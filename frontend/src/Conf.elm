@@ -117,6 +117,7 @@ ids :
     , findPathDialog : HtmlId
     , schemaAnalysisDialog : HtmlId
     , helpDialog : HtmlId
+    , customDialog : HtmlId
     , confirmDialog : HtmlId
     , promptDialog : HtmlId
     , modal : HtmlId
@@ -135,6 +136,7 @@ ids =
     , findPathDialog = "find-path-dialog"
     , schemaAnalysisDialog = "schema-analysis-dialog"
     , helpDialog = "help-dialog"
+    , customDialog = "custom-dialog"
     , confirmDialog = "confirm-dialog"
     , promptDialog = "prompt-dialog"
     , modal = "modal"

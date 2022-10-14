@@ -29,13 +29,12 @@ import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Views.Commands exposing (viewCommands)
 import PagesComponents.Organization_.Project_.Views.Erd as Erd exposing (viewErd)
-import PagesComponents.Organization_.Project_.Views.Modals.Confirm exposing (viewConfirm)
 import PagesComponents.Organization_.Project_.Views.Modals.EditNotes exposing (viewEditNotes)
 import PagesComponents.Organization_.Project_.Views.Modals.FindPath exposing (viewFindPath)
 import PagesComponents.Organization_.Project_.Views.Modals.Help exposing (viewHelp)
+import PagesComponents.Organization_.Project_.Views.Modals.Modals as Modals
 import PagesComponents.Organization_.Project_.Views.Modals.NewLayout as NewLayout
 import PagesComponents.Organization_.Project_.Views.Modals.ProjectSettings exposing (viewProjectSettings)
-import PagesComponents.Organization_.Project_.Views.Modals.Prompt exposing (viewPrompt)
 import PagesComponents.Organization_.Project_.Views.Modals.SchemaAnalysis exposing (viewSchemaAnalysis)
 import PagesComponents.Organization_.Project_.Views.Modals.Sharing exposing (viewSharing)
 import PagesComponents.Organization_.Project_.Views.Navbar as Navbar exposing (viewNavbar)
@@ -140,8 +139,9 @@ viewModal : Url -> Shared.Model -> Model -> Cmd Msg -> Html Msg
 viewModal currentUrl shared model _ =
     Keyed.node "div"
         [ class "az-modals" ]
-        ([ model.confirm |> Maybe.map (\m -> ( m.id, viewConfirm (model.openedDialogs |> List.member m.id) m ))
-         , model.prompt |> Maybe.map (\m -> ( m.id, viewPrompt (model.openedDialogs |> List.member m.id) m ))
+        ([ model.modal |> Maybe.map (\m -> ( m.id, Modals.view (model.openedDialogs |> List.member m.id) m ))
+         , model.confirm |> Maybe.map (\m -> ( m.id, Modals.viewConfirm (model.openedDialogs |> List.member m.id) m ))
+         , model.prompt |> Maybe.map (\m -> ( m.id, Modals.viewPrompt (model.openedDialogs |> List.member m.id) m ))
          , model.newLayout |> Maybe.map2 (\e m -> ( m.id, NewLayout.view NewLayoutMsg ModalClose (e |> Erd.getOrganization) (e.layouts |> Dict.keys) (model.openedDialogs |> List.member m.id) m )) model.erd
          , model.editNotes |> Maybe.map2 (\e m -> ( m.id, viewEditNotes (model.openedDialogs |> List.member m.id) e m )) model.erd
          , model.findPath |> Maybe.map2 (\e m -> ( m.id, viewFindPath (model.openedDialogs |> List.member m.id) model.openedDropdown e.settings.defaultSchema e.tables e.settings.findPath m )) model.erd

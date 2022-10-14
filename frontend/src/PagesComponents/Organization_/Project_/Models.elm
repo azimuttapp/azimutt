@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, AmlSidebarMsg(..), ConfirmDialog, ContextMenu, FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutMsg(..), Model, Msg(..), NavbarModel, NotesDialog, NotesMsg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, SharingDialog, SharingMsg(..), VirtualRelation, VirtualRelationMsg(..), confirm, confirmDanger, prompt, simplePrompt)
+module PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, AmlSidebarMsg(..), ConfirmDialog, ContextMenu, FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutMsg(..), ModalDialog, Model, Msg(..), NavbarModel, NotesDialog, NotesMsg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, SharingDialog, SharingMsg(..), VirtualRelation, VirtualRelationMsg(..), confirm, confirmDanger, prompt, simplePrompt)
 
 import Components.Atoms.Icon exposing (Icon(..))
 import DataSources.AmlMiner.AmlAdapter exposing (AmlSchemaError)
@@ -81,6 +81,7 @@ type alias Model =
     , contextMenu : Maybe ContextMenu
     , dragging : Maybe DragState
     , toasts : Toasts.Model
+    , modal : Maybe ModalDialog
     , confirm : Maybe ConfirmDialog
     , prompt : Maybe PromptDialog
     , openedDialogs : List HtmlId
@@ -127,6 +128,10 @@ type alias HelpDialog =
 
 type alias ContextMenu =
     { content : Html Msg, position : Position.Viewport, show : Bool }
+
+
+type alias ModalDialog =
+    { id : HtmlId, content : Msg -> String -> Html Msg }
 
 
 type alias ConfirmDialog =
@@ -204,6 +209,8 @@ type Msg
     | DragEnd Position.Viewport
     | DragCancel
     | Toast Toasts.Msg
+    | CustomModalOpen (Msg -> String -> Html Msg)
+    | CustomModalClose
     | ConfirmOpen (Confirm Msg)
     | ConfirmAnswer Bool (Cmd Msg)
     | PromptOpen (Prompt Msg) String

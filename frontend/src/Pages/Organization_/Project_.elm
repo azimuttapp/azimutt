@@ -82,6 +82,7 @@ init params query =
       , contextMenu = Nothing
       , dragging = Nothing
       , toasts = Toasts.init
+      , modal = Nothing
       , confirm = Nothing
       , prompt = Nothing
       , openedDialogs = []

@@ -130,6 +130,7 @@ module Services.Lenses exposing
     , setLocation
     , setMax
     , setMobileMenuOpen
+    , setModal
     , setMouse
     , setName
     , setNavbar
@@ -620,6 +621,11 @@ setMobileMenuOpen =
 mapMobileMenuOpen : (v -> v) -> { item | mobileMenuOpen : v } -> { item | mobileMenuOpen : v }
 mapMobileMenuOpen =
     map_ .mobileMenuOpen setMobileMenuOpen
+
+
+setModal : v -> { item | modal : v } -> { item | modal : v }
+setModal =
+    set_ .modal (\value item -> { item | modal = value })
 
 
 setMouse : v -> { item | mouse : v } -> { item | mouse : v }

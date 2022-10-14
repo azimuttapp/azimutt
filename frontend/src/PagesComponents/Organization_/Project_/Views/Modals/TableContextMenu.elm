@@ -1,16 +1,14 @@
 module PagesComponents.Organization_.Project_.Views.Modals.TableContextMenu exposing (view)
 
 import Components.Molecules.ContextMenu as ContextMenu
+import Components.Organisms.ColorPicker as ColorPicker
 import Conf
-import Html exposing (Html, button, div)
-import Html.Attributes exposing (class, tabindex, title, type_)
-import Html.Events exposing (onClick)
+import Html exposing (Html, div)
+import Html.Attributes exposing (class)
 import Libs.Bool as B
 import Libs.Dict as Dict
-import Libs.Html.Attributes exposing (css, role)
 import Libs.Maybe as Maybe
 import Libs.Models.Platform exposing (Platform)
-import Libs.Tailwind as Color exposing (bg_500, focus, hover)
 import Models.ColumnOrder as ColumnOrder
 import PagesComponents.Organization_.Project_.Models exposing (FindPathMsg(..), Msg(..), NotesMsg(..))
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
@@ -27,14 +25,7 @@ view platform conf index table layout notes =
         ([ -- Maybe.when conf.layout { label = "Show details", action = ContextMenu.Simple { action = DetailsSidebarMsg (DetailsSidebar.ShowTable table.id), platform = platform, hotkeys = [] } },
            Maybe.when conf.layout { label = B.cond layout.props.selected "Hide selected tables" "Hide table", action = ContextMenu.Simple { action = HideTable table.id, platform = platform, hotkeys = Conf.hotkeys |> Dict.getOrElse "hide" [] } }
          , Maybe.when conf.layout { label = notes |> Maybe.mapOrElse (\_ -> "Update notes") "Add notes", action = ContextMenu.Simple { action = NotesMsg (NOpen (NoteRef.fromTable table.id)), platform = platform, hotkeys = Conf.hotkeys |> Dict.getOrElse "notes" [] } }
-         , Maybe.when conf.layout
-            { label = B.cond layout.props.selected "Set color of selected tables" "Set color"
-            , action =
-                ContextMenu.Custom
-                    (div [ css [ "group-hover:grid grid-cols-6 gap-1 p-1 pl-2" ] ]
-                        (Color.selectable |> List.map (\c -> button [ type_ "button", onClick (TableColor table.id c), title (Color.toString c), role "menuitem", tabindex -1, css [ "rounded-full w-6 h-6", bg_500 c, hover [ "scale-125" ], focus [ "outline-none" ] ] ] []))
-                    )
-            }
+         , Maybe.when conf.layout { label = B.cond layout.props.selected "Set color of selected tables" "Set color", action = ContextMenu.Custom (ColorPicker.view (TableColor table.id)) }
          , Maybe.when conf.layout { label = B.cond layout.props.selected "Sort columns of selected tables" "Sort columns", action = ContextMenu.SubMenu (ColumnOrder.all |> List.map (\o -> { label = ColumnOrder.show o, action = SortColumns table.id o, platform = platform, hotkeys = [] })) }
          , Maybe.when conf.layout
             { label = B.cond layout.props.selected "Hide columns of selected tables" "Hide columns"

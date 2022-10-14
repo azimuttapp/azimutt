@@ -21,12 +21,14 @@ import Components.Molecules.Select as Select
 import Components.Molecules.Slideover as Slideover
 import Components.Molecules.Toast as Toast
 import Components.Molecules.Tooltip as Tooltip
+import Components.Organisms.ColorPicker as ColorPicker
 import Components.Organisms.Details as Details
 import Components.Organisms.Navbar as Navbar
 import Components.Organisms.Relation as Relation
 import Components.Organisms.Table as Table
 import Components.Slices.NewLayoutBody as NewLayoutBody
 import Components.Slices.NotFound as NotFound
+import Components.Slices.ProPlan as ProPlan
 import Components.Slices.ProjectSaveDialogBody as ProjectSaveDialogBody
 import ElmBook
 import ElmBook.Chapter as Chapter exposing (Chapter)
@@ -89,10 +91,10 @@ main =
         |> ElmBook.withChapterGroups
             -- sorted alphabetically
             [ ( "", [ docs ] )
-            , ( "Atoms", [ Badge.doc, Button.doc, colorsDoc, Icon.doc, Input.doc, Kbd.doc, Link.doc, Loader.doc ] )
+            , ( "Slices", [ NotFound.doc, NewLayoutBody.doc, ProjectSaveDialogBody.doc, ProPlan.doc ] )
+            , ( "Organisms", [ ColorPicker.doc, Details.doc, Navbar.doc, Relation.doc, Table.doc ] )
             , ( "Molecules", [ Alert.doc, Divider.doc, Dropdown.doc, Editor.doc, FileInput.doc, FormLabel.doc, InputText.doc, ItemList.doc, Modal.doc, Popover.doc, Select.doc, Slideover.doc, Toast.doc, Tooltip.doc ] )
-            , ( "Organisms", [ Details.doc, Navbar.doc, Relation.doc, Table.doc ] )
-            , ( "Slices", [ NotFound.doc, NewLayoutBody.doc, ProjectSaveDialogBody.doc ] )
+            , ( "Atoms", [ Badge.doc, Button.doc, colorsDoc, Icon.doc, Input.doc, Kbd.doc, Link.doc, Loader.doc ] )
             ]
 
 

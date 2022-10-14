@@ -2,6 +2,7 @@ module PagesComponents.Organization_.Project_.Views.Modals.NewLayout exposing (G
 
 import Components.Molecules.Modal as Modal
 import Components.Slices.NewLayoutBody as NewLayoutBody
+import Components.Slices.ProPlan as ProPlan
 import Dict
 import Html exposing (Html)
 import Libs.Maybe as Maybe
@@ -85,7 +86,7 @@ view wrap modalClose organization layouts opened model =
         , onBackgroundClick = Cancel |> wrap |> modalClose
         }
         [ if organization.plan.layouts |> Maybe.any (\l -> List.length layouts > l) then
-            NewLayoutBody.overQuota (Cancel |> wrap |> modalClose) titleId organization
+            ProPlan.layoutsModalBody organization (Cancel |> wrap |> modalClose) titleId
 
           else
             NewLayoutBody.view (BodyMsg >> wrap) (Create model.from >> wrap >> modalClose) (Cancel |> wrap |> modalClose) titleId layouts organization model
