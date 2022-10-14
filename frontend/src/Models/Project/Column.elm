@@ -82,7 +82,7 @@ encode value =
         , ( "nullable", value.nullable |> Encode.withDefault Encode.bool False )
         , ( "default", value.default |> Encode.maybe ColumnValue.encode )
         , ( "comment", value.comment |> Encode.maybe Comment.encode )
-        , ( "origins", value.origins |> Encode.withDefault (Encode.list Origin.encode) [] )
+        , ( "origins", value.origins |> Encode.list Origin.encode )
         ]
 
 

@@ -30,7 +30,7 @@ encode : Comment -> Value
 encode value =
     Encode.notNullObject
         [ ( "text", value.text |> Encode.string )
-        , ( "origins", value.origins |> Encode.withDefault (Encode.list Origin.encode) [] )
+        , ( "origins", value.origins |> Encode.list Origin.encode )
         ]
 
 

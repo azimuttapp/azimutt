@@ -36,7 +36,7 @@ encode value =
     Encode.notNullObject
         [ ( "name", value.name |> Encode.maybe PrimaryKeyName.encode )
         , ( "columns", value.columns |> Encode.nel ColumnName.encode )
-        , ( "origins", value.origins |> Encode.withDefault (Encode.list Origin.encode) [] )
+        , ( "origins", value.origins |> Encode.list Origin.encode )
         ]
 
 

@@ -65,7 +65,7 @@ encode value =
         [ ( "schema", value.id |> Tuple.first |> SchemaName.encode )
         , ( "name", value.name |> CustomTypeName.encode )
         , ( "value", value.value |> CustomTypeValue.encode )
-        , ( "origins", value.origins |> Encode.withDefault (Encode.list Origin.encode) [] )
+        , ( "origins", value.origins |> Encode.list Origin.encode )
         ]
 
 

@@ -37,9 +37,9 @@ encode : Check -> Value
 encode value =
     Encode.notNullObject
         [ ( "name", value.name |> CheckName.encode )
-        , ( "columns", value.columns |> Encode.withDefault (Encode.list ColumnName.encode) [] )
+        , ( "columns", value.columns |> Encode.list ColumnName.encode )
         , ( "predicate", value.predicate |> Encode.maybe Encode.string )
-        , ( "origins", value.origins |> Encode.withDefault (Encode.list Origin.encode) [] )
+        , ( "origins", value.origins |> Encode.list Origin.encode )
         ]
 
 

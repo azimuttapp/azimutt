@@ -4,10 +4,11 @@ import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.Modal as Modal
 import Components.Molecules.Tooltip as Tooltip
+import Components.Slices.ProPlan as ProPlan
 import Conf
 import Dict exposing (Dict)
 import Html exposing (Html, div, h3, h4, h5, p, span, text)
-import Html.Attributes exposing (class, classList, id)
+import Html.Attributes exposing (class, classList, id, style)
 import Html.Events exposing (onClick)
 import Libs.Bool as B
 import Libs.Dict as Dict
@@ -18,6 +19,7 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Regex as Regex
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (sm)
+import Models.Organization exposing (Organization)
 import Models.Project.ColumnName as ColumnName exposing (ColumnName)
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
 import Models.Project.ColumnType exposing (ColumnType)
@@ -48,8 +50,8 @@ import Services.Backend as Backend
 -}
 
 
-viewSchemaAnalysis : Bool -> SchemaName -> Dict TableId ErdTable -> SchemaAnalysisDialog -> Html Msg
-viewSchemaAnalysis opened defaultSchema tables model =
+viewSchemaAnalysis : Organization -> Bool -> SchemaName -> Dict TableId ErdTable -> SchemaAnalysisDialog -> Html Msg
+viewSchemaAnalysis organization opened defaultSchema tables model =
     let
         titleId : HtmlId
         titleId =
@@ -57,14 +59,19 @@ viewSchemaAnalysis opened defaultSchema tables model =
     in
     Modal.modal { id = model.id, titleId = titleId, isOpen = opened, onBackgroundClick = ModalClose (SchemaAnalysisMsg SAClose) }
         [ viewHeader titleId
-        , viewAnalysis model.opened defaultSchema tables
+        , if organization.plan.dbAnalysis then
+            div [] []
+
+          else
+            div [ class "max-w-5xl px-6 mt-3" ] [ ProPlan.analysisWarning organization ]
+        , viewAnalysis organization model.opened defaultSchema tables
         , viewFooter
         ]
 
 
 viewHeader : HtmlId -> Html msg
 viewHeader titleId =
-    div [ css [ "pt-6 px-6", sm [ "flex items-start" ] ] ]
+    div [ css [ "max-w-5xl px-6 mt-3", sm [ "flex items-start" ] ] ]
         [ div [ css [ "mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-primary-100", sm [ "mx-0 h-10 w-10" ] ] ]
             [ Icon.outline Beaker "text-primary-600"
             ]
@@ -76,19 +83,19 @@ viewHeader titleId =
         ]
 
 
-viewAnalysis : HtmlId -> SchemaName -> Dict TableId ErdTable -> Html Msg
-viewAnalysis opened defaultSchema tables =
-    div [ class "px-6" ]
-        [ viewMissingPrimaryKey "missing-pks" opened defaultSchema (computeMissingPrimaryKey tables)
-        , viewMissingRelations "missing-relations" opened defaultSchema (computeMissingRelations tables)
-        , viewHeterogeneousTypes "heterogeneous-types" opened defaultSchema (computeHeterogeneousTypes tables)
-        , viewBigTables "big-tables" opened defaultSchema (computeBigTables tables)
+viewAnalysis : Organization -> HtmlId -> SchemaName -> Dict TableId ErdTable -> Html Msg
+viewAnalysis organization opened defaultSchema tables =
+    div [ class "max-w-5xl px-6 mt-3" ]
+        [ viewMissingPrimaryKey "missing-pks" organization opened defaultSchema (computeMissingPrimaryKey tables)
+        , viewMissingRelations "missing-relations" organization opened defaultSchema (computeMissingRelations tables)
+        , viewHeterogeneousTypes "heterogeneous-types" organization opened defaultSchema (computeHeterogeneousTypes tables)
+        , viewBigTables "big-tables" organization opened defaultSchema (computeBigTables tables)
         ]
 
 
 viewFooter : Html Msg
 viewFooter =
-    div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50 rounded-b-lg" ]
+    div [ class "max-w-5xl px-6 mt-3 py-3 flex items-center justify-between flex-row-reverse bg-gray-50 rounded-b-lg" ]
         [ Button.primary3 Tw.primary [ class "ml-3", onClick (ModalClose (SchemaAnalysisMsg SAClose)) ] [ text "Close" ]
         , span [] [ text "If you've got any ideas for improvements, ", extLink "https://github.com/azimuttapp/azimutt/discussions/75" [ class "link" ] [ text "please let us know" ], text "." ]
         ]
@@ -103,25 +110,22 @@ computeMissingPrimaryKey tables =
     tables |> Dict.values |> List.filter (\t -> t.primaryKey == Nothing)
 
 
-viewMissingPrimaryKey : HtmlId -> HtmlId -> SchemaName -> List ErdTable -> Html Msg
-viewMissingPrimaryKey htmlId opened defaultSchema missingPks =
+viewMissingPrimaryKey : HtmlId -> Organization -> HtmlId -> SchemaName -> List ErdTable -> Html Msg
+viewMissingPrimaryKey htmlId organization opened defaultSchema missingPks =
     viewSection htmlId
         opened
         "All tables have a primary key"
         (missingPks |> List.length)
         (\nb -> "Found " ++ (nb |> String.pluralize "table") ++ " without a primary key")
-        [ div []
-            (missingPks
-                |> List.map
-                    (\t ->
-                        div [ class "flex justify-between items-center my-1" ]
-                            [ div [] [ bText (TableId.show defaultSchema t.id), text " has no primary key" ]
-                            , Button.primary1 Tw.primary [ class "ml-3", onClick (ShowTable t.id Nothing) ] [ text "Show table" ]
-                            ]
-                    )
+        [ p [ class "mb-3 text-sm text-gray-500" ] [ text "It's not always required to have a primary key but strongly encouraged in most case. Make sure this is what you want!" ]
+        , viewResults organization
+            missingPks
+            (\t ->
+                div [ class "flex justify-between items-center my-1" ]
+                    [ div [] [ bText (TableId.show defaultSchema t.id), text " has no primary key" ]
+                    , Button.primary1 Tw.primary [ class "ml-3", onClick (ShowTable t.id Nothing) ] [ text "Show table" ]
+                    ]
             )
-        , p [ class "prose mb-3 text-sm text-gray-500" ]
-            [ text "It's not always required to have a primary key but strongly encouraged in most case. Make sure this is what you want!" ]
         ]
 
 
@@ -203,32 +207,29 @@ kindMatch rel =
         rel.src.kind == rel.ref.kind
 
 
-viewMissingRelations : HtmlId -> HtmlId -> SchemaName -> ( List MissingRelation, List MissingRef ) -> Html Msg
-viewMissingRelations htmlId opened defaultSchema ( missingRels, missingRefs ) =
+viewMissingRelations : HtmlId -> Organization -> HtmlId -> SchemaName -> ( List MissingRelation, List MissingRef ) -> Html Msg
+viewMissingRelations htmlId organization opened defaultSchema ( missingRels, missingRefs ) =
     viewSection htmlId
         opened
         "No potentially missing relation found"
         ((missingRels |> List.length) + (missingRefs |> List.length))
         (\nb -> "Found " ++ (nb |> String.pluralize "potentially missing relation"))
-        [ div []
-            (missingRels
-                |> List.sortBy (\rel -> ColumnRef.show defaultSchema rel.ref ++ " ← " ++ ColumnRef.show defaultSchema rel.src)
-                |> List.map
-                    (\rel ->
-                        div [ class "flex justify-between items-center py-1" ]
-                            [ div []
-                                [ text (TableId.show defaultSchema rel.ref.table)
-                                , span [ class "text-gray-500" ] [ text (ColumnName.withName rel.ref.column "") ]
-                                , Icon.solid ArrowNarrowLeft "inline mx-1"
-                                , text (TableId.show defaultSchema rel.src.table)
-                                , span [ class "text-gray-500" ] [ text (ColumnName.withName rel.src.column "") ]
-                                ]
-                            , div [ class "ml-3" ]
-                                [ B.cond (kindMatch rel) (span [] []) (span [ class "text-gray-400 mr-3" ] [ Icon.solid Exclamation "inline", text (" " ++ rel.ref.kind ++ " vs " ++ rel.src.kind) ])
-                                , Button.primary1 Tw.primary [ onClick (CreateRelation (infoToRef rel.src) (infoToRef rel.ref)) ] [ text "Add relation" ]
-                                ]
-                            ]
-                    )
+        [ viewResults organization
+            (missingRels |> List.sortBy (\rel -> ColumnRef.show defaultSchema rel.ref ++ " ← " ++ ColumnRef.show defaultSchema rel.src))
+            (\rel ->
+                div [ class "flex justify-between items-center py-1" ]
+                    [ div []
+                        [ text (TableId.show defaultSchema rel.ref.table)
+                        , span [ class "text-gray-500" ] [ text (ColumnName.withName rel.ref.column "") ]
+                        , Icon.solid ArrowNarrowLeft "inline mx-1"
+                        , text (TableId.show defaultSchema rel.src.table)
+                        , span [ class "text-gray-500" ] [ text (ColumnName.withName rel.src.column "") ]
+                        ]
+                    , div [ class "ml-3" ]
+                        [ B.cond (kindMatch rel) (span [] []) (span [ class "text-gray-400 mr-3" ] [ Icon.solid Exclamation "inline", text (" " ++ rel.ref.kind ++ " vs " ++ rel.src.kind) ])
+                        , Button.primary1 Tw.primary [ onClick (CreateRelation (infoToRef rel.src) (infoToRef rel.ref)) ] [ text "Add relation" ]
+                        ]
+                    ]
             )
         , if missingRefs |> List.isEmpty then
             div [] []
@@ -236,16 +237,14 @@ viewMissingRelations htmlId opened defaultSchema ( missingRels, missingRefs ) =
           else
             div []
                 [ h5 [ class "mt-1 font-medium" ] [ text "Some columns may need a relation, but can't find a related table:" ]
-                , div []
-                    (missingRefs
-                        |> List.map
-                            (\rel ->
-                                div [ class "ml-3" ]
-                                    [ text (TableId.show defaultSchema rel.src.table)
-                                    , span [ class "text-gray-500" ] [ text (ColumnName.withName rel.src.column "") ]
-                                    , span [ class "text-gray-400" ] [ text (" (" ++ rel.src.kind ++ ")") ]
-                                    ]
-                            )
+                , viewResults organization
+                    missingRefs
+                    (\rel ->
+                        div [ class "ml-3" ]
+                            [ text (TableId.show defaultSchema rel.src.table)
+                            , span [ class "text-gray-500" ] [ text (ColumnName.withName rel.src.column "") ]
+                            , span [ class "text-gray-400" ] [ text (" (" ++ rel.src.kind ++ ")") ]
+                            ]
                     )
                 ]
         ]
@@ -266,35 +265,34 @@ computeHeterogeneousTypes tables =
         |> List.filter (\( _, cols ) -> (cols |> List.length) > 1)
 
 
-viewHeterogeneousTypes : HtmlId -> HtmlId -> SchemaName -> List ( ColumnName, List ( ColumnType, List TableId ) ) -> Html Msg
-viewHeterogeneousTypes htmlId opened defaultSchema heterogeneousTypes =
+viewHeterogeneousTypes : HtmlId -> Organization -> HtmlId -> SchemaName -> List ( ColumnName, List ( ColumnType, List TableId ) ) -> Html Msg
+viewHeterogeneousTypes htmlId organization opened defaultSchema heterogeneousTypes =
     viewSection htmlId
         opened
         "No heterogeneous types found"
         (heterogeneousTypes |> List.length)
         (\nb -> "Found " ++ (nb |> String.pluralize "column") ++ " with heterogeneous types")
-        (p [ class "prose mb-3 text-sm text-gray-500" ]
+        [ p [ class "mb-1 text-sm text-gray-500" ]
             [ text
                 ("There is nothing wrong intrinsically with heterogeneous types "
                     ++ "but sometimes, the same concept stored in different format may not be ideal and having everything aligned is clearer. "
                     ++ "But of course, not every column with the same name is the same thing, so just look at the to know, not to fix everything."
                 )
             ]
-            :: (heterogeneousTypes
-                    |> List.map
-                        (\( col, types ) ->
-                            div []
-                                [ bText col
-                                , text " has types: "
-                                , span [ class "text-gray-500" ]
-                                    (types
-                                        |> List.map (\( t, ids ) -> text t |> Tooltip.t (ids |> List.map (TableId.show defaultSchema) |> String.join ", "))
-                                        |> List.intersperse (text ", ")
-                                    )
-                                ]
+        , viewResults organization
+            heterogeneousTypes
+            (\( col, types ) ->
+                div []
+                    [ bText col
+                    , text " has types: "
+                    , span [ class "text-gray-500" ]
+                        (types
+                            |> List.map (\( t, ids ) -> text t |> Tooltip.t (ids |> List.map (TableId.show defaultSchema) |> String.join ", "))
+                            |> List.intersperse (text ", ")
                         )
-               )
-        )
+                    ]
+            )
+        ]
 
 
 
@@ -309,21 +307,21 @@ computeBigTables tables =
         |> List.sortBy (\t -> t.columns |> Dict.size |> negate)
 
 
-viewBigTables : HtmlId -> HtmlId -> SchemaName -> List ErdTable -> Html Msg
-viewBigTables htmlId opened defaultSchema bigTables =
+viewBigTables : HtmlId -> Organization -> HtmlId -> SchemaName -> List ErdTable -> Html Msg
+viewBigTables htmlId organization opened defaultSchema bigTables =
     viewSection htmlId
         opened
         "No big table found"
         (bigTables |> List.length)
         (\nb -> "Found " ++ (nb |> String.pluralize "table") ++ " too big")
-        [ div [] (bigTables |> List.map (\t -> div [] [ text ((t.columns |> Dict.size |> String.pluralize "column") ++ ": "), bText (TableId.show defaultSchema t.id) ]))
-        , div [ class "mt-1 text-gray-500" ]
+        [ div [ class "mb-1 text-gray-500" ]
             [ text "See "
             , extLink (Backend.blogArticleUrl "why-you-should-avoid-tables-with-many-columns-and-how-to-fix-them")
                 [ css [ "link" ] ]
                 [ text "Why you should avoid tables with many columns, and how to fix them"
                 ]
             ]
+        , viewResults organization bigTables (\t -> div [] [ text ((t.columns |> Dict.size |> String.pluralize "column") ++ ": "), bText (TableId.show defaultSchema t.id) ])
         ]
 
 
@@ -353,5 +351,20 @@ viewSection htmlId opened successTitle errorCount failureTitle content =
                 , text (errorCount |> failureTitle)
                 , Icon.solid ChevronDown ("inline transform transition " ++ B.cond isOpen "-rotate-180" "")
                 ]
-            , div [ classList [ ( "hidden", not isOpen ) ] ] content
+            , div [ class "ml-8", classList [ ( "hidden", not isOpen ) ] ] content
             ]
+
+
+viewResults : Organization -> List a -> (a -> Html msg) -> Html msg
+viewResults organization items render =
+    if organization.plan.dbAnalysis || List.length items <= 5 then
+        div [] (items |> List.map render)
+
+    else
+        div [ class "relative" ]
+            ((items |> List.take 5 |> List.map render)
+                ++ [ div [ class "absolute inset-x-0 pt-32 bg-gradient-to-t from-white flex justify-center text-sm text-gray-500 pointer-events-none", style "bottom" "-2px" ]
+                        [ text "See more with upgraded plan."
+                        ]
+                   ]
+            )

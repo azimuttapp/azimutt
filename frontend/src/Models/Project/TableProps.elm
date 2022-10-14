@@ -28,7 +28,7 @@ encode value =
     Encode.notNullObject
         [ ( "id", value.id |> TableId.encode )
         , ( "position", value.position |> Position.encodeCanvasGrid )
-        , ( "size", value.size |> Encode.withDefault Size.encodeCanvas Size.zeroCanvas )
+        , ( "size", value.size |> Size.encodeCanvas )
         , ( "color", value.color |> Tw.encodeColor )
         , ( "columns", value.columns |> Encode.list ColumnName.encode )
         , ( "selected", value.selected |> Encode.withDefault Encode.bool False )

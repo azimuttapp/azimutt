@@ -41,7 +41,6 @@ unpack : ErdLayout -> Layout
 unpack layout =
     { canvas = layout.canvas
     , tables = layout.tables |> List.map (\t -> t |> ErdTableLayout.unpack)
-    , hiddenTables = []
     , createdAt = layout.createdAt
     , updatedAt = layout.updatedAt
     }

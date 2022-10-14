@@ -404,7 +404,6 @@ upgradeLayout : LayoutV1 -> Layout
 upgradeLayout layout =
     { canvas = layout.canvas |> upgradeCanvasProps
     , tables = layout.tables |> List.map upgradeTableProps
-    , hiddenTables = layout.hiddenTables |> List.map upgradeTableProps
     , createdAt = layout.createdAt
     , updatedAt = layout.updatedAt
     }

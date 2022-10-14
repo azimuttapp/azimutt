@@ -162,7 +162,7 @@ origin =
 
 layout : Fuzzer Layout
 layout =
-    Fuzz.map5 Layout canvasProps (listSmall tableProps) (listSmall tableProps) posix posix
+    Fuzz.map4 Layout canvasProps (listSmall tableProps) posix posix
 
 
 canvasProps : Fuzzer CanvasProps

@@ -124,7 +124,7 @@ encode value =
         , ( "indexes", value.indexes |> Encode.withDefault (Encode.list Index.encode) [] )
         , ( "checks", value.checks |> Encode.withDefault (Encode.list Check.encode) [] )
         , ( "comment", value.comment |> Encode.maybe Comment.encode )
-        , ( "origins", value.origins |> Encode.withDefault (Encode.list Origin.encode) [] )
+        , ( "origins", value.origins |> Encode.list Origin.encode )
         ]
 
 

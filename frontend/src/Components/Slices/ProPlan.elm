@@ -1,4 +1,4 @@
-module Components.Slices.ProPlan exposing (colorsModalBody, doc, layoutsModalBody, layoutsWarning)
+module Components.Slices.ProPlan exposing (analysisWarning, colorsModalBody, doc, layoutsModalBody, layoutsWarning)
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon
@@ -76,6 +76,25 @@ colorsModalBody organization close titleId =
         ]
 
 
+analysisWarning : Organization -> Html msg
+analysisWarning organization =
+    Alert.withActions
+        { color = Tw.fuchsia
+        , icon = Icon.Exclamation
+        , title = "Get full analysis with Pro plan!"
+        , actions =
+            [ Link.secondary3 Tw.fuchsia
+                [ href (Backend.organizationBillingUrl organization.id), target "_blank", rel "noopener" ]
+                [ Icon.outline Icon.ShieldCheck "mr-1"
+                , text "Upgrade plan"
+                ]
+            ]
+        }
+        [ p [] [ text "Schema analysis is still an early feature but a very important one in Azimutt." ]
+        , p [] [ text "It analyze your schema, and even database statistics one day, to give you insights on possible improvements. In free mode you can only access limited results. Consider upgrading to access to the full analysis and support Azimutt expansion ❤️" ]
+        ]
+
+
 
 -- DOCUMENTATION
 
@@ -97,4 +116,5 @@ doc =
             [ ( "layoutsWarning", layoutsWarning Organization.free )
             , ( "layoutsModalBody", layoutsModalBody Organization.free sampleCancel sampleTitleId )
             , ( "colorsModalBody", colorsModalBody Organization.free sampleCancel sampleTitleId )
+            , ( "analysisWarning", analysisWarning Organization.free )
             ]
