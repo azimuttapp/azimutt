@@ -3,7 +3,6 @@ module Conf exposing (canvas, constants, hotkeys, ids, schema, ui)
 import Dict exposing (Dict)
 import Libs.Models.Hotkey exposing (Hotkey, hotkey, target)
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Models.Uuid as Uuid
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Url as Url
 import Models.Project.LayoutName exposing (LayoutName)
@@ -26,7 +25,6 @@ constants :
     , azimuttEmail : String
     , defaultTitle : String
     , defaultDescription : String
-    , tmpOrg : String
     , newProjectName : ProjectName
     , defaultLayout : LayoutName
     , freePlanLayouts : Int
@@ -49,7 +47,6 @@ constants =
     , azimuttEmail = "hey@azimutt.app"
     , defaultTitle = "Azimutt - Database explorer and analyzer"
     , defaultDescription = "Next gen ERD: explore and analyze your SQL database schema. Search and display what you want, follow relations, find paths and much more..."
-    , tmpOrg = Uuid.zero
     , newProjectName = "New Project"
     , defaultLayout = "initial layout"
     , freePlanLayouts = 3 -- MUST stay in sync with free_plan_layouts in backend/config/config.exs

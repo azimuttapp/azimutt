@@ -1,4 +1,4 @@
-module Models.ProjectInfo exposing (ProjectInfo, decode, encode, fromProject)
+module Models.ProjectInfo exposing (ProjectInfo, decode, encode, fromProject, organizationId)
 
 import Dict exposing (Dict)
 import Json.Decode as Decode
@@ -6,8 +6,10 @@ import Json.Encode as Encode exposing (Value)
 import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
 import Libs.List as List
+import Libs.Maybe as Maybe
 import Libs.Time as Time
 import Models.Organization as Organization exposing (Organization)
+import Models.OrganizationId as OrganizationId
 import Models.Project exposing (Project)
 import Models.Project.ProjectEncodingVersion as ProjectEncodingVersion exposing (ProjectEncodingVersion)
 import Models.Project.ProjectId as ProjectId exposing (ProjectId)
@@ -66,6 +68,11 @@ fromProject p =
     , createdAt = p.createdAt
     , updatedAt = p.updatedAt
     }
+
+
+organizationId : ProjectInfo -> OrganizationId.OrganizationId
+organizationId p =
+    p.organization |> Maybe.mapOrElse .id OrganizationId.zero
 
 
 encode : ProjectInfo -> Value

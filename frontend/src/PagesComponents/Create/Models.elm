@@ -28,7 +28,7 @@ type Msg
     | SqlSourceMsg SqlSource.Msg
     | JsonSourceMsg JsonSource.Msg
     | AmlSourceMsg
-    | CreateProject Project
+    | CreateProjectTmp Project
       -- global messages
     | Toast Toasts.Msg
     | JsMessage JsMsg

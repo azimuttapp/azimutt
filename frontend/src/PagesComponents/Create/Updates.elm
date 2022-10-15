@@ -7,8 +7,9 @@ import Libs.Maybe as Maybe
 import Libs.Result as Result
 import Libs.String as String
 import Libs.Task as T
-import Models.OrganizationId exposing (OrganizationId)
+import Models.OrganizationId as OrganizationId exposing (OrganizationId)
 import Models.Project as Project
+import Models.Project.ProjectId as ProjectId
 import Models.Project.Source as Source exposing (Source)
 import Models.Project.SourceId as SourceId
 import PagesComponents.Create.Models exposing (Model, Msg(..))
@@ -50,28 +51,31 @@ update req now urlOrganization msg model =
             model |> mapSqlSourceMCmd (SqlSource.update SqlSourceMsg now message)
 
         AmlSourceMsg ->
-            ( model, SourceId.generator |> Random.generate (Source.aml Conf.constants.virtualRelationSourceName now >> Project.create model.projects model.projectName >> CreateProject) )
+            ( model, SourceId.generator |> Random.generate (Source.aml Conf.constants.virtualRelationSourceName now >> Project.create model.projects model.projectName >> CreateProjectTmp) )
 
-        CreateProject project ->
-            ( model, Cmd.batch [ Ports.createProjectTmp project, Ports.track (Track.initProject project), Request.pushRoute (Route.Organization___Project_ { organization = urlOrganization |> Maybe.withDefault Conf.constants.tmpOrg, project = project.id }) req ] )
+        CreateProjectTmp project ->
+            ( model, Cmd.batch [ Ports.createProjectTmp project, Ports.track (Track.initProject project) ] )
 
         Toast message ->
             model |> mapToastsCmd (Toasts.update Toast message)
 
         JsMessage message ->
-            model |> handleJsMessage message
+            model |> handleJsMessage req urlOrganization message
 
 
 createProject : Model -> Result String Source -> Msg
 createProject model =
-    Result.fold (Toasts.error >> Toast) (Project.create model.projects model.projectName >> CreateProject)
+    Result.fold (Toasts.error >> Toast) (Project.create model.projects model.projectName >> CreateProjectTmp)
 
 
-handleJsMessage : JsMsg -> Model -> ( Model, Cmd Msg )
-handleJsMessage msg model =
+handleJsMessage : Request.With params -> Maybe OrganizationId -> JsMsg -> Model -> ( Model, Cmd Msg )
+handleJsMessage req urlOrganization msg model =
     case msg of
         GotLegacyProjects ( _, projects ) ->
             ( { model | projects = Sort.lastUpdatedFirst projects }, T.send InitProject )
+
+        GotProject _ ->
+            ( model, Request.pushRoute (Route.Organization___Project_ { organization = urlOrganization |> Maybe.withDefault OrganizationId.zero, project = ProjectId.zero }) req )
 
         GotToast level message ->
             ( model, message |> Toasts.create level |> Toast |> T.send )

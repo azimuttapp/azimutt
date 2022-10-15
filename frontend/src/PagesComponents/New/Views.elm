@@ -27,7 +27,7 @@ import Libs.Tailwind as Tw exposing (hover, lg, sm)
 import Models.OrganizationId exposing (OrganizationId)
 import Models.Project as Project
 import Models.Project.Source exposing (Source)
-import Models.ProjectInfo exposing (ProjectInfo)
+import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import PagesComponents.Helpers exposing (appShell)
 import PagesComponents.New.Models exposing (ConfirmDialog, Model, Msg(..), Tab(..), confirm)
 import Services.Backend as Backend
@@ -203,11 +203,11 @@ viewImportProjectTab htmlId zone projects model =
                                         |> List.find (\p -> p.id == project.id)
                                         |> Maybe.map
                                             (\p ->
-                                                [ Button.secondary3 Tw.red [ onClick (project |> CreateProject |> confirm ("Replace " ++ p.name ++ " project?") (text "This operation can't be undone")), css [ "ml-3" ] ] [ text "Replace existing project" ]
-                                                , Button.primary3 Tw.primary [ onClick (project |> Project.duplicate projects |> CreateProject), id "create-project-btn", css [ "ml-3" ] ] [ text "Import in new project!" ]
+                                                [ Button.secondary3 Tw.red [ onClick (project |> CreateProjectTmp |> confirm ("Replace " ++ p.name ++ " project?") (text "This operation can't be undone")), css [ "ml-3" ] ] [ text "Replace existing project" ]
+                                                , Button.primary3 Tw.primary [ onClick (project |> Project.duplicate projects |> CreateProjectTmp), id "create-project-btn", css [ "ml-3" ] ] [ text "Import in new project!" ]
                                                 ]
                                             )
-                                        |> Maybe.withDefault [ Button.primary3 Tw.primary [ onClick (CreateProject project), id "create-project-btn", css [ "ml-3" ] ] [ text "Import project!" ] ]
+                                        |> Maybe.withDefault [ Button.primary3 Tw.primary [ onClick (CreateProjectTmp project), id "create-project-btn", css [ "ml-3" ] ] [ text "Import project!" ] ]
                                    )
                             )
                         ]
@@ -245,8 +245,8 @@ viewSampleProjectTab zone projects model =
                             (Button.white3 Tw.primary [ onClick (InitTab TabSamples) ] [ text "Cancel" ]
                                 :: (projects
                                         |> List.find (\p -> p.id == project.id)
-                                        |> Maybe.map (\p -> [ Link.primary3 Tw.primary [ href (Route.toHref (Route.Organization___Project_ { organization = p.organization |> Maybe.mapOrElse .id Conf.constants.tmpOrg, project = p.id })), id "create-project-btn", css [ "ml-3" ] ] [ text "View this project" ] ])
-                                        |> Maybe.withDefault [ Button.primary3 Tw.primary [ onClick (CreateProject project), id "create-project-btn", css [ "ml-3" ] ] [ text "Load sample" ] ]
+                                        |> Maybe.map (\p -> [ Link.primary3 Tw.primary [ href (Route.toHref (Route.Organization___Project_ { organization = p |> ProjectInfo.organizationId, project = p.id })), id "create-project-btn", css [ "ml-3" ] ] [ text "View this project" ] ])
+                                        |> Maybe.withDefault [ Button.primary3 Tw.primary [ onClick (CreateProjectTmp project), id "create-project-btn", css [ "ml-3" ] ] [ text "Load sample" ] ]
                                    )
                             )
                         ]
@@ -324,7 +324,7 @@ viewSourceActionButtons drop projects parsedSource =
                             |> Result.fold (\_ -> [ Button.white3 Tw.primary [ onClick drop ] [ text "Clear" ] ])
                                 (\src ->
                                     [ Button.white3 Tw.primary [ onClick drop ] [ text "Trash this" ]
-                                    , Button.primary3 Tw.primary [ onClick (CreateProject (Project.create projects src.name src)), id "create-project-btn", css [ "ml-3" ] ] [ text "Create project!" ]
+                                    , Button.primary3 Tw.primary [ onClick (CreateProjectTmp (Project.create projects src.name src)), id "create-project-btn", css [ "ml-3" ] ] [ text "Create project!" ]
                                     ]
                                 )
                         )

@@ -7,7 +7,7 @@ import Json.Decode as Decode
 import Json.Encode as Encode
 import Libs.Bool as B
 import Libs.Task as T
-import Models.OrganizationId exposing (OrganizationId)
+import Models.OrganizationId as OrganizationId exposing (OrganizationId)
 import Models.Project as Project
 import Models.Project.ProjectId as ProjectId
 import Models.Project.Source as Source
@@ -92,11 +92,11 @@ update req now urlOrganization msg model =
             (model |> mapSampleProjectMCmd (ImportProject.update SampleProjectMsg message))
                 |> Tuple.mapSecond (\cmd -> B.cond (message == ImportProject.BuildProject) (Cmd.batch [ cmd, Ports.confetti "create-project-btn" ]) cmd)
 
-        CreateProject project ->
-            ( model, Cmd.batch [ Ports.createProjectTmp project, Ports.track (Track.initProject project), Request.pushRoute (Route.Organization___Project_ { organization = urlOrganization |> Maybe.withDefault Conf.constants.tmpOrg, project = ProjectId.zero }) req ] )
+        CreateProjectTmp project ->
+            ( model, Cmd.batch [ Ports.createProjectTmp project, Ports.track (Track.initProject project) ] )
 
         CreateEmptyProject name ->
-            ( model, SourceId.generator |> Random.generate (Source.aml Conf.constants.virtualRelationSourceName now >> Project.create model.projects name >> CreateProject) )
+            ( model, SourceId.generator |> Random.generate (Source.aml Conf.constants.virtualRelationSourceName now >> Project.create model.projects name >> CreateProjectTmp) )
 
         DropdownToggle id ->
             ( model |> Dropdown.update id, Cmd.none )
@@ -117,14 +117,14 @@ update req now urlOrganization msg model =
             ( model |> mapOpenedDialogs (List.drop 1), T.sendAfter Conf.ui.closeDuration message )
 
         JsMessage message ->
-            model |> handleJsMessage now message
+            model |> handleJsMessage req now urlOrganization message
 
         Noop _ ->
             ( model, Cmd.none )
 
 
-handleJsMessage : Time.Posix -> JsMsg -> Model -> ( Model, Cmd Msg )
-handleJsMessage now msg model =
+handleJsMessage : Request.With params -> Time.Posix -> Maybe OrganizationId -> JsMsg -> Model -> ( Model, Cmd Msg )
+handleJsMessage req now urlOrganization msg model =
     case msg of
         GotLegacyProjects ( _, projects ) ->
             ( { model | projects = Sort.lastUpdatedFirst projects }, Cmd.none )
@@ -141,6 +141,9 @@ handleJsMessage now msg model =
 
             else
                 ( model, "Unhandled local file kind '" ++ kind ++ "'" |> Toasts.error |> Toast |> T.send )
+
+        GotProject _ ->
+            ( model, Request.pushRoute (Route.Organization___Project_ { organization = urlOrganization |> Maybe.withDefault OrganizationId.zero, project = ProjectId.zero }) req )
 
         GotToast level message ->
             ( model, message |> Toasts.create level |> Toast |> T.send )

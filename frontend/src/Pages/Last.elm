@@ -8,6 +8,7 @@ import Gen.Route as Route
 import Html.Lazy as Lazy
 import Libs.Maybe as Maybe
 import Libs.Task as T
+import Models.ProjectInfo as ProjectInfo
 import Page
 import Ports exposing (JsMsg(..))
 import Request
@@ -86,7 +87,7 @@ handleJsMessage req msg model =
                 (projects
                     |> Sort.lastUpdatedFirst
                     |> List.head
-                    |> Maybe.mapOrElse (\p -> Route.Organization___Project_ { organization = p.organization |> Maybe.mapOrElse .id Conf.constants.tmpOrg, project = p.id }) Route.Projects
+                    |> Maybe.mapOrElse (\p -> Route.Organization___Project_ { organization = p |> ProjectInfo.organizationId, project = p.id }) Route.Projects
                 )
                 req
             )

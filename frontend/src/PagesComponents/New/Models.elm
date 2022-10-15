@@ -59,7 +59,7 @@ type Msg
     | JsonSourceMsg JsonSource.Msg
     | ImportProjectMsg ImportProject.Msg
     | SampleProjectMsg ImportProject.Msg
-    | CreateProject Project
+    | CreateProjectTmp Project
     | CreateEmptyProject ProjectName
       -- global messages
     | DropdownToggle HtmlId

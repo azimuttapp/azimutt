@@ -16,7 +16,6 @@ import Libs.Dict as Dict
 import Libs.Html exposing (bText)
 import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, css, role)
 import Libs.List as List
-import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Platform exposing (Platform)
 import Libs.String as String
@@ -24,7 +23,7 @@ import Libs.Tailwind as Tw exposing (focus, focus_ring_offset_600)
 import Libs.Task as T
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectStorage as ProjectStorage
-import Models.ProjectInfo exposing (ProjectInfo)
+import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import PagesComponents.Organization_.Project_.Models exposing (LayoutMsg(..), Msg(..), confirmDanger, prompt)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
@@ -105,7 +104,7 @@ viewProjectsDropdown platform projects project dirty htmlId openedDropdown =
                         [ otherProjects
                             |> List.map
                                 (\p ->
-                                    ContextMenu.linkHtml (Route.toHref (Route.Organization___Project_ { organization = p.organization |> Maybe.mapOrElse .id Conf.constants.tmpOrg, project = p.id }))
+                                    ContextMenu.linkHtml (Route.toHref (Route.Organization___Project_ { organization = p |> ProjectInfo.organizationId, project = p.id }))
                                         [ class "flex" ]
                                         [ Icon.outline (ProjectStorage.icon p.storage) "mr-1"
                                         , text p.name
