@@ -21,8 +21,9 @@ import PagesComponents.Organization_.Project_.Models.FindPathResult exposing (Fi
 import PagesComponents.Organization_.Project_.Models.FindPathState as FindPathState exposing (FindPathState(..))
 import PagesComponents.Organization_.Project_.Models.FindPathStep exposing (FindPathStep)
 import PagesComponents.Organization_.Project_.Models.FindPathStepDir exposing (FindPathStepDir(..))
+import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirty, setDirtyCmd)
 import Ports
-import Services.Lenses exposing (mapErdM, mapFindPathM, mapOpened, mapResult, mapSettings, mapShowSettings, setDirty, setFindPath, setFrom, setResult, setTo)
+import Services.Lenses exposing (mapErdM, mapFindPathM, mapOpened, mapResult, mapSettings, mapShowSettings, setFindPath, setFrom, setResult, setTo)
 import Track
 
 
@@ -48,10 +49,10 @@ handleFindPath msg model =
                         , result = Empty
                         }
                     )
-                |> setDirty True
                 |> mapErdM (mapSettings ProjectSettings.fillFindPath)
             , Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.findPathDialog), Ports.track Track.openFindPath ]
             )
+                |> setDirtyCmd
 
         FPToggleSettings ->
             ( model |> mapFindPathM (mapShowSettings not), Cmd.none )
@@ -75,7 +76,7 @@ handleFindPath msg model =
             ( model |> mapFindPathM (mapResult (FindPathState.map (mapOpened (\o -> B.cond (o == Just index) Nothing (Just index))))), Cmd.none )
 
         FPSettingsUpdate settings ->
-            ( model |> setDirty True |> mapErdM (mapSettings (setFindPath settings)), Cmd.none )
+            model |> mapErdM (mapSettings (setFindPath settings)) |> setDirty
 
         FPClose ->
             ( model |> setFindPath Nothing, Cmd.none )

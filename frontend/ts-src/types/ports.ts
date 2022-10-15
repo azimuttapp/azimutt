@@ -126,6 +126,8 @@ export type MoveProjectTo = { kind: 'MoveProjectTo', project: Project, storage: 
 export const MoveProjectTo = z.object({kind: z.literal('MoveProjectTo'), project: Project, storage: ProjectStorage}).strict()
 export type DeleteProject = { kind: 'DeleteProject', project: ProjectInfo, redirect: string | null }
 export const DeleteProject = z.object({kind: z.literal('DeleteProject'), project: ProjectInfo, redirect: z.string().nullable()}).strict()
+export type ProjectDirty = { kind: 'ProjectDirty', dirty: boolean }
+export const ProjectDirty = z.object({kind: z.literal('ProjectDirty'), dirty: z.boolean()}).strict()
 export type DownloadFile = { kind: 'DownloadFile', filename: FileName, content: FileContent }
 export const DownloadFile = z.object({kind: z.literal('DownloadFile'), filename: FileName, content: FileContent}).strict()
 export type GetLocalFile = { kind: 'GetLocalFile', sourceKind: SourceOrigin, file: File }
@@ -144,8 +146,8 @@ export type TrackEvent = { kind: 'TrackEvent', name: string, details?: Data }
 export const TrackEvent = z.object({kind: z.literal('TrackEvent'), name: z.string(), details: Data.optional()}).strict()
 export type TrackError = { kind: 'TrackError', name: string, details?: Data }
 export const TrackError = z.object({kind: z.literal('TrackError'), name: z.string(), details: Data.optional()}).strict()
-export type ElmMsg = Click | MouseDown | Focus | Blur | ScrollTo | Fullscreen | SetMeta | AutofocusWithin | Toast | GetLegacyProjects | GetProject | CreateProjectTmp | UpdateProjectTmp | CreateProject | UpdateProject | MoveProjectTo | DeleteProject | DownloadFile | GetLocalFile | ObserveSizes | ListenKeys | Confetti | ConfettiPride | TrackPage | TrackEvent | TrackError
-export const ElmMsg = z.discriminatedUnion('kind', [Click, MouseDown, Focus, Blur, ScrollTo, Fullscreen, SetMeta, AutofocusWithin, Toast, GetLegacyProjects, GetProject, CreateProjectTmp, UpdateProjectTmp, CreateProject, UpdateProject, MoveProjectTo, DeleteProject, DownloadFile, GetLocalFile, ObserveSizes, ListenKeys, Confetti, ConfettiPride, TrackPage, TrackEvent, TrackError])
+export type ElmMsg = Click | MouseDown | Focus | Blur | ScrollTo | Fullscreen | SetMeta | AutofocusWithin | Toast | GetLegacyProjects | GetProject | CreateProjectTmp | UpdateProjectTmp | CreateProject | UpdateProject | MoveProjectTo | DeleteProject | ProjectDirty | DownloadFile | GetLocalFile | ObserveSizes | ListenKeys | Confetti | ConfettiPride | TrackPage | TrackEvent | TrackError
+export const ElmMsg = z.discriminatedUnion('kind', [Click, MouseDown, Focus, Blur, ScrollTo, Fullscreen, SetMeta, AutofocusWithin, Toast, GetLegacyProjects, GetProject, CreateProjectTmp, UpdateProjectTmp, CreateProject, UpdateProject, MoveProjectTo, DeleteProject, ProjectDirty, DownloadFile, GetLocalFile, ObserveSizes, ListenKeys, Confetti, ConfettiPride, TrackPage, TrackEvent, TrackError])
 
 
 export type GotSizes = { kind: 'GotSizes', sizes: ElementSize[] }

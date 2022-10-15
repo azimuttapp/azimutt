@@ -6,8 +6,9 @@ import Libs.Task as T
 import Models.Project.LayoutName exposing (LayoutName)
 import PagesComponents.Organization_.Project_.Models exposing (LayoutMsg(..), Msg(..))
 import PagesComponents.Organization_.Project_.Models.Erd exposing (Erd)
+import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirtyCmd)
 import Ports
-import Services.Lenses exposing (mapErdMCmd, mapLayouts, setCurrentLayout, setDirty)
+import Services.Lenses exposing (mapErdMCmd, mapLayouts, setCurrentLayout)
 import Services.Toasts as Toasts
 import Track
 
@@ -20,10 +21,10 @@ handleLayout : LayoutMsg -> Model x -> ( Model x, Cmd Msg )
 handleLayout msg model =
     case msg of
         LLoad name ->
-            model |> setDirty True |> mapErdMCmd (loadLayout name)
+            model |> mapErdMCmd (loadLayout name) |> setDirtyCmd
 
         LDelete name ->
-            model |> setDirty True |> mapErdMCmd (deleteLayout name)
+            model |> mapErdMCmd (deleteLayout name) |> setDirtyCmd
 
 
 loadLayout : LayoutName -> Erd -> ( Erd, Cmd Msg )

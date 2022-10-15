@@ -100,7 +100,6 @@ module Services.Lenses exposing
     , setDatabaseSource
     , setDefaultSchema
     , setDetailsSidebar
-    , setDirty
     , setDragging
     , setEditNotes
     , setEmbedSourceParsing
@@ -381,11 +380,6 @@ setDetailsSidebar =
 mapDetailsSidebarCmd : (v -> ( v, Cmd msg )) -> { item | detailsSidebar : v } -> ( { item | detailsSidebar : v }, Cmd msg )
 mapDetailsSidebarCmd =
     mapCmd_ .detailsSidebar setDetailsSidebar
-
-
-setDirty : v -> { item | dirty : v } -> { item | dirty : v }
-setDirty =
-    set_ .dirty (\value item -> { item | dirty = value })
 
 
 setDragging : v -> { item | dragging : v } -> { item | dragging : v }

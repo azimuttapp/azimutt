@@ -5,5 +5,6 @@ declare global {
     export interface Window {
         Elm: { Main: ElmProgram<ElmFlags, JsMsg, ElmMsg> }
         azimutt: AzimuttApi
+        isDirty: boolean
     }
 }

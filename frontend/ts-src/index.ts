@@ -8,6 +8,7 @@ import {
     HotkeyId,
     ListenKeys,
     ObserveSizes,
+    ProjectDirty,
     SetMeta,
     UpdateProject,
     UpdateProjectTmp
@@ -85,6 +86,7 @@ app.on('CreateProject', createProject)
 app.on('UpdateProject', updateProject)
 // FIXME: app.on('MoveProjectTo', msg => store.moveProjectTo(msg.project, msg.storage).then(app.gotProject).catch(err => app.toast(ToastLevel.enum.error, err)))
 app.on('DeleteProject', deleteProject)
+app.on('ProjectDirty', projectDirty)
 app.on('DownloadFile', msg => Utils.downloadFile(msg.filename, msg.content))
 app.on('GetLocalFile', getLocalFile)
 app.on('ObserveSizes', observeSizes)
@@ -174,7 +176,7 @@ function createProjectTmp(msg: CreateProjectTmp): void {
 function updateProjectTmp(msg: UpdateProjectTmp): void {
     const json = buildProjectJson(msg.project)
     storage.updateProject(Uuid.zero, json)
-        .then(_ => {}, err => reportError(`Can't update draft project`, err))
+        .then(_ => null, err => reportError(`Can't update draft project`, err))
 }
 
 function createProject(msg: CreateProject): void {
@@ -249,6 +251,20 @@ function deleteProject(msg: DeleteProject): void {
             return Promise.reject(err)
         }).then(_ => msg.redirect ? window.location.href = msg.redirect : app.dropProject(msg.project.id))
     }
+}
+
+// prompt users to save before leave project when not fully saved
+window.isDirty = false
+window.addEventListener('beforeunload', function (e: BeforeUnloadEvent) {
+    if (window.isDirty) {
+        const message = 'Your project is not saved, want to leave?'
+        e.returnValue = message // Gecko, Trident, Chrome 34+
+        return message          // Gecko, WebKit, Chrome <34
+    }
+})
+
+function projectDirty(msg: ProjectDirty): void {
+    window.isDirty = msg.dirty
 }
 
 function getLocalFile(msg: GetLocalFile) {

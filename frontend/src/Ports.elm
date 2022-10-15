@@ -1,4 +1,4 @@
-port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProject, createProjectTmp, deleteProject, downloadFile, focus, fullscreen, getLegacyProjects, getProject, listenHotkeys, mouseDown, moveProjectTo, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, scrollTo, setMeta, toast, track, trackError, trackJsonError, trackPage, unhandledJsMsgError, updateProject, updateProjectTmp)
+port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProject, createProjectTmp, deleteProject, downloadFile, focus, fullscreen, getLegacyProjects, getProject, listenHotkeys, mouseDown, moveProjectTo, observeSize, observeTableSize, observeTablesSize, onJsMessage, projectDirty, readLocalFile, scrollTo, setMeta, toast, track, trackError, trackJsonError, trackPage, unhandledJsMsgError, updateProject, updateProjectTmp)
 
 import Dict exposing (Dict)
 import FileValue exposing (File)
@@ -117,6 +117,11 @@ deleteProject project redirect =
     Cmd.batch [ messageToJs (DeleteProject project redirect), track (Track.deleteProject project) ]
 
 
+projectDirty : Bool -> Cmd msg
+projectDirty dirty =
+    messageToJs (ProjectDirty dirty)
+
+
 readLocalFile : String -> File -> Cmd msg
 readLocalFile sourceKind file =
     messageToJs (GetLocalFile sourceKind file)
@@ -212,6 +217,7 @@ type ElmMsg
     | UpdateProject Project
     | MoveProjectTo Project ProjectStorage
     | DeleteProject ProjectInfo (Maybe String)
+    | ProjectDirty Bool
     | DownloadFile FileName FileContent
     | GetLocalFile String File
     | ObserveSizes (List HtmlId)
@@ -324,6 +330,9 @@ elmEncoder elm =
 
         DeleteProject project redirect ->
             Encode.object [ ( "kind", "DeleteProject" |> Encode.string ), ( "project", project |> ProjectInfo.encode ), ( "redirect", redirect |> Encode.maybe Encode.string ) ]
+
+        ProjectDirty dirty ->
+            Encode.object [ ( "kind", "ProjectDirty" |> Encode.string ), ( "dirty", dirty |> Encode.bool ) ]
 
         DownloadFile filename content ->
             Encode.object [ ( "kind", "DownloadFile" |> Encode.string ), ( "filename", filename |> Encode.string ), ( "content", content |> Encode.string ) ]

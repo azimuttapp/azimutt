@@ -14,11 +14,12 @@ import PagesComponents.Organization_.Project_.Models exposing (Model)
 import PagesComponents.Organization_.Project_.Models.DragState exposing (DragState)
 import PagesComponents.Organization_.Project_.Models.Erd as Erd
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
-import Services.Lenses exposing (mapCanvas, mapErdM, mapPosition, mapProps, mapTables, setDirty, setSelected, setSelectionBox)
+import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirty)
+import Services.Lenses exposing (mapCanvas, mapErdM, mapPosition, mapProps, mapTables, setSelected, setSelectionBox)
 import Time
 
 
-handleDrag : Time.Posix -> DragState -> Bool -> Model -> Model
+handleDrag : Time.Posix -> DragState -> Bool -> Model -> ( Model, Cmd msg )
 handleDrag now drag isEnd model =
     let
         canvas : CanvasProps
@@ -27,29 +28,31 @@ handleDrag now drag isEnd model =
     in
     if drag.id == Conf.ids.erd then
         if isEnd && drag.init /= drag.last then
-            model |> setDirty True |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapCanvas (moveCanvas drag)))
+            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapCanvas (moveCanvas drag))) |> setDirty
 
         else
-            model
+            ( model, Cmd.none )
 
     else if drag.id == Conf.ids.selectionBox then
         if isEnd then
-            model |> setSelectionBox Nothing
+            ( model |> setSelectionBox Nothing, Cmd.none )
 
         else
-            drag
+            ( drag
                 |> buildSelectionArea model.erdElem canvas
                 |> (\area ->
                         model
                             |> setSelectionBox (Just area)
                             |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.map (mapProps (\p -> p |> setSelected (Area.overlapCanvas area { position = p.position |> Position.offGrid, size = p.size }))))))
                    )
+            , Cmd.none
+            )
 
     else if isEnd && drag.init /= drag.last then
-        model |> setDirty True |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (moveTables drag canvas.zoom)))
+        model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (moveTables drag canvas.zoom))) |> setDirty
 
     else
-        model
+        ( model, Cmd.none )
 
 
 moveCanvas : DragState -> CanvasProps -> CanvasProps

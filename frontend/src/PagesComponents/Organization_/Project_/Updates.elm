@@ -49,6 +49,7 @@ import PagesComponents.Organization_.Project_.Updates.ProjectSettings exposing (
 import PagesComponents.Organization_.Project_.Updates.Sharing exposing (handleSharing)
 import PagesComponents.Organization_.Project_.Updates.Source as Source
 import PagesComponents.Organization_.Project_.Updates.Table exposing (hideColumn, hideColumns, hideRelatedTables, hideTable, hoverColumn, hoverNextColumn, mapTablePropOrSelected, showAllTables, showColumn, showColumns, showRelatedTables, showTable, showTables, sortColumns)
+import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirty, setDirtyCmd)
 import PagesComponents.Organization_.Project_.Updates.VirtualRelation exposing (handleVirtualRelation)
 import PagesComponents.Organization_.Project_.Views as Views
 import PagesComponents.Organization_.Project_.Views.Modals.NewLayout as NewLayout
@@ -56,7 +57,7 @@ import Ports exposing (JsMsg(..))
 import Random
 import Services.Backend as Backend
 import Services.JsonSource as JsonSource
-import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapConf, mapContextMenuM, mapDetailsSidebarCmd, mapEmbedSourceParsingMCmd, mapErdM, mapErdMCmd, mapHoverTable, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapPosition, mapProject, mapPromptM, mapProps, mapSaveCmd, mapSchemaAnalysisM, mapSearch, mapSelected, mapShowHiddenColumns, mapTables, mapTablesCmd, mapToastsCmd, setActive, setCollapsed, setColor, setConfirm, setContextMenu, setCursorMode, setDirty, setDragging, setHoverColumn, setHoverTable, setInput, setLast, setModal, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setSelected, setShow, setSize, setText)
+import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapConf, mapContextMenuM, mapDetailsSidebarCmd, mapEmbedSourceParsingMCmd, mapErdM, mapErdMCmd, mapHoverTable, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapPosition, mapProject, mapPromptM, mapProps, mapSaveCmd, mapSchemaAnalysisM, mapSearch, mapSelected, mapShowHiddenColumns, mapTables, mapTablesCmd, mapToastsCmd, setActive, setCollapsed, setColor, setConfirm, setContextMenu, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setLast, setModal, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setSelected, setShow, setSize, setText)
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
 import Time
@@ -85,7 +86,7 @@ update currentLayout now urlOrganization organizations projects msg model =
             model |> moveProject storage
 
         RenameProject name ->
-            ( model |> setDirty True |> mapErdM (mapProject (setName name)), Cmd.none )
+            model |> mapErdM (mapProject (setName name)) |> setDirty
 
         DeleteProject ->
             ( model
@@ -95,22 +96,22 @@ update currentLayout now urlOrganization organizations projects msg model =
             )
 
         ShowTable id hint ->
-            model |> setDirty True |> mapErdMCmd (showTable now id hint)
+            model |> mapErdMCmd (showTable now id hint) |> setDirtyCmd
 
         ShowTables ids hint ->
-            model |> setDirty True |> mapErdMCmd (showTables now ids hint)
+            model |> mapErdMCmd (showTables now ids hint) |> setDirtyCmd
 
         ShowAllTables ->
-            model |> setDirty True |> mapErdMCmd (showAllTables now)
+            model |> mapErdMCmd (showAllTables now) |> setDirtyCmd
 
         HideTable id ->
-            ( model |> setDirty True |> mapErdM (hideTable now id) |> mapHoverTable (\h -> B.cond (h == Just id) Nothing h), Cmd.none )
+            model |> mapErdM (hideTable now id) |> mapHoverTable (\h -> B.cond (h == Just id) Nothing h) |> setDirty
 
         ShowRelatedTables id ->
-            model |> setDirty True |> mapErdMCmd (showRelatedTables id)
+            model |> mapErdMCmd (showRelatedTables id) |> setDirtyCmd
 
         HideRelatedTables id ->
-            model |> setDirty True |> mapErdMCmd (hideRelatedTables id)
+            model |> mapErdMCmd (hideRelatedTables id) |> setDirtyCmd
 
         ToggleColumns id ->
             let
@@ -118,44 +119,44 @@ update currentLayout now urlOrganization organizations projects msg model =
                 collapsed =
                     model.erd |> Maybe.andThen (Erd.currentLayout >> .tables >> List.findBy .id id) |> Maybe.mapOrElse (.props >> .collapsed) False
             in
-            model |> setDirty True |> mapErdMCmd (\erd -> erd |> Erd.mapCurrentLayoutCmd now (mapTablesCmd (mapTablePropOrSelected erd.settings.defaultSchema id (mapProps (setCollapsed (not collapsed))))))
+            model |> mapErdMCmd (\erd -> erd |> Erd.mapCurrentLayoutCmd now (mapTablesCmd (mapTablePropOrSelected erd.settings.defaultSchema id (mapProps (setCollapsed (not collapsed)))))) |> setDirtyCmd
 
         ShowColumn { table, column } ->
-            ( model |> setDirty True |> mapErdM (showColumn now table column), Cmd.none )
+            model |> mapErdM (showColumn now table column) |> setDirty
 
         HideColumn { table, column } ->
-            ( model |> setDirty True |> mapErdM (hideColumn now table column) |> hoverNextColumn table column, Cmd.none )
+            model |> mapErdM (hideColumn now table column) |> hoverNextColumn table column |> setDirty
 
         ShowColumns id kind ->
-            model |> setDirty True |> mapErdMCmd (showColumns now id kind)
+            model |> mapErdMCmd (showColumns now id kind) |> setDirtyCmd
 
         HideColumns id kind ->
-            model |> setDirty True |> mapErdMCmd (hideColumns now id kind)
+            model |> mapErdMCmd (hideColumns now id kind) |> setDirtyCmd
 
         SortColumns id kind ->
-            model |> setDirty True |> mapErdMCmd (sortColumns now id kind)
+            model |> mapErdMCmd (sortColumns now id kind) |> setDirtyCmd
 
         ToggleHiddenColumns id ->
-            ( model |> setDirty True |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.updateBy .id id (mapProps (mapShowHiddenColumns not))))), Cmd.none )
+            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.updateBy .id id (mapProps (mapShowHiddenColumns not))))) |> setDirty
 
         SelectTable tableId ctrl ->
             if model.dragging |> Maybe.any DragState.hasMoved then
                 ( model, Cmd.none )
 
             else
-                ( model |> setDirty True |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.map (\t -> t |> mapProps (mapSelected (\s -> B.cond (t.id == tableId) (not s) (B.cond ctrl s False))))))), Cmd.none )
+                model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.map (\t -> t |> mapProps (mapSelected (\s -> B.cond (t.id == tableId) (not s) (B.cond ctrl s False))))))) |> setDirty
 
         SelectAllTables ->
-            ( model |> setDirty True |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.map (mapProps (setSelected True))))), Cmd.none )
+            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.map (mapProps (setSelected True))))) |> setDirty
 
         TableMove id delta ->
-            ( model |> setDirty True |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.updateBy .id id (mapProps (mapPosition (Position.moveCanvasGrid delta)))))), Cmd.none )
+            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.updateBy .id id (mapProps (mapPosition (Position.moveCanvasGrid delta)))))) |> setDirty
 
         TablePosition id position ->
-            ( model |> setDirty True |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.updateBy .id id (mapProps (setPosition position))))), Cmd.none )
+            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.updateBy .id id (mapProps (setPosition position))))) |> setDirty
 
         TableOrder id index ->
-            ( model |> setDirty True |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (\tables -> tables |> List.moveBy .id id (List.length tables - 1 - index)))), Cmd.none )
+            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (\tables -> tables |> List.moveBy .id id (List.length tables - 1 - index)))) |> setDirty
 
         TableColor id color ->
             let
@@ -164,13 +165,13 @@ update currentLayout now urlOrganization organizations projects msg model =
                     model.erd |> Maybe.andThen (.project >> .organization) |> Maybe.withDefault Organization.free
             in
             if organization.plan.colors then
-                model |> setDirty True |> mapErdMCmd (\erd -> erd |> Erd.mapCurrentLayoutCmd now (mapTablesCmd (mapTablePropOrSelected erd.settings.defaultSchema id (mapProps (setColor color)))))
+                model |> mapErdMCmd (\erd -> erd |> Erd.mapCurrentLayoutCmd now (mapTablesCmd (mapTablePropOrSelected erd.settings.defaultSchema id (mapProps (setColor color))))) |> setDirtyCmd
 
             else
                 ( model, ProPlan.colorsModalBody organization |> CustomModalOpen |> T.send )
 
         MoveColumn column position ->
-            ( model |> setDirty True |> mapErdM (\erd -> erd |> Erd.mapCurrentLayoutWithTime now (mapTables (List.updateBy .id column.table (mapColumns (List.moveBy .name column.column position))))), Cmd.none )
+            model |> mapErdM (\erd -> erd |> Erd.mapCurrentLayoutWithTime now (mapTables (List.updateBy .id column.table (mapColumns (List.moveBy .name column.column position))))) |> setDirty
 
         ToggleHoverTable table on ->
             ( model |> setHoverTable (B.cond on (Just table) Nothing), Cmd.none )
@@ -182,10 +183,10 @@ update currentLayout now urlOrganization organizations projects msg model =
             ( model, SourceId.generator |> Random.generate (Source.aml name now >> CreateUserSourceWithId) )
 
         CreateUserSourceWithId source ->
-            ( model |> setDirty True |> mapErdM (Erd.mapSources (List.add source)) |> (\updated -> updated |> mapAmlSidebarM (AmlSidebar.setSource (updated.erd |> Maybe.andThen (.sources >> List.last)))), Cmd.none )
+            model |> mapErdM (Erd.mapSources (List.add source)) |> (\updated -> updated |> mapAmlSidebarM (AmlSidebar.setSource (updated.erd |> Maybe.andThen (.sources >> List.last)))) |> setDirty
 
         CreateRelation src ref ->
-            model |> setDirty True |> mapErdMCmd (Source.createRelation now src ref)
+            model |> mapErdMCmd (Source.createRelation now src ref) |> setDirtyCmd
 
         NewLayoutMsg message ->
             model |> NewLayout.update ModalOpen Toast now message
@@ -239,16 +240,16 @@ update currentLayout now urlOrganization organizations projects msg model =
             ( model |> setCursorMode mode, Cmd.none )
 
         FitContent ->
-            model |> setDirty True |> mapErdMCmd (fitCanvas now model.erdElem)
+            model |> mapErdMCmd (fitCanvas now model.erdElem) |> setDirtyCmd
 
         Fullscreen id ->
             ( model, Ports.fullscreen id )
 
         OnWheel event ->
-            ( model |> setDirty True |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapCanvas (handleWheel event model.erdElem))), Cmd.none )
+            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapCanvas (handleWheel event model.erdElem))) |> setDirty
 
         Zoom delta ->
-            ( model |> setDirty True |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapCanvas (zoomCanvas delta model.erdElem))), Cmd.none )
+            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapCanvas (zoomCanvas delta model.erdElem))) |> setDirty
 
         Focus id ->
             ( model, Ports.focus id )
@@ -277,21 +278,17 @@ update currentLayout now urlOrganization organizations projects msg model =
         DragStart id pos ->
             model.dragging
                 |> Maybe.mapOrElse (\d -> ( model, "Already dragging " ++ d.id |> Toasts.info |> Toast |> T.send ))
-                    ( { id = id, init = pos, last = pos } |> (\d -> model |> setDragging (Just d) |> handleDrag now d False), Cmd.none )
+                    ({ id = id, init = pos, last = pos } |> (\d -> model |> setDragging (Just d) |> handleDrag now d False))
 
         DragMove pos ->
-            ( model.dragging
+            model.dragging
                 |> Maybe.map (setLast pos)
-                |> Maybe.mapOrElse (\d -> model |> setDragging (Just d) |> handleDrag now d False) model
-            , Cmd.none
-            )
+                |> Maybe.mapOrElse (\d -> model |> setDragging (Just d) |> handleDrag now d False) ( model, Cmd.none )
 
         DragEnd pos ->
-            ( model.dragging
+            model.dragging
                 |> Maybe.map (setLast pos)
-                |> Maybe.mapOrElse (\d -> model |> setDragging Nothing |> handleDrag now d True) model
-            , Cmd.none
-            )
+                |> Maybe.mapOrElse (\d -> model |> setDragging Nothing |> handleDrag now d True) ( model, Cmd.none )
 
         DragCancel ->
             ( model |> setDragging Nothing, Cmd.none )
@@ -365,6 +362,7 @@ handleJsMessage now currentLayout msg model =
                         ([ Ports.observeSize Conf.ids.erd
                          , Ports.observeTablesSize (erd |> Erd.currentLayout |> .tables |> List.map .id)
                          , Ports.setMeta { title = Just (Views.title (Just erd)), description = Nothing, canonical = Nothing, html = Nothing, body = Nothing }
+                         , Ports.projectDirty False
                          ]
                             ++ B.cond (model.save == Nothing) [] [ ProjectSaveDialog.Close |> ProjectSaveMsg |> ModalClose |> T.send, Ports.confettiPride ]
                         )

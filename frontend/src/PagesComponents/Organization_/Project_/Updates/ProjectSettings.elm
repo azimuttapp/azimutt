@@ -11,8 +11,9 @@ import Models.Project.TableId exposing (TableId)
 import PagesComponents.Organization_.Project_.Components.SourceUpdateDialog as SourceUpdateDialog
 import PagesComponents.Organization_.Project_.Models exposing (Msg(..), ProjectSettingsDialog, ProjectSettingsMsg(..))
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
+import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirty, setDirtyCmd)
 import Ports
-import Services.Lenses exposing (mapCollapseTableColumns, mapColumnBasicTypes, mapEnabled, mapErdM, mapHiddenColumns, mapProps, mapRelations, mapRemoveViews, mapRemovedSchemas, mapSourceUpdateCmd, setColumnOrder, setDefaultSchema, setDirty, setList, setMax, setRelationStyle, setRemovedTables, setSettings)
+import Services.Lenses exposing (mapCollapseTableColumns, mapColumnBasicTypes, mapEnabled, mapErdM, mapHiddenColumns, mapProps, mapRelations, mapRemoveViews, mapRemovedSchemas, mapSourceUpdateCmd, setColumnOrder, setDefaultSchema, setList, setMax, setRelationStyle, setRemovedTables, setSettings)
 import Services.Toasts as Toasts
 import Time
 import Track
@@ -38,7 +39,6 @@ handleProjectSettings now msg model =
 
         PSSourceToggle source ->
             model
-                |> setDirty True
                 |> mapErdM (Erd.mapSource source.id (mapEnabled not))
                 |> (\updated ->
                         ( updated
@@ -48,55 +48,56 @@ handleProjectSettings now msg model =
                             ]
                         )
                    )
+                |> setDirtyCmd
 
         PSSourceDelete source ->
-            ( model |> setDirty True |> mapErdM (Erd.mapSources (List.filter (\s -> s.id /= source.id))), "Source " ++ source.name ++ " has been deleted from your project." |> Toasts.info |> Toast |> T.send )
+            ( model |> mapErdM (Erd.mapSources (List.filter (\s -> s.id /= source.id))), "Source " ++ source.name ++ " has been deleted from your project." |> Toasts.info |> Toast |> T.send ) |> setDirtyCmd
 
         PSSourceUpdate message ->
             model |> mapSourceUpdateCmd (SourceUpdateDialog.update (PSSourceUpdate >> ProjectSettingsMsg) ModalOpen Noop now message)
 
         PSSourceSet source ->
             if model.erd |> Maybe.mapOrElse (\erd -> erd.sources |> List.memberBy .id source.id) False then
-                ( model |> setDirty True |> mapErdM (Erd.mapSource source.id (Source.refreshWith source)), Cmd.batch [ T.send (ModalClose (SourceUpdateDialog.Close |> PSSourceUpdate |> ProjectSettingsMsg)), Ports.track (Track.refreshSource source) ] )
+                ( model |> mapErdM (Erd.mapSource source.id (Source.refreshWith source)), Cmd.batch [ T.send (ModalClose (SourceUpdateDialog.Close |> PSSourceUpdate |> ProjectSettingsMsg)), Ports.track (Track.refreshSource source) ] ) |> setDirtyCmd
 
             else
-                ( model |> setDirty True |> mapErdM (Erd.mapSources (List.add source)), Cmd.batch [ T.send (ModalClose (SourceUpdateDialog.Close |> PSSourceUpdate |> ProjectSettingsMsg)), Ports.track (Track.addSource source) ] )
+                ( model |> mapErdM (Erd.mapSources (List.add source)), Cmd.batch [ T.send (ModalClose (SourceUpdateDialog.Close |> PSSourceUpdate |> ProjectSettingsMsg)), Ports.track (Track.addSource source) ] ) |> setDirtyCmd
 
         PSDefaultSchemaUpdate value ->
-            ( model |> setDirty True |> mapErdM (Erd.mapSettings (setDefaultSchema value)), Cmd.none )
+            model |> mapErdM (Erd.mapSettings (setDefaultSchema value)) |> setDirty
 
         PSSchemaToggle schema ->
-            model |> setDirty True |> mapErdM (Erd.mapSettings (mapRemovedSchemas (List.toggle schema))) |> (\m -> ( m, Ports.observeTablesSize (m.erd |> getShownTables) ))
+            model |> mapErdM (Erd.mapSettings (mapRemovedSchemas (List.toggle schema))) |> (\m -> ( m, Ports.observeTablesSize (m.erd |> getShownTables) )) |> setDirtyCmd
 
         PSRemoveViewsToggle ->
-            model |> setDirty True |> mapErdM (Erd.mapSettings (mapRemoveViews not)) |> (\m -> ( m, Ports.observeTablesSize (m.erd |> getShownTables) ))
+            model |> mapErdM (Erd.mapSettings (mapRemoveViews not)) |> (\m -> ( m, Ports.observeTablesSize (m.erd |> getShownTables) )) |> setDirtyCmd
 
         PSRemovedTablesUpdate values ->
-            model |> setDirty True |> mapErdM (Erd.mapSettings (setRemovedTables values >> ProjectSettings.fillFindPath)) |> (\m -> ( m, Ports.observeTablesSize (m.erd |> getShownTables) ))
+            model |> mapErdM (Erd.mapSettings (setRemovedTables values >> ProjectSettings.fillFindPath)) |> (\m -> ( m, Ports.observeTablesSize (m.erd |> getShownTables) )) |> setDirtyCmd
 
         PSHiddenColumnsListUpdate values ->
-            ( model |> setDirty True |> mapErdM (Erd.mapSettings (mapHiddenColumns (setList values) >> ProjectSettings.fillFindPath)), Cmd.none )
+            model |> mapErdM (Erd.mapSettings (mapHiddenColumns (setList values) >> ProjectSettings.fillFindPath)) |> setDirty
 
         PSHiddenColumnsMaxUpdate value ->
-            ( value |> String.toInt |> Maybe.mapOrElse (\max -> model |> setDirty True |> mapErdM (Erd.mapSettings (mapHiddenColumns (setMax max) >> ProjectSettings.fillFindPath))) model, Cmd.none )
+            value |> String.toInt |> Maybe.mapOrElse (\max -> model |> mapErdM (Erd.mapSettings (mapHiddenColumns (setMax max) >> ProjectSettings.fillFindPath))) model |> setDirty
 
         PSHiddenColumnsPropsToggle ->
-            ( model |> setDirty True |> mapErdM (Erd.mapSettings (mapHiddenColumns (mapProps not))), Cmd.none )
+            model |> mapErdM (Erd.mapSettings (mapHiddenColumns (mapProps not))) |> setDirty
 
         PSHiddenColumnsRelationsToggle ->
-            ( model |> setDirty True |> mapErdM (Erd.mapSettings (mapHiddenColumns (mapRelations not))), Cmd.none )
+            model |> mapErdM (Erd.mapSettings (mapHiddenColumns (mapRelations not))) |> setDirty
 
         PSColumnOrderUpdate order ->
-            ( model |> setDirty True |> mapErdM (\e -> e |> Erd.mapSettings (setColumnOrder order)), Cmd.none )
+            model |> mapErdM (\e -> e |> Erd.mapSettings (setColumnOrder order)) |> setDirty
 
         PSRelationStyleUpdate style ->
-            ( model |> setDirty True |> mapErdM (\e -> e |> Erd.mapSettings (setRelationStyle style)), Cmd.none )
+            model |> mapErdM (\e -> e |> Erd.mapSettings (setRelationStyle style)) |> setDirty
 
         PSColumnBasicTypesToggle ->
-            ( model |> setDirty True |> mapErdM (Erd.mapSettings (mapColumnBasicTypes not)), Cmd.none )
+            model |> mapErdM (Erd.mapSettings (mapColumnBasicTypes not)) |> setDirty
 
         PSCollapseTableOnShowToggle ->
-            ( model |> setDirty True |> mapErdM (Erd.mapSettings (mapCollapseTableColumns not)), Cmd.none )
+            model |> mapErdM (Erd.mapSettings (mapCollapseTableColumns not)) |> setDirty
 
 
 getShownTables : Maybe Erd -> List TableId

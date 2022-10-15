@@ -1,14 +1,4 @@
-import {
-    ElementSize,
-    ElmFlags,
-    ElmMsg,
-    ElmRuntime,
-    GetLocalFile,
-    Hotkey,
-    HotkeyId,
-    JsMsg,
-    UpdateProjectTmp
-} from "../types/ports";
+import {ElementSize, ElmFlags, ElmMsg, ElmRuntime, GetLocalFile, Hotkey, HotkeyId, JsMsg} from "../types/ports";
 import {ColumnId, Project, ProjectId, ProjectInfoLocalLegacy, TableId} from "../types/project";
 import {Color, Delta, Position, ToastLevel} from "../types/basics";
 import {Logger} from "./logger";
@@ -38,6 +28,7 @@ export class ElmApp {
         UpdateProject: [],
         MoveProjectTo: [],
         DeleteProject: [],
+        ProjectDirty: [],
         DownloadFile: [],
         GetLocalFile: [],
         ObserveSizes: [],

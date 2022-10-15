@@ -6,8 +6,9 @@ import Libs.Task as T
 import PagesComponents.Organization_.Project_.Models exposing (Msg(..), NotesDialog, NotesMsg(..))
 import PagesComponents.Organization_.Project_.Models.Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdTableNotes as ErdTableNotes
+import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirty)
 import Ports
-import Services.Lenses exposing (mapEditNotesM, mapErdM, mapNotes, setDirty, setEditNotes, setNotes)
+import Services.Lenses exposing (mapEditNotesM, mapErdM, mapNotes, setEditNotes, setNotes)
 import Track
 
 
@@ -38,7 +39,7 @@ handleNotes msg model =
             ( model |> mapEditNotesM (setNotes notes), Cmd.none )
 
         NSave ref notes ->
-            ( model |> setEditNotes Nothing |> setDirty True |> mapErdM (mapNotes (ErdTableNotes.set ref (String.nonEmptyMaybe notes))), Cmd.none )
+            model |> setEditNotes Nothing |> mapErdM (mapNotes (ErdTableNotes.set ref (String.nonEmptyMaybe notes))) |> setDirty
 
         NCancel ->
             ( model |> setEditNotes Nothing, Cmd.none )

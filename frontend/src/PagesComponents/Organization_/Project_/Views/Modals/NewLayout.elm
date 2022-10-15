@@ -12,8 +12,9 @@ import Models.Organization exposing (Organization)
 import Models.Project.LayoutName exposing (LayoutName)
 import PagesComponents.Organization_.Project_.Models.Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout
+import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirtyCmd)
 import Ports
-import Services.Lenses exposing (mapErdMCmd, mapLayouts, mapNewLayoutMCmd, setCurrentLayout, setDirty, setNewLayout)
+import Services.Lenses exposing (mapErdMCmd, mapLayouts, mapNewLayoutMCmd, setCurrentLayout, setNewLayout)
 import Services.Toasts as Toasts
 import Time
 import Track
@@ -53,7 +54,7 @@ update modalOpen toast now msg model =
             model |> mapNewLayoutMCmd (NewLayoutBody.update m)
 
         Create from name ->
-            model |> setNewLayout Nothing |> setDirty True |> mapErdMCmd (createLayout toast from name now)
+            model |> setNewLayout Nothing |> mapErdMCmd (createLayout toast from name now) |> setDirtyCmd
 
         Cancel ->
             ( model |> setNewLayout Nothing, Cmd.none )
