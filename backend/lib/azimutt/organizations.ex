@@ -119,6 +119,7 @@ defmodule Azimutt.Organizations do
     OrganizationInvitation
     |> where([oi], oi.id == ^id)
     |> preload(:organization)
+    |> preload(:created_by)
     |> preload(:answered_by)
     |> Repo.one()
   end

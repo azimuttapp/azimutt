@@ -4,7 +4,7 @@ defmodule AzimuttWeb.OrganizationInvitationController do
   alias Azimutt.Services.StripeSrv
 
   def show(conn, %{"id" => id}) do
-    # FIXME: don't show organization & plan anymore => change layout + remove `get_organization_plan`
+    # FIXME: remove `get_organization_plan`
     invitation = Organizations.get_organization_invitation(id)
     organization = invitation.organization
     {:ok, plan} = Organizations.get_organization_plan(organization)
