@@ -1,6 +1,13 @@
-<p align="center"><a href="https://azimutt.app" target="_blank"><img width="150px" src="https://azimutt.app/logo.png" alt="logo"/></a></p>
-<h1 align="center">Azimutt</h1>
-<h4 align="center">Next gen ERD</h4>
+<p align="center">
+    <a href="https://azimutt.app" target="_blank">
+        <picture>
+          <source media="(prefers-color-scheme: dark)" srcset="backend/priv/static/images/logo_light.svg">
+          <source media="(prefers-color-scheme: light)" srcset="backend/priv/static/images/logo_dark.svg">
+          <img alt="Azimutt logo" src="backend/priv/static/images/logo_dark.svg">
+        </picture>
+    </a>
+</p>
+<h3 align="center">Next gen ERD</h3>
 <p align="center">Design, Explore, Document and Analyze your database</p>
 
 <p align="center">

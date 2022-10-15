@@ -41,6 +41,7 @@ defmodule AzimuttWeb.Router do
     post "/users/confirm", UserConfirmationController, :create
     get "/users/confirm/:token", UserConfirmationController, :edit
     post "/users/confirm/:token", UserConfirmationController, :update
+    get "/sitemap.xml", SitemapController, :index
   end
 
   # auth routes

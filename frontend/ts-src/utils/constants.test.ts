@@ -17,7 +17,7 @@ export const organization: Organization = {
     slug: 'valid',
     name: 'Valid',
     plan: plan,
-    logo: 'https://azimutt.app/logo.png',
+    logo: 'https://azimutt.app/images/logo_dark.svg',
     location: 'Paris',
     description: 'bla bla bla'
 }

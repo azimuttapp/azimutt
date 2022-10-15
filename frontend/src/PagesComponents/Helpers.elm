@@ -40,7 +40,7 @@ appShell currentUrl urlOrganization user onNavigationClick onProfileClick model 
     in
     [ div [ css [ "pb-32 bg-primary-600" ] ]
         [ Navbar.admin
-            { brand = { img = { src = Backend.resourceUrl "/logo.png", alt = "Azimutt" }, link = { url = urlOrganization |> Backend.organizationUrl, text = "Azimutt" } }
+            { brand = { url = urlOrganization |> Backend.organizationUrl, src = Backend.resourceUrl "/logo_light.svg", alt = "Azimutt" }
             , navigation =
                 { links = [ { url = urlOrganization |> Backend.organizationUrl, text = "Dashboard" } ]
                 , onClick = onNavigationClick

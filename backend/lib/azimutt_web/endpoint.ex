@@ -22,7 +22,8 @@ defmodule AzimuttWeb.Endpoint do
     at: "/",
     from: :azimutt,
     gzip: false,
-    only: ~w(assets fonts images favicon.ico robots.txt elm blog)
+    only:
+      ~w(assets blog elm fonts images android-chrome-192x192.png android-chrome-512x512.png apple-touch-icon.png browserconfig.xml favicon.ico favicon-16x16.png favicon-32x32.png mstile-150x150.png robots.txt safari-pinned-tab.svg screenshot.png screenshot-complex.png service-worker.js site.webmanifest)
 
   plug Plug.Static, at: "/uploads", from: Path.expand('./uploads'), gzip: false
 

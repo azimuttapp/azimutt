@@ -27,7 +27,7 @@ free =
     , slug = OrganizationId.zero
     , name = "zero"
     , plan = Plan.free
-    , logo = "https://azimutt.app/logo.png"
+    , logo = "https://azimutt.app/images/logo_dark.svg"
     , location = Nothing
     , description = Nothing
     }

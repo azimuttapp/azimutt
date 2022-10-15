@@ -7,7 +7,7 @@ import Components.Molecules.Tooltip as Tooltip
 import Conf
 import Either exposing (Either(..))
 import Html exposing (Attribute, Html, a, button, div, img, nav, span, text)
-import Html.Attributes exposing (alt, class, height, href, id, src, tabindex, type_, width)
+import Html.Attributes exposing (alt, class, height, href, id, src, tabindex, type_)
 import Html.Events exposing (onClick)
 import Html.Lazy as Lazy
 import Libs.Bool as B
@@ -117,8 +117,7 @@ viewNavbarBrand organization conf =
                 hrefBlank Conf.constants.azimuttWebsite
     in
     a (attrs ++ [ class "flex justify-start items-center flex-shrink-0 font-medium" ])
-        [ img [ class "block h-8 h-8", src (Backend.resourceUrl "/logo.png"), alt "Azimutt", width 32, height 32 ] []
-        , span [ css [ "ml-3 text-2xl text-white hidden", lg [ "block" ] ] ] [ text "Azimutt" ]
+        [ img [ class "block h-8 w-auto", src (Backend.resourceUrl "/logo_light.svg"), alt "Azimutt", height 32 ] []
         ]
 
 

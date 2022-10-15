@@ -11,7 +11,7 @@ import Html.Attributes exposing (alt, for, height, href, id, name, placeholder, 
 import Html.Events exposing (onClick)
 import Libs.Html.Attributes exposing (ariaCurrent, ariaExpanded, ariaHaspopup, css)
 import Libs.Maybe as Maybe
-import Libs.Models exposing (Image, Link)
+import Libs.Models exposing (Link)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Tw exposing (TwClass, focusWithin, focus_ring_offset_600, hover, lg, sm)
 
@@ -25,7 +25,7 @@ type alias AdminModel msg =
 
 
 type alias AdminBrand =
-    { img : Image, link : Link }
+    { url : String, src : String, alt : String }
 
 
 type alias AdminNavigation msg =
@@ -79,9 +79,8 @@ admin model state =
 
 adminBrand : AdminBrand -> Html msg
 adminBrand brand =
-    a [ href brand.link.url, css [ "flex justify-start items-center" ] ]
-        [ img [ css [ "block h-8 w-8" ], src brand.img.src, alt brand.img.alt, width 32, height 32 ] []
-        , span [ css [ "ml-3 text-2xl text-white font-medium hidden", lg [ "block" ] ] ] [ text brand.link.text ]
+    a [ href brand.url, css [ "flex justify-start items-center" ] ]
+        [ img [ css [ "block h-8 w-auto" ], src brand.src, alt brand.alt, height 32 ] []
         ]
 
 
@@ -143,7 +142,7 @@ logoWhite =
 
 adminModel : AdminState -> AdminModel (Msg (SharedDocState x))
 adminModel s =
-    { brand = { img = { src = logoWhite, alt = "Workflow" }, link = { url = "#", text = "Workflow" } }
+    { brand = { url = "#", src = logoWhite, alt = "Workflow" }
     , navigation =
         { links =
             [ { url = "", text = "Dashboard" }

@@ -122,7 +122,7 @@ viewNotFound : Model -> List (Html Msg)
 viewNotFound model =
     [ NotFound.simple
         { brand =
-            { img = { src = Backend.resourceUrl "/logo.png", alt = "Azimutt" }
+            { img = { src = Backend.resourceUrl "/logo_dark.svg", alt = "Azimutt" }
             , link = { url = Backend.homeUrl, text = "Azimutt" }
             }
         , header = "404 error"
