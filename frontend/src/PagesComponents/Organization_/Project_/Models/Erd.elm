@@ -9,6 +9,7 @@ import Libs.Time as Time
 import Models.Area as Area
 import Models.ErdProps exposing (ErdProps)
 import Models.Organization as Organization exposing (Organization)
+import Models.OrganizationId exposing (OrganizationId)
 import Models.Position as Position
 import Models.Project as Project exposing (Project)
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
@@ -109,9 +110,14 @@ mapCurrentLayoutCmd now transform erd =
     erd |> mapLayoutsDCmd erd.currentLayout (transform >> Tuple.mapFirst (\l -> { l | updatedAt = now }))
 
 
-getOrganization : Erd -> Organization
-getOrganization erd =
-    erd.project.organization |> Maybe.withDefault Organization.free
+getOrganization : Maybe OrganizationId -> Erd -> Organization
+getOrganization urlOrganization erd =
+    let
+        free : Organization
+        free =
+            Organization.free
+    in
+    erd.project.organization |> Maybe.withDefault (urlOrganization |> Maybe.mapOrElse (\id -> { free | id = id }) free)
 
 
 getColumn : ColumnRef -> Erd -> Maybe ErdColumn

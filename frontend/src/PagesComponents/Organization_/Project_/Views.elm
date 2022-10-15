@@ -65,7 +65,7 @@ viewProject onDelete currentUrl urlOrganization shared model =
 
       else
         Loader.fullScreen
-    , Lazy.lazy4 viewModal currentUrl shared model onDelete
+    , Lazy.lazy5 viewModal currentUrl urlOrganization shared model onDelete
     , Lazy.lazy2 Toasts.view Toast model.toasts
     , Lazy.lazy viewContextMenu model.contextMenu
     ]
@@ -135,17 +135,17 @@ viewRightSidebar model =
         ]
 
 
-viewModal : Url -> Shared.Model -> Model -> Cmd Msg -> Html Msg
-viewModal currentUrl shared model _ =
+viewModal : Url -> Maybe OrganizationId -> Shared.Model -> Model -> Cmd Msg -> Html Msg
+viewModal currentUrl urlOrganization shared model _ =
     Keyed.node "div"
         [ class "az-modals" ]
         ([ model.modal |> Maybe.map (\m -> ( m.id, Modals.view (model.openedDialogs |> List.member m.id) m ))
          , model.confirm |> Maybe.map (\m -> ( m.id, Modals.viewConfirm (model.openedDialogs |> List.member m.id) m ))
          , model.prompt |> Maybe.map (\m -> ( m.id, Modals.viewPrompt (model.openedDialogs |> List.member m.id) m ))
-         , model.newLayout |> Maybe.map2 (\e m -> ( m.id, NewLayout.view NewLayoutMsg ModalClose (e |> Erd.getOrganization) (e.layouts |> Dict.keys) (model.openedDialogs |> List.member m.id) m )) model.erd
+         , model.newLayout |> Maybe.map2 (\e m -> ( m.id, NewLayout.view NewLayoutMsg ModalClose (e |> Erd.getOrganization urlOrganization) (e.layouts |> Dict.keys) (model.openedDialogs |> List.member m.id) m )) model.erd
          , model.editNotes |> Maybe.map2 (\e m -> ( m.id, viewEditNotes (model.openedDialogs |> List.member m.id) e m )) model.erd
          , model.findPath |> Maybe.map2 (\e m -> ( m.id, viewFindPath (model.openedDialogs |> List.member m.id) model.openedDropdown e.settings.defaultSchema e.tables e.settings.findPath m )) model.erd
-         , model.schemaAnalysis |> Maybe.map2 (\e m -> ( m.id, viewSchemaAnalysis (e |> Erd.getOrganization) (model.openedDialogs |> List.member m.id) e.settings.defaultSchema e.tables m )) model.erd
+         , model.schemaAnalysis |> Maybe.map2 (\e m -> ( m.id, viewSchemaAnalysis (e |> Erd.getOrganization urlOrganization) (model.openedDialogs |> List.member m.id) e.settings.defaultSchema e.tables m )) model.erd
          , model.sharing |> Maybe.map2 (\e m -> ( m.id, viewSharing currentUrl (model.openedDialogs |> List.member m.id) e m )) model.erd
          , model.save |> Maybe.map2 (\e m -> ( m.id, ProjectSaveDialog.view ProjectSaveMsg ModalClose CreateProject currentUrl shared.user shared.organizations (model.openedDialogs |> List.member m.id) e m )) model.erd
          , model.settings |> Maybe.map2 (\e m -> ( m.id, viewProjectSettings shared.zone (model.openedDialogs |> List.member m.id) e m )) model.erd

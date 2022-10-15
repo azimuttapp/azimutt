@@ -8,7 +8,7 @@ import Components.Slices.ProPlan as ProPlan
 import Conf
 import Dict exposing (Dict)
 import Html exposing (Html, div, h3, h4, h5, p, span, text)
-import Html.Attributes exposing (class, classList, id, style)
+import Html.Attributes exposing (class, classList, id, rel)
 import Html.Events exposing (onClick)
 import Libs.Bool as B
 import Libs.Dict as Dict
@@ -78,7 +78,7 @@ viewHeader titleId =
         , div [ css [ "mt-3 text-center", sm [ "mt-0 ml-4 text-left" ] ] ]
             [ h3 [ id titleId, class "text-lg leading-6 font-medium text-gray-900" ] [ text "Schema analysis" ]
             , p [ class "text-sm text-gray-500" ]
-                [ text "Let's find out if we can find improvements for your schema..." ]
+                [ text "Let's find out if you can make improvements on your schema..." ]
             ]
         ]
 
@@ -118,7 +118,7 @@ viewMissingPrimaryKey htmlId organization opened defaultSchema missingPks =
         (missingPks |> List.length)
         (\nb -> "Found " ++ (nb |> String.pluralize "table") ++ " without a primary key")
         [ p [ class "mb-3 text-sm text-gray-500" ] [ text "It's not always required to have a primary key but strongly encouraged in most case. Make sure this is what you want!" ]
-        , viewResults organization
+        , ProPlan.analysisResults organization
             missingPks
             (\t ->
                 div [ class "flex justify-between items-center my-1" ]
@@ -214,7 +214,7 @@ viewMissingRelations htmlId organization opened defaultSchema ( missingRels, mis
         "No potentially missing relation found"
         ((missingRels |> List.length) + (missingRefs |> List.length))
         (\nb -> "Found " ++ (nb |> String.pluralize "potentially missing relation"))
-        [ viewResults organization
+        [ ProPlan.analysisResults organization
             (missingRels |> List.sortBy (\rel -> ColumnRef.show defaultSchema rel.ref ++ " ← " ++ ColumnRef.show defaultSchema rel.src))
             (\rel ->
                 div [ class "flex justify-between items-center py-1" ]
@@ -237,7 +237,7 @@ viewMissingRelations htmlId organization opened defaultSchema ( missingRels, mis
           else
             div []
                 [ h5 [ class "mt-1 font-medium" ] [ text "Some columns may need a relation, but can't find a related table:" ]
-                , viewResults organization
+                , ProPlan.analysisResults organization
                     missingRefs
                     (\rel ->
                         div [ class "ml-3" ]
@@ -279,7 +279,7 @@ viewHeterogeneousTypes htmlId organization opened defaultSchema heterogeneousTyp
                     ++ "But of course, not every column with the same name is the same thing, so just look at the to know, not to fix everything."
                 )
             ]
-        , viewResults organization
+        , ProPlan.analysisResults organization
             heterogeneousTypes
             (\( col, types ) ->
                 div []
@@ -321,7 +321,7 @@ viewBigTables htmlId organization opened defaultSchema bigTables =
                 [ text "Why you should avoid tables with many columns, and how to fix them"
                 ]
             ]
-        , viewResults organization bigTables (\t -> div [] [ text ((t.columns |> Dict.size |> String.pluralize "column") ++ ": "), bText (TableId.show defaultSchema t.id) ])
+        , ProPlan.analysisResults organization bigTables (\t -> div [] [ text ((t.columns |> Dict.size |> String.pluralize "column") ++ ": "), bText (TableId.show defaultSchema t.id) ])
         ]
 
 
@@ -353,18 +353,3 @@ viewSection htmlId opened successTitle errorCount failureTitle content =
                 ]
             , div [ class "ml-8", classList [ ( "hidden", not isOpen ) ] ] content
             ]
-
-
-viewResults : Organization -> List a -> (a -> Html msg) -> Html msg
-viewResults organization items render =
-    if organization.plan.dbAnalysis || List.length items <= 5 then
-        div [] (items |> List.map render)
-
-    else
-        div [ class "relative" ]
-            ((items |> List.take 5 |> List.map render)
-                ++ [ div [ class "absolute inset-x-0 pt-32 bg-gradient-to-t from-white flex justify-center text-sm text-gray-500 pointer-events-none", style "bottom" "-2px" ]
-                        [ text "See more with upgraded plan."
-                        ]
-                   ]
-            )

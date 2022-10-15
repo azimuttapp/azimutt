@@ -87,17 +87,9 @@ showAllTables now erd =
         tablesToShow =
             erd.tables |> Dict.values |> List.filter (\t -> shownIds |> Set.member t.id |> not)
 
-        collapsed : Bool
-        collapsed =
-            if List.length tablesToShow > 30 then
-                True
-
-            else
-                erd.settings.collapseTableColumns
-
         newTables : List ErdTableLayout
         newTables =
-            tablesToShow |> List.map (\t -> t |> ErdTableLayout.init erd.settings shownIds (erd.relationsByTable |> Dict.getOrElse t.id []) collapsed Nothing)
+            tablesToShow |> List.map (\t -> t |> ErdTableLayout.init erd.settings shownIds (erd.relationsByTable |> Dict.getOrElse t.id []) erd.settings.collapseTableColumns Nothing)
     in
     ( erd |> Erd.mapCurrentLayoutWithTime now (mapTables (\old -> newTables ++ old))
     , Cmd.batch [ Ports.observeTablesSize (newTables |> List.map .id) ]

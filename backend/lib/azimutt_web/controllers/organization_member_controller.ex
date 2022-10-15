@@ -5,10 +5,16 @@ defmodule AzimuttWeb.OrganizationMemberController do
   alias Azimutt.Organizations.OrganizationInvitation
   alias Azimutt.Organizations.OrganizationMember
   alias Azimutt.Services.StripeSrv
+  alias Azimutt.Utils.Uuid
 
   def index(conn, %{"organization_id" => organization_id}) do
     now = DateTime.utc_now()
     current_user = conn.assigns.current_user
+
+    if organization_id == Uuid.zero() do
+      organization = Azimutt.Accounts.get_user_personal_organization(current_user)
+      conn |> redirect(to: Routes.organization_member_path(conn, :index, organization))
+    end
 
     with {:ok, %Organization{} = organization} <- Organizations.get_organization(organization_id, current_user) do
       organization_invitation_changeset =

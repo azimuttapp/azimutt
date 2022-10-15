@@ -76,7 +76,7 @@ encode value =
 decode : Decode.Decoder Delta
 decode =
     Decode.map2 Delta
-        (Decode.field "dy" Decode.float)
+        (Decode.field "dx" Decode.float)
         (Decode.field "dy" Decode.float)
 
 

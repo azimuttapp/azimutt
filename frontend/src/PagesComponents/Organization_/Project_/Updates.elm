@@ -466,7 +466,7 @@ updateSizes changes model =
 
 updateTables : ZoomLevel -> Area.Canvas -> List SizeChange -> List ErdTableLayout -> List ErdTableLayout
 updateTables zoom erdViewport changes tables =
-    tables |> List.map (\table -> changes |> List.find (\c -> c.id == TableId.toHtmlId table.id) |> Maybe.mapOrElse (updateTable zoom tables erdViewport table) table)
+    changes |> List.foldl (\c tbls -> tbls |> List.map (\tbl -> B.cond (c.id == TableId.toHtmlId tbl.id) (updateTable zoom tbls erdViewport tbl c) tbl)) tables
 
 
 updateTable : ZoomLevel -> List ErdTableLayout -> Area.Canvas -> ErdTableLayout -> SizeChange -> ErdTableLayout

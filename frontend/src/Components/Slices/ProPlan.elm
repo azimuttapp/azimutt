@@ -1,4 +1,4 @@
-module Components.Slices.ProPlan exposing (analysisWarning, colorsModalBody, doc, layoutsModalBody, layoutsWarning)
+module Components.Slices.ProPlan exposing (analysisResults, analysisWarning, colorsModalBody, doc, layoutsModalBody, layoutsWarning)
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon
@@ -7,8 +7,8 @@ import Components.Molecules.Alert as Alert
 import ElmBook
 import ElmBook.Actions as Actions
 import ElmBook.Chapter as Chapter exposing (Chapter)
-import Html exposing (Html, div, h3, p, text)
-import Html.Attributes exposing (class, href, id, rel, target)
+import Html exposing (Html, a, div, h3, p, text)
+import Html.Attributes exposing (class, href, id, rel, style, target)
 import Html.Events exposing (onClick)
 import Libs.Html exposing (bText)
 import Libs.Html.Attributes exposing (css)
@@ -63,9 +63,9 @@ colorsModalBody organization close titleId =
             , div [ css [ "mt-3 text-center", sm [ "mt-0 ml-4 text-left" ] ] ]
                 [ h3 [ id titleId, class "text-lg leading-6 font-medium text-gray-900" ] [ text "Change colors" ]
                 , div [ class "mt-3" ]
-                    [ p [ class "text-sm text-gray-500" ] [ text "Oh! You found a Pro feature!" ]
-                    , p [ class "mt-2 text-sm text-gray-500" ] [ text "That's great to see you explore Azimutt. We've done it exactly for this and we plan to bring much more to make it the ultimate tool to help you understand your database." ]
-                    , p [ class "text-sm text-gray-500" ] [ text "This would need a lot more resources and having a small contribution from you would be awesome. Please onboard in Azimutt community, it will ", bText "bring us much further together", text "." ]
+                    [ p [ class "text-sm text-gray-500" ] [ bText "Oh! You found a Pro feature!" ]
+                    , p [ class "mt-2 text-sm text-gray-500" ] [ text "I'm glad you are exploring Azimutt. We want to make it the ultimate tool to understand and analyze your database, and will bring much more in the coming months." ]
+                    , p [ class "text-sm text-gray-500" ] [ text "This would need a lot of resources and having a small contribution from you would be awesome. Please onboard in Azimutt community, it will ", bText "bring us much further together", text "." ]
                     ]
                 ]
             ]
@@ -91,8 +91,26 @@ analysisWarning organization =
             ]
         }
         [ p [] [ text "Schema analysis is still an early feature but a very important one in Azimutt." ]
-        , p [] [ text "It analyze your schema, and even database statistics one day, to give you insights on possible improvements. In free mode you can only access limited results. Consider upgrading to access to the full analysis and support Azimutt expansion ❤️" ]
+        , p [] [ text "It analyzes your schema to give you insights on possible improvements. In free mode you can only see limited results." ]
+        , p [] [ text "Consider upgrading to access to the full analysis and support Azimutt expansion ❤️" ]
         ]
+
+
+analysisResults : Organization -> List a -> (a -> Html msg) -> Html msg
+analysisResults organization items render =
+    if organization.plan.dbAnalysis || List.length items <= 5 then
+        div [] (items |> List.map render)
+
+    else
+        div [ class "relative" ]
+            ((items |> List.take 5 |> List.map render)
+                ++ [ div [ class "absolute inset-x-0 pt-32 bg-gradient-to-t from-white text-center text-sm text-gray-500 pointer-events-none", style "bottom" "-2px" ]
+                        [ text "See more with "
+                        , a [ href (Backend.organizationBillingUrl organization.id), target "_blank", rel "noopener", class "underline text-fuchsia-500 pointer-events-auto" ] [ text "upgraded plan" ]
+                        , text "."
+                        ]
+                   ]
+            )
 
 
 
@@ -117,4 +135,5 @@ doc =
             , ( "layoutsModalBody", layoutsModalBody Organization.free sampleCancel sampleTitleId )
             , ( "colorsModalBody", colorsModalBody Organization.free sampleCancel sampleTitleId )
             , ( "analysisWarning", analysisWarning Organization.free )
+            , ( "analysisResults", analysisResults Organization.free [ 1, 2, 3, 4, 5, 6 ] (\i -> p [] [ text ("Item " ++ String.fromInt i) ]) )
             ]

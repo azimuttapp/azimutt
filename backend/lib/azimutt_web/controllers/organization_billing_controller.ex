@@ -2,13 +2,19 @@ defmodule AzimuttWeb.OrganizationBillingController do
   use AzimuttWeb, :controller
   alias Azimutt.Organizations
   alias Azimutt.Organizations.Organization
+  alias Azimutt.Utils.Uuid
   alias AzimuttWeb.Router.Helpers, as: Routes
   require Logger
 
-  def index(conn, %{"organization_id" => id}) do
+  def index(conn, %{"organization_id" => organization_id}) do
     current_user = conn.assigns.current_user
 
-    with {:ok, %Organization{} = organization} <- Organizations.get_organization(id, current_user) do
+    if organization_id == Uuid.zero() do
+      organization = Azimutt.Accounts.get_user_personal_organization(current_user)
+      conn |> redirect(to: Routes.organization_billing_path(conn, :index, organization))
+    end
+
+    with {:ok, %Organization{} = organization} <- Organizations.get_organization(organization_id, current_user) do
       if organization.stripe_subscription_id do
         status = Organizations.get_subscription_status(organization.stripe_subscription_id)
 

@@ -3,6 +3,7 @@ defmodule AzimuttWeb.OrganizationController do
   alias Azimutt.Organizations
   alias Azimutt.Organizations.Organization
   alias Azimutt.Projects
+  alias Azimutt.Utils.Uuid
 
   def index(conn, _params) do
     current_user = conn.assigns.current_user
@@ -36,10 +37,15 @@ defmodule AzimuttWeb.OrganizationController do
     end
   end
 
-  def show(conn, %{"id" => id}) do
+  def show(conn, %{"id" => organization_id}) do
     current_user = conn.assigns.current_user
 
-    with {:ok, organization} <- Organizations.get_organization(id, current_user),
+    if organization_id == Uuid.zero() do
+      organization = Azimutt.Accounts.get_user_personal_organization(current_user)
+      conn |> redirect(to: Routes.organization_path(conn, :show, organization))
+    end
+
+    with {:ok, organization} <- Organizations.get_organization(organization_id, current_user),
          {:ok, plan} <- Organizations.get_organization_plan(organization) do
       projects = Projects.list_projects(organization, current_user)
 
@@ -47,10 +53,15 @@ defmodule AzimuttWeb.OrganizationController do
     end
   end
 
-  def edit(conn, %{"id" => id}) do
+  def edit(conn, %{"id" => organization_id}) do
     current_user = conn.assigns.current_user
 
-    with {:ok, organization} <- Organizations.get_organization(id, current_user),
+    if organization_id == Uuid.zero() do
+      organization = Azimutt.Accounts.get_user_personal_organization(current_user)
+      conn |> redirect(to: Routes.organization_path(conn, :edit, organization))
+    end
+
+    with {:ok, organization} <- Organizations.get_organization(organization_id, current_user),
          {:ok, plan} <- Organizations.get_organization_plan(organization) do
       changeset = Organization.update_changeset(organization, %{}, current_user)
       render(conn, "edit.html", organization: organization, plan: plan, changeset: changeset)
