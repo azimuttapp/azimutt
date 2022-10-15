@@ -17,4 +17,10 @@
     <meta name="twitter:creator" content={twitter_creator(@conn)} />
     <link phx-track-static rel="stylesheet" href={Routes.static_path(@conn, "/assets/app.css")}/>
     <script defer phx-track-static type="text/javascript" src={Routes.static_path(@conn, "/assets/app.js")}></script>
+    <%= if Mix.env() == :prod do %>
+        <script defer data-domain="azimutt.app" src="https://plausible.io/js/plausible.js"></script>
+    <% end %>
+    <%= if Mix.env() == :staging do %>
+        <script defer data-domain="azimutt.dev" src="https://plausible.io/js/plausible.js"></script>
+    <% end %>
 </head>
