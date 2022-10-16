@@ -11,24 +11,24 @@ export function validate<T>(value: T, zod: z.ZodType<T>, label: string): T {
     } else {
         const jsonErrors = res.error.issues.map(i => issueToJson(value, i))
         const strErrors = res.error.issues.map(i => issueToString(value, i))
-        console.error(`Can't decode ${label}`, jsonErrors.length > 1 ? jsonErrors : jsonErrors[0], value)
-        throw Error(`Can't decode ${label}: ${strErrors.join(', ')}`)
+        console.error(`invalid ${label}`, jsonErrors.length > 1 ? jsonErrors : jsonErrors[0], value)
+        throw Error(`invalid ${label} (${strErrors.length} errors): ${strErrors.join(', ')}`)
     }
 }
 
 function issueToString(value: any, issue: z.ZodIssue): string {
     if (issue.code === z.ZodIssueCode.unrecognized_keys) {
-        return `${pathToString(issue.path)}: invalid additional key${issue.keys.length > 1 ? 's:' : ''} ${issue.keys.map(k => `'${k}' (${JSON.stringify(getValue(value, issue.path.concat(k)))})`).join(', ')}`
+        return `at ${pathToString(issue.path)}: invalid additional key${issue.keys.length > 1 ? 's:' : ''} ${issue.keys.map(k => `'${k}' (${JSON.stringify(getValue(value, issue.path.concat(k)))})`).join(', ')}`
     } else if (issue.code === z.ZodIssueCode.invalid_type) {
-        return `${pathToString(issue.path)}: expect '${issue.expected}' but got '${issue.received}' (${JSON.stringify(getValue(value, issue.path))})`
+        return `at ${pathToString(issue.path)}: expect '${issue.expected}' but got '${issue.received}' (${JSON.stringify(getValue(value, issue.path))})`
     } else if (issue.code === z.ZodIssueCode.invalid_literal) {
-        return `${pathToString(issue.path)}: expect ${JSON.stringify(issue.expected)} but got ${JSON.stringify(getValue(value, issue.path))}`
+        return `at ${pathToString(issue.path)}: expect ${JSON.stringify(issue.expected)} but got ${JSON.stringify(getValue(value, issue.path))}`
     } else if (issue.code === z.ZodIssueCode.invalid_enum_value) {
-        return `${pathToString(issue.path)}: expect \`${issue.options.map(o => JSON.stringify(o)).join(' | ')}\` but got ${JSON.stringify(getValue(value, issue.path))}`
+        return `at ${pathToString(issue.path)}: expect \`${issue.options.map(o => JSON.stringify(o)).join(' | ')}\` but got ${JSON.stringify(getValue(value, issue.path))}`
     } else if (issue.code === z.ZodIssueCode.invalid_union_discriminator) {
-        return `${pathToString(issue.path)}: expect \`${issue.options.map(o => JSON.stringify(o)).join(' | ')}\` but got ${JSON.stringify(getValue(value, issue.path))}`
+        return `at ${pathToString(issue.path)}: expect \`${issue.options.map(o => JSON.stringify(o)).join(' | ')}\` but got ${JSON.stringify(getValue(value, issue.path))}`
     } else if (issue.code === z.ZodIssueCode.invalid_union) {
-        return `${pathToString(issue.path)}: invalid union for ${JSON.stringify(anyTrim(getValue(value, issue.path), 3))}`
+        return `at ${pathToString(issue.path)}: invalid union for ${JSON.stringify(anyTrim(getValue(value, issue.path), 2))}`
     } else {
         return issue.message
     }
@@ -38,7 +38,7 @@ function pathToString(path: (string | number)[]): string {
     if (path.length === 0) {
         return '_root_'
     } else {
-        return `'${path.join('.')}'`
+        return `.${path.join('.')}`
     }
 }
 
@@ -99,11 +99,11 @@ function getValue(value: any, path: (string | number)[]): any {
 
 function anyTrim(value: any, depth: number): any {
     if (Array.isArray(value)) {
-        return depth <= 0 ? [] : (value.length > 3 ? value.slice(0, 3).concat(['...']) : value).map(v => anyTrim(v, depth - 1))
+        return depth <= 0 ? '?' : (value.length > 3 ? value.slice(0, 3).concat(['...']) : value).map(v => anyTrim(v, depth - 1))
     } else if (value === null) {
         return value
     } else if (typeof value === 'object') {
-        return depth <= 0 ? {} : Object.fromEntries(Object.entries(value).map(([key, value]) => [key, anyTrim(value, depth - 1)]))
+        return depth <= 0 ? '?' : Object.fromEntries(Object.entries(value).map(([key, value]) => [key, anyTrim(value, depth - 1)]))
     } else if (typeof value === 'string') {
         return value.length > 20 ? value.substring(0, 20) + '...' : value
     } else {

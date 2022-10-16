@@ -2,6 +2,7 @@ import {migrateLegacyProject, ProjectId, ProjectJson, ProjectStored, ProjectStor
 import {StorageApi, StorageKind} from "./api";
 import {Logger} from "../logger";
 import * as Zod from "../../utils/zod";
+import {AnyError} from "../../utils/error";
 
 export class IndexedDBStorage implements StorageApi {
     static databaseName = 'azimutt'
@@ -27,18 +28,28 @@ export class IndexedDBStorage implements StorageApi {
     constructor(private db: IDBDatabase, private logger: Logger) {
     }
 
-    listProjects = (): Promise<ProjectStoredWithId[]> => {
+    listProjects = (): Promise<[[ProjectId, AnyError][], ProjectStoredWithId[]]> => {
         this.logger.debug(`indexedDb.listProjects()`)
         return this.openStore('readonly').then(store => {
-            return new Promise<ProjectStoredWithId[]>((resolve, reject) => {
+            return new Promise<[[ProjectId, AnyError][], ProjectStoredWithId[]]>((resolve, reject) => {
                 const projects: ProjectStoredWithId[] = []
+                const errors: [ProjectId, AnyError][] = []
                 store.openCursor().onsuccess = (event: any) => {
-                    const cursor = event.target.result
-                    if (cursor) {
-                        projects.push(Zod.validate([cursor.key, migrateLegacyProject(cursor.value)], ProjectStoredWithId, 'ProjectStoredWithId'))
-                        cursor.continue()
-                    } else {
-                        resolve(projects)
+                    try {
+                        const cursor = event.target.result
+                        if (cursor) {
+                            try {
+                                projects.push([cursor.key, Zod.validate(migrateLegacyProject(cursor.value), ProjectStored, 'ProjectStored')])
+                            } catch (e) {
+                                errors.push([cursor.key, e])
+                            }
+                            cursor.continue()
+                        } else {
+                            resolve([errors, projects])
+                        }
+                    } catch (e) {
+                        // if anything throws, the promise is not automatically rejected as it only fails the `onsuccess` callback :(
+                        reject(e)
                     }
                 }
                 (store as any).onerror = (err: any) => reject(`Unable to load projects: ${err}`)

@@ -32,42 +32,42 @@ describe('zod', () => {
         test('additional keys', () => {
             const data = {...user, fullname: 'Loïc'}
             const error = getError(data, User.safeParse(data))
-            expect(error).toEqual("1 validation error:\n - _root_: invalid additional key 'fullname' (\"Loïc\")")
+            expect(error).toEqual("1 validation error:\n - at _root_: invalid additional key 'fullname' (\"Loïc\")")
         })
         test('required', () => {
             const {id, ...data} = user
             const error = getError(data, User.safeParse(data))
-            expect(error).toEqual("1 validation error:\n - 'id': expect 'number' but got 'undefined' (undefined)")
+            expect(error).toEqual("1 validation error:\n - at .id: expect 'number' but got 'undefined' (undefined)")
         })
         test('bad type', () => {
             const data = {...user, name: 2}
             const error = getError(data, User.safeParse(data))
-            expect(error).toEqual("1 validation error:\n - 'name': expect 'string' but got 'number' (2)")
+            expect(error).toEqual("1 validation error:\n - at .name: expect 'string' but got 'number' (2)")
         })
         test('nested error', () => {
             const data = {...user, org: {...user.org, admin: {...user.org.admin, name: true}}}
             const error = getError(data, User.safeParse(data))
-            expect(error).toEqual("1 validation error:\n - 'org.admin.name': expect 'string' but got 'boolean' (true)")
+            expect(error).toEqual("1 validation error:\n - at .org.admin.name: expect 'string' but got 'boolean' (true)")
         })
         test('invalid literal', () => {
             const data = {...user, version: 2}
             const error = getError(data, User.safeParse(data))
-            expect(error).toEqual("1 validation error:\n - 'version': expect 1 but got 2")
+            expect(error).toEqual("1 validation error:\n - at .version: expect 1 but got 2")
         })
         test('invalid enum', () => {
             const data = {...user, roles: ['guest', 'troll', 'admin']}
             const error = getError(data, User.safeParse(data))
-            expect(error).toEqual("1 validation error:\n - 'roles.1': expect `\"guest\" | \"admin\"` but got \"troll\"")
+            expect(error).toEqual("1 validation error:\n - at .roles.1: expect `\"guest\" | \"admin\"` but got \"troll\"")
         })
         test('invalid discriminated union', () => {
             const data = {kind: 'bad'}
             const error = getError(data, File.safeParse(data))
-            expect(error).toEqual("1 validation error:\n - 'kind': expect `\"local\" | \"remote\"` but got \"bad\"")
+            expect(error).toEqual("1 validation error:\n - at .kind: expect `\"local\" | \"remote\"` but got \"bad\"")
         })
         test('invalid union', () => {
             const data = {dx: 0, dy: 0}
             const error = getError(data, Position.safeParse(data))
-            expect(error).toEqual("1 validation error:\n - _root_: invalid union for {\"dx\":0,\"dy\":0}")
+            expect(error).toEqual("1 validation error:\n - at _root_: invalid union for {\"dx\":0,\"dy\":0}")
         })
     })
 

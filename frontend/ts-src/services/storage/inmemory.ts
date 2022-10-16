@@ -2,6 +2,8 @@ import {ProjectJson, ProjectStored, ProjectStoredWithId, ProjectId} from "../../
 import {StorageApi, StorageKind} from "./api";
 import {Logger} from "../logger";
 import * as Zod from "../../utils/zod";
+import {AnyError} from "../../utils/error";
+import {sequenceSafe} from "../../utils/promise";
 
 export class InMemoryStorage implements StorageApi {
     public kind: StorageKind = 'inMemory'
@@ -9,9 +11,9 @@ export class InMemoryStorage implements StorageApi {
     constructor(private logger: Logger, private projects: { [id: string]: ProjectJson } = {}) {
     }
 
-    listProjects = (): Promise<ProjectStoredWithId[]> => {
+    listProjects = (): Promise<[[ProjectId, AnyError][], ProjectStoredWithId[]]> => {
         this.logger.debug(`inMemory.listProjects()`)
-        return Promise.resolve(Zod.validate(Object.entries(this.projects), ProjectStoredWithId.array(), 'ProjectStoredWithId[]'))
+        return sequenceSafe(Object.keys(this.projects), k => Promise.resolve(this.projects[k]).then(p => [k, Zod.validate(p, ProjectStored, 'ProjectStored')]))
     }
     loadProject = (id: ProjectId): Promise<ProjectStored> => {
         this.logger.debug(`inMemory.loadProject(${id})`)

@@ -6,13 +6,15 @@ import {Logger} from "./logger";
 import {
     computeStats,
     isLegacy,
+    ProjectId,
     ProjectInfoLocalLegacy,
     ProjectJson,
-    ProjectJsonLegacy, ProjectStored,
-    ProjectId,
-    ProjectStorage
+    ProjectJsonLegacy,
+    ProjectStorage,
+    ProjectStored
 } from "../types/project";
 import {successes} from "../utils/promise";
+import {AnyError} from "../utils/error";
 
 export class Storage {
     public kind: StorageKind = 'manager'
@@ -26,13 +28,17 @@ export class Storage {
         this.inMemory = new InMemoryStorage(logger.disableDebug())
     }
 
-    getLegacyProjects = (): Promise<ProjectInfoLocalLegacy[]> => {
+    getLegacyProjects = (): Promise<[[ProjectId, AnyError][], ProjectInfoLocalLegacy[]]> => {
         this.logger.debug(`storage.getLegacyProjects()`)
         return successes([
             this.indexedDb.then(s => s.listProjects()),
             this.localStorage.then(s => s.listProjects()),
             this.inMemory.listProjects()
-        ]).then(res => filterLegacy(res.flat())).then(projects => projects.map(legacyProjectInfo))
+        ]).then(results => {
+            const errors = results.map(([err, _]) => err).flat()
+            const projects = results.map(([_, p]) => p).flat()
+            return [errors, filterLegacy(projects).map(legacyProjectInfo)]
+        })
     }
 
     getLegacyProject = (id: ProjectId): Promise<ProjectJsonLegacy> => {

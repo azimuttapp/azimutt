@@ -1,7 +1,8 @@
 import {Color, Position, Size, Slug, Timestamp} from "./basics";
 import {Uuid} from "./uuid";
 import {Organization} from "./organization";
-import * as Array from "../utils/array";
+import * as array from "../utils/array";
+import * as object from "../utils/object";
 import {z} from "zod";
 import * as Zod from "../utils/zod";
 
@@ -501,16 +502,20 @@ export function isLegacy(p: ProjectStored): p is ProjectJsonLegacy {
 // required read transformations to satisfy Zod validations
 export function migrateLegacyProject(p: any | undefined): any {
     if (!p) return p
-    if (p.createdAt) { // if legacy, remove storage
+    if (p.createdAt) { // if legacy, remove storage and transform sources & layouts
         const {storage, ...res} = p
-        return {...res, sources: res.sources.map(migrateLegacySource)}
+        return {
+            ...res,
+            sources: res.sources.map(migrateLegacySource),
+            layouts: object.mapValues(res.layouts, migrateLegacyLayout)
+        }
     } else { // if not legacy, remove id
         const {id, ...res} = p
         return res
     }
 }
 
-export function migrateLegacySource(s: any) {
+function migrateLegacySource(s: any) {
     if (s.kind.kind === 'LocalFile') {
         s.kind.kind = 'SqlLocalFile'
         return s
@@ -522,6 +527,13 @@ export function migrateLegacySource(s: any) {
         return s
     } else {
         return s
+    }
+}
+
+function migrateLegacyLayout(l: any) {
+    return {
+        ...l,
+        tables: l.tables.map((t: any) => ({...t, columns: t.columns || []}))
     }
 }
 
@@ -573,8 +585,8 @@ export function buildProjectJson({organization, id, storage, createdAt, updatedA
 
 export function computeStats(p: ProjectStored): ProjectStats {
     // should be the same as `fromProject` in src/Models/ProjectInfo.elm
-    const tables = Array.groupBy(p.sources.flatMap(s => s.tables), t => `${t.schema}.${t.table}`)
-    const types = Array.groupBy(p.sources.flatMap(s => s.types || []), t => `${t.schema}.${t.name}`)
+    const tables = array.groupBy(p.sources.flatMap(s => s.tables), t => `${t.schema}.${t.table}`)
+    const types = array.groupBy(p.sources.flatMap(s => s.types || []), t => `${t.schema}.${t.name}`)
 
     return Zod.validate({
         nbSources: p.sources.length,

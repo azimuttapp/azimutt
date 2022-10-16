@@ -1,8 +1,8 @@
-import {ProjectJson, ProjectStored, ProjectStoredWithId, ProjectId, migrateLegacyProject} from "../../types/project";
+import {migrateLegacyProject, ProjectId, ProjectJson, ProjectStored, ProjectStoredWithId} from "../../types/project";
 import {StorageApi, StorageKind} from "./api";
 import {Logger} from "../logger";
-import {formatError} from "../../utils/error";
-import {successes} from "../../utils/promise";
+import {AnyError, formatError} from "../../utils/error";
+import {sequenceSafe} from "../../utils/promise";
 import * as Zod from "../../utils/zod";
 import * as Json from "../../utils/json";
 
@@ -19,10 +19,10 @@ export class LocalStorageStorage implements StorageApi {
     constructor(private logger: Logger) {
     }
 
-    listProjects = (): Promise<ProjectStoredWithId[]> => {
+    listProjects = (): Promise<[[ProjectId, AnyError][], ProjectStoredWithId[]]> => {
         this.logger.debug(`localStorage.listProjects()`)
         const keys = Object.keys(window.localStorage).filter(this.isKey)
-        return successes(keys.map(k => this.getProject(k).then(p => Zod.validate([this.keyToId(k), p], ProjectStoredWithId, 'ProjectStoredWithId'))))
+        return sequenceSafe(keys, k => this.getProject(k).then(p => [this.keyToId(k), Zod.validate(p, ProjectStored, 'ProjectStored')]))
     }
     loadProject = (id: ProjectId): Promise<ProjectStored> => {
         this.logger.debug(`localStorage.loadProject(${id})`)

@@ -130,7 +130,10 @@ function setMeta(meta: SetMeta) {
 }
 
 function getLegacyProjects() {
-    storage.getLegacyProjects().then(app.gotLegacyProjects).catch(err => {
+    storage.getLegacyProjects().then(([errs, p]) => {
+        errs.forEach(([id, e]) => reportError(`Can't decode project ${id}`, e))
+        app.gotLegacyProjects(p)
+    }, err => {
         reportError(`Can't list legacy projects`, err)
         app.gotLegacyProjects([])
     })
