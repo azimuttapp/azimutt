@@ -35,10 +35,8 @@
     <:cloud_logo><img src={Routes.static_path(@conn, "/images/neocase_logo.png")} alt="Neocase logo"/></:cloud_logo>
     <:cloud_logo><img src={Routes.static_path(@conn, "/images/manomano_logo.png")} alt="Mano Mano logo"/></:cloud_logo>
 </LandingPage.hero_section>
-
-
- <%= render "_features.html", assigns %>
-
+<!-- FIXME: transform in component  -->
+<%= render "_features.html", assigns %>
 
 <section id="testimonials" aria-label="What our customers are saying" class="py-20 bg-slate-50 sm:py-32">
 <div class="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
@@ -104,8 +102,8 @@
                     <li class="flex"><Icon.check_circle kind="outline" class="text-slate-400" /><span class="ml-4">Limited database analysis</span></li>
                     <li class="flex"><Icon.check_circle kind="outline" class="text-slate-400" /><span class="ml-4">Share with up to <%= Azimutt.config(:free_plan_seats) %> people</span></li>
                 </ul>
-                <!-- FIXME: what link? -->
-                <a class="inline-flex items-center justify-center px-4 py-2 mt-8 text-sm text-white rounded-full group ring-1 focus:outline-none ring-slate-700 hover:ring-slate-500 active:ring-slate-700 active:text-slate-400 focus-visible:outline-white" href="/register">Get started</a>
+                <!-- FIXME: improve link -->
+                <a class="inline-flex items-center justify-center px-4 py-2 mt-8 text-sm text-white rounded-full group ring-1 focus:outline-none ring-slate-700 hover:ring-slate-500 active:ring-slate-700 active:text-slate-400 focus-visible:outline-white" href="/login">Get started</a>
             </section>
             <section class="flex flex-col order-first px-6 py-8 bg-blue-600 rounded-3xl sm:px-8 lg:order-none">
                 <h3 class="mt-5 text-lg text-white font-display">Team</h3>
@@ -120,11 +118,10 @@
                     <li class="flex"><Icon.check_circle kind="outline" class="text-white" /><span class="ml-4">Layout customization</span></li>
                     <li class="flex"><Icon.check_circle kind="outline" class="text-white" /><span class="ml-4" title="Soon...">*Database access</span></li>
                 </ul>
-                <!-- FIXME: what link? -->
-                <a class="inline-flex items-center justify-center px-4 py-2 mt-8 text-sm font-semibold bg-white rounded-full group focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 text-slate-900 hover:bg-blue-50 active:bg-blue-200 active:text-slate-600 focus-visible:outline-white" href="/register">Get started</a>
+                <!-- FIXME: improve link -->
+                <a class="inline-flex items-center justify-center px-4 py-2 mt-8 text-sm font-semibold bg-white rounded-full group focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 text-slate-900 hover:bg-blue-50 active:bg-blue-200 active:text-slate-600 focus-visible:outline-white" href="/login">Get started</a>
             </section>
             <section class="flex flex-col px-6 rounded-3xl sm:px-8 lg:py-8">
-                <!-- FIXME: should we put this? Would be simpler to have just one price... -->
                 <h3 class="mt-5 text-lg text-white font-display">Enterprise</h3>
                 <p class="mt-2 text-base text-slate-400">Security, compliance, and flexible integration</p>
                 <p class="order-first text-5xl font-light tracking-tight text-white font-display">Contact us</p>
@@ -135,8 +132,8 @@
                     <li class="flex"><Icon.check_circle kind="outline" class="text-slate-400" /><span class="ml-4">Rights management</span></li>
                     <li class="flex"><Icon.check_circle kind="outline" class="text-slate-400" /><span class="ml-4">Audit logs</span></li>
                 </ul>
-                <!-- FIXME: what link? -->
-                <a class="inline-flex items-center justify-center px-4 py-2 mt-8 text-sm text-white rounded-full group ring-1 focus:outline-none ring-slate-700 hover:ring-slate-500 active:ring-slate-700 active:text-slate-400 focus-visible:outline-white" href="/register">Contact us</a>
+                <!-- FIXME: improve link -->
+                <a class="inline-flex items-center justify-center px-4 py-2 mt-8 text-sm text-white rounded-full group ring-1 focus:outline-none ring-slate-700 hover:ring-slate-500 active:ring-slate-700 active:text-slate-400 focus-visible:outline-white" href="mailto:hey@azimutt.app">Contact us</a>
             </section>
         </div>
     </div>
