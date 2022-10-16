@@ -97,8 +97,6 @@ init params query =
             }
         , Ports.trackPage "app"
         , Ports.listenHotkeys Conf.hotkeys
-
-        -- , Ports.loadProject id
         , Ports.getLegacyProjects
         , Ports.getProject params.organization params.project
         , Bool.cond (query |> Dict.member "save") (T.sendAfter 500 TriggerSaveProject) Cmd.none

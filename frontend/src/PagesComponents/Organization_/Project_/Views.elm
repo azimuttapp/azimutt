@@ -17,6 +17,7 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
 import Models.OrganizationId exposing (OrganizationId)
 import Models.Position as Position
+import Models.ProjectInfo exposing (ProjectInfo)
 import Models.User exposing (User)
 import PagesComponents.Organization_.Project_.Components.AmlSidebar as AmlSidebar
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
@@ -75,7 +76,17 @@ viewApp : Url -> Maybe OrganizationId -> Shared.Model -> Model -> HtmlId -> Erd 
 viewApp currentUrl urlOrganization shared model htmlId erd =
     div [ class "az-app h-full" ]
         [ if model.conf.showNavbar then
-            Lazy.lazy8 viewNavbar shared.conf shared.user model.conf model.virtualRelation erd shared.projects model.navbar (Navbar.argsToString currentUrl urlOrganization model.dirty (htmlId ++ "-nav") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-nav")))
+            let
+                projects : List ProjectInfo
+                projects =
+                    case shared.legacyProjects of
+                        Loading ->
+                            []
+
+                        Loaded legacyProjects ->
+                            legacyProjects
+            in
+            Lazy.lazy8 viewNavbar shared.conf shared.user model.conf model.virtualRelation erd (shared.projects ++ projects) model.navbar (Navbar.argsToString currentUrl urlOrganization model.dirty (htmlId ++ "-nav") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-nav")))
 
           else
             div [] []

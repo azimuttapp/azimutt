@@ -105,7 +105,8 @@ init _ flags =
         [ Task.perform ZoneChanged Time.here
         , Backend.getCurrentUser GotUser
         , Backend.getOrganizationsAndProjects GotBackendProjects
-        , Ports.getLegacyProjects
+
+        --, called in pages, don't call here to avoid duplicate calls. Ports.getLegacyProjects
         ]
     )
 

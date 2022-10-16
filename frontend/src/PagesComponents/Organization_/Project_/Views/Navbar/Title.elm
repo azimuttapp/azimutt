@@ -1,6 +1,7 @@
 module PagesComponents.Organization_.Project_.Views.Navbar.Title exposing (NavbarTitleArgs, argsToString, viewNavbarTitle)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
+import Components.Molecules.Avatar as Avatar
 import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
 import Components.Molecules.Dropdown as Dropdown
 import Components.Molecules.Tooltip as Tooltip
@@ -61,7 +62,7 @@ viewNavbarTitle gConf eConf projects project layouts args =
         ([ if eConf.projectManagement then
             -- FIXME: propose to move project from local to remote and the reverse
             button [ onClick (MoveProjectTo (B.cond (project.storage == ProjectStorage.Local) ProjectStorage.Remote ProjectStorage.Local)), css [ "mx-1 rounded-full", focus_ring_offset_600 Tw.primary ] ]
-                [ Icon.outline (B.cond (project.storage == ProjectStorage.Local) CloudUpload Cloud) ""
+                [ Icon.outline (B.cond (project.storage == ProjectStorage.Local) Folder Cloud) ""
                 ]
                 |> Tooltip.b (B.cond (project.storage == ProjectStorage.Local) "Sync your project" "Sync in Azimutt")
 
@@ -106,7 +107,9 @@ viewProjectsDropdown platform projects project dirty htmlId openedDropdown =
                                 (\p ->
                                     ContextMenu.linkHtml (Route.toHref (Route.Organization___Project_ { organization = p |> ProjectInfo.organizationId, project = p.id }))
                                         [ class "flex" ]
-                                        [ Icon.outline (ProjectStorage.icon p.storage) "mr-1"
+                                        [ p.organization
+                                            |> Maybe.map (\o -> Avatar.xsWithIcon o.logo o.name (ProjectStorage.icon p.storage) "mr-2")
+                                            |> Maybe.withDefault (Icon.outline (ProjectStorage.icon p.storage) "mr-2")
                                         , text p.name
                                         ]
                                 )
