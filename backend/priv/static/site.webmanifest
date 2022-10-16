@@ -23,12 +23,16 @@
     {
       "src": "/screenshot.png",
       "type": "image/png",
-      "sizes": "1000x949"
+      "sizes": "1280x720",
+      "platform": "wide",
+      "label": "Sample diagram with Azimutt"
     },
     {
       "src": "/screenshot-complex.png",
       "type": "image/png",
-      "sizes": "1000x949"
+      "sizes": "1280x720",
+      "platform": "wide",
+      "label": "Complex diagram with Azimutt"
     }
   ]
 }

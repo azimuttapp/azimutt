@@ -33,6 +33,9 @@ export class Backend {
     constructor(private env: Env, private logger: Logger) {
     }
 
+    loginUrl = (currentUrl: string | undefined): string =>
+        currentUrl ? `/login/redirect?url=${encodeURIComponent(currentUrl)}` : '/login'
+
     getProject = async (o: OrganizationId, p: ProjectId): Promise<ProjectInfoWithContent> => {
         this.logger.debug(`backend.getProject(${o}, ${p})`)
         const project = await this.fetchProject(o, p)

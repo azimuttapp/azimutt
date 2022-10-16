@@ -36,6 +36,7 @@ import {Platform, ToastLevel, ViewPosition} from "./types/basics";
 import {Env, getEnv} from "./utils/env";
 import {AnyError, formatError} from "./utils/error";
 import * as Json from "./utils/json";
+import * as url from "./utils/url";
 
 const env = getEnv()
 const platform = Utils.getPlatform()
@@ -160,8 +161,12 @@ function getProject(msg: GetProject) {
     ).then(project => {
         app.gotProject(project)
     }, err => {
-        reportError(`Can't load project`, err)
-        app.gotProject(undefined)
+        if (err.statusCode === 401) {
+            window.location.replace(backend.loginUrl(url.relative(window.location)))
+        } else {
+            reportError(`Can't load project`, err)
+            app.gotProject(undefined)
+        }
     })
 }
 

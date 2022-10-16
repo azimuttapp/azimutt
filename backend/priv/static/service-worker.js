@@ -37,6 +37,8 @@ const assets = [
     '/images/logo_light.svg',
     '/mstile-150x150.png',
     '/safari-pinned-tab.svg',
+    '/screenshot.png',
+    '/screenshot-complex.png',
     '/site.webmanifest',
     '/sitemap.xml',
 ]

@@ -1,5 +1,7 @@
 import {z} from "zod";
 
+export type Brand<K, T> = K & { __brand: T } // cf https://michalzalecki.com/nominal-typing-in-typescript
+
 export type Timestamp = number // date in numerical format (1663007946750)
 export const Timestamp = z.number()
 export type DateTime = string // date in iso format ("2022-09-12T11:13:02.611616Z")
