@@ -4,16 +4,11 @@ defmodule Azimutt.Repo.Migrations.InitDatabase do
   def change do
     execute "CREATE EXTENSION IF NOT EXISTS citext", ""
 
-    create table(:users,
-             comments:
-               "users are never deleted to not break foreign keys, they are cleared when deleted"
-           ) do
+    create table(:users, comments: "users are not deleted but cleared to not break foreign keys") do
       add :slug, :citext, null: false, comment: "friendly id to show on url"
       add :name, :string, null: false
       add :email, :citext, null: false
-      # TODO: delete
       add :provider, :string
-      # TODO: delete
       add :provider_uid, :string
       add :avatar, :string
       add :company, :string
@@ -25,34 +20,12 @@ defmodule Azimutt.Repo.Migrations.InitDatabase do
       add :hashed_password, :string, comment: "present only if user used login/pass auth"
       add :last_signin, :utc_datetime_usec, null: false
       timestamps()
-
-      add :confirmed_at, :utc_datetime_usec,
-        comment:
-          "if and when the used was confirmed: immediately for social, on email confirmation otherwise"
-
-      add :deleted_at, :utc_datetime_usec,
-        comment: "on deletion data is cleared but the record is kept for foreign keys"
+      add :confirmed_at, :utc_datetime_usec, comment: "on email confirm or directly for sso"
+      add :deleted_at, :utc_datetime_usec, comment: "user is cleared on deletion but kept for FKs"
     end
 
     create unique_index(:users, [:slug])
     create unique_index(:users, [:email])
-
-    #    create table(:github_profiles, primary_key: false, comment: "data from github auth, should not be modified") do
-    #      add :id, :string, primary_key: true, null: false
-    #      add :user_id, references(:users), null: false
-    #      add :name, :string
-    #      add :nickname, :string
-    #      add :first_name, :string
-    #      add :last_name, :string
-    #      add :email, :string
-    #      add :phone, :string
-    #      add :image, :string
-    #      add :description, :string
-    #      add :location, :string
-    #      # add :urls, :map
-    #      timestamps()
-    #    end
-    #    create index(:github_profiles, [:user_id])
 
     create table(:user_tokens, comment: "needed for login/pass auth") do
       add :user_id, references(:users, on_delete: :delete_all), null: false
@@ -76,19 +49,12 @@ defmodule Azimutt.Repo.Migrations.InitDatabase do
       add :twitter_username, :string
       add :stripe_customer_id, :string, null: false
       add :stripe_subscription_id, :string
-
-      add :is_personal, :boolean,
-        null: false,
-        comment:
-          "personal organizations are created for each user, they can't invite other people in it"
-
+      add :is_personal, :boolean, null: false, comment: "mimic user accounts when true"
       add :created_by, references(:users), null: false
       add :updated_by, references(:users), null: false
       timestamps()
       add :deleted_by, references(:users)
-
-      add :deleted_at, :utc_datetime_usec,
-        comment: "on deletion data is cleared but the record is kept for foreign keys"
+      add :deleted_at, :utc_datetime_usec, comment: "orga is cleared on deletion but kept for FKs"
     end
 
     create unique_index(:organizations, [:slug])
