@@ -83,14 +83,6 @@ defmodule AzimuttWeb.Router do
     patch "/invitations/:id/refuse", OrganizationInvitationController, :refuse, as: :invitation
   end
 
-  # authed session routes
-  scope "/", AzimuttWeb do
-    pipe_through [:browser, :require_authenticated_user, :account_session_layout]
-    get "/users/settings", UserSettingsController, :edit
-    put "/users/settings", UserSettingsController, :update
-    get "/users/settings/confirm_email/:token", UserSettingsController, :confirm_email
-  end
-
   # authed admin routes
   # FIXME: doesn't work :(
   # scope "/admin", AzimuttWeb do
