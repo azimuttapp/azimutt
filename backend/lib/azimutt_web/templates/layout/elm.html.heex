@@ -1,56 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-
-    <title>Azimutt - Database explorer and analyzer</title>
-    <meta name="description" content="Next gen ERD: explore and analyze your SQL database schema. Search and display what you want, follow relations, find paths and much more..."/>
-    <meta name="keywords" content="SQL,schema,database,entity relationship diagram,data analyst,schema explorer,schema analyzer,DDL,DBA,database schema,database diagram,explore,understand,visualization"/>
-    <meta name="author" content="Loïc Knuchel,Samir Bouaked" />
-    <meta name="robots" content="index, follow" />
-
-    <meta property="og:title" content="Azimutt - Database explorer and analyzer"/>
-    <meta property="og:description" content="Next gen ERD: explore and analyze your SQL database schema. Search and display what you want, follow relations, find paths and much more..."/>
-    <meta property="og:image" content="https://azimutt.app/images/logo_dark.svg"/>
-    <meta property="og:url" content="https://azimutt.app"/>
-    <meta property="og:site_name" content="Azimutt"/>
-    <meta property="og:type" content="website"/>
-    <meta property="og:locale" content="en_US"/>
-
-    <meta name="twitter:title" content="Azimutt - Database explorer and analyzer"/>
-    <meta name="twitter:description" content="Next gen ERD: explore and analyze your SQL database schema. Search and display what you want, follow relations, find paths and much more..."/>
-    <meta name="twitter:card" content="summary"/>
-    <meta name="twitter:image" content="https://azimutt.app/images/logo_dark.svg"/>
-    <meta name="twitter:url" content="https://azimutt.app"/>
-    <meta name="twitter:site" content="@azimuttapp"/>
-    <meta name="twitter:creator" content="@azimuttapp"/>
-
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"/>
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png"/>
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"/>
-    <link rel="manifest" href="/site.webmanifest"/>
-    <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#065f46"/>
-    <meta name="apple-mobile-web-app-title" content="Azimutt"/>
-    <meta name="application-name" content="Azimutt"/>
-    <meta name="msapplication-TileColor" content="#f1f6f8"/>
-    <meta name="theme-color" content="#f1f6f8"/>
-
-    <script type="application/ld+json">
-        {
-            "@@context": "https://schema.org",
-            "@@type": "Organization",
-            "name": "Azimutt",
-            "url": "https://azimutt.app",
-            "logo": "https://azimutt.app/images/logo_dark.svg"
-        }
-    </script>
-
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.4.0/styles/androidstudio.min.css" integrity="sha512-1XN5rnQ4rhaGEfX3nlDJ4Hb7kKNMAi0+DWQ/cNf54tuuTGSs0Wyw6mbgzVxLUCQ+vxSpmzr4j87ROim2ChrYnA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <%= render("_seo.html", assigns) %>
     <link rel="stylesheet" href={Routes.static_path(@conn, "/elm/dist/styles.css")} />
     <script type="text/javascript" src={Routes.static_path(@conn, "/elm/dist/elm.js")} />
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.4.0/highlight.min.js" integrity="sha512-IaaKO80nPNs5j+VLxd42eK/7sYuXQmr+fyywCNA0e+C6gtQnuCXNtORe9xR4LqGPz5U9VpH+ff41wKs/ZmC3iA==" crossorigin="anonymous" referrerpolicy="no-referrer"/>
 </head>
 <body>
     <script type="text/javascript" src={Routes.static_path(@conn, "/elm/script.js")} />

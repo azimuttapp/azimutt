@@ -8,12 +8,13 @@
 import Config
 
 config :azimutt,
-  app_name: "Azimutt - Explore your database schema easily",
   business_name: "Azimutt",
+  seo_title: "Azimutt · Database explorer and analyzer",
+  seo_description: "Next-Gen ERD: explore, analyze, document and design your SQL database schema.",
+  seo_keywords:
+    "SQL,schema,database,entity relationship diagram,data analyst,schema explorer,schema analyzer,DDL,DBA,database schema,database diagram,explore,understand,visualization",
   mailer_default_from_name: "Support",
   logo_url_for_emails: "https://res.cloudinary.com/azimutt/image/upload/v1659696136/logo/logo_wtzb16.png",
-  seo_description:
-    "An open source ERD: explore and analyze your SQL database schema. Search and display what you want, follow relations, find paths, work with other and much more.",
   twitter_url: "https://twitter.com/azimuttapp",
   github_url: "https://github.com/azimuttapp/azimutt",
   github_new_issue: "https://github.com/azimuttapp/azimutt/issues/new",

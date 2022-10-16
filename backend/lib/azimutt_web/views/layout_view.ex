@@ -6,26 +6,19 @@ defmodule AzimuttWeb.LayoutView do
   # so we instruct Elixir to not warn if the dashboard route is missing.
   @compile {:no_warn_undefined, {Routes, :live_dashboard_path, 2}}
 
-  def app_name, do: Azimutt.config(:app_name)
-
   def title(%{assigns: %{page_title: page_title}}), do: page_title
-
-  def title(_conn) do
-    app_name()
-  end
+  def title(_conn), do: Azimutt.config(:seo_title)
 
   def description(%{assigns: %{meta_description: meta_description}}), do: meta_description
+  def description(_conn), do: Azimutt.config(:seo_description)
 
-  def description(_conn) do
-    Azimutt.config(:seo_description)
-  end
+  def keywords(%{assigns: %{meta_keywords: meta_keywords}}), do: meta_keywords
+  def keywords(_conn), do: Azimutt.config(:seo_keywords)
 
   def og_image(%{assigns: %{og_image: og_image}}), do: og_image
   def og_image(conn), do: Routes.static_url(conn, "/images/open-graph.png")
 
-  def current_page_url(%{host: host, request_path: request_path}),
-    do: "https://" <> host <> request_path
-
+  def current_page_url(%{host: host, request_path: request_path}), do: "https://" <> host <> request_path
   def current_page_url(_conn), do: AzimuttWeb.Endpoint.url()
 
   def twitter_creator(%{assigns: %{twitter_creator: twitter_creator}}), do: twitter_creator

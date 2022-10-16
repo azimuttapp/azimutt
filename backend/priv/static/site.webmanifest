@@ -1,7 +1,7 @@
 {
   "short_name": "Azimutt",
-  "name": "Azimutt - Database explorer and analyzer",
-  "description": "Next gen ERD: explore and analyze your SQL database schema. Search and display what you want, follow relations, find paths and much more...",
+  "name": "Azimutt · Database explorer and analyzer",
+  "description": "Next-Gen ERD: explore, analyze, document and design your SQL database schema.",
   "start_url": "/last",
   "display": "standalone",
   "theme_color": "#4f46e5",
