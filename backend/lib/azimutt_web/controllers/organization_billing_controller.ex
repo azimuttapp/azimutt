@@ -5,6 +5,7 @@ defmodule AzimuttWeb.OrganizationBillingController do
   alias Azimutt.Utils.Uuid
   alias AzimuttWeb.Router.Helpers, as: Routes
   require Logger
+  action_fallback AzimuttWeb.FallbackController
 
   def index(conn, %{"organization_id" => organization_id}) do
     current_user = conn.assigns.current_user

@@ -1,6 +1,7 @@
 defmodule AzimuttWeb.BlogController do
   use AzimuttWeb, :controller
   alias Azimutt.Blog
+  action_fallback AzimuttWeb.FallbackController
 
   def index(conn, _params) do
     with {:ok, articles} <- Blog.get_articles(),

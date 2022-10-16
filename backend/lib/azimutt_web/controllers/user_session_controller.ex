@@ -1,8 +1,8 @@
 defmodule AzimuttWeb.UserSessionController do
   use AzimuttWeb, :controller
-
   alias Azimutt.Accounts
   alias AzimuttWeb.UserAuth
+  action_fallback AzimuttWeb.FallbackController
 
   def new(conn, _params) do
     render(conn, "new.html", error_message: nil)

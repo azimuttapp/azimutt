@@ -1,7 +1,8 @@
 defmodule AzimuttWeb.SitemapController do
   use AzimuttWeb, :controller
-  plug :put_layout, false
   alias Azimutt.Blog
+  action_fallback AzimuttWeb.FallbackController
+  plug :put_layout, false
 
   def index(conn, _params) do
     with {:ok, articles} <- Blog.get_articles(),

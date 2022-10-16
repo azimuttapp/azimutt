@@ -2,7 +2,6 @@ defmodule AzimuttWeb.UserAuth do
   @moduledoc "base auth module generate by `mix phx.gen.auth`"
   import Plug.Conn
   import Phoenix.Controller
-
   alias Azimutt.Accounts
   alias AzimuttWeb.Router.Helpers, as: Routes
 

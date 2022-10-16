@@ -1,5 +1,6 @@
 defmodule AzimuttWeb.ElmController do
   use AzimuttWeb, :controller
+  action_fallback AzimuttWeb.FallbackController
 
   # every action is the same, just load the Elm index but we need different actions for the reverse router
   def create(conn, _params), do: load_elm(conn)

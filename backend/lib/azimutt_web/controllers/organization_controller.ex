@@ -4,6 +4,7 @@ defmodule AzimuttWeb.OrganizationController do
   alias Azimutt.Organizations.Organization
   alias Azimutt.Projects
   alias Azimutt.Utils.Uuid
+  action_fallback AzimuttWeb.FallbackController
 
   def index(conn, _params) do
     current_user = conn.assigns.current_user

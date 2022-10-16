@@ -2,7 +2,6 @@ defmodule AzimuttWeb.Api.AnalyzerController do
   use AzimuttWeb, :controller
   use PhoenixSwagger
   alias Azimutt.Analyzer
-
   action_fallback AzimuttWeb.Api.FallbackController
 
   swagger_path :schema do

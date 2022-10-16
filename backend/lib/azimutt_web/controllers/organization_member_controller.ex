@@ -6,6 +6,7 @@ defmodule AzimuttWeb.OrganizationMemberController do
   alias Azimutt.Organizations.OrganizationMember
   alias Azimutt.Services.StripeSrv
   alias Azimutt.Utils.Uuid
+  action_fallback AzimuttWeb.FallbackController
 
   def index(conn, %{"organization_id" => organization_id}) do
     now = DateTime.utc_now()

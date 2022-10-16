@@ -2,6 +2,7 @@ defmodule AzimuttWeb.OrganizationInvitationController do
   use AzimuttWeb, :controller
   alias Azimutt.Organizations
   alias Azimutt.Services.StripeSrv
+  action_fallback AzimuttWeb.FallbackController
 
   def show(conn, %{"id" => id}) do
     # FIXME: remove `get_organization_plan`

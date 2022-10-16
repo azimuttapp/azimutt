@@ -1,5 +1,6 @@
 defmodule AzimuttWeb.UserDashboardController do
   use AzimuttWeb, :controller
+  action_fallback AzimuttWeb.FallbackController
 
   def action(%Plug.Conn{assigns: %{current_user: current_user}} = conn, _opts) do
     apply(__MODULE__, action_name(conn), [conn, conn.params, current_user])

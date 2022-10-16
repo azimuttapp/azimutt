@@ -2,6 +2,7 @@ defmodule AzimuttWeb.UserOauthController do
   use AzimuttWeb, :controller
   alias Azimutt.Accounts
   alias AzimuttWeb.UserAuth
+  action_fallback AzimuttWeb.FallbackController
   plug Ueberauth
 
   def callback(%{assigns: %{ueberauth_auth: %{info: user_info}}} = conn, %{"provider" => "github"}) do

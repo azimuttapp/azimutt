@@ -2,6 +2,7 @@ defmodule AzimuttWeb.ProjectController do
   use AzimuttWeb, :controller
   # alias Azimutt.Organizations
   # alias Azimutt.Projects
+  action_fallback AzimuttWeb.FallbackController
 
   # FIXME: doesn't work, not sure where it should be used :(
   # def index(conn, %{"organization_id" => organization_id}) do

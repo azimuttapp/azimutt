@@ -1,8 +1,7 @@
 defmodule AzimuttWeb.UserResetPasswordController do
   use AzimuttWeb, :controller
-
   alias Azimutt.Accounts
-
+  action_fallback AzimuttWeb.FallbackController
   plug :get_user_by_reset_password_token when action in [:edit, :update]
 
   def new(conn, _params) do
