@@ -13,9 +13,9 @@ defmodule AzimuttWeb.Components.Brand do
 
     ~H"""
     <%= if @variant do %>
-      <img class={@class} src={"/images/logo_#{@variant}.svg"} />
+      <img class={@class} src={"/images/logo_#{@variant}.svg"} alt="Azimutt Logo" />
     <% else %>
-      <img class={@class <> " block"} src="/images/logo_dark.svg" />
+      <img class={@class <> " block"} src="/images/logo_dark.svg" alt="Azimutt Logo" />
     <% end %>
     """
   end
@@ -29,9 +29,9 @@ defmodule AzimuttWeb.Components.Brand do
 
     ~H"""
     <%= if @variant do %>
-      <img class={@class} src={"/images/logo_icon_#{@variant}.svg"} />
+      <img class={@class} src={"/images/logo_icon_#{@variant}.svg"} alt="Azimutt Icon"/>
     <% else %>
-      <img class={@class <> " block"} src="/images/logo_icon_dark.svg" />
+      <img class={@class <> " block"} src="/images/logo_icon_dark.svg" alt="Azimutt Icon"/>
     <% end %>
     """
   end
@@ -39,7 +39,7 @@ defmodule AzimuttWeb.Components.Brand do
   @doc "Displays the full logo from cloudinary"
   def logo_for_emails(assigns) do
     ~H"""
-    <img height="60" src={Azimutt.config(:logo_url_for_emails)} />
+    <img height="60" src={Azimutt.config(:logo_url_for_emails)} alt="Azimutt Logo" />
     """
   end
 end
