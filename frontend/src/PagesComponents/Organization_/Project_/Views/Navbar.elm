@@ -23,7 +23,7 @@ import Libs.Models.Platform exposing (Platform)
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (TwClass, batch, focus, focus_ring_offset_600, hover, lg, sm)
 import Libs.Url as Url
-import Models.OrganizationId exposing (OrganizationId)
+import Models.OrganizationId as OrganizationId exposing (OrganizationId)
 import Models.ProjectInfo exposing (ProjectInfo)
 import Models.User exposing (User)
 import PagesComponents.Helpers as Helpers
@@ -111,10 +111,14 @@ viewNavbarBrand organization conf =
         attrs : List (Attribute msg)
         attrs =
             if conf.dashboardLink then
-                [ href (organization |> Backend.organizationUrl) ]
+                if organization |> Maybe.any (\id -> id /= OrganizationId.zero) then
+                    [ href (organization |> Backend.organizationUrl) ]
+
+                else
+                    [ href Backend.homeUrl ]
 
             else
-                hrefBlank Conf.constants.azimuttWebsite
+                hrefBlank Backend.homeUrl
     in
     a (attrs ++ [ class "flex justify-start items-center flex-shrink-0 font-medium" ])
         [ img [ class "block h-8 w-auto", src (Backend.resourceUrl "/logo_light.svg"), alt "Azimutt", height 32 ] []

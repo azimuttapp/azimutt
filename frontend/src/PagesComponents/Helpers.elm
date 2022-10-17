@@ -15,7 +15,7 @@ import Libs.Maybe as Maybe
 import Libs.Models exposing (Link)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Tw exposing (focus_ring_offset_600, hover, lg, md, sm)
-import Models.OrganizationId exposing (OrganizationId)
+import Models.OrganizationId as OrganizationId exposing (OrganizationId)
 import Models.User exposing (User)
 import Services.Backend as Backend
 import Url exposing (Url)
@@ -37,10 +37,18 @@ appShell currentUrl urlOrganization user onNavigationClick onProfileClick model 
         profileDropdown : HtmlId
         profileDropdown =
             "shell-profile-dropdown"
+
+        logoUrl : String
+        logoUrl =
+            if urlOrganization |> Maybe.any (\id -> id /= OrganizationId.zero) then
+                urlOrganization |> Backend.organizationUrl
+
+            else
+                Backend.homeUrl
     in
     [ div [ css [ "pb-32 bg-primary-600" ] ]
         [ Navbar.admin
-            { brand = { url = urlOrganization |> Backend.organizationUrl, src = Backend.resourceUrl "/logo_light.svg", alt = "Azimutt" }
+            { brand = { url = logoUrl, src = Backend.resourceUrl "/logo_light.svg", alt = "Azimutt" }
             , navigation =
                 { links = [ { url = urlOrganization |> Backend.organizationUrl, text = "Dashboard" } ]
                 , onClick = onNavigationClick

@@ -516,17 +516,17 @@ export function migrateLegacyProject(p: any | undefined): any {
 }
 
 function migrateLegacySource(s: any) {
-    if (s.kind.kind === 'LocalFile') {
-        s.kind.kind = 'SqlLocalFile'
-        return s
-    } else if (s.kind.kind === 'RemoteFile') {
-        s.kind.kind = 'SqlRemoteFile'
-        return s
-    } else if (s.kind.kind === 'UserDefined') {
-        s.kind.kind = 'AmlEditor'
-        return s
-    } else {
-        return s
+    const kind = s.kind.kind === 'LocalFile' ? 'SqlLocalFile' :
+        s.kind.kind === 'RemoteFile' ? 'SqlRemoteFile' :
+            s.kind.kind === 'UserDefined' ? 'AmlEditor' : s.kind.kind
+
+    return {
+        ...s,
+        kind: {...s.kind, kind},
+        tables: s.tables.map((t: any) => ({
+            ...t,
+            checks: t.checks?.map((c: any) => ({...c, columns: c.columns || []}))
+        }))
     }
 }
 

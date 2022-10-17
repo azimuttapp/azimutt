@@ -16,7 +16,7 @@ import Libs.Tailwind as Tw exposing (Color)
 import Libs.Time as Time
 import Libs.Url as Url
 import Models.Organization exposing (Organization)
-import Models.OrganizationId exposing (OrganizationId)
+import Models.OrganizationId as OrganizationId exposing (OrganizationId)
 import Models.Plan as Plan exposing (Plan)
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectStorage as ProjectStorage exposing (ProjectStorage)
@@ -67,7 +67,7 @@ logoutUrl =
 
 organizationUrl : Maybe OrganizationId -> String
 organizationUrl organization =
-    organization |> Maybe.mapOrElse (\id -> "/organizations/" ++ id) "/home"
+    organization |> Maybe.filter (\id -> id /= OrganizationId.zero) |> Maybe.mapOrElse (\id -> "/organizations/" ++ id) "/home"
 
 
 organizationBillingUrl : OrganizationId -> String

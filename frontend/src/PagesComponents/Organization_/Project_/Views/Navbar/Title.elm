@@ -64,7 +64,7 @@ viewNavbarTitle gConf eConf projects project layouts args =
             button [ onClick (MoveProjectTo (B.cond (project.storage == ProjectStorage.Local) ProjectStorage.Remote ProjectStorage.Local)), css [ "mx-1 rounded-full", focus_ring_offset_600 Tw.primary ] ]
                 [ Icon.outline (B.cond (project.storage == ProjectStorage.Local) Folder Cloud) ""
                 ]
-                |> Tooltip.b (B.cond (project.storage == ProjectStorage.Local) "Sync your project" "Sync in Azimutt")
+                |> Tooltip.b (B.cond (project.storage == ProjectStorage.Local) "Local project" "Shared project")
 
            else
             div [] []

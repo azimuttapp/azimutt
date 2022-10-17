@@ -151,7 +151,9 @@ function getProject(msg: GetProject) {
                     return Promise.reject('Invalid storage')
                 }
             }, err => {
-                if (err.statusCode === 404) {
+                if (err.statusCode === 401) {
+                    return storage.getLegacyProject(msg.project).then(p => buildProjectLegacy(msg.project, p), _ => Promise.reject(err))
+                } else if (err.statusCode === 404) {
                     return storage.getLegacyProject(msg.project).then(p => {
                         app.toast(ToastLevel.enum.warning, 'Unregistered project: save it again to keep it in you Azimutt account. '
                             + 'Your data will stay local, only statistics will be shared with Azimutt.')

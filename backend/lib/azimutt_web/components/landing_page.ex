@@ -18,14 +18,12 @@ defmodule AzimuttWeb.Components.LandingPage do
       <p class="mx-auto mt-6 max-w-2xl text-lg tracking-tight text-slate-700">
          <%= render_slot(@description) %>
       </p>
-    <div class="mt-10 flex justify-center gap-x-6">
       <%= render_slot(@action_buttons) %>
-    </div>
-    <%= if @cloud_logo do %>
-      <div class="mt-16">
-        <.logo_cloud title={@logo_cloud_title} cloud_logo={@cloud_logo} />
-      </div>
-    <% end %>
+      <%= if @cloud_logo do %>
+        <div class="mt-16">
+          <.logo_cloud title={@logo_cloud_title} cloud_logo={@cloud_logo} />
+        </div>
+      <% end %>
     </div>
 
     """
