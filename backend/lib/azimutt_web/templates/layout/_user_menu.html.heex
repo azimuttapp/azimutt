@@ -1,0 +1,23 @@
+<AzimuttWeb.Components.Header.header >
+  <:menu>
+    <a class="inline-block rounded-lg py-1 px-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900" href="/#features"> Features </a>
+    <a class="inline-block rounded-lg py-1 px-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900" href="/#testimonials"> Testimonials </a>
+    <a class="inline-block rounded-lg py-1 px-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900" href="/#pricing"> Pricing </a>
+    <a class="inline-block rounded-lg py-1 px-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900" href="/blog"> Blog </a>
+  </:menu>
+  <:right_menu>
+    <%= if @current_user do %>
+      <%= link @current_user.email, class: "inline-block rounded-lg py-1 px-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900", to: Routes.user_dashboard_path(@conn, :index) %>
+      <%= link "Log out", class: "relative cursor-pointer inline-flex items-center space-x-2 text-center font-regular transition ease-out duration-200 rounded outline-none transition-all outline-0 focus-visible:outline-4 focus-visible:outline-offset-1 text-scale-1200 bg-scale-100 hover:bg-scale-300 bordershadow-scale-600 hover:bordershadow-scale-700 focus-visible:outline-brand-600  shadow-sm text-sm px-4 py-2", to: Routes.user_session_path(@conn, :delete), method: :delete %>
+    <% else %>
+    <a href={ Routes.user_oauth_path(@conn, :request, "github")} class="relative cursor-pointer inline-flex items-center space-x-2 text-center text-white font-regular transition ease-out duration-200 rounded outline-none transition-all outline-0 focus-visible:outline-4 focus-visible:outline-offset-1  bg-gray-800 hover:bg-gray-900 text-lo-contrast  focus-visible:outline-brand-600  shadow-sm text-sm px-4 py-2" >
+    <Icon.github />
+    <span class="truncate">Sign In with GitHub</span>
+  </a>
+    <% end %>
+  </:right_menu>
+  <:mobile_menu>
+    <a class="border-transparent text-gray-500 hover:bg-gray-50 hover:border-blue-300 hover:text-blue-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium" href="/"> Home</a>
+    <a class="border-transparent text-gray-500 hover:bg-gray-50 hover:border-blue-300 hover:text-blue-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium" href="/blog"> Blog</a>
+  </:mobile_menu>
+</AzimuttWeb.Components.Header.header>

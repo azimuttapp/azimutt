@@ -1,0 +1,29 @@
+<div class="mx-auto lg:mt-24 flex h-full max-w-screen-xl items-center justify-center px-8">
+    <div class="sm:text-center">
+        <h1 class="text-3xl">Explore your <span class="text-blue-600">database</span> like never before</h1>
+        <p class="text-scale-1100 mb-10 text-base sm:mx-auto sm:max-w-2xl md:mt-5">
+            Explore your database like <span class="text-blue-600">never before</span>. Search, follow relations, find path, save layouts, identify design smells and much more. Works well with thousands of tables.
+        </p>
+        <div class="flex items-center space-x-2 sm:justify-center">
+            <a href={ Routes.user_oauth_path(@conn, :request, "github")} class="relative cursor-pointer inline-flex items-center space-x-2 text-center text-white font-regular transition ease-out duration-200 rounded outline-none transition-all outline-0 focus-visible:outline-4 focus-visible:outline-offset-1  bg-gray-800 hover:bg-gray-900 text-lo-contrast  focus-visible:outline-brand-600  shadow-sm text-sm px-4 py-2" >
+                <Icon.github />
+                <span class="truncate">Sign In with GitHub</span>
+            </a>
+            <a href={Azimutt.config(:github_url)} class="relative cursor-pointer inline-flex items-center space-x-2 text-center font-regular transition ease-out duration-200 rounded outline-none transition-all outline-0 focus-visible:outline-4 focus-visible:outline-offset-1 text-scale-1200 bg-scale-100 hover:bg-scale-300 bordershadow-scale-600 hover:bordershadow-scale-700 focus-visible:outline-brand-600 shadow-sm text-sm px-4 py-2">
+                <span class="truncate">Docs</span>
+            </a>
+        </div>
+        <div class="sm:text-center">
+            <p class="text-scale-900 mt-8 mb-5 text-xs sm:mx-auto sm:max-w-sm">
+                By continuing, you agree to Azimutt's <a class="hover:text-scale-1100 underline" href="#">Terms of Service</a> and
+                <a class="hover:text-scale-1100" href="#">Privacy Policy</a>,
+                and to receive periodic emails with updates.
+            </p>
+        </div>
+        <hr class="mt-16 max-w-[75px] border-zinc-500 sm:mx-auto">
+        <div class="sm:text-center">
+            <p class="mt-16 mb-5 text-slate-400 sm:mx-auto sm:max-w-2xl">You have specific needs regarding your database management?</p>
+            <a class="text-slate-800" href="mailto:hey@azimutt.app">Let's talk!</a>
+        </div>
+    </div>
+</div>

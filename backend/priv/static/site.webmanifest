@@ -1,0 +1,38 @@
+{
+  "short_name": "Azimutt",
+  "name": "Azimutt · Database explorer and analyzer",
+  "description": "Next-Gen ERD: explore, analyze, document and design your SQL database schema.",
+  "start_url": "/last",
+  "display": "standalone",
+  "theme_color": "#4f46e5",
+  "background_color": "#4f46e5",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshot.png",
+      "type": "image/png",
+      "sizes": "1280x720",
+      "platform": "wide",
+      "label": "Sample diagram with Azimutt"
+    },
+    {
+      "src": "/screenshot-complex.png",
+      "type": "image/png",
+      "sizes": "1280x720",
+      "platform": "wide",
+      "label": "Complex diagram with Azimutt"
+    }
+  ]
+}

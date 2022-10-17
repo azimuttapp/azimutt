@@ -1,0 +1,41 @@
+<div class="mt-12 max-w-lg mx-auto">
+    <h3 class="text-xl leading-6 font-medium text-gray-900">Projects</h3>
+</div>
+<div class="mt-12 w-full mx-auto">
+    <ul role="list" class="relative z-0 divide-y divide-gray-200 border-b border-t border-gray-200">
+        <%= for project <- @projects |> Enum.sort_by(& &1.updated_at, {:desc, DateTime}) do %>
+            <li class="relative py-5 pl-4 pr-6 hover:bg-gray-50 sm:py-6 sm:pl-6 lg:pl-8 xl:pl-6">
+                <div class="flex items-center justify-between space-x-4">
+                    <div class="min-w-0 space-y-3">
+                        <div class="flex items-center space-x-3">
+                            <span class="h-4 w-4 bg-green-100 rounded-full flex items-center justify-center" aria-hidden="true"><span class="h-2 w-2 bg-green-400 rounded-full"></span></span>
+                            <h2 class="text-sm font-medium my-0">
+                                <a href={Routes.elm_path(@conn, :project_show, project.organization, project)}>
+                                    <%= project.name %> <span class="absolute inset-0" aria-hidden="true"></span>
+                                </a>
+                            </h2>
+                        </div>
+                        <span class="group flex items-center space-x-2.5">
+                            <%= if project.storage_kind == :local do %>
+                                <Icon.folder kind="outline" class="text-gray-400" />
+                            <% else %>
+                                <Icon.cloud kind="outline" class="text-gray-400" />
+                            <% end %>
+                            <span class="truncate text-sm font-medium text-gray-500 group-hover:text-gray-900"><%= project.id %></span>
+                        </span>
+                    </div>
+                    <div class="sm:hidden"><Icon.chevron_right class="text-gray-400" /></div>
+                    <div class="hidden sm:flex flex-shrink-0 flex-col items-end space-y-3">
+                        <p class="text-sm font-medium text-gray-500 hover:text-gray-900"><%= project.updated_at |> AzimuttWeb.ProjectView.last_update %></p>
+                        <p class="flex space-x-2 text-sm text-gray-500">
+                            <span><%= project.nb_tables %> tables</span><span aria-hidden="true">·</span>
+                            <span><%= project.nb_relations %> relations</span><span aria-hidden="true">·</span>
+                            <span><%= project.nb_notes %> notes</span>
+                        </p>
+                    </div>
+                </div>
+            </li>
+        <% end %>
+    </ul>
+    <p class="m-6"><%= link "Access legacy projects →", to: Routes.elm_path(@conn, :projects_legacy), class: "font-semibold text-indigo-600 hover:text-indigo-900" %></p>
+</div>

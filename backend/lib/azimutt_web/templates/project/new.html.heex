@@ -1,0 +1,67 @@
+<div class="mt-12 max-w-lg mx-auto">
+    <h2 class="text-xl leading-6 font-medium text-gray-900">Create your project</h2>
+    <p class="mt-1 text-sm text-gray-500">You haven’t created a project yet. Get started by selecting a template or start from an empty project.</p>
+    <ul role="list" class="mt-6 border-t border-b border-gray-200 divide-y divide-gray-200">
+        <li>
+            <div class="relative group py-4 flex items-start space-x-3">
+                <div class="flex-shrink-0">
+                    <span class="inline-flex items-center justify-center h-10 w-10 rounded-lg bg-pink-500"><Icon.circle_stack kind="outline" class="text-white" /></span>
+                </div>
+                <div class="min-w-0 flex-1">
+                    <div class="text-sm font-medium text-gray-900"><%= link "From database connection", to: Routes.elm_path(@conn, :orga_new, @organization, database: "") %></div>
+                    <p class="text-sm text-gray-500">Extract your schema directly from your database connection.</p>
+                </div>
+                <div class="flex-shrink-0 self-center"><Icon.chevron_right class="text-gray-400 group-hover:text-gray-500" /></div>
+            </div>
+        </li>
+        <li>
+            <div class="relative group py-4 flex items-start space-x-3">
+                <div class="flex-shrink-0">
+                    <span class="inline-flex items-center justify-center h-10 w-10 rounded-lg bg-purple-500"><Icon.document_text kind="outline" class="text-white" /></span>
+                </div>
+                <div class="min-w-0 flex-1">
+                    <div class="text-sm font-medium text-gray-900"><%= link "From SQL structure", to: Routes.elm_path(@conn, :orga_new, @organization, sql: "") %></div>
+                    <p class="text-sm text-gray-500">Upload your structure.sql file and let azimutt parse your schema.</p>
+                </div>
+                <div class="flex-shrink-0 self-center"><Icon.chevron_right class="text-gray-400 group-hover:text-gray-500" /></div>
+            </div>
+        </li>
+        <li>
+            <div class="relative group py-4 flex items-start space-x-3">
+                <div class="flex-shrink-0">
+                    <span class="inline-flex items-center justify-center h-10 w-10 rounded-lg bg-yellow-500"><Icon.code_bracket kind="outline" class="text-white" /></span>
+                </div>
+                <div class="min-w-0 flex-1">
+                    <div class="text-sm font-medium text-gray-900"><%= link "From JSON", to: Routes.elm_path(@conn, :orga_new, @organization, json: "") %></div>
+                    <p class="text-sm text-gray-500">Import your custom source from JSON.</p>
+                </div>
+                <div class="flex-shrink-0 self-center"><Icon.chevron_right class="text-gray-400 group-hover:text-gray-500" /></div>
+            </div>
+        </li>
+        <li>
+            <div class="relative group py-4 flex items-start space-x-3">
+                <div class="flex-shrink-0">
+                    <span class="inline-flex items-center justify-center h-10 w-10 rounded-lg bg-green-500"><Icon.document kind="outline" class="text-white" /></span>
+                </div>
+                <div class="min-w-0 flex-1">
+                    <div class="text-sm font-medium text-gray-900"><%= link "Empty", to: Routes.elm_path(@conn, :orga_create, @organization, empty: "") %></div>
+                    <p class="text-sm text-gray-500">Perfect to design your database from scratch!</p>
+                </div>
+                <div class="flex-shrink-0 self-center"><Icon.chevron_right class="text-gray-400 group-hover:text-gray-500" /></div>
+            </div>
+        </li>
+        <li>
+            <div class="relative group py-4 flex items-start space-x-3">
+                <div class="flex-shrink-0">
+                    <span class="inline-flex items-center justify-center h-10 w-10 rounded-lg bg-blue-500"><Icon.squares_plus kind="outline" class="text-white" /></span>
+                </div>
+                <div class="min-w-0 flex-1">
+                    <div class="text-sm font-medium text-gray-900"><%= link "Explore samples", to: Routes.elm_path(@conn, :orga_new, @organization, sample: "") %></div>
+                    <p class="text-sm text-gray-500">Experiment Azimutt with suggested diagrams, for all tastes.</p>
+                </div>
+                <div class="flex-shrink-0 self-center"><Icon.chevron_right class="text-gray-400 group-hover:text-gray-500" /></div>
+            </div>
+        </li>
+    </ul>
+    <p class="mt-6"><%= link "Access legacy projects →", to: Routes.elm_path(@conn, :projects_legacy), class: "font-semibold text-indigo-600 hover:text-indigo-900" %></p>
+</div>

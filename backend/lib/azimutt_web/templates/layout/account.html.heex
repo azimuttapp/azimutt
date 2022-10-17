@@ -1,0 +1,10 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth h-full">
+<%= render("_head.html", assigns) %>
+<body class="font-sans antialiased bg-gray-50 h-full">
+    <div class="min-h-full">
+        <%= render "_account_user_menu.html", assigns %>
+        <%= @inner_content %>
+    </div>
+</body>
+</html>

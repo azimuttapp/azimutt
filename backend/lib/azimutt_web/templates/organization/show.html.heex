@@ -1,0 +1,5 @@
+<%= if @projects == [] do %>
+    <%= render AzimuttWeb.ProjectView, "new.html", assigns %>
+<% else %>
+    <%= render "_project_list.html", assigns %>
+<% end %>

@@ -1,0 +1,27 @@
+<div class="mt-12 max-w-lg mx-auto">
+    <h3 class="text-xl leading-6 font-medium text-gray-900">Billing</h3>
+    <p class="mt-6 text-sm text-gray-500">
+        Azimutt empowers developers all around the world to understand better their database.
+        The <b>schema exploration is and will remain free</b>.
+        You can subscribe to a paid plan to support us and go beyond this initial use case with
+        <%= if !@organization.is_personal do %>team collaboration, <% end %>documentation, full analysis and all the features that will continue to be added.
+        <%= if @organization.is_personal do %><br>If you want to share projects with other people, please create an organization (top left select) and invite them.<% end %>
+    </p>
+    <h4 class="mt-6 text-lg leading-6 font-medium text-gray-900">
+        Setup a paid plan: $<%= Azimutt.config(:team_plan_seat_price) %><span class="text-xs text-gray-500"> / month<%= if !@organization.is_personal do %> / user<% end %></span>
+    </h4>
+    <ul role="list" class="mt-6 space-y-2">
+        <li class="flex space-x-3"><Icon.check class="flex-shrink-0 text-green-500" /><span class="text-sm text-gray-500">Cancel any time</span></li>
+        <li class="flex space-x-3"><Icon.check class="flex-shrink-0 text-green-500" /><span class="text-sm text-gray-500">Unlimited layouts</span></li>
+        <li class="flex space-x-3"><Icon.check class="flex-shrink-0 text-green-500" /><span class="text-sm text-gray-500">Full schema analysis</span></li>
+        <li class="flex space-x-3"><Icon.check class="flex-shrink-0 text-green-500" /><span class="text-sm text-gray-500" title="Soon...">*Database access</span></li>
+        <%= if !@organization.is_personal do %><li class="flex space-x-3"><Icon.check class="flex-shrink-0 text-green-500" /><span class="text-sm text-gray-500">As many collaborators as you want</span></li><% end %>
+        <li class="flex space-x-3"><Icon.heart class="flex-shrink-0 text-rose-500" /><span class="text-sm text-gray-500">Support Azimutt development</span></li>
+    </ul>
+    <div class="mt-6 sm:flex sm:items-start sm:justify-between">
+        <!-- FIXME: could be a link? -->
+        <.form for={@conn} action={Routes.organization_billing_path(@conn, :new, @organization.id)}>
+            <%= submit "Subscribe", class: "inline-flex items-center px-4 py-2 border border-transparent shadow-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:text-sm" %>
+        </.form>
+    </div>
+</div>

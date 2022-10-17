@@ -1,0 +1,225 @@
+<section id="features" class="relative py-20 overflow-hidden bg-slate-900 sm:py-32">
+    <div class="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
+        <div class="max-w-2xl md:mx-auto md:text-center xl:max-w-none">
+            <h2 class="text-3xl tracking-tight text-white font-display sm:text-4xl md:text-5xl">
+                Did you ever find yourself lost in your database?
+            </h2>
+            <p class="mt-6 text-xl tracking-tight text-blue-100">
+                Discover how Azimutt will help you understand it.
+            </p>
+        </div>
+    </div>
+    <div>
+        <div class="relative pb-32 overflow-hidden">
+            <div class="lg:mx-auto lg:max-w-7xl lg:px-8 lg:grid lg:grid-cols-2 lg:grid-flow-col-dense lg:gap-24">
+                <div class="max-w-xl px-4 mx-auto sm:px-6 lg:py-32 lg:max-w-none lg:mx-0 lg:px-0 lg:col-start-1">
+                    <div class="mt-6">
+                        <h3 class="font-display text-2xl leading-7 text-white">
+                            Explore your database schema
+                        </h3>
+                        <p class="mt-6 text-lg text-slate-400">Not everyone has the opportunity to work on brand new
+                            application where you create everything, including the data model.
+                            Many developers evolve and maintain existing applications with an already big schema,
+                            sometimes more than 50, 100 or even 500 tables.<br/>
+                            Finding the right tables and relations to work with can be hard, and sincerely, no tool
+                            really helps. Until now.<br/> <br/>
+                            <strong>Azimutt</strong> allows you to explore your schema: search for
+                            relevant tables, follow the relations, hide less interesting columns and even find the paths
+                            between tables.
+                        </p>
+                    </div>
+                    <div class="mt-1">
+                        <a href="/new"
+                           class="group inline-flex ring-1 items-center justify-center rounded-full py-2 px-4 text-sm focus:outline-none ring-slate-700 text-white hover:ring-slate-500 active:ring-slate-700 active:text-slate-400 focus-visible:outline-white mt-8">
+                            🎉 Let's try it!
+                        </a>
+                    </div>
+                </div>
+                <div class="mt-12 sm:mt-16 lg:col-start-2">
+                    <div class="pl-4 -mr-48 sm:pl-6 md:-mr-16 lg:px-0 lg:m-0 lg:relative lg:h-full">
+                        <img class="w-auto rounded-xl lg:absolute lg:left-0 lg:h-full lg:w-auto lg:max-w-none" src={Routes.static_url(@conn, "/images/feature_1.png")} alt="Basic schema by Azimutt"/>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="relative overflow-hidden bg-white pt-16 pb-32">
+<div class="relative">
+    <div class="lg:mx-auto lg:grid lg:max-w-7xl lg:grid-flow-col-dense lg:grid-cols-2 lg:gap-24 lg:px-8">
+        <div class="mx-auto max-w-xl px-4 sm:px-6 lg:mx-0 lg:max-w-none lg:py-16 lg:px-0">
+            <div>
+                <div class="mt-6">
+                    <h2 class="text-3xl font-bold tracking-tight text-gray-900">See what you need</h2>
+                    <p class="mt-4 text-lg text-gray-500">Good understanding starts with a good visualization. Azimutt
+                        is the only Entity-Relationship diagram that let you choose what you want to see and how.
+                        <div class="mt-3"></div>
+                        <div class="relative">
+                            <dl>
+                                <dt>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="True"
+                                         class="flex-shrink-0 h-6 w-6 absolute text-green-500">
+                                        <path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"
+                                              stroke-width="2" vector-effect="non-scaling-stroke"></path>
+                                    </svg>
+                                    <p class="ml-9 text-lg leading-6 font-medium text-gray-900">
+                                        search everywhere
+                                    </p>
+                                </dt>
+                            </dl>
+                        </div>
+                        <div class="relative">
+                            <dl>
+                                <dt>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="True"
+                                         class="flex-shrink-0 h-6 w-6 absolute text-green-500">
+                                        <path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"
+                                              stroke-width="2" vector-effect="non-scaling-stroke"></path>
+                                    </svg>
+                                    <p class="ml-9 text-lg leading-6 font-medium text-gray-900">
+                                        show, hide and organize tables
+                                    </p>
+                                </dt>
+                            </dl>
+                        </div>
+                        <div class="relative">
+                            <dl>
+                                <dt>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="True"
+                                         class="flex-shrink-0 h-6 w-6 absolute text-green-500">
+                                        <path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"
+                                              stroke-width="2" vector-effect="non-scaling-stroke"></path>
+                                    </svg>
+                                    <p class="ml-9 text-lg leading-6 font-medium text-gray-900">
+                                        show, hide and sort columns
+                                    </p>
+                                </dt>
+                            </dl>
+                        </div>
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="mt-12 sm:mt-16 lg:mt-0">
+            <div class="-mr-48 pl-4 sm:pl-6 md:-mr-16 lg:relative lg:m-0 lg:h-full lg:px-0">
+                <img class="w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5 lg:absolute lg:left-0 lg:h-full lg:w-auto lg:max-w-none"
+                     src={Routes.static_url(@conn, "/images/see_what_you_need.png")} alt="See what you need image">
+            </div>
+        </div>
+    </div>
+</div>
+<div class="mt-24">
+    <div class="lg:mx-auto lg:grid lg:max-w-7xl lg:grid-flow-col-dense lg:grid-cols-2 lg:gap-24 lg:px-8">
+        <div class="mx-auto max-w-xl px-4 sm:px-6 lg:col-start-2 lg:mx-0 lg:max-w-none lg:py-32 lg:px-0">
+            <div>
+
+                <div class="mt-6">
+                    <h2 class="text-3xl font-bold tracking-tight text-gray-900">Follow your mind
+                    </h2>
+                    <p class="mt-4 text-lg text-gray-500">
+                        Relational databases are made of, well, relations.<br/>
+                        Did you ever wanted to see what is on the other side of a relation ? With Azimutt, it's just one
+                        click away 🤩<br/>
+                        And there's more, how do you see incoming relations ? Azimutt list all of them and is able to
+                        show one, many or all of them in just two clicks! 😍
+                        <div class="mt-3"></div>
+                        <div class="relative">
+                            <dl>
+                                <dt>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="True"
+                                         class="flex-shrink-0 h-6 w-6 absolute text-green-500">
+                                        <path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"
+                                              stroke-width="2" vector-effect="non-scaling-stroke"></path>
+                                    </svg>
+                                    <p class="ml-9 text-lg leading-6 font-medium text-gray-900">outgoing relations</p>
+                                </dt>
+                            </dl>
+
+                        </div>
+                        <div class="relative">
+                            <dl>
+                                <dt>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="True"
+                                         class="flex-shrink-0 h-6 w-6 absolute text-green-500">
+                                        <path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"
+                                              stroke-width="2" vector-effect="non-scaling-stroke"></path>
+                                    </svg>
+                                    <p class="ml-9 text-lg leading-6 font-medium text-gray-900">incoming relations</p>
+                                </dt>
+                            </dl>
+                        </div>
+                    </p>
+                    <div class="mt-6">
+                        <a href="/new"
+                           class="inline-flex rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-indigo-700">I
+                            can't resist, let's go!</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="mt-12 sm:mt-16 lg:col-start-1 lg:mt-0">
+            <div class="-ml-48 pr-4 sm:pr-6 md:-ml-16 lg:relative lg:m-0 lg:h-full lg:px-0">
+                <img class="w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5 lg:absolute lg:right-0 lg:h-full lg:w-auto lg:max-w-none"
+                     src={Routes.static_url(@conn, "/images/follow_your_mind.png")} alt="Follow your mind">
+            </div>
+        </div>
+    </div>
+</div>
+<div class="mt-24">
+    <div class="lg:mx-auto lg:grid lg:max-w-7xl lg:grid-flow-col-dense lg:grid-cols-2 lg:gap-24 lg:px-8">
+        <div class="mx-auto max-w-xl px-4 sm:px-6 lg:mx-0 lg:max-w-none lg:py-16 lg:px-0">
+            <div>
+                <div class="mt-6">
+                    <h2 class="text-3xl font-bold tracking-tight text-gray-900">
+                        Context switch like a pro
+                    </h2>
+                    <p class="mt-4 text-lg text-gray-500">Do you like throwing away your work ? Me neither. And Azimutt
+                        has you covered on this. Once you have finished an investigation, save your meaningful diagram
+                        as a layout so you can come back to it later and even improve it.<br />Your colleagues will be
+                        jealous, until you tell them about Azimutt ❤️</p>
+                </div>
+            </div>
+
+        </div>
+        <div class="mt-12 sm:mt-16 lg:mt-0">
+            <div class="-mr-48 pl-4 sm:pl-6 md:-mr-16 lg:relative lg:m-0 lg:h-full lg:px-0">
+                <img class="w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5 lg:absolute lg:left-0 lg:h-full lg:w-auto lg:max-w-none"
+                     src={Routes.static_url(@conn, "/images/layouts.png")} alt="Context switch">
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-24">
+    <div class="lg:mx-auto lg:grid lg:max-w-7xl lg:grid-flow-col-dense lg:grid-cols-2 lg:gap-24 lg:px-8">
+        <div class="mx-auto max-w-xl px-4 sm:px-6 lg:col-start-2 lg:mx-0 lg:max-w-none lg:py-32 lg:px-0">
+            <div>
+                <div class="mt-6">
+                    <h2 class="text-3xl font-bold tracking-tight text-gray-900">
+                        Let Azimutt drive you
+                    </h2>
+                    <p class="my-4 text-lg text-gray-500">Sometimes, easily following relations is not enough,
+                        especially when you don't know in which direction to go.
+                        And looking at every possible relation can be tedious. So let's grab a <span>🍹</span> drink and
+                        watch Azimutt do the work for you.<br/>It will look for every relation and build possible paths
+                        between two tables you want to join.
+                        And as it is helpful, it will even build the SQL request for you with all the needed joins.
+                    </p>
+                    <a href="/new"
+                       class="inline-flex rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-indigo-700">I'm
+                        hooked!
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="mt-12 sm:mt-16 lg:col-start-1 lg:mt-0">
+            <div class="-ml-48 pr-4 sm:pr-6 md:-ml-16 lg:relative lg:m-0 lg:h-full lg:px-0">
+                <img class="w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5 lg:absolute lg:right-0 lg:h-full lg:w-auto lg:max-w-none"
+                     src="https://azimutt.app/assets/images/gospeak-find-path.png"
+                     alt="Customer profile user interface"/>
+            </div>
+        </div>
+    </div>
+</div>
+</div>

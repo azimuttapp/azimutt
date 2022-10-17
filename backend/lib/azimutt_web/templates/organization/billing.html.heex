@@ -1,0 +1,13 @@
+<div class="mt-12 max-w-lg mx-auto">
+    <h3 class="text-xl leading-6 font-medium text-gray-900">Billing</h3>
+    <p class="mt-6 text-sm text-gray-500">
+        Thank you so much for supporting us. It's really great for us to be an open source project and have a community supporting us with paying plans ✨
+    </p>
+    <p class="mt-3 text-sm text-gray-500">
+        Azimutt partner with Stripe to handle subscriptions, you can manage it with the link below. You can cancel your subscription anytime.
+    </p>
+    <!-- FIXME: could be a link? -->
+    <.form for={@conn} action={Routes.organization_billing_path(@conn, :edit, @organization.id)} class="mt-6">
+        <%= submit "Manage your subscription", class: "inline-flex items-center px-4 py-2 border border-transparent shadow-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:text-sm" %>
+    </.form>
+</div>

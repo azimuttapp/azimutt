@@ -1,0 +1,57 @@
+<div class="xl:flex-shrink-0 xl:w-64 xl:border-r xl:border-gray-200 bg-white">
+    <div class="pl-4 pr-6 py-6 sm:pl-6 lg:pl-8 xl:pl-0">
+        <div class="flex items-center justify-between">
+            <div class="flex-1 space-y-4">
+                <div class="sm:space-y-0 sm:flex sm:justify-between sm:items-center xl:block">
+                    <!-- Profile -->
+                    <div x-data="{ open: false }" class="my-2">
+                        <div class="mt-1 relative">
+                            <button @click="open = !open" type="button" class="bg-white relative w-full border border-gray-300 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" aria-haspopup="listbox" aria-expanded="true">
+                                <div class="flex items-center">
+                                    <%= if @organization.logo do %>
+                                        <img src={@organization.logo} class="flex-shrink-0 h-6 w-6 rounded-full">
+                                    <% end %>
+                                    <!-- Selected: "font-semibold", Not Selected: "font-normal" -->
+                                    <span class="font-normal ml-3 block truncate"><%= @organization.name %> </span>
+                                </div>
+                                <span class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                                    <!-- Heroicon name: solid/selector -->
+                                    <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                        <path fill-rule="evenodd" d="M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </span>
+                            </button>
+                            <ul x-show="open" @click.outside="open = false" class="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm" tabindex="-1" role="listbox" style="display: none;">
+                                <%= for organization <- @current_user.organizations |> Enum.sort_by(fn o -> o.name end) do %>
+                                    <a @click="open = false" class="cursor-pointer" data-phx-link="patch" data-phx-link-state="push" href={Routes.organization_path(@conn, :show, organization.id)}>
+                                        <li class="flex items-center text-gray-900 hover:text-white hover:bg-indigo-600 select-none relative py-2 pl-3 pr-9" role="option">
+                                            <%= if organization.logo do %>
+                                                <img src={organization.logo} class="flex-shrink-0 h-6 w-6 rounded-full">
+                                            <% end %>
+                                            <!-- Selected: "font-semibold", Not Selected: "font-normal" -->
+                                            <span class="font-normal ml-3 block truncate"><%= organization.name %> </span>
+                                        </li>
+                                    </a>
+                                <% end %>
+                                <a href={Routes.organization_path(@conn, :new)} class="border-t border-gray-200 group flex items-center px-4 py-2 text-sm text-gray-900 hover:text-white hover:bg-indigo-600">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="mr-3 h-5 w-5 text-gray-400 group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    Create an Organization
+                                </a>
+                            </ul>
+                        </div>
+                    </div>
+                    <%= generate_organization_plan_badge(@plan) %>
+                    <%= if @organization.description do %>
+                        <p class="text-sm text-gray-500 py-4"><%= @organization.description %></p>
+                    <% end %>
+                    <div class="flex flex-col sm:flex-row xl:flex-col py-2">
+                        <%= link "New Project", to: Routes.elm_path(@conn, :orga_new, @organization), class: "inline-flex items-center justify-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 xl:w-full" %>
+                    </div>
+                </div>
+                <%= render "_left_panel_menu.html", assigns %>
+            </div>
+        </div>
+    </div>
+</div>
