@@ -5,6 +5,7 @@ defmodule AzimuttWeb.Components.Header do
   use Phoenix.Component
   import AzimuttWeb.Components.Brand
 
+  # FIXME: use Router instead of "/"
   @doc "Displays full logo. "
   def header(assigns) do
     ~H"""

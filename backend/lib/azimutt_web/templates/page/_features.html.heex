@@ -29,15 +29,14 @@
                         </p>
                     </div>
                     <div class="mt-1">
-                        <a href="/new"
-                           class="group inline-flex ring-1 items-center justify-center rounded-full py-2 px-4 text-sm focus:outline-none ring-slate-700 text-white hover:ring-slate-500 active:ring-slate-700 active:text-slate-400 focus-visible:outline-white mt-8">
+                        <a href={Routes.elm_path(@conn, :new)} class="group inline-flex ring-1 items-center justify-center rounded-full py-2 px-4 text-sm focus:outline-none ring-slate-700 text-white hover:ring-slate-500 active:ring-slate-700 active:text-slate-400 focus-visible:outline-white mt-8">
                             🎉 Let's try it!
                         </a>
                     </div>
                 </div>
                 <div class="mt-12 sm:mt-16 lg:col-start-2">
                     <div class="pl-4 -mr-48 sm:pl-6 md:-mr-16 lg:px-0 lg:m-0 lg:relative lg:h-full">
-                        <img class="w-auto rounded-xl lg:absolute lg:left-0 lg:h-full lg:w-auto lg:max-w-none" src={Routes.static_url(@conn, "/images/feature_1.png")} alt="Basic schema by Azimutt"/>
+                        <img src={Routes.static_path(@conn, "/images/feature_1.png")} alt="Basic schema by Azimutt" class="w-auto rounded-xl lg:absolute lg:left-0 lg:h-full lg:w-auto lg:max-w-none" />
                     </div>
                 </div>
             </div>
@@ -103,8 +102,7 @@
         </div>
         <div class="mt-12 sm:mt-16 lg:mt-0">
             <div class="-mr-48 pl-4 sm:pl-6 md:-mr-16 lg:relative lg:m-0 lg:h-full lg:px-0">
-                <img class="w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5 lg:absolute lg:left-0 lg:h-full lg:w-auto lg:max-w-none"
-                     src={Routes.static_url(@conn, "/images/see_what_you_need.png")} alt="See what you need image">
+                <img src={Routes.static_path(@conn, "/images/see_what_you_need.png")} alt="See what you need image" class="w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5 lg:absolute lg:left-0 lg:h-full lg:w-auto lg:max-w-none" />
             </div>
         </div>
     </div>
@@ -151,17 +149,16 @@
                         </div>
                     </p>
                     <div class="mt-6">
-                        <a href="/new"
-                           class="inline-flex rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-indigo-700">I
-                            can't resist, let's go!</a>
+                        <a href={Routes.elm_path(@conn, :new)} class="inline-flex rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-indigo-700">
+                            I can't resist, let's go!
+                        </a>
                     </div>
                 </div>
             </div>
         </div>
         <div class="mt-12 sm:mt-16 lg:col-start-1 lg:mt-0">
             <div class="-ml-48 pr-4 sm:pr-6 md:-ml-16 lg:relative lg:m-0 lg:h-full lg:px-0">
-                <img class="w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5 lg:absolute lg:right-0 lg:h-full lg:w-auto lg:max-w-none"
-                     src={Routes.static_url(@conn, "/images/follow_your_mind.png")} alt="Follow your mind">
+                <img src={Routes.static_path(@conn, "/images/follow_your_mind.png")} alt="Follow your mind" class="w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5 lg:absolute lg:right-0 lg:h-full lg:w-auto lg:max-w-none" />
             </div>
         </div>
     </div>
@@ -184,8 +181,7 @@
         </div>
         <div class="mt-12 sm:mt-16 lg:mt-0">
             <div class="-mr-48 pl-4 sm:pl-6 md:-mr-16 lg:relative lg:m-0 lg:h-full lg:px-0">
-                <img class="w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5 lg:absolute lg:left-0 lg:h-full lg:w-auto lg:max-w-none"
-                     src={Routes.static_url(@conn, "/images/layouts.png")} alt="Context switch">
+                <img src={Routes.static_path(@conn, "/images/layouts.png")} alt="Context switch" class="w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5 lg:absolute lg:left-0 lg:h-full lg:w-auto lg:max-w-none" />
             </div>
         </div>
     </div>
@@ -206,18 +202,15 @@
                         between two tables you want to join.
                         And as it is helpful, it will even build the SQL request for you with all the needed joins.
                     </p>
-                    <a href="/new"
-                       class="inline-flex rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-indigo-700">I'm
-                        hooked!
+                    <a href={Routes.elm_path(@conn, :new)} class="inline-flex rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-indigo-700">
+                        I'm hooked!
                     </a>
                 </div>
             </div>
         </div>
         <div class="mt-12 sm:mt-16 lg:col-start-1 lg:mt-0">
             <div class="-ml-48 pr-4 sm:pr-6 md:-ml-16 lg:relative lg:m-0 lg:h-full lg:px-0">
-                <img class="w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5 lg:absolute lg:right-0 lg:h-full lg:w-auto lg:max-w-none"
-                     src="https://azimutt.app/assets/images/gospeak-find-path.png"
-                     alt="Customer profile user interface"/>
+                <img src={Routes.static_path(@conn, "/images/gospeak-find-path.png")} alt="Customer profile user interface" class="w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5 lg:absolute lg:right-0 lg:h-full lg:w-auto lg:max-w-none" />
             </div>
         </div>
     </div>
