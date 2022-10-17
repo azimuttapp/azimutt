@@ -31,7 +31,7 @@ triggerSaveProject urlOrganization organizations model =
                     |> Maybe.map (\_ -> UpdateProject |> T.send)
                     |> Maybe.withDefault
                         (if e.project.id == ProjectId.zero then
-                            Cmd.batch [ ProjectSaveDialog.Open e.project.name preselectedOrg |> ProjectSaveMsg |> T.send, e |> Erd.unpack |> Ports.updateProjectTmp ]
+                            Cmd.batch [ ProjectSaveDialog.Open e.project.name preselectedOrg |> ProjectSaveMsg |> T.send, e |> Erd.unpack |> Ports.updateProjectTmp, Ports.projectDirty False ]
 
                          else
                             ProjectSaveDialog.Open e.project.name preselectedOrg |> ProjectSaveMsg |> T.send

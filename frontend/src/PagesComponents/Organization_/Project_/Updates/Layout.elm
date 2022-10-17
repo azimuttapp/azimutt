@@ -6,6 +6,7 @@ import Libs.Task as T
 import Models.Project.LayoutName exposing (LayoutName)
 import PagesComponents.Organization_.Project_.Models exposing (LayoutMsg(..), Msg(..))
 import PagesComponents.Organization_.Project_.Models.Erd exposing (Erd)
+import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirtyCmd)
 import Ports
 import Services.Lenses exposing (mapErdMCmd, mapLayouts, setCurrentLayout)
@@ -14,7 +15,7 @@ import Track
 
 
 type alias Model x =
-    { x | dirty : Bool, erd : Maybe Erd }
+    { x | conf : ErdConf, dirty : Bool, erd : Maybe Erd }
 
 
 handleLayout : LayoutMsg -> Model x -> ( Model x, Cmd Msg )

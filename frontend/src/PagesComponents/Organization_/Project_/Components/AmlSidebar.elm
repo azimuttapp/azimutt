@@ -30,6 +30,7 @@ import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, AmlSidebarMsg(..), Msg(..), simplePrompt)
 import PagesComponents.Organization_.Project_.Models.CursorMode exposing (CursorMode)
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
+import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint(..))
 import PagesComponents.Organization_.Project_.Models.ShowColumns as ShowColumns
@@ -42,7 +43,8 @@ import Track
 
 type alias Model x =
     { x
-        | dirty : Bool
+        | conf : ErdConf
+        , dirty : Bool
         , erd : Maybe Erd
         , cursorMode : CursorMode
         , amlSidebar : Maybe AmlSidebar

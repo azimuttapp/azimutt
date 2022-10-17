@@ -7,15 +7,17 @@ defmodule AzimuttWeb.LayoutView do
   @compile {:no_warn_undefined, {Routes, :live_dashboard_path, 2}}
 
   # use:
+  # https://frontendchecklist.io
   # https://search.google.com/structured-data/testing-tool
   # https://cards-dev.twitter.com/validator
   # https://developers.facebook.com/tools/debug
+  # https://app.sistrix.com/en/serp-snippet-generator
 
-  # max 70 chars
+  # max 55-70 chars
   def title(%{assigns: %{seo: %{title: title}}}), do: title <> " · " <> Azimutt.config(:seo_title)
   def title(_conn), do: Azimutt.config(:seo_title)
 
-  # max 200 chars
+  # max 150-300 chars
   def description(%{assigns: %{seo: %{description: description}}}), do: description
   def description(_conn), do: Azimutt.config(:seo_description)
 
@@ -28,6 +30,7 @@ defmodule AzimuttWeb.LayoutView do
   def og_type(%{assigns: %{seo: %{type: type}}}), do: type
   def og_type(_conn), do: "website"
 
+  # ratio: 2:1, ex: 1200x600
   def og_image(%{assigns: %{seo: %{image: image}}}), do: image
   def og_image(conn), do: Routes.static_url(conn, "/images/open-graph.png")
 

@@ -11,6 +11,7 @@ import Models.Project.TableId exposing (TableId)
 import PagesComponents.Organization_.Project_.Components.SourceUpdateDialog as SourceUpdateDialog
 import PagesComponents.Organization_.Project_.Models exposing (Msg(..), ProjectSettingsDialog, ProjectSettingsMsg(..))
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
+import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirty, setDirtyCmd)
 import Ports
 import Services.Lenses exposing (mapCollapseTableColumns, mapColumnBasicTypes, mapEnabled, mapErdM, mapHiddenColumns, mapProps, mapRelations, mapRemoveViews, mapRemovedSchemas, mapSourceUpdateCmd, setColumnOrder, setDefaultSchema, setList, setMax, setRelationStyle, setRemovedTables, setSettings)
@@ -21,7 +22,8 @@ import Track
 
 type alias Model x =
     { x
-        | dirty : Bool
+        | conf : ErdConf
+        , dirty : Bool
         , erd : Maybe Erd
         , settings : Maybe ProjectSettingsDialog
         , sourceUpdate : Maybe (SourceUpdateDialog.Model Msg)

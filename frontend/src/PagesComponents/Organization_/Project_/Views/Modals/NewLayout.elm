@@ -11,6 +11,7 @@ import Libs.Task as T
 import Models.Organization exposing (Organization)
 import Models.Project.LayoutName exposing (LayoutName)
 import PagesComponents.Organization_.Project_.Models.Erd exposing (Erd)
+import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout
 import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirtyCmd)
 import Ports
@@ -27,7 +28,8 @@ dialogId =
 
 type alias GlobalModel x =
     { x
-        | dirty : Bool
+        | conf : ErdConf
+        , dirty : Bool
         , erd : Maybe Erd
         , newLayout : Maybe Model
     }

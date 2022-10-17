@@ -13,6 +13,7 @@ import Models.Project.ProjectSettings as ProjectSettings
 import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.Organization_.Project_.Models exposing (FindPathMsg(..), Msg(..))
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
+import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.ErdRelation exposing (ErdRelation)
 import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.FindPathDialog exposing (FindPathDialog)
@@ -29,7 +30,8 @@ import Track
 
 type alias Model x =
     { x
-        | dirty : Bool
+        | conf : ErdConf
+        , dirty : Bool
         , erd : Maybe Erd
         , findPath : Maybe FindPathDialog
     }

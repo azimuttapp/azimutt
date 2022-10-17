@@ -2,20 +2,20 @@ module PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf, 
 
 
 type alias ErdConf =
-    { fitOnLoad : Bool
-    , fullscreen : Bool
-    , save : Bool
-    , hover : Bool
-    , select : Bool
-    , move : Bool
-    , layout : Bool
-    , update : Bool
-    , showNavbar : Bool
-    , dashboardLink : Bool
-    , findPath : Bool
-    , layoutManagement : Bool
-    , projectManagement : Bool
-    , sharing : Bool
+    { fitOnLoad : Bool -- to run fit to screen on project load
+    , fullscreen : Bool -- to allow fullscreen button
+    , save : Bool -- to allow to save the project
+    , hover : Bool -- to be responsive to the hover (column & link highlight)
+    , select : Bool -- to allow to select tables
+    , move : Bool -- to allow to move tables
+    , layout : Bool -- to allow to update the current layout
+    , update : Bool -- to enable AML sources button
+    , showNavbar : Bool -- to show navbar
+    , dashboardLink : Bool -- if top left Azimutt link send to home or landing page
+    , findPath : Bool -- to allow find path feature
+    , layoutManagement : Bool -- to allow to create & change layouts
+    , projectManagement : Bool -- to allow to change, update or create projects
+    , sharing : Bool -- to display embed button
     }
 
 

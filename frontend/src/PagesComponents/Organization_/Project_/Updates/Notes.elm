@@ -5,6 +5,7 @@ import Libs.String as String
 import Libs.Task as T
 import PagesComponents.Organization_.Project_.Models exposing (Msg(..), NotesDialog, NotesMsg(..))
 import PagesComponents.Organization_.Project_.Models.Erd exposing (Erd)
+import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.ErdTableNotes as ErdTableNotes
 import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirty)
 import Ports
@@ -14,7 +15,8 @@ import Track
 
 type alias Model x =
     { x
-        | dirty : Bool
+        | conf : ErdConf
+        , dirty : Bool
         , erd : Maybe Erd
         , editNotes : Maybe NotesDialog
     }
