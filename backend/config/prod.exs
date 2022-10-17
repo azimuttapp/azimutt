@@ -16,7 +16,8 @@ config :azimutt,
   domain: "azimutt.app",
   site_url: "https://azimutt.app",
   support_email: "hey@azimutt.app",
-  mailer_default_from_email: "hey@azimutt.app"
+  mailer_default_from_email: "hey@azimutt.app",
+  team_plan_price_id: "price_1LqeMcCaPXsf4veh2yBgWKiX"
 
 # Do not print debug messages in production
 config :logger, level: :info

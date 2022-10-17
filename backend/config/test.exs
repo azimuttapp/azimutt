@@ -5,7 +5,8 @@ config :bcrypt_elixir, :log_rounds, 1
 
 config :azimutt,
   environment: :test,
-  mailer_default_from_email: "hey@azimutt.dev"
+  mailer_default_from_email: "hey@azimutt.dev",
+  team_plan_price_id: "price_1LqdRzCaPXsf4vehSyyUn4pd"
 
 # Configure your database
 #
