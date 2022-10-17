@@ -15,19 +15,16 @@
     <:action_buttons>
         <div class="mt-10 flex justify-center gap-x-6">
             <%= if @current_user do %>
-                <%= link "Access your projects", class: "relative cursor-pointer inline-flex items-center space-x-2 text-center text-white font-regular transition ease-out duration-200 rounded outline-none transition-all outline-0 focus-visible:outline-4 focus-visible:outline-offset-1  bg-gray-800 hover:bg-gray-900 text-lo-contrast  focus-visible:outline-brand-600  shadow-sm text-sm px-4 py-2", to: Routes.user_dashboard_path(@conn, :index) %>
+                <%= link "Access your projects", to: Routes.user_dashboard_path(@conn, :index), class: "relative inline-flex items-center px-4 py-2 space-x-2 text-center text-white transition-all transition duration-200 ease-out bg-gray-800 rounded shadow-sm outline-none cursor-pointer font-regular outline-0 focus-visible:outline-4 focus-visible:outline-offset-1 hover:bg-gray-900 text-lo-contrast focus-visible:outline-brand-600" %>
             <% else %>
                 <div class="flex items-center space-x-2 sm:justify-center">
-                    <a href={ Routes.elm_path(@conn, :new)} class="relative inline-flex items-center px-4 py-2 space-x-2 text-sm text-center text-white transition-all transition duration-200 ease-out bg-gray-800 rounded shadow-sm outline-none cursor-pointer font-regular outline-0 focus-visible:outline-4 focus-visible:outline-offset-1 hover:bg-gray-900 text-lo-contrast focus-visible:outline-brand-600" >
+                    <a href={Routes.elm_path(@conn, :new)} class="relative inline-flex items-center px-4 py-2 space-x-2 text-center text-white transition-all transition duration-200 ease-out bg-gray-800 rounded shadow-sm outline-none cursor-pointer font-regular outline-0 focus-visible:outline-4 focus-visible:outline-offset-1 hover:bg-gray-900 text-lo-contrast focus-visible:outline-brand-600">
                         Explore your schema
                     </a>
-                    <a href={Azimutt.config(:github_url)} class="relative inline-flex items-center px-4 py-2 space-x-2 text-sm text-center transition-all transition duration-200 ease-out rounded shadow-sm outline-none cursor-pointer font-regular outline-0 focus-visible:outline-4 focus-visible:outline-offset-1 text-scale-1200 bg-scale-100 hover:bg-scale-300 bordershadow-scale-600 hover:bordershadow-scale-700 focus-visible:outline-brand-600">
-                        Docs
-                    </a>
+                    <span>or <%= link "view old projects", to: Routes.elm_path(@conn, :projects_legacy), class: "underline" %></span>
                 </div>
             <% end %>
         </div>
-        <p class="m-1">or <%= link "view old projects", to: Routes.elm_path(@conn, :projects_legacy), class: "underline" %></p>
     </:action_buttons>
 
     <:cloud_logo><img src={Routes.static_path(@conn, "/images/fundimmo_logo.png")} alt="Fundimmo logo"/></:cloud_logo>
@@ -44,8 +41,9 @@
 <div class="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
     <div class="max-w-2xl mx-auto md:text-center">
         <h2 class="text-3xl tracking-tight font-display text-slate-900 sm:text-4xl">People ❤️ Azimutt</h2>
-        <p class="mt-4 text-lg tracking-tight text-slate-700">Our software is so simple that people can’t help but fall
-            in love with it. Simplicity is easy when you just skip tons of mission-critical features.
+        <p class="mt-4 text-lg tracking-tight text-slate-700">
+            Still not convinced? Just hear out our early adopters. They love it!
+            Try Azimutt and give us your feedback. So if it's not yet perfect for you, it will be soon...
         </p>
     </div>
     <ul role="list"
