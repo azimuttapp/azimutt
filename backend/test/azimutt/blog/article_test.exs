@@ -18,6 +18,7 @@ defmodule Azimutt.Blog.ArticleTest do
 
       input = %{
         "title" => "My title",
+        "banner" => "{{base_link}}/home.jpg",
         "excerpt" => "Awesome post!",
         "category" => "news",
         "tags" => "announce, v2",
@@ -29,6 +30,7 @@ defmodule Azimutt.Blog.ArticleTest do
         path: path,
         id: "the-story-behind-azimutt",
         title: "My title",
+        banner: "/blog/2021-10-01-the-story-behind-azimutt/home.jpg",
         excerpt: "Awesome post!",
         category: "news",
         tags: ["announce", "v2"],

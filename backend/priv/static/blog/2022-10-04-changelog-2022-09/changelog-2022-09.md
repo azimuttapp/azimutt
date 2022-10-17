@@ -1,5 +1,6 @@
 ---
 title: "[changelog] Cloud Nord, visual roadmap and unreleased work ^^"
+banner: "{{base_link}}/cloud-nord.jpg"
 excerpt: The big launch teased last month still needs a bit of polish, but we can reveal more about it... You will be the first ones to discover and maybe use it! Hope it will please you <3
 category: azimutt
 tags: changelog, azimutt

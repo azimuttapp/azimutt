@@ -6,25 +6,38 @@ defmodule AzimuttWeb.LayoutView do
   # so we instruct Elixir to not warn if the dashboard route is missing.
   @compile {:no_warn_undefined, {Routes, :live_dashboard_path, 2}}
 
-  def title(%{assigns: %{page_title: page_title}}), do: page_title
+  # use:
+  # https://search.google.com/structured-data/testing-tool
+  # https://cards-dev.twitter.com/validator
+  # https://developers.facebook.com/tools/debug
+
+  # max 70 chars
+  def title(%{assigns: %{seo: %{title: title}}}), do: title <> " · " <> Azimutt.config(:seo_title)
   def title(_conn), do: Azimutt.config(:seo_title)
 
-  def description(%{assigns: %{meta_description: meta_description}}), do: meta_description
+  # max 200 chars
+  def description(%{assigns: %{seo: %{description: description}}}), do: description
   def description(_conn), do: Azimutt.config(:seo_description)
 
-  def keywords(%{assigns: %{meta_keywords: meta_keywords}}), do: meta_keywords
+  def keywords(%{assigns: %{seo: %{keywords: keywords}}}), do: keywords
   def keywords(_conn), do: Azimutt.config(:seo_keywords)
 
-  def og_image(%{assigns: %{og_image: og_image}}), do: og_image
+  def canonical(%{request_path: request_path} = conn), do: Routes.url(conn) <> request_path
+  def canonical(_conn), do: AzimuttWeb.Endpoint.url()
+
+  def og_type(%{assigns: %{seo: %{type: type}}}), do: type
+  def og_type(_conn), do: "website"
+
+  def og_image(%{assigns: %{seo: %{image: image}}}), do: image
   def og_image(conn), do: Routes.static_url(conn, "/images/open-graph.png")
 
-  def current_page_url(%{host: host, request_path: request_path}), do: "https://" <> host <> request_path
-  def current_page_url(_conn), do: AzimuttWeb.Endpoint.url()
+  def twitter_card(%{assigns: %{seo: %{card: card}}}), do: card
+  def twitter_card(_conn), do: "summary_large_image"
 
-  def twitter_creator(%{assigns: %{twitter_creator: twitter_creator}}), do: twitter_creator
+  def twitter_creator(%{assigns: %{seo: %{twitter_creator: twitter_creator}}}), do: twitter_creator
   def twitter_creator(_conn), do: twitter_site(%{})
 
-  def twitter_site(%{assigns: %{twitter_site: twitter_site}}), do: twitter_site
+  def twitter_site(%{assigns: %{seo: %{twitter_site: twitter_site}}}), do: twitter_site
 
   def twitter_site(_conn) do
     if Azimutt.config(:twitter_url) do

@@ -2,27 +2,28 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
 
-<%= live_title_tag assigns[:page_title] || "Azimutt", suffix: " · Database explorer and analyzer" %>
+<%= live_title_tag title(@conn) %>
 <meta name="description" content={description(@conn)} />
 <meta name="keywords" content={keywords(@conn)} />
 <meta name="author" content="Loïc Knuchel,Samir Bouaked" />
 <meta name="robots" content="index, follow" />
+<link rel="canonical" href={canonical(@conn)}>
 
 <meta property="og:title" content={title(@conn)} />
 <meta property="og:description" content={description(@conn)} />
+<meta property="og:type" content={og_type(@conn)} />
 <meta property="og:image" content={og_image(@conn)} />
-<meta property="og:url" content={current_page_url(@conn)} />
+<meta property="og:url" content={canonical(@conn)} />
 <meta property="og:site_name" content="Azimutt"/>
-<meta property="og:type" content="website" />
 <meta property="og:locale" content="en_US" />
 
 <meta name="twitter:title" content={title(@conn)} />
 <meta name="twitter:description" content={description(@conn)} />
-<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:card" content={twitter_card(@conn)} />
 <meta name="twitter:image" content={og_image(@conn)} />
-<meta name="twitter:url" content="https://azimutt.app" />
 <meta name="twitter:site" content={twitter_site(@conn)} />
 <meta name="twitter:creator" content={twitter_creator(@conn)} />
+<meta name="twitter:url" content="https://azimutt.app" />
 
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />

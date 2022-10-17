@@ -1,5 +1,6 @@
 ---
 title: Explore PostgreSQL internals with SQL to extract a database schema!
+banner: "{{base_link}}/postgresql-internals.jpg"
 excerpt: Have you ever wondered how to list tables and columns on PostgreSQL? Or some even trickier operations such as getting tables without primary key? Here it is, let's dive into the internals and see what we can do.
 category: database
 tags: postgresql, exploration

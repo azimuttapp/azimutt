@@ -9,7 +9,6 @@ defmodule Azimutt.Utils.Frontmatter do
       [frontmatter, body] ->
         YamlElixir.read_from_string(frontmatter)
         |> Result.map(fn m -> m |> Map.put("body", body |> String.trim()) end)
-        |> Result.map_error(fn err -> {:error, %{error: err, content: content}} end)
 
       _ ->
         {:error, :invalid_frontmatter}

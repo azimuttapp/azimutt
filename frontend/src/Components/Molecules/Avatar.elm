@@ -11,7 +11,7 @@ xsWithIcon : String -> String -> Icon -> TwClass -> Html msg
 xsWithIcon url name icon styles =
     span [ class ("relative inline-block " ++ styles) ]
         [ img [ class "h-6 w-6 rounded-full", src url, alt name ] []
-        , span [ class "absolute block text-gray-500", style "bottom" "-6px", style "right" "-6px" ] [ Icon.outline icon "h-4 w-4" ]
+        , span [ class "absolute block text-gray-700", style "bottom" "-6px", style "right" "-6px" ] [ Icon.solid icon "h-4 w-4" ]
         ]
 
 

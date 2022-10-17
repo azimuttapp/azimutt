@@ -1,5 +1,6 @@
 ---
 title: Embed your database schema anywhere
+banner: "{{base_link}}/azimutt-embed-preview.jpg"
 excerpt: If you ever write some documentation or designed some database evolution, it could be helpful to include a visual diagram to make it more understandable. Learn how to do it with Azimutt and much more, be sure to read until the end.
 category: azimutt feature
 tags: entity relationship diagram

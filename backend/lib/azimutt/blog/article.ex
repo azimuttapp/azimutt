@@ -11,6 +11,7 @@ defmodule Azimutt.Blog.Article do
     field :path, String.t()
     field :id, String.t()
     field :title, String.t()
+    field :banner, String.t()
     field :excerpt, String.t()
     field :category, String.t()
     field :tags, list(String.t())
@@ -40,6 +41,7 @@ defmodule Azimutt.Blog.Article do
     published_str = path_to_date(path)
 
     with {:ok, title} when is_binary(title) <- map |> Mapx.fetch("title"),
+         {:ok, banner} when is_binary(banner) <- map |> Mapx.fetch("banner"),
          {:ok, excerpt} when is_binary(excerpt) <- map |> Mapx.fetch("excerpt"),
          {:ok, category} when is_binary(category) <- map |> Mapx.fetch("category"),
          {:ok, tags} <- map |> Mapx.fetch("tags") |> Result.flat_map(&build_tags/1),
@@ -55,6 +57,7 @@ defmodule Azimutt.Blog.Article do
               path: path,
               id: id,
               title: title,
+              banner: banner |> String.replace("{{base_link}}", base_link(path)),
               excerpt: excerpt,
               category: category,
               tags: tags,
@@ -83,13 +86,13 @@ defmodule Azimutt.Blog.Article do
   defp build_tags(tags) when is_nil(tags), do: {:ok, []}
   defp build_tags(tags), do: {:error, "Unexpected tags: #{inspect(tags)}"}
 
+  defp base_link(path), do: path |> String.split("/") |> Enum.drop(2) |> Enum.take(2) |> Enum.map_join(fn p -> "/#{p}" end)
+
   defp preprocess_article_content(path, content) do
-    # FIXME: don't know why http://localhost:4000/blog/2021-10-01-the-story-behind-azimutt/digital-singularity.jpg don't return image :(
-    base_link = path |> String.split("/") |> Enum.drop(2) |> Enum.take(2) |> Enum.map_join(fn p -> "/#{p}" end)
     github = "https://github.com/azimuttapp/azimutt"
 
     content
-    |> String.replace("{{base_link}}", base_link)
+    |> String.replace("{{base_link}}", base_link(path))
     |> String.replace("{{app_link}}", "/home")
     |> String.replace("{{roadmap_link}}", "#{github}/projects/1")
     |> String.replace("{{issues_link}}", "#{github}/issues?q=is%3Aissue+is%3Aopen+label%3A%22feature+request%22")

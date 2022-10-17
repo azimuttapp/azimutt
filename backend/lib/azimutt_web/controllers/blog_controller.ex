@@ -10,6 +10,15 @@ defmodule AzimuttWeb.BlogController do
 
   def show(conn, %{"id" => id}) do
     with {:ok, article} <- Blog.get_article(id),
-         do: render(conn, "show.html", article: article)
+         do:
+           render(conn, "show.html",
+             article: article,
+             seo: %{
+               type: "article",
+               title: article.title,
+               description: article.excerpt,
+               image: Routes.url(conn) <> article.banner
+             }
+           )
   end
 end

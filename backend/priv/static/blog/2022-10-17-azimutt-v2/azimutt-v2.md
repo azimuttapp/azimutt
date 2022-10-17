@@ -1,5 +1,6 @@
 ---
 title: Azimutt v2
+banner: "{{base_link}}/azimutt-home.png"
 excerpt: About a year after its first release, Azimutt is moving into the biggest change it has ever made, and for that, we announce today the 2nd version of Azimutt 🚀
 category: azimutt
 tags: azimutt
