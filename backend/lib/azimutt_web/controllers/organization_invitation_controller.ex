@@ -5,11 +5,12 @@ defmodule AzimuttWeb.OrganizationInvitationController do
   action_fallback AzimuttWeb.FallbackController
 
   def show(conn, %{"id" => id}) do
+    now = DateTime.utc_now()
     # FIXME: remove `get_organization_plan`
-    invitation = Organizations.get_organization_invitation(id)
+    {:ok, invitation} = Organizations.get_organization_invitation(id)
     organization = invitation.organization
     {:ok, plan} = Organizations.get_organization_plan(organization)
-    render(conn, "show.html", organization_invitation: invitation, organization: organization, plan: plan)
+    render(conn, "show.html", now: now, organization_invitation: invitation, organization: organization, plan: plan)
   end
 
   def accept(conn, %{"id" => id}) do

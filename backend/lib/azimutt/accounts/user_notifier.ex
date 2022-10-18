@@ -25,9 +25,6 @@ defmodule Azimutt.Accounts.UserNotifier do
   """
   def deliver_confirmation_instructions(user, url) do
     deliver(user.email, "Confirmation instructions", """
-
-    ==============================
-
     Hi #{user.email},
 
     You can confirm your account by visiting the URL below:
@@ -36,7 +33,8 @@ defmodule Azimutt.Accounts.UserNotifier do
 
     If you didn't create an account with us, please ignore this.
 
-    ==============================
+    Happy database hunting,
+    Samir & Loïc, from Azimutt
     """)
   end
 
@@ -45,9 +43,6 @@ defmodule Azimutt.Accounts.UserNotifier do
   """
   def deliver_reset_password_instructions(user, url) do
     deliver(user.email, "Reset password instructions", """
-
-    ==============================
-
     Hi #{user.email},
 
     You can reset your password by visiting the URL below:
@@ -56,7 +51,8 @@ defmodule Azimutt.Accounts.UserNotifier do
 
     If you didn't request this change, please ignore this.
 
-    ==============================
+    Happy database hunting,
+    Samir & Loïc, from Azimutt
     """)
   end
 
@@ -65,9 +61,6 @@ defmodule Azimutt.Accounts.UserNotifier do
   """
   def deliver_update_email_instructions(user, url) do
     deliver(user.email, "Update email instructions", """
-
-    ==============================
-
     Hi #{user.email},
 
     You can change your email by visiting the URL below:
@@ -76,27 +69,28 @@ defmodule Azimutt.Accounts.UserNotifier do
 
     If you didn't request this change, please ignore this.
 
-    ==============================
+    Happy database hunting,
+    Samir & Loïc, from Azimutt
     """)
   end
 
   @doc """
   Deliver instructions to a invited member of an organization.
   """
-  def deliver_organization_invitation_instructions(organization_invitation, url) do
-    deliver(organization_invitation.sent_to, "Organization invitation", """
-
-    ==============================
-
+  def deliver_organization_invitation_instructions(invitation, organization, creator, url) do
+    deliver(invitation.sent_to, "Organization invitation", """
     Hi,
 
-    You are invited to join an organization on Azimutt by visiting the URL below:
+    #{creator.name} invited you to join #{organization.name} organization on Azimutt.
+
+    Please visit the below link to accept or not this invitation:
 
     #{url}
 
-    If you didn't request this change, please ignore this.
+    If you are not interested, you can ignore this email. The invitation will expire after a few days.
 
-    ==============================
+    Happy database hunting,
+    Samir & Loïc, from Azimutt
     """)
   end
 end

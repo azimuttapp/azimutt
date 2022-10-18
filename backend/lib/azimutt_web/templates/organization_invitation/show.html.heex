@@ -1,13 +1,25 @@
 <div class="px-8 py-5 sm:p-6">
   <img src={@organization.logo} class="mx-auto h-12 w-12 items-center justify-center rounded-full" alt="organization logo"/>
   <div class="mt-3 text-center sm:mt-5">
-    <h3 class="text-lg font-medium leading-6 text-gray-900" id="modal-title">You've been invited to the <%= @organization.name %> organization 🎉</h3>
+    <h3 class="text-lg font-medium leading-6 text-gray-900" id="modal-title">You've been invited to <%= @organization.name %> organization 🎉</h3>
     <div class="mt-2">
       <p class="text-sm text-gray-500"><strong>Invited by <%= @organization_invitation.created_by.name %></strong></p>
     </div>
   </div>
 </div>
-<div class="px-8 mt-5 sm:mt-6 sm:grid sm:grid-flow-row-dense sm:grid-cols-2 sm:gap-3">
-  <%= link "Join #{@organization.name}", class: "inline-flex w-full justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:col-start-2 sm:text-sm", to: Routes.invitation_path(@conn, :accept, @organization_invitation.id), method: :patch %>
-  <%= link "Decline", class: "mt-3 inline-flex w-full justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-base font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:col-start-1 sm:mt-0 sm:text-sm", to: Routes.invitation_path(@conn, :refuse, @organization_invitation.id), method: :patch, data: [confirm: "Are you sure?"] %>
-</div>
+
+<%= cond do %>
+  <% @now > @organization_invitation.expire_at -> %>
+    <p class="px-8 mt-5 pb-24 sm:mt-6 text-xl text-gray-500">Oh no! This invitation has expired 😥<br>You can ask <%= @organization_invitation.created_by.name %> to invite you again.</p>
+  <% @organization_invitation.cancel_at -> %>
+    <p class="px-8 mt-5 pb-24 sm:mt-6 text-xl text-gray-500">This invitation has been canceled.<br>You can't join <%= @organization.name %> anymore...</p>
+  <% @organization_invitation.refused_at -> %>
+    <p class="px-8 mt-5 pb-24 sm:mt-6 text-xl text-gray-500">You rejected this invitation.<br>If you changed your mind, you can ask <%= @organization_invitation.created_by.name %> to invite you again.</p>
+  <% @organization_invitation.accepted_at -> %>
+    <p class="px-8 mt-5 pb-24 sm:mt-6 text-xl text-gray-500">You already accepted this invitation!<br>If you leaved and want to join again, you can ask <%= @organization_invitation.created_by.name %> to invite you again.</p>
+  <% true -> %>
+    <div class="px-8 mt-5 sm:mt-6 pb-24 sm:grid sm:grid-flow-row-dense sm:grid-cols-2 sm:gap-3">
+      <%= link "Join #{@organization.name}", to: Routes.invitation_path(@conn, :accept, @organization_invitation.id), method: :patch, class: "inline-flex w-full justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:col-start-2 sm:text-sm" %>
+      <%= link "Decline", to: Routes.invitation_path(@conn, :refuse, @organization_invitation.id), method: :patch, data: [confirm: "Are you sure?"], class: "mt-3 inline-flex w-full justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-base font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:col-start-1 sm:mt-0 sm:text-sm" %>
+    </div>
+<%= end %>

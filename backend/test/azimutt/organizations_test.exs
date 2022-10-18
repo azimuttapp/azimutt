@@ -88,13 +88,12 @@ defmodule Azimutt.OrganizationsTest do
     @invalid_attrs %{sent_to: nil, token: nil}
 
     @tag :skip
-    test "get_organization_invitation!/1 returns the organization_invitation with given id" do
+    test "get_organization_invitation/1 returns the organization_invitation with given id" do
       user = user_fixture()
       organization = organization_fixture(user)
       organization_invitation = organization_invitation_fixture(organization, user)
 
-      assert Organizations.get_organization_invitation!(organization_invitation.id) ==
-               organization_invitation
+      assert {:ok, organization_invitation} == Organizations.get_organization_invitation(organization_invitation.id)
     end
 
     @tag :skip

@@ -122,6 +122,7 @@ defmodule Azimutt.Organizations do
     |> preload(:created_by)
     |> preload(:answered_by)
     |> Repo.one()
+    |> Result.from_nillable()
   end
 
   def get_user_organization_invitation(%User{} = user, %Organization{} = organization, now) do
@@ -141,7 +142,9 @@ defmodule Azimutt.Organizations do
     |> Repo.insert()
     |> case do
       {:ok, organization_invitation} ->
-        UserNotifier.deliver_organization_invitation_instructions(organization_invitation, invitation_url.(organization_invitation.id))
+        with {:ok, i} <- get_organization_invitation(organization_invitation.id),
+             do: UserNotifier.deliver_organization_invitation_instructions(i, i.organization, i.created_by, invitation_url.(i.id))
+
         {:ok, organization_invitation}
 
       error ->
@@ -150,7 +153,7 @@ defmodule Azimutt.Organizations do
   end
 
   def accept_organization_invitation(id, %User{} = current_user, now) do
-    invitation = get_organization_invitation(id)
+    {:ok, invitation} = get_organization_invitation(id)
 
     if is_valid(invitation, current_user, now) do
       Ecto.Multi.new()
@@ -173,7 +176,7 @@ defmodule Azimutt.Organizations do
   end
 
   def refuse_organization_invitation(id, %User{} = current_user, now) do
-    invitation = get_organization_invitation(id)
+    {:ok, invitation} = get_organization_invitation(id)
 
     if is_valid(invitation, current_user, now) do
       Ecto.Multi.new()
@@ -197,7 +200,7 @@ defmodule Azimutt.Organizations do
   end
 
   def cancel_organization_invitation(id, %User{} = current_user, now) do
-    invitation = get_organization_invitation(id)
+    {:ok, invitation} = get_organization_invitation(id)
 
     if invitation.created_by_id == current_user.id do
       Ecto.Multi.new()

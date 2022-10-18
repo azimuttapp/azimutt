@@ -4,8 +4,8 @@
   "description": "Next-Gen ERD: explore, analyze, document and design your SQL database schema.",
   "start_url": "/last",
   "display": "standalone",
-  "theme_color": "#4f46e5",
-  "background_color": "#4f46e5",
+  "theme_color": "#000000",
+  "background_color": "#000000",
   "orientation": "any",
   "icons": [
     {

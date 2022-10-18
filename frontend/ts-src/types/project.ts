@@ -503,11 +503,14 @@ export function isLegacy(p: ProjectStored): p is ProjectJsonLegacy {
 export function migrateLegacyProject(p: any | undefined): any {
     if (!p) return p
     if (p.createdAt) { // if legacy, remove storage and transform sources & layouts
-        const {storage, ...res} = p
+        const {storage, layout, ...res} = p
+        const layouts = Object.assign(layout ? {'initial layout': layout} : {}, res.layouts)
+        const usedLayout = layout ? 'initial layout' : res.usedLayout || Object.keys(res.layouts)[0]
         return {
             ...res,
             sources: res.sources.map(migrateLegacySource),
-            layouts: object.mapValues(res.layouts, migrateLegacyLayout)
+            layouts: object.mapValues(layouts, migrateLegacyLayout),
+            usedLayout
         }
     } else { // if not legacy, remove id
         const {id, ...res} = p
@@ -533,7 +536,11 @@ function migrateLegacySource(s: any) {
 function migrateLegacyLayout(l: any) {
     return {
         ...l,
-        tables: l.tables.map((t: any) => ({...t, columns: t.columns || []}))
+        tables: l.tables.map((t: any) => ({
+            ...t,
+            size: t.size || {width: 0, height: 0},
+            columns: t.columns || []
+        }))
     }
 }
 
