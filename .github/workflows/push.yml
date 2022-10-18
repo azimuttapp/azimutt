@@ -81,7 +81,7 @@ jobs:
     environment:
       name: staging
       url: https://azimutt.dev
-    if: ${{ github.ref == 'refs/heads/staging' }}
+    if: ${{ github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     needs: [ test ]
     steps:
