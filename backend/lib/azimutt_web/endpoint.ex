@@ -51,7 +51,8 @@ defmodule AzimuttWeb.Endpoint do
     secret: {Application, :get_env, [:stripity_stripe, :signing_secret]}
 
   plug Plug.Parsers,
-    parsers: [:urlencoded, :multipart, :json],
+    # 100 MB body size for multipart (approximately)
+    parsers: [:urlencoded, :json, {:multipart, length: 100_000_000}],
     pass: ["*/*"],
     json_decoder: Phoenix.json_library()
 
