@@ -3,6 +3,7 @@ defmodule Azimutt.Blog do
   alias Azimutt.Blog.Article
   alias Azimutt.Utils.Enumx
   alias Azimutt.Utils.Frontmatter
+  alias Azimutt.Utils.Phoenix
   alias Azimutt.Utils.Result
 
   defp article_path, do: "priv/static/blog"
@@ -10,7 +11,7 @@ defmodule Azimutt.Blog do
   def get_articles do
     # FIXME: add caching for articles
     Path.wildcard("#{article_path()}/????-??-??-*/*.md")
-    |> Enum.reject(&Article.path_has_hash/1)
+    |> Enum.reject(&Phoenix.has_digest/1)
     |> Enum.map(&Article.path_to_id/1)
     |> Enum.map(&get_article/1)
     |> Result.sequence()

@@ -35,6 +35,8 @@ defmodule AzimuttWeb.Router do
     get "/", PageController, :index
     get "/blog", BlogController, :index
     get "/blog/:id", BlogController, :show
+    get "/gallery", GalleryController, :index
+    get "/gallery/:id", GalleryController, :show
     get "/logout", UserSessionController, :delete
     delete "/logout", UserSessionController, :delete
     get "/users/confirm", UserConfirmationController, :new

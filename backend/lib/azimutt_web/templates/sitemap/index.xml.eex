@@ -16,4 +16,16 @@
     <lastmod><%= article.published %></lastmod>
   </url>
   <% end %>
+
+  <url>
+    <loc><%= Routes.gallery_url(@conn, :index) %></loc>
+    <lastmod><%= Enum.max_by(@examples, & &1.published, Date).published %></lastmod>
+    <changefreq>weekly</changefreq>
+  </url>
+  <%= for example <- @examples do %>
+  <url>
+    <loc><%= Routes.gallery_url(@conn, :show, example) %></loc>
+    <lastmod><%= example.published %></lastmod>
+  </url>
+  <% end %>
 </urlset>

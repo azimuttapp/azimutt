@@ -42,7 +42,7 @@ placeholder kind =
             Uuid.zero
 
         EmbedProjectUrl ->
-            "https://azimutt.app/samples/gospeak.azimutt.json"
+            "https://azimutt.app/elm/samples/gospeak.azimutt.json"
 
         EmbedDatabaseSource ->
             "postgres://<user>:<password>@<host>:<port>/<db_name>"

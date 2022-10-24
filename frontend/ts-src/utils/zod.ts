@@ -105,7 +105,7 @@ function anyTrim(value: any, depth: number): any {
     } else if (typeof value === 'object') {
         return depth <= 0 ? '?' : Object.fromEntries(Object.entries(value).map(([key, value]) => [key, anyTrim(value, depth - 1)]))
     } else if (typeof value === 'string') {
-        return value.length > 20 ? value.substring(0, 20) + '...' : value
+        return value.length > 30 ? value.substring(0, 30) + '...' : value
     } else {
         return value
     }

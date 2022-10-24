@@ -1,8 +1,7 @@
-defmodule Azimutt.Blog.Article do
-  @moduledoc "A blog article"
+defmodule Azimutt.Gallery.Example do
+  @moduledoc "A gallery example"
   use TypedStruct
-  alias Azimutt.Blog.Article
-  alias Azimutt.Blog.Article.Author
+  alias Azimutt.Gallery.Example
   alias Azimutt.Utils.Mapx
   alias Azimutt.Utils.Markdown
   alias Azimutt.Utils.Result
@@ -10,58 +9,48 @@ defmodule Azimutt.Blog.Article do
   typedstruct enforce: true do
     field :path, String.t()
     field :id, String.t()
-    field :title, String.t()
+    field :icon, String.t()
+    field :color, String.t()
+    field :name, String.t()
+    field :website, String.t()
     field :banner, String.t()
     field :excerpt, String.t()
-    field :category, String.t()
-    field :tags, list(String.t())
-    field :author, Author.t()
+    field :tables, integer()
+    field :project_url, String.t()
     field :published, Date.t()
     field :markdown, String.t()
     field :html, String.t()
   end
 
-  typedstruct module: Author, enforce: true do
-    @moduledoc false
-    field :name, String.t()
-  end
-
-  def authors do
-    Map.new([
-      {"loic", %Author{name: "Loïc Knuchel"}}
-    ])
-  end
-
-  def get_author(id) do
-    authors() |> Mapx.fetch(id)
-  end
-
   def build(path, map) do
     id = path_to_id(path)
-    published_str = path_to_date(path)
 
-    with {:ok, title} when is_binary(title) <- map |> Mapx.fetch("title"),
+    with {:ok, icon} when is_binary(icon) <- map |> Mapx.fetch("icon"),
+         {:ok, color} when is_binary(color) <- map |> Mapx.fetch("color"),
+         {:ok, name} when is_binary(name) <- map |> Mapx.fetch("name"),
+         {:ok, website} when is_binary(website) <- map |> Mapx.fetch("website"),
          {:ok, banner} when is_binary(banner) <- map |> Mapx.fetch("banner"),
          {:ok, excerpt} when is_binary(excerpt) <- map |> Mapx.fetch("excerpt"),
-         {:ok, category} when is_binary(category) <- map |> Mapx.fetch("category"),
-         {:ok, tags} <- map |> Mapx.fetch("tags") |> Result.flat_map(&build_tags/1),
-         {:ok, author_id} when is_binary(author_id) <- map |> Mapx.fetch("author"),
-         {:ok, %Author{} = author} <- author_id |> get_author,
+         {:ok, tables} when is_integer(tables) <- map |> Mapx.fetch("tables"),
+         {:ok, project_url} when is_binary(project_url) <- map |> Mapx.fetch("project-url"),
+         {:ok, published_str} when is_binary(published_str) <- map |> Mapx.fetch("published"),
          {:ok, published} <- published_str |> Date.from_iso8601(),
          {:ok, body} when is_binary(body) <- map |> Mapx.fetch("body"),
-         markdown = preprocess_article_content(path, body),
+         markdown = preprocess_example_content(path, body),
          {:ok, html} when is_binary(html) <- Markdown.to_html(markdown),
          do:
            {:ok,
-            %Article{
+            %Example{
               path: path,
               id: id,
-              title: title,
+              icon: icon,
+              color: color,
+              name: name,
+              website: website,
               banner: banner |> String.replace("{{base_link}}", base_link(path)),
               excerpt: excerpt,
-              category: category,
-              tags: tags,
-              author: author,
+              tables: tables,
+              project_url: project_url |> String.replace("{{base_link}}", base_link(path)),
               published: published,
               markdown: markdown,
               html: html
@@ -69,16 +58,9 @@ defmodule Azimutt.Blog.Article do
   end
 
   def path_to_id(path), do: path |> String.split("/") |> Enum.take(-1) |> Enum.at(0) |> String.replace_suffix(".md", "")
-  def path_to_date(path), do: path |> String.split("/") |> Enum.drop(3) |> Enum.at(0) |> String.split("-") |> Enum.take(3) |> Enum.join("-")
-
-  defp build_tags(tags) when is_binary(tags), do: {:ok, tags |> String.split(",") |> Enum.map(&String.trim/1)}
-  defp build_tags(tags) when is_list(tags), do: {:ok, tags}
-  defp build_tags(tags) when is_nil(tags), do: {:ok, []}
-  defp build_tags(tags), do: {:error, "Unexpected tags: #{inspect(tags)}"}
-
   defp base_link(path), do: path |> String.split("/") |> Enum.drop(2) |> Enum.take(2) |> Enum.map_join(fn p -> "/#{p}" end)
 
-  defp preprocess_article_content(path, content) do
+  defp preprocess_example_content(path, content) do
     github = "https://github.com/azimuttapp/azimutt"
 
     content

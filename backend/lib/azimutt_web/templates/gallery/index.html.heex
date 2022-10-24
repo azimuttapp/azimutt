@@ -1,0 +1,58 @@
+<div class="bg-gray-100">
+    <div class="mx-auto max-w-7xl py-16 px-4 sm:py-24 sm:px-6 lg:px-8">
+        <div class="text-center">
+            <h2 class="text-lg font-semibold text-indigo-600">Provided by Azimutt!</h2>
+            <p class="mt-1 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl"><%= @seo.title %></p>
+            <p class="mx-auto mt-5 max-w-xl text-xl text-gray-500"><%= @seo.description %></p>
+        </div>
+    </div>
+</div>
+
+<main class="relative overflow-hidden bg-white">
+    <%= for {example, i} <- @examples |> Enum.with_index do %>
+        <article class={"#{if rem(i, 2) == 0, do: "", else: "bg-gray-100"} relative py-16"}>
+            <div class="lg:mx-auto lg:grid lg:max-w-7xl lg:grid-flow-col-dense lg:grid-cols-2 lg:gap-24 lg:px-8">
+                <div class={"#{if rem(i, 2) == 0, do: "lg:col-start-2", else: ""} mx-auto max-w-xl px-4 sm:px-6 lg:mx-0 lg:max-w-none lg:py-32 lg:px-0"}>
+                    <span class={"flex h-12 w-12 items-center justify-center rounded-md bg-#{example.color}-600"}><Icon.draw name={example.icon} kind="outline" class="text-white" /></span>
+                    <div class="mt-6">
+                        <h2 class="text-3xl font-bold tracking-tight text-gray-900"><%= example.name %></h2>
+                        <div>
+                            <span class={"inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium text-#{example.color}-800 bg-#{example.color}-100"}><%= example.tables %> tables</span>
+                        </div>
+                        <p class="mt-4 h-48 sm:h-28 text-lg text-gray-500"><%= example.excerpt %></p>
+                        <div class="mt-6">
+                            <a href={Routes.gallery_path(@conn, :show, example)} class={"bg-#{example.color}-600 hover:bg-#{example.color}-700 inline-flex rounded-md border border-transparent px-4 py-2 text-base font-medium text-white shadow-sm"}>View <%= example.name |> String.downcase %> schema</a>
+                        </div>
+                    </div>
+                </div>
+                <div class={"#{if rem(i, 2) == 0, do: "lg:col-start-1", else: ""} mt-12 sm:mt-16 lg:mt-0"}>
+                    <div class={"#{if rem(i, 2) == 0, do: "-ml-48 pr-4 sm:pr-6 md:-ml-16", else: "-mr-48 pl-4 sm:pl-6 md:-mr-16"} lg:relative lg:m-0 lg:h-full lg:px-0"}>
+                        <img src={example.banner} alt={"#{example.name} banner"} class={"#{if rem(i, 2) == 0, do: "lg:right-0", else: "lg:left-0"} w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5 lg:absolute lg:right-0 lg:h-full lg:w-auto lg:max-w-none"}>
+                    </div>
+                </div>
+            </div>
+        </article>
+    <% end %>
+</main>
+
+<div class="bg-indigo-50 mt-16">
+    <div class="mx-auto max-w-7xl py-12 px-4 sm:px-6 lg:flex lg:items-center lg:justify-between lg:py-24 lg:px-8">
+        <h2 class="text-3xl font-bold tracking-tight text-gray-900 md:text-4xl">
+            <span class="block">Add your own schema here!</span>
+            <span class="block text-indigo-600">Make it visible and easily explorable.</span>
+        </h2>
+        <div class="mt-8 flex lg:mt-0 lg:flex-shrink-0">
+            <div class="inline-flex rounded-md shadow">
+                <a href={"#{Azimutt.config(:github_url)}/tree/main/backend/priv/static/gallery"} target="_blank" rel="noopener" class="inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-5 py-3 text-base font-medium text-white hover:bg-indigo-700">Send a PR</a>
+            </div>
+            <div class="ml-3 inline-flex rounded-md shadow">
+                <a href={"#{Azimutt.config(:github_new_issue)}?title=Add {{MySchema}} to Azimutt Gallery&body=Website url:%0AAzimutt project url:%0ADatabase description:%0ADatabase analysis:"} target="_blank" rel="noopener" class="inline-flex items-center justify-center rounded-md border border-transparent bg-white px-5 py-3 text-base font-medium text-indigo-600 hover:bg-indigo-50">Send an Issue</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="max-w-3xl mt-6 px-6 pb-24 mx-auto space-y-12">
+    <%= render AzimuttWeb.BlogView, "_blog_footer.html", assigns %>
+</div>

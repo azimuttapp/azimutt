@@ -1,5 +1,5 @@
 <p align="center">
-    <a href="https://azimutt.app" target="_blank">
+    <a href="https://azimutt.app" target="_blank" rel="noopener">
         <picture>
           <source media="(prefers-color-scheme: dark)" srcset="backend/priv/static/images/logo_light.svg">
           <source media="(prefers-color-scheme: light)" srcset="backend/priv/static/images/logo_dark.svg">
@@ -11,9 +11,9 @@
 <p align="center">Explore, Analyze, Document and Design your database</p>
 
 <p align="center">
-  <a href="https://azimutt.app" target="_blank">azimutt.app</a> •
-  <a href="https://github.com/azimuttapp/azimutt/projects/1" target="_blank">roadmap</a> •
-  <a href="https://twitter.com/azimuttapp" target="_blank">@azimuttapp</a>
+  <a href="https://azimutt.app" target="_blank" rel="noopener">azimutt.app</a> •
+  <a href="https://github.com/azimuttapp/azimutt/projects/1" target="_blank" rel="noopener">roadmap</a> •
+  <a href="https://twitter.com/azimuttapp" target="_blank" rel="noopener">@azimuttapp</a>
 </p>
 
 Azimutt is an Entity Relationship Diagram (ERD) targeting real world database schema (big & messy).
