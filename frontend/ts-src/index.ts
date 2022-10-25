@@ -212,10 +212,16 @@ function createProject(msg: CreateProject): void {
             })
         })
     } else if (msg.storage == ProjectStorage.enum.remote) {
-        backend.createProjectRemote(msg.organization, json).then(res => {
-            app.toast(ToastLevel.enum.success, `Project created!`)
-            window.history.replaceState("", "", `/${msg.organization}/${res.id}`)
-            app.gotProject(buildProjectRemote(res, json))
+        backend.createProjectRemote(msg.organization, json).then(p => {
+            // delete previously stored projects: draft and legacy one
+            return Promise.all([storage.deleteProject(Uuid.zero), storage.deleteProject(msg.project.id)]).catch(err => {
+                reportError(`Can't delete temporary project`, err)
+                return Promise.resolve()
+            }).then(_ => {
+                app.toast(ToastLevel.enum.success, `Project created!`)
+                window.history.replaceState("", "", `/${msg.organization}/${p.id}`)
+                app.gotProject(buildProjectRemote(p, json))
+            })
         }, err => reportError(`Can't save project to backend`, err))
     } else {
         reportError(`Unknown ProjectStorage`, msg.storage)
