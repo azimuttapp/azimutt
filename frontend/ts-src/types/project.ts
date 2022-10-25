@@ -528,7 +528,14 @@ function migrateLegacySource(s: any) {
         kind: {...s.kind, kind},
         tables: s.tables.map((t: any) => ({
             ...t,
-            checks: t.checks?.map((c: any) => ({...c, columns: c.columns || []}))
+            columns: t.columns.map((c: any) => ({...c, origins: c.origins || []})),
+            primaryKey: t.primaryKey ? {...t.primaryKey, origins: t.primaryKey.origins || []} : t.primaryKey,
+            checks: t.checks?.map((c: any) => ({...c, columns: c.columns || []})),
+            origins: t.origins || []
+        })),
+        relations: s.relations?.map((r: any) => ({
+            ...r,
+            origins: r.origins || []
         }))
     }
 }
