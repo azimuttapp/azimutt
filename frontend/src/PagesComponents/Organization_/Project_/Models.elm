@@ -219,6 +219,7 @@ type Msg
     | ModalOpen HtmlId
     | ModalClose Msg
     | JsMessage JsMsg
+    | Batch (List Msg)
     | Send (Cmd Msg)
     | Noop String
 
@@ -236,7 +237,7 @@ type NotesMsg
 
 
 type AmlSidebarMsg
-    = AOpen
+    = AOpen (Maybe SourceId)
     | AClose
     | AToggle
     | AChangeSource (Maybe SourceId)

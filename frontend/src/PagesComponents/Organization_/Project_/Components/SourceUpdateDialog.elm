@@ -22,9 +22,10 @@ import Libs.Tailwind as Tw exposing (sm)
 import Libs.Task as T
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceKind exposing (SourceKind(..))
+import Services.AmlSource as AmlSource
 import Services.DatabaseSource as DatabaseSource
 import Services.JsonSource as JsonSource
-import Services.Lenses exposing (mapDatabaseSourceCmd, mapJsonSourceCmd, mapMCmd, mapSqlSourceCmd)
+import Services.Lenses exposing (mapAmlSourceCmd, mapDatabaseSourceCmd, mapJsonSourceCmd, mapMCmd, mapSqlSourceCmd)
 import Services.SourceDiff as SourceDiff
 import Services.SqlSource as SqlSource
 import Time
@@ -36,6 +37,7 @@ type alias Model msg =
     , databaseSource : DatabaseSource.Model msg
     , sqlSource : SqlSource.Model msg
     , jsonSource : JsonSource.Model msg
+    , amlSource : AmlSource.Model
     , newSourceTab : Tab
     }
 
@@ -44,6 +46,7 @@ type Tab
     = TabDatabase
     | TabSql
     | TabJson
+    | TabAml
 
 
 type Msg
@@ -52,6 +55,7 @@ type Msg
     | DatabaseSourceMsg DatabaseSource.Msg
     | SqlSourceMsg SqlSource.Msg
     | JsonSourceMsg JsonSource.Msg
+    | AmlSourceMsg AmlSource.Msg
     | UpdateTab Tab
 
 
@@ -62,6 +66,7 @@ init noop source =
     , databaseSource = DatabaseSource.init source (\_ -> noop "project-settings-database-source-callback")
     , sqlSource = SqlSource.init source (\_ -> noop "project-settings-sql-source-callback")
     , jsonSource = JsonSource.init source (\_ -> noop "project-settings-json-source-callback")
+    , amlSource = AmlSource.init
     , newSourceTab = TabDatabase
     }
 
@@ -83,6 +88,9 @@ update wrap modalOpen noop now msg model =
 
         JsonSourceMsg message ->
             model |> mapMCmd (mapJsonSourceCmd (JsonSource.update (JsonSourceMsg >> wrap) now message))
+
+        AmlSourceMsg message ->
+            model |> mapMCmd (mapAmlSourceCmd (AmlSource.update (AmlSourceMsg >> wrap) now message))
 
         UpdateTab kind ->
             ( model |> Maybe.map (\m -> { m | newSourceTab = kind }), Cmd.none )
@@ -262,6 +270,7 @@ newSourceModal wrap sourceSet close noop htmlId titleId model =
             [ Bool.cond (model.newSourceTab == TabDatabase) Button.primary1 Button.white1 Tw.primary [ onClick (TabDatabase |> UpdateTab |> wrap) ] [ text "Database" ]
             , Bool.cond (model.newSourceTab == TabSql) Button.primary1 Button.white1 Tw.primary [ onClick (TabSql |> UpdateTab |> wrap), class "ml-3" ] [ text "SQL" ]
             , Bool.cond (model.newSourceTab == TabJson) Button.primary1 Button.white1 Tw.primary [ onClick (TabJson |> UpdateTab |> wrap), class "ml-3" ] [ text "JSON" ]
+            , Bool.cond (model.newSourceTab == TabAml) Button.primary1 Button.white1 Tw.primary [ onClick (TabAml |> UpdateTab |> wrap), class "ml-3" ] [ text "AML" ]
             ]
         , div [ class "mt-3" ]
             (case model.newSourceTab of
@@ -279,6 +288,10 @@ newSourceModal wrap sourceSet close noop htmlId titleId model =
                     [ JsonSource.viewInput (JsonSourceMsg >> wrap) noop (htmlId ++ "-json") model.jsonSource
                     , JsonSource.viewParsing (JsonSourceMsg >> wrap) model.jsonSource
                     ]
+
+                TabAml ->
+                    [ AmlSource.viewInput (AmlSourceMsg >> wrap) (htmlId ++ "-aml") model.amlSource
+                    ]
             )
         ]
     , case model.newSourceTab of
@@ -290,6 +303,9 @@ newSourceModal wrap sourceSet close noop htmlId titleId model =
 
         TabJson ->
             newSourceButtons sourceSet close model.jsonSource.parsedSource
+
+        TabAml ->
+            newSourceButtons sourceSet close model.amlSource.parsedSource
     ]
 
 

@@ -27,7 +27,7 @@ import Models.Project.SourceKind exposing (SourceKind(..))
 import Models.Project.Table exposing (Table)
 import Models.RelationStyle as RelationStyle
 import PagesComponents.Organization_.Project_.Components.SourceUpdateDialog as SourceUpdateDialog
-import PagesComponents.Organization_.Project_.Models exposing (Msg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), confirm)
+import PagesComponents.Organization_.Project_.Models exposing (AmlSidebarMsg(..), Msg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), confirm)
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import Ports
 import Time
@@ -78,9 +78,12 @@ viewSource htmlId _ zone source =
                             source.enabled
                             (source |> PSSourceToggle |> ProjectSettingsMsg)
                         , div []
-                            [ button [ type_ "button", onClick (source |> Just |> SourceUpdateDialog.Open |> PSSourceUpdate |> ProjectSettingsMsg), css [ focus [ "outline-none" ], B.cond (source.kind == AmlEditor || source.fromSample /= Nothing) "hidden" "" ] ]
+                            [ button [ type_ "button", onClick (source |> Just |> SourceUpdateDialog.Open |> PSSourceUpdate |> ProjectSettingsMsg), css [ focus [ "outline-none" ], B.cond (source.kind /= AmlEditor && source.fromSample == Nothing) "" "hidden" ] ]
                                 [ Icon.solid Refresh "inline" ]
                                 |> Tooltip.bl "Refresh this source"
+                            , button [ type_ "button", onClick (Batch [ ModalClose (ProjectSettingsMsg PSClose), AmlSidebarMsg (AOpen (Just source.id)) ]), css [ focus [ "outline-none" ], B.cond (source.kind == AmlEditor) "" "hidden" ] ]
+                                [ Icon.solid Pencil "inline" ]
+                                |> Tooltip.bl "Update this source"
                             , button [ type_ "button", onClick (source |> PSSourceDelete |> ProjectSettingsMsg |> confirm ("Delete " ++ source.name ++ " source?") (text "Are you really sure?")), css [ focus [ "outline-none" ] ] ]
                                 [ Icon.solid Trash "inline" ]
                                 |> Tooltip.bl "Delete this source"

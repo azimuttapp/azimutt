@@ -56,7 +56,11 @@ handleHotkey _ model hotkey =
             ( model, hideElement model )
 
         "save" ->
-            ( model, T.send TriggerSaveProject )
+            if model.conf.save then
+                ( model, T.send TriggerSaveProject )
+
+            else
+                ( model, "Can't save in embed mode" |> Toasts.warning |> Toast |> T.send )
 
         "move-up" ->
             ( model, model |> moveTables { dx = 0, dy = -10 } |> Maybe.orElse (model |> upDetails) |> Maybe.withDefault Cmd.none )

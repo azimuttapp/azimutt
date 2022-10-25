@@ -326,6 +326,9 @@ update currentLayout now urlOrganization organizations projects msg model =
         JsMessage message ->
             model |> handleJsMessage now currentLayout message
 
+        Batch messages ->
+            ( model, Cmd.batch (messages |> List.map T.send) )
+
         Send cmd ->
             ( model, cmd )
 
@@ -355,7 +358,7 @@ handleJsMessage now currentLayout msg model =
 
                         amlSidebar : Maybe AmlSidebar
                         amlSidebar =
-                            B.maybe (project.sources |> List.all (\s -> s.kind == SourceKind.AmlEditor)) (AmlSidebar.init (Just erd))
+                            B.maybe (project.sources |> List.all (\s -> s.kind == SourceKind.AmlEditor)) (AmlSidebar.init Nothing (Just erd))
                     in
                     ( { model | loaded = True, dirty = False, erd = Just erd, amlSidebar = amlSidebar }
                     , Cmd.batch

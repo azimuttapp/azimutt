@@ -23,7 +23,7 @@ import Models.Position as Position
 import Models.Project.ColumnId as ColumnId
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.Source as Source exposing (Source)
-import Models.Project.SourceId as SourceId
+import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.SourceKind as SourceKind
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
@@ -55,15 +55,12 @@ type alias Model x =
 -- INIT
 
 
-init : Maybe Erd -> AmlSidebar
-init erd =
-    let
-        source : Maybe Source
-        source =
-            erd |> Maybe.andThen (.sources >> List.filter .enabled >> List.find (.kind >> SourceKind.isUser))
-    in
+init : Maybe SourceId -> Maybe Erd -> AmlSidebar
+init id erd =
     { id = Conf.ids.amlSidebarDialog
-    , selected = source |> Maybe.map .id
+    , selected =
+        id
+            |> Maybe.orElse (erd |> Maybe.andThen (.sources >> List.find (\s -> s.enabled && SourceKind.isUser s.kind)) |> Maybe.map .id)
     , errors = []
     }
 
@@ -75,14 +72,14 @@ init erd =
 update : Time.Posix -> AmlSidebarMsg -> Model x -> ( Model x, Cmd Msg )
 update now msg model =
     case msg of
-        AOpen ->
-            ( model |> setAmlSidebar (Just (init model.erd)), Ports.track Track.openUpdateSchema )
+        AOpen id ->
+            ( model |> setAmlSidebar (Just (init id model.erd)), Ports.track Track.openUpdateSchema )
 
         AClose ->
             ( model |> setAmlSidebar Nothing, Cmd.none )
 
         AToggle ->
-            ( model, T.send (AmlSidebarMsg (Bool.cond (model.amlSidebar == Nothing) AOpen AClose)) )
+            ( model, T.send (AmlSidebarMsg (Bool.cond (model.amlSidebar == Nothing) (AOpen Nothing) AClose)) )
 
         AChangeSource source ->
             ( model |> mapAmlSidebarM (setSelected source), Cmd.none )
@@ -222,7 +219,7 @@ viewHeading =
     div [ class "px-6 py-5 border-b border-gray-200" ]
         [ div [ class "flex space-x-3" ]
             [ div [ class "flex-1" ]
-                [ h3 [ class "text-lg leading-6 font-medium text-gray-900" ] [ text "Extend schema" ]
+                [ h3 [ class "text-lg leading-6 font-medium text-gray-900" ] [ text "Update your schema" ]
                 ]
             , div [ class "flex-shrink-0 self-center flex" ]
                 [ button [ onClick (AmlSidebarMsg AClose), class "-m-2 p-2 rounded-full flex items-center text-gray-400 hover:text-gray-600" ] [ Icon.solid Icon.X "" ]

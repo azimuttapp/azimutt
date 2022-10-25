@@ -27,7 +27,7 @@ import Models.OrganizationId as OrganizationId exposing (OrganizationId)
 import Models.ProjectInfo exposing (ProjectInfo)
 import Models.User exposing (User)
 import PagesComponents.Helpers as Helpers
-import PagesComponents.Organization_.Project_.Models exposing (FindPathMsg(..), HelpMsg(..), Msg(..), NavbarModel, ProjectSettingsMsg(..), SchemaAnalysisMsg(..), SharingMsg(..), VirtualRelation, VirtualRelationMsg(..))
+import PagesComponents.Organization_.Project_.Models exposing (AmlSidebarMsg(..), FindPathMsg(..), HelpMsg(..), Msg(..), NavbarModel, ProjectSettingsMsg(..), SchemaAnalysisMsg(..), SharingMsg(..), VirtualRelation, VirtualRelationMsg(..))
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Views.Navbar.Search exposing (viewNavbarSearch)
@@ -73,6 +73,7 @@ viewNavbar gConf maybeUser eConf virtualRelation erd projects model args =
                     |> Maybe.map (\_ -> { action = Right (VirtualRelationMsg VRCancel), content = text "Cancel adding relation", hotkeys = Conf.hotkeys |> Dict.getOrElse "create-virtual-relation" [] })
                     |> Maybe.withDefault { action = Right (VirtualRelationMsg (VRCreate Nothing)), content = text "Add a relation", hotkeys = Conf.hotkeys |> Dict.getOrElse "create-virtual-relation" [] }
                 )
+            , Maybe.when eConf.update { action = Right (AmlSidebarMsg AToggle), content = text "Update your schema", hotkeys = [] }
             , Maybe.when eConf.findPath { action = Right (FindPathMsg (FPOpen Nothing Nothing)), content = text "Find path between tables", hotkeys = Conf.hotkeys |> Dict.getOrElse "find-path" [] }
             , Just { action = Right (SchemaAnalysisMsg SAOpen), content = text "Analyze your schema 🔎", hotkeys = [] }
             , Just { action = Left Conf.constants.azimuttFeatureRequests, content = text "Suggest a feature 🚀", hotkeys = [] }

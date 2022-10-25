@@ -1,6 +1,7 @@
 module Services.Lenses exposing
     ( mapActive
     , mapAmlSidebarM
+    , mapAmlSourceCmd
     , mapCanvas
     , mapChecks
     , mapCollapseTableColumns
@@ -80,6 +81,7 @@ module Services.Lenses exposing
     , mapVirtualRelationM
     , setActive
     , setAmlSidebar
+    , setAmlSource
     , setBio
     , setCanvas
     , setChecks
@@ -220,6 +222,16 @@ setAmlSidebar =
 mapAmlSidebarM : (v -> v) -> { item | amlSidebar : Maybe v } -> { item | amlSidebar : Maybe v }
 mapAmlSidebarM =
     mapM_ .amlSidebar setAmlSidebar
+
+
+setAmlSource : v -> { item | amlSource : v } -> { item | amlSource : v }
+setAmlSource =
+    set_ .amlSource (\value item -> { item | amlSource = value })
+
+
+mapAmlSourceCmd : (v -> ( v, Cmd msg )) -> { item | amlSource : v } -> ( { item | amlSource : v }, Cmd msg )
+mapAmlSourceCmd =
+    mapCmd_ .amlSource setAmlSource
 
 
 setBio : v -> { item | bio : v } -> { item | bio : v }

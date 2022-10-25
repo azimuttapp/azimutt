@@ -48,7 +48,7 @@ viewCommands conf cursorMode canvasZoom htmlId hasTables openedDropdown =
                 [ -- button [ type_ "button", onClick (DetailsSidebarMsg DetailsSidebar.Toggle), css [ "rounded-l-md", buttonStyles, classic ] ] [ Icon.solid Menu "" ]
                   -- |> B.cond (conf.select && hasTables) Tooltip.t Tooltip.tl "List tables",
                   button [ type_ "button", onClick (AmlSidebarMsg AToggle), css [ "-ml-px rounded-l-md rounded-r-md", buttonStyles, classic ] ] [ Icon.solid Pencil "" ]
-                    |> B.cond (conf.move && hasTables) Tooltip.t Tooltip.tl "Update schema"
+                    |> B.cond (conf.move && hasTables) Tooltip.t Tooltip.tl "Update your schema"
                 ]
 
           else
