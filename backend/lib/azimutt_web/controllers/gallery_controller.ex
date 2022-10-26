@@ -9,7 +9,7 @@ defmodule AzimuttWeb.GalleryController do
            render(conn, "index.html",
              examples: examples,
              seo: %{
-               title: "Database Schema Gallery",
+               title: "The Database Schema Gallery",
                description:
                  "Discover great database examples, for inspiration or learning. Azimutt has gathered great examples just for you!"
              }
