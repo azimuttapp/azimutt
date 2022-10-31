@@ -1,8 +1,8 @@
 <AzimuttWeb.Components.Header.header >
   <:menu>
-    <a href={"#{Routes.page_path(@conn, :index)}#features"} class="inline-block rounded-lg py-1 px-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900">Features</a>
-    <a href={"#{Routes.page_path(@conn, :index)}#testimonials"} class="inline-block rounded-lg py-1 px-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900">Testimonials</a>
-    <a href={"#{Routes.page_path(@conn, :index)}#pricing"} class="inline-block rounded-lg py-1 px-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900">Pricing</a>
+    <a href={"#{Routes.website_path(@conn, :index)}#features"} class="inline-block rounded-lg py-1 px-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900">Features</a>
+    <a href={"#{Routes.website_path(@conn, :index)}#testimonials"} class="inline-block rounded-lg py-1 px-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900">Testimonials</a>
+    <a href={"#{Routes.website_path(@conn, :index)}#pricing"} class="inline-block rounded-lg py-1 px-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900">Pricing</a>
     <a href={Routes.blog_path(@conn, :index)} class="inline-block rounded-lg py-1 px-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900">Blog</a>
     <a href={Routes.gallery_path(@conn, :index)} class="inline-block rounded-lg py-1 px-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900">Inspirations</a>
   </:menu>
@@ -18,7 +18,7 @@
     <% end %>
   </:right_menu>
   <:mobile_menu>
-    <a href={Routes.page_path(@conn, :index)} class="border-transparent text-gray-500 hover:bg-gray-50 hover:border-blue-300 hover:text-blue-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">Home</a>
+    <a href={Routes.website_path(@conn, :index)} class="border-transparent text-gray-500 hover:bg-gray-50 hover:border-blue-300 hover:text-blue-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">Home</a>
     <a href={Routes.blog_path(@conn, :index)} class="border-transparent text-gray-500 hover:bg-gray-50 hover:border-blue-300 hover:text-blue-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">Blog</a>
     <a href={Routes.gallery_path(@conn, :index)} class="border-transparent text-gray-500 hover:bg-gray-50 hover:border-blue-300 hover:text-blue-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">Inspirations</a>
   </:mobile_menu>

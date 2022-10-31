@@ -69,7 +69,8 @@ function fetchAndUpdateCache(fetchEvent, request) {
         caches.open(assetsCache).then(cache =>
             fetch(request)
                 .then(response => {
-                    cache.put(request, response.clone())
+                    const shouldCache = /^https?:\/\//.test(request.url)
+                    shouldCache && cache.put(request, response.clone())
                     return response
                 })
                 .catch(err => cache.match(request).then(response => response || Promise.reject(err)))

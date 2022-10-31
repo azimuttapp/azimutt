@@ -194,7 +194,7 @@ view erd model =
                 |> List.unique
                 |> List.filterMap
                     (\( table, column ) ->
-                        case erd.tables |> Dict.get table |> Maybe.map (\t -> t.columns |> Dict.get column) of
+                        case erd |> Erd.getTable table |> Maybe.map (\t -> t.columns |> Dict.get column) of
                             Just (Just _) ->
                                 Nothing
 

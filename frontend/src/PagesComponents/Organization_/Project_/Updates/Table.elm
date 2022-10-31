@@ -35,7 +35,7 @@ import Time
 
 showTable : Time.Posix -> TableId -> Maybe PositionHint -> Erd -> ( Erd, Cmd Msg )
 showTable now id hint erd =
-    case erd.tables |> Dict.get id of
+    case erd |> Erd.getTable id of
         Just table ->
             if erd |> Erd.isShown id then
                 ( erd, "Table " ++ TableId.show erd.settings.defaultSchema id ++ " already shown" |> Toasts.info |> Toast |> T.send )
@@ -50,7 +50,7 @@ showTable now id hint erd =
 showTables : Time.Posix -> List TableId -> Maybe PositionHint -> Erd -> ( Erd, Cmd Msg )
 showTables now ids hint erd =
     ids
-        |> List.indexedMap (\i id -> ( id, erd.tables |> Dict.get id, hint |> Maybe.map (PositionHint.move { dx = 0, dy = Conf.ui.tableHeaderHeight * toFloat i }) ))
+        |> List.indexedMap (\i id -> ( id, erd |> Erd.getTable id, hint |> Maybe.map (PositionHint.move { dx = 0, dy = Conf.ui.tableHeaderHeight * toFloat i }) ))
         |> List.foldl
             (\( id, maybeTable, tableHint ) ( e, ( found, shown, notFound ) ) ->
                 case maybeTable of
@@ -163,7 +163,7 @@ showRelatedTables id erd =
 guessHeight : TableId -> Erd -> Float
 guessHeight id erd =
     (erd |> Erd.currentLayout |> .tables |> List.findBy .id id |> Maybe.map (\t -> Conf.ui.tableHeaderHeight + (Conf.ui.tableColumnHeight * (t.columns |> List.length |> toFloat))))
-        |> Maybe.orElse (erd.tables |> Dict.get id |> Maybe.map (\t -> Conf.ui.tableHeaderHeight + (Conf.ui.tableColumnHeight * (t.columns |> Dict.size |> toFloat |> min 15))))
+        |> Maybe.orElse (erd |> Erd.getTable id |> Maybe.map (\t -> Conf.ui.tableHeaderHeight + (Conf.ui.tableColumnHeight * (t.columns |> Dict.size |> toFloat |> min 15))))
         |> Maybe.withDefault 200
 
 

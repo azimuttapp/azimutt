@@ -67,7 +67,7 @@ handleFindPath msg model =
 
         FPSearch ->
             Maybe.zip model.findPath model.erd
-                |> Maybe.andThen (\( fp, erd ) -> Maybe.zip3 (Just erd) (erd |> Erd.getTable fp.from) (erd |> Erd.getTable fp.to))
+                |> Maybe.andThen (\( fp, erd ) -> Maybe.zip3 (Just erd) (erd |> Erd.getTable (TableId.parse fp.from)) (erd |> Erd.getTable (TableId.parse fp.to)))
                 |> Maybe.mapOrElse (\( erd, from, to ) -> ( model |> mapFindPathM (setResult Searching), T.sendAfter 300 (FindPathMsg (FPCompute erd.tables erd.relations from.id to.id erd.settings.findPath)) ))
                     ( model, Cmd.none )
 

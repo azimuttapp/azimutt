@@ -17,7 +17,7 @@ import Models.Project.Origin exposing (Origin)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
 import Models.Project.TableId exposing (TableId)
-import PagesComponents.Organization_.Project_.Models.Erd exposing (Erd)
+import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn)
 import PagesComponents.Organization_.Project_.Models.ErdColumnProps exposing (ErdColumnProps)
 import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable)
@@ -123,7 +123,7 @@ schemaView erd name =
 
 tableView : Erd -> TableId -> View
 tableView erd id =
-    (erd.tables |> Dict.get id)
+    (erd |> Erd.getTable id)
         |> Maybe.mapOrElse
             (\table ->
                 TableView
@@ -136,7 +136,7 @@ tableView erd id =
 
 columnView : Erd -> ColumnRef -> View
 columnView erd ref =
-    (erd.tables |> Dict.get ref.table)
+    (erd |> Erd.getTable ref.table)
         |> Maybe.mapOrElse
             (\table ->
                 (table.columns |> Dict.get ref.column)

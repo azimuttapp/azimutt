@@ -87,7 +87,7 @@ defmodule AzimuttWeb.OrganizationBillingController do
 
     case Stripe.BillingPortal.Session.create(%{
            customer: organization.stripe_customer_id,
-           return_url: Routes.page_url(conn, :index)
+           return_url: Routes.website_url(conn, :index)
          }) do
       {:ok, session} ->
         Logger.info("Stripe Billing Portal session is create with success")

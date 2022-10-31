@@ -749,7 +749,7 @@ selectSchema schema state =
 
 selectTable : TableId -> DocState -> DocState
 selectTable table state =
-    (sampleErd.tables |> Dict.get table)
+    (sampleErd |> Erd.getTable table)
         |> Maybe.map
             (\erdTable ->
                 { state
@@ -763,7 +763,7 @@ selectTable table state =
 
 selectColumn : ColumnRef -> DocState -> DocState
 selectColumn { table, column } state =
-    (sampleErd.tables |> Dict.get table)
+    (sampleErd |> Erd.getTable table)
         |> Maybe.andThen
             (\erdTable ->
                 (erdTable.columns |> Dict.get column)

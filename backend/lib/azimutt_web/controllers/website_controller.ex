@@ -1,4 +1,4 @@
-defmodule AzimuttWeb.PageController do
+defmodule AzimuttWeb.WebsiteController do
   use AzimuttWeb, :controller
   action_fallback AzimuttWeb.FallbackController
 

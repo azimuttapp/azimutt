@@ -23,7 +23,7 @@ import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId exposing (SourceId)
 import Models.Project.Table exposing (Table)
-import Models.Project.TableId as TableId exposing (TableId)
+import Models.Project.TableId exposing (TableId)
 import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Models.Size as Size
 import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn)
@@ -120,9 +120,23 @@ getOrganization urlOrganization erd =
     erd.project.organization |> Maybe.withDefault (urlOrganization |> Maybe.mapOrElse (\id -> { free | id = id }) free)
 
 
+getTable : TableId -> Erd -> Maybe ErdTable
+getTable ( schema, table ) erd =
+    case erd.tables |> Dict.get ( schema, table ) of
+        Just t ->
+            Just t
+
+        Nothing ->
+            if schema == Conf.schema.empty then
+                erd.tables |> Dict.get ( erd.settings.defaultSchema, table )
+
+            else
+                Nothing
+
+
 getColumn : ColumnRef -> Erd -> Maybe ErdColumn
 getColumn ref erd =
-    erd.tables |> Dict.get ref.table |> Maybe.andThen (\t -> t.columns |> Dict.get ref.column)
+    erd |> getTable ref.table |> Maybe.andThen (\t -> t.columns |> Dict.get ref.column)
 
 
 getColumnPos : ColumnRef -> Erd -> Maybe Position.Canvas
@@ -154,12 +168,6 @@ isShown table erd =
 defaultSchemaM : Maybe Erd -> SchemaName
 defaultSchemaM erd =
     erd |> Maybe.mapOrElse (.settings >> .defaultSchema) Conf.schema.empty
-
-
-getTable : String -> Erd -> Maybe ErdTable
-getTable tableId erd =
-    (erd.tables |> Dict.get (TableId.parse tableId))
-        |> Maybe.orElse (erd.tables |> Dict.get (TableId.parseWith erd.settings.defaultSchema tableId))
 
 
 viewportToCanvas : ErdProps -> CanvasProps -> Position.Viewport -> Position.Canvas

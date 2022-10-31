@@ -2,6 +2,7 @@ defmodule AzimuttWeb.Router do
   use AzimuttWeb, :router
   import PhxLiveStorybook.Router
   import AzimuttWeb.UserAuth
+  alias AzimuttWeb.Plugs.AllowCrossOriginIframe
 
   pipeline :browser do
     plug Ueberauth
@@ -32,7 +33,7 @@ defmodule AzimuttWeb.Router do
   # public routes
   scope "/", AzimuttWeb do
     pipe_through :browser
-    get "/", PageController, :index
+    get "/", WebsiteController, :index
     get "/blog", BlogController, :index
     get "/blog/:id", BlogController, :show
     get "/gallery", GalleryController, :index
@@ -165,12 +166,16 @@ defmodule AzimuttWeb.Router do
     }
   end
 
+  scope "/", AzimuttWeb do
+    pipe_through [:browser, AllowCrossOriginIframe]
+    get "/embed", ElmController, :embed
+  end
+
   # elm routes, must be at the end (because of `/:organization_id/:project_id` "catch all")
   # routes listed in the same order than in `elm/src/Pages`
   scope "/", AzimuttWeb do
     pipe_through :browser
     get "/create", ElmController, :create
-    get "/embed", ElmController, :embed
     get "/last", ElmController, :last
     get "/new", ElmController, :new
     get "/projects", ElmController, :projects_legacy
