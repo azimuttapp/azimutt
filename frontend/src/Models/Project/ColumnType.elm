@@ -34,7 +34,7 @@ asBasic kind =
 type ParsedColumnType
     = Unknown ColumnType
     | Array ParsedColumnType
-    | String
+    | Text
     | Int
     | Float
     | Bool
@@ -54,7 +54,7 @@ parse kind =
         Array (parse (kind |> String.dropRight 2))
 
     else if (kind |> Regex.matchI "^(tiny|medium|long)?text$") || (kind |> Regex.matchI "^character( varying)? ?(\\(\\d+\\))?$") || (kind |> Regex.matchI "^n?(var)?char ?(\\([^)]+\\))?$") then
-        String
+        Text
 
     else if (kind |> Regex.matchI "integer|bit") || (kind |> Regex.matchI "number\\(\\d+(\\s*,\\s*0)?\\)") || (kind |> Regex.matchI "^(small)?serial$") || (kind |> Regex.matchI "^(tiny|small|big)?int ?(\\(\\d+\\))?( unsigned)?$") then
         Int
@@ -102,8 +102,8 @@ toString kind =
         Array k ->
             toString k ++ "[]"
 
-        String ->
-            "String"
+        Text ->
+            "Text"
 
         Int ->
             "Int"
