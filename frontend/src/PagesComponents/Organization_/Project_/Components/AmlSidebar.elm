@@ -109,9 +109,20 @@ updateSource now source input model =
         ( removed, bothPresent, added ) =
             List.diff .id (source.tables |> Dict.values) (parsed.tables |> Dict.values)
 
+        otherSources : List Source
+        otherSources =
+            model.erd
+                |> Maybe.andThen (.sources >> List.filterNot (\s -> s.id == source.id) >> Maybe.Just)
+                |> Maybe.withDefault []
+
+        tableIdsOutsideSource : List Table
+        tableIdsOutsideSource =
+            otherSources |> List.concatMap (\s -> s.tables |> Dict.values)
+
+        (trulyRemoved, _, _) = removed |> List.diff .id tableIdsOutsideSource
+
         toHide : List TableId
-        toHide =
-            removed |> List.map .id
+        toHide = trulyRemoved |> List.map .id
 
         updated : List ( TableId, List ColumnName )
         updated =
