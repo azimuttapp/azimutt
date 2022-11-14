@@ -12,7 +12,7 @@ import DataSources.JsonMiner.JsonSchema as JsonSchema
 import Dict
 import Gen.Route as Route
 import Html exposing (Html, a, aside, div, h2, li, nav, p, pre, span, text, ul)
-import Html.Attributes exposing (class, href, id)
+import Html.Attributes exposing (class, href, id, rel, target)
 import Html.Events exposing (onClick)
 import Html.Keyed as Keyed
 import Html.Lazy as Lazy
@@ -122,7 +122,7 @@ viewTabContent : HtmlId -> Time.Zone -> Model -> Html Msg
 viewTabContent htmlId zone model =
     case model.selectedTab of
         TabDatabase ->
-            model.databaseSource |> Maybe.mapOrElse (viewDatabaseSourceTab (htmlId ++ "-database") model.projects) (div [] [])
+            model.databaseSource |> Maybe.mapOrElse (viewDatabaseSourceTab (htmlId ++ "-database") model.openedCollapse model.projects) (div [] [])
 
         TabSql ->
             model.sqlSource |> Maybe.mapOrElse (viewSqlSourceTab (htmlId ++ "-sql") model.openedCollapse model.projects) (div [] [])
@@ -140,13 +140,14 @@ viewTabContent htmlId zone model =
             model.sampleProject |> Maybe.mapOrElse (viewSampleProjectTab zone model.projects) (div [] [])
 
 
-viewDatabaseSourceTab : HtmlId -> List ProjectInfo -> DatabaseSource.Model Msg -> Html Msg
-viewDatabaseSourceTab htmlId projects model =
+viewDatabaseSourceTab : HtmlId -> HtmlId -> List ProjectInfo -> DatabaseSource.Model Msg -> Html Msg
+viewDatabaseSourceTab htmlId openedCollapse projects model =
     div []
         [ viewHeading "Extract your database schema" [ text "Sadly browsers can't directly connect to a database so this extraction will be made through Azimutt servers but nothing is stored." ]
         , div [ class "mt-6" ] [ DatabaseSource.viewInput DatabaseSourceMsg htmlId model ]
         , DatabaseSource.viewParsing DatabaseSourceMsg model
         , viewSourceActionButtons (InitTab TabDatabase) projects model.parsedSource
+        , div [ class "mt-3" ] [ viewDataPrivacyCollapse htmlId openedCollapse ]
         ]
 
 
@@ -291,8 +292,10 @@ viewDataPrivacyCollapse htmlId openedCollapse =
     div []
         [ div [ onClick (ToggleCollapse (htmlId ++ "-data-privacy")), css [ "link text-sm text-gray-500" ] ] [ text "What about data privacy?" ]
         , div [ css [ "mt-1 p-3 border rounded border-gray-300", B.cond (openedCollapse == (htmlId ++ "-data-privacy")) "" "hidden" ] ]
-            [ p [] [ text "Your application schema may be a sensitive information, but no worries with Azimutt, everything stay on your machine. In fact, there is even no server at all!" ]
-            , p [ css [ "mt-3" ] ] [ text "Your schema is read and ", bText "parsed in your browser", text ", and then saved with the layouts in your browser ", bText "local storage", text ". Nothing fancy ^^" ]
+            [ p [] [ text "Your application schema may be a sensitive information, but no worries with Azimutt, we are ", bText "privacy focused", text "." ]
+            , p [ css [ "mt-1" ] ] [ text "Your schema is ", bText "read and parsed in your browser", text ". You can explore it without leaking anything to Azimutt server." ]
+            , p [ css [ "mt-1" ] ] [ text "When saving your project you can choose between ", bText "local", text " or ", bText "remote", text " storage. The first one offer full privacy, your schema don't leave your computer. The second offer collaboration, sharing it with other people." ]
+            , p [ css [ "mt-1" ] ] [ text "If you are worried, please ", a [ href ("mailto:" ++ Conf.constants.azimuttEmail), target "_blank", rel "noopener", class "link" ] [ text "contact us" ], text ", we take this very seriously and do whatever is possible to satisfy needs." ]
             ]
         ]
 

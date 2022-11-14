@@ -18,7 +18,7 @@
 
 Azimutt is an Entity Relationship Diagram (ERD) targeting real world database schema (big & messy).
 
-![Azimutt screenshot](docs/_assets/azimutt-screenshot-gospeak.png)
+[![Azimutt screenshot](docs/_assets/azimutt-screenshot-gospeak.png)](https://azimutt.app/gallery/gospeak)
 
 **Why building Azimutt?**
 
@@ -32,7 +32,7 @@ So we decided to built it 💪
 
 Azimutt started as a schema exploration tool for databases with hundreds of tables, but now it has grown a lot:
 
-![Azimutt roadmap](docs/_assets/azimutt-roadmap.png)
+[![Azimutt roadmap](docs/_assets/azimutt-roadmap.png)](https://mm.tt/map/2434161843?t=N2yWZj1pc1)
 
 - Design your schema using [AML](docs/aml/README.md) for a fast diagramming
 - Explore your database using search everywhere, display only useful tables/columns and follow relations
