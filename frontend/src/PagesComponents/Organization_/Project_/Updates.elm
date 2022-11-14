@@ -88,12 +88,8 @@ update currentLayout now urlOrganization organizations projects msg model =
         RenameProject name ->
             model |> mapErdM (mapProject (setName name)) |> setDirty
 
-        DeleteProject ->
-            ( model
-            , model.erd
-                |> Maybe.map (\e -> Ports.deleteProject e.project ((e.project.organization |> Maybe.map .id) |> Backend.organizationUrl |> Just))
-                |> Maybe.withDefault ("No project to delete!" |> Toasts.warning |> Toast |> T.send)
-            )
+        DeleteProject project ->
+            ( model, Ports.deleteProject project ((project.organization |> Maybe.map .id) |> Backend.organizationUrl |> Just) )
 
         ShowTable id hint ->
             model |> mapErdMCmd (showTable now id hint) |> setDirtyCmd

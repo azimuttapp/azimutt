@@ -26,6 +26,7 @@ import Models.Project.Source exposing (Source)
 import Models.Project.SourceId exposing (SourceId)
 import Models.Project.SourceName exposing (SourceName)
 import Models.Project.TableId exposing (TableId)
+import Models.ProjectInfo exposing (ProjectInfo)
 import Models.RelationStyle exposing (RelationStyle)
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
 import PagesComponents.Organization_.Project_.Components.EmbedSourceParsingDialog as EmbedSourceParsingDialog
@@ -150,7 +151,7 @@ type Msg
     | UpdateProject
     | MoveProjectTo ProjectStorage
     | RenameProject ProjectName
-    | DeleteProject
+    | DeleteProject ProjectInfo
     | ShowTable TableId (Maybe PositionHint)
     | ShowTables (List TableId) (Maybe PositionHint)
     | ShowAllTables

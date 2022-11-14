@@ -97,7 +97,7 @@ viewProjectsDropdown platform projects project dirty htmlId openedDropdown =
             div [ class "divide-y divide-gray-100" ]
                 (([ [ ContextMenu.btnHotkey "" TriggerSaveProject [ text "Save project" ] platform (Conf.hotkeys |> Dict.getOrElse "save" [])
                     , ContextMenu.btn "" (RenameProject |> prompt "Rename project" (text "") project.name) [ text "Rename project" ]
-                    , ContextMenu.btn "" (DeleteProject |> confirmDanger "Delete project?" (text "This action is definitive!")) [ text "Delete project" ]
+                    , ContextMenu.btn "" (DeleteProject project |> confirmDanger "Delete project?" (text "This action is definitive!")) [ text "Delete project" ]
                     ]
                   ]
                     ++ B.cond (List.isEmpty otherProjects)

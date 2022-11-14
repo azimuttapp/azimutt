@@ -12,7 +12,7 @@ import Libs.Models.DatabaseUrl exposing (DatabaseUrl)
 import Libs.Models.FileUrl exposing (FileUrl)
 import Libs.Task as T
 import Models.ErdProps as ErdProps
-import Models.OrganizationId as OrganizationId exposing (OrganizationId)
+import Models.OrganizationId as OrganizationId
 import Models.Project as Project
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectId exposing (ProjectId)
@@ -42,14 +42,13 @@ page shared req =
         query =
             parseQueryString req.query
 
-        urlOrganization : Maybe OrganizationId
-        urlOrganization =
-            Nothing
+        ( urlOrganization, urlProject ) =
+            ( Nothing, query.projectId )
     in
     Page.element
         { init = init query
         , update = Updates.update query.layout shared.now urlOrganization shared.organizations shared.projects
-        , view = Views.view (Request.pushRoute Route.NotFound req) req.url urlOrganization shared
+        , view = Views.view (Request.pushRoute Route.NotFound req) req.url urlOrganization urlProject shared
         , subscriptions = Subscriptions.subscriptions
         }
 

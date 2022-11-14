@@ -294,7 +294,7 @@ viewDataPrivacyCollapse htmlId openedCollapse =
         , div [ css [ "mt-1 p-3 border rounded border-gray-300", B.cond (openedCollapse == (htmlId ++ "-data-privacy")) "" "hidden" ] ]
             [ p [] [ text "Your application schema may be a sensitive information, but no worries with Azimutt, we are ", bText "privacy focused", text "." ]
             , p [ css [ "mt-1" ] ] [ text "Your schema is ", bText "read and parsed in your browser", text ". You can explore it without leaking anything to Azimutt server." ]
-            , p [ css [ "mt-1" ] ] [ text "When saving your project you can choose between ", bText "local", text " or ", bText "remote", text " storage. The first one offer full privacy, your schema don't leave your computer. The second offer collaboration, sharing it with other people." ]
+            , p [ css [ "mt-1" ] ] [ text "When saving your project you can choose between ", bText "local", text " or ", bText "remote", text " storage. The first one offers full privacy, your schema don't leave your computer. The second offers collaboration, sharing it with other people." ]
             , p [ css [ "mt-1" ] ] [ text "If you are worried, please ", a [ href ("mailto:" ++ Conf.constants.azimuttEmail), target "_blank", rel "noopener", class "link" ] [ text "contact us" ], text ", we take this very seriously and do whatever is possible to satisfy needs." ]
             ]
         ]

@@ -7,7 +7,6 @@ import Gen.Route as Route
 import Libs.Bool as Bool
 import Libs.Task as T
 import Models.ErdProps as ErdProps
-import Models.OrganizationId exposing (OrganizationId)
 import Page
 import PagesComponents.Organization_.Project_.Models as Models exposing (Msg(..))
 import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode
@@ -21,21 +20,16 @@ import Services.Toasts as Toasts
 import Shared exposing (StoredProjects(..))
 
 
-
--- FIXME: if fail to load local project, propose to delete it
-
-
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
 page shared req =
     let
-        urlOrganization : Maybe OrganizationId
-        urlOrganization =
-            Just req.params.organization
+        ( urlOrganization, urlProject ) =
+            ( Just req.params.organization, Just req.params.project )
     in
     Page.element
         { init = init req.params req.query
         , update = Updates.update Nothing shared.now urlOrganization shared.organizations shared.projects
-        , view = Views.view (Request.pushRoute Route.Projects req) req.url urlOrganization shared
+        , view = Views.view (Request.pushRoute Route.Projects req) req.url urlOrganization urlProject shared
         , subscriptions = Subscriptions.subscriptions
         }
 

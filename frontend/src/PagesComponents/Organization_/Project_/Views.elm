@@ -2,21 +2,24 @@ module PagesComponents.Organization_.Project_.Views exposing (title, view)
 
 import Components.Atoms.Loader as Loader
 import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
-import Components.Slices.NotFound as NotFound
 import Conf
 import Dict
-import Html exposing (Html, aside, div, main_, section)
-import Html.Attributes exposing (class, style)
+import Html exposing (Html, a, aside, br, button, div, footer, h1, img, main_, nav, p, section, span, text)
+import Html.Attributes exposing (alt, class, href, src, style)
+import Html.Events exposing (onClick)
 import Html.Keyed as Keyed
 import Html.Lazy as Lazy
 import Libs.Bool as B
-import Libs.Html.Attributes exposing (css)
+import Libs.Html.Attributes exposing (ariaHidden, css)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
+import Libs.Tailwind exposing (hover, lg, sm)
 import Models.OrganizationId exposing (OrganizationId)
 import Models.Position as Position
+import Models.Project.ProjectId exposing (ProjectId)
+import Models.Project.ProjectStorage as ProjectStorage
 import Models.ProjectInfo exposing (ProjectInfo)
 import Models.User exposing (User)
 import PagesComponents.Organization_.Project_.Components.AmlSidebar as AmlSidebar
@@ -24,7 +27,7 @@ import PagesComponents.Organization_.Project_.Components.DetailsSidebar as Detai
 import PagesComponents.Organization_.Project_.Components.EmbedSourceParsingDialog as EmbedSourceParsingDialog
 import PagesComponents.Organization_.Project_.Components.ProjectSaveDialog as ProjectSaveDialog
 import PagesComponents.Organization_.Project_.Components.SourceUpdateDialog as SourceUpdateDialog
-import PagesComponents.Organization_.Project_.Models exposing (ContextMenu, LayoutMsg(..), Model, Msg(..), ProjectSettingsMsg(..))
+import PagesComponents.Organization_.Project_.Models exposing (ContextMenu, LayoutMsg(..), Model, Msg(..), ProjectSettingsMsg(..), confirmDanger)
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
@@ -52,17 +55,17 @@ title erd =
     erd |> Maybe.mapOrElse (\e -> e.project.name ++ " - Azimutt") Conf.constants.defaultTitle
 
 
-view : Cmd Msg -> Url -> Maybe OrganizationId -> Shared.Model -> Model -> View Msg
-view onDelete currentUrl urlOrganization shared model =
+view : Cmd Msg -> Url -> Maybe OrganizationId -> Maybe ProjectId -> Shared.Model -> Model -> View Msg
+view onDelete currentUrl urlOrganization urlProject shared model =
     { title = model.erd |> title
-    , body = model |> viewProject onDelete currentUrl urlOrganization shared
+    , body = model |> viewProject onDelete currentUrl urlOrganization urlProject shared
     }
 
 
-viewProject : Cmd Msg -> Url -> Maybe OrganizationId -> Shared.Model -> Model -> List (Html Msg)
-viewProject onDelete currentUrl urlOrganization shared model =
+viewProject : Cmd Msg -> Url -> Maybe OrganizationId -> Maybe ProjectId -> Shared.Model -> Model -> List (Html Msg)
+viewProject onDelete currentUrl urlOrganization urlProject shared model =
     [ if model.loaded then
-        model.erd |> Maybe.mapOrElse (viewApp currentUrl urlOrganization shared model "app") (viewNotFound currentUrl urlOrganization shared.user model.conf)
+        model.erd |> Maybe.mapOrElse (viewApp currentUrl urlOrganization shared model "app") (viewNotFound currentUrl urlOrganization urlProject shared.user shared.projects model.conf)
 
       else
         Loader.fullScreen
@@ -180,27 +183,62 @@ viewContextMenu menu =
             (div [ class "az-context-menu" ] [])
 
 
-viewNotFound : Url -> Maybe OrganizationId -> Maybe User -> ErdConf -> Html msg
-viewNotFound currentUrl urlOrganization user conf =
-    NotFound.simple
-        { brand =
-            { img = { src = Backend.resourceUrl "/logo_dark.svg", alt = "Azimutt" }
-            , link = { url = Backend.homeUrl, text = "Azimutt" }
-            }
-        , header = "404 error"
-        , title = "Project not found."
-        , message = "Sorry, we couldn't find the project you’re looking for."
-        , links =
-            (if conf.projectManagement then
-                [ { url = urlOrganization |> Backend.organizationUrl, text = "Back to dashboard" } ]
+viewNotFound : Url -> Maybe OrganizationId -> Maybe ProjectId -> Maybe User -> List ProjectInfo -> ErdConf -> Html Msg
+viewNotFound currentUrl urlOrganization urlProject user projects conf =
+    let
+        localProject : Maybe ProjectInfo
+        localProject =
+            urlProject |> Maybe.andThen (\id -> projects |> List.find (\p -> p.id == id)) |> Maybe.filter (\p -> p.storage == ProjectStorage.Local)
+    in
+    div [ class "min-h-full pt-16 pb-12 flex flex-col bg-white" ]
+        [ main_ [ css [ "flex-grow flex flex-col justify-center max-w-7xl w-full mx-auto px-4", sm [ "px-6" ], lg [ "px-8" ] ] ]
+            [ div [ class "flex-shrink-0 flex justify-center" ]
+                [ a [ href Backend.homeUrl, class "inline-flex" ]
+                    [ span [ class "sr-only" ] [ text "Azimutt" ]
+                    , img [ class "h-12 w-auto", src (Backend.resourceUrl "/logo_dark.svg"), alt "Azimutt" ] []
+                    ]
+                ]
+            , div [ class "py-16" ]
+                [ div [ class "text-center" ]
+                    [ p [ class "text-sm font-semibold text-primary-600 uppercase tracking-wide" ] [ text "404 error" ]
+                    , h1 [ css [ "mt-2 text-4xl font-extrabold text-gray-900 tracking-tight", sm [ "text-5xl" ] ] ]
+                        [ text (localProject |> Maybe.mapOrElse (\_ -> "Local project not found.") "Project not found.") ]
+                    , p [ class "mt-2 text-base text-gray-500" ]
+                        (localProject
+                            |> Maybe.mapOrElse
+                                (\p ->
+                                    [ text "This is a local project, stored in your browser. Make sure use the same browser to access it."
+                                    , br [] []
+                                    , text "If you cleared your storage, you can "
+                                    , button [ class "link", onClick (DeleteProject p |> confirmDanger ("Delete project '" ++ p.name ++ "'?") (text "Make sure you are not just on the wrong device/browser.")) ] [ text "delete it" ]
+                                    , text "."
+                                    ]
+                                )
+                                [ text "Sorry, we couldn't find the project you’re looking for." ]
+                        )
+                    , div [ class "mt-6 flex justify-center space-x-4" ]
+                        (((if conf.projectManagement then
+                            [ { url = urlOrganization |> Backend.organizationUrl, text = "Back to dashboard" } ]
 
-             else
-                [ { url = Conf.constants.azimuttWebsite, text = "Visit Azimutt" } ]
-            )
-                ++ (user |> Maybe.mapOrElse (\_ -> []) [ { url = Backend.loginUrl currentUrl, text = "Sign in" } ])
-        , footer =
-            [ { url = Conf.constants.azimuttDiscussions, text = "Contact Support" }
-            , { url = Conf.constants.azimuttTwitter, text = "Twitter" }
-            , { url = Backend.blogUrl, text = "Blog" }
+                           else
+                            [ { url = Conf.constants.azimuttWebsite, text = "Visit Azimutt" } ]
+                          )
+                            ++ (user |> Maybe.mapOrElse (\_ -> []) [ { url = Backend.loginUrl currentUrl, text = "Sign in" } ])
+                         )
+                            |> List.map (\link -> a [ href link.url, css [ "text-base font-medium text-primary-600", hover [ "text-primary-500" ] ] ] [ text link.text ])
+                            |> List.intersperse (span [ class "inline-block border-l border-gray-300", ariaHidden True ] [])
+                        )
+                    ]
+                ]
             ]
-        }
+        , footer [ css [ "flex-shrink-0 max-w-7xl w-full mx-auto px-4 ", sm [ "px-6" ], lg [ "px-8" ] ] ]
+            [ nav [ class "flex justify-center space-x-4" ]
+                ([ { url = Conf.constants.azimuttDiscussions, text = "Contact Support" }
+                 , { url = Conf.constants.azimuttTwitter, text = "Twitter" }
+                 , { url = Backend.blogUrl, text = "Blog" }
+                 ]
+                    |> List.map (\link -> a [ href link.url, css [ "text-sm font-medium text-gray-500 ", hover [ "text-gray-600" ] ] ] [ text link.text ])
+                    |> List.intersperse (span [ class "inline-block border-l border-gray-300", ariaHidden True ] [])
+                )
+            ]
+        ]
