@@ -94,7 +94,7 @@ update now msg model =
 
         AUpdateSource id value ->
             model.erd
-                |> sourceById id
+                |> Maybe.andThen (.sources >> List.find (\s -> s.id == id))
                 |> Maybe.map (\s -> model |> updateSource now s value |> setDirtyCmd)
                 |> Maybe.withDefault ( model |> mapAmlSidebarM (setErrors [ { row = 0, col = 0, problem = "Invalid source" } ]), Cmd.none )
 
@@ -185,11 +185,6 @@ contentSplit input =
 contentStr : Source -> String
 contentStr source =
     source.content |> Array.toList |> String.join "\n"
-
-
-sourceById : SourceId -> Maybe Erd -> Maybe Source
-sourceById id erd =
-    erd |> Maybe.andThen (.sources >> List.find (\s -> s.id == id))
 
 
 getOtherSourcesTableIds : Maybe SourceId -> Maybe Erd -> Set TableId
