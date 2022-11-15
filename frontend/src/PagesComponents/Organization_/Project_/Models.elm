@@ -48,8 +48,8 @@ import PagesComponents.Organization_.Project_.Models.ShowColumns exposing (ShowC
 import PagesComponents.Organization_.Project_.Views.Modals.NewLayout as NewLayout
 import Ports exposing (JsMsg)
 import Services.Toasts as Toasts
-import Shared exposing (Confirm, Prompt)
 import Set exposing (Set)
+import Shared exposing (Confirm, Prompt)
 
 
 type alias Model =
