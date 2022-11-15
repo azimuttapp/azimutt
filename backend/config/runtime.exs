@@ -20,38 +20,34 @@ if System.get_env("PHX_SERVER") do
   config :azimutt, AzimuttWeb.Endpoint, server: true
 end
 
-stripe_api_key =
-  System.get_env("STRIPE_API_KEY") ||
-    raise """
-    environment variable STRIPE_API_KEY is missing.
-    You can obtain it from the stripe dashboard: https://dashboard.stripe.com/test/apikeys
-    """
+github_client_id = System.get_env("GITHUB_CLIENT_ID")
+github_client_secret = System.get_env("GITHUB_CLIENT_SECRET")
 
-stripe_webhook_key =
-  System.get_env("STRIPE_WEBHOOK_SIGNING_SECRET") ||
-    raise """
-    environment variable STRIPE_WEBHOOK_SIGNING_SECRET is missing.
-    You can obtain it from the stripe dashboard: https://dashboard.stripe.com/account/webhooks
-    """
+if github_client_id && github_client_secret do
+  IO.puts("Setup Github auth")
 
-config :azimutt,
-  stripe_api_key: stripe_api_key
+  config :ueberauth, Ueberauth.Strategy.Github.OAuth,
+    client_id: github_client_id,
+    client_secret: github_client_secret
+else
+  # FIXME: make email/password signup available
+  IO.puts("Github auth not setup (GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET env variables not found)")
+end
 
-config :stripity_stripe,
-  api_key: stripe_api_key,
-  signing_secret: stripe_webhook_key
+# https://dashboard.stripe.com/test/apikeys
+stripe_api_key = System.get_env("STRIPE_API_KEY")
+# https://dashboard.stripe.com/account/webhooks
+stripe_webhook_key = System.get_env("STRIPE_WEBHOOK_SIGNING_SECRET")
 
-config :ueberauth, Ueberauth.Strategy.Github.OAuth,
-  client_id:
-    System.get_env("GITHUB_CLIENT_ID") ||
-      raise("""
-      environment variable GITHUB_CLIENT_ID is missing.
-      """),
-  client_secret:
-    System.get_env("GITHUB_CLIENT_SECRET") ||
-      raise("""
-      environment variable GITHUB_CLIENT_SECRET is missing.
-      """)
+if stripe_api_key && stripe_webhook_key do
+  IO.puts("Setup Stripe")
+
+  config :stripity_stripe,
+    api_key: stripe_api_key,
+    signing_secret: stripe_webhook_key
+else
+  IO.puts("Stripe not setup (STRIPE_API_KEY and STRIPE_WEBHOOK_SIGNING_SECRET env variables not found)")
+end
 
 if config_env() == :prod || config_env() == :staging do
   database_url =
@@ -96,29 +92,19 @@ if config_env() == :prod || config_env() == :staging do
     ],
     secret_key_base: secret_key_base
 
-  mailgun_api_key =
-    System.get_env("MAILGUN_API_KEY") ||
-      raise """
-      environment variable MAILGUN_API_KEY is missing.
-      """
+  mailgun_api_key = System.get_env("MAILGUN_API_KEY")
+  mailgun_domain = System.get_env("MAILGUN_DOMAIN")
+  mailgun_base_url = System.get_env("MAILGUN_BASE_URL")
 
-  mailgun_domain =
-    System.get_env("MAILGUN_DOMAIN") ||
-      raise """
-      environment variable MAILGUN_DOMAIN is missing.
-      """
-
-  mailgun_base_url =
-    System.get_env("MAILGUN_BASE_URL") ||
-      raise """
-      environment variable MAILGUN_BASE_URL is missing.
-      """
-
-  config :azimutt, Azimutt.Mailer,
-    adapter: Swoosh.Adapters.Mailgun,
-    api_key: mailgun_api_key,
-    domain: mailgun_domain,
-    base_url: mailgun_base_url
+  if mailgun_api_key && mailgun_domain && mailgun_base_url do
+    config :azimutt, Azimutt.Mailer,
+      adapter: Swoosh.Adapters.Mailgun,
+      api_key: mailgun_api_key,
+      domain: mailgun_domain,
+      base_url: mailgun_base_url
+  else
+    raise "missing mailgun environment variables: MAILGUN_API_KEY, MAILGUN_DOMAIN and MAILGUN_BASE_URL"
+  end
 
   config :swoosh, :api_client, Swoosh.ApiClient.Hackney
 end
