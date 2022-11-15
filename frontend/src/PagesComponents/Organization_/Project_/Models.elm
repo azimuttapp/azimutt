@@ -49,6 +49,7 @@ import PagesComponents.Organization_.Project_.Views.Modals.NewLayout as NewLayou
 import Ports exposing (JsMsg)
 import Services.Toasts as Toasts
 import Shared exposing (Confirm, Prompt)
+import Set exposing (Set)
 
 
 type alias Model =
@@ -104,7 +105,7 @@ type alias NotesDialog =
 
 
 type alias AmlSidebar =
-    { id : HtmlId, selected : Maybe SourceId, errors : List AmlSchemaError }
+    { id : HtmlId, selected : Maybe SourceId, errors : List AmlSchemaError, otherSourcesTableIdsCache : Set TableId }
 
 
 type alias VirtualRelation =

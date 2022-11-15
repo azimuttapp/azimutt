@@ -21,7 +21,6 @@ import Libs.Tailwind as Tw exposing (focus)
 import Libs.Task as T
 import Models.Position as Position
 import Models.Project.ColumnId as ColumnId
-import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.Source as Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.SourceKind as SourceKind
@@ -37,6 +36,7 @@ import PagesComponents.Organization_.Project_.Models.ShowColumns as ShowColumns
 import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirtyCmd)
 import Ports
 import Services.Lenses exposing (mapAmlSidebarM, mapErdM, setAmlSidebar, setContent, setErrors, setSelected, setUpdatedAt)
+import Set exposing (Set)
 import Time
 import Track
 
@@ -57,11 +57,15 @@ type alias Model x =
 
 init : Maybe SourceId -> Maybe Erd -> AmlSidebar
 init id erd =
+    let
+        selectedId =
+            id
+                |> Maybe.orElse (erd |> Maybe.andThen (.sources >> List.find (\s -> s.enabled && SourceKind.isUser s.kind)) |> Maybe.map .id)
+    in
     { id = Conf.ids.amlSidebarDialog
-    , selected =
-        id
-            |> Maybe.orElse (erd |> Maybe.andThen (.sources >> List.find (\s -> s.enabled && SourceKind.isUser s.kind)) |> Maybe.map .id)
+    , selected = selectedId
     , errors = []
+    , otherSourcesTableIdsCache = getOtherSourcesTableIds selectedId erd
     }
 
 
@@ -82,11 +86,15 @@ update now msg model =
             ( model, T.send (AmlSidebarMsg (Bool.cond (model.amlSidebar == Nothing) (AOpen Nothing) AClose)) )
 
         AChangeSource source ->
-            ( model |> mapAmlSidebarM (setSelected source), Cmd.none )
+            ( model
+                |> mapAmlSidebarM (setSelected source)
+                |> mapAmlSidebarM (\v -> { v | otherSourcesTableIdsCache = getOtherSourcesTableIds source model.erd })
+            , Cmd.none
+            )
 
         AUpdateSource id value ->
             model.erd
-                |> Maybe.andThen (.sources >> List.find (\s -> s.id == id))
+                |> sourceById id
                 |> Maybe.map (\s -> model |> updateSource now s value |> setDirtyCmd)
                 |> Maybe.withDefault ( model |> mapAmlSidebarM (setErrors [ { row = 0, col = 0, problem = "Invalid source" } ]), Cmd.none )
 
@@ -109,28 +117,25 @@ updateSource now source input model =
         ( removed, bothPresent, added ) =
             List.diff .id (source.tables |> Dict.values) (parsed.tables |> Dict.values)
 
-        otherSources : List Source
-        otherSources =
-            model.erd
-                |> Maybe.andThen (.sources >> List.filterNot (\s -> s.id == source.id) >> Maybe.Just)
-                |> Maybe.withDefault []
-
-        tableIdsOutsideSource : List Table
+        tableIdsOutsideSource : Set TableId
         tableIdsOutsideSource =
-            otherSources |> List.concatMap (\s -> s.tables |> Dict.values)
+            getOtherSourcesTableIds (Just source.id) model.erd
 
-        (trulyRemoved, _, _) = removed |> List.diff .id tableIdsOutsideSource
+        trulyRemoved =
+            removed |> List.filterNot (\t -> Set.member t.id tableIdsOutsideSource)
 
         toHide : List TableId
-        toHide = trulyRemoved |> List.map .id
+        toHide =
+            trulyRemoved |> List.map .id
 
-        updated : List ( TableId, List ColumnName )
+        updated : List Table
         updated =
-            bothPresent |> List.filter (\( t1, t2 ) -> t1 /= t2) |> List.map (\( _, t ) -> ( t.id, t.columns |> Dict.keys ))
+            bothPresent |> List.filter (\( t1, t2 ) -> t1 /= t2) |> List.map (\( _, t ) -> t)
 
         toShow : List ( TableId, Maybe PositionHint )
         toShow =
-            added
+            (updated ++ added)
+                |> List.filterNot (\t -> tableLayouts |> List.map .id |> List.member t.id)
                 |> associateTables removed
                 |> List.map
                     (\( table, previous ) ->
@@ -152,7 +157,7 @@ updateSource now source input model =
             (List.map T.send
                 ((toShow |> List.map (tupled ShowTable))
                     ++ (toHide |> List.map HideTable)
-                    ++ (updated |> List.map (\( id, cols ) -> ShowColumns id (ShowColumns.List cols)))
+                    ++ (updated |> List.map (\t -> ShowColumns t.id (ShowColumns.List (t.columns |> Dict.keys))))
                 )
             )
         )
@@ -180,6 +185,28 @@ contentSplit input =
 contentStr : Source -> String
 contentStr source =
     source.content |> Array.toList |> String.join "\n"
+
+
+sourceById : SourceId -> Maybe Erd -> Maybe Source
+sourceById id erd =
+    erd |> Maybe.andThen (.sources >> List.find (\s -> s.id == id))
+
+
+getOtherSourcesTableIds : Maybe SourceId -> Maybe Erd -> Set TableId
+getOtherSourcesTableIds currentSourceId erd =
+    case currentSourceId of
+        Nothing ->
+            Set.empty
+
+        Just id ->
+            let
+                otherSources : List Source
+                otherSources =
+                    erd
+                        |> Maybe.map (.sources >> List.filterNot (\s -> s.id == id))
+                        |> Maybe.withDefault []
+            in
+            otherSources |> List.concatMap (\s -> s.tables |> Dict.values) |> List.map .id |> Set.fromList
 
 
 
