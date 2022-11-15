@@ -58,6 +58,7 @@ type alias Model x =
 init : Maybe SourceId -> Maybe Erd -> AmlSidebar
 init id erd =
     let
+        selectedId : Maybe SourceId
         selectedId =
             id
                 |> Maybe.orElse (erd |> Maybe.andThen (.sources >> List.find (\s -> s.enabled && SourceKind.isUser s.kind)) |> Maybe.map .id)
@@ -121,6 +122,7 @@ updateSource now source input model =
         tableIdsOutsideSource =
             getOtherSourcesTableIds (Just source.id) model.erd
 
+        trulyRemoved : List Table
         trulyRemoved =
             removed |> List.filterNot (\t -> Set.member t.id tableIdsOutsideSource)
 
