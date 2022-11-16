@@ -5,7 +5,6 @@ defmodule Azimutt.OrganizationsTest do
 
   describe "organizations" do
     alias Azimutt.Organizations.Organization
-
     import Azimutt.AccountsFixtures
     import Azimutt.OrganizationsFixtures
 

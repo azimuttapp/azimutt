@@ -72,7 +72,7 @@ defmodule AzimuttWeb.Api.ProjectController do
     current_user = conn.assigns.current_user
 
     with {:ok, %Project{} = project} <- Projects.get_project(id, current_user),
-         {:ok, %Project{}} <- Projects.delete_project(project),
+         {:ok, %Project{}} <- Projects.delete_project(project, current_user),
          do: conn |> send_resp(:no_content, "")
   end
 
