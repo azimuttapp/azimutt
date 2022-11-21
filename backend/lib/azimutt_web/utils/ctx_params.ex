@@ -26,6 +26,12 @@ defmodule AzimuttWeb.Utils.CtxParams do
     }
   end
 
+  def add_expand(%CtxParams{} = ctx, value) do
+    %CtxParams{
+      expand: ctx.expand ++ [value]
+    }
+  end
+
   def nested(%CtxParams{} = ctx, attr) do
     %CtxParams{
       expand:

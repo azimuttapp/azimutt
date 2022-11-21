@@ -17,6 +17,20 @@ defmodule Azimutt.Utils.Markdown do
          do: {:ok, html}
   end
 
+  def preprocess(path, content) do
+    github = "https://github.com/azimuttapp/azimutt"
+
+    content
+    |> String.replace("{{base_link}}", base_link(path))
+    |> String.replace("{{app_link}}", "/home")
+    |> String.replace("{{roadmap_link}}", "#{github}/projects/1")
+    |> String.replace("{{issues_link}}", "#{github}/issues?q=is%3Aissue+is%3Aopen+label%3A%22feature+request%22")
+    |> String.replace("{{feedback_link}}", "#{github}/discussions")
+    |> String.replace("{{azimutt_twitter}}", "https://twitter.com/azimuttapp")
+  end
+
+  def base_link(path), do: path |> String.split("/") |> Enum.drop(2) |> Enum.take(2) |> Enum.map_join(fn p -> "/#{p}" end)
+
   defp add_id_att({_tag, _atts, content, _meta} = node) do
     Earmark.AstTools.merge_atts_in_node(node, id: Slugme.slugify(content_to_string(content)))
   end

@@ -34,6 +34,10 @@ defmodule AzimuttWeb.Api.ProjectView do
     |> put_content(project, ctx)
   end
 
+  def render("content.json", %{project: %Project{} = project, ctx: %CtxParams{} = ctx}) do
+    project |> get_content |> Jason.decode!()
+  end
+
   defp put_orga(json, project, ctx) do
     if ctx.expand |> Enum.member?("organization") do
       orga_ctx = ctx |> CtxParams.nested("organization")
@@ -44,22 +48,29 @@ defmodule AzimuttWeb.Api.ProjectView do
   end
 
   defp put_content(json, project, ctx) do
-    if ctx.expand |> Enum.member?("content") && project.storage_kind == Storage.remote() do
-      # FIXME: handle spaces in name
-      file_url = ProjectFile.url({project.file, project}, signed: true)
-
-      if Mix.env() in [:dev, :test] do
-        with {:ok, body} <- File.read("./#{file_url}"), do: json |> Map.put(:content, body)
-      else
-        response = HTTPoison.get!(file_url)
-        json |> Map.put(:content, response.body)
-      end
+    if ctx.expand |> Enum.member?("content") do
+      json |> Map.put(:content, get_content(project))
     else
       json
     end
   end
 
-  def last_update(datetime) do
+  defp get_content(project) do
+    if project.storage_kind == Storage.remote() do
+      # FIXME: handle spaces in name
+      file_url = ProjectFile.url({project.file, project}, signed: true)
+
+      if Mix.env() in [:dev, :test] do
+        with {:ok, body} <- File.read("./#{file_url}"), do: body
+      else
+        HTTPoison.get!(file_url).body
+      end
+    else
+      "{}"
+    end
+  end
+
+  defp last_update(datetime) do
     {:ok, relative_str} = datetime |> Timex.format("{relative}", :relative)
     relative_str
   end
