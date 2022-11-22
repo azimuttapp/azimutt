@@ -12,6 +12,7 @@ defmodule Azimutt.Gallery do
     Sample
     |> join(:inner, [s], p in Project, on: s.project_id == p.id)
     |> where([s, p], p.public != ^public)
+    |> order_by([s, p], p.nb_tables)
     |> preload(:project)
     |> Repo.all()
   end
@@ -29,16 +30,6 @@ defmodule Azimutt.Gallery do
 
   # Get 3 other samples
   def related_samples(sample) do
-    list_samples |> Enum.filter(fn s -> s.id != sample.id end) |> Enum.shuffle() |> Enum.take(3)
-  end
-
-  def create_sample(attrs \\ %{}) do
-    %Sample{}
-    |> Sample.changeset(attrs)
-    |> Repo.insert()
-  end
-
-  def delete_sample(%Sample{} = sample) do
-    Repo.delete(sample)
+    list_samples() |> Enum.filter(fn s -> s.id != sample.id end) |> Enum.shuffle() |> Enum.take(3)
   end
 end

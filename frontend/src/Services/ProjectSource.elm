@@ -24,7 +24,9 @@ import Libs.Result as Result
 import Libs.String as String
 import Libs.Tailwind as Tw
 import Libs.Task as T
+import Models.OrganizationId exposing (OrganizationId)
 import Models.Project as Project exposing (Project)
+import Models.Project.ProjectId exposing (ProjectId)
 import Models.Project.SampleKey exposing (SampleKey)
 import Ports
 import Services.Lenses exposing (mapShow, setProject)
@@ -46,6 +48,7 @@ type alias Model =
 type Msg
     = GetRemoteFile FileUrl (Maybe SampleKey)
     | GotRemoteFile (Result Http.Error FileContent)
+    | GetProject OrganizationId ProjectId
     | GetLocalFile File
     | GotFile FileContent
     | ParseProject
@@ -85,6 +88,9 @@ update wrap msg model =
             ( init |> (\m -> { m | selectedLocalFile = Just file })
             , Ports.readLocalFile kind file
             )
+
+        GetProject organization project ->
+            ( init, Ports.getProject organization project )
 
         GetRemoteFile url sample ->
             ( init |> (\m -> { m | selectedRemoteFile = Just url, selectedSample = sample })

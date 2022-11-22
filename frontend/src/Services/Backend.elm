@@ -1,7 +1,6 @@
-module Services.Backend exposing (Error, SampleSchema, blogArticleUrl, blogUrl, embedUrl, errorStatus, errorToString, getCurrentUser, getDatabaseSchema, getOrganizationsAndProjects, homeUrl, internal, loginUrl, logoutUrl, organizationBillingUrl, organizationUrl, resourceUrl, schemaSamples)
+module Services.Backend exposing (Error, Sample, SampleSchema, blogArticleUrl, blogUrl, embedUrl, errorStatus, errorToString, getCurrentUser, getDatabaseSchema, getOrganizationsAndProjects, getSamples, homeUrl, internal, loginUrl, logoutUrl, organizationBillingUrl, organizationUrl, projectContentUrl, resourceUrl)
 
-import Components.Atoms.Icon exposing (Icon(..))
-import Dict exposing (Dict)
+import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Either exposing (Either(..))
 import Http exposing (Error(..))
 import Json.Decode as Decode
@@ -12,16 +11,17 @@ import Libs.Json.Decode as Decode
 import Libs.Maybe as Maybe
 import Libs.Models.DatabaseUrl as DatabaseUrl exposing (DatabaseUrl)
 import Libs.Result as Result
-import Libs.Tailwind as Tw exposing (Color)
+import Libs.Tailwind exposing (Color, decodeColor)
 import Libs.Time as Time
 import Libs.Url as Url
 import Models.Organization exposing (Organization)
 import Models.OrganizationId as OrganizationId exposing (OrganizationId)
 import Models.Plan as Plan exposing (Plan)
 import Models.Project.LayoutName exposing (LayoutName)
+import Models.Project.ProjectId as ProjectId exposing (ProjectId)
 import Models.Project.ProjectStorage as ProjectStorage exposing (ProjectStorage)
 import Models.ProjectInfo exposing (ProjectInfo)
-import Models.User as User2 exposing (User)
+import Models.User as User exposing (User)
 import PagesComponents.Organization_.Project_.Models.EmbedKind as EmbedKind exposing (EmbedKind)
 import PagesComponents.Organization_.Project_.Models.EmbedMode as EmbedMode exposing (EmbedModeId)
 import Time
@@ -75,6 +75,11 @@ organizationBillingUrl organization =
     "/organizations/" ++ organization ++ "/billing"
 
 
+projectContentUrl : OrganizationId -> ProjectId -> String
+projectContentUrl organization project =
+    "/api/v1/organizations/" ++ organization ++ "/projects/" ++ project ++ "/content"
+
+
 blogUrl : String
 blogUrl =
     "/blog"
@@ -109,18 +114,6 @@ type alias SampleSchema =
     { url : String, color : Color, icon : Icon, key : String, name : String, description : String, tables : Int }
 
 
-schemaSamples : Dict String SampleSchema
-schemaSamples =
-    [ { url = resourceUrl "/samples/basic.azimutt.json", color = Tw.pink, icon = ViewList, key = "basic", name = "Basic", description = "Simple login/role schema. The easiest one, just enough play with Azimutt features.", tables = 4 }
-    , { url = resourceUrl "/samples/wordpress.azimutt.json", color = Tw.yellow, icon = Template, key = "wordpress", name = "Wordpress", description = "The well known CMS powering most of the web. An interesting schema, but with no foreign keys!", tables = 12 }
-    , { url = resourceUrl "/samples/gladys.azimutt.json", color = Tw.cyan, icon = Home, key = "gladys", name = "Gladys Assistant", description = "A privacy-first, open-source home assistant with many features and integrations", tables = 21 }
-    , { url = resourceUrl "/samples/gospeak.azimutt.json", color = Tw.purple, icon = ClipboardList, key = "gospeak", name = "Gospeak.io", description = "SaaS for meetup organizers. Good real world example to explore and see the power of Azimutt.", tables = 26 }
-    , { url = resourceUrl "/samples/postgresql.azimutt.json", color = Tw.blue, icon = Database, key = "postgresql", name = "PostgreSQL", description = "Explore 'pg_catalog' and 'information_schema' with tables, relations and documentation.", tables = 194 }
-    ]
-        |> List.map (\sample -> ( sample.key, sample ))
-        |> Dict.fromList
-
-
 internal : Url -> Either String Url
 internal url =
     if isExternal url then
@@ -140,11 +133,23 @@ isExternal url =
         || (url.path |> String.startsWith "/organizations/")
 
 
+type alias Sample =
+    { slug : String, color : Color, icon : Icon, name : String, description : String, project_id : ProjectId, nb_tables : Int }
+
+
+getSamples : (Result Error (List Sample) -> msg) -> Cmd msg
+getSamples toMsg =
+    riskyGet
+        { url = "/api/v1/gallery"
+        , expect = Http.expectJson (Result.mapError buildError >> toMsg) (Decode.list decodeSample)
+        }
+
+
 getCurrentUser : (Result Error (Maybe User) -> msg) -> Cmd msg
 getCurrentUser toMsg =
     riskyGet
         { url = "/api/v1/users/current"
-        , expect = Http.expectJson (recoverUnauthorized >> Result.mapError buildError >> toMsg) User2.decode
+        , expect = Http.expectJson (recoverUnauthorized >> Result.mapError buildError >> toMsg) User.decode
         }
 
 
@@ -295,6 +300,18 @@ decodeProject =
         (Decode.field "created_at" Time.decode)
         (Decode.field "updated_at" Time.decode)
         (Decode.maybeField "archived_at" Time.decode)
+
+
+decodeSample : Decode.Decoder Sample
+decodeSample =
+    Decode.map7 Sample
+        (Decode.field "slug" Decode.string)
+        (Decode.field "color" decodeColor)
+        (Decode.field "icon" Icon.decode)
+        (Decode.field "name" Decode.string)
+        (Decode.field "description" Decode.string)
+        (Decode.field "project_id" ProjectId.decode)
+        (Decode.field "nb_tables" Decode.int)
 
 
 handleResponse : Http.Response String -> Result Error String

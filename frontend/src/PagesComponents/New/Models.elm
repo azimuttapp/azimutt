@@ -9,6 +9,7 @@ import Models.Project exposing (Project)
 import Models.Project.ProjectName exposing (ProjectName)
 import Models.ProjectInfo exposing (ProjectInfo)
 import Ports exposing (JsMsg)
+import Services.Backend as Backend exposing (Sample)
 import Services.DatabaseSource as DatabaseSource
 import Services.ImportProject as ImportProject exposing (Model, Msg)
 import Services.JsonSource as JsonSource
@@ -22,6 +23,7 @@ type alias Model =
     , mobileMenuOpen : Bool
     , openedCollapse : HtmlId
     , projects : List ProjectInfo
+    , samples : List Sample
     , selectedTab : Tab
     , databaseSource : Maybe (DatabaseSource.Model Msg)
     , sqlSource : Maybe (SqlSource.Model Msg)
@@ -53,6 +55,7 @@ type alias ConfirmDialog =
 type Msg
     = SelectMenu String
     | ToggleCollapse HtmlId
+    | GotSamples (Result Backend.Error (List Sample))
     | InitTab Tab
     | DatabaseSourceMsg DatabaseSource.Msg
     | SqlSourceMsg SqlSource.Msg

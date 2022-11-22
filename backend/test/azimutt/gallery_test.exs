@@ -1,11 +1,9 @@
 defmodule Azimutt.GalleryTest do
   use Azimutt.DataCase
-
   alias Azimutt.Gallery
 
   describe "samples" do
     alias Azimutt.Gallery.Sample
-
     import Azimutt.GalleryFixtures
 
     @invalid_attrs %{analysis: nil, banner: nil, color: nil, description: nil, icon: nil, tips: nil, website: nil}

@@ -2,10 +2,13 @@ module PagesComponents.New.Updates exposing (update)
 
 import Components.Molecules.Dropdown as Dropdown
 import Conf
+import Dict
 import Gen.Route as Route
 import Json.Decode as Decode
 import Json.Encode as Encode
 import Libs.Bool as B
+import Libs.List as List
+import Libs.Result as Result
 import Libs.Task as T
 import Models.OrganizationId as OrganizationId exposing (OrganizationId)
 import Models.Project as Project
@@ -17,6 +20,7 @@ import PagesComponents.New.Models exposing (Model, Msg(..), Tab(..))
 import Ports exposing (JsMsg(..))
 import Random
 import Request
+import Services.Backend as Backend exposing (Sample)
 import Services.DatabaseSource as DatabaseSource
 import Services.ImportProject as ImportProject
 import Services.JsonSource as JsonSource
@@ -36,6 +40,19 @@ update req now urlOrganization msg model =
 
         ToggleCollapse id ->
             ( { model | openedCollapse = B.cond (model.openedCollapse == id) "" id }, Cmd.none )
+
+        GotSamples res ->
+            res
+                |> Result.fold (\_ -> ( model, Cmd.none ))
+                    (\samples ->
+                        ( { model | samples = samples }
+                        , req.query
+                            |> Dict.get "sample"
+                            |> Maybe.andThen (\value -> samples |> List.find (\s -> s.slug == value))
+                            |> Maybe.map (\s -> T.send (SampleProjectMsg (ImportProject.GetRemoteFile (Backend.projectContentUrl OrganizationId.zero s.project_id) (Just s.slug))))
+                            |> Maybe.withDefault Cmd.none
+                        )
+                    )
 
         InitTab tab ->
             ( let

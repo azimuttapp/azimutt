@@ -13,7 +13,6 @@ defmodule AzimuttWeb.GalleryController do
     )
   end
 
-  # TODO: show real projects (stored in orga) with is_public flag
   def show(conn, %{"slug" => slug}) do
     with {:ok, sample} <- Gallery.get_sample(slug),
          do:
