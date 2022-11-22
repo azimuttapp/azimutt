@@ -23,7 +23,6 @@ module Services.Lenses exposing
     , mapFindPathM
     , mapHiddenColumns
     , mapHoverTable
-    , mapImportProjectMCmd
     , mapIndex
     , mapIndexes
     , mapJsonSourceCmd
@@ -47,6 +46,7 @@ module Services.Lenses exposing
     , mapPosition
     , mapPrimaryKeyM
     , mapProject
+    , mapProjectSourceMCmd
     , mapPromptM
     , mapProps
     , mapRelatedTables
@@ -54,7 +54,7 @@ module Services.Lenses exposing
     , mapRemoveViews
     , mapRemovedSchemas
     , mapResult
-    , mapSampleProjectMCmd
+    , mapSampleSourceMCmd
     , mapSaveCmd
     , mapSaveM
     , mapSchemaAnalysisM
@@ -119,7 +119,6 @@ module Services.Lenses exposing
     , setId
     , setIgnoredColumns
     , setIgnoredTables
-    , setImportProject
     , setIndex
     , setIndexes
     , setInput
@@ -148,6 +147,7 @@ module Services.Lenses exposing
     , setPrimaryKey
     , setProject
     , setProjectName
+    , setProjectSource
     , setPrompt
     , setProps
     , setRelatedTables
@@ -157,7 +157,7 @@ module Services.Lenses exposing
     , setRemovedSchemas
     , setRemovedTables
     , setResult
-    , setSampleProject
+    , setSampleSource
     , setSave
     , setSchemaAnalysis
     , setSearch
@@ -524,16 +524,6 @@ setIgnoredTables =
     set_ .ignoredTables (\value item -> { item | ignoredTables = value })
 
 
-setImportProject : v -> { item | importProject : v } -> { item | importProject : v }
-setImportProject =
-    set_ .importProject (\value item -> { item | importProject = value })
-
-
-mapImportProjectMCmd : (v -> ( v, Cmd msg )) -> { item | importProject : Maybe v } -> ( { item | importProject : Maybe v }, Cmd msg )
-mapImportProjectMCmd =
-    mapMCmd_ .importProject setImportProject
-
-
 setIndex : v -> { item | index : v } -> { item | index : v }
 setIndex =
     set_ .index (\value item -> { item | index = value })
@@ -769,6 +759,16 @@ setProjectName =
     set_ .projectName (\value item -> { item | projectName = value })
 
 
+setProjectSource : v -> { item | projectSource : v } -> { item | projectSource : v }
+setProjectSource =
+    set_ .projectSource (\value item -> { item | projectSource = value })
+
+
+mapProjectSourceMCmd : (v -> ( v, Cmd msg )) -> { item | projectSource : Maybe v } -> ( { item | projectSource : Maybe v }, Cmd msg )
+mapProjectSourceMCmd =
+    mapMCmd_ .projectSource setProjectSource
+
+
 setPrompt : v -> { item | prompt : v } -> { item | prompt : v }
 setPrompt =
     set_ .prompt (\value item -> { item | prompt = value })
@@ -849,14 +849,14 @@ mapResult =
     map_ .result setResult
 
 
-setSampleProject : v -> { item | sampleProject : v } -> { item | sampleProject : v }
-setSampleProject =
-    set_ .sampleProject (\value item -> { item | sampleProject = value })
+setSampleSource : v -> { item | sampleSource : v } -> { item | sampleSource : v }
+setSampleSource =
+    set_ .sampleSource (\value item -> { item | sampleSource = value })
 
 
-mapSampleProjectMCmd : (v -> ( v, Cmd msg )) -> { item | sampleProject : Maybe v } -> ( { item | sampleProject : Maybe v }, Cmd msg )
-mapSampleProjectMCmd =
-    mapMCmd_ .sampleProject setSampleProject
+mapSampleSourceMCmd : (v -> ( v, Cmd msg )) -> { item | sampleSource : Maybe v } -> ( { item | sampleSource : Maybe v }, Cmd msg )
+mapSampleSourceMCmd =
+    mapMCmd_ .sampleSource setSampleSource
 
 
 setSave : v -> { item | save : v } -> { item | save : v }

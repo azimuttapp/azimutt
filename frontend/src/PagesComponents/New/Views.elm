@@ -23,7 +23,7 @@ import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Result as Result
 import Libs.Tailwind as Tw exposing (hover, lg, sm)
-import Models.OrganizationId as OrganizationId exposing (OrganizationId)
+import Models.OrganizationId exposing (OrganizationId)
 import Models.Project as Project
 import Models.Project.Source exposing (Source)
 import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
@@ -31,8 +31,9 @@ import PagesComponents.Helpers exposing (appShell)
 import PagesComponents.New.Models exposing (ConfirmDialog, Model, Msg(..), Tab(..), confirm)
 import Services.Backend as Backend exposing (Sample)
 import Services.DatabaseSource as DatabaseSource
-import Services.ImportProject as ImportProject
 import Services.JsonSource as JsonSource
+import Services.ProjectSource as ProjectSource
+import Services.SampleSource as SampleSource
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
 import Shared
@@ -133,10 +134,10 @@ viewTabContent htmlId zone model =
             viewEmptyProjectTab
 
         TabProject ->
-            model.importProject |> Maybe.mapOrElse (viewImportProjectTab (htmlId ++ "-project") zone model.projects) (div [] [])
+            model.projectSource |> Maybe.mapOrElse (viewProjectSourceTab (htmlId ++ "-project") zone model.projects) (div [] [])
 
         TabSamples ->
-            model.sampleProject |> Maybe.mapOrElse (viewSampleProjectTab zone model.projects model.samples) (div [] [])
+            model.sampleSource |> Maybe.mapOrElse (viewSampleSourceTab model.projects model.samples) (div [] [])
 
 
 viewDatabaseSourceTab : HtmlId -> HtmlId -> List ProjectInfo -> DatabaseSource.Model Msg -> Html Msg
@@ -185,13 +186,13 @@ viewEmptyProjectTab =
         ]
 
 
-viewImportProjectTab : HtmlId -> Time.Zone -> List ProjectInfo -> ImportProject.Model -> Html Msg
-viewImportProjectTab htmlId zone projects model =
+viewProjectSourceTab : HtmlId -> Time.Zone -> List ProjectInfo -> ProjectSource.Model -> Html Msg
+viewProjectSourceTab htmlId zone projects model =
     div []
         [ viewHeading "Import an existing project" [ text "If you have an Azimutt project, you can load it here." ]
-        , div [ class "mt-6" ] [ ImportProject.viewLocalInput ImportProjectMsg Noop (htmlId ++ "-remote-file") ]
+        , div [ class "mt-6" ] [ ProjectSource.viewLocalInput ProjectSourceMsg Noop (htmlId ++ "-remote-file") ]
         , p [ css [ "mt-1 text-sm text-gray-500" ] ] [ text "Download your project with the button on the bottom of the settings (top right cog)." ]
-        , ImportProject.viewParsing ImportProjectMsg zone Nothing model
+        , ProjectSource.viewParsing ProjectSourceMsg zone Nothing model
         , model.parsedProject
             |> Maybe.andThen Result.toMaybe
             |> Maybe.map
@@ -216,8 +217,8 @@ viewImportProjectTab htmlId zone projects model =
         ]
 
 
-viewSampleProjectTab : Time.Zone -> List ProjectInfo -> List Sample -> ImportProject.Model -> Html Msg
-viewSampleProjectTab zone projects samples model =
+viewSampleSourceTab : List ProjectInfo -> List Sample -> SampleSource.Model -> Html Msg
+viewSampleSourceTab projects samples model =
     div []
         [ viewHeading "Explore a sample schema" [ text "If you want to see what Azimutt is capable of, you can pick a schema a play with it." ]
         , ItemList.withIcons
@@ -229,12 +230,12 @@ viewSampleProjectTab zone projects samples model =
                         , icon = sample.icon
                         , title = sample.name ++ " (" ++ (sample.nb_tables |> String.fromInt) ++ " tables)"
                         , description = sample.description
-                        , active = model.selectedSample |> Maybe.all (\s -> s == sample.slug)
-                        , onClick = ImportProject.GetRemoteFile (Backend.projectContentUrl OrganizationId.zero sample.project_id) (Just sample.slug) |> SampleProjectMsg
+                        , active = model.selectedSample |> Maybe.all (\s -> s.slug == sample.slug)
+                        , onClick = SampleSource.GetSample sample |> SampleSourceMsg
                         }
                     )
             )
-        , ImportProject.viewParsing SampleProjectMsg zone Nothing model
+        , SampleSource.viewParsing model
         , model.parsedProject
             |> Maybe.andThen Result.toMaybe
             |> Maybe.map

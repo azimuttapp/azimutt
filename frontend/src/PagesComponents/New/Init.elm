@@ -11,8 +11,8 @@ import PagesComponents.New.Views as Views
 import Ports
 import Services.Backend as Backend
 import Services.DatabaseSource as DatabaseSource
-import Services.ImportProject as ImportProject
 import Services.JsonSource as JsonSource
+import Services.ProjectSource as ProjectSource
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
 
@@ -28,8 +28,8 @@ init urlOrganization query =
       , databaseSource = Nothing
       , sqlSource = Nothing
       , jsonSource = Nothing
-      , importProject = Nothing
-      , sampleProject = Nothing
+      , projectSource = Nothing
+      , sampleSource = Nothing
       , openedDropdown = ""
       , toasts = Toasts.init
       , confirm = Nothing
@@ -51,7 +51,7 @@ init urlOrganization query =
                     |> Maybe.orElse (query |> Dict.get "sql" |> Maybe.map (\value -> [ T.send (InitTab TabSql), T.sendAfter 1 (SqlSourceMsg (SqlSource.GetRemoteFile value)) ]))
                     |> Maybe.orElse (query |> Dict.get "json" |> Maybe.map (\value -> [ T.send (InitTab TabJson), T.sendAfter 1 (JsonSourceMsg (JsonSource.GetRemoteFile value)) ]))
                     |> Maybe.orElse (query |> Dict.get "empty" |> Maybe.map (\_ -> [ T.send (InitTab TabEmptyProject) ]))
-                    |> Maybe.orElse (query |> Dict.get "project" |> Maybe.map (\value -> [ T.send (InitTab TabProject), T.sendAfter 1 (ImportProjectMsg (ImportProject.GetRemoteFile value Nothing)) ]))
+                    |> Maybe.orElse (query |> Dict.get "project" |> Maybe.map (\value -> [ T.send (InitTab TabProject), T.sendAfter 1 (ProjectSourceMsg (ProjectSource.GetRemoteFile value)) ]))
                     |> Maybe.orElse (query |> Dict.get "sample" |> Maybe.map (\_ -> [ T.send (InitTab TabSamples) ]))
                     |> Maybe.withDefault [ T.send (InitTab TabDatabase) ]
                )
