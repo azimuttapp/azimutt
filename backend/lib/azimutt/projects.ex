@@ -81,7 +81,6 @@ defmodule Azimutt.Projects do
   end
 
   def delete_project(%Project{} = project, %User{} = current_user) do
-    # FIXME: add right validation!!!
     Repo.delete(project)
     |> Result.tap(fn p -> Audit.project_deleted(current_user, p.organization.id, p.id) end)
   end
