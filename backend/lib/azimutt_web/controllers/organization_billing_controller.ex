@@ -51,8 +51,6 @@ defmodule AzimuttWeb.OrganizationBillingController do
     quantity = get_seats_from_organization(organization)
 
     session_config = %{
-      success_url: Routes.organization_billing_url(conn, :success, organization_id),
-      cancel_url: Routes.organization_billing_url(conn, :cancel, organization_id),
       mode: "subscription",
       customer: organization.stripe_customer_id,
       line_items: [
@@ -60,7 +58,10 @@ defmodule AzimuttWeb.OrganizationBillingController do
           price: price_id,
           quantity: quantity
         }
-      ]
+      ],
+      allow_promotion_codes: true,
+      success_url: Routes.organization_billing_url(conn, :success, organization_id),
+      cancel_url: Routes.organization_billing_url(conn, :cancel, organization_id)
     }
 
     case Stripe.Session.create(session_config) do
