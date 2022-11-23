@@ -10,7 +10,7 @@ import Components.Molecules.Modal as Modal
 import Conf
 import DataSources.JsonMiner.JsonSchema as JsonSchema
 import Gen.Route as Route
-import Html exposing (Html, a, aside, div, h2, li, nav, p, pre, span, text, ul)
+import Html exposing (Html, a, aside, div, h2, h3, li, nav, p, pre, span, text, ul)
 import Html.Attributes exposing (class, href, id, rel, target)
 import Html.Events exposing (onClick)
 import Html.Keyed as Keyed
@@ -221,20 +221,24 @@ viewSampleSourceTab : List ProjectInfo -> List Sample -> SampleSource.Model -> H
 viewSampleSourceTab projects samples model =
     div []
         [ viewHeading "Explore a sample schema" [ text "If you want to see what Azimutt is capable of, you can pick a schema a play with it." ]
-        , ItemList.withIcons
-            (samples
-                |> List.sortBy .nb_tables
-                |> List.map
-                    (\sample ->
-                        { color = sample.color
-                        , icon = sample.icon
-                        , title = sample.name ++ " (" ++ (sample.nb_tables |> String.fromInt) ++ " tables)"
-                        , description = sample.description
-                        , active = model.selectedSample |> Maybe.all (\s -> s.slug == sample.slug)
-                        , onClick = SampleSource.GetSample sample |> SampleSourceMsg
-                        }
-                    )
-            )
+        , if samples == [] then
+            h3 [ class "mt-2 text-sm font-medium text-gray-900" ] [ text "No sample project 😓" ]
+
+          else
+            ItemList.withIcons
+                (samples
+                    |> List.sortBy .nb_tables
+                    |> List.map
+                        (\sample ->
+                            { color = sample.color
+                            , icon = sample.icon
+                            , title = sample.name ++ " (" ++ (sample.nb_tables |> String.fromInt) ++ " tables)"
+                            , description = sample.description
+                            , active = model.selectedSample |> Maybe.all (\s -> s.slug == sample.slug)
+                            , onClick = SampleSource.GetSample sample |> SampleSourceMsg
+                            }
+                        )
+                )
         , SampleSource.viewParsing model
         , model.parsedProject
             |> Maybe.andThen Result.toMaybe

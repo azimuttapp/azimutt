@@ -22,19 +22,19 @@ describe('project', () => {
         expect(res).toEqual(valid)
     })
     test('project json', () => {
-        const {organization, id, storage, createdAt, updatedAt, ...json} = project
+        const {organization, id, storage, visibility, createdAt, updatedAt, ...json} = project
         const valid: ProjectJson = {...json, _type: 'json'}
         const res = ProjectJson.parse(valid)
         expect(res).toEqual(valid)
     })
     test('project json legacy', () => {
-        const {organization, slug, description, storage, ...json} = project
+        const {organization, slug, description, storage, visibility, ...json} = project
         const valid: ProjectJsonLegacy = {...json}
         const res = ProjectJsonLegacy.parse(valid)
         expect(res).toEqual(valid)
     })
     test('project stored with id', () => {
-        const {organization, id, storage, createdAt, updatedAt, ...json} = project
+        const {organization, id, storage, visibility, createdAt, updatedAt, ...json} = project
         const valid: ProjectStoredWithId = [project.id, {...json, _type: 'json'}]
         const res = ProjectStoredWithId.parse(valid)
         expect(res).toEqual(valid)

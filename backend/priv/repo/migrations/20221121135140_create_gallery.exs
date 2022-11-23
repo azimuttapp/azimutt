@@ -3,7 +3,7 @@ defmodule Azimutt.Repo.Migrations.CreateGallery do
 
   def change do
     alter table(:projects) do
-      add :public, :string, default: "none", null: false, comment: "enum: none, read, write"
+      add :visibility, :string, default: "none", null: false, comment: "enum: none, read, write"
     end
 
     create table(:gallery) do

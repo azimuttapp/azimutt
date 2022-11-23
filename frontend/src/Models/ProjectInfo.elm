@@ -1,5 +1,6 @@
-module Models.ProjectInfo exposing (ProjectInfo, decode, encode, fromProject, organizationId)
+module Models.ProjectInfo exposing (ProjectInfo, decode, encode, fromProject, icon, organizationId)
 
+import Components.Atoms.Icon as Icon
 import Dict exposing (Dict)
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
@@ -9,13 +10,14 @@ import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Time as Time
 import Models.Organization as Organization exposing (Organization)
-import Models.OrganizationId as OrganizationId
+import Models.OrganizationId as OrganizationId exposing (OrganizationId)
 import Models.Project exposing (Project)
 import Models.Project.ProjectEncodingVersion as ProjectEncodingVersion exposing (ProjectEncodingVersion)
 import Models.Project.ProjectId as ProjectId exposing (ProjectId)
 import Models.Project.ProjectName as ProjectName exposing (ProjectName)
 import Models.Project.ProjectSlug as ProjectSlug exposing (ProjectSlug)
 import Models.Project.ProjectStorage as ProjectStorage exposing (ProjectStorage)
+import Models.Project.ProjectVisibility as ProjectVisibility exposing (ProjectVisibility)
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
 import Time
@@ -28,6 +30,7 @@ type alias ProjectInfo =
     , name : ProjectName
     , description : Maybe String
     , storage : ProjectStorage
+    , visibility : ProjectVisibility
     , version : ProjectEncodingVersion
     , nbSources : Int
     , nbTables : Int
@@ -56,6 +59,7 @@ fromProject p =
     , name = p.name
     , description = p.description
     , storage = p.storage
+    , visibility = p.visibility
     , version = p.version
     , nbSources = p.sources |> List.length
     , nbTables = tables |> Dict.size
@@ -70,9 +74,21 @@ fromProject p =
     }
 
 
-organizationId : ProjectInfo -> OrganizationId.OrganizationId
+organizationId : ProjectInfo -> OrganizationId
 organizationId p =
     p.organization |> Maybe.mapOrElse .id OrganizationId.zero
+
+
+icon : ProjectInfo -> Icon.Icon
+icon project =
+    if project.storage == ProjectStorage.Local then
+        Icon.Folder
+
+    else if project.visibility == ProjectVisibility.None then
+        Icon.Cloud
+
+    else
+        Icon.GlobeAlt
 
 
 encode : ProjectInfo -> Value
@@ -84,6 +100,7 @@ encode value =
         , ( "name", value.name |> ProjectName.encode )
         , ( "description", value.description |> Encode.maybe Encode.string )
         , ( "storage", value.storage |> ProjectStorage.encode )
+        , ( "visibility", value.visibility |> ProjectVisibility.encode )
         , ( "encodingVersion", value.version |> ProjectEncodingVersion.encode )
         , ( "nbSources", value.nbSources |> Encode.int )
         , ( "nbTables", value.nbTables |> Encode.int )
@@ -100,13 +117,14 @@ encode value =
 
 decode : Decode.Decoder ProjectInfo
 decode =
-    Decode.map17 ProjectInfo
+    Decode.map18 ProjectInfo
         (Decode.maybeField "organization" Organization.decode)
         (Decode.field "id" ProjectId.decode)
         (Decode.field "slug" ProjectSlug.decode)
         (Decode.field "name" ProjectName.decode)
         (Decode.maybeField "description" Decode.string)
         (Decode.field "storage" ProjectStorage.decode)
+        (Decode.field "visibility" ProjectVisibility.decode)
         (Decode.field "encodingVersion" ProjectEncodingVersion.decode)
         (Decode.field "nbSources" Decode.int)
         (Decode.field "nbTables" Decode.int)

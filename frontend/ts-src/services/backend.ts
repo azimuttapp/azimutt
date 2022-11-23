@@ -15,7 +15,8 @@ import {
     ProjectSlug,
     ProjectStats,
     ProjectStorage,
-    ProjectVersion
+    ProjectVersion,
+    ProjectVisibility
 } from "../types/project";
 import {Organization, OrganizationId, OrganizationSlug, Plan} from "../types/organization";
 import {DateTime} from "../types/basics";
@@ -187,6 +188,7 @@ interface ProjectResponse extends ProjectStatsResponse {
     description: string | null
     encoding_version: ProjectVersion
     storage_kind: ProjectStorage
+    visibility: ProjectVisibility
     created_at: DateTime
     updated_at: DateTime
     archived_at: DateTime | null
@@ -200,6 +202,7 @@ export const ProjectResponse = ProjectStatsResponse.extend({
     description: z.string().nullable(),
     encoding_version: ProjectVersion,
     storage_kind: ProjectStorage,
+    visibility: ProjectVisibility,
     created_at: DateTime,
     updated_at: DateTime,
     archived_at: DateTime.nullable()
@@ -270,6 +273,7 @@ function toProjectInfo(p: ProjectResponse): ProjectInfo {
         description: p.description || undefined,
         encodingVersion: p.encoding_version,
         storage: p.storage_kind,
+        visibility: p.visibility,
         createdAt: new Date(p.created_at).getTime(),
         updatedAt: new Date(p.updated_at).getTime(),
         ...toStats(p)

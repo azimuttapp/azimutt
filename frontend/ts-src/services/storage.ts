@@ -11,7 +11,8 @@ import {
     ProjectJson,
     ProjectJsonLegacy,
     ProjectStorage,
-    ProjectStored
+    ProjectStored,
+    ProjectVisibility
 } from "../types/project";
 import {successes} from "../utils/promise";
 import {AnyError} from "../utils/error";
@@ -91,6 +92,7 @@ function legacyProjectInfo([id, p]: [ProjectId, ProjectJsonLegacy]): ProjectInfo
         name: p.name,
         encodingVersion: p.version,
         storage: ProjectStorage.enum.local,
+        visibility: ProjectVisibility.enum.none,
         createdAt: p.createdAt,
         updatedAt: p.updatedAt,
         ...computeStats(p)

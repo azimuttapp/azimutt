@@ -20,6 +20,7 @@ import Models.Plan as Plan exposing (Plan)
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectId as ProjectId exposing (ProjectId)
 import Models.Project.ProjectStorage as ProjectStorage exposing (ProjectStorage)
+import Models.Project.ProjectVisibility as ProjectVisibility exposing (ProjectVisibility)
 import Models.ProjectInfo exposing (ProjectInfo)
 import Models.User as User exposing (User)
 import PagesComponents.Organization_.Project_.Models.EmbedKind as EmbedKind exposing (EmbedKind)
@@ -200,6 +201,7 @@ formatOrgasAndProjects orgas =
                             , name = p.name
                             , description = p.description
                             , storage = p.storage
+                            , visibility = p.visibility
                             , version = p.encodingVersion
                             , nbSources = p.nbSources
                             , nbTables = p.nbTables
@@ -248,6 +250,7 @@ type alias OrgaProject =
     , description : Maybe String
     , encodingVersion : Int
     , storage : ProjectStorage
+    , visibility : ProjectVisibility
     , nbSources : Int
     , nbTables : Int
     , nbColumns : Int
@@ -277,13 +280,14 @@ decodeOrga =
 
 decodeProject : Decode.Decoder OrgaProject
 decodeProject =
-    Decode.map17 OrgaProject
+    Decode.map18 OrgaProject
         (Decode.field "id" Decode.string)
         (Decode.field "slug" Decode.string)
         (Decode.field "name" Decode.string)
         (Decode.maybeField "description" Decode.string)
         (Decode.field "encoding_version" Decode.int)
         (Decode.field "storage_kind" ProjectStorage.decode)
+        (Decode.field "visibility" ProjectVisibility.decode)
         (Decode.field "nb_sources" Decode.int)
         (Decode.field "nb_tables" Decode.int)
         (Decode.field "nb_columns" Decode.int)

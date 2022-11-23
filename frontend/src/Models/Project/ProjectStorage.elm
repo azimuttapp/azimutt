@@ -1,6 +1,5 @@
-module Models.Project.ProjectStorage exposing (ProjectStorage(..), decode, encode, icon)
+module Models.Project.ProjectStorage exposing (ProjectStorage(..), decode, encode)
 
-import Components.Atoms.Icon as Icon
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
 
@@ -8,15 +7,6 @@ import Json.Encode as Encode exposing (Value)
 type ProjectStorage
     = Local
     | Remote
-
-
-icon : ProjectStorage -> Icon.Icon
-icon storage =
-    if storage == Local then
-        Icon.Folder
-
-    else
-        Icon.Cloud
 
 
 encode : ProjectStorage -> Value

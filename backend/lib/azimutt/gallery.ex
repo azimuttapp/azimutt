@@ -7,22 +7,22 @@ defmodule Azimutt.Gallery do
   alias Azimutt.Utils.Result
 
   def list_samples do
-    public = :none
+    visibility = :none
 
     Sample
     |> join(:inner, [s], p in Project, on: s.project_id == p.id)
-    |> where([s, p], p.public != ^public)
+    |> where([s, p], p.visibility != ^visibility)
     |> order_by([s, p], p.nb_tables)
     |> preload(:project)
     |> Repo.all()
   end
 
   def get_sample(slug) do
-    public = :none
+    visibility = :none
 
     Sample
     |> join(:inner, [s], p in Project, on: s.project_id == p.id)
-    |> where([s, p], s.slug == ^slug and p.public != ^public)
+    |> where([s, p], s.slug == ^slug and p.visibility != ^visibility)
     |> preload(:project)
     |> Repo.one()
     |> Result.from_nillable()

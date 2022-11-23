@@ -18,7 +18,7 @@ defmodule Azimutt.Projects.Project do
     field :storage_kind, Ecto.Enum, values: [:local, :remote]
     field :file, Azimutt.Projects.ProjectFile.Type
     belongs_to :local_owner, User, source: :local_owner
-    field :public, Ecto.Enum, values: [:none, :read, :write]
+    field :visibility, Ecto.Enum, values: [:none, :read, :write]
     field :nb_sources, :integer
     field :nb_tables, :integer
     field :nb_columns, :integer
@@ -72,7 +72,7 @@ defmodule Azimutt.Projects.Project do
     |> put_change(:organization, organization)
     |> put_change(:storage_kind, Storage.local())
     |> put_change(:local_owner, current_user)
-    |> put_change(:public, :none)
+    |> put_change(:visibility, :none)
     |> put_change(:created_by, current_user)
     |> put_change(:updated_by, current_user)
     |> validate_required(required)
@@ -100,7 +100,7 @@ defmodule Azimutt.Projects.Project do
     |> cast_attachments(attrs, [:file])
     |> put_change(:organization, organization)
     |> put_change(:storage_kind, Storage.remote())
-    |> put_change(:public, :none)
+    |> put_change(:visibility, :none)
     |> put_change(:created_by, current_user)
     |> put_change(:updated_by, current_user)
     |> validate_required(required)

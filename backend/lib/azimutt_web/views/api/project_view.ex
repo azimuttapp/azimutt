@@ -17,6 +17,7 @@ defmodule AzimuttWeb.Api.ProjectView do
       description: project.description,
       encoding_version: project.encoding_version,
       storage_kind: project.storage_kind,
+      visibility: project.visibility,
       nb_sources: project.nb_sources,
       nb_tables: project.nb_tables,
       nb_columns: project.nb_columns,

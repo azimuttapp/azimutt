@@ -1,0 +1,9 @@
+<%= if @project.storage_kind == :local do %>
+    <Icon.folder kind="outline" class="text-gray-400" />
+<% else %>
+    <%= if @project.visibility == :none do %>
+        <Icon.cloud kind="outline" class="text-gray-400" />
+    <% else %>
+        <Icon.globe kind="outline" class="text-gray-400" />
+    <% end %>
+<% end %>
