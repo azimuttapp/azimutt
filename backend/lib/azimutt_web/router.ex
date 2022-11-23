@@ -106,6 +106,7 @@ defmodule AzimuttWeb.Router do
     get "/analyzer/schema", Api.AnalyzerController, :schema
     post "/analyzer/schema", Api.AnalyzerController, :schema
     get "/gallery", Api.GalleryController, :index
+    get "/organizations/:organization_id/projects/:id", Api.ProjectController, :show
   end
 
   # authed APIs
@@ -114,7 +115,7 @@ defmodule AzimuttWeb.Router do
     get "/users/current", Api.UserController, :current
 
     resources "/organizations", Api.OrganizationController, only: [:index] do
-      resources "/projects", Api.ProjectController, except: [:new, :edit]
+      resources "/projects", Api.ProjectController, except: [:new, :edit, :show]
     end
   end
 

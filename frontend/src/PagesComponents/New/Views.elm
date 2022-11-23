@@ -68,6 +68,7 @@ viewNewProject shared currentUrl urlOrganization model =
         [ a [ href backUrl ] [ Icon.outline Icon.ArrowLeft "inline-block", text " ", text model.selectedMenu ] ]
         [ viewContent "new-project"
             shared.zone
+            urlOrganization
             model
             { tabs =
                 [ { tab = TabDatabase, icon = Icon.Database, content = [ text "From database connection", Badge.rounded Tw.green [ class "ml-3" ] [ text "New" ] ] }
@@ -93,13 +94,13 @@ type alias TabModel tab msg =
     { tab : tab, icon : Icon, content : List (Html msg) }
 
 
-viewContent : HtmlId -> Time.Zone -> Model -> PageModel Msg -> Html Msg
-viewContent htmlId zone model page =
+viewContent : HtmlId -> Time.Zone -> Maybe OrganizationId -> Model -> PageModel Msg -> Html Msg
+viewContent htmlId zone urlOrganization model page =
     div [ css [ "divide-y", lg [ "grid grid-cols-12 divide-x" ] ] ]
         [ aside [ css [ "py-6", lg [ "col-span-3" ] ] ]
             [ nav [ css [ "space-y-1" ] ] (page.tabs |> List.map (viewTab model.selectedTab)) ]
         , div [ css [ "px-4 py-6", sm [ "p-6" ], lg [ "pb-8 col-span-9 rounded-r-lg" ] ] ]
-            [ viewTabContent (htmlId ++ "-tab") zone model ]
+            [ viewTabContent (htmlId ++ "-tab") zone urlOrganization model ]
         ]
 
 
@@ -118,8 +119,8 @@ viewTab selected tab =
             ]
 
 
-viewTabContent : HtmlId -> Time.Zone -> Model -> Html Msg
-viewTabContent htmlId zone model =
+viewTabContent : HtmlId -> Time.Zone -> Maybe OrganizationId -> Model -> Html Msg
+viewTabContent htmlId zone urlOrganization model =
     case model.selectedTab of
         TabDatabase ->
             model.databaseSource |> Maybe.mapOrElse (viewDatabaseSourceTab (htmlId ++ "-database") model.openedCollapse model.projects) (div [] [])
@@ -137,7 +138,7 @@ viewTabContent htmlId zone model =
             model.projectSource |> Maybe.mapOrElse (viewProjectSourceTab (htmlId ++ "-project") zone model.projects) (div [] [])
 
         TabSamples ->
-            model.sampleSource |> Maybe.mapOrElse (viewSampleSourceTab model.projects model.samples) (div [] [])
+            model.sampleSource |> Maybe.mapOrElse (viewSampleSourceTab urlOrganization model.projects model.samples) (div [] [])
 
 
 viewDatabaseSourceTab : HtmlId -> HtmlId -> List ProjectInfo -> DatabaseSource.Model Msg -> Html Msg
@@ -217,8 +218,8 @@ viewProjectSourceTab htmlId zone projects model =
         ]
 
 
-viewSampleSourceTab : List ProjectInfo -> List Sample -> SampleSource.Model -> Html Msg
-viewSampleSourceTab projects samples model =
+viewSampleSourceTab : Maybe OrganizationId -> List ProjectInfo -> List Sample -> SampleSource.Model -> Html Msg
+viewSampleSourceTab urlOrganization projects samples model =
     div []
         [ viewHeading "Explore a sample schema" [ text "If you want to see what Azimutt is capable of, you can pick a schema a play with it." ]
         , if samples == [] then
@@ -249,7 +250,7 @@ viewSampleSourceTab projects samples model =
                             (Button.white3 Tw.primary [ onClick (InitTab TabSamples) ] [ text "Cancel" ]
                                 :: (projects
                                         |> List.find (\p -> p.id == project.id)
-                                        |> Maybe.map (\p -> [ Link.primary3 Tw.primary [ href (Route.toHref (Route.Organization___Project_ { organization = p |> ProjectInfo.organizationId, project = p.id })), id "create-project-btn", css [ "ml-3" ] ] [ text "View this project" ] ])
+                                        |> Maybe.map (\p -> [ Link.primary3 Tw.primary [ href (Route.toHref (Route.Organization___Project_ { organization = urlOrganization |> Maybe.withDefault (ProjectInfo.organizationId p), project = p.id })), id "create-project-btn", css [ "ml-3" ] ] [ text "View this project" ] ])
                                         |> Maybe.withDefault [ Button.primary3 Tw.primary [ onClick (CreateProjectTmp project), id "create-project-btn", css [ "ml-3" ] ] [ text "Load sample" ] ]
                                    )
                             )

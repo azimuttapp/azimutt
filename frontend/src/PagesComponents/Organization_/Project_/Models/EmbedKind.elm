@@ -1,6 +1,4 @@
-module PagesComponents.Organization_.Project_.Models.EmbedKind exposing (EmbedKind(..), all, databaseSource, fromValue, jsonSource, label, placeholder, projectId, projectUrl, sourceUrl, sqlSource, value)
-
-import Libs.Models.Uuid as Uuid
+module PagesComponents.Organization_.Project_.Models.EmbedKind exposing (EmbedKind(..), all, databaseSource, fromValue, jsonSource, label, projectId, projectUrl, sourceUrl, sqlSource, value)
 
 
 type EmbedKind
@@ -33,25 +31,6 @@ label kind =
 
         EmbedJsonSource ->
             "JSON"
-
-
-placeholder : EmbedKind -> String
-placeholder kind =
-    case kind of
-        EmbedProjectId ->
-            Uuid.zero
-
-        EmbedProjectUrl ->
-            "https://azimutt.app/elm/samples/gospeak.azimutt.json"
-
-        EmbedDatabaseSource ->
-            "postgres://<user>:<password>@<host>:<port>/<db_name>"
-
-        EmbedSqlSource ->
-            "https://azimutt.app/samples/gospeak.sql"
-
-        EmbedJsonSource ->
-            "https://azimutt.app/samples/gospeak.json"
 
 
 value : EmbedKind -> String

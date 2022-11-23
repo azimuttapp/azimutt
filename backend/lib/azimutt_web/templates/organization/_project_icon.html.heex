@@ -1,9 +1,9 @@
 <%= if @project.storage_kind == :local do %>
-    <Icon.folder kind="outline" class="text-gray-400" />
+    <span title="Local project"><Icon.folder kind="outline" class="text-gray-400" /></span>
 <% else %>
     <%= if @project.visibility == :none do %>
-        <Icon.cloud kind="outline" class="text-gray-400" />
+        <span title="Remote project"><Icon.cloud kind="outline" class="text-gray-400" /></span>
     <% else %>
-        <Icon.globe kind="outline" class="text-gray-400" />
+        <span title="Public project"><Icon.globe kind="outline" class="text-gray-400" /></span>
     <% end %>
 <% end %>

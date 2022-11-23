@@ -12,37 +12,45 @@ defmodule Azimutt.Projects do
   alias Azimutt.Utils.Result
 
   def list_projects(%Organization{} = organization, %User{} = current_user) do
-    Project
-    |> join(:inner, [p], o in Organization, on: p.organization_id == o.id)
-    |> join(:inner, [_, o], om in OrganizationMember, on: om.organization_id == o.id)
+    project_query()
     |> where(
       [p, o, om],
       om.user_id == ^current_user.id and
         o.id == ^organization.id and
         (p.storage_kind == :remote or (p.storage_kind == :local and p.local_owner_id == ^current_user.id))
     )
-    |> preload(:organization)
-    |> preload(:updated_by)
     |> Repo.all()
   end
 
+  # TODO: can do better than define function twice with lot of repetition?
   def get_project(id, %User{} = current_user) do
-    Project
-    |> join(:inner, [p], o in Organization, on: p.organization_id == o.id)
-    |> join(:inner, [_, o], om in OrganizationMember, on: om.organization_id == o.id)
+    project_query()
     |> where(
       [p, _, om],
-      om.user_id == ^current_user.id and
-        p.id == ^id and
-        (p.storage_kind == :remote or (p.storage_kind == :local and p.local_owner_id == ^current_user.id))
+      p.id == ^id and
+        (p.storage_kind == :remote or (p.storage_kind == :local and p.local_owner_id == ^current_user.id)) and
+        (om.user_id == ^current_user.id or p.visibility != :none)
     )
-    |> preload(:organization)
-    |> preload(:updated_by)
     |> Repo.one()
     |> Result.from_nillable()
   end
 
-  def create_project(attrs \\ %{}, %Organization{} = organization, %User{} = current_user) do
+  def get_project(id, current_user) when is_nil(current_user) do
+    project_query()
+    |> where([p, _, om], p.id == ^id and p.storage_kind == :remote and p.visibility != :none)
+    |> Repo.one()
+    |> Result.from_nillable()
+  end
+
+  defp project_query do
+    Project
+    |> join(:inner, [p], o in Organization, on: p.organization_id == o.id)
+    |> join(:inner, [_, o], om in OrganizationMember, on: om.organization_id == o.id)
+    |> preload(:organization)
+    |> preload(:updated_by)
+  end
+
+  def create_project(attrs, %Organization{} = organization, %User{} = current_user) do
     if organization |> Organizations.has_member?(current_user) do
       # FIXME: atom for seeds and string for api, how make it work for both?
       try do

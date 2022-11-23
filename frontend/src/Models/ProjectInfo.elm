@@ -1,4 +1,4 @@
-module Models.ProjectInfo exposing (ProjectInfo, decode, encode, fromProject, icon, organizationId)
+module Models.ProjectInfo exposing (ProjectInfo, decode, encode, fromProject, icon, organizationId, title)
 
 import Components.Atoms.Icon as Icon
 import Dict exposing (Dict)
@@ -89,6 +89,18 @@ icon project =
 
     else
         Icon.GlobeAlt
+
+
+title : ProjectInfo -> String
+title project =
+    if project.storage == ProjectStorage.Local then
+        "Local project"
+
+    else if project.visibility == ProjectVisibility.None then
+        "Remote project"
+
+    else
+        "Public project"
 
 
 encode : ProjectInfo -> Value

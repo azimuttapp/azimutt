@@ -99,7 +99,7 @@ describe('project', () => {
         test('zod remote source', () => {
             const valid: Source = {
                 ...source,
-                kind: {kind: 'SqlRemoteFile', url: 'https://azimutt.app/samples/gospeak.sql', size: 1000}
+                kind: {kind: 'SqlRemoteFile', url: 'https://azimutt.app/elm/samples/basic.sql', size: 1000}
             }
             const res: Source = Source.parse(valid)
             expect(res).toEqual(valid)

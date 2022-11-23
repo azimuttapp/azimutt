@@ -1,4 +1,4 @@
-module Services.ProjectSource exposing (Model, Msg(..), init, kind, update, viewLocalInput, viewParsing)
+module Services.ProjectSource exposing (Model, Msg(..), example, init, kind, update, viewLocalInput, viewParsing)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.Alert as Alert
@@ -58,6 +58,11 @@ type Msg
 kind : String
 kind =
     "import-project"
+
+
+example : String
+example =
+    "https://azimutt.app/elm/samples/basic.azimutt.json"
 
 
 init : Model

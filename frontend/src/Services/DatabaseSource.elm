@@ -1,4 +1,4 @@
-module Services.DatabaseSource exposing (Model, Msg(..), init, update, viewInput, viewParsing)
+module Services.DatabaseSource exposing (Model, Msg(..), example, init, update, viewInput, viewParsing)
 
 import Components.Molecules.Divider as Divider
 import Components.Molecules.Tooltip as Tooltip
@@ -52,6 +52,11 @@ type Msg
 
 
 -- INIT
+
+
+example : String
+example =
+    "postgres://<user>:<password>@<host>:<port>/<db_name>"
 
 
 init : Maybe Source -> (Result String Source -> msg) -> Model msg
@@ -148,7 +153,7 @@ viewInput wrap htmlId model =
                 [ type_ "text"
                 , id (htmlId ++ "-url")
                 , name (htmlId ++ "-url")
-                , placeholder "ex: postgres://<user>:<password>@<host>:<port>/<db_name>"
+                , placeholder ("ex: " ++ example)
                 , value model.url
                 , disabled ((model.selectedUrl |> Maybe.andThen Result.toMaybe) /= Nothing && model.loadedSchema == Nothing)
                 , onInput (UpdateUrl >> wrap)
