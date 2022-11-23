@@ -106,7 +106,6 @@ defmodule AzimuttWeb.Router do
     get "/analyzer/schema", Api.AnalyzerController, :schema
     post "/analyzer/schema", Api.AnalyzerController, :schema
     get "/gallery", Api.GalleryController, :index
-    get "/organizations/:organization_id/projects/:id/content", Api.ProjectController, :content, as: :organization_project
   end
 
   # authed APIs

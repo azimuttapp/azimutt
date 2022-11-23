@@ -34,14 +34,6 @@ defmodule AzimuttWeb.Api.ProjectController do
          do: conn |> render("show.json", project: project, ctx: ctx)
   end
 
-  def content(conn, %{"organization_id" => _organization_id, "id" => id} = params) do
-    current_user = conn.assigns.current_user
-    ctx = CtxParams.from_params(params)
-
-    with {:ok, %Project{} = project} <- Projects.get_project(id, current_user),
-         do: conn |> render("content.json", project: project, ctx: ctx)
-  end
-
   swagger_path :create do
     post("/api/v1/organizations/:organization_id/projects")
     summary("Create a project")

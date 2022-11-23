@@ -34,10 +34,6 @@ defmodule AzimuttWeb.Api.ProjectView do
     |> put_content(project, ctx)
   end
 
-  def render("content.json", %{project: %Project{} = project, ctx: %CtxParams{} = ctx}) do
-    project |> get_content |> Jason.decode!()
-  end
-
   defp put_orga(json, project, ctx) do
     if ctx.expand |> Enum.member?("organization") do
       orga_ctx = ctx |> CtxParams.nested("organization")

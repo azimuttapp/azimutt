@@ -1,4 +1,4 @@
-module Services.Backend exposing (Error, Sample, SampleSchema, blogArticleUrl, blogUrl, embedUrl, errorStatus, errorToString, getCurrentUser, getDatabaseSchema, getOrganizationsAndProjects, getSamples, homeUrl, internal, loginUrl, logoutUrl, organizationBillingUrl, organizationUrl, projectContentUrl, resourceUrl)
+module Services.Backend exposing (Error, Sample, SampleSchema, blogArticleUrl, blogUrl, embedUrl, errorStatus, errorToString, getCurrentUser, getDatabaseSchema, getOrganizationsAndProjects, getSamples, homeUrl, internal, loginUrl, logoutUrl, organizationBillingUrl, organizationUrl, resourceUrl)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Either exposing (Either(..))
@@ -73,11 +73,6 @@ organizationUrl organization =
 organizationBillingUrl : OrganizationId -> String
 organizationBillingUrl organization =
     "/organizations/" ++ organization ++ "/billing"
-
-
-projectContentUrl : OrganizationId -> ProjectId -> String
-projectContentUrl organization project =
-    "/api/v1/organizations/" ++ organization ++ "/projects/" ++ project ++ "/content"
 
 
 blogUrl : String
