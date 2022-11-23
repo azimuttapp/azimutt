@@ -179,7 +179,11 @@ update currentLayout now urlOrganization organizations projects msg model =
             ( model, SourceId.generator |> Random.generate (Source.aml name now >> CreateUserSourceWithId) )
 
         CreateUserSourceWithId source ->
-            model |> mapErdM (Erd.mapSources (List.add source)) |> (\updated -> updated |> mapAmlSidebarM (AmlSidebar.setSource (updated.erd |> Maybe.andThen (.sources >> List.last)))) |> setDirty
+            model
+                |> mapErdM (Erd.mapSources (List.add source))
+                |> (\updated -> updated |> mapAmlSidebarM (AmlSidebar.setSource (updated.erd |> Maybe.andThen (.sources >> List.last))))
+                |> AmlSidebar.setOtherSourcesTableIdsCache (Just source.id)
+                |> setDirty
 
         CreateRelation src ref ->
             model |> mapErdMCmd (Source.createRelation now src ref) |> setDirtyCmd

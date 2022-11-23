@@ -79,8 +79,6 @@ defmodule Azimutt.Services.StripeSrv do
   def create_session(%{customer: customer, success_url: success_url, cancel_url: cancel_url, price_id: price_id, quantity: quantity}) do
     if stripe_configured?() do
       Stripe.Session.create(%{
-        success_url: success_url,
-        cancel_url: cancel_url,
         mode: "subscription",
         customer: customer,
         line_items: [
@@ -88,7 +86,10 @@ defmodule Azimutt.Services.StripeSrv do
             price: price_id,
             quantity: quantity
           }
-        ]
+        ],
+        allow_promotion_codes: true,
+        success_url: success_url,
+        cancel_url: cancel_url
       })
     else
       {:error, "Stripe not configured"}

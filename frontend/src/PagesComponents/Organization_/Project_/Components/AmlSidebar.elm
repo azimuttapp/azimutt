@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Components.AmlSidebar exposing (Model, init, setSource, update, view)
+module PagesComponents.Organization_.Project_.Components.AmlSidebar exposing (Model, init, setOtherSourcesTableIdsCache, setSource, update, view)
 
 import Array exposing (Array)
 import Components.Atoms.Icon as Icon
@@ -21,7 +21,6 @@ import Libs.Tailwind as Tw exposing (focus)
 import Libs.Task as T
 import Models.Position as Position
 import Models.Project.ColumnId as ColumnId
-import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.Source as Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.SourceKind as SourceKind
@@ -37,6 +36,7 @@ import PagesComponents.Organization_.Project_.Models.ShowColumns as ShowColumns
 import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirtyCmd)
 import Ports
 import Services.Lenses exposing (mapAmlSidebarM, mapErdM, setAmlSidebar, setContent, setErrors, setSelected, setUpdatedAt)
+import Set exposing (Set)
 import Time
 import Track
 
@@ -57,11 +57,16 @@ type alias Model x =
 
 init : Maybe SourceId -> Maybe Erd -> AmlSidebar
 init id erd =
+    let
+        selectedId : Maybe SourceId
+        selectedId =
+            id
+                |> Maybe.orElse (erd |> Maybe.andThen (.sources >> List.find (\s -> s.enabled && SourceKind.isUser s.kind)) |> Maybe.map .id)
+    in
     { id = Conf.ids.amlSidebarDialog
-    , selected =
-        id
-            |> Maybe.orElse (erd |> Maybe.andThen (.sources >> List.find (\s -> s.enabled && SourceKind.isUser s.kind)) |> Maybe.map .id)
+    , selected = selectedId
     , errors = []
+    , otherSourcesTableIdsCache = getOtherSourcesTableIds selectedId erd
     }
 
 
@@ -82,7 +87,9 @@ update now msg model =
             ( model, T.send (AmlSidebarMsg (Bool.cond (model.amlSidebar == Nothing) (AOpen Nothing) AClose)) )
 
         AChangeSource source ->
-            ( model |> mapAmlSidebarM (setSelected source), Cmd.none )
+            ( model |> mapAmlSidebarM (setSelected source) |> setOtherSourcesTableIdsCache source
+            , Cmd.none
+            )
 
         AUpdateSource id value ->
             model.erd
@@ -109,17 +116,22 @@ updateSource now source input model =
         ( removed, bothPresent, added ) =
             List.diff .id (source.tables |> Dict.values) (parsed.tables |> Dict.values)
 
+        otherSourcesTableIds : Set TableId
+        otherSourcesTableIds =
+            model.amlSidebar |> Maybe.mapOrElse .otherSourcesTableIdsCache Set.empty
+
         toHide : List TableId
         toHide =
-            removed |> List.map .id
+            removed |> List.filterNot (\t -> Set.member t.id otherSourcesTableIds) |> List.map .id
 
-        updated : List ( TableId, List ColumnName )
+        updated : List Table
         updated =
-            bothPresent |> List.filter (\( t1, t2 ) -> t1 /= t2) |> List.map (\( _, t ) -> ( t.id, t.columns |> Dict.keys ))
+            bothPresent |> List.filter (\( t1, t2 ) -> t1 /= t2) |> List.map Tuple.second
 
         toShow : List ( TableId, Maybe PositionHint )
         toShow =
-            added
+            (updated ++ added)
+                |> List.filterNot (\t -> tableLayouts |> List.map .id |> List.member t.id)
                 |> associateTables removed
                 |> List.map
                     (\( table, previous ) ->
@@ -141,7 +153,7 @@ updateSource now source input model =
             (List.map T.send
                 ((toShow |> List.map (tupled ShowTable))
                     ++ (toHide |> List.map HideTable)
-                    ++ (updated |> List.map (\( id, cols ) -> ShowColumns id (ShowColumns.List cols)))
+                    ++ (updated |> List.map (\t -> ShowColumns t.id (ShowColumns.List (t.columns |> Dict.keys))))
                 )
             )
         )
@@ -161,6 +173,11 @@ setSource source model =
     model |> setSelected (source |> Maybe.map .id)
 
 
+setOtherSourcesTableIdsCache : Maybe SourceId -> Model x -> Model x
+setOtherSourcesTableIdsCache sourceId model =
+    model |> mapAmlSidebarM (\v -> { v | otherSourcesTableIdsCache = getOtherSourcesTableIds sourceId model.erd })
+
+
 contentSplit : String -> Array String
 contentSplit input =
     input |> String.split "\n" |> Array.fromList
@@ -169,6 +186,20 @@ contentSplit input =
 contentStr : Source -> String
 contentStr source =
     source.content |> Array.toList |> String.join "\n"
+
+
+getOtherSourcesTableIds : Maybe SourceId -> Maybe Erd -> Set TableId
+getOtherSourcesTableIds currentSourceId erd =
+    case currentSourceId of
+        Nothing ->
+            Set.empty
+
+        Just id ->
+            erd
+                |> Maybe.mapOrElse .sources []
+                |> List.filterNot (\s -> s.id == id)
+                |> List.concatMap (.tables >> Dict.keys)
+                |> Set.fromList
 
 
 
