@@ -42,7 +42,7 @@ defmodule Azimutt.Projects do
     |> Result.from_nillable()
   end
 
-  def create_project(attrs \\ %{}, %Organization{} = organization, %User{} = current_user) do
+  def create_project(attrs, %Organization{} = organization, %User{} = current_user) do
     if organization |> Organizations.has_member?(current_user) do
       # FIXME: atom for seeds and string for api, how make it work for both?
       try do

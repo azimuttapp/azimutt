@@ -49,7 +49,7 @@ defmodule Azimutt.Organizations do
       |> Repo.insert()
       |> Result.tap_both(
         fn _err -> StripeSrv.delete_customer(stripe_customer) end,
-        fn org -> update_stripe_customer(org, current_user, stripe_customer, true) end
+        fn org -> stripe_update_customer(stripe_customer, org, current_user, true) end
       )
     end)
   end
@@ -66,12 +66,12 @@ defmodule Azimutt.Organizations do
       |> Repo.insert()
       |> Result.tap_both(
         fn _err -> StripeSrv.delete_customer(stripe_customer) end,
-        fn org -> update_stripe_customer(org, current_user, stripe_customer, false) end
+        fn org -> stripe_update_customer(stripe_customer, org, current_user, false) end
       )
     end)
   end
 
-  defp update_stripe_customer(%Organization{} = organization, %User{} = current_user, %Stripe.Customer{} = stripe_customer, is_personal) do
+  defp stripe_update_customer(%Stripe.Customer{} = stripe_customer, %Organization{} = organization, %User{} = current_user, is_personal) do
     StripeSrv.update_organization(
       stripe_customer,
       organization.id,
