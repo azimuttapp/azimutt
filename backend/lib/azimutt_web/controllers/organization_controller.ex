@@ -69,11 +69,11 @@ defmodule AzimuttWeb.OrganizationController do
     end
   end
 
-  def update(conn, %{"id" => id, "organization" => organization_params}) do
+  def update(conn, %{"id" => id, "organization" => organization_attrs}) do
     current_user = conn.assigns.current_user
     {:ok, organization} = Organizations.get_organization(id, current_user)
 
-    case Organizations.update_organization(organization, organization_params, current_user) do
+    case Organizations.update_organization(organization_attrs, organization, current_user) do
       {:ok, organization} ->
         conn
         |> put_flash(:info, "Organization updated successfully.")

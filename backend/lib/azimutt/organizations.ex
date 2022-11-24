@@ -54,7 +54,7 @@ defmodule Azimutt.Organizations do
     end)
   end
 
-  def create_non_personal_organization(attrs \\ %{}, %User{} = current_user) do
+  def create_non_personal_organization(attrs, %User{} = current_user) do
     StripeSrv.init_customer("TMP - #{attrs[:name]}")
     |> Result.flat_map(fn stripe_customer ->
       member_changeset = OrganizationMember.creator_changeset(current_user)
@@ -84,7 +84,7 @@ defmodule Azimutt.Organizations do
     )
   end
 
-  def update_organization(%Organization{} = organization, attrs, %User{} = current_user) do
+  def update_organization(attrs, %Organization{} = organization, %User{} = current_user) do
     organization
     |> Organization.update_changeset(attrs, current_user)
     |> Repo.update()
@@ -136,7 +136,7 @@ defmodule Azimutt.Organizations do
     |> Repo.one()
   end
 
-  def create_organization_invitation(attrs \\ %{}, invitation_url, organization_id, current_user, now) do
+  def create_organization_invitation(attrs, invitation_url, organization_id, current_user, now) do
     %OrganizationInvitation{}
     |> OrganizationInvitation.create_changeset(attrs, organization_id, current_user, Timex.shift(now, days: 7))
     |> Repo.insert()

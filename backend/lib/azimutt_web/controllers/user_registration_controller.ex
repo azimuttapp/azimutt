@@ -7,7 +7,7 @@ defmodule AzimuttWeb.UserRegistrationController do
 
   def new(conn, %{"user" => user_params}) do
     now = DateTime.utc_now()
-    changeset = Accounts.change_user_registration(%User{}, user_params, now)
+    changeset = Accounts.change_user_registration(user_params, %User{}, now)
     render(conn, "new.html", changeset: changeset)
   end
 
