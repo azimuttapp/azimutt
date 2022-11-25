@@ -43,7 +43,6 @@
   "dependencies": {
     "@sentry/browser": "^7.14.0",
     "@sentry/tracing": "^7.14.0",
-    "@splitbee/web": "^0.3.0",
     "canvas-confetti": "^1.5.1",
     "jiff": "^0.7.3",
     "zod": "^3.19.1"
