@@ -100,7 +100,7 @@ app.on('TrackError', msg => {
     analytics.trackError(msg.name, msg.details)
     errorTracking.trackError(msg.name, msg.details)
 })
-if (app.noListeners().length > 0) {
+if (app.noListeners().length > 0 && env !== Env.enum.prod) {
     logger.error(`Do not listen to elm events: ${app.noListeners().join(', ')}`)
 }
 

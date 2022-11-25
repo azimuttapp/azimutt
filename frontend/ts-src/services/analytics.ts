@@ -7,22 +7,29 @@ export interface Analytics {
     trackError: (name: string, details?: TrackingDetails) => void
 }
 
-export type Plausible = (event: string, details?: {props: TrackingDetails}) => void
+export type Plausible = (event: string, details?: { props: TrackingDetails }) => void
 
 export class PlausibleAnalytics implements Analytics {
-    private readonly plausible: Plausible
-
-    constructor() {
-        const plausible = (window as any).plausible
-        this.plausible = plausible || function() { (plausible.q = plausible.q || []).push(arguments) }
-    }
-
+    private readonly buffer: { name: string, details?: TrackingDetails }[] = []
     trackPage = (name: string): void => { /* automatically tracked, do nothing */
     }
     trackEvent = (name: string, details?: TrackingDetails): void => {
-        this.plausible(name, details ? {props: details} : details)
+        if (window.plausible) {
+            window.plausible(name, details ? {props: details} : details)
+        } else {
+            this.buffer.length === 0 && setTimeout(() => this.sendBuffer(), 500)
+            this.buffer.push({name, details})
+        }
     }
     trackError = (name: string, details?: TrackingDetails): void => { /* don't track errors */
+    }
+
+    private sendBuffer = (): void => {
+        if (window.plausible) {
+            this.buffer.splice(0, this.buffer.length).forEach(({name, details}) => this.trackEvent(name, details))
+        } else {
+            setTimeout(() => this.sendBuffer(), 500)
+        }
     }
 }
 
