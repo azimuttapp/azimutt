@@ -87,9 +87,8 @@ export const Hotkey = z.object({
     preventDefault: z.boolean()
 }).strict()
 
-// from node_modules/@splitbee/web/src/types.ts but not exported :(
-export type Data = { [key: string]: string | number | boolean | undefined | null };
-export const Data = z.record(z.union([z.string(), z.number(), z.boolean(), z.undefined(), z.null()]))
+export type TrackingDetails = { [key: string]: string | number | boolean | undefined | null };
+export const TrackingDetails = z.record(z.union([z.string(), z.number(), z.boolean(), z.undefined(), z.null()]))
 
 
 export type Click = { kind: 'Click', id: HtmlId }
@@ -142,10 +141,10 @@ export type ConfettiPride = { kind: 'ConfettiPride' }
 export const ConfettiPride = z.object({kind: z.literal('ConfettiPride')}).strict()
 export type TrackPage = { kind: 'TrackPage', name: string }
 export const TrackPage = z.object({kind: z.literal('TrackPage'), name: z.string()}).strict()
-export type TrackEvent = { kind: 'TrackEvent', name: string, details?: Data }
-export const TrackEvent = z.object({kind: z.literal('TrackEvent'), name: z.string(), details: Data.optional()}).strict()
-export type TrackError = { kind: 'TrackError', name: string, details?: Data }
-export const TrackError = z.object({kind: z.literal('TrackError'), name: z.string(), details: Data.optional()}).strict()
+export type TrackEvent = { kind: 'TrackEvent', name: string, details?: TrackingDetails }
+export const TrackEvent = z.object({kind: z.literal('TrackEvent'), name: z.string(), details: TrackingDetails.optional()}).strict()
+export type TrackError = { kind: 'TrackError', name: string, details?: TrackingDetails }
+export const TrackError = z.object({kind: z.literal('TrackError'), name: z.string(), details: TrackingDetails.optional()}).strict()
 export type ElmMsg = Click | MouseDown | Focus | Blur | ScrollTo | Fullscreen | SetMeta | AutofocusWithin | Toast | GetLegacyProjects | GetProject | CreateProjectTmp | UpdateProjectTmp | CreateProject | UpdateProject | MoveProjectTo | DeleteProject | ProjectDirty | DownloadFile | GetLocalFile | ObserveSizes | ListenKeys | Confetti | ConfettiPride | TrackPage | TrackEvent | TrackError
 export const ElmMsg = z.discriminatedUnion('kind', [Click, MouseDown, Focus, Blur, ScrollTo, Fullscreen, SetMeta, AutofocusWithin, Toast, GetLegacyProjects, GetProject, CreateProjectTmp, UpdateProjectTmp, CreateProject, UpdateProject, MoveProjectTo, DeleteProject, ProjectDirty, DownloadFile, GetLocalFile, ObserveSizes, ListenKeys, Confetti, ConfettiPride, TrackPage, TrackEvent, TrackError])
 
