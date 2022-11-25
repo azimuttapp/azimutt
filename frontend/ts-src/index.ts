@@ -23,7 +23,7 @@ import {
     buildProjectRemote,
     ProjectStorage
 } from "./types/project";
-import {LogAnalytics, SplitbeeAnalytics} from "./services/analytics";
+import {LogAnalytics, PlausibleAnalytics} from "./services/analytics";
 import {LogErrLogger, SentryErrLogger} from "./services/errors";
 import {ConsoleLogger} from "./services/logger";
 import {loadPolyfills} from "./utils/polyfills";
@@ -48,7 +48,7 @@ const app = ElmApp.init(flags, logger)
 const storage = new Storage(logger)
 const backend = new Backend(env, logger)
 const skipAnalytics = !!Json.parse(localStorage.getItem('skip-analytics') || 'false')
-const analytics = env === Env.enum.prod && !skipAnalytics ? new SplitbeeAnalytics(conf.splitbee) : new LogAnalytics(logger)
+const analytics = env === Env.enum.prod && !skipAnalytics ? new PlausibleAnalytics() : new LogAnalytics(logger)
 const errorTracking = env === Env.enum.prod ? new SentryErrLogger(conf.sentry) : new LogErrLogger(logger)
 logger.info('Hi there! I hope you are enjoying Azimutt 👍️\n\n' +
     'Did you know you can access your current project in the console?\n' +
@@ -100,7 +100,7 @@ app.on('TrackError', msg => {
     analytics.trackError(msg.name, msg.details)
     errorTracking.trackError(msg.name, msg.details)
 })
-if (app.noListeners().length > 0) {
+if (app.noListeners().length > 0 && env !== Env.enum.prod) {
     logger.error(`Do not listen to elm events: ${app.noListeners().join(', ')}`)
 }
 
@@ -133,6 +133,9 @@ function getLegacyProjects() {
     storage.getLegacyProjects().then(([errs, p]) => {
         errs.forEach(([id, e]) => reportError(`Can't decode project ${id}`, e))
         app.gotLegacyProjects(p)
+        if (p.length > 0) {
+            analytics.trackEvent('has-legacy-projects', {count: p.length})
+        }
     }, err => {
         reportError(`Can't list legacy projects`, err)
         app.gotLegacyProjects([])
