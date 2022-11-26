@@ -4,3 +4,4 @@
 .env
 .clever.json
 /node_modules/
+addon-manifest.json
