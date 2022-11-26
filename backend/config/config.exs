@@ -79,7 +79,8 @@ config :tailwind,
 
 config :ueberauth, Ueberauth,
   providers: [
-    github: {Ueberauth.Strategy.Github, [default_scope: "user,public_repo,notifications"]}
+    # see https://docs.github.com/en/developers/apps/building-oauth-apps/scopes-for-oauth-apps
+    github: {Ueberauth.Strategy.Github, [default_scope: "read:user,user:email,user:follow"]}
   ]
 
 config :azimutt, AzimuttWeb.Storybook,
