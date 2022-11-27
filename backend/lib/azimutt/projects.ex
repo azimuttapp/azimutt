@@ -9,6 +9,7 @@ defmodule Azimutt.Projects do
   alias Azimutt.Projects.Project
   alias Azimutt.Projects.Project.Storage
   alias Azimutt.Repo
+  alias Azimutt.Tracking
   alias Azimutt.Utils.Result
 
   def list_projects(%Organization{} = organization, %User{} = current_user) do
@@ -55,6 +56,7 @@ defmodule Azimutt.Projects do
           true -> raise "Invalid storage: '#{storage}'"
         end
         |> Repo.insert()
+        |> Result.tap(fn p -> Tracking.project_created(current_user, p) end)
       rescue
         e ->
           Logger.error(Exception.format(:error, e, __STACKTRACE__))
@@ -75,9 +77,11 @@ defmodule Azimutt.Projects do
       true -> raise "Invalid storage: '#{storage}'"
     end
     |> Repo.update()
+    |> Result.tap(fn p -> Tracking.project_updated(current_user, p) end)
   end
 
-  def delete_project(%Project{} = project) do
+  def delete_project(%Project{} = project, %User{} = current_user) do
     Repo.delete(project)
+    |> Result.tap(fn p -> Tracking.project_deleted(current_user, p) end)
   end
 end

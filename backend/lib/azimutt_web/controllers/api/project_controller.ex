@@ -61,6 +61,7 @@ defmodule AzimuttWeb.Api.ProjectController do
     ctx = CtxParams.from_params(project_params)
     current_user = conn.assigns.current_user
 
+    # FIXME: add correct validation, especially for public projects => get_project does not offer guarantees
     with {:ok, %Project{} = project} <- Projects.get_project(id, current_user),
          {:ok, %Project{} = updated} <- Projects.update_project(project, project_params, current_user, now),
          # needed to get preloads
@@ -71,8 +72,9 @@ defmodule AzimuttWeb.Api.ProjectController do
   def delete(conn, %{"organization_id" => _organization_id, "id" => id}) do
     current_user = conn.assigns.current_user
 
+    # FIXME: add correct validation, especially for public projects => get_project does not offer guarantees
     with {:ok, %Project{} = project} <- Projects.get_project(id, current_user),
-         {:ok, %Project{}} <- Projects.delete_project(project),
+         {:ok, %Project{}} <- Projects.delete_project(project, current_user),
          do: conn |> send_resp(:no_content, "")
   end
 
