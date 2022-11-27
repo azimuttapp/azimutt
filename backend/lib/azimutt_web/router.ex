@@ -69,7 +69,6 @@ defmodule AzimuttWeb.Router do
     get "/login/redirect", UserSessionController, :redirect_to
 
     resources "/organizations", OrganizationController, except: [:index] do
-      # FIXME: don't work, still useful? get "/projects", ProjectController, :index
       get "/billing", OrganizationBillingController, :index, as: :billing
       post "/billing/new", OrganizationBillingController, :new, as: :billing
       post "/billing/edit", OrganizationBillingController, :edit, as: :billing
@@ -87,14 +86,10 @@ defmodule AzimuttWeb.Router do
   end
 
   # authed admin routes
-  # FIXME: doesn't work :(
   # scope "/admin", AzimuttWeb do
   #   pipe_through [:browser, :require_authenticated_user]
-  #   get "/users/projects", ProjectController, :index
-  #   resources "/organizations", OrganizationController
   # end
 
-  # FIXME '/api' will catch all :(
   scope "/api/v1/swagger" do
     forward "/", PhoenixSwagger.Plug.SwaggerUI, otp_app: :azimutt, swagger_file: "swagger.json"
   end

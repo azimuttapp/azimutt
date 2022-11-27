@@ -5,11 +5,8 @@ defmodule Azimutt.OrganizationsTest do
 
   describe "organizations" do
     alias Azimutt.Organizations.Organization
-
     import Azimutt.AccountsFixtures
     import Azimutt.OrganizationsFixtures
-
-    @invalid_attrs %{name: nil}
 
     setup do
       %{user: user_fixture()}
@@ -19,28 +16,27 @@ defmodule Azimutt.OrganizationsTest do
     test "list_organizations/0 returns all organizations" do
       user = user_fixture()
       organization = organization_fixture(user)
-      assert Organizations.list_organizations() == [organization]
+      assert Organizations.list_organizations(user) == [organization]
     end
 
     @tag :skip
     test "get_organization/1 returns the organization with given id" do
       user = user_fixture()
       organization = organization_fixture(user)
-      assert {:ok, organization} == Organizations.get_organization(organization.id)
+      assert {:ok, organization} == Organizations.get_organization(organization.id, user)
     end
 
     @tag :skip
-    test "create_organization/1 with valid data creates a organization", %{user: user} do
-      valid_attrs = %{name: "some name"}
-
-      assert {:ok, %Organization{} = organization} = Organizations.create_organization(valid_attrs, user)
-
+    test "create_personal_organization/1 with valid data creates a organization", %{user: user} do
+      assert {:ok, %Organization{} = organization} = Organizations.create_personal_organization(user)
       assert organization.name == "some name"
     end
 
     @tag :skip
-    test "create_organization/1 with invalid data returns error changeset", %{user: user} do
-      assert {:error, %Ecto.Changeset{}} = Organizations.create_organization(@invalid_attrs, user)
+    test "create_non_personal_organization/1 with valid data creates a organization", %{user: user} do
+      valid_attrs = %{name: "Orga name", contact_email: "admin@mail.com"}
+      assert {:ok, %Organization{} = organization} = Organizations.create_non_personal_organization(valid_attrs, user)
+      assert organization.name == "some name"
     end
 
     @tag :skip
@@ -49,7 +45,7 @@ defmodule Azimutt.OrganizationsTest do
       organization = organization_fixture(user)
       update_attrs = %{name: "some updated name"}
 
-      assert {:ok, %Organization{} = organization} = Organizations.update_organization(organization, update_attrs)
+      assert {:ok, %Organization{} = organization} = Organizations.update_organization(update_attrs, organization, user)
 
       assert organization.name == "some updated name"
     end
@@ -59,9 +55,9 @@ defmodule Azimutt.OrganizationsTest do
       user = user_fixture()
       organization = organization_fixture(user)
 
-      assert {:error, %Ecto.Changeset{}} = Organizations.update_organization(organization, @invalid_attrs)
+      assert {:error, %Ecto.Changeset{}} = Organizations.update_organization(%{name: nil}, organization, user)
 
-      assert {:ok, organization} == Organizations.get_organization(organization.id)
+      assert {:ok, organization} == Organizations.get_organization(organization.id, user)
     end
 
     @tag :skip
@@ -69,23 +65,13 @@ defmodule Azimutt.OrganizationsTest do
       user = user_fixture()
       organization = organization_fixture(user)
       assert {:ok, %Organization{}} = Organizations.delete_organization(organization)
-      assert {:error, :not_found} == Organizations.get_organization(organization.id)
-    end
-
-    @tag :skip
-    test "change_organization/1 returns a organization changeset" do
-      user = user_fixture()
-      organization = organization_fixture(user)
-      assert %Ecto.Changeset{} = Organizations.change_organization(organization)
+      assert {:error, :not_found} == Organizations.get_organization(organization.id, user)
     end
   end
 
   describe "organization_invitations" do
     alias Azimutt.Organizations.OrganizationInvitation
-
     import Azimutt.OrganizationsFixtures
-
-    @invalid_attrs %{sent_to: nil, token: nil}
 
     @tag :skip
     test "get_organization_invitation/1 returns the organization_invitation with given id" do
@@ -98,31 +84,23 @@ defmodule Azimutt.OrganizationsTest do
 
     @tag :skip
     test "create_organization_invitation/1 with valid data creates a organization_invitation" do
+      now = DateTime.utc_now()
       user = user_fixture()
       organization = organization_fixture(user)
+      valid_attrs = %{sent_to: "hey@mail.com"}
 
-      valid_attrs = %{
-        organization_id: organization.id,
-        sent_to: "some sent_to"
-      }
-
-      assert {:ok, %OrganizationInvitation{} = organization_invitation} = Organizations.create_organization_invitation(valid_attrs, "url")
+      assert {:ok, %OrganizationInvitation{} = organization_invitation} =
+               Organizations.create_organization_invitation(valid_attrs, "url", organization.id, user, now)
 
       assert organization_invitation.sent_to == "some sent_to"
     end
 
     @tag :skip
     test "create_organization_invitation/1 with invalid data returns error changeset" do
-      assert {:error, %Ecto.Changeset{}} = Organizations.create_organization_invitation(@invalid_attrs, "url")
-    end
-
-    @tag :skip
-    test "change_organization_invitation/1 returns a organization_invitation changeset" do
+      now = DateTime.utc_now()
       user = user_fixture()
       organization = organization_fixture(user)
-      organization_invitation = organization_invitation_fixture(organization, user)
-
-      assert %Ecto.Changeset{} = Organizations.change_organization_invitation(organization_invitation)
+      assert {:error, %Ecto.Changeset{}} = Organizations.create_organization_invitation(%{sent_to: nil}, "url", organization.id, user, now)
     end
   end
 end

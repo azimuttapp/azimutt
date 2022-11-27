@@ -8,14 +8,6 @@ defmodule AzimuttWeb.OrganizationControllerTest do
   @update_attrs %{name: "some updated name"}
   @invalid_attrs %{name: nil}
 
-  describe "index" do
-    @tag :skip
-    test "lists all organizations", %{conn: conn} do
-      conn = get(conn, Routes.organization_path(conn, :index))
-      assert html_response(conn, 200) =~ "Listing Organizations"
-    end
-  end
-
   describe "new organization" do
     @tag :skip
     test "renders form", %{conn: conn} do
