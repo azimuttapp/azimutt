@@ -57,7 +57,8 @@ defmodule Azimutt.AccountsTest do
   describe "register_password_user/1" do
     @tag :skip
     test "requires email and password to be set" do
-      {:error, changeset} = Accounts.register_password_user(%{})
+      now = DateTime.utc_now()
+      {:error, changeset} = Accounts.register_password_user(%{}, now)
 
       assert %{
                password: ["can't be blank"],
@@ -67,7 +68,8 @@ defmodule Azimutt.AccountsTest do
 
     @tag :skip
     test "validates email and password when given" do
-      {:error, changeset} = Accounts.register_password_user(%{email: "not valid", password: "not valid"})
+      now = DateTime.utc_now()
+      {:error, changeset} = Accounts.register_password_user(%{email: "not valid", password: "not valid"}, now)
 
       assert %{
                email: ["must have the @ sign and no spaces"],
@@ -77,9 +79,10 @@ defmodule Azimutt.AccountsTest do
 
     @tag :skip
     test "validates maximum values for email and password for security" do
+      now = DateTime.utc_now()
       too_long = String.duplicate("db", 100)
 
-      {:error, changeset} = Accounts.register_password_user(%{email: too_long, password: too_long})
+      {:error, changeset} = Accounts.register_password_user(%{email: too_long, password: too_long}, now)
 
       assert "should be at most 160 character(s)" in errors_on(changeset).email
       assert "should be at most 72 character(s)" in errors_on(changeset).password
@@ -87,19 +90,21 @@ defmodule Azimutt.AccountsTest do
 
     @tag :skip
     test "validates email uniqueness" do
+      now = DateTime.utc_now()
       %{email: email} = user_fixture()
-      {:error, changeset} = Accounts.register_password_user(%{email: email})
+      {:error, changeset} = Accounts.register_password_user(%{email: email}, now)
       assert "has already been taken" in errors_on(changeset).email
 
       # Now try with the upper cased email too, to check that email case is ignored.
-      {:error, changeset} = Accounts.register_password_user(%{email: String.upcase(email)})
+      {:error, changeset} = Accounts.register_password_user(%{email: String.upcase(email)}, now)
       assert "has already been taken" in errors_on(changeset).email
     end
 
     @tag :skip
     test "registers users with a hashed password" do
+      now = DateTime.utc_now()
       email = unique_user_email()
-      {:ok, user} = Accounts.register_password_user(valid_user_attributes(email: email))
+      {:ok, user} = Accounts.register_password_user(valid_user_attributes(email: email), now)
       assert user.email == email
       assert is_binary(user.hashed_password)
       assert is_nil(user.confirmed_at)
@@ -110,20 +115,18 @@ defmodule Azimutt.AccountsTest do
   describe "change_user_registration/2" do
     @tag :skip
     test "returns a changeset" do
-      assert %Ecto.Changeset{} = changeset = Accounts.change_user_registration(%User{})
+      now = DateTime.utc_now()
+      assert %Ecto.Changeset{} = changeset = Accounts.change_user_registration(%{}, %User{}, now)
       assert changeset.required == [:password, :email]
     end
 
     @tag :skip
     test "allows fields to be set" do
+      now = DateTime.utc_now()
       email = unique_user_email()
       password = valid_user_password()
-
-      changeset =
-        Accounts.change_user_registration(
-          %User{},
-          valid_user_attributes(email: email, password: password)
-        )
+      attrs = valid_user_attributes(email: email, password: password)
+      changeset = Accounts.change_user_registration(attrs, %User{}, now)
 
       assert changeset.valid?
       assert get_change(changeset, :email) == email
@@ -433,7 +436,8 @@ defmodule Azimutt.AccountsTest do
 
     @tag :skip
     test "confirms the email with a valid token", %{user: user, token: token} do
-      assert {:ok, confirmed_user} = Accounts.confirm_user(token)
+      now = DateTime.utc_now()
+      assert {:ok, confirmed_user} = Accounts.confirm_user(token, now)
       assert confirmed_user.confirmed_at
       assert confirmed_user.confirmed_at != user.confirmed_at
       assert Repo.get!(User, user.id).confirmed_at
@@ -442,15 +446,17 @@ defmodule Azimutt.AccountsTest do
 
     @tag :skip
     test "does not confirm with invalid token", %{user: user} do
-      assert Accounts.confirm_user("oops") == :error
+      now = DateTime.utc_now()
+      assert Accounts.confirm_user("oops", now) == :error
       refute Repo.get!(User, user.id).confirmed_at
       assert Repo.get_by(UserToken, user_id: user.id)
     end
 
     @tag :skip
     test "does not confirm email if token expired", %{user: user, token: token} do
+      now = DateTime.utc_now()
       {1, nil} = Repo.update_all(UserToken, set: [inserted_at: ~N[2020-01-01 00:00:00]])
-      assert Accounts.confirm_user(token) == :error
+      assert Accounts.confirm_user(token, now) == :error
       refute Repo.get!(User, user.id).confirmed_at
       assert Repo.get_by(UserToken, user_id: user.id)
     end
