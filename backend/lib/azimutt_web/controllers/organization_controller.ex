@@ -6,12 +6,6 @@ defmodule AzimuttWeb.OrganizationController do
   alias Azimutt.Utils.Uuid
   action_fallback AzimuttWeb.FallbackController
 
-  def index(conn, _params) do
-    current_user = conn.assigns.current_user
-    organizations = Organizations.list_organizations(current_user)
-    render(conn, "index.html", organizations: organizations)
-  end
-
   def new(conn, _params) do
     current_user = conn.assigns.current_user
     changeset = Organization.create_non_personal_changeset(%Organization{}, current_user, %Stripe.Customer{})
@@ -69,11 +63,11 @@ defmodule AzimuttWeb.OrganizationController do
     end
   end
 
-  def update(conn, %{"id" => id, "organization" => organization_params}) do
+  def update(conn, %{"id" => id, "organization" => organization_attrs}) do
     current_user = conn.assigns.current_user
     {:ok, organization} = Organizations.get_organization(id, current_user)
 
-    case Organizations.update_organization(organization, organization_params, current_user) do
+    case Organizations.update_organization(organization_attrs, organization, current_user) do
       {:ok, organization} ->
         conn
         |> put_flash(:info, "Organization updated successfully.")

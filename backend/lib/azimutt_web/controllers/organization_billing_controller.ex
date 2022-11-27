@@ -2,6 +2,7 @@ defmodule AzimuttWeb.OrganizationBillingController do
   use AzimuttWeb, :controller
   alias Azimutt.Organizations
   alias Azimutt.Organizations.Organization
+  alias Azimutt.Services.StripeSrv
   alias Azimutt.Utils.Uuid
   alias AzimuttWeb.Router.Helpers, as: Routes
   require Logger
@@ -46,39 +47,28 @@ defmodule AzimuttWeb.OrganizationBillingController do
     current_user = conn.assigns.current_user
     {:ok, organization} = Organizations.get_organization(organization_id, current_user)
 
-    # Get this from the Stripe dashboard for your product
-    price_id = Azimutt.config(:team_plan_price_id)
-    quantity = get_seats_from_organization(organization)
-
-    session_config = %{
-      mode: "subscription",
-      customer: organization.stripe_customer_id,
-      line_items: [
-        %{
-          price: price_id,
-          quantity: quantity
-        }
-      ],
-      allow_promotion_codes: true,
-      success_url: Routes.organization_billing_url(conn, :success, organization_id),
-      cancel_url: Routes.organization_billing_url(conn, :cancel, organization_id)
-    }
-
-    case Stripe.Session.create(session_config) do
+    case StripeSrv.create_session(%{
+           customer: organization.stripe_customer_id,
+           success_url: Routes.organization_billing_url(conn, :success, organization_id),
+           cancel_url: Routes.organization_billing_url(conn, :cancel, organization_id),
+           # Get price_id from your Stripe dashboard for your product
+           price_id: Azimutt.config(:team_plan_price_id),
+           quantity: get_organization_seats(organization)
+         }) do
       {:ok, session} ->
         Logger.info("Stripe session is create with success")
         redirect(conn, external: session.url)
 
       {:error, stripe_error} ->
-        Logger.error("Cannot create Stripe Session", stripe_error)
+        Logger.error("Cannot create Stripe Session: #{stripe_error}")
 
         conn
         |> put_flash(:error, "Sorry something went wrong.")
-        |> redirect(to: Routes.user_dashboard_path(conn, :index))
+        |> redirect(to: Routes.organization_billing_path(conn, :index, organization_id))
     end
   end
 
-  defp get_seats_from_organization(organization) do
+  defp get_organization_seats(organization) do
     organization.members |> length
   end
 
@@ -86,7 +76,7 @@ defmodule AzimuttWeb.OrganizationBillingController do
     current_user = conn.assigns.current_user
     {:ok, organization} = Organizations.get_organization(organization_id, current_user)
 
-    case Stripe.BillingPortal.Session.create(%{
+    case StripeSrv.update_session(%{
            customer: organization.stripe_customer_id,
            return_url: Routes.website_url(conn, :index)
          }) do
