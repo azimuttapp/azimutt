@@ -3,13 +3,13 @@ defmodule Azimutt.Projects do
   import Ecto.Query, warn: false
   require Logger
   alias Azimutt.Accounts.User
-  alias Azimutt.Audit
   alias Azimutt.Organizations
   alias Azimutt.Organizations.Organization
   alias Azimutt.Organizations.OrganizationMember
   alias Azimutt.Projects.Project
   alias Azimutt.Projects.Project.Storage
   alias Azimutt.Repo
+  alias Azimutt.Tracking
   alias Azimutt.Utils.Result
 
   def list_projects(%Organization{} = organization, %User{} = current_user) do
@@ -56,7 +56,7 @@ defmodule Azimutt.Projects do
           true -> raise "Invalid storage: '#{storage}'"
         end
         |> Repo.insert()
-        |> Result.tap(fn p -> Audit.project_created(current_user, p.organization.id, p.id) end)
+        |> Result.tap(fn p -> Tracking.project_created(current_user, p) end)
       rescue
         e ->
           Logger.error(Exception.format(:error, e, __STACKTRACE__))
@@ -77,11 +77,11 @@ defmodule Azimutt.Projects do
       true -> raise "Invalid storage: '#{storage}'"
     end
     |> Repo.update()
-    |> Result.tap(fn p -> Audit.project_updated(current_user, p.organization.id, p.id) end)
+    |> Result.tap(fn p -> Tracking.project_updated(current_user, p) end)
   end
 
   def delete_project(%Project{} = project, %User{} = current_user) do
     Repo.delete(project)
-    |> Result.tap(fn p -> Audit.project_deleted(current_user, p.organization.id, p.id) end)
+    |> Result.tap(fn p -> Tracking.project_deleted(current_user, p) end)
   end
 end

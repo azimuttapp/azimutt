@@ -1,10 +1,10 @@
-defmodule Azimutt.AuditTest do
+defmodule Azimutt.TrackingTest do
   use Azimutt.DataCase
-  alias Azimutt.Audit
+  alias Azimutt.Tracking
 
   describe "events" do
-    alias Azimutt.Audit.Event
-    import Azimutt.AuditFixtures
+    alias Azimutt.Tracking.Event
+    import Azimutt.TrackingFixtures
     import Azimutt.AccountsFixtures
     import Azimutt.OrganizationsFixtures
     import Azimutt.ProjectsFixtures
@@ -17,7 +17,7 @@ defmodule Azimutt.AuditTest do
       organization = organization_fixture(user)
       project = project_fixture(organization, user)
       event = project_created_fixture(user, organization, project)
-      assert Audit.list_events() == [event]
+      assert Tracking.list_events() == [event]
     end
 
     @tag :skip
@@ -26,13 +26,13 @@ defmodule Azimutt.AuditTest do
       organization = organization_fixture(user)
       project = project_fixture(organization, user)
 
-      assert {:ok, %Event{} = event} = Audit.project_created(user, organization.id, project.id)
+      assert {:ok, %Event{} = event} = Tracking.project_created(user, organization.id, project.id)
       assert event.name == :project_created
     end
 
     @tag :skip
     test "create_event/1 with invalid data returns error changeset" do
-      assert {:error, %Ecto.Changeset{}} = Audit.create_event(@invalid_attrs)
+      assert {:error, %Ecto.Changeset{}} = Tracking.create_event(@invalid_attrs)
     end
   end
 end
