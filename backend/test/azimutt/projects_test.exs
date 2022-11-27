@@ -125,7 +125,7 @@ defmodule Azimutt.ProjectsTest do
       user = user_fixture()
       organization = organization_fixture(user)
       project = project_fixture(organization, user)
-      assert {:ok, %Project{}} = Projects.delete_project(project)
+      assert {:ok, %Project{}} = Projects.delete_project(project, user)
       assert {:error, :not_found} = Projects.get_project(project.id, user)
     end
   end
