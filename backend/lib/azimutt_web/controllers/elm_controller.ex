@@ -1,6 +1,8 @@
 defmodule AzimuttWeb.ElmController do
   use AzimuttWeb, :controller
   alias Azimutt.Audit
+  alias Azimutt.Projects
+  alias Azimutt.Projects.Project
   action_fallback AzimuttWeb.FallbackController
 
   # every action is the same, just load the Elm index but we need different actions for the reverse router
@@ -13,8 +15,11 @@ defmodule AzimuttWeb.ElmController do
   def orga_new(conn, _params), do: load_elm(conn)
 
   def project_show(conn, %{"organization_id" => organization_id, "project_id" => project_id}) do
-    # FIXME: rescue errors in `project_loaded` (wrong ids for example)
-    Audit.project_loaded(conn.assigns.current_user, organization_id, project_id)
+    current_user = conn.assigns.current_user
+
+    with {:ok, %Project{} = project} <- Projects.get_project(project_id, current_user),
+         do: Audit.project_loaded(current_user, organization_id, project_id)
+
     load_elm(conn)
   end
 
