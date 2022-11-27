@@ -80,7 +80,7 @@ config :tailwind,
 config :ueberauth, Ueberauth,
   providers: [
     # see https://docs.github.com/en/developers/apps/building-oauth-apps/scopes-for-oauth-apps
-    github: {Ueberauth.Strategy.Github, [default_scope: "read:user,user:email,user:follow"]}
+    github: {Ueberauth.Strategy.Github, [default_scope: "read:user,user:email"]}
   ]
 
 config :azimutt, AzimuttWeb.Storybook,
