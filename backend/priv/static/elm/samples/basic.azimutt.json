@@ -7,7 +7,7 @@
       "name": "basic.sql",
       "kind": {
         "kind": "SqlRemoteFile",
-        "url": "/samples/basic.sql",
+        "url": "/elm/samples/basic.sql",
         "size": 1764
       },
       "content": [
@@ -71,7 +71,7 @@
       ],
       "tables": [
         {
-          "schema": "public",
+          "schema": "",
           "table": "credentials",
           "columns": [
             {
@@ -80,7 +80,15 @@
               "origins": [
                 {
                   "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
-                  "lines": []
+                  "lines": [
+                    35,
+                    36,
+                    37,
+                    38,
+                    39,
+                    40,
+                    41
+                  ]
                 }
               ]
             },
@@ -90,7 +98,15 @@
               "origins": [
                 {
                   "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
-                  "lines": []
+                  "lines": [
+                    35,
+                    36,
+                    37,
+                    38,
+                    39,
+                    40,
+                    41
+                  ]
                 }
               ]
             },
@@ -100,7 +116,15 @@
               "origins": [
                 {
                   "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
-                  "lines": []
+                  "lines": [
+                    35,
+                    36,
+                    37,
+                    38,
+                    39,
+                    40,
+                    41
+                  ]
                 }
               ]
             }
@@ -138,7 +162,7 @@
           ]
         },
         {
-          "schema": "public",
+          "schema": "",
           "table": "role_user",
           "columns": [
             {
@@ -147,7 +171,19 @@
               "origins": [
                 {
                   "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
-                  "lines": []
+                  "lines": [
+                    45,
+                    46,
+                    47,
+                    48,
+                    49,
+                    50,
+                    51,
+                    52,
+                    53,
+                    54,
+                    55
+                  ]
                 }
               ]
             },
@@ -157,7 +193,19 @@
               "origins": [
                 {
                   "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
-                  "lines": []
+                  "lines": [
+                    45,
+                    46,
+                    47,
+                    48,
+                    49,
+                    50,
+                    51,
+                    52,
+                    53,
+                    54,
+                    55
+                  ]
                 }
               ]
             },
@@ -167,7 +215,19 @@
               "origins": [
                 {
                   "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
-                  "lines": []
+                  "lines": [
+                    45,
+                    46,
+                    47,
+                    48,
+                    49,
+                    50,
+                    51,
+                    52,
+                    53,
+                    54,
+                    55
+                  ]
                 }
               ]
             },
@@ -177,7 +237,19 @@
               "origins": [
                 {
                   "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
-                  "lines": []
+                  "lines": [
+                    45,
+                    46,
+                    47,
+                    48,
+                    49,
+                    50,
+                    51,
+                    52,
+                    53,
+                    54,
+                    55
+                  ]
                 }
               ]
             },
@@ -187,7 +259,19 @@
               "origins": [
                 {
                   "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
-                  "lines": []
+                  "lines": [
+                    45,
+                    46,
+                    47,
+                    48,
+                    49,
+                    50,
+                    51,
+                    52,
+                    53,
+                    54,
+                    55
+                  ]
                 }
               ]
             }
@@ -236,7 +320,7 @@
           ]
         },
         {
-          "schema": "public",
+          "schema": "",
           "table": "roles",
           "columns": [
             {
@@ -245,7 +329,18 @@
               "origins": [
                 {
                   "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
-                  "lines": []
+                  "lines": [
+                    20,
+                    21,
+                    22,
+                    23,
+                    24,
+                    25,
+                    26,
+                    27,
+                    28,
+                    29
+                  ]
                 }
               ]
             },
@@ -255,7 +350,18 @@
               "origins": [
                 {
                   "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
-                  "lines": []
+                  "lines": [
+                    20,
+                    21,
+                    22,
+                    23,
+                    24,
+                    25,
+                    26,
+                    27,
+                    28,
+                    29
+                  ]
                 }
               ]
             },
@@ -265,7 +371,18 @@
               "origins": [
                 {
                   "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
-                  "lines": []
+                  "lines": [
+                    20,
+                    21,
+                    22,
+                    23,
+                    24,
+                    25,
+                    26,
+                    27,
+                    28,
+                    29
+                  ]
                 }
               ]
             },
@@ -276,7 +393,18 @@
               "origins": [
                 {
                   "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
-                  "lines": []
+                  "lines": [
+                    20,
+                    21,
+                    22,
+                    23,
+                    24,
+                    25,
+                    26,
+                    27,
+                    28,
+                    29
+                  ]
                 }
               ]
             },
@@ -286,7 +414,18 @@
               "origins": [
                 {
                   "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
-                  "lines": []
+                  "lines": [
+                    20,
+                    21,
+                    22,
+                    23,
+                    24,
+                    25,
+                    26,
+                    27,
+                    28,
+                    29
+                  ]
                 }
               ]
             },
@@ -296,7 +435,18 @@
               "origins": [
                 {
                   "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
-                  "lines": []
+                  "lines": [
+                    20,
+                    21,
+                    22,
+                    23,
+                    24,
+                    25,
+                    26,
+                    27,
+                    28,
+                    29
+                  ]
                 }
               ]
             }
@@ -375,7 +525,7 @@
           ]
         },
         {
-          "schema": "public",
+          "schema": "",
           "table": "users",
           "columns": [
             {
@@ -395,7 +545,17 @@
               "origins": [
                 {
                   "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
-                  "lines": []
+                  "lines": [
+                    0,
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8
+                  ]
                 }
               ]
             },
@@ -405,7 +565,17 @@
               "origins": [
                 {
                   "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
-                  "lines": []
+                  "lines": [
+                    0,
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8
+                  ]
                 }
               ]
             },
@@ -415,7 +585,17 @@
               "origins": [
                 {
                   "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
-                  "lines": []
+                  "lines": [
+                    0,
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8
+                  ]
                 }
               ]
             },
@@ -426,7 +606,17 @@
               "origins": [
                 {
                   "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
-                  "lines": []
+                  "lines": [
+                    0,
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8
+                  ]
                 }
               ]
             },
@@ -437,7 +627,17 @@
               "origins": [
                 {
                   "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
-                  "lines": []
+                  "lines": [
+                    0,
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8
+                  ]
                 }
               ]
             }
@@ -547,11 +747,11 @@
         {
           "name": "credentials_user_id_fk",
           "src": {
-            "table": "public.credentials",
+            "table": ".credentials",
             "column": "user_id"
           },
           "ref": {
-            "table": "public.users",
+            "table": ".users",
             "column": "id"
           },
           "origins": [
@@ -570,13 +770,13 @@
           ]
         },
         {
-          "name": "role_user_role_id_fk",
+          "name": "role_user_user_id_fk",
           "src": {
-            "table": "public.role_user",
-            "column": "role_id"
+            "table": ".role_user",
+            "column": "user_id"
           },
           "ref": {
-            "table": "public.roles",
+            "table": ".users",
             "column": "id"
           },
           "origins": [
@@ -599,13 +799,13 @@
           ]
         },
         {
-          "name": "role_user_user_id_fk",
+          "name": "role_user_role_id_fk",
           "src": {
-            "table": "public.role_user",
-            "column": "user_id"
+            "table": ".role_user",
+            "column": "role_id"
           },
           "ref": {
-            "table": "public.users",
+            "table": ".roles",
             "column": "id"
           },
           "origins": [
@@ -628,7 +828,6 @@
           ]
         }
       ],
-      "fromSample": "basic",
       "createdAt": 1649492400000,
       "updatedAt": 1649492400000
     }
@@ -638,20 +837,20 @@
     "initial layout": {
       "canvas": {
         "position": {
-          "left": -271,
-          "top": -106
+          "left": 0,
+          "top": 0
         },
         "zoom": 1
       },
       "tables": [
         {
-          "id": "public.credentials",
+          "id": ".credentials",
           "position": {
-            "left": 930,
-            "top": 620
+            "left": 700,
+            "top": 490
           },
           "size": {
-            "width": 159.38333129882812,
+            "width": 147.5,
             "height": 117
           },
           "color": "orange",
@@ -662,10 +861,10 @@
           ]
         },
         {
-          "id": "public.role_user",
+          "id": ".role_user",
           "position": {
-            "left": 890,
-            "top": 280
+            "left": 700,
+            "top": 210
           },
           "size": {
             "width": 166.5833282470703,
@@ -679,31 +878,31 @@
           ]
         },
         {
-          "id": "public.roles",
+          "id": ".roles",
           "position": {
-            "left": 1140,
-            "top": 300
+            "left": 960,
+            "top": 210
           },
           "size": {
-            "width": 171.76666259765625,
+            "width": 166.5833282470703,
             "height": 165
           },
           "color": "blue",
           "columns": [
             "id",
-            "name",
             "slug",
+            "name",
             "description"
           ]
         },
         {
-          "id": "public.users",
+          "id": ".users",
           "position": {
-            "left": 600,
-            "top": 470
+            "left": 420,
+            "top": 360
           },
           "size": {
-            "width": 168.25,
+            "width": 161.88333129882812,
             "height": 167.5
           },
           "color": "yellow",
@@ -719,9 +918,6 @@
       "createdAt": 1649492400000,
       "updatedAt": 1649492400000
     }
-  },
-  "settings": {
-    "defaultSchema": "public"
   },
   "createdAt": 1649492400000,
   "updatedAt": 1649492400000,

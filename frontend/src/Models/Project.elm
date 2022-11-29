@@ -179,8 +179,24 @@ downloadFilename project =
 
 
 downloadContent : Project -> String
-downloadContent project =
-    (project |> encode |> Encode.encode 2) ++ "\n"
+downloadContent value =
+    -- same as encode but without keys: `organization`, `slug`, `storage` & `visibility`
+    (Encode.notNullObject
+        [ ( "id", value.id |> ProjectId.encode )
+        , ( "name", value.name |> ProjectName.encode )
+        , ( "description", value.description |> Encode.maybe Encode.string )
+        , ( "sources", value.sources |> Encode.list Source.encode )
+        , ( "notes", value.notes |> Encode.withDefault (Encode.dict identity Encode.string) Dict.empty )
+        , ( "usedLayout", value.usedLayout |> LayoutName.encode )
+        , ( "layouts", value.layouts |> Encode.dict LayoutName.toString Layout.encode )
+        , ( "settings", value.settings |> Encode.withDefaultDeep ProjectSettings.encode (ProjectSettings.init Conf.schema.empty) )
+        , ( "createdAt", value.createdAt |> Time.encode )
+        , ( "updatedAt", value.updatedAt |> Time.encode )
+        , ( "version", ProjectEncodingVersion.current |> Encode.int )
+        ]
+        |> Encode.encode 2
+    )
+        ++ "\n"
 
 
 encode : Project -> Value

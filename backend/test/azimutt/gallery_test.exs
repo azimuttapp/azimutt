@@ -1,20 +1,28 @@
 defmodule Azimutt.GalleryTest do
   use Azimutt.DataCase
   alias Azimutt.Gallery
+  alias Azimutt.Utils.Result
 
   describe "samples" do
+    import Azimutt.AccountsFixtures
+    import Azimutt.OrganizationsFixtures
+    import Azimutt.ProjectsFixtures
     import Azimutt.GalleryFixtures
 
-    @tag :skip
     test "list_samples/0 returns all samples" do
-      sample = sample_fixture()
-      assert Gallery.list_samples() == [sample]
+      user = user_fixture()
+      organization = organization_fixture(user)
+      project = project_fixture(organization, user)
+      sample = sample_fixture(project)
+      assert [sample.id] == Gallery.list_samples() |> Enum.map(fn s -> s.id end)
     end
 
-    @tag :skip
     test "get_sample!/1 returns the sample with given id" do
-      sample = sample_fixture()
-      assert Gallery.get_sample(sample.slug) == {:ok, sample}
+      user = user_fixture()
+      organization = organization_fixture(user)
+      project = project_fixture(organization, user)
+      sample = sample_fixture(project)
+      assert {:ok, sample.id} == Gallery.get_sample(sample.slug) |> Result.map(fn s -> s.id end)
     end
   end
 end
