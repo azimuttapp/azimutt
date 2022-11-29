@@ -1,4 +1,4 @@
-module Services.SqlSource exposing (Model, Msg(..), ParsingMsg(..), SqlParsing, hasErrors, init, kind, update, viewInput, viewLocalInput, viewParsing, viewRemoteInput)
+module Services.SqlSource exposing (Model, Msg(..), ParsingMsg(..), SqlParsing, example, hasErrors, init, kind, update, viewInput, viewLocalInput, viewParsing, viewRemoteInput)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Atoms.Link as Link
@@ -95,6 +95,11 @@ type ParsingMsg
 kind : String
 kind =
     "sql-source"
+
+
+example : String
+example =
+    "/elm/samples/basic.sql"
 
 
 init : Maybe Source -> (( Maybe (SqlParsing msg), Result String Source ) -> msg) -> Model msg
@@ -298,7 +303,7 @@ viewRemoteInput wrap htmlId model error =
                 [ type_ "text"
                 , id htmlId
                 , name htmlId
-                , placeholder "ex: https://azimutt.app/samples/gospeak.sql"
+                , placeholder ("ex: " ++ example)
                 , value model
                 , onInput (UpdateRemoteFile >> wrap)
                 , onBlur (model |> GetRemoteFile |> wrap)

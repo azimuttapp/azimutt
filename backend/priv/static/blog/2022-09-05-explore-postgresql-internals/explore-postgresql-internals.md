@@ -282,7 +282,7 @@ That was a long way and explanation. Luckily for you, I packaged my investigatio
 
 And for even more immediate access, here is its embed version (use the fullscreen button for easier exploration):
 
-<iframe width="100%" height="800px" src="/embed?project-url=%2Felm%2Fsamples%2Fpostgresql.azimutt.json&layout=extract%20schema%20tables&mode=advanced" title="PostgreSQL internals" frameborder="0" allowtransparency="true" allowfullscreen="true" scrolling="no" style="box-shadow: 0 2px 8px 0 rgba(63,69,81,0.16); border-radius:5px;"></iframe>
+<iframe width="100%" height="800px" src="/embed?project-id=2f94aa32-e18f-44da-86fd-1ff25af58626&layout=extract%20schema%20tables&mode=advanced" title="PostgreSQL internals" frameborder="0" allowtransparency="true" allowfullscreen="true" scrolling="no" style="box-shadow: 0 2px 8px 0 rgba(63,69,81,0.16); border-radius:5px;"></iframe>
 
 Thanks for following me until there, on such a long post ^^
 Don't hesitate if you have any questions and if you haven't tried Azimutt yet, that's your perfect occasion to [discover it](/home)!

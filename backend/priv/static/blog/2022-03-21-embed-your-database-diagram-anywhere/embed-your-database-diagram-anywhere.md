@@ -40,7 +40,7 @@ All this is great, but working daily with other people and a database schema tha
 
 One solution there, this one is just for you, fellow readers that went until the end of this article. The feature is still hidden, but instead of giving your Azimutt project to the embed url, you can directly give your SQL schema. For that, just replace the `project-url` parameter with a `source-url` parameter pointing at your database schema, and the *full* mode allowing you to [explore it fully](./how-to-explore-your-database-schema-with-azimutt), it can be very convenient:
 
-<iframe width="100%" height="550px" src="https://azimutt.app/embed?source-url=https://raw.githubusercontent.com/azimuttapp/azimutt/main/public/samples/gospeak.sql&mode=full" title="Embedded Azimutt diagram" frameborder="0" allowtransparency="true" allowfullscreen="true" scrolling="no" style="box-shadow: 0 2px 8px 0 rgba(63,69,81,0.16); border-radius:5px;"></iframe>
+<iframe width="100%" height="550px" src="https://azimutt.app/embed?source-url=/elm/samples/basic.sql&mode=full" title="Embedded Azimutt diagram" frameborder="0" allowtransparency="true" allowfullscreen="true" scrolling="no" style="box-shadow: 0 2px 8px 0 rgba(63,69,81,0.16); border-radius:5px;"></iframe>
 
 You now have a fresh project, created from your dynamically parsed schema 🥳
 

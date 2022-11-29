@@ -21,6 +21,7 @@ import Models.Project.ProjectName as ProjectName exposing (ProjectName)
 import Models.Project.ProjectSettings as ProjectSettings exposing (ProjectSettings)
 import Models.Project.ProjectSlug as ProjectSlug exposing (ProjectSlug)
 import Models.Project.ProjectStorage as ProjectStorage exposing (ProjectStorage)
+import Models.Project.ProjectVisibility as ProjectVisibility exposing (ProjectVisibility)
 import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source as Source exposing (Source)
@@ -45,14 +46,15 @@ type alias Project =
     , layouts : Dict LayoutName Layout
     , settings : ProjectSettings
     , storage : ProjectStorage
+    , visibility : ProjectVisibility
     , version : ProjectEncodingVersion
     , createdAt : Time.Posix
     , updatedAt : Time.Posix
     }
 
 
-new : Maybe Organization -> ProjectId -> ProjectSlug -> ProjectName -> Maybe String -> List Source -> Dict NotesKey Notes -> LayoutName -> Dict LayoutName Layout -> ProjectSettings -> ProjectStorage -> ProjectEncodingVersion -> Time.Posix -> Time.Posix -> Project
-new organization id slug name description sources notes usedLayout layouts settings storage version createdAt updatedAt =
+new : Maybe Organization -> ProjectId -> ProjectSlug -> ProjectName -> Maybe String -> List Source -> Dict NotesKey Notes -> LayoutName -> Dict LayoutName Layout -> ProjectSettings -> ProjectStorage -> ProjectVisibility -> ProjectEncodingVersion -> Time.Posix -> Time.Posix -> Project
+new organization id slug name description sources notes usedLayout layouts settings storage visibility version createdAt updatedAt =
     { organization = organization
     , id = id
     , slug = slug
@@ -67,6 +69,7 @@ new organization id slug name description sources notes usedLayout layouts setti
     , layouts = layouts
     , settings = settings
     , storage = storage
+    , visibility = visibility
     , version = version
     , createdAt = createdAt
     , updatedAt = updatedAt
@@ -87,6 +90,7 @@ create projects name source =
         (Dict.fromList [ ( Conf.constants.defaultLayout, Layout.empty source.createdAt ) ])
         (ProjectSettings.init (mostUsedSchema source.tables))
         ProjectStorage.Local
+        ProjectVisibility.None
         ProjectEncodingVersion.current
         source.createdAt
         source.updatedAt
@@ -175,8 +179,24 @@ downloadFilename project =
 
 
 downloadContent : Project -> String
-downloadContent project =
-    (project |> encode |> Encode.encode 2) ++ "\n"
+downloadContent value =
+    -- same as encode but without keys: `organization`, `slug`, `storage` & `visibility`
+    (Encode.notNullObject
+        [ ( "id", value.id |> ProjectId.encode )
+        , ( "name", value.name |> ProjectName.encode )
+        , ( "description", value.description |> Encode.maybe Encode.string )
+        , ( "sources", value.sources |> Encode.list Source.encode )
+        , ( "notes", value.notes |> Encode.withDefault (Encode.dict identity Encode.string) Dict.empty )
+        , ( "usedLayout", value.usedLayout |> LayoutName.encode )
+        , ( "layouts", value.layouts |> Encode.dict LayoutName.toString Layout.encode )
+        , ( "settings", value.settings |> Encode.withDefaultDeep ProjectSettings.encode (ProjectSettings.init Conf.schema.empty) )
+        , ( "createdAt", value.createdAt |> Time.encode )
+        , ( "updatedAt", value.updatedAt |> Time.encode )
+        , ( "version", ProjectEncodingVersion.current |> Encode.int )
+        ]
+        |> Encode.encode 2
+    )
+        ++ "\n"
 
 
 encode : Project -> Value
@@ -193,6 +213,7 @@ encode value =
         , ( "layouts", value.layouts |> Encode.dict LayoutName.toString Layout.encode )
         , ( "settings", value.settings |> Encode.withDefaultDeep ProjectSettings.encode (ProjectSettings.init Conf.schema.empty) )
         , ( "storage", value.storage |> ProjectStorage.encode )
+        , ( "visibility", value.visibility |> ProjectVisibility.encode )
         , ( "createdAt", value.createdAt |> Time.encode )
         , ( "updatedAt", value.updatedAt |> Time.encode )
         , ( "version", ProjectEncodingVersion.current |> Encode.int )
@@ -201,7 +222,7 @@ encode value =
 
 decode : Decode.Decoder Project
 decode =
-    Decode.map15 decodeProject
+    Decode.map16 decodeProject
         (Decode.maybeField "organization" Organization.decode)
         (Decode.field "id" ProjectId.decode)
         (Decode.maybeField "slug" ProjectSlug.decode)
@@ -214,13 +235,14 @@ decode =
         (Decode.defaultField "layouts" (Decode.customDict LayoutName.fromString Layout.decode) Dict.empty)
         (Decode.defaultFieldDeep "settings" ProjectSettings.decode (ProjectSettings.init Conf.schema.empty))
         (Decode.defaultField "storage" ProjectStorage.decode ProjectStorage.Local)
+        (Decode.defaultField "visibility" ProjectVisibility.decode ProjectVisibility.None)
         (Decode.field "version" ProjectEncodingVersion.decode)
         (Decode.field "createdAt" Time.decode)
         (Decode.field "updatedAt" Time.decode)
 
 
-decodeProject : Maybe Organization -> ProjectId -> Maybe ProjectSlug -> ProjectName -> Maybe String -> List Source -> Dict NotesKey Notes -> Layout -> LayoutName -> Dict LayoutName Layout -> ProjectSettings -> ProjectStorage -> ProjectEncodingVersion -> Time.Posix -> Time.Posix -> Project
-decodeProject organization id maybeSlug name description sources notes layout usedLayout layouts settings storage version createdAt updatedAt =
+decodeProject : Maybe Organization -> ProjectId -> Maybe ProjectSlug -> ProjectName -> Maybe String -> List Source -> Dict NotesKey Notes -> Layout -> LayoutName -> Dict LayoutName Layout -> ProjectSettings -> ProjectStorage -> ProjectVisibility -> ProjectEncodingVersion -> Time.Posix -> Time.Posix -> Project
+decodeProject organization id maybeSlug name description sources notes layout usedLayout layouts settings storage visibility version createdAt updatedAt =
     let
         allLayouts : Dict LayoutName Layout
         allLayouts =
@@ -236,4 +258,4 @@ decodeProject organization id maybeSlug name description sources notes layout us
             -- retro-compatibility with old projects
             maybeSlug |> Maybe.withDefault id
     in
-    new organization id slug name description sources notes usedLayout allLayouts settings storage version createdAt updatedAt
+    new organization id slug name description sources notes usedLayout allLayouts settings storage visibility version createdAt updatedAt

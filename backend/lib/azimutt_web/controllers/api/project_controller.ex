@@ -27,8 +27,8 @@ defmodule AzimuttWeb.Api.ProjectController do
   end
 
   def show(conn, %{"organization_id" => _organization_id, "id" => id} = params) do
-    ctx = CtxParams.from_params(params)
     current_user = conn.assigns.current_user
+    ctx = CtxParams.from_params(params)
 
     with {:ok, %Project{} = project} <- Projects.get_project(id, current_user),
          do: conn |> render("show.json", project: project, ctx: ctx)
@@ -46,8 +46,8 @@ defmodule AzimuttWeb.Api.ProjectController do
   end
 
   def create(conn, %{"organization_id" => organization_id} = project_params) do
-    ctx = CtxParams.from_params(project_params)
     current_user = conn.assigns.current_user
+    ctx = CtxParams.from_params(project_params)
 
     with {:ok, %Organization{} = organization} <- Organizations.get_organization(organization_id, current_user),
          {:ok, %Project{} = created} <- Projects.create_project(project_params, organization, current_user),
@@ -58,8 +58,8 @@ defmodule AzimuttWeb.Api.ProjectController do
 
   def update(conn, %{"organization_id" => _organization_id, "id" => id} = project_params) do
     now = DateTime.utc_now()
-    ctx = CtxParams.from_params(project_params)
     current_user = conn.assigns.current_user
+    ctx = CtxParams.from_params(project_params)
 
     # FIXME: add correct validation, especially for public projects => get_project does not offer guarantees
     with {:ok, %Project{} = project} <- Projects.get_project(id, current_user),

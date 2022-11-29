@@ -9,9 +9,8 @@ import Components.Molecules.ItemList as ItemList
 import Components.Molecules.Modal as Modal
 import Conf
 import DataSources.JsonMiner.JsonSchema as JsonSchema
-import Dict
 import Gen.Route as Route
-import Html exposing (Html, a, aside, div, h2, li, nav, p, pre, span, text, ul)
+import Html exposing (Html, a, aside, div, h2, h3, li, nav, p, pre, span, text, ul)
 import Html.Attributes exposing (class, href, id, rel, target)
 import Html.Events exposing (onClick)
 import Html.Keyed as Keyed
@@ -30,10 +29,11 @@ import Models.Project.Source exposing (Source)
 import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import PagesComponents.Helpers exposing (appShell)
 import PagesComponents.New.Models exposing (ConfirmDialog, Model, Msg(..), Tab(..), confirm)
-import Services.Backend as Backend
+import Services.Backend as Backend exposing (Sample)
 import Services.DatabaseSource as DatabaseSource
-import Services.ImportProject as ImportProject
 import Services.JsonSource as JsonSource
+import Services.ProjectSource as ProjectSource
+import Services.SampleSource as SampleSource
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
 import Shared
@@ -68,6 +68,7 @@ viewNewProject shared currentUrl urlOrganization model =
         [ a [ href backUrl ] [ Icon.outline Icon.ArrowLeft "inline-block", text " ", text model.selectedMenu ] ]
         [ viewContent "new-project"
             shared.zone
+            urlOrganization
             model
             { tabs =
                 [ { tab = TabDatabase, icon = Icon.Database, content = [ text "From database connection", Badge.rounded Tw.green [ class "ml-3" ] [ text "New" ] ] }
@@ -93,13 +94,13 @@ type alias TabModel tab msg =
     { tab : tab, icon : Icon, content : List (Html msg) }
 
 
-viewContent : HtmlId -> Time.Zone -> Model -> PageModel Msg -> Html Msg
-viewContent htmlId zone model page =
+viewContent : HtmlId -> Time.Zone -> Maybe OrganizationId -> Model -> PageModel Msg -> Html Msg
+viewContent htmlId zone urlOrganization model page =
     div [ css [ "divide-y", lg [ "grid grid-cols-12 divide-x" ] ] ]
         [ aside [ css [ "py-6", lg [ "col-span-3" ] ] ]
             [ nav [ css [ "space-y-1" ] ] (page.tabs |> List.map (viewTab model.selectedTab)) ]
         , div [ css [ "px-4 py-6", sm [ "p-6" ], lg [ "pb-8 col-span-9 rounded-r-lg" ] ] ]
-            [ viewTabContent (htmlId ++ "-tab") zone model ]
+            [ viewTabContent (htmlId ++ "-tab") zone urlOrganization model ]
         ]
 
 
@@ -118,8 +119,8 @@ viewTab selected tab =
             ]
 
 
-viewTabContent : HtmlId -> Time.Zone -> Model -> Html Msg
-viewTabContent htmlId zone model =
+viewTabContent : HtmlId -> Time.Zone -> Maybe OrganizationId -> Model -> Html Msg
+viewTabContent htmlId zone urlOrganization model =
     case model.selectedTab of
         TabDatabase ->
             model.databaseSource |> Maybe.mapOrElse (viewDatabaseSourceTab (htmlId ++ "-database") model.openedCollapse model.projects) (div [] [])
@@ -134,10 +135,10 @@ viewTabContent htmlId zone model =
             viewEmptyProjectTab
 
         TabProject ->
-            model.importProject |> Maybe.mapOrElse (viewImportProjectTab (htmlId ++ "-project") zone model.projects) (div [] [])
+            model.projectSource |> Maybe.mapOrElse (viewProjectSourceTab (htmlId ++ "-project") zone model.projects) (div [] [])
 
         TabSamples ->
-            model.sampleProject |> Maybe.mapOrElse (viewSampleProjectTab zone model.projects) (div [] [])
+            model.sampleSource |> Maybe.mapOrElse (viewSampleSourceTab urlOrganization model.projects model.samples) (div [] [])
 
 
 viewDatabaseSourceTab : HtmlId -> HtmlId -> List ProjectInfo -> DatabaseSource.Model Msg -> Html Msg
@@ -186,13 +187,13 @@ viewEmptyProjectTab =
         ]
 
 
-viewImportProjectTab : HtmlId -> Time.Zone -> List ProjectInfo -> ImportProject.Model -> Html Msg
-viewImportProjectTab htmlId zone projects model =
+viewProjectSourceTab : HtmlId -> Time.Zone -> List ProjectInfo -> ProjectSource.Model -> Html Msg
+viewProjectSourceTab htmlId zone projects model =
     div []
         [ viewHeading "Import an existing project" [ text "If you have an Azimutt project, you can load it here." ]
-        , div [ class "mt-6" ] [ ImportProject.viewLocalInput ImportProjectMsg Noop (htmlId ++ "-remote-file") ]
+        , div [ class "mt-6" ] [ ProjectSource.viewLocalInput ProjectSourceMsg Noop (htmlId ++ "-remote-file") ]
         , p [ css [ "mt-1 text-sm text-gray-500" ] ] [ text "Download your project with the button on the bottom of the settings (top right cog)." ]
-        , ImportProject.viewParsing ImportProjectMsg zone Nothing model
+        , ProjectSource.viewParsing ProjectSourceMsg zone Nothing model
         , model.parsedProject
             |> Maybe.andThen Result.toMaybe
             |> Maybe.map
@@ -217,26 +218,29 @@ viewImportProjectTab htmlId zone projects model =
         ]
 
 
-viewSampleProjectTab : Time.Zone -> List ProjectInfo -> ImportProject.Model -> Html Msg
-viewSampleProjectTab zone projects model =
+viewSampleSourceTab : Maybe OrganizationId -> List ProjectInfo -> List Sample -> SampleSource.Model -> Html Msg
+viewSampleSourceTab urlOrganization projects samples model =
     div []
         [ viewHeading "Explore a sample schema" [ text "If you want to see what Azimutt is capable of, you can pick a schema a play with it." ]
-        , ItemList.withIcons
-            (Backend.schemaSamples
-                |> Dict.values
-                |> List.sortBy .tables
-                |> List.map
-                    (\sample ->
-                        { color = sample.color
-                        , icon = sample.icon
-                        , title = sample.name ++ " (" ++ (sample.tables |> String.fromInt) ++ " tables)"
-                        , description = sample.description
-                        , active = model.selectedSample |> Maybe.all (\s -> s == sample.key)
-                        , onClick = ImportProject.GetRemoteFile sample.url (Just sample.key) |> SampleProjectMsg
-                        }
-                    )
-            )
-        , ImportProject.viewParsing SampleProjectMsg zone Nothing model
+        , if samples == [] then
+            h3 [ class "mt-2 text-sm font-medium text-gray-900" ] [ text "No sample project 😓" ]
+
+          else
+            ItemList.withIcons
+                (samples
+                    |> List.sortBy .nb_tables
+                    |> List.map
+                        (\sample ->
+                            { color = sample.color
+                            , icon = sample.icon
+                            , title = sample.name ++ " (" ++ (sample.nb_tables |> String.fromInt) ++ " tables)"
+                            , description = sample.description
+                            , active = model.selectedSample |> Maybe.all (\s -> s.slug == sample.slug)
+                            , onClick = SampleSource.GetSample sample |> SampleSourceMsg
+                            }
+                        )
+                )
+        , SampleSource.viewParsing model
         , model.parsedProject
             |> Maybe.andThen Result.toMaybe
             |> Maybe.map
@@ -246,7 +250,7 @@ viewSampleProjectTab zone projects model =
                             (Button.white3 Tw.primary [ onClick (InitTab TabSamples) ] [ text "Cancel" ]
                                 :: (projects
                                         |> List.find (\p -> p.id == project.id)
-                                        |> Maybe.map (\p -> [ Link.primary3 Tw.primary [ href (Route.toHref (Route.Organization___Project_ { organization = p |> ProjectInfo.organizationId, project = p.id })), id "create-project-btn", css [ "ml-3" ] ] [ text "View this project" ] ])
+                                        |> Maybe.map (\p -> [ Link.primary3 Tw.primary [ href (Route.toHref (Route.Organization___Project_ { organization = urlOrganization |> Maybe.withDefault (ProjectInfo.organizationId p), project = p.id })), id "create-project-btn", css [ "ml-3" ] ] [ text "View this project" ] ])
                                         |> Maybe.withDefault [ Button.primary3 Tw.primary [ onClick (CreateProjectTmp project), id "create-project-btn", css [ "ml-3" ] ] [ text "Load sample" ] ]
                                    )
                             )

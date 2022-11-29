@@ -37,7 +37,7 @@ defmodule AzimuttWeb.Router do
     get "/blog", BlogController, :index
     get "/blog/:id", BlogController, :show
     get "/gallery", GalleryController, :index
-    get "/gallery/:id", GalleryController, :show
+    get "/gallery/:slug", GalleryController, :show
     get "/logout", UserSessionController, :delete
     delete "/logout", UserSessionController, :delete
     get "/users/confirm", UserConfirmationController, :new
@@ -100,6 +100,8 @@ defmodule AzimuttWeb.Router do
     # GET is practical for development and POST allows to not have params in possible http logs
     get "/analyzer/schema", Api.AnalyzerController, :schema
     post "/analyzer/schema", Api.AnalyzerController, :schema
+    get "/gallery", Api.GalleryController, :index
+    get "/organizations/:organization_id/projects/:id", Api.ProjectController, :show
   end
 
   # authed APIs
@@ -108,7 +110,7 @@ defmodule AzimuttWeb.Router do
     get "/users/current", Api.UserController, :current
 
     resources "/organizations", Api.OrganizationController, only: [:index] do
-      resources "/projects", Api.ProjectController, except: [:new, :edit]
+      resources "/projects", Api.ProjectController, except: [:new, :edit, :show]
     end
   end
 

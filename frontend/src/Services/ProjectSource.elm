@@ -1,4 +1,4 @@
-module Services.ImportProject exposing (Model, Msg(..), init, kind, update, viewLocalInput, viewParsing)
+module Services.ProjectSource exposing (Model, Msg(..), example, init, kind, update, viewLocalInput, viewParsing)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.Alert as Alert
@@ -25,7 +25,6 @@ import Libs.String as String
 import Libs.Tailwind as Tw
 import Libs.Task as T
 import Models.Project as Project exposing (Project)
-import Models.Project.SampleKey exposing (SampleKey)
 import Ports
 import Services.Lenses exposing (mapShow, setProject)
 import Services.SourceLogs as SourceLogs
@@ -35,7 +34,6 @@ import Time
 type alias Model =
     { selectedLocalFile : Maybe File
     , selectedRemoteFile : Maybe FileUrl
-    , selectedSample : Maybe SampleKey
     , loadedProject : Maybe (Result Http.Error FileContent)
     , parsedProject : Maybe (Result Decode.Error Project)
     , project : Maybe (Result String Project)
@@ -44,7 +42,7 @@ type alias Model =
 
 
 type Msg
-    = GetRemoteFile FileUrl (Maybe SampleKey)
+    = GetRemoteFile FileUrl
     | GotRemoteFile (Result Http.Error FileContent)
     | GetLocalFile File
     | GotFile FileContent
@@ -62,11 +60,15 @@ kind =
     "import-project"
 
 
+example : String
+example =
+    "/elm/samples/basic.azimutt.json"
+
+
 init : Model
 init =
     { selectedLocalFile = Nothing
     , selectedRemoteFile = Nothing
-    , selectedSample = Nothing
     , loadedProject = Nothing
     , parsedProject = Nothing
     , project = Nothing
@@ -86,8 +88,8 @@ update wrap msg model =
             , Ports.readLocalFile kind file
             )
 
-        GetRemoteFile url sample ->
-            ( init |> (\m -> { m | selectedRemoteFile = Just url, selectedSample = sample })
+        GetRemoteFile url ->
+            ( init |> (\m -> { m | selectedRemoteFile = Just url })
             , Http.get { url = url, expect = Http.expectString (GotRemoteFile >> wrap) }
             )
 
@@ -150,13 +152,7 @@ viewLocalInput wrap noop htmlId =
 
 viewParsing : (Msg -> msg) -> Time.Zone -> Maybe Project -> Model -> Html msg
 viewParsing wrap zone currentProject model =
-    let
-        isSample : Bool
-        isSample =
-            model.selectedSample /= Nothing
-    in
-    model.selectedSample
-        |> Maybe.orElse (model.selectedLocalFile |> Maybe.map (\f -> f.name ++ " file"))
+    (model.selectedLocalFile |> Maybe.map (\f -> f.name ++ " file"))
         |> Maybe.orElse (model.selectedRemoteFile |> Maybe.map (\url -> url ++ " file"))
         |> Maybe.mapOrElse
             (\fileName ->
@@ -172,12 +168,12 @@ viewParsing wrap zone currentProject model =
                     , SourceLogs.viewContainer
                         [ SourceLogs.viewFile UiToggle model.show fileName (model.loadedProject |> Maybe.andThen Result.toMaybe) |> Html.map wrap
                         , model.loadedProject |> Maybe.mapOrElse (Result.mapError Http.errorToString >> SourceLogs.viewError) (div [] [])
-                        , model.parsedProject |> Maybe.mapOrElse (Result.fold viewLogsError (viewLogsProject zone isSample)) (div [] [])
+                        , model.parsedProject |> Maybe.mapOrElse (Result.fold viewLogsError (viewLogsProject zone)) (div [] [])
                         , model.project |> Maybe.mapOrElse SourceLogs.viewResult (div [] [])
                         ]
                     , model.parsedProject
                         |> Maybe.andThen Result.toMaybe
-                        |> Maybe.andThen (\project -> currentProject |> Maybe.map (\p -> viewDiffAlert zone isSample p project))
+                        |> Maybe.andThen (\project -> currentProject |> Maybe.map (\p -> viewDiffAlert zone p project))
                         |> Maybe.withDefault (div [] [])
                     ]
             )
@@ -193,34 +189,24 @@ viewLogsError error =
         ]
 
 
-viewLogsProject : Time.Zone -> Bool -> Project -> Html msg
-viewLogsProject zone isSample project =
-    if isSample then
-        div []
-            [ div [] [ text "Successfully decoded project." ] ]
-
-    else
-        div []
-            [ div [] [ text ("Successfully decoded project " ++ project.name ++ ".") ]
-            , div [] [ text ("It was created on " ++ DateTime.formatDate zone project.createdAt ++ " and last modified on " ++ DateTime.formatDate zone project.updatedAt ++ ".") ]
-            , div [] [ text ("It has " ++ String.pluralizeD "layout" project.layouts ++ " and " ++ String.pluralizeL "source" project.sources ++ ", containing " ++ String.pluralizeD "table" project.tables ++ " and " ++ String.pluralizeL "relation" project.relations ++ ".") ]
-            ]
+viewLogsProject : Time.Zone -> Project -> Html msg
+viewLogsProject zone project =
+    div []
+        [ div [] [ text ("Successfully decoded project " ++ project.name ++ ".") ]
+        , div [] [ text ("It was created on " ++ DateTime.formatDate zone project.createdAt ++ " and last modified on " ++ DateTime.formatDate zone project.updatedAt ++ ".") ]
+        , div [] [ text ("It has " ++ String.pluralizeD "layout" project.layouts ++ " and " ++ String.pluralizeL "source" project.sources ++ ", containing " ++ String.pluralizeD "table" project.tables ++ " and " ++ String.pluralizeL "relation" project.relations ++ ".") ]
+        ]
 
 
-viewDiffAlert : Time.Zone -> Bool -> Project -> Project -> Html msg
-viewDiffAlert zone isSample old new =
+viewDiffAlert : Time.Zone -> Project -> Project -> Html msg
+viewDiffAlert zone old new =
     div [ class "mt-6" ]
         [ Alert.withDescription { color = Tw.yellow, icon = Exclamation, title = "Oh! You already have this project here." }
-            (if isSample then
-                []
-
-             else
-                [ div [] [ text "This project already exist in Azimutt (same id), compare the differences below to decide what to do:" ]
-                , ul [ class "list-disc list-inside" ]
-                    [ li [] [ text ("Existing project has been last modified on " ++ DateTime.formatDate zone old.updatedAt ++ " while imported one was updated on " ++ DateTime.formatDate zone new.updatedAt) ]
-                    , li [] [ text ("Existing project has " ++ String.pluralizeD "table" old.tables ++ " and " ++ String.pluralizeL "relation" old.relations ++ ", the imported one has " ++ String.pluralizeD "table" new.tables ++ " and " ++ String.pluralizeL "relation" new.relations ++ ".") ]
-                    , li [] [ text ("Existing project has " ++ String.pluralizeD "layout" old.layouts ++ ", the imported one has " ++ String.pluralizeD "layout" new.layouts ++ ".") ]
-                    ]
+            [ div [] [ text "This project already exist in Azimutt (same id), compare the differences below to decide what to do:" ]
+            , ul [ class "list-disc list-inside" ]
+                [ li [] [ text ("Existing project has been last modified on " ++ DateTime.formatDate zone old.updatedAt ++ " while imported one was updated on " ++ DateTime.formatDate zone new.updatedAt) ]
+                , li [] [ text ("Existing project has " ++ String.pluralizeD "table" old.tables ++ " and " ++ String.pluralizeL "relation" old.relations ++ ", the imported one has " ++ String.pluralizeD "table" new.tables ++ " and " ++ String.pluralizeL "relation" new.relations ++ ".") ]
+                , li [] [ text ("Existing project has " ++ String.pluralizeD "layout" old.layouts ++ ", the imported one has " ++ String.pluralizeD "layout" new.layouts ++ ".") ]
                 ]
-            )
+            ]
         ]

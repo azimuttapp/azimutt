@@ -49,7 +49,7 @@ defmodule Azimutt.Blog.Article do
          {:ok, %Author{} = author} <- author_id |> get_author,
          {:ok, published} <- published_str |> Date.from_iso8601(),
          {:ok, body} when is_binary(body) <- map |> Mapx.fetch("body"),
-         markdown = preprocess_article_content(path, body),
+         markdown = Markdown.preprocess(path, body),
          {:ok, html} when is_binary(html) <- Markdown.to_html(markdown),
          do:
            {:ok,
@@ -57,7 +57,7 @@ defmodule Azimutt.Blog.Article do
               path: path,
               id: id,
               title: title,
-              banner: banner |> String.replace("{{base_link}}", base_link(path)),
+              banner: banner |> String.replace("{{base_link}}", Markdown.base_link(path)),
               excerpt: excerpt,
               category: category,
               tags: tags,
@@ -75,18 +75,4 @@ defmodule Azimutt.Blog.Article do
   defp build_tags(tags) when is_list(tags), do: {:ok, tags}
   defp build_tags(tags) when is_nil(tags), do: {:ok, []}
   defp build_tags(tags), do: {:error, "Unexpected tags: #{inspect(tags)}"}
-
-  defp base_link(path), do: path |> String.split("/") |> Enum.drop(2) |> Enum.take(2) |> Enum.map_join(fn p -> "/#{p}" end)
-
-  defp preprocess_article_content(path, content) do
-    github = "https://github.com/azimuttapp/azimutt"
-
-    content
-    |> String.replace("{{base_link}}", base_link(path))
-    |> String.replace("{{app_link}}", "/home")
-    |> String.replace("{{roadmap_link}}", "#{github}/projects/1")
-    |> String.replace("{{issues_link}}", "#{github}/issues?q=is%3Aissue+is%3Aopen+label%3A%22feature+request%22")
-    |> String.replace("{{feedback_link}}", "#{github}/discussions")
-    |> String.replace("{{azimutt_twitter}}", "https://twitter.com/azimuttapp")
-  end
 end

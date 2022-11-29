@@ -16,11 +16,7 @@
                             </h2>
                         </div>
                         <span class="group flex items-center space-x-2.5">
-                            <%= if project.storage_kind == :local do %>
-                                <Icon.folder kind="outline" class="text-gray-400" />
-                            <% else %>
-                                <Icon.cloud kind="outline" class="text-gray-400" />
-                            <% end %>
+                            <%= render "_project_icon.html", project: project %>
                             <span class="truncate text-sm font-medium text-gray-500 group-hover:text-gray-900"><%= project.id %></span>
                         </span>
                     </div>

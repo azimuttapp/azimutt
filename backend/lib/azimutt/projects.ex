@@ -13,41 +13,39 @@ defmodule Azimutt.Projects do
   alias Azimutt.Utils.Result
 
   def list_projects(%Organization{} = organization, %User{} = current_user) do
-    Project
-    |> join(:inner, [p], o in Organization, on: p.organization_id == o.id)
-    |> join(:inner, [_, o], om in OrganizationMember, on: om.organization_id == o.id)
+    project_query()
     |> where(
       [p, o, om],
       om.user_id == ^current_user.id and
         o.id == ^organization.id and
         (p.storage_kind == :remote or (p.storage_kind == :local and p.local_owner_id == ^current_user.id))
     )
-    |> preload(:organization)
-    |> preload(:updated_by)
     |> Repo.all()
   end
 
   def get_project(id, %User{} = current_user) do
-    Project
-    |> join(:inner, [p], o in Organization, on: p.organization_id == o.id)
-    |> join(:inner, [_, o], om in OrganizationMember, on: om.organization_id == o.id)
+    project_query()
     |> where(
       [p, _, om],
-      om.user_id == ^current_user.id and
-        p.id == ^id and
-        (p.storage_kind == :remote or (p.storage_kind == :local and p.local_owner_id == ^current_user.id))
+      p.id == ^id and
+        (p.storage_kind == :remote or (p.storage_kind == :local and p.local_owner_id == ^current_user.id)) and
+        (om.user_id == ^current_user.id or p.visibility != :none)
     )
-    |> preload(:organization)
-    |> preload(:updated_by)
+    |> Repo.one()
+    |> Result.from_nillable()
+  end
+
+  def get_project(id, current_user) when is_nil(current_user) do
+    project_query()
+    |> where([p, _, om], p.id == ^id and p.storage_kind == :remote and p.visibility != :none)
     |> Repo.one()
     |> Result.from_nillable()
   end
 
   def create_project(attrs, %Organization{} = organization, %User{} = current_user) do
     if organization |> Organizations.has_member?(current_user) do
-      # FIXME: atom for seeds and string for api, how make it work for both?
       try do
-        storage = Storage.from_string_or_atom(attrs[:storage_kind] || attrs["storage_kind"])
+        storage = get_storage(attrs)
         uuid = Ecto.UUID.generate()
 
         cond do
@@ -68,20 +66,61 @@ defmodule Azimutt.Projects do
   end
 
   def update_project(%Project{} = project, attrs, %User{} = current_user, now) do
-    # FIXME: atom for seeds and string for api, how make it work for both?
-    storage = Storage.from_string_or_atom(attrs[:storage_kind] || attrs["storage_kind"])
+    storage = get_storage(attrs)
 
-    cond do
-      storage == Storage.local() -> project |> Project.update_local_changeset(attrs, current_user, now)
-      storage == Storage.remote() -> project |> Project.update_remote_changeset(attrs, current_user, now)
-      true -> raise "Invalid storage: '#{storage}'"
+    can_update =
+      project_query()
+      |> where(
+        [p, _, om],
+        p.id == ^project.id and
+          (p.storage_kind == :remote or (p.storage_kind == :local and p.local_owner_id == ^current_user.id)) and
+          (om.user_id == ^current_user.id or p.visibility != :write)
+      )
+      |> Repo.exists?()
+
+    if can_update do
+      cond do
+        storage == Storage.local() -> project |> Project.update_local_changeset(attrs, current_user, now)
+        storage == Storage.remote() -> project |> Project.update_remote_changeset(attrs, current_user, now)
+        true -> raise "Invalid storage: '#{storage}'"
+      end
+      |> Repo.update()
+      |> Result.tap(fn p -> Tracking.project_updated(current_user, p) end)
+    else
+      {:error, :forbidden}
     end
-    |> Repo.update()
-    |> Result.tap(fn p -> Tracking.project_updated(current_user, p) end)
   end
 
   def delete_project(%Project{} = project, %User{} = current_user) do
-    Repo.delete(project)
-    |> Result.tap(fn p -> Tracking.project_deleted(current_user, p) end)
+    can_delete =
+      project_query()
+      |> where(
+        [p, _, om],
+        p.id == ^project.id and
+          (p.storage_kind == :remote or (p.storage_kind == :local and p.local_owner_id == ^current_user.id)) and
+          om.user_id == ^current_user.id
+      )
+      |> Repo.exists?()
+
+    if can_delete do
+      Repo.delete(project)
+      |> Result.tap(fn p -> Tracking.project_deleted(current_user, p) end)
+    else
+      {:error, :forbidden}
+    end
+  end
+
+  defp get_storage(attrs) do
+    # FIXME: atom for seeds and string for api, how make it work for both?
+    Storage.from_string_or_atom(attrs[:storage_kind] || attrs["storage_kind"])
+  end
+
+  defp project_query do
+    # TODO: how to also mutualise the where clause?
+    Project
+    |> join(:inner, [p], o in Organization, on: p.organization_id == o.id)
+    |> join(:inner, [_, o], om in OrganizationMember, on: om.organization_id == o.id)
+    |> preload(:organization)
+    |> preload(:updated_by)
   end
 end

@@ -385,6 +385,9 @@ export const Settings = z.object({
 export type ProjectStorage = 'local' | 'remote'
 export const ProjectStorage = z.enum(['local', 'remote'])
 
+export type ProjectVisibility = 'none' | 'read' | 'write'
+export const ProjectVisibility = z.enum(['none', 'read', 'write'])
+
 export type ProjectVersion = 1 | 2
 export const ProjectVersion = z.union([z.literal(1), z.literal(2)])
 
@@ -400,6 +403,7 @@ export interface Project {
     layouts: { [name: LayoutName]: Layout }
     settings?: Settings
     storage: ProjectStorage
+    visibility: ProjectVisibility
     createdAt: Timestamp
     updatedAt: Timestamp
     version: ProjectVersion
@@ -417,15 +421,16 @@ export const Project = z.object({
     layouts: z.record(LayoutName, Layout),
     settings: Settings.optional(),
     storage: ProjectStorage,
+    visibility: ProjectVisibility,
     createdAt: Timestamp,
     updatedAt: Timestamp,
     version: ProjectVersion
 }).strict()
 
-export type ProjectJson = Omit<Project, 'organization' | 'id' | 'storage' | 'createdAt' | 'updatedAt'> & { _type: 'json' }
-export const ProjectJson = Project.omit({organization: true, id: true, storage: true, createdAt: true, updatedAt: true}).extend({_type: z.literal('json')}).strict()
-export type ProjectJsonLegacy = Omit<Project, 'organization' | 'slug' | 'description' | 'storage'>
-export const ProjectJsonLegacy = Project.omit({organization: true, slug: true, description: true, storage: true}).strict()
+export type ProjectJson = Omit<Project, 'organization' | 'id' | 'storage' | 'visibility' | 'createdAt' | 'updatedAt'> & { _type: 'json' }
+export const ProjectJson = Project.omit({organization: true, id: true, storage: true, visibility: true, createdAt: true, updatedAt: true}).extend({_type: z.literal('json')}).strict()
+export type ProjectJsonLegacy = Omit<Project, 'organization' | 'slug' | 'description' | 'storage' | 'visibility'>
+export const ProjectJsonLegacy = Project.omit({organization: true, slug: true, description: true, storage: true, visibility: true}).strict()
 export type ProjectStored = ProjectJson | ProjectJsonLegacy
 export const ProjectStored = z.union([ProjectJson, ProjectJsonLegacy])
 export type ProjectStoredWithId = [ProjectId, ProjectStored]
@@ -477,14 +482,14 @@ export const ProjectInfoLocal = ProjectStats.extend({
     updatedAt: Timestamp
 }).strict()
 
-export type ProjectInfoRemote = Omit<ProjectInfoLocal, 'storage'> & { storage: 'remote' }
-export const ProjectInfoRemote = ProjectInfoLocal.omit({storage: true}).extend({storage: z.literal(ProjectStorage.enum.remote)}).strict()
+export type ProjectInfoRemote = Omit<ProjectInfoLocal, 'storage'> & { storage: 'remote', visibility: ProjectVisibility }
+export const ProjectInfoRemote = ProjectInfoLocal.omit({storage: true}).extend({storage: z.literal(ProjectStorage.enum.remote), visibility: ProjectVisibility}).strict()
 export type ProjectInfoRemoteWithContent = ProjectInfoRemote & { content: ProjectJson }
 export type ProjectInfo = ProjectInfoLocal | ProjectInfoRemote
 export const ProjectInfo = z.discriminatedUnion('storage', [ProjectInfoLocal, ProjectInfoRemote])
 export type ProjectInfoWithContent = ProjectInfoLocal | ProjectInfoRemoteWithContent
-export type ProjectInfoLocalLegacy = Omit<ProjectInfoLocal, 'organization'>
-export const ProjectInfoLocalLegacy = ProjectInfoLocal.omit({organization: true}).strict()
+export type ProjectInfoLocalLegacy = Omit<ProjectInfoLocal, 'organization'> & { visibility: ProjectVisibility }
+export const ProjectInfoLocalLegacy = ProjectInfoLocal.omit({organization: true}).extend({visibility: ProjectVisibility}).strict()
 
 
 export function isLocal(p: ProjectInfo): p is ProjectInfoLocal {
@@ -556,7 +561,8 @@ export function buildProjectLegacy(id: ProjectId, p: ProjectJsonLegacy): Project
         ...p,
         id,
         slug: id,
-        storage: ProjectStorage.enum.local
+        storage: ProjectStorage.enum.local,
+        visibility: ProjectVisibility.enum.none
     }, Project, 'Project')
 }
 
@@ -566,6 +572,7 @@ export function buildProjectDraft(id: ProjectId, {_type, ...p}: ProjectJson): Pr
         id,
         slug: id,
         storage: ProjectStorage.enum.local,
+        visibility: ProjectVisibility.enum.none,
         createdAt: Date.now(),
         updatedAt: Date.now()
     }, Project, 'Project')
@@ -577,6 +584,7 @@ export function buildProjectLocal(info: ProjectInfoLocal, {_type, ...p}: Project
         organization: info.organization,
         id: info.id,
         storage: ProjectStorage.enum.local,
+        visibility: ProjectVisibility.enum.none,
         createdAt: info.createdAt,
         updatedAt: info.updatedAt
     }, Project, 'Project')
@@ -588,12 +596,13 @@ export function buildProjectRemote(info: ProjectInfoRemote, {_type, ...p}: Proje
         organization: info.organization,
         id: info.id,
         storage: ProjectStorage.enum.remote,
+        visibility: info.visibility,
         createdAt: info.createdAt,
         updatedAt: info.updatedAt
     }, Project, 'Project')
 }
 
-export function buildProjectJson({organization, id, storage, createdAt, updatedAt, ...p}: Project): ProjectJson {
+export function buildProjectJson({organization, id, storage, visibility, createdAt, updatedAt, ...p}: Project): ProjectJson {
     return Zod.validate({...p, _type: 'json'}, ProjectJson, 'ProjectJson')
 }
 

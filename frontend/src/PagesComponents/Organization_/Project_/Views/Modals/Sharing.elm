@@ -13,6 +13,7 @@ import Libs.Dict as Dict
 import Libs.Html exposing (extLink, sendTweet)
 import Libs.Html.Attributes exposing (css)
 import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.Models.Uuid as Uuid
 import Libs.Tailwind as Tw exposing (focus, sm)
 import Libs.Time as Time
 import Libs.Url as Url
@@ -25,7 +26,11 @@ import PagesComponents.Organization_.Project_.Models.EmbedMode as EmbedMode expo
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import Ports
 import Services.Backend as Backend
+import Services.DatabaseSource as DatabaseSource
+import Services.JsonSource as JsonSource
 import Services.Lenses exposing (mapRelations, mapSources, mapTables, setContent, setLayouts)
+import Services.ProjectSource as ProjectSource
+import Services.SqlSource as SqlSource
 import Url exposing (Url)
 
 
@@ -151,9 +156,28 @@ viewBodyKindContentInput inputId kind content =
                 , select [ id kindInput, name kindInput, onInput (EmbedKind.fromValue >> Maybe.withDefault EmbedKind.EmbedProjectUrl >> SKindUpdate >> SharingMsg), class "h-full py-0 pl-3 pr-7 border-transparent bg-transparent text-gray-500 rounded-md sm:text-sm focus:ring-indigo-500 focus:border-indigo-500" ]
                     (EmbedKind.all |> List.map (\k -> option [ value (EmbedKind.value k), selected (k == kind) ] [ text (EmbedKind.label k) ]))
                 ]
-            , input [ type_ "text", id contentInput, name contentInput, placeholder ("ex: " ++ EmbedKind.placeholder kind), value content, onInput (SContentUpdate >> SharingMsg), class "block w-full pl-32 border-gray-300 rounded-md sm:text-sm focus:ring-indigo-500 focus:border-indigo-500" ] []
+            , input [ type_ "text", id contentInput, name contentInput, placeholder ("ex: " ++ embedKindPlaceholder kind), value content, onInput (SContentUpdate >> SharingMsg), class "block w-full pl-32 border-gray-300 rounded-md sm:text-sm focus:ring-indigo-500 focus:border-indigo-500" ] []
             ]
         ]
+
+
+embedKindPlaceholder : EmbedKind -> String
+embedKindPlaceholder kind =
+    case kind of
+        EmbedKind.EmbedProjectId ->
+            Uuid.zero
+
+        EmbedKind.EmbedProjectUrl ->
+            ProjectSource.example
+
+        EmbedKind.EmbedDatabaseSource ->
+            DatabaseSource.example
+
+        EmbedKind.EmbedSqlSource ->
+            SqlSource.example
+
+        EmbedKind.EmbedJsonSource ->
+            JsonSource.example
 
 
 viewBodyLayoutInput : HtmlId -> LayoutName -> List LayoutName -> Html Msg
