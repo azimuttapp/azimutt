@@ -23,7 +23,6 @@ defmodule Azimutt.Projects do
     |> Repo.all()
   end
 
-  # TODO: can do better than define function twice with lot of repetition?
   def get_project(id, %User{} = current_user) do
     project_query()
     |> where(
@@ -41,14 +40,6 @@ defmodule Azimutt.Projects do
     |> where([p, _, om], p.id == ^id and p.storage_kind == :remote and p.visibility != :none)
     |> Repo.one()
     |> Result.from_nillable()
-  end
-
-  defp project_query do
-    Project
-    |> join(:inner, [p], o in Organization, on: p.organization_id == o.id)
-    |> join(:inner, [_, o], om in OrganizationMember, on: om.organization_id == o.id)
-    |> preload(:organization)
-    |> preload(:updated_by)
   end
 
   def create_project(attrs, %Organization{} = organization, %User{} = current_user) do
@@ -100,11 +91,6 @@ defmodule Azimutt.Projects do
     end
   end
 
-  defp get_storage(attrs) do
-    # FIXME: atom for seeds and string for api, how make it work for both?
-    Storage.from_string_or_atom(attrs[:storage_kind] || attrs["storage_kind"])
-  end
-
   def delete_project(%Project{} = project, %User{} = current_user) do
     can_delete =
       project_query()
@@ -122,5 +108,19 @@ defmodule Azimutt.Projects do
     else
       {:error, :forbidden}
     end
+  end
+
+  defp get_storage(attrs) do
+    # FIXME: atom for seeds and string for api, how make it work for both?
+    Storage.from_string_or_atom(attrs[:storage_kind] || attrs["storage_kind"])
+  end
+
+  defp project_query do
+    # TODO: how to also mutualise the where clause?
+    Project
+    |> join(:inner, [p], o in Organization, on: p.organization_id == o.id)
+    |> join(:inner, [_, o], om in OrganizationMember, on: om.organization_id == o.id)
+    |> preload(:organization)
+    |> preload(:updated_by)
   end
 end

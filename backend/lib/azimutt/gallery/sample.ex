@@ -20,8 +20,10 @@ defmodule Azimutt.Gallery.Sample do
 
   @doc false
   def changeset(sample, attrs) do
+    required = [:slug, :icon, :color, :website, :banner, :tips, :description, :analysis]
+
     sample
-    |> cast(attrs, [:slug, :icon, :color, :website, :banner, :tips, :description, :analysis])
-    |> validate_required([:slug, :icon, :color, :website, :banner, :tips, :description, :analysis])
+    |> cast(attrs, required)
+    |> validate_required(required)
   end
 end

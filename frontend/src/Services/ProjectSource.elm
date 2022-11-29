@@ -62,7 +62,7 @@ kind =
 
 example : String
 example =
-    "https://azimutt.app/elm/samples/basic.azimutt.json"
+    "/elm/samples/basic.azimutt.json"
 
 
 init : Model
