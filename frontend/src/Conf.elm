@@ -72,7 +72,7 @@ canvas :
     , grid : Int
     }
 canvas =
-    { zoom = { min = 0.05, max = 5, speed = 0.001 }
+    { zoom = { min = 0.001, max = 5, speed = 0.001 }
     , zIndex = { tables = 10 }
     , grid = 10
     }

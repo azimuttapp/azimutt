@@ -4,7 +4,6 @@ import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
 import Components.Molecules.Dropdown as Dropdown
 import Components.Molecules.Tooltip as Tooltip
-import Conf
 import Html exposing (Html, button, div, span, text)
 import Html.Attributes exposing (class, id, type_)
 import Html.Events exposing (onClick)
@@ -17,6 +16,7 @@ import Libs.Tailwind exposing (TwClass, batch, focus, hover)
 import PagesComponents.Organization_.Project_.Models exposing (AmlSidebarMsg(..), Msg(..))
 import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode exposing (CursorMode)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
+import Round
 
 
 viewCommands : ErdConf -> CursorMode -> ZoomLevel -> HtmlId -> Bool -> HtmlId -> Html Msg
@@ -33,6 +33,17 @@ viewCommands conf cursorMode canvasZoom htmlId hasTables openedDropdown =
         inverted : TwClass
         inverted =
             batch [ "bg-gray-700 text-white", hover [ "bg-gray-600" ] ]
+
+        zoomLabel : String
+        zoomLabel =
+            if canvasZoom > 0.1 then
+                canvasZoom * 100 |> Round.round 0
+
+            else if canvasZoom > 0.01 then
+                canvasZoom * 100 |> Round.round 1
+
+            else
+                canvasZoom * 100 |> Round.round 2
     in
     div [ class "az-commands absolute bottom-0 right-0 m-3 print:hidden" ]
         [ if conf.move && hasTables then
@@ -69,11 +80,11 @@ viewCommands conf cursorMode canvasZoom htmlId hasTables openedDropdown =
                 , Dropdown.dropdown { id = htmlId ++ "-zoom-level", direction = TopLeft, isOpen = openedDropdown == htmlId ++ "-zoom-level" }
                     (\m ->
                         button [ type_ "button", id m.id, onClick (DropdownToggle m.id), ariaExpanded False, ariaHaspopup "true", css [ "-ml-px", buttonStyles, classic ] ]
-                            [ text (String.fromInt (round (canvasZoom * 100)) ++ " %") ]
+                            [ text (zoomLabel ++ " %") ]
                     )
                     (\_ ->
                         div []
-                            [ ContextMenu.btn "" (Zoom (Conf.canvas.zoom.min - canvasZoom)) [ text (String.fromFloat (Conf.canvas.zoom.min * 100) ++ " %") ]
+                            [ ContextMenu.btn "" (Zoom (0.05 - canvasZoom)) [ text "5%" ]
                             , ContextMenu.btn "" (Zoom (0.25 - canvasZoom)) [ text "25%" ]
                             , ContextMenu.btn "" (Zoom (0.5 - canvasZoom)) [ text "50%" ]
                             , ContextMenu.btn "" (Zoom (0.8 - canvasZoom)) [ text "80%" ]
@@ -81,7 +92,7 @@ viewCommands conf cursorMode canvasZoom htmlId hasTables openedDropdown =
                             , ContextMenu.btn "" (Zoom (1.2 - canvasZoom)) [ text "120%" ]
                             , ContextMenu.btn "" (Zoom (1.5 - canvasZoom)) [ text "150%" ]
                             , ContextMenu.btn "" (Zoom (2 - canvasZoom)) [ text "200%" ]
-                            , ContextMenu.btn "" (Zoom (Conf.canvas.zoom.max - canvasZoom)) [ text (String.fromFloat (Conf.canvas.zoom.max * 100) ++ " %") ]
+                            , ContextMenu.btn "" (Zoom (5 - canvasZoom)) [ text "500%" ]
                             ]
                     )
                 , button [ type_ "button", onClick (Zoom (canvasZoom / 10)), css [ "-ml-px rounded-r-md", buttonStyles, classic ] ] [ Icon.solid Plus "" ]
