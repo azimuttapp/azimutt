@@ -48,7 +48,7 @@ import PagesComponents.Organization_.Project_.Updates.Project exposing (createPr
 import PagesComponents.Organization_.Project_.Updates.ProjectSettings exposing (handleProjectSettings)
 import PagesComponents.Organization_.Project_.Updates.Sharing exposing (handleSharing)
 import PagesComponents.Organization_.Project_.Updates.Source as Source
-import PagesComponents.Organization_.Project_.Updates.Table exposing (hideColumn, hideColumns, hideRelatedTables, hideTable, hoverColumn, hoverNextColumn, mapTablePropOrSelected, showAllTables, showColumn, showColumns, showRelatedTables, showTable, showTables, sortColumns)
+import PagesComponents.Organization_.Project_.Updates.Table exposing (goToTable, hideColumn, hideColumns, hideRelatedTables, hideTable, hoverColumn, hoverNextColumn, mapTablePropOrSelected, showAllTables, showColumn, showColumns, showRelatedTables, showTable, showTables, sortColumns)
 import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirty, setDirtyCmd)
 import PagesComponents.Organization_.Project_.Updates.VirtualRelation exposing (handleVirtualRelation)
 import PagesComponents.Organization_.Project_.Views as Views
@@ -90,6 +90,9 @@ update currentLayout now urlOrganization organizations projects msg model =
 
         DeleteProject project ->
             ( model, Ports.deleteProject project ((project.organization |> Maybe.map .id) |> Backend.organizationUrl |> Just) )
+
+        GoToTable id ->
+            model |> mapErdMCmd (goToTable now id model.erdElem) |> setDirtyCmd
 
         ShowTable id hint ->
             model |> mapErdMCmd (showTable now id hint) |> setDirtyCmd

@@ -1,4 +1,4 @@
-module Models.Size exposing (Canvas, Viewport, buildCanvas, buildViewport, decodeCanvas, decodeViewport, diffCanvas, divCanvas, divViewport, encodeCanvas, extractCanvas, extractViewport, ratioCanvas, stylesCanvas, subCanvas, toTupleCanvas, toTupleViewport, viewportToCanvas, zeroCanvas, zeroViewport)
+module Models.Size exposing (Canvas, Viewport, buildCanvas, buildViewport, decodeCanvas, decodeViewport, deltaCanvas, diffCanvas, divCanvas, divViewport, encodeCanvas, extractCanvas, extractViewport, ratioCanvas, stylesCanvas, subCanvas, toTupleCanvas, toTupleViewport, viewportToCanvas, zeroCanvas, zeroViewport)
 
 import Html exposing (Attribute)
 import Html.Attributes exposing (style)
@@ -40,6 +40,11 @@ extractCanvas : Canvas -> Size
 extractCanvas (Canvas size) =
     -- use it only in last resort in very narrow and explicit scope
     size
+
+
+deltaCanvas : Canvas -> Delta
+deltaCanvas (Canvas size) =
+    { dx = size.width, dy = size.height }
 
 
 zeroViewport : Viewport
