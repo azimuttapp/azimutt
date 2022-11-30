@@ -2,10 +2,13 @@ module PagesComponents.New.Updates exposing (update)
 
 import Components.Molecules.Dropdown as Dropdown
 import Conf
+import Dict
 import Gen.Route as Route
 import Json.Decode as Decode
 import Json.Encode as Encode
 import Libs.Bool as B
+import Libs.List as List
+import Libs.Result as Result
 import Libs.Task as T
 import Models.OrganizationId as OrganizationId exposing (OrganizationId)
 import Models.Project as Project
@@ -17,10 +20,12 @@ import PagesComponents.New.Models exposing (Model, Msg(..), Tab(..))
 import Ports exposing (JsMsg(..))
 import Random
 import Request
+import Services.Backend as Backend
 import Services.DatabaseSource as DatabaseSource
-import Services.ImportProject as ImportProject
 import Services.JsonSource as JsonSource
-import Services.Lenses exposing (mapDatabaseSourceMCmd, mapImportProjectMCmd, mapJsonSourceMCmd, mapOpenedDialogs, mapSampleProjectMCmd, mapSqlSourceMCmd, mapToastsCmd, setConfirm)
+import Services.Lenses exposing (mapDatabaseSourceMCmd, mapJsonSourceMCmd, mapOpenedDialogs, mapProjectSourceMCmd, mapSampleSourceMCmd, mapSqlSourceMCmd, mapToastsCmd, setConfirm)
+import Services.ProjectSource as ProjectSource
+import Services.SampleSource as SampleSource
 import Services.Sort as Sort
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
@@ -37,11 +42,24 @@ update req now urlOrganization msg model =
         ToggleCollapse id ->
             ( { model | openedCollapse = B.cond (model.openedCollapse == id) "" id }, Cmd.none )
 
+        GotSamples res ->
+            res
+                |> Result.fold (\err -> ( model, "Error on samples: " ++ Backend.errorToString err |> Toasts.warning |> Toast |> T.send ))
+                    (\samples ->
+                        ( { model | samples = samples }
+                        , req.query
+                            |> Dict.get "sample"
+                            |> Maybe.andThen (\value -> samples |> List.find (\s -> s.slug == value))
+                            |> Maybe.map (SampleSource.GetSample >> SampleSourceMsg >> T.send)
+                            |> Maybe.withDefault Cmd.none
+                        )
+                    )
+
         InitTab tab ->
             ( let
                 clean : Model
                 clean =
-                    { model | selectedTab = tab, databaseSource = Nothing, sqlSource = Nothing, jsonSource = Nothing, importProject = Nothing, sampleProject = Nothing }
+                    { model | selectedTab = tab, databaseSource = Nothing, sqlSource = Nothing, jsonSource = Nothing, projectSource = Nothing, sampleSource = Nothing }
               in
               case tab of
                 TabDatabase ->
@@ -57,10 +75,10 @@ update req now urlOrganization msg model =
                     clean
 
                 TabProject ->
-                    { clean | importProject = Just ImportProject.init }
+                    { clean | projectSource = Just ProjectSource.init }
 
                 TabSamples ->
-                    { clean | sampleProject = Just ImportProject.init }
+                    { clean | sampleSource = Just SampleSource.init }
             , Cmd.none
             )
 
@@ -84,13 +102,13 @@ update req now urlOrganization msg model =
             (model |> mapJsonSourceMCmd (JsonSource.update JsonSourceMsg now message))
                 |> Tuple.mapSecond (\cmd -> B.cond (message == JsonSource.BuildSource) (Cmd.batch [ cmd, Ports.confetti "create-project-btn" ]) cmd)
 
-        ImportProjectMsg message ->
-            (model |> mapImportProjectMCmd (ImportProject.update ImportProjectMsg message))
-                |> Tuple.mapSecond (\cmd -> B.cond (message == ImportProject.BuildProject) (Cmd.batch [ cmd, Ports.confetti "create-project-btn" ]) cmd)
+        ProjectSourceMsg message ->
+            (model |> mapProjectSourceMCmd (ProjectSource.update ProjectSourceMsg message))
+                |> Tuple.mapSecond (\cmd -> B.cond (message == ProjectSource.BuildProject) (Cmd.batch [ cmd, Ports.confetti "create-project-btn" ]) cmd)
 
-        SampleProjectMsg message ->
-            (model |> mapSampleProjectMCmd (ImportProject.update SampleProjectMsg message))
-                |> Tuple.mapSecond (\cmd -> B.cond (message == ImportProject.BuildProject) (Cmd.batch [ cmd, Ports.confetti "create-project-btn" ]) cmd)
+        SampleSourceMsg message ->
+            (model |> mapSampleSourceMCmd (SampleSource.update SampleSourceMsg message))
+                |> Tuple.mapSecond (\cmd -> B.cond (message == SampleSource.BuildProject) (Cmd.batch [ cmd, Ports.confetti "create-project-btn" ]) cmd)
 
         CreateProjectTmp project ->
             ( model, Cmd.batch [ Ports.createProjectTmp project, Ports.track (Track.initProject project) ] )
@@ -130,8 +148,8 @@ handleJsMessage req now urlOrganization msg model =
             ( { model | projects = Sort.lastUpdatedFirst projects }, Cmd.none )
 
         GotLocalFile kind file content ->
-            if kind == ImportProject.kind then
-                ( model, T.send (content |> ImportProject.GotFile |> ImportProjectMsg) )
+            if kind == ProjectSource.kind then
+                ( model, T.send (content |> ProjectSource.GotFile |> ProjectSourceMsg) )
 
             else if kind == SqlSource.kind then
                 ( model, SourceId.generator |> Random.generate (\sourceId -> content |> SqlSource.GotFile (SourceInfo.sqlLocal now sourceId file) |> SqlSourceMsg) )
@@ -142,8 +160,12 @@ handleJsMessage req now urlOrganization msg model =
             else
                 ( model, "Unhandled local file kind '" ++ kind ++ "'" |> Toasts.error |> Toast |> T.send )
 
-        GotProject _ ->
-            ( model, Request.pushRoute (Route.Organization___Project_ { organization = urlOrganization |> Maybe.withDefault OrganizationId.zero, project = ProjectId.zero }) req )
+        GotProject r ->
+            if model.sampleSource == Nothing || (model.sampleSource |> Maybe.andThen .parsedProject) /= Nothing then
+                ( model, Request.pushRoute (Route.Organization___Project_ { organization = urlOrganization |> Maybe.withDefault OrganizationId.zero, project = ProjectId.zero }) req )
+
+            else
+                ( model, T.send (r |> SampleSource.GotProject |> SampleSourceMsg) )
 
         GotToast level message ->
             ( model, message |> Toasts.create level |> Toast |> T.send )

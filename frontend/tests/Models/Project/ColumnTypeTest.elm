@@ -19,6 +19,7 @@ suite =
             , testParse "longtext" "Text"
             , testParse "tinytext" "Text"
             , testParse "mediumtext" "Text"
+            , testParse "citext" "Text"
             , testParse "character" "Text"
             , testParse "character(36)" "Text"
             , testParse "character varying" "Text"

@@ -17,6 +17,7 @@ defmodule AzimuttWeb.Api.ProjectView do
       description: project.description,
       encoding_version: project.encoding_version,
       storage_kind: project.storage_kind,
+      visibility: project.visibility,
       nb_sources: project.nb_sources,
       nb_tables: project.nb_tables,
       nb_columns: project.nb_columns,
@@ -44,23 +45,25 @@ defmodule AzimuttWeb.Api.ProjectView do
   end
 
   defp put_content(json, project, ctx) do
-    if ctx.expand |> Enum.member?("content") && project.storage_kind == Storage.remote() do
-      # FIXME: handle spaces in name
-      file_url = ProjectFile.url({project.file, project}, signed: true)
-
-      if Mix.env() in [:dev, :test] do
-        with {:ok, body} <- File.read("./#{file_url}"), do: json |> Map.put(:content, body)
-      else
-        response = HTTPoison.get!(file_url)
-        json |> Map.put(:content, response.body)
-      end
+    if ctx.expand |> Enum.member?("content") do
+      json |> Map.put(:content, get_content(project))
     else
       json
     end
   end
 
-  def last_update(datetime) do
-    {:ok, relative_str} = datetime |> Timex.format("{relative}", :relative)
-    relative_str
+  defp get_content(project) do
+    if project.storage_kind == Storage.remote() do
+      # FIXME: handle spaces in name
+      file_url = ProjectFile.url({project.file, project}, signed: true)
+
+      if Mix.env() in [:dev, :test] do
+        with {:ok, body} <- File.read("./#{file_url}"), do: body
+      else
+        HTTPoison.get!(file_url).body
+      end
+    else
+      "{}"
+    end
   end
 end

@@ -75,6 +75,18 @@ defmodule Azimutt.Utils.ResultTest do
       assert :error = :error |> Result.tap_both(fn _ -> "err" end, on_ok)
     end
 
+    test "filter" do
+      assert {:ok, 1} = {:ok, 1} |> Result.filter(fn x -> x == 1 end)
+      assert {:error, :invalid_predicate} = {:ok, 1} |> Result.filter(fn x -> x > 1 end)
+      assert {:error, "oops"} = {:error, "oops"} |> Result.filter(fn x -> x > 1 end)
+    end
+
+    test "filter_not" do
+      assert {:error, :invalid_predicate} = {:ok, 1} |> Result.filter_not(fn x -> x == 1 end)
+      assert {:ok, 1} = {:ok, 1} |> Result.filter_not(fn x -> x > 1 end)
+      assert {:error, "oops"} = {:error, "oops"} |> Result.filter_not(fn x -> x > 1 end)
+    end
+
     test "sequence" do
       assert {:ok, [1, 2, 3]} = [{:ok, 1}, {:ok, 2}, {:ok, 3}] |> Result.sequence()
       assert {:error, "e1"} = [{:ok, 1}, {:error, "e1"}, {:error, "e2"}] |> Result.sequence()

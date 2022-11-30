@@ -9,9 +9,11 @@ import Models.Project exposing (Project)
 import Models.Project.ProjectName exposing (ProjectName)
 import Models.ProjectInfo exposing (ProjectInfo)
 import Ports exposing (JsMsg)
+import Services.Backend as Backend exposing (Sample)
 import Services.DatabaseSource as DatabaseSource
-import Services.ImportProject as ImportProject exposing (Model, Msg)
 import Services.JsonSource as JsonSource
+import Services.ProjectSource as ProjectSource exposing (Model, Msg)
+import Services.SampleSource as SampleSource
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
 import Shared exposing (Confirm)
@@ -22,12 +24,13 @@ type alias Model =
     , mobileMenuOpen : Bool
     , openedCollapse : HtmlId
     , projects : List ProjectInfo
+    , samples : List Sample
     , selectedTab : Tab
     , databaseSource : Maybe (DatabaseSource.Model Msg)
     , sqlSource : Maybe (SqlSource.Model Msg)
     , jsonSource : Maybe (JsonSource.Model Msg)
-    , importProject : Maybe ImportProject.Model
-    , sampleProject : Maybe ImportProject.Model
+    , projectSource : Maybe ProjectSource.Model
+    , sampleSource : Maybe SampleSource.Model
 
     -- global attrs
     , openedDropdown : HtmlId
@@ -53,12 +56,13 @@ type alias ConfirmDialog =
 type Msg
     = SelectMenu String
     | ToggleCollapse HtmlId
+    | GotSamples (Result Backend.Error (List Sample))
     | InitTab Tab
     | DatabaseSourceMsg DatabaseSource.Msg
     | SqlSourceMsg SqlSource.Msg
     | JsonSourceMsg JsonSource.Msg
-    | ImportProjectMsg ImportProject.Msg
-    | SampleProjectMsg ImportProject.Msg
+    | ProjectSourceMsg ProjectSource.Msg
+    | SampleSourceMsg SampleSource.Msg
     | CreateProjectTmp Project
     | CreateEmptyProject ProjectName
       -- global messages

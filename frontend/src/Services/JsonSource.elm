@@ -1,4 +1,4 @@
-module Services.JsonSource exposing (Model, Msg(..), init, kind, update, viewInput, viewLocalInput, viewParsing, viewRemoteInput)
+module Services.JsonSource exposing (Model, Msg(..), example, init, kind, update, viewInput, viewLocalInput, viewParsing, viewRemoteInput)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.Divider as Divider
@@ -63,6 +63,11 @@ type Msg
 kind : String
 kind =
     "json-source"
+
+
+example : String
+example =
+    "https://azimutt.app/elm/samples/basic.json"
 
 
 init : Maybe Source -> (Result String Source -> msg) -> Model msg
@@ -182,7 +187,7 @@ viewRemoteInput wrap htmlId model error =
                 [ type_ "text"
                 , id htmlId
                 , name htmlId
-                , placeholder "ex: https://azimutt.app/samples/gospeak.json"
+                , placeholder ("ex: " ++ example)
                 , value model
                 , onInput (UpdateRemoteFile >> wrap)
                 , onBlur (model |> GetRemoteFile |> wrap)

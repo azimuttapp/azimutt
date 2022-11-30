@@ -142,7 +142,7 @@ update _ msg model =
                 (errors
                     |> List.concatMap
                         (\( name, err ) ->
-                            [ "Unable to read project " ++ name ++ ": " ++ Decode.errorToHtml err |> Ports.toast "error"
+                            [ "Unable to read legacy project " ++ name ++ ": " ++ Decode.errorToHtml err |> Ports.toast "error"
                             , Ports.trackJsonError "decode-project" err
                             ]
                         )

@@ -37,7 +37,7 @@ defmodule AzimuttWeb.Router do
     get "/blog", BlogController, :index
     get "/blog/:id", BlogController, :show
     get "/gallery", GalleryController, :index
-    get "/gallery/:id", GalleryController, :show
+    get "/gallery/:slug", GalleryController, :show
     get "/logout", UserSessionController, :delete
     delete "/logout", UserSessionController, :delete
     get "/users/confirm", UserConfirmationController, :new
@@ -69,7 +69,6 @@ defmodule AzimuttWeb.Router do
     get "/login/redirect", UserSessionController, :redirect_to
 
     resources "/organizations", OrganizationController, except: [:index] do
-      # FIXME: don't work, still useful? get "/projects", ProjectController, :index
       get "/billing", OrganizationBillingController, :index, as: :billing
       post "/billing/new", OrganizationBillingController, :new, as: :billing
       post "/billing/edit", OrganizationBillingController, :edit, as: :billing
@@ -87,14 +86,10 @@ defmodule AzimuttWeb.Router do
   end
 
   # authed admin routes
-  # FIXME: doesn't work :(
   # scope "/admin", AzimuttWeb do
   #   pipe_through [:browser, :require_authenticated_user]
-  #   get "/users/projects", ProjectController, :index
-  #   resources "/organizations", OrganizationController
   # end
 
-  # FIXME '/api' will catch all :(
   scope "/api/v1/swagger" do
     forward "/", PhoenixSwagger.Plug.SwaggerUI, otp_app: :azimutt, swagger_file: "swagger.json"
   end
@@ -105,6 +100,8 @@ defmodule AzimuttWeb.Router do
     # GET is practical for development and POST allows to not have params in possible http logs
     get "/analyzer/schema", Api.AnalyzerController, :schema
     post "/analyzer/schema", Api.AnalyzerController, :schema
+    get "/gallery", Api.GalleryController, :index
+    get "/organizations/:organization_id/projects/:id", Api.ProjectController, :show
   end
 
   # authed APIs
@@ -113,7 +110,7 @@ defmodule AzimuttWeb.Router do
     get "/users/current", Api.UserController, :current
 
     resources "/organizations", Api.OrganizationController, only: [:index] do
-      resources "/projects", Api.ProjectController, except: [:new, :edit]
+      resources "/projects", Api.ProjectController, except: [:new, :edit, :show]
     end
   end
 

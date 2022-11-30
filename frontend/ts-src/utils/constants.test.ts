@@ -1,6 +1,16 @@
 import {Organization, Plan, PlanId} from "../types/organization";
 import {Timestamp} from "../types/basics";
-import {Layout, Origin, Project, ProjectStorage, Relation, Source, Table, Type} from "../types/project";
+import {
+    Layout,
+    Origin,
+    Project,
+    ProjectStorage,
+    ProjectVisibility,
+    Relation,
+    Source,
+    Table,
+    Type
+} from "../types/project";
 
 export const uuid = '84547c71-bec5-433b-87c7-685f1c9353b2'
 export const now: Timestamp = 1663789596755
@@ -96,6 +106,7 @@ export const project: Project = {
     layouts: {init: layout},
     settings: {removedTables: 'logs'},
     storage: ProjectStorage.enum.local,
+    visibility: ProjectVisibility.enum.none,
     createdAt: now,
     updatedAt: now,
     version: 1

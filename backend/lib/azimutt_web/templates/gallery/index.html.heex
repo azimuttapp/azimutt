@@ -9,25 +9,28 @@
 </div>
 
 <main class="relative overflow-hidden bg-white">
-    <%= for {example, i} <- @examples |> Enum.with_index do %>
+    <%= if @samples == [] do %>
+        <h2 class="mt-12 text-3xl font-bold text-gray-900 text-center">No samples in gallery!</h2>
+    <% end %>
+    <%= for {sample, i} <- @samples |> Enum.with_index do %>
         <article class={"#{if rem(i, 2) == 0, do: "", else: "bg-gray-100"} relative py-16"}>
             <div class="lg:mx-auto lg:grid lg:max-w-7xl lg:grid-flow-col-dense lg:grid-cols-2 lg:gap-24 lg:px-8">
                 <div class={"#{if rem(i, 2) == 0, do: "lg:col-start-2", else: ""} mx-auto max-w-xl px-4 sm:px-6 lg:mx-0 lg:max-w-none lg:py-32 lg:px-0"}>
-                    <span class={"flex h-12 w-12 items-center justify-center rounded-md bg-#{example.color}-600"}><Icon.draw name={example.icon} kind="outline" class="text-white" /></span>
+                    <span class={"flex h-12 w-12 items-center justify-center rounded-md bg-#{sample.color}-600"}><Icon.draw name={sample.icon} kind="outline" class="text-white" /></span>
                     <div class="mt-6">
-                        <h2 class="text-3xl font-bold tracking-tight text-gray-900"><%= example.name %></h2>
+                        <h2 class="text-3xl font-bold tracking-tight text-gray-900"><%= sample.project.name %></h2>
                         <div>
-                            <span class={"inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium text-#{example.color}-800 bg-#{example.color}-100"}><%= example.tables %> tables</span>
+                            <span class={"inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium text-#{sample.color}-800 bg-#{sample.color}-100"}><%= sample.project.nb_tables %> tables</span>
                         </div>
-                        <p class="mt-4 h-48 sm:h-28 text-lg text-gray-500"><%= example.excerpt %></p>
+                        <p class="mt-4 h-48 sm:h-28 text-lg text-gray-500"><%= sample.description %></p>
                         <div class="mt-6">
-                            <a href={Routes.gallery_path(@conn, :show, example)} class={"bg-#{example.color}-600 hover:bg-#{example.color}-700 inline-flex rounded-md border border-transparent px-4 py-2 text-base font-medium text-white shadow-sm"}>View <%= example.name |> String.downcase %> schema</a>
+                            <a href={Routes.gallery_path(@conn, :show, sample.slug)} class={"bg-#{sample.color}-600 hover:bg-#{sample.color}-700 inline-flex rounded-md border border-transparent px-4 py-2 text-base font-medium text-white shadow-sm"}>View <%= sample.project.name |> String.downcase %> schema</a>
                         </div>
                     </div>
                 </div>
                 <div class={"#{if rem(i, 2) == 0, do: "lg:col-start-1", else: ""} mt-12 sm:mt-16 lg:mt-0"}>
                     <div class={"#{if rem(i, 2) == 0, do: "-ml-48 pr-4 sm:pr-6 md:-ml-16", else: "-mr-48 pl-4 sm:pl-6 md:-mr-16"} lg:relative lg:m-0 lg:h-full lg:px-0"}>
-                        <img src={example.banner} alt={"#{example.name} banner"} class={"#{if rem(i, 2) == 0, do: "lg:right-0", else: "lg:left-0"} w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5 lg:absolute lg:right-0 lg:h-full lg:w-auto lg:max-w-none"}>
+                        <img src={sample.banner} alt={"#{sample.project.name} banner"} class={"#{if rem(i, 2) == 0, do: "lg:right-0", else: "lg:left-0"} w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5 lg:absolute lg:right-0 lg:h-full lg:w-auto lg:max-w-none"}>
                     </div>
                 </div>
             </div>

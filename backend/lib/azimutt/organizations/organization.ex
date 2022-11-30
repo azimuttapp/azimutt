@@ -1,7 +1,5 @@
 defmodule Azimutt.Organizations.Organization do
-  @moduledoc """
-  The organization schema
-  """
+  @moduledoc "The organization schema"
   use Ecto.Schema
   use Azimutt.Schema
   use TypedStruct

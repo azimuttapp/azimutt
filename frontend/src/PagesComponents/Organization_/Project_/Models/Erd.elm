@@ -84,6 +84,7 @@ unpack erd =
     , layouts = erd.layouts |> Dict.map (\_ -> ErdLayout.unpack)
     , settings = erd.settings
     , storage = erd.project.storage
+    , visibility = erd.project.visibility
     , version = erd.project.version
     , createdAt = erd.project.createdAt
     , updatedAt = erd.project.updatedAt

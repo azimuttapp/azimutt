@@ -1,16 +1,16 @@
 defmodule Azimutt.AccountsFixtures do
-  @moduledoc """
-  This module defines test helpers for creating
-  entities via the `Azimutt.Accounts` context.
-  """
+  @moduledoc false
 
   def unique_user_email, do: "user#{System.unique_integer()}@example.com"
   def valid_user_password, do: "hello world!"
 
   def valid_user_attributes(attrs \\ %{}) do
+    i = System.unique_integer()
+
     Enum.into(attrs, %{
-      email: unique_user_email(),
-      password: valid_user_password(),
+      name: "User #{i}",
+      email: "user#{i}@example.com",
+      password: "hello world!",
       nickname: "user"
     })
   end

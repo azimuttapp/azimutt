@@ -1,10 +1,12 @@
-module Components.Atoms.Icon exposing (Icon(..), doc, dribbble, facebook, github, github2, instagram, loading, outline, outline2x, slash, solid, twitter)
+module Components.Atoms.Icon exposing (Icon(..), decode, doc, dribbble, facebook, github, github2, instagram, loading, outline, outline2x, slash, solid, twitter)
 
 import Dict exposing (Dict)
 import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Html, div, span)
 import Html.Attributes exposing (title)
+import Json.Decode as Decode
 import Libs.Html.Attributes exposing (ariaHidden, role)
+import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Svg.Attributes exposing (css, vectorEffect)
 import Libs.Tailwind exposing (TwClass)
@@ -250,701 +252,255 @@ type Icon
     | ZoomOut
 
 
-toString : Icon -> String
+iconNames : List ( Icon, List String )
+iconNames =
+    [ ( AcademicCap, [ "academic-cap" ] )
+    , ( Adjustments, [ "adjustments" ] )
+    , ( Annotation, [ "annotation" ] )
+    , ( Archive, [ "archive" ] )
+    , ( ArrowCircleDown, [ "arrow-circle-down" ] )
+    , ( ArrowCircleLeft, [ "arrow-circle-left" ] )
+    , ( ArrowCircleRight, [ "arrow-circle-right" ] )
+    , ( ArrowCircleUp, [ "arrow-circle-up" ] )
+    , ( ArrowDown, [ "arrow-down" ] )
+    , ( ArrowLeft, [ "arrow-left" ] )
+    , ( ArrowNarrowDown, [ "arrow-narrow-down" ] )
+    , ( ArrowNarrowLeft, [ "arrow-narrow-left" ] )
+    , ( ArrowNarrowRight, [ "arrow-narrow-right" ] )
+    , ( ArrowNarrowUp, [ "arrow-narrow-up" ] )
+    , ( ArrowRight, [ "arrow-right" ] )
+    , ( ArrowSmDown, [ "arrow-sm-down" ] )
+    , ( ArrowSmLeft, [ "arrow-sm-left" ] )
+    , ( ArrowSmRight, [ "arrow-sm-right" ] )
+    , ( ArrowSmUp, [ "arrow-sm-up" ] )
+    , ( ArrowUp, [ "arrow-up" ] )
+    , ( ArrowsExpand, [ "arrows-expand" ] )
+    , ( AtSymbol, [ "at-symbol" ] )
+    , ( Backspace, [ "backspace" ] )
+    , ( BadgeCheck, [ "badge-check" ] )
+    , ( Ban, [ "ban" ] )
+    , ( Beaker, [ "beaker" ] )
+    , ( Bell, [ "bell" ] )
+    , ( BookOpen, [ "book-open" ] )
+    , ( Bookmark, [ "bookmark" ] )
+    , ( BookmarkAlt, [ "bookmark-alt" ] )
+    , ( Briefcase, [ "briefcase" ] )
+    , ( Cake, [ "cake" ] )
+    , ( Calculator, [ "calculator" ] )
+    , ( Calendar, [ "calendar" ] )
+    , ( Camera, [ "camera" ] )
+    , ( Cash, [ "cash" ] )
+    , ( ChartBar, [ "chart-bar" ] )
+    , ( ChartPie, [ "chart-pie" ] )
+    , ( ChartSquareBar, [ "chart-square-bar" ] )
+    , ( Chat, [ "chat" ] )
+    , ( ChatAlt, [ "chat-alt" ] )
+    , ( ChatAlt2, [ "chat-alt-2", "chat-bubble-left-right" ] )
+    , ( Check, [ "check" ] )
+    , ( CheckCircle, [ "check-circle" ] )
+    , ( ChevronDoubleDown, [ "chevron-double-down" ] )
+    , ( ChevronDoubleLeft, [ "chevron-double-left" ] )
+    , ( ChevronDoubleRight, [ "chevron-double-right" ] )
+    , ( ChevronDoubleUp, [ "chevron-double-up" ] )
+    , ( ChevronDown, [ "chevron-down" ] )
+    , ( ChevronLeft, [ "chevron-left" ] )
+    , ( ChevronRight, [ "chevron-right" ] )
+    , ( ChevronUp, [ "chevron-up" ] )
+    , ( Chip, [ "chip" ] )
+    , ( Clipboard, [ "clipboard" ] )
+    , ( ClipboardCheck, [ "clipboard-check" ] )
+    , ( ClipboardCopy, [ "clipboard-copy" ] )
+    , ( ClipboardList, [ "clipboard-list" ] )
+    , ( Clock, [ "clock" ] )
+    , ( Cloud, [ "cloud" ] )
+    , ( CloudDownload, [ "cloud-download" ] )
+    , ( CloudUpload, [ "cloud-upload" ] )
+    , ( Code, [ "code", "code-bracket" ] )
+    , ( Cog, [ "cog" ] )
+    , ( Collection, [ "collection" ] )
+    , ( ColorSwatch, [ "color-swatch" ] )
+    , ( CreditCard, [ "credit-card" ] )
+    , ( Cube, [ "cube" ] )
+    , ( CubeTransparent, [ "cube-transparent" ] )
+    , ( CurrencyBangladeshi, [ "currency-bangladeshi" ] )
+    , ( CurrencyDollar, [ "currency-dollar" ] )
+    , ( CurrencyEuro, [ "currency-euro" ] )
+    , ( CurrencyPound, [ "currency-pound" ] )
+    , ( CurrencyRupee, [ "currency-rupee" ] )
+    , ( CurrencyYen, [ "currency-yen" ] )
+    , ( CursorClick, [ "cursor-click" ] )
+    , ( Database, [ "database", "circle-stack" ] )
+    , ( DesktopComputer, [ "desktop-computer" ] )
+    , ( DeviceMobile, [ "device-mobile" ] )
+    , ( DeviceTablet, [ "device-tablet" ] )
+    , ( Document, [ "document" ] )
+    , ( DocumentAdd, [ "document-add" ] )
+    , ( DocumentDownload, [ "document-download" ] )
+    , ( DocumentDuplicate, [ "document-duplicate" ] )
+    , ( DocumentRemove, [ "document-remove" ] )
+    , ( DocumentReport, [ "document-report" ] )
+    , ( DocumentSearch, [ "document-search" ] )
+    , ( DocumentText, [ "document-text" ] )
+    , ( DotsCircleHorizontal, [ "dots-circle-horizontal" ] )
+    , ( DotsHorizontal, [ "dots-horizontal" ] )
+    , ( DotsVertical, [ "dots-vertical" ] )
+    , ( Download, [ "download" ] )
+    , ( Duplicate, [ "duplicate" ] )
+    , ( EmojiHappy, [ "emoji-happy" ] )
+    , ( EmojiSad, [ "emoji-sad" ] )
+    , ( Empty, [ "empty" ] )
+    , ( Exclamation, [ "exclamation" ] )
+    , ( ExclamationCircle, [ "exclamation-circle" ] )
+    , ( ExternalLink, [ "external-link" ] )
+    , ( Eye, [ "eye" ] )
+    , ( EyeOff, [ "eye-off" ] )
+    , ( FastForward, [ "fast-forward" ] )
+    , ( Film, [ "film" ] )
+    , ( Filter, [ "filter" ] )
+    , ( FingerPrint, [ "finger-print" ] )
+    , ( Fire, [ "fire" ] )
+    , ( Flag, [ "flag" ] )
+    , ( Folder, [ "folder" ] )
+    , ( FolderAdd, [ "folder-add" ] )
+    , ( FolderDownload, [ "folder-download" ] )
+    , ( FolderOpen, [ "folder-open" ] )
+    , ( FolderRemove, [ "folder-remove" ] )
+    , ( Gift, [ "gift" ] )
+    , ( Globe, [ "globe" ] )
+    , ( GlobeAlt, [ "globe-alt" ] )
+    , ( Hand, [ "hand" ] )
+    , ( Hashtag, [ "hashtag" ] )
+    , ( Heart, [ "heart" ] )
+    , ( Home, [ "home" ] )
+    , ( Identification, [ "identification" ] )
+    , ( Inbox, [ "inbox" ] )
+    , ( InboxIn, [ "inbox-in" ] )
+    , ( InformationCircle, [ "information-circle" ] )
+    , ( Key, [ "key" ] )
+    , ( Library, [ "library" ] )
+    , ( LightBulb, [ "light-bulb" ] )
+    , ( LightningBolt, [ "lightning-bolt" ] )
+    , ( Link, [ "link" ] )
+    , ( LocationMarker, [ "location-marker" ] )
+    , ( LockClosed, [ "lock-closed" ] )
+    , ( LockOpen, [ "lock-open" ] )
+    , ( Login, [ "login" ] )
+    , ( Logout, [ "logout" ] )
+    , ( Mail, [ "mail" ] )
+    , ( MailOpen, [ "mail-open" ] )
+    , ( Map, [ "map" ] )
+    , ( Menu, [ "menu" ] )
+    , ( MenuAlt1, [ "menu-alt-1" ] )
+    , ( MenuAlt2, [ "menu-alt-2" ] )
+    , ( MenuAlt3, [ "menu-alt-3" ] )
+    , ( MenuAlt4, [ "menu-alt-4" ] )
+    , ( Microphone, [ "microphone" ] )
+    , ( Minus, [ "minus" ] )
+    , ( MinusCircle, [ "minus-circle" ] )
+    , ( MinusSm, [ "minus-sm" ] )
+    , ( Moon, [ "moon" ] )
+    , ( MusicNote, [ "music-note" ] )
+    , ( Newspaper, [ "newspaper" ] )
+    , ( OfficeBuilding, [ "office-building" ] )
+    , ( PaperAirplane, [ "paper-airplane" ] )
+    , ( PaperClip, [ "paper-clip" ] )
+    , ( Pause, [ "pause" ] )
+    , ( Pencil, [ "pencil" ] )
+    , ( PencilAlt, [ "pencil-alt" ] )
+    , ( Phone, [ "phone" ] )
+    , ( PhoneIncoming, [ "phone-incoming" ] )
+    , ( PhoneMissedCall, [ "phone-missed-call" ] )
+    , ( PhoneOutgoing, [ "phone-outgoing" ] )
+    , ( Photograph, [ "photograph" ] )
+    , ( Play, [ "play" ] )
+    , ( Plus, [ "plus" ] )
+    , ( PlusCircle, [ "plus-circle" ] )
+    , ( PlusSm, [ "plus-sm" ] )
+    , ( PresentationChartBar, [ "presentation-chart-bar" ] )
+    , ( PresentationChartLine, [ "presentation-chart-line" ] )
+    , ( Printer, [ "printer" ] )
+    , ( Puzzle, [ "puzzle" ] )
+    , ( Qrcode, [ "qrcode" ] )
+    , ( QuestionMarkCircle, [ "question-mark-circle" ] )
+    , ( ReceiptRefund, [ "receipt-refund" ] )
+    , ( ReceiptTax, [ "receipt-tax" ] )
+    , ( Refresh, [ "refresh" ] )
+    , ( Reply, [ "reply" ] )
+    , ( Rewind, [ "rewind" ] )
+    , ( Rss, [ "rss" ] )
+    , ( Save, [ "save" ] )
+    , ( SaveAs, [ "save-as" ] )
+    , ( Scale, [ "scale" ] )
+    , ( Scissors, [ "scissors" ] )
+    , ( Search, [ "search" ] )
+    , ( SearchCircle, [ "search-circle" ] )
+    , ( Selector, [ "selector" ] )
+    , ( Server, [ "server" ] )
+    , ( Share, [ "share" ] )
+    , ( ShieldCheck, [ "shield-check" ] )
+    , ( ShieldExclamation, [ "shield-exclamation" ] )
+    , ( ShoppingBag, [ "shopping-bag" ] )
+    , ( ShoppingCart, [ "shopping-cart" ] )
+    , ( SortAscending, [ "sort-ascending" ] )
+    , ( SortDescending, [ "sort-descending" ] )
+    , ( Sparkles, [ "sparkles" ] )
+    , ( Speakerphone, [ "speakerphone" ] )
+    , ( Star, [ "star" ] )
+    , ( StatusOffline, [ "status-offline" ] )
+    , ( StatusOnline, [ "status-online" ] )
+    , ( Stop, [ "stop" ] )
+    , ( Sun, [ "sun" ] )
+    , ( Support, [ "support" ] )
+    , ( SwitchHorizontal, [ "switch-horizontal" ] )
+    , ( SwitchVertical, [ "switch-vertical" ] )
+    , ( Table, [ "table" ] )
+    , ( Tag, [ "tag" ] )
+    , ( Template, [ "template", "rectangle-group" ] )
+    , ( Terminal, [ "terminal" ] )
+    , ( ThumbDown, [ "thumb-down" ] )
+    , ( ThumbUp, [ "thumb-up" ] )
+    , ( Ticket, [ "ticket" ] )
+    , ( Translate, [ "translate" ] )
+    , ( Trash, [ "trash" ] )
+    , ( TrendingDown, [ "trending-down" ] )
+    , ( TrendingUp, [ "trending-up" ] )
+    , ( Truck, [ "truck" ] )
+    , ( Upload, [ "upload" ] )
+    , ( User, [ "user" ] )
+    , ( UserAdd, [ "user-add" ] )
+    , ( UserCircle, [ "user-circle" ] )
+    , ( UserGroup, [ "user-group" ] )
+    , ( UserRemove, [ "user-remove" ] )
+    , ( Users, [ "users" ] )
+    , ( Variable, [ "variable" ] )
+    , ( VideoCamera, [ "video-camera" ] )
+    , ( ViewBoards, [ "view-boards" ] )
+    , ( ViewGrid, [ "view-grid" ] )
+    , ( ViewGridAdd, [ "view-grid-add" ] )
+    , ( ViewList, [ "view-list" ] )
+    , ( VolumeOff, [ "volume-off" ] )
+    , ( VolumeUp, [ "volume-up" ] )
+    , ( Wifi, [ "wifi" ] )
+    , ( X, [ "x" ] )
+    , ( XCircle, [ "x-circle" ] )
+    , ( ZoomIn, [ "zoom-in" ] )
+    , ( ZoomOut, [ "zoom-out" ] )
+    ]
+
+
+toString : Icon -> Maybe String
 toString icon =
-    case icon of
-        AcademicCap ->
-            "academic-cap"
+    iconNames |> List.find (\( i, _ ) -> i == icon) |> Maybe.map Tuple.second |> Maybe.andThen List.head
 
-        Adjustments ->
-            "adjustments"
 
-        Annotation ->
-            "annotation"
+fromString : String -> Maybe Icon
+fromString icon =
+    iconNames |> List.find (\( _, s ) -> s |> List.member icon) |> Maybe.map Tuple.first
 
-        Archive ->
-            "archive"
 
-        ArrowCircleDown ->
-            "arrow-circle-down"
-
-        ArrowCircleLeft ->
-            "arrow-circle-left"
-
-        ArrowCircleRight ->
-            "arrow-circle-right"
-
-        ArrowCircleUp ->
-            "arrow-circle-up"
-
-        ArrowDown ->
-            "arrow-down"
-
-        ArrowLeft ->
-            "arrow-left"
-
-        ArrowNarrowDown ->
-            "arrow-narrow-down"
-
-        ArrowNarrowLeft ->
-            "arrow-narrow-left"
-
-        ArrowNarrowRight ->
-            "arrow-narrow-right"
-
-        ArrowNarrowUp ->
-            "arrow-narrow-up"
-
-        ArrowRight ->
-            "arrow-right"
-
-        ArrowSmDown ->
-            "arrow-sm-down"
-
-        ArrowSmLeft ->
-            "arrow-sm-left"
-
-        ArrowSmRight ->
-            "arrow-sm-right"
-
-        ArrowSmUp ->
-            "arrow-sm-up"
-
-        ArrowUp ->
-            "arrow-up"
-
-        ArrowsExpand ->
-            "arrows-expand"
-
-        AtSymbol ->
-            "at-symbol"
-
-        Backspace ->
-            "backspace"
-
-        BadgeCheck ->
-            "badge-check"
-
-        Ban ->
-            "ban"
-
-        Beaker ->
-            "beaker"
-
-        Bell ->
-            "bell"
-
-        BookOpen ->
-            "book-open"
-
-        Bookmark ->
-            "bookmark"
-
-        BookmarkAlt ->
-            "bookmark-alt"
-
-        Briefcase ->
-            "briefcase"
-
-        Cake ->
-            "cake"
-
-        Calculator ->
-            "calculator"
-
-        Calendar ->
-            "calendar"
-
-        Camera ->
-            "camera"
-
-        Cash ->
-            "cash"
-
-        ChartBar ->
-            "chart-bar"
-
-        ChartPie ->
-            "chart-pie"
-
-        ChartSquareBar ->
-            "chart-square-bar"
-
-        Chat ->
-            "chat"
-
-        ChatAlt ->
-            "chat-alt"
-
-        ChatAlt2 ->
-            "chat-alt-2"
-
-        Check ->
-            "check"
-
-        CheckCircle ->
-            "check-circle"
-
-        ChevronDoubleDown ->
-            "chevron-double-down"
-
-        ChevronDoubleLeft ->
-            "chevron-double-left"
-
-        ChevronDoubleRight ->
-            "chevron-double-right"
-
-        ChevronDoubleUp ->
-            "chevron-double-up"
-
-        ChevronDown ->
-            "chevron-down"
-
-        ChevronLeft ->
-            "chevron-left"
-
-        ChevronRight ->
-            "chevron-right"
-
-        ChevronUp ->
-            "chevron-up"
-
-        Chip ->
-            "chip"
-
-        Clipboard ->
-            "clipboard"
-
-        ClipboardCheck ->
-            "clipboard-check"
-
-        ClipboardCopy ->
-            "clipboard-copy"
-
-        ClipboardList ->
-            "clipboard-list"
-
-        Clock ->
-            "clock"
-
-        Cloud ->
-            "cloud"
-
-        CloudDownload ->
-            "cloud-download"
-
-        CloudUpload ->
-            "cloud-upload"
-
-        Code ->
-            "code"
-
-        Cog ->
-            "cog"
-
-        Collection ->
-            "collection"
-
-        ColorSwatch ->
-            "color-swatch"
-
-        CreditCard ->
-            "credit-card"
-
-        Cube ->
-            "cube"
-
-        CubeTransparent ->
-            "cube-transparent"
-
-        CurrencyBangladeshi ->
-            "currency-bangladeshi"
-
-        CurrencyDollar ->
-            "currency-dollar"
-
-        CurrencyEuro ->
-            "currency-euro"
-
-        CurrencyPound ->
-            "currency-pound"
-
-        CurrencyRupee ->
-            "currency-rupee"
-
-        CurrencyYen ->
-            "currency-yen"
-
-        CursorClick ->
-            "cursor-click"
-
-        Database ->
-            "database"
-
-        DesktopComputer ->
-            "desktop-computer"
-
-        DeviceMobile ->
-            "device-mobile"
-
-        DeviceTablet ->
-            "device-tablet"
-
-        Document ->
-            "document"
-
-        DocumentAdd ->
-            "document-add"
-
-        DocumentDownload ->
-            "document-download"
-
-        DocumentDuplicate ->
-            "document-duplicate"
-
-        DocumentRemove ->
-            "document-remove"
-
-        DocumentReport ->
-            "document-report"
-
-        DocumentSearch ->
-            "document-search"
-
-        DocumentText ->
-            "document-text"
-
-        DotsCircleHorizontal ->
-            "dots-circle-horizontal"
-
-        DotsHorizontal ->
-            "dots-horizontal"
-
-        DotsVertical ->
-            "dots-vertical"
-
-        Download ->
-            "download"
-
-        Duplicate ->
-            "duplicate"
-
-        EmojiHappy ->
-            "emoji-happy"
-
-        EmojiSad ->
-            "emoji-sad"
-
-        Empty ->
-            "empty"
-
-        Exclamation ->
-            "exclamation"
-
-        ExclamationCircle ->
-            "exclamation-circle"
-
-        ExternalLink ->
-            "external-link"
-
-        Eye ->
-            "eye"
-
-        EyeOff ->
-            "eye-off"
-
-        FastForward ->
-            "fast-forward"
-
-        Film ->
-            "film"
-
-        Filter ->
-            "filter"
-
-        FingerPrint ->
-            "finger-print"
-
-        Fire ->
-            "fire"
-
-        Flag ->
-            "flag"
-
-        Folder ->
-            "folder"
-
-        FolderAdd ->
-            "folder-add"
-
-        FolderDownload ->
-            "folder-download"
-
-        FolderOpen ->
-            "folder-open"
-
-        FolderRemove ->
-            "folder-remove"
-
-        Gift ->
-            "gift"
-
-        Globe ->
-            "globe"
-
-        GlobeAlt ->
-            "globe-alt"
-
-        Hand ->
-            "hand"
-
-        Hashtag ->
-            "hashtag"
-
-        Heart ->
-            "heart"
-
-        Home ->
-            "home"
-
-        Identification ->
-            "identification"
-
-        Inbox ->
-            "inbox"
-
-        InboxIn ->
-            "inbox-in"
-
-        InformationCircle ->
-            "information-circle"
-
-        Key ->
-            "key"
-
-        Library ->
-            "library"
-
-        LightBulb ->
-            "light-bulb"
-
-        LightningBolt ->
-            "lightning-bolt"
-
-        Link ->
-            "link"
-
-        LocationMarker ->
-            "location-marker"
-
-        LockClosed ->
-            "lock-closed"
-
-        LockOpen ->
-            "lock-open"
-
-        Login ->
-            "login"
-
-        Logout ->
-            "logout"
-
-        Mail ->
-            "mail"
-
-        MailOpen ->
-            "mail-open"
-
-        Map ->
-            "map"
-
-        Menu ->
-            "menu"
-
-        MenuAlt1 ->
-            "menu-alt-1"
-
-        MenuAlt2 ->
-            "menu-alt-2"
-
-        MenuAlt3 ->
-            "menu-alt-3"
-
-        MenuAlt4 ->
-            "menu-alt-4"
-
-        Microphone ->
-            "microphone"
-
-        Minus ->
-            "minus"
-
-        MinusCircle ->
-            "minus-circle"
-
-        MinusSm ->
-            "minus-sm"
-
-        Moon ->
-            "moon"
-
-        MusicNote ->
-            "music-note"
-
-        Newspaper ->
-            "newspaper"
-
-        OfficeBuilding ->
-            "office-building"
-
-        PaperAirplane ->
-            "paper-airplane"
-
-        PaperClip ->
-            "paper-clip"
-
-        Pause ->
-            "pause"
-
-        Pencil ->
-            "pencil"
-
-        PencilAlt ->
-            "pencil-alt"
-
-        Phone ->
-            "phone"
-
-        PhoneIncoming ->
-            "phone-incoming"
-
-        PhoneMissedCall ->
-            "phone-missed-call"
-
-        PhoneOutgoing ->
-            "phone-outgoing"
-
-        Photograph ->
-            "photograph"
-
-        Play ->
-            "play"
-
-        Plus ->
-            "plus"
-
-        PlusCircle ->
-            "plus-circle"
-
-        PlusSm ->
-            "plus-sm"
-
-        PresentationChartBar ->
-            "presentation-chart-bar"
-
-        PresentationChartLine ->
-            "presentation-chart-line"
-
-        Printer ->
-            "printer"
-
-        Puzzle ->
-            "puzzle"
-
-        Qrcode ->
-            "qrcode"
-
-        QuestionMarkCircle ->
-            "question-mark-circle"
-
-        ReceiptRefund ->
-            "receipt-refund"
-
-        ReceiptTax ->
-            "receipt-tax"
-
-        Refresh ->
-            "refresh"
-
-        Reply ->
-            "reply"
-
-        Rewind ->
-            "rewind"
-
-        Rss ->
-            "rss"
-
-        Save ->
-            "save"
-
-        SaveAs ->
-            "save-as"
-
-        Scale ->
-            "scale"
-
-        Scissors ->
-            "scissors"
-
-        Search ->
-            "search"
-
-        SearchCircle ->
-            "search-circle"
-
-        Selector ->
-            "selector"
-
-        Server ->
-            "server"
-
-        Share ->
-            "share"
-
-        ShieldCheck ->
-            "shield-check"
-
-        ShieldExclamation ->
-            "shield-exclamation"
-
-        ShoppingBag ->
-            "shopping-bag"
-
-        ShoppingCart ->
-            "shopping-cart"
-
-        SortAscending ->
-            "sort-ascending"
-
-        SortDescending ->
-            "sort-descending"
-
-        Sparkles ->
-            "sparkles"
-
-        Speakerphone ->
-            "speakerphone"
-
-        Star ->
-            "star"
-
-        StatusOffline ->
-            "status-offline"
-
-        StatusOnline ->
-            "status-online"
-
-        Stop ->
-            "stop"
-
-        Sun ->
-            "sun"
-
-        Support ->
-            "support"
-
-        SwitchHorizontal ->
-            "switch-horizontal"
-
-        SwitchVertical ->
-            "switch-vertical"
-
-        Table ->
-            "table"
-
-        Tag ->
-            "tag"
-
-        Template ->
-            "template"
-
-        Terminal ->
-            "terminal"
-
-        ThumbDown ->
-            "thumb-down"
-
-        ThumbUp ->
-            "thumb-up"
-
-        Ticket ->
-            "ticket"
-
-        Translate ->
-            "translate"
-
-        Trash ->
-            "trash"
-
-        TrendingDown ->
-            "trending-down"
-
-        TrendingUp ->
-            "trending-up"
-
-        Truck ->
-            "truck"
-
-        Upload ->
-            "upload"
-
-        User ->
-            "user"
-
-        UserAdd ->
-            "user-add"
-
-        UserCircle ->
-            "user-circle"
-
-        UserGroup ->
-            "user-group"
-
-        UserRemove ->
-            "user-remove"
-
-        Users ->
-            "users"
-
-        Variable ->
-            "variable"
-
-        VideoCamera ->
-            "video-camera"
-
-        ViewBoards ->
-            "view-boards"
-
-        ViewGrid ->
-            "view-grid"
-
-        ViewGridAdd ->
-            "view-grid-add"
-
-        ViewList ->
-            "view-list"
-
-        VolumeOff ->
-            "volume-off"
-
-        VolumeUp ->
-            "volume-up"
-
-        Wifi ->
-            "wifi"
-
-        X ->
-            "x"
-
-        XCircle ->
-            "x-circle"
-
-        ZoomIn ->
-            "zoom-in"
-
-        ZoomOut ->
-            "zoom-out"
+decode : Decode.Decoder Icon
+decode =
+    Decode.string |> Decode.andThen (\name -> name |> fromString |> Maybe.mapOrElse Decode.succeed (Decode.fail ("Unknown icon: '" ++ name ++ "'")))
 
 
 type alias IconData =
@@ -1190,17 +746,17 @@ icons =
 
 outline : Icon -> TwClass -> Html msg
 outline icon styles =
-    icons |> Dict.get (icon |> toString) |> Maybe.mapOrElse .outline [] |> (\lines -> viewOutline lines ("h-6 w-6 " ++ styles))
+    icons |> Dict.get (icon |> toString |> Maybe.withDefault "") |> Maybe.mapOrElse .outline [] |> (\lines -> viewOutline lines ("h-6 w-6 " ++ styles))
 
 
 outline2x : Icon -> TwClass -> Html msg
 outline2x icon styles =
-    icons |> Dict.get (icon |> toString) |> Maybe.mapOrElse .outline [] |> (\lines -> viewOutline lines ("h-12 w-12 " ++ styles))
+    icons |> Dict.get (icon |> toString |> Maybe.withDefault "") |> Maybe.mapOrElse .outline [] |> (\lines -> viewOutline lines ("h-12 w-12 " ++ styles))
 
 
 solid : Icon -> TwClass -> Html msg
 solid icon styles =
-    icons |> Dict.get (icon |> toString) |> Maybe.mapOrElse .solid [] |> (\lines -> viewSolid lines ("h-5 w-5 " ++ styles))
+    icons |> Dict.get (icon |> toString |> Maybe.withDefault "") |> Maybe.mapOrElse .solid [] |> (\lines -> viewSolid lines ("h-5 w-5 " ++ styles))
 
 
 

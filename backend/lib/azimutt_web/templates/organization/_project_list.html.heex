@@ -16,17 +16,13 @@
                             </h2>
                         </div>
                         <span class="group flex items-center space-x-2.5">
-                            <%= if project.storage_kind == :local do %>
-                                <Icon.folder kind="outline" class="text-gray-400" />
-                            <% else %>
-                                <Icon.cloud kind="outline" class="text-gray-400" />
-                            <% end %>
+                            <%= render "_project_icon.html", project: project %>
                             <span class="truncate text-sm font-medium text-gray-500 group-hover:text-gray-900"><%= project.id %></span>
                         </span>
                     </div>
                     <div class="sm:hidden"><Icon.chevron_right class="text-gray-400" /></div>
                     <div class="hidden sm:flex flex-shrink-0 flex-col items-end space-y-3">
-                        <p class="text-sm font-medium text-gray-500 hover:text-gray-900"><%= project.updated_at |> AzimuttWeb.ProjectView.last_update %></p>
+                        <p class="text-sm font-medium text-gray-500 hover:text-gray-900"><%= project.updated_at |> last_update %></p>
                         <p class="flex space-x-2 text-sm text-gray-500">
                             <span><%= project.nb_tables %> tables</span><span aria-hidden="true">·</span>
                             <span><%= project.nb_relations %> relations</span><span aria-hidden="true">·</span>

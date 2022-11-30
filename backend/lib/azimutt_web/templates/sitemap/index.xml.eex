@@ -17,15 +17,17 @@
   </url>
   <% end %>
 
+  <%= if @samples |> length > 0 do %>
   <url>
     <loc><%= Routes.gallery_url(@conn, :index) %></loc>
-    <lastmod><%= Enum.max_by(@examples, & &1.published, Date).published %></lastmod>
+    <lastmod><%= Enum.max_by(@samples, & &1.updated_at, Date).updated_at %></lastmod>
     <changefreq>weekly</changefreq>
   </url>
-  <%= for example <- @examples do %>
+  <% end %>
+  <%= for sample <- @samples do %>
   <url>
-    <loc><%= Routes.gallery_url(@conn, :show, example) %></loc>
-    <lastmod><%= example.published %></lastmod>
+    <loc><%= Routes.gallery_url(@conn, :show, sample.slug) %></loc>
+    <lastmod><%= sample.updated_at %></lastmod>
   </url>
   <% end %>
 </urlset>

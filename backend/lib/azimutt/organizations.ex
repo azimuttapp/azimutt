@@ -49,12 +49,12 @@ defmodule Azimutt.Organizations do
       |> Repo.insert()
       |> Result.tap_both(
         fn _err -> StripeSrv.delete_customer(stripe_customer) end,
-        fn org -> update_stripe_customer(org, current_user, stripe_customer, true) end
+        fn org -> stripe_update_customer(stripe_customer, org, current_user, true) end
       )
     end)
   end
 
-  def create_non_personal_organization(attrs \\ %{}, %User{} = current_user) do
+  def create_non_personal_organization(attrs, %User{} = current_user) do
     StripeSrv.init_customer("TMP - #{attrs[:name]}")
     |> Result.flat_map(fn stripe_customer ->
       member_changeset = OrganizationMember.creator_changeset(current_user)
@@ -66,12 +66,12 @@ defmodule Azimutt.Organizations do
       |> Repo.insert()
       |> Result.tap_both(
         fn _err -> StripeSrv.delete_customer(stripe_customer) end,
-        fn org -> update_stripe_customer(org, current_user, stripe_customer, false) end
+        fn org -> stripe_update_customer(stripe_customer, org, current_user, false) end
       )
     end)
   end
 
-  defp update_stripe_customer(%Organization{} = organization, %User{} = current_user, %Stripe.Customer{} = stripe_customer, is_personal) do
+  defp stripe_update_customer(%Stripe.Customer{} = stripe_customer, %Organization{} = organization, %User{} = current_user, is_personal) do
     StripeSrv.update_organization(
       stripe_customer,
       organization.id,
@@ -84,7 +84,7 @@ defmodule Azimutt.Organizations do
     )
   end
 
-  def update_organization(%Organization{} = organization, attrs, %User{} = current_user) do
+  def update_organization(attrs, %Organization{} = organization, %User{} = current_user) do
     organization
     |> Organization.update_changeset(attrs, current_user)
     |> Repo.update()
@@ -136,7 +136,7 @@ defmodule Azimutt.Organizations do
     |> Repo.one()
   end
 
-  def create_organization_invitation(attrs \\ %{}, invitation_url, organization_id, current_user, now) do
+  def create_organization_invitation(attrs, invitation_url, organization_id, current_user, now) do
     %OrganizationInvitation{}
     |> OrganizationInvitation.create_changeset(attrs, organization_id, current_user, Timex.shift(now, days: 7))
     |> Repo.insert()
