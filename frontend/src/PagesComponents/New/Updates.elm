@@ -20,6 +20,7 @@ import PagesComponents.New.Models exposing (Model, Msg(..), Tab(..))
 import Ports exposing (JsMsg(..))
 import Random
 import Request
+import Services.Backend as Backend
 import Services.DatabaseSource as DatabaseSource
 import Services.JsonSource as JsonSource
 import Services.Lenses exposing (mapDatabaseSourceMCmd, mapJsonSourceMCmd, mapOpenedDialogs, mapProjectSourceMCmd, mapSampleSourceMCmd, mapSqlSourceMCmd, mapToastsCmd, setConfirm)
@@ -43,7 +44,7 @@ update req now urlOrganization msg model =
 
         GotSamples res ->
             res
-                |> Result.fold (\_ -> ( model, Cmd.none ))
+                |> Result.fold (\err -> ( model, "Error on samples: " ++ Backend.errorToString err |> Toasts.warning |> Toast |> T.send ))
                     (\samples ->
                         ( { model | samples = samples }
                         , req.query
