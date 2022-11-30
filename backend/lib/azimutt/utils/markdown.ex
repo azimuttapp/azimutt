@@ -17,7 +17,7 @@ defmodule Azimutt.Utils.Markdown do
          do: {:ok, html}
   end
 
-  def preprocess(path, content) do
+  def preprocess(content, path) do
     github = "https://github.com/azimuttapp/azimutt"
 
     content

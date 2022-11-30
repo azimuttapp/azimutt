@@ -47,7 +47,7 @@
     <div class="relative overflow-hidden mt-16 pt-6 bg-white">
         <div class="relative px-4 sm:px-6 lg:px-8">
             <div class="prose prose-lg prose-indigo mx-auto text-gray-500">
-                <%= raw Markdown.to_html(Markdown.preprocess(Routes.gallery_path(@conn, :show, @sample.slug), @sample.analysis)) |> Result.or_else "" %>
+                <%= raw @sample.analysis |> Markdown.preprocess(Routes.gallery_path(@conn, :show, @sample.slug)) |> Markdown.to_html |> Result.or_else("") %>
             </div>
         </div>
     </div>

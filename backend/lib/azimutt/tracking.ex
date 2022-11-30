@@ -5,6 +5,16 @@ defmodule Azimutt.Tracking do
   alias Azimutt.Projects.Project
   alias Azimutt.Repo
   alias Azimutt.Tracking.Event
+  alias Azimutt.Utils.Result
+
+  def last_project_loaded(%User{} = current_user) do
+    Event
+    |> where([e], e.name == :project_loaded and e.created_by_id == ^current_user.id)
+    |> order_by([e], desc: e.created_at)
+    |> limit(1)
+    |> Repo.one()
+    |> Result.from_nillable()
+  end
 
   def project_loaded(%User{} = current_user, %Project{} = project) do
     create_event(:project_loaded, project_data(project), %{}, current_user, project.organization.id, project.id)

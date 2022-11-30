@@ -49,7 +49,7 @@ defmodule Azimutt.Blog.Article do
          {:ok, %Author{} = author} <- author_id |> get_author,
          {:ok, published} <- published_str |> Date.from_iso8601(),
          {:ok, body} when is_binary(body) <- map |> Mapx.fetch("body"),
-         markdown = Markdown.preprocess(path, body),
+         markdown = Markdown.preprocess(body, path),
          {:ok, html} when is_binary(html) <- Markdown.to_html(markdown),
          do:
            {:ok,

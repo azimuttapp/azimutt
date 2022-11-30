@@ -184,6 +184,32 @@ defmodule Azimutt.Utils.Result do
   end
 
   @doc """
+  Transforms a Result to :error if predicate fails.
+  ## Examples
+      iex> {:ok, 1} |> Result.filter(fn x -> x == 1 end)
+      {:ok, 1}
+      iex> {:ok, 1} |> Result.filter(fn x -> x > 1 end)
+      {:error, :invalid_predicate}
+      iex> {:error, 1} |> Result.filter(fn x -> x > 1 end)
+      {:error, 1}
+  """
+  def filter({:ok, val} = res, p), do: if(p.(val), do: res, else: {:error, :invalid_predicate})
+  def filter({:error, _err} = res, _p), do: res
+
+  @doc """
+  Same as `filter` but reverse.
+  ## Examples
+      iex> {:ok, 1} |> Result.filter_not(fn x -> x == 1 end)
+      {:error, :invalid_predicate}
+      iex> {:ok, 1} |> Result.filter_not(fn x -> x > 1 end)
+      {:ok, 1}
+      iex> {:error, 1} |> Result.filter_not(fn x -> x > 1 end)
+      {:error, 1}
+  """
+  def filter_not({:ok, val} = res, p), do: if(p.(val), do: {:error, :invalid_predicate}, else: res)
+  def filter_not({:error, _err} = res, _p), do: res
+
+  @doc """
   Transforms a list of results into a result of list.
   If they are all :ok, it will be :ok, otherwise returns the first :error.
   ## Examples
