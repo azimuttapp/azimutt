@@ -135,6 +135,7 @@ function getLegacyProjects() {
         app.gotLegacyProjects(p)
         if (p.length > 0) {
             analytics.trackEvent('has-legacy-projects', {count: p.length})
+            setTimeout(() => alert(`You still have some legacy projects. They won't be supported in 2023. If you don't want to loose them, open and save them before the end of the year.`), 3000)
         }
     }, err => {
         reportError(`Can't list legacy projects`, err)
