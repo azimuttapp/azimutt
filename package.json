@@ -26,6 +26,7 @@
     "server": "concurrently \"npm run tailwind:dev\" \"npm run ts:dev\" \"npm run elm:server\" \"npm run ex:dev\"",
     "test": "npm run ts:test && npm run elm:test && npm run ex:test",
     "build": "npm run tailwind:build && npm run ts:build && npm run elm:build && npm run ex:build",
+    "format": "npm run ex:format && npm run elm:format",
     "ex:install": "cd backend && mix local.hex --force && mix deps.get",
     "ex:setup": "cd backend && mix deps.get && mix ecto.setup",
     "ex:dev": "cd backend && mix phx.server",

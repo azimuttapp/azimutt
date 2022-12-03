@@ -4,7 +4,7 @@ defmodule Azimutt.BlogTest do
 
   describe "blog" do
     test "all articles are valid" do
-      assert {:ok, _} = Blog.get_articles()
+      assert {:ok, _} = Blog.list_articles()
     end
   end
 end
