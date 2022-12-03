@@ -34,6 +34,7 @@ defmodule AzimuttWeb.Router do
   scope "/", AzimuttWeb do
     pipe_through :browser
     get "/", WebsiteController, :index
+    get "/last", WebsiteController, :last
     get "/blog", BlogController, :index
     get "/blog/:id", BlogController, :show
     get "/gallery", GalleryController, :index
@@ -173,7 +174,6 @@ defmodule AzimuttWeb.Router do
   scope "/", AzimuttWeb do
     pipe_through :browser
     get "/create", ElmController, :create
-    get "/last", ElmController, :last
     get "/new", ElmController, :new
     get "/projects", ElmController, :projects_legacy
     get "/:organization_id", ElmController, :orga_show

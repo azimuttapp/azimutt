@@ -8,7 +8,6 @@ defmodule AzimuttWeb.ElmController do
   # every action is the same, just load the Elm index but we need different actions for the reverse router
   def create(conn, _params), do: conn |> load_elm
   def embed(conn, _params), do: conn |> load_elm
-  def last(conn, _params), do: conn |> load_elm
   def new(conn, _params), do: conn |> load_elm
   def projects_legacy(conn, _params), do: conn |> load_elm
   def orga_create(conn, _params), do: conn |> load_elm
