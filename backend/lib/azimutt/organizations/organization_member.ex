@@ -23,7 +23,7 @@ defmodule Azimutt.Organizations.OrganizationMember do
     |> put_assoc(:user, current_user)
     |> put_assoc(:created_by, current_user)
     |> put_assoc(:updated_by, current_user)
-    |> validate_required([:updated_by, :created_by])
+    |> validate_required([:created_by, :updated_by])
   end
 
   @doc false
@@ -34,6 +34,6 @@ defmodule Azimutt.Organizations.OrganizationMember do
     |> put_change(:organization_id, organization_id)
     |> put_assoc(:created_by, current_user)
     |> put_assoc(:updated_by, current_user)
-    |> validate_required([:updated_by, :created_by])
+    |> validate_required([:created_by, :updated_by])
   end
 end

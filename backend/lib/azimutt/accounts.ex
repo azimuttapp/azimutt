@@ -41,9 +41,7 @@ defmodule Azimutt.Accounts do
   def register_github_user(attrs, now) do
     Ecto.Multi.new()
     |> Ecto.Multi.insert(:user, %User{} |> User.github_creation_changeset(attrs, now))
-    |> Ecto.Multi.run(:organization, fn _repo, %{user: user} ->
-      Organizations.create_personal_organization(user)
-    end)
+    |> Ecto.Multi.run(:organization, fn _repo, %{user: user} -> Organizations.create_personal_organization(user) end)
     |> Repo.transaction()
     |> case do
       {:ok, %{user: user}} -> {:ok, user}
