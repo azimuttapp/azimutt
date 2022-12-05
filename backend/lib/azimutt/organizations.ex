@@ -38,14 +38,20 @@ defmodule Azimutt.Organizations do
   end
 
   def create_personal_organization(%User{} = current_user) do
-    StripeSrv.init_customer("TMP - #{current_user.name}")
+    StripeSrv.init_customer("TMP - P - #{current_user.name}", %{
+      name: current_user.name,
+      email: current_user.email,
+      provider: current_user.provider,
+      provider_uid: current_user.provider_uid,
+      location: current_user.location,
+      description: current_user.description,
+      github_username: current_user.github_username
+    })
     |> Result.flat_map(fn stripe_customer ->
-      member_changeset = OrganizationMember.creator_changeset(current_user)
-
       %Organization{}
       |> Repo.preload(:members)
       |> Organization.create_personal_changeset(current_user, stripe_customer)
-      |> Ecto.Changeset.put_assoc(:members, [member_changeset])
+      |> Ecto.Changeset.put_assoc(:members, [OrganizationMember.creator_changeset(current_user)])
       |> Repo.insert()
       |> Result.tap_both(
         fn _err -> StripeSrv.delete_customer(stripe_customer) end,
@@ -55,14 +61,12 @@ defmodule Azimutt.Organizations do
   end
 
   def create_non_personal_organization(attrs, %User{} = current_user) do
-    StripeSrv.init_customer("TMP - #{attrs[:name]}")
+    StripeSrv.init_customer("TMP - O - #{attrs[:name]} - #{current_user.name}", attrs)
     |> Result.flat_map(fn stripe_customer ->
-      member_changeset = OrganizationMember.creator_changeset(current_user)
-
       %Organization{}
       |> Repo.preload(:members)
       |> Organization.create_non_personal_changeset(current_user, stripe_customer, attrs)
-      |> Ecto.Changeset.put_assoc(:members, [member_changeset])
+      |> Ecto.Changeset.put_assoc(:members, [OrganizationMember.creator_changeset(current_user)])
       |> Repo.insert()
       |> Result.tap_both(
         fn _err -> StripeSrv.delete_customer(stripe_customer) end,
@@ -72,7 +76,7 @@ defmodule Azimutt.Organizations do
   end
 
   defp stripe_update_customer(%Stripe.Customer{} = stripe_customer, %Organization{} = organization, %User{} = current_user, is_personal) do
-    StripeSrv.update_organization(
+    StripeSrv.update_customer(
       stripe_customer,
       organization.id,
       organization.name,

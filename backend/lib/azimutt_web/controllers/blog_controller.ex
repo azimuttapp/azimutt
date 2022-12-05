@@ -1,10 +1,11 @@
 defmodule AzimuttWeb.BlogController do
   use AzimuttWeb, :controller
   alias Azimutt.Blog
+  alias Azimutt.Utils.Result
   action_fallback AzimuttWeb.FallbackController
 
   def index(conn, _params) do
-    with {:ok, articles} <- Blog.get_articles(),
+    with {:ok, articles} <- Blog.list_articles(),
          do:
            render(conn, "index.html",
              articles: articles,
@@ -21,6 +22,7 @@ defmodule AzimuttWeb.BlogController do
          do:
            render(conn, "show.html",
              article: article,
+             related: Blog.related_articles(article) |> Result.or_else([]),
              seo: %{
                type: "article",
                title: article.title,

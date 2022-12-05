@@ -23,7 +23,7 @@ import Time
 handleWheel : WheelEvent -> ErdProps -> CanvasProps -> CanvasProps
 handleWheel event erdElem canvas =
     if event.ctrl then
-        canvas |> performZoom erdElem (-event.delta.dy * Conf.canvas.zoom.speed) event.clientPos
+        canvas |> performZoom erdElem (-event.delta.dy * Conf.canvas.zoom.speed * canvas.zoom) event.clientPos
 
     else
         { canvas | position = canvas.position |> Position.moveDiagram (event.delta |> Delta.negate |> Delta.adjust canvas.zoom) }

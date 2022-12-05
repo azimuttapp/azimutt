@@ -153,6 +153,7 @@ type Msg
     | MoveProjectTo ProjectStorage
     | RenameProject ProjectName
     | DeleteProject ProjectInfo
+    | GoToTable TableId
     | ShowTable TableId (Maybe PositionHint)
     | ShowTables (List TableId) (Maybe PositionHint)
     | ShowAllTables

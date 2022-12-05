@@ -3,10 +3,10 @@ defmodule Azimutt.Services.StripeSrv do
   alias Azimutt.Utils.Result
   require Logger
 
-  def init_customer(name) do
+  def init_customer(name, metadata) do
     if stripe_configured?() do
       # https://stripe.com/docs/api/customers/create
-      Stripe.Customer.create(%{name: name})
+      Stripe.Customer.create(%{name: name, metadata: metadata})
     else
       {:error, "Stripe not configured"}
     end
@@ -21,7 +21,7 @@ defmodule Azimutt.Services.StripeSrv do
     end
   end
 
-  def update_organization(
+  def update_customer(
         %Stripe.Customer{} = customer,
         organization_id,
         name,

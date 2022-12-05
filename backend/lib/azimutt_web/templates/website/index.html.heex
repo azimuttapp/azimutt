@@ -29,10 +29,7 @@
 
     <:cloud_logo><img src={Routes.static_path(@conn, "/images/fundimmo_logo.png")} alt="Fundimmo logo"/></:cloud_logo>
     <:cloud_logo><img src={Routes.static_path(@conn, "/images/uncover_logo.png")} alt="Uncover logo"/></:cloud_logo>
-    <:cloud_logo><img src={Routes.static_path(@conn, "/images/locomote_logo.png")} alt="Locomote logo"/></:cloud_logo>
-    <:cloud_logo><img src={Routes.static_path(@conn, "/images/swile_logo.png")} alt="Swile logo"/></:cloud_logo>
     <:cloud_logo><img src={Routes.static_path(@conn, "/images/neocase_logo.png")} alt="Neocase logo"/></:cloud_logo>
-    <:cloud_logo><img src={Routes.static_path(@conn, "/images/manomano_logo.png")} alt="Mano Mano logo"/></:cloud_logo>
 </LandingPage.hero_section>
 <!-- FIXME: transform in component  -->
 <%= render "_features.html", assigns %>
@@ -50,8 +47,8 @@
         class="grid max-w-2xl grid-cols-1 gap-6 mx-auto mt-16 sm:gap-8 lg:mt-20 lg:max-w-none lg:grid-cols-3">
         <li>
             <ul role="list" class="flex flex-col gap-y-6 sm:gap-y-8">
-                <LandingPage.testimonial_card title="Co-founder & CTO of pix.fr." name="Jérémy Buget" picture_url="https://avatars.githubusercontent.com/u/265963?v=4" link="https://twitter.com/jbuget/status/1561708207764029440" text="Aujourd'hui j'ai découvert @azimuttapp, un service en ligne pour y voir plus clair et plus joli dans son schéma de données. Idéal pour les nouveaux-venus d'un projet." />
-                <LandingPage.testimonial_card title="Head of Engineering at Swile" name="Jordan Temim" picture_url="https://media-exp1.licdn.com/dms/image/C4D03AQHICIgfkN-dpg/profile-displayphoto-shrink_400_400/0/1641135662382?e=1669852800&v=beta&t=rMVgGpDfYMeWS7Ld8ZpjRIDV4IGisAsv8z_TN5E8cQU" link="https://www.linkedin.com/feed/update/urn%3Ali%3Aactivity%3A6963834821580099584/" text="Quick summer message to highlight Loïc Knuchel's incredible work on Azimutt app!
+                <LandingPage.testimonial_card title="Co-founder & CTO of pix.fr." name="Jérémy Buget" picture_url="/images/jeremy_buget.jpg" link="https://twitter.com/jbuget/status/1561708207764029440" text="Aujourd'hui j'ai découvert @azimuttapp, un service en ligne pour y voir plus clair et plus joli dans son schéma de données. Idéal pour les nouveaux-venus d'un projet." />
+                <LandingPage.testimonial_card title="Head of Engineering at Swile" name="Jordan Temim" picture_url="/images/jordan_temim.jpeg" link="https://www.linkedin.com/feed/update/urn%3Ali%3Aactivity%3A6963834821580099584/" text="Quick summer message to highlight Loïc Knuchel's incredible work on Azimutt app!
                     It's an advanced ER Diagram tool that allows you to explore your database schema, prepare migrations, focus on a group of tables precisely and even ask for the shortest path between several relationships.
                     The app is Open Source and we can follow the roadmap and ask for features.
                     If modeling is important to you, I recommend this tool!" />
@@ -59,15 +56,15 @@
         </li>
         <li>
             <ul role="list" class="flex flex-col gap-y-6 sm:gap-y-8">
-                <LandingPage.testimonial_card title="Software developer" name="Miguel Cobá" picture_url="https://pbs.twimg.com/profile_images/1572871996953747457/Awc2FLzZ_400x400.jpg" link="https://twitter.com/MiguelCoba_/status/1442434336653860874" text="Wow that's a dope app. It looks very responsive. And the controls seem very  polished. Amazing job, Loïc! And congrats on the release." />
-                <LandingPage.testimonial_card title="Consultant at Boulevard" name="Oliver Searle Barnes" picture_url="https://media-exp1.licdn.com/dms/image/C4D03AQGAIzpMZsv2MA/profile-displayphoto-shrink_400_400/0/1516273111173?e=1669852800&v=beta&t=Apm20DVNw5Vn5ZxKC0p7N6uGHd1P7tYzZyRig8hUoYs" link="https://discourse.elm-lang.org/t/azimutt-explore-your-database-thanks-to-elm/7734/10" text="I mainly wanted to add some praise. The app seems really well thought out, particularly the control you have over what to include in the diagram and the ability to save different views. This feels like the workflow I never knew I wanted until trying it just now." />
+                <LandingPage.testimonial_card title="Software developer" name="Miguel Cobá" picture_url="/images/miguel_coba.jpg" link="https://twitter.com/MiguelCoba_/status/1442434336653860874" text="Wow that's a dope app. It looks very responsive. And the controls seem very  polished. Amazing job, Loïc! And congrats on the release." />
+                <LandingPage.testimonial_card title="Consultant at Boulevard" name="Oliver Searle Barnes" picture_url="/images/oliver_searle_barnes.png" link="https://discourse.elm-lang.org/t/azimutt-explore-your-database-thanks-to-elm/7734/10" text="I mainly wanted to add some praise. The app seems really well thought out, particularly the control you have over what to include in the diagram and the ability to save different views. This feels like the workflow I never knew I wanted until trying it just now." />
             </ul>
         </li>
         <li>
             <ul role="list" class="flex flex-col gap-y-6 sm:gap-y-8">
-                <LandingPage.testimonial_card title="CEO of feram.io" name="Adrian Sieber" picture_url="https://pbs.twimg.com/profile_images/1493681184156569606/uOLgIKUE_400x400.jpg" link="https://discourse.elm-lang.org/t/azimutt-explore-your-database-thanks-to-elm/7734/13" text="Nice! Really beautiful app and it works quite smoothly. I especially like that you can start from scratch and build up the graph with only the tables which you are interested in. In some other tools it’s always quite an info dump." />
-                <LandingPage.testimonial_card title="Building tweethunter.io & taplio.com " name="Tibo" picture_url="https://pbs.twimg.com/profile_images/1421725545017004032/Ge7H8BDx_400x400.jpg" link="https://twitter.com/tibo_maker/status/1443603421970386944?s=20&t=ivYxzf8OfWbi41W1KO5eSw" text="As a dev, i love it!!" />
-                <LandingPage.testimonial_card title="Techjournalism @i-programmer.info" name="nikosv" picture_url="https://pbs.twimg.com/profile_images/862615106005471233/l0Kui6R4_400x400.jpg" link="https://twitter.com/nikosvg/status/1557975423186878464" text="Azimutt has really made a difference. keep up the good work!" />
+                <LandingPage.testimonial_card title="CEO of feram.io" name="Adrian Sieber" picture_url="/images/adrian_sieber.jpg" link="https://discourse.elm-lang.org/t/azimutt-explore-your-database-thanks-to-elm/7734/13" text="Nice! Really beautiful app and it works quite smoothly. I especially like that you can start from scratch and build up the graph with only the tables which you are interested in. In some other tools it’s always quite an info dump." />
+                <LandingPage.testimonial_card title="Building tweethunter.io & taplio.com " name="Tibo" picture_url="/images/tibo.jpg" link="https://twitter.com/tibo_maker/status/1443603421970386944?s=20&t=ivYxzf8OfWbi41W1KO5eSw" text="As a dev, i love it!!" />
+                <LandingPage.testimonial_card title="Techjournalism @i-programmer.info" name="nikosv" picture_url="/images/nikosv.jpg" link="https://twitter.com/nikosvg/status/1557975423186878464" text="Azimutt has really made a difference. keep up the good work!" />
 
             </ul>
         </li>

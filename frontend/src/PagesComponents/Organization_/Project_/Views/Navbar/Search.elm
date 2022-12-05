@@ -103,9 +103,9 @@ type SearchResult
 viewSearchResult : HtmlId -> SchemaName -> List ErdTableLayout -> Int -> Int -> SearchResult -> Html Msg
 viewSearchResult searchId defaultSchema shownTables active index res =
     let
-        viewItem : msg -> Icon -> List (Html msg) -> Bool -> Html msg
+        viewItem : msg -> msg -> Icon -> List (Html msg) -> Bool -> Html msg
         viewItem =
-            \msg icon content disabled ->
+            \msg disabledMsg icon content disabled ->
                 let
                     commonAttrs : List (Attribute msg)
                     commonAttrs =
@@ -116,7 +116,7 @@ viewSearchResult searchId defaultSchema shownTables active index res =
                         "flex w-full items-center"
                 in
                 if disabled then
-                    span (commonAttrs ++ [ css [ commonStyles, B.cond (active == index) ContextMenu.itemDisabledActiveStyles ContextMenu.itemDisabledStyles ] ])
+                    button (commonAttrs ++ [ type_ "button", onMouseDown disabledMsg, css [ commonStyles, B.cond (active == index) ContextMenu.itemDisabledActiveStyles ContextMenu.itemDisabledStyles ] ])
                         ([ Icon.solid icon "mr-3" ] ++ content)
 
                 else
@@ -125,20 +125,20 @@ viewSearchResult searchId defaultSchema shownTables active index res =
     in
     case res of
         FoundTable table ->
-            viewItem (ShowTable table.id Nothing) Icon.Table [ text (TableId.show defaultSchema table.id) ] (shownTables |> List.memberBy .id table.id)
+            viewItem (ShowTable table.id Nothing) (GoToTable table.id) Icon.Table [ text (TableId.show defaultSchema table.id) ] (shownTables |> List.memberBy .id table.id)
 
         FoundColumn table column ->
-            viewItem (ShowTable table.id Nothing) Tag [ span [ class "opacity-50" ] [ text (TableId.show defaultSchema table.id ++ ".") ], text column.name ] (shownTables |> List.memberBy .id table.id)
+            viewItem (ShowTable table.id Nothing) (GoToTable table.id) Tag [ span [ class "opacity-50" ] [ text (TableId.show defaultSchema table.id ++ ".") ], text column.name ] (shownTables |> List.memberBy .id table.id)
 
         FoundRelation relation ->
             if shownTables |> List.memberBy .id relation.src.table |> not then
-                viewItem (ShowTable relation.src.table Nothing) ExternalLink [ text relation.name ] False
+                viewItem (ShowTable relation.src.table Nothing) (GoToTable relation.src.table) ExternalLink [ text relation.name ] False
 
             else if shownTables |> List.memberBy .id relation.ref.table |> not then
-                viewItem (ShowTable relation.ref.table Nothing) ExternalLink [ text relation.name ] False
+                viewItem (ShowTable relation.ref.table Nothing) (GoToTable relation.ref.table) ExternalLink [ text relation.name ] False
 
             else
-                viewItem (ShowTable relation.src.table Nothing) ExternalLink [ text relation.name ] True
+                viewItem (ShowTable relation.src.table Nothing) (GoToTable relation.src.table) ExternalLink [ text relation.name ] True
 
 
 performSearch : Dict TableId ErdTable -> List ErdRelation -> Dict TableId ErdTableNotes -> String -> List SearchResult

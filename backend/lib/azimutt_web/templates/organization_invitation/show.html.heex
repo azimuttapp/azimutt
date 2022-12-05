@@ -9,7 +9,7 @@
 </div>
 
 <%= cond do %>
-  <% @now > @organization_invitation.expire_at -> %>
+  <% Date.compare(@now,@organization_invitation.expire_at) == :gt -> %>
     <p class="px-8 mt-5 pb-24 sm:mt-6 text-xl text-gray-500">Oh no! This invitation has expired 😥<br>You can ask <%= @organization_invitation.created_by.name %> to invite you again.</p>
   <% @organization_invitation.cancel_at -> %>
     <p class="px-8 mt-5 pb-24 sm:mt-6 text-xl text-gray-500">This invitation has been canceled.<br>You can't join <%= @organization.name %> anymore...</p>

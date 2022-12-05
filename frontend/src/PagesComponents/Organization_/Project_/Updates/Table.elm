@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Updates.Table exposing (hideColumn, hideColumns, hideRelatedTables, hideTable, hoverColumn, hoverNextColumn, mapTablePropOrSelected, showAllTables, showColumn, showColumns, showRelatedTables, showTable, showTables, sortColumns)
+module PagesComponents.Organization_.Project_.Updates.Table exposing (goToTable, hideColumn, hideColumns, hideRelatedTables, hideTable, hoverColumn, hoverNextColumn, mapTablePropOrSelected, showAllTables, showColumn, showColumns, showRelatedTables, showTable, showTables, sortColumns)
 
 import Conf
 import Dict
@@ -8,8 +8,11 @@ import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.Delta exposing (Delta)
 import Libs.Task as T
+import Models.Area as Area
 import Models.ColumnOrder as ColumnOrder exposing (ColumnOrder)
+import Models.ErdProps exposing (ErdProps)
 import Models.Position as Position
+import Models.Project.CanvasProps exposing (CanvasProps)
 import Models.Project.ColumnId exposing (ColumnId)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnRef exposing (ColumnRef)
@@ -23,14 +26,37 @@ import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps exposing (ErdColumnProps)
 import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout as ErdTableLayout exposing (ErdTableLayout)
+import PagesComponents.Organization_.Project_.Models.ErdTableProps exposing (ErdTableProps)
 import PagesComponents.Organization_.Project_.Models.HideColumns as HideColumns exposing (HideColumns)
 import PagesComponents.Organization_.Project_.Models.PositionHint as PositionHint exposing (PositionHint(..))
 import PagesComponents.Organization_.Project_.Models.ShowColumns as ShowColumns exposing (ShowColumns)
 import Ports
-import Services.Lenses exposing (mapColumns, mapRelatedTables, mapTables, mapTablesL, setHighlighted, setHoverColumn, setShown)
+import Services.Lenses exposing (mapCanvas, mapColumns, mapProps, mapRelatedTables, mapTables, mapTablesL, setHighlighted, setHoverColumn, setPosition, setSelected, setShown)
 import Services.Toasts as Toasts
 import Set exposing (Set)
 import Time
+
+
+goToTable : Time.Posix -> TableId -> ErdProps -> Erd -> ( Erd, Cmd Msg )
+goToTable now id viewport erd =
+    (erd |> Erd.getLayoutTable id)
+        |> Maybe.map (\p -> placeTableAtCenter viewport (erd |> Erd.currentLayout |> .canvas) p.props)
+        |> Maybe.map (\pos -> ( erd |> Erd.mapCurrentLayoutWithTime now (mapTables (List.map (\t -> t |> mapProps (setSelected (t.id == id)))) >> mapCanvas (setPosition pos)), Cmd.none ))
+        |> Maybe.withDefault ( erd, "Table " ++ TableId.show erd.settings.defaultSchema id ++ " not shown" |> Toasts.info |> Toast |> T.send )
+
+
+placeTableAtCenter : ErdProps -> CanvasProps -> ErdTableProps -> Position.Diagram
+placeTableAtCenter viewport canvas table =
+    let
+        tableCenter : Position.Viewport
+        tableCenter =
+            table |> Area.centerCanvasGrid |> Position.canvasToViewport viewport.position canvas.position canvas.zoom
+
+        delta : Delta
+        delta =
+            viewport |> Area.centerViewport |> Position.diffViewport tableCenter
+    in
+    canvas.position |> Position.moveDiagram delta
 
 
 showTable : Time.Posix -> TableId -> Maybe PositionHint -> Erd -> ( Erd, Cmd Msg )

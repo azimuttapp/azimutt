@@ -39,7 +39,7 @@ defmodule AzimuttWeb.Components.LandingPage do
     <div id="logo-cloud" class="container px-4 mx-auto">
         <p>Open source ❤️</p>
         <p class="font-display text-base text-slate-900">
-         and used by developers from top-notch companies
+         and used by developers from companies all around the globe:
         </p>
       <div class="flex flex-wrap justify-center items-center">
         <%= for logo <- @cloud_logo do %>

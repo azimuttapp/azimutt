@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Models.Erd exposing (Erd, create, currentLayout, defaultSchemaM, getColumn, getColumnPos, getOrganization, getTable, isShown, mapCurrentLayout, mapCurrentLayoutCmd, mapCurrentLayoutWithTime, mapSettings, mapSource, mapSources, setSettings, setSources, unpack, viewportM, viewportToCanvas)
+module PagesComponents.Organization_.Project_.Models.Erd exposing (Erd, create, currentLayout, defaultSchemaM, getColumn, getColumnPos, getLayoutTable, getOrganization, getTable, isShown, mapCurrentLayout, mapCurrentLayoutCmd, mapCurrentLayoutWithTime, mapSettings, mapSource, mapSources, setSettings, setSources, unpack, viewportM, viewportToCanvas)
 
 import Conf
 import Dict exposing (Dict)
@@ -30,6 +30,7 @@ import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColu
 import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.ErdRelation as ErdRelation exposing (ErdRelation)
 import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable exposing (ErdTable)
+import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.ErdTableNotes as ErdTableNotes exposing (ErdTableNotes)
 import Services.Lenses exposing (mapLayoutsD, mapLayoutsDCmd)
 import Time
@@ -161,9 +162,14 @@ getColumnPos ref erd =
             )
 
 
+getLayoutTable : TableId -> Erd -> Maybe ErdTableLayout
+getLayoutTable table erd =
+    erd |> currentLayout |> .tables |> List.findBy .id table
+
+
 isShown : TableId -> Erd -> Bool
 isShown table erd =
-    erd |> currentLayout |> .tables |> List.memberBy .id table
+    erd |> getLayoutTable table |> Maybe.isJust
 
 
 defaultSchemaM : Maybe Erd -> SchemaName

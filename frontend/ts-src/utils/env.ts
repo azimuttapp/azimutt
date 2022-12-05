@@ -8,9 +8,7 @@ export function getEnv(): Env {
         return Env.enum.dev
     } else if (window.location.hostname.endsWith('azimutt.dev')) {
         return Env.enum.staging
-    } else if (window.location.hostname.endsWith('azimutt.app')) {
-        return Env.enum.prod
     } else {
-        return Env.enum.staging
+        return Env.enum.prod
     }
 }
