@@ -117,8 +117,14 @@ defmodule AzimuttWeb.Router do
 
   scope "/heroku", AzimuttWeb do
     pipe_through [:api]
+    post "/login", Api.HerokuController, :login
+  end
+
+  scope "/heroku", AzimuttWeb do
+    pipe_through [:api, :require_heroku_basic_auth]
     post "/resources", Api.HerokuController, :create
-    delete "/resources/:id", Api.HerokuController, :delete
+    put "/resources/:heroku_id", Api.HerokuController, :update
+    delete "/resources/:heroku_id", Api.HerokuController, :delete
   end
 
   # Enables LiveDashboard only for development

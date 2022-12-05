@@ -145,12 +145,37 @@ defmodule AzimuttWeb.UserAuth do
     if conn.assigns[:current_user] do
       conn
     else
-      conn
-      |> put_status(:unauthorized)
-      |> put_view(AzimuttWeb.ErrorView)
-      |> render("error.json", message: "Return to azimutt.app to login")
-      |> halt()
+      conn |> put_api_error(:unauthorized, "User not authenticated, go to azimutt.app to login")
     end
+  end
+
+  def require_heroku_basic_auth(conn, _opts) do
+    heroku_addon_id = Application.get_env(:heroku, :addon_id)
+    heroku_password = Application.get_env(:heroku, :password)
+
+    if heroku_addon_id && heroku_password do
+      case Plug.BasicAuth.parse_basic_auth(conn) do
+        {user, pass} ->
+          if Plug.Crypto.secure_compare(user, heroku_addon_id) && Plug.Crypto.secure_compare(pass, heroku_password) do
+            conn
+          else
+            conn |> put_api_error(:unauthorized, "Invalid credentials for heroku basic auth")
+          end
+
+        :error ->
+          conn |> put_api_error(:unauthorized, "Invalid or missing heroku basic auth")
+      end
+    else
+      conn |> put_api_error(:unauthorized, "Heroku basic auth not set up")
+    end
+  end
+
+  defp put_api_error(conn, status, message) do
+    conn
+    |> put_status(status)
+    |> put_view(AzimuttWeb.ErrorView)
+    |> render("error.json", message: message)
+    |> halt()
   end
 
   defp maybe_store_return_to(%{method: "GET"} = conn) do
