@@ -1,4 +1,5 @@
 alias Azimutt.Accounts.User
+alias Azimutt.Heroku
 alias Azimutt.Organizations.Organization
 alias Azimutt.Organizations.OrganizationMember
 alias Azimutt.Organizations.OrganizationInvitation
@@ -103,3 +104,16 @@ IO.inspect(basic_project_file, label: "basic_project_file")
   basic_project
   |> Ecto.Changeset.cast(%{visibility: :read}, [:visibility])
   |> Azimutt.Repo.update()
+
+{:ok, _heroku} =
+  Heroku.create_resource(%{
+    heroku_id: "8d97f847-ef86-489a-bfdb-b8d83d5c0926",
+    name: "heroku-app",
+    plan: "free",
+    region: "eu",
+    options: nil,
+    callback: "https://api.heroku.com/addons/01234567-89ab-cdef-0123-456789abcdef",
+    oauth_code: "2365b1f8-9111-4e64-b7ae-43ed192ce1bd",
+    oauth_type: "amazon-web-services::us-east-1",
+    oauth_expire: "2023-03-03T18:01:31-0800"
+  })

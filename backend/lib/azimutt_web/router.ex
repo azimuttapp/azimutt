@@ -86,6 +86,24 @@ defmodule AzimuttWeb.Router do
     patch "/invitations/:id/refuse", OrganizationInvitationController, :refuse, as: :invitation
   end
 
+  scope "/heroku", AzimuttWeb do
+    pipe_through [:api, :require_heroku_basic_auth]
+    post "/resources", Api.HerokuController, :create
+    put "/resources/:heroku_id", Api.HerokuController, :update
+    delete "/resources/:heroku_id", Api.HerokuController, :delete
+  end
+
+  scope "/heroku", AzimuttWeb do
+    pipe_through [:browser]
+    get "/", HerokuController, :index
+    post "/login", HerokuController, :login
+  end
+
+  scope "/heroku", AzimuttWeb do
+    pipe_through [:browser, :fetch_heroku_resource, :require_heroku_resource]
+    get "/resources/:heroku_id", HerokuController, :show
+  end
+
   # authed admin routes
   # scope "/admin", AzimuttWeb do
   #   pipe_through [:browser, :require_authenticated_user]
@@ -113,23 +131,6 @@ defmodule AzimuttWeb.Router do
     resources "/organizations", Api.OrganizationController, only: [:index] do
       resources "/projects", Api.ProjectController, except: [:new, :edit, :show]
     end
-  end
-
-  scope "/heroku", AzimuttWeb do
-    pipe_through [:api, :require_heroku_basic_auth]
-    post "/resources", Api.HerokuController, :create
-    put "/resources/:heroku_id", Api.HerokuController, :update
-    delete "/resources/:heroku_id", Api.HerokuController, :delete
-  end
-
-  scope "/heroku", AzimuttWeb do
-    pipe_through [:browser]
-    post "/login", HerokuController, :login
-  end
-
-  scope "/heroku", AzimuttWeb do
-    pipe_through [:browser, :fetch_heroku_resource, :require_heroku_resource]
-    get "/resources/:heroku_id", HerokuController, :show
   end
 
   # Enables LiveDashboard only for development

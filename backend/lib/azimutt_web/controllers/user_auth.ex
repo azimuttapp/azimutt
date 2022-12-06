@@ -19,7 +19,7 @@ defmodule AzimuttWeb.UserAuth do
   @remember_me_options [sign: true, max_age: 60 * @days, same_site: "Lax"]
 
   # cf https://devcenter.heroku.com/articles/add-on-single-sign-on
-  @heroku_cookie "_azimutt_heroku_resource"
+  @heroku_cookie "_azimutt_heroku_sso"
   @heroku_options [sign: true, max_age: 90 * @minutes, same_site: "Lax"]
 
   @doc """
@@ -160,8 +160,8 @@ defmodule AzimuttWeb.UserAuth do
   end
 
   def require_heroku_basic_auth(conn, _opts) do
-    heroku_addon_id = Application.get_env(:heroku, :addon_id)
-    heroku_password = Application.get_env(:heroku, :password)
+    heroku_addon_id = Azimutt.config(:heroku_addon_id)
+    heroku_password = Azimutt.config(:heroku_password)
 
     if heroku_addon_id && heroku_password do
       case Plug.BasicAuth.parse_basic_auth(conn) do

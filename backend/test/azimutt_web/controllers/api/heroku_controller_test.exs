@@ -6,12 +6,12 @@ defmodule AzimuttWeb.Api.HerokuControllerTest do
   @token Plug.BasicAuth.encode_basic_auth(@addon_id, @password)
 
   setup do
-    Application.put_env(:heroku, :addon_id, @addon_id)
-    Application.put_env(:heroku, :password, @password)
+    Application.put_env(:azimutt, :heroku_addon_id, @addon_id)
+    Application.put_env(:azimutt, :heroku_password, @password)
 
     on_exit(fn ->
-      Application.delete_env(:heroku, :addon_id)
-      Application.delete_env(:heroku, :password)
+      Application.delete_env(:azimutt, :heroku_addon_id)
+      Application.delete_env(:azimutt, :heroku_password)
     end)
   end
 

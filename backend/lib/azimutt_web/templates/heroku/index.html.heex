@@ -1,0 +1,38 @@
+<div class="mt-12 max-w-lg mx-auto">
+    <h1>Heroku SSO login simulation</h1>
+    <%= form_for @conn, Routes.heroku_path(@conn, :login), [], fn f -> %>
+        <%= for field <- @fields do %>
+            <div>
+                <%= label f, field.id, class: "block text-sm font-medium text-gray-700" %>
+                <div class="mt-1">
+                    <%= text_input f, field.id, value: field.value, placeholder: field.value, class: "block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" %>
+                    <%= error_tag f, field.id %>
+                </div>
+            </div>
+        <% end %>
+        <div class="pt-5">
+            <%= submit "Login", class: "inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" %>
+        </div>
+    <% end %>
+    <script>
+        const resourceId = document.querySelector('#resource_id')
+        const timestamp = document.querySelector('#timestamp')
+        const salt = document.querySelector('#salt')
+        const resourceToken = document.querySelector('#resource_token')
+
+        resourceId.addEventListener('change', () => computeToken())
+        timestamp.addEventListener('change', () => computeToken())
+        salt.addEventListener('change', () => computeToken())
+
+        async function computeToken() {
+            resourceToken.value = await sha1(`${resourceId.value}:${salt.value}:${timestamp.value}`)
+        }
+
+        async function sha1(str) {
+            const msgUint8 = new TextEncoder().encode(str)                      // encode comme (utf-8) Uint8Array
+            const hashBuffer = await crypto.subtle.digest('SHA-1', msgUint8)    // fait le condensé
+            const hashArray = Array.from(new Uint8Array(hashBuffer))            // convertit le buffer en tableau d'octet
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('') // convertit le tableau en chaîne hexadélimale
+        }
+    </script>
+</div>

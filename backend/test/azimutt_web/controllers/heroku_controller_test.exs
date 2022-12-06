@@ -7,8 +7,8 @@ defmodule AzimuttWeb.HerokuControllerTest do
   @sso_salt "salt"
 
   setup do
-    Application.put_env(:heroku, :sso_salt, @sso_salt)
-    on_exit(fn -> Application.delete_env(:heroku, :sso_salt) end)
+    Application.put_env(:azimutt, :heroku_sso_salt, @sso_salt)
+    on_exit(fn -> Application.delete_env(:azimutt, :heroku_sso_salt) end)
   end
 
   # https://devcenter.heroku.com/articles/add-on-single-sign-on

@@ -1,13 +1,20 @@
-<div>
+<div class="mt-12 max-w-lg mx-auto">
     <h1>Hello Heroku user!</h1>
-    <p>App: <%= @user.app %></p>
-    <p>Email: <%= @user.email %></p>
-    <dl>
-        <dt>heroku_id</dt><dd><%= @resource.heroku_id %></dd>
-        <dt>name</dt><dd><%= @resource.name %></dd>
-        <dt>plan</dt><dd><%= @resource.plan %></dd>
-        <dt>region</dt><dd><%= @resource.region %></dd>
-        <dt>options</dt><dd><%= @resource.options %></dd>
-        <dt>callback</dt><dd><%= @resource.callback %></dd>
+    <dl class="sm:divide-y sm:divide-gray-200">
+        <%= for field <- [
+            %{label: "app", value: @user.app},
+            %{label: "email", value: @user.email},
+            %{label: "heroku_id", value: @resource.heroku_id},
+            %{label: "name", value: @resource.name},
+            %{label: "plan", value: @resource.plan},
+            %{label: "region", value: @resource.region},
+            %{label: "options", value: @resource.options},
+            %{label: "callback", value: @resource.callback}
+        ] do %>
+        <div class="py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:py-5 sm:px-6">
+            <dt class="text-sm font-medium text-gray-500"><%= field.label %></dt>
+            <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0"><%= field.value %></dd>
+        </div>
+        <% end %>
     </dl>
 </div>
