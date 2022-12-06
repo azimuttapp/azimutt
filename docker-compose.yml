@@ -13,7 +13,7 @@ services:
     container_name: migrate
     build:
       context: ./backend/
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.prod
     depends_on:
       - database
     env_file: .env
@@ -27,7 +27,7 @@ services:
     restart: always
     build:
       context: ./backend/
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.prod
     depends_on:
       - migrate
       - database
