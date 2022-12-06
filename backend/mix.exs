@@ -104,7 +104,6 @@ defmodule Azimutt.MixProject do
       "assets.deploy": [
         "esbuild default --minify",
         "tailwind default --minify",
-        "elm.build",
         "phx.digest"
       ],
       elm: ["cmd --cd ../frontend npm run make"],

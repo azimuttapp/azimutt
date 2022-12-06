@@ -57,7 +57,7 @@ defmodule AzimuttWeb.Api.ProjectView do
       # FIXME: handle spaces in name
       file_url = ProjectFile.url({project.file, project}, signed: true)
 
-      if Mix.env() in [:dev, :test] do
+      if Azimutt.Application.env() in [:dev, :test] do
         with {:ok, body} <- File.read("./#{file_url}"), do: body
       else
         HTTPoison.get!(file_url).body

@@ -23,6 +23,8 @@ config :azimutt,
   # MUST stay in sync with freePlanLayouts in frontend/src/Conf.elm
   free_plan_layouts: 3
 
+config :azimutt, :app_env, config_env()
+
 config :azimutt,
   ecto_repos: [Azimutt.Repo]
 
