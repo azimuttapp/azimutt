@@ -79,12 +79,14 @@ defmodule Azimutt.Utils.ResultTest do
       assert {:ok, 1} = {:ok, 1} |> Result.filter(fn x -> x == 1 end)
       assert {:error, :invalid_predicate} = {:ok, 1} |> Result.filter(fn x -> x > 1 end)
       assert {:error, "oops"} = {:error, "oops"} |> Result.filter(fn x -> x > 1 end)
+      assert {:error, :bad} = {:ok, 1} |> Result.filter(fn x -> x > 1 end, :bad)
     end
 
     test "filter_not" do
       assert {:error, :invalid_predicate} = {:ok, 1} |> Result.filter_not(fn x -> x == 1 end)
       assert {:ok, 1} = {:ok, 1} |> Result.filter_not(fn x -> x > 1 end)
       assert {:error, "oops"} = {:error, "oops"} |> Result.filter_not(fn x -> x > 1 end)
+      assert {:error, :bad} = {:ok, 1} |> Result.filter_not(fn x -> x == 1 end, :bad)
     end
 
     test "sequence" do

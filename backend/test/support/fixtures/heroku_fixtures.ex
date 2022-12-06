@@ -5,13 +5,13 @@ defmodule Azimutt.HerokuFixtures do
     {:ok, resource} =
       attrs
       |> Enum.into(%{
-        heroku_id: "85c71086-5e50-4057-b269-34b628aff1b1",
+        heroku_id: Ecto.UUID.generate(),
         name: "acme-inc-primary-database",
         plan: "basic",
         region: "amazon-web-services::us-east-1",
         options: nil,
-        callback: "https://api.heroku.com/addons/5f80ab31-8b20-4a93-9950-732bc1f97ca9",
-        oauth_code: "635248df-7717-4446-bf4e-258ae33b8c18",
+        callback: "https://api.heroku.com/addons/#{Ecto.UUID.generate()}",
+        oauth_code: Ecto.UUID.generate(),
         oauth_type: "authorization_code",
         oauth_expire: Timex.shift(DateTime.utc_now(), days: 7),
         deleted_at: nil

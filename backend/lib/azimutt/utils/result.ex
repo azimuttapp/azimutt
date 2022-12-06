@@ -195,6 +195,8 @@ defmodule Azimutt.Utils.Result do
   """
   def filter({:ok, val} = res, p), do: if(p.(val), do: res, else: {:error, :invalid_predicate})
   def filter({:error, _err} = res, _p), do: res
+  def filter({:ok, val} = res, p, default_err), do: if(p.(val), do: res, else: {:error, default_err})
+  def filter({:error, _err} = res, _p, _default_err), do: res
 
   @doc """
   Same as `filter` but reverse.
@@ -208,6 +210,8 @@ defmodule Azimutt.Utils.Result do
   """
   def filter_not({:ok, val} = res, p), do: if(p.(val), do: {:error, :invalid_predicate}, else: res)
   def filter_not({:error, _err} = res, _p), do: res
+  def filter_not({:ok, val} = res, p, default_err), do: if(p.(val), do: {:error, default_err}, else: res)
+  def filter_not({:error, _err} = res, _p, _default_err), do: res
 
   @doc """
   Transforms a list of results into a result of list.

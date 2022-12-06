@@ -5,30 +5,10 @@
 defmodule AzimuttWeb.Api.HerokuController do
   use AzimuttWeb, :controller
   alias Azimutt.Heroku
-  alias Azimutt.Utils.Crypto
   action_fallback AzimuttWeb.Api.FallbackController
 
-  # SSO from Heroku: https://devcenter.heroku.com/articles/building-an-add-on#the-provisioning-request-example-request
-  def login(conn, params) do
-    # credo:disable-for-next-line
-    IO.inspect(params, label: "Heroku login")
-    now = System.os_time(:second)
-    timestamp = String.to_integer(params["timestamp"])
-    older_than_5_min = timestamp < now - 5 * 60
-    salt = Application.get_env(:heroku, :sso_salt)
-    token = Crypto.sha1("#{params["resource_id"]}:#{salt}:#{params["timestamp"]}")
-    has_valid_token = Plug.Crypto.secure_compare(token, params["resource_token"])
-
-    cond do
-      older_than_5_min -> conn |> send_resp(:forbidden, "")
-      # FIXME: create user session for the heroku resource
-      has_valid_token -> conn |> redirect(to: Routes.user_dashboard_path(conn, :index))
-      true -> conn |> send_resp(:forbidden, "")
-    end
-  end
-
-  # https://devcenter.heroku.com/articles/building-an-add-on#the-provisioning-request-example-request
   # https://devcenter.heroku.com/articles/add-on-partner-api-reference#add-on-provision
+  # https://devcenter.heroku.com/articles/building-an-add-on#the-provisioning-request-example-request
   # this endpoint MUST be idempotent (one resource per uuid), return 410 if deleted and 422 on error
   def create(conn, %{"uuid" => heroku_id} = params) do
     # credo:disable-for-next-line
@@ -60,12 +40,12 @@ defmodule AzimuttWeb.Api.HerokuController do
     end
   end
 
+  # https://devcenter.heroku.com/articles/add-on-partner-api-reference#add-on-plan-change
   # https://devcenter.heroku.com/articles/building-an-add-on#the-plan-change-request-upgrade-downgrade
-  def update(conn, %{"heroku_id" => heroku_id} = params) do
+  def update(conn, %{"heroku_id" => heroku_id, "plan" => plan} = params) do
     # credo:disable-for-next-line
     IO.inspect(params, label: "Heroku update resource")
     now = DateTime.utc_now()
-    plan = params["plan"]
 
     case Heroku.get_resource(heroku_id) do
       {:ok, resource} ->
@@ -73,7 +53,7 @@ defmodule AzimuttWeb.Api.HerokuController do
           conn |> send_resp(:gone, "")
         else
           case Heroku.update_resource(resource, %{plan: plan}, now) do
-            {:ok, _resource} -> conn |> render("show.json", resource: resource, message: "Plan updated to #{plan}.")
+            {:ok, _} -> conn |> render("show.json", resource: resource, message: "Plan changed from #{resource.plan} to #{plan}.")
             {:error, _err} -> conn |> send_resp(:unprocessable_entity, "")
           end
         end
@@ -83,6 +63,7 @@ defmodule AzimuttWeb.Api.HerokuController do
     end
   end
 
+  # https://devcenter.heroku.com/articles/add-on-partner-api-reference#add-on-deprovision
   # https://devcenter.heroku.com/articles/building-an-add-on#the-deprovisioning-request-example-request
   def delete(conn, %{"heroku_id" => heroku_id} = params) do
     # credo:disable-for-next-line

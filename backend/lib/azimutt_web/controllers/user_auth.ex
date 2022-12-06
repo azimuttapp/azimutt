@@ -3,14 +3,24 @@ defmodule AzimuttWeb.UserAuth do
   import Plug.Conn
   import Phoenix.Controller
   alias Azimutt.Accounts
+  alias Azimutt.Heroku
+  alias Azimutt.Utils.Result
   alias AzimuttWeb.Router.Helpers, as: Routes
+
+  @seconds 1
+  @minutes 60 * @seconds
+  @hours 60 * @minutes
+  @days 24 * @hours
 
   # Make the remember me cookie valid for 60 days.
   # If you want bump or reduce this value, also change
   # the token expiry itself in UserToken.
-  @max_age 60 * 60 * 24 * 60
   @remember_me_cookie "_azimutt_web_user_remember_me"
-  @remember_me_options [sign: true, max_age: @max_age, same_site: "Lax"]
+  @remember_me_options [sign: true, max_age: 60 * @days, same_site: "Lax"]
+
+  # cf https://devcenter.heroku.com/articles/add-on-single-sign-on
+  @heroku_cookie "_azimutt_heroku_resource"
+  @heroku_options [sign: true, max_age: 90 * @minutes, same_site: "Lax"]
 
   @doc """
   Logs the user in.
@@ -167,6 +177,39 @@ defmodule AzimuttWeb.UserAuth do
       end
     else
       conn |> put_api_error(:unauthorized, "Heroku basic auth not set up")
+    end
+  end
+
+  # write @heroku_cookie to make the specified resource accessible
+  def heroku_sso(conn, resource, user) do
+    conn
+    |> put_resp_cookie(@heroku_cookie, %{heroku_id: resource.heroku_id, user: user}, @heroku_options)
+    |> redirect(to: Routes.heroku_path(conn, :show, resource.heroku_id))
+  end
+
+  # read @heroku_cookie and make resource available in conn
+  def fetch_heroku_resource(conn, _opts) do
+    conn = fetch_cookies(conn, signed: [@heroku_cookie])
+
+    Result.from_nillable(conn.cookies[@heroku_cookie])
+    |> Result.flat_map(fn cookie ->
+      Heroku.get_resource(cookie.heroku_id)
+      |> Result.filter_not(fn resource -> resource.deleted_at end)
+      |> Result.map(fn resource -> conn |> assign(:heroku_resource, resource) |> assign(:heroku_user, cookie.user) end)
+    end)
+    |> Result.or_else(conn)
+  end
+
+  # check :heroku_resource is available or redirect
+  def require_heroku_resource(conn, _opts) do
+    if conn.assigns[:heroku_resource] do
+      conn
+    else
+      conn
+      |> put_status(:forbidden)
+      |> put_view(AzimuttWeb.ErrorView)
+      |> render("403.html", message: "Please access this resource through heroku add-on SSO.")
+      |> halt()
     end
   end
 
