@@ -2,34 +2,18 @@ services:
   database:
     image: postgres
     restart: always
-    container_name: azimutt-db
     volumes:
       - pg-data:/var/lib/postgresql/data
     environment: # Used by the postgres image to setup a default user. For security reason, you should avoid using the postgres user
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: azimutt_dev
-  migrate:
-    container_name: migrate
-    build:
-      context: ./backend/
-      dockerfile: Dockerfile.prod
-    depends_on:
-      - database
-    env_file: .env
-    command: >
-      sh -c "/app/bin/migrate"
-    environment:
-      POSTGRESQL_ADDON_URI: "ecto://postgres:postgres@database/azimutt_dev" # Template : "ecto://db_user:db_password@ip_or_compose_service_name/db_name"
-      SECRET_KEY_BASE: "1wOVZ9rWAqPcbVZdilZzBPLXFKNrUmLUzX0q9Z02LpOy2jVWZwa6ee4fU81tuN+W" # Can literally be anything, but generally generated randomly by tools like mix phx.gen.secret
   backend:
-    container_name: azimutt-backend
     restart: always
     build:
       context: ./backend/
-      dockerfile: Dockerfile.prod
+      dockerfile: Dockerfile.dev
     depends_on:
-      - migrate
       - database
     ports: # Docker need to expose ports for you to access your app.
       - 4000:4000
@@ -40,4 +24,3 @@ services:
 
 volumes:
   pg-data:
-    external: false # Must use "docker volume create --name=pg-data before
