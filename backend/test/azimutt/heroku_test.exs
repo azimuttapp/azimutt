@@ -44,7 +44,7 @@ defmodule Azimutt.HerokuTest do
       assert {:error, %Ecto.Changeset{}} = Heroku.create_resource(%{heroku_id: nil})
     end
 
-    test "update_resource/2 with valid data updates the resource" do
+    test "update_resource_plan/2 with valid data updates the resource" do
       now = DateTime.utc_now()
       resource = resource_fixture()
 
@@ -60,7 +60,7 @@ defmodule Azimutt.HerokuTest do
         oauth_expire: ~U[2022-12-05 11:00:00.000000Z]
       }
 
-      assert {:ok, %Resource{} = updated} = Heroku.update_resource(resource, update_attrs, now)
+      assert {:ok, %Resource{} = updated} = Heroku.update_resource_plan(resource, update_attrs, now)
       assert updated.heroku_id == resource.heroku_id
       assert updated.name == resource.name
       assert updated.plan == "some updated plan"
@@ -72,10 +72,10 @@ defmodule Azimutt.HerokuTest do
       assert updated.oauth_expire == resource.oauth_expire
     end
 
-    test "update_resource/2 with invalid data returns error changeset" do
+    test "update_resource_plan/2 with invalid data returns error changeset" do
       now = DateTime.utc_now()
       resource = resource_fixture()
-      assert {:error, %Ecto.Changeset{}} = Heroku.update_resource(resource, %{plan: nil}, now)
+      assert {:error, %Ecto.Changeset{}} = Heroku.update_resource_plan(resource, %{plan: nil}, now)
       assert {:ok, resource} == Heroku.get_resource(resource.heroku_id)
     end
 
@@ -84,8 +84,7 @@ defmodule Azimutt.HerokuTest do
       resource = resource_fixture()
       assert resource.deleted_at == nil
       assert {:ok, %Resource{} = _} = Heroku.delete_resource(resource, now)
-      {:ok, deleted_resource} = Heroku.get_resource(resource.heroku_id)
-      assert deleted_resource.deleted_at != nil
+      assert {:error, :deleted} = Heroku.get_resource(resource.heroku_id)
     end
   end
 end

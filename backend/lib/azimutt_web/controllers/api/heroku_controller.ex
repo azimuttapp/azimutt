@@ -16,11 +16,7 @@ defmodule AzimuttWeb.Api.HerokuController do
 
     case Heroku.get_resource(heroku_id) do
       {:ok, resource} ->
-        if resource.deleted_at do
-          conn |> send_resp(:gone, "")
-        else
-          conn |> render("show.json", resource: resource, message: "This resource was already created.")
-        end
+        conn |> render("show.json", resource: resource, message: "This resource was already created.")
 
       {:error, :not_found} ->
         case Heroku.create_resource(%{
@@ -37,6 +33,9 @@ defmodule AzimuttWeb.Api.HerokuController do
           {:ok, resource} -> conn |> render("show.json", resource: resource, message: "Your add-on is now provisioned.")
           {:error, _err} -> conn |> send_resp(:unprocessable_entity, "")
         end
+
+      {:error, :deleted} ->
+        conn |> send_resp(:gone, "")
     end
   end
 
@@ -49,17 +48,16 @@ defmodule AzimuttWeb.Api.HerokuController do
 
     case Heroku.get_resource(heroku_id) do
       {:ok, resource} ->
-        if resource.deleted_at do
-          conn |> send_resp(:gone, "")
-        else
-          case Heroku.update_resource(resource, %{plan: plan}, now) do
-            {:ok, _} -> conn |> render("show.json", resource: resource, message: "Plan changed from #{resource.plan} to #{plan}.")
-            {:error, _err} -> conn |> send_resp(:unprocessable_entity, "")
-          end
+        case Heroku.update_resource_plan(resource, %{plan: plan}, now) do
+          {:ok, _} -> conn |> render("show.json", resource: resource, message: "Plan changed from #{resource.plan} to #{plan}.")
+          {:error, _err} -> conn |> send_resp(:unprocessable_entity, "")
         end
 
       {:error, :not_found} ->
         conn |> send_resp(:not_found, "")
+
+      {:error, :deleted} ->
+        conn |> send_resp(:gone, "")
     end
   end
 
@@ -72,17 +70,16 @@ defmodule AzimuttWeb.Api.HerokuController do
 
     case Heroku.get_resource(heroku_id) do
       {:ok, resource} ->
-        if resource.deleted_at do
-          conn |> send_resp(:gone, "")
-        else
-          case Heroku.delete_resource(resource, now) do
-            {:ok, _resource} -> conn |> send_resp(:no_content, "")
-            {:error, _err} -> conn |> send_resp(:unprocessable_entity, "")
-          end
+        case Heroku.delete_resource(resource, now) do
+          {:ok, _resource} -> conn |> send_resp(:no_content, "")
+          {:error, _err} -> conn |> send_resp(:unprocessable_entity, "")
         end
 
       {:error, :not_found} ->
         conn |> send_resp(:not_found, "")
+
+      {:error, :deleted} ->
+        conn |> send_resp(:gone, "")
     end
   end
 end

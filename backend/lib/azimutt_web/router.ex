@@ -95,7 +95,7 @@ defmodule AzimuttWeb.Router do
 
   scope "/heroku", AzimuttWeb do
     pipe_through [:browser]
-    get "/", HerokuController, :index
+    if Mix.env() == :dev, do: get("/", HerokuController, :index)
     post "/login", HerokuController, :login
   end
 

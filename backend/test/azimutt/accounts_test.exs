@@ -1,56 +1,44 @@
 defmodule Azimutt.AccountsTest do
   use Azimutt.DataCase
-
   alias Azimutt.Accounts
-
-  import Azimutt.AccountsFixtures
   alias Azimutt.Accounts.{User, UserToken}
+  import Azimutt.AccountsFixtures
 
   describe "get_user_by_email/1" do
-    @tag :skip
     test "does not return the user if the email does not exist" do
-      refute Accounts.get_user_by_email("unknown@example.com")
+      assert {:error, :not_found} = Accounts.get_user_by_email("unknown@example.com")
     end
 
-    @tag :skip
     test "returns the user if the email exists" do
       %{id: id} = user = user_fixture()
-      assert %User{id: ^id} = Accounts.get_user_by_email(user.email)
+      assert {:ok, %User{id: ^id}} = Accounts.get_user_by_email(user.email)
     end
   end
 
   describe "get_user_by_email_and_password/2" do
-    @tag :skip
     test "does not return the user if the email does not exist" do
-      refute Accounts.get_user_by_email_and_password("unknown@example.com", "hello world!")
+      assert {:error, :not_found} = Accounts.get_user_by_email_and_password("unknown@example.com", "hello world!")
     end
 
-    @tag :skip
     test "does not return the user if the password is not valid" do
       user = user_fixture()
-      refute Accounts.get_user_by_email_and_password(user.email, "invalid")
+      assert {:error, :not_found} = Accounts.get_user_by_email_and_password(user.email, "invalid")
     end
 
-    @tag :skip
     test "returns the user if the email and password are valid" do
       %{id: id} = user = user_fixture()
-
-      assert %User{id: ^id} = Accounts.get_user_by_email_and_password(user.email, valid_user_password())
+      assert {:ok, %User{id: ^id}} = Accounts.get_user_by_email_and_password(user.email, valid_user_password())
     end
   end
 
-  describe "get_user!/1" do
-    @tag :skip
-    test "raises if id is invalid" do
-      assert_raise Ecto.NoResultsError, fn ->
-        Accounts.get_user!(-1)
-      end
+  describe "get_user/1" do
+    test "return error if id is invalid" do
+      assert {:error, :not_found} = Accounts.get_user("bf4176c5-4439-4316-81e1-7a6e2320b141")
     end
 
-    @tag :skip
     test "returns the user with the given id" do
       %{id: id} = user = user_fixture()
-      assert %User{id: ^id} = Accounts.get_user!(user.id)
+      assert {:ok, %User{id: ^id}} = Accounts.get_user(user.id)
     end
   end
 
@@ -184,14 +172,6 @@ defmodule Azimutt.AccountsTest do
       {:error, changeset} = Accounts.apply_user_email(user, "invalid", %{email: unique_user_email()})
 
       assert %{current_password: ["is not valid"]} = errors_on(changeset)
-    end
-
-    @tag :skip
-    test "applies the email without persisting it", %{user: user} do
-      email = unique_user_email()
-      {:ok, user} = Accounts.apply_user_email(user, valid_user_password(), %{email: email})
-      assert user.email == email
-      assert Accounts.get_user!(user.id).email != email
     end
   end
 
@@ -329,7 +309,7 @@ defmodule Azimutt.AccountsTest do
         })
 
       assert is_nil(user.password)
-      assert Accounts.get_user_by_email_and_password(user.email, "new valid password")
+      assert {:ok, _} = Accounts.get_user_by_email_and_password(user.email, "new valid password")
     end
 
     @tag :skip
@@ -544,7 +524,7 @@ defmodule Azimutt.AccountsTest do
     test "updates the password", %{user: user} do
       {:ok, updated_user} = Accounts.reset_user_password(user, %{password: "new valid password"})
       assert is_nil(updated_user.password)
-      assert Accounts.get_user_by_email_and_password(user.email, "new valid password")
+      assert {:ok, _} = Accounts.get_user_by_email_and_password(user.email, "new valid password")
     end
 
     @tag :skip

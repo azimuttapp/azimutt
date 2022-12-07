@@ -3,7 +3,9 @@ defmodule AzimuttWeb.UserAuth do
   import Plug.Conn
   import Phoenix.Controller
   alias Azimutt.Accounts
+  alias Azimutt.Accounts.User
   alias Azimutt.Heroku
+  alias Azimutt.Heroku.Resource
   alias Azimutt.Utils.Result
   alias AzimuttWeb.Router.Helpers, as: Routes
 
@@ -91,7 +93,7 @@ defmodule AzimuttWeb.UserAuth do
     conn
     |> renew_session()
     |> delete_resp_cookie(@remember_me_cookie)
-    |> redirect(to: "/")
+    |> redirect(to: Routes.website_path(conn, :index))
   end
 
   @doc """
@@ -181,9 +183,9 @@ defmodule AzimuttWeb.UserAuth do
   end
 
   # write @heroku_cookie to make the specified resource accessible
-  def heroku_sso(conn, resource, user) do
+  def heroku_sso(conn, resource, user, app) do
     conn
-    |> put_resp_cookie(@heroku_cookie, %{heroku_id: resource.heroku_id, user: user}, @heroku_options)
+    |> put_resp_cookie(@heroku_cookie, %{heroku_id: resource.heroku_id, user_id: user.id, app: app}, @heroku_options)
     |> redirect(to: Routes.heroku_path(conn, :show, resource.heroku_id))
   end
 
@@ -191,18 +193,18 @@ defmodule AzimuttWeb.UserAuth do
   def fetch_heroku_resource(conn, _opts) do
     conn = fetch_cookies(conn, signed: [@heroku_cookie])
 
-    Result.from_nillable(conn.cookies[@heroku_cookie])
-    |> Result.flat_map(fn cookie ->
-      Heroku.get_resource(cookie.heroku_id)
-      |> Result.filter_not(fn resource -> resource.deleted_at end)
-      |> Result.map(fn resource -> conn |> assign(:heroku_resource, resource) |> assign(:heroku_user, cookie.user) end)
-    end)
+    with(
+      {:ok, cookie} <- Result.from_nillable(conn.cookies[@heroku_cookie]),
+      {:ok, %Resource{} = resource} <- Heroku.get_resource(cookie.heroku_id),
+      {:ok, %User{} = user} <- Accounts.get_user(cookie.user_id),
+      do: {:ok, conn |> assign(:heroku, %{resource: resource, user: user, app: cookie.app})}
+    )
     |> Result.or_else(conn)
   end
 
   # check :heroku_resource is available or redirect
   def require_heroku_resource(conn, _opts) do
-    if conn.assigns[:heroku_resource] do
+    if conn.assigns[:heroku] do
       conn
     else
       conn

@@ -4,8 +4,8 @@
 # see https://devcenter.heroku.com/articles/add-on-single-sign-on
 defmodule AzimuttWeb.HerokuController do
   use AzimuttWeb, :controller
+  alias Azimutt.Accounts
   alias Azimutt.Heroku
-  alias Azimutt.Heroku.Resource
   alias Azimutt.Utils.Crypto
   alias Azimutt.Utils.Result
   alias AzimuttWeb.UserAuth
@@ -13,56 +13,68 @@ defmodule AzimuttWeb.HerokuController do
 
   # ease heroku testing in dev
   def index(conn, _params) do
-    if Mix.env() == :dev do
-      # defined as env variable (see `HEROKU_SSO_SALT` in .env:8)
-      salt = "salt"
-      # defined in seeds (backend/priv/repo/seeds.exs:110)
-      heroku_id = "8d97f847-ef86-489a-bfdb-b8d83d5c0926"
-      timestamp = System.os_time(:second)
+    now_ts = System.os_time(:second)
+    # defined as env variable (see `HEROKU_SSO_SALT` in .env:8)
+    salt = "salt"
+    # defined in seeds (backend/priv/repo/seeds.exs:110)
+    heroku_id = "8d97f847-ef86-489a-bfdb-b8d83d5c0926"
 
-      fields = [
-        %{id: :app, value: "heroku-app"},
-        %{id: :email, value: "user@mail.com"},
-        %{id: :resource_id, value: heroku_id},
-        %{id: :timestamp, value: timestamp},
-        %{id: :salt, value: salt},
-        %{id: :resource_token, value: heroku_token(heroku_id, timestamp, salt)}
-      ]
+    fields = [
+      %{id: :app, value: "heroku-app"},
+      %{id: :email, value: "user@mail.com"},
+      %{id: :resource_id, value: heroku_id},
+      %{id: :timestamp, value: now_ts},
+      %{id: :salt, value: salt},
+      %{id: :resource_token, value: heroku_token(heroku_id, now_ts, salt)}
+    ]
 
-      conn |> render("index.html", fields: fields)
-    else
-      {:error, :forbidden}
-    end
+    conn |> render("index.html", fields: fields)
   end
 
   # https://devcenter.heroku.com/articles/add-on-single-sign-on
   # https://devcenter.heroku.com/articles/building-an-add-on#the-provisioning-request-example-request
-  def login(conn, %{"resource_id" => heroku_id, "timestamp" => timestamp, "resource_token" => token} = params) do
-    # credo:disable-for-next-line
-    IO.inspect(params, label: "Heroku login")
-    now = System.os_time(:second)
-    user = %{app: params["app"], email: params["email"]}
+  def login(conn, %{"resource_id" => heroku_id, "timestamp" => timestamp, "resource_token" => token, "email" => email, "app" => app}) do
+    now = DateTime.utc_now()
+    now_ts = System.os_time(:second)
     salt = Azimutt.config(:heroku_sso_salt)
-    older_than_5_min = String.to_integer(timestamp) < now - 5 * 60
+    older_than_5_min = String.to_integer(timestamp) < now_ts - 5 * 60
     expected_token = heroku_token(heroku_id, timestamp, salt)
     invalid_token = !Plug.Crypto.secure_compare(expected_token, token)
 
     if older_than_5_min || invalid_token do
       {:error, :forbidden}
     else
-      with {:ok, %Resource{} = resource} <- Heroku.get_resource(heroku_id) |> Result.filter_not(fn r -> r.deleted_at end, :gone),
-           do: conn |> UserAuth.heroku_sso(resource, user)
+      case Heroku.get_resource(heroku_id) do
+        {:ok, resource} ->
+          user_params = %{
+            name: email |> String.split("@") |> hd(),
+            email: email,
+            avatar: "https://www.gravatar.com/avatar/#{Crypto.md5(email)}?s=150&d=robohash",
+            provider: "heroku"
+          }
+
+          Accounts.get_user_by_email(user_params.email)
+          |> Result.flat_map_error(fn _ -> Accounts.register_heroku_user(user_params, now) end)
+          |> Result.tap(fn user -> Heroku.set_resource_member(resource, user) end)
+          |> Result.map(fn user -> conn |> UserAuth.heroku_sso(resource, user, app) end)
+          |> Result.or_else(conn |> put_flash(:error, "Authentication failed") |> redirect(to: Routes.website_path(conn, :index)))
+
+        {:error, :not_found} ->
+          conn |> send_resp(:not_found, "")
+
+        {:error, :deleted} ->
+          conn |> send_resp(:gone, "")
+      end
     end
   end
 
   def show(conn, %{"heroku_id" => heroku_id} = params) do
     # credo:disable-for-next-line
     IO.inspect(params, label: "Heroku show resource")
-    resource = conn.assigns.heroku_resource
-    user = conn.assigns.heroku_user
+    %{resource: resource, user: user, app: app} = conn.assigns.heroku
 
     if resource.heroku_id == heroku_id do
-      conn |> render("show.html", resource: resource, user: user)
+      conn |> render("show.html", resource: resource, user: user, app: app)
     else
       {:error, :forbidden}
     end

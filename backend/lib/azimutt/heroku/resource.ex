@@ -3,9 +3,11 @@ defmodule Azimutt.Heroku.Resource do
   use Ecto.Schema
   use Azimutt.Schema
   import Ecto.Changeset
+  alias Azimutt.Projects.Project
 
   schema "heroku_resources" do
     field :heroku_id, Ecto.UUID
+    belongs_to :project, Project
     field :name, :string
     field :plan, :string
     field :region, :string
@@ -14,9 +16,8 @@ defmodule Azimutt.Heroku.Resource do
     field :oauth_code, Ecto.UUID
     field :oauth_type, :string
     field :oauth_expire, :utc_datetime_usec
-    field :deleted_at, :utc_datetime_usec
-
     timestamps()
+    field :deleted_at, :utc_datetime_usec
   end
 
   def create_changeset(resource, attrs) do
@@ -27,7 +28,7 @@ defmodule Azimutt.Heroku.Resource do
     |> validate_required(required)
   end
 
-  def update_changeset(resource, attrs, now) do
+  def update_plan_changeset(resource, attrs, now) do
     resource
     |> cast(attrs, [:plan])
     |> validate_required([:plan])

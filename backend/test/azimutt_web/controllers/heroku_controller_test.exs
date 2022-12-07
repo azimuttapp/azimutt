@@ -13,15 +13,15 @@ defmodule AzimuttWeb.HerokuControllerTest do
 
   # https://devcenter.heroku.com/articles/add-on-single-sign-on
   test "login and access heroku resource", %{conn: conn} do
+    now_ts = System.os_time(:second)
     resource = resource_fixture()
-    timestamp = System.os_time(:second)
     app = "demo-app"
     email = "user@mail.com"
 
     attrs = %{
       resource_id: resource.heroku_id,
-      timestamp: timestamp,
-      resource_token: Crypto.sha1("#{resource.heroku_id}:#{@sso_salt}:#{timestamp}"),
+      timestamp: now_ts,
+      resource_token: Crypto.sha1("#{resource.heroku_id}:#{@sso_salt}:#{now_ts}"),
       app: app,
       email: email
     }
