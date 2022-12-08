@@ -8,6 +8,10 @@ defmodule Azimutt.Heroku do
   alias Azimutt.Repo
   alias Azimutt.Utils.Result
 
+  def all_resources do
+    Resource |> preload(:project) |> Repo.all()
+  end
+
   def get_resource(heroku_id) do
     Repo.get_by(Resource, heroku_id: heroku_id)
     |> Result.from_nillable()

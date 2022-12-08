@@ -3,7 +3,6 @@ defmodule AzimuttWeb.UserAuth do
   import Plug.Conn
   import Phoenix.Controller
   alias Azimutt.Accounts
-  alias Azimutt.Accounts.User
   alias Azimutt.Heroku
   alias Azimutt.Heroku.Resource
   alias Azimutt.Utils.Result
@@ -37,15 +36,22 @@ defmodule AzimuttWeb.UserAuth do
   if you are not using LiveView.
   """
   def log_in_user(conn, user, params \\ %{}) do
-    token = Accounts.generate_user_session_token(user)
     user_return_to = get_session(conn, :user_return_to)
+
+    conn
+    |> login_user(user, params)
+    |> redirect(to: user_return_to || signed_in_path(conn))
+  end
+
+  # no redirect
+  defp login_user(conn, user, params \\ %{}) do
+    token = Accounts.generate_user_session_token(user)
 
     conn
     |> renew_session()
     |> put_session(:user_token, token)
     |> put_session(:live_socket_id, "users_sessions:#{Base.url_encode64(token)}")
     |> maybe_write_remember_me_cookie(token, params)
-    |> redirect(to: user_return_to || signed_in_path(conn))
   end
 
   defp maybe_write_remember_me_cookie(conn, token, %{"remember_me" => "true"}) do
@@ -93,6 +99,7 @@ defmodule AzimuttWeb.UserAuth do
     conn
     |> renew_session()
     |> delete_resp_cookie(@remember_me_cookie)
+    |> delete_resp_cookie(@heroku_cookie)
     |> redirect(to: Routes.website_path(conn, :index))
   end
 
@@ -185,7 +192,8 @@ defmodule AzimuttWeb.UserAuth do
   # write @heroku_cookie to make the specified resource accessible
   def heroku_sso(conn, resource, user, app) do
     conn
-    |> put_resp_cookie(@heroku_cookie, %{heroku_id: resource.heroku_id, user_id: user.id, app: app}, @heroku_options)
+    |> login_user(user)
+    |> put_resp_cookie(@heroku_cookie, %{heroku_id: resource.heroku_id, app: app}, @heroku_options)
     |> redirect(to: Routes.heroku_path(conn, :show, resource.heroku_id))
   end
 
@@ -196,8 +204,7 @@ defmodule AzimuttWeb.UserAuth do
     with(
       {:ok, cookie} <- Result.from_nillable(conn.cookies[@heroku_cookie]),
       {:ok, %Resource{} = resource} <- Heroku.get_resource(cookie.heroku_id),
-      {:ok, %User{} = user} <- Accounts.get_user(cookie.user_id),
-      do: {:ok, conn |> assign(:heroku, %{resource: resource, user: user, app: cookie.app})}
+      do: {:ok, conn |> assign(:heroku, %{resource: resource, app: cookie.app})}
     )
     |> Result.or_else(conn)
   end

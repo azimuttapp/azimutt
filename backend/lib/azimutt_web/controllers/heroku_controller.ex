@@ -13,22 +13,15 @@ defmodule AzimuttWeb.HerokuController do
 
   # ease heroku testing in dev
   def index(conn, _params) do
-    now_ts = System.os_time(:second)
-    # defined as env variable (see `HEROKU_SSO_SALT` in .env:8)
-    salt = "salt"
-    # defined in seeds (backend/priv/repo/seeds.exs:110)
-    heroku_id = "8d97f847-ef86-489a-bfdb-b8d83d5c0926"
+    # defined as env variable (see .env)
+    heroku = %{
+      addon_id: "azimutt-dev",
+      password: "pass",
+      sso_salt: "salt"
+    }
 
-    fields = [
-      %{id: :app, value: "heroku-app"},
-      %{id: :email, value: "user@mail.com"},
-      %{id: :resource_id, value: heroku_id},
-      %{id: :timestamp, value: now_ts},
-      %{id: :salt, value: salt},
-      %{id: :resource_token, value: heroku_token(heroku_id, now_ts, salt)}
-    ]
-
-    conn |> render("index.html", fields: fields)
+    resources = Heroku.all_resources()
+    conn |> render("index.html", heroku: heroku, resources: resources)
   end
 
   # https://devcenter.heroku.com/articles/add-on-single-sign-on
@@ -71,7 +64,8 @@ defmodule AzimuttWeb.HerokuController do
   def show(conn, %{"heroku_id" => heroku_id} = params) do
     # credo:disable-for-next-line
     IO.inspect(params, label: "Heroku show resource")
-    %{resource: resource, user: user, app: app} = conn.assigns.heroku
+    user = conn.assigns.current_user
+    %{resource: resource, app: app} = conn.assigns.heroku
 
     if resource.heroku_id == heroku_id do
       conn |> render("show.html", resource: resource, user: user, app: app)

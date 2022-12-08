@@ -100,7 +100,7 @@ defmodule AzimuttWeb.Router do
   end
 
   scope "/heroku", AzimuttWeb do
-    pipe_through [:browser, :fetch_heroku_resource, :require_heroku_resource]
+    pipe_through [:browser, :fetch_heroku_resource, :require_heroku_resource, :require_authenticated_user]
     get "/resources/:heroku_id", HerokuController, :show
   end
 

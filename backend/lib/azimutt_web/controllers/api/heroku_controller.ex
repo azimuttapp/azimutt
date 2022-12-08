@@ -20,7 +20,7 @@ defmodule AzimuttWeb.Api.HerokuController do
 
       {:error, :not_found} ->
         case Heroku.create_resource(%{
-               heroku_id: params["uuid"],
+               heroku_id: heroku_id,
                name: params["name"],
                plan: params["plan"],
                region: params["region"],
