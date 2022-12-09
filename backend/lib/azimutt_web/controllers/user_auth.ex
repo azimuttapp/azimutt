@@ -209,7 +209,6 @@ defmodule AzimuttWeb.UserAuth do
     |> Result.or_else(conn)
   end
 
-  # check :heroku_resource is available or redirect
   def require_heroku_resource(conn, _opts) do
     if conn.assigns[:heroku] do
       conn
@@ -219,6 +218,14 @@ defmodule AzimuttWeb.UserAuth do
       |> put_view(AzimuttWeb.ErrorView)
       |> render("403.html", message: "Please access this resource through heroku add-on SSO.")
       |> halt()
+    end
+  end
+
+  def require_heroku_resource_api(conn, _opts) do
+    if conn.assigns[:heroku] do
+      conn
+    else
+      conn |> put_api_error(:unauthorized, "Not accessible heroku resource, access it from heroku dashboard")
     end
   end
 

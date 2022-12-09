@@ -13,6 +13,7 @@ defmodule AzimuttWeb.Router do
     plug :protect_from_forgery
     plug :put_secure_browser_headers
     plug :fetch_current_user
+    plug :fetch_heroku_resource
   end
 
   pipeline :api do
@@ -20,6 +21,7 @@ defmodule AzimuttWeb.Router do
     plug :accepts, ["json"]
     plug :fetch_session
     plug :fetch_current_user
+    plug :fetch_heroku_resource
   end
 
   pipeline :account_session_layout do
@@ -100,7 +102,7 @@ defmodule AzimuttWeb.Router do
   end
 
   scope "/heroku", AzimuttWeb do
-    pipe_through [:browser, :fetch_heroku_resource, :require_heroku_resource, :require_authenticated_user]
+    pipe_through [:browser, :require_heroku_resource, :require_authenticated_user]
     get "/resources/:heroku_id", HerokuController, :show
   end
 

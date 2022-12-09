@@ -595,6 +595,7 @@ export function buildProjectRemote(info: ProjectInfoRemote, {_type, ...p}: Proje
         ...p,
         organization: info.organization,
         id: info.id,
+        slug: info.slug,
         storage: ProjectStorage.enum.remote,
         visibility: info.visibility,
         createdAt: info.createdAt,

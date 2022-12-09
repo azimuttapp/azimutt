@@ -1,6 +1,7 @@
 defmodule AzimuttWeb.Api.ProjectController do
   use AzimuttWeb, :controller
   use PhoenixSwagger
+  alias Azimutt.Heroku
   alias Azimutt.Organizations
   alias Azimutt.Organizations.Organization
   alias Azimutt.Projects
@@ -45,25 +46,30 @@ defmodule AzimuttWeb.Api.ProjectController do
     response(400, "Client Error")
   end
 
-  def create(conn, %{"organization_id" => organization_id} = project_params) do
+  def create(conn, %{"organization_id" => organization_id} = params) do
+    now = DateTime.utc_now()
     current_user = conn.assigns.current_user
-    ctx = CtxParams.from_params(project_params)
+    resource = if conn.assigns.heroku, do: conn.assigns.heroku.resource, else: nil
+    valid_heroku = !params["heroku"] || (params["heroku"] && resource && params["heroku"] == resource.heroku_id)
+    ctx = CtxParams.from_params(params)
 
-    with {:ok, %Organization{} = organization} <- Organizations.get_organization(organization_id, current_user),
-         {:ok, %Project{} = created} <- Projects.create_project(project_params, organization, current_user),
+    with {:ok, _} <- if(valid_heroku, do: {:ok, resource}, else: {:error, :not_found}),
+         {:ok, %Organization{} = organization} <- Organizations.get_organization(organization_id, current_user),
+         {:ok, %Project{} = created} <- Projects.create_project(params, organization, current_user),
+         {:ok, _} <- if(params["heroku"], do: Heroku.add_resource_project(resource, created, now), else: {:ok, ""}),
          # needed to get preloads
          {:ok, %Project{} = project} <- Projects.get_project(created.id, current_user),
          do: conn |> put_status(:created) |> render("show.json", project: project, ctx: ctx)
   end
 
-  def update(conn, %{"organization_id" => _organization_id, "id" => id} = project_params) do
+  def update(conn, %{"organization_id" => _organization_id, "id" => id} = params) do
     now = DateTime.utc_now()
     current_user = conn.assigns.current_user
-    ctx = CtxParams.from_params(project_params)
+    ctx = CtxParams.from_params(params)
 
     # FIXME: add correct validation, especially for public projects => get_project does not offer guarantees
     with {:ok, %Project{} = project} <- Projects.get_project(id, current_user),
-         {:ok, %Project{} = updated} <- Projects.update_project(project, project_params, current_user, now),
+         {:ok, %Project{} = updated} <- Projects.update_project(project, params, current_user, now),
          # needed to get preloads
          {:ok, %Project{} = project} <- Projects.get_project(updated.id, current_user),
          do: conn |> render("show.json", project: project, ctx: ctx)

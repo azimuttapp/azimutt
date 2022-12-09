@@ -1,14 +1,14 @@
 defmodule Azimutt.HerokuTest do
   use Azimutt.DataCase
   alias Azimutt.Heroku
+  alias Azimutt.Heroku.Resource
+  alias Azimutt.Utils.Result
+  import Azimutt.HerokuFixtures
 
   describe "resources" do
-    alias Azimutt.Heroku.Resource
-    import Azimutt.HerokuFixtures
-
     test "get_resource/1 returns the resource with given id" do
       resource = resource_fixture()
-      assert Heroku.get_resource(resource.heroku_id) == {:ok, resource}
+      assert {:ok, resource.id} == Heroku.get_resource(resource.heroku_id) |> Result.map(fn r -> r.id end)
     end
 
     test "create_resource/1 with valid data creates a resource" do
@@ -76,7 +76,7 @@ defmodule Azimutt.HerokuTest do
       now = DateTime.utc_now()
       resource = resource_fixture()
       assert {:error, %Ecto.Changeset{}} = Heroku.update_resource_plan(resource, %{plan: nil}, now)
-      assert {:ok, resource} == Heroku.get_resource(resource.heroku_id)
+      assert {:ok, resource.id} == Heroku.get_resource(resource.heroku_id) |> Result.map(fn r -> r.id end)
     end
 
     test "delete_resource/2 deletes the resource" do

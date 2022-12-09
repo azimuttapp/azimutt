@@ -1,6 +1,24 @@
 <div class="mt-12 max-w-lg mx-auto">
     <h1>Hello Heroku user!</h1>
-    <dl class="sm:divide-y sm:divide-gray-200">
+    <h2>Create your Azimutt project from your database url:</h2>
+    <%= form_for @conn, Routes.elm_path(@conn, :orga_create, @organization.id), [method: :get], fn f -> %>
+        <input type="hidden" name="heroku" value={@resource.heroku_id}>
+        <%= for field <- [
+            %{id: :database, label: "Database Url", value: "postgres://<user>:<password>@<host>:<port>/<db_name>"}
+        ] do %>
+            <div>
+                <label class="block text-sm font-medium text-gray-700" for={field.id}><%= field.label %></label>
+                <div class="mt-1">
+                    <%= text_input f, field.id, value: field.value, placeholder: field.value, class: "block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" %>
+                    <%= error_tag f, field.id %>
+                </div>
+            </div>
+        <% end %>
+        <div class="pt-5">
+            <%= submit "Create project", class: "inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" %>
+        </div>
+    <% end %>
+    <dl class="mt-6 sm:divide-y sm:divide-gray-200">
         <%= for field <- [
             %{label: "app", value: @app},
             %{label: "email", value: @user.email},

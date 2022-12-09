@@ -10,6 +10,7 @@ import Libs.Task as T
 import Models.OrganizationId as OrganizationId exposing (OrganizationId)
 import Models.Project as Project
 import Models.Project.ProjectId as ProjectId
+import Models.Project.ProjectStorage as ProjectStorage
 import Models.Project.Source as Source exposing (Source)
 import Models.Project.SourceId as SourceId
 import PagesComponents.Create.Models exposing (Model, Msg(..))
@@ -54,7 +55,13 @@ update req now urlOrganization msg model =
             ( model, SourceId.generator |> Random.generate (Source.aml Conf.constants.virtualRelationSourceName now >> Project.create model.projects model.projectName >> CreateProjectTmp) )
 
         CreateProjectTmp project ->
-            ( model, Cmd.batch [ Ports.createProjectTmp project, Ports.track (Track.initProject project) ] )
+            ( model
+            , Cmd.batch
+                (Maybe.zip urlOrganization (req.query |> Dict.get "heroku")
+                    |> Maybe.map (\( organizationId, heroku ) -> [ Ports.createProject organizationId ProjectStorage.Remote (Just heroku) project, Ports.track (Track.createProject project) ])
+                    |> Maybe.withDefault [ Ports.createProjectTmp project, Ports.track (Track.initProject project) ]
+                )
+            )
 
         Toast message ->
             model |> mapToastsCmd (Toasts.update Toast message)
@@ -74,8 +81,16 @@ handleJsMessage req urlOrganization msg model =
         GotLegacyProjects ( _, projects ) ->
             ( { model | projects = Sort.lastUpdatedFirst projects }, T.send InitProject )
 
-        GotProject _ ->
-            ( model, Request.pushRoute (Route.Organization___Project_ { organization = urlOrganization |> Maybe.withDefault OrganizationId.zero, project = ProjectId.zero }) req )
+        GotProject project ->
+            ( model
+            , Request.pushRoute
+                (Route.Organization___Project_
+                    { organization = project |> Maybe.andThen Result.toMaybe |> Maybe.andThen .organization |> Maybe.map .id |> Maybe.orElse urlOrganization |> Maybe.withDefault OrganizationId.zero
+                    , project = project |> Maybe.andThen Result.toMaybe |> Maybe.mapOrElse .id ProjectId.zero
+                    }
+                )
+                req
+            )
 
         GotToast level message ->
             ( model, message |> Toasts.create level |> Toast |> T.send )

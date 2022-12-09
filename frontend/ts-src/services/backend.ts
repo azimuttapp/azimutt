@@ -26,6 +26,7 @@ import {z} from "zod";
 import * as Zod from "../utils/zod";
 import * as Json from "../utils/json";
 import * as jiff from "jiff";
+import {HerokuId} from "../types/heroku";
 
 
 export class Backend {
@@ -58,9 +59,10 @@ export class Backend {
             .then(res => isLocal(res) ? res : Promise.reject('Expecting a local project'))
     }
 
-    createProjectRemote = async (o: OrganizationId, json: ProjectJson): Promise<ProjectInfoRemote> => {
+    createProjectRemote = async (o: OrganizationId, json: ProjectJson, heroku: HerokuId | null): Promise<ProjectInfoRemote> => {
         this.logger.debug(`backend.createProjectRemote(${o})`, json)
-        const url = this.withXhrHost(`/api/v1/organizations/${o}/projects?expand=organization,organization.plan`)
+        const herokuParam = heroku ? `heroku=${heroku}&` : ''
+        const url = this.withXhrHost(`/api/v1/organizations/${o}/projects?${herokuParam}expand=organization,organization.plan`)
         const formData: FormData = new FormData()
         Object.entries(toProjectBody(json, ProjectStorage.enum.remote))
             .filter(([_, value]) => value !== null && value !== undefined)

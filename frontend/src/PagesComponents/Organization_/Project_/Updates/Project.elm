@@ -51,7 +51,7 @@ createProject name organization storage model =
                     (\p ->
                         p.organization
                             |> Maybe.map (\_ -> [ "Project already created" |> Toasts.warning |> Toast |> T.send ])
-                            |> Maybe.withDefault [ Ports.createProject organization.id storage { p | name = name }, Ports.track (Track.createProject p) ]
+                            |> Maybe.withDefault [ Ports.createProject organization.id storage Nothing { p | name = name }, Ports.track (Track.createProject p) ]
                     )
                     [ "No project to save" |> Toasts.warning |> Toast |> T.send ]
             )

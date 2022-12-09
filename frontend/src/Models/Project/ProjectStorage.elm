@@ -1,7 +1,8 @@
-module Models.Project.ProjectStorage exposing (ProjectStorage(..), decode, encode)
+module Models.Project.ProjectStorage exposing (ProjectStorage(..), decode, encode, fromString, toString)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
+import Libs.Maybe as Maybe
 
 
 type ProjectStorage
@@ -9,35 +10,42 @@ type ProjectStorage
     | Remote
 
 
-encode : ProjectStorage -> Value
-encode value =
+toString : ProjectStorage -> String
+toString value =
     case value of
         Local ->
-            "local" |> Encode.string
+            "local"
 
         Remote ->
-            "remote" |> Encode.string
+            "remote"
+
+
+fromString : String -> Maybe ProjectStorage
+fromString value =
+    case value of
+        "local" ->
+            Just Local
+
+        "remote" ->
+            Just Remote
+
+        -- legacy values:
+        "browser" ->
+            Just Local
+
+        "cloud" ->
+            Just Remote
+
+        _ ->
+            Nothing
+
+
+encode : ProjectStorage -> Value
+encode value =
+    value |> toString |> Encode.string
 
 
 decode : Decode.Decoder ProjectStorage
 decode =
     Decode.string
-        |> Decode.andThen
-            (\value ->
-                case value of
-                    "local" ->
-                        Local |> Decode.succeed
-
-                    "remote" ->
-                        Remote |> Decode.succeed
-
-                    -- legacy values:
-                    "browser" ->
-                        Local |> Decode.succeed
-
-                    "cloud" ->
-                        Remote |> Decode.succeed
-
-                    _ ->
-                        Decode.fail ("invalid ProjectStorage '" ++ value ++ "'")
-            )
+        |> Decode.andThen (\v -> v |> fromString |> Maybe.mapOrElse Decode.succeed (Decode.fail ("invalid ProjectStorage '" ++ v ++ "'")))

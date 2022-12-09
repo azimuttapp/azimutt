@@ -13,7 +13,9 @@ defmodule Azimutt.Heroku do
   end
 
   def get_resource(heroku_id) do
-    Repo.get_by(Resource, heroku_id: heroku_id)
+    Resource
+    |> preload(:project)
+    |> Repo.get_by(heroku_id: heroku_id)
     |> Result.from_nillable()
     |> Result.filter_not(fn r -> r.deleted_at end, :deleted)
   end
@@ -27,6 +29,12 @@ defmodule Azimutt.Heroku do
   def update_resource_plan(%Resource{} = resource, attrs, now) do
     resource
     |> Resource.update_plan_changeset(attrs, now)
+    |> Repo.update()
+  end
+
+  def add_resource_project(%Resource{} = resource, %Project{} = project, now) do
+    resource
+    |> Resource.set_project_changeset(project, now)
     |> Repo.update()
   end
 

@@ -64,11 +64,12 @@ defmodule AzimuttWeb.HerokuController do
   def show(conn, %{"heroku_id" => heroku_id} = params) do
     # credo:disable-for-next-line
     IO.inspect(params, label: "Heroku show resource")
-    user = conn.assigns.current_user
+    current_user = conn.assigns.current_user
     %{resource: resource, app: app} = conn.assigns.heroku
 
     if resource.heroku_id == heroku_id do
-      conn |> render("show.html", resource: resource, user: user, app: app)
+      organization = Accounts.get_user_personal_organization(current_user)
+      conn |> render("show.html", resource: resource, user: current_user, organization: organization, app: app)
     else
       {:error, :forbidden}
     end

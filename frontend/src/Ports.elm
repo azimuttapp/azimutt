@@ -13,6 +13,7 @@ import Libs.Models.FileName exposing (FileName)
 import Libs.Models.Hotkey as Hotkey exposing (Hotkey)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Color exposing (Color)
+import Models.HerokuId as HerokuId exposing (HerokuId)
 import Models.OrganizationId as OrganizationId exposing (OrganizationId)
 import Models.Position as Position
 import Models.Project as Project exposing (Project)
@@ -92,9 +93,9 @@ updateProjectTmp project =
     messageToJs (UpdateProjectTmp project)
 
 
-createProject : OrganizationId -> ProjectStorage -> Project -> Cmd msg
-createProject organization storage project =
-    messageToJs (CreateProject organization storage project)
+createProject : OrganizationId -> ProjectStorage -> Maybe HerokuId -> Project -> Cmd msg
+createProject organization storage heroku project =
+    messageToJs (CreateProject organization storage heroku project)
 
 
 updateProject : Project -> Cmd msg
@@ -213,7 +214,7 @@ type ElmMsg
     | GetProject OrganizationId ProjectId
     | CreateProjectTmp Project
     | UpdateProjectTmp Project
-    | CreateProject OrganizationId ProjectStorage Project
+    | CreateProject OrganizationId ProjectStorage (Maybe HerokuId) Project
     | UpdateProject Project
     | MoveProjectTo Project ProjectStorage
     | DeleteProject ProjectInfo (Maybe String)
@@ -319,8 +320,8 @@ elmEncoder elm =
         UpdateProjectTmp project ->
             Encode.object [ ( "kind", "UpdateProjectTmp" |> Encode.string ), ( "project", project |> Project.encode ) ]
 
-        CreateProject organization storage project ->
-            Encode.object [ ( "kind", "CreateProject" |> Encode.string ), ( "organization", organization |> OrganizationId.encode ), ( "storage", storage |> ProjectStorage.encode ), ( "project", project |> Project.encode ) ]
+        CreateProject organization storage heroku project ->
+            Encode.object [ ( "kind", "CreateProject" |> Encode.string ), ( "organization", organization |> OrganizationId.encode ), ( "storage", storage |> ProjectStorage.encode ), ( "heroku", heroku |> Encode.maybe HerokuId.encode ), ( "project", project |> Project.encode ) ]
 
         UpdateProject project ->
             Encode.object [ ( "kind", "UpdateProject" |> Encode.string ), ( "project", project |> Project.encode ) ]
