@@ -19,28 +19,28 @@ defmodule AzimuttWeb.HerokuControllerTest do
     email = "user@mail.com"
 
     attrs = %{
-      resource_id: resource.heroku_id,
+      resource_id: resource.id,
       timestamp: now_ts,
-      resource_token: Crypto.sha1("#{resource.heroku_id}:#{@sso_salt}:#{now_ts}"),
+      resource_token: Crypto.sha1("#{resource.id}:#{@sso_salt}:#{now_ts}"),
       app: app,
       email: email
     }
 
-    conn = get(conn, Routes.heroku_path(conn, :show, resource.heroku_id))
+    conn = get(conn, Routes.heroku_path(conn, :show, resource.id))
     assert conn.status == 403
 
     conn = post(conn, Routes.heroku_path(conn, :login, attrs))
-    assert redirected_to(conn, 302) =~ Routes.heroku_path(conn, :show, resource.heroku_id)
+    assert redirected_to(conn, 302) =~ Routes.heroku_path(conn, :show, resource.id)
 
-    conn = get(conn, Routes.heroku_path(conn, :show, resource.heroku_id))
+    conn = get(conn, Routes.heroku_path(conn, :show, resource.id))
     assert html_response(conn, 200) =~ "Hello Heroku user!"
     assert html_response(conn, 200) =~ app
     assert html_response(conn, 200) =~ email
-    assert html_response(conn, 200) =~ resource.heroku_id
+    assert html_response(conn, 200) =~ resource.id
 
     Heroku.delete_resource(resource, DateTime.utc_now())
 
-    conn = get(conn, Routes.heroku_path(conn, :show, resource.heroku_id))
+    conn = get(conn, Routes.heroku_path(conn, :show, resource.id))
     assert conn.status == 403
   end
 end

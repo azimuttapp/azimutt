@@ -8,14 +8,14 @@ defmodule Azimutt.HerokuTest do
   describe "resources" do
     test "get_resource/1 returns the resource with given id" do
       resource = resource_fixture()
-      assert {:ok, resource.id} == Heroku.get_resource(resource.heroku_id) |> Result.map(fn r -> r.id end)
+      assert {:ok, resource.id} == Heroku.get_resource(resource.id) |> Result.map(fn r -> r.id end)
     end
 
     test "create_resource/1 with valid data creates a resource" do
       now = DateTime.utc_now()
 
       valid_attrs = %{
-        heroku_id: "01234567-89ab-cdef-0123-456789abcdef",
+        id: "01234567-89ab-cdef-0123-456789abcdef",
         name: "acme-inc-primary-database",
         plan: "basic",
         region: "amazon-web-services::us-east-1",
@@ -28,7 +28,7 @@ defmodule Azimutt.HerokuTest do
       }
 
       assert {:ok, %Resource{} = resource} = Heroku.create_resource(valid_attrs)
-      assert resource.heroku_id == "01234567-89ab-cdef-0123-456789abcdef"
+      assert resource.id == "01234567-89ab-cdef-0123-456789abcdef"
       assert resource.name == "acme-inc-primary-database"
       assert resource.plan == "basic"
       assert resource.region == "amazon-web-services::us-east-1"
@@ -41,7 +41,7 @@ defmodule Azimutt.HerokuTest do
     end
 
     test "create_resource/1 with invalid data returns error changeset" do
-      assert {:error, %Ecto.Changeset{}} = Heroku.create_resource(%{heroku_id: nil})
+      assert {:error, %Ecto.Changeset{}} = Heroku.create_resource(%{id: nil})
     end
 
     test "update_resource_plan/2 with valid data updates the resource" do
@@ -49,7 +49,7 @@ defmodule Azimutt.HerokuTest do
       resource = resource_fixture()
 
       update_attrs = %{
-        heroku_id: "7488a646-e31f-11e4-aace-600308960668",
+        id: "7488a646-e31f-11e4-aace-600308960668",
         name: "some updated name",
         plan: "some updated plan",
         region: "some updated region",
@@ -61,7 +61,7 @@ defmodule Azimutt.HerokuTest do
       }
 
       assert {:ok, %Resource{} = updated} = Heroku.update_resource_plan(resource, update_attrs, now)
-      assert updated.heroku_id == resource.heroku_id
+      assert updated.id == resource.id
       assert updated.name == resource.name
       assert updated.plan == "some updated plan"
       assert updated.region == resource.region
@@ -76,7 +76,7 @@ defmodule Azimutt.HerokuTest do
       now = DateTime.utc_now()
       resource = resource_fixture()
       assert {:error, %Ecto.Changeset{}} = Heroku.update_resource_plan(resource, %{plan: nil}, now)
-      assert {:ok, resource.id} == Heroku.get_resource(resource.heroku_id) |> Result.map(fn r -> r.id end)
+      assert {:ok, resource.id} == Heroku.get_resource(resource.id) |> Result.map(fn r -> r.id end)
     end
 
     test "delete_resource/2 deletes the resource" do
@@ -84,7 +84,7 @@ defmodule Azimutt.HerokuTest do
       resource = resource_fixture()
       assert resource.deleted_at == nil
       assert {:ok, %Resource{} = _} = Heroku.delete_resource(resource, now)
-      assert {:error, :deleted} = Heroku.get_resource(resource.heroku_id)
+      assert {:error, :deleted} = Heroku.get_resource(resource.id)
     end
   end
 end

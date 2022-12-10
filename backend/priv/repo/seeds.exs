@@ -107,7 +107,7 @@ IO.inspect(basic_project_file, label: "basic_project_file")
 
 {:ok, _heroku} =
   Heroku.create_resource(%{
-    heroku_id: "8d97f847-ef86-489a-bfdb-b8d83d5c0926",
+    id: "8d97f847-ef86-489a-bfdb-b8d83d5c0926",
     name: "heroku-app",
     plan: "free",
     region: "eu",

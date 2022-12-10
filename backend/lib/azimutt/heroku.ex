@@ -12,10 +12,10 @@ defmodule Azimutt.Heroku do
     Resource |> preload(:project) |> Repo.all()
   end
 
-  def get_resource(heroku_id) do
+  def get_resource(id) do
     Resource
     |> preload(:project)
-    |> Repo.get_by(heroku_id: heroku_id)
+    |> Repo.get(id)
     |> Result.from_nillable()
     |> Result.filter_not(fn r -> r.deleted_at end, :deleted)
   end

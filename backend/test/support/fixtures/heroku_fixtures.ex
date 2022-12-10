@@ -5,7 +5,7 @@ defmodule Azimutt.HerokuFixtures do
     {:ok, resource} =
       attrs
       |> Enum.into(%{
-        heroku_id: Ecto.UUID.generate(),
+        id: Ecto.UUID.generate(),
         name: "acme-inc-primary-database",
         plan: "basic",
         region: "amazon-web-services::us-east-1",

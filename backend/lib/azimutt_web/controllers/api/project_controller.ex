@@ -50,7 +50,7 @@ defmodule AzimuttWeb.Api.ProjectController do
     now = DateTime.utc_now()
     current_user = conn.assigns.current_user
     resource = if Map.has_key?(conn.assigns, :heroku), do: conn.assigns.heroku.resource, else: nil
-    valid_heroku = !params["heroku"] || (params["heroku"] && resource && params["heroku"] == resource.heroku_id)
+    valid_heroku = !params["heroku"] || (params["heroku"] && resource && params["heroku"] == resource.id)
     ctx = CtxParams.from_params(params)
 
     with {:ok, _} <- if(valid_heroku, do: {:ok, resource}, else: {:error, :not_found}),

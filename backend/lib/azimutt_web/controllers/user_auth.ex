@@ -193,8 +193,8 @@ defmodule AzimuttWeb.UserAuth do
   def heroku_sso(conn, resource, user, app) do
     conn
     |> login_user(user)
-    |> put_resp_cookie(@heroku_cookie, %{heroku_id: resource.heroku_id, app: app}, @heroku_options)
-    |> redirect(to: Routes.heroku_path(conn, :show, resource.heroku_id))
+    |> put_resp_cookie(@heroku_cookie, %{resource_id: resource.id, app: app}, @heroku_options)
+    |> redirect(to: Routes.heroku_path(conn, :show, resource.id))
   end
 
   # read @heroku_cookie and make resource available in conn
@@ -203,7 +203,7 @@ defmodule AzimuttWeb.UserAuth do
 
     with(
       {:ok, cookie} <- Result.from_nillable(conn.cookies[@heroku_cookie]),
-      {:ok, %Resource{} = resource} <- Heroku.get_resource(cookie.heroku_id),
+      {:ok, %Resource{} = resource} <- Heroku.get_resource(cookie.resource_id),
       do: {:ok, conn |> assign(:heroku, %{resource: resource, app: cookie.app})}
     )
     |> Result.or_else(conn)

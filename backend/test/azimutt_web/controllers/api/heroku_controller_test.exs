@@ -17,10 +17,10 @@ defmodule AzimuttWeb.Api.HerokuControllerTest do
 
   # cf https://devcenter.heroku.com/articles/building-an-add-on#the-provisioning-request
   test "provision, change plan and deprovision a resource", %{conn: conn} do
-    heroku_id = "e5a2235b-7cd1-4e15-89ba-d7b5c3ccfe38"
+    id = "e5a2235b-7cd1-4e15-89ba-d7b5c3ccfe38"
 
     resource = %{
-      uuid: heroku_id,
+      uuid: id,
       name: "acme-inc-primary-database",
       callback_url: "https://api.heroku.com/addons/816de863-66ce-42ff-8b1d-b8fd7d713ba0",
       oauth_grant: %{
@@ -34,18 +34,18 @@ defmodule AzimuttWeb.Api.HerokuControllerTest do
     }
 
     conn = conn |> authed() |> post(Routes.heroku_path(conn, :create, resource))
-    assert json_response(conn, 200) == %{"id" => heroku_id, "message" => "Your add-on is now provisioned."}
+    assert json_response(conn, 200) == %{"id" => id, "message" => "Your add-on is now provisioned."}
 
     conn = conn |> recycle() |> authed() |> post(Routes.heroku_path(conn, :create, resource))
-    assert json_response(conn, 200) == %{"id" => heroku_id, "message" => "This resource was already created."}
+    assert json_response(conn, 200) == %{"id" => id, "message" => "This resource was already created."}
 
-    conn = conn |> recycle() |> authed() |> put(Routes.heroku_path(conn, :update, heroku_id, %{plan: "pro"}))
-    assert json_response(conn, 200) == %{"id" => heroku_id, "message" => "Plan changed from basic to pro."}
+    conn = conn |> recycle() |> authed() |> put(Routes.heroku_path(conn, :update, id, %{plan: "pro"}))
+    assert json_response(conn, 200) == %{"id" => id, "message" => "Plan changed from basic to pro."}
 
-    conn = conn |> recycle() |> authed() |> delete(Routes.heroku_path(conn, :delete, heroku_id))
+    conn = conn |> recycle() |> authed() |> delete(Routes.heroku_path(conn, :delete, id))
     assert conn.status == 204
 
-    conn = conn |> recycle() |> authed() |> delete(Routes.heroku_path(conn, :delete, heroku_id))
+    conn = conn |> recycle() |> authed() |> delete(Routes.heroku_path(conn, :delete, id))
     assert conn.status == 410
   end
 

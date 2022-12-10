@@ -70,7 +70,7 @@ defmodule AzimuttWeb.Api.ProjectView do
 
   defp put_heroku_resource(json, project, _ctx) do
     if project.heroku_resource do
-      json |> Map.put(:heroku, %{id: project.heroku_resource.heroku_id})
+      json |> Map.put(:heroku, %{id: project.heroku_resource.id})
     else
       json
     end

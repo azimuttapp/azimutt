@@ -91,8 +91,8 @@ defmodule AzimuttWeb.Router do
   scope "/heroku", AzimuttWeb do
     pipe_through [:api, :require_heroku_basic_auth]
     post "/resources", Api.HerokuController, :create
-    put "/resources/:heroku_id", Api.HerokuController, :update
-    delete "/resources/:heroku_id", Api.HerokuController, :delete
+    put "/resources/:id", Api.HerokuController, :update
+    delete "/resources/:id", Api.HerokuController, :delete
   end
 
   scope "/heroku", AzimuttWeb do
@@ -103,7 +103,7 @@ defmodule AzimuttWeb.Router do
 
   scope "/heroku", AzimuttWeb do
     pipe_through [:browser, :require_heroku_resource, :require_authenticated_user]
-    get "/resources/:heroku_id", HerokuController, :show
+    get "/resources/:id", HerokuController, :show
   end
 
   # authed admin routes

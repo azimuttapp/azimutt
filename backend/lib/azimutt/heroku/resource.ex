@@ -7,7 +7,6 @@ defmodule Azimutt.Heroku.Resource do
   alias Azimutt.Projects.Project
 
   schema "heroku_resources" do
-    field :heroku_id, Ecto.UUID
     belongs_to :project, Project
     field :name, :string
     field :plan, :string
@@ -22,7 +21,7 @@ defmodule Azimutt.Heroku.Resource do
   end
 
   def create_changeset(%Resource{} = resource, attrs) do
-    required = [:heroku_id, :name, :plan, :region, :callback, :oauth_code, :oauth_type, :oauth_expire]
+    required = [:id, :name, :plan, :region, :callback, :oauth_code, :oauth_type, :oauth_expire]
 
     resource
     |> cast(attrs, required ++ [:options])
