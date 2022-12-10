@@ -32,10 +32,19 @@ defmodule Azimutt.Heroku do
     |> Repo.update()
   end
 
-  def add_resource_project(%Resource{} = resource, %Project{} = project, now) do
-    resource
-    |> Resource.set_project_changeset(project, now)
-    |> Repo.update()
+  def set_resource_project(%Resource{} = resource, %Project{} = project, now) do
+    cond do
+      resource.project == nil ->
+        resource
+        |> Resource.set_project_changeset(project, now)
+        |> Repo.update()
+
+      resource.project.id == project.id ->
+        {:ok, resource}
+
+      true ->
+        {:error, :project_already_set}
+    end
   end
 
   def get_resource_member(%Resource{} = resource, %User{} = user) do

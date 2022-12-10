@@ -3,6 +3,7 @@
     <h2>Create your Azimutt project from your database url:</h2>
     <%= form_for @conn, Routes.elm_path(@conn, :orga_create, @organization.id), [method: :get], fn f -> %>
         <input type="hidden" name="heroku" value={@resource.id}>
+        <input type="hidden" name="name" value={@resource.name}>
         <%= for field <- [
             %{id: :database, label: "Database Url", value: "postgres://<user>:<password>@<host>:<port>/<db_name>"}
         ] do %>

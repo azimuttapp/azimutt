@@ -50,6 +50,13 @@ defmodule AzimuttWeb.HerokuController do
           |> Result.flat_map_error(fn _ -> Accounts.register_heroku_user(user_params, now) end)
           |> Result.tap(fn user -> Heroku.set_resource_member(resource, user) end)
           |> Result.map(fn user -> conn |> UserAuth.heroku_sso(resource, user, app) end)
+          |> Result.map(fn conn ->
+            if resource.project do
+              conn |> redirect(to: Routes.elm_path(conn, :project_show, resource.project.organization_id, resource.project.id))
+            else
+              conn |> redirect(to: Routes.heroku_path(conn, :show, resource.id))
+            end
+          end)
           |> Result.or_else(conn |> put_flash(:error, "Authentication failed") |> redirect(to: Routes.website_path(conn, :index)))
 
         {:error, :not_found} ->

@@ -67,9 +67,14 @@ logoutUrl =
     "/logout"
 
 
+dashboardUrl : String
+dashboardUrl =
+    "/home"
+
+
 organizationUrl : Maybe OrganizationId -> String
 organizationUrl organization =
-    organization |> Maybe.filter (\id -> id /= OrganizationId.zero) |> Maybe.mapOrElse (\id -> "/organizations/" ++ id) "/home"
+    organization |> Maybe.filter (\id -> id /= OrganizationId.zero) |> Maybe.mapOrElse (\id -> "/organizations/" ++ id) dashboardUrl
 
 
 organizationBillingUrl : OrganizationId -> String

@@ -56,7 +56,7 @@ defmodule AzimuttWeb.Api.ProjectController do
     with {:ok, _} <- if(valid_heroku, do: {:ok, resource}, else: {:error, :not_found}),
          {:ok, %Organization{} = organization} <- Organizations.get_organization(organization_id, current_user),
          {:ok, %Project{} = created} <- Projects.create_project(params, organization, current_user),
-         {:ok, _} <- if(params["heroku"], do: Heroku.add_resource_project(resource, created, now), else: {:ok, ""}),
+         {:ok, _} <- if(params["heroku"], do: Heroku.set_resource_project(resource, created, now), else: {:ok, ""}),
          # needed to get preloads
          {:ok, %Project{} = project} <- Projects.get_project(created.id, current_user),
          do: conn |> put_status(:created) |> render("show.json", project: project, ctx: ctx)

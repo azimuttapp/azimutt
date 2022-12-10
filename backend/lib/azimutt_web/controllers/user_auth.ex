@@ -194,7 +194,6 @@ defmodule AzimuttWeb.UserAuth do
     conn
     |> login_user(user)
     |> put_resp_cookie(@heroku_cookie, %{resource_id: resource.id, app: app}, @heroku_options)
-    |> redirect(to: Routes.heroku_path(conn, :show, resource.id))
   end
 
   # read @heroku_cookie and make resource available in conn

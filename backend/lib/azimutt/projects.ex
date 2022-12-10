@@ -3,6 +3,8 @@ defmodule Azimutt.Projects do
   import Ecto.Query, warn: false
   require Logger
   alias Azimutt.Accounts.User
+  alias Azimutt.Heroku.Resource
+  alias Azimutt.Heroku.ResourceMember
   alias Azimutt.Organizations
   alias Azimutt.Organizations.Organization
   alias Azimutt.Organizations.OrganizationMember
@@ -26,10 +28,10 @@ defmodule Azimutt.Projects do
   def get_project(id, %User{} = current_user) do
     project_query()
     |> where(
-      [p, _, om],
+      [p, _, om, _, hm],
       p.id == ^id and
         (p.storage_kind == :remote or (p.storage_kind == :local and p.local_owner_id == ^current_user.id)) and
-        (om.user_id == ^current_user.id or p.visibility != :none)
+        (om.user_id == ^current_user.id or hm.user_id == ^current_user.id or p.visibility != :none)
     )
     |> Repo.one()
     |> Result.from_nillable()
@@ -120,6 +122,8 @@ defmodule Azimutt.Projects do
     Project
     |> join(:inner, [p], o in Organization, on: p.organization_id == o.id)
     |> join(:inner, [_, o], om in OrganizationMember, on: om.organization_id == o.id)
+    |> join(:left, [p, _, _], h in Resource, on: h.project_id == p.id)
+    |> join(:left, [p, _, _, h], hm in ResourceMember, on: hm.heroku_resource_id == h.id)
     |> preload(:organization)
     |> preload(:heroku_resource)
     |> preload(:updated_by)

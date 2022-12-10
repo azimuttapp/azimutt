@@ -15,7 +15,6 @@ type alias Model =
     , databaseSource : Maybe (DatabaseSource.Model Msg)
     , sqlSource : Maybe (SqlSource.Model Msg)
     , jsonSource : Maybe (JsonSource.Model Msg)
-    , projectName : ProjectName
 
     -- global attrs
     , toasts : Toasts.Model
@@ -27,7 +26,7 @@ type Msg
     | DatabaseSourceMsg DatabaseSource.Msg
     | SqlSourceMsg SqlSource.Msg
     | JsonSourceMsg JsonSource.Msg
-    | AmlSourceMsg
+    | AmlSourceMsg ProjectName
     | CreateProjectTmp Project
       -- global messages
     | Toast Toasts.Msg

@@ -89,7 +89,7 @@ viewApp currentUrl urlOrganization shared model htmlId erd =
                         Loaded legacyProjects ->
                             legacyProjects
             in
-            Lazy.lazy8 viewNavbar shared.conf shared.user model.conf model.virtualRelation erd (shared.projects ++ projects) model.navbar (Navbar.argsToString currentUrl urlOrganization model.dirty (htmlId ++ "-nav") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-nav")))
+            Lazy.lazy8 viewNavbar shared.conf shared.user model.conf model.virtualRelation erd (shared.projects ++ projects) model.navbar (Navbar.argsToString currentUrl urlOrganization (shared.organizations |> List.map .id) (htmlId ++ "-nav") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-nav")) model.dirty)
 
           else
             div [] []
