@@ -33,6 +33,7 @@ defmodule Azimutt.Organizations do
     |> where([o, om], om.user_id == ^current_user.id)
     |> preload(:members)
     |> preload(:projects)
+    |> preload(projects: :heroku_resource)
     |> preload(:invitations)
     |> Repo.all()
   end

@@ -26,7 +26,7 @@ import {z} from "zod";
 import * as Zod from "../utils/zod";
 import * as Json from "../utils/json";
 import * as jiff from "jiff";
-import {HerokuId} from "../types/heroku";
+import {HerokuId, HerokuResource} from "../types/heroku";
 
 
 export class Backend {
@@ -184,6 +184,7 @@ export const OrganizationResponse = z.object({
 
 interface ProjectResponse extends ProjectStatsResponse {
     organization: OrganizationResponse
+    heroku?: HerokuResource
     id: ProjectId
     slug: ProjectSlug
     name: ProjectName
@@ -198,6 +199,7 @@ interface ProjectResponse extends ProjectStatsResponse {
 
 export const ProjectResponse = ProjectStatsResponse.extend({
     organization: OrganizationResponse,
+    heroku: HerokuResource.optional(),
     id: ProjectId,
     slug: ProjectSlug,
     name: ProjectName,
@@ -269,6 +271,7 @@ function toOrganization(o: OrganizationResponse): Organization {
 function toProjectInfo(p: ProjectResponse): ProjectInfo {
     return {
         organization: toOrganization(p.organization),
+        heroku: p.heroku,
         id: p.id,
         slug: p.slug,
         name: p.name,

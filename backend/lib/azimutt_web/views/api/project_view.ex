@@ -33,6 +33,7 @@ defmodule AzimuttWeb.Api.ProjectView do
     }
     |> put_orga(project, ctx)
     |> put_content(project, ctx)
+    |> put_heroku_resource(project, ctx)
   end
 
   defp put_orga(json, project, ctx) do
@@ -64,6 +65,14 @@ defmodule AzimuttWeb.Api.ProjectView do
       end
     else
       "{}"
+    end
+  end
+
+  defp put_heroku_resource(json, project, _ctx) do
+    if project.heroku_resource do
+      json |> Map.put(:heroku, %{id: project.heroku_resource.heroku_id})
+    else
+      json
     end
   end
 end

@@ -29,7 +29,7 @@
                     </div>
                     <div @click.outside="open = false" class="relative ml-4 shrink-0" x-data="{ open: false }">
                         <div>
-                            <button @click="open = !open" class="flex text-sm text-white bg-gray-800 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white" id="user-menu" aria-haspopup="true" x-bind:aria-expanded="open" aria-expanded="false">
+                            <button @click="open = !open" class="flex text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white" id="user-menu" aria-haspopup="true" x-bind:aria-expanded="open" aria-expanded="false">
                                 <span class="sr-only">Open user menu</span>
                                 <img class="w-8 h-8 rounded-full" src={@current_user.avatar}>
                             </button>

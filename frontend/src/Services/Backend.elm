@@ -14,6 +14,7 @@ import Libs.Result as Result
 import Libs.Tailwind exposing (Color, decodeColor)
 import Libs.Time as Time
 import Libs.Url as Url
+import Models.HerokuResource as HerokuResource exposing (HerokuResource)
 import Models.Organization exposing (Organization)
 import Models.OrganizationId as OrganizationId exposing (OrganizationId)
 import Models.Plan as Plan exposing (Plan)
@@ -196,6 +197,7 @@ formatOrgasAndProjects orgas =
                     |> List.map
                         (\p ->
                             { organization = Just (buildOrganization o)
+                            , heroku = p.heroku
                             , id = p.id
                             , slug = p.slug
                             , name = p.name
@@ -244,7 +246,8 @@ type alias OrgaWithProjects =
 
 
 type alias OrgaProject =
-    { id : String
+    { heroku : Maybe HerokuResource
+    , id : String
     , slug : String
     , name : String
     , description : Maybe String
@@ -280,7 +283,8 @@ decodeOrga =
 
 decodeProject : Decode.Decoder OrgaProject
 decodeProject =
-    Decode.map18 OrgaProject
+    Decode.map19 OrgaProject
+        (Decode.maybeField "heroku" HerokuResource.decode)
         (Decode.field "id" Decode.string)
         (Decode.field "slug" Decode.string)
         (Decode.field "name" Decode.string)

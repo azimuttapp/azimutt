@@ -10,6 +10,7 @@ import Libs.Json.Encode as Encode
 import Libs.List as List
 import Libs.String as String
 import Libs.Time as Time
+import Models.HerokuResource as HerokuResource exposing (HerokuResource)
 import Models.Organization as Organization exposing (Organization)
 import Models.Project.CustomType as CustomType exposing (CustomType)
 import Models.Project.CustomTypeId exposing (CustomTypeId)
@@ -33,6 +34,7 @@ import Time
 
 type alias Project =
     { organization : Maybe Organization
+    , heroku : Maybe HerokuResource
     , id : ProjectId
     , slug : ProjectSlug
     , name : ProjectName
@@ -53,9 +55,10 @@ type alias Project =
     }
 
 
-new : Maybe Organization -> ProjectId -> ProjectSlug -> ProjectName -> Maybe String -> List Source -> Dict NotesKey Notes -> LayoutName -> Dict LayoutName Layout -> ProjectSettings -> ProjectStorage -> ProjectVisibility -> ProjectEncodingVersion -> Time.Posix -> Time.Posix -> Project
-new organization id slug name description sources notes usedLayout layouts settings storage visibility version createdAt updatedAt =
+new : Maybe Organization -> Maybe HerokuResource -> ProjectId -> ProjectSlug -> ProjectName -> Maybe String -> List Source -> Dict NotesKey Notes -> LayoutName -> Dict LayoutName Layout -> ProjectSettings -> ProjectStorage -> ProjectVisibility -> ProjectEncodingVersion -> Time.Posix -> Time.Posix -> Project
+new organization heroku id slug name description sources notes usedLayout layouts settings storage visibility version createdAt updatedAt =
     { organization = organization
+    , heroku = heroku
     , id = id
     , slug = slug
     , name = name
@@ -80,6 +83,7 @@ new organization id slug name description sources notes usedLayout layouts setti
 create : List { a | name : ProjectName } -> ProjectName -> Source -> Project
 create projects name source =
     new Nothing
+        Nothing
         ProjectId.zero
         ProjectSlug.zero
         (String.unique (projects |> List.map .name) name)
@@ -222,8 +226,9 @@ encode value =
 
 decode : Decode.Decoder Project
 decode =
-    Decode.map16 decodeProject
+    Decode.map17 decodeProject
         (Decode.maybeField "organization" Organization.decode)
+        (Decode.maybeField "heroku" HerokuResource.decode)
         (Decode.field "id" ProjectId.decode)
         (Decode.maybeField "slug" ProjectSlug.decode)
         (Decode.field "name" ProjectName.decode)
@@ -241,8 +246,8 @@ decode =
         (Decode.field "updatedAt" Time.decode)
 
 
-decodeProject : Maybe Organization -> ProjectId -> Maybe ProjectSlug -> ProjectName -> Maybe String -> List Source -> Dict NotesKey Notes -> Layout -> LayoutName -> Dict LayoutName Layout -> ProjectSettings -> ProjectStorage -> ProjectVisibility -> ProjectEncodingVersion -> Time.Posix -> Time.Posix -> Project
-decodeProject organization id maybeSlug name description sources notes layout usedLayout layouts settings storage visibility version createdAt updatedAt =
+decodeProject : Maybe Organization -> Maybe HerokuResource -> ProjectId -> Maybe ProjectSlug -> ProjectName -> Maybe String -> List Source -> Dict NotesKey Notes -> Layout -> LayoutName -> Dict LayoutName Layout -> ProjectSettings -> ProjectStorage -> ProjectVisibility -> ProjectEncodingVersion -> Time.Posix -> Time.Posix -> Project
+decodeProject organization heroku id maybeSlug name description sources notes layout usedLayout layouts settings storage visibility version createdAt updatedAt =
     let
         allLayouts : Dict LayoutName Layout
         allLayouts =
@@ -258,4 +263,4 @@ decodeProject organization id maybeSlug name description sources notes layout us
             -- retro-compatibility with old projects
             maybeSlug |> Maybe.withDefault id
     in
-    new organization id slug name description sources notes usedLayout allLayouts settings storage visibility version createdAt updatedAt
+    new organization heroku id slug name description sources notes usedLayout allLayouts settings storage visibility version createdAt updatedAt

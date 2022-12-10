@@ -274,6 +274,7 @@ defaultProjectSettings =
 upgrade : ProjectV1 -> Project
 upgrade project =
     { organization = Nothing
+    , heroku = Nothing
     , id = project.id
     , slug = project.id
     , name = project.name

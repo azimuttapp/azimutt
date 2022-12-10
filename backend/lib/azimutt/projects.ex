@@ -121,6 +121,7 @@ defmodule Azimutt.Projects do
     |> join(:inner, [p], o in Organization, on: p.organization_id == o.id)
     |> join(:inner, [_, o], om in OrganizationMember, on: om.organization_id == o.id)
     |> preload(:organization)
+    |> preload(:heroku_resource)
     |> preload(:updated_by)
   end
 end

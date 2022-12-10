@@ -7,6 +7,8 @@ import Libs.Dict as Dict
 import Libs.Fuzz as Fuzz
 import Libs.List as List
 import Models.ColumnOrder as ColumnOrder exposing (ColumnOrder)
+import Models.HerokuId exposing (HerokuId)
+import Models.HerokuResource exposing (HerokuResource)
 import Models.Project as Project exposing (Project)
 import Models.Project.CanvasProps exposing (CanvasProps)
 import Models.Project.Check exposing (Check)
@@ -60,7 +62,7 @@ import TestHelpers.OrganizationFuzzers exposing (organization)
 
 project : Fuzzer Project
 project =
-    Fuzz.map15 Project.new (Fuzz.maybe organization) projectId projectSlug projectName (Fuzz.maybe stringSmall) (listSmall source) (dictSmall stringSmall stringSmall) layoutName (dictSmall layoutName layout) projectSettings projectStorage projectVisibility projectEncodingVersion posix posix
+    Fuzz.map16 Project.new (Fuzz.maybe organization) (Fuzz.maybe herokuResource) projectId projectSlug projectName (Fuzz.maybe stringSmall) (listSmall source) (dictSmall stringSmall stringSmall) layoutName (dictSmall layoutName layout) projectSettings projectStorage projectVisibility projectEncodingVersion posix posix
 
 
 source : Fuzzer Source
@@ -204,6 +206,16 @@ projectVisibility =
 projectEncodingVersion : Fuzzer ProjectEncodingVersion
 projectEncodingVersion =
     Fuzz.constant ProjectEncodingVersion.current
+
+
+herokuId : Fuzzer HerokuId
+herokuId =
+    uuid
+
+
+herokuResource : Fuzzer HerokuResource
+herokuResource =
+    Fuzz.map HerokuResource herokuId
 
 
 projectId : Fuzzer ProjectId

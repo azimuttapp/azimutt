@@ -41,11 +41,9 @@ defmodule AzimuttWeb.OrganizationController do
     end
 
     with {:ok, organization} <- Organizations.get_organization(organization_id, current_user),
-         {:ok, plan} <- Organizations.get_organization_plan(organization) do
-      projects = Projects.list_projects(organization, current_user)
-
-      render(conn, "show.html", organization: organization, plan: plan, projects: projects)
-    end
+         projects = Projects.list_projects(organization, current_user),
+         {:ok, plan} <- Organizations.get_organization_plan(organization),
+         do: render(conn, "show.html", organization: organization, plan: plan, projects: projects)
   end
 
   def edit(conn, %{"id" => organization_id}) do
