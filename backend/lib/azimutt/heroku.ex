@@ -65,8 +65,15 @@ defmodule Azimutt.Heroku do
   end
 
   def delete_resource(%Resource{} = resource, now) do
-    resource
-    |> Resource.delete_changeset(now)
-    |> Repo.update()
+    res =
+      resource
+      |> Resource.delete_changeset(now)
+      |> Repo.update()
+
+    if resource.project do
+      Repo.delete(resource.project)
+    end
+
+    res
   end
 end

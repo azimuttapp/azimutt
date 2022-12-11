@@ -59,6 +59,7 @@ defmodule Azimutt.Analyzer.Postgres do
       database: conf.database,
       username: conf.username,
       password: conf.password,
+      ssl: true,
       # no retry on failed connection
       backoff_type: :stop
     )

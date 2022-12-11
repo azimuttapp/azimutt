@@ -1,5 +1,6 @@
 defmodule Azimutt.HerokuFixtures do
   @moduledoc false
+  alias Azimutt.Heroku
 
   def resource_fixture(attrs \\ %{}) do
     {:ok, resource} =
@@ -16,8 +17,10 @@ defmodule Azimutt.HerokuFixtures do
         oauth_expire: Timex.shift(DateTime.utc_now(), days: 7),
         deleted_at: nil
       })
-      |> Azimutt.Heroku.create_resource()
+      |> Heroku.create_resource()
 
+    # fetch resource with project association loaded
+    {:ok, resource} = Heroku.get_resource(resource.id)
     resource
   end
 end

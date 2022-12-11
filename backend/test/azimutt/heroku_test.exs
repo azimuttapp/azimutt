@@ -2,8 +2,12 @@ defmodule Azimutt.HerokuTest do
   use Azimutt.DataCase
   alias Azimutt.Heroku
   alias Azimutt.Heroku.Resource
+  alias Azimutt.Projects
   alias Azimutt.Utils.Result
+  import Azimutt.AccountsFixtures
   import Azimutt.HerokuFixtures
+  import Azimutt.OrganizationsFixtures
+  import Azimutt.ProjectsFixtures
 
   describe "resources" do
     test "get_resource/1 returns the resource with given id" do
@@ -83,8 +87,20 @@ defmodule Azimutt.HerokuTest do
       now = DateTime.utc_now()
       resource = resource_fixture()
       assert resource.deleted_at == nil
+
+      user = user_fixture()
+      organization = organization_fixture(user)
+      project = project_fixture(organization, user)
+      {:ok, _} = Heroku.set_resource_project(resource, project, now)
+
+      # fetch resource with project association present
+      {:ok, resource} = Heroku.get_resource(resource.id)
+      {:ok, project} = Projects.get_project(project.id, user)
+
       assert {:ok, %Resource{} = _} = Heroku.delete_resource(resource, now)
+
       assert {:error, :deleted} = Heroku.get_resource(resource.id)
+      assert {:error, :not_found} = Projects.get_project(project.id, user)
     end
   end
 end
