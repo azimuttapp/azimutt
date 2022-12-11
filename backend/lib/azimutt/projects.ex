@@ -15,7 +15,7 @@ defmodule Azimutt.Projects do
   alias Azimutt.Utils.Result
 
   def list_projects(%Organization{} = organization, %User{} = current_user) do
-    project_query()
+    project_query(current_user)
     |> where(
       [p, o, om],
       om.user_id == ^current_user.id and
@@ -26,7 +26,7 @@ defmodule Azimutt.Projects do
   end
 
   def get_project(id, %User{} = current_user) do
-    project_query()
+    project_query(current_user)
     |> where(
       [p, _, om, _, hm],
       p.id == ^id and
@@ -38,7 +38,7 @@ defmodule Azimutt.Projects do
   end
 
   def get_project(id, current_user) when is_nil(current_user) do
-    project_query()
+    project_query(current_user)
     |> where([p, _, om], p.id == ^id and p.storage_kind == :remote and p.visibility != :none)
     |> Repo.one()
     |> Result.from_nillable()
@@ -71,7 +71,7 @@ defmodule Azimutt.Projects do
     storage = get_storage(attrs)
 
     can_update =
-      project_query()
+      project_query(current_user)
       |> where(
         [p, _, om],
         p.id == ^project.id and
@@ -95,7 +95,7 @@ defmodule Azimutt.Projects do
 
   def delete_project(%Project{} = project, %User{} = current_user) do
     can_delete =
-      project_query()
+      project_query(current_user)
       |> where(
         [p, _, om],
         p.id == ^project.id and
@@ -117,13 +117,13 @@ defmodule Azimutt.Projects do
     Storage.from_string_or_atom(attrs[:storage_kind] || attrs["storage_kind"])
   end
 
-  defp project_query do
+  defp project_query(%User{} = current_user) do
     # TODO: how to also mutualise the where clause?
     Project
     |> join(:inner, [p], o in Organization, on: p.organization_id == o.id)
     |> join(:inner, [_, o], om in OrganizationMember, on: om.organization_id == o.id)
     |> join(:left, [p, _, _], h in Resource, on: h.project_id == p.id)
-    |> join(:left, [p, _, _, h], hm in ResourceMember, on: hm.heroku_resource_id == h.id)
+    |> join(:left, [p, _, _, h], hm in ResourceMember, on: hm.heroku_resource_id == h.id and hm.user_id == ^current_user.id)
     |> preload(:organization)
     |> preload(:heroku_resource)
     |> preload(:updated_by)

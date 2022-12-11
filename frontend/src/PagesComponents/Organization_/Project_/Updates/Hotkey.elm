@@ -176,6 +176,7 @@ cancelElement model =
     (model.contextMenu |> Maybe.map (\_ -> ContextMenuClose))
         |> Maybe.orElse (model.confirm |> Maybe.map (\c -> ModalClose (ConfirmAnswer False c.content.onConfirm)))
         |> Maybe.orElse (model.prompt |> Maybe.map (\_ -> ModalClose (PromptAnswer Cmd.none)))
+        |> Maybe.orElse (model.modal |> Maybe.map (\_ -> ModalClose CustomModalClose))
         |> Maybe.orElse (model.virtualRelation |> Maybe.map (\_ -> VirtualRelationMsg VRCancel))
         |> Maybe.orElse (model.dragging |> Maybe.map (\_ -> DragCancel))
         |> Maybe.orElse (model.newLayout |> Maybe.map (\_ -> ModalClose (NewLayoutMsg NewLayout.Cancel)))

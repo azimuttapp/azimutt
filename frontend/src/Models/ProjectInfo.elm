@@ -103,11 +103,14 @@ title project =
     if project.storage == ProjectStorage.Local then
         "Local project"
 
-    else if project.visibility == ProjectVisibility.None then
-        "Remote project"
+    else if project.visibility /= ProjectVisibility.None then
+        "Public project"
+
+    else if project.heroku /= Nothing then
+        "Heroku Add-on project"
 
     else
-        "Public project"
+        "Remote project"
 
 
 encode : ProjectInfo -> Value
