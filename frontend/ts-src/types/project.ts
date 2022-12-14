@@ -5,7 +5,6 @@ import * as array from "../utils/array";
 import * as object from "../utils/object";
 import {z} from "zod";
 import * as Zod from "../utils/zod";
-import {HerokuResource} from "./heroku";
 
 export type ProjectId = Uuid
 export const ProjectId = Uuid
@@ -394,7 +393,6 @@ export const ProjectVersion = z.union([z.literal(1), z.literal(2)])
 
 export interface Project {
     organization?: Organization
-    heroku?: HerokuResource
     id: ProjectId
     slug: ProjectSlug
     name: ProjectName
@@ -413,7 +411,6 @@ export interface Project {
 
 export const Project = z.object({
     organization: Organization.optional(),
-    heroku: HerokuResource.optional(),
     id: ProjectId,
     slug: ProjectSlug,
     name: ProjectName,
@@ -485,8 +482,8 @@ export const ProjectInfoLocal = ProjectStats.extend({
     updatedAt: Timestamp
 }).strict()
 
-export type ProjectInfoRemote = Omit<ProjectInfoLocal, 'storage'> & { storage: 'remote', visibility: ProjectVisibility, heroku?: HerokuResource }
-export const ProjectInfoRemote = ProjectInfoLocal.omit({storage: true}).extend({storage: z.literal(ProjectStorage.enum.remote), visibility: ProjectVisibility, heroku: HerokuResource.optional()}).strict()
+export type ProjectInfoRemote = Omit<ProjectInfoLocal, 'storage'> & { storage: 'remote', visibility: ProjectVisibility }
+export const ProjectInfoRemote = ProjectInfoLocal.omit({storage: true}).extend({storage: z.literal(ProjectStorage.enum.remote), visibility: ProjectVisibility}).strict()
 export type ProjectInfoRemoteWithContent = ProjectInfoRemote & { content: ProjectJson }
 export type ProjectInfo = ProjectInfoLocal | ProjectInfoRemote
 export const ProjectInfo = z.discriminatedUnion('storage', [ProjectInfoLocal, ProjectInfoRemote])
@@ -597,7 +594,6 @@ export function buildProjectRemote(info: ProjectInfoRemote, {_type, ...p}: Proje
     return Zod.validate({
         ...p,
         organization: info.organization,
-        heroku: info.heroku,
         id: info.id,
         slug: info.slug,
         storage: ProjectStorage.enum.remote,

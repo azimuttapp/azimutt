@@ -264,7 +264,7 @@ function toOrganization(o: OrganizationResponse): Organization {
         logo: o.logo,
         location: o.location || undefined,
         description: o.description || undefined,
-        heroku: o.heroku
+        heroku: o.heroku,
     }
 }
 

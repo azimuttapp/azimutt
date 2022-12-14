@@ -11,9 +11,6 @@ defmodule AzimuttWeb.Api.HerokuController do
   # https://devcenter.heroku.com/articles/building-an-add-on#the-provisioning-request-example-request
   # this endpoint MUST be idempotent (one resource per uuid), return 410 if deleted and 422 on error
   def create(conn, %{"uuid" => id} = params) do
-    # credo:disable-for-next-line
-    IO.inspect(params, label: "Heroku create resource")
-
     case Heroku.get_resource(id) do
       {:ok, resource} ->
         conn |> render("show.json", resource: resource, message: "This resource was already created.")
@@ -41,9 +38,7 @@ defmodule AzimuttWeb.Api.HerokuController do
 
   # https://devcenter.heroku.com/articles/add-on-partner-api-reference#add-on-plan-change
   # https://devcenter.heroku.com/articles/building-an-add-on#the-plan-change-request-upgrade-downgrade
-  def update(conn, %{"id" => id, "plan" => plan} = params) do
-    # credo:disable-for-next-line
-    IO.inspect(params, label: "Heroku update resource")
+  def update(conn, %{"id" => id, "plan" => plan}) do
     now = DateTime.utc_now()
 
     case Heroku.get_resource(id) do
@@ -63,9 +58,7 @@ defmodule AzimuttWeb.Api.HerokuController do
 
   # https://devcenter.heroku.com/articles/add-on-partner-api-reference#add-on-deprovision
   # https://devcenter.heroku.com/articles/building-an-add-on#the-deprovisioning-request-example-request
-  def delete(conn, %{"id" => id} = params) do
-    # credo:disable-for-next-line
-    IO.inspect(params, label: "Heroku delete resource")
+  def delete(conn, %{"id" => id}) do
     now = DateTime.utc_now()
 
     case Heroku.get_resource(id) do

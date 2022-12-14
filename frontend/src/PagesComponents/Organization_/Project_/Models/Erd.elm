@@ -115,11 +115,11 @@ mapCurrentLayoutCmd now transform erd =
 getOrganization : Maybe OrganizationId -> Erd -> Organization
 getOrganization urlOrganization erd =
     let
-        free : Organization
-        free =
-            Organization.free
+        organization : Organization
+        organization =
+            Organization.zero
     in
-    erd.project.organization |> Maybe.withDefault (urlOrganization |> Maybe.mapOrElse (\id -> { free | id = id }) free)
+    erd.project.organization |> Maybe.withDefault (urlOrganization |> Maybe.mapOrElse (\id -> { organization | id = id }) organization)
 
 
 getTable : TableId -> Erd -> Maybe ErdTable

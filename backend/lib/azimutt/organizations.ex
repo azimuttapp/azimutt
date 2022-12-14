@@ -4,6 +4,7 @@ defmodule Azimutt.Organizations do
   import Ecto.Query, warn: false
   alias Azimutt.Accounts.User
   alias Azimutt.Accounts.UserNotifier
+  alias Azimutt.Heroku
   alias Azimutt.Heroku.Resource
   alias Azimutt.Organizations.Organization
   alias Azimutt.Organizations.OrganizationInvitation
@@ -115,6 +116,12 @@ defmodule Azimutt.Organizations do
     OrganizationMember
     |> where([om], om.organization_id == ^organization.id and om.user_id == ^current_user.id)
     |> Repo.exists?()
+  end
+
+  def count_member(%Organization{} = organization) do
+    OrganizationMember
+    |> where([om], om.organization_id == ^organization.id)
+    |> Repo.aggregate(:count, :user_id)
   end
 
   def remove_member(%Organization{} = organization, member_id) do
@@ -267,6 +274,14 @@ defmodule Azimutt.Organizations do
           Logger.warning("Get unexpected subscription status : #{other}")
           :incomplete
       end
+    end
+  end
+
+  def get_allowed_members(%Organization{} = organization) do
+    if organization.heroku_resource do
+      Heroku.allowed_members(organization.heroku_resource.plan)
+    else
+      Azimutt.config(:free_plan_seats)
     end
   end
 

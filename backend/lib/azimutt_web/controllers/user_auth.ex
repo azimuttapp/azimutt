@@ -164,7 +164,7 @@ defmodule AzimuttWeb.UserAuth do
     if conn.assigns[:current_user] do
       conn
     else
-      conn |> put_api_error(:unauthorized, "User not authenticated, go to azimutt.app to login")
+      conn |> put_error_api(:unauthorized, "User not authenticated, go to azimutt.app to login")
     end
   end
 
@@ -178,14 +178,14 @@ defmodule AzimuttWeb.UserAuth do
           if Plug.Crypto.secure_compare(user, heroku_addon_id) && Plug.Crypto.secure_compare(pass, heroku_password) do
             conn
           else
-            conn |> put_api_error(:unauthorized, "Invalid credentials for heroku basic auth")
+            conn |> put_error_api(:unauthorized, "Invalid credentials for heroku basic auth")
           end
 
         :error ->
-          conn |> put_api_error(:unauthorized, "Invalid or missing heroku basic auth")
+          conn |> put_error_api(:unauthorized, "Invalid or missing heroku basic auth")
       end
     else
-      conn |> put_api_error(:unauthorized, "Heroku basic auth not set up")
+      conn |> put_error_api(:unauthorized, "Heroku basic auth not set up")
     end
   end
 
@@ -212,11 +212,7 @@ defmodule AzimuttWeb.UserAuth do
     if conn.assigns[:heroku] do
       conn
     else
-      conn
-      |> put_status(:forbidden)
-      |> put_view(AzimuttWeb.ErrorView)
-      |> render("403.html", message: "Please access this resource through heroku add-on SSO.")
-      |> halt()
+      conn |> put_error_html(:forbidden, "403.html", "Please access this resource through heroku add-on SSO.")
     end
   end
 
@@ -224,11 +220,19 @@ defmodule AzimuttWeb.UserAuth do
     if conn.assigns[:heroku] do
       conn
     else
-      conn |> put_api_error(:unauthorized, "Not accessible heroku resource, access it from heroku dashboard")
+      conn |> put_error_api(:unauthorized, "Not accessible heroku resource, access it from heroku dashboard")
     end
   end
 
-  defp put_api_error(conn, status, message) do
+  defp put_error_html(conn, status, view, message) do
+    conn
+    |> put_status(status)
+    |> put_view(AzimuttWeb.ErrorView)
+    |> render(view, message: message)
+    |> halt()
+  end
+
+  defp put_error_api(conn, status, message) do
     conn
     |> put_status(status)
     |> put_view(AzimuttWeb.ErrorView)

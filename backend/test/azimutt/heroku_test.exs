@@ -2,7 +2,6 @@ defmodule Azimutt.HerokuTest do
   use Azimutt.DataCase
   alias Azimutt.Heroku
   alias Azimutt.Heroku.Resource
-  alias Azimutt.Organizations
   alias Azimutt.Projects
   alias Azimutt.Utils.Result
   import Azimutt.AccountsFixtures
@@ -85,12 +84,13 @@ defmodule Azimutt.HerokuTest do
 
     test "delete_resource/2 deletes the resource" do
       now = DateTime.utc_now()
-      resource = resource_fixture()
-
       user = user_fixture()
-      {:ok, resource} = Heroku.add_organization_if_needed(resource, user, now)
-      {:ok, organization} = Organizations.get_organization(resource.organization.id, user)
+      resource = resource_fixture()
+      {:ok, organization} = Heroku.add_organization_if_needed(resource, user, now)
       project = project_fixture(organization, user)
+
+      assert {:ok, resource} = Heroku.get_resource(resource.id)
+      assert {:ok, project} = Projects.get_project(project.id, user)
 
       assert {:ok, %Resource{} = _} = Heroku.delete_resource(resource, now)
 

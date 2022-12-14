@@ -33,27 +33,11 @@ defmodule Azimutt.Accounts do
   end
 
   def register_password_user(attrs, now) do
-    Ecto.Multi.new()
-    |> Ecto.Multi.insert(:user, %User{} |> User.password_creation_changeset(attrs, now))
-    |> Ecto.Multi.run(:organization, fn _repo, %{user: user} ->
-      Organizations.create_personal_organization(user)
-    end)
-    |> Repo.transaction()
-    |> case do
-      {:ok, %{user: user}} -> {:ok, user}
-      {:error, :user, changeset, _} -> {:error, changeset}
-    end
+    register_user(%User{} |> User.password_creation_changeset(attrs, now))
   end
 
   def register_github_user(attrs, now) do
-    Ecto.Multi.new()
-    |> Ecto.Multi.insert(:user, %User{} |> User.github_creation_changeset(attrs, now))
-    |> Ecto.Multi.run(:organization, fn _repo, %{user: user} -> Organizations.create_personal_organization(user) end)
-    |> Repo.transaction()
-    |> case do
-      {:ok, %{user: user}} -> {:ok, user}
-      {:error, :user, changeset, _} -> {:error, changeset}
-    end
+    register_user(%User{} |> User.github_creation_changeset(attrs, now))
   end
 
   def register_heroku_user(email, now) do
@@ -64,8 +48,12 @@ defmodule Azimutt.Accounts do
       provider: "heroku"
     }
 
+    register_user(%User{} |> User.heroku_creation_changeset(attrs, now))
+  end
+
+  defp register_user(changeset) do
     Ecto.Multi.new()
-    |> Ecto.Multi.insert(:user, %User{} |> User.heroku_creation_changeset(attrs, now))
+    |> Ecto.Multi.insert(:user, changeset)
     |> Ecto.Multi.run(:organization, fn _repo, %{user: user} -> Organizations.create_personal_organization(user) end)
     |> Repo.transaction()
     |> case do

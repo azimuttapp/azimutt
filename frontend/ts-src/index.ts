@@ -211,7 +211,6 @@ function createProject(msg: CreateProject): void {
                 return Promise.resolve()
             }).then(_ => {
                 app.toast(ToastLevel.enum.success, `Project created!`)
-                window.history.replaceState("", "", `/${msg.organization}/${p.id}`)
                 app.gotProject(p)
             })
         })

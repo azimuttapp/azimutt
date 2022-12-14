@@ -1,5 +1,6 @@
 defmodule AzimuttWeb.OrganizationBillingController do
   use AzimuttWeb, :controller
+  alias Azimutt.Heroku
   alias Azimutt.Organizations
   alias Azimutt.Organizations.Organization
   alias Azimutt.Services.StripeSrv
@@ -17,21 +18,23 @@ defmodule AzimuttWeb.OrganizationBillingController do
     end
 
     with {:ok, %Organization{} = organization} <- Organizations.get_organization(organization_id, current_user) do
-      if organization.stripe_subscription_id do
-        status = Organizations.get_subscription_status(organization.stripe_subscription_id)
-
-        case status do
-          :active -> generate_billing_view(conn, "billing.html", organization, "Your subscription is active !")
-          :past_due -> generate_billing_view(conn, "billing.html", organization, "We have an issue with your subscription")
-          :unpaid -> generate_billing_view(conn, "billing.html", organization, "We have an issue with your subscription")
-          :canceled -> generate_billing_view(conn, "subscribe.html", organization, "Your subscription is canceled")
-          :incomplete -> generate_billing_view(conn, "billing.html", organization, "We have an issue with your subscription")
-          :incomplete_expired -> generate_billing_view(conn, "billing.html", organization, "We have an issue with your subscription")
-          :trialing -> generate_billing_view(conn, "billing.html", organization, "You are in free trial")
-        end
-      else
-        generate_billing_view(conn, "subscribe.html", organization, "You haven't got subscribe yet !")
+      cond do
+        organization.heroku_resource -> conn |> redirect(external: Heroku.app_addons_url(organization.heroku_resource.name))
+        organization.stripe_subscription_id -> conn |> stripe_subscription_view(organization)
+        true -> generate_billing_view(conn, "subscribe.html", organization, "You haven't got subscribe yet !")
       end
+    end
+  end
+
+  defp stripe_subscription_view(conn, %Organization{} = organization) do
+    case Organizations.get_subscription_status(organization.stripe_subscription_id) do
+      :active -> generate_billing_view(conn, "billing.html", organization, "Your subscription is active !")
+      :past_due -> generate_billing_view(conn, "billing.html", organization, "We have an issue with your subscription")
+      :unpaid -> generate_billing_view(conn, "billing.html", organization, "We have an issue with your subscription")
+      :canceled -> generate_billing_view(conn, "subscribe.html", organization, "Your subscription is canceled")
+      :incomplete -> generate_billing_view(conn, "billing.html", organization, "We have an issue with your subscription")
+      :incomplete_expired -> generate_billing_view(conn, "billing.html", organization, "We have an issue with your subscription")
+      :trialing -> generate_billing_view(conn, "billing.html", organization, "You are in free trial")
     end
   end
 

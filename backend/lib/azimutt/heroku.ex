@@ -4,21 +4,33 @@ defmodule Azimutt.Heroku do
   alias Azimutt.Accounts.User
   alias Azimutt.Heroku.Resource
   alias Azimutt.Organizations
+  alias Azimutt.Organizations.Organization
   alias Azimutt.Organizations.OrganizationMember
   alias Azimutt.Repo
   alias Azimutt.Utils.Result
 
+  def app_addons_url(app), do: "https://dashboard.heroku.com/apps/#{app}/resources"
+
+  def allowed_members(plan) do
+    team_members = Regex.named_captures(~r/team-(?<members>[0-9]+)/, plan)
+
+    if team_members do
+      String.to_integer(team_members["members"])
+    else
+      Azimutt.config(:free_plan_seats)
+    end
+  end
+
+  # use only for HerokuController.index local helper
   def all_resources do
     Resource
     |> preload(:organization)
-    |> preload(organization: :projects)
     |> Repo.all()
   end
 
   def get_resource(id) do
     Resource
     |> preload(:organization)
-    |> preload(organization: :projects)
     |> Repo.get(id)
     |> Result.from_nillable()
     |> Result.filter_not(fn r -> r.deleted_at end, :deleted)
@@ -32,25 +44,37 @@ defmodule Azimutt.Heroku do
 
   def add_organization_if_needed(%Resource{} = resource, %User{} = current_user, now) do
     if resource.organization do
-      {:ok, resource}
+      {:ok, resource.organization}
     else
       attrs = %{name: resource.name, contact_email: current_user.email, logo: Faker.Avatar.image_url()}
 
       Organizations.create_non_personal_organization(attrs, current_user)
-      |> Result.flat_map(fn organization ->
+      |> Result.flat_tap(fn organization ->
         resource
         |> Resource.update_organization_changeset(organization, now)
         |> Repo.update()
-        |> Result.flat_map(fn _ -> get_resource(resource.id) end)
       end)
     end
   end
 
-  def add_member_if_needed(%Resource{} = resource, %User{} = current_user) do
+  def add_member_if_needed(%Resource{} = resource, %Organization{} = organization, %User{} = current_user) do
+    slots_in_plan = allowed_members(resource.plan)
+    existing_members = Organizations.count_member(organization)
+
     cond do
-      !resource.organization -> {:error, :missing_resource_organization}
-      Organizations.has_member?(resource.organization, current_user) -> {:ok, resource}
-      true -> OrganizationMember.new_member_changeset(resource.organization.id, current_user) |> Repo.insert()
+      existing_members > slots_in_plan ->
+        {:error, :too_many_members}
+
+      Organizations.has_member?(organization, current_user) ->
+        {:ok, :already_member}
+
+      existing_members < slots_in_plan ->
+        OrganizationMember.new_member_changeset(organization.id, current_user)
+        |> Repo.insert()
+        |> Result.map(fn _ -> :member_added end)
+
+      true ->
+        {:error, :member_limit_reached}
     end
   end
 

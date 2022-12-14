@@ -1,4 +1,4 @@
-module Models.Organization exposing (Organization, decode, encode, free)
+module Models.Organization exposing (Organization, decode, encode, zero)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
@@ -23,8 +23,8 @@ type alias Organization =
     }
 
 
-free : Organization
-free =
+zero : Organization
+zero =
     { id = OrganizationId.zero
     , slug = OrganizationId.zero
     , name = "zero"

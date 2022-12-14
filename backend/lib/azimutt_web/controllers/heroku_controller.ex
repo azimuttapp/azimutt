@@ -12,9 +12,9 @@ defmodule AzimuttWeb.HerokuController do
   alias AzimuttWeb.UserAuth
   action_fallback AzimuttWeb.FallbackController
 
-  # ease heroku testing in dev
+  # helper to ease heroku testing in local
   def index(conn, _params) do
-    # defined as env variable (see .env)
+    # defined as env variable (see .env), don't use env vars to make leak impossible
     heroku = %{
       addon_id: "azimutt-dev",
       password: "pass",
@@ -35,39 +35,34 @@ defmodule AzimuttWeb.HerokuController do
     expected_token = heroku_token(resource_id, timestamp, salt)
     invalid_token = !Plug.Crypto.secure_compare(expected_token, token)
 
-    if older_than_5_min || invalid_token do
+    if invalid_token || older_than_5_min do
       {:error, :forbidden}
     else
-      case Heroku.get_resource(resource_id) do
-        {:ok, resource} ->
-          Accounts.get_user_by_email(email)
-          |> Result.flat_map_error(fn _ -> Accounts.register_heroku_user(email, now) end)
-          |> Result.flat_map_with(fn user -> Heroku.add_organization_if_needed(resource, user, now) end)
-          |> Result.flat_tap(fn {user, resource} -> Heroku.add_member_if_needed(resource, user) end)
-          |> Result.map_with(fn {user, resource} -> conn |> UserAuth.heroku_sso(resource, user, app) end)
-          |> Result.map(fn {{user, resource}, conn} ->
-            project = Projects.list_projects(resource.organization, user) |> List.first()
+      with {:ok, resource} <- Heroku.get_resource(resource_id),
+           {:ok, user} <- Accounts.get_user_by_email(email) |> Result.flat_map_error(fn _ -> Accounts.register_heroku_user(email, now) end),
+           {:ok, organization} <- Heroku.add_organization_if_needed(resource, user, now),
+           {:ok, _} <- Heroku.add_member_if_needed(resource, organization, user) do
+        conn = conn |> UserAuth.heroku_sso(resource, user, app)
+        project = Projects.list_projects(organization, user) |> List.first()
 
-            if project do
-              conn |> redirect(to: Routes.elm_path(conn, :project_show, project.organization_id, project.id))
-            else
-              conn |> redirect(to: Routes.heroku_path(conn, :show, resource.id))
-            end
-          end)
-          |> Result.or_else(conn |> put_flash(:error, "Authentication failed") |> redirect(to: Routes.website_path(conn, :index)))
-
-        {:error, :not_found} ->
-          conn |> send_resp(:not_found, "")
-
-        {:error, :deleted} ->
-          conn |> send_resp(:gone, "")
+        if project do
+          conn |> redirect(to: Routes.elm_path(conn, :project_show, organization.id, project.id))
+        else
+          conn |> redirect(to: Routes.heroku_path(conn, :show, resource.id))
+        end
+      end
+      |> case do
+        {:error, :not_found} -> {:error, :not_found}
+        {:error, :deleted} -> {:error, :gone}
+        {:error, :too_many_members} -> conn |> render("error_too_many_members.html", app_url: Heroku.app_addons_url(app))
+        {:error, :member_limit_reached} -> conn |> render("error_member_limit_reached.html", app_url: Heroku.app_addons_url(app))
+        {:error, err} -> conn |> put_flash(:error, "Authentication failed: #{err}") |> redirect(to: Routes.website_path(conn, :index))
+        conn -> conn
       end
     end
   end
 
-  def show(conn, %{"id" => id} = params) do
-    # credo:disable-for-next-line
-    IO.inspect(params, label: "Heroku show resource")
+  def show(conn, %{"id" => id}) do
     current_user = conn.assigns.current_user
     %{resource: resource, app: app} = conn.assigns.heroku
 
@@ -79,5 +74,4 @@ defmodule AzimuttWeb.HerokuController do
   end
 
   defp heroku_token(resource_id, timestamp, salt), do: Crypto.sha1("#{resource_id}:#{salt}:#{timestamp}")
-  # defp heroku_dashboard(user), do: "https://dashboard.heroku.com/apps/#{user.app}"
 end
