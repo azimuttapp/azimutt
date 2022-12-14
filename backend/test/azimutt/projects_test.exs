@@ -1,9 +1,7 @@
 defmodule Azimutt.ProjectsTest do
   use Azimutt.DataCase
   import Azimutt.AccountsFixtures
-  import Azimutt.HerokuFixtures
   import Azimutt.OrganizationsFixtures
-  alias Azimutt.Heroku
   alias Azimutt.Projects
 
   describe "projects" do
@@ -22,20 +20,12 @@ defmodule Azimutt.ProjectsTest do
     end
 
     test "get_project/1 returns the project with given id" do
-      now = DateTime.utc_now()
       user = user_fixture()
       user2 = user_fixture()
       organization = organization_fixture(user)
       project = project_fixture(organization, user)
       assert Projects.get_project(project.id, user) |> Result.map(fn p -> p.id end) == {:ok, project.id}
       assert Projects.get_project(project.id, user2) |> Result.map(fn p -> p.id end) == {:error, :not_found}
-
-      resource = resource_fixture()
-      {:ok, resource} = Heroku.get_resource(resource.id)
-      {:ok, resource} = Heroku.set_resource_project(resource, project, now)
-      {:ok, _resource} = Heroku.create_resource_member(resource, user2)
-      # FIXME: works in prod but not in test... should troubleshoot...
-      # assert Projects.get_project(project.id, user2) |> Result.map(fn p -> p.id end) == {:ok, project.id}
     end
 
     test "create_project/1 with valid data creates a project" do

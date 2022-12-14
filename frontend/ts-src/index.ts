@@ -216,7 +216,7 @@ function createProject(msg: CreateProject): void {
             })
         })
     } else if (msg.storage == ProjectStorage.enum.remote) {
-        backend.createProjectRemote(msg.organization, json, msg.heroku).then(p => {
+        backend.createProjectRemote(msg.organization, json).then(p => {
             // delete previously stored projects: draft and legacy one
             return Promise.all([storage.deleteProject(Uuid.zero), storage.deleteProject(msg.project.id)]).catch(err => {
                 reportError(`Can't delete temporary project`, err)

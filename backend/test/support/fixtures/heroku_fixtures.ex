@@ -19,7 +19,7 @@ defmodule Azimutt.HerokuFixtures do
       })
       |> Heroku.create_resource()
 
-    # fetch resource with project association loaded
+    # fetch resource with associations loaded
     {:ok, resource} = Heroku.get_resource(resource.id)
     resource
   end

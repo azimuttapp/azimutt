@@ -3,27 +3,55 @@ defmodule Azimutt.Heroku do
   import Ecto.Query, warn: false
   alias Azimutt.Accounts.User
   alias Azimutt.Heroku.Resource
-  alias Azimutt.Heroku.ResourceMember
-  alias Azimutt.Projects.Project
+  alias Azimutt.Organizations
+  alias Azimutt.Organizations.OrganizationMember
   alias Azimutt.Repo
   alias Azimutt.Utils.Result
 
   def all_resources do
-    Resource |> preload(:project) |> Repo.all()
+    Resource
+    |> preload(:organization)
+    |> preload(organization: :projects)
+    |> Repo.all()
   end
 
   def get_resource(id) do
     Resource
-    |> preload(:project)
+    |> preload(:organization)
+    |> preload(organization: :projects)
     |> Repo.get(id)
     |> Result.from_nillable()
     |> Result.filter_not(fn r -> r.deleted_at end, :deleted)
   end
 
-  def create_resource(attrs \\ %{}) do
+  def create_resource(attrs) do
     %Resource{}
     |> Resource.create_changeset(attrs)
     |> Repo.insert()
+  end
+
+  def add_organization_if_needed(%Resource{} = resource, %User{} = current_user, now) do
+    if resource.organization do
+      {:ok, resource}
+    else
+      attrs = %{name: resource.name, contact_email: current_user.email, logo: Faker.Avatar.image_url()}
+
+      Organizations.create_non_personal_organization(attrs, current_user)
+      |> Result.flat_map(fn organization ->
+        resource
+        |> Resource.update_organization_changeset(organization, now)
+        |> Repo.update()
+        |> Result.flat_map(fn _ -> get_resource(resource.id) end)
+      end)
+    end
+  end
+
+  def add_member_if_needed(%Resource{} = resource, %User{} = current_user) do
+    cond do
+      !resource.organization -> {:error, :missing_resource_organization}
+      Organizations.has_member?(resource.organization, current_user) -> {:ok, resource}
+      true -> OrganizationMember.new_member_changeset(resource.organization.id, current_user) |> Repo.insert()
+    end
   end
 
   def update_resource_plan(%Resource{} = resource, attrs, now) do
@@ -32,46 +60,14 @@ defmodule Azimutt.Heroku do
     |> Repo.update()
   end
 
-  def set_resource_project(%Resource{} = resource, %Project{} = project, now) do
-    cond do
-      resource.project == nil ->
-        resource
-        |> Resource.set_project_changeset(project, now)
-        |> Repo.update()
-
-      resource.project.id == project.id ->
-        {:ok, resource}
-
-      true ->
-        {:error, :project_already_set}
-    end
-  end
-
-  def get_resource_member(%Resource{} = resource, %User{} = user) do
-    ResourceMember
-    |> where([rm], rm.heroku_resource_id == ^resource.id and rm.user_id == ^user.id)
-    |> Repo.one()
-    |> Result.from_nillable()
-  end
-
-  def create_resource_member(%Resource{} = resource, %User{} = user) do
-    ResourceMember.new_member_changeset(resource, user)
-    |> Repo.insert()
-  end
-
-  def set_resource_member(%Resource{} = resource, %User{} = user) do
-    get_resource_member(resource, user)
-    |> Result.flat_map_error(fn _ -> create_resource_member(resource, user) end)
-  end
-
   def delete_resource(%Resource{} = resource, now) do
     res =
       resource
       |> Resource.delete_changeset(now)
       |> Repo.update()
 
-    if resource.project do
-      Repo.delete(resource.project)
+    if resource.organization do
+      Organizations.delete_organization(resource.organization, now)
     end
 
     res

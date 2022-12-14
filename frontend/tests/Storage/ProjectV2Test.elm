@@ -87,7 +87,6 @@ src1 =
 project0 : Project
 project0 =
     { organization = Nothing
-    , heroku = Nothing
     , id = ProjectId.zero
     , slug = Uuid.zero
     , name = "Project 0"
@@ -123,7 +122,6 @@ tables1 =
 project1 : Project
 project1 =
     { organization = Nothing
-    , heroku = Nothing
     , id = ProjectId.zero
     , slug = Uuid.zero
     , name = "Project 0"
@@ -204,7 +202,6 @@ relations2 =
 project2 : Project
 project2 =
     { organization = Nothing
-    , heroku = Nothing
     , id = ProjectId.zero
     , slug = Uuid.zero
     , name = "Project 0"

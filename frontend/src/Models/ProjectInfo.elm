@@ -9,7 +9,6 @@ import Libs.Json.Encode as Encode
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Time as Time
-import Models.HerokuResource as HerokuResource exposing (HerokuResource)
 import Models.Organization as Organization exposing (Organization)
 import Models.OrganizationId as OrganizationId exposing (OrganizationId)
 import Models.Project exposing (Project)
@@ -26,7 +25,6 @@ import Time
 
 type alias ProjectInfo =
     { organization : Maybe Organization
-    , heroku : Maybe HerokuResource
     , id : ProjectId
     , slug : ProjectSlug
     , name : ProjectName
@@ -56,7 +54,6 @@ fromProject p =
             p.sources |> List.concatMap (\s -> s.tables |> Dict.values) |> List.groupBy .id
     in
     { organization = p.organization
-    , heroku = p.heroku
     , id = p.id
     , slug = p.slug
     , name = p.name
@@ -91,7 +88,7 @@ icon project =
     else if project.visibility /= ProjectVisibility.None then
         Icon.GlobeAlt
 
-    else if project.heroku /= Nothing then
+    else if (project.organization |> Maybe.andThen .heroku) /= Nothing then
         Icon.Puzzle
 
     else
@@ -106,7 +103,7 @@ title project =
     else if project.visibility /= ProjectVisibility.None then
         "Public project"
 
-    else if project.heroku /= Nothing then
+    else if (project.organization |> Maybe.andThen .heroku) /= Nothing then
         "Heroku Add-on project"
 
     else
@@ -117,7 +114,6 @@ encode : ProjectInfo -> Value
 encode value =
     Encode.notNullObject
         [ ( "organization", value.organization |> Encode.maybe Organization.encode )
-        , ( "heroku", value.heroku |> Encode.maybe HerokuResource.encode )
         , ( "id", value.id |> ProjectId.encode )
         , ( "slug", value.slug |> ProjectSlug.encode )
         , ( "name", value.name |> ProjectName.encode )
@@ -140,9 +136,8 @@ encode value =
 
 decode : Decode.Decoder ProjectInfo
 decode =
-    Decode.map19 ProjectInfo
+    Decode.map18 ProjectInfo
         (Decode.maybeField "organization" Organization.decode)
-        (Decode.maybeField "heroku" HerokuResource.decode)
         (Decode.field "id" ProjectId.decode)
         (Decode.field "slug" ProjectSlug.decode)
         (Decode.field "name" ProjectName.decode)

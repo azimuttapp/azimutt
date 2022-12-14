@@ -202,7 +202,6 @@ formatOrgasAndProjects orgas =
                     |> List.map
                         (\p ->
                             { organization = Just (buildOrganization o)
-                            , heroku = p.heroku
                             , id = p.id
                             , slug = p.slug
                             , name = p.name
@@ -235,6 +234,7 @@ buildOrganization o =
     , logo = o.logo
     , location = o.location
     , description = o.description
+    , heroku = o.heroku
     }
 
 
@@ -246,13 +246,13 @@ type alias OrgaWithProjects =
     , logo : String
     , location : Maybe String
     , description : Maybe String
+    , heroku : Maybe HerokuResource
     , projects : List OrgaProject
     }
 
 
 type alias OrgaProject =
-    { heroku : Maybe HerokuResource
-    , id : String
+    { id : String
     , slug : String
     , name : String
     , description : Maybe String
@@ -275,7 +275,7 @@ type alias OrgaProject =
 
 decodeOrga : Decode.Decoder OrgaWithProjects
 decodeOrga =
-    Decode.map8 OrgaWithProjects
+    Decode.map9 OrgaWithProjects
         (Decode.field "id" Decode.string)
         (Decode.field "slug" Decode.string)
         (Decode.field "name" Decode.string)
@@ -283,13 +283,13 @@ decodeOrga =
         (Decode.defaultField "logo" Decode.string "")
         (Decode.maybeField "location" Decode.string)
         (Decode.maybeField "description" Decode.string)
+        (Decode.maybeField "heroku" HerokuResource.decode)
         (Decode.field "projects" (Decode.list decodeProject))
 
 
 decodeProject : Decode.Decoder OrgaProject
 decodeProject =
-    Decode.map19 OrgaProject
-        (Decode.maybeField "heroku" HerokuResource.decode)
+    Decode.map18 OrgaProject
         (Decode.field "id" Decode.string)
         (Decode.field "slug" Decode.string)
         (Decode.field "name" Decode.string)

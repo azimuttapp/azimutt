@@ -4,10 +4,10 @@ defmodule Azimutt.Heroku.Resource do
   use Azimutt.Schema
   import Ecto.Changeset
   alias Azimutt.Heroku.Resource
-  alias Azimutt.Projects.Project
+  alias Azimutt.Organizations.Organization
 
   schema "heroku_resources" do
-    belongs_to :project, Project
+    belongs_to :organization, Organization
     field :name, :string
     field :plan, :string
     field :region, :string
@@ -28,17 +28,17 @@ defmodule Azimutt.Heroku.Resource do
     |> validate_required(required)
   end
 
+  def update_organization_changeset(%Resource{} = resource, %Organization{} = organization, now) do
+    resource
+    |> cast(%{}, [])
+    |> put_change(:organization, organization)
+    |> put_change(:updated_at, now)
+  end
+
   def update_plan_changeset(%Resource{} = resource, attrs, now) do
     resource
     |> cast(attrs, [:plan])
     |> validate_required([:plan])
-    |> put_change(:updated_at, now)
-  end
-
-  def set_project_changeset(%Resource{} = resource, %Project{} = project, now) do
-    resource
-    |> cast(%{}, [])
-    |> put_change(:project, project)
     |> put_change(:updated_at, now)
   end
 

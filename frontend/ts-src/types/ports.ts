@@ -26,7 +26,6 @@ import {
 import {OrganizationId} from "./organization";
 import {Env} from "../utils/env";
 import {z} from "zod";
-import {HerokuId} from "./heroku";
 
 export interface ElmProgram<F, I, O> {
     init: (f: { flags: F, node?: HTMLElement }) => ElmRuntime<I, O>
@@ -118,8 +117,8 @@ export type CreateProjectTmp = { kind: 'CreateProjectTmp', project: Project }
 export const CreateProjectTmp = z.object({kind: z.literal('CreateProjectTmp'), project: Project}).strict()
 export type UpdateProjectTmp = { kind: 'UpdateProjectTmp', project: Project }
 export const UpdateProjectTmp = z.object({kind: z.literal('UpdateProjectTmp'), project: Project}).strict()
-export type CreateProject = { kind: 'CreateProject', organization: OrganizationId, storage: ProjectStorage, heroku: HerokuId | null, project: Project }
-export const CreateProject = z.object({kind: z.literal('CreateProject'), organization: OrganizationId, storage: ProjectStorage, heroku: HerokuId.nullable(), project: Project}).strict()
+export type CreateProject = { kind: 'CreateProject', organization: OrganizationId, storage: ProjectStorage, project: Project }
+export const CreateProject = z.object({kind: z.literal('CreateProject'), organization: OrganizationId, storage: ProjectStorage, project: Project}).strict()
 export type UpdateProject = { kind: 'UpdateProject', project: Project }
 export const UpdateProject = z.object({kind: z.literal('UpdateProject'), project: Project}).strict()
 export type MoveProjectTo = { kind: 'MoveProjectTo', project: Project, storage: ProjectStorage }

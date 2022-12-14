@@ -3,7 +3,7 @@
         <span title="Local project"><Icon.folder kind="outline" class="text-gray-400" /></span>
     <% @project.visibility != :none -> %>
         <span title="Public project"><Icon.globe kind="outline" class="text-gray-400" /></span>
-    <% @project.heroku_resource -> %>
+    <% @project.organization.heroku_resource -> %>
         <span title="Heroku project"><Icon.puzzle_piece kind="outline" class="text-gray-400" /></span>
     <% true -> %>
         <span title="Remote project"><Icon.cloud kind="outline" class="text-gray-400" /></span>

@@ -26,7 +26,7 @@ import {z} from "zod";
 import * as Zod from "../utils/zod";
 import * as Json from "../utils/json";
 import * as jiff from "jiff";
-import {HerokuId, HerokuResource} from "../types/heroku";
+import {HerokuResource} from "../types/heroku";
 
 
 export class Backend {
@@ -59,10 +59,9 @@ export class Backend {
             .then(res => isLocal(res) ? res : Promise.reject('Expecting a local project'))
     }
 
-    createProjectRemote = async (o: OrganizationId, json: ProjectJson, heroku: HerokuId | null): Promise<ProjectInfoRemote> => {
+    createProjectRemote = async (o: OrganizationId, json: ProjectJson): Promise<ProjectInfoRemote> => {
         this.logger.debug(`backend.createProjectRemote(${o})`, json)
-        const herokuParam = heroku ? `heroku=${heroku}&` : ''
-        const url = this.withXhrHost(`/api/v1/organizations/${o}/projects?${herokuParam}expand=organization,organization.plan`)
+        const url = this.withXhrHost(`/api/v1/organizations/${o}/projects?expand=organization,organization.plan`)
         const formData: FormData = new FormData()
         Object.entries(toProjectBody(json, ProjectStorage.enum.remote))
             .filter(([_, value]) => value !== null && value !== undefined)
@@ -170,6 +169,7 @@ export interface OrganizationResponse {
     logo: string
     location: string | null
     description: string | null
+    heroku?: HerokuResource
 }
 
 export const OrganizationResponse = z.object({
@@ -179,12 +179,12 @@ export const OrganizationResponse = z.object({
     plan: Plan,
     logo: z.string(),
     location: z.string().nullable(),
-    description: z.string().nullable()
+    description: z.string().nullable(),
+    heroku: HerokuResource.optional(),
 }).strict()
 
 interface ProjectResponse extends ProjectStatsResponse {
     organization: OrganizationResponse
-    heroku?: HerokuResource
     id: ProjectId
     slug: ProjectSlug
     name: ProjectName
@@ -199,7 +199,6 @@ interface ProjectResponse extends ProjectStatsResponse {
 
 export const ProjectResponse = ProjectStatsResponse.extend({
     organization: OrganizationResponse,
-    heroku: HerokuResource.optional(),
     id: ProjectId,
     slug: ProjectSlug,
     name: ProjectName,
@@ -264,14 +263,14 @@ function toOrganization(o: OrganizationResponse): Organization {
         plan: o.plan,
         logo: o.logo,
         location: o.location || undefined,
-        description: o.description || undefined
+        description: o.description || undefined,
+        heroku: o.heroku
     }
 }
 
 function toProjectInfo(p: ProjectResponse): ProjectInfo {
     return {
         organization: toOrganization(p.organization),
-        heroku: p.heroku,
         id: p.id,
         slug: p.slug,
         name: p.name,

@@ -6,6 +6,7 @@ defmodule AzimuttWeb.HerokuController do
   use AzimuttWeb, :controller
   alias Azimutt.Accounts
   alias Azimutt.Heroku
+  alias Azimutt.Projects
   alias Azimutt.Utils.Crypto
   alias Azimutt.Utils.Result
   alias AzimuttWeb.UserAuth
@@ -39,20 +40,16 @@ defmodule AzimuttWeb.HerokuController do
     else
       case Heroku.get_resource(resource_id) do
         {:ok, resource} ->
-          user_params = %{
-            name: email |> String.split("@") |> hd(),
-            email: email,
-            avatar: "https://www.gravatar.com/avatar/#{Crypto.md5(email)}?s=150&d=robohash",
-            provider: "heroku"
-          }
+          Accounts.get_user_by_email(email)
+          |> Result.flat_map_error(fn _ -> Accounts.register_heroku_user(email, now) end)
+          |> Result.flat_map_with(fn user -> Heroku.add_organization_if_needed(resource, user, now) end)
+          |> Result.flat_tap(fn {user, resource} -> Heroku.add_member_if_needed(resource, user) end)
+          |> Result.map_with(fn {user, resource} -> conn |> UserAuth.heroku_sso(resource, user, app) end)
+          |> Result.map(fn {{user, resource}, conn} ->
+            project = Projects.list_projects(resource.organization, user) |> List.first()
 
-          Accounts.get_user_by_email(user_params.email)
-          |> Result.flat_map_error(fn _ -> Accounts.register_heroku_user(user_params, now) end)
-          |> Result.tap(fn user -> Heroku.set_resource_member(resource, user) end)
-          |> Result.map(fn user -> conn |> UserAuth.heroku_sso(resource, user, app) end)
-          |> Result.map(fn conn ->
-            if resource.project do
-              conn |> redirect(to: Routes.elm_path(conn, :project_show, resource.project.organization_id, resource.project.id))
+            if project do
+              conn |> redirect(to: Routes.elm_path(conn, :project_show, project.organization_id, project.id))
             else
               conn |> redirect(to: Routes.heroku_path(conn, :show, resource.id))
             end
@@ -75,8 +72,7 @@ defmodule AzimuttWeb.HerokuController do
     %{resource: resource, app: app} = conn.assigns.heroku
 
     if resource.id == id do
-      organization = Accounts.get_user_personal_organization(current_user)
-      conn |> render("show.html", resource: resource, user: current_user, organization: organization, app: app)
+      conn |> render("show.html", resource: resource, user: current_user, app: app)
     else
       {:error, :forbidden}
     end

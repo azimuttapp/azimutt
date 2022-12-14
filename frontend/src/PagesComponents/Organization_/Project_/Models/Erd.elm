@@ -72,7 +72,6 @@ create project =
 unpack : Erd -> Project
 unpack erd =
     { organization = erd.project.organization
-    , heroku = erd.project.heroku
     , id = erd.project.id
     , slug = erd.project.slug
     , name = erd.project.name

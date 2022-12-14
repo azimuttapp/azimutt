@@ -56,9 +56,25 @@ defmodule Azimutt.Utils.ResultTest do
       assert {:error, "err"} = :error |> Result.map_both(fn _ -> "err" end, on_ok)
     end
 
+    test "map_with" do
+      assert {:ok, {1, 2}} = {:ok, 1} |> Result.map_with(fn x -> x + 1 end)
+      assert {:error, "oops"} = {:error, "oops"} |> Result.map_with(fn x -> x + 1 end)
+    end
+
+    test "flat_map_with" do
+      assert {:ok, {1, 2}} = {:ok, 1} |> Result.flat_map_with(fn x -> {:ok, x + 1} end)
+      assert {:error, "nooo"} = {:ok, 1} |> Result.flat_map(fn _x -> {:error, "nooo"} end)
+      assert {:error, "oops"} = {:error, "oops"} |> Result.flat_map(fn x -> x + 1 end)
+    end
+
     test "tap" do
       assert {:ok, 1} = {:ok, 1} |> Result.tap(fn x -> x + 1 end)
       assert {:error, "oops"} = {:error, "oops"} |> Result.tap(fn x -> x + 1 end)
+    end
+
+    test "flat_tap" do
+      assert {:ok, 1} = {:ok, 1} |> Result.flat_tap(fn x -> {:ok, x + 1} end)
+      assert {:error, "nooo"} = {:ok, 1} |> Result.flat_tap(fn _x -> {:error, "nooo"} end)
     end
 
     test "tap_error" do

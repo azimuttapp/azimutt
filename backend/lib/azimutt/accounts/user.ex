@@ -48,39 +48,32 @@ defmodule Azimutt.Accounts.User do
       Defaults to `true`.
   """
   def password_creation_changeset(user, attrs, now, opts \\ []) do
+    required = [:name, :email, :avatar]
+
     user
-    |> cast(attrs, [
-      :name,
-      :email,
-      :password,
-      :avatar,
-      :company,
-      :location,
-      :description,
-      :github_username,
-      :twitter_username
-    ])
+    |> cast(attrs, required ++ [:password, :company, :location, :description, :github_username, :twitter_username])
     |> Slugme.generate_slug(:name)
     |> validate_email()
     |> validate_password(opts)
     |> put_change(:last_signin, now)
+    |> validate_required(required)
   end
 
   def github_creation_changeset(user, attrs, now) do
-    required = [:name, :email, :provider]
+    required = [:name, :email, :avatar, :provider]
 
     user
-    |> cast(attrs, required ++ [:provider_uid, :avatar, :company, :location, :description, :github_username, :twitter_username])
+    |> cast(attrs, required ++ [:provider_uid, :company, :location, :description, :github_username, :twitter_username])
     |> Slugme.generate_slug(:github_username)
     |> put_change(:last_signin, now)
     |> validate_required(required)
   end
 
   def heroku_creation_changeset(user, attrs, now) do
-    required = [:name, :email, :provider]
+    required = [:name, :email, :avatar, :provider]
 
     user
-    |> cast(attrs, required ++ [:avatar])
+    |> cast(attrs, required)
     |> Slugme.generate_slug(:name)
     |> put_change(:last_signin, now)
     |> validate_required(required)

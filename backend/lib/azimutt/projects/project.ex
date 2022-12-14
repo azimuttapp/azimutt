@@ -5,7 +5,6 @@ defmodule Azimutt.Projects.Project do
   use Waffle.Ecto.Schema
   import Ecto.Changeset
   alias Azimutt.Accounts.User
-  alias Azimutt.Heroku.Resource
   alias Azimutt.Organizations.Organization
   alias Azimutt.Projects.Project
   alias Azimutt.Utils.Slugme
@@ -35,7 +34,6 @@ defmodule Azimutt.Projects.Project do
     timestamps()
     belongs_to :archived_by, User, source: :archived_by
     field :archived_at, :utc_datetime_usec
-    has_one :heroku_resource, Resource
   end
 
   defmodule Storage do

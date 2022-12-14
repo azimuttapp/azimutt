@@ -1,8 +1,8 @@
 <div class="mt-12 max-w-lg mx-auto">
     <h1>Hello Heroku user!</h1>
     <h2>Create your Azimutt project from your database url:</h2>
-    <%= form_for @conn, Routes.elm_path(@conn, :orga_create, @organization.id), [method: :get], fn f -> %>
-        <input type="hidden" name="heroku" value={@resource.id}>
+    <%= form_for @conn, Routes.elm_path(@conn, :orga_create, @resource.organization.id), [method: :get], fn f -> %>
+        <input type="hidden" name="storage" value="remote">
         <input type="hidden" name="name" value={@resource.name}>
         <%= for field <- [
             %{id: :database, label: "Database Url", value: "postgres://<user>:<password>@<host>:<port>/<db_name>"}
@@ -26,6 +26,7 @@
             %{label: "id", value: @resource.id},
             %{label: "name", value: @resource.name},
             %{label: "plan", value: @resource.plan},
+            %{label: "organization", value: if(@resource.organization, do: @resource.organization.id, else: "")},
             %{label: "region", value: @resource.region},
             %{label: "options", value: @resource.options},
             %{label: "callback", value: @resource.callback}

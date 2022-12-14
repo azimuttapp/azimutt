@@ -1,9 +1,9 @@
 <div class="mt-6 flex flex-row gap-4 mx-auto max-w-7xl">
     <div class="grow">
-        <h1>Create heroku resource</h1>
+        <h1>Create Heroku resource</h1>
         <%= form_for @conn, Routes.heroku_path(@conn, :create), [], fn f -> %>
         <%= for field <- [
-            %{id: :uuid, label: "Heroku id", value: Ecto.UUID.generate()},
+            %{id: :uuid, label: "Id", value: Ecto.UUID.generate()},
             %{id: :name, label: "Name", value: "heroku-app"},
             %{id: :plan, label: "Plan", value: "free"},
             %{id: :region, label: "Region", value: "us"},
@@ -44,12 +44,12 @@
         </script>
     </div>
     <div class="grow">
-        <h1>Heroku SSO login simulation</h1>
+        <h1>Login with Heroku SSO</h1>
         <%= form_for @conn, Routes.heroku_path(@conn, :login), [], fn f -> %>
             <%= for field <- [
                 %{id: :app, label: "App", value: "heroku-app"},
                 %{id: :email, label: "Email", value: "user@mail.com"},
-                %{id: :resource_id, label: "Heroku id", value: hd(@resources).id},
+                %{id: :resource_id, label: "Resource id", value: hd(@resources).id},
                 %{id: :timestamp, label: "Timestamp", value: System.os_time(:second)},
                 %{id: :salt, label: "SSO Salt", value: @heroku.sso_salt},
                 %{id: :resource_token, label: "Token", value: ""}
@@ -95,10 +95,10 @@
     <table class="min-w-full divide-y divide-gray-300">
         <thead class="bg-gray-50">
             <tr>
-                <th scope="col" class="whitespace-nowrap py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Heroku id</th>
+                <th scope="col" class="whitespace-nowrap py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Id</th>
                 <th scope="col" class="whitespace-nowrap px-2 py-3.5 text-left text-sm font-semibold text-gray-900">Plan</th>
                 <th scope="col" class="whitespace-nowrap px-2 py-3.5 text-left text-sm font-semibold text-gray-900">Name</th>
-                <th scope="col" class="whitespace-nowrap px-2 py-3.5 text-left text-sm font-semibold text-gray-900">Project</th>
+                <th scope="col" class="whitespace-nowrap px-2 py-3.5 text-left text-sm font-semibold text-gray-900">Organization</th>
                 <th scope="col" class="whitespace-nowrap px-2 py-3.5 text-left text-sm font-semibold text-gray-900">Deleted</th>
             </tr>
         </thead>
@@ -108,8 +108,8 @@
                     <td class="whitespace-nowrap py-2 pl-4 pr-3 text-sm text-gray-500 sm:pl-6"><%= resource.id %></td>
                     <td class="whitespace-nowrap px-2 py-2 text-sm text-gray-900"><%= resource.plan %></td>
                     <td class="whitespace-nowrap px-2 py-2 text-sm text-gray-900"><%= resource.name %></td>
-                    <%= if resource.project do %>
-                        <td class="whitespace-nowrap px-2 py-2 text-sm text-gray-900"><%= resource.project.id %></td>
+                    <%= if resource.organization do %>
+                        <td class="whitespace-nowrap px-2 py-2 text-sm text-gray-900"><%= resource.organization.id %></td>
                     <% else %>
                         <td class="whitespace-nowrap px-2 py-2 text-sm text-gray-900"></td>
                     <% end %>

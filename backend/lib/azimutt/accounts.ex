@@ -4,6 +4,7 @@ defmodule Azimutt.Accounts do
   alias Azimutt.Repo
   alias Azimutt.Accounts.{User, UserNotifier, UserToken}
   alias Azimutt.Organizations
+  alias Azimutt.Utils.Crypto
   alias Azimutt.Utils.Result
 
   ## Database getters
@@ -55,7 +56,14 @@ defmodule Azimutt.Accounts do
     end
   end
 
-  def register_heroku_user(attrs, now) do
+  def register_heroku_user(email, now) do
+    attrs = %{
+      name: email |> String.split("@") |> hd(),
+      email: email,
+      avatar: "https://www.gravatar.com/avatar/#{Crypto.md5(email)}?s=150&d=robohash",
+      provider: "heroku"
+    }
+
     Ecto.Multi.new()
     |> Ecto.Multi.insert(:user, %User{} |> User.heroku_creation_changeset(attrs, now))
     |> Ecto.Multi.run(:organization, fn _repo, %{user: user} -> Organizations.create_personal_organization(user) end)
