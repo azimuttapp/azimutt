@@ -67,7 +67,11 @@ defmodule AzimuttWeb.HerokuController do
     %{resource: resource, app: app} = conn.assigns.heroku
 
     if resource.id == id do
-      conn |> render("show.html", resource: resource, user: current_user, app: app)
+      conn
+      |> put_layout({AzimuttWeb.LayoutView, "empty.html"})
+      |> put_root_layout({AzimuttWeb.LayoutView, "empty.html"})
+      # Heroku color: #79589f, 20% darker: #61467f, 20% lighter: #9377b4
+      |> render("show.html", resource: resource, user: current_user, app: app)
     else
       {:error, :forbidden}
     end

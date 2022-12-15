@@ -10,6 +10,7 @@ defmodule Azimutt.Heroku do
   alias Azimutt.Utils.Result
 
   def app_addons_url(app), do: "https://dashboard.heroku.com/apps/#{app}/resources"
+  def app_settings_url(app), do: "https://dashboard.heroku.com/apps/#{app}/settings"
 
   def allowed_members(plan) do
     team_members = Regex.named_captures(~r/team-(?<members>[0-9]+)/, plan)
