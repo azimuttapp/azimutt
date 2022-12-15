@@ -1,3 +1,4 @@
+# Heroku partner portal: https://addons-next.heroku.com
 # handle specific Heroku needs for https://elements.heroku.com/addons#data-store-utilities
 # see https://devcenter.heroku.com/categories/building-add-ons
 # see https://devcenter.heroku.com/articles/building-an-add-on

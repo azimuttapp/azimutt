@@ -3,7 +3,7 @@
         <h1>Create Heroku resource</h1>
         <%= form_for @conn, Routes.heroku_path(@conn, :create), [], fn f -> %>
         <%= for field <- [
-            %{id: :uuid, label: "Id", value: Ecto.UUID.generate()},
+            %{id: :uuid, label: "Id (randomly generated)", value: Ecto.UUID.generate()},
             %{id: :name, label: "Name", value: "heroku-app"},
             %{id: :plan, label: "Plan", value: "free"},
             %{id: :region, label: "Region", value: "us"},
@@ -45,11 +45,12 @@
     </div>
     <div class="grow">
         <h1>Login with Heroku SSO</h1>
-        <%= form_for @conn, Routes.heroku_path(@conn, :login), [], fn f -> %>
+        <% resource = @resources |> List.first %>
+        <%= form_for @conn, Routes.heroku_path(@conn, :login), [class: "login-form"], fn f -> %>
             <%= for field <- [
-                %{id: :app, label: "App", value: "heroku-app"},
                 %{id: :email, label: "Email", value: "user@mail.com"},
-                %{id: :resource_id, label: "Resource id", value: hd(@resources).id},
+                %{id: :resource_id, label: "Resource id", value: resource.id},
+                %{id: :app, label: "App name", value: resource.name},
                 %{id: :timestamp, label: "Timestamp", value: System.os_time(:second)},
                 %{id: :salt, label: "SSO Salt", value: @heroku.sso_salt},
                 %{id: :resource_token, label: "Token", value: ""}
@@ -67,6 +68,8 @@
             </div>
         <% end %>
         <script>
+            const loginForm = document.querySelector('.login-form')
+            const app = document.querySelector('#app')
             const resourceId = document.querySelector('#resource_id')
             const timestamp = document.querySelector('#timestamp')
             const salt = document.querySelector('#salt')
@@ -96,28 +99,40 @@
         <thead class="bg-gray-50">
             <tr>
                 <th scope="col" class="whitespace-nowrap py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Id</th>
-                <th scope="col" class="whitespace-nowrap px-2 py-3.5 text-left text-sm font-semibold text-gray-900">Plan</th>
                 <th scope="col" class="whitespace-nowrap px-2 py-3.5 text-left text-sm font-semibold text-gray-900">Name</th>
+                <th scope="col" class="whitespace-nowrap px-2 py-3.5 text-left text-sm font-semibold text-gray-900">Plan</th>
                 <th scope="col" class="whitespace-nowrap px-2 py-3.5 text-left text-sm font-semibold text-gray-900">Organization</th>
-                <th scope="col" class="whitespace-nowrap px-2 py-3.5 text-left text-sm font-semibold text-gray-900">Deleted</th>
+                <th scope="col" class="whitespace-nowrap px-2 py-3.5 text-left text-sm font-semibold text-gray-900">Projects</th>
+                <th scope="col" class="whitespace-nowrap px-2 py-3.5 text-left text-sm font-semibold text-gray-900">Actions</th>
             </tr>
         </thead>
         <tbody class="divide-y divide-gray-200 bg-white">
             <%= for resource <- @resources do %>
                 <tr>
                     <td class="whitespace-nowrap py-2 pl-4 pr-3 text-sm text-gray-500 sm:pl-6"><%= resource.id %></td>
-                    <td class="whitespace-nowrap px-2 py-2 text-sm text-gray-900"><%= resource.plan %></td>
                     <td class="whitespace-nowrap px-2 py-2 text-sm text-gray-900"><%= resource.name %></td>
+                    <td class="whitespace-nowrap px-2 py-2 text-sm text-gray-900"><%= resource.plan %></td>
                     <%= if resource.organization do %>
-                        <td class="whitespace-nowrap px-2 py-2 text-sm text-gray-900"><%= resource.organization.id %></td>
+                        <td class="whitespace-nowrap px-2 py-2 text-sm text-gray-900">
+                            <a href={Routes.organization_path(@conn, :show, resource.organization)} title={resource.organization.id} class="underline"><%= resource.organization.name %></a>
+                        </td>
+                        <td class="whitespace-nowrap px-2 py-2 text-sm text-gray-900">
+                            <%= for project <- resource.organization.projects do %>
+                                <a href={Routes.elm_path(@conn, :project_show, resource.organization, project)} title={project.id} class="underline"><%= project.name %></a>
+                            <% end %>
+                        </td>
                     <% else %>
                         <td class="whitespace-nowrap px-2 py-2 text-sm text-gray-900"></td>
+                        <td class="whitespace-nowrap px-2 py-2 text-sm text-gray-900"></td>
                     <% end %>
-                    <%= if resource.deleted_at do %>
-                        <td class="whitespace-nowrap px-2 py-2 text-sm text-gray-900"><%= resource.deleted_at %></td>
-                    <% else %>
-                        <td class="whitespace-nowrap px-2 py-2 text-sm text-gray-900"><a href={Routes.heroku_path(@conn, :delete, resource.id)} method="delete" class="underline cursor-pointer">delete</a></td>
-                    <% end %>
+                    <td class="whitespace-nowrap px-2 py-2 text-sm text-gray-900">
+                        <%= if resource.deleted_at do %>
+                            Deleted at <%= resource.deleted_at %>
+                        <% else %>
+                            <a href="#" class="underline cursor-pointer resource-login" data-id={resource.id} data-name={resource.name}>login</a> •
+                            <a href={Routes.heroku_path(@conn, :delete, resource.id)} method="delete" class="underline cursor-pointer">delete</a>
+                        <% end %>
+                    </td>
                 </tr>
             <% end %>
         </tbody>
@@ -133,6 +148,14 @@
                         'Authorization': `Basic ${btoa(`<%= @heroku.addon_id %>:<%= @heroku.password %>`)}`
                     }
                 }).then(() => document.location.reload(true), err => console.error(err))
+            })
+        })
+        document.querySelectorAll('.resource-login').forEach(action => {
+            action.addEventListener('click', (event) => {
+                event.preventDefault()
+                resourceId.value = event.target.getAttribute('data-id')
+                app.value = event.target.getAttribute('data-name')
+                computeToken().then(() => loginForm.submit())
             })
         })
     </script>

@@ -1,3 +1,4 @@
+# Heroku partner portal: https://addons-next.heroku.com
 # handle specific Heroku needs for https://elements.heroku.com/addons#data-store-utilities
 # see https://devcenter.heroku.com/categories/building-add-ons
 # see https://devcenter.heroku.com/articles/building-an-add-on
@@ -43,7 +44,7 @@ defmodule AzimuttWeb.HerokuController do
            {:ok, organization} <- Heroku.add_organization_if_needed(resource, user, now),
            {:ok, _} <- Heroku.add_member_if_needed(resource, organization, user) do
         conn = conn |> UserAuth.heroku_sso(resource, user, app)
-        project = Projects.list_projects(organization, user) |> List.first()
+        project = Projects.list_projects(organization, user) |> Enum.sort_by(& &1.updated_at, {:desc, DateTime}) |> List.first()
 
         if project do
           conn |> redirect(to: Routes.elm_path(conn, :project_show, organization.id, project.id))

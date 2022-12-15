@@ -9,6 +9,7 @@ defmodule Azimutt.Heroku do
   alias Azimutt.Repo
   alias Azimutt.Utils.Result
 
+  def app_url(app), do: "https://dashboard.heroku.com/apps/#{app}"
   def app_addons_url(app), do: "https://dashboard.heroku.com/apps/#{app}/resources"
   def app_settings_url(app), do: "https://dashboard.heroku.com/apps/#{app}/settings"
 
@@ -25,7 +26,9 @@ defmodule Azimutt.Heroku do
   # use only for HerokuController.index local helper
   def all_resources do
     Resource
+    |> order_by([r], desc: [r.deleted_at, r.created_at])
     |> preload(:organization)
+    |> preload(organization: :projects)
     |> Repo.all()
   end
 
