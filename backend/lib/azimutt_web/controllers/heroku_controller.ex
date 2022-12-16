@@ -63,10 +63,16 @@ defmodule AzimuttWeb.HerokuController do
           {:error, :gone}
 
         {:error, :too_many_members} ->
-          conn |> render("error_too_many_members.html", app_url: Heroku.app_addons_url(app))
+          conn
+          |> put_layout({AzimuttWeb.LayoutView, "empty.html"})
+          |> put_root_layout({AzimuttWeb.LayoutView, "empty.html"})
+          |> render("error_too_many_members.html", heroku_app: app)
 
         {:error, :member_limit_reached} ->
-          conn |> render("error_member_limit_reached.html", app_url: Heroku.app_addons_url(app))
+          conn
+          |> put_layout({AzimuttWeb.LayoutView, "empty.html"})
+          |> put_root_layout({AzimuttWeb.LayoutView, "empty.html"})
+          |> render("error_member_limit_reached.html", heroku_app: app)
 
         {:error, err} ->
           conn |> put_flash(:error, "Authentication failed: #{Stringx.inspect(err)}") |> redirect(to: Routes.website_path(conn, :index))
