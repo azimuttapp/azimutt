@@ -236,7 +236,7 @@ defmodule Azimutt.Organizations do
   end
 
   def delete_organization(%Organization{} = organization, now) do
-    # FIXME: check current_user is owner
+    # TODO decide between soft and hard delete of organization, if hard, add tracking events
     Project
     |> where([p], p.organization_id == ^organization.id)
     |> Repo.delete_all()
