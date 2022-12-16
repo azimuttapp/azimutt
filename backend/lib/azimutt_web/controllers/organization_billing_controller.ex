@@ -19,7 +19,7 @@ defmodule AzimuttWeb.OrganizationBillingController do
 
     with {:ok, %Organization{} = organization} <- Organizations.get_organization(organization_id, current_user) do
       cond do
-        organization.heroku_resource -> conn |> redirect(external: Heroku.app_addons_url(organization.heroku_resource.name))
+        organization.heroku_resource -> conn |> redirect(external: Heroku.app_addons_url(organization.heroku_resource.app))
         organization.stripe_subscription_id -> conn |> stripe_subscription_view(organization)
         true -> generate_billing_view(conn, "subscribe.html", organization, "You haven't got subscribe yet !")
       end

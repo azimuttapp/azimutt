@@ -4,6 +4,7 @@ defmodule Azimutt.Analyzer do
   It's exposed on the web and used as a proxy to allow the browser to connect to a database.
   """
   alias Azimutt.Utils.Result
+  alias Azimutt.Utils.Stringx
   alias Azimutt.Analyzer.{Mysql, Postgres, Schema}
 
   @doc """
@@ -22,7 +23,7 @@ defmodule Azimutt.Analyzer do
     |> Result.or_else({:error, "Database url not recognized"})
     |> Result.map_error(fn
       :killed -> "Can't connect to the database"
-      e -> if(is_binary(e), do: e, else: inspect(e))
+      e -> if(is_binary(e), do: e, else: Stringx.inspect(e))
     end)
   end
 end

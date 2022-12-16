@@ -4,6 +4,7 @@ defmodule Azimutt.Repo.Migrations.CreateHerokuResources do
   def change do
     create table(:heroku_resources, comments: "Heroku addon resources") do
       add :name, :string, null: false
+      add :app, :string
       add :plan, :string, null: false
       add :region, :string, null: false
       add :options, :map
@@ -23,5 +24,7 @@ defmodule Azimutt.Repo.Migrations.CreateHerokuResources do
     alter table(:organizations) do
       modify(:logo, :string, null: false, from: :string)
     end
+
+    drop unique_index(:organizations, [:name])
   end
 end

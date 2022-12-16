@@ -12,17 +12,17 @@
             <div>
                 <label class="block text-sm font-medium text-gray-700" for={field.id}><%= field.label %></label>
                 <div class="mt-1">
-                    <%= text_input f, field.id, value: field.value, placeholder: field.value, class: "block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" %>
+                    <%= text_input f, field.id, value: field.value, placeholder: field.value, required: true, class: "block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" %>
                     <%= error_tag f, field.id %>
                 </div>
             </div>
         <% end %>
         <div class="pt-5">
-            <%= submit "Create resource", id: "create_resource", class: "inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" %>
+            <%= submit "Create resource", id: "create-resource", class: "inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" %>
         </div>
         <% end %>
         <script>
-            const createResourceForm = document.querySelector('#create_resource').closest('form')
+            const createResourceForm = document.querySelector('#create-resource').closest('form')
             createResourceForm.addEventListener('submit', (event) => {
                 event.preventDefault()
                 const form = event.target
@@ -50,7 +50,7 @@
             <%= for field <- [
                 %{id: :email, label: "Email", value: "user@mail.com"},
                 %{id: :resource_id, label: "Resource id", value: resource.id},
-                %{id: :app, label: "App name", value: resource.name},
+                %{id: :app, label: "App name", value: resource.app},
                 %{id: :timestamp, label: "Timestamp", value: System.os_time(:second)},
                 %{id: :salt, label: "SSO Salt", value: @heroku.sso_salt},
                 %{id: :resource_token, label: "Token", value: ""}
@@ -58,7 +58,7 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700" for={field.id}><%= field.label %></label>
                     <div class="mt-1">
-                        <%= text_input f, field.id, value: field.value, placeholder: field.value, class: "block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" %>
+                        <%= text_input f, field.id, value: field.value, placeholder: field.value, required: true, class: "block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" %>
                         <%= error_tag f, field.id %>
                     </div>
                 </div>
@@ -100,6 +100,7 @@
             <tr>
                 <th scope="col" class="whitespace-nowrap py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Id</th>
                 <th scope="col" class="whitespace-nowrap px-2 py-3.5 text-left text-sm font-semibold text-gray-900">Name</th>
+                <th scope="col" class="whitespace-nowrap px-2 py-3.5 text-left text-sm font-semibold text-gray-900">App</th>
                 <th scope="col" class="whitespace-nowrap px-2 py-3.5 text-left text-sm font-semibold text-gray-900">Plan</th>
                 <th scope="col" class="whitespace-nowrap px-2 py-3.5 text-left text-sm font-semibold text-gray-900">Organization</th>
                 <th scope="col" class="whitespace-nowrap px-2 py-3.5 text-left text-sm font-semibold text-gray-900">Projects</th>
@@ -111,6 +112,7 @@
                 <tr>
                     <td class="whitespace-nowrap py-2 pl-4 pr-3 text-sm text-gray-500 sm:pl-6"><%= resource.id %></td>
                     <td class="whitespace-nowrap px-2 py-2 text-sm text-gray-900"><%= resource.name %></td>
+                    <td class="whitespace-nowrap px-2 py-2 text-sm text-gray-900"><%= resource.app %></td>
                     <td class="whitespace-nowrap px-2 py-2 text-sm text-gray-900"><%= resource.plan %></td>
                     <%= if resource.organization do %>
                         <td class="whitespace-nowrap px-2 py-2 text-sm text-gray-900">
@@ -129,7 +131,7 @@
                         <%= if resource.deleted_at do %>
                             Deleted at <%= resource.deleted_at %>
                         <% else %>
-                            <a href="#" class="underline cursor-pointer resource-login" data-id={resource.id} data-name={resource.name}>login</a> •
+                            <a href="#" class="underline cursor-pointer resource-login" data-id={resource.id} data-app={resource.app}>login</a> •
                             <a href={Routes.heroku_path(@conn, :delete, resource.id)} method="delete" class="underline cursor-pointer">delete</a>
                         <% end %>
                     </td>
@@ -154,7 +156,7 @@
             action.addEventListener('click', (event) => {
                 event.preventDefault()
                 resourceId.value = event.target.getAttribute('data-id')
-                app.value = event.target.getAttribute('data-name')
+                app.value = event.target.getAttribute('data-app')
                 computeToken().then(() => loginForm.submit())
             })
         })

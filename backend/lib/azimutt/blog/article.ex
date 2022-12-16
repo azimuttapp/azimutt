@@ -6,6 +6,7 @@ defmodule Azimutt.Blog.Article do
   alias Azimutt.Utils.Mapx
   alias Azimutt.Utils.Markdown
   alias Azimutt.Utils.Result
+  alias Azimutt.Utils.Stringx
 
   typedstruct enforce: true do
     field :path, String.t()
@@ -74,5 +75,5 @@ defmodule Azimutt.Blog.Article do
   defp build_tags(tags) when is_binary(tags), do: {:ok, tags |> String.split(",") |> Enum.map(&String.trim/1)}
   defp build_tags(tags) when is_list(tags), do: {:ok, tags}
   defp build_tags(tags) when is_nil(tags), do: {:ok, []}
-  defp build_tags(tags), do: {:error, "Unexpected tags: #{inspect(tags)}"}
+  defp build_tags(tags), do: {:error, "Unexpected tags: #{Stringx.inspect(tags)}"}
 end

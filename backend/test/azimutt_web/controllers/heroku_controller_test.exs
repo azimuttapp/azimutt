@@ -32,10 +32,11 @@ defmodule AzimuttWeb.HerokuControllerTest do
     conn = post(conn, Routes.heroku_path(conn, :login, attrs))
     assert redirected_to(conn, 302) =~ Routes.heroku_path(conn, :show, resource.id)
 
+    {:ok, resource} = Heroku.get_resource(resource.id)
     conn = get(conn, Routes.heroku_path(conn, :show, resource.id))
     assert html_response(conn, 200) =~ "Azimutt Add-on"
     assert html_response(conn, 200) =~ email
-    assert html_response(conn, 200) =~ resource.name
+    assert html_response(conn, 200) =~ resource.app
 
     Heroku.delete_resource(resource, DateTime.utc_now())
 

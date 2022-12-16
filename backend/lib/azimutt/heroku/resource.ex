@@ -9,6 +9,7 @@ defmodule Azimutt.Heroku.Resource do
   schema "heroku_resources" do
     belongs_to :organization, Organization
     field :name, :string
+    field :app, :string
     field :plan, :string
     field :region, :string
     field :options, :map
@@ -26,6 +27,13 @@ defmodule Azimutt.Heroku.Resource do
     resource
     |> cast(attrs, required ++ [:options])
     |> validate_required(required)
+  end
+
+  def update_app_changeset(%Resource{} = resource, app, now) do
+    resource
+    |> cast(%{app: app}, [:app])
+    |> put_change(:updated_at, now)
+    |> validate_required([:app])
   end
 
   def update_organization_changeset(%Resource{} = resource, %Organization{} = organization, now) do

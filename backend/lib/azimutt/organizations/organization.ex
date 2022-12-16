@@ -43,7 +43,6 @@ defmodule Azimutt.Organizations.Organization do
     organization
     |> cast(
       %{
-        slug: current_user.slug,
         name: current_user.name,
         contact_email: current_user.email,
         logo: current_user.avatar,
@@ -51,13 +50,15 @@ defmodule Azimutt.Organizations.Organization do
         github_username: current_user.github_username,
         twitter_username: current_user.twitter_username
       },
-      required ++ [:slug, :location, :description, :github_username, :twitter_username]
+      required ++ [:location, :description, :github_username, :twitter_username]
     )
+    |> Slugme.generate_slug(:name)
     |> put_change(:is_personal, true)
     |> put_change(:stripe_customer_id, stripe_customer.id)
     |> put_assoc(:created_by, current_user)
     |> put_assoc(:updated_by, current_user)
     |> validate_required(required)
+    |> unique_constraint(:slug)
   end
 
   @doc false
@@ -77,6 +78,7 @@ defmodule Azimutt.Organizations.Organization do
     |> put_change(:created_by, current_user)
     |> put_change(:updated_by, current_user)
     |> validate_required(required)
+    |> unique_constraint(:slug)
   end
 
   @doc false

@@ -33,6 +33,7 @@ defmodule Azimutt.HerokuTest do
       assert {:ok, %Resource{} = resource} = Heroku.create_resource(valid_attrs)
       assert resource.id == "01234567-89ab-cdef-0123-456789abcdef"
       assert resource.name == "acme-inc-primary-database"
+      assert resource.app == nil
       assert resource.plan == "basic"
       assert resource.region == "amazon-web-services::us-east-1"
       assert resource.options == nil
@@ -86,8 +87,9 @@ defmodule Azimutt.HerokuTest do
       now = DateTime.utc_now()
       user = user_fixture()
       resource = resource_fixture()
-      {:ok, organization} = Heroku.add_organization_if_needed(resource, user, now)
-      project = project_fixture(organization, user)
+      {:ok, resource} = Heroku.set_app_if_needed(resource, "app", now)
+      {:ok, resource} = Heroku.set_organization_if_needed(resource, user, now)
+      project = project_fixture(resource.organization, user)
 
       assert {:ok, resource} = Heroku.get_resource(resource.id)
       assert {:ok, project} = Projects.get_project(project.id, user)

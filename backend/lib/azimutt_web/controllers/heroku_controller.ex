@@ -10,6 +10,7 @@ defmodule AzimuttWeb.HerokuController do
   alias Azimutt.Projects
   alias Azimutt.Utils.Crypto
   alias Azimutt.Utils.Result
+  alias Azimutt.Utils.Stringx
   alias AzimuttWeb.UserAuth
   action_fallback AzimuttWeb.FallbackController
 
@@ -41,38 +42,50 @@ defmodule AzimuttWeb.HerokuController do
     else
       with {:ok, resource} <- Heroku.get_resource(resource_id),
            {:ok, user} <- Accounts.get_user_by_email(email) |> Result.flat_map_error(fn _ -> Accounts.register_heroku_user(email, now) end),
-           {:ok, organization} <- Heroku.add_organization_if_needed(resource, user, now),
-           {:ok, _} <- Heroku.add_member_if_needed(resource, organization, user) do
-        conn = conn |> UserAuth.heroku_sso(resource, user, app)
-        project = Projects.list_projects(organization, user) |> Enum.sort_by(& &1.updated_at, {:desc, DateTime}) |> List.first()
+           {:ok, resource} <- Heroku.set_app_if_needed(resource, app, now),
+           {:ok, resource} <- Heroku.set_organization_if_needed(resource, user, now),
+           {:ok, _} <- Heroku.add_member_if_needed(resource, resource.organization, user) do
+        conn = conn |> UserAuth.heroku_sso(resource, user)
+        project = Projects.list_projects(resource.organization, user) |> Enum.sort_by(& &1.updated_at, {:desc, DateTime}) |> List.first()
 
         if project do
-          conn |> redirect(to: Routes.elm_path(conn, :project_show, organization.id, project.id))
+          conn |> redirect(to: Routes.elm_path(conn, :project_show, resource.organization.id, project.id))
         else
           conn |> redirect(to: Routes.heroku_path(conn, :show, resource.id))
         end
       end
       |> case do
-        {:error, :not_found} -> {:error, :not_found}
-        {:error, :deleted} -> {:error, :gone}
-        {:error, :too_many_members} -> conn |> render("error_too_many_members.html", app_url: Heroku.app_addons_url(app))
-        {:error, :member_limit_reached} -> conn |> render("error_member_limit_reached.html", app_url: Heroku.app_addons_url(app))
-        {:error, err} -> conn |> put_flash(:error, "Authentication failed: #{err}") |> redirect(to: Routes.website_path(conn, :index))
-        conn -> conn
+        {:error, :not_found} ->
+          {:error, :not_found}
+
+        {:error, :deleted} ->
+          {:error, :gone}
+
+        {:error, :too_many_members} ->
+          conn |> render("error_too_many_members.html", app_url: Heroku.app_addons_url(app))
+
+        {:error, :member_limit_reached} ->
+          conn |> render("error_member_limit_reached.html", app_url: Heroku.app_addons_url(app))
+
+        {:error, err} ->
+          conn |> put_flash(:error, "Authentication failed: #{Stringx.inspect(err)}") |> redirect(to: Routes.website_path(conn, :index))
+
+        conn ->
+          conn
       end
     end
   end
 
   def show(conn, %{"id" => id}) do
     current_user = conn.assigns.current_user
-    %{resource: resource, app: app} = conn.assigns.heroku
+    resource = conn.assigns.heroku
 
     if resource.id == id do
       conn
       |> put_layout({AzimuttWeb.LayoutView, "empty.html"})
       |> put_root_layout({AzimuttWeb.LayoutView, "empty.html"})
       # Heroku color: #79589f, 20% darker: #61467f, 20% lighter: #9377b4
-      |> render("show.html", resource: resource, user: current_user, app: app)
+      |> render("show.html", resource: resource, user: current_user)
     else
       {:error, :forbidden}
     end

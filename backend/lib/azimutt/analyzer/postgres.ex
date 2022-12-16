@@ -1,8 +1,13 @@
 defmodule Azimutt.Analyzer.Postgres do
   @moduledoc "Analyzer implementation for PostgreSQL"
   use TypedStruct
-  alias Azimutt.Utils.{Mapx, Nil, Resource, Result}
-  alias Azimutt.Analyzer.{Schema, Utils}
+  alias Azimutt.Analyzer.Schema
+  alias Azimutt.Analyzer.Utils
+  alias Azimutt.Utils.Mapx
+  alias Azimutt.Utils.Nil
+  alias Azimutt.Utils.Resource
+  alias Azimutt.Utils.Result
+  alias Azimutt.Utils.Stringx
 
   @spec get_schema(String.t(), String.t() | nil) :: Result.s(Result.s(Schema.t()))
   def get_schema(url, schema),
@@ -460,5 +465,5 @@ defmodule Azimutt.Analyzer.Postgres do
 
   defp format_error(%Postgrex.QueryError{} = err), do: err.message
   defp format_error(%DBConnection.ConnectionError{} = err), do: err.message
-  defp format_error(err), do: "Unknown error: " <> Kernel.inspect(err)
+  defp format_error(err), do: "Unknown error: #{Stringx.inspect(err)}"
 end

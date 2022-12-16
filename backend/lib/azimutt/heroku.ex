@@ -46,18 +46,30 @@ defmodule Azimutt.Heroku do
     |> Repo.insert()
   end
 
-  def add_organization_if_needed(%Resource{} = resource, %User{} = current_user, now) do
-    if resource.organization do
-      {:ok, resource.organization}
+  def set_app_if_needed(%Resource{} = resource, app, now) do
+    if resource.app == app do
+      {:ok, resource}
     else
-      attrs = %{name: resource.name, contact_email: current_user.email, logo: Faker.Avatar.image_url()}
+      resource
+      |> Resource.update_app_changeset(app, now)
+      |> Repo.update()
+      |> Result.flat_map(fn _ -> get_resource(resource.id) end)
+    end
+  end
+
+  def set_organization_if_needed(%Resource{} = resource, %User{} = current_user, now) do
+    if resource.organization do
+      {:ok, resource}
+    else
+      attrs = %{name: resource.app, contact_email: current_user.email, logo: Faker.Avatar.image_url()}
 
       Organizations.create_non_personal_organization(attrs, current_user)
-      |> Result.flat_tap(fn organization ->
+      |> Result.flat_map(fn organization ->
         resource
         |> Resource.update_organization_changeset(organization, now)
         |> Repo.update()
       end)
+      |> Result.flat_map(fn _ -> get_resource(resource.id) end)
     end
   end
 
