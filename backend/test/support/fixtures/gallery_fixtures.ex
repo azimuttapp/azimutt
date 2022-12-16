@@ -1,12 +1,13 @@
 defmodule Azimutt.GalleryFixtures do
   @moduledoc false
   alias Azimutt.Projects.Project
+  alias Azimutt.Utils.Slugme
 
   def sample_fixture(%Project{} = project, attrs \\ %{}) do
     required = [:slug, :icon, :color, :website, :banner, :tips, :description, :analysis]
 
     default = %{
-      slug: "basic",
+      slug: Slugme.slugify(project.name),
       icon: "academic-cap",
       color: "pink",
       website: "https://azimutt.app",
@@ -43,6 +44,7 @@ defmodule Azimutt.GalleryFixtures do
       |> Ecto.Changeset.cast(attrs |> Enum.into(default), required)
       |> Ecto.Changeset.put_change(:project, public_project)
       |> Ecto.Changeset.validate_required(required)
+      |> Ecto.Changeset.unique_constraint(:slug)
       |> Azimutt.Repo.insert()
 
     sample

@@ -17,7 +17,6 @@ init urlOrganization =
       , databaseSource = Nothing
       , sqlSource = Nothing
       , jsonSource = Nothing
-      , projectName = Conf.constants.newProjectName
       , toasts = Toasts.init
       }
     , Cmd.batch

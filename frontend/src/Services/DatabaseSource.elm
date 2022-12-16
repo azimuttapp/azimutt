@@ -104,7 +104,13 @@ update wrap now msg model =
                 ((model.parsedSchema |> Maybe.map (Result.mapError Decode.errorToString))
                     |> Maybe.orElse (model.loadedSchema |> Maybe.map (Result.map (\_ -> DatabaseSchema.empty) >> Result.mapError Backend.errorToString))
                 )
-                |> (\source -> ( { model | parsedSource = source }, Ports.track (Track.parsedDatabaseSource (source |> Maybe.withDefault (Err "Source not available"))) ))
+                |> (\source ->
+                        ( { model | parsedSource = source }
+                        , source
+                            |> Maybe.map (\s -> Cmd.batch [ s |> model.callback |> T.send, s |> Track.parsedDatabaseSource |> Ports.track ])
+                            |> Maybe.withDefault (Err "Source not available" |> Track.parsedDatabaseSource |> Ports.track)
+                        )
+                   )
 
         UiToggle htmlId ->
             ( model |> mapShow (\s -> B.cond (s == htmlId) "" htmlId), Cmd.none )

@@ -131,9 +131,9 @@ doc : Chapter x
 doc =
     Chapter.chapter "ProPlan"
         |> Chapter.renderComponentList
-            [ ( "layoutsWarning", layoutsWarning Organization.free )
-            , ( "layoutsModalBody", layoutsModalBody Organization.free sampleCancel sampleTitleId )
-            , ( "colorsModalBody", colorsModalBody Organization.free sampleCancel sampleTitleId )
-            , ( "analysisWarning", analysisWarning Organization.free )
-            , ( "analysisResults", analysisResults Organization.free [ 1, 2, 3, 4, 5, 6 ] (\i -> p [] [ text ("Item " ++ String.fromInt i) ]) )
+            [ ( "layoutsWarning", layoutsWarning Organization.zero )
+            , ( "layoutsModalBody", layoutsModalBody Organization.zero sampleCancel sampleTitleId )
+            , ( "colorsModalBody", colorsModalBody Organization.zero sampleCancel sampleTitleId )
+            , ( "analysisWarning", analysisWarning Organization.zero )
+            , ( "analysisResults", analysisResults Organization.zero [ 1, 2, 3, 4, 5, 6 ] (\i -> p [] [ text ("Item " ++ String.fromInt i) ]) )
             ]

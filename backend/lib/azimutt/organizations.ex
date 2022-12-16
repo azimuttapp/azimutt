@@ -4,10 +4,13 @@ defmodule Azimutt.Organizations do
   import Ecto.Query, warn: false
   alias Azimutt.Accounts.User
   alias Azimutt.Accounts.UserNotifier
+  alias Azimutt.Heroku
+  alias Azimutt.Heroku.Resource
   alias Azimutt.Organizations.Organization
   alias Azimutt.Organizations.OrganizationInvitation
   alias Azimutt.Organizations.OrganizationMember
   alias Azimutt.Organizations.OrganizationPlan
+  alias Azimutt.Projects.Project
   alias Azimutt.Repo
   alias Azimutt.Services.StripeSrv
   alias Azimutt.Utils.Enumx
@@ -16,10 +19,11 @@ defmodule Azimutt.Organizations do
   def get_organization(id, %User{} = current_user) do
     Organization
     |> join(:inner, [o], om in OrganizationMember, on: om.organization_id == o.id)
-    |> where([o, om], om.user_id == ^current_user.id and o.id == ^id)
+    |> where([o, om], om.user_id == ^current_user.id and o.id == ^id and is_nil(o.deleted_at))
     |> preload(members: [:user, :created_by, :updated_by])
     # TODO: can filter projects? (ignore local projects not owned by the current_user)
     |> preload(:projects)
+    |> preload(:heroku_resource)
     |> preload(:invitations)
     |> preload(:created_by)
     |> preload(:updated_by)
@@ -30,9 +34,10 @@ defmodule Azimutt.Organizations do
   def list_organizations(%User{} = current_user) do
     Organization
     |> join(:inner, [o], om in OrganizationMember, on: om.organization_id == o.id)
-    |> where([o, om], om.user_id == ^current_user.id)
+    |> where([o, om], om.user_id == ^current_user.id and is_nil(o.deleted_at))
     |> preload(:members)
     |> preload(:projects)
+    |> preload(:heroku_resource)
     |> preload(:invitations)
     |> Repo.all()
   end
@@ -108,7 +113,15 @@ defmodule Azimutt.Organizations do
   # Organization members
 
   def has_member?(%Organization{} = organization, %User{} = current_user) do
-    organization.members |> Enum.any?(fn m -> m.user.id == current_user.id end)
+    OrganizationMember
+    |> where([om], om.organization_id == ^organization.id and om.user_id == ^current_user.id)
+    |> Repo.exists?()
+  end
+
+  def count_member(%Organization{} = organization) do
+    OrganizationMember
+    |> where([om], om.organization_id == ^organization.id)
+    |> Repo.aggregate(:count, :user_id)
   end
 
   def remove_member(%Organization{} = organization, member_id) do
@@ -222,9 +235,15 @@ defmodule Azimutt.Organizations do
     end
   end
 
-  def delete_organization(%Organization{} = organization) do
-    # FIXME: check current_user is owner
-    Repo.delete(organization)
+  def delete_organization(%Organization{} = organization, now) do
+    # TODO decide between soft and hard delete of organization, if hard, add tracking events
+    Project
+    |> where([p], p.organization_id == ^organization.id)
+    |> Repo.delete_all()
+
+    organization
+    |> Organization.delete_changeset(now)
+    |> Repo.update()
   end
 
   def get_subscription_status(stripe_subscription_id) when is_bitstring(stripe_subscription_id) do
@@ -258,18 +277,38 @@ defmodule Azimutt.Organizations do
     end
   end
 
+  def get_allowed_members(%Organization{} = organization) do
+    if organization.heroku_resource do
+      Heroku.allowed_members(organization.heroku_resource.plan)
+    else
+      Azimutt.config(:free_plan_seats)
+    end
+  end
+
   def get_organization_plan(%Organization{} = organization) do
-    if organization.stripe_subscription_id do
-      StripeSrv.get_subscription(organization.stripe_subscription_id)
-      |> Result.map(fn s ->
-        if s.status == "active" || s.status == "past_due" || s.status == "unpaid" do
-          OrganizationPlan.team()
-        else
-          OrganizationPlan.free()
-        end
-      end)
+    cond do
+      organization.heroku_resource -> heroku_plan(organization.heroku_resource)
+      organization.stripe_subscription_id -> stripe_plan(organization.stripe_subscription_id)
+      true -> {:ok, OrganizationPlan.free()}
+    end
+  end
+
+  defp heroku_plan(%Resource{} = resource) do
+    if resource.plan |> String.starts_with?("team-") do
+      {:ok, OrganizationPlan.team()}
     else
       {:ok, OrganizationPlan.free()}
     end
+  end
+
+  defp stripe_plan(subscription_id) do
+    StripeSrv.get_subscription(subscription_id)
+    |> Result.map(fn s ->
+      if s.status == "active" || s.status == "past_due" || s.status == "unpaid" do
+        OrganizationPlan.team()
+      else
+        OrganizationPlan.free()
+      end
+    end)
   end
 end

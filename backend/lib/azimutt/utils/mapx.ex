@@ -1,6 +1,7 @@
 defmodule Azimutt.Utils.Mapx do
   @moduledoc "Helper functions on Map."
   alias Azimutt.Utils.Result
+  alias Azimutt.Utils.Stringx
 
   @doc """
   Same as `Map.fetch` but return a better error
@@ -10,7 +11,7 @@ defmodule Azimutt.Utils.Mapx do
       iex> %{foo: "bar"} |> Mapx.fetch(:bar)
       {:error, "Missing :bar key"}
   """
-  def fetch(enumerable, key), do: enumerable |> Map.fetch(key) |> Result.map_error(fn _ -> "Key #{inspect(key)} not found" end)
+  def fetch(enumerable, key), do: enumerable |> Map.fetch(key) |> Result.map_error(fn _ -> "Key #{Stringx.inspect(key)} not found" end)
 
   @doc """
   Same as `Enum.map` but for a Map.

@@ -35,7 +35,7 @@ defmodule AzimuttWeb.Api.ProjectView do
     |> put_content(project, ctx)
   end
 
-  defp put_orga(json, project, ctx) do
+  defp put_orga(json, %Project{} = project, %CtxParams{} = ctx) do
     if ctx.expand |> Enum.member?("organization") do
       orga_ctx = ctx |> CtxParams.nested("organization")
       json |> Map.put(:organization, render_one(project.organization, AzimuttWeb.Api.OrganizationView, "show.json", ctx: orga_ctx))
@@ -44,7 +44,7 @@ defmodule AzimuttWeb.Api.ProjectView do
     end
   end
 
-  defp put_content(json, project, ctx) do
+  defp put_content(json, %Project{} = project, %CtxParams{} = ctx) do
     if ctx.expand |> Enum.member?("content") do
       json |> Map.put(:content, get_content(project))
     else
@@ -52,7 +52,7 @@ defmodule AzimuttWeb.Api.ProjectView do
     end
   end
 
-  defp get_content(project) do
+  defp get_content(%Project{} = project) do
     if project.storage_kind == Storage.remote() do
       # FIXME: handle spaces in name
       file_url = ProjectFile.url({project.file, project}, signed: true)

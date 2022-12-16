@@ -1,6 +1,7 @@
 import {Uuid} from "./uuid";
 import {Slug} from "./basics";
 import {z} from "zod";
+import {HerokuResource} from "./heroku";
 
 export type OrganizationId = Uuid
 export const OrganizationId = Uuid
@@ -37,6 +38,7 @@ export interface Organization {
     logo: string
     location?: string
     description?: string
+    heroku?: HerokuResource
 }
 
 export const Organization = z.object({
@@ -47,4 +49,5 @@ export const Organization = z.object({
     logo: z.string().url(),
     location: z.string().optional(),
     description: z.string().optional(),
+    heroku: HerokuResource.optional(),
 }).strict()

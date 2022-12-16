@@ -26,6 +26,7 @@ import {z} from "zod";
 import * as Zod from "../utils/zod";
 import * as Json from "../utils/json";
 import * as jiff from "jiff";
+import {HerokuResource} from "../types/heroku";
 
 
 export class Backend {
@@ -168,6 +169,7 @@ export interface OrganizationResponse {
     logo: string
     location: string | null
     description: string | null
+    heroku?: HerokuResource
 }
 
 export const OrganizationResponse = z.object({
@@ -177,7 +179,8 @@ export const OrganizationResponse = z.object({
     plan: Plan,
     logo: z.string(),
     location: z.string().nullable(),
-    description: z.string().nullable()
+    description: z.string().nullable(),
+    heroku: HerokuResource.optional(),
 }).strict()
 
 interface ProjectResponse extends ProjectStatsResponse {
@@ -260,7 +263,8 @@ function toOrganization(o: OrganizationResponse): Organization {
         plan: o.plan,
         logo: o.logo,
         location: o.location || undefined,
-        description: o.description || undefined
+        description: o.description || undefined,
+        heroku: o.heroku,
     }
 }
 

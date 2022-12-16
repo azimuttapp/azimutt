@@ -13,6 +13,7 @@ defmodule AzimuttWeb.Router do
     plug :protect_from_forgery
     plug :put_secure_browser_headers
     plug :fetch_current_user
+    plug :fetch_heroku_resource
   end
 
   pipeline :api do
@@ -20,6 +21,7 @@ defmodule AzimuttWeb.Router do
     plug :accepts, ["json"]
     plug :fetch_session
     plug :fetch_current_user
+    plug :fetch_heroku_resource
   end
 
   pipeline :account_session_layout do
@@ -84,6 +86,24 @@ defmodule AzimuttWeb.Router do
     get "/invitations/:id", OrganizationInvitationController, :show, as: :invitation
     patch "/invitations/:id/accept", OrganizationInvitationController, :accept, as: :invitation
     patch "/invitations/:id/refuse", OrganizationInvitationController, :refuse, as: :invitation
+  end
+
+  scope "/heroku", AzimuttWeb do
+    pipe_through [:api, :require_heroku_basic_auth]
+    post "/resources", Api.HerokuController, :create
+    put "/resources/:id", Api.HerokuController, :update
+    delete "/resources/:id", Api.HerokuController, :delete
+  end
+
+  scope "/heroku", AzimuttWeb do
+    pipe_through [:browser]
+    if Mix.env() == :dev, do: get("/", HerokuController, :index)
+    post "/login", HerokuController, :login
+  end
+
+  scope "/heroku", AzimuttWeb do
+    pipe_through [:browser, :require_heroku_resource, :require_authenticated_user]
+    get "/resources/:id", HerokuController, :show
   end
 
   # authed admin routes

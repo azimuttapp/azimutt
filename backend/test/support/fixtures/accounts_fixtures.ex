@@ -11,7 +11,7 @@ defmodule Azimutt.AccountsFixtures do
       name: "User #{i}",
       email: "user#{i}@example.com",
       password: "hello world!",
-      nickname: "user"
+      avatar: Faker.Avatar.image_url()
     })
   end
 

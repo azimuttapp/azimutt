@@ -81,14 +81,18 @@ organizationId p =
 
 icon : ProjectInfo -> Icon.Icon
 icon project =
+    -- should stay sync with backend/lib/azimutt_web/templates/organization/_project_icon.html.heex
     if project.storage == ProjectStorage.Local then
         Icon.Folder
 
-    else if project.visibility == ProjectVisibility.None then
-        Icon.Cloud
+    else if project.visibility /= ProjectVisibility.None then
+        Icon.GlobeAlt
+
+    else if (project.organization |> Maybe.andThen .heroku) /= Nothing then
+        Icon.Puzzle
 
     else
-        Icon.GlobeAlt
+        Icon.Cloud
 
 
 title : ProjectInfo -> String
@@ -96,11 +100,14 @@ title project =
     if project.storage == ProjectStorage.Local then
         "Local project"
 
-    else if project.visibility == ProjectVisibility.None then
-        "Remote project"
+    else if project.visibility /= ProjectVisibility.None then
+        "Public project"
+
+    else if (project.organization |> Maybe.andThen .heroku) /= Nothing then
+        "Heroku Add-on project"
 
     else
-        "Public project"
+        "Remote project"
 
 
 encode : ProjectInfo -> Value

@@ -161,7 +161,7 @@ update currentLayout now urlOrganization organizations projects msg model =
             let
                 organization : Organization
                 organization =
-                    model.erd |> Maybe.andThen (.project >> .organization) |> Maybe.withDefault Organization.free
+                    model.erd |> Maybe.andThen (.project >> .organization) |> Maybe.withDefault Organization.zero
             in
             if organization.plan.colors then
                 model |> mapErdMCmd (\erd -> erd |> Erd.mapCurrentLayoutCmd now (mapTablesCmd (mapTablePropOrSelected erd.settings.defaultSchema id (mapProps (setColor color))))) |> setDirtyCmd

@@ -14,6 +14,7 @@ import Libs.Result as Result
 import Libs.Tailwind exposing (Color, decodeColor)
 import Libs.Time as Time
 import Libs.Url as Url
+import Models.HerokuResource as HerokuResource exposing (HerokuResource)
 import Models.Organization exposing (Organization)
 import Models.OrganizationId as OrganizationId exposing (OrganizationId)
 import Models.Plan as Plan exposing (Plan)
@@ -66,9 +67,14 @@ logoutUrl =
     "/logout"
 
 
+dashboardUrl : String
+dashboardUrl =
+    "/home"
+
+
 organizationUrl : Maybe OrganizationId -> String
 organizationUrl organization =
-    organization |> Maybe.filter (\id -> id /= OrganizationId.zero) |> Maybe.mapOrElse (\id -> "/organizations/" ++ id) "/home"
+    organization |> Maybe.filter (\id -> id /= OrganizationId.zero) |> Maybe.mapOrElse (\id -> "/organizations/" ++ id) dashboardUrl
 
 
 organizationBillingUrl : OrganizationId -> String
@@ -228,6 +234,7 @@ buildOrganization o =
     , logo = o.logo
     , location = o.location
     , description = o.description
+    , heroku = o.heroku
     }
 
 
@@ -239,6 +246,7 @@ type alias OrgaWithProjects =
     , logo : String
     , location : Maybe String
     , description : Maybe String
+    , heroku : Maybe HerokuResource
     , projects : List OrgaProject
     }
 
@@ -267,7 +275,7 @@ type alias OrgaProject =
 
 decodeOrga : Decode.Decoder OrgaWithProjects
 decodeOrga =
-    Decode.map8 OrgaWithProjects
+    Decode.map9 OrgaWithProjects
         (Decode.field "id" Decode.string)
         (Decode.field "slug" Decode.string)
         (Decode.field "name" Decode.string)
@@ -275,6 +283,7 @@ decodeOrga =
         (Decode.defaultField "logo" Decode.string "")
         (Decode.maybeField "location" Decode.string)
         (Decode.maybeField "description" Decode.string)
+        (Decode.maybeField "heroku" HerokuResource.decode)
         (Decode.field "projects" (Decode.list decodeProject))
 
 

@@ -1,9 +1,10 @@
-<%= if @project.storage_kind == :local do %>
-    <span title="Local project"><Icon.folder kind="outline" class="text-gray-400" /></span>
-<% else %>
-    <%= if @project.visibility == :none do %>
-        <span title="Remote project"><Icon.cloud kind="outline" class="text-gray-400" /></span>
-    <% else %>
+<%= cond do # should stay sync with frontend/src/Models/ProjectInfo.elm#icon %>
+    <% @project.storage_kind == :local -> %>
+        <span title="Local project"><Icon.folder kind="outline" class="text-gray-400" /></span>
+    <% @project.visibility != :none -> %>
         <span title="Public project"><Icon.globe kind="outline" class="text-gray-400" /></span>
-    <% end %>
+    <% @project.organization.heroku_resource -> %>
+        <span title="Heroku project"><Icon.puzzle_piece kind="outline" class="text-gray-400" /></span>
+    <% true -> %>
+        <span title="Remote project"><Icon.cloud kind="outline" class="text-gray-400" /></span>
 <% end %>

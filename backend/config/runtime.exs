@@ -49,6 +49,21 @@ else
   IO.puts("Stripe not setup (STRIPE_API_KEY and STRIPE_WEBHOOK_SIGNING_SECRET env variables not found)")
 end
 
+heroku_addon_id = System.get_env("HEROKU_ADDON_ID")
+heroku_password = System.get_env("HEROKU_PASSWORD")
+heroku_sso_salt = System.get_env("HEROKU_SSO_SALT")
+
+if heroku_addon_id && heroku_password && heroku_sso_salt do
+  IO.puts("Setup Heroku addon")
+
+  config :azimutt,
+    heroku_addon_id: heroku_addon_id,
+    heroku_password: heroku_password,
+    heroku_sso_salt: heroku_sso_salt
+else
+  IO.puts("Heroku addon not setup (HEROKU_ADDON_ID, HEROKU_PASSWORD and HEROKU_SSO_SALT env variables not found)")
+end
+
 if config_env() == :prod || config_env() == :staging do
   database_url =
     System.get_env("POSTGRESQL_ADDON_URI") ||

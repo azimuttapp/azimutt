@@ -34,7 +34,7 @@ defmodule Azimutt.OrganizationsTest do
 
     @tag :skip
     test "create_non_personal_organization/1 with valid data creates a organization", %{user: user} do
-      valid_attrs = %{name: "Orga name", contact_email: "admin@mail.com"}
+      valid_attrs = %{name: "Orga name", contact_email: "admin@mail.com", logo: Faker.Avatar.image_url()}
       assert {:ok, %Organization{} = organization} = Organizations.create_non_personal_organization(valid_attrs, user)
       assert organization.name == "some name"
     end
@@ -62,9 +62,10 @@ defmodule Azimutt.OrganizationsTest do
 
     @tag :skip
     test "delete_organization/1 deletes the organization" do
+      now = DateTime.utc_now()
       user = user_fixture()
       organization = organization_fixture(user)
-      assert {:ok, %Organization{}} = Organizations.delete_organization(organization)
+      assert {:ok, %Organization{}} = Organizations.delete_organization(organization, now)
       assert {:error, :not_found} == Organizations.get_organization(organization.id, user)
     end
   end

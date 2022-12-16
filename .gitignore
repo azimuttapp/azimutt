@@ -4,3 +4,6 @@
 .env
 .clever.json
 /node_modules/
+addon-manifest.json
+addon-manifest-prod.json
+addon-manifest-staging.json

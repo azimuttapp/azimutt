@@ -148,8 +148,8 @@ doc : Chapter (SharedDocState x)
 doc =
     Chapter.chapter "NewLayoutBody"
         |> Chapter.renderStatefulComponentList
-            [ component "create" (\m -> view updateDocState sampleOnCreate sampleOnCancel sampleTitleId sampleLayouts1 Organization.free m)
-            , component "duplicate" (\m -> view updateDocState sampleOnCreate sampleOnCancel sampleTitleId sampleLayouts1 Organization.free { m | from = sampleLayouts1 |> List.head })
-            , component "create limit" (\m -> view updateDocState sampleOnCreate sampleOnCancel sampleTitleId sampleLayouts3 Organization.free m)
-            , component "duplicate limit" (\m -> view updateDocState sampleOnCreate sampleOnCancel sampleTitleId sampleLayouts3 Organization.free { m | from = sampleLayouts3 |> List.head })
+            [ component "create" (\m -> view updateDocState sampleOnCreate sampleOnCancel sampleTitleId sampleLayouts1 Organization.zero m)
+            , component "duplicate" (\m -> view updateDocState sampleOnCreate sampleOnCancel sampleTitleId sampleLayouts1 Organization.zero { m | from = sampleLayouts1 |> List.head })
+            , component "create limit" (\m -> view updateDocState sampleOnCreate sampleOnCancel sampleTitleId sampleLayouts3 Organization.zero m)
+            , component "duplicate limit" (\m -> view updateDocState sampleOnCreate sampleOnCancel sampleTitleId sampleLayouts3 Organization.zero { m | from = sampleLayouts3 |> List.head })
             ]

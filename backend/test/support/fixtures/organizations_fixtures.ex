@@ -8,7 +8,7 @@ defmodule Azimutt.OrganizationsFixtures do
         name: "some name",
         description: "some description",
         contact_email: "contact#{System.unique_integer()}@example.com",
-        logo: "",
+        logo: Faker.Avatar.image_url(),
         location: "some location",
         stripe_customer_id: "cus_xxx",
         is_archived: false,
