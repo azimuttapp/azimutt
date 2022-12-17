@@ -99,8 +99,6 @@ config :azimutt, :phoenix_swagger,
     ]
   }
 
-config :waffle, storage: Waffle.Storage.Local
-
 config :ex_aws, json_codec: Jason
 
 config :phoenix_swagger, json_library: Jason

@@ -33,45 +33,32 @@ config :sentry,
   },
   included_environments: [:prod]
 
-cellar_bucket =
-  System.get_env("CELLAR_BUCKET") ||
-    raise """
-    environment variable CELLAR_BUCKET is missing.
-    """
+cellar_addon_key_id = System.get_env("CELLAR_ADDON_KEY_ID")
+cellar_addon_key_secret = System.get_env("CELLAR_ADDON_KEY_SECRET")
+cellar_host = System.get_env("CELLAR_ADDON_HOST")
+cellar_bucket = System.get_env("CELLAR_BUCKET")
 
-cellar_host =
-  System.get_env("CELLAR_ADDON_HOST") ||
-    raise """
-    environment variable CELLAR_ADDON_HOST is missing.
-    """
+if cellar_addon_key_id && cellar_addon_key_secret && cellar_host && cellar_bucket do
+  IO.puts("Setup Cellar storage")
 
-config :waffle,
-  storage: Waffle.Storage.S3,
-  bucket: cellar_bucket,
-  asset_host: cellar_host
+  config :waffle,
+    storage: Waffle.Storage.S3,
+    asset_host: cellar_host,
+    bucket: cellar_bucket
 
-cellar_addon_key_id =
-  System.get_env("CELLAR_ADDON_KEY_ID") ||
-    raise """
-    environment variable CELLAR_ADDON_KEY_ID is missing.
-    """
+  config :ex_aws,
+    debug_requests: true,
+    json_codec: Jason,
+    access_key_id: cellar_addon_key_id,
+    secret_access_key: cellar_addon_key_secret
 
-cellar_addon_key_secret =
-  System.get_env("CELLAR_ADDON_KEY_SECRET") ||
-    raise """
-    environment variable CELLAR_ADDON_KEY_SECRET is missing.
-    """
-
-config :ex_aws,
-  debug_requests: true,
-  json_codec: Jason,
-  access_key_id: cellar_addon_key_id,
-  secret_access_key: cellar_addon_key_secret
-
-config :ex_aws, :s3,
-  scheme: "https://",
-  host: cellar_host,
-  region: "eu-west-1"
+  config :ex_aws, :s3,
+    scheme: "https://",
+    host: cellar_host,
+    region: "eu-west-1"
+else
+  raise "missing cellar environment variables: CELLAR_ADDON_KEY_ID, CELLAR_ADDON_KEY_SECRET, CELLAR_ADDON_HOST and CELLAR_BUCKET"
+end
 
 # ## SSL Support
 #

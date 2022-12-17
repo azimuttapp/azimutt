@@ -36,6 +36,7 @@ defmodule AzimuttWeb.Router do
   # public routes
   scope "/", AzimuttWeb do
     pipe_through :browser
+    post "/heroku/login", HerokuController, :login
     get "/", WebsiteController, :index
     get "/last", WebsiteController, :last
     get "/blog", BlogController, :index
@@ -89,17 +90,16 @@ defmodule AzimuttWeb.Router do
     patch "/invitations/:id/refuse", OrganizationInvitationController, :refuse, as: :invitation
   end
 
+  # scope "/heroku", AzimuttWeb do
+  #   pipe_through [:browser]
+  #   if Mix.env() == :dev, do: get("/", HerokuController, :index)
+  # end
+
   scope "/heroku", AzimuttWeb do
     pipe_through [:api, :require_heroku_basic_auth]
     post "/resources", Api.HerokuController, :create
     put "/resources/:id", Api.HerokuController, :update
     delete "/resources/:id", Api.HerokuController, :delete
-  end
-
-  scope "/heroku", AzimuttWeb do
-    pipe_through [:browser]
-    post "/login", HerokuController, :login
-    if Mix.env() == :dev, do: get("/", HerokuController, :index)
   end
 
   scope "/heroku", AzimuttWeb do
