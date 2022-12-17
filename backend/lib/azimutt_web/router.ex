@@ -56,7 +56,7 @@ defmodule AzimuttWeb.Router do
 
   # auth routes
   scope "/", AzimuttWeb do
-    pipe_through [:browser, :redirect_if_user_is_authenticated]
+    pipe_through [:browser, :redirect_if_user_is_authed]
     get "/auth/:provider", UserOauthController, :request
     get "/auth/:provider/callback", UserOauthController, :callback
     get "/register", UserRegistrationController, :new
@@ -71,7 +71,7 @@ defmodule AzimuttWeb.Router do
 
   # authed dashboard routes
   scope "/", AzimuttWeb do
-    pipe_through [:browser, :require_authenticated_user, :account_dashboard_layout]
+    pipe_through [:browser, :require_authed_user, :account_dashboard_layout]
     get "/home", UserDashboardController, :index
     get "/login/redirect", UserSessionController, :redirect_to
 
@@ -106,14 +106,14 @@ defmodule AzimuttWeb.Router do
   end
 
   scope "/heroku", AzimuttWeb do
-    pipe_through [:browser, :require_heroku_resource, :require_authenticated_user]
+    pipe_through [:browser, :require_heroku_resource, :require_authed_user]
     get "/resources/:id", HerokuController, :show
   end
 
-  # authed admin routes
-  # scope "/admin", AzimuttWeb do
-  #   pipe_through [:browser, :require_authenticated_user]
-  # end
+   scope "/admin", AzimuttWeb do
+     pipe_through [:browser, :require_authed_user, :require_admin_user]
+     get "/", Admin.DashboardController, :index
+   end
 
   scope "/api/v1/swagger" do
     forward "/", PhoenixSwagger.Plug.SwaggerUI, otp_app: :azimutt, swagger_file: "swagger.json"
@@ -131,7 +131,7 @@ defmodule AzimuttWeb.Router do
 
   # authed APIs
   scope "/api/v1", AzimuttWeb do
-    pipe_through [:api, :require_authenticated_user_api]
+    pipe_through [:api, :require_authed_user_api]
     get "/users/current", Api.UserController, :current
 
     resources "/organizations", Api.OrganizationController, only: [:index] do

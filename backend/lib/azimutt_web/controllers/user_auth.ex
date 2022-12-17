@@ -129,10 +129,7 @@ defmodule AzimuttWeb.UserAuth do
     end
   end
 
-  @doc """
-  Used for routes that require the user to not be authenticated.
-  """
-  def redirect_if_user_is_authenticated(conn, _opts) do
+  def redirect_if_user_is_authed(conn, _opts) do
     if conn.assigns[:current_user] do
       conn
       |> redirect(to: signed_in_path(conn))
@@ -142,13 +139,7 @@ defmodule AzimuttWeb.UserAuth do
     end
   end
 
-  @doc """
-  Used for routes that require the user to be authenticated.
-
-  If you want to enforce the user email is confirmed before
-  they use the application at all, here would be a good place.
-  """
-  def require_authenticated_user(conn, _opts) do
+  def require_authed_user(conn, _opts) do
     if conn.assigns[:current_user] do
       conn
     else
@@ -160,7 +151,7 @@ defmodule AzimuttWeb.UserAuth do
     end
   end
 
-  def require_authenticated_user_api(conn, _opts) do
+  def require_authed_user_api(conn, _opts) do
     if conn.assigns[:current_user] do
       conn
     else
@@ -220,7 +211,15 @@ defmodule AzimuttWeb.UserAuth do
     if conn.assigns[:heroku] do
       conn
     else
-      conn |> put_error_api(:unauthorized, "Not accessible heroku resource, access it from heroku dashboard")
+      conn |> put_error_api(:unauthorized, "Not accessible heroku resource, access it from heroku dashboard.")
+    end
+  end
+
+  def require_admin_user(conn, _opts) do
+    if conn.assigns[:current_user] && conn.assigns[:current_user].is_admin do
+      conn
+    else
+      conn |> put_error_html(:forbidden, "403.html", "This section is for admins only.")
     end
   end
 

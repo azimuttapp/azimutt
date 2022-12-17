@@ -122,26 +122,26 @@ defmodule AzimuttWeb.UserAuthTest do
     end
   end
 
-  describe "redirect_if_user_is_authenticated/2" do
+  describe "redirect_if_user_is_authed/2" do
     @tag :skip
     test "redirects if user is authenticated", %{conn: conn, user: user} do
-      conn = conn |> assign(:current_user, user) |> UserAuth.redirect_if_user_is_authenticated([])
+      conn = conn |> assign(:current_user, user) |> UserAuth.redirect_if_user_is_authed([])
       assert conn.halted
       assert redirected_to(conn) == "/"
     end
 
     @tag :skip
     test "does not redirect if user is not authenticated", %{conn: conn} do
-      conn = UserAuth.redirect_if_user_is_authenticated(conn, [])
+      conn = UserAuth.redirect_if_user_is_authed(conn, [])
       refute conn.halted
       refute conn.status
     end
   end
 
-  describe "require_authenticated_user/2" do
+  describe "require_authed_user/2" do
     @tag :skip
     test "redirects if user is not authenticated", %{conn: conn} do
-      conn = conn |> fetch_flash() |> UserAuth.require_authenticated_user([])
+      conn = conn |> fetch_flash() |> UserAuth.require_authed_user([])
       assert conn.halted
       assert redirected_to(conn) == Routes.user_session_path(conn, :new)
     end
@@ -151,7 +151,7 @@ defmodule AzimuttWeb.UserAuthTest do
       halted_conn =
         %{conn | path_info: ["foo"], query_string: ""}
         |> fetch_flash()
-        |> UserAuth.require_authenticated_user([])
+        |> UserAuth.require_authed_user([])
 
       assert halted_conn.halted
       assert get_session(halted_conn, :user_return_to) == "/foo"
@@ -159,7 +159,7 @@ defmodule AzimuttWeb.UserAuthTest do
       halted_conn =
         %{conn | path_info: ["foo"], query_string: "bar=baz"}
         |> fetch_flash()
-        |> UserAuth.require_authenticated_user([])
+        |> UserAuth.require_authed_user([])
 
       assert halted_conn.halted
       assert get_session(halted_conn, :user_return_to) == "/foo?bar=baz"
@@ -167,7 +167,7 @@ defmodule AzimuttWeb.UserAuthTest do
       halted_conn =
         %{conn | path_info: ["foo"], query_string: "bar", method: "POST"}
         |> fetch_flash()
-        |> UserAuth.require_authenticated_user([])
+        |> UserAuth.require_authed_user([])
 
       assert halted_conn.halted
       refute get_session(halted_conn, :user_return_to)
@@ -175,7 +175,7 @@ defmodule AzimuttWeb.UserAuthTest do
 
     @tag :skip
     test "does not redirect if user is authenticated", %{conn: conn, user: user} do
-      conn = conn |> assign(:current_user, user) |> UserAuth.require_authenticated_user([])
+      conn = conn |> assign(:current_user, user) |> UserAuth.require_authed_user([])
       refute conn.halted
       refute conn.status
     end
