@@ -1,6 +1,5 @@
 defmodule Azimutt.Utils.Stringx do
   @moduledoc "Helper functions on String."
-  alias Azimutt.Utils.Stringx
 
   @doc """
   A smart stringification from any value

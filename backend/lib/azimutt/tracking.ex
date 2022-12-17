@@ -58,7 +58,8 @@ defmodule Azimutt.Tracking do
     }
   end
 
-  defp create_event(name, data, details, %User{} = current_user, organization_id \\ nil, project_id \\ nil) do
+  # `organization_id` and `project_id` are nullable
+  defp create_event(name, data, details, %User{} = current_user, organization_id, project_id) do
     %Event{}
     |> Event.changeset(%{
       name: name,
