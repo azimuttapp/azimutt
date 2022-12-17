@@ -78,7 +78,6 @@ config :azimutt, AzimuttWeb.Endpoint,
   ]
 
 config :waffle, storage: Waffle.Storage.Local
-IO.puts("Setup storage local files")
 
 # Do not include metadata nor timestamps in development logs
 config :logger, :console, format: "[$level] $message\n"

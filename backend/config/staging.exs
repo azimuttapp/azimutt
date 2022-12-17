@@ -1,5 +1,7 @@
 import Config
 
+config :azimutt, AzimuttWeb.Endpoint, cache_static_manifest: "priv/static/cache_manifest.json"
+
 config :azimutt,
   environment: :staging,
   domain: "azimutt.dev",
@@ -8,15 +10,8 @@ config :azimutt,
   mailer_default_from_email: "hey@azimutt.dev",
   team_plan_price_id: "price_1LqdRzCaPXsf4vehSyyUn4pd"
 
-# Do not print debug messages in staging
-logger_level = System.get_env("LOGGER_LEVEL")
-config :logger, level: if(logger_level, do: String.to_existing_atom(logger_level), else: :info)
-
-config :azimutt, AzimuttWeb.Endpoint,
-  url: [host: "azimutt.dev", port: 80],
-  cache_static_manifest: "priv/static/cache_manifest.json",
-  check_origin: true,
-  debug_errors: logger_level == "debug"
+# Do not print debug messages in production
+config :logger, level: :info
 
 config :sentry,
   dsn: "https://e9e1c774b12b459592c58405c6cf4102@o1353262.ingest.sentry.io/6635088",
@@ -29,29 +24,46 @@ config :sentry,
   },
   included_environments: [:staging]
 
-cellar_addon_key_id = System.get_env("CELLAR_ADDON_KEY_ID")
-cellar_addon_key_secret = System.get_env("CELLAR_ADDON_KEY_SECRET")
-cellar_host = System.get_env("CELLAR_ADDON_HOST")
-cellar_bucket = System.get_env("CELLAR_BUCKET")
+config :azimutt, AzimuttWeb.Endpoint,
+  url: [host: "azimutt.dev", port: 80],
+  check_origin: true
 
-if cellar_addon_key_id && cellar_addon_key_secret && cellar_host && cellar_bucket do
-  IO.puts("Setup Cellar storage")
+cellar_bucket =
+  System.get_env("CELLAR_BUCKET") ||
+    raise """
+    environment variable CELLAR_BUCKET is missing.
+    """
 
-  config :waffle,
-    storage: Waffle.Storage.S3,
-    asset_host: cellar_host,
-    bucket: cellar_bucket
+cellar_host =
+  System.get_env("CELLAR_ADDON_HOST") ||
+    raise """
+    environment variable CELLAR_ADDON_HOST is missing.
+    """
 
-  config :ex_aws,
-    debug_requests: true,
-    json_codec: Jason,
-    access_key_id: cellar_addon_key_id,
-    secret_access_key: cellar_addon_key_secret
+config :waffle,
+  storage: Waffle.Storage.S3,
+  bucket: cellar_bucket,
+  asset_host: cellar_host
 
-  config :ex_aws, :s3,
-    scheme: "https://",
-    host: cellar_host,
-    region: "eu-west-1"
-else
-  raise "missing cellar environment variables: CELLAR_ADDON_KEY_ID, CELLAR_ADDON_KEY_SECRET, CELLAR_ADDON_HOST and CELLAR_BUCKET"
-end
+cellar_addon_key_id =
+  System.get_env("CELLAR_ADDON_KEY_ID") ||
+    raise """
+    environment variable CELLAR_ADDON_KEY_ID is missing.
+    """
+
+cellar_addon_key_secret =
+  System.get_env("CELLAR_ADDON_KEY_SECRET") ||
+    raise """
+    environment variable CELLAR_ADDON_KEY_SECRET is missing.
+    """
+
+config :ex_aws,
+  debug_requests: true,
+  json_codec: Jason,
+  access_key_id: cellar_addon_key_id,
+  secret_access_key: cellar_addon_key_secret
+
+config :ex_aws, :s3,
+  scheme: "https://",
+  host: cellar_host,
+  region: "eu-west-1"
