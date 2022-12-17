@@ -1,7 +1,5 @@
 import Config
 
-config :azimutt, AzimuttWeb.Endpoint, cache_static_manifest: "priv/static/cache_manifest.json"
-
 config :azimutt,
   environment: :staging,
   domain: "azimutt.dev",
@@ -14,6 +12,12 @@ config :azimutt,
 logger_level = System.get_env("LOGGER_LEVEL")
 config :logger, level: if(logger_level, do: String.to_existing_atom(logger_level), else: :info)
 
+config :azimutt, AzimuttWeb.Endpoint,
+  url: [host: "azimutt.dev", port: 80],
+  cache_static_manifest: "priv/static/cache_manifest.json",
+  check_origin: true,
+  debug_errors: logger_level == "debug"
+
 config :sentry,
   dsn: "https://e9e1c774b12b459592c58405c6cf4102@o1353262.ingest.sentry.io/6635088",
   environment_name: :staging,
@@ -24,11 +28,6 @@ config :sentry,
     env: "staging"
   },
   included_environments: [:staging]
-
-config :azimutt, AzimuttWeb.Endpoint,
-  url: [host: "azimutt.dev", port: 80],
-  debug_errors: true,
-  check_origin: true
 
 cellar_addon_key_id = System.get_env("CELLAR_ADDON_KEY_ID")
 cellar_addon_key_secret = System.get_env("CELLAR_ADDON_KEY_SECRET")

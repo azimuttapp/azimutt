@@ -4,7 +4,7 @@ defmodule AzimuttWeb.Router do
   import AzimuttWeb.UserAuth
   alias AzimuttWeb.Plugs.AllowCrossOriginIframe
 
-  pipeline :browser_no_csrf do
+  pipeline :browser_no_csrf_protection do
     plug Ueberauth
     plug :accepts, ["html"]
     plug :fetch_session
@@ -16,7 +16,7 @@ defmodule AzimuttWeb.Router do
   end
 
   pipeline :browser do
-    plug :browser_no_csrf
+    plug :browser_no_csrf_protection
     plug :protect_from_forgery
   end
 
@@ -100,9 +100,9 @@ defmodule AzimuttWeb.Router do
   end
 
   scope "/heroku", AzimuttWeb do
-    pipe_through [:browser_no_csrf]
+    pipe_through [:browser_no_csrf_protection]
     if Mix.env() == :dev, do: get("/", HerokuController, :index)
-    post "/heroku/login", HerokuController, :login
+    post "/login", HerokuController, :login
   end
 
   scope "/heroku", AzimuttWeb do
