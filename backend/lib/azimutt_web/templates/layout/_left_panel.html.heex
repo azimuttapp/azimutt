@@ -44,7 +44,11 @@
                     </div>
                     <%= generate_organization_plan_badge(@plan) %>
                     <%= if @organization.heroku_resource do %>
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-sm font-medium bg-indigo-100 text-indigo-800">Heroku Add-on</span>
+                        <%= if @organization.heroku_resource.app do %>
+                            <a href={Heroku.app_url(@organization.heroku_resource.app)} target="_blank" rel="noopener" class="inline-flex items-center px-2.5 py-0.5 rounded-md text-sm font-medium bg-indigo-100 text-indigo-800">Heroku Add-on</a>
+                        <% else %>
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-sm font-medium bg-indigo-100 text-indigo-800">Heroku Add-on</span>
+                        <% end %>
                     <% end %>
                     <%= if @organization.description do %>
                         <p class="text-sm text-gray-500 py-4"><%= @organization.description %></p>

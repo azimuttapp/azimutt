@@ -1,5 +1,6 @@
 defmodule AzimuttWeb.LayoutView do
   use AzimuttWeb, :view
+  alias Azimutt.Heroku
   alias Azimutt.Organizations.OrganizationPlan
 
   # Phoenix LiveDashboard is available only in development by default,
