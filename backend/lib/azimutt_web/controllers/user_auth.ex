@@ -204,14 +204,22 @@ defmodule AzimuttWeb.UserAuth do
 
   # read @heroku_cookie and make resource available in conn
   def fetch_heroku_resource(conn, _opts) do
+    Logger.info("fetch_heroku_resource")
     conn = fetch_cookies(conn, signed: [@heroku_cookie])
+    Logger.info("fetch_heroku_resource: fetched cookie")
 
-    with(
-      {:ok, cookie} <- Result.from_nillable(conn.cookies[@heroku_cookie]),
-      {:ok, %Resource{} = resource} <- Heroku.get_resource(cookie.resource_id),
-      do: {:ok, conn |> assign(:heroku, resource)}
-    )
-    |> Result.or_else(conn)
+    res =
+      with {:ok, cookie} <- Result.from_nillable(conn.cookies[@heroku_cookie]),
+           _ = Logger.info("fetch_heroku_resource: got cookie: #{inspect(cookie)}"),
+           {:ok, %Resource{} = resource} <- Heroku.get_resource(cookie.resource_id) do
+        Logger.info("fetch_heroku_resource: got resource: #{inspect(resource)}")
+        {:ok, conn |> assign(:heroku, resource)}
+      end
+
+    Logger.info("fetch_heroku_resource: res: #{inspect(res)}")
+    c = res |> Result.or_else(conn)
+    Logger.info("fetch_heroku_resource: final conn: #{inspect(c)}")
+    c
   end
 
   def require_heroku_resource(conn, _opts) do

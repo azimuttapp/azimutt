@@ -1,5 +1,6 @@
 defmodule AzimuttWeb.Router do
   use AzimuttWeb, :router
+  require Logger
   import PhxLiveStorybook.Router
   import AzimuttWeb.UserAuth
   alias AzimuttWeb.Plugs.AllowCrossOriginIframe
@@ -97,8 +98,8 @@ defmodule AzimuttWeb.Router do
 
   scope "/heroku", AzimuttWeb do
     pipe_through [:browser]
-    if Mix.env() == :dev, do: get("/", HerokuController, :index)
     post "/login", HerokuController, :login
+    if Mix.env() == :dev, do: get("/", HerokuController, :index)
   end
 
   scope "/heroku", AzimuttWeb do
