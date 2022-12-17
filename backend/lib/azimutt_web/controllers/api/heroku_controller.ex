@@ -4,26 +4,19 @@
 # see https://devcenter.heroku.com/articles/building-an-add-on
 # see https://devcenter.heroku.com/articles/add-on-single-sign-on
 defmodule AzimuttWeb.Api.HerokuController do
-  require Logger
   use AzimuttWeb, :controller
   alias Azimutt.Heroku
-  alias Azimutt.Utils.Stringx
   action_fallback AzimuttWeb.Api.FallbackController
 
   # https://devcenter.heroku.com/articles/add-on-partner-api-reference#add-on-provision
   # https://devcenter.heroku.com/articles/building-an-add-on#the-provisioning-request-example-request
   # this endpoint MUST be idempotent (one resource per uuid), return 410 if deleted and 422 on error
   def create(conn, %{"uuid" => id} = params) do
-    Logger.info("Api.HerokuController#create: #{Stringx.inspect(params)}")
-
     case Heroku.get_resource(id) do
       {:ok, resource} ->
-        Logger.info("Api.HerokuController#create: already exists")
         conn |> render("show.json", resource: resource, message: "This resource was already created.")
 
       {:error, :not_found} ->
-        Logger.info("Api.HerokuController#create: create")
-
         case Heroku.create_resource(%{
                id: id,
                name: params["name"],
@@ -35,25 +28,18 @@ defmodule AzimuttWeb.Api.HerokuController do
                oauth_type: params["oauth_grant"]["type"],
                oauth_expire: params["oauth_grant"]["expires_at"]
              }) do
-          {:ok, resource} ->
-            Logger.info("Api.HerokuController#create: created: #{Stringx.inspect(resource)}")
-            conn |> render("show.json", resource: resource, message: "Your add-on is now provisioned.")
-
-          {:error, err} ->
-            Logger.info("Api.HerokuController#create: error: #{Stringx.inspect(err)}")
-            conn |> send_resp(:unprocessable_entity, "")
+          {:ok, resource} -> conn |> render("show.json", resource: resource, message: "Your add-on is now provisioned.")
+          {:error, _err} -> conn |> send_resp(:unprocessable_entity, "")
         end
 
       {:error, :deleted} ->
-        Logger.info("Api.HerokuController#create: deleted")
         conn |> send_resp(:gone, "")
     end
   end
 
   # https://devcenter.heroku.com/articles/add-on-partner-api-reference#add-on-plan-change
   # https://devcenter.heroku.com/articles/building-an-add-on#the-plan-change-request-upgrade-downgrade
-  def update(conn, %{"id" => id, "plan" => plan} = params) do
-    Logger.info("Api.HerokuController#update: #{Stringx.inspect(params)}")
+  def update(conn, %{"id" => id, "plan" => plan}) do
     now = DateTime.utc_now()
 
     case Heroku.get_resource(id) do
@@ -73,8 +59,7 @@ defmodule AzimuttWeb.Api.HerokuController do
 
   # https://devcenter.heroku.com/articles/add-on-partner-api-reference#add-on-deprovision
   # https://devcenter.heroku.com/articles/building-an-add-on#the-deprovisioning-request-example-request
-  def delete(conn, %{"id" => id} = params) do
-    Logger.info("Api.HerokuController#delete: #{Stringx.inspect(params)}")
+  def delete(conn, %{"id" => id}) do
     now = DateTime.utc_now()
 
     case Heroku.get_resource(id) do

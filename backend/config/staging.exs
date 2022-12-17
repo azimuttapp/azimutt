@@ -11,7 +11,8 @@ config :azimutt,
   team_plan_price_id: "price_1LqdRzCaPXsf4vehSyyUn4pd"
 
 # Do not print debug messages in staging
-config :logger, level: :debug
+logger_level = System.get_env("LOGGER_LEVEL")
+config :logger, level: if(logger_level, do: String.to_existing_atom(logger_level), else: :info)
 
 config :sentry,
   dsn: "https://e9e1c774b12b459592c58405c6cf4102@o1353262.ingest.sentry.io/6635088",

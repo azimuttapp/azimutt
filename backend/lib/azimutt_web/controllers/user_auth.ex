@@ -1,6 +1,5 @@
 defmodule AzimuttWeb.UserAuth do
   @moduledoc "base auth module generate by `mix phx.gen.auth`"
-  require Logger
   import Plug.Conn
   import Phoenix.Controller
   alias Azimutt.Accounts
@@ -172,25 +171,20 @@ defmodule AzimuttWeb.UserAuth do
   def require_heroku_basic_auth(conn, _opts) do
     heroku_addon_id = Azimutt.config(:heroku_addon_id)
     heroku_password = Azimutt.config(:heroku_password)
-    Logger.info("require_heroku_basic_auth: #{heroku_addon_id} / #{heroku_password}")
 
     if heroku_addon_id && heroku_password do
       case Plug.BasicAuth.parse_basic_auth(conn) do
         {user, pass} ->
           if Plug.Crypto.secure_compare(user, heroku_addon_id) && Plug.Crypto.secure_compare(pass, heroku_password) do
-            Logger.info("require_heroku_basic_auth: OK")
             conn
           else
-            Logger.info("require_heroku_basic_auth: Invalid credentials")
             conn |> put_error_api(:unauthorized, "Invalid credentials for heroku basic auth")
           end
 
         :error ->
-          Logger.info("require_heroku_basic_auth: Invalid auth")
           conn |> put_error_api(:unauthorized, "Invalid or missing heroku basic auth")
       end
     else
-      Logger.info("require_heroku_basic_auth: Heroku not setup")
       conn |> put_error_api(:unauthorized, "Heroku basic auth not set up")
     end
   end
@@ -204,22 +198,14 @@ defmodule AzimuttWeb.UserAuth do
 
   # read @heroku_cookie and make resource available in conn
   def fetch_heroku_resource(conn, _opts) do
-    Logger.info("fetch_heroku_resource")
     conn = fetch_cookies(conn, signed: [@heroku_cookie])
-    Logger.info("fetch_heroku_resource: fetched cookie")
 
-    res =
-      with {:ok, cookie} <- Result.from_nillable(conn.cookies[@heroku_cookie]),
-           _ = Logger.info("fetch_heroku_resource: got cookie: #{inspect(cookie)}"),
-           {:ok, %Resource{} = resource} <- Heroku.get_resource(cookie.resource_id) do
-        Logger.info("fetch_heroku_resource: got resource: #{inspect(resource)}")
-        {:ok, conn |> assign(:heroku, resource)}
-      end
-
-    Logger.info("fetch_heroku_resource: res: #{inspect(res)}")
-    c = res |> Result.or_else(conn)
-    Logger.info("fetch_heroku_resource: final conn: #{inspect(c)}")
-    c
+    with(
+      {:ok, cookie} <- Result.from_nillable(conn.cookies[@heroku_cookie]),
+      {:ok, %Resource{} = resource} <- Heroku.get_resource(cookie.resource_id),
+      do: {:ok, conn |> assign(:heroku, resource)}
+    )
+    |> Result.or_else(conn)
   end
 
   def require_heroku_resource(conn, _opts) do

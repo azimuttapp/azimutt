@@ -1,20 +1,23 @@
 defmodule AzimuttWeb.Router do
   use AzimuttWeb, :router
-  require Logger
   import PhxLiveStorybook.Router
   import AzimuttWeb.UserAuth
   alias AzimuttWeb.Plugs.AllowCrossOriginIframe
 
-  pipeline :browser do
+  pipeline :browser_no_csrf do
     plug Ueberauth
     plug :accepts, ["html"]
     plug :fetch_session
     plug :fetch_live_flash
     plug :put_root_layout, {AzimuttWeb.LayoutView, :root}
-    plug :protect_from_forgery
     plug :put_secure_browser_headers
     plug :fetch_current_user
     plug :fetch_heroku_resource
+  end
+
+  pipeline :browser do
+    plug :browser_no_csrf
+    plug :protect_from_forgery
   end
 
   pipeline :api do
@@ -36,7 +39,6 @@ defmodule AzimuttWeb.Router do
   # public routes
   scope "/", AzimuttWeb do
     pipe_through :browser
-    post "/heroku/login", HerokuController, :login
     get "/", WebsiteController, :index
     get "/last", WebsiteController, :last
     get "/blog", BlogController, :index
@@ -90,16 +92,17 @@ defmodule AzimuttWeb.Router do
     patch "/invitations/:id/refuse", OrganizationInvitationController, :refuse, as: :invitation
   end
 
-  # scope "/heroku", AzimuttWeb do
-  #   pipe_through [:browser]
-  #   if Mix.env() == :dev, do: get("/", HerokuController, :index)
-  # end
-
   scope "/heroku", AzimuttWeb do
     pipe_through [:api, :require_heroku_basic_auth]
     post "/resources", Api.HerokuController, :create
     put "/resources/:id", Api.HerokuController, :update
     delete "/resources/:id", Api.HerokuController, :delete
+  end
+
+  scope "/heroku", AzimuttWeb do
+    pipe_through [:browser_no_csrf]
+    if Mix.env() == :dev, do: get("/", HerokuController, :index)
+    post "/heroku/login", HerokuController, :login
   end
 
   scope "/heroku", AzimuttWeb do
