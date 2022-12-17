@@ -31,11 +31,13 @@ defmodule AzimuttWeb.HerokuController do
   # https://devcenter.heroku.com/articles/add-on-single-sign-on
   # https://devcenter.heroku.com/articles/building-an-add-on#the-provisioning-request-example-request
   # TODO: should update user when github login after heroku sso? (create heroku_auth & github_auth tables?)
-  def login(
-        conn,
-        %{"resource_id" => resource_id, "timestamp" => timestamp, "resource_token" => token, "email" => email, "app" => app} = params
-      ) do
+  def login(conn, params) do
     Logger.info("HerokuController#login: #{Stringx.inspect(params)}")
+    resource_id = params["resource_id"]
+    timestamp = params["timestamp"]
+    token = params["resource_token"]
+    email = params["email"]
+    app = params["app"]
     now = DateTime.utc_now()
     now_ts = System.os_time(:second)
     salt = Azimutt.config(:heroku_sso_salt)
