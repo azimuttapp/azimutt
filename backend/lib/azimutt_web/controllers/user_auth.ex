@@ -219,6 +219,7 @@ defmodule AzimuttWeb.UserAuth do
     if conn.assigns[:current_user] && conn.assigns[:current_user].is_admin do
       conn
     else
+      # TODO: can I render FallbackController {:error, :forbidden}?
       conn |> put_error_html(:forbidden, "403.html", "This section is for admins only.")
     end
   end
@@ -227,6 +228,8 @@ defmodule AzimuttWeb.UserAuth do
     conn
     |> put_status(status)
     |> put_view(AzimuttWeb.ErrorView)
+    |> put_layout({AzimuttWeb.LayoutView, "empty.html"})
+    |> put_root_layout({AzimuttWeb.LayoutView, "empty.html"})
     |> render(view, message: message)
     |> halt()
   end

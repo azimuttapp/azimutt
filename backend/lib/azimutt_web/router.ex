@@ -110,10 +110,10 @@ defmodule AzimuttWeb.Router do
     get "/resources/:id", HerokuController, :show
   end
 
-   scope "/admin", AzimuttWeb do
-     pipe_through [:browser, :require_authed_user, :require_admin_user]
-     get "/", Admin.DashboardController, :index
-   end
+  scope "/admin", AzimuttWeb do
+    pipe_through [:browser, :require_authed_user, :require_admin_user]
+    get "/", Admin.AdminController, :index
+  end
 
   scope "/api/v1/swagger" do
     forward "/", PhoenixSwagger.Plug.SwaggerUI, otp_app: :azimutt, swagger_file: "swagger.json"
