@@ -33,6 +33,7 @@ defmodule AzimuttWeb.HerokuController do
   # TODO: should update user when github login after heroku sso? (create heroku_auth & github_auth tables?)
   def login(conn, params) do
     Logger.info("HerokuController#login: #{Stringx.inspect(params)}")
+    # also user_id :)
     resource_id = params["resource_id"]
     timestamp = params["timestamp"]
     token = params["resource_token"]

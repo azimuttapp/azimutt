@@ -88,3 +88,10 @@ config :phoenix, :stacktrace_depth, 20
 
 # Initialize plugs at runtime for faster development compilation
 config :phoenix, :plug_init_mode, :runtime
+
+config :azimutt, AzimuttWeb.Endpoint,
+  http: [port: 4000],
+  https: [port: 4443, otp_app: :azimutt, keyfile: "priv/keys/localhost.key", certfile: "priv/keys/localhost.cert"],
+  debug_errors: true,
+  code_reloader: true,
+  check_origin: false
