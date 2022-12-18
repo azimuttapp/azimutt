@@ -114,6 +114,21 @@ fk admins.id -> users.id
                 , AmlRelationStatement { from = { schema = Nothing, table = "admins", column = "id" }, to = { schema = Nothing, table = "users", column = "id" }, comment = Nothing }
                 , AmlEmptyStatement { comment = Nothing }
                 ]
+
+            --, parserTest ( "space tolerant", AmlParser.parser )
+            --    (""
+            --        ++ "users\n"
+            --        ++ "  id\n"
+            --        ++ "  \n"
+            --        ++ "\n"
+            --        ++ "events\n"
+            --        ++ "  id\n"
+            --    )
+            --    [ AmlTableStatement { table | table = "users", columns = [ { column | name = "id" } ] }
+            --    , AmlEmptyStatement { comment = Nothing }
+            --    , AmlEmptyStatement { comment = Nothing }
+            --    , AmlTableStatement { table | table = "events", columns = [ { column | name = "id" } ] }
+            --    ]
             , parserFail ( "ExpectingSymbol", AmlParser.parser ) "users\n  id fk bad\n" [ { row = 2, col = 12, problem = ExpectingSymbol "." } ]
             , parserFail ( "UnexpectedChar", AmlParser.parser ) "users\n  id fk bad.\n" [ { row = 2, col = 13, problem = UnexpectedChar }, { row = 2, col = 13, problem = UnexpectedChar } ]
             ]
