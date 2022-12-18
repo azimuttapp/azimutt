@@ -1,4 +1,19 @@
-module Libs.Tuple3 exposing (mapFirst, mapSecond, mapThird)
+module Libs.Tuple3 exposing (first, mapFirst, mapSecond, mapThird, second, third)
+
+
+first : ( a, b, c ) -> a
+first ( a, _, _ ) =
+    a
+
+
+second : ( a, b, c ) -> b
+second ( _, b, _ ) =
+    b
+
+
+third : ( a, b, c ) -> c
+third ( _, _, c ) =
+    c
 
 
 mapFirst : (a -> x) -> ( a, b, c ) -> ( x, b, c )

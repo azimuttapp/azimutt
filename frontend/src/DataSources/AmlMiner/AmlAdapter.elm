@@ -1,6 +1,6 @@
 module DataSources.AmlMiner.AmlAdapter exposing (AmlSchema, AmlSchemaError, buildSource, evolve)
 
-import Array
+import Array exposing (Array)
 import Conf
 import DataSources.AmlMiner.AmlParser exposing (AmlColumn, AmlColumnName, AmlColumnRef, AmlNotes, AmlStatement(..), AmlTable)
 import DataSources.Helpers exposing (defaultCheckName, defaultIndexName, defaultRelName, defaultUniqueName)
@@ -46,8 +46,8 @@ type alias AmlSchemaError =
     }
 
 
-buildSource : SourceInfo -> Result (List DeadEnd) (List AmlStatement) -> ( List AmlSchemaError, Source )
-buildSource source result =
+buildSource : SourceInfo -> Array String -> Result (List DeadEnd) (List AmlStatement) -> ( List AmlSchemaError, Source, Dict TableId (List ColumnName) )
+buildSource source content result =
     let
         schema : AmlSchema
         schema =
@@ -55,12 +55,16 @@ buildSource source result =
                 |> Result.fold
                     (\err -> AmlSchema Dict.empty [] Dict.empty (err |> List.map (\e -> { row = e.row, col = e.col, problem = Parser.problemToString e.problem })))
                     (List.foldl (evolve source.id) (AmlSchema Dict.empty [] Dict.empty []))
+
+        orderedColumns : Dict TableId (List ColumnName)
+        orderedColumns =
+            result |> Result.fold (\_ -> Dict.empty) (List.foldl tablesColumnsOrdered Dict.empty)
     in
     ( schema.errors |> List.reverse
     , { id = source.id
       , name = source.name
       , kind = source.kind
-      , content = Array.empty
+      , content = content
       , tables = schema.tables
       , relations = schema.relations |> List.reverse
       , types = schema.types
@@ -69,7 +73,21 @@ buildSource source result =
       , createdAt = source.createdAt
       , updatedAt = source.updatedAt
       }
+    , orderedColumns
     )
+
+
+tablesColumnsOrdered : AmlStatement -> Dict TableId (List ColumnName) -> Dict TableId (List ColumnName)
+tablesColumnsOrdered statement tables =
+    case statement of
+        AmlTableStatement table ->
+            tables |> Dict.insert (createTableId table) (table.columns |> List.map .name)
+
+        AmlRelationStatement _ ->
+            tables
+
+        AmlEmptyStatement _ ->
+            tables
 
 
 evolve : SourceId -> AmlStatement -> AmlSchema -> AmlSchema
@@ -97,11 +115,21 @@ evolve source statement schema =
             schema
 
 
+createTableId : AmlTable -> TableId
+createTableId table =
+    ( table.schema |> Maybe.withDefault Conf.schema.empty, table.table )
+
+
 createTable : SourceId -> AmlTable -> ( Table, List Relation, Dict CustomTypeId CustomType )
 createTable source table =
-    ( { id = ( table.schema |> Maybe.withDefault Conf.schema.empty, table.table )
-      , schema = table.schema |> Maybe.withDefault Conf.schema.empty
-      , name = table.table
+    let
+        id : TableId
+        id =
+            createTableId table
+    in
+    ( { id = id
+      , schema = id |> TableId.schema
+      , name = id |> TableId.name
       , view = table.isView
       , columns = table.columns |> List.indexedMap (createColumn source) |> Dict.fromListMap .name
       , primaryKey = table.columns |> createPrimaryKey source

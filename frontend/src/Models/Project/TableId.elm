@@ -1,4 +1,4 @@
-module Models.Project.TableId exposing (TableId, decode, decodeWith, encode, fromHtmlId, fromString, parse, parseWith, show, toHtmlId, toString)
+module Models.Project.TableId exposing (TableId, decode, decodeWith, encode, fromHtmlId, fromString, name, parse, parseWith, schema, show, toHtmlId, toString)
 
 import Conf
 import Json.Decode as Decode
@@ -14,43 +14,53 @@ type alias TableId =
     ( SchemaName, TableName )
 
 
+schema : TableId -> SchemaName
+schema ( s, _ ) =
+    s
+
+
+name : TableId -> TableName
+name ( _, t ) =
+    t
+
+
 toHtmlId : TableId -> HtmlId
-toHtmlId ( schema, table ) =
-    "table-" ++ schema ++ "-" ++ (table |> HtmlId.encode)
+toHtmlId ( s, t ) =
+    "table-" ++ s ++ "-" ++ (t |> HtmlId.encode)
 
 
 fromHtmlId : HtmlId -> Maybe TableId
 fromHtmlId id =
     case String.split "-" id of
-        "table" :: schema :: table :: [] ->
-            Just ( schema, table |> HtmlId.decode )
+        "table" :: s :: t :: [] ->
+            Just ( s, t |> HtmlId.decode )
 
         _ ->
             Nothing
 
 
 toString : TableId -> String
-toString ( schema, table ) =
-    schema ++ "." ++ table
+toString ( s, t ) =
+    s ++ "." ++ t
 
 
 fromString : String -> Maybe TableId
 fromString id =
     case String.split "." id of
-        schema :: table :: [] ->
-            Just ( schema, table )
+        s :: t :: [] ->
+            Just ( s, t )
 
         _ ->
             Nothing
 
 
 show : SchemaName -> TableId -> String
-show defaultSchema ( schema, table ) =
-    if schema == Conf.schema.empty || schema == defaultSchema then
-        table
+show defaultSchema ( s, t ) =
+    if s == Conf.schema.empty || s == defaultSchema then
+        t
 
     else
-        schema ++ "." ++ table
+        s ++ "." ++ t
 
 
 parse : String -> TableId
@@ -61,8 +71,8 @@ parse tableId =
 parseWith : SchemaName -> String -> TableId
 parseWith defaultSchema tableId =
     case tableId |> String.split "." of
-        schema :: table :: [] ->
-            ( schema, table )
+        s :: t :: [] ->
+            ( s, t )
 
         _ ->
             ( defaultSchema, tableId )

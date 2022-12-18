@@ -236,31 +236,13 @@ hoverNextColumn table column model =
 
 showColumns : Time.Posix -> TableId -> ShowColumns -> Erd -> ( Erd, Cmd msg )
 showColumns now id kind erd =
-    ( mapTablePropsOrSelectedColumns now
+    ( mapColumnsForTableOrSelectedProps now
         id
         (\table columns ->
             erd.relations
                 |> List.filter (Relation.linkedToTable id)
-                |> (\tableRelations ->
-                        columns
-                            ++ (table.columns
-                                    |> Dict.values
-                                    |> List.filter (\c -> columns |> List.memberBy .name c.name |> not)
-                                    |> List.filter
-                                        (\column ->
-                                            case kind of
-                                                ShowColumns.All ->
-                                                    True
-
-                                                ShowColumns.Relations ->
-                                                    tableRelations |> List.filter (Relation.linkedTo ( id, column.name )) |> List.nonEmpty
-
-                                                ShowColumns.List cols ->
-                                                    cols |> List.member column.name
-                                        )
-                                    |> List.map (.name >> ErdColumnProps.create)
-                               )
-                   )
+                |> (\tableRelations -> ShowColumns.filterBy kind tableRelations table columns)
+                |> (\cols -> ShowColumns.sortBy kind cols)
         )
         erd
     , Cmd.none
@@ -269,7 +251,7 @@ showColumns now id kind erd =
 
 hideColumns : Time.Posix -> TableId -> HideColumns -> Erd -> ( Erd, Cmd Msg )
 hideColumns now id kind erd =
-    ( mapTablePropsOrSelectedColumns now
+    ( mapColumnsForTableOrSelectedProps now
         id
         (\table columns ->
             erd.relations
@@ -308,7 +290,7 @@ hideColumns now id kind erd =
 
 sortColumns : Time.Posix -> TableId -> ColumnOrder -> Erd -> ( Erd, Cmd Msg )
 sortColumns now id kind erd =
-    ( mapTablePropsOrSelectedColumns now
+    ( mapColumnsForTableOrSelectedProps now
         id
         (\table columns ->
             columns
@@ -389,8 +371,8 @@ mapTablePropOrSelected defaultSchema id transform tableLayouts =
         |> Maybe.withDefault ( tableLayouts, "Table " ++ TableId.show defaultSchema id ++ " not found" |> Toasts.info |> Toast |> T.send )
 
 
-mapTablePropsOrSelectedColumns : Time.Posix -> TableId -> (ErdTable -> List ErdColumnProps -> List ErdColumnProps) -> Erd -> Erd
-mapTablePropsOrSelectedColumns now id transform erd =
+mapColumnsForTableOrSelectedProps : Time.Posix -> TableId -> (ErdTable -> List ErdColumnProps -> List ErdColumnProps) -> Erd -> Erd
+mapColumnsForTableOrSelectedProps now id transform erd =
     let
         selected : Bool
         selected =
