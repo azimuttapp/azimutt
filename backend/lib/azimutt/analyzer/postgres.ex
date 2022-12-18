@@ -519,6 +519,7 @@ defmodule Azimutt.Analyzer.Postgres do
       %ColumnType{
         formatted: row |> Enum.at(0),
         name: row |> Enum.at(1),
+        # https://www.postgresql.org/docs/current/catalog-pg-type.html#CATALOG-TYPCATEGORY-TABLE
         category: row |> Enum.at(2)
       }
     end)
@@ -584,8 +585,7 @@ defmodule Azimutt.Analyzer.Postgres do
 
   # HELPERS
 
-  defp in_schema(schema),
-    do: if(schema == nil, do: "NOT IN ('information_schema', 'pg_catalog')", else: "IN ($1)")
+  defp in_schema(schema), do: if(schema == nil, do: "NOT IN ('information_schema', 'pg_catalog')", else: "IN ($1)")
 
   defp format_result(%Postgrex.Result{} = res, struct) do
     columns = res.columns |> Enum.map(&String.to_atom/1)
@@ -594,9 +594,7 @@ defmodule Azimutt.Analyzer.Postgres do
 
   # other interesting fields: `res.query` & `res.postgres.position`
   defp format_error(%Postgrex.Error{} = err),
-    do:
-      err.postgres.message <>
-        if(err.postgres[:hint] == nil, do: "", else: ". " <> err.postgres[:hint])
+    do: "#{err.postgres.message}#{if(err.postgres[:hint] == nil, do: "", else: ". #{err.postgres[:hint]}")}"
 
   defp format_error(%Postgrex.QueryError{} = err), do: err.message
   defp format_error(%DBConnection.ConnectionError{} = err), do: err.message
