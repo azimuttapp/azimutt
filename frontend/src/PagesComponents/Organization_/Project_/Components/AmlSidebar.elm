@@ -12,6 +12,7 @@ import Html.Attributes exposing (class, disabled, for, id, name, selected, value
 import Html.Events exposing (onClick, onInput)
 import Libs.Basics exposing (tupled)
 import Libs.Bool as Bool
+import Libs.Dict as Dict
 import Libs.Html exposing (extLink)
 import Libs.Html.Attributes exposing (css)
 import Libs.List as List
@@ -109,9 +110,8 @@ updateSource now source input model =
         content =
             contentSplit input
 
-        ( errors, parsed ) =
-            -- TODO: improve, `content` should be set in source inside the `buildSource`
-            String.trim input ++ "\n" |> AmlParser.parse |> AmlAdapter.buildSource (source |> Source.toInfo) |> Tuple.mapSecond (setContent content)
+        ( errors, parsed, amlColumns ) =
+            (String.trim input ++ "\n") |> AmlParser.parse |> AmlAdapter.buildSource (source |> Source.toInfo) content
 
         ( removed, bothPresent, added ) =
             List.diff .id (source.tables |> Dict.values) (parsed.tables |> Dict.values)
@@ -153,7 +153,7 @@ updateSource now source input model =
             (List.map T.send
                 ((toShow |> List.map (tupled ShowTable))
                     ++ (toHide |> List.map HideTable)
-                    ++ (updated |> List.map (\t -> ShowColumns t.id (ShowColumns.List (t.columns |> Dict.keys))))
+                    ++ (updated |> List.map (\t -> ShowColumns t.id (ShowColumns.List (amlColumns |> Dict.getOrElse t.id []))))
                 )
             )
         )

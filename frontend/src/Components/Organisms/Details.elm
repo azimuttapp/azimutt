@@ -22,6 +22,7 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
 import Libs.Tailwind exposing (TwClass)
 import Libs.Time as Time
+import Libs.Tuple3 as Tuple3
 import Models.Project as Project
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
 import Models.Project.LayoutName exposing (LayoutName)
@@ -817,7 +818,7 @@ demo.test
   key varchar
 """
         |> AmlParser.parse
-        |> AmlAdapter.buildSource (SourceInfo.aml Time.zero SourceId.zero "test")
-        |> Tuple.second
+        |> AmlAdapter.buildSource (SourceInfo.aml Time.zero SourceId.zero "test") Array.empty
+        |> Tuple3.second
         |> Project.create [] "Project name"
         |> Erd.create
