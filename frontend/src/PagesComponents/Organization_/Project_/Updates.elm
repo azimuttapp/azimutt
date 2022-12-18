@@ -10,7 +10,7 @@ import Libs.Json.Decode as Decode
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models exposing (SizeChange)
-import Libs.Models.Delta as Delta exposing (Delta)
+import Libs.Models.Delta exposing (Delta)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Task as T
 import Models.Area as Area
@@ -488,7 +488,7 @@ updateTable zoom tables erdViewport table change =
 
 
 computeInitialPosition : List ErdTableLayout -> Area.Canvas -> Size.Canvas -> Delta -> Maybe PositionHint -> Position.CanvasGrid
-computeInitialPosition tables erdViewport newSize seeds hint =
+computeInitialPosition tables erdViewport newSize _ hint =
     hint
         |> Maybe.mapOrElse
             (\h ->
@@ -502,12 +502,14 @@ computeInitialPosition tables erdViewport newSize seeds hint =
                     PlaceAt position ->
                         position
             )
-            (if tables |> List.filter (\t -> t.props.size /= Size.zeroCanvas) |> List.isEmpty then
-                newSize |> placeAtCenter erdViewport
-
-             else
-                newSize |> placeAtRandom erdViewport seeds
-            )
+            -- EXPERIMENT: always show new tables at the center
+            --(if tables |> List.filter (\t -> t.props.size /= Size.zeroCanvas) |> List.isEmpty then
+            --    newSize |> placeAtCenter erdViewport
+            --
+            -- else
+            --    newSize |> placeAtRandom erdViewport seeds
+            --)
+            (newSize |> placeAtCenter erdViewport)
 
 
 placeAtCenter : Area.Canvas -> Size.Canvas -> Position.CanvasGrid
@@ -521,11 +523,12 @@ placeAtCenter erdViewport newSize =
     canvasCenter |> Position.moveCanvas (Position.zeroCanvas |> Position.diffCanvas tableCenter) |> Position.onGrid
 
 
-placeAtRandom : Area.Canvas -> Delta -> Size.Canvas -> Position.CanvasGrid
-placeAtRandom erdViewport seeds newSize =
-    erdViewport.position
-        |> Position.moveCanvas (erdViewport.size |> Size.diffCanvas newSize |> Delta.max 0 |> Delta.multD seeds)
-        |> Position.onGrid
+
+--placeAtRandom : Area.Canvas -> Delta -> Size.Canvas -> Position.CanvasGrid
+--placeAtRandom erdViewport seeds newSize =
+--    erdViewport.position
+--        |> Position.moveCanvas (erdViewport.size |> Size.diffCanvas newSize |> Delta.max 0 |> Delta.multD seeds)
+--        |> Position.onGrid
 
 
 moveDownIfExists : List ErdTableLayout -> Size.Canvas -> Position.CanvasGrid -> Position.CanvasGrid
