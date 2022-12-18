@@ -11,10 +11,13 @@ defmodule Azimutt.Analyzer.ColumnStats do
     field :rows, pos_integer()
     field :nulls, pos_integer()
     field :cardinality, pos_integer()
-    # field :min, any()
-    # field :max, any()
     field :common_values, list(ValueCount.t())
-    # field :random_values, list(any())
+    # field :random_values, list(any()) # TODO
+    # TODO: for strings: min, max, min_len, max_len
+    # TODO: for numbers: min, max, avg, median
+    # TODO: for dates: min, max
+    # TODO: for bools: /
+    # TODO: for enums: /
   end
 
   typedstruct module: ValueCount, enforce: true do
