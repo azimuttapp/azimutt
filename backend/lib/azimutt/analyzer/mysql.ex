@@ -57,7 +57,7 @@ defmodule Azimutt.Analyzer.Mysql do
   @spec compute_stats(DbConf.t(), String.t() | nil, String.t(), String.t() | nil) :: Result.s(TableStats.t() | ColumnStats.t())
   def compute_stats(conf, schema, table, _column) do
     Resource.use(fn -> connect(conf) end, &disconnect(&1), fn _pid ->
-      {:ok, %TableStats{schema: schema, table: table}}
+      {:ok, %TableStats{schema: schema, table: table, rows: 0}}
     end)
   end
 

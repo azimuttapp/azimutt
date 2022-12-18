@@ -6,5 +6,6 @@ defmodule Azimutt.Analyzer.TableStats do
     @derive Jason.Encoder
     field :schema, String.t()
     field :table, String.t()
+    field :rows, integer()
   end
 end
