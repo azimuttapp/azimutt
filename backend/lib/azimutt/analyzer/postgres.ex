@@ -2,6 +2,7 @@ defmodule Azimutt.Analyzer.Postgres do
   @moduledoc "Analyzer implementation for PostgreSQL"
   use TypedStruct
   alias Azimutt.Analyzer.ColumnStats
+  alias Azimutt.Analyzer.ColumnStats.ValueCount
   alias Azimutt.Analyzer.QueryResults
   alias Azimutt.Analyzer.Schema
   alias Azimutt.Analyzer.TableStats
@@ -553,11 +554,17 @@ defmodule Azimutt.Analyzer.Postgres do
     end)
   end
 
-  @spec common_values(pid(), String.t(), String.t()) :: Result.s(map())
+  @spec common_values(pid(), String.t(), String.t()) :: Result.s(list(ValueCount.t()))
   defp common_values(pid, table, column) do
     Postgrex.query(pid, "SELECT #{column}, count(*) FROM #{table} GROUP BY #{column} ORDER BY count(*) DESC LIMIT 10", [])
     |> Result.map_both(&format_error/1, fn res ->
-      res.rows |> Enum.map(fn row -> {row |> Enum.at(0) |> format_value, row |> Enum.at(1)} end) |> Map.new()
+      res.rows
+      |> Enum.map(fn row ->
+        %ValueCount{
+          value: row |> Enum.at(0) |> format_value,
+          count: row |> Enum.at(1)
+        }
+      end)
     end)
   end
 
@@ -596,6 +603,5 @@ defmodule Azimutt.Analyzer.Postgres do
   defp format_error(err), do: "Unknown error: #{Stringx.inspect(err)}"
 
   defp format_value(value) when is_binary(value) and byte_size(value) == 16, do: Ecto.UUID.cast!(value)
-  # defp format_value(value) when is_nil(value), do: "null"
   defp format_value(value), do: value
 end
