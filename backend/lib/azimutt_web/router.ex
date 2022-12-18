@@ -125,6 +125,10 @@ defmodule AzimuttWeb.Router do
     # GET is practical for development and POST allows to not have params in possible http logs
     get "/analyzer/schema", Api.AnalyzerController, :schema
     post "/analyzer/schema", Api.AnalyzerController, :schema
+    get "/analyzer/stats", Api.AnalyzerController, :stats
+    post "/analyzer/stats", Api.AnalyzerController, :stats
+    get "/analyzer/query", Api.AnalyzerController, :query
+    post "/analyzer/query", Api.AnalyzerController, :query
     get "/gallery", Api.GalleryController, :index
     get "/organizations/:organization_id/projects/:id", Api.ProjectController, :show
   end

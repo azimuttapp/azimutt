@@ -1,7 +1,10 @@
 defmodule Azimutt.Analyzer.Postgres do
   @moduledoc "Analyzer implementation for PostgreSQL"
   use TypedStruct
+  alias Azimutt.Analyzer.ColumnStats
+  alias Azimutt.Analyzer.QueryResults
   alias Azimutt.Analyzer.Schema
+  alias Azimutt.Analyzer.TableStats
   alias Azimutt.Analyzer.Utils
   alias Azimutt.Utils.Mapx
   alias Azimutt.Utils.Nil
@@ -10,8 +13,13 @@ defmodule Azimutt.Analyzer.Postgres do
   alias Azimutt.Utils.Stringx
 
   @spec get_schema(String.t(), String.t() | nil) :: Result.s(Result.s(Schema.t()))
-  def get_schema(url, schema),
-    do: parse_url(url) |> Result.map(&extract_schema(&1, schema))
+  def get_schema(url, schema), do: parse_url(url) |> Result.map(&extract_schema(&1, schema))
+
+  @spec get_stats(String.t(), String.t() | nil, String.t(), String.t() | nil) :: Result.s(Result.s(TableStats.t() | ColumnStats.t()))
+  def get_stats(url, schema, table, column), do: parse_url(url) |> Result.map(&compute_stats(&1, schema, table, column))
+
+  @spec run_query(String.t(), String.t()) :: Result.s(Result.s(QueryResults.t()))
+  def run_query(url, query), do: parse_url(url) |> Result.map(&exec_query(&1, query))
 
   typedstruct module: DbConf, enforce: true do
     @moduledoc false
@@ -53,6 +61,30 @@ defmodule Azimutt.Analyzer.Postgres do
            do: {:ok, build_schema(columns, constraints, indexes, comments, relations, types)}
     end)
   end
+
+  @spec compute_stats(DbConf.t(), String.t() | nil, String.t(), String.t() | nil) :: Result.s(TableStats.t() | ColumnStats.t())
+  def compute_stats(conf, schema, table, _column) do
+    Resource.use(fn -> connect(conf) end, &disconnect(&1), fn _pid ->
+      {:ok, %TableStats{schema: schema, table: table}}
+    end)
+  end
+
+  @spec exec_query(DbConf.t(), String.t()) :: Result.s(QueryResults.t())
+  def exec_query(conf, query) do
+    Resource.use(fn -> connect(conf) end, &disconnect(&1), fn pid ->
+      Postgrex.query(pid, query, [])
+      |> Result.map_both(&format_error/1, fn res ->
+        %QueryResults{
+          query: query,
+          columns: res.columns,
+          values: res.rows |> Enum.map(fn row -> row |> Enum.map(&format_query_value/1) end)
+        }
+      end)
+    end)
+  end
+
+  defp format_query_value(value) when is_binary(value) and byte_size(value) == 16, do: Ecto.UUID.cast!(value)
+  defp format_query_value(value), do: value
 
   @spec connect(DbConf.t()) :: Result.s(pid())
   defp connect(%DbConf{} = conf) do

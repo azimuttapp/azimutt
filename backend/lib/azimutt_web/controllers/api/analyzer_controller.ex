@@ -29,6 +29,16 @@ defmodule AzimuttWeb.Api.AnalyzerController do
          do: conn |> render("schema.json", schema: schema)
   end
 
+  def stats(conn, %{"url" => url, "table" => table} = params) do
+    with {:ok, stats} <- Analyzer.get_stats(url, params["schema"], table, params["column"]),
+         do: conn |> render("stats.json", stats: stats)
+  end
+
+  def query(conn, %{"url" => url, "query" => query}) do
+    with {:ok, results} <- Analyzer.run_query(url, query),
+         do: conn |> render("query.json", results: results)
+  end
+
   def swagger_definitions do
     %{
       Schema:
