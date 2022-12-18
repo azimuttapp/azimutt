@@ -63,28 +63,32 @@ defmodule Azimutt.Analyzer.Postgres do
   end
 
   @spec compute_stats(DbConf.t(), String.t() | nil, String.t(), String.t() | nil) :: Result.s(TableStats.t() | ColumnStats.t())
-  def compute_stats(conf, schema, table, _column) do
-    Resource.use(fn -> connect(conf) end, &disconnect(&1), fn _pid ->
-      {:ok, %TableStats{schema: schema, table: table}}
-    end)
-  end
-
-  @spec exec_query(DbConf.t(), String.t()) :: Result.s(QueryResults.t())
-  def exec_query(conf, query) do
+  def compute_stats(conf, schema, table, column) do
     Resource.use(fn -> connect(conf) end, &disconnect(&1), fn pid ->
-      Postgrex.query(pid, query, [])
-      |> Result.map_both(&format_error/1, fn res ->
-        %QueryResults{
-          query: query,
-          columns: res.columns,
-          values: res.rows |> Enum.map(fn row -> row |> Enum.map(&format_query_value/1) end)
-        }
-      end)
+      sql_table = "#{if(schema, do: "#{schema}.", else: "")}#{table}"
+
+      if column do
+        with {:ok, type} <- get_column_type(pid, schema, table, column),
+             {:ok, stats} <- column_basics(pid, sql_table, column),
+             {:ok, common_values} <- common_values(pid, sql_table, column),
+             do:
+               {:ok,
+                %ColumnStats{
+                  schema: schema,
+                  table: table,
+                  column: column,
+                  type: type.name,
+                  rows: stats.rows,
+                  nulls: stats.nulls,
+                  cardinality: stats.cardinality,
+                  common_values: common_values
+                }}
+      else
+        with {:ok, rows} <- count_rows(pid, sql_table),
+             do: {:ok, %TableStats{schema: schema, table: table, rows: rows}}
+      end
     end)
   end
-
-  defp format_query_value(value) when is_binary(value) and byte_size(value) == 16, do: Ecto.UUID.cast!(value)
-  defp format_query_value(value), do: value
 
   @spec connect(DbConf.t()) :: Result.s(pid())
   defp connect(%DbConf{} = conf) do
@@ -479,6 +483,98 @@ defmodule Azimutt.Analyzer.Postgres do
 
   defp to_table_id(item), do: "#{item.table_schema}.#{item.table_name}"
 
+  @spec count_rows(pid(), String.t()) :: Result.s(integer())
+  defp count_rows(pid, sql_table) do
+    Postgrex.query(pid, "SELECT count(*) FROM #{sql_table}", [])
+    |> Result.map_both(&format_error/1, fn res -> res.rows |> hd() |> hd() end)
+  end
+
+  typedstruct module: ColumnType, enforce: true do
+    @moduledoc false
+    field :formatted, String.t()
+    field :name, String.t()
+    field :category, String.t()
+  end
+
+  @spec get_column_type(pid(), String.t() | nil, String.t(), String.t()) :: Result.s(ColumnType.t())
+  defp get_column_type(pid, schema, table, column) do
+    Postgrex.query(
+      pid,
+      """
+      SELECT format_type(a.atttypid, a.atttypmod) AS formatted
+           , t.typname                            AS name
+           , t.typcategory                        AS category
+      FROM pg_attribute a
+         JOIN pg_class c ON c.oid = a.attrelid
+         JOIN pg_namespace n ON n.oid = c.relnamespace
+         JOIN pg_type t ON t.oid = a.atttypid
+      WHERE c.relname=$1 AND a.attname=$2#{if(schema, do: " AND n.nspname=$3", else: "")}
+      """,
+      if(schema, do: [table, column, schema], else: [table, column])
+    )
+    |> Result.map_both(&format_error/1, fn res ->
+      row = res.rows |> hd()
+
+      %ColumnType{
+        formatted: row |> Enum.at(0),
+        name: row |> Enum.at(1),
+        category: row |> Enum.at(2)
+      }
+    end)
+  end
+
+  typedstruct module: ColumnCounts, enforce: true do
+    @moduledoc false
+    field :rows, pos_integer()
+    field :cardinality, pos_integer()
+    field :nulls, pos_integer()
+  end
+
+  @spec column_basics(pid(), String.t(), String.t()) :: Result.s(ColumnCounts.t())
+  defp column_basics(pid, sql_table, column) do
+    Postgrex.query(
+      pid,
+      """
+      SELECT count(*)                                                    AS rows
+           , count(distinct #{column})                                   AS cardinality
+           , (SELECT count(*) FROM #{sql_table} WHERE #{column} IS NULL) AS nulls
+      FROM #{sql_table}
+      """,
+      []
+    )
+    |> Result.map_both(&format_error/1, fn res ->
+      row = res.rows |> hd()
+
+      %ColumnCounts{
+        rows: row |> Enum.at(0),
+        cardinality: row |> Enum.at(1),
+        nulls: row |> Enum.at(2)
+      }
+    end)
+  end
+
+  @spec common_values(pid(), String.t(), String.t()) :: Result.s(map())
+  defp common_values(pid, table, column) do
+    Postgrex.query(pid, "SELECT #{column}, count(*) FROM #{table} GROUP BY #{column} ORDER BY count(*) DESC LIMIT 10", [])
+    |> Result.map_both(&format_error/1, fn res ->
+      res.rows |> Enum.map(fn row -> {row |> Enum.at(0) |> format_value, row |> Enum.at(1)} end) |> Map.new()
+    end)
+  end
+
+  @spec exec_query(DbConf.t(), String.t()) :: Result.s(QueryResults.t())
+  def exec_query(conf, query) do
+    Resource.use(fn -> connect(conf) end, &disconnect(&1), fn pid ->
+      Postgrex.query(pid, query, [])
+      |> Result.map_both(&format_error/1, fn res ->
+        %QueryResults{
+          query: query,
+          columns: res.columns,
+          values: res.rows |> Enum.map(fn row -> row |> Enum.map(&format_value/1) end)
+        }
+      end)
+    end)
+  end
+
   # HELPERS
 
   defp in_schema(schema),
@@ -498,4 +594,8 @@ defmodule Azimutt.Analyzer.Postgres do
   defp format_error(%Postgrex.QueryError{} = err), do: err.message
   defp format_error(%DBConnection.ConnectionError{} = err), do: err.message
   defp format_error(err), do: "Unknown error: #{Stringx.inspect(err)}"
+
+  defp format_value(value) when is_binary(value) and byte_size(value) == 16, do: Ecto.UUID.cast!(value)
+  # defp format_value(value) when is_nil(value), do: "null"
+  defp format_value(value), do: value
 end
