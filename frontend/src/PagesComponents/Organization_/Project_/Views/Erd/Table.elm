@@ -19,6 +19,7 @@ import Models.Project.ColumnType as ColumnType
 import Models.Project.CustomTypeValue as CustomTypeValue
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Size as Size
+import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
 import PagesComponents.Organization_.Project_.Models exposing (Msg(..), NotesMsg(..), VirtualRelationMsg(..))
 import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode exposing (CursorMode)
 import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn)
@@ -99,12 +100,12 @@ viewTable conf zoom args notes layout table =
             , actions =
                 { hover = ToggleHoverTable table.id
                 , headerClick = \e -> B.cond (e.button == MainButton) (SelectTable table.id (e.ctrl || e.shift)) (Noop "non-main-button-table-header-click")
-                , headerDblClick = Noop "dbl-click-table-header" -- DetailsSidebarMsg (DetailsSidebar.ShowTable table.id)
+                , headerDblClick = DetailsSidebarMsg (DetailsSidebar.ShowTable table.id)
                 , headerRightClick = ContextMenuCreate dropdown
                 , headerDropdownClick = DropdownToggle
                 , columnHover = \col on -> ToggleHoverColumn { table = table.id, column = col } on
                 , columnClick = B.maybe virtualRelation (\col e -> VirtualRelationMsg (VRUpdate { table = table.id, column = col } e.clientPos))
-                , columnDblClick = \_ -> Noop "dbl-click-table-column" -- \col -> { table = table.id, column = col } |> DetailsSidebar.ShowColumn |> DetailsSidebarMsg
+                , columnDblClick = \col -> { table = table.id, column = col } |> DetailsSidebar.ShowColumn |> DetailsSidebarMsg
                 , columnRightClick = \i col -> ContextMenuCreate (B.cond (layout.columns |> List.memberBy .name col) ColumnContextMenu.view ColumnContextMenu.viewHidden platform i { table = table.id, column = col } (notes.columns |> Dict.get col))
                 , notesClick = \col -> NotesMsg (NOpen (col |> Maybe.mapOrElse (\c -> NoteRef.fromColumn { table = table.id, column = c }) (NoteRef.fromTable table.id)))
                 , relationsIconClick =

@@ -54,7 +54,7 @@ type alias Heading item props =
 
 type Msg
     = Close
-      --| Toggle
+    | Toggle
     | SearchUpdate String
     | ShowList
     | ShowSchema SchemaName
@@ -82,8 +82,9 @@ update erd msg model =
         Close ->
             ( Nothing, Cmd.none )
 
-        --Toggle ->
-        --    ( model |> Maybe.mapOrElse (\_ -> Nothing) (listView |> init |> Just), Cmd.none )
+        Toggle ->
+            ( model |> Maybe.mapOrElse (\_ -> Nothing) (listView |> init |> Just), Cmd.none )
+
         SearchUpdate search ->
             ( model |> Maybe.map (setSearch search), Cmd.none )
 
