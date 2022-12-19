@@ -1,0 +1,3 @@
+azimutt.localhost {
+        reverse_proxy * http://localhost:4000
+}

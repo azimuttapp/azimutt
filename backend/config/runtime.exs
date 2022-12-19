@@ -17,7 +17,9 @@ import Config
 # Alternatively, you can use `mix phx.gen.release` to generate a `bin/server`
 # script that automatically sets the env var above.
 if System.get_env("PHX_SERVER") do
-  config :azimutt, AzimuttWeb.Endpoint, server: true
+  config :azimutt, AzimuttWeb.Endpoint,
+    server: true,
+    debug_errors: true
 end
 
 github_client_id = System.get_env("GITHUB_CLIENT_ID")
@@ -76,8 +78,48 @@ secret_key_base =
     You can generate one by calling: mix phx.gen.secret
     """
 
-host = System.get_env("PHX_HOST") || "azimutt.app"
+host = System.get_env("PHX_HOST") || "undefined"
 port = String.to_integer(System.get_env("PORT") || "8080")
+
+cellar_bucket =
+  System.get_env("CELLAR_BUCKET") ||
+    raise """
+    environment variable CELLAR_BUCKET is missing.
+    """
+
+cellar_host =
+  System.get_env("CELLAR_ADDON_HOST") ||
+    raise """
+    environment variable CELLAR_ADDON_HOST is missing.
+    """
+
+config :waffle,
+  storage: Waffle.Storage.S3,
+  bucket: cellar_bucket,
+  asset_host: cellar_host
+
+cellar_addon_key_id =
+  System.get_env("CELLAR_ADDON_KEY_ID") ||
+    raise """
+    environment variable CELLAR_ADDON_KEY_ID is missing.
+    """
+
+cellar_addon_key_secret =
+  System.get_env("CELLAR_ADDON_KEY_SECRET") ||
+    raise """
+    environment variable CELLAR_ADDON_KEY_SECRET is missing.
+    """
+
+config :ex_aws,
+  debug_requests: true,
+  json_codec: Jason,
+  access_key_id: cellar_addon_key_id,
+  secret_access_key: cellar_addon_key_secret
+
+config :ex_aws, :s3,
+  scheme: "https://",
+  host: cellar_host,
+  region: "eu-west-1"
 
 config :azimutt, AzimuttWeb.Endpoint,
   url: [host: host, port: 443, scheme: "https"],
