@@ -39,28 +39,28 @@ type alias TableArgs =
     String
 
 
-argsToString : Platform -> CursorMode -> SchemaName -> String -> String -> Int -> Bool -> Bool -> Bool -> Bool -> TableArgs
-argsToString platform cursorMode defaultSchema openedDropdown openedPopover index isHover dragging virtualRelation useBasicTypes =
-    [ Platform.toString platform, CursorMode.toString cursorMode, defaultSchema, openedDropdown, openedPopover, String.fromInt index, B.cond isHover "Y" "N", B.cond dragging "Y" "N", B.cond virtualRelation "Y" "N", B.cond useBasicTypes "Y" "N" ] |> String.join "~"
+argsToString : Platform -> CursorMode -> SchemaName -> String -> String -> Int -> DetailsSidebar.Selected -> Bool -> Bool -> Bool -> Bool -> TableArgs
+argsToString platform cursorMode defaultSchema openedDropdown openedPopover index selected isHover dragging virtualRelation useBasicTypes =
+    [ Platform.toString platform, CursorMode.toString cursorMode, defaultSchema, openedDropdown, openedPopover, String.fromInt index, selected, B.cond isHover "Y" "N", B.cond dragging "Y" "N", B.cond virtualRelation "Y" "N", B.cond useBasicTypes "Y" "N" ] |> String.join "~"
 
 
-stringToArgs : TableArgs -> ( ( Platform, CursorMode, SchemaName ), ( String, String, Int ), ( ( Bool, Bool ), ( Bool, Bool ) ) )
+stringToArgs : TableArgs -> ( ( Platform, CursorMode, SchemaName ), ( ( String, String, Int ), DetailsSidebar.Selected ), ( ( Bool, Bool ), ( Bool, Bool ) ) )
 stringToArgs args =
     case args |> String.split "~" of
-        [ platform, cursorMode, defaultSchema, openedDropdown, openedPopover, index, isHover, dragging, virtualRelation, useBasicTypes ] ->
+        [ platform, cursorMode, defaultSchema, openedDropdown, openedPopover, index, selected, isHover, dragging, virtualRelation, useBasicTypes ] ->
             ( ( Platform.fromString platform, CursorMode.fromString cursorMode, defaultSchema )
-            , ( openedDropdown, openedPopover, String.toInt index |> Maybe.withDefault 0 )
+            , ( ( openedDropdown, openedPopover, String.toInt index |> Maybe.withDefault 0 ), selected )
             , ( ( isHover == "Y", dragging == "Y" ), ( virtualRelation == "Y", useBasicTypes == "Y" ) )
             )
 
         _ ->
-            ( ( Platform.PC, CursorMode.Drag, Conf.schema.empty ), ( "", "", 0 ), ( ( False, False ), ( False, False ) ) )
+            ( ( Platform.PC, CursorMode.Drag, Conf.schema.empty ), ( ( "", "", 0 ), "" ), ( ( False, False ), ( False, False ) ) )
 
 
 viewTable : ErdConf -> ZoomLevel -> TableArgs -> ErdTableNotes -> ErdTableLayout -> ErdTable -> Html Msg
 viewTable conf zoom args notes layout table =
     let
-        ( ( platform, cursorMode, defaultSchema ), ( openedDropdown, openedPopover, index ), ( ( isHover, dragging ), ( virtualRelation, useBasicTypes ) ) ) =
+        ( ( platform, cursorMode, defaultSchema ), ( ( openedDropdown, openedPopover, index ), selected ), ( ( isHover, dragging ), ( virtualRelation, useBasicTypes ) ) ) =
             stringToArgs args
 
         ( columns, hiddenColumns ) =
@@ -73,6 +73,17 @@ viewTable conf zoom args notes layout table =
         dropdown : Html Msg
         dropdown =
             TableContextMenu.view platform conf index table layout notes.table
+
+        ( selectedTable, selectedColumn ) =
+            case selected |> String.split "." of
+                schemaName :: tableName :: columnName :: [] ->
+                    B.cond (schemaName == table.schema && tableName == table.name) ( True, [ columnName ] ) ( False, [] )
+
+                schemaName :: tableName :: [] ->
+                    B.cond (schemaName == table.schema && tableName == table.name) ( True, [] ) ( False, [] )
+
+                _ ->
+                    ( False, [] )
     in
     div ([ css [ "select-none absolute" ], classList [ ( "z-max", layout.props.selected ), ( "invisible", layout.props.size == Size.zeroCanvas ) ] ] ++ Position.stylesCanvasGrid layout.props.position ++ drag)
         [ Table.table
@@ -89,8 +100,8 @@ viewTable conf zoom args notes layout table =
             , state =
                 { color = layout.props.color
                 , isHover = isHover
-                , highlightedColumns = layout.columns |> List.filter .highlighted |> List.map .name |> Set.fromList
-                , selected = layout.props.selected
+                , highlightedColumns = layout.columns |> List.filter .highlighted |> List.map .name |> List.append selectedColumn |> Set.fromList
+                , selected = layout.props.selected || selectedTable
                 , dragging = dragging
                 , collapsed = layout.props.collapsed
                 , openedDropdown = openedDropdown

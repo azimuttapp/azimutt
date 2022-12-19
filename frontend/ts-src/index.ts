@@ -2,8 +2,10 @@ import {
     CreateProject,
     CreateProjectTmp,
     DeleteProject,
+    GetColumnStats,
     GetLocalFile,
     GetProject,
+    GetTableStats,
     Hotkey,
     HotkeyId,
     ListenKeys,
@@ -37,6 +39,7 @@ import {Env, getEnv} from "./utils/env";
 import {AnyError, formatError} from "./utils/error";
 import * as Json from "./utils/json";
 import * as url from "./utils/url";
+import {ColumnStats, TableStats} from "./types/stats";
 
 const env = getEnv()
 const platform = Utils.getPlatform()
@@ -90,6 +93,8 @@ app.on('DeleteProject', deleteProject)
 app.on('ProjectDirty', projectDirty)
 app.on('DownloadFile', msg => Utils.downloadFile(msg.filename, msg.content))
 app.on('GetLocalFile', getLocalFile)
+app.on('GetTableStats', getTableStats)
+app.on('GetColumnStats', getColumnStats)
 app.on('ObserveSizes', observeSizes)
 app.on('ListenKeys', listenHotkeys)
 app.on('Confetti', msg => Utils.launchConfetti(msg.id))
@@ -291,6 +296,33 @@ function getLocalFile(msg: GetLocalFile) {
     const reader = new FileReader()
     reader.onload = (e: any) => app.gotLocalFile(msg, e.target.result)
     reader.readAsText(msg.file as any)
+}
+
+const tableStatsCache: { [key: string]: TableStats } = {}
+
+function getTableStats(msg: GetTableStats) {
+    if (tableStatsCache[msg.table]) {
+        app.gotTableStats(msg.source, tableStatsCache[msg.table])
+    } else {
+        backend.getTableStats(msg.database, msg.table).then(
+            stats => app.gotTableStats(msg.source, tableStatsCache[msg.table] = stats),
+            err => err.statusCode !== 404 && reportError(`Can't get stats for ${msg.table}`, err)
+        )
+    }
+}
+
+const columnStatsCache: { [key: string]: ColumnStats } = {}
+
+function getColumnStats(msg: GetColumnStats) {
+    const key = `${msg.column.table}.${msg.column.column}`
+    if (columnStatsCache[key]) {
+        app.gotColumnStats(msg.source, columnStatsCache[key])
+    } else {
+        backend.getColumnStats(msg.database, msg.column).then(
+            stats => app.gotColumnStats(msg.source, columnStatsCache[key] = stats),
+            err => err.statusCode !== 404 && reportError(`Can't get stats for ${msg.column}`, err)
+        )
+    }
 }
 
 const resizeObserver = new ResizeObserver(entries => {

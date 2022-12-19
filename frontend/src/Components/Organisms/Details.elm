@@ -1,16 +1,17 @@
 module Components.Organisms.Details exposing (DocState, Heading, SharedDocState, buildColumnHeading, buildSchemaHeading, buildTableHeading, doc, initDocState, viewColumn, viewColumn2, viewList, viewList2, viewSchema, viewSchema2, viewTable, viewTable2)
 
 import Array exposing (Array)
+import Components.Atoms.Badge as Badge
 import Components.Atoms.Icon as Icon exposing (Icon)
 import Components.Molecules.Tooltip as Tooltip
 import Conf
 import DataSources.AmlMiner.AmlAdapter as AmlAdapter
 import DataSources.AmlMiner.AmlParser as AmlParser
-import Dict
+import Dict exposing (Dict)
 import ElmBook exposing (Msg)
 import ElmBook.Actions as Actions exposing (logAction)
 import ElmBook.Chapter as Chapter exposing (Chapter)
-import Html exposing (Html, a, aside, br, button, dd, div, dl, dt, form, h2, h3, img, input, label, li, nav, ol, p, pre, span, text, ul)
+import Html exposing (Html, a, aside, br, button, dd, div, dl, dt, form, h2, h3, i, img, input, label, li, nav, ol, p, pre, span, text, ul)
 import Html.Attributes exposing (action, alt, class, disabled, for, href, id, name, placeholder, src, type_, value)
 import Html.Events exposing (onClick, onInput)
 import Libs.Bool as Bool
@@ -20,16 +21,18 @@ import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
-import Libs.Tailwind exposing (TwClass)
+import Libs.Tailwind as Tw exposing (TwClass)
 import Libs.Time as Time
 import Libs.Tuple3 as Tuple3
 import Models.Project as Project
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
+import Models.Project.ColumnStats exposing (ColumnStats, ColumnValueCount)
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.SchemaName as SchemaName exposing (SchemaName)
-import Models.Project.SourceId as SourceId exposing (SourceId)
+import Models.Project.SourceId as SourceId exposing (SourceId, SourceIdStr)
 import Models.Project.SourceName exposing (SourceName)
 import Models.Project.TableId as TableId exposing (TableId)
+import Models.Project.TableStats exposing (TableStats)
 import Models.SourceInfo as SourceInfo
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn)
@@ -147,8 +150,9 @@ viewTable :
     -> Heading ErdTable ErdTableLayout
     -> List LayoutName
     -> List ( { o | id : SourceId, lines : List Int }, { s | id : SourceId, name : SourceName, content : Array String } )
+    -> Dict SourceIdStr TableStats
     -> Html msg
-viewTable goToList goToSchema goToTable goToColumn loadLayout toggleSource openedSource defaultSchema schema table inLayouts inSources =
+viewTable goToList goToSchema goToTable goToColumn loadLayout toggleSource openedSource defaultSchema schema table inLayouts inSources stats =
     div []
         [ viewSchemaHeading goToList goToSchema defaultSchema schema
         , viewTableHeading goToSchema goToTable table
@@ -157,7 +161,7 @@ viewTable goToList goToSchema goToTable goToColumn loadLayout toggleSource opene
             , table.item.comment |> Maybe.mapOrElse viewComment (p [] [])
             , dl []
                 [ inLayouts |> List.nonEmptyMap (\l -> viewProp "In layouts" (l |> List.map (viewLayout loadLayout))) (p [] [])
-                , inSources |> List.nonEmptyMap (\s -> viewProp "From sources" (s |> List.map (viewSource toggleSource openedSource))) (p [] [])
+                , inSources |> List.nonEmptyMap (\s -> viewProp "From sources" (s |> List.map (viewTableSource toggleSource openedSource stats))) (p [] [])
                 ]
             , viewProp (table.item.columns |> String.pluralizeD "column")
                 [ ul [ role "list", class "-mx-3 relative z-0 divide-y divide-gray-200" ]
@@ -198,8 +202,9 @@ viewColumn :
     -> Heading ErdColumn ErdColumnProps
     -> List LayoutName
     -> List ( { o | id : SourceId, lines : List Int }, { s | id : SourceId, name : SourceName, content : Array String } )
+    -> Dict SourceIdStr ColumnStats
     -> Html msg
-viewColumn goToList goToSchema goToTable goToColumn relationClick loadLayout toggleSource openedSource defaultSchema schema table column inLayouts inSources =
+viewColumn goToList goToSchema goToTable goToColumn relationClick loadLayout toggleSource openedSource defaultSchema schema table column inLayouts inSources stats =
     div []
         [ viewSchemaHeading goToList goToSchema defaultSchema schema
         , viewTableHeading goToSchema goToTable table
@@ -212,7 +217,7 @@ viewColumn goToList goToSchema goToTable goToColumn relationClick loadLayout tog
                 [ column.item.outRelations |> List.nonEmptyMap (\r -> viewProp "References" (r |> List.map (viewRelation relationClick defaultSchema))) (p [] [])
                 , column.item.inRelations |> List.nonEmptyMap (\r -> viewProp "Referenced by" (r |> List.map (viewRelation relationClick defaultSchema))) (p [] [])
                 , inLayouts |> List.nonEmptyMap (\l -> viewProp "In layouts" (l |> List.map (viewLayout loadLayout))) (p [] [])
-                , inSources |> List.nonEmptyMap (\s -> viewProp "From sources" (s |> List.map (viewSource toggleSource openedSource))) (p [] [])
+                , inSources |> List.nonEmptyMap (\s -> viewProp "From sources" (s |> List.map (viewColumnSource toggleSource openedSource stats))) (p [] [])
                 ]
             ]
         ]
@@ -396,16 +401,68 @@ viewLayout loadLayout layout =
     div [] [ span [ class "cursor-pointer", onClick (loadLayout layout) ] [ text layout ] |> Tooltip.r "View layout" ]
 
 
-viewSource : (SourceName -> msg) -> SourceName -> ( { o | id : SourceId, lines : List Int }, { s | id : SourceId, name : SourceName, content : Array String } ) -> Html msg
-viewSource click openedSource ( origin, source ) =
+viewTableSource : (SourceName -> msg) -> SourceName -> Dict SourceIdStr TableStats -> ( { o | id : SourceId, lines : List Int }, { s | id : SourceId, name : SourceName, content : Array String } ) -> Html msg
+viewTableSource click openedSource tableStats ( origin, source ) =
+    let
+        sourceStats : Maybe TableStats
+        sourceStats =
+            tableStats |> Dict.get (source.id |> SourceId.toString)
+
+        rowStats : String
+        rowStats =
+            sourceStats |> Maybe.mapOrElse (\s -> " (" ++ String.fromInt s.rows ++ " rows)") ""
+    in
     div []
-        [ span [ class "cursor-pointer", onClick (source.name |> click) ] [ text source.name ] |> Tooltip.r "View source content"
+        [ span [ class "cursor-pointer", onClick (source.name |> click) ] [ text (source.name ++ rowStats) ] |> Tooltip.r "View source content"
         , if openedSource == source.name then
             viewSourceContent origin source
 
           else
-            text ""
+            div [] []
         ]
+
+
+viewColumnSource : (SourceName -> msg) -> SourceName -> Dict SourceIdStr ColumnStats -> ( { o | id : SourceId, lines : List Int }, { s | id : SourceId, name : SourceName, content : Array String } ) -> Html msg
+viewColumnSource click openedSource columnStats ( origin, source ) =
+    let
+        sourceStats : Maybe ColumnStats
+        sourceStats =
+            columnStats |> Dict.get (source.id |> SourceId.toString)
+
+        rowStats : String
+        rowStats =
+            sourceStats |> Maybe.mapOrElse (\s -> " (" ++ String.fromInt (100 * s.nulls // s.rows) ++ "% nulls)") ""
+    in
+    div []
+        [ span [ class "cursor-pointer", onClick (source.name |> click) ] [ text (source.name ++ rowStats) ] |> Tooltip.r "View source content"
+        , if openedSource == source.name then
+            div []
+                [ sourceStats
+                    |> Maybe.mapOrElse
+                        (\s ->
+                            div []
+                                [ div [] [ text ("Rows: " ++ String.fromInt s.rows ++ ", Cardinality: " ++ String.fromInt s.cardinality) ]
+                                , div [] (text "Sample values: " :: (s.commonValues |> List.take 3 |> List.map viewColumnValue))
+                                ]
+                        )
+                        (div [] [])
+                , viewSourceContent origin source
+                ]
+
+          else
+            div [] []
+        ]
+
+
+viewColumnValue : ColumnValueCount -> Html msg
+viewColumnValue value =
+    (if value.value == "" then
+        Badge.rounded Tw.gray [ class "mr-1 italic" ] [ text "Empty string" ]
+
+     else
+        Badge.rounded Tw.gray [ class "mr-1" ] [ text value.value ]
+    )
+        |> Tooltip.t (String.fromInt value.count ++ " occurrences")
 
 
 viewSourceContent : { o | id : SourceId, lines : List Int } -> { s | id : SourceId, content : Array String } -> Html msg
@@ -417,13 +474,13 @@ viewSourceContent origin source =
                 origin.lines |> List.filterMap (\i -> source.content |> Array.get i)
         in
         if List.isEmpty lines then
-            pre [] [ text "No content from this source" ]
+            div [] [ pre [] [ text "No content from this source" ] ]
 
         else
-            pre [ class "overflow-x-auto" ] [ text (lines |> String.join "\n") ]
+            div [] [ pre [ class "overflow-x-auto" ] [ text (lines |> String.join "\n") ] ]
 
     else
-        pre [] [ text "Source didn't match with origin!" ]
+        div [] [ pre [] [ text "Source didn't match with origin!" ] ]
 
 
 
@@ -653,6 +710,7 @@ doc =
                                 table
                                 sample.inLayouts
                                 sample.inSources
+                                Dict.empty
                         )
                         s.currentSchema
                         s.currentTable
@@ -677,6 +735,7 @@ doc =
                                 column
                                 sample.inLayouts
                                 sample.inSources
+                                Dict.empty
                         )
                         s.currentSchema
                         s.currentTable

@@ -7,6 +7,7 @@ defmodule Azimutt.Analyzer.Postgres do
   alias Azimutt.Analyzer.Schema
   alias Azimutt.Analyzer.TableStats
   alias Azimutt.Analyzer.Utils
+  alias Azimutt.Utils.Enumx
   alias Azimutt.Utils.Mapx
   alias Azimutt.Utils.Nil
   alias Azimutt.Utils.Resource
@@ -18,6 +19,10 @@ defmodule Azimutt.Analyzer.Postgres do
 
   @spec get_stats(String.t(), String.t() | nil, String.t(), String.t() | nil) :: Result.s(Result.s(TableStats.t() | ColumnStats.t()))
   def get_stats(url, schema, table, column), do: parse_url(url) |> Result.map(&compute_stats(&1, schema, table, column))
+
+  @spec get_rows(String.t(), String.t() | nil, String.t(), String.t() | nil, String.t() | nil, pos_integer()) :: Result.s(QueryResults.t())
+  def get_rows(url, schema, table, column, value, limit),
+    do: parse_url(url) |> Result.map(&fetch_rows(&1, schema, table, column, value, limit))
 
   @spec run_query(String.t(), String.t()) :: Result.s(Result.s(QueryResults.t()))
   def run_query(url, query), do: parse_url(url) |> Result.map(&exec_query(&1, query))
@@ -78,14 +83,15 @@ defmodule Azimutt.Analyzer.Postgres do
                   schema: schema,
                   table: table,
                   column: column,
-                  type: type.name,
+                  type: type.formatted,
                   rows: stats.rows,
                   nulls: stats.nulls,
                   cardinality: stats.cardinality,
                   common_values: common_values
                 }}
       else
-        with {:ok, rows} <- count_rows(pid, sql_table),
+        with {:ok, _type} <- get_table_type(pid, schema, table),
+             {:ok, rows} <- count_rows(pid, sql_table),
              do: {:ok, %TableStats{schema: schema, table: table, rows: rows}}
       end
     end)
@@ -484,6 +490,21 @@ defmodule Azimutt.Analyzer.Postgres do
 
   defp to_table_id(item), do: "#{item.table_schema}.#{item.table_name}"
 
+  @spec get_table_type(pid(), String.t() | nil, String.t()) :: Result.s(String.t())
+  defp get_table_type(pid, schema, table) do
+    Postgrex.query(
+      pid,
+      """
+      SELECT c.relkind AS table_kind
+      FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE c.relkind IN ('r', 'v', 'm') AND c.relname=$1#{if(schema, do: " AND n.nspname=$2", else: "")}
+      """,
+      if(schema, do: [table, schema], else: [table])
+    )
+    |> Result.map_error(&format_error/1)
+    |> Result.flat_map(fn res -> res.rows |> Enumx.one() |> Result.map(fn row -> row |> Enum.at(0) end) end)
+  end
+
   @spec count_rows(pid(), String.t()) :: Result.s(integer())
   defp count_rows(pid, sql_table) do
     Postgrex.query(pid, "SELECT count(*) FROM #{sql_table}", [])
@@ -513,15 +534,18 @@ defmodule Azimutt.Analyzer.Postgres do
       """,
       if(schema, do: [table, column, schema], else: [table, column])
     )
-    |> Result.map_both(&format_error/1, fn res ->
-      row = res.rows |> hd()
-
-      %ColumnType{
-        formatted: row |> Enum.at(0),
-        name: row |> Enum.at(1),
-        # https://www.postgresql.org/docs/current/catalog-pg-type.html#CATALOG-TYPCATEGORY-TABLE
-        category: row |> Enum.at(2)
-      }
+    |> Result.map_error(&format_error/1)
+    |> Result.flat_map(fn res ->
+      res.rows
+      |> Enumx.one()
+      |> Result.map(fn row ->
+        %ColumnType{
+          formatted: row |> Enum.at(0),
+          name: row |> Enum.at(1),
+          # https://www.postgresql.org/docs/current/catalog-pg-type.html#CATALOG-TYPCATEGORY-TABLE
+          category: row |> Enum.at(2)
+        }
+      end)
     end)
   end
 
@@ -569,13 +593,27 @@ defmodule Azimutt.Analyzer.Postgres do
     end)
   end
 
-  @spec exec_query(DbConf.t(), String.t()) :: Result.s(QueryResults.t())
-  def exec_query(conf, query) do
+  @spec fetch_rows(DbConf.t(), String.t() | nil, String.t(), String.t() | nil, String.t() | nil, pos_integer()) ::
+          Result.s(QueryResults.t())
+  def fetch_rows(conf, schema, table, column, value, limit) do
+    sql_table = "#{if(schema, do: "#{schema}.", else: "")}#{table}"
+
+    [query, params] =
+      if column && value do
+        ["SELECT * FROM #{sql_table} WHERE #{column}=$1 LIMIT $2", [value, limit]]
+      else
+        ["SELECT * FROM #{sql_table} LIMIT $1", [limit]]
+      end
+
+    exec_query(conf, query, params)
+  end
+
+  @spec exec_query(DbConf.t(), String.t(), list()) :: Result.s(QueryResults.t())
+  def exec_query(conf, query, params \\ []) do
     Resource.use(fn -> connect(conf) end, &disconnect(&1), fn pid ->
-      Postgrex.query(pid, query, [])
+      Postgrex.query(pid, query, params)
       |> Result.map_both(&format_error/1, fn res ->
         %QueryResults{
-          query: query,
           columns: res.columns,
           values: res.rows |> Enum.map(fn row -> row |> Enum.map(&format_value/1) end)
         }

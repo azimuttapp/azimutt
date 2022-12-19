@@ -127,6 +127,8 @@ defmodule AzimuttWeb.Router do
     post "/analyzer/schema", Api.AnalyzerController, :schema
     get "/analyzer/stats", Api.AnalyzerController, :stats
     post "/analyzer/stats", Api.AnalyzerController, :stats
+    get "/analyzer/rows", Api.AnalyzerController, :rows
+    post "/analyzer/rows", Api.AnalyzerController, :rows
     get "/analyzer/query", Api.AnalyzerController, :query
     post "/analyzer/query", Api.AnalyzerController, :query
     get "/gallery", Api.GalleryController, :index

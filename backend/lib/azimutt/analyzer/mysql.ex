@@ -14,6 +14,10 @@ defmodule Azimutt.Analyzer.Mysql do
   @spec get_stats(String.t(), String.t() | nil, String.t(), String.t() | nil) :: Result.s(Result.s(TableStats.t() | ColumnStats.t()))
   def get_stats(url, schema, table, column), do: parse_url(url) |> Result.map(&compute_stats(&1, schema, table, column))
 
+  @spec get_rows(String.t(), String.t() | nil, String.t(), String.t() | nil, String.t() | nil, pos_integer()) :: Result.s(QueryResults.t())
+  def get_rows(url, schema, table, column, value, limit),
+    do: parse_url(url) |> Result.map(&fetch_rows(&1, schema, table, column, value, limit))
+
   @spec run_query(String.t(), String.t()) :: Result.s(Result.s(QueryResults.t()))
   def run_query(url, query), do: parse_url(url) |> Result.map(&exec_query(&1, query))
 
@@ -61,10 +65,16 @@ defmodule Azimutt.Analyzer.Mysql do
     end)
   end
 
+  @spec fetch_rows(DbConf.t(), String.t() | nil, String.t(), String.t() | nil, String.t() | nil, pos_integer()) ::
+          Result.s(QueryResults.t())
+  def fetch_rows(conf, schema, table, column, value, limit) do
+    exec_query(conf, "SELECT * FROM #{schema}.#{table} WHERE #{column}=#{value} LIMIT #{limit}")
+  end
+
   @spec exec_query(DbConf.t(), String.t()) :: Result.s(QueryResults.t())
   def exec_query(conf, query) do
     Resource.use(fn -> connect(conf) end, &disconnect(&1), fn _pid ->
-      {:ok, %QueryResults{query: query, columns: [], values: []}}
+      {:ok, %QueryResults{columns: [], values: []}}
     end)
   end
 

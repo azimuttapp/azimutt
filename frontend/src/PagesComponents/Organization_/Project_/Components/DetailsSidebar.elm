@@ -1,27 +1,34 @@
-module PagesComponents.Organization_.Project_.Components.DetailsSidebar exposing (ColumnData, Heading, Model, Msg(..), SchemaData, TableData, View(..), update, view)
+module PagesComponents.Organization_.Project_.Components.DetailsSidebar exposing (ColumnData, Heading, Model, Msg(..), SchemaData, Selected, TableData, View(..), selected, update, view)
 
 import Components.Atoms.Icon as Icon
 import Components.Organisms.Details as Details
 import Conf
-import Dict
+import Dict exposing (Dict)
 import Html exposing (Html, button, div, h2, span, text)
 import Html.Attributes exposing (class, id, name, type_)
 import Html.Events exposing (onClick)
 import Libs.Bool as Bool
+import Libs.Dict as Dict
 import Libs.List as List
 import Libs.Maybe as Maybe
+import Libs.Models.DatabaseUrl exposing (DatabaseUrl)
 import Libs.Models.HtmlId exposing (HtmlId)
+import Models.Project.ColumnId exposing (ColumnId)
 import Models.Project.ColumnRef exposing (ColumnRef)
+import Models.Project.ColumnStats exposing (ColumnStats)
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.Origin exposing (Origin)
 import Models.Project.SchemaName exposing (SchemaName)
-import Models.Project.Source exposing (Source)
+import Models.Project.Source as Source exposing (Source)
+import Models.Project.SourceId exposing (SourceId, SourceIdStr)
 import Models.Project.TableId exposing (TableId)
+import Models.Project.TableStats exposing (TableStats)
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn)
 import PagesComponents.Organization_.Project_.Models.ErdColumnProps exposing (ErdColumnProps)
 import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
+import Ports
 import Services.Lenses exposing (setSearch, setView)
 
 
@@ -95,10 +102,10 @@ update erd msg model =
             ( model |> setViewM (schemaView erd schema), Cmd.none )
 
         ShowTable table ->
-            ( model |> setViewM (tableView erd table), Cmd.none )
+            ( model |> setViewM (tableView erd table), Cmd.batch (erd.sources |> filterDatabaseSources |> List.map (Ports.getTableStats table)) )
 
         ShowColumn column ->
-            ( model |> setViewM (columnView erd column), Cmd.none )
+            ( model |> setViewM (columnView erd column), Cmd.batch (erd.sources |> filterDatabaseSources |> List.map (Ports.getColumnStats column)) )
 
         ToggleCollapse id ->
             ( model |> Maybe.map (\m -> { m | openedCollapse = Bool.cond (m.openedCollapse == id) "" id }), Cmd.none )
@@ -154,12 +161,17 @@ columnView erd ref =
             listView
 
 
+filterDatabaseSources : List Source -> List ( SourceId, DatabaseUrl )
+filterDatabaseSources sources =
+    sources |> List.filterMap (\s -> s |> Source.databaseUrl |> Maybe.map (\url -> ( s.id, url )))
+
+
 
 -- VIEW
 
 
-view : (Msg -> msg) -> (TableId -> msg) -> (TableId -> msg) -> (ColumnRef -> msg) -> (ColumnRef -> msg) -> (LayoutName -> msg) -> Erd -> Model -> Html msg
-view wrap showTable hideTable showColumn hideColumn loadLayout erd model =
+view : (Msg -> msg) -> (TableId -> msg) -> (TableId -> msg) -> (ColumnRef -> msg) -> (ColumnRef -> msg) -> (LayoutName -> msg) -> Dict TableId (Dict SourceIdStr TableStats) -> Dict ColumnId (Dict SourceIdStr ColumnStats) -> Erd -> Model -> Html msg
+view wrap showTable hideTable showColumn hideColumn loadLayout tableStats columnStats erd model =
     div [ class "flex h-full flex-col overflow-y-scroll bg-white py-6 shadow-xl" ]
         [ div [ class "px-4 sm:px-6" ]
             [ div [ class "flex items-start justify-between" ]
@@ -182,10 +194,10 @@ view wrap showTable hideTable showColumn hideColumn loadLayout erd model =
                         viewSchema wrap erd v
 
                     TableView v ->
-                        viewTable wrap showTable hideTable loadLayout erd model.openedCollapse v
+                        viewTable wrap showTable hideTable loadLayout erd model.openedCollapse tableStats v
 
                     ColumnView v ->
-                        viewColumn wrap showTable hideTable showColumn hideColumn loadLayout erd model.openedCollapse v
+                        viewColumn wrap showTable hideTable showColumn hideColumn loadLayout erd model.openedCollapse columnStats v
                 ]
             ]
         ]
@@ -201,8 +213,8 @@ viewSchema wrap erd model =
     Details.viewSchema (ShowList |> wrap) (ShowSchema >> wrap) (ShowTable >> wrap) erd.settings.defaultSchema model.schema model.tables
 
 
-viewTable : (Msg -> msg) -> (TableId -> msg) -> (TableId -> msg) -> (LayoutName -> msg) -> Erd -> HtmlId -> TableData -> Html msg
-viewTable wrap _ _ loadLayout erd openedCollapse model =
+viewTable : (Msg -> msg) -> (TableId -> msg) -> (TableId -> msg) -> (LayoutName -> msg) -> Erd -> HtmlId -> Dict TableId (Dict SourceIdStr TableStats) -> TableData -> Html msg
+viewTable wrap _ _ loadLayout erd openedCollapse stats model =
     let
         inLayouts : List LayoutName
         inLayouts =
@@ -211,12 +223,16 @@ viewTable wrap _ _ loadLayout erd openedCollapse model =
         inSources : List ( Origin, Source )
         inSources =
             model.table.item.origins |> List.filterZip (\o -> erd.sources |> List.findBy .id o.id)
+
+        tableStats : Dict SourceIdStr TableStats
+        tableStats =
+            stats |> Dict.getOrElse model.table.item.id Dict.empty
     in
-    Details.viewTable (ShowList |> wrap) (ShowSchema >> wrap) (ShowTable >> wrap) (ShowColumn >> wrap) loadLayout (ToggleCollapse >> wrap) openedCollapse erd.settings.defaultSchema model.schema model.table inLayouts inSources
+    Details.viewTable (ShowList |> wrap) (ShowSchema >> wrap) (ShowTable >> wrap) (ShowColumn >> wrap) loadLayout (ToggleCollapse >> wrap) openedCollapse erd.settings.defaultSchema model.schema model.table inLayouts inSources tableStats
 
 
-viewColumn : (Msg -> msg) -> (TableId -> msg) -> (TableId -> msg) -> (ColumnRef -> msg) -> (ColumnRef -> msg) -> (LayoutName -> msg) -> Erd -> HtmlId -> ColumnData -> Html msg
-viewColumn wrap _ _ _ _ loadLayout erd openedCollapse model =
+viewColumn : (Msg -> msg) -> (TableId -> msg) -> (TableId -> msg) -> (ColumnRef -> msg) -> (ColumnRef -> msg) -> (LayoutName -> msg) -> Erd -> HtmlId -> Dict ColumnId (Dict SourceIdStr ColumnStats) -> ColumnData -> Html msg
+viewColumn wrap _ _ _ _ loadLayout erd openedCollapse stats model =
     let
         inLayouts : List LayoutName
         inLayouts =
@@ -225,5 +241,33 @@ viewColumn wrap _ _ _ _ loadLayout erd openedCollapse model =
         inSources : List ( Origin, Source )
         inSources =
             model.column.item.origins |> List.filterZip (\o -> erd.sources |> List.findBy .id o.id)
+
+        columnStats : Dict SourceIdStr ColumnStats
+        columnStats =
+            stats |> Dict.getOrElse ( model.table.item.id, model.column.item.name ) Dict.empty
     in
-    Details.viewColumn (ShowList |> wrap) (ShowSchema >> wrap) (ShowTable >> wrap) (ShowColumn >> wrap) (ShowColumn >> wrap) loadLayout (ToggleCollapse >> wrap) openedCollapse erd.settings.defaultSchema model.schema model.table model.column inLayouts inSources
+    Details.viewColumn (ShowList |> wrap) (ShowSchema >> wrap) (ShowTable >> wrap) (ShowColumn >> wrap) (ShowColumn >> wrap) loadLayout (ToggleCollapse >> wrap) openedCollapse erd.settings.defaultSchema model.schema model.table model.column inLayouts inSources columnStats
+
+
+
+-- HELPERS
+
+
+type alias Selected =
+    String
+
+
+selected : Model -> Selected
+selected model =
+    case model.view of
+        ListView ->
+            ""
+
+        SchemaView data ->
+            data.schema.item
+
+        TableView data ->
+            data.schema.item ++ "." ++ data.table.item.name
+
+        ColumnView data ->
+            data.schema.item ++ "." ++ data.table.item.name ++ "." ++ data.column.item.name

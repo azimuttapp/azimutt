@@ -88,6 +88,7 @@ count predicate dict =
 
 alter : comparable -> (v -> v) -> Dict comparable v -> Dict comparable v
 alter key transform dict =
+    -- similar to update but only when key is present
     Dict.update key (Maybe.map transform) dict
 
 

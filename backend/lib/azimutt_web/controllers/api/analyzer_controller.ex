@@ -30,8 +30,21 @@ defmodule AzimuttWeb.Api.AnalyzerController do
   end
 
   def stats(conn, %{"url" => url, "table" => table} = params) do
-    with {:ok, stats} <- Analyzer.get_stats(url, params["schema"], table, params["column"]),
+    schema = if params["schema"] != nil && params["schema"] != "", do: params["schema"], else: nil
+    column = if params["column"] != nil && params["column"] != "", do: params["column"], else: nil
+
+    with {:ok, stats} <- Analyzer.get_stats(url, schema, table, column),
          do: conn |> render("stats.json", stats: stats)
+  end
+
+  def rows(conn, %{"url" => url, "table" => table} = params) do
+    schema = if params["schema"] != nil && params["schema"] != "", do: params["schema"], else: nil
+    column = if params["column"] != nil && params["column"] != "", do: params["column"], else: nil
+    value = if params["value"] != nil && params["value"] != "", do: params["value"], else: nil
+    limit = if params["limit"] != nil && params["limit"] != "", do: min(10, String.to_integer(params["limit"])), else: 1
+
+    with {:ok, rows} <- Analyzer.get_rows(url, schema, table, column, value, limit),
+         do: conn |> render("query.json", results: rows)
   end
 
   def query(conn, %{"url" => url, "query" => query}) do
