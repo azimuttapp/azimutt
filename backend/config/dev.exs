@@ -2,8 +2,8 @@ import Config
 
 config :azimutt,
   environment: :dev,
-  domain: "azimutt.localhost",
-  site_url: "https://azimutt.localhost",
+  domain: "localhost",
+  site_url: "localhost:4000",
   support_email: "hey@azimutt.local",
   mailer_default_from_email: "hey@azimutt.dev",
   team_plan_price_id: "price_1LqdRzCaPXsf4vehSyyUn4pd"
@@ -73,7 +73,7 @@ config :azimutt, AzimuttWeb.Endpoint,
       ~r"priv/static/.*(js|css|png|jpeg|jpg|gif|svg)$",
       ~r"priv/gettext/.*(po)$",
       ~r"lib/azimutt_web/(live|views)/.*(ex)$",
-      ~r"lib/azimutt_web/templates/.*(eex)$"
+      ~r"lib/azimutt_web/*/*/.*(eex)$"
     ]
   ]
 
