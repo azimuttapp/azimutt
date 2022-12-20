@@ -429,7 +429,7 @@ viewTitle content =
 viewComment : { a | text : String } -> Html msg
 viewComment comment =
     div [ class "mt-1 flex flex-row" ]
-        [ Icon.outline Icon.Chat "w-4 opacity-50 mr-1"
+        [ Icon.outline Icon.Chat "w-4 opacity-50 mr-1" |> Tooltip.r "SQL comment"
         , viewMarkdown comment.text
         ]
 
@@ -450,7 +450,7 @@ viewNotes model =
             "edit-notes"
     in
     div [ class "mt-1 flex flex-row" ]
-        [ Icon.outline Icon.DocumentText "w-4 opacity-50 mr-1"
+        [ Icon.outline Icon.DocumentText "w-4 opacity-50 mr-1" |> Tooltip.r "Azimutt notes"
         , if model.editing then
             textarea
                 [ id inputId
