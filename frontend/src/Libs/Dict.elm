@@ -1,4 +1,4 @@
-module Libs.Dict exposing (alter, count, find, from, fromIndexedList, fromListMap, fuse, getOrElse, getResult, nonEmpty, notMember, set)
+module Libs.Dict exposing (alter, count, filterMap, find, from, fromIndexedList, fromListMap, fuse, getOrElse, getResult, nonEmpty, notMember, set)
 
 import Dict exposing (Dict)
 

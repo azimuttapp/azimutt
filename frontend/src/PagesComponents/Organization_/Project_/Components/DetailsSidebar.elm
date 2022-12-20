@@ -28,6 +28,7 @@ import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColu
 import PagesComponents.Organization_.Project_.Models.ErdColumnProps exposing (ErdColumnProps)
 import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
+import PagesComponents.Organization_.Project_.Models.Notes exposing (Notes)
 import Ports
 import Services.Lenses exposing (setSearch, setView)
 
@@ -216,6 +217,10 @@ viewSchema wrap erd model =
 viewTable : (Msg -> msg) -> (TableId -> msg) -> (TableId -> msg) -> (LayoutName -> msg) -> Erd -> HtmlId -> Dict TableId (Dict SourceIdStr TableStats) -> TableData -> Html msg
 viewTable wrap _ _ loadLayout erd openedCollapse stats model =
     let
+        tableNotes : Maybe Notes
+        tableNotes =
+            erd.notes |> Dict.get model.table.item.id |> Maybe.andThen .table
+
         inLayouts : List LayoutName
         inLayouts =
             erd.layouts |> Dict.filter (\_ l -> l.tables |> List.memberBy .id model.table.item.id) |> Dict.keys
@@ -228,12 +233,16 @@ viewTable wrap _ _ loadLayout erd openedCollapse stats model =
         tableStats =
             stats |> Dict.getOrElse model.table.item.id Dict.empty
     in
-    Details.viewTable (ShowList |> wrap) (ShowSchema >> wrap) (ShowTable >> wrap) (ShowColumn >> wrap) loadLayout (ToggleCollapse >> wrap) openedCollapse erd.settings.defaultSchema model.schema model.table inLayouts inSources tableStats
+    Details.viewTable (ShowList |> wrap) (ShowSchema >> wrap) (ShowTable >> wrap) (ShowColumn >> wrap) loadLayout (ToggleCollapse >> wrap) openedCollapse erd.settings.defaultSchema model.schema model.table tableNotes inLayouts inSources tableStats
 
 
 viewColumn : (Msg -> msg) -> (TableId -> msg) -> (TableId -> msg) -> (ColumnRef -> msg) -> (ColumnRef -> msg) -> (LayoutName -> msg) -> Erd -> HtmlId -> Dict ColumnId (Dict SourceIdStr ColumnStats) -> ColumnData -> Html msg
 viewColumn wrap _ _ _ _ loadLayout erd openedCollapse stats model =
     let
+        columnNotes : Maybe Notes
+        columnNotes =
+            erd.notes |> Dict.get model.table.item.id |> Maybe.andThen (\n -> n.columns |> Dict.get model.column.item.name)
+
         inLayouts : List LayoutName
         inLayouts =
             erd.layouts |> Dict.filter (\_ l -> l.tables |> List.memberWith (\t -> t.id == model.table.item.id && (t.columns |> List.memberBy .name model.column.item.name))) |> Dict.keys
@@ -246,7 +255,7 @@ viewColumn wrap _ _ _ _ loadLayout erd openedCollapse stats model =
         columnStats =
             stats |> Dict.getOrElse ( model.table.item.id, model.column.item.name ) Dict.empty
     in
-    Details.viewColumn (ShowList |> wrap) (ShowSchema >> wrap) (ShowTable >> wrap) (ShowColumn >> wrap) (ShowColumn >> wrap) loadLayout (ToggleCollapse >> wrap) openedCollapse erd.settings.defaultSchema model.schema model.table model.column inLayouts inSources columnStats
+    Details.viewColumn (ShowList |> wrap) (ShowSchema >> wrap) (ShowTable >> wrap) (ShowColumn >> wrap) (ShowColumn >> wrap) loadLayout (ToggleCollapse >> wrap) openedCollapse erd.settings.defaultSchema model.schema model.table model.column columnNotes inLayouts inSources columnStats
 
 
 

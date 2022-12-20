@@ -72,7 +72,7 @@ defmodule Azimutt.Analyzer.Mysql do
   end
 
   @spec exec_query(DbConf.t(), String.t()) :: Result.s(QueryResults.t())
-  def exec_query(conf, query) do
+  def exec_query(conf, _query) do
     Resource.use(fn -> connect(conf) end, &disconnect(&1), fn _pid ->
       {:ok, %QueryResults{columns: [], values: []}}
     end)
