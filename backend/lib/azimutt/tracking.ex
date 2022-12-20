@@ -1,7 +1,9 @@
 defmodule Azimutt.Tracking do
   @moduledoc "The Tracking context."
   import Ecto.Query, warn: false
+  require Logger
   alias Azimutt.Accounts.User
+  alias Azimutt.Organizations.Organization
   alias Azimutt.Projects.Project
   alias Azimutt.Repo
   alias Azimutt.Tracking.Event
@@ -16,20 +18,86 @@ defmodule Azimutt.Tracking do
     |> Result.from_nillable()
   end
 
-  def project_loaded(%User{} = current_user, %Project{} = project) do
-    create_event(:project_loaded, project_data(project), %{}, current_user, project.organization.id, project.id)
+  def login(%User{} = current_user, method),
+    do: create_event(:login, user_data(current_user), %{method: method}, current_user, nil, nil)
+
+  def project_loaded(%User{} = current_user, %Project{} = project),
+    do: create_event(:project_loaded, project_data(project), nil, current_user, project.organization.id, project.id)
+
+  def project_created(%User{} = current_user, %Project{} = project),
+    do: create_event(:project_created, project_data(project), nil, current_user, project.organization.id, project.id)
+
+  def project_updated(%User{} = current_user, %Project{} = project),
+    do: create_event(:project_updated, project_data(project), nil, current_user, project.organization.id, project.id)
+
+  def project_deleted(%User{} = current_user, %Project{} = project),
+    do: create_event(:project_deleted, project_data(project), nil, current_user, project.organization.id, project.id)
+
+  def billing_loaded(%User{} = current_user, %Organization{} = org, source),
+    do: create_event(:billing_loaded, org_data(org), %{source: source}, current_user, org.id, nil)
+
+  def subscribe_init(%User{} = current_user, %Organization{} = org, price, quantity),
+    do: create_event(:subscribe_init, org_data(org), %{price: price, quantity: quantity}, current_user, org.id, nil)
+
+  def subscribe_start(%User{} = current_user, %Organization{} = org, price, quantity),
+    do: create_event(:subscribe_start, org_data(org), %{price: price, quantity: quantity}, current_user, org.id, nil)
+
+  def subscribe_error(%User{} = current_user, %Organization{} = org, price, quantity),
+    do: create_event(:subscribe_error, org_data(org), %{price: price, quantity: quantity}, current_user, org.id, nil)
+
+  def subscribe_success(%User{} = current_user, %Organization{} = org),
+    do: create_event(:subscribe_success, org_data(org), nil, current_user, org.id, nil)
+
+  def subscribe_abort(%User{} = current_user, %Organization{} = org),
+    do: create_event(:subscribe_abort, org_data(org), nil, current_user, org.id, nil)
+
+  # `organization_id` and `project_id` are nullable
+  defp create_event(name, data, details, %User{} = current_user, organization_id, project_id) do
+    if Mix.env() == :dev, do: Logger.info("Tracking event '#{name}': #{inspect(details)}")
+
+    %Event{}
+    |> Event.changeset(%{
+      name: name,
+      data: data,
+      details: details,
+      created_by: current_user,
+      organization_id: organization_id,
+      project_id: project_id
+    })
+    |> Repo.insert()
   end
 
-  def project_created(%User{} = current_user, %Project{} = project) do
-    create_event(:project_created, project_data(project), %{}, current_user, project.organization.id, project.id)
+  defp user_data(%User{} = user) do
+    %{
+      slug: user.slug,
+      name: user.name,
+      email: user.email,
+      company: user.company,
+      location: user.location,
+      github_username: user.github_username,
+      twitter_username: user.twitter_username,
+      is_admin: user.is_admin,
+      last_signin: user.last_signin,
+      created_at: user.created_at
+    }
   end
 
-  def project_updated(%User{} = current_user, %Project{} = project) do
-    create_event(:project_updated, project_data(project), %{}, current_user, project.organization.id, project.id)
-  end
-
-  def project_deleted(%User{} = current_user, %Project{} = project) do
-    create_event(:project_deleted, project_data(project), %{}, current_user, project.organization.id, project.id)
+  defp org_data(%Organization{} = org) do
+    %{
+      slug: org.slug,
+      name: org.name,
+      contact_email: org.contact_email,
+      location: org.location,
+      github_username: org.github_username,
+      twitter_username: org.twitter_username,
+      stripe_customer_id: org.stripe_customer_id,
+      stripe_subscription_id: org.stripe_subscription_id,
+      is_personal: org.is_personal,
+      heroku: if(Ecto.assoc_loaded?(org.heroku_resource) && org.heroku_resource, do: org.heroku_resource.id, else: nil),
+      members: if(Ecto.assoc_loaded?(org.members), do: org.members |> length, else: nil),
+      projects: if(Ecto.assoc_loaded?(org.projects), do: org.projects |> length, else: nil),
+      created_at: org.created_at
+    }
   end
 
   defp project_data(%Project{} = project) do
@@ -56,19 +124,5 @@ defmodule Azimutt.Tracking do
       archived_by: project.archived_by_id,
       archived_at: project.archived_at
     }
-  end
-
-  # `organization_id` and `project_id` are nullable
-  defp create_event(name, data, details, %User{} = current_user, organization_id, project_id) do
-    %Event{}
-    |> Event.changeset(%{
-      name: name,
-      data: data,
-      details: details,
-      created_by: current_user,
-      organization_id: organization_id,
-      project_id: project_id
-    })
-    |> Repo.insert()
   end
 end
