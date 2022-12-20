@@ -1,23 +1,27 @@
 defmodule AzimuttWeb.OrganizationBillingController do
   use AzimuttWeb, :controller
+  require Logger
   alias Azimutt.Heroku
   alias Azimutt.Organizations
   alias Azimutt.Organizations.Organization
   alias Azimutt.Services.StripeSrv
+  alias Azimutt.Tracking
   alias Azimutt.Utils.Uuid
   alias AzimuttWeb.Router.Helpers, as: Routes
-  require Logger
   action_fallback AzimuttWeb.FallbackController
 
-  def index(conn, %{"organization_id" => organization_id}) do
+  def index(conn, %{"organization_id" => organization_id} = params) do
+    source = params["source"]
     current_user = conn.assigns.current_user
 
     if organization_id == Uuid.zero() do
       organization = Azimutt.Accounts.get_user_personal_organization(current_user)
-      conn |> redirect(to: Routes.organization_billing_path(conn, :index, organization))
+      conn |> redirect(to: Routes.organization_billing_path(conn, :index, organization, source: source))
     end
 
     with {:ok, %Organization{} = organization} <- Organizations.get_organization(organization_id, current_user) do
+      Tracking.billing_loaded(current_user, organization, source)
+
       cond do
         organization.heroku_resource -> conn |> redirect(external: Heroku.app_addons_url(organization.heroku_resource.app))
         organization.stripe_subscription_id -> conn |> stripe_subscription_view(organization)
@@ -48,26 +52,31 @@ defmodule AzimuttWeb.OrganizationBillingController do
 
   def new(conn, %{"organization_id" => organization_id}) do
     current_user = conn.assigns.current_user
-    {:ok, organization} = Organizations.get_organization(organization_id, current_user)
+    {:ok, %Organization{} = organization} = Organizations.get_organization(organization_id, current_user)
+    price = Azimutt.config(:team_plan_price_id)
+    quantity = get_organization_seats(organization)
+    Tracking.subscribe_init(current_user, organization, price, quantity)
 
     case StripeSrv.create_session(%{
            customer: organization.stripe_customer_id,
            success_url: Routes.organization_billing_url(conn, :success, organization_id),
            cancel_url: Routes.organization_billing_url(conn, :cancel, organization_id),
            # Get price_id from your Stripe dashboard for your product
-           price_id: Azimutt.config(:team_plan_price_id),
-           quantity: get_organization_seats(organization)
+           price_id: price,
+           quantity: quantity
          }) do
       {:ok, session} ->
         Logger.info("Stripe session is create with success")
+        Tracking.subscribe_start(current_user, organization, price, quantity)
         redirect(conn, external: session.url)
 
       {:error, stripe_error} ->
         Logger.error("Cannot create Stripe Session: #{stripe_error}")
+        Tracking.subscribe_error(current_user, organization, price, quantity)
 
         conn
         |> put_flash(:error, "Sorry something went wrong.")
-        |> redirect(to: Routes.organization_billing_path(conn, :index, organization_id))
+        |> redirect(to: Routes.organization_billing_path(conn, :index, organization, source: "billing-error"))
     end
   end
 
@@ -97,14 +106,22 @@ defmodule AzimuttWeb.OrganizationBillingController do
   end
 
   def success(conn, %{"organization_id" => organization_id}) do
+    current_user = conn.assigns.current_user
+    {:ok, %Organization{} = organization} = Organizations.get_organization(organization_id, current_user)
+    Tracking.subscribe_success(current_user, organization)
+
     conn
     |> put_flash(:info, "Thanks for subscribing!")
-    |> redirect(to: Routes.organization_billing_path(conn, :index, organization_id))
+    |> redirect(to: Routes.organization_billing_path(conn, :index, organization, source: "billing-success"))
   end
 
   def cancel(conn, %{"organization_id" => organization_id}) do
+    current_user = conn.assigns.current_user
+    {:ok, %Organization{} = organization} = Organizations.get_organization(organization_id, current_user)
+    Tracking.subscribe_abort(current_user, organization)
+
     conn
     |> put_flash(:info, "Sorry you didn't like our stuff.")
-    |> redirect(to: Routes.organization_billing_path(conn, :index, organization_id))
+    |> redirect(to: Routes.organization_billing_path(conn, :index, organization, source: "billing-cancel"))
   end
 end

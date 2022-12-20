@@ -11,6 +11,7 @@ defmodule AzimuttWeb.UserSessionController do
 
   def create(conn, %{"user" => %{"email" => email, "password" => password} = user_params}) do
     Accounts.get_user_by_email_and_password(email, password)
+    |> Result.tap(fn user -> Tracking.login(user, "password") end)
     |> Result.map(fn user -> conn |> UserAuth.log_in_user(user, user_params) end)
     # In order to prevent user enumeration attacks, don't disclose whether the email is registered.
     |> Result.or_else(conn |> render("new.html", error_message: "Invalid email or password"))
