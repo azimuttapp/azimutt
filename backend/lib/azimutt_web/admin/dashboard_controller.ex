@@ -1,4 +1,4 @@
-defmodule AzimuttWeb.Admin.AdminController do
+defmodule AzimuttWeb.Admin.DashboardController do
   use AzimuttWeb, :controller
   action_fallback AzimuttWeb.FallbackController
 

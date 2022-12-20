@@ -112,7 +112,7 @@ defmodule AzimuttWeb.Router do
 
   scope "/admin", AzimuttWeb do
     pipe_through [:browser, :require_authed_user, :require_admin_user]
-    get "/", Admin.AdminController, :index
+    get "/", Admin.DashboardController, :index
   end
 
   scope "/api/v1/swagger" do
