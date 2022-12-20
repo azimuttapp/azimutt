@@ -1,6 +1,7 @@
 defmodule AzimuttWeb.UserSessionController do
   use AzimuttWeb, :controller
   alias Azimutt.Accounts
+  alias Azimutt.Tracking
   alias Azimutt.Utils.Result
   alias AzimuttWeb.UserAuth
   action_fallback AzimuttWeb.FallbackController
