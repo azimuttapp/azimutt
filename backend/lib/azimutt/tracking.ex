@@ -1,6 +1,7 @@
 defmodule Azimutt.Tracking do
   @moduledoc "The Tracking context."
   import Ecto.Query, warn: false
+  require Logger
   alias Azimutt.Accounts.User
   alias Azimutt.Organizations.Organization
   alias Azimutt.Projects.Project
@@ -29,11 +30,28 @@ defmodule Azimutt.Tracking do
   def project_deleted(%User{} = current_user, %Project{} = project),
     do: create_event(:project_deleted, project_data(project), %{}, current_user, project.organization.id, project.id)
 
-  def billing_loaded(%User{} = current_user, %Organization{} = organization, source),
-    do: create_event(:billing_loaded, organization_data(organization), %{source: source}, current_user, organization.id, nil)
+  def billing_loaded(%User{} = current_user, %Organization{} = org, source),
+    do: create_event(:billing_loaded, org_data(org), %{source: source}, current_user, org.id, nil)
+
+  def subscribe_init(%User{} = current_user, %Organization{} = org, price, quantity),
+    do: create_event(:subscribe_init, org_data(org), %{price: price, quantity: quantity}, current_user, org.id, nil)
+
+  def subscribe_start(%User{} = current_user, %Organization{} = org, price, quantity),
+    do: create_event(:subscribe_start, org_data(org), %{price: price, quantity: quantity}, current_user, org.id, nil)
+
+  def subscribe_error(%User{} = current_user, %Organization{} = org, price, quantity),
+    do: create_event(:subscribe_error, org_data(org), %{price: price, quantity: quantity}, current_user, org.id, nil)
+
+  def subscribe_success(%User{} = current_user, %Organization{} = org),
+    do: create_event(:subscribe_success, org_data(org), %{}, current_user, org.id, nil)
+
+  def subscribe_abort(%User{} = current_user, %Organization{} = org),
+    do: create_event(:subscribe_abort, org_data(org), %{}, current_user, org.id, nil)
 
   # `organization_id` and `project_id` are nullable
   defp create_event(name, data, details, %User{} = current_user, organization_id, project_id) do
+    if Mix.env() == :dev, do: Logger.info("Tracking event '#{name}': #{inspect(details)}")
+
     %Event{}
     |> Event.changeset(%{
       name: name,
@@ -46,7 +64,7 @@ defmodule Azimutt.Tracking do
     |> Repo.insert()
   end
 
-  defp organization_data(%Organization{} = organization) do
+  defp org_data(%Organization{} = organization) do
     %{
       slug: organization.slug,
       name: organization.name,
@@ -58,8 +76,8 @@ defmodule Azimutt.Tracking do
       stripe_subscription_id: organization.stripe_subscription_id,
       is_personal: organization.is_personal,
       heroku: if(organization.heroku_resource, do: organization.heroku_resource.id, else: nil),
-      members: organization.members |> length(),
-      projects: organization.projects |> length()
+      members: organization.members |> length,
+      projects: organization.projects |> length
     }
   end
 
