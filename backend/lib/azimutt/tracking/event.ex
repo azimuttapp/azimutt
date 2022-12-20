@@ -10,6 +10,7 @@ defmodule Azimutt.Tracking.Event do
   schema "events" do
     field :name, Ecto.Enum,
       values: [
+        :login,
         :project_loaded,
         :project_created,
         :project_updated,
