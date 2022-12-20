@@ -3,6 +3,7 @@ defmodule AzimuttWeb.Admin.DashboardController do
   action_fallback AzimuttWeb.FallbackController
 
   def index(conn, _params) do
-    conn |> render("index.html")
+    events = Azimutt.Admin.list_last_events(20)
+    conn |> render("index.html", events: events)
   end
 end

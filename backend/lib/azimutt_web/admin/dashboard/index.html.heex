@@ -1,5 +1,46 @@
-<div class="bg-red-100 h-3 w-full"></div>
-<h1>Hello Dasbhoard Admin cosdfntroller test </h1>
-dsfkjdslkfjsdsfsfdsf
+<div class="bg-gray-900 h-7 w-full text-center">
+    <span class="text-white text-xs"> admin section </span>
+</div>
 
-fdsfsdfsdsfdsfsdfs test de samir l
+<div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+<h2> Events </h2>
+<div class="mt-2 flex flex-col">
+    <div class="min-w-full overflow-hidden overflow-x-auto align-middle shadow sm:rounded-lg">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead>
+            <tr>
+                <th class="bg-gray-50 px-6 py-3 text-left text-sm font-semibold text-gray-900" scope="col">Name</th>
+                <th class="bg-gray-50 px-6 py-3 text-right text-sm font-semibold text-gray-900" scope="col">Members</th>
+                <th class="hidden bg-gray-50 px-6 py-3 text-left text-sm font-semibold text-gray-900 md:block" scope="col">Is personal</th>
+                <th class="bg-gray-50 px-6 py-3 text-right text-sm font-semibold text-gray-900" scope="col">Created at</th>
+            </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200 bg-white">
+            <%= for organization <- assigns.organizations do %>
+            <tr class="bg-white">
+                <td class="w-full max-w-0 whitespace-nowrap px-6 py-4 text-sm text-gray-900">
+                    <div class="flex">
+                        <a href="#" class="group inline-flex space-x-2 truncate text-sm">
+                            <p class="truncate text-gray-500 group-hover:text-gray-900"><%= organization.name %></p>
+                        </a>
+                    </div>
+                </td>
+                <td class="whitespace-nowrap px-6 py-4 text-right text-sm text-gray-500">
+                    <span class="font-medium text-gray-900"><%=  organization.members |> Enum.count %></span>
+                </td>
+                <td class="hidden whitespace-nowrap px-6 py-4 text-sm text-gray-500 md:block">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 capitalize"><%= organization.is_personal %></span>
+                </td>
+                <td class="whitespace-nowrap px-6 py-4 text-right text-sm text-gray-500">
+                    <%= organization.created_at %>
+                </td>
+            </tr>
+
+            <% end %>
+
+
+            </tbody>
+        </table>
+    </div>
+</div>
+</div>

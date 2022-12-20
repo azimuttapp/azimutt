@@ -12,15 +12,19 @@ config :cors_plug,
   origin: ["http://localhost:4001"],
   max_age: 86400
 
+database_url =
+  System.get_env("POSTGRESQL_ADDON_URI") ||
+    raise """
+    environment variable POSTGRESQL_ADDON_URI is missing.
+    For example: ecto://USER:PASS@HOST/DATABASE
+    """
+
 # Configure your database
 config :azimutt, Azimutt.Repo,
-  username: "postgres",
-  password: "postgres",
-  hostname: "localhost",
-  database: "azimutt_dev",
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
-  pool_size: 10
+  pool_size: 10,
+  url: database_url
 
 # For development, we disable any cache and enable
 # debugging and code reloading.
