@@ -2,8 +2,8 @@ import Config
 
 config :azimutt,
   environment: :dev,
-  domain: "localhost",
-  site_url: "http://localhost:4000",
+  domain: "azimutt.localhost",
+  site_url: "https://azimutt.localhost",
   support_email: "hey@azimutt.local",
   mailer_default_from_email: "hey@azimutt.dev",
   team_plan_price_id: "price_1LqdRzCaPXsf4vehSyyUn4pd"
