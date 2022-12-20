@@ -2,6 +2,7 @@ defmodule Azimutt.Tracking do
   @moduledoc "The Tracking context."
   import Ecto.Query, warn: false
   alias Azimutt.Accounts.User
+  alias Azimutt.Organizations.Organization
   alias Azimutt.Projects.Project
   alias Azimutt.Repo
   alias Azimutt.Tracking.Event
@@ -16,20 +17,50 @@ defmodule Azimutt.Tracking do
     |> Result.from_nillable()
   end
 
-  def project_loaded(%User{} = current_user, %Project{} = project) do
-    create_event(:project_loaded, project_data(project), %{}, current_user, project.organization.id, project.id)
+  def project_loaded(%User{} = current_user, %Project{} = project),
+    do: create_event(:project_loaded, project_data(project), %{}, current_user, project.organization.id, project.id)
+
+  def project_created(%User{} = current_user, %Project{} = project),
+    do: create_event(:project_created, project_data(project), %{}, current_user, project.organization.id, project.id)
+
+  def project_updated(%User{} = current_user, %Project{} = project),
+    do: create_event(:project_updated, project_data(project), %{}, current_user, project.organization.id, project.id)
+
+  def project_deleted(%User{} = current_user, %Project{} = project),
+    do: create_event(:project_deleted, project_data(project), %{}, current_user, project.organization.id, project.id)
+
+  def billing_loaded(%User{} = current_user, %Organization{} = organization, source),
+    do: create_event(:billing_loaded, organization_data(organization), %{source: source}, current_user, organization.id, nil)
+
+  # `organization_id` and `project_id` are nullable
+  defp create_event(name, data, details, %User{} = current_user, organization_id, project_id) do
+    %Event{}
+    |> Event.changeset(%{
+      name: name,
+      data: data,
+      details: details,
+      created_by: current_user,
+      organization_id: organization_id,
+      project_id: project_id
+    })
+    |> Repo.insert()
   end
 
-  def project_created(%User{} = current_user, %Project{} = project) do
-    create_event(:project_created, project_data(project), %{}, current_user, project.organization.id, project.id)
-  end
-
-  def project_updated(%User{} = current_user, %Project{} = project) do
-    create_event(:project_updated, project_data(project), %{}, current_user, project.organization.id, project.id)
-  end
-
-  def project_deleted(%User{} = current_user, %Project{} = project) do
-    create_event(:project_deleted, project_data(project), %{}, current_user, project.organization.id, project.id)
+  defp organization_data(%Organization{} = organization) do
+    %{
+      slug: organization.slug,
+      name: organization.name,
+      contact_email: organization.contact_email,
+      location: organization.location,
+      github_username: organization.github_username,
+      twitter_username: organization.twitter_username,
+      stripe_customer_id: organization.stripe_customer_id,
+      stripe_subscription_id: organization.stripe_subscription_id,
+      is_personal: organization.is_personal,
+      heroku: if(organization.heroku_resource, do: organization.heroku_resource.id, else: nil),
+      members: organization.members |> length(),
+      projects: organization.projects |> length()
+    }
   end
 
   defp project_data(%Project{} = project) do
@@ -56,19 +87,5 @@ defmodule Azimutt.Tracking do
       archived_by: project.archived_by_id,
       archived_at: project.archived_at
     }
-  end
-
-  # `organization_id` and `project_id` are nullable
-  defp create_event(name, data, details, %User{} = current_user, organization_id, project_id) do
-    %Event{}
-    |> Event.changeset(%{
-      name: name,
-      data: data,
-      details: details,
-      created_by: current_user,
-      organization_id: organization_id,
-      project_id: project_id
-    })
-    |> Repo.insert()
   end
 end

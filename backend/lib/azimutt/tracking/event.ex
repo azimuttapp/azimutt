@@ -8,7 +8,7 @@ defmodule Azimutt.Tracking.Event do
   alias Azimutt.Projects.Project
 
   schema "events" do
-    field :name, Ecto.Enum, values: [:project_loaded, :project_created, :project_updated, :project_deleted]
+    field :name, Ecto.Enum, values: [:project_loaded, :project_created, :project_updated, :project_deleted, :billing_loaded]
     field :data, :map
     field :details, :map
     belongs_to :created_by, User, source: :created_by

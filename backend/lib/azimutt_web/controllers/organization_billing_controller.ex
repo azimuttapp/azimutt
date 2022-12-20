@@ -4,20 +4,24 @@ defmodule AzimuttWeb.OrganizationBillingController do
   alias Azimutt.Organizations
   alias Azimutt.Organizations.Organization
   alias Azimutt.Services.StripeSrv
+  alias Azimutt.Tracking
   alias Azimutt.Utils.Uuid
   alias AzimuttWeb.Router.Helpers, as: Routes
   require Logger
   action_fallback AzimuttWeb.FallbackController
 
-  def index(conn, %{"organization_id" => organization_id}) do
+  def index(conn, %{"organization_id" => organization_id} = params) do
+    source = params["source"]
     current_user = conn.assigns.current_user
 
     if organization_id == Uuid.zero() do
       organization = Azimutt.Accounts.get_user_personal_organization(current_user)
-      conn |> redirect(to: Routes.organization_billing_path(conn, :index, organization))
+      conn |> redirect(to: "#{Routes.organization_billing_path(conn, :index, organization)}#{if source, do: "?source=#{source}", else: ""}")
     end
 
     with {:ok, %Organization{} = organization} <- Organizations.get_organization(organization_id, current_user) do
+      Tracking.billing_loaded(current_user, organization, source)
+
       cond do
         organization.heroku_resource -> conn |> redirect(external: Heroku.app_addons_url(organization.heroku_resource.app))
         organization.stripe_subscription_id -> conn |> stripe_subscription_view(organization)
@@ -67,7 +71,7 @@ defmodule AzimuttWeb.OrganizationBillingController do
 
         conn
         |> put_flash(:error, "Sorry something went wrong.")
-        |> redirect(to: Routes.organization_billing_path(conn, :index, organization_id))
+        |> redirect(to: "#{Routes.organization_billing_path(conn, :index, organization_id)}?source=billing-error")
     end
   end
 
@@ -99,12 +103,12 @@ defmodule AzimuttWeb.OrganizationBillingController do
   def success(conn, %{"organization_id" => organization_id}) do
     conn
     |> put_flash(:info, "Thanks for subscribing!")
-    |> redirect(to: Routes.organization_billing_path(conn, :index, organization_id))
+    |> redirect(to: "#{Routes.organization_billing_path(conn, :index, organization_id)}?source=billing-success")
   end
 
   def cancel(conn, %{"organization_id" => organization_id}) do
     conn
     |> put_flash(:info, "Sorry you didn't like our stuff.")
-    |> redirect(to: Routes.organization_billing_path(conn, :index, organization_id))
+    |> redirect(to: "#{Routes.organization_billing_path(conn, :index, organization_id)}?source=billing-cancel")
   end
 end
