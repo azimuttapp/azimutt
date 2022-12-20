@@ -16,7 +16,7 @@ defmodule AzimuttWeb.OrganizationBillingController do
 
     if organization_id == Uuid.zero() do
       organization = Azimutt.Accounts.get_user_personal_organization(current_user)
-      conn |> redirect(to: "#{Routes.organization_billing_path(conn, :index, organization)}#{if source, do: "?source=#{source}", else: ""}")
+      conn |> redirect(to: Routes.organization_billing_path(conn, :index, organization, source: source))
     end
 
     with {:ok, %Organization{} = organization} <- Organizations.get_organization(organization_id, current_user) do
@@ -71,7 +71,7 @@ defmodule AzimuttWeb.OrganizationBillingController do
 
         conn
         |> put_flash(:error, "Sorry something went wrong.")
-        |> redirect(to: "#{Routes.organization_billing_path(conn, :index, organization_id)}?source=billing-error")
+        |> redirect(to: Routes.organization_billing_path(conn, :index, organization_id, source: "billing-error"))
     end
   end
 
@@ -103,12 +103,12 @@ defmodule AzimuttWeb.OrganizationBillingController do
   def success(conn, %{"organization_id" => organization_id}) do
     conn
     |> put_flash(:info, "Thanks for subscribing!")
-    |> redirect(to: "#{Routes.organization_billing_path(conn, :index, organization_id)}?source=billing-success")
+    |> redirect(to: Routes.organization_billing_path(conn, :index, organization_id, source: "billing-success"))
   end
 
   def cancel(conn, %{"organization_id" => organization_id}) do
     conn
     |> put_flash(:info, "Sorry you didn't like our stuff.")
-    |> redirect(to: "#{Routes.organization_billing_path(conn, :index, organization_id)}?source=billing-cancel")
+    |> redirect(to: Routes.organization_billing_path(conn, :index, organization_id, source: "billing-cancel"))
   end
 end
