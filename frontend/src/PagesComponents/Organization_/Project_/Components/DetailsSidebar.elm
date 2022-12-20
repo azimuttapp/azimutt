@@ -1,5 +1,6 @@
 module PagesComponents.Organization_.Project_.Components.DetailsSidebar exposing (ColumnData, Heading, Model, Msg(..), SchemaData, Selected, TableData, View(..), selected, update, view)
 
+import Browser.Dom as Dom
 import Components.Atoms.Icon as Icon
 import Components.Organisms.Details as Details
 import Conf
@@ -28,13 +29,14 @@ import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColu
 import PagesComponents.Organization_.Project_.Models.ErdColumnProps exposing (ErdColumnProps)
 import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
-import PagesComponents.Organization_.Project_.Models.Notes exposing (Notes)
+import PagesComponents.Organization_.Project_.Models.Notes as NotesRef exposing (Notes, NotesRef)
 import Ports
-import Services.Lenses exposing (setSearch, setView)
+import Services.Lenses exposing (setEditNotes, setSearch, setView)
+import Task
 
 
 type alias Model =
-    { id : HtmlId, view : View, openedCollapse : HtmlId, search : String }
+    { id : HtmlId, view : View, search : String, editNotes : Bool, openedCollapse : HtmlId }
 
 
 type View
@@ -45,15 +47,15 @@ type View
 
 
 type alias SchemaData =
-    { schema : Heading SchemaName Never, tables : List ErdTable }
+    { id : SchemaName, schema : Heading SchemaName Never, tables : List ErdTable }
 
 
 type alias TableData =
-    { schema : Heading SchemaName Never, table : Heading ErdTable ErdTableLayout }
+    { id : TableId, schema : Heading SchemaName Never, table : Heading ErdTable ErdTableLayout }
 
 
 type alias ColumnData =
-    { schema : Heading SchemaName Never, table : Heading ErdTable ErdTableLayout, column : Heading ErdColumn ErdColumnProps }
+    { id : ColumnRef, schema : Heading SchemaName Never, table : Heading ErdTable ErdTableLayout, column : Heading ErdColumn ErdColumnProps }
 
 
 type alias Heading item props =
@@ -69,6 +71,7 @@ type Msg
     | ShowTable TableId
     | ShowColumn ColumnRef
     | ToggleCollapse HtmlId
+    | ToggleEditNotes HtmlId
 
 
 
@@ -77,15 +80,15 @@ type Msg
 
 init : View -> Model
 init v =
-    { id = Conf.ids.detailsSidebarDialog, view = v, openedCollapse = "", search = "" }
+    { id = Conf.ids.detailsSidebarDialog, view = v, search = "", editNotes = False, openedCollapse = "" }
 
 
 
 -- UPDATE
 
 
-update : Erd -> Msg -> Maybe Model -> ( Maybe Model, Cmd msg )
-update erd msg model =
+update : (String -> msg) -> Erd -> Msg -> Maybe Model -> ( Maybe Model, Cmd msg )
+update noop erd msg model =
     case msg of
         Close ->
             ( Nothing, Cmd.none )
@@ -111,10 +114,13 @@ update erd msg model =
         ToggleCollapse id ->
             ( model |> Maybe.map (\m -> { m | openedCollapse = Bool.cond (m.openedCollapse == id) "" id }), Cmd.none )
 
+        ToggleEditNotes id ->
+            ( model |> Maybe.map (\m -> { m | editNotes = not m.editNotes }), Dom.focus id |> Task.attempt (\_ -> noop "focus-notes-input") )
+
 
 setViewM : View -> Maybe Model -> Maybe Model
 setViewM v model =
-    model |> Maybe.mapOrElse (setView v) (init v) |> Just
+    model |> Maybe.mapOrElse (setView v >> setEditNotes False) (init v) |> Just
 
 
 listView : View
@@ -125,7 +131,8 @@ listView =
 schemaView : Erd -> SchemaName -> View
 schemaView erd name =
     SchemaView
-        { schema = Details.buildSchemaHeading erd name
+        { id = name
+        , schema = Details.buildSchemaHeading erd name
         , tables = erd.tables |> Dict.values |> List.filterBy .schema name |> List.sortBy .name
         }
 
@@ -136,7 +143,8 @@ tableView erd id =
         |> Maybe.mapOrElse
             (\table ->
                 TableView
-                    { schema = Details.buildSchemaHeading erd table.schema
+                    { id = table.id
+                    , schema = Details.buildSchemaHeading erd table.schema
                     , table = Details.buildTableHeading erd table
                     }
             )
@@ -152,7 +160,8 @@ columnView erd ref =
                     |> Maybe.mapOrElse
                         (\column ->
                             ColumnView
-                                { schema = Details.buildSchemaHeading erd table.schema
+                                { id = { table = table.id, column = column.name }
+                                , schema = Details.buildSchemaHeading erd table.schema
                                 , table = Details.buildTableHeading erd table
                                 , column = Details.buildColumnHeading erd table column
                                 }
@@ -171,8 +180,8 @@ filterDatabaseSources sources =
 -- VIEW
 
 
-view : (Msg -> msg) -> (TableId -> msg) -> (TableId -> msg) -> (ColumnRef -> msg) -> (ColumnRef -> msg) -> (LayoutName -> msg) -> Dict TableId (Dict SourceIdStr TableStats) -> Dict ColumnId (Dict SourceIdStr ColumnStats) -> Erd -> Model -> Html msg
-view wrap showTable hideTable showColumn hideColumn loadLayout tableStats columnStats erd model =
+view : (Msg -> msg) -> (TableId -> msg) -> (TableId -> msg) -> (ColumnRef -> msg) -> (ColumnRef -> msg) -> (LayoutName -> msg) -> (NotesRef -> Notes -> msg) -> Dict TableId (Dict SourceIdStr TableStats) -> Dict ColumnId (Dict SourceIdStr ColumnStats) -> Erd -> Model -> Html msg
+view wrap showTable hideTable showColumn hideColumn loadLayout updateNotes tableStats columnStats erd model =
     div [ class "flex h-full flex-col overflow-y-scroll bg-white py-6 shadow-xl" ]
         [ div [ class "px-4 sm:px-6" ]
             [ div [ class "flex items-start justify-between" ]
@@ -195,10 +204,10 @@ view wrap showTable hideTable showColumn hideColumn loadLayout tableStats column
                         viewSchema wrap erd v
 
                     TableView v ->
-                        viewTable wrap showTable hideTable loadLayout erd model.openedCollapse tableStats v
+                        viewTable wrap showTable hideTable loadLayout (updateNotes (NotesRef.fromTable v.id)) erd model.editNotes model.openedCollapse tableStats v
 
                     ColumnView v ->
-                        viewColumn wrap showTable hideTable showColumn hideColumn loadLayout erd model.openedCollapse columnStats v
+                        viewColumn wrap showTable hideTable showColumn hideColumn loadLayout (updateNotes (NotesRef.fromColumn v.id)) erd model.editNotes model.openedCollapse columnStats v
                 ]
             ]
         ]
@@ -214,16 +223,20 @@ viewSchema wrap erd model =
     Details.viewSchema (ShowList |> wrap) (ShowSchema >> wrap) (ShowTable >> wrap) erd.settings.defaultSchema model.schema model.tables
 
 
-viewTable : (Msg -> msg) -> (TableId -> msg) -> (TableId -> msg) -> (LayoutName -> msg) -> Erd -> HtmlId -> Dict TableId (Dict SourceIdStr TableStats) -> TableData -> Html msg
-viewTable wrap _ _ loadLayout erd openedCollapse stats model =
+viewTable : (Msg -> msg) -> (TableId -> msg) -> (TableId -> msg) -> (LayoutName -> msg) -> (Notes -> msg) -> Erd -> Bool -> HtmlId -> Dict TableId (Dict SourceIdStr TableStats) -> TableData -> Html msg
+viewTable wrap _ _ loadLayout updateNotes erd editNotes openedCollapse stats model =
     let
-        tableNotes : Maybe Notes
-        tableNotes =
-            erd.notes |> Dict.get model.table.item.id |> Maybe.andThen .table
+        notes : Details.NotesModel msg
+        notes =
+            { notes = erd.notes |> Dict.get model.id |> Maybe.andThen .table
+            , editing = editNotes
+            , toggleEdit = ToggleEditNotes >> wrap
+            , update = updateNotes
+            }
 
         inLayouts : List LayoutName
         inLayouts =
-            erd.layouts |> Dict.filter (\_ l -> l.tables |> List.memberBy .id model.table.item.id) |> Dict.keys
+            erd.layouts |> Dict.filter (\_ l -> l.tables |> List.memberBy .id model.id) |> Dict.keys
 
         inSources : List ( Origin, Source )
         inSources =
@@ -231,21 +244,25 @@ viewTable wrap _ _ loadLayout erd openedCollapse stats model =
 
         tableStats : Dict SourceIdStr TableStats
         tableStats =
-            stats |> Dict.getOrElse model.table.item.id Dict.empty
+            stats |> Dict.getOrElse model.id Dict.empty
     in
-    Details.viewTable (ShowList |> wrap) (ShowSchema >> wrap) (ShowTable >> wrap) (ShowColumn >> wrap) loadLayout (ToggleCollapse >> wrap) openedCollapse erd.settings.defaultSchema model.schema model.table tableNotes inLayouts inSources tableStats
+    Details.viewTable (ShowList |> wrap) (ShowSchema >> wrap) (ShowTable >> wrap) (ShowColumn >> wrap) loadLayout (ToggleCollapse >> wrap) openedCollapse erd.settings.defaultSchema model.schema model.table notes inLayouts inSources tableStats
 
 
-viewColumn : (Msg -> msg) -> (TableId -> msg) -> (TableId -> msg) -> (ColumnRef -> msg) -> (ColumnRef -> msg) -> (LayoutName -> msg) -> Erd -> HtmlId -> Dict ColumnId (Dict SourceIdStr ColumnStats) -> ColumnData -> Html msg
-viewColumn wrap _ _ _ _ loadLayout erd openedCollapse stats model =
+viewColumn : (Msg -> msg) -> (TableId -> msg) -> (TableId -> msg) -> (ColumnRef -> msg) -> (ColumnRef -> msg) -> (LayoutName -> msg) -> (Notes -> msg) -> Erd -> Bool -> HtmlId -> Dict ColumnId (Dict SourceIdStr ColumnStats) -> ColumnData -> Html msg
+viewColumn wrap _ _ _ _ loadLayout updateNotes erd editNotes openedCollapse stats model =
     let
-        columnNotes : Maybe Notes
-        columnNotes =
-            erd.notes |> Dict.get model.table.item.id |> Maybe.andThen (\n -> n.columns |> Dict.get model.column.item.name)
+        notes : Details.NotesModel msg
+        notes =
+            { notes = erd.notes |> Dict.get model.id.table |> Maybe.andThen (\n -> n.columns |> Dict.get model.id.column)
+            , editing = editNotes
+            , toggleEdit = ToggleEditNotes >> wrap
+            , update = updateNotes
+            }
 
         inLayouts : List LayoutName
         inLayouts =
-            erd.layouts |> Dict.filter (\_ l -> l.tables |> List.memberWith (\t -> t.id == model.table.item.id && (t.columns |> List.memberBy .name model.column.item.name))) |> Dict.keys
+            erd.layouts |> Dict.filter (\_ l -> l.tables |> List.memberWith (\t -> t.id == model.id.table && (t.columns |> List.memberBy .name model.id.column))) |> Dict.keys
 
         inSources : List ( Origin, Source )
         inSources =
@@ -253,9 +270,9 @@ viewColumn wrap _ _ _ _ loadLayout erd openedCollapse stats model =
 
         columnStats : Dict SourceIdStr ColumnStats
         columnStats =
-            stats |> Dict.getOrElse ( model.table.item.id, model.column.item.name ) Dict.empty
+            stats |> Dict.getOrElse ( model.id.table, model.id.column ) Dict.empty
     in
-    Details.viewColumn (ShowList |> wrap) (ShowSchema >> wrap) (ShowTable >> wrap) (ShowColumn >> wrap) (ShowColumn >> wrap) loadLayout (ToggleCollapse >> wrap) openedCollapse erd.settings.defaultSchema model.schema model.table model.column columnNotes inLayouts inSources columnStats
+    Details.viewColumn (ShowList |> wrap) (ShowSchema >> wrap) (ShowTable >> wrap) (ShowColumn >> wrap) loadLayout (ToggleCollapse >> wrap) openedCollapse erd.settings.defaultSchema model.schema model.table model.column notes inLayouts inSources columnStats
 
 
 

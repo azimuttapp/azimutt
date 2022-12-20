@@ -7,6 +7,7 @@ import Components.Atoms.Input as Input
 import Components.Atoms.Kbd as Kbd
 import Components.Atoms.Link as Link
 import Components.Atoms.Loader as Loader
+import Components.Atoms.Markdown as Markdown
 import Components.Molecules.Alert as Alert
 import Components.Molecules.Avatar as Avatar
 import Components.Molecules.Divider as Divider
@@ -95,7 +96,7 @@ main =
             , ( "Slices", [ NotFound.doc, NewLayoutBody.doc, ProjectSaveDialogBody.doc, ProPlan.doc ] )
             , ( "Organisms", [ ColorPicker.doc, Details.doc, Navbar.doc, Relation.doc, Table.doc ] )
             , ( "Molecules", [ Alert.doc, Avatar.doc, Divider.doc, Dropdown.doc, Editor.doc, FileInput.doc, FormLabel.doc, InputText.doc, ItemList.doc, Modal.doc, Popover.doc, Select.doc, Slideover.doc, Toast.doc, Tooltip.doc ] )
-            , ( "Atoms", [ Badge.doc, Button.doc, colorsDoc, Icon.doc, Input.doc, Kbd.doc, Link.doc, Loader.doc ] )
+            , ( "Atoms", [ Badge.doc, Button.doc, colorsDoc, Icon.doc, Input.doc, Kbd.doc, Markdown.doc, Link.doc, Loader.doc ] )
             ]
 
 
