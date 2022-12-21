@@ -14,7 +14,7 @@ import ElmBook exposing (Msg)
 import ElmBook.Actions as Actions exposing (logAction)
 import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Html, a, aside, button, div, form, h2, h3, i, img, input, label, li, nav, ol, p, span, text, textarea, ul)
-import Html.Attributes exposing (action, alt, autofocus, class, disabled, for, href, id, name, placeholder, rows, src, type_, value)
+import Html.Attributes exposing (action, alt, autofocus, class, disabled, for, href, id, name, placeholder, rows, src, title, type_, value)
 import Html.Events exposing (onBlur, onClick, onInput)
 import Libs.Basics as Basics
 import Libs.Bool as Bool
@@ -57,7 +57,7 @@ import Models.SourceInfo as SourceInfo
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn)
 import PagesComponents.Organization_.Project_.Models.ErdColumnProps exposing (ErdColumnProps)
-import PagesComponents.Organization_.Project_.Models.ErdColumnRef exposing (ErdColumnRef)
+import PagesComponents.Organization_.Project_.Models.ErdColumnRef as ErdColumnRef exposing (ErdColumnRef)
 import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
@@ -179,11 +179,11 @@ viewTable goToList goToSchema goToTable goToColumn loadLayout _ _ defaultSchema 
 
         outRelations : List ErdColumnRef
         outRelations =
-            table.item.columns |> Dict.values |> List.concatMap (\c -> c.outRelations) |> List.uniqueBy (\r -> r.table)
+            table.item.columns |> Dict.values |> List.concatMap .outRelations |> List.uniqueBy .table
 
         inRelations : List ErdColumnRef
         inRelations =
-            table.item.columns |> Dict.values |> List.concatMap (\c -> c.inRelations) |> List.uniqueBy (\r -> r.table)
+            table.item.columns |> Dict.values |> List.concatMap .inRelations |> List.uniqueBy .table
     in
     div []
         [ viewSchemaHeading goToList goToSchema defaultSchema schema
@@ -192,11 +192,11 @@ viewTable goToList goToSchema goToTable goToColumn loadLayout _ _ defaultSchema 
             [ viewTitle table.item.name
             , table.item.comment |> Maybe.mapOrElse viewComment (div [] [])
             , viewNotes notes
-            , outRelations |> List.nonEmptyMap (\r -> viewProp "References" (r |> List.map (viewTableRelation goToTable defaultSchema))) (div [] [])
-            , inRelations |> List.nonEmptyMap (\r -> viewProp "Referenced by" (r |> List.map (viewTableRelation goToTable defaultSchema))) (div [] [])
+            , outRelations |> List.nonEmptyMap (\r -> viewProp "References" (r |> List.sortBy .table |> List.map (viewTableRelation goToTable defaultSchema))) (div [] [])
+            , inRelations |> List.nonEmptyMap (\r -> viewProp "Referenced by" (r |> List.sortBy .table |> List.map (viewTableRelation goToTable defaultSchema))) (div [] [])
             , viewTableConstraints table.item
-            , inLayouts |> List.nonEmptyMap (\l -> viewProp "In layouts" (l |> List.map (viewLayout loadLayout))) (div [] [])
-            , inSources |> List.nonEmptyMap (\sources -> viewProp "From sources" (sources |> List.map (\( o, s ) -> viewSource (stats |> Dict.get (SourceId.toString s.id) |> Maybe.map .rows) ( o, s )))) (div [] [])
+            , inLayouts |> List.nonEmptyMap (\l -> viewProp "In layouts" (l |> List.sort |> List.map (viewLayout loadLayout))) (div [] [])
+            , inSources |> List.nonEmptyMap (\sources -> viewProp "From sources" (sources |> List.sortBy (Tuple.second >> .name) |> List.map (\( o, s ) -> viewSource (stats |> Dict.get (SourceId.toString s.id) |> Maybe.map .rows) ( o, s )))) (div [] [])
             , viewProp (table.item.columns |> String.pluralizeD "column")
                 [ ul [ role "list", class "-mx-3 relative z-0 divide-y divide-gray-200" ]
                     (table.item.columns
@@ -262,11 +262,11 @@ viewColumn goToList goToSchema goToTable goToColumn loadLayout _ _ defaultSchema
             , column.item.comment |> Maybe.mapOrElse viewComment (div [] [])
             , viewNotes notes
             , viewColumnStats (inSources |> List.map Tuple.second) stats
-            , column.item.outRelations |> List.nonEmptyMap (\r -> viewProp "References" (r |> List.map (viewColumnRelation goToColumn defaultSchema))) (div [] [])
-            , column.item.inRelations |> List.nonEmptyMap (\r -> viewProp "Referenced by" (r |> List.map (viewColumnRelation goToColumn defaultSchema))) (div [] [])
+            , column.item.outRelations |> List.nonEmptyMap (\r -> viewProp "References" (r |> List.sortBy ErdColumnRef.toId |> List.map (viewColumnRelation goToColumn defaultSchema))) (div [] [])
+            , column.item.inRelations |> List.nonEmptyMap (\r -> viewProp "Referenced by" (r |> List.sortBy ErdColumnRef.toId |> List.map (viewColumnRelation goToColumn defaultSchema))) (div [] [])
             , viewColumnConstraints table.item column.item
-            , inLayouts |> List.nonEmptyMap (\l -> viewProp "In layouts" (l |> List.map (viewLayout loadLayout))) (div [] [])
-            , inSources |> List.nonEmptyMap (\s -> viewProp "From sources" (s |> List.map (viewSource Nothing))) (div [] [])
+            , inLayouts |> List.nonEmptyMap (\l -> viewProp "In layouts" (l |> List.sort |> List.map (viewLayout loadLayout))) (div [] [])
+            , inSources |> List.nonEmptyMap (\s -> viewProp "From sources" (s |> List.sortBy (Tuple.second >> .name) |> List.map (viewSource Nothing))) (div [] [])
             ]
         ]
 
@@ -506,18 +506,15 @@ viewColumnStats sources stats =
     div []
         (stats
             |> Dict.toList
+            |> List.map (\( sourceId, s ) -> ( sources |> List.findBy (.id >> SourceId.toString) sourceId |> Maybe.mapOrElse .name sourceId, s ))
+            |> List.sortBy Tuple.first
             |> List.map
-                (\( sourceId, s ) ->
-                    let
-                        source : String
-                        source =
-                            sources |> List.findBy (.id >> SourceId.toString) sourceId |> Maybe.mapOrElse .name sourceId
-                    in
+                (\( sourceName, s ) ->
                     if s.rows == 0 then
-                        viewProp ("Values in " ++ source ++ " source") [ div [] [ text ("Rows: " ++ String.fromInt s.rows) ] ]
+                        viewProp ("Values in " ++ sourceName ++ " source") [ div [] [ text ("Rows: " ++ String.fromInt s.rows) ] ]
 
                     else
-                        viewProp ("Values in " ++ source ++ " source")
+                        viewProp ("Values in " ++ sourceName ++ " source")
                             [ div [] (text "Samples: " :: (s.commonValues |> List.take 5 |> List.map viewColumnValue))
                             , div []
                                 ([ span [] [ text ("Rows: " ++ String.fromInt s.rows) ]
@@ -557,9 +554,9 @@ viewTableConstraints table =
     else
         viewProp "Constraints"
             (((table.primaryKey |> Maybe.toList |> List.map (\pk -> ( "Primary key", Icons.columns.primaryKey, viewTablePrimaryKey pk )))
-                ++ (table.uniques |> List.map (\u -> ( "Unique", Icons.columns.unique, viewTableUnique u )))
-                ++ (table.indexes |> List.map (\i -> ( "Index", Icons.columns.index, viewTableIndex i )))
-                ++ (table.checks |> List.map (\c -> ( "Check", Icons.columns.check, viewTableCheck c )))
+                ++ (table.uniques |> List.sortBy .name |> List.map (\u -> ( "Unique", Icons.columns.unique, viewTableUnique u )))
+                ++ (table.indexes |> List.sortBy .name |> List.map (\i -> ( "Index", Icons.columns.index, viewTableIndex i )))
+                ++ (table.checks |> List.sortBy .name |> List.map (\c -> ( "Check", Icons.columns.check, viewTableCheck c )))
              )
                 |> List.map (\( kind, icon, content ) -> div [ class "flex flex-row" ] [ Icon.solid icon "inline text-gray-500 w-4 mr-1" |> Tooltip.r kind, content ])
             )
@@ -567,22 +564,30 @@ viewTableConstraints table =
 
 viewTablePrimaryKey : PrimaryKey -> Html msg
 viewTablePrimaryKey primaryKey =
-    div [ class "text-gray-500 truncate" ] (span [ class "text-gray-900" ] [ text ("Primary key: " ++ (primaryKey.columns |> Nel.join ", ")) ] :: (primaryKey.name |> Maybe.toList |> List.map (\n -> span [] [ text (" (" ++ n ++ ")") ])))
+    viewTableConstraint "Primary key" primaryKey.name (primaryKey.columns |> Nel.toList)
 
 
 viewTableUnique : Unique -> Html msg
 viewTableUnique unique =
-    div [ class "text-gray-500 truncate" ] [ span [ class "text-gray-900" ] [ text ("Unique: " ++ (unique.columns |> Nel.join ", ")) ], span [] [ text (" (" ++ unique.name ++ ")") ] ]
+    viewTableConstraint "Unique" (Just unique.name) (unique.columns |> Nel.toList)
 
 
 viewTableIndex : Index -> Html msg
 viewTableIndex index =
-    div [ class "text-gray-500 truncate" ] [ span [ class "text-gray-900" ] [ text ("Index: " ++ (index.columns |> Nel.join ", ")) ], span [] [ text (" (" ++ index.name ++ ")") ] ]
+    viewTableConstraint "Index" (Just index.name) (index.columns |> Nel.toList)
 
 
 viewTableCheck : Check -> Html msg
 viewTableCheck check =
-    div [ class "text-gray-500 truncate" ] [ span [ class "text-gray-900" ] [ text ("Index: " ++ (check.columns |> String.join ", ")) ], span [] [ text (" (" ++ check.name ++ ")") ] ]
+    viewTableConstraint "Check" (Just check.name) check.columns
+
+
+viewTableConstraint : String -> Maybe String -> List ColumnName -> Html msg
+viewTableConstraint constraint name columns =
+    div [ class "text-gray-500 truncate" ]
+        (span [ class "text-gray-900" ] (text (constraint ++ ": ") :: (columns |> List.map (\c -> span [ title c ] [ text c ]) |> List.intersperse (text ", ")))
+            :: (name |> Maybe.toList |> List.map (\n -> span [ title n ] [ text (" (" ++ n ++ ")") ]))
+        )
 
 
 viewColumnConstraints : ErdTable -> ErdColumn -> Html msg
@@ -593,9 +598,9 @@ viewColumnConstraints table column =
     else
         viewProp "Constraints"
             (((column.isPrimaryKey |> Bool.list ( "Primary key", Icons.columns.primaryKey, viewColumnPrimaryKey table.primaryKey ))
-                ++ (column.uniques |> List.map (\u -> ( "Unique", Icons.columns.unique, viewColumnUnique table.uniques u )))
-                ++ (column.indexes |> List.map (\i -> ( "Index", Icons.columns.index, viewColumnIndex table.indexes i )))
-                ++ (column.checks |> List.map (\c -> ( "Check", Icons.columns.check, viewColumnCheck table.checks c )))
+                ++ (column.uniques |> List.sort |> List.map (\u -> ( "Unique", Icons.columns.unique, viewColumnUnique table.uniques u )))
+                ++ (column.indexes |> List.sort |> List.map (\i -> ( "Index", Icons.columns.index, viewColumnIndex table.indexes i )))
+                ++ (column.checks |> List.sort |> List.map (\c -> ( "Check", Icons.columns.check, viewColumnCheck table.checks c )))
              )
                 |> List.map (\( kind, icon, content ) -> div [ class "flex flex-row" ] [ Icon.solid icon "inline text-gray-500 w-4 mr-1" |> Tooltip.r kind, content ])
             )
@@ -624,17 +629,17 @@ viewColumnCheck constraints name =
 viewColumnConstraint : String -> ( List ColumnName, Maybe String ) -> Maybe String -> Html msg
 viewColumnConstraint constraint ( columns, definition ) name =
     let
-        columnsText : String
-        columnsText =
+        columnsHtml : List (Html msg)
+        columnsHtml =
             if List.length columns > 1 then
-                " (" ++ (columns |> String.join ", ") ++ ")"
+                [ text " (", span [ title (columns |> String.join ", ") ] [ text (columns |> String.join ", ") ], text ")" ]
 
             else
-                ""
+                []
     in
     definition
-        |> Maybe.map (\d -> span [] [ text (name |> Maybe.withDefault constraint) |> Tooltip.tr d, text columnsText ])
-        |> Maybe.withDefault (text ((name |> Maybe.withDefault constraint) ++ columnsText))
+        |> Maybe.map (\d -> span [ class "truncate" ] ((text (name |> Maybe.withDefault constraint) |> Tooltip.tr d) :: columnsHtml))
+        |> Maybe.withDefault (span [ class "truncate" ] (text (name |> Maybe.withDefault constraint) :: columnsHtml))
 
 
 viewLayout : (LayoutName -> msg) -> LayoutName -> Html msg
