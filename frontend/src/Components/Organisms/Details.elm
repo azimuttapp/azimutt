@@ -675,7 +675,7 @@ viewColumnValue value =
      else
         Badge.basicFlex Tw.gray [ class "mr-1" ] [ text value.value ]
     )
-        |> Tooltip.t (String.fromInt value.count ++ " occurrences")
+        |> Tooltip.tr (String.fromInt value.count ++ " occurrences")
 
 
 breadcrumbSection : TwClass -> List { a | url : String, label : String } -> Html msg
