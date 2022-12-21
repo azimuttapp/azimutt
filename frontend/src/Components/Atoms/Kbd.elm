@@ -8,7 +8,7 @@ import Libs.Tailwind as Tw
 
 badge : List (Attribute msg) -> List String -> Html msg
 badge attrs keys =
-    Badge.rounded Tw.gray attrs [ text (keys |> String.join " + ") ]
+    Badge.basicFlex Tw.gray attrs [ text (keys |> String.join " + ") ]
 
 
 

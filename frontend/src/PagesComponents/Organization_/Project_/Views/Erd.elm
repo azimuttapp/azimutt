@@ -288,7 +288,7 @@ viewEmptyState defaultSchema tables =
                             [ text "Your project has "
                             , bText (tables |> String.pluralizeD "table")
                             , text ". Here are some that could be interesting:"
-                            , div [] (bestTables |> List.map (\t -> Badge.basic Tw.primary [ onClick (ShowTable t.id Nothing), class "m-1 cursor-pointer" ] [ text (TableId.show defaultSchema t.id) ] |> Tooltip.t (t.columns |> String.pluralizeD "column")))
+                            , div [] (bestTables |> List.map (\t -> Badge.roundedFlex Tw.primary [ onClick (ShowTable t.id Nothing), class "m-1 cursor-pointer" ] [ text (TableId.show defaultSchema t.id) ] |> Tooltip.t (t.columns |> String.pluralizeD "column")))
                             ]
                         ]
                 , p [ class "mt-3 text-sm text-gray-500" ]

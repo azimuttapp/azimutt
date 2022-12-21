@@ -92,7 +92,8 @@ defmodule Azimutt.Analyzer.Postgres do
       else
         with {:ok, _type} <- get_table_type(pid, schema, table),
              {:ok, rows} <- count_rows(pid, sql_table),
-             do: {:ok, %TableStats{schema: schema, table: table, rows: rows}}
+             {:ok, sample_values} <- sample_values(pid, sql_table),
+             do: {:ok, %TableStats{schema: schema, table: table, rows: rows, sample_values: sample_values}}
       end
     end)
   end
@@ -593,6 +594,33 @@ defmodule Azimutt.Analyzer.Postgres do
     end)
   end
 
+  @spec sample_values(pid(), String.t()) :: Result.s(map())
+  defp sample_values(pid, table) do
+    Postgrex.query(pid, "SELECT * FROM #{table} LIMIT 10", [])
+    |> Result.map_both(&format_error/1, fn res ->
+      res.columns
+      |> Enum.with_index(0)
+      |> Enum.map(fn {col, i} ->
+        {col,
+         res.rows
+         |> Enum.map(fn r -> r |> Enum.at(i) end)
+         |> Enum.filter(fn v -> v != nil end)
+         |> Enum.shuffle()
+         |> Enum.at(0, nil)
+         |> then(fn v -> if(v == nil, do: sample_value_not_null(pid, table, col), else: v) end)
+         |> format_value()}
+      end)
+      |> Map.new()
+    end)
+  end
+
+  @spec sample_value_not_null(pid(), String.t(), String.t()) :: any()
+  defp sample_value_not_null(pid, table, column) do
+    Postgrex.query(pid, "SELECT #{column} FROM #{table} WHERE #{column} IS NOT NULL LIMIT 10", [])
+    |> Result.map(fn res -> res.rows |> Enum.shuffle() |> Enum.at(0, nil) end)
+    |> Result.or_else(fn _ -> nil end)
+  end
+
   @spec fetch_rows(DbConf.t(), String.t() | nil, String.t(), String.t() | nil, String.t() | nil, pos_integer()) ::
           Result.s(QueryResults.t())
   def fetch_rows(conf, schema, table, column, value, limit) do
@@ -639,5 +667,6 @@ defmodule Azimutt.Analyzer.Postgres do
   defp format_error(err), do: "Unknown error: #{Stringx.inspect(err)}"
 
   defp format_value(value) when is_binary(value) and byte_size(value) == 16, do: Ecto.UUID.cast!(value)
+  defp format_value(value) when is_binary(value), do: if(String.valid?(value), do: value, else: "<binary>")
   defp format_value(value), do: value
 end

@@ -42,4 +42,5 @@ decodeAny =
         , Decode.bool |> Decode.map Bool.toString
         , Decode.int |> Decode.map String.fromInt
         , Decode.float |> Decode.map String.fromFloat
+        , Decode.value |> Decode.map (Encode.encode 0)
         ]

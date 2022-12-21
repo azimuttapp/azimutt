@@ -215,17 +215,17 @@ sectionToAccordionItem isOpen section =
 
 tip : Html msg
 tip =
-    Badge.rounded Tw.green [] [ text "tip" ]
+    Badge.basicFlex Tw.green [] [ text "tip" ]
 
 
 soon : Html msg
 soon =
-    Badge.rounded Tw.indigo [] [ text "soon" ]
+    Badge.basicFlex Tw.indigo [] [ text "soon" ]
 
 
 experimental : Html msg
 experimental =
-    Badge.rounded Tw.yellow [] [ text "experimental" ]
+    Badge.basicFlex Tw.yellow [] [ text "experimental" ]
 
 
 hotkey : List String -> Html msg

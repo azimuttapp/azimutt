@@ -1,6 +1,6 @@
 module Components.Organisms.Details exposing (DocState, Heading, NotesModel, SharedDocState, buildColumnHeading, buildSchemaHeading, buildTableHeading, doc, initDocState, viewColumn, viewColumn2, viewList, viewList2, viewSchema, viewSchema2, viewTable, viewTable2)
 
-import Array exposing (Array)
+import Array
 import Components.Atoms.Badge as Badge
 import Components.Atoms.Icon as Icon exposing (Icon)
 import Components.Atoms.Icons as Icons
@@ -13,9 +13,10 @@ import Dict exposing (Dict)
 import ElmBook exposing (Msg)
 import ElmBook.Actions as Actions exposing (logAction)
 import ElmBook.Chapter as Chapter exposing (Chapter)
-import Html exposing (Html, a, aside, button, dd, div, dl, dt, form, h2, h3, i, img, input, label, li, nav, ol, p, span, text, textarea, ul)
+import Html exposing (Html, a, aside, button, div, form, h2, h3, i, img, input, label, li, nav, ol, p, span, text, textarea, ul)
 import Html.Attributes exposing (action, alt, autofocus, class, disabled, for, href, id, name, placeholder, rows, src, type_, value)
 import Html.Events exposing (onBlur, onClick, onInput)
+import Libs.Basics as Basics
 import Libs.Bool as Bool
 import Libs.Dict as Dict
 import Libs.Html.Attributes exposing (ariaHidden, ariaLabel, css, role)
@@ -36,12 +37,16 @@ import Models.Project.ColumnId exposing (ColumnId)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
 import Models.Project.ColumnStats exposing (ColumnStats, ColumnValueCount)
+import Models.Project.ColumnValue exposing (ColumnValue)
 import Models.Project.Index exposing (Index)
 import Models.Project.IndexName exposing (IndexName)
 import Models.Project.LayoutName exposing (LayoutName)
+import Models.Project.Origin exposing (Origin)
 import Models.Project.PrimaryKey exposing (PrimaryKey)
 import Models.Project.SchemaName as SchemaName exposing (SchemaName)
-import Models.Project.SourceId as SourceId exposing (SourceId, SourceIdStr)
+import Models.Project.Source exposing (Source)
+import Models.Project.SourceId as SourceId exposing (SourceIdStr)
+import Models.Project.SourceKind as SourceKind
 import Models.Project.SourceName exposing (SourceName)
 import Models.Project.TableId as TableId exposing (TableId, TableIdStr)
 import Models.Project.TableStats exposing (TableStats)
@@ -163,23 +168,35 @@ viewTable :
     -> Heading ErdTable ErdTableLayout
     -> NotesModel msg
     -> List LayoutName
-    -> List ( { o | id : SourceId, lines : List Int }, { s | id : SourceId, name : SourceName, content : Array String } )
+    -> List ( Origin, Source )
     -> Dict SourceIdStr TableStats
     -> Html msg
-viewTable goToList goToSchema goToTable goToColumn loadLayout _ _ defaultSchema schema table notes inLayouts inSources _ =
+viewTable goToList goToSchema goToTable goToColumn loadLayout _ _ defaultSchema schema table notes inLayouts inSources stats =
+    let
+        columnValues : Dict ColumnName ColumnValue
+        columnValues =
+            stats |> Dict.toList |> List.foldl (\( _, s ) acc -> acc |> Dict.union s.sampleValues) Dict.empty
+
+        outRelations : List ErdColumnRef
+        outRelations =
+            table.item.columns |> Dict.values |> List.concatMap (\c -> c.outRelations) |> List.uniqueBy (\r -> r.table)
+
+        inRelations : List ErdColumnRef
+        inRelations =
+            table.item.columns |> Dict.values |> List.concatMap (\c -> c.inRelations) |> List.uniqueBy (\r -> r.table)
+    in
     div []
         [ viewSchemaHeading goToList goToSchema defaultSchema schema
         , viewTableHeading goToSchema goToTable table
         , div [ class "px-3" ]
             [ viewTitle table.item.name
-            , table.item.comment |> Maybe.mapOrElse viewComment (p [] [])
+            , table.item.comment |> Maybe.mapOrElse viewComment (div [] [])
             , viewNotes notes
-            , dl []
-                [ div [ class "flex flex-row" ]
-                    [ inSources |> List.nonEmptyMap (\s -> div [ class "grow" ] [ viewProp "From sources" (s |> List.map viewSource) ]) (div [] [])
-                    , inLayouts |> List.nonEmptyMap (\l -> div [ class "grow" ] [ viewProp "In layouts" (l |> List.map (viewLayout loadLayout)) ]) (div [] [])
-                    ]
-                ]
+            , outRelations |> List.nonEmptyMap (\r -> viewProp "References" (r |> List.map (viewTableRelation goToTable defaultSchema))) (div [] [])
+            , inRelations |> List.nonEmptyMap (\r -> viewProp "Referenced by" (r |> List.map (viewTableRelation goToTable defaultSchema))) (div [] [])
+            , viewTableConstraints table.item
+            , inLayouts |> List.nonEmptyMap (\l -> viewProp "In layouts" (l |> List.map (viewLayout loadLayout))) (div [] [])
+            , inSources |> List.nonEmptyMap (\sources -> viewProp "From sources" (sources |> List.map (\( o, s ) -> viewSource (stats |> Dict.get (SourceId.toString s.id) |> Maybe.map .rows) ( o, s )))) (div [] [])
             , viewProp (table.item.columns |> String.pluralizeD "column")
                 [ ul [ role "list", class "-mx-3 relative z-0 divide-y divide-gray-200" ]
                     (table.item.columns
@@ -190,9 +207,12 @@ viewTable goToList goToSchema goToTable goToColumn loadLayout _ _ defaultSchema 
                                 li []
                                     [ div [ class "relative px-6 py-1 flex items-center space-x-3 hover:bg-gray-50 focus-within:ring-2 focus-within:ring-inset focus-within:ring-primary-500" ]
                                         [ div [ class "flex-1 min-w-0" ]
-                                            [ button [ type_ "button", onClick ({ table = table.item.id, column = column.name } |> goToColumn), class "focus:outline-none" ]
+                                            [ button [ type_ "button", onClick ({ table = table.item.id, column = column.name } |> goToColumn), class "w-full focus:outline-none" ]
                                                 [ span [ class "absolute inset-0", ariaHidden True ] [] -- Extend touch target to entire panel
-                                                , p [ class "text-sm font-medium text-gray-900" ] [ text column.name ]
+                                                , div [ class "flex justify-between" ]
+                                                    [ span [ class "text-sm font-medium text-gray-900" ] [ text column.name ]
+                                                    , columnValues |> Dict.get column.name |> Maybe.mapOrElse (\v -> Badge.basic Tw.gray [ class "ml-3 truncate" ] [ text v ]) (span [] [])
+                                                    ]
                                                 ]
                                             ]
                                         ]
@@ -218,7 +238,7 @@ viewColumn :
     -> Heading ErdColumn ErdColumnProps
     -> NotesModel msg
     -> List LayoutName
-    -> List ( { o | id : SourceId, lines : List Int }, { s | id : SourceId, name : SourceName, content : Array String } )
+    -> List ( Origin, Source )
     -> Dict SourceIdStr ColumnStats
     -> Html msg
 viewColumn goToList goToSchema goToTable goToColumn loadLayout _ _ defaultSchema schema table column notes inLayouts inSources stats =
@@ -242,15 +262,11 @@ viewColumn goToList goToSchema goToTable goToColumn loadLayout _ _ defaultSchema
             , column.item.comment |> Maybe.mapOrElse viewComment (div [] [])
             , viewNotes notes
             , viewColumnStats (inSources |> List.map Tuple.second) stats
-            , dl []
-                [ column.item.outRelations |> List.nonEmptyMap (\r -> viewProp "References" (r |> List.map (viewRelation goToColumn defaultSchema))) (p [] [])
-                , column.item.inRelations |> List.nonEmptyMap (\r -> viewProp "Referenced by" (r |> List.map (viewRelation goToColumn defaultSchema))) (p [] [])
-                , viewConstraints table.item column.item
-                , div [ class "flex flex-row" ]
-                    [ inSources |> List.nonEmptyMap (\s -> div [ class "grow" ] [ viewProp "From sources" (s |> List.map viewSource) ]) (div [] [])
-                    , inLayouts |> List.nonEmptyMap (\l -> div [ class "grow" ] [ viewProp "In layouts" (l |> List.map (viewLayout loadLayout)) ]) (div [] [])
-                    ]
-                ]
+            , column.item.outRelations |> List.nonEmptyMap (\r -> viewProp "References" (r |> List.map (viewColumnRelation goToColumn defaultSchema))) (div [] [])
+            , column.item.inRelations |> List.nonEmptyMap (\r -> viewProp "Referenced by" (r |> List.map (viewColumnRelation goToColumn defaultSchema))) (div [] [])
+            , viewColumnConstraints table.item column.item
+            , inLayouts |> List.nonEmptyMap (\l -> viewProp "In layouts" (l |> List.map (viewLayout loadLayout))) (div [] [])
+            , inSources |> List.nonEmptyMap (\s -> viewProp "From sources" (s |> List.map (viewSource Nothing))) (div [] [])
             ]
         ]
 
@@ -278,7 +294,7 @@ viewTable2 :
     -> Heading ErdTable ErdTableLayout
     -> NotesModel msg
     -> List LayoutName
-    -> List ( { o | id : SourceId, lines : List Int }, { s | id : SourceId, name : SourceName, content : Array String } )
+    -> List ( Origin, Source )
     -> Dict SourceIdStr TableStats
     -> Html msg
 viewTable2 _ _ _ _ _ _ _ _ _ _ _ _ _ _ =
@@ -299,7 +315,7 @@ viewColumn2 :
     -> Heading ErdColumn ErdColumnProps
     -> NotesModel msg
     -> List LayoutName
-    -> List ( { o | id : SourceId, lines : List Int }, { s | id : SourceId, name : SourceName, content : Array String } )
+    -> List ( Origin, Source )
     -> Dict SourceIdStr ColumnStats
     -> Html msg
 viewColumn2 _ _ _ _ _ _ _ defaultSchema schema table column _ _ _ _ =
@@ -485,7 +501,7 @@ viewMarkdown content =
     Markdown.markdown "-mt-1 prose prose-sm leading-tight prose-p:my-2 prose-ul:my-2 prose-li:my-0" content
 
 
-viewColumnStats : List { s | id : SourceId, name : SourceName, content : Array String } -> Dict SourceIdStr ColumnStats -> Html msg
+viewColumnStats : List Source -> Dict SourceIdStr ColumnStats -> Html msg
 viewColumnStats sources stats =
     div []
         (stats
@@ -502,8 +518,14 @@ viewColumnStats sources stats =
 
                     else
                         viewProp ("Values in " ++ source ++ " source")
-                            [ div [] (text "Samples: " :: (s.commonValues |> List.take 3 |> List.map viewColumnValue))
-                            , div [] [ text ("Rows: " ++ String.fromInt s.rows ++ ", Cardinality: " ++ String.fromInt s.cardinality ++ ", Nulls: " ++ String.fromInt (100 * s.nulls // s.rows) ++ "%") ]
+                            [ div [] (text "Samples: " :: (s.commonValues |> List.take 5 |> List.map viewColumnValue))
+                            , div []
+                                ([ span [] [ text ("Rows: " ++ String.fromInt s.rows) ]
+                                 , span [] [ text ("Cardinality: " ++ String.fromInt s.cardinality) ]
+                                 , text ("Nulls: " ++ (s.nulls |> Basics.percent s.rows |> Basics.prettyNumber) ++ "%") |> Tooltip.t (String.fromInt s.nulls ++ " nulls")
+                                 ]
+                                    |> List.intersperse (text ", ")
+                                )
                             ]
                 )
         )
@@ -511,55 +533,96 @@ viewColumnStats sources stats =
 
 viewProp : String -> List (Html msg) -> Html msg
 viewProp label content =
-    p [ class "mt-3" ]
-        [ dt [ class "text-sm font-medium text-gray-500" ] [ text label ]
-        , dd [ class "mt-1 text-sm text-gray-900" ] content
+    div [ class "mt-3" ]
+        [ div [ class "text-sm font-medium text-gray-500" ] [ text label ]
+        , div [ class "mt-1 text-sm text-gray-900" ] content
         ]
 
 
-viewRelation : (ColumnRef -> msg) -> String -> ErdColumnRef -> Html msg
-viewRelation click defaultSchema relation =
+viewTableRelation : (TableId -> msg) -> String -> ErdColumnRef -> Html msg
+viewTableRelation click defaultSchema relation =
+    div [] [ span [ class "underline cursor-pointer", onClick (relation.table |> click) ] [ text (TableId.show defaultSchema relation.table) ] |> Tooltip.r "View table" ]
+
+
+viewColumnRelation : (ColumnRef -> msg) -> String -> ErdColumnRef -> Html msg
+viewColumnRelation click defaultSchema relation =
     div [] [ span [ class "underline cursor-pointer", onClick ({ table = relation.table, column = relation.column } |> click) ] [ text (ColumnRef.show defaultSchema relation) ] |> Tooltip.r "View column" ]
 
 
-viewConstraints : ErdTable -> ErdColumn -> Html msg
-viewConstraints table column =
+viewTableConstraints : ErdTable -> Html msg
+viewTableConstraints table =
+    if table.primaryKey == Nothing && List.isEmpty table.uniques && List.isEmpty table.indexes && List.isEmpty table.checks then
+        div [] []
+
+    else
+        viewProp "Constraints"
+            (((table.primaryKey |> Maybe.toList |> List.map (\pk -> ( "Primary key", Icons.columns.primaryKey, viewTablePrimaryKey pk )))
+                ++ (table.uniques |> List.map (\u -> ( "Unique", Icons.columns.unique, viewTableUnique u )))
+                ++ (table.indexes |> List.map (\i -> ( "Index", Icons.columns.index, viewTableIndex i )))
+                ++ (table.checks |> List.map (\c -> ( "Check", Icons.columns.check, viewTableCheck c )))
+             )
+                |> List.map (\( kind, icon, content ) -> div [ class "flex flex-row" ] [ Icon.solid icon "inline text-gray-500 w-4 mr-1" |> Tooltip.r kind, content ])
+            )
+
+
+viewTablePrimaryKey : PrimaryKey -> Html msg
+viewTablePrimaryKey primaryKey =
+    div [ class "text-gray-500 truncate" ] (span [ class "text-gray-900" ] [ text ("Primary key: " ++ (primaryKey.columns |> Nel.join ", ")) ] :: (primaryKey.name |> Maybe.toList |> List.map (\n -> span [] [ text (" (" ++ n ++ ")") ])))
+
+
+viewTableUnique : Unique -> Html msg
+viewTableUnique unique =
+    div [ class "text-gray-500 truncate" ] [ span [ class "text-gray-900" ] [ text ("Unique: " ++ (unique.columns |> Nel.join ", ")) ], span [] [ text (" (" ++ unique.name ++ ")") ] ]
+
+
+viewTableIndex : Index -> Html msg
+viewTableIndex index =
+    div [ class "text-gray-500 truncate" ] [ span [ class "text-gray-900" ] [ text ("Index: " ++ (index.columns |> Nel.join ", ")) ], span [] [ text (" (" ++ index.name ++ ")") ] ]
+
+
+viewTableCheck : Check -> Html msg
+viewTableCheck check =
+    div [ class "text-gray-500 truncate" ] [ span [ class "text-gray-900" ] [ text ("Index: " ++ (check.columns |> String.join ", ")) ], span [] [ text (" (" ++ check.name ++ ")") ] ]
+
+
+viewColumnConstraints : ErdTable -> ErdColumn -> Html msg
+viewColumnConstraints table column =
     if not column.isPrimaryKey && List.isEmpty column.uniques && List.isEmpty column.indexes && List.isEmpty column.checks then
         div [] []
 
     else
         viewProp "Constraints"
-            (((column.isPrimaryKey |> Bool.list ( Icons.columns.primaryKey, viewPrimaryKey table.primaryKey ))
-                ++ (column.uniques |> List.map (\u -> ( Icons.columns.unique, viewUnique table.uniques u )))
-                ++ (column.indexes |> List.map (\i -> ( Icons.columns.index, viewIndex table.indexes i )))
-                ++ (column.checks |> List.map (\c -> ( Icons.columns.check, viewCheck table.checks c )))
+            (((column.isPrimaryKey |> Bool.list ( "Primary key", Icons.columns.primaryKey, viewColumnPrimaryKey table.primaryKey ))
+                ++ (column.uniques |> List.map (\u -> ( "Unique", Icons.columns.unique, viewColumnUnique table.uniques u )))
+                ++ (column.indexes |> List.map (\i -> ( "Index", Icons.columns.index, viewColumnIndex table.indexes i )))
+                ++ (column.checks |> List.map (\c -> ( "Check", Icons.columns.check, viewColumnCheck table.checks c )))
              )
-                |> List.map (\( icon, content ) -> div [] [ Icon.solid icon "inline text-gray-500 w-4 mr-1", content ])
+                |> List.map (\( kind, icon, content ) -> div [ class "flex flex-row" ] [ Icon.solid icon "inline text-gray-500 w-4 mr-1" |> Tooltip.r kind, content ])
             )
 
 
-viewPrimaryKey : Maybe PrimaryKey -> Html msg
-viewPrimaryKey primaryKey =
-    (primaryKey |> Maybe.andThen .name) |> viewConstraint "Primary key" (primaryKey |> Maybe.mapOrElse (\pk -> ( Nel.toList pk.columns, Nothing )) ( [], Nothing ))
+viewColumnPrimaryKey : Maybe PrimaryKey -> Html msg
+viewColumnPrimaryKey primaryKey =
+    (primaryKey |> Maybe.andThen .name) |> viewColumnConstraint "Primary key" (primaryKey |> Maybe.mapOrElse (\pk -> ( Nel.toList pk.columns, Nothing )) ( [], Nothing ))
 
 
-viewUnique : List Unique -> UniqueName -> Html msg
-viewUnique constraints name =
-    Just name |> viewConstraint "Unique" (constraints |> List.findBy .name name |> Maybe.mapOrElse (\u -> ( Nel.toList u.columns, u.definition )) ( [], Nothing ))
+viewColumnUnique : List Unique -> UniqueName -> Html msg
+viewColumnUnique constraints name =
+    Just name |> viewColumnConstraint "Unique" (constraints |> List.findBy .name name |> Maybe.mapOrElse (\u -> ( Nel.toList u.columns, u.definition )) ( [], Nothing ))
 
 
-viewIndex : List Index -> IndexName -> Html msg
-viewIndex constraints name =
-    Just name |> viewConstraint "Index" (constraints |> List.findBy .name name |> Maybe.mapOrElse (\u -> ( Nel.toList u.columns, u.definition )) ( [], Nothing ))
+viewColumnIndex : List Index -> IndexName -> Html msg
+viewColumnIndex constraints name =
+    Just name |> viewColumnConstraint "Index" (constraints |> List.findBy .name name |> Maybe.mapOrElse (\u -> ( Nel.toList u.columns, u.definition )) ( [], Nothing ))
 
 
-viewCheck : List Check -> CheckName -> Html msg
-viewCheck constraints name =
-    Just name |> viewConstraint "Check" (constraints |> List.findBy .name name |> Maybe.mapOrElse (\u -> ( u.columns, u.predicate )) ( [], Nothing ))
+viewColumnCheck : List Check -> CheckName -> Html msg
+viewColumnCheck constraints name =
+    Just name |> viewColumnConstraint "Check" (constraints |> List.findBy .name name |> Maybe.mapOrElse (\u -> ( u.columns, u.predicate )) ( [], Nothing ))
 
 
-viewConstraint : String -> ( List ColumnName, Maybe String ) -> Maybe String -> Html msg
-viewConstraint constraint ( columns, definition ) name =
+viewColumnConstraint : String -> ( List ColumnName, Maybe String ) -> Maybe String -> Html msg
+viewColumnConstraint constraint ( columns, definition ) name =
     let
         columnsText : String
         columnsText =
@@ -570,13 +633,8 @@ viewConstraint constraint ( columns, definition ) name =
                 ""
     in
     definition
-        |> Maybe.map
-            (\d ->
-                name
-                    |> Maybe.map (\n -> span [] [ text (constraint ++ ": "), text n |> Tooltip.tr d, text columnsText ])
-                    |> Maybe.withDefault (span [] [ text constraint |> Tooltip.tr d, text columnsText ])
-            )
-        |> Maybe.withDefault (text (constraint ++ (name |> Maybe.mapOrElse (\n -> ": " ++ n) "") ++ columnsText))
+        |> Maybe.map (\d -> span [] [ text (name |> Maybe.withDefault constraint) |> Tooltip.tr d, text columnsText ])
+        |> Maybe.withDefault (text ((name |> Maybe.withDefault constraint) ++ columnsText))
 
 
 viewLayout : (LayoutName -> msg) -> LayoutName -> Html msg
@@ -584,18 +642,38 @@ viewLayout loadLayout layout =
     div [] [ span [ class "underline cursor-pointer", onClick (loadLayout layout) ] [ text layout ] |> Tooltip.r "View layout" ]
 
 
-viewSource : ( { o | id : SourceId, lines : List Int }, { s | id : SourceId, name : SourceName, content : Array String } ) -> Html msg
-viewSource ( _, source ) =
-    div [] [ text source.name ]
+viewSource : Maybe Int -> ( Origin, Source ) -> Html msg
+viewSource rows ( _, source ) =
+    div [ class "mt-1 flex flex-row" ]
+        [ case source.kind of
+            SourceKind.DatabaseConnection _ ->
+                Icon.solid Icons.sources.database "w-4 opacity-50 mr-1" |> Tooltip.r "Database source"
+
+            SourceKind.SqlLocalFile _ _ _ ->
+                Icon.solid Icons.sources.sql "w-4 opacity-50 mr-1" |> Tooltip.r "SQL source"
+
+            SourceKind.SqlRemoteFile _ _ ->
+                Icon.solid Icons.sources.sql "w-4 opacity-50 mr-1" |> Tooltip.r "SQL source"
+
+            SourceKind.JsonLocalFile _ _ _ ->
+                Icon.solid Icons.sources.json "w-4 opacity-50 mr-1" |> Tooltip.r "JSON source"
+
+            SourceKind.JsonRemoteFile _ _ ->
+                Icon.solid Icons.sources.json "w-4 opacity-50 mr-1" |> Tooltip.r "JSON source"
+
+            SourceKind.AmlEditor ->
+                Icon.solid Icons.sources.aml "w-4 opacity-50 mr-1" |> Tooltip.r "AML source"
+        , text (source.name ++ (rows |> Maybe.mapOrElse (\r -> " (" ++ String.fromInt r ++ " rows)") ""))
+        ]
 
 
 viewColumnValue : ColumnValueCount -> Html msg
 viewColumnValue value =
     (if value.value == "" then
-        Badge.rounded Tw.gray [ class "mr-1 italic" ] [ text "Empty string" ]
+        Badge.basicFlex Tw.gray [ class "mr-1 italic" ] [ text "Empty string" ]
 
      else
-        Badge.rounded Tw.gray [ class "mr-1" ] [ text value.value ]
+        Badge.basicFlex Tw.gray [ class "mr-1" ] [ text value.value ]
     )
         |> Tooltip.t (String.fromInt value.count ++ " occurrences")
 
@@ -989,7 +1067,7 @@ docColumnStats =
 
 docTableStats : Dict TableId (Dict SourceIdStr TableStats)
 docTableStats =
-    docColumnStats |> Dict.toList |> List.map (\( ( table, _ ), dict ) -> ( table, dict |> Dict.map (\_ s -> { id = table, rows = s.rows }) )) |> Dict.fromList
+    docColumnStats |> Dict.toList |> List.map (\( ( table, col ), dict ) -> ( table, dict |> Dict.map (\_ s -> { id = table, rows = s.rows, sampleValues = s.commonValues |> List.map (\v -> ( col, v.value )) |> Dict.fromList }) )) |> Dict.fromList
 
 
 docBuildLayout : List ( TableIdStr, List ColumnName ) -> ErdLayout

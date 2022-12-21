@@ -1,4 +1,4 @@
-module Libs.Nel exposing (Nel, any, append, filter, filterMap, filterNot, filterZip, find, from, fromList, indexedMap, length, map, member, merge, partition, prepend, sortBy, toList, unique, uniqueBy, zipWith)
+module Libs.Nel exposing (Nel, any, append, filter, filterMap, filterNot, filterZip, find, from, fromList, indexedMap, join, length, map, member, merge, partition, prepend, sortBy, toList, unique, uniqueBy, zipWith)
 
 -- Nel: NonEmptyList
 
@@ -131,6 +131,11 @@ listZipWith transform list =
 merge : (a -> comparable) -> (a -> a -> a) -> Nel a -> Nel a -> Nel a
 merge getKey mergeValue l1 l2 =
     List.merge getKey mergeValue (l1 |> toList) (l2 |> toList) |> fromList |> Maybe.withDefault l1
+
+
+join : String -> Nel String -> String
+join sep nel =
+    nel |> toList |> String.join sep
 
 
 from : a -> Nel a

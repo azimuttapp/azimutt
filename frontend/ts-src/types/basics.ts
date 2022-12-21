@@ -90,3 +90,8 @@ export type Color =
     | 'gray'
 
 export const Color = z.enum(['indigo', 'violet', 'purple', 'fuchsia', 'pink', 'rose', 'red', 'orange', 'amber', 'yellow', 'lime', 'green', 'emerald', 'teal', 'cyan', 'sky', 'blue', 'gray'])
+
+const literalSchema = z.union([z.string(), z.number(), z.boolean(), z.null()])
+type Literal = z.infer<typeof literalSchema>
+type Json = Literal | { [key: string]: Json } | Json[]
+export const Json: z.ZodType<Json> = z.lazy(() => z.union([literalSchema, z.array(Json), z.record(Json)]))

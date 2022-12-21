@@ -1,22 +1,28 @@
 module Models.Project.TableStats exposing (TableStats, decode)
 
+import Dict exposing (Dict)
 import Json.Decode as Decode exposing (Decoder)
+import Models.Project.ColumnName exposing (ColumnName)
+import Models.Project.ColumnValue as ColumnValue exposing (ColumnValue)
 import Models.Project.SchemaName as SchemaName
 import Models.Project.TableId exposing (TableId)
 import Models.Project.TableName as TableName
 
 
 type alias TableStats =
+    -- keep sync with frontend/ts-src/types/stats.ts & backend/lib/azimutt/analyzer/table_stats.ex
     { id : TableId
     , rows : Int
+    , sampleValues : Dict ColumnName ColumnValue
     }
 
 
 decode : Decoder TableStats
 decode =
-    Decode.map2 TableStats
+    Decode.map3 TableStats
         decodeTableId
         (Decode.field "rows" Decode.int)
+        (Decode.field "sample_values" (Decode.dict ColumnValue.decodeAny))
 
 
 decodeTableId : Decoder TableId

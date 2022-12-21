@@ -72,7 +72,7 @@ viewNewProject shared currentUrl urlOrganization model =
             urlOrganization
             model
             { tabs =
-                [ { tab = TabDatabase, icon = Icons.sources.database, content = [ text "From database connection", Badge.rounded Tw.green [ class "ml-3" ] [ text "New" ] ] }
+                [ { tab = TabDatabase, icon = Icons.sources.database, content = [ text "From database connection", Badge.basicFlex Tw.green [ class "ml-3" ] [ text "New" ] ] }
                 , { tab = TabSql, icon = Icons.sources.sql, content = [ text "From SQL structure" ] }
                 , { tab = TabJson, icon = Icons.sources.json, content = [ text "From JSON" ] }
                 , { tab = TabEmptyProject, icon = Icons.sources.empty, content = [ text "Empty project" ] }
