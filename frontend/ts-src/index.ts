@@ -301,11 +301,12 @@ function getLocalFile(msg: GetLocalFile) {
 const tableStatsCache: { [key: string]: TableStats } = {}
 
 function getTableStats(msg: GetTableStats) {
-    if (tableStatsCache[msg.table]) {
-        app.gotTableStats(msg.source, tableStatsCache[msg.table])
+    const key = `${msg.source}-${msg.table}`
+    if (tableStatsCache[key]) {
+        app.gotTableStats(msg.source, tableStatsCache[key])
     } else {
         backend.getTableStats(msg.database, msg.table).then(
-            stats => app.gotTableStats(msg.source, tableStatsCache[msg.table] = stats),
+            stats => app.gotTableStats(msg.source, tableStatsCache[key] = stats),
             err => err.statusCode !== 404 && reportError(`Can't get stats for ${msg.table}`, err)
         )
     }
@@ -314,7 +315,7 @@ function getTableStats(msg: GetTableStats) {
 const columnStatsCache: { [key: string]: ColumnStats } = {}
 
 function getColumnStats(msg: GetColumnStats) {
-    const key = `${msg.column.table}.${msg.column.column}`
+    const key = `${msg.source}-${msg.column.table}.${msg.column.column}`
     if (columnStatsCache[key]) {
         app.gotColumnStats(msg.source, columnStatsCache[key])
     } else {

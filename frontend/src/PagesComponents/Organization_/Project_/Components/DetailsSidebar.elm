@@ -15,7 +15,7 @@ import Libs.Maybe as Maybe
 import Libs.Models.DatabaseUrl exposing (DatabaseUrl)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Models.Project.ColumnId exposing (ColumnId)
-import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
+import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.ColumnStats exposing (ColumnStats)
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.Origin exposing (Origin)
@@ -190,13 +190,19 @@ view wrap showTable hideTable showColumn hideColumn loadLayout updateNotes table
                     [ text "All tables" ]
 
                 SchemaView v ->
-                    [ span [ class "underline" ] [ text v.id ], text " schema tables" ]
+                    [ span [ class "font-bold" ] [ text v.id ], text " schema tables" ]
 
                 TableView v ->
-                    [ span [ class "underline" ] [ text (TableId.show erd.settings.defaultSchema v.id) ], text " table details" ]
+                    [ span [ class "font-bold" ] [ text (TableId.show erd.settings.defaultSchema v.id) ], text " table details" ]
 
                 ColumnView v ->
-                    [ span [ class "underline" ] [ text (ColumnRef.show erd.settings.defaultSchema v.id) ], text " column details" ]
+                    [ span [ class "font-bold" ]
+                        [ span [ onClick (v.id.table |> ShowTable |> wrap), class "cursor-pointer" ] [ text (TableId.show erd.settings.defaultSchema v.id.table) ]
+                        , text "."
+                        , span [] [ text v.id.column ]
+                        ]
+                    , text " column details"
+                    ]
     in
     div [ class "flex h-full flex-col overflow-y-scroll bg-white py-6 shadow-xl" ]
         [ div [ class "px-4 sm:px-6" ]

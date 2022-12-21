@@ -111,9 +111,9 @@ viewList goToTable updateSearch htmlId defaultSchema tables search =
                                             li []
                                                 [ div [ class "relative px-6 py-5 flex items-center space-x-3 hover:bg-gray-50 focus-within:ring-2 focus-within:ring-inset focus-within:ring-primary-500" ]
                                                     [ div [ class "flex-1 min-w-0" ]
-                                                        [ button [ type_ "button", onClick (t.id |> goToTable), class "focus:outline-none" ]
+                                                        [ button [ type_ "button", onClick (t.id |> goToTable), class "text-left focus:outline-none" ]
                                                             [ span [ class "absolute inset-0", ariaHidden True ] [] -- Extend touch target to entire panel
-                                                            , p [ class "text-sm font-medium text-gray-900" ] [ text (TableId.show defaultSchema t.id) ]
+                                                            , p [ class "text-sm text-gray-900 font-medium" ] [ text (TableId.show defaultSchema t.id) ]
                                                             , p [ class "text-sm text-gray-500 truncate" ] [ text (t.columns |> String.pluralizeD "column") ]
                                                             ]
                                                         ]
@@ -447,7 +447,7 @@ viewColumnHeading goToTable goToColumn table model =
 
 viewTitle : String -> Html msg
 viewTitle content =
-    h2 [ class "mt-2 text-lg font-bold text-gray-900" ] [ text content ]
+    h2 [ class "mt-2 text-xl font-bold text-gray-900" ] [ text content ]
 
 
 viewComment : { a | text : String } -> Html msg
@@ -498,7 +498,7 @@ viewNotes model =
 
 viewMarkdown : String -> Html msg
 viewMarkdown content =
-    Markdown.markdown "-mt-1 prose prose-sm leading-tight prose-p:my-2 prose-ul:my-2 prose-li:my-0" content
+    Markdown.markdown "-mt-1 prose prose-sm leading-tight prose-p:my-2 prose-p:last:mb-0 prose-ul:my-2 prose-li:my-0" content
 
 
 viewColumnStats : List Source -> Dict SourceIdStr ColumnStats -> Html msg
@@ -840,8 +840,8 @@ directory =
                                                         ]
                                                     , div [ class "flex-1 min-w-0" ]
                                                         [ a [ href "#", class "focus:outline-none" ]
-                                                            [ {- Extend touch target to entire panel -} span [ class "absolute inset-0", ariaHidden True ] []
-                                                            , p [ class "text-sm font-medium text-gray-900" ] [ text employee.name ]
+                                                            [ span [ class "absolute inset-0", ariaHidden True ] [] -- Extend touch target to entire panel
+                                                            , p [ class "text-sm text-gray-900 font-medium" ] [ text employee.name ]
                                                             , p [ class "text-sm text-gray-500 truncate" ] [ text employee.job ]
                                                             ]
                                                         ]
