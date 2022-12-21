@@ -1,6 +1,7 @@
 module PagesComponents.Organization_.Project_.Views.Navbar.Search exposing (viewNavbarSearch)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
+import Components.Atoms.Icons as Icons
 import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
 import Components.Molecules.Dropdown as Dropdown
 import Conf
@@ -65,7 +66,7 @@ viewNavbarSearch defaultSchema search tables relations notes shownTables htmlId 
                     if search.text == "" then
                         div []
                             [ span [ role "menuitem", tabindex -1, css [ "flex w-full items-center", ContextMenu.itemDisabledStyles ] ]
-                                [ text "Type to search into tables (", Icon.solid Icon.Table "", text "), columns (", Icon.solid Tag "", text ") and relations (", Icon.solid ExternalLink "", text ")" ]
+                                [ text "Type to search into tables (", Icon.solid Icons.table "", text "), columns (", Icon.solid Icons.column "", text ") and relations (", Icon.solid Icons.columns.foreignKey "", text ")" ]
                             , button
                                 [ type_ "button"
                                 , onMouseDown (B.cond (Dict.size tables < 30) ShowAllTables (confirm "Show all tables" (text "You are about to add a lot of tables, it may show down your computer. Continue?") ShowAllTables))
@@ -125,20 +126,20 @@ viewSearchResult searchId defaultSchema shownTables active index res =
     in
     case res of
         FoundTable table ->
-            viewItem (ShowTable table.id Nothing) (GoToTable table.id) Icon.Table [ text (TableId.show defaultSchema table.id) ] (shownTables |> List.memberBy .id table.id)
+            viewItem (ShowTable table.id Nothing) (GoToTable table.id) Icons.table [ text (TableId.show defaultSchema table.id) ] (shownTables |> List.memberBy .id table.id)
 
         FoundColumn table column ->
-            viewItem (ShowTable table.id Nothing) (GoToTable table.id) Tag [ span [ class "opacity-50" ] [ text (TableId.show defaultSchema table.id ++ ".") ], text column.name ] (shownTables |> List.memberBy .id table.id)
+            viewItem (ShowTable table.id Nothing) (GoToTable table.id) Icons.column [ span [ class "opacity-50" ] [ text (TableId.show defaultSchema table.id ++ ".") ], text column.name ] (shownTables |> List.memberBy .id table.id)
 
         FoundRelation relation ->
             if shownTables |> List.memberBy .id relation.src.table |> not then
-                viewItem (ShowTable relation.src.table Nothing) (GoToTable relation.src.table) ExternalLink [ text relation.name ] False
+                viewItem (ShowTable relation.src.table Nothing) (GoToTable relation.src.table) Icons.columns.foreignKey [ text relation.name ] False
 
             else if shownTables |> List.memberBy .id relation.ref.table |> not then
-                viewItem (ShowTable relation.ref.table Nothing) (GoToTable relation.ref.table) ExternalLink [ text relation.name ] False
+                viewItem (ShowTable relation.ref.table Nothing) (GoToTable relation.ref.table) Icons.columns.foreignKey [ text relation.name ] False
 
             else
-                viewItem (ShowTable relation.src.table Nothing) (GoToTable relation.src.table) ExternalLink [ text relation.name ] True
+                viewItem (ShowTable relation.src.table Nothing) (GoToTable relation.src.table) Icons.columns.foreignKey [ text relation.name ] True
 
 
 performSearch : Dict TableId ErdTable -> List ErdRelation -> Dict TableId ErdTableNotes -> String -> List SearchResult

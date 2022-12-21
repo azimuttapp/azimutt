@@ -3,6 +3,7 @@ module Components.Organisms.Details exposing (DocState, Heading, NotesModel, Sha
 import Array exposing (Array)
 import Components.Atoms.Badge as Badge
 import Components.Atoms.Icon as Icon exposing (Icon)
+import Components.Atoms.Icons as Icons
 import Components.Atoms.Markdown as Markdown
 import Components.Molecules.Tooltip as Tooltip
 import Conf
@@ -21,6 +22,7 @@ import Libs.Html.Attributes exposing (ariaHidden, ariaLabel, css, role)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.Nel as Nel
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (TwClass)
 import Libs.Time as Time
@@ -28,16 +30,23 @@ import Libs.Tuple3 as Tuple3
 import Models.Position as Position
 import Models.Project as Project
 import Models.Project.CanvasProps as CanvasProps
+import Models.Project.Check exposing (Check)
+import Models.Project.CheckName exposing (CheckName)
 import Models.Project.ColumnId exposing (ColumnId)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
 import Models.Project.ColumnStats exposing (ColumnStats, ColumnValueCount)
+import Models.Project.Index exposing (Index)
+import Models.Project.IndexName exposing (IndexName)
 import Models.Project.LayoutName exposing (LayoutName)
+import Models.Project.PrimaryKey exposing (PrimaryKey)
 import Models.Project.SchemaName as SchemaName exposing (SchemaName)
 import Models.Project.SourceId as SourceId exposing (SourceId, SourceIdStr)
 import Models.Project.SourceName exposing (SourceName)
 import Models.Project.TableId as TableId exposing (TableId, TableIdStr)
 import Models.Project.TableStats exposing (TableStats)
+import Models.Project.Unique exposing (Unique)
+import Models.Project.UniqueName exposing (UniqueName)
 import Models.Size as Size
 import Models.SourceInfo as SourceInfo
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
@@ -233,11 +242,10 @@ viewColumn goToList goToSchema goToTable goToColumn loadLayout _ _ defaultSchema
             , column.item.comment |> Maybe.mapOrElse viewComment (div [] [])
             , viewNotes notes
             , viewColumnStats (inSources |> List.map Tuple.second) stats
-
-            -- TODO: add constraint & indexes
             , dl []
                 [ column.item.outRelations |> List.nonEmptyMap (\r -> viewProp "References" (r |> List.map (viewRelation goToColumn defaultSchema))) (p [] [])
                 , column.item.inRelations |> List.nonEmptyMap (\r -> viewProp "Referenced by" (r |> List.map (viewRelation goToColumn defaultSchema))) (p [] [])
+                , viewConstraints table.item column.item
                 , div [ class "flex flex-row" ]
                     [ inSources |> List.nonEmptyMap (\s -> div [ class "grow" ] [ viewProp "From sources" (s |> List.map viewSource) ]) (div [] [])
                     , inLayouts |> List.nonEmptyMap (\l -> div [ class "grow" ] [ viewProp "In layouts" (l |> List.map (viewLayout loadLayout)) ]) (div [] [])
@@ -429,7 +437,7 @@ viewTitle content =
 viewComment : { a | text : String } -> Html msg
 viewComment comment =
     div [ class "mt-1 flex flex-row" ]
-        [ Icon.outline Icon.Chat "w-4 opacity-50 mr-1" |> Tooltip.r "SQL comment"
+        [ Icon.outline Icons.comment "w-4 opacity-50 mr-1" |> Tooltip.r "SQL comment"
         , viewMarkdown comment.text
         ]
 
@@ -450,7 +458,7 @@ viewNotes model =
             "edit-notes"
     in
     div [ class "mt-1 flex flex-row" ]
-        [ Icon.outline Icon.DocumentText "w-4 opacity-50 mr-1" |> Tooltip.r "Azimutt notes"
+        [ Icon.outline Icons.notes "w-4 opacity-50 mr-1" |> Tooltip.r "Azimutt notes"
         , if model.editing then
             textarea
                 [ id inputId
@@ -489,10 +497,14 @@ viewColumnStats sources stats =
                         source =
                             sources |> List.findBy (.id >> SourceId.toString) sourceId |> Maybe.mapOrElse .name sourceId
                     in
-                    viewProp ("Values in " ++ source ++ " source")
-                        [ div [] (text "Samples: " :: (s.commonValues |> List.take 3 |> List.map viewColumnValue))
-                        , div [] [ text ("Rows: " ++ String.fromInt s.rows ++ ", Cardinality: " ++ String.fromInt s.cardinality ++ ", Nulls: " ++ String.fromInt (100 * s.nulls // s.rows) ++ "%") ]
-                        ]
+                    if s.rows == 0 then
+                        viewProp ("Values in " ++ source ++ " source") [ div [] [ text ("Rows: " ++ String.fromInt s.rows) ] ]
+
+                    else
+                        viewProp ("Values in " ++ source ++ " source")
+                            [ div [] (text "Samples: " :: (s.commonValues |> List.take 3 |> List.map viewColumnValue))
+                            , div [] [ text ("Rows: " ++ String.fromInt s.rows ++ ", Cardinality: " ++ String.fromInt s.cardinality ++ ", Nulls: " ++ String.fromInt (100 * s.nulls // s.rows) ++ "%") ]
+                            ]
                 )
         )
 
@@ -508,6 +520,63 @@ viewProp label content =
 viewRelation : (ColumnRef -> msg) -> String -> ErdColumnRef -> Html msg
 viewRelation click defaultSchema relation =
     div [] [ span [ class "underline cursor-pointer", onClick ({ table = relation.table, column = relation.column } |> click) ] [ text (ColumnRef.show defaultSchema relation) ] |> Tooltip.r "View column" ]
+
+
+viewConstraints : ErdTable -> ErdColumn -> Html msg
+viewConstraints table column =
+    if not column.isPrimaryKey && List.isEmpty column.uniques && List.isEmpty column.indexes && List.isEmpty column.checks then
+        div [] []
+
+    else
+        viewProp "Constraints"
+            (((column.isPrimaryKey |> Bool.list ( Icons.columns.primaryKey, viewPrimaryKey table.primaryKey ))
+                ++ (column.uniques |> List.map (\u -> ( Icons.columns.unique, viewUnique table.uniques u )))
+                ++ (column.indexes |> List.map (\i -> ( Icons.columns.index, viewIndex table.indexes i )))
+                ++ (column.checks |> List.map (\c -> ( Icons.columns.check, viewCheck table.checks c )))
+             )
+                |> List.map (\( icon, content ) -> div [] [ Icon.solid icon "inline text-gray-500 w-4 mr-1", content ])
+            )
+
+
+viewPrimaryKey : Maybe PrimaryKey -> Html msg
+viewPrimaryKey primaryKey =
+    (primaryKey |> Maybe.andThen .name) |> viewConstraint "Primary key" (primaryKey |> Maybe.mapOrElse (\pk -> ( Nel.toList pk.columns, Nothing )) ( [], Nothing ))
+
+
+viewUnique : List Unique -> UniqueName -> Html msg
+viewUnique constraints name =
+    Just name |> viewConstraint "Unique" (constraints |> List.findBy .name name |> Maybe.mapOrElse (\u -> ( Nel.toList u.columns, u.definition )) ( [], Nothing ))
+
+
+viewIndex : List Index -> IndexName -> Html msg
+viewIndex constraints name =
+    Just name |> viewConstraint "Index" (constraints |> List.findBy .name name |> Maybe.mapOrElse (\u -> ( Nel.toList u.columns, u.definition )) ( [], Nothing ))
+
+
+viewCheck : List Check -> CheckName -> Html msg
+viewCheck constraints name =
+    Just name |> viewConstraint "Check" (constraints |> List.findBy .name name |> Maybe.mapOrElse (\u -> ( u.columns, u.predicate )) ( [], Nothing ))
+
+
+viewConstraint : String -> ( List ColumnName, Maybe String ) -> Maybe String -> Html msg
+viewConstraint constraint ( columns, definition ) name =
+    let
+        columnsText : String
+        columnsText =
+            if List.length columns > 1 then
+                " (" ++ (columns |> String.join ", ") ++ ")"
+
+            else
+                ""
+    in
+    definition
+        |> Maybe.map
+            (\d ->
+                name
+                    |> Maybe.map (\n -> span [] [ text (constraint ++ ": "), text n |> Tooltip.tr d, text columnsText ])
+                    |> Maybe.withDefault (span [] [ text constraint |> Tooltip.tr d, text columnsText ])
+            )
+        |> Maybe.withDefault (text (constraint ++ (name |> Maybe.mapOrElse (\n -> ": " ++ n) "") ++ columnsText))
 
 
 viewLayout : (LayoutName -> msg) -> LayoutName -> Html msg

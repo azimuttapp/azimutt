@@ -1,6 +1,7 @@
 module Components.Organisms.Table exposing (Actions, CheckConstraint, Column, ColumnName, ColumnRef, DocState, IndexConstraint, Model, Relation, SchemaName, SharedDocState, State, TableConf, TableName, TableRef, UniqueConstraint, doc, initDocState, table)
 
-import Components.Atoms.Icon as Icon exposing (Icon(..))
+import Components.Atoms.Icon as Icon
+import Components.Atoms.Icons as Icons
 import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..), ItemAction(..))
 import Components.Molecules.Dropdown as Dropdown
 import Components.Molecules.Popover as Popover
@@ -222,7 +223,7 @@ viewHeader model =
                                     ++ track Track.openTableDropdown
                                 )
                                 [ span [ class "sr-only" ] [ text "Open table settings" ]
-                                , Icon.solid DotsVertical ""
+                                , Icon.solid Icon.DotsVertical ""
                                 ]
                         )
                         (\_ -> dropdownContent)
@@ -334,26 +335,26 @@ viewColumnIcon model column =
     if column.outRelations |> List.nonEmpty then
         if (column.outRelations |> List.filter .tableShown |> List.nonEmpty) || not model.conf.layout then
             div []
-                [ Icon.solid ExternalLink "w-4 h-4" |> Tooltip.t tooltip ]
+                [ Icon.solid Icons.columns.foreignKey "w-4 h-4" |> Tooltip.t tooltip ]
 
         else
             div ([ css [ "cursor-pointer", text_500 model.state.color ], onClick (model.actions.relationsIconClick column.outRelations True) ] ++ track Track.showTableWithForeignKey)
-                [ Icon.solid ExternalLink "w-4 h-4" |> Tooltip.t tooltip ]
+                [ Icon.solid Icons.columns.foreignKey "w-4 h-4" |> Tooltip.t tooltip ]
 
     else if column.isPrimaryKey then
-        div [] [ Icon.solid Key "w-4 h-4" |> Tooltip.t tooltip ]
+        div [] [ Icon.solid Icons.columns.primaryKey "w-4 h-4" |> Tooltip.t tooltip ]
 
     else if column.uniques |> List.nonEmpty then
-        div [] [ Icon.solid FingerPrint "w-4 h-4" |> Tooltip.t tooltip ]
+        div [] [ Icon.solid Icons.columns.unique "w-4 h-4" |> Tooltip.t tooltip ]
 
     else if column.indexes |> List.nonEmpty then
-        div [] [ Icon.solid SortDescending "w-4 h-4" |> Tooltip.t tooltip ]
+        div [] [ Icon.solid Icons.columns.index "w-4 h-4" |> Tooltip.t tooltip ]
 
     else if column.checks |> List.nonEmpty then
-        div [] [ Icon.solid Check "w-4 h-4" |> Tooltip.t tooltip ]
+        div [] [ Icon.solid Icons.columns.check "w-4 h-4" |> Tooltip.t tooltip ]
 
     else
-        div [] [ Icon.solid Empty "w-4 h-4" ]
+        div [] [ Icon.solid Icon.Empty "w-4 h-4" ]
 
 
 viewColumnIconDropdown : Model msg -> Column -> Html msg -> Html msg
@@ -396,7 +397,7 @@ viewColumnIconDropdown model column icon =
                                 let
                                     content : List (Html msg)
                                     content =
-                                        [ Icon.solid ExternalLink "inline"
+                                        [ Icon.solid Icons.columns.foreignKey "inline"
                                         , bText (showTableRef model.defaultSchema { schema = rels.head.column.schema, table = rels.head.column.table })
                                         , text ("." ++ (rels |> Nel.toList |> List.map (\r -> r.column.column ++ Bool.cond r.nullable "?" "") |> String.join ", "))
                                         ]
@@ -438,7 +439,7 @@ viewColumnName model column =
 
 viewComment : String -> Html msg
 viewComment comment =
-    Icon.outline Chat "w-4 ml-1 opacity-50" |> Tooltip.t comment
+    Icon.outline Icons.comment "w-4 ml-1 opacity-50" |> Tooltip.t comment
 
 
 viewNotes : Model msg -> Maybe String -> String -> Html msg
@@ -447,7 +448,7 @@ viewNotes model column notes =
         [ Attributes.when model.conf.layout (onClick (model.actions.notesClick column))
         , classList [ ( "cursor-pointer", model.conf.layout ) ]
         ]
-        [ Icon.outline DocumentText "w-4 ml-1 opacity-50" |> Tooltip.t notes ]
+        [ Icon.outline Icons.notes "w-4 ml-1 opacity-50" |> Tooltip.t notes ]
 
 
 viewColumnKind : Model msg -> Column -> Html msg

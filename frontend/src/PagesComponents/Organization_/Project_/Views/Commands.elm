@@ -20,8 +20,8 @@ import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import Round
 
 
-viewCommands : ErdConf -> CursorMode -> ZoomLevel -> HtmlId -> Bool -> HtmlId -> Html Msg
-viewCommands conf cursorMode canvasZoom htmlId hasTables openedDropdown =
+viewCommands : ErdConf -> CursorMode -> ZoomLevel -> HtmlId -> Bool -> HtmlId -> Bool -> Bool -> Html Msg
+viewCommands conf cursorMode canvasZoom htmlId hasTables openedDropdown amlSidebar detailsSidebar =
     let
         buttonStyles : TwClass
         buttonStyles =
@@ -57,9 +57,9 @@ viewCommands conf cursorMode canvasZoom htmlId hasTables openedDropdown =
             Html.none
         , if conf.update then
             span [ class "relative z-0 inline-flex shadow-sm rounded-md ml-2" ]
-                [ button [ type_ "button", onClick (DetailsSidebarMsg DetailsSidebar.Toggle), css [ "rounded-l-md", buttonStyles, classic ] ] [ Icon.solid Menu "" ]
+                [ button [ type_ "button", onClick (DetailsSidebarMsg DetailsSidebar.Toggle), css [ "rounded-l-md", buttonStyles, B.cond detailsSidebar inverted classic ] ] [ Icon.solid Menu "" ]
                     |> B.cond (conf.select && hasTables) Tooltip.t Tooltip.tl "List tables"
-                , button [ type_ "button", onClick (AmlSidebarMsg AToggle), css [ "-ml-px rounded-r-md", buttonStyles, classic ] ] [ Icon.solid Pencil "" ]
+                , button [ type_ "button", onClick (AmlSidebarMsg AToggle), css [ "-ml-px rounded-r-md", buttonStyles, B.cond amlSidebar inverted classic ] ] [ Icon.solid Pencil "" ]
                     |> B.cond (conf.move && hasTables) Tooltip.t Tooltip.tl "Update your schema"
                 ]
 

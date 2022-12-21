@@ -3,6 +3,7 @@ module PagesComponents.Organization_.Project_.Views.Modals.Help exposing (viewHe
 import Components.Atoms.Badge as Badge
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
+import Components.Atoms.Icons as Icons
 import Components.Atoms.Kbd as Kbd
 import Components.Molecules.Modal as Modal
 import Conf
@@ -153,7 +154,7 @@ followRelation =
         [ text "Azimutt shows you foreign keys as outgoing relations from a column with a small horizontal link on the right. Just "
         , hotkey [ "click" ]
         , text " on the column icon ("
-        , Icon.solid ExternalLink "inline"
+        , Icon.solid Icons.columns.foreignKey "inline"
         , text ") to show the target table. Incoming relations (foreign keys pointing to the table) are shown on the left, "
         , hotkey [ "click" ]
         , text " on the column icon to see all the incoming relations an choose the tables you want to show."

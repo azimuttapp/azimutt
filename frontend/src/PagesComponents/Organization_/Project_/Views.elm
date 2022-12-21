@@ -105,7 +105,7 @@ viewApp currentUrl urlOrganization shared model htmlId erd =
                         layout =
                             erd |> Erd.currentLayout
                     in
-                    Lazy.lazy6 viewCommands model.conf model.cursorMode layout.canvas.zoom (htmlId ++ "-commands") (layout.tables |> List.isEmpty |> not) (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-commands"))
+                    Lazy.lazy8 viewCommands model.conf model.cursorMode layout.canvas.zoom (htmlId ++ "-commands") (layout.tables |> List.isEmpty |> not) (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-commands")) (model.amlSidebar /= Nothing) (model.detailsSidebar /= Nothing)
 
                   else
                     div [] []

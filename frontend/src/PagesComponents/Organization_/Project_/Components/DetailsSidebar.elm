@@ -15,14 +15,14 @@ import Libs.Maybe as Maybe
 import Libs.Models.DatabaseUrl exposing (DatabaseUrl)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Models.Project.ColumnId exposing (ColumnId)
-import Models.Project.ColumnRef exposing (ColumnRef)
+import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
 import Models.Project.ColumnStats exposing (ColumnStats)
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.Origin exposing (Origin)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source as Source exposing (Source)
 import Models.Project.SourceId exposing (SourceId, SourceIdStr)
-import Models.Project.TableId exposing (TableId)
+import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableStats exposing (TableStats)
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn)
@@ -182,10 +182,26 @@ filterDatabaseSources sources =
 
 view : (Msg -> msg) -> (TableId -> msg) -> (TableId -> msg) -> (ColumnRef -> msg) -> (ColumnRef -> msg) -> (LayoutName -> msg) -> (NotesRef -> Notes -> msg) -> Dict TableId (Dict SourceIdStr TableStats) -> Dict ColumnId (Dict SourceIdStr ColumnStats) -> Erd -> Model -> Html msg
 view wrap showTable hideTable showColumn hideColumn loadLayout updateNotes tableStats columnStats erd model =
+    let
+        heading : List (Html msg)
+        heading =
+            case model.view of
+                ListView ->
+                    [ text "All tables" ]
+
+                SchemaView v ->
+                    [ span [ class "underline" ] [ text v.id ], text " schema tables" ]
+
+                TableView v ->
+                    [ span [ class "underline" ] [ text (TableId.show erd.settings.defaultSchema v.id) ], text " table details" ]
+
+                ColumnView v ->
+                    [ span [ class "underline" ] [ text (ColumnRef.show erd.settings.defaultSchema v.id) ], text " column details" ]
+    in
     div [ class "flex h-full flex-col overflow-y-scroll bg-white py-6 shadow-xl" ]
         [ div [ class "px-4 sm:px-6" ]
             [ div [ class "flex items-start justify-between" ]
-                [ h2 [ class "text-lg font-medium text-gray-900" ] [ text "Details" ]
+                [ h2 [ class "text-lg font-medium text-gray-900 truncate" ] heading
                 , div [ class "ml-3 flex h-7 items-center" ]
                     [ button [ type_ "button", onClick (wrap Close), class "rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" ]
                         [ span [ class "sr-only" ] [ text "Close panel" ]
