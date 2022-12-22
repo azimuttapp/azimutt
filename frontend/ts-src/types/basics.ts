@@ -13,6 +13,8 @@ export type Email = string
 export type Username = string
 export type HtmlId = string
 export const HtmlId = z.string()
+export type DatabaseUrl = string
+export const DatabaseUrl = z.string()
 export type FileUrl = string
 export type FileName = string
 export const FileName = z.string()
@@ -88,3 +90,8 @@ export type Color =
     | 'gray'
 
 export const Color = z.enum(['indigo', 'violet', 'purple', 'fuchsia', 'pink', 'rose', 'red', 'orange', 'amber', 'yellow', 'lime', 'green', 'emerald', 'teal', 'cyan', 'sky', 'blue', 'gray'])
+
+const literalSchema = z.union([z.string(), z.number(), z.boolean(), z.null()])
+type Literal = z.infer<typeof literalSchema>
+type Json = Literal | { [key: string]: Json } | Json[]
+export const Json: z.ZodType<Json> = z.lazy(() => z.union([literalSchema, z.array(Json), z.record(Json)]))

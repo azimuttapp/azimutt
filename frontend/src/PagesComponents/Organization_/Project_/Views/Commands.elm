@@ -7,20 +7,21 @@ import Components.Molecules.Tooltip as Tooltip
 import Html exposing (Html, button, div, span, text)
 import Html.Attributes exposing (class, id, type_)
 import Html.Events exposing (onClick)
+import Libs.Basics as Basics
 import Libs.Bool as B
 import Libs.Html as Html
 import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, css)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Tailwind exposing (TwClass, batch, focus, hover)
+import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
 import PagesComponents.Organization_.Project_.Models exposing (AmlSidebarMsg(..), Msg(..))
 import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode exposing (CursorMode)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
-import Round
 
 
-viewCommands : ErdConf -> CursorMode -> ZoomLevel -> HtmlId -> Bool -> HtmlId -> Html Msg
-viewCommands conf cursorMode canvasZoom htmlId hasTables openedDropdown =
+viewCommands : ErdConf -> CursorMode -> ZoomLevel -> HtmlId -> Bool -> HtmlId -> Bool -> Bool -> Html Msg
+viewCommands conf cursorMode canvasZoom htmlId hasTables openedDropdown amlSidebar detailsSidebar =
     let
         buttonStyles : TwClass
         buttonStyles =
@@ -33,17 +34,6 @@ viewCommands conf cursorMode canvasZoom htmlId hasTables openedDropdown =
         inverted : TwClass
         inverted =
             batch [ "bg-gray-700 text-white", hover [ "bg-gray-600" ] ]
-
-        zoomLabel : String
-        zoomLabel =
-            if canvasZoom > 0.1 then
-                canvasZoom * 100 |> Round.round 0
-
-            else if canvasZoom > 0.01 then
-                canvasZoom * 100 |> Round.round 1
-
-            else
-                canvasZoom * 100 |> Round.round 2
     in
     div [ class "az-commands absolute bottom-0 right-0 m-3 print:hidden" ]
         [ if conf.move && hasTables then
@@ -56,9 +46,9 @@ viewCommands conf cursorMode canvasZoom htmlId hasTables openedDropdown =
             Html.none
         , if conf.update then
             span [ class "relative z-0 inline-flex shadow-sm rounded-md ml-2" ]
-                [ -- button [ type_ "button", onClick (DetailsSidebarMsg DetailsSidebar.Toggle), css [ "rounded-l-md", buttonStyles, classic ] ] [ Icon.solid Menu "" ]
-                  -- |> B.cond (conf.select && hasTables) Tooltip.t Tooltip.tl "List tables",
-                  button [ type_ "button", onClick (AmlSidebarMsg AToggle), css [ "-ml-px rounded-l-md rounded-r-md", buttonStyles, classic ] ] [ Icon.solid Pencil "" ]
+                [ button [ type_ "button", onClick (DetailsSidebarMsg DetailsSidebar.Toggle), css [ "rounded-l-md", buttonStyles, B.cond detailsSidebar inverted classic ] ] [ Icon.solid Menu "" ]
+                    |> B.cond (conf.select && hasTables) Tooltip.t Tooltip.tl "Open table list"
+                , button [ type_ "button", onClick (AmlSidebarMsg AToggle), css [ "-ml-px rounded-r-md", buttonStyles, B.cond amlSidebar inverted classic ] ] [ Icon.solid Pencil "" ]
                     |> B.cond (conf.move && hasTables) Tooltip.t Tooltip.tl "Update your schema"
                 ]
 
@@ -80,7 +70,7 @@ viewCommands conf cursorMode canvasZoom htmlId hasTables openedDropdown =
                 , Dropdown.dropdown { id = htmlId ++ "-zoom-level", direction = TopLeft, isOpen = openedDropdown == htmlId ++ "-zoom-level" }
                     (\m ->
                         button [ type_ "button", id m.id, onClick (DropdownToggle m.id), ariaExpanded False, ariaHaspopup "true", css [ "-ml-px", buttonStyles, classic ] ]
-                            [ text (zoomLabel ++ " %") ]
+                            [ text (Basics.prettyNumber (canvasZoom * 100) ++ " %") ]
                     )
                     (\_ ->
                         div []

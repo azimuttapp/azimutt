@@ -84,6 +84,8 @@ init query =
       , loaded = [ query.projectId, query.projectUrl, query.databaseSource, query.sqlSource, query.jsonSource ] |> List.all (\a -> a == Nothing)
       , dirty = False
       , erd = Nothing
+      , tableStats = Dict.empty
+      , columnStats = Dict.empty
       , hoverTable = Nothing
       , hoverColumn = Nothing
       , cursorMode = CursorMode.Select

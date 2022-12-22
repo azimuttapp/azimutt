@@ -1,4 +1,4 @@
-module Libs.Bool exposing (cond, lazyCond, maybe, toString)
+module Libs.Bool exposing (cond, lazyCond, list, maybe, toString)
 
 
 cond : Bool -> a -> a -> a
@@ -17,6 +17,15 @@ maybe predicate a =
 
     else
         Nothing
+
+
+list : a -> Bool -> List a
+list a predicate =
+    if predicate then
+        [ a ]
+
+    else
+        []
 
 
 lazyCond : Bool -> (() -> a) -> (() -> a) -> a

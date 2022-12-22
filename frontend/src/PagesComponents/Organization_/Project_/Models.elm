@@ -16,16 +16,19 @@ import Models.ColumnOrder exposing (ColumnOrder)
 import Models.ErdProps exposing (ErdProps)
 import Models.Organization exposing (Organization)
 import Models.Position as Position
+import Models.Project.ColumnId exposing (ColumnId)
 import Models.Project.ColumnRef exposing (ColumnRef)
+import Models.Project.ColumnStats exposing (ColumnStats)
 import Models.Project.FindPathSettings exposing (FindPathSettings)
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectName exposing (ProjectName)
 import Models.Project.ProjectStorage exposing (ProjectStorage)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
-import Models.Project.SourceId exposing (SourceId)
+import Models.Project.SourceId exposing (SourceId, SourceIdStr)
 import Models.Project.SourceName exposing (SourceName)
 import Models.Project.TableId exposing (TableId)
+import Models.Project.TableStats exposing (TableStats)
 import Models.ProjectInfo exposing (ProjectInfo)
 import Models.RelationStyle exposing (RelationStyle)
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
@@ -59,6 +62,8 @@ type alias Model =
     , loaded : Bool
     , dirty : Bool
     , erd : Maybe Erd
+    , tableStats : Dict TableId (Dict SourceIdStr TableStats)
+    , columnStats : Dict ColumnId (Dict SourceIdStr ColumnStats)
     , hoverTable : Maybe TableId
     , hoverColumn : Maybe ColumnRef
     , cursorMode : CursorMode

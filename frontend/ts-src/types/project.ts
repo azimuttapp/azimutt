@@ -1,4 +1,4 @@
-import {Color, Position, Size, Slug, Timestamp} from "./basics";
+import {Color, Json, Position, Size, Slug, Timestamp} from "./basics";
 import {Uuid} from "./uuid";
 import {Organization} from "./organization";
 import * as array from "../utils/array";
@@ -28,6 +28,8 @@ export type ColumnName = string
 export const ColumnName = z.string()
 export type ColumnType = string
 export const ColumnType = z.string()
+export type ColumnValue = string | number | boolean | null | unknown
+export const ColumnValue = z.union([z.string(), z.number(), z.boolean(), z.null(), Json])
 export type Line = string
 export const Line = z.string()
 export type LineIndex = number
@@ -502,6 +504,11 @@ export function isRemote(p: ProjectInfo): p is ProjectInfoRemote {
 
 export function isLegacy(p: ProjectStored): p is ProjectJsonLegacy {
     return 'createdAt' in p
+}
+
+export function parseTableId(id: TableId): {schema: SchemaName, table: TableName} {
+    const [schema, table] = id.split(".")
+    return table === undefined ? {schema: "", table: schema} : {schema, table}
 }
 
 // required read transformations to satisfy Zod validations

@@ -1,8 +1,9 @@
-module Libs.Basics exposing (convertBase, fromDec, inside, maxBy, minBy, toDec, toHex, toOct, tupled)
+module Libs.Basics exposing (convertBase, fromDec, inside, maxBy, minBy, percent, prettyNumber, toDec, toHex, toOct, tupled)
 
 import Array exposing (Array)
 import Dict exposing (Dict)
 import Libs.Maybe as Maybe
+import Round
 
 
 convertBase : Int -> Int -> String -> Result (List String) String
@@ -47,6 +48,26 @@ toOct value =
 toHex : Int -> String
 toHex value =
     value |> fromDec 16 |> Result.withDefault ""
+
+
+percent : Int -> Int -> Float
+percent total value =
+    100 * toFloat value / toFloat total
+
+
+prettyNumber : Float -> String
+prettyNumber value =
+    if value == 0 then
+        "0"
+
+    else if value > 10 then
+        value |> Round.round 0
+
+    else if value > 1 then
+        value |> Round.round 1
+
+    else
+        value |> Round.round 2
 
 
 maxBy : (a -> comparable) -> a -> a -> a

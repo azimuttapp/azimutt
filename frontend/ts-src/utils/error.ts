@@ -8,6 +8,8 @@ export function formatError(err: AnyError) {
         return err
     } else if (typeof err === 'object' && err.json && typeof err.json.message === 'string') {
         return err.json.message
+    } else if (typeof err === 'object' && err && typeof err.statusCode === 'number' && typeof err.message === 'string') {
+        return err.message
     } else {
         return JSON.stringify(err)
     }

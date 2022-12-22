@@ -1,4 +1,4 @@
-module Models.Project.SourceId exposing (SourceId, decode, encode, fromString, generator, new, toString, zero)
+module Models.Project.SourceId exposing (SourceId, SourceIdStr, decode, encode, fromString, generator, new, toString, zero)
 
 import Json.Decode as Decode exposing (Value)
 import Libs.Models.Uuid as Uuid exposing (Uuid)
@@ -7,6 +7,10 @@ import Random
 
 type SourceId
     = SourceId Uuid
+
+
+type alias SourceIdStr =
+    Uuid
 
 
 zero : SourceId

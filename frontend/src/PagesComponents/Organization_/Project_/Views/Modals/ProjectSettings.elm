@@ -1,7 +1,8 @@
 module PagesComponents.Organization_.Project_.Views.Modals.ProjectSettings exposing (viewProjectSettings)
 
 import Components.Atoms.Button as Button
-import Components.Atoms.Icon as Icon exposing (Icon(..))
+import Components.Atoms.Icon as Icon exposing (Icon)
+import Components.Atoms.Icons as Icons
 import Components.Atoms.Input as Input
 import Components.Molecules.Slideover as Slideover
 import Components.Molecules.Tooltip as Tooltip
@@ -79,13 +80,13 @@ viewSource htmlId _ zone source =
                             (source |> PSSourceToggle |> ProjectSettingsMsg)
                         , div []
                             [ button [ type_ "button", onClick (source |> Just |> SourceUpdateDialog.Open |> PSSourceUpdate |> ProjectSettingsMsg), css [ focus [ "outline-none" ], B.cond (source.kind /= AmlEditor && source.fromSample == Nothing) "" "hidden" ] ]
-                                [ Icon.solid Refresh "inline" ]
+                                [ Icon.solid Icon.Refresh "inline" ]
                                 |> Tooltip.bl "Refresh this source"
                             , button [ type_ "button", onClick (Batch [ ModalClose (ProjectSettingsMsg PSClose), AmlSidebarMsg (AOpen (Just source.id)) ]), css [ focus [ "outline-none" ], B.cond (source.kind == AmlEditor) "" "hidden" ] ]
-                                [ Icon.solid Pencil "inline" ]
+                                [ Icon.solid Icon.Pencil "inline" ]
                                 |> Tooltip.bl "Update this source"
                             , button [ type_ "button", onClick (source |> PSSourceDelete |> ProjectSettingsMsg |> confirm ("Delete " ++ source.name ++ " source?") (text "Are you really sure?")), css [ focus [ "outline-none" ] ] ]
-                                [ Icon.solid Trash "inline" ]
+                                [ Icon.solid Icon.Trash "inline" ]
                                 |> Tooltip.bl "Delete this source"
                             ]
                         ]
@@ -97,28 +98,28 @@ viewSource htmlId _ zone source =
     in
     case source.kind of
         DatabaseConnection url ->
-            view Database "Last fetched on " source.updatedAt ("Database " ++ url)
+            view Icons.sources.database "Last fetched on " source.updatedAt ("Database " ++ url)
 
         SqlLocalFile path _ modified ->
-            view DocumentText "File last modified on " modified (path ++ " file")
+            view Icons.sources.sql "File last modified on " modified (path ++ " file")
 
         SqlRemoteFile url _ ->
-            view CloudDownload "Last fetched on " source.updatedAt ("File from " ++ url)
+            view Icons.sources.remote "Last fetched on " source.updatedAt ("File from " ++ url)
 
         JsonLocalFile path _ modified ->
-            view Code "File last modified on " modified (path ++ " file")
+            view Icons.sources.json "File last modified on " modified (path ++ " file")
 
         JsonRemoteFile url _ ->
-            view CloudDownload "Last fetched on " source.updatedAt ("File from " ++ url)
+            view Icons.sources.remote "Last fetched on " source.updatedAt ("File from " ++ url)
 
         AmlEditor ->
-            view User "Last edited on " source.updatedAt "Created by you"
+            view Icons.sources.aml "Last edited on " source.updatedAt "Created by you"
 
 
 viewAddSource : HtmlId -> ProjectId -> Html Msg
 viewAddSource _ _ =
     button [ type_ "button", onClick (Nothing |> SourceUpdateDialog.Open |> PSSourceUpdate |> ProjectSettingsMsg), css [ "inline-flex items-center px-3 py-2 w-full text-left", focus [ "outline-none" ] ] ]
-        [ Icon.solid Plus "inline", text "Add source" ]
+        [ Icon.solid Icon.Plus "inline", text "Add source" ]
 
 
 viewSchemasSection : HtmlId -> Erd -> Html Msg

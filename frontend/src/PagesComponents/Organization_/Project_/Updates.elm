@@ -3,6 +3,7 @@ module PagesComponents.Organization_.Project_.Updates exposing (update)
 import Components.Molecules.Dropdown as Dropdown
 import Components.Slices.ProPlan as ProPlan
 import Conf
+import Dict
 import Json.Decode as Decode
 import Json.Encode as Encode
 import Libs.Bool as B
@@ -204,7 +205,7 @@ update currentLayout now urlOrganization organizations projects msg model =
             model |> AmlSidebar.update now message
 
         DetailsSidebarMsg message ->
-            model.erd |> Maybe.mapOrElse (\erd -> model |> mapDetailsSidebarCmd (DetailsSidebar.update erd message)) ( model, Cmd.none )
+            model.erd |> Maybe.mapOrElse (\erd -> model |> mapDetailsSidebarCmd (DetailsSidebar.update Noop erd message)) ( model, Cmd.none )
 
         VirtualRelationMsg message ->
             model |> handleVirtualRelation message
@@ -392,6 +393,12 @@ handleJsMessage now currentLayout msg model =
 
             else
                 ( model, "Unhandled local file kind '" ++ kind ++ "'" |> Toasts.error |> Toast |> T.send )
+
+        GotTableStats source stats ->
+            ( { model | tableStats = model.tableStats |> Dict.update stats.id (Maybe.withDefault Dict.empty >> Dict.insert (SourceId.toString source) stats >> Just) }, Cmd.none )
+
+        GotColumnStats source stats ->
+            ( { model | columnStats = model.columnStats |> Dict.update stats.id (Maybe.withDefault Dict.empty >> Dict.insert (SourceId.toString source) stats >> Just) }, Cmd.none )
 
         GotHotkey hotkey ->
             handleHotkey now model hotkey

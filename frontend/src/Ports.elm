@@ -1,4 +1,4 @@
-port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProject, createProjectTmp, deleteProject, downloadFile, focus, fullscreen, getLegacyProjects, getProject, listenHotkeys, mouseDown, moveProjectTo, observeSize, observeTableSize, observeTablesSize, onJsMessage, projectDirty, readLocalFile, scrollTo, setMeta, toast, track, trackError, trackJsonError, trackPage, unhandledJsMsgError, updateProject, updateProjectTmp)
+port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProject, createProjectTmp, deleteProject, downloadFile, focus, fullscreen, getColumnStats, getLegacyProjects, getProject, getTableStats, listenHotkeys, mouseDown, moveProjectTo, observeSize, observeTableSize, observeTablesSize, onJsMessage, projectDirty, readLocalFile, scrollTo, setMeta, toast, track, trackError, trackJsonError, trackPage, unhandledJsMsgError, updateProject, updateProjectTmp)
 
 import Dict exposing (Dict)
 import FileValue exposing (File)
@@ -8,6 +8,7 @@ import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
 import Libs.List as List
 import Libs.Models exposing (FileContent, SizeChange, TrackEvent)
+import Libs.Models.DatabaseUrl as DatabaseUrl exposing (DatabaseUrl)
 import Libs.Models.Delta as Delta exposing (Delta)
 import Libs.Models.FileName exposing (FileName)
 import Libs.Models.Hotkey as Hotkey exposing (Hotkey)
@@ -17,9 +18,12 @@ import Models.OrganizationId as OrganizationId exposing (OrganizationId)
 import Models.Position as Position
 import Models.Project as Project exposing (Project)
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
+import Models.Project.ColumnStats as ColumnStats exposing (ColumnStats)
 import Models.Project.ProjectId as ProjectId exposing (ProjectId)
 import Models.Project.ProjectStorage as ProjectStorage exposing (ProjectStorage)
+import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.TableId as TableId exposing (TableId)
+import Models.Project.TableStats as TableStats exposing (TableStats)
 import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Models.Route as Route exposing (Route)
 import Models.Size as Size
@@ -127,6 +131,16 @@ readLocalFile sourceKind file =
     messageToJs (GetLocalFile sourceKind file)
 
 
+getTableStats : TableId -> ( SourceId, DatabaseUrl ) -> Cmd msg
+getTableStats table ( source, database ) =
+    messageToJs (GetTableStats source database table)
+
+
+getColumnStats : ColumnRef -> ( SourceId, DatabaseUrl ) -> Cmd msg
+getColumnStats column ( source, database ) =
+    messageToJs (GetColumnStats source database column)
+
+
 observeSize : HtmlId -> Cmd msg
 observeSize id =
     observeSizes [ id ]
@@ -220,6 +234,8 @@ type ElmMsg
     | ProjectDirty Bool
     | DownloadFile FileName FileContent
     | GetLocalFile String File
+    | GetTableStats SourceId DatabaseUrl TableId
+    | GetColumnStats SourceId DatabaseUrl ColumnRef
     | ObserveSizes (List HtmlId)
     | ListenKeys (Dict String (List Hotkey))
     | Confetti HtmlId
@@ -235,6 +251,8 @@ type JsMsg
     | GotProject (Maybe (Result Decode.Error Project))
     | ProjectDeleted ProjectId
     | GotLocalFile String File FileContent
+    | GotTableStats SourceId TableStats
+    | GotColumnStats SourceId ColumnStats
     | GotHotkey String
     | GotKeyHold String Bool
     | GotToast String String
@@ -340,6 +358,12 @@ elmEncoder elm =
         GetLocalFile sourceKind file ->
             Encode.object [ ( "kind", "GetLocalFile" |> Encode.string ), ( "sourceKind", sourceKind |> Encode.string ), ( "file", file |> FileValue.encode ) ]
 
+        GetTableStats source database table ->
+            Encode.object [ ( "kind", "GetTableStats" |> Encode.string ), ( "source", source |> SourceId.encode ), ( "database", database |> DatabaseUrl.encode ), ( "table", table |> TableId.encode ) ]
+
+        GetColumnStats source database column ->
+            Encode.object [ ( "kind", "GetColumnStats" |> Encode.string ), ( "source", source |> SourceId.encode ), ( "database", database |> DatabaseUrl.encode ), ( "column", column |> ColumnRef.encode ) ]
+
         ObserveSizes ids ->
             Encode.object [ ( "kind", "ObserveSizes" |> Encode.string ), ( "ids", ids |> Encode.list Encode.string ) ]
 
@@ -393,6 +417,12 @@ jsDecoder =
                         (Decode.field "sourceKind" Decode.string)
                         (Decode.field "file" FileValue.decoder)
                         (Decode.field "content" Decode.string)
+
+                "GotTableStats" ->
+                    Decode.map2 GotTableStats (Decode.field "source" SourceId.decode) (Decode.field "stats" TableStats.decode)
+
+                "GotColumnStats" ->
+                    Decode.map2 GotColumnStats (Decode.field "source" SourceId.decode) (Decode.field "stats" ColumnStats.decode)
 
                 "GotHotkey" ->
                     Decode.map GotHotkey (Decode.field "id" Decode.string)
@@ -482,6 +512,12 @@ unhandledJsMsgError msg =
 
                 GotLocalFile _ _ _ ->
                     "GotLocalFile"
+
+                GotTableStats _ _ ->
+                    "GotTableStats"
+
+                GotColumnStats _ _ ->
+                    "GotColumnStats"
 
                 GotHotkey _ ->
                     "GotHotkey"

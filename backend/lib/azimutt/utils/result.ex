@@ -135,7 +135,7 @@ defmodule Azimutt.Utils.Result do
   def map_with({:error, _err} = res, _f), do: res
 
   @doc """
-  Like `flat_map` but keeps the mapped value
+  Like `flat_map` but puts the mapped value in a tuple with the map result
   ## Examples
       iex> {:ok, 1} |> Result.flat_map_with(fn x -> {:ok, x + 1} end)
       {:ok, {1, 2}}

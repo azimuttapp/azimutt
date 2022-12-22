@@ -1,4 +1,4 @@
-module Models.Project.Source exposing (Source, addRelation, aml, decode, encode, refreshWith, toInfo)
+module Models.Project.Source exposing (Source, addRelation, aml, databaseUrl, decode, encode, refreshWith, toInfo)
 
 import Array exposing (Array)
 import Conf
@@ -10,6 +10,7 @@ import Libs.Dict as Dict
 import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
 import Libs.List as List
+import Libs.Models.DatabaseUrl exposing (DatabaseUrl)
 import Libs.Time as Time
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.CustomType as CustomType exposing (CustomType)
@@ -69,6 +70,16 @@ toInfo source =
     , createdAt = source.createdAt
     , updatedAt = source.updatedAt
     }
+
+
+databaseUrl : Source -> Maybe DatabaseUrl
+databaseUrl source =
+    case source.kind of
+        DatabaseConnection url ->
+            Just url
+
+        _ ->
+            Nothing
 
 
 refreshWith : Source -> Source -> Source
