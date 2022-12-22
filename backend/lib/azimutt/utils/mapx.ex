@@ -29,6 +29,13 @@ defmodule Azimutt.Utils.Mapx do
       iex> %{foo: "bar", bob: "alice"} |> Mapx.map_values(&String.length/1)
       %{foo: 3, bob: 5}
   """
-  def map_values(enumerable, f),
-    do: enumerable |> Enum.map(fn {k, v} -> {k, f.(v)} end) |> Map.new()
+  def map_values(enumerable, f), do: enumerable |> Enum.map(fn {k, v} -> {k, f.(v)} end) |> Map.new()
+
+  @doc """
+  Transform Map keys to :atom
+  ## Examples
+      iex> %{"foo" => "bar", "bob" => "alice"} |> Mapx.atomize()
+      %{foo: "bar", bob: "alice"}
+  """
+  def atomize(struct), do: struct |> Map.new(fn {k, v} -> {String.to_atom(k), v} end)
 end
