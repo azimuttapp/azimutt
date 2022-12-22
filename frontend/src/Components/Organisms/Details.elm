@@ -30,7 +30,6 @@ import Libs.Time as Time
 import Libs.Tuple3 as Tuple3
 import Models.Position as Position
 import Models.Project as Project
-import Models.Project.CanvasProps as CanvasProps
 import Models.Project.Check exposing (Check)
 import Models.Project.CheckName exposing (CheckName)
 import Models.Project.ColumnId exposing (ColumnId)
@@ -58,12 +57,12 @@ import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn)
 import PagesComponents.Organization_.Project_.Models.ErdColumnProps exposing (ErdColumnProps)
 import PagesComponents.Organization_.Project_.Models.ErdColumnRef as ErdColumnRef exposing (ErdColumnRef)
-import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
+import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.ErdTableProps exposing (ErdTableProps)
 import PagesComponents.Organization_.Project_.Models.Notes exposing (Notes)
-import Services.Lenses exposing (setLayouts)
+import Services.Lenses exposing (setLayouts, setTables)
 import Simple.Fuzzy
 import Time exposing (Posix)
 
@@ -1077,20 +1076,18 @@ docTableStats =
 
 docBuildLayout : List ( TableIdStr, List ColumnName ) -> ErdLayout
 docBuildLayout tables =
-    { canvas = CanvasProps.empty
-    , tables =
-        tables
-            |> List.map
-                (\( table, columns ) ->
-                    { id = TableId.parse table
-                    , props = ErdTableProps Nothing Position.zeroGrid Size.zeroCanvas Tw.red True True True
-                    , columns = columns |> List.map (\col -> ErdColumnProps col True)
-                    , relatedTables = Dict.empty
-                    }
-                )
-    , createdAt = docNow
-    , updatedAt = docNow
-    }
+    ErdLayout.empty docNow
+        |> setTables
+            (tables
+                |> List.map
+                    (\( table, columns ) ->
+                        { id = TableId.parse table
+                        , props = ErdTableProps Nothing Position.zeroGrid Size.zeroCanvas Tw.red True True True
+                        , columns = columns |> List.map (\col -> ErdColumnProps col True)
+                        , relatedTables = Dict.empty
+                        }
+                    )
+            )
 
 
 docComponent : String -> (DocState -> Html msg) -> ( String, SharedDocState x -> Html msg )

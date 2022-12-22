@@ -54,7 +54,8 @@ import Models.Project.Unique exposing (Unique)
 import Models.Project.UniqueName exposing (UniqueName)
 import Models.RelationStyle as RelationStyle exposing (RelationStyle)
 import Models.Size as Size
-import TestHelpers.Fuzzers exposing (color, dictSmall, fileLineIndex, fileModified, fileName, fileSize, fileUrl, identifier, intPosSmall, listSmall, nelSmall, positionCanvas, positionGrid, posix, stringSmall, text, uuid, zoomLevel)
+import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
+import TestHelpers.Fuzzers exposing (color, dictSmall, fileLineIndex, fileModified, fileName, fileSize, fileUrl, identifier, intPosSmall, listSmall, nelSmall, positionDiagram, positionGrid, posix, sizeCanvas, stringSmall, text, uuid, zoomLevel)
 import TestHelpers.OrganizationFuzzers exposing (organization)
 
 
@@ -141,8 +142,8 @@ customType =
 customTypeValue : Fuzzer CustomTypeValue
 customTypeValue =
     Fuzz.oneOf
-        [ listSmall Fuzz.string |> Fuzz.map CustomTypeValue.Enum
-        , Fuzz.string |> Fuzz.map CustomTypeValue.Definition
+        [ listSmall stringSmall |> Fuzz.map CustomTypeValue.Enum
+        , stringSmall |> Fuzz.map CustomTypeValue.Definition
         ]
 
 
@@ -163,17 +164,22 @@ origin =
 
 layout : Fuzzer Layout
 layout =
-    Fuzz.map4 Layout canvasProps (listSmall tableProps) posix posix
+    Fuzz.map5 Layout canvasProps (listSmall tableProps) (listSmall memo) posix posix
 
 
 canvasProps : Fuzzer CanvasProps
 canvasProps =
-    Fuzz.map2 CanvasProps positionCanvas zoomLevel
+    Fuzz.map2 CanvasProps positionDiagram zoomLevel
 
 
 tableProps : Fuzzer TableProps
 tableProps =
     Fuzz.map7 (\id p -> TableProps id p Size.zeroCanvas) tableId positionGrid color (listSmall columnName) Fuzz.bool Fuzz.bool Fuzz.bool
+
+
+memo : Fuzzer Memo
+memo =
+    Fuzz.map3 Memo stringSmall positionGrid sizeCanvas
 
 
 projectSettings : Fuzzer ProjectSettings
@@ -183,7 +189,7 @@ projectSettings =
 
 findPathSettings : Fuzzer FindPathSettings
 findPathSettings =
-    Fuzz.map3 FindPathSettings intPosSmall Fuzz.string Fuzz.string
+    Fuzz.map3 FindPathSettings intPosSmall stringSmall stringSmall
 
 
 findHiddenColumns : Fuzzer HiddenColumns
