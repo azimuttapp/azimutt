@@ -1,5 +1,7 @@
-module Libs.Models.Size exposing (Size, decode, diff, div, encode, fromTuple, mult, ratio, round, sub, toString, toStringRound, toTuple, zero)
+module Libs.Models.Size exposing (Size, decode, diff, div, encode, fromTuple, mult, ratio, round, styles, sub, toString, toStringRound, toTuple, zero)
 
+import Html exposing (Attribute)
+import Html.Attributes exposing (style)
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
 import Libs.Json.Encode as Encode
@@ -78,3 +80,8 @@ decode =
     Decode.map2 Size
         (Decode.field "width" Decode.float)
         (Decode.field "height" Decode.float)
+
+
+styles : Size -> List (Attribute msg)
+styles size =
+    [ style "width" (String.fromFloat size.width ++ "px"), style "height" (String.fromFloat size.height ++ "px") ]

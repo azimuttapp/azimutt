@@ -31,6 +31,7 @@ constants :
     , virtualRelationSourceName : SourceName
     , cheeringTweet : String
     , sharingTweet : String
+    , canvasMargins : Float
     }
 constants =
     { azimuttWebsite = "https://azimutt.app"
@@ -53,6 +54,7 @@ constants =
     , virtualRelationSourceName = "default"
     , cheeringTweet = "Hi team, I really like what you've done with @" ++ twitter ++ ". Keep up the good work 💪"
     , sharingTweet = "Hi @" ++ twitter ++ ", I just published my schema at ..., I would love if you can share 🚀"
+    , canvasMargins = 20
     }
 
 

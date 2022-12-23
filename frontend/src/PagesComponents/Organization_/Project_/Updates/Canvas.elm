@@ -1,15 +1,22 @@
-module PagesComponents.Organization_.Project_.Updates.Canvas exposing (computeFit, fitCanvas, handleWheel, performZoom, zoomCanvas)
+module PagesComponents.Organization_.Project_.Updates.Canvas exposing (arrangeTables, computeFit, fitCanvas, handleWheel, performZoom, zoomCanvas)
 
 import Conf
+import Dagre as D
+import Dagre.Attributes as DA
+import Dict exposing (Dict)
+import Graph
 import Libs.Bool as B
 import Libs.Html.Events exposing (WheelEvent)
 import Libs.Models.Delta as Delta exposing (Delta)
+import Libs.Models.Position as Position
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
+import Libs.Nel as Nel exposing (Nel)
 import Libs.Task as T
 import Models.Area as Area
 import Models.ErdProps exposing (ErdProps)
 import Models.Position as Position
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
+import Models.Project.TableId exposing (TableId)
 import Models.Size as Size
 import PagesComponents.Organization_.Project_.Models exposing (Msg(..))
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
@@ -36,41 +43,83 @@ zoomCanvas delta erdElem canvas =
 
 fitCanvas : Time.Posix -> ErdProps -> Erd -> ( Erd, Cmd Msg )
 fitCanvas now erdElem erd =
-    let
-        padding : Float
-        padding =
-            20
+    (erd |> Erd.currentLayout |> selectedTablesOrAll |> List.map .id |> Nel.fromList)
+        |> Maybe.map (\tables -> ( erd |> Erd.mapCurrentLayoutWithTime now (fitCanvasAlgo erdElem tables), Cmd.none ))
+        |> Maybe.withDefault ( erd, "No table to fit into the canvas" |> Toasts.create "warning" |> Toast |> T.send )
 
-        layout : ErdLayout
-        layout =
-            erd |> Erd.currentLayout
 
-        selectedTables : List ErdTableLayout
-        selectedTables =
-            layout.tables |> List.filter (.props >> .selected)
-
-        tables : List ErdTableLayout
-        tables =
-            B.cond (List.isEmpty selectedTables) layout.tables selectedTables
-    in
-    tables
-        |> List.map (\t -> { position = t.props.position |> Position.offGrid, size = t.props.size })
+fitCanvasAlgo : ErdProps -> Nel TableId -> ErdLayout -> ErdLayout
+fitCanvasAlgo erdElem tables layout =
+    -- WARNING: the computation looks good but the diagram changes on resize due to table header size change
+    -- (see headerTextSize in frontend/src/Components/Organisms/Table.elm:177)
+    -- if you look to fix it, make sure to disable it before testing!
+    (layout.tables |> List.filter (\t -> tables |> Nel.member t.id) |> List.map (.props >> Area.offGrid))
         |> Area.mergeCanvas
         |> Maybe.map
             (\tablesArea ->
                 let
                     ( newZoom, centerOffset ) =
-                        computeFit (layout.canvas |> CanvasProps.viewport erdElem) padding tablesArea layout.canvas.zoom
+                        computeFit (layout.canvas |> CanvasProps.viewport erdElem) Conf.constants.canvasMargins tablesArea layout.canvas.zoom
                 in
-                ( erd
-                    |> Erd.mapCurrentLayoutWithTime now
-                        (mapCanvas (setPosition Position.zeroDiagram >> setZoom newZoom)
-                            >> mapTables (List.map (mapProps (mapPosition (Position.moveCanvasGrid centerOffset))))
-                        )
-                , Cmd.none
-                )
+                layout
+                    |> mapCanvas (setPosition Position.zeroDiagram >> setZoom newZoom)
+                    |> mapTables (List.map (mapProps (mapPosition (centerOffset |> Position.moveGrid))))
             )
-        |> Maybe.withDefault ( erd, "No table to fit into the canvas" |> Toasts.create "warning" |> Toast |> T.send )
+        |> Maybe.withDefault layout
+
+
+arrangeTables : Time.Posix -> ErdProps -> Erd -> ( Erd, Cmd Msg )
+arrangeTables now erdElem erd =
+    -- TODO: toggle this on show all tables if layout was empty before, see frontend/src/PagesComponents/Organization_/Project_/Updates/Table.elm:106#showAllTables
+    -- Improvement: fit only selected tables if there is some, use `selectedTablesOrAll` instead of `.tables`
+    -- For that, they need to stay in "the same area", but it will probably extend a lot... Maybe keep the center?
+    (erd |> Erd.currentLayout |> .tables |> List.map .id |> Nel.fromList)
+        |> Maybe.map (\tables -> ( erd |> Erd.mapCurrentLayoutWithTime now (arrangeTablesAlgo tables >> fitCanvasAlgo erdElem tables), Cmd.none ))
+        |> Maybe.withDefault ( erd, "No table to arrange in the canvas" |> Toasts.create "warning" |> Toast |> T.send )
+
+
+arrangeTablesAlgo : Nel TableId -> ErdLayout -> ErdLayout
+arrangeTablesAlgo tables layout =
+    let
+        nodes : List (Graph.Node ErdTableLayout)
+        nodes =
+            layout.tables |> List.filter (\t -> tables |> Nel.member t.id) |> List.indexedMap Graph.Node
+
+        asNodeId : Dict TableId Graph.NodeId
+        asNodeId =
+            nodes |> List.map (\n -> ( n.label.id, n.id )) |> Dict.fromList
+
+        edges : List (Graph.Edge ())
+        edges =
+            nodes |> List.concatMap (\n -> n.label.relatedTables |> Dict.filter (\_ -> .shown) |> Dict.keys |> List.filterMap (\id -> asNodeId |> Dict.get id) |> List.map (\n2 -> Graph.Edge n.id n2 ()))
+
+        diagram : D.GraphLayout
+        diagram =
+            D.runLayout
+                [ DA.rankDir DA.LR
+                , DA.widthDict (nodes |> List.map (\n -> ( n.id, n.label.props.size |> Size.extractCanvas |> .width )) |> Dict.fromList)
+                , DA.heightDict (nodes |> List.map (\n -> ( n.id, n.label.props.size |> Size.extractCanvas |> .height )) |> Dict.fromList)
+                ]
+                (Graph.fromNodesAndEdges nodes edges)
+
+        updatePosition : ErdTableLayout -> ErdTableLayout
+        updatePosition t =
+            (asNodeId |> Dict.get t.id)
+                |> Maybe.andThen (\id -> diagram.coordDict |> Dict.get id |> Maybe.map (Position.fromTuple >> Position.grid))
+                |> Maybe.map (\pos -> t |> mapProps (setPosition pos))
+                |> Maybe.withDefault t
+    in
+    layout |> mapTables (List.map updatePosition)
+
+
+selectedTablesOrAll : ErdLayout -> List ErdTableLayout
+selectedTablesOrAll layout =
+    let
+        selectedTables : List ErdTableLayout
+        selectedTables =
+            layout.tables |> List.filter (.props >> .selected)
+    in
+    B.cond (List.isEmpty selectedTables) layout.tables selectedTables
 
 
 performZoom : ErdProps -> Float -> Position.Viewport -> CanvasProps -> CanvasProps

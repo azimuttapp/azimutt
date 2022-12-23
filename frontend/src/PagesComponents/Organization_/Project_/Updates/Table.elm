@@ -163,7 +163,7 @@ showRelatedTables id erd =
                         related |> List.filterNot (\t -> erd |> Erd.currentLayout |> .tables |> List.memberBy .id t) |> List.map (\t -> ( t, guessHeight t erd ))
 
                     ( tablePos, tableSize ) =
-                        ( table.props.position |> Position.extractCanvasGrid, table.props.size |> Size.extractCanvas )
+                        ( table.props.position |> Position.extractGrid, table.props.size |> Size.extractCanvas )
 
                     left : Float
                     left =
@@ -179,7 +179,7 @@ showRelatedTables id erd =
 
                     shows : List ( TableId, Maybe PositionHint )
                     shows =
-                        toShow |> List.foldl (\( t, h ) ( cur, res ) -> ( cur + h + padding.dy, ( t, Just (PlaceAt (Position.buildCanvasGrid { left = left, top = cur })) ) :: res )) ( top, [] ) |> Tuple.second
+                        toShow |> List.foldl (\( t, h ) ( cur, res ) -> ( cur + h + padding.dy, ( t, Just (PlaceAt (Position.grid { left = left, top = cur })) ) :: res )) ( top, [] ) |> Tuple.second
                 in
                 ( erd, Cmd.batch (shows |> List.map (\( t, hint ) -> T.send (ShowTable t hint))) )
             )
@@ -338,7 +338,7 @@ performShowTable now table hint erd =
         |> Erd.mapCurrentLayoutWithTime now
             (mapTables
                 (\tables ->
-                    -- initial position is computed in frontend/src/PagesComponents/Organization_/Project_/Updates.elm#computeInitialPosition when size is known
+                    -- initial position is computed in frontend/src/PagesComponents/Organization_/Project_/Updates.elm:502#computeInitialPosition when size is known
                     ErdTableLayout.init erd.settings
                         (tables |> List.map .id |> Set.fromList)
                         (erd.relationsByTable |> Dict.getOrElse table.id [])

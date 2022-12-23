@@ -276,12 +276,12 @@ project2Json =
 
 canvasPos : Float -> Float -> Position.Diagram
 canvasPos x y =
-    Position x y |> Position.buildDiagram
+    Position x y |> Position.diagram
 
 
 gridPos : Float -> Float -> Position.CanvasGrid
 gridPos x y =
-    Position x y |> Position.buildCanvasGrid
+    Position x y |> Position.grid
 
 
 time : Int -> Time.Posix

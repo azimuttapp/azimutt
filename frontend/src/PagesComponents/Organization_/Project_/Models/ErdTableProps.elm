@@ -37,7 +37,7 @@ create props =
 init : Bool -> Maybe PositionHint -> ErdTable -> ErdTableProps
 init collapsed hint table =
     { positionHint = hint
-    , position = Position.zeroCanvasGrid
+    , position = Position.zeroGrid
     , size = Size.zeroCanvas
     , color = computeColor table.id
     , selected = False

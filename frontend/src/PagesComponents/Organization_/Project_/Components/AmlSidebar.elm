@@ -139,7 +139,7 @@ updateSource now source input model =
                         , previous
                             |> Maybe.andThen (\t -> tableLayouts |> List.findBy .id t.id)
                             |> Maybe.map (.props >> .position)
-                            |> Maybe.filter (\p -> p /= Position.zeroCanvasGrid)
+                            |> Maybe.filter (\p -> p /= Position.zeroGrid)
                             |> Maybe.map PlaceAt
                         )
                     )

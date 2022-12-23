@@ -200,6 +200,7 @@ type Msg
     | HelpMsg HelpMsg
     | CursorMode CursorMode
     | FitContent
+    | ArrangeTables
     | Fullscreen (Maybe HtmlId)
     | OnWheel WheelEvent
     | Zoom ZoomDelta

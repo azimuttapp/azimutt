@@ -97,7 +97,8 @@ viewApp currentUrl urlOrganization shared model htmlId erd =
             [ class "flex-1 flex overflow-hidden"
             , style "height" (B.cond model.conf.showNavbar ("calc(100% - " ++ (model.erdElem.position |> Position.extractViewport |> .top |> String.fromFloat) ++ "px)") "100%")
             ]
-            [ section [ class "relative min-w-0 flex-1 h-full flex flex-col overflow-y-auto" ]
+            [ -- model.erdElem |> Area.debugViewport "erdElem" "border-red-500",
+              section [ class "relative min-w-0 flex-1 h-full flex flex-col overflow-y-auto" ]
                 [ Lazy.lazy8 viewErd model.conf model.erdElem model.hoverTable erd model.selectionBox model.virtualRelation (Erd.argsToString shared.conf.platform model.cursorMode model.openedDropdown model.openedPopover (model.detailsSidebar |> Maybe.mapOrElse DetailsSidebar.selected "")) model.dragging
                 , if model.conf.fullscreen || model.conf.move then
                     let

@@ -1,7 +1,10 @@
-module Libs.Models.Area exposing (Area, AreaLike, inside, merge, normalize, overlap, toStringRound, zero)
+module Libs.Models.Area exposing (Area, AreaLike, debug, inside, merge, normalize, overlap, toStringRound, zero)
 
+import Html exposing (Attribute, Html, text)
+import Html.Attributes exposing (class)
 import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.Size as Size exposing (Size)
+import Libs.Tailwind exposing (TwClass)
 
 
 type alias Area =
@@ -71,3 +74,13 @@ overlap area1 area2 =
 toStringRound : AreaLike a -> String
 toStringRound { position, size } =
     Position.toStringRound position ++ " / " ++ Size.toStringRound size
+
+
+styleTransform : AreaLike a -> List (Attribute msg)
+styleTransform area =
+    Position.styleTransform area.position :: Size.styles area.size
+
+
+debug : String -> TwClass -> AreaLike a -> Html msg
+debug name classes area =
+    Html.div ([ class (classes ++ " z-max absolute pointer-events-none whitespace-nowrap border") ] ++ styleTransform area) [ text (name ++ ": " ++ toStringRound area) ]

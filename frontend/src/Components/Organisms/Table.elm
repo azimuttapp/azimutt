@@ -12,7 +12,7 @@ import ElmBook exposing (Msg)
 import ElmBook.Actions as Actions exposing (logAction)
 import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Attribute, Html, br, button, div, span, text)
-import Html.Attributes exposing (class, classList, id, style, tabindex, title, type_)
+import Html.Attributes exposing (class, classList, id, tabindex, title, type_)
 import Html.Events exposing (onClick, onDoubleClick, onMouseEnter, onMouseLeave)
 import Html.Keyed as Keyed
 import Html.Lazy as Lazy
@@ -174,7 +174,9 @@ viewHeader model =
         headerTextSize : List (Attribute msg)
         headerTextSize =
             if model.zoom < 0.5 then
-                [ style "font-size" (String.fromFloat (1.25 * 0.5 / model.zoom) ++ "rem") ]
+                -- EXPERIMENT: disable table title magnification when small so the diagram doesn't change and makes the fit-to-screen flaky
+                -- [ style "font-size" (String.fromFloat (1.25 * 0.5 / model.zoom) ++ "rem") ]
+                []
 
             else
                 []

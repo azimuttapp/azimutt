@@ -25,7 +25,7 @@ viewport : ErdProps -> CanvasProps -> Area.Canvas
 viewport erdElem canvas =
     -- compute the canvas viewport (the visible area of the canvas)
     Area.Diagram Position.zeroDiagram (erdElem.size |> Size.viewportToCanvas canvas.zoom)
-        |> Area.diagramToCanvas canvas.position canvas.zoom
+        |> Area.diagramToCanvas canvas.position
 
 
 encode : CanvasProps -> Value

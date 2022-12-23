@@ -1083,7 +1083,7 @@ docBuildLayout tables =
             |> List.map
                 (\( table, columns ) ->
                     { id = TableId.parse table
-                    , props = ErdTableProps Nothing Position.zeroCanvasGrid Size.zeroCanvas Tw.red True True True
+                    , props = ErdTableProps Nothing Position.zeroGrid Size.zeroCanvas Tw.red True True True
                     , columns = columns |> List.map (\col -> ErdColumnProps col True)
                     , relatedTables = Dict.empty
                     }

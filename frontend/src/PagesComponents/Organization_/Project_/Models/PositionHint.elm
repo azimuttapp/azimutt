@@ -15,10 +15,10 @@ move : Delta -> PositionHint -> PositionHint
 move delta hint =
     case hint of
         PlaceLeft pos ->
-            PlaceLeft (pos |> Position.moveCanvasGrid delta)
+            PlaceLeft (pos |> Position.moveGrid delta)
 
         PlaceRight pos size ->
-            PlaceRight (pos |> Position.moveCanvasGrid delta) size
+            PlaceRight (pos |> Position.moveGrid delta) size
 
         PlaceAt pos ->
             PlaceAt pos
