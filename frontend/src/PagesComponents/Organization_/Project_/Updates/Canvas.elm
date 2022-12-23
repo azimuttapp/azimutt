@@ -70,11 +70,10 @@ fitCanvasAlgo erdElem tables layout =
 
 arrangeTables : Time.Posix -> ErdProps -> Erd -> ( Erd, Cmd Msg )
 arrangeTables now erdElem erd =
-    -- TODO: toggle this on show all tables if layout was empty before
+    -- TODO: toggle this on show all tables if layout was empty before, see frontend/src/PagesComponents/Organization_/Project_/Updates/Table.elm:106#showAllTables
     -- Improvement: fit only selected tables if there is some, use `selectedTablesOrAll` instead of `.tables`
     -- For that, they need to stay in "the same area", but it will probably extend a lot... Maybe keep the center?
     (erd |> Erd.currentLayout |> .tables |> List.map .id |> Nel.fromList)
-        -- TODO: instead of pipe into fitCanvasAlgo, use layout width/height to fit in the viewport?
         |> Maybe.map (\tables -> ( erd |> Erd.mapCurrentLayoutWithTime now (arrangeTablesAlgo tables >> fitCanvasAlgo erdElem tables), Cmd.none ))
         |> Maybe.withDefault ( erd, "No table to arrange in the canvas" |> Toasts.create "warning" |> Toast |> T.send )
 

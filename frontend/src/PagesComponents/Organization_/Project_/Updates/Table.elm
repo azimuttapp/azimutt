@@ -338,7 +338,7 @@ performShowTable now table hint erd =
         |> Erd.mapCurrentLayoutWithTime now
             (mapTables
                 (\tables ->
-                    -- initial position is computed in frontend/src/PagesComponents/Organization_/Project_/Updates.elm#computeInitialPosition when size is known
+                    -- initial position is computed in frontend/src/PagesComponents/Organization_/Project_/Updates.elm:502#computeInitialPosition when size is known
                     ErdTableLayout.init erd.settings
                         (tables |> List.map .id |> Set.fromList)
                         (erd.relationsByTable |> Dict.getOrElse table.id [])
