@@ -1,4 +1,4 @@
-defmodule Azimutt.Services.StripeTest do
+defmodule Azimutt.Services.StripeSrvTest do
   use Azimutt.DataCase
   alias Azimutt.Services.StripeSrv
 
