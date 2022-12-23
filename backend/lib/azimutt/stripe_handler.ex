@@ -2,44 +2,98 @@ defmodule Azimutt.StripeHandler do
   @moduledoc false
   @behaviour Stripe.WebhookHandler
   alias Azimutt.Organizations
+  alias Azimutt.Organizations.Organization
+  alias Azimutt.Tracking
+  alias Azimutt.Tracking.Event
   # credo:disable-for-this-file
 
   @impl true
+  def handle_event(%Stripe.Event{type: "customer.subscription.created"} = event) do
+    subscription = event.data.object
+
+    with {:ok, %Organization{} = organization} <- Organizations.get_organization_by_customer(subscription.customer),
+         {:ok, %Event{} = last_billing} <- Tracking.last_billing_loaded(organization) do
+      Tracking.stripe_subscription_created(event, organization, last_billing.created_by, subscription.quantity, subscription.id)
+      Organizations.update_organization_subscription(organization, subscription.id)
+    end
+
+    :ok
+  end
+
+  @impl true
+  def handle_event(%Stripe.Event{type: "customer.subscription.updated"} = event) do
+    subscription = event.data.object
+    previous = event.data.previous_attributes
+
+    with {:ok, %Organization{} = organization} <- Organizations.get_organization_by_customer(subscription.customer),
+         {:ok, %Event{} = last_billing} <- Tracking.last_billing_loaded(organization) do
+      cond do
+        previous.cancel_at == nil && subscription.cancel_at != nil ->
+          Tracking.stripe_subscription_canceled(event, organization, last_billing.created_by, subscription.quantity)
+
+        previous.cancel_at != nil && subscription.cancel_at == nil ->
+          Tracking.stripe_subscription_renewed(event, organization, last_billing.created_by, subscription.quantity)
+
+        previous.quantity ->
+          Tracking.stripe_subscription_quantity_updated(
+            event,
+            organization,
+            last_billing.created_by,
+            subscription.quantity,
+            previous.quantity
+          )
+
+        previous.status == "incomplete" && subscription.status == "active" ->
+          # saved in 'customer.subscription.created' event
+          # Tracking.stripe_subscription_created(event, organization, last_billing.created_by, subscription.quantity)
+          :ok
+
+        true ->
+          Tracking.stripe_subscription_updated(event, organization, last_billing.created_by, subscription.quantity)
+      end
+    end
+
+    :ok
+  end
+
+  @impl true
+  def handle_event(%Stripe.Event{type: "billing_portal.session.created"} = event) do
+    with {:ok, %Organization{} = organization} <- Organizations.get_organization_by_customer(event.data.object.customer),
+         {:ok, %Event{} = last_billing} <- Tracking.last_billing_loaded(organization),
+         do: Tracking.stripe_open_billing_portal(event, organization, last_billing.created_by)
+
+    :ok
+  end
+
+  @impl true
   def handle_event(%Stripe.Event{type: "invoice.paid"} = event) do
-    IO.inspect(event, label: "Payment Succeeded")
-    # Continue to provision the subscription as payments continue to be made.
-    # Store the status in your database and check when a user accesses your service.
-    # This approach helps you avoid hitting rate limits.
+    with {:ok, %Organization{} = organization} <- Organizations.get_organization_by_customer(event.data.object.customer),
+         {:ok, %Event{} = last_billing} <- Tracking.last_billing_loaded(organization),
+         do: Tracking.stripe_invoice_paid(event, organization, last_billing.created_by)
+
     :ok
   end
 
   @impl true
   def handle_event(%Stripe.Event{type: "invoice.payment_failed"} = event) do
-    IO.inspect(event, label: "Payment Failed")
-    # The payment failed or the customer does not have a valid payment method.
-    # The subscription becomes past_due. Notify your customer and send them to the
-    # customer portal to update their payment information.
-    :ok
-  end
+    with {:ok, %Organization{} = organization} <- Organizations.get_organization_by_customer(event.data.object.customer),
+         {:ok, %Event{} = last_billing} <- Tracking.last_billing_loaded(organization),
+         do: Tracking.stripe_invoice_payment_failed(event, organization, last_billing.created_by)
 
-  @impl true
-  def handle_event(%Stripe.Event{type: "checkout.session.completed"} = event) do
-    IO.inspect(event, label: "Checkout Session Completed")
-    # Payment is successful and the subscription is created.
-    # You should provision the subscription and save the customer ID to your database.
-    :ok
-  end
-
-  @impl true
-  def handle_event(%Stripe.Event{type: "customer.subscription.created"} = event) do
-    IO.inspect(event, label: "Subscription Created")
-    customer_id = event.data.object.customer
-    subscription_id = event.data.object.id
-    Organizations.update_organization_subscription(customer_id, subscription_id)
     :ok
   end
 
   # Return HTTP 200 for unhandled events
   @impl true
-  def handle_event(_event), do: :ok
+  def handle_event(event) do
+    # IO.inspect(event, label: "Got Stripe event")
+    :ok
+  end
+
+  # When create an orga: "customer.created", "customer.updated"
+  # When subscribe for the first time: "charge.succeeded", "payment_method.attached", "customer.updated", "checkout.session.completed", "invoice.created", "invoice.finalized", "customer.subscription.created", "customer.subscription.updated", "invoice.updated", "invoice.paid", "invoice.payment_succeeded", "payment_intent.succeeded", "payment_intent.created"
+  # When go to billing portal: "billing_portal.session.created"
+  # When cancel subscription: "customer.subscription.updated"
+  # When re-subscribe: "customer.subscription.updated"
+  # When user join orga: "customer.subscription.updated", "invoiceitem.created", "invoiceitem.created"
 end

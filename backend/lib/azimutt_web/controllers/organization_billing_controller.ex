@@ -1,6 +1,7 @@
 defmodule AzimuttWeb.OrganizationBillingController do
   use AzimuttWeb, :controller
   require Logger
+  alias Azimutt.Accounts
   alias Azimutt.Heroku
   alias Azimutt.Organizations
   alias Azimutt.Organizations.Organization
@@ -15,7 +16,7 @@ defmodule AzimuttWeb.OrganizationBillingController do
     current_user = conn.assigns.current_user
 
     if organization_id == Uuid.zero() do
-      organization = Azimutt.Accounts.get_user_personal_organization(current_user)
+      organization = Accounts.get_user_personal_organization(current_user)
       conn |> redirect(to: Routes.organization_billing_path(conn, :index, organization, source: source))
     end
 
@@ -90,7 +91,7 @@ defmodule AzimuttWeb.OrganizationBillingController do
 
     case StripeSrv.update_session(%{
            customer: organization.stripe_customer_id,
-           return_url: Routes.website_url(conn, :index)
+           return_url: Routes.organization_billing_url(conn, :index, organization, source: "billing-portal")
          }) do
       {:ok, session} ->
         Logger.info("Stripe Billing Portal session is create with success")
