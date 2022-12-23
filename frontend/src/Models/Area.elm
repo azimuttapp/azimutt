@@ -4,7 +4,6 @@ import Html exposing (Attribute, Html, div, text)
 import Html.Attributes exposing (class)
 import Libs.Models.Area as Area exposing (Area)
 import Libs.Models.Delta as Delta
-import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Tailwind exposing (TwClass)
 import Models.Position as Position
 import Models.Size as Size
@@ -84,9 +83,10 @@ divCanvas factor area =
     Canvas (area.position |> Position.divCanvas factor) (area.size |> Size.divCanvas factor)
 
 
-diagramToCanvas : Position.Diagram -> ZoomLevel -> Diagram -> Canvas
-diagramToCanvas canvasPos canvasZoom { position, size } =
-    Canvas (position |> Position.diagramToCanvas canvasPos) size |> divCanvas canvasZoom
+diagramToCanvas : Position.Diagram -> Diagram -> Canvas
+diagramToCanvas canvasPos { position, size } =
+    -- size is already on Canvas, don't adjust it
+    Canvas (position |> Position.diagramToCanvas canvasPos) size
 
 
 mergeCanvas : List (CanvasLike a) -> Maybe Canvas
