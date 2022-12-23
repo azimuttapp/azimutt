@@ -434,7 +434,7 @@ jsDecoder =
                     Decode.map2 GotToast (Decode.field "level" Decode.string) (Decode.field "message" Decode.string)
 
                 "GotTableShow" ->
-                    Decode.map2 GotTableShow (Decode.field "id" TableId.decode) (Decode.maybeField "position" Position.decodeCanvasGrid)
+                    Decode.map2 GotTableShow (Decode.field "id" TableId.decode) (Decode.maybeField "position" Position.decodeGrid)
 
                 "GotTableHide" ->
                     Decode.map GotTableHide (Decode.field "id" TableId.decode)
@@ -443,7 +443,7 @@ jsDecoder =
                     Decode.map GotTableToggleColumns (Decode.field "id" TableId.decode)
 
                 "GotTablePosition" ->
-                    Decode.map2 GotTablePosition (Decode.field "id" TableId.decode) (Decode.field "position" Position.decodeCanvasGrid)
+                    Decode.map2 GotTablePosition (Decode.field "id" TableId.decode) (Decode.field "position" Position.decodeGrid)
 
                 "GotTableMove" ->
                     Decode.map2 GotTableMove (Decode.field "id" TableId.decode) (Decode.field "delta" Delta.decode)

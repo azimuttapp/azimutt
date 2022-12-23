@@ -38,7 +38,7 @@ import PagesComponents.Organization_.Project_.Models.DragState as DragState
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint(..))
-import PagesComponents.Organization_.Project_.Updates.Canvas exposing (fitCanvas, handleWheel, zoomCanvas)
+import PagesComponents.Organization_.Project_.Updates.Canvas exposing (arrangeTables, fitCanvas, handleWheel, zoomCanvas)
 import PagesComponents.Organization_.Project_.Updates.Drag exposing (handleDrag)
 import PagesComponents.Organization_.Project_.Updates.FindPath exposing (handleFindPath)
 import PagesComponents.Organization_.Project_.Updates.Help exposing (handleHelp)
@@ -150,7 +150,7 @@ update currentLayout now urlOrganization organizations projects msg model =
             model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.map (mapProps (setSelected True))))) |> setDirty
 
         TableMove id delta ->
-            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.updateBy .id id (mapProps (mapPosition (Position.moveCanvasGrid delta)))))) |> setDirty
+            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.updateBy .id id (mapProps (mapPosition (Position.moveGrid delta)))))) |> setDirty
 
         TablePosition id position ->
             model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.updateBy .id id (mapProps (setPosition position))))) |> setDirty
@@ -245,6 +245,9 @@ update currentLayout now urlOrganization organizations projects msg model =
 
         FitContent ->
             model |> mapErdMCmd (fitCanvas now model.erdElem) |> setDirtyCmd
+
+        ArrangeTables ->
+            model |> mapErdMCmd (arrangeTables now model.erdElem) |> setDirtyCmd
 
         Fullscreen id ->
             ( model, Ports.fullscreen id )
@@ -488,7 +491,7 @@ updateTable zoom tables erdViewport table change =
         newSize =
             change.size |> Size.viewportToCanvas zoom
     in
-    if table.props.size == Size.zeroCanvas && table.props.position == Position.zeroCanvasGrid then
+    if table.props.size == Size.zeroCanvas && table.props.position == Position.zeroGrid then
         table |> mapProps (setSize newSize >> setPosition (computeInitialPosition tables erdViewport newSize change.seeds table.props.positionHint))
 
     else
@@ -502,10 +505,10 @@ computeInitialPosition tables erdViewport newSize _ hint =
             (\h ->
                 case h of
                     PlaceLeft position ->
-                        position |> Position.moveCanvasGrid { dx = (Size.extractCanvas newSize).width + 50 |> negate, dy = 0 } |> moveDownIfExists tables newSize
+                        position |> Position.moveGrid { dx = (Size.extractCanvas newSize).width + 50 |> negate, dy = 0 } |> moveDownIfExists tables newSize
 
                     PlaceRight position size ->
-                        position |> Position.moveCanvasGrid { dx = (Size.extractCanvas size).width + 50, dy = 0 } |> moveDownIfExists tables newSize
+                        position |> Position.moveGrid { dx = (Size.extractCanvas size).width + 50, dy = 0 } |> moveDownIfExists tables newSize
 
                     PlaceAt position ->
                         position
@@ -542,7 +545,7 @@ placeAtCenter erdViewport newSize =
 moveDownIfExists : List ErdTableLayout -> Size.Canvas -> Position.CanvasGrid -> Position.CanvasGrid
 moveDownIfExists tables size position =
     if tables |> List.any (\t -> t.props.position == position || isSameTopRight t.props { position = position, size = size }) then
-        position |> Position.moveCanvasGrid { dx = 0, dy = Conf.ui.tableHeaderHeight } |> moveDownIfExists tables size
+        position |> Position.moveGrid { dx = 0, dy = Conf.ui.tableHeaderHeight } |> moveDownIfExists tables size
 
     else
         position
@@ -552,7 +555,7 @@ isSameTopRight : { x | position : Position.CanvasGrid, size : Size.Canvas } -> {
 isSameTopRight a b =
     let
         ( aPos, bPos ) =
-            ( a.position |> Position.extractCanvasGrid, b.position |> Position.extractCanvasGrid )
+            ( a.position |> Position.extractGrid, b.position |> Position.extractGrid )
 
         ( aSize, bSize ) =
             ( a.size |> Size.extractCanvas, b.size |> Size.extractCanvas )

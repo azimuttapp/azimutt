@@ -75,7 +75,7 @@ moveTables drag zoom tables =
         |> List.map
             (\t ->
                 if Just t.id == tableId || (dragSelected && t.props.selected) then
-                    t |> mapProps (mapPosition (Position.moveCanvasGrid (buildDelta drag zoom)))
+                    t |> mapProps (mapPosition (Position.moveGrid (buildDelta drag zoom)))
 
                 else
                     t

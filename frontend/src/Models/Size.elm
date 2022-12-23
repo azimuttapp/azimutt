@@ -1,4 +1,4 @@
-module Models.Size exposing (Canvas, Viewport, buildCanvas, buildViewport, decodeCanvas, decodeViewport, deltaCanvas, diffCanvas, divCanvas, divViewport, encodeCanvas, extractCanvas, extractViewport, ratioCanvas, stylesCanvas, subCanvas, toTupleCanvas, toTupleViewport, viewportToCanvas, zeroCanvas, zeroViewport)
+module Models.Size exposing (Canvas, Viewport, canvas, decodeCanvas, decodeViewport, deltaCanvas, diffCanvas, divCanvas, divViewport, encodeCanvas, extractCanvas, extractViewport, ratioCanvas, stylesCanvas, subCanvas, toTupleCanvas, toTupleViewport, viewport, viewportToCanvas, zeroCanvas, zeroViewport)
 
 import Html exposing (Attribute)
 import Html.Attributes exposing (style)
@@ -18,8 +18,8 @@ type Canvas
     = Canvas Size -- size in the canvas, doesn't change with zoom
 
 
-buildViewport : Size -> Viewport
-buildViewport pos =
+viewport : Size -> Viewport
+viewport pos =
     -- use it only in last resort in very narrow and explicit scope
     pos |> Viewport
 
@@ -30,8 +30,8 @@ extractViewport (Viewport size) =
     size
 
 
-buildCanvas : Size -> Canvas
-buildCanvas pos =
+canvas : Size -> Canvas
+canvas pos =
     -- use it only in last resort in very narrow and explicit scope
     pos |> Canvas
 
@@ -59,17 +59,17 @@ zeroCanvas =
 
 subCanvas : Float -> Canvas -> Canvas
 subCanvas amount (Canvas size) =
-    size |> Size.sub amount |> buildCanvas
+    size |> Size.sub amount |> canvas
 
 
 divViewport : Float -> Viewport -> Viewport
 divViewport factor (Viewport size) =
-    size |> Size.div factor |> buildViewport
+    size |> Size.div factor |> viewport
 
 
 divCanvas : Float -> Canvas -> Canvas
 divCanvas factor (Canvas size) =
-    size |> Size.div factor |> buildCanvas
+    size |> Size.div factor |> canvas
 
 
 diffCanvas : Canvas -> Canvas -> Delta
@@ -84,7 +84,7 @@ ratioCanvas (Canvas b) (Canvas a) =
 
 viewportToCanvas : ZoomLevel -> Viewport -> Canvas
 viewportToCanvas zoom (Viewport size) =
-    size |> Size.div zoom |> buildCanvas
+    size |> Size.div zoom |> canvas
 
 
 toTupleViewport : Viewport -> ( Float, Float )
@@ -112,13 +112,13 @@ encodeCanvas (Canvas size) =
 
 decodeCanvas : Decode.Decoder Canvas
 decodeCanvas =
-    Decode.map2 (\w h -> Size w h |> buildCanvas)
+    Decode.map2 (\w h -> Size w h |> canvas)
         (Decode.field "width" Decode.float)
         (Decode.field "height" Decode.float)
 
 
 decodeViewport : Decode.Decoder Viewport
 decodeViewport =
-    Decode.map2 (\w h -> Size w h |> buildViewport)
+    Decode.map2 (\w h -> Size w h |> viewport)
         (Decode.field "width" Decode.float)
         (Decode.field "height" Decode.float)

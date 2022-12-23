@@ -85,7 +85,7 @@ viewTable conf zoom args notes layout table =
                 _ ->
                     ( False, [] )
     in
-    div ([ css [ "select-none absolute" ], classList [ ( "z-max", layout.props.selected ), ( "invisible", layout.props.size == Size.zeroCanvas ) ] ] ++ Position.stylesCanvasGrid layout.props.position ++ drag)
+    div ([ css [ "select-none absolute" ], classList [ ( "z-max", layout.props.selected ), ( "invisible", layout.props.size == Size.zeroCanvas ) ] ] ++ Position.stylesGrid layout.props.position ++ drag)
         [ Table.table
             { id = table.htmlId
             , ref = { schema = table.schema, table = table.name }

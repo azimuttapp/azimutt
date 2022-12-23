@@ -87,7 +87,7 @@ mergeCanvas areas =
     areas
         |> List.map (\{ position, size } -> Area (Position.extractCanvas position) (Size.extractCanvas size))
         |> Area.merge
-        |> Maybe.map (\{ position, size } -> Canvas (Position.buildCanvas position) (Size.buildCanvas size))
+        |> Maybe.map (\{ position, size } -> Canvas (Position.canvas position) (Size.canvas size))
 
 
 overlapCanvas : CanvasLike b -> CanvasLike a -> Bool
