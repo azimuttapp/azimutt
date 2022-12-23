@@ -1,14 +1,14 @@
-module Models.Position exposing (Canvas, CanvasGrid, Diagram, Document, Viewport, canvas, canvasToViewport, decodeDiagram, decodeDocument, decodeGrid, decodeViewport, diagram, diagramToCanvas, diffCanvas, diffViewport, divCanvas, encodeDiagram, encodeGrid, extractCanvas, extractGrid, extractViewport, fromEventViewport, grid, minCanvas, moveCanvas, moveDiagram, moveGrid, moveViewport, negateGrid, offGrid, onGrid, roundDiagram, sizeCanvas, styleTransformCanvas, styleTransformDiagram, stylesGrid, stylesViewport, toStringRoundDiagram, toStringRoundViewport, viewport, viewportToCanvas, zeroCanvas, zeroDiagram, zeroGrid, zeroViewport)
+module Models.Position exposing (Canvas, CanvasGrid, Diagram, Document, Viewport, canvas, canvasToViewport, debugDiagram, decodeDiagram, decodeDocument, decodeGrid, decodeViewport, diagram, diagramToCanvas, diffCanvas, diffViewport, divCanvas, encodeDiagram, encodeGrid, extractCanvas, extractGrid, extractViewport, fromEventViewport, grid, minCanvas, moveCanvas, moveDiagram, moveGrid, moveViewport, multCanvas, negateGrid, offGrid, onGrid, roundDiagram, sizeCanvas, styleTransformCanvas, styleTransformDiagram, styleTransformViewport, stylesGrid, stylesViewport, toStringRoundDiagram, toStringRoundViewport, viewport, viewportToCanvas, zeroCanvas, zeroDiagram, zeroGrid, zeroViewport)
 
-import Html exposing (Attribute)
+import Html exposing (Attribute, Html)
 import Html.Attributes exposing (style)
 import Html.Events.Extra.Mouse exposing (Event)
 import Json.Decode as Decode
-import Json.Encode as Encode exposing (Value)
-import Libs.Json.Encode as Encode
+import Json.Encode exposing (Value)
 import Libs.Models.Delta exposing (Delta)
 import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
+import Libs.Tailwind exposing (TwClass)
 import Models.Size as Size
 
 
@@ -155,6 +155,11 @@ sizeCanvas (Canvas p1) (Canvas p2) =
     Position.size p1 p2 |> Size.canvas
 
 
+multCanvas : Float -> Canvas -> Canvas
+multCanvas factor (Canvas pos) =
+    Position.mult factor pos |> canvas
+
+
 divCanvas : Float -> Canvas -> Canvas
 divCanvas factor (Canvas pos) =
     Position.div factor pos |> canvas
@@ -205,14 +210,22 @@ canvasToViewport (Viewport erdPos) (Diagram canvasPos) canvasZoom (Canvas pos) =
 
 diagramToCanvas : Diagram -> Diagram -> Canvas
 diagramToCanvas (Diagram canvasPos) (Diagram pos) =
-    pos
-        |> Position.move (Position.zero |> Position.diff canvasPos)
-        |> canvas
+    pos |> Position.move (Position.zero |> Position.diff canvasPos) |> canvas
 
 
 stylesViewport : Viewport -> List (Attribute msg)
 stylesViewport (Viewport pos) =
-    [ style "left" (String.fromFloat pos.left ++ "px"), style "top" (String.fromFloat pos.top ++ "px") ]
+    Position.styles pos
+
+
+stylesGrid : CanvasGrid -> List (Attribute msg)
+stylesGrid (CanvasGrid pos) =
+    Position.styles pos
+
+
+styleTransformViewport : Viewport -> Attribute msg
+styleTransformViewport (Viewport pos) =
+    Position.styleTransform pos
 
 
 styleTransformDiagram : Diagram -> ZoomLevel -> Attribute msg
@@ -222,12 +235,7 @@ styleTransformDiagram (Diagram pos) zoom =
 
 styleTransformCanvas : Canvas -> Attribute msg
 styleTransformCanvas (Canvas pos) =
-    style "transform" ("translate(" ++ String.fromFloat pos.left ++ "px, " ++ String.fromFloat pos.top ++ "px)")
-
-
-stylesGrid : CanvasGrid -> List (Attribute msg)
-stylesGrid (CanvasGrid pos) =
-    [ style "left" (String.fromFloat pos.left ++ "px"), style "top" (String.fromFloat pos.top ++ "px") ]
+    Position.styleTransform pos
 
 
 toStringRoundViewport : Viewport -> String
@@ -238,6 +246,11 @@ toStringRoundViewport (Viewport pos) =
 toStringRoundDiagram : Diagram -> String
 toStringRoundDiagram (Diagram pos) =
     Position.toStringRound pos
+
+
+debugDiagram : String -> TwClass -> Diagram -> Html msg
+debugDiagram name classes (Diagram p) =
+    Position.debug name classes p
 
 
 decodeViewport : Decode.Decoder Viewport
@@ -256,29 +269,19 @@ decodeDocument =
 
 encodeDiagram : Diagram -> Value
 encodeDiagram (Diagram pos) =
-    Encode.notNullObject
-        [ ( "left", pos.left |> Encode.float )
-        , ( "top", pos.top |> Encode.float )
-        ]
+    Position.encode pos
 
 
 decodeDiagram : Decode.Decoder Diagram
 decodeDiagram =
-    Decode.map2 (\l t -> Position l t |> diagram)
-        (Decode.field "left" Decode.float)
-        (Decode.field "top" Decode.float)
+    Position.decode |> Decode.map diagram
 
 
 encodeGrid : CanvasGrid -> Value
 encodeGrid (CanvasGrid pos) =
-    Encode.notNullObject
-        [ ( "left", pos.left |> alignCoord |> Encode.float )
-        , ( "top", pos.top |> alignCoord |> Encode.float )
-        ]
+    Position.encode pos
 
 
 decodeGrid : Decode.Decoder CanvasGrid
 decodeGrid =
-    Decode.map2 (\l t -> Position l t |> grid)
-        (Decode.field "left" Decode.float)
-        (Decode.field "top" Decode.float)
+    Position.decode |> Decode.map grid

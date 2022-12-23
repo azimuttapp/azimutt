@@ -1,10 +1,8 @@
-module Models.Size exposing (Canvas, Viewport, canvas, decodeCanvas, decodeViewport, deltaCanvas, diffCanvas, divCanvas, divViewport, encodeCanvas, extractCanvas, extractViewport, ratioCanvas, stylesCanvas, subCanvas, toTupleCanvas, toTupleViewport, viewport, viewportToCanvas, zeroCanvas, zeroViewport)
+module Models.Size exposing (Canvas, Viewport, canvas, decodeCanvas, decodeViewport, deltaCanvas, diffCanvas, divCanvas, divViewport, encodeCanvas, extractCanvas, extractViewport, multCanvas, ratioCanvas, stylesCanvas, stylesViewport, subCanvas, toTupleCanvas, toTupleViewport, viewport, viewportToCanvas, zeroCanvas, zeroViewport)
 
 import Html exposing (Attribute)
-import Html.Attributes exposing (style)
 import Json.Decode as Decode
-import Json.Encode as Encode exposing (Value)
-import Libs.Json.Encode as Encode
+import Json.Encode exposing (Value)
 import Libs.Models.Delta exposing (Delta)
 import Libs.Models.Size as Size exposing (Size)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
@@ -67,6 +65,11 @@ divViewport factor (Viewport size) =
     size |> Size.div factor |> viewport
 
 
+multCanvas : Float -> Canvas -> Canvas
+multCanvas factor (Canvas size) =
+    size |> Size.mult factor |> canvas
+
+
 divCanvas : Float -> Canvas -> Canvas
 divCanvas factor (Canvas size) =
     size |> Size.div factor |> canvas
@@ -97,28 +100,26 @@ toTupleCanvas (Canvas size) =
     size |> Size.toTuple
 
 
+stylesViewport : Viewport -> List (Attribute msg)
+stylesViewport (Viewport size) =
+    Size.styles size
+
+
 stylesCanvas : Canvas -> List (Attribute msg)
 stylesCanvas (Canvas size) =
-    [ style "width" (String.fromFloat size.width ++ "px"), style "height" (String.fromFloat size.height ++ "px") ]
+    Size.styles size
 
 
 encodeCanvas : Canvas -> Value
 encodeCanvas (Canvas size) =
-    Encode.notNullObject
-        [ ( "width", size.width |> Encode.float )
-        , ( "height", size.height |> Encode.float )
-        ]
+    Size.encode size
 
 
 decodeCanvas : Decode.Decoder Canvas
 decodeCanvas =
-    Decode.map2 (\w h -> Size w h |> canvas)
-        (Decode.field "width" Decode.float)
-        (Decode.field "height" Decode.float)
+    Size.decode |> Decode.map canvas
 
 
 decodeViewport : Decode.Decoder Viewport
 decodeViewport =
-    Decode.map2 (\w h -> Size w h |> viewport)
-        (Decode.field "width" Decode.float)
-        (Decode.field "height" Decode.float)
+    Size.decode |> Decode.map viewport

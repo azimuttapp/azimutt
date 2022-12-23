@@ -50,6 +50,9 @@ fitCanvas now erdElem erd =
 
 fitCanvasAlgo : ErdProps -> Nel TableId -> ErdLayout -> ErdLayout
 fitCanvasAlgo erdElem tables layout =
+    -- WARNING: the computation looks good but the diagram changes on resize due to table header size change
+    -- (see headerTextSize in frontend/src/Components/Organisms/Table.elm:177)
+    -- if you look to fix it, make sure to disable it before testing!
     (layout.tables |> List.filter (\t -> tables |> Nel.member t.id) |> List.map (.props >> Area.offGrid))
         |> Area.mergeCanvas
         |> Maybe.map
@@ -60,13 +63,14 @@ fitCanvasAlgo erdElem tables layout =
                 in
                 layout
                     |> mapCanvas (setPosition Position.zeroDiagram >> setZoom newZoom)
-                    |> mapTables (List.map (mapProps (mapPosition (Position.moveGrid centerOffset))))
+                    |> mapTables (List.map (mapProps (mapPosition (centerOffset |> Position.moveGrid))))
             )
         |> Maybe.withDefault layout
 
 
 arrangeTables : Time.Posix -> ErdProps -> Erd -> ( Erd, Cmd Msg )
 arrangeTables now erdElem erd =
+    -- TODO: toggle this on show all tables if layout was empty before
     -- Improvement: fit only selected tables if there is some, use `selectedTablesOrAll` instead of `.tables`
     -- For that, they need to stay in "the same area", but it will probably extend a lot... Maybe keep the center?
     (erd |> Erd.currentLayout |> .tables |> List.map .id |> Nel.fromList)
@@ -142,7 +146,6 @@ performZoom erdElem delta target canvas =
 computeFit : Area.Canvas -> Float -> Area.Canvas -> ZoomLevel -> ( ZoomLevel, Delta )
 computeFit erdViewport padding content zoom =
     let
-        -- FIXME: seems bad when aspect ratio are different
         newZoom : ZoomLevel
         newZoom =
             computeZoom erdViewport padding content zoom
