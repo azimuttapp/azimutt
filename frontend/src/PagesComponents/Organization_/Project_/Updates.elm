@@ -44,6 +44,7 @@ import PagesComponents.Organization_.Project_.Updates.FindPath exposing (handleF
 import PagesComponents.Organization_.Project_.Updates.Help exposing (handleHelp)
 import PagesComponents.Organization_.Project_.Updates.Hotkey exposing (handleHotkey)
 import PagesComponents.Organization_.Project_.Updates.Layout exposing (handleLayout)
+import PagesComponents.Organization_.Project_.Updates.Memo exposing (handleMemo)
 import PagesComponents.Organization_.Project_.Updates.Notes exposing (handleNotes)
 import PagesComponents.Organization_.Project_.Updates.Project exposing (createProject, moveProject, triggerSaveProject, updateProject)
 import PagesComponents.Organization_.Project_.Updates.ProjectSettings exposing (handleProjectSettings)
@@ -200,6 +201,9 @@ update currentLayout now urlOrganization organizations projects msg model =
 
         NotesMsg message ->
             model |> handleNotes message
+
+        MemoMsg message ->
+            model |> handleMemo now message
 
         AmlSidebarMsg message ->
             model |> AmlSidebar.update now message

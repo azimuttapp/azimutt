@@ -54,7 +54,7 @@ import Models.Project.Unique exposing (Unique)
 import Models.Project.UniqueName exposing (UniqueName)
 import Models.RelationStyle as RelationStyle exposing (RelationStyle)
 import Models.Size as Size
-import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
+import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo, MemoId)
 import TestHelpers.Fuzzers exposing (color, dictSmall, fileLineIndex, fileModified, fileName, fileSize, fileUrl, identifier, intPosSmall, listSmall, nelSmall, positionDiagram, positionGrid, posix, sizeCanvas, stringSmall, text, uuid, zoomLevel)
 import TestHelpers.OrganizationFuzzers exposing (organization)
 
@@ -179,7 +179,12 @@ tableProps =
 
 memo : Fuzzer Memo
 memo =
-    Fuzz.map3 Memo stringSmall positionGrid sizeCanvas
+    Fuzz.map4 Memo memoId stringSmall positionGrid sizeCanvas
+
+
+memoId : Fuzzer MemoId
+memoId =
+    intPosSmall
 
 
 projectSettings : Fuzzer ProjectSettings

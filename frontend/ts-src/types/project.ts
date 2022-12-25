@@ -38,6 +38,8 @@ export type RelationName = string
 export const RelationName = z.string()
 export type TypeName = string
 export const TypeName = z.string()
+export type MemoId = number
+export const MemoId = z.number()
 export type LayoutName = string
 export const LayoutName = z.string()
 export type ZoomLevel = number
@@ -335,9 +337,24 @@ export const TableProps = z.object({
     hiddenColumns: z.boolean().optional()
 }).strict()
 
+export interface Memo {
+    id: MemoId
+    content: string
+    position: Position
+    size: Size
+}
+
+export const Memo = z.object({
+    id: MemoId,
+    content: z.string(),
+    position: Position,
+    size: Size
+}).strict()
+
 export interface Layout {
     canvas: CanvasProps
     tables: TableProps[]
+    memos?: Memo[]
     createdAt: Timestamp
     updatedAt: Timestamp
 }
@@ -345,6 +362,7 @@ export interface Layout {
 export const Layout = z.object({
     canvas: CanvasProps,
     tables: TableProps.array(),
+    memos: Memo.array().optional(),
     createdAt: Timestamp,
     updatedAt: Timestamp
 }).strict()

@@ -34,6 +34,7 @@ module Services.Lenses exposing
     , mapM
     , mapMCmd
     , mapMTeamCmd
+    , mapMemos
     , mapMobileMenuOpen
     , mapNavbar
     , mapNewLayoutM
@@ -129,6 +130,7 @@ module Services.Lenses exposing
     , setList
     , setLocation
     , setMax
+    , setMemos
     , setMobileMenuOpen
     , setModal
     , setMouse
@@ -607,6 +609,16 @@ setLocation =
 setMax : v -> { item | max : v } -> { item | max : v }
 setMax =
     set_ .max (\value item -> { item | max = value })
+
+
+setMemos : v -> { item | memos : v } -> { item | memos : v }
+setMemos =
+    set_ .memos (\value item -> { item | memos = value })
+
+
+mapMemos : (v -> v) -> { item | memos : v } -> { item | memos : v }
+mapMemos =
+    map_ .memos setMemos
 
 
 setMobileMenuOpen : v -> { item | mobileMenuOpen : v } -> { item | mobileMenuOpen : v }

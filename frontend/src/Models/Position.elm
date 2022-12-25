@@ -1,4 +1,4 @@
-module Models.Position exposing (Canvas, CanvasGrid, Diagram, Document, Viewport, canvas, canvasToViewport, debugDiagram, decodeDiagram, decodeDocument, decodeGrid, decodeViewport, diagram, diagramToCanvas, diffCanvas, diffViewport, divCanvas, encodeDiagram, encodeGrid, extractCanvas, extractGrid, extractViewport, fromEventViewport, grid, minCanvas, moveCanvas, moveDiagram, moveGrid, moveViewport, multCanvas, negateGrid, offGrid, onGrid, roundDiagram, sizeCanvas, styleTransformCanvas, styleTransformDiagram, styleTransformViewport, stylesGrid, stylesViewport, toStringRoundDiagram, toStringRoundViewport, viewport, viewportToCanvas, zeroCanvas, zeroDiagram, zeroGrid, zeroViewport)
+module Models.Position exposing (Canvas, CanvasGrid, Diagram, Document, Viewport, canvas, canvasToViewport, debugDiagram, decodeDiagram, decodeDocument, decodeGrid, decodeViewport, diagram, diagramToCanvas, diffCanvas, diffViewport, divCanvas, encodeDiagram, encodeGrid, extractCanvas, extractGrid, extractViewport, fromEventViewport, grid, minCanvas, moveCanvas, moveDiagram, moveGrid, moveViewport, multCanvas, negateGrid, offGrid, onGrid, roundDiagram, sizeCanvas, styleTransformCanvas, styleTransformDiagram, styleTransformViewport, stylesGrid, stylesViewport, toStringRoundDiagram, toStringRoundGrid, toStringRoundViewport, viewport, viewportToCanvas, zeroCanvas, zeroDiagram, zeroGrid, zeroViewport)
 
 import Html exposing (Attribute, Html)
 import Html.Attributes exposing (style)
@@ -245,6 +245,11 @@ toStringRoundViewport (Viewport pos) =
 
 toStringRoundDiagram : Diagram -> String
 toStringRoundDiagram (Diagram pos) =
+    Position.toStringRound pos
+
+
+toStringRoundGrid : CanvasGrid -> String
+toStringRoundGrid (CanvasGrid pos) =
     Position.toStringRound pos
 
 

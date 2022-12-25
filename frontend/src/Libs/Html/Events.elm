@@ -1,4 +1,4 @@
-module Libs.Html.Events exposing (PointerEvent, WheelEvent, onContextMenu, onPointerDown, onPointerUp, onWheel, pointerDecoder, preventPointerDown, stopClick, stopPointerDown, wheelDecoder)
+module Libs.Html.Events exposing (PointerEvent, WheelEvent, onContextMenu, onDblClick, onPointerDown, onPointerUp, onWheel, pointerDecoder, preventPointerDown, stopClick, stopDoubleClick, stopPointerDown, wheelDecoder)
 
 import Html exposing (Attribute)
 import Html.Events exposing (preventDefaultOn, stopPropagationOn)
@@ -38,6 +38,11 @@ onPointerDown platform msg =
 onPointerUp : Platform -> (PointerEvent -> msg) -> Attribute msg
 onPointerUp platform msg =
     Html.Events.on "pointerup" (pointerDecoder platform |> Decode.map msg)
+
+
+onDblClick : Platform -> (PointerEvent -> msg) -> Attribute msg
+onDblClick platform msg =
+    Html.Events.on "dblclick" (pointerDecoder platform |> Decode.map msg)
 
 
 type alias FileEvent =
@@ -105,6 +110,11 @@ preventPointerDown platform msg =
 stopClick : msg -> Attribute msg
 stopClick m =
     stopPropagationOn "click" (Decode.succeed ( m, True ))
+
+
+stopDoubleClick : msg -> Attribute msg
+stopDoubleClick m =
+    stopPropagationOn "dblclick" (Decode.succeed ( m, True ))
 
 
 stopPointerDown : Platform -> (PointerEvent -> msg) -> Attribute msg
