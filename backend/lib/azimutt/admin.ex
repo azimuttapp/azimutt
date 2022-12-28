@@ -7,8 +7,8 @@ defmodule Azimutt.Admin do
   alias Azimutt.Accounts.User
   alias Azimutt.Organizations.Organization
   alias Azimutt.Projects.Project
-  alias Azimutt.Tracking.Event
   alias Azimutt.Repo
+  alias Azimutt.Tracking.Event
 
   def list_organizations do
     Organization
