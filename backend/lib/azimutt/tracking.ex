@@ -188,5 +188,4 @@ defmodule Azimutt.Tracking do
       type: event.type
     }
   end
-
 end
