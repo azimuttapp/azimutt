@@ -6,6 +6,7 @@ defmodule Azimutt.Admin do
   import Ecto.Query, warn: false
   alias Azimutt.Accounts.User
   alias Azimutt.Organizations.Organization
+  alias Azimutt.Projects.Project
   alias Azimutt.Tracking.Event
   alias Azimutt.Repo
 
@@ -14,31 +15,45 @@ defmodule Azimutt.Admin do
     |> preload(:members)
     |> preload(:projects)
     |> preload(:invitations)
+    |> preload(:created_by)
+    |> Repo.all()
+  end
+
+  def list_projects do
+    Project
+    |> preload(:created_by)
     |> Repo.all()
   end
 
   def list_users do
     User
-    |> preload(:organizations)
     |> Repo.all()
-    |> List.first()
+  end
+
+  def list_last_events do
+    query_events()
+    |> Repo.all()
   end
 
   def list_last_events(number) do
-    Event
-    |> preload(:project)
-    |> preload(:organization)
-    |> preload(:created_by)
+    query_events()
     |> Repo.all()
     |> Enum.take(number)
   end
 
-  def cli_display_event(number) do
-    header = ["Created at", "Event", "ID", "Created By"]
+  defp query_events do
+    Event
+    |> preload(:project)
+    |> preload(:organization)
+    |> preload(:created_by)
+  end
+
+  def cli_display(list) do
+    header = ["Created at", "name", "ID", "Created By"]
 
     rows =
-      for event <- list_last_events(number) do
-        [event.created_at, event.name, event.id, event.created_by.name]
+      for element <- list do
+        [element.created_at, element.name, element.id, element.created_by.name]
       end
 
     TableRex.quick_render!(rows, header)
