@@ -1,9 +1,11 @@
 import {Logger} from "./logger";
 import {
     buildProjectJson,
+    ColumnRef,
     computeStats,
     isLocal,
     isRemote,
+    parseTableId,
     Project,
     ProjectId,
     ProjectInfo,
@@ -16,10 +18,11 @@ import {
     ProjectStats,
     ProjectStorage,
     ProjectVersion,
-    ProjectVisibility
+    ProjectVisibility,
+    TableId
 } from "../types/project";
 import {Organization, OrganizationId, OrganizationSlug, Plan} from "../types/organization";
-import {DateTime} from "../types/basics";
+import {DatabaseUrl, DateTime} from "../types/basics";
 import {Env} from "../utils/env";
 import * as Http from "../utils/http";
 import {z} from "zod";
@@ -27,7 +30,7 @@ import * as Zod from "../utils/zod";
 import * as Json from "../utils/json";
 import * as jiff from "jiff";
 import {HerokuResource} from "../types/heroku";
-
+import {ColumnStats, TableStats} from "../types/stats";
 
 export class Backend {
     private projects: { [id: ProjectId]: ProjectJson } = {}
@@ -119,6 +122,20 @@ export class Backend {
         const url = this.withXhrHost(`/api/v1/organizations/${o}/projects/${p}`)
         await Http.deleteNoContent(url)
         delete this.projects[p]
+    }
+
+    getTableStats = async (database: DatabaseUrl, id: TableId): Promise<TableStats> => {
+        this.logger.debug(`backend.getTableStats(${database}, ${id})`)
+        const {schema, table} = parseTableId(id)
+        const url = this.withXhrHost(`/api/v1/analyzer/stats`)
+        return Http.postJson(url, {url: database, schema, table}, TableStats, 'TableStats')
+    }
+
+    getColumnStats = async (database: DatabaseUrl, column: ColumnRef): Promise<ColumnStats> => {
+        this.logger.debug(`backend.getColumnStats(${database}, ${JSON.stringify(column)})`)
+        const {schema, table} = parseTableId(column.table)
+        const url = this.withXhrHost(`/api/v1/analyzer/stats`)
+        return Http.postJson(url, {url: database, schema, table, column: column.column}, ColumnStats, 'ColumnStats')
     }
 
     private withXhrHost(path: string): string {

@@ -32,6 +32,7 @@ import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.RelationStyle exposing (RelationStyle)
 import Models.Size as Size
+import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
 import PagesComponents.Organization_.Project_.Models exposing (Msg(..), VirtualRelation)
 import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode exposing (CursorMode)
 import PagesComponents.Organization_.Project_.Models.DragState exposing (DragState)
@@ -56,25 +57,25 @@ type alias ErdArgs =
     String
 
 
-argsToString : Platform -> CursorMode -> String -> String -> ErdArgs
-argsToString platform cursorMode openedDropdown openedPopover =
-    [ Platform.toString platform, CursorMode.toString cursorMode, openedDropdown, openedPopover ] |> String.join "~"
+argsToString : Platform -> CursorMode -> String -> String -> DetailsSidebar.Selected -> ErdArgs
+argsToString platform cursorMode openedDropdown openedPopover selected =
+    [ Platform.toString platform, CursorMode.toString cursorMode, openedDropdown, openedPopover, selected ] |> String.join "~"
 
 
-stringToArgs : ErdArgs -> ( ( Platform, CursorMode ), ( String, String ) )
+stringToArgs : ErdArgs -> ( ( Platform, CursorMode ), ( String, String, DetailsSidebar.Selected ) )
 stringToArgs args =
     case args |> String.split "~" of
-        [ platform, cursorMode, openedDropdown, openedPopover ] ->
-            ( ( Platform.fromString platform, CursorMode.fromString cursorMode ), ( openedDropdown, openedPopover ) )
+        [ platform, cursorMode, openedDropdown, openedPopover, selected ] ->
+            ( ( Platform.fromString platform, CursorMode.fromString cursorMode ), ( openedDropdown, openedPopover, selected ) )
 
         _ ->
-            ( ( Platform.PC, CursorMode.Select ), ( "", "" ) )
+            ( ( Platform.PC, CursorMode.Select ), ( "", "", "" ) )
 
 
 viewErd : ErdConf -> ErdProps -> Maybe TableId -> Erd -> Maybe Area.Canvas -> Maybe VirtualRelation -> ErdArgs -> Maybe DragState -> Html Msg
 viewErd conf erdElem hoverTable erd selectionBox virtualRelation args dragging =
     let
-        ( ( platform, cursorMode ), ( openedDropdown, openedPopover ) ) =
+        ( ( platform, cursorMode ), ( openedDropdown, openedPopover, selected ) ) =
             stringToArgs args
 
         layout : ErdLayout
@@ -137,8 +138,10 @@ viewErd conf erdElem hoverTable erd selectionBox virtualRelation args dragging =
         ]
         [ div [ class "az-canvas origin-top-left", Position.styleTransformDiagram canvas.position canvas.zoom ]
             -- use HTML order instead of z-index, must be careful with it, this allows to have tooltips & popovers always on top
-            [ displayedRelations |> Lazy.lazy5 viewRelations conf erd.settings.defaultSchema erd.settings.relationStyle displayedTables
-            , tableProps |> viewTables platform conf cursorMode virtualRelation openedDropdown openedPopover hoverTable dragging canvas.zoom erd.settings.defaultSchema erd.settings.columnBasicTypes erd.tables erd.notes
+            [ -- canvas.position |> Position.debugDiagram "canvas" "bg-black"
+              -- , layout.tables |> List.map (.props >> Area.offGrid) |> Area.mergeCanvas |> Maybe.mapOrElse (Area.debugCanvas "tablesArea" "border-blue-500") (div [] []),
+              displayedRelations |> Lazy.lazy5 viewRelations conf erd.settings.defaultSchema erd.settings.relationStyle displayedTables
+            , tableProps |> viewTables platform conf cursorMode virtualRelation openedDropdown openedPopover hoverTable dragging canvas.zoom erd.settings.defaultSchema selected erd.settings.columnBasicTypes erd.tables erd.notes
             , selectionBox |> Maybe.filterNot (\_ -> tableProps |> List.isEmpty) |> Maybe.mapOrElse viewSelectionBox (div [] [])
             , virtualRelationInfo |> Maybe.mapOrElse (viewVirtualRelation erd.settings.relationStyle) viewEmptyRelation
             ]
@@ -179,8 +182,8 @@ handleErdPointerDown conf cursorMode e =
         Noop "No match on erd pointer down"
 
 
-viewTables : Platform -> ErdConf -> CursorMode -> Maybe VirtualRelation -> HtmlId -> HtmlId -> Maybe TableId -> Maybe DragState -> ZoomLevel -> SchemaName -> Bool -> Dict TableId ErdTable -> Dict TableId ErdTableNotes -> List ErdTableLayout -> Html Msg
-viewTables platform conf cursorMode virtualRelation openedDropdown openedPopover hoverTable dragging zoom defaultSchema useBasicTypes tables notes tableLayouts =
+viewTables : Platform -> ErdConf -> CursorMode -> Maybe VirtualRelation -> HtmlId -> HtmlId -> Maybe TableId -> Maybe DragState -> ZoomLevel -> SchemaName -> DetailsSidebar.Selected -> Bool -> Dict TableId ErdTable -> Dict TableId ErdTableNotes -> List ErdTableLayout -> Html Msg
+viewTables platform conf cursorMode virtualRelation openedDropdown openedPopover hoverTable dragging zoom defaultSchema selected useBasicTypes tables notes tableLayouts =
     Keyed.node "div"
         [ class "az-tables" ]
         (tableLayouts
@@ -200,6 +203,7 @@ viewTables platform conf cursorMode virtualRelation openedDropdown openedPopover
                             (B.cond (openedDropdown |> String.startsWith table.htmlId) openedDropdown "")
                             (B.cond (openedPopover |> String.startsWith table.htmlId) openedPopover "")
                             index
+                            selected
                             (hoverTable == Just table.id)
                             (dragging |> Maybe.any (\d -> d.id == table.htmlId && d.init /= d.last))
                             (virtualRelation /= Nothing)
@@ -286,7 +290,7 @@ viewEmptyState defaultSchema tables =
                             [ text "Your project has "
                             , bText (tables |> String.pluralizeD "table")
                             , text ". Here are some that could be interesting:"
-                            , div [] (bestTables |> List.map (\t -> Badge.basic Tw.primary [ onClick (ShowTable t.id Nothing), class "m-1 cursor-pointer" ] [ text (TableId.show defaultSchema t.id) ] |> Tooltip.t (t.columns |> String.pluralizeD "column")))
+                            , div [] (bestTables |> List.map (\t -> Badge.roundedFlex Tw.primary [ onClick (ShowTable t.id Nothing), class "m-1 cursor-pointer" ] [ text (TableId.show defaultSchema t.id) ] |> Tooltip.t (t.columns |> String.pluralizeD "column")))
                             ]
                         ]
                 , p [ class "mt-3 text-sm text-gray-500" ]

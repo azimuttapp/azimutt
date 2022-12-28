@@ -85,7 +85,9 @@ defmodule Azimutt.MixProject do
       {:ex_aws_s3, "~> 2.3"},
       {:sweet_xml, "~> 0.7.3"},
       {:httpoison, "~> 1.8"},
-      {:html_entities, "~> 0.5"}
+      {:html_entities, "~> 0.5"},
+      {:oauther, "~> 1.3"},
+      {:extwitter, "~> 0.14"}
     ]
   end
 

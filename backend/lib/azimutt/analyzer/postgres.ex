@@ -1,8 +1,13 @@
 defmodule Azimutt.Analyzer.Postgres do
   @moduledoc "Analyzer implementation for PostgreSQL"
   use TypedStruct
+  alias Azimutt.Analyzer.ColumnStats
+  alias Azimutt.Analyzer.ColumnStats.ValueCount
+  alias Azimutt.Analyzer.QueryResults
   alias Azimutt.Analyzer.Schema
+  alias Azimutt.Analyzer.TableStats
   alias Azimutt.Analyzer.Utils
+  alias Azimutt.Utils.Enumx
   alias Azimutt.Utils.Mapx
   alias Azimutt.Utils.Nil
   alias Azimutt.Utils.Resource
@@ -10,8 +15,17 @@ defmodule Azimutt.Analyzer.Postgres do
   alias Azimutt.Utils.Stringx
 
   @spec get_schema(String.t(), String.t() | nil) :: Result.s(Result.s(Schema.t()))
-  def get_schema(url, schema),
-    do: parse_url(url) |> Result.map(&extract_schema(&1, schema))
+  def get_schema(url, schema), do: parse_url(url) |> Result.map(&extract_schema(&1, schema))
+
+  @spec get_stats(String.t(), String.t() | nil, String.t(), String.t() | nil) :: Result.s(Result.s(TableStats.t() | ColumnStats.t()))
+  def get_stats(url, schema, table, column), do: parse_url(url) |> Result.map(&compute_stats(&1, schema, table, column))
+
+  @spec get_rows(String.t(), String.t() | nil, String.t(), String.t() | nil, String.t() | nil, pos_integer()) :: Result.s(QueryResults.t())
+  def get_rows(url, schema, table, column, value, limit),
+    do: parse_url(url) |> Result.map(&fetch_rows(&1, schema, table, column, value, limit))
+
+  @spec run_query(String.t(), String.t()) :: Result.s(Result.s(QueryResults.t()))
+  def run_query(url, query), do: parse_url(url) |> Result.map(&exec_query(&1, query))
 
   typedstruct module: DbConf, enforce: true do
     @moduledoc false
@@ -51,6 +65,36 @@ defmodule Azimutt.Analyzer.Postgres do
            {:ok, relations} <- get_relations(pid, schema),
            {:ok, types} <- get_types(pid, schema),
            do: {:ok, build_schema(columns, constraints, indexes, comments, relations, types)}
+    end)
+  end
+
+  @spec compute_stats(DbConf.t(), String.t() | nil, String.t(), String.t() | nil) :: Result.s(TableStats.t() | ColumnStats.t())
+  def compute_stats(conf, schema, table, column) do
+    Resource.use(fn -> connect(conf) end, &disconnect(&1), fn pid ->
+      sql_table = "#{if(schema, do: "#{schema}.", else: "")}#{table}"
+
+      if column do
+        with {:ok, type} <- get_column_type(pid, schema, table, column),
+             {:ok, stats} <- column_basics(pid, sql_table, column),
+             {:ok, common_values} <- common_values(pid, sql_table, column),
+             do:
+               {:ok,
+                %ColumnStats{
+                  schema: schema,
+                  table: table,
+                  column: column,
+                  type: type.formatted,
+                  rows: stats.rows,
+                  nulls: stats.nulls,
+                  cardinality: stats.cardinality,
+                  common_values: common_values
+                }}
+      else
+        with {:ok, _type} <- get_table_type(pid, schema, table),
+             {:ok, rows} <- count_rows(pid, sql_table),
+             {:ok, sample_values} <- sample_values(pid, sql_table),
+             do: {:ok, %TableStats{schema: schema, table: table, rows: rows, sample_values: sample_values}}
+      end
     end)
   end
 
@@ -447,10 +491,167 @@ defmodule Azimutt.Analyzer.Postgres do
 
   defp to_table_id(item), do: "#{item.table_schema}.#{item.table_name}"
 
+  @spec get_table_type(pid(), String.t() | nil, String.t()) :: Result.s(String.t())
+  defp get_table_type(pid, schema, table) do
+    Postgrex.query(
+      pid,
+      """
+      SELECT c.relkind AS table_kind
+      FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE c.relkind IN ('r', 'v', 'm') AND c.relname=$1#{if(schema, do: " AND n.nspname=$2", else: "")}
+      """,
+      if(schema, do: [table, schema], else: [table])
+    )
+    |> Result.map_error(&format_error/1)
+    |> Result.flat_map(fn res -> res.rows |> Enumx.one() |> Result.map(fn row -> row |> Enum.at(0) end) end)
+  end
+
+  @spec count_rows(pid(), String.t()) :: Result.s(integer())
+  defp count_rows(pid, sql_table) do
+    Postgrex.query(pid, "SELECT count(*) FROM #{sql_table}", [])
+    |> Result.map_both(&format_error/1, fn res -> res.rows |> hd() |> hd() end)
+  end
+
+  typedstruct module: ColumnType, enforce: true do
+    @moduledoc false
+    field :formatted, String.t()
+    field :name, String.t()
+    field :category, String.t()
+  end
+
+  @spec get_column_type(pid(), String.t() | nil, String.t(), String.t()) :: Result.s(ColumnType.t())
+  defp get_column_type(pid, schema, table, column) do
+    Postgrex.query(
+      pid,
+      """
+      SELECT format_type(a.atttypid, a.atttypmod) AS formatted
+           , t.typname                            AS name
+           , t.typcategory                        AS category
+      FROM pg_attribute a
+         JOIN pg_class c ON c.oid = a.attrelid
+         JOIN pg_namespace n ON n.oid = c.relnamespace
+         JOIN pg_type t ON t.oid = a.atttypid
+      WHERE c.relname=$1 AND a.attname=$2#{if(schema, do: " AND n.nspname=$3", else: "")}
+      """,
+      if(schema, do: [table, column, schema], else: [table, column])
+    )
+    |> Result.map_error(&format_error/1)
+    |> Result.flat_map(fn res ->
+      res.rows
+      |> Enumx.one()
+      |> Result.map(fn row ->
+        %ColumnType{
+          formatted: row |> Enum.at(0),
+          name: row |> Enum.at(1),
+          # https://www.postgresql.org/docs/current/catalog-pg-type.html#CATALOG-TYPCATEGORY-TABLE
+          category: row |> Enum.at(2)
+        }
+      end)
+    end)
+  end
+
+  typedstruct module: ColumnCounts, enforce: true do
+    @moduledoc false
+    field :rows, pos_integer()
+    field :cardinality, pos_integer()
+    field :nulls, pos_integer()
+  end
+
+  @spec column_basics(pid(), String.t(), String.t()) :: Result.s(ColumnCounts.t())
+  defp column_basics(pid, sql_table, column) do
+    Postgrex.query(
+      pid,
+      """
+      SELECT count(*)                                                    AS rows
+           , count(distinct #{column})                                   AS cardinality
+           , (SELECT count(*) FROM #{sql_table} WHERE #{column} IS NULL) AS nulls
+      FROM #{sql_table}
+      """,
+      []
+    )
+    |> Result.map_both(&format_error/1, fn res ->
+      row = res.rows |> hd()
+
+      %ColumnCounts{
+        rows: row |> Enum.at(0),
+        cardinality: row |> Enum.at(1),
+        nulls: row |> Enum.at(2)
+      }
+    end)
+  end
+
+  @spec common_values(pid(), String.t(), String.t()) :: Result.s(list(ValueCount.t()))
+  defp common_values(pid, table, column) do
+    Postgrex.query(pid, "SELECT #{column}, count(*) FROM #{table} GROUP BY #{column} ORDER BY count(*) DESC LIMIT 10", [])
+    |> Result.map_both(&format_error/1, fn res ->
+      res.rows
+      |> Enum.map(fn row ->
+        %ValueCount{
+          value: row |> Enum.at(0) |> format_value,
+          count: row |> Enum.at(1)
+        }
+      end)
+    end)
+  end
+
+  @spec sample_values(pid(), String.t()) :: Result.s(map())
+  defp sample_values(pid, table) do
+    Postgrex.query(pid, "SELECT * FROM #{table} LIMIT 10", [])
+    |> Result.map_both(&format_error/1, fn res ->
+      res.columns
+      |> Enum.with_index(0)
+      |> Enum.map(fn {col, i} ->
+        {col,
+         res.rows
+         |> Enum.map(fn r -> r |> Enum.at(i) end)
+         |> Enum.filter(fn v -> v != nil end)
+         |> Enum.shuffle()
+         |> Enum.at(0, nil)
+         |> then(fn v -> if(v == nil, do: sample_value_not_null(pid, table, col), else: v) end)
+         |> format_value()}
+      end)
+      |> Map.new()
+    end)
+  end
+
+  @spec sample_value_not_null(pid(), String.t(), String.t()) :: any()
+  defp sample_value_not_null(pid, table, column) do
+    Postgrex.query(pid, "SELECT #{column} FROM #{table} WHERE #{column} IS NOT NULL LIMIT 10", [])
+    |> Result.map(fn res -> res.rows |> Enum.shuffle() |> Enum.at(0, nil) end)
+    |> Result.or_else(fn _ -> nil end)
+  end
+
+  @spec fetch_rows(DbConf.t(), String.t() | nil, String.t(), String.t() | nil, String.t() | nil, pos_integer()) ::
+          Result.s(QueryResults.t())
+  def fetch_rows(conf, schema, table, column, value, limit) do
+    sql_table = "#{if(schema, do: "#{schema}.", else: "")}#{table}"
+
+    [query, params] =
+      if column && value do
+        ["SELECT * FROM #{sql_table} WHERE #{column}=$1 LIMIT $2", [value, limit]]
+      else
+        ["SELECT * FROM #{sql_table} LIMIT $1", [limit]]
+      end
+
+    exec_query(conf, query, params)
+  end
+
+  @spec exec_query(DbConf.t(), String.t(), list()) :: Result.s(QueryResults.t())
+  def exec_query(conf, query, params \\ []) do
+    Resource.use(fn -> connect(conf) end, &disconnect(&1), fn pid ->
+      Postgrex.query(pid, query, params)
+      |> Result.map_both(&format_error/1, fn res ->
+        %QueryResults{
+          columns: res.columns,
+          values: res.rows |> Enum.map(fn row -> row |> Enum.map(&format_value/1) end)
+        }
+      end)
+    end)
+  end
+
   # HELPERS
 
-  defp in_schema(schema),
-    do: if(schema == nil, do: "NOT IN ('information_schema', 'pg_catalog')", else: "IN ($1)")
+  defp in_schema(schema), do: if(schema == nil, do: "NOT IN ('information_schema', 'pg_catalog')", else: "IN ($1)")
 
   defp format_result(%Postgrex.Result{} = res, struct) do
     columns = res.columns |> Enum.map(&String.to_atom/1)
@@ -459,11 +660,13 @@ defmodule Azimutt.Analyzer.Postgres do
 
   # other interesting fields: `res.query` & `res.postgres.position`
   defp format_error(%Postgrex.Error{} = err),
-    do:
-      err.postgres.message <>
-        if(err.postgres[:hint] == nil, do: "", else: ". " <> err.postgres[:hint])
+    do: "#{err.postgres.message}#{if(err.postgres[:hint] == nil, do: "", else: ". #{err.postgres[:hint]}")}"
 
   defp format_error(%Postgrex.QueryError{} = err), do: err.message
   defp format_error(%DBConnection.ConnectionError{} = err), do: err.message
   defp format_error(err), do: "Unknown error: #{Stringx.inspect(err)}"
+
+  defp format_value(value) when is_binary(value) and byte_size(value) == 16, do: Ecto.UUID.cast!(value)
+  defp format_value(value) when is_binary(value), do: if(String.valid?(value), do: value, else: "<binary>")
+  defp format_value(value), do: value
 end

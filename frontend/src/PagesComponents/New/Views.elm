@@ -3,6 +3,7 @@ module PagesComponents.New.Views exposing (title, view)
 import Components.Atoms.Badge as Badge
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon)
+import Components.Atoms.Icons as Icons
 import Components.Atoms.Kbd as Kbd
 import Components.Atoms.Link as Link
 import Components.Molecules.ItemList as ItemList
@@ -71,12 +72,12 @@ viewNewProject shared currentUrl urlOrganization model =
             urlOrganization
             model
             { tabs =
-                [ { tab = TabDatabase, icon = Icon.Database, content = [ text "From database connection", Badge.rounded Tw.green [ class "ml-3" ] [ text "New" ] ] }
-                , { tab = TabSql, icon = Icon.DocumentText, content = [ text "From SQL structure" ] }
-                , { tab = TabJson, icon = Icon.Code, content = [ text "From JSON" ] }
-                , { tab = TabEmptyProject, icon = Icon.Document, content = [ text "Empty project" ] }
-                , { tab = TabProject, icon = Icon.FolderDownload, content = [ text "Import project" ] }
-                , { tab = TabSamples, icon = Icon.Gift, content = [ text "Explore sample" ] }
+                [ { tab = TabDatabase, icon = Icons.sources.database, content = [ text "From database connection", Badge.basicFlex Tw.green [ class "ml-3" ] [ text "New" ] ] }
+                , { tab = TabSql, icon = Icons.sources.sql, content = [ text "From SQL structure" ] }
+                , { tab = TabJson, icon = Icons.sources.json, content = [ text "From JSON" ] }
+                , { tab = TabEmptyProject, icon = Icons.sources.empty, content = [ text "Empty project" ] }
+                , { tab = TabProject, icon = Icons.sources.project, content = [ text "Import project" ] }
+                , { tab = TabSamples, icon = Icons.sources.sample, content = [ text "Explore sample" ] }
                 ]
             }
         ]

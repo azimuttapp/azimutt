@@ -78,7 +78,7 @@ viewRelation defaultSchema style conf srcTable refTable relation =
         ( Just s, Just r ) ->
             let
                 ( sPos, rPos ) =
-                    ( s.table.position |> Position.extractCanvasGrid, r.table.position |> Position.extractCanvasGrid )
+                    ( s.table.position |> Position.extractGrid, r.table.position |> Position.extractGrid )
 
                 ( ( srcX, srcDir ), ( refX, refDir ) ) =
                     positionLeft s.table r.table
@@ -86,7 +86,7 @@ viewRelation defaultSchema style conf srcTable refTable relation =
                 ( srcY, refY ) =
                     ( sPos.top + deltaTop s.index s.table.collapsed, rPos.top + deltaTop r.index r.table.collapsed )
             in
-            Relation.show style relConf ( Position.buildCanvas { left = srcX, top = srcY }, srcDir ) ( Position.buildCanvas { left = refX, top = refY }, refDir ) relation.src.nullable color label onHover
+            Relation.show style relConf ( Position.canvas { left = srcX, top = srcY }, srcDir ) ( Position.canvas { left = refX, top = refY }, refDir ) relation.src.nullable color label onHover
 
 
 viewVirtualRelation : RelationStyle -> ( ( Maybe ColumnInfo, ErdColumn ), Position.Canvas ) -> Svg Msg
@@ -95,7 +95,7 @@ viewVirtualRelation style ( ( maybeProps, column ), position ) =
         Just props ->
             let
                 ( pos, tablePos, tableSize ) =
-                    ( position |> Position.extractCanvas, props.table.position |> Position.extractCanvasGrid, props.table.size |> Size.extractCanvas )
+                    ( position |> Position.extractCanvas, props.table.position |> Position.extractGrid, props.table.size |> Size.extractCanvas )
 
                 isRight : Bool
                 isRight =

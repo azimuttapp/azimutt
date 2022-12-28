@@ -20,7 +20,15 @@ defmodule Azimutt.Tracking.Event do
         :subscribe_start,
         :subscribe_error,
         :subscribe_success,
-        :subscribe_abort
+        :subscribe_abort,
+        :stripe_subscription_created,
+        :stripe_subscription_canceled,
+        :stripe_subscription_renewed,
+        :stripe_subscription_quantity_updated,
+        :stripe_subscription_updated,
+        :stripe_open_billing_portal,
+        :stripe_invoice_paid,
+        :stripe_invoice_payment_failed
       ]
 
     field :data, :map

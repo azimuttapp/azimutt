@@ -262,8 +262,8 @@ doc =
             [ ( "straight", samples straight )
             , ( "bezier", samples bezier )
             , ( "steps", samples steps )
-            , ( "green", div [ class "h-12" ] [ straight { hover = True } ( Position.zeroCanvas, Right ) ( Position 50 50 |> Position.buildCanvas, Left ) False (Just Tw.green) "relation" (\_ -> logAction "hover relation") ] )
-            , ( "nullable", div [ class "h-12" ] [ straight { hover = True } ( Position.zeroCanvas, Right ) ( Position 50 50 |> Position.buildCanvas, Left ) True Nothing "relation" (\_ -> logAction "hover relation") ] )
+            , ( "green", div [ class "h-12" ] [ straight { hover = True } ( Position.zeroCanvas, Right ) ( Position 50 50 |> Position.canvas, Left ) False (Just Tw.green) "relation" (\_ -> logAction "hover relation") ] )
+            , ( "nullable", div [ class "h-12" ] [ straight { hover = True } ( Position.zeroCanvas, Right ) ( Position 50 50 |> Position.canvas, Left ) True Nothing "relation" (\_ -> logAction "hover relation") ] )
             ]
 
 
@@ -271,10 +271,10 @@ samples : (RelationConf -> ( Position.Canvas, Direction ) -> ( Position.Canvas, 
 samples displayRelation =
     let
         ( p0, p55 ) =
-            ( Position 0 0 |> Position.buildCanvas, Position 50 50 |> Position.buildCanvas )
+            ( Position 0 0 |> Position.canvas, Position 50 50 |> Position.canvas )
 
         ( p05, p50 ) =
-            ( Position 0 50 |> Position.buildCanvas, Position 50 0 |> Position.buildCanvas )
+            ( Position 0 50 |> Position.canvas, Position 50 0 |> Position.canvas )
 
         dirs : List ( Direction, Direction )
         dirs =

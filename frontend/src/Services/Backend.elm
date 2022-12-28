@@ -167,7 +167,7 @@ getDatabaseSchema : DatabaseUrl -> (Result Error String -> msg) -> Cmd msg
 getDatabaseSchema url toMsg =
     riskyPost
         { url = "/api/v1/analyzer/schema"
-        , body = url |> databaseSchemaBody |> Http.jsonBody
+        , body = databaseSchemaBody url |> Http.jsonBody
         , expect = Http.expectStringResponse toMsg handleResponse
         }
 

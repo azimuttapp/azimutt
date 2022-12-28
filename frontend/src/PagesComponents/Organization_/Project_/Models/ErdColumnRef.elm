@@ -1,7 +1,8 @@
-module PagesComponents.Organization_.Project_.Models.ErdColumnRef exposing (ErdColumnRef, create, unpack)
+module PagesComponents.Organization_.Project_.Models.ErdColumnRef exposing (ErdColumnRef, create, toId, unpack)
 
 import Dict exposing (Dict)
 import Libs.Maybe as Maybe
+import Models.Project.ColumnId exposing (ColumnId)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.Table exposing (Table)
@@ -13,6 +14,11 @@ type alias ErdColumnRef =
     , column : ColumnName
     , nullable : Bool
     }
+
+
+toId : ErdColumnRef -> ColumnId
+toId ref =
+    ( ref.table, ref.column )
 
 
 create : Dict TableId Table -> ColumnRef -> ErdColumnRef

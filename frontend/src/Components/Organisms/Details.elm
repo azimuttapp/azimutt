@@ -1,43 +1,71 @@
-module Components.Organisms.Details exposing (DocState, Heading, SharedDocState, buildColumnHeading, buildSchemaHeading, buildTableHeading, doc, initDocState, viewColumn, viewColumn2, viewList, viewList2, viewSchema, viewSchema2, viewTable, viewTable2)
+module Components.Organisms.Details exposing (DocState, Heading, NotesModel, SharedDocState, buildColumnHeading, buildSchemaHeading, buildTableHeading, doc, initDocState, viewColumn, viewColumn2, viewList, viewList2, viewSchema, viewSchema2, viewTable, viewTable2)
 
-import Array exposing (Array)
+import Array
+import Components.Atoms.Badge as Badge
 import Components.Atoms.Icon as Icon exposing (Icon)
+import Components.Atoms.Icons as Icons
+import Components.Atoms.Markdown as Markdown
 import Components.Molecules.Tooltip as Tooltip
 import Conf
 import DataSources.AmlMiner.AmlAdapter as AmlAdapter
 import DataSources.AmlMiner.AmlParser as AmlParser
-import Dict
+import Dict exposing (Dict)
 import ElmBook exposing (Msg)
 import ElmBook.Actions as Actions exposing (logAction)
 import ElmBook.Chapter as Chapter exposing (Chapter)
-import Html exposing (Html, a, aside, br, button, dd, div, dl, dt, form, h2, h3, img, input, label, li, nav, ol, p, pre, span, text, ul)
-import Html.Attributes exposing (action, alt, class, disabled, for, href, id, name, placeholder, src, type_, value)
-import Html.Events exposing (onClick, onInput)
+import Html exposing (Html, a, aside, button, div, form, h2, h3, i, img, input, label, li, nav, ol, p, span, text, textarea, ul)
+import Html.Attributes exposing (action, alt, autofocus, class, disabled, for, href, id, name, placeholder, rows, src, title, type_, value)
+import Html.Events exposing (onBlur, onClick, onInput)
+import Libs.Basics as Basics
 import Libs.Bool as Bool
 import Libs.Dict as Dict
 import Libs.Html.Attributes exposing (ariaHidden, ariaLabel, css, role)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.Nel as Nel
 import Libs.String as String
-import Libs.Tailwind exposing (TwClass)
+import Libs.Tailwind as Tw exposing (TwClass)
 import Libs.Time as Time
 import Libs.Tuple3 as Tuple3
+import Models.Position as Position
 import Models.Project as Project
+import Models.Project.CanvasProps as CanvasProps
+import Models.Project.Check exposing (Check)
+import Models.Project.CheckName exposing (CheckName)
+import Models.Project.ColumnId exposing (ColumnId)
+import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
+import Models.Project.ColumnStats exposing (ColumnStats, ColumnValueCount)
+import Models.Project.ColumnValue exposing (ColumnValue)
+import Models.Project.Index exposing (Index)
+import Models.Project.IndexName exposing (IndexName)
 import Models.Project.LayoutName exposing (LayoutName)
+import Models.Project.Origin exposing (Origin)
+import Models.Project.PrimaryKey exposing (PrimaryKey)
 import Models.Project.SchemaName as SchemaName exposing (SchemaName)
-import Models.Project.SourceId as SourceId exposing (SourceId)
+import Models.Project.Source exposing (Source)
+import Models.Project.SourceId as SourceId exposing (SourceIdStr)
+import Models.Project.SourceKind as SourceKind
 import Models.Project.SourceName exposing (SourceName)
-import Models.Project.TableId as TableId exposing (TableId)
+import Models.Project.TableId as TableId exposing (TableId, TableIdStr)
+import Models.Project.TableStats exposing (TableStats)
+import Models.Project.Unique exposing (Unique)
+import Models.Project.UniqueName exposing (UniqueName)
+import Models.Size as Size
 import Models.SourceInfo as SourceInfo
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn)
 import PagesComponents.Organization_.Project_.Models.ErdColumnProps exposing (ErdColumnProps)
-import PagesComponents.Organization_.Project_.Models.ErdColumnRef exposing (ErdColumnRef)
+import PagesComponents.Organization_.Project_.Models.ErdColumnRef as ErdColumnRef exposing (ErdColumnRef)
+import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
+import PagesComponents.Organization_.Project_.Models.ErdTableProps exposing (ErdTableProps)
+import PagesComponents.Organization_.Project_.Models.Notes exposing (Notes)
+import Services.Lenses exposing (setLayouts)
 import Simple.Fuzzy
+import Time exposing (Posix)
 
 
 type alias Heading item props =
@@ -83,9 +111,9 @@ viewList goToTable updateSearch htmlId defaultSchema tables search =
                                             li []
                                                 [ div [ class "relative px-6 py-5 flex items-center space-x-3 hover:bg-gray-50 focus-within:ring-2 focus-within:ring-inset focus-within:ring-primary-500" ]
                                                     [ div [ class "flex-1 min-w-0" ]
-                                                        [ button [ type_ "button", onClick (t.id |> goToTable), class "focus:outline-none" ]
+                                                        [ button [ type_ "button", onClick (t.id |> goToTable), class "text-left focus:outline-none" ]
                                                             [ span [ class "absolute inset-0", ariaHidden True ] [] -- Extend touch target to entire panel
-                                                            , p [ class "text-sm font-medium text-gray-900" ] [ text (TableId.show defaultSchema t.id) ]
+                                                            , p [ class "text-sm text-gray-900 font-medium" ] [ text (TableId.show defaultSchema t.id) ]
                                                             , p [ class "text-sm text-gray-500 truncate" ] [ text (t.columns |> String.pluralizeD "column") ]
                                                             ]
                                                         ]
@@ -99,19 +127,12 @@ viewList goToTable updateSearch htmlId defaultSchema tables search =
         ]
 
 
-viewSchema :
-    msg
-    -> (SchemaName -> msg)
-    -> (TableId -> msg)
-    -> SchemaName
-    -> Heading SchemaName Never
-    -> List ErdTable
-    -> Html msg
+viewSchema : msg -> (SchemaName -> msg) -> (TableId -> msg) -> SchemaName -> Heading SchemaName Never -> List ErdTable -> Html msg
 viewSchema goToList goToSchema goToTable defaultSchema schema tables =
     div []
         [ viewSchemaHeading goToList goToSchema defaultSchema schema
         , div [ class "px-3" ]
-            [ h2 [ class "mt-2 font-medium text-gray-900" ] [ text (schema.item |> SchemaName.show defaultSchema) ]
+            [ viewTitle (schema.item |> SchemaName.show defaultSchema)
             , viewProp (tables |> String.pluralizeL "table")
                 [ ul [ role "list", class "-mx-3 relative z-0 divide-y divide-gray-200" ]
                     (tables
@@ -145,20 +166,37 @@ viewTable :
     -> SchemaName
     -> Heading SchemaName Never
     -> Heading ErdTable ErdTableLayout
+    -> NotesModel msg
     -> List LayoutName
-    -> List ( { o | id : SourceId, lines : List Int }, { s | id : SourceId, name : SourceName, content : Array String } )
+    -> List ( Origin, Source )
+    -> Dict SourceIdStr TableStats
     -> Html msg
-viewTable goToList goToSchema goToTable goToColumn loadLayout toggleSource openedSource defaultSchema schema table inLayouts inSources =
+viewTable goToList goToSchema goToTable goToColumn loadLayout _ _ defaultSchema schema table notes inLayouts inSources stats =
+    let
+        columnValues : Dict ColumnName ColumnValue
+        columnValues =
+            stats |> Dict.toList |> List.foldl (\( _, s ) acc -> acc |> Dict.union s.sampleValues) Dict.empty
+
+        outRelations : List ErdColumnRef
+        outRelations =
+            table.item.columns |> Dict.values |> List.concatMap .outRelations |> List.uniqueBy .table
+
+        inRelations : List ErdColumnRef
+        inRelations =
+            table.item.columns |> Dict.values |> List.concatMap .inRelations |> List.uniqueBy .table
+    in
     div []
         [ viewSchemaHeading goToList goToSchema defaultSchema schema
         , viewTableHeading goToSchema goToTable table
         , div [ class "px-3" ]
-            [ h2 [ class "mt-2 font-medium text-gray-900" ] [ text table.item.name ]
-            , table.item.comment |> Maybe.mapOrElse viewComment (p [] [])
-            , dl []
-                [ inLayouts |> List.nonEmptyMap (\l -> viewProp "In layouts" (l |> List.map (viewLayout loadLayout))) (p [] [])
-                , inSources |> List.nonEmptyMap (\s -> viewProp "From sources" (s |> List.map (viewSource toggleSource openedSource))) (p [] [])
-                ]
+            [ viewTitle table.item.name
+            , table.item.comment |> Maybe.mapOrElse viewComment (div [] [])
+            , viewNotes notes
+            , outRelations |> List.nonEmptyMap (\r -> viewProp "References" (r |> List.sortBy .table |> List.map (viewTableRelation goToTable defaultSchema))) (div [] [])
+            , inRelations |> List.nonEmptyMap (\r -> viewProp "Referenced by" (r |> List.sortBy .table |> List.map (viewTableRelation goToTable defaultSchema))) (div [] [])
+            , viewTableConstraints table.item
+            , inLayouts |> List.nonEmptyMap (\l -> viewProp "In layouts" (l |> List.sort |> List.map (viewLayout loadLayout))) (div [] [])
+            , inSources |> List.nonEmptyMap (\sources -> viewProp "From sources" (sources |> List.sortBy (Tuple.second >> .name) |> List.map (\( o, s ) -> viewSource (stats |> Dict.get (SourceId.toString s.id) |> Maybe.map .rows) ( o, s )))) (div [] [])
             , viewProp (table.item.columns |> String.pluralizeD "column")
                 [ ul [ role "list", class "-mx-3 relative z-0 divide-y divide-gray-200" ]
                     (table.item.columns
@@ -169,9 +207,12 @@ viewTable goToList goToSchema goToTable goToColumn loadLayout toggleSource opene
                                 li []
                                     [ div [ class "relative px-6 py-1 flex items-center space-x-3 hover:bg-gray-50 focus-within:ring-2 focus-within:ring-inset focus-within:ring-primary-500" ]
                                         [ div [ class "flex-1 min-w-0" ]
-                                            [ button [ type_ "button", onClick ({ table = table.item.id, column = column.name } |> goToColumn), class "focus:outline-none" ]
+                                            [ button [ type_ "button", onClick ({ table = table.item.id, column = column.name } |> goToColumn), class "w-full focus:outline-none" ]
                                                 [ span [ class "absolute inset-0", ariaHidden True ] [] -- Extend touch target to entire panel
-                                                , p [ class "text-sm font-medium text-gray-900" ] [ text column.name ]
+                                                , div [ class "flex justify-between" ]
+                                                    [ span [ class "text-sm font-medium text-gray-900" ] [ text column.name ]
+                                                    , columnValues |> Dict.get column.name |> Maybe.mapOrElse (\v -> Badge.basic Tw.gray [ class "ml-3 truncate" ] [ text v ]) (span [] [])
+                                                    ]
                                                 ]
                                             ]
                                         ]
@@ -188,6 +229,82 @@ viewColumn :
     -> (SchemaName -> msg)
     -> (TableId -> msg)
     -> (ColumnRef -> msg)
+    -> (LayoutName -> msg)
+    -> (SourceName -> msg)
+    -> SourceName
+    -> SchemaName
+    -> Heading SchemaName Never
+    -> Heading ErdTable ErdTableLayout
+    -> Heading ErdColumn ErdColumnProps
+    -> NotesModel msg
+    -> List LayoutName
+    -> List ( Origin, Source )
+    -> Dict SourceIdStr ColumnStats
+    -> Html msg
+viewColumn goToList goToSchema goToTable goToColumn loadLayout _ _ defaultSchema schema table column notes inLayouts inSources stats =
+    div []
+        [ viewSchemaHeading goToList goToSchema defaultSchema schema
+        , viewTableHeading goToSchema goToTable table
+        , viewColumnHeading goToTable goToColumn table.item.id column
+        , div [ class "px-3" ]
+            [ viewTitle (String.fromInt column.item.index ++ ". " ++ column.item.name)
+            , div [ class "flex flex-row flex-wrap" ]
+                ([ Just ( Icon.Tag, column.item.kind )
+                 , Just (Bool.cond column.item.nullable ( Icon.ShieldExclamation, "Nullable" ) ( Icon.ShieldCheck, "NOT NULL" ))
+                 , column.item.default |> Maybe.map (\v -> ( Icon.PlusCircle, "Default: " ++ v ))
+                 ]
+                    |> List.filterMap identity
+                    |> List.map
+                        (\( icon, content ) ->
+                            div [ class "mt-1 mr-3 flex flex-shrink-0 items-center text-sm text-gray-500" ] [ Icon.solid icon "text-gray-400 mr-1", text content ]
+                        )
+                )
+            , column.item.comment |> Maybe.mapOrElse viewComment (div [] [])
+            , viewNotes notes
+            , viewColumnStats (inSources |> List.map Tuple.second) stats
+            , column.item.outRelations |> List.nonEmptyMap (\r -> viewProp "References" (r |> List.sortBy ErdColumnRef.toId |> List.map (viewColumnRelation goToColumn defaultSchema))) (div [] [])
+            , column.item.inRelations |> List.nonEmptyMap (\r -> viewProp "Referenced by" (r |> List.sortBy ErdColumnRef.toId |> List.map (viewColumnRelation goToColumn defaultSchema))) (div [] [])
+            , viewColumnConstraints table.item column.item
+            , inLayouts |> List.nonEmptyMap (\l -> viewProp "In layouts" (l |> List.sort |> List.map (viewLayout loadLayout))) (div [] [])
+            , inSources |> List.nonEmptyMap (\s -> viewProp "From sources" (s |> List.sortBy (Tuple.second >> .name) |> List.map (viewSource Nothing))) (div [] [])
+            ]
+        ]
+
+
+viewList2 : (TableId -> msg) -> (String -> msg) -> HtmlId -> SchemaName -> List ErdTable -> String -> Html msg
+viewList2 _ _ _ _ _ _ =
+    div [] [ text "TODO viewList2" ]
+
+
+viewSchema2 : msg -> (SchemaName -> msg) -> (TableId -> msg) -> SchemaName -> Heading SchemaName Never -> List ErdTable -> Html msg
+viewSchema2 _ _ _ _ _ _ =
+    div [] [ text "TODO viewSchema2" ]
+
+
+viewTable2 :
+    msg
+    -> (SchemaName -> msg)
+    -> (TableId -> msg)
+    -> (ColumnRef -> msg)
+    -> (LayoutName -> msg)
+    -> (SourceName -> msg)
+    -> SourceName
+    -> SchemaName
+    -> Heading SchemaName Never
+    -> Heading ErdTable ErdTableLayout
+    -> NotesModel msg
+    -> List LayoutName
+    -> List ( Origin, Source )
+    -> Dict SourceIdStr TableStats
+    -> Html msg
+viewTable2 _ _ _ _ _ _ _ _ _ _ _ _ _ _ =
+    div [] [ text "TODO viewTable2" ]
+
+
+viewColumn2 :
+    msg
+    -> (SchemaName -> msg)
+    -> (TableId -> msg)
     -> (ColumnRef -> msg)
     -> (LayoutName -> msg)
     -> (SourceName -> msg)
@@ -196,58 +313,12 @@ viewColumn :
     -> Heading SchemaName Never
     -> Heading ErdTable ErdTableLayout
     -> Heading ErdColumn ErdColumnProps
+    -> NotesModel msg
     -> List LayoutName
-    -> List ( { o | id : SourceId, lines : List Int }, { s | id : SourceId, name : SourceName, content : Array String } )
+    -> List ( Origin, Source )
+    -> Dict SourceIdStr ColumnStats
     -> Html msg
-viewColumn goToList goToSchema goToTable goToColumn relationClick loadLayout toggleSource openedSource defaultSchema schema table column inLayouts inSources =
-    div []
-        [ viewSchemaHeading goToList goToSchema defaultSchema schema
-        , viewTableHeading goToSchema goToTable table
-        , viewColumnHeading goToTable goToColumn table.item.id column
-        , div [ class "px-3" ]
-            [ h2 [ class "mt-2 font-medium text-gray-900" ] [ text (String.fromInt column.item.index ++ ". " ++ column.item.name) ]
-            , p [ class "mt-1 text-sm text-gray-700" ] [ text column.item.kind ]
-            , column.item.comment |> Maybe.mapOrElse viewComment (p [] [])
-            , dl []
-                [ column.item.outRelations |> List.nonEmptyMap (\r -> viewProp "References" (r |> List.map (viewRelation relationClick defaultSchema))) (p [] [])
-                , column.item.inRelations |> List.nonEmptyMap (\r -> viewProp "Referenced by" (r |> List.map (viewRelation relationClick defaultSchema))) (p [] [])
-                , inLayouts |> List.nonEmptyMap (\l -> viewProp "In layouts" (l |> List.map (viewLayout loadLayout))) (p [] [])
-                , inSources |> List.nonEmptyMap (\s -> viewProp "From sources" (s |> List.map (viewSource toggleSource openedSource))) (p [] [])
-                ]
-            ]
-        ]
-
-
-viewList2 : SchemaName -> List ErdTable -> Html msg
-viewList2 _ _ =
-    div [] [ text "TODO viewList2" ]
-
-
-viewSchema2 :
-    SchemaName
-    -> Heading SchemaName Never
-    -> List ErdTable
-    -> Html msg
-viewSchema2 _ _ _ =
-    div [] [ text "TODO viewSchema2" ]
-
-
-viewTable2 :
-    SchemaName
-    -> Heading SchemaName Never
-    -> Heading ErdTable ErdTableLayout
-    -> Html msg
-viewTable2 _ _ _ =
-    div [] [ text "TODO viewTable2" ]
-
-
-viewColumn2 :
-    SchemaName
-    -> Heading SchemaName Never
-    -> Heading ErdTable ErdTableLayout
-    -> Heading ErdColumn ErdColumnProps
-    -> Html msg
-viewColumn2 defaultSchema schema table column =
+viewColumn2 _ _ _ _ _ _ _ defaultSchema schema table column _ _ _ _ =
     div []
         [ div [ class "lg:flex lg:items-center lg:justify-between" ]
             [ div [ class "flex-1 min-w-0" ]
@@ -255,7 +326,9 @@ viewColumn2 defaultSchema schema table column =
                     [ { url = "#", label = schema.item |> SchemaName.show defaultSchema }
                     , { url = "#", label = table.item.name }
                     ]
-                , titleSection "mt-2" (String.fromInt column.item.index ++ ". " ++ table.item.name ++ "." ++ column.item.name)
+                , h2 [ css [ "mt-2 text-gray-900 text-2xl font-bold tracking-tight truncate" ] ]
+                    [ text (String.fromInt column.item.index ++ ". " ++ table.item.name ++ "." ++ column.item.name)
+                    ]
                 , metadataSection "mt-1"
                     [ { icon = Icon.Tag, label = column.item.kind }
                     ]
@@ -338,7 +411,7 @@ viewSchemaHeading goToList goToSchema defaultSchema model =
 
 viewTableHeading : (SchemaName -> msg) -> (TableId -> msg) -> Heading ErdTable ErdTableLayout -> Html msg
 viewTableHeading goToSchema goToTable model =
-    div [ class "flex items-center justify-between border-b border-gray-200 bg-gray-50 px-1 py-1 text-sm font-medium text-gray-500" ]
+    div [ class "pl-4 flex items-center justify-between border-b border-gray-200 bg-gray-50 px-1 py-1 text-sm font-medium text-gray-500" ]
         [ div [ class "flex" ]
             [ button [ type_ "button", onClick (model.item.schema |> goToSchema) ] [ Icon.solid Icon.ChevronUp "" ] |> Tooltip.tr "Schema details"
             , h3 [] [ text model.item.name ]
@@ -356,7 +429,7 @@ viewTableHeading goToSchema goToTable model =
 
 viewColumnHeading : (TableId -> msg) -> (ColumnRef -> msg) -> TableId -> Heading ErdColumn ErdColumnProps -> Html msg
 viewColumnHeading goToTable goToColumn table model =
-    div [ class "flex items-center justify-between border-b border-gray-200 bg-gray-50 px-1 py-1 text-sm font-medium text-gray-500" ]
+    div [ class "pl-7 flex items-center justify-between border-b border-gray-200 bg-gray-50 px-1 py-1 text-sm font-medium text-gray-500" ]
         [ div [ class "flex" ]
             [ button [ type_ "button", onClick (table |> goToTable) ] [ Icon.solid Icon.ChevronUp "" ] |> Tooltip.tr "Table details"
             , h3 [] [ text model.item.name ]
@@ -372,88 +445,242 @@ viewColumnHeading goToTable goToColumn table model =
         ]
 
 
+viewTitle : String -> Html msg
+viewTitle content =
+    h2 [ class "mt-2 text-xl font-bold text-gray-900" ] [ text content ]
+
+
 viewComment : { a | text : String } -> Html msg
 viewComment comment =
-    p [ class "mt-1 text-sm text-gray-700" ]
-        (comment.text |> String.split "\\n" |> List.map text |> List.intersperse (br [] []))
+    div [ class "mt-1 flex flex-row" ]
+        [ Icon.outline Icons.comment "w-4 opacity-50 mr-1" |> Tooltip.r "SQL comment"
+        , viewMarkdown comment.text
+        ]
+
+
+type alias NotesModel msg =
+    { notes : Maybe Notes
+    , editing : Bool
+    , toggleEdit : HtmlId -> msg
+    , update : Notes -> msg
+    }
+
+
+viewNotes : NotesModel msg -> Html msg
+viewNotes model =
+    let
+        inputId : HtmlId
+        inputId =
+            "edit-notes"
+    in
+    div [ class "mt-1 flex flex-row" ]
+        [ Icon.outline Icons.notes "w-4 opacity-50 mr-1" |> Tooltip.r "Azimutt notes"
+        , if model.editing then
+            textarea
+                [ id inputId
+                , name inputId
+                , rows (model.notes |> Maybe.withDefault "" |> String.split "\n" |> List.length)
+                , value (model.notes |> Maybe.withDefault "")
+                , onInput model.update
+                , onBlur (model.toggleEdit inputId)
+                , autofocus True
+                , placeholder "Write your notes..."
+                , class "block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                ]
+                []
+
+          else
+            model.notes
+                |> Maybe.mapOrElse (\n -> div [ onClick (model.toggleEdit inputId), class "w-full cursor-pointer" ] [ viewMarkdown n ])
+                    (div [ onClick (model.toggleEdit inputId), class "w-full text-sm text-gray-400 italic underline cursor-pointer" ] [ text "Click to write notes" ])
+        ]
+
+
+viewMarkdown : String -> Html msg
+viewMarkdown content =
+    Markdown.markdown "-mt-1 prose prose-sm leading-tight prose-p:my-2 prose-p:last:mb-0 prose-ul:my-2 prose-li:my-0" content
+
+
+viewColumnStats : List Source -> Dict SourceIdStr ColumnStats -> Html msg
+viewColumnStats sources stats =
+    div []
+        (stats
+            |> Dict.toList
+            |> List.map (\( sourceId, s ) -> ( sources |> List.findBy (.id >> SourceId.toString) sourceId |> Maybe.mapOrElse .name sourceId, s ))
+            |> List.sortBy Tuple.first
+            |> List.map
+                (\( sourceName, s ) ->
+                    if s.rows == 0 then
+                        viewProp ("Values in " ++ sourceName ++ " source") [ div [] [ text ("Rows: " ++ String.fromInt s.rows) ] ]
+
+                    else
+                        viewProp ("Values in " ++ sourceName ++ " source")
+                            [ div [] (text "Samples: " :: (s.commonValues |> List.take 5 |> List.map viewColumnValue))
+                            , div []
+                                ([ span [] [ text ("Rows: " ++ String.fromInt s.rows) ]
+                                 , span [] [ text ("Cardinality: " ++ String.fromInt s.cardinality) ]
+                                 , text ("Nulls: " ++ (s.nulls |> Basics.percent s.rows |> Basics.prettyNumber) ++ "%") |> Tooltip.t (String.fromInt s.nulls ++ " nulls")
+                                 ]
+                                    |> List.intersperse (text ", ")
+                                )
+                            ]
+                )
+        )
 
 
 viewProp : String -> List (Html msg) -> Html msg
 viewProp label content =
-    p [ class "mt-3" ]
-        [ dt [ class "text-sm font-medium text-gray-500" ] [ text label ]
-        , dd [ class "mt-1 text-sm text-gray-900" ] content
+    div [ class "mt-3" ]
+        [ div [ class "text-sm font-medium text-gray-500" ] [ text label ]
+        , div [ class "mt-1 text-sm text-gray-900" ] content
         ]
 
 
-viewRelation : (ColumnRef -> msg) -> String -> ErdColumnRef -> Html msg
-viewRelation click defaultSchema relation =
-    div [] [ span [ class "cursor-pointer", onClick ({ table = relation.table, column = relation.column } |> click) ] [ text (ColumnRef.show defaultSchema relation) ] |> Tooltip.r "View column" ]
+viewTableRelation : (TableId -> msg) -> String -> ErdColumnRef -> Html msg
+viewTableRelation click defaultSchema relation =
+    div [] [ span [ class "underline cursor-pointer", onClick (relation.table |> click) ] [ text (TableId.show defaultSchema relation.table) ] |> Tooltip.r "View table" ]
+
+
+viewColumnRelation : (ColumnRef -> msg) -> String -> ErdColumnRef -> Html msg
+viewColumnRelation click defaultSchema relation =
+    div [] [ span [ class "underline cursor-pointer", onClick ({ table = relation.table, column = relation.column } |> click) ] [ text (ColumnRef.show defaultSchema relation) ] |> Tooltip.r "View column" ]
+
+
+viewTableConstraints : ErdTable -> Html msg
+viewTableConstraints table =
+    if table.primaryKey == Nothing && List.isEmpty table.uniques && List.isEmpty table.indexes && List.isEmpty table.checks then
+        div [] []
+
+    else
+        viewProp "Constraints"
+            (((table.primaryKey |> Maybe.toList |> List.map (\pk -> ( "Primary key", Icons.columns.primaryKey, viewTablePrimaryKey pk )))
+                ++ (table.uniques |> List.sortBy .name |> List.map (\u -> ( "Unique", Icons.columns.unique, viewTableUnique u )))
+                ++ (table.indexes |> List.sortBy .name |> List.map (\i -> ( "Index", Icons.columns.index, viewTableIndex i )))
+                ++ (table.checks |> List.sortBy .name |> List.map (\c -> ( "Check", Icons.columns.check, viewTableCheck c )))
+             )
+                |> List.map (\( kind, icon, content ) -> div [ class "flex flex-row" ] [ Icon.solid icon "inline text-gray-500 w-4 mr-1" |> Tooltip.r kind, content ])
+            )
+
+
+viewTablePrimaryKey : PrimaryKey -> Html msg
+viewTablePrimaryKey primaryKey =
+    viewTableConstraint "Primary key" primaryKey.name (primaryKey.columns |> Nel.toList)
+
+
+viewTableUnique : Unique -> Html msg
+viewTableUnique unique =
+    viewTableConstraint "Unique" (Just unique.name) (unique.columns |> Nel.toList)
+
+
+viewTableIndex : Index -> Html msg
+viewTableIndex index =
+    viewTableConstraint "Index" (Just index.name) (index.columns |> Nel.toList)
+
+
+viewTableCheck : Check -> Html msg
+viewTableCheck check =
+    viewTableConstraint "Check" (Just check.name) check.columns
+
+
+viewTableConstraint : String -> Maybe String -> List ColumnName -> Html msg
+viewTableConstraint constraint name columns =
+    div [ class "text-gray-500 truncate" ]
+        (span [ class "text-gray-900" ] (text (constraint ++ ": ") :: (columns |> List.map (\c -> span [ title c ] [ text c ]) |> List.intersperse (text ", ")))
+            :: (name |> Maybe.toList |> List.map (\n -> span [ title n ] [ text (" (" ++ n ++ ")") ]))
+        )
+
+
+viewColumnConstraints : ErdTable -> ErdColumn -> Html msg
+viewColumnConstraints table column =
+    if not column.isPrimaryKey && List.isEmpty column.uniques && List.isEmpty column.indexes && List.isEmpty column.checks then
+        div [] []
+
+    else
+        viewProp "Constraints"
+            (((column.isPrimaryKey |> Bool.list ( "Primary key", Icons.columns.primaryKey, viewColumnPrimaryKey table.primaryKey ))
+                ++ (column.uniques |> List.sort |> List.map (\u -> ( "Unique", Icons.columns.unique, viewColumnUnique table.uniques u )))
+                ++ (column.indexes |> List.sort |> List.map (\i -> ( "Index", Icons.columns.index, viewColumnIndex table.indexes i )))
+                ++ (column.checks |> List.sort |> List.map (\c -> ( "Check", Icons.columns.check, viewColumnCheck table.checks c )))
+             )
+                |> List.map (\( kind, icon, content ) -> div [ class "flex flex-row" ] [ Icon.solid icon "inline text-gray-500 w-4 mr-1" |> Tooltip.r kind, content ])
+            )
+
+
+viewColumnPrimaryKey : Maybe PrimaryKey -> Html msg
+viewColumnPrimaryKey primaryKey =
+    (primaryKey |> Maybe.andThen .name) |> viewColumnConstraint "Primary key" (primaryKey |> Maybe.mapOrElse (\pk -> ( Nel.toList pk.columns, Nothing )) ( [], Nothing ))
+
+
+viewColumnUnique : List Unique -> UniqueName -> Html msg
+viewColumnUnique constraints name =
+    Just name |> viewColumnConstraint "Unique" (constraints |> List.findBy .name name |> Maybe.mapOrElse (\u -> ( Nel.toList u.columns, u.definition )) ( [], Nothing ))
+
+
+viewColumnIndex : List Index -> IndexName -> Html msg
+viewColumnIndex constraints name =
+    Just name |> viewColumnConstraint "Index" (constraints |> List.findBy .name name |> Maybe.mapOrElse (\u -> ( Nel.toList u.columns, u.definition )) ( [], Nothing ))
+
+
+viewColumnCheck : List Check -> CheckName -> Html msg
+viewColumnCheck constraints name =
+    Just name |> viewColumnConstraint "Check" (constraints |> List.findBy .name name |> Maybe.mapOrElse (\u -> ( u.columns, u.predicate )) ( [], Nothing ))
+
+
+viewColumnConstraint : String -> ( List ColumnName, Maybe String ) -> Maybe String -> Html msg
+viewColumnConstraint constraint ( columns, definition ) name =
+    let
+        columnsHtml : List (Html msg)
+        columnsHtml =
+            if List.length columns > 1 then
+                [ text " (", span [ title (columns |> String.join ", ") ] [ text (columns |> String.join ", ") ], text ")" ]
+
+            else
+                []
+    in
+    definition
+        |> Maybe.map (\d -> span [ class "truncate", title d ] (text (name |> Maybe.withDefault constraint) :: columnsHtml))
+        |> Maybe.withDefault (span [ class "truncate" ] (text (name |> Maybe.withDefault constraint) :: columnsHtml))
 
 
 viewLayout : (LayoutName -> msg) -> LayoutName -> Html msg
 viewLayout loadLayout layout =
-    div [] [ span [ class "cursor-pointer", onClick (loadLayout layout) ] [ text layout ] |> Tooltip.r "View layout" ]
+    div [] [ span [ class "underline cursor-pointer", onClick (loadLayout layout) ] [ text layout ] |> Tooltip.r "View layout" ]
 
 
-viewSource : (SourceName -> msg) -> SourceName -> ( { o | id : SourceId, lines : List Int }, { s | id : SourceId, name : SourceName, content : Array String } ) -> Html msg
-viewSource click openedSource ( origin, source ) =
-    div []
-        [ span [ class "cursor-pointer", onClick (source.name |> click) ] [ text source.name ] |> Tooltip.r "View source content"
-        , if openedSource == source.name then
-            viewSourceContent origin source
+viewSource : Maybe Int -> ( Origin, Source ) -> Html msg
+viewSource rows ( _, source ) =
+    div [ class "mt-1 flex flex-row" ]
+        [ case source.kind of
+            SourceKind.DatabaseConnection _ ->
+                Icon.solid Icons.sources.database "w-4 opacity-50 mr-1" |> Tooltip.r "Database source"
 
-          else
-            text ""
+            SourceKind.SqlLocalFile _ _ _ ->
+                Icon.solid Icons.sources.sql "w-4 opacity-50 mr-1" |> Tooltip.r "SQL source"
+
+            SourceKind.SqlRemoteFile _ _ ->
+                Icon.solid Icons.sources.sql "w-4 opacity-50 mr-1" |> Tooltip.r "SQL source"
+
+            SourceKind.JsonLocalFile _ _ _ ->
+                Icon.solid Icons.sources.json "w-4 opacity-50 mr-1" |> Tooltip.r "JSON source"
+
+            SourceKind.JsonRemoteFile _ _ ->
+                Icon.solid Icons.sources.json "w-4 opacity-50 mr-1" |> Tooltip.r "JSON source"
+
+            SourceKind.AmlEditor ->
+                Icon.solid Icons.sources.aml "w-4 opacity-50 mr-1" |> Tooltip.r "AML source"
+        , text (source.name ++ (rows |> Maybe.mapOrElse (\r -> " (" ++ String.fromInt r ++ " rows)") ""))
         ]
 
 
-viewSourceContent : { o | id : SourceId, lines : List Int } -> { s | id : SourceId, content : Array String } -> Html msg
-viewSourceContent origin source =
-    if origin.id == source.id then
-        let
-            lines : List String
-            lines =
-                origin.lines |> List.filterMap (\i -> source.content |> Array.get i)
-        in
-        if List.isEmpty lines then
-            pre [] [ text "No content from this source" ]
+viewColumnValue : ColumnValueCount -> Html msg
+viewColumnValue value =
+    (if value.value == "" then
+        Badge.basicFlex Tw.gray [ class "mr-1 italic" ] [ text "Empty string" ]
 
-        else
-            pre [ class "overflow-x-auto" ] [ text (lines |> String.join "\n") ]
-
-    else
-        pre [] [ text "Source didn't match with origin!" ]
-
-
-
--- PAGE HEADING
-
-
-pageHeading : Html msg
-pageHeading =
-    -- from https://tailwindui.com/components/application-ui/headings/page-headings#component-40a924bca34bb5e303d056decfa530e5
-    div [ class "lg:flex lg:items-center lg:justify-between" ]
-        [ div [ class "flex-1 min-w-0" ]
-            [ breadcrumbSection ""
-                [ { url = "#", label = "Jobs" }
-                , { url = "#", label = "Engineering" }
-                , { url = "#", label = "Software" }
-                ]
-            , titleSection "mt-2" "Back End Developer"
-            , metadataSection "mt-1"
-                [ { icon = Icon.Briefcase, label = "Full-time" }
-                , { icon = Icon.LocationMarker, label = "Remote" }
-                , { icon = Icon.CurrencyDollar, label = "$120k – $140k" }
-                , { icon = Icon.Calendar, label = "Closing on January 9, 2020" }
-                ]
-            ]
-        ]
-
-
-titleSection : TwClass -> String -> Html msg
-titleSection styles content =
-    h2 [ css [ styles, "text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:tracking-tight sm:truncate" ] ] [ text content ]
+     else
+        Badge.basicFlex Tw.gray [ class "mr-1" ] [ text value.value ]
+    )
+        |> Tooltip.tr (String.fromInt value.count ++ " occurrences")
 
 
 breadcrumbSection : TwClass -> List { a | url : String, label : String } -> Html msg
@@ -492,6 +719,63 @@ metadataSection styles items =
                         [ Icon.solid icon "flex-shrink-0 mr-1.5 text-gray-400", text label ]
                 )
         )
+
+
+
+-- PAGE HEADING
+
+
+pageHeading : Html msg
+pageHeading =
+    -- from https://tailwindui.com/components/application-ui/headings/page-headings#component-40a924bca34bb5e303d056decfa530e5
+    div [ class "lg:flex lg:items-center lg:justify-between" ]
+        [ div [ class "flex-1 min-w-0" ]
+            [ [ { url = "#", label = "Jobs" }
+              , { url = "#", label = "Engineering" }
+              , { url = "#", label = "Software" }
+              ]
+                |> (\items ->
+                        nav [ class "flex", ariaLabel "Breadcrumb" ]
+                            [ ol [ role "list", class "flex items-center space-x-4" ]
+                                (items
+                                    |> List.indexedMap
+                                        (\i { url, label } ->
+                                            if i == 0 then
+                                                li []
+                                                    [ div [ class "flex" ]
+                                                        [ a [ href url, class "text-sm font-medium text-gray-500 hover:text-gray-700" ] [ text label ]
+                                                        ]
+                                                    ]
+
+                                            else
+                                                li []
+                                                    [ div [ class "flex items-center" ]
+                                                        [ Icon.solid Icon.ChevronRight "flex-shrink-0 text-gray-400"
+                                                        , a [ href url, class "ml-4 text-sm font-medium text-gray-500 hover:text-gray-700" ] [ text label ]
+                                                        ]
+                                                    ]
+                                        )
+                                )
+                            ]
+                   )
+            , h2 [ css [ "mt-2 text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:tracking-tight sm:truncate" ] ] [ text "Back End Developer" ]
+            , [ { icon = Icon.Briefcase, label = "Full-time" }
+              , { icon = Icon.LocationMarker, label = "Remote" }
+              , { icon = Icon.CurrencyDollar, label = "$120k – $140k" }
+              , { icon = Icon.Calendar, label = "Closing on January 9, 2020" }
+              ]
+                |> (\items ->
+                        div [ css [ "mt-1 flex flex-col sm:flex-row sm:flex-wrap sm:mt-0 sm:space-x-6" ] ]
+                            (items
+                                |> List.map
+                                    (\{ icon, label } ->
+                                        div [ class "mt-2 flex items-center text-sm text-gray-500" ]
+                                            [ Icon.solid icon "flex-shrink-0 mr-1.5 text-gray-400", text label ]
+                                    )
+                            )
+                   )
+            ]
+        ]
 
 
 
@@ -561,8 +845,8 @@ directory =
                                                         ]
                                                     , div [ class "flex-1 min-w-0" ]
                                                         [ a [ href "#", class "focus:outline-none" ]
-                                                            [ {- Extend touch target to entire panel -} span [ class "absolute inset-0", ariaHidden True ] []
-                                                            , p [ class "text-sm font-medium text-gray-900" ] [ text employee.name ]
+                                                            [ span [ class "absolute inset-0", ariaHidden True ] [] -- Extend touch target to entire panel
+                                                            , p [ class "text-sm text-gray-900 font-medium" ] [ text employee.name ]
                                                             , p [ class "text-sm text-gray-500 truncate" ] [ text employee.job ]
                                                             ]
                                                         ]
@@ -592,6 +876,9 @@ type alias DocState =
     , currentSchema : Maybe ( Heading SchemaName Never, List ErdTable )
     , currentTable : Maybe (Heading ErdTable ErdTableLayout)
     , currentColumn : Maybe (Heading ErdColumn ErdColumnProps)
+    , tableNotes : Dict TableId Notes
+    , columnNotes : Dict ColumnId Notes
+    , editNotes : Bool
     }
 
 
@@ -603,209 +890,150 @@ initDocState =
     , currentSchema = Nothing
     , currentTable = Nothing
     , currentColumn = Nothing
+    , tableNotes = Dict.fromList [ ( ( "", "users" ), "Azimutt notes for **users**" ) ]
+    , columnNotes = Dict.fromList [ ( ( ( "", "users" ), "id" ), "Azimutt notes for **users.id**" ) ]
+    , editNotes = False
     }
-        |> selectColumn { table = ( Conf.schema.empty, "users" ), column = "name" }
+        |> docSelectColumn { table = ( Conf.schema.empty, "users" ), column = "id" }
 
 
 doc : Chapter (SharedDocState x)
 doc =
     Chapter.chapter "Details"
         |> Chapter.renderStatefulComponentList
-            [ component "viewList"
+            [ docComponent "viewList & viewList2"
                 (\s ->
-                    viewList
-                        (\tableId -> s |> selectTable tableId |> setState)
-                        (\search -> { s | search = search } |> setState)
-                        "html-id"
-                        s.defaultSchema
-                        (sampleErd.tables |> Dict.values)
-                        s.search
+                    div [ class "flex flex-row grow gap-3" ]
+                        ([ viewList, viewList2 ]
+                            |> List.map
+                                (\renderView ->
+                                    div [ class "w-112 border border-gray-300" ]
+                                        [ renderView
+                                            (\tableId -> s |> docSelectTable tableId |> docSetState)
+                                            (\search -> { s | search = search } |> docSetState)
+                                            "html-id"
+                                            s.defaultSchema
+                                            (docErd.tables |> Dict.values)
+                                            s.search
+                                        ]
+                                )
+                        )
                 )
-            , component "viewSchema"
+            , docComponent "viewSchema & viewSchema2"
                 (\s ->
                     Maybe.map
                         (\( schema, tables ) ->
-                            viewSchema
-                                (selectList s |> setState)
-                                (\schemaName -> s |> selectSchema schemaName |> setState)
-                                (\tableId -> s |> selectTable tableId |> setState)
-                                s.defaultSchema
-                                schema
-                                tables
+                            div [ class "flex flex-row grow gap-3" ]
+                                ([ viewSchema, viewSchema2 ]
+                                    |> List.map
+                                        (\renderView ->
+                                            div [ class "w-112 border border-gray-300" ]
+                                                [ renderView
+                                                    (docSelectList s |> docSetState)
+                                                    (\schemaName -> s |> docSelectSchema schemaName |> docSetState)
+                                                    (\tableId -> s |> docSelectTable tableId |> docSetState)
+                                                    s.defaultSchema
+                                                    schema
+                                                    tables
+                                                ]
+                                        )
+                                )
                         )
                         s.currentSchema
                         |> Maybe.withDefault (div [] [ text "No selected schema" ])
                 )
-            , component "viewTable"
+            , docComponent "viewTable & viewTable2"
                 (\s ->
                     Maybe.map2
                         (\( schema, _ ) table ->
-                            viewTable
-                                (selectList s |> setState)
-                                (\schemaName -> s |> selectSchema schemaName |> setState)
-                                (\tableId -> s |> selectTable tableId |> setState)
-                                (\columnRef -> s |> selectColumn columnRef |> setState)
-                                (\layout -> logAction ("loadLayout " ++ layout))
-                                (\source -> setState { s | openedCollapse = Bool.cond (s.openedCollapse == "viewTable-" ++ source) "" ("viewTable-" ++ source) })
-                                (s.openedCollapse |> String.stripLeft "viewTable-")
-                                s.defaultSchema
-                                schema
-                                table
-                                sample.inLayouts
-                                sample.inSources
+                            div [ class "flex flex-row grow gap-3" ]
+                                ([ viewTable, viewTable2 ]
+                                    |> List.map
+                                        (\renderView ->
+                                            div [ class "w-112 border border-gray-300" ]
+                                                [ renderView
+                                                    (docSelectList s |> docSetState)
+                                                    (\schemaName -> s |> docSelectSchema schemaName |> docSetState)
+                                                    (\tableId -> s |> docSelectTable tableId |> docSetState)
+                                                    (\columnRef -> s |> docSelectColumn columnRef |> docSetState)
+                                                    (\layout -> logAction ("loadLayout " ++ layout))
+                                                    (\source -> docSetState { s | openedCollapse = Bool.cond (s.openedCollapse == "viewTable-" ++ source) "" ("viewTable-" ++ source) })
+                                                    (s.openedCollapse |> String.stripLeft "viewTable-")
+                                                    s.defaultSchema
+                                                    schema
+                                                    table
+                                                    { notes = s.tableNotes |> Dict.get table.item.id
+                                                    , editing = s.editNotes
+                                                    , toggleEdit = \_ -> docSetState { s | editNotes = not s.editNotes }
+                                                    , update = \notes -> docSetState { s | tableNotes = s.tableNotes |> Dict.insert table.item.id notes }
+                                                    }
+                                                    (docErd.layouts |> Dict.filter (\_ l -> l.tables |> List.memberBy .id table.item.id) |> Dict.keys)
+                                                    (table.item.origins |> List.filterZip (\o -> docErd.sources |> List.findBy .id o.id))
+                                                    (docTableStats |> Dict.getOrElse table.item.id Dict.empty)
+                                                ]
+                                        )
+                                )
                         )
                         s.currentSchema
                         s.currentTable
                         |> Maybe.withDefault (div [] [ text "No selected table" ])
                 )
-            , component "viewColumn"
+            , docComponent "viewColumn & viewColumn2"
                 (\s ->
                     Maybe.map3
                         (\( schema, _ ) table column ->
-                            viewColumn
-                                (selectList s |> setState)
-                                (\schemaName -> s |> selectSchema schemaName |> setState)
-                                (\tableId -> s |> selectTable tableId |> setState)
-                                (\columnRef -> s |> selectColumn columnRef |> setState)
-                                (\columnRef -> logAction ("relationClick " ++ (columnRef |> ColumnRef.show s.defaultSchema)))
-                                (\layout -> logAction ("loadLayout " ++ layout))
-                                (\source -> setState { s | openedCollapse = Bool.cond (s.openedCollapse == "viewColumn-" ++ source) "" ("viewColumn-" ++ source) })
-                                (s.openedCollapse |> String.stripLeft "viewColumn-")
-                                s.defaultSchema
-                                schema
-                                table
-                                column
-                                sample.inLayouts
-                                sample.inSources
+                            div [ class "flex flex-row grow gap-3" ]
+                                ([ viewColumn, viewColumn2 ]
+                                    |> List.map
+                                        (\renderView ->
+                                            div [ class "w-112 border border-gray-300" ]
+                                                [ renderView
+                                                    (docSelectList s |> docSetState)
+                                                    (\schemaName -> s |> docSelectSchema schemaName |> docSetState)
+                                                    (\tableId -> s |> docSelectTable tableId |> docSetState)
+                                                    (\columnRef -> s |> docSelectColumn columnRef |> docSetState)
+                                                    (\layout -> logAction ("loadLayout " ++ layout))
+                                                    (\source -> docSetState { s | openedCollapse = Bool.cond (s.openedCollapse == "viewColumn-" ++ source) "" ("viewColumn-" ++ source) })
+                                                    (s.openedCollapse |> String.stripLeft "viewColumn-")
+                                                    s.defaultSchema
+                                                    schema
+                                                    table
+                                                    column
+                                                    { notes = s.columnNotes |> Dict.get ( table.item.id, column.item.name )
+                                                    , editing = s.editNotes
+                                                    , toggleEdit = \_ -> docSetState { s | editNotes = not s.editNotes }
+                                                    , update = \notes -> docSetState { s | columnNotes = s.columnNotes |> Dict.insert ( table.item.id, column.item.name ) notes }
+                                                    }
+                                                    (docErd.layouts |> Dict.filter (\_ l -> l.tables |> List.memberWith (\t -> t.id == table.item.id && (t.columns |> List.memberBy .name column.item.name))) |> Dict.keys)
+                                                    (column.item.origins |> List.filterZip (\o -> docErd.sources |> List.findBy .id o.id))
+                                                    (docColumnStats |> Dict.getOrElse ( table.item.id, column.item.name ) Dict.empty)
+                                                ]
+                                        )
+                                )
                         )
                         s.currentSchema
                         s.currentTable
                         s.currentColumn
                         |> Maybe.withDefault (div [] [ text "No selected column" ])
                 )
-            , component "viewList2"
-                (\s ->
-                    viewList2
-                        s.defaultSchema
-                        (sampleErd.tables |> Dict.values)
-                )
-            , component "viewSchema2"
-                (\s ->
-                    Maybe.map
-                        (\( schema, tables ) ->
-                            viewSchema2 s.defaultSchema schema tables
-                        )
-                        s.currentSchema
-                        |> Maybe.withDefault (div [] [ text "No selected schema" ])
-                )
-            , component "viewTable2"
-                (\s ->
-                    Maybe.map2
-                        (\( schema, _ ) table ->
-                            viewTable2 s.defaultSchema schema table
-                        )
-                        s.currentSchema
-                        s.currentTable
-                        |> Maybe.withDefault (div [] [ text "No selected table" ])
-                )
-            , component "viewColumn2"
-                (\s ->
-                    Maybe.map3
-                        (\( schema, _ ) table column ->
-                            viewColumn2 s.defaultSchema schema table column
-                        )
-                        s.currentSchema
-                        s.currentTable
-                        s.currentColumn
-                        |> Maybe.withDefault (div [] [ text "No selected column" ])
-                )
-            , component "pageHeading" (\_ -> pageHeading)
-            , component "directory" (\_ -> directory)
+            , docComponent "pageHeading" (\_ -> pageHeading)
+            , docComponent "directory" (\_ -> directory)
             ]
 
 
-component : String -> (DocState -> Html msg) -> ( String, SharedDocState x -> Html msg )
-component name render =
-    ( name, \{ detailsDocState } -> render detailsDocState )
+docNow : Posix
+docNow =
+    Time.zero
 
 
-setState : DocState -> Msg (SharedDocState x)
-setState state =
-    Actions.updateState (\s -> { s | detailsDocState = state })
-
-
-selectList : DocState -> DocState
-selectList state =
-    { state | currentSchema = Nothing, currentTable = Nothing, currentColumn = Nothing }
-
-
-selectSchema : SchemaName -> DocState -> DocState
-selectSchema schema state =
-    { state
-        | currentSchema = Just ( buildSchemaHeading sampleErd schema, sampleErd.tables |> Dict.values |> List.filterBy .schema schema |> List.sortBy .name )
-        , currentTable = Nothing
-        , currentColumn = Nothing
-    }
-
-
-selectTable : TableId -> DocState -> DocState
-selectTable table state =
-    (sampleErd |> Erd.getTable table)
-        |> Maybe.map
-            (\erdTable ->
-                { state
-                    | currentSchema = Just ( buildSchemaHeading sampleErd erdTable.schema, sampleErd.tables |> Dict.values |> List.filterBy .schema erdTable.schema |> List.sortBy .name )
-                    , currentTable = Just (buildTableHeading sampleErd erdTable)
-                    , currentColumn = Nothing
-                }
-            )
-        |> Maybe.withDefault state
-
-
-selectColumn : ColumnRef -> DocState -> DocState
-selectColumn { table, column } state =
-    (sampleErd |> Erd.getTable table)
-        |> Maybe.andThen
-            (\erdTable ->
-                (erdTable.columns |> Dict.get column)
-                    |> Maybe.map
-                        (\erdColumn ->
-                            { state
-                                | currentSchema = Just ( buildSchemaHeading sampleErd erdTable.schema, sampleErd.tables |> Dict.values |> List.filterBy .schema erdTable.schema |> List.sortBy .name )
-                                , currentTable = Just (buildTableHeading sampleErd erdTable)
-                                , currentColumn = Just (buildColumnHeading sampleErd erdTable erdColumn)
-                            }
-                        )
-            )
-        |> Maybe.withDefault state
-
-
-sample :
-    { inLayouts : List SchemaName
-    , inSources :
-        List
-            ( { id : SourceId, lines : List number }
-            , { id : SourceId, name : String, content : Array String }
-            )
-    }
-sample =
-    { inLayouts = [ "Layout 1", "Layout 2" ]
-    , inSources =
-        [ ( { id = SourceId.new "1", lines = [ 2, 3 ] }
-          , { id = SourceId.new "1", name = "structure.sql", content = Array.fromList [ "line 1", "line 2", "line 3", "line 4" ] }
-          )
-        ]
-    }
-
-
-sampleErd : Erd
-sampleErd =
+docErd : Erd
+docErd =
     """
 groups
   id uuid pk
 
-users
-  id uuid pk
+users | List **all** users
+  id uuid=uuid() pk | User **identifier**
   name varchar unique | The name of the user
   group_id uuid nullable fk groups.id
 
@@ -822,3 +1050,103 @@ demo.test
         |> Tuple3.second
         |> Project.create [] "Project name"
         |> Erd.create
+        |> setLayouts
+            (Dict.fromList
+                [ ( "init layout", docBuildLayout [ ( "users", [ "id", "name" ] ) ] )
+                , ( "overview", docBuildLayout [ ( "users", [ "id", "name", "group_id" ] ), ( "groups", [ "id" ] ), ( "credentials", [ "provider_id", "provider_key", "user_id" ] ) ] )
+                ]
+            )
+
+
+docSourceId : SourceIdStr
+docSourceId =
+    docErd.sources |> List.head |> Maybe.mapOrElse (.id >> SourceId.toString) ""
+
+
+docColumnStats : Dict ColumnId (Dict SourceIdStr ColumnStats)
+docColumnStats =
+    [ ( docSourceId, ColumnStats ( ( "", "users" ), "id" ) "uuid" 10 0 10 [ { value = "a53cbae3-8e35-46cd-b476-ebaa2a66a278", count = 1 } ] ) ]
+        |> List.groupBy (\( _, s ) -> s.id)
+        |> Dict.map (\_ -> Dict.fromList)
+
+
+docTableStats : Dict TableId (Dict SourceIdStr TableStats)
+docTableStats =
+    docColumnStats |> Dict.toList |> List.map (\( ( table, col ), dict ) -> ( table, dict |> Dict.map (\_ s -> { id = table, rows = s.rows, sampleValues = s.commonValues |> List.map (\v -> ( col, v.value )) |> Dict.fromList }) )) |> Dict.fromList
+
+
+docBuildLayout : List ( TableIdStr, List ColumnName ) -> ErdLayout
+docBuildLayout tables =
+    { canvas = CanvasProps.empty
+    , tables =
+        tables
+            |> List.map
+                (\( table, columns ) ->
+                    { id = TableId.parse table
+                    , props = ErdTableProps Nothing Position.zeroGrid Size.zeroCanvas Tw.red True True True
+                    , columns = columns |> List.map (\col -> ErdColumnProps col True)
+                    , relatedTables = Dict.empty
+                    }
+                )
+    , createdAt = docNow
+    , updatedAt = docNow
+    }
+
+
+docComponent : String -> (DocState -> Html msg) -> ( String, SharedDocState x -> Html msg )
+docComponent name render =
+    ( name, \{ detailsDocState } -> render detailsDocState )
+
+
+docSetState : DocState -> Msg (SharedDocState x)
+docSetState state =
+    Actions.updateState (\s -> { s | detailsDocState = state })
+
+
+docSelectList : DocState -> DocState
+docSelectList state =
+    { state | currentSchema = Nothing, currentTable = Nothing, currentColumn = Nothing, editNotes = False }
+
+
+docSelectSchema : SchemaName -> DocState -> DocState
+docSelectSchema schema state =
+    { state
+        | currentSchema = Just ( buildSchemaHeading docErd schema, docErd.tables |> Dict.values |> List.filterBy .schema schema |> List.sortBy .name )
+        , currentTable = Nothing
+        , currentColumn = Nothing
+        , editNotes = False
+    }
+
+
+docSelectTable : TableId -> DocState -> DocState
+docSelectTable table state =
+    (docErd |> Erd.getTable table)
+        |> Maybe.map
+            (\erdTable ->
+                { state
+                    | currentSchema = Just ( buildSchemaHeading docErd erdTable.schema, docErd.tables |> Dict.values |> List.filterBy .schema erdTable.schema |> List.sortBy .name )
+                    , currentTable = Just (buildTableHeading docErd erdTable)
+                    , currentColumn = Nothing
+                    , editNotes = False
+                }
+            )
+        |> Maybe.withDefault state
+
+
+docSelectColumn : ColumnRef -> DocState -> DocState
+docSelectColumn { table, column } state =
+    (docErd |> Erd.getTable table)
+        |> Maybe.andThen
+            (\erdTable ->
+                (erdTable.columns |> Dict.get column)
+                    |> Maybe.map
+                        (\erdColumn ->
+                            { state
+                                | currentSchema = Just ( buildSchemaHeading docErd erdTable.schema, docErd.tables |> Dict.values |> List.filterBy .schema erdTable.schema |> List.sortBy .name )
+                                , currentTable = Just (buildTableHeading docErd erdTable)
+                                , currentColumn = Just (buildColumnHeading docErd erdTable erdColumn)
+                                , editNotes = False
+                            }
+                        )
+            )
+        |> Maybe.withDefault state

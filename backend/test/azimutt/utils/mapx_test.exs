@@ -15,5 +15,9 @@ defmodule Azimutt.Utils.MapxTest do
     test "map_values" do
       assert %{foo: 3, bob: 5} = %{foo: "bar", bob: "alice"} |> Mapx.map_values(&String.length/1)
     end
+
+    test "atomize" do
+      assert %{foo: "bar", bob: "alice"} = %{"foo" => "bar", "bob" => "alice"} |> Mapx.atomize()
+    end
   end
 end

@@ -1,4 +1,4 @@
-module Models.Project.TableId exposing (TableId, decode, decodeWith, encode, fromHtmlId, fromString, name, parse, parseWith, schema, show, toHtmlId, toString)
+module Models.Project.TableId exposing (TableId, TableIdStr, decode, decodeWith, encode, fromHtmlId, fromString, name, parse, parseWith, schema, show, toHtmlId, toString)
 
 import Conf
 import Json.Decode as Decode
@@ -12,6 +12,10 @@ import Models.Project.TableName exposing (TableName)
 type alias TableId =
     -- needs to be comparable to be in Dict key
     ( SchemaName, TableName )
+
+
+type alias TableIdStr =
+    String
 
 
 schema : TableId -> SchemaName

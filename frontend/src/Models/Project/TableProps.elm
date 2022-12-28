@@ -27,7 +27,7 @@ encode : TableProps -> Value
 encode value =
     Encode.notNullObject
         [ ( "id", value.id |> TableId.encode )
-        , ( "position", value.position |> Position.encodeCanvasGrid )
+        , ( "position", value.position |> Position.encodeGrid )
         , ( "size", value.size |> Size.encodeCanvas )
         , ( "color", value.color |> Tw.encodeColor )
         , ( "columns", value.columns |> Encode.list ColumnName.encode )
@@ -41,7 +41,7 @@ decode : Decode.Decoder TableProps
 decode =
     Decode.map8 TableProps
         (Decode.field "id" TableId.decode)
-        (Decode.field "position" Position.decodeCanvasGrid)
+        (Decode.field "position" Position.decodeGrid)
         (Decode.defaultField "size" Size.decodeCanvas Size.zeroCanvas)
         (Decode.field "color" Tw.decodeColor)
         (Decode.defaultField "columns" (Decode.list ColumnName.decode) [])

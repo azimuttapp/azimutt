@@ -23,22 +23,22 @@ import Time
 
 positionViewport : Fuzzer Position.Viewport
 positionViewport =
-    position |> Fuzz.map Position.buildViewport
+    position |> Fuzz.map Position.viewport
 
 
 positionCanvas : Fuzzer Position.Diagram
 positionCanvas =
-    position |> Fuzz.map Position.buildDiagram
+    position |> Fuzz.map Position.diagram
 
 
 positionInCanvas : Fuzzer Position.Canvas
 positionInCanvas =
-    position |> Fuzz.map Position.buildCanvas
+    position |> Fuzz.map Position.canvas
 
 
 positionGrid : Fuzzer Position.CanvasGrid
 positionGrid =
-    position |> Fuzz.map Position.buildCanvasGrid
+    position |> Fuzz.map Position.grid
 
 
 position : Fuzzer Position

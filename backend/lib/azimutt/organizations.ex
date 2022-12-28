@@ -31,6 +31,17 @@ defmodule Azimutt.Organizations do
     |> Result.from_nillable()
   end
 
+  # /!\ should be only used in stripe_handler.ex
+  def get_organization_by_customer(customer_id) do
+    # Repo.get_by(Organization, stripe_customer_id: customer_id)
+    # |> preload([:created_by])
+    Organization
+    |> where([o], o.stripe_customer_id == ^customer_id)
+    |> preload(:created_by)
+    |> Repo.one()
+    |> Result.from_nillable()
+  end
+
   def list_organizations(%User{} = current_user) do
     Organization
     |> join(:inner, [o], om in OrganizationMember, on: om.organization_id == o.id)
@@ -99,15 +110,13 @@ defmodule Azimutt.Organizations do
     |> Repo.update()
   end
 
-  def update_organization_subscription(customer_id, subscription_id) do
-    organization = Azimutt.Repo.get_by!(Organization, stripe_customer_id: customer_id)
-
+  def update_organization_subscription(%Organization{} = organization, subscription_id) do
     if organization.stripe_subscription_id do
       Logger.error("Organization #{organization.id} as already a subscription #{organization.stripe_subscription_id}, it will be replace")
     end
 
     organization = Ecto.Changeset.change(organization, stripe_subscription_id: subscription_id)
-    Azimutt.Repo.update!(organization)
+    Repo.update!(organization)
   end
 
   # Organization members
@@ -136,6 +145,7 @@ defmodule Azimutt.Organizations do
     OrganizationInvitation
     |> where([oi], oi.id == ^id)
     |> preload(:organization)
+    |> preload(organization: :heroku_resource)
     |> preload(:created_by)
     |> preload(:answered_by)
     |> Repo.one()
@@ -150,6 +160,7 @@ defmodule Azimutt.Organizations do
         is_nil(oi.accepted_at) and is_nil(oi.refused_at)
     )
     |> preload(:organization)
+    |> preload(organization: :heroku_resource)
     |> Repo.one()
   end
 

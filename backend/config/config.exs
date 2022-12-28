@@ -105,6 +105,19 @@ config :ex_aws, json_codec: Jason
 
 config :phoenix_swagger, json_library: Jason
 
+twitter_consumer_key = System.get_env("TWITTER_CONSUMER_KEY")
+twitter_consumer_secret = System.get_env("TWITTER_CONSUMER_SECRET")
+twitter_access_token = System.get_env("TWITTER_ACCESS_TOKEN")
+twitter_access_token_secret = System.get_env("TWITTER_ACCESS_SECRET")
+
+if twitter_consumer_key && twitter_consumer_secret && twitter_access_token && twitter_access_token_secret do
+  config :extwitter, :oauth,
+    consumer_key: twitter_consumer_key,
+    consumer_secret: twitter_consumer_secret,
+    access_token: twitter_access_token,
+    access_token_secret: twitter_access_token_secret
+end
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"

@@ -1,0 +1,37 @@
+<div id="heroku-addon-banner" class="fixed inset-x-0 bottom-0 duration-500">
+    <div class="bg-indigo-600">
+        <div class="mx-auto max-w-7xl py-3 px-3 sm:px-6 lg:px-8">
+            <div class="flex flex-wrap items-center justify-between">
+                <div class="flex w-0 flex-1 items-center">
+                    <span class="flex rounded-lg bg-indigo-800 p-2"><Icon.megaphone kind="outline" class="text-white" /></span>
+                    <p class="ml-3 truncate font-medium text-white">
+                        <span class="md:hidden">
+                            Use Azimutt on <a href="https://elements.heroku.com/addons/azimutt" target="_blank" rel="noopener noreferrer" class="underline">Heroku</a>!
+                            <span class="font-black">Get free pro account!</span>
+                        </span>
+                        <span class="hidden md:inline">
+                            Azimutt is available as <a href="https://elements.heroku.com/addons/azimutt" target="_blank" rel="noopener noreferrer" class="underline">Heroku Add-on</a>.
+                            <span class="font-black">Get 1 year free team account</span> by testing it.
+                        </span>
+                    </p>
+                </div>
+                <div class="order-3 mt-2 w-full flex-shrink-0 sm:order-2 sm:mt-0 sm:w-auto">
+                    <a href={"mailto:#{Azimutt.config(:support_email)}?subject=#{URI.encode("Heroku Add-on testing")}&body=#{URI.encode("Hi team,\n\nI'm interested in testing Azimutt on Heroku...")}"} class="flex items-center justify-center rounded-md border border-transparent bg-white px-4 py-2 text-sm font-medium text-indigo-600 shadow-sm hover:bg-indigo-50">
+                        Get invitation
+                    </a>
+                </div>
+                <div class="order-2 flex-shrink-0 sm:order-3 sm:ml-3">
+                    <button type="button" class="-mr-1 flex rounded-md p-2 hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-white sm:-mr-2">
+                        <span class="sr-only">Dismiss</span>
+                        <Icon.x_mark kind="outline" class="text-white" />
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    const banner = document.querySelector('#heroku-addon-banner')
+    banner.querySelector('button')
+        .addEventListener('click', () => banner.classList.add('-bottom-64'))
+</script>

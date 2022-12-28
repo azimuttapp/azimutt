@@ -42,19 +42,19 @@ suite =
 
 erdElem : ErdProps
 erdElem =
-    { position = Position 0 0 |> Position.buildViewport, size = Size 0 0 |> Size.buildViewport }
+    { position = Position 0 0 |> Position.viewport, size = Size 0 0 |> Size.viewport }
 
 
 inArea : Position -> Size -> Area.Canvas
 inArea pos size =
-    Area.Canvas (Position.buildCanvas pos) (Size.buildCanvas size)
+    Area.Canvas (Position.canvas pos) (Size.canvas size)
 
 
 viewportPos : Float -> Float -> Position.Viewport
 viewportPos x y =
-    Position x y |> Position.buildViewport
+    Position x y |> Position.viewport
 
 
 canvasPos : Float -> Float -> Position.Diagram
 canvasPos x y =
-    Position x y |> Position.buildDiagram
+    Position x y |> Position.diagram
