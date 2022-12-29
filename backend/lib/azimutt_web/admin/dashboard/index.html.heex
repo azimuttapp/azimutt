@@ -1,6 +1,6 @@
 <div class="mx-auto px-12">
 <div>
-    <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-6">
+    <dl class="mt-5 grid grid-cols-3 gap-5 sm:grid-cols-6">
         <div class="overflow-hidden rounded-md bg-slate-800 px-4 py-5 shadow">
             <dt class="truncate text-sm font-medium text-gray-100">Users</dt>
             <dd class="mt-1 text-2xl font-semibold tracking-tight text-gray-100"><%= assigns.users_count %></dd>
@@ -30,6 +30,7 @@
             <thead class="text-gray-100 bg-slate-800 text-xs font-semibold">
             <tr>
                 <th class="px-1 py-1 text-left" scope="col">Created at</th>
+                <th class="px-1 py-1 text-left" scope="col">ID</th>
                 <th class="px-1 py-1 text-left" scope="col">Name</th>
                 <th class="px-1 py-1 text-left" scope="col">Created By</th>
                 <th class="px-1 py-1 text-left" scope="col">Project</th>
@@ -41,6 +42,11 @@
                 <tr class=" text-xs whitespace-nowrap hover:bg-slate-800 hover:text-slate-300">
                     <td class="text-left ">
                         <span class="font-medium "><%= format_date(event.created_at) %></span>
+                    </td>
+                    <td class="text-left ">
+                        <%= link to: Routes.event_path(@conn, :show, event.id) do %>
+                            <span class="font-medium "><%= event.id %></span>
+                        <% end %>
                     </td>
                     <td class="text-left">
                         <%= badge(event.name) %>

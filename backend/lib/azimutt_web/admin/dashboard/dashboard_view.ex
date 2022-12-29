@@ -2,7 +2,11 @@ defmodule AzimuttWeb.Admin.DashboardView do
   # use AzimuttWeb, :view
   # use Phoenix.View, root: "lib/azimutt_web/admin/templates", path: "*"
   use Phoenix.View, root: "lib/azimutt_web", namespace: AzimuttWeb
+  # obligé pour le moment de réaliser les imports ci dessous manuellement dans chaque View Admin.
+  # il faudra trouver comment faire avec la nouvelle structure
   import Phoenix.HTML.Tag
+  import Phoenix.HTML.Link
+  alias AzimuttWeb.Router.Helpers, as: Routes
 
   def display_project_name(event) do
     if event.project !== nil do
@@ -26,11 +30,11 @@ defmodule AzimuttWeb.Admin.DashboardView do
   end
 
   def badge(event_name) do
-    default_class = "text-center px-1"
+    default_class = "px-1"
 
     case event_name do
       event_name when event_name in [:login] ->
-        content_tag(:div, event_name, class: default_class <> " text-gray-100")
+        content_tag(:div, event_name, class: default_class <> "text-gray-100")
 
       event_name when event_name in [:project_updated] ->
         content_tag(:div, event_name, class: default_class <> " text-scheme-blue")
