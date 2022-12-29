@@ -31,7 +31,7 @@
                         <%= link "Events", to: Routes.event_path(@conn, :index), class: "rounded-lg py-1 px-2 text-sm text-slate-100 hover:bg-slate-700 hover:text-slate-200" %>
                     </div>
                     <div class="flex">
-                        <%= link "Dashboard", to: Routes.user_dashboard_path(@conn, :index), class: "rounded-lg py-1 px-2 text-sm text-slate-100 hover:bg-slate-700 hover:text-slate-200" %>
+                        <%= link "Dashboard", to: Routes.dashboard_path(@conn, :index), class: "rounded-lg py-1 px-2 text-sm text-slate-100 hover:bg-slate-700 hover:text-slate-200" %>
                     </div>
                     <div @click.outside="open = false" class="relative ml-4 shrink-0" x-data="{ open: false }">
                         <div>
