@@ -1,4 +1,4 @@
-<div class="mx-auto px-12">
+
 <div>
     <dl class="mt-5 grid grid-cols-3 gap-5 sm:grid-cols-6">
         <div class="overflow-hidden rounded-md bg-slate-800 px-4 py-5 shadow">
@@ -22,48 +22,4 @@
     </dl>
 </div>
 
-
-<div class="mt-2 flex flex-col">
-    <h2 class="text-slate-100"> <%= assigns.events |> Enum.count() %> last events</h2>
-    <div class="min-w-full overflow-hidden overflow-x-auto align-middle shadow sm:rounded-sm">
-        <table class="w-full">
-            <thead class="text-gray-100 bg-slate-800 text-xs font-semibold">
-            <tr>
-                <th class="px-1 py-1 text-left" scope="col">Created at</th>
-                <th class="px-1 py-1 text-left" scope="col">ID</th>
-                <th class="px-1 py-1 text-left" scope="col">Name</th>
-                <th class="px-1 py-1 text-left" scope="col">Created By</th>
-                <th class="px-1 py-1 text-left" scope="col">Project</th>
-                <th class="px-1 py-1 text-left" scope="col">Organization</th>
-            </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-800 text-slate-500  bg-slate-900">
-            <%= for event <- assigns.events do %>
-                <tr class=" text-xs whitespace-nowrap hover:bg-slate-800 hover:text-slate-300">
-                    <td class="text-left ">
-                        <span class="font-medium "><%= format_date(event.created_at) %></span>
-                    </td>
-                    <td class="text-left ">
-                        <%= link to: Routes.event_path(@conn, :show, event.id) do %>
-                            <span class="font-medium "><%= event.id %></span>
-                        <% end %>
-                    </td>
-                    <td class="text-left">
-                        <%= badge(event.name) %>
-                    </td>
-                    <td class="text-left">
-                        <span class="font-medium "><%= event.created_by.name %></span>
-                    </td>
-                    <td class="text-left">
-                        <span class="font-medium " ><%= display_project_name(event) %></span>
-                    </td>
-                    <td class="text-left">
-                        <span class="font-medium "><%= display_organization_name(event) %></span>
-                    </td>
-                </tr>
-            <% end %>
-            </tbody>
-        </table>
-    </div>
-</div>
-</div>
+    <%= render AzimuttWeb.Admin.EventView, "_events_table.html", assigns %>

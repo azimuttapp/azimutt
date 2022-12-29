@@ -2,7 +2,9 @@
 <html lang="en" class="scroll-smooth h-full">
     <%= render("_head.html", assigns) %>
     <body class="font-mono antialiased bg-slate-900 h-full">
-            <%= render "_admin_user_menu.html", assigns %>
+        <%= render "_admin_user_menu.html", assigns %>
+        <div class="mx-auto px-12">
             <%= @inner_content %>
+        </div>
     </body>
 </html>
