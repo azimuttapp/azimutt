@@ -5,9 +5,9 @@
             <thead class="text-gray-100 bg-slate-800 text-xs font-semibold">
             <tr>
                 <th class="px-1 py-1 text-center" scope="col">Created at</th>
-                <th class="px-1 py-1 text-center" scope="col">Created By</th>
-                <th class="px-1 py-1 text-center" scope="col">ID</th>
                 <th class="px-1 py-1 text-center" scope="col">Name</th>
+                <th class="px-1 py-1 text-center" scope="col">ID</th>
+                <th class="px-1 py-1 text-center" scope="col">Created By</th>
                 <th class="px-1 py-1 text-center" scope="col">Project</th>
                 <th class="px-1 py-1 text-center" scope="col">Organization</th>
             </tr>
@@ -18,19 +18,19 @@
                     <td class="text-left">
                         <span class="font-medium"><%= format_date(event.created_at) %></span>
                     </td>
-                    <td class="text-left px-1 pl-2">
-                        <%= link to: Routes.user_path(@conn, :show, event.created_by.id) do %>
-                            <%= img_tag(event.created_by.avatar, class: "inline-block h-4 w-4 rounded-md") %>
-                            <%= event.created_by.name %>
-                        <% end %>
+                    <td class="text-left pl-2">
+                        <%= badge(event.name) %>
                     </td>
                     <td class="text-left pl-4">
                         <%= link to: Routes.event_path(@conn, :show, event.id) do %>
-                        <span class="">#<%= event.id %></span>
+                        <span class="text-xs"><%= event.id %></span>
                         <% end %>
                     </td>
-                    <td class="text-left pl-2">
-                        <%= badge(event.name) %>
+                    <td class="text-left px-1 pl-2">
+                        <%= link to: Routes.user_path(@conn, :show, event.created_by.id) do %>
+                        <%= img_tag(event.created_by.avatar, class: "inline-block h-4 w-4 rounded-md") %>
+                        <%= event.created_by.slug %>
+                        <% end %>
                     </td>
                     <td class="text-left pl-4">
                         <span class="font-medium" ><%= display_project_name(event) %></span>

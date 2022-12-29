@@ -66,6 +66,7 @@ defmodule Azimutt.Admin do
   def get_user(id) do
     User
     |> where([u], u.id == ^id)
+    |> preload(organizations: [:created_by, :members, projects: [:organization]])
     |> Repo.one()
     |> Result.from_nillable()
   end

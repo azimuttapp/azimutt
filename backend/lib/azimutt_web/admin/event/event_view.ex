@@ -14,7 +14,7 @@ defmodule AzimuttWeb.Admin.EventView do
 
   def display_project_name(event) do
     if event.project !== nil do
-      content_tag(:div, event.project.name, class: "font-medium")
+      content_tag(:div, event.project.slug, class: "font-medium")
     else
       " -"
     end
@@ -22,7 +22,7 @@ defmodule AzimuttWeb.Admin.EventView do
 
   def display_organization_name(event) do
     if event.organization !== nil do
-      event.organization.name
+      event.organization.slug
     else
       " - "
     end

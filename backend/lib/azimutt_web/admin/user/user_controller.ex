@@ -12,7 +12,11 @@ defmodule AzimuttWeb.Admin.UserController do
     events = Azimutt.Admin.get_user_events(user_id)
 
     with {:ok, user} <- Azimutt.Admin.get_user(user_id) do
-      render(conn, "show.html", user: user, events: events)
+      projects =
+        Enum.map(user.organizations, fn orga -> orga.projects end)
+        |> List.flatten()
+
+      render(conn, "show.html", user: user, events: events, organizations: user.organizations, projects: projects)
     end
   end
 end
