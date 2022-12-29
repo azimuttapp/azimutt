@@ -13,6 +13,7 @@ defmodule Azimutt.Admin do
 
   def list_organizations do
     Organization
+    |> order_by(desc: :created_at)
     |> preload(:members)
     |> preload(:projects)
     |> preload(:invitations)
@@ -22,12 +23,14 @@ defmodule Azimutt.Admin do
 
   def list_projects do
     Project
+    |> order_by(desc: :created_at)
     |> preload(:created_by)
     |> Repo.all()
   end
 
   def list_users do
     User
+    |> order_by(desc: :created_at)
     |> Repo.all()
   end
 
@@ -47,6 +50,7 @@ defmodule Azimutt.Admin do
     |> preload(:project)
     |> preload(:organization)
     |> preload(:created_by)
+    |> order_by(desc: :created_at)
   end
 
   def get_event(id) do
@@ -57,6 +61,23 @@ defmodule Azimutt.Admin do
     |> preload(:created_by)
     |> Repo.one()
     |> Result.from_nillable()
+  end
+
+  def get_user(id) do
+    User
+    |> where([u], u.id == ^id)
+    |> Repo.one()
+    |> Result.from_nillable()
+  end
+
+  def get_user_events(id) do
+    Event
+    |> where([e], e.created_by_id == ^id)
+    |> order_by(desc: :created_at)
+    |> preload(:project)
+    |> preload(:organization)
+    |> preload(:created_by)
+    |> Repo.all()
   end
 
   def cli_display(list) do

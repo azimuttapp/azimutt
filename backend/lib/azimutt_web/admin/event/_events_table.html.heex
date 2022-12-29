@@ -1,41 +1,47 @@
-<div class="mt-2 flex flex-col">
-    <h2 class="text-slate-100"> <%= assigns.events |> Enum.count() %> last events</h2>
+<div class="flex flex-col border-l border-1 border-slate-800 pl-4 pb-8">
+    <div class="text-2xl font-bold text-slate-100 py-2"> <%= assigns.events |> Enum.count() %> last events</div>
     <div class="min-w-full overflow-hidden overflow-x-auto align-middle shadow sm:rounded-sm">
         <table class="w-full">
             <thead class="text-gray-100 bg-slate-800 text-xs font-semibold">
             <tr>
-                <th class="px-1 py-1 text-left" scope="col">Created at</th>
-                <th class="px-1 py-1 text-left" scope="col">ID</th>
-                <th class="px-1 py-1 text-left" scope="col">Name</th>
-                <th class="px-1 py-1 text-left" scope="col">Created By</th>
-                <th class="px-1 py-1 text-left" scope="col">Project</th>
-                <th class="px-1 py-1 text-left" scope="col">Organization</th>
+                <th class="px-1 py-1 text-center" scope="col">Created at</th>
+                <th class="px-1 py-1 text-center" scope="col">Created By</th>
+                <th class="px-1 py-1 text-center" scope="col">ID</th>
+                <th class="px-1 py-1 text-center" scope="col">Name</th>
+                <th class="px-1 py-1 text-center" scope="col">Project</th>
+                <th class="px-1 py-1 text-center" scope="col">Organization</th>
             </tr>
             </thead>
             <tbody class="divide-y divide-slate-800 text-slate-500  bg-slate-900">
             <%= for event <- assigns.events do %>
-            <tr class=" text-xs whitespace-nowrap hover:bg-slate-800 hover:text-slate-300">
-                <td class="text-left ">
-                    <span class="font-medium "><%= format_date(event.created_at) %></span>
-                </td>
-                <td class="text-left ">
-                    <%= link to: Routes.event_path(@conn, :show, event.id) do %>
-                    <span class="font-medium "><%= event.id %></span>
-                    <% end %>
-                </td>
-                <td class="text-left">
-                    <%= badge(event.name) %>
-                </td>
-                <td class="text-left">
-                    <span class="font-medium "><%= event.created_by.name %></span>
-                </td>
-                <td class="text-left">
-                    <span class="font-medium " ><%= display_project_name(event) %></span>
-                </td>
-                <td class="text-left">
-                    <span class="font-medium "><%= display_organization_name(event) %></span>
-                </td>
-            </tr>
+                <tr class=" text-xs whitespace-nowrap hover:bg-slate-800 hover:text-slate-300">
+                    <td class="text-left">
+                        <span class="font-medium"><%= format_date(event.created_at) %></span>
+                    </td>
+                    <td class="text-left px-1 pl-2">
+                        <%= link to: Routes.user_path(@conn, :show, event.created_by.id) do %>
+                            <%= img_tag(event.created_by.avatar, class: "inline-block h-4 w-4 rounded-md") %>
+                            <%= event.created_by.name %>
+                        <% end %>
+                    </td>
+                    <td class="text-left pl-4">
+                        <%= link to: Routes.event_path(@conn, :show, event.id) do %>
+                        <span class="font-medium">#<%= event.id %></span>
+                        <% end %>
+                    </td>
+                    <td class="text-left pl-2">
+                        <%= badge(event.name) %>
+                    </td>
+                    <td class="text-left pl-4">
+                        <span class="font-medium" ><%= display_project_name(event) %></span>
+                    </td>
+                    <td class="text-left pl-2">
+                        <%= if event.organization do %>
+                            <%= img_tag(event.organization.logo, class: "inline-block h-4 w-4 rounded-md") %>
+                        <% end %>
+                        <span class="font-medium"><%= display_organization_name(event) %></span>
+                    </td>
+                </tr>
             <% end %>
             </tbody>
         </table>

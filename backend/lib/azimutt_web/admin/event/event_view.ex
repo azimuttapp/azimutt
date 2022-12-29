@@ -33,7 +33,7 @@ defmodule AzimuttWeb.Admin.EventView do
 
     case event_name do
       event_name when event_name in [:login] ->
-        content_tag(:div, event_name, class: default_class <> "text-gray-100")
+        content_tag(:div, event_name, class: default_class <> "text-white")
 
       event_name when event_name in [:project_updated] ->
         content_tag(:div, event_name, class: default_class <> " text-scheme-blue")

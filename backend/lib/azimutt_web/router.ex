@@ -119,6 +119,8 @@ defmodule AzimuttWeb.Router do
     get "/", Admin.DashboardController, :index
     get "/events", Admin.EventController, :index
     get "/events/:id", Admin.EventController, :show
+    get "/users", Admin.UserController, :index
+    get "/users/:id", Admin.UserController, :show
   end
 
   scope "/api/v1/swagger" do

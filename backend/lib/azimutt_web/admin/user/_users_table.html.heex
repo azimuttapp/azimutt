@@ -1,0 +1,36 @@
+<div class="mt-2 flex flex-col">
+    <div class="text-2xl font-bold text-slate-100 py-2"> <%= assigns.users |> Enum.count() %> users</div>
+    <div class="min-w-full overflow-hidden overflow-x-auto align-middle shadow sm:rounded-sm">
+        <table class="w-full">
+            <thead class="text-gray-100 bg-slate-800 text-xs font-semibold">
+            <tr>
+                <th class="px-1 py-1 text-left" scope="col">Created at</th>
+                <th class="px-1 py-1 text-left" scope="col">Name</th>
+                <th class="px-1 py-1 text-left" scope="col">Email</th>
+                <th class="px-1 py-1 text-left" scope="col">Description</th>
+            </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800 text-slate-500  bg-slate-900">
+            <%= for user <- assigns.users do %>
+            <tr class=" text-xs whitespace-nowrap hover:bg-slate-800 hover:text-slate-300">
+                <td class="text-left">
+                    <span class="font-medium "><%= format_date(user.created_at) %></span>
+                </td>
+                <td class="text-left pl-4">
+                    <%= img_tag(user.avatar, class: "inline-block h-5 w-5 rounded-md") %>
+                    <%= user.name %>
+                </td>
+                <td class="text-left pl-2">
+                    <%= link to: Routes.user_path(@conn, :show, user.id) do %>
+                    <span class="font-medium pl-2" ><%= user.email %></span>
+                    <% end %>
+                </td>
+                <td class="text-left pl-2">
+                    <span class="font-medium "><%= user.description %></span>
+                </td>
+            </tr>
+            <% end %>
+            </tbody>
+        </table>
+    </div>
+</div>
