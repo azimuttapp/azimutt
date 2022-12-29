@@ -36,6 +36,10 @@ defmodule AzimuttWeb.Router do
     plug :put_root_layout, {AzimuttWeb.LayoutView, :account_dashboard}
   end
 
+  pipeline :admin_dashboard_layout do
+    plug :put_root_layout, {AzimuttWeb.LayoutView, :admin_dashboard}
+  end
+
   # public routes
   scope "/", AzimuttWeb do
     pipe_through :browser
@@ -111,7 +115,7 @@ defmodule AzimuttWeb.Router do
   end
 
   scope "/admin", AzimuttWeb do
-    pipe_through [:browser, :require_authed_user, :require_admin_user]
+    pipe_through [:browser, :require_authed_user, :require_admin_user, :admin_dashboard_layout]
     get "/", Admin.DashboardController, :index
   end
 

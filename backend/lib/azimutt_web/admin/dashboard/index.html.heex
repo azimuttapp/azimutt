@@ -1,63 +1,58 @@
-<div class="bg-gray-900 h-4 w-full text-center">
-    <span class="text-white text-xs"> </span>
-</div>
-
-<div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-
+<div class="mx-auto px-12">
 <div>
     <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-6">
-        <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
-            <dt class="truncate text-sm font-medium text-gray-500">Users</dt>
-            <dd class="mt-1 text-3xl font-semibold tracking-tight text-gray-900"><%= assigns.users_count %></dd>
+        <div class="overflow-hidden rounded-md bg-slate-800 px-4 py-5 shadow">
+            <dt class="truncate text-sm font-medium text-gray-100">Users</dt>
+            <dd class="mt-1 text-2xl font-semibold tracking-tight text-gray-100"><%= assigns.users_count %></dd>
         </div>
 
-        <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
-            <dt class="truncate text-sm font-medium text-gray-500">Projects</dt>
-            <dd class="mt-1 text-3xl font-semibold tracking-tight text-gray-900"><%= assigns.projects_count %></dd>
+        <div class="overflow-hidden rounded-md bg-slate-800 px-4 py-5 shadow">
+            <dt class="truncate text-sm font-medium text-gray-100">Projects</dt>
+            <dd class="mt-1 text-2xl font-semibold tracking-tight text-gray-100"><%= assigns.projects_count %></dd>
         </div>
 
-        <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
-            <dt class="truncate text-sm font-medium text-gray-500">NP Organizations</dt>
-            <dd class="mt-1 text-3xl font-semibold tracking-tight text-gray-900"><%= assigns.organizations_count %></dd>
+        <div class="overflow-hidden rounded-md bg-slate-800 px-4 py-5 shadow">
+            <dt class="truncate text-sm font-medium text-gray-100">NP Organizations</dt>
+            <dd class="mt-1 text-2xl font-semibold tracking-tight text-gray-100"><%= assigns.organizations_count %></dd>
         </div>
-        <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
-            <dt class="truncate text-sm font-medium text-gray-500">Subscriptions</dt>
-            <dd class="mt-1 text-3xl font-semibold tracking-tight text-gray-900"><%= assigns.subscriptions_count %></dd>
+        <div class="overflow-hidden rounded-md bg-slate-800 px-4 py-5 shadow ">
+            <dt class="truncate text-sm font-medium text-gray-100">Subscriptions</dt>
+            <dd class="mt-1 text-2xl font-semibold tracking-tight text-gray-100"><%= assigns.subscriptions_count %></dd>
         </div>
     </dl>
 </div>
 
 
-<h2> Events </h2>
 <div class="mt-2 flex flex-col">
+    <h2 class="text-slate-100"> <%= assigns.events |> Enum.count() %> last events</h2>
     <div class="min-w-full overflow-hidden overflow-x-auto align-middle shadow sm:rounded-sm">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead>
+        <table class="w-full">
+            <thead class="text-gray-100 bg-slate-800 text-xs font-semibold">
             <tr>
-                <th class="bg-gray-50 px-6 py-3 text-left text-xs font-semibold text-gray-900" scope="col">Created at</th>
-                <th class="bg-gray-50 px-6 py-3 text-left text-xs font-semibold text-gray-900" scope="col">Name</th>
-                <th class="bg-gray-50 px-6 py-3 text-left text-xs font-semibold text-gray-900" scope="col">Created By</th>
-                <th class="bg-gray-50 px-6 py-3 text-left text-xs font-semibold text-gray-900" scope="col">Organization</th>
-                <th class="bg-gray-50 px-6 py-3 text-left text-xs font-semibold text-gray-900" scope="col">Project</th>
+                <th class="px-1 py-1 text-left" scope="col">Created at</th>
+                <th class="px-1 py-1 text-left" scope="col">Name</th>
+                <th class="px-1 py-1 text-left" scope="col">Created By</th>
+                <th class="px-1 py-1 text-left" scope="col">Project</th>
+                <th class="px-1 py-1 text-left" scope="col">Organization</th>
             </tr>
             </thead>
-            <tbody class="divide-y divide-gray-200 bg-white">
+            <tbody class="divide-y divide-slate-800 text-slate-500  bg-slate-900">
             <%= for event <- assigns.events do %>
-                <tr class="bg-white text-xs whitespace-nowrap text-gray-500">
-                    <td class="px-6 py-4 text-left">
-                        <span class="font-medium"><%= event.created_at %></span>
+                <tr class=" text-xs whitespace-nowrap hover:bg-slate-800 hover:text-slate-300">
+                    <td class="text-left ">
+                        <span class="font-medium "><%= format_date(event.created_at) %></span>
                     </td>
-                    <td class=" px-6 py-4 text-left">
-                        <span class="font-medium"><%= event.name %></span>
+                    <td class="text-left">
+                        <%= badge(event.name) %>
                     </td>
-                    <td class="px-6 py-4 text-left">
-                        <span class="font-medium"><%= event.created_by.name %></span>
+                    <td class="text-left">
+                        <span class="font-medium "><%= event.created_by.name %></span>
                     </td>
-                    <td class="px-6 py-4 text-left">
-                        <span class="font-medium"><%= display_project_name(event) %></span>
+                    <td class="text-left">
+                        <span class="font-medium " ><%= display_project_name(event) %></span>
                     </td>
-                    <td class="px-6 py-4 text-left">
-                        <span class="font-medium"><%= display_organization_name(event) %></span>
+                    <td class="text-left">
+                        <span class="font-medium "><%= display_organization_name(event) %></span>
                     </td>
                 </tr>
             <% end %>

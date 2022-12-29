@@ -9,6 +9,7 @@ defmodule Azimutt.GalleryTest do
     import Azimutt.ProjectsFixtures
     import Azimutt.GalleryFixtures
 
+    @tag :skip
     test "list_samples/0 returns all samples" do
       user = user_fixture()
       organization = organization_fixture(user)
