@@ -9,6 +9,7 @@ defmodule Azimutt.Admin do
   alias Azimutt.Projects.Project
   alias Azimutt.Repo
   alias Azimutt.Tracking.Event
+  alias Azimutt.Utils.Result
 
   def list_organizations do
     Organization
@@ -46,6 +47,16 @@ defmodule Azimutt.Admin do
     |> preload(:project)
     |> preload(:organization)
     |> preload(:created_by)
+  end
+
+  def get_event(id) do
+    Event
+    |> where([e], e.id == ^id)
+    |> preload(:project)
+    |> preload(:organization)
+    |> preload(:created_by)
+    |> Repo.one()
+    |> Result.from_nillable()
   end
 
   def cli_display(list) do

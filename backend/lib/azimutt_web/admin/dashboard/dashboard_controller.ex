@@ -3,7 +3,7 @@ defmodule AzimuttWeb.Admin.DashboardController do
   action_fallback AzimuttWeb.FallbackController
 
   def index(conn, _params) do
-    events_loaded = 500
+    events_loaded = 50
     events = Azimutt.Admin.list_last_events(events_loaded)
     organizations = Azimutt.Admin.list_organizations()
     users = Azimutt.Admin.list_users()
