@@ -79,16 +79,4 @@ defmodule Azimutt.Admin do
     |> preload(:created_by)
     |> Repo.all()
   end
-
-  def cli_display(list) do
-    header = ["Created at", "name", "ID", "Created By"]
-
-    rows =
-      for element <- list do
-        [element.created_at, element.name, element.id, element.created_by.name]
-      end
-
-    TableRex.quick_render!(rows, header)
-    |> IO.puts()
-  end
 end

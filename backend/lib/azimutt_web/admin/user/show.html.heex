@@ -1,12 +1,15 @@
-<div class="flex items-start pl-24 mt-4">
-    <%= img_tag(assigns.user.avatar, class: "mt-2 h-24 w-24 rounded-md") %>
-    <div class="pl-4 mt-2">
-        <div class="text-3xl font-bold text-slate-100"><%= assigns.user.name %> </div>
-        <div class="text-md font-medium text-scheme-yellow"><%= assigns.user.email %> </div>
-        <div class="text-xs font-medium text-slate-300"><%= assigns.user.description %> </div>
-        <div class="text-xs font-medium text-slate-500"><%= assigns.user.location %> </div>
+<div class="flex pl-24 mt-4 ">
+    <div class="w-1/3 flex border-b border-1 border-slate-800 pb-4">
+        <%= img_tag(assigns.user.avatar, class: "mt-2 h-24 w-24 rounded-md") %>
+        <div class="pl-4 mt-2">
+            <div class="text-3xl font-bold text-slate-100"><%= assigns.user.name %> </div>
+            <div class="text-md font-medium text-scheme-yellow"><%= assigns.user.email %> </div>
+            <div class="text-xs font-medium text-slate-300"><%= assigns.user.description %> </div>
+            <div class="text-xs font-medium text-slate-500"><%= assigns.user.location %> </div>
+        </div>
     </div>
-    <div class="pl-4">
+
+    <div class="pl-4 w-2/3">
         <%= render AzimuttWeb.Admin.EventView, "_events_table.html", assigns %>
     </div>
 </div>
