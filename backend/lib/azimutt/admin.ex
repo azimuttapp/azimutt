@@ -45,14 +45,6 @@ defmodule Azimutt.Admin do
     |> Repo.all()
   end
 
-  defp query_events do
-    Event
-    |> preload(:project)
-    |> preload(:organization)
-    |> preload(:created_by)
-    |> order_by(desc: :created_at)
-  end
-
   def get_event(id) do
     query_events()
     |> where([e], e.id == ^id)
@@ -82,12 +74,16 @@ defmodule Azimutt.Admin do
   end
 
   def get_user_events(id) do
-    Event
+    query_events()
     |> where([e], e.created_by_id == ^id)
-    |> order_by(desc: :created_at)
+    |> Repo.all()
+  end
+
+  defp query_events do
+    Event
     |> preload(:project)
     |> preload(:organization)
     |> preload(:created_by)
-    |> Repo.all()
+    |> order_by(desc: :created_at)
   end
 end
