@@ -37,6 +37,8 @@ import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode
 import PagesComponents.Organization_.Project_.Models.DragState as DragState
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
+import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
+import PagesComponents.Organization_.Project_.Models.MemoId as MemoId
 import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint(..))
 import PagesComponents.Organization_.Project_.Updates.Canvas exposing (arrangeTables, fitCanvas, handleWheel, zoomCanvas)
 import PagesComponents.Organization_.Project_.Updates.Drag exposing (handleDrag)
@@ -59,7 +61,7 @@ import Ports exposing (JsMsg(..))
 import Random
 import Services.Backend as Backend
 import Services.JsonSource as JsonSource
-import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapConf, mapContextMenuM, mapDetailsSidebarCmd, mapEmbedSourceParsingMCmd, mapErdM, mapErdMCmd, mapHoverTable, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapPosition, mapProject, mapPromptM, mapProps, mapSaveCmd, mapSchemaAnalysisM, mapSearch, mapSelected, mapShowHiddenColumns, mapTables, mapTablesCmd, mapToastsCmd, setActive, setCollapsed, setColor, setConfirm, setContextMenu, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setLast, setModal, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setSelected, setShow, setSize, setText)
+import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapConf, mapContextMenuM, mapDetailsSidebarCmd, mapEmbedSourceParsingMCmd, mapErdM, mapErdMCmd, mapHoverTable, mapMemos, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapPosition, mapProject, mapPromptM, mapProps, mapSaveCmd, mapSchemaAnalysisM, mapSearch, mapSelected, mapShowHiddenColumns, mapTables, mapTablesCmd, mapToastsCmd, setActive, setCollapsed, setColor, setConfirm, setContextMenu, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setLast, setModal, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setSelected, setShow, setSize, setText)
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
 import Time
@@ -376,6 +378,7 @@ handleJsMessage now currentLayout msg model =
                     , Cmd.batch
                         ([ Ports.observeSize Conf.ids.erd
                          , Ports.observeTablesSize (erd |> Erd.currentLayout |> .tables |> List.map .id)
+                         , Ports.observeMemosSize (erd |> Erd.currentLayout |> .memos |> List.map .id)
                          , Ports.setMeta { title = Just (Views.title (Just erd)), description = Nothing, canonical = Nothing, html = Nothing, body = Nothing }
                          , Ports.projectDirty False
                          ]
@@ -474,13 +477,28 @@ updateSizes changes model =
 
         tablesChanged : Model
         tablesChanged =
-            erdChanged |> mapErdM (\erd -> erd |> Erd.mapCurrentLayout (\l -> l |> mapTables (updateTables l.canvas.zoom erdViewport changes)))
+            erdChanged
+                |> mapErdM
+                    (\erd ->
+                        erd
+                            |> Erd.mapCurrentLayout
+                                (\l ->
+                                    l
+                                        |> mapMemos (updateMemos l.canvas.zoom changes)
+                                        |> mapTables (updateTables l.canvas.zoom erdViewport changes)
+                                )
+                    )
     in
     if model.conf.fitOnLoad then
         ( tablesChanged |> mapConf (\c -> { c | fitOnLoad = False }), T.send FitContent )
 
     else
         ( tablesChanged, Cmd.none )
+
+
+updateMemos : ZoomLevel -> List SizeChange -> List Memo -> List Memo
+updateMemos zoom changes memos =
+    changes |> List.foldl (\c mms -> mms |> List.map (\memo -> B.cond (c.id == MemoId.toHtmlId memo.id) (memo |> setSize (c.size |> Size.viewportToCanvas zoom)) memo)) memos
 
 
 updateTables : ZoomLevel -> Area.Canvas -> List SizeChange -> List ErdTableLayout -> List ErdTableLayout
