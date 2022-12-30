@@ -41,8 +41,8 @@ defmodule Azimutt.Admin do
 
   def list_last_events(number) do
     query_events()
+    |> limit(^number)
     |> Repo.all()
-    |> Enum.take(number)
   end
 
   defp query_events do
@@ -54,11 +54,8 @@ defmodule Azimutt.Admin do
   end
 
   def get_event(id) do
-    Event
+    query_events()
     |> where([e], e.id == ^id)
-    |> preload(:project)
-    |> preload(:organization)
-    |> preload(:created_by)
     |> Repo.one()
     |> Result.from_nillable()
   end
