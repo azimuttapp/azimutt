@@ -463,8 +463,9 @@ export interface ProjectStats {
     nbRelations: number
     nbTypes: number
     nbComments: number
-    nbNotes: number
     nbLayouts: number
+    nbNotes: number
+    nbMemos: number
 }
 
 export const ProjectStats = z.object({
@@ -474,8 +475,9 @@ export const ProjectStats = z.object({
     nbRelations: z.number(),
     nbTypes: z.number(),
     nbComments: z.number(),
+    nbLayouts: z.number(),
     nbNotes: z.number(),
-    nbLayouts: z.number()
+    nbMemos: z.number()
 }).strict()
 
 export interface ProjectInfoLocal extends ProjectStats {
@@ -644,7 +646,8 @@ export function computeStats(p: ProjectStored): ProjectStats {
         nbRelations: p.sources.reduce((acc, src) => acc + src.relations.length, 0),
         nbTypes: Object.keys(types).length,
         nbComments: p.sources.flatMap(s => s.tables.flatMap(t => [t.comment].concat(t.columns.map(c => c.comment)).filter(c => !!c))).length,
+        nbLayouts: Object.keys(p.layouts).length,
         nbNotes: Object.keys(p.notes || {}).length,
-        nbLayouts: Object.keys(p.layouts).length
+        nbMemos: Object.values(p.layouts).flatMap(l => l.memos || []).length,
     }, ProjectStats, 'ProjectStats')
 }

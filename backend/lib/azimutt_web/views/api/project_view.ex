@@ -24,8 +24,9 @@ defmodule AzimuttWeb.Api.ProjectView do
       nb_relations: project.nb_relations,
       nb_types: project.nb_types,
       nb_comments: project.nb_comments,
-      nb_notes: project.nb_notes,
       nb_layouts: project.nb_layouts,
+      nb_notes: project.nb_notes,
+      nb_memos: project.nb_memos,
       # FIXME load `created_by` association to show it, and toggle it with expands (projects.created_by)
       created_at: project.created_at,
       updated_at: project.updated_at,

@@ -1,7 +1,7 @@
 defmodule Azimutt.Utils.StringxTest do
   use Azimutt.DataCase
-  alias Azimutt.Heroku.Resource
-  alias Azimutt.Utils.Stringx
+  # alias Azimutt.Heroku.Resource
+  # alias Azimutt.Utils.Stringx
 
   describe "string" do
     test "inspect" do

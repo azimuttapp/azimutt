@@ -43,8 +43,9 @@ defmodule Azimutt.ProjectsTest do
         nb_relations: 42,
         nb_types: 42,
         nb_comments: 42,
+        nb_layouts: 42,
         nb_notes: 42,
-        nb_layouts: 42
+        nb_memos: 42
       }
 
       assert {:ok, %Project{} = project} = Projects.create_project(valid_attrs, organization, user)
@@ -60,8 +61,9 @@ defmodule Azimutt.ProjectsTest do
       assert project.nb_relations == 42
       assert project.nb_types == 42
       assert project.nb_comments == 42
-      assert project.nb_notes == 42
       assert project.nb_layouts == 42
+      assert project.nb_notes == 42
+      assert project.nb_memos == 42
     end
 
     @tag :skip
