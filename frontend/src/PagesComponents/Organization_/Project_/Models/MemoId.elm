@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Models.MemoId exposing (MemoId, fromString, isHtmlId, toHtmlId, toString)
+module PagesComponents.Organization_.Project_.Models.MemoId exposing (MemoId, fromString, isHtmlId, toHtmlId, toInputId, toString)
 
 import Libs.Models.HtmlId exposing (HtmlId)
 
@@ -30,3 +30,8 @@ toHtmlId id =
 isHtmlId : HtmlId -> Bool
 isHtmlId id =
     id |> String.startsWith htmlIdPrefix
+
+
+toInputId : MemoId -> HtmlId
+toInputId id =
+    htmlIdPrefix ++ String.fromInt id ++ "-input"

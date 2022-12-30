@@ -11,7 +11,7 @@ import Models.Project.TableId exposing (TableId)
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
 import PagesComponents.Organization_.Project_.Components.ProjectSaveDialog as ProjectSaveDialog
 import PagesComponents.Organization_.Project_.Components.SourceUpdateDialog as SourceUpdateDialog
-import PagesComponents.Organization_.Project_.Models exposing (AmlSidebarMsg(..), FindPathMsg(..), HelpMsg(..), MemoMsg(..), Model, Msg(..), NotesMsg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..), SharingMsg(..), VirtualRelationMsg(..))
+import PagesComponents.Organization_.Project_.Models exposing (AmlSidebarMsg(..), FindPathMsg(..), HelpMsg(..), Model, Msg(..), NotesMsg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..), SharingMsg(..), VirtualRelationMsg(..))
 import PagesComponents.Organization_.Project_.Models.Erd as Erd
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.Notes as NoteRef
@@ -181,7 +181,6 @@ cancelElement model =
         |> Maybe.orElse (model.dragging |> Maybe.map (\_ -> DragCancel))
         |> Maybe.orElse (model.newLayout |> Maybe.map (\_ -> ModalClose (NewLayoutMsg NewLayout.Cancel)))
         |> Maybe.orElse (model.editNotes |> Maybe.map (\_ -> ModalClose (NotesMsg NCancel)))
-        |> Maybe.orElse (model.editMemo |> Maybe.map (\_ -> MemoMsg MCancel))
         |> Maybe.orElse (model.save |> Maybe.map (\_ -> ModalClose (ProjectSaveMsg ProjectSaveDialog.Close)))
         |> Maybe.orElse (model.schemaAnalysis |> Maybe.map (\_ -> ModalClose (SchemaAnalysisMsg SAClose)))
         |> Maybe.orElse (model.amlSidebar |> Maybe.map (\_ -> AmlSidebarMsg AClose))

@@ -65,7 +65,8 @@ createMemo erdElem layout e =
             (layout.memos |> List.map .id |> List.maximum |> Maybe.withDefault 0) + 1
     in
     { id = id
-    , content = "Memo " ++ String.fromInt id ++ " content"
+    , content = ""
     , position = e.clientPos |> Position.viewportToCanvas erdElem.position layout.canvas.position layout.canvas.zoom |> Position.onGrid
     , size = Size 150 150 |> Size.canvas
+    , color = Nothing
     }

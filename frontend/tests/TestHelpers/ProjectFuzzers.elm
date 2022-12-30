@@ -180,7 +180,7 @@ tableProps =
 
 memo : Fuzzer Memo
 memo =
-    Fuzz.map4 Memo memoId stringSmall positionGrid sizeCanvas
+    Fuzz.map5 Memo memoId stringSmall positionGrid sizeCanvas (Fuzz.maybe color)
 
 
 memoId : Fuzzer MemoId

@@ -113,7 +113,7 @@ type alias NotesDialog =
 
 
 type alias MemoEdit =
-    { id : MemoId, content : String }
+    { id : MemoId, content : String, createMode : Bool }
 
 
 type alias AmlSidebar =
@@ -249,9 +249,10 @@ type LayoutMsg
 type MemoMsg
     = MCreate PointerEvent
     | MEdit Memo
-    | MUpdate String
-    | MSave
-    | MCancel
+    | MEditUpdate String
+    | MEditSave
+    | MSetColor MemoId (Maybe Color)
+    | MDelete MemoId
 
 
 type NotesMsg
