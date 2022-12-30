@@ -8,9 +8,11 @@ import Libs.Json.Encode as Encode
 
 
 type alias Plan =
+    -- MUST stay in sync with backend/lib/azimutt/organizations/organization_plan.ex
     { id : String
     , name : String
     , layouts : Maybe Int
+    , memos : Maybe Int
     , colors : Bool
     , dbAnalysis : Bool
     , dbAccess : Bool
@@ -23,6 +25,7 @@ free =
     { id = "free"
     , name = "Free plan"
     , layouts = Just Conf.constants.freePlanLayouts
+    , memos = Just Conf.constants.freePlanMemos
     , colors = False
     , dbAnalysis = False
     , dbAccess = False
@@ -35,6 +38,7 @@ encode value =
         [ ( "id", value.id |> Encode.string )
         , ( "name", value.name |> Encode.string )
         , ( "layouts", value.layouts |> Encode.maybe Encode.int )
+        , ( "memos", value.memos |> Encode.maybe Encode.int )
         , ( "colors", value.colors |> Encode.bool )
         , ( "db_analysis", value.dbAnalysis |> Encode.bool )
         , ( "db_access", value.dbAccess |> Encode.bool )
@@ -43,10 +47,11 @@ encode value =
 
 decode : Decode.Decoder Plan
 decode =
-    Decode.map6 Plan
+    Decode.map7 Plan
         (Decode.field "id" Decode.string)
         (Decode.field "name" Decode.string)
         (Decode.maybeField "layouts" Decode.int)
+        (Decode.maybeField "memos" Decode.int)
         (Decode.field "colors" Decode.bool)
         (Decode.field "db_analysis" Decode.bool)
         (Decode.field "db_access" Decode.bool)

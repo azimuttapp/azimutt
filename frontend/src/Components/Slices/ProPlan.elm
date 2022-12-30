@@ -1,9 +1,10 @@
-module Components.Slices.ProPlan exposing (analysisResults, analysisWarning, colorsModalBody, doc, layoutsModalBody, layoutsWarning)
+module Components.Slices.ProPlan exposing (analysisResults, analysisWarning, colorsModalBody, doc, layoutsModalBody, layoutsWarning, memosModalBody)
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon
 import Components.Atoms.Link as Link
 import Components.Molecules.Alert as Alert
+import Conf
 import ElmBook
 import ElmBook.Actions as Actions
 import ElmBook.Chapter as Chapter exposing (Chapter)
@@ -13,6 +14,7 @@ import Html.Events exposing (onClick)
 import Libs.Html exposing (bText)
 import Libs.Html.Attributes exposing (css)
 import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.String as String
 import Libs.Tailwind as Tw exposing (sm)
 import Models.Organization as Organization exposing (Organization)
 import Services.Backend as Backend
@@ -48,6 +50,34 @@ layoutsModalBody organization close titleId =
             ]
         , div [ class "px-6 py-3 mt-6 flex items-center flex-row-reverse bg-gray-50 rounded-b-lg" ]
             [ Link.primary3 Tw.rose [ href (Backend.organizationBillingUrl organization.id "new-layout-limit"), target "_blank", rel "noopener", css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ Icon.solid Icon.Sparkles "mr-1", text "Upgrade plan" ]
+            , Button.white3 Tw.gray [ onClick close, css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text "Cancel" ]
+            ]
+        ]
+
+
+memosModalBody : Organization -> msg -> HtmlId -> Html msg
+memosModalBody organization close titleId =
+    let
+        limit : Int
+        limit =
+            organization.plan.memos |> Maybe.withDefault Conf.constants.freePlanMemos
+    in
+    div [ class "max-w-2xl" ]
+        [ div [ css [ "px-6 pt-6", sm [ "flex items-start" ] ] ]
+            [ div [ css [ "mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-amber-100", sm [ "mx-0 h-10 w-10" ] ] ]
+                [ Icon.outline Icon.Newspaper "text-amber-600"
+                ]
+            , div [ css [ "mt-3 text-center", sm [ "mt-0 ml-4 text-left" ] ] ]
+                [ h3 [ id titleId, class "text-lg leading-6 font-medium text-gray-900" ] [ text "Layout memos" ]
+                , div [ class "mt-3" ]
+                    [ p [ class "text-sm text-gray-500" ] [ bText ("You just hit a plan limit, you are limited to " ++ String.pluralize "memo" limit ++ " per layout!") ]
+                    , p [ class "mt-2 text-sm text-gray-500" ] [ text "I'm a huge fan of memos and it seems you too. They are awesome for documentation, quick notes or even branding as you can write any markdown, including links and images." ]
+                    , p [ class "text-sm text-gray-500" ] [ text "We see this as a long term feature to document database schema so it's reserved for pro accounts. ", bText "Consider subscribing", text " or reach at us to bring Azimutt one step further." ]
+                    ]
+                ]
+            ]
+        , div [ class "px-6 py-3 mt-6 flex items-center flex-row-reverse bg-gray-50 rounded-b-lg" ]
+            [ Link.primary3 Tw.amber [ href (Backend.organizationBillingUrl organization.id "new-memo-limit"), target "_blank", rel "noopener", css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ Icon.solid Icon.ThumbUp "mr-1", text "Upgrade plan" ]
             , Button.white3 Tw.gray [ onClick close, css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text "Cancel" ]
             ]
         ]
@@ -133,6 +163,7 @@ doc =
         |> Chapter.renderComponentList
             [ ( "layoutsWarning", layoutsWarning Organization.zero )
             , ( "layoutsModalBody", layoutsModalBody Organization.zero sampleCancel sampleTitleId )
+            , ( "memosModalBody", memosModalBody Organization.zero sampleCancel sampleTitleId )
             , ( "colorsModalBody", colorsModalBody Organization.zero sampleCancel sampleTitleId )
             , ( "analysisWarning", analysisWarning Organization.zero )
             , ( "analysisResults", analysisResults Organization.zero [ 1, 2, 3, 4, 5, 6 ] (\i -> p [] [ text ("Item " ++ String.fromInt i) ]) )

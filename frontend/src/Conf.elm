@@ -28,6 +28,7 @@ constants :
     , newProjectName : ProjectName
     , defaultLayout : LayoutName
     , freePlanLayouts : Int
+    , freePlanMemos : Int
     , virtualRelationSourceName : SourceName
     , cheeringTweet : String
     , sharingTweet : String
@@ -51,6 +52,7 @@ constants =
     , newProjectName = "New Project"
     , defaultLayout = "initial layout"
     , freePlanLayouts = 3 -- MUST stay in sync with free_plan_layouts in backend/config/config.exs
+    , freePlanMemos = 1 -- MUST stay in sync with free_plan_memos in backend/config/config.exs
     , virtualRelationSourceName = "default"
     , cheeringTweet = "Hi team, I really like what you've done with @" ++ twitter ++ ". Keep up the good work 💪"
     , sharingTweet = "Hi @" ++ twitter ++ ", I just published my schema at ..., I would love if you can share 🚀"
