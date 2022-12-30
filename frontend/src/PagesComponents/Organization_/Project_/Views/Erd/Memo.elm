@@ -29,9 +29,13 @@ viewMemo platform conf cursorMode edit memo =
         htmlId =
             MemoId.toHtmlId memo.id
 
-        drag : List (Attribute Msg)
-        drag =
+        dragMemo : List (Attribute Msg)
+        dragMemo =
             Bool.cond (cursorMode == CursorMode.Drag || not conf.move) [] [ stopPointerDown platform (handleMemoPointerDown htmlId) ]
+
+        resizeMemo : List (Attribute Msg)
+        resizeMemo =
+            Bool.cond (cursorMode == CursorMode.Drag || not conf.move) [] [ stopPointerDown platform (\_ -> Noop "no drag on memo resize") ]
     in
     edit
         |> Maybe.map
@@ -53,13 +57,14 @@ viewMemo platform conf cursorMode edit memo =
         |> Maybe.withDefault
             (div
                 ([ id htmlId
-                 , class ("select-none absolute p-3 cursor-pointer border border-transparent border-dashed hover:border-gray-300 hover:resize hover:overflow-auto" ++ (memo.color |> Maybe.mapOrElse (\c -> " shadow rounded " ++ Tw.bg_200 c) ""))
+                 , class ("select-none absolute p-3 cursor-pointer overflow-hidden border border-transparent border-dashed hover:border-gray-300 hover:resize hover:overflow-auto" ++ (memo.color |> Maybe.mapOrElse (\c -> " shadow rounded " ++ Tw.bg_200 c) ""))
                  , Attributes.when conf.layout (onContextMenu platform (ContextMenuCreate (MemoContextMenu.view platform conf memo)))
                  , Attributes.when conf.update (stopDoubleClick (MemoMsg (MEdit memo)))
                  ]
                     ++ Area.stylesGrid memo
+                    ++ resizeMemo
                 )
-                [ div ([ class "w-full h-full" ] ++ drag) [ viewMarkdown memo.content ]
+                [ div ([ class "w-full h-full" ] ++ dragMemo) [ viewMarkdown memo.content ]
                 ]
             )
 
