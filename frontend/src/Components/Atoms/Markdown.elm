@@ -1,10 +1,15 @@
-module Components.Atoms.Markdown exposing (doc, markdown, markdownUnsafe, rawHtml)
+module Components.Atoms.Markdown exposing (doc, markdown, markdownUnsafe, prose, rawHtml)
 
 import ElmBook.Chapter exposing (Chapter, chapter, renderComponentList)
 import Html exposing (Html)
 import Libs.Html.Attributes exposing (css)
 import Libs.Tailwind exposing (TwClass)
 import Markdown exposing (Options)
+
+
+prose : TwClass -> String -> Html msg
+prose styles md =
+    markdown (styles ++ " prose leading-tight prose-p:my-2 prose-p:last:mb-0 prose-ul:my-2 prose-li:my-0 prose-pre:my-2 prose-pre:py-1 prose-pre:px-2 prose-pre:bg-gray-200 prose-pre:text-gray-700") md
 
 
 markdown : TwClass -> String -> Html msg

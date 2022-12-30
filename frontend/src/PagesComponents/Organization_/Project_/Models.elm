@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, AmlSidebarMsg(..), ConfirmDialog, ContextMenu, FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutMsg(..), MemoMsg(..), ModalDialog, Model, Msg(..), NavbarModel, NotesDialog, NotesMsg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, SharingDialog, SharingMsg(..), VirtualRelation, VirtualRelationMsg(..), confirm, confirmDanger, prompt, simplePrompt)
+module PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, AmlSidebarMsg(..), ConfirmDialog, ContextMenu, FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutMsg(..), MemoEdit, MemoMsg(..), ModalDialog, Model, Msg(..), NavbarModel, NotesDialog, NotesMsg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, SharingDialog, SharingMsg(..), VirtualRelation, VirtualRelationMsg(..), confirm, confirmDanger, prompt, simplePrompt)
 
 import Components.Atoms.Icon exposing (Icon(..))
 import DataSources.AmlMiner.AmlAdapter exposing (AmlSchemaError)
@@ -45,6 +45,8 @@ import PagesComponents.Organization_.Project_.Models.ErdRelation exposing (ErdRe
 import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.FindPathDialog exposing (FindPathDialog)
 import PagesComponents.Organization_.Project_.Models.HideColumns exposing (HideColumns)
+import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
+import PagesComponents.Organization_.Project_.Models.MemoId exposing (MemoId)
 import PagesComponents.Organization_.Project_.Models.Notes exposing (Notes, NotesRef)
 import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint)
 import PagesComponents.Organization_.Project_.Models.ShowColumns exposing (ShowColumns)
@@ -70,6 +72,7 @@ type alias Model =
     , selectionBox : Maybe Area.Canvas
     , newLayout : Maybe NewLayout.Model
     , editNotes : Maybe NotesDialog
+    , editMemo : Maybe MemoEdit
     , amlSidebar : Maybe AmlSidebar
     , detailsSidebar : Maybe DetailsSidebar.Model
     , virtualRelation : Maybe VirtualRelation
@@ -107,6 +110,10 @@ type alias SearchModel =
 
 type alias NotesDialog =
     { id : HtmlId, ref : NotesRef, notes : Notes }
+
+
+type alias MemoEdit =
+    { id : MemoId, content : String }
 
 
 type alias AmlSidebar =
@@ -241,6 +248,10 @@ type LayoutMsg
 
 type MemoMsg
     = MCreate PointerEvent
+    | MEdit Memo
+    | MUpdate String
+    | MSave
+    | MCancel
 
 
 type NotesMsg

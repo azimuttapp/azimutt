@@ -33,7 +33,7 @@ import Models.Project.TableId as TableId exposing (TableId)
 import Models.RelationStyle exposing (RelationStyle)
 import Models.Size as Size
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
-import PagesComponents.Organization_.Project_.Models exposing (MemoMsg(..), Msg(..), VirtualRelation)
+import PagesComponents.Organization_.Project_.Models exposing (MemoEdit, MemoMsg(..), Msg(..), VirtualRelation)
 import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode exposing (CursorMode)
 import PagesComponents.Organization_.Project_.Models.DragState exposing (DragState)
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
@@ -46,7 +46,8 @@ import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.ErdTableNotes as ErdTableNotes exposing (ErdTableNotes)
 import PagesComponents.Organization_.Project_.Models.ErdTableProps exposing (ErdTableProps)
-import PagesComponents.Organization_.Project_.Models.Memo as Memo exposing (Memo)
+import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
+import PagesComponents.Organization_.Project_.Models.MemoId as MemoId
 import PagesComponents.Organization_.Project_.Updates.Drag as Drag
 import PagesComponents.Organization_.Project_.Views.Erd.Memo as Memo
 import PagesComponents.Organization_.Project_.Views.Erd.Relation as Relation exposing (viewEmptyRelation, viewRelation, viewVirtualRelation)
@@ -59,25 +60,25 @@ type alias ErdArgs =
     String
 
 
-argsToString : Platform -> CursorMode -> String -> String -> DetailsSidebar.Selected -> ErdArgs
-argsToString platform cursorMode openedDropdown openedPopover selected =
-    [ Platform.toString platform, CursorMode.toString cursorMode, openedDropdown, openedPopover, selected ] |> String.join "~"
+argsToString : Platform -> CursorMode -> Maybe TableId -> String -> String -> DetailsSidebar.Selected -> ErdArgs
+argsToString platform cursorMode hoverTable openedDropdown openedPopover selected =
+    [ Platform.toString platform, CursorMode.toString cursorMode, hoverTable |> Maybe.mapOrElse TableId.toString "", openedDropdown, openedPopover, selected ] |> String.join "~"
 
 
-stringToArgs : ErdArgs -> ( ( Platform, CursorMode ), ( String, String, DetailsSidebar.Selected ) )
+stringToArgs : ErdArgs -> ( ( Platform, CursorMode, Maybe TableId ), ( String, String, DetailsSidebar.Selected ) )
 stringToArgs args =
     case args |> String.split "~" of
-        [ platform, cursorMode, openedDropdown, openedPopover, selected ] ->
-            ( ( Platform.fromString platform, CursorMode.fromString cursorMode ), ( openedDropdown, openedPopover, selected ) )
+        [ platform, cursorMode, hoverTable, openedDropdown, openedPopover, selected ] ->
+            ( ( Platform.fromString platform, CursorMode.fromString cursorMode, hoverTable |> TableId.fromString ), ( openedDropdown, openedPopover, selected ) )
 
         _ ->
-            ( ( Platform.PC, CursorMode.Select ), ( "", "", "" ) )
+            ( ( Platform.PC, CursorMode.Select, Nothing ), ( "", "", "" ) )
 
 
-viewErd : ErdConf -> ErdProps -> Maybe TableId -> Erd -> Maybe Area.Canvas -> Maybe VirtualRelation -> ErdArgs -> Maybe DragState -> Html Msg
-viewErd conf erdElem hoverTable erd selectionBox virtualRelation args dragging =
+viewErd : ErdConf -> ErdProps -> Erd -> Maybe Area.Canvas -> Maybe VirtualRelation -> Maybe MemoEdit -> ErdArgs -> Maybe DragState -> Html Msg
+viewErd conf erdElem erd selectionBox virtualRelation editMemo args dragging =
     let
-        ( ( platform, cursorMode ), ( openedDropdown, openedPopover, selected ) ) =
+        ( ( platform, cursorMode, hoverTable ), ( openedDropdown, openedPopover, selected ) ) =
             stringToArgs args
 
         layout : ErdLayout
@@ -98,7 +99,7 @@ viewErd conf erdElem hoverTable erd selectionBox virtualRelation args dragging =
 
         memos : List Memo
         memos =
-            dragging |> Maybe.filter (\d -> d.id |> String.startsWith Memo.htmlIdPrefix) |> Maybe.mapOrElse (\d -> layout.memos |> Drag.moveMemos d canvas.zoom) layout.memos
+            dragging |> Maybe.filter (.id >> MemoId.isHtmlId) |> Maybe.mapOrElse (\d -> layout.memos |> Drag.moveMemos d canvas.zoom) layout.memos
 
         displayedTables : List ErdTableLayout
         displayedTables =
@@ -149,7 +150,7 @@ viewErd conf erdElem hoverTable erd selectionBox virtualRelation args dragging =
               -- , layout.tables |> List.map (.props >> Area.offGrid) |> Area.mergeCanvas |> Maybe.mapOrElse (Area.debugCanvas "tablesArea" "border-blue-500") (div [] []),
               displayedRelations |> Lazy.lazy5 viewRelations conf erd.settings.defaultSchema erd.settings.relationStyle displayedTables
             , tableProps |> viewTables platform conf cursorMode virtualRelation openedDropdown openedPopover hoverTable dragging canvas.zoom erd.settings.defaultSchema selected erd.settings.columnBasicTypes erd.tables erd.notes
-            , memos |> viewMemos platform conf cursorMode
+            , memos |> viewMemos platform conf cursorMode editMemo
             , selectionBox |> Maybe.filterNot (\_ -> tableProps |> List.isEmpty) |> Maybe.mapOrElse viewSelectionBox (div [] [])
             , virtualRelationInfo |> Maybe.mapOrElse (viewVirtualRelation erd.settings.relationStyle) viewEmptyRelation
             ]
@@ -161,11 +162,18 @@ viewErd conf erdElem hoverTable erd selectionBox virtualRelation args dragging =
         ]
 
 
-viewMemos : Platform -> ErdConf -> CursorMode -> List Memo -> Html Msg
-viewMemos platform conf cursorMode memos =
+viewMemos : Platform -> ErdConf -> CursorMode -> Maybe MemoEdit -> List Memo -> Html Msg
+viewMemos platform conf cursorMode editMemo memos =
     Keyed.node "div"
         [ class "az-memos" ]
-        (memos |> List.map (\memo -> ( "memo-" ++ String.fromInt memo.id, Memo.viewMemo platform conf cursorMode memo )))
+        (memos
+            |> List.map
+                (\memo ->
+                    ( MemoId.toHtmlId memo.id
+                    , Lazy.lazy5 Memo.viewMemo platform conf cursorMode (editMemo |> Maybe.filterBy .id memo.id |> Maybe.map .content) memo
+                    )
+                )
+        )
 
 
 handleErdPointerDown : ErdConf -> CursorMode -> PointerEvent -> Msg

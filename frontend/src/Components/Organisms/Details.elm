@@ -497,7 +497,7 @@ viewNotes model =
 
 viewMarkdown : String -> Html msg
 viewMarkdown content =
-    Markdown.markdown "-mt-1 prose prose-sm leading-tight prose-p:my-2 prose-p:last:mb-0 prose-ul:my-2 prose-li:my-0" content
+    Markdown.prose "-mt-1 prose-sm" content
 
 
 viewColumnStats : List Source -> Dict SourceIdStr ColumnStats -> Html msg

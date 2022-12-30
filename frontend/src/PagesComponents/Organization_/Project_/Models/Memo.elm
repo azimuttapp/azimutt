@@ -1,15 +1,11 @@
-module PagesComponents.Organization_.Project_.Models.Memo exposing (Memo, MemoId, decode, encode, htmlId, htmlIdPrefix)
+module PagesComponents.Organization_.Project_.Models.Memo exposing (Memo, decode, encode)
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 import Libs.Json.Encode as Encode
-import Libs.Models.HtmlId exposing (HtmlId)
 import Models.Position as Position
 import Models.Size as Size
-
-
-type alias MemoId =
-    Int
+import PagesComponents.Organization_.Project_.Models.MemoId exposing (MemoId)
 
 
 type alias Memo =
@@ -20,16 +16,6 @@ type alias Memo =
 
     -- , edits : List ( Time.Posix, Maybe UserId )
     }
-
-
-htmlIdPrefix : HtmlId
-htmlIdPrefix =
-    "az-memo-"
-
-
-htmlId : Int -> HtmlId
-htmlId id =
-    htmlIdPrefix ++ String.fromInt id
 
 
 encode : Memo -> Value

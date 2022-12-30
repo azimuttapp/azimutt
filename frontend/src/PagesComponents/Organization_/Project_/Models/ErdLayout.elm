@@ -12,7 +12,8 @@ import Models.Project.Relation exposing (Relation)
 import Models.Project.TableId exposing (TableId)
 import Models.Size as Size
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout as ErdTableLayout exposing (ErdTableLayout)
-import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo, MemoId)
+import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
+import PagesComponents.Organization_.Project_.Models.MemoId exposing (MemoId)
 import Set
 import Time
 

@@ -14,7 +14,8 @@ import PagesComponents.Organization_.Project_.Models exposing (Model)
 import PagesComponents.Organization_.Project_.Models.DragState exposing (DragState)
 import PagesComponents.Organization_.Project_.Models.Erd as Erd
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
-import PagesComponents.Organization_.Project_.Models.Memo as Memo exposing (Memo)
+import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
+import PagesComponents.Organization_.Project_.Models.MemoId as MemoId
 import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirty)
 import Services.Lenses exposing (mapCanvas, mapErdM, mapMemos, mapPosition, mapProps, mapTables, setSelected, setSelectionBox)
 import Time
@@ -50,7 +51,7 @@ handleDrag now drag isEnd model =
             )
 
     else if isEnd && drag.init /= drag.last then
-        if drag.id |> String.startsWith Memo.htmlIdPrefix then
+        if MemoId.isHtmlId drag.id then
             model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapMemos (moveMemos drag canvas.zoom))) |> setDirty
 
         else
@@ -92,7 +93,7 @@ moveMemos drag zoom memos =
     memos
         |> List.map
             (\m ->
-                if drag.id == Memo.htmlId m.id then
+                if drag.id == MemoId.toHtmlId m.id then
                     m |> mapPosition (Position.moveGrid (buildDelta drag zoom))
 
                 else

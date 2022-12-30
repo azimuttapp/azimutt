@@ -14,6 +14,7 @@ module Services.Lenses exposing
     , mapDatabaseSourceCmd
     , mapDatabaseSourceMCmd
     , mapDetailsSidebarCmd
+    , mapEditMemoM
     , mapEditNotesM
     , mapEmbedSourceParsingMCmd
     , mapEnabled
@@ -35,6 +36,7 @@ module Services.Lenses exposing
     , mapMCmd
     , mapMTeamCmd
     , mapMemos
+    , mapMemosL
     , mapMobileMenuOpen
     , mapNavbar
     , mapNewLayoutM
@@ -104,6 +106,7 @@ module Services.Lenses exposing
     , setDefaultSchema
     , setDetailsSidebar
     , setDragging
+    , setEditMemo
     , setEditNotes
     , setEmbedSourceParsing
     , setEnabled
@@ -401,6 +404,16 @@ setDragging =
     set_ .dragging (\value item -> { item | dragging = value })
 
 
+setEditMemo : v -> { item | editMemo : v } -> { item | editMemo : v }
+setEditMemo =
+    set_ .editMemo (\value item -> { item | editMemo = value })
+
+
+mapEditMemoM : (v -> v) -> { item | editMemo : Maybe v } -> { item | editMemo : Maybe v }
+mapEditMemoM =
+    mapM_ .editMemo setEditMemo
+
+
 setEditNotes : v -> { item | editNotes : v } -> { item | editNotes : v }
 setEditNotes =
     set_ .editNotes (\value item -> { item | editNotes = value })
@@ -619,6 +632,11 @@ setMemos =
 mapMemos : (v -> v) -> { item | memos : v } -> { item | memos : v }
 mapMemos =
     map_ .memos setMemos
+
+
+mapMemosL : (v -> k) -> k -> (v -> v) -> { item | memos : List v } -> { item | memos : List v }
+mapMemosL =
+    mapL_ .memos setMemos
 
 
 setMobileMenuOpen : v -> { item | mobileMenuOpen : v } -> { item | mobileMenuOpen : v }

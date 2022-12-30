@@ -92,6 +92,7 @@ init query =
       , selectionBox = Nothing
       , newLayout = Nothing
       , editNotes = Nothing
+      , editMemo = Nothing
       , amlSidebar = Nothing
       , detailsSidebar = Nothing
       , virtualRelation = Nothing
