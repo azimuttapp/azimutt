@@ -2,9 +2,7 @@ module PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayo
 
 import Dict exposing (Dict)
 import Libs.Dict as Dict
-import Libs.Html.Events exposing (PointerEvent)
 import Libs.Models.Size exposing (Size)
-import Models.ErdProps exposing (ErdProps)
 import Models.Position as Position
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.Layout exposing (Layout)
@@ -57,8 +55,8 @@ unpack layout =
     }
 
 
-createMemo : ErdProps -> ErdLayout -> PointerEvent -> Memo
-createMemo erdElem layout e =
+createMemo : ErdLayout -> Position.Canvas -> Memo
+createMemo layout position =
     let
         id : MemoId
         id =
@@ -66,7 +64,7 @@ createMemo erdElem layout e =
     in
     { id = id
     , content = ""
-    , position = e.clientPos |> Position.viewportToCanvas erdElem.position layout.canvas.position layout.canvas.zoom |> Position.onGrid
+    , position = position |> Position.moveCanvas { dx = -75, dy = -75 } |> Position.onGrid
     , size = Size 150 150 |> Size.canvas
     , color = Nothing
     }

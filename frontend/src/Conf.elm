@@ -150,6 +150,7 @@ hotkeys =
         , ( "search-down", [ { hotkey | key = "ArrowDown", target = Just { target | tag = Just "input", id = Just ids.searchInput } } ] )
         , ( "search-confirm", [ { hotkey | key = "Enter", target = Just { target | tag = Just "input", id = Just ids.searchInput } } ] )
         , ( "notes", [ { hotkey | key = "n" } ] )
+        , ( "new-memo", [ { hotkey | key = "m" } ] )
         , ( "collapse", [ { hotkey | key = "c" } ] )
         , ( "expand", [ { hotkey | key = "ArrowRight", ctrl = True } ] )
         , ( "shrink", [ { hotkey | key = "ArrowLeft", ctrl = True } ] )

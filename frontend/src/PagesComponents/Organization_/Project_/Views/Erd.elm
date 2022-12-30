@@ -27,7 +27,7 @@ import Libs.Tuple as Tuple
 import Models.Area as Area
 import Models.ErdProps exposing (ErdProps)
 import Models.Position as Position
-import Models.Project.CanvasProps exposing (CanvasProps)
+import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.RelationStyle exposing (RelationStyle)
@@ -141,8 +141,8 @@ viewErd conf erdElem erd selectionBox virtualRelation editMemo args dragging =
         , id Conf.ids.erd
         , Attributes.when (conf.move && not (List.isEmpty tableProps)) (onWheel platform OnWheel)
         , Attributes.when (conf.move || conf.select) (stopPointerDown platform (handleErdPointerDown conf cursorMode))
-        , Attributes.when conf.layout (onContextMenu platform (ContextMenuCreate (ErdContextMenu.view platform)))
-        , Attributes.when conf.layout (onDblClick platform (MCreate >> MemoMsg))
+        , Attributes.when conf.layout (onContextMenu platform (\e -> ContextMenuCreate (ErdContextMenu.view platform erdElem canvas e) e))
+        , Attributes.when conf.layout (onDblClick platform (CanvasProps.eventCanvas erdElem canvas >> MCreate >> MemoMsg))
         ]
         [ div [ class "az-canvas origin-top-left", Position.styleTransformDiagram canvas.position canvas.zoom ]
             -- use HTML order instead of z-index, must be careful with it, this allows to have tooltips & popovers always on top

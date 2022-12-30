@@ -45,7 +45,7 @@ viewMemo platform conf cursorMode edit memo =
                         , onBlur (MemoMsg MEditSave)
                         , autofocus True
                         , placeholder "Write any useful memo here!"
-                        , class "w-full h-full block rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                        , class "w-full h-full block rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                         ]
                         []
                     ]
@@ -53,7 +53,7 @@ viewMemo platform conf cursorMode edit memo =
         |> Maybe.withDefault
             (div
                 ([ id htmlId
-                 , class ("select-none absolute p-1 cursor-pointer border border-transparent border-dashed hover:border-gray-300 hover:resize hover:overflow-auto" ++ (memo.color |> Maybe.mapOrElse (\c -> " shadow rounded " ++ Tw.bg_200 c) ""))
+                 , class ("select-none absolute p-3 cursor-pointer border border-transparent border-dashed hover:border-gray-300 hover:resize hover:overflow-auto" ++ (memo.color |> Maybe.mapOrElse (\c -> " shadow rounded " ++ Tw.bg_200 c) ""))
                  , Attributes.when conf.layout (onContextMenu platform (ContextMenuCreate (MemoContextMenu.view platform conf memo)))
                  , Attributes.when conf.update (stopDoubleClick (MemoMsg (MEdit memo)))
                  ]
@@ -66,7 +66,7 @@ viewMemo platform conf cursorMode edit memo =
 
 viewMarkdown : String -> Html msg
 viewMarkdown content =
-    Markdown.prose "" content
+    Markdown.prose "prose-img:pointer-events-none" content
 
 
 handleMemoPointerDown : HtmlId -> PointerEvent -> Msg

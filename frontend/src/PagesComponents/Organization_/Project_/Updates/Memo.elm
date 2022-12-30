@@ -1,11 +1,11 @@
 module PagesComponents.Organization_.Project_.Updates.Memo exposing (Model, handleMemo)
 
 import Browser.Dom as Dom
-import Libs.Html.Events exposing (PointerEvent)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Task as T
 import Models.ErdProps exposing (ErdProps)
+import Models.Position as Position
 import PagesComponents.Organization_.Project_.Models exposing (MemoEdit, MemoMsg(..), Msg(..))
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
@@ -32,8 +32,8 @@ type alias Model x =
 handleMemo : Time.Posix -> MemoMsg -> Model x -> ( Model x, Cmd Msg )
 handleMemo now msg model =
     case msg of
-        MCreate event ->
-            model.erd |> Maybe.mapOrElse (\erd -> model |> createMemo now event erd) ( model, Cmd.none )
+        MCreate pos ->
+            model.erd |> Maybe.mapOrElse (\erd -> model |> createMemo now pos erd) ( model, Cmd.none )
 
         MEdit memo ->
             model |> editMemo False memo
@@ -51,9 +51,9 @@ handleMemo now msg model =
             model |> deleteMemo now id False
 
 
-createMemo : Time.Posix -> PointerEvent -> Erd -> Model x -> ( Model x, Cmd Msg )
-createMemo now event erd model =
-    ErdLayout.createMemo model.erdElem (erd |> Erd.currentLayout) event
+createMemo : Time.Posix -> Position.Canvas -> Erd -> Model x -> ( Model x, Cmd Msg )
+createMemo now position erd model =
+    ErdLayout.createMemo (erd |> Erd.currentLayout) position
         |> (\memo -> model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapMemos (List.append [ memo ]))) |> editMemo True memo)
 
 

@@ -247,7 +247,7 @@ type LayoutMsg
 
 
 type MemoMsg
-    = MCreate PointerEvent
+    = MCreate Position.Canvas
     | MEdit Memo
     | MEditUpdate String
     | MEditSave
