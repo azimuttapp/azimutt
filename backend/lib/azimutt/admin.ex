@@ -63,6 +63,19 @@ defmodule Azimutt.Admin do
     |> Result.from_nillable()
   end
 
+  def get_organization(id) do
+    Organization
+    |> where([o], o.id == ^id)
+    |> preload(members: [:user, :created_by, :updated_by])
+    |> preload(:projects)
+    |> preload(:heroku_resource)
+    |> preload(:invitations)
+    |> preload(:created_by)
+    |> preload(:updated_by)
+    |> Repo.one()
+    |> Result.from_nillable()
+  end
+
   def get_user(id) do
     User
     |> where([u], u.id == ^id)

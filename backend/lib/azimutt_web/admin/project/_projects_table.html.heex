@@ -6,7 +6,7 @@
             <tr>
                 <th class="px-1 py-1 text-center" scope="col">Created</th>
                 <th class="px-1 py-1 text-center" scope="col">Name</th>
-                <th class="px-1 py-1 text-center" scope="col">T/C/L</th>
+                <th class="px-1 py-1 text-center" scope="col">T/C/L/S</th>
                 <th class="px-1 py-1 text-center" scope="col">Orga</th>
             </tr>
             </thead>
@@ -20,11 +20,13 @@
                         <span class="font-medium" ><%= project.name %></span>
                     </td>
                     <td class="text-center pl-4">
-                        <span class="font-medium text-scheme-green" ><%= project.nb_tables %></span>/<span class="font-medium text-scheme-yellow" ><%= project.nb_columns %></span>/<span class="font-medium text-scheme-red" ><%= project.nb_layouts %></span>
+                        <span class="font-medium text-scheme-green" ><%= project.nb_tables %></span>/<span class="font-medium text-scheme-yellow" ><%= project.nb_columns %></span>/<span class="font-medium text-scheme-red" ><%= project.nb_layouts %></span>/<span class="font-medium text-purple-300" ><%= project.nb_sources %></span>
                     </td>
                     <td class="text-left px-1 pl-2">
-                        <%= img_tag(project.organization.logo, class: "inline-block h-4 w-4 rounded-md") %>
-                        <span class="font-medium" ><%= project.organization.slug %></span>
+                        <%= link to: "/admin/organizations/#{project.organization.id}" do %>
+                            <%= img_tag(project.organization.logo, class: "inline-block h-4 w-4 rounded-md") %>
+                            <span class="font-medium" ><%= project.organization.slug %></span>
+                        <% end %>
                     </td>
                 </tr>
             <% end %>

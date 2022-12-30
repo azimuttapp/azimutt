@@ -37,9 +37,11 @@
                     </td>
                     <td class="text-left pl-2">
                         <%= if event.organization do %>
-                            <%= img_tag(event.organization.logo, class: "inline-block h-4 w-4 rounded-md") %>
+                            <%= link to: "/admin/organizations/#{event.organization.id}" do %>
+                                <%= img_tag(event.organization.logo, class: "inline-block h-4 w-4 rounded-md") %>
+                                <span class="font-medium" ><%= event.organization.slug %></span>
+                            <% end %>
                         <% end %>
-                        <span class="font-medium"><%= display_organization_name(event) %></span>
                     </td>
                 </tr>
             <% end %>

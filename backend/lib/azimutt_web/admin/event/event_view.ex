@@ -20,14 +20,6 @@ defmodule AzimuttWeb.Admin.EventView do
     end
   end
 
-  def display_organization_name(event) do
-    if event.organization !== nil do
-      event.organization.slug
-    else
-      " - "
-    end
-  end
-
   def badge(event_name) do
     default_class = "px-1"
 

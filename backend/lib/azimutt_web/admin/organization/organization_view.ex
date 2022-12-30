@@ -19,4 +19,8 @@ defmodule AzimuttWeb.Admin.OrganizationView do
       x when x >= 4 -> content_tag(:span, x, class: "text-scheme-red")
     end
   end
+
+  def stripe_subscription_url(stripe_sub_id) do
+    "https://dashboard.stripe.com/subscriptions/#{stripe_sub_id}"
+  end
 end
