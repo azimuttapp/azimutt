@@ -156,8 +156,9 @@ export interface ProjectStatsResponse {
     nb_relations: number
     nb_types: number
     nb_comments: number
-    nb_notes: number
     nb_layouts: number
+    nb_notes: number
+    nb_memos: number
 }
 
 export const ProjectStatsResponse = z.object({
@@ -167,8 +168,9 @@ export const ProjectStatsResponse = z.object({
     nb_relations: z.number(),
     nb_types: z.number(),
     nb_comments: z.number(),
+    nb_layouts: z.number(),
     nb_notes: z.number(),
-    nb_layouts: z.number()
+    nb_memos: z.number()
 }).strict()
 
 interface ProjectBody extends ProjectStatsResponse {
@@ -244,8 +246,9 @@ function toStats(s: ProjectStatsResponse): ProjectStats {
         nbRelations: s.nb_relations,
         nbTypes: s.nb_types,
         nbComments: s.nb_comments,
+        nbLayouts: s.nb_layouts,
         nbNotes: s.nb_notes,
-        nbLayouts: s.nb_layouts
+        nbMemos: s.nb_memos
     }
 }
 
@@ -257,8 +260,9 @@ function toStatsResponse(s: ProjectStats): ProjectStatsResponse {
         nb_relations: s.nbRelations,
         nb_types: s.nbTypes,
         nb_comments: s.nbComments,
+        nb_layouts: s.nbLayouts,
         nb_notes: s.nbNotes,
-        nb_layouts: s.nbLayouts
+        nb_memos: s.nbMemos
     }
 }
 

@@ -1,4 +1,4 @@
-module Models.Area exposing (Canvas, CanvasGridLike, CanvasLike, Diagram, Viewport, ViewportLike, centerCanvas, centerCanvasGrid, centerViewport, debugCanvas, debugViewport, diagramToCanvas, divCanvas, fromCanvas, mergeCanvas, multCanvas, offGrid, overlapCanvas, styleTransformCanvas, styleTransformViewport, stylesViewport, toStringRoundCanvas, toStringRoundViewport, topLeftCanvasGrid, topRightCanvasGrid, zeroCanvas)
+module Models.Area exposing (Canvas, CanvasLike, Diagram, GridLike, Viewport, ViewportLike, centerCanvas, centerCanvasGrid, centerViewport, debugCanvas, debugViewport, diagramToCanvas, divCanvas, fromCanvas, mergeCanvas, multCanvas, offGrid, overlapCanvas, styleTransformCanvas, styleTransformViewport, stylesGrid, stylesViewport, toStringRoundCanvas, toStringRoundViewport, topLeftCanvasGrid, topRightCanvasGrid, zeroCanvas)
 
 import Html exposing (Attribute, Html, div, text)
 import Html.Attributes exposing (class)
@@ -29,7 +29,7 @@ type alias CanvasLike x =
     { x | position : Position.Canvas, size : Size.Canvas }
 
 
-type alias CanvasGridLike x =
+type alias GridLike x =
     { x | position : Position.CanvasGrid, size : Size.Canvas }
 
 
@@ -53,22 +53,22 @@ centerCanvas area =
     area.position |> Position.moveCanvas (area.size |> Size.divCanvas 2 |> Size.toTupleCanvas |> Delta.fromTuple)
 
 
-offGrid : CanvasGridLike a -> Canvas
+offGrid : GridLike a -> Canvas
 offGrid area =
     Canvas (area.position |> Position.offGrid) area.size
 
 
-topLeftCanvasGrid : CanvasGridLike a -> Position.Canvas
+topLeftCanvasGrid : GridLike a -> Position.Canvas
 topLeftCanvasGrid area =
     area.position |> Position.offGrid
 
 
-topRightCanvasGrid : CanvasGridLike a -> Position.Canvas
+topRightCanvasGrid : GridLike a -> Position.Canvas
 topRightCanvasGrid area =
     area.position |> Position.offGrid |> Position.moveCanvas { dx = area.size |> Size.extractCanvas |> .width, dy = 0 }
 
 
-centerCanvasGrid : CanvasGridLike a -> Position.Canvas
+centerCanvasGrid : GridLike a -> Position.Canvas
 centerCanvasGrid area =
     area.position |> Position.offGrid |> Position.moveCanvas (area.size |> Size.divCanvas 2 |> Size.deltaCanvas)
 
@@ -107,6 +107,11 @@ overlapCanvas area2 area1 =
 stylesViewport : ViewportLike a -> List (Attribute msg)
 stylesViewport area =
     Position.stylesViewport area.position ++ Size.stylesViewport area.size
+
+
+stylesGrid : GridLike a -> List (Attribute msg)
+stylesGrid area =
+    Position.stylesGrid area.position ++ Size.stylesCanvas area.size
 
 
 styleTransformViewport : ViewportLike a -> List (Attribute msg)

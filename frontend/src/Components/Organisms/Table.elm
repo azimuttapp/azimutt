@@ -13,13 +13,13 @@ import ElmBook.Actions as Actions exposing (logAction)
 import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Attribute, Html, br, button, div, span, text)
 import Html.Attributes exposing (class, classList, id, tabindex, title, type_)
-import Html.Events exposing (onClick, onDoubleClick, onMouseEnter, onMouseLeave)
+import Html.Events exposing (onClick, onMouseEnter, onMouseLeave)
 import Html.Keyed as Keyed
 import Html.Lazy as Lazy
 import Libs.Bool as Bool
 import Libs.Html as Html exposing (bText)
 import Libs.Html.Attributes as Attributes exposing (ariaExpanded, ariaHaspopup, css, role, track)
-import Libs.Html.Events exposing (PointerEvent, onContextMenu, onPointerUp)
+import Libs.Html.Events exposing (PointerEvent, onContextMenu, onPointerUp, stopDoubleClick)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
@@ -196,7 +196,7 @@ viewHeader model =
         ]
         [ div
             [ Attributes.when model.conf.select (onPointerUp model.platform model.actions.headerClick)
-            , Attributes.when model.conf.layout (onDoubleClick model.actions.headerDblClick)
+            , Attributes.when model.conf.layout (stopDoubleClick model.actions.headerDblClick)
             , Attributes.when model.conf.layout (onContextMenu model.platform model.actions.headerRightClick)
             , class "flex-grow text-center whitespace-nowrap"
             ]
@@ -303,7 +303,7 @@ viewColumn model styles isLast index column =
         ([ title (column.name ++ " (" ++ column.kind ++ Bool.cond column.nullable "?" "" ++ ")")
          , Attributes.when model.conf.hover (onMouseEnter (model.actions.columnHover column.name True))
          , Attributes.when model.conf.hover (onMouseLeave (model.actions.columnHover column.name False))
-         , Attributes.when model.conf.layout (onDoubleClick (model.actions.columnDblClick column.name))
+         , Attributes.when model.conf.layout (stopDoubleClick (model.actions.columnDblClick column.name))
          , Attributes.when model.conf.layout (onContextMenu model.platform (model.actions.columnRightClick index column.name))
          , css
             [ "h-6 px-2 flex items-center align-middle whitespace-nowrap relative"

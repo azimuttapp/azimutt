@@ -35,7 +35,7 @@ loadLayout name erd =
         |> Maybe.mapOrElse
             (\layout ->
                 ( erd |> setCurrentLayout name
-                , Cmd.batch [ Ports.observeTablesSize (layout.tables |> List.map .id), Ports.track (Track.loadLayout layout) ]
+                , Cmd.batch [ Ports.observeTablesSize (layout.tables |> List.map .id), Ports.observeMemosSize (layout.memos |> List.map .id), Ports.track (Track.loadLayout layout) ]
                 )
             )
             ( erd, Cmd.none )

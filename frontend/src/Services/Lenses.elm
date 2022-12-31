@@ -14,6 +14,7 @@ module Services.Lenses exposing
     , mapDatabaseSourceCmd
     , mapDatabaseSourceMCmd
     , mapDetailsSidebarCmd
+    , mapEditMemoM
     , mapEditNotesM
     , mapEmbedSourceParsingMCmd
     , mapEnabled
@@ -34,6 +35,8 @@ module Services.Lenses exposing
     , mapM
     , mapMCmd
     , mapMTeamCmd
+    , mapMemos
+    , mapMemosL
     , mapMobileMenuOpen
     , mapNavbar
     , mapNewLayoutM
@@ -103,6 +106,7 @@ module Services.Lenses exposing
     , setDefaultSchema
     , setDetailsSidebar
     , setDragging
+    , setEditMemo
     , setEditNotes
     , setEmbedSourceParsing
     , setEnabled
@@ -129,6 +133,7 @@ module Services.Lenses exposing
     , setList
     , setLocation
     , setMax
+    , setMemos
     , setMobileMenuOpen
     , setModal
     , setMouse
@@ -399,6 +404,16 @@ setDragging =
     set_ .dragging (\value item -> { item | dragging = value })
 
 
+setEditMemo : v -> { item | editMemo : v } -> { item | editMemo : v }
+setEditMemo =
+    set_ .editMemo (\value item -> { item | editMemo = value })
+
+
+mapEditMemoM : (v -> v) -> { item | editMemo : Maybe v } -> { item | editMemo : Maybe v }
+mapEditMemoM =
+    mapM_ .editMemo setEditMemo
+
+
 setEditNotes : v -> { item | editNotes : v } -> { item | editNotes : v }
 setEditNotes =
     set_ .editNotes (\value item -> { item | editNotes = value })
@@ -607,6 +622,21 @@ setLocation =
 setMax : v -> { item | max : v } -> { item | max : v }
 setMax =
     set_ .max (\value item -> { item | max = value })
+
+
+setMemos : v -> { item | memos : v } -> { item | memos : v }
+setMemos =
+    set_ .memos (\value item -> { item | memos = value })
+
+
+mapMemos : (v -> v) -> { item | memos : v } -> { item | memos : v }
+mapMemos =
+    map_ .memos setMemos
+
+
+mapMemosL : (v -> k) -> k -> (v -> v) -> { item | memos : List v } -> { item | memos : List v }
+mapMemosL =
+    mapL_ .memos setMemos
 
 
 setMobileMenuOpen : v -> { item | mobileMenuOpen : v } -> { item | mobileMenuOpen : v }

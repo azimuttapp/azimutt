@@ -33,7 +33,7 @@ organizationName =
 
 plan : Fuzzer Plan
 plan =
-    Fuzz.map6 Plan planId planName (Fuzz.maybe intPosSmall) Fuzz.bool Fuzz.bool Fuzz.bool
+    Fuzz.map7 Plan planId planName (Fuzz.maybe intPosSmall) (Fuzz.maybe intPosSmall) Fuzz.bool Fuzz.bool Fuzz.bool
 
 
 planId : Fuzzer String

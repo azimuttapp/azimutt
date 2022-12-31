@@ -1,4 +1,4 @@
-port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProject, createProjectTmp, deleteProject, downloadFile, focus, fullscreen, getColumnStats, getLegacyProjects, getProject, getTableStats, listenHotkeys, mouseDown, moveProjectTo, observeSize, observeTableSize, observeTablesSize, onJsMessage, projectDirty, readLocalFile, scrollTo, setMeta, toast, track, trackError, trackJsonError, trackPage, unhandledJsMsgError, updateProject, updateProjectTmp)
+port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProject, createProjectTmp, deleteProject, downloadFile, focus, fullscreen, getColumnStats, getLegacyProjects, getProject, getTableStats, listenHotkeys, mouseDown, moveProjectTo, observeMemosSize, observeSize, observeTableSize, observeTablesSize, onJsMessage, projectDirty, readLocalFile, scrollTo, setMeta, toast, track, trackError, trackJsonError, trackPage, unhandledJsMsgError, updateProject, updateProjectTmp)
 
 import Dict exposing (Dict)
 import FileValue exposing (File)
@@ -27,6 +27,7 @@ import Models.Project.TableStats as TableStats exposing (TableStats)
 import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Models.Route as Route exposing (Route)
 import Models.Size as Size
+import PagesComponents.Organization_.Project_.Models.MemoId as MemoId exposing (MemoId)
 import Storage.ProjectV2 exposing (decodeProject)
 import Track
 
@@ -154,6 +155,11 @@ observeTableSize id =
 observeTablesSize : List TableId -> Cmd msg
 observeTablesSize ids =
     observeSizes (List.map TableId.toHtmlId ids)
+
+
+observeMemosSize : List MemoId -> Cmd msg
+observeMemosSize ids =
+    observeSizes (List.map MemoId.toHtmlId ids)
 
 
 observeSizes : List HtmlId -> Cmd msg

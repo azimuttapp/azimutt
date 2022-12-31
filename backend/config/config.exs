@@ -21,7 +21,8 @@ config :azimutt,
   team_plan_seat_price: 13,
   free_plan_seats: 3,
   # MUST stay in sync with freePlanLayouts in frontend/src/Conf.elm
-  free_plan_layouts: 3
+  free_plan_layouts: 3,
+  free_plan_memos: 1
 
 config :azimutt,
   ecto_repos: [Azimutt.Repo]

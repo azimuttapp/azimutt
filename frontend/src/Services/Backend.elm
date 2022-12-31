@@ -215,8 +215,9 @@ formatOrgasAndProjects orgas =
                             , nbRelations = p.nbRelations
                             , nbTypes = p.nbTypes
                             , nbComments = p.nbComments
-                            , nbNotes = p.nbNotes
                             , nbLayouts = p.nbLayouts
+                            , nbNotes = p.nbNotes
+                            , nbMemos = p.nbMemos
                             , createdAt = p.createdAt
                             , updatedAt = p.updatedAt
                             }
@@ -265,8 +266,9 @@ type alias OrgaProject =
     , nbRelations : Int
     , nbTypes : Int
     , nbComments : Int
-    , nbNotes : Int
     , nbLayouts : Int
+    , nbNotes : Int
+    , nbMemos : Int
     , createdAt : Time.Posix
     , updatedAt : Time.Posix
     , archivedAt : Maybe Time.Posix
@@ -289,7 +291,7 @@ decodeOrga =
 
 decodeProject : Decode.Decoder OrgaProject
 decodeProject =
-    Decode.map18 OrgaProject
+    Decode.map19 OrgaProject
         (Decode.field "id" Decode.string)
         (Decode.field "slug" Decode.string)
         (Decode.field "name" Decode.string)
@@ -303,8 +305,9 @@ decodeProject =
         (Decode.field "nb_relations" Decode.int)
         (Decode.field "nb_types" Decode.int)
         (Decode.field "nb_comments" Decode.int)
-        (Decode.field "nb_notes" Decode.int)
         (Decode.field "nb_layouts" Decode.int)
+        (Decode.field "nb_notes" Decode.int)
+        (Decode.field "nb_memos" Decode.int)
         (Decode.field "created_at" Time.decode)
         (Decode.field "updated_at" Time.decode)
         (Decode.maybeField "archived_at" Time.decode)

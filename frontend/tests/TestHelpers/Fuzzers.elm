@@ -17,6 +17,7 @@ import Libs.Ned as Ned exposing (Ned)
 import Libs.Nel exposing (Nel)
 import Libs.Tailwind as Tw exposing (Color)
 import Models.Position as Position
+import Models.Size as Size
 import Random
 import Time
 
@@ -26,8 +27,8 @@ positionViewport =
     position |> Fuzz.map Position.viewport
 
 
-positionCanvas : Fuzzer Position.Diagram
-positionCanvas =
+positionDiagram : Fuzzer Position.Diagram
+positionDiagram =
     position |> Fuzz.map Position.diagram
 
 
@@ -53,6 +54,11 @@ size =
     Fuzz.map2 Size
         (Fuzz.floatRange 0 10000)
         (Fuzz.floatRange 0 10000)
+
+
+sizeCanvas : Fuzzer Size.Canvas
+sizeCanvas =
+    size |> Fuzz.map Size.canvas
 
 
 fileName : Fuzzer FileName
