@@ -31,6 +31,7 @@ import * as Json from "../utils/json";
 import * as jiff from "jiff";
 import {HerokuResource} from "../types/heroku";
 import {ColumnStats, TableStats} from "../types/stats";
+import {TrackEvent} from "../types/tracking";
 
 export class Backend {
     private projects: { [id: ProjectId]: ProjectJson } = {}
@@ -138,10 +139,10 @@ export class Backend {
         return Http.postJson(url, {url: database, schema, table, column: column.column}, ColumnStats, 'ColumnStats')
     }
 
-    sendEvent = (name: String, details?: object): void => {
-        this.logger.debug(`backend.sendEvent(${name}, ${JSON.stringify(details)})`)
+    trackEvent = (event: TrackEvent): void => {
+        this.logger.debug(`backend.trackEvent(${JSON.stringify(event)})`)
         const url = this.withXhrHost(`/api/v1/events`)
-        Http.postJson(url, {name, details}, TrackingEvent, 'TrackingEvent').then(_ => undefined)
+        Http.postJson(url, event, TrackEvent, 'TrackEvent').then(_ => undefined)
     }
 
     private withXhrHost(path: string): string {
@@ -327,8 +328,3 @@ function decodeContent(content?: string): ProjectJson {
         throw 'Missing content in backend response!'
     }
 }
-
-const TrackingEvent = z.object({
-    name: z.string(),
-    details: z.any().optional()
-}).strict()

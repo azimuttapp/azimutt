@@ -12,9 +12,7 @@ import {
     ObserveSizes,
     ProjectDirty,
     SetMeta,
-    TrackError,
-    TrackEvent,
-    TrackPage,
+    Track,
     UpdateProject,
     UpdateProjectTmp
 } from "./types/ports";
@@ -94,9 +92,7 @@ app.on('ObserveSizes', observeSizes)
 app.on('ListenKeys', listenHotkeys)
 app.on('Confetti', msg => Utils.launchConfetti(msg.id))
 app.on('ConfettiPride', _ => Utils.launchConfettiPride())
-app.on('TrackPage', trackPage)
-app.on('TrackEvent', trackEvent)
-app.on('TrackError', trackError)
+app.on('Track', msg => backend.trackEvent(msg.event))
 if (app.noListeners().length > 0 && env !== Env.enum.prod) {
     logger.error(`Do not listen to elm events: ${app.noListeners().join(', ')}`)
 }
@@ -131,7 +127,7 @@ function getLegacyProjects() {
         errs.forEach(([id, e]) => reportError(`Can't decode project ${id}`, e))
         app.gotLegacyProjects(p)
         if (p.length > 0) {
-            trackEvent({kind: 'TrackEvent', name: 'has-legacy-projects', details: {count: p.length}})
+            backend.trackEvent({name: 'has-legacy-projects', details: {count: p.length}})
             env === Env.enum.prod && setTimeout(() => alert(`You still have some legacy projects. They won't be supported in 2023. If you don't want to loose them, open and save them before the end of the year.`), 3000)
         }
     }, err => {
@@ -406,23 +402,13 @@ function reportError(label: string, error?: AnyError) {
     }
 }
 
-function trackPage(msg: TrackPage) {
-    // TODO: send page to web analytics
-}
-function trackEvent(msg: TrackEvent) {
-    backend.sendEvent(msg.name, msg.details)
-}
-function trackError(msg: TrackError) {
-    // TODO: send error somewhere...
-}
-
 
 // listen at every click to handle tracking events
 function trackClick(e: MouseEvent) {
     const target = e.target as HTMLElement
     const tracked = Utils.findParent(target, e => !!e.getAttribute('data-track-event'))
     if (tracked) {
-        const name = tracked.getAttribute('data-track-event') || ''
+        const name = tracked.getAttribute('data-track-event') || 'click'
         const details: { [key: string]: string } = {label: (tracked.textContent || '').trim()}
         const attrs = target.attributes
         for (let i = 0; i < attrs.length; i++) {
@@ -431,7 +417,7 @@ function trackClick(e: MouseEvent) {
                 details[attr.name.replace('data-track-event-', '')] = attr.value
             }
         }
-        trackEvent({kind: 'TrackEvent', name, details})
+        backend.trackEvent({name, details})
     }
 }
 

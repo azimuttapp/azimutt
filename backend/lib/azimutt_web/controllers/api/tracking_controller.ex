@@ -6,11 +6,7 @@ defmodule AzimuttWeb.Api.TrackingController do
 
   def create(conn, %{"name" => name} = params) do
     current_user = conn.assigns.current_user
-    all_details = params["details"]
-    organization_id = all_details |> Nil.safe(fn d -> d["organization_id"] end)
-    project_id = all_details |> Nil.safe(fn d -> d["project_id"] end)
-    details = all_details |> Map.delete("organization_id") |> Map.delete("project_id")
-    Tracking.frontend_event(name, details, current_user, organization_id, project_id)
+    Tracking.frontend_event(name, params["details"], current_user, params["organization"], params["project"])
     conn |> send_resp(:no_content, "")
   end
 end

@@ -3,9 +3,12 @@ module Libs.Html.Attributes exposing (ariaActivedescendant, ariaChecked, ariaCon
 import Html exposing (Attribute)
 import Html.Attributes exposing (attribute, class, classList, href, rel, target)
 import Libs.Bool as B
-import Libs.Models exposing (Text, TrackEvent)
+import Libs.Maybe as Maybe
+import Libs.Models exposing (Text)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind exposing (TwClass)
+import Models.OrganizationId exposing (OrganizationId)
+import Models.TrackEvent exposing (TrackClick, TrackEvent)
 
 
 
@@ -115,10 +118,12 @@ role text =
     attribute "role" text
 
 
-track : TrackEvent -> List (Attribute msg)
+track : TrackClick -> List (Attribute msg)
 track event =
-    if event.enabled then
-        attribute "data-track-event" event.name :: (event.details |> List.map (\( k, v ) -> attribute ("data-track-event-" ++ k) v))
-
-    else
-        []
+    let
+        moreDetails : List ( String, OrganizationId )
+        moreDetails =
+            (event.organization |> Maybe.map (\id -> ( "organization", id )) |> Maybe.toList)
+                ++ (event.project |> Maybe.map (\id -> ( "project", id )) |> Maybe.toList)
+    in
+    attribute "data-track-event" event.name :: ((moreDetails ++ event.details) |> List.map (\( k, v ) -> attribute ("data-track-event-" ++ k) v))

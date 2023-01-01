@@ -5,15 +5,16 @@ import DataSources.SqlMiner.SqlAdapter exposing (SqlSchema)
 import DataSources.SqlMiner.SqlParser exposing (Command)
 import DataSources.SqlMiner.Utils.Types exposing (ParseError, SqlStatement)
 import Dict exposing (Dict)
+import Json.Encode as Encode
 import Libs.Bool as Bool
 import Libs.Dict as Dict
 import Libs.Maybe as Maybe
-import Libs.Models exposing (TrackEvent)
 import Libs.Result as Result
 import Models.Project exposing (Project)
 import Models.Project.ProjectId as ProjectId
 import Models.Project.Source exposing (Source)
 import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
+import Models.TrackEvent exposing (TrackClick, TrackEvent)
 import PagesComponents.Organization_.Project_.Models.Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.FindPathResult exposing (FindPathResult)
@@ -25,52 +26,52 @@ import PagesComponents.Organization_.Project_.Models.FindPathResult exposing (Fi
 
 openSharing : TrackEvent
 openSharing =
-    { name = "open-sharing", details = [], enabled = True }
+    { name = "open-sharing", details = [], organization = Nothing, project = Nothing }
 
 
 openSettings : TrackEvent
 openSettings =
-    { name = "open-settings", details = [], enabled = True }
+    { name = "open-settings", details = [], organization = Nothing, project = Nothing }
 
 
 openHelp : TrackEvent
 openHelp =
-    { name = "open-help", details = [], enabled = True }
+    { name = "open-help", details = [], organization = Nothing, project = Nothing }
 
 
-openTableDropdown : TrackEvent
+openTableDropdown : TrackClick
 openTableDropdown =
-    { name = "open-table-dropdown", details = [], enabled = True }
+    { name = "open-table-dropdown", details = [], organization = Nothing, project = Nothing }
 
 
-showTableWithForeignKey : TrackEvent
+showTableWithForeignKey : TrackClick
 showTableWithForeignKey =
-    { name = "show-table-with-foreign-key", details = [], enabled = True }
+    { name = "show-table-with-foreign-key", details = [], organization = Nothing, project = Nothing }
 
 
-showTableWithIncomingRelationsDropdown : TrackEvent
+showTableWithIncomingRelationsDropdown : TrackClick
 showTableWithIncomingRelationsDropdown =
-    { name = "show-table-with-incoming-relations-dropdown", details = [], enabled = True }
+    { name = "show-table-with-incoming-relations-dropdown", details = [], organization = Nothing, project = Nothing }
 
 
-openIncomingRelationsDropdown : TrackEvent
+openIncomingRelationsDropdown : TrackClick
 openIncomingRelationsDropdown =
-    { name = "open-incoming-relations-dropdown", details = [], enabled = True }
+    { name = "open-incoming-relations-dropdown", details = [], organization = Nothing, project = Nothing }
 
 
 openSaveLayout : TrackEvent
 openSaveLayout =
-    { name = "open-save-layout", details = [], enabled = True }
+    { name = "open-save-layout", details = [], organization = Nothing, project = Nothing }
 
 
 openEditNotes : TrackEvent
 openEditNotes =
-    { name = "open-edit-notes", details = [], enabled = True }
+    { name = "open-edit-notes", details = [], organization = Nothing, project = Nothing }
 
 
 openUpdateSchema : TrackEvent
 openUpdateSchema =
-    { name = "open-update-schema", details = [], enabled = True }
+    { name = "open-update-schema", details = [], organization = Nothing, project = Nothing }
 
 
 parsedDatabaseSource : Result String Source -> TrackEvent
@@ -88,9 +89,9 @@ parsedJsonSource =
     parseJsonEvent
 
 
-loadProject : ProjectInfo -> TrackEvent
+loadProject : ProjectInfo -> TrackClick
 loadProject =
-    projectEvent "load"
+    projectClick "load"
 
 
 initProject : Project -> TrackEvent
@@ -138,19 +139,19 @@ deleteLayout =
     layoutEvent "delete"
 
 
-externalLink : String -> TrackEvent
+externalLink : String -> TrackClick
 externalLink url =
-    { name = "external-link", details = [ ( "url", url ) ], enabled = True }
+    { name = "external-link", details = [ ( "url", url ) ], organization = Nothing, project = Nothing }
 
 
 openFindPath : TrackEvent
 openFindPath =
-    { name = "open-find-path", details = [], enabled = True }
+    { name = "open-find-path", details = [], organization = Nothing, project = Nothing }
 
 
 openSchemaAnalysis : TrackEvent
 openSchemaAnalysis =
-    { name = "open-schema-analysis", details = [], enabled = True }
+    { name = "open-schema-analysis", details = [], organization = Nothing, project = Nothing }
 
 
 findPathResult : FindPathResult -> TrackEvent
@@ -160,15 +161,7 @@ findPathResult =
 
 proPlanLimit : String -> Erd -> TrackEvent
 proPlanLimit limit erd =
-    { name = "pro_plan_limit", details = [ ( "limit", limit ) ] ++ projectRefs erd, enabled = True }
-
-
-projectRefs : Erd -> List ( String, String )
-projectRefs erd =
-    [ erd.project.organization |> Maybe.map (\o -> ( "organization_id", o.id ))
-    , Just erd.project.id |> Maybe.filter (\id -> id /= ProjectId.zero) |> Maybe.map (\id -> ( "project_id", id ))
-    ]
-        |> List.filterMap identity
+    { name = "pro_plan_limit", details = [ ( "limit", limit |> Encode.string ) ], organization = erd.project.organization |> Maybe.map .id, project = Just erd.project.id }
 
 
 
@@ -180,13 +173,15 @@ parseDatabaseEvent source =
     { name = "parse" ++ (source |> Result.toMaybe |> Maybe.andThen .fromSample |> Maybe.mapOrElse (\_ -> "-sample") "") ++ "-database-source"
     , details =
         source
-            |> Result.fold (\e -> [ ( "error", e ) ])
+            |> Result.fold
+                (\e -> [ ( "error", e |> Encode.string ) ])
                 (\s ->
-                    [ ( "table-count", s.tables |> Dict.size |> String.fromInt )
-                    , ( "relation-count", s.relations |> List.length |> String.fromInt )
+                    [ ( "nb-table", s.tables |> Dict.size |> Encode.int )
+                    , ( "nb-relation", s.relations |> List.length |> Encode.int )
                     ]
                 )
-    , enabled = True
+    , organization = Nothing
+    , project = Nothing
     }
 
 
@@ -203,14 +198,15 @@ parseSqlEvent : SQLParsing msg -> Source -> TrackEvent
 parseSqlEvent parser source =
     { name = "parse" ++ (source.fromSample |> Maybe.mapOrElse (\_ -> "-sample") "") ++ "-sql-source"
     , details =
-        [ ( "lines-count", parser.lines |> Maybe.mapOrElse List.length 0 |> String.fromInt )
-        , ( "statements-count", parser.statements |> Maybe.mapOrElse Dict.size 0 |> String.fromInt )
-        , ( "table-count", source.tables |> Dict.size |> String.fromInt )
-        , ( "relation-count", source.relations |> List.length |> String.fromInt )
-        , ( "parsing-errors", parser.commands |> Maybe.mapOrElse (Dict.count (\_ ( _, r ) -> r |> Result.isErr)) 0 |> String.fromInt )
-        , ( "schema-errors", parser.schema |> Maybe.mapOrElse .errors [] |> List.length |> String.fromInt )
+        [ ( "nb-lines", parser.lines |> Maybe.mapOrElse List.length 0 |> Encode.int )
+        , ( "nb-statements", parser.statements |> Maybe.mapOrElse Dict.size 0 |> Encode.int )
+        , ( "nb-table", source.tables |> Dict.size |> Encode.int )
+        , ( "nb-relation", source.relations |> List.length |> Encode.int )
+        , ( "parsing-errors", parser.commands |> Maybe.mapOrElse (Dict.count (\_ ( _, r ) -> r |> Result.isErr)) 0 |> Encode.int )
+        , ( "schema-errors", parser.schema |> Maybe.mapOrElse .errors [] |> List.length |> Encode.int )
         ]
-    , enabled = True
+    , organization = Nothing
+    , project = Nothing
     }
 
 
@@ -219,57 +215,83 @@ parseJsonEvent source =
     { name = "parse" ++ (source |> Result.toMaybe |> Maybe.andThen .fromSample |> Maybe.mapOrElse (\_ -> "-sample") "") ++ "-json-source"
     , details =
         source
-            |> Result.fold (\e -> [ ( "error", e ) ])
+            |> Result.fold
+                (\e -> [ ( "error", e |> Encode.string ) ])
                 (\s ->
-                    [ ( "table-count", s.tables |> Dict.size |> String.fromInt )
-                    , ( "relation-count", s.relations |> List.length |> String.fromInt )
+                    [ ( "nb-table", s.tables |> Dict.size |> Encode.int )
+                    , ( "nb-relation", s.relations |> List.length |> Encode.int )
                     ]
                 )
-    , enabled = True
+    , organization = Nothing
+    , project = Nothing
     }
 
 
 projectEvent : String -> ProjectInfo -> TrackEvent
 projectEvent eventName project =
     { name = eventName ++ Bool.cond (ProjectId.isSample project.id) "-sample" "" ++ "-project"
-    , details =
-        [ ( "source-count", project.nbSources |> String.fromInt )
-        , ( "table-count", project.nbTables |> String.fromInt )
-        , ( "column-count", project.nbColumns |> String.fromInt )
-        , ( "relation-count", project.nbRelations |> String.fromInt )
-        , ( "type-count", project.nbTypes |> String.fromInt )
-        , ( "comment-count", project.nbComments |> String.fromInt )
-        , ( "note-count", project.nbNotes |> String.fromInt )
-        , ( "layout-count", project.nbLayouts |> String.fromInt )
-        ]
-    , enabled = True
+    , details = projectStats project |> List.map (\( k, v ) -> ( k, v |> Encode.int ))
+    , organization = project.organization |> Maybe.map .id
+    , project = Just project.id
     }
+
+
+projectClick : String -> ProjectInfo -> TrackClick
+projectClick eventName project =
+    { name = eventName ++ Bool.cond (ProjectId.isSample project.id) "-sample" "" ++ "-project"
+    , details = projectStats project |> List.map (\( k, v ) -> ( k, v |> String.fromInt ))
+    , organization = project.organization |> Maybe.map .id
+    , project = Just project.id
+    }
+
+
+projectStats : ProjectInfo -> List ( String, Int )
+projectStats project =
+    [ ( "nb-source", project.nbSources )
+    , ( "nb-table", project.nbTables )
+    , ( "nb-column", project.nbColumns )
+    , ( "nb-relation", project.nbRelations )
+    , ( "nb-type", project.nbTypes )
+    , ( "nb-comment", project.nbComments )
+    , ( "nb-layout", project.nbLayouts )
+    , ( "nb-note", project.nbNotes )
+    , ( "nb-memos", project.nbMemos )
+    ]
 
 
 sourceEvent : String -> Source -> TrackEvent
 sourceEvent eventName source =
     { name = eventName ++ "-source"
     , details =
-        [ ( "table-count", source.tables |> Dict.size |> String.fromInt )
-        , ( "relation-count", source.relations |> List.length |> String.fromInt )
+        [ ( "nb-table", source.tables |> Dict.size |> Encode.int )
+        , ( "nb-relation", source.relations |> List.length |> Encode.int )
         ]
-    , enabled = True
+    , organization = Nothing
+    , project = Nothing
     }
 
 
 layoutEvent : String -> ErdLayout -> TrackEvent
 layoutEvent eventName layout =
-    { name = eventName ++ "-layout", details = [ ( "table-count", layout.tables |> List.length |> String.fromInt ) ], enabled = True }
+    { name = eventName ++ "-layout"
+    , details =
+        [ ( "nb-table", layout.tables |> List.length |> Encode.int )
+        , ( "nb-memos", layout.memos |> List.length |> Encode.int )
+        ]
+    , organization = Nothing
+    , project = Nothing
+    }
 
 
 findPathResults : FindPathResult -> TrackEvent
 findPathResults result =
     { name = "find-path-results"
     , details =
-        [ ( "found-paths", String.fromInt (result.paths |> List.length) )
-        , ( "ignored-columns", String.fromInt (result.settings.ignoredColumns |> String.split "," |> List.length) )
-        , ( "ignored-tables", String.fromInt (result.settings.ignoredTables |> String.split "," |> List.length) )
-        , ( "max-path-length", String.fromInt result.settings.maxPathLength )
+        [ ( "found-paths", result.paths |> List.length |> Encode.int )
+        , ( "ignored-columns", result.settings.ignoredColumns |> String.split "," |> List.length |> Encode.int )
+        , ( "ignored-tables", result.settings.ignoredTables |> String.split "," |> List.length |> Encode.int )
+        , ( "max-path-length", result.settings.maxPathLength |> Encode.int )
         ]
-    , enabled = True
+    , organization = Nothing
+    , project = Nothing
     }

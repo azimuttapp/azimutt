@@ -36,11 +36,9 @@ export class ElmApp {
         GetColumnStats: [],
         ObserveSizes: [],
         ListenKeys: [],
-        TrackPage: [],
         Confetti: [],
         ConfettiPride: [],
-        TrackEvent: [],
-        TrackError: [],
+        Track: [],
     }
 
     constructor(private elm: ElmRuntime<JsMsg, ElmMsg>, private logger: Logger) {
