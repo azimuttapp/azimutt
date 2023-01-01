@@ -28,16 +28,16 @@ defmodule Azimutt.TrackingTest do
       project = project_fixture(organization, user)
 
       assert {:ok, %Event{} = project_created} = Tracking.project_created(user, project)
-      assert project_created.name == :project_created
+      assert project_created.name == "project_created"
 
       assert {:ok, %Event{} = project_loaded} = Tracking.project_loaded(user, project)
-      assert project_loaded.name == :project_loaded
+      assert project_loaded.name == "project_loaded"
 
       assert {:ok, %Event{} = project_updated} = Tracking.project_updated(user, project)
-      assert project_updated.name == :project_updated
+      assert project_updated.name == "project_updated"
 
       assert {:ok, %Event{} = project_deleted} = Tracking.project_deleted(user, project)
-      assert project_deleted.name == :project_deleted
+      assert project_deleted.name == "project_deleted"
     end
   end
 end

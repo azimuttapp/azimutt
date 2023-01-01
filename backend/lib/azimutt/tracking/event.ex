@@ -8,29 +8,7 @@ defmodule Azimutt.Tracking.Event do
   alias Azimutt.Projects.Project
 
   schema "events" do
-    field :name, Ecto.Enum,
-      values: [
-        :login,
-        :project_loaded,
-        :project_created,
-        :project_updated,
-        :project_deleted,
-        :billing_loaded,
-        :subscribe_init,
-        :subscribe_start,
-        :subscribe_error,
-        :subscribe_success,
-        :subscribe_abort,
-        :stripe_subscription_created,
-        :stripe_subscription_canceled,
-        :stripe_subscription_renewed,
-        :stripe_subscription_quantity_updated,
-        :stripe_subscription_updated,
-        :stripe_open_billing_portal,
-        :stripe_invoice_paid,
-        :stripe_invoice_payment_failed
-      ]
-
+    field :name, :string
     field :data, :map
     field :details, :map
     belongs_to :created_by, User, source: :created_by

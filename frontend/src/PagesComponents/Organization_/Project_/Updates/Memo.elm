@@ -15,10 +15,12 @@ import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout
 import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
 import PagesComponents.Organization_.Project_.Models.MemoId as MemoId exposing (MemoId)
 import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirty)
+import Ports
 import Services.Lenses exposing (mapEditMemoM, mapErdM, mapMemos, mapMemosL, setColor, setContent, setEditMemo)
 import Services.Toasts as Toasts
 import Task
 import Time
+import Track
 
 
 type alias Model x =
@@ -69,7 +71,7 @@ createMemo now position erd model =
             |> (\memo -> model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapMemos (List.append [ memo ]))) |> editMemo True memo)
 
     else
-        ( model, ProPlan.memosModalBody organization |> CustomModalOpen |> T.send )
+        ( model, Cmd.batch [ ProPlan.memosModalBody organization |> CustomModalOpen |> T.send, Track.proPlanLimit "new-memo" erd |> Ports.track ] )
 
 
 editMemo : Bool -> Memo -> Model x -> ( Model x, Cmd Msg )

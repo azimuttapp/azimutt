@@ -138,6 +138,12 @@ export class Backend {
         return Http.postJson(url, {url: database, schema, table, column: column.column}, ColumnStats, 'ColumnStats')
     }
 
+    sendEvent = (name: String, details?: object): void => {
+        this.logger.debug(`backend.sendEvent(${name}, ${JSON.stringify(details)})`)
+        const url = this.withXhrHost(`/api/v1/events`)
+        Http.postJson(url, {name, details}, TrackingEvent, 'TrackingEvent').then(_ => undefined)
+    }
+
     private withXhrHost(path: string): string {
         if (this.env == Env.enum.dev) {
             return `${path}`
@@ -321,3 +327,8 @@ function decodeContent(content?: string): ProjectJson {
         throw 'Missing content in backend response!'
     }
 }
+
+const TrackingEvent = z.object({
+    name: z.string(),
+    details: z.any().optional()
+}).strict()

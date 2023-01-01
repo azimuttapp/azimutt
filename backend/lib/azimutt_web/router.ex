@@ -139,6 +139,7 @@ defmodule AzimuttWeb.Router do
   scope "/api/v1", AzimuttWeb do
     pipe_through [:api, :require_authenticated_user_api]
     get "/users/current", Api.UserController, :current
+    post "/events", Api.TrackingController, :create
 
     resources "/organizations", Api.OrganizationController, only: [:index] do
       resources "/projects", Api.ProjectController, except: [:new, :edit, :show]

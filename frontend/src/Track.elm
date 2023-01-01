@@ -1,4 +1,4 @@
-module Track exposing (SQLParsing, addSource, createLayout, createProject, deleteLayout, deleteProject, externalLink, findPathResult, initProject, loadLayout, loadProject, openAppCta, openEditNotes, openFindPath, openHelp, openIncomingRelationsDropdown, openProjectUploadDialog, openSaveLayout, openSchemaAnalysis, openSettings, openSharing, openTableDropdown, openUpdateSchema, parsedDatabaseSource, parsedJsonSource, parsedSqlSource, refreshSource, showTableWithForeignKey, showTableWithIncomingRelationsDropdown, updateProject)
+module Track exposing (SQLParsing, addSource, createLayout, createProject, deleteLayout, deleteProject, externalLink, findPathResult, initProject, loadLayout, loadProject, openEditNotes, openFindPath, openHelp, openIncomingRelationsDropdown, openSaveLayout, openSchemaAnalysis, openSettings, openSharing, openTableDropdown, openUpdateSchema, parsedDatabaseSource, parsedJsonSource, parsedSqlSource, proPlanLimit, refreshSource, showTableWithForeignKey, showTableWithIncomingRelationsDropdown, updateProject)
 
 import DataSources.Helpers exposing (SourceLine)
 import DataSources.SqlMiner.SqlAdapter exposing (SqlSchema)
@@ -14,22 +14,13 @@ import Models.Project exposing (Project)
 import Models.Project.ProjectId as ProjectId
 import Models.Project.Source exposing (Source)
 import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
+import PagesComponents.Organization_.Project_.Models.Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.FindPathResult exposing (FindPathResult)
 
 
 
 -- all tracking events should be declared here to have a good overview of them
-
-
-openAppCta : String -> TrackEvent
-openAppCta source =
-    { name = "open-app-cta", details = [ ( "source", source ) ], enabled = True }
-
-
-openProjectUploadDialog : TrackEvent
-openProjectUploadDialog =
-    { name = "open-project-upload-dialog", details = [], enabled = True }
 
 
 openSharing : TrackEvent
@@ -165,6 +156,19 @@ openSchemaAnalysis =
 findPathResult : FindPathResult -> TrackEvent
 findPathResult =
     findPathResults
+
+
+proPlanLimit : String -> Erd -> TrackEvent
+proPlanLimit limit erd =
+    { name = "pro_plan_limit", details = [ ( "limit", limit ) ] ++ projectRefs erd, enabled = True }
+
+
+projectRefs : Erd -> List ( String, String )
+projectRefs erd =
+    [ erd.project.organization |> Maybe.map (\o -> ( "organization_id", o.id ))
+    , Just erd.project.id |> Maybe.filter (\id -> id /= ProjectId.zero) |> Maybe.map (\id -> ( "project_id", id ))
+    ]
+        |> List.filterMap identity
 
 
 
