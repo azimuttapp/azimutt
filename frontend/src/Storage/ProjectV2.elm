@@ -2,7 +2,6 @@ module Storage.ProjectV2 exposing (decodeProject)
 
 import Json.Decode as Decode
 import Models.Project as Project exposing (Project)
-import Storage.ProjectV1 as ProjectV1
 
 
 decodeProject : Decode.Decoder Project
@@ -12,8 +11,11 @@ decodeProject =
             (\v ->
                 case v of
                     1 ->
-                        ProjectV1.decodeProject |> Decode.map ProjectV1.upgrade
+                        Decode.fail "Version 1 of project is not supported anymore."
+
+                    2 ->
+                        Project.decode
 
                     _ ->
-                        Project.decode
+                        Decode.fail ("Unknown project version " ++ String.fromInt v ++ ".")
             )
