@@ -15,6 +15,7 @@ import Models.Project as Project
 import Models.Project.ProjectId as ProjectId
 import Models.Project.Source as Source
 import Models.Project.SourceId as SourceId
+import Models.ProjectInfo exposing (ProjectInfo)
 import Models.SourceInfo as SourceInfo
 import PagesComponents.New.Models exposing (Model, Msg(..), Tab(..))
 import Ports exposing (JsMsg(..))
@@ -26,15 +27,14 @@ import Services.JsonSource as JsonSource
 import Services.Lenses exposing (mapDatabaseSourceMCmd, mapJsonSourceMCmd, mapOpenedDialogs, mapProjectSourceMCmd, mapSampleSourceMCmd, mapSqlSourceMCmd, mapToastsCmd, setConfirm)
 import Services.ProjectSource as ProjectSource
 import Services.SampleSource as SampleSource
-import Services.Sort as Sort
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
 import Time
 import Track
 
 
-update : Request.With params -> Time.Posix -> Maybe OrganizationId -> Msg -> Model -> ( Model, Cmd Msg )
-update req now urlOrganization msg model =
+update : Request.With params -> Time.Posix -> List ProjectInfo -> Maybe OrganizationId -> Msg -> Model -> ( Model, Cmd Msg )
+update req now projects urlOrganization msg model =
     case msg of
         SelectMenu menu ->
             ( { model | selectedMenu = menu }, Cmd.none )
@@ -114,7 +114,7 @@ update req now urlOrganization msg model =
             ( model, Cmd.batch [ Ports.createProjectTmp project, Track.projectDraftCreated project |> Ports.track ] )
 
         CreateEmptyProject name ->
-            ( model, SourceId.generator |> Random.generate (Source.aml Conf.constants.virtualRelationSourceName now >> Project.create model.projects name >> CreateProjectTmp) )
+            ( model, SourceId.generator |> Random.generate (Source.aml Conf.constants.virtualRelationSourceName now >> Project.create projects name >> CreateProjectTmp) )
 
         DropdownToggle id ->
             ( model |> Dropdown.update id, Cmd.none )
@@ -144,9 +144,6 @@ update req now urlOrganization msg model =
 handleJsMessage : Request.With params -> Time.Posix -> Maybe OrganizationId -> JsMsg -> Model -> ( Model, Cmd Msg )
 handleJsMessage req now urlOrganization msg model =
     case msg of
-        GotLegacyProjects ( _, projects ) ->
-            ( { model | projects = Sort.lastUpdatedFirst projects }, Cmd.none )
-
         GotLocalFile kind file content ->
             if kind == ProjectSource.kind then
                 ( model, T.send (content |> ProjectSource.GotFile |> ProjectSourceMsg) )

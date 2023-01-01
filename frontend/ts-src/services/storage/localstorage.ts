@@ -1,8 +1,7 @@
-import {migrateLegacyProject, ProjectId, ProjectJson, ProjectStored, ProjectStoredWithId} from "../../types/project";
+import {ProjectId, ProjectJson} from "../../types/project";
 import {StorageApi, StorageKind} from "./api";
 import {Logger} from "../logger";
-import {AnyError, formatError} from "../../utils/error";
-import {sequenceSafe} from "../../utils/promise";
+import {formatError} from "../../utils/error";
 import * as Zod from "../../utils/zod";
 import * as Json from "../../utils/json";
 
@@ -19,12 +18,7 @@ export class LocalStorageStorage implements StorageApi {
     constructor(private logger: Logger) {
     }
 
-    listProjects = (): Promise<[[ProjectId, AnyError][], ProjectStoredWithId[]]> => {
-        this.logger.debug(`localStorage.listProjects()`)
-        const keys = Object.keys(window.localStorage).filter(this.isKey)
-        return sequenceSafe(keys, k => this.getProject(k).then(p => [this.keyToId(k), Zod.validate(p, ProjectStored, 'ProjectStored')]))
-    }
-    loadProject = (id: ProjectId): Promise<ProjectStored> => {
+    loadProject = (id: ProjectId): Promise<ProjectJson> => {
         this.logger.debug(`localStorage.loadProject(${id})`)
         return Promise.resolve(this.getProject(this.idToKey(id))).then(p => p ? p : Promise.reject(`Project ${id} not found`))
     }
@@ -52,16 +46,14 @@ export class LocalStorageStorage implements StorageApi {
         return Promise.resolve()
     }
 
-    private isKey = (key: string): boolean => key.startsWith(this.prefix)
     private idToKey = (id: ProjectId): string => this.prefix + id
-    private keyToId = (key: string): ProjectId => Zod.validate(key.replace(this.prefix, ''), ProjectId, 'ProjectId')
-    private getProject = (key: string): Promise<ProjectStored> => {
+    private getProject = (key: string): Promise<ProjectJson> => {
         const value = window.localStorage.getItem(key)
         if (value === null) {
             return Promise.reject(`Nothing in localStorage ${JSON.stringify(key)}`)
         }
         try {
-            return Promise.resolve(Zod.validate(migrateLegacyProject(Json.parse(value)), ProjectStored, 'ProjectStored'))
+            return Promise.resolve(Zod.validate(Json.parse(value), ProjectJson, 'ProjectJson'))
         } catch (e) {
             return Promise.reject(`Invalid JSON in localStorage ${JSON.stringify(key)}: ${formatError(e)}`)
         }

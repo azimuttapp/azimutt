@@ -69,6 +69,7 @@ viewNewProject shared currentUrl urlOrganization model =
         [ a [ href backUrl ] [ Icon.outline Icon.ArrowLeft "inline-block", text " ", text model.selectedMenu ] ]
         [ viewContent "new-project"
             shared.zone
+            shared.projects
             urlOrganization
             model
             { tabs =
@@ -95,13 +96,13 @@ type alias TabModel tab msg =
     { tab : tab, icon : Icon, content : List (Html msg) }
 
 
-viewContent : HtmlId -> Time.Zone -> Maybe OrganizationId -> Model -> PageModel Msg -> Html Msg
-viewContent htmlId zone urlOrganization model page =
+viewContent : HtmlId -> Time.Zone -> List ProjectInfo -> Maybe OrganizationId -> Model -> PageModel Msg -> Html Msg
+viewContent htmlId zone projects urlOrganization model page =
     div [ css [ "divide-y", lg [ "grid grid-cols-12 divide-x" ] ] ]
         [ aside [ css [ "py-6", lg [ "col-span-3" ] ] ]
             [ nav [ css [ "space-y-1" ] ] (page.tabs |> List.map (viewTab model.selectedTab)) ]
         , div [ css [ "px-4 py-6", sm [ "p-6" ], lg [ "pb-8 col-span-9 rounded-r-lg" ] ] ]
-            [ viewTabContent (htmlId ++ "-tab") zone urlOrganization model ]
+            [ viewTabContent (htmlId ++ "-tab") zone projects urlOrganization model ]
         ]
 
 
@@ -120,26 +121,26 @@ viewTab selected tab =
             ]
 
 
-viewTabContent : HtmlId -> Time.Zone -> Maybe OrganizationId -> Model -> Html Msg
-viewTabContent htmlId zone urlOrganization model =
+viewTabContent : HtmlId -> Time.Zone -> List ProjectInfo -> Maybe OrganizationId -> Model -> Html Msg
+viewTabContent htmlId zone projects urlOrganization model =
     case model.selectedTab of
         TabDatabase ->
-            model.databaseSource |> Maybe.mapOrElse (viewDatabaseSourceTab (htmlId ++ "-database") model.openedCollapse model.projects) (div [] [])
+            model.databaseSource |> Maybe.mapOrElse (viewDatabaseSourceTab (htmlId ++ "-database") model.openedCollapse projects) (div [] [])
 
         TabSql ->
-            model.sqlSource |> Maybe.mapOrElse (viewSqlSourceTab (htmlId ++ "-sql") model.openedCollapse model.projects) (div [] [])
+            model.sqlSource |> Maybe.mapOrElse (viewSqlSourceTab (htmlId ++ "-sql") model.openedCollapse projects) (div [] [])
 
         TabJson ->
-            model.jsonSource |> Maybe.mapOrElse (viewJsonSourceTab (htmlId ++ "-json") model.openedCollapse model.projects) (div [] [])
+            model.jsonSource |> Maybe.mapOrElse (viewJsonSourceTab (htmlId ++ "-json") model.openedCollapse projects) (div [] [])
 
         TabEmptyProject ->
             viewEmptyProjectTab
 
         TabProject ->
-            model.projectSource |> Maybe.mapOrElse (viewProjectSourceTab (htmlId ++ "-project") zone model.projects) (div [] [])
+            model.projectSource |> Maybe.mapOrElse (viewProjectSourceTab (htmlId ++ "-project") zone projects) (div [] [])
 
         TabSamples ->
-            model.sampleSource |> Maybe.mapOrElse (viewSampleSourceTab urlOrganization model.projects model.samples) (div [] [])
+            model.sampleSource |> Maybe.mapOrElse (viewSampleSourceTab urlOrganization projects model.samples) (div [] [])
 
 
 viewDatabaseSourceTab : HtmlId -> HtmlId -> List ProjectInfo -> DatabaseSource.Model Msg -> Html Msg

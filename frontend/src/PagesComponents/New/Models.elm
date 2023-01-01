@@ -7,7 +7,6 @@ import Libs.Tailwind as Tw
 import Libs.Task as T
 import Models.Project exposing (Project)
 import Models.Project.ProjectName exposing (ProjectName)
-import Models.ProjectInfo exposing (ProjectInfo)
 import Ports exposing (JsMsg)
 import Services.Backend as Backend exposing (Sample)
 import Services.DatabaseSource as DatabaseSource
@@ -23,7 +22,6 @@ type alias Model =
     { selectedMenu : String
     , mobileMenuOpen : Bool
     , openedCollapse : HtmlId
-    , projects : List ProjectInfo
     , samples : List Sample
     , selectedTab : Tab
     , databaseSource : Maybe (DatabaseSource.Model Msg)

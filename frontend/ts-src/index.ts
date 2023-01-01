@@ -21,7 +21,6 @@ import {AzimuttApi} from "./services/api";
 import {
     buildProjectDraft,
     buildProjectJson,
-    buildProjectLegacy,
     buildProjectLocal,
     buildProjectRemote,
     ProjectStorage
@@ -77,7 +76,6 @@ app.on('Fullscreen', msg => Utils.fullscreen(msg.id).then(() => app.fitToScreen(
 app.on('SetMeta', setMeta)
 app.on('AutofocusWithin', msg => (Utils.getElementById(msg.id).querySelector<HTMLElement>('[autofocus]'))?.focus())
 app.on('Toast', msg => app.toast(msg.level, msg.message))
-app.on('GetLegacyProjects', getLegacyProjects)
 app.on('GetProject', getProject)
 app.on('CreateProjectTmp', createProjectTmp)
 app.on('UpdateProjectTmp', updateProjectTmp)
@@ -125,20 +123,6 @@ function setMeta(meta: SetMeta) {
     }
 }
 
-function getLegacyProjects() {
-    storage.getLegacyProjects().then(([errs, p]) => {
-        errs.forEach(([id, e]) => reportError(`Can't decode project ${id}`, e))
-        app.gotLegacyProjects(p)
-        if (p.length > 0) {
-            backend.trackEvent({name: 'has-legacy-projects', details: {count: p.length}})
-            env === Env.enum.prod && setTimeout(() => alert(`You still have some legacy projects. They won't be supported in 2023. If you don't want to loose them, open and save them before the end of the year.`), 3000)
-        }
-    }, err => {
-        reportError(`Can't list legacy projects`, err)
-        app.gotLegacyProjects([])
-    })
-}
-
 function getProject(msg: GetProject) {
     (msg.project === Uuid.zero ?
             storage.getProject(msg.project).then(p => buildProjectDraft(msg.project, p)) :
@@ -150,22 +134,8 @@ function getProject(msg: GetProject) {
                 } else {
                     return Promise.reject('Invalid storage')
                 }
-            }, err => {
-                if (err.statusCode === 401) {
-                    return storage.getLegacyProject(msg.project).then(p => buildProjectLegacy(msg.project, p), _ => Promise.reject(err))
-                } else if (err.statusCode === 404) {
-                    return storage.getLegacyProject(msg.project).then(p => {
-                        app.toast(ToastLevel.enum.warning, 'Unregistered project: save it again to keep it in you Azimutt account. '
-                            + 'Your data will stay local, only statistics will be shared with Azimutt.')
-                        return buildProjectLegacy(msg.project, p)
-                    })
-                } else {
-                    return Promise.reject(err)
-                }
             })
-    ).then(project => {
-        app.gotProject(project)
-    }, err => {
+    ).then(project => app.gotProject(project), err => {
         if (err.statusCode === 401) {
             window.location.replace(backend.loginUrl(url.relative(window.location)))
         } else {
