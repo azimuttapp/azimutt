@@ -6,7 +6,6 @@ import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Task as T
 import Models.ErdProps exposing (ErdProps)
-import Models.Organization as Organization exposing (Organization)
 import Models.Position as Position
 import PagesComponents.Organization_.Project_.Models exposing (MemoEdit, MemoMsg(..), Msg(..))
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
@@ -57,21 +56,12 @@ handleMemo now msg model =
 
 createMemo : Time.Posix -> Position.Canvas -> Erd -> Model x -> ( Model x, Cmd Msg )
 createMemo now position erd model =
-    let
-        organization : Organization
-        organization =
-            erd.project.organization |> Maybe.withDefault Organization.zero
-
-        layoutMemos : Int
-        layoutMemos =
-            erd |> Erd.currentLayout |> .memos |> List.length
-    in
-    if organization.plan.memos |> Maybe.all (\limit -> limit > layoutMemos) then
+    if model.erd |> Erd.canCreateMemo then
         ErdLayout.createMemo (erd |> Erd.currentLayout) position
             |> (\memo -> model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapMemos (List.append [ memo ]))) |> editMemo True memo)
 
     else
-        ( model, Cmd.batch [ ProPlan.memosModalBody organization |> CustomModalOpen |> T.send, Track.proPlanLimit "new-memo" erd |> Ports.track ] )
+        ( model, Cmd.batch [ erd |> Erd.getOrganization Nothing |> ProPlan.memosModalBody |> CustomModalOpen |> T.send, Track.proPlanLimit "new-memo" (Just erd) |> Ports.track ] )
 
 
 editMemo : Bool -> Memo -> Model x -> ( Model x, Cmd Msg )

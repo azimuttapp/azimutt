@@ -16,7 +16,6 @@ import Models.Project.ProjectId as ProjectId exposing (ProjectId)
 import Models.Project.Source exposing (Source)
 import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Models.TrackEvent exposing (TrackClick, TrackEvent)
-import PagesComponents.Organization_.Project_.Models.Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.FindPathResult exposing (FindPathResult)
 
@@ -161,9 +160,9 @@ findPathResult =
     findPathResults
 
 
-proPlanLimit : String -> Erd -> TrackEvent
+proPlanLimit : String -> Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> TrackEvent
 proPlanLimit limit erd =
-    { name = "pro_plan_limit", details = [ ( "limit", limit |> Encode.string ) ], organization = erd.project.organization |> Maybe.map .id, project = Just erd.project.id }
+    createEvent "pro_plan_limit" [ ( "limit", limit |> Encode.string ) ] (erd |> Maybe.map .project)
 
 
 
