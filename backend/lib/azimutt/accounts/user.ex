@@ -23,6 +23,7 @@ defmodule Azimutt.Accounts.User do
     field :hashed_password, :string, redact: true
     field :password, :string, virtual: true, redact: true
     field :last_signin, :utc_datetime_usec
+    field :data, :map
     timestamps()
     field :confirmed_at, :utc_datetime_usec
     field :deleted_at, :utc_datetime_usec
