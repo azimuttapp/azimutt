@@ -8,11 +8,11 @@ import Conf
 import ElmBook
 import ElmBook.Actions as Actions
 import ElmBook.Chapter as Chapter exposing (Chapter)
-import Html exposing (Html, a, div, h3, p, text)
-import Html.Attributes exposing (class, href, id, rel, style, target)
+import Html exposing (Html, a, blockquote, button, div, h3, input, label, p, text)
+import Html.Attributes exposing (class, for, href, id, name, placeholder, rel, style, target, type_)
 import Html.Events exposing (onClick)
-import Libs.Html exposing (bText)
-import Libs.Html.Attributes exposing (css)
+import Libs.Html exposing (bText, extLink, sendTweet)
+import Libs.Html.Attributes exposing (ariaDescribedby, ariaHidden, css)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (sm)
@@ -85,6 +85,11 @@ memosModalBody organization close titleId =
 
 colorsModalBody : Organization -> msg -> HtmlId -> Html msg
 colorsModalBody organization close titleId =
+    let
+        tweetInput : HtmlId
+        tweetInput =
+            "change-color-tweet"
+    in
     div [ class "max-w-2xl" ]
         [ div [ css [ "px-6 pt-6", sm [ "flex items-start" ] ] ]
             [ div [ css [ "mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-orange-100", sm [ "mx-0 h-10 w-10" ] ] ]
@@ -95,8 +100,40 @@ colorsModalBody organization close titleId =
                 , div [ class "mt-3" ]
                     [ p [ class "text-sm text-gray-500" ] [ bText "Oh! You found a Pro feature!" ]
                     , p [ class "mt-2 text-sm text-gray-500" ] [ text "I'm glad you are exploring Azimutt. We want to make it the ultimate tool to understand and analyze your database, and will bring much more in the coming months." ]
-                    , p [ class "text-sm text-gray-500" ] [ text "This would need a lot of resources and having a small contribution from you would be awesome. Please onboard in Azimutt community, it will ", bText "bring us much further together", text "." ]
+                    , p [ class "text-sm text-gray-500" ] [ text "This would need a lot of resources and having a small contribution from you would be awesome. Onboard in Azimutt community, it will ", bText "bring us much further together", text "." ]
                     ]
+                , div [ class "mt-3 relative" ]
+                    [ div [ class "absolute inset-0 flex items-center", ariaHidden True ]
+                        [ div [ class "w-full border-t border-gray-300" ] []
+                        ]
+                    , div [ class "relative flex justify-center" ]
+                        [ button [ type_ "button", class "inline-flex items-center rounded-full border border-gray-300 bg-white px-4 py-1.5 text-sm font-medium leading-5 text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" ]
+                            [ text "Or tweet to unlock feature"
+                            ]
+                        ]
+                    ]
+                , div []
+                    [ label [ for tweetInput, class "block text-sm font-medium text-gray-700" ] [ text "Your tweet url" ]
+                    , div [ class "mt-1" ] [ input [ type_ "url", name tweetInput, id tweetInput, placeholder "ex: https://twitter.com/azimuttapp/status/1442355066636161032", ariaDescribedby (tweetInput ++ "-description"), class "block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" ] [] ]
+                    , p [ id (tweetInput ++ "-description"), class "mt-2 text-sm text-gray-500" ] [ text "* It should be published less than 10 min ago, mention ", extLink Conf.constants.azimuttTwitter [ class "link" ] [ text "@azimuttapp" ], text " and link ", extLink Conf.constants.azimuttWebsite [ class "link" ] [ text "azimutt.app" ], text "." ]
+                    ]
+                , p [ class "mt-3 block text-sm font-medium text-gray-700" ] [ text "Some inspiration if you need:" ]
+                , div []
+                    ([ "Hey @azimuttapp, please unlock table colors on https://azimutt.app 🙏"
+                     , "I'm discovering @azimuttapp to explore my database, I can recommend it: https://azimutt.app"
+                     , "Azimutt (@azimuttapp) is a visual database exploration tool, made for big real world databases. Try it out: https://azimutt.app"
+                     ]
+                        |> List.map
+                            (\tweet ->
+                                sendTweet tweet
+                                    []
+                                    [ blockquote [ class "mt-3 relative font-medium text-gray-500" ]
+                                        [ Icon.quote "absolute top-0 left-0 transform -translate-x-3 -translate-y-2 text-gray-100"
+                                        , p [ class "relative" ] [ text tweet ]
+                                        ]
+                                    ]
+                            )
+                    )
                 ]
             ]
         , div [ class "px-6 py-3 mt-6 flex items-center flex-row-reverse bg-gray-50 rounded-b-lg" ]
