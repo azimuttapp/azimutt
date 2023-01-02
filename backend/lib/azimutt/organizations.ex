@@ -302,6 +302,7 @@ defmodule Azimutt.Organizations do
       organization.stripe_subscription_id -> stripe_plan(organization.stripe_subscription_id)
       true -> {:ok, OrganizationPlan.free()}
     end
+    |> Result.map(fn plan -> plan_overrides(organization, plan) end)
   end
 
   defp heroku_plan(%Resource{} = resource) do
@@ -321,5 +322,54 @@ defmodule Azimutt.Organizations do
         OrganizationPlan.free()
       end
     end)
+  end
+
+  defp plan_overrides(%Organization{} = organization, %OrganizationPlan{} = plan) do
+    plan
+    |> override_layouts(organization)
+    |> override_memos(organization)
+    |> override_colors(organization)
+  end
+
+  defp override_layouts(%OrganizationPlan{} = plan, %Organization{} = organization) do
+    # `allowed_layouts` could be nil or an integer
+    key = "allowed_layouts"
+    override = organization.data[key]
+
+    if is_map(organization.data) && organization.data |> Map.has_key?(key) && (override == nil || is_integer(override)) do
+      %{plan | layouts: best_limit(plan.layouts, override)}
+    else
+      plan
+    end
+  end
+
+  defp override_memos(%OrganizationPlan{} = plan, %Organization{} = organization) do
+    # `allowed_memos` could be nil or an integer
+    key = "allowed_memos"
+    override = organization.data[key]
+
+    if is_map(organization.data) && organization.data |> Map.has_key?(key) && (override == nil || is_integer(override)) do
+      %{plan | memos: best_limit(plan.memos, override)}
+    else
+      plan
+    end
+  end
+
+  defp override_colors(%OrganizationPlan{} = plan, %Organization{} = organization) do
+    # `allow_table_color_change` could be a tweet url, true or nil
+    if organization.data["allow_table_color_change"] do
+      %{plan | colors: true}
+    else
+      plan
+    end
+  end
+
+  defp best_limit(a, b) do
+    cond do
+      a == nil || b == nil -> nil
+      is_integer(a) && is_integer(b) -> max(a, b)
+      is_integer(a) -> a
+      is_integer(b) -> b
+    end
   end
 end
