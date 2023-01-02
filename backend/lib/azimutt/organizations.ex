@@ -329,6 +329,7 @@ defmodule Azimutt.Organizations do
     |> override_layouts(organization)
     |> override_memos(organization)
     |> override_colors(organization)
+    |> override_analysis(organization)
   end
 
   defp override_layouts(%OrganizationPlan{} = plan, %Organization{} = organization) do
@@ -359,6 +360,15 @@ defmodule Azimutt.Organizations do
     # `allow_table_color_change` could be a tweet url, true or nil
     if organization.data["allow_table_color_change"] do
       %{plan | colors: true}
+    else
+      plan
+    end
+  end
+
+  defp override_analysis(%OrganizationPlan{} = plan, %Organization{} = organization) do
+    # `allow_database_analysis` true or nil
+    if organization.data["allow_database_analysis"] do
+      %{plan | db_analysis: true}
     else
       plan
     end
