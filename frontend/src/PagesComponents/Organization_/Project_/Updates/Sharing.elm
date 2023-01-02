@@ -38,7 +38,7 @@ handleSharing msg model =
                                 }
                         )
                     )
-            , Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.sharingDialog), Ports.track Track.openSharing ]
+            , Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.sharingDialog), Track.openSharing model.erd |> Ports.track ]
             )
 
         SClose ->

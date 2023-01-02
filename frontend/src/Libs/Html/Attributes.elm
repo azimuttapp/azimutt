@@ -120,6 +120,7 @@ role text =
 
 track : TrackClick -> List (Attribute msg)
 track event =
+    -- MUST stay sync with frontend/ts-src/index.ts:407#trackClick
     let
         moreDetails : List ( String, OrganizationId )
         moreDetails =

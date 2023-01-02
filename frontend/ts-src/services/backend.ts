@@ -142,7 +142,7 @@ export class Backend {
     trackEvent = (event: TrackEvent): void => {
         this.logger.debug(`backend.trackEvent(${JSON.stringify(event)})`)
         const url = this.withXhrHost(`/api/v1/events`)
-        Http.postJson(url, event, TrackEvent, 'TrackEvent').then(_ => undefined)
+        Http.postNoContent(url, event).then(_ => undefined)
     }
 
     private withXhrHost(path: string): string {

@@ -30,6 +30,7 @@ import Models.Position as Position
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.TableId as TableId exposing (TableId)
+import Models.ProjectInfo exposing (ProjectInfo)
 import Models.RelationStyle exposing (RelationStyle)
 import Models.Size as Size
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
@@ -149,7 +150,7 @@ viewErd conf erdElem erd selectionBox virtualRelation editMemo args dragging =
             [ -- canvas.position |> Position.debugDiagram "canvas" "bg-black"
               -- , layout.tables |> List.map (.props >> Area.offGrid) |> Area.mergeCanvas |> Maybe.mapOrElse (Area.debugCanvas "tablesArea" "border-blue-500") (div [] []),
               displayedRelations |> Lazy.lazy5 viewRelations conf erd.settings.defaultSchema erd.settings.relationStyle displayedTables
-            , tableProps |> viewTables platform conf cursorMode virtualRelation openedDropdown openedPopover hoverTable dragging canvas.zoom erd.settings.defaultSchema selected erd.settings.columnBasicTypes erd.tables erd.notes
+            , tableProps |> viewTables platform conf cursorMode virtualRelation openedDropdown openedPopover hoverTable dragging canvas.zoom erd.settings.defaultSchema selected erd.settings.columnBasicTypes erd.project erd.tables erd.notes
             , memos |> viewMemos platform conf cursorMode editMemo
             , selectionBox |> Maybe.filterNot (\_ -> tableProps |> List.isEmpty) |> Maybe.mapOrElse viewSelectionBox (div [] [])
             , virtualRelationInfo |> Maybe.mapOrElse (viewVirtualRelation erd.settings.relationStyle) viewEmptyRelation
@@ -205,8 +206,8 @@ handleErdPointerDown conf cursorMode e =
         Noop "No match on erd pointer down"
 
 
-viewTables : Platform -> ErdConf -> CursorMode -> Maybe VirtualRelation -> HtmlId -> HtmlId -> Maybe TableId -> Maybe DragState -> ZoomLevel -> SchemaName -> DetailsSidebar.Selected -> Bool -> Dict TableId ErdTable -> Dict TableId ErdTableNotes -> List ErdTableLayout -> Html Msg
-viewTables platform conf cursorMode virtualRelation openedDropdown openedPopover hoverTable dragging zoom defaultSchema selected useBasicTypes tables notes tableLayouts =
+viewTables : Platform -> ErdConf -> CursorMode -> Maybe VirtualRelation -> HtmlId -> HtmlId -> Maybe TableId -> Maybe DragState -> ZoomLevel -> SchemaName -> DetailsSidebar.Selected -> Bool -> ProjectInfo -> Dict TableId ErdTable -> Dict TableId ErdTableNotes -> List ErdTableLayout -> Html Msg
+viewTables platform conf cursorMode virtualRelation openedDropdown openedPopover hoverTable dragging zoom defaultSchema selected useBasicTypes projectInfo tables notes tableLayouts =
     Keyed.node "div"
         [ class "az-tables" ]
         (tableLayouts
@@ -216,7 +217,7 @@ viewTables platform conf cursorMode virtualRelation openedDropdown openedPopover
             |> List.map
                 (\( index, table, tableLayout ) ->
                     ( TableId.toString table.id
-                    , Lazy.lazy6 viewTable
+                    , Lazy.lazy7 viewTable
                         conf
                         zoom
                         (Table.argsToString
@@ -232,6 +233,7 @@ viewTables platform conf cursorMode virtualRelation openedDropdown openedPopover
                             (virtualRelation /= Nothing)
                             useBasicTypes
                         )
+                        projectInfo
                         (notes |> Dict.getOrElse table.id ErdTableNotes.empty)
                         tableLayout
                         table

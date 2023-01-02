@@ -18,6 +18,7 @@ import Models.Position as Position
 import Models.Project.ColumnType as ColumnType
 import Models.Project.CustomTypeValue as CustomTypeValue
 import Models.Project.SchemaName exposing (SchemaName)
+import Models.ProjectInfo exposing (ProjectInfo)
 import Models.Size as Size
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
 import PagesComponents.Organization_.Project_.Models exposing (Msg(..), NotesMsg(..), VirtualRelationMsg(..))
@@ -57,8 +58,8 @@ stringToArgs args =
             ( ( Platform.PC, CursorMode.Drag, Conf.schema.empty ), ( ( "", "", 0 ), "" ), ( ( False, False ), ( False, False ) ) )
 
 
-viewTable : ErdConf -> ZoomLevel -> TableArgs -> ErdTableNotes -> ErdTableLayout -> ErdTable -> Html Msg
-viewTable conf zoom args notes layout table =
+viewTable : ErdConf -> ZoomLevel -> TableArgs -> ProjectInfo -> ErdTableNotes -> ErdTableLayout -> ErdTable -> Html Msg
+viewTable conf zoom args projectInfo notes layout table =
     let
         ( ( platform, cursorMode, defaultSchema ), ( ( openedDropdown, openedPopover, index ), selected ), ( ( isHover, dragging ), ( virtualRelation, useBasicTypes ) ) ) =
             stringToArgs args
@@ -96,7 +97,6 @@ viewTable conf zoom args notes layout table =
             , columns = layout.columns |> List.filterMap (\c -> columns |> List.findBy .name c.name)
             , hiddenColumns = hiddenColumns |> List.sortBy .index
             , dropdown = Just dropdown
-            , platform = platform
             , state =
                 { color = layout.props.color
                 , isHover = isHover
@@ -138,6 +138,8 @@ viewTable conf zoom args notes layout table =
                 }
             , zoom = zoom
             , conf = { layout = conf.layout, move = conf.move, select = conf.select, hover = conf.hover }
+            , project = { id = projectInfo.id, organization = projectInfo.organization |> Maybe.map (\o -> { id = o.id }) }
+            , platform = platform
             , defaultSchema = defaultSchema
             }
         ]

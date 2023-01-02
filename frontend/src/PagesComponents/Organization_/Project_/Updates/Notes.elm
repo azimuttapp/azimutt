@@ -34,7 +34,7 @@ handleNotes msg model =
                         , notes = model.erd |> Maybe.andThen (.notes >> ErdTableNotes.get ref) |> Maybe.withDefault ""
                         }
                     )
-            , Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.editNotesDialog), Ports.track Track.openEditNotes ]
+            , Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.editNotesDialog), Track.openEditNotes model.erd |> Ports.track ]
             )
 
         NEdit notes ->

@@ -10,8 +10,9 @@ import Libs.Bool as Bool
 import Libs.Dict as Dict
 import Libs.Maybe as Maybe
 import Libs.Result as Result
+import Models.OrganizationId exposing (OrganizationId)
 import Models.Project exposing (Project)
-import Models.Project.ProjectId as ProjectId
+import Models.Project.ProjectId as ProjectId exposing (ProjectId)
 import Models.Project.Source exposing (Source)
 import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Models.TrackEvent exposing (TrackClick, TrackEvent)
@@ -24,54 +25,54 @@ import PagesComponents.Organization_.Project_.Models.FindPathResult exposing (Fi
 -- all tracking events should be declared here to have a good overview of them
 
 
-openSharing : TrackEvent
-openSharing =
-    { name = "open-sharing", details = [], organization = Nothing, project = Nothing }
+openSharing : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> TrackEvent
+openSharing erd =
+    createEvent "open-sharing" [] (erd |> Maybe.map .project)
 
 
-openSettings : TrackEvent
-openSettings =
-    { name = "open-settings", details = [], organization = Nothing, project = Nothing }
+openSettings : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> TrackEvent
+openSettings erd =
+    createEvent "open-settings" [] (erd |> Maybe.map .project)
 
 
-openHelp : TrackEvent
-openHelp =
-    { name = "open-help", details = [], organization = Nothing, project = Nothing }
+openHelp : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> TrackEvent
+openHelp erd =
+    createEvent "open-help" [] (erd |> Maybe.map .project)
 
 
-openTableDropdown : TrackClick
-openTableDropdown =
-    { name = "open-table-dropdown", details = [], organization = Nothing, project = Nothing }
+openTableDropdown : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> TrackClick
+openTableDropdown project =
+    createClick "open-table-dropdown" [] (Just project)
 
 
-showTableWithForeignKey : TrackClick
-showTableWithForeignKey =
-    { name = "show-table-with-foreign-key", details = [], organization = Nothing, project = Nothing }
+showTableWithForeignKey : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> TrackClick
+showTableWithForeignKey project =
+    createClick "show-table-with-foreign-key" [] (Just project)
 
 
-showTableWithIncomingRelationsDropdown : TrackClick
-showTableWithIncomingRelationsDropdown =
-    { name = "show-table-with-incoming-relations-dropdown", details = [], organization = Nothing, project = Nothing }
+showTableWithIncomingRelationsDropdown : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> TrackClick
+showTableWithIncomingRelationsDropdown project =
+    createClick "show-table-with-incoming-relations-dropdown" [] (Just project)
 
 
-openIncomingRelationsDropdown : TrackClick
-openIncomingRelationsDropdown =
-    { name = "open-incoming-relations-dropdown", details = [], organization = Nothing, project = Nothing }
+openIncomingRelationsDropdown : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> TrackClick
+openIncomingRelationsDropdown project =
+    createClick "open-incoming-relations-dropdown" [] (Just project)
 
 
-openSaveLayout : TrackEvent
-openSaveLayout =
-    { name = "open-save-layout", details = [], organization = Nothing, project = Nothing }
+openSaveLayout : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> TrackEvent
+openSaveLayout erd =
+    createEvent "open-save-layout" [] (erd |> Maybe.map .project)
 
 
-openEditNotes : TrackEvent
-openEditNotes =
-    { name = "open-edit-notes", details = [], organization = Nothing, project = Nothing }
+openEditNotes : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> TrackEvent
+openEditNotes erd =
+    createEvent "open-edit-notes" [] (erd |> Maybe.map .project)
 
 
-openUpdateSchema : TrackEvent
-openUpdateSchema =
-    { name = "open-update-schema", details = [], organization = Nothing, project = Nothing }
+openUpdateSchema : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> TrackEvent
+openUpdateSchema erd =
+    createEvent "open-update-schema" [] (erd |> Maybe.map .project)
 
 
 parsedDatabaseSource : Result String Source -> TrackEvent
@@ -91,6 +92,7 @@ parsedJsonSource =
 
 loadProject : ProjectInfo -> TrackClick
 loadProject =
+    -- FIXME: removed with legacy projects
     projectClick "load"
 
 
@@ -124,19 +126,19 @@ refreshSource =
     sourceEvent "refresh"
 
 
-createLayout : ErdLayout -> TrackEvent
+createLayout : { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> ErdLayout -> TrackEvent
 createLayout =
-    layoutEvent "create"
+    createLayoutEvent "create"
 
 
-loadLayout : ErdLayout -> TrackEvent
+loadLayout : { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> ErdLayout -> TrackEvent
 loadLayout =
-    layoutEvent "load"
+    createLayoutEvent "load"
 
 
-deleteLayout : ErdLayout -> TrackEvent
+deleteLayout : { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> ErdLayout -> TrackEvent
 deleteLayout =
-    layoutEvent "delete"
+    createLayoutEvent "delete"
 
 
 externalLink : String -> TrackClick
@@ -144,14 +146,14 @@ externalLink url =
     { name = "external-link", details = [ ( "url", url ) ], organization = Nothing, project = Nothing }
 
 
-openFindPath : TrackEvent
-openFindPath =
-    { name = "open-find-path", details = [], organization = Nothing, project = Nothing }
+openFindPath : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> TrackEvent
+openFindPath erd =
+    createEvent "open-find-path" [] (erd |> Maybe.map .project)
 
 
-openSchemaAnalysis : TrackEvent
-openSchemaAnalysis =
-    { name = "open-schema-analysis", details = [], organization = Nothing, project = Nothing }
+openSchemaAnalysis : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> TrackEvent
+openSchemaAnalysis erd =
+    createEvent "open-schema-analysis" [] (erd |> Maybe.map .project)
 
 
 findPathResult : FindPathResult -> TrackEvent
@@ -166,6 +168,16 @@ proPlanLimit limit erd =
 
 
 -- HELPERS
+
+
+createEvent : String -> List ( String, Encode.Value ) -> Maybe { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> TrackEvent
+createEvent name details project =
+    { name = name, details = details, organization = project |> Maybe.andThen .organization |> Maybe.map .id, project = project |> Maybe.map .id }
+
+
+createClick : String -> List ( String, String ) -> Maybe { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> TrackClick
+createClick name details project =
+    { name = name, details = details, organization = project |> Maybe.andThen .organization |> Maybe.map .id, project = project |> Maybe.map .id }
 
 
 parseDatabaseEvent : Result String Source -> TrackEvent
@@ -271,16 +283,13 @@ sourceEvent eventName source =
     }
 
 
-layoutEvent : String -> ErdLayout -> TrackEvent
-layoutEvent eventName layout =
-    { name = eventName ++ "-layout"
-    , details =
+createLayoutEvent : String -> { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> ErdLayout -> TrackEvent
+createLayoutEvent eventName erd layout =
+    createEvent (eventName ++ "-layout")
         [ ( "nb-table", layout.tables |> List.length |> Encode.int )
         , ( "nb-memos", layout.memos |> List.length |> Encode.int )
         ]
-    , organization = Nothing
-    , project = Nothing
-    }
+        (Just erd.project)
 
 
 findPathResults : FindPathResult -> TrackEvent

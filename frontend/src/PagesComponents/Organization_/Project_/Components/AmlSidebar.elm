@@ -79,7 +79,7 @@ update : Time.Posix -> AmlSidebarMsg -> Model x -> ( Model x, Cmd Msg )
 update now msg model =
     case msg of
         AOpen id ->
-            ( model |> setAmlSidebar (Just (init id model.erd)), Ports.track Track.openUpdateSchema )
+            ( model |> setAmlSidebar (Just (init id model.erd)), Track.openUpdateSchema model.erd |> Ports.track )
 
         AClose ->
             ( model |> setAmlSidebar Nothing, Cmd.none )

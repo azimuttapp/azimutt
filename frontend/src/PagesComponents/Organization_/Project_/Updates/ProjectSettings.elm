@@ -34,7 +34,7 @@ handleProjectSettings : Time.Posix -> ProjectSettingsMsg -> Model x -> ( Model x
 handleProjectSettings now msg model =
     case msg of
         PSOpen ->
-            ( model |> setSettings (Just { id = Conf.ids.settingsDialog }), Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.settingsDialog), Ports.track Track.openSettings ] )
+            ( model |> setSettings (Just { id = Conf.ids.settingsDialog }), Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.settingsDialog), Track.openSettings model.erd |> Ports.track ] )
 
         PSClose ->
             ( model |> setSettings Nothing, Cmd.none )

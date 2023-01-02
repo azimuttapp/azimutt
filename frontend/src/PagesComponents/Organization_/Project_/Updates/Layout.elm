@@ -35,7 +35,7 @@ loadLayout name erd =
         |> Maybe.mapOrElse
             (\layout ->
                 ( erd |> setCurrentLayout name
-                , Cmd.batch [ Ports.observeTablesSize (layout.tables |> List.map .id), Ports.observeMemosSize (layout.memos |> List.map .id), Ports.track (Track.loadLayout layout) ]
+                , Cmd.batch [ Ports.observeTablesSize (layout.tables |> List.map .id), Ports.observeMemosSize (layout.memos |> List.map .id), Track.loadLayout erd layout |> Ports.track ]
                 )
             )
             ( erd, Cmd.none )
@@ -49,5 +49,5 @@ deleteLayout name erd =
     else
         erd.layouts
             |> Dict.get name
-            |> Maybe.map (\layout -> ( erd |> mapLayouts (Dict.remove name), Ports.track (Track.deleteLayout layout) ))
+            |> Maybe.map (\layout -> ( erd |> mapLayouts (Dict.remove name), Track.deleteLayout erd layout |> Ports.track ))
             |> Maybe.withDefault ( erd, "Can't find layout '" ++ name ++ "' to delete" |> Toasts.warning |> Toast |> T.send )

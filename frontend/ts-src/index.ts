@@ -404,20 +404,22 @@ function reportError(label: string, error?: AnyError) {
 
 
 // listen at every click to handle tracking events
+// MUST stay sync with frontend/src/Libs/Html/Attributes.elm:123#track
 function trackClick(e: MouseEvent) {
     const target = e.target as HTMLElement
     const tracked = Utils.findParent(target, e => !!e.getAttribute('data-track-event'))
     if (tracked) {
         const name = tracked.getAttribute('data-track-event') || 'click'
-        const details: { [key: string]: string } = {label: (tracked.textContent || '').trim()}
-        const attrs = target.attributes
+        const trackDetails: { [key: string]: string } = {label: (tracked.textContent || '').trim()}
+        const attrs = tracked.attributes
         for (let i = 0; i < attrs.length; i++) {
             const attr = attrs[i]
             if (attr.name.startsWith('data-track-event-')) {
-                details[attr.name.replace('data-track-event-', '')] = attr.value
+                trackDetails[attr.name.replace('data-track-event-', '')] = attr.value
             }
         }
-        backend.trackEvent({name, details})
+        const {organization, project, ...details} = trackDetails
+        backend.trackEvent({name, details, organization, project})
     }
 }
 

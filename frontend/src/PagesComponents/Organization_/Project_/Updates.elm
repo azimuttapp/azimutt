@@ -220,7 +220,7 @@ update currentLayout now urlOrganization organizations projects msg model =
             model |> handleFindPath message
 
         SchemaAnalysisMsg SAOpen ->
-            ( model |> setSchemaAnalysis (Just { id = Conf.ids.schemaAnalysisDialog, opened = "" }), Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.schemaAnalysisDialog), Ports.track Track.openSchemaAnalysis ] )
+            ( model |> setSchemaAnalysis (Just { id = Conf.ids.schemaAnalysisDialog, opened = "" }), Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.schemaAnalysisDialog), Track.openSchemaAnalysis model.erd |> Ports.track ] )
 
         SchemaAnalysisMsg (SASectionToggle section) ->
             ( model |> mapSchemaAnalysisM (mapOpened (\opened -> B.cond (opened == section) "" section)), Cmd.none )

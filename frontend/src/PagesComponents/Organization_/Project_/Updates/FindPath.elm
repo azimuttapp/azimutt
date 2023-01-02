@@ -52,7 +52,7 @@ handleFindPath msg model =
                         }
                     )
                 |> mapErdM (mapSettings ProjectSettings.fillFindPath)
-            , Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.findPathDialog), Ports.track Track.openFindPath ]
+            , Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.findPathDialog), Track.openFindPath model.erd |> Ports.track ]
             )
                 |> setDirtyCmd
 

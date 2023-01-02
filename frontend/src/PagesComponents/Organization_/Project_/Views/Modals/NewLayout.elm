@@ -50,7 +50,7 @@ update : (HtmlId -> msg) -> (Toasts.Msg -> msg) -> Time.Posix -> Msg -> GlobalMo
 update modalOpen toast now msg model =
     case msg of
         Open from ->
-            ( model |> setNewLayout (Just (NewLayoutBody.init dialogId from)), Cmd.batch [ T.sendAfter 1 (modalOpen dialogId), Ports.track Track.openSaveLayout ] )
+            ( model |> setNewLayout (Just (NewLayoutBody.init dialogId from)), Cmd.batch [ T.sendAfter 1 (modalOpen dialogId), Track.openSaveLayout model.erd |> Ports.track ] )
 
         BodyMsg m ->
             model |> mapNewLayoutMCmd (NewLayoutBody.update m)
@@ -71,7 +71,7 @@ createLayout toast from name now erd =
             (from
                 |> Maybe.andThen (\f -> erd.layouts |> Dict.get f)
                 |> Maybe.withDefault (ErdLayout.empty now)
-                |> (\layout -> ( erd |> setCurrentLayout name |> mapLayouts (Dict.insert name layout), Ports.track (Track.createLayout layout) ))
+                |> (\layout -> ( erd |> setCurrentLayout name |> mapLayouts (Dict.insert name layout), Track.createLayout erd layout |> Ports.track ))
             )
 
 

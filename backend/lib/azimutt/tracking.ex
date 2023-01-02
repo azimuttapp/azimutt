@@ -7,6 +7,7 @@ defmodule Azimutt.Tracking do
   alias Azimutt.Projects.Project
   alias Azimutt.Repo
   alias Azimutt.Tracking.Event
+  alias Azimutt.Utils.Nil
   alias Azimutt.Utils.Result
 
   def last_project_loaded(%User{} = current_user) do
@@ -114,11 +115,14 @@ defmodule Azimutt.Tracking do
   defp create_event(name, data, details, %User{} = current_user, organization_id, project_id) do
     if Mix.env() == :dev, do: Logger.info("Tracking event '#{name}': #{inspect(details)}")
 
+    saved_data = Nil.safe(data, fn v -> if map_size(v) == 0, do: nil, else: v end)
+    saved_details = Nil.safe(details, fn v -> if map_size(v) == 0, do: nil, else: v end)
+
     %Event{}
     |> Event.changeset(%{
       name: name,
-      data: data,
-      details: details,
+      data: saved_data,
+      details: saved_details,
       created_by: current_user,
       organization_id: organization_id,
       project_id: project_id

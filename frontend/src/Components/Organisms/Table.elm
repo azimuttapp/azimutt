@@ -1,4 +1,4 @@
-module Components.Organisms.Table exposing (Actions, CheckConstraint, Column, ColumnName, ColumnRef, DocState, IndexConstraint, Model, Relation, SchemaName, SharedDocState, State, TableConf, TableName, TableRef, UniqueConstraint, doc, initDocState, table)
+module Components.Organisms.Table exposing (Actions, CheckConstraint, Column, ColumnName, ColumnRef, DocState, IndexConstraint, Model, OrganizationId, ProjectId, ProjectInfo, Relation, SchemaName, SharedDocState, State, TableConf, TableName, TableRef, UniqueConstraint, doc, initDocState, table)
 
 import Components.Atoms.Icon as Icon
 import Components.Atoms.Icons as Icons
@@ -24,6 +24,7 @@ import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Platform as Platform exposing (Platform)
+import Libs.Models.Uuid exposing (Uuid)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Nel as Nel
 import Libs.String as String
@@ -46,6 +47,7 @@ type alias Model msg =
     , actions : Actions msg
     , zoom : ZoomLevel
     , conf : TableConf
+    , project : ProjectInfo
     , platform : Platform
     , defaultSchema : SchemaName
     }
@@ -139,6 +141,18 @@ type alias ColumnName =
     String
 
 
+type alias OrganizationId =
+    Uuid
+
+
+type alias ProjectId =
+    Uuid
+
+
+type alias ProjectInfo =
+    { organization : Maybe { id : OrganizationId }, id : ProjectId }
+
+
 table : Model msg -> Html msg
 table model =
     div
@@ -222,7 +236,7 @@ viewHeader model =
                                  , ariaHaspopup "true"
                                  , css [ "flex text-sm opacity-25", focus [ "outline-none" ] ]
                                  ]
-                                    ++ track Track.openTableDropdown
+                                    ++ (Track.openTableDropdown model.project |> track)
                                 )
                                 [ span [ class "sr-only" ] [ text "Open table settings" ]
                                 , Icon.solid Icon.DotsVertical ""
@@ -340,7 +354,7 @@ viewColumnIcon model column =
                 [ Icon.solid Icons.columns.foreignKey "w-4 h-4" |> Tooltip.t tooltip ]
 
         else
-            div ([ css [ "cursor-pointer", text_500 model.state.color ], onClick (model.actions.relationsIconClick column.outRelations True) ] ++ track Track.showTableWithForeignKey)
+            div ([ css [ "cursor-pointer", text_500 model.state.color ], onClick (model.actions.relationsIconClick column.outRelations True) ] ++ (Track.showTableWithForeignKey model.project |> track))
                 [ Icon.solid Icons.columns.foreignKey "w-4 h-4" |> Tooltip.t tooltip ]
 
     else if column.isPrimaryKey then
@@ -384,7 +398,7 @@ viewColumnIconDropdown model column icon =
                      , ariaHaspopup "true"
                      , css [ Bool.cond (tablesToShow |> List.isEmpty) "" (text_500 model.state.color), focus [ "outline-none" ] ]
                      ]
-                        ++ track Track.openIncomingRelationsDropdown
+                        ++ (Track.openIncomingRelationsDropdown model.project |> track)
                     )
                     [ icon ]
             )
@@ -408,11 +422,11 @@ viewColumnIconDropdown model column icon =
                                     ContextMenu.btnDisabled "py-1" content
 
                                 else
-                                    viewColumnIconDropdownItem (model.actions.relationsIconClick [ rels.head ] False) content
+                                    viewColumnIconDropdownItem model.project (model.actions.relationsIconClick [ rels.head ] False) content
                             )
                      )
                         ++ (if List.length tablesToShow > 1 then
-                                [ viewColumnIconDropdownItem (model.actions.relationsIconClick tablesToShow False) [ text ("Show all (" ++ (tablesToShow |> String.pluralizeL "table") ++ ")") ] ]
+                                [ viewColumnIconDropdownItem model.project (model.actions.relationsIconClick tablesToShow False) [ text ("Show all (" ++ (tablesToShow |> String.pluralizeL "table") ++ ")") ] ]
 
                             else
                                 []
@@ -421,11 +435,11 @@ viewColumnIconDropdown model column icon =
             )
 
 
-viewColumnIconDropdownItem : msg -> List (Html msg) -> Html msg
-viewColumnIconDropdownItem message content =
+viewColumnIconDropdownItem : ProjectInfo -> msg -> List (Html msg) -> Html msg
+viewColumnIconDropdownItem project message content =
     button
         ([ type_ "button", onClick message, role "menuitem", tabindex -1, css [ "py-1 block w-full text-left", focus [ "outline-none" ], ContextMenu.itemStyles ] ]
-            ++ track Track.showTableWithIncomingRelationsDropdown
+            ++ (Track.showTableWithIncomingRelationsDropdown project |> track)
         )
         content
 
@@ -597,6 +611,7 @@ sample =
         , hiddenColumnsClick = logAction "hiddenColumnsClick"
         }
     , zoom = 1
+    , project = { id = "", organization = Nothing }
     , conf = { layout = True, move = True, select = True, hover = True }
     , defaultSchema = Conf.schema.default
     }
