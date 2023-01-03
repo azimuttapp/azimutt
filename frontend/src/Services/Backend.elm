@@ -1,4 +1,4 @@
-module Services.Backend exposing (Error, Sample, SampleSchema, blogArticleUrl, blogUrl, embedUrl, errorStatus, errorToString, getCurrentUser, getDatabaseSchema, getOrganizationsAndProjects, getSamples, homeUrl, internal, loginUrl, logoutUrl, organizationBillingUrl, organizationUrl, resourceUrl)
+module Services.Backend exposing (Error, Sample, SampleSchema, TableColorTweet, blogArticleUrl, blogUrl, embedUrl, errorStatus, errorToString, getCurrentUser, getDatabaseSchema, getOrganizationsAndProjects, getSamples, getTableColorTweet, homeUrl, internal, loginUrl, logoutUrl, organizationBillingUrl, organizationUrl, resourceUrl)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Either exposing (Either(..))
@@ -9,6 +9,7 @@ import Libs.Bool as Bool
 import Libs.Http as Http
 import Libs.Json.Decode as Decode
 import Libs.Maybe as Maybe
+import Libs.Models exposing (TweetUrl)
 import Libs.Models.DatabaseUrl as DatabaseUrl exposing (DatabaseUrl)
 import Libs.Result as Result
 import Libs.Tailwind exposing (Color, decodeColor)
@@ -167,15 +168,27 @@ getDatabaseSchema : DatabaseUrl -> (Result Error String -> msg) -> Cmd msg
 getDatabaseSchema url toMsg =
     riskyPost
         { url = "/api/v1/analyzer/schema"
-        , body = databaseSchemaBody url |> Http.jsonBody
+        , body = [ ( "url", url |> DatabaseUrl.encode ) ] |> Encode.object |> Http.jsonBody
         , expect = Http.expectStringResponse toMsg handleResponse
         }
 
 
-databaseSchemaBody : DatabaseUrl -> Encode.Value
-databaseSchemaBody url =
-    Encode.object
-        [ ( "url", url |> DatabaseUrl.encode ) ]
+type alias TableColorTweet =
+    { tweet : String, errors : List String }
+
+
+getTableColorTweet : OrganizationId -> TweetUrl -> (Result Error TableColorTweet -> msg) -> Cmd msg
+getTableColorTweet organizationId tweetUrl toMsg =
+    riskyPost
+        { url = "/api/v1/organizations/" ++ organizationId ++ "/tweet-for-table-colors"
+        , body = [ ( "tweet_url", tweetUrl |> Encode.string ) ] |> Encode.object |> Http.jsonBody
+        , expect =
+            Http.expectJson (Result.mapError buildError >> toMsg)
+                (Decode.map2 TableColorTweet
+                    (Decode.field "tweet" Decode.string)
+                    (Decode.field "errors" (Decode.list Decode.string))
+                )
+        }
 
 
 riskyGet : { url : String, expect : Http.Expect msg } -> Cmd msg

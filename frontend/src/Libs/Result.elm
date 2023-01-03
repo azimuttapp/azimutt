@@ -1,4 +1,4 @@
-module Libs.Result exposing (ap, ap3, ap4, ap5, bimap, filter, fold, isErr, isOk, map6, partition, toError)
+module Libs.Result exposing (ap, ap3, ap4, ap5, bimap, filter, fold, isErr, isOk, map6, partition, swap, toError)
 
 import Libs.Bool as B
 import Libs.Nel as Nel exposing (Nel)
@@ -32,6 +32,16 @@ toError result =
 
         Err e ->
             Just e
+
+
+swap : Result e a -> Result a e
+swap result =
+    case result of
+        Ok a ->
+            Err a
+
+        Err e ->
+            Ok e
 
 
 partition : List (Result e a) -> ( List e, List a )

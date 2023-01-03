@@ -296,6 +296,16 @@ defmodule Azimutt.Organizations do
     end
   end
 
+  def allow_table_color_change(%Organization{} = organization, tweet_url) when is_binary(tweet_url) do
+    set_organization_data(organization, "allow_table_color_change", tweet_url)
+  end
+
+  defp set_organization_data(%Organization{} = organization, key, value) do
+    organization
+    |> Organization.put_data_changeset(key, value)
+    |> Repo.update()
+  end
+
   def get_organization_plan(%Organization{} = organization) do
     cond do
       organization.heroku_resource -> heroku_plan(organization.heroku_resource)

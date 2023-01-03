@@ -23,6 +23,13 @@ defmodule AzimuttWeb.Api.OrganizationView do
     |> put_heroku_resource(organization, ctx)
   end
 
+  def render("table_colors.json", %{tweet: tweet, errors: errors}) do
+    %{
+      tweet: tweet.text,
+      errors: errors
+    }
+  end
+
   defp put_plan(json, %Organization{} = organization, %CtxParams{} = ctx) do
     if ctx.expand |> Enum.member?("plan") do
       {:ok, plan} = Organizations.get_organization_plan(organization)

@@ -1,6 +1,7 @@
 module PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, AmlSidebarMsg(..), ConfirmDialog, ContextMenu, FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutMsg(..), MemoEdit, MemoMsg(..), ModalDialog, Model, Msg(..), NavbarModel, NotesDialog, NotesMsg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, SharingDialog, SharingMsg(..), VirtualRelation, VirtualRelationMsg(..), confirm, confirmDanger, prompt, simplePrompt)
 
 import Components.Atoms.Icon exposing (Icon(..))
+import Components.Slices.ProPlan as ProPlan
 import DataSources.AmlMiner.AmlAdapter exposing (AmlSchemaError)
 import Dict exposing (Dict)
 import Html exposing (Html, text)
@@ -205,6 +206,7 @@ type Msg
     | ProjectSettingsMsg ProjectSettingsMsg
     | EmbedSourceParsingMsg EmbedSourceParsingDialog.Msg
     | SourceParsed Source
+    | ProPlanColors ProPlan.ColorsModel ProPlan.ColorsMsg
     | HelpMsg HelpMsg
     | CursorMode CursorMode
     | FitContent

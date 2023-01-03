@@ -142,6 +142,7 @@ defmodule AzimuttWeb.Router do
 
     resources "/organizations", Api.OrganizationController, only: [:index] do
       resources "/projects", Api.ProjectController, except: [:new, :edit, :show]
+      post "/tweet-for-table-colors", Api.OrganizationController, :table_colors
     end
   end
 

@@ -113,4 +113,14 @@ defmodule Azimutt.Organizations.Organization do
     |> cast(%{}, [])
     |> put_change(:deleted_at, now)
   end
+
+  def put_data_changeset(%Organization{} = organization, key, value) do
+    new_data = (organization.data || %{}) |> Map.put(key, value)
+    organization |> cast(%{data: new_data}, [:data])
+  end
+
+  def drop_data_changeset(%Organization{} = organization, key) do
+    new_data = (organization.data || %{}) |> Map.drop(key)
+    organization |> cast(%{data: new_data}, [:data])
+  end
 end
