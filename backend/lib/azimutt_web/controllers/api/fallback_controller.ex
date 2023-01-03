@@ -28,6 +28,13 @@ defmodule AzimuttWeb.Api.FallbackController do
     |> render("error.json", message: "Unauthorized")
   end
 
+  def call(conn, {:error, {status, message}}) do
+    conn
+    |> put_status(status)
+    |> put_view(AzimuttWeb.ErrorView)
+    |> render("error.json", message: message)
+  end
+
   def call(conn, {:error, message}) do
     conn
     |> put_status(:internal_server_error)

@@ -2,8 +2,8 @@ module Services.Backend exposing (Error, Sample, SampleSchema, TableColorTweet, 
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Either exposing (Either(..))
-import Http exposing (Error(..))
-import Json.Decode as Decode
+import Http exposing (Error(..), Expect)
+import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Libs.Bool as Bool
 import Libs.Http as Http
@@ -11,7 +11,6 @@ import Libs.Json.Decode as Decode
 import Libs.Maybe as Maybe
 import Libs.Models exposing (TweetUrl)
 import Libs.Models.DatabaseUrl as DatabaseUrl exposing (DatabaseUrl)
-import Libs.Result as Result
 import Libs.Tailwind exposing (Color, decodeColor)
 import Libs.Time as Time
 import Libs.Url as Url
@@ -142,26 +141,17 @@ type alias Sample =
 
 getSamples : (Result Error (List Sample) -> msg) -> Cmd msg
 getSamples toMsg =
-    riskyGet
-        { url = "/api/v1/gallery"
-        , expect = Http.expectJson (Result.mapError buildError >> toMsg) (Decode.list decodeSample)
-        }
+    riskyGet { url = "/api/v1/gallery", expect = expectJson toMsg (Decode.list decodeSample) }
 
 
 getCurrentUser : (Result Error (Maybe User) -> msg) -> Cmd msg
 getCurrentUser toMsg =
-    riskyGet
-        { url = "/api/v1/users/current"
-        , expect = Http.expectJson (recoverUnauthorized >> Result.mapError buildError >> toMsg) User.decode
-        }
+    riskyGet { url = "/api/v1/users/current", expect = expectJson (recoverUnauthorized >> toMsg) User.decode }
 
 
 getOrganizationsAndProjects : (Result Error ( List Organization, List ProjectInfo ) -> msg) -> Cmd msg
 getOrganizationsAndProjects toMsg =
-    riskyGet
-        { url = "/api/v1/organizations?expand=plan,projects"
-        , expect = Http.expectJson (Result.bimap buildError formatOrgasAndProjects >> toMsg) (Decode.list decodeOrga)
-        }
+    riskyGet { url = "/api/v1/organizations?expand=plan,projects", expect = expectJson (Result.map formatOrgasAndProjects >> toMsg) (Decode.list decodeOrga) }
 
 
 getDatabaseSchema : DatabaseUrl -> (Result Error String -> msg) -> Cmd msg
@@ -183,7 +173,7 @@ getTableColorTweet organizationId tweetUrl toMsg =
         { url = "/api/v1/organizations/" ++ organizationId ++ "/tweet-for-table-colors"
         , body = [ ( "tweet_url", tweetUrl |> Encode.string ) ] |> Encode.object |> Http.jsonBody
         , expect =
-            Http.expectJson (Result.mapError buildError >> toMsg)
+            expectJson toMsg
                 (Decode.map2 TableColorTweet
                     (Decode.field "tweet" Decode.string)
                     (Decode.field "errors" (Decode.list Decode.string))
@@ -199,6 +189,11 @@ riskyGet r =
 riskyPost : { url : String, body : Http.Body, expect : Http.Expect msg } -> Cmd msg
 riskyPost r =
     Http.riskyRequest { method = "POST", url = r.url, headers = [], body = r.body, expect = r.expect, timeout = Nothing, tracker = Nothing }
+
+
+expectJson : (Result Error a -> msg) -> Decoder a -> Expect msg
+expectJson toMsg decoder =
+    Http.expectStringResponse toMsg (handleResponse >> Result.andThen (Decode.decodeString decoder >> Result.mapError (Decode.errorToStringNoValue >> Error 0)))
 
 
 
@@ -353,22 +348,22 @@ handleResponse response =
         Http.BadStatus_ metadata body ->
             case body |> Decode.decodeString errorDecoder of
                 Ok err ->
-                    metadata.statusText ++ ": " ++ err |> Error metadata.statusCode |> Err
+                    err |> Error metadata.statusCode |> Err
 
                 Err _ ->
-                    (Http.BadStatus metadata.statusCode |> Http.errorToString) ++ (Bool.cond (String.isEmpty body) "" ": " ++ body) |> Error metadata.statusCode |> Err
+                    (Http.BadStatus metadata.statusCode |> Http.errorToString) ++ Bool.cond (String.isEmpty body) "" (": " ++ body) |> Error metadata.statusCode |> Err
 
         Http.GoodStatus_ _ body ->
             Ok body
 
 
-recoverUnauthorized : Result Http.Error a -> Result Http.Error (Maybe a)
+recoverUnauthorized : Result Error a -> Result Error (Maybe a)
 recoverUnauthorized r =
     case r of
         Ok a ->
             Ok (Just a)
 
-        Err (BadStatus 401) ->
+        Err (Error 401 _) ->
             Ok Nothing
 
         Err e ->

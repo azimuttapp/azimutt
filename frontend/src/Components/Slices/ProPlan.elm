@@ -170,8 +170,8 @@ colorsModalBody organization update model close titleId =
                             div []
                                 [ colorsTweetInput (update model) organization.id tweetInput model.tweetUrl color
                                 , (model.result |> Maybe.andThen Result.toError)
-                                    |> Maybe.map (\err -> p [ id (tweetInput ++ "-description"), class "mt-2 text-sm text-red-600" ] [ text err ])
-                                    |> Maybe.withDefault (p [ id (tweetInput ++ "-description"), class "mt-2 text-sm text-gray-500" ] [ text "Your tweet has to be published within the last 10 minutes, mention ", extLink Conf.constants.azimuttTwitter [ class "link" ] [ text "@azimuttapp" ], text " and have a link to ", extLink Conf.constants.azimuttWebsite [ class "link" ] [ text "azimutt.app" ], text "." ])
+                                    |> Maybe.map (\err -> p [ id (tweetInput ++ "-description"), class "mt-2 h-10 text-sm text-red-600" ] [ text err ])
+                                    |> Maybe.withDefault (p [ id (tweetInput ++ "-description"), class "mt-2 h-10 text-sm text-gray-500" ] [ text "Your tweet has to be published within the last 10 minutes, mention ", extLink Conf.constants.azimuttTwitter [ class "link" ] [ text "@azimuttapp" ], text " and have a link to ", extLink Conf.constants.azimuttWebsite [ class "link" ] [ text "azimutt.app" ], text "." ])
                                 , colorsTweetInspiration color
                                 ]
 

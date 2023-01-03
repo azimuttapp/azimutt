@@ -20,8 +20,9 @@ defmodule AzimuttWeb.Api.OrganizationController do
     current_user = conn.assigns.current_user
 
     with {:ok, %Organization{} = organization} <- Organizations.get_organization(organization_id, current_user),
-         {:ok, %{user: tweet_user, tweet: tweet_id}} <- TwitterSrv.parse_url(tweet_url),
-         {:ok, tweet} <- TwitterSrv.get_tweet(tweet_id) |> Result.map_error(fn e -> e.message end) do
+         {:ok, %{user: tweet_user, tweet: tweet_id}} <-
+           TwitterSrv.parse_url(tweet_url) |> Result.map_error(fn _ -> {:bad_request, "Invalid tweet url"} end),
+         {:ok, tweet} <- TwitterSrv.get_tweet(tweet_id) |> Result.map_error(fn e -> {:bad_request, e.message} end) do
       errors =
         [
           if(tweet |> TwitterSrv.Tweet.is_after?(now |> Timex.shift(minutes: -10)), do: nil, else: "Tweet not within the last 10 minutes"),
@@ -31,6 +32,7 @@ defmodule AzimuttWeb.Api.OrganizationController do
         |> Enum.filter(fn e -> e != nil end)
 
       if errors == [] do
+        # TODO add tracking event
         {:ok, _} = Organizations.allow_table_color_change(organization, tweet_url)
       end
 
