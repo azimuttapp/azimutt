@@ -24,7 +24,7 @@ import Libs.Task as T
 import Models.Organization as Organization exposing (Organization)
 import Models.OrganizationId exposing (OrganizationId)
 import Services.Backend as Backend exposing (TableColorTweet)
-import Services.Lenses exposing (setColors)
+import Services.Lenses exposing (setColors, setResult)
 
 
 layoutsWarning : Organization -> Html msg
@@ -109,6 +109,11 @@ colorsInit =
 
 colorsUpdate : (ColorsModel -> ColorsMsg -> msg) -> ColorsMsg -> ColorsModel -> ( ColorsModel, Cmd msg )
 colorsUpdate update msg model =
+    let
+        wrap : ColorsMsg -> msg
+        wrap =
+            update model
+    in
     case msg of
         ToggleTweet ->
             ( { model | tweetOpen = not model.tweetOpen }, Cmd.none )
@@ -121,21 +126,18 @@ colorsUpdate update msg model =
                 ( { model | result = Nothing }, Cmd.none )
 
             else
-                ( { model | result = Nothing }, Backend.getTableColorTweet id url (GotTableColorTweet >> update model) )
+                ( { model | result = Nothing }, Backend.getTableColorTweet id url (GotTableColorTweet >> wrap) )
 
         GotTableColorTweet res ->
             let
                 result : Result ErrorMessage TweetText
                 result =
                     res |> Result.mapError Backend.errorToString |> Result.andThen colorsTweetResult
-
-                cmd : Cmd msg
-                cmd =
-                    result |> Result.fold (\_ -> Cmd.none) (\_ -> update model EnableTableChangeColor |> T.send)
             in
-            ( { model | result = Just result }, cmd )
+            ( { model | result = Just result }, result |> Result.map (\_ -> EnableTableChangeColor |> wrap |> T.send) |> Result.withDefault Cmd.none )
 
         EnableTableChangeColor ->
+            -- never called, should be intercepted in the higher level to update the global model
             ( model, Cmd.none )
 
 
@@ -147,8 +149,8 @@ colorsTweetResult r =
 colorsModalBody : Organization -> (ColorsModel -> ColorsMsg -> msg) -> ColorsModel -> msg -> HtmlId -> Html msg
 colorsModalBody organization update model close titleId =
     let
-        ( color, tweetInput ) =
-            ( Tw.orange, "change-color-tweet" )
+        ( wrap, color, tweetInput ) =
+            ( update model, Tw.orange, "change-color-tweet" )
     in
     div [ class "max-w-2xl" ]
         [ div [ css [ "px-6 pt-6", sm [ "flex items-start" ] ] ]
@@ -162,13 +164,13 @@ colorsModalBody organization update model close titleId =
                     , p [ class "mt-2 text-sm text-gray-500" ] [ text "I'm glad you are exploring Azimutt. We want to make it the ultimate tool to understand and analyze your database, and will bring much more in the coming months." ]
                     , p [ class "text-sm text-gray-500" ] [ text "This would need a lot of resources and having a small contribution from you would be awesome. Onboard in Azimutt community, it will ", bText "bring us much further together", text "." ]
                     ]
-                , colorsTweetDivider update model color
+                , colorsTweetDivider wrap color
                 , (model.result |> Maybe.andThen Result.toMaybe)
                     |> Maybe.map (\_ -> colorsTweetSuccess close)
                     |> Maybe.withDefault
                         (if model.tweetOpen then
                             div []
-                                [ colorsTweetInput (update model) organization.id tweetInput model.tweetUrl color
+                                [ colorsTweetInput wrap organization.id tweetInput model.tweetUrl color
                                 , (model.result |> Maybe.andThen Result.toError)
                                     |> Maybe.map (\err -> p [ id (tweetInput ++ "-description"), class "mt-2 h-10 text-sm text-red-600" ] [ text err ])
                                     |> Maybe.withDefault (p [ id (tweetInput ++ "-description"), class "mt-2 h-10 text-sm text-gray-500" ] [ text "Your tweet has to be published within the last 10 minutes, mention ", extLink Conf.constants.azimuttTwitter [ class "link" ] [ text "@azimuttapp" ], text " and have a link to ", extLink Conf.constants.azimuttWebsite [ class "link" ] [ text "azimutt.app" ], text "." ])
@@ -187,14 +189,14 @@ colorsModalBody organization update model close titleId =
         ]
 
 
-colorsTweetDivider : (ColorsModel -> ColorsMsg -> msg) -> ColorsModel -> Color -> Html msg
-colorsTweetDivider update model color =
+colorsTweetDivider : (ColorsMsg -> msg) -> Color -> Html msg
+colorsTweetDivider wrap color =
     div [ class "mt-3 relative" ]
         [ div [ class "absolute inset-0 flex items-center", ariaHidden True ]
             [ div [ class "w-full border-t border-gray-300" ] []
             ]
         , div [ class "relative flex justify-center" ]
-            [ button [ type_ "button", onClick (ToggleTweet |> update model), css [ "inline-flex items-center rounded-full border border-gray-300 bg-white px-4 py-1.5 text-sm font-medium leading-5 text-gray-700 shadow-sm hover:bg-gray-50", Tw.focus_ring_500 color ] ]
+            [ button [ type_ "button", onClick (ToggleTweet |> wrap), css [ "inline-flex items-center rounded-full border border-gray-300 bg-white px-4 py-1.5 text-sm font-medium leading-5 text-gray-700 shadow-sm hover:bg-gray-50", Tw.focus_ring_500 color ] ]
                 [ text "Or tweet to unlock feature"
                 ]
             ]
@@ -327,6 +329,7 @@ doc =
             , ( "layoutsModalBody", \_ -> layoutsModalBody Organization.zero docClose docTitleId )
             , ( "memosModalBody", \_ -> memosModalBody Organization.zero docClose docTitleId )
             , ( "colorsModalBody", \s -> colorsModalBody Organization.zero docColorsUpdate s.proPlanDocState.colors docClose docTitleId )
+            , ( "colorsModalBody success", \s -> colorsModalBody Organization.zero docColorsUpdate (s.proPlanDocState.colors |> setResult (Just (Ok "Tweet.."))) docClose docTitleId )
             , ( "analysisWarning", \_ -> analysisWarning Organization.zero )
             , ( "analysisResults", \_ -> analysisResults Organization.zero [ 1, 2, 3, 4, 5, 6 ] (\i -> p [] [ text ("Item " ++ String.fromInt i) ]) )
             ]
