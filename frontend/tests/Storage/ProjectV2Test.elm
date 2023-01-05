@@ -279,7 +279,7 @@ canvasPos x y =
     Position x y |> Position.diagram
 
 
-gridPos : Float -> Float -> Position.CanvasGrid
+gridPos : Float -> Float -> Position.Grid
 gridPos x y =
     Position x y |> Position.grid
 

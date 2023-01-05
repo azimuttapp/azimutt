@@ -182,7 +182,7 @@ type Msg
     | SelectTable TableId Bool
     | SelectAllTables
     | TableMove TableId Delta
-    | TablePosition TableId Position.CanvasGrid
+    | TablePosition TableId Position.Grid
     | TableOrder TableId Int
     | TableColor TableId Color
     | MoveColumn ColumnRef Int
@@ -207,7 +207,7 @@ type Msg
     | SourceParsed Source
     | HelpMsg HelpMsg
     | CursorMode CursorMode
-    | FitContent
+    | FitToScreen
     | ArrangeTables
     | Fullscreen (Maybe HtmlId)
     | OnWheel WheelEvent

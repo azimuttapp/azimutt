@@ -18,7 +18,7 @@ view platform erdElem canvasProps event =
         [ ContextMenu.btnHotkey "" SelectAllTables [ text "Select all tables" ] platform (Conf.hotkeys |> Dict.getOrElse "select-all" [])
         , ContextMenu.btnHotkey "" (NewLayoutMsg (NewLayout.Open Nothing)) [ text "New layout" ] platform (Conf.hotkeys |> Dict.getOrElse "create-layout" [])
         , ContextMenu.btnHotkey "" (event |> CanvasProps.eventCanvas erdElem canvasProps |> MCreate |> MemoMsg) [ text "New memo" ] platform (Conf.hotkeys |> Dict.getOrElse "new-memo" [])
-        , ContextMenu.btn "" FitContent [ text "Fit diagram to screen" ]
+        , ContextMenu.btn "" FitToScreen [ text "Fit diagram to screen" ]
         , ContextMenu.btn "" (AmlSidebarMsg AToggle) [ text "Update your schema" ]
         , ContextMenu.btnHotkey "" (FindPathMsg (FPOpen Nothing Nothing)) [ text "Find path between tables" ] platform (Conf.hotkeys |> Dict.getOrElse "find-path" [])
         , ContextMenu.btn "" (SchemaAnalysisMsg SAOpen) [ text "Analyze schema" ]

@@ -262,10 +262,10 @@ type JsMsg
     | GotHotkey String
     | GotKeyHold String Bool
     | GotToast String String
-    | GotTableShow TableId (Maybe Position.CanvasGrid)
+    | GotTableShow TableId (Maybe Position.Grid)
     | GotTableHide TableId
     | GotTableToggleColumns TableId
-    | GotTablePosition TableId Position.CanvasGrid
+    | GotTablePosition TableId Position.Grid
     | GotTableMove TableId Delta
     | GotTableSelect TableId
     | GotTableColor TableId Color

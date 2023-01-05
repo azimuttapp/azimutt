@@ -1,4 +1,4 @@
-module Libs.Models.Size exposing (Size, decode, diff, div, encode, fromTuple, mult, ratio, round, styles, sub, toString, toStringRound, toTuple, zero)
+module Libs.Models.Size exposing (Size, SizeLike, decode, diff, div, encode, fromTuple, mult, ratio, round, styles, sub, toString, toStringRound, toTuple, zero)
 
 import Html exposing (Attribute)
 import Html.Attributes exposing (style)
@@ -10,6 +10,10 @@ import Libs.Models.Delta exposing (Delta)
 
 type alias Size =
     { width : Float, height : Float }
+
+
+type alias SizeLike x =
+    { x | width : Float, height : Float }
 
 
 zero : Size

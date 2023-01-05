@@ -249,7 +249,7 @@ update currentLayout now urlOrganization organizations projects msg model =
         CursorMode mode ->
             ( model |> setCursorMode mode, Cmd.none )
 
-        FitContent ->
+        FitToScreen ->
             model |> mapErdMCmd (fitCanvas now model.erdElem) |> setDirtyCmd
 
         ArrangeTables ->
@@ -458,7 +458,7 @@ handleJsMessage now currentLayout msg model =
             ( model, T.send (MoveColumn ref index) )
 
         GotFitToScreen ->
-            ( model, T.send FitContent )
+            ( model, T.send FitToScreen )
 
         Error json err ->
             ( model, Cmd.batch [ "Unable to decode JavaScript message: " ++ Decode.errorToString err ++ " in " ++ Encode.encode 0 json |> Toasts.error |> Toast |> T.send, Ports.trackJsonError "js-message" err ] )
@@ -490,7 +490,7 @@ updateSizes changes model =
                     )
     in
     if model.conf.fitOnLoad then
-        ( tablesChanged |> mapConf (\c -> { c | fitOnLoad = False }), T.send FitContent )
+        ( tablesChanged |> mapConf (\c -> { c | fitOnLoad = False }), T.send FitToScreen )
 
     else
         ( tablesChanged, Cmd.none )
@@ -520,7 +520,7 @@ updateTable zoom tables erdViewport table change =
         table |> mapProps (setSize newSize)
 
 
-computeInitialPosition : List ErdTableLayout -> Area.Canvas -> Size.Canvas -> Delta -> Maybe PositionHint -> Position.CanvasGrid
+computeInitialPosition : List ErdTableLayout -> Area.Canvas -> Size.Canvas -> Delta -> Maybe PositionHint -> Position.Grid
 computeInitialPosition tables erdViewport newSize _ hint =
     hint
         |> Maybe.mapOrElse
@@ -545,7 +545,7 @@ computeInitialPosition tables erdViewport newSize _ hint =
             (newSize |> placeAtCenter erdViewport)
 
 
-placeAtCenter : Area.Canvas -> Size.Canvas -> Position.CanvasGrid
+placeAtCenter : Area.Canvas -> Size.Canvas -> Position.Grid
 placeAtCenter erdViewport newSize =
     let
         ( canvasCenter, tableCenter ) =
@@ -564,7 +564,7 @@ placeAtCenter erdViewport newSize =
 --        |> Position.onGrid
 
 
-moveDownIfExists : List ErdTableLayout -> Size.Canvas -> Position.CanvasGrid -> Position.CanvasGrid
+moveDownIfExists : List ErdTableLayout -> Size.Canvas -> Position.Grid -> Position.Grid
 moveDownIfExists tables size position =
     if tables |> List.any (\t -> t.props.position == position || isSameTopRight t.props { position = position, size = size }) then
         position |> Position.moveGrid { dx = 0, dy = Conf.ui.tableHeaderHeight } |> moveDownIfExists tables size
@@ -573,7 +573,7 @@ moveDownIfExists tables size position =
         position
 
 
-isSameTopRight : { x | position : Position.CanvasGrid, size : Size.Canvas } -> { y | position : Position.CanvasGrid, size : Size.Canvas } -> Bool
+isSameTopRight : { x | position : Position.Grid, size : Size.Canvas } -> { y | position : Position.Grid, size : Size.Canvas } -> Bool
 isSameTopRight a b =
     let
         ( aPos, bPos ) =

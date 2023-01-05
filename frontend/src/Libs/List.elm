@@ -8,6 +8,8 @@ module Libs.List exposing
     , dropUntil
     , dropWhile
     , filterBy
+    , filterIn
+    , filterInBy
     , filterNot
     , filterZip
     , find
@@ -35,6 +37,7 @@ module Libs.List exposing
     , prepend
     , prependIf
     , prependOn
+    , reduce
     , remove
     , removeAt
     , removeBy
@@ -157,6 +160,16 @@ findIndexBy matcher value list =
 filterBy : (a -> b) -> b -> List a -> List a
 filterBy matcher value list =
     List.filter (\a -> matcher a == value) list
+
+
+filterIn : List a -> List a -> List a
+filterIn limit list =
+    List.filter (\a -> limit |> List.member a) list
+
+
+filterInBy : (a -> b) -> List b -> List a -> List a
+filterInBy matcher limit list =
+    List.filter (\a -> limit |> List.member (matcher a)) list
 
 
 filterNot : (a -> Bool) -> List a -> List a
@@ -447,6 +460,16 @@ minimumBy getKey list =
 
         _ ->
             Nothing
+
+
+reduce : (a -> a -> a) -> List a -> Maybe a
+reduce func list =
+    case list of
+        [] ->
+            Nothing
+
+        x :: xs ->
+            xs |> List.foldl func x |> Just
 
 
 toggle : comparable -> List comparable -> List comparable
