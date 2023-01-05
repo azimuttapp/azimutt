@@ -26,36 +26,43 @@ import PagesComponents.Organization_.Project_.Models.FindPathResult exposing (Fi
 
 openSharing : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> TrackEvent
 openSharing erd =
+    -- TODO: onboarding goal
     createEvent "open-sharing" [] (erd |> Maybe.map .project)
 
 
 openSettings : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> TrackEvent
 openSettings erd =
+    -- TODO: onboarding goal
     createEvent "open-settings" [] (erd |> Maybe.map .project)
 
 
 openHelp : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> TrackEvent
 openHelp erd =
-    createEvent "open-help" [] (erd |> Maybe.map .project)
+    -- TODO: add source: top_navbar
+    createEvent "editor_open_help" [] (erd |> Maybe.map .project)
 
 
 openTableDropdown : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> TrackClick
 openTableDropdown project =
+    -- TODO: onboarding goal
     createClick "open-table-dropdown" [] (Just project)
 
 
 showTableWithForeignKey : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> TrackClick
 showTableWithForeignKey project =
+    -- TODO: onboarding goal
     createClick "show-table-with-foreign-key" [] (Just project)
 
 
 showTableWithIncomingRelationsDropdown : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> TrackClick
 showTableWithIncomingRelationsDropdown project =
+    -- TODO: onboarding goal
     createClick "show-table-with-incoming-relations-dropdown" [] (Just project)
 
 
 openIncomingRelationsDropdown : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> TrackClick
 openIncomingRelationsDropdown project =
+    -- TODO: onboarding goal
     createClick "open-incoming-relations-dropdown" [] (Just project)
 
 
@@ -71,11 +78,13 @@ openEditNotes erd =
 
 openUpdateSchema : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> TrackEvent
 openUpdateSchema erd =
+    -- TODO add source
     createEvent "open-update-schema" [] (erd |> Maybe.map .project)
 
 
 parsedDatabaseSource : Result String Source -> TrackEvent
 parsedDatabaseSource =
+    -- TODO: one event for all sources with a kind (sql, json, database...) detail: "editor_parse_source"
     parseDatabaseEvent
 
 
@@ -102,21 +111,29 @@ initProject project =
 
 createProject : Project -> TrackEvent
 createProject project =
+    -- TODO: already in backend
     projectEvent "create" (ProjectInfo.fromProject project)
 
 
 updateProject : Project -> TrackEvent
 updateProject project =
+    -- TODO: already in backend
     projectEvent "update" (ProjectInfo.fromProject project)
 
 
 deleteProject : ProjectInfo -> TrackEvent
 deleteProject =
+    -- TODO: already in backend
     projectEvent "delete"
+
+
+
+-- TODO: add event on "editor_source_add_modal_opened"
 
 
 addSource : Source -> TrackEvent
 addSource =
+    -- TODO: "editor_source_added"
     sourceEvent "add"
 
 
@@ -142,22 +159,22 @@ deleteLayout =
 
 externalLink : String -> TrackClick
 externalLink url =
-    { name = "external-link", details = [ ( "url", url ) ], organization = Nothing, project = Nothing }
+    { name = "external_link_clicked", details = [ ( "url", url ), ( "source", "editor" ) ], organization = Nothing, project = Nothing }
 
 
 openFindPath : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> TrackEvent
 openFindPath erd =
-    createEvent "open-find-path" [] (erd |> Maybe.map .project)
-
-
-openSchemaAnalysis : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> TrackEvent
-openSchemaAnalysis erd =
-    createEvent "open-schema-analysis" [] (erd |> Maybe.map .project)
+    createEvent "editor_find_path_opened" [] (erd |> Maybe.map .project)
 
 
 findPathResult : FindPathResult -> TrackEvent
 findPathResult =
     findPathResults
+
+
+openSchemaAnalysis : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> TrackEvent
+openSchemaAnalysis erd =
+    createEvent "editor_schema_analysis_opened" [] (erd |> Maybe.map .project)
 
 
 proPlanLimit : String -> Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> TrackEvent
@@ -166,6 +183,8 @@ proPlanLimit limit erd =
 
 
 
+-- TODO: add memos
+-- TODO: add events on search clicked: editor_search_clicked
 -- HELPERS
 
 
@@ -293,7 +312,8 @@ createLayoutEvent eventName erd layout =
 
 findPathResults : FindPathResult -> TrackEvent
 findPathResults result =
-    { name = "find-path-results"
+    -- TODO: nb results
+    { name = "editor_find_path_searched"
     , details =
         [ ( "found-paths", result.paths |> List.length |> Encode.int )
         , ( "ignored-columns", result.settings.ignoredColumns |> String.split "," |> List.length |> Encode.int )
