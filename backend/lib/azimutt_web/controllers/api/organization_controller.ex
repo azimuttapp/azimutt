@@ -4,6 +4,7 @@ defmodule AzimuttWeb.Api.OrganizationController do
   alias Azimutt.Organizations
   alias Azimutt.Organizations.Organization
   alias Azimutt.Services.TwitterSrv
+  alias Azimutt.Tracking
   alias Azimutt.Utils.Result
   alias AzimuttWeb.Utils.CtxParams
   action_fallback AzimuttWeb.Api.FallbackController
@@ -32,8 +33,8 @@ defmodule AzimuttWeb.Api.OrganizationController do
         |> Enum.filter(fn e -> e != nil end)
 
       if errors == [] do
-        # TODO add tracking event
         {:ok, _} = Organizations.allow_table_color_change(organization, tweet_url)
+        Tracking.allow_table_color(current_user, organization, tweet_url)
       end
 
       conn |> render("table_colors.json", tweet: tweet, errors: errors)
