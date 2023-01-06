@@ -133,13 +133,13 @@ docOpened source erd =
 
 
 proPlanLimit : String -> Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> TrackEvent
-proPlanLimit limit erd =
-    createEvent "pro_plan_limit" [ ( "limit", limit |> Encode.string ) ] (erd |> Maybe.map .project)
+proPlanLimit feature erd =
+    createEvent "pro_plan_limit" [ ( "feature", feature |> Encode.string ) ] (erd |> Maybe.map .project)
 
 
 externalLink : String -> TrackClick
 externalLink url =
-    { name = "external_link_clicked", details = [ ( "url", url ), ( "source", "editor" ) ], organization = Nothing, project = Nothing }
+    { name = "external_link_clicked", details = [ ( "source", "editor" ), ( "url", url ) ], organization = Nothing, project = Nothing }
 
 
 jsonError : String -> Decode.Error -> TrackEvent
@@ -183,10 +183,10 @@ type alias SQLParsing x =
 
 sqlSourceDetails : SQLParsing msg -> Source -> List ( String, Encode.Value )
 sqlSourceDetails parser source =
-    [ ( "nb-lines", parser.lines |> Maybe.mapOrElse List.length 0 |> Encode.int )
-    , ( "nb-statements", parser.statements |> Maybe.mapOrElse Dict.size 0 |> Encode.int )
-    , ( "parsing-errors", parser.commands |> Maybe.mapOrElse (Dict.count (\_ ( _, r ) -> r |> Result.isErr)) 0 |> Encode.int )
-    , ( "schema-errors", parser.schema |> Maybe.mapOrElse .errors [] |> List.length |> Encode.int )
+    [ ( "nb_lines", parser.lines |> Maybe.mapOrElse List.length 0 |> Encode.int )
+    , ( "nb_statements", parser.statements |> Maybe.mapOrElse Dict.size 0 |> Encode.int )
+    , ( "nb_parsing_errors", parser.commands |> Maybe.mapOrElse (Dict.count (\_ ( _, r ) -> r |> Result.isErr)) 0 |> Encode.int )
+    , ( "nb_schema_errors", parser.schema |> Maybe.mapOrElse .errors [] |> List.length |> Encode.int )
     ]
         ++ sourceDetails source
 
@@ -198,30 +198,30 @@ jsonSourceDetails source =
 
 projectDetails : ProjectInfo -> List ( String, Encode.Value )
 projectDetails project =
-    [ ( "nb-source", project.nbSources |> Encode.int )
-    , ( "nb-table", project.nbTables |> Encode.int )
-    , ( "nb-column", project.nbColumns |> Encode.int )
-    , ( "nb-relation", project.nbRelations |> Encode.int )
-    , ( "nb-type", project.nbTypes |> Encode.int )
-    , ( "nb-comment", project.nbComments |> Encode.int )
-    , ( "nb-layout", project.nbLayouts |> Encode.int )
-    , ( "nb-note", project.nbNotes |> Encode.int )
-    , ( "nb-memos", project.nbMemos |> Encode.int )
+    [ ( "nb_sources", project.nbSources |> Encode.int )
+    , ( "nb_tables", project.nbTables |> Encode.int )
+    , ( "nb_columns", project.nbColumns |> Encode.int )
+    , ( "nb_relations", project.nbRelations |> Encode.int )
+    , ( "nb_types", project.nbTypes |> Encode.int )
+    , ( "nb_comments", project.nbComments |> Encode.int )
+    , ( "nb_layouts", project.nbLayouts |> Encode.int )
+    , ( "nb_notes", project.nbNotes |> Encode.int )
+    , ( "nb_memos", project.nbMemos |> Encode.int )
     ]
 
 
 sourceDetails : Source -> List ( String, Encode.Value )
 sourceDetails source =
     [ ( "kind", source.kind |> SourceKind.toString |> Encode.string )
-    , ( "nb-table", source.tables |> Dict.size |> Encode.int )
-    , ( "nb-relation", source.relations |> List.length |> Encode.int )
+    , ( "nb_table", source.tables |> Dict.size |> Encode.int )
+    , ( "nb_relation", source.relations |> List.length |> Encode.int )
     ]
 
 
 layoutDetails : ErdLayout -> List ( String, Encode.Value )
 layoutDetails layout =
-    [ ( "nb-table", layout.tables |> List.length |> Encode.int )
-    , ( "nb-memos", layout.memos |> List.length |> Encode.int )
+    [ ( "nb_table", layout.tables |> List.length |> Encode.int )
+    , ( "nb_memos", layout.memos |> List.length |> Encode.int )
     ]
 
 
