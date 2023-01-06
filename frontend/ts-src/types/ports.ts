@@ -30,6 +30,7 @@ import {OrganizationId} from "./organization";
 import {Env} from "../utils/env";
 import {z} from "zod";
 import {ColumnStats, TableStats} from "./stats";
+import {TrackEvent} from "./tracking";
 
 export interface ElmProgram<F, I, O> {
     init: (f: { flags: F, node?: HTMLElement }) => ElmRuntime<I, O>
@@ -91,9 +92,6 @@ export const Hotkey = z.object({
     preventDefault: z.boolean()
 }).strict()
 
-export type TrackingDetails = { [key: string]: string | number | boolean | undefined | null };
-export const TrackingDetails = z.record(z.union([z.string(), z.number(), z.boolean(), z.undefined(), z.null()]))
-
 
 export type Click = { kind: 'Click', id: HtmlId }
 export const Click = z.object({kind: z.literal('Click'), id: HtmlId}).strict()
@@ -147,14 +145,10 @@ export type Confetti = { kind: 'Confetti', id: HtmlId }
 export const Confetti = z.object({kind: z.literal('Confetti'), id: HtmlId}).strict()
 export type ConfettiPride = { kind: 'ConfettiPride' }
 export const ConfettiPride = z.object({kind: z.literal('ConfettiPride')}).strict()
-export type TrackPage = { kind: 'TrackPage', name: string }
-export const TrackPage = z.object({kind: z.literal('TrackPage'), name: z.string()}).strict()
-export type TrackEvent = { kind: 'TrackEvent', name: string, details?: TrackingDetails }
-export const TrackEvent = z.object({kind: z.literal('TrackEvent'), name: z.string(), details: TrackingDetails.optional()}).strict()
-export type TrackError = { kind: 'TrackError', name: string, details?: TrackingDetails }
-export const TrackError = z.object({kind: z.literal('TrackError'), name: z.string(), details: TrackingDetails.optional()}).strict()
-export type ElmMsg = Click | MouseDown | Focus | Blur | ScrollTo | Fullscreen | SetMeta | AutofocusWithin | Toast | GetLegacyProjects | GetProject | CreateProjectTmp | UpdateProjectTmp | CreateProject | UpdateProject | MoveProjectTo | DeleteProject | ProjectDirty | DownloadFile | GetLocalFile | GetTableStats | GetColumnStats | ObserveSizes | ListenKeys | Confetti | ConfettiPride | TrackPage | TrackEvent | TrackError
-export const ElmMsg = z.discriminatedUnion('kind', [Click, MouseDown, Focus, Blur, ScrollTo, Fullscreen, SetMeta, AutofocusWithin, Toast, GetLegacyProjects, GetProject, CreateProjectTmp, UpdateProjectTmp, CreateProject, UpdateProject, MoveProjectTo, DeleteProject, ProjectDirty, DownloadFile, GetLocalFile, GetTableStats, GetColumnStats, ObserveSizes, ListenKeys, Confetti, ConfettiPride, TrackPage, TrackEvent, TrackError])
+export type Track = { kind: 'Track', event: TrackEvent }
+export const Track = z.object({kind: z.literal('Track'), event: TrackEvent}).strict()
+export type ElmMsg = Click | MouseDown | Focus | Blur | ScrollTo | Fullscreen | SetMeta | AutofocusWithin | Toast | GetLegacyProjects | GetProject | CreateProjectTmp | UpdateProjectTmp | CreateProject | UpdateProject | MoveProjectTo | DeleteProject | ProjectDirty | DownloadFile | GetLocalFile | GetTableStats | GetColumnStats | ObserveSizes | ListenKeys | Confetti | ConfettiPride | Track
+export const ElmMsg = z.discriminatedUnion('kind', [Click, MouseDown, Focus, Blur, ScrollTo, Fullscreen, SetMeta, AutofocusWithin, Toast, GetLegacyProjects, GetProject, CreateProjectTmp, UpdateProjectTmp, CreateProject, UpdateProject, MoveProjectTo, DeleteProject, ProjectDirty, DownloadFile, GetLocalFile, GetTableStats, GetColumnStats, ObserveSizes, ListenKeys, Confetti, ConfettiPride, Track])
 
 
 export type GotSizes = { kind: 'GotSizes', sizes: ElementSize[] }

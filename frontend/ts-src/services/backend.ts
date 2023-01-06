@@ -31,6 +31,7 @@ import * as Json from "../utils/json";
 import * as jiff from "jiff";
 import {HerokuResource} from "../types/heroku";
 import {ColumnStats, TableStats} from "../types/stats";
+import {TrackEvent} from "../types/tracking";
 
 export class Backend {
     private projects: { [id: ProjectId]: ProjectJson } = {}
@@ -136,6 +137,12 @@ export class Backend {
         const {schema, table} = parseTableId(column.table)
         const url = this.withXhrHost(`/api/v1/analyzer/stats`)
         return Http.postJson(url, {url: database, schema, table, column: column.column}, ColumnStats, 'ColumnStats')
+    }
+
+    trackEvent = (event: TrackEvent): void => {
+        this.logger.debug(`backend.trackEvent(${JSON.stringify(event)})`)
+        const url = this.withXhrHost(`/api/v1/events`)
+        Http.postNoContent(url, event).then(_ => undefined)
     }
 
     private withXhrHost(path: string): string {

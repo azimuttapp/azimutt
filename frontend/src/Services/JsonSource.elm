@@ -23,6 +23,7 @@ import Libs.Tailwind exposing (TwClass)
 import Libs.Task as T
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId as SourceId
+import Models.ProjectInfo exposing (ProjectInfo)
 import Models.SourceInfo as SourceInfo exposing (SourceInfo)
 import Ports
 import Random
@@ -88,8 +89,8 @@ init source callback =
 -- UPDATE
 
 
-update : (Msg -> msg) -> Time.Posix -> Msg -> Model msg -> ( Model msg, Cmd msg )
-update wrap now msg model =
+update : (Msg -> msg) -> Time.Posix -> Maybe ProjectInfo -> Msg -> Model msg -> ( Model msg, Cmd msg )
+update wrap now project msg model =
     case msg of
         UpdateRemoteFile url ->
             ( { model | url = url }, Cmd.none )
@@ -133,7 +134,7 @@ update wrap now msg model =
             Maybe.map2 (\( info, _ ) schema -> schema |> Result.map (JsonAdapter.buildSource info) |> Result.mapError Decode.errorToString)
                 model.loadedSchema
                 model.parsedSchema
-                |> Maybe.map (\source -> ( model |> setParsedSource (source |> Just), Cmd.batch [ T.send (model.callback source), Ports.track (Track.parsedJsonSource source) ] ))
+                |> Maybe.map (\source -> ( model |> setParsedSource (source |> Just), Cmd.batch [ T.send (model.callback source), Track.jsonSourceCreated project source |> Ports.track ] ))
                 |> Maybe.withDefault ( model, Cmd.none )
 
         UiToggle htmlId ->

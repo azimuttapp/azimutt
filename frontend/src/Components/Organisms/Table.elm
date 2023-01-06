@@ -1,4 +1,4 @@
-module Components.Organisms.Table exposing (Actions, CheckConstraint, Column, ColumnName, ColumnRef, DocState, IndexConstraint, Model, Relation, SchemaName, SharedDocState, State, TableConf, TableName, TableRef, UniqueConstraint, doc, initDocState, table)
+module Components.Organisms.Table exposing (Actions, CheckConstraint, Column, ColumnName, ColumnRef, DocState, IndexConstraint, Model, OrganizationId, ProjectId, ProjectInfo, Relation, SchemaName, SharedDocState, State, TableConf, TableName, TableRef, UniqueConstraint, doc, initDocState, table)
 
 import Components.Atoms.Icon as Icon
 import Components.Atoms.Icons as Icons
@@ -18,18 +18,18 @@ import Html.Keyed as Keyed
 import Html.Lazy as Lazy
 import Libs.Bool as Bool
 import Libs.Html as Html exposing (bText)
-import Libs.Html.Attributes as Attributes exposing (ariaExpanded, ariaHaspopup, css, role, track)
+import Libs.Html.Attributes as Attributes exposing (ariaExpanded, ariaHaspopup, css, role)
 import Libs.Html.Events exposing (PointerEvent, onContextMenu, onPointerUp, stopDoubleClick)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Platform as Platform exposing (Platform)
+import Libs.Models.Uuid exposing (Uuid)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Nel as Nel
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (Color, TwClass, batch, bg_50, border_500, focus, ring_500, text_500)
 import Set exposing (Set)
-import Track
 
 
 type alias Model msg =
@@ -139,6 +139,18 @@ type alias ColumnName =
     String
 
 
+type alias OrganizationId =
+    Uuid
+
+
+type alias ProjectId =
+    Uuid
+
+
+type alias ProjectInfo =
+    { organization : Maybe { id : OrganizationId }, id : ProjectId }
+
+
 table : Model msg -> Html msg
 table model =
     div
@@ -215,15 +227,13 @@ viewHeader model =
                     Dropdown.dropdown { id = dropdownId, direction = BottomLeft, isOpen = model.state.openedDropdown == dropdownId }
                         (\m ->
                             button
-                                ([ type_ "button"
-                                 , id m.id
-                                 , onClick (model.actions.headerDropdownClick m.id)
-                                 , ariaExpanded m.isOpen
-                                 , ariaHaspopup "true"
-                                 , css [ "flex text-sm opacity-25", focus [ "outline-none" ] ]
-                                 ]
-                                    ++ track Track.openTableDropdown
-                                )
+                                [ type_ "button"
+                                , id m.id
+                                , onClick (model.actions.headerDropdownClick m.id)
+                                , ariaExpanded m.isOpen
+                                , ariaHaspopup "true"
+                                , css [ "flex text-sm opacity-25", focus [ "outline-none" ] ]
+                                ]
                                 [ span [ class "sr-only" ] [ text "Open table settings" ]
                                 , Icon.solid Icon.DotsVertical ""
                                 ]
@@ -336,11 +346,10 @@ viewColumnIcon model column =
     in
     if column.outRelations |> List.nonEmpty then
         if (column.outRelations |> List.filter .tableShown |> List.nonEmpty) || not model.conf.layout then
-            div []
-                [ Icon.solid Icons.columns.foreignKey "w-4 h-4" |> Tooltip.t tooltip ]
+            div [] [ Icon.solid Icons.columns.foreignKey "w-4 h-4" |> Tooltip.t tooltip ]
 
         else
-            div ([ css [ "cursor-pointer", text_500 model.state.color ], onClick (model.actions.relationsIconClick column.outRelations True) ] ++ track Track.showTableWithForeignKey)
+            div [ css [ "cursor-pointer", text_500 model.state.color ], onClick (model.actions.relationsIconClick column.outRelations True) ]
                 [ Icon.solid Icons.columns.foreignKey "w-4 h-4" |> Tooltip.t tooltip ]
 
     else if column.isPrimaryKey then
@@ -377,15 +386,13 @@ viewColumnIconDropdown model column icon =
         Dropdown.dropdown { id = dropdownId, direction = BottomRight, isOpen = model.state.openedDropdown == dropdownId }
             (\m ->
                 button
-                    ([ type_ "button"
-                     , id m.id
-                     , onClick (model.actions.headerDropdownClick m.id)
-                     , ariaExpanded m.isOpen
-                     , ariaHaspopup "true"
-                     , css [ Bool.cond (tablesToShow |> List.isEmpty) "" (text_500 model.state.color), focus [ "outline-none" ] ]
-                     ]
-                        ++ track Track.openIncomingRelationsDropdown
-                    )
+                    [ type_ "button"
+                    , id m.id
+                    , onClick (model.actions.headerDropdownClick m.id)
+                    , ariaExpanded m.isOpen
+                    , ariaHaspopup "true"
+                    , css [ Bool.cond (tablesToShow |> List.isEmpty) "" (text_500 model.state.color), focus [ "outline-none" ] ]
+                    ]
                     [ icon ]
             )
             (\_ ->
@@ -423,11 +430,7 @@ viewColumnIconDropdown model column icon =
 
 viewColumnIconDropdownItem : msg -> List (Html msg) -> Html msg
 viewColumnIconDropdownItem message content =
-    button
-        ([ type_ "button", onClick message, role "menuitem", tabindex -1, css [ "py-1 block w-full text-left", focus [ "outline-none" ], ContextMenu.itemStyles ] ]
-            ++ track Track.showTableWithIncomingRelationsDropdown
-        )
-        content
+    button [ type_ "button", onClick message, role "menuitem", tabindex -1, css [ "py-1 block w-full text-left", focus [ "outline-none" ], ContextMenu.itemStyles ] ] content
 
 
 viewColumnName : Model msg -> Column -> Html msg

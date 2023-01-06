@@ -77,6 +77,13 @@ update currentLayout now urlOrganization organizations projects msg model =
         SearchUpdated search ->
             ( model |> mapNavbar (mapSearch (setText search >> setActive 0)), Cmd.none )
 
+        SearchClicked kind table ->
+            if model.erd |> Maybe.mapOrElse (Erd.currentLayout >> .tables) [] |> List.any (\t -> t.id == table) then
+                ( model, Cmd.batch [ GoToTable table |> T.send, Track.searchClicked kind True model.erd |> Ports.track ] )
+
+            else
+                ( model, Cmd.batch [ ShowTable table Nothing |> T.send, Track.searchClicked kind False model.erd |> Ports.track ] )
+
         TriggerSaveProject ->
             model |> triggerSaveProject urlOrganization organizations
 
@@ -167,11 +174,11 @@ update currentLayout now urlOrganization organizations projects msg model =
                 organization =
                     model.erd |> Erd.getOrganizationM Nothing
             in
-            if organization.plan.colors then
+            if model.erd |> Erd.canChangeTableColor then
                 model |> mapErdMCmd (\erd -> erd |> Erd.mapCurrentLayoutCmd now (mapTablesCmd (mapTablePropOrSelected erd.settings.defaultSchema id (mapProps (setColor color))))) |> setDirtyCmd
 
             else
-                ( model, ProPlan.colorsModalBody organization ProPlanColors ProPlan.colorsInit |> CustomModalOpen |> T.send )
+                ( model, Cmd.batch [ ProPlan.colorsModalBody organization ProPlanColors ProPlan.colorsInit |> CustomModalOpen |> T.send, Track.proPlanLimit Conf.features.tableColor.name model.erd |> Ports.track ] )
 
         MoveColumn column position ->
             model |> mapErdM (\erd -> erd |> Erd.mapCurrentLayoutWithTime now (mapTables (List.updateBy .id column.table (mapColumns (List.moveBy .name column.column position))))) |> setDirty
@@ -196,7 +203,7 @@ update currentLayout now urlOrganization organizations projects msg model =
             model |> mapErdMCmd (Source.createRelation now src ref) |> setDirtyCmd
 
         NewLayoutMsg message ->
-            model |> NewLayout.update ModalOpen Toast now message
+            model |> NewLayout.update ModalOpen Toast CustomModalOpen now message
 
         LayoutMsg message ->
             model |> handleLayout message
@@ -211,7 +218,7 @@ update currentLayout now urlOrganization organizations projects msg model =
             model |> AmlSidebar.update now message
 
         DetailsSidebarMsg message ->
-            model.erd |> Maybe.mapOrElse (\erd -> model |> mapDetailsSidebarCmd (DetailsSidebar.update Noop erd message)) ( model, Cmd.none )
+            model.erd |> Maybe.mapOrElse (\erd -> model |> mapDetailsSidebarCmd (DetailsSidebar.update Noop NotesMsg erd message)) ( model, Cmd.none )
 
         VirtualRelationMsg message ->
             model |> handleVirtualRelation message
@@ -220,7 +227,7 @@ update currentLayout now urlOrganization organizations projects msg model =
             model |> handleFindPath message
 
         SchemaAnalysisMsg SAOpen ->
-            ( model |> setSchemaAnalysis (Just { id = Conf.ids.schemaAnalysisDialog, opened = "" }), Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.schemaAnalysisDialog), Ports.track Track.openSchemaAnalysis ] )
+            ( model |> setSchemaAnalysis (Just { id = Conf.ids.schemaAnalysisDialog, opened = "" }), Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.schemaAnalysisDialog), Track.dbAnalysisOpened model.erd |> Ports.track ] )
 
         SchemaAnalysisMsg (SASectionToggle section) ->
             ( model |> mapSchemaAnalysisM (mapOpened (\opened -> B.cond (opened == section) "" section)), Cmd.none )
@@ -238,7 +245,7 @@ update currentLayout now urlOrganization organizations projects msg model =
             model |> handleProjectSettings now message
 
         EmbedSourceParsingMsg message ->
-            model |> mapEmbedSourceParsingMCmd (EmbedSourceParsingDialog.update EmbedSourceParsingMsg now message)
+            model |> mapEmbedSourceParsingMCmd (EmbedSourceParsingDialog.update EmbedSourceParsingMsg now (model.erd |> Maybe.map .project) message)
 
         SourceParsed source ->
             ( model, Project.create projects source.name source |> Ok |> Just |> GotProject |> JsMessage |> T.send )
@@ -255,7 +262,7 @@ update currentLayout now urlOrganization organizations projects msg model =
         CursorMode mode ->
             ( model |> setCursorMode mode, Cmd.none )
 
-        FitContent ->
+        FitToScreen ->
             model |> mapErdMCmd (fitCanvas now model.erdElem) |> setDirtyCmd
 
         ArrangeTables ->
@@ -367,7 +374,7 @@ handleJsMessage now currentLayout msg model =
                     ( { model | loaded = True }, Cmd.none )
 
                 Just (Err err) ->
-                    ( { model | loaded = True }, Cmd.batch [ "Unable to read project: " ++ Decode.errorToHtml err |> Toasts.error |> Toast |> T.send, Ports.trackJsonError "decode-project" err ] )
+                    ( { model | loaded = True }, Cmd.batch [ "Unable to read project: " ++ Decode.errorToHtml err |> Toasts.error |> Toast |> T.send, Track.jsonError "decode-project" err |> Ports.track ] )
 
                 Just (Ok project) ->
                     let
@@ -464,10 +471,10 @@ handleJsMessage now currentLayout msg model =
             ( model, T.send (MoveColumn ref index) )
 
         GotFitToScreen ->
-            ( model, T.send FitContent )
+            ( model, T.send FitToScreen )
 
         Error json err ->
-            ( model, Cmd.batch [ "Unable to decode JavaScript message: " ++ Decode.errorToString err ++ " in " ++ Encode.encode 0 json |> Toasts.error |> Toast |> T.send, Ports.trackJsonError "js-message" err ] )
+            ( model, Cmd.batch [ "Unable to decode JavaScript message: " ++ Decode.errorToString err ++ " in " ++ Encode.encode 0 json |> Toasts.error |> Toast |> T.send, Track.jsonError "js_message" err |> Ports.track ] )
 
 
 updateSizes : List SizeChange -> Model -> ( Model, Cmd Msg )
@@ -496,7 +503,7 @@ updateSizes changes model =
                     )
     in
     if model.conf.fitOnLoad then
-        ( tablesChanged |> mapConf (\c -> { c | fitOnLoad = False }), T.send FitContent )
+        ( tablesChanged |> mapConf (\c -> { c | fitOnLoad = False }), T.send FitToScreen )
 
     else
         ( tablesChanged, Cmd.none )
@@ -526,7 +533,7 @@ updateTable zoom tables erdViewport table change =
         table |> mapProps (setSize newSize)
 
 
-computeInitialPosition : List ErdTableLayout -> Area.Canvas -> Size.Canvas -> Delta -> Maybe PositionHint -> Position.CanvasGrid
+computeInitialPosition : List ErdTableLayout -> Area.Canvas -> Size.Canvas -> Delta -> Maybe PositionHint -> Position.Grid
 computeInitialPosition tables erdViewport newSize _ hint =
     hint
         |> Maybe.mapOrElse
@@ -551,7 +558,7 @@ computeInitialPosition tables erdViewport newSize _ hint =
             (newSize |> placeAtCenter erdViewport)
 
 
-placeAtCenter : Area.Canvas -> Size.Canvas -> Position.CanvasGrid
+placeAtCenter : Area.Canvas -> Size.Canvas -> Position.Grid
 placeAtCenter erdViewport newSize =
     let
         ( canvasCenter, tableCenter ) =
@@ -570,7 +577,7 @@ placeAtCenter erdViewport newSize =
 --        |> Position.onGrid
 
 
-moveDownIfExists : List ErdTableLayout -> Size.Canvas -> Position.CanvasGrid -> Position.CanvasGrid
+moveDownIfExists : List ErdTableLayout -> Size.Canvas -> Position.Grid -> Position.Grid
 moveDownIfExists tables size position =
     if tables |> List.any (\t -> t.props.position == position || isSameTopRight t.props { position = position, size = size }) then
         position |> Position.moveGrid { dx = 0, dy = Conf.ui.tableHeaderHeight } |> moveDownIfExists tables size
@@ -579,7 +586,7 @@ moveDownIfExists tables size position =
         position
 
 
-isSameTopRight : { x | position : Position.CanvasGrid, size : Size.Canvas } -> { y | position : Position.CanvasGrid, size : Size.Canvas } -> Bool
+isSameTopRight : { x | position : Position.Grid, size : Size.Canvas } -> { y | position : Position.Grid, size : Size.Canvas } -> Bool
 isSameTopRight a b =
     let
         ( aPos, bPos ) =

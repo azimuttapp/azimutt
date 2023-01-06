@@ -12,6 +12,7 @@ import {
     ObserveSizes,
     ProjectDirty,
     SetMeta,
+    Track,
     UpdateProject,
     UpdateProjectTmp
 } from "./types/ports";
@@ -25,34 +26,26 @@ import {
     buildProjectRemote,
     ProjectStorage
 } from "./types/project";
-import {LogAnalytics, PlausibleAnalytics} from "./services/analytics";
-import {LogErrLogger, SentryErrLogger} from "./services/errors";
 import {ConsoleLogger} from "./services/logger";
 import {loadPolyfills} from "./utils/polyfills";
 import {Utils} from "./utils/utils";
 import {Storage} from "./services/storage";
-import {Conf} from "./conf";
 import {Backend} from "./services/backend";
 import * as Uuid from "./types/uuid";
 import {Platform, ToastLevel, ViewPosition} from "./types/basics";
 import {Env, getEnv} from "./utils/env";
 import {AnyError, formatError} from "./utils/error";
-import * as Json from "./utils/json";
 import * as url from "./utils/url";
 import {ColumnStats, TableStats} from "./types/stats";
 
 const env = getEnv()
 const platform = Utils.getPlatform()
-const conf = Conf.get()
 const logger = new ConsoleLogger(env)
 const flags = {now: Date.now(), conf: {env, platform}}
 logger.debug('flags', flags)
 const app = ElmApp.init(flags, logger)
 const storage = new Storage(logger)
 const backend = new Backend(env, logger)
-const skipAnalytics = !!Json.parse(localStorage.getItem('skip-analytics') || 'false')
-const analytics = env === Env.enum.prod && !skipAnalytics ? new PlausibleAnalytics() : new LogAnalytics(logger)
-const errorTracking = env === Env.enum.prod ? new SentryErrLogger(conf.sentry) : new LogErrLogger(logger)
 logger.info('Hi there! I hope you are enjoying Azimutt 👍️\n\n' +
     'Did you know you can access your current project in the console?\n' +
     'And even trigger some actions in Azimutt?\n\n' +
@@ -99,12 +92,7 @@ app.on('ObserveSizes', observeSizes)
 app.on('ListenKeys', listenHotkeys)
 app.on('Confetti', msg => Utils.launchConfetti(msg.id))
 app.on('ConfettiPride', _ => Utils.launchConfettiPride())
-app.on('TrackPage', msg => analytics.trackPage(msg.name))
-app.on('TrackEvent', msg => analytics.trackEvent(msg.name, msg.details))
-app.on('TrackError', msg => {
-    analytics.trackError(msg.name, msg.details)
-    errorTracking.trackError(msg.name, msg.details)
-})
+app.on('Track', msg => backend.trackEvent(msg.event))
 if (app.noListeners().length > 0 && env !== Env.enum.prod) {
     logger.error(`Do not listen to elm events: ${app.noListeners().join(', ')}`)
 }
@@ -139,7 +127,7 @@ function getLegacyProjects() {
         errs.forEach(([id, e]) => reportError(`Can't decode project ${id}`, e))
         app.gotLegacyProjects(p)
         if (p.length > 0) {
-            analytics.trackEvent('has-legacy-projects', {count: p.length})
+            backend.trackEvent({name: 'has-legacy-projects', details: {count: p.length}})
             env === Env.enum.prod && setTimeout(() => alert(`You still have some legacy projects. They won't be supported in 2023. If you don't want to loose them, open and save them before the end of the year.`), 3000)
         }
     }, err => {
@@ -416,20 +404,22 @@ function reportError(label: string, error?: AnyError) {
 
 
 // listen at every click to handle tracking events
+// MUST stay sync with frontend/src/Libs/Html/Attributes.elm:123#track
 function trackClick(e: MouseEvent) {
     const target = e.target as HTMLElement
     const tracked = Utils.findParent(target, e => !!e.getAttribute('data-track-event'))
     if (tracked) {
-        const eventName = tracked.getAttribute('data-track-event') || ''
-        const details: { [key: string]: string } = {label: (tracked.textContent || '').trim()}
-        const attrs = target.attributes
+        const name = tracked.getAttribute('data-track-event') || 'click'
+        const trackDetails: { [key: string]: string } = {label: (tracked.textContent || '').trim()}
+        const attrs = tracked.attributes
         for (let i = 0; i < attrs.length; i++) {
             const attr = attrs[i]
             if (attr.name.startsWith('data-track-event-')) {
-                details[attr.name.replace('data-track-event-', '')] = attr.value
+                trackDetails[attr.name.replace('data-track-event-', '')] = attr.value
             }
         }
-        analytics.trackEvent(eventName, details)
+        const {organization, project, ...details} = trackDetails
+        backend.trackEvent({name, details, organization, project})
     }
 }
 

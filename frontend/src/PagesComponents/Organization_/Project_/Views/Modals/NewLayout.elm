@@ -3,6 +3,7 @@ module PagesComponents.Organization_.Project_.Views.Modals.NewLayout exposing (G
 import Components.Molecules.Modal as Modal
 import Components.Slices.NewLayoutBody as NewLayoutBody
 import Components.Slices.ProPlan as ProPlan
+import Conf
 import Dict
 import Html exposing (Html)
 import Libs.Maybe as Maybe
@@ -10,7 +11,7 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Task as T
 import Models.Organization exposing (Organization)
 import Models.Project.LayoutName exposing (LayoutName)
-import PagesComponents.Organization_.Project_.Models.Erd exposing (Erd)
+import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout
 import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirtyCmd)
@@ -46,11 +47,15 @@ type Msg
     | Cancel
 
 
-update : (HtmlId -> msg) -> (Toasts.Msg -> msg) -> Time.Posix -> Msg -> GlobalModel x -> ( GlobalModel x, Cmd msg )
-update modalOpen toast now msg model =
+update : (HtmlId -> msg) -> (Toasts.Msg -> msg) -> ((msg -> String -> Html msg) -> msg) -> Time.Posix -> Msg -> GlobalModel x -> ( GlobalModel x, Cmd msg )
+update modalOpen toast customModalOpen now msg model =
     case msg of
         Open from ->
-            ( model |> setNewLayout (Just (NewLayoutBody.init dialogId from)), Cmd.batch [ T.sendAfter 1 (modalOpen dialogId), Ports.track Track.openSaveLayout ] )
+            if model.erd |> Erd.canCreateLayout then
+                ( model |> setNewLayout (Just (NewLayoutBody.init dialogId from)), Cmd.batch [ T.sendAfter 1 (modalOpen dialogId) ] )
+
+            else
+                ( model, Cmd.batch [ model.erd |> Erd.getOrganizationM Nothing |> ProPlan.layoutsModalBody |> customModalOpen |> T.send, Track.proPlanLimit Conf.features.layouts.name model.erd |> Ports.track ] )
 
         BodyMsg m ->
             model |> mapNewLayoutMCmd (NewLayoutBody.update m)
@@ -71,7 +76,7 @@ createLayout toast from name now erd =
             (from
                 |> Maybe.andThen (\f -> erd.layouts |> Dict.get f)
                 |> Maybe.withDefault (ErdLayout.empty now)
-                |> (\layout -> ( erd |> setCurrentLayout name |> mapLayouts (Dict.insert name layout), Ports.track (Track.createLayout layout) ))
+                |> (\layout -> ( erd |> setCurrentLayout name |> mapLayouts (Dict.insert name layout), Track.layoutCreated erd.project layout |> Ports.track ))
             )
 
 
@@ -88,9 +93,5 @@ view wrap modalClose organization layouts opened model =
         , isOpen = opened
         , onBackgroundClick = Cancel |> wrap |> modalClose
         }
-        [ if organization.plan.layouts |> Maybe.any (\l -> List.length layouts > l) then
-            ProPlan.layoutsModalBody organization (Cancel |> wrap |> modalClose) titleId
-
-          else
-            NewLayoutBody.view (BodyMsg >> wrap) (Create model.from >> wrap >> modalClose) (Cancel |> wrap |> modalClose) titleId layouts organization model
+        [ NewLayoutBody.view (BodyMsg >> wrap) (Create model.from >> wrap >> modalClose) (Cancel |> wrap |> modalClose) titleId layouts organization model
         ]

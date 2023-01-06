@@ -20,7 +20,7 @@ import Models.Project.CustomTypeValue as CustomTypeValue
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Size as Size
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
-import PagesComponents.Organization_.Project_.Models exposing (Msg(..), NotesMsg(..), VirtualRelationMsg(..))
+import PagesComponents.Organization_.Project_.Models exposing (Msg(..), VirtualRelationMsg(..))
 import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode exposing (CursorMode)
 import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn)
 import PagesComponents.Organization_.Project_.Models.ErdColumnRef exposing (ErdColumnRef)
@@ -29,6 +29,7 @@ import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.ErdTableNotes exposing (ErdTableNotes)
 import PagesComponents.Organization_.Project_.Models.Notes as NoteRef
+import PagesComponents.Organization_.Project_.Models.NotesMsg exposing (NotesMsg(..))
 import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint(..))
 import PagesComponents.Organization_.Project_.Views.Modals.ColumnContextMenu as ColumnContextMenu
 import PagesComponents.Organization_.Project_.Views.Modals.TableContextMenu as TableContextMenu
@@ -96,7 +97,6 @@ viewTable conf zoom args notes layout table =
             , columns = layout.columns |> List.filterMap (\c -> columns |> List.findBy .name c.name)
             , hiddenColumns = hiddenColumns |> List.sortBy .index
             , dropdown = Just dropdown
-            , platform = platform
             , state =
                 { color = layout.props.color
                 , isHover = isHover
@@ -138,6 +138,7 @@ viewTable conf zoom args notes layout table =
                 }
             , zoom = zoom
             , conf = { layout = conf.layout, move = conf.move, select = conf.select, hover = conf.hover }
+            , platform = platform
             , defaultSchema = defaultSchema
             }
         ]

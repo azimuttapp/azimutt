@@ -4,7 +4,7 @@ import Html exposing (Attribute)
 import Json.Decode as Decode
 import Json.Encode exposing (Value)
 import Libs.Models.Delta exposing (Delta)
-import Libs.Models.Size as Size exposing (Size)
+import Libs.Models.Size as Size exposing (Size, SizeLike)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 
 
@@ -28,10 +28,10 @@ extractViewport (Viewport size) =
     size
 
 
-canvas : Size -> Canvas
+canvas : SizeLike x -> Canvas
 canvas pos =
     -- use it only in last resort in very narrow and explicit scope
-    pos |> Canvas
+    { width = pos.width, height = pos.height } |> Canvas
 
 
 extractCanvas : Canvas -> Size

@@ -6,9 +6,9 @@ import Models.Size as Size
 
 
 type PositionHint
-    = PlaceLeft Position.CanvasGrid
-    | PlaceRight Position.CanvasGrid Size.Canvas
-    | PlaceAt Position.CanvasGrid
+    = PlaceLeft Position.Grid
+    | PlaceRight Position.Grid Size.Canvas
+    | PlaceAt Position.Grid
 
 
 move : Delta -> PositionHint -> PositionHint

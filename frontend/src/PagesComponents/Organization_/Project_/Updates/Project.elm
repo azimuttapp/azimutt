@@ -13,7 +13,6 @@ import PagesComponents.Organization_.Project_.Models exposing (Model, Msg(..))
 import PagesComponents.Organization_.Project_.Models.Erd as Erd
 import Ports
 import Services.Toasts as Toasts
-import Track
 
 
 triggerSaveProject : Maybe OrganizationId -> List Organization -> Model -> ( Model, Cmd Msg )
@@ -51,7 +50,7 @@ createProject name organization storage model =
                     (\p ->
                         p.organization
                             |> Maybe.map (\_ -> [ "Project already created" |> Toasts.warning |> Toast |> T.send ])
-                            |> Maybe.withDefault [ Ports.createProject organization.id storage { p | name = name }, Ports.track (Track.createProject p) ]
+                            |> Maybe.withDefault [ Ports.createProject organization.id storage { p | name = name } ]
                     )
                     [ "No project to save" |> Toasts.warning |> Toast |> T.send ]
             )
@@ -70,7 +69,7 @@ updateProject model =
                 |> Maybe.mapOrElse
                     (\p ->
                         p.organization
-                            |> Maybe.map (\_ -> [ Ports.updateProject p, Ports.track (Track.updateProject p) ])
+                            |> Maybe.map (\_ -> [ Ports.updateProject p ])
                             |> Maybe.withDefault [ "Project doesn't exist" |> Toasts.warning |> Toast |> T.send ]
                     )
                     [ "No project to save" |> Toasts.warning |> Toast |> T.send ]

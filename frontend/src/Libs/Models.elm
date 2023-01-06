@@ -1,4 +1,4 @@
-module Libs.Models exposing (ErrorMessage, FileContent, FileLine, FileLineContent, Image, Link, ListIndex, Millis, SizeChange, Text, TrackEvent, TrackedLink, TweetText, TweetUrl, ZoomDelta)
+module Libs.Models exposing (ErrorMessage, FileContent, FileLine, FileLineContent, Image, Link, ListIndex, Millis, SizeChange, Text, TweetText, TweetUrl, ZoomDelta)
 
 import Libs.Models.Delta exposing (Delta)
 import Libs.Models.FileLineIndex exposing (FileLineIndex)
@@ -49,14 +49,6 @@ type alias Image =
 
 type alias Link =
     { url : String, text : String }
-
-
-type alias TrackEvent =
-    { name : String, details : List ( String, String ), enabled : Bool }
-
-
-type alias TrackedLink =
-    { url : String, text : String, track : Maybe TrackEvent }
 
 
 type alias TweetUrl =

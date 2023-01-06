@@ -458,10 +458,11 @@ viewComment comment =
 
 
 type alias NotesModel msg =
-    { notes : Maybe Notes
-    , editing : Bool
-    , toggleEdit : HtmlId -> msg
+    { notes : Notes
+    , editing : Maybe Notes
+    , edit : HtmlId -> Notes -> msg
     , update : Notes -> msg
+    , save : Notes -> msg
     }
 
 
@@ -474,30 +475,34 @@ viewNotes model =
     in
     div [ class "mt-1 flex flex-row" ]
         [ Icon.outline Icons.notes "w-4 opacity-50 mr-1" |> Tooltip.r "Azimutt notes"
-        , if model.editing then
-            textarea
-                [ id inputId
-                , name inputId
-                , rows (model.notes |> Maybe.withDefault "" |> String.split "\n" |> List.length)
-                , value (model.notes |> Maybe.withDefault "")
-                , onInput model.update
-                , onBlur (model.toggleEdit inputId)
-                , autofocus True
-                , placeholder "Write your notes..."
-                , class "block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                ]
-                []
-
-          else
-            model.notes
-                |> Maybe.mapOrElse (\n -> div [ onClick (model.toggleEdit inputId), class "w-full cursor-pointer" ] [ viewMarkdown n ])
-                    (div [ onClick (model.toggleEdit inputId), class "w-full text-sm text-gray-400 italic underline cursor-pointer" ] [ text "Click to write notes" ])
+        , model.editing
+            |> Maybe.map
+                (\content ->
+                    textarea
+                        [ id inputId
+                        , name inputId
+                        , rows (model.notes |> String.split "\n" |> List.length)
+                        , value content
+                        , onInput model.update
+                        , onBlur (model.save content)
+                        , autofocus True
+                        , placeholder "Write your notes..."
+                        , class "block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                        ]
+                        []
+                )
+            |> Maybe.withDefault
+                (model.notes
+                    |> String.nonEmptyMaybe
+                    |> Maybe.map (\n -> div [ onClick (model.edit inputId model.notes), class "w-full cursor-pointer" ] [ viewMarkdown n ])
+                    |> Maybe.withDefault (div [ onClick (model.edit inputId model.notes), class "w-full text-sm text-gray-400 italic underline cursor-pointer" ] [ text "Click to write notes" ])
+                )
         ]
 
 
 viewMarkdown : String -> Html msg
 viewMarkdown content =
-    Markdown.prose "-mt-1 prose-sm" content
+    Markdown.prose "mt-1 prose-sm" content
 
 
 viewColumnStats : List Source -> Dict SourceIdStr ColumnStats -> Html msg
@@ -877,7 +882,7 @@ type alias DocState =
     , currentColumn : Maybe (Heading ErdColumn ErdColumnProps)
     , tableNotes : Dict TableId Notes
     , columnNotes : Dict ColumnId Notes
-    , editNotes : Bool
+    , editNotes : Maybe Notes
     }
 
 
@@ -891,7 +896,7 @@ initDocState =
     , currentColumn = Nothing
     , tableNotes = Dict.fromList [ ( ( "", "users" ), "Azimutt notes for **users**" ) ]
     , columnNotes = Dict.fromList [ ( ( ( "", "users" ), "id" ), "Azimutt notes for **users.id**" ) ]
-    , editNotes = False
+    , editNotes = Nothing
     }
         |> docSelectColumn { table = ( Conf.schema.empty, "users" ), column = "id" }
 
@@ -961,10 +966,11 @@ doc =
                                                     s.defaultSchema
                                                     schema
                                                     table
-                                                    { notes = s.tableNotes |> Dict.get table.item.id
+                                                    { notes = s.tableNotes |> Dict.get table.item.id |> Maybe.withDefault ""
                                                     , editing = s.editNotes
-                                                    , toggleEdit = \_ -> docSetState { s | editNotes = not s.editNotes }
-                                                    , update = \notes -> docSetState { s | tableNotes = s.tableNotes |> Dict.insert table.item.id notes }
+                                                    , edit = \_ content -> docSetState { s | editNotes = Just content }
+                                                    , update = \content -> docSetState { s | editNotes = s.editNotes |> Maybe.map (\_ -> content) }
+                                                    , save = \content -> docSetState { s | tableNotes = s.tableNotes |> Dict.insert table.item.id content }
                                                     }
                                                     (docErd.layouts |> Dict.filter (\_ l -> l.tables |> List.memberBy .id table.item.id) |> Dict.keys)
                                                     (table.item.origins |> List.filterZip (\o -> docErd.sources |> List.findBy .id o.id))
@@ -998,10 +1004,11 @@ doc =
                                                     schema
                                                     table
                                                     column
-                                                    { notes = s.columnNotes |> Dict.get ( table.item.id, column.item.name )
+                                                    { notes = s.columnNotes |> Dict.get ( table.item.id, column.item.name ) |> Maybe.withDefault ""
                                                     , editing = s.editNotes
-                                                    , toggleEdit = \_ -> docSetState { s | editNotes = not s.editNotes }
-                                                    , update = \notes -> docSetState { s | columnNotes = s.columnNotes |> Dict.insert ( table.item.id, column.item.name ) notes }
+                                                    , edit = \_ content -> docSetState { s | editNotes = Just content }
+                                                    , update = \content -> docSetState { s | editNotes = s.editNotes |> Maybe.map (\_ -> content) }
+                                                    , save = \content -> docSetState { s | columnNotes = s.columnNotes |> Dict.insert ( table.item.id, column.item.name ) content }
                                                     }
                                                     (docErd.layouts |> Dict.filter (\_ l -> l.tables |> List.memberWith (\t -> t.id == table.item.id && (t.columns |> List.memberBy .name column.item.name))) |> Dict.keys)
                                                     (column.item.origins |> List.filterZip (\o -> docErd.sources |> List.findBy .id o.id))
@@ -1102,7 +1109,7 @@ docSetState state =
 
 docSelectList : DocState -> DocState
 docSelectList state =
-    { state | currentSchema = Nothing, currentTable = Nothing, currentColumn = Nothing, editNotes = False }
+    { state | currentSchema = Nothing, currentTable = Nothing, currentColumn = Nothing, editNotes = Nothing }
 
 
 docSelectSchema : SchemaName -> DocState -> DocState
@@ -1111,7 +1118,7 @@ docSelectSchema schema state =
         | currentSchema = Just ( buildSchemaHeading docErd schema, docErd.tables |> Dict.values |> List.filterBy .schema schema |> List.sortBy .name )
         , currentTable = Nothing
         , currentColumn = Nothing
-        , editNotes = False
+        , editNotes = Nothing
     }
 
 
@@ -1124,7 +1131,7 @@ docSelectTable table state =
                     | currentSchema = Just ( buildSchemaHeading docErd erdTable.schema, docErd.tables |> Dict.values |> List.filterBy .schema erdTable.schema |> List.sortBy .name )
                     , currentTable = Just (buildTableHeading docErd erdTable)
                     , currentColumn = Nothing
-                    , editNotes = False
+                    , editNotes = Nothing
                 }
             )
         |> Maybe.withDefault state
@@ -1142,7 +1149,7 @@ docSelectColumn { table, column } state =
                                 | currentSchema = Just ( buildSchemaHeading docErd erdTable.schema, docErd.tables |> Dict.values |> List.filterBy .schema erdTable.schema |> List.sortBy .name )
                                 , currentTable = Just (buildTableHeading docErd erdTable)
                                 , currentColumn = Just (buildColumnHeading docErd erdTable erdColumn)
-                                , editNotes = False
+                                , editNotes = Nothing
                             }
                         )
             )

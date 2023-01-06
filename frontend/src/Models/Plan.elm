@@ -24,11 +24,11 @@ free =
     -- MUST stay in sync with backend/lib/azimutt/organizations/organization_plan.ex#free
     { id = "free"
     , name = "Free plan"
-    , layouts = Just Conf.constants.freePlanLayouts
-    , memos = Just Conf.constants.freePlanMemos
-    , colors = False
-    , dbAnalysis = False
-    , dbAccess = False
+    , layouts = Just Conf.features.layouts.free
+    , memos = Just Conf.features.memos.free
+    , colors = Conf.features.tableColor.free
+    , dbAnalysis = Conf.features.dbAnalysis.free
+    , dbAccess = Conf.features.dbAnalysis.free
     }
 
 

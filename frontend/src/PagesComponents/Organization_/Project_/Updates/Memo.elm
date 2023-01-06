@@ -2,11 +2,11 @@ module PagesComponents.Organization_.Project_.Updates.Memo exposing (Model, hand
 
 import Browser.Dom as Dom
 import Components.Slices.ProPlan as ProPlan
+import Conf
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Task as T
 import Models.ErdProps exposing (ErdProps)
-import Models.Organization as Organization exposing (Organization)
 import Models.Position as Position
 import PagesComponents.Organization_.Project_.Models exposing (MemoEdit, MemoMsg(..), Msg(..))
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
@@ -14,11 +14,13 @@ import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout
 import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
 import PagesComponents.Organization_.Project_.Models.MemoId as MemoId exposing (MemoId)
-import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirty)
+import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirty, setDirtyCmd)
+import Ports
 import Services.Lenses exposing (mapEditMemoM, mapErdM, mapMemos, mapMemosL, setColor, setContent, setEditMemo)
 import Services.Toasts as Toasts
 import Task
 import Time
+import Track
 
 
 type alias Model x =
@@ -55,21 +57,12 @@ handleMemo now msg model =
 
 createMemo : Time.Posix -> Position.Canvas -> Erd -> Model x -> ( Model x, Cmd Msg )
 createMemo now position erd model =
-    let
-        organization : Organization
-        organization =
-            erd.project.organization |> Maybe.withDefault Organization.zero
-
-        layoutMemos : Int
-        layoutMemos =
-            erd |> Erd.currentLayout |> .memos |> List.length
-    in
-    if organization.plan.memos |> Maybe.all (\limit -> limit > layoutMemos) then
+    if model.erd |> Erd.canCreateMemo then
         ErdLayout.createMemo (erd |> Erd.currentLayout) position
             |> (\memo -> model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapMemos (List.append [ memo ]))) |> editMemo True memo)
 
     else
-        ( model, ProPlan.memosModalBody organization |> CustomModalOpen |> T.send )
+        ( model, Cmd.batch [ erd |> Erd.getOrganization Nothing |> ProPlan.memosModalBody |> CustomModalOpen |> T.send, Track.proPlanLimit Conf.features.memos.name (Just erd) |> Ports.track ] )
 
 
 editMemo : Bool -> Memo -> Model x -> ( Model x, Cmd Msg )
@@ -92,7 +85,7 @@ saveMemo now edit model =
         ( model |> setEditMemo Nothing, Cmd.none )
 
     else
-        model |> setEditMemo Nothing |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapMemosL .id edit.id (setContent edit.content))) |> setDirty
+        ( model |> setEditMemo Nothing |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapMemosL .id edit.id (setContent edit.content))), Track.memoSaved edit.createMode edit.content model.erd |> Ports.track ) |> setDirtyCmd
 
 
 deleteMemo : Time.Posix -> MemoId -> Bool -> Model x -> ( Model x, Cmd Msg )
@@ -104,5 +97,5 @@ deleteMemo now id createMode model =
                     ( m, Cmd.none )
 
                 else
-                    m |> setDirty
+                    ( m, Track.memoDeleted model.erd |> Ports.track ) |> setDirtyCmd
            )

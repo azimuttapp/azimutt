@@ -41,4 +41,8 @@ defmodule AzimuttWeb.Api.FallbackController do
     |> put_view(AzimuttWeb.ErrorView)
     |> render("error.json", message: message)
   end
+
+  def call(conn, :ok) do
+    conn |> send_resp(:no_content, "")
+  end
 end

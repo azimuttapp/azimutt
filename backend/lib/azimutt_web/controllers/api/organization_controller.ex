@@ -20,7 +20,7 @@ defmodule AzimuttWeb.Api.OrganizationController do
     current_user = conn.assigns.current_user
 
     with {:ok, %Organization{} = organization} <- Organizations.get_organization(organization_id, current_user),
-         {:ok, %{user: tweet_user, tweet: tweet_id}} <-
+         {:ok, %{user: _tweet_user, tweet: tweet_id}} <-
            TwitterSrv.parse_url(tweet_url) |> Result.map_error(fn _ -> {:bad_request, "Invalid tweet url"} end),
          {:ok, tweet} <- TwitterSrv.get_tweet(tweet_id) |> Result.map_error(fn e -> {:bad_request, e.message} end) do
       errors =

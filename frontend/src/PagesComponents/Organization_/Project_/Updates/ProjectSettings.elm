@@ -34,7 +34,7 @@ handleProjectSettings : Time.Posix -> ProjectSettingsMsg -> Model x -> ( Model x
 handleProjectSettings now msg model =
     case msg of
         PSOpen ->
-            ( model |> setSettings (Just { id = Conf.ids.settingsDialog }), Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.settingsDialog), Ports.track Track.openSettings ] )
+            ( model |> setSettings (Just { id = Conf.ids.settingsDialog }), Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.settingsDialog) ] )
 
         PSClose ->
             ( model |> setSettings Nothing, Cmd.none )
@@ -53,17 +53,17 @@ handleProjectSettings now msg model =
                 |> setDirtyCmd
 
         PSSourceDelete source ->
-            ( model |> mapErdM (Erd.mapSources (List.filter (\s -> s.id /= source.id))), "Source " ++ source.name ++ " has been deleted from your project." |> Toasts.info |> Toast |> T.send ) |> setDirtyCmd
+            ( model |> mapErdM (Erd.mapSources (List.filter (\s -> s.id /= source.id))), Cmd.batch [ "Source " ++ source.name ++ " has been deleted from your project." |> Toasts.info |> Toast |> T.send, Track.sourceDeleted model.erd source |> Ports.track ] ) |> setDirtyCmd
 
         PSSourceUpdate message ->
-            model |> mapSourceUpdateCmd (SourceUpdateDialog.update (PSSourceUpdate >> ProjectSettingsMsg) ModalOpen Noop now message)
+            model |> mapSourceUpdateCmd (SourceUpdateDialog.update (PSSourceUpdate >> ProjectSettingsMsg) ModalOpen Noop now (model.erd |> Maybe.map .project) message)
 
         PSSourceSet source ->
             if model.erd |> Maybe.mapOrElse (\erd -> erd.sources |> List.memberBy .id source.id) False then
-                ( model |> mapErdM (Erd.mapSource source.id (Source.refreshWith source)), Cmd.batch [ T.send (ModalClose (SourceUpdateDialog.Close |> PSSourceUpdate |> ProjectSettingsMsg)), Ports.track (Track.refreshSource source) ] ) |> setDirtyCmd
+                ( model |> mapErdM (Erd.mapSource source.id (Source.refreshWith source)), Cmd.batch [ T.send (ModalClose (SourceUpdateDialog.Close |> PSSourceUpdate |> ProjectSettingsMsg)), Track.sourceRefreshed model.erd source |> Ports.track ] ) |> setDirtyCmd
 
             else
-                ( model |> mapErdM (Erd.mapSources (List.add source)), Cmd.batch [ T.send (ModalClose (SourceUpdateDialog.Close |> PSSourceUpdate |> ProjectSettingsMsg)), Ports.track (Track.addSource source) ] ) |> setDirtyCmd
+                ( model |> mapErdM (Erd.mapSources (List.add source)), Cmd.batch [ T.send (ModalClose (SourceUpdateDialog.Close |> PSSourceUpdate |> ProjectSettingsMsg)), Track.sourceAdded model.erd source |> Ports.track ] ) |> setDirtyCmd
 
         PSDefaultSchemaUpdate value ->
             model |> mapErdM (Erd.mapSettings (setDefaultSchema value)) |> setDirty
