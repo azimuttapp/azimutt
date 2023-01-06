@@ -13,7 +13,7 @@ import PagesComponents.Organization_.Project_.Models.MemoId exposing (MemoId)
 type alias Memo =
     { id : MemoId
     , content : String
-    , position : Position.CanvasGrid
+    , position : Position.Grid
     , size : Size.Canvas
     , color : Maybe Color
     }

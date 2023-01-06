@@ -1,4 +1,4 @@
-module Models.Area exposing (Canvas, CanvasLike, Diagram, GridLike, Viewport, ViewportLike, centerCanvas, centerCanvasGrid, centerViewport, debugCanvas, debugViewport, diagramToCanvas, divCanvas, fromCanvas, mergeCanvas, multCanvas, offGrid, overlapCanvas, styleTransformCanvas, styleTransformViewport, stylesGrid, stylesViewport, toStringRoundCanvas, toStringRoundViewport, topLeftCanvasGrid, topRightCanvasGrid, zeroCanvas)
+module Models.Area exposing (Canvas, CanvasLike, Diagram, Grid, GridLike, Viewport, ViewportLike, centerCanvas, centerCanvasGrid, centerViewport, debugCanvas, debugViewport, diagramToCanvas, divCanvas, fromCanvas, mergeCanvas, multCanvas, offGrid, overlapCanvas, styleTransformCanvas, styleTransformViewport, stylesGrid, stylesViewport, toStringRoundCanvas, toStringRoundViewport, topLeftCanvasGrid, topRightCanvasGrid, zeroCanvas)
 
 import Html exposing (Attribute, Html, div, text)
 import Html.Attributes exposing (class)
@@ -21,6 +21,10 @@ type alias Canvas =
     { position : Position.Canvas, size : Size.Canvas }
 
 
+type alias Grid =
+    { position : Position.Grid, size : Size.Canvas }
+
+
 type alias ViewportLike x =
     { x | position : Position.Viewport, size : Size.Viewport }
 
@@ -30,7 +34,7 @@ type alias CanvasLike x =
 
 
 type alias GridLike x =
-    { x | position : Position.CanvasGrid, size : Size.Canvas }
+    { x | position : Position.Grid, size : Size.Canvas }
 
 
 zeroCanvas : Canvas

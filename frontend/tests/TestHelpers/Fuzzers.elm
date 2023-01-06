@@ -37,7 +37,7 @@ positionInCanvas =
     position |> Fuzz.map Position.canvas
 
 
-positionGrid : Fuzzer Position.CanvasGrid
+positionGrid : Fuzzer Position.Grid
 positionGrid =
     position |> Fuzz.map Position.grid
 

@@ -107,7 +107,7 @@ handleHotkey _ model hotkey =
             ( model, T.send (Zoom (1 - (model.erd |> Maybe.mapOrElse (Erd.currentLayout >> .canvas >> .zoom) 0))) )
 
         "fit-to-screen" ->
-            ( model, T.send FitContent )
+            ( model, T.send FitToScreen )
 
         "undo" ->
             -- TODO: implement undo

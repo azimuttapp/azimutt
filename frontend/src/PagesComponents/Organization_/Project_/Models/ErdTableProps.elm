@@ -13,7 +13,7 @@ import PagesComponents.Organization_.Project_.Models.PositionHint exposing (Posi
 
 type alias ErdTableProps =
     { positionHint : Maybe PositionHint
-    , position : Position.CanvasGrid
+    , position : Position.Grid
     , size : Size.Canvas
     , color : Color
     , selected : Bool
