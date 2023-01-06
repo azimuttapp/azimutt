@@ -109,7 +109,7 @@ defmodule Azimutt.Tracking do
     do: create_event("stripe_invoice_payment_failed", stripe_event_data(event), nil, current_user, org.id, nil)
 
   def frontend_event(name, details, %User{} = current_user, organization_id, project_id),
-    do: create_event(name, %{}, details, current_user, organization_id, project_id)
+    do: create_event(name, nil, details, current_user, organization_id, project_id)
 
   # `organization_id` and `project_id` are nullable
   # FIXME: make this async "fire & forget"
