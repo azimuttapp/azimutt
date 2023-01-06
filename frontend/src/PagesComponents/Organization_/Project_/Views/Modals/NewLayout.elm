@@ -3,6 +3,7 @@ module PagesComponents.Organization_.Project_.Views.Modals.NewLayout exposing (G
 import Components.Molecules.Modal as Modal
 import Components.Slices.NewLayoutBody as NewLayoutBody
 import Components.Slices.ProPlan as ProPlan
+import Conf
 import Dict
 import Html exposing (Html)
 import Libs.Maybe as Maybe
@@ -51,10 +52,10 @@ update modalOpen toast customModalOpen now msg model =
     case msg of
         Open from ->
             if model.erd |> Erd.canCreateLayout then
-                ( model |> setNewLayout (Just (NewLayoutBody.init dialogId from)), Cmd.batch [ T.sendAfter 1 (modalOpen dialogId), Track.openSaveLayout model.erd |> Ports.track ] )
+                ( model |> setNewLayout (Just (NewLayoutBody.init dialogId from)), Cmd.batch [ T.sendAfter 1 (modalOpen dialogId) ] )
 
             else
-                ( model, Cmd.batch [ model.erd |> Erd.getOrganizationM Nothing |> ProPlan.layoutsModalBody |> customModalOpen |> T.send, Track.proPlanLimit "new-layout" model.erd |> Ports.track ] )
+                ( model, Cmd.batch [ model.erd |> Erd.getOrganizationM Nothing |> ProPlan.layoutsModalBody |> customModalOpen |> T.send, Track.proPlanLimit Conf.features.layouts.name model.erd |> Ports.track ] )
 
         BodyMsg m ->
             model |> mapNewLayoutMCmd (NewLayoutBody.update m)
@@ -75,7 +76,7 @@ createLayout toast from name now erd =
             (from
                 |> Maybe.andThen (\f -> erd.layouts |> Dict.get f)
                 |> Maybe.withDefault (ErdLayout.empty now)
-                |> (\layout -> ( erd |> setCurrentLayout name |> mapLayouts (Dict.insert name layout), Track.createLayout erd layout |> Ports.track ))
+                |> (\layout -> ( erd |> setCurrentLayout name |> mapLayouts (Dict.insert name layout), Track.layoutCreated erd.project layout |> Ports.track ))
             )
 
 

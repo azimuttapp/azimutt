@@ -18,7 +18,7 @@ import Html.Keyed as Keyed
 import Html.Lazy as Lazy
 import Libs.Bool as Bool
 import Libs.Html as Html exposing (bText)
-import Libs.Html.Attributes as Attributes exposing (ariaExpanded, ariaHaspopup, css, role, track)
+import Libs.Html.Attributes as Attributes exposing (ariaExpanded, ariaHaspopup, css, role)
 import Libs.Html.Events exposing (PointerEvent, onContextMenu, onPointerUp, stopDoubleClick)
 import Libs.List as List
 import Libs.Maybe as Maybe
@@ -30,7 +30,6 @@ import Libs.Nel as Nel
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (Color, TwClass, batch, bg_50, border_500, focus, ring_500, text_500)
 import Set exposing (Set)
-import Track
 
 
 type alias Model msg =
@@ -47,7 +46,6 @@ type alias Model msg =
     , actions : Actions msg
     , zoom : ZoomLevel
     , conf : TableConf
-    , project : ProjectInfo
     , platform : Platform
     , defaultSchema : SchemaName
     }
@@ -229,15 +227,13 @@ viewHeader model =
                     Dropdown.dropdown { id = dropdownId, direction = BottomLeft, isOpen = model.state.openedDropdown == dropdownId }
                         (\m ->
                             button
-                                ([ type_ "button"
-                                 , id m.id
-                                 , onClick (model.actions.headerDropdownClick m.id)
-                                 , ariaExpanded m.isOpen
-                                 , ariaHaspopup "true"
-                                 , css [ "flex text-sm opacity-25", focus [ "outline-none" ] ]
-                                 ]
-                                    ++ (Track.openTableDropdown model.project |> track)
-                                )
+                                [ type_ "button"
+                                , id m.id
+                                , onClick (model.actions.headerDropdownClick m.id)
+                                , ariaExpanded m.isOpen
+                                , ariaHaspopup "true"
+                                , css [ "flex text-sm opacity-25", focus [ "outline-none" ] ]
+                                ]
                                 [ span [ class "sr-only" ] [ text "Open table settings" ]
                                 , Icon.solid Icon.DotsVertical ""
                                 ]
@@ -350,11 +346,10 @@ viewColumnIcon model column =
     in
     if column.outRelations |> List.nonEmpty then
         if (column.outRelations |> List.filter .tableShown |> List.nonEmpty) || not model.conf.layout then
-            div []
-                [ Icon.solid Icons.columns.foreignKey "w-4 h-4" |> Tooltip.t tooltip ]
+            div [] [ Icon.solid Icons.columns.foreignKey "w-4 h-4" |> Tooltip.t tooltip ]
 
         else
-            div ([ css [ "cursor-pointer", text_500 model.state.color ], onClick (model.actions.relationsIconClick column.outRelations True) ] ++ (Track.showTableWithForeignKey model.project |> track))
+            div [ css [ "cursor-pointer", text_500 model.state.color ], onClick (model.actions.relationsIconClick column.outRelations True) ]
                 [ Icon.solid Icons.columns.foreignKey "w-4 h-4" |> Tooltip.t tooltip ]
 
     else if column.isPrimaryKey then
@@ -391,15 +386,13 @@ viewColumnIconDropdown model column icon =
         Dropdown.dropdown { id = dropdownId, direction = BottomRight, isOpen = model.state.openedDropdown == dropdownId }
             (\m ->
                 button
-                    ([ type_ "button"
-                     , id m.id
-                     , onClick (model.actions.headerDropdownClick m.id)
-                     , ariaExpanded m.isOpen
-                     , ariaHaspopup "true"
-                     , css [ Bool.cond (tablesToShow |> List.isEmpty) "" (text_500 model.state.color), focus [ "outline-none" ] ]
-                     ]
-                        ++ (Track.openIncomingRelationsDropdown model.project |> track)
-                    )
+                    [ type_ "button"
+                    , id m.id
+                    , onClick (model.actions.headerDropdownClick m.id)
+                    , ariaExpanded m.isOpen
+                    , ariaHaspopup "true"
+                    , css [ Bool.cond (tablesToShow |> List.isEmpty) "" (text_500 model.state.color), focus [ "outline-none" ] ]
+                    ]
                     [ icon ]
             )
             (\_ ->
@@ -422,11 +415,11 @@ viewColumnIconDropdown model column icon =
                                     ContextMenu.btnDisabled "py-1" content
 
                                 else
-                                    viewColumnIconDropdownItem model.project (model.actions.relationsIconClick [ rels.head ] False) content
+                                    viewColumnIconDropdownItem (model.actions.relationsIconClick [ rels.head ] False) content
                             )
                      )
                         ++ (if List.length tablesToShow > 1 then
-                                [ viewColumnIconDropdownItem model.project (model.actions.relationsIconClick tablesToShow False) [ text ("Show all (" ++ (tablesToShow |> String.pluralizeL "table") ++ ")") ] ]
+                                [ viewColumnIconDropdownItem (model.actions.relationsIconClick tablesToShow False) [ text ("Show all (" ++ (tablesToShow |> String.pluralizeL "table") ++ ")") ] ]
 
                             else
                                 []
@@ -435,13 +428,9 @@ viewColumnIconDropdown model column icon =
             )
 
 
-viewColumnIconDropdownItem : ProjectInfo -> msg -> List (Html msg) -> Html msg
-viewColumnIconDropdownItem project message content =
-    button
-        ([ type_ "button", onClick message, role "menuitem", tabindex -1, css [ "py-1 block w-full text-left", focus [ "outline-none" ], ContextMenu.itemStyles ] ]
-            ++ (Track.showTableWithIncomingRelationsDropdown project |> track)
-        )
-        content
+viewColumnIconDropdownItem : msg -> List (Html msg) -> Html msg
+viewColumnIconDropdownItem message content =
+    button [ type_ "button", onClick message, role "menuitem", tabindex -1, css [ "py-1 block w-full text-left", focus [ "outline-none" ], ContextMenu.itemStyles ] ] content
 
 
 viewColumnName : Model msg -> Column -> Html msg
@@ -611,7 +600,6 @@ sample =
         , hiddenColumnsClick = logAction "hiddenColumnsClick"
         }
     , zoom = 1
-    , project = { id = "", organization = Nothing }
     , conf = { layout = True, move = True, select = True, hover = True }
     , defaultSchema = Conf.schema.default
     }

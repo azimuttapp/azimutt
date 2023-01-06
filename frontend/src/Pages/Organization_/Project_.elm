@@ -92,7 +92,6 @@ init params query =
             , html = Just "h-full"
             , body = Just "h-full overflow-hidden"
             }
-        , Ports.trackPage "app"
         , Ports.listenHotkeys Conf.hotkeys
         , Ports.getLegacyProjects
         , Ports.getProject params.organization params.project

@@ -8,8 +8,9 @@ import Libs.Maybe as Maybe
 import Libs.Models.Platform exposing (Platform)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
-import PagesComponents.Organization_.Project_.Models exposing (Msg(..), NotesMsg(..), VirtualRelationMsg(..))
+import PagesComponents.Organization_.Project_.Models exposing (Msg(..), VirtualRelationMsg(..))
 import PagesComponents.Organization_.Project_.Models.Notes as NoteRef
+import PagesComponents.Organization_.Project_.Models.NotesMsg exposing (NotesMsg(..))
 
 
 view : Platform -> Int -> ColumnRef -> Maybe String -> Html Msg

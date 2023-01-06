@@ -67,7 +67,6 @@ init =
             , html = Just "h-full bg-gray-100"
             , body = Just "h-full"
             }
-        , Ports.trackPage "dashboard"
         , Ports.getLegacyProjects -- to update legacyProjects in Shared
         ]
     )

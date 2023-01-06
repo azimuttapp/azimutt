@@ -9,7 +9,6 @@ import Html.Attributes exposing (href)
 import Libs.Models.Env as Env
 import Libs.Tailwind as Tw
 import Page
-import Ports
 import Request
 import Shared
 
@@ -17,7 +16,7 @@ import Shared
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
 page shared _ =
     Page.element
-        { init = ( {}, Ports.trackPage "home" )
+        { init = ( {}, Cmd.none )
         , update = \_ model -> ( model, Cmd.none )
         , view =
             \_ ->

@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, AmlSidebarMsg(..), ConfirmDialog, ContextMenu, FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutMsg(..), MemoEdit, MemoMsg(..), ModalDialog, Model, Msg(..), NavbarModel, NotesDialog, NotesMsg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, SharingDialog, SharingMsg(..), VirtualRelation, VirtualRelationMsg(..), confirm, confirmDanger, prompt, simplePrompt)
+module PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, AmlSidebarMsg(..), ConfirmDialog, ContextMenu, FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutMsg(..), MemoEdit, MemoMsg(..), ModalDialog, Model, Msg(..), NavbarModel, NotesDialog, ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, SharingDialog, SharingMsg(..), VirtualRelation, VirtualRelationMsg(..), confirm, confirmDanger, prompt, simplePrompt)
 
 import Components.Atoms.Icon exposing (Icon(..))
 import DataSources.AmlMiner.AmlAdapter exposing (AmlSchemaError)
@@ -48,6 +48,7 @@ import PagesComponents.Organization_.Project_.Models.HideColumns exposing (HideC
 import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
 import PagesComponents.Organization_.Project_.Models.MemoId exposing (MemoId)
 import PagesComponents.Organization_.Project_.Models.Notes exposing (Notes, NotesRef)
+import PagesComponents.Organization_.Project_.Models.NotesMsg exposing (NotesMsg)
 import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint)
 import PagesComponents.Organization_.Project_.Models.ShowColumns exposing (ShowColumns)
 import PagesComponents.Organization_.Project_.Views.Modals.NewLayout as NewLayout
@@ -109,7 +110,7 @@ type alias SearchModel =
 
 
 type alias NotesDialog =
-    { id : HtmlId, ref : NotesRef, notes : Notes }
+    { id : HtmlId, ref : NotesRef, initialNotes : Notes, notes : Notes }
 
 
 type alias MemoEdit =
@@ -159,6 +160,7 @@ type alias PromptDialog =
 type Msg
     = ToggleMobileMenu
     | SearchUpdated String
+    | SearchClicked String TableId
     | TriggerSaveProject
     | CreateProject ProjectName Organization ProjectStorage
     | UpdateProject
@@ -253,13 +255,6 @@ type MemoMsg
     | MEditSave
     | MSetColor MemoId (Maybe Color)
     | MDelete MemoId
-
-
-type NotesMsg
-    = NOpen NotesRef
-    | NEdit Notes
-    | NSave NotesRef Notes
-    | NCancel
 
 
 type AmlSidebarMsg

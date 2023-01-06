@@ -104,42 +104,42 @@ type SearchResult
 viewSearchResult : HtmlId -> SchemaName -> List ErdTableLayout -> Int -> Int -> SearchResult -> Html Msg
 viewSearchResult searchId defaultSchema shownTables active index res =
     let
-        viewItem : msg -> msg -> Icon -> List (Html msg) -> Bool -> Html msg
+        viewItem : String -> TableId -> Icon -> List (Html Msg) -> Bool -> Html Msg
         viewItem =
-            \msg disabledMsg icon content disabled ->
+            \kind table icon content disabled ->
                 let
-                    commonAttrs : List (Attribute msg)
+                    commonAttrs : List (Attribute Msg)
                     commonAttrs =
-                        [ role "menuitem", tabindex -1 ] ++ B.cond (active == index) [ id (searchId ++ "-active-item") ] []
+                        [ type_ "button", onMouseDown (SearchClicked kind table), role "menuitem", tabindex -1 ] ++ B.cond (active == index) [ id (searchId ++ "-active-item") ] []
 
                     commonStyles : TwClass
                     commonStyles =
                         "flex w-full items-center"
                 in
                 if disabled then
-                    button (commonAttrs ++ [ type_ "button", onMouseDown disabledMsg, css [ commonStyles, B.cond (active == index) ContextMenu.itemDisabledActiveStyles ContextMenu.itemDisabledStyles ] ])
+                    button (commonAttrs ++ [ css [ commonStyles, B.cond (active == index) ContextMenu.itemDisabledActiveStyles ContextMenu.itemDisabledStyles ] ])
                         ([ Icon.solid icon "mr-3" ] ++ content)
 
                 else
-                    button (commonAttrs ++ [ type_ "button", onMouseDown msg, css [ commonStyles, focus [ "outline-none" ], B.cond (active == index) ContextMenu.itemActiveStyles ContextMenu.itemStyles ] ])
+                    button (commonAttrs ++ [ css [ commonStyles, focus [ "outline-none" ], B.cond (active == index) ContextMenu.itemActiveStyles ContextMenu.itemStyles ] ])
                         ([ Icon.solid icon "mr-3" ] ++ content)
     in
     case res of
         FoundTable table ->
-            viewItem (ShowTable table.id Nothing) (GoToTable table.id) Icons.table [ text (TableId.show defaultSchema table.id) ] (shownTables |> List.memberBy .id table.id)
+            viewItem "table" table.id Icons.table [ text (TableId.show defaultSchema table.id) ] (shownTables |> List.memberBy .id table.id)
 
         FoundColumn table column ->
-            viewItem (ShowTable table.id Nothing) (GoToTable table.id) Icons.column [ span [ class "opacity-50" ] [ text (TableId.show defaultSchema table.id ++ ".") ], text column.name ] (shownTables |> List.memberBy .id table.id)
+            viewItem "column" table.id Icons.column [ span [ class "opacity-50" ] [ text (TableId.show defaultSchema table.id ++ ".") ], text column.name ] (shownTables |> List.memberBy .id table.id)
 
         FoundRelation relation ->
             if shownTables |> List.memberBy .id relation.src.table |> not then
-                viewItem (ShowTable relation.src.table Nothing) (GoToTable relation.src.table) Icons.columns.foreignKey [ text relation.name ] False
+                viewItem "relation" relation.src.table Icons.columns.foreignKey [ text relation.name ] False
 
             else if shownTables |> List.memberBy .id relation.ref.table |> not then
-                viewItem (ShowTable relation.ref.table Nothing) (GoToTable relation.ref.table) Icons.columns.foreignKey [ text relation.name ] False
+                viewItem "relation" relation.ref.table Icons.columns.foreignKey [ text relation.name ] False
 
             else
-                viewItem (ShowTable relation.src.table Nothing) (GoToTable relation.src.table) Icons.columns.foreignKey [ text relation.name ] True
+                viewItem "relation" relation.src.table Icons.columns.foreignKey [ text relation.name ] True
 
 
 performSearch : Dict TableId ErdTable -> List ErdRelation -> Dict TableId ErdTableNotes -> String -> List SearchResult

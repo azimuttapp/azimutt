@@ -122,7 +122,6 @@ init query =
             , html = Just "h-full"
             , body = Just "h-full overflow-hidden"
             }
-         , Ports.trackPage "embed"
          , Ports.listenHotkeys Conf.hotkeys
          ]
             -- org id is not used to get the project ^^

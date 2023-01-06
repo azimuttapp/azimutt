@@ -53,13 +53,13 @@ update req now urlOrganization msg model =
             )
 
         DatabaseSourceMsg message ->
-            model |> mapDatabaseSourceMCmd (DatabaseSource.update DatabaseSourceMsg now message)
+            model |> mapDatabaseSourceMCmd (DatabaseSource.update DatabaseSourceMsg now Nothing message)
 
         JsonSourceMsg message ->
-            model |> mapJsonSourceMCmd (JsonSource.update JsonSourceMsg now message)
+            model |> mapJsonSourceMCmd (JsonSource.update JsonSourceMsg now Nothing message)
 
         SqlSourceMsg message ->
-            model |> mapSqlSourceMCmd (SqlSource.update SqlSourceMsg now message)
+            model |> mapSqlSourceMCmd (SqlSource.update SqlSourceMsg now Nothing message)
 
         AmlSourceMsg storage name ->
             ( model, SourceId.generator |> Random.generate (Source.aml Conf.constants.virtualRelationSourceName now >> Project.create model.projects name >> CreateProjectTmp storage) )
@@ -68,8 +68,8 @@ update req now urlOrganization msg model =
             ( model
             , Cmd.batch
                 (Maybe.zip urlOrganization storage
-                    |> Maybe.map (\( organizationId, s ) -> [ Ports.createProject organizationId s project, Ports.track (Track.createProject project) ])
-                    |> Maybe.withDefault [ Ports.createProjectTmp project, Ports.track (Track.initProject project) ]
+                    |> Maybe.map (\( organizationId, s ) -> [ Ports.createProject organizationId s project ])
+                    |> Maybe.withDefault [ Ports.createProjectTmp project, Track.projectDraftCreated project |> Ports.track ]
                 )
             )
 

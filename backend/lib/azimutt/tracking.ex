@@ -112,6 +112,7 @@ defmodule Azimutt.Tracking do
     do: create_event(name, %{}, details, current_user, organization_id, project_id)
 
   # `organization_id` and `project_id` are nullable
+  # FIXME: make this async "fire & forget"
   defp create_event(name, data, details, %User{} = current_user, organization_id, project_id) do
     if Mix.env() == :dev, do: Logger.info("Tracking event '#{name}': #{inspect(details)}")
 

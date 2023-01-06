@@ -18,10 +18,9 @@ import Models.Position as Position
 import Models.Project.ColumnType as ColumnType
 import Models.Project.CustomTypeValue as CustomTypeValue
 import Models.Project.SchemaName exposing (SchemaName)
-import Models.ProjectInfo exposing (ProjectInfo)
 import Models.Size as Size
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
-import PagesComponents.Organization_.Project_.Models exposing (Msg(..), NotesMsg(..), VirtualRelationMsg(..))
+import PagesComponents.Organization_.Project_.Models exposing (Msg(..), VirtualRelationMsg(..))
 import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode exposing (CursorMode)
 import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn)
 import PagesComponents.Organization_.Project_.Models.ErdColumnRef exposing (ErdColumnRef)
@@ -30,6 +29,7 @@ import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.ErdTableNotes exposing (ErdTableNotes)
 import PagesComponents.Organization_.Project_.Models.Notes as NoteRef
+import PagesComponents.Organization_.Project_.Models.NotesMsg exposing (NotesMsg(..))
 import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint(..))
 import PagesComponents.Organization_.Project_.Views.Modals.ColumnContextMenu as ColumnContextMenu
 import PagesComponents.Organization_.Project_.Views.Modals.TableContextMenu as TableContextMenu
@@ -58,8 +58,8 @@ stringToArgs args =
             ( ( Platform.PC, CursorMode.Drag, Conf.schema.empty ), ( ( "", "", 0 ), "" ), ( ( False, False ), ( False, False ) ) )
 
 
-viewTable : ErdConf -> ZoomLevel -> TableArgs -> ProjectInfo -> ErdTableNotes -> ErdTableLayout -> ErdTable -> Html Msg
-viewTable conf zoom args projectInfo notes layout table =
+viewTable : ErdConf -> ZoomLevel -> TableArgs -> ErdTableNotes -> ErdTableLayout -> ErdTable -> Html Msg
+viewTable conf zoom args notes layout table =
     let
         ( ( platform, cursorMode, defaultSchema ), ( ( openedDropdown, openedPopover, index ), selected ), ( ( isHover, dragging ), ( virtualRelation, useBasicTypes ) ) ) =
             stringToArgs args
@@ -138,7 +138,6 @@ viewTable conf zoom args projectInfo notes layout table =
                 }
             , zoom = zoom
             , conf = { layout = conf.layout, move = conf.move, select = conf.select, hover = conf.hover }
-            , project = { id = projectInfo.id, organization = projectInfo.organization |> Maybe.map (\o -> { id = o.id }) }
             , platform = platform
             , defaultSchema = defaultSchema
             }

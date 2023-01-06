@@ -26,7 +26,7 @@ layoutsWarning organization =
         { color = Tw.red
         , icon = Icon.Exclamation
         , title = "You've reached plan limit!"
-        , actions = [ Link.secondary3 Tw.red [ href (Backend.organizationBillingUrl organization.id "new-layout-warning"), target "_blank", rel "noopener" ] [ Icon.outline Icon.Sparkles "mr-1", text "Upgrade plan" ] ]
+        , actions = [ Link.secondary3 Tw.red [ href (Backend.organizationBillingUrl organization.id (Conf.features.layouts.name ++ "_warning")), target "_blank", rel "noopener" ] [ Icon.outline Icon.Sparkles "mr-1", text "Upgrade plan" ] ]
         }
         [ p [] [ text "Hey! We are very happy you use and like layouts in Azimutt." ]
         , p [] [ text "They are an important feature but also a limited one. You've reached the limits of your current plan and will need to upgrade. We will let you create one last layout so you can keep working but ", bText "please upgrade as soon as possible", text "." ]
@@ -49,7 +49,7 @@ layoutsModalBody organization close titleId =
                 ]
             ]
         , div [ class "px-6 py-3 mt-6 flex items-center flex-row-reverse bg-gray-50 rounded-b-lg" ]
-            [ Link.primary3 Tw.rose [ href (Backend.organizationBillingUrl organization.id "new-layout-limit"), target "_blank", rel "noopener", css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ Icon.solid Icon.Sparkles "mr-1", text "Upgrade plan" ]
+            [ Link.primary3 Tw.rose [ href (Backend.organizationBillingUrl organization.id Conf.features.layouts.name), target "_blank", rel "noopener", css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ Icon.solid Icon.Sparkles "mr-1", text "Upgrade plan" ]
             , Button.white3 Tw.gray [ onClick close, css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text "Cancel" ]
             ]
         ]
@@ -60,7 +60,7 @@ memosModalBody organization close titleId =
     let
         limit : Int
         limit =
-            organization.plan.memos |> Maybe.withDefault Conf.constants.freePlanMemos
+            organization.plan.memos |> Maybe.withDefault Conf.features.memos.free
     in
     div [ class "max-w-2xl" ]
         [ div [ css [ "px-6 pt-6", sm [ "flex items-start" ] ] ]
@@ -77,7 +77,7 @@ memosModalBody organization close titleId =
                 ]
             ]
         , div [ class "px-6 py-3 mt-6 flex items-center flex-row-reverse bg-gray-50 rounded-b-lg" ]
-            [ Link.primary3 Tw.amber [ href (Backend.organizationBillingUrl organization.id "new-memo-limit"), target "_blank", rel "noopener", css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ Icon.solid Icon.ThumbUp "mr-1", text "Upgrade plan" ]
+            [ Link.primary3 Tw.amber [ href (Backend.organizationBillingUrl organization.id Conf.features.memos.name), target "_blank", rel "noopener", css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ Icon.solid Icon.ThumbUp "mr-1", text "Upgrade plan" ]
             , Button.white3 Tw.gray [ onClick close, css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text "Cancel" ]
             ]
         ]
@@ -100,7 +100,7 @@ colorsModalBody organization close titleId =
                 ]
             ]
         , div [ class "px-6 py-3 mt-6 flex items-center flex-row-reverse bg-gray-50 rounded-b-lg" ]
-            [ Link.primary3 Tw.orange [ href (Backend.organizationBillingUrl organization.id "color-change"), target "_blank", rel "noopener", css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ Icon.solid Icon.Fire "mr-1", text "Upgrade plan" ]
+            [ Link.primary3 Tw.orange [ href (Backend.organizationBillingUrl organization.id Conf.features.tableColor.name), target "_blank", rel "noopener", css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ Icon.solid Icon.Fire "mr-1", text "Upgrade plan" ]
             , Button.white3 Tw.gray [ onClick close, css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text "Cancel" ]
             ]
         ]
@@ -114,7 +114,7 @@ analysisWarning organization =
         , title = "Get full analysis with Pro plan!"
         , actions =
             [ Link.secondary3 Tw.fuchsia
-                [ href (Backend.organizationBillingUrl organization.id "analysis-alert"), target "_blank", rel "noopener" ]
+                [ href (Backend.organizationBillingUrl organization.id Conf.features.dbAnalysis.name), target "_blank", rel "noopener" ]
                 [ Icon.outline Icon.ShieldCheck "mr-1"
                 , text "Upgrade plan"
                 ]
@@ -136,7 +136,7 @@ analysisResults organization items render =
             ((items |> List.take 5 |> List.map render)
                 ++ [ div [ class "absolute inset-x-0 pt-32 bg-gradient-to-t from-white text-center text-sm text-gray-500 pointer-events-none", style "bottom" "-2px" ]
                         [ text "See more with "
-                        , a [ href (Backend.organizationBillingUrl organization.id "analysis-results"), target "_blank", rel "noopener", class "underline text-fuchsia-500 pointer-events-auto" ] [ text "upgraded plan" ]
+                        , a [ href (Backend.organizationBillingUrl organization.id (Conf.features.dbAnalysis.name ++ "_results")), target "_blank", rel "noopener", class "underline text-fuchsia-500 pointer-events-auto" ] [ text "upgraded plan" ]
                         , text "."
                         ]
                    ]

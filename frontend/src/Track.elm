@@ -1,10 +1,11 @@
-module Track exposing (SQLParsing, addSource, createLayout, createProject, deleteLayout, deleteProject, externalLink, findPathResult, initProject, loadLayout, loadProject, openEditNotes, openFindPath, openHelp, openIncomingRelationsDropdown, openSaveLayout, openSchemaAnalysis, openSettings, openSharing, openTableDropdown, openUpdateSchema, parsedDatabaseSource, parsedJsonSource, parsedSqlSource, proPlanLimit, refreshSource, showTableWithForeignKey, showTableWithIncomingRelationsDropdown, updateProject)
+module Track exposing (SQLParsing, amlSourceCreated, dbAnalysisOpened, dbSourceCreated, docOpened, externalLink, findPathOpened, findPathResults, jsonError, jsonSourceCreated, layoutCreated, layoutDeleted, layoutLoaded, memoDeleted, memoSaved, notFound, notesCreated, notesDeleted, notesUpdated, proPlanLimit, projectDraftCreated, searchClicked, sourceAdded, sourceDeleted, sourceRefreshed, sqlSourceCreated)
 
 import DataSources.Helpers exposing (SourceLine)
 import DataSources.SqlMiner.SqlAdapter exposing (SqlSchema)
 import DataSources.SqlMiner.SqlParser exposing (Command)
 import DataSources.SqlMiner.Utils.Types exposing (ParseError, SqlStatement)
 import Dict exposing (Dict)
+import Json.Decode as Decode
 import Json.Encode as Encode
 import Libs.Bool as Bool
 import Libs.Dict as Dict
@@ -12,169 +13,123 @@ import Libs.Maybe as Maybe
 import Libs.Result as Result
 import Models.OrganizationId exposing (OrganizationId)
 import Models.Project exposing (Project)
-import Models.Project.ProjectId as ProjectId exposing (ProjectId)
+import Models.Project.ProjectId exposing (ProjectId)
 import Models.Project.Source exposing (Source)
+import Models.Project.SourceKind as SourceKind
 import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Models.TrackEvent exposing (TrackClick, TrackEvent)
 import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.FindPathResult exposing (FindPathResult)
+import PagesComponents.Organization_.Project_.Models.Notes exposing (Notes)
 
 
 
--- all tracking events should be declared here to have a good overview of them
+-- all tracking events should be declared here to have a good overview of all of them
 
 
-openSharing : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> TrackEvent
-openSharing erd =
-    -- TODO: onboarding goal
-    createEvent "open-sharing" [] (erd |> Maybe.map .project)
+dbSourceCreated : Maybe ProjectInfo -> Result String Source -> TrackEvent
+dbSourceCreated project source =
+    createEvent "editor_source_created" ([ ( "format", "database" |> Encode.string ) ] ++ dbSourceDetails source) project
 
 
-openSettings : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> TrackEvent
-openSettings erd =
-    -- TODO: onboarding goal
-    createEvent "open-settings" [] (erd |> Maybe.map .project)
+sqlSourceCreated : Maybe ProjectInfo -> SQLParsing msg -> Source -> TrackEvent
+sqlSourceCreated project parser source =
+    createEvent "editor_source_created" ([ ( "format", "sql" |> Encode.string ) ] ++ sqlSourceDetails parser source) project
 
 
-openHelp : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> TrackEvent
-openHelp erd =
-    -- TODO: add source: top_navbar
-    createEvent "editor_open_help" [] (erd |> Maybe.map .project)
+jsonSourceCreated : Maybe ProjectInfo -> Result String Source -> TrackEvent
+jsonSourceCreated project source =
+    createEvent "editor_source_created" ([ ( "format", "json" |> Encode.string ) ] ++ jsonSourceDetails source) project
 
 
-openTableDropdown : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> TrackClick
-openTableDropdown project =
-    -- TODO: onboarding goal
-    createClick "open-table-dropdown" [] (Just project)
+amlSourceCreated : Maybe ProjectInfo -> Source -> TrackEvent
+amlSourceCreated project source =
+    createEvent "editor_source_created" ([ ( "format", "aml" |> Encode.string ) ] ++ sourceDetails source) project
 
 
-showTableWithForeignKey : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> TrackClick
-showTableWithForeignKey project =
-    -- TODO: onboarding goal
-    createClick "show-table-with-foreign-key" [] (Just project)
+projectDraftCreated : Project -> TrackEvent
+projectDraftCreated project =
+    createEvent "editor_project_draft_created" (project |> ProjectInfo.fromProject |> projectDetails) (Just project)
 
 
-showTableWithIncomingRelationsDropdown : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> TrackClick
-showTableWithIncomingRelationsDropdown project =
-    -- TODO: onboarding goal
-    createClick "show-table-with-incoming-relations-dropdown" [] (Just project)
+sourceAdded : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> Source -> TrackEvent
+sourceAdded erd source =
+    createEvent "editor_source_added" (sourceDetails source) (erd |> Maybe.map .project)
 
 
-openIncomingRelationsDropdown : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> TrackClick
-openIncomingRelationsDropdown project =
-    -- TODO: onboarding goal
-    createClick "open-incoming-relations-dropdown" [] (Just project)
+sourceRefreshed : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> Source -> TrackEvent
+sourceRefreshed erd source =
+    createEvent "editor_source_refreshed" (sourceDetails source) (erd |> Maybe.map .project)
 
 
-openSaveLayout : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> TrackEvent
-openSaveLayout erd =
-    createEvent "open-save-layout" [] (erd |> Maybe.map .project)
+sourceDeleted : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> Source -> TrackEvent
+sourceDeleted erd source =
+    createEvent "editor_source_deleted" (sourceDetails source) (erd |> Maybe.map .project)
 
 
-openEditNotes : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> TrackEvent
-openEditNotes erd =
-    createEvent "open-edit-notes" [] (erd |> Maybe.map .project)
+layoutCreated : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> ErdLayout -> TrackEvent
+layoutCreated project layout =
+    createEvent "editor_layout_created" (layoutDetails layout) (Just project)
 
 
-openUpdateSchema : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> TrackEvent
-openUpdateSchema erd =
-    -- TODO add source
-    createEvent "open-update-schema" [] (erd |> Maybe.map .project)
+layoutLoaded : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> ErdLayout -> TrackEvent
+layoutLoaded project layout =
+    createEvent "editor_layout_loaded" (layoutDetails layout) (Just project)
 
 
-parsedDatabaseSource : Result String Source -> TrackEvent
-parsedDatabaseSource =
-    -- TODO: one event for all sources with a kind (sql, json, database...) detail: "editor_parse_source"
-    parseDatabaseEvent
+layoutDeleted : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> ErdLayout -> TrackEvent
+layoutDeleted project layout =
+    createEvent "editor_layout_deleted" (layoutDetails layout) (Just project)
 
 
-parsedSqlSource : SQLParsing msg -> Source -> TrackEvent
-parsedSqlSource =
-    parseSqlEvent
+searchClicked : String -> Bool -> Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> TrackEvent
+searchClicked kind shown erd =
+    createEvent "editor_search_clicked" [ ( "kind", kind |> Encode.string ), ( "shown", shown |> Encode.bool ) ] (erd |> Maybe.map .project)
 
 
-parsedJsonSource : Result String Source -> TrackEvent
-parsedJsonSource =
-    parseJsonEvent
+notesCreated : Notes -> Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> TrackEvent
+notesCreated content erd =
+    createEvent "editor_notes_created" [ ( "length", content |> String.length |> Encode.int ) ] (erd |> Maybe.map .project)
 
 
-loadProject : ProjectInfo -> TrackClick
-loadProject =
-    -- FIXME: removed with legacy projects
-    projectClick "load"
+notesUpdated : Notes -> Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> TrackEvent
+notesUpdated content erd =
+    createEvent "editor_notes_updated" [ ( "length", content |> String.length |> Encode.int ) ] (erd |> Maybe.map .project)
 
 
-initProject : Project -> TrackEvent
-initProject project =
-    projectEvent "init" (ProjectInfo.fromProject project)
+notesDeleted : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> TrackEvent
+notesDeleted erd =
+    createEvent "editor_notes_deleted" [] (erd |> Maybe.map .project)
 
 
-createProject : Project -> TrackEvent
-createProject project =
-    -- TODO: already in backend
-    projectEvent "create" (ProjectInfo.fromProject project)
+memoSaved : Bool -> String -> Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> TrackEvent
+memoSaved createMode content erd =
+    createEvent (Bool.cond createMode "editor_memo_created" "editor_memo_updated") [ ( "length", content |> String.length |> Encode.int ) ] (erd |> Maybe.map .project)
 
 
-updateProject : Project -> TrackEvent
-updateProject project =
-    -- TODO: already in backend
-    projectEvent "update" (ProjectInfo.fromProject project)
+memoDeleted : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> TrackEvent
+memoDeleted erd =
+    createEvent "editor_memo_deleted" [] (erd |> Maybe.map .project)
 
 
-deleteProject : ProjectInfo -> TrackEvent
-deleteProject =
-    -- TODO: already in backend
-    projectEvent "delete"
-
-
-
--- TODO: add event on "editor_source_add_modal_opened"
-
-
-addSource : Source -> TrackEvent
-addSource =
-    -- TODO: "editor_source_added"
-    sourceEvent "add"
-
-
-refreshSource : Source -> TrackEvent
-refreshSource =
-    sourceEvent "refresh"
-
-
-createLayout : { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> ErdLayout -> TrackEvent
-createLayout =
-    createLayoutEvent "create"
-
-
-loadLayout : { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> ErdLayout -> TrackEvent
-loadLayout =
-    createLayoutEvent "load"
-
-
-deleteLayout : { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> ErdLayout -> TrackEvent
-deleteLayout =
-    createLayoutEvent "delete"
-
-
-externalLink : String -> TrackClick
-externalLink url =
-    { name = "external_link_clicked", details = [ ( "url", url ), ( "source", "editor" ) ], organization = Nothing, project = Nothing }
-
-
-openFindPath : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> TrackEvent
-openFindPath erd =
+findPathOpened : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> TrackEvent
+findPathOpened erd =
     createEvent "editor_find_path_opened" [] (erd |> Maybe.map .project)
 
 
-findPathResult : FindPathResult -> TrackEvent
-findPathResult =
-    findPathResults
+findPathResults : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> FindPathResult -> TrackEvent
+findPathResults erd result =
+    createEvent "editor_find_path_searched" (findPathDetails result) (erd |> Maybe.map .project)
 
 
-openSchemaAnalysis : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> TrackEvent
-openSchemaAnalysis erd =
-    createEvent "editor_schema_analysis_opened" [] (erd |> Maybe.map .project)
+dbAnalysisOpened : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> TrackEvent
+dbAnalysisOpened erd =
+    createEvent "editor_db_analysis_opened" [] (erd |> Maybe.map .project)
+
+
+docOpened : String -> Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> TrackEvent
+docOpened source erd =
+    createEvent "editor_doc_opened" [ ( "source", source |> Encode.string ) ] (erd |> Maybe.map .project)
 
 
 proPlanLimit : String -> Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> TrackEvent
@@ -182,9 +137,22 @@ proPlanLimit limit erd =
     createEvent "pro_plan_limit" [ ( "limit", limit |> Encode.string ) ] (erd |> Maybe.map .project)
 
 
+externalLink : String -> TrackClick
+externalLink url =
+    { name = "external_link_clicked", details = [ ( "url", url ), ( "source", "editor" ) ], organization = Nothing, project = Nothing }
 
--- TODO: add memos
--- TODO: add events on search clicked: editor_search_clicked
+
+jsonError : String -> Decode.Error -> TrackEvent
+jsonError kind error =
+    createEvent "editor_json_error" [ ( "kind", kind |> Encode.string ), ( "message", Decode.errorToString error |> Encode.string ) ] Nothing
+
+
+notFound : String -> TrackEvent
+notFound url =
+    createEvent "not_found" [ ( "url", url |> Encode.string ) ] Nothing
+
+
+
 -- HELPERS
 
 
@@ -193,26 +161,15 @@ createEvent name details project =
     { name = name, details = details, organization = project |> Maybe.andThen .organization |> Maybe.map .id, project = project |> Maybe.map .id }
 
 
-createClick : String -> List ( String, String ) -> Maybe { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> TrackClick
-createClick name details project =
-    { name = name, details = details, organization = project |> Maybe.andThen .organization |> Maybe.map .id, project = project |> Maybe.map .id }
+
+--createClick : String -> List ( String, String ) -> Maybe { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> TrackClick
+--createClick name details project =
+--    { name = name, details = details, organization = project |> Maybe.andThen .organization |> Maybe.map .id, project = project |> Maybe.map .id }
 
 
-parseDatabaseEvent : Result String Source -> TrackEvent
-parseDatabaseEvent source =
-    { name = "parse" ++ (source |> Result.toMaybe |> Maybe.andThen .fromSample |> Maybe.mapOrElse (\_ -> "-sample") "") ++ "-database-source"
-    , details =
-        source
-            |> Result.fold
-                (\e -> [ ( "error", e |> Encode.string ) ])
-                (\s ->
-                    [ ( "nb-table", s.tables |> Dict.size |> Encode.int )
-                    , ( "nb-relation", s.relations |> List.length |> Encode.int )
-                    ]
-                )
-    , organization = Nothing
-    , project = Nothing
-    }
+dbSourceDetails : Result String Source -> List ( String, Encode.Value )
+dbSourceDetails source =
+    source |> Result.fold (\e -> [ ( "error", e |> Encode.string ) ]) sourceDetails
 
 
 type alias SQLParsing x =
@@ -224,102 +181,54 @@ type alias SQLParsing x =
     }
 
 
-parseSqlEvent : SQLParsing msg -> Source -> TrackEvent
-parseSqlEvent parser source =
-    { name = "parse" ++ (source.fromSample |> Maybe.mapOrElse (\_ -> "-sample") "") ++ "-sql-source"
-    , details =
-        [ ( "nb-lines", parser.lines |> Maybe.mapOrElse List.length 0 |> Encode.int )
-        , ( "nb-statements", parser.statements |> Maybe.mapOrElse Dict.size 0 |> Encode.int )
-        , ( "nb-table", source.tables |> Dict.size |> Encode.int )
-        , ( "nb-relation", source.relations |> List.length |> Encode.int )
-        , ( "parsing-errors", parser.commands |> Maybe.mapOrElse (Dict.count (\_ ( _, r ) -> r |> Result.isErr)) 0 |> Encode.int )
-        , ( "schema-errors", parser.schema |> Maybe.mapOrElse .errors [] |> List.length |> Encode.int )
-        ]
-    , organization = Nothing
-    , project = Nothing
-    }
+sqlSourceDetails : SQLParsing msg -> Source -> List ( String, Encode.Value )
+sqlSourceDetails parser source =
+    [ ( "nb-lines", parser.lines |> Maybe.mapOrElse List.length 0 |> Encode.int )
+    , ( "nb-statements", parser.statements |> Maybe.mapOrElse Dict.size 0 |> Encode.int )
+    , ( "parsing-errors", parser.commands |> Maybe.mapOrElse (Dict.count (\_ ( _, r ) -> r |> Result.isErr)) 0 |> Encode.int )
+    , ( "schema-errors", parser.schema |> Maybe.mapOrElse .errors [] |> List.length |> Encode.int )
+    ]
+        ++ sourceDetails source
 
 
-parseJsonEvent : Result String Source -> TrackEvent
-parseJsonEvent source =
-    { name = "parse" ++ (source |> Result.toMaybe |> Maybe.andThen .fromSample |> Maybe.mapOrElse (\_ -> "-sample") "") ++ "-json-source"
-    , details =
-        source
-            |> Result.fold
-                (\e -> [ ( "error", e |> Encode.string ) ])
-                (\s ->
-                    [ ( "nb-table", s.tables |> Dict.size |> Encode.int )
-                    , ( "nb-relation", s.relations |> List.length |> Encode.int )
-                    ]
-                )
-    , organization = Nothing
-    , project = Nothing
-    }
+jsonSourceDetails : Result String Source -> List ( String, Encode.Value )
+jsonSourceDetails source =
+    source |> Result.fold (\e -> [ ( "error", e |> Encode.string ) ]) sourceDetails
 
 
-projectEvent : String -> ProjectInfo -> TrackEvent
-projectEvent eventName project =
-    { name = eventName ++ Bool.cond (ProjectId.isSample project.id) "-sample" "" ++ "-project"
-    , details = projectStats project |> List.map (\( k, v ) -> ( k, v |> Encode.int ))
-    , organization = project.organization |> Maybe.map .id
-    , project = Just project.id
-    }
-
-
-projectClick : String -> ProjectInfo -> TrackClick
-projectClick eventName project =
-    { name = eventName ++ Bool.cond (ProjectId.isSample project.id) "-sample" "" ++ "-project"
-    , details = projectStats project |> List.map (\( k, v ) -> ( k, v |> String.fromInt ))
-    , organization = project.organization |> Maybe.map .id
-    , project = Just project.id
-    }
-
-
-projectStats : ProjectInfo -> List ( String, Int )
-projectStats project =
-    [ ( "nb-source", project.nbSources )
-    , ( "nb-table", project.nbTables )
-    , ( "nb-column", project.nbColumns )
-    , ( "nb-relation", project.nbRelations )
-    , ( "nb-type", project.nbTypes )
-    , ( "nb-comment", project.nbComments )
-    , ( "nb-layout", project.nbLayouts )
-    , ( "nb-note", project.nbNotes )
-    , ( "nb-memos", project.nbMemos )
+projectDetails : ProjectInfo -> List ( String, Encode.Value )
+projectDetails project =
+    [ ( "nb-source", project.nbSources |> Encode.int )
+    , ( "nb-table", project.nbTables |> Encode.int )
+    , ( "nb-column", project.nbColumns |> Encode.int )
+    , ( "nb-relation", project.nbRelations |> Encode.int )
+    , ( "nb-type", project.nbTypes |> Encode.int )
+    , ( "nb-comment", project.nbComments |> Encode.int )
+    , ( "nb-layout", project.nbLayouts |> Encode.int )
+    , ( "nb-note", project.nbNotes |> Encode.int )
+    , ( "nb-memos", project.nbMemos |> Encode.int )
     ]
 
 
-sourceEvent : String -> Source -> TrackEvent
-sourceEvent eventName source =
-    { name = eventName ++ "-source"
-    , details =
-        [ ( "nb-table", source.tables |> Dict.size |> Encode.int )
-        , ( "nb-relation", source.relations |> List.length |> Encode.int )
-        ]
-    , organization = Nothing
-    , project = Nothing
-    }
+sourceDetails : Source -> List ( String, Encode.Value )
+sourceDetails source =
+    [ ( "kind", source.kind |> SourceKind.toString |> Encode.string )
+    , ( "nb-table", source.tables |> Dict.size |> Encode.int )
+    , ( "nb-relation", source.relations |> List.length |> Encode.int )
+    ]
 
 
-createLayoutEvent : String -> { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> ErdLayout -> TrackEvent
-createLayoutEvent eventName erd layout =
-    createEvent (eventName ++ "-layout")
-        [ ( "nb-table", layout.tables |> List.length |> Encode.int )
-        , ( "nb-memos", layout.memos |> List.length |> Encode.int )
-        ]
-        (Just erd.project)
+layoutDetails : ErdLayout -> List ( String, Encode.Value )
+layoutDetails layout =
+    [ ( "nb-table", layout.tables |> List.length |> Encode.int )
+    , ( "nb-memos", layout.memos |> List.length |> Encode.int )
+    ]
 
 
-findPathResults : FindPathResult -> TrackEvent
-findPathResults result =
-    -- TODO: nb results
-    { name = "editor_find_path_searched"
-    , details =
-        [ ( "found-paths", result.paths |> List.length |> Encode.int )
-        , ( "ignored-columns", result.settings.ignoredColumns |> String.split "," |> List.length |> Encode.int )
-        , ( "ignored-tables", result.settings.ignoredTables |> String.split "," |> List.length |> Encode.int )
-        , ( "max-path-length", result.settings.maxPathLength |> Encode.int )
-        ]
-    , organization = Nothing
-    , project = Nothing
-    }
+findPathDetails : FindPathResult -> List ( String, Encode.Value )
+findPathDetails result =
+    [ ( "nb_results", result.paths |> List.length |> Encode.int )
+    , ( "nb_ignored_columns", result.settings.ignoredColumns |> String.split "," |> List.length |> Encode.int )
+    , ( "nb_ignored_tables", result.settings.ignoredTables |> String.split "," |> List.length |> Encode.int )
+    , ( "path_max_length", result.settings.maxPathLength |> Encode.int )
+    ]

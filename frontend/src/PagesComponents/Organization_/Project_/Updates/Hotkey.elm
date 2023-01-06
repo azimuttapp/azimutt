@@ -13,10 +13,11 @@ import Models.Project.TableId exposing (TableId)
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
 import PagesComponents.Organization_.Project_.Components.ProjectSaveDialog as ProjectSaveDialog
 import PagesComponents.Organization_.Project_.Components.SourceUpdateDialog as SourceUpdateDialog
-import PagesComponents.Organization_.Project_.Models exposing (AmlSidebarMsg(..), FindPathMsg(..), HelpMsg(..), MemoMsg(..), Model, Msg(..), NotesMsg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..), SharingMsg(..), VirtualRelationMsg(..))
+import PagesComponents.Organization_.Project_.Models exposing (AmlSidebarMsg(..), FindPathMsg(..), HelpMsg(..), MemoMsg(..), Model, Msg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..), SharingMsg(..), VirtualRelationMsg(..))
 import PagesComponents.Organization_.Project_.Models.Erd as Erd
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.Notes as NoteRef
+import PagesComponents.Organization_.Project_.Models.NotesMsg exposing (NotesMsg(..))
 import PagesComponents.Organization_.Project_.Views.Modals.NewLayout as NewLayout
 import Ports
 import Services.Lenses exposing (mapActive, mapNavbar, mapSearch)

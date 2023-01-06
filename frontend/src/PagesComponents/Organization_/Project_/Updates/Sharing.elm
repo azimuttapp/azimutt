@@ -7,9 +7,7 @@ import Models.Project.ProjectStorage as ProjectStorage
 import PagesComponents.Organization_.Project_.Models exposing (Model, Msg(..), SharingMsg(..))
 import PagesComponents.Organization_.Project_.Models.EmbedKind as EmbedKind
 import PagesComponents.Organization_.Project_.Models.EmbedMode as EmbedMode
-import Ports
 import Services.Lenses exposing (mapSharingM, setSharing)
-import Track
 
 
 handleSharing : SharingMsg -> Model -> ( Model, Cmd Msg )
@@ -38,7 +36,7 @@ handleSharing msg model =
                                 }
                         )
                     )
-            , Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.sharingDialog), Track.openSharing model.erd |> Ports.track ]
+            , Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.sharingDialog) ]
             )
 
         SClose ->

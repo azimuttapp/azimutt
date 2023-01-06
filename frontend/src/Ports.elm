@@ -1,8 +1,8 @@
-port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProject, createProjectTmp, deleteProject, downloadFile, focus, fullscreen, getColumnStats, getLegacyProjects, getProject, getTableStats, listenHotkeys, mouseDown, moveProjectTo, observeMemosSize, observeSize, observeTableSize, observeTablesSize, onJsMessage, projectDirty, readLocalFile, scrollTo, setMeta, toast, track, trackJsonError, trackPage, unhandledJsMsgError, updateProject, updateProjectTmp)
+port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProject, createProjectTmp, deleteProject, downloadFile, focus, fullscreen, getColumnStats, getLegacyProjects, getProject, getTableStats, listenHotkeys, mouseDown, moveProjectTo, observeMemosSize, observeSize, observeTableSize, observeTablesSize, onJsMessage, projectDirty, readLocalFile, scrollTo, setMeta, toast, track, unhandledJsMsgError, updateProject, updateProjectTmp)
 
 import Dict exposing (Dict)
 import FileValue exposing (File)
-import Json.Decode as Decode exposing (Decoder, Value, errorToString)
+import Json.Decode as Decode exposing (Decoder, Value)
 import Json.Encode as Encode
 import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
@@ -30,7 +30,6 @@ import Models.Size as Size
 import Models.TrackEvent as TrackEvent exposing (TrackEvent)
 import PagesComponents.Organization_.Project_.Models.MemoId as MemoId exposing (MemoId)
 import Storage.ProjectV2 exposing (decodeProject)
-import Track
 
 
 click : HtmlId -> Cmd msg
@@ -120,7 +119,7 @@ downloadFile filename content =
 
 deleteProject : ProjectInfo -> Maybe String -> Cmd msg
 deleteProject project redirect =
-    Cmd.batch [ messageToJs (DeleteProject project redirect), track (Track.deleteProject project) ]
+    messageToJs (DeleteProject project redirect)
 
 
 projectDirty : Bool -> Cmd msg
@@ -190,16 +189,6 @@ confettiPride =
 track : TrackEvent -> Cmd msg
 track event =
     messageToJs (Track event)
-
-
-trackPage : String -> Cmd msg
-trackPage name =
-    track { name = "page", details = [ ( "name", name |> Encode.string ) ], organization = Nothing, project = Nothing }
-
-
-trackJsonError : String -> Decode.Error -> Cmd msg
-trackJsonError kind error =
-    track { name = "error", details = [ ( "kind", kind |> Encode.string ), ( "message", errorToString error |> Encode.string ) ], organization = Nothing, project = Nothing }
 
 
 type alias MetaInfos =

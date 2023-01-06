@@ -43,7 +43,6 @@ init urlOrganization query =
             , html = Just "h-full bg-gray-100"
             , body = Just "h-full"
             }
-         , Ports.trackPage "new-project"
          , Ports.getLegacyProjects
          , Backend.getSamples GotSamples
          ]
