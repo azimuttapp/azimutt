@@ -14,6 +14,7 @@ import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.DatabaseUrl exposing (DatabaseUrl)
 import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.Task as T
 import Models.Project.ColumnId exposing (ColumnId)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.ColumnStats exposing (ColumnStats)
@@ -30,13 +31,14 @@ import PagesComponents.Organization_.Project_.Models.ErdColumnProps exposing (Er
 import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.Notes as NotesRef exposing (Notes, NotesRef)
+import PagesComponents.Organization_.Project_.Models.NotesMsg exposing (NotesMsg(..))
 import Ports
 import Services.Lenses exposing (setEditNotes, setSearch, setView)
 import Task
 
 
 type alias Model =
-    { id : HtmlId, view : View, search : String, editNotes : Bool, openedCollapse : HtmlId }
+    { id : HtmlId, view : View, search : String, editNotes : Maybe Notes, openedCollapse : HtmlId }
 
 
 type View
@@ -71,7 +73,9 @@ type Msg
     | ShowTable TableId
     | ShowColumn ColumnRef
     | ToggleCollapse HtmlId
-    | ToggleEditNotes HtmlId
+    | EditNotes HtmlId Notes
+    | EditNotesUpdate Notes
+    | SaveNotes NotesRef Notes Notes
 
 
 
@@ -80,15 +84,15 @@ type Msg
 
 init : View -> Model
 init v =
-    { id = Conf.ids.detailsSidebarDialog, view = v, search = "", editNotes = False, openedCollapse = "" }
+    { id = Conf.ids.detailsSidebarDialog, view = v, search = "", editNotes = Nothing, openedCollapse = "" }
 
 
 
 -- UPDATE
 
 
-update : (String -> msg) -> Erd -> Msg -> Maybe Model -> ( Maybe Model, Cmd msg )
-update noop erd msg model =
+update : (String -> msg) -> (NotesMsg -> msg) -> Erd -> Msg -> Maybe Model -> ( Maybe Model, Cmd msg )
+update noop notesMsg erd msg model =
     case msg of
         Close ->
             ( Nothing, Cmd.none )
@@ -114,13 +118,19 @@ update noop erd msg model =
         ToggleCollapse id ->
             ( model |> Maybe.map (\m -> { m | openedCollapse = Bool.cond (m.openedCollapse == id) "" id }), Cmd.none )
 
-        ToggleEditNotes id ->
-            ( model |> Maybe.map (\m -> { m | editNotes = not m.editNotes }), Dom.focus id |> Task.attempt (\_ -> noop "focus-notes-input") )
+        EditNotes id content ->
+            ( model |> Maybe.map (\m -> { m | editNotes = Just content }), Dom.focus id |> Task.attempt (\_ -> noop "focus-notes-input") )
+
+        EditNotesUpdate content ->
+            ( model |> Maybe.map (\m -> { m | editNotes = m.editNotes |> Maybe.map (\_ -> content) }), Cmd.none )
+
+        SaveNotes ref initialNotes updatedNotes ->
+            ( model |> Maybe.map (\m -> { m | editNotes = Nothing }), NSave ref initialNotes updatedNotes |> notesMsg |> T.send )
 
 
 setViewM : View -> Maybe Model -> Maybe Model
 setViewM v model =
-    model |> Maybe.mapOrElse (setView v >> setEditNotes False) (init v) |> Just
+    model |> Maybe.mapOrElse (setView v >> setEditNotes Nothing) (init v) |> Just
 
 
 listView : View
@@ -180,8 +190,8 @@ filterDatabaseSources sources =
 -- VIEW
 
 
-view : (Msg -> msg) -> (TableId -> msg) -> (TableId -> msg) -> (ColumnRef -> msg) -> (ColumnRef -> msg) -> (LayoutName -> msg) -> (NotesRef -> Notes -> msg) -> Dict TableId (Dict SourceIdStr TableStats) -> Dict ColumnId (Dict SourceIdStr ColumnStats) -> Erd -> Model -> Html msg
-view wrap showTable hideTable showColumn hideColumn loadLayout updateNotes tableStats columnStats erd model =
+view : (Msg -> msg) -> (TableId -> msg) -> (TableId -> msg) -> (ColumnRef -> msg) -> (ColumnRef -> msg) -> (LayoutName -> msg) -> Dict TableId (Dict SourceIdStr TableStats) -> Dict ColumnId (Dict SourceIdStr ColumnStats) -> Erd -> Model -> Html msg
+view wrap showTable hideTable showColumn hideColumn loadLayout tableStats columnStats erd model =
     let
         heading : List (Html msg)
         heading =
@@ -226,10 +236,10 @@ view wrap showTable hideTable showColumn hideColumn loadLayout updateNotes table
                         viewSchema wrap erd v
 
                     TableView v ->
-                        viewTable wrap showTable hideTable loadLayout (updateNotes (NotesRef.fromTable v.id)) erd model.editNotes model.openedCollapse tableStats v
+                        viewTable wrap showTable hideTable loadLayout erd model.editNotes model.openedCollapse tableStats v
 
                     ColumnView v ->
-                        viewColumn wrap showTable hideTable showColumn hideColumn loadLayout (updateNotes (NotesRef.fromColumn v.id)) erd model.editNotes model.openedCollapse columnStats v
+                        viewColumn wrap showTable hideTable showColumn hideColumn loadLayout erd model.editNotes model.openedCollapse columnStats v
                 ]
             ]
         ]
@@ -245,15 +255,20 @@ viewSchema wrap erd model =
     Details.viewSchema (ShowList |> wrap) (ShowSchema >> wrap) (ShowTable >> wrap) erd.settings.defaultSchema model.schema model.tables
 
 
-viewTable : (Msg -> msg) -> (TableId -> msg) -> (TableId -> msg) -> (LayoutName -> msg) -> (Notes -> msg) -> Erd -> Bool -> HtmlId -> Dict TableId (Dict SourceIdStr TableStats) -> TableData -> Html msg
-viewTable wrap _ _ loadLayout updateNotes erd editNotes openedCollapse stats model =
+viewTable : (Msg -> msg) -> (TableId -> msg) -> (TableId -> msg) -> (LayoutName -> msg) -> Erd -> Maybe Notes -> HtmlId -> Dict TableId (Dict SourceIdStr TableStats) -> TableData -> Html msg
+viewTable wrap _ _ loadLayout erd editNotes openedCollapse stats model =
     let
-        notes : Details.NotesModel msg
+        notes : Notes
         notes =
-            { notes = erd.notes |> Dict.get model.id |> Maybe.andThen .table
+            erd.notes |> Dict.get model.id |> Maybe.andThen .table |> Maybe.withDefault ""
+
+        notesModel : Details.NotesModel msg
+        notesModel =
+            { notes = notes
             , editing = editNotes
-            , toggleEdit = ToggleEditNotes >> wrap
-            , update = updateNotes
+            , edit = \id content -> EditNotes id content |> wrap
+            , update = EditNotesUpdate >> wrap
+            , save = SaveNotes (NotesRef.fromTable model.id) notes >> wrap
             }
 
         inLayouts : List LayoutName
@@ -268,18 +283,23 @@ viewTable wrap _ _ loadLayout updateNotes erd editNotes openedCollapse stats mod
         tableStats =
             stats |> Dict.getOrElse model.id Dict.empty
     in
-    Details.viewTable (ShowList |> wrap) (ShowSchema >> wrap) (ShowTable >> wrap) (ShowColumn >> wrap) loadLayout (ToggleCollapse >> wrap) openedCollapse erd.settings.defaultSchema model.schema model.table notes inLayouts inSources tableStats
+    Details.viewTable (ShowList |> wrap) (ShowSchema >> wrap) (ShowTable >> wrap) (ShowColumn >> wrap) loadLayout (ToggleCollapse >> wrap) openedCollapse erd.settings.defaultSchema model.schema model.table notesModel inLayouts inSources tableStats
 
 
-viewColumn : (Msg -> msg) -> (TableId -> msg) -> (TableId -> msg) -> (ColumnRef -> msg) -> (ColumnRef -> msg) -> (LayoutName -> msg) -> (Notes -> msg) -> Erd -> Bool -> HtmlId -> Dict ColumnId (Dict SourceIdStr ColumnStats) -> ColumnData -> Html msg
-viewColumn wrap _ _ _ _ loadLayout updateNotes erd editNotes openedCollapse stats model =
+viewColumn : (Msg -> msg) -> (TableId -> msg) -> (TableId -> msg) -> (ColumnRef -> msg) -> (ColumnRef -> msg) -> (LayoutName -> msg) -> Erd -> Maybe Notes -> HtmlId -> Dict ColumnId (Dict SourceIdStr ColumnStats) -> ColumnData -> Html msg
+viewColumn wrap _ _ _ _ loadLayout erd editNotes openedCollapse stats model =
     let
-        notes : Details.NotesModel msg
+        notes : Notes
         notes =
-            { notes = erd.notes |> Dict.get model.id.table |> Maybe.andThen (\n -> n.columns |> Dict.get model.id.column)
+            erd.notes |> Dict.get model.id.table |> Maybe.andThen (\n -> n.columns |> Dict.get model.id.column) |> Maybe.withDefault ""
+
+        notesModel : Details.NotesModel msg
+        notesModel =
+            { notes = notes
             , editing = editNotes
-            , toggleEdit = ToggleEditNotes >> wrap
-            , update = updateNotes
+            , edit = \id content -> EditNotes id content |> wrap
+            , update = EditNotesUpdate >> wrap
+            , save = SaveNotes (NotesRef.fromColumn model.id) notes >> wrap
             }
 
         inLayouts : List LayoutName
@@ -294,7 +314,7 @@ viewColumn wrap _ _ _ _ loadLayout updateNotes erd editNotes openedCollapse stat
         columnStats =
             stats |> Dict.getOrElse ( model.id.table, model.id.column ) Dict.empty
     in
-    Details.viewColumn (ShowList |> wrap) (ShowSchema >> wrap) (ShowTable >> wrap) (ShowColumn >> wrap) loadLayout (ToggleCollapse >> wrap) openedCollapse erd.settings.defaultSchema model.schema model.table model.column notes inLayouts inSources columnStats
+    Details.viewColumn (ShowList |> wrap) (ShowSchema >> wrap) (ShowTable >> wrap) (ShowColumn >> wrap) loadLayout (ToggleCollapse >> wrap) openedCollapse erd.settings.defaultSchema model.schema model.table model.column notesModel inLayouts inSources columnStats
 
 
 

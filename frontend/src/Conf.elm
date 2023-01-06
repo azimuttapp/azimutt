@@ -1,4 +1,4 @@
-module Conf exposing (canvas, constants, hotkeys, ids, schema, ui)
+module Conf exposing (canvas, constants, features, hotkeys, ids, schema, ui)
 
 import Dict exposing (Dict)
 import Libs.Models.Hotkey exposing (Hotkey, hotkey, target)
@@ -27,8 +27,6 @@ constants :
     , defaultDescription : String
     , newProjectName : ProjectName
     , defaultLayout : LayoutName
-    , freePlanLayouts : Int
-    , freePlanMemos : Int
     , virtualRelationSourceName : SourceName
     , cheeringTweet : String
     , sharingTweet : String
@@ -51,8 +49,6 @@ constants =
     , defaultDescription = "Next-Gen ERD: explore, analyze, document and design your SQL database schema."
     , newProjectName = "New Project"
     , defaultLayout = "initial layout"
-    , freePlanLayouts = 3 -- MUST stay in sync with free_plan_layouts in backend/config/config.exs
-    , freePlanMemos = 1 -- MUST stay in sync with free_plan_memos in backend/config/config.exs
     , virtualRelationSourceName = "default"
     , cheeringTweet = "Hi team, I really like what you've done with @" ++ twitter ++ ". Keep up the good work 💪"
     , sharingTweet = "Hi @" ++ twitter ++ ", I just published my schema at ..., I would love if you can share 🚀"
@@ -101,6 +97,17 @@ ui =
     , closeDuration = 300
     , tableHeaderHeight = 45
     , tableColumnHeight = 24
+    }
+
+
+features : { tableColor : { name : String, free : Bool }, layouts : { name : String, free : number }, memos : { name : String, free : number }, dbAnalysis : { name : String, free : Bool }, dbAccess : { name : String, free : Bool } }
+features =
+    -- MUST stay in sync with backend/config/config.exs (`free_plan_layouts`)
+    { tableColor = { name = "table_color", free = False }
+    , layouts = { name = "layouts", free = 3 }
+    , memos = { name = "memos", free = 1 }
+    , dbAnalysis = { name = "analysis", free = False }
+    , dbAccess = { name = "data_access", free = False }
     }
 
 

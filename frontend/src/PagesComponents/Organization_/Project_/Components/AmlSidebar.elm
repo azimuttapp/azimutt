@@ -35,11 +35,9 @@ import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (Er
 import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint(..))
 import PagesComponents.Organization_.Project_.Models.ShowColumns as ShowColumns
 import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirtyCmd)
-import Ports
 import Services.Lenses exposing (mapAmlSidebarM, mapErdM, setAmlSidebar, setContent, setErrors, setSelected, setUpdatedAt)
 import Set exposing (Set)
 import Time
-import Track
 
 
 type alias Model x =
@@ -79,7 +77,7 @@ update : Time.Posix -> AmlSidebarMsg -> Model x -> ( Model x, Cmd Msg )
 update now msg model =
     case msg of
         AOpen id ->
-            ( model |> setAmlSidebar (Just (init id model.erd)), Ports.track Track.openUpdateSchema )
+            ( model |> setAmlSidebar (Just (init id model.erd)), Cmd.none )
 
         AClose ->
             ( model |> setAmlSidebar Nothing, Cmd.none )

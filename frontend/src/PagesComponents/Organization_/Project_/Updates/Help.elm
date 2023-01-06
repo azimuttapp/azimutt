@@ -4,19 +4,20 @@ import Conf
 import Libs.Bool as B
 import Libs.Task as T
 import PagesComponents.Organization_.Project_.Models exposing (HelpDialog, HelpMsg(..), Msg(..))
+import PagesComponents.Organization_.Project_.Models.Erd exposing (Erd)
 import Ports
 import Track
 
 
 type alias Model x =
-    { x | help : Maybe HelpDialog }
+    { x | help : Maybe HelpDialog, erd : Maybe Erd }
 
 
 handleHelp : HelpMsg -> Model x -> ( Model x, Cmd Msg )
 handleHelp msg model =
     case msg of
         HOpen section ->
-            ( { model | help = Just { id = Conf.ids.helpDialog, openedSection = section } }, Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.helpDialog), Ports.track Track.openHelp ] )
+            ( { model | help = Just { id = Conf.ids.helpDialog, openedSection = section } }, Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.helpDialog), Track.docOpened "navbar_top" model.erd |> Ports.track ] )
 
         HClose ->
             ( { model | help = Nothing }, Cmd.none )

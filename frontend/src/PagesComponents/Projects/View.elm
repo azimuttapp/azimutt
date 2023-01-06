@@ -12,7 +12,7 @@ import Html.Attributes exposing (class, href, id, type_)
 import Html.Events exposing (onClick)
 import Html.Lazy as Lazy
 import Libs.Html exposing (bText)
-import Libs.Html.Attributes exposing (css, role, track)
+import Libs.Html.Attributes exposing (css, role)
 import Libs.Models.DateTime exposing (formatDate)
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (TwClass, hover, lg, md, sm)
@@ -26,7 +26,6 @@ import Services.Backend as Backend
 import Services.Toasts as Toasts
 import Shared exposing (StoredProjects(..))
 import Time
-import Track
 import Url exposing (Url)
 
 
@@ -142,7 +141,7 @@ viewProjectCard zone project =
             [ button [ type_ "button", onClick (confirmDeleteProject project), css [ "flex-grow-0 inline-flex items-center justify-center py-4 text-sm text-gray-700 font-medium px-4", hover [ "text-gray-500" ] ] ]
                 [ Icon.outline Icon.Trash "text-gray-400" ]
                 |> Tooltip.t "Delete this project"
-            , a ([ href (Route.toHref (Route.Organization___Project_ { organization = project |> ProjectInfo.organizationId, project = project.id })), css [ "flex-grow inline-flex items-center justify-center py-4 text-sm text-gray-700 font-medium", hover [ "text-gray-500" ] ] ] ++ track (Track.loadProject project))
+            , a [ href (Route.toHref (Route.Organization___Project_ { organization = project |> ProjectInfo.organizationId, project = project.id })), css [ "flex-grow inline-flex items-center justify-center py-4 text-sm text-gray-700 font-medium", hover [ "text-gray-500" ] ] ]
                 [ Icon.outline Icon.ArrowCircleRight "text-gray-400", span [ css [ "ml-3" ] ] [ text "Open project" ] ]
             ]
         ]

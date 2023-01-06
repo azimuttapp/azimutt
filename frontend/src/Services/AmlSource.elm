@@ -7,8 +7,11 @@ import Libs.Html exposing (extLink)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Models.Project.Source as Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId)
+import Models.ProjectInfo exposing (ProjectInfo)
+import Ports
 import Random
 import Time
+import Track
 
 
 type alias Model =
@@ -37,8 +40,8 @@ init =
 -- UPDATE
 
 
-update : (Msg -> msg) -> Time.Posix -> Msg -> Model -> ( Model, Cmd msg )
-update wrap now msg model =
+update : (Msg -> msg) -> Time.Posix -> Maybe ProjectInfo -> Msg -> Model -> ( Model, Cmd msg )
+update wrap now project msg model =
     case msg of
         UpdateName name ->
             if name == "" then
@@ -55,7 +58,7 @@ update wrap now msg model =
                 ( model, Cmd.none )
 
             else
-                ( { model | parsedSource = Source.aml model.name now id |> Ok |> Just }, Cmd.none )
+                Source.aml model.name now id |> (\source -> ( { model | parsedSource = source |> Ok |> Just }, Track.amlSourceCreated project source |> Ports.track ))
 
 
 

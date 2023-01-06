@@ -1,4 +1,4 @@
-module Models.Project.SourceKind exposing (SourceKind(..), decode, encode, isUser, path, same)
+module Models.Project.SourceKind exposing (SourceKind(..), decode, encode, isUser, path, same, toString)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
@@ -75,6 +75,28 @@ same k2 k1 =
 
         _ ->
             False
+
+
+toString : SourceKind -> String
+toString value =
+    case value of
+        DatabaseConnection _ ->
+            "DatabaseConnection"
+
+        SqlLocalFile _ _ _ ->
+            "SqlLocalFile"
+
+        SqlRemoteFile _ _ ->
+            "SqlRemoteFile"
+
+        JsonLocalFile _ _ _ ->
+            "JsonLocalFile"
+
+        JsonRemoteFile _ _ ->
+            "JsonRemoteFile"
+
+        AmlEditor ->
+            "AmlEditor"
 
 
 encode : SourceKind -> Value
