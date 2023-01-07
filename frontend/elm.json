@@ -40,7 +40,7 @@
             "avh4/elm-color": "1.0.0",
             "avh4/elm-fifo": "1.0.4",
             "danfishgold/base64-bytes": "1.1.0",
-            "dillonkearns/elm-markdown": "7.0.0",
+            "dillonkearns/elm-markdown": "7.0.1",
             "elm/bytes": "1.0.8",
             "elm/file": "1.0.5",
             "elm/virtual-dom": "1.0.3",
@@ -64,7 +64,7 @@
     },
     "test-dependencies": {
         "direct": {
-            "elm-explorations/test": "1.2.2"
+            "elm-explorations/test": "2.1.0"
         },
         "indirect": {}
     }
