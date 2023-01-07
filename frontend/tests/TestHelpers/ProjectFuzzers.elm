@@ -245,7 +245,7 @@ sourceName =
 
 tableId : Fuzzer TableId
 tableId =
-    Fuzz.tuple ( schemaName, tableName )
+    Fuzz.pair schemaName tableName
 
 
 schemaName : Fuzzer SchemaName

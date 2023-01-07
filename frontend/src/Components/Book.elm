@@ -54,6 +54,7 @@ type alias DocState =
     , newLayoutDocState : NewLayoutBody.DocState
     , popoverDocState : Popover.DocState
     , projectSaveDocState : ProjectSaveDialogBody.DocState
+    , proPlanDocState : ProPlan.DocState
     , selectDocState : Select.DocState
     , slideoverDocState : Slideover.DocState
     , tableDocState : Table.DocState
@@ -73,6 +74,7 @@ init =
     , newLayoutDocState = NewLayoutBody.initDocState
     , popoverDocState = Popover.initDocState
     , projectSaveDocState = ProjectSaveDialogBody.initDocState
+    , proPlanDocState = ProPlan.initDocState
     , selectDocState = Select.initDocState
     , slideoverDocState = Slideover.initDocState
     , tableDocState = Table.initDocState

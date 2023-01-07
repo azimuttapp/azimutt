@@ -1,6 +1,6 @@
 module PagesComponents.Helpers exposing (appShell, viewProfileIcon)
 
-import Components.Atoms.Icon as Icon exposing (Icon(..))
+import Components.Atoms.Icon as Icon
 import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
 import Components.Molecules.Dropdown as Dropdown
 import Components.Molecules.Tooltip as Tooltip

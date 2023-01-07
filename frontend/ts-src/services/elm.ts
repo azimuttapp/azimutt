@@ -38,6 +38,7 @@ export class ElmApp {
         ListenKeys: [],
         Confetti: [],
         ConfettiPride: [],
+        Fireworks: [],
         Track: [],
     }
 

@@ -61,7 +61,7 @@ import Ports exposing (JsMsg(..))
 import Random
 import Services.Backend as Backend
 import Services.JsonSource as JsonSource
-import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapConf, mapContextMenuM, mapDetailsSidebarCmd, mapEmbedSourceParsingMCmd, mapErdM, mapErdMCmd, mapHoverTable, mapMemos, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapPosition, mapProject, mapPromptM, mapProps, mapSaveCmd, mapSchemaAnalysisM, mapSearch, mapSelected, mapShowHiddenColumns, mapTables, mapTablesCmd, mapToastsCmd, setActive, setCollapsed, setColor, setConfirm, setContextMenu, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setLast, setModal, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setSelected, setShow, setSize, setText)
+import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapConf, mapContextMenuM, mapDetailsSidebarCmd, mapEmbedSourceParsingMCmd, mapErdM, mapErdMCmd, mapHoverTable, mapMemos, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapOrganizationM, mapPlan, mapPosition, mapProject, mapPromptM, mapProps, mapSaveCmd, mapSchemaAnalysisM, mapSearch, mapSelected, mapShowHiddenColumns, mapTables, mapTablesCmd, mapToastsCmd, setActive, setCollapsed, setColor, setColors, setConfirm, setContextMenu, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setLast, setModal, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setSelected, setShow, setSize, setText)
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
 import Time
@@ -169,11 +169,16 @@ update currentLayout now urlOrganization organizations projects msg model =
             model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (\tables -> tables |> List.moveBy .id id (List.length tables - 1 - index)))) |> setDirty
 
         TableColor id color ->
+            let
+                organization : Organization
+                organization =
+                    model.erd |> Erd.getOrganizationM Nothing
+            in
             if model.erd |> Erd.canChangeTableColor then
                 model |> mapErdMCmd (\erd -> erd |> Erd.mapCurrentLayoutCmd now (mapTablesCmd (mapTablePropOrSelected erd.settings.defaultSchema id (mapProps (setColor color))))) |> setDirtyCmd
 
             else
-                ( model, Cmd.batch [ model.erd |> Erd.getOrganizationM Nothing |> ProPlan.colorsModalBody |> CustomModalOpen |> T.send, Track.proPlanLimit Conf.features.tableColor.name model.erd |> Ports.track ] )
+                ( model, Cmd.batch [ ProPlan.colorsModalBody organization ProPlanColors ProPlan.colorsInit |> CustomModalOpen |> T.send, Track.proPlanLimit Conf.features.tableColor.name model.erd |> Ports.track ] )
 
         MoveColumn column position ->
             model |> mapErdM (\erd -> erd |> Erd.mapCurrentLayoutWithTime now (mapTables (List.updateBy .id column.table (mapColumns (List.moveBy .name column.column position))))) |> setDirty
@@ -244,6 +249,12 @@ update currentLayout now urlOrganization organizations projects msg model =
 
         SourceParsed source ->
             ( model, Project.create projects source.name source |> Ok |> Just |> GotProject |> JsMessage |> T.send )
+
+        ProPlanColors _ ProPlan.EnableTableChangeColor ->
+            ( model |> mapErdM (mapProject (mapOrganizationM (mapPlan (setColors True)))), Ports.fireworks )
+
+        ProPlanColors state message ->
+            state |> ProPlan.colorsUpdate ProPlanColors message |> Tuple.mapFirst (\s -> { model | modal = model.modal |> Maybe.map (\m -> { m | content = ProPlan.colorsModalBody (model.erd |> Erd.getOrganizationM Nothing) ProPlanColors s }) })
 
         HelpMsg message ->
             model |> handleHelp message

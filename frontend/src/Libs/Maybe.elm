@@ -1,4 +1,4 @@
-module Libs.Maybe exposing (all, andThenZip, any, any2, filter, filterBy, filterNot, has, hasBy, isJust, mapOrElse, merge, orElse, resultSeq, toList, when, zip, zip3)
+module Libs.Maybe exposing (all, andThenZip, any, any2, filter, filterBy, filterNot, has, hasBy, isJust, mapOrElse, merge, orElse, resultSeq, toList, toResult, toResultErr, when, zip, zip3)
 
 import Libs.Bool as B
 
@@ -150,3 +150,23 @@ toList maybe =
 
         Nothing ->
             []
+
+
+toResult : e -> Maybe a -> Result e a
+toResult err maybe =
+    case maybe of
+        Just a ->
+            Ok a
+
+        Nothing ->
+            Err err
+
+
+toResultErr : a -> Maybe e -> Result e a
+toResultErr value maybe =
+    case maybe of
+        Just a ->
+            Err a
+
+        Nothing ->
+            Ok value

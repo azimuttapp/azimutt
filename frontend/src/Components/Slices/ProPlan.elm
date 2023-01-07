@@ -1,4 +1,4 @@
-module Components.Slices.ProPlan exposing (analysisResults, analysisWarning, colorsModalBody, doc, layoutsModalBody, layoutsWarning, memosModalBody)
+module Components.Slices.ProPlan exposing (ColorsModel, ColorsMsg(..), DocState, SharedDocState, analysisResults, analysisWarning, colorsInit, colorsModalBody, colorsUpdate, doc, initDocState, layoutsModalBody, layoutsWarning, memosModalBody)
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon
@@ -8,16 +8,23 @@ import Conf
 import ElmBook
 import ElmBook.Actions as Actions
 import ElmBook.Chapter as Chapter exposing (Chapter)
-import Html exposing (Html, a, div, h3, p, text)
-import Html.Attributes exposing (class, href, id, rel, style, target)
-import Html.Events exposing (onClick)
-import Libs.Html exposing (bText)
-import Libs.Html.Attributes exposing (css)
+import Html exposing (Html, a, blockquote, button, div, h3, input, label, p, text)
+import Html.Attributes exposing (class, for, href, id, name, placeholder, rel, style, target, type_, value)
+import Html.Events exposing (onBlur, onClick, onInput)
+import Libs.Html exposing (bText, extLink, sendTweet)
+import Libs.Html.Attributes exposing (ariaDescribedby, ariaHidden, css)
+import Libs.Maybe as Maybe
+import Libs.Models exposing (ErrorMessage, TweetText, TweetUrl)
 import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.Nel as Nel
+import Libs.Result as Result
 import Libs.String as String
-import Libs.Tailwind as Tw exposing (sm)
+import Libs.Tailwind as Tw exposing (Color, focus, sm)
+import Libs.Task as T
 import Models.Organization as Organization exposing (Organization)
-import Services.Backend as Backend
+import Models.OrganizationId exposing (OrganizationId)
+import Services.Backend as Backend exposing (TableColorTweet)
+import Services.Lenses exposing (setColors, setResult)
 
 
 layoutsWarning : Organization -> Html msg
@@ -83,26 +90,169 @@ memosModalBody organization close titleId =
         ]
 
 
-colorsModalBody : Organization -> msg -> HtmlId -> Html msg
-colorsModalBody organization close titleId =
+type alias ColorsModel =
+    { tweetOpen : Bool, tweetUrl : String, result : Maybe (Result ErrorMessage TweetText) }
+
+
+type ColorsMsg
+    = ToggleTweet
+    | UpdateTweetUrl String
+    | GetTableColorTweet OrganizationId TweetUrl
+    | GotTableColorTweet (Result Backend.Error TableColorTweet)
+    | EnableTableChangeColor
+
+
+colorsInit : ColorsModel
+colorsInit =
+    { tweetOpen = False, tweetUrl = "", result = Nothing }
+
+
+colorsUpdate : (ColorsModel -> ColorsMsg -> msg) -> ColorsMsg -> ColorsModel -> ( ColorsModel, Cmd msg )
+colorsUpdate update msg model =
+    let
+        wrap : ColorsMsg -> msg
+        wrap =
+            update model
+    in
+    case msg of
+        ToggleTweet ->
+            ( { model | tweetOpen = not model.tweetOpen }, Cmd.none )
+
+        UpdateTweetUrl value ->
+            ( { model | tweetUrl = value }, Cmd.none )
+
+        GetTableColorTweet id url ->
+            if url == "" then
+                ( { model | result = Nothing }, Cmd.none )
+
+            else
+                ( { model | result = Nothing }, Backend.getTableColorTweet id url (GotTableColorTweet >> wrap) )
+
+        GotTableColorTweet res ->
+            let
+                result : Result ErrorMessage TweetText
+                result =
+                    res |> Result.mapError Backend.errorToString |> Result.andThen colorsTweetResult
+            in
+            ( { model | result = Just result }, result |> Result.map (\_ -> EnableTableChangeColor |> wrap |> T.send) |> Result.withDefault Cmd.none )
+
+        EnableTableChangeColor ->
+            -- never called, should be intercepted in the higher level to update the global model
+            ( model, Cmd.none )
+
+
+colorsTweetResult : TableColorTweet -> Result ErrorMessage TweetText
+colorsTweetResult r =
+    r.errors |> Nel.fromList |> Maybe.map (Nel.join ", ") |> Maybe.toResultErr r.tweet
+
+
+colorsModalBody : Organization -> (ColorsModel -> ColorsMsg -> msg) -> ColorsModel -> msg -> HtmlId -> Html msg
+colorsModalBody organization update model close titleId =
+    let
+        ( wrap, color, tweetInput ) =
+            ( update model, Tw.orange, "change-color-tweet" )
+    in
     div [ class "max-w-2xl" ]
         [ div [ css [ "px-6 pt-6", sm [ "flex items-start" ] ] ]
-            [ div [ css [ "mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-orange-100", sm [ "mx-0 h-10 w-10" ] ] ]
-                [ Icon.outline Icon.ColorSwatch "text-orange-600"
+            [ div [ css [ "mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full", Tw.bg_100 color, sm [ "mx-0 h-10 w-10" ] ] ]
+                [ Icon.outline Icon.ColorSwatch (Tw.text_600 color)
                 ]
             , div [ css [ "mt-3 text-center", sm [ "mt-0 ml-4 text-left" ] ] ]
                 [ h3 [ id titleId, class "text-lg leading-6 font-medium text-gray-900" ] [ text "Change colors" ]
                 , div [ class "mt-3" ]
                     [ p [ class "text-sm text-gray-500" ] [ bText "Oh! You found a Pro feature!" ]
                     , p [ class "mt-2 text-sm text-gray-500" ] [ text "I'm glad you are exploring Azimutt. We want to make it the ultimate tool to understand and analyze your database, and will bring much more in the coming months." ]
-                    , p [ class "text-sm text-gray-500" ] [ text "This would need a lot of resources and having a small contribution from you would be awesome. Please onboard in Azimutt community, it will ", bText "bring us much further together", text "." ]
+                    , p [ class "text-sm text-gray-500" ] [ text "This would need a lot of resources and having a small contribution from you would be awesome. Onboard in Azimutt community, it will ", bText "bring us much further together", text "." ]
                     ]
+                , colorsTweetDivider wrap color
+                , (model.result |> Maybe.andThen Result.toMaybe)
+                    |> Maybe.map (\_ -> colorsTweetSuccess close)
+                    |> Maybe.withDefault
+                        (if model.tweetOpen then
+                            div []
+                                [ colorsTweetInput wrap organization.id tweetInput model.tweetUrl color
+                                , (model.result |> Maybe.andThen Result.toError)
+                                    |> Maybe.map (\err -> p [ id (tweetInput ++ "-description"), class "mt-2 h-10 text-sm text-red-600" ] [ text err ])
+                                    |> Maybe.withDefault (p [ id (tweetInput ++ "-description"), class "mt-2 h-10 text-sm text-gray-500" ] [ text "Your tweet has to be published within the last 10 minutes, mention ", extLink Conf.constants.azimuttTwitter [ class "link" ] [ text "@azimuttapp" ], text " and have a link to ", extLink Conf.constants.azimuttWebsite [ class "link" ] [ text "azimutt.app" ], text "." ])
+                                , colorsTweetInspiration color
+                                ]
+
+                         else
+                            div [] []
+                        )
                 ]
             ]
         , div [ class "px-6 py-3 mt-6 flex items-center flex-row-reverse bg-gray-50 rounded-b-lg" ]
-            [ Link.primary3 Tw.orange [ href (Backend.organizationBillingUrl organization.id Conf.features.tableColor.name), target "_blank", rel "noopener", css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ Icon.solid Icon.Fire "mr-1", text "Upgrade plan" ]
+            [ Link.primary3 color [ href (Backend.organizationBillingUrl organization.id Conf.features.tableColor.name), target "_blank", rel "noopener", css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ Icon.solid Icon.Fire "mr-1", text "Upgrade plan" ]
             , Button.white3 Tw.gray [ onClick close, css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text "Cancel" ]
             ]
+        ]
+
+
+colorsTweetDivider : (ColorsMsg -> msg) -> Color -> Html msg
+colorsTweetDivider wrap color =
+    div [ class "mt-3 relative" ]
+        [ div [ class "absolute inset-0 flex items-center", ariaHidden True ]
+            [ div [ class "w-full border-t border-gray-300" ] []
+            ]
+        , div [ class "relative flex justify-center" ]
+            [ button [ type_ "button", onClick (ToggleTweet |> wrap), css [ "inline-flex items-center rounded-full border border-gray-300 bg-white px-4 py-1.5 text-sm font-medium leading-5 text-gray-700 shadow-sm hover:bg-gray-50", Tw.focus_ring_500 color ] ]
+                [ text "Or tweet to unlock feature"
+                ]
+            ]
+        ]
+
+
+colorsTweetInput : (ColorsMsg -> msg) -> OrganizationId -> HtmlId -> String -> Color -> Html msg
+colorsTweetInput wrap organizationId inputId inputValue color =
+    div []
+        [ label [ for inputId, class "block text-sm font-medium text-gray-700" ] [ text "Your tweet url" ]
+        , div [ class "mt-1" ]
+            [ input
+                [ type_ "url"
+                , name inputId
+                , id inputId
+                , value inputValue
+                , onInput (UpdateTweetUrl >> wrap)
+                , onBlur (GetTableColorTweet organizationId inputValue |> wrap)
+                , placeholder "ex: https://twitter.com/azimuttapp/status/1442355066636161032"
+                , ariaDescribedby (inputId ++ "-description")
+                , css [ "block w-full rounded-md border-gray-300 shadow-sm sm:text-sm", focus [ Tw.border_500 color, Tw.ring_500 color ] ]
+                ]
+                []
+            ]
+        ]
+
+
+colorsTweetInspiration : Color -> Html msg
+colorsTweetInspiration color =
+    div []
+        [ p [ class "mt-3 block text-sm font-medium text-gray-700" ] [ text "Some inspiration if you need:" ]
+        , div []
+            ([ "Hey @azimuttapp, please unlock table colors on https://azimutt.app 🙏"
+             , "I'm discovering @azimuttapp to explore my database, I can recommend it: https://azimutt.app"
+             , "Azimutt (@azimuttapp) is a visual database exploration tool, made for big real world databases. Try it out: https://azimutt.app"
+             ]
+                |> List.map
+                    (\tweet ->
+                        sendTweet tweet
+                            []
+                            [ blockquote [ class "mt-3 relative font-medium text-gray-500" ]
+                                [ Icon.quote ("absolute top-0 left-0 transform -translate-x-3 -translate-y-2 " ++ Tw.text_100 color)
+                                , p [ class "relative" ] [ text tweet ]
+                                ]
+                            ]
+                    )
+            )
+        ]
+
+
+colorsTweetSuccess : msg -> Html msg
+colorsTweetSuccess close =
+    div [ class "mt-3 py-12 bg-green-500 rounded shadow text-center text-white" ]
+        [ Icon.solid Icon.Check "w-16 h-16 inline"
+        , div [ class "text-lg font-bold" ] [ text "CHANGE TABLE COLOR ENABLED 👌" ]
+        , button [ type_ "button", onClick close, class "mt-12 inline-flex items-center rounded-md border border-green-300 bg-white px-6 py-3 text-base font-medium text-green-500 shadow-sm hover:bg-green-50" ] [ text "Back to editor" ]
         ]
 
 
@@ -147,24 +297,54 @@ analysisResults organization items render =
 -- DOCUMENTATION
 
 
-sampleCancel : ElmBook.Msg state
-sampleCancel =
-    Actions.logAction "onCancel"
+type alias SharedDocState x =
+    { x | proPlanDocState : DocState }
 
 
-sampleTitleId : String
-sampleTitleId =
-    "modal-id-title"
+type alias DocState =
+    { colors : ColorsModel }
 
 
-doc : Chapter x
+initDocState : DocState
+initDocState =
+    { colors = colorsInit }
+
+
+type DocMsg
+    = ColorsMsg ColorsModel ColorsMsg
+
+
+updateDocState : DocMsg -> ElmBook.Msg (SharedDocState x)
+updateDocState msg =
+    case msg of
+        ColorsMsg model message ->
+            Actions.updateState (\s -> { s | proPlanDocState = s.proPlanDocState |> setColors (colorsUpdate docColorsUpdate message model |> Tuple.first) })
+
+
+doc : Chapter (SharedDocState x)
 doc =
     Chapter.chapter "ProPlan"
-        |> Chapter.renderComponentList
-            [ ( "layoutsWarning", layoutsWarning Organization.zero )
-            , ( "layoutsModalBody", layoutsModalBody Organization.zero sampleCancel sampleTitleId )
-            , ( "memosModalBody", memosModalBody Organization.zero sampleCancel sampleTitleId )
-            , ( "colorsModalBody", colorsModalBody Organization.zero sampleCancel sampleTitleId )
-            , ( "analysisWarning", analysisWarning Organization.zero )
-            , ( "analysisResults", analysisResults Organization.zero [ 1, 2, 3, 4, 5, 6 ] (\i -> p [] [ text ("Item " ++ String.fromInt i) ]) )
+        |> Chapter.renderStatefulComponentList
+            [ ( "layoutsWarning", \_ -> layoutsWarning Organization.zero )
+            , ( "layoutsModalBody", \_ -> layoutsModalBody Organization.zero docClose docTitleId )
+            , ( "memosModalBody", \_ -> memosModalBody Organization.zero docClose docTitleId )
+            , ( "colorsModalBody", \s -> colorsModalBody Organization.zero docColorsUpdate s.proPlanDocState.colors docClose docTitleId )
+            , ( "colorsModalBody success", \s -> colorsModalBody Organization.zero docColorsUpdate (s.proPlanDocState.colors |> setResult (Just (Ok "Tweet.."))) docClose docTitleId )
+            , ( "analysisWarning", \_ -> analysisWarning Organization.zero )
+            , ( "analysisResults", \_ -> analysisResults Organization.zero [ 1, 2, 3, 4, 5, 6 ] (\i -> p [] [ text ("Item " ++ String.fromInt i) ]) )
             ]
+
+
+docColorsUpdate : ColorsModel -> ColorsMsg -> ElmBook.Msg (SharedDocState x)
+docColorsUpdate model msg =
+    ColorsMsg model msg |> updateDocState
+
+
+docClose : ElmBook.Msg state
+docClose =
+    Actions.logAction "onClose"
+
+
+docTitleId : String
+docTitleId =
+    "modal-id-title"

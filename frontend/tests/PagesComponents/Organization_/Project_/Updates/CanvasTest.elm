@@ -1,7 +1,7 @@
 module PagesComponents.Organization_.Project_.Updates.CanvasTest exposing (..)
 
 import Expect
-import Fuzz exposing (tuple)
+import Fuzz
 import Libs.Models.Delta as Delta exposing (Delta)
 import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.Size exposing (Size)
@@ -24,7 +24,7 @@ suite =
             [ test "basic" (\_ -> CanvasProps (canvasPos 0 0) 1 |> performZoom erdElem 0.5 (viewportPos 50 50) |> Expect.equal (CanvasProps (canvasPos -25 -25) 1.5))
             , test "basic round trip" (\_ -> CanvasProps (canvasPos 0 0) 1 |> performZoom erdElem 0.5 (viewportPos 50 50) |> performZoom erdElem -0.5 (viewportPos 50 50) |> Expect.equal (CanvasProps (canvasPos 0 0) 1))
             , test "complex" (\_ -> CanvasProps (canvasPos 50 20) 0.5 |> performZoom erdElem 0.1 (viewportPos 200 300) |> Expect.equal (CanvasProps (canvasPos 20 -36) 0.6))
-            , fuzz (tuple ( positionViewport, canvasProps )) "no change" (\( pos, props ) -> props |> performZoom erdElem 0 pos |> Expect.equal (props |> mapPosition Position.roundDiagram))
+            , fuzz (Fuzz.pair positionViewport canvasProps) "no change" (\( pos, props ) -> props |> performZoom erdElem 0 pos |> Expect.equal (props |> mapPosition Position.roundDiagram))
 
             --, fuzz (tuple3 ( float, positionViewport, canvasProps )) "round trip" (\( delta, pos, props ) -> props |> performZoom erdElem delta pos |> performZoom erdElem -delta pos |> Expect.equal (props |> mapPosition Position.roundCanvas))
             ]

@@ -4,7 +4,7 @@ import Gen.Params.Organization_.New exposing (Params)
 import Models.OrganizationId exposing (OrganizationId)
 import Page
 import PagesComponents.New.Init as Init
-import PagesComponents.New.Models as Models exposing (Msg, Tab(..))
+import PagesComponents.New.Models as Models exposing (Msg)
 import PagesComponents.New.Subscriptions as Subscriptions
 import PagesComponents.New.Updates as Updates
 import PagesComponents.New.Views as Views

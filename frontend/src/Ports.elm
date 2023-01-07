@@ -1,4 +1,4 @@
-port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProject, createProjectTmp, deleteProject, downloadFile, focus, fullscreen, getColumnStats, getLegacyProjects, getProject, getTableStats, listenHotkeys, mouseDown, moveProjectTo, observeMemosSize, observeSize, observeTableSize, observeTablesSize, onJsMessage, projectDirty, readLocalFile, scrollTo, setMeta, toast, track, unhandledJsMsgError, updateProject, updateProjectTmp)
+port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProject, createProjectTmp, deleteProject, downloadFile, fireworks, focus, fullscreen, getColumnStats, getLegacyProjects, getProject, getTableStats, listenHotkeys, mouseDown, moveProjectTo, observeMemosSize, observeSize, observeTableSize, observeTablesSize, onJsMessage, projectDirty, readLocalFile, scrollTo, setMeta, toast, track, unhandledJsMsgError, updateProject, updateProjectTmp)
 
 import Dict exposing (Dict)
 import FileValue exposing (File)
@@ -186,6 +186,11 @@ confettiPride =
     messageToJs ConfettiPride
 
 
+fireworks : Cmd msg
+fireworks =
+    messageToJs Fireworks
+
+
 track : TrackEvent -> Cmd msg
 track event =
     messageToJs (Track event)
@@ -227,6 +232,7 @@ type ElmMsg
     | ListenKeys (Dict String (List Hotkey))
     | Confetti HtmlId
     | ConfettiPride
+    | Fireworks
     | Track TrackEvent
 
 
@@ -360,6 +366,9 @@ elmEncoder elm =
 
         ConfettiPride ->
             Encode.object [ ( "kind", "ConfettiPride" |> Encode.string ) ]
+
+        Fireworks ->
+            Encode.object [ ( "kind", "Fireworks" |> Encode.string ) ]
 
         Track event ->
             Encode.object [ ( "kind", "Track" |> Encode.string ), ( "event", event |> TrackEvent.encode ) ]

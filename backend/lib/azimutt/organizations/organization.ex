@@ -24,6 +24,7 @@ defmodule Azimutt.Organizations.Organization do
     field :stripe_customer_id, :string
     field :stripe_subscription_id, :string
     field :is_personal, :boolean
+    embeds_one :data, Organization.Data, on_replace: :update
     belongs_to :created_by, User, source: :created_by
     belongs_to :updated_by, User, source: :updated_by
     timestamps()
@@ -111,5 +112,17 @@ defmodule Azimutt.Organizations.Organization do
     organization
     |> cast(%{}, [])
     |> put_change(:deleted_at, now)
+  end
+
+  def allow_table_color_changeset(%Organization{} = organization, tweet_url) do
+    organization
+    |> cast(%{data: %{allow_table_color: tweet_url}}, [])
+    |> cast_embed(:data, required: true, with: &data_allow_table_color_changeset/2)
+  end
+
+  defp data_allow_table_color_changeset(data, attrs) do
+    data
+    |> cast(attrs, [:allow_table_color])
+    |> validate_required([:allow_table_color])
   end
 end

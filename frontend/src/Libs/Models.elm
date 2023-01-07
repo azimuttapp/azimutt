@@ -1,10 +1,14 @@
-module Libs.Models exposing (FileContent, FileLine, FileLineContent, Image, Link, ListIndex, Millis, SizeChange, Text, ZoomDelta)
+module Libs.Models exposing (ErrorMessage, FileContent, FileLine, FileLineContent, Image, Link, ListIndex, Millis, SizeChange, Text, TweetText, TweetUrl, ZoomDelta)
 
 import Libs.Models.Delta exposing (Delta)
 import Libs.Models.FileLineIndex exposing (FileLineIndex)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Models.Position as Position
 import Models.Size as Size
+
+
+type alias ErrorMessage =
+    String
 
 
 type alias ListIndex =
@@ -45,3 +49,11 @@ type alias Image =
 
 type alias Link =
     { url : String, text : String }
+
+
+type alias TweetUrl =
+    String
+
+
+type alias TweetText =
+    String

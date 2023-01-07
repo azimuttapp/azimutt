@@ -5,6 +5,7 @@ module Services.Lenses exposing
     , mapCanvas
     , mapChecks
     , mapCollapseTableColumns
+    , mapColors
     , mapColumnBasicTypes
     , mapColumns
     , mapCommentM
@@ -38,6 +39,8 @@ module Services.Lenses exposing
     , mapMemos
     , mapMemosL
     , mapMobileMenuOpen
+    , mapModal
+    , mapModalM
     , mapNavbar
     , mapNewLayoutM
     , mapNewLayoutMCmd
@@ -45,7 +48,9 @@ module Services.Lenses exposing
     , mapOpened
     , mapOpenedDialogs
     , mapOpenedDropdown
+    , mapOrganizationM
     , mapParsedSchemaM
+    , mapPlan
     , mapPosition
     , mapPrimaryKeyM
     , mapProject
@@ -91,6 +96,7 @@ module Services.Lenses exposing
     , setCollapseTableColumns
     , setCollapsed
     , setColor
+    , setColors
     , setColumnBasicTypes
     , setColumnOrder
     , setColumns
@@ -145,9 +151,11 @@ module Services.Lenses exposing
     , setOpenedDialogs
     , setOpenedDropdown
     , setOpenedPopover
+    , setOrganization
     , setOrigins
     , setParsedSchema
     , setParsedSource
+    , setPlan
     , setPosition
     , setPrimaryKey
     , setProject
@@ -282,6 +290,16 @@ mapCollapseTableColumns =
 setColor : v -> { item | color : v } -> { item | color : v }
 setColor =
     set_ .color (\value item -> { item | color = value })
+
+
+setColors : v -> { item | colors : v } -> { item | colors : v }
+setColors =
+    set_ .colors (\value item -> { item | colors = value })
+
+
+mapColors : (v -> v) -> { item | colors : v } -> { item | colors : v }
+mapColors =
+    map_ .colors setColors
 
 
 setColumns : v -> { item | columns : v } -> { item | columns : v }
@@ -654,6 +672,16 @@ setModal =
     set_ .modal (\value item -> { item | modal = value })
 
 
+mapModal : (v -> v) -> { item | modal : v } -> { item | modal : v }
+mapModal =
+    map_ .modal setModal
+
+
+mapModalM : (v -> v) -> { item | modal : Maybe v } -> { item | modal : Maybe v }
+mapModalM =
+    mapM_ .modal setModal
+
+
 setMouse : v -> { item | mouse : v } -> { item | mouse : v }
 setMouse =
     set_ .mouse (\value item -> { item | mouse = value })
@@ -734,6 +762,16 @@ mapOpenedDialogs =
     map_ .openedDialogs setOpenedDialogs
 
 
+setOrganization : v -> { item | organization : v } -> { item | organization : v }
+setOrganization =
+    set_ .organization (\value item -> { item | organization = value })
+
+
+mapOrganizationM : (v -> v) -> { item | organization : Maybe v } -> { item | organization : Maybe v }
+mapOrganizationM =
+    mapM_ .organization setOrganization
+
+
 setOrigins : v -> { item | origins : v } -> { item | origins : v }
 setOrigins =
     set_ .origins (\value item -> { item | origins = value })
@@ -752,6 +790,16 @@ mapParsedSchemaM =
 setParsedSource : v -> { item | parsedSource : v } -> { item | parsedSource : v }
 setParsedSource =
     set_ .parsedSource (\value item -> { item | parsedSource = value })
+
+
+setPlan : v -> { item | plan : v } -> { item | plan : v }
+setPlan =
+    set_ .plan (\value item -> { item | plan = value })
+
+
+mapPlan : (v -> v) -> { item | plan : v } -> { item | plan : v }
+mapPlan =
+    map_ .plan setPlan
 
 
 setPosition : v -> { item | position : v } -> { item | position : v }

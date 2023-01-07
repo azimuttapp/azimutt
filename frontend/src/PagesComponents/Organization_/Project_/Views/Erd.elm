@@ -6,7 +6,7 @@ import Components.Molecules.Tooltip as Tooltip
 import Conf
 import Dict exposing (Dict)
 import Html exposing (Html, button, div, h2, p, text)
-import Html.Attributes exposing (class, classList, id, style)
+import Html.Attributes exposing (class, classList, id)
 import Html.Events exposing (onClick)
 import Html.Events.Extra.Mouse exposing (Button(..))
 import Html.Keyed as Keyed

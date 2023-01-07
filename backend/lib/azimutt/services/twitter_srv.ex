@@ -1,7 +1,14 @@
 defmodule Azimutt.Services.TwitterSrv do
   @moduledoc false
+  alias Azimutt.Utils.Mapx
   alias Azimutt.Utils.Result
   # available API: https://github.com/parroty/extwitter/blob/master/lib/extwitter.ex
+
+  def parse_url(tweet_url) do
+    Regex.named_captures(~r/https?:\/\/twitter.com\/(?<user>[^\/]+)\/status\/(?<tweet>[0-9]+).*/, tweet_url)
+    |> Result.from_nillable()
+    |> Result.map(&Mapx.atomize/1)
+  end
 
   def get_tweet(id) do
     {:ok, ExTwitter.show(id)}
