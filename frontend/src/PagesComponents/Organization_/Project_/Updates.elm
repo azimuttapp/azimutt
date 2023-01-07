@@ -251,7 +251,7 @@ update currentLayout now urlOrganization organizations projects msg model =
             ( model, Project.create projects source.name source |> Ok |> Just |> GotProject |> JsMessage |> T.send )
 
         ProPlanColors _ ProPlan.EnableTableChangeColor ->
-            ( model |> mapErdM (mapProject (mapOrganizationM (mapPlan (setColors True)))), Cmd.none )
+            ( model |> mapErdM (mapProject (mapOrganizationM (mapPlan (setColors True)))), Ports.fireworks )
 
         ProPlanColors state message ->
             state |> ProPlan.colorsUpdate ProPlanColors message |> Tuple.mapFirst (\s -> { model | modal = model.modal |> Maybe.map (\m -> { m | content = ProPlan.colorsModalBody (model.erd |> Erd.getOrganizationM Nothing) ProPlanColors s }) })

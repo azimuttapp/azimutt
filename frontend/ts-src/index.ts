@@ -92,6 +92,7 @@ app.on('ObserveSizes', observeSizes)
 app.on('ListenKeys', listenHotkeys)
 app.on('Confetti', msg => Utils.launchConfetti(msg.id))
 app.on('ConfettiPride', _ => Utils.launchConfettiPride())
+app.on('Fireworks', _ => Utils.launchFireworks())
 app.on('Track', msg => backend.trackEvent(msg.event))
 if (app.noListeners().length > 0 && env !== Env.enum.prod) {
     logger.error(`Do not listen to elm events: ${app.noListeners().join(', ')}`)

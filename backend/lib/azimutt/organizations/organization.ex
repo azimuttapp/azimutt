@@ -24,7 +24,7 @@ defmodule Azimutt.Organizations.Organization do
     field :stripe_customer_id, :string
     field :stripe_subscription_id, :string
     field :is_personal, :boolean
-    embeds_one :data, Organization.Data
+    embeds_one :data, Organization.Data, on_replace: :update
     belongs_to :created_by, User, source: :created_by
     belongs_to :updated_by, User, source: :updated_by
     timestamps()

@@ -145,10 +145,12 @@ export type Confetti = { kind: 'Confetti', id: HtmlId }
 export const Confetti = z.object({kind: z.literal('Confetti'), id: HtmlId}).strict()
 export type ConfettiPride = { kind: 'ConfettiPride' }
 export const ConfettiPride = z.object({kind: z.literal('ConfettiPride')}).strict()
+export type Fireworks = { kind: 'Fireworks' }
+export const Fireworks = z.object({kind: z.literal('Fireworks')}).strict()
 export type Track = { kind: 'Track', event: TrackEvent }
 export const Track = z.object({kind: z.literal('Track'), event: TrackEvent}).strict()
-export type ElmMsg = Click | MouseDown | Focus | Blur | ScrollTo | Fullscreen | SetMeta | AutofocusWithin | Toast | GetLegacyProjects | GetProject | CreateProjectTmp | UpdateProjectTmp | CreateProject | UpdateProject | MoveProjectTo | DeleteProject | ProjectDirty | DownloadFile | GetLocalFile | GetTableStats | GetColumnStats | ObserveSizes | ListenKeys | Confetti | ConfettiPride | Track
-export const ElmMsg = z.discriminatedUnion('kind', [Click, MouseDown, Focus, Blur, ScrollTo, Fullscreen, SetMeta, AutofocusWithin, Toast, GetLegacyProjects, GetProject, CreateProjectTmp, UpdateProjectTmp, CreateProject, UpdateProject, MoveProjectTo, DeleteProject, ProjectDirty, DownloadFile, GetLocalFile, GetTableStats, GetColumnStats, ObserveSizes, ListenKeys, Confetti, ConfettiPride, Track])
+export type ElmMsg = Click | MouseDown | Focus | Blur | ScrollTo | Fullscreen | SetMeta | AutofocusWithin | Toast | GetLegacyProjects | GetProject | CreateProjectTmp | UpdateProjectTmp | CreateProject | UpdateProject | MoveProjectTo | DeleteProject | ProjectDirty | DownloadFile | GetLocalFile | GetTableStats | GetColumnStats | ObserveSizes | ListenKeys | Confetti | ConfettiPride | Fireworks | Track
+export const ElmMsg = z.discriminatedUnion('kind', [Click, MouseDown, Focus, Blur, ScrollTo, Fullscreen, SetMeta, AutofocusWithin, Toast, GetLegacyProjects, GetProject, CreateProjectTmp, UpdateProjectTmp, CreateProject, UpdateProject, MoveProjectTo, DeleteProject, ProjectDirty, DownloadFile, GetLocalFile, GetTableStats, GetColumnStats, ObserveSizes, ListenKeys, Confetti, ConfettiPride, Fireworks, Track])
 
 
 export type GotSizes = { kind: 'GotSizes', sizes: ElementSize[] }
