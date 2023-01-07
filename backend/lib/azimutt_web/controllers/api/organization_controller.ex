@@ -33,7 +33,7 @@ defmodule AzimuttWeb.Api.OrganizationController do
         |> Enum.filter(fn e -> e != nil end)
 
       if errors == [] do
-        {:ok, _} = Organizations.allow_table_color_change(organization, tweet_url)
+        {:ok, _} = Organizations.allow_table_color(organization, tweet_url)
         Tracking.allow_table_color(current_user, organization, tweet_url)
       end
 

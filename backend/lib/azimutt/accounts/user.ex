@@ -3,6 +3,7 @@ defmodule Azimutt.Accounts.User do
   use Ecto.Schema
   use Azimutt.Schema
   import Ecto.Changeset
+  alias Azimutt.Accounts.User
   alias Azimutt.Organizations.Organization
   alias Azimutt.Organizations.OrganizationMember
   alias Azimutt.Utils.Slugme
@@ -23,7 +24,7 @@ defmodule Azimutt.Accounts.User do
     field :hashed_password, :string, redact: true
     field :password, :string, virtual: true, redact: true
     field :last_signin, :utc_datetime_usec
-    field :data, :map
+    embeds_one :data, User.Data
     timestamps()
     field :confirmed_at, :utc_datetime_usec
     field :deleted_at, :utc_datetime_usec

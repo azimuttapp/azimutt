@@ -296,13 +296,9 @@ defmodule Azimutt.Organizations do
     end
   end
 
-  def allow_table_color_change(%Organization{} = organization, tweet_url) when is_binary(tweet_url) do
-    set_organization_data(organization, "allow_table_color_change", tweet_url)
-  end
-
-  defp set_organization_data(%Organization{} = organization, key, value) do
+  def allow_table_color(%Organization{} = organization, tweet_url) when is_binary(tweet_url) do
     organization
-    |> Organization.put_data_changeset(key, value)
+    |> Organization.allow_table_color_changeset(tweet_url)
     |> Repo.update()
   end
 
@@ -335,49 +331,43 @@ defmodule Azimutt.Organizations do
   end
 
   defp plan_overrides(%Organization{} = organization, %OrganizationPlan{} = plan) do
-    plan
-    |> override_layouts(organization)
-    |> override_memos(organization)
-    |> override_colors(organization)
-    |> override_analysis(organization)
-  end
-
-  defp override_layouts(%OrganizationPlan{} = plan, %Organization{} = organization) do
-    # `allowed_layouts` could be nil or an integer
-    key = "allowed_layouts"
-    override = organization.data[key]
-
-    if is_map(organization.data) && organization.data |> Map.has_key?(key) && (override == nil || is_integer(override)) do
-      %{plan | layouts: best_limit(plan.layouts, override)}
+    if organization.data != nil do
+      plan
+      |> override_layouts(organization.data)
+      |> override_memos(organization.data)
+      |> override_colors(organization.data)
+      |> override_analysis(organization.data)
     else
       plan
     end
   end
 
-  defp override_memos(%OrganizationPlan{} = plan, %Organization{} = organization) do
-    # `allowed_memos` could be nil or an integer
-    key = "allowed_memos"
-    override = organization.data[key]
-
-    if is_map(organization.data) && organization.data |> Map.has_key?(key) && (override == nil || is_integer(override)) do
-      %{plan | memos: best_limit(plan.memos, override)}
+  defp override_layouts(%OrganizationPlan{} = plan, %Organization.Data{} = data) do
+    if data.allowed_layouts != nil do
+      %{plan | layouts: best_limit(plan.layouts, data.allowed_layouts)}
     else
       plan
     end
   end
 
-  defp override_colors(%OrganizationPlan{} = plan, %Organization{} = organization) do
-    # `allow_table_color_change` could be a tweet url, true or nil
-    if organization.data["allow_table_color_change"] do
+  defp override_memos(%OrganizationPlan{} = plan, %Organization.Data{} = data) do
+    if data.allowed_memos != nil do
+      %{plan | memos: best_limit(plan.memos, data.allowed_memos)}
+    else
+      plan
+    end
+  end
+
+  defp override_colors(%OrganizationPlan{} = plan, %Organization.Data{} = data) do
+    if data.allow_table_color do
       %{plan | colors: true}
     else
       plan
     end
   end
 
-  defp override_analysis(%OrganizationPlan{} = plan, %Organization{} = organization) do
-    # `allow_database_analysis` true or nil
-    if organization.data["allow_database_analysis"] do
+  defp override_analysis(%OrganizationPlan{} = plan, %Organization.Data{} = data) do
+    if data.allow_database_analysis do
       %{plan | db_analysis: true}
     else
       plan
