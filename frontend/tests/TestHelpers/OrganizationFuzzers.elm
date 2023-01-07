@@ -1,7 +1,6 @@
 module TestHelpers.OrganizationFuzzers exposing (..)
 
 import Fuzz exposing (Fuzzer)
-import Libs.Fuzz as Fuzz
 import Models.Organization exposing (Organization)
 import Models.OrganizationId exposing (OrganizationId)
 import Models.OrganizationName exposing (OrganizationName)

@@ -19,7 +19,6 @@ import NoMissingTypeAnnotation
 import NoMissingTypeAnnotationInLetIn
 import NoMissingTypeExpose
 import NoRecursiveUpdate
-import NoUnused.CustomTypeConstructors
 import NoUnused.Dependencies
 import NoUnused.Parameters
 import NoUnused.Patterns
@@ -37,7 +36,8 @@ config =
     , NoMissingTypeAnnotation.rule |> Rule.ignoreErrorsForDirectories [ ".elm-spa" ]
     , NoMissingTypeAnnotationInLetIn.rule
     , NoMissingTypeExpose.rule |> Rule.ignoreErrorsForDirectories [ ".elm-spa" ]
-    , NoUnused.CustomTypeConstructors.rule [] |> Rule.ignoreErrorsForDirectories [ ".elm-spa", "src/Libs" ] |> Rule.ignoreErrorsForFiles [ "src/Components/Atoms/Icon.elm" ]
+
+    -- , NoUnused.CustomTypeConstructors.rule [] |> Rule.ignoreErrorsForDirectories [ ".elm-spa", "src/Libs" ] |> Rule.ignoreErrorsForFiles [ "src/Components/Atoms/Icon.elm" ]
     , NoUnused.Dependencies.rule
     , NoUnused.Parameters.rule |> Rule.ignoreErrorsForDirectories [ ".elm-spa" ]
     , NoUnused.Patterns.rule

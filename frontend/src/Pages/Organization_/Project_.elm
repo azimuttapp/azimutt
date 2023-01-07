@@ -17,7 +17,7 @@ import PagesComponents.Organization_.Project_.Views as Views
 import Ports
 import Request
 import Services.Toasts as Toasts
-import Shared exposing (StoredProjects(..))
+import Shared
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg

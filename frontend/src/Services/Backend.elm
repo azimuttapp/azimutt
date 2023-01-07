@@ -1,6 +1,6 @@
 module Services.Backend exposing (Error, Sample, SampleSchema, TableColorTweet, blogArticleUrl, blogUrl, embedUrl, errorStatus, errorToString, getCurrentUser, getDatabaseSchema, getOrganizationsAndProjects, getSamples, getTableColorTweet, homeUrl, internal, loginUrl, logoutUrl, organizationBillingUrl, organizationUrl, resourceUrl)
 
-import Components.Atoms.Icon as Icon exposing (Icon(..))
+import Components.Atoms.Icon as Icon exposing (Icon)
 import Either exposing (Either(..))
 import Http exposing (Error(..), Expect)
 import Json.Decode as Decode exposing (Decoder)

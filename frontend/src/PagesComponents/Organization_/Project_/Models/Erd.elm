@@ -129,12 +129,12 @@ getOrganizationM urlOrganization erd =
 
 canCreateLayout : Maybe Erd -> Bool
 canCreateLayout erd =
-    erd |> getOrganizationM Nothing |> .plan |> .layouts |> Maybe.any (\max -> max + 1 > Dict.size (erd |> Maybe.mapOrElse .layouts Dict.empty))
+    erd |> getOrganizationM Nothing |> .plan |> .layouts |> Maybe.all (\max -> max + 1 > Dict.size (erd |> Maybe.mapOrElse .layouts Dict.empty))
 
 
 canCreateMemo : Maybe Erd -> Bool
 canCreateMemo erd =
-    erd |> getOrganizationM Nothing |> .plan |> .memos |> Maybe.any (\max -> max > List.length (erd |> Maybe.mapOrElse (currentLayout >> .memos) []))
+    erd |> getOrganizationM Nothing |> .plan |> .memos |> Maybe.all (\max -> max > List.length (erd |> Maybe.mapOrElse (currentLayout >> .memos) []))
 
 
 canChangeTableColor : Maybe Erd -> Bool

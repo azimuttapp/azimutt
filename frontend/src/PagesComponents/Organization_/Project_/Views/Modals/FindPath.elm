@@ -7,7 +7,7 @@ import Components.Molecules.Tooltip as Tooltip
 import Conf
 import Dict exposing (Dict)
 import Html exposing (Html, br, button, div, h2, h3, img, input, label, li, p, pre, small, span, text, ul)
-import Html.Attributes exposing (alt, class, disabled, for, id, placeholder, src, tabindex, title, type_, value)
+import Html.Attributes exposing (alt, class, disabled, for, id, placeholder, src, tabindex, type_, value)
 import Html.Events exposing (onClick, onFocus, onInput)
 import Libs.Bool as B
 import Libs.Html exposing (bText, extLink)

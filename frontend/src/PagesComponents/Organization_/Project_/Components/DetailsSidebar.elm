@@ -6,7 +6,7 @@ import Components.Organisms.Details as Details
 import Conf
 import Dict exposing (Dict)
 import Html exposing (Html, button, div, h2, span, text)
-import Html.Attributes exposing (class, id, name, type_)
+import Html.Attributes exposing (class, type_)
 import Html.Events exposing (onClick)
 import Libs.Bool as Bool
 import Libs.Dict as Dict

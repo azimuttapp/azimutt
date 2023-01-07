@@ -114,12 +114,12 @@ nelSmall fuzz =
 
 dictSmall : Fuzzer comparable -> Fuzzer a -> Fuzzer (Dict comparable a)
 dictSmall fuzzK fuzzA =
-    Fuzz.tuple ( fuzzK, fuzzA ) |> listSmall |> Fuzz.map Dict.fromList
+    Fuzz.pair fuzzK fuzzA |> listSmall |> Fuzz.map Dict.fromList
 
 
 nedSmall : Fuzzer comparable -> Fuzzer a -> Fuzzer (Ned comparable a)
 nedSmall fuzzK fuzzA =
-    Fuzz.tuple ( fuzzK, fuzzA ) |> nelSmall |> Fuzz.map Ned.fromNel
+    Fuzz.pair fuzzK fuzzA |> nelSmall |> Fuzz.map Ned.fromNel
 
 
 stringSmall : Fuzzer String

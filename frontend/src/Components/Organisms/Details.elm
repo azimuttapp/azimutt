@@ -13,7 +13,7 @@ import Dict exposing (Dict)
 import ElmBook exposing (Msg)
 import ElmBook.Actions as Actions exposing (logAction)
 import ElmBook.Chapter as Chapter exposing (Chapter)
-import Html exposing (Html, a, aside, button, div, form, h2, h3, i, img, input, label, li, nav, ol, p, span, text, textarea, ul)
+import Html exposing (Html, a, aside, button, div, form, h2, h3, img, input, label, li, nav, ol, p, span, text, textarea, ul)
 import Html.Attributes exposing (action, alt, autofocus, class, disabled, for, href, id, name, placeholder, rows, src, title, type_, value)
 import Html.Events exposing (onBlur, onClick, onInput)
 import Libs.Basics as Basics

@@ -1,6 +1,6 @@
 module PagesComponents.Organization_.Project_.Views.Modals.ColumnContextMenu exposing (view, viewHidden)
 
-import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
+import Components.Molecules.ContextMenu as ContextMenu
 import Conf
 import Html exposing (Html, div, text)
 import Libs.Dict as Dict

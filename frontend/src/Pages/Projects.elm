@@ -14,7 +14,7 @@ import Ports exposing (JsMsg(..))
 import Request
 import Services.Lenses exposing (mapToastsCmd)
 import Services.Toasts as Toasts
-import Shared exposing (StoredProjects(..))
+import Shared
 import View exposing (View)
 
 
