@@ -60,9 +60,9 @@ type Msg
     | UpdateTab Tab
 
 
-init : (String -> msg) -> Maybe Source -> Model msg
-init noop source =
-    { id = Conf.ids.sourceUpdateDialog
+init : (String -> msg) -> HtmlId -> Maybe Source -> Model msg
+init noop dialogId source =
+    { id = dialogId
     , source = source
     , databaseSource = DatabaseSource.init source (\_ -> noop "project-settings-database-source-callback")
     , sqlSource = SqlSource.init source (\_ -> noop "project-settings-sql-source-callback")
@@ -76,7 +76,7 @@ update : (Msg -> msg) -> (HtmlId -> msg) -> (String -> msg) -> Time.Posix -> May
 update wrap modalOpen noop now project msg model =
     case msg of
         Open source ->
-            ( Just (init noop source), T.sendAfter 1 (modalOpen Conf.ids.sourceUpdateDialog) )
+            ( Just (init noop Conf.ids.sourceUpdateDialog source), T.sendAfter 1 (modalOpen Conf.ids.sourceUpdateDialog) )
 
         Close ->
             ( Nothing, Cmd.none )

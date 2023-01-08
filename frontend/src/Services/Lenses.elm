@@ -69,6 +69,8 @@ module Services.Lenses exposing
     , mapSearch
     , mapSelected
     , mapSettings
+    , mapSharing
+    , mapSharingCmd
     , mapSharingM
     , mapShow
     , mapShowHiddenColumns
@@ -1002,9 +1004,19 @@ setSharing =
     set_ .sharing (\value item -> { item | sharing = value })
 
 
+mapSharing : (v -> v) -> { item | sharing : v } -> { item | sharing : v }
+mapSharing =
+    map_ .sharing setSharing
+
+
 mapSharingM : (v -> v) -> { item | sharing : Maybe v } -> { item | sharing : Maybe v }
 mapSharingM =
     mapM_ .sharing setSharing
+
+
+mapSharingCmd : (v -> ( v, Cmd msg )) -> { item | sharing : v } -> ( { item | sharing : v }, Cmd msg )
+mapSharingCmd =
+    mapCmd_ .sharing setSharing
 
 
 setShow : v -> { item | show : v } -> { item | show : v }

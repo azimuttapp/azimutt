@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Views.Modals.Sharing exposing (viewSharing)
+module PagesComponents.Organization_.Project_.Components.ProjectSharing exposing (Model, Msg(..), init, update, view)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.Modal as Modal
@@ -9,12 +9,15 @@ import Html.Attributes exposing (attribute, class, for, height, id, list, name, 
 import Html.Events exposing (onClick, onInput)
 import Libs.Html exposing (sendTweet)
 import Libs.Html.Attributes exposing (css)
+import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Uuid as Uuid
 import Libs.Tailwind exposing (focus, sm)
+import Libs.Task as T
 import Libs.Url as Url
 import Models.Project.LayoutName exposing (LayoutName)
-import PagesComponents.Organization_.Project_.Models exposing (Msg(..), SharingDialog, SharingMsg(..))
+import Models.Project.ProjectStorage as ProjectStorage
+import Models.ProjectToken exposing (ProjectToken)
 import PagesComponents.Organization_.Project_.Models.EmbedKind as EmbedKind exposing (EmbedKind)
 import PagesComponents.Organization_.Project_.Models.EmbedMode as EmbedMode exposing (EmbedModeId)
 import PagesComponents.Organization_.Project_.Models.Erd exposing (Erd)
@@ -26,8 +29,84 @@ import Services.SqlSource as SqlSource
 import Url exposing (Url)
 
 
-viewSharing : Url -> Bool -> Erd -> SharingDialog -> Html Msg
-viewSharing currentUrl opened erd model =
+type alias Model =
+    { id : HtmlId
+    , kind : EmbedKind
+    , content : String
+    , layout : LayoutName
+    , mode : EmbedModeId
+    , tokens : List ProjectToken
+    }
+
+
+type Msg
+    = Open
+    | Close
+    | KindUpdate EmbedKind
+    | ContentUpdate String
+    | LayoutUpdate LayoutName
+    | ModeUpdate EmbedModeId
+
+
+
+-- INIT
+
+
+init : HtmlId -> Maybe Erd -> Model
+init dialogId maybeErd =
+    maybeErd
+        |> Maybe.filter (\erd -> erd.project.storage == ProjectStorage.Remote)
+        |> Maybe.mapOrElse
+            (\erd ->
+                { id = dialogId
+                , kind = EmbedKind.EmbedProjectId
+                , content = erd.project.id
+                , layout = erd.currentLayout
+                , mode = EmbedMode.default
+                , tokens = []
+                }
+            )
+            { id = dialogId
+            , kind = EmbedKind.EmbedProjectUrl
+            , content = ""
+            , layout = maybeErd |> Maybe.mapOrElse .currentLayout ""
+            , mode = EmbedMode.default
+            , tokens = []
+            }
+
+
+
+-- UPDATE
+
+
+update : (HtmlId -> msg) -> Maybe Erd -> Msg -> Maybe Model -> ( Maybe Model, Cmd msg )
+update modalOpen erd msg model =
+    case msg of
+        Open ->
+            ( Just (init Conf.ids.sharingDialog erd), Cmd.batch [ T.sendAfter 1 (modalOpen Conf.ids.sharingDialog) ] )
+
+        Close ->
+            ( Nothing, Cmd.none )
+
+        KindUpdate kind ->
+            ( model |> Maybe.map (\s -> { s | kind = kind, content = "" }), Cmd.none )
+
+        ContentUpdate content ->
+            ( model |> Maybe.map (\s -> { s | content = content }), Cmd.none )
+
+        LayoutUpdate layout ->
+            ( model |> Maybe.map (\s -> { s | layout = layout }), Cmd.none )
+
+        ModeUpdate mode ->
+            ( model |> Maybe.map (\s -> { s | mode = mode }), Cmd.none )
+
+
+
+-- VIEW
+
+
+view : (Msg -> msg) -> (msg -> msg) -> Url -> Bool -> Erd -> Model -> Html msg
+view wrap modalClose currentUrl opened erd model =
     let
         titleId : HtmlId
         titleId =
@@ -37,12 +116,12 @@ viewSharing currentUrl opened erd model =
         iframeUrl =
             buildIframeUrl currentUrl model.kind model.content model.layout model.mode
     in
-    Modal.modal { id = model.id, titleId = titleId, isOpen = opened, onBackgroundClick = ModalClose (SharingMsg SClose) }
+    Modal.modal { id = model.id, titleId = titleId, isOpen = opened, onBackgroundClick = Close |> wrap |> modalClose }
         [ div [ class "flex" ]
             [ viewIframe iframeUrl
             , div [ class "p-4", style "width" "65ch" ]
-                [ viewHeader titleId
-                , viewBody currentUrl erd model
+                [ viewHeader wrap modalClose titleId
+                , viewBody wrap currentUrl erd model
                 ]
             ]
         ]
@@ -64,34 +143,34 @@ buildIframeHtml iframeUrl =
         ""
 
 
-viewHeader : HtmlId -> Html Msg
-viewHeader titleId =
+viewHeader : (Msg -> msg) -> (msg -> msg) -> HtmlId -> Html msg
+viewHeader wrap modalClose titleId =
     div [ css [ sm [ "flex justify-between" ] ] ]
         [ div [ css [ "mt-3 text-center", sm [ "mt-0 text-left" ] ] ]
             [ h3 [ id titleId, class "text-lg leading-6 font-medium text-gray-900" ] [ text "Share your project" ]
             , p [ class "text-sm text-gray-500" ]
                 [ text "Send it to other people or embed it in your documentation or website." ]
             ]
-        , span [ class "cursor-pointer text-gray-400", onClick (ModalClose (SharingMsg SClose)) ] [ Icon.solid X "" ]
+        , span [ class "cursor-pointer text-gray-400", onClick (Close |> wrap |> modalClose) ] [ Icon.solid X "" ]
         ]
 
 
-viewBody : Url -> Erd -> SharingDialog -> Html Msg
-viewBody currentUrl erd model =
+viewBody : (Msg -> msg) -> Url -> Erd -> Model -> Html msg
+viewBody wrap currentUrl erd model =
     div []
         [ p [ class "mt-3" ]
             [ text "The easiest way to collaborate on your project is to invite new members in your organization. "
             , text "Still you can share it in read only using a private link or even embed it anywhere (with or without a private link)."
             ]
-        , viewBodyKindContentInput (model.id ++ "-input") model.kind model.content
-        , viewBodyLayoutInput (model.id ++ "-input-layout") model.layout (erd.layouts |> Dict.keys)
-        , viewBodyModeInput (model.id ++ "-input-mode") model.mode
+        , viewBodyKindContentInput wrap (model.id ++ "-input") model.kind model.content
+        , viewBodyLayoutInput wrap (model.id ++ "-input-layout") model.layout (erd.layouts |> Dict.keys)
+        , viewBodyModeInput wrap (model.id ++ "-input-mode") model.mode
         , viewBodyIframe currentUrl model
         ]
 
 
-viewBodyKindContentInput : HtmlId -> EmbedKind -> String -> Html Msg
-viewBodyKindContentInput inputId kind content =
+viewBodyKindContentInput : (Msg -> msg) -> HtmlId -> EmbedKind -> String -> Html msg
+viewBodyKindContentInput wrap inputId kind content =
     let
         ( kindInput, contentInput ) =
             ( inputId ++ "-kind", inputId ++ "-content" )
@@ -101,10 +180,10 @@ viewBodyKindContentInput inputId kind content =
         , div [ class "mt-1 relative rounded-md shadow-sm" ]
             [ div [ class "absolute inset-y-0 left-0 flex items-center" ]
                 [ label [ for kindInput, class "sr-only" ] [ text "Content kind" ]
-                , select [ id kindInput, name kindInput, onInput (EmbedKind.fromValue >> Maybe.withDefault EmbedKind.EmbedProjectUrl >> SKindUpdate >> SharingMsg), class "h-full py-0 pl-3 pr-7 border-transparent bg-transparent text-gray-500 rounded-md sm:text-sm focus:ring-indigo-500 focus:border-indigo-500" ]
+                , select [ id kindInput, name kindInput, onInput (EmbedKind.fromValue >> Maybe.withDefault EmbedKind.EmbedProjectUrl >> KindUpdate >> wrap), class "h-full py-0 pl-3 pr-7 border-transparent bg-transparent text-gray-500 rounded-md sm:text-sm focus:ring-indigo-500 focus:border-indigo-500" ]
                     (EmbedKind.all |> List.map (\k -> option [ value (EmbedKind.value k), selected (k == kind) ] [ text (EmbedKind.label k) ]))
                 ]
-            , input [ type_ "text", id contentInput, name contentInput, placeholder ("ex: " ++ embedKindPlaceholder kind), value content, onInput (SContentUpdate >> SharingMsg), class "block w-full pl-32 border-gray-300 rounded-md sm:text-sm focus:ring-indigo-500 focus:border-indigo-500" ] []
+            , input [ type_ "text", id contentInput, name contentInput, placeholder ("ex: " ++ embedKindPlaceholder kind), value content, onInput (ContentUpdate >> wrap), class "block w-full pl-32 border-gray-300 rounded-md sm:text-sm focus:ring-indigo-500 focus:border-indigo-500" ] []
             ]
         ]
 
@@ -128,8 +207,8 @@ embedKindPlaceholder kind =
             JsonSource.example
 
 
-viewBodyLayoutInput : HtmlId -> LayoutName -> List LayoutName -> Html Msg
-viewBodyLayoutInput inputId inputValue layouts =
+viewBodyLayoutInput : (Msg -> msg) -> HtmlId -> LayoutName -> List LayoutName -> Html msg
+viewBodyLayoutInput wrap inputId inputValue layouts =
     let
         listId : HtmlId
         listId =
@@ -147,7 +226,7 @@ viewBodyLayoutInput inputId inputValue layouts =
                 , name inputId
                 , list listId
                 , value inputValue
-                , onInput (SLayoutUpdate >> SharingMsg)
+                , onInput (LayoutUpdate >> wrap)
                 , css [ "block w-full border border-gray-300 rounded-md shadow-sm", sm [ "text-sm" ], focus [ "border-indigo-500 ring-indigo-500" ] ]
                 ]
                 []
@@ -156,21 +235,21 @@ viewBodyLayoutInput inputId inputValue layouts =
         ]
 
 
-viewBodyModeInput : HtmlId -> EmbedModeId -> Html Msg
-viewBodyModeInput inputId inputValue =
+viewBodyModeInput : (Msg -> msg) -> HtmlId -> EmbedModeId -> Html msg
+viewBodyModeInput wrap inputId inputValue =
     div [ class "mt-3" ]
         [ label [ for inputId, class "block text-sm font-medium text-gray-700" ] [ text "Mode" ]
         , select
             [ id inputId
             , name inputId
-            , onInput (SModeUpdate >> SharingMsg)
+            , onInput (ModeUpdate >> wrap)
             , css [ "mt-1 block w-full py-2 px-3 bg-white border border-gray-300 rounded-md shadow-sm", sm [ "text-sm" ], focus [ "outline-none border-indigo-500 ring-indigo-500" ] ]
             ]
             (EmbedMode.all |> List.map (\m -> option [ value m.id, selected (inputValue == m.id) ] [ text (m.id ++ ": " ++ m.description) ]))
         ]
 
 
-viewBodyIframe : Url -> SharingDialog -> Html msg
+viewBodyIframe : Url -> Model -> Html msg
 viewBodyIframe currentUrl model =
     let
         iframeUrl : Maybe String

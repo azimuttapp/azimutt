@@ -22,7 +22,6 @@ import NoRecursiveUpdate
 import NoUnused.Dependencies
 import NoUnused.Parameters
 import NoUnused.Patterns
-import NoUnused.Variables
 import Review.Rule as Rule exposing (Rule)
 
 
@@ -37,9 +36,12 @@ config =
     , NoMissingTypeAnnotationInLetIn.rule
     , NoMissingTypeExpose.rule |> Rule.ignoreErrorsForDirectories [ ".elm-spa" ]
 
+    -- problem: some used constructors are reported as error :(
     -- , NoUnused.CustomTypeConstructors.rule [] |> Rule.ignoreErrorsForDirectories [ ".elm-spa", "src/Libs" ] |> Rule.ignoreErrorsForFiles [ "src/Components/Atoms/Icon.elm" ]
     , NoUnused.Dependencies.rule
     , NoUnused.Parameters.rule |> Rule.ignoreErrorsForDirectories [ ".elm-spa" ]
     , NoUnused.Patterns.rule
-    , NoUnused.Variables.rule |> Rule.ignoreErrorsForDirectories [ ".elm-spa", "src/Libs", "tests/Libs" ]
+
+    -- problem: used modules in unused functions are reported as error :(
+    -- , NoUnused.Variables.rule |> Rule.ignoreErrorsForDirectories [ ".elm-spa", "src/Libs", "tests/Libs" ]
     ]

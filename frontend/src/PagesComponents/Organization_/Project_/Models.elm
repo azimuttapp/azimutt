@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, AmlSidebarMsg(..), ConfirmDialog, ContextMenu, FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutMsg(..), MemoEdit, MemoMsg(..), ModalDialog, Model, Msg(..), NavbarModel, NotesDialog, ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, SharingDialog, SharingMsg(..), VirtualRelation, VirtualRelationMsg(..), confirm, confirmDanger, prompt, simplePrompt)
+module PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, AmlSidebarMsg(..), ConfirmDialog, ContextMenu, FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutMsg(..), MemoEdit, MemoMsg(..), ModalDialog, Model, Msg(..), NavbarModel, NotesDialog, ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, VirtualRelation, VirtualRelationMsg(..), confirm, confirmDanger, prompt, simplePrompt)
 
 import Components.Atoms.Icon exposing (Icon(..))
 import Components.Slices.ProPlan as ProPlan
@@ -35,11 +35,10 @@ import Models.RelationStyle exposing (RelationStyle)
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
 import PagesComponents.Organization_.Project_.Components.EmbedSourceParsingDialog as EmbedSourceParsingDialog
 import PagesComponents.Organization_.Project_.Components.ProjectSaveDialog as ProjectSaveDialog
+import PagesComponents.Organization_.Project_.Components.ProjectSharing as ProjectSharing
 import PagesComponents.Organization_.Project_.Components.SourceUpdateDialog as SourceUpdateDialog
 import PagesComponents.Organization_.Project_.Models.CursorMode exposing (CursorMode)
 import PagesComponents.Organization_.Project_.Models.DragState exposing (DragState)
-import PagesComponents.Organization_.Project_.Models.EmbedKind exposing (EmbedKind)
-import PagesComponents.Organization_.Project_.Models.EmbedMode exposing (EmbedModeId)
 import PagesComponents.Organization_.Project_.Models.Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.ErdRelation exposing (ErdRelation)
@@ -80,7 +79,7 @@ type alias Model =
     , virtualRelation : Maybe VirtualRelation
     , findPath : Maybe FindPathDialog
     , schemaAnalysis : Maybe SchemaAnalysisDialog
-    , sharing : Maybe SharingDialog
+    , sharing : Maybe ProjectSharing.Model
     , save : Maybe ProjectSaveDialog.Model
     , settings : Maybe ProjectSettingsDialog
     , sourceUpdate : Maybe (SourceUpdateDialog.Model Msg)
@@ -128,10 +127,6 @@ type alias VirtualRelation =
 
 type alias SchemaAnalysisDialog =
     { id : HtmlId, opened : HtmlId }
-
-
-type alias SharingDialog =
-    { id : HtmlId, kind : EmbedKind, content : String, layout : LayoutName, mode : EmbedModeId }
 
 
 type alias ProjectSettingsDialog =
@@ -203,7 +198,7 @@ type Msg
     | VirtualRelationMsg VirtualRelationMsg
     | FindPathMsg FindPathMsg
     | SchemaAnalysisMsg SchemaAnalysisMsg
-    | SharingMsg SharingMsg
+    | SharingMsg ProjectSharing.Msg
     | ProjectSaveMsg ProjectSaveDialog.Msg
     | ProjectSettingsMsg ProjectSettingsMsg
     | EmbedSourceParsingMsg EmbedSourceParsingDialog.Msg
@@ -290,15 +285,6 @@ type SchemaAnalysisMsg
     = SAOpen
     | SASectionToggle HtmlId
     | SAClose
-
-
-type SharingMsg
-    = SOpen
-    | SClose
-    | SKindUpdate EmbedKind
-    | SContentUpdate String
-    | SLayoutUpdate LayoutName
-    | SModeUpdate EmbedModeId
 
 
 type ProjectSettingsMsg

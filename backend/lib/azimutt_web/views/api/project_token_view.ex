@@ -14,7 +14,7 @@ defmodule AzimuttWeb.Api.ProjectTokenView do
       last_access: token.last_access,
       expire_at: token.expire_at,
       created_at: token.created_at,
-      created_by: render_one(token.created_by, AzimuttWeb.Api.UserView, "show.json")
+      created_by: render_one(token.created_by, AzimuttWeb.Api.UserView, "light.json")
     }
   end
 end
