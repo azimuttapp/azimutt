@@ -119,6 +119,7 @@ defmodule Azimutt.Projects do
     |> Result.map(fn project ->
       ProjectToken
       |> where([pt], pt.project_id == ^project.id and is_nil(pt.revoked_at) and (is_nil(pt.expire_at) or pt.expire_at > ^now))
+      |> preload(:created_by)
       |> Repo.all()
     end)
   end
@@ -130,12 +131,12 @@ defmodule Azimutt.Projects do
     |> Result.from_nillable()
     |> Result.flat_map(fn project ->
       %ProjectToken{}
-      |> ProjectToken.create_changeset(
-        Map.merge(attrs, %{
-          project_id: project.id,
-          created_by: current_user
-        })
-      )
+      |> ProjectToken.create_changeset(%{
+        name: attrs["name"],
+        expire_at: attrs["expire_at"],
+        project_id: project.id,
+        created_by: current_user
+      })
       |> Repo.insert()
     end)
   end

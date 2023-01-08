@@ -9,7 +9,8 @@ defmodule AzimuttWeb.Api.FallbackController do
   def call(conn, {:error, %Ecto.Changeset{} = changeset}) do
     conn
     |> put_status(:unprocessable_entity)
-    |> put_view(AzimuttWeb.ChangesetView)
+    |> put_view(AzimuttWeb.ErrorView)
+    # FIXME: better error formatting (cf backend/test/support/data_case.ex:52#errors_on)
     |> render("error.json", changeset: changeset)
   end
 

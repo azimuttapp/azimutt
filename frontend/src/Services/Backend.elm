@@ -164,12 +164,12 @@ getProjectTokens project toMsg =
         }
 
 
-createProjectToken : String -> Maybe Time.Posix -> ProjectInfo -> (Result Error ProjectToken -> msg) -> Cmd msg
+createProjectToken : String -> Maybe Time.Posix -> ProjectInfo -> (Result Error () -> msg) -> Cmd msg
 createProjectToken name expireAt project toMsg =
     riskyPost
         { url = "/api/v1/organizations/" ++ (project |> ProjectInfo.organizationId) ++ "/projects/" ++ project.id ++ "/access-tokens"
-        , body = [ ( "name", name |> Encode.string ), ( "expire_at", expireAt |> Encode.maybe Time.encode ) ] |> Encode.object |> Http.jsonBody
-        , expect = expectJson toMsg ProjectToken.decode
+        , body = [ ( "name", name |> Encode.string ), ( "expire_at", expireAt |> Encode.maybe Time.encodeIso ) ] |> Encode.object |> Http.jsonBody
+        , expect = expectEmpty toMsg
         }
 
 
@@ -177,7 +177,7 @@ revokeProjectToken : ProjectToken -> ProjectInfo -> (Result Error () -> msg) -> 
 revokeProjectToken token project toMsg =
     riskyDelete
         { url = "/api/v1/organizations/" ++ (project |> ProjectInfo.organizationId) ++ "/projects/" ++ project.id ++ "/access-tokens/" ++ token.id
-        , expect = expectJson toMsg (Decode.succeed ())
+        , expect = expectEmpty toMsg
         }
 
 
@@ -226,6 +226,11 @@ riskyDelete r =
 expectJson : (Result Error a -> msg) -> Decoder a -> Expect msg
 expectJson toMsg decoder =
     Http.expectStringResponse toMsg (handleResponse >> Result.andThen (Decode.decodeString decoder >> Result.mapError (Decode.errorToStringNoValue >> Error 0)))
+
+
+expectEmpty : (Result Error () -> msg) -> Expect msg
+expectEmpty toMsg =
+    Http.expectStringResponse toMsg (handleResponse >> Result.andThen (\v -> Bool.cond (v == "") (Ok ()) (Err (Error 0 ("Expected empty string but got: " ++ v)))))
 
 
 

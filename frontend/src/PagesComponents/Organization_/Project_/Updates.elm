@@ -68,8 +68,8 @@ import Time
 import Track
 
 
-update : Maybe LayoutName -> Time.Posix -> Maybe OrganizationId -> List Organization -> List ProjectInfo -> Msg -> Model -> ( Model, Cmd Msg )
-update currentLayout now urlOrganization organizations projects msg model =
+update : Maybe LayoutName -> Time.Zone -> Time.Posix -> Maybe OrganizationId -> List Organization -> List ProjectInfo -> Msg -> Model -> ( Model, Cmd Msg )
+update currentLayout zone now urlOrganization organizations projects msg model =
     case msg of
         ToggleMobileMenu ->
             ( model |> mapNavbar (mapMobileMenuOpen not), Cmd.none )
@@ -236,7 +236,7 @@ update currentLayout now urlOrganization organizations projects msg model =
             ( model |> setSchemaAnalysis Nothing, Cmd.none )
 
         SharingMsg message ->
-            model |> mapSharingCmd (ProjectSharing.update ModalOpen model.erd message)
+            model |> mapSharingCmd (ProjectSharing.update SharingMsg ModalOpen Toast zone now model.erd message)
 
         ProjectSaveMsg message ->
             model |> mapSaveCmd (ProjectSaveDialog.update ModalOpen message)

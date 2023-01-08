@@ -15,8 +15,8 @@ defmodule AzimuttWeb.Api.ProjectTokenController do
   def create(conn, %{"organization_id" => _, "project_id" => project_id} = params) do
     current_user = conn.assigns.current_user
 
-    with {:ok, %ProjectToken{} = token} <- Projects.create_project_token(project_id, current_user, params),
-         do: conn |> render("show.json", token: token)
+    with {:ok, %ProjectToken{} = _} <- Projects.create_project_token(project_id, current_user, params),
+         do: conn |> send_resp(:no_content, "")
   end
 
   def delete(conn, %{"organization_id" => _, "project_id" => _, "id" => id}) do

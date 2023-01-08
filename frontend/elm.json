@@ -25,6 +25,7 @@
             "elm-community/graph": "6.0.0",
             "elm-explorations/markdown": "1.0.0",
             "goyalarchit/elm-dagre": "3.0.0",
+            "justinmimbs/time-extra": "1.1.1",
             "mpizenberg/elm-file": "1.0.0",
             "mpizenberg/elm-pointer-events": "4.0.2",
             "myrho/elm-round": "1.0.5",
@@ -57,6 +58,7 @@
             "ianmackenzie/elm-triangular-mesh": "1.1.0",
             "ianmackenzie/elm-units": "2.9.0",
             "ianmackenzie/elm-units-interval": "2.3.0",
+            "justinmimbs/date": "4.0.1",
             "pablohirafuji/elm-syntax-highlight": "3.4.1",
             "rtfeldman/elm-hex": "1.0.0",
             "zwilias/elm-utf-tools": "2.0.1"

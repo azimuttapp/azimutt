@@ -6,7 +6,7 @@ defmodule AzimuttWeb.Api.ProjectTokenView do
     render_many(tokens, __MODULE__, "show.json")
   end
 
-  def render("show.json", %{token: %ProjectToken{} = token}) do
+  def render("show.json", %{project_token: %ProjectToken{} = token}) do
     %{
       id: token.id,
       name: token.name,
