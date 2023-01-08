@@ -37,6 +37,8 @@ import {Env, getEnv} from "./utils/env";
 import {AnyError, formatError} from "./utils/error";
 import * as url from "./utils/url";
 import {ColumnStats, TableStats} from "./types/stats";
+import * as Sentry from "@sentry/browser";
+import {BrowserTracing} from "@sentry/tracing";
 
 const env = getEnv()
 const platform = Utils.getPlatform()
@@ -435,5 +437,13 @@ document.addEventListener('keydown', (e: KeyboardEvent) => {
 document.addEventListener('keyup', (e: KeyboardEvent) => {
     keyupHoldKey(e)
 })
+
+if (env === Env.enum.prod) {
+    Sentry.init({
+        dsn: "https://52a062c4168f402485783ad10fe2ccc2@o1353262.ingest.sentry.io/4504471109304320",
+        integrations: [new BrowserTracing()],
+        tracesSampleRate: 1.0,
+    })
+}
 
 loadPolyfills()
