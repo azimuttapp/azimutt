@@ -2,21 +2,21 @@ defmodule Azimutt.ProjectsTest do
   use Azimutt.DataCase
   import Azimutt.AccountsFixtures
   import Azimutt.OrganizationsFixtures
+  import Azimutt.ProjectsFixtures
   alias Azimutt.Projects
+  alias Azimutt.Projects.Project
+  alias Azimutt.Projects.Project.Storage
+  alias Azimutt.Projects.ProjectToken
+  alias Azimutt.Utils.Result
 
   describe "projects" do
-    alias Azimutt.Projects.Project
-    alias Azimutt.Projects.Project.Storage
-    alias Azimutt.Utils.Result
-    import Azimutt.ProjectsFixtures
-
     test "list_projects/0 returns all projects" do
       user = user_fixture()
       user2 = user_fixture()
       organization = organization_fixture(user)
       project = project_fixture(organization, user)
-      assert Projects.list_projects(organization, user) |> Enum.map(fn p -> p.id end) == [project.id]
-      assert Projects.list_projects(organization, user2) |> Enum.map(fn p -> p.id end) == []
+      assert Projects.list_projects(organization, user) |> Enum.map(& &1.id) == [project.id]
+      assert Projects.list_projects(organization, user2) |> Enum.map(& &1.id) == []
     end
 
     test "get_project/1 returns the project with given id" do
@@ -24,8 +24,8 @@ defmodule Azimutt.ProjectsTest do
       user2 = user_fixture()
       organization = organization_fixture(user)
       project = project_fixture(organization, user)
-      assert Projects.get_project(project.id, user) |> Result.map(fn p -> p.id end) == {:ok, project.id}
-      assert Projects.get_project(project.id, user2) |> Result.map(fn p -> p.id end) == {:error, :not_found}
+      assert Projects.get_project(project.id, user) |> Result.map(& &1.id) == {:ok, project.id}
+      assert Projects.get_project(project.id, user2) |> Result.map(& &1.id) == {:error, :not_found}
     end
 
     test "create_project/1 with valid data creates a project" do
@@ -118,6 +118,32 @@ defmodule Azimutt.ProjectsTest do
       assert {:error, :forbidden} = Projects.delete_project(project, user2)
       assert {:ok, %Project{}} = Projects.delete_project(project, user)
       assert {:error, :not_found} = Projects.get_project(project.id, user)
+    end
+  end
+
+  describe "project_tokens" do
+    test "can create, list, access and revoke tokens" do
+      now = DateTime.utc_now()
+      user = user_fixture()
+      user2 = user_fixture()
+      organization = organization_fixture(user)
+      project = project_fixture(organization, user, %{storage_kind: Storage.remote()})
+      project_id = project.id
+
+      assert {:ok, project_id} = Projects.get_project(project_id, user) |> Result.map(& &1.id)
+      assert {:error, :not_found} = Projects.get_project(project_id, user2) |> Result.map(& &1.id)
+
+      {:ok, token} = Projects.create_project_token(project_id, user, %{name: "name"})
+      assert {:ok, ["name"]} = Projects.list_project_tokens(project_id, user, now) |> Result.map(fn ts -> ts |> Enum.map(& &1.name) end)
+      assert {:ok, project_id} = Projects.access_project(token.id, now) |> Result.map(& &1.id)
+
+      accessed_token = ProjectToken |> Azimutt.Repo.get(token.id)
+      assert 1 = accessed_token.nb_access
+      assert now = accessed_token.last_access
+
+      {:ok, _} = Projects.revoke_project_token(token.id, user, now)
+      assert {:ok, []} = Projects.list_project_tokens(project_id, user, now) |> Result.map(fn ts -> ts |> Enum.map(& &1.name) end)
+      assert {:error, :not_found} = Projects.access_project(token.id, now) |> Result.map(& &1.id)
     end
   end
 end

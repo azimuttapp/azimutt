@@ -8,6 +8,7 @@ defmodule Azimutt.Projects do
   alias Azimutt.Organizations.OrganizationMember
   alias Azimutt.Projects.Project
   alias Azimutt.Projects.Project.Storage
+  alias Azimutt.Projects.ProjectToken
   alias Azimutt.Repo
   alias Azimutt.Tracking
   alias Azimutt.Utils.Result
@@ -108,6 +109,69 @@ defmodule Azimutt.Projects do
     else
       {:error, :forbidden}
     end
+  end
+
+  def list_project_tokens(project_id, %User{} = current_user, now) do
+    project_query()
+    |> where([p, _, om], p.id == ^project_id and p.storage_kind == :remote and om.user_id == ^current_user.id)
+    |> Repo.one()
+    |> Result.from_nillable()
+    |> Result.map(fn project ->
+      ProjectToken
+      |> where([pt], pt.project_id == ^project.id and is_nil(pt.revoked_at) and (is_nil(pt.expire_at) or pt.expire_at > ^now))
+      |> Repo.all()
+    end)
+  end
+
+  def create_project_token(project_id, %User{} = current_user, attrs) do
+    project_query()
+    |> where([p, _, om], p.id == ^project_id and p.storage_kind == :remote and om.user_id == ^current_user.id)
+    |> Repo.one()
+    |> Result.from_nillable()
+    |> Result.flat_map(fn project ->
+      %ProjectToken{}
+      |> ProjectToken.create_changeset(
+        Map.merge(attrs, %{
+          project_id: project.id,
+          created_by: current_user
+        })
+      )
+      |> Repo.insert()
+    end)
+  end
+
+  def revoke_project_token(token_id, %User{} = current_user, now) do
+    ProjectToken
+    |> join(:inner, [pt], p in Project, on: pt.project_id == p.id)
+    |> join(:inner, [_, p], o in Organization, on: p.organization_id == o.id)
+    |> join(:inner, [_, _, o], om in OrganizationMember, on: om.organization_id == o.id)
+    |> preload(:revoked_by)
+    |> where(
+      [pt, p, _, om],
+      pt.id == ^token_id and is_nil(pt.revoked_at) and (is_nil(pt.expire_at) or pt.expire_at > ^now) and
+        p.storage_kind == :remote and om.user_id == ^current_user.id
+    )
+    |> Repo.one()
+    |> Result.from_nillable()
+    |> Result.flat_map(fn token ->
+      token
+      |> ProjectToken.revoke_changeset(current_user, now)
+      |> Repo.update()
+    end)
+  end
+
+  def access_project(token_id, now) do
+    ProjectToken
+    |> where([pt], pt.id == ^token_id and is_nil(pt.revoked_at) and (is_nil(pt.expire_at) or pt.expire_at > ^now))
+    |> Repo.one()
+    |> Result.from_nillable()
+    |> Result.flat_map(fn token -> token |> ProjectToken.access_changeset(now) |> Repo.update() end)
+    |> Result.flat_map(fn token ->
+      project_query()
+      |> where([p, _, _], p.id == ^token.project_id and p.storage_kind == :remote)
+      |> Repo.one()
+      |> Result.from_nillable()
+    end)
   end
 
   defp get_storage(attrs) do
