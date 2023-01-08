@@ -143,7 +143,10 @@ defmodule AzimuttWeb.Router do
     post "/events", Api.TrackingController, :create
 
     resources "/organizations", Api.OrganizationController, only: [:index] do
-      resources "/projects", Api.ProjectController, except: [:new, :edit, :show]
+      resources "/projects", Api.ProjectController, except: [:new, :edit, :show] do
+        resources "/access-tokens", Api.ProjectTokenController, only: [:index, :create, :delete]
+      end
+
       post "/tweet-for-table-colors", Api.OrganizationController, :table_colors
     end
   end
