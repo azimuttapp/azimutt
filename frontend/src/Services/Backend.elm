@@ -1,4 +1,4 @@
-module Services.Backend exposing (Error, Sample, SampleSchema, TableColorTweet, blogArticleUrl, blogUrl, embedUrl, errorStatus, errorToString, getCurrentUser, getDatabaseSchema, getOrganizationsAndProjects, getSamples, getTableColorTweet, homeUrl, internal, loginUrl, logoutUrl, organizationBillingUrl, organizationUrl, resourceUrl)
+module Services.Backend exposing (Error, Sample, SampleSchema, TableColorTweet, blogArticleUrl, blogUrl, createProjectToken, embedUrl, errorStatus, errorToString, getCurrentUser, getDatabaseSchema, getOrganizationsAndProjects, getProjectTokens, getSamples, getTableColorTweet, homeUrl, internal, loginUrl, logoutUrl, organizationBillingUrl, organizationUrl, resourceUrl, revokeProjectToken)
 
 import Components.Atoms.Icon as Icon exposing (Icon)
 import Either exposing (Either(..))
@@ -8,6 +8,7 @@ import Json.Encode as Encode
 import Libs.Bool as Bool
 import Libs.Http as Http
 import Libs.Json.Decode as Decode
+import Libs.Json.Encode as Encode
 import Libs.Maybe as Maybe
 import Libs.Models exposing (TweetUrl)
 import Libs.Models.DatabaseUrl as DatabaseUrl exposing (DatabaseUrl)
@@ -22,7 +23,8 @@ import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectId as ProjectId exposing (ProjectId)
 import Models.Project.ProjectStorage as ProjectStorage exposing (ProjectStorage)
 import Models.Project.ProjectVisibility as ProjectVisibility exposing (ProjectVisibility)
-import Models.ProjectInfo exposing (ProjectInfo)
+import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
+import Models.ProjectToken as ProjectToken exposing (ProjectToken)
 import Models.User as User exposing (User)
 import PagesComponents.Organization_.Project_.Models.EmbedKind as EmbedKind exposing (EmbedKind)
 import PagesComponents.Organization_.Project_.Models.EmbedMode as EmbedMode exposing (EmbedModeId)
@@ -92,14 +94,15 @@ blogArticleUrl slug =
     "/blog/" ++ slug
 
 
-embedUrl : EmbedKind -> String -> LayoutName -> EmbedModeId -> String
-embedUrl kind content layout mode =
+embedUrl : EmbedKind -> String -> LayoutName -> EmbedModeId -> Maybe ProjectToken -> String
+embedUrl kind content layout mode token =
     let
         queryString : String
         queryString =
             [ ( EmbedKind.value kind, content )
             , ( "layout", layout )
             , ( EmbedMode.key, mode )
+            , ( "token", token |> Maybe.mapOrElse .id "" )
             ]
                 |> List.filter (\( _, value ) -> value /= "")
                 |> Url.buildQueryString
@@ -154,6 +157,31 @@ getOrganizationsAndProjects toMsg =
     riskyGet { url = "/api/v1/organizations?expand=plan,projects", expect = expectJson (Result.map formatOrgasAndProjects >> toMsg) (Decode.list decodeOrga) }
 
 
+getProjectTokens : ProjectInfo -> (Result Error (List ProjectToken) -> msg) -> Cmd msg
+getProjectTokens project toMsg =
+    riskyGet
+        { url = "/api/v1/organizations/" ++ (project |> ProjectInfo.organizationId) ++ "/projects/" ++ project.id ++ "/access-tokens"
+        , expect = expectJson toMsg (Decode.list ProjectToken.decode)
+        }
+
+
+createProjectToken : String -> Maybe Time.Posix -> ProjectInfo -> (Result Error () -> msg) -> Cmd msg
+createProjectToken name expireAt project toMsg =
+    riskyPost
+        { url = "/api/v1/organizations/" ++ (project |> ProjectInfo.organizationId) ++ "/projects/" ++ project.id ++ "/access-tokens"
+        , body = [ ( "name", name |> Encode.string ), ( "expire_at", expireAt |> Encode.maybe Time.encodeIso ) ] |> Encode.object |> Http.jsonBody
+        , expect = expectEmpty toMsg
+        }
+
+
+revokeProjectToken : ProjectToken -> ProjectInfo -> (Result Error () -> msg) -> Cmd msg
+revokeProjectToken token project toMsg =
+    riskyDelete
+        { url = "/api/v1/organizations/" ++ (project |> ProjectInfo.organizationId) ++ "/projects/" ++ project.id ++ "/access-tokens/" ++ token.id
+        , expect = expectEmpty toMsg
+        }
+
+
 getDatabaseSchema : DatabaseUrl -> (Result Error String -> msg) -> Cmd msg
 getDatabaseSchema url toMsg =
     riskyPost
@@ -191,9 +219,19 @@ riskyPost r =
     Http.riskyRequest { method = "POST", url = r.url, headers = [], body = r.body, expect = r.expect, timeout = Nothing, tracker = Nothing }
 
 
+riskyDelete : { url : String, expect : Http.Expect msg } -> Cmd msg
+riskyDelete r =
+    Http.riskyRequest { method = "DELETE", url = r.url, headers = [], body = Http.emptyBody, expect = r.expect, timeout = Nothing, tracker = Nothing }
+
+
 expectJson : (Result Error a -> msg) -> Decoder a -> Expect msg
 expectJson toMsg decoder =
     Http.expectStringResponse toMsg (handleResponse >> Result.andThen (Decode.decodeString decoder >> Result.mapError (Decode.errorToStringNoValue >> Error 0)))
+
+
+expectEmpty : (Result Error () -> msg) -> Expect msg
+expectEmpty toMsg =
+    Http.expectStringResponse toMsg (handleResponse >> Result.andThen (\v -> Bool.cond (v == "") (Ok ()) (Err (Error 0 ("Expected empty string but got: " ++ v)))))
 
 
 

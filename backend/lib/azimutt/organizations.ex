@@ -336,6 +336,7 @@ defmodule Azimutt.Organizations do
       |> override_layouts(organization.data)
       |> override_memos(organization.data)
       |> override_colors(organization.data)
+      |> override_private_links(organization.data)
       |> override_analysis(organization.data)
     else
       plan
@@ -361,6 +362,14 @@ defmodule Azimutt.Organizations do
   defp override_colors(%OrganizationPlan{} = plan, %Organization.Data{} = data) do
     if data.allow_table_color do
       %{plan | colors: true}
+    else
+      plan
+    end
+  end
+
+  defp override_private_links(%OrganizationPlan{} = plan, %Organization.Data{} = data) do
+    if data.allow_private_links do
+      %{plan | private_links: true}
     else
       plan
     end

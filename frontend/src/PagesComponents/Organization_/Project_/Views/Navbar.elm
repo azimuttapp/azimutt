@@ -27,7 +27,8 @@ import Models.OrganizationId exposing (OrganizationId)
 import Models.ProjectInfo exposing (ProjectInfo)
 import Models.User exposing (User)
 import PagesComponents.Helpers as Helpers
-import PagesComponents.Organization_.Project_.Models exposing (AmlSidebarMsg(..), FindPathMsg(..), HelpMsg(..), Msg(..), NavbarModel, ProjectSettingsMsg(..), SchemaAnalysisMsg(..), SharingMsg(..), VirtualRelation, VirtualRelationMsg(..))
+import PagesComponents.Organization_.Project_.Components.ProjectSharing as ProjectSharing
+import PagesComponents.Organization_.Project_.Models exposing (AmlSidebarMsg(..), FindPathMsg(..), HelpMsg(..), Msg(..), NavbarModel, ProjectSettingsMsg(..), SchemaAnalysisMsg(..), VirtualRelation, VirtualRelationMsg(..))
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Views.Navbar.Search exposing (viewNavbarSearch)
@@ -155,7 +156,7 @@ viewNavbarFeatures platform features htmlId openedDropdown =
 
 viewNavbarShare : Html Msg
 viewNavbarShare =
-    button [ type_ "button", onClick (SharingMsg SOpen), css [ "mx-1 flex-shrink-0 bg-primary-600 p-1 rounded-full text-primary-200", hover [ "text-white animate-pulse" ], focus_ring_offset_600 Tw.primary ] ]
+    button [ type_ "button", onClick (SharingMsg ProjectSharing.Open), css [ "mx-1 flex-shrink-0 bg-primary-600 p-1 rounded-full text-primary-200", hover [ "text-white animate-pulse" ], focus_ring_offset_600 Tw.primary ] ]
         [ span [ class "sr-only" ] [ text "Share" ]
         , Icon.outline Icon.Share ""
         ]

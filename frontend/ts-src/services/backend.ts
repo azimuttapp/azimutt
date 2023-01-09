@@ -17,6 +17,7 @@ import {
     ProjectSlug,
     ProjectStats,
     ProjectStorage,
+    ProjectTokenId,
     ProjectVersion,
     ProjectVisibility,
     TableId
@@ -42,17 +43,18 @@ export class Backend {
     loginUrl = (currentUrl: string | undefined): string =>
         currentUrl ? `/login/redirect?url=${encodeURIComponent(currentUrl)}` : '/login'
 
-    getProject = async (o: OrganizationId, p: ProjectId): Promise<ProjectInfoWithContent> => {
-        this.logger.debug(`backend.getProject(${o}, ${p})`)
-        const project = await this.fetchProject(o, p)
+    getProject = async (o: OrganizationId, p: ProjectId, t: ProjectTokenId | null): Promise<ProjectInfoWithContent> => {
+        this.logger.debug(`backend.getProject(${o}, ${p}, ${t})`)
+        const project = await this.fetchProject(o, p, t)
         if (project.storage === ProjectStorage.enum.remote) {
             this.projects[p] = project.content
         }
         return project
     }
 
-    private fetchProject = (o: OrganizationId, p: ProjectId): Promise<ProjectInfoWithContent> => {
-        const url = this.withXhrHost(`/api/v1/organizations/${o}/projects/${p}?expand=organization,organization.plan,content`)
+    private fetchProject = (o: OrganizationId, p: ProjectId, t: ProjectTokenId | null): Promise<ProjectInfoWithContent> => {
+        const token = t ? `token=${t}&` : ''
+        const url = this.withXhrHost(`/api/v1/organizations/${o}/projects/${p}?${token}expand=organization,organization.plan,content`)
         return Http.getJson(url, ProjectWithContentResponse, 'ProjectWithContentResponse').then(toProjectInfoWithContent)
     }
 
@@ -92,7 +94,7 @@ export class Backend {
         if (p.storage !== ProjectStorage.enum.remote) return Promise.reject('Expecting a remote project')
 
         const initial = this.projects[p.id] // where the user started
-        const current = await this.fetchProject(p.organization.id, p.id) // server version
+        const current = await this.fetchProject(p.organization.id, p.id, null) // server version
             .then(p => isRemote(p) ? p : Promise.reject('Expecting a remote project'))
         let json = buildProjectJson(p)
         if (current.updatedAt !== p.updatedAt) {

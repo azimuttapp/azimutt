@@ -69,6 +69,8 @@ module Services.Lenses exposing
     , mapSearch
     , mapSelected
     , mapSettings
+    , mapSharing
+    , mapSharingCmd
     , mapSharingM
     , mapShow
     , mapShowHiddenColumns
@@ -83,6 +85,10 @@ module Services.Lenses exposing
     , mapTeamCmd
     , mapToasts
     , mapToastsCmd
+    , mapToken
+    , mapTokenForm
+    , mapTokenFormM
+    , mapTokens
     , mapTop
     , mapUniques
     , mapUserM
@@ -118,6 +124,7 @@ module Services.Lenses exposing
     , setEnabled
     , setErd
     , setErrors
+    , setExpire
     , setFindPath
     , setFrom
     , setGithub
@@ -192,6 +199,9 @@ module Services.Lenses exposing
     , setText
     , setTo
     , setToasts
+    , setToken
+    , setTokenForm
+    , setTokens
     , setTop
     , setTwitter
     , setUniques
@@ -480,6 +490,11 @@ mapErdMCmd =
 setErrors : v -> { item | errors : v } -> { item | errors : v }
 setErrors =
     set_ .errors (\value item -> { item | errors = value })
+
+
+setExpire : v -> { item | expire : v } -> { item | expire : v }
+setExpire =
+    set_ .expire (\value item -> { item | expire = value })
 
 
 setFindPath : v -> { item | findPath : v } -> { item | findPath : v }
@@ -1002,9 +1017,19 @@ setSharing =
     set_ .sharing (\value item -> { item | sharing = value })
 
 
+mapSharing : (v -> v) -> { item | sharing : v } -> { item | sharing : v }
+mapSharing =
+    map_ .sharing setSharing
+
+
 mapSharingM : (v -> v) -> { item | sharing : Maybe v } -> { item | sharing : Maybe v }
 mapSharingM =
     mapM_ .sharing setSharing
+
+
+mapSharingCmd : (v -> ( v, Cmd msg )) -> { item | sharing : v } -> ( { item | sharing : v }, Cmd msg )
+mapSharingCmd =
+    mapCmd_ .sharing setSharing
 
 
 setShow : v -> { item | show : v } -> { item | show : v }
@@ -1145,6 +1170,41 @@ mapToasts =
 mapToastsCmd : (v -> ( v, Cmd msg )) -> { item | toasts : v } -> ( { item | toasts : v }, Cmd msg )
 mapToastsCmd =
     mapCmd_ .toasts setToasts
+
+
+setToken : v -> { item | token : v } -> { item | token : v }
+setToken =
+    set_ .token (\value item -> { item | token = value })
+
+
+mapToken : (v -> v) -> { item | token : v } -> { item | token : v }
+mapToken =
+    map_ .token setToken
+
+
+setTokens : v -> { item | tokens : v } -> { item | tokens : v }
+setTokens =
+    set_ .tokens (\value item -> { item | tokens = value })
+
+
+mapTokens : (v -> v) -> { item | tokens : v } -> { item | tokens : v }
+mapTokens =
+    map_ .tokens setTokens
+
+
+setTokenForm : v -> { item | tokenForm : v } -> { item | tokenForm : v }
+setTokenForm =
+    set_ .tokenForm (\value item -> { item | tokenForm = value })
+
+
+mapTokenForm : (v -> v) -> { item | tokenForm : v } -> { item | tokenForm : v }
+mapTokenForm =
+    map_ .tokenForm setTokenForm
+
+
+mapTokenFormM : (v -> v) -> { item | tokenForm : Maybe v } -> { item | tokenForm : Maybe v }
+mapTokenFormM =
+    mapM_ .tokenForm setTokenForm
 
 
 setTop : v -> { item | top : v } -> { item | top : v }

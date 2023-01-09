@@ -11,7 +11,6 @@ import Libs.Html.Events exposing (PointerEvent, onContextMenu, stopDoubleClick, 
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Platform exposing (Platform)
-import Libs.Svg.Attributes as Attributes
 import Libs.Tailwind as Tw
 import Models.Area as Area
 import PagesComponents.Organization_.Project_.Models exposing (MemoMsg(..), Msg(..))
@@ -58,9 +57,9 @@ viewMemo platform conf cursorMode edit memo =
             (div
                 ([ id htmlId
                  , class ("select-none absolute p-3 cursor-pointer overflow-hidden border border-transparent border-dashed hover:border-gray-300 hover:resize hover:overflow-auto" ++ (memo.color |> Maybe.mapOrElse (\c -> " shadow rounded " ++ Tw.bg_200 c) ""))
-                 , Attributes.when conf.layout (onContextMenu platform (ContextMenuCreate (MemoContextMenu.view platform conf memo)))
-                 , Attributes.when conf.update (stopDoubleClick (MemoMsg (MEdit memo)))
                  ]
+                    ++ Bool.cond conf.layout [ onContextMenu platform (ContextMenuCreate (MemoContextMenu.view platform conf memo)) ] []
+                    ++ Bool.cond conf.update [ stopDoubleClick (MemoMsg (MEdit memo)) ] []
                     ++ Area.stylesGrid memo
                     ++ resizeMemo
                 )

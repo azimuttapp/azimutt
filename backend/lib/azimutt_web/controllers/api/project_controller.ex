@@ -26,11 +26,20 @@ defmodule AzimuttWeb.Api.ProjectController do
          do: conn |> render("index.json", projects: organization.projects)
   end
 
-  def show(conn, %{"organization_id" => _organization_id, "id" => id} = params) do
-    current_user = conn.assigns.current_user
+  def show(conn, %{"organization_id" => _organization_id, "id" => project_id} = params) do
+    now = DateTime.utc_now()
+    maybe_current_user = conn.assigns.current_user
+    token = params["token"]
     ctx = CtxParams.from_params(params)
 
-    with {:ok, %Project{} = project} <- Projects.get_project(id, current_user),
+    project_result =
+      if token do
+        Projects.access_project(project_id, token, now)
+      else
+        Projects.get_project(project_id, maybe_current_user)
+      end
+
+    with {:ok, %Project{} = project} <- project_result,
          do: conn |> render("show.json", project: project, ctx: ctx)
   end
 

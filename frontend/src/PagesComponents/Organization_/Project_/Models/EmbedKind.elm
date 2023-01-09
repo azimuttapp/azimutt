@@ -24,13 +24,13 @@ label kind =
             "Project url"
 
         EmbedDatabaseSource ->
-            "Database"
+            "Database source"
 
         EmbedSqlSource ->
-            "SQL"
+            "SQL source"
 
         EmbedJsonSource ->
-            "JSON"
+            "JSON source"
 
 
 value : EmbedKind -> String

@@ -31,6 +31,7 @@ import PagesComponents.Organization_.Project_.Components.AmlSidebar as AmlSideba
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
 import PagesComponents.Organization_.Project_.Components.EmbedSourceParsingDialog as EmbedSourceParsingDialog
 import PagesComponents.Organization_.Project_.Components.ProjectSaveDialog as ProjectSaveDialog
+import PagesComponents.Organization_.Project_.Components.ProjectSharing as ProjectSharing
 import PagesComponents.Organization_.Project_.Components.SourceUpdateDialog as SourceUpdateDialog
 import PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, Model, Msg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..))
 import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode
@@ -50,7 +51,6 @@ import PagesComponents.Organization_.Project_.Updates.Memo exposing (handleMemo)
 import PagesComponents.Organization_.Project_.Updates.Notes exposing (handleNotes)
 import PagesComponents.Organization_.Project_.Updates.Project exposing (createProject, moveProject, triggerSaveProject, updateProject)
 import PagesComponents.Organization_.Project_.Updates.ProjectSettings exposing (handleProjectSettings)
-import PagesComponents.Organization_.Project_.Updates.Sharing exposing (handleSharing)
 import PagesComponents.Organization_.Project_.Updates.Source as Source
 import PagesComponents.Organization_.Project_.Updates.Table exposing (goToTable, hideColumn, hideColumns, hideRelatedTables, hideTable, hoverColumn, hoverNextColumn, mapTablePropOrSelected, showAllTables, showColumn, showColumns, showRelatedTables, showTable, showTables, sortColumns)
 import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirty, setDirtyCmd)
@@ -61,15 +61,15 @@ import Ports exposing (JsMsg(..))
 import Random
 import Services.Backend as Backend
 import Services.JsonSource as JsonSource
-import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapConf, mapContextMenuM, mapDetailsSidebarCmd, mapEmbedSourceParsingMCmd, mapErdM, mapErdMCmd, mapHoverTable, mapMemos, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapOrganizationM, mapPlan, mapPosition, mapProject, mapPromptM, mapProps, mapSaveCmd, mapSchemaAnalysisM, mapSearch, mapSelected, mapShowHiddenColumns, mapTables, mapTablesCmd, mapToastsCmd, setActive, setCollapsed, setColor, setColors, setConfirm, setContextMenu, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setLast, setModal, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setSelected, setShow, setSize, setText)
+import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapConf, mapContextMenuM, mapDetailsSidebarCmd, mapEmbedSourceParsingMCmd, mapErdM, mapErdMCmd, mapHoverTable, mapMemos, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapOrganizationM, mapPlan, mapPosition, mapProject, mapPromptM, mapProps, mapSaveCmd, mapSchemaAnalysisM, mapSearch, mapSelected, mapSharingCmd, mapShowHiddenColumns, mapTables, mapTablesCmd, mapToastsCmd, setActive, setCollapsed, setColor, setColors, setConfirm, setContextMenu, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setLast, setModal, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setSelected, setShow, setSize, setText)
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
 import Time
 import Track
 
 
-update : Maybe LayoutName -> Time.Posix -> Maybe OrganizationId -> List Organization -> List ProjectInfo -> Msg -> Model -> ( Model, Cmd Msg )
-update currentLayout now urlOrganization organizations projects msg model =
+update : Maybe LayoutName -> Time.Zone -> Time.Posix -> Maybe OrganizationId -> List Organization -> List ProjectInfo -> Msg -> Model -> ( Model, Cmd Msg )
+update currentLayout zone now urlOrganization organizations projects msg model =
     case msg of
         ToggleMobileMenu ->
             ( model |> mapNavbar (mapMobileMenuOpen not), Cmd.none )
@@ -236,7 +236,7 @@ update currentLayout now urlOrganization organizations projects msg model =
             ( model |> setSchemaAnalysis Nothing, Cmd.none )
 
         SharingMsg message ->
-            model |> handleSharing message
+            model |> mapSharingCmd (ProjectSharing.update SharingMsg ModalOpen Toast zone now model.erd message)
 
         ProjectSaveMsg message ->
             model |> mapSaveCmd (ProjectSaveDialog.update ModalOpen message)
@@ -366,7 +366,7 @@ handleJsMessage : Time.Posix -> Maybe LayoutName -> JsMsg -> Model -> ( Model, C
 handleJsMessage now currentLayout msg model =
     case msg of
         GotSizes sizes ->
-            model |> updateSizes sizes
+            model |> updateSizes now sizes
 
         GotProject res ->
             case res of
@@ -380,7 +380,10 @@ handleJsMessage now currentLayout msg model =
                     let
                         erd : Erd
                         erd =
-                            currentLayout |> Maybe.mapOrElse (\l -> { project | usedLayout = l }) project |> Erd.create
+                            currentLayout
+                                |> Maybe.filter (\l -> project.layouts |> Dict.member l)
+                                |> Maybe.mapOrElse (\l -> { project | usedLayout = l }) project
+                                |> Erd.create
 
                         amlSidebar : Maybe AmlSidebar
                         amlSidebar =
@@ -390,8 +393,7 @@ handleJsMessage now currentLayout msg model =
                     ( { model | loaded = True, dirty = False, erd = Just erd, amlSidebar = amlSidebar }
                     , Cmd.batch
                         ([ Ports.observeSize Conf.ids.erd
-                         , Ports.observeTablesSize (erd |> Erd.currentLayout |> .tables |> List.map .id)
-                         , Ports.observeMemosSize (erd |> Erd.currentLayout |> .memos |> List.map .id)
+                         , Ports.observeLayout (erd |> Erd.currentLayout)
                          , Ports.setMeta { title = Just (Views.title (Just erd)), description = Nothing, canonical = Nothing, html = Nothing, body = Nothing }
                          , Ports.projectDirty False
                          ]
@@ -477,8 +479,8 @@ handleJsMessage now currentLayout msg model =
             ( model, Cmd.batch [ "Unable to decode JavaScript message: " ++ Decode.errorToString err ++ " in " ++ Encode.encode 0 json |> Toasts.error |> Toast |> T.send, Track.jsonError "js_message" err |> Ports.track ] )
 
 
-updateSizes : List SizeChange -> Model -> ( Model, Cmd Msg )
-updateSizes changes model =
+updateSizes : Time.Posix -> List SizeChange -> Model -> ( Model, Cmd Msg )
+updateSizes now changes model =
     let
         erdChanged : Model
         erdChanged =
@@ -488,8 +490,8 @@ updateSizes changes model =
         erdViewport =
             erdChanged.erd |> Erd.viewportM erdChanged.erdElem
 
-        tablesChanged : Model
-        tablesChanged =
+        newModel : Model
+        newModel =
             erdChanged
                 |> mapErdM
                     (\erd ->
@@ -502,11 +504,20 @@ updateSizes changes model =
                                 )
                     )
     in
-    if model.conf.fitOnLoad then
-        ( tablesChanged |> mapConf (\c -> { c | fitOnLoad = False }), T.send FitToScreen )
+    if model.conf.fitOnLoad && (changes |> List.memberBy .id "erd") then
+        newModel
+            |> mapConf (\c -> { c | fitOnLoad = False })
+            |> mapErdMCmd
+                (\e ->
+                    if (e |> Erd.currentLayout |> .tables |> List.length) > 0 then
+                        e |> fitCanvas now newModel.erdElem
+
+                    else
+                        ( e, Cmd.none )
+                )
 
     else
-        ( tablesChanged, Cmd.none )
+        ( newModel, Cmd.none )
 
 
 updateMemos : ZoomLevel -> List SizeChange -> List Memo -> List Memo

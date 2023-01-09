@@ -10,7 +10,7 @@ import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.Delta exposing (Delta)
 import Libs.Models.Position as Position exposing (Position)
-import Libs.Svg.Attributes as Attributes exposing (css)
+import Libs.Svg.Attributes exposing (css)
 import Libs.Svg.Utils exposing (circle, curveTo, lineTo, moveTo)
 import Libs.Tailwind as Tw exposing (Color, fill_500, stroke_500)
 import Models.Position as Position
@@ -97,10 +97,9 @@ drawLine conf pos1 pos2 onHover nullable color =
          , y1 (String.fromFloat p1.top)
          , x2 (String.fromFloat p2.left)
          , y2 (String.fromFloat p2.top)
-         , Attributes.when conf.hover (onMouseEnter (onHover True))
-         , Attributes.when conf.hover (onMouseLeave (onHover False))
          ]
             ++ lineAttrs nullable color
+            ++ Bool.cond conf.hover [ onMouseEnter (onHover True), onMouseLeave (onHover False) ] []
         )
         []
     ]

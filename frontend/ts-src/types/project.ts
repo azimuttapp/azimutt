@@ -44,6 +44,8 @@ export type LayoutName = string
 export const LayoutName = z.string()
 export type ZoomLevel = number
 export const ZoomLevel = z.number()
+export type ProjectTokenId = Uuid
+export const ProjectTokenId = Uuid
 
 export interface DatabaseConnection {
     kind: 'DatabaseConnection',
@@ -487,6 +489,7 @@ export interface ProjectInfoLocal extends ProjectStats {
     name: ProjectName
     description?: string
     storage: 'local'
+    visibility: ProjectVisibility
     encodingVersion: ProjectVersion
     createdAt: Timestamp
     updatedAt: Timestamp
@@ -499,19 +502,20 @@ export const ProjectInfoLocal = ProjectStats.extend({
     name: ProjectName,
     description: z.string().optional(),
     storage: z.literal(ProjectStorage.enum.local),
+    visibility: ProjectVisibility,
     encodingVersion: ProjectVersion,
     createdAt: Timestamp,
     updatedAt: Timestamp
 }).strict()
 
-export type ProjectInfoRemote = Omit<ProjectInfoLocal, 'storage'> & { storage: 'remote', visibility: ProjectVisibility }
-export const ProjectInfoRemote = ProjectInfoLocal.omit({storage: true}).extend({storage: z.literal(ProjectStorage.enum.remote), visibility: ProjectVisibility}).strict()
+export type ProjectInfoRemote = Omit<ProjectInfoLocal, 'storage'> & { storage: 'remote' }
+export const ProjectInfoRemote = ProjectInfoLocal.omit({storage: true}).extend({storage: z.literal(ProjectStorage.enum.remote)}).strict()
 export type ProjectInfoRemoteWithContent = ProjectInfoRemote & { content: ProjectJson }
 export type ProjectInfo = ProjectInfoLocal | ProjectInfoRemote
 export const ProjectInfo = z.discriminatedUnion('storage', [ProjectInfoLocal, ProjectInfoRemote])
 export type ProjectInfoWithContent = ProjectInfoLocal | ProjectInfoRemoteWithContent
-export type ProjectInfoLocalLegacy = Omit<ProjectInfoLocal, 'organization'> & { visibility: ProjectVisibility }
-export const ProjectInfoLocalLegacy = ProjectInfoLocal.omit({organization: true}).extend({visibility: ProjectVisibility}).strict()
+export type ProjectInfoLocalLegacy = Omit<ProjectInfoLocal, 'organization'>
+export const ProjectInfoLocalLegacy = ProjectInfoLocal.omit({organization: true}).strict()
 
 
 export function isLocal(p: ProjectInfo): p is ProjectInfoLocal {

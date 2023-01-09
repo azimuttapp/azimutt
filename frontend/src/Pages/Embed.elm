@@ -16,6 +16,7 @@ import Models.OrganizationId as OrganizationId
 import Models.Project as Project
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectId exposing (ProjectId)
+import Models.ProjectTokenId exposing (ProjectTokenId)
 import Page
 import PagesComponents.Organization_.Project_.Components.EmbedSourceParsingDialog as EmbedSourceParsingDialog
 import PagesComponents.Organization_.Project_.Models as Models exposing (Msg(..))
@@ -47,7 +48,7 @@ page shared req =
     in
     Page.element
         { init = init query
-        , update = Updates.update query.layout shared.now urlOrganization shared.organizations shared.projects
+        , update = Updates.update query.layout shared.zone shared.now urlOrganization shared.organizations shared.projects
         , view = Views.view (Request.pushRoute Route.NotFound req) req.url urlOrganization urlProject shared
         , subscriptions = Subscriptions.subscriptions
         }
@@ -61,6 +62,7 @@ type alias QueryString =
     , jsonSource : Maybe FileUrl
     , layout : Maybe LayoutName
     , mode : Maybe EmbedModeId
+    , token : Maybe ProjectTokenId
     }
 
 
@@ -125,7 +127,7 @@ init query =
          , Ports.listenHotkeys Conf.hotkeys
          ]
             -- org id is not used to get the project ^^
-            ++ ((query.projectId |> Maybe.map (\id -> [ Ports.getProject OrganizationId.zero id ]))
+            ++ ((query.projectId |> Maybe.map (\id -> [ Ports.getProject OrganizationId.zero id query.token ]))
                     |> Maybe.orElse (query.projectUrl |> Maybe.map (\url -> [ Http.get { url = url, expect = Http.decodeJson (Result.toMaybe >> GotProject >> JsMessage) Project.decode } ]))
                     |> Maybe.orElse (query.databaseSource |> Maybe.map (\url -> [ T.send (url |> DatabaseSource.GetSchema |> EmbedSourceParsingDialog.EmbedDatabaseSource |> EmbedSourceParsingMsg), T.sendAfter 1 (ModalOpen Conf.ids.sourceParsingDialog) ]))
                     |> Maybe.orElse (query.sqlSource |> Maybe.map (\url -> [ T.send (url |> SqlSource.GetRemoteFile |> EmbedSourceParsingDialog.EmbedSqlSource |> EmbedSourceParsingMsg), T.sendAfter 1 (ModalOpen Conf.ids.sourceParsingDialog) ]))
@@ -145,6 +147,7 @@ parseQueryString query =
     , jsonSource = query |> Dict.get EmbedKind.jsonSource
     , layout = query |> Dict.get "layout"
     , mode = query |> Dict.get EmbedMode.key
+    , token = query |> Dict.get "token"
     }
 
 

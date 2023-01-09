@@ -1,7 +1,7 @@
-module Libs.Html.Attributes exposing (ariaActivedescendant, ariaChecked, ariaControls, ariaCurrent, ariaDescribedby, ariaExpanded, ariaHaspopup, ariaHidden, ariaLabel, ariaLabelledby, ariaLive, ariaModal, ariaOrientation, css, hrefBlank, none, role, styles, track, when)
+module Libs.Html.Attributes exposing (ariaActivedescendant, ariaChecked, ariaControls, ariaCurrent, ariaDescribedby, ariaExpanded, ariaHaspopup, ariaHidden, ariaLabel, ariaLabelledby, ariaLive, ariaModal, ariaOrientation, css, hrefBlank, role, styles, track)
 
 import Html exposing (Attribute)
-import Html.Attributes exposing (attribute, class, classList, href, rel, target)
+import Html.Attributes exposing (attribute, class, href, rel, target)
 import Libs.Bool as B
 import Libs.Maybe as Maybe
 import Libs.Models exposing (Text)
@@ -97,20 +97,6 @@ styles values =
 hrefBlank : String -> List (Attribute msg)
 hrefBlank url =
     [ href url, target "_blank", rel "noopener" ]
-
-
-when : Bool -> Attribute msg -> Attribute msg
-when p attr =
-    if p then
-        attr
-
-    else
-        classList []
-
-
-none : Attribute msg
-none =
-    classList []
 
 
 role : String -> Attribute msg

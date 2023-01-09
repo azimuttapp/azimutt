@@ -105,6 +105,12 @@ defmodule Azimutt.Utils.ResultTest do
       assert {:error, :bad} = {:ok, 1} |> Result.filter_not(fn x -> x == 1 end, :bad)
     end
 
+    test "exists" do
+      assert true == {:ok, 1} |> Result.exists(fn x -> x == 1 end)
+      assert false == {:ok, 1} |> Result.exists(fn x -> x == 2 end)
+      assert false == {:error, 1} |> Result.exists(fn x -> x == 1 end)
+    end
+
     test "sequence" do
       assert {:ok, [1, 2, 3]} = [{:ok, 1}, {:ok, 2}, {:ok, 3}] |> Result.sequence()
       assert {:error, "e1"} = [{:ok, 1}, {:error, "e1"}, {:error, "e2"}] |> Result.sequence()

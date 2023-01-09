@@ -1,4 +1,4 @@
-port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProject, createProjectTmp, deleteProject, downloadFile, fireworks, focus, fullscreen, getColumnStats, getLegacyProjects, getProject, getTableStats, listenHotkeys, mouseDown, moveProjectTo, observeMemosSize, observeSize, observeTableSize, observeTablesSize, onJsMessage, projectDirty, readLocalFile, scrollTo, setMeta, toast, track, unhandledJsMsgError, updateProject, updateProjectTmp)
+port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProject, createProjectTmp, deleteProject, downloadFile, fireworks, focus, fullscreen, getColumnStats, getLegacyProjects, getProject, getTableStats, listenHotkeys, mouseDown, moveProjectTo, observeLayout, observeSize, observeTableSize, observeTablesSize, onJsMessage, projectDirty, readLocalFile, scrollTo, setMeta, toast, track, unhandledJsMsgError, updateProject, updateProjectTmp)
 
 import Dict exposing (Dict)
 import FileValue exposing (File)
@@ -25,9 +25,11 @@ import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableStats as TableStats exposing (TableStats)
 import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
+import Models.ProjectTokenId as ProjectTokenId exposing (ProjectTokenId)
 import Models.Route as Route exposing (Route)
 import Models.Size as Size
 import Models.TrackEvent as TrackEvent exposing (TrackEvent)
+import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.MemoId as MemoId exposing (MemoId)
 import Storage.ProjectV2 exposing (decodeProject)
 
@@ -82,9 +84,9 @@ getLegacyProjects =
     messageToJs GetLegacyProjects
 
 
-getProject : OrganizationId -> ProjectId -> Cmd msg
-getProject organization project =
-    messageToJs (GetProject organization project)
+getProject : OrganizationId -> ProjectId -> Maybe ProjectTokenId -> Cmd msg
+getProject organization project token =
+    messageToJs (GetProject organization project token)
 
 
 createProjectTmp : Project -> Cmd msg
@@ -157,9 +159,9 @@ observeTablesSize ids =
     observeSizes (List.map TableId.toHtmlId ids)
 
 
-observeMemosSize : List MemoId -> Cmd msg
-observeMemosSize ids =
-    observeSizes (List.map MemoId.toHtmlId ids)
+observeLayout : ErdLayout -> Cmd msg
+observeLayout layout =
+    observeSizes ((layout.tables |> List.map (.id >> TableId.toHtmlId)) ++ (layout.memos |> List.map (.id >> MemoId.toHtmlId)))
 
 
 observeSizes : List HtmlId -> Cmd msg
@@ -216,7 +218,7 @@ type ElmMsg
     | AutofocusWithin HtmlId
     | Toast String String
     | GetLegacyProjects
-    | GetProject OrganizationId ProjectId
+    | GetProject OrganizationId ProjectId (Maybe ProjectTokenId)
     | CreateProjectTmp Project
     | UpdateProjectTmp Project
     | CreateProject OrganizationId ProjectStorage Project
@@ -319,8 +321,8 @@ elmEncoder elm =
         GetLegacyProjects ->
             Encode.object [ ( "kind", "GetLegacyProjects" |> Encode.string ) ]
 
-        GetProject organization project ->
-            Encode.object [ ( "kind", "GetProject" |> Encode.string ), ( "organization", organization |> OrganizationId.encode ), ( "project", project |> ProjectId.encode ) ]
+        GetProject organization project token ->
+            Encode.object [ ( "kind", "GetProject" |> Encode.string ), ( "organization", organization |> OrganizationId.encode ), ( "project", project |> ProjectId.encode ), ( "token", token |> Encode.maybe ProjectTokenId.encode ) ]
 
         CreateProjectTmp project ->
             Encode.object [ ( "kind", "CreateProjectTmp" |> Encode.string ), ( "project", project |> Project.encode ) ]

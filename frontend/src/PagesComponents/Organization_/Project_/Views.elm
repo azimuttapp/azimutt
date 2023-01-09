@@ -26,6 +26,7 @@ import PagesComponents.Organization_.Project_.Components.AmlSidebar as AmlSideba
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
 import PagesComponents.Organization_.Project_.Components.EmbedSourceParsingDialog as EmbedSourceParsingDialog
 import PagesComponents.Organization_.Project_.Components.ProjectSaveDialog as ProjectSaveDialog
+import PagesComponents.Organization_.Project_.Components.ProjectSharing as ProjectSharing
 import PagesComponents.Organization_.Project_.Components.SourceUpdateDialog as SourceUpdateDialog
 import PagesComponents.Organization_.Project_.Models exposing (ContextMenu, LayoutMsg(..), Model, Msg(..), ProjectSettingsMsg(..), confirmDanger)
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
@@ -40,7 +41,6 @@ import PagesComponents.Organization_.Project_.Views.Modals.Modals as Modals
 import PagesComponents.Organization_.Project_.Views.Modals.NewLayout as NewLayout
 import PagesComponents.Organization_.Project_.Views.Modals.ProjectSettings exposing (viewProjectSettings)
 import PagesComponents.Organization_.Project_.Views.Modals.SchemaAnalysis exposing (viewSchemaAnalysis)
-import PagesComponents.Organization_.Project_.Views.Modals.Sharing exposing (viewSharing)
 import PagesComponents.Organization_.Project_.Views.Navbar as Navbar exposing (viewNavbar)
 import PagesComponents.Organization_.Project_.Views.Watermark exposing (viewWatermark)
 import Services.Backend as Backend
@@ -161,7 +161,7 @@ viewModal currentUrl urlOrganization shared model _ =
          , model.editNotes |> Maybe.map2 (\e m -> ( m.id, viewEditNotes (model.openedDialogs |> List.member m.id) e m )) model.erd
          , model.findPath |> Maybe.map2 (\e m -> ( m.id, viewFindPath (model.openedDialogs |> List.member m.id) model.openedDropdown e.settings.defaultSchema e.tables e.settings.findPath m )) model.erd
          , model.schemaAnalysis |> Maybe.map2 (\e m -> ( m.id, viewSchemaAnalysis (e |> Erd.getOrganization urlOrganization) (model.openedDialogs |> List.member m.id) e.settings.defaultSchema e.tables m )) model.erd
-         , model.sharing |> Maybe.map2 (\e m -> ( m.id, viewSharing currentUrl (model.openedDialogs |> List.member m.id) e m )) model.erd
+         , model.sharing |> Maybe.map2 (\e m -> ( m.id, ProjectSharing.view SharingMsg Send ModalClose confirmDanger shared.zone currentUrl (model.openedDialogs |> List.member m.id) e m )) model.erd
          , model.save |> Maybe.map2 (\e m -> ( m.id, ProjectSaveDialog.view ProjectSaveMsg ModalClose CreateProject currentUrl shared.user shared.organizations (model.openedDialogs |> List.member m.id) e m )) model.erd
          , model.settings |> Maybe.map2 (\e m -> ( m.id, viewProjectSettings shared.zone (model.openedDialogs |> List.member m.id) e m )) model.erd
          , model.sourceUpdate |> Maybe.map (\m -> ( m.id, SourceUpdateDialog.view (PSSourceUpdate >> ProjectSettingsMsg) (PSSourceSet >> ProjectSettingsMsg) ModalClose Noop shared.zone shared.now (model.openedDialogs |> List.member m.id) m ))
