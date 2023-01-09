@@ -5,9 +5,11 @@ import Components.Molecules.Modal as Modal
 import Components.Molecules.Tooltip as Tooltip
 import Conf
 import Dict
-import Html exposing (Html, button, datalist, div, h3, iframe, img, input, label, option, p, select, span, text)
-import Html.Attributes exposing (attribute, class, disabled, for, height, id, list, name, placeholder, selected, src, style, title, type_, value)
+import Gen.Route as Route
+import Html exposing (Html, a, button, datalist, div, h3, iframe, img, input, label, option, p, select, span, text)
+import Html.Attributes exposing (attribute, class, disabled, for, height, href, id, list, name, placeholder, rel, selected, src, style, target, title, type_, value)
 import Html.Events exposing (onClick, onInput)
+import Html.Lazy as Lazy
 import Libs.Bool as Bool
 import Libs.Html exposing (sendTweet)
 import Libs.Html.Attributes exposing (ariaChecked, ariaHidden, ariaLabelledby, css, role)
@@ -15,12 +17,14 @@ import Libs.Maybe as Maybe
 import Libs.Models.DateTime as DateTime
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Uuid as Uuid
+import Libs.String as String
 import Libs.Tailwind exposing (TwClass, focus, sm)
 import Libs.Task as T
 import Libs.Time as Time
 import Libs.Url as Url
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectStorage as ProjectStorage
+import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Models.ProjectToken exposing (ProjectToken)
 import PagesComponents.Organization_.Project_.Models.EmbedKind as EmbedKind exposing (EmbedKind)
 import PagesComponents.Organization_.Project_.Models.EmbedMode as EmbedMode exposing (EmbedModeId)
@@ -64,6 +68,8 @@ type Msg
     | TokenExpireUpdate (Maybe Interval)
     | CreateToken TokenForm
     | TokenCreated (Result Backend.Error ())
+    | RevokeToken ProjectToken
+    | TokenRevoked (Result Backend.Error ())
     | TokenUpdate (Maybe ProjectToken)
     | LayoutUpdate LayoutName
     | ModeUpdate EmbedModeId
@@ -153,6 +159,15 @@ update wrap modalOpen toast zone now erd msg model =
         TokenCreated (Err err) ->
             ( model |> Maybe.map (mapTokenFormM (\f -> { f | loading = False, error = err |> Backend.errorToString |> Just })), Cmd.none )
 
+        RevokeToken token ->
+            ( model |> Maybe.map (mapTokenFormM (\f -> { f | error = Nothing })), erd |> Maybe.mapOrElse (\e -> Backend.revokeProjectToken token e.project (TokenRevoked >> wrap)) Cmd.none )
+
+        TokenRevoked (Ok _) ->
+            ( model, erd |> Maybe.mapOrElse (\e -> Backend.getProjectTokens e.project (GotTokens >> wrap)) Cmd.none )
+
+        TokenRevoked (Err err) ->
+            ( model |> Maybe.map (mapTokenFormM (\f -> { f | error = err |> Backend.errorToString |> Just })), Cmd.none )
+
         TokenUpdate token ->
             ( model |> Maybe.map (mapTokenFormM (setToken token)), Cmd.none )
 
@@ -167,8 +182,8 @@ update wrap modalOpen toast zone now erd msg model =
 -- VIEW
 
 
-view : (Msg -> msg) -> (msg -> msg) -> Time.Zone -> Url -> Bool -> Erd -> Model -> Html msg
-view wrap modalClose zone currentUrl opened erd model =
+view : (Msg -> msg) -> (msg -> msg) -> (String -> Html msg -> msg -> msg) -> Time.Zone -> Url -> Bool -> Erd -> Model -> Html msg
+view wrap modalClose confirm zone currentUrl opened erd model =
     let
         titleId : HtmlId
         titleId =
@@ -176,22 +191,23 @@ view wrap modalClose zone currentUrl opened erd model =
 
         iframeUrl : Maybe String
         iframeUrl =
-            buildIframeUrl currentUrl model.kind model.content model.layout model.mode
+            buildIframeUrl currentUrl model.kind model.content model.layout model.mode (model.tokenForm |> Maybe.andThen .token)
     in
     Modal.modal { id = model.id, titleId = titleId, isOpen = opened, onBackgroundClick = Close |> wrap |> modalClose }
         [ div [ class "flex" ]
-            [ viewIframe iframeUrl
-            , div [ class "p-4", style "width" "65ch" ]
+            [ Lazy.lazy viewIframe (iframeUrl |> Maybe.withDefault "")
+            , div [ class "p-4", style "width" "70ch" ]
                 [ viewHeader wrap modalClose titleId
-                , viewBody wrap zone currentUrl erd model
+                , viewBody wrap confirm zone currentUrl erd model
                 ]
             ]
         ]
 
 
-viewIframe : Maybe String -> Html msg
+viewIframe : String -> Html msg
 viewIframe iframeUrl =
     iframeUrl
+        |> String.nonEmptyMaybe
         |> Maybe.map (\url -> div [ style "width" "1000px" ] [ iframe [ attribute "width" "100%", height 800, src url, title "Embedded Azimutt diagram", attribute "frameborder" "0", attribute "allowtransparency" "true", attribute "allowfullscreen" "true", attribute "scrolling" "no", style "box-shadow" "0 2px 8px 0 rgba(63,69,81,0.16)", style "border-radius" "5px" ] [] ])
         |> Maybe.withDefault (div [ class "flex items-center" ] [ img [ class "rounded-l-lg", src (Backend.resourceUrl "/assets/images/education.gif") ] [] ])
 
@@ -217,17 +233,18 @@ viewHeader wrap modalClose titleId =
         ]
 
 
-viewBody : (Msg -> msg) -> Time.Zone -> Url -> Erd -> Model -> Html msg
-viewBody wrap zone currentUrl erd model =
+viewBody : (Msg -> msg) -> (String -> Html msg -> msg -> msg) -> Time.Zone -> Url -> Erd -> Model -> Html msg
+viewBody wrap confirm zone currentUrl erd model =
     div []
         [ p [ class "mt-3" ]
             [ text "The easiest way to collaborate on your project is to invite new members in your organization. "
             , text "Still you can share it in read only using a private link or even embed it anywhere (with or without a private link)."
             ]
         , viewBodyKindContentInput wrap (model.id ++ "-input") model.kind model.content
-        , viewBodyProjectTokens wrap zone (model.id ++ "-input-token") model.tokens model.tokenForm
+        , viewBodyProjectTokens wrap confirm zone (model.id ++ "-input-token") model.tokens model.tokenForm
         , viewBodyLayoutInput wrap (model.id ++ "-input-layout") model.layout (erd.layouts |> Dict.keys)
         , viewBodyModeInput wrap (model.id ++ "-input-mode") model.mode
+        , viewBodyLink currentUrl erd.project model
         , viewBodyIframe currentUrl model
         ]
 
@@ -239,7 +256,7 @@ viewBodyKindContentInput wrap inputId kind content =
             ( inputId ++ "-kind", inputId ++ "-content" )
     in
     div [ class "mt-3" ]
-        [ label [ for contentInput, class "block text-sm font-medium text-gray-700" ] [ text "Embed" ]
+        [ label [ for contentInput, class "block text-sm font-medium text-gray-700" ] [ text "Share" ]
         , div [ class "mt-1 relative rounded-md shadow-sm" ]
             [ div [ class "absolute inset-y-0 left-0 flex items-center" ]
                 [ label [ for kindInput, class "sr-only" ] [ text "Content kind" ]
@@ -270,11 +287,14 @@ embedKindPlaceholder kind =
             JsonSource.example
 
 
-viewBodyProjectTokens : (Msg -> msg) -> Time.Zone -> HtmlId -> List ProjectToken -> Maybe TokenForm -> Html msg
-viewBodyProjectTokens wrap zone inputId tokens form =
+viewBodyProjectTokens : (Msg -> msg) -> (String -> Html msg -> msg -> msg) -> Time.Zone -> HtmlId -> List ProjectToken -> Maybe TokenForm -> Html msg
+viewBodyProjectTokens wrap confirm zone inputId tokens form =
     div [ class "mt-3" ]
         [ div [ class "flex justify-between" ]
-            [ label [ for inputId, class "block text-sm font-medium text-gray-700" ] [ text "Private tokens" ]
+            [ label [ for inputId, class "block text-sm font-medium text-gray-700" ]
+                [ text "Private tokens"
+                , Icon.solid Icon.QuestionMarkCircle "h-4 opacity-50" |> Tooltip.t "They allow anyone to view the project (no edit), it's great for quick sharing or embed in documentation."
+                ]
             , button [ type_ "button", onClick (form |> Maybe.mapOrElse (\_ -> DisableTokenForm) EnableTokenForm |> wrap), role "switch", ariaChecked True, class "group relative inline-flex h-5 w-10 flex-shrink-0 cursor-pointer items-center justify-center rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" ]
                 [ span [ class "sr-only" ] [ text "Use private tokens" ]
                 , span [ ariaHidden True, class "pointer-events-none absolute h-full w-full rounded-md bg-white" ] []
@@ -288,7 +308,7 @@ viewBodyProjectTokens wrap zone inputId tokens form =
                 (\f ->
                     div [ class "mt-1" ]
                         [ div [ class "-space-y-px shadow-sm bg-white" ]
-                            ((tokens |> List.indexedMap (viewBodyProjectToken wrap zone inputId f.token))
+                            ((tokens |> List.indexedMap (viewBodyProjectToken wrap confirm zone inputId f.token))
                                 ++ [ viewBodyProjectTokenCreation wrap inputId (tokens == []) f ]
                             )
                         , f.error |> Maybe.mapOrElse (\err -> p [ class "mt-2 text-sm text-red-600" ] [ text err ]) (p [] [])
@@ -298,8 +318,8 @@ viewBodyProjectTokens wrap zone inputId tokens form =
         ]
 
 
-viewBodyProjectToken : (Msg -> msg) -> Time.Zone -> HtmlId -> Maybe ProjectToken -> Int -> ProjectToken -> Html msg
-viewBodyProjectToken wrap zone inputId chosen i token =
+viewBodyProjectToken : (Msg -> msg) -> (String -> Html msg -> msg -> msg) -> Time.Zone -> HtmlId -> Maybe ProjectToken -> Int -> ProjectToken -> Html msg
+viewBodyProjectToken wrap confirm zone inputId chosen i token =
     let
         labelId : HtmlId
         labelId =
@@ -309,17 +329,38 @@ viewBodyProjectToken wrap zone inputId chosen i token =
         selected =
             chosen |> Maybe.any (\c -> c.id == token.id)
 
-        tooltip : String
-        tooltip =
-            "Created by " ++ token.createdBy.name ++ " on " ++ DateTime.formatDatetime zone token.createdAt ++ ", " ++ String.fromInt token.nbAccess ++ " access since creation" ++ (token.lastAccess |> Maybe.mapOrElse (\t -> " (last one on " ++ DateTime.formatDatetime zone t ++ ")") "")
+        ( created, accessed ) =
+            ( "Created by " ++ token.createdBy.name ++ " on " ++ DateTime.formatDatetime zone token.createdAt
+            , String.fromInt token.nbAccess ++ " access since creation" ++ (token.lastAccess |> Maybe.mapOrElse (\t -> " (last one on " ++ DateTime.formatDatetime zone t ++ ")") "")
+            )
     in
-    label [ css [ Bool.cond selected "bg-indigo-50 border-indigo-300 z-10" "border-gray-300", Bool.cond (i == 0) "rounded-t-md" "", "relative border px-3 py-2 flex cursor-pointer focus:outline-none" ] ]
-        [ input [ type_ "radio", name inputId, value token.id, onInput (\_ -> Bool.cond selected Nothing (token |> Just) |> TokenUpdate |> wrap), ariaLabelledby labelId, class "mt-0.5 h-4 w-4 shrink-0 cursor-pointer text-indigo-600 focus:ring-indigo-500" ] []
-        , span [ class "ml-3 flex flex-col" ]
-            [ span [ id labelId, css [ Bool.cond selected "text-indigo-900" "text-gray-900", "block text-sm font-medium" ] ]
-                [ text (token.name ++ (token.expireAt |> Maybe.mapOrElse (\t -> " (expire on " ++ DateTime.formatDatetime zone t ++ ")") " (does not expire)")) ]
-                |> Tooltip.t tooltip
+    div [ css [ Bool.cond selected "bg-indigo-50 border-indigo-300 z-10" "border-gray-300", Bool.cond (i == 0) "rounded-t-md" "", "border flex" ] ]
+        [ label [ class "grow relative flex px-3 py-2 cursor-pointer focus:outline-none" ]
+            [ input [ type_ "radio", name inputId, value token.id, onInput (\_ -> Bool.cond selected Nothing (token |> Just) |> TokenUpdate |> wrap), ariaLabelledby labelId, class "mt-0.5 h-4 w-4 shrink-0 cursor-pointer text-indigo-600 focus:ring-indigo-500" ] []
+            , span [ class "ml-3 flex flex-col" ]
+                [ span [ id labelId, css [ Bool.cond selected "text-indigo-900" "text-gray-900", "block text-sm font-medium" ] ]
+                    [ text (token.name ++ (token.expireAt |> Maybe.mapOrElse (\t -> " (expire on " ++ DateTime.formatDatetime zone t ++ ")") " (does not expire)")) ]
+                    |> Tooltip.t (created ++ ", " ++ accessed)
+                ]
             ]
+        , button
+            [ type_ "button"
+            , onClick
+                (RevokeToken token
+                    |> wrap
+                    |> confirm ("Revoke token '" ++ token.name ++ "'?")
+                        (div []
+                            [ p [] [ text created ]
+                            , p [] [ text accessed ]
+                            , p [ class "mt-3" ] [ text "People with this token won't be able to access this project anymore." ]
+                            ]
+                        )
+                )
+            , class "px-3 py-2"
+            ]
+            [ Icon.solid Icon.Trash "text-gray-300"
+            ]
+            |> Tooltip.tl "Revoke token (won't work anymore)"
         ]
 
 
@@ -345,7 +386,7 @@ viewBodyProjectTokenCreation wrap inputId roundFull f =
                     |> List.map (\( v, l ) -> option [ value (v |> Maybe.mapOrElse Time.intervalToString ""), selected (f.expire == v) ] [ text l ])
                 )
             ]
-        , button [ type_ "button", onClick (CreateToken f |> wrap), disabled f.loading, css [ Bool.cond roundFull "rounded-r-md" "rounded-br-md", "relative block border border-gray-300 px-4 py-2 text-sm font-medium bg-gray-50 text-gray-700 hover:bg-gray-100 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:bg-gray-100 disabled:text-gray-400" ] ]
+        , button [ type_ "button", onClick (CreateToken f |> wrap), disabled (f.name == "" || f.loading), css [ Bool.cond roundFull "rounded-r-md" "rounded-br-md", "relative block border border-gray-300 px-4 py-2 text-sm font-medium bg-gray-50 text-gray-700 hover:bg-gray-100 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:bg-gray-100 disabled:text-gray-400" ] ]
             [ text "Create token"
             ]
         ]
@@ -393,18 +434,47 @@ viewBodyModeInput wrap inputId inputValue =
         ]
 
 
-viewBodyIframe : Url -> Model -> Html msg
-viewBodyIframe currentUrl model =
-    let
-        iframeUrl : Maybe String
-        iframeUrl =
-            buildIframeUrl currentUrl model.kind model.content model.layout model.mode
-    in
-    iframeUrl
-        |> Maybe.map
+viewBodyLink : Url -> ProjectInfo -> Model -> Html msg
+viewBodyLink currentUrl project model =
+    buildShareUrl currentUrl project model.kind model.content model.layout (model.tokenForm |> Maybe.andThen .token)
+        |> Maybe.mapOrElse
             (\url ->
                 div [ class "mt-3" ]
-                    [ span [ class "block text-sm font-medium text-gray-700" ] [ text "Iframe" ]
+                    [ span [ class "block text-sm font-medium text-gray-700" ] [ text "Sharing url" ]
+                    , div [ class "mt-1 bg-gray-100 text-gray-700 rounded text-sm px-3 py-2" ]
+                        [ a [ href url, target "_blank", rel "noopener", class "hover:link" ] [ text url ]
+                        ]
+                    ]
+            )
+            (div [] [])
+
+
+buildShareUrl : Url -> ProjectInfo -> EmbedKind -> String -> LayoutName -> Maybe ProjectToken -> Maybe String
+buildShareUrl currentUrl project kind content layout token =
+    if kind == EmbedKind.EmbedProjectId && content /= "" && token /= Nothing then
+        Just
+            (Url.domain currentUrl
+                ++ Route.toHref (Route.Organization___Project_ { organization = ProjectInfo.organizationId project, project = content })
+                ++ "?"
+                ++ Url.buildQueryString
+                    ([ ( "layout", layout )
+                     , ( "token", token |> Maybe.mapOrElse .id "" )
+                     ]
+                        |> List.filter (\( _, v ) -> v /= "")
+                    )
+            )
+
+    else
+        Nothing
+
+
+viewBodyIframe : Url -> Model -> Html msg
+viewBodyIframe currentUrl model =
+    buildIframeUrl currentUrl model.kind model.content model.layout model.mode (model.tokenForm |> Maybe.andThen .token)
+        |> Maybe.mapOrElse
+            (\url ->
+                div [ class "mt-3" ]
+                    [ span [ class "block text-sm font-medium text-gray-700" ] [ text "Embed iframe" ]
                     , div [ class "mt-1 bg-gray-100 text-gray-700 rounded text-sm px-3 py-2" ] [ text (buildIframeHtml url) ]
                     , p [ class "mt-2 text-sm text-gray-500" ]
                         [ text "You are publishing your schema? Please "
@@ -413,13 +483,13 @@ viewBodyIframe currentUrl model =
                         ]
                     ]
             )
-        |> Maybe.withDefault (div [] [])
+            (div [] [])
 
 
-buildIframeUrl : Url -> EmbedKind -> String -> LayoutName -> EmbedModeId -> Maybe String
-buildIframeUrl currentUrl kind content layout mode =
+buildIframeUrl : Url -> EmbedKind -> String -> LayoutName -> EmbedModeId -> Maybe ProjectToken -> Maybe String
+buildIframeUrl currentUrl kind content layout mode token =
     if content /= "" then
-        Just (Url.domain currentUrl ++ Backend.embedUrl kind content layout mode)
+        Just (Url.domain currentUrl ++ Backend.embedUrl kind content layout mode token)
 
     else
         Nothing

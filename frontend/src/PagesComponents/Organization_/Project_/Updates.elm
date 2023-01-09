@@ -33,7 +33,7 @@ import PagesComponents.Organization_.Project_.Components.EmbedSourceParsingDialo
 import PagesComponents.Organization_.Project_.Components.ProjectSaveDialog as ProjectSaveDialog
 import PagesComponents.Organization_.Project_.Components.ProjectSharing as ProjectSharing
 import PagesComponents.Organization_.Project_.Components.SourceUpdateDialog as SourceUpdateDialog
-import PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, Model, Msg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..))
+import PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, Model, Msg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..), confirmDanger)
 import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode
 import PagesComponents.Organization_.Project_.Models.DragState as DragState
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)

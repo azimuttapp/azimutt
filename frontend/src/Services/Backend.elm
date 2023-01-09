@@ -94,14 +94,15 @@ blogArticleUrl slug =
     "/blog/" ++ slug
 
 
-embedUrl : EmbedKind -> String -> LayoutName -> EmbedModeId -> String
-embedUrl kind content layout mode =
+embedUrl : EmbedKind -> String -> LayoutName -> EmbedModeId -> Maybe ProjectToken -> String
+embedUrl kind content layout mode token =
     let
         queryString : String
         queryString =
             [ ( EmbedKind.value kind, content )
             , ( "layout", layout )
             , ( EmbedMode.key, mode )
+            , ( "token", token |> Maybe.mapOrElse .id "" )
             ]
                 |> List.filter (\( _, value ) -> value /= "")
                 |> Url.buildQueryString
