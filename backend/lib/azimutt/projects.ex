@@ -170,7 +170,7 @@ defmodule Azimutt.Projects do
     |> Repo.one()
     |> Result.from_nillable()
     |> Result.flat_map(fn token ->
-      project_query()
+      project_query_no_join()
       |> where([p, _, _], p.id == ^project_id and p.storage_kind == :remote)
       |> Repo.one()
       |> Result.from_nillable()
@@ -189,6 +189,14 @@ defmodule Azimutt.Projects do
     Project
     |> join(:inner, [p], o in Organization, on: p.organization_id == o.id)
     |> join(:inner, [_, o], om in OrganizationMember, on: om.organization_id == o.id)
+    |> order_by([p, _, _], desc: p.updated_at)
+    |> preload(:organization)
+    |> preload(organization: :heroku_resource)
+    |> preload(:updated_by)
+  end
+
+  defp project_query_no_join do
+    Project
     |> order_by([p, _, _], desc: p.updated_at)
     |> preload(:organization)
     |> preload(organization: :heroku_resource)
