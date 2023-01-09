@@ -18,7 +18,7 @@ import Html.Keyed as Keyed
 import Html.Lazy as Lazy
 import Libs.Bool as Bool
 import Libs.Html as Html exposing (bText)
-import Libs.Html.Attributes as Attributes exposing (ariaExpanded, ariaHaspopup, css, role)
+import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, css, role)
 import Libs.Html.Events exposing (PointerEvent, onContextMenu, onPointerUp, stopDoubleClick)
 import Libs.List as List
 import Libs.Maybe as Maybe
@@ -154,16 +154,16 @@ type alias ProjectInfo =
 table : Model msg -> Html msg
 table model =
     div
-        [ id model.id
-        , Attributes.when model.conf.hover (onMouseEnter (model.actions.hover True))
-        , Attributes.when model.conf.hover (onMouseLeave (model.actions.hover False))
-        , css
+        ([ id model.id
+         , css
             [ "inline-block bg-white rounded-lg"
             , Bool.cond model.state.isHover "shadow-lg" "shadow-md"
             , Bool.cond model.state.selected ("ring-4 " ++ ring_500 model.state.color) ""
             , Bool.cond model.state.dragging "cursor-move" ""
             ]
-        ]
+         ]
+            ++ Bool.cond model.conf.hover [ onMouseEnter (model.actions.hover True), onMouseLeave (model.actions.hover False) ] []
+        )
         [ Lazy.lazy viewHeader model
         , if model.state.collapsed then
             div [] []
@@ -207,11 +207,10 @@ viewHeader model =
             ]
         ]
         [ div
-            [ Attributes.when model.conf.select (onPointerUp model.platform model.actions.headerClick)
-            , Attributes.when model.conf.layout (stopDoubleClick model.actions.headerDblClick)
-            , Attributes.when model.conf.layout (onContextMenu model.platform model.actions.headerRightClick)
-            , class "flex-grow text-center whitespace-nowrap"
-            ]
+            ([ class "flex-grow text-center whitespace-nowrap" ]
+                ++ Bool.cond model.conf.select [ onPointerUp model.platform model.actions.headerClick ] []
+                ++ Bool.cond model.conf.layout [ stopDoubleClick model.actions.headerDblClick, onContextMenu model.platform model.actions.headerRightClick ] []
+            )
             ([ if model.isView then
                 span ([ class "text-xl italic underline decoration-dotted" ] ++ headerTextSize) [ text model.label ] |> Tooltip.t "This is a view"
 
@@ -293,13 +292,13 @@ viewHiddenColumns model =
             []
             (( label
              , div
-                [ title label
-                , Attributes.when model.conf.hover (onMouseEnter (model.actions.hiddenColumnsHover popoverId True))
-                , Attributes.when model.conf.hover (onMouseLeave (model.actions.hiddenColumnsHover popoverId False))
-                , Attributes.when model.conf.layout (onClick model.actions.hiddenColumnsClick)
-                , class "h-6 pl-7 pr-2 whitespace-nowrap text-default-500 opacity-50 hover:opacity-100"
-                , classList [ ( "cursor-pointer", model.conf.layout ) ]
-                ]
+                ([ title label
+                 , class "h-6 pl-7 pr-2 whitespace-nowrap text-default-500 opacity-50 hover:opacity-100"
+                 , classList [ ( "cursor-pointer", model.conf.layout ) ]
+                 ]
+                    ++ Bool.cond model.conf.hover [ onMouseEnter (model.actions.hiddenColumnsHover popoverId True), onMouseLeave (model.actions.hiddenColumnsHover popoverId False) ] []
+                    ++ Bool.cond model.conf.layout [ onClick model.actions.hiddenColumnsClick ] []
+                )
                 [ text ("... " ++ label) ]
                 |> Popover.r popover showPopover
              )
@@ -311,10 +310,6 @@ viewColumn : Model msg -> TwClass -> Bool -> Int -> Column -> Html msg
 viewColumn model styles isLast index column =
     div
         ([ title (column.name ++ " (" ++ column.kind ++ Bool.cond column.nullable "?" "" ++ ")")
-         , Attributes.when model.conf.hover (onMouseEnter (model.actions.columnHover column.name True))
-         , Attributes.when model.conf.hover (onMouseLeave (model.actions.columnHover column.name False))
-         , Attributes.when model.conf.layout (stopDoubleClick (model.actions.columnDblClick column.name))
-         , Attributes.when model.conf.layout (onContextMenu model.platform (model.actions.columnRightClick index column.name))
          , css
             [ "h-6 px-2 flex items-center align-middle whitespace-nowrap relative"
             , styles
@@ -322,6 +317,8 @@ viewColumn model styles isLast index column =
             , Bool.cond isLast "rounded-b-lg" ""
             ]
          ]
+            ++ Bool.cond model.conf.hover [ onMouseEnter (model.actions.columnHover column.name True), onMouseLeave (model.actions.columnHover column.name False) ] []
+            ++ Bool.cond model.conf.layout [ stopDoubleClick (model.actions.columnDblClick column.name), onContextMenu model.platform (model.actions.columnRightClick index column.name) ] []
             ++ (model.actions.columnClick |> Maybe.mapOrElse (\action -> [ onPointerUp model.platform (action column.name) ]) [])
         )
         [ viewColumnIcon model column |> viewColumnIconDropdown model column
@@ -449,10 +446,7 @@ viewComment comment =
 
 viewNotes : Model msg -> Maybe String -> String -> Html msg
 viewNotes model column notes =
-    span
-        [ Attributes.when model.conf.layout (onClick (model.actions.notesClick column))
-        , classList [ ( "cursor-pointer", model.conf.layout ) ]
-        ]
+    span ([ classList [ ( "cursor-pointer", model.conf.layout ) ] ] ++ Bool.cond model.conf.layout [ onClick (model.actions.notesClick column) ] [])
         [ Icon.outline Icons.notes "w-4 ml-1 opacity-50" |> Tooltip.t notes ]
 
 

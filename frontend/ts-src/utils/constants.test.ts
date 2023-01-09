@@ -20,6 +20,7 @@ export const plan: Plan = {
     layouts: 3,
     memos: 1,
     colors: false,
+    private_links: false,
     db_analysis: false,
     db_access: false
 }

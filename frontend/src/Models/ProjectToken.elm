@@ -2,14 +2,14 @@ module Models.ProjectToken exposing (ProjectToken, decode)
 
 import Json.Decode as Decode exposing (Decoder)
 import Libs.Json.Decode as Decode
-import Libs.Models.Uuid as Uuid exposing (Uuid)
 import Libs.Time as Time
+import Models.ProjectTokenId as ProjectTokenId exposing (ProjectTokenId)
 import Models.User as User exposing (UserLight)
 import Time
 
 
 type alias ProjectToken =
-    { id : Uuid
+    { id : ProjectTokenId
     , name : String
     , nbAccess : Int
     , lastAccess : Maybe Time.Posix
@@ -22,7 +22,7 @@ type alias ProjectToken =
 decode : Decoder ProjectToken
 decode =
     Decode.map7 ProjectToken
-        (Decode.field "id" Uuid.decode)
+        (Decode.field "id" ProjectTokenId.decode)
         (Decode.field "name" Decode.string)
         (Decode.field "nb_access" Decode.int)
         (Decode.maybeField "last_access" Time.decode)

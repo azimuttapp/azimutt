@@ -33,7 +33,7 @@ import PagesComponents.Organization_.Project_.Components.EmbedSourceParsingDialo
 import PagesComponents.Organization_.Project_.Components.ProjectSaveDialog as ProjectSaveDialog
 import PagesComponents.Organization_.Project_.Components.ProjectSharing as ProjectSharing
 import PagesComponents.Organization_.Project_.Components.SourceUpdateDialog as SourceUpdateDialog
-import PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, Model, Msg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..), confirmDanger)
+import PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, Model, Msg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..))
 import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode
 import PagesComponents.Organization_.Project_.Models.DragState as DragState
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
@@ -366,7 +366,7 @@ handleJsMessage : Time.Posix -> Maybe LayoutName -> JsMsg -> Model -> ( Model, C
 handleJsMessage now currentLayout msg model =
     case msg of
         GotSizes sizes ->
-            model |> updateSizes sizes
+            model |> updateSizes now sizes
 
         GotProject res ->
             case res of
@@ -380,7 +380,10 @@ handleJsMessage now currentLayout msg model =
                     let
                         erd : Erd
                         erd =
-                            currentLayout |> Maybe.mapOrElse (\l -> { project | usedLayout = l }) project |> Erd.create
+                            currentLayout
+                                |> Maybe.filter (\l -> project.layouts |> Dict.member l)
+                                |> Maybe.mapOrElse (\l -> { project | usedLayout = l }) project
+                                |> Erd.create
 
                         amlSidebar : Maybe AmlSidebar
                         amlSidebar =
@@ -390,8 +393,7 @@ handleJsMessage now currentLayout msg model =
                     ( { model | loaded = True, dirty = False, erd = Just erd, amlSidebar = amlSidebar }
                     , Cmd.batch
                         ([ Ports.observeSize Conf.ids.erd
-                         , Ports.observeTablesSize (erd |> Erd.currentLayout |> .tables |> List.map .id)
-                         , Ports.observeMemosSize (erd |> Erd.currentLayout |> .memos |> List.map .id)
+                         , Ports.observeLayout (erd |> Erd.currentLayout)
                          , Ports.setMeta { title = Just (Views.title (Just erd)), description = Nothing, canonical = Nothing, html = Nothing, body = Nothing }
                          , Ports.projectDirty False
                          ]
@@ -477,8 +479,8 @@ handleJsMessage now currentLayout msg model =
             ( model, Cmd.batch [ "Unable to decode JavaScript message: " ++ Decode.errorToString err ++ " in " ++ Encode.encode 0 json |> Toasts.error |> Toast |> T.send, Track.jsonError "js_message" err |> Ports.track ] )
 
 
-updateSizes : List SizeChange -> Model -> ( Model, Cmd Msg )
-updateSizes changes model =
+updateSizes : Time.Posix -> List SizeChange -> Model -> ( Model, Cmd Msg )
+updateSizes now changes model =
     let
         erdChanged : Model
         erdChanged =
@@ -488,8 +490,8 @@ updateSizes changes model =
         erdViewport =
             erdChanged.erd |> Erd.viewportM erdChanged.erdElem
 
-        tablesChanged : Model
-        tablesChanged =
+        newModel : Model
+        newModel =
             erdChanged
                 |> mapErdM
                     (\erd ->
@@ -502,11 +504,20 @@ updateSizes changes model =
                                 )
                     )
     in
-    if model.conf.fitOnLoad then
-        ( tablesChanged |> mapConf (\c -> { c | fitOnLoad = False }), T.send FitToScreen )
+    if model.conf.fitOnLoad && (changes |> List.memberBy .id "erd") then
+        newModel
+            |> mapConf (\c -> { c | fitOnLoad = False })
+            |> mapErdMCmd
+                (\e ->
+                    if (e |> Erd.currentLayout |> .tables |> List.length) > 0 then
+                        e |> fitCanvas now newModel.erdElem
+
+                    else
+                        ( e, Cmd.none )
+                )
 
     else
-        ( tablesChanged, Cmd.none )
+        ( newModel, Cmd.none )
 
 
 updateMemos : ZoomLevel -> List SizeChange -> List Memo -> List Memo

@@ -22,7 +22,11 @@ config :azimutt,
   free_plan_seats: 3,
   # MUST stay in sync with frontend/src/Conf.elm (`features`)
   free_plan_layouts: 3,
-  free_plan_memos: 1
+  free_plan_memos: 1,
+  free_plan_colors: false,
+  free_plan_private_links: true,
+  free_plan_db_analysis: false,
+  free_plan_db_access: false
 
 config :azimutt,
   ecto_repos: [Azimutt.Repo]

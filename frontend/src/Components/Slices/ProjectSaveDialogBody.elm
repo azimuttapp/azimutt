@@ -235,7 +235,7 @@ docProjectName =
 
 docPlan : Plan
 docPlan =
-    Plan "free" "Free plan" (Just 3) (Just 1) False False False
+    Plan "free" "Free plan" (Just 3) (Just 1) False False False False
 
 
 docOrganizations : List Organization

@@ -1,8 +1,10 @@
 module PagesComponents.Organization_.Project_.Components.ProjectSharing exposing (Model, Msg(..), TokenForm, init, update, view)
 
+import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.Modal as Modal
 import Components.Molecules.Tooltip as Tooltip
+import Components.Slices.ProPlan as ProPlan
 import Conf
 import Dict
 import Gen.Route as Route
@@ -11,24 +13,28 @@ import Html.Attributes exposing (attribute, class, disabled, for, height, href, 
 import Html.Events exposing (onClick, onInput)
 import Html.Lazy as Lazy
 import Libs.Bool as Bool
-import Libs.Html exposing (sendTweet)
+import Libs.Html exposing (extLink, sendTweet)
 import Libs.Html.Attributes exposing (ariaChecked, ariaHidden, ariaLabelledby, css, role)
 import Libs.Maybe as Maybe
 import Libs.Models.DateTime as DateTime
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Uuid as Uuid
 import Libs.String as String
-import Libs.Tailwind exposing (TwClass, focus, sm)
+import Libs.Tailwind as Tw exposing (TwClass, focus, sm)
 import Libs.Task as T
 import Libs.Time as Time
 import Libs.Url as Url
+import Models.Organization exposing (Organization)
+import Models.Plan exposing (Plan)
+import Models.Project as Project exposing (Project)
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectStorage as ProjectStorage
 import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Models.ProjectToken exposing (ProjectToken)
 import PagesComponents.Organization_.Project_.Models.EmbedKind as EmbedKind exposing (EmbedKind)
 import PagesComponents.Organization_.Project_.Models.EmbedMode as EmbedMode exposing (EmbedModeId)
-import PagesComponents.Organization_.Project_.Models.Erd exposing (Erd)
+import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
+import Ports
 import Services.Backend as Backend
 import Services.DatabaseSource as DatabaseSource
 import Services.JsonSource as JsonSource
@@ -38,6 +44,7 @@ import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
 import Time
 import Time.Extra as Time exposing (Interval(..))
+import Track
 import Url exposing (Url)
 
 
@@ -123,13 +130,19 @@ update wrap modalOpen toast zone now erd msg model =
             ( Nothing, Cmd.none )
 
         KindUpdate kind ->
-            ( model |> Maybe.map (\s -> { s | kind = kind, content = "" }), Cmd.none )
+            ( model |> Maybe.map (\s -> { s | kind = kind, content = "", tokenForm = Nothing }), Cmd.none )
 
         ContentUpdate content ->
             ( model |> Maybe.map (\s -> { s | content = content }), Cmd.none )
 
         EnableTokenForm ->
-            ( model |> Maybe.map (setTokenForm (Just initTokenForm)), erd |> Maybe.mapOrElse (\e -> Backend.getProjectTokens e.project (GotTokens >> wrap)) Cmd.none )
+            ( model |> Maybe.map (setTokenForm (Just initTokenForm))
+            , if erd |> Erd.getOrganizationM Nothing |> .plan |> .privateLinks then
+                erd |> Maybe.mapOrElse (\e -> Backend.getProjectTokens e.project (GotTokens >> wrap)) Cmd.none
+
+              else
+                Track.proPlanLimit Conf.features.privateLinks.name erd |> Ports.track
+            )
 
         DisableTokenForm ->
             ( model |> Maybe.map (setTokenForm Nothing), Cmd.none )
@@ -182,8 +195,8 @@ update wrap modalOpen toast zone now erd msg model =
 -- VIEW
 
 
-view : (Msg -> msg) -> (msg -> msg) -> (String -> Html msg -> msg -> msg) -> Time.Zone -> Url -> Bool -> Erd -> Model -> Html msg
-view wrap modalClose confirm zone currentUrl opened erd model =
+view : (Msg -> msg) -> (Cmd msg -> msg) -> (msg -> msg) -> (String -> Html msg -> msg -> msg) -> Time.Zone -> Url -> Bool -> Erd -> Model -> Html msg
+view wrap send modalClose confirm zone currentUrl opened erd model =
     let
         titleId : HtmlId
         titleId =
@@ -198,7 +211,7 @@ view wrap modalClose confirm zone currentUrl opened erd model =
             [ Lazy.lazy viewIframe (iframeUrl |> Maybe.withDefault "")
             , div [ class "p-4", style "width" "70ch" ]
                 [ viewHeader wrap modalClose titleId
-                , viewBody wrap confirm zone currentUrl erd model
+                , viewBody wrap send confirm zone currentUrl erd model
                 ]
             ]
         ]
@@ -227,26 +240,60 @@ viewHeader wrap modalClose titleId =
         [ div [ css [ "mt-3 text-center", sm [ "mt-0 text-left" ] ] ]
             [ h3 [ id titleId, class "text-lg leading-6 font-medium text-gray-900" ] [ text "Share your project" ]
             , p [ class "text-sm text-gray-500" ]
-                [ text "Send it to other people or embed it in your documentation or website." ]
+                [ text "Send it to people or embed it in your documentation or website." ]
             ]
         , span [ class "cursor-pointer text-gray-400", onClick (Close |> wrap |> modalClose) ] [ Icon.solid X "" ]
         ]
 
 
-viewBody : (Msg -> msg) -> (String -> Html msg -> msg -> msg) -> Time.Zone -> Url -> Erd -> Model -> Html msg
-viewBody wrap confirm zone currentUrl erd model =
+viewBody : (Msg -> msg) -> (Cmd msg -> msg) -> (String -> Html msg -> msg -> msg) -> Time.Zone -> Url -> Erd -> Model -> Html msg
+viewBody wrap send confirm zone currentUrl erd model =
     div []
-        [ p [ class "mt-3" ]
-            [ text "The easiest way to collaborate on your project is to invite new members in your organization. "
-            , text "Still you can share it in read only using a private link or even embed it anywhere (with or without a private link)."
-            ]
+        [ case erd.project.storage of
+            ProjectStorage.Local ->
+                viewBodyLocalProject send erd
+
+            ProjectStorage.Remote ->
+                viewBodyRemoteProject
         , viewBodyKindContentInput wrap (model.id ++ "-input") model.kind model.content
-        , viewBodyProjectTokens wrap confirm zone (model.id ++ "-input-token") model.tokens model.tokenForm
+        , if erd.project.storage == ProjectStorage.Remote && model.kind == EmbedKind.EmbedProjectId then
+            viewBodyProjectTokens wrap confirm zone (model.id ++ "-input-token") (erd |> Erd.getOrganization Nothing) model.tokens model.tokenForm
+
+          else
+            div [] []
         , viewBodyLayoutInput wrap (model.id ++ "-input-layout") model.layout (erd.layouts |> Dict.keys)
         , viewBodyModeInput wrap (model.id ++ "-input-mode") model.mode
         , viewBodyLink currentUrl erd.project model
         , viewBodyIframe currentUrl model
         ]
+
+
+viewBodyLocalProject : (Cmd msg -> msg) -> Erd -> Html msg
+viewBodyLocalProject send erd =
+    let
+        project : Project
+        project =
+            erd |> Erd.unpack
+
+        filename : String
+        filename =
+            project |> Project.downloadFilename
+    in
+    div [ class "mt-3" ]
+        [ p []
+            [ text "Local project are only on your machine, to share them you must download and host them ("
+            , extLink "https://gist.github.com" [ class "link" ] [ text "secret gist" ]
+            , text " are good for that), then fill the URL just below."
+            ]
+        , Button.primary3 Tw.primary
+            [ onClick (project |> Project.downloadContent |> Ports.downloadFile filename |> send), class "mt-1 whitespace-nowrap" ]
+            [ text "Download project" ]
+        ]
+
+
+viewBodyRemoteProject : Html msg
+viewBodyRemoteProject =
+    p [] []
 
 
 viewBodyKindContentInput : (Msg -> msg) -> HtmlId -> EmbedKind -> String -> Html msg
@@ -260,10 +307,10 @@ viewBodyKindContentInput wrap inputId kind content =
         , div [ class "mt-1 relative rounded-md shadow-sm" ]
             [ div [ class "absolute inset-y-0 left-0 flex items-center" ]
                 [ label [ for kindInput, class "sr-only" ] [ text "Content kind" ]
-                , select [ id kindInput, name kindInput, onInput (EmbedKind.fromValue >> Maybe.withDefault EmbedKind.EmbedProjectUrl >> KindUpdate >> wrap), class "h-full py-0 pl-3 pr-7 border-transparent bg-transparent text-gray-500 rounded-md sm:text-sm focus:ring-indigo-500 focus:border-indigo-500" ]
+                , select [ id kindInput, name kindInput, onInput (EmbedKind.fromValue >> Maybe.withDefault EmbedKind.EmbedProjectUrl >> KindUpdate >> wrap), class "h-full py-0 pl-2 pr-7 border-transparent bg-transparent text-gray-500 rounded-md sm:text-sm focus:ring-indigo-500 focus:border-indigo-500" ]
                     (EmbedKind.all |> List.map (\k -> option [ value (EmbedKind.value k), selected (k == kind) ] [ text (EmbedKind.label k) ]))
                 ]
-            , input [ type_ "text", id contentInput, name contentInput, placeholder ("ex: " ++ embedKindPlaceholder kind), value content, onInput (ContentUpdate >> wrap), class "block w-full pl-32 border-gray-300 rounded-md sm:text-sm focus:ring-indigo-500 focus:border-indigo-500" ] []
+            , input [ type_ "text", id contentInput, name contentInput, placeholder ("ex: " ++ embedKindPlaceholder kind), value content, onInput (ContentUpdate >> wrap), class "block w-full pl-36 border-gray-300 rounded-md sm:text-sm focus:ring-indigo-500 focus:border-indigo-500" ] []
             ]
         ]
 
@@ -287,13 +334,13 @@ embedKindPlaceholder kind =
             JsonSource.example
 
 
-viewBodyProjectTokens : (Msg -> msg) -> (String -> Html msg -> msg -> msg) -> Time.Zone -> HtmlId -> List ProjectToken -> Maybe TokenForm -> Html msg
-viewBodyProjectTokens wrap confirm zone inputId tokens form =
+viewBodyProjectTokens : (Msg -> msg) -> (String -> Html msg -> msg -> msg) -> Time.Zone -> HtmlId -> Organization -> List ProjectToken -> Maybe TokenForm -> Html msg
+viewBodyProjectTokens wrap confirm zone inputId organization tokens form =
     div [ class "mt-3" ]
         [ div [ class "flex justify-between" ]
             [ label [ for inputId, class "block text-sm font-medium text-gray-700" ]
-                [ text "Private tokens"
-                , Icon.solid Icon.QuestionMarkCircle "h-4 opacity-50" |> Tooltip.t "They allow anyone to view the project (no edit), it's great for quick sharing or embed in documentation."
+                [ text "Private link"
+                , Icon.solid Icon.QuestionMarkCircle "h-4 opacity-50" |> Tooltip.t "Allow anyone with the token to access the project (read-only), it's great for quick sharing or embed in documentation."
                 ]
             , button [ type_ "button", onClick (form |> Maybe.mapOrElse (\_ -> DisableTokenForm) EnableTokenForm |> wrap), role "switch", ariaChecked True, class "group relative inline-flex h-5 w-10 flex-shrink-0 cursor-pointer items-center justify-center rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" ]
                 [ span [ class "sr-only" ] [ text "Use private tokens" ]
@@ -306,13 +353,17 @@ viewBodyProjectTokens wrap confirm zone inputId tokens form =
         , form
             |> Maybe.mapOrElse
                 (\f ->
-                    div [ class "mt-1" ]
-                        [ div [ class "-space-y-px shadow-sm bg-white" ]
-                            ((tokens |> List.indexedMap (viewBodyProjectToken wrap confirm zone inputId f.token))
-                                ++ [ viewBodyProjectTokenCreation wrap inputId (tokens == []) f ]
-                            )
-                        , f.error |> Maybe.mapOrElse (\err -> p [ class "mt-2 text-sm text-red-600" ] [ text err ]) (p [] [])
-                        ]
+                    if organization.plan.privateLinks then
+                        div [ class "mt-1" ]
+                            [ div [ class "-space-y-px shadow-sm bg-white" ]
+                                ((tokens |> List.indexedMap (viewBodyProjectToken wrap confirm zone inputId f.token))
+                                    ++ [ viewBodyProjectTokenCreation wrap inputId (tokens == []) f ]
+                                )
+                            , f.error |> Maybe.mapOrElse (\err -> p [ class "mt-2 text-sm text-red-600" ] [ text err ]) (p [] [])
+                            ]
+
+                    else
+                        div [ class "mt-1" ] [ ProPlan.privateLinkWarning organization ]
                 )
                 (div [] [])
         ]
@@ -358,9 +409,8 @@ viewBodyProjectToken wrap confirm zone inputId chosen i token =
                 )
             , class "px-3 py-2"
             ]
-            [ Icon.solid Icon.Trash "text-gray-300"
-            ]
-            |> Tooltip.tl "Revoke token (won't work anymore)"
+            [ Icon.solid Icon.Trash "text-gray-300" ]
+            |> Tooltip.tl "Revoke token"
         ]
 
 
@@ -440,7 +490,7 @@ viewBodyLink currentUrl project model =
         |> Maybe.mapOrElse
             (\url ->
                 div [ class "mt-3" ]
-                    [ span [ class "block text-sm font-medium text-gray-700" ] [ text "Sharing url" ]
+                    [ span [ class "block text-sm font-medium text-gray-700" ] [ text "Private link:" ]
                     , div [ class "mt-1 bg-gray-100 text-gray-700 rounded text-sm px-3 py-2" ]
                         [ a [ href url, target "_blank", rel "noopener", class "hover:link" ] [ text url ]
                         ]
@@ -474,7 +524,7 @@ viewBodyIframe currentUrl model =
         |> Maybe.mapOrElse
             (\url ->
                 div [ class "mt-3" ]
-                    [ span [ class "block text-sm font-medium text-gray-700" ] [ text "Embed iframe" ]
+                    [ span [ class "block text-sm font-medium text-gray-700" ] [ text "Embed iframe:" ]
                     , div [ class "mt-1 bg-gray-100 text-gray-700 rounded text-sm px-3 py-2" ] [ text (buildIframeHtml url) ]
                     , p [ class "mt-2 text-sm text-gray-500" ]
                         [ text "You are publishing your schema? Please "

@@ -1,4 +1,4 @@
-module Components.Slices.ProPlan exposing (ColorsModel, ColorsMsg(..), DocState, SharedDocState, analysisResults, analysisWarning, colorsInit, colorsModalBody, colorsUpdate, doc, initDocState, layoutsModalBody, layoutsWarning, memosModalBody)
+module Components.Slices.ProPlan exposing (ColorsModel, ColorsMsg(..), DocState, SharedDocState, analysisResults, analysisWarning, colorsInit, colorsModalBody, colorsUpdate, doc, initDocState, layoutsModalBody, layoutsWarning, memosModalBody, privateLinkWarning)
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon
@@ -29,11 +29,16 @@ import Services.Lenses exposing (setColors, setResult)
 
 layoutsWarning : Organization -> Html msg
 layoutsWarning organization =
+    let
+        color : Color
+        color =
+            Tw.rose
+    in
     Alert.withActions
-        { color = Tw.red
+        { color = color
         , icon = Icon.Exclamation
         , title = "You've reached plan limit!"
-        , actions = [ Link.secondary3 Tw.red [ href (Backend.organizationBillingUrl organization.id (Conf.features.layouts.name ++ "_warning")), target "_blank", rel "noopener" ] [ Icon.outline Icon.Sparkles "mr-1", text "Upgrade plan" ] ]
+        , actions = [ Link.secondary3 color [ href (Backend.organizationBillingUrl organization.id (Conf.features.layouts.name ++ "_warning")), target "_blank", rel "noopener" ] [ Icon.outline Icon.Sparkles "mr-1", text "Upgrade plan" ] ]
         }
         [ p [] [ text "Hey! We are very happy you use and like layouts in Azimutt." ]
         , p [] [ text "They are an important feature but also a limited one. You've reached the limits of your current plan and will need to upgrade. We will let you create one last layout so you can keep working but ", bText "please upgrade as soon as possible", text "." ]
@@ -42,10 +47,15 @@ layoutsWarning organization =
 
 layoutsModalBody : Organization -> msg -> HtmlId -> Html msg
 layoutsModalBody organization close titleId =
+    let
+        color : Color
+        color =
+            Tw.rose
+    in
     div [ class "max-w-2xl" ]
         [ div [ css [ "px-6 pt-6", sm [ "flex items-start" ] ] ]
-            [ div [ css [ "mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-rose-100", sm [ "mx-0 h-10 w-10" ] ] ]
-                [ Icon.outline Icon.Template "text-rose-600"
+            [ div [ css [ Tw.bg_100 color, "mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full", sm [ "mx-0 h-10 w-10" ] ] ]
+                [ Icon.outline Icon.Template (Tw.text_600 color)
                 ]
             , div [ css [ "mt-3 text-center", sm [ "mt-0 ml-4 text-left" ] ] ]
                 [ h3 [ id titleId, class "text-lg leading-6 font-medium text-gray-900" ] [ text "New layout" ]
@@ -56,7 +66,7 @@ layoutsModalBody organization close titleId =
                 ]
             ]
         , div [ class "px-6 py-3 mt-6 flex items-center flex-row-reverse bg-gray-50 rounded-b-lg" ]
-            [ Link.primary3 Tw.rose [ href (Backend.organizationBillingUrl organization.id Conf.features.layouts.name), target "_blank", rel "noopener", css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ Icon.solid Icon.Sparkles "mr-1", text "Upgrade plan" ]
+            [ Link.primary3 color [ href (Backend.organizationBillingUrl organization.id Conf.features.layouts.name), target "_blank", rel "noopener", css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ Icon.solid Icon.Sparkles "mr-1", text "Upgrade plan" ]
             , Button.white3 Tw.gray [ onClick close, css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text "Cancel" ]
             ]
         ]
@@ -65,14 +75,18 @@ layoutsModalBody organization close titleId =
 memosModalBody : Organization -> msg -> HtmlId -> Html msg
 memosModalBody organization close titleId =
     let
+        color : Color
+        color =
+            Tw.amber
+
         limit : Int
         limit =
             organization.plan.memos |> Maybe.withDefault Conf.features.memos.free
     in
     div [ class "max-w-2xl" ]
         [ div [ css [ "px-6 pt-6", sm [ "flex items-start" ] ] ]
-            [ div [ css [ "mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-amber-100", sm [ "mx-0 h-10 w-10" ] ] ]
-                [ Icon.outline Icon.Newspaper "text-amber-600"
+            [ div [ css [ Tw.bg_100 color, "mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full", sm [ "mx-0 h-10 w-10" ] ] ]
+                [ Icon.outline Icon.Newspaper (Tw.text_600 color)
                 ]
             , div [ css [ "mt-3 text-center", sm [ "mt-0 ml-4 text-left" ] ] ]
                 [ h3 [ id titleId, class "text-lg leading-6 font-medium text-gray-900" ] [ text "Layout memos" ]
@@ -84,7 +98,7 @@ memosModalBody organization close titleId =
                 ]
             ]
         , div [ class "px-6 py-3 mt-6 flex items-center flex-row-reverse bg-gray-50 rounded-b-lg" ]
-            [ Link.primary3 Tw.amber [ href (Backend.organizationBillingUrl organization.id Conf.features.memos.name), target "_blank", rel "noopener", css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ Icon.solid Icon.ThumbUp "mr-1", text "Upgrade plan" ]
+            [ Link.primary3 color [ href (Backend.organizationBillingUrl organization.id Conf.features.memos.name), target "_blank", rel "noopener", css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ Icon.solid Icon.ThumbUp "mr-1", text "Upgrade plan" ]
             , Button.white3 Tw.gray [ onClick close, css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text "Cancel" ]
             ]
         ]
@@ -256,14 +270,37 @@ colorsTweetSuccess close =
         ]
 
 
+privateLinkWarning : Organization -> Html msg
+privateLinkWarning organization =
+    let
+        color : Color
+        color =
+            Tw.cyan
+    in
+    Alert.withActions
+        { color = color
+        , icon = Icon.Exclamation
+        , title = "Private links are a pro feature!"
+        , actions = [ Link.secondary3 color [ href (Backend.organizationBillingUrl organization.id Conf.features.privateLinks.name), target "_blank", rel "noopener" ] [ Icon.outline Icon.UserGroup "mr-1", text "Join us!" ] ]
+        }
+        [ p [] [ text "They hold a great power to easily share projects or embed them in documentation." ]
+        , p [] [ text "And thus, we keep them fresh for users wise enough to use our pro plan 😉" ]
+        ]
+
+
 analysisWarning : Organization -> Html msg
 analysisWarning organization =
+    let
+        color : Color
+        color =
+            Tw.fuchsia
+    in
     Alert.withActions
-        { color = Tw.fuchsia
+        { color = color
         , icon = Icon.Exclamation
         , title = "Get full analysis with Pro plan!"
         , actions =
-            [ Link.secondary3 Tw.fuchsia
+            [ Link.secondary3 color
                 [ href (Backend.organizationBillingUrl organization.id Conf.features.dbAnalysis.name), target "_blank", rel "noopener" ]
                 [ Icon.outline Icon.ShieldCheck "mr-1"
                 , text "Upgrade plan"
@@ -282,11 +319,16 @@ analysisResults organization items render =
         div [] (items |> List.map render)
 
     else
+        let
+            color : Color
+            color =
+                Tw.fuchsia
+        in
         div [ class "relative" ]
             ((items |> List.take 5 |> List.map render)
                 ++ [ div [ class "absolute inset-x-0 pt-32 bg-gradient-to-t from-white text-center text-sm text-gray-500 pointer-events-none", style "bottom" "-2px" ]
                         [ text "See more with "
-                        , a [ href (Backend.organizationBillingUrl organization.id (Conf.features.dbAnalysis.name ++ "_results")), target "_blank", rel "noopener", class "underline text-fuchsia-500 pointer-events-auto" ] [ text "upgraded plan" ]
+                        , a [ href (Backend.organizationBillingUrl organization.id (Conf.features.dbAnalysis.name ++ "_results")), target "_blank", rel "noopener", css [ Tw.text_500 color, "underline pointer-events-auto" ] ] [ text "upgraded plan" ]
                         , text "."
                         ]
                    ]
@@ -330,6 +372,7 @@ doc =
             , ( "memosModalBody", \_ -> memosModalBody Organization.zero docClose docTitleId )
             , ( "colorsModalBody", \s -> colorsModalBody Organization.zero docColorsUpdate s.proPlanDocState.colors docClose docTitleId )
             , ( "colorsModalBody success", \s -> colorsModalBody Organization.zero docColorsUpdate (s.proPlanDocState.colors |> setResult (Just (Ok "Tweet.."))) docClose docTitleId )
+            , ( "privateLinkWarning", \_ -> privateLinkWarning Organization.zero )
             , ( "analysisWarning", \_ -> analysisWarning Organization.zero )
             , ( "analysisResults", \_ -> analysisResults Organization.zero [ 1, 2, 3, 4, 5, 6 ] (\i -> p [] [ text ("Item " ++ String.fromInt i) ]) )
             ]

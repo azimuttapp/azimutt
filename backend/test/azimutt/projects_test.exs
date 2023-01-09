@@ -135,7 +135,7 @@ defmodule Azimutt.ProjectsTest do
 
       {:ok, token} = Projects.create_project_token(project_id, user, %{"name" => "Token"})
       assert {:ok, ["Token"]} = Projects.list_project_tokens(project_id, user, now) |> Result.map(fn ts -> ts |> Enum.map(& &1.name) end)
-      assert {:ok, project_id} = Projects.access_project(token.id, now) |> Result.map(& &1.id)
+      assert {:ok, project_id} = Projects.access_project(project_id, token.id, now) |> Result.map(& &1.id)
 
       accessed_token = ProjectToken |> Azimutt.Repo.get(token.id)
       assert 1 = accessed_token.nb_access
@@ -143,7 +143,7 @@ defmodule Azimutt.ProjectsTest do
 
       {:ok, _} = Projects.revoke_project_token(token.id, user, now)
       assert {:ok, []} = Projects.list_project_tokens(project_id, user, now) |> Result.map(fn ts -> ts |> Enum.map(& &1.name) end)
-      assert {:error, :not_found} = Projects.access_project(token.id, now) |> Result.map(& &1.id)
+      assert {:error, :not_found} = Projects.access_project(project_id, token.id, now) |> Result.map(& &1.id)
     end
   end
 end

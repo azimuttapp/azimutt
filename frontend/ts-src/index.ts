@@ -142,7 +142,7 @@ function getLegacyProjects() {
 function getProject(msg: GetProject) {
     (msg.project === Uuid.zero ?
             storage.getProject(msg.project).then(p => buildProjectDraft(msg.project, p)) :
-            backend.getProject(msg.organization, msg.project).then(res => {
+            backend.getProject(msg.organization, msg.project, msg.token).then(res => {
                 if (res.storage === ProjectStorage.enum.remote) {
                     return buildProjectRemote(res, res.content)
                 } else if (res.storage === ProjectStorage.enum.local) {

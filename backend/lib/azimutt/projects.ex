@@ -161,17 +161,21 @@ defmodule Azimutt.Projects do
     end)
   end
 
-  def access_project(token_id, now) do
+  def access_project(project_id, token_id, now) do
     ProjectToken
-    |> where([pt], pt.id == ^token_id and is_nil(pt.revoked_at) and (is_nil(pt.expire_at) or pt.expire_at > ^now))
+    |> where(
+      [pt],
+      pt.project_id == ^project_id and pt.id == ^token_id and is_nil(pt.revoked_at) and (is_nil(pt.expire_at) or pt.expire_at > ^now)
+    )
     |> Repo.one()
     |> Result.from_nillable()
-    |> Result.flat_map(fn token -> token |> ProjectToken.access_changeset(now) |> Repo.update() end)
     |> Result.flat_map(fn token ->
       project_query()
-      |> where([p, _, _], p.id == ^token.project_id and p.storage_kind == :remote)
+      |> where([p, _, _], p.id == ^project_id and p.storage_kind == :remote)
       |> Repo.one()
       |> Result.from_nillable()
+      |> Result.filter(fn p -> Organizations.get_organization_plan(p.organization) |> Result.exists(& &1.private_links) end, :not_found)
+      |> Result.tap(fn _ -> token |> ProjectToken.access_changeset(now) |> Repo.update() end)
     end)
   end
 

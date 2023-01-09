@@ -14,7 +14,7 @@ import Html.Lazy as Lazy
 import Libs.Bool as B
 import Libs.Dict as Dict
 import Libs.Html exposing (bText, extLink, sendTweet)
-import Libs.Html.Attributes as Attributes exposing (css)
+import Libs.Html.Attributes exposing (css)
 import Libs.Html.Events exposing (PointerEvent, onContextMenu, onDblClick, onWheel, stopPointerDown)
 import Libs.List as List
 import Libs.Maybe as Maybe
@@ -132,18 +132,19 @@ viewErd conf erdElem erd selectionBox virtualRelation editMemo args dragging =
                     )
     in
     div
-        [ class "az-erd h-full bg-gray-100 overflow-hidden"
-        , classList
-            [ ( "cursor-grab-all", cursorMode == CursorMode.Drag && dragging == Nothing && virtualRelation == Nothing )
+        ([ id Conf.ids.erd
+         , class "az-erd h-full bg-gray-100 overflow-hidden"
+         , classList
+            [ ( "invisible", erdElem.size == Size.zeroViewport )
+            , ( "cursor-grab-all", cursorMode == CursorMode.Drag && dragging == Nothing && virtualRelation == Nothing )
             , ( "cursor-grabbing-all", cursorMode == CursorMode.Drag && dragging /= Nothing && virtualRelation == Nothing )
             , ( "cursor-crosshair-all", virtualRelation /= Nothing )
             ]
-        , id Conf.ids.erd
-        , Attributes.when (conf.move && not (List.isEmpty tableProps)) (onWheel platform OnWheel)
-        , Attributes.when (conf.move || conf.select) (stopPointerDown platform (handleErdPointerDown conf cursorMode))
-        , Attributes.when conf.layout (onContextMenu platform (\e -> ContextMenuCreate (ErdContextMenu.view platform erdElem canvas e) e))
-        , Attributes.when conf.layout (onDblClick platform (CanvasProps.eventCanvas erdElem canvas >> MCreate >> MemoMsg))
-        ]
+         ]
+            ++ B.cond (conf.move && not (List.isEmpty tableProps)) [ onWheel platform OnWheel ] []
+            ++ B.cond (conf.move || conf.select) [ stopPointerDown platform (handleErdPointerDown conf cursorMode) ] []
+            ++ B.cond conf.layout [ onDblClick platform (CanvasProps.eventCanvas erdElem canvas >> MCreate >> MemoMsg), onContextMenu platform (\e -> ContextMenuCreate (ErdContextMenu.view platform erdElem canvas e) e) ] []
+        )
         [ div [ class "az-canvas origin-top-left", Position.styleTransformDiagram canvas.position canvas.zoom ]
             -- use HTML order instead of z-index, must be careful with it, this allows to have tooltips & popovers always on top
             [ -- canvas.position |> Position.debugDiagram "canvas" "bg-black"

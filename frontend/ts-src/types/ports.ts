@@ -22,6 +22,7 @@ import {
     ProjectInfo,
     ProjectInfoLocalLegacy,
     ProjectStorage,
+    ProjectTokenId,
     SourceId,
     SourceOrigin,
     TableId
@@ -113,8 +114,8 @@ export type Toast = { kind: 'Toast', level: ToastLevel, message: string }
 export const Toast = z.object({kind: z.literal('Toast'), level: ToastLevel, message: z.string()}).strict()
 export type GetLegacyProjects = { kind: 'GetLegacyProjects' }
 export const GetLegacyProjects = z.object({kind: z.literal('GetLegacyProjects')}).strict()
-export type GetProject = { kind: 'GetProject', organization: OrganizationId, project: ProjectId }
-export const GetProject = z.object({kind: z.literal('GetProject'), organization: OrganizationId, project: ProjectId}).strict()
+export type GetProject = { kind: 'GetProject', organization: OrganizationId, project: ProjectId, token: ProjectTokenId | null }
+export const GetProject = z.object({kind: z.literal('GetProject'), organization: OrganizationId, project: ProjectId, token: ProjectTokenId.nullable()}).strict()
 export type CreateProjectTmp = { kind: 'CreateProjectTmp', project: Project }
 export const CreateProjectTmp = z.object({kind: z.literal('CreateProjectTmp'), project: Project}).strict()
 export type UpdateProjectTmp = { kind: 'UpdateProjectTmp', project: Project }

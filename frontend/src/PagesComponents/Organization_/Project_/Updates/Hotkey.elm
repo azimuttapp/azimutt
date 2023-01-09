@@ -67,7 +67,7 @@ handleHotkey _ model hotkey =
                 ( model, T.send TriggerSaveProject )
 
             else
-                ( model, "Can't save in embed mode" |> Toasts.warning |> Toast |> T.send )
+                ( model, "Can't save in read-only mode" |> Toasts.warning |> Toast |> T.send )
 
         "move-up" ->
             ( model, model |> moveTables { dx = 0, dy = -10 } |> Maybe.orElse (model |> upDetails) |> Maybe.withDefault Cmd.none )

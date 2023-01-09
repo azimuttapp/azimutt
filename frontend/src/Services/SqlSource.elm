@@ -100,7 +100,7 @@ kind =
 
 example : String
 example =
-    "/elm/samples/basic.sql"
+    "https://azimutt.app/elm/samples/basic.sql"
 
 
 init : Maybe Source -> (( Maybe (SqlParsing msg), Result String Source ) -> msg) -> Model msg

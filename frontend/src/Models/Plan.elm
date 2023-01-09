@@ -14,6 +14,7 @@ type alias Plan =
     , layouts : Maybe Int
     , memos : Maybe Int
     , colors : Bool
+    , privateLinks : Bool
     , dbAnalysis : Bool
     , dbAccess : Bool
     }
@@ -27,6 +28,7 @@ free =
     , layouts = Just Conf.features.layouts.free
     , memos = Just Conf.features.memos.free
     , colors = Conf.features.tableColor.free
+    , privateLinks = Conf.features.privateLinks.free
     , dbAnalysis = Conf.features.dbAnalysis.free
     , dbAccess = Conf.features.dbAnalysis.free
     }
@@ -40,6 +42,7 @@ encode value =
         , ( "layouts", value.layouts |> Encode.maybe Encode.int )
         , ( "memos", value.memos |> Encode.maybe Encode.int )
         , ( "colors", value.colors |> Encode.bool )
+        , ( "private_links", value.privateLinks |> Encode.bool )
         , ( "db_analysis", value.dbAnalysis |> Encode.bool )
         , ( "db_access", value.dbAccess |> Encode.bool )
         ]
@@ -47,11 +50,12 @@ encode value =
 
 decode : Decode.Decoder Plan
 decode =
-    Decode.map7 Plan
+    Decode.map8 Plan
         (Decode.field "id" Decode.string)
         (Decode.field "name" Decode.string)
         (Decode.maybeField "layouts" Decode.int)
         (Decode.maybeField "memos" Decode.int)
         (Decode.field "colors" Decode.bool)
+        (Decode.field "private_links" Decode.bool)
         (Decode.field "db_analysis" Decode.bool)
         (Decode.field "db_access" Decode.bool)
