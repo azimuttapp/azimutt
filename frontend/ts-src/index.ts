@@ -32,7 +32,7 @@ import {Utils} from "./utils/utils";
 import {Storage} from "./services/storage";
 import {Backend} from "./services/backend";
 import * as Uuid from "./types/uuid";
-import {Platform, ToastLevel, ViewPosition} from "./types/basics";
+import {HtmlId, Platform, ToastLevel, ViewPosition} from "./types/basics";
 import {Env, getEnv} from "./utils/env";
 import {AnyError, formatError} from "./utils/error";
 import * as url from "./utils/url";
@@ -332,7 +332,19 @@ const resizeObserver = new ResizeObserver(entries => {
 })
 
 function observeSizes(msg: ObserveSizes) {
-    msg.ids.flatMap(Utils.maybeElementById).forEach(elt => resizeObserver.observe(elt))
+    msg.ids.forEach(id => {
+        const elt = document.getElementById(id)
+        elt ? resizeObserver.observe(elt) : observeSizesRetry(id, 20)
+    })
+}
+
+function observeSizesRetry(id: HtmlId, remainingAttempts: number) {
+    if (remainingAttempts > 0) {
+        setTimeout(() => {
+            const elt = document.getElementById(id)
+            elt ? resizeObserver.observe(elt) : observeSizesRetry(id, remainingAttempts - 1)
+        }, 200)
+    }
 }
 
 const hotkeys: { [key: string]: (Hotkey & { id: HotkeyId })[] } = {}
