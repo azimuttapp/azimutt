@@ -256,14 +256,13 @@ viewBody wrap send confirm zone currentUrl erd model =
             ProjectStorage.Remote ->
                 viewBodyRemoteProject
         , viewBodyKindContentInput wrap (model.id ++ "-input") model.kind model.content
+        , viewBodyLayoutInput wrap (model.id ++ "-input-layout") model.layout (erd.layouts |> Dict.keys)
         , if erd.project.storage == ProjectStorage.Remote && model.kind == EmbedKind.EmbedProjectId then
-            viewBodyProjectTokens wrap confirm zone (model.id ++ "-input-token") (erd |> Erd.getOrganization Nothing) model.tokens model.tokenForm
+            viewBodyPrivateLinkInput wrap confirm zone (model.id ++ "-input-token") currentUrl erd model
 
           else
             div [] []
-        , viewBodyLayoutInput wrap (model.id ++ "-input-layout") model.layout (erd.layouts |> Dict.keys)
         , viewBodyModeInput wrap (model.id ++ "-input-mode") model.mode
-        , viewBodyLink currentUrl erd.project model
         , viewBodyIframe currentUrl model
         ]
 
@@ -334,36 +333,49 @@ embedKindPlaceholder kind =
             JsonSource.example
 
 
-viewBodyProjectTokens : (Msg -> msg) -> (String -> Html msg -> msg -> msg) -> Time.Zone -> HtmlId -> Organization -> List ProjectToken -> Maybe TokenForm -> Html msg
-viewBodyProjectTokens wrap confirm zone inputId organization tokens form =
+viewBodyPrivateLinkInput : (Msg -> msg) -> (String -> Html msg -> msg -> msg) -> Time.Zone -> HtmlId -> Url -> Erd -> Model -> Html msg
+viewBodyPrivateLinkInput wrap confirm zone inputId currentUrl erd model =
+    let
+        organization : Organization
+        organization =
+            erd |> Erd.getOrganization Nothing
+    in
     div [ class "mt-3" ]
         [ div [ class "flex justify-between" ]
             [ label [ for inputId, class "block text-sm font-medium text-gray-700" ]
                 [ text "Private link"
                 , Icon.solid Icon.QuestionMarkCircle "h-4 opacity-50" |> Tooltip.t "Allow anyone with the token to access the project (read-only), it's great for quick sharing or embed in documentation."
                 ]
-            , button [ type_ "button", onClick (form |> Maybe.mapOrElse (\_ -> DisableTokenForm) EnableTokenForm |> wrap), role "switch", ariaChecked True, class "group relative inline-flex h-5 w-10 flex-shrink-0 cursor-pointer items-center justify-center rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" ]
+            , button [ type_ "button", onClick (model.tokenForm |> Maybe.mapOrElse (\_ -> DisableTokenForm) EnableTokenForm |> wrap), role "switch", ariaChecked True, class "group relative inline-flex h-5 w-10 flex-shrink-0 cursor-pointer items-center justify-center rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" ]
                 [ span [ class "sr-only" ] [ text "Use private tokens" ]
                 , span [ ariaHidden True, class "pointer-events-none absolute h-full w-full rounded-md bg-white" ] []
-                , span [ ariaHidden True, css [ form |> Maybe.mapOrElse (\_ -> "bg-indigo-600") "bg-gray-200", "pointer-events-none absolute mx-auto h-4 w-9 rounded-full transition-colors duration-200 ease-in-out" ] ] []
-                , span [ ariaHidden True, css [ form |> Maybe.mapOrElse (\_ -> "translate-x-5") "translate-x-0", "pointer-events-none absolute left-0 inline-block h-5 w-5 transform rounded-full border border-gray-200 bg-white shadow ring-0 transition-transform duration-200 ease-in-out" ] ] []
+                , span [ ariaHidden True, css [ model.tokenForm |> Maybe.mapOrElse (\_ -> "bg-indigo-600") "bg-gray-200", "pointer-events-none absolute mx-auto h-4 w-9 rounded-full transition-colors duration-200 ease-in-out" ] ] []
+                , span [ ariaHidden True, css [ model.tokenForm |> Maybe.mapOrElse (\_ -> "translate-x-5") "translate-x-0", "pointer-events-none absolute left-0 inline-block h-5 w-5 transform rounded-full border border-gray-200 bg-white shadow ring-0 transition-transform duration-200 ease-in-out" ] ] []
                 ]
                 |> Tooltip.tl "Enable private tokens"
             ]
-        , form
+        , model.tokenForm
             |> Maybe.mapOrElse
                 (\f ->
                     if organization.plan.privateLinks then
                         div [ class "mt-1" ]
                             [ div [ class "-space-y-px shadow-sm bg-white" ]
-                                ((tokens |> List.indexedMap (viewBodyProjectToken wrap confirm zone inputId f.token))
-                                    ++ [ viewBodyProjectTokenCreation wrap inputId (tokens == []) f ]
+                                ((model.tokens |> List.indexedMap (viewBodyProjectToken wrap confirm zone inputId f.token))
+                                    ++ [ viewBodyProjectTokenCreation wrap inputId (model.tokens == []) f ]
                                 )
                             , f.error |> Maybe.mapOrElse (\err -> p [ class "mt-2 text-sm text-red-600" ] [ text err ]) (p [] [])
                             ]
 
                     else
                         div [ class "mt-1" ] [ ProPlan.privateLinkWarning organization ]
+                )
+                (div [] [])
+        , buildShareUrl currentUrl erd.project model.kind model.content model.layout (model.tokenForm |> Maybe.andThen .token)
+            |> Maybe.mapOrElse
+                (\url ->
+                    div [ class "mt-2 bg-gray-100 text-gray-700 rounded text-sm px-3 py-2" ]
+                        [ a [ href url, target "_blank", rel "noopener", class "hover:link" ] [ text url ]
+                        ]
                 )
                 (div [] [])
         ]
@@ -484,15 +496,18 @@ viewBodyModeInput wrap inputId inputValue =
         ]
 
 
-viewBodyLink : Url -> ProjectInfo -> Model -> Html msg
-viewBodyLink currentUrl project model =
-    buildShareUrl currentUrl project model.kind model.content model.layout (model.tokenForm |> Maybe.andThen .token)
+viewBodyIframe : Url -> Model -> Html msg
+viewBodyIframe currentUrl model =
+    buildIframeUrl currentUrl model.kind model.content model.layout model.mode (model.tokenForm |> Maybe.andThen .token)
         |> Maybe.mapOrElse
             (\url ->
                 div [ class "mt-3" ]
-                    [ span [ class "block text-sm font-medium text-gray-700" ] [ text "Private link:" ]
-                    , div [ class "mt-1 bg-gray-100 text-gray-700 rounded text-sm px-3 py-2" ]
-                        [ a [ href url, target "_blank", rel "noopener", class "hover:link" ] [ text url ]
+                    [ span [ class "block text-sm font-medium text-gray-700" ] [ text "Embed iframe:" ]
+                    , div [ class "mt-1 bg-gray-100 text-gray-700 rounded text-sm px-3 py-2" ] [ text (buildIframeHtml url) ]
+                    , p [ class "mt-2 text-sm text-gray-500" ]
+                        [ text "You are publishing your schema? Please "
+                        , sendTweet Conf.constants.sharingTweet [ class "link" ] [ text "let us know" ]
+                        , text " and we can help spread it 🤗"
                         ]
                     ]
             )
@@ -516,24 +531,6 @@ buildShareUrl currentUrl project kind content layout token =
 
     else
         Nothing
-
-
-viewBodyIframe : Url -> Model -> Html msg
-viewBodyIframe currentUrl model =
-    buildIframeUrl currentUrl model.kind model.content model.layout model.mode (model.tokenForm |> Maybe.andThen .token)
-        |> Maybe.mapOrElse
-            (\url ->
-                div [ class "mt-3" ]
-                    [ span [ class "block text-sm font-medium text-gray-700" ] [ text "Embed iframe:" ]
-                    , div [ class "mt-1 bg-gray-100 text-gray-700 rounded text-sm px-3 py-2" ] [ text (buildIframeHtml url) ]
-                    , p [ class "mt-2 text-sm text-gray-500" ]
-                        [ text "You are publishing your schema? Please "
-                        , sendTweet Conf.constants.sharingTweet [ class "link" ] [ text "let us know" ]
-                        , text " and we can help spread it 🤗"
-                        ]
-                    ]
-            )
-            (div [] [])
 
 
 buildIframeUrl : Url -> EmbedKind -> String -> LayoutName -> EmbedModeId -> Maybe ProjectToken -> Maybe String
