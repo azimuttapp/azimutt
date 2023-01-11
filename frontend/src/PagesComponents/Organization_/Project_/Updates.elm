@@ -387,8 +387,9 @@ handleJsMessage now currentLayout msg model =
 
                         amlSidebar : Maybe AmlSidebar
                         amlSidebar =
-                            -- if sidebar is present do nothing, if not and all sources are AML, then open it
-                            model.amlSidebar |> Maybe.orElse (B.maybe (project.sources |> List.all (\s -> s.kind == SourceKind.AmlEditor)) (AmlSidebar.init Nothing (Just erd)))
+                            -- if sidebar is present do nothing, if not, all sources are AML and it's not embed, then open it
+                            model.amlSidebar
+                                |> Maybe.orElse (B.maybe (model.conf.update && (project.sources |> List.all (\s -> s.kind == SourceKind.AmlEditor))) (AmlSidebar.init Nothing (Just erd)))
                     in
                     ( { model | loaded = True, dirty = False, erd = Just erd, amlSidebar = amlSidebar }
                     , Cmd.batch

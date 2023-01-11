@@ -56,7 +56,7 @@ viewMemo platform conf cursorMode edit memo =
         |> Maybe.withDefault
             (div
                 ([ id htmlId
-                 , class ("select-none absolute p-3 cursor-pointer overflow-hidden border border-transparent border-dashed hover:border-gray-300 hover:resize hover:overflow-auto" ++ (memo.color |> Maybe.mapOrElse (\c -> " shadow rounded " ++ Tw.bg_200 c) ""))
+                 , class ("select-none absolute px-3 py-1 cursor-pointer overflow-hidden border border-transparent border-dashed hover:border-gray-300 hover:resize hover:overflow-auto" ++ (memo.color |> Maybe.mapOrElse (\c -> " shadow rounded " ++ Tw.bg_200 c) ""))
                  ]
                     ++ Bool.cond conf.layout [ onContextMenu platform (ContextMenuCreate (MemoContextMenu.view platform conf memo)) ] []
                     ++ Bool.cond conf.update [ stopDoubleClick (MemoMsg (MEdit memo)) ] []

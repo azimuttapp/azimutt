@@ -10,9 +10,12 @@ defmodule Azimutt.Tracking do
   alias Azimutt.Utils.Nil
   alias Azimutt.Utils.Result
 
-  def last_project_loaded(%User{} = current_user) do
+  def last_used_project(%User{} = current_user) do
     Event
-    |> where([e], e.name == "project_loaded" and e.created_by_id == ^current_user.id)
+    |> where(
+      [e],
+      e.created_by_id == ^current_user.id and (e.name == "project_loaded" or e.name == "project_created" or e.name == "project_updated")
+    )
     |> order_by([e], desc: e.created_at)
     |> limit(1)
     |> Repo.one()

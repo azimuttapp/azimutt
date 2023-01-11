@@ -502,7 +502,7 @@ viewNotes model =
 
 viewMarkdown : String -> Html msg
 viewMarkdown content =
-    Markdown.prose "mt-1 prose-sm" content
+    Markdown.prose "prose-sm -mt-1" content
 
 
 viewColumnStats : List Source -> Dict SourceIdStr ColumnStats -> Html msg

@@ -441,13 +441,29 @@ viewColumnName model column =
 
 viewComment : String -> Html msg
 viewComment comment =
-    Icon.outline Icons.comment "w-4 ml-1 opacity-50" |> Tooltip.t comment
+    Icon.outline Icons.comment "w-4 ml-1 opacity-50" |> Tooltip.t (buildTooltipContent comment)
 
 
 viewNotes : Model msg -> Maybe String -> String -> Html msg
 viewNotes model column notes =
     span ([ classList [ ( "cursor-pointer", model.conf.layout ) ] ] ++ Bool.cond model.conf.layout [ onClick (model.actions.notesClick column) ] [])
-        [ Icon.outline Icons.notes "w-4 ml-1 opacity-50" |> Tooltip.t notes ]
+        [ Icon.outline Icons.notes "w-4 ml-1 opacity-50" ]
+        |> Tooltip.t (buildTooltipContent notes)
+
+
+buildTooltipContent : String -> String
+buildTooltipContent content =
+    let
+        trimmed : String
+        trimmed =
+            content |> String.trim
+    in
+    trimmed
+        |> String.split "\n"
+        |> List.head
+        |> Maybe.withDefault ""
+        |> String.left 50
+        |> (\show -> Bool.cond (show == trimmed) show (show ++ "… double click to see all"))
 
 
 viewColumnKind : Model msg -> Column -> Html msg

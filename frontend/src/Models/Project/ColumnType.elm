@@ -40,7 +40,7 @@ type ParsedColumnType
     | Bool
     | Date
     | Time
-    | DateTime
+    | Instant
     | Interval
     | Uuid
     | Ip
@@ -72,7 +72,7 @@ parse kind =
         Time
 
     else if (kind |> Regex.matchI "^datetime(offset)?$") || (kind |> Regex.matchI "^timestamp(tz)? ?(\\(\\d+\\))?( with(out)? time zone)?$") then
-        DateTime
+        Instant
 
     else if kind |> Regex.matchI "^interval ?(\\(\\d+\\))?$" then
         Interval
@@ -120,8 +120,8 @@ toString kind =
         Time ->
             "Time"
 
-        DateTime ->
-            "DateTime"
+        Instant ->
+            "Instant"
 
         Interval ->
             "Interval"

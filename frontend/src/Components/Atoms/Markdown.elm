@@ -12,10 +12,10 @@ prose styles md =
     markdown
         (styles
             ++ " prose leading-tight "
-            ++ "prose-p:my-2 prose-p:first:mt-0 prose-p:last:mb-0 "
+            ++ "prose-p:my-2 "
             ++ "prose-ul:my-2 prose-li:my-0 "
-            ++ "prose-img:my-0 "
-            ++ "prose-pre:my-2 prose-pre:py-1 prose-pre:px-2 prose-pre:bg-gray-200 prose-pre:text-gray-700 prose-pre:first:mt-0 prose-pre:last:mb-0"
+            ++ "prose-img:my-2 "
+            ++ "prose-pre:my-2 prose-pre:py-1 prose-pre:px-2 prose-pre:bg-gray-200 prose-pre:text-gray-700"
         )
         md
 

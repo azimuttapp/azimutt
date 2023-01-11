@@ -9,7 +9,7 @@ defmodule Azimutt.TrackingTest do
     import Azimutt.OrganizationsFixtures
     import Azimutt.ProjectsFixtures
 
-    test "last_project_loaded/1 fetch last project_loaded for a user" do
+    test "last_used_project/1 fetch last project_loaded for a user" do
       user = user_fixture()
       user2 = user_fixture()
       organization = organization_fixture(user)
@@ -18,8 +18,8 @@ defmodule Azimutt.TrackingTest do
 
       assert {:ok, %Event{} = _event} = Tracking.project_loaded(user, project)
       assert {:ok, %Event{} = event2} = Tracking.project_loaded(user, project2)
-      assert {:ok, event2.id} == Tracking.last_project_loaded(user) |> Result.map(fn e -> e.id end)
-      assert {:error, :not_found} == Tracking.last_project_loaded(user2)
+      assert {:ok, event2.id} == Tracking.last_used_project(user) |> Result.map(fn e -> e.id end)
+      assert {:error, :not_found} == Tracking.last_used_project(user2)
     end
 
     test "create one event of each kind" do
