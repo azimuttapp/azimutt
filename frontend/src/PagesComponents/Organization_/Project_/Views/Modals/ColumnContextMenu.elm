@@ -1,6 +1,6 @@
 module PagesComponents.Organization_.Project_.Views.Modals.ColumnContextMenu exposing (view, viewHidden)
 
-import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
+import Components.Molecules.ContextMenu as ContextMenu
 import Conf
 import Html exposing (Html, div, text)
 import Libs.Dict as Dict
@@ -8,8 +8,9 @@ import Libs.Maybe as Maybe
 import Libs.Models.Platform exposing (Platform)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
-import PagesComponents.Organization_.Project_.Models exposing (Msg(..), NotesMsg(..), VirtualRelationMsg(..))
+import PagesComponents.Organization_.Project_.Models exposing (Msg(..), VirtualRelationMsg(..))
 import PagesComponents.Organization_.Project_.Models.Notes as NoteRef
+import PagesComponents.Organization_.Project_.Models.NotesMsg exposing (NotesMsg(..))
 
 
 view : Platform -> Int -> ColumnRef -> Maybe String -> Html Msg

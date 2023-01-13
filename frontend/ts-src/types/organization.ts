@@ -16,7 +16,9 @@ export interface Plan {
     id: PlanId
     name: string
     layouts: number | null
+    memos: number | null
     colors: boolean
+    private_links: boolean
     db_analysis: boolean
     db_access: boolean
 }
@@ -25,7 +27,9 @@ export const Plan = z.object({
     id: PlanId,
     name: z.string(),
     layouts: z.number().nullable(),
+    memos: z.number().nullable(),
     colors: z.boolean(),
+    private_links: z.boolean(),
     db_analysis: z.boolean(),
     db_access: z.boolean()
 }).strict()

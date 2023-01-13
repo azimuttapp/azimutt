@@ -27,8 +27,9 @@ defmodule Azimutt.Projects.Project do
     field :nb_types, :integer
     # number of SQL comments in the project
     field :nb_comments, :integer
-    field :nb_notes, :integer
     field :nb_layouts, :integer
+    field :nb_notes, :integer
+    field :nb_memos, :integer
     belongs_to :created_by, User, source: :created_by
     belongs_to :updated_by, User, source: :updated_by
     timestamps()
@@ -61,8 +62,9 @@ defmodule Azimutt.Projects.Project do
       :nb_relations,
       :nb_types,
       :nb_comments,
+      :nb_layouts,
       :nb_notes,
-      :nb_layouts
+      :nb_memos
     ]
 
     %Project{}
@@ -89,8 +91,9 @@ defmodule Azimutt.Projects.Project do
       :nb_relations,
       :nb_types,
       :nb_comments,
+      :nb_layouts,
       :nb_notes,
-      :nb_layouts
+      :nb_memos
     ]
 
     %Project{}
@@ -119,8 +122,9 @@ defmodule Azimutt.Projects.Project do
       :nb_relations,
       :nb_types,
       :nb_comments,
+      :nb_layouts,
       :nb_notes,
-      :nb_layouts
+      :nb_memos
     ]
 
     project
@@ -142,8 +146,9 @@ defmodule Azimutt.Projects.Project do
       :nb_relations,
       :nb_types,
       :nb_comments,
+      :nb_layouts,
       :nb_notes,
-      :nb_layouts
+      :nb_memos
     ]
 
     project

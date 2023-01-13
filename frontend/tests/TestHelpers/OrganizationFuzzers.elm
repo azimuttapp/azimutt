@@ -1,7 +1,6 @@
 module TestHelpers.OrganizationFuzzers exposing (..)
 
 import Fuzz exposing (Fuzzer)
-import Libs.Fuzz as Fuzz
 import Models.Organization exposing (Organization)
 import Models.OrganizationId exposing (OrganizationId)
 import Models.OrganizationName exposing (OrganizationName)
@@ -33,7 +32,7 @@ organizationName =
 
 plan : Fuzzer Plan
 plan =
-    Fuzz.map6 Plan planId planName (Fuzz.maybe intPosSmall) Fuzz.bool Fuzz.bool Fuzz.bool
+    Fuzz.map8 Plan planId planName (Fuzz.maybe intPosSmall) (Fuzz.maybe intPosSmall) Fuzz.bool Fuzz.bool Fuzz.bool Fuzz.bool
 
 
 planId : Fuzzer String

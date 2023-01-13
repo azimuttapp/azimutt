@@ -13,6 +13,7 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Result as Result
 import Libs.Tailwind as Tw
 import Models.Project.Source exposing (Source)
+import Models.ProjectInfo exposing (ProjectInfo)
 import Services.DatabaseSource as DatabaseSource
 import Services.JsonSource as JsonSource
 import Services.Lenses exposing (mapDatabaseSourceMCmd, mapJsonSourceMCmd, mapSqlSourceMCmd)
@@ -70,17 +71,17 @@ init sourceParsed modalClose noop databaseSource sqlSource jsonSource =
 -- UPDATE
 
 
-update : (Msg -> msg) -> Time.Posix -> Msg -> Model msg -> ( Model msg, Cmd msg )
-update wrap now msg model =
+update : (Msg -> msg) -> Time.Posix -> Maybe ProjectInfo -> Msg -> Model msg -> ( Model msg, Cmd msg )
+update wrap now project msg model =
     case msg of
         EmbedDatabaseSource message ->
-            model |> mapDatabaseSourceMCmd (DatabaseSource.update (EmbedDatabaseSource >> wrap) now message)
+            model |> mapDatabaseSourceMCmd (DatabaseSource.update (EmbedDatabaseSource >> wrap) now project message)
 
         EmbedSqlSource message ->
-            model |> mapSqlSourceMCmd (SqlSource.update (EmbedSqlSource >> wrap) now message)
+            model |> mapSqlSourceMCmd (SqlSource.update (EmbedSqlSource >> wrap) now project message)
 
         EmbedJsonSource message ->
-            model |> mapJsonSourceMCmd (JsonSource.update (EmbedJsonSource >> wrap) now message)
+            model |> mapJsonSourceMCmd (JsonSource.update (EmbedJsonSource >> wrap) now project message)
 
 
 

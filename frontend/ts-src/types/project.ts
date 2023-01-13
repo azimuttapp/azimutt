@@ -38,10 +38,14 @@ export type RelationName = string
 export const RelationName = z.string()
 export type TypeName = string
 export const TypeName = z.string()
+export type MemoId = number
+export const MemoId = z.number()
 export type LayoutName = string
 export const LayoutName = z.string()
 export type ZoomLevel = number
 export const ZoomLevel = z.number()
+export type ProjectTokenId = Uuid
+export const ProjectTokenId = Uuid
 
 export interface DatabaseConnection {
     kind: 'DatabaseConnection',
@@ -335,9 +339,24 @@ export const TableProps = z.object({
     hiddenColumns: z.boolean().optional()
 }).strict()
 
+export interface Memo {
+    id: MemoId
+    content: string
+    position: Position
+    size: Size
+}
+
+export const Memo = z.object({
+    id: MemoId,
+    content: z.string(),
+    position: Position,
+    size: Size
+}).strict()
+
 export interface Layout {
     canvas: CanvasProps
     tables: TableProps[]
+    memos?: Memo[]
     createdAt: Timestamp
     updatedAt: Timestamp
 }
@@ -345,6 +364,7 @@ export interface Layout {
 export const Layout = z.object({
     canvas: CanvasProps,
     tables: TableProps.array(),
+    memos: Memo.array().optional(),
     createdAt: Timestamp,
     updatedAt: Timestamp
 }).strict()
@@ -445,8 +465,9 @@ export interface ProjectStats {
     nbRelations: number
     nbTypes: number
     nbComments: number
-    nbNotes: number
     nbLayouts: number
+    nbNotes: number
+    nbMemos: number
 }
 
 export const ProjectStats = z.object({
@@ -456,8 +477,9 @@ export const ProjectStats = z.object({
     nbRelations: z.number(),
     nbTypes: z.number(),
     nbComments: z.number(),
+    nbLayouts: z.number(),
     nbNotes: z.number(),
-    nbLayouts: z.number()
+    nbMemos: z.number()
 }).strict()
 
 export interface ProjectInfoLocal extends ProjectStats {
@@ -467,6 +489,7 @@ export interface ProjectInfoLocal extends ProjectStats {
     name: ProjectName
     description?: string
     storage: 'local'
+    visibility: ProjectVisibility
     encodingVersion: ProjectVersion
     createdAt: Timestamp
     updatedAt: Timestamp
@@ -479,19 +502,20 @@ export const ProjectInfoLocal = ProjectStats.extend({
     name: ProjectName,
     description: z.string().optional(),
     storage: z.literal(ProjectStorage.enum.local),
+    visibility: ProjectVisibility,
     encodingVersion: ProjectVersion,
     createdAt: Timestamp,
     updatedAt: Timestamp
 }).strict()
 
-export type ProjectInfoRemote = Omit<ProjectInfoLocal, 'storage'> & { storage: 'remote', visibility: ProjectVisibility }
-export const ProjectInfoRemote = ProjectInfoLocal.omit({storage: true}).extend({storage: z.literal(ProjectStorage.enum.remote), visibility: ProjectVisibility}).strict()
+export type ProjectInfoRemote = Omit<ProjectInfoLocal, 'storage'> & { storage: 'remote' }
+export const ProjectInfoRemote = ProjectInfoLocal.omit({storage: true}).extend({storage: z.literal(ProjectStorage.enum.remote)}).strict()
 export type ProjectInfoRemoteWithContent = ProjectInfoRemote & { content: ProjectJson }
 export type ProjectInfo = ProjectInfoLocal | ProjectInfoRemote
 export const ProjectInfo = z.discriminatedUnion('storage', [ProjectInfoLocal, ProjectInfoRemote])
 export type ProjectInfoWithContent = ProjectInfoLocal | ProjectInfoRemoteWithContent
-export type ProjectInfoLocalLegacy = Omit<ProjectInfoLocal, 'organization'> & { visibility: ProjectVisibility }
-export const ProjectInfoLocalLegacy = ProjectInfoLocal.omit({organization: true}).extend({visibility: ProjectVisibility}).strict()
+export type ProjectInfoLocalLegacy = Omit<ProjectInfoLocal, 'organization'>
+export const ProjectInfoLocalLegacy = ProjectInfoLocal.omit({organization: true}).strict()
 
 
 export function isLocal(p: ProjectInfo): p is ProjectInfoLocal {
@@ -626,7 +650,8 @@ export function computeStats(p: ProjectStored): ProjectStats {
         nbRelations: p.sources.reduce((acc, src) => acc + src.relations.length, 0),
         nbTypes: Object.keys(types).length,
         nbComments: p.sources.flatMap(s => s.tables.flatMap(t => [t.comment].concat(t.columns.map(c => c.comment)).filter(c => !!c))).length,
+        nbLayouts: Object.keys(p.layouts).length,
         nbNotes: Object.keys(p.notes || {}).length,
-        nbLayouts: Object.keys(p.layouts).length
+        nbMemos: Object.values(p.layouts).flatMap(l => l.memos || []).length,
     }, ProjectStats, 'ProjectStats')
 }

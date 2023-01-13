@@ -1,5 +1,6 @@
 defmodule Azimutt.AccountsFixtures do
   @moduledoc false
+  alias Azimutt.Accounts
 
   def unique_user_email, do: "user#{System.unique_integer()}@example.com"
   def valid_user_password, do: "hello world!"
@@ -19,7 +20,7 @@ defmodule Azimutt.AccountsFixtures do
     {:ok, user} =
       attrs
       |> valid_user_attributes()
-      |> Azimutt.Accounts.register_password_user(DateTime.utc_now())
+      |> Accounts.register_password_user(DateTime.utc_now())
 
     user
   end

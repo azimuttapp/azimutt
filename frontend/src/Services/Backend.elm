@@ -1,16 +1,17 @@
-module Services.Backend exposing (Error, Sample, SampleSchema, blogArticleUrl, blogUrl, embedUrl, errorStatus, errorToString, getCurrentUser, getDatabaseSchema, getOrganizationsAndProjects, getSamples, homeUrl, internal, loginUrl, logoutUrl, organizationBillingUrl, organizationUrl, resourceUrl)
+module Services.Backend exposing (Error, Sample, SampleSchema, TableColorTweet, blogArticleUrl, blogUrl, createProjectToken, embedUrl, errorStatus, errorToString, getCurrentUser, getDatabaseSchema, getOrganizationsAndProjects, getProjectTokens, getSamples, getTableColorTweet, homeUrl, internal, loginUrl, logoutUrl, organizationBillingUrl, organizationUrl, resourceUrl, revokeProjectToken)
 
-import Components.Atoms.Icon as Icon exposing (Icon(..))
+import Components.Atoms.Icon as Icon exposing (Icon)
 import Either exposing (Either(..))
-import Http exposing (Error(..))
-import Json.Decode as Decode
+import Http exposing (Error(..), Expect)
+import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Libs.Bool as Bool
 import Libs.Http as Http
 import Libs.Json.Decode as Decode
+import Libs.Json.Encode as Encode
 import Libs.Maybe as Maybe
+import Libs.Models exposing (TweetUrl)
 import Libs.Models.DatabaseUrl as DatabaseUrl exposing (DatabaseUrl)
-import Libs.Result as Result
 import Libs.Tailwind exposing (Color, decodeColor)
 import Libs.Time as Time
 import Libs.Url as Url
@@ -22,7 +23,8 @@ import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectId as ProjectId exposing (ProjectId)
 import Models.Project.ProjectStorage as ProjectStorage exposing (ProjectStorage)
 import Models.Project.ProjectVisibility as ProjectVisibility exposing (ProjectVisibility)
-import Models.ProjectInfo exposing (ProjectInfo)
+import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
+import Models.ProjectToken as ProjectToken exposing (ProjectToken)
 import Models.User as User exposing (User)
 import PagesComponents.Organization_.Project_.Models.EmbedKind as EmbedKind exposing (EmbedKind)
 import PagesComponents.Organization_.Project_.Models.EmbedMode as EmbedMode exposing (EmbedModeId)
@@ -92,14 +94,15 @@ blogArticleUrl slug =
     "/blog/" ++ slug
 
 
-embedUrl : EmbedKind -> String -> LayoutName -> EmbedModeId -> String
-embedUrl kind content layout mode =
+embedUrl : EmbedKind -> String -> LayoutName -> EmbedModeId -> Maybe ProjectToken -> String
+embedUrl kind content layout mode token =
     let
         queryString : String
         queryString =
             [ ( EmbedKind.value kind, content )
             , ( "layout", layout )
             , ( EmbedMode.key, mode )
+            , ( "token", token |> Maybe.mapOrElse .id "" )
             ]
                 |> List.filter (\( _, value ) -> value /= "")
                 |> Url.buildQueryString
@@ -141,25 +144,41 @@ type alias Sample =
 
 getSamples : (Result Error (List Sample) -> msg) -> Cmd msg
 getSamples toMsg =
-    riskyGet
-        { url = "/api/v1/gallery"
-        , expect = Http.expectJson (Result.mapError buildError >> toMsg) (Decode.list decodeSample)
-        }
+    riskyGet { url = "/api/v1/gallery", expect = expectJson toMsg (Decode.list decodeSample) }
 
 
 getCurrentUser : (Result Error (Maybe User) -> msg) -> Cmd msg
 getCurrentUser toMsg =
-    riskyGet
-        { url = "/api/v1/users/current"
-        , expect = Http.expectJson (recoverUnauthorized >> Result.mapError buildError >> toMsg) User.decode
-        }
+    riskyGet { url = "/api/v1/users/current", expect = expectJson (recoverUnauthorized >> toMsg) User.decode }
 
 
 getOrganizationsAndProjects : (Result Error ( List Organization, List ProjectInfo ) -> msg) -> Cmd msg
 getOrganizationsAndProjects toMsg =
+    riskyGet { url = "/api/v1/organizations?expand=plan,projects", expect = expectJson (Result.map formatOrgasAndProjects >> toMsg) (Decode.list decodeOrga) }
+
+
+getProjectTokens : ProjectInfo -> (Result Error (List ProjectToken) -> msg) -> Cmd msg
+getProjectTokens project toMsg =
     riskyGet
-        { url = "/api/v1/organizations?expand=plan,projects"
-        , expect = Http.expectJson (Result.bimap buildError formatOrgasAndProjects >> toMsg) (Decode.list decodeOrga)
+        { url = "/api/v1/organizations/" ++ (project |> ProjectInfo.organizationId) ++ "/projects/" ++ project.id ++ "/access-tokens"
+        , expect = expectJson toMsg (Decode.list ProjectToken.decode)
+        }
+
+
+createProjectToken : String -> Maybe Time.Posix -> ProjectInfo -> (Result Error () -> msg) -> Cmd msg
+createProjectToken name expireAt project toMsg =
+    riskyPost
+        { url = "/api/v1/organizations/" ++ (project |> ProjectInfo.organizationId) ++ "/projects/" ++ project.id ++ "/access-tokens"
+        , body = [ ( "name", name |> Encode.string ), ( "expire_at", expireAt |> Encode.maybe Time.encodeIso ) ] |> Encode.object |> Http.jsonBody
+        , expect = expectEmpty toMsg
+        }
+
+
+revokeProjectToken : ProjectToken -> ProjectInfo -> (Result Error () -> msg) -> Cmd msg
+revokeProjectToken token project toMsg =
+    riskyDelete
+        { url = "/api/v1/organizations/" ++ (project |> ProjectInfo.organizationId) ++ "/projects/" ++ project.id ++ "/access-tokens/" ++ token.id
+        , expect = expectEmpty toMsg
         }
 
 
@@ -167,15 +186,27 @@ getDatabaseSchema : DatabaseUrl -> (Result Error String -> msg) -> Cmd msg
 getDatabaseSchema url toMsg =
     riskyPost
         { url = "/api/v1/analyzer/schema"
-        , body = databaseSchemaBody url |> Http.jsonBody
+        , body = [ ( "url", url |> DatabaseUrl.encode ) ] |> Encode.object |> Http.jsonBody
         , expect = Http.expectStringResponse toMsg handleResponse
         }
 
 
-databaseSchemaBody : DatabaseUrl -> Encode.Value
-databaseSchemaBody url =
-    Encode.object
-        [ ( "url", url |> DatabaseUrl.encode ) ]
+type alias TableColorTweet =
+    { tweet : String, errors : List String }
+
+
+getTableColorTweet : OrganizationId -> TweetUrl -> (Result Error TableColorTweet -> msg) -> Cmd msg
+getTableColorTweet organizationId tweetUrl toMsg =
+    riskyPost
+        { url = "/api/v1/organizations/" ++ organizationId ++ "/tweet-for-table-colors"
+        , body = [ ( "tweet_url", tweetUrl |> Encode.string ) ] |> Encode.object |> Http.jsonBody
+        , expect =
+            expectJson toMsg
+                (Decode.map2 TableColorTweet
+                    (Decode.field "tweet" Decode.string)
+                    (Decode.field "errors" (Decode.list Decode.string))
+                )
+        }
 
 
 riskyGet : { url : String, expect : Http.Expect msg } -> Cmd msg
@@ -186,6 +217,21 @@ riskyGet r =
 riskyPost : { url : String, body : Http.Body, expect : Http.Expect msg } -> Cmd msg
 riskyPost r =
     Http.riskyRequest { method = "POST", url = r.url, headers = [], body = r.body, expect = r.expect, timeout = Nothing, tracker = Nothing }
+
+
+riskyDelete : { url : String, expect : Http.Expect msg } -> Cmd msg
+riskyDelete r =
+    Http.riskyRequest { method = "DELETE", url = r.url, headers = [], body = Http.emptyBody, expect = r.expect, timeout = Nothing, tracker = Nothing }
+
+
+expectJson : (Result Error a -> msg) -> Decoder a -> Expect msg
+expectJson toMsg decoder =
+    Http.expectStringResponse toMsg (handleResponse >> Result.andThen (Decode.decodeString decoder >> Result.mapError (Decode.errorToStringNoValue >> Error 0)))
+
+
+expectEmpty : (Result Error () -> msg) -> Expect msg
+expectEmpty toMsg =
+    Http.expectStringResponse toMsg (handleResponse >> Result.andThen (\v -> Bool.cond (v == "") (Ok ()) (Err (Error 0 ("Expected empty string but got: " ++ v)))))
 
 
 
@@ -215,8 +261,9 @@ formatOrgasAndProjects orgas =
                             , nbRelations = p.nbRelations
                             , nbTypes = p.nbTypes
                             , nbComments = p.nbComments
-                            , nbNotes = p.nbNotes
                             , nbLayouts = p.nbLayouts
+                            , nbNotes = p.nbNotes
+                            , nbMemos = p.nbMemos
                             , createdAt = p.createdAt
                             , updatedAt = p.updatedAt
                             }
@@ -265,8 +312,9 @@ type alias OrgaProject =
     , nbRelations : Int
     , nbTypes : Int
     , nbComments : Int
-    , nbNotes : Int
     , nbLayouts : Int
+    , nbNotes : Int
+    , nbMemos : Int
     , createdAt : Time.Posix
     , updatedAt : Time.Posix
     , archivedAt : Maybe Time.Posix
@@ -289,7 +337,7 @@ decodeOrga =
 
 decodeProject : Decode.Decoder OrgaProject
 decodeProject =
-    Decode.map18 OrgaProject
+    Decode.map19 OrgaProject
         (Decode.field "id" Decode.string)
         (Decode.field "slug" Decode.string)
         (Decode.field "name" Decode.string)
@@ -303,8 +351,9 @@ decodeProject =
         (Decode.field "nb_relations" Decode.int)
         (Decode.field "nb_types" Decode.int)
         (Decode.field "nb_comments" Decode.int)
-        (Decode.field "nb_notes" Decode.int)
         (Decode.field "nb_layouts" Decode.int)
+        (Decode.field "nb_notes" Decode.int)
+        (Decode.field "nb_memos" Decode.int)
         (Decode.field "created_at" Time.decode)
         (Decode.field "updated_at" Time.decode)
         (Decode.maybeField "archived_at" Time.decode)
@@ -337,22 +386,22 @@ handleResponse response =
         Http.BadStatus_ metadata body ->
             case body |> Decode.decodeString errorDecoder of
                 Ok err ->
-                    metadata.statusText ++ ": " ++ err |> Error metadata.statusCode |> Err
+                    err |> Error metadata.statusCode |> Err
 
                 Err _ ->
-                    (Http.BadStatus metadata.statusCode |> Http.errorToString) ++ (Bool.cond (String.isEmpty body) "" ": " ++ body) |> Error metadata.statusCode |> Err
+                    (Http.BadStatus metadata.statusCode |> Http.errorToString) ++ Bool.cond (String.isEmpty body) "" (": " ++ body) |> Error metadata.statusCode |> Err
 
         Http.GoodStatus_ _ body ->
             Ok body
 
 
-recoverUnauthorized : Result Http.Error a -> Result Http.Error (Maybe a)
+recoverUnauthorized : Result Error a -> Result Error (Maybe a)
 recoverUnauthorized r =
     case r of
         Ok a ->
             Ok (Just a)
 
-        Err (BadStatus 401) ->
+        Err (Error 401 _) ->
             Ok Nothing
 
         Err e ->

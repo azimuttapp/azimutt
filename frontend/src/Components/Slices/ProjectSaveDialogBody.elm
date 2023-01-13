@@ -208,41 +208,41 @@ component name render =
     ( name, \{ projectSaveDocState } -> render projectSaveDocState )
 
 
-sampleCloseModal : ElmBook.Msg state
-sampleCloseModal =
+docCloseModal : ElmBook.Msg state
+docCloseModal =
     ElmBook.Actions.logAction "modalClose"
 
 
-sampleSave : ProjectName -> Organization -> ProjectStorage -> ElmBook.Msg state
-sampleSave name orga storage =
+docSave : ProjectName -> Organization -> ProjectStorage -> ElmBook.Msg state
+docSave name orga storage =
     ElmBook.Actions.logAction ("save: " ++ name ++ ", " ++ orga.name ++ ", " ++ storageToString storage)
 
 
-sampleLoginUrl : String
-sampleLoginUrl =
+docLoginUrl : String
+docLoginUrl =
     "#login"
 
 
-sampleTitleId : String
-sampleTitleId =
+docTitleId : String
+docTitleId =
     "modal-id-title"
 
 
-sampleProjectName : String
-sampleProjectName =
+docProjectName : String
+docProjectName =
     "MyProject"
 
 
-samplePlan : Plan
-samplePlan =
-    Plan "free" "Free plan" (Just 3) False False False
+docPlan : Plan
+docPlan =
+    Plan "free" "Free plan" (Just 3) (Just 1) False False False False
 
 
-sampleOrganizations : List Organization
-sampleOrganizations =
-    [ Organization "00000000-0000-0000-0000-000000000001" "orga-1" "Orga 1" samplePlan "logo" Nothing Nothing Nothing
-    , Organization "00000000-0000-0000-0000-000000000002" "orga-2" "Orga 2" samplePlan "logo" Nothing Nothing Nothing
-    , Organization "00000000-0000-0000-0000-000000000003" "orga-3" "Orga 3" samplePlan "logo" Nothing Nothing Nothing
+docOrganizations : List Organization
+docOrganizations =
+    [ Organization "00000000-0000-0000-0000-000000000001" "orga-1" "Orga 1" docPlan "logo" Nothing Nothing Nothing
+    , Organization "00000000-0000-0000-0000-000000000002" "orga-2" "Orga 2" docPlan "logo" Nothing Nothing Nothing
+    , Organization "00000000-0000-0000-0000-000000000003" "orga-3" "Orga 3" docPlan "logo" Nothing Nothing Nothing
     ]
 
 
@@ -250,6 +250,6 @@ doc : Chapter (SharedDocState x)
 doc =
     Chapter.chapter "ProjectSaveDialogBody"
         |> Chapter.renderStatefulComponentList
-            [ component "signIn" (\_ -> signIn sampleCloseModal sampleLoginUrl sampleTitleId)
-            , component "selectSave" (selectSave updateDocState sampleCloseModal sampleSave sampleTitleId sampleOrganizations sampleProjectName)
+            [ component "signIn" (\_ -> signIn docCloseModal docLoginUrl docTitleId)
+            , component "selectSave" (selectSave updateDocState docCloseModal docSave docTitleId docOrganizations docProjectName)
             ]

@@ -27,7 +27,6 @@ init urlOrganization =
             , html = Just "h-full"
             , body = Just "h-full"
             }
-        , Ports.trackPage "create-project"
         , Ports.getLegacyProjects
         ]
     )

@@ -1,13 +1,13 @@
-port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProject, createProjectTmp, deleteProject, downloadFile, focus, fullscreen, getColumnStats, getLegacyProjects, getProject, getTableStats, listenHotkeys, mouseDown, moveProjectTo, observeSize, observeTableSize, observeTablesSize, onJsMessage, projectDirty, readLocalFile, scrollTo, setMeta, toast, track, trackError, trackJsonError, trackPage, unhandledJsMsgError, updateProject, updateProjectTmp)
+port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProject, createProjectTmp, deleteProject, downloadFile, fireworks, focus, fullscreen, getColumnStats, getLegacyProjects, getProject, getTableStats, listenHotkeys, mouseDown, moveProjectTo, observeLayout, observeSize, observeTableSize, observeTablesSize, onJsMessage, projectDirty, readLocalFile, scrollTo, setMeta, toast, track, unhandledJsMsgError, updateProject, updateProjectTmp)
 
 import Dict exposing (Dict)
 import FileValue exposing (File)
-import Json.Decode as Decode exposing (Decoder, Value, errorToString)
+import Json.Decode as Decode exposing (Decoder, Value)
 import Json.Encode as Encode
 import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
 import Libs.List as List
-import Libs.Models exposing (FileContent, SizeChange, TrackEvent)
+import Libs.Models exposing (FileContent, SizeChange)
 import Libs.Models.DatabaseUrl as DatabaseUrl exposing (DatabaseUrl)
 import Libs.Models.Delta as Delta exposing (Delta)
 import Libs.Models.FileName exposing (FileName)
@@ -25,10 +25,13 @@ import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableStats as TableStats exposing (TableStats)
 import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
+import Models.ProjectTokenId as ProjectTokenId exposing (ProjectTokenId)
 import Models.Route as Route exposing (Route)
 import Models.Size as Size
+import Models.TrackEvent as TrackEvent exposing (TrackEvent)
+import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
+import PagesComponents.Organization_.Project_.Models.MemoId as MemoId exposing (MemoId)
 import Storage.ProjectV2 exposing (decodeProject)
-import Track
 
 
 click : HtmlId -> Cmd msg
@@ -81,9 +84,9 @@ getLegacyProjects =
     messageToJs GetLegacyProjects
 
 
-getProject : OrganizationId -> ProjectId -> Cmd msg
-getProject organization project =
-    messageToJs (GetProject organization project)
+getProject : OrganizationId -> ProjectId -> Maybe ProjectTokenId -> Cmd msg
+getProject organization project token =
+    messageToJs (GetProject organization project token)
 
 
 createProjectTmp : Project -> Cmd msg
@@ -118,7 +121,7 @@ downloadFile filename content =
 
 deleteProject : ProjectInfo -> Maybe String -> Cmd msg
 deleteProject project redirect =
-    Cmd.batch [ messageToJs (DeleteProject project redirect), track (Track.deleteProject project) ]
+    messageToJs (DeleteProject project redirect)
 
 
 projectDirty : Bool -> Cmd msg
@@ -156,6 +159,11 @@ observeTablesSize ids =
     observeSizes (List.map TableId.toHtmlId ids)
 
 
+observeLayout : ErdLayout -> Cmd msg
+observeLayout layout =
+    observeSizes ((layout.tables |> List.map (.id >> TableId.toHtmlId)) ++ (layout.memos |> List.map (.id >> MemoId.toHtmlId)))
+
+
 observeSizes : List HtmlId -> Cmd msg
 observeSizes ids =
     if ids |> List.isEmpty then
@@ -180,28 +188,14 @@ confettiPride =
     messageToJs ConfettiPride
 
 
+fireworks : Cmd msg
+fireworks =
+    messageToJs Fireworks
+
+
 track : TrackEvent -> Cmd msg
 track event =
-    if event.enabled then
-        messageToJs (TrackEvent event.name (Encode.object (event.details |> List.map (\( k, v ) -> ( k, v |> Encode.string )))))
-
-    else
-        Cmd.none
-
-
-trackPage : String -> Cmd msg
-trackPage name =
-    messageToJs (TrackPage name)
-
-
-trackJsonError : String -> Decode.Error -> Cmd msg
-trackJsonError name error =
-    messageToJs (TrackError name (Encode.object [ ( "message", errorToString error |> Encode.string ) ]))
-
-
-trackError : String -> String -> Cmd msg
-trackError name error =
-    messageToJs (TrackError name (Encode.object [ ( "error", error |> Encode.string ) ]))
+    messageToJs (Track event)
 
 
 type alias MetaInfos =
@@ -224,7 +218,7 @@ type ElmMsg
     | AutofocusWithin HtmlId
     | Toast String String
     | GetLegacyProjects
-    | GetProject OrganizationId ProjectId
+    | GetProject OrganizationId ProjectId (Maybe ProjectTokenId)
     | CreateProjectTmp Project
     | UpdateProjectTmp Project
     | CreateProject OrganizationId ProjectStorage Project
@@ -240,9 +234,8 @@ type ElmMsg
     | ListenKeys (Dict String (List Hotkey))
     | Confetti HtmlId
     | ConfettiPride
-    | TrackPage String
-    | TrackEvent String Value
-    | TrackError String Value
+    | Fireworks
+    | Track TrackEvent
 
 
 type JsMsg
@@ -256,10 +249,10 @@ type JsMsg
     | GotHotkey String
     | GotKeyHold String Bool
     | GotToast String String
-    | GotTableShow TableId (Maybe Position.CanvasGrid)
+    | GotTableShow TableId (Maybe Position.Grid)
     | GotTableHide TableId
     | GotTableToggleColumns TableId
-    | GotTablePosition TableId Position.CanvasGrid
+    | GotTablePosition TableId Position.Grid
     | GotTableMove TableId Delta
     | GotTableSelect TableId
     | GotTableColor TableId Color
@@ -328,8 +321,8 @@ elmEncoder elm =
         GetLegacyProjects ->
             Encode.object [ ( "kind", "GetLegacyProjects" |> Encode.string ) ]
 
-        GetProject organization project ->
-            Encode.object [ ( "kind", "GetProject" |> Encode.string ), ( "organization", organization |> OrganizationId.encode ), ( "project", project |> ProjectId.encode ) ]
+        GetProject organization project token ->
+            Encode.object [ ( "kind", "GetProject" |> Encode.string ), ( "organization", organization |> OrganizationId.encode ), ( "project", project |> ProjectId.encode ), ( "token", token |> Encode.maybe ProjectTokenId.encode ) ]
 
         CreateProjectTmp project ->
             Encode.object [ ( "kind", "CreateProjectTmp" |> Encode.string ), ( "project", project |> Project.encode ) ]
@@ -376,14 +369,11 @@ elmEncoder elm =
         ConfettiPride ->
             Encode.object [ ( "kind", "ConfettiPride" |> Encode.string ) ]
 
-        TrackPage name ->
-            Encode.object [ ( "kind", "TrackPage" |> Encode.string ), ( "name", name |> Encode.string ) ]
+        Fireworks ->
+            Encode.object [ ( "kind", "Fireworks" |> Encode.string ) ]
 
-        TrackEvent name details ->
-            Encode.object [ ( "kind", "TrackEvent" |> Encode.string ), ( "name", name |> Encode.string ), ( "details", details ) ]
-
-        TrackError name details ->
-            Encode.object [ ( "kind", "TrackError" |> Encode.string ), ( "name", name |> Encode.string ), ( "details", details ) ]
+        Track event ->
+            Encode.object [ ( "kind", "Track" |> Encode.string ), ( "event", event |> TrackEvent.encode ) ]
 
 
 jsDecoder : Decoder JsMsg

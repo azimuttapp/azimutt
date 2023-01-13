@@ -45,7 +45,7 @@ azimutt_org_attrs = %{
 
 {:ok, azimutt_org} = Azimutt.Organizations.create_non_personal_organization(azimutt_org_attrs, admin)
 
-{:ok, basic_project_file} = File.read("priv/static/elm/samples/basic.json")
+{:ok, basic_project_file} = File.read("priv/static/elm/samples/basic.azimutt.json")
 IO.inspect(basic_project_file, label: "basic_project_file")
 
 {:ok, basic_project} =

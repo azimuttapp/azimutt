@@ -7,6 +7,7 @@ import Gen.Route as Route
 import Libs.Bool as Bool
 import Libs.Task as T
 import Models.ErdProps as ErdProps
+import Models.ProjectTokenId exposing (ProjectTokenId)
 import Page
 import PagesComponents.Organization_.Project_.Models as Models exposing (Msg(..))
 import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode
@@ -17,7 +18,7 @@ import PagesComponents.Organization_.Project_.Views as Views
 import Ports
 import Request
 import Services.Toasts as Toasts
-import Shared exposing (StoredProjects(..))
+import Shared
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
@@ -25,10 +26,13 @@ page shared req =
     let
         ( urlOrganization, urlProject ) =
             ( Just req.params.organization, Just req.params.project )
+
+        ( urlLayout, urlToken, urlSave ) =
+            ( req.query |> Dict.get "layout", req.query |> Dict.get "token", req.query |> Dict.member "save" )
     in
     Page.element
-        { init = init req.params req.query
-        , update = Updates.update Nothing shared.now urlOrganization shared.organizations shared.projects
+        { init = init req.params urlToken urlSave
+        , update = Updates.update urlLayout shared.zone shared.now urlOrganization shared.organizations shared.projects
         , view = Views.view (Request.pushRoute Route.Projects req) req.url urlOrganization urlProject shared
         , subscriptions = Subscriptions.subscriptions
         }
@@ -46,9 +50,9 @@ type alias Msg =
 -- INIT
 
 
-init : Params -> Dict String String -> ( Model, Cmd Msg )
-init params query =
-    ( { conf = ErdConf.default
+init : Params -> Maybe ProjectTokenId -> Bool -> ( Model, Cmd Msg )
+init params token save =
+    ( { conf = ErdConf.project token
       , navbar = { mobileMenuOpen = False, search = { text = "", active = 0 } }
       , erdElem = ErdProps.zero
       , loaded = False
@@ -62,6 +66,7 @@ init params query =
       , selectionBox = Nothing
       , newLayout = Nothing
       , editNotes = Nothing
+      , editMemo = Nothing
       , amlSidebar = Nothing
       , detailsSidebar = Nothing
       , virtualRelation = Nothing
@@ -91,10 +96,9 @@ init params query =
             , html = Just "h-full"
             , body = Just "h-full overflow-hidden"
             }
-        , Ports.trackPage "app"
         , Ports.listenHotkeys Conf.hotkeys
         , Ports.getLegacyProjects
-        , Ports.getProject params.organization params.project
-        , Bool.cond (query |> Dict.member "save") (T.sendAfter 1000 TriggerSaveProject) Cmd.none
+        , Ports.getProject params.organization params.project token
+        , Bool.cond save (T.sendAfter 1000 TriggerSaveProject) Cmd.none
         ]
     )

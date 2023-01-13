@@ -1,4 +1,4 @@
-module Models.Position exposing (Canvas, CanvasGrid, Diagram, Document, Viewport, canvas, canvasToViewport, debugDiagram, decodeDiagram, decodeDocument, decodeGrid, decodeViewport, diagram, diagramToCanvas, diffCanvas, diffViewport, divCanvas, encodeDiagram, encodeGrid, extractCanvas, extractGrid, extractViewport, fromEventViewport, grid, minCanvas, moveCanvas, moveDiagram, moveGrid, moveViewport, multCanvas, negateGrid, offGrid, onGrid, roundDiagram, sizeCanvas, styleTransformCanvas, styleTransformDiagram, styleTransformViewport, stylesGrid, stylesViewport, toStringRoundDiagram, toStringRoundViewport, viewport, viewportToCanvas, zeroCanvas, zeroDiagram, zeroGrid, zeroViewport)
+module Models.Position exposing (Canvas, Diagram, Document, Grid, Viewport, canvas, canvasToViewport, debugDiagram, decodeDiagram, decodeDocument, decodeGrid, decodeViewport, diagram, diagramToCanvas, diffCanvas, diffViewport, divCanvas, encodeDiagram, encodeGrid, extractCanvas, extractGrid, extractViewport, fromEventViewport, grid, minCanvas, minGrid, moveCanvas, moveDiagram, moveGrid, moveViewport, multCanvas, negateGrid, offGrid, onGrid, roundDiagram, sizeCanvas, styleTransformCanvas, styleTransformDiagram, styleTransformViewport, stylesGrid, stylesViewport, toStringRoundDiagram, toStringRoundGrid, toStringRoundViewport, viewport, viewportToCanvas, zeroCanvas, zeroDiagram, zeroGrid, zeroViewport)
 
 import Html exposing (Attribute, Html)
 import Html.Attributes exposing (style)
@@ -28,8 +28,8 @@ type Canvas
     = Canvas Position -- position in the canvas (for tables, relations...)
 
 
-type CanvasGrid
-    = CanvasGrid Position -- same as Canvas but with a grid step
+type Grid
+    = Grid Position -- same as Canvas but with a grid step
 
 
 gridStep : Int
@@ -83,14 +83,14 @@ extractCanvas (Canvas pos) =
     pos
 
 
-grid : Position -> CanvasGrid
+grid : Position -> Grid
 grid pos =
     -- use it only in last resort in very narrow and explicit scope
-    pos |> alignPos |> CanvasGrid
+    pos |> alignPos |> Grid
 
 
-extractGrid : CanvasGrid -> Position
-extractGrid (CanvasGrid pos) =
+extractGrid : Grid -> Position
+extractGrid (Grid pos) =
     -- use it only in last resort in very narrow and explicit scope
     pos
 
@@ -110,9 +110,9 @@ zeroCanvas =
     Canvas Position.zero
 
 
-zeroGrid : CanvasGrid
+zeroGrid : Grid
 zeroGrid =
-    CanvasGrid Position.zero
+    Grid Position.zero
 
 
 fromEventViewport : Event -> Viewport
@@ -135,19 +135,24 @@ moveCanvas delta (Canvas pos) =
     pos |> Position.move delta |> canvas
 
 
-moveGrid : Delta -> CanvasGrid -> CanvasGrid
-moveGrid delta (CanvasGrid pos) =
+moveGrid : Delta -> Grid -> Grid
+moveGrid delta (Grid pos) =
     pos |> Position.move delta |> grid
 
 
-negateGrid : CanvasGrid -> CanvasGrid
-negateGrid (CanvasGrid pos) =
-    Position.negate pos |> CanvasGrid
+negateGrid : Grid -> Grid
+negateGrid (Grid pos) =
+    Position.negate pos |> Grid
 
 
 minCanvas : Canvas -> Canvas -> Canvas
 minCanvas (Canvas p1) (Canvas p2) =
     Position.min p1 p2 |> canvas
+
+
+minGrid : Grid -> Grid -> Grid
+minGrid (Grid p1) (Grid p2) =
+    Position.min p1 p2 |> grid
 
 
 sizeCanvas : Canvas -> Canvas -> Size.Canvas
@@ -180,13 +185,13 @@ roundDiagram (Diagram pos) =
     pos |> Position.round |> diagram
 
 
-onGrid : Canvas -> CanvasGrid
+onGrid : Canvas -> Grid
 onGrid (Canvas pos) =
     grid pos
 
 
-offGrid : CanvasGrid -> Canvas
-offGrid (CanvasGrid pos) =
+offGrid : Grid -> Canvas
+offGrid (Grid pos) =
     canvas pos
 
 
@@ -218,8 +223,8 @@ stylesViewport (Viewport pos) =
     Position.styles pos
 
 
-stylesGrid : CanvasGrid -> List (Attribute msg)
-stylesGrid (CanvasGrid pos) =
+stylesGrid : Grid -> List (Attribute msg)
+stylesGrid (Grid pos) =
     Position.styles pos
 
 
@@ -245,6 +250,11 @@ toStringRoundViewport (Viewport pos) =
 
 toStringRoundDiagram : Diagram -> String
 toStringRoundDiagram (Diagram pos) =
+    Position.toStringRound pos
+
+
+toStringRoundGrid : Grid -> String
+toStringRoundGrid (Grid pos) =
     Position.toStringRound pos
 
 
@@ -277,11 +287,11 @@ decodeDiagram =
     Position.decode |> Decode.map diagram
 
 
-encodeGrid : CanvasGrid -> Value
-encodeGrid (CanvasGrid pos) =
+encodeGrid : Grid -> Value
+encodeGrid (Grid pos) =
     Position.encode pos
 
 
-decodeGrid : Decode.Decoder CanvasGrid
+decodeGrid : Decode.Decoder Grid
 decodeGrid =
     Position.decode |> Decode.map grid

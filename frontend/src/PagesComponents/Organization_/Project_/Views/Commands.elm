@@ -38,7 +38,7 @@ viewCommands conf cursorMode canvasZoom htmlId hasTables openedDropdown amlSideb
     div [ class "az-commands absolute bottom-0 right-0 m-3 print:hidden" ]
         [ if conf.move && hasTables then
             span [ class "relative z-0 inline-flex shadow-sm rounded-md" ]
-                [ button [ type_ "button", onClick FitContent, css [ "rounded-l-md", buttonStyles, classic ] ] [ Icon.solid ArrowsExpand "" ]
+                [ button [ type_ "button", onClick FitToScreen, css [ "rounded-l-md", buttonStyles, classic ] ] [ Icon.solid ArrowsExpand "" ]
                     |> Tooltip.t "Fit diagram to screen"
                 , button [ type_ "button", onClick ArrangeTables, css [ "-ml-px rounded-r-md", buttonStyles, classic ] ] [ Icon.solid CubeTransparent "" ]
                     |> Tooltip.t "Arrange tables"

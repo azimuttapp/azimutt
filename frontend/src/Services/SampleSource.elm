@@ -47,7 +47,7 @@ update wrap msg model =
     case msg of
         GetSample sample ->
             ( init |> (\m -> { m | selectedSample = Just sample })
-            , Ports.getProject OrganizationId.zero sample.project_id
+            , Ports.getProject OrganizationId.zero sample.project_id Nothing
             )
 
         GotProject r ->

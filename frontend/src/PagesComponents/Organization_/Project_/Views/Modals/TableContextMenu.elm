@@ -11,12 +11,13 @@ import Libs.Maybe as Maybe
 import Libs.Models.Platform exposing (Platform)
 import Models.ColumnOrder as ColumnOrder
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
-import PagesComponents.Organization_.Project_.Models exposing (FindPathMsg(..), Msg(..), NotesMsg(..))
+import PagesComponents.Organization_.Project_.Models exposing (FindPathMsg(..), Msg(..))
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.HideColumns as HideColumns
 import PagesComponents.Organization_.Project_.Models.Notes as NoteRef
+import PagesComponents.Organization_.Project_.Models.NotesMsg exposing (NotesMsg(..))
 import PagesComponents.Organization_.Project_.Models.ShowColumns as ShowColumns
 
 

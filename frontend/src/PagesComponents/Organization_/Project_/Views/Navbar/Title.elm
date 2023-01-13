@@ -17,11 +17,13 @@ import Libs.Dict as Dict
 import Libs.Html exposing (bText)
 import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, css, role)
 import Libs.List as List
+import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Platform exposing (Platform)
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (focus, focus_ring_offset_600)
 import Libs.Task as T
+import Models.OrganizationId exposing (OrganizationId)
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectStorage as ProjectStorage
 import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
@@ -69,7 +71,7 @@ viewNavbarTitle gConf eConf projects project layouts args =
            else
             div [] []
          , if eConf.projectManagement then
-            Lazy.lazy6 viewProjectsDropdown gConf.platform projects project dirty (htmlId ++ "-projects") (openedDropdown |> String.filterStartsWith (htmlId ++ "-projects"))
+            Lazy.lazy7 viewProjectsDropdown gConf.platform eConf projects project dirty (htmlId ++ "-projects") (openedDropdown |> String.filterStartsWith (htmlId ++ "-projects"))
 
            else
             div [] [ text project.name ]
@@ -78,9 +80,13 @@ viewNavbarTitle gConf eConf projects project layouts args =
         )
 
 
-viewProjectsDropdown : Platform -> List ProjectInfo -> ProjectInfo -> Bool -> HtmlId -> HtmlId -> Html Msg
-viewProjectsDropdown platform projects project dirty htmlId openedDropdown =
+viewProjectsDropdown : Platform -> ErdConf -> List ProjectInfo -> ProjectInfo -> Bool -> HtmlId -> HtmlId -> Html Msg
+viewProjectsDropdown platform eConf projects project dirty htmlId openedDropdown =
     let
+        userOrganizations : List OrganizationId
+        userOrganizations =
+            projects |> List.filterMap .organization |> List.map .id |> List.unique
+
         otherProjects : List ProjectInfo
         otherProjects =
             projects |> List.filter (\p -> p.id /= project.id)
@@ -95,10 +101,17 @@ viewProjectsDropdown platform projects project dirty htmlId openedDropdown =
         )
         (\_ ->
             div [ class "divide-y divide-gray-100" ]
-                (([ [ ContextMenu.btnHotkey "" TriggerSaveProject [ text "Save project" ] platform (Conf.hotkeys |> Dict.getOrElse "save" [])
-                    , ContextMenu.btn "" (RenameProject |> prompt "Rename project" (text "") project.name) [ text "Rename project" ]
-                    , ContextMenu.btn "" (DeleteProject project |> confirmDanger "Delete project?" (text "This action is definitive!")) [ text "Delete project" ]
-                    ]
+                (([ if eConf.save then
+                        [ ContextMenu.btnHotkey "" TriggerSaveProject [ text "Save project" ] platform (Conf.hotkeys |> Dict.getOrElse "save" [])
+                        , ContextMenu.btn "" (RenameProject |> prompt "Rename project" (text "") project.name) [ text "Rename project" ]
+                        , ContextMenu.btn "" (DeleteProject project |> confirmDanger "Delete project?" (text "This action is definitive!")) [ text "Delete project" ]
+                        ]
+
+                    else
+                        [ ContextMenu.btnDisabled "" [ text "Save project" |> Tooltip.r "You are in read-one mode" ]
+                        , ContextMenu.btnDisabled "" [ text "Rename project" |> Tooltip.r "You are in read-one mode" ]
+                        , ContextMenu.btnDisabled "" [ text "Delete project" |> Tooltip.r "You are in read-one mode" ]
+                        ]
                   ]
                     ++ B.cond (List.isEmpty otherProjects)
                         []
@@ -114,7 +127,7 @@ viewProjectsDropdown platform projects project dirty htmlId openedDropdown =
                                         ]
                                 )
                         ]
-                    ++ [ [ ContextMenu.link { url = project.organization |> Maybe.map .id |> Backend.organizationUrl, text = "Back to dashboard" } ] ]
+                    ++ [ [ ContextMenu.link { url = project.organization |> Maybe.map .id |> Maybe.filter (\id -> userOrganizations |> List.member id) |> Backend.organizationUrl, text = "Back to dashboard" } ] ]
                  )
                     |> List.filterNot List.isEmpty
                     |> List.map (\section -> div [ role "none", class "py-1" ] section)

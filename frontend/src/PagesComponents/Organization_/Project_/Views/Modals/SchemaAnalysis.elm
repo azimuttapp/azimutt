@@ -8,7 +8,7 @@ import Components.Slices.ProPlan as ProPlan
 import Conf
 import Dict exposing (Dict)
 import Html exposing (Html, div, h3, h4, h5, p, span, text)
-import Html.Attributes exposing (class, classList, id, rel)
+import Html.Attributes exposing (class, classList, id)
 import Html.Events exposing (onClick)
 import Libs.Bool as B
 import Libs.Dict as Dict

@@ -7,11 +7,15 @@ defmodule Azimutt.Tracking do
   alias Azimutt.Projects.Project
   alias Azimutt.Repo
   alias Azimutt.Tracking.Event
+  alias Azimutt.Utils.Nil
   alias Azimutt.Utils.Result
 
-  def last_project_loaded(%User{} = current_user) do
+  def last_used_project(%User{} = current_user) do
     Event
-    |> where([e], e.name == :project_loaded and e.created_by_id == ^current_user.id)
+    |> where(
+      [e],
+      e.created_by_id == ^current_user.id and (e.name == "project_loaded" or e.name == "project_created" or e.name == "project_updated")
+    )
     |> order_by([e], desc: e.created_at)
     |> limit(1)
     |> Repo.one()
@@ -20,7 +24,7 @@ defmodule Azimutt.Tracking do
 
   def last_billing_loaded(%Organization{} = org) do
     Event
-    |> where([e], e.name == :billing_loaded and e.organization_id == ^org.id)
+    |> where([e], e.name == "billing_loaded" and e.organization_id == ^org.id)
     |> order_by([e], desc: e.created_at)
     |> preload(:created_by)
     |> limit(1)
@@ -29,42 +33,42 @@ defmodule Azimutt.Tracking do
   end
 
   def login(%User{} = current_user, method),
-    do: create_event(:login, user_data(current_user), %{method: method}, current_user, nil, nil)
+    do: create_event("login", user_data(current_user), %{method: method}, current_user, nil, nil)
 
   def project_loaded(%User{} = current_user, %Project{} = project),
-    do: create_event(:project_loaded, project_data(project), nil, current_user, project.organization.id, project.id)
+    do: create_event("project_loaded", project_data(project), nil, current_user, project.organization.id, project.id)
 
   def project_created(%User{} = current_user, %Project{} = project),
-    do: create_event(:project_created, project_data(project), nil, current_user, project.organization.id, project.id)
+    do: create_event("project_created", project_data(project), nil, current_user, project.organization.id, project.id)
 
   def project_updated(%User{} = current_user, %Project{} = project),
-    do: create_event(:project_updated, project_data(project), nil, current_user, project.organization.id, project.id)
+    do: create_event("project_updated", project_data(project), nil, current_user, project.organization.id, project.id)
 
   def project_deleted(%User{} = current_user, %Project{} = project),
-    do: create_event(:project_deleted, project_data(project), nil, current_user, project.organization.id, project.id)
+    do: create_event("project_deleted", project_data(project), nil, current_user, project.organization.id, project.id)
 
   def billing_loaded(%User{} = current_user, %Organization{} = org, source),
-    do: create_event(:billing_loaded, org_data(org), %{source: source}, current_user, org.id, nil)
+    do: create_event("billing_loaded", org_data(org), %{source: source}, current_user, org.id, nil)
 
   def subscribe_init(%User{} = current_user, %Organization{} = org, price, quantity),
-    do: create_event(:subscribe_init, org_data(org), %{price: price, quantity: quantity}, current_user, org.id, nil)
+    do: create_event("subscribe_init", org_data(org), %{price: price, quantity: quantity}, current_user, org.id, nil)
 
   def subscribe_start(%User{} = current_user, %Organization{} = org, price, quantity),
-    do: create_event(:subscribe_start, org_data(org), %{price: price, quantity: quantity}, current_user, org.id, nil)
+    do: create_event("subscribe_start", org_data(org), %{price: price, quantity: quantity}, current_user, org.id, nil)
 
   def subscribe_error(%User{} = current_user, %Organization{} = org, price, quantity),
-    do: create_event(:subscribe_error, org_data(org), %{price: price, quantity: quantity}, current_user, org.id, nil)
+    do: create_event("subscribe_error", org_data(org), %{price: price, quantity: quantity}, current_user, org.id, nil)
 
   def subscribe_success(%User{} = current_user, %Organization{} = org),
-    do: create_event(:subscribe_success, org_data(org), nil, current_user, org.id, nil)
+    do: create_event("subscribe_success", org_data(org), nil, current_user, org.id, nil)
 
   def subscribe_abort(%User{} = current_user, %Organization{} = org),
-    do: create_event(:subscribe_abort, org_data(org), nil, current_user, org.id, nil)
+    do: create_event("subscribe_abort", org_data(org), nil, current_user, org.id, nil)
 
   def stripe_subscription_created(%Stripe.Event{} = event, %Organization{} = org, %User{} = current_user, quantity, subscription_id),
     do:
       create_event(
-        :stripe_subscription_created,
+        "stripe_subscription_created",
         stripe_event_data(event),
         %{quantity: quantity, subscription_id: subscription_id},
         current_user,
@@ -73,10 +77,10 @@ defmodule Azimutt.Tracking do
       )
 
   def stripe_subscription_canceled(%Stripe.Event{} = event, %Organization{} = org, %User{} = current_user, quantity),
-    do: create_event(:stripe_subscription_canceled, stripe_event_data(event), %{quantity: quantity}, current_user, org.id, nil)
+    do: create_event("stripe_subscription_canceled", stripe_event_data(event), %{quantity: quantity}, current_user, org.id, nil)
 
   def stripe_subscription_renewed(%Stripe.Event{} = event, %Organization{} = org, %User{} = current_user, quantity),
-    do: create_event(:stripe_subscription_renewed, stripe_event_data(event), %{quantity: quantity}, current_user, org.id, nil)
+    do: create_event("stripe_subscription_renewed", stripe_event_data(event), %{quantity: quantity}, current_user, org.id, nil)
 
   def stripe_subscription_quantity_updated(
         %Stripe.Event{} = event,
@@ -87,7 +91,7 @@ defmodule Azimutt.Tracking do
       ),
       do:
         create_event(
-          :stripe_subscription_quantity_updated,
+          "stripe_subscription_quantity_updated",
           stripe_event_data(event),
           %{quantity: quantity, previous_quantity: previous_quantity},
           current_user,
@@ -96,26 +100,36 @@ defmodule Azimutt.Tracking do
         )
 
   def stripe_subscription_updated(%Stripe.Event{} = event, %Organization{} = org, %User{} = current_user, quantity),
-    do: create_event(:stripe_subscription_updated, stripe_event_data(event), %{quantity: quantity}, current_user, org.id, nil)
+    do: create_event("stripe_subscription_updated", stripe_event_data(event), %{quantity: quantity}, current_user, org.id, nil)
 
   def stripe_open_billing_portal(%Stripe.Event{} = event, %Organization{} = org, %User{} = current_user),
-    do: create_event(:stripe_open_billing_portal, stripe_event_data(event), nil, current_user, org.id, nil)
+    do: create_event("stripe_open_billing_portal", stripe_event_data(event), nil, current_user, org.id, nil)
 
   def stripe_invoice_paid(%Stripe.Event{} = event, %Organization{} = org, %User{} = current_user),
-    do: create_event(:stripe_invoice_paid, stripe_event_data(event), nil, current_user, org.id, nil)
+    do: create_event("stripe_invoice_paid", stripe_event_data(event), nil, current_user, org.id, nil)
 
   def stripe_invoice_payment_failed(%Stripe.Event{} = event, %Organization{} = org, %User{} = current_user),
-    do: create_event(:stripe_invoice_payment_failed, stripe_event_data(event), nil, current_user, org.id, nil)
+    do: create_event("stripe_invoice_payment_failed", stripe_event_data(event), nil, current_user, org.id, nil)
+
+  def allow_table_color(%User{} = current_user, %Organization{} = org, tweet_url),
+    do: create_event("allow_table_color", org_data(org), %{tweet_url: tweet_url}, current_user, org.id, nil)
+
+  def frontend_event(name, details, %User{} = current_user, organization_id, project_id),
+    do: create_event(name, nil, details, current_user, organization_id, project_id)
 
   # `organization_id` and `project_id` are nullable
+  # FIXME: make this async "fire & forget"
   defp create_event(name, data, details, %User{} = current_user, organization_id, project_id) do
     if Mix.env() == :dev, do: Logger.info("Tracking event '#{name}': #{inspect(details)}")
+
+    saved_data = Nil.safe(data, fn v -> if map_size(v) == 0, do: nil, else: v end)
+    saved_details = Nil.safe(details, fn v -> if map_size(v) == 0, do: nil, else: v end)
 
     %Event{}
     |> Event.changeset(%{
       name: name,
-      data: data,
-      details: details,
+      data: saved_data,
+      details: saved_details,
       created_by: current_user,
       organization_id: organization_id,
       project_id: project_id

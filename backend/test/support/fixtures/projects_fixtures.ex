@@ -19,8 +19,9 @@ defmodule Azimutt.ProjectsFixtures do
         nb_relations: 42,
         nb_types: 42,
         nb_comments: 42,
+        nb_layouts: 42,
         nb_notes: 42,
-        nb_layouts: 42
+        nb_memos: 42
       })
       |> Azimutt.Projects.create_project(organization, user)
 

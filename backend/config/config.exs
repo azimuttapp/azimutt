@@ -20,8 +20,13 @@ config :azimutt,
   github_new_issue: "https://github.com/azimuttapp/azimutt/issues/new",
   team_plan_seat_price: 13,
   free_plan_seats: 3,
-  # MUST stay in sync with freePlanLayouts in frontend/src/Conf.elm
-  free_plan_layouts: 3
+  # MUST stay in sync with frontend/src/Conf.elm (`features`)
+  free_plan_layouts: 3,
+  free_plan_memos: 1,
+  free_plan_colors: false,
+  free_plan_private_links: true,
+  free_plan_db_analysis: false,
+  free_plan_db_access: false
 
 config :azimutt,
   ecto_repos: [Azimutt.Repo]

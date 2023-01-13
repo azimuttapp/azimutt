@@ -6,7 +6,7 @@ import Components.Molecules.Tooltip as Tooltip
 import Conf
 import Dict exposing (Dict)
 import Html exposing (Html, button, div, h2, p, text)
-import Html.Attributes exposing (class, classList, id, style)
+import Html.Attributes exposing (class, classList, id)
 import Html.Events exposing (onClick)
 import Html.Events.Extra.Mouse exposing (Button(..))
 import Html.Keyed as Keyed
@@ -14,8 +14,8 @@ import Html.Lazy as Lazy
 import Libs.Bool as B
 import Libs.Dict as Dict
 import Libs.Html exposing (bText, extLink, sendTweet)
-import Libs.Html.Attributes as Attributes exposing (css)
-import Libs.Html.Events exposing (PointerEvent, onContextMenu, onWheel, stopPointerDown)
+import Libs.Html.Attributes exposing (css)
+import Libs.Html.Events exposing (PointerEvent, onContextMenu, onDblClick, onWheel, stopPointerDown)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
@@ -27,13 +27,13 @@ import Libs.Tuple as Tuple
 import Models.Area as Area
 import Models.ErdProps exposing (ErdProps)
 import Models.Position as Position
-import Models.Project.CanvasProps exposing (CanvasProps)
+import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.RelationStyle exposing (RelationStyle)
 import Models.Size as Size
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
-import PagesComponents.Organization_.Project_.Models exposing (Msg(..), VirtualRelation)
+import PagesComponents.Organization_.Project_.Models exposing (MemoEdit, MemoMsg(..), Msg(..), VirtualRelation)
 import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode exposing (CursorMode)
 import PagesComponents.Organization_.Project_.Models.DragState exposing (DragState)
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
@@ -46,7 +46,10 @@ import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.ErdTableNotes as ErdTableNotes exposing (ErdTableNotes)
 import PagesComponents.Organization_.Project_.Models.ErdTableProps exposing (ErdTableProps)
+import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
+import PagesComponents.Organization_.Project_.Models.MemoId as MemoId
 import PagesComponents.Organization_.Project_.Updates.Drag as Drag
+import PagesComponents.Organization_.Project_.Views.Erd.Memo as Memo
 import PagesComponents.Organization_.Project_.Views.Erd.Relation as Relation exposing (viewEmptyRelation, viewRelation, viewVirtualRelation)
 import PagesComponents.Organization_.Project_.Views.Erd.Table as Table exposing (viewTable)
 import PagesComponents.Organization_.Project_.Views.Modals.ErdContextMenu as ErdContextMenu
@@ -57,25 +60,25 @@ type alias ErdArgs =
     String
 
 
-argsToString : Platform -> CursorMode -> String -> String -> DetailsSidebar.Selected -> ErdArgs
-argsToString platform cursorMode openedDropdown openedPopover selected =
-    [ Platform.toString platform, CursorMode.toString cursorMode, openedDropdown, openedPopover, selected ] |> String.join "~"
+argsToString : Platform -> CursorMode -> Maybe TableId -> String -> String -> DetailsSidebar.Selected -> ErdArgs
+argsToString platform cursorMode hoverTable openedDropdown openedPopover selected =
+    [ Platform.toString platform, CursorMode.toString cursorMode, hoverTable |> Maybe.mapOrElse TableId.toString "", openedDropdown, openedPopover, selected ] |> String.join "~"
 
 
-stringToArgs : ErdArgs -> ( ( Platform, CursorMode ), ( String, String, DetailsSidebar.Selected ) )
+stringToArgs : ErdArgs -> ( ( Platform, CursorMode, Maybe TableId ), ( String, String, DetailsSidebar.Selected ) )
 stringToArgs args =
     case args |> String.split "~" of
-        [ platform, cursorMode, openedDropdown, openedPopover, selected ] ->
-            ( ( Platform.fromString platform, CursorMode.fromString cursorMode ), ( openedDropdown, openedPopover, selected ) )
+        [ platform, cursorMode, hoverTable, openedDropdown, openedPopover, selected ] ->
+            ( ( Platform.fromString platform, CursorMode.fromString cursorMode, hoverTable |> TableId.fromString ), ( openedDropdown, openedPopover, selected ) )
 
         _ ->
-            ( ( Platform.PC, CursorMode.Select ), ( "", "", "" ) )
+            ( ( Platform.PC, CursorMode.Select, Nothing ), ( "", "", "" ) )
 
 
-viewErd : ErdConf -> ErdProps -> Maybe TableId -> Erd -> Maybe Area.Canvas -> Maybe VirtualRelation -> ErdArgs -> Maybe DragState -> Html Msg
-viewErd conf erdElem hoverTable erd selectionBox virtualRelation args dragging =
+viewErd : ErdConf -> ErdProps -> Erd -> Maybe Area.Canvas -> Maybe VirtualRelation -> Maybe MemoEdit -> ErdArgs -> Maybe DragState -> Html Msg
+viewErd conf erdElem erd selectionBox virtualRelation editMemo args dragging =
     let
-        ( ( platform, cursorMode ), ( openedDropdown, openedPopover, selected ) ) =
+        ( ( platform, cursorMode, hoverTable ), ( openedDropdown, openedPopover, selected ) ) =
             stringToArgs args
 
         layout : ErdLayout
@@ -93,6 +96,10 @@ viewErd conf erdElem hoverTable erd selectionBox virtualRelation args dragging =
         tableProps : List ErdTableLayout
         tableProps =
             dragging |> Maybe.filter (\d -> d.id /= Conf.ids.erd) |> Maybe.mapOrElse (\d -> layout.tables |> Drag.moveTables d canvas.zoom) layout.tables
+
+        memos : List Memo
+        memos =
+            dragging |> Maybe.filter (.id >> MemoId.isHtmlId) |> Maybe.mapOrElse (\d -> layout.memos |> Drag.moveMemos d canvas.zoom) layout.memos
 
         displayedTables : List ErdTableLayout
         displayedTables =
@@ -125,23 +132,26 @@ viewErd conf erdElem hoverTable erd selectionBox virtualRelation args dragging =
                     )
     in
     div
-        [ class "az-erd h-full bg-gray-100 overflow-hidden"
-        , classList
-            [ ( "cursor-grab-all", cursorMode == CursorMode.Drag && dragging == Nothing && virtualRelation == Nothing )
+        ([ id Conf.ids.erd
+         , class "az-erd h-full bg-gray-100 overflow-hidden"
+         , classList
+            [ ( "invisible", erdElem.size == Size.zeroViewport )
+            , ( "cursor-grab-all", cursorMode == CursorMode.Drag && dragging == Nothing && virtualRelation == Nothing )
             , ( "cursor-grabbing-all", cursorMode == CursorMode.Drag && dragging /= Nothing && virtualRelation == Nothing )
             , ( "cursor-crosshair-all", virtualRelation /= Nothing )
             ]
-        , id Conf.ids.erd
-        , Attributes.when (conf.move && not (List.isEmpty tableProps)) (onWheel platform OnWheel)
-        , Attributes.when (conf.move || conf.select) (stopPointerDown platform (handleErdPointerDown conf cursorMode))
-        , Attributes.when conf.layout (onContextMenu platform (ContextMenuCreate (ErdContextMenu.view platform)))
-        ]
+         ]
+            ++ B.cond (conf.move && not (List.isEmpty tableProps)) [ onWheel platform OnWheel ] []
+            ++ B.cond (conf.move || conf.select) [ stopPointerDown platform (handleErdPointerDown conf cursorMode) ] []
+            ++ B.cond conf.layout [ onDblClick platform (CanvasProps.eventCanvas erdElem canvas >> MCreate >> MemoMsg), onContextMenu platform (\e -> ContextMenuCreate (ErdContextMenu.view platform erdElem canvas e) e) ] []
+        )
         [ div [ class "az-canvas origin-top-left", Position.styleTransformDiagram canvas.position canvas.zoom ]
             -- use HTML order instead of z-index, must be careful with it, this allows to have tooltips & popovers always on top
             [ -- canvas.position |> Position.debugDiagram "canvas" "bg-black"
               -- , layout.tables |> List.map (.props >> Area.offGrid) |> Area.mergeCanvas |> Maybe.mapOrElse (Area.debugCanvas "tablesArea" "border-blue-500") (div [] []),
               displayedRelations |> Lazy.lazy5 viewRelations conf erd.settings.defaultSchema erd.settings.relationStyle displayedTables
             , tableProps |> viewTables platform conf cursorMode virtualRelation openedDropdown openedPopover hoverTable dragging canvas.zoom erd.settings.defaultSchema selected erd.settings.columnBasicTypes erd.tables erd.notes
+            , memos |> viewMemos platform conf cursorMode editMemo
             , selectionBox |> Maybe.filterNot (\_ -> tableProps |> List.isEmpty) |> Maybe.mapOrElse viewSelectionBox (div [] [])
             , virtualRelationInfo |> Maybe.mapOrElse (viewVirtualRelation erd.settings.relationStyle) viewEmptyRelation
             ]
@@ -151,6 +161,20 @@ viewErd conf erdElem hoverTable erd selectionBox virtualRelation args dragging =
           else
             div [] []
         ]
+
+
+viewMemos : Platform -> ErdConf -> CursorMode -> Maybe MemoEdit -> List Memo -> Html Msg
+viewMemos platform conf cursorMode editMemo memos =
+    Keyed.node "div"
+        [ class "az-memos" ]
+        (memos
+            |> List.map
+                (\memo ->
+                    ( MemoId.toHtmlId memo.id
+                    , Lazy.lazy5 Memo.viewMemo platform conf cursorMode (editMemo |> Maybe.filterBy .id memo.id |> Maybe.map .content) memo
+                    )
+                )
+        )
 
 
 handleErdPointerDown : ErdConf -> CursorMode -> PointerEvent -> Msg

@@ -83,7 +83,7 @@ update req now urlOrganization msg model =
             )
 
         DatabaseSourceMsg message ->
-            (model |> mapDatabaseSourceMCmd (DatabaseSource.update DatabaseSourceMsg now message))
+            (model |> mapDatabaseSourceMCmd (DatabaseSource.update DatabaseSourceMsg now Nothing message))
                 |> Tuple.mapSecond
                     (\cmd ->
                         case message of
@@ -95,11 +95,11 @@ update req now urlOrganization msg model =
                     )
 
         SqlSourceMsg message ->
-            (model |> mapSqlSourceMCmd (SqlSource.update SqlSourceMsg now message))
+            (model |> mapSqlSourceMCmd (SqlSource.update SqlSourceMsg now Nothing message))
                 |> Tuple.mapSecond (\cmd -> B.cond (message == SqlSource.BuildSource) (Cmd.batch [ cmd, Ports.confetti "create-project-btn" ]) cmd)
 
         JsonSourceMsg message ->
-            (model |> mapJsonSourceMCmd (JsonSource.update JsonSourceMsg now message))
+            (model |> mapJsonSourceMCmd (JsonSource.update JsonSourceMsg now Nothing message))
                 |> Tuple.mapSecond (\cmd -> B.cond (message == JsonSource.BuildSource) (Cmd.batch [ cmd, Ports.confetti "create-project-btn" ]) cmd)
 
         ProjectSourceMsg message ->
@@ -111,7 +111,7 @@ update req now urlOrganization msg model =
                 |> Tuple.mapSecond (\cmd -> B.cond (message == SampleSource.BuildProject) (Cmd.batch [ cmd, Ports.confetti "create-project-btn" ]) cmd)
 
         CreateProjectTmp project ->
-            ( model, Cmd.batch [ Ports.createProjectTmp project, Ports.track (Track.initProject project) ] )
+            ( model, Cmd.batch [ Ports.createProjectTmp project, Track.projectDraftCreated project |> Ports.track ] )
 
         CreateEmptyProject name ->
             ( model, SourceId.generator |> Random.generate (Source.aml Conf.constants.virtualRelationSourceName now >> Project.create model.projects name >> CreateProjectTmp) )
@@ -171,7 +171,7 @@ handleJsMessage req now urlOrganization msg model =
             ( model, message |> Toasts.create level |> Toast |> T.send )
 
         Error json err ->
-            ( model, Cmd.batch [ "Unable to decode JavaScript message: " ++ Decode.errorToString err ++ " in " ++ Encode.encode 0 json |> Toasts.error |> Toast |> T.send, Ports.trackJsonError "js-message" err ] )
+            ( model, Cmd.batch [ "Unable to decode JavaScript message: " ++ Decode.errorToString err ++ " in " ++ Encode.encode 0 json |> Toasts.error |> Toast |> T.send, Track.jsonError "js_message" err |> Ports.track ] )
 
         GotSizes _ ->
             ( model, Cmd.none )

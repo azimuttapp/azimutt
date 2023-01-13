@@ -13,7 +13,7 @@ import Models.Size as Size
 
 type alias TableProps =
     { id : TableId
-    , position : Position.CanvasGrid
+    , position : Position.Grid
     , size : Size.Canvas
     , color : Color
     , columns : List ColumnName

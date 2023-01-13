@@ -14,7 +14,7 @@ import Ports exposing (JsMsg(..))
 import Request
 import Services.Lenses exposing (mapToastsCmd)
 import Services.Toasts as Toasts
-import Shared exposing (StoredProjects(..))
+import Shared
 import View exposing (View)
 
 
@@ -67,7 +67,6 @@ init =
             , html = Just "h-full bg-gray-100"
             , body = Just "h-full"
             }
-        , Ports.trackPage "dashboard"
         , Ports.getLegacyProjects -- to update legacyProjects in Shared
         ]
     )

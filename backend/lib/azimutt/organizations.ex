@@ -296,12 +296,19 @@ defmodule Azimutt.Organizations do
     end
   end
 
+  def allow_table_color(%Organization{} = organization, tweet_url) when is_binary(tweet_url) do
+    organization
+    |> Organization.allow_table_color_changeset(tweet_url)
+    |> Repo.update()
+  end
+
   def get_organization_plan(%Organization{} = organization) do
     cond do
       organization.heroku_resource -> heroku_plan(organization.heroku_resource)
       organization.stripe_subscription_id -> stripe_plan(organization.stripe_subscription_id)
       true -> {:ok, OrganizationPlan.free()}
     end
+    |> Result.map(fn plan -> plan_overrides(organization, plan) end)
   end
 
   defp heroku_plan(%Resource{} = resource) do
@@ -321,5 +328,67 @@ defmodule Azimutt.Organizations do
         OrganizationPlan.free()
       end
     end)
+  end
+
+  defp plan_overrides(%Organization{} = organization, %OrganizationPlan{} = plan) do
+    if organization.data != nil do
+      plan
+      |> override_layouts(organization.data)
+      |> override_memos(organization.data)
+      |> override_colors(organization.data)
+      |> override_private_links(organization.data)
+      |> override_analysis(organization.data)
+    else
+      plan
+    end
+  end
+
+  defp override_layouts(%OrganizationPlan{} = plan, %Organization.Data{} = data) do
+    if data.allowed_layouts != nil do
+      %{plan | layouts: best_limit(plan.layouts, data.allowed_layouts)}
+    else
+      plan
+    end
+  end
+
+  defp override_memos(%OrganizationPlan{} = plan, %Organization.Data{} = data) do
+    if data.allowed_memos != nil do
+      %{plan | memos: best_limit(plan.memos, data.allowed_memos)}
+    else
+      plan
+    end
+  end
+
+  defp override_colors(%OrganizationPlan{} = plan, %Organization.Data{} = data) do
+    if data.allow_table_color do
+      %{plan | colors: true}
+    else
+      plan
+    end
+  end
+
+  defp override_private_links(%OrganizationPlan{} = plan, %Organization.Data{} = data) do
+    if data.allow_private_links do
+      %{plan | private_links: true}
+    else
+      plan
+    end
+  end
+
+  defp override_analysis(%OrganizationPlan{} = plan, %Organization.Data{} = data) do
+    if data.allow_database_analysis do
+      %{plan | db_analysis: true}
+    else
+      plan
+    end
+  end
+
+  defp best_limit(a, b) do
+    cond do
+      a == nil || b == nil -> nil
+      is_integer(a) && is_integer(b) -> max(a, b)
+      is_integer(a) -> a
+      is_integer(b) -> b
+    end
   end
 end

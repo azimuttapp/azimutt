@@ -175,7 +175,7 @@ positionLeft src ref =
                    )
 
 
-leftCenterRight : { x | position : Position.CanvasGrid, size : Size.Canvas } -> ( Float, Float, Float )
+leftCenterRight : { x | position : Position.Grid, size : Size.Canvas } -> ( Float, Float, Float )
 leftCenterRight { position, size } =
     let
         pos : Position

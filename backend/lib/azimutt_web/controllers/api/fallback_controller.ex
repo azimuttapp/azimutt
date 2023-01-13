@@ -9,7 +9,8 @@ defmodule AzimuttWeb.Api.FallbackController do
   def call(conn, {:error, %Ecto.Changeset{} = changeset}) do
     conn
     |> put_status(:unprocessable_entity)
-    |> put_view(AzimuttWeb.ChangesetView)
+    |> put_view(AzimuttWeb.ErrorView)
+    # FIXME: better error formatting (cf backend/test/support/data_case.ex:52#errors_on)
     |> render("error.json", changeset: changeset)
   end
 
@@ -28,10 +29,21 @@ defmodule AzimuttWeb.Api.FallbackController do
     |> render("error.json", message: "Unauthorized")
   end
 
+  def call(conn, {:error, {status, message}}) do
+    conn
+    |> put_status(status)
+    |> put_view(AzimuttWeb.ErrorView)
+    |> render("error.json", message: message)
+  end
+
   def call(conn, {:error, message}) do
     conn
     |> put_status(:internal_server_error)
     |> put_view(AzimuttWeb.ErrorView)
     |> render("error.json", message: message)
+  end
+
+  def call(conn, :ok) do
+    conn |> send_resp(:no_content, "")
   end
 end

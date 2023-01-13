@@ -17,6 +17,7 @@ import {
     ProjectSlug,
     ProjectStats,
     ProjectStorage,
+    ProjectTokenId,
     ProjectVersion,
     ProjectVisibility,
     TableId
@@ -31,6 +32,7 @@ import * as Json from "../utils/json";
 import * as jiff from "jiff";
 import {HerokuResource} from "../types/heroku";
 import {ColumnStats, TableStats} from "../types/stats";
+import {TrackEvent} from "../types/tracking";
 
 export class Backend {
     private projects: { [id: ProjectId]: ProjectJson } = {}
@@ -41,17 +43,18 @@ export class Backend {
     loginUrl = (currentUrl: string | undefined): string =>
         currentUrl ? `/login/redirect?url=${encodeURIComponent(currentUrl)}` : '/login'
 
-    getProject = async (o: OrganizationId, p: ProjectId): Promise<ProjectInfoWithContent> => {
-        this.logger.debug(`backend.getProject(${o}, ${p})`)
-        const project = await this.fetchProject(o, p)
+    getProject = async (o: OrganizationId, p: ProjectId, t: ProjectTokenId | null): Promise<ProjectInfoWithContent> => {
+        this.logger.debug(`backend.getProject(${o}, ${p}, ${t})`)
+        const project = await this.fetchProject(o, p, t)
         if (project.storage === ProjectStorage.enum.remote) {
             this.projects[p] = project.content
         }
         return project
     }
 
-    private fetchProject = (o: OrganizationId, p: ProjectId): Promise<ProjectInfoWithContent> => {
-        const url = this.withXhrHost(`/api/v1/organizations/${o}/projects/${p}?expand=organization,organization.plan,content`)
+    private fetchProject = (o: OrganizationId, p: ProjectId, t: ProjectTokenId | null): Promise<ProjectInfoWithContent> => {
+        const token = t ? `token=${t}&` : ''
+        const url = this.withXhrHost(`/api/v1/organizations/${o}/projects/${p}?${token}expand=organization,organization.plan,content`)
         return Http.getJson(url, ProjectWithContentResponse, 'ProjectWithContentResponse').then(toProjectInfoWithContent)
     }
 
@@ -91,7 +94,7 @@ export class Backend {
         if (p.storage !== ProjectStorage.enum.remote) return Promise.reject('Expecting a remote project')
 
         const initial = this.projects[p.id] // where the user started
-        const current = await this.fetchProject(p.organization.id, p.id) // server version
+        const current = await this.fetchProject(p.organization.id, p.id, null) // server version
             .then(p => isRemote(p) ? p : Promise.reject('Expecting a remote project'))
         let json = buildProjectJson(p)
         if (current.updatedAt !== p.updatedAt) {
@@ -138,6 +141,12 @@ export class Backend {
         return Http.postJson(url, {url: database, schema, table, column: column.column}, ColumnStats, 'ColumnStats')
     }
 
+    trackEvent = (event: TrackEvent): void => {
+        this.logger.debug(`backend.trackEvent(${JSON.stringify(event)})`)
+        const url = this.withXhrHost(`/api/v1/events`)
+        Http.postNoContent(url, event).then(_ => undefined)
+    }
+
     private withXhrHost(path: string): string {
         if (this.env == Env.enum.dev) {
             return `${path}`
@@ -156,8 +165,9 @@ export interface ProjectStatsResponse {
     nb_relations: number
     nb_types: number
     nb_comments: number
-    nb_notes: number
     nb_layouts: number
+    nb_notes: number
+    nb_memos: number
 }
 
 export const ProjectStatsResponse = z.object({
@@ -167,8 +177,9 @@ export const ProjectStatsResponse = z.object({
     nb_relations: z.number(),
     nb_types: z.number(),
     nb_comments: z.number(),
+    nb_layouts: z.number(),
     nb_notes: z.number(),
-    nb_layouts: z.number()
+    nb_memos: z.number()
 }).strict()
 
 interface ProjectBody extends ProjectStatsResponse {
@@ -244,8 +255,9 @@ function toStats(s: ProjectStatsResponse): ProjectStats {
         nbRelations: s.nb_relations,
         nbTypes: s.nb_types,
         nbComments: s.nb_comments,
+        nbLayouts: s.nb_layouts,
         nbNotes: s.nb_notes,
-        nbLayouts: s.nb_layouts
+        nbMemos: s.nb_memos
     }
 }
 
@@ -257,8 +269,9 @@ function toStatsResponse(s: ProjectStats): ProjectStatsResponse {
         nb_relations: s.nbRelations,
         nb_types: s.nbTypes,
         nb_comments: s.nbComments,
+        nb_layouts: s.nbLayouts,
         nb_notes: s.nbNotes,
-        nb_layouts: s.nbLayouts
+        nb_memos: s.nbMemos
     }
 }
 

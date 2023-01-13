@@ -251,6 +251,19 @@ defmodule Azimutt.Utils.Result do
   def filter_not({:error, _err} = res, _p, _default_err), do: res
 
   @doc """
+  Check the value inside the Result with a predicate, always return false on errors
+  ## Examples
+      iex> {:ok, 1} |> Result.exists(fn x -> x == 1 end)
+      true
+      iex> {:ok, 1} |> Result.exists(fn x -> x == 2 end)
+      false
+      iex> {:error, 1} |> Result.map(fn x -> x == 1 end)
+      false
+  """
+  def exists({:ok, val}, p), do: p.(val)
+  def exists({:error, _err}, _f), do: false
+
+  @doc """
   Transforms a list of results into a result of list.
   If they are all :ok, it will be :ok, otherwise returns the first :error.
   ## Examples
