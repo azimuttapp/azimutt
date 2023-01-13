@@ -2,25 +2,27 @@ defmodule AzimuttWeb.Admin.OrganizationView do
   # use AzimuttWeb, :view
   # use Phoenix.View, root: "lib/azimutt_web/admin/templates", path: "*"
   use Phoenix.View, root: "lib/azimutt_web", namespace: AzimuttWeb
-
   import Phoenix.HTML.Tag
   import Phoenix.HTML.Link
+  alias Azimutt.Organizations.Organization
+  alias Azimutt.Services.StripeSrv
   alias AzimuttWeb.Router.Helpers, as: Routes
 
-  def format_date(date) do
-    {:ok, date_parsed} = Timex.format(date, "{D}/{M}/{YY}")
-    date_parsed
+  def format_datetime(date) do
+    {:ok, formatted} = Timex.format(date, "{Mshort} {D}, {h24}:{m}:{s}")
+    formatted
   end
+
+  def format_data(data) when is_nil(data), do: ""
+  def format_data(%Organization.Data{} = data), do: data |> Map.from_struct() |> Jason.encode!()
 
   def display_number(list) do
+    threshold = Azimutt.config(:free_plan_seats)
+
     case Enum.count(list) do
       1 -> content_tag(:span, "1")
-      x when x < 4 -> content_tag(:span, x, class: "text-scheme-blue")
-      x when x >= 4 -> content_tag(:span, x, class: "text-scheme-red")
+      x when x <= threshold -> content_tag(:span, x, class: "text-scheme-blue")
+      x when x > threshold -> content_tag(:span, x, class: "text-scheme-red")
     end
-  end
-
-  def stripe_subscription_url(stripe_sub_id) do
-    "https://dashboard.stripe.com/subscriptions/#{stripe_sub_id}"
   end
 end

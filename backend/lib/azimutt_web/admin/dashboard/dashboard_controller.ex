@@ -1,41 +1,18 @@
 defmodule AzimuttWeb.Admin.DashboardController do
   use AzimuttWeb, :controller
+  alias Azimutt.Admin
   action_fallback AzimuttWeb.FallbackController
 
   def index(conn, _params) do
-    events_loaded = 50
-    events = Azimutt.Admin.list_last_events(events_loaded)
-    organizations = Azimutt.Admin.list_organizations()
-    users = Azimutt.Admin.list_users()
-    projects = Azimutt.Admin.list_projects()
-
-    organizations_count =
-      organizations
-      |> Enum.filter(fn organization -> organization.is_personal == false end)
-      |> Enum.count()
-
-    subscriptions_count =
-      organizations
-      |> Enum.filter(fn organization -> organization.stripe_subscription_id !== nil end)
-      |> Enum.count()
-
-    projects_count =
-      projects
-      |> Enum.count()
-
-    users_count =
-      users
-      |> Enum.count()
-
     conn
     |> render(
       "index.html",
-      events: events,
-      organizations: organizations,
-      projects_count: projects_count,
-      organizations_count: organizations_count,
-      subscriptions_count: subscriptions_count,
-      users_count: users_count
+      events: Admin.list_events(50),
+      users_count: Admin.count_users(),
+      projects_count: Admin.count_projects(),
+      organizations_count: Admin.count_non_personal_organizations(),
+      stripe_count: Admin.count_stripe_subscriptions(),
+      heroku_count: Admin.count_heroku_resources()
     )
   end
 end

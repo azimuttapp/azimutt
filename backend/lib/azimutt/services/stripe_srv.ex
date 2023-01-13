@@ -107,5 +107,9 @@ defmodule Azimutt.Services.StripeSrv do
     end
   end
 
+  def subscription_url(stripe_sub_id) do
+    "https://dashboard.stripe.com/subscriptions/#{stripe_sub_id}"
+  end
+
   defp stripe_configured?, do: !!Application.get_env(:stripity_stripe, :api_key)
 end

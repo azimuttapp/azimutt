@@ -1,35 +1,47 @@
-<div class="flex flex-col border-l border-1 border-slate-800 pl-4 pb-4">
-    <div class="text-2xl font-bold text-slate-100 py-2"> <%= assigns.projects |> Enum.count() %> projects</div>
-    <div class="min-w-full overflow-hidden overflow-x-auto align-middle shadow sm:rounded-sm">
-        <table class="w-full">
+<div class="flex flex-col border-l border-1 border-slate-800 pl-3">
+    <div class="text-2xl font-bold text-slate-100 py-2"><%= @projects |> Enum.count() %> projects</div>
+    <div class="align-middle shadow sm:rounded-sm">
+        <table class="w-full text-left">
             <thead class="text-gray-100 bg-slate-800 text-xs font-semibold">
-            <tr>
-                <th class="px-1 py-1 text-center" scope="col">Created</th>
-                <th class="px-1 py-1 text-center" scope="col">Name</th>
-                <th class="px-1 py-1 text-center" scope="col">T/C/L/S</th>
-                <th class="px-1 py-1 text-center" scope="col">Orga</th>
-            </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-800 text-slate-500  bg-slate-900">
-            <%= for project <- assigns.projects do %>
-                <tr class=" text-xs whitespace-nowrap hover:bg-slate-800 hover:text-slate-300">
-                    <td class="text-left">
-                        <span class="font-medium"><%= format_date(project.created_at) %></span>
-                    </td>
-                    <td class="text-left pl-4">
-                        <span class="font-medium" ><%= project.name %></span>
-                    </td>
-                    <td class="text-center pl-4">
-                        <span class="font-medium text-scheme-green" ><%= project.nb_tables %></span>/<span class="font-medium text-scheme-yellow" ><%= project.nb_columns %></span>/<span class="font-medium text-scheme-red" ><%= project.nb_layouts %></span>/<span class="font-medium text-purple-300" ><%= project.nb_sources %></span>
-                    </td>
-                    <td class="text-left px-1 pl-2">
-                        <%= link to: "/admin/organizations/#{project.organization.id}" do %>
-                            <%= img_tag(project.organization.logo, class: "inline-block h-4 w-4 rounded-md") %>
-                            <span class="font-medium" ><%= project.organization.slug %></span>
-                        <% end %>
-                    </td>
+                <tr>
+                    <th class="p-1" scope="col">Name</th>
+                    <th class="p-1" scope="col">
+                        <span class="inline-block w-4 text-red-300" title="nb_sources">S</span> /
+                        <span class="inline-block w-4 text-amber-300" title="nb_tables">T</span> /
+                        <span class="inline-block w-4 text-lime-300" title="nb_layouts">L</span> /
+                        <span class="inline-block w-4 text-emerald-300" title="nb_comments">C</span> /
+                        <span class="inline-block w-4 text-cyan-300" title="nb_notes">N</span> /
+                        <span class="inline-block w-4 text-blue-300" title="nb_memos">M</span>
+                    </th>
+                    <th class="p-1" scope="col">Organization</th>
+                    <th class="p-1" scope="col">Storage</th>
+                    <th class="p-1" scope="col">Public</th>
+                    <th class="p-1" scope="col">Last update</th>
                 </tr>
-            <% end %>
+            </thead>
+            <tbody class="divide-y divide-slate-800 text-slate-500 bg-slate-900">
+                <%= for project <- @projects do %>
+                    <tr class="text-xs whitespace-nowrap hover:bg-slate-800 hover:text-slate-300">
+                        <td class="p-1" title={project.description}><%= link project.name, to: Routes.admin_project_path(@conn, :show, project), class: "underline" %></td>
+                        <td class="p-1">
+                            <span class="inline-block w-4 text-red-300" title="nb_sources"><%= project.nb_sources %></span> /
+                            <span class="inline-block w-4 text-amber-300" title="nb_tables"><%= project.nb_tables %></span> /
+                            <span class="inline-block w-4 text-lime-300" title="nb_layouts"><%= project.nb_layouts %></span> /
+                            <span class="inline-block w-4 text-emerald-300" title="nb_comments"><%= project.nb_comments %></span> /
+                            <span class="inline-block w-4 text-cyan-300" title="nb_notes"><%= project.nb_notes %></span> /
+                            <span class="inline-block w-4 text-blue-300" title="nb_memos"><%= project.nb_memos %></span>
+                        </td>
+                        <td class="p-1">
+                            <%= link to: Routes.admin_organization_path(@conn, :show, project.organization), class: "underline" do %>
+                                <%= img_tag(project.organization.logo, class: "inline-block h-4 w-4 rounded-md") %>
+                                <%= project.organization.name %>
+                            <% end %>
+                        </td>
+                        <td class="p-1"><%= project.storage_kind %></td>
+                        <td class="p-1"><%= project.visibility %></td>
+                        <td class="p-1"><%= format_datetime(project.updated_at) %></td>
+                    </tr>
+                <% end %>
             </tbody>
         </table>
     </div>

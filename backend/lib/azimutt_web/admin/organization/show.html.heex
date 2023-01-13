@@ -1,11 +1,11 @@
-<div class="flex my-4">
+<div class="my-3 flex">
     <div class="w-1/3">
         <div class="flex">
-            <%= img_tag(assigns.organization.logo, class: "mt-2 h-24 w-24 rounded-md") %>
+            <%= img_tag(@organization.logo, class: "mt-2 h-24 w-24 rounded-md") %>
             <div class="pl-4 mt-2">
-                <div class="text-xl font-bold text-slate-100 truncate"><%= assigns.organization.name %> </div>
-                <div class="text-xs font-medium text-scheme-yellow truncate"><%= assigns.organization.created_by.name %> </div>
-                <div class="text-xs font-medium text-slate-300"><%= assigns.organization.description %> </div>
+                <div class="text-xl font-bold text-slate-100 truncate"><%= @organization.name %></div>
+                <div class="text-xs font-medium text-scheme-yellow truncate"><%= @organization.created_by.name %></div>
+                <div class="text-xs font-medium text-slate-300"><%= @organization.description %></div>
             </div>
         </div>
     </div>

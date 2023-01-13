@@ -1,22 +1,21 @@
 defmodule AzimuttWeb.Admin.UserController do
   use AzimuttWeb, :controller
+  alias Azimutt.Admin
   action_fallback AzimuttWeb.FallbackController
 
   def index(conn, _params) do
-    users = Azimutt.Admin.list_users()
-
-    render(conn, "index.html", users: users)
+    render(conn, "index.html", users: Admin.list_users(1000))
   end
 
   def show(conn, %{"id" => user_id}) do
-    events = Azimutt.Admin.get_user_events(user_id)
-
-    with {:ok, user} <- Azimutt.Admin.get_user(user_id) do
-      projects =
-        Enum.map(user.organizations, fn orga -> orga.projects end)
-        |> List.flatten()
-
-      render(conn, "show.html", user: user, events: events, organizations: user.organizations, projects: projects)
+    with {:ok, user} <- Admin.get_user(user_id) do
+      conn
+      |> render("show.html",
+        user: user,
+        organizations: user.organizations,
+        projects: user.organizations |> Enum.flat_map(fn o -> o.projects end),
+        events: Admin.get_user_events(user.id, 1000)
+      )
     end
   end
 end

@@ -1,7 +1,6 @@
 defmodule AzimuttWeb.OrganizationBillingController do
   use AzimuttWeb, :controller
   require Logger
-
   alias Azimutt.Accounts
   alias Azimutt.Heroku
   alias Azimutt.Organizations

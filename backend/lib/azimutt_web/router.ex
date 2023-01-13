@@ -114,14 +114,13 @@ defmodule AzimuttWeb.Router do
     get "/resources/:id", HerokuController, :show
   end
 
-  scope "/admin", AzimuttWeb do
+  scope "/admin", AzimuttWeb, as: :admin do
     pipe_through [:browser, :require_authed_user, :require_admin_user, :admin_dashboard_layout]
     get "/", Admin.DashboardController, :index
-    get "/events", Admin.EventController, :index
-    get "/events/:id", Admin.EventController, :show
-    get "/users", Admin.UserController, :index
-    get "/users/:id", Admin.UserController, :show
-    get "/organizations/:id", Admin.OrganizationController, :show
+    resources "/users", Admin.UserController, only: [:index, :show]
+    resources "/organizations", Admin.OrganizationController, only: [:index, :show]
+    resources "/projects", Admin.ProjectController, only: [:index, :show]
+    resources "/events", Admin.EventController, only: [:index, :show]
   end
 
   scope "/api/v1/swagger" do
