@@ -9,7 +9,11 @@ defmodule AzimuttWeb.Admin.ProjectController do
 
   def show(conn, %{"id" => project_id}) do
     with {:ok, project} <- Admin.get_project(project_id) do
-      conn |> render("show.html", project: project)
+      conn
+      |> render("show.html",
+        project: project,
+        events: Admin.get_project_events(project.id, 1000)
+      )
     end
   end
 end

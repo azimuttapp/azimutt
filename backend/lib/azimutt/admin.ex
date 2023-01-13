@@ -49,7 +49,7 @@ defmodule Azimutt.Admin do
     Organization
     |> where([o], o.id == ^id)
     |> preload(members: [:user, :created_by, :updated_by])
-    |> preload(:projects)
+    |> preload(projects: [:organization])
     |> preload(:heroku_resource)
     |> preload(:invitations)
     |> preload(:created_by)
@@ -92,6 +92,20 @@ defmodule Azimutt.Admin do
   def get_user_events(id, limit) do
     query_events()
     |> where([e], e.created_by_id == ^id)
+    |> limit(^limit)
+    |> Repo.all()
+  end
+
+  def get_organization_events(id, limit) do
+    query_events()
+    |> where([e], e.organization_id == ^id)
+    |> limit(^limit)
+    |> Repo.all()
+  end
+
+  def get_project_events(id, limit) do
+    query_events()
+    |> where([e], e.project_id == ^id)
     |> limit(^limit)
     |> Repo.all()
   end

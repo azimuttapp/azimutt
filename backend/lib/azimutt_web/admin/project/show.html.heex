@@ -1,10 +1,25 @@
 <div class="my-3 flex">
-    <div class="w-1/3">
+    <div class="w-1/2">
         <div class="flex">
-            <div class="pl-4 mt-2">
+            <div class="mt-2 pl-3">
                 <div class="text-xl font-bold text-slate-100 truncate"><%= @project.name %></div>
                 <div class="text-xs font-medium text-scheme-yellow truncate"><%= @project.created_by.name %></div>
+                <div class="text-xs font-medium text-slate-300"><%= @project.storage_kind %> / visibility: <%= @project.visibility %></div>
             </div>
         </div>
+        <div class="my-3 pl-3 text-xs text-slate-100">
+            <div><%= @project.nb_sources %> sources</div>
+            <div><%= @project.nb_tables %> tables</div>
+            <div><%= @project.nb_columns %> columns</div>
+            <div><%= @project.nb_relations %> relations</div>
+            <div><%= @project.nb_types %> types</div>
+            <div><%= @project.nb_comments %> comments</div>
+            <div><%= @project.nb_layouts %> layouts</div>
+            <div><%= @project.nb_notes %> notes</div>
+            <div><%= @project.nb_memos %> memos</div>
+        </div>
+    </div>
+    <div class="pl-3 w-1/2">
+        <%= render AzimuttWeb.Admin.EventView, "_events_table.html", conn: @conn, events: @events %>
     </div>
 </div>
