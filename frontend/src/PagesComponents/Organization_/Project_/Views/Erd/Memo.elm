@@ -58,8 +58,7 @@ viewMemo platform conf cursorMode edit memo =
                 ([ id htmlId
                  , class ("select-none absolute px-3 py-1 cursor-pointer overflow-hidden border border-transparent border-dashed hover:border-gray-300 hover:resize hover:overflow-auto" ++ (memo.color |> Maybe.mapOrElse (\c -> " shadow rounded " ++ Tw.bg_200 c) ""))
                  ]
-                    ++ Bool.cond conf.layout [ onContextMenu platform (ContextMenuCreate (MemoContextMenu.view platform conf memo)) ] []
-                    ++ Bool.cond conf.update [ stopDoubleClick (MemoMsg (MEdit memo)) ] []
+                    ++ Bool.cond conf.layout [ stopDoubleClick (MemoMsg (MEdit memo)), onContextMenu platform (ContextMenuCreate (MemoContextMenu.view platform conf memo)) ] []
                     ++ Area.stylesGrid memo
                     ++ resizeMemo
                 )

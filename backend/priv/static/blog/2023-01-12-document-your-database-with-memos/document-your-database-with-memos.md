@@ -21,12 +21,14 @@ Then we added **notes** on tables and columns. They are very similar to SQL comm
 
 And now we are introducing **memos** 🎉
 
-They are small pieces of content you can freely place anywhere in your layout. And as they are rendered using markdown, you can really leverage them for rich layout documentation. For example, you could:
+They are small pieces of content you can freely place anywhere in your layout. And as they are rendered using **markdown**, you can really leverage them for rich layout documentation. For example, you could:
 
 - link to other documentation or website
 - add images for branding, highlighting some parts or even showing some emotions
 - add SQL queries and sample result
 - or any other creative idea or custom need you may have
+
+To create a memo it's really simple, just double click anywhere in your diagram background (or right click, also works 😉).
 
 The first screenshot is a good example of what you can achieve with many Azimutt features, memos but not only and can be seen as overloaded but here is a more realistic documentation example, showcasing the [Gospeak](https://gospeak.io) database schema:
 

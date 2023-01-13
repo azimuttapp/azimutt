@@ -15,7 +15,7 @@ defmodule AzimuttWeb.LayoutView do
   # https://app.sistrix.com/en/serp-snippet-generator
 
   # max 55-70 chars
-  def title(%{assigns: %{seo: %{title: title}}}), do: title <> " · " <> Azimutt.config(:seo_title)
+  def title(%{assigns: %{seo: %{title: title}}}), do: title <> " · Azimutt"
   def title(_conn), do: Azimutt.config(:seo_title)
 
   # max 150-300 chars
