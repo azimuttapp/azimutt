@@ -20,6 +20,18 @@
     <% end %>
 </dl>
 
+<div class="my-3 grid grid-cols-3 gap-5">
+    <div class="overflow-hidden rounded-md bg-slate-800 px-4 py-5 shadow">
+        <canvas class="line-chart"><%= @created_chart |> Jason.encode!() %></canvas>
+    </div>
+    <div class="overflow-hidden rounded-md bg-slate-800 px-4 py-5 shadow">
+        <canvas class="line-chart"><%= @connected_chart |> Jason.encode!() %></canvas>
+    </div>
+    <div class="overflow-hidden rounded-md bg-slate-800 px-4 py-5 shadow">
+        <canvas class="line-chart"><%= @monthly_connected_chart |> Jason.encode!() %></canvas>
+    </div>
+</div>
+
 <div class="my-3">
     <%= render AzimuttWeb.Admin.EventView, "_events_table.html", assigns %>
 </div>

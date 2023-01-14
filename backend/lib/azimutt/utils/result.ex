@@ -264,6 +264,17 @@ defmodule Azimutt.Utils.Result do
   def exists({:error, _err}, _f), do: false
 
   @doc """
+  Transform Result into a list, with one element if success or empty if error
+  ## Examples
+      iex> {:ok, 1} |> Result.to_list()
+      [1]
+      iex> {:error, 1} |> Result.to_list()
+      []
+  """
+  def to_list({:ok, val}), do: [val]
+  def to_list({:error, _err}), do: []
+
+  @doc """
   Transforms a list of results into a result of list.
   If they are all :ok, it will be :ok, otherwise returns the first :error.
   ## Examples

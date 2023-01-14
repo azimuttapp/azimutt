@@ -117,4 +117,63 @@ defmodule Azimutt.Admin do
     |> preload(:created_by)
     |> order_by(desc: :created_at)
   end
+
+  def daily_created_users do
+    from(User)
+    |> group_by([u], fragment("to_char(?, 'yyyy-mm-dd')", u.created_at))
+    |> select([u], {fragment("to_char(?, 'yyyy-mm-dd')", u.created_at), count(u.id)})
+    |> order_by([u], fragment("to_char(?, 'yyyy-mm-dd')", u.created_at))
+    |> Repo.all()
+  end
+
+  def daily_created_projects do
+    from(Project)
+    |> group_by([p], fragment("to_char(?, 'yyyy-mm-dd')", p.created_at))
+    |> select([p], {fragment("to_char(?, 'yyyy-mm-dd')", p.created_at), count(p.id)})
+    |> order_by([p], fragment("to_char(?, 'yyyy-mm-dd')", p.created_at))
+    |> Repo.all()
+  end
+
+  def daily_created_non_personal_organizations do
+    from(Organization)
+    |> where([o], o.is_personal == false)
+    |> group_by([o], fragment("to_char(?, 'yyyy-mm-dd')", o.created_at))
+    |> select([o], {fragment("to_char(?, 'yyyy-mm-dd')", o.created_at), count(o.id)})
+    |> order_by([o], fragment("to_char(?, 'yyyy-mm-dd')", o.created_at))
+    |> Repo.all()
+  end
+
+  def daily_connected_users do
+    from(Event)
+    |> group_by([e], fragment("to_char(?, 'yyyy-mm-dd')", e.created_at))
+    |> select([e], {fragment("to_char(?, 'yyyy-mm-dd')", e.created_at), count(e.created_by_id, :distinct)})
+    |> order_by([e], fragment("to_char(?, 'yyyy-mm-dd')", e.created_at))
+    |> Repo.all()
+  end
+
+  def monthly_connected_users do
+    from(Event)
+    |> group_by([e], fragment("to_char(?, 'yyyy-mm')", e.created_at))
+    |> select([e], {fragment("to_char(?, 'yyyy-mm')", e.created_at), count(e.created_by_id, :distinct)})
+    |> order_by([e], fragment("to_char(?, 'yyyy-mm')", e.created_at))
+    |> Repo.all()
+  end
+
+  def daily_used_projects do
+    from(Event)
+    |> where([o], not is_nil(o.project_id))
+    |> group_by([e], fragment("to_char(?, 'yyyy-mm-dd')", e.created_at))
+    |> select([e], {fragment("to_char(?, 'yyyy-mm-dd')", e.created_at), count(e.project_id, :distinct)})
+    |> order_by([e], fragment("to_char(?, 'yyyy-mm-dd')", e.created_at))
+    |> Repo.all()
+  end
+
+  def monthly_used_projects do
+    from(Event)
+    |> where([o], not is_nil(o.project_id))
+    |> group_by([e], fragment("to_char(?, 'yyyy-mm')", e.created_at))
+    |> select([e], {fragment("to_char(?, 'yyyy-mm')", e.created_at), count(e.project_id, :distinct)})
+    |> order_by([e], fragment("to_char(?, 'yyyy-mm')", e.created_at))
+    |> Repo.all()
+  end
 end

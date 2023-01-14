@@ -111,6 +111,11 @@ defmodule Azimutt.Utils.ResultTest do
       assert false == {:error, 1} |> Result.exists(fn x -> x == 1 end)
     end
 
+    test "to_list" do
+      assert [1] == {:ok, 1} |> Result.to_list()
+      assert [] == {:error, 1} |> Result.to_list()
+    end
+
     test "sequence" do
       assert {:ok, [1, 2, 3]} = [{:ok, 1}, {:ok, 2}, {:ok, 3}] |> Result.sequence()
       assert {:error, "e1"} = [{:ok, 1}, {:error, "e1"}, {:error, "e2"}] |> Result.sequence()
