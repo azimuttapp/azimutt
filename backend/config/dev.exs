@@ -3,7 +3,7 @@ import Config
 config :azimutt,
   environment: :dev,
   domain: "localhost",
-  site_url: "http://localhost:4000",
+  site_url: "localhost:4000",
   support_email: "hey@azimutt.local",
   mailer_default_from_email: "hey@azimutt.dev",
   team_plan_price_id: "price_1LqdRzCaPXsf4vehSyyUn4pd"
@@ -14,11 +14,11 @@ config :cors_plug,
 
 # Configure your database
 config :azimutt, Azimutt.Repo,
+  stacktrace: true,
   username: "postgres",
   password: "postgres",
   hostname: "localhost",
   database: "azimutt_dev",
-  stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
 
@@ -73,7 +73,7 @@ config :azimutt, AzimuttWeb.Endpoint,
       ~r"priv/static/.*(js|css|png|jpeg|jpg|gif|svg)$",
       ~r"priv/gettext/.*(po)$",
       ~r"lib/azimutt_web/(live|views)/.*(ex)$",
-      ~r"lib/azimutt_web/templates/.*(eex)$"
+      ~r"lib/azimutt_web/*/*/.*(eex)$"
     ]
   ]
 

@@ -12,8 +12,18 @@ defmodule Azimutt.Utils.MapxTest do
       assert %{foo: 3, bob: 5} = %{foo: "bar", bob: "alice"} |> Mapx.map(fn {k, v} -> {k, String.length(v)} end)
     end
 
+    test "map_keys" do
+      assert %{"foo" => "bar", "bob" => "alice"} = %{foo: "bar", bob: "alice"} |> Mapx.map_keys(&Atom.to_string/1)
+    end
+
     test "map_values" do
       assert %{foo: 3, bob: 5} = %{foo: "bar", bob: "alice"} |> Mapx.map_values(&String.length/1)
+    end
+
+    test "toggle" do
+      assert %{foo: "bar"} = %{foo: "bar", bob: "alice"} |> Mapx.toggle(:bob, "alice")
+      assert %{foo: "bar", bob: "loic"} = %{foo: "bar", bob: "alice"} |> Mapx.toggle(:bob, "loic")
+      assert %{foo: "bar", bob: "alice", lol: "mdr"} = %{foo: "bar", bob: "alice"} |> Mapx.toggle(:lol, "mdr")
     end
 
     test "atomize" do

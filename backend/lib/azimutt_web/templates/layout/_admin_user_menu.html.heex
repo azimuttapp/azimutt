@@ -1,0 +1,93 @@
+<nav x-data="{ open: false }" class="z-50 flex-shrink-0 bg-gray-900 shadow-sm font-sans">
+    <!-- FIXME: move this in /admin folder -->
+    <div class="px-2 mx-auto sm:px-4 lg:px-8">
+        <div class="relative flex items-center justify-between h-16">
+            <!-- Logo section -->
+            <div class="flex items-center px-2 lg:px-0 xl:w-64">
+                <div class="flex-shrink-0">
+                    <a aria-label="Home" href={Routes.user_dashboard_path(@conn, :index)}>
+                        <AzimuttWeb.Components.Brand.logo variant="light" class="w-auto h-8" />
+                    </a>
+                </div>
+            </div>
+            <div class="flex lg:hidden">
+                <!-- Mobile menu button -->
+                <button type="button" class="inline-flex items-center justify-center p-2 text-gray-100 rounded-md bg-slate-800 hover:text-white hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-700 focus:ring-white" aria-controls="mobile-menu" @click="open = !open" aria-expanded="false" x-bind:aria-expanded="open.toString()">
+                    <span class="sr-only">Open main menu</span>
+                    <svg x-description="Icon when menu is closed. Heroicon name: outline/menu-alt-1" x-state:on="Menu open" x-state:off="Menu closed" class="block w-6 h-6" :class="{ 'hidden': open, 'block': !(open) }" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h8m-8 6h16"></path>
+                    </svg>
+                    <svg x-description="Icon when menu is open. Heroicon name: outline/x" x-state:on="Menu open" x-state:off="Menu closed" class="hidden w-6 h-6" :class="{ 'block': open, 'hidden': !(open) }" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <!-- Links section -->
+            <div class="hidden lg:block lg:w-80">
+                <div class="flex items-center justify-end">
+                    <div class="flex"><%= link "Dashboard", to: Routes.admin_dashboard_path(@conn, :index), class: "rounded-lg py-1 px-2 text-sm text-slate-100 hover:bg-slate-700 hover:text-slate-200" %></div>
+                    <div class="flex"><%= link "Users", to: Routes.admin_user_path(@conn, :index), class: "rounded-lg py-1 px-2 text-sm text-slate-100 hover:bg-slate-700 hover:text-slate-200" %></div>
+                    <div class="flex"><%= link "Organizations", to: Routes.admin_organization_path(@conn, :index), class: "rounded-lg py-1 px-2 text-sm text-slate-100 hover:bg-slate-700 hover:text-slate-200" %></div>
+                    <div class="flex"><%= link "Projects", to: Routes.admin_project_path(@conn, :index), class: "rounded-lg py-1 px-2 text-sm text-slate-100 hover:bg-slate-700 hover:text-slate-200" %></div>
+                    <div class="flex"><%= link "Events", to: Routes.admin_event_path(@conn, :index), class: "rounded-lg py-1 px-2 text-sm text-slate-100 hover:bg-slate-700 hover:text-slate-200" %></div>
+                    <div class="flex"><%= link "Email", to: Routes.admin_email_path(@conn, :index), class: "rounded-lg py-1 px-2 text-sm text-slate-100 hover:bg-slate-700 hover:text-slate-200" %></div>
+                    <div @click.outside="open = false" class="relative ml-4 shrink-0" x-data="{ open: false }">
+                        <div>
+                            <button @click="open = !open" class="flex text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white" id="user-menu" aria-haspopup="true" x-bind:aria-expanded="open" aria-expanded="false">
+                                <span class="sr-only">Open user menu</span>
+                                <img class="w-8 h-8 rounded-full" src={@current_user.avatar} alt={@current_user.name}>
+                            </button>
+                        </div>
+                        <div x-show="open" x-description="Profile dropdown panel, show/hide based on dropdown state." x-transition:enter="transition ease-out duration-100" x-transition:enter-start="transform opacity-0 scale-95" x-transition:enter-end="transform opacity-100 scale-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="transform opacity-100 scale-100" x-transition:leave-end="transform opacity-0 scale-95" class="absolute right-0 z-50 w-48 py-1 mt-2 origin-top-right bg-slate-800 rounded-md shadow-lg" role="menu" aria-orientation="vertical" aria-labelledby="user-menu" style="display: none;">
+                            <div class="absolute right-0 w-56 -mt-1 origin-top-right bg-slate-800 divide-y divide-slate-700 rounded-md ring-1 ring-slate-100 ring-opacity-5">
+                                <div class="px-4 py-3">
+                                    <p class="text-sm text-slate-100">Connected with</p>
+                                    <p class="text-xs font-medium text-slate-100 truncate"><%= @current_user.email %></p>
+                                </div>
+
+                                <%= if @current_user.is_admin do %>
+                                    <div class="py-1">
+                                        <div class="px-4 py-3" role="none">
+                                            <div class="flex items-center text-sm" role="none">
+                                                <Icon.server_stack kind="mini" class="w-4 h-4 text-slate-100" />
+                                                <span class="px-2 text-sm font-medium text-slate-100">Admin</span>
+                                            </div>
+                                        </div>
+                                        <a class="block px-8 py-2 text-sm text-gray-100 hover:bg-slate-700" href="/admin">Administrateurs</a>
+                                    </div>
+                                <% end %>
+
+                                <%= if Mix.env() == :dev do %>
+                                    <div class="py-1">
+                                        <div class="px-4 py-3" role="none">
+                                            <div class="flex items-center text-sm" role="none">
+                                                <Icon.beaker kind="mini" class="w-4 h-4 text-slate-100" />
+                                                <span class="px-2 text-sm font-medium text-slate-100">Developers tools</span>
+                                            </div>
+                                        </div>
+                                        <a class="block px-8 py-2 text-sm text-slate-100 hover:bg-slate-700" href="/dashboard">LiveDashboard</a>
+                                        <a class="block px-8 py-2 text-sm text-slate-100 hover:bg-slate-700" href="/dev/mailbox">Mailbox</a>
+                                    </div>
+                                <% end %>
+                                <div class="py-1">
+                                    <%= link "Log out", class: "block px-4 py-2 text-sm text-slate-100 hover:bg-slate-700", to: Routes.user_session_path(@conn, :delete), method: :delete %>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div x-description="Mobile menu, show/hide based on menu state." class="lg:hidden" id="mobile-menu" x-show="open" style="display: none;">
+        <div class="px-2 pt-2 pb-3 space-y-1">
+            <a href="#" class="block px-3 py-2 text-base font-medium text-slate-100 bg-slate-800 rounded-md" x-state:on="Current" x-state:off="Default" aria-current="page" >Dashboard</a>
+        </div>
+        <div class="pt-4 pb-3 border-t border-slate-800">
+            <div class="px-2 space-y-1">
+                <a href="#" class="block px-3 py-2 text-base font-medium text-slate-100 rounded-md hover:text-gray-50 hover:bg-slate-700">Sign out</a>
+            </div>
+        </div>
+    </div>
+</nav>

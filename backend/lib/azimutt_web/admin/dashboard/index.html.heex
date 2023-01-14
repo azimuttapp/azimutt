@@ -1,0 +1,37 @@
+<dl class="my-3 grid grid-cols-3 gap-5 sm:grid-cols-6">
+    <%= for {title, value, url} <- [
+        {"Users", @users_count, Routes.admin_user_path(@conn, :index)},
+        {"Projects", @projects_count, Routes.admin_project_path(@conn, :index)},
+        {"Organizations (non personal)", @organizations_count, Routes.admin_organization_path(@conn, :index)},
+        {"Stripe subscriptions", @stripe_count, nil},
+        {"Heroku addons", @heroku_count, nil},
+    ] do %>
+        <%= if url == nil do %>
+            <div class="overflow-hidden rounded-md bg-slate-800 px-4 py-5 shadow">
+                <dt class="truncate text-sm font-medium text-gray-100"><%= title %></dt>
+                <dd class="mt-1 text-2xl font-semibold tracking-tight text-gray-100"><%= value %></dd>
+            </div>
+        <% else %>
+            <a href={url} class="overflow-hidden rounded-md bg-slate-800 px-4 py-5 shadow">
+                <dt class="truncate text-sm font-medium text-gray-100"><%= title %></dt>
+                <dd class="mt-1 text-2xl font-semibold tracking-tight text-gray-100"><%= value %></dd>
+            </a>
+        <% end %>
+    <% end %>
+</dl>
+
+<div class="my-3 grid grid-cols-3 gap-5">
+    <div class="overflow-hidden rounded-md bg-slate-800 px-4 py-5 shadow">
+        <canvas class="line-chart"><%= @created_chart |> Jason.encode!() %></canvas>
+    </div>
+    <div class="overflow-hidden rounded-md bg-slate-800 px-4 py-5 shadow">
+        <canvas class="line-chart"><%= @connected_chart |> Jason.encode!() %></canvas>
+    </div>
+    <div class="overflow-hidden rounded-md bg-slate-800 px-4 py-5 shadow">
+        <canvas class="line-chart"><%= @monthly_connected_chart |> Jason.encode!() %></canvas>
+    </div>
+</div>
+
+<div class="my-3">
+    <%= render AzimuttWeb.Admin.EventView, "_events_table.html", conn: @conn, events: @events %>
+</div>

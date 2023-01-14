@@ -1,0 +1,28 @@
+<div class="my-3 flex">
+    <div class="w-1/2">
+        <div class="flex">
+            <%= img_tag(@organization.logo, class: "mt-2 h-24 w-24 rounded-md") %>
+            <div class="mt-2 pl-3">
+                <div class="text-xl font-bold text-slate-100 truncate"><%= @organization.name %></div>
+                <div class="text-xs font-medium text-scheme-yellow truncate">
+                    <%= if @organization.is_personal do %>
+                        Personal organization
+                    <% else %>
+                        <%= @organization.created_by.name %>
+                    <% end %>
+                </div>
+                <div class="text-xs font-medium text-slate-300"><%= @organization.description %></div>
+                <div class="text-xs font-medium text-slate-500 truncate"><%= @organization.data |> format_data() %></div>
+            </div>
+        </div>
+        <div class="my-3">
+            <%= render AzimuttWeb.Admin.UserView, "_users_table.html", conn: @conn, users: @members %>
+        </div>
+        <div class="my-3">
+            <%= render AzimuttWeb.Admin.ProjectView, "_projects_table.html", conn: @conn, projects: @projects %>
+        </div>
+    </div>
+    <div class="pl-3 w-1/2">
+        <%= render AzimuttWeb.Admin.EventView, "_events_table.html", conn: @conn, events: @events %>
+    </div>
+</div>

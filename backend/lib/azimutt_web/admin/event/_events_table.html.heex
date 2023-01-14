@@ -1,0 +1,54 @@
+<div class="flex flex-col border-l border-1 border-slate-800 pl-3">
+    <div class="text-2xl font-bold text-slate-100 py-2"><%= @events |> Page.title("event") %></div>
+
+    <div class="align-middle shadow sm:rounded-sm">
+        <table class="w-full text-left">
+            <thead class="text-gray-100 bg-slate-800 text-xs font-semibold">
+                <tr>
+                    <th class="p-1" scope="col">Name</th>
+                    <th class="p-1" scope="col">Details</th>
+                    <th class="p-1" scope="col">Project</th>
+                    <th class="p-1" scope="col">Organization</th>
+                    <th class="p-1" scope="col">Created By</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800 text-slate-500  bg-slate-900">
+                <%= for event <- @events.items do %>
+                    <tr class="text-xs whitespace-nowrap hover:bg-slate-800 hover:text-slate-300">
+                        <td class="p-1 group">
+                            <%= link event.name, title: event.id, to: Routes.admin_event_path(@conn, :show, event), class: "underline" %>
+                            <%= render AzimuttWeb.PartialsView, "_page_filter.html", conn: @conn, page: @events, key: "name", value: event.name %>
+                        </td>
+                        <td class="p-1 truncate max-w-xs" title={event.details |> format_details()}><%= event.details |> format_details() %></td>
+                        <td class="p-1 group">
+                            <%= if event.project do %>
+                                <%= link to: Routes.admin_project_path(@conn, :show, event.project), class: "underline" do %>
+                                    <%= event.project.name %>
+                                <% end %>
+                                <%= render AzimuttWeb.PartialsView, "_page_filter.html", conn: @conn, page: @events, key: "project_id", value: event.project_id %>
+                            <% end %>
+                        </td>
+                        <td class="p-1 group">
+                            <%= if event.organization do %>
+                                <%= link to: Routes.admin_organization_path(@conn, :show, event.organization), class: "underline" do %>
+                                    <%= img_tag(event.organization.logo, class: "inline-block h-4 w-4 rounded-md") %>
+                                    <%= event.organization.name %>
+                                <% end %>
+                                <%= render AzimuttWeb.PartialsView, "_page_filter.html", conn: @conn, page: @events, key: "organization_id", value: event.organization_id %>
+                            <% end %>
+                        </td>
+                        <td class="p-1 group" title={"Created on #{format_datetime(event.created_at)}"}>
+                            <%= link to: Routes.admin_user_path(@conn, :show, event.created_by), class: "underline" do %>
+                                <%= img_tag(event.created_by.avatar, class: "inline-block h-4 w-4 rounded-md") %>
+                                <%= event.created_by.name %>
+                            <% end %>
+                            <%= render AzimuttWeb.PartialsView, "_page_filter.html", conn: @conn, page: @events, key: "created_by_id", value: event.created_by_id %>
+                        </td>
+                    </tr>
+                <% end %>
+            </tbody>
+        </table>
+    </div>
+
+    <%= render AzimuttWeb.PartialsView, "_pagination.html", conn: @conn, page: @events %>
+</div>
