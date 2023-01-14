@@ -30,6 +30,7 @@
                     <div class="flex"><%= link "Organizations", to: Routes.admin_organization_path(@conn, :index), class: "rounded-lg py-1 px-2 text-sm text-slate-100 hover:bg-slate-700 hover:text-slate-200" %></div>
                     <div class="flex"><%= link "Projects", to: Routes.admin_project_path(@conn, :index), class: "rounded-lg py-1 px-2 text-sm text-slate-100 hover:bg-slate-700 hover:text-slate-200" %></div>
                     <div class="flex"><%= link "Events", to: Routes.admin_event_path(@conn, :index), class: "rounded-lg py-1 px-2 text-sm text-slate-100 hover:bg-slate-700 hover:text-slate-200" %></div>
+                    <div class="flex"><%= link "Email", to: Routes.admin_email_path(@conn, :index), class: "rounded-lg py-1 px-2 text-sm text-slate-100 hover:bg-slate-700 hover:text-slate-200" %></div>
                     <div @click.outside="open = false" class="relative ml-4 shrink-0" x-data="{ open: false }">
                         <div>
                             <button @click="open = !open" class="flex text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white" id="user-menu" aria-haspopup="true" x-bind:aria-expanded="open" aria-expanded="false">

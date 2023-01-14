@@ -121,6 +121,7 @@ defmodule AzimuttWeb.Router do
     resources "/organizations", Admin.OrganizationController, only: [:index, :show]
     resources "/projects", Admin.ProjectController, only: [:index, :show]
     resources "/events", Admin.EventController, only: [:index, :show]
+    resources "/email", Admin.EmailController, only: [:index, :create]
   end
 
   scope "/api/v1/swagger" do
