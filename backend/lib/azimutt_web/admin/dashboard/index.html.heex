@@ -33,5 +33,5 @@
 </div>
 
 <div class="my-3">
-    <%= render AzimuttWeb.Admin.EventView, "_events_table.html", assigns %>
+    <%= render AzimuttWeb.Admin.EventView, "_events_table.html", conn: @conn, events: @events %>
 </div>

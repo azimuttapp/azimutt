@@ -4,6 +4,7 @@ defmodule AzimuttWeb.Admin.EventView do
   use Phoenix.View, root: "lib/azimutt_web", namespace: AzimuttWeb
   import Phoenix.HTML.Tag
   import Phoenix.HTML.Link
+  alias Azimutt.Utils.Page
   alias AzimuttWeb.Router.Helpers, as: Routes
 
   def format_datetime(date) do

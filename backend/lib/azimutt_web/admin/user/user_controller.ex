@@ -1,10 +1,11 @@
 defmodule AzimuttWeb.Admin.UserController do
   use AzimuttWeb, :controller
   alias Azimutt.Admin
+  alias Azimutt.Utils.Page
   action_fallback AzimuttWeb.FallbackController
 
   def index(conn, _params) do
-    render(conn, "index.html", users: Admin.list_users(1000))
+    render(conn, "index.html", users: Admin.list_users(conn |> Page.from_conn()))
   end
 
   def show(conn, %{"id" => user_id}) do
@@ -12,9 +13,9 @@ defmodule AzimuttWeb.Admin.UserController do
       conn
       |> render("show.html",
         user: user,
-        organizations: user.organizations,
-        projects: user.organizations |> Enum.flat_map(fn o -> o.projects end),
-        events: Admin.get_user_events(user.id, 1000)
+        organizations: user.organizations |> Page.wrap(),
+        projects: user.organizations |> Enum.flat_map(fn o -> o.projects end) |> Page.wrap(),
+        events: Admin.get_user_events(user.id, conn |> Page.from_conn(%{prefix: "events", size: 40}))
       )
     end
   end

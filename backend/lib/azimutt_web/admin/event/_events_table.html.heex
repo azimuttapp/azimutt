@@ -1,5 +1,6 @@
 <div class="flex flex-col border-l border-1 border-slate-800 pl-3">
-    <div class="text-2xl font-bold text-slate-100 py-2"><%= @events |> Enum.count() %> last events</div>
+    <div class="text-2xl font-bold text-slate-100 py-2"><%= @events |> Page.title("event") %></div>
+
     <div class="align-middle shadow sm:rounded-sm">
         <table class="w-full text-left">
             <thead class="text-gray-100 bg-slate-800 text-xs font-semibold">
@@ -12,7 +13,7 @@
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-800 text-slate-500  bg-slate-900">
-                <%= for event <- @events do %>
+                <%= for event <- @events.items do %>
                     <tr class="text-xs whitespace-nowrap hover:bg-slate-800 hover:text-slate-300">
                         <td class="p-1"><%= link event.name, title: event.id, to: Routes.admin_event_path(@conn, :show, event), class: "underline" %></td>
                         <td class="p-1 truncate max-w-xs" title={event.details |> format_details()}><%= event.details |> format_details() %></td>
@@ -42,4 +43,6 @@
             </tbody>
         </table>
     </div>
+
+    <%= render AzimuttWeb.PartialsView, "_pagination.html", conn: @conn, page: @events %>
 </div>

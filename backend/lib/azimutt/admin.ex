@@ -7,6 +7,7 @@ defmodule Azimutt.Admin do
   alias Azimutt.Projects.Project
   alias Azimutt.Repo
   alias Azimutt.Tracking.Event
+  alias Azimutt.Utils.Page
   alias Azimutt.Utils.Result
 
   def count_users, do: User |> Repo.aggregate(:count, :id)
@@ -17,12 +18,10 @@ defmodule Azimutt.Admin do
   def count_heroku_resources, do: Heroku.Resource |> Repo.aggregate(:count, :id)
   def count_projects, do: Project |> Repo.aggregate(:count, :id)
 
-  # FIXME add pagination instead of limit
-  def list_users(limit) do
+  def list_users(%Page.Info{} = p) do
     User
     |> order_by(desc: :created_at)
-    |> limit(^limit)
-    |> Repo.all()
+    |> Page.get(p)
   end
 
   def get_user(id) do
@@ -33,16 +32,15 @@ defmodule Azimutt.Admin do
     |> Result.from_nillable()
   end
 
-  def list_organizations(limit) do
+  def list_organizations(%Page.Info{} = p) do
     Organization
     |> order_by(desc: :created_at)
-    |> limit(^limit)
     |> preload(:members)
     |> preload(:projects)
     |> preload(:invitations)
     |> preload(:heroku_resource)
     |> preload(:created_by)
-    |> Repo.all()
+    |> Page.get(p)
   end
 
   def get_organization(id) do
@@ -58,13 +56,12 @@ defmodule Azimutt.Admin do
     |> Result.from_nillable()
   end
 
-  def list_projects(limit) do
+  def list_projects(%Page.Info{} = p) do
     Project
     |> order_by(desc: :created_at)
-    |> limit(^limit)
     |> preload(:organization)
     |> preload(:created_by)
-    |> Repo.all()
+    |> Page.get(p)
   end
 
   def get_project(id) do
@@ -76,10 +73,9 @@ defmodule Azimutt.Admin do
     |> Result.from_nillable()
   end
 
-  def list_events(limit) do
+  def list_events(%Page.Info{} = p) do
     query_events()
-    |> limit(^limit)
-    |> Repo.all()
+    |> Page.get(p)
   end
 
   def get_event(id) do
@@ -89,25 +85,22 @@ defmodule Azimutt.Admin do
     |> Result.from_nillable()
   end
 
-  def get_user_events(id, limit) do
+  def get_user_events(id, %Page.Info{} = p) do
     query_events()
     |> where([e], e.created_by_id == ^id)
-    |> limit(^limit)
-    |> Repo.all()
+    |> Page.get(p)
   end
 
-  def get_organization_events(id, limit) do
+  def get_organization_events(id, %Page.Info{} = p) do
     query_events()
     |> where([e], e.organization_id == ^id)
-    |> limit(^limit)
-    |> Repo.all()
+    |> Page.get(p)
   end
 
-  def get_project_events(id, limit) do
+  def get_project_events(id, %Page.Info{} = p) do
     query_events()
     |> where([e], e.project_id == ^id)
-    |> limit(^limit)
-    |> Repo.all()
+    |> Page.get(p)
   end
 
   defp query_events do

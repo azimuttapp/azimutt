@@ -1,5 +1,6 @@
 <div class="flex flex-col border-l border-1 border-slate-800 pl-3">
-    <div class="text-2xl font-bold text-slate-100 py-2"><%= @users |> Enum.count() %> users</div>
+    <div class="text-2xl font-bold text-slate-100 py-2"><%= @users |> Page.title("user") %></div>
+
     <div class="align-middle shadow sm:rounded-sm">
         <table class="w-full text-left">
             <thead class="text-gray-100 bg-slate-800 text-xs font-semibold">
@@ -13,7 +14,7 @@
             </tr>
             </thead>
             <tbody class="divide-y divide-slate-800 text-slate-500  bg-slate-900">
-                <%= for user <- @users do %>
+                <%= for user <- @users.items do %>
                     <tr class=" text-xs whitespace-nowrap hover:bg-slate-800 hover:text-slate-300">
                         <td class="p-1" title={"Created on #{format_datetime(user.created_at)}"}>
                             <%= link to: Routes.admin_user_path(@conn, :show, user), class: "underline" do %>
@@ -39,4 +40,6 @@
             </tbody>
         </table>
     </div>
+
+    <%= render AzimuttWeb.PartialsView, "_pagination.html", conn: @conn, page: @users %>
 </div>

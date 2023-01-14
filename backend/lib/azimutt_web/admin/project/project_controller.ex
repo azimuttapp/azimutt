@@ -1,10 +1,11 @@
 defmodule AzimuttWeb.Admin.ProjectController do
   use AzimuttWeb, :controller
   alias Azimutt.Admin
+  alias Azimutt.Utils.Page
   action_fallback AzimuttWeb.FallbackController
 
   def index(conn, _params) do
-    render(conn, "index.html", projects: Admin.list_projects(1000))
+    render(conn, "index.html", projects: Admin.list_projects(conn |> Page.from_conn()))
   end
 
   def show(conn, %{"id" => project_id}) do
@@ -12,7 +13,7 @@ defmodule AzimuttWeb.Admin.ProjectController do
       conn
       |> render("show.html",
         project: project,
-        events: Admin.get_project_events(project.id, 1000)
+        events: Admin.get_project_events(project.id, conn |> Page.from_conn(%{prefix: "events", size: 40}))
       )
     end
   end

@@ -1,5 +1,6 @@
 <div class="flex flex-col border-l border-1 border-slate-800 pl-3">
-    <div class="text-2xl font-bold text-slate-100 py-2"><%= @organizations |> Enum.count() %> organizations</div>
+    <div class="text-2xl font-bold text-slate-100 py-2"><%= @organizations |> Page.title("organization") %></div>
+
     <div class="align-middle shadow sm:rounded-sm">
         <table class="w-full text-left">
             <thead class="text-gray-100 bg-slate-800 text-xs font-semibold">
@@ -13,7 +14,7 @@
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-800 text-slate-500 bg-slate-900">
-                <%= for organization <- @organizations do %>
+                <%= for organization <- @organizations.items do %>
                     <tr class="text-xs whitespace-nowrap hover:bg-slate-800 hover:text-slate-300">
                         <td class="p-1">
                             <%= if organization.stripe_subscription_id do %>
@@ -51,4 +52,6 @@
             </tbody>
         </table>
     </div>
+
+    <%= render AzimuttWeb.PartialsView, "_pagination.html", conn: @conn, page: @organizations %>
 </div>

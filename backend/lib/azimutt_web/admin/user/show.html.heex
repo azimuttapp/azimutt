@@ -10,13 +10,13 @@
             </div>
         </div>
         <div class="my-3">
-            <%= render AzimuttWeb.Admin.OrganizationView, "_organizations_table.html", assigns %>
+            <%= render AzimuttWeb.Admin.OrganizationView, "_organizations_table.html", conn: @conn, organizations: @organizations %>
         </div>
         <div class="my-3">
-            <%= render AzimuttWeb.Admin.ProjectView, "_projects_table.html", assigns %>
+            <%= render AzimuttWeb.Admin.ProjectView, "_projects_table.html", conn: @conn, projects: @projects %>
         </div>
     </div>
     <div class="pl-3 w-1/2">
-        <%= render AzimuttWeb.Admin.EventView, "_events_table.html", assigns %>
+        <%= render AzimuttWeb.Admin.EventView, "_events_table.html", conn: @conn, events: @events %>
     </div>
 </div>

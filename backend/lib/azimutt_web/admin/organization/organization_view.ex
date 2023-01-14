@@ -6,6 +6,7 @@ defmodule AzimuttWeb.Admin.OrganizationView do
   import Phoenix.HTML.Link
   alias Azimutt.Organizations.Organization
   alias Azimutt.Services.StripeSrv
+  alias Azimutt.Utils.Page
   alias AzimuttWeb.Router.Helpers, as: Routes
 
   def format_datetime(date) do
