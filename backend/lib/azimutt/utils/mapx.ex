@@ -23,6 +23,15 @@ defmodule Azimutt.Utils.Mapx do
   def map(enumerable, f), do: enumerable |> Enum.map(f) |> Map.new()
 
   @doc """
+  Same as `map` but only on the keys.
+  It iterates over all the keys and apply them the `f` function.
+  ## Examples
+      iex> %{foo: "bar", bob: "alice"} |> Mapx.map_keys(fn k -> k <> "s" end)
+      %{foos: "bar", bobs: "alice"}
+  """
+  def map_keys(enumerable, f), do: enumerable |> Enum.map(fn {k, v} -> {f.(k), v} end) |> Map.new()
+
+  @doc """
   Same as `map` but only on the values.
   It iterates over all the values and apply them the `f` function.
   ## Examples
@@ -30,6 +39,24 @@ defmodule Azimutt.Utils.Mapx do
       %{foo: 3, bob: 5}
   """
   def map_values(enumerable, f), do: enumerable |> Enum.map(fn {k, v} -> {k, f.(v)} end) |> Map.new()
+
+  @doc """
+  Remove a key if it's present with the expected value, or set it
+  ## Examples
+      iex> %{foo: "bar", bob: "alice"} |> Mapx.toggle(:foo, "bar")
+      %{bob: "alice"}
+      iex> %{foo: "bar", bob: "alice"} |> Mapx.toggle(:foo, "test")
+      %{foo: "test", bob: "alice"}
+      iex> %{foo: "bar", bob: "alice"} |> Mapx.toggle(:lol, "mdr")
+      %{foo: "bar", bob: "alice", lol: "mdr"}
+  """
+  def toggle(enumerable, key, value) do
+    if enumerable |> Map.get(key) == value do
+      enumerable |> Map.delete(key)
+    else
+      enumerable |> Map.put(key, value)
+    end
+  end
 
   @doc """
   Transform Map keys to :atom

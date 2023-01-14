@@ -32,14 +32,21 @@
                             <span class="inline-block w-4 text-cyan-300" title="nb_notes"><%= project.nb_notes %></span> /
                             <span class="inline-block w-4 text-blue-300" title="nb_memos"><%= project.nb_memos %></span>
                         </td>
-                        <td class="p-1">
+                        <td class="p-1 group">
                             <%= link to: Routes.admin_organization_path(@conn, :show, project.organization), class: "underline" do %>
                                 <%= img_tag(project.organization.logo, class: "inline-block h-4 w-4 rounded-md") %>
                                 <%= project.organization.name %>
                             <% end %>
+                            <%= render AzimuttWeb.PartialsView, "_page_filter.html", conn: @conn, page: @projects, key: "organization_id", value: project.organization_id %>
                         </td>
-                        <td class="p-1"><%= project.storage_kind %></td>
-                        <td class="p-1"><%= project.visibility %></td>
+                        <td class="p-1 group">
+                            <%= project.storage_kind %>
+                            <%= render AzimuttWeb.PartialsView, "_page_filter.html", conn: @conn, page: @projects, key: "storage_kind", value: project.storage_kind |> Atom.to_string %>
+                        </td>
+                        <td class="p-1 group">
+                            <%= project.visibility %>
+                            <%= render AzimuttWeb.PartialsView, "_page_filter.html", conn: @conn, page: @projects, key: "visibility", value: project.visibility |> Atom.to_string %>
+                        </td>
                         <td class="p-1"><%= format_datetime(project.updated_at) %></td>
                     </tr>
                 <% end %>

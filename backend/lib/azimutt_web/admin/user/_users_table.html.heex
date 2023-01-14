@@ -31,8 +31,14 @@
                                 / <a href={"https://twitter.com/#{user.twitter_username}"} class="underline">@<%= user.twitter_username %></a>
                             <% end %>
                         </td>
-                        <td class="p-1"><%= user.company %></td>
-                        <td class="p-1"><%= user.location %></td>
+                        <td class="p-1 group">
+                            <%= user.company %>
+                            <%= render AzimuttWeb.PartialsView, "_page_filter.html", conn: @conn, page: @users, key: "company", value: user.company %>
+                        </td>
+                        <td class="p-1 group">
+                            <%= user.location %>
+                            <%= render AzimuttWeb.PartialsView, "_page_filter.html", conn: @conn, page: @users, key: "location", value: user.location %>
+                        </td>
                         <td class="p-1 truncate max-w-xs" title={user.description}><%= user.description %></td>
                         <td class="p-1 truncate max-w-xs" title={user.data |> format_data()}><%= user.data |> format_data() %></td>
                     </tr>

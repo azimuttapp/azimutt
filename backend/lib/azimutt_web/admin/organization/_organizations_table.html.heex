@@ -30,8 +30,11 @@
                                 <%= organization.name %>
                             <% end %>
                         </td>
-                        <td class="p-1"><%= organization.location %></td>
-                        <td class="p-1">
+                        <td class="p-1 group">
+                            <%= organization.location %>
+                            <%= render AzimuttWeb.PartialsView, "_page_filter.html", conn: @conn, page: @organizations, key: "location", value: organization.location %>
+                        </td>
+                        <td class="p-1 group">
                             <span title="members"><%= display_number(organization.members) %></span> /
                             <span title="projects"><%= display_number(organization.projects) %></span> /
                             <%= if organization.is_personal do %>
@@ -39,12 +42,14 @@
                             <% else %>
                                 <span class="text-scheme-yellow" title="Non personal">N</span>
                             <% end %>
+                            <%= render AzimuttWeb.PartialsView, "_page_filter.html", conn: @conn, page: @organizations, key: "is_personal", value: organization.is_personal |> to_string %>
                         </td>
-                        <td class="p-1" title={"Created on #{format_datetime(organization.created_at)}"}>
+                        <td class="p-1 group" title={"Created on #{format_datetime(organization.created_at)}"}>
                             <%= link to: Routes.admin_user_path(@conn, :show, organization.created_by), class: "underline" do %>
                                 <%= img_tag(organization.created_by.avatar, class: "inline-block h-4 w-4 rounded-md") %>
                                 <%= organization.created_by.name %>
                             <% end %>
+                            <%= render AzimuttWeb.PartialsView, "_page_filter.html", conn: @conn, page: @organizations, key: "created_by_id", value: organization.created_by_id %>
                         </td>
                         <td class="p-1 truncate max-w-xs" title={organization.data |> format_data()}><%= organization.data |> format_data() %></td>
                     </tr>
