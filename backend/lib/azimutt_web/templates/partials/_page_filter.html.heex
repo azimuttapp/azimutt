@@ -1,10 +1,10 @@
 <%= if (@page |> Page.has_pagination || Page.filtered?(@page, @key, @value)) && @value != nil && @value != "" do %>
     <%= if Page.filtered?(@page, @key, @value) do %>
-        <a href={Page.filter(@page, @key, @value)}>
+        <a href={Page.filter(@page, @key, @value)} title="remove filter">
             <Icon.funnel kind="solid" class="w-4 h-4 inline-block" />
         </a>
     <% else %>
-        <a href={Page.filter(@page, @key, @value)} class="invisible group-hover:visible">
+        <a href={Page.filter(@page, @key, @value)} title="filter on this value" class="invisible group-hover:visible">
             <Icon.funnel kind="outline" class="w-4 h-4 inline-block" />
         </a>
     <% end %>

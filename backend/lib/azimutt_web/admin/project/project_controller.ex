@@ -5,7 +5,10 @@ defmodule AzimuttWeb.Admin.ProjectController do
   action_fallback AzimuttWeb.FallbackController
 
   def index(conn, _params) do
-    render(conn, "index.html", projects: Admin.list_projects(conn |> Page.from_conn()))
+    conn
+    |> render("index.html",
+      projects: Admin.list_projects(conn |> Page.from_conn(%{sort: "-created_at"}))
+    )
   end
 
   def show(conn, %{"id" => project_id}) do
@@ -13,7 +16,7 @@ defmodule AzimuttWeb.Admin.ProjectController do
       conn
       |> render("show.html",
         project: project,
-        events: Admin.get_project_events(project.id, conn |> Page.from_conn(%{prefix: "events", size: 40}))
+        events: Admin.get_project_events(project.id, conn |> Page.from_conn(%{prefix: "events", sort: "-created_at", size: 40}))
       )
     end
   end

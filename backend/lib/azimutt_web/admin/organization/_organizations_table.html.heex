@@ -6,9 +6,21 @@
             <thead class="text-gray-100 bg-slate-800 text-xs font-semibold">
                 <tr>
                     <th class="p-1" scope="col">Sub</th>
-                    <th class="p-1" scope="col">Name</th>
-                    <th class="p-1" scope="col">Location</th>
-                    <th class="p-1" scope="col"><span title="members">M</span> / <span title="projects">P</span> / <span title="is_personal">NP</span></th>
+                    <th class="group p-1" scope="col">
+                        Name
+                        <%= render AzimuttWeb.PartialsView, "_page_sort.html", page: @organizations, key: "name" %>
+                    </th>
+                    <th class="group p-1" scope="col">
+                        Location
+                        <%= render AzimuttWeb.PartialsView, "_page_sort.html", page: @organizations, key: "location" %>
+                    </th>
+                    <th class="p-1" scope="col">
+                        <span title="members">M</span> /
+                        <span title="projects">P</span> /
+                        <span class="group" title="is_personal">
+                            NP
+                            <%= render AzimuttWeb.PartialsView, "_page_sort.html", page: @organizations, key: "is_personal" %>
+                        </span></th>
                     <th class="p-1" scope="col">Created By</th>
                     <th class="p-1" scope="col">Data</th>
                 </tr>
@@ -30,11 +42,11 @@
                                 <%= organization.name %>
                             <% end %>
                         </td>
-                        <td class="p-1 group">
+                        <td class="group p-1">
                             <%= organization.location %>
-                            <%= render AzimuttWeb.PartialsView, "_page_filter.html", conn: @conn, page: @organizations, key: "location", value: organization.location %>
+                            <%= render AzimuttWeb.PartialsView, "_page_filter.html", page: @organizations, key: "location", value: organization.location %>
                         </td>
-                        <td class="p-1 group">
+                        <td class="group p-1">
                             <span title="members"><%= display_number(organization.members) %></span> /
                             <span title="projects"><%= display_number(organization.projects) %></span> /
                             <%= if organization.is_personal do %>
@@ -42,14 +54,14 @@
                             <% else %>
                                 <span class="text-scheme-yellow" title="Non personal">N</span>
                             <% end %>
-                            <%= render AzimuttWeb.PartialsView, "_page_filter.html", conn: @conn, page: @organizations, key: "is_personal", value: organization.is_personal |> to_string %>
+                            <%= render AzimuttWeb.PartialsView, "_page_filter.html", page: @organizations, key: "is_personal", value: organization.is_personal |> to_string() %>
                         </td>
-                        <td class="p-1 group" title={"Created on #{format_datetime(organization.created_at)}"}>
+                        <td class="group p-1" title={"Created on #{format_datetime(organization.created_at)}"}>
                             <%= link to: Routes.admin_user_path(@conn, :show, organization.created_by), class: "underline" do %>
                                 <%= img_tag(organization.created_by.avatar, class: "inline-block h-4 w-4 rounded-md") %>
                                 <%= organization.created_by.name %>
                             <% end %>
-                            <%= render AzimuttWeb.PartialsView, "_page_filter.html", conn: @conn, page: @organizations, key: "created_by_id", value: organization.created_by_id %>
+                            <%= render AzimuttWeb.PartialsView, "_page_filter.html", page: @organizations, key: "created_by_id", value: organization.created_by_id %>
                         </td>
                         <td class="p-1 truncate max-w-xs" title={organization.data |> format_data()}><%= organization.data |> format_data() %></td>
                     </tr>
@@ -58,5 +70,5 @@
         </table>
     </div>
 
-    <%= render AzimuttWeb.PartialsView, "_pagination.html", conn: @conn, page: @organizations %>
+    <%= render AzimuttWeb.PartialsView, "_pagination.html", page: @organizations %>
 </div>

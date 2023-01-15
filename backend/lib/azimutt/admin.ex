@@ -19,9 +19,7 @@ defmodule Azimutt.Admin do
   def count_projects, do: Project |> Repo.aggregate(:count, :id)
 
   def list_users(%Page.Info{} = p) do
-    User
-    |> order_by(desc: :created_at)
-    |> Page.get(p)
+    User |> Page.get(p)
   end
 
   def get_user(id) do
@@ -34,7 +32,6 @@ defmodule Azimutt.Admin do
 
   def list_organizations(%Page.Info{} = p) do
     Organization
-    |> order_by(desc: :created_at)
     |> preload(:members)
     |> preload(:projects)
     |> preload(:invitations)
@@ -58,7 +55,6 @@ defmodule Azimutt.Admin do
 
   def list_projects(%Page.Info{} = p) do
     Project
-    |> order_by(desc: :created_at)
     |> preload(:organization)
     |> preload(:created_by)
     |> Page.get(p)
@@ -67,7 +63,6 @@ defmodule Azimutt.Admin do
   def get_project(id) do
     Project
     |> where([p], p.id == ^id)
-    |> order_by(desc: :created_at)
     |> preload(:created_by)
     |> Repo.one()
     |> Result.from_nillable()
@@ -108,7 +103,6 @@ defmodule Azimutt.Admin do
     |> preload(:project)
     |> preload(:organization)
     |> preload(:created_by)
-    |> order_by(desc: :created_at)
   end
 
   def daily_created_users do

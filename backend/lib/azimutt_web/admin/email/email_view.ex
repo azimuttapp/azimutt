@@ -2,8 +2,6 @@ defmodule AzimuttWeb.Admin.EmailView do
   # use AzimuttWeb, :view
   # use Phoenix.View, root: "lib/azimutt_web/admin/templates", path: "*"
   use Phoenix.View, root: "lib/azimutt_web", namespace: AzimuttWeb
-  import Phoenix.HTML.Tag
-  import Phoenix.HTML.Link
   alias AzimuttWeb.Router.Helpers, as: Routes
 
   def format_datetime(date) do

@@ -7,9 +7,8 @@ defmodule AzimuttWeb.Admin.DashboardController do
 
   def index(conn, _params) do
     conn
-    |> render(
-      "index.html",
-      events: Admin.list_events(conn |> Page.from_conn(%{size: 40})),
+    |> render("index.html",
+      events: Admin.list_events(conn |> Page.from_conn(%{sort: "-created_at", size: 40})),
       users_count: Admin.count_users(),
       projects_count: Admin.count_projects(),
       organizations_count: Admin.count_non_personal_organizations(),
