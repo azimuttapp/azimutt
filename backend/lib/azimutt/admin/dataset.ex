@@ -49,23 +49,30 @@ defmodule Azimutt.Admin.Dataset do
         dataset.data |> Enum.flat_map(fn d -> d.label |> Timex.parse(format) |> Result.to_list() end)
       end)
 
-    start = dates |> Enum.min(Date)
-    stop = dates |> Enum.max(Date)
-    # TODO: inject correct step instead of generating for each day and then dedup :/
-    labels = Date.range(start, stop) |> Enum.flat_map(fn d -> d |> Timex.format(format) |> Result.to_list() end) |> Enum.dedup()
+    if dates |> length() == 0 do
+      %{
+        labels: [],
+        datasets: datasets |> Enum.map(fn dataset -> %{label: dataset.name, data: []} end)
+      }
+    else
+      start = dates |> Enum.min(Date)
+      stop = dates |> Enum.max(Date)
+      # TODO: inject correct step instead of generating for each day and then dedup :/
+      labels = Date.range(start, stop) |> Enum.flat_map(fn d -> d |> Timex.format(format) |> Result.to_list() end) |> Enum.dedup()
 
-    %{
-      labels: labels,
-      datasets:
-        datasets
-        |> Enum.map(fn dataset ->
-          values_map = dataset.data |> Enum.map(fn d -> {d.label, d.value} end) |> Map.new()
+      %{
+        labels: labels,
+        datasets:
+          datasets
+          |> Enum.map(fn dataset ->
+            values_map = dataset.data |> Enum.map(fn d -> {d.label, d.value} end) |> Map.new()
 
-          %{
-            label: dataset.name,
-            data: labels |> Enum.map(fn label -> values_map |> Map.get(label, 0) end)
-          }
-        end)
-    }
+            %{
+              label: dataset.name,
+              data: labels |> Enum.map(fn label -> values_map |> Map.get(label, 0) end)
+            }
+          end)
+      }
+    end
   end
 end
