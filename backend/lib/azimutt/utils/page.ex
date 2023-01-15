@@ -77,6 +77,7 @@ defmodule Azimutt.Utils.Page do
 
   defp build_filter({key, value}) do
     # TODO: would be nice to allow `like` filters, but don't know how to do...
+    # TODO: would be nice to filter dates also (on a day for example)
     {key |> String.to_atom(), value}
   end
 

@@ -125,8 +125,15 @@ defmodule Azimutt.Admin do
 
   def daily_used_projects do
     Event
-    |> where([o], not is_nil(o.project_id))
+    |> where([e], not is_nil(e.project_id))
     |> select([e], {fragment("to_char(?, 'yyyy-mm-dd')", e.created_at), count(e.project_id, :distinct)})
+    |> daily_events()
+  end
+
+  def daily_event(name) do
+    Event
+    |> where([e], e.name == ^name)
+    |> select([e], {fragment("to_char(?, 'yyyy-mm-dd')", e.created_at), count()})
     |> daily_events()
   end
 
@@ -145,7 +152,7 @@ defmodule Azimutt.Admin do
 
   def monthly_used_projects do
     Event
-    |> where([o], not is_nil(o.project_id))
+    |> where([e], not is_nil(e.project_id))
     |> select([e], {fragment("to_char(?, 'yyyy-mm')", e.created_at), count(e.project_id, :distinct)})
     |> monthly_events()
   end

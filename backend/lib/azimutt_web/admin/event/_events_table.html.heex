@@ -6,18 +6,23 @@
             <thead class="text-gray-100 bg-slate-800 text-xs font-semibold">
                 <tr>
                     <th class="group p-1" scope="col">
+                        Created at
+                        <%= render AzimuttWeb.PartialsView, "_page_sort.html", page: @events, key: "created_at" %>
+                    </th>
+                    <th class="group p-1" scope="col">
                         Name
                         <%= render AzimuttWeb.PartialsView, "_page_sort.html", page: @events, key: "name" %>
                     </th>
                     <th class="p-1" scope="col">Details</th>
                     <th class="p-1" scope="col">Project</th>
                     <th class="p-1" scope="col">Organization</th>
-                    <th class="p-1" scope="col">Created By</th>
+                    <th class="p-1" scope="col">Created by</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-800 text-slate-500  bg-slate-900">
                 <%= for event <- @events.items do %>
                     <tr class="text-xs whitespace-nowrap hover:bg-slate-800 hover:text-slate-300">
+                        <td class="p-1"><%= format_datetime(event.created_at) %></td>
                         <td class="group p-1">
                             <%= link event.name, title: event.id, to: Routes.admin_event_path(@conn, :show, event), class: "underline" %>
                             <%= render AzimuttWeb.PartialsView, "_page_filter.html", page: @events, key: "name", value: event.name %>
