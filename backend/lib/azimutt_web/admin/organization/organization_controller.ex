@@ -1,6 +1,7 @@
 defmodule AzimuttWeb.Admin.OrganizationController do
   use AzimuttWeb, :controller
   alias Azimutt.Admin
+  alias Azimutt.Admin.Dataset
   alias Azimutt.Utils.Page
   action_fallback AzimuttWeb.FallbackController
 
@@ -18,7 +19,8 @@ defmodule AzimuttWeb.Admin.OrganizationController do
         organization: organization,
         members: organization.members |> Enum.map(fn m -> m.user end) |> Page.wrap(),
         projects: organization.projects |> Page.wrap(),
-        events: Admin.get_organization_events(organization.id, conn |> Page.from_conn(%{prefix: "events", sort: "-created_at", size: 40}))
+        activity: Dataset.chartjs_daily_data([Admin.daily_organization_activity(organization) |> Dataset.from_values("Daily events")]),
+        events: Admin.get_organization_events(organization, conn |> Page.from_conn(%{prefix: "events", sort: "-created_at", size: 40}))
       )
     end
   end

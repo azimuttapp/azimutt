@@ -1,6 +1,7 @@
 defmodule AzimuttWeb.Admin.UserController do
   use AzimuttWeb, :controller
   alias Azimutt.Admin
+  alias Azimutt.Admin.Dataset
   alias Azimutt.Utils.Page
   action_fallback AzimuttWeb.FallbackController
 
@@ -18,7 +19,8 @@ defmodule AzimuttWeb.Admin.UserController do
         user: user,
         organizations: user.organizations |> Page.wrap(),
         projects: user.organizations |> Enum.flat_map(fn o -> o.projects end) |> Page.wrap(),
-        events: Admin.get_user_events(user.id, conn |> Page.from_conn(%{prefix: "events", sort: "-created_at", size: 40}))
+        activity: Dataset.chartjs_daily_data([Admin.daily_user_activity(user) |> Dataset.from_values("Daily events")]),
+        events: Admin.get_user_events(user, conn |> Page.from_conn(%{prefix: "events", sort: "-created_at", size: 40}))
       )
     end
   end
