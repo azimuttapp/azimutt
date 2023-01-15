@@ -18,6 +18,7 @@
             <div><%= @project.nb_notes %> notes</div>
             <div><%= @project.nb_memos %> memos</div>
         </div>
+        <div class="my-3"><canvas class="line-chart"><%= @activity |> Jason.encode!() %></canvas></div>
     </div>
     <div class="pl-3 w-1/2">
         <%= render AzimuttWeb.Admin.EventView, "_events_table.html", conn: @conn, events: @events %>

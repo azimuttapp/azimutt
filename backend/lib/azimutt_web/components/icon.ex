@@ -11,8 +11,10 @@ defmodule AzimuttWeb.Components.Icon do
       "academic-cap" -> academic_cap(assigns)
       "arrow-left" -> arrow_left(assigns)
       "arrow-left-on-rectangle" -> arrow_left_on_rectangle(assigns)
+      "arrow-long-down" -> arrow_long_down(assigns)
       "arrow-long-left" -> arrow_long_left(assigns)
       "arrow-long-right" -> arrow_long_right(assigns)
+      "arrow-long-up" -> arrow_long_up(assigns)
       "at-symbol" -> at_symbol(assigns)
       "bars-3-center-left" -> bars_3_center_left(assigns)
       "beaker" -> beaker(assigns)
@@ -113,6 +115,27 @@ defmodule AzimuttWeb.Components.Icon do
     end
   end
 
+  def arrow_long_down(assigns) do
+    classes = if assigns[:class], do: " #{assigns[:class]}", else: ""
+
+    case assigns[:kind] do
+      "outline" ->
+        ~H"""
+        <.outline classes={classes}><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25L12 21m0 0l-3.75-3.75M12 21V3" /></.outline>
+        """
+
+      "solid" ->
+        ~H"""
+        <.solid classes={classes}><path fill-rule="evenodd" d="M12 2.25a.75.75 0 01.75.75v16.19l2.47-2.47a.75.75 0 111.06 1.06l-3.75 3.75a.75.75 0 01-1.06 0l-3.75-3.75a.75.75 0 111.06-1.06l2.47 2.47V3a.75.75 0 01.75-.75z" clip-rule="evenodd" /></.solid>
+        """
+
+      _ ->
+        ~H"""
+        <.mini classes={classes}><path fill-rule="evenodd" d="M10 2a.75.75 0 01.75.75v12.59l1.95-2.1a.75.75 0 111.1 1.02l-3.25 3.5a.75.75 0 01-1.1 0l-3.25-3.5a.75.75 0 111.1-1.02l1.95 2.1V2.75A.75.75 0 0110 2z" clip-rule="evenodd" /></.mini>
+        """
+    end
+  end
+
   def arrow_long_left(assigns) do
     classes = if assigns[:class], do: " #{assigns[:class]}", else: ""
 
@@ -151,6 +174,27 @@ defmodule AzimuttWeb.Components.Icon do
       _ ->
         ~H"""
         <.mini classes={classes}><path fill-rule="evenodd" d="M2 10a.75.75 0 01.75-.75h12.59l-2.1-1.95a.75.75 0 111.02-1.1l3.5 3.25a.75.75 0 010 1.1l-3.5 3.25a.75.75 0 11-1.02-1.1l2.1-1.95H2.75A.75.75 0 012 10z" clip-rule="evenodd" /></.mini>
+        """
+    end
+  end
+
+  def arrow_long_up(assigns) do
+    classes = if assigns[:class], do: " #{assigns[:class]}", else: ""
+
+    case assigns[:kind] do
+      "outline" ->
+        ~H"""
+        <.outline classes={classes}><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75L12 3m0 0l3.75 3.75M12 3v18" /></.outline>
+        """
+
+      "solid" ->
+        ~H"""
+        <.solid classes={classes}><path fill-rule="evenodd" d="M11.47 2.47a.75.75 0 011.06 0l3.75 3.75a.75.75 0 01-1.06 1.06l-2.47-2.47V21a.75.75 0 01-1.5 0V4.81L8.78 7.28a.75.75 0 01-1.06-1.06l3.75-3.75z" clip-rule="evenodd" /></.solid>
+        """
+
+      _ ->
+        ~H"""
+        <.mini classes={classes}><path fill-rule="evenodd" d="M10 18a.75.75 0 01-.75-.75V4.66L7.3 6.76a.75.75 0 11-1.1-1.02l3.25-3.5a.75.75 0 011.1 0l3.25 3.5a.75.75 0 01-1.1 1.02l-1.95-2.1v12.59A.75.75 0 0110 18z" clip-rule="evenodd" /></.mini>
         """
     end
   end

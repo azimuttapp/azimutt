@@ -19,9 +19,7 @@ defmodule Azimutt.Admin do
   def count_projects, do: Project |> Repo.aggregate(:count, :id)
 
   def list_users(%Page.Info{} = p) do
-    User
-    |> order_by(desc: :created_at)
-    |> Page.get(p)
+    User |> Page.get(p)
   end
 
   def get_user(id) do
@@ -34,7 +32,6 @@ defmodule Azimutt.Admin do
 
   def list_organizations(%Page.Info{} = p) do
     Organization
-    |> order_by(desc: :created_at)
     |> preload(:members)
     |> preload(:projects)
     |> preload(:invitations)
@@ -58,7 +55,6 @@ defmodule Azimutt.Admin do
 
   def list_projects(%Page.Info{} = p) do
     Project
-    |> order_by(desc: :created_at)
     |> preload(:organization)
     |> preload(:created_by)
     |> Page.get(p)
@@ -67,7 +63,6 @@ defmodule Azimutt.Admin do
   def get_project(id) do
     Project
     |> where([p], p.id == ^id)
-    |> order_by(desc: :created_at)
     |> preload(:created_by)
     |> Repo.one()
     |> Result.from_nillable()
@@ -85,21 +80,21 @@ defmodule Azimutt.Admin do
     |> Result.from_nillable()
   end
 
-  def get_user_events(id, %Page.Info{} = p) do
+  def get_user_events(%User{} = user, %Page.Info{} = p) do
     query_events()
-    |> where([e], e.created_by_id == ^id)
+    |> where([e], e.created_by_id == ^user.id)
     |> Page.get(p)
   end
 
-  def get_organization_events(id, %Page.Info{} = p) do
+  def get_organization_events(%Organization{} = organization, %Page.Info{} = p) do
     query_events()
-    |> where([e], e.organization_id == ^id)
+    |> where([e], e.organization_id == ^organization.id)
     |> Page.get(p)
   end
 
-  def get_project_events(id, %Page.Info{} = p) do
+  def get_project_events(%Project{} = project, %Page.Info{} = p) do
     query_events()
-    |> where([e], e.project_id == ^id)
+    |> where([e], e.project_id == ^project.id)
     |> Page.get(p)
   end
 
@@ -108,65 +103,76 @@ defmodule Azimutt.Admin do
     |> preload(:project)
     |> preload(:organization)
     |> preload(:created_by)
-    |> order_by(desc: :created_at)
   end
 
-  def daily_created_users do
-    from(User)
-    |> group_by([u], fragment("to_char(?, 'yyyy-mm-dd')", u.created_at))
-    |> select([u], {fragment("to_char(?, 'yyyy-mm-dd')", u.created_at), count(u.id)})
-    |> order_by([u], fragment("to_char(?, 'yyyy-mm-dd')", u.created_at))
-    |> Repo.all()
-  end
+  def daily_created_users, do: User |> daily_creations()
+  def daily_created_projects, do: Project |> daily_creations()
+  def daily_created_non_personal_organizations, do: Organization |> where([o], o.is_personal == false) |> daily_creations()
 
-  def daily_created_projects do
-    from(Project)
-    |> group_by([p], fragment("to_char(?, 'yyyy-mm-dd')", p.created_at))
-    |> select([p], {fragment("to_char(?, 'yyyy-mm-dd')", p.created_at), count(p.id)})
-    |> order_by([p], fragment("to_char(?, 'yyyy-mm-dd')", p.created_at))
-    |> Repo.all()
-  end
-
-  def daily_created_non_personal_organizations do
-    from(Organization)
-    |> where([o], o.is_personal == false)
-    |> group_by([o], fragment("to_char(?, 'yyyy-mm-dd')", o.created_at))
-    |> select([o], {fragment("to_char(?, 'yyyy-mm-dd')", o.created_at), count(o.id)})
-    |> order_by([o], fragment("to_char(?, 'yyyy-mm-dd')", o.created_at))
+  defp daily_creations(query) do
+    query
+    |> select([t], {fragment("to_char(?, 'yyyy-mm-dd')", t.created_at), count(t.id, :distinct)})
+    |> group_by([t], fragment("to_char(?, 'yyyy-mm-dd')", t.created_at))
+    |> order_by([t], fragment("to_char(?, 'yyyy-mm-dd')", t.created_at))
     |> Repo.all()
   end
 
   def daily_connected_users do
-    from(Event)
-    |> group_by([e], fragment("to_char(?, 'yyyy-mm-dd')", e.created_at))
+    Event
     |> select([e], {fragment("to_char(?, 'yyyy-mm-dd')", e.created_at), count(e.created_by_id, :distinct)})
+    |> daily_events()
+  end
+
+  def daily_used_projects do
+    Event
+    |> where([e], not is_nil(e.project_id))
+    |> select([e], {fragment("to_char(?, 'yyyy-mm-dd')", e.created_at), count(e.project_id, :distinct)})
+    |> daily_events()
+  end
+
+  def daily_event(name) do
+    Event
+    |> where([e], e.name == ^name)
+    |> select([e], {fragment("to_char(?, 'yyyy-mm-dd')", e.created_at), count()})
+    |> daily_events()
+  end
+
+  defp daily_events(query) do
+    query
+    |> group_by([e], fragment("to_char(?, 'yyyy-mm-dd')", e.created_at))
     |> order_by([e], fragment("to_char(?, 'yyyy-mm-dd')", e.created_at))
     |> Repo.all()
   end
 
   def monthly_connected_users do
-    from(Event)
-    |> group_by([e], fragment("to_char(?, 'yyyy-mm')", e.created_at))
+    Event
     |> select([e], {fragment("to_char(?, 'yyyy-mm')", e.created_at), count(e.created_by_id, :distinct)})
-    |> order_by([e], fragment("to_char(?, 'yyyy-mm')", e.created_at))
-    |> Repo.all()
-  end
-
-  def daily_used_projects do
-    from(Event)
-    |> where([o], not is_nil(o.project_id))
-    |> group_by([e], fragment("to_char(?, 'yyyy-mm-dd')", e.created_at))
-    |> select([e], {fragment("to_char(?, 'yyyy-mm-dd')", e.created_at), count(e.project_id, :distinct)})
-    |> order_by([e], fragment("to_char(?, 'yyyy-mm-dd')", e.created_at))
-    |> Repo.all()
+    |> monthly_events()
   end
 
   def monthly_used_projects do
-    from(Event)
-    |> where([o], not is_nil(o.project_id))
-    |> group_by([e], fragment("to_char(?, 'yyyy-mm')", e.created_at))
+    Event
+    |> where([e], not is_nil(e.project_id))
     |> select([e], {fragment("to_char(?, 'yyyy-mm')", e.created_at), count(e.project_id, :distinct)})
+    |> monthly_events()
+  end
+
+  defp monthly_events(query) do
+    query
+    |> group_by([e], fragment("to_char(?, 'yyyy-mm')", e.created_at))
     |> order_by([e], fragment("to_char(?, 'yyyy-mm')", e.created_at))
+    |> Repo.all()
+  end
+
+  def daily_user_activity(%User{} = user), do: Event |> where([o], o.created_by_id == ^user.id) |> get_activity()
+  def daily_organization_activity(%Organization{} = org), do: Event |> where([o], o.organization_id == ^org.id) |> get_activity()
+  def daily_project_activity(%Project{} = project), do: Event |> where([o], o.project_id == ^project.id) |> get_activity()
+
+  defp get_activity(query) do
+    query
+    |> group_by([e], fragment("to_char(?, 'yyyy-mm-dd')", e.created_at))
+    |> select([e], {fragment("to_char(?, 'yyyy-mm-dd')", e.created_at), count()})
+    |> order_by([e], fragment("to_char(?, 'yyyy-mm-dd')", e.created_at))
     |> Repo.all()
   end
 end

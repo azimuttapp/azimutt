@@ -51,7 +51,7 @@ defmodule Azimutt.Admin.Dataset do
 
     start = dates |> Enum.min(Date)
     stop = dates |> Enum.max(Date)
-    # TODO: inject correct step instead of generating for each day and the dedup :/
+    # TODO: inject correct step instead of generating for each day and then dedup :/
     labels = Date.range(start, stop) |> Enum.flat_map(fn d -> d |> Timex.format(format) |> Result.to_list() end) |> Enum.dedup()
 
     %{

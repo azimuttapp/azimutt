@@ -5,7 +5,10 @@ defmodule AzimuttWeb.Admin.EventController do
   action_fallback AzimuttWeb.FallbackController
 
   def index(conn, _params) do
-    render(conn, "index.html", events: Admin.list_events(conn |> Page.from_conn(%{size: 120})))
+    conn
+    |> render("index.html",
+      events: Admin.list_events(conn |> Page.from_conn(%{sort: "-created_at", size: 120}))
+    )
   end
 
   def show(conn, %{"id" => event_id}) do
