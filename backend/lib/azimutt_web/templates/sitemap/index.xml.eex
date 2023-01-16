@@ -1,15 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc><%= Routes.website_url(@conn, :index) %></loc>
-    <lastmod>2022-03-07</lastmod>
-  </url>
+  <url><loc><%= Routes.website_url(@conn, :index) %></loc><lastmod>2023-01-08</lastmod></url>
+  <url><loc><%= Routes.website_url(@conn, :design) %></loc><lastmod>2023-01-17</lastmod></url>
+  <url><loc><%= Routes.website_url(@conn, :explore) %></loc><lastmod>2023-01-17</lastmod></url>
+  <url><loc><%= Routes.website_url(@conn, :document) %></loc><lastmod>2023-01-17</lastmod></url>
+  <url><loc><%= Routes.website_url(@conn, :analyze) %></loc><lastmod>2023-01-17</lastmod></url>
 
+  <%= if length(@articles) > 0 do %>
   <url>
     <loc><%= Routes.blog_url(@conn, :index) %></loc>
     <lastmod><%= Enum.max_by(@articles, & &1.published, Date).published %></lastmod>
     <changefreq>weekly</changefreq>
   </url>
+  <% end %>
   <%= for article <- @articles do %>
   <url>
     <loc><%= Routes.blog_url(@conn, :show, article) %></loc>
@@ -17,7 +20,7 @@
   </url>
   <% end %>
 
-  <%= if @samples |> length > 0 do %>
+  <%= if length(@samples) > 0 do %>
   <url>
     <loc><%= Routes.gallery_url(@conn, :index) %></loc>
     <lastmod><%= Enum.max_by(@samples, & &1.updated_at, Date).updated_at %></lastmod>

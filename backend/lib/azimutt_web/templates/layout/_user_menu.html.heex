@@ -7,7 +7,7 @@
         Use cases
         <Icon.chevron_down kind="mini" class="text-gray-400 ml-2 h-5 w-5 group-hover:text-gray-500" />
       </button>
-      <div x-show="open" @click.outside="open = false" class="absolute left-1/2 z-10 mt-3 w-screen max-w-md -translate-x-1/2 transform px-2 sm:px-0">
+      <div x-show="open" @click.outside="open = false" class="absolute left-1/2 z-10 mt-3 w-screen max-w-md -translate-x-1/2 transform px-2 sm:px-0" style="display: none">
         <div class="overflow-hidden rounded-lg shadow-lg ring-1 ring-black ring-opacity-5">
           <div class="relative grid gap-6 bg-white px-5 py-6 sm:gap-8 sm:p-8">
             <%= for {url, icon, title, description} <- [
