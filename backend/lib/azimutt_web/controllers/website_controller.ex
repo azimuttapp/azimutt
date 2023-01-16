@@ -31,4 +31,9 @@ defmodule AzimuttWeb.WebsiteController do
   defp same_domain?(conn) do
     get_req_header(conn, "referer") |> Enum.any?(fn h -> h |> String.contains?(Azimutt.config(:domain)) end)
   end
+
+  def analyze(conn, _params), do: conn |> render("use-case-analyze.html")
+  def design(conn, _params), do: conn |> render("use-case-design.html")
+  def document(conn, _params), do: conn |> render("use-case-document.html")
+  def explore(conn, _params), do: conn |> render("use-case-explore.html")
 end

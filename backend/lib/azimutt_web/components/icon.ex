@@ -18,13 +18,17 @@ defmodule AzimuttWeb.Components.Icon do
       "at-symbol" -> at_symbol(assigns)
       "bars-3-center-left" -> bars_3_center_left(assigns)
       "beaker" -> beaker(assigns)
+      "book-open" -> book_open(assigns)
       "chat-bubble-left-right" -> chat_bubble_left_right(assigns)
       "check" -> check(assigns)
       "check-circle" -> check_circle(assigns)
+      "chevron-down" -> chevron_down(assigns)
       "chevron-right" -> chevron_right(assigns)
+      "chevron-up" -> chevron_up(assigns)
       "circle-stack" -> circle_stack(assigns)
       "cloud" -> cloud(assigns)
       "code-bracket" -> code_bracket(assigns)
+      "cursor-arrow-rays" -> cursor_arrow_rays(assigns)
       "document" -> document(assigns)
       "document-text" -> document_text(assigns)
       "folder" -> folder(assigns)
@@ -38,6 +42,7 @@ defmodule AzimuttWeb.Components.Icon do
       "rectangle-group" -> rectangle_group(assigns)
       "server-stack" -> server_stack(assigns)
       "sparkles" -> sparkles(assigns)
+      "shield-check" -> shield_check(assigns)
       "squares-plus" -> squares_plus(assigns)
       "user-group" -> user_group(assigns)
       "x-circle" -> x_circle(assigns)
@@ -262,6 +267,27 @@ defmodule AzimuttWeb.Components.Icon do
     end
   end
 
+  def book_open(assigns) do
+    classes = if assigns[:class], do: " #{assigns[:class]}", else: ""
+
+    case assigns[:kind] do
+      "outline" ->
+        ~H"""
+        <.outline classes={classes}><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></.outline>
+        """
+
+      "solid" ->
+        ~H"""
+        <.solid classes={classes}><path d="M11.25 4.533A9.707 9.707 0 006 3a9.735 9.735 0 00-3.25.555.75.75 0 00-.5.707v14.25a.75.75 0 001 .707A8.237 8.237 0 016 18.75c1.995 0 3.823.707 5.25 1.886V4.533zM12.75 20.636A8.214 8.214 0 0118 18.75c.966 0 1.89.166 2.75.47a.75.75 0 001-.708V4.262a.75.75 0 00-.5-.707A9.735 9.735 0 0018 3a9.707 9.707 0 00-5.25 1.533v16.103z" /></.solid>
+        """
+
+      _ ->
+        ~H"""
+        <.mini classes={classes}><path d="M10.75 16.82A7.462 7.462 0 0115 15.5c.71 0 1.396.098 2.046.282A.75.75 0 0018 15.06v-11a.75.75 0 00-.546-.721A9.006 9.006 0 0015 3a8.963 8.963 0 00-4.25 1.065V16.82zM9.25 4.065A8.963 8.963 0 005 3c-.85 0-1.673.118-2.454.339A.75.75 0 002 4.06v11a.75.75 0 00.954.721A7.506 7.506 0 015 15.5c1.579 0 3.042.487 4.25 1.32V4.065z" /></.mini>
+        """
+    end
+  end
+
   def chat_bubble_left_right(assigns) do
     classes = if assigns[:class], do: " #{assigns[:class]}", else: ""
 
@@ -331,6 +357,27 @@ defmodule AzimuttWeb.Components.Icon do
     end
   end
 
+  def chevron_down(assigns) do
+    classes = if assigns[:class], do: " #{assigns[:class]}", else: ""
+
+    case assigns[:kind] do
+      "outline" ->
+        ~H"""
+        <.outline classes={classes}><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></.outline>
+        """
+
+      "solid" ->
+        ~H"""
+        <.solid classes={classes}><path fill-rule="evenodd" d="M12.53 16.28a.75.75 0 01-1.06 0l-7.5-7.5a.75.75 0 011.06-1.06L12 14.69l6.97-6.97a.75.75 0 111.06 1.06l-7.5 7.5z" clip-rule="evenodd" /></.solid>
+        """
+
+      _ ->
+        ~H"""
+        <.mini classes={classes}><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" /></.mini>
+        """
+    end
+  end
+
   def chevron_right(assigns) do
     classes = if assigns[:class], do: " #{assigns[:class]}", else: ""
 
@@ -348,6 +395,27 @@ defmodule AzimuttWeb.Components.Icon do
       _ ->
         ~H"""
         <.mini classes={classes}><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" /></.mini>
+        """
+    end
+  end
+
+  def chevron_up(assigns) do
+    classes = if assigns[:class], do: " #{assigns[:class]}", else: ""
+
+    case assigns[:kind] do
+      "outline" ->
+        ~H"""
+        <.outline classes={classes}><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" /></.outline>
+        """
+
+      "solid" ->
+        ~H"""
+        <.solid classes={classes}><path fill-rule="evenodd" d="M11.47 7.72a.75.75 0 011.06 0l7.5 7.5a.75.75 0 11-1.06 1.06L12 9.31l-6.97 6.97a.75.75 0 01-1.06-1.06l7.5-7.5z" clip-rule="evenodd" /></.solid>
+        """
+
+      _ ->
+        ~H"""
+        <.mini classes={classes}><path fill-rule="evenodd" d="M14.77 12.79a.75.75 0 01-1.06-.02L10 8.832 6.29 12.77a.75.75 0 11-1.08-1.04l4.25-4.5a.75.75 0 011.08 0l4.25 4.5a.75.75 0 01-.02 1.06z" clip-rule="evenodd" /></.mini>
         """
     end
   end
@@ -416,6 +484,27 @@ defmodule AzimuttWeb.Components.Icon do
       _ ->
         ~H"""
         <.mini classes={classes}><path fill-rule="evenodd" d="M6.28 5.22a.75.75 0 010 1.06L2.56 10l3.72 3.72a.75.75 0 01-1.06 1.06L.97 10.53a.75.75 0 010-1.06l4.25-4.25a.75.75 0 011.06 0zm7.44 0a.75.75 0 011.06 0l4.25 4.25a.75.75 0 010 1.06l-4.25 4.25a.75.75 0 01-1.06-1.06L17.44 10l-3.72-3.72a.75.75 0 010-1.06zM11.377 2.011a.75.75 0 01.612.867l-2.5 14.5a.75.75 0 01-1.478-.255l2.5-14.5a.75.75 0 01.866-.612z" clip-rule="evenodd" /></.mini>
+        """
+    end
+  end
+
+  def cursor_arrow_rays(assigns) do
+    classes = if assigns[:class], do: " #{assigns[:class]}", else: ""
+
+    case assigns[:kind] do
+      "outline" ->
+        ~H"""
+        <.outline classes={classes}><path stroke-linecap="round" stroke-linejoin="round" d="M15.042 21.672L13.684 16.6m0 0l-2.51 2.225.569-9.47 5.227 7.917-3.286-.672zM12 2.25V4.5m5.834.166l-1.591 1.591M20.25 10.5H18M7.757 14.743l-1.59 1.59M6 10.5H3.75m4.007-4.243l-1.59-1.59" /></.outline>
+        """
+
+      "solid" ->
+        ~H"""
+        <.solid classes={classes}><path fill-rule="evenodd" d="M12 1.5a.75.75 0 01.75.75V4.5a.75.75 0 01-1.5 0V2.25A.75.75 0 0112 1.5zM5.636 4.136a.75.75 0 011.06 0l1.592 1.591a.75.75 0 01-1.061 1.06l-1.591-1.59a.75.75 0 010-1.061zm12.728 0a.75.75 0 010 1.06l-1.591 1.592a.75.75 0 01-1.06-1.061l1.59-1.591a.75.75 0 011.061 0zm-6.816 4.496a.75.75 0 01.82.311l5.228 7.917a.75.75 0 01-.777 1.148l-2.097-.43 1.045 3.9a.75.75 0 01-1.45.388l-1.044-3.899-1.601 1.42a.75.75 0 01-1.247-.606l.569-9.47a.75.75 0 01.554-.68zM3 10.5a.75.75 0 01.75-.75H6a.75.75 0 010 1.5H3.75A.75.75 0 013 10.5zm14.25 0a.75.75 0 01.75-.75h2.25a.75.75 0 010 1.5H18a.75.75 0 01-.75-.75zm-8.962 3.712a.75.75 0 010 1.061l-1.591 1.591a.75.75 0 11-1.061-1.06l1.591-1.592a.75.75 0 011.06 0z" clip-rule="evenodd" /></.solid>
+        """
+
+      _ ->
+        ~H"""
+        <.mini classes={classes}><path fill-rule="evenodd" d="M10 1a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 1zM5.05 3.05a.75.75 0 011.06 0l1.062 1.06A.75.75 0 116.11 5.173L5.05 4.11a.75.75 0 010-1.06zm9.9 0a.75.75 0 010 1.06l-1.06 1.062a.75.75 0 01-1.062-1.061l1.061-1.06a.75.75 0 011.06 0zM3 8a.75.75 0 01.75-.75h1.5a.75.75 0 010 1.5h-1.5A.75.75 0 013 8zm11 0a.75.75 0 01.75-.75h1.5a.75.75 0 010 1.5h-1.5A.75.75 0 0114 8zm-6.828 2.828a.75.75 0 010 1.061L6.11 12.95a.75.75 0 01-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm3.594-3.317a.75.75 0 00-1.37.364l-.492 6.861a.75.75 0 001.204.65l1.043-.799.985 3.678a.75.75 0 001.45-.388l-.978-3.646 1.292.204a.75.75 0 00.74-1.16l-3.874-5.764z" clip-rule="evenodd" /></.mini>
         """
     end
   end
@@ -708,6 +797,27 @@ defmodule AzimuttWeb.Components.Icon do
       _ ->
         ~H"""
         <.mini classes={classes}><path d="M4.464 3.162A2 2 0 016.28 2h7.44a2 2 0 011.816 1.162l1.154 2.5c.067.145.115.291.145.438A3.508 3.508 0 0016 6H4c-.288 0-.568.035-.835.1.03-.147.078-.293.145-.438l1.154-2.5z" /><path fill-rule="evenodd" d="M2 9.5a2 2 0 012-2h12a2 2 0 110 4H4a2 2 0 01-2-2zm13.24 0a.75.75 0 01.75-.75H16a.75.75 0 01.75.75v.01a.75.75 0 01-.75.75h-.01a.75.75 0 01-.75-.75V9.5zm-2.25-.75a.75.75 0 00-.75.75v.01c0 .414.336.75.75.75H13a.75.75 0 00.75-.75V9.5a.75.75 0 00-.75-.75h-.01zM2 15a2 2 0 012-2h12a2 2 0 110 4H4a2 2 0 01-2-2zm13.24 0a.75.75 0 01.75-.75H16a.75.75 0 01.75.75v.01a.75.75 0 01-.75.75h-.01a.75.75 0 01-.75-.75V15zm-2.25-.75a.75.75 0 00-.75.75v.01c0 .414.336.75.75.75H13a.75.75 0 00.75-.75V15a.75.75 0 00-.75-.75h-.01z" clip-rule="evenodd" /></.mini>
+        """
+    end
+  end
+
+  def shield_check(assigns) do
+    classes = if assigns[:class], do: " #{assigns[:class]}", else: ""
+
+    case assigns[:kind] do
+      "outline" ->
+        ~H"""
+        <.outline classes={classes}><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></.outline>
+        """
+
+      "solid" ->
+        ~H"""
+        <.solid classes={classes}><path fill-rule="evenodd" d="M12.516 2.17a.75.75 0 00-1.032 0 11.209 11.209 0 01-7.877 3.08.75.75 0 00-.722.515A12.74 12.74 0 002.25 9.75c0 5.942 4.064 10.933 9.563 12.348a.749.749 0 00.374 0c5.499-1.415 9.563-6.406 9.563-12.348 0-1.39-.223-2.73-.635-3.985a.75.75 0 00-.722-.516l-.143.001c-2.996 0-5.717-1.17-7.734-3.08zm3.094 8.016a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z" clip-rule="evenodd" /></.solid>
+        """
+
+      _ ->
+        ~H"""
+        <.mini classes={classes}><path fill-rule="evenodd" d="M9.661 2.237a.531.531 0 01.678 0 11.947 11.947 0 007.078 2.749.5.5 0 01.479.425c.069.52.104 1.05.104 1.59 0 5.162-3.26 9.563-7.834 11.256a.48.48 0 01-.332 0C5.26 16.564 2 12.163 2 7c0-.538.035-1.069.104-1.589a.5.5 0 01.48-.425 11.947 11.947 0 007.077-2.75zm4.196 5.954a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" /></.mini>
         """
     end
   end

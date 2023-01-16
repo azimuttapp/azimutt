@@ -1,6 +1,34 @@
 <AzimuttWeb.Components.Header.header >
   <:menu>
     <a href={"#{Routes.website_path(@conn, :index)}#features"} class="inline-block rounded-lg py-1 px-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900">Features</a>
+
+    <div x-data="{ open: false }" class="relative">
+      <button @click="open = !open" type="button" class="group inline-flex items-center rounded-lg py-1 px-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" aria-expanded="false">
+        Use cases
+        <Icon.chevron_down kind="mini" class="text-gray-400 ml-2 h-5 w-5 group-hover:text-gray-500" />
+      </button>
+      <div x-show="open" @click.outside="open = false" class="absolute left-1/2 z-10 mt-3 w-screen max-w-md -translate-x-1/2 transform px-2 sm:px-0">
+        <div class="overflow-hidden rounded-lg shadow-lg ring-1 ring-black ring-opacity-5">
+          <div class="relative grid gap-6 bg-white px-5 py-6 sm:gap-8 sm:p-8">
+            <%= for {url, icon, title, description} <- [
+              {Routes.website_path(@conn, :design), "academic-cap", "Design", "Make beautiful diagrams at your typing speed using our minimal DSL."}, # icon options: academic-cap / adjustments-horizontal / sparkles
+              {Routes.website_path(@conn, :explore), "cursor-arrow-rays", "Explore", "The all-in-one tool to understand your database following your thought process."}, # icon options: cursor-arrow-rays / cursor-arrow-ripple / document-magnifying-glass / eye / globe-europe-africa / magnifying-glass-circle / map / rectangle-group
+              {Routes.website_path(@conn, :document), "book-open", "Document", "Nice and contextual documentation for databases is now finally a reality."}, # icon options: book-open / tag / archive-box / bars-3-center-left
+              {Routes.website_path(@conn, :analyze), "shield-check", "Analyze", "Identify database design warts and automate any check to keep it consistent."}, # icon options: shield-check / check-badge / beaker / clipboard-document-check / finger-print / funnel
+            ] do %>
+              <a href={url} class="-m-3 flex items-start rounded-lg p-3 transition duration-150 ease-in-out hover:bg-gray-50">
+                <Icon.draw name={icon} kind="outline" class="text-indigo-600 flex-shrink-0" />
+                <div class="ml-4">
+                  <p class="text-base font-medium text-gray-900"><%= title %></p>
+                  <p class="mt-1 text-sm text-gray-500"><%= description %></p>
+                </div>
+              </a>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <a href={"#{Routes.website_path(@conn, :index)}#testimonials"} class="inline-block rounded-lg py-1 px-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900">Testimonials</a>
     <a href={"#{Routes.website_path(@conn, :index)}#pricing"} class="inline-block rounded-lg py-1 px-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900">Pricing</a>
     <a href={Routes.blog_path(@conn, :index)} class="inline-block rounded-lg py-1 px-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900">Blog</a>
