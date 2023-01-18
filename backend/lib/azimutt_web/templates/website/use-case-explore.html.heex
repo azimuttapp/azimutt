@@ -15,7 +15,7 @@
             <ul role="list">
                 <li><a href="#the-sad-state-of-the-art">The sad state of the art</a></li>
                 <li><a href="#what-s-the-bare-minimum-for-a-decent-tool">What's the bare minimum for a decent tool?</a></li>
-                <li><a href="#how-azimutt-went-further">How Azimutt went further?</a></li>
+                <li><a href="#how-azimutt-went-further">How dit Azimutt go further?</a></li>
                 <li><a href="#what-s-the-promised-future-we-can-only-dream-of-today">What's the promised future we can only dream of today?</a></li>
             </ul>
 
@@ -38,7 +38,7 @@
                 I have been in this situation. I used to spend a lot of time in the <code>structure.sql</code>, declaring our database schema.
                 As you can imagine, it was long, painful and inefficient.
                 I looked for a tool to help me navigate through the database schema.
-                <b>Entity-Relationship diagrams</b> were the obvious choice, but as all of them display everything on screen, that made them unusable with 400 tables (I think the limit is around 40 tables).
+                <b>Entity-Relationship diagrams</b> were the obvious choice, but as all of them display everything on the screen, that made them unusable with 400 tables (I think the limit is around 40 tables).
                 I know <b>data catalogs</b> (built 2 already ^^) but their use case is for organization wise documentation, not exploring from scratch a application database.
                 I made a <a href="./blog/how-to-choose-your-entity-relationship-diagram">review of all those tools</a> if you are interested but the conclusion was: nothing came close to the basics I needed.
             </p>
@@ -65,7 +65,7 @@
                 The biggest used one had around 1500 tables and 100k columns 😱
             </p>
 
-            <h2 id="how-azimutt-went-further">How Azimutt went further?</h2>
+            <h2 id="how-azimutt-went-further">How did Azimutt go further?</h2>
             <p>
                 As you may guess, we didn't stop there, at the MVP stage. We added tons of big and small features.
                 Some to support crucial use cases around the database:
@@ -79,11 +79,11 @@
                 Of course, you can choose which sources to use or not, depending on what you are doing.
             </p>
             <p>
-                An other one is <b id="find-path">finding a path between two tables following relations</b>.
+                Another one is <b id="find-path">finding a path between two tables following relations</b>.
                 Sometimes, following relations is not enough when tables have several steps between them, and you don't know which path to follow to join them.
-                The find path feature will do this exploration for you and report all the possible paths, you just have to choose the right one 🎉<br>
+                The find path feature will do this exploration for you and report all possible paths, you just have to choose the right one 🎉<br>
                 Two things about that.
-                First, your <b>relations need to be declared</b>. Azimutt build them from foreign keys but can't guess what is not in the schema (<em title="one day we could propose to monitor database requests to find relations based on used joins.">for now</em>).
+                First, your <b>relations need to be declared</b>. Azimutt build them from foreign keys but I can't guess what is not in the schema (<em title="one day we could propose to monitor database requests to find relations based on used joins.">for now</em>).
                 If some are missing, declare them manually in Azimutt (or use the <a href={Routes.website_path(@conn, :analyze)}>analyze feature</a> to help you find missing ones).
                 Second, you will have <b>tons of paths</b> (every time I'm surprised). Use <em>find path settings</em> to ignore some tables and/or columns to keep only meaningful ones (for example the <code>created_by</code> columns or your <code>audit</code> table are rarely relevant).
             </p>
@@ -104,7 +104,7 @@
                 The one thing I still miss on schema exploration is the <b>query diagram</b>.
                 If you have a complex SELECT, put it in Azimutt, and it will draw a diagram with used table and columns.
                 I think it will help a lot, understanding big queries.
-                Azimutt could also suggest to add missing relations if some JOINs are done between columns with no existing relation.
+                Azimutt could also suggest adding missing relations if some JOINs are done between columns with no existing relation.
             </p>
             <p>
                 Extending diagrams beyond relational databases is also another possible evolution.
@@ -125,7 +125,7 @@
             <p>
                 I don't know how you feel about this, but I'm personally very excited to see this coming live.
                 Helping you to explore and understand your database is the core focus of Azimutt.
-                If you see anything we may have miss or could improve, a specific use case, a feature or some UX improvement, <a href="https://github.com/azimuttapp/azimutt/issues" target="_blank" rel="noopener">please reach out</a> to discuss how to achieve it best.
+                If you see anything we may have missed or could improve, a specific use case, a feature or some UX improvement, <a href="https://github.com/azimuttapp/azimutt/issues" target="_blank" rel="noopener">please reach out</a> to discuss how to achieve it best.
             </p>
         </div>
     </div>
