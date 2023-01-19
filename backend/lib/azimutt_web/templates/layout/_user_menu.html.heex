@@ -1,7 +1,5 @@
 <AzimuttWeb.Components.Header.header>
   <:menu>
-    <a href={"#{Routes.website_path(@conn, :index)}#features"} class="inline-block rounded-lg py-1 px-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900">Features</a>
-
     <div x-data="{ open: false }" class="relative">
       <button @click="open = !open" type="button" class="group inline-flex items-center rounded-lg py-1 px-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" aria-expanded="false">
         Use cases
@@ -28,9 +26,8 @@
         </div>
       </div>
     </div>
-
-    <a href={"#{Routes.website_path(@conn, :index)}#testimonials"} class="inline-block rounded-lg py-1 px-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900">Testimonials</a>
-    <a href={"#{Routes.website_path(@conn, :index)}#pricing"} class="inline-block rounded-lg py-1 px-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900">Pricing</a>
+    <a href={Routes.website_path(@conn, :features)} class="inline-block rounded-lg py-1 px-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900">Features</a>
+    <a href={Routes.website_path(@conn, :pricing)} class="inline-block rounded-lg py-1 px-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900">Pricing</a>
     <a href={Routes.blog_path(@conn, :index)} class="inline-block rounded-lg py-1 px-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900">Blog</a>
     <a href={Routes.gallery_path(@conn, :index)} class="inline-block rounded-lg py-1 px-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900">Inspirations</a>
   </:menu>
