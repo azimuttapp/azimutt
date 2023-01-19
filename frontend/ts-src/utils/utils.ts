@@ -39,10 +39,10 @@ export const Utils = {
             return undefined
         }
     },
-    fullscreen(id: HtmlId | undefined) {
+    fullscreen(id: HtmlId | undefined): Promise<void> {
         const element = id ? Utils.getElementById(id) : document.body
         const result = element.requestFullscreen ? element.requestFullscreen() : Promise.reject(new Error('requestFullscreen not available'))
-        result.catch(_ => window.open(window.location.href, '_blank')?.focus()) // if full-screen is denied, open in a new tab
+        return result.catch(_ => window.open(window.location.href, '_blank')?.focus()) // if full-screen is denied, open in a new tab
     },
     downloadFile(filename: string, content: string) {
         const element = document.createElement('a')

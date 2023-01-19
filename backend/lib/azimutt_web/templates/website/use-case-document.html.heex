@@ -8,7 +8,7 @@
             </h1>
             <p class="mt-8 text-xl leading-8 text-gray-500">
                 Documentation is one of the trickiest things, for many reasons. And Azimutt will not be your silver bullet about it.
-                But it can still be your best ally, allowing rich and contextual documentation.
+                But still, it can be your <strong>best ally</strong>, allowing rich and contextual documentation.
             </p>
         </div>
         <div class="prose prose-lg prose-indigo mx-auto mt-6 text-gray-500">
@@ -16,53 +16,91 @@
                 <li><a href="#why-documentation-is-so-hard">Why documentation is so hard?</a></li>
                 <li><a href="#what-azimutt-can-do-about-it">What Azimutt can do about it?</a></li>
                 <li><a href="#a-practical-example">A practical example</a></li>
+                <li><a href="#pushing-even-further">Pushing even further</a></li>
             </ul>
 
             <h2 id="why-documentation-is-so-hard">Why documentation is so hard?</h2>
+            <p>
+                As far as I can remember I always heard people complain about documentation.
+                Either because they don't want to write it, they don't know what to put inside or how to structure it.
+                Either because it doesn't exist, they can't find it, it's outdated, or it doesn't cover needed topics.
+            </p>
+            <p>
+                Very few people can see some gratification in writing documentation, sometimes because it's just a side-contribution in their job, but probably also because the benefit of it is delayed (multiple months later) or even not known (you never know who and how much benefited from it).
+                One exception is teams doing support, they leverage documentation to decrease their load. But for engineers, we often see this as necessary task but without much value. And so don't do it or do it badly.
+            </p>
+            <p>
+                I you have found a useful piece of documentation recently, please take a few minutes to thank the author. This will be much appreciated 🤩
+            </p>
+
             <h2 id="what-azimutt-can-do-about-it">What Azimutt can do about it?</h2>
+            <p>
+                Obviously, Azimutt won't write a good documentation for you.
+                But it has a few features which should make this much easier for you when doing it for your database.
+                We believe that good documentation should be contextual: it gives the relevant information in the relevant way at the relevant place.
+            </p>
+            <p>
+                And what's better than documenting your database tables and columns just on them?
+                For this Azimutt display <strong>SQL comments</strong> and provides an additional <strong>notes</strong> feature.
+                So if you already have documented your database with SQL comments, you will see them in Azimutt, and they will be formatted using markdown, in case you used it.
+                Otherwise, notes are best as you can see and edit them directly inside Azimutt, making your documentation well alive and easily up to date.
+                You can easily explain in details the use cases of tables and columns as well as how they should be used or what is important to take care of.
+                It's also a very good place to explain your vocabulary or conventions.
+            </p>
+            <img src="/images/screenshots/sql-comments-and-notes.png" alt="SQL comments and notes" class="w-full rounded-lg">
+            <p>
+                But sometimes, you may need to explain things broader than just a column or table.
+                That's why Azimutt also has <strong>memos</strong>. They are markdown texts in layouts you can place anywhere.
+                This is a great way to create some visual documentation, exploiting markdown capabilities:
+            </p>
+            <ul role="list">
+                <li>use images for your logo, add highlights like arrows or some illustrations.</li>
+                <li>use links for referencing other documentation or any relevant web page.</li>
+                <li>use code and tables to give sample queries and show example results.</li>
+                <li>use lists for TODOs or assign owners</li>
+                <li>use memo color as convention, for feedback, ideas or improvements</li>
+            </ul>
+            <img src="/images/screenshots/memos.png" alt="Azimutt memos" class="w-full rounded-lg">
+            <p>
+                You can read more about them in our <a href="/blog/document-your-database-with-memos">detailed blog post</a> but clearly they are a game changer for database documentation.
+            </p>
+            <p>
+                <strong>Layouts</strong> are also great for documenting. You can create dedicated layouts for explaining different parts of your database, showing only relevant tables and columns and highlighting what's important with memos.
+                If an image is worth a thousand words, a good diagram also can be a game changer.
+                Use them to illustrate your words but also use cases, features or even team scope.
+                Use a naming convention to keep them well organized, and you will be in a very good position to use your database the most efficiently.
+            </p>
+            <p>
+                Last but not least, <strong>embedding</strong> your Azimutt diagrams will bring them everywhere, in the best possible context.
+                The <a href="/blog/embed-your-database-diagram-anywhere">embed</a> has recently been augmented by <strong>private links</strong>, allowing you to create a token to share your diagram with anyone, and so the embed window. If you already have some online documentation, for example in confluence, notion or even docusaurus, it will be a great addition to add rich and interactive database diagrams.
+            </p>
+            <img src="/images/screenshots/private-link.png" alt="Azimutt private link" class="w-full rounded-lg">
+
             <h2 id="a-practical-example">A practical example</h2>
             <p>
-                Hard:
-                - invest time now, not sure about ROI
-                - don't know reader expectations
-                - keep it up to date
-                - specialists are not the best writers
-                - choosing reader expertize & context levels
-
-                Azimutt
-                - layouts
-                - SQL comments
-                - notes
-                - memos
-                - embed + private links
-
-                markdown:
-                - text formatting: bold, italic, heading
-                - link: other doc
-                - images: branding, emotions, highlights
-                - code: sql queries
-                - tables: query results, sample data
+                Here is a live example of an embedded diagram using a private link. It has some notes and memos but no SQL comment.
             </p>
-            <p>Faucibus commodo massa rhoncus, volutpat. <strong>Dignissim</strong> sed <strong>eget risus enim</strong>. Mattis mauris semper sed amet vitae sed turpis id. Id dolor praesent donec est. Odio penatibus risus viverra tellus varius sit neque erat velit. Faucibus commodo massa rhoncus, volutpat. Dignissim sed eget risus enim. <a href="#">Mattis mauris semper</a> sed amet vitae sed turpis id.</p>
-            <ul role="list">
-                <li>Quis elit egestas venenatis mattis dignissim.</li>
-                <li>Cras cras lobortis vitae vivamus ultricies facilisis tempus.</li>
-                <li>Orci in sit morbi dignissim metus diam arcu pretium.</li>
-            </ul>
-            <p>Quis semper vulputate aliquam venenatis egestas sagittis quisque orci. Donec commodo sit viverra aliquam porttitor ultrices gravida eu. Tincidunt leo, elementum mattis elementum ut nisl, justo, amet, mattis. Nunc purus, diam commodo tincidunt turpis. Amet, duis sed elit interdum dignissim.</p>
-            <h2>From beginner to expert in 30 days</h2>
-            <p>Id orci tellus laoreet id ac. Dolor, aenean leo, ac etiam consequat in. Convallis arcu ipsum urna nibh. Pharetra, euismod vitae interdum mauris enim, consequat vulputate nibh. Maecenas pellentesque id sed tellus mauris, ultrices mauris. Tincidunt enim cursus ridiculus mi. Pellentesque nam sed nullam sed diam turpis ipsum eu a sed convallis diam.</p>
-            <blockquote>
-                <p>Sagittis scelerisque nulla cursus in enim consectetur quam. Dictum urna sed consectetur neque tristique pellentesque. Blandit amet, sed aenean erat arcu morbi.</p>
-            </blockquote>
-            <p>Faucibus commodo massa rhoncus, volutpat. Dignissim sed eget risus enim. Mattis mauris semper sed amet vitae sed turpis id. Id dolor praesent donec est. Odio penatibus risus viverra tellus varius sit neque erat velit.</p>
-            <figure>
-                <img class="w-full rounded-lg" src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-1.2.1&auto=format&fit=facearea&w=1310&h=873&q=80&facepad=3" alt="" width="1310" height="873">
-                <figcaption>Sagittis scelerisque nulla cursus in enim consectetur quam.</figcaption>
-            </figure>
-            <h2>Everything you need to get up and running</h2>
-            <p>Purus morbi dignissim senectus mattis <a href="#">adipiscing</a>. Amet, massa quam varius orci dapibus volutpat cras. In amet eu ridiculus leo sodales cursus tristique. Tincidunt sed tempus ut viverra ridiculus non molestie. Gravida quis fringilla amet eget dui tempor dignissim. Facilisis auctor venenatis varius nunc, congue erat ac. Cras fermentum convallis quam.</p>
-            <p>Faucibus commodo massa rhoncus, volutpat. Dignissim sed eget risus enim. Mattis mauris semper sed amet vitae sed turpis id. Id dolor praesent donec est. Odio penatibus risus viverra tellus varius sit neque erat velit.</p>
+            <iframe width="100%" height="450px" src="https://azimutt.app/embed?project-id=adbe859a-08c4-4386-9af3-be165b30e000&layout=documentation%20showcase&mode=layout&token=ec6ef23d-cd86-4521-955a-2ea1aedbf758" title="Embedded Azimutt diagram" frameborder="0" allowtransparency="true" allowfullscreen="true" scrolling="no" style="box-shadow: 0 2px 8px 0 rgba(63,69,81,0.16); border-radius:5px;"></iframe>
+
+            <h2 id="pushing-even-further">Pushing even further</h2>
+            <p>
+                I believe with all this you are already quite well-equipped to document your database without too much trouble.
+                Still a few improvements are planned and could be prioritized according to customer needs.
+            </p>
+            <p>
+                First, <strong>updating SQL comments</strong> for sources with a database connection.
+                This would make documentation sharing between tools much easier.
+                But beware, updating a database if far from a trivial operation and I would advise to think twice before activating this once it's available.
+            </p>
+            <p>
+                Second, adding <strong>tags</strong> to tables and columns could allow you to categorize and filter them.
+            </p>
+            <p>
+                Also, adding some <strong>documentation history</strong> with author and dates to notes and memos will make them more relevant for projects on the long term or with many people.
+            </p>
+            <p>
+                That's the obvious we have in mind but <a href="https://github.com/azimuttapp/azimutt/issues">feel free to suggest other ideas</a> to improve database documentation in Azimutt, even if probably not the most attractive feature to start, we believe this is an important and valuable one (and also one that is not solved at all for now 😉).
+            </p>
         </div>
     </div>
 </div>

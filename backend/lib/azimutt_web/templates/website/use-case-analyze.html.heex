@@ -47,10 +47,10 @@
                 it can identify some smells you would be wise to check (like a static code analysis tools). Here are <a href="/blog/improve-your-database-design-with-azimutt-analyzer">the checks we implemented</a>:
             </p>
             <ul role="list">
-                <li><b>Missing primary key</b>: it's uncommon not to define a primary key for a table, so if a table don't have one, make sure it's really expected, or fix it.</li>
-                <li><b>Missing foreign keys</b>: this one is checked using columns name convention (split column name in words and look for a table + column that match several consecutive words). It can be done on purpose but even here, you will <a href={"#{Routes.website_path(@conn, :explore)}#find-path"}>want to add the relation</a> in Azimutt.</li>
-                <li><b>Inconsistent types</b>: if you have several columns with the same name (in different tables), they probably represent the same thing and so have the same type (ex: if you have <code>email</code> columns with <code>varchar(56)</code> and <code>varchar(128)</code> you could want to homogenize them).</li>
-                <li><b>Too big tables</b>: regardless of your design, tables with many columns (> 30) are probably storing a <a href="https://linearb.io/blog/what-is-a-god-class" target="_blank" rel="noopener">god object</a> and <a href="/blog/why-you-should-avoid-tables-with-many-columns-and-how-to-fix-them">should be avoided</a> most of the time.</li>
+                <li><strong>Missing primary key</strong>: it's uncommon not to define a primary key for a table, so if a table don't have one, make sure it's really expected, or fix it.</li>
+                <li><strong>Missing foreign keys</strong>: this one is checked using columns name convention (split column name in words and look for a table + column that match several consecutive words). It can be done on purpose but even here, you will <a href={"#{Routes.website_path(@conn, :explore)}#find-path"}>want to add the relation</a> in Azimutt.</li>
+                <li><strong>Inconsistent types</strong>: if you have several columns with the same name (in different tables), they probably represent the same thing and so have the same type (ex: if you have <code>email</code> columns with <code>varchar(56)</code> and <code>varchar(128)</code> you could want to homogenize them).</li>
+                <li><strong>Too big tables</strong>: regardless of your design, tables with many columns (> 30) are probably storing a <a href="https://linearb.io/blog/what-is-a-god-class" target="_blank" rel="noopener">god object</a> and <a href="/blog/why-you-should-avoid-tables-with-many-columns-and-how-to-fix-them">should be avoided</a> most of the time.</li>
             </ul>
             <p>
                 This is a beginning, and we will expand them as we find more smells but also with users feedback.

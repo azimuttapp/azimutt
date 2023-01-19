@@ -7,7 +7,7 @@
                 <span class="mt-2 block text-center text-3xl font-bold leading-8 tracking-tight text-gray-900 sm:text-4xl">Exploring your database</span>
             </h1>
             <p class="mt-8 text-xl leading-8 text-gray-500">
-                Do you know a good tool to explore real world databases with a lot of tables? <b>I don't.</b> And so we built Azimutt ❤️
+                Do you know a good tool to explore real world databases with a lot of tables? <strong>I don't.</strong> And so we built Azimutt ❤️
                 Let's dig a bit and discover why is Azimutt so special for exploration...
             </p>
         </div>
@@ -15,7 +15,7 @@
             <ul role="list">
                 <li><a href="#the-sad-state-of-the-art">The sad state of the art</a></li>
                 <li><a href="#what-s-the-bare-minimum-for-a-decent-tool">What's the bare minimum for a decent tool?</a></li>
-                <li><a href="#how-azimutt-went-further">How dit Azimutt go further?</a></li>
+                <li><a href="#how-azimutt-went-further">How Azimutt went further?</a></li>
                 <li><a href="#what-s-the-promised-future-we-can-only-dream-of-today">What's the promised future we can only dream of today?</a></li>
             </ul>
 
@@ -38,8 +38,8 @@
                 I have been in this situation. I used to spend a lot of time in the <code>structure.sql</code>, declaring our database schema.
                 As you can imagine, it was long, painful and inefficient.
                 I looked for a tool to help me navigate through the database schema.
-                <b>Entity-Relationship diagrams</b> were the obvious choice, but as all of them display everything on the screen, that made them unusable with 400 tables (I think the limit is around 40 tables).
-                I know <b>data catalogs</b> (built 2 already ^^) but their use case is for organization wise documentation, not exploring from scratch a application database.
+                <strong>Entity-Relationship diagrams</strong> were the obvious choice, but as all of them display everything on screen, that made them unusable with 400 tables (I think the limit is around 40 tables).
+                I know <strong>data catalogs</strong> (built 2 already ^^) but their use case is for organization wise documentation, not exploring from scratch a application database.
                 I made a <a href="./blog/how-to-choose-your-entity-relationship-diagram">review of all those tools</a> if you are interested but the conclusion was: nothing came close to the basics I needed.
             </p>
             <p>
@@ -52,12 +52,12 @@
                 Here is what I needed:
             </p>
             <ul role="list">
-                <li><b>Build from database</b> (SQL or connection): you can't manually input everything, there's too much.</li>
-                <li><b>Display only tables I want</b>: don't pollute the whole diagram with unneeded information.</li>
-                <li><b>Search everywhere</b>: table, column, relation and constraint names as well as SQL comments.</li>
-                <li><b>Display only columns I want</b>: some tables have tens of columns but only a few are relevant to your use case.</li>
-                <li><b>See and follow relations</b>: outgoing but also incoming, showing tables using relations is great exploration.</li>
-                <li><b>Save table & columns layouts</b>: having one diagram for each use case is key to understand, not everything fit together.</li>
+                <li><strong>Build from database</strong> (SQL or connection): you can't manually input everything, there's too much.</li>
+                <li><strong>Display only tables I want</strong>: don't pollute the whole diagram with unneeded information.</li>
+                <li><strong>Search everywhere</strong>: table, column, relation and constraint names as well as SQL comments.</li>
+                <li><strong>Display only columns I want</strong>: some tables have tens of columns but only a few are relevant to your use case.</li>
+                <li><strong>See and follow relations</strong>: outgoing but also incoming, showing tables using relations is great exploration.</li>
+                <li><strong>Save table & columns layouts</strong>: having one diagram for each use case is key to understand, not everything fit together.</li>
             </ul>
             <img src="/images/use-cases/exploration-features-slide.png" alt="Basic features for exploration" class="w-full rounded-lg">
             <p>
@@ -65,7 +65,7 @@
                 The biggest used one had around 1500 tables and 100k columns 😱
             </p>
 
-            <h2 id="how-azimutt-went-further">How did Azimutt go further?</h2>
+            <h2 id="how-azimutt-went-further">How Azimutt went further?</h2>
             <p>
                 As you may guess, we didn't stop there, at the MVP stage. We added tons of big and small features.
                 Some to support crucial use cases around the database:
@@ -74,21 +74,21 @@
                 And many other gold nuggets you will have to discover on your own ^^
             </p>
             <p>
-                The first one was <b>multi-database exploration</b>.
+                The first one was <strong>multi-database exploration</strong>.
                 If you want to explore several databases together, for example if you have multiple databases backing your monolith, you can import them all as sources and browse them as if they were just one.
                 Of course, you can choose which sources to use or not, depending on what you are doing.
             </p>
             <p>
-                Another one is <b id="find-path">finding a path between two tables following relations</b>.
+                Another one is <strong id="find-path">finding a path between two tables following relations</strong>.
                 Sometimes, following relations is not enough when tables have several steps between them, and you don't know which path to follow to join them.
                 The find path feature will do this exploration for you and report all possible paths, you just have to choose the right one 🎉<br>
                 Two things about that.
-                First, your <b>relations need to be declared</b>. Azimutt build them from foreign keys but I can't guess what is not in the schema (<em title="one day we could propose to monitor database requests to find relations based on used joins.">for now</em>).
+                First, your <strong>relations need to be declared</strong>. Azimutt build them from foreign keys but can't guess what is not in the schema (<em title="one day we could propose to monitor database requests to find relations based on used joins.">for now</em>).
                 If some are missing, declare them manually in Azimutt (or use the <a href={Routes.website_path(@conn, :analyze)}>analyze feature</a> to help you find missing ones).
-                Second, you will have <b>tons of paths</b> (every time I'm surprised). Use <em>find path settings</em> to ignore some tables and/or columns to keep only meaningful ones (for example the <code>created_by</code> columns or your <code>audit</code> table are rarely relevant).
+                Second, you will have <strong>tons of paths</strong> (every time I'm surprised). Use <em>find path settings</em> to ignore some tables and/or columns to keep only meaningful ones (for example the <code>created_by</code> columns or your <code>audit</code> table are rarely relevant).
             </p>
             <p>
-                But clearly the <em>biggest one</em> is the <b>data exploration</b>. And we are just staring with it.
+                But clearly the <em>biggest one</em> is the <strong>data exploration</strong>. And we are just staring with it.
                 Exploring your database schema is already a big deal, but being able to seamlessly explore actual data is an awesome addition to it.<br>
                 When you use a database connection source, Azimutt is able to query your database to extract the schema. Also, when you are exploring Azimutt can show you sample data and statistics to better understand what is inside:
             </p>
@@ -101,26 +101,26 @@
 
             <h2 id="what-s-the-promised-future-we-can-only-dream-of-today">What's the promised future we can only dream of today?</h2>
             <p>
-                The one thing I still miss on schema exploration is the <b>query diagram</b>.
+                The one thing I still miss on schema exploration is the <strong>query diagram</strong>.
                 If you have a complex SELECT, put it in Azimutt, and it will draw a diagram with used table and columns.
                 I think it will help a lot, understanding big queries.
-                Azimutt could also suggest adding missing relations if some JOINs are done between columns with no existing relation.
+                Azimutt could also suggest to add missing relations if some JOINs are done between columns with no existing relation.
             </p>
             <p>
                 Extending diagrams beyond relational databases is also another possible evolution.
-                For this, Azimutt would only need <b>nested columns</b> to handle JSON columns in relational databases but also document databases as well as REST APIs (using OpenAPI specification).
+                For this, Azimutt would only need <strong>nested columns</strong> to handle JSON columns in relational databases but also document databases as well as REST APIs (using OpenAPI specification).
                 We don't have the use case for now but it would be interesting to investigate.
             </p>
             <p>
-                Of course, the huge improvement that will surely come at some point is the <b id="extended-data-exploration">extended data exploration</b>.
+                Of course, the huge improvement that will surely come at some point is the <strong id="extended-data-exploration">extended data exploration</strong>.
                 We want to seamlessly bridge the gap between schema and data exploration, making accessing data easy and contextual.
                 Here are a few ideas we already have but will probably extend much more with time:
             </p>
             <ul role="list">
-                <li><b>Search in data</b>: the search will also give data results and open then in a data explorer.</li>
-                <li><b>Data explorer</b>: run any query you want, with some useful ones already predefined.</li>
-                <li><b>Data navigation</b>: when showing a column with relation, allow to open matching data with a single click.</li>
-                <li><b>Query log analysis</b>: fetching queries executed in the database and look for missing relations or indexes.</li>
+                <li><strong>Search in data</strong>: the search will also give data results and open then in a data explorer.</li>
+                <li><strong>Data explorer</strong>: run any query you want, with some useful ones already predefined.</li>
+                <li><strong>Data navigation</strong>: when showing a column with relation, allow to open matching data with a single click.</li>
+                <li><strong>Query log analysis</strong>: fetching queries executed in the database and look for missing relations or indexes.</li>
             </ul>
             <p>
                 I don't know how you feel about this, but I'm personally very excited to see this coming live.

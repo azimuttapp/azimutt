@@ -9,7 +9,7 @@
             <p class="mt-8 text-xl leading-8 text-gray-500">
                 Once in a while you need to think about your database design.<br>
                 It happens a lot when you are starting a new project but also when you build a new context in your app.
-                Most of the time <b>pen and paper</b> are the best tools for this, but that was before Azimutt...
+                Most of the time <strong>pen and paper</strong> are the best tools for this, but that was before Azimutt...
             </p>
         </div>
         <div class="prose prose-lg prose-indigo mx-auto mt-6 text-gray-500">
@@ -22,9 +22,9 @@
 
             <h2 id="how-did-it-start">How did it start?</h2>
             <p>
-                When working on database design, the most important thing is to <b>let ideas flow</b> and be able to sketch things quickly without a tool in the way.
+                When working on database design, the most important thing is to <strong>let ideas flow</strong> and be able to sketch things quickly without a tool in the way.
                 Most of the time I start with <em>pen and paper</em>, writing just table names and key information. It allows me to have a rough idea of the business domain I'm working with, which is the first step.
-                But fast enough, either some modifications are needed or I need more places than I anticipated. This is usually when I switch to either just a <b>text editor</b> to note things freely or an online <b>drawing tool</b> such as <a href="https://excalidraw.com" target="_blank" rel="noopener">excalidraw</a>.
+                But fast enough, either some modifications are needed or I need more space than I anticipated. This is usually when I switch to either just a <strong>text editor</strong> to note things freely or an online <strong>drawing tool</strong> such as <a href="https://excalidraw.com" target="_blank" rel="noopener">excalidraw</a>.
             </p>
             <p>
                 It can seem strange but <em>I don't use data modeling tools like ERDs</em> because their UI is too strict and make me lose a lot of time with all the buttons, input texts and selects.
@@ -46,17 +46,17 @@ user_roles
 
             <h2 id="how-does-azimutt-envision-diagram-building">How does Azimutt envision diagram building?</h2>
             <p>
-                When I went on to <b>adding data modeling capabilities to Azimutt</b> (it was initially built only for exploring existing database schemas, no edit at all at first),
-                 my thought was on keeping this very natural flow I was used to. So it got obvious I should <b>turn the code above into a DSL</b> to express database diagrams.
+                When I went on to <strong>adding data modeling capabilities to Azimutt</strong> (it was initially built only for exploring existing database schemas, no edit at all at first),
+                 my thought was on keeping this very natural flow I was used to. So it got obvious I should <strong>turn the code above into a DSL</strong> to express database diagrams.
             </p>
             <p>
-                That's how we built AML, <b>Azimutt Markup Language</b>, with very clear goals:
+                That's how we built AML, <strong>Azimutt Markup Language</strong>, with very clear goals:
             </p>
             <ul role="list">
-                <li><b>Intuitive</b>: don't learn it, write your thoughts, it's probably valid AML 😉</li>
-                <li><b>Minimal</b>: don't get distracted by keywords or syntax</li>
-                <li><b>Flexible</b>: almost everything is optional, no extra content</li>
-                <li><b>Rich</b>: all important concepts of SQL should be supported: column types, primary keys, foreign keys, indexes, uniques, comments...</li>
+                <li><strong>Intuitive</strong>: don't learn it, write your thoughts, it's probably valid AML 😉</li>
+                <li><strong>Minimal</strong>: don't get distracted by keywords or syntax</li>
+                <li><strong>Flexible</strong>: almost everything is optional, no extra content</li>
+                <li><strong>Rich</strong>: all important concepts of SQL should be supported: column types, primary keys, foreign keys, indexes, uniques, comments...</li>
             </ul>
 
             <h2 id="what-does-it-look-like-for-real">What does it look like for real?</h2>
@@ -163,32 +163,32 @@ order_lines
             <p>Which produces this schema:</p>
             <img src="/images/screenshots/aml.png" alt="Create your diagram with Azimutt Markup Language" class="w-full rounded-lg">
             <p>
-                The syntax was carefully crafted but still, I was really surprised by how it's <b>so convenient and efficient</b> when using it for real.
+                The syntax was carefully crafted but still, I was really surprised by how it's <strong>so convenient and efficient</strong> when using it for real.
                 With hindsight, it's kind of obvious. Text is what we manipulate the more easily, just like what we do every day with programming languages.
                 For example, you can:
             </p>
             <ul role="list">
-                <li><b>Copy/Paste anything</b>: if you have similar fields in your schema (created_at, created_by, updated_at, updated_by...) or similar tables.</li>
-                <li><b>Edit in your favorite text editor</b>, and benefit from advanced editing like column mode, regex replace or text transform.</li>
-                <li><b>Generate it</b> from anything, using just a bit of code (JSON source would be better than AML for this, but still possible).</li>
-                <li><b>Commit it in your project</b> to keep your modification history easily.</li>
+                <li><strong>Copy/Paste anything</strong>: if you have similar fields in your schema (created_at, created_by, updated_at, updated_by...) or similar tables.</li>
+                <li><strong>Edit in your favorite text editor</strong>, and benefit from advanced editing like column mode, regex replace or text transform.</li>
+                <li><strong>Generate it</strong> from anything, using just a bit of code (JSON source would be better than AML for this, but still possible).</li>
+                <li><strong>Commit it in your project</strong> to keep your modification history easily.</li>
             </ul>
             <p>
                 All of this can sound stupidly obvious, but it's not.
                 If, like many other tools, Azimutt had tens of inputs everywhere instead, it would be impossible to even dream of this.
-                Here, it's <b>just a copy/paste away</b>.
+                Here, it's <strong>just a copy/paste away</strong>.
             </p>
 
             <h2 id="what-s-coming-next">What's coming next?</h2>
             <p>
-                Currently everything works, and pretty well, might I add. One big improvement is still to come: having a <b>full-featured text editor</b> to replace the current textarea, mostly for syntax highlighting and code completions. For example:
+                Currently everything works, and pretty well, might I add. One big improvement is still to come: having a <strong>full-featured text editor</strong> to replace the current textarea, mostly for syntax highlighting and code completions. For example:
             </p>
             <ul role="list">
                 <li><code>user_id</code> column could suggest: <code>fk users.id</code> relation if it does exist.</li>
                 <li><code>cre</code> column could suggest <code>created_at timestamp</code> from other tables.</li>
             </ul>
             <p>
-                So far, feedback welcome, you <a href="/create?empty" target="_blank" rel="noopener">absolutely have to try it</a> the next time you need to think about your database design.
+                So far, all feedback were amazed, you <a href="/create?empty" target="_blank" rel="noopener">absolutely have to try it</a> the next time you need to think about your database design.
             </p>
         </div>
     </div>
