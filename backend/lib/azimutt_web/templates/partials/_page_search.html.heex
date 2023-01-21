@@ -1,4 +1,4 @@
-<%= if @page |> Page.has_pagination do %>
+<%= if @page |> Page.has_pagination || @page.info.search != nil do %>
     <form>
         <%= for {name, value} <- @page.info.query do %>
             <input type="hidden" name={name} value={value} />
