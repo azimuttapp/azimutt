@@ -37,6 +37,19 @@ defmodule Azimutt.Organizations.Organization do
     has_one :heroku_resource, Resource
   end
 
+  def search_fields,
+    do: [
+      :slug,
+      :name,
+      :contact_email,
+      :location,
+      :description,
+      :github_username,
+      :twitter_username,
+      :stripe_customer_id,
+      :stripe_subscription_id
+    ]
+
   @doc false
   def create_personal_changeset(%Organization{} = organization, %User{} = current_user, %Stripe.Customer{} = stripe_customer) do
     required = [:name, :contact_email, :logo]

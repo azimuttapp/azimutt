@@ -32,6 +32,8 @@ defmodule Azimutt.Accounts.User do
     many_to_many :organizations, Organization, join_through: OrganizationMember
   end
 
+  def search_fields, do: [:slug, :name, :email, :company, :location, :description, :github_username, :twitter_username]
+
   @doc """
   A user changeset for registration.
 

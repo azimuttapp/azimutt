@@ -2,13 +2,16 @@ defmodule AzimuttWeb.Admin.DashboardController do
   use AzimuttWeb, :controller
   alias Azimutt.Admin
   alias Azimutt.Admin.Dataset
+  alias Azimutt.Tracking.Event
   alias Azimutt.Utils.Page
   action_fallback AzimuttWeb.FallbackController
 
   def index(conn, _params) do
+    page = conn |> Page.from_conn(%{search_on: Event.search_fields(), sort: "-created_at", size: 40})
+
     conn
     |> render("index.html",
-      events: Admin.list_events(conn |> Page.from_conn(%{sort: "-created_at", size: 40})),
+      events: Admin.list_events(page),
       users_count: Admin.count_users(),
       projects_count: Admin.count_projects(),
       organizations_count: Admin.count_non_personal_organizations(),

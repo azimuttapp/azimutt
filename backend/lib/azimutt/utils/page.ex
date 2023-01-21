@@ -25,9 +25,10 @@ defmodule Azimutt.Utils.Page do
     field :prefix, String.t()
     field :size, pos_integer()
     field :page, pos_integer()
+    field :search, String.t() | nil
+    field :search_fields, list(atom())
     field :filters, any()
     field :sort, list(String.t())
-    # search (q=aaa)
   end
 
   def from_conn(conn, opts \\ %{}) do
@@ -40,6 +41,8 @@ defmodule Azimutt.Utils.Page do
       prefix: prefix,
       size: Intx.parse(query["#{prefix}size"]) |> Result.or_else(opts[:size] || 20),
       page: Intx.parse(query["#{prefix}page"]) |> Result.or_else(1),
+      search: query["#{prefix}q"],
+      search_fields: opts[:search_on] || [],
       filters:
         query
         |> Map.filter(fn {k, _v} -> k |> String.starts_with?("#{prefix}f-") end)
@@ -53,7 +56,7 @@ defmodule Azimutt.Utils.Page do
     size = items |> length()
 
     %Page{
-      info: %Info{path: "", query: %{}, prefix: "", size: max(size, 1), page: 1, filters: %{}, sort: []},
+      info: %Info{path: "", query: %{}, prefix: "", size: max(size, 1), page: 1, search: nil, search_fields: [], filters: %{}, sort: []},
       items: items,
       total: size
     }
@@ -62,6 +65,7 @@ defmodule Azimutt.Utils.Page do
   def get(query, %Info{} = info) do
     new_query =
       query
+      |> add_search(info.search, info.search_fields)
       |> where(^(info.filters |> Enum.map(&build_filter/1)))
       |> order_by(^(info.sort |> Enum.map(&build_sort/1)))
 
@@ -73,6 +77,15 @@ defmodule Azimutt.Utils.Page do
 
     total = new_query |> Repo.aggregate(:count)
     %Page{info: info, items: items, total: total}
+  end
+
+  defp add_search(query, term, fields) do
+    if term != nil && term |> String.length() > 0 && fields |> length() > 0 do
+      clause = fields |> Enum.reduce(false, fn f, q -> dynamic([t], ^q or like(field(t, ^f), ^"%#{term}%")) end)
+      query |> where(^clause)
+    else
+      query
+    end
   end
 
   defp build_filter({key, value}) do
