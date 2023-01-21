@@ -13,7 +13,11 @@ defmodule AzimuttWeb.Admin.EventController do
 
   def show(conn, %{"id" => event_id}) do
     with {:ok, event} <- Admin.get_event(event_id) do
-      conn |> render("show.html", event: event)
+      conn
+      |> render("show.html",
+        event: event,
+        events: Admin.get_day_user_events(event.created_by, event.created_at, conn |> Page.from_conn(%{sort: "-created_at", size: 120}))
+      )
     end
   end
 end

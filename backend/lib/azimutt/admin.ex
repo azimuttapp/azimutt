@@ -86,6 +86,14 @@ defmodule Azimutt.Admin do
     |> Page.get(p)
   end
 
+  def get_day_user_events(%User{} = user, date, %Page.Info{} = p) do
+    {:ok, day} = date |> Timex.format("{YYYY}-{0M}-{0D}")
+
+    query_events()
+    |> where([e], e.created_by_id == ^user.id and fragment("to_char(?, 'yyyy-mm-dd')", e.created_at) == ^day)
+    |> Page.get(p)
+  end
+
   def get_organization_events(%Organization{} = organization, %Page.Info{} = p) do
     query_events()
     |> where([e], e.organization_id == ^organization.id)
