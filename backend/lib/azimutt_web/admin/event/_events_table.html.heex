@@ -34,7 +34,10 @@
             <tbody class="divide-y divide-slate-800 text-slate-500 bg-slate-900">
                 <%= for event <- @events.items do %>
                     <tr class={"text-xs whitespace-nowrap #{if(assigns[:selected] |> Nil.safe(fn e -> e.id end) == event.id, do: "bg-slate-800 text-slate-300", else: "hover:bg-slate-800 hover:text-slate-300")}"}>
-                        <td class="p-1"><%= format_datetime(event.created_at) %></td>
+                        <td class="group p-1">
+                            <%= format_datetime(event.created_at) %>
+                            <%= render AzimuttWeb.PartialsView, "_page_filter.html", page: @events, key: "created_at", value: format_date_filter(event.created_at) %>
+                        </td>
                         <td class="group p-1">
                             <%= link event.name, title: event.id, to: Routes.admin_event_path(@conn, :show, event), class: "underline" %>
                             <%= render AzimuttWeb.PartialsView, "_page_filter.html", page: @events, key: "name", value: event.name %>

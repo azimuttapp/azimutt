@@ -13,6 +13,11 @@ defmodule AzimuttWeb.Admin.EventView do
     formatted
   end
 
+  def format_date_filter(date) do
+    {:ok, formatted} = Timex.format(date, "{YYYY}-{0M}-{0D}")
+    formatted
+  end
+
   def format_details(details) when is_nil(details), do: ""
   def format_details(details), do: details |> Jason.encode!()
 end

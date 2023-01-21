@@ -21,6 +21,16 @@ defmodule Azimutt.Utils.ResultTest do
       assert 2 = {:error, "oops"} |> Result.or_else(2)
     end
 
+    test "is_ok?" do
+      assert true == {:ok, 1} |> Result.is_ok?()
+      assert false == {:error, "oops"} |> Result.is_ok?()
+    end
+
+    test "is_error?" do
+      assert false == {:ok, 1} |> Result.is_error?()
+      assert true == {:error, "oops"} |> Result.is_error?()
+    end
+
     test "map" do
       assert {:ok, 2} = {:ok, 1} |> Result.map(fn x -> x + 1 end)
       assert {:error, "oops"} = {:error, "oops"} |> Result.map(fn x -> x + 1 end)

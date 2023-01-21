@@ -83,7 +83,10 @@
                             <%= project.visibility %>
                             <%= render AzimuttWeb.PartialsView, "_page_filter.html", page: @projects, key: "visibility", value: project.visibility |> Atom.to_string() %>
                         </td>
-                        <td class="p-1" title={"Created on #{format_datetime(project.updated_at)}"}><%= format_datetime(project.updated_at) %></td>
+                        <td class="group p-1" title={"Created on #{format_datetime(project.updated_at)}"}>
+                            <%= format_datetime(project.updated_at) %>
+                            <%= render AzimuttWeb.PartialsView, "_page_filter.html", page: @projects, key: "updated_at", value: format_date_filter(project.updated_at) %>
+                        </td>
                     </tr>
                 <% end %>
             </tbody>

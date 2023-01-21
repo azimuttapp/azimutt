@@ -66,7 +66,7 @@ defmodule Azimutt.Utils.Page do
     new_query =
       query
       |> add_search(info.search, info.search_fields)
-      |> where(^(info.filters |> Enum.map(&build_filter/1)))
+      |> add_filters(info.filters)
       |> order_by(^(info.sort |> Enum.map(&build_sort/1)))
 
     items =
@@ -88,10 +88,30 @@ defmodule Azimutt.Utils.Page do
     end
   end
 
-  defp build_filter({key, value}) do
-    # TODO: would be nice to allow `like` filters, but don't know how to do...
-    # TODO: would be nice to filter dates also (on a day for example)
-    {key |> String.to_atom(), value}
+  defp add_filters(query, filters) do
+    filters |> Enum.reduce(query, fn {key, value}, q -> q |> where(^filter_clause(String.to_atom(key), value)) end)
+  end
+
+  defp filter_clause(field, value) do
+    cond do
+      value |> String.contains?(",") ->
+        value |> String.split(",") |> Enum.reduce(false, fn v, q -> dynamic([t], ^q or ^filter_clause(field, v)) end)
+
+      value |> String.starts_with?("!") ->
+        dynamic([t], not (^filter_clause(field, value |> String.trim_leading("!"))))
+
+      value |> Timex.parse("{YYYY}-{0M}-{0D}") |> Result.is_ok?() ->
+        dynamic([t], fragment("to_char(?, 'yyyy-mm-dd')", field(t, ^field)) == ^value)
+
+      value |> Timex.parse("{YYYY}-{0M}") |> Result.is_ok?() ->
+        dynamic([t], fragment("to_char(?, 'yyyy-mm')", field(t, ^field)) == ^value)
+
+      value |> String.contains?("%") ->
+        dynamic([t], like(field(t, ^field), ^value))
+
+      true ->
+        dynamic([t], field(t, ^field) == ^value)
+    end
   end
 
   defp build_sort(sort) do
