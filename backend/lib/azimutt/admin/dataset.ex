@@ -3,7 +3,7 @@ defmodule Azimutt.Admin.Dataset do
   use TypedStruct
   alias Azimutt.Admin.Dataset
   alias Azimutt.Admin.Dataset.Data
-  alias Azimutt.Utils.Result
+  alias Azimutt.Utils.Enumx
 
   typedstruct enforce: true do
     @derive Jason.Encoder
@@ -39,40 +39,61 @@ defmodule Azimutt.Admin.Dataset do
     }
   end
 
-  def chartjs_daily_data(datasets), do: chartjs_date_data(datasets, "{YYYY}-{0M}-{0D}")
-  def chartjs_monthly_data(datasets), do: chartjs_date_data(datasets, "{YYYY}-{0M}")
+  def chartjs_daily_data(datasets, from, to) do
+    generate_date_labels(from, to, "{YYYY}-{0M}-{0D}", fn d -> Timex.shift(d, days: 1) end)
+    |> build_chartjs(datasets)
+  end
 
-  defp chartjs_date_data(datasets, format) do
-    dates =
-      datasets
-      |> Enum.flat_map(fn dataset ->
-        dataset.data |> Enum.flat_map(fn d -> d.label |> Timex.parse(format) |> Result.to_list() end)
-      end)
+  def chartjs_weekly_data(datasets, from, to) do
+    generate_date_labels(from |> Timex.beginning_of_week(:mon), to, "{YYYY}-{0M}-{0D}", fn d -> Timex.shift(d, days: 7) end)
+    |> build_chartjs(datasets)
+  end
 
-    if dates |> length() == 0 do
-      %{
-        labels: [],
-        datasets: datasets |> Enum.map(fn dataset -> %{label: dataset.name, data: []} end)
-      }
-    else
-      start = dates |> Enum.min(Date)
-      stop = dates |> Enum.max(Date)
-      # TODO: inject correct step instead of generating for each day and then dedup :/
-      labels = Date.range(start, stop) |> Enum.flat_map(fn d -> d |> Timex.format(format) |> Result.to_list() end) |> Enum.dedup()
+  def chartjs_monthly_data(datasets, from, to) do
+    generate_date_labels(from, to, "{YYYY}-{0M}", fn d -> Timex.shift(d, months: 1) end)
+    |> build_chartjs(datasets)
+  end
 
-      %{
-        labels: labels,
-        datasets:
-          datasets
-          |> Enum.map(fn dataset ->
-            values_map = dataset.data |> Enum.map(fn d -> {d.label, d.value} end) |> Map.new()
+  defp generate_date_labels(from, to, format, step) do
+    Stream.unfold(from, fn cur ->
+      if Date.compare(cur, to) == :gt do
+        nil
+      else
+        {:ok, label} = cur |> Timex.format(format)
+        {label, step.(cur)}
+      end
+    end)
+    |> Enum.to_list()
+  end
 
-            %{
-              label: dataset.name,
-              data: labels |> Enum.map(fn label -> values_map |> Map.get(label, 0) end)
-            }
-          end)
-      }
-    end
+  defp build_chartjs(labels, datasets) do
+    %{
+      labels: labels,
+      datasets:
+        datasets
+        |> Enum.map(fn dataset ->
+          values_map = dataset.data |> Enum.map(fn d -> {d.label, d.value} end) |> Map.new()
+
+          %{
+            label: dataset.name,
+            data: labels |> Enum.map(fn label -> values_map |> Map.get(label, 0) end)
+          }
+        end)
+    }
+  end
+
+  # works only for cumulative metrics
+  def grouped(chartjs, size, label_transform) do
+    %{
+      labels: chartjs.labels |> Enumx.grouped(size) |> Enum.map(&List.last/1),
+      datasets:
+        chartjs.datasets
+        |> Enum.map(fn dataset ->
+          %{
+            label: label_transform.(dataset.label),
+            data: dataset.data |> Enumx.grouped(size) |> Enum.map(&Enum.sum/1)
+          }
+        end)
+    }
   end
 end

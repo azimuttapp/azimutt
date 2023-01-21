@@ -6,12 +6,24 @@ defmodule Azimutt.Utils.PageTest do
   describe "page" do
     test "from_params empty" do
       conn = %{request_path: "/", query_params: %{}}
-      info = %Info{path: "/", query: conn.query_params, prefix: "", size: 20, page: 1, filters: %{}, sort: []}
+
+      info = %Info{
+        path: "/",
+        query: conn.query_params,
+        prefix: "",
+        size: 20,
+        page: 1,
+        search: nil,
+        search_fields: [],
+        filters: %{},
+        sort: []
+      }
+
       assert info == conn |> Page.from_conn()
     end
 
     test "from_params full" do
-      conn = %{request_path: "/", query_params: %{"size" => "5", "page" => "3", "f-name" => "loic", "sort" => "-admin,name"}}
+      conn = %{request_path: "/", query_params: %{"size" => "5", "page" => "3", "f-name" => "loic", "q" => "term", "sort" => "-admin,name"}}
 
       info = %Info{
         path: "/",
@@ -19,6 +31,8 @@ defmodule Azimutt.Utils.PageTest do
         prefix: "",
         size: 5,
         page: 3,
+        search: "term",
+        search_fields: [],
         filters: %{"name" => "loic"},
         sort: ["-admin", "name"]
       }

@@ -1,5 +1,8 @@
 <div class="flex flex-col border-l border-1 border-slate-800 pl-3">
-    <div class="text-2xl font-bold text-slate-100 py-2"><%= @projects |> Page.title("project") %></div>
+    <div class="py-2 flex justify-between">
+        <div class="text-2xl font-bold text-slate-100"><%= @projects |> Page.title("project") %></div>
+        <%= render AzimuttWeb.PartialsView, "_page_search.html", page: @projects %>
+    </div>
 
     <div class="align-middle shadow sm:rounded-sm">
         <table class="w-full text-left">
@@ -71,7 +74,10 @@
                             <%= project.visibility %>
                             <%= render AzimuttWeb.PartialsView, "_page_filter.html", page: @projects, key: "visibility", value: project.visibility |> Atom.to_string() %>
                         </td>
-                        <td class="p-1" title={"Created on #{format_datetime(project.updated_at)}"}><%= format_datetime(project.updated_at) %></td>
+                        <td class="group p-1" title={"Created on #{format_datetime(project.updated_at)}"}>
+                            <%= format_datetime(project.updated_at) %>
+                            <%= render AzimuttWeb.PartialsView, "_page_filter.html", page: @projects, key: "updated_at", value: format_date_filter(project.updated_at) %>
+                        </td>
                     </tr>
                 <% end %>
             </tbody>
