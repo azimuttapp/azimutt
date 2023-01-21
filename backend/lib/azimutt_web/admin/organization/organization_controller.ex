@@ -15,6 +15,7 @@ defmodule AzimuttWeb.Admin.OrganizationController do
   def show(conn, %{"id" => organization_id}) do
     now = DateTime.utc_now()
     events_page = conn |> Page.from_conn(%{prefix: "events", search_on: Event.search_fields(), sort: "-created_at", size: 40})
+    {:ok, start_stats} = "2022-11-01" |> Timex.parse("{YYYY}-{0M}-{0D}")
 
     with {:ok, organization} <- Admin.get_organization(organization_id) do
       conn
@@ -24,7 +25,12 @@ defmodule AzimuttWeb.Admin.OrganizationController do
         projects: organization.projects |> Enum.sort_by(& &1.updated_at, {:desc, Date}) |> Page.wrap(),
         members: organization.members |> Enum.sort_by(& &1.created_at, {:desc, Date}) |> Enum.map(fn m -> m.user end) |> Page.wrap(),
         invitations: organization.invitations |> Enum.sort_by(& &1.created_at, {:desc, Date}) |> Page.wrap(),
-        activity: Dataset.chartjs_daily_data([Admin.daily_organization_activity(organization) |> Dataset.from_values("Daily events")]),
+        activity:
+          Dataset.chartjs_daily_data(
+            [Admin.daily_organization_activity(organization) |> Dataset.from_values("Daily events")],
+            start_stats,
+            now
+          ),
         events: Admin.get_organization_events(organization, events_page)
       )
     end
