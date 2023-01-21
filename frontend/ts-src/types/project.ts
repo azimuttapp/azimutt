@@ -344,13 +344,15 @@ export interface Memo {
     content: string
     position: Position
     size: Size
+    color?: Color
 }
 
 export const Memo = z.object({
     id: MemoId,
     content: z.string(),
     position: Position,
-    size: Size
+    size: Size,
+    color: Color.optional()
 }).strict()
 
 export interface Layout {

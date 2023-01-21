@@ -179,17 +179,17 @@ h5 {
 pre code.hljs {
     display: block;
     overflow-x: auto;
-    padding: 1em
+    /*padding: 1em*/
 }
 
 code.hljs {
     padding: 3px 5px
 }
 
-.hljs {
+/*.hljs {
     color: #abb2bf;
     background: #282c34
-}
+}*/
 
 .hljs-comment, .hljs-quote {
     color: #5c6370;

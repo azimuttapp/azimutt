@@ -38,7 +38,7 @@ I personally love the new capabilities offered by memos and I feel schema can be
 
 If you want to play a bit with this new feature, here is the previous layout [embedded](./embed-your-database-diagram-anywhere), so you can move things and create new memos (but can't save obviously ^^):
 
-<iframe width="100%" height="450px" src="https://azimutt.app/embed?project-id=9b317ef6-ee82-49ca-ae3b-63bf8110e13f&layout=introduction&mode=layout&token=151c37dd-6a92-4412-a57e-9f1b8563ae99" title="Embedded Azimutt diagram" frameborder="0" allowtransparency="true" allowfullscreen="true" scrolling="no" style="box-shadow: 0 2px 8px 0 rgba(63,69,81,0.16); border-radius:5px;"></iframe>
+<iframe width="100%" height="450px" src="https://azimutt.app/embed?project-id=adbe859a-08c4-4386-9af3-be165b30e000&layout=documentation%20showcase&mode=layout&token=5274f6b3-8abc-4e03-9ec7-a0a16b526f4d" title="Embedded Azimutt diagram" frameborder="0" allowtransparency="true" allowfullscreen="true" scrolling="no" style="box-shadow: 0 2px 8px 0 rgba(63,69,81,0.16); border-radius:5px;"></iframe>
 
 For now, this feature is limited to 1 memo per layout on free plan and, of course, truly unlimited for pro ones. We are just starting out so really don't hesitate to [reach at us](mailto:{{azimutt_email}}) if you think it's too limited or the pro plan is not fine for you. We can easily find arrangements to make you succeed using Azimutt 🚀
 

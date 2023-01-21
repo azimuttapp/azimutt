@@ -1,0 +1,86 @@
+<div class="relative overflow-hidden bg-white py-16">
+    <%= render "_content_dots.html" %>
+    <div class="relative px-6 lg:px-8">
+        <div class="mx-auto max-w-prose text-lg">
+            <h1>
+                <span class="block text-center text-lg font-semibold text-indigo-600">Use case for Azimutt:</span>
+                <span class="mt-2 block text-center text-3xl font-bold leading-8 tracking-tight text-gray-900 sm:text-4xl">Analyzing your database</span>
+            </h1>
+            <p class="mt-8 text-xl leading-8 text-gray-500">
+                Scaling things is really hard.
+                What works at a size, won't at be bigger one. It can be easy to keep 10 tables well-designed and consistent.
+                But it's a whole different game for a database with 100 tables.
+                You need different tools and processes.
+            </p>
+        </div>
+        <div class="prose prose-lg prose-indigo mx-auto mt-6 text-gray-500">
+            <ul role="list">
+                <li><a href="#how-to-keep-a-high-quality-database">How to keep a high quality database?</a></li>
+                <li><a href="#azimutt-analysis-early-attempt">Azimutt analysis early attempt</a></li>
+            </ul>
+
+            <h2 id="how-to-keep-a-high-quality-database">How to keep a high quality database?</h2>
+            <p>
+                If you know, let us know 😉
+            </p>
+            <p>
+                Joke aside, it's clear there is no simple answer to this, and it requires a lot of expertise and time.
+                Nevertheless, keeping quality at scale has some different challenges that are harder for a human but simpler for a program.
+                With 100 tables or more, it becomes quite impossible for people not to make an obvious mistake or spotting them all, once you're looking at the database.
+                A program, on the other hand, can easily check whatever we want at scale and help keep consistency and avoid obvious errors.
+            </p>
+            <p>
+                At Azimutt we believe this could be a great help at improving databases too big for humans.
+                And as ground feedback, we have learned interesting things and found issues to fix on every single database we ran our analysis.
+                So even if it's just an early start and may sound too trivial, I can only encourage you to try it and see how it goes.
+            </p>
+
+            <h2 id="azimutt-analysis-early-attempt">Azimutt analysis early attempt</h2>
+            <p>
+                On other topics (<a href={Routes.website_path(@conn, :design)}>design</a>, <a href={Routes.website_path(@conn, :explore)}>exploration</a> and <a href={Routes.website_path(@conn, :document)}>documentation</a>),
+                it's easy to explain how Azimutt is doing an amazing job as the purpose is clear, and we think Azimutt answers it pretty well.
+                Here it's very different, finding great heuristics is not trivial. Especially for the general case, but it doesn't prevent us from trying, and you to <a href="https://github.com/azimuttapp/azimutt/issues" target="_blank" rel="noopener">give feedback and suggest ideas</a> 💪
+            </p>
+            <p>
+                From experience, scaling things often comes with better quality, more automation and standardization.
+                Of course Azimutt can't judge your database design, but having access to the whole schema (and <a href={"#{Routes.website_path(@conn, :explore)}#extended-data-exploration"}>soon</a> the whole database if you choose to)
+                it can identify some smells you would be wise to check (like a static code analysis tools). Here are <a href="/blog/improve-your-database-design-with-azimutt-analyzer">the checks we implemented</a>:
+            </p>
+            <ul role="list">
+                <li><strong>Missing primary key</strong>: it's uncommon not to define a primary key for a table, so if a table don't have one, make sure it's really expected, or fix it.</li>
+                <li><strong>Missing foreign keys</strong>: this one is checked using columns name convention (split column name in words and look for a table + column that match several consecutive words). It can be done on purpose but even here, you will <a href={"#{Routes.website_path(@conn, :explore)}#find-path"}>want to add the relation</a> in Azimutt.</li>
+                <li><strong>Inconsistent types</strong>: if you have several columns with the same name (in different tables), they probably represent the same thing and so have the same type (ex: if you have <code>email</code> columns with <code>varchar(56)</code> and <code>varchar(128)</code> you could want to homogenize them).</li>
+                <li><strong>Too big tables</strong>: regardless of your design, tables with many columns (> 30) are probably storing a <a href="https://linearb.io/blog/what-is-a-god-class" target="_blank" rel="noopener">god object</a> and <a href="/blog/why-you-should-avoid-tables-with-many-columns-and-how-to-fix-them">should be avoided</a> most of the time.</li>
+            </ul>
+            <p>
+                This is a beginning, and we will expand them as we find more smells but also with users feedback.
+                If you think a database analyzer can be useful, <a href="https://github.com/azimuttapp/azimutt/issues" target="_blank" rel="noopener">tell us</a> what you expect from it and let's see if we can integrate it into Azimutt.
+            </p>
+            <p>One more thing...</p>
+            <p>
+                We truly believe that scaling and quality comes from automation most of the time.
+                As Azimutt have a structured representation of your database schema, we thought it could be useful to let you access it, to automate tasks.
+                For that, you only need to open the JavaScript console and use the variable <code>azimutt</code> 🤯
+            </p>
+            <p>Here is an example extracting all the column types:</p>
+            <pre><code>const columns = azimutt.getAllTables().flatMap(t => t.columns)
+const types = [...new Set(columns.map(c => c.type))].sort()
+types</code></pre>
+            <p>Or a more complex one generating <a href="https://mermaid.live">mermaid</a> graph from your current layout:</p>
+            <pre><code>const tables = azimutt.getVisibleTables()
+  .reduce((acc, t) => Object.assign({}, acc, {[`${t.schema}.${t.table}`]: t}), {})
+const relations = azimutt.getAllRelations()
+  .filter(r => tables[r.src.table] && tables[r.ref.table])
+const mermaid = ['graph TD']
+  .concat(Object.values(tables).map(t => `    ${t.table}`))
+  .concat(relations.map(r => `    ${r.src.table.split('.')[1]} -->|${r.src.column}| ${r.ref.table.split('.')[1]}`))
+  .join('\n')
+mermaid</code></pre>
+            <p>
+                Hope this could help you in some task as it already did for us...
+                A more complete article about this will come soon but this was just a small hint to help you manage your schema at scale...
+            </p>
+        </div>
+    </div>
+</div>
+<%= render "_footer.html" %>
