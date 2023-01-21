@@ -1,6 +1,7 @@
-module Components.Organisms.Table exposing (Actions, CheckConstraint, Column, ColumnName, ColumnRef, DocState, IndexConstraint, Model, Relation, SchemaName, SharedDocState, State, TableConf, TableName, TableRef, UniqueConstraint, doc, initDocState, table)
+module Components.Organisms.Table exposing (Actions, CheckConstraint, Column, ColumnName, ColumnRef, DocState, IndexConstraint, Model, OrganizationId, ProjectId, ProjectInfo, Relation, SchemaName, SharedDocState, State, TableConf, TableName, TableRef, UniqueConstraint, doc, initDocState, table)
 
-import Components.Atoms.Icon as Icon exposing (Icon(..))
+import Components.Atoms.Icon as Icon
+import Components.Atoms.Icons as Icons
 import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..), ItemAction(..))
 import Components.Molecules.Dropdown as Dropdown
 import Components.Molecules.Popover as Popover
@@ -11,24 +12,24 @@ import ElmBook exposing (Msg)
 import ElmBook.Actions as Actions exposing (logAction)
 import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Attribute, Html, br, button, div, span, text)
-import Html.Attributes exposing (class, classList, id, style, tabindex, title, type_)
-import Html.Events exposing (onClick, onDoubleClick, onMouseEnter, onMouseLeave)
+import Html.Attributes exposing (class, classList, id, tabindex, title, type_)
+import Html.Events exposing (onClick, onMouseEnter, onMouseLeave)
 import Html.Keyed as Keyed
 import Html.Lazy as Lazy
 import Libs.Bool as Bool
 import Libs.Html as Html exposing (bText)
-import Libs.Html.Attributes as Attributes exposing (ariaExpanded, ariaHaspopup, css, role, track)
-import Libs.Html.Events exposing (PointerEvent, onContextMenu, onPointerUp)
+import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, css, role)
+import Libs.Html.Events exposing (PointerEvent, onContextMenu, onPointerUp, stopDoubleClick)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Platform as Platform exposing (Platform)
+import Libs.Models.Uuid exposing (Uuid)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Nel as Nel
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (Color, TwClass, batch, bg_50, border_500, focus, ring_500, text_500)
 import Set exposing (Set)
-import Track
 
 
 type alias Model msg =
@@ -138,19 +139,31 @@ type alias ColumnName =
     String
 
 
+type alias OrganizationId =
+    Uuid
+
+
+type alias ProjectId =
+    Uuid
+
+
+type alias ProjectInfo =
+    { organization : Maybe { id : OrganizationId }, id : ProjectId }
+
+
 table : Model msg -> Html msg
 table model =
     div
-        [ id model.id
-        , Attributes.when model.conf.hover (onMouseEnter (model.actions.hover True))
-        , Attributes.when model.conf.hover (onMouseLeave (model.actions.hover False))
-        , css
+        ([ id model.id
+         , css
             [ "inline-block bg-white rounded-lg"
             , Bool.cond model.state.isHover "shadow-lg" "shadow-md"
             , Bool.cond model.state.selected ("ring-4 " ++ ring_500 model.state.color) ""
             , Bool.cond model.state.dragging "cursor-move" ""
             ]
-        ]
+         ]
+            ++ Bool.cond model.conf.hover [ onMouseEnter (model.actions.hover True), onMouseLeave (model.actions.hover False) ] []
+        )
         [ Lazy.lazy viewHeader model
         , if model.state.collapsed then
             div [] []
@@ -173,7 +186,9 @@ viewHeader model =
         headerTextSize : List (Attribute msg)
         headerTextSize =
             if model.zoom < 0.5 then
-                [ style "font-size" (String.fromFloat (1.25 * 0.5 / model.zoom) ++ "rem") ]
+                -- EXPERIMENT: disable table title magnification when small so the diagram doesn't change and makes the fit-to-screen flaky
+                -- [ style "font-size" (String.fromFloat (1.25 * 0.5 / model.zoom) ++ "rem") ]
+                []
 
             else
                 []
@@ -192,11 +207,10 @@ viewHeader model =
             ]
         ]
         [ div
-            [ Attributes.when model.conf.select (onPointerUp model.platform model.actions.headerClick)
-            , Attributes.when model.conf.layout (onDoubleClick model.actions.headerDblClick)
-            , Attributes.when model.conf.layout (onContextMenu model.platform model.actions.headerRightClick)
-            , class "flex-grow text-center whitespace-nowrap"
-            ]
+            ([ class "flex-grow text-center whitespace-nowrap" ]
+                ++ Bool.cond model.conf.select [ onPointerUp model.platform model.actions.headerClick ] []
+                ++ Bool.cond model.conf.layout [ stopDoubleClick model.actions.headerDblClick, onContextMenu model.platform model.actions.headerRightClick ] []
+            )
             ([ if model.isView then
                 span ([ class "text-xl italic underline decoration-dotted" ] ++ headerTextSize) [ text model.label ] |> Tooltip.t "This is a view"
 
@@ -212,17 +226,15 @@ viewHeader model =
                     Dropdown.dropdown { id = dropdownId, direction = BottomLeft, isOpen = model.state.openedDropdown == dropdownId }
                         (\m ->
                             button
-                                ([ type_ "button"
-                                 , id m.id
-                                 , onClick (model.actions.headerDropdownClick m.id)
-                                 , ariaExpanded m.isOpen
-                                 , ariaHaspopup "true"
-                                 , css [ "flex text-sm opacity-25", focus [ "outline-none" ] ]
-                                 ]
-                                    ++ track Track.openTableDropdown
-                                )
+                                [ type_ "button"
+                                , id m.id
+                                , onClick (model.actions.headerDropdownClick m.id)
+                                , ariaExpanded m.isOpen
+                                , ariaHaspopup "true"
+                                , css [ "flex text-sm opacity-25", focus [ "outline-none" ] ]
+                                ]
                                 [ span [ class "sr-only" ] [ text "Open table settings" ]
-                                , Icon.solid DotsVertical ""
+                                , Icon.solid Icon.DotsVertical ""
                                 ]
                         )
                         (\_ -> dropdownContent)
@@ -280,13 +292,13 @@ viewHiddenColumns model =
             []
             (( label
              , div
-                [ title label
-                , Attributes.when model.conf.hover (onMouseEnter (model.actions.hiddenColumnsHover popoverId True))
-                , Attributes.when model.conf.hover (onMouseLeave (model.actions.hiddenColumnsHover popoverId False))
-                , Attributes.when model.conf.layout (onClick model.actions.hiddenColumnsClick)
-                , class "h-6 pl-7 pr-2 whitespace-nowrap text-default-500 opacity-50 hover:opacity-100"
-                , classList [ ( "cursor-pointer", model.conf.layout ) ]
-                ]
+                ([ title label
+                 , class "h-6 pl-7 pr-2 whitespace-nowrap text-default-500 opacity-50 hover:opacity-100"
+                 , classList [ ( "cursor-pointer", model.conf.layout ) ]
+                 ]
+                    ++ Bool.cond model.conf.hover [ onMouseEnter (model.actions.hiddenColumnsHover popoverId True), onMouseLeave (model.actions.hiddenColumnsHover popoverId False) ] []
+                    ++ Bool.cond model.conf.layout [ onClick model.actions.hiddenColumnsClick ] []
+                )
                 [ text ("... " ++ label) ]
                 |> Popover.r popover showPopover
              )
@@ -298,10 +310,6 @@ viewColumn : Model msg -> TwClass -> Bool -> Int -> Column -> Html msg
 viewColumn model styles isLast index column =
     div
         ([ title (column.name ++ " (" ++ column.kind ++ Bool.cond column.nullable "?" "" ++ ")")
-         , Attributes.when model.conf.hover (onMouseEnter (model.actions.columnHover column.name True))
-         , Attributes.when model.conf.hover (onMouseLeave (model.actions.columnHover column.name False))
-         , Attributes.when model.conf.layout (onDoubleClick (model.actions.columnDblClick column.name))
-         , Attributes.when model.conf.layout (onContextMenu model.platform (model.actions.columnRightClick index column.name))
          , css
             [ "h-6 px-2 flex items-center align-middle whitespace-nowrap relative"
             , styles
@@ -309,6 +317,8 @@ viewColumn model styles isLast index column =
             , Bool.cond isLast "rounded-b-lg" ""
             ]
          ]
+            ++ Bool.cond model.conf.hover [ onMouseEnter (model.actions.columnHover column.name True), onMouseLeave (model.actions.columnHover column.name False) ] []
+            ++ Bool.cond model.conf.layout [ stopDoubleClick (model.actions.columnDblClick column.name), onContextMenu model.platform (model.actions.columnRightClick index column.name) ] []
             ++ (model.actions.columnClick |> Maybe.mapOrElse (\action -> [ onPointerUp model.platform (action column.name) ]) [])
         )
         [ viewColumnIcon model column |> viewColumnIconDropdown model column
@@ -333,27 +343,26 @@ viewColumnIcon model column =
     in
     if column.outRelations |> List.nonEmpty then
         if (column.outRelations |> List.filter .tableShown |> List.nonEmpty) || not model.conf.layout then
-            div []
-                [ Icon.solid ExternalLink "w-4 h-4" |> Tooltip.t tooltip ]
+            div [] [ Icon.solid Icons.columns.foreignKey "w-4 h-4" |> Tooltip.t tooltip ]
 
         else
-            div ([ css [ "cursor-pointer", text_500 model.state.color ], onClick (model.actions.relationsIconClick column.outRelations True) ] ++ track Track.showTableWithForeignKey)
-                [ Icon.solid ExternalLink "w-4 h-4" |> Tooltip.t tooltip ]
+            div [ css [ "cursor-pointer", text_500 model.state.color ], onClick (model.actions.relationsIconClick column.outRelations True) ]
+                [ Icon.solid Icons.columns.foreignKey "w-4 h-4" |> Tooltip.t tooltip ]
 
     else if column.isPrimaryKey then
-        div [] [ Icon.solid Key "w-4 h-4" |> Tooltip.t tooltip ]
+        div [] [ Icon.solid Icons.columns.primaryKey "w-4 h-4" |> Tooltip.t tooltip ]
 
     else if column.uniques |> List.nonEmpty then
-        div [] [ Icon.solid FingerPrint "w-4 h-4" |> Tooltip.t tooltip ]
+        div [] [ Icon.solid Icons.columns.unique "w-4 h-4" |> Tooltip.t tooltip ]
 
     else if column.indexes |> List.nonEmpty then
-        div [] [ Icon.solid SortDescending "w-4 h-4" |> Tooltip.t tooltip ]
+        div [] [ Icon.solid Icons.columns.index "w-4 h-4" |> Tooltip.t tooltip ]
 
     else if column.checks |> List.nonEmpty then
-        div [] [ Icon.solid Check "w-4 h-4" |> Tooltip.t tooltip ]
+        div [] [ Icon.solid Icons.columns.check "w-4 h-4" |> Tooltip.t tooltip ]
 
     else
-        div [] [ Icon.solid Empty "w-4 h-4" ]
+        div [] [ Icon.solid Icon.Empty "w-4 h-4" ]
 
 
 viewColumnIconDropdown : Model msg -> Column -> Html msg -> Html msg
@@ -374,15 +383,13 @@ viewColumnIconDropdown model column icon =
         Dropdown.dropdown { id = dropdownId, direction = BottomRight, isOpen = model.state.openedDropdown == dropdownId }
             (\m ->
                 button
-                    ([ type_ "button"
-                     , id m.id
-                     , onClick (model.actions.headerDropdownClick m.id)
-                     , ariaExpanded m.isOpen
-                     , ariaHaspopup "true"
-                     , css [ Bool.cond (tablesToShow |> List.isEmpty) "" (text_500 model.state.color), focus [ "outline-none" ] ]
-                     ]
-                        ++ track Track.openIncomingRelationsDropdown
-                    )
+                    [ type_ "button"
+                    , id m.id
+                    , onClick (model.actions.headerDropdownClick m.id)
+                    , ariaExpanded m.isOpen
+                    , ariaHaspopup "true"
+                    , css [ Bool.cond (tablesToShow |> List.isEmpty) "" (text_500 model.state.color), focus [ "outline-none" ] ]
+                    ]
                     [ icon ]
             )
             (\_ ->
@@ -396,7 +403,7 @@ viewColumnIconDropdown model column icon =
                                 let
                                     content : List (Html msg)
                                     content =
-                                        [ Icon.solid ExternalLink "inline"
+                                        [ Icon.solid Icons.columns.foreignKey "inline"
                                         , bText (showTableRef model.defaultSchema { schema = rels.head.column.schema, table = rels.head.column.table })
                                         , text ("." ++ (rels |> Nel.toList |> List.map (\r -> r.column.column ++ Bool.cond r.nullable "?" "") |> String.join ", "))
                                         ]
@@ -420,11 +427,7 @@ viewColumnIconDropdown model column icon =
 
 viewColumnIconDropdownItem : msg -> List (Html msg) -> Html msg
 viewColumnIconDropdownItem message content =
-    button
-        ([ type_ "button", onClick message, role "menuitem", tabindex -1, css [ "py-1 block w-full text-left", focus [ "outline-none" ], ContextMenu.itemStyles ] ]
-            ++ track Track.showTableWithIncomingRelationsDropdown
-        )
-        content
+    button [ type_ "button", onClick message, role "menuitem", tabindex -1, css [ "py-1 block w-full text-left", focus [ "outline-none" ], ContextMenu.itemStyles ] ] content
 
 
 viewColumnName : Model msg -> Column -> Html msg
@@ -438,16 +441,29 @@ viewColumnName model column =
 
 viewComment : String -> Html msg
 viewComment comment =
-    Icon.outline Chat "w-4 ml-1 opacity-50" |> Tooltip.t comment
+    Icon.outline Icons.comment "w-4 ml-1 opacity-50" |> Tooltip.t (buildTooltipContent comment)
 
 
 viewNotes : Model msg -> Maybe String -> String -> Html msg
 viewNotes model column notes =
-    span
-        [ Attributes.when model.conf.layout (onClick (model.actions.notesClick column))
-        , classList [ ( "cursor-pointer", model.conf.layout ) ]
-        ]
-        [ Icon.outline DocumentText "w-4 ml-1 opacity-50" |> Tooltip.t notes ]
+    span ([ classList [ ( "cursor-pointer", model.conf.layout ) ] ] ++ Bool.cond model.conf.layout [ onClick (model.actions.notesClick column) ] [])
+        [ Icon.outline Icons.notes "w-4 ml-1 opacity-50" ]
+        |> Tooltip.t (buildTooltipContent notes)
+
+
+buildTooltipContent : String -> String
+buildTooltipContent content =
+    let
+        trimmed : String
+        trimmed =
+            content |> String.trim
+    in
+    trimmed
+        |> String.split "\n"
+        |> List.head
+        |> Maybe.withDefault ""
+        |> String.left 50
+        |> (\show -> Bool.cond (show == trimmed) show (show ++ "… double click to see all"))
 
 
 viewColumnKind : Model msg -> Column -> Html msg

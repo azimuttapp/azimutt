@@ -17,7 +17,6 @@ init urlOrganization =
       , databaseSource = Nothing
       , sqlSource = Nothing
       , jsonSource = Nothing
-      , projectName = Conf.constants.newProjectName
       , toasts = Toasts.init
       }
     , Cmd.batch
@@ -28,7 +27,6 @@ init urlOrganization =
             , html = Just "h-full"
             , body = Just "h-full"
             }
-        , Ports.trackPage "create-project"
         , Ports.getLegacyProjects
         ]
     )

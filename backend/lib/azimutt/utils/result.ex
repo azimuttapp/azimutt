@@ -124,6 +124,32 @@ defmodule Azimutt.Utils.Result do
   def map_both(:error, f_error, _f_ok), do: error(f_error.(nil))
 
   @doc """
+  Like `map` but keeps the mapped value in a tuple
+  ## Examples
+      iex> {:ok, 1} |> Result.map_with(fn x -> x + 1 end)
+      {:ok, {1, 2}}
+      iex> {:error, 1} |> Result.map_with(fn x -> x + 1 end)
+      {:error, 1}
+  """
+  def map_with({:ok, val}, f), do: ok({val, f.(val)})
+  def map_with({:error, _err} = res, _f), do: res
+
+  @doc """
+  Like `flat_map` but puts the mapped value in a tuple with the map result
+  ## Examples
+      iex> {:ok, 1} |> Result.flat_map_with(fn x -> {:ok, x + 1} end)
+      {:ok, {1, 2}}
+      iex> {:ok, 1} |> Result.flat_map_with(fn x -> {:error, "oops"} end)
+      {:error, "oops"}
+      iex> {:error, "oops"} |> Result.flat_map_with(fn x -> {:ok, x + 1} end)
+      {:error, "oops"}
+      iex> {:error, "oops"} |> Result.flat_map_with(fn x -> {:error, "oops2"} end)
+      {:error, "oops"}
+  """
+  def flat_map_with({:ok, val}, f), do: f.(val) |> map(fn r -> {val, r} end)
+  def flat_map_with({:error, _err} = res, _f), do: res
+
+  @doc """
   Execute the function on :ok but does not change the result
   ## Examples
       iex> {:ok, 1} |> Result.tap(fn x -> x + 1 end)
@@ -137,6 +163,17 @@ defmodule Azimutt.Utils.Result do
   end
 
   def tap({:error, _err} = res, _f), do: res
+
+  @doc """
+  Same as `tap` but handle errors.
+  ## Examples
+      iex> {:ok, 1} |> Result.flat_tap(fn x -> {:ok, x + 1} end)
+      {:ok, 1}
+      iex> {:ok, 1} |> Result.flat_tap(fn x -> {:error, "oops"} end)
+      {:error, "oops"}
+  """
+  def flat_tap({:ok, val}, f), do: f.(val) |> map(fn _ -> val end)
+  def flat_tap({:error, _err} = res, _f), do: res
 
   @doc """
   Execure the function on :error but does not change the result
@@ -195,6 +232,8 @@ defmodule Azimutt.Utils.Result do
   """
   def filter({:ok, val} = res, p), do: if(p.(val), do: res, else: {:error, :invalid_predicate})
   def filter({:error, _err} = res, _p), do: res
+  def filter({:ok, val} = res, p, default_err), do: if(p.(val), do: res, else: {:error, default_err})
+  def filter({:error, _err} = res, _p, _default_err), do: res
 
   @doc """
   Same as `filter` but reverse.
@@ -208,6 +247,32 @@ defmodule Azimutt.Utils.Result do
   """
   def filter_not({:ok, val} = res, p), do: if(p.(val), do: {:error, :invalid_predicate}, else: res)
   def filter_not({:error, _err} = res, _p), do: res
+  def filter_not({:ok, val} = res, p, default_err), do: if(p.(val), do: {:error, default_err}, else: res)
+  def filter_not({:error, _err} = res, _p, _default_err), do: res
+
+  @doc """
+  Check the value inside the Result with a predicate, always return false on errors
+  ## Examples
+      iex> {:ok, 1} |> Result.exists(fn x -> x == 1 end)
+      true
+      iex> {:ok, 1} |> Result.exists(fn x -> x == 2 end)
+      false
+      iex> {:error, 1} |> Result.map(fn x -> x == 1 end)
+      false
+  """
+  def exists({:ok, val}, p), do: p.(val)
+  def exists({:error, _err}, _f), do: false
+
+  @doc """
+  Transform Result into a list, with one element if success or empty if error
+  ## Examples
+      iex> {:ok, 1} |> Result.to_list()
+      [1]
+      iex> {:error, 1} |> Result.to_list()
+      []
+  """
+  def to_list({:ok, val}), do: [val]
+  def to_list({:error, _err}), do: []
 
   @doc """
   Transforms a list of results into a result of list.

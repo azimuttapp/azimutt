@@ -26,6 +26,7 @@ import PagesComponents.Organization_.Project_.Components.AmlSidebar as AmlSideba
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
 import PagesComponents.Organization_.Project_.Components.EmbedSourceParsingDialog as EmbedSourceParsingDialog
 import PagesComponents.Organization_.Project_.Components.ProjectSaveDialog as ProjectSaveDialog
+import PagesComponents.Organization_.Project_.Components.ProjectSharing as ProjectSharing
 import PagesComponents.Organization_.Project_.Components.SourceUpdateDialog as SourceUpdateDialog
 import PagesComponents.Organization_.Project_.Models exposing (ContextMenu, LayoutMsg(..), Model, Msg(..), ProjectSettingsMsg(..), confirmDanger)
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
@@ -40,7 +41,6 @@ import PagesComponents.Organization_.Project_.Views.Modals.Modals as Modals
 import PagesComponents.Organization_.Project_.Views.Modals.NewLayout as NewLayout
 import PagesComponents.Organization_.Project_.Views.Modals.ProjectSettings exposing (viewProjectSettings)
 import PagesComponents.Organization_.Project_.Views.Modals.SchemaAnalysis exposing (viewSchemaAnalysis)
-import PagesComponents.Organization_.Project_.Views.Modals.Sharing exposing (viewSharing)
 import PagesComponents.Organization_.Project_.Views.Navbar as Navbar exposing (viewNavbar)
 import PagesComponents.Organization_.Project_.Views.Watermark exposing (viewWatermark)
 import Services.Backend as Backend
@@ -89,7 +89,7 @@ viewApp currentUrl urlOrganization shared model htmlId erd =
                         Loaded legacyProjects ->
                             legacyProjects
             in
-            Lazy.lazy8 viewNavbar shared.conf shared.user model.conf model.virtualRelation erd (shared.projects ++ projects) model.navbar (Navbar.argsToString currentUrl urlOrganization model.dirty (htmlId ++ "-nav") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-nav")))
+            Lazy.lazy8 viewNavbar shared.conf shared.user model.conf model.virtualRelation erd (shared.projects ++ projects) model.navbar (Navbar.argsToString currentUrl urlOrganization (shared.organizations |> List.map .id) (htmlId ++ "-nav") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-nav")) model.dirty)
 
           else
             div [] []
@@ -97,15 +97,16 @@ viewApp currentUrl urlOrganization shared model htmlId erd =
             [ class "flex-1 flex overflow-hidden"
             , style "height" (B.cond model.conf.showNavbar ("calc(100% - " ++ (model.erdElem.position |> Position.extractViewport |> .top |> String.fromFloat) ++ "px)") "100%")
             ]
-            [ section [ class "relative min-w-0 flex-1 h-full flex flex-col overflow-y-auto" ]
-                [ Lazy.lazy8 viewErd model.conf model.erdElem model.hoverTable erd model.selectionBox model.virtualRelation (Erd.argsToString shared.conf.platform model.cursorMode model.openedDropdown model.openedPopover) model.dragging
+            [ -- model.erdElem |> Area.debugViewport "erdElem" "border-red-500",
+              section [ class "relative min-w-0 flex-1 h-full flex flex-col overflow-y-auto" ]
+                [ Lazy.lazy8 viewErd model.conf model.erdElem erd model.selectionBox model.virtualRelation model.editMemo (Erd.argsToString shared.conf.platform model.cursorMode model.hoverTable model.openedDropdown model.openedPopover (model.detailsSidebar |> Maybe.mapOrElse DetailsSidebar.selected "")) model.dragging
                 , if model.conf.fullscreen || model.conf.move then
                     let
                         layout : ErdLayout
                         layout =
                             erd |> Erd.currentLayout
                     in
-                    Lazy.lazy6 viewCommands model.conf model.cursorMode layout.canvas.zoom (htmlId ++ "-commands") (layout.tables |> List.isEmpty |> not) (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-commands"))
+                    Lazy.lazy8 viewCommands model.conf model.cursorMode layout.canvas.zoom (htmlId ++ "-commands") (layout.tables |> List.isEmpty |> not) (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-commands")) (model.amlSidebar /= Nothing) (model.detailsSidebar /= Nothing)
 
                   else
                     div [] []
@@ -126,7 +127,7 @@ viewLeftSidebar model =
     let
         content : Maybe (Html Msg)
         content =
-            model.detailsSidebar |> Maybe.map2 (DetailsSidebar.view DetailsSidebarMsg (\id -> ShowTable id Nothing) HideTable ShowColumn HideColumn (LLoad >> LayoutMsg)) model.erd
+            model.detailsSidebar |> Maybe.map2 (DetailsSidebar.view DetailsSidebarMsg (\id -> ShowTable id Nothing) HideTable ShowColumn HideColumn (LLoad >> LayoutMsg) model.tableStats model.columnStats) model.erd
     in
     aside [ css [ "block flex-shrink-0 order-first" ] ]
         [ div [ css [ B.cond (content == Nothing) "-ml-112" "", "w-112 transition-[margin] ease-in-out duration-200 h-full relative flex flex-col border-r border-gray-200 bg-white overflow-y-auto" ] ]
@@ -160,7 +161,7 @@ viewModal currentUrl urlOrganization shared model _ =
          , model.editNotes |> Maybe.map2 (\e m -> ( m.id, viewEditNotes (model.openedDialogs |> List.member m.id) e m )) model.erd
          , model.findPath |> Maybe.map2 (\e m -> ( m.id, viewFindPath (model.openedDialogs |> List.member m.id) model.openedDropdown e.settings.defaultSchema e.tables e.settings.findPath m )) model.erd
          , model.schemaAnalysis |> Maybe.map2 (\e m -> ( m.id, viewSchemaAnalysis (e |> Erd.getOrganization urlOrganization) (model.openedDialogs |> List.member m.id) e.settings.defaultSchema e.tables m )) model.erd
-         , model.sharing |> Maybe.map2 (\e m -> ( m.id, viewSharing currentUrl (model.openedDialogs |> List.member m.id) e m )) model.erd
+         , model.sharing |> Maybe.map2 (\e m -> ( m.id, ProjectSharing.view SharingMsg Send ModalClose confirmDanger shared.zone currentUrl (model.openedDialogs |> List.member m.id) e m )) model.erd
          , model.save |> Maybe.map2 (\e m -> ( m.id, ProjectSaveDialog.view ProjectSaveMsg ModalClose CreateProject currentUrl shared.user shared.organizations (model.openedDialogs |> List.member m.id) e m )) model.erd
          , model.settings |> Maybe.map2 (\e m -> ( m.id, viewProjectSettings shared.zone (model.openedDialogs |> List.member m.id) e m )) model.erd
          , model.sourceUpdate |> Maybe.map (\m -> ( m.id, SourceUpdateDialog.view (PSSourceUpdate >> ProjectSettingsMsg) (PSSourceSet >> ProjectSettingsMsg) ModalClose Noop shared.zone shared.now (model.openedDialogs |> List.member m.id) m ))

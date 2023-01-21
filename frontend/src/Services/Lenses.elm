@@ -5,6 +5,7 @@ module Services.Lenses exposing
     , mapCanvas
     , mapChecks
     , mapCollapseTableColumns
+    , mapColors
     , mapColumnBasicTypes
     , mapColumns
     , mapCommentM
@@ -14,6 +15,7 @@ module Services.Lenses exposing
     , mapDatabaseSourceCmd
     , mapDatabaseSourceMCmd
     , mapDetailsSidebarCmd
+    , mapEditMemoM
     , mapEditNotesM
     , mapEmbedSourceParsingMCmd
     , mapEnabled
@@ -34,7 +36,11 @@ module Services.Lenses exposing
     , mapM
     , mapMCmd
     , mapMTeamCmd
+    , mapMemos
+    , mapMemosL
     , mapMobileMenuOpen
+    , mapModal
+    , mapModalM
     , mapNavbar
     , mapNewLayoutM
     , mapNewLayoutMCmd
@@ -42,7 +48,9 @@ module Services.Lenses exposing
     , mapOpened
     , mapOpenedDialogs
     , mapOpenedDropdown
+    , mapOrganizationM
     , mapParsedSchemaM
+    , mapPlan
     , mapPosition
     , mapPrimaryKeyM
     , mapProject
@@ -61,6 +69,8 @@ module Services.Lenses exposing
     , mapSearch
     , mapSelected
     , mapSettings
+    , mapSharing
+    , mapSharingCmd
     , mapSharingM
     , mapShow
     , mapShowHiddenColumns
@@ -75,6 +85,10 @@ module Services.Lenses exposing
     , mapTeamCmd
     , mapToasts
     , mapToastsCmd
+    , mapToken
+    , mapTokenForm
+    , mapTokenFormM
+    , mapTokens
     , mapTop
     , mapUniques
     , mapUserM
@@ -88,6 +102,7 @@ module Services.Lenses exposing
     , setCollapseTableColumns
     , setCollapsed
     , setColor
+    , setColors
     , setColumnBasicTypes
     , setColumnOrder
     , setColumns
@@ -103,11 +118,13 @@ module Services.Lenses exposing
     , setDefaultSchema
     , setDetailsSidebar
     , setDragging
+    , setEditMemo
     , setEditNotes
     , setEmbedSourceParsing
     , setEnabled
     , setErd
     , setErrors
+    , setExpire
     , setFindPath
     , setFrom
     , setGithub
@@ -129,6 +146,7 @@ module Services.Lenses exposing
     , setList
     , setLocation
     , setMax
+    , setMemos
     , setMobileMenuOpen
     , setModal
     , setMouse
@@ -140,9 +158,11 @@ module Services.Lenses exposing
     , setOpenedDialogs
     , setOpenedDropdown
     , setOpenedPopover
+    , setOrganization
     , setOrigins
     , setParsedSchema
     , setParsedSource
+    , setPlan
     , setPosition
     , setPrimaryKey
     , setProject
@@ -179,6 +199,9 @@ module Services.Lenses exposing
     , setText
     , setTo
     , setToasts
+    , setToken
+    , setTokenForm
+    , setTokens
     , setTop
     , setTwitter
     , setUniques
@@ -277,6 +300,16 @@ mapCollapseTableColumns =
 setColor : v -> { item | color : v } -> { item | color : v }
 setColor =
     set_ .color (\value item -> { item | color = value })
+
+
+setColors : v -> { item | colors : v } -> { item | colors : v }
+setColors =
+    set_ .colors (\value item -> { item | colors = value })
+
+
+mapColors : (v -> v) -> { item | colors : v } -> { item | colors : v }
+mapColors =
+    map_ .colors setColors
 
 
 setColumns : v -> { item | columns : v } -> { item | columns : v }
@@ -399,6 +432,16 @@ setDragging =
     set_ .dragging (\value item -> { item | dragging = value })
 
 
+setEditMemo : v -> { item | editMemo : v } -> { item | editMemo : v }
+setEditMemo =
+    set_ .editMemo (\value item -> { item | editMemo = value })
+
+
+mapEditMemoM : (v -> v) -> { item | editMemo : Maybe v } -> { item | editMemo : Maybe v }
+mapEditMemoM =
+    mapM_ .editMemo setEditMemo
+
+
 setEditNotes : v -> { item | editNotes : v } -> { item | editNotes : v }
 setEditNotes =
     set_ .editNotes (\value item -> { item | editNotes = value })
@@ -447,6 +490,11 @@ mapErdMCmd =
 setErrors : v -> { item | errors : v } -> { item | errors : v }
 setErrors =
     set_ .errors (\value item -> { item | errors = value })
+
+
+setExpire : v -> { item | expire : v } -> { item | expire : v }
+setExpire =
+    set_ .expire (\value item -> { item | expire = value })
 
 
 setFindPath : v -> { item | findPath : v } -> { item | findPath : v }
@@ -609,6 +657,21 @@ setMax =
     set_ .max (\value item -> { item | max = value })
 
 
+setMemos : v -> { item | memos : v } -> { item | memos : v }
+setMemos =
+    set_ .memos (\value item -> { item | memos = value })
+
+
+mapMemos : (v -> v) -> { item | memos : v } -> { item | memos : v }
+mapMemos =
+    map_ .memos setMemos
+
+
+mapMemosL : (v -> k) -> k -> (v -> v) -> { item | memos : List v } -> { item | memos : List v }
+mapMemosL =
+    mapL_ .memos setMemos
+
+
 setMobileMenuOpen : v -> { item | mobileMenuOpen : v } -> { item | mobileMenuOpen : v }
 setMobileMenuOpen =
     set_ .mobileMenuOpen (\value item -> { item | mobileMenuOpen = value })
@@ -622,6 +685,16 @@ mapMobileMenuOpen =
 setModal : v -> { item | modal : v } -> { item | modal : v }
 setModal =
     set_ .modal (\value item -> { item | modal = value })
+
+
+mapModal : (v -> v) -> { item | modal : v } -> { item | modal : v }
+mapModal =
+    map_ .modal setModal
+
+
+mapModalM : (v -> v) -> { item | modal : Maybe v } -> { item | modal : Maybe v }
+mapModalM =
+    mapM_ .modal setModal
 
 
 setMouse : v -> { item | mouse : v } -> { item | mouse : v }
@@ -704,6 +777,16 @@ mapOpenedDialogs =
     map_ .openedDialogs setOpenedDialogs
 
 
+setOrganization : v -> { item | organization : v } -> { item | organization : v }
+setOrganization =
+    set_ .organization (\value item -> { item | organization = value })
+
+
+mapOrganizationM : (v -> v) -> { item | organization : Maybe v } -> { item | organization : Maybe v }
+mapOrganizationM =
+    mapM_ .organization setOrganization
+
+
 setOrigins : v -> { item | origins : v } -> { item | origins : v }
 setOrigins =
     set_ .origins (\value item -> { item | origins = value })
@@ -722,6 +805,16 @@ mapParsedSchemaM =
 setParsedSource : v -> { item | parsedSource : v } -> { item | parsedSource : v }
 setParsedSource =
     set_ .parsedSource (\value item -> { item | parsedSource = value })
+
+
+setPlan : v -> { item | plan : v } -> { item | plan : v }
+setPlan =
+    set_ .plan (\value item -> { item | plan = value })
+
+
+mapPlan : (v -> v) -> { item | plan : v } -> { item | plan : v }
+mapPlan =
+    map_ .plan setPlan
 
 
 setPosition : v -> { item | position : v } -> { item | position : v }
@@ -924,9 +1017,19 @@ setSharing =
     set_ .sharing (\value item -> { item | sharing = value })
 
 
+mapSharing : (v -> v) -> { item | sharing : v } -> { item | sharing : v }
+mapSharing =
+    map_ .sharing setSharing
+
+
 mapSharingM : (v -> v) -> { item | sharing : Maybe v } -> { item | sharing : Maybe v }
 mapSharingM =
     mapM_ .sharing setSharing
+
+
+mapSharingCmd : (v -> ( v, Cmd msg )) -> { item | sharing : v } -> ( { item | sharing : v }, Cmd msg )
+mapSharingCmd =
+    mapCmd_ .sharing setSharing
 
 
 setShow : v -> { item | show : v } -> { item | show : v }
@@ -1067,6 +1170,41 @@ mapToasts =
 mapToastsCmd : (v -> ( v, Cmd msg )) -> { item | toasts : v } -> ( { item | toasts : v }, Cmd msg )
 mapToastsCmd =
     mapCmd_ .toasts setToasts
+
+
+setToken : v -> { item | token : v } -> { item | token : v }
+setToken =
+    set_ .token (\value item -> { item | token = value })
+
+
+mapToken : (v -> v) -> { item | token : v } -> { item | token : v }
+mapToken =
+    map_ .token setToken
+
+
+setTokens : v -> { item | tokens : v } -> { item | tokens : v }
+setTokens =
+    set_ .tokens (\value item -> { item | tokens = value })
+
+
+mapTokens : (v -> v) -> { item | tokens : v } -> { item | tokens : v }
+mapTokens =
+    map_ .tokens setTokens
+
+
+setTokenForm : v -> { item | tokenForm : v } -> { item | tokenForm : v }
+setTokenForm =
+    set_ .tokenForm (\value item -> { item | tokenForm = value })
+
+
+mapTokenForm : (v -> v) -> { item | tokenForm : v } -> { item | tokenForm : v }
+mapTokenForm =
+    map_ .tokenForm setTokenForm
+
+
+mapTokenFormM : (v -> v) -> { item | tokenForm : Maybe v } -> { item | tokenForm : Maybe v }
+mapTokenFormM =
+    mapM_ .tokenForm setTokenForm
 
 
 setTop : v -> { item | top : v } -> { item | top : v }

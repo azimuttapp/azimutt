@@ -97,7 +97,7 @@ project0 =
     , types = Dict.empty
     , notes = Dict.empty
     , usedLayout = "initial layout"
-    , layouts = Dict.fromList [ ( "initial layout", Layout (CanvasProps (canvasPos 10 20) 0.75) [] (time 1200) (time 1201) ) ]
+    , layouts = Dict.fromList [ ( "initial layout", Layout (CanvasProps (canvasPos 10 20) 0.75) [] [] (time 1200) (time 1201) ) ]
     , settings = ProjectSettings.init defaultSchema
     , storage = ProjectStorage.Local
     , visibility = ProjectVisibility.None
@@ -134,8 +134,8 @@ project1 =
     , usedLayout = "initial layout"
     , layouts =
         Dict.fromList
-            [ ( "initial layout", Layout (CanvasProps (canvasPos 10 20) 0.75) [ TableProps ( "public", "users" ) (gridPos 30 40) Size.zeroCanvas Tw.red [ "id" ] True False False ] (time 1200) (time 1201) )
-            , ( "empty", Layout (CanvasProps Position.zeroDiagram 0.5) [] (time 1202) (time 1203) )
+            [ ( "initial layout", Layout (CanvasProps (canvasPos 10 20) 0.75) [ TableProps ( "public", "users" ) (gridPos 30 40) Size.zeroCanvas Tw.red [ "id" ] True False False ] [] (time 1200) (time 1201) )
+            , ( "empty", Layout (CanvasProps Position.zeroDiagram 0.5) [] [] (time 1202) (time 1203) )
             ]
     , settings = ProjectSettings (FindPathSettings 4 "" "") defaultSchema [] False "" (HiddenColumns "created_.+, updated_.+" 15 False False) OrderByProperty Bezier True False
     , storage = ProjectStorage.Local
@@ -247,9 +247,9 @@ project2 =
     , usedLayout = "users"
     , layouts =
         Dict.fromList
-            [ ( "initial layout", Layout (CanvasProps (canvasPos 10 20) 0.75) [ TableProps ( "public", "users" ) (gridPos 30 40) Size.zeroCanvas Tw.red [ "id" ] True False False ] (time 1200) (time 1201) )
-            , ( "empty", Layout (CanvasProps Position.zeroDiagram 0.5) [] (time 1202) (time 1203) )
-            , ( "users", Layout (CanvasProps (canvasPos 120 320) 1.5) [ TableProps ( "public", "users" ) (gridPos 90 100) Size.zeroCanvas Tw.red [ "id", "name" ] True False False ] (time 1202) (time 1203) )
+            [ ( "initial layout", Layout (CanvasProps (canvasPos 10 20) 0.75) [ TableProps ( "public", "users" ) (gridPos 30 40) Size.zeroCanvas Tw.red [ "id" ] True False False ] [] (time 1200) (time 1201) )
+            , ( "empty", Layout (CanvasProps Position.zeroDiagram 0.5) [] [] (time 1202) (time 1203) )
+            , ( "users", Layout (CanvasProps (canvasPos 120 320) 1.5) [ TableProps ( "public", "users" ) (gridPos 90 100) Size.zeroCanvas Tw.red [ "id", "name" ] True False False ] [] (time 1202) (time 1203) )
             ]
     , settings = ProjectSettings (FindPathSettings 4 "users" "created_by") defaultSchema [] False "" (HiddenColumns "created_.+, updated_.+" 15 False False) OrderByProperty Bezier True False
     , storage = ProjectStorage.Local
@@ -276,12 +276,12 @@ project2Json =
 
 canvasPos : Float -> Float -> Position.Diagram
 canvasPos x y =
-    Position x y |> Position.buildDiagram
+    Position x y |> Position.diagram
 
 
-gridPos : Float -> Float -> Position.CanvasGrid
+gridPos : Float -> Float -> Position.Grid
 gridPos x y =
-    Position x y |> Position.buildCanvasGrid
+    Position x y |> Position.grid
 
 
 time : Int -> Time.Posix

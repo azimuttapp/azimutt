@@ -2,6 +2,7 @@ defmodule Azimutt.ProjectsFixtures do
   @moduledoc false
   alias Azimutt.Accounts.User
   alias Azimutt.Organizations.Organization
+  alias Azimutt.Projects
   alias Azimutt.Projects.Project.Storage
 
   def project_fixture(%Organization{} = organization, %User{} = user, attrs \\ %{}) do
@@ -18,11 +19,14 @@ defmodule Azimutt.ProjectsFixtures do
         nb_relations: 42,
         nb_types: 42,
         nb_comments: 42,
+        nb_layouts: 42,
         nb_notes: 42,
-        nb_layouts: 42
+        nb_memos: 42
       })
       |> Azimutt.Projects.create_project(organization, user)
 
+    # fetch project with associations loaded
+    {:ok, project} = Projects.get_project(project.id, user)
     project
   end
 end

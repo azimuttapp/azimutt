@@ -20,8 +20,13 @@ config :azimutt,
   github_new_issue: "https://github.com/azimuttapp/azimutt/issues/new",
   team_plan_seat_price: 13,
   free_plan_seats: 3,
-  # MUST stay in sync with freePlanLayouts in frontend/src/Conf.elm
-  free_plan_layouts: 3
+  # MUST stay in sync with frontend/src/Conf.elm (`features`)
+  free_plan_layouts: 3,
+  free_plan_memos: 1,
+  free_plan_colors: false,
+  free_plan_private_links: true,
+  free_plan_db_analysis: false,
+  free_plan_db_access: false
 
 config :azimutt, :app_env, config_env()
 
@@ -106,6 +111,19 @@ config :waffle, storage: Waffle.Storage.Local
 config :ex_aws, json_codec: Jason
 
 config :phoenix_swagger, json_library: Jason
+
+twitter_consumer_key = System.get_env("TWITTER_CONSUMER_KEY")
+twitter_consumer_secret = System.get_env("TWITTER_CONSUMER_SECRET")
+twitter_access_token = System.get_env("TWITTER_ACCESS_TOKEN")
+twitter_access_token_secret = System.get_env("TWITTER_ACCESS_SECRET")
+
+if twitter_consumer_key && twitter_consumer_secret && twitter_access_token && twitter_access_token_secret do
+  config :extwitter, :oauth,
+    consumer_key: twitter_consumer_key,
+    consumer_secret: twitter_consumer_secret,
+    access_token: twitter_access_token,
+    access_token_secret: twitter_access_token_secret
+end
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

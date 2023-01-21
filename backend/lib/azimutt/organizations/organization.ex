@@ -5,6 +5,7 @@ defmodule Azimutt.Organizations.Organization do
   use TypedStruct
   import Ecto.Changeset
   alias Azimutt.Accounts.User
+  alias Azimutt.Heroku.Resource
   alias Azimutt.Organizations.Organization
   alias Azimutt.Organizations.OrganizationInvitation
   alias Azimutt.Organizations.OrganizationMember
@@ -23,6 +24,7 @@ defmodule Azimutt.Organizations.Organization do
     field :stripe_customer_id, :string
     field :stripe_subscription_id, :string
     field :is_personal, :boolean
+    embeds_one :data, Organization.Data, on_replace: :update
     belongs_to :created_by, User, source: :created_by
     belongs_to :updated_by, User, source: :updated_by
     timestamps()
@@ -32,14 +34,16 @@ defmodule Azimutt.Organizations.Organization do
     has_many :members, OrganizationMember, on_replace: :delete
     has_many :projects, Project
     has_many :invitations, OrganizationInvitation
+    has_one :heroku_resource, Resource
   end
 
   @doc false
   def create_personal_changeset(%Organization{} = organization, %User{} = current_user, %Stripe.Customer{} = stripe_customer) do
+    required = [:name, :contact_email, :logo]
+
     organization
     |> cast(
       %{
-        slug: current_user.slug,
         name: current_user.name,
         contact_email: current_user.email,
         logo: current_user.avatar,
@@ -47,21 +51,15 @@ defmodule Azimutt.Organizations.Organization do
         github_username: current_user.github_username,
         twitter_username: current_user.twitter_username
       },
-      [
-        :slug,
-        :name,
-        :contact_email,
-        :logo,
-        :location,
-        :description,
-        :github_username,
-        :twitter_username
-      ]
+      required ++ [:location, :description, :github_username, :twitter_username]
     )
+    |> Slugme.generate_slug(:name)
     |> put_change(:is_personal, true)
     |> put_change(:stripe_customer_id, stripe_customer.id)
     |> put_assoc(:created_by, current_user)
     |> put_assoc(:updated_by, current_user)
+    |> validate_required(required)
+    |> unique_constraint(:slug)
   end
 
   @doc false
@@ -71,22 +69,17 @@ defmodule Azimutt.Organizations.Organization do
         %Stripe.Customer{} = stripe_customer,
         attrs \\ %{}
       ) do
+    required = [:name, :contact_email, :logo]
+
     organization
-    |> cast(attrs, [
-      :name,
-      :contact_email,
-      :logo,
-      :location,
-      :description,
-      :github_username,
-      :twitter_username
-    ])
+    |> cast(attrs, required ++ [:location, :description, :github_username, :twitter_username])
     |> Slugme.generate_slug(:name)
     |> put_change(:is_personal, false)
     |> put_change(:stripe_customer_id, stripe_customer.id)
     |> put_change(:created_by, current_user)
     |> put_change(:updated_by, current_user)
-    |> validate_required([:name, :contact_email])
+    |> validate_required(required)
+    |> unique_constraint(:slug)
   end
 
   @doc false
@@ -113,5 +106,23 @@ defmodule Azimutt.Organizations.Organization do
       :twitter_username
     ])
     |> put_change(:updated_by_id, current_user.id)
+  end
+
+  def delete_changeset(%Organization{} = organization, now) do
+    organization
+    |> cast(%{}, [])
+    |> put_change(:deleted_at, now)
+  end
+
+  def allow_table_color_changeset(%Organization{} = organization, tweet_url) do
+    organization
+    |> cast(%{data: %{allow_table_color: tweet_url}}, [])
+    |> cast_embed(:data, required: true, with: &data_allow_table_color_changeset/2)
+  end
+
+  defp data_allow_table_color_changeset(data, attrs) do
+    data
+    |> cast(attrs, [:allow_table_color])
+    |> validate_required([:allow_table_color])
   end
 end

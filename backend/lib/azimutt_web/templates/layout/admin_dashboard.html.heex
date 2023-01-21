@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth h-full">
+    <%= render("_head.html", assigns) %>
+    <body class="font-mono antialiased bg-slate-900 h-full">
+        <%= render "_admin_user_menu.html", assigns %>
+        <div class="mx-auto px-3">
+            <%= @inner_content %>
+        </div>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.1.2/chart.umd.min.js" integrity="sha512-KTyzZ0W6S8dUq9WIt8fSflj2ArYRGcGNIU5QcB1skGGd1EPFMupHZSexEsFFX18tZK4eO0iGGSZGuyrNIqjV8g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+        <script>document.querySelectorAll('canvas.line-chart').forEach(ctx => new Chart(ctx, {type: 'line', data: JSON.parse(ctx.textContent)}))</script>
+    </body>
+</html>

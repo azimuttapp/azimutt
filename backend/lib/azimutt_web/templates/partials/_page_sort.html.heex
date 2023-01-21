@@ -1,0 +1,12 @@
+<%= if @page |> Page.has_pagination || Page.sorted_up?(@page, @key) || Page.sorted_down?(@page, @key) do %>
+    <%= cond do %>
+        <% Page.sorted_down?(@page, @key) -> %>
+            <a href={Page.sort_up(@page, @key)} title={"sorted down by #{@key}"}><Icon.arrow_long_up kind="solid" class="w-4 h-4 inline-block" /></a>
+        <% Page.sorted_up?(@page, @key) -> %>
+            <a href={Page.sort_down(@page, @key)} title={"sorted by #{@key}"}><Icon.arrow_long_down kind="solid" class="w-4 h-4 inline-block" /></a>
+        <% assigns[:default] == "down" -> %>
+            <a href={Page.sort_down(@page, @key)} title={"sort down by #{@key}"} class="invisible group-hover:visible"><Icon.arrow_long_up kind="outline" class="w-4 h-4 inline-block" /></a>
+        <% true -> %>
+            <a href={Page.sort_up(@page, @key)} title={"sort by #{@key}"} class="invisible group-hover:visible"><Icon.arrow_long_down kind="outline" class="w-4 h-4 inline-block" /></a>
+    <% end %>
+<% end %>

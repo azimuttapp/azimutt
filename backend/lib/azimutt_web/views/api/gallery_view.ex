@@ -7,7 +7,7 @@ defmodule AzimuttWeb.Api.GalleryView do
     render_many(samples, __MODULE__, "show.json", ctx: CtxParams.empty())
   end
 
-  def render("show.json", %{gallery: %Sample{} = sample, ctx: %CtxParams{} = ctx}) do
+  def render("show.json", %{gallery: %Sample{} = sample, ctx: %CtxParams{} = _ctx}) do
     %{
       slug: sample.slug,
       color: sample.color,

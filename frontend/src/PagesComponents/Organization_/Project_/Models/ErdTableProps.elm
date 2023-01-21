@@ -13,7 +13,7 @@ import PagesComponents.Organization_.Project_.Models.PositionHint exposing (Posi
 
 type alias ErdTableProps =
     { positionHint : Maybe PositionHint
-    , position : Position.CanvasGrid
+    , position : Position.Grid
     , size : Size.Canvas
     , color : Color
     , selected : Bool
@@ -37,7 +37,7 @@ create props =
 init : Bool -> Maybe PositionHint -> ErdTable -> ErdTableProps
 init collapsed hint table =
     { positionHint = hint
-    , position = Position.zeroCanvasGrid
+    , position = Position.zeroGrid
     , size = Size.zeroCanvas
     , color = computeColor table.id
     , selected = False

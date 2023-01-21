@@ -1,0 +1,196 @@
+<div class="relative overflow-hidden bg-white py-16">
+    <%= render "_content_dots.html" %>
+    <div class="relative px-6 lg:px-8">
+        <div class="mx-auto max-w-prose text-lg">
+            <h1>
+                <span class="block text-center text-lg font-semibold text-indigo-600">Use case for Azimutt:</span>
+                <span class="mt-2 block text-center text-3xl font-bold leading-8 tracking-tight text-gray-900 sm:text-4xl">Designing your database</span>
+            </h1>
+            <p class="mt-8 text-xl leading-8 text-gray-500">
+                Once in a while you need to think about your database design.<br>
+                It happens a lot when you are starting a new project but also when you build a new context in your app.
+                Most of the time <strong>pen and paper</strong> are the best tools for this, but that was before Azimutt...
+            </p>
+        </div>
+        <div class="prose prose-lg prose-indigo mx-auto mt-6 text-gray-500">
+            <ul role="list">
+                <li><a href="#how-did-it-start">How did it start?</a></li>
+                <li><a href="#how-does-azimutt-envision-diagram-building">How does Azimutt envision diagram building?</a></li>
+                <li><a href="#what-does-it-look-like-for-real">What does it look like for real?</a></li>
+                <li><a href="#what-s-coming-next">What's coming next?</a></li>
+            </ul>
+
+            <h2 id="how-did-it-start">How did it start?</h2>
+            <p>
+                When working on database design, the most important thing is to <strong>let ideas flow</strong> and be able to sketch things quickly without a tool in the way.
+                Most of the time I start with <em>pen and paper</em>, writing just table names and key information. It allows me to have a rough idea of the business domain I'm working with, which is the first step.
+                But fast enough, either some modifications are needed or I need more space than I anticipated. This is usually when I switch to either just a <strong>text editor</strong> to note things freely or an online <strong>drawing tool</strong> such as <a href="https://excalidraw.com" target="_blank" rel="noopener">excalidraw</a>.
+            </p>
+            <p>
+                It can seem strange but <em>I don't use data modeling tools like ERDs</em> because their UI is too strict and make me lose a lot of time with all the buttons, input texts and selects.
+                To me, it's much more important to write things quickly to have my diagram follow my thought process than to be exact and be able to generate SQL.
+                For example, here is the kind of notes I could write:
+            </p>
+            <pre><code class="hljs language-aml">user
+  id
+  name
+
+roles
+  id
+  name
+
+user_roles
+  user_id
+  role_id
+</code></pre>
+
+            <h2 id="how-does-azimutt-envision-diagram-building">How does Azimutt envision diagram building?</h2>
+            <p>
+                When I went on to <strong>adding data modeling capabilities to Azimutt</strong> (it was initially built only for exploring existing database schemas, no edit at all at first),
+                 my thought was on keeping this very natural flow I was used to. So it got obvious I should <strong>turn the code above into a DSL</strong> to express database diagrams.
+            </p>
+            <p>
+                That's how we built AML, <strong>Azimutt Markup Language</strong>, with very clear goals:
+            </p>
+            <ul role="list">
+                <li><strong>Intuitive</strong>: don't learn it, write your thoughts, it's probably valid AML 😉</li>
+                <li><strong>Minimal</strong>: don't get distracted by keywords or syntax</li>
+                <li><strong>Flexible</strong>: almost everything is optional, no extra content</li>
+                <li><strong>Rich</strong>: all important concepts of SQL should be supported: column types, primary keys, foreign keys, indexes, uniques, comments...</li>
+            </ul>
+
+            <h2 id="what-does-it-look-like-for-real">What does it look like for real?</h2>
+            <p>
+                Here is the <a href="https://github.com/azimuttapp/azimutt/blob/main/docs/aml/README.md" target="_blank" rel="noopener">full AML specification</a>
+                but look at this sample to learn it fast:
+            </p>
+            <pre><code class="hljs language-aml"># Identity domain
+
+users
+  id uuid pk
+  slug varchar unique | user identifier in urls
+  role user_role(customer, staff, admin)
+  name varchar
+  avatar url
+  email varchar unique
+  email_validated timestamp nullable
+  phone varchar unique
+  phone_validated timestamp nullable
+  bio text nullable
+  company varchar nullable
+  locale locale(en, fr)
+  created_at timestamp
+  updated_at timestamp
+  last_login timestamp
+
+credentials
+  provider_id provider(google, facebook, twitter, email) pk
+  provider_key varchar pk | user id in provider system
+  hasher hash_method(md5, sha1, sha256)
+  password_hash varchar
+  password_salt varchar
+  user_id uuid fk users.id
+
+social_profiles
+  user_id uuid fk users.id
+  platform social_platform(facebook, twitter, instagram, slack, github)
+  platform_user varchar
+  created_at timestamp
+
+# Catalog domain
+
+categories
+  id uuid pk
+  slug varchar unique | category identifier in urls
+  name varchar
+  description text
+  tags varchar[]
+  parent_category uuid fk categories.id
+  created_at timestamp
+  updated_at timestamp
+
+products
+  id uuid pk
+  category_id uuid nullable fk categories.id
+  title varchar
+  picture varchar
+  summary text
+  description text
+  price number | in Euro
+  discount_type discount_type(none, percent, amount)
+  discount_value number
+  tags varchar[]
+  created_at timestamp
+  updated_at timestamp
+
+reviews
+  id uuid pk
+  user_id uuid fk users.id
+  product_id uuid fk products.id
+  rating int index | between 1 and 5
+  comment text
+  created_at timestamp
+
+# Cart domain
+
+carts
+  id uuid pk
+  status cart_status(active, ordered, abandonned)
+  created_at timestamp=now
+  created_by uuid fk users.id
+  updated_at timestamp
+
+cart_items
+  cart_id uuid pk fk carts.id
+  product_id uuid pk fk products.id
+  price number
+  quantity int check="quantity > 0" | should be > 0
+  created_at timestamp
+
+# Order domain
+
+orders
+  id uuid pk
+  user_id uuid fk users.id
+  created_at timestamp
+
+order_lines
+  id uuid pk
+  order_id uuid fk orders.id
+  product_id uuid fk products.id | used as reference and for re-order by copy data at order time as they should not change
+  price number | in Euro
+  quantity int check="quantity > 0" | should be > 0</code></pre>
+            <p>Which produces this schema:</p>
+            <img src="/images/screenshots/aml.png" alt="Create your diagram with Azimutt Markup Language" class="w-full rounded-lg">
+            <p>
+                The syntax was carefully crafted but still, I was really surprised by how it's <strong>so convenient and efficient</strong> when using it for real.
+                With hindsight, it's kind of obvious. Text is what we manipulate the more easily, just like what we do every day with programming languages.
+                For example, you can:
+            </p>
+            <ul role="list">
+                <li><strong>Copy/Paste anything</strong>: if you have similar fields in your schema (created_at, created_by, updated_at, updated_by...) or similar tables.</li>
+                <li><strong>Edit in your favorite text editor</strong>, and benefit from advanced editing like column mode, regex replace or text transform.</li>
+                <li><strong>Generate it</strong> from anything, using just a bit of code (JSON source would be better than AML for this, but still possible).</li>
+                <li><strong>Commit it in your project</strong> to keep your modification history easily.</li>
+            </ul>
+            <p>
+                All of this can sound stupidly obvious, but it's not.
+                If, like many other tools, Azimutt had tens of inputs everywhere instead, it would be impossible to even dream of this.
+                Here, it's <strong>just a copy/paste away</strong>.
+            </p>
+
+            <h2 id="what-s-coming-next">What's coming next?</h2>
+            <p>
+                Currently everything works, and pretty well, might I add. One big improvement is still to come: having a <strong>full-featured text editor</strong> to replace the current textarea, mostly for syntax highlighting and code completions. For example:
+            </p>
+            <ul role="list">
+                <li><code>user_id</code> column could suggest: <code>fk users.id</code> relation if it does exist.</li>
+                <li><code>cre</code> column could suggest <code>created_at timestamp</code> from other tables.</li>
+            </ul>
+            <p>
+                So far, all feedback were amazed, you <a href="/create?empty" target="_blank" rel="noopener">absolutely have to try it</a> the next time you need to think about your database design.
+            </p>
+        </div>
+    </div>
+</div>
+<%= render "_footer.html" %>

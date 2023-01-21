@@ -17,28 +17,29 @@ import Libs.Ned as Ned exposing (Ned)
 import Libs.Nel exposing (Nel)
 import Libs.Tailwind as Tw exposing (Color)
 import Models.Position as Position
+import Models.Size as Size
 import Random
 import Time
 
 
 positionViewport : Fuzzer Position.Viewport
 positionViewport =
-    position |> Fuzz.map Position.buildViewport
+    position |> Fuzz.map Position.viewport
 
 
-positionCanvas : Fuzzer Position.Diagram
-positionCanvas =
-    position |> Fuzz.map Position.buildDiagram
+positionDiagram : Fuzzer Position.Diagram
+positionDiagram =
+    position |> Fuzz.map Position.diagram
 
 
 positionInCanvas : Fuzzer Position.Canvas
 positionInCanvas =
-    position |> Fuzz.map Position.buildCanvas
+    position |> Fuzz.map Position.canvas
 
 
-positionGrid : Fuzzer Position.CanvasGrid
+positionGrid : Fuzzer Position.Grid
 positionGrid =
-    position |> Fuzz.map Position.buildCanvasGrid
+    position |> Fuzz.map Position.grid
 
 
 position : Fuzzer Position
@@ -53,6 +54,11 @@ size =
     Fuzz.map2 Size
         (Fuzz.floatRange 0 10000)
         (Fuzz.floatRange 0 10000)
+
+
+sizeCanvas : Fuzzer Size.Canvas
+sizeCanvas =
+    size |> Fuzz.map Size.canvas
 
 
 fileName : Fuzzer FileName
@@ -108,12 +114,12 @@ nelSmall fuzz =
 
 dictSmall : Fuzzer comparable -> Fuzzer a -> Fuzzer (Dict comparable a)
 dictSmall fuzzK fuzzA =
-    Fuzz.tuple ( fuzzK, fuzzA ) |> listSmall |> Fuzz.map Dict.fromList
+    Fuzz.pair fuzzK fuzzA |> listSmall |> Fuzz.map Dict.fromList
 
 
 nedSmall : Fuzzer comparable -> Fuzzer a -> Fuzzer (Ned comparable a)
 nedSmall fuzzK fuzzA =
-    Fuzz.tuple ( fuzzK, fuzzA ) |> nelSmall |> Fuzz.map Ned.fromNel
+    Fuzz.pair fuzzK fuzzA |> nelSmall |> Fuzz.map Ned.fromNel
 
 
 stringSmall : Fuzzer String

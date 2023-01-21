@@ -6,15 +6,19 @@ import Libs.Maybe as Maybe
 import Libs.Models.Delta exposing (Delta)
 import Libs.Task as T
 import Libs.Tuple as Tuple
+import Models.Area as Area
+import Models.Project.CanvasProps as CanvasProps
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.TableId exposing (TableId)
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
 import PagesComponents.Organization_.Project_.Components.ProjectSaveDialog as ProjectSaveDialog
+import PagesComponents.Organization_.Project_.Components.ProjectSharing as ProjectSharing
 import PagesComponents.Organization_.Project_.Components.SourceUpdateDialog as SourceUpdateDialog
-import PagesComponents.Organization_.Project_.Models exposing (AmlSidebarMsg(..), FindPathMsg(..), HelpMsg(..), Model, Msg(..), NotesMsg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..), SharingMsg(..), VirtualRelationMsg(..))
+import PagesComponents.Organization_.Project_.Models exposing (AmlSidebarMsg(..), FindPathMsg(..), HelpMsg(..), MemoMsg(..), Model, Msg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..), VirtualRelationMsg(..))
 import PagesComponents.Organization_.Project_.Models.Erd as Erd
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.Notes as NoteRef
+import PagesComponents.Organization_.Project_.Models.NotesMsg exposing (NotesMsg(..))
 import PagesComponents.Organization_.Project_.Views.Modals.NewLayout as NewLayout
 import Ports
 import Services.Lenses exposing (mapActive, mapNavbar, mapSearch)
@@ -40,6 +44,9 @@ handleHotkey _ model hotkey =
         "notes" ->
             ( model, notesElement model )
 
+        "new-memo" ->
+            ( model, createMemo model )
+
         "collapse" ->
             ( model, collapseElement model )
 
@@ -60,7 +67,7 @@ handleHotkey _ model hotkey =
                 ( model, T.send TriggerSaveProject )
 
             else
-                ( model, "Can't save in embed mode" |> Toasts.warning |> Toast |> T.send )
+                ( model, "Can't save in read-only mode" |> Toasts.warning |> Toast |> T.send )
 
         "move-up" ->
             ( model, model |> moveTables { dx = 0, dy = -10 } |> Maybe.orElse (model |> upDetails) |> Maybe.withDefault Cmd.none )
@@ -102,7 +109,7 @@ handleHotkey _ model hotkey =
             ( model, T.send (Zoom (1 - (model.erd |> Maybe.mapOrElse (Erd.currentLayout >> .canvas >> .zoom) 0))) )
 
         "fit-to-screen" ->
-            ( model, T.send FitContent )
+            ( model, T.send FitToScreen )
 
         "undo" ->
             -- TODO: implement undo
@@ -127,6 +134,11 @@ notesElement model =
     (model |> currentColumn |> Maybe.map (NoteRef.fromColumn >> NOpen >> NotesMsg >> T.send))
         |> Maybe.orElse (model |> currentTable |> Maybe.map (NoteRef.fromTable >> NOpen >> NotesMsg >> T.send))
         |> Maybe.withDefault ("Can't find an element to collapse :(" |> Toasts.info |> Toast |> T.send)
+
+
+createMemo : Model -> Cmd Msg
+createMemo model =
+    model.erd |> Maybe.mapOrElse (\erd -> erd |> Erd.currentLayout |> .canvas |> CanvasProps.viewport model.erdElem |> Area.centerCanvas |> MCreate |> MemoMsg |> T.send) Cmd.none
 
 
 collapseElement : Model -> Cmd Msg
@@ -176,6 +188,7 @@ cancelElement model =
     (model.contextMenu |> Maybe.map (\_ -> ContextMenuClose))
         |> Maybe.orElse (model.confirm |> Maybe.map (\c -> ModalClose (ConfirmAnswer False c.content.onConfirm)))
         |> Maybe.orElse (model.prompt |> Maybe.map (\_ -> ModalClose (PromptAnswer Cmd.none)))
+        |> Maybe.orElse (model.modal |> Maybe.map (\_ -> ModalClose CustomModalClose))
         |> Maybe.orElse (model.virtualRelation |> Maybe.map (\_ -> VirtualRelationMsg VRCancel))
         |> Maybe.orElse (model.dragging |> Maybe.map (\_ -> DragCancel))
         |> Maybe.orElse (model.newLayout |> Maybe.map (\_ -> ModalClose (NewLayoutMsg NewLayout.Cancel)))
@@ -185,7 +198,7 @@ cancelElement model =
         |> Maybe.orElse (model.amlSidebar |> Maybe.map (\_ -> AmlSidebarMsg AClose))
         |> Maybe.orElse (model.findPath |> Maybe.map (\_ -> ModalClose (FindPathMsg FPClose)))
         |> Maybe.orElse (model.sourceUpdate |> Maybe.map (\_ -> ModalClose (SourceUpdateDialog.Close |> PSSourceUpdate |> ProjectSettingsMsg)))
-        |> Maybe.orElse (model.sharing |> Maybe.map (\_ -> ModalClose (SharingMsg SClose)))
+        |> Maybe.orElse (model.sharing |> Maybe.map (\_ -> ModalClose (SharingMsg ProjectSharing.Close)))
         |> Maybe.orElse (model.settings |> Maybe.map (\_ -> ModalClose (ProjectSettingsMsg PSClose)))
         |> Maybe.orElse (model.help |> Maybe.map (\_ -> ModalClose (HelpMsg HClose)))
         |> Maybe.orElse (model.erd |> Maybe.andThen (Erd.currentLayout >> .tables >> List.find (.props >> .selected)) |> Maybe.map (\p -> SelectTable p.id False))

@@ -1,9 +1,10 @@
 import {ElementSize, ElmFlags, ElmMsg, ElmRuntime, GetLocalFile, Hotkey, HotkeyId, JsMsg} from "../types/ports";
-import {ColumnId, Project, ProjectId, ProjectInfoLocalLegacy, TableId} from "../types/project";
+import {ColumnId, Project, ProjectId, ProjectInfoLocalLegacy, SourceId, TableId} from "../types/project";
 import {Color, Delta, Position, ToastLevel} from "../types/basics";
 import {Logger} from "./logger";
 import * as Zod from "../utils/zod";
 import {formatError} from "../utils/error";
+import {ColumnStats, TableStats} from "../types/stats";
 
 export class ElmApp {
     static init(flags: ElmFlags, logger: Logger) {
@@ -31,13 +32,14 @@ export class ElmApp {
         ProjectDirty: [],
         DownloadFile: [],
         GetLocalFile: [],
+        GetTableStats: [],
+        GetColumnStats: [],
         ObserveSizes: [],
         ListenKeys: [],
-        TrackPage: [],
         Confetti: [],
         ConfettiPride: [],
-        TrackEvent: [],
-        TrackError: [],
+        Fireworks: [],
+        Track: [],
     }
 
     constructor(private elm: ElmRuntime<JsMsg, ElmMsg>, private logger: Logger) {
@@ -84,6 +86,8 @@ export class ElmApp {
         file: msg.file,
         content
     })
+    gotTableStats = (source: SourceId, stats: TableStats): void => this.send({kind: 'GotTableStats', source, stats})
+    gotColumnStats = (source: SourceId, stats: ColumnStats): void => this.send({kind: 'GotColumnStats', source, stats})
     gotHotkey = (hotkey: Hotkey & { id: HotkeyId }): void => this.send({kind: 'GotHotkey', id: hotkey.id})
     gotKeyHold = (key: string, start: boolean): void => this.send({kind: 'GotKeyHold', key, start})
     toast = (level: ToastLevel, message: string): void => this.send({kind: 'GotToast', level, message})

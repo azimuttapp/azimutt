@@ -1,5 +1,6 @@
 import {
     Layout,
+    parseTableId,
     Project,
     ProjectJson,
     ProjectJsonLegacy,
@@ -125,5 +126,12 @@ describe('project', () => {
             const res = Layout.safeParse(invalid)
             expect(res.success).toEqual(false)
         })
+    })
+    test('parseTableId should work', () => {
+        expect(parseTableId('public.users')).toEqual({schema: 'public', table: 'users'})
+        expect(parseTableId('.users')).toEqual({schema: '', table: 'users'})
+        expect(parseTableId('users')).toEqual({schema: '', table: 'users'})
+        expect(parseTableId('')).toEqual({schema: '', table: ''})
+        expect(parseTableId('a.b.c')).toEqual({schema: 'a', table: 'b'})
     })
 })

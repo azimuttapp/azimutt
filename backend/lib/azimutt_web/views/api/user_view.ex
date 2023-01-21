@@ -19,4 +19,19 @@ defmodule AzimuttWeb.Api.UserView do
       created_at: user.created_at
     }
   end
+
+  def render("light.json", %{user: %User{} = user}) do
+    %{
+      id: user.id,
+      slug: user.slug,
+      name: user.name,
+      email: user.email,
+      avatar: user.avatar,
+      company: user.company,
+      location: user.location,
+      description: user.description,
+      github_username: user.github_username,
+      twitter_username: user.twitter_username
+    }
+  end
 end

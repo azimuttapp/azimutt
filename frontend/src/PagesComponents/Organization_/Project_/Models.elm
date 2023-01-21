@@ -1,6 +1,7 @@
-module PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, AmlSidebarMsg(..), ConfirmDialog, ContextMenu, FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutMsg(..), ModalDialog, Model, Msg(..), NavbarModel, NotesDialog, NotesMsg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, SharingDialog, SharingMsg(..), VirtualRelation, VirtualRelationMsg(..), confirm, confirmDanger, prompt, simplePrompt)
+module PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, AmlSidebarMsg(..), ConfirmDialog, ContextMenu, FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutMsg(..), MemoEdit, MemoMsg(..), ModalDialog, Model, Msg(..), NavbarModel, NotesDialog, ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, VirtualRelation, VirtualRelationMsg(..), confirm, confirmDanger, prompt, simplePrompt)
 
 import Components.Atoms.Icon exposing (Icon(..))
+import Components.Slices.ProPlan as ProPlan
 import DataSources.AmlMiner.AmlAdapter exposing (AmlSchemaError)
 import Dict exposing (Dict)
 import Html exposing (Html, text)
@@ -16,33 +17,38 @@ import Models.ColumnOrder exposing (ColumnOrder)
 import Models.ErdProps exposing (ErdProps)
 import Models.Organization exposing (Organization)
 import Models.Position as Position
+import Models.Project.ColumnId exposing (ColumnId)
 import Models.Project.ColumnRef exposing (ColumnRef)
+import Models.Project.ColumnStats exposing (ColumnStats)
 import Models.Project.FindPathSettings exposing (FindPathSettings)
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectName exposing (ProjectName)
 import Models.Project.ProjectStorage exposing (ProjectStorage)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
-import Models.Project.SourceId exposing (SourceId)
+import Models.Project.SourceId exposing (SourceId, SourceIdStr)
 import Models.Project.SourceName exposing (SourceName)
 import Models.Project.TableId exposing (TableId)
+import Models.Project.TableStats exposing (TableStats)
 import Models.ProjectInfo exposing (ProjectInfo)
 import Models.RelationStyle exposing (RelationStyle)
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
 import PagesComponents.Organization_.Project_.Components.EmbedSourceParsingDialog as EmbedSourceParsingDialog
 import PagesComponents.Organization_.Project_.Components.ProjectSaveDialog as ProjectSaveDialog
+import PagesComponents.Organization_.Project_.Components.ProjectSharing as ProjectSharing
 import PagesComponents.Organization_.Project_.Components.SourceUpdateDialog as SourceUpdateDialog
 import PagesComponents.Organization_.Project_.Models.CursorMode exposing (CursorMode)
 import PagesComponents.Organization_.Project_.Models.DragState exposing (DragState)
-import PagesComponents.Organization_.Project_.Models.EmbedKind exposing (EmbedKind)
-import PagesComponents.Organization_.Project_.Models.EmbedMode exposing (EmbedModeId)
 import PagesComponents.Organization_.Project_.Models.Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.ErdRelation exposing (ErdRelation)
 import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.FindPathDialog exposing (FindPathDialog)
 import PagesComponents.Organization_.Project_.Models.HideColumns exposing (HideColumns)
+import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
+import PagesComponents.Organization_.Project_.Models.MemoId exposing (MemoId)
 import PagesComponents.Organization_.Project_.Models.Notes exposing (Notes, NotesRef)
+import PagesComponents.Organization_.Project_.Models.NotesMsg exposing (NotesMsg)
 import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint)
 import PagesComponents.Organization_.Project_.Models.ShowColumns exposing (ShowColumns)
 import PagesComponents.Organization_.Project_.Views.Modals.NewLayout as NewLayout
@@ -59,18 +65,21 @@ type alias Model =
     , loaded : Bool
     , dirty : Bool
     , erd : Maybe Erd
+    , tableStats : Dict TableId (Dict SourceIdStr TableStats)
+    , columnStats : Dict ColumnId (Dict SourceIdStr ColumnStats)
     , hoverTable : Maybe TableId
     , hoverColumn : Maybe ColumnRef
     , cursorMode : CursorMode
     , selectionBox : Maybe Area.Canvas
     , newLayout : Maybe NewLayout.Model
     , editNotes : Maybe NotesDialog
+    , editMemo : Maybe MemoEdit
     , amlSidebar : Maybe AmlSidebar
     , detailsSidebar : Maybe DetailsSidebar.Model
     , virtualRelation : Maybe VirtualRelation
     , findPath : Maybe FindPathDialog
     , schemaAnalysis : Maybe SchemaAnalysisDialog
-    , sharing : Maybe SharingDialog
+    , sharing : Maybe ProjectSharing.Model
     , save : Maybe ProjectSaveDialog.Model
     , settings : Maybe ProjectSettingsDialog
     , sourceUpdate : Maybe (SourceUpdateDialog.Model Msg)
@@ -101,7 +110,11 @@ type alias SearchModel =
 
 
 type alias NotesDialog =
-    { id : HtmlId, ref : NotesRef, notes : Notes }
+    { id : HtmlId, ref : NotesRef, initialNotes : Notes, notes : Notes }
+
+
+type alias MemoEdit =
+    { id : MemoId, content : String, createMode : Bool }
 
 
 type alias AmlSidebar =
@@ -114,10 +127,6 @@ type alias VirtualRelation =
 
 type alias SchemaAnalysisDialog =
     { id : HtmlId, opened : HtmlId }
-
-
-type alias SharingDialog =
-    { id : HtmlId, kind : EmbedKind, content : String, layout : LayoutName, mode : EmbedModeId }
 
 
 type alias ProjectSettingsDialog =
@@ -147,6 +156,7 @@ type alias PromptDialog =
 type Msg
     = ToggleMobileMenu
     | SearchUpdated String
+    | SearchClicked String TableId
     | TriggerSaveProject
     | CreateProject ProjectName Organization ProjectStorage
     | UpdateProject
@@ -170,7 +180,7 @@ type Msg
     | SelectTable TableId Bool
     | SelectAllTables
     | TableMove TableId Delta
-    | TablePosition TableId Position.CanvasGrid
+    | TablePosition TableId Position.Grid
     | TableOrder TableId Int
     | TableColor TableId Color
     | MoveColumn ColumnRef Int
@@ -182,19 +192,22 @@ type Msg
     | NewLayoutMsg NewLayout.Msg
     | LayoutMsg LayoutMsg
     | NotesMsg NotesMsg
+    | MemoMsg MemoMsg
     | AmlSidebarMsg AmlSidebarMsg
     | DetailsSidebarMsg DetailsSidebar.Msg
     | VirtualRelationMsg VirtualRelationMsg
     | FindPathMsg FindPathMsg
     | SchemaAnalysisMsg SchemaAnalysisMsg
-    | SharingMsg SharingMsg
+    | SharingMsg ProjectSharing.Msg
     | ProjectSaveMsg ProjectSaveDialog.Msg
     | ProjectSettingsMsg ProjectSettingsMsg
     | EmbedSourceParsingMsg EmbedSourceParsingDialog.Msg
     | SourceParsed Source
+    | ProPlanColors ProPlan.ColorsModel ProPlan.ColorsMsg
     | HelpMsg HelpMsg
     | CursorMode CursorMode
-    | FitContent
+    | FitToScreen
+    | ArrangeTables
     | Fullscreen (Maybe HtmlId)
     | OnWheel WheelEvent
     | Zoom ZoomDelta
@@ -232,11 +245,13 @@ type LayoutMsg
     | LDelete LayoutName
 
 
-type NotesMsg
-    = NOpen NotesRef
-    | NEdit Notes
-    | NSave NotesRef Notes
-    | NCancel
+type MemoMsg
+    = MCreate Position.Canvas
+    | MEdit Memo
+    | MEditUpdate String
+    | MEditSave
+    | MSetColor MemoId (Maybe Color)
+    | MDelete MemoId
 
 
 type AmlSidebarMsg
@@ -270,15 +285,6 @@ type SchemaAnalysisMsg
     = SAOpen
     | SASectionToggle HtmlId
     | SAClose
-
-
-type SharingMsg
-    = SOpen
-    | SClose
-    | SKindUpdate EmbedKind
-    | SContentUpdate String
-    | SLayoutUpdate LayoutName
-    | SModeUpdate EmbedModeId
 
 
 type ProjectSettingsMsg

@@ -6,19 +6,19 @@ import Models.Size as Size
 
 
 type PositionHint
-    = PlaceLeft Position.CanvasGrid
-    | PlaceRight Position.CanvasGrid Size.Canvas
-    | PlaceAt Position.CanvasGrid
+    = PlaceLeft Position.Grid
+    | PlaceRight Position.Grid Size.Canvas
+    | PlaceAt Position.Grid
 
 
 move : Delta -> PositionHint -> PositionHint
 move delta hint =
     case hint of
         PlaceLeft pos ->
-            PlaceLeft (pos |> Position.moveCanvasGrid delta)
+            PlaceLeft (pos |> Position.moveGrid delta)
 
         PlaceRight pos size ->
-            PlaceRight (pos |> Position.moveCanvasGrid delta) size
+            PlaceRight (pos |> Position.moveGrid delta) size
 
         PlaceAt pos ->
             PlaceAt pos

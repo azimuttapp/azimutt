@@ -4,6 +4,7 @@ import * as Json from "./json";
 
 export const getJson = <Response>(url: string, zod: ZodType<Response>, label: string): Promise<Response> => fetch(url, {credentials: 'include'}).then(buildJsonResponse(zod, label))
 export const postJson = <Body, Response>(url: string, body: Body, zod: ZodType<Response>, label: string): Promise<Response> => fetchJson('POST', url, body, zod, label)
+export const postNoContent = <Body>(url: string, body: Body): Promise<void> => fetchNoContent('POST', url, body)
 export const postMultipart = <Response>(url: string, body: FormData, zod: ZodType<Response>, label: string): Promise<Response> => fetchMultipart('POST', url, body, zod, label)
 export const putJson = <Body, Response>(url: string, body: Body, zod: ZodType<Response>, label: string): Promise<Response> => fetchJson('PUT', url, body, zod, label)
 export const putMultipart = <Response>(url: string, body: FormData, zod: ZodType<Response>, label: string): Promise<Response> => fetchMultipart('PUT', url, body, zod, label)
@@ -19,6 +20,15 @@ function fetchJson<Body, Response>(method: Method, url: string, body: Body, zod:
         headers: {'Accept': 'application/json', 'Content-Type': 'application/json'},
         body: JSON.stringify(body)
     }).then(buildJsonResponse(zod, label))
+}
+
+function fetchNoContent<Body>(method: Method, url: string, body: Body): Promise<void> {
+    return fetch(url, {
+        method,
+        credentials: 'include',
+        headers: {'Accept': 'application/json', 'Content-Type': 'application/json'},
+        body: JSON.stringify(body)
+    }).then(buildNoContentResponse)
 }
 
 function fetchMultipart<Response>(method: Method, url: string, body: FormData, zod: ZodType<Response>, label: string): Promise<Response> {

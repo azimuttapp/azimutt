@@ -1,10 +1,13 @@
-module Libs.Models.Position exposing (Position, decode, diff, distance, div, encode, min, move, mult, negate, round, size, toString, toStringRound, zero)
+module Libs.Models.Position exposing (Position, debug, decode, diff, distance, div, encode, fromTuple, min, move, mult, negate, round, size, styleTransform, styles, toString, toStringRound, toTuple, zero)
 
+import Html exposing (Attribute, Html, text)
+import Html.Attributes exposing (class, style)
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
 import Libs.Json.Encode as Encode
-import Libs.Models.Delta as Delta exposing (Delta)
+import Libs.Models.Delta exposing (Delta)
 import Libs.Models.Size exposing (Size)
+import Libs.Tailwind exposing (TwClass)
 
 
 type alias Position =
@@ -61,6 +64,16 @@ distance b a =
     diff b a |> (\{ dx, dy } -> sqrt (dx * dx + dy * dy))
 
 
+fromTuple : ( Float, Float ) -> Position
+fromTuple ( left, top ) =
+    Position left top
+
+
+toTuple : Position -> ( Float, Float )
+toTuple { left, top } =
+    ( left, top )
+
+
 toString : Position -> String
 toString pos =
     "(" ++ String.fromFloat pos.left ++ "," ++ String.fromFloat pos.top ++ ")"
@@ -84,3 +97,18 @@ decode =
     Decode.map2 Position
         (Decode.field "left" Decode.float)
         (Decode.field "top" Decode.float)
+
+
+styles : Position -> List (Attribute msg)
+styles pos =
+    [ style "left" (String.fromFloat pos.left ++ "px"), style "top" (String.fromFloat pos.top ++ "px") ]
+
+
+styleTransform : Position -> Attribute msg
+styleTransform pos =
+    style "transform" ("translate(" ++ String.fromFloat pos.left ++ "px, " ++ String.fromFloat pos.top ++ "px)")
+
+
+debug : String -> TwClass -> Position -> Html msg
+debug name classes p =
+    Html.div [ class (classes ++ " z-max absolute pointer-events-none whitespace-nowrap"), style "width" "1px", style "height" "1px" ] [ text (name ++ ": " ++ toStringRound p) ]

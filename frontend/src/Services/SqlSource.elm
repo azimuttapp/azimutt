@@ -34,6 +34,7 @@ import Libs.Task as T
 import Models.Project.Column exposing (Column)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId)
+import Models.ProjectInfo exposing (ProjectInfo)
 import Models.SourceInfo as SourceInfo exposing (SourceInfo)
 import Ports
 import Random
@@ -99,7 +100,7 @@ kind =
 
 example : String
 example =
-    "/elm/samples/basic.sql"
+    "https://azimutt.app/elm/samples/basic.sql"
 
 
 init : Maybe Source -> (( Maybe (SqlParsing msg), Result String Source ) -> msg) -> Model msg
@@ -134,8 +135,8 @@ parsingInit fileContent buildMsg buildProject =
 -- UPDATE
 
 
-update : (Msg -> msg) -> Time.Posix -> Msg -> Model msg -> ( Model msg, Cmd msg )
-update wrap now msg model =
+update : (Msg -> msg) -> Time.Posix -> Maybe ProjectInfo -> Msg -> Model msg -> ( Model msg, Cmd msg )
+update wrap now project msg model =
     case msg of
         UpdateRemoteFile url ->
             ( { model | url = url }, Cmd.none )
@@ -201,7 +202,7 @@ update wrap now msg model =
                 |> Maybe.map
                     (\( parsedSchema, source ) ->
                         ( model |> setParsedSource (source |> Ok |> Just)
-                        , Cmd.batch [ T.send (model.callback ( Just parsedSchema, Ok source )), Ports.track (Track.parsedSqlSource parsedSchema source) ]
+                        , Cmd.batch [ T.send (model.callback ( Just parsedSchema, Ok source )), Track.sqlSourceCreated project parsedSchema source |> Ports.track ]
                         )
                     )
                 |> Maybe.withDefault ( model, Cmd.none )

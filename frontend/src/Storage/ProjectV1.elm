@@ -297,7 +297,7 @@ upgrade project =
 upgradeTableProps : TablePropsV1 -> TableProps
 upgradeTableProps props =
     { id = props.id
-    , position = props.position |> Position.buildCanvasGrid
+    , position = props.position |> Position.grid
     , size = Size.zeroCanvas
     , color = props.color
     , columns = props.columns
@@ -406,6 +406,7 @@ upgradeLayout : LayoutV1 -> Layout
 upgradeLayout layout =
     { canvas = layout.canvas |> upgradeCanvasProps
     , tables = layout.tables |> List.map upgradeTableProps
+    , memos = []
     , createdAt = layout.createdAt
     , updatedAt = layout.updatedAt
     }
@@ -413,7 +414,7 @@ upgradeLayout layout =
 
 upgradeCanvasProps : CanvasPropsV1 -> CanvasProps
 upgradeCanvasProps c =
-    { position = c.position |> Position.buildDiagram
+    { position = c.position |> Position.diagram
     , zoom = c.zoom
     }
 

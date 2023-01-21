@@ -20,6 +20,7 @@ import Libs.Tailwind as Tw exposing (TwClass)
 import Libs.Task as T
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId)
+import Models.ProjectInfo exposing (ProjectInfo)
 import Ports
 import Random
 import Services.Backend as Backend
@@ -76,8 +77,8 @@ init src callback =
 -- UPDATE
 
 
-update : (Msg -> msg) -> Time.Posix -> Msg -> Model msg -> ( Model msg, Cmd msg )
-update wrap now msg model =
+update : (Msg -> msg) -> Time.Posix -> Maybe ProjectInfo -> Msg -> Model msg -> ( Model msg, Cmd msg )
+update wrap now project msg model =
     case msg of
         UpdateUrl url ->
             ( { model | url = url }, Cmd.none )
@@ -104,7 +105,13 @@ update wrap now msg model =
                 ((model.parsedSchema |> Maybe.map (Result.mapError Decode.errorToString))
                     |> Maybe.orElse (model.loadedSchema |> Maybe.map (Result.map (\_ -> DatabaseSchema.empty) >> Result.mapError Backend.errorToString))
                 )
-                |> (\source -> ( { model | parsedSource = source }, Ports.track (Track.parsedDatabaseSource (source |> Maybe.withDefault (Err "Source not available"))) ))
+                |> (\source ->
+                        ( { model | parsedSource = source }
+                        , source
+                            |> Maybe.map (\s -> Cmd.batch [ s |> model.callback |> T.send, s |> Track.dbSourceCreated project |> Ports.track ])
+                            |> Maybe.withDefault (Err "Source not available" |> Track.dbSourceCreated project |> Ports.track)
+                        )
+                   )
 
         UiToggle htmlId ->
             ( model |> mapShow (\s -> B.cond (s == htmlId) "" htmlId), Cmd.none )

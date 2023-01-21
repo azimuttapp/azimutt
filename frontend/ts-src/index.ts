@@ -2,14 +2,17 @@ import {
     CreateProject,
     CreateProjectTmp,
     DeleteProject,
+    GetColumnStats,
     GetLocalFile,
     GetProject,
+    GetTableStats,
     Hotkey,
     HotkeyId,
     ListenKeys,
     ObserveSizes,
     ProjectDirty,
     SetMeta,
+    Track,
     UpdateProject,
     UpdateProjectTmp
 } from "./types/ports";
@@ -23,33 +26,28 @@ import {
     buildProjectRemote,
     ProjectStorage
 } from "./types/project";
-import {LogAnalytics, PlausibleAnalytics} from "./services/analytics";
-import {LogErrLogger, SentryErrLogger} from "./services/errors";
 import {ConsoleLogger} from "./services/logger";
 import {loadPolyfills} from "./utils/polyfills";
 import {Utils} from "./utils/utils";
 import {Storage} from "./services/storage";
-import {Conf} from "./conf";
 import {Backend} from "./services/backend";
 import * as Uuid from "./types/uuid";
-import {Platform, ToastLevel, ViewPosition} from "./types/basics";
+import {HtmlId, Platform, ToastLevel, ViewPosition} from "./types/basics";
 import {Env, getEnv} from "./utils/env";
 import {AnyError, formatError} from "./utils/error";
-import * as Json from "./utils/json";
 import * as url from "./utils/url";
+import {ColumnStats, TableStats} from "./types/stats";
+import * as Sentry from "@sentry/browser";
+import {BrowserTracing} from "@sentry/tracing";
 
 const env = getEnv()
 const platform = Utils.getPlatform()
-const conf = Conf.get()
 const logger = new ConsoleLogger(env)
 const flags = {now: Date.now(), conf: {env, platform}}
 logger.debug('flags', flags)
 const app = ElmApp.init(flags, logger)
 const storage = new Storage(logger)
 const backend = new Backend(env, logger)
-const skipAnalytics = !!Json.parse(localStorage.getItem('skip-analytics') || 'false')
-const analytics = env === Env.enum.prod && !skipAnalytics ? new PlausibleAnalytics() : new LogAnalytics(logger)
-const errorTracking = env === Env.enum.prod ? new SentryErrLogger(conf.sentry) : new LogErrLogger(logger)
 logger.info('Hi there! I hope you are enjoying Azimutt 👍️\n\n' +
     'Did you know you can access your current project in the console?\n' +
     'And even trigger some actions in Azimutt?\n\n' +
@@ -75,7 +73,7 @@ app.on('MouseDown', msg => Utils.getElementById(msg.id).dispatchEvent(new Event(
 app.on('Focus', msg => Utils.getElementById(msg.id).focus())
 app.on('Blur', msg => Utils.getElementById(msg.id).blur())
 app.on('ScrollTo', msg => Utils.maybeElementById(msg.id).forEach(e => e.scrollIntoView(msg.position !== ViewPosition.enum.end)))
-app.on('Fullscreen', msg => Utils.fullscreen(msg.id))
+app.on('Fullscreen', msg => Utils.fullscreen(msg.id).then(() => app.fitToScreen()))
 app.on('SetMeta', setMeta)
 app.on('AutofocusWithin', msg => (Utils.getElementById(msg.id).querySelector<HTMLElement>('[autofocus]'))?.focus())
 app.on('Toast', msg => app.toast(msg.level, msg.message))
@@ -90,16 +88,14 @@ app.on('DeleteProject', deleteProject)
 app.on('ProjectDirty', projectDirty)
 app.on('DownloadFile', msg => Utils.downloadFile(msg.filename, msg.content))
 app.on('GetLocalFile', getLocalFile)
+app.on('GetTableStats', getTableStats)
+app.on('GetColumnStats', getColumnStats)
 app.on('ObserveSizes', observeSizes)
 app.on('ListenKeys', listenHotkeys)
 app.on('Confetti', msg => Utils.launchConfetti(msg.id))
 app.on('ConfettiPride', _ => Utils.launchConfettiPride())
-app.on('TrackPage', msg => analytics.trackPage(msg.name))
-app.on('TrackEvent', msg => analytics.trackEvent(msg.name, msg.details))
-app.on('TrackError', msg => {
-    analytics.trackError(msg.name, msg.details)
-    errorTracking.trackError(msg.name, msg.details)
-})
+app.on('Fireworks', _ => Utils.launchFireworks())
+app.on('Track', msg => backend.trackEvent(msg.event))
 if (app.noListeners().length > 0 && env !== Env.enum.prod) {
     logger.error(`Do not listen to elm events: ${app.noListeners().join(', ')}`)
 }
@@ -134,8 +130,8 @@ function getLegacyProjects() {
         errs.forEach(([id, e]) => reportError(`Can't decode project ${id}`, e))
         app.gotLegacyProjects(p)
         if (p.length > 0) {
-            analytics.trackEvent('has-legacy-projects', {count: p.length})
-            setTimeout(() => alert(`You still have some legacy projects. They won't be supported in 2023. If you don't want to loose them, open and save them before the end of the year.`), 3000)
+            backend.trackEvent({name: 'has-legacy-projects', details: {count: p.length}})
+            env === Env.enum.prod && setTimeout(() => alert(`You still have some legacy projects. They won't be supported in 2023. If you don't want to loose them, open and save them before the end of the year.`), 3000)
         }
     }, err => {
         reportError(`Can't list legacy projects`, err)
@@ -146,7 +142,7 @@ function getLegacyProjects() {
 function getProject(msg: GetProject) {
     (msg.project === Uuid.zero ?
             storage.getProject(msg.project).then(p => buildProjectDraft(msg.project, p)) :
-            backend.getProject(msg.organization, msg.project).then(res => {
+            backend.getProject(msg.organization, msg.project, msg.token).then(res => {
                 if (res.storage === ProjectStorage.enum.remote) {
                     return buildProjectRemote(res, res.content)
                 } else if (res.storage === ProjectStorage.enum.local) {
@@ -293,6 +289,34 @@ function getLocalFile(msg: GetLocalFile) {
     reader.readAsText(msg.file as any)
 }
 
+const tableStatsCache: { [key: string]: TableStats } = {}
+
+function getTableStats(msg: GetTableStats) {
+    const key = `${msg.source}-${msg.table}`
+    if (tableStatsCache[key]) {
+        app.gotTableStats(msg.source, tableStatsCache[key])
+    } else {
+        backend.getTableStats(msg.database, msg.table).then(
+            stats => app.gotTableStats(msg.source, tableStatsCache[key] = stats),
+            err => err.statusCode !== 404 && reportError(`Can't get stats for ${msg.table}`, err)
+        )
+    }
+}
+
+const columnStatsCache: { [key: string]: ColumnStats } = {}
+
+function getColumnStats(msg: GetColumnStats) {
+    const key = `${msg.source}-${msg.column.table}.${msg.column.column}`
+    if (columnStatsCache[key]) {
+        app.gotColumnStats(msg.source, columnStatsCache[key])
+    } else {
+        backend.getColumnStats(msg.database, msg.column).then(
+            stats => app.gotColumnStats(msg.source, columnStatsCache[key] = stats),
+            err => err.statusCode !== 404 && reportError(`Can't get stats for ${msg.column}`, err)
+        )
+    }
+}
+
 const resizeObserver = new ResizeObserver(entries => {
     app.updateSizes(entries.map(entry => {
         const rect = entry.target.getBoundingClientRect() // viewport position & size
@@ -308,7 +332,19 @@ const resizeObserver = new ResizeObserver(entries => {
 })
 
 function observeSizes(msg: ObserveSizes) {
-    msg.ids.flatMap(Utils.maybeElementById).forEach(elt => resizeObserver.observe(elt))
+    msg.ids.forEach(id => {
+        const elt = document.getElementById(id)
+        elt ? resizeObserver.observe(elt) : observeSizesRetry(id, 20)
+    })
+}
+
+function observeSizesRetry(id: HtmlId, remainingAttempts: number) {
+    if (remainingAttempts > 0) {
+        setTimeout(() => {
+            const elt = document.getElementById(id)
+            elt ? resizeObserver.observe(elt) : observeSizesRetry(id, remainingAttempts - 1)
+        }, 200)
+    }
 }
 
 const hotkeys: { [key: string]: (Hotkey & { id: HotkeyId })[] } = {}
@@ -383,20 +419,22 @@ function reportError(label: string, error?: AnyError) {
 
 
 // listen at every click to handle tracking events
+// MUST stay sync with frontend/src/Libs/Html/Attributes.elm:123#track
 function trackClick(e: MouseEvent) {
     const target = e.target as HTMLElement
     const tracked = Utils.findParent(target, e => !!e.getAttribute('data-track-event'))
     if (tracked) {
-        const eventName = tracked.getAttribute('data-track-event') || ''
-        const details: { [key: string]: string } = {label: (tracked.textContent || '').trim()}
-        const attrs = target.attributes
+        const name = tracked.getAttribute('data-track-event') || 'click'
+        const trackDetails: { [key: string]: string } = {label: (tracked.textContent || '').trim()}
+        const attrs = tracked.attributes
         for (let i = 0; i < attrs.length; i++) {
             const attr = attrs[i]
             if (attr.name.startsWith('data-track-event-')) {
-                details[attr.name.replace('data-track-event-', '')] = attr.value
+                trackDetails[attr.name.replace('data-track-event-', '')] = attr.value
             }
         }
-        analytics.trackEvent(eventName, details)
+        const {organization, project, ...details} = trackDetails
+        backend.trackEvent({name, details, organization, project})
     }
 }
 
@@ -411,5 +449,13 @@ document.addEventListener('keydown', (e: KeyboardEvent) => {
 document.addEventListener('keyup', (e: KeyboardEvent) => {
     keyupHoldKey(e)
 })
+
+if (env === Env.enum.prod) {
+    Sentry.init({
+        dsn: "https://52a062c4168f402485783ad10fe2ccc2@o1353262.ingest.sentry.io/4504471109304320",
+        integrations: [new BrowserTracing()],
+        tracesSampleRate: 1.0,
+    })
+}
 
 loadPolyfills()

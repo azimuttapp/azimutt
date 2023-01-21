@@ -17,6 +17,7 @@ import Services.Backend as Backend
 import Services.Sort as Sort
 import Task
 import Time
+import Track
 
 
 type alias Flags =
@@ -143,7 +144,7 @@ update _ msg model =
                     |> List.concatMap
                         (\( name, err ) ->
                             [ "Unable to read legacy project " ++ name ++ ": " ++ Decode.errorToHtml err |> Ports.toast "error"
-                            , Ports.trackJsonError "decode-project" err
+                            , Track.jsonError "decode-project" err |> Ports.track
                             ]
                         )
                 )

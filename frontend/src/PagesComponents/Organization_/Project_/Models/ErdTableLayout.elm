@@ -17,6 +17,8 @@ type alias ErdTableLayout =
     { id : TableId
     , props : ErdTableProps -- props should be separated from columns to Lazy checks
     , columns : List ErdColumnProps -- list order is used for display
+
+    -- FIXME: related tables are wrong when multiple tables are displayed at the same time :/
     , relatedTables : Dict TableId ErdRelationProps
     }
 

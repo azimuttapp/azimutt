@@ -21,7 +21,7 @@ defmodule AzimuttWeb.OrganizationInvitationController do
       {:ok, invitation} ->
         if invitation.organization.stripe_subscription_id do
           {:ok, organization} = Organizations.get_organization(invitation.organization_id, current_user)
-          StripeSrv.update_quantity(organization.stripe_subscription_id, length(organization.members) + 1)
+          StripeSrv.update_quantity(organization.stripe_subscription_id, length(organization.members))
         end
 
         conn

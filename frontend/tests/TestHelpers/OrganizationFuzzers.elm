@@ -1,18 +1,18 @@
 module TestHelpers.OrganizationFuzzers exposing (..)
 
 import Fuzz exposing (Fuzzer)
-import Libs.Fuzz as Fuzz
 import Models.Organization exposing (Organization)
 import Models.OrganizationId exposing (OrganizationId)
 import Models.OrganizationName exposing (OrganizationName)
 import Models.OrganizationSlug exposing (OrganizationSlug)
 import Models.Plan exposing (Plan)
 import TestHelpers.Fuzzers exposing (identifier, intPosSmall, stringSmall, uuid)
+import TestHelpers.HerokuFuzzers exposing (herokuResource)
 
 
 organization : Fuzzer Organization
 organization =
-    Fuzz.map7 Organization organizationId organizationSlug organizationName plan logo (Fuzz.maybe location) (Fuzz.maybe description)
+    Fuzz.map8 Organization organizationId organizationSlug organizationName plan logo (Fuzz.maybe location) (Fuzz.maybe description) (Fuzz.maybe herokuResource)
 
 
 organizationId : Fuzzer OrganizationId
@@ -32,7 +32,7 @@ organizationName =
 
 plan : Fuzzer Plan
 plan =
-    Fuzz.map6 Plan planId planName (Fuzz.maybe intPosSmall) Fuzz.bool Fuzz.bool Fuzz.bool
+    Fuzz.map8 Plan planId planName (Fuzz.maybe intPosSmall) (Fuzz.maybe intPosSmall) Fuzz.bool Fuzz.bool Fuzz.bool Fuzz.bool
 
 
 planId : Fuzzer String

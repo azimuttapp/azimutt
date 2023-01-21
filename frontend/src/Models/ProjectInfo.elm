@@ -38,8 +38,9 @@ type alias ProjectInfo =
     , nbRelations : Int
     , nbTypes : Int
     , nbComments : Int
-    , nbNotes : Int
     , nbLayouts : Int
+    , nbNotes : Int
+    , nbMemos : Int
     , createdAt : Time.Posix
     , updatedAt : Time.Posix
     }
@@ -67,8 +68,9 @@ fromProject p =
     , nbRelations = p.sources |> List.foldl (\src acc -> acc + (src.relations |> List.length)) 0
     , nbTypes = p.types |> Dict.size
     , nbComments = p.sources |> List.concatMap (.tables >> Dict.values >> List.concatMap (\t -> t.comment :: (t.columns |> Dict.values |> List.map .comment) |> List.filterMap identity)) |> List.length
-    , nbNotes = p.notes |> Dict.size
     , nbLayouts = p.layouts |> Dict.size
+    , nbNotes = p.notes |> Dict.size
+    , nbMemos = p.layouts |> Dict.values |> List.concatMap .memos |> List.length
     , createdAt = p.createdAt
     , updatedAt = p.updatedAt
     }
@@ -81,14 +83,18 @@ organizationId p =
 
 icon : ProjectInfo -> Icon.Icon
 icon project =
+    -- should stay sync with backend/lib/azimutt_web/templates/organization/_project_icon.html.heex
     if project.storage == ProjectStorage.Local then
         Icon.Folder
 
-    else if project.visibility == ProjectVisibility.None then
-        Icon.Cloud
+    else if project.visibility /= ProjectVisibility.None then
+        Icon.GlobeAlt
+
+    else if (project.organization |> Maybe.andThen .heroku) /= Nothing then
+        Icon.Puzzle
 
     else
-        Icon.GlobeAlt
+        Icon.Cloud
 
 
 title : ProjectInfo -> String
@@ -96,11 +102,14 @@ title project =
     if project.storage == ProjectStorage.Local then
         "Local project"
 
-    else if project.visibility == ProjectVisibility.None then
-        "Remote project"
+    else if project.visibility /= ProjectVisibility.None then
+        "Public project"
+
+    else if (project.organization |> Maybe.andThen .heroku) /= Nothing then
+        "Heroku Add-on project"
 
     else
-        "Public project"
+        "Remote project"
 
 
 encode : ProjectInfo -> Value
@@ -120,8 +129,9 @@ encode value =
         , ( "nbRelations", value.nbRelations |> Encode.int )
         , ( "nbTypes", value.nbTypes |> Encode.int )
         , ( "nbComments", value.nbComments |> Encode.int )
-        , ( "nbNotes", value.nbNotes |> Encode.int )
         , ( "nbLayouts", value.nbLayouts |> Encode.int )
+        , ( "nbNotes", value.nbNotes |> Encode.int )
+        , ( "nbMemos", value.nbMemos |> Encode.int )
         , ( "createdAt", value.createdAt |> Time.encode )
         , ( "updatedAt", value.updatedAt |> Time.encode )
         ]
@@ -129,7 +139,7 @@ encode value =
 
 decode : Decode.Decoder ProjectInfo
 decode =
-    Decode.map18 ProjectInfo
+    Decode.map19 ProjectInfo
         (Decode.maybeField "organization" Organization.decode)
         (Decode.field "id" ProjectId.decode)
         (Decode.field "slug" ProjectSlug.decode)
@@ -144,7 +154,8 @@ decode =
         (Decode.field "nbRelations" Decode.int)
         (Decode.field "nbTypes" Decode.int)
         (Decode.field "nbComments" Decode.int)
-        (Decode.field "nbNotes" Decode.int)
         (Decode.field "nbLayouts" Decode.int)
+        (Decode.field "nbNotes" Decode.int)
+        (Decode.field "nbMemos" Decode.int)
         (Decode.field "createdAt" Time.decode)
         (Decode.field "updatedAt" Time.decode)

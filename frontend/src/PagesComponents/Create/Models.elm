@@ -2,6 +2,7 @@ module PagesComponents.Create.Models exposing (Model, Msg(..))
 
 import Models.Project exposing (Project)
 import Models.Project.ProjectName exposing (ProjectName)
+import Models.Project.ProjectStorage exposing (ProjectStorage)
 import Models.ProjectInfo exposing (ProjectInfo)
 import Ports exposing (JsMsg)
 import Services.DatabaseSource as DatabaseSource
@@ -15,7 +16,6 @@ type alias Model =
     , databaseSource : Maybe (DatabaseSource.Model Msg)
     , sqlSource : Maybe (SqlSource.Model Msg)
     , jsonSource : Maybe (JsonSource.Model Msg)
-    , projectName : ProjectName
 
     -- global attrs
     , toasts : Toasts.Model
@@ -27,8 +27,8 @@ type Msg
     | DatabaseSourceMsg DatabaseSource.Msg
     | SqlSourceMsg SqlSource.Msg
     | JsonSourceMsg JsonSource.Msg
-    | AmlSourceMsg
-    | CreateProjectTmp Project
+    | AmlSourceMsg (Maybe ProjectStorage) ProjectName
+    | CreateProjectTmp (Maybe ProjectStorage) Project
       -- global messages
     | Toast Toasts.Msg
     | JsMessage JsMsg

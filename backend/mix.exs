@@ -50,7 +50,7 @@ defmodule Azimutt.MixProject do
       {:postgrex, ">= 0.0.0"},
       {:phoenix_html, "~> 3.0"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
-      {:phoenix_live_view, "~> 0.17.5"},
+      {:phoenix_live_view, "~> 0.17.11"},
       {:floki, ">= 0.30.0", only: :test},
       {:phoenix_live_dashboard, "~> 0.6"},
       {:esbuild, "~> 0.4", runtime: Mix.env() == :dev},
@@ -84,7 +84,9 @@ defmodule Azimutt.MixProject do
       {:ex_aws_s3, "~> 2.3"},
       {:sweet_xml, "~> 0.7.3"},
       {:httpoison, "~> 1.8"},
-      {:html_entities, "~> 0.5"}
+      {:html_entities, "~> 0.5"},
+      {:oauther, "~> 1.3"},
+      {:extwitter, "~> 0.14"}
     ]
   end
 

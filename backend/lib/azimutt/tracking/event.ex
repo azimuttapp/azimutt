@@ -8,7 +8,7 @@ defmodule Azimutt.Tracking.Event do
   alias Azimutt.Projects.Project
 
   schema "events" do
-    field :name, Ecto.Enum, values: [:project_loaded, :project_created, :project_updated, :project_deleted]
+    field :name, :string
     field :data, :map
     field :details, :map
     belongs_to :created_by, User, source: :created_by
@@ -24,6 +24,6 @@ defmodule Azimutt.Tracking.Event do
     |> put_change(:created_by, attrs.created_by)
     |> put_change(:organization_id, attrs.organization_id)
     |> put_change(:project_id, attrs.project_id)
-    |> validate_required([:name, :data, :created_by])
+    |> validate_required([:name, :created_by])
   end
 end

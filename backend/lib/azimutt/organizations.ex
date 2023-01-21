@@ -4,10 +4,13 @@ defmodule Azimutt.Organizations do
   import Ecto.Query, warn: false
   alias Azimutt.Accounts.User
   alias Azimutt.Accounts.UserNotifier
+  alias Azimutt.Heroku
+  alias Azimutt.Heroku.Resource
   alias Azimutt.Organizations.Organization
   alias Azimutt.Organizations.OrganizationInvitation
   alias Azimutt.Organizations.OrganizationMember
   alias Azimutt.Organizations.OrganizationPlan
+  alias Azimutt.Projects.Project
   alias Azimutt.Repo
   alias Azimutt.Services.StripeSrv
   alias Azimutt.Utils.Enumx
@@ -16,10 +19,11 @@ defmodule Azimutt.Organizations do
   def get_organization(id, %User{} = current_user) do
     Organization
     |> join(:inner, [o], om in OrganizationMember, on: om.organization_id == o.id)
-    |> where([o, om], om.user_id == ^current_user.id and o.id == ^id)
+    |> where([o, om], om.user_id == ^current_user.id and o.id == ^id and is_nil(o.deleted_at))
     |> preload(members: [:user, :created_by, :updated_by])
     # TODO: can filter projects? (ignore local projects not owned by the current_user)
     |> preload(:projects)
+    |> preload(:heroku_resource)
     |> preload(:invitations)
     |> preload(:created_by)
     |> preload(:updated_by)
@@ -27,25 +31,43 @@ defmodule Azimutt.Organizations do
     |> Result.from_nillable()
   end
 
+  # /!\ should be only used in stripe_handler.ex
+  def get_organization_by_customer(customer_id) do
+    # Repo.get_by(Organization, stripe_customer_id: customer_id)
+    # |> preload([:created_by])
+    Organization
+    |> where([o], o.stripe_customer_id == ^customer_id)
+    |> preload(:created_by)
+    |> Repo.one()
+    |> Result.from_nillable()
+  end
+
   def list_organizations(%User{} = current_user) do
     Organization
     |> join(:inner, [o], om in OrganizationMember, on: om.organization_id == o.id)
-    |> where([o, om], om.user_id == ^current_user.id)
+    |> where([o, om], om.user_id == ^current_user.id and is_nil(o.deleted_at))
     |> preload(:members)
     |> preload(:projects)
+    |> preload(:heroku_resource)
     |> preload(:invitations)
     |> Repo.all()
   end
 
   def create_personal_organization(%User{} = current_user) do
-    StripeSrv.init_customer("TMP - #{current_user.name}")
+    StripeSrv.init_customer("TMP - P - #{current_user.name}", %{
+      name: current_user.name,
+      email: current_user.email,
+      provider: current_user.provider,
+      provider_uid: current_user.provider_uid,
+      location: current_user.location,
+      description: current_user.description,
+      github_username: current_user.github_username
+    })
     |> Result.flat_map(fn stripe_customer ->
-      member_changeset = OrganizationMember.creator_changeset(current_user)
-
       %Organization{}
       |> Repo.preload(:members)
       |> Organization.create_personal_changeset(current_user, stripe_customer)
-      |> Ecto.Changeset.put_assoc(:members, [member_changeset])
+      |> Ecto.Changeset.put_assoc(:members, [OrganizationMember.creator_changeset(current_user)])
       |> Repo.insert()
       |> Result.tap_both(
         fn _err -> StripeSrv.delete_customer(stripe_customer) end,
@@ -55,14 +77,12 @@ defmodule Azimutt.Organizations do
   end
 
   def create_non_personal_organization(attrs, %User{} = current_user) do
-    StripeSrv.init_customer("TMP - #{attrs[:name]}")
+    StripeSrv.init_customer("TMP - O - #{attrs[:name]} - #{current_user.name}", attrs)
     |> Result.flat_map(fn stripe_customer ->
-      member_changeset = OrganizationMember.creator_changeset(current_user)
-
       %Organization{}
       |> Repo.preload(:members)
       |> Organization.create_non_personal_changeset(current_user, stripe_customer, attrs)
-      |> Ecto.Changeset.put_assoc(:members, [member_changeset])
+      |> Ecto.Changeset.put_assoc(:members, [OrganizationMember.creator_changeset(current_user)])
       |> Repo.insert()
       |> Result.tap_both(
         fn _err -> StripeSrv.delete_customer(stripe_customer) end,
@@ -72,7 +92,7 @@ defmodule Azimutt.Organizations do
   end
 
   defp stripe_update_customer(%Stripe.Customer{} = stripe_customer, %Organization{} = organization, %User{} = current_user, is_personal) do
-    StripeSrv.update_organization(
+    StripeSrv.update_customer(
       stripe_customer,
       organization.id,
       organization.name,
@@ -90,21 +110,27 @@ defmodule Azimutt.Organizations do
     |> Repo.update()
   end
 
-  def update_organization_subscription(customer_id, subscription_id) do
-    organization = Azimutt.Repo.get_by!(Organization, stripe_customer_id: customer_id)
-
+  def update_organization_subscription(%Organization{} = organization, subscription_id) do
     if organization.stripe_subscription_id do
       Logger.error("Organization #{organization.id} as already a subscription #{organization.stripe_subscription_id}, it will be replace")
     end
 
     organization = Ecto.Changeset.change(organization, stripe_subscription_id: subscription_id)
-    Azimutt.Repo.update!(organization)
+    Repo.update!(organization)
   end
 
   # Organization members
 
   def has_member?(%Organization{} = organization, %User{} = current_user) do
-    organization.members |> Enum.any?(fn m -> m.user.id == current_user.id end)
+    OrganizationMember
+    |> where([om], om.organization_id == ^organization.id and om.user_id == ^current_user.id)
+    |> Repo.exists?()
+  end
+
+  def count_member(%Organization{} = organization) do
+    OrganizationMember
+    |> where([om], om.organization_id == ^organization.id)
+    |> Repo.aggregate(:count, :user_id)
   end
 
   def remove_member(%Organization{} = organization, member_id) do
@@ -119,6 +145,7 @@ defmodule Azimutt.Organizations do
     OrganizationInvitation
     |> where([oi], oi.id == ^id)
     |> preload(:organization)
+    |> preload(organization: :heroku_resource)
     |> preload(:created_by)
     |> preload(:answered_by)
     |> Repo.one()
@@ -133,6 +160,7 @@ defmodule Azimutt.Organizations do
         is_nil(oi.accepted_at) and is_nil(oi.refused_at)
     )
     |> preload(:organization)
+    |> preload(organization: :heroku_resource)
     |> Repo.one()
   end
 
@@ -218,9 +246,15 @@ defmodule Azimutt.Organizations do
     end
   end
 
-  def delete_organization(%Organization{} = organization) do
-    # FIXME: check current_user is owner
-    Repo.delete(organization)
+  def delete_organization(%Organization{} = organization, now) do
+    # TODO decide between soft and hard delete of organization, if hard, add tracking events
+    Project
+    |> where([p], p.organization_id == ^organization.id)
+    |> Repo.delete_all()
+
+    organization
+    |> Organization.delete_changeset(now)
+    |> Repo.update()
   end
 
   def get_subscription_status(stripe_subscription_id) when is_bitstring(stripe_subscription_id) do
@@ -254,18 +288,107 @@ defmodule Azimutt.Organizations do
     end
   end
 
+  def get_allowed_members(%Organization{} = organization) do
+    if organization.heroku_resource do
+      Heroku.allowed_members(organization.heroku_resource.plan)
+    else
+      Azimutt.config(:free_plan_seats)
+    end
+  end
+
+  def allow_table_color(%Organization{} = organization, tweet_url) when is_binary(tweet_url) do
+    organization
+    |> Organization.allow_table_color_changeset(tweet_url)
+    |> Repo.update()
+  end
+
   def get_organization_plan(%Organization{} = organization) do
-    if organization.stripe_subscription_id do
-      StripeSrv.get_subscription(organization.stripe_subscription_id)
-      |> Result.map(fn s ->
-        if s.status == "active" || s.status == "past_due" || s.status == "unpaid" do
-          OrganizationPlan.team()
-        else
-          OrganizationPlan.free()
-        end
-      end)
+    cond do
+      organization.heroku_resource -> heroku_plan(organization.heroku_resource)
+      organization.stripe_subscription_id -> stripe_plan(organization.stripe_subscription_id)
+      true -> {:ok, OrganizationPlan.free()}
+    end
+    |> Result.map(fn plan -> plan_overrides(organization, plan) end)
+  end
+
+  defp heroku_plan(%Resource{} = resource) do
+    if resource.plan |> String.starts_with?("team-") do
+      {:ok, OrganizationPlan.team()}
     else
       {:ok, OrganizationPlan.free()}
+    end
+  end
+
+  defp stripe_plan(subscription_id) do
+    StripeSrv.get_subscription(subscription_id)
+    |> Result.map(fn s ->
+      if s.status == "active" || s.status == "past_due" || s.status == "unpaid" do
+        OrganizationPlan.team()
+      else
+        OrganizationPlan.free()
+      end
+    end)
+  end
+
+  defp plan_overrides(%Organization{} = organization, %OrganizationPlan{} = plan) do
+    if organization.data != nil do
+      plan
+      |> override_layouts(organization.data)
+      |> override_memos(organization.data)
+      |> override_colors(organization.data)
+      |> override_private_links(organization.data)
+      |> override_analysis(organization.data)
+    else
+      plan
+    end
+  end
+
+  defp override_layouts(%OrganizationPlan{} = plan, %Organization.Data{} = data) do
+    if data.allowed_layouts != nil do
+      %{plan | layouts: best_limit(plan.layouts, data.allowed_layouts)}
+    else
+      plan
+    end
+  end
+
+  defp override_memos(%OrganizationPlan{} = plan, %Organization.Data{} = data) do
+    if data.allowed_memos != nil do
+      %{plan | memos: best_limit(plan.memos, data.allowed_memos)}
+    else
+      plan
+    end
+  end
+
+  defp override_colors(%OrganizationPlan{} = plan, %Organization.Data{} = data) do
+    if data.allow_table_color do
+      %{plan | colors: true}
+    else
+      plan
+    end
+  end
+
+  defp override_private_links(%OrganizationPlan{} = plan, %Organization.Data{} = data) do
+    if data.allow_private_links do
+      %{plan | private_links: true}
+    else
+      plan
+    end
+  end
+
+  defp override_analysis(%OrganizationPlan{} = plan, %Organization.Data{} = data) do
+    if data.allow_database_analysis do
+      %{plan | db_analysis: true}
+    else
+      plan
+    end
+  end
+
+  defp best_limit(a, b) do
+    cond do
+      a == nil || b == nil -> nil
+      is_integer(a) && is_integer(b) -> max(a, b)
+      is_integer(a) -> a
+      is_integer(b) -> b
     end
   end
 end

@@ -15,6 +15,7 @@ import Services.Backend as Backend
 import Services.Lenses exposing (mapToastsCmd)
 import Services.Toasts as Toasts
 import Shared
+import Track
 import View exposing (View)
 
 
@@ -50,7 +51,12 @@ title =
 
 init : Request -> ( Model, Cmd Msg )
 init req =
-    ( { url = req.url.path |> addPrefixed "?" req.url.query |> addPrefixed "#" req.url.fragment
+    let
+        url : String
+        url =
+            req.url.path |> addPrefixed "?" req.url.query |> addPrefixed "#" req.url.fragment
+    in
+    ( { url = url
       , toasts = Toasts.init
       }
     , Cmd.batch
@@ -61,7 +67,7 @@ init req =
             , html = Just "h-full"
             , body = Just "h-full"
             }
-        , Ports.trackPage "not-found"
+        , Track.notFound url |> Ports.track
         ]
     )
 

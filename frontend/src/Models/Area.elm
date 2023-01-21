@@ -1,9 +1,10 @@
-module Models.Area exposing (Canvas, CanvasGridLike, CanvasLike, Diagram, Viewport, ViewportLike, centerCanvas, centerCanvasGrid, centerViewport, diagramToCanvas, divCanvas, fromCanvas, mergeCanvas, offGrid, overlapCanvas, styleTransformCanvas, toStringRoundCanvas, toStringRoundViewport, topLeftCanvasGrid, topRightCanvasGrid, zeroCanvas)
+module Models.Area exposing (Canvas, CanvasLike, Diagram, Grid, GridLike, Viewport, ViewportLike, centerCanvas, centerCanvasGrid, centerViewport, debugCanvas, debugViewport, diagramToCanvas, divCanvas, fromCanvas, mergeCanvas, multCanvas, offGrid, overlapCanvas, styleTransformCanvas, styleTransformViewport, stylesGrid, stylesViewport, toStringRoundCanvas, toStringRoundViewport, topLeftCanvasGrid, topRightCanvasGrid, zeroCanvas)
 
-import Html exposing (Attribute)
+import Html exposing (Attribute, Html, div, text)
+import Html.Attributes exposing (class)
 import Libs.Models.Area as Area exposing (Area)
 import Libs.Models.Delta as Delta
-import Libs.Models.ZoomLevel exposing (ZoomLevel)
+import Libs.Tailwind exposing (TwClass)
 import Models.Position as Position
 import Models.Size as Size
 
@@ -20,6 +21,10 @@ type alias Canvas =
     { position : Position.Canvas, size : Size.Canvas }
 
 
+type alias Grid =
+    { position : Position.Grid, size : Size.Canvas }
+
+
 type alias ViewportLike x =
     { x | position : Position.Viewport, size : Size.Viewport }
 
@@ -28,8 +33,8 @@ type alias CanvasLike x =
     { x | position : Position.Canvas, size : Size.Canvas }
 
 
-type alias CanvasGridLike x =
-    { x | position : Position.CanvasGrid, size : Size.Canvas }
+type alias GridLike x =
+    { x | position : Position.Grid, size : Size.Canvas }
 
 
 zeroCanvas : Canvas
@@ -52,24 +57,29 @@ centerCanvas area =
     area.position |> Position.moveCanvas (area.size |> Size.divCanvas 2 |> Size.toTupleCanvas |> Delta.fromTuple)
 
 
-offGrid : CanvasGridLike a -> Canvas
+offGrid : GridLike a -> Canvas
 offGrid area =
     Canvas (area.position |> Position.offGrid) area.size
 
 
-topLeftCanvasGrid : CanvasGridLike a -> Position.Canvas
+topLeftCanvasGrid : GridLike a -> Position.Canvas
 topLeftCanvasGrid area =
     area.position |> Position.offGrid
 
 
-topRightCanvasGrid : CanvasGridLike a -> Position.Canvas
+topRightCanvasGrid : GridLike a -> Position.Canvas
 topRightCanvasGrid area =
     area.position |> Position.offGrid |> Position.moveCanvas { dx = area.size |> Size.extractCanvas |> .width, dy = 0 }
 
 
-centerCanvasGrid : CanvasGridLike a -> Position.Canvas
+centerCanvasGrid : GridLike a -> Position.Canvas
 centerCanvasGrid area =
     area.position |> Position.offGrid |> Position.moveCanvas (area.size |> Size.divCanvas 2 |> Size.deltaCanvas)
+
+
+multCanvas : Float -> Canvas -> Canvas
+multCanvas factor area =
+    Canvas (area.position |> Position.multCanvas factor) (area.size |> Size.multCanvas factor)
 
 
 divCanvas : Float -> Canvas -> Canvas
@@ -77,9 +87,10 @@ divCanvas factor area =
     Canvas (area.position |> Position.divCanvas factor) (area.size |> Size.divCanvas factor)
 
 
-diagramToCanvas : Position.Diagram -> ZoomLevel -> Diagram -> Canvas
-diagramToCanvas canvasPos canvasZoom { position, size } =
-    Canvas (position |> Position.diagramToCanvas canvasPos) size |> divCanvas canvasZoom
+diagramToCanvas : Position.Diagram -> Diagram -> Canvas
+diagramToCanvas canvasPos { position, size } =
+    -- size is already on Canvas, don't adjust it
+    Canvas (position |> Position.diagramToCanvas canvasPos) size
 
 
 mergeCanvas : List (CanvasLike a) -> Maybe Canvas
@@ -87,7 +98,7 @@ mergeCanvas areas =
     areas
         |> List.map (\{ position, size } -> Area (Position.extractCanvas position) (Size.extractCanvas size))
         |> Area.merge
-        |> Maybe.map (\{ position, size } -> Canvas (Position.buildCanvas position) (Size.buildCanvas size))
+        |> Maybe.map (\{ position, size } -> Canvas (Position.canvas position) (Size.canvas size))
 
 
 overlapCanvas : CanvasLike b -> CanvasLike a -> Bool
@@ -97,9 +108,34 @@ overlapCanvas area2 area1 =
         (Area (Position.extractCanvas area1.position) (Size.extractCanvas area1.size))
 
 
-styleTransformCanvas : Canvas -> List (Attribute msg)
+stylesViewport : ViewportLike a -> List (Attribute msg)
+stylesViewport area =
+    Position.stylesViewport area.position ++ Size.stylesViewport area.size
+
+
+stylesGrid : GridLike a -> List (Attribute msg)
+stylesGrid area =
+    Position.stylesGrid area.position ++ Size.stylesCanvas area.size
+
+
+styleTransformViewport : ViewportLike a -> List (Attribute msg)
+styleTransformViewport area =
+    Position.styleTransformViewport area.position :: Size.stylesViewport area.size
+
+
+styleTransformCanvas : CanvasLike a -> List (Attribute msg)
 styleTransformCanvas area =
     Position.styleTransformCanvas area.position :: Size.stylesCanvas area.size
+
+
+debugViewport : String -> TwClass -> ViewportLike a -> Html msg
+debugViewport name classes area =
+    div ([ class (classes ++ " z-max absolute pointer-events-none whitespace-nowrap border") ] ++ stylesViewport area) [ text (name ++ ": " ++ toStringRoundViewport area) ]
+
+
+debugCanvas : String -> TwClass -> CanvasLike a -> Html msg
+debugCanvas name classes area =
+    div ([ class (classes ++ " z-max absolute pointer-events-none whitespace-nowrap border") ] ++ styleTransformCanvas area) [ text (name ++ ": " ++ toStringRoundCanvas area) ]
 
 
 toStringRoundViewport : ViewportLike a -> String

@@ -10,20 +10,22 @@ import Libs.Dict as Dict
 import Libs.Maybe as Maybe
 import Libs.Models.Platform exposing (Platform)
 import Models.ColumnOrder as ColumnOrder
-import PagesComponents.Organization_.Project_.Models exposing (FindPathMsg(..), Msg(..), NotesMsg(..))
+import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
+import PagesComponents.Organization_.Project_.Models exposing (FindPathMsg(..), Msg(..))
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.HideColumns as HideColumns
 import PagesComponents.Organization_.Project_.Models.Notes as NoteRef
+import PagesComponents.Organization_.Project_.Models.NotesMsg exposing (NotesMsg(..))
 import PagesComponents.Organization_.Project_.Models.ShowColumns as ShowColumns
 
 
 view : Platform -> ErdConf -> Int -> ErdTable -> ErdTableLayout -> Maybe String -> Html Msg
 view platform conf index table layout notes =
     div [ class "z-max" ]
-        ([ -- Maybe.when conf.layout { label = "Show details", action = ContextMenu.Simple { action = DetailsSidebarMsg (DetailsSidebar.ShowTable table.id), platform = platform, hotkeys = [] } },
-           Maybe.when conf.layout { label = B.cond layout.props.selected "Hide selected tables" "Hide table", action = ContextMenu.Simple { action = HideTable table.id, platform = platform, hotkeys = Conf.hotkeys |> Dict.getOrElse "hide" [] } }
+        ([ Maybe.when conf.layout { label = "Show details", action = ContextMenu.Simple { action = DetailsSidebarMsg (DetailsSidebar.ShowTable table.id), platform = platform, hotkeys = [] } }
+         , Maybe.when conf.layout { label = B.cond layout.props.selected "Hide selected tables" "Hide table", action = ContextMenu.Simple { action = HideTable table.id, platform = platform, hotkeys = Conf.hotkeys |> Dict.getOrElse "hide" [] } }
          , Maybe.when conf.layout { label = notes |> Maybe.mapOrElse (\_ -> "Update notes") "Add notes", action = ContextMenu.Simple { action = NotesMsg (NOpen (NoteRef.fromTable table.id)), platform = platform, hotkeys = Conf.hotkeys |> Dict.getOrElse "notes" [] } }
          , Maybe.when conf.layout { label = B.cond layout.props.selected "Set color of selected tables" "Set color", action = ContextMenu.Custom (ColorPicker.view (TableColor table.id)) }
          , Maybe.when conf.layout { label = B.cond layout.props.selected "Sort columns of selected tables" "Sort columns", action = ContextMenu.SubMenu (ColumnOrder.all |> List.map (\o -> { label = ColumnOrder.show o, action = SortColumns table.id o, platform = platform, hotkeys = [] })) }

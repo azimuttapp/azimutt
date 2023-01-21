@@ -1,0 +1,41 @@
+<%= if @page |> Page.has_pagination do %>
+    <nav class="flex items-center justify-between border-t border-gray-200 px-4 sm:px-0">
+        <div class="-mt-px flex w-0 flex-1">
+            <%= if @page |> Page.has_previous do %>
+                <a href={Page.change_page(@page, @page.info.page - 1)} class="inline-flex items-center border-t-2 border-transparent pt-4 pr-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700">
+                    <Icon.arrow_long_left class="mr-3 text-gray-400" /> Previous
+                </a>
+            <% end %>
+        </div>
+        <div class="hidden md:-mt-px md:flex">
+            <%= if Page.first_pages(@page) != [] do %>
+                <%= for p <- Page.first_pages(@page) do %>
+                    <a href={Page.change_page(@page, p)} class="inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"><%= p %></a>
+                <% end %>
+                <span class="inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500">...</span>
+            <% end %>
+
+            <%= for p <- Page.current_pages(@page) do %>
+                <%= if @page.info.page == p do %>
+                    <span class="inline-flex items-center border-t-2 border-indigo-500 px-4 pt-4 text-sm font-medium text-indigo-600" aria-current="page"><%= p %></span>
+                <% else %>
+                    <a href={Page.change_page(@page, p)} class="inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"><%= p %></a>
+                <% end %>
+            <% end %>
+
+            <%= if Page.last_pages(@page) != [] do %>
+                <span class="inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500">...</span>
+                <%= for p <- Page.last_pages(@page) do %>
+                    <a href={Page.change_page(@page, p)} class="inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"><%= p %></a>
+                <% end %>
+            <% end %>
+        </div>
+        <div class="-mt-px flex w-0 flex-1 justify-end">
+            <%= if @page |> Page.has_next do %>
+                <a href={Page.change_page(@page, @page.info.page + 1)} class="inline-flex items-center border-t-2 border-transparent pt-4 pl-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700">
+                    Next <Icon.arrow_long_right class="ml-3 text-gray-400" />
+                </a>
+            <% end %>
+        </div>
+    </nav>
+<% end %>

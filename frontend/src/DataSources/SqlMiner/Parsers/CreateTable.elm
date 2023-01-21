@@ -1,7 +1,7 @@
 module DataSources.SqlMiner.Parsers.CreateTable exposing (ParsedCheck, ParsedColumn, ParsedForeignKey, ParsedIndex, ParsedPrimaryKey, ParsedTable, ParsedUnique, parseCreateTable, parseCreateTableColumn, parseCreateTableColumnForeignKey, parseCreateTableForeignKey, parseCreateTableKey)
 
 import DataSources.Helpers exposing (defaultUniqueName)
-import DataSources.SqlMiner.Parsers.AlterTable as AlterTable exposing (TableConstraint(..), parseAlterTableAddConstraint)
+import DataSources.SqlMiner.Parsers.AlterTable as AlterTable exposing (TableConstraint, parseAlterTableAddConstraint)
 import DataSources.SqlMiner.Utils.Helpers exposing (buildColumnName, buildColumnType, buildComment, buildConstraintName, buildRawSql, buildSchemaName, buildSqlLine, buildTableName, commaSplit, sqlTriggers)
 import DataSources.SqlMiner.Utils.Types exposing (ParseError, RawSql, SqlColumnName, SqlColumnType, SqlColumnValue, SqlComment, SqlConstraintName, SqlForeignKeyRef, SqlPredicate, SqlSchemaName, SqlStatement, SqlTableName)
 import Libs.List as List

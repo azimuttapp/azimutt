@@ -1,8 +1,8 @@
-module Components.Atoms.Icon exposing (Icon(..), decode, doc, dribbble, facebook, github, github2, instagram, loading, outline, outline2x, slash, solid, twitter)
+module Components.Atoms.Icon exposing (Icon(..), decode, doc, dribbble, facebook, github, github2, instagram, loading, outline, outline2x, quote, slash, solid, twitter)
 
 import Dict exposing (Dict)
 import ElmBook.Chapter as Chapter exposing (Chapter)
-import Html exposing (Html, div, span)
+import Html exposing (Html, div, span, text)
 import Html.Attributes exposing (title)
 import Json.Decode as Decode
 import Libs.Html.Attributes exposing (ariaHidden, role)
@@ -798,6 +798,13 @@ loading styles =
         ]
 
 
+quote : TwClass -> Html msg
+quote styles =
+    svg [ viewBox "0 0 32 32", fill "currentColor", ariaHidden True, css [ "h-8 w-8", styles ] ]
+        [ path [ d "M9.352 4C4.456 7.456 1 13.12 1 19.36c0 5.088 3.072 8.064 6.624 8.064 3.36 0 5.856-2.688 5.856-5.856 0-3.168-2.208-5.472-5.088-5.472-.576 0-1.344.096-1.536.192.48-3.264 3.552-7.104 6.624-9.024L9.352 4zm16.512 0c-4.8 3.456-8.256 9.12-8.256 15.36 0 5.088 3.072 8.064 6.624 8.064 3.264 0 5.856-2.688 5.856-5.856 0-3.168-2.304-5.472-5.184-5.472-.576 0-1.248.096-1.44.192.48-3.264 3.456-7.104 6.528-9.024L25.864 4z" ] []
+        ]
+
+
 slash : TwClass -> Html msg
 slash styles =
     viewSolid [ "M5.555 17.776l8-16 .894.448-8 16-.894-.448z" ] ("h-5 w-5 " ++ styles)
@@ -842,14 +849,24 @@ doc =
             , ( "solid icons", div [] (icons |> Dict.toList |> List.map (\( name, icon ) -> div [ title name, css [ "inline-block w-6" ] ] [ viewSolid icon.solid "h-5 w-5" ])) )
             , ( "special icons"
               , div []
-                    [ span [ title "dribbble", css [ "inline-block w-6" ] ] [ dribbble "" ]
-                    , span [ title "facebook", css [ "inline-block w-6" ] ] [ facebook "" ]
-                    , span [ title "github", css [ "inline-block w-6" ] ] [ github "" ]
-                    , span [ title "github2", css [ "inline-block w-6" ] ] [ github2 24 ]
-                    , span [ title "instagram", css [ "inline-block w-6" ] ] [ instagram "" ]
-                    , span [ title "loading", css [ "inline-block w-6" ] ] [ loading "" ]
-                    , span [ title "slash", css [ "inline-block w-6" ] ] [ slash "" ]
-                    , span [ title "twitter", css [ "inline-block w-6" ] ] [ twitter "" ]
+                    [ div []
+                        [ div [] [ text "w-5 h-5:" ]
+                        , span [ title "slash", css [ "inline-block w-6" ] ] [ slash "" ]
+                        ]
+                    , div []
+                        [ div [] [ text "w-6 h-6:" ]
+                        , span [ title "dribbble", css [ "inline-block w-6" ] ] [ dribbble "" ]
+                        , span [ title "facebook", css [ "inline-block w-6" ] ] [ facebook "" ]
+                        , span [ title "github", css [ "inline-block w-6" ] ] [ github "" ]
+                        , span [ title "github2", css [ "inline-block w-6" ] ] [ github2 24 ]
+                        , span [ title "instagram", css [ "inline-block w-6" ] ] [ instagram "" ]
+                        , span [ title "loading", css [ "inline-block w-6" ] ] [ loading "" ]
+                        , span [ title "twitter", css [ "inline-block w-6" ] ] [ twitter "" ]
+                        ]
+                    , div []
+                        [ div [] [ text "w-8 h-8:" ]
+                        , span [ title "quote", css [ "inline-block w-6" ] ] [ quote "" ]
+                        ]
                     ]
               )
             ]

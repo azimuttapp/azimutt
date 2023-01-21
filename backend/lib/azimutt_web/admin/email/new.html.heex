@@ -1,0 +1,52 @@
+<div class="my-3 max-w-prose mx-auto">
+    <h1>Send an email</h1>
+
+    <% # FIXME: must use `<.form action={Routes.admin_email_path(@conn, :create)} let={f} class="space-y-5">` for csrf, but can't due to missing import ("undefined function form/1") :/ %>
+    <form method="post" action={Routes.admin_email_path(@conn, :create)} class="space-y-5">
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Recipients</label>
+            <div class="mt-1">
+                <fieldset>
+                    <legend class="sr-only">Recipients</legend>
+                    <div class="space-y-3">
+                        <%= for {value, label, description} <- [
+                            {"users", "All users", "Everyone registered on Azimutt"},
+                            {"stargazers", "GitHub stargazers", "Everyone who stared azimuttapp/azimutt on GitHub"},
+                            {"followers", "Twitter followers", "Everyone who follow @azimuttapp on Twitter"}
+                        ] do %>
+                            <div class="relative flex items-start">
+                                <div class="flex h-5 items-center">
+                                    <input type="radio" name="recipient" id={value} aria-describedby={"#{value}-description"} class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                                </div>
+                                <div class="ml-3 text-sm">
+                                    <label for={value} class="font-medium text-gray-700"><%= label %></label>
+                                    <span id={"#{value}-description"} class="text-gray-500"><%= description %></span>
+                                </div>
+                            </div>
+                        <% end %>
+                    </div>
+                </fieldset>
+            </div>
+        </div>
+
+        <div>
+            <label for="object" class="block text-sm font-medium text-gray-700">Object</label>
+            <div class="mt-1">
+                <input type="text" name="object" id="object" placeholder="ex: Happy New Year!" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+            </div>
+        </div>
+
+        <div>
+            <label for="body" class="block text-sm font-medium text-gray-700">Body</label>
+            <div class="mt-1">
+                <textarea name="body" id="body" rows="8" placeholder="Hello!" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"></textarea>
+            </div>
+        </div>
+
+        <div class="flex justify-end">
+            <button type="submit" class="inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                Send email
+            </button>
+        </div>
+    </form>
+</div>

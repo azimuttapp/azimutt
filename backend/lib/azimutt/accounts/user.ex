@@ -3,6 +3,7 @@ defmodule Azimutt.Accounts.User do
   use Ecto.Schema
   use Azimutt.Schema
   import Ecto.Changeset
+  alias Azimutt.Accounts.User
   alias Azimutt.Organizations.Organization
   alias Azimutt.Organizations.OrganizationMember
   alias Azimutt.Utils.Slugme
@@ -23,6 +24,7 @@ defmodule Azimutt.Accounts.User do
     field :hashed_password, :string, redact: true
     field :password, :string, virtual: true, redact: true
     field :last_signin, :utc_datetime_usec
+    embeds_one :data, User.Data, on_replace: :update
     timestamps()
     field :confirmed_at, :utc_datetime_usec
     field :deleted_at, :utc_datetime_usec
@@ -47,41 +49,36 @@ defmodule Azimutt.Accounts.User do
       validations on a LiveView form), this option can be set to `false`.
       Defaults to `true`.
   """
-  def create_password_changeset(user, attrs, now, opts \\ []) do
+  def password_creation_changeset(user, attrs, now, opts \\ []) do
+    required = [:name, :email, :avatar]
+
     user
-    |> cast(attrs, [
-      :name,
-      :email,
-      :password,
-      :avatar,
-      :company,
-      :location,
-      :description,
-      :github_username,
-      :twitter_username
-    ])
+    |> cast(attrs, required ++ [:password, :company, :location, :description, :github_username, :twitter_username])
     |> Slugme.generate_slug(:name)
     |> validate_email()
     |> validate_password(opts)
     |> put_change(:last_signin, now)
+    |> validate_required(required)
   end
 
   def github_creation_changeset(user, attrs, now) do
+    required = [:name, :email, :avatar, :provider]
+
     user
-    |> cast(attrs, [
-      :name,
-      :email,
-      :provider,
-      :provider_uid,
-      :avatar,
-      :company,
-      :location,
-      :description,
-      :github_username,
-      :twitter_username
-    ])
+    |> cast(attrs, required ++ [:provider_uid, :company, :location, :description, :github_username, :twitter_username])
     |> Slugme.generate_slug(:github_username)
     |> put_change(:last_signin, now)
+    |> validate_required(required)
+  end
+
+  def heroku_creation_changeset(user, attrs, now) do
+    required = [:name, :email, :avatar, :provider]
+
+    user
+    |> cast(attrs, required)
+    |> Slugme.generate_slug(:name)
+    |> put_change(:last_signin, now)
+    |> validate_required(required)
   end
 
   defp validate_email(changeset) do

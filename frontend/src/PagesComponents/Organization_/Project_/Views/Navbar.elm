@@ -23,11 +23,12 @@ import Libs.Models.Platform exposing (Platform)
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (TwClass, batch, focus, focus_ring_offset_600, hover, lg, sm)
 import Libs.Url as Url
-import Models.OrganizationId as OrganizationId exposing (OrganizationId)
+import Models.OrganizationId exposing (OrganizationId)
 import Models.ProjectInfo exposing (ProjectInfo)
 import Models.User exposing (User)
 import PagesComponents.Helpers as Helpers
-import PagesComponents.Organization_.Project_.Models exposing (AmlSidebarMsg(..), FindPathMsg(..), HelpMsg(..), Msg(..), NavbarModel, ProjectSettingsMsg(..), SchemaAnalysisMsg(..), SharingMsg(..), VirtualRelation, VirtualRelationMsg(..))
+import PagesComponents.Organization_.Project_.Components.ProjectSharing as ProjectSharing
+import PagesComponents.Organization_.Project_.Models exposing (AmlSidebarMsg(..), FindPathMsg(..), HelpMsg(..), Msg(..), NavbarModel, ProjectSettingsMsg(..), SchemaAnalysisMsg(..), VirtualRelation, VirtualRelationMsg(..))
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Views.Navbar.Search exposing (viewNavbarSearch)
@@ -45,25 +46,25 @@ type alias NavbarArgs =
     String
 
 
-argsToString : Url -> Maybe OrganizationId -> Bool -> HtmlId -> HtmlId -> NavbarArgs
-argsToString currentUrl urlOrganization dirty htmlId openedDropdown =
-    [ Url.toString currentUrl, Maybe.withDefault "" urlOrganization, B.cond dirty "Y" "N", htmlId, openedDropdown ] |> String.join "~"
+argsToString : Url -> Maybe OrganizationId -> List OrganizationId -> HtmlId -> HtmlId -> Bool -> NavbarArgs
+argsToString currentUrl urlOrganization userOrganizations htmlId openedDropdown dirty =
+    [ Url.toString currentUrl, Maybe.withDefault "" urlOrganization, userOrganizations |> String.join ",", htmlId, openedDropdown, B.cond dirty "Y" "N" ] |> String.join "~"
 
 
-stringToArgs : NavbarArgs -> ( ( Url, Maybe OrganizationId, Bool ), ( HtmlId, HtmlId ) )
+stringToArgs : NavbarArgs -> ( ( Url, Maybe OrganizationId, List OrganizationId ), ( HtmlId, HtmlId, Bool ) )
 stringToArgs args =
     case String.split "~" args of
-        [ url, urlOrganization, dirty, htmlId, openedDropdown ] ->
-            ( ( url |> Url.fromString |> Maybe.withDefault Url.empty, urlOrganization |> String.nonEmptyMaybe, dirty == "Y" ), ( htmlId, openedDropdown ) )
+        [ url, urlOrganization, userOrganizations, htmlId, openedDropdown, dirty ] ->
+            ( ( url |> Url.fromString |> Maybe.withDefault Url.empty, urlOrganization |> String.nonEmptyMaybe, userOrganizations |> String.split "," ), ( htmlId, openedDropdown, dirty == "Y" ) )
 
         _ ->
-            ( ( Url.empty, Nothing, False ), ( "", "" ) )
+            ( ( Url.empty, Nothing, [] ), ( "", "", False ) )
 
 
 viewNavbar : GlobalConf -> Maybe User -> ErdConf -> Maybe VirtualRelation -> Erd -> List ProjectInfo -> NavbarModel -> NavbarArgs -> Html Msg
 viewNavbar gConf maybeUser eConf virtualRelation erd projects model args =
     let
-        ( ( currentUrl, urlOrganization, dirty ), ( htmlId, openedDropdown ) ) =
+        ( ( currentUrl, urlOrganization, userOrganizations ), ( htmlId, openedDropdown, dirty ) ) =
             stringToArgs args
 
         features : List (Btn Msg)
@@ -84,7 +85,7 @@ viewNavbar gConf maybeUser eConf virtualRelation erd projects model args =
         [ div [ css [ "mx-auto px-2", sm [ "px-4" ], lg [ "px-8" ] ] ]
             [ div [ class "relative flex items-center justify-between h-16" ]
                 [ div [ css [ "flex items-center px-2", lg [ "px-0" ] ] ]
-                    [ viewNavbarBrand (erd.project.organization |> Maybe.map .id |> Maybe.orElse urlOrganization) eConf
+                    [ viewNavbarBrand (erd.project.organization |> Maybe.map .id |> Maybe.orElse urlOrganization |> Maybe.filter (\id -> userOrganizations |> List.member id)) eConf
                     , Lazy.lazy8 viewNavbarSearch erd.settings.defaultSchema model.search erd.tables erd.relations erd.notes (erd |> Erd.currentLayout |> .tables) (htmlId ++ "-search") (openedDropdown |> String.filterStartsWith (htmlId ++ "-search"))
                     , viewNavbarHelp
                     ]
@@ -112,11 +113,7 @@ viewNavbarBrand organization conf =
         attrs : List (Attribute msg)
         attrs =
             if conf.dashboardLink then
-                if organization |> Maybe.any (\id -> id /= OrganizationId.zero) then
-                    [ href (organization |> Backend.organizationUrl) ]
-
-                else
-                    [ href Backend.homeUrl ]
+                [ href (organization |> Backend.organizationUrl) ]
 
             else
                 hrefBlank Backend.homeUrl
@@ -159,7 +156,7 @@ viewNavbarFeatures platform features htmlId openedDropdown =
 
 viewNavbarShare : Html Msg
 viewNavbarShare =
-    button [ type_ "button", onClick (SharingMsg SOpen), css [ "mx-1 flex-shrink-0 bg-primary-600 p-1 rounded-full text-primary-200", hover [ "text-white animate-pulse" ], focus_ring_offset_600 Tw.primary ] ]
+    button [ type_ "button", onClick (SharingMsg ProjectSharing.Open), css [ "mx-1 flex-shrink-0 bg-primary-600 p-1 rounded-full text-primary-200", hover [ "text-white animate-pulse" ], focus_ring_offset_600 Tw.primary ] ]
         [ span [ class "sr-only" ] [ text "Share" ]
         , Icon.outline Icon.Share ""
         ]

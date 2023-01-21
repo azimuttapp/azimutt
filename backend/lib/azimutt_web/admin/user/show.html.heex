@@ -1,0 +1,19 @@
+<div class="my-3 flex">
+    <div class="w-1/2">
+        <div class="flex">
+            <%= img_tag(@user.avatar, class: "mt-2 h-24 w-24 rounded-md") %>
+            <div class="mt-2 pl-3">
+                <div class="text-xl font-bold text-slate-100 truncate"><%= @user.name %></div>
+                <div class="text-xs font-medium text-scheme-yellow truncate"><%= @user.email %></div>
+                <div class="text-xs font-medium text-slate-300"><%= @user.description %></div>
+                <div class="text-xs font-medium text-slate-500 truncate"><%= @user.location %></div>
+            </div>
+        </div>
+        <div class="my-3"><%= render AzimuttWeb.Admin.OrganizationView, "_organizations_table.html", conn: @conn, organizations: @organizations %></div>
+        <div class="my-3"><%= render AzimuttWeb.Admin.ProjectView, "_projects_table.html", conn: @conn, projects: @projects %></div>
+        <div class="my-3"><canvas class="line-chart"><%= @activity |> Jason.encode!() %></canvas></div>
+    </div>
+    <div class="pl-3 w-1/2">
+        <%= render AzimuttWeb.Admin.EventView, "_events_table.html", conn: @conn, events: @events %>
+    </div>
+</div>

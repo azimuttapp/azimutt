@@ -1,58 +1,65 @@
 defmodule Azimutt.Accounts do
-  @moduledoc """
-  The Accounts context.
-  """
-
+  @moduledoc "The Accounts context."
   import Ecto.Query, warn: false
   alias Azimutt.Repo
-
   alias Azimutt.Accounts.{User, UserNotifier, UserToken}
   alias Azimutt.Organizations
+  alias Azimutt.Utils.Crypto
+  alias Azimutt.Utils.Result
 
   ## Database getters
 
+  def get_user(id) when is_binary(id) do
+    Repo.get(User, id)
+    |> Repo.preload([:organizations])
+    |> Result.from_nillable()
+  end
+
   def get_user_by_email(email) when is_binary(email) do
-    Repo.get_by(User, email: email) |> Repo.preload([:organizations])
+    Repo.get_by(User, email: email)
+    |> Repo.preload([:organizations])
+    |> Result.from_nillable()
   end
 
-  def get_user_by_email_and_password(email, password)
-      when is_binary(email) and is_binary(password) do
-    user = Repo.get_by(User, email: email)
-    if User.valid_password?(user, password), do: user
+  def get_user_by_email_and_password(email, password) when is_binary(email) and is_binary(password) do
+    get_user_by_email(email)
+    |> Result.filter(fn user -> User.valid_password?(user, password) end, :not_found)
   end
-
-  def get_user!(id), do: Repo.get!(User, id)
 
   ## User registration
 
+  def change_user_registration(attrs, %User{} = user, now) do
+    User.password_creation_changeset(user, attrs, now, hash_password: false)
+  end
+
   def register_password_user(attrs, now) do
-    Ecto.Multi.new()
-    |> Ecto.Multi.insert(:user, %User{} |> User.create_password_changeset(attrs, now))
-    |> Ecto.Multi.run(:organization, fn _repo, %{user: user} ->
-      Organizations.create_personal_organization(user)
-    end)
-    |> Repo.transaction()
-    |> case do
-      {:ok, %{user: user}} -> {:ok, user}
-      {:error, :user, changeset, _} -> {:error, changeset}
-    end
+    register_user(%User{} |> User.password_creation_changeset(attrs, now))
   end
 
   def register_github_user(attrs, now) do
+    register_user(%User{} |> User.github_creation_changeset(attrs, now))
+  end
+
+  def register_heroku_user(email, now) do
+    attrs = %{
+      name: email |> String.split("@") |> hd(),
+      email: email,
+      avatar: "https://www.gravatar.com/avatar/#{Crypto.md5(email)}?s=150&d=robohash",
+      provider: "heroku"
+    }
+
+    register_user(%User{} |> User.heroku_creation_changeset(attrs, now))
+  end
+
+  defp register_user(changeset) do
     Ecto.Multi.new()
-    |> Ecto.Multi.insert(:user, %User{} |> User.github_creation_changeset(attrs, now))
-    |> Ecto.Multi.run(:organization, fn _repo, %{user: user} ->
-      Organizations.create_personal_organization(user)
-    end)
+    |> Ecto.Multi.insert(:user, changeset)
+    |> Ecto.Multi.run(:organization, fn _repo, %{user: user} -> Organizations.create_personal_organization(user) end)
     |> Repo.transaction()
     |> case do
       {:ok, %{user: user}} -> {:ok, user}
       {:error, :user, changeset, _} -> {:error, changeset}
     end
-  end
-
-  def change_user_registration(attrs, %User{} = user, now) do
-    User.create_password_changeset(user, attrs, now, hash_password: false)
   end
 
   ## Settings
@@ -209,16 +216,6 @@ defmodule Azimutt.Accounts do
     |> case do
       {:ok, %{user: user}} -> {:ok, user}
       {:error, :user, changeset, _} -> {:error, changeset}
-    end
-  end
-
-  def fetch_or_create_user(attrs, now) do
-    case get_user_by_email(attrs.email) do
-      %User{} = user ->
-        {:ok, user}
-
-      _ ->
-        register_github_user(attrs, now)
     end
   end
 

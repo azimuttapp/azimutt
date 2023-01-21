@@ -18,7 +18,9 @@ export const plan: Plan = {
     id: PlanId.enum.free,
     name: 'Free plan',
     layouts: 3,
+    memos: 1,
     colors: false,
+    private_links: false,
     db_analysis: false,
     db_access: false
 }

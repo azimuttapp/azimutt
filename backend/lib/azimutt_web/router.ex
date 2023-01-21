@@ -4,15 +4,20 @@ defmodule AzimuttWeb.Router do
   import AzimuttWeb.UserAuth
   alias AzimuttWeb.Plugs.AllowCrossOriginIframe
 
-  pipeline :browser do
+  pipeline :browser_no_csrf_protection do
     plug Ueberauth
     plug :accepts, ["html"]
     plug :fetch_session
     plug :fetch_live_flash
     plug :put_root_layout, {AzimuttWeb.LayoutView, :root}
-    plug :protect_from_forgery
     plug :put_secure_browser_headers
     plug :fetch_current_user
+    plug :fetch_heroku_resource
+  end
+
+  pipeline :browser do
+    plug :browser_no_csrf_protection
+    plug :protect_from_forgery
   end
 
   pipeline :api do
@@ -20,6 +25,7 @@ defmodule AzimuttWeb.Router do
     plug :accepts, ["json"]
     plug :fetch_session
     plug :fetch_current_user
+    plug :fetch_heroku_resource
   end
 
   pipeline :account_session_layout do
@@ -30,10 +36,19 @@ defmodule AzimuttWeb.Router do
     plug :put_root_layout, {AzimuttWeb.LayoutView, :account_dashboard}
   end
 
+  pipeline :admin_dashboard_layout do
+    plug :put_root_layout, {AzimuttWeb.LayoutView, :admin_dashboard}
+  end
+
   # public routes
   scope "/", AzimuttWeb do
     pipe_through :browser
     get "/", WebsiteController, :index
+    get "/last", WebsiteController, :last
+    get "/use-case/analyze", WebsiteController, :analyze
+    get "/use-case/design", WebsiteController, :design
+    get "/use-case/document", WebsiteController, :document
+    get "/use-case/explore", WebsiteController, :explore
     get "/blog", BlogController, :index
     get "/blog/:id", BlogController, :show
     get "/gallery", GalleryController, :index
@@ -49,7 +64,7 @@ defmodule AzimuttWeb.Router do
 
   # auth routes
   scope "/", AzimuttWeb do
-    pipe_through [:browser, :redirect_if_user_is_authenticated]
+    pipe_through [:browser, :redirect_if_user_is_authed]
     get "/auth/:provider", UserOauthController, :request
     get "/auth/:provider/callback", UserOauthController, :callback
     get "/register", UserRegistrationController, :new
@@ -64,7 +79,7 @@ defmodule AzimuttWeb.Router do
 
   # authed dashboard routes
   scope "/", AzimuttWeb do
-    pipe_through [:browser, :require_authenticated_user, :account_dashboard_layout]
+    pipe_through [:browser, :require_authed_user, :account_dashboard_layout]
     get "/home", UserDashboardController, :index
     get "/login/redirect", UserSessionController, :redirect_to
 
@@ -85,10 +100,33 @@ defmodule AzimuttWeb.Router do
     patch "/invitations/:id/refuse", OrganizationInvitationController, :refuse, as: :invitation
   end
 
-  # authed admin routes
-  # scope "/admin", AzimuttWeb do
-  #   pipe_through [:browser, :require_authenticated_user]
-  # end
+  scope "/heroku", AzimuttWeb do
+    pipe_through [:api, :require_heroku_basic_auth]
+    post "/resources", Api.HerokuController, :create
+    put "/resources/:id", Api.HerokuController, :update
+    delete "/resources/:id", Api.HerokuController, :delete
+  end
+
+  scope "/heroku", AzimuttWeb do
+    pipe_through [:browser_no_csrf_protection]
+    if Mix.env() == :dev, do: get("/", HerokuController, :index)
+    post "/login", HerokuController, :login
+  end
+
+  scope "/heroku", AzimuttWeb do
+    pipe_through [:browser, :require_heroku_resource, :require_authed_user]
+    get "/resources/:id", HerokuController, :show
+  end
+
+  scope "/admin", AzimuttWeb, as: :admin do
+    pipe_through [:browser, :require_authed_user, :require_admin_user, :admin_dashboard_layout]
+    get "/", Admin.DashboardController, :index
+    resources "/users", Admin.UserController, only: [:index, :show]
+    resources "/organizations", Admin.OrganizationController, only: [:index, :show]
+    resources "/projects", Admin.ProjectController, only: [:index, :show]
+    resources "/events", Admin.EventController, only: [:index, :show]
+    resources "/email", Admin.EmailController, only: [:index, :create]
+  end
 
   scope "/api/v1/swagger" do
     forward "/", PhoenixSwagger.Plug.SwaggerUI, otp_app: :azimutt, swagger_file: "swagger.json"
@@ -100,17 +138,29 @@ defmodule AzimuttWeb.Router do
     # GET is practical for development and POST allows to not have params in possible http logs
     get "/analyzer/schema", Api.AnalyzerController, :schema
     post "/analyzer/schema", Api.AnalyzerController, :schema
+    get "/analyzer/stats", Api.AnalyzerController, :stats
+    post "/analyzer/stats", Api.AnalyzerController, :stats
+    get "/analyzer/rows", Api.AnalyzerController, :rows
+    post "/analyzer/rows", Api.AnalyzerController, :rows
+    get "/analyzer/query", Api.AnalyzerController, :query
+    post "/analyzer/query", Api.AnalyzerController, :query
     get "/gallery", Api.GalleryController, :index
     get "/organizations/:organization_id/projects/:id", Api.ProjectController, :show
   end
 
   # authed APIs
   scope "/api/v1", AzimuttWeb do
-    pipe_through [:api, :require_authenticated_user_api]
+    pipe_through [:api, :require_authed_user_api]
     get "/users/current", Api.UserController, :current
+    # only track authed users
+    post "/events", Api.TrackingController, :create
 
     resources "/organizations", Api.OrganizationController, only: [:index] do
-      resources "/projects", Api.ProjectController, except: [:new, :edit, :show]
+      resources "/projects", Api.ProjectController, except: [:new, :edit, :show] do
+        resources "/access-tokens", Api.ProjectTokenController, only: [:index, :create, :delete]
+      end
+
+      post "/tweet-for-table-colors", Api.OrganizationController, :table_colors
     end
   end
 
@@ -173,7 +223,6 @@ defmodule AzimuttWeb.Router do
   scope "/", AzimuttWeb do
     pipe_through :browser
     get "/create", ElmController, :create
-    get "/last", ElmController, :last
     get "/new", ElmController, :new
     get "/projects", ElmController, :projects_legacy
     get "/:organization_id", ElmController, :orga_show

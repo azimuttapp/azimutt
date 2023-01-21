@@ -12,6 +12,7 @@ import Html.Attributes exposing (class, disabled, for, id, name, selected, value
 import Html.Events exposing (onClick, onInput)
 import Libs.Basics exposing (tupled)
 import Libs.Bool as Bool
+import Libs.Dict as Dict
 import Libs.Html exposing (extLink)
 import Libs.Html.Attributes exposing (css)
 import Libs.List as List
@@ -34,11 +35,9 @@ import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (Er
 import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint(..))
 import PagesComponents.Organization_.Project_.Models.ShowColumns as ShowColumns
 import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirtyCmd)
-import Ports
 import Services.Lenses exposing (mapAmlSidebarM, mapErdM, setAmlSidebar, setContent, setErrors, setSelected, setUpdatedAt)
 import Set exposing (Set)
 import Time
-import Track
 
 
 type alias Model x =
@@ -78,7 +77,7 @@ update : Time.Posix -> AmlSidebarMsg -> Model x -> ( Model x, Cmd Msg )
 update now msg model =
     case msg of
         AOpen id ->
-            ( model |> setAmlSidebar (Just (init id model.erd)), Ports.track Track.openUpdateSchema )
+            ( model |> setAmlSidebar (Just (init id model.erd)), Cmd.none )
 
         AClose ->
             ( model |> setAmlSidebar Nothing, Cmd.none )
@@ -109,9 +108,8 @@ updateSource now source input model =
         content =
             contentSplit input
 
-        ( errors, parsed ) =
-            -- TODO: improve, `content` should be set in source inside the `buildSource`
-            String.trim input ++ "\n" |> AmlParser.parse |> AmlAdapter.buildSource (source |> Source.toInfo) |> Tuple.mapSecond (setContent content)
+        ( errors, parsed, amlColumns ) =
+            (String.trim input ++ "\n") |> AmlParser.parse |> AmlAdapter.buildSource (source |> Source.toInfo) content
 
         ( removed, bothPresent, added ) =
             List.diff .id (source.tables |> Dict.values) (parsed.tables |> Dict.values)
@@ -139,7 +137,7 @@ updateSource now source input model =
                         , previous
                             |> Maybe.andThen (\t -> tableLayouts |> List.findBy .id t.id)
                             |> Maybe.map (.props >> .position)
-                            |> Maybe.filter (\p -> p /= Position.zeroCanvasGrid)
+                            |> Maybe.filter (\p -> p /= Position.zeroGrid)
                             |> Maybe.map PlaceAt
                         )
                     )
@@ -153,7 +151,7 @@ updateSource now source input model =
             (List.map T.send
                 ((toShow |> List.map (tupled ShowTable))
                     ++ (toHide |> List.map HideTable)
-                    ++ (updated |> List.map (\t -> ShowColumns t.id (ShowColumns.List (t.columns |> Dict.keys))))
+                    ++ (updated |> List.map (\t -> ShowColumns t.id (ShowColumns.List (amlColumns |> Dict.getOrElse t.id []))))
                 )
             )
         )
@@ -277,7 +275,7 @@ viewChooseSource selectedSource userSources =
             [ div [ class "relative flex items-stretch flex-grow focus-within:z-10" ]
                 [ select [ id selectId, name selectId, onInput (SourceId.fromString >> AChangeSource >> AmlSidebarMsg), disabled (List.isEmpty userSources), css [ "block w-full text-sm border-gray-300 rounded-none rounded-l-md", focus [ "ring-indigo-500 border-indigo-500" ], Tw.disabled [ "bg-slate-50 text-slate-500 shadow-none" ] ] ]
                     (option [] [ text (Bool.cond (List.isEmpty userSources) "-- no edit source, create one →" "-- select a source to edit") ]
-                        :: (userSources |> List.map (\s -> option [ selected (Maybe.map .id selectedSource == Just s.id), value (SourceId.toString s.id) ] [ text s.name ]))
+                        :: (userSources |> List.sortBy .name |> List.map (\s -> option [ selected (Maybe.map .id selectedSource == Just s.id), value (SourceId.toString s.id) ] [ text s.name ]))
                     )
                 ]
             , button [ onClick (simplePrompt "AML source name:" CreateUserSource), class "-ml-px relative inline-flex items-center space-x-2 px-4 py-2 border border-gray-300 text-sm font-medium rounded-r-md text-gray-700 bg-gray-50 hover:bg-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500" ]

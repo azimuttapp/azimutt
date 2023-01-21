@@ -52,7 +52,7 @@ handleFindPath msg model =
                         }
                     )
                 |> mapErdM (mapSettings ProjectSettings.fillFindPath)
-            , Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.findPathDialog), Ports.track Track.openFindPath ]
+            , Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.findPathDialog), Track.findPathOpened model.erd |> Ports.track ]
             )
                 |> setDirtyCmd
 
@@ -72,7 +72,7 @@ handleFindPath msg model =
                     ( model, Cmd.none )
 
         FPCompute tables relations from to settings ->
-            computeFindPath tables relations from to settings |> (\result -> ( model |> mapFindPathM (setResult (Found result)), Cmd.batch [ Ports.track (Track.findPathResult result) ] ))
+            computeFindPath tables relations from to settings |> (\result -> ( model |> mapFindPathM (setResult (Found result)), Cmd.batch [ Ports.track (Track.findPathResults model.erd result) ] ))
 
         FPToggleResult index ->
             ( model |> mapFindPathM (mapResult (FindPathState.map (mapOpened (\o -> B.cond (o == Just index) Nothing (Just index))))), Cmd.none )

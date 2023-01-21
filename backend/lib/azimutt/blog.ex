@@ -8,7 +8,7 @@ defmodule Azimutt.Blog do
 
   defp article_path, do: "priv/static/blog"
 
-  def get_articles do
+  def list_articles do
     # FIXME: add caching for articles
     Path.wildcard("#{article_path()}/????-??-??-*/*.md")
     |> Enum.reject(&Phoenix.has_digest/1)
@@ -23,5 +23,11 @@ defmodule Azimutt.Blog do
          {:ok, content} <- File.read(path),
          {:ok, map} <- Frontmatter.parse(content),
          do: Article.build(path, map)
+  end
+
+  # Get 3 other articles
+  def related_articles(article) do
+    list_articles()
+    |> Result.map(fn articles -> articles |> Enum.filter(fn a -> a.id != article.id end) |> Enum.shuffle() |> Enum.take(3) end)
   end
 end

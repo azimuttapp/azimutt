@@ -1,4 +1,6 @@
-module PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf, default, embedDefault)
+module PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf, embedDefault, project)
+
+import Models.ProjectTokenId exposing (ProjectTokenId)
 
 
 type alias ErdConf =
@@ -19,12 +21,13 @@ type alias ErdConf =
     }
 
 
-default : ErdConf
-default =
+project : Maybe ProjectTokenId -> ErdConf
+project token =
     -- used for real app
+    -- if token is present, we are in sharing mode so disabled the sharing menu and the save action
     { fitOnLoad = False
     , fullscreen = False
-    , save = True
+    , save = token == Nothing
     , hover = True
     , select = True
     , move = True
@@ -35,7 +38,7 @@ default =
     , findPath = True
     , layoutManagement = True
     , projectManagement = True
-    , sharing = True
+    , sharing = token == Nothing
     }
 
 

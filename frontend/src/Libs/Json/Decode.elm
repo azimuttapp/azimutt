@@ -1,4 +1,4 @@
-module Libs.Json.Decode exposing (customDict, customNed, defaultField, defaultFieldDeep, errorToHtml, errorToStringNoValue, filter, map10, map11, map12, map13, map14, map15, map16, map17, map18, map9, matchOn, maybeField, maybeWithDefault, nel, tuple)
+module Libs.Json.Decode exposing (customDict, customNed, defaultField, defaultFieldDeep, errorToHtml, errorToStringNoValue, filter, map10, map11, map12, map13, map14, map15, map16, map17, map18, map19, map20, map9, matchOn, maybeField, maybeWithDefault, nel, tuple)
 
 import Dict exposing (Dict)
 import Json.Decode as Decode exposing (Decoder)
@@ -239,3 +239,21 @@ map18 callback da db dc dd de df dg dh di dj dk dl dm dn do dp dq dr =
         (Decode.map6 (\a b c d e f -> ( ( a, b, c ), ( d, e, f ) )) da db dc dd de df)
         (Decode.map6 (\g h i j k l -> ( ( g, h, i ), ( j, k, l ) )) dg dh di dj dk dl)
         (Decode.map6 (\m n o p q r -> ( ( m, n, o ), ( p, q, r ) )) dm dn do dp dq dr)
+
+
+map19 : (a -> b -> c -> d -> e -> f -> g -> h -> i -> j -> k -> l -> m -> n -> o -> p -> q -> r -> s -> value) -> Decode.Decoder a -> Decode.Decoder b -> Decode.Decoder c -> Decode.Decoder d -> Decode.Decoder e -> Decode.Decoder f -> Decode.Decoder g -> Decode.Decoder h -> Decode.Decoder i -> Decode.Decoder j -> Decode.Decoder k -> Decode.Decoder l -> Decode.Decoder m -> Decode.Decoder n -> Decode.Decoder o -> Decode.Decoder p -> Decode.Decoder q -> Decode.Decoder r -> Decode.Decoder s -> Decode.Decoder value
+map19 callback da db dc dd de df dg dh di dj dk dl dm dn do dp dq dr ds =
+    Decode.map4 (\( ( a, b, c ), ( d, e, f ) ) ( ( g, h, i ), ( j, k, l ) ) ( ( m, n, o ), ( p, q, r ) ) s -> callback a b c d e f g h i j k l m n o p q r s)
+        (Decode.map6 (\a b c d e f -> ( ( a, b, c ), ( d, e, f ) )) da db dc dd de df)
+        (Decode.map6 (\g h i j k l -> ( ( g, h, i ), ( j, k, l ) )) dg dh di dj dk dl)
+        (Decode.map6 (\m n o p q r -> ( ( m, n, o ), ( p, q, r ) )) dm dn do dp dq dr)
+        ds
+
+
+map20 : (a -> b -> c -> d -> e -> f -> g -> h -> i -> j -> k -> l -> m -> n -> o -> p -> q -> r -> s -> t -> value) -> Decode.Decoder a -> Decode.Decoder b -> Decode.Decoder c -> Decode.Decoder d -> Decode.Decoder e -> Decode.Decoder f -> Decode.Decoder g -> Decode.Decoder h -> Decode.Decoder i -> Decode.Decoder j -> Decode.Decoder k -> Decode.Decoder l -> Decode.Decoder m -> Decode.Decoder n -> Decode.Decoder o -> Decode.Decoder p -> Decode.Decoder q -> Decode.Decoder r -> Decode.Decoder s -> Decode.Decoder t -> Decode.Decoder value
+map20 callback da db dc dd de df dg dh di dj dk dl dm dn do dp dq dr ds dt =
+    Decode.map4 (\( ( a, b, c ), ( d, e, f ) ) ( ( g, h, i ), ( j, k, l ) ) ( ( m, n, o ), ( p, q, r ) ) ( s, t ) -> callback a b c d e f g h i j k l m n o p q r s t)
+        (Decode.map6 (\a b c d e f -> ( ( a, b, c ), ( d, e, f ) )) da db dc dd de df)
+        (Decode.map6 (\g h i j k l -> ( ( g, h, i ), ( j, k, l ) )) dg dh di dj dk dl)
+        (Decode.map6 (\m n o p q r -> ( ( m, n, o ), ( p, q, r ) )) dm dn do dp dq dr)
+        (Decode.map2 (\s t -> ( s, t )) ds dt)

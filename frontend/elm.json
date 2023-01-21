@@ -10,7 +10,7 @@
         "direct": {
             "NoRedInk/elm-simple-fuzzy": "1.0.3",
             "TSFoster/elm-uuid": "4.2.0",
-            "dtwrks/elm-book": "1.4.1",
+            "dtwrks/elm-book": "1.4.2",
             "elm/browser": "1.0.2",
             "elm/core": "1.0.5",
             "elm/html": "1.0.0",
@@ -22,6 +22,10 @@
             "elm/svg": "1.0.1",
             "elm/time": "1.0.0",
             "elm/url": "1.0.0",
+            "elm-community/graph": "6.0.0",
+            "elm-explorations/markdown": "1.0.0",
+            "goyalarchit/elm-dagre": "3.0.0",
+            "justinmimbs/time-extra": "1.1.1",
             "mpizenberg/elm-file": "1.0.0",
             "mpizenberg/elm-pointer-events": "4.0.2",
             "myrho/elm-round": "1.0.5",
@@ -34,11 +38,27 @@
             "TSFoster/elm-bytes-extra": "1.3.0",
             "TSFoster/elm-md5": "2.0.1",
             "TSFoster/elm-sha1": "2.1.1",
+            "avh4/elm-color": "1.0.0",
+            "avh4/elm-fifo": "1.0.4",
             "danfishgold/base64-bytes": "1.1.0",
-            "dillonkearns/elm-markdown": "7.0.0",
+            "dillonkearns/elm-markdown": "7.0.1",
             "elm/bytes": "1.0.8",
             "elm/file": "1.0.5",
             "elm/virtual-dom": "1.0.3",
+            "elm-community/intdict": "3.0.0",
+            "elm-community/list-extra": "8.7.0",
+            "elm-community/typed-svg": "7.0.0",
+            "folkertdev/elm-deque": "3.0.1",
+            "folkertdev/one-true-path-experiment": "6.0.0",
+            "folkertdev/svg-path-lowlevel": "4.0.1",
+            "ianmackenzie/elm-1d-parameter": "1.0.1",
+            "ianmackenzie/elm-float-extra": "1.1.0",
+            "ianmackenzie/elm-geometry": "3.9.1",
+            "ianmackenzie/elm-interval": "2.0.0",
+            "ianmackenzie/elm-triangular-mesh": "1.1.0",
+            "ianmackenzie/elm-units": "2.9.0",
+            "ianmackenzie/elm-units-interval": "2.3.0",
+            "justinmimbs/date": "4.0.1",
             "pablohirafuji/elm-syntax-highlight": "3.4.1",
             "rtfeldman/elm-hex": "1.0.0",
             "zwilias/elm-utf-tools": "2.0.1"
@@ -46,7 +66,7 @@
     },
     "test-dependencies": {
         "direct": {
-            "elm-explorations/test": "1.2.2"
+            "elm-explorations/test": "2.1.0"
         },
         "indirect": {}
     }

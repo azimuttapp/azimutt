@@ -22,6 +22,7 @@ import Libs.Tailwind as Tw exposing (sm)
 import Libs.Task as T
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceKind exposing (SourceKind(..))
+import Models.ProjectInfo exposing (ProjectInfo)
 import Services.AmlSource as AmlSource
 import Services.DatabaseSource as DatabaseSource
 import Services.JsonSource as JsonSource
@@ -59,9 +60,9 @@ type Msg
     | UpdateTab Tab
 
 
-init : (String -> msg) -> Maybe Source -> Model msg
-init noop source =
-    { id = Conf.ids.sourceUpdateDialog
+init : (String -> msg) -> HtmlId -> Maybe Source -> Model msg
+init noop dialogId source =
+    { id = dialogId
     , source = source
     , databaseSource = DatabaseSource.init source (\_ -> noop "project-settings-database-source-callback")
     , sqlSource = SqlSource.init source (\_ -> noop "project-settings-sql-source-callback")
@@ -71,26 +72,26 @@ init noop source =
     }
 
 
-update : (Msg -> msg) -> (HtmlId -> msg) -> (String -> msg) -> Time.Posix -> Msg -> Maybe (Model msg) -> ( Maybe (Model msg), Cmd msg )
-update wrap modalOpen noop now msg model =
+update : (Msg -> msg) -> (HtmlId -> msg) -> (String -> msg) -> Time.Posix -> Maybe ProjectInfo -> Msg -> Maybe (Model msg) -> ( Maybe (Model msg), Cmd msg )
+update wrap modalOpen noop now project msg model =
     case msg of
         Open source ->
-            ( Just (init noop source), T.sendAfter 1 (modalOpen Conf.ids.sourceUpdateDialog) )
+            ( Just (init noop Conf.ids.sourceUpdateDialog source), T.sendAfter 1 (modalOpen Conf.ids.sourceUpdateDialog) )
 
         Close ->
             ( Nothing, Cmd.none )
 
         DatabaseSourceMsg message ->
-            model |> mapMCmd (mapDatabaseSourceCmd (DatabaseSource.update (DatabaseSourceMsg >> wrap) now message))
+            model |> mapMCmd (mapDatabaseSourceCmd (DatabaseSource.update (DatabaseSourceMsg >> wrap) now project message))
 
         SqlSourceMsg message ->
-            model |> mapMCmd (mapSqlSourceCmd (SqlSource.update (SqlSourceMsg >> wrap) now message))
+            model |> mapMCmd (mapSqlSourceCmd (SqlSource.update (SqlSourceMsg >> wrap) now project message))
 
         JsonSourceMsg message ->
-            model |> mapMCmd (mapJsonSourceCmd (JsonSource.update (JsonSourceMsg >> wrap) now message))
+            model |> mapMCmd (mapJsonSourceCmd (JsonSource.update (JsonSourceMsg >> wrap) now project message))
 
         AmlSourceMsg message ->
-            model |> mapMCmd (mapAmlSourceCmd (AmlSource.update (AmlSourceMsg >> wrap) now message))
+            model |> mapMCmd (mapAmlSourceCmd (AmlSource.update (AmlSourceMsg >> wrap) now project message))
 
         UpdateTab kind ->
             ( model |> Maybe.map (\m -> { m | newSourceTab = kind }), Cmd.none )

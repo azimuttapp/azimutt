@@ -1,5 +1,6 @@
 import {
     Color,
+    DatabaseUrl,
     Delta,
     FileContent,
     FileName,
@@ -15,17 +16,22 @@ import {
 } from "./basics";
 import {
     ColumnId,
+    ColumnRef,
     Project,
     ProjectId,
     ProjectInfo,
     ProjectInfoLocalLegacy,
     ProjectStorage,
+    ProjectTokenId,
+    SourceId,
     SourceOrigin,
     TableId
 } from "./project";
 import {OrganizationId} from "./organization";
 import {Env} from "../utils/env";
 import {z} from "zod";
+import {ColumnStats, TableStats} from "./stats";
+import {TrackEvent} from "./tracking";
 
 export interface ElmProgram<F, I, O> {
     init: (f: { flags: F, node?: HTMLElement }) => ElmRuntime<I, O>
@@ -87,9 +93,6 @@ export const Hotkey = z.object({
     preventDefault: z.boolean()
 }).strict()
 
-export type TrackingDetails = { [key: string]: string | number | boolean | undefined | null };
-export const TrackingDetails = z.record(z.union([z.string(), z.number(), z.boolean(), z.undefined(), z.null()]))
-
 
 export type Click = { kind: 'Click', id: HtmlId }
 export const Click = z.object({kind: z.literal('Click'), id: HtmlId}).strict()
@@ -111,8 +114,8 @@ export type Toast = { kind: 'Toast', level: ToastLevel, message: string }
 export const Toast = z.object({kind: z.literal('Toast'), level: ToastLevel, message: z.string()}).strict()
 export type GetLegacyProjects = { kind: 'GetLegacyProjects' }
 export const GetLegacyProjects = z.object({kind: z.literal('GetLegacyProjects')}).strict()
-export type GetProject = { kind: 'GetProject', organization: OrganizationId, project: ProjectId }
-export const GetProject = z.object({kind: z.literal('GetProject'), organization: OrganizationId, project: ProjectId}).strict()
+export type GetProject = { kind: 'GetProject', organization: OrganizationId, project: ProjectId, token: ProjectTokenId | null }
+export const GetProject = z.object({kind: z.literal('GetProject'), organization: OrganizationId, project: ProjectId, token: ProjectTokenId.nullable()}).strict()
 export type CreateProjectTmp = { kind: 'CreateProjectTmp', project: Project }
 export const CreateProjectTmp = z.object({kind: z.literal('CreateProjectTmp'), project: Project}).strict()
 export type UpdateProjectTmp = { kind: 'UpdateProjectTmp', project: Project }
@@ -131,6 +134,10 @@ export type DownloadFile = { kind: 'DownloadFile', filename: FileName, content: 
 export const DownloadFile = z.object({kind: z.literal('DownloadFile'), filename: FileName, content: FileContent}).strict()
 export type GetLocalFile = { kind: 'GetLocalFile', sourceKind: SourceOrigin, file: File }
 export const GetLocalFile = z.object({kind: z.literal('GetLocalFile'), sourceKind: SourceOrigin, file: FileObject}).strict()
+export type GetTableStats = { kind: 'GetTableStats', source: SourceId, database: DatabaseUrl, table: TableId }
+export const GetTableStats = z.object({kind: z.literal('GetTableStats'), source: SourceId, database: DatabaseUrl, table: TableId}).strict()
+export type GetColumnStats = { kind: 'GetColumnStats', source: SourceId, database: DatabaseUrl, column: ColumnRef }
+export const GetColumnStats = z.object({kind: z.literal('GetColumnStats'), source: SourceId, database: DatabaseUrl, column: ColumnRef}).strict()
 export type ObserveSizes = { kind: 'ObserveSizes', ids: HtmlId[] }
 export const ObserveSizes = z.object({kind: z.literal('ObserveSizes'), ids: HtmlId.array()}).strict()
 export type ListenKeys = { kind: 'ListenKeys', keys: { [id: HotkeyId]: Hotkey[] } }
@@ -139,14 +146,12 @@ export type Confetti = { kind: 'Confetti', id: HtmlId }
 export const Confetti = z.object({kind: z.literal('Confetti'), id: HtmlId}).strict()
 export type ConfettiPride = { kind: 'ConfettiPride' }
 export const ConfettiPride = z.object({kind: z.literal('ConfettiPride')}).strict()
-export type TrackPage = { kind: 'TrackPage', name: string }
-export const TrackPage = z.object({kind: z.literal('TrackPage'), name: z.string()}).strict()
-export type TrackEvent = { kind: 'TrackEvent', name: string, details?: TrackingDetails }
-export const TrackEvent = z.object({kind: z.literal('TrackEvent'), name: z.string(), details: TrackingDetails.optional()}).strict()
-export type TrackError = { kind: 'TrackError', name: string, details?: TrackingDetails }
-export const TrackError = z.object({kind: z.literal('TrackError'), name: z.string(), details: TrackingDetails.optional()}).strict()
-export type ElmMsg = Click | MouseDown | Focus | Blur | ScrollTo | Fullscreen | SetMeta | AutofocusWithin | Toast | GetLegacyProjects | GetProject | CreateProjectTmp | UpdateProjectTmp | CreateProject | UpdateProject | MoveProjectTo | DeleteProject | ProjectDirty | DownloadFile | GetLocalFile | ObserveSizes | ListenKeys | Confetti | ConfettiPride | TrackPage | TrackEvent | TrackError
-export const ElmMsg = z.discriminatedUnion('kind', [Click, MouseDown, Focus, Blur, ScrollTo, Fullscreen, SetMeta, AutofocusWithin, Toast, GetLegacyProjects, GetProject, CreateProjectTmp, UpdateProjectTmp, CreateProject, UpdateProject, MoveProjectTo, DeleteProject, ProjectDirty, DownloadFile, GetLocalFile, ObserveSizes, ListenKeys, Confetti, ConfettiPride, TrackPage, TrackEvent, TrackError])
+export type Fireworks = { kind: 'Fireworks' }
+export const Fireworks = z.object({kind: z.literal('Fireworks')}).strict()
+export type Track = { kind: 'Track', event: TrackEvent }
+export const Track = z.object({kind: z.literal('Track'), event: TrackEvent}).strict()
+export type ElmMsg = Click | MouseDown | Focus | Blur | ScrollTo | Fullscreen | SetMeta | AutofocusWithin | Toast | GetLegacyProjects | GetProject | CreateProjectTmp | UpdateProjectTmp | CreateProject | UpdateProject | MoveProjectTo | DeleteProject | ProjectDirty | DownloadFile | GetLocalFile | GetTableStats | GetColumnStats | ObserveSizes | ListenKeys | Confetti | ConfettiPride | Fireworks | Track
+export const ElmMsg = z.discriminatedUnion('kind', [Click, MouseDown, Focus, Blur, ScrollTo, Fullscreen, SetMeta, AutofocusWithin, Toast, GetLegacyProjects, GetProject, CreateProjectTmp, UpdateProjectTmp, CreateProject, UpdateProject, MoveProjectTo, DeleteProject, ProjectDirty, DownloadFile, GetLocalFile, GetTableStats, GetColumnStats, ObserveSizes, ListenKeys, Confetti, ConfettiPride, Fireworks, Track])
 
 
 export type GotSizes = { kind: 'GotSizes', sizes: ElementSize[] }
@@ -159,6 +164,10 @@ export type ProjectDeleted = { kind: 'ProjectDeleted', id: ProjectId }
 export const ProjectDeleted = z.object({kind: z.literal('ProjectDeleted'), id: ProjectId}).strict()
 export type GotLocalFile = { kind: 'GotLocalFile', sourceKind: SourceOrigin, file: File, content: string }
 export const GotLocalFile = z.object({kind: z.literal('GotLocalFile'), sourceKind: SourceOrigin, file: FileObject, content: z.string()}).strict()
+export type GotTableStats = { kind: 'GotTableStats', source: SourceId, stats: TableStats }
+export const GotTableStats = z.object({kind: z.literal('GotTableStats'), source: SourceId, stats: TableStats}).strict()
+export type GotColumnStats = { kind: 'GotColumnStats', source: SourceId, stats: ColumnStats }
+export const GotColumnStats = z.object({kind: z.literal('GotColumnStats'), source: SourceId, stats: ColumnStats}).strict()
 export type GotHotkey = { kind: 'GotHotkey', id: string }
 export const GotHotkey = z.object({kind: z.literal('GotHotkey'), id: z.string()}).strict()
 export type GotKeyHold = { kind: 'GotKeyHold', key: string, start: boolean }
@@ -189,5 +198,5 @@ export type GotFitToScreen = { kind: 'GotFitToScreen' }
 export const GotFitToScreen = z.object({kind: z.literal('GotFitToScreen')}).strict()
 export type Error = { kind: 'Error', message: string }
 export const Error = z.object({kind: z.literal('Error'), message: z.string()}).strict()
-export type JsMsg = GotSizes | GotLegacyProjects | GotProject | ProjectDeleted | GotLocalFile | GotHotkey | GotKeyHold | GotToast | GotTableShow | GotTableHide | GotTableToggleColumns | GotTablePosition | GotTableMove | GotTableSelect | GotTableColor | GotColumnShow | GotColumnHide | GotColumnMove | GotFitToScreen | Error
-export const JsMsg = z.discriminatedUnion('kind', [GotSizes, GotLegacyProjects, GotProject, ProjectDeleted, GotLocalFile, GotHotkey, GotKeyHold, GotToast, GotTableShow, GotTableHide, GotTableToggleColumns, GotTablePosition, GotTableMove, GotTableSelect, GotTableColor, GotColumnShow, GotColumnHide, GotColumnMove, GotFitToScreen, Error])
+export type JsMsg = GotSizes | GotLegacyProjects | GotProject | ProjectDeleted | GotLocalFile | GotTableStats | GotColumnStats | GotHotkey | GotKeyHold | GotToast | GotTableShow | GotTableHide | GotTableToggleColumns | GotTablePosition | GotTableMove | GotTableSelect | GotTableColor | GotColumnShow | GotColumnHide | GotColumnMove | GotFitToScreen | Error
+export const JsMsg = z.discriminatedUnion('kind', [GotSizes, GotLegacyProjects, GotProject, ProjectDeleted, GotLocalFile, GotTableStats, GotColumnStats, GotHotkey, GotKeyHold, GotToast, GotTableShow, GotTableHide, GotTableToggleColumns, GotTablePosition, GotTableMove, GotTableSelect, GotTableColor, GotColumnShow, GotColumnHide, GotColumnMove, GotFitToScreen, Error])

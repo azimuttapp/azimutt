@@ -2,6 +2,7 @@ defmodule AzimuttWeb.UserRegistrationController do
   use AzimuttWeb, :controller
   alias Azimutt.Accounts
   alias Azimutt.Accounts.User
+  alias Azimutt.Tracking
   alias AzimuttWeb.UserAuth
   action_fallback AzimuttWeb.FallbackController
 
@@ -16,11 +17,8 @@ defmodule AzimuttWeb.UserRegistrationController do
 
     case Accounts.register_password_user(user_params, now) do
       {:ok, user} ->
-        {:ok, _} =
-          Accounts.deliver_user_confirmation_instructions(
-            user,
-            &Routes.user_confirmation_url(conn, :edit, &1)
-          )
+        {:ok, _} = Accounts.deliver_user_confirmation_instructions(user, &Routes.user_confirmation_url(conn, :edit, &1))
+        Tracking.login(user, "password")
 
         conn
         |> put_flash(:info, "User created successfully.")

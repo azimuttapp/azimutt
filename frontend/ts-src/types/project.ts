@@ -1,4 +1,4 @@
-import {Color, Position, Size, Slug, Timestamp} from "./basics";
+import {Color, Json, Position, Size, Slug, Timestamp} from "./basics";
 import {Uuid} from "./uuid";
 import {Organization} from "./organization";
 import * as array from "../utils/array";
@@ -28,6 +28,8 @@ export type ColumnName = string
 export const ColumnName = z.string()
 export type ColumnType = string
 export const ColumnType = z.string()
+export type ColumnValue = string | number | boolean | null | unknown
+export const ColumnValue = z.union([z.string(), z.number(), z.boolean(), z.null(), Json])
 export type Line = string
 export const Line = z.string()
 export type LineIndex = number
@@ -36,10 +38,14 @@ export type RelationName = string
 export const RelationName = z.string()
 export type TypeName = string
 export const TypeName = z.string()
+export type MemoId = number
+export const MemoId = z.number()
 export type LayoutName = string
 export const LayoutName = z.string()
 export type ZoomLevel = number
 export const ZoomLevel = z.number()
+export type ProjectTokenId = Uuid
+export const ProjectTokenId = Uuid
 
 export interface DatabaseConnection {
     kind: 'DatabaseConnection',
@@ -333,9 +339,26 @@ export const TableProps = z.object({
     hiddenColumns: z.boolean().optional()
 }).strict()
 
+export interface Memo {
+    id: MemoId
+    content: string
+    position: Position
+    size: Size
+    color?: Color
+}
+
+export const Memo = z.object({
+    id: MemoId,
+    content: z.string(),
+    position: Position,
+    size: Size,
+    color: Color.optional()
+}).strict()
+
 export interface Layout {
     canvas: CanvasProps
     tables: TableProps[]
+    memos?: Memo[]
     createdAt: Timestamp
     updatedAt: Timestamp
 }
@@ -343,6 +366,7 @@ export interface Layout {
 export const Layout = z.object({
     canvas: CanvasProps,
     tables: TableProps.array(),
+    memos: Memo.array().optional(),
     createdAt: Timestamp,
     updatedAt: Timestamp
 }).strict()
@@ -443,8 +467,9 @@ export interface ProjectStats {
     nbRelations: number
     nbTypes: number
     nbComments: number
-    nbNotes: number
     nbLayouts: number
+    nbNotes: number
+    nbMemos: number
 }
 
 export const ProjectStats = z.object({
@@ -454,8 +479,9 @@ export const ProjectStats = z.object({
     nbRelations: z.number(),
     nbTypes: z.number(),
     nbComments: z.number(),
+    nbLayouts: z.number(),
     nbNotes: z.number(),
-    nbLayouts: z.number()
+    nbMemos: z.number()
 }).strict()
 
 export interface ProjectInfoLocal extends ProjectStats {
@@ -465,6 +491,7 @@ export interface ProjectInfoLocal extends ProjectStats {
     name: ProjectName
     description?: string
     storage: 'local'
+    visibility: ProjectVisibility
     encodingVersion: ProjectVersion
     createdAt: Timestamp
     updatedAt: Timestamp
@@ -477,19 +504,20 @@ export const ProjectInfoLocal = ProjectStats.extend({
     name: ProjectName,
     description: z.string().optional(),
     storage: z.literal(ProjectStorage.enum.local),
+    visibility: ProjectVisibility,
     encodingVersion: ProjectVersion,
     createdAt: Timestamp,
     updatedAt: Timestamp
 }).strict()
 
-export type ProjectInfoRemote = Omit<ProjectInfoLocal, 'storage'> & { storage: 'remote', visibility: ProjectVisibility }
-export const ProjectInfoRemote = ProjectInfoLocal.omit({storage: true}).extend({storage: z.literal(ProjectStorage.enum.remote), visibility: ProjectVisibility}).strict()
+export type ProjectInfoRemote = Omit<ProjectInfoLocal, 'storage'> & { storage: 'remote' }
+export const ProjectInfoRemote = ProjectInfoLocal.omit({storage: true}).extend({storage: z.literal(ProjectStorage.enum.remote)}).strict()
 export type ProjectInfoRemoteWithContent = ProjectInfoRemote & { content: ProjectJson }
 export type ProjectInfo = ProjectInfoLocal | ProjectInfoRemote
 export const ProjectInfo = z.discriminatedUnion('storage', [ProjectInfoLocal, ProjectInfoRemote])
 export type ProjectInfoWithContent = ProjectInfoLocal | ProjectInfoRemoteWithContent
-export type ProjectInfoLocalLegacy = Omit<ProjectInfoLocal, 'organization'> & { visibility: ProjectVisibility }
-export const ProjectInfoLocalLegacy = ProjectInfoLocal.omit({organization: true}).extend({visibility: ProjectVisibility}).strict()
+export type ProjectInfoLocalLegacy = Omit<ProjectInfoLocal, 'organization'>
+export const ProjectInfoLocalLegacy = ProjectInfoLocal.omit({organization: true}).strict()
 
 
 export function isLocal(p: ProjectInfo): p is ProjectInfoLocal {
@@ -502,6 +530,11 @@ export function isRemote(p: ProjectInfo): p is ProjectInfoRemote {
 
 export function isLegacy(p: ProjectStored): p is ProjectJsonLegacy {
     return 'createdAt' in p
+}
+
+export function parseTableId(id: TableId): {schema: SchemaName, table: TableName} {
+    const [schema, table] = id.split(".")
+    return table === undefined ? {schema: "", table: schema} : {schema, table}
 }
 
 // required read transformations to satisfy Zod validations
@@ -595,6 +628,7 @@ export function buildProjectRemote(info: ProjectInfoRemote, {_type, ...p}: Proje
         ...p,
         organization: info.organization,
         id: info.id,
+        slug: info.slug,
         storage: ProjectStorage.enum.remote,
         visibility: info.visibility,
         createdAt: info.createdAt,
@@ -618,7 +652,8 @@ export function computeStats(p: ProjectStored): ProjectStats {
         nbRelations: p.sources.reduce((acc, src) => acc + src.relations.length, 0),
         nbTypes: Object.keys(types).length,
         nbComments: p.sources.flatMap(s => s.tables.flatMap(t => [t.comment].concat(t.columns.map(c => c.comment)).filter(c => !!c))).length,
+        nbLayouts: Object.keys(p.layouts).length,
         nbNotes: Object.keys(p.notes || {}).length,
-        nbLayouts: Object.keys(p.layouts).length
+        nbMemos: Object.values(p.layouts).flatMap(l => l.memos || []).length,
     }, ProjectStats, 'ProjectStats')
 }

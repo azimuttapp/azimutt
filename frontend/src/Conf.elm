@@ -1,4 +1,4 @@
-module Conf exposing (canvas, constants, hotkeys, ids, schema, ui)
+module Conf exposing (canvas, constants, features, hotkeys, ids, schema, ui)
 
 import Dict exposing (Dict)
 import Libs.Models.Hotkey exposing (Hotkey, hotkey, target)
@@ -27,10 +27,10 @@ constants :
     , defaultDescription : String
     , newProjectName : ProjectName
     , defaultLayout : LayoutName
-    , freePlanLayouts : Int
     , virtualRelationSourceName : SourceName
     , cheeringTweet : String
     , sharingTweet : String
+    , canvasMargins : Float
     }
 constants =
     { azimuttWebsite = "https://azimutt.app"
@@ -49,10 +49,10 @@ constants =
     , defaultDescription = "Next-Gen ERD: explore, analyze, document and design your SQL database schema."
     , newProjectName = "New Project"
     , defaultLayout = "initial layout"
-    , freePlanLayouts = 3 -- MUST stay in sync with free_plan_layouts in backend/config/config.exs
     , virtualRelationSourceName = "default"
     , cheeringTweet = "Hi team, I really like what you've done with @" ++ twitter ++ ". Keep up the good work 💪"
     , sharingTweet = "Hi @" ++ twitter ++ ", I just published my schema at ..., I would love if you can share 🚀"
+    , canvasMargins = 20
     }
 
 
@@ -97,6 +97,18 @@ ui =
     , closeDuration = 300
     , tableHeaderHeight = 45
     , tableColumnHeight = 24
+    }
+
+
+features : { layouts : { name : String, free : number }, memos : { name : String, free : number }, tableColor : { name : String, free : Bool }, privateLinks : { name : String, free : Bool }, dbAnalysis : { name : String, free : Bool }, dbAccess : { name : String, free : Bool } }
+features =
+    -- MUST stay in sync with backend/config/config.exs (`free_plan_layouts`)
+    { layouts = { name = "layouts", free = 3 }
+    , memos = { name = "memos", free = 1 }
+    , tableColor = { name = "table_color", free = False }
+    , privateLinks = { name = "private_links", free = True }
+    , dbAnalysis = { name = "analysis", free = False }
+    , dbAccess = { name = "data_access", free = False }
     }
 
 
@@ -148,6 +160,7 @@ hotkeys =
         , ( "search-down", [ { hotkey | key = "ArrowDown", target = Just { target | tag = Just "input", id = Just ids.searchInput } } ] )
         , ( "search-confirm", [ { hotkey | key = "Enter", target = Just { target | tag = Just "input", id = Just ids.searchInput } } ] )
         , ( "notes", [ { hotkey | key = "n" } ] )
+        , ( "new-memo", [ { hotkey | key = "m" } ] )
         , ( "collapse", [ { hotkey | key = "c" } ] )
         , ( "expand", [ { hotkey | key = "ArrowRight", ctrl = True } ] )
         , ( "shrink", [ { hotkey | key = "ArrowLeft", ctrl = True } ] )
