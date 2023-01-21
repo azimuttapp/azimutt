@@ -1,16 +1,7 @@
 <div class="flex flex-col border-l border-1 border-slate-800 pl-3">
     <div class="py-2 flex justify-between">
         <div class="text-2xl font-bold text-slate-100"><%= @events |> Page.title("event") %></div>
-        <form>
-            <%= for {name, value} <- @events.info.query do %>
-                <input type="hidden" name={name} value={value} />
-            <% end %>
-            <input type="search"
-                   name={"#{@events.info.prefix}q"}
-                   value={@events.info.search}
-                   placeholder="Search..."
-                   class="py-1 text-sm rounded-md text-slate-300 bg-slate-900 border-slate-700 shadow-sm focus:border-indigo-900 focus:ring-indigo-900" />
-        </form>
+        <%= render AzimuttWeb.PartialsView, "_page_search.html", page: @events %>
     </div>
 
     <div class="align-middle shadow sm:rounded-sm">

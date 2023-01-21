@@ -1,0 +1,12 @@
+<%= if @page |> Page.has_pagination do %>
+    <form>
+        <%= for {name, value} <- @page.info.query do %>
+        <input type="hidden" name={name} value={value} />
+        <% end %>
+        <input type="search"
+               name={"#{@page.info.prefix}q"}
+               value={@page.info.search}
+               placeholder="Search..."
+               class="py-1 text-sm rounded-md text-slate-300 bg-slate-900 border-slate-700 shadow-sm focus:border-indigo-900 focus:ring-indigo-900" />
+    </form>
+<% end %>
