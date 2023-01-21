@@ -1,0 +1,54 @@
+<div class="flex flex-col border-l border-1 border-slate-800 pl-3">
+    <div class="text-2xl font-bold text-slate-100 py-2"><%= @invitations |> Page.title("invitation") %></div>
+
+    <div class="align-middle shadow sm:rounded-sm">
+        <table class="w-full text-left">
+            <thead class="text-gray-100 bg-slate-800 text-xs font-semibold">
+                <tr>
+                    <th class="p-1" scope="col">Invitation for</th>
+                    <th class="p-1" scope="col">Status</th>
+                    <th class="p-1" scope="col">Created by</th>
+                    <th class="p-1" scope="col">Created at</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800 text-slate-500 bg-slate-900">
+                <%= for invitation <- @invitations.items do %>
+                    <tr class="text-xs whitespace-nowrap hover:bg-slate-800 hover:text-slate-300">
+                        <td class="p-1"><a href={"mailto:#{invitation.sent_to}"} class="underline"><%= invitation.sent_to %></a></td>
+                        <td class="p-1">
+                            <%= cond do %>
+                                <% invitation.cancel_at -> %>
+                                    <span title={"Canceled on #{format_datetime(invitation.cancel_at)}"}>cancel</span>
+                                <% invitation.refused_at -> %>
+                                    <span title={"Refused on #{format_datetime(invitation.refused_at)}"}>refused</span> by
+                                    <%= link to: Routes.admin_user_path(@conn, :show, invitation.answered_by), class: "underline" do %>
+                                        <%= img_tag(invitation.answered_by.avatar, class: "inline-block h-4 w-4 rounded-md") %>
+                                        <%= invitation.answered_by.name %>
+                                    <% end %>
+                                <% invitation.accepted_at -> %>
+                                    <span title={"Accepted on #{format_datetime(invitation.accepted_at)}"}>accepted</span> by
+                                    <%= link to: Routes.admin_user_path(@conn, :show, invitation.answered_by), class: "underline" do %>
+                                        <%= img_tag(invitation.answered_by.avatar, class: "inline-block h-4 w-4 rounded-md") %>
+                                        <%= invitation.answered_by.name %>
+                                    <% end %>
+                                <% Date.compare(@now, invitation.expire_at) == :gt -> %>
+                                    <span title={"Expired on #{format_datetime(invitation.expire_at)}"}>expired</span>
+                                <% true -> %>
+                                    <span title={"Expire on #{format_datetime(invitation.expire_at)}"}>active</span>
+                            <% end %>
+                        </td>
+                        <td class="p-1">
+                            <%= link to: Routes.admin_user_path(@conn, :show, invitation.created_by), class: "underline" do %>
+                                <%= img_tag(invitation.created_by.avatar, class: "inline-block h-4 w-4 rounded-md") %>
+                                <%= invitation.created_by.name %>
+                            <% end %>
+                        </td>
+                        <td class="p-1"><%= format_datetime(invitation.created_at) %></td>
+                    </tr>
+                <% end %>
+            </tbody>
+        </table>
+    </div>
+
+    <%= render AzimuttWeb.PartialsView, "_pagination.html", page: @invitations %>
+</div>

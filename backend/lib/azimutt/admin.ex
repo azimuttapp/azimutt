@@ -32,8 +32,8 @@ defmodule Azimutt.Admin do
 
   def list_organizations(%Page.Info{} = p) do
     Organization
-    |> preload(:members)
     |> preload(:projects)
+    |> preload(:members)
     |> preload(:invitations)
     |> preload(:heroku_resource)
     |> preload(:created_by)
@@ -43,10 +43,10 @@ defmodule Azimutt.Admin do
   def get_organization(id) do
     Organization
     |> where([o], o.id == ^id)
-    |> preload(members: [:user, :created_by, :updated_by])
     |> preload(projects: [:organization])
+    |> preload(members: [:user, :created_by, :updated_by])
+    |> preload(invitations: [:answered_by, :created_by])
     |> preload(:heroku_resource)
-    |> preload(:invitations)
     |> preload(:created_by)
     |> preload(:updated_by)
     |> Repo.one()
