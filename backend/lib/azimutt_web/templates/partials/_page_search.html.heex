@@ -1,7 +1,7 @@
 <%= if @page |> Page.has_pagination do %>
     <form>
         <%= for {name, value} <- @page.info.query do %>
-        <input type="hidden" name={name} value={value} />
+            <input type="hidden" name={name} value={value} />
         <% end %>
         <input type="search"
                name={"#{@page.info.prefix}q"}
