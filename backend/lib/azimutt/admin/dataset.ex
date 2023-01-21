@@ -4,7 +4,6 @@ defmodule Azimutt.Admin.Dataset do
   alias Azimutt.Admin.Dataset
   alias Azimutt.Admin.Dataset.Data
   alias Azimutt.Utils.Enumx
-  alias Azimutt.Utils.Result
 
   typedstruct enforce: true do
     @derive Jason.Encoder
@@ -42,6 +41,11 @@ defmodule Azimutt.Admin.Dataset do
 
   def chartjs_daily_data(datasets, from, to) do
     generate_date_labels(from, to, "{YYYY}-{0M}-{0D}", fn d -> Timex.shift(d, days: 1) end)
+    |> build_chartjs(datasets)
+  end
+
+  def chartjs_weekly_data(datasets, from, to) do
+    generate_date_labels(from |> Timex.beginning_of_week(:mon), to, "{YYYY}-{0M}-{0D}", fn d -> Timex.shift(d, days: 7) end)
     |> build_chartjs(datasets)
   end
 

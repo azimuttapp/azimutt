@@ -28,7 +28,15 @@ defmodule AzimuttWeb.Admin.DashboardController do
           start_stats,
           now
         ),
-      weekly_connected_chart: %{labels: [], datasets: []},
+      weekly_connected_chart:
+        Dataset.chartjs_weekly_data(
+          [
+            Admin.weekly_connected_users() |> Dataset.from_values("Weekly users"),
+            Admin.weekly_used_projects() |> Dataset.from_values("Weekly projects")
+          ],
+          start_stats,
+          now
+        ),
       monthly_connected_chart:
         Dataset.chartjs_monthly_data(
           [

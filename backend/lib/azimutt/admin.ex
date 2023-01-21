@@ -152,6 +152,26 @@ defmodule Azimutt.Admin do
     |> Repo.all()
   end
 
+  def weekly_connected_users do
+    Event
+    |> select([e], {fragment("to_char(date_trunc('week', ?), 'yyyy-mm-dd')", e.created_at), count(e.created_by_id, :distinct)})
+    |> weekly_events()
+  end
+
+  def weekly_used_projects do
+    Event
+    |> where([e], not is_nil(e.project_id))
+    |> select([e], {fragment("to_char(date_trunc('week', ?), 'yyyy-mm-dd')", e.created_at), count(e.project_id, :distinct)})
+    |> weekly_events()
+  end
+
+  defp weekly_events(query) do
+    query
+    |> group_by([e], fragment("to_char(date_trunc('week', ?), 'yyyy-mm-dd')", e.created_at))
+    |> order_by([e], fragment("to_char(date_trunc('week', ?), 'yyyy-mm-dd')", e.created_at))
+    |> Repo.all()
+  end
+
   def monthly_connected_users do
     Event
     |> select([e], {fragment("to_char(?, 'yyyy-mm')", e.created_at), count(e.created_by_id, :distinct)})
