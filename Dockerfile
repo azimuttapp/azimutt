@@ -34,7 +34,6 @@ RUN mix local.hex --force && \
 
 # set build ENV
 ENV MIX_ENV="prod"
-ENV PHX_SERVER="true"
 
 # install mix dependencies
 COPY backend/mix.exs backend/mix.lock ./
@@ -55,11 +54,13 @@ COPY backend/priv priv
 # step down so that `lib` is available.
 COPY backend/assets assets
 
-# compile assets
-RUN mix assets.deploy
+
 
 # Compile the release
 COPY backend/lib lib
+
+# compile assets
+RUN mix assets.deploy
 
 RUN mix compile
 
@@ -88,6 +89,7 @@ RUN chown nobody /app
 
 # set runner ENV
 ENV MIX_ENV="prod"
+ENV PHX_SERVER="true"
 
 # Only copy the final release from the build stage
 COPY --from=builder --chown=nobody:root /app/_build/${MIX_ENV}/rel/azimutt ./
