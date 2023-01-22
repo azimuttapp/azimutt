@@ -120,7 +120,7 @@ defmodule Azimutt.Tracking do
   # `organization_id` and `project_id` are nullable
   # FIXME: make this async "fire & forget"
   defp create_event(name, data, details, %User{} = current_user, organization_id, project_id) do
-    if Mix.env() == :dev, do: Logger.info("Tracking event '#{name}': #{inspect(details)}")
+    if Azimutt.Application.env() == :dev, do: Logger.info("Tracking event '#{name}': #{inspect(details)}")
 
     saved_data = Nil.safe(data, fn v -> if map_size(v) == 0, do: nil, else: v end)
     saved_details = Nil.safe(details, fn v -> if map_size(v) == 0, do: nil, else: v end)

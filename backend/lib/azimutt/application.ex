@@ -4,6 +4,10 @@ defmodule Azimutt.Application do
   @moduledoc false
 
   use Application
+  
+  def env do
+    Application.fetch_env!(:azimutt, :app_env)
+  end
 
   @impl true
   def start(_type, _args) do

@@ -26,7 +26,8 @@ config :azimutt,
   free_plan_colors: false,
   free_plan_private_links: true,
   free_plan_db_analysis: false,
-  free_plan_db_access: false
+  free_plan_db_access: false,
+  app_env: config_env()
 
 config :azimutt,
   ecto_repos: [Azimutt.Repo]

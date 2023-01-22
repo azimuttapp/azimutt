@@ -109,7 +109,7 @@ defmodule AzimuttWeb.Router do
 
   scope "/heroku", AzimuttWeb do
     pipe_through [:browser_no_csrf_protection]
-    if Mix.env() == :dev, do: get("/", HerokuController, :index)
+    if Azimutt.Application.env() == :dev, do: get("/", HerokuController, :index)
     post "/login", HerokuController, :login
   end
 
@@ -171,7 +171,7 @@ defmodule AzimuttWeb.Router do
   # If your application does not have an admins-only section yet,
   # you can use Plug.BasicAuth to set up some basic authentication
   # as long as you are also using SSL (which you should anyway).
-  if Mix.env() in [:dev, :test, :staging] do
+  if Azimutt.Application.env() in [:dev, :test, :staging] do
     import Phoenix.LiveDashboard.Router
 
     scope "/" do
@@ -189,7 +189,7 @@ defmodule AzimuttWeb.Router do
   #
   # Note that preview only shows emails that were sent by the same
   # node running the Phoenix server.
-  if Mix.env() == :dev do
+  if Azimutt.Application.env() == :dev do
     scope "/dev" do
       pipe_through :browser
 
