@@ -32,8 +32,8 @@ defmodule Azimutt.Admin do
 
   def list_organizations(%Page.Info{} = p) do
     Organization
-    |> preload(:members)
     |> preload(:projects)
+    |> preload(:members)
     |> preload(:invitations)
     |> preload(:heroku_resource)
     |> preload(:created_by)
@@ -43,10 +43,10 @@ defmodule Azimutt.Admin do
   def get_organization(id) do
     Organization
     |> where([o], o.id == ^id)
-    |> preload(members: [:user, :created_by, :updated_by])
     |> preload(projects: [:organization])
+    |> preload(members: [:user, :created_by, :updated_by])
+    |> preload(invitations: [:answered_by, :created_by])
     |> preload(:heroku_resource)
-    |> preload(:invitations)
     |> preload(:created_by)
     |> preload(:updated_by)
     |> Repo.one()
@@ -83,6 +83,14 @@ defmodule Azimutt.Admin do
   def get_user_events(%User{} = user, %Page.Info{} = p) do
     query_events()
     |> where([e], e.created_by_id == ^user.id)
+    |> Page.get(p)
+  end
+
+  def get_day_user_events(%User{} = user, date, %Page.Info{} = p) do
+    {:ok, day} = date |> Timex.format("{YYYY}-{0M}-{0D}")
+
+    query_events()
+    |> where([e], e.created_by_id == ^user.id and fragment("to_char(?, 'yyyy-mm-dd')", e.created_at) == ^day)
     |> Page.get(p)
   end
 
@@ -141,6 +149,26 @@ defmodule Azimutt.Admin do
     query
     |> group_by([e], fragment("to_char(?, 'yyyy-mm-dd')", e.created_at))
     |> order_by([e], fragment("to_char(?, 'yyyy-mm-dd')", e.created_at))
+    |> Repo.all()
+  end
+
+  def weekly_connected_users do
+    Event
+    |> select([e], {fragment("to_char(date_trunc('week', ?), 'yyyy-mm-dd')", e.created_at), count(e.created_by_id, :distinct)})
+    |> weekly_events()
+  end
+
+  def weekly_used_projects do
+    Event
+    |> where([e], not is_nil(e.project_id))
+    |> select([e], {fragment("to_char(date_trunc('week', ?), 'yyyy-mm-dd')", e.created_at), count(e.project_id, :distinct)})
+    |> weekly_events()
+  end
+
+  defp weekly_events(query) do
+    query
+    |> group_by([e], fragment("to_char(date_trunc('week', ?), 'yyyy-mm-dd')", e.created_at))
+    |> order_by([e], fragment("to_char(date_trunc('week', ?), 'yyyy-mm-dd')", e.created_at))
     |> Repo.all()
   end
 

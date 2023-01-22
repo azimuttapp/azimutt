@@ -2,25 +2,40 @@ defmodule AzimuttWeb.Admin.OrganizationController do
   use AzimuttWeb, :controller
   alias Azimutt.Admin
   alias Azimutt.Admin.Dataset
+  alias Azimutt.Organizations
+  alias Azimutt.Organizations.Organization
+  alias Azimutt.Organizations.OrganizationPlan
+  alias Azimutt.Tracking.Event
   alias Azimutt.Utils.Page
   action_fallback AzimuttWeb.FallbackController
 
   def index(conn, _params) do
-    conn
-    |> render("index.html",
-      organizations: Admin.list_organizations(conn |> Page.from_conn(%{sort: "-created_at"}))
-    )
+    page = conn |> Page.from_conn(%{search_on: Organization.search_fields(), sort: "-created_at"})
+    conn |> render("index.html", organizations: Admin.list_organizations(page))
   end
 
   def show(conn, %{"id" => organization_id}) do
-    with {:ok, organization} <- Admin.get_organization(organization_id) do
+    now = DateTime.utc_now()
+    events_page = conn |> Page.from_conn(%{prefix: "events", search_on: Event.search_fields(), sort: "-created_at", size: 40})
+    {:ok, start_stats} = "2022-11-01" |> Timex.parse("{YYYY}-{0M}-{0D}")
+
+    with {:ok, %Organization{} = organization} <- Admin.get_organization(organization_id),
+         {:ok, %OrganizationPlan{} = plan} <- Organizations.get_organization_plan(organization) do
       conn
       |> render("show.html",
+        now: now,
         organization: organization,
-        members: organization.members |> Enum.map(fn m -> m.user end) |> Page.wrap(),
-        projects: organization.projects |> Page.wrap(),
-        activity: Dataset.chartjs_daily_data([Admin.daily_organization_activity(organization) |> Dataset.from_values("Daily events")]),
-        events: Admin.get_organization_events(organization, conn |> Page.from_conn(%{prefix: "events", sort: "-created_at", size: 40}))
+        plan: plan,
+        projects: organization.projects |> Enum.sort_by(& &1.updated_at, {:desc, Date}) |> Page.wrap(),
+        members: organization.members |> Enum.sort_by(& &1.created_at, {:desc, Date}) |> Enum.map(fn m -> m.user end) |> Page.wrap(),
+        invitations: organization.invitations |> Enum.sort_by(& &1.created_at, {:desc, Date}) |> Page.wrap(),
+        activity:
+          Dataset.chartjs_daily_data(
+            [Admin.daily_organization_activity(organization) |> Dataset.from_values("Daily events")],
+            start_stats,
+            now
+          ),
+        events: Admin.get_organization_events(organization, events_page)
       )
     end
   end

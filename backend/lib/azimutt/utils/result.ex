@@ -48,6 +48,28 @@ defmodule Azimutt.Utils.Result do
   def or_else({:error, _err}, default), do: default
 
   @doc """
+  Returns true if Result is :ok
+  ## Examples
+      iex> {:ok, 1} |> Result.is_ok?()
+      true
+      iex> {:error, 1} |> Result.is_ok?()
+      false
+  """
+  def is_ok?({:ok, _}), do: true
+  def is_ok?({:error, _}), do: false
+
+  @doc """
+  Returns true if Result is :error
+  ## Examples
+      iex> {:ok, 1} |> Result.is_error?()
+      false
+      iex> {:error, 1} |> Result.is_error?()
+      true
+  """
+  def is_error?({:ok, _}), do: false
+  def is_error?({:error, _}), do: true
+
+  @doc """
   Transforms the Result value (when :ok).
   ## Examples
       iex> {:ok, 1} |> Result.map(fn x -> x + 1 end)

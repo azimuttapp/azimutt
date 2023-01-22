@@ -17,6 +17,8 @@ defmodule Azimutt.Tracking.Event do
     belongs_to :project, Project
   end
 
+  def search_fields, do: [:name]
+
   @doc false
   def changeset(event, attrs) do
     event

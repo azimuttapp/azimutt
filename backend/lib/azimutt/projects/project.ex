@@ -37,6 +37,8 @@ defmodule Azimutt.Projects.Project do
     field :archived_at, :utc_datetime_usec
   end
 
+  def search_fields, do: [:slug, :name, :description]
+
   defmodule Storage do
     @moduledoc false
     def local, do: :local

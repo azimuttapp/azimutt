@@ -2,6 +2,7 @@ module PagesComponents.Organization_.Project_.Components.ProjectSharing exposing
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
+import Components.Molecules.Alert as Alert
 import Components.Molecules.Modal as Modal
 import Components.Molecules.Tooltip as Tooltip
 import Components.Slices.ProPlan as ProPlan
@@ -13,7 +14,7 @@ import Html.Attributes exposing (attribute, class, disabled, for, height, href, 
 import Html.Events exposing (onClick, onInput)
 import Html.Lazy as Lazy
 import Libs.Bool as Bool
-import Libs.Html exposing (extLink, sendTweet)
+import Libs.Html exposing (bText, extLink, sendTweet)
 import Libs.Html.Attributes exposing (ariaChecked, ariaHidden, ariaLabelledby, css, role)
 import Libs.Maybe as Maybe
 import Libs.Models.DateTime as DateTime
@@ -29,6 +30,8 @@ import Models.Plan exposing (Plan)
 import Models.Project as Project exposing (Project)
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectStorage as ProjectStorage
+import Models.Project.Source as Source
+import Models.Project.SourceKind as SourceKind
 import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Models.ProjectToken exposing (ProjectToken)
 import PagesComponents.Organization_.Project_.Models.EmbedKind as EmbedKind exposing (EmbedKind)
@@ -364,6 +367,20 @@ viewBodyPrivateLinkInput wrap confirm zone inputId currentUrl erd model =
                                     ++ [ viewBodyProjectTokenCreation wrap inputId (model.tokens == []) f ]
                                 )
                             , f.error |> Maybe.mapOrElse (\err -> p [ class "mt-2 text-sm text-red-600" ] [ text err ]) (p [] [])
+                            , if erd.sources |> List.any (.kind >> SourceKind.isDatabase) then
+                                div [ class "mt-2" ]
+                                    [ Alert.simple Tw.yellow
+                                        Icon.ExclamationCircle
+                                        [ text "Your project has "
+                                        , bText "database url"
+                                        , text " as source. "
+                                        , text "It will be accessible from people you share the project with. "
+                                        , text "Make sure it's fine."
+                                        ]
+                                    ]
+
+                              else
+                                div [] []
                             ]
 
                     else

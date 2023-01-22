@@ -1,6 +1,6 @@
-module Libs.Html exposing (bText, codeText, divIf, extLink, none, sendTweet)
+module Libs.Html exposing (bText, codeText, divIf, extLink, iText, none, sendTweet)
 
-import Html exposing (Attribute, Html, a, b, code, div, text)
+import Html exposing (Attribute, Html, a, b, code, div, i, text)
 import Libs.Html.Attributes exposing (hrefBlank, track)
 import Track
 import Url exposing (percentEncode)
@@ -9,6 +9,11 @@ import Url exposing (percentEncode)
 bText : String -> Html msg
 bText content =
     b [] [ text content ]
+
+
+iText : String -> Html msg
+iText content =
+    i [] [ text content ]
 
 
 codeText : String -> Html msg

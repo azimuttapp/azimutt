@@ -1,5 +1,7 @@
 module Services.DatabaseSource exposing (Model, Msg(..), example, init, update, viewInput, viewParsing)
 
+import Components.Atoms.Icon as Icon
+import Components.Molecules.Alert as Alert
 import Components.Molecules.Divider as Divider
 import Components.Molecules.Tooltip as Tooltip
 import Conf
@@ -10,7 +12,7 @@ import Html.Attributes exposing (class, disabled, id, name, placeholder, src, ty
 import Html.Events exposing (onBlur, onInput)
 import Json.Decode as Decode
 import Libs.Bool as B
-import Libs.Html exposing (extLink)
+import Libs.Html exposing (bText, extLink, iText)
 import Libs.Html.Attributes exposing (css)
 import Libs.Maybe as Maybe
 import Libs.Models.DatabaseUrl as DatabaseUrl exposing (DatabaseUrl)
@@ -170,6 +172,19 @@ viewInput wrap htmlId model =
                 []
             ]
         , error |> Maybe.mapOrElse (\err -> p [ class "mt-1 text-sm text-red-500" ] [ text err ]) (p [] [])
+        , div [ class "mt-3" ]
+            [ Alert.simple Tw.blue
+                Icon.QuestionMarkCircle
+                [ text "Database url is a "
+                , bText "very sensitive information"
+                , text ". It will be stored in your project, to allow schema refresh and show data statistics."
+                , text " For best security prefer to use a "
+                , iText "read-only user"
+                , text " and on a "
+                , iText "non-production database"
+                , text "."
+                ]
+            ]
         ]
 
 
