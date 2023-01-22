@@ -1,0 +1,118 @@
+# flyctl launch added from .elixir_ls/.gitignore
+.elixir_ls/**/*
+
+# flyctl launch added from .gitignore
+**/*.iml
+**/.idea
+**/.DS_Store
+**/.env
+**/.clever.json
+node_modules
+**/addon-manifest.json
+**/addon-manifest-prod.json
+**/addon-manifest-staging.json
+
+# flyctl launch added from .idea/.gitignore
+# Default ignored files
+.idea/shelf
+.idea/workspace.xml
+# Editor-based HTTP Client requests
+.idea/httpRequests
+# Datasource local storage ignored files
+.idea/dataSources
+.idea/dataSources.local.xml
+
+# flyctl launch added from backend/.elixir_ls/.gitignore
+backend/.elixir_ls/**/*
+
+# flyctl launch added from backend/.gitignore
+# The directory Mix will write compiled artifacts to.
+backend/_build
+
+# If you run "mix test --cover", coverage assets end up here.
+backend/cover
+
+# The directory Mix downloads your dependencies sources to.
+backend/deps
+
+# Where 3rd-party dependencies like ExDoc output generated docs.
+backend/doc
+
+# Ignore .fetch files in case you like to edit your project deps locally.
+backend/.fetch
+
+# If the VM crashes, it generates a dump, let's ignore it too.
+backend/**/erl_crash.dump
+
+# Also ignore archive artifacts (built via "mix archive.build").
+backend/**/*.ez
+
+# Ignore package tarball (built via "mix hex.build").
+backend/**/azimutt-*.tar
+
+# Ignore assets that are produced by build tools.
+backend/priv/static/assets
+
+# Ignore digested assets cache.
+backend/priv/static/cache_manifest.json
+
+# In case you use Node.js/npm, you want to ignore these.
+backend/**/npm-debug.log
+backend/assets/node_modules
+backend/priv/static/swagger*.json
+backend/uploads
+
+# flyctl launch added from backend/_build/dev/rel/azimutt/lib/azimutt-2.0.1670333486/priv/static/elm/.gitignore
+backend/_build/dev/rel/azimutt/lib/azimutt-2.0.1670333486/priv/static/elm/**/dist
+!backend/_build/dev/rel/azimutt/lib/azimutt-2.0.1670333486/priv/static/elm/**/dist/.gitkeep
+backend/_build/dev/rel/azimutt/lib/azimutt-2.0.1670333486/priv/static/elm/**/script.js
+backend/_build/dev/rel/azimutt/lib/azimutt-2.0.1670333486/priv/static/elm/**/script.js.map
+
+# flyctl launch added from backend/_build/dev/rel/azimutt/lib/azimutt-2.0.1670334969/priv/static/elm/.gitignore
+backend/_build/dev/rel/azimutt/lib/azimutt-2.0.1670334969/priv/static/elm/**/dist
+!backend/_build/dev/rel/azimutt/lib/azimutt-2.0.1670334969/priv/static/elm/**/dist/.gitkeep
+backend/_build/dev/rel/azimutt/lib/azimutt-2.0.1670334969/priv/static/elm/**/script.js
+backend/_build/dev/rel/azimutt/lib/azimutt-2.0.1670334969/priv/static/elm/**/script.js.map
+
+# flyctl launch added from backend/_build/dev/rel/azimutt/lib/azimutt-2.0.1670337327/priv/static/elm/.gitignore
+backend/_build/dev/rel/azimutt/lib/azimutt-2.0.1670337327/priv/static/elm/**/dist
+!backend/_build/dev/rel/azimutt/lib/azimutt-2.0.1670337327/priv/static/elm/**/dist/.gitkeep
+backend/_build/dev/rel/azimutt/lib/azimutt-2.0.1670337327/priv/static/elm/**/script.js
+backend/_build/dev/rel/azimutt/lib/azimutt-2.0.1670337327/priv/static/elm/**/script.js.map
+
+# flyctl launch added from backend/_build/prod/rel/azimutt/lib/azimutt-2.0.1670333508/priv/static/elm/.gitignore
+backend/_build/prod/rel/azimutt/lib/azimutt-2.0.1670333508/priv/static/elm/**/dist
+!backend/_build/prod/rel/azimutt/lib/azimutt-2.0.1670333508/priv/static/elm/**/dist/.gitkeep
+backend/_build/prod/rel/azimutt/lib/azimutt-2.0.1670333508/priv/static/elm/**/script.js
+backend/_build/prod/rel/azimutt/lib/azimutt-2.0.1670333508/priv/static/elm/**/script.js.map
+
+# flyctl launch added from backend/_build/prod/rel/azimutt/lib/azimutt-2.0.1670334878/priv/static/elm/.gitignore
+backend/_build/prod/rel/azimutt/lib/azimutt-2.0.1670334878/priv/static/elm/**/dist
+!backend/_build/prod/rel/azimutt/lib/azimutt-2.0.1670334878/priv/static/elm/**/dist/.gitkeep
+backend/_build/prod/rel/azimutt/lib/azimutt-2.0.1670334878/priv/static/elm/**/script.js
+backend/_build/prod/rel/azimutt/lib/azimutt-2.0.1670334878/priv/static/elm/**/script.js.map
+
+# flyctl launch added from backend/_build/prod/rel/azimutt/lib/azimutt-2.0.1674403172/priv/static/elm/.gitignore
+backend/_build/prod/rel/azimutt/lib/azimutt-2.0.1674403172/priv/static/elm/**/dist
+!backend/_build/prod/rel/azimutt/lib/azimutt-2.0.1674403172/priv/static/elm/**/dist/.gitkeep
+backend/_build/prod/rel/azimutt/lib/azimutt-2.0.1674403172/priv/static/elm/**/script.js
+backend/_build/prod/rel/azimutt/lib/azimutt-2.0.1674403172/priv/static/elm/**/script.js.map
+
+# flyctl launch added from backend/priv/static/elm/.gitignore
+backend/priv/static/elm/**/dist
+!backend/priv/static/elm/**/dist/.gitkeep
+backend/priv/static/elm/**/script.js
+backend/priv/static/elm/**/script.js.map
+
+# flyctl launch added from browser-extension/.gitignore
+browser-extension/**/dist
+browser-extension/**/node_modules
+
+# flyctl launch added from frontend/.gitignore
+frontend/.coverage
+frontend/.elm-spa
+frontend/elm-stuff
+frontend/node_modules
+frontend/review/elm-stuff
+frontend/public
+fly.toml
