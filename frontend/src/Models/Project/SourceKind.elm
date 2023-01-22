@@ -1,4 +1,4 @@
-module Models.Project.SourceKind exposing (SourceKind(..), decode, encode, isUser, path, same, toString)
+module Models.Project.SourceKind exposing (SourceKind(..), decode, encode, isDatabase, isUser, path, same, toString)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
@@ -24,6 +24,16 @@ isUser : SourceKind -> Bool
 isUser kind =
     case kind of
         AmlEditor ->
+            True
+
+        _ ->
+            False
+
+
+isDatabase : SourceKind -> Bool
+isDatabase kind =
+    case kind of
+        DatabaseConnection _ ->
             True
 
         _ ->
