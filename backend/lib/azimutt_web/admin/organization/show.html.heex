@@ -3,16 +3,47 @@
         <div class="flex">
             <%= img_tag(@organization.logo, class: "mt-2 h-24 w-24 rounded-md") %>
             <div class="mt-2 pl-3">
-                <div class="text-xl font-bold text-slate-100 truncate"><%= @organization.name %></div>
-                <div class="text-xs font-medium text-scheme-yellow truncate">
-                    <%= if @organization.is_personal do %>
-                        Personal organization
-                    <% else %>
-                        <%= @organization.created_by.name %>
+                <div class="text-xl font-bold text-slate-100 truncate">
+                    <%= @organization.name %>
+                    <%= if @organization.stripe_subscription_id do %>
+                        - <%= link "Stripe", to: StripeSrv.subscription_url(@organization.stripe_subscription_id), class: "underline" %>
+                    <% end %>
+                    <%= if @organization.heroku_resource do %>
+                        - <span title={@organization.heroku_resource.name}>Heroku</span>
                     <% end %>
                 </div>
-                <div class="text-xs font-medium text-slate-300"><%= @organization.description %></div>
-                <div class="text-xs font-medium text-slate-500 truncate"><%= @organization.data |> format_data() %></div>
+                <div class="mt-1 text-xs font-medium text-scheme-yellow truncate">
+                    <%= if @organization.is_personal do %>
+                        <a href={Routes.admin_user_path(@conn, :show, @organization.created_by)} class="underline">Personal organization</a>
+                    <% else %>
+                        Created by <a href={Routes.admin_user_path(@conn, :show, @organization.created_by)} class="underline"><%= @organization.created_by.name %></a>
+                    <% end %>
+                </div>
+                <div class="mt-1 text-xs font-medium text-slate-300">
+                    <a href={"mailto:#{@organization.contact_email}"} title="Contact email" class="underline"><%= @organization.contact_email %></a>
+                    <%= if @organization.github_username do %>
+                        - <a href={"https://github.com/#{@organization.github_username}"} title="GitHub profile" class="underline"><%= @organization.github_username %></a>
+                    <% end %>
+                    <%= if @organization.twitter_username do %>
+                        - <a href={"https://twitter.com/#{@organization.twitter_username}"} title="Twitter account" class="underline">@<%= @organization.twitter_username %></a>
+                    <% end %>
+                    <%= if @organization.location != nil && @organization.location != "" do %>
+                        - <span title="location"><%= @organization.location %></span>
+                    <% end %>
+                    <%= if @organization.description != nil && @organization.description != "" do %>
+                        - <span title="description"><%= @organization.description %></span>
+                    <% end %>
+                </div>
+                <div class="mt-1 text-xs font-medium text-slate-300">
+                    <span class="font-bold"><%= @plan.name %></span>:
+                    <%= @plan.layouts || "∞" %> layouts,
+                    <%= @plan.memos || "∞" %> memos,
+                    <span class={if(@plan.colors, do: "", else: "line-through")}>colors</span>,
+                    <span class={if(@plan.private_links, do: "", else: "line-through")}>private links</span>,
+                    <span class={if(@plan.db_analysis, do: "", else: "line-through")}>db analysis</span>,
+                    <span class={if(@plan.db_access, do: "", else: "line-through")}>db access</span>
+                </div>
+                <div class="mt-1 text-xs font-medium text-slate-500 truncate"><%= @organization.data |> format_data() %></div>
             </div>
         </div>
         <div class="my-3"><%= render AzimuttWeb.Admin.ProjectView, "_projects_table.html", conn: @conn, projects: @projects %></div>

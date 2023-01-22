@@ -2,7 +2,9 @@ defmodule AzimuttWeb.Admin.OrganizationController do
   use AzimuttWeb, :controller
   alias Azimutt.Admin
   alias Azimutt.Admin.Dataset
+  alias Azimutt.Organizations
   alias Azimutt.Organizations.Organization
+  alias Azimutt.Organizations.OrganizationPlan
   alias Azimutt.Tracking.Event
   alias Azimutt.Utils.Page
   action_fallback AzimuttWeb.FallbackController
@@ -17,11 +19,13 @@ defmodule AzimuttWeb.Admin.OrganizationController do
     events_page = conn |> Page.from_conn(%{prefix: "events", search_on: Event.search_fields(), sort: "-created_at", size: 40})
     {:ok, start_stats} = "2022-11-01" |> Timex.parse("{YYYY}-{0M}-{0D}")
 
-    with {:ok, organization} <- Admin.get_organization(organization_id) do
+    with {:ok, %Organization{} = organization} <- Admin.get_organization(organization_id),
+         {:ok, %OrganizationPlan{} = plan} <- Organizations.get_organization_plan(organization) do
       conn
       |> render("show.html",
         now: now,
         organization: organization,
+        plan: plan,
         projects: organization.projects |> Enum.sort_by(& &1.updated_at, {:desc, Date}) |> Page.wrap(),
         members: organization.members |> Enum.sort_by(& &1.created_at, {:desc, Date}) |> Enum.map(fn m -> m.user end) |> Page.wrap(),
         invitations: organization.invitations |> Enum.sort_by(& &1.created_at, {:desc, Date}) |> Page.wrap(),
