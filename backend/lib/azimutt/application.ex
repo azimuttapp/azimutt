@@ -4,7 +4,7 @@ defmodule Azimutt.Application do
   @moduledoc false
 
   use Application
-  
+
   def env do
     Application.fetch_env!(:azimutt, :app_env)
   end

@@ -4,8 +4,6 @@ config :azimutt, AzimuttWeb.Endpoint, cache_static_manifest: "priv/static/cache_
 
 config :azimutt,
   environment: :staging,
-  domain: "azimutt.dev",
-  site_url: "https://azimutt.dev",
   support_email: "hey@azimutt.dev",
   mailer_default_from_email: "hey@azimutt.dev",
   team_plan_price_id: "price_1LqdRzCaPXsf4vehSyyUn4pd"
@@ -27,4 +25,3 @@ config :sentry,
 config :azimutt, AzimuttWeb.Endpoint,
   url: [host: "azimutt.dev", port: 80],
   check_origin: true
-

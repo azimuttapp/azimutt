@@ -13,8 +13,6 @@ config :azimutt, AzimuttWeb.Endpoint, cache_static_manifest: "priv/static/cache_
 
 config :azimutt,
   environment: :prod,
-  domain: "azimutt.app",
-  site_url: "https://azimutt.app",
   support_email: "hey@azimutt.app",
   mailer_default_from_email: "hey@azimutt.app",
   team_plan_price_id: "price_1LqeMcCaPXsf4veh2yBgWKiX"
@@ -32,7 +30,6 @@ config :sentry,
     env: "production"
   },
   included_environments: [:prod]
-
 
 # ## SSL Support
 #
