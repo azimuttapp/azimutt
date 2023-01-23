@@ -13,7 +13,7 @@ services:
     container_name: azimutt-backend
     restart: always
     build:
-      context: ./backend/
+      context: .
       dockerfile: Dockerfile
     depends_on:
       - database
