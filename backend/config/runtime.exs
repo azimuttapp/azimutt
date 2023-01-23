@@ -93,9 +93,9 @@ end
 
 if config_env() == :prod || config_env() == :staging do
   database_url =
-    System.get_env("POSTGRESQL_ADDON_URI") ||
+    System.get_env("DATABASE_URL") ||
       raise """
-      environment variable POSTGRESQL_ADDON_URI is missing.
+      environment variable DATABASE_URL is missing.
       For example: ecto://USER:PASS@HOST/DATABASE
       """
 
