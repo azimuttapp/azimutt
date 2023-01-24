@@ -93,11 +93,7 @@ end
 
 if config_env() == :prod || config_env() == :staging do
   database_url =
-    System.get_env("DATABASE_URL") ||
-      raise """
-      environment variable DATABASE_URL is missing.
-      For example: ecto://USER:PASS@HOST/DATABASE
-      """
+    System.get_env("DATABASE_URL") || raise "environment variable DATABASE_URL is missing. For example: ecto://USER:PASS@HOST/DATABASE"
 
   maybe_ipv6 = if System.get_env("ECTO_IPV6"), do: [:inet6], else: []
 
@@ -133,20 +129,39 @@ if config_env() == :prod || config_env() == :staging do
       port: port
     ],
     secret_key_base: secret_key_base
+end
 
-  mailgun_api_key = System.get_env("MAILGUN_API_KEY")
-  mailgun_domain = System.get_env("MAILGUN_DOMAIN")
-  mailgun_base_url = System.get_env("MAILGUN_BASE_URL")
+email_adapter = System.get_env("EMAIL_ADAPTER")
 
-  if mailgun_api_key && mailgun_domain && mailgun_base_url do
-    config :azimutt, Azimutt.Mailer,
-      adapter: Swoosh.Adapters.Mailgun,
-      api_key: mailgun_api_key,
-      domain: mailgun_domain,
-      base_url: mailgun_base_url
-  else
-    raise "missing mailgun environment variables: MAILGUN_API_KEY, MAILGUN_DOMAIN and MAILGUN_BASE_URL"
-  end
+cond do
+  email_adapter == "mailgun" ->
+    mailgun_api_key = System.get_env("EMAIL_MAILGUN_API_KEY")
+    mailgun_domain = System.get_env("EMAIL_MAILGUN_DOMAIN")
+    mailgun_base_url = System.get_env("EMAIL_MAILGUN_BASE_URL")
 
-  config :swoosh, :api_client, Swoosh.ApiClient.Hackney
+    if mailgun_api_key && mailgun_domain && mailgun_base_url do
+      config :azimutt, Azimutt.Mailer,
+        adapter: Swoosh.Adapters.Mailgun,
+        api_key: mailgun_api_key,
+        domain: mailgun_domain,
+        base_url: mailgun_base_url
+
+      config :swoosh, :api_client, Swoosh.ApiClient.Hackney
+    else
+      raise "missing mailgun environment variables: EMAIL_MAILGUN_API_KEY, EMAIL_MAILGUN_DOMAIN and EMAIL_MAILGUN_BASE_URL"
+    end
+
+  email_adapter == "gmail" ->
+    gmail_access_token = System.get_env("EMAIL_GMAIL_ACCESS_TOKEN")
+
+    if gmail_access_token do
+      config :azimutt, Azimutt.Mailer,
+        adapter: Swoosh.Adapters.Gmail,
+        access_token: gmail_access_token
+    else
+      raise "missing gmail environment variable: EMAIL_GMAIL_ACCESS_TOKEN"
+    end
+
+  true ->
+    IO.puts("Email system not setup (EMAIL_ADAPTER env variable not found)")
 end
