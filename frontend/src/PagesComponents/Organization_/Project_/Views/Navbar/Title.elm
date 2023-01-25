@@ -9,7 +9,7 @@ import Conf
 import Dict exposing (Dict)
 import Gen.Route as Route
 import Html exposing (Html, br, button, div, small, span, text)
-import Html.Attributes exposing (class, disabled, id, tabindex, type_)
+import Html.Attributes exposing (class, classList, disabled, id, tabindex, type_)
 import Html.Events exposing (onClick)
 import Html.Lazy as Lazy
 import Libs.Bool as B
@@ -86,10 +86,6 @@ viewProjectsDropdown platform eConf projects project dirty htmlId openedDropdown
         userOrganizations : List OrganizationId
         userOrganizations =
             projects |> List.filterMap .organization |> List.map .id |> List.unique
-
-        otherProjects : List ProjectInfo
-        otherProjects =
-            projects |> List.filter (\p -> p.id /= project.id)
     in
     Dropdown.dropdown { id = htmlId, direction = BottomRight, isOpen = openedDropdown == htmlId }
         (\m ->
@@ -113,13 +109,13 @@ viewProjectsDropdown platform eConf projects project dirty htmlId openedDropdown
                         , ContextMenu.btnDisabled "" [ text "Delete project" |> Tooltip.r "You are in read-one mode" ]
                         ]
                   ]
-                    ++ B.cond (List.isEmpty otherProjects)
+                    ++ B.cond (List.isEmpty projects)
                         []
-                        [ otherProjects
+                        [ projects
                             |> List.map
                                 (\p ->
                                     ContextMenu.linkHtml (Route.toHref (Route.Organization___Project_ { organization = p |> ProjectInfo.organizationId, project = p.id }))
-                                        [ class "flex" ]
+                                        [ class "flex", classList [ ( "text-gray-400", p.id == project.id ) ] ]
                                         [ p.organization
                                             |> Maybe.map (\o -> Avatar.xsWithIcon o.logo o.name (ProjectInfo.icon p) "mr-2")
                                             |> Maybe.withDefault (Icon.outline (ProjectInfo.icon p) "mr-2")
