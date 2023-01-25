@@ -288,11 +288,17 @@ defmodule Azimutt.Organizations do
     end
   end
 
-  def get_allowed_members(%Organization{} = organization) do
-    if organization.heroku_resource do
-      Heroku.allowed_members(organization.heroku_resource.plan)
-    else
-      Azimutt.config(:free_plan_seats)
+  def get_allowed_members(%Organization{} = organization, %OrganizationPlan{} = plan) do
+    cond do
+      organization.heroku_resource ->
+        Heroku.allowed_members(organization.heroku_resource.plan)
+
+      plan.id == :pro ->
+        # means no limit
+        nil
+
+      true ->
+        Azimutt.config(:free_plan_seats)
     end
   end
 
