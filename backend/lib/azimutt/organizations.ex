@@ -288,11 +288,17 @@ defmodule Azimutt.Organizations do
     end
   end
 
-  def get_allowed_members(%Organization{} = organization) do
-    if organization.heroku_resource do
-      Heroku.allowed_members(organization.heroku_resource.plan)
-    else
-      Azimutt.config(:free_plan_seats)
+  def get_allowed_members(%Organization{} = organization, %OrganizationPlan{} = plan) do
+    cond do
+      organization.heroku_resource ->
+        Heroku.allowed_members(organization.heroku_resource.plan)
+
+      plan.id == :pro ->
+        # means no limit
+        nil
+
+      true ->
+        Azimutt.config(:free_plan_seats)
     end
   end
 
@@ -312,8 +318,8 @@ defmodule Azimutt.Organizations do
   end
 
   defp heroku_plan(%Resource{} = resource) do
-    if resource.plan |> String.starts_with?("team-") do
-      {:ok, OrganizationPlan.team()}
+    if resource.plan |> String.starts_with?("pro-") do
+      {:ok, OrganizationPlan.pro()}
     else
       {:ok, OrganizationPlan.free()}
     end
@@ -323,7 +329,7 @@ defmodule Azimutt.Organizations do
     StripeSrv.get_subscription(subscription_id)
     |> Result.map(fn s ->
       if s.status == "active" || s.status == "past_due" || s.status == "unpaid" do
-        OrganizationPlan.team()
+        OrganizationPlan.pro()
       else
         OrganizationPlan.free()
       end

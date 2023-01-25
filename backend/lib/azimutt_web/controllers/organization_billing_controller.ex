@@ -54,7 +54,7 @@ defmodule AzimuttWeb.OrganizationBillingController do
   def new(conn, %{"organization_id" => organization_id}) do
     current_user = conn.assigns.current_user
     {:ok, %Organization{} = organization} = Organizations.get_organization(organization_id, current_user)
-    price = Azimutt.config(:team_plan_price_id)
+    price = Azimutt.config(:pro_plan_price_id)
     quantity = get_organization_seats(organization)
     Tracking.subscribe_init(current_user, organization, price, quantity)
 

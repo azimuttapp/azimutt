@@ -5,7 +5,6 @@ module Services.Lenses exposing
     , mapCanvas
     , mapChecks
     , mapCollapseTableColumns
-    , mapColors
     , mapColumnBasicTypes
     , mapColumns
     , mapCommentM
@@ -35,14 +34,10 @@ module Services.Lenses exposing
     , mapList
     , mapM
     , mapMCmd
-    , mapMTeamCmd
     , mapMemos
     , mapMemosL
     , mapMobileMenuOpen
-    , mapModal
-    , mapModalM
     , mapNavbar
-    , mapNewLayoutM
     , mapNewLayoutMCmd
     , mapNotes
     , mapOpened
@@ -64,39 +59,28 @@ module Services.Lenses exposing
     , mapResult
     , mapSampleSourceMCmd
     , mapSaveCmd
-    , mapSaveM
     , mapSchemaAnalysisM
     , mapSearch
     , mapSelected
     , mapSettings
-    , mapSharing
     , mapSharingCmd
-    , mapSharingM
     , mapShow
     , mapShowHiddenColumns
     , mapShowSettings
     , mapSourceUpdateCmd
-    , mapSources
     , mapSqlSourceCmd
     , mapSqlSourceMCmd
     , mapTables
     , mapTablesCmd
     , mapTablesL
-    , mapTeamCmd
     , mapToasts
     , mapToastsCmd
-    , mapToken
-    , mapTokenForm
     , mapTokenFormM
-    , mapTokens
-    , mapTop
     , mapUniques
-    , mapUserM
     , mapVirtualRelationM
     , setActive
     , setAmlSidebar
     , setAmlSource
-    , setBio
     , setCanvas
     , setChecks
     , setCollapseTableColumns
@@ -107,7 +91,6 @@ module Services.Lenses exposing
     , setColumnOrder
     , setColumns
     , setComment
-    , setCompany
     , setConf
     , setConfirm
     , setContent
@@ -127,7 +110,6 @@ module Services.Lenses exposing
     , setExpire
     , setFindPath
     , setFrom
-    , setGithub
     , setHiddenColumns
     , setHighlight
     , setHighlighted
@@ -144,7 +126,6 @@ module Services.Lenses exposing
     , setLast
     , setLayouts
     , setList
-    , setLocation
     , setMax
     , setMemos
     , setMobileMenuOpen
@@ -166,7 +147,6 @@ module Services.Lenses exposing
     , setPosition
     , setPrimaryKey
     , setProject
-    , setProjectName
     , setProjectSource
     , setPrompt
     , setProps
@@ -191,27 +171,20 @@ module Services.Lenses exposing
     , setShown
     , setSize
     , setSourceUpdate
-    , setSources
     , setSqlSource
     , setTable
     , setTables
-    , setTeam
     , setText
     , setTo
     , setToasts
     , setToken
     , setTokenForm
     , setTokens
-    , setTop
-    , setTwitter
     , setUniques
     , setUpdatedAt
-    , setUser
-    , setUsername
     , setValue
     , setView
     , setVirtualRelation
-    , setWebsite
     , setZoom
     )
 
@@ -255,11 +228,6 @@ setAmlSource =
 mapAmlSourceCmd : (v -> ( v, Cmd msg )) -> { item | amlSource : v } -> ( { item | amlSource : v }, Cmd msg )
 mapAmlSourceCmd =
     mapCmd_ .amlSource setAmlSource
-
-
-setBio : v -> { item | bio : v } -> { item | bio : v }
-setBio =
-    set_ .bio (\value item -> { item | bio = value })
 
 
 setCanvas : v -> { item | canvas : v } -> { item | canvas : v }
@@ -307,11 +275,6 @@ setColors =
     set_ .colors (\value item -> { item | colors = value })
 
 
-mapColors : (v -> v) -> { item | colors : v } -> { item | colors : v }
-mapColors =
-    map_ .colors setColors
-
-
 setColumns : v -> { item | columns : v } -> { item | columns : v }
 setColumns =
     set_ .columns (\value item -> { item | columns = value })
@@ -345,11 +308,6 @@ setComment =
 mapCommentM : (v -> v) -> { item | comment : Maybe v } -> { item | comment : Maybe v }
 mapCommentM =
     mapM_ .comment setComment
-
-
-setCompany : v -> { item | company : v } -> { item | company : v }
-setCompany =
-    set_ .company (\value item -> { item | company = value })
 
 
 setConf : v -> { item | conf : v } -> { item | conf : v }
@@ -517,11 +475,6 @@ setFrom =
     set_ .from (\value item -> { item | from = value })
 
 
-setGithub : v -> { item | github : v } -> { item | github : v }
-setGithub =
-    set_ .github (\value item -> { item | github = value })
-
-
 setHiddenColumns : v -> { item | hiddenColumns : v } -> { item | hiddenColumns : v }
 setHiddenColumns =
     set_ .hiddenColumns (\value item -> { item | hiddenColumns = value })
@@ -647,11 +600,6 @@ setList =
     set_ .list (\value item -> { item | list = value })
 
 
-setLocation : v -> { item | location : v } -> { item | location : v }
-setLocation =
-    set_ .location (\value item -> { item | location = value })
-
-
 setMax : v -> { item | max : v } -> { item | max : v }
 setMax =
     set_ .max (\value item -> { item | max = value })
@@ -687,16 +635,6 @@ setModal =
     set_ .modal (\value item -> { item | modal = value })
 
 
-mapModal : (v -> v) -> { item | modal : v } -> { item | modal : v }
-mapModal =
-    map_ .modal setModal
-
-
-mapModalM : (v -> v) -> { item | modal : Maybe v } -> { item | modal : Maybe v }
-mapModalM =
-    mapM_ .modal setModal
-
-
 setMouse : v -> { item | mouse : v } -> { item | mouse : v }
 setMouse =
     set_ .mouse (\value item -> { item | mouse = value })
@@ -720,11 +658,6 @@ mapNavbar =
 setNewLayout : v -> { item | newLayout : v } -> { item | newLayout : v }
 setNewLayout =
     set_ .newLayout (\value item -> { item | newLayout = value })
-
-
-mapNewLayoutM : (v -> v) -> { item | newLayout : Maybe v } -> { item | newLayout : Maybe v }
-mapNewLayoutM =
-    mapM_ .newLayout setNewLayout
 
 
 mapNewLayoutMCmd : (v -> ( v, Cmd msg )) -> { item | newLayout : Maybe v } -> ( { item | newLayout : Maybe v }, Cmd msg )
@@ -847,11 +780,6 @@ mapProject =
     map_ .project setProject
 
 
-setProjectName : v -> { item | projectName : v } -> { item | projectName : v }
-setProjectName =
-    set_ .projectName (\value item -> { item | projectName = value })
-
-
 setProjectSource : v -> { item | projectSource : v } -> { item | projectSource : v }
 setProjectSource =
     set_ .projectSource (\value item -> { item | projectSource = value })
@@ -957,11 +885,6 @@ setSave =
     set_ .save (\value item -> { item | save = value })
 
 
-mapSaveM : (v -> v) -> { item | save : Maybe v } -> { item | save : Maybe v }
-mapSaveM =
-    mapM_ .save setSave
-
-
 mapSaveCmd : (v -> ( v, Cmd msg )) -> { item | save : v } -> ( { item | save : v }, Cmd msg )
 mapSaveCmd =
     mapCmd_ .save setSave
@@ -1017,16 +940,6 @@ setSharing =
     set_ .sharing (\value item -> { item | sharing = value })
 
 
-mapSharing : (v -> v) -> { item | sharing : v } -> { item | sharing : v }
-mapSharing =
-    map_ .sharing setSharing
-
-
-mapSharingM : (v -> v) -> { item | sharing : Maybe v } -> { item | sharing : Maybe v }
-mapSharingM =
-    mapM_ .sharing setSharing
-
-
 mapSharingCmd : (v -> ( v, Cmd msg )) -> { item | sharing : v } -> ( { item | sharing : v }, Cmd msg )
 mapSharingCmd =
     mapCmd_ .sharing setSharing
@@ -1070,16 +983,6 @@ mapShowSettings =
 setSize : v -> { item | size : v } -> { item | size : v }
 setSize =
     set_ .size (\value item -> { item | size = value })
-
-
-setSources : v -> { item | sources : v } -> { item | sources : v }
-setSources =
-    set_ .sources (\value item -> { item | sources = value })
-
-
-mapSources : (v -> v) -> { item | sources : v } -> { item | sources : v }
-mapSources =
-    map_ .sources setSources
 
 
 setSourceUpdate : v -> { item | sourceUpdate : v } -> { item | sourceUpdate : v }
@@ -1132,21 +1035,6 @@ mapTablesCmd =
     mapCmd_ .tables setTables
 
 
-setTeam : v -> { item | team : v } -> { item | team : v }
-setTeam =
-    set_ .team (\value item -> { item | team = value })
-
-
-mapTeamCmd : (v -> ( v, Cmd msg )) -> { item | team : v } -> ( { item | team : v }, Cmd msg )
-mapTeamCmd =
-    mapCmd_ .team setTeam
-
-
-mapMTeamCmd : (v -> ( v, Cmd msg )) -> Maybe { item | team : v } -> ( Maybe { item | team : v }, Cmd msg )
-mapMTeamCmd f model =
-    model |> Maybe.map (mapTeamCmd f >> Tuple.mapFirst Just) |> Maybe.withDefault ( Nothing, Cmd.none )
-
-
 setText : v -> { item | text : v } -> { item | text : v }
 setText =
     set_ .text (\value item -> { item | text = value })
@@ -1177,19 +1065,9 @@ setToken =
     set_ .token (\value item -> { item | token = value })
 
 
-mapToken : (v -> v) -> { item | token : v } -> { item | token : v }
-mapToken =
-    map_ .token setToken
-
-
 setTokens : v -> { item | tokens : v } -> { item | tokens : v }
 setTokens =
     set_ .tokens (\value item -> { item | tokens = value })
-
-
-mapTokens : (v -> v) -> { item | tokens : v } -> { item | tokens : v }
-mapTokens =
-    map_ .tokens setTokens
 
 
 setTokenForm : v -> { item | tokenForm : v } -> { item | tokenForm : v }
@@ -1197,29 +1075,9 @@ setTokenForm =
     set_ .tokenForm (\value item -> { item | tokenForm = value })
 
 
-mapTokenForm : (v -> v) -> { item | tokenForm : v } -> { item | tokenForm : v }
-mapTokenForm =
-    map_ .tokenForm setTokenForm
-
-
 mapTokenFormM : (v -> v) -> { item | tokenForm : Maybe v } -> { item | tokenForm : Maybe v }
 mapTokenFormM =
     mapM_ .tokenForm setTokenForm
-
-
-setTop : v -> { item | top : v } -> { item | top : v }
-setTop =
-    set_ .top (\value item -> { item | top = value })
-
-
-mapTop : (v -> v) -> { item | top : v } -> { item | top : v }
-mapTop =
-    map_ .top setTop
-
-
-setTwitter : v -> { item | twitter : v } -> { item | twitter : v }
-setTwitter =
-    set_ .twitter (\value item -> { item | twitter = value })
 
 
 setUniques : v -> { item | uniques : v } -> { item | uniques : v }
@@ -1235,21 +1093,6 @@ mapUniques =
 setUpdatedAt : v -> { item | updatedAt : v } -> { item | updatedAt : v }
 setUpdatedAt =
     set_ .updatedAt (\value item -> { item | updatedAt = value })
-
-
-setUser : v -> { item | user : v } -> { item | user : v }
-setUser =
-    set_ .user (\value item -> { item | user = value })
-
-
-mapUserM : (v -> v) -> { item | user : Maybe v } -> { item | user : Maybe v }
-mapUserM =
-    mapM_ .user setUser
-
-
-setUsername : v -> { item | username : v } -> { item | username : v }
-setUsername =
-    set_ .username (\value item -> { item | username = value })
 
 
 setValue : v -> { item | value : v } -> { item | value : v }
@@ -1270,11 +1113,6 @@ setVirtualRelation =
 mapVirtualRelationM : (v -> v) -> { item | virtualRelation : Maybe v } -> { item | virtualRelation : Maybe v }
 mapVirtualRelationM =
     mapM_ .virtualRelation setVirtualRelation
-
-
-setWebsite : v -> { item | website : v } -> { item | website : v }
-setWebsite =
-    set_ .website (\value item -> { item | website = value })
 
 
 setZoom : v -> { item | zoom : v } -> { item | zoom : v }

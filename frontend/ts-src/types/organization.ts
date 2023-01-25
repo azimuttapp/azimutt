@@ -9,8 +9,8 @@ export type OrganizationSlug = Slug
 export const OrganizationSlug = Slug
 export type OrganizationName = string
 export const OrganizationName = z.string()
-export type PlanId = 'free' | 'team'
-export const PlanId = z.enum(['free', 'team'])
+export type PlanId = 'free' | 'pro'
+export const PlanId = z.enum(['free', 'pro'])
 
 export interface Plan {
     id: PlanId
