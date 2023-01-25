@@ -18,7 +18,7 @@ config :azimutt,
   twitter_url: "https://twitter.com/azimuttapp",
   github_url: "https://github.com/azimuttapp/azimutt",
   github_new_issue: "https://github.com/azimuttapp/azimutt/issues/new",
-  team_plan_seat_price: 13,
+  pro_plan_seat_price: 13,
   free_plan_seats: 3,
   # MUST stay in sync with frontend/src/Conf.elm (`features`)
   free_plan_layouts: 3,

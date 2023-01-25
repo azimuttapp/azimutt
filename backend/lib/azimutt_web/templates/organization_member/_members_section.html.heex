@@ -21,7 +21,7 @@
                         You still have <b><%= remaining_seats %> remaining seats</b> in your free organization.
                     <% @plan.id == :free -> %>
                         You have no remaining seat in your free organization.<br>
-                        Get more collaborators with <%= link "our team plan", to: Routes.organization_billing_path(@conn, :index, @organization, source: "members"), class: "text-indigo-600 font-semibold hover:text-indigo-900" %>.
+                        Get more collaborators with <%= link "our pro plan", to: Routes.organization_billing_path(@conn, :index, @organization, source: "members"), class: "text-indigo-600 font-semibold hover:text-indigo-900" %>.
                     <% @organization.heroku_resource && remaining_seats > 0 -> %>
                         Your Heroku plan has <%= total_seats %> seats, you have <%= remaining_seats %> left.
                     <% @organization.heroku_resource -> %>

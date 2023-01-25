@@ -7,7 +7,7 @@ defmodule AzimuttWeb.Admin.EmailController do
     conn |> render("new.html")
   end
 
-  def create(conn, params) do
+  def create(conn, _params) do
     # IO.inspect(params, label: "params")
     conn
     |> put_flash(:info, "TODO: send email")

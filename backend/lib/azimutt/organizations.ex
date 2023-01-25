@@ -312,8 +312,8 @@ defmodule Azimutt.Organizations do
   end
 
   defp heroku_plan(%Resource{} = resource) do
-    if resource.plan |> String.starts_with?("team-") do
-      {:ok, OrganizationPlan.team()}
+    if resource.plan |> String.starts_with?("pro-") do
+      {:ok, OrganizationPlan.pro()}
     else
       {:ok, OrganizationPlan.free()}
     end
@@ -323,7 +323,7 @@ defmodule Azimutt.Organizations do
     StripeSrv.get_subscription(subscription_id)
     |> Result.map(fn s ->
       if s.status == "active" || s.status == "past_due" || s.status == "unpaid" do
-        OrganizationPlan.team()
+        OrganizationPlan.pro()
       else
         OrganizationPlan.free()
       end

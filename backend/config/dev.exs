@@ -6,7 +6,7 @@ config :azimutt,
   site_url: "localhost:4000",
   support_email: "hey@azimutt.local",
   mailer_default_from_email: "hey@azimutt.dev",
-  team_plan_price_id: "price_1LqdRzCaPXsf4vehSyyUn4pd"
+  pro_plan_price_id: "price_1LqdRzCaPXsf4vehSyyUn4pd"
 
 config :cors_plug,
   origin: ["http://localhost:4001"],

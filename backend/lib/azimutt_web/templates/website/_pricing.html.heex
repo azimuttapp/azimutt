@@ -28,10 +28,10 @@
                 <a href={Routes.user_session_path(@conn, :new)} class="inline-flex items-center justify-center px-4 py-2 mt-8 text-sm text-white rounded-full group ring-1 focus:outline-none ring-slate-700 hover:ring-slate-500 active:ring-slate-700 active:text-slate-400 focus-visible:outline-white">Get started</a>
             </section>
             <section class="flex flex-col order-first px-6 py-8 bg-blue-600 rounded-3xl sm:px-8 lg:order-none">
-                <h3 class="mt-5 text-lg text-white font-display">Team</h3>
+                <h3 class="mt-5 text-lg text-white font-display">Pro</h3>
                 <p class="mt-2 text-base text-white">Advanced collaboration for individuals and organizations.</p>
                 <p class="order-first text-5xl font-light tracking-tight text-white font-display">
-                    $<%= Azimutt.config(:team_plan_seat_price) %><span class="text-sm text-gray-50 "> / month / user</span>
+                    $<%= Azimutt.config(:pro_plan_seat_price) %><span class="text-sm text-gray-50 "> / month / user</span>
                 </p>
                 <ul role="list" class="flex flex-col order-last mt-10 text-sm text-white gap-y-3">
                     <li class="flex"><Icon.arrow_left class="mr-1 text-white" /><span class="ml-4">Everything included in Free, plus...</span></li>
@@ -47,7 +47,7 @@
                 <p class="mt-2 text-base text-slate-400">Security, compliance, and flexible integration.</p>
                 <p class="order-first text-5xl font-light tracking-tight text-white font-display">Contact us</p>
                 <ul role="list" class="flex flex-col order-last mt-10 text-sm gap-y-3 text-slate-200">
-                    <li class="flex"><Icon.arrow_left class="mr-1 text-white" /><span class="ml-4">Everything included in Team, plus...</span></li>
+                    <li class="flex"><Icon.arrow_left class="mr-1 text-white" /><span class="ml-4">Everything included in Pro, plus...</span></li>
                     <li class="flex"><Icon.check_circle kind="outline" class="text-slate-400" /><span class="ml-4">SSO</span></li>
                     <li class="flex"><Icon.check_circle kind="outline" class="text-slate-400" /><span class="ml-4">End to end encryption</span></li>
                     <li class="flex"><Icon.check_circle kind="outline" class="text-slate-400" /><span class="ml-4">Rights management</span></li>
