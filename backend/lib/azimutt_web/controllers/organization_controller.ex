@@ -8,7 +8,7 @@ defmodule AzimuttWeb.OrganizationController do
 
   def new(conn, _params) do
     current_user = conn.assigns.current_user
-    changeset = Organization.create_non_personal_changeset(%Organization{}, current_user, %Stripe.Customer{})
+    changeset = Organization.create_non_personal_changeset(%Organization{}, current_user)
     logo = Faker.Avatar.image_url()
 
     conn

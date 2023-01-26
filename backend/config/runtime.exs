@@ -20,6 +20,11 @@ if System.get_env("PHX_SERVER") do
   config :azimutt, AzimuttWeb.Endpoint, server: true
 end
 
+skip_public_site = System.get_env("SKIP_PUBLIC_SITE") || false
+
+config :azimutt,
+  skip_public_site: skip_public_site
+
 github_client_id = System.get_env("GITHUB_CLIENT_ID")
 github_client_secret = System.get_env("GITHUB_CLIENT_SECRET")
 
@@ -34,9 +39,8 @@ else
   IO.puts("Github auth not setup (GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET env variables not found)")
 end
 
-# https://dashboard.stripe.com/test/apikeys
+# https://dashboard.stripe.com/test/apikeys & https://dashboard.stripe.com/account/webhooks
 stripe_api_key = System.get_env("STRIPE_API_KEY")
-# https://dashboard.stripe.com/account/webhooks
 stripe_webhook_key = System.get_env("STRIPE_WEBHOOK_SIGNING_SECRET")
 
 if stripe_api_key && stripe_webhook_key do

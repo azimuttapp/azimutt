@@ -7,6 +7,7 @@ defmodule AzimuttWeb.OrganizationBillingController do
   alias Azimutt.Organizations.Organization
   alias Azimutt.Services.StripeSrv
   alias Azimutt.Tracking
+  alias Azimutt.Utils.Result
   alias Azimutt.Utils.Uuid
   alias AzimuttWeb.Router.Helpers, as: Routes
   action_fallback AzimuttWeb.FallbackController
@@ -33,13 +34,29 @@ defmodule AzimuttWeb.OrganizationBillingController do
 
   defp stripe_subscription_view(conn, %Organization{} = organization) do
     case Organizations.get_subscription_status(organization.stripe_subscription_id) do
-      :active -> generate_billing_view(conn, "billing.html", organization, "Your subscription is active !")
-      :past_due -> generate_billing_view(conn, "billing.html", organization, "We have an issue with your subscription")
-      :unpaid -> generate_billing_view(conn, "billing.html", organization, "We have an issue with your subscription")
-      :canceled -> generate_billing_view(conn, "subscribe.html", organization, "Your subscription is canceled")
-      :incomplete -> generate_billing_view(conn, "billing.html", organization, "We have an issue with your subscription")
-      :incomplete_expired -> generate_billing_view(conn, "billing.html", organization, "We have an issue with your subscription")
-      :trialing -> generate_billing_view(conn, "billing.html", organization, "You are in free trial")
+      {:ok, :active} ->
+        generate_billing_view(conn, "billing.html", organization, "Your subscription is active !")
+
+      {:ok, :past_due} ->
+        generate_billing_view(conn, "billing.html", organization, "We have an issue with your subscription")
+
+      {:ok, :unpaid} ->
+        generate_billing_view(conn, "billing.html", organization, "We have an issue with your subscription")
+
+      {:ok, :canceled} ->
+        generate_billing_view(conn, "subscribe.html", organization, "Your subscription is canceled")
+
+      {:ok, :incomplete} ->
+        generate_billing_view(conn, "billing.html", organization, "We have an issue with your subscription")
+
+      {:ok, :incomplete_expired} ->
+        generate_billing_view(conn, "billing.html", organization, "We have an issue with your subscription")
+
+      {:ok, :trialing} ->
+        generate_billing_view(conn, "billing.html", organization, "You are in free trial")
+
+      {:error, err} ->
+        conn |> put_flash(:error, "Can't show view: #{err}.") |> redirect(to: Routes.organization_path(conn, :show, organization))
     end
   end
 
@@ -58,25 +75,35 @@ defmodule AzimuttWeb.OrganizationBillingController do
     quantity = get_organization_seats(organization)
     Tracking.subscribe_init(current_user, organization, price, quantity)
 
-    case StripeSrv.create_session(%{
-           customer: organization.stripe_customer_id,
-           success_url: Routes.organization_billing_url(conn, :success, organization_id),
-           cancel_url: Routes.organization_billing_url(conn, :cancel, organization_id),
-           # Get price_id from your Stripe dashboard for your product
-           price_id: price,
-           quantity: quantity
-         }) do
+    result =
+      if organization.stripe_customer_id == nil do
+        Organizations.create_stripe_customer(organization, current_user)
+      else
+        {:ok, organization}
+      end
+      |> Result.flat_map(fn stripe_orga ->
+        StripeSrv.create_session(%{
+          customer: stripe_orga.stripe_customer_id,
+          success_url: Routes.organization_billing_url(conn, :success, organization_id),
+          cancel_url: Routes.organization_billing_url(conn, :cancel, organization_id),
+          # Get price_id from your Stripe dashboard for your product
+          price_id: price,
+          quantity: quantity
+        })
+      end)
+
+    case result do
       {:ok, session} ->
         Logger.info("Stripe session is create with success")
         Tracking.subscribe_start(current_user, organization, price, quantity)
         redirect(conn, external: session.url)
 
       {:error, stripe_error} ->
-        Logger.error("Cannot create Stripe Session: #{stripe_error}")
+        Logger.error("Cannot create Stripe Session for organization #{organization.id}: #{stripe_error}")
         Tracking.subscribe_error(current_user, organization, price, quantity)
 
         conn
-        |> put_flash(:error, "Sorry something went wrong.")
+        |> put_flash(:error, "Sorry something went wrong, please contact us at #{Azimutt.config(:support_email)}.")
         |> redirect(to: Routes.organization_billing_path(conn, :index, organization, source: "billing-error"))
     end
   end
@@ -89,20 +116,24 @@ defmodule AzimuttWeb.OrganizationBillingController do
     current_user = conn.assigns.current_user
     {:ok, organization} = Organizations.get_organization(organization_id, current_user)
 
-    case StripeSrv.update_session(%{
-           customer: organization.stripe_customer_id,
-           return_url: Routes.organization_billing_url(conn, :index, organization, source: "billing-portal")
-         }) do
-      {:ok, session} ->
-        Logger.info("Stripe Billing Portal session is create with success")
-        redirect(conn, external: session.url)
+    if organization.stripe_customer_id != nil do
+      case StripeSrv.update_session(%{
+             customer: organization.stripe_customer_id,
+             return_url: Routes.organization_billing_url(conn, :index, organization, source: "billing-portal")
+           }) do
+        {:ok, session} ->
+          Logger.info("Stripe Billing Portal session is create with success")
+          redirect(conn, external: session.url)
 
-      {:error, stripe_error} ->
-        Logger.error("Cannot create Stripe  Billing Portal Session", stripe_error)
+        {:error, stripe_error} ->
+          Logger.error("Cannot create Stripe  Billing Portal Session", stripe_error)
 
-        conn
-        |> put_flash(:error, "Sorry something went wrong.")
-        |> redirect(to: Routes.user_dashboard_path(conn, :index))
+          conn
+          |> put_flash(:error, "Sorry something went wrong.")
+          |> redirect(to: Routes.organization_path(conn, :show, organization))
+      end
+    else
+      conn |> put_flash(:error, "Can't show view.") |> redirect(to: Routes.organization_path(conn, :show, organization))
     end
   end
 

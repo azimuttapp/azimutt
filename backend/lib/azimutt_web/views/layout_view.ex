@@ -2,6 +2,7 @@ defmodule AzimuttWeb.LayoutView do
   use AzimuttWeb, :view
   alias Azimutt.Heroku
   alias Azimutt.Organizations.OrganizationPlan
+  alias Azimutt.Services.StripeSrv
 
   # Phoenix LiveDashboard is available only in development by default,
   # so we instruct Elixir to not warn if the dashboard route is missing.
