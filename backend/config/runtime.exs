@@ -20,7 +20,7 @@ if System.get_env("PHX_SERVER") do
   config :azimutt, AzimuttWeb.Endpoint, server: true
 end
 
-skip_public_site = System.get_env("SKIP_PUBLIC_SITE") || false
+skip_public_site = System.get_env("SKIP_PUBLIC_SITE") == "true"
 
 config :azimutt,
   skip_public_site: skip_public_site
