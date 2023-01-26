@@ -117,9 +117,12 @@ defmodule Azimutt.Tracking do
   def frontend_event(name, details, %User{} = current_user, organization_id, project_id),
     do: create_event(name, nil, details, current_user, organization_id, project_id)
 
+  def frontend_event(name, details, current_user, organization_id, project_id) when is_nil(current_user),
+    do: create_event(name, nil, details, current_user, organization_id, project_id)
+
   # `organization_id` and `project_id` are nullable
   # FIXME: make this async "fire & forget"
-  defp create_event(name, data, details, %User{} = current_user, organization_id, project_id) do
+  defp create_event(name, data, details, current_user, organization_id, project_id) do
     if Mix.env() == :dev, do: Logger.info("Tracking event '#{name}': #{inspect(details)}")
 
     saved_data = Nil.safe(data, fn v -> if map_size(v) == 0, do: nil, else: v end)

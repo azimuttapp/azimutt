@@ -146,14 +146,13 @@ defmodule AzimuttWeb.Router do
     post "/analyzer/query", Api.AnalyzerController, :query
     get "/gallery", Api.GalleryController, :index
     get "/organizations/:organization_id/projects/:id", Api.ProjectController, :show
+    post "/events", Api.TrackingController, :create
   end
 
   # authed APIs
   scope "/api/v1", AzimuttWeb do
     pipe_through [:api, :require_authed_user_api]
     get "/users/current", Api.UserController, :current
-    # only track authed users
-    post "/events", Api.TrackingController, :create
 
     resources "/organizations", Api.OrganizationController, only: [:index] do
       resources "/projects", Api.ProjectController, except: [:new, :edit, :show] do
