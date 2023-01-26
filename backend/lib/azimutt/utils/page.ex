@@ -109,6 +109,9 @@ defmodule Azimutt.Utils.Page do
       value |> String.contains?("%") ->
         dynamic([t], like(field(t, ^field), ^value))
 
+      value == "null" ->
+        dynamic([t], is_nil(field(t, ^field)))
+
       true ->
         dynamic([t], field(t, ^field) == ^value)
     end

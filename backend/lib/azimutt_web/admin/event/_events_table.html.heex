@@ -52,11 +52,16 @@
                             <% end %>
                         </td>
                         <td class="group p-1" title={"Created on #{format_datetime(event.created_at)}"}>
-                            <%= link to: Routes.admin_user_path(@conn, :show, event.created_by), class: "underline" do %>
-                                <%= img_tag(event.created_by.avatar, class: "inline-block h-4 w-4 rounded-md") %>
-                                <%= event.created_by.name %>
+                            <%= if event.created_by do %>
+                                <%= link to: Routes.admin_user_path(@conn, :show, event.created_by), class: "underline" do %>
+                                    <%= img_tag(event.created_by.avatar, class: "inline-block h-4 w-4 rounded-md") %>
+                                    <%= event.created_by.name %>
+                                <% end %>
+                                <%= render AzimuttWeb.PartialsView, "_page_filter.html", page: @events, key: "created_by_id", value: event.created_by_id %>
+                            <% else %>
+                                Anonymous
+                                <%= render AzimuttWeb.PartialsView, "_page_filter.html", page: @events, key: "created_by_id", value: "null" %>
                             <% end %>
-                            <%= render AzimuttWeb.PartialsView, "_page_filter.html", page: @events, key: "created_by_id", value: event.created_by_id %>
                         </td>
                     </tr>
                 <% end %>

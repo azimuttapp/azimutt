@@ -4,9 +4,15 @@
             <!-- Logo section -->
             <div class="flex items-center px-2 lg:px-0 xl:w-64">
                 <div class="flex-shrink-0">
-                    <a aria-label="Home" href={Routes.website_path(@conn, :index)}>
-                        <AzimuttWeb.Components.Brand.logo class="w-auto h-8" />
-                    </a>
+                    <%= if Azimutt.config(:skip_public_site) do %>
+                        <a aria-label="Home" href="https://azimutt.app" target="_blank">
+                            <AzimuttWeb.Components.Brand.logo class="w-auto h-8" />
+                        </a>
+                    <% else %>
+                        <a aria-label="Home" href={Routes.website_path(@conn, :index)}>
+                            <AzimuttWeb.Components.Brand.logo class="w-auto h-8" />
+                        </a>
+                    <% end %>
                 </div>
             </div>
             <div class="flex lg:hidden">

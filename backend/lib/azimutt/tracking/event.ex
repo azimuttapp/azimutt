@@ -26,6 +26,6 @@ defmodule Azimutt.Tracking.Event do
     |> put_change(:created_by, attrs.created_by)
     |> put_change(:organization_id, attrs.organization_id)
     |> put_change(:project_id, attrs.project_id)
-    |> validate_required([:name, :created_by])
+    |> validate_required([:name])
   end
 end

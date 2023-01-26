@@ -24,16 +24,28 @@
         <div class="text-xs font-medium text-slate-500 truncate"><%= @event.data |> format_details() %></div>
     <% end %>
 
-    <div class="mt-3 text-slate-300">
-        Created by:
-        <%= link to: Routes.admin_user_path(@conn, :show, @event.created_by), class: "underline" do %>
-            <%= img_tag(@event.created_by.avatar, class: "inline-block h-4 w-4 rounded-md") %>
-            <%= @event.created_by.name %>
-        <% end %>
-    </div>
 
-    <div class="mt-3">
-        <div class="text-slate-300">Others events of the day for <%= @event.created_by.name %>:</div>
-        <%= render "_events_table.html", conn: @conn, events: @events, selected: @event %>
-    </div>
+    <%= if @event.created_by do %>
+        <div class="mt-3 text-slate-300">
+            Created by:
+            <%= link to: Routes.admin_user_path(@conn, :show, @event.created_by), class: "underline" do %>
+                <%= img_tag(@event.created_by.avatar, class: "inline-block h-4 w-4 rounded-md") %>
+                <%= @event.created_by.name %>
+            <% end %>
+        </div>
+
+        <div class="mt-3">
+            <div class="text-slate-300">Others events of the day for <%= @event.created_by.name %>:</div>
+            <%= render "_events_table.html", conn: @conn, events: @events, selected: @event %>
+        </div>
+    <% else %>
+        <div class="mt-3 text-slate-300">
+            Created by: Anonymous
+        </div>
+
+        <div class="mt-3">
+            <div class="text-slate-300">Others anonymous events of the day:</div>
+            <%= render "_events_table.html", conn: @conn, events: @events, selected: @event %>
+        </div>
+    <% end %>
 </div>

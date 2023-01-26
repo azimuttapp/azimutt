@@ -13,7 +13,7 @@ import Libs.Maybe as Maybe
 import Libs.Result as Result
 import Models.OrganizationId exposing (OrganizationId)
 import Models.Project exposing (Project)
-import Models.Project.ProjectId exposing (ProjectId)
+import Models.Project.ProjectId as ProjectId exposing (ProjectId)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceKind as SourceKind
 import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
@@ -158,7 +158,11 @@ notFound url =
 
 createEvent : String -> List ( String, Encode.Value ) -> Maybe { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> TrackEvent
 createEvent name details project =
-    { name = name, details = details, organization = project |> Maybe.andThen .organization |> Maybe.map .id, project = project |> Maybe.map .id }
+    { name = name
+    , details = details
+    , organization = project |> Maybe.andThen .organization |> Maybe.map .id
+    , project = project |> Maybe.map .id |> Maybe.filter (\id -> id /= ProjectId.zero)
+    }
 
 
 
