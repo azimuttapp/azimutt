@@ -1,7 +1,9 @@
 defmodule AzimuttWeb.LayoutView do
   use AzimuttWeb, :view
+  alias Azimutt.Accounts
   alias Azimutt.Heroku
   alias Azimutt.Organizations.OrganizationPlan
+  alias Azimutt.Services.StripeSrv
 
   # Phoenix LiveDashboard is available only in development by default,
   # so we instruct Elixir to not warn if the dashboard route is missing.
@@ -64,7 +66,7 @@ defmodule AzimuttWeb.LayoutView do
 
     case plan.id do
       :free -> content_tag(:span, "Free plan", class: "#{classes} bg-gray-100 text-gray-800")
-      :team -> content_tag(:span, "Team plan", class: "#{classes} bg-yellow-100 text-yellow-800")
+      :pro -> content_tag(:span, "Pro plan", class: "#{classes} bg-yellow-100 text-yellow-800")
       :enterprise -> content_tag(:span, "Enterprise plan", class: "#{classes} bg-purple-100 text-purple-800")
       _ -> content_tag(:span, "Unknown plan #{plan.id}", class: "#{classes} bg-red-100 text-red-800")
     end

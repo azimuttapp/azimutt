@@ -1,7 +1,5 @@
 defmodule AzimuttWeb.Components.Brand do
-  @moduledoc """
-  Brand component
-  """
+  @moduledoc "Brand component"
   use Phoenix.Component
 
   @doc "Displays full logo. "

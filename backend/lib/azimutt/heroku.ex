@@ -14,7 +14,7 @@ defmodule Azimutt.Heroku do
   def app_settings_url(app), do: "https://dashboard.heroku.com/apps/#{app}/settings"
 
   def allowed_members(plan) do
-    team_members = Regex.named_captures(~r/team-(?<members>[0-9]+)/, plan)
+    team_members = Regex.named_captures(~r/pro-(?<members>[0-9]+)/, plan)
 
     if team_members do
       String.to_integer(team_members["members"])

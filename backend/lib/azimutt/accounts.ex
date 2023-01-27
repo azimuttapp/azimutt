@@ -4,6 +4,8 @@ defmodule Azimutt.Accounts do
   alias Azimutt.Repo
   alias Azimutt.Accounts.{User, UserNotifier, UserToken}
   alias Azimutt.Organizations
+  alias Azimutt.Organizations.Organization
+  alias Azimutt.Organizations.OrganizationMember
   alias Azimutt.Utils.Crypto
   alias Azimutt.Utils.Result
 
@@ -57,8 +59,15 @@ defmodule Azimutt.Accounts do
     |> Ecto.Multi.run(:organization, fn _repo, %{user: user} -> Organizations.create_personal_organization(user) end)
     |> Repo.transaction()
     |> case do
-      {:ok, %{user: user}} -> {:ok, user}
-      {:error, :user, changeset, _} -> {:error, changeset}
+      {:ok, %{user: user}} ->
+        if Azimutt.config(:global_organization) do
+          OrganizationMember.new_member_changeset(Azimutt.config(:global_organization), user) |> Repo.insert()
+        end
+
+        {:ok, user}
+
+      {:error, :user, changeset, _} ->
+        {:error, changeset}
     end
   end
 
@@ -219,20 +228,27 @@ defmodule Azimutt.Accounts do
     end
   end
 
-  def get_user_organization(%User{} = user) do
-    user.organizations
+  def get_user_organizations(%User{} = user) do
+    if Azimutt.config(:global_organization) && Azimutt.config(:global_organization_alone) do
+      user.organizations |> Enum.filter(fn orga -> orga.id == Azimutt.config(:global_organization) end)
+    else
+      user.organizations
+    end
+  end
+
+  def get_user_default_organization(%User{} = user) do
+    if Azimutt.config(:global_organization) do
+      user.organizations
+      |> Enum.filter(fn orga -> orga.id == Azimutt.config(:global_organization) end)
+      |> List.first() || get_user_personal_organization(user)
+    else
+      get_user_personal_organization(user)
+    end
   end
 
   def get_user_personal_organization(%User{} = user) do
     user.organizations
-    |> filter_personal_organizations
-    |> List.first()
-  end
-
-  def filter_personal_organizations(list_of_organizations) do
-    Enum.filter(
-      list_of_organizations,
-      fn organization -> organization.is_personal == true end
-    )
+    |> Enum.filter(fn orga -> orga.is_personal == true end)
+    |> List.first() || user.organizations |> List.first()
   end
 end

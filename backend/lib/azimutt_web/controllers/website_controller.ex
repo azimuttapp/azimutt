@@ -10,8 +10,18 @@ defmodule AzimuttWeb.WebsiteController do
   def index(conn, _params) do
     case conn |> last_used_project |> Result.filter_not(fn _p -> same_domain?(conn) end) do
       # {:ok, p} -> conn |> redirect(to: Routes.organization_path(conn, :show, p.organization_id))
-      {:ok, p} -> conn |> redirect(to: Routes.elm_path(conn, :project_show, p.organization_id, p.id))
-      _ -> conn |> render("index.html")
+      {:ok, p} ->
+        conn |> redirect(to: Routes.elm_path(conn, :project_show, p.organization_id, p.id))
+
+      _ ->
+        if Azimutt.config(:skip_public_site) do
+          conn.assigns.current_user
+          |> Result.from_nillable()
+          |> Result.map(fn _user -> conn |> redirect(to: Routes.user_dashboard_path(conn, :index)) end)
+          |> Result.or_else(conn |> redirect(to: Routes.user_session_path(conn, :new)))
+        else
+          conn |> render("index.html")
+        end
     end
   end
 

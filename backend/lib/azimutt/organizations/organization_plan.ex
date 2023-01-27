@@ -30,10 +30,10 @@ defmodule Azimutt.Organizations.OrganizationPlan do
     }
   end
 
-  def team do
+  def pro do
     %OrganizationPlan{
-      id: :team,
-      name: "Team plan",
+      id: :pro,
+      name: "Pro plan",
       layouts: nil,
       memos: nil,
       colors: true,

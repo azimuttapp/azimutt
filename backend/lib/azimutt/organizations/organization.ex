@@ -51,7 +51,7 @@ defmodule Azimutt.Organizations.Organization do
     ]
 
   @doc false
-  def create_personal_changeset(%Organization{} = organization, %User{} = current_user, %Stripe.Customer{} = stripe_customer) do
+  def create_personal_changeset(%Organization{} = organization, %User{} = current_user) do
     required = [:name, :contact_email, :logo]
 
     organization
@@ -68,7 +68,6 @@ defmodule Azimutt.Organizations.Organization do
     )
     |> Slugme.generate_slug(:name)
     |> put_change(:is_personal, true)
-    |> put_change(:stripe_customer_id, stripe_customer.id)
     |> put_assoc(:created_by, current_user)
     |> put_assoc(:updated_by, current_user)
     |> validate_required(required)
@@ -76,23 +75,24 @@ defmodule Azimutt.Organizations.Organization do
   end
 
   @doc false
-  def create_non_personal_changeset(
-        %Organization{} = organization,
-        %User{} = current_user,
-        %Stripe.Customer{} = stripe_customer,
-        attrs \\ %{}
-      ) do
+  def create_non_personal_changeset(%Organization{} = organization, %User{} = current_user, attrs \\ %{}) do
     required = [:name, :contact_email, :logo]
 
     organization
     |> cast(attrs, required ++ [:location, :description, :github_username, :twitter_username])
     |> Slugme.generate_slug(:name)
     |> put_change(:is_personal, false)
-    |> put_change(:stripe_customer_id, stripe_customer.id)
     |> put_change(:created_by, current_user)
     |> put_change(:updated_by, current_user)
     |> validate_required(required)
     |> unique_constraint(:slug)
+  end
+
+  @doc false
+  def add_stripe_customer_changeset(%Organization{} = organization, %Stripe.Customer{} = stripe_customer) do
+    organization
+    |> cast(%{}, [])
+    |> put_change(:stripe_customer_id, stripe_customer.id)
   end
 
   @doc false
@@ -103,11 +103,7 @@ defmodule Azimutt.Organizations.Organization do
   end
 
   @doc false
-  def update_changeset(
-        %Organization{} = organization,
-        attrs \\ %{},
-        %User{} = current_user
-      ) do
+  def update_changeset(%Organization{} = organization, attrs \\ %{}, %User{} = current_user) do
     organization
     |> cast(attrs, [
       :name,

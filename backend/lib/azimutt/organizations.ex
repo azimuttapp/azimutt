@@ -54,54 +54,54 @@ defmodule Azimutt.Organizations do
   end
 
   def create_personal_organization(%User{} = current_user) do
-    StripeSrv.init_customer("TMP - P - #{current_user.name}", %{
-      name: current_user.name,
-      email: current_user.email,
-      provider: current_user.provider,
-      provider_uid: current_user.provider_uid,
-      location: current_user.location,
-      description: current_user.description,
-      github_username: current_user.github_username
-    })
-    |> Result.flat_map(fn stripe_customer ->
-      %Organization{}
-      |> Repo.preload(:members)
-      |> Organization.create_personal_changeset(current_user, stripe_customer)
-      |> Ecto.Changeset.put_assoc(:members, [OrganizationMember.creator_changeset(current_user)])
-      |> Repo.insert()
-      |> Result.tap_both(
-        fn _err -> StripeSrv.delete_customer(stripe_customer) end,
-        fn org -> stripe_update_customer(stripe_customer, org, current_user, true) end
-      )
+    %Organization{}
+    |> Repo.preload(:members)
+    |> Organization.create_personal_changeset(current_user)
+    |> Ecto.Changeset.put_assoc(:members, [OrganizationMember.creator_changeset(current_user)])
+    |> Repo.insert()
+    |> Result.flat_map(fn orga ->
+      if StripeSrv.stripe_configured?() do
+        create_stripe_customer(orga, current_user)
+      else
+        {:ok, orga}
+      end
     end)
   end
 
   def create_non_personal_organization(attrs, %User{} = current_user) do
-    StripeSrv.init_customer("TMP - O - #{attrs[:name]} - #{current_user.name}", attrs)
-    |> Result.flat_map(fn stripe_customer ->
-      %Organization{}
-      |> Repo.preload(:members)
-      |> Organization.create_non_personal_changeset(current_user, stripe_customer, attrs)
-      |> Ecto.Changeset.put_assoc(:members, [OrganizationMember.creator_changeset(current_user)])
-      |> Repo.insert()
-      |> Result.tap_both(
-        fn _err -> StripeSrv.delete_customer(stripe_customer) end,
-        fn org -> stripe_update_customer(stripe_customer, org, current_user, false) end
-      )
+    %Organization{}
+    |> Repo.preload(:members)
+    |> Organization.create_non_personal_changeset(current_user, attrs)
+    |> Ecto.Changeset.put_assoc(:members, [OrganizationMember.creator_changeset(current_user)])
+    |> Repo.insert()
+    |> Result.flat_map(fn orga ->
+      if StripeSrv.stripe_configured?() do
+        create_stripe_customer(orga, current_user)
+      else
+        {:ok, orga}
+      end
     end)
   end
 
-  defp stripe_update_customer(%Stripe.Customer{} = stripe_customer, %Organization{} = organization, %User{} = current_user, is_personal) do
-    StripeSrv.update_customer(
-      stripe_customer,
-      organization.id,
-      organization.name,
-      organization.contact_email,
-      organization.description,
-      is_personal,
-      current_user.name,
-      current_user.email
-    )
+  def create_stripe_customer(%Organization{} = organization, %User{} = current_user) do
+    if organization.stripe_customer_id == nil do
+      StripeSrv.create_customer(
+        organization.id,
+        organization.name,
+        organization.contact_email,
+        organization.description,
+        organization.is_personal,
+        current_user.name,
+        current_user.email
+      )
+      |> Result.flat_map(fn customer ->
+        organization
+        |> Organization.add_stripe_customer_changeset(customer)
+        |> Repo.update()
+      end)
+    else
+      {:error, "Stripe customer already set for organization #{organization.name} (#{organization.id})"}
+    end
   end
 
   def update_organization(attrs, %Organization{} = organization, %User{} = current_user) do
@@ -261,38 +261,44 @@ defmodule Azimutt.Organizations do
     with {:ok, subscription} <- StripeSrv.get_subscription(stripe_subscription_id) do
       case subscription.status do
         "active" ->
-          :active
+          {:ok, :active}
 
         "past_due" ->
-          :past_due
+          {:ok, :past_due}
 
         "unpaid" ->
-          :unpaid
+          {:ok, :unpaid}
 
         "canceled" ->
-          :canceled
+          {:ok, :canceled}
 
         "incomplete" ->
-          :incomplete
+          {:ok, :incomplete}
 
         "incomplete_expired" ->
-          :incomplete_expired
+          {:ok, :incomplete_expired}
 
         "trialing" ->
-          :trialing
+          {:ok, :trialing}
 
         other ->
           Logger.warning("Get unexpected subscription status : #{other}")
-          :incomplete
+          {:ok, :incomplete}
       end
     end
   end
 
-  def get_allowed_members(%Organization{} = organization) do
-    if organization.heroku_resource do
-      Heroku.allowed_members(organization.heroku_resource.plan)
-    else
-      Azimutt.config(:free_plan_seats)
+  def get_allowed_members(%Organization{} = organization, %OrganizationPlan{} = plan) do
+    cond do
+      organization.heroku_resource ->
+        Heroku.allowed_members(organization.heroku_resource.plan)
+
+      plan.id == :pro ->
+        # means no limit
+        nil
+
+      true ->
+        Azimutt.config(:free_plan_seats)
     end
   end
 
@@ -305,15 +311,15 @@ defmodule Azimutt.Organizations do
   def get_organization_plan(%Organization{} = organization) do
     cond do
       organization.heroku_resource -> heroku_plan(organization.heroku_resource)
-      organization.stripe_subscription_id -> stripe_plan(organization.stripe_subscription_id)
+      organization.stripe_subscription_id && StripeSrv.stripe_configured?() -> stripe_plan(organization.stripe_subscription_id)
       true -> {:ok, OrganizationPlan.free()}
     end
     |> Result.map(fn plan -> plan_overrides(organization, plan) end)
   end
 
   defp heroku_plan(%Resource{} = resource) do
-    if resource.plan |> String.starts_with?("team-") do
-      {:ok, OrganizationPlan.team()}
+    if resource.plan |> String.starts_with?("pro-") do
+      {:ok, OrganizationPlan.pro()}
     else
       {:ok, OrganizationPlan.free()}
     end
@@ -323,7 +329,7 @@ defmodule Azimutt.Organizations do
     StripeSrv.get_subscription(subscription_id)
     |> Result.map(fn s ->
       if s.status == "active" || s.status == "past_due" || s.status == "unpaid" do
-        OrganizationPlan.team()
+        OrganizationPlan.pro()
       else
         OrganizationPlan.free()
       end

@@ -8,7 +8,7 @@ defmodule AzimuttWeb.OrganizationController do
 
   def new(conn, _params) do
     current_user = conn.assigns.current_user
-    changeset = Organization.create_non_personal_changeset(%Organization{}, current_user, %Stripe.Customer{})
+    changeset = Organization.create_non_personal_changeset(%Organization{}, current_user)
     logo = Faker.Avatar.image_url()
 
     conn
@@ -36,7 +36,7 @@ defmodule AzimuttWeb.OrganizationController do
     current_user = conn.assigns.current_user
 
     if organization_id == Uuid.zero() do
-      organization = Azimutt.Accounts.get_user_personal_organization(current_user)
+      organization = Azimutt.Accounts.get_user_default_organization(current_user)
       conn |> redirect(to: Routes.organization_path(conn, :show, organization))
     end
 
@@ -50,7 +50,7 @@ defmodule AzimuttWeb.OrganizationController do
     current_user = conn.assigns.current_user
 
     if organization_id == Uuid.zero() do
-      organization = Azimutt.Accounts.get_user_personal_organization(current_user)
+      organization = Azimutt.Accounts.get_user_default_organization(current_user)
       conn |> redirect(to: Routes.organization_path(conn, :edit, organization))
     end
 

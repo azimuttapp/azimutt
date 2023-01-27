@@ -37,12 +37,12 @@ plan =
 
 planId : Fuzzer String
 planId =
-    Fuzz.oneOf ([ "free", "team" ] |> List.map Fuzz.constant)
+    Fuzz.oneOf ([ "free", "pro" ] |> List.map Fuzz.constant)
 
 
 planName : Fuzzer String
 planName =
-    Fuzz.oneOf ([ "Free plan", "Team plan" ] |> List.map Fuzz.constant)
+    Fuzz.oneOf ([ "Free plan", "Pro plan" ] |> List.map Fuzz.constant)
 
 
 logo : Fuzzer String
