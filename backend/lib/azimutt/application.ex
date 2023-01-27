@@ -2,8 +2,9 @@ defmodule Azimutt.Application do
   # See https://hexdocs.pm/elixir/Application.html
   # for more information on OTP Applications
   @moduledoc false
-
   use Application
+  alias Azimutt.Admin
+  alias Azimutt.Utils.Uuid
 
   @impl true
   def start(_type, _args) do
@@ -23,7 +24,11 @@ defmodule Azimutt.Application do
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Azimutt.Supervisor]
-    Supervisor.start_link(children, opts)
+    res = Supervisor.start_link(children, opts)
+
+    check_global_organization()
+
+    res
   end
 
   # Tell Phoenix to update the endpoint configuration
@@ -32,5 +37,20 @@ defmodule Azimutt.Application do
   def config_change(changed, _new, removed) do
     AzimuttWeb.Endpoint.config_change(changed, removed)
     :ok
+  end
+
+  defp check_global_organization do
+    if Azimutt.config(:global_organization) do
+      if !Uuid.is_valid?(Azimutt.config(:global_organization)) do
+        raise "Configuration error: GLOBAL_ORGANIZATION '#{Azimutt.config(:global_organization)}' is not a valid UUID. Can't start."
+      end
+
+      alone = if(Azimutt.config(:global_organization_alone), do: " alone", else: "")
+
+      case Admin.get_organization(Azimutt.config(:global_organization)) do
+        {:ok, orga} -> IO.puts("Setup global organization#{alone}: #{orga.name} (#{orga.id})")
+        _ -> raise "Configuration error: GLOBAL_ORGANIZATION '#{Azimutt.config(:global_organization)}' does not exist. Can't start."
+      end
+    end
   end
 end

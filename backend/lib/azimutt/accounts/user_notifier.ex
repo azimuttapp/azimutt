@@ -1,11 +1,10 @@
 defmodule Azimutt.Accounts.UserNotifier do
-  @moduledoc """
-    base user notifier generate by `mix phx.gen.auth`
-  """
+  @moduledoc "base user notifier generate by `mix phx.gen.auth`"
   import Swoosh.Email
-
   alias Azimutt.Mailer
 
+  # FIXME: make emails optional (if not configured)
+  # TODO: send all emails from a central place
   # Delivers the email using the application mailer.
   defp deliver(recipient, subject, body) do
     email =
@@ -20,9 +19,7 @@ defmodule Azimutt.Accounts.UserNotifier do
     end
   end
 
-  @doc """
-  Deliver instructions to confirm account.
-  """
+  @doc "Deliver instructions to confirm account."
   def deliver_confirmation_instructions(user, url) do
     deliver(user.email, "Confirmation instructions", """
     Hi #{user.email},
@@ -38,9 +35,7 @@ defmodule Azimutt.Accounts.UserNotifier do
     """)
   end
 
-  @doc """
-  Deliver instructions to reset a user password.
-  """
+  @doc "Deliver instructions to reset a user password."
   def deliver_reset_password_instructions(user, url) do
     deliver(user.email, "Reset password instructions", """
     Hi #{user.email},
@@ -56,9 +51,7 @@ defmodule Azimutt.Accounts.UserNotifier do
     """)
   end
 
-  @doc """
-  Deliver instructions to update a user email.
-  """
+  @doc "Deliver instructions to update a user email."
   def deliver_update_email_instructions(user, url) do
     deliver(user.email, "Update email instructions", """
     Hi #{user.email},
@@ -74,9 +67,7 @@ defmodule Azimutt.Accounts.UserNotifier do
     """)
   end
 
-  @doc """
-  Deliver instructions to a invited member of an organization.
-  """
+  @doc "Deliver instructions to an invited member of an organization."
   def deliver_organization_invitation_instructions(invitation, organization, creator, url) do
     deliver(invitation.sent_to, "Organization invitation", """
     Hi,

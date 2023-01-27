@@ -4,13 +4,19 @@
             <div class="flex-1 space-y-4">
                 <div class="sm:space-y-0 sm:flex sm:justify-between sm:items-center xl:block">
                     <!-- Profile -->
-                    <div x-data="{ open: false }" class="my-2">
-                        <div class="mt-1 relative">
+                    <%= if Azimutt.config(:global_organization) && Azimutt.config(:global_organization_alone) do %>
+                        <div class="bg-white relative w-full border border-white rounded-md pl-3 pr-10 py-2 text-left sm:text-sm">
+                            <div class="flex items-center">
+                                <%= if @organization.logo do %><img src={@organization.logo} class="flex-shrink-0 h-6 w-6 rounded-full"><% end %>
+                                <!-- Selected: "font-semibold", Not Selected: "font-normal" -->
+                                <span class="font-normal ml-3 block truncate"><%= @organization.name %> </span>
+                            </div>
+                        </div>
+                    <% else %>
+                        <div x-data="{ open: false }" class="my-2 relative">
                             <button @click="open = !open" type="button" class="bg-white relative w-full border border-gray-300 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" aria-haspopup="listbox" aria-expanded="true">
                                 <div class="flex items-center">
-                                    <%= if @organization.logo do %>
-                                        <img src={@organization.logo} class="flex-shrink-0 h-6 w-6 rounded-full">
-                                    <% end %>
+                                    <%= if @organization.logo do %><img src={@organization.logo} class="flex-shrink-0 h-6 w-6 rounded-full"><% end %>
                                     <!-- Selected: "font-semibold", Not Selected: "font-normal" -->
                                     <span class="font-normal ml-3 block truncate"><%= @organization.name %> </span>
                                 </div>
@@ -21,8 +27,8 @@
                                     </svg>
                                 </span>
                             </button>
-                            <ul x-show="open" @click.outside="open = false" class="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm" tabindex="-1" role="listbox" style="display: none;">
-                                <%= for organization <- @current_user.organizations |> Enum.sort_by(fn o -> o.name end) do %>
+                            <ul x-show="open" @click.outside="open = false" class="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-64 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm" tabindex="-1" role="listbox" style="display: none;">
+                                <%= for organization <- @current_user |> Accounts.get_user_organizations() |> Enum.sort_by(& &1.name) do %>
                                     <a @click="open = false" class="cursor-pointer" data-phx-link="patch" data-phx-link-state="push" href={Routes.organization_path(@conn, :show, organization.id)}>
                                         <li class="flex items-center text-gray-900 hover:text-white hover:bg-indigo-600 select-none relative py-2 pl-3 pr-9" role="option">
                                             <%= if organization.logo do %>
@@ -41,7 +47,7 @@
                                 </a>
                             </ul>
                         </div>
-                    </div>
+                    <% end %>
                     <%= if !Azimutt.config(:skip_public_site) do %>
                         <%= generate_organization_plan_badge(@plan) %>
                     <% end %>
