@@ -1,5 +1,6 @@
 defmodule AzimuttWeb.LayoutView do
   use AzimuttWeb, :view
+  alias Azimutt.Accounts
   alias Azimutt.Heroku
   alias Azimutt.Organizations.OrganizationPlan
   alias Azimutt.Services.StripeSrv

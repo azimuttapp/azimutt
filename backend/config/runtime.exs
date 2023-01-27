@@ -21,9 +21,13 @@ if System.get_env("PHX_SERVER") do
 end
 
 skip_public_site = System.get_env("SKIP_PUBLIC_SITE") == "true"
+global_organization = System.get_env("GLOBAL_ORGANIZATION")
+global_organization_alone = global_organization && System.get_env("GLOBAL_ORGANIZATION_ALONE") == "true"
 
 config :azimutt,
-  skip_public_site: skip_public_site
+  skip_public_site: skip_public_site,
+  global_organization: global_organization,
+  global_organization_alone: global_organization_alone
 
 github_client_id = System.get_env("GITHUB_CLIENT_ID")
 github_client_secret = System.get_env("GITHUB_CLIENT_SECRET")

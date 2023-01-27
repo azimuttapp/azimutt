@@ -14,7 +14,7 @@ config :azimutt,
   seo_keywords:
     "SQL,schema,database,entity relationship diagram,data analyst,schema explorer,schema analyzer,DDL,DBA,database schema,database diagram,explore,understand,visualization",
   mailer_default_from_name: "Support",
-  logo_url_for_emails: "https://res.cloudinary.com/azimutt/image/upload/v1659696136/logo/logo_wtzb16.png",
+  logo_url_for_emails: "https://azimutt.app/android-chrome-512x512.png",
   twitter_url: "https://twitter.com/azimuttapp",
   github_url: "https://github.com/azimuttapp/azimutt",
   github_new_issue: "https://github.com/azimuttapp/azimutt/issues/new",

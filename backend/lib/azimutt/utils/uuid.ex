@@ -8,4 +8,6 @@ defmodule Azimutt.Utils.Uuid do
       "00000000-0000-0000-0000-000000000000"
   """
   def zero, do: "00000000-0000-0000-0000-000000000000"
+
+  def is_valid?(value), do: Ecto.UUID.cast(value) != :error
 end

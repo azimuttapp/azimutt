@@ -17,7 +17,7 @@ defmodule AzimuttWeb.OrganizationBillingController do
     current_user = conn.assigns.current_user
 
     if organization_id == Uuid.zero() do
-      organization = Accounts.get_user_personal_organization(current_user)
+      organization = Accounts.get_user_default_organization(current_user)
       conn |> redirect(to: Routes.organization_billing_path(conn, :index, organization, source: source))
     end
 

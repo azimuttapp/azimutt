@@ -8,7 +8,7 @@ defmodule AzimuttWeb.UserDashboardController do
   end
 
   def index(conn, _params, current_user) do
-    organization = Accounts.get_user_personal_organization(current_user)
+    organization = Accounts.get_user_default_organization(current_user)
     conn |> redirect(to: Routes.organization_path(conn, :show, organization))
   end
 end
