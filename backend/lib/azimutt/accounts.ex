@@ -4,7 +4,6 @@ defmodule Azimutt.Accounts do
   alias Azimutt.Repo
   alias Azimutt.Accounts.{User, UserNotifier, UserToken}
   alias Azimutt.Organizations
-  alias Azimutt.Organizations.Organization
   alias Azimutt.Organizations.OrganizationMember
   alias Azimutt.Utils.Crypto
   alias Azimutt.Utils.Result
