@@ -36,9 +36,9 @@ FROM ${BUILDER_IMAGE} as builder
 # install build dependencies
 RUN apt-get update -y && apt-get install -y build-essential git nodejs npm curl wget \
   && apt-get clean && rm -f /var/lib/apt/lists/*_*
-RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+RUN curl -fsSL https://deb.nodesource.com/setup_19.x | bash - \
   && apt-get install -y nodejs
-
+RUN npm install -g npm@latest
 RUN wget -O - 'https://github.com/elm/compiler/releases/download/0.19.1/binary-for-linux-64-bit.gz' \
     | gunzip -c >/usr/local/bin/elm
 
@@ -75,11 +75,8 @@ COPY backend/priv priv
 COPY backend/assets assets
 
 COPY frontend/ frontend
-WORKDIR frontend
 
-RUN npm run elm:build
-
-WORKDIR /app
+RUN npm run docker --prefix frontend
 
 # Compile the release
 COPY backend/lib lib
