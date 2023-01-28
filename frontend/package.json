@@ -27,7 +27,7 @@
     "build": "npm install && npm run tailwind:build && npm run ts:build && npm run elm:build",
     "elm:dev": "elm-go ./src/Main.elm --dir=../backend/priv/static/elm --pushstate --no-server -- --output=../backend/priv/static/elm/dist/elm.js",
     "elm:server": "elm-go ./src/Main.elm --dir=../backend/priv/static/elm --pushstate --port=4001 --proxy-prefix=/api --proxy-host=http://localhost:4000/api -- --output=../backend/priv/static/elm/dist/elm.js",
-    "elm:build": "elm-spa gen && elm make src/Main.elm --optimize --output=../backend/priv/static/elm/dist/elm.js",
+    "elm:build": "npx elm-spa gen && elm make src/Main.elm --optimize --output=../backend/priv/static/elm/dist/elm.js",
     "elm:test": "elm-test --fuzz 5",
     "elm:review": "elm-review",
     "elm:format": "elm-format src tests --validate",

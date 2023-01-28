@@ -34,8 +34,16 @@ ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
 FROM ${BUILDER_IMAGE} as builder
 
 # install build dependencies
-RUN apt-get update -y && apt-get install -y build-essential git \
-    && apt-get clean && rm -f /var/lib/apt/lists/*_*
+RUN apt-get update -y && apt-get install -y build-essential git nodejs npm curl wget \
+  && apt-get clean && rm -f /var/lib/apt/lists/*_*
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+  && apt-get install -y nodejs
+
+RUN wget -O - 'https://github.com/elm/compiler/releases/download/0.19.1/binary-for-linux-64-bit.gz' \
+    | gunzip -c >/usr/local/bin/elm
+
+# make the elm compiler executable
+RUN chmod +x /usr/local/bin/elm
 
 # prepare build dir
 WORKDIR /app
@@ -65,6 +73,13 @@ COPY backend/priv priv
 # your Elixir templates, you will need to move the asset compilation
 # step down so that `lib` is available.
 COPY backend/assets assets
+
+COPY frontend/ frontend
+WORKDIR frontend
+
+RUN npm run elm:build
+
+WORKDIR /app
 
 # Compile the release
 COPY backend/lib lib
