@@ -46,7 +46,7 @@ Once it's done, your database schema and documentation is only one click away fr
 ![Gospeak database schema on Azimutt]({{base_link}}/gospeak-on-azimutt.png)
 
 We hope this integration will ease your use of PostgreSQL as well as Azimutt.
-Try it and tell us what do you think.
+Try it and tell us what you think.
 As it's Alpha stage, it's very easy to improve ^^
 
 Cheers!
