@@ -7,7 +7,7 @@
 <div class="relative mx-auto max-w-7xl">
     <div class="mx-auto grid max-w-lg gap-5 lg:max-w-none lg:grid-cols-3">
         <%= for article <- @articles do %>
-        <%= render "_post_card.html", conn: @conn, article: article %>
+            <%= render "_post_card.html", conn: @conn, article: article %>
         <% end %>
     </div>
 </div>
