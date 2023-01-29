@@ -59,11 +59,11 @@
     },
     "windows": [
       {
+        "title": "Azimutt · Database explorer and analyzer",
+        "url": "https://azimutt.app/last",
         "fullscreen": false,
-        "height": 600,
-        "resizable": true,
-        "title": "azimutt",
-        "width": 800
+        "maximized": true,
+        "resizable": true
       }
     ]
   }
