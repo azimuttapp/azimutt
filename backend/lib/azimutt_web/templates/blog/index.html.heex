@@ -2,7 +2,7 @@
     <div class="container max-w-screen-sm mt-12">
         <div class="text-center">
             <h1 class="text-4xl font-black"><%= @seo.title %></h1>
-            <p class="content-text text-lg py-6"><%= render "_blog_description.html", assigns %></p>
+            <p class="content-text text-lg py-6"><%= render "_blog_description.html" %></p>
         </div>
     </div>
     <%= for article <- @articles do %>
@@ -15,5 +15,5 @@
         </article>
         <hr class="w-full bg-gray-100" style="height: 1px;">
     <% end %>
-    <%= render "_blog_footer.html", assigns %>
+    <%= render "_blog_footer.html" %>
 </main>

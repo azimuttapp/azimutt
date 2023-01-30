@@ -31,4 +31,10 @@ defmodule AzimuttWeb.BlogController do
              }
            )
   end
+
+  # same as index but to preview cards
+  def cards(conn, _params) do
+    with {:ok, articles} <- Blog.list_articles(),
+         do: render(conn, "cards.html", articles: articles, seo: %{title: "Cards", description: "Show all cards"})
+  end
 end
