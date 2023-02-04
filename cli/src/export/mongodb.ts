@@ -24,7 +24,7 @@ export async function exportSchema(url: MongoUrl, databaseName: MongoDatabaseNam
     })
 }
 
-export function transformSchema(schema: MongoSchema, flatten: boolean, inferRelations: boolean): AzimuttSchema {
+export function transformSchema(schema: MongoSchema, flatten: number, inferRelations: boolean): AzimuttSchema {
     // FIXME: handle flatten
     // FIXME: handle inferRelations
     return {
@@ -47,7 +47,7 @@ async function listDatabases(client: MongoClient): Promise<MongoDatabaseName[]> 
     return dbs.databases.map(db => db.name).filter(name => name !== 'local')
 }
 
-export async function connect<T>(url: MongoUrl, run: (c: MongoClient) => Promise<T>): Promise<T> {
+async function connect<T>(url: MongoUrl, run: (c: MongoClient) => Promise<T>): Promise<T> {
     const client: MongoClient = new MongoClient(url)
     try {
         await client.connect()
@@ -59,7 +59,7 @@ export async function connect<T>(url: MongoUrl, run: (c: MongoClient) => Promise
     }
 }
 
-export async function infer(collection: Collection, sampleSize: number): Promise<MongoCollection> {
+async function infer(collection: Collection, sampleSize: number): Promise<MongoCollection> {
     // FIXME: fetch index informations
     // console.log('options', await collection.options()) // empty
     // console.log('indexes', await collection.indexes())

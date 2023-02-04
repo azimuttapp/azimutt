@@ -4,14 +4,14 @@ This CLI is aimed at helping work with Azimutt and extend its capabilities.
 
 ## Commands
 
-- **export**, ex: `azimutt export --url "mongodb://mongodb0.example.com:27017" --flatten --infer-relations --output ~/azimutt.json`
-  - for now, it **only works with mongodb**, but could be expanded on demand ;)
+- **export**, ex: `azimutt export --url "mongodb://mongodb0.example.com:27017" --flatten 1 --infer-relations --output ~/azimutt.json`
+  - for now, it **only works with PostgreSQL & MongoDB**, but could be expanded on demand ;)
   - `kind` is optional, can be inferred from `url`
   - `database` is optional, restrict schema extraction to this database
   - `schema` is optional, restrict schema extraction to this schema
   - `sample-size` defines how many items are used to infer a schema
   - `raw-schema` writes another file with the intermediary representation of the database schema (more details & specificities)
-  - `flatten` flag makes nested objects flat, may be useful for document databases
+  - `flatten` nested objects in specified levels, may be useful for document databases
   - `infer-relations` flag build relations based on column names, for example a `user_id` will have a relation if a table `users` has an `id` column
   - `format` is optional, default to `json` but for relational database it could also be `sql`
   - `output` is optional, database name will be inferred from url and prefixed by the timestamp
