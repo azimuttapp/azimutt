@@ -1,13 +1,12 @@
-import {Collection, Document, MongoClient, WithId} from "mongodb";
-import {sequence} from "../utils/promise";
+import {Collection, MongoClient} from "mongodb";
+import {schemaFromValues, ValueSchema} from "./infer";
 import {AzimuttSchema} from "../utils/database";
+import {sequence} from "../utils/promise";
 import {log} from "../utils/logger";
 
 export type MongoUrl = string
 export type MongoSchema = { collections: MongoCollection[] }
-export type MongoCollection = { db: MongoDatabaseName, name: MongoCollectionName, schema: MongoDocument, sampleDocs: number, totalDocs: number }
-export type MongoDocument = { [key: string]: MongoDocumentValue }
-export type MongoDocumentValue = { types: string[], nullable: boolean, values: any[] }
+export type MongoCollection = { db: MongoDatabaseName, name: MongoCollectionName, schema: ValueSchema, sampleDocs: number, totalDocs: number }
 export type MongoDatabaseName = string
 export type MongoCollectionName = string
 
@@ -31,11 +30,11 @@ export function transformSchema(schema: MongoSchema, flatten: number, inferRelat
         tables: schema.collections.map(c => ({
             schema: c.db,
             table: c.name,
-            columns: Object.entries(c.schema).map(([key, value]) => ({
+            columns: c.schema.nested ? Object.entries(c.schema.nested).map(([key, value]) => ({
                 name: key,
-                type: value.types.join('|'),
+                type: value.type,
                 nullable: value.nullable
-            }))
+            })) : []
         })),
         relations: []
     }
@@ -67,50 +66,12 @@ async function infer(collection: Collection, sampleSize: number): Promise<MongoC
     // console.log('indexInformation', await collection.indexInformation()) // not much
     // console.log('stats', await collection.stats()) // several info
     log(`Exporting collection ${collection.dbName}.${collection.collectionName}...`)
-    const documents: WithId<Document>[] = await collection.find({}, {limit: sampleSize}).toArray()
+    const documents = await collection.find({}, {limit: sampleSize}).toArray()
     return {
         db: collection.dbName,
         name: collection.collectionName,
-        schema: documents.reduce(addToSchema, {}),
+        schema: schemaFromValues(documents),
         sampleDocs: documents.length,
         totalDocs: await collection.estimatedDocumentCount()
     }
-}
-
-function addToSchema(schema: MongoDocument, doc: Document): MongoDocument {
-    // FIXME: make inference recursive
-    return Object.entries(doc).reduce((s, [key, value]) => {
-        return {...s, [key]: s[key] ? enrichSchema(s[key], value) : initSchema(value)}
-    }, schema)
-}
-
-function initSchema(value: any): MongoDocumentValue {
-    return {types: [getType(value)], nullable: isNullable(value), values: [value]}
-}
-
-function enrichSchema(schema: MongoDocumentValue, value: any): MongoDocumentValue {
-    const type = getType(value)
-    return {
-        types: schema.types.indexOf(type) !== -1 ? schema.types : schema.types.concat([type]),
-        nullable: schema.nullable || isNullable(value),
-        values: schema.values.concat([value])
-    }
-}
-
-function getType(value: any): string {
-    if (value === undefined) {
-        return 'undefined'
-    } else if (value === null) {
-        return 'null'
-    } else if (Array.isArray(value)) {
-        return value.length > 0 ? getType(value[0]) + '[]' : '[]'
-    } else if (typeof value === 'object') {
-        return value.constructor.name
-    } else {
-        return typeof value
-    }
-}
-
-function isNullable(value: any): boolean {
-    return value === null || value === undefined
 }

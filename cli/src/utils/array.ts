@@ -7,3 +7,4 @@ export const groupBy = <T, K extends keyof any>(list: T[], getKey: (item: T) => 
     }, {} as Record<K, T[]>)
 
 export const zip = <T, U>(list1: T[], list2: U[]): [T, U][] => list1.slice(0, list2.length).map((t, i) => [t, list2[i]])
+export const distinct = <T>(arr: T[]): T[] => arr.filter((t, i) => arr.indexOf(t) === i)

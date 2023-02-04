@@ -1,7 +1,7 @@
 import {Client} from "pg";
 import {AzimuttSchema} from "../utils/database";
-import {groupBy, zip} from "../utils/array";
 import {filterValues} from "../utils/object";
+import {groupBy, zip} from "../utils/array";
 
 export type PostgresUrl = string
 export type PostgresSchema = { tables: PostgresTable[], relations: PostgresRelation[], types: PostgresType[] }
@@ -360,6 +360,6 @@ function filterSchema(field: string, schema: PostgresSchemaName | undefined) {
     return `${field} ${schema ? `IN ('${schema}')` : `NOT IN ('information_schema', 'pg_catalog')`}`
 }
 
-function removeUndefined<T extends object>(obj: T): T {
+function removeUndefined<K extends keyof any, V, T extends Record<K, V>>(obj: T): T {
     return filterValues(obj, v => v !== undefined) as T
 }
