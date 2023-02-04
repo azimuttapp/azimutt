@@ -1,5 +1,5 @@
 import {Collection, MongoClient} from "mongodb";
-import {schemaFromValues, ValueSchema} from "./infer";
+import {schemaFromValues, schemaToColumns, ValueSchema} from "./infer";
 import {AzimuttSchema} from "../utils/database";
 import {sequence} from "../utils/promise";
 import {log} from "../utils/logger";
@@ -24,17 +24,12 @@ export async function exportSchema(url: MongoUrl, databaseName: MongoDatabaseNam
 }
 
 export function transformSchema(schema: MongoSchema, flatten: number, inferRelations: boolean): AzimuttSchema {
-    // FIXME: handle flatten
     // FIXME: handle inferRelations
     return {
         tables: schema.collections.map(c => ({
             schema: c.db,
             table: c.name,
-            columns: c.schema.nested ? Object.entries(c.schema.nested).map(([key, value]) => ({
-                name: key,
-                type: value.type,
-                nullable: value.nullable
-            })) : []
+            columns: schemaToColumns(c.schema, flatten)
         })),
         relations: []
     }

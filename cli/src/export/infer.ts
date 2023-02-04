@@ -1,9 +1,24 @@
-import {distinct} from "../utils/array";
+import {AzimuttColumn} from "../utils/database";
 import {mapValues} from "../utils/object";
+import {distinct} from "../utils/array";
 
 export type ValueSchema = { type: ValueType, values: Value[], nullable?: boolean, nested?: { [key: string]: ValueSchema } }
 export type Value = any
 export type ValueType = string
+
+export function schemaToColumns(schema: ValueSchema, flatten: number, path: string[] = []): AzimuttColumn[] {
+    if (schema.nested && flatten >= 0) {
+        return Object.entries(schema.nested).flatMap(([key, value]) => {
+            return [{
+                name: path.map(p => p + '.').join('') + key,
+                type: value.type,
+                nullable: value.nullable
+            }, ...schemaToColumns(value, flatten - 1, [...path, key])]
+        })
+    } else {
+        return []
+    }
+}
 
 export function schemaFromValues(values: Value[]): ValueSchema {
     if (values.length > 0) {
