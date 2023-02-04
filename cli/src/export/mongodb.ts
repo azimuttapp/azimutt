@@ -12,11 +12,11 @@ export type MongoCollectionName = string
 
 export async function exportSchema(url: MongoUrl, databaseName: MongoDatabaseName | undefined, sampleSize: number): Promise<MongoSchema> {
     return await connect(url, async client => {
-        log('Connected to database...')
+        log('Connected to database ...')
         const databaseNames: MongoDatabaseName[] = databaseName ? [databaseName] : await listDatabases(client)
-        log(databaseName ? `Export for '${databaseName}' database...` : `Found ${databaseNames.length} databases to export...`)
+        log(databaseName ? `Export for '${databaseName}' database ...` : `Found ${databaseNames.length} databases to export ...`)
         const collections: Collection[] = (await sequence(databaseNames, dbName => client.db(dbName).collections())).flat()
-        log(`Found ${collections.length} collections to export...`)
+        log(`Found ${collections.length} collections to export ...`)
         const schemas: MongoCollection[] = await sequence(collections, collection => infer(collection, sampleSize))
         log('✔︎ All collections exported!')
         return {collections: schemas}
@@ -58,7 +58,7 @@ async function infer(collection: Collection, sampleSize: number): Promise<MongoC
     // console.log('listIndexes', await collection.listIndexes().toArray()) // same result as indexes()
     // console.log('indexInformation', await collection.indexInformation()) // not much
     // console.log('stats', await collection.stats()) // several info
-    log(`Exporting collection ${collection.dbName}.${collection.collectionName}...`)
+    log(`Exporting collection ${collection.dbName}.${collection.collectionName} ...`)
     const documents = await collection.find({}, {limit: sampleSize}).toArray()
     return {
         db: collection.dbName,

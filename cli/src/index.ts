@@ -6,6 +6,7 @@ import {exportDbSchema} from "./export";
 import {parseUrl} from "./utils/database";
 import {error, log} from "./utils/logger";
 import {safeParseInt} from "./utils/number";
+import {errorToString} from "./utils/error";
 
 const clear = require('clear')
 const figlet = require('figlet')
@@ -41,15 +42,5 @@ if (!process.argv.slice(2).length) {
 }
 
 function exec(res: Promise<void>) {
-    res.catch(e => {
-        let err
-        if (e instanceof Error) {
-            err = e.message
-        } else if (typeof e === 'string') {
-            err = e
-        } else {
-            err = JSON.stringify(e)
-        }
-        error(chalk.red('Unexpected error: ' + err))
-    })
+    res.catch(e => error(chalk.red('Unexpected error: ' + errorToString(e))))
 }

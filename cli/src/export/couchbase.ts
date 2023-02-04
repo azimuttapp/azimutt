@@ -1,30 +1,33 @@
-import {Bucket, Cluster, Collection, connect as open, Scope} from "couchbase";
+import chalk from "chalk";
+import {Cluster, Collection, connect as open, PlanningFailureError} from "couchbase";
 import {schemaFromValues, schemaToColumns, ValueSchema} from "./infer";
 import {AzimuttSchema, DbUrl} from "../utils/database";
 import {sequence} from "../utils/promise";
-import {log} from "../utils/logger";
+import {log, warn} from "../utils/logger";
+import {errorToString} from "../utils/error";
 
 export type CouchbaseSchema = { collections: CouchbaseCollection[] }
 export type CouchbaseCollection = { bucket: CouchbaseBucketName, scope: CouchbaseScopeName, collection: CouchbaseCollectionName, schema: ValueSchema, sampleDocs: number, totalDocs: number }
 export type CouchbaseBucketName = string
 export type CouchbaseScopeName = string
 export type CouchbaseCollectionName = string
-type ScopeFull = { scope: Scope, collections: CouchbaseCollectionName[] }
 
 export async function exportSchema(url: DbUrl, bucketName: CouchbaseBucketName | undefined, sampleSize: number): Promise<CouchbaseSchema> {
     return connect(url, async cluster => {
-        log('Connected to cluster...')
+        log('Connected to cluster ...')
         const bucketNames: CouchbaseBucketName[] = bucketName ? [bucketName] : await listBuckets(cluster)
-        log(bucketName ? `Export for '${bucketName}' bucket...` : `Found ${bucketNames.length} buckets to export...`)
-        const buckets: Bucket[] = bucketNames.map(b => cluster.bucket(b))
-        const scopes: ScopeFull[] = (await sequence(buckets, async b => (await b.collections().getAllScopes()).map(s => ({
-            scope: b.scope(s.name),
-            collections: s.collections.map(c => c.name)
-        })))).flat()
-        log(`Found ${scopes.length} scopes to export...`)
-        const collections: Collection[] = scopes.flatMap(({scope, collections}) => collections.map(scope.collection))
-        log(`Found ${collections.length} collections to export...`)
-        const schemas = await sequence(collections, collection => infer(collection, sampleSize))
+        log(bucketName ? `Export for '${bucketName}' bucket ...` : `Found ${bucketNames.length} buckets to export ...`)
+
+        const schemas = (await sequence(bucketNames, async b => {
+            const bucket = cluster.bucket(b)
+            const scopes = await bucket.collections().getAllScopes()
+            return (await sequence(scopes, async s => {
+                const scope = bucket.scope(s.name)
+                const collections = s.collections.map(c => scope.collection(c.name))
+                return await sequence(collections, c => infer(c, sampleSize))
+            })).flat()
+        })).flat()
+
         log('✔︎ All collections exported!')
         return {collections: schemas}
     })
@@ -58,10 +61,8 @@ async function connect<T>(url: DbUrl, run: (c: Cluster) => Promise<T>): Promise<
 async function infer(collection: Collection, sampleSize: number): Promise<CouchbaseCollection> {
     // FIXME: fetch index informations & more
     const scope = collection.scope
-    log(`Exporting collection ${scope.bucket.name}.${scope.name}.${collection.name}...`)
-    const documents = (await scope.query(`SELECT ${collection.name}.*
-                                          FROM ${collection.name}
-                                          LIMIT ${sampleSize}`)).rows
+    log(`Exporting collection ${collectionRef(collection)} ...`)
+    const documents = await getSampleDocuments(collection, sampleSize)
     const count = (await scope.query(`SELECT count(*) as count
                                       FROM ${collection.name}`)).rows[0].count
     return {
@@ -72,4 +73,25 @@ async function infer(collection: Collection, sampleSize: number): Promise<Couchb
         sampleDocs: documents.length,
         totalDocs: count
     }
+}
+
+async function getSampleDocuments(collection: Collection, sampleSize: number): Promise<any[]> {
+    try {
+        return (await collection.scope.query(`SELECT ${collection.name}.*
+                                              FROM ${collection.name}
+                                              LIMIT ${sampleSize}`)).rows
+    } catch (e) {
+        let err
+        if (e instanceof PlanningFailureError) {
+            err = (e.cause as any).first_error_message
+        } else {
+            err = errorToString(e)
+        }
+        warn(chalk.red(`Can't get sample documents for ${collectionRef(collection)}: ${err}`))
+        return []
+    }
+}
+
+function collectionRef(collection: Collection): string {
+    return `${collection.scope.bucket.name}.${collection.scope.name}.${collection.name}`
 }

@@ -20,18 +20,18 @@ export type Opts = {
 }
 
 export async function exportDbSchema(url: DbUrl, opts: Opts): Promise<void> {
-    log(`Exporting database schema from ${url.full}...`)
+    log(`Exporting database schema from ${url.full} ...`)
     const kind = opts.kind || url.kind
     if (kind === 'mongodb') {
         if (opts.format !== 'json') {
             return warn(`Only 'json' format is supported for MongoDB.`)
         }
-        log('MongoDB database recognized...')
+        log('MongoDB database recognized ...')
         const mongoSchema = await mongodb.exportSchema(url.full, opts.database || url.db, opts.sampleSize)
         const azimuttSchema = mongodb.transformSchema(mongoSchema, opts.flatten, opts.inferRelations)
         const schemas: string[] = [...new Set(azimuttSchema.tables.map(t => t.schema))]
         const file = filename(opts.output, url, schemas, opts.format)
-        log(`Writing schema to ${file} file...`)
+        log(`Writing schema to ${file} file ...`)
         await writeJsonFile(file, azimuttSchema)
         opts.rawSchema && await writeJsonFile(file.replace('.json', `.${kind}.json`), mongoSchema)
         log('')
@@ -42,12 +42,12 @@ export async function exportDbSchema(url: DbUrl, opts: Opts): Promise<void> {
         if (opts.format !== 'json') {
             return warn(`Only 'json' format is supported for Couchbase.`)
         }
-        log('Couchbase database recognized...')
+        log('Couchbase database recognized ...')
         const couchbaseSchema = await couchbase.exportSchema(url, opts.bucket || url.db, opts.sampleSize)
         const azimuttSchema = couchbase.transformSchema(couchbaseSchema, opts.flatten, opts.inferRelations)
         const schemas: string[] = [...new Set(azimuttSchema.tables.map(t => t.schema))]
         const file = filename(opts.output, url, schemas, opts.format)
-        log(`Writing schema to ${file} file...`)
+        log(`Writing schema to ${file} file ...`)
         await writeJsonFile(file, azimuttSchema)
         opts.rawSchema && await writeJsonFile(file.replace('.json', `.${kind}.json`), couchbaseSchema)
         log('')
@@ -58,12 +58,12 @@ export async function exportDbSchema(url: DbUrl, opts: Opts): Promise<void> {
         if (opts.format !== 'json') { // FIXME handle 'sql' format using pg_dump
             return warn(`Only 'json' format is supported for PostgreSQL.`)
         }
-        log('PostgreSQL database recognized...')
+        log('PostgreSQL database recognized ...')
         const postgresSchema = await postgres.exportSchema(url.full, opts.schema, opts.sampleSize)
         const azimuttSchema = postgres.transformSchema(postgresSchema, opts.flatten, opts.inferRelations)
         const schemas: string[] = [...new Set(azimuttSchema.tables.map(t => t.schema))]
         const file = filename(opts.output, url, schemas, opts.format)
-        log(`Writing schema to ${file} file...`)
+        log(`Writing schema to ${file} file ...`)
         await writeJsonFile(file, azimuttSchema)
         opts.rawSchema && await writeJsonFile(file.replace('.json', `.${kind}.json`), postgresSchema)
         log('')
