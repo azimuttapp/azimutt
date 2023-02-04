@@ -10,9 +10,9 @@
   },
   "scripts": {
     "init": "npm install && npm run build && chmod +x ./lib/index.js",
-    "build": "tsc",
+    "build": "rm -rf ./lib && tsc",
     "test": "jest",
-    "exec": "npm run build && lib/index.js",
+    "exec": "npm run build && node ./lib/index.js",
     "start": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/index.ts",
     "start:windows": "nodemon --watch 'src/**/*.ts' --exec \"npx ts-node\" src/index.ts",
     "local": "sudo npm install -g && azimutt",
@@ -22,6 +22,7 @@
     "chalk": "^4.1.2",
     "clear": "^0.1.0",
     "commander": "^10.0.0",
+    "couchbase": "^4.2.0",
     "figlet": "^1.5.2",
     "mongodb": "^5.0.0",
     "pg": "^8.9.0"

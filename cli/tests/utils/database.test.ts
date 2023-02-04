@@ -19,6 +19,22 @@ describe('utils/database', () => {
             options: 'secure=true'
         })
     })
+    test('parse couchbase url', () => {
+        expect(parseUrl('couchbases://cb.id.cloud.couchbase.com')).toEqual({
+            full: 'couchbases://cb.id.cloud.couchbase.com',
+            kind: 'couchbase',
+            host: 'cb.id.cloud.couchbase.com'
+        })
+        expect(parseUrl('couchbases://user:pass@cb.id.cloud.couchbase.com:4567/bucket')).toEqual({
+            full: 'couchbases://user:pass@cb.id.cloud.couchbase.com:4567/bucket',
+            kind: 'couchbase',
+            user: 'user',
+            pass: 'pass',
+            host: 'cb.id.cloud.couchbase.com',
+            port: 4567,
+            db: 'bucket',
+        })
+    })
     test('parse postgres url', () => {
         expect(parseUrl('postgres://postgres0.example.com')).toEqual({
             full: 'postgres://postgres0.example.com',

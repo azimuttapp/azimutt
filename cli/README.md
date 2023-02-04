@@ -9,6 +9,7 @@ This CLI is aimed at helping work with Azimutt and extend its capabilities.
   - `kind` is optional, can be inferred from `url`
   - `database` is optional, restrict schema extraction to this database
   - `schema` is optional, restrict schema extraction to this schema
+  - `bucket` is optional, restrict schema extraction to this bucket
   - `sample-size` defines how many items are used to infer a schema
   - `raw-schema` writes another file with the intermediary representation of the database schema (more details & specificities)
   - `flatten` nested objects in specified levels, may be useful for document databases
