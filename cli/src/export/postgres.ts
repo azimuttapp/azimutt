@@ -1,9 +1,8 @@
 import {Client} from "pg";
-import {AzimuttSchema} from "../utils/database";
+import {AzimuttSchema, DbUrl} from "../utils/database";
 import {filterValues} from "../utils/object";
 import {groupBy, zip} from "../utils/array";
 
-export type PostgresUrl = string
 export type PostgresSchema = { tables: PostgresTable[], relations: PostgresRelation[], types: PostgresType[] }
 export type PostgresTable = { schema: PostgresSchemaName, table: PostgresTableName, view: boolean, columns: PostgresColumn[], primaryKey: PostgresPrimaryKey | null, uniques: PostgresUnique[], indexes: PostgresIndex[], checks: PostgresCheck[], comment: string | null }
 export type PostgresColumn = { name: PostgresColumnName, type: PostgresColumnType, nullable: boolean, default: string | null, comment: string | null }
@@ -23,7 +22,7 @@ export type PostgresRelationName = string
 export type PostgresTypeName = string
 export type PostgresTableId = string
 
-export async function exportSchema(url: PostgresUrl, schema: PostgresSchemaName | undefined, sampleSize: number): Promise<PostgresSchema> {
+export async function fetchSchema(url: DbUrl, schema: PostgresSchemaName | undefined, sampleSize: number): Promise<PostgresSchema> {
     return await connect(url, async client => {
         const columns = await getColumns(client, schema).then(cols => groupBy(cols, toTableId))
         const columnsByIndex: { [tableId: string]: { [columnIndex: number]: RawColumn } } = Object.keys(columns).reduce((acc, tableId) => ({
@@ -148,10 +147,10 @@ export function transformSchema(schema: PostgresSchema, flatten: number, inferRe
     }
 }
 
-function connect<T>(url: PostgresUrl, exec: (c: Client) => Promise<T>): Promise<T> {
+function connect<T>(url: DbUrl, exec: (c: Client) => Promise<T>): Promise<T> {
     const client = new Client({
         application_name: 'azimutt-cli',
-        connectionString: url,
+        connectionString: url.full,
         ssl: {rejectUnauthorized: false}
     })
     return client.connect().then(_ => {

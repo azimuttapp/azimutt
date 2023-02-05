@@ -12,7 +12,7 @@ export type CouchbaseBucketName = string
 export type CouchbaseScopeName = string
 export type CouchbaseCollectionName = string
 
-export async function exportSchema(url: DbUrl, bucketName: CouchbaseBucketName | undefined, sampleSize: number): Promise<CouchbaseSchema> {
+export async function fetchSchema(url: DbUrl, bucketName: CouchbaseBucketName | undefined, sampleSize: number): Promise<CouchbaseSchema> {
     return connect(url, async cluster => {
         log('Connected to cluster ...')
         const bucketNames: CouchbaseBucketName[] = bucketName ? [bucketName] : await listBuckets(cluster)

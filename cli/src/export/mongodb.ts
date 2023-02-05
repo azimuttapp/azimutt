@@ -1,16 +1,15 @@
 import {Collection, MongoClient} from "mongodb";
 import {schemaFromValues, schemaToColumns, ValueSchema} from "./infer";
-import {AzimuttSchema} from "../utils/database";
+import {AzimuttSchema, DbUrl} from "../utils/database";
 import {sequence} from "../utils/promise";
 import {log} from "../utils/logger";
 
-export type MongoUrl = string
 export type MongoSchema = { collections: MongoCollection[] }
 export type MongoCollection = { db: MongoDatabaseName, name: MongoCollectionName, schema: ValueSchema, sampleDocs: number, totalDocs: number }
 export type MongoDatabaseName = string
 export type MongoCollectionName = string
 
-export async function exportSchema(url: MongoUrl, databaseName: MongoDatabaseName | undefined, sampleSize: number): Promise<MongoSchema> {
+export async function fetchSchema(url: DbUrl, databaseName: MongoDatabaseName | undefined, sampleSize: number): Promise<MongoSchema> {
     return await connect(url, async client => {
         log('Connected to database ...')
         const databaseNames: MongoDatabaseName[] = databaseName ? [databaseName] : await listDatabases(client)
@@ -39,8 +38,8 @@ async function listDatabases(client: MongoClient): Promise<MongoDatabaseName[]> 
     return dbs.databases.map(db => db.name).filter(name => name !== 'local')
 }
 
-async function connect<T>(url: MongoUrl, run: (c: MongoClient) => Promise<T>): Promise<T> {
-    const client: MongoClient = new MongoClient(url)
+async function connect<T>(url: DbUrl, run: (c: MongoClient) => Promise<T>): Promise<T> {
+    const client: MongoClient = new MongoClient(url.full)
     try {
         await client.connect()
         return await run(client)

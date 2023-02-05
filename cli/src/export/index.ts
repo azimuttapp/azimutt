@@ -2,7 +2,7 @@ import chalk from "chalk";
 import * as mongodb from "./mongodb";
 import * as couchbase from "./couchbase";
 import * as postgres from "./postgres";
-import {DbKind, DbUrl} from "../utils/database";
+import {AzimuttSchema, DbKind, DbUrl} from "../utils/database";
 import {log, warn} from "../utils/logger";
 import {FileFormat, FilePath, writeJsonFile} from "../utils/file";
 
@@ -23,58 +23,35 @@ export async function exportDbSchema(url: DbUrl, opts: Opts): Promise<void> {
     log(`Exporting database schema from ${url.full} ...`)
     const kind = opts.kind || url.kind
     if (kind === 'mongodb') {
-        if (opts.format !== 'json') {
-            return warn(`Only 'json' format is supported for MongoDB.`)
-        }
-        log('MongoDB database recognized ...')
-        const mongoSchema = await mongodb.exportSchema(url.full, opts.database || url.db, opts.sampleSize)
-        const azimuttSchema = mongodb.transformSchema(mongoSchema, opts.flatten, opts.inferRelations)
-        const schemas: string[] = [...new Set(azimuttSchema.tables.map(t => t.schema))]
-        const file = filename(opts.output, url, schemas, opts.format)
-        log(`Writing schema to ${file} file ...`)
-        await writeJsonFile(file, azimuttSchema)
-        opts.rawSchema && await writeJsonFile(file.replace('.json', `.${kind}.json`), mongoSchema)
-        log('')
-        log(chalk.green(`MongoDB schema written in '${file}'.`))
-        log(`Found ${azimuttSchema.tables.length} collections in ${schemas.length} databases.`)
-        log('You can now import this file in ▶︎https://azimutt.app/new?json ◀︎︎')
+        await exportJsonSchema(url, opts, mongodb.fetchSchema, mongodb.transformSchema, 'MongoDB')
     } else if (kind === 'couchbase') {
-        if (opts.format !== 'json') {
-            return warn(`Only 'json' format is supported for Couchbase.`)
-        }
-        log('Couchbase database recognized ...')
-        const couchbaseSchema = await couchbase.exportSchema(url, opts.bucket || url.db, opts.sampleSize)
-        const azimuttSchema = couchbase.transformSchema(couchbaseSchema, opts.flatten, opts.inferRelations)
-        const schemas: string[] = [...new Set(azimuttSchema.tables.map(t => t.schema))]
-        const file = filename(opts.output, url, schemas, opts.format)
-        log(`Writing schema to ${file} file ...`)
-        await writeJsonFile(file, azimuttSchema)
-        opts.rawSchema && await writeJsonFile(file.replace('.json', `.${kind}.json`), couchbaseSchema)
-        log('')
-        log(chalk.green(`Couchbase schema written in '${file}'.`))
-        log(`Found ${azimuttSchema.tables.length} collections in ${schemas.length} buckets.`)
-        log('You can now import this file in ▶︎https://azimutt.app/new?json ◀︎︎')
+        await exportJsonSchema(url, opts, couchbase.fetchSchema, couchbase.transformSchema, 'Couchbase')
     } else if (kind === 'postgres') {
-        if (opts.format !== 'json') { // FIXME handle 'sql' format using pg_dump
-            return warn(`Only 'json' format is supported for PostgreSQL.`)
-        }
-        log('PostgreSQL database recognized ...')
-        const postgresSchema = await postgres.exportSchema(url.full, opts.schema, opts.sampleSize)
-        const azimuttSchema = postgres.transformSchema(postgresSchema, opts.flatten, opts.inferRelations)
-        const schemas: string[] = [...new Set(azimuttSchema.tables.map(t => t.schema))]
-        const file = filename(opts.output, url, schemas, opts.format)
-        log(`Writing schema to ${file} file ...`)
-        await writeJsonFile(file, azimuttSchema)
-        opts.rawSchema && await writeJsonFile(file.replace('.json', `.${kind}.json`), postgresSchema)
-        log('')
-        log(chalk.green(`PostgreSQL schema written in '${file}'.`))
-        log(`Found ${azimuttSchema.tables.length} tables in ${schemas.length} schemas.`)
-        log('You can now import this file in ▶︎https://azimutt.app/new?json ◀︎︎')
+        // TODO handle 'sql' format using pg_dump
+        await exportJsonSchema(url, opts, postgres.fetchSchema, postgres.transformSchema, 'PostgreSQL')
     } else {
         log('')
         warn(chalk.red(`Database kind '${url.kind}' is not supported :(`))
         log(`But you're welcome to send an issue or PR at https://github.com/azimuttapp/azimutt ;)`)
     }
+}
+
+async function exportJsonSchema<T extends object>(url: DbUrl, opts: Opts, fetchSchema: (url: DbUrl, schema: string | undefined, sampleSize: number) => Promise<T>, transformSchema: (s: T, flatten: number, inferRelations: boolean) => AzimuttSchema, name: string) {
+    if (opts.format !== 'json') {
+        return warn(chalk.red(`Unsupported format '${opts.format}' for ${name}, try 'json'.`))
+    }
+    log(`${name} database recognized ...`)
+    const rawSchema = await fetchSchema(url, opts.database || opts.bucket || opts.schema, opts.sampleSize)
+    const azimuttSchema = transformSchema(rawSchema, opts.flatten, opts.inferRelations)
+    const schemas: string[] = [...new Set(azimuttSchema.tables.map(t => t.schema))]
+    const file = filename(opts.output, url, schemas, opts.format)
+    log(`Writing schema to ${file} file ...`)
+    await writeJsonFile(file, azimuttSchema)
+    opts.rawSchema && await writeJsonFile(file.replace('.json', `.${opts.kind || url.kind}.json`), rawSchema)
+    log('')
+    log(chalk.green(`${name} schema written in '${file}'.`))
+    log(`Found ${azimuttSchema.tables.length} tables in ${schemas.length} schemas.`)
+    log('You can now import this file in ▶︎https://azimutt.app/new?json ◀︎︎')
 }
 
 function filename(output: FilePath | undefined, url: DbUrl, schemas: string[], format: FileFormat): string {
