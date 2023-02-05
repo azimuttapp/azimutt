@@ -7,7 +7,7 @@ describe('export/infer', () => {
         expect(schemaFromValue(2)).toEqual({type: 'number', values: [2]})
         expect(schemaFromValue(true)).toEqual({type: 'boolean', values: [true]})
         expect(schemaFromValue(null)).toEqual({type: 'null', values: [], nullable: true})
-        expect(schemaFromValue(undefined)).toEqual({type: 'undefined', values: [], nullable: true})
+        expect(schemaFromValue(undefined)).toEqual({type: 'null', values: [], nullable: true})
         const date = new Date()
         expect(schemaFromValue(date)).toEqual({type: 'Date', values: [date]})
     })

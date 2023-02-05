@@ -37,7 +37,7 @@ export function transformSchema(schema: CouchbaseSchema, flatten: number, inferR
     // FIXME: handle inferRelations
     const tables = schema.collections.map(c => ({
         schema: c.bucket,
-        table: `${c.scope}/${c.collection}`,
+        table: `${c.scope}__${c.collection}`,
         columns: schemaToColumns(c.schema, flatten)
     }))
     return {tables, relations: []}

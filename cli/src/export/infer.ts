@@ -62,7 +62,7 @@ function mergeNested(items: { [key: string]: ValueSchema }[]): { [key: string]: 
 
 function sumSchema(schemas: ValueSchema[]): ValueSchema {
     return cleanSchema({
-        type: sumType(schemas.map(s => s.type).filter(t => t !== 'null')),
+        type: sumType(schemas.map(s => s.type).filter(t => t !== 'null')) || 'null',
         values: schemas.flatMap(s => s.values),
         nullable: schemas.reduce((acc, schema) => schema.nullable || false || acc, false as boolean),
         nested: mergeNested(schemas.map(s => s.nested || {}))
@@ -81,9 +81,7 @@ function cleanSchema(schema: ValueSchema): ValueSchema {
 }
 
 function getType(value: Value): ValueType {
-    if (value === undefined) {
-        return 'undefined'
-    } else if (value === null) {
+    if (value === undefined || value === null) {
         return 'null'
     } else if (Array.isArray(value)) {
         return value.length > 0 ? sumType(value.map(getType)) + '[]' : '[]'
