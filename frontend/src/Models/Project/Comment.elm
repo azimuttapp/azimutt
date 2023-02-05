@@ -4,6 +4,7 @@ import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
 import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
+import Libs.Nel as Nel
 import Models.Project.Origin as Origin exposing (Origin)
 import Services.Lenses exposing (setOrigins)
 
@@ -30,7 +31,7 @@ encode : Comment -> Value
 encode value =
     Encode.notNullObject
         [ ( "text", value.text |> Encode.string )
-        , ( "origins", value.origins |> Encode.list Origin.encode )
+        , ( "origins", value.origins |> Origin.encodeList )
         ]
 
 

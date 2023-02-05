@@ -4,7 +4,7 @@ import Dict exposing (Dict)
 import Libs.Maybe as Maybe
 import Libs.Nel as Nel
 import Models.Project.CheckName exposing (CheckName)
-import Models.Project.Column exposing (Column)
+import Models.Project.Column exposing (Column, NestedColumns)
 import Models.Project.ColumnIndex exposing (ColumnIndex)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnType as ColumnType exposing (ColumnType)
@@ -38,6 +38,7 @@ type alias ErdColumn =
     , uniques : List UniqueName
     , indexes : List IndexName
     , checks : List CheckName
+    , columns : Maybe NestedColumns
     , origins : List Origin
     }
 
@@ -59,6 +60,7 @@ create defaultSchema tables types columnRelations table column =
     , uniques = table.uniques |> List.filter (.columns >> Nel.member column.name) |> List.map .name
     , indexes = table.indexes |> List.filter (.columns >> Nel.member column.name) |> List.map .name
     , checks = table.checks |> List.filter (.columns >> List.member column.name) |> List.map .name
+    , columns = column.columns
     , origins = table.origins
     }
 
@@ -71,5 +73,6 @@ unpack column =
     , nullable = column.nullable
     , default = column.default
     , comment = column.comment
+    , columns = column.columns
     , origins = column.origins
     }

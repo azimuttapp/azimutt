@@ -78,6 +78,7 @@ buildColumn origins index column =
     , nullable = column.nullable
     , default = column.default
     , comment = column.comment |> Maybe.map (buildComment origins)
+    , columns = Nothing -- nested columns not supported (yet) in databases
     , origins = origins
     }
 

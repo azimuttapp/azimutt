@@ -39,7 +39,7 @@ encode value =
         [ ( "name", value.name |> CheckName.encode )
         , ( "columns", value.columns |> Encode.list ColumnName.encode )
         , ( "predicate", value.predicate |> Encode.maybe Encode.string )
-        , ( "origins", value.origins |> Encode.list Origin.encode )
+        , ( "origins", value.origins |> Origin.encodeList )
         ]
 
 

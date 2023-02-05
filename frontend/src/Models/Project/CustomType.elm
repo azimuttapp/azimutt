@@ -2,7 +2,6 @@ module Models.Project.CustomType exposing (CustomType, decode, def, encode, enum
 
 import Dict exposing (Dict)
 import Json.Decode as Decode exposing (Value)
-import Json.Encode as Encode
 import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
 import Libs.Maybe as Maybe
@@ -65,7 +64,7 @@ encode value =
         [ ( "schema", value.id |> Tuple.first |> SchemaName.encode )
         , ( "name", value.name |> CustomTypeName.encode )
         , ( "value", value.value |> CustomTypeValue.encode )
-        , ( "origins", value.origins |> Encode.list Origin.encode )
+        , ( "origins", value.origins |> Origin.encodeList )
         ]
 
 

@@ -79,7 +79,7 @@ encode value =
         [ ( "name", value.name |> RelationName.encode )
         , ( "src", value.src |> ColumnRef.encode )
         , ( "ref", value.ref |> ColumnRef.encode )
-        , ( "origins", value.origins |> Encode.list Origin.encode )
+        , ( "origins", value.origins |> Origin.encodeList )
         ]
 
 

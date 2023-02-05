@@ -363,6 +363,7 @@ upgradeColumn column =
     , nullable = column.nullable
     , default = column.default
     , comment = column.comment |> Maybe.map upgradeComment
+    , columns = Nothing
     , origins = column.sources |> List.map upgradeSource
     }
 

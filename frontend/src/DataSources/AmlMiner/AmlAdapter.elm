@@ -152,6 +152,7 @@ createColumn source index column =
     , nullable = column.nullable
     , default = column.default
     , comment = column.notes |> Maybe.map (createComment source)
+    , columns = Nothing -- nested columns not supported in AML
     , origins = [ { id = source, lines = [] } ]
     }
 

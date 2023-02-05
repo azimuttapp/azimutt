@@ -4,12 +4,14 @@ import Array
 import DataSources.Helpers exposing (defaultCheckName, defaultIndexName, defaultUniqueName)
 import DataSources.JsonMiner.JsonSchema exposing (JsonSchema)
 import DataSources.JsonMiner.Models.JsonRelation exposing (JsonRelation)
-import DataSources.JsonMiner.Models.JsonTable exposing (JsonCheck, JsonColumn, JsonIndex, JsonPrimaryKey, JsonTable, JsonUnique)
+import DataSources.JsonMiner.Models.JsonTable exposing (JsonCheck, JsonColumn, JsonIndex, JsonNestedColumns(..), JsonPrimaryKey, JsonTable, JsonUnique)
 import DataSources.JsonMiner.Models.JsonType exposing (JsonType, JsonTypeValue(..))
 import Dict exposing (Dict)
 import Libs.Dict as Dict
+import Libs.Ned as Ned
+import Libs.Nel as Nel exposing (Nel)
 import Models.Project.Check exposing (Check)
-import Models.Project.Column exposing (Column)
+import Models.Project.Column exposing (Column, NestedColumns(..))
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.Comment exposing (Comment)
 import Models.Project.CustomType exposing (CustomType)
@@ -74,8 +76,14 @@ buildColumn origins index column =
     , nullable = column.nullable |> Maybe.withDefault False
     , default = column.default
     , comment = column.comment |> Maybe.map (buildComment origins)
+    , columns = column.columns |> Maybe.map buildNestedColumns
     , origins = origins
     }
+
+
+buildNestedColumns : JsonNestedColumns -> NestedColumns
+buildNestedColumns (JsonNestedColumns columns) =
+    columns |> Nel.indexedMap (buildColumn []) |> Ned.fromNelMap .name |> NestedColumns
 
 
 buildPrimaryKey : List Origin -> JsonPrimaryKey -> PrimaryKey
