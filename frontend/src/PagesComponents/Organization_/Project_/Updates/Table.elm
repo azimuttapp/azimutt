@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Updates.Table exposing (goToTable, hideColumn, hideColumns, hideRelatedTables, hideTable, hoverColumn, hoverNextColumn, mapTablePropOrSelected, showAllTables, showColumn, showColumns, showRelatedTables, showTable, showTables, sortColumns)
+module PagesComponents.Organization_.Project_.Updates.Table exposing (goToTable, hideColumn, hideColumns, hideRelatedTables, hideTable, hoverColumn, hoverNextColumn, mapTablePropOrSelected, showAllTables, showColumn, showColumns, showRelatedTables, showTable, showTables, sortColumns, toggleNestedColumn)
 
 import Conf
 import Dict
@@ -7,6 +7,8 @@ import Libs.Dict as Dict
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.Delta exposing (Delta)
+import Libs.Ned as Ned
+import Libs.Nel as Nel
 import Libs.Task as T
 import Models.Area as Area
 import Models.ColumnOrder as ColumnOrder exposing (ColumnOrder)
@@ -15,6 +17,7 @@ import Models.Position as Position
 import Models.Project.CanvasProps exposing (CanvasProps)
 import Models.Project.ColumnId exposing (ColumnId)
 import Models.Project.ColumnName exposing (ColumnName)
+import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.Relation as Relation
 import Models.Project.SchemaName exposing (SchemaName)
@@ -23,8 +26,9 @@ import Models.Project.TableId as TableId exposing (TableId)
 import Models.Size as Size
 import PagesComponents.Organization_.Project_.Models exposing (Model, Msg(..))
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
+import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn, ErdNestedColumns(..))
 import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps exposing (ErdColumnProps)
-import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable)
+import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout as ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.ErdTableProps exposing (ErdTableProps)
 import PagesComponents.Organization_.Project_.Models.HideColumns as HideColumns exposing (HideColumns)
@@ -288,6 +292,42 @@ hideColumns now id kind erd =
     )
 
 
+toggleNestedColumn : Time.Posix -> TableId -> ColumnPath -> Bool -> Erd -> Erd
+toggleNestedColumn now id path open erd =
+    mapColumnsForTableOrSelectedProps now
+        id
+        (\table columns ->
+            ColumnPath.key path
+                |> (\key ->
+                        columns
+                            |> List.concatMap
+                                (\column ->
+                                    if open && column.name == key then
+                                        column
+                                            :: (table
+                                                    |> ErdTable.getColumn path
+                                                    |> Maybe.andThen .columns
+                                                    |> Maybe.mapOrElse
+                                                        (\(ErdNestedColumns cols) ->
+                                                            cols
+                                                                |> Ned.values
+                                                                |> Nel.toList
+                                                                |> List.map (\c -> path |> List.add c.name |> ColumnPath.key |> ErdColumnProps.create)
+                                                        )
+                                                        []
+                                               )
+
+                                    else if (column.name |> String.startsWith key) && column.name /= key then
+                                        []
+
+                                    else
+                                        [ column ]
+                                )
+                   )
+        )
+        erd
+
+
 sortColumns : Time.Posix -> TableId -> ColumnOrder -> Erd -> ( Erd, Cmd Msg )
 sortColumns now id kind erd =
     ( mapColumnsForTableOrSelectedProps now
@@ -387,7 +427,7 @@ mapColumnsForTableOrSelectedProps now id transform erd =
                         if props.id == id || (selected && props.props.selected) then
                             erd.tables
                                 |> Dict.get props.id
-                                |> Maybe.map (\table -> props |> mapColumns (transform table >> List.filter (\c -> table.columns |> Dict.member c.name)))
+                                |> Maybe.map (\table -> props |> mapColumns (transform table))
                                 |> Maybe.withDefault props
 
                         else

@@ -1,4 +1,4 @@
-module Components.Organisms.Table exposing (Actions, CheckConstraint, Column, ColumnName, ColumnRef, DocState, IndexConstraint, Model, OrganizationId, ProjectId, ProjectInfo, Relation, SchemaName, SharedDocState, State, TableConf, TableName, TableRef, UniqueConstraint, doc, initDocState, table)
+module Components.Organisms.Table exposing (Actions, CheckConstraint, Column, ColumnName, ColumnRef, DocState, IndexConstraint, Model, NestedColumns(..), OrganizationId, ProjectId, ProjectInfo, Relation, SchemaName, SharedDocState, State, TableConf, TableName, TableRef, UniqueConstraint, doc, initDocState, table)
 
 import Components.Atoms.Icon as Icon
 import Components.Atoms.Icons as Icons
@@ -12,7 +12,7 @@ import ElmBook exposing (Msg)
 import ElmBook.Actions as Actions exposing (logAction)
 import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Attribute, Html, br, button, div, span, text)
-import Html.Attributes exposing (class, classList, id, tabindex, title, type_)
+import Html.Attributes exposing (class, classList, id, style, tabindex, title, type_)
 import Html.Events exposing (onClick, onMouseEnter, onMouseLeave)
 import Html.Keyed as Keyed
 import Html.Lazy as Lazy
@@ -26,9 +26,10 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Platform as Platform exposing (Platform)
 import Libs.Models.Uuid exposing (Uuid)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
-import Libs.Nel as Nel
+import Libs.Nel as Nel exposing (Nel)
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (Color, TwClass, batch, bg_50, border_500, focus, ring_500, text_500)
+import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Set exposing (Set)
 
 
@@ -57,6 +58,7 @@ type alias TableRef =
 
 type alias Column =
     { index : Int
+    , path : ColumnPath
     , name : ColumnName
     , kind : String
     , kindDetails : Maybe String
@@ -70,7 +72,12 @@ type alias Column =
     , uniques : List UniqueConstraint
     , indexes : List IndexConstraint
     , checks : List CheckConstraint
+    , children : Maybe NestedColumns
     }
+
+
+type NestedColumns
+    = NestedColumns Int (List Column)
 
 
 type alias State =
@@ -98,6 +105,7 @@ type alias Actions msg =
     , columnRightClick : Int -> ColumnName -> PointerEvent -> msg
     , notesClick : Maybe ColumnName -> msg
     , relationsIconClick : List Relation -> Bool -> msg
+    , nestedIconClick : ColumnPath -> Bool -> msg
     , hiddenColumnsHover : HtmlId -> Bool -> msg
     , hiddenColumnsClick : msg
     }
@@ -246,11 +254,20 @@ viewHeader model =
 viewColumns : Model msg -> Html msg
 viewColumns model =
     let
+        columns : List Column
+        columns =
+            model.columns |> flattenColumns
+
         count : Int
         count =
-            (model.columns |> List.length) + (model.hiddenColumns |> List.length)
+            (columns |> List.length) + (model.hiddenColumns |> List.length)
     in
-    Keyed.node "div" [] (model.columns |> List.indexedMap (\i c -> ( c.name, Lazy.lazy5 viewColumn model "" (i + 1 == count) i c )))
+    Keyed.node "div" [] (columns |> List.indexedMap (\i c -> ( c.name, Lazy.lazy5 viewColumn model "" (i + 1 == count) i c )))
+
+
+flattenColumns : List Column -> List Column
+flattenColumns columns =
+    columns |> List.concatMap (\c -> c :: (c.children |> Maybe.mapOrElse (\(NestedColumns _ cols) -> cols |> flattenColumns) []))
 
 
 viewHiddenColumns : Model msg -> Html msg
@@ -308,17 +325,24 @@ viewHiddenColumns model =
 
 viewColumn : Model msg -> TwClass -> Bool -> Int -> Column -> Html msg
 viewColumn model styles isLast index column =
+    let
+        key : ColumnName
+        key =
+            column.path |> ColumnPath.key
+    in
     div
         ([ title (column.name ++ " (" ++ column.kind ++ Bool.cond column.nullable "?" "" ++ ")")
          , css
-            [ "h-6 px-2 flex items-center align-middle whitespace-nowrap relative"
+            [ "h-6 flex items-center align-middle whitespace-nowrap relative"
             , styles
-            , Bool.cond (isHighlightedColumn model column) (batch [ text_500 model.state.color, bg_50 model.state.color ]) "text-default-500 bg-white"
+            , Bool.cond (isHighlightedColumn model column.path) (batch [ text_500 model.state.color, bg_50 model.state.color ]) "text-default-500 bg-white"
             , Bool.cond isLast "rounded-b-lg" ""
             ]
+         , style "padding-left" ((List.length column.path - 1 |> String.fromInt) ++ ".5rem")
+         , style "padding-right" "0.5rem"
          ]
-            ++ Bool.cond model.conf.hover [ onMouseEnter (model.actions.columnHover column.name True), onMouseLeave (model.actions.columnHover column.name False) ] []
-            ++ Bool.cond model.conf.layout [ stopDoubleClick (model.actions.columnDblClick column.name), onContextMenu model.platform (model.actions.columnRightClick index column.name) ] []
+            ++ Bool.cond model.conf.hover [ onMouseEnter (model.actions.columnHover key True), onMouseLeave (model.actions.columnHover key False) ] []
+            ++ Bool.cond model.conf.layout [ stopDoubleClick (model.actions.columnDblClick column.name), onContextMenu model.platform (model.actions.columnRightClick index (column.path |> ColumnPath.key)) ] []
             ++ (model.actions.columnClick |> Maybe.mapOrElse (\action -> [ onPointerUp model.platform (action column.name) ]) [])
         )
         [ viewColumnIcon model column |> viewColumnIconDropdown model column
@@ -337,6 +361,7 @@ viewColumnIcon model column =
             , Bool.maybe (column.uniques |> List.nonEmpty) ("Unique constraint for " ++ (column.uniques |> List.map .name |> String.join ", "))
             , Bool.maybe (column.indexes |> List.nonEmpty) ("Indexed by " ++ (column.indexes |> List.map .name |> String.join ", "))
             , Bool.maybe (column.checks |> List.nonEmpty) ("In checks " ++ (column.checks |> List.map .name |> String.join ", "))
+            , column.children |> Maybe.map (\(NestedColumns count _) -> "Has " ++ String.fromInt count ++ " nested columns")
             ]
                 |> List.filterMap (\a -> a)
                 |> String.join ", "
@@ -351,6 +376,13 @@ viewColumnIcon model column =
 
     else if column.isPrimaryKey then
         div [] [ Icon.solid Icons.columns.primaryKey "w-4 h-4" |> Tooltip.t tooltip ]
+
+    else if column.children /= Nothing then
+        if column.children |> Maybe.mapOrElse (\(NestedColumns _ cols) -> cols |> List.isEmpty) True then
+            div [ onClick (model.actions.nestedIconClick column.path True), class "cursor-pointer" ] [ Icon.solid Icons.columns.nested "w-4 h-4" |> Tooltip.t tooltip ]
+
+        else
+            div [ onClick (model.actions.nestedIconClick column.path False), class "cursor-pointer" ] [ Icon.solid Icons.columns.nestedOpen "w-4 h-4" |> Tooltip.t tooltip ]
 
     else if column.uniques |> List.nonEmpty then
         div [] [ Icon.solid Icons.columns.unique "w-4 h-4" |> Tooltip.t tooltip ]
@@ -435,7 +467,7 @@ viewColumnName model column =
     div [ css [ "ml-1 flex flex-grow", Bool.cond column.isPrimaryKey "font-bold" "" ] ]
         ([ text column.name ]
             |> List.appendOn column.comment viewComment
-            |> List.appendOn column.notes (viewNotes model (Just column.name))
+            |> List.appendOn column.notes (viewNotes model (Just (column.path |> ColumnPath.key)))
         )
 
 
@@ -471,7 +503,7 @@ viewColumnKind model column =
     let
         opacity : TwClass
         opacity =
-            Bool.cond (isHighlightedColumn model column) "opacity-100" "opacity-50"
+            Bool.cond (isHighlightedColumn model column.path) "opacity-100" "opacity-50"
 
         tooltip : Maybe String
         tooltip =
@@ -518,9 +550,13 @@ showColumnRef defaultSchema ref =
         ref.schema ++ "." ++ ref.table ++ "." ++ ref.column
 
 
-isHighlightedColumn : Model msg -> Column -> Bool
-isHighlightedColumn model column =
-    model.state.highlightedColumns |> Set.member column.name
+isHighlightedColumn : Model msg -> ColumnPath -> Bool
+isHighlightedColumn model path =
+    if path |> List.isEmpty then
+        False
+
+    else
+        (model.state.highlightedColumns |> Set.member (path |> ColumnPath.key)) || isHighlightedColumn model (path |> List.dropRight 1)
 
 
 
@@ -547,7 +583,7 @@ updateDocState transform =
 
 sampleColumn : Column
 sampleColumn =
-    { index = 0, name = "", kind = "", kindDetails = Nothing, nullable = False, default = Nothing, comment = Nothing, notes = Nothing, isPrimaryKey = False, inRelations = [], outRelations = [], uniques = [], indexes = [], checks = [] }
+    { index = 0, path = [], name = "", kind = "", kindDetails = Nothing, nullable = False, default = Nothing, comment = Nothing, notes = Nothing, isPrimaryKey = False, inRelations = [], outRelations = [], uniques = [], indexes = [], checks = [], children = Nothing }
 
 
 sample : Model (Msg x)
@@ -564,6 +600,7 @@ sample =
         , { sampleColumn | name = "email", kind = "character varying(120)", indexes = [ { name = "users_email_idx" } ] }
         , { sampleColumn | name = "bio", kind = "text", checks = [ { name = "users_bio_min_length" } ] }
         , { sampleColumn | name = "organization", kind = "integer", nullable = True, outRelations = [ { column = { schema = "demo", table = "organizations", column = "id" }, nullable = True, tableShown = False } ] }
+        , { sampleColumn | name = "plan", kind = "object", children = Just (NestedColumns 1 []) }
         , { sampleColumn | name = "created", kind = "timestamp without time zone", default = Just "CURRENT_TIMESTAMP" }
         ]
     , hiddenColumns = []
@@ -606,6 +643,7 @@ sample =
         , columnRightClick = \_ col _ -> logAction ("columnRightClick " ++ col)
         , notesClick = \col -> logAction ("notesClick " ++ (col |> Maybe.withDefault "table"))
         , relationsIconClick = \refs _ -> logAction ("relationsIconClick " ++ (refs |> List.map (\r -> r.column.schema ++ "." ++ r.column.table) |> String.join ", "))
+        , nestedIconClick = \path open -> logAction ("nestedIconClick " ++ (path |> ColumnPath.key) ++ " " ++ Bool.cond open "open" " close")
         , hiddenColumnsHover = \id _ -> logAction ("hiddenColumnsHover " ++ id)
         , hiddenColumnsClick = logAction "hiddenColumnsClick"
         }
@@ -637,6 +675,7 @@ doc =
                                 , columnRightClick = \_ col _ -> logAction ("columnRightClick " ++ col)
                                 , notesClick = \col -> logAction ("notesClick " ++ (col |> Maybe.withDefault "table"))
                                 , relationsIconClick = \refs _ -> logAction ("relationsIconClick " ++ (refs |> List.map (\r -> r.column.schema ++ "." ++ r.column.table) |> String.join ", "))
+                                , nestedIconClick = \path open -> logAction ("nestedIconClick " ++ (path |> ColumnPath.key) ++ " " ++ Bool.cond open "open" " close")
                                 , hiddenColumnsHover = \id _ -> updateDocState (\s -> { s | openedPopover = id })
                                 , hiddenColumnsClick = updateDocState (\s -> { s | showHiddenColumns = not s.showHiddenColumns })
                                 }
@@ -646,6 +685,7 @@ doc =
               , \_ ->
                     div [ css [ "flex flex-wrap gap-6" ] ]
                         ([ { sample | id = "View", isView = True }
+                         , { sample | id = "With nested", columns = sample.columns |> List.map (\c -> Bool.cond (c.name == "plan") { c | children = Just (NestedColumns 1 [ { sampleColumn | path = [ "plan", "id" ], name = "id", kind = "int" } ]) } c) }
                          , { sample | id = "With comment", comment = Just "Here is a comment" }
                          , { sample | id = "With notes", notes = Just "Here is some notes" }
                          , { sample | id = "Hover table", state = sample.state |> (\s -> { s | isHover = True }) }

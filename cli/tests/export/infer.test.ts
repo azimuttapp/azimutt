@@ -1,5 +1,5 @@
 import {describe, expect, test} from "@jest/globals";
-import {schemaFromValue, schemaFromValues} from "../../src/export/infer";
+import {schemaFromValue, schemaFromValues, sumType} from "../../src/export/infer";
 
 describe('export/infer', () => {
     test('infer primitive schema', () => {
@@ -59,5 +59,10 @@ describe('export/infer', () => {
                 name: {type: 'string', values: ['luc'], nullable: true}
             }
         })
+    })
+    test('merge empty array type', () => {
+        expect(sumType(['string', 'number'])).toEqual('string|number')
+        expect(sumType(['[]', 'string[]'])).toEqual('string[]')
+        expect(sumType(['[]', 'string'])).toEqual('[]|string')
     })
 })

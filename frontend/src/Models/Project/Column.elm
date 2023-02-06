@@ -1,4 +1,4 @@
-module Models.Project.Column exposing (Column, ColumnLike, NestedColumns(..), clearOrigins, decode, encode, merge, withName, withNullable)
+module Models.Project.Column exposing (Column, ColumnLike, NestedColumns(..), clearOrigins, decode, encode, merge, withNullable)
 
 import Conf
 import Json.Decode as Decode exposing (Decoder)
@@ -43,11 +43,6 @@ type alias ColumnLike x =
         , comment : Maybe Comment
         , origins : List Origin
     }
-
-
-withName : ColumnLike x -> String -> String
-withName column text =
-    ColumnName.withName column.name text
 
 
 withNullable : ColumnLike x -> String -> String

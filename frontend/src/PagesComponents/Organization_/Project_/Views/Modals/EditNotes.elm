@@ -10,10 +10,12 @@ import Html.Events exposing (onClick, onInput)
 import Libs.Html.Attributes exposing (ariaHidden, css)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Tw exposing (sm)
+import Models.Project.ColumnPath as ColumnPath
 import Models.Project.ColumnRef as ColumnRef
 import Models.Project.TableId as TableId
 import PagesComponents.Organization_.Project_.Models exposing (Msg(..), NotesDialog)
 import PagesComponents.Organization_.Project_.Models.Erd exposing (Erd)
+import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable
 import PagesComponents.Organization_.Project_.Models.Notes exposing (NotesRef(..))
 import PagesComponents.Organization_.Project_.Models.NotesMsg exposing (NotesMsg(..))
 
@@ -69,6 +71,6 @@ refAsName erd ref =
         ColumnNote column ->
             erd.tables
                 |> Dict.get column.table
-                |> Maybe.andThen (\t -> t.columns |> Dict.get column.column)
+                |> Maybe.andThen (ErdTable.getColumn (ColumnPath.fromName column.column))
                 |> Maybe.map (\_ -> span [] [ Badge.basicFlex Tw.gray [] [ text (ColumnRef.show erd.settings.defaultSchema column) ], text " column" ])
                 |> Maybe.withDefault (text ("unknown column " ++ ColumnRef.show erd.settings.defaultSchema column))

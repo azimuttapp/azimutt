@@ -18,6 +18,7 @@ import Models.ErdProps exposing (ErdProps)
 import Models.Organization exposing (Organization)
 import Models.Position as Position
 import Models.Project.ColumnId exposing (ColumnId)
+import Models.Project.ColumnPath exposing (ColumnPath)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.ColumnStats exposing (ColumnStats)
 import Models.Project.FindPathSettings exposing (FindPathSettings)
@@ -176,6 +177,7 @@ type Msg
     | ShowColumns TableId ShowColumns
     | HideColumns TableId HideColumns
     | SortColumns TableId ColumnOrder
+    | ToggleNestedColumn TableId ColumnPath Bool
     | ToggleHiddenColumns TableId
     | SelectTable TableId Bool
     | SelectAllTables

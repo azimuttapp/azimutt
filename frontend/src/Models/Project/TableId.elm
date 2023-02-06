@@ -30,12 +30,12 @@ name ( _, t ) =
 
 toHtmlId : TableId -> HtmlId
 toHtmlId ( s, t ) =
-    "table-" ++ s ++ "-" ++ (t |> HtmlId.encode)
+    "table#" ++ s ++ "#" ++ (t |> HtmlId.encode)
 
 
 fromHtmlId : HtmlId -> Maybe TableId
 fromHtmlId id =
-    case String.split "-" id of
+    case String.split "#" id of
         "table" :: s :: t :: [] ->
             Just ( s, t |> HtmlId.decode )
 

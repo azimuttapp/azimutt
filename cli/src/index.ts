@@ -21,7 +21,7 @@ program.name('azimutt')
     .version('0.0.1')
 
 program.command('export')
-    .description('Export a database schema in a file to easily import it in Azimutt.\nWorks only with PostgreSQL & MongoDB for now, but issues and PR are welcome in https://github.com/azimuttapp/azimutt ;)')
+    .description('Export a database schema in a file to easily import it in Azimutt.\nWorks with PostgreSQL, MongoDB & Couchbase, issues and PR are welcome in https://github.com/azimuttapp/azimutt ;)')
     .requiredOption('-u, --url <url>', 'Url of the database to connect to [required]')
     .option('-k, --kind <kind>', "Database kind, when not inferred from the url")
     .option('-d, --database <database>', 'Limit to a specific database (ex for MongoDB)')
@@ -33,7 +33,8 @@ program.command('export')
     .option('--infer-relations', 'Infer relations using column names')
     .option('-f, --format <format>', 'Output format', 'json')
     .option('-o, --output <output>', "Path to write the schema, ex: ~/azimutt.json")
-    .action(args => exec(exportDbSchema(parseUrl(args.url), args)))
+    .option('--stack-trace', 'Show the full stacktrace instead of a more friendly error')
+    .action(args => exec(exportDbSchema(parseUrl(args.url), args), args))
 
 program.parse(process.argv)
 
@@ -41,6 +42,8 @@ if (!process.argv.slice(2).length) {
     program.outputHelp()
 }
 
-function exec(res: Promise<void>) {
-    res.catch(e => error(chalk.red('Unexpected error: ' + errorToString(e))))
+function exec(res: Promise<void>, args: any) {
+    if (!args.stackTrace) {
+        res.catch(e => error(chalk.red('Unexpected error: ' + errorToString(e))))
+    }
 }

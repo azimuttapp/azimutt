@@ -14,7 +14,10 @@ import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Platform as Platform exposing (Platform)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
+import Libs.Ned as Ned
+import Libs.Nel as Nel
 import Models.Position as Position
+import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.ColumnType as ColumnType
 import Models.Project.CustomTypeValue as CustomTypeValue
 import Models.Project.SchemaName exposing (SchemaName)
@@ -22,7 +25,7 @@ import Models.Size as Size
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
 import PagesComponents.Organization_.Project_.Models exposing (Msg(..), VirtualRelationMsg(..))
 import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode exposing (CursorMode)
-import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn)
+import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn, ErdNestedColumns(..))
 import PagesComponents.Organization_.Project_.Models.ErdColumnRef exposing (ErdColumnRef)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable)
@@ -65,7 +68,7 @@ viewTable conf zoom args notes layout table =
             stringToArgs args
 
         ( columns, hiddenColumns ) =
-            table.columns |> Dict.values |> List.map (buildColumn useBasicTypes notes layout) |> List.partition (\c -> layout.columns |> List.memberBy .name c.name)
+            table.columns |> Dict.values |> List.map (buildColumn useBasicTypes notes layout []) |> List.partition (\c -> layout.columns |> List.memberBy .name c.name)
 
         drag : List (Attribute Msg)
         drag =
@@ -133,6 +136,7 @@ viewTable conf zoom args notes layout table =
                                         _ ->
                                             ShowTables (cols |> List.map (\col -> ( col.column.schema, col.column.table ))) hint
                                )
+                , nestedIconClick = ToggleNestedColumn table.id
                 , hiddenColumnsHover = \id on -> PopoverSet (B.cond on id "")
                 , hiddenColumnsClick = ToggleHiddenColumns table.id
                 }
@@ -156,9 +160,15 @@ handleTablePointerDown htmlId e =
         Noop "No match on table pointer down"
 
 
-buildColumn : Bool -> ErdTableNotes -> ErdTableLayout -> ErdColumn -> Table.Column
-buildColumn useBasicTypes notes layout column =
+buildColumn : Bool -> ErdTableNotes -> ErdTableLayout -> ColumnPath -> ErdColumn -> Table.Column
+buildColumn useBasicTypes notes layout parents column =
+    let
+        path : ColumnPath
+        path =
+            parents |> List.add column.name
+    in
     { index = column.index
+    , path = path
     , name = column.name
     , kind =
         if useBasicTypes then
@@ -180,13 +190,24 @@ buildColumn useBasicTypes notes layout column =
     , nullable = column.nullable
     , default = column.defaultLabel
     , comment = column.comment |> Maybe.map .text
-    , notes = notes.columns |> Dict.get column.name
+    , notes = notes.columns |> Dict.get (path |> ColumnPath.key)
     , isPrimaryKey = column.isPrimaryKey
     , inRelations = column.inRelations |> List.map (buildColumnRelation layout)
     , outRelations = column.outRelations |> List.map (buildColumnRelation layout)
     , uniques = column.uniques |> List.map (\u -> { name = u })
     , indexes = column.indexes |> List.map (\i -> { name = i })
     , checks = column.checks |> List.map (\c -> { name = c })
+    , children =
+        column.columns
+            |> Maybe.map
+                (\(ErdNestedColumns cols) ->
+                    cols
+                        |> Ned.values
+                        |> Nel.toList
+                        |> List.filter (\c -> layout.columns |> List.any (\l -> l.name == (path |> List.add c.name |> ColumnPath.key)))
+                        |> List.map (buildColumn useBasicTypes notes layout path)
+                        |> Table.NestedColumns (cols |> Ned.size)
+                )
     }
 
 

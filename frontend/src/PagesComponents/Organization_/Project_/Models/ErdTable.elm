@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable, create, unpack)
+module PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable, create, getColumn, unpack)
 
 import Dict exposing (Dict)
 import Libs.Dict as Dict
@@ -6,6 +6,7 @@ import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Models.Project.Check exposing (Check)
 import Models.Project.ColumnName exposing (ColumnName)
+import Models.Project.ColumnPath exposing (ColumnPath)
 import Models.Project.Comment exposing (Comment)
 import Models.Project.CustomType exposing (CustomType)
 import Models.Project.CustomTypeId exposing (CustomTypeId)
@@ -92,3 +93,13 @@ unpack table =
     , comment = table.comment
     , origins = table.origins
     }
+
+
+getColumn : ColumnPath -> ErdTable -> Maybe ErdColumn
+getColumn path table =
+    case path of
+        [] ->
+            Nothing
+
+        head :: tail ->
+            table.columns |> Dict.get head |> Maybe.andThen (ErdColumn.getColumn tail)

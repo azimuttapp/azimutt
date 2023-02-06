@@ -1,12 +1,14 @@
-module PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn, create, unpack)
+module PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn, ErdNestedColumns(..), create, getColumn, unpack)
 
 import Dict exposing (Dict)
 import Libs.Maybe as Maybe
+import Libs.Ned as Ned exposing (Ned)
 import Libs.Nel as Nel
 import Models.Project.CheckName exposing (CheckName)
-import Models.Project.Column exposing (Column, NestedColumns)
+import Models.Project.Column exposing (Column, NestedColumns(..))
 import Models.Project.ColumnIndex exposing (ColumnIndex)
 import Models.Project.ColumnName exposing (ColumnName)
+import Models.Project.ColumnPath exposing (ColumnPath)
 import Models.Project.ColumnType as ColumnType exposing (ColumnType)
 import Models.Project.ColumnValue as ColumnValue exposing (ColumnValue)
 import Models.Project.Comment exposing (Comment)
@@ -38,9 +40,13 @@ type alias ErdColumn =
     , uniques : List UniqueName
     , indexes : List IndexName
     , checks : List CheckName
-    , columns : Maybe NestedColumns
+    , columns : Maybe ErdNestedColumns
     , origins : List Origin
     }
+
+
+type ErdNestedColumns
+    = ErdNestedColumns (Ned ColumnName ErdColumn)
 
 
 create : SchemaName -> Dict TableId Table -> Dict CustomTypeId CustomType -> List Relation -> Table -> Column -> ErdColumn
@@ -60,8 +66,30 @@ create defaultSchema tables types columnRelations table column =
     , uniques = table.uniques |> List.filter (.columns >> Nel.member column.name) |> List.map .name
     , indexes = table.indexes |> List.filter (.columns >> Nel.member column.name) |> List.map .name
     , checks = table.checks |> List.filter (.columns >> List.member column.name) |> List.map .name
-    , columns = column.columns
+    , columns = column.columns |> Maybe.map (\(NestedColumns cols) -> cols |> Ned.map (\_ -> createNested defaultSchema types) |> ErdNestedColumns)
     , origins = table.origins
+    }
+
+
+createNested : SchemaName -> Dict CustomTypeId CustomType -> Column -> ErdColumn
+createNested defaultSchema types column =
+    { index = column.index
+    , name = column.name
+    , kind = column.kind
+    , kindLabel = column.kind |> ColumnType.label defaultSchema
+    , customType = types |> CustomType.get defaultSchema column.kind
+    , nullable = column.nullable
+    , default = column.default
+    , defaultLabel = column.default |> Maybe.map ColumnValue.label
+    , comment = column.comment
+    , isPrimaryKey = False
+    , inRelations = []
+    , outRelations = []
+    , uniques = []
+    , indexes = []
+    , checks = []
+    , columns = column.columns |> Maybe.map (\(NestedColumns cols) -> cols |> Ned.map (\_ -> createNested defaultSchema types) |> ErdNestedColumns)
+    , origins = []
     }
 
 
@@ -73,6 +101,16 @@ unpack column =
     , nullable = column.nullable
     , default = column.default
     , comment = column.comment
-    , columns = column.columns
+    , columns = column.columns |> Maybe.map (\(ErdNestedColumns cols) -> cols |> Ned.map (\_ -> unpack) |> NestedColumns)
     , origins = column.origins
     }
+
+
+getColumn : ColumnPath -> ErdColumn -> Maybe ErdColumn
+getColumn path column =
+    case path of
+        [] ->
+            Just column
+
+        head :: tail ->
+            column.columns |> Maybe.andThen (\(ErdNestedColumns cols) -> cols |> Ned.get head) |> Maybe.andThen (getColumn tail)

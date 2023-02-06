@@ -6,6 +6,7 @@ import Html exposing (Html, div, text)
 import Libs.Dict as Dict
 import Libs.Maybe as Maybe
 import Libs.Models.Platform exposing (Platform)
+import Models.Project.ColumnPath as ColumnPath
 import Models.Project.ColumnRef exposing (ColumnRef)
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
 import PagesComponents.Organization_.Project_.Models exposing (Msg(..), VirtualRelationMsg(..))
@@ -15,16 +16,27 @@ import PagesComponents.Organization_.Project_.Models.NotesMsg exposing (NotesMsg
 
 view : Platform -> Int -> ColumnRef -> Maybe String -> Html Msg
 view platform index column notes =
+    let
+        notNested : Bool
+        notNested =
+            column.column |> ColumnPath.isNested |> not
+
+        root : ColumnRef
+        root =
+            { column | column = column.column |> ColumnPath.root }
+    in
     div []
-        [ ContextMenu.btn "" (DetailsSidebarMsg (DetailsSidebar.ShowColumn column)) [ text "Show details" ]
-        , ContextMenu.btnHotkey "" (HideColumn column) [ text "Hide column" ] platform (Conf.hotkeys |> Dict.getOrElse "hide" [])
-        , ContextMenu.btnHotkey "" (NotesMsg (NOpen (NoteRef.fromColumn column))) [ text (notes |> Maybe.mapOrElse (\_ -> "Update notes") "Add notes") ] platform (Conf.hotkeys |> Dict.getOrElse "notes" [])
-        , ContextMenu.btnHotkey "" (VirtualRelationMsg (VRCreate (Just column))) [ text "Add relation" ] platform (Conf.hotkeys |> Dict.getOrElse "create-virtual-relation" [])
-        , ContextMenu.btn "" (MoveColumn column (index - 1)) [ text "Move up" ]
-        , ContextMenu.btn "" (MoveColumn column (index + 1)) [ text "Move down" ]
-        , ContextMenu.btn "" (MoveColumn column 0) [ text "Move top" ]
-        , ContextMenu.btn "" (MoveColumn column 100) [ text "Move bottom" ]
-        ]
+        ([ Just (ContextMenu.btn "" (DetailsSidebarMsg (DetailsSidebar.ShowColumn root)) [ text "Show details" ])
+         , Just (ContextMenu.btnHotkey "" (HideColumn column) [ text "Hide column" ] platform (Conf.hotkeys |> Dict.getOrElse "hide" []))
+         , Just (ContextMenu.btnHotkey "" (NotesMsg (NOpen (NoteRef.fromColumn column))) [ text (notes |> Maybe.mapOrElse (\_ -> "Update notes") "Add notes") ] platform (Conf.hotkeys |> Dict.getOrElse "notes" []))
+         , Maybe.when notNested (ContextMenu.btnHotkey "" (VirtualRelationMsg (VRCreate (Just column))) [ text "Add relation" ] platform (Conf.hotkeys |> Dict.getOrElse "create-virtual-relation" []))
+         , Maybe.when notNested (ContextMenu.btn "" (MoveColumn column (index - 1)) [ text "Move up" ])
+         , Maybe.when notNested (ContextMenu.btn "" (MoveColumn column (index + 1)) [ text "Move down" ])
+         , Maybe.when notNested (ContextMenu.btn "" (MoveColumn column 0) [ text "Move top" ])
+         , Maybe.when notNested (ContextMenu.btn "" (MoveColumn column 100) [ text "Move bottom" ])
+         ]
+            |> List.filterMap identity
+        )
 
 
 viewHidden : Platform -> Int -> ColumnRef -> Maybe String -> Html Msg

@@ -1,5 +1,5 @@
 import {AzimuttColumn} from "../utils/database";
-import {mapValues} from "../utils/object";
+import {mapValues, removeUndefined} from "../utils/object";
 import {distinct} from "../utils/array";
 
 export type ValueSchema = { type: ValueType, values: Value[], nullable?: boolean, nested?: { [key: string]: ValueSchema } }
@@ -7,13 +7,22 @@ export type Value = any
 export type ValueType = string
 
 export function schemaToColumns(schema: ValueSchema, flatten: number, path: string[] = []): AzimuttColumn[] {
-    if (schema.nested && flatten >= 0) {
+    if (schema.nested && flatten > 0) {
         return Object.entries(schema.nested).flatMap(([key, value]) => {
             return [{
                 name: path.map(p => p + '.').join('') + key,
                 type: value.type,
                 nullable: value.nullable
             }, ...schemaToColumns(value, flatten - 1, [...path, key])]
+        })
+    } else if (schema.nested) {
+        return Object.entries(schema.nested).map(([key, value]) => {
+            return removeUndefined({
+                name: path.map(p => p + '.').join('') + key,
+                type: value.type,
+                nullable: value.nullable,
+                columns: value.nested ? schemaToColumns(value, 0, []) : undefined
+            })
         })
     } else {
         return []
@@ -92,8 +101,11 @@ function getType(value: Value): ValueType {
     }
 }
 
-function sumType(types: ValueType[]): ValueType {
-    return distinct(types).map(t => t.indexOf('|') === -1 ? t : `(${t})`).join('|')
+// exported for tests
+export function sumType(types: ValueType[]): ValueType {
+    types = distinct(types)
+    types = types.some(t => t !== '[]' && t.endsWith('[]')) ? types.filter(t => t !== '[]') : types
+    return types.map(t => t.indexOf('|') === -1 ? t : `(${t})`).join('|')
 }
 
 function isNullable(value: Value): boolean {
