@@ -3,7 +3,7 @@ module PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColu
 import Dict exposing (Dict)
 import Libs.Maybe as Maybe
 import Libs.Ned as Ned exposing (Ned)
-import Libs.Nel as Nel
+import Libs.Nel as Nel exposing (Nel)
 import Models.Project.CheckName exposing (CheckName)
 import Models.Project.Column exposing (Column, NestedColumns(..))
 import Models.Project.ColumnIndex exposing (ColumnIndex)
@@ -108,9 +108,6 @@ unpack column =
 
 getColumn : ColumnPath -> ErdColumn -> Maybe ErdColumn
 getColumn path column =
-    case path of
-        [] ->
-            Just column
-
-        head :: tail ->
-            column.columns |> Maybe.andThen (\(ErdNestedColumns cols) -> cols |> Ned.get head) |> Maybe.andThen (getColumn tail)
+    column.columns
+        |> Maybe.andThen (\(ErdNestedColumns cols) -> cols |> Ned.get path.head)
+        |> Maybe.andThen (\col -> path.tail |> Nel.fromList |> Maybe.mapOrElse (\next -> getColumn next col) (Just col))

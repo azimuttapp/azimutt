@@ -338,7 +338,7 @@ viewColumn model styles isLast index column =
             , Bool.cond (isHighlightedColumn model column.path) (batch [ text_500 model.state.color, bg_50 model.state.color ]) "text-default-500 bg-white"
             , Bool.cond isLast "rounded-b-lg" ""
             ]
-         , style "padding-left" ((List.length column.path - 1 |> String.fromInt) ++ ".5rem")
+         , style "padding-left" ((column.path |> ColumnPath.parents |> Maybe.mapOrElse Nel.length 0 |> String.fromInt) ++ ".5rem")
          , style "padding-right" "0.5rem"
          ]
             ++ Bool.cond model.conf.hover [ onMouseEnter (model.actions.columnHover key True), onMouseLeave (model.actions.columnHover key False) ] []
@@ -552,11 +552,7 @@ showColumnRef defaultSchema ref =
 
 isHighlightedColumn : Model msg -> ColumnPath -> Bool
 isHighlightedColumn model path =
-    if path |> List.isEmpty then
-        False
-
-    else
-        (model.state.highlightedColumns |> Set.member (path |> ColumnPath.key)) || isHighlightedColumn model (path |> List.dropRight 1)
+    (model.state.highlightedColumns |> Set.member (path |> ColumnPath.key)) || (path |> ColumnPath.parents |> Maybe.mapOrElse (isHighlightedColumn model) False)
 
 
 
@@ -583,7 +579,7 @@ updateDocState transform =
 
 sampleColumn : Column
 sampleColumn =
-    { index = 0, path = [], name = "", kind = "", kindDetails = Nothing, nullable = False, default = Nothing, comment = Nothing, notes = Nothing, isPrimaryKey = False, inRelations = [], outRelations = [], uniques = [], indexes = [], checks = [], children = Nothing }
+    { index = 0, path = Nel "" [], name = "", kind = "", kindDetails = Nothing, nullable = False, default = Nothing, comment = Nothing, notes = Nothing, isPrimaryKey = False, inRelations = [], outRelations = [], uniques = [], indexes = [], checks = [], children = Nothing }
 
 
 sample : Model (Msg x)
@@ -685,7 +681,7 @@ doc =
               , \_ ->
                     div [ css [ "flex flex-wrap gap-6" ] ]
                         ([ { sample | id = "View", isView = True }
-                         , { sample | id = "With nested", columns = sample.columns |> List.map (\c -> Bool.cond (c.name == "plan") { c | children = Just (NestedColumns 1 [ { sampleColumn | path = [ "plan", "id" ], name = "id", kind = "int" } ]) } c) }
+                         , { sample | id = "With nested", columns = sample.columns |> List.map (\c -> Bool.cond (c.name == "plan") { c | children = Just (NestedColumns 1 [ { sampleColumn | path = Nel "plan" [ "id" ], name = "id", kind = "int" } ]) } c) }
                          , { sample | id = "With comment", comment = Just "Here is a comment" }
                          , { sample | id = "With notes", notes = Just "Here is some notes" }
                          , { sample | id = "Hover table", state = sample.state |> (\s -> { s | isHover = True }) }

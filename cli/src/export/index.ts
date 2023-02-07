@@ -23,7 +23,7 @@ export async function exportDbSchema(url: DbUrl, opts: Opts): Promise<void> {
     log(`Exporting database schema from ${url.full} ...`)
     const kind = opts.kind || url.kind
     if (opts.kind && opts.kind !== url.kind) {
-        warn(chalk.yellow(`${opts.kind} not recognized from url, will try anyway but expect an error.`))
+        warn(chalk.yellow(`${opts.kind} not recognized from url (got ${JSON.stringify(url.kind)}), will try anyway but expect some errors.`))
     }
     if (kind === 'mongodb') {
         await exportJsonSchema(url, opts, mongodb.fetchSchema, mongodb.transformSchema, 'MongoDB')

@@ -312,7 +312,7 @@ toggleNestedColumn now id path open erd =
                                                             cols
                                                                 |> Ned.values
                                                                 |> Nel.toList
-                                                                |> List.map (\c -> path |> List.add c.name |> ColumnPath.key |> ErdColumnProps.create)
+                                                                |> List.map (\c -> path |> ColumnPath.child c.name |> ColumnPath.key |> ErdColumnProps.create)
                                                         )
                                                         []
                                                )

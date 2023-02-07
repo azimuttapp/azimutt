@@ -4,6 +4,7 @@ import Dict exposing (Dict)
 import Libs.Dict as Dict
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.Nel as Nel exposing (Nel)
 import Models.Project.Check exposing (Check)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnPath exposing (ColumnPath)
@@ -97,9 +98,6 @@ unpack table =
 
 getColumn : ColumnPath -> ErdTable -> Maybe ErdColumn
 getColumn path table =
-    case path of
-        [] ->
-            Nothing
-
-        head :: tail ->
-            table.columns |> Dict.get head |> Maybe.andThen (ErdColumn.getColumn tail)
+    table.columns
+        |> Dict.get path.head
+        |> Maybe.andThen (\col -> path.tail |> Nel.fromList |> Maybe.mapOrElse (\next -> ErdColumn.getColumn next col) (Just col))

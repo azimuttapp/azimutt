@@ -5,7 +5,7 @@ This CLI is aimed at helping work with Azimutt and extend its capabilities.
 ## Commands
 
 - **export**, ex: `azimutt export --url "mongodb://mongodb0.example.com:27017" --flatten 1 --infer-relations --output ~/azimutt.json`
-  - for now, it works with PostgreSQL, MongoDB & Couchbase, and could be extended on demand ;)
+  - for now, it works only with PostgreSQL, MongoDB & Couchbase, but could be extended on demand ;)
   - `kind` is optional, can be inferred from `url`
   - `database` is optional, restrict schema extraction to this database
   - `schema` is optional, restrict schema extraction to this schema

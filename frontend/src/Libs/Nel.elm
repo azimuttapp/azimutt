@@ -1,4 +1,4 @@
-module Libs.Nel exposing (Nel, any, append, filter, filterMap, filterNot, filterZip, find, from, fromList, indexedMap, join, length, map, member, merge, partition, prepend, sortBy, toList, unique, uniqueBy, zipWith)
+module Libs.Nel exposing (Nel, add, any, filter, filterMap, filterNot, filterZip, find, from, fromList, indexedMap, join, length, map, member, merge, partition, prepend, sortBy, toList, unique, uniqueBy, zipWith)
 
 -- Nel: NonEmptyList
 
@@ -15,8 +15,8 @@ prepend a nel =
     Nel a (nel.head :: nel.tail)
 
 
-append : a -> Nel a -> Nel a
-append a { head, tail } =
+add : a -> Nel a -> Nel a
+add a { head, tail } =
     Nel head (tail ++ [ a ])
 
 

@@ -15,7 +15,7 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Platform as Platform exposing (Platform)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Ned as Ned
-import Libs.Nel as Nel
+import Libs.Nel as Nel exposing (Nel)
 import Models.Position as Position
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.ColumnType as ColumnType
@@ -68,7 +68,7 @@ viewTable conf zoom args notes layout table =
             stringToArgs args
 
         ( columns, hiddenColumns ) =
-            table.columns |> Dict.values |> List.map (buildColumn useBasicTypes notes layout []) |> List.partition (\c -> layout.columns |> List.memberBy .name c.name)
+            table.columns |> Dict.values |> List.map (\c -> buildColumn useBasicTypes notes layout (ColumnPath.fromName c.name) c) |> List.partition (\c -> layout.columns |> List.memberBy .name c.name)
 
         drag : List (Attribute Msg)
         drag =
@@ -161,12 +161,7 @@ handleTablePointerDown htmlId e =
 
 
 buildColumn : Bool -> ErdTableNotes -> ErdTableLayout -> ColumnPath -> ErdColumn -> Table.Column
-buildColumn useBasicTypes notes layout parents column =
-    let
-        path : ColumnPath
-        path =
-            parents |> List.add column.name
-    in
+buildColumn useBasicTypes notes layout path column =
     { index = column.index
     , path = path
     , name = column.name
@@ -204,8 +199,8 @@ buildColumn useBasicTypes notes layout parents column =
                     cols
                         |> Ned.values
                         |> Nel.toList
-                        |> List.filter (\c -> layout.columns |> List.any (\l -> l.name == (path |> List.add c.name |> ColumnPath.key)))
-                        |> List.map (buildColumn useBasicTypes notes layout path)
+                        |> List.filter (\c -> layout.columns |> List.any (\l -> l.name == (path |> ColumnPath.child c.name |> ColumnPath.key)))
+                        |> List.map (\c -> buildColumn useBasicTypes notes layout (path |> ColumnPath.child c.name) c)
                         |> Table.NestedColumns (cols |> Ned.size)
                 )
     }
