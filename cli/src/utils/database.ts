@@ -6,7 +6,7 @@ export type DbUrl = { full: string, kind?: DbKind, user?: string, pass?: string,
 // vertically align regexes with variable names ^^
 const mongoRegex = /mongodb(?:\+srv)?:\/\/(?:([^:]+):([^@]+)@)?([^:/?]+)(?::(\d+))?(?:\/([^?]+))?(?:\?(.+))?/
 const p = /^(?:jdbc:)?postgres(?:ql)?:\/\/(?:([^:]+):([^@]+)@)?([^:/?]+)(?::(\d+))?(?:\/([^?]+))?$/
-const couchbaseRegexps = /^couchbases:\/\/(?:([^:]+):([^@]+)@)?([^:/?]+)(?::(\d+))?(?:\/([^?]+))?$/
+const couchbaseRegexps = /^couchbases?:\/\/(?:([^:]+):([^@]+)@)?([^:/?]+)(?::(\d+))?(?:\/([^?]+))?$/
 
 export function parseUrl(url: string): DbUrl {
     const mongo = url.match(mongoRegex)

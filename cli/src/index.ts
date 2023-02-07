@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import {Command} from "commander";
+import {Argument, Command} from "commander";
 import chalk from "chalk";
 import {exportDbSchema} from "./export";
 import {parseUrl} from "./utils/database";
@@ -22,8 +22,8 @@ program.name('azimutt')
 
 program.command('export')
     .description('Export a database schema in a file to easily import it in Azimutt.\nWorks with PostgreSQL, MongoDB & Couchbase, issues and PR are welcome in https://github.com/azimuttapp/azimutt ;)')
-    .requiredOption('-u, --url <url>', 'Url of the database to connect to [required]')
-    .option('-k, --kind <kind>', "Database kind, when not inferred from the url")
+    .addArgument(new Argument('<kind>', 'the source kind of the export').choices(['mongodb', 'couchbase', 'postgres']))
+    .argument('<url>', 'the url to connect to the source, including credentials')
     .option('-d, --database <database>', 'Limit to a specific database (ex for MongoDB)')
     .option('-s, --schema <schema>', 'Limit to a specific schema (ex for PostgreSQL)')
     .option('-b, --bucket <bucket>', 'Limit to a specific bucket (ex for Couchbase)')
@@ -33,8 +33,8 @@ program.command('export')
     .option('--infer-relations', 'Infer relations using column names')
     .option('-f, --format <format>', 'Output format', 'json')
     .option('-o, --output <output>', "Path to write the schema, ex: ~/azimutt.json")
-    .option('--stack-trace', 'Show the full stacktrace instead of a more friendly error')
-    .action(args => exec(exportDbSchema(parseUrl(args.url), args), args))
+    .option('--debug', 'Add debug logs and show the full stacktrace instead of a shorter error')
+    .action((kind, url, args) => exec(exportDbSchema(kind, parseUrl(url), args), args))
 
 program.parse(process.argv)
 
