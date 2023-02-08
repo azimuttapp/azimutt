@@ -15,6 +15,7 @@ import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind exposing (TwClass, focus, lg, sm)
+import Models.Project.ColumnPath as ColumnPath
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.Organization_.Project_.Models exposing (Msg(..), SearchModel, confirm)
@@ -129,7 +130,7 @@ viewSearchResult searchId defaultSchema shownTables active index res =
             viewItem "table" table.id Icons.table [ text (TableId.show defaultSchema table.id) ] (shownTables |> List.memberBy .id table.id)
 
         FoundColumn table column ->
-            viewItem "column" table.id Icons.column [ span [ class "opacity-50" ] [ text (TableId.show defaultSchema table.id ++ ".") ], text column.name ] (shownTables |> List.memberBy .id table.id)
+            viewItem "column" table.id Icons.column [ span [ class "opacity-50" ] [ text (TableId.show defaultSchema table.id ++ ".") ], text (ColumnPath.show column.path) ] (shownTables |> List.memberBy .id table.id)
 
         FoundRelation relation ->
             if shownTables |> List.memberBy .id relation.src.table |> not then
@@ -165,7 +166,7 @@ performSearch tables relations notes lQuery =
                                 |> (\n ->
                                         table.columns
                                             |> Dict.values
-                                            |> List.filterMap (\c -> c |> columnMatch lQuery (n |> Maybe.andThen (.columns >> Dict.get c.name)) table)
+                                            |> List.filterMap (\c -> c |> columnMatch lQuery (n |> Maybe.andThen (.columns >> ColumnPath.get c.path)) table)
                                    )
                         )
 
@@ -219,16 +220,16 @@ tableMatch lQuery notes table =
 
 columnMatch : String -> Maybe Notes -> ErdTable -> ErdColumn -> Maybe ( Float, SearchResult )
 columnMatch lQuery notes table column =
-    if String.toLower column.name == lQuery then
+    if (column.path |> ColumnPath.toString |> String.toLower) == lQuery then
         Just ( 0.9, FoundColumn table column )
 
-    else if column.name |> String.toLower |> String.startsWith lQuery then
+    else if column.path |> ColumnPath.toString |> String.toLower |> String.startsWith lQuery then
         Just ( 0.8, FoundColumn table column )
 
-    else if column.name |> match lQuery then
+    else if column.path |> ColumnPath.toString |> match lQuery then
         Just ( 0.7, FoundColumn table column )
 
-    else if column.name |> fuzzy lQuery then
+    else if column.path |> ColumnPath.toString |> fuzzy lQuery then
         Just ( 0.6, FoundColumn table column )
 
     else if
@@ -264,8 +265,8 @@ relationMatch lQuery relation =
         Just ( 0.06, FoundRelation relation )
 
     else if
-        (relation.src.column |> match lQuery)
-            || (relation.ref.column |> match lQuery)
+        (relation.src.column |> ColumnPath.toString |> match lQuery)
+            || (relation.ref.column |> ColumnPath.toString |> match lQuery)
             || (relation.src.table |> Tuple.second |> match lQuery)
             || (relation.ref.table |> Tuple.second |> match lQuery)
     then

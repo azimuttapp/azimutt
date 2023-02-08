@@ -219,7 +219,7 @@ view erd model =
         warnings =
             selectedSource
                 |> Maybe.mapOrElse .relations []
-                |> List.concatMap (\r -> [ ColumnId.from r.src, ColumnId.from r.ref ])
+                |> List.concatMap (\r -> [ ColumnId.fromRef r.src, ColumnId.fromRef r.ref ])
                 |> List.unique
                 |> List.filterMap
                     (\( table, column ) ->

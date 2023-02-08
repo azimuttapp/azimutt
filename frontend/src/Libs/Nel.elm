@@ -1,12 +1,11 @@
-module Libs.Nel exposing (Nel, add, any, filter, filterMap, filterNot, filterZip, find, from, fromList, indexedMap, join, length, map, member, merge, partition, prepend, sortBy, toList, unique, uniqueBy, zipWith)
-
--- Nel: NonEmptyList
+module Libs.Nel exposing (Nel, add, all, any, concatMap, filter, filterMap, filterNot, filterZip, find, from, fromList, indexedMap, join, length, map, member, merge, partition, prepend, sortBy, startsWith, toList, unique, uniqueBy, zip, zipWith)
 
 import Libs.List as List
 import Set
 
 
 type alias Nel a =
+    -- Nel: NonEmptyList
     { head : a, tail : List a }
 
 
@@ -28,6 +27,11 @@ map f xs =
 indexedMap : (Int -> a -> b) -> Nel a -> Nel b
 indexedMap f xs =
     { head = f 0 xs.head, tail = xs.tail |> List.indexedMap (\i a -> f (i + 1) a) }
+
+
+concatMap : (a -> List b) -> Nel a -> List b
+concatMap f nel =
+    nel |> map f |> toList |> List.concat
 
 
 find : (a -> Bool) -> Nel a -> Maybe a
@@ -69,6 +73,11 @@ partition predicate nel =
     nel |> toList |> List.partition predicate
 
 
+all : (a -> Bool) -> Nel a -> Bool
+all predicate nel =
+    nel |> toList |> List.all predicate
+
+
 any : (a -> Bool) -> Nel a -> Bool
 any predicate nel =
     nel |> toList |> List.any predicate
@@ -79,6 +88,11 @@ member value nel =
     nel |> toList |> List.any (\a -> a == value)
 
 
+startsWith : Nel a -> Nel a -> Bool
+startsWith value nel =
+    (nel |> zip value |> all (\( a, b ) -> a == b)) && (List.length value.tail <= List.length nel.tail)
+
+
 length : Nel a -> Int
 length nel =
     1 + List.length nel.tail
@@ -87,6 +101,11 @@ length nel =
 sortBy : (a -> comparable) -> Nel a -> Nel a
 sortBy transform nel =
     nel |> toList |> List.sortBy transform |> fromList |> Maybe.withDefault nel
+
+
+zip : Nel b -> Nel a -> Nel ( a, b )
+zip bNel aNel =
+    Nel ( aNel.head, bNel.head ) (aNel.tail |> List.zip bNel.tail)
 
 
 zipWith : (a -> b) -> Nel a -> Nel ( a, b )

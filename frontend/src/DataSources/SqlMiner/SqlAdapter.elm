@@ -18,6 +18,7 @@ import Libs.Nel as Nel exposing (Nel)
 import Libs.String as String
 import Models.Project.Check exposing (Check)
 import Models.Project.Column exposing (Column)
+import Models.Project.ColumnPath as ColumnPath
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.Comment exposing (Comment)
 import Models.Project.CustomType exposing (CustomType)
@@ -96,11 +97,11 @@ evolve source ( statement, command ) content =
                    )
 
         AlterTable (AddTableConstraint schema table (AlterTable.ParsedPrimaryKey constraintName pk)) ->
-            updateTable schema table (\t -> t.primaryKey |> Maybe.mapOrElse (\_ -> ( t, [ "Primary key already defined for '" ++ TableId.show Conf.schema.empty t.id ++ "' table" ] )) ( { t | primaryKey = Just (PrimaryKey constraintName pk [ origin ]) }, [] )) statement content
+            updateTable schema table (\t -> t.primaryKey |> Maybe.mapOrElse (\_ -> ( t, [ "Primary key already defined for '" ++ TableId.show Conf.schema.empty t.id ++ "' table" ] )) ( { t | primaryKey = Just (PrimaryKey constraintName (pk |> Nel.map ColumnPath.fromString) [ origin ]) }, [] )) statement content
 
         AlterTable (AddTableConstraint schema table (AlterTable.ParsedForeignKey constraint fks)) ->
             -- TODO: handle multi-column foreign key!
-            createRelation origin content.tables table constraint (ColumnRef (createTableId schema table) fks.head.column) fks.head.ref
+            createRelation origin content.tables table constraint (ColumnRef (createTableId schema table) (ColumnPath.fromString fks.head.column)) fks.head.ref
                 |> (\( relation, errors ) ->
                         { content
                             | relations = relation |> Maybe.mapOrElse (\r -> r :: content.relations) content.relations
@@ -109,10 +110,10 @@ evolve source ( statement, command ) content =
                    )
 
         AlterTable (AddTableConstraint schema table (AlterTable.ParsedUnique constraint unique)) ->
-            updateTable schema table (\t -> ( { t | uniques = t.uniques ++ [ Unique constraint unique.columns (Just unique.definition) [ origin ] ] }, [] )) statement content
+            updateTable schema table (\t -> ( { t | uniques = t.uniques ++ [ Unique constraint (unique.columns |> Nel.map ColumnPath.fromString) (Just unique.definition) [ origin ] ] }, [] )) statement content
 
         AlterTable (AddTableConstraint schema table (AlterTable.ParsedCheck constraint check)) ->
-            updateTable schema table (\t -> ( { t | checks = t.checks ++ [ Check constraint check.columns (Just check.predicate) [ origin ] ] }, [] )) statement content
+            updateTable schema table (\t -> ( { t | checks = t.checks ++ [ Check constraint (check.columns |> List.map ColumnPath.fromString) (Just check.predicate) [ origin ] ] }, [] )) statement content
 
         AlterTable (AddTableConstraint _ _ (IgnoredConstraint _)) ->
             content
@@ -139,10 +140,10 @@ evolve source ( statement, command ) content =
             content
 
         CreateIndex index ->
-            updateTable index.table.schema index.table.table (\t -> ( { t | indexes = t.indexes ++ [ Index index.name index.columns (Just index.definition) [ origin ] ] }, [] )) statement content
+            updateTable index.table.schema index.table.table (\t -> ( { t | indexes = t.indexes ++ [ Index index.name (index.columns |> Nel.map ColumnPath.fromString) (Just index.definition) [ origin ] ] }, [] )) statement content
 
         CreateUnique unique ->
-            updateTable unique.table.schema unique.table.table (\t -> ( { t | uniques = t.uniques ++ [ Unique unique.name unique.columns (Just unique.definition) [ origin ] ] }, [] )) statement content
+            updateTable unique.table.schema unique.table.table (\t -> ( { t | uniques = t.uniques ++ [ Unique unique.name (unique.columns |> Nel.map ColumnPath.fromString) (Just unique.definition) [ origin ] ] }, [] )) statement content
 
         TableComment comment ->
             updateTable comment.schema comment.table (\t -> t.comment |> Maybe.mapOrElse (\_ -> ( t, [ "Comment already defined for '" ++ TableId.show Conf.schema.empty t.id ++ "' table" ] )) ( { t | comment = Just (Comment comment.comment [ origin ]) }, [] )) statement content
@@ -312,25 +313,25 @@ buildViewColumn origin tables index column =
 
 createPrimaryKey : Origin -> Nel ParsedColumn -> Maybe ParsedPrimaryKey -> Maybe PrimaryKey
 createPrimaryKey origin columns primaryKey =
-    (primaryKey |> Maybe.map (\pk -> PrimaryKey pk.name pk.columns [ origin ]))
-        |> Maybe.orElse (columns |> Nel.filterMap (\c -> c.primaryKey |> Maybe.map (\pk -> PrimaryKey (String.nonEmptyMaybe pk) (Nel c.name []) [ origin ])) |> List.head)
+    (primaryKey |> Maybe.map (\pk -> PrimaryKey pk.name (pk.columns |> Nel.map ColumnPath.fromString) [ origin ]))
+        |> Maybe.orElse (columns |> Nel.filterMap (\c -> c.primaryKey |> Maybe.map (\pk -> PrimaryKey (String.nonEmptyMaybe pk) (Nel (c.name |> ColumnPath.fromString) []) [ origin ])) |> List.head)
 
 
 createUniques : Origin -> SqlTableName -> Nel ParsedColumn -> List ParsedUnique -> List Unique
 createUniques origin tableName columns uniques =
-    (uniques |> List.map (\u -> Unique u.name u.columns (Just u.definition) [ origin ]))
-        ++ (columns |> Nel.toList |> List.filterMap (\col -> col.unique |> Maybe.map (\u -> Unique (defaultUniqueName tableName col.name) (Nel col.name []) (Just u) [ origin ])))
+    (uniques |> List.map (\u -> Unique u.name (u.columns |> Nel.map ColumnPath.fromString) (Just u.definition) [ origin ]))
+        ++ (columns |> Nel.toList |> List.filterMap (\col -> col.unique |> Maybe.map (\u -> Unique (defaultUniqueName tableName col.name) (Nel (col.name |> ColumnPath.fromString) []) (Just u) [ origin ])))
 
 
 createIndexes : Origin -> List ParsedIndex -> List Index
 createIndexes origin indexes =
-    indexes |> List.map (\i -> Index i.name i.columns (Just i.definition) [ origin ])
+    indexes |> List.map (\i -> Index i.name (i.columns |> Nel.map ColumnPath.fromString) (Just i.definition) [ origin ])
 
 
 createChecks : Origin -> SqlTableName -> Nel ParsedColumn -> List ParsedCheck -> List Check
 createChecks origin tableName columns checks =
-    (checks |> List.map (\c -> Check c.name c.columns (Just c.predicate) [ origin ]))
-        ++ (columns |> Nel.toList |> List.filterMap (\col -> col.check |> Maybe.map (\c -> Check (defaultCheckName tableName col.name) [ col.name ] (Just c) [ origin ])))
+    (checks |> List.map (\c -> Check c.name (c.columns |> List.map ColumnPath.fromString) (Just c.predicate) [ origin ]))
+        ++ (columns |> Nel.toList |> List.filterMap (\col -> col.check |> Maybe.map (\c -> Check (defaultCheckName tableName col.name) [ col.name |> ColumnPath.fromString ] (Just c) [ origin ])))
 
 
 createType : Origin -> ParsedType -> CustomType
@@ -352,8 +353,8 @@ createComment origin comment =
 
 createRelations : Origin -> Dict TableId Table -> TableId -> SqlTableName -> Nel ParsedColumn -> List ParsedForeignKey -> ( List Relation, List SqlSchemaError )
 createRelations origin tables tableId tableName columns foreignKeys =
-    ((columns |> Nel.toList |> List.filterMap (\col -> col.foreignKey |> Maybe.map (\( name, ref ) -> createRelation origin tables tableName name (ColumnRef tableId col.name) ref)))
-        ++ (foreignKeys |> List.map (\fk -> createRelation origin tables tableName fk.name (ColumnRef tableId fk.src) fk.ref))
+    ((columns |> Nel.toList |> List.filterMap (\col -> col.foreignKey |> Maybe.map (\( name, ref ) -> createRelation origin tables tableName name (ColumnRef tableId (ColumnPath.fromString col.name)) ref)))
+        ++ (foreignKeys |> List.map (\fk -> createRelation origin tables tableName fk.name (ColumnRef tableId (ColumnPath.fromString fk.src)) fk.ref))
     )
         |> List.foldr (\( rel, errs ) ( rels, errors ) -> ( rel |> Maybe.mapOrElse (\r -> r :: rels) rels, errs ++ errors )) ( [], [] )
 
@@ -371,7 +372,7 @@ createRelation origin tables table relation src ref =
 
         ( refCol, errors ) =
             ref.column
-                |> Maybe.map (\c -> ( Just c, [] ))
+                |> Maybe.map (\c -> ( c |> ColumnPath.fromString |> Just, [] ))
                 |> Maybe.withDefault
                     (tables
                         |> Dict.get refTable
@@ -383,7 +384,7 @@ createRelation origin tables table relation src ref =
                                             ( Just cols.head, [] )
 
                                         else
-                                            ( Just cols.head, [ "Bad relation '" ++ name ++ "': target table " ++ TableId.show Conf.schema.empty refTable ++ " has a primary key with multiple columns (" ++ String.join ", " (Nel.toList cols) ++ ")" ] )
+                                            ( Just cols.head, [ "Bad relation '" ++ name ++ "': target table " ++ TableId.show Conf.schema.empty refTable ++ " has a primary key with multiple columns (" ++ (cols |> Nel.map ColumnPath.show |> Nel.toList |> String.join ", ") ++ ")" ] )
 
                                     Nothing ->
                                         ( Nothing, [ "Can't create relation '" ++ name ++ "': target table '" ++ TableId.show Conf.schema.empty refTable ++ "' has no primary key" ] )

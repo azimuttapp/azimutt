@@ -13,6 +13,7 @@ import Models.OrganizationId exposing (OrganizationId)
 import Models.Position as Position
 import Models.Project as Project exposing (Project)
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
+import Models.Project.ColumnPath as ColumnPath
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.CustomType exposing (CustomType)
 import Models.Project.CustomTypeId exposing (CustomTypeId)
@@ -41,7 +42,7 @@ type alias Erd =
     , tables : Dict TableId ErdTable
     , relations : List ErdRelation
     , types : Dict CustomTypeId CustomType
-    , relationsByTable : Dict TableId (List Relation)
+    , relationsByTable : Dict TableId (List ErdRelation)
     , layouts : Dict LayoutName ErdLayout
     , currentLayout : LayoutName
     , notes : Dict TableId ErdTableNotes
@@ -158,14 +159,14 @@ getTable ( schema, table ) erd =
 
 getColumn : ColumnRef -> Erd -> Maybe ErdColumn
 getColumn ref erd =
-    erd |> getTable ref.table |> Maybe.andThen (\t -> t.columns |> Dict.get ref.column)
+    erd |> getTable ref.table |> Maybe.andThen (.columns >> ColumnPath.get ref.column)
 
 
 getColumnPos : ColumnRef -> Erd -> Maybe Position.Canvas
 getColumnPos ref erd =
     (currentLayout erd |> .tables)
         |> List.find (\t -> t.id == ref.table)
-        |> Maybe.andThen (\t -> t.columns |> List.zipWithIndex |> List.find (\( c, _ ) -> c.name == ref.column) |> Maybe.map (\( c, i ) -> ( t.props, c, i )))
+        |> Maybe.andThen (\t -> t.columns |> List.zipWithIndex |> List.find (\( c, _ ) -> c.path == ref.column) |> Maybe.map (\( c, i ) -> ( t.props, c, i )))
         |> Maybe.map
             (\( t, _, index ) ->
                 (if t.collapsed then
@@ -207,7 +208,7 @@ viewportM erdElem erd =
     erd |> Maybe.mapOrElse (currentLayout >> .canvas >> CanvasProps.viewport erdElem) Area.zeroCanvas
 
 
-computeSources : ProjectSettings -> List Source -> ( ( Dict TableId ErdTable, List ErdRelation, Dict CustomTypeId CustomType ), Dict TableId (List Relation) )
+computeSources : ProjectSettings -> List Source -> ( ( Dict TableId ErdTable, List ErdRelation, Dict CustomTypeId CustomType ), Dict TableId (List ErdRelation) )
 computeSources settings sources =
     let
         tables : Dict TableId Table
@@ -222,22 +223,22 @@ computeSources settings sources =
         types =
             sources |> Project.computeTypes
 
-        relationsByTable : Dict TableId (List Relation)
-        relationsByTable =
-            buildRelationsByTable relations
-
-        erdTables : Dict TableId ErdTable
-        erdTables =
-            tables |> Dict.map (\id -> ErdTable.create settings.defaultSchema tables types (relationsByTable |> Dict.getOrElse id []))
-
         erdRelations : List ErdRelation
         erdRelations =
             relations |> List.map (ErdRelation.create tables)
+
+        erdRelationsByTable : Dict TableId (List ErdRelation)
+        erdRelationsByTable =
+            buildRelationsByTable erdRelations
+
+        erdTables : Dict TableId ErdTable
+        erdTables =
+            tables |> Dict.map (\id -> ErdTable.create settings.defaultSchema types (erdRelationsByTable |> Dict.getOrElse id []))
     in
-    ( ( erdTables, erdRelations, types ), relationsByTable )
+    ( ( erdTables, erdRelations, types ), erdRelationsByTable )
 
 
-buildRelationsByTable : List Relation -> Dict TableId (List Relation)
+buildRelationsByTable : List ErdRelation -> Dict TableId (List ErdRelation)
 buildRelationsByTable relations =
     relations
         |> List.foldr

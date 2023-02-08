@@ -13,6 +13,7 @@ import Libs.Nel as Nel exposing (Nel)
 import Models.Project.Check exposing (Check)
 import Models.Project.Column exposing (Column, NestedColumns(..))
 import Models.Project.ColumnName exposing (ColumnName)
+import Models.Project.ColumnPath as ColumnPath
 import Models.Project.Comment exposing (Comment)
 import Models.Project.CustomType exposing (CustomType)
 import Models.Project.CustomTypeValue as CustomTypeValue
@@ -89,7 +90,7 @@ buildNestedColumns (JsonNestedColumns columns) =
 buildPrimaryKey : List Origin -> JsonPrimaryKey -> PrimaryKey
 buildPrimaryKey origins pk =
     { name = pk.name
-    , columns = pk.columns
+    , columns = pk.columns |> Nel.map ColumnPath.fromString
     , origins = origins
     }
 
@@ -97,7 +98,7 @@ buildPrimaryKey origins pk =
 buildUnique : List Origin -> String -> JsonUnique -> Unique
 buildUnique origins table unique =
     { name = unique.name |> Maybe.withDefault (defaultUniqueName table unique.columns.head)
-    , columns = unique.columns
+    , columns = unique.columns |> Nel.map ColumnPath.fromString
     , definition = unique.definition
     , origins = origins
     }
@@ -106,7 +107,7 @@ buildUnique origins table unique =
 buildIndex : List Origin -> String -> JsonIndex -> Index
 buildIndex origins table index =
     { name = index.name |> Maybe.withDefault (defaultIndexName table index.columns.head)
-    , columns = index.columns
+    , columns = index.columns |> Nel.map ColumnPath.fromString
     , definition = index.definition
     , origins = origins
     }
@@ -115,7 +116,7 @@ buildIndex origins table index =
 buildCheck : List Origin -> String -> JsonCheck -> Check
 buildCheck origins table check =
     { name = check.name |> Maybe.withDefault (defaultCheckName table (check.columns |> List.head |> Maybe.withDefault ""))
-    , columns = check.columns
+    , columns = check.columns |> List.map ColumnPath.fromString
     , predicate = check.predicate
     , origins = origins
     }
@@ -131,8 +132,8 @@ buildComment origins comment =
 buildRelation : List Origin -> JsonRelation -> Relation
 buildRelation origins relation =
     Relation.new relation.name
-        { table = ( relation.src.schema, relation.src.table ), column = relation.src.column }
-        { table = ( relation.ref.schema, relation.ref.table ), column = relation.ref.column }
+        { table = ( relation.src.schema, relation.src.table ), column = ColumnPath.fromString relation.src.column }
+        { table = ( relation.ref.schema, relation.ref.table ), column = ColumnPath.fromString relation.ref.column }
         origins
 
 

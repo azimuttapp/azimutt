@@ -1,11 +1,10 @@
-module Models.Project.Relation exposing (Relation, RelationLike, clearOrigins, decode, encode, inOutRelation, linkedTo, linkedToTable, merge, new, virtual)
+module Models.Project.Relation exposing (Relation, RelationLike, clearOrigins, decode, encode, inOutRelation, linkedToTable, merge, new, virtual)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
 import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
-import Models.Project.ColumnId exposing (ColumnId)
-import Models.Project.ColumnName exposing (ColumnName)
+import Models.Project.ColumnPath exposing (ColumnPath)
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef, ColumnRefLike)
 import Models.Project.Origin as Origin exposing (Origin)
 import Models.Project.RelationId as RelationId exposing (RelationId)
@@ -43,7 +42,7 @@ virtual src ref origin =
     new "virtual relation" src ref [ origin ]
 
 
-inOutRelation : List (RelationLike x y) -> ColumnName -> List (RelationLike x y)
+inOutRelation : List (RelationLike x y) -> ColumnPath -> List (RelationLike x y)
 inOutRelation tableOutRelations column =
     tableOutRelations |> List.filter (\r -> r.src.column == column)
 
@@ -51,11 +50,6 @@ inOutRelation tableOutRelations column =
 linkedToTable : TableId -> RelationLike x y -> Bool
 linkedToTable table relation =
     relation.src.table == table || relation.ref.table == table
-
-
-linkedTo : ColumnId -> RelationLike x y -> Bool
-linkedTo ( table, column ) relation =
-    (relation.src.table == table && relation.src.column == column) || (relation.ref.table == table && relation.ref.column == column)
 
 
 merge : Relation -> Relation -> Relation

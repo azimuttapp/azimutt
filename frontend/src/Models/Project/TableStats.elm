@@ -2,7 +2,7 @@ module Models.Project.TableStats exposing (TableStats, decode)
 
 import Dict exposing (Dict)
 import Json.Decode as Decode exposing (Decoder)
-import Models.Project.ColumnName exposing (ColumnName)
+import Models.Project.ColumnPath exposing (ColumnPathStr)
 import Models.Project.ColumnValue as ColumnValue exposing (ColumnValue)
 import Models.Project.SchemaName as SchemaName
 import Models.Project.TableId exposing (TableId)
@@ -13,7 +13,7 @@ type alias TableStats =
     -- keep sync with frontend/ts-src/types/stats.ts & backend/lib/azimutt/analyzer/table_stats.ex
     { id : TableId
     , rows : Int
-    , sampleValues : Dict ColumnName ColumnValue
+    , sampleValues : Dict ColumnPathStr ColumnValue
     }
 
 

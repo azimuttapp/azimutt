@@ -17,9 +17,9 @@ import PagesComponents.Organization_.Project_.Models.NotesMsg exposing (NotesMsg
 view : Platform -> Int -> ColumnRef -> Maybe String -> Html Msg
 view platform index column notes =
     let
-        notNested : Bool
-        notNested =
-            column.column |> ColumnPath.isNested |> not
+        isRoot : Bool
+        isRoot =
+            column.column |> ColumnPath.isRoot
 
         root : ColumnRef
         root =
@@ -29,11 +29,13 @@ view platform index column notes =
         ([ Just (ContextMenu.btn "" (DetailsSidebarMsg (DetailsSidebar.ShowColumn root)) [ text "Show details" ])
          , Just (ContextMenu.btnHotkey "" (HideColumn column) [ text "Hide column" ] platform (Conf.hotkeys |> Dict.getOrElse "hide" []))
          , Just (ContextMenu.btnHotkey "" (NotesMsg (NOpen (NoteRef.fromColumn column))) [ text (notes |> Maybe.mapOrElse (\_ -> "Update notes") "Add notes") ] platform (Conf.hotkeys |> Dict.getOrElse "notes" []))
-         , Maybe.when notNested (ContextMenu.btnHotkey "" (VirtualRelationMsg (VRCreate (Just column))) [ text "Add relation" ] platform (Conf.hotkeys |> Dict.getOrElse "create-virtual-relation" []))
-         , Maybe.when notNested (ContextMenu.btn "" (MoveColumn column (index - 1)) [ text "Move up" ])
-         , Maybe.when notNested (ContextMenu.btn "" (MoveColumn column (index + 1)) [ text "Move down" ])
-         , Maybe.when notNested (ContextMenu.btn "" (MoveColumn column 0) [ text "Move top" ])
-         , Maybe.when notNested (ContextMenu.btn "" (MoveColumn column 100) [ text "Move bottom" ])
+
+         -- FIXME: add nested columns in AML to allow relations between them
+         , Maybe.when isRoot (ContextMenu.btnHotkey "" (VirtualRelationMsg (VRCreate (Just column))) [ text "Add relation" ] platform (Conf.hotkeys |> Dict.getOrElse "create-virtual-relation" []))
+         , Maybe.when isRoot (ContextMenu.btn "" (MoveColumn column (index - 1)) [ text "Move up" ])
+         , Maybe.when isRoot (ContextMenu.btn "" (MoveColumn column (index + 1)) [ text "Move down" ])
+         , Maybe.when isRoot (ContextMenu.btn "" (MoveColumn column 0) [ text "Move top" ])
+         , Maybe.when isRoot (ContextMenu.btn "" (MoveColumn column 100) [ text "Move bottom" ])
          ]
             |> List.filterMap identity
         )

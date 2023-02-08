@@ -19,6 +19,8 @@ import Models.Project exposing (Project)
 import Models.Project.CanvasProps exposing (CanvasProps)
 import Models.Project.Check exposing (Check)
 import Models.Project.Column exposing (Column)
+import Models.Project.ColumnPath as ColumnPath
+import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.Comment exposing (Comment)
 import Models.Project.FindPathSettings exposing (FindPathSettings)
 import Models.Project.Index exposing (Index)
@@ -300,7 +302,7 @@ upgradeTableProps props =
     , position = props.position |> Position.grid
     , size = Size.zeroCanvas
     , color = props.color
-    , columns = props.columns
+    , columns = props.columns |> List.map ColumnPath.fromString
     , selected = props.selected
     , collapsed = False
     , hiddenColumns = False
@@ -370,22 +372,22 @@ upgradeColumn column =
 
 upgradePrimaryKey : PrimaryKeyV1 -> PrimaryKey
 upgradePrimaryKey pk =
-    { name = Just pk.name, columns = pk.columns, origins = pk.sources |> List.map upgradeSource }
+    { name = Just pk.name, columns = pk.columns |> Nel.map ColumnPath.fromString, origins = pk.sources |> List.map upgradeSource }
 
 
 upgradeUnique : UniqueV1 -> Unique
 upgradeUnique unique =
-    { name = unique.name, columns = unique.columns, definition = Just unique.definition, origins = unique.sources |> List.map upgradeSource }
+    { name = unique.name, columns = unique.columns |> Nel.map ColumnPath.fromString, definition = Just unique.definition, origins = unique.sources |> List.map upgradeSource }
 
 
 upgradeIndex : IndexV1 -> Index
 upgradeIndex index =
-    { name = index.name, columns = index.columns, definition = Just index.definition, origins = index.sources |> List.map upgradeSource }
+    { name = index.name, columns = index.columns |> Nel.map ColumnPath.fromString, definition = Just index.definition, origins = index.sources |> List.map upgradeSource }
 
 
 upgradeCheck : CheckV1 -> Check
 upgradeCheck check =
-    { name = check.name, columns = check.columns, predicate = Just check.predicate, origins = check.sources |> List.map upgradeSource }
+    { name = check.name, columns = check.columns |> List.map ColumnPath.fromString, predicate = Just check.predicate, origins = check.sources |> List.map upgradeSource }
 
 
 upgradeComment : CommentV1 -> Comment
@@ -395,7 +397,12 @@ upgradeComment comment =
 
 upgradeRelation : RelationV1 -> Relation
 upgradeRelation relation =
-    Relation.new relation.name relation.src relation.ref (relation.sources |> List.map upgradeSource)
+    Relation.new relation.name (upgradeColumnRef relation.src) (upgradeColumnRef relation.ref) (relation.sources |> List.map upgradeSource)
+
+
+upgradeColumnRef : ColumnRefV1 -> ColumnRef
+upgradeColumnRef ref =
+    { table = ref.table, column = ColumnPath.fromString ref.column }
 
 
 upgradeSource : SourceV1 -> Origin

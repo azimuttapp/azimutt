@@ -68,7 +68,7 @@ viewTable conf zoom args notes layout table =
             stringToArgs args
 
         ( columns, hiddenColumns ) =
-            table.columns |> Dict.values |> List.map (\c -> buildColumn useBasicTypes notes layout (ColumnPath.fromName c.name) c) |> List.partition (\c -> layout.columns |> List.memberBy .name c.name)
+            table.columns |> Dict.values |> List.map (\c -> buildColumn useBasicTypes notes layout c) |> List.partition (\c -> layout.columns |> List.memberBy .path c.path)
 
         drag : List (Attribute Msg)
         drag =
@@ -80,8 +80,8 @@ viewTable conf zoom args notes layout table =
 
         ( selectedTable, selectedColumn ) =
             case selected |> String.split "." of
-                schemaName :: tableName :: columnName :: [] ->
-                    B.cond (schemaName == table.schema && tableName == table.name) ( True, [ columnName ] ) ( False, [] )
+                schemaName :: tableName :: columnPathStr :: [] ->
+                    B.cond (schemaName == table.schema && tableName == table.name) ( True, [ ColumnPath.fromString columnPathStr ] ) ( False, [] )
 
                 schemaName :: tableName :: [] ->
                     B.cond (schemaName == table.schema && tableName == table.name) ( True, [] ) ( False, [] )
@@ -97,13 +97,13 @@ viewTable conf zoom args notes layout table =
             , isView = table.view
             , comment = table.comment |> Maybe.map .text
             , notes = notes.table
-            , columns = layout.columns |> List.filterMap (\c -> columns |> List.findBy .name c.name)
+            , columns = layout.columns |> List.filterMap (\c -> columns |> List.findBy .path c.path)
             , hiddenColumns = hiddenColumns |> List.sortBy .index
             , dropdown = Just dropdown
             , state =
                 { color = layout.props.color
                 , isHover = isHover
-                , highlightedColumns = layout.columns |> List.filter .highlighted |> List.map .name |> List.append selectedColumn |> Set.fromList
+                , highlightedColumns = layout.columns |> List.filter .highlighted |> List.map .path |> List.append selectedColumn |> List.map ColumnPath.toString |> Set.fromList
                 , selected = layout.props.selected || selectedTable
                 , dragging = dragging
                 , collapsed = layout.props.collapsed
@@ -120,7 +120,7 @@ viewTable conf zoom args notes layout table =
                 , columnHover = \col on -> ToggleHoverColumn { table = table.id, column = col } on
                 , columnClick = B.maybe virtualRelation (\col e -> VirtualRelationMsg (VRUpdate { table = table.id, column = col } e.clientPos))
                 , columnDblClick = \col -> { table = table.id, column = col } |> DetailsSidebar.ShowColumn |> DetailsSidebarMsg
-                , columnRightClick = \i col -> ContextMenuCreate (B.cond (layout.columns |> List.memberBy .name col) ColumnContextMenu.view ColumnContextMenu.viewHidden platform i { table = table.id, column = col } (notes.columns |> Dict.get col))
+                , columnRightClick = \i col -> ContextMenuCreate (B.cond (layout.columns |> List.memberBy .path col) ColumnContextMenu.view ColumnContextMenu.viewHidden platform i { table = table.id, column = col } (notes.columns |> ColumnPath.get col))
                 , notesClick = \col -> NotesMsg (NOpen (col |> Maybe.mapOrElse (\c -> NoteRef.fromColumn { table = table.id, column = c }) (NoteRef.fromTable table.id)))
                 , relationsIconClick =
                     \cols isOut ->
@@ -160,11 +160,11 @@ handleTablePointerDown htmlId e =
         Noop "No match on table pointer down"
 
 
-buildColumn : Bool -> ErdTableNotes -> ErdTableLayout -> ColumnPath -> ErdColumn -> Table.Column
-buildColumn useBasicTypes notes layout path column =
+buildColumn : Bool -> ErdTableNotes -> ErdTableLayout -> ErdColumn -> Table.Column
+buildColumn useBasicTypes notes layout column =
     { index = column.index
-    , path = path
-    , name = column.name
+    , path = column.path
+    , name = column.path |> ColumnPath.name
     , kind =
         if useBasicTypes then
             column.kindLabel |> ColumnType.asBasic
@@ -185,7 +185,7 @@ buildColumn useBasicTypes notes layout path column =
     , nullable = column.nullable
     , default = column.defaultLabel
     , comment = column.comment |> Maybe.map .text
-    , notes = notes.columns |> Dict.get (path |> ColumnPath.key)
+    , notes = notes.columns |> ColumnPath.get column.path
     , isPrimaryKey = column.isPrimaryKey
     , inRelations = column.inRelations |> List.map (buildColumnRelation layout)
     , outRelations = column.outRelations |> List.map (buildColumnRelation layout)
@@ -199,8 +199,8 @@ buildColumn useBasicTypes notes layout path column =
                     cols
                         |> Ned.values
                         |> Nel.toList
-                        |> List.filter (\c -> layout.columns |> List.any (\l -> l.name == (path |> ColumnPath.child c.name |> ColumnPath.key)))
-                        |> List.map (\c -> buildColumn useBasicTypes notes layout (path |> ColumnPath.child c.name) c)
+                        |> List.filter (\c -> layout.columns |> List.any (\l -> l.path == c.path))
+                        |> List.map (\c -> buildColumn useBasicTypes notes layout c)
                         |> Table.NestedColumns (cols |> Ned.size)
                 )
     }

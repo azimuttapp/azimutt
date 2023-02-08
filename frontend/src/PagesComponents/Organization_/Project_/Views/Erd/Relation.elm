@@ -8,7 +8,7 @@ import Libs.Models.Position exposing (Position)
 import Libs.Tailwind exposing (Color)
 import Models.Area as Area
 import Models.Position as Position
-import Models.Project.ColumnName exposing (ColumnName)
+import Models.Project.ColumnPath exposing (ColumnPath)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.RelationStyle exposing (RelationStyle)
 import Models.Size as Size
@@ -27,9 +27,9 @@ type alias ColumnInfo =
     { table : ErdTableProps, column : ErdColumnProps, index : Int }
 
 
-buildColumnInfo : ColumnName -> Maybe ErdTableLayout -> Maybe ColumnInfo
+buildColumnInfo : ColumnPath -> Maybe ErdTableLayout -> Maybe ColumnInfo
 buildColumnInfo column layout =
-    layout |> Maybe.andThen (\t -> t.columns |> List.zipWithIndex |> List.findBy (Tuple.first >> .name) column |> Maybe.map (\( c, i ) -> ColumnInfo t.props c i))
+    layout |> Maybe.andThen (\t -> t.columns |> List.zipWithIndex |> List.findBy (Tuple.first >> .path) column |> Maybe.map (\( c, i ) -> ColumnInfo t.props c i))
 
 
 viewRelation : SchemaName -> RelationStyle -> ErdConf -> Maybe ErdTableLayout -> Maybe ErdTableLayout -> ErdRelation -> Svg Msg

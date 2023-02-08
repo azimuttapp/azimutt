@@ -1,6 +1,6 @@
-module Models.Project.ColumnName exposing (ColumnName, decode, encode, merge, withName)
+module Models.Project.ColumnName exposing (ColumnName, decode, encode)
 
-import Json.Decode as Decode
+import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 
 
@@ -9,21 +9,11 @@ type alias ColumnName =
     String
 
 
-withName : ColumnName -> String -> String
-withName column text =
-    text ++ "." ++ column
-
-
-merge : ColumnName -> ColumnName -> ColumnName
-merge n1 _ =
-    n1
-
-
 encode : ColumnName -> Value
 encode value =
-    Encode.string value
+    value |> Encode.string
 
 
-decode : Decode.Decoder ColumnName
+decode : Decoder ColumnName
 decode =
     Decode.string

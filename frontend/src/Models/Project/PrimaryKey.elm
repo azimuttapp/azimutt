@@ -5,7 +5,7 @@ import Json.Encode as Encode exposing (Value)
 import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
 import Libs.Nel as Nel exposing (Nel)
-import Models.Project.ColumnName as ColumnName exposing (ColumnName)
+import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.Origin as Origin exposing (Origin)
 import Models.Project.PrimaryKeyName as PrimaryKeyName exposing (PrimaryKeyName)
 import Services.Lenses exposing (setOrigins)
@@ -13,7 +13,7 @@ import Services.Lenses exposing (setOrigins)
 
 type alias PrimaryKey =
     { name : Maybe PrimaryKeyName
-    , columns : Nel ColumnName
+    , columns : Nel ColumnPath
     , origins : List Origin
     }
 
@@ -21,7 +21,7 @@ type alias PrimaryKey =
 merge : PrimaryKey -> PrimaryKey -> PrimaryKey
 merge pk1 pk2 =
     { name = pk1.name
-    , columns = Nel.merge identity ColumnName.merge pk1.columns pk2.columns
+    , columns = Nel.merge ColumnPath.toString ColumnPath.merge pk1.columns pk2.columns
     , origins = pk1.origins ++ pk2.origins
     }
 
@@ -35,7 +35,7 @@ encode : PrimaryKey -> Value
 encode value =
     Encode.notNullObject
         [ ( "name", value.name |> Encode.maybe PrimaryKeyName.encode )
-        , ( "columns", value.columns |> Encode.nel ColumnName.encode )
+        , ( "columns", value.columns |> Encode.nel ColumnPath.encode )
         , ( "origins", value.origins |> Origin.encodeList )
         ]
 
@@ -44,5 +44,5 @@ decode : Decode.Decoder PrimaryKey
 decode =
     Decode.map3 PrimaryKey
         (Decode.maybeField "name" PrimaryKeyName.decode)
-        (Decode.field "columns" (Decode.nel ColumnName.decode))
+        (Decode.field "columns" (Decode.nel ColumnPath.decode))
         (Decode.defaultField "origins" (Decode.list Origin.decode) [])

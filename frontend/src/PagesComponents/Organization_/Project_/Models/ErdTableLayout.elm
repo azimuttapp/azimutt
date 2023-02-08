@@ -2,10 +2,10 @@ module PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (Er
 
 import Dict exposing (Dict)
 import Models.Project.ProjectSettings exposing (ProjectSettings)
-import Models.Project.Relation exposing (Relation)
 import Models.Project.TableId exposing (TableId)
 import Models.Project.TableProps exposing (TableProps)
 import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps exposing (ErdColumnProps)
+import PagesComponents.Organization_.Project_.Models.ErdRelation exposing (ErdRelation)
 import PagesComponents.Organization_.Project_.Models.ErdRelationProps as ErdRelationProps exposing (ErdRelationProps)
 import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.ErdTableProps as ErdTableProps exposing (ErdTableProps)
@@ -23,7 +23,7 @@ type alias ErdTableLayout =
     }
 
 
-create : Set TableId -> List Relation -> TableProps -> ErdTableLayout
+create : Set TableId -> List ErdRelation -> TableProps -> ErdTableLayout
 create shownTables relations props =
     { id = props.id
     , props = ErdTableProps.create props
@@ -38,14 +38,14 @@ unpack layout =
     , position = layout.props.position
     , size = layout.props.size
     , color = layout.props.color
-    , columns = layout.columns |> List.map .name
+    , columns = layout.columns |> List.map .path
     , selected = layout.props.selected
     , collapsed = layout.props.collapsed
     , hiddenColumns = layout.props.showHiddenColumns
     }
 
 
-init : ProjectSettings -> Set TableId -> List Relation -> Bool -> Maybe PositionHint -> ErdTable -> ErdTableLayout
+init : ProjectSettings -> Set TableId -> List ErdRelation -> Bool -> Maybe PositionHint -> ErdTable -> ErdTableLayout
 init settings shownTables relations collapsed hint table =
     { id = table.id
     , props = ErdTableProps.init collapsed hint table
@@ -54,7 +54,7 @@ init settings shownTables relations collapsed hint table =
     }
 
 
-buildRelatedTables : Set TableId -> List Relation -> Dict TableId ErdRelationProps
+buildRelatedTables : Set TableId -> List ErdRelation -> Dict TableId ErdRelationProps
 buildRelatedTables shownTables relations =
     relations
         |> List.concatMap (\r -> [ r.src.table, r.ref.table ])

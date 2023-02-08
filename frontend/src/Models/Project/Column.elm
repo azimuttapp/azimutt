@@ -1,4 +1,4 @@
-module Models.Project.Column exposing (Column, ColumnLike, NestedColumns(..), clearOrigins, decode, encode, merge, withNullable)
+module Models.Project.Column exposing (Column, ColumnLike, NestedColumns(..), clearOrigins, decode, encode, getColumn, merge)
 
 import Conf
 import Json.Decode as Decode exposing (Decoder)
@@ -10,6 +10,7 @@ import Libs.Ned as Ned exposing (Ned)
 import Libs.Nel as Nel
 import Models.Project.ColumnIndex exposing (ColumnIndex)
 import Models.Project.ColumnName as ColumnName exposing (ColumnName)
+import Models.Project.ColumnPath exposing (ColumnPath)
 import Models.Project.ColumnType as ColumnType exposing (ColumnType)
 import Models.Project.ColumnValue as ColumnValue exposing (ColumnValue)
 import Models.Project.Comment as Comment exposing (Comment)
@@ -45,15 +46,6 @@ type alias ColumnLike x =
     }
 
 
-withNullable : ColumnLike x -> String -> String
-withNullable column text =
-    if column.nullable then
-        text ++ "?"
-
-    else
-        text
-
-
 merge : Column -> Column -> Column
 merge c1 c2 =
     { index = c1.index
@@ -75,6 +67,13 @@ merge c1 c2 =
 mergeNested : NestedColumns -> NestedColumns -> NestedColumns
 mergeNested (NestedColumns c1) (NestedColumns c2) =
     Ned.merge merge c1 c2 |> NestedColumns
+
+
+getColumn : ColumnPath -> Column -> Maybe Column
+getColumn path column =
+    column.columns
+        |> Maybe.andThen (\(NestedColumns cols) -> cols |> Ned.get path.head)
+        |> Maybe.andThen (\col -> path.tail |> Nel.fromList |> Maybe.mapOrElse (\next -> getColumn next col) (Just col))
 
 
 clearOrigins : Column -> Column

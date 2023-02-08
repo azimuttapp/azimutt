@@ -13,6 +13,7 @@ import Libs.Nel as Nel
 import Models.Project.Check exposing (Check)
 import Models.Project.Column exposing (Column)
 import Models.Project.ColumnName exposing (ColumnName)
+import Models.Project.ColumnPath as ColumnPath
 import Models.Project.Comment exposing (Comment)
 import Models.Project.CustomType exposing (CustomType)
 import Models.Project.CustomTypeValue as CustomTypeValue
@@ -90,7 +91,7 @@ buildPrimaryKey origins pk =
         |> Maybe.map
             (\columns ->
                 { name = pk.name
-                , columns = columns
+                , columns = columns |> Nel.map ColumnPath.fromString
                 , origins = origins
                 }
             )
@@ -103,7 +104,7 @@ buildUnique origins table unique =
         |> Maybe.map
             (\columns ->
                 { name = unique.name |> Maybe.withDefault (defaultUniqueName table columns.head)
-                , columns = columns
+                , columns = columns |> Nel.map ColumnPath.fromString
                 , definition = unique.definition
                 , origins = origins
                 }
@@ -117,7 +118,7 @@ buildIndex origins table index =
         |> Maybe.map
             (\columns ->
                 { name = index.name |> Maybe.withDefault (defaultIndexName table columns.head)
-                , columns = columns
+                , columns = columns |> Nel.map ColumnPath.fromString
                 , definition = index.definition
                 , origins = origins
                 }
@@ -127,7 +128,7 @@ buildIndex origins table index =
 buildCheck : List Origin -> String -> DatabaseCheck -> Check
 buildCheck origins table check =
     { name = check.name |> Maybe.withDefault (defaultCheckName table (check.columns |> List.head |> Maybe.withDefault ""))
-    , columns = check.columns
+    , columns = check.columns |> List.map ColumnPath.fromString
     , predicate = check.predicate
     , origins = origins
     }
@@ -147,8 +148,8 @@ buildRelation origins relation =
         |> Maybe.map
             (\col ->
                 Relation.new relation.name
-                    { table = ( relation.src.schema, relation.src.table ), column = col.src }
-                    { table = ( relation.ref.schema, relation.ref.table ), column = col.ref }
+                    { table = ( relation.src.schema, relation.src.table ), column = ColumnPath.fromString col.src }
+                    { table = ( relation.ref.schema, relation.ref.table ), column = ColumnPath.fromString col.ref }
                     origins
             )
 

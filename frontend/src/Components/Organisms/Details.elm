@@ -23,7 +23,7 @@ import Libs.Html.Attributes exposing (ariaHidden, ariaLabel, css, role)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Nel as Nel
+import Libs.Nel as Nel exposing (Nel)
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (TwClass)
 import Libs.Time as Time
@@ -32,8 +32,8 @@ import Models.Position as Position
 import Models.Project as Project
 import Models.Project.Check exposing (Check)
 import Models.Project.CheckName exposing (CheckName)
-import Models.Project.ColumnId exposing (ColumnId)
-import Models.Project.ColumnName exposing (ColumnName)
+import Models.Project.ColumnId as ColumnId exposing (ColumnId)
+import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath, ColumnPathStr)
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
 import Models.Project.ColumnStats exposing (ColumnStats, ColumnValueCount)
 import Models.Project.ColumnValue exposing (ColumnValue)
@@ -172,7 +172,7 @@ viewTable :
     -> Html msg
 viewTable goToList goToSchema goToTable goToColumn loadLayout _ _ defaultSchema schema table notes inLayouts inSources stats =
     let
-        columnValues : Dict ColumnName ColumnValue
+        columnValues : Dict ColumnPathStr ColumnValue
         columnValues =
             stats |> Dict.toList |> List.foldl (\( _, s ) acc -> acc |> Dict.union s.sampleValues) Dict.empty
 
@@ -206,11 +206,11 @@ viewTable goToList goToSchema goToTable goToColumn loadLayout _ _ defaultSchema 
                                 li []
                                     [ div [ class "relative px-6 py-1 flex items-center space-x-3 hover:bg-gray-50 focus-within:ring-2 focus-within:ring-inset focus-within:ring-primary-500" ]
                                         [ div [ class "flex-1 min-w-0" ]
-                                            [ button [ type_ "button", onClick ({ table = table.item.id, column = column.name } |> goToColumn), class "w-full focus:outline-none" ]
+                                            [ button [ type_ "button", onClick ({ table = table.item.id, column = column.path } |> goToColumn), class "w-full focus:outline-none" ]
                                                 [ span [ class "absolute inset-0", ariaHidden True ] [] -- Extend touch target to entire panel
                                                 , div [ class "flex justify-between" ]
-                                                    [ span [ class "text-sm font-medium text-gray-900" ] [ text column.name ]
-                                                    , columnValues |> Dict.get column.name |> Maybe.mapOrElse (\v -> Badge.basic Tw.gray [ class "ml-3 truncate" ] [ text v ]) (span [] [])
+                                                    [ span [ class "text-sm font-medium text-gray-900" ] [ text (column.path |> ColumnPath.name) ]
+                                                    , columnValues |> ColumnPath.get column.path |> Maybe.mapOrElse (\v -> Badge.basic Tw.gray [ class "ml-3 truncate" ] [ text v ]) (span [] [])
                                                     ]
                                                 ]
                                             ]
@@ -246,7 +246,7 @@ viewColumn goToList goToSchema goToTable goToColumn loadLayout _ _ defaultSchema
         , viewTableHeading goToSchema goToTable table
         , viewColumnHeading goToTable goToColumn table.item.id column
         , div [ class "px-3" ]
-            [ viewTitle (String.fromInt column.item.index ++ ". " ++ column.item.name)
+            [ viewTitle (String.fromInt column.item.index ++ ". " ++ ColumnPath.show column.item.path)
             , div [ class "flex flex-row flex-wrap" ]
                 ([ Just ( Icon.Tag, column.item.kind )
                  , Just (Bool.cond column.item.nullable ( Icon.ShieldExclamation, "Nullable" ) ( Icon.ShieldCheck, "NOT NULL" ))
@@ -258,6 +258,8 @@ viewColumn goToList goToSchema goToTable goToColumn loadLayout _ _ defaultSchema
                             div [ class "mt-1 mr-3 flex flex-shrink-0 items-center text-sm text-gray-500" ] [ Icon.solid icon "text-gray-400 mr-1", text content ]
                         )
                 )
+
+            -- TODO: show nested columns
             , column.item.comment |> Maybe.mapOrElse viewComment (div [] [])
             , viewNotes notes
             , viewColumnStats (inSources |> List.map Tuple.second) stats
@@ -326,7 +328,7 @@ viewColumn2 _ _ _ _ _ _ _ defaultSchema schema table column _ _ _ _ =
                     , { url = "#", label = table.item.name }
                     ]
                 , h2 [ css [ "mt-2 text-gray-900 text-2xl font-bold tracking-tight truncate" ] ]
-                    [ text (String.fromInt column.item.index ++ ". " ++ table.item.name ++ "." ++ column.item.name)
+                    [ text (String.fromInt column.item.index ++ ". " ++ table.item.name ++ "." ++ ColumnPath.show column.item.path)
                     ]
                 , metadataSection "mt-1"
                     [ { icon = Icon.Tag, label = column.item.kind }
@@ -382,7 +384,7 @@ buildColumnHeading erd table column =
     { item = column
     , prev = table.columns |> Dict.find (\_ c -> c.index == column.index - 1) |> Maybe.map Tuple.second
     , next = table.columns |> Dict.find (\_ c -> c.index == column.index + 1) |> Maybe.map Tuple.second
-    , shown = erd |> Erd.currentLayout |> .tables |> List.findBy .id table.id |> Maybe.andThen (\t -> t.columns |> List.findBy .name column.name)
+    , shown = erd |> Erd.currentLayout |> .tables |> List.findBy .id table.id |> Maybe.andThen (\t -> t.columns |> List.findBy .path column.path)
     }
 
 
@@ -431,14 +433,14 @@ viewColumnHeading goToTable goToColumn table model =
     div [ class "pl-7 flex items-center justify-between border-b border-gray-200 bg-gray-50 px-1 py-1 text-sm font-medium text-gray-500" ]
         [ div [ class "flex" ]
             [ button [ type_ "button", onClick (table |> goToTable) ] [ Icon.solid Icon.ChevronUp "" ] |> Tooltip.tr "Table details"
-            , h3 [] [ text model.item.name ]
+            , h3 [] [ text (ColumnPath.show model.item.path) ]
             ]
         , div [ class "flex" ]
             [ model.prev
-                |> Maybe.map (\c -> button [ type_ "button", onClick ({ table = table, column = c.name } |> goToColumn) ] [ Icon.solid Icon.ChevronLeft "" ] |> Tooltip.tl c.name)
+                |> Maybe.map (\c -> button [ type_ "button", onClick ({ table = table, column = c.path } |> goToColumn) ] [ Icon.solid Icon.ChevronLeft "" ] |> Tooltip.tl (ColumnPath.show c.path))
                 |> Maybe.withDefault (button [ type_ "button", disabled True, class "text-gray-300" ] [ Icon.solid Icon.ChevronLeft "" ])
             , model.next
-                |> Maybe.map (\c -> button [ type_ "button", onClick ({ table = table, column = c.name } |> goToColumn) ] [ Icon.solid Icon.ChevronRight "" ] |> Tooltip.tl c.name)
+                |> Maybe.map (\c -> button [ type_ "button", onClick ({ table = table, column = c.path } |> goToColumn) ] [ Icon.solid Icon.ChevronRight "" ] |> Tooltip.tl (ColumnPath.show c.path))
                 |> Maybe.withDefault (button [ type_ "button", disabled True, class "text-gray-300" ] [ Icon.solid Icon.ChevronRight "" ])
             ]
         ]
@@ -586,10 +588,10 @@ viewTableCheck check =
     viewTableConstraint "Check" (Just check.name) check.columns
 
 
-viewTableConstraint : String -> Maybe String -> List ColumnName -> Html msg
+viewTableConstraint : String -> Maybe String -> List ColumnPath -> Html msg
 viewTableConstraint constraint name columns =
     div [ class "text-gray-500 truncate" ]
-        (span [ class "text-gray-900" ] (text (constraint ++ ": ") :: (columns |> List.map (\c -> span [ title c ] [ text c ]) |> List.intersperse (text ", ")))
+        (span [ class "text-gray-900" ] (text (constraint ++ ": ") :: (columns |> List.map ColumnPath.show |> List.map (\c -> span [ title c ] [ text c ]) |> List.intersperse (text ", ")))
             :: (name |> Maybe.toList |> List.map (\n -> span [ title n ] [ text (" (" ++ n ++ ")") ]))
         )
 
@@ -630,13 +632,17 @@ viewColumnCheck constraints name =
     Just name |> viewColumnConstraint "Check" (constraints |> List.findBy .name name |> Maybe.mapOrElse (\u -> ( u.columns, u.predicate )) ( [], Nothing ))
 
 
-viewColumnConstraint : String -> ( List ColumnName, Maybe String ) -> Maybe String -> Html msg
+viewColumnConstraint : String -> ( List ColumnPath, Maybe String ) -> Maybe String -> Html msg
 viewColumnConstraint constraint ( columns, definition ) name =
     let
+        label : String
+        label =
+            columns |> List.map ColumnPath.show |> String.join ", "
+
         columnsHtml : List (Html msg)
         columnsHtml =
             if List.length columns > 1 then
-                [ text " (", span [ title (columns |> String.join ", ") ] [ text (columns |> String.join ", ") ], text ")" ]
+                [ text " (", span [ title label ] [ text label ], text ")" ]
 
             else
                 []
@@ -898,7 +904,7 @@ initDocState =
     , columnNotes = Dict.fromList [ ( ( ( "", "users" ), "id" ), "Azimutt notes for **users.id**" ) ]
     , editNotes = Nothing
     }
-        |> docSelectColumn { table = ( Conf.schema.empty, "users" ), column = "id" }
+        |> docSelectColumn { table = ( Conf.schema.empty, "users" ), column = ColumnPath.fromString "id" }
 
 
 doc : Chapter (SharedDocState x)
@@ -1004,15 +1010,15 @@ doc =
                                                     schema
                                                     table
                                                     column
-                                                    { notes = s.columnNotes |> Dict.get ( table.item.id, column.item.name ) |> Maybe.withDefault ""
+                                                    { notes = s.columnNotes |> Dict.get (ColumnId.from table.item column.item) |> Maybe.withDefault ""
                                                     , editing = s.editNotes
                                                     , edit = \_ content -> docSetState { s | editNotes = Just content }
                                                     , update = \content -> docSetState { s | editNotes = s.editNotes |> Maybe.map (\_ -> content) }
-                                                    , save = \content -> docSetState { s | columnNotes = s.columnNotes |> Dict.insert ( table.item.id, column.item.name ) content }
+                                                    , save = \content -> docSetState { s | columnNotes = s.columnNotes |> Dict.insert (ColumnId.from table.item column.item) content }
                                                     }
-                                                    (docErd.layouts |> Dict.filter (\_ l -> l.tables |> List.memberWith (\t -> t.id == table.item.id && (t.columns |> List.memberBy .name column.item.name))) |> Dict.keys)
+                                                    (docErd.layouts |> Dict.filter (\_ l -> l.tables |> List.memberWith (\t -> t.id == table.item.id && (t.columns |> List.memberBy .path column.item.path))) |> Dict.keys)
                                                     (column.item.origins |> List.filterZip (\o -> docErd.sources |> List.findBy .id o.id))
-                                                    (docColumnStats |> Dict.getOrElse ( table.item.id, column.item.name ) Dict.empty)
+                                                    (docColumnStats |> Dict.getOrElse (ColumnId.from table.item column.item) Dict.empty)
                                                 ]
                                         )
                                 )
@@ -1081,7 +1087,7 @@ docTableStats =
     docColumnStats |> Dict.toList |> List.map (\( ( table, col ), dict ) -> ( table, dict |> Dict.map (\_ s -> { id = table, rows = s.rows, sampleValues = s.commonValues |> List.map (\v -> ( col, v.value )) |> Dict.fromList }) )) |> Dict.fromList
 
 
-docBuildLayout : List ( TableIdStr, List ColumnName ) -> ErdLayout
+docBuildLayout : List ( TableIdStr, List ColumnPathStr ) -> ErdLayout
 docBuildLayout tables =
     ErdLayout.empty docNow
         |> setTables
@@ -1090,7 +1096,7 @@ docBuildLayout tables =
                     (\( table, columns ) ->
                         { id = TableId.parse table
                         , props = ErdTableProps Nothing Position.zeroGrid Size.zeroCanvas Tw.red True True True
-                        , columns = columns |> List.map (\col -> ErdColumnProps col True)
+                        , columns = columns |> List.map ColumnPath.fromString |> List.map (\col -> ErdColumnProps col True)
                         , relatedTables = Dict.empty
                         }
                     )
@@ -1142,7 +1148,7 @@ docSelectColumn { table, column } state =
     (docErd |> Erd.getTable table)
         |> Maybe.andThen
             (\erdTable ->
-                (erdTable.columns |> Dict.get column)
+                (erdTable.columns |> ColumnPath.get column)
                     |> Maybe.map
                         (\erdColumn ->
                             { state

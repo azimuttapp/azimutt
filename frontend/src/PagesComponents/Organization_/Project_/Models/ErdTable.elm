@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable, create, getColumn, unpack)
+module PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable, create, getColumn, inChecks, inIndexes, inPrimaryKey, inUniques, unpack)
 
 import Dict exposing (Dict)
 import Libs.Dict as Dict
@@ -7,20 +7,20 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Nel as Nel exposing (Nel)
 import Models.Project.Check exposing (Check)
 import Models.Project.ColumnName exposing (ColumnName)
-import Models.Project.ColumnPath exposing (ColumnPath)
+import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath, ColumnPathStr)
 import Models.Project.Comment exposing (Comment)
 import Models.Project.CustomType exposing (CustomType)
 import Models.Project.CustomTypeId exposing (CustomTypeId)
 import Models.Project.Index exposing (Index)
 import Models.Project.Origin exposing (Origin)
 import Models.Project.PrimaryKey exposing (PrimaryKey)
-import Models.Project.Relation exposing (Relation)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableName exposing (TableName)
 import Models.Project.Unique exposing (Unique)
 import PagesComponents.Organization_.Project_.Models.ErdColumn as ErdColumn exposing (ErdColumn)
+import PagesComponents.Organization_.Project_.Models.ErdRelation exposing (ErdRelation)
 
 
 type alias ErdTable =
@@ -40,24 +40,24 @@ type alias ErdTable =
     }
 
 
-create : SchemaName -> Dict TableId Table -> Dict CustomTypeId CustomType -> List Relation -> Table -> ErdTable
-create defaultSchema tables types tableRelations table =
+create : SchemaName -> Dict CustomTypeId CustomType -> List ErdRelation -> Table -> ErdTable
+create defaultSchema types tableRelations table =
     let
-        relationsByColumn : Dict ColumnName (List Relation)
-        relationsByColumn =
+        relationsByRootColumn : Dict ColumnName (List ErdRelation)
+        relationsByRootColumn =
             tableRelations
                 |> List.foldr
                     (\rel dict ->
                         if rel.src.table == table.id && rel.ref.table == table.id then
                             dict
-                                |> Dict.update rel.src.column (Maybe.mapOrElse (\relations -> rel :: relations) [ rel ] >> Just)
-                                |> Dict.update rel.ref.column (Maybe.mapOrElse (\relations -> rel :: relations) [ rel ] >> Just)
+                                |> Dict.update (rel.src.column |> ColumnPath.rootName) (Maybe.mapOrElse (\relations -> rel :: relations) [ rel ] >> Just)
+                                |> Dict.update (rel.ref.column |> ColumnPath.rootName) (Maybe.mapOrElse (\relations -> rel :: relations) [ rel ] >> Just)
 
                         else if rel.src.table == table.id then
-                            dict |> Dict.update rel.src.column (Maybe.mapOrElse (\relations -> rel :: relations) [ rel ] >> Just)
+                            dict |> Dict.update (rel.src.column |> ColumnPath.rootName) (Maybe.mapOrElse (\relations -> rel :: relations) [ rel ] >> Just)
 
                         else if rel.ref.table == table.id then
-                            dict |> Dict.update rel.ref.column (Maybe.mapOrElse (\relations -> rel :: relations) [ rel ] >> Just)
+                            dict |> Dict.update (rel.ref.column |> ColumnPath.rootName) (Maybe.mapOrElse (\relations -> rel :: relations) [ rel ] >> Just)
 
                         else
                             dict
@@ -70,7 +70,7 @@ create defaultSchema tables types tableRelations table =
     , schema = table.schema
     , name = table.name
     , view = table.view
-    , columns = table.columns |> Dict.map (\name -> ErdColumn.create defaultSchema tables types (relationsByColumn |> Dict.getOrElse name []) table)
+    , columns = table.columns |> Dict.map (\name -> ErdColumn.create defaultSchema types (relationsByRootColumn |> Dict.getOrElse name []) table (ColumnPath.fromString name))
     , primaryKey = table.primaryKey
     , uniques = table.uniques
     , indexes = table.indexes
@@ -101,3 +101,28 @@ getColumn path table =
     table.columns
         |> Dict.get path.head
         |> Maybe.andThen (\col -> path.tail |> Nel.fromList |> Maybe.mapOrElse (\next -> ErdColumn.getColumn next col) (Just col))
+
+
+inPrimaryKey : ErdTable -> ColumnPath -> Maybe PrimaryKey
+inPrimaryKey table column =
+    table.primaryKey |> Maybe.filter (\{ columns } -> columns |> Nel.toList |> hasColumn column)
+
+
+inUniques : ErdTable -> ColumnPath -> List Unique
+inUniques table column =
+    table.uniques |> List.filter (\u -> u.columns |> Nel.toList |> hasColumn column)
+
+
+inIndexes : ErdTable -> ColumnPath -> List Index
+inIndexes table column =
+    table.indexes |> List.filter (\i -> i.columns |> Nel.toList |> hasColumn column)
+
+
+inChecks : ErdTable -> ColumnPath -> List Check
+inChecks table column =
+    table.checks |> List.filter (\i -> i.columns |> hasColumn column)
+
+
+hasColumn : ColumnPath -> List ColumnPath -> Bool
+hasColumn column columns =
+    columns |> List.any (\c -> c == column)

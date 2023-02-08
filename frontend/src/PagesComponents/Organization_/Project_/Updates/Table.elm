@@ -15,19 +15,18 @@ import Models.ColumnOrder as ColumnOrder exposing (ColumnOrder)
 import Models.ErdProps exposing (ErdProps)
 import Models.Position as Position
 import Models.Project.CanvasProps exposing (CanvasProps)
-import Models.Project.ColumnId exposing (ColumnId)
-import Models.Project.ColumnName exposing (ColumnName)
+import Models.Project.ColumnId as ColumnId exposing (ColumnId)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
-import Models.Project.ColumnRef exposing (ColumnRef)
+import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
 import Models.Project.Relation as Relation
 import Models.Project.SchemaName exposing (SchemaName)
-import Models.Project.Table as Table
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Size as Size
 import PagesComponents.Organization_.Project_.Models exposing (Model, Msg(..))
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn, ErdNestedColumns(..))
 import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps exposing (ErdColumnProps)
+import PagesComponents.Organization_.Project_.Models.ErdRelation as ErdRelation
 import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout as ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.ErdTableProps exposing (ErdTableProps)
@@ -216,24 +215,24 @@ hideRelatedTables id erd =
     ( erd, Cmd.batch (related |> List.map (\t -> T.send (HideTable t))) )
 
 
-showColumn : Time.Posix -> TableId -> ColumnName -> Erd -> Erd
+showColumn : Time.Posix -> TableId -> ColumnPath -> Erd -> Erd
 showColumn now table column erd =
-    erd |> Erd.mapCurrentLayoutWithTime now (mapTablesL .id table (mapColumns (List.removeBy .name column >> List.prepend [ ErdColumnProps.create column ])))
+    erd |> Erd.mapCurrentLayoutWithTime now (mapTablesL .id table (mapColumns (List.removeBy (.path >> ColumnPath.toString) (ColumnPath.toString column) >> List.prepend [ ErdColumnProps.create column ])))
 
 
-hideColumn : Time.Posix -> TableId -> ColumnName -> Erd -> Erd
+hideColumn : Time.Posix -> TableId -> ColumnPath -> Erd -> Erd
 hideColumn now table column erd =
-    erd |> Erd.mapCurrentLayoutWithTime now (mapTablesL .id table (mapColumns (List.removeBy .name column)))
+    erd |> Erd.mapCurrentLayoutWithTime now (mapTablesL .id table (mapColumns (List.removeBy (.path >> ColumnPath.toString) (ColumnPath.toString column))))
 
 
-hoverNextColumn : TableId -> ColumnName -> Model -> Model
+hoverNextColumn : TableId -> ColumnPath -> Model -> Model
 hoverNextColumn table column model =
     let
-        nextColumn : Maybe ColumnName
+        nextColumn : Maybe ColumnPath
         nextColumn =
             model.erd
                 |> Maybe.andThen (Erd.currentLayout >> .tables >> List.findBy .id table)
-                |> Maybe.andThen (.columns >> List.map .name >> List.dropUntil (\c -> c == column) >> List.drop 1 >> List.head)
+                |> Maybe.andThen (.columns >> List.map .path >> List.dropUntil (\c -> c == column) >> List.drop 1 >> List.head)
     in
     model |> setHoverColumn (nextColumn |> Maybe.map (ColumnRef table))
 
@@ -262,18 +261,18 @@ hideColumns now id kind erd =
                 |> List.filter (Relation.linkedToTable id)
                 |> (\tableRelations ->
                         columns
-                            |> List.zipWith (\props -> table.columns |> Dict.get props.name)
+                            |> List.zipWith (\props -> table.columns |> ColumnPath.get props.path)
                             |> List.filter
                                 (\( props, col ) ->
                                     case ( kind, col ) of
                                         ( HideColumns.Relations, Just _ ) ->
-                                            tableRelations |> List.filter (Relation.linkedTo ( id, props.name )) |> List.nonEmpty
+                                            tableRelations |> List.filter (ErdRelation.linkedTo (ColumnRef.from { id = id } props)) |> List.nonEmpty
 
                                         ( HideColumns.Regular, Just _ ) ->
-                                            (props.name |> Table.inPrimaryKey table |> Maybe.isJust)
-                                                || (tableRelations |> List.filter (Relation.linkedTo ( id, props.name )) |> List.nonEmpty)
-                                                || (props.name |> Table.inUniques table |> List.nonEmpty)
-                                                || (props.name |> Table.inIndexes table |> List.nonEmpty)
+                                            (props.path |> ErdTable.inPrimaryKey table |> Maybe.isJust)
+                                                || (tableRelations |> List.filter (ErdRelation.linkedTo (ColumnRef.from { id = id } props)) |> List.nonEmpty)
+                                                || (props.path |> ErdTable.inUniques table |> List.nonEmpty)
+                                                || (props.path |> ErdTable.inIndexes table |> List.nonEmpty)
 
                                         ( HideColumns.Nullable, Just c ) ->
                                             not c.nullable
@@ -297,33 +296,30 @@ toggleNestedColumn now id path open erd =
     mapColumnsForTableOrSelectedProps now
         id
         (\table columns ->
-            ColumnPath.key path
-                |> (\key ->
-                        columns
-                            |> List.concatMap
-                                (\column ->
-                                    if open && column.name == key then
-                                        column
-                                            :: (table
-                                                    |> ErdTable.getColumn path
-                                                    |> Maybe.andThen .columns
-                                                    |> Maybe.mapOrElse
-                                                        (\(ErdNestedColumns cols) ->
-                                                            cols
-                                                                |> Ned.values
-                                                                |> Nel.toList
-                                                                |> List.map (\c -> path |> ColumnPath.child c.name |> ColumnPath.key |> ErdColumnProps.create)
-                                                        )
-                                                        []
-                                               )
+            columns
+                |> List.concatMap
+                    (\column ->
+                        if open && column.path == path then
+                            column
+                                :: (table
+                                        |> ErdTable.getColumn path
+                                        |> Maybe.andThen .columns
+                                        |> Maybe.mapOrElse
+                                            (\(ErdNestedColumns cols) ->
+                                                cols
+                                                    |> Ned.values
+                                                    |> Nel.toList
+                                                    |> List.map (.path >> ErdColumnProps.create)
+                                            )
+                                            []
+                                   )
 
-                                    else if (column.name |> String.startsWith key) && column.name /= key then
-                                        []
+                        else if (column.path |> ColumnPath.startsWith path) && column.path /= path then
+                            []
 
-                                    else
-                                        [ column ]
-                                )
-                   )
+                        else
+                            [ column ]
+                    )
         )
         erd
 
@@ -334,10 +330,10 @@ sortColumns now id kind erd =
         id
         (\table columns ->
             columns
-                |> List.map .name
-                |> List.filterMap (\name -> table.columns |> Dict.get name)
+                |> List.map .path
+                |> List.filterMap (\path -> table.columns |> ColumnPath.get path)
                 |> ColumnOrder.sortBy kind table erd.relations
-                |> List.map (.name >> ErdColumnProps.create)
+                |> List.map (.path >> ErdColumnProps.create)
         )
         erd
     , Cmd.none
@@ -347,24 +343,20 @@ sortColumns now id kind erd =
 hoverColumn : ColumnRef -> Bool -> Erd -> List ErdTableLayout -> List ErdTableLayout
 hoverColumn column enter erd tables =
     let
-        columnId : ColumnId
-        columnId =
-            ( column.table, column.column )
-
         highlightedColumns : Set ColumnId
         highlightedColumns =
             if enter then
                 erd.relationsByTable
                     |> Dict.getOrElse column.table []
-                    |> List.filter (Relation.linkedTo columnId)
-                    |> List.concatMap (\r -> [ ( r.src.table, r.src.column ), ( r.ref.table, r.ref.column ) ])
+                    |> List.filter (ErdRelation.linkedTo column)
+                    |> List.concatMap (\r -> [ ColumnId.fromRef r.src, ColumnId.fromRef r.ref ])
                     |> Set.fromList
-                    |> Set.insert columnId
+                    |> Set.insert (ColumnId.fromRef column)
 
             else
                 Set.empty
     in
-    tables |> List.map (\t -> t |> mapColumns (List.map (\c -> c |> setHighlighted (highlightedColumns |> Set.member ( t.id, c.name )))))
+    tables |> List.map (\t -> t |> mapColumns (List.map (\c -> c |> setHighlighted (highlightedColumns |> Set.member (ColumnId.from t c)))))
 
 
 performHideTable : Time.Posix -> TableId -> Erd -> Erd

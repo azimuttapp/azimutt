@@ -2,7 +2,7 @@ module PagesComponents.Organization_.Project_.Models.ErdTableNotes exposing (Erd
 
 import Dict exposing (Dict)
 import Libs.Maybe as Maybe
-import Models.Project.ColumnName exposing (ColumnName)
+import Models.Project.ColumnPath as ColumnPath exposing (ColumnPathStr)
 import Models.Project.TableId exposing (TableId)
 import PagesComponents.Organization_.Project_.Models.Notes as Notes exposing (Notes, NotesKey, NotesRef(..))
 import Services.Lenses exposing (mapColumns, setTable)
@@ -10,7 +10,7 @@ import Services.Lenses exposing (mapColumns, setTable)
 
 type alias ErdTableNotes =
     { table : Maybe Notes
-    , columns : Dict ColumnName Notes
+    , columns : Dict ColumnPathStr Notes
     }
 
 
@@ -33,7 +33,7 @@ unpack : TableId -> ErdTableNotes -> Dict NotesKey Notes
 unpack table notes =
     Dict.fromList
         ((notes.table |> Maybe.toList |> List.map (\n -> ( Notes.tableKey table, n )))
-            ++ (notes.columns |> Dict.toList |> List.map (\( col, n ) -> ( Notes.columnKey { table = table, column = col }, n )))
+            ++ (notes.columns |> Dict.toList |> List.map (\( col, n ) -> ( Notes.columnKey { table = table, column = ColumnPath.fromString col }, n )))
         )
 
 
@@ -47,7 +47,7 @@ get ref notes =
             notes |> Dict.get table |> Maybe.andThen .table
 
         ColumnNote { table, column } ->
-            notes |> Dict.get table |> Maybe.andThen (.columns >> Dict.get column)
+            notes |> Dict.get table |> Maybe.andThen (.columns >> ColumnPath.get column)
 
 
 set : NotesRef -> Maybe Notes -> Dict TableId ErdTableNotes -> Dict TableId ErdTableNotes
@@ -60,4 +60,4 @@ set ref value notes =
             notes |> Dict.update table (Maybe.withDefault empty >> setTable value >> Just)
 
         ColumnNote { table, column } ->
-            notes |> Dict.update table (Maybe.withDefault empty >> mapColumns (Dict.update column (\_ -> value)) >> Just)
+            notes |> Dict.update table (Maybe.withDefault empty >> mapColumns (ColumnPath.update column (\_ -> value)) >> Just)

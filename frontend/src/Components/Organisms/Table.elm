@@ -29,7 +29,7 @@ import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Nel as Nel exposing (Nel)
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (Color, TwClass, batch, bg_50, border_500, focus, ring_500, text_500)
-import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
+import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath, ColumnPathStr)
 import Set exposing (Set)
 
 
@@ -83,7 +83,7 @@ type NestedColumns
 type alias State =
     { color : Color
     , isHover : Bool
-    , highlightedColumns : Set String
+    , highlightedColumns : Set ColumnPathStr
     , selected : Bool
     , collapsed : Bool
     , dragging : Bool
@@ -99,11 +99,11 @@ type alias Actions msg =
     , headerDblClick : msg
     , headerRightClick : PointerEvent -> msg
     , headerDropdownClick : HtmlId -> msg
-    , columnHover : ColumnName -> Bool -> msg
-    , columnClick : Maybe (ColumnName -> PointerEvent -> msg)
-    , columnDblClick : ColumnName -> msg
-    , columnRightClick : Int -> ColumnName -> PointerEvent -> msg
-    , notesClick : Maybe ColumnName -> msg
+    , columnHover : ColumnPath -> Bool -> msg
+    , columnClick : Maybe (ColumnPath -> PointerEvent -> msg)
+    , columnDblClick : ColumnPath -> msg
+    , columnRightClick : Int -> ColumnPath -> PointerEvent -> msg
+    , notesClick : Maybe ColumnPath -> msg
     , relationsIconClick : List Relation -> Bool -> msg
     , nestedIconClick : ColumnPath -> Bool -> msg
     , hiddenColumnsHover : HtmlId -> Bool -> msg
@@ -120,7 +120,7 @@ type alias Relation =
 
 
 type alias ColumnRef =
-    { schema : String, table : String, column : String }
+    { schema : String, table : String, column : ColumnPath }
 
 
 type alias UniqueConstraint =
@@ -325,11 +325,6 @@ viewHiddenColumns model =
 
 viewColumn : Model msg -> TwClass -> Bool -> Int -> Column -> Html msg
 viewColumn model styles isLast index column =
-    let
-        key : ColumnName
-        key =
-            column.path |> ColumnPath.key
-    in
     div
         ([ title (column.name ++ " (" ++ column.kind ++ Bool.cond column.nullable "?" "" ++ ")")
          , css
@@ -338,12 +333,12 @@ viewColumn model styles isLast index column =
             , Bool.cond (isHighlightedColumn model column.path) (batch [ text_500 model.state.color, bg_50 model.state.color ]) "text-default-500 bg-white"
             , Bool.cond isLast "rounded-b-lg" ""
             ]
-         , style "padding-left" ((column.path |> ColumnPath.parents |> Maybe.mapOrElse Nel.length 0 |> String.fromInt) ++ ".5rem")
+         , style "padding-left" ((column.path |> ColumnPath.parent |> Maybe.mapOrElse Nel.length 0 |> String.fromInt) ++ ".5rem")
          , style "padding-right" "0.5rem"
          ]
-            ++ Bool.cond model.conf.hover [ onMouseEnter (model.actions.columnHover key True), onMouseLeave (model.actions.columnHover key False) ] []
-            ++ Bool.cond model.conf.layout [ stopDoubleClick (model.actions.columnDblClick column.name), onContextMenu model.platform (model.actions.columnRightClick index (column.path |> ColumnPath.key)) ] []
-            ++ (model.actions.columnClick |> Maybe.mapOrElse (\action -> [ onPointerUp model.platform (action column.name) ]) [])
+            ++ Bool.cond model.conf.hover [ onMouseEnter (model.actions.columnHover column.path True), onMouseLeave (model.actions.columnHover column.path False) ] []
+            ++ Bool.cond model.conf.layout [ stopDoubleClick (model.actions.columnDblClick column.path), onContextMenu model.platform (model.actions.columnRightClick index column.path) ] []
+            ++ (model.actions.columnClick |> Maybe.mapOrElse (\action -> [ onPointerUp model.platform (action column.path) ]) [])
         )
         [ viewColumnIcon model column |> viewColumnIconDropdown model column
         , viewColumnName model column
@@ -429,7 +424,7 @@ viewColumnIconDropdown model column icon =
                     ((column.inRelations
                         |> List.groupBy (\r -> r.column.schema ++ "-" ++ r.column.table)
                         |> Dict.values
-                        |> List.filterMap (List.sortBy (.column >> .column) >> Nel.fromList)
+                        |> List.filterMap (List.sortBy (.column >> .column >> ColumnPath.toString) >> Nel.fromList)
                         |> List.map
                             (\rels ->
                                 let
@@ -437,7 +432,7 @@ viewColumnIconDropdown model column icon =
                                     content =
                                         [ Icon.solid Icons.columns.foreignKey "inline"
                                         , bText (showTableRef model.defaultSchema { schema = rels.head.column.schema, table = rels.head.column.table })
-                                        , text ("." ++ (rels |> Nel.toList |> List.map (\r -> r.column.column ++ Bool.cond r.nullable "?" "") |> String.join ", "))
+                                        , text ("." ++ (rels |> Nel.toList |> List.map (\r -> ColumnPath.show r.column.column ++ Bool.cond r.nullable "?" "") |> String.join ", "))
                                         ]
                                 in
                                 if rels.head.tableShown then
@@ -467,7 +462,7 @@ viewColumnName model column =
     div [ css [ "ml-1 flex flex-grow", Bool.cond column.isPrimaryKey "font-bold" "" ] ]
         ([ text column.name ]
             |> List.appendOn column.comment viewComment
-            |> List.appendOn column.notes (viewNotes model (Just (column.path |> ColumnPath.key)))
+            |> List.appendOn column.notes (viewNotes model (Just column.path))
         )
 
 
@@ -476,7 +471,7 @@ viewComment comment =
     Icon.outline Icons.comment "w-4 ml-1 opacity-50" |> Tooltip.t (buildTooltipContent comment)
 
 
-viewNotes : Model msg -> Maybe String -> String -> Html msg
+viewNotes : Model msg -> Maybe ColumnPath -> String -> Html msg
 viewNotes model column notes =
     span ([ classList [ ( "cursor-pointer", model.conf.layout ) ] ] ++ Bool.cond model.conf.layout [ onClick (model.actions.notesClick column) ] [])
         [ Icon.outline Icons.notes "w-4 ml-1 opacity-50" ]
@@ -544,15 +539,15 @@ showTableRef defaultSchema ref =
 showColumnRef : SchemaName -> ColumnRef -> String
 showColumnRef defaultSchema ref =
     if ref.schema == defaultSchema || ref.schema == Conf.schema.empty then
-        ref.table ++ "." ++ ref.column
+        ref.table ++ "." ++ ColumnPath.show ref.column
 
     else
-        ref.schema ++ "." ++ ref.table ++ "." ++ ref.column
+        ref.schema ++ "." ++ ref.table ++ "." ++ ColumnPath.show ref.column
 
 
 isHighlightedColumn : Model msg -> ColumnPath -> Bool
 isHighlightedColumn model path =
-    (model.state.highlightedColumns |> Set.member (path |> ColumnPath.key)) || (path |> ColumnPath.parents |> Maybe.mapOrElse (isHighlightedColumn model) False)
+    (model.state.highlightedColumns |> Set.member (path |> ColumnPath.toString)) || (path |> ColumnPath.parent |> Maybe.mapOrElse (isHighlightedColumn model) False)
 
 
 
@@ -591,11 +586,11 @@ sample =
     , comment = Nothing
     , notes = Nothing
     , columns =
-        [ { sampleColumn | name = "id", kind = "integer", isPrimaryKey = True, inRelations = [ { column = { schema = "demo", table = "accounts", column = "user" }, nullable = True, tableShown = False } ] }
+        [ { sampleColumn | name = "id", kind = "integer", isPrimaryKey = True, inRelations = [ { column = { schema = "demo", table = "accounts", column = ColumnPath.fromString "user" }, nullable = True, tableShown = False } ] }
         , { sampleColumn | name = "name", kind = "character varying(120)", comment = Just "Should be unique", notes = Just "A nice note", uniques = [ { name = "users_name_unique" } ] }
         , { sampleColumn | name = "email", kind = "character varying(120)", indexes = [ { name = "users_email_idx" } ] }
         , { sampleColumn | name = "bio", kind = "text", checks = [ { name = "users_bio_min_length" } ] }
-        , { sampleColumn | name = "organization", kind = "integer", nullable = True, outRelations = [ { column = { schema = "demo", table = "organizations", column = "id" }, nullable = True, tableShown = False } ] }
+        , { sampleColumn | name = "organization", kind = "integer", nullable = True, outRelations = [ { column = { schema = "demo", table = "organizations", column = ColumnPath.fromString "id" }, nullable = True, tableShown = False } ] }
         , { sampleColumn | name = "plan", kind = "object", children = Just (NestedColumns 1 []) }
         , { sampleColumn | name = "created", kind = "timestamp without time zone", default = Just "CURRENT_TIMESTAMP" }
         ]
@@ -633,13 +628,13 @@ sample =
         , headerDblClick = logAction "headerDblClick"
         , headerRightClick = \_ -> logAction "headerRightClick"
         , headerDropdownClick = \id -> logAction ("headerDropdownClick " ++ id)
-        , columnHover = \c on -> logAction ("columnHover " ++ c ++ " " ++ Bool.cond on "on" " off")
-        , columnClick = Just (\col _ -> logAction ("columnClick " ++ col))
-        , columnDblClick = \col -> logAction ("columnDblClick " ++ col)
-        , columnRightClick = \_ col _ -> logAction ("columnRightClick " ++ col)
-        , notesClick = \col -> logAction ("notesClick " ++ (col |> Maybe.withDefault "table"))
+        , columnHover = \c on -> logAction ("columnHover " ++ ColumnPath.show c ++ " " ++ Bool.cond on "on" " off")
+        , columnClick = Just (\col _ -> logAction ("columnClick " ++ ColumnPath.show col))
+        , columnDblClick = \col -> logAction ("columnDblClick " ++ ColumnPath.show col)
+        , columnRightClick = \_ col _ -> logAction ("columnRightClick " ++ ColumnPath.show col)
+        , notesClick = \col -> logAction ("notesClick " ++ (col |> Maybe.mapOrElse ColumnPath.show "table"))
         , relationsIconClick = \refs _ -> logAction ("relationsIconClick " ++ (refs |> List.map (\r -> r.column.schema ++ "." ++ r.column.table) |> String.join ", "))
-        , nestedIconClick = \path open -> logAction ("nestedIconClick " ++ (path |> ColumnPath.key) ++ " " ++ Bool.cond open "open" " close")
+        , nestedIconClick = \path open -> logAction ("nestedIconClick " ++ (path |> ColumnPath.show) ++ " " ++ Bool.cond open "open" " close")
         , hiddenColumnsHover = \id _ -> logAction ("hiddenColumnsHover " ++ id)
         , hiddenColumnsClick = logAction "hiddenColumnsClick"
         }
@@ -665,13 +660,13 @@ doc =
                                 , headerDblClick = updateDocState (\s -> s)
                                 , headerRightClick = \_ -> updateDocState (\s -> s)
                                 , headerDropdownClick = \id -> updateDocState (\s -> { s | openedDropdown = Bool.cond (id == s.openedDropdown) "" id })
-                                , columnHover = \c on -> updateDocState (\s -> { s | highlightedColumns = Bool.cond on (Set.fromList [ c ]) Set.empty })
-                                , columnClick = Just (\col _ -> logAction ("columnClick " ++ col))
-                                , columnDblClick = \col -> logAction ("columnDblClick " ++ col)
-                                , columnRightClick = \_ col _ -> logAction ("columnRightClick " ++ col)
-                                , notesClick = \col -> logAction ("notesClick " ++ (col |> Maybe.withDefault "table"))
+                                , columnHover = \c on -> updateDocState (\s -> { s | highlightedColumns = Bool.cond on (Set.fromList [ ColumnPath.toString c ]) Set.empty })
+                                , columnClick = Just (\col _ -> logAction ("columnClick " ++ ColumnPath.show col))
+                                , columnDblClick = \col -> logAction ("columnDblClick " ++ ColumnPath.show col)
+                                , columnRightClick = \_ col _ -> logAction ("columnRightClick " ++ ColumnPath.show col)
+                                , notesClick = \col -> logAction ("notesClick " ++ (col |> Maybe.mapOrElse ColumnPath.show "table"))
                                 , relationsIconClick = \refs _ -> logAction ("relationsIconClick " ++ (refs |> List.map (\r -> r.column.schema ++ "." ++ r.column.table) |> String.join ", "))
-                                , nestedIconClick = \path open -> logAction ("nestedIconClick " ++ (path |> ColumnPath.key) ++ " " ++ Bool.cond open "open" " close")
+                                , nestedIconClick = \col open -> logAction ("nestedIconClick " ++ ColumnPath.show col ++ " " ++ Bool.cond open "open" " close")
                                 , hiddenColumnsHover = \id _ -> updateDocState (\s -> { s | openedPopover = id })
                                 , hiddenColumnsClick = updateDocState (\s -> { s | showHiddenColumns = not s.showHiddenColumns })
                                 }
