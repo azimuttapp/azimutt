@@ -53,7 +53,7 @@ import PagesComponents.Organization_.Project_.Views.Erd.Memo as Memo
 import PagesComponents.Organization_.Project_.Views.Erd.Relation as Relation exposing (viewEmptyRelation, viewRelation, viewVirtualRelation)
 import PagesComponents.Organization_.Project_.Views.Erd.Table as Table exposing (viewTable)
 import PagesComponents.Organization_.Project_.Views.Modals.ErdContextMenu as ErdContextMenu
-import Set
+import Set exposing (Set)
 
 
 type alias ErdArgs =
@@ -105,7 +105,7 @@ viewErd conf erdElem erd selectionBox virtualRelation editMemo args dragging =
         displayedTables =
             tableProps |> List.filter (\t -> t.props.size /= Size.zeroCanvas)
 
-        displayedIds : Set.Set TableId
+        displayedIds : Set TableId
         displayedIds =
             displayedTables |> List.map .id |> Set.fromList
 

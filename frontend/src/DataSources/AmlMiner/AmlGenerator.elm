@@ -12,13 +12,22 @@ relation src ref =
 
 columnRef : ColumnRef -> String
 columnRef { table, column } =
-    tableId table ++ "." ++ ColumnPath.toString column
+    tableId table ++ "." ++ (column |> ColumnPath.toString |> quotesWhenNeeded)
 
 
 tableId : TableId -> String
 tableId ( schema, table ) =
     if schema == "" then
-        table
+        table |> quotesWhenNeeded
 
     else
-        schema ++ "." ++ table
+        (schema |> quotesWhenNeeded) ++ "." ++ (table |> quotesWhenNeeded)
+
+
+quotesWhenNeeded : String -> String
+quotesWhenNeeded name =
+    if name |> String.contains " " then
+        "\"" ++ name ++ "\""
+
+    else
+        name
