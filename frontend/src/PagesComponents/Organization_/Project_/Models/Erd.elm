@@ -13,7 +13,6 @@ import Models.OrganizationId exposing (OrganizationId)
 import Models.Position as Position
 import Models.Project as Project exposing (Project)
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
-import Models.Project.ColumnPath as ColumnPath
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.CustomType exposing (CustomType)
 import Models.Project.CustomTypeId exposing (CustomTypeId)
@@ -28,11 +27,12 @@ import Models.Project.TableId exposing (TableId)
 import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Models.Size as Size
 import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn)
+import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps
 import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout exposing (ErdLayout)
+import PagesComponents.Organization_.Project_.Models.ErdNotes as ErdNotes exposing (ErdNotes)
 import PagesComponents.Organization_.Project_.Models.ErdRelation as ErdRelation exposing (ErdRelation)
 import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
-import PagesComponents.Organization_.Project_.Models.ErdTableNotes as ErdTableNotes exposing (ErdTableNotes)
 import Services.Lenses exposing (mapLayoutsD, mapLayoutsDCmd)
 import Time
 
@@ -45,7 +45,7 @@ type alias Erd =
     , relationsByTable : Dict TableId (List ErdRelation)
     , layouts : Dict LayoutName ErdLayout
     , currentLayout : LayoutName
-    , notes : Dict TableId ErdTableNotes
+    , notes : ErdNotes
     , sources : List Source
     , settings : ProjectSettings
     }
@@ -64,7 +64,7 @@ create project =
     , relationsByTable = relationsByTable
     , layouts = project.layouts |> Dict.map (\_ -> ErdLayout.create relationsByTable)
     , currentLayout = project.usedLayout
-    , notes = ErdTableNotes.createAll project.notes
+    , notes = ErdNotes.create project.notes
     , sources = project.sources
     , settings = project.settings
     }
@@ -81,7 +81,7 @@ unpack erd =
     , tables = erd.tables |> Dict.map (\_ -> ErdTable.unpack)
     , relations = erd.relations |> List.map ErdRelation.unpack
     , types = erd.types
-    , notes = ErdTableNotes.unpackAll erd.notes
+    , notes = ErdNotes.unpack erd.notes
     , usedLayout = erd.currentLayout
     , layouts = erd.layouts |> Dict.map (\_ -> ErdLayout.unpack)
     , settings = erd.settings
@@ -159,16 +159,16 @@ getTable ( schema, table ) erd =
 
 getColumn : ColumnRef -> Erd -> Maybe ErdColumn
 getColumn ref erd =
-    erd |> getTable ref.table |> Maybe.andThen (.columns >> ColumnPath.get ref.column)
+    erd |> getTable ref.table |> Maybe.andThen (ErdTable.getColumn ref.column)
 
 
 getColumnPos : ColumnRef -> Erd -> Maybe Position.Canvas
 getColumnPos ref erd =
     (currentLayout erd |> .tables)
         |> List.find (\t -> t.id == ref.table)
-        |> Maybe.andThen (\t -> t.columns |> List.zipWithIndex |> List.find (\( c, _ ) -> c.path == ref.column) |> Maybe.map (\( c, i ) -> ( t.props, c, i )))
+        |> Maybe.andThen (\t -> t.columns |> ErdColumnProps.getIndex ref.column |> Maybe.map (\i -> ( t.props, i )))
         |> Maybe.map
-            (\( t, _, index ) ->
+            (\( t, index ) ->
                 (if t.collapsed then
                     { dx = (Size.extractCanvas t.size).width / 2
                     , dy = Conf.ui.tableHeaderHeight * 0.5

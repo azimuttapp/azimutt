@@ -4,7 +4,7 @@ import Dict
 import Libs.List as List
 import Models.Project.ColumnPath exposing (ColumnPath)
 import Models.Project.ColumnRef as ColumnRef
-import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps exposing (ErdColumnProps)
+import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps exposing (ErdColumnProps, ErdColumnPropsFlat)
 import PagesComponents.Organization_.Project_.Models.ErdRelation as ErdRelation exposing (ErdRelation)
 import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable)
 
@@ -20,7 +20,7 @@ filterBy kind tableRelations table columns =
     columns
         ++ (table.columns
                 |> Dict.values
-                |> List.filter (\c -> columns |> List.memberBy .path c.path |> not)
+                |> List.filter (\c -> columns |> ErdColumnProps.member c.path |> not)
                 |> List.filter
                     (\column ->
                         case kind of
@@ -33,7 +33,8 @@ filterBy kind tableRelations table columns =
                             List cols ->
                                 cols |> List.member column.path
                     )
-                |> List.map (.path >> ErdColumnProps.create)
+                |> List.map .path
+                |> ErdColumnProps.createAll
            )
 
 
@@ -47,12 +48,13 @@ sortBy kind columns =
             columns
 
         List cols ->
+            -- sort `columns` in the same order than `cols`, used for AML, only at root level
             let
                 ( shown, others ) =
-                    columns |> List.partition (\c -> cols |> List.member c.path)
+                    columns |> List.partition (\c -> cols |> List.map .head |> List.member c.name)
 
                 shownSorted : List ErdColumnProps
                 shownSorted =
-                    cols |> List.filterMap (\path -> shown |> List.findBy .path path)
+                    cols |> List.filterMap (\path -> shown |> List.findBy .name path.head)
             in
             others ++ shownSorted

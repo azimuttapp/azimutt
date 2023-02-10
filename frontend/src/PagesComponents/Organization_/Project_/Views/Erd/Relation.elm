@@ -14,7 +14,7 @@ import Models.RelationStyle exposing (RelationStyle)
 import Models.Size as Size
 import PagesComponents.Organization_.Project_.Models exposing (Msg(..))
 import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn)
-import PagesComponents.Organization_.Project_.Models.ErdColumnProps exposing (ErdColumnProps)
+import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps exposing (ErdColumnPropsFlat)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.ErdRelation as ErdRelation exposing (ErdRelation)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
@@ -24,15 +24,15 @@ import Svg.Attributes exposing (class, height, width)
 
 
 type alias ColumnInfo =
-    { table : ErdTableProps, column : ErdColumnProps, index : Int }
+    { table : ErdTableProps, column : ErdColumnPropsFlat, index : Int }
 
 
 buildColumnInfo : ColumnPath -> Maybe ErdTableLayout -> Maybe ColumnInfo
 buildColumnInfo column layout =
-    layout |> Maybe.andThen (\t -> t.columns |> List.zipWithIndex |> findColumn column |> Maybe.map (\( c, i ) -> ColumnInfo t.props c i))
+    layout |> Maybe.andThen (\t -> t.columns |> ErdColumnProps.flatten |> List.zipWithIndex |> findColumn column |> Maybe.map (\( c, i ) -> ColumnInfo t.props c i))
 
 
-findColumn : ColumnPath -> List ( ErdColumnProps, Int ) -> Maybe ( ErdColumnProps, Int )
+findColumn : ColumnPath -> List ( ErdColumnPropsFlat, Int ) -> Maybe ( ErdColumnPropsFlat, Int )
 findColumn column columns =
     case columns |> List.findBy (Tuple.first >> .path) column of
         Just res ->

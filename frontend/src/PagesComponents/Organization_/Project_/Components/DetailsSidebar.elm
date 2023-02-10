@@ -28,8 +28,9 @@ import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableStats exposing (TableStats)
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn)
-import PagesComponents.Organization_.Project_.Models.ErdColumnProps exposing (ErdColumnProps)
-import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable)
+import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps exposing (ErdColumnProps, ErdColumnPropsFlat)
+import PagesComponents.Organization_.Project_.Models.ErdNotes as ErdNotes
+import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.Notes as NotesRef exposing (Notes, NotesRef)
 import PagesComponents.Organization_.Project_.Models.NotesMsg exposing (NotesMsg(..))
@@ -167,7 +168,7 @@ columnView erd ref =
     (erd |> Erd.getTable ref.table)
         |> Maybe.mapOrElse
             (\table ->
-                (table.columns |> ColumnPath.get ref.column)
+                (table |> ErdTable.getColumn ref.column)
                     |> Maybe.mapOrElse
                         (\column ->
                             ColumnView
@@ -261,7 +262,7 @@ viewTable wrap _ _ loadLayout erd editNotes openedCollapse stats model =
     let
         notes : Notes
         notes =
-            erd.notes |> Dict.get model.id |> Maybe.andThen .table |> Maybe.withDefault ""
+            erd.notes |> ErdNotes.getTable model.id |> Maybe.withDefault ""
 
         notesModel : Details.NotesModel msg
         notesModel =
@@ -292,7 +293,7 @@ viewColumn wrap _ _ _ _ loadLayout erd editNotes openedCollapse stats model =
     let
         notes : Notes
         notes =
-            erd.notes |> Dict.get model.id.table |> Maybe.andThen (.columns >> ColumnPath.get model.id.column) |> Maybe.withDefault ""
+            erd.notes |> ErdNotes.getColumn model.id |> Maybe.withDefault ""
 
         notesModel : Details.NotesModel msg
         notesModel =
@@ -305,7 +306,7 @@ viewColumn wrap _ _ _ _ loadLayout erd editNotes openedCollapse stats model =
 
         inLayouts : List LayoutName
         inLayouts =
-            erd.layouts |> Dict.filter (\_ l -> l.tables |> List.memberWith (\t -> t.id == model.id.table && (t.columns |> List.memberBy .path model.id.column))) |> Dict.keys
+            erd.layouts |> Dict.filter (\_ l -> l.tables |> List.memberWith (\t -> t.id == model.id.table && (t.columns |> ErdColumnProps.member model.id.column))) |> Dict.keys
 
         inSources : List ( Origin, Source )
         inSources =

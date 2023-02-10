@@ -20,15 +20,16 @@ import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.Organization_.Project_.Models exposing (Msg(..), SearchModel, confirm)
 import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn)
+import PagesComponents.Organization_.Project_.Models.ErdNotes as ErdNotes exposing (ErdNotes)
+import PagesComponents.Organization_.Project_.Models.ErdNotesTable exposing (ErdNotesTable)
 import PagesComponents.Organization_.Project_.Models.ErdRelation exposing (ErdRelation)
 import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
-import PagesComponents.Organization_.Project_.Models.ErdTableNotes exposing (ErdTableNotes)
 import PagesComponents.Organization_.Project_.Models.Notes exposing (Notes)
 import Simple.Fuzzy
 
 
-viewNavbarSearch : SchemaName -> SearchModel -> Dict TableId ErdTable -> List ErdRelation -> Dict TableId ErdTableNotes -> List ErdTableLayout -> HtmlId -> HtmlId -> Html Msg
+viewNavbarSearch : SchemaName -> SearchModel -> Dict TableId ErdTable -> List ErdRelation -> ErdNotes -> List ErdTableLayout -> HtmlId -> HtmlId -> Html Msg
 viewNavbarSearch defaultSchema search tables relations notes shownTables htmlId openedDropdown =
     div [ class "ml-6 print:hidden" ]
         [ div [ css [ "max-w-lg w-full", lg [ "max-w-xs" ] ] ]
@@ -143,7 +144,7 @@ viewSearchResult searchId defaultSchema shownTables active index res =
                 viewItem "relation" relation.src.table Icons.columns.foreignKey [ text relation.name ] True
 
 
-performSearch : Dict TableId ErdTable -> List ErdRelation -> Dict TableId ErdTableNotes -> String -> List SearchResult
+performSearch : Dict TableId ErdTable -> List ErdRelation -> ErdNotes -> String -> List SearchResult
 performSearch tables relations notes lQuery =
     let
         maxResults : Int
@@ -152,7 +153,7 @@ performSearch tables relations notes lQuery =
 
         tableResults : List ( Float, SearchResult )
         tableResults =
-            tables |> Dict.values |> List.filterMap (\t -> t |> tableMatch lQuery (notes |> Dict.get t.id |> Maybe.andThen .table))
+            tables |> Dict.values |> List.filterMap (\t -> t |> tableMatch lQuery (notes |> ErdNotes.getTable t.id))
 
         columnResults : List ( Float, SearchResult )
         columnResults =

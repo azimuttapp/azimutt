@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable, create, getColumn, inChecks, inIndexes, inPrimaryKey, inUniques, unpack)
+module PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable, create, getColumn, getColumnRoot, inChecks, inIndexes, inPrimaryKey, inUniques, unpack)
 
 import Dict exposing (Dict)
 import Libs.Dict as Dict
@@ -101,6 +101,11 @@ getColumn path table =
     table.columns
         |> Dict.get path.head
         |> Maybe.andThen (\col -> path.tail |> Nel.fromList |> Maybe.mapOrElse (\next -> ErdColumn.getColumn next col) (Just col))
+
+
+getColumnRoot : ColumnPath -> ErdTable -> Maybe ErdColumn
+getColumnRoot path table =
+    table.columns |> Dict.get path.head
 
 
 inPrimaryKey : ErdTable -> ColumnPath -> Maybe PrimaryKey

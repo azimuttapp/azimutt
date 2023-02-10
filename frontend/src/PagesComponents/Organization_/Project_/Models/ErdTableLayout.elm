@@ -4,7 +4,7 @@ import Dict exposing (Dict)
 import Models.Project.ProjectSettings exposing (ProjectSettings)
 import Models.Project.TableId exposing (TableId)
 import Models.Project.TableProps exposing (TableProps)
-import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps exposing (ErdColumnProps)
+import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps exposing (ErdColumnProps, ErdColumnPropsFlat)
 import PagesComponents.Organization_.Project_.Models.ErdRelation exposing (ErdRelation)
 import PagesComponents.Organization_.Project_.Models.ErdRelationProps as ErdRelationProps exposing (ErdRelationProps)
 import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable)
@@ -27,7 +27,7 @@ create : Set TableId -> List ErdRelation -> TableProps -> ErdTableLayout
 create shownTables relations props =
     { id = props.id
     , props = ErdTableProps.create props
-    , columns = props.columns |> List.map ErdColumnProps.create
+    , columns = props.columns |> ErdColumnProps.createAll
     , relatedTables = buildRelatedTables shownTables relations
     }
 
@@ -38,7 +38,7 @@ unpack layout =
     , position = layout.props.position
     , size = layout.props.size
     , color = layout.props.color
-    , columns = layout.columns |> List.map .path
+    , columns = layout.columns |> ErdColumnProps.unpackAll
     , selected = layout.props.selected
     , collapsed = layout.props.collapsed
     , hiddenColumns = layout.props.showHiddenColumns

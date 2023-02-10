@@ -1,4 +1,4 @@
-module Models.Project.ColumnPath exposing (ColumnPath, ColumnPathStr, child, decode, encode, fromString, get, isRoot, merge, name, parent, root, rootName, show, startsWith, toString, update, withName)
+module Models.Project.ColumnPath exposing (ColumnPath, ColumnPathStr, child, decode, encode, fromString, get, isRoot, merge, name, parent, rootName, show, startsWith, toString, update, withName)
 
 import Dict exposing (Dict)
 import Json.Decode as Decode exposing (Decoder, Value)
@@ -42,11 +42,6 @@ show path =
 withName : ColumnPath -> String -> String
 withName column text =
     text ++ "." ++ show column
-
-
-root : ColumnPath -> ColumnPath
-root { head } =
-    Nel head []
 
 
 name : ColumnPath -> ColumnName

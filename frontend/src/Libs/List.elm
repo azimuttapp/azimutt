@@ -18,6 +18,7 @@ module Libs.List exposing
     , findIndexBy
     , get
     , groupBy
+    , groupByL
     , indexOf
     , indexedFilter
     , last
@@ -427,7 +428,37 @@ uniqueBy matcher list =
 
 groupBy : (a -> comparable) -> List a -> Dict comparable (List a)
 groupBy key list =
-    List.foldr (\a dict -> dict |> Dict.update (key a) (\v -> v |> Maybe.mapOrElse (\x -> a :: x) [ a ] |> Just)) Dict.empty list
+    list |> List.foldr (\a dict -> dict |> Dict.update (key a) (\v -> v |> Maybe.mapOrElse (\x -> a :: x) [ a ] |> Just)) Dict.empty
+
+
+groupByL : (a -> comparable) -> List a -> List ( comparable, List a )
+groupByL getKey list =
+    -- same as groupBy but keep list order
+    list
+        |> List.foldl
+            (\a res ->
+                let
+                    key : comparable
+                    key =
+                        getKey a
+                in
+                if find (\( k, _ ) -> k == key) res == Nothing then
+                    ( key, [ a ] ) :: res
+
+                else
+                    res
+                        |> List.map
+                            (\( k, l ) ->
+                                if k == key then
+                                    ( k, a :: l )
+
+                                else
+                                    ( k, l )
+                            )
+            )
+            []
+        |> List.reverse
+        |> List.map (Tuple.mapSecond List.reverse)
 
 
 merge : (a -> comparable) -> (a -> a -> a) -> List a -> List a -> List a

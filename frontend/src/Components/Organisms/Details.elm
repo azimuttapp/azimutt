@@ -55,10 +55,10 @@ import Models.Size as Size
 import Models.SourceInfo as SourceInfo
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn)
-import PagesComponents.Organization_.Project_.Models.ErdColumnProps exposing (ErdColumnProps)
+import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps exposing (ErdColumnProps, ErdColumnPropsFlat)
 import PagesComponents.Organization_.Project_.Models.ErdColumnRef as ErdColumnRef exposing (ErdColumnRef)
 import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout exposing (ErdLayout)
-import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable)
+import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.ErdTableProps exposing (ErdTableProps)
 import PagesComponents.Organization_.Project_.Models.Notes exposing (Notes)
@@ -384,7 +384,7 @@ buildColumnHeading erd table column =
     { item = column
     , prev = table.columns |> Dict.find (\_ c -> c.index == column.index - 1) |> Maybe.map Tuple.second
     , next = table.columns |> Dict.find (\_ c -> c.index == column.index + 1) |> Maybe.map Tuple.second
-    , shown = erd |> Erd.currentLayout |> .tables |> List.findBy .id table.id |> Maybe.andThen (\t -> t.columns |> List.findBy .path column.path)
+    , shown = erd |> Erd.currentLayout |> .tables |> List.findBy .id table.id |> Maybe.andThen (.columns >> ErdColumnProps.find column.path)
     }
 
 
@@ -1016,7 +1016,7 @@ doc =
                                                     , update = \content -> docSetState { s | editNotes = s.editNotes |> Maybe.map (\_ -> content) }
                                                     , save = \content -> docSetState { s | columnNotes = s.columnNotes |> Dict.insert (ColumnId.from table.item column.item) content }
                                                     }
-                                                    (docErd.layouts |> Dict.filter (\_ l -> l.tables |> List.memberWith (\t -> t.id == table.item.id && (t.columns |> List.memberBy .path column.item.path))) |> Dict.keys)
+                                                    (docErd.layouts |> Dict.filter (\_ l -> l.tables |> List.memberWith (\t -> t.id == table.item.id && (t.columns |> ErdColumnProps.member column.item.path))) |> Dict.keys)
                                                     (column.item.origins |> List.filterZip (\o -> docErd.sources |> List.findBy .id o.id))
                                                     (docColumnStats |> Dict.getOrElse (ColumnId.from table.item column.item) Dict.empty)
                                                 ]
@@ -1096,7 +1096,7 @@ docBuildLayout tables =
                     (\( table, columns ) ->
                         { id = TableId.parse table
                         , props = ErdTableProps Nothing Position.zeroGrid Size.zeroCanvas Tw.red True True True
-                        , columns = columns |> List.map ColumnPath.fromString |> List.map (\col -> ErdColumnProps col True)
+                        , columns = columns |> List.map ColumnPath.fromString |> ErdColumnProps.createAll
                         , relatedTables = Dict.empty
                         }
                     )
@@ -1148,7 +1148,7 @@ docSelectColumn { table, column } state =
     (docErd |> Erd.getTable table)
         |> Maybe.andThen
             (\erdTable ->
-                (erdTable.columns |> ColumnPath.get column)
+                (erdTable |> ErdTable.getColumn column)
                     |> Maybe.map
                         (\erdColumn ->
                             { state

@@ -59,7 +59,12 @@ createMemo : Time.Posix -> Position.Canvas -> Erd -> Model x -> ( Model x, Cmd M
 createMemo now position erd model =
     if model.erd |> Erd.canCreateMemo then
         ErdLayout.createMemo (erd |> Erd.currentLayout) position
-            |> (\memo -> model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapMemos (List.append [ memo ]))) |> editMemo True memo)
+            |> (\memo ->
+                    model
+                        |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapMemos (List.append [ memo ])))
+                        |> editMemo True memo
+                        |> Tuple.mapSecond (\cmd -> Cmd.batch [ cmd, Ports.observeMemoSize memo.id ])
+               )
 
     else
         ( model, Cmd.batch [ erd |> Erd.getOrganization Nothing |> ProPlan.memosModalBody |> CustomModalOpen |> T.send, Track.proPlanLimit Conf.features.memos.name (Just erd) |> Ports.track ] )
