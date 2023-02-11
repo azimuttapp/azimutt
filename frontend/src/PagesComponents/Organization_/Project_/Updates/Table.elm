@@ -17,7 +17,7 @@ import Models.Position as Position
 import Models.Project.CanvasProps exposing (CanvasProps)
 import Models.Project.ColumnId as ColumnId exposing (ColumnId)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
-import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
+import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.Relation as Relation
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.TableId as TableId exposing (TableId)
@@ -267,11 +267,11 @@ hideColumns now id kind erd =
                                 (\( props, col ) ->
                                     case ( kind, col ) of
                                         ( HideColumns.Relations, Just _ ) ->
-                                            tableRelations |> List.filter (ErdRelation.linkedTo (ColumnRef.from { id = id } props)) |> List.nonEmpty
+                                            props.path |> Relation.outRelation tableRelations |> List.nonEmpty
 
                                         ( HideColumns.Regular, Just _ ) ->
                                             (props.path |> ErdTable.inPrimaryKey table |> Maybe.isJust)
-                                                || (tableRelations |> List.filter (ErdRelation.linkedTo (ColumnRef.from { id = id } props)) |> List.nonEmpty)
+                                                || (props.path |> Relation.outRelation tableRelations |> List.nonEmpty)
                                                 || (props.path |> ErdTable.inUniques table |> List.nonEmpty)
                                                 || (props.path |> ErdTable.inIndexes table |> List.nonEmpty)
 
@@ -334,11 +334,18 @@ sortColumns now id kind erd =
         id
         (\table columns ->
             columns
-                |> ErdColumnProps.flatten
-                |> List.filterMap (\col -> table |> ErdTable.getColumn col.path)
-                |> ColumnOrder.sortBy kind table erd.relations
-                |> List.map .path
-                |> ErdColumnProps.createAll
+                |> ErdColumnProps.applyDeep
+                    (\path cols ->
+                        cols
+                            |> List.filterMap
+                                (\col ->
+                                    table
+                                        |> ErdTable.getColumn (path |> Maybe.mapOrElse (ColumnPath.child col.name) (ColumnPath.fromString col.name))
+                                        |> Maybe.map (\c -> ( c, col ))
+                                )
+                            |> ColumnOrder.sortBy kind table erd.relations
+                            |> List.map Tuple.second
+                    )
         )
         erd
     , Cmd.none

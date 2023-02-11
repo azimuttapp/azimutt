@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Models.ErdColumnProps exposing (ErdColumnProps, ErdColumnPropsFlat, ErdColumnPropsNested(..), add, children, createAll, createFlat, filter, find, flatten, getIndex, initAll, map, member, nest, remove, unpackAll, updateAt)
+module PagesComponents.Organization_.Project_.Models.ErdColumnProps exposing (ErdColumnProps, ErdColumnPropsFlat, ErdColumnPropsNested(..), add, applyDeep, children, createAll, createFlat, filter, find, flatten, getIndex, initAll, map, member, nest, remove, unpackAll, updateAt)
 
 import Dict
 import Libs.List as List
@@ -87,10 +87,11 @@ initAll settings relations table =
     table.columns
         |> Dict.values
         |> List.filterNot (ProjectSettings.hideColumn settings.hiddenColumns)
+        |> List.zipWithIndex
         |> ColumnOrder.sortBy settings.columnOrder table tableRelations
         |> List.take settings.hiddenColumns.max
         |> List.map
-            (\c ->
+            (\( c, _ ) ->
                 { name = c.path.head
                 , children = ErdColumnPropsNested []
                 , highlighted = False
@@ -178,6 +179,16 @@ map transform columns =
 mapNested : ColumnPath -> (ColumnPath -> ErdColumnProps -> ErdColumnProps) -> List ErdColumnProps -> List ErdColumnProps
 mapNested path transform columns =
     columns |> List.map (\c -> c |> transform (path |> ColumnPath.child c.name) |> mapChildren (mapNested (path |> ColumnPath.child c.name) transform))
+
+
+applyDeep : (Maybe ColumnPath -> List ErdColumnProps -> List ErdColumnProps) -> List ErdColumnProps -> List ErdColumnProps
+applyDeep transform columns =
+    columns |> transform Nothing |> List.map (\col -> col |> mapChildren (applyDeepNested (col.name |> ColumnPath.fromString) transform))
+
+
+applyDeepNested : ColumnPath -> (Maybe ColumnPath -> List ErdColumnProps -> List ErdColumnProps) -> List ErdColumnProps -> List ErdColumnProps
+applyDeepNested path transform columns =
+    columns |> transform (Just path) |> List.map (\col -> col |> mapChildren (applyDeepNested (path |> ColumnPath.child col.name) transform))
 
 
 children : ErdColumnProps -> List ErdColumnProps

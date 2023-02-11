@@ -1,10 +1,10 @@
-module Models.Project.Relation exposing (Relation, RelationLike, clearOrigins, decode, encode, inOutRelation, linkedToTable, merge, new, virtual)
+module Models.Project.Relation exposing (Relation, RelationLike, clearOrigins, decode, encode, linkedToTable, merge, new, outRelation, virtual)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
 import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
-import Models.Project.ColumnPath exposing (ColumnPath)
+import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef, ColumnRefLike)
 import Models.Project.Origin as Origin exposing (Origin)
 import Models.Project.RelationId as RelationId exposing (RelationId)
@@ -42,9 +42,9 @@ virtual src ref origin =
     new "virtual relation" src ref [ origin ]
 
 
-inOutRelation : List (RelationLike x y) -> ColumnPath -> List (RelationLike x y)
-inOutRelation tableOutRelations column =
-    tableOutRelations |> List.filter (\r -> r.src.column == column)
+outRelation : List (RelationLike x y) -> ColumnPath -> List (RelationLike x y)
+outRelation tableOutRelations column =
+    tableOutRelations |> List.filter (\r -> r.src.column |> ColumnPath.startsWith column)
 
 
 linkedToTable : TableId -> RelationLike x y -> Bool

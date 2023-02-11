@@ -130,4 +130,4 @@ inChecks table column =
 
 hasColumn : ColumnPath -> List ColumnPath -> Bool
 hasColumn column columns =
-    columns |> List.any (\c -> c == column)
+    columns |> List.any (\c -> c |> ColumnPath.startsWith column)

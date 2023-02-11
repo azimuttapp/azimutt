@@ -38,7 +38,7 @@ show order =
             "By type"
 
 
-sortBy : ColumnOrder -> ErdTable -> List (RelationLike c d) -> List ErdColumn -> List ErdColumn
+sortBy : ColumnOrder -> ErdTable -> List (RelationLike c d) -> List ( ErdColumn, a ) -> List ( ErdColumn, a )
 sortBy order table relations columns =
     let
         tableRelations : List (RelationLike c d)
@@ -47,16 +47,16 @@ sortBy order table relations columns =
     in
     case order of
         OrderByIndex ->
-            columns |> List.sortBy .index
+            columns |> List.sortBy (Tuple.first >> .index)
 
         OrderByProperty ->
             columns
                 |> List.sortBy
-                    (\c ->
+                    (\( c, _ ) ->
                         if c.path |> ErdTable.inPrimaryKey table |> Maybe.isJust then
                             ( 0 + sortOffset c.nullable, c.index )
 
-                        else if c.path |> Relation.inOutRelation tableRelations |> List.nonEmpty then
+                        else if c.path |> Relation.outRelation tableRelations |> List.nonEmpty then
                             ( 1 + sortOffset c.nullable, c.index )
 
                         else if c.path |> ErdTable.inUniques table |> List.nonEmpty then
@@ -70,10 +70,10 @@ sortBy order table relations columns =
                     )
 
         OderByName ->
-            columns |> List.sortBy (.path >> ColumnPath.toString >> String.toLower)
+            columns |> List.sortBy (Tuple.first >> .path >> ColumnPath.toString >> String.toLower)
 
         OderByType ->
-            columns |> List.sortBy (\c -> c.kind |> String.toLower |> ErdColumn.withNullable c)
+            columns |> List.sortBy (\( c, _ ) -> c.kind |> String.toLower |> ErdColumn.withNullable c)
 
 
 sortOffset : Bool -> Float
