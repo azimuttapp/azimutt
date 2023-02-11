@@ -24,12 +24,12 @@ import Svg.Attributes exposing (class, height, width)
 
 
 type alias ColumnInfo =
-    { table : ErdTableProps, column : ErdColumnPropsFlat, index : Int }
+    { table : ErdTableProps, index : Int, highlighted : Bool }
 
 
 buildColumnInfo : ColumnPath -> Maybe ErdTableLayout -> Maybe ColumnInfo
 buildColumnInfo column layout =
-    layout |> Maybe.andThen (\t -> t.columns |> ErdColumnProps.flatten |> List.zipWithIndex |> findColumn column |> Maybe.map (\( c, i ) -> ColumnInfo t.props c i))
+    layout |> Maybe.andThen (\t -> t.columns |> ErdColumnProps.flatten |> List.zipWithIndex |> findColumn column |> Maybe.map (\( c, i ) -> ColumnInfo t.props i c.highlighted))
 
 
 findColumn : ColumnPath -> List ( ErdColumnPropsFlat, Int ) -> Maybe ( ErdColumnPropsFlat, Int )
@@ -133,13 +133,13 @@ getColor : Maybe ColumnInfo -> Maybe ColumnInfo -> Maybe Color
 getColor src ref =
     case ( src, ref ) of
         ( Just s, Just r ) ->
-            B.maybe (s.table.selected || r.table.selected || (s.column.highlighted && r.column.highlighted)) s.table.color
+            B.maybe (s.table.selected || r.table.selected || (s.highlighted && r.highlighted)) s.table.color
 
         ( Just s, Nothing ) ->
-            B.maybe (s.table.selected || s.column.highlighted) s.table.color
+            B.maybe (s.table.selected || s.highlighted) s.table.color
 
         ( Nothing, Just r ) ->
-            B.maybe (r.table.selected || r.column.highlighted) r.table.color
+            B.maybe (r.table.selected || r.highlighted) r.table.color
 
         ( Nothing, Nothing ) ->
             Nothing

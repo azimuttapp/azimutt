@@ -187,7 +187,7 @@ update currentLayout zone now urlOrganization organizations projects msg model =
                 ( model, Cmd.batch [ ProPlan.colorsModalBody organization ProPlanColors ProPlan.colorsInit |> CustomModalOpen |> T.send, Track.proPlanLimit Conf.features.tableColor.name model.erd |> Ports.track ] )
 
         MoveColumn column position ->
-            model |> mapErdM (\erd -> erd |> Erd.mapCurrentLayoutWithTime now (mapTables (List.updateBy .id column.table (mapColumns (ErdColumnProps.updateAt (column.column |> ColumnPath.parent) (List.moveBy .name (column.column |> Nel.last) position)))))) |> setDirty
+            model |> mapErdM (\erd -> erd |> Erd.mapCurrentLayoutWithTime now (mapTables (List.updateBy .id column.table (mapColumns (ErdColumnProps.mapAt (column.column |> ColumnPath.parent) (List.moveBy .name (column.column |> Nel.last) position)))))) |> setDirty
 
         ToggleHoverTable table on ->
             ( model |> setHoverTable (B.cond on (Just table) Nothing), Cmd.none )

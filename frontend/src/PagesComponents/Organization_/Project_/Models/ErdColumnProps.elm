@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Models.ErdColumnProps exposing (ErdColumnProps, ErdColumnPropsFlat, ErdColumnPropsNested(..), add, applyDeep, children, createAll, createFlat, filter, find, flatten, getIndex, initAll, map, member, nest, remove, unpackAll, updateAt)
+module PagesComponents.Organization_.Project_.Models.ErdColumnProps exposing (ErdColumnProps, ErdColumnPropsFlat, ErdColumnPropsNested(..), add, children, createAll, createChildren, filter, find, flatten, getIndex, initAll, map, mapAll, mapAt, member, nest, remove, unpackAll)
 
 import Dict
 import Libs.List as List
@@ -24,15 +24,9 @@ type ErdColumnPropsNested
 
 
 type alias ErdColumnPropsFlat =
+    -- TODO: remove this model (replace with ErdColumnProps everywhere)
     { path : ColumnPath
     , highlighted : Bool
-    }
-
-
-createFlat : ColumnPath -> ErdColumnPropsFlat
-createFlat path =
-    { path = path
-    , highlighted = False
     }
 
 
@@ -49,6 +43,11 @@ createAll columns =
             )
 
 
+createChildren : List ColumnName -> ErdColumnProps -> ErdColumnProps
+createChildren names column =
+    { column | children = names |> List.map (\name -> { name = name, children = ErdColumnPropsNested [], highlighted = False }) |> ErdColumnPropsNested }
+
+
 unpackAll : List ErdColumnProps -> List ColumnPath
 unpackAll columns =
     columns |> flatten |> List.map .path
@@ -56,6 +55,7 @@ unpackAll columns =
 
 flatten : List ErdColumnProps -> List ErdColumnPropsFlat
 flatten columns =
+    -- TODO: remove this method
     columns |> List.concatMap (\col -> col.name |> ColumnPath.fromString |> (\p -> { path = p, highlighted = col.highlighted } :: (col.children |> flattenNested p)))
 
 
@@ -116,11 +116,6 @@ member path columns =
     columns |> find path |> Maybe.isJust
 
 
-updateAt : Maybe ColumnPath -> (List ErdColumnProps -> List ErdColumnProps) -> List ErdColumnProps -> List ErdColumnProps
-updateAt path transform columns =
-    path |> Maybe.mapOrElse (\p -> columns |> List.map (mapChildren (updateAt (p.tail |> Nel.fromList) transform))) (transform columns)
-
-
 getIndex : ColumnPath -> List ErdColumnProps -> Maybe Int
 getIndex path columns =
     columns |> unpackAll |> List.zipWithIndex |> List.find (\( p, _ ) -> p == path) |> Maybe.map (\( _, i ) -> i)
@@ -161,6 +156,33 @@ add path columns =
                ]
 
 
+map : (ColumnPath -> ErdColumnProps -> ErdColumnProps) -> List ErdColumnProps -> List ErdColumnProps
+map f columns =
+    columns |> List.map (\c -> c |> f (ColumnPath.fromString c.name) |> mapChildren (mapNested (ColumnPath.fromString c.name) f))
+
+
+mapNested : ColumnPath -> (ColumnPath -> ErdColumnProps -> ErdColumnProps) -> List ErdColumnProps -> List ErdColumnProps
+mapNested path f columns =
+    columns |> List.map (\c -> c |> f (path |> ColumnPath.child c.name) |> mapChildren (mapNested (path |> ColumnPath.child c.name) f))
+
+
+mapAt : Maybe ColumnPath -> (List ErdColumnProps -> List ErdColumnProps) -> List ErdColumnProps -> List ErdColumnProps
+mapAt path f columns =
+    -- apply `f` on columns under the given path
+    path |> Maybe.mapOrElse (\p -> columns |> List.map (mapChildren (mapAt (p.tail |> Nel.fromList) f))) (f columns)
+
+
+mapAll : (Maybe ColumnPath -> List ErdColumnProps -> List ErdColumnProps) -> List ErdColumnProps -> List ErdColumnProps
+mapAll f columns =
+    -- apply `f` everywhere in the nested structure
+    columns |> f Nothing |> List.map (\col -> col |> mapChildren (mapAllNested (col.name |> ColumnPath.fromString) f))
+
+
+mapAllNested : ColumnPath -> (Maybe ColumnPath -> List ErdColumnProps -> List ErdColumnProps) -> List ErdColumnProps -> List ErdColumnProps
+mapAllNested path f columns =
+    columns |> f (Just path) |> List.map (\col -> col |> mapChildren (mapAllNested (path |> ColumnPath.child col.name) f))
+
+
 filter : (ColumnPath -> ErdColumnProps -> Bool) -> List ErdColumnProps -> List ErdColumnProps
 filter predicate columns =
     columns |> List.filter (\c -> c |> predicate (ColumnPath.fromString c.name)) |> List.map (\c -> c |> mapChildren (filterNested (ColumnPath.fromString c.name) predicate))
@@ -171,31 +193,11 @@ filterNested path predicate columns =
     columns |> List.filter (\c -> c |> predicate (path |> ColumnPath.child c.name)) |> List.map (\c -> c |> mapChildren (filterNested (path |> ColumnPath.child c.name) predicate))
 
 
-map : (ColumnPath -> ErdColumnProps -> ErdColumnProps) -> List ErdColumnProps -> List ErdColumnProps
-map transform columns =
-    columns |> List.map (\c -> c |> transform (ColumnPath.fromString c.name) |> mapChildren (mapNested (ColumnPath.fromString c.name) transform))
-
-
-mapNested : ColumnPath -> (ColumnPath -> ErdColumnProps -> ErdColumnProps) -> List ErdColumnProps -> List ErdColumnProps
-mapNested path transform columns =
-    columns |> List.map (\c -> c |> transform (path |> ColumnPath.child c.name) |> mapChildren (mapNested (path |> ColumnPath.child c.name) transform))
-
-
-applyDeep : (Maybe ColumnPath -> List ErdColumnProps -> List ErdColumnProps) -> List ErdColumnProps -> List ErdColumnProps
-applyDeep transform columns =
-    columns |> transform Nothing |> List.map (\col -> col |> mapChildren (applyDeepNested (col.name |> ColumnPath.fromString) transform))
-
-
-applyDeepNested : ColumnPath -> (Maybe ColumnPath -> List ErdColumnProps -> List ErdColumnProps) -> List ErdColumnProps -> List ErdColumnProps
-applyDeepNested path transform columns =
-    columns |> transform (Just path) |> List.map (\col -> col |> mapChildren (applyDeepNested (path |> ColumnPath.child col.name) transform))
-
-
 children : ErdColumnProps -> List ErdColumnProps
 children column =
     column.children |> (\(ErdColumnPropsNested cols) -> cols)
 
 
 mapChildren : (List ErdColumnProps -> List ErdColumnProps) -> ErdColumnProps -> ErdColumnProps
-mapChildren transform column =
-    { column | children = column |> children |> transform |> ErdColumnPropsNested }
+mapChildren f column =
+    { column | children = column |> children |> f |> ErdColumnPropsNested }

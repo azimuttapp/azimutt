@@ -38,7 +38,6 @@ import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode ex
 import PagesComponents.Organization_.Project_.Models.DragState exposing (DragState)
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn)
-import PagesComponents.Organization_.Project_.Models.ErdColumnProps exposing (ErdColumnPropsFlat)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.ErdNotes exposing (ErdNotes)
@@ -114,7 +113,7 @@ viewErd conf erdElem erd selectionBox virtualRelation editMemo args dragging =
         displayedRelations =
             erd.relations |> List.filter (\r -> [ r.src, r.ref ] |> List.any (\c -> displayedIds |> Set.member c.table))
 
-        virtualRelationInfo : Maybe ( ( Maybe { table : ErdTableProps, column : ErdColumnPropsFlat, index : Int }, ErdColumn ), Position.Canvas )
+        virtualRelationInfo : Maybe ( ( Maybe { table : ErdTableProps, index : Int, highlighted : Bool }, ErdColumn ), Position.Canvas )
         virtualRelationInfo =
             virtualRelation
                 |> Maybe.andThen

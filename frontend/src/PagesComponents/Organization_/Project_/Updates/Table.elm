@@ -8,7 +8,7 @@ import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.Delta exposing (Delta)
 import Libs.Ned as Ned
-import Libs.Nel as Nel
+import Libs.Nel as Nel exposing (Nel)
 import Libs.Task as T
 import Models.Area as Area
 import Models.ColumnOrder as ColumnOrder exposing (ColumnOrder)
@@ -25,7 +25,7 @@ import Models.Size as Size
 import PagesComponents.Organization_.Project_.Models exposing (Model, Msg(..))
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn, ErdNestedColumns(..))
-import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps exposing (ErdColumnProps, ErdColumnPropsFlat)
+import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps exposing (ErdColumnProps, ErdColumnPropsFlat, ErdColumnPropsNested(..))
 import PagesComponents.Organization_.Project_.Models.ErdRelation as ErdRelation
 import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout as ErdTableLayout exposing (ErdTableLayout)
@@ -261,19 +261,17 @@ hideColumns now id kind erd =
                 |> List.filter (Relation.linkedToTable id)
                 |> (\tableRelations ->
                         columns
-                            |> ErdColumnProps.flatten
-                            |> List.zipWith (\props -> table |> ErdTable.getColumnRoot props.path)
-                            |> List.filter
-                                (\( props, col ) ->
-                                    case ( kind, col ) of
+                            |> ErdColumnProps.filter
+                                (\path _ ->
+                                    case ( kind, table |> ErdTable.getColumn path ) of
                                         ( HideColumns.Relations, Just _ ) ->
-                                            props.path |> Relation.outRelation tableRelations |> List.nonEmpty
+                                            path |> Relation.outRelation tableRelations |> List.nonEmpty
 
                                         ( HideColumns.Regular, Just _ ) ->
-                                            (props.path |> ErdTable.inPrimaryKey table |> Maybe.isJust)
-                                                || (props.path |> Relation.outRelation tableRelations |> List.nonEmpty)
-                                                || (props.path |> ErdTable.inUniques table |> List.nonEmpty)
-                                                || (props.path |> ErdTable.inIndexes table |> List.nonEmpty)
+                                            (path |> ErdTable.inPrimaryKey table |> Maybe.isJust)
+                                                || (path |> Relation.outRelation tableRelations |> List.nonEmpty)
+                                                || (path |> ErdTable.inUniques table |> List.nonEmpty)
+                                                || (path |> ErdTable.inIndexes table |> List.nonEmpty)
 
                                         ( HideColumns.Nullable, Just c ) ->
                                             not c.nullable
@@ -284,8 +282,6 @@ hideColumns now id kind erd =
                                         _ ->
                                             False
                                 )
-                            |> List.map Tuple.first
-                            |> ErdColumnProps.nest
                    )
         )
         erd
@@ -299,31 +295,24 @@ toggleNestedColumn now id path open erd =
         id
         (\table columns ->
             columns
-                |> ErdColumnProps.flatten
-                |> List.concatMap
-                    (\column ->
-                        if open && column.path == path then
-                            column
-                                :: (table
-                                        |> ErdTable.getColumn path
-                                        |> Maybe.andThen .columns
-                                        |> Maybe.mapOrElse
-                                            (\(ErdNestedColumns cols) ->
-                                                cols
-                                                    |> Ned.values
-                                                    |> Nel.toList
-                                                    |> List.map (.path >> ErdColumnProps.createFlat)
-                                            )
-                                            []
-                                   )
+                |> ErdColumnProps.map
+                    (\p col ->
+                        if p == path then
+                            if open then
+                                col
+                                    |> ErdColumnProps.createChildren
+                                        (table
+                                            |> ErdTable.getColumn path
+                                            |> Maybe.andThen .columns
+                                            |> Maybe.mapOrElse (\(ErdNestedColumns cols) -> cols |> Ned.values |> Nel.toList |> List.map (.path >> Nel.last)) []
+                                        )
 
-                        else if (column.path |> ColumnPath.startsWith path) && column.path /= path then
-                            []
+                            else
+                                col |> ErdColumnProps.createChildren []
 
                         else
-                            [ column ]
+                            col
                     )
-                |> ErdColumnProps.nest
         )
         erd
 
@@ -334,7 +323,7 @@ sortColumns now id kind erd =
         id
         (\table columns ->
             columns
-                |> ErdColumnProps.applyDeep
+                |> ErdColumnProps.mapAll
                     (\path cols ->
                         cols
                             |> List.filterMap
