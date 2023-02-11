@@ -51,7 +51,7 @@ async function exportJsonSchema<T extends object>(kind: DbKind, url: DbUrl, opts
     log('')
     log(chalk.green(`${name} schema written in '${file}'.`))
     log(`Found ${azimuttSchema.tables.length} tables in ${schemas.length} schemas.`)
-    log('You can now import this file in ▶︎https://azimutt.app/new?json ◀︎︎')
+    log('You can now import this file in ▶︎ https://azimutt.app/new?json ◀︎︎')
 }
 
 function filename(output: FilePath | undefined, url: DbUrl, schemas: string[], format: FileFormat): string {

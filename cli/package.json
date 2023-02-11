@@ -1,7 +1,7 @@
 {
-  "name": "azimutt-cli",
-  "description": "A CLI to better work with https://azimutt.app",
-  "version": "0.0.2",
+  "name": "@azimutt/azimutt",
+  "description": "Export database schema from relational or document databases. Import it to https://azimutt.app",
+  "version": "0.0.1",
   "author": "Loïc Knuchel",
   "license": "MIT",
   "main": "./lib/index.js",
