@@ -59,7 +59,6 @@ type alias TableRef =
 type alias Column =
     { index : Int
     , path : ColumnPath
-    , name : ColumnName
     , kind : String
     , kindDetails : Maybe String
     , nullable : Bool
@@ -254,7 +253,7 @@ viewHeader model =
 viewColumns : Model msg -> Html msg
 viewColumns model =
     let
-        columns : List Column
+        columns : List ( Int, Column )
         columns =
             model.columns |> flattenColumns
 
@@ -262,12 +261,12 @@ viewColumns model =
         count =
             (columns |> List.length) + (model.hiddenColumns |> List.length)
     in
-    Keyed.node "div" [] (columns |> List.indexedMap (\i c -> ( c.name, Lazy.lazy5 viewColumn model "" (i + 1 == count) i c )))
+    Keyed.node "div" [] (columns |> List.indexedMap (\index ( i, c ) -> ( c.path |> ColumnPath.toString, Lazy.lazy5 viewColumn model "" (index + 1 == count) i c )))
 
 
-flattenColumns : List Column -> List Column
+flattenColumns : List Column -> List ( Int, Column )
 flattenColumns columns =
-    columns |> List.concatMap (\c -> c :: (c.children |> Maybe.mapOrElse (\(NestedColumns _ cols) -> cols |> flattenColumns) []))
+    columns |> List.zipWithIndex |> List.concatMap (\( c, i ) -> ( i, c ) :: (c.children |> Maybe.mapOrElse (\(NestedColumns _ cols) -> cols |> flattenColumns) []))
 
 
 viewHiddenColumns : Model msg -> Html msg
@@ -288,7 +287,7 @@ viewHiddenColumns model =
             popover : Html msg
             popover =
                 if showPopover then
-                    Keyed.node "div" [ class "py-2 rounded-lg bg-white shadow-md" ] (model.hiddenColumns |> List.map (\c -> ( c.name, Lazy.lazy5 viewColumn model "" False -1 c )))
+                    Keyed.node "div" [ class "py-2 rounded-lg bg-white shadow-md" ] (model.hiddenColumns |> List.indexedMap (\i c -> ( c.path |> ColumnPath.toString, Lazy.lazy5 viewColumn model "" False i c )))
 
                 else
                     div [] []
@@ -296,7 +295,7 @@ viewHiddenColumns model =
             hiddenColumns : List ( String, Html msg )
             hiddenColumns =
                 if model.state.showHiddenColumns then
-                    model.hiddenColumns |> List.indexedMap (\i c -> ( c.name, Lazy.lazy5 viewColumn model "opacity-50" (i == List.length model.hiddenColumns - 1) -1 c ))
+                    model.hiddenColumns |> List.indexedMap (\i c -> ( c.path |> ColumnPath.toString, Lazy.lazy5 viewColumn model "opacity-50" (i == List.length model.hiddenColumns - 1) i c ))
 
                 else
                     []
@@ -324,9 +323,9 @@ viewHiddenColumns model =
 
 
 viewColumn : Model msg -> TwClass -> Bool -> Int -> Column -> Html msg
-viewColumn model styles isLast index column =
+viewColumn model styles isLast nestIndex column =
     div
-        ([ title (column.name ++ " (" ++ column.kind ++ Bool.cond column.nullable "?" "" ++ ")")
+        ([ title (ColumnPath.name column.path ++ " (" ++ column.kind ++ Bool.cond column.nullable "?" "" ++ ")")
          , css
             [ "h-6 flex items-center align-middle whitespace-nowrap relative"
             , styles
@@ -337,7 +336,7 @@ viewColumn model styles isLast index column =
          , style "padding-right" "0.5rem"
          ]
             ++ Bool.cond model.conf.hover [ onMouseEnter (model.actions.columnHover column.path True), onMouseLeave (model.actions.columnHover column.path False) ] []
-            ++ Bool.cond model.conf.layout [ stopDoubleClick (model.actions.columnDblClick column.path), onContextMenu model.platform (model.actions.columnRightClick index column.path) ] []
+            ++ Bool.cond model.conf.layout [ stopDoubleClick (model.actions.columnDblClick column.path), onContextMenu model.platform (model.actions.columnRightClick nestIndex column.path) ] []
             ++ (model.actions.columnClick |> Maybe.mapOrElse (\action -> [ onPointerUp model.platform (action column.path) ]) [])
         )
         [ viewColumnIcon model column |> viewColumnIconDropdown model column
@@ -397,7 +396,7 @@ viewColumnIconDropdown model column icon =
     let
         dropdownId : HtmlId
         dropdownId =
-            model.id ++ "-" ++ column.name ++ "-dropdown"
+            model.id ++ "-" ++ ColumnPath.toString column.path ++ "-dropdown"
 
         tablesToShow : List Relation
         tablesToShow =
@@ -460,7 +459,7 @@ viewColumnIconDropdownItem message content =
 viewColumnName : Model msg -> Column -> Html msg
 viewColumnName model column =
     div [ css [ "ml-1 flex flex-grow", Bool.cond column.isPrimaryKey "font-bold" "" ] ]
-        ([ text column.name ]
+        ([ text (ColumnPath.name column.path) ]
             |> List.appendOn column.comment viewComment
             |> List.appendOn column.notes (viewNotes model (Just column.path))
         )
@@ -574,7 +573,7 @@ updateDocState transform =
 
 sampleColumn : Column
 sampleColumn =
-    { index = 0, path = Nel "" [], name = "", kind = "", kindDetails = Nothing, nullable = False, default = Nothing, comment = Nothing, notes = Nothing, isPrimaryKey = False, inRelations = [], outRelations = [], uniques = [], indexes = [], checks = [], children = Nothing }
+    { index = 0, path = Nel "" [], kind = "", kindDetails = Nothing, nullable = False, default = Nothing, comment = Nothing, notes = Nothing, isPrimaryKey = False, inRelations = [], outRelations = [], uniques = [], indexes = [], checks = [], children = Nothing }
 
 
 sample : Model (Msg x)
@@ -586,13 +585,13 @@ sample =
     , comment = Nothing
     , notes = Nothing
     , columns =
-        [ { sampleColumn | name = "id", kind = "integer", isPrimaryKey = True, inRelations = [ { column = { schema = "demo", table = "accounts", column = ColumnPath.fromString "user" }, nullable = True, tableShown = False } ] }
-        , { sampleColumn | name = "name", kind = "character varying(120)", comment = Just "Should be unique", notes = Just "A nice note", uniques = [ { name = "users_name_unique" } ] }
-        , { sampleColumn | name = "email", kind = "character varying(120)", indexes = [ { name = "users_email_idx" } ] }
-        , { sampleColumn | name = "bio", kind = "text", checks = [ { name = "users_bio_min_length" } ] }
-        , { sampleColumn | name = "organization", kind = "integer", nullable = True, outRelations = [ { column = { schema = "demo", table = "organizations", column = ColumnPath.fromString "id" }, nullable = True, tableShown = False } ] }
-        , { sampleColumn | name = "plan", kind = "object", children = Just (NestedColumns 1 []) }
-        , { sampleColumn | name = "created", kind = "timestamp without time zone", default = Just "CURRENT_TIMESTAMP" }
+        [ { sampleColumn | path = Nel "id" [], kind = "integer", isPrimaryKey = True, inRelations = [ { column = { schema = "demo", table = "accounts", column = ColumnPath.fromString "user" }, nullable = True, tableShown = False } ] }
+        , { sampleColumn | path = Nel "name" [], kind = "character varying(120)", comment = Just "Should be unique", notes = Just "A nice note", uniques = [ { name = "users_name_unique" } ] }
+        , { sampleColumn | path = Nel "email" [], kind = "character varying(120)", indexes = [ { name = "users_email_idx" } ] }
+        , { sampleColumn | path = Nel "bio" [], kind = "text", checks = [ { name = "users_bio_min_length" } ] }
+        , { sampleColumn | path = Nel "organization" [], kind = "integer", nullable = True, outRelations = [ { column = { schema = "demo", table = "organizations", column = ColumnPath.fromString "id" }, nullable = True, tableShown = False } ] }
+        , { sampleColumn | path = Nel "plan" [], kind = "object", children = Just (NestedColumns 1 []) }
+        , { sampleColumn | path = Nel "created" [], kind = "timestamp without time zone", default = Just "CURRENT_TIMESTAMP" }
         ]
     , hiddenColumns = []
     , dropdown =
@@ -652,7 +651,7 @@ doc =
               , \{ tableDocState } ->
                     table
                         { sample
-                            | hiddenColumns = [ { sampleColumn | name = "created", kind = "timestamp without time zone" } ]
+                            | hiddenColumns = [ { sampleColumn | path = Nel "created" [], kind = "timestamp without time zone" } ]
                             , state = tableDocState
                             , actions =
                                 { hover = \on -> updateDocState (\s -> { s | isHover = on })
@@ -676,7 +675,7 @@ doc =
               , \_ ->
                     div [ css [ "flex flex-wrap gap-6" ] ]
                         ([ { sample | id = "View", isView = True }
-                         , { sample | id = "With nested", columns = sample.columns |> List.map (\c -> Bool.cond (c.name == "plan") { c | children = Just (NestedColumns 1 [ { sampleColumn | path = Nel "plan" [ "id" ], name = "id", kind = "int" } ]) } c) }
+                         , { sample | id = "With nested", columns = sample.columns |> List.map (\c -> Bool.cond (c.path == Nel "plan" []) { c | children = Just (NestedColumns 1 [ { sampleColumn | path = Nel "plan" [ "id" ], kind = "int" } ]) } c) }
                          , { sample | id = "With comment", comment = Just "Here is a comment" }
                          , { sample | id = "With notes", notes = Just "Here is some notes" }
                          , { sample | id = "Hover table", state = sample.state |> (\s -> { s | isHover = True }) }

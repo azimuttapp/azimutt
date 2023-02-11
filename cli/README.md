@@ -2,6 +2,8 @@
 
 This CLI is aimed at helping work with Azimutt and extend its capabilities.
 
+You can use it without installing it using `npx`, for example: `npx azimutt [command] <options>`
+
 ## Commands
 
 - **export**, ex: `azimutt export --url "mongodb://mongodb0.example.com:27017" --flatten 1 --infer-relations --output ~/azimutt.json`

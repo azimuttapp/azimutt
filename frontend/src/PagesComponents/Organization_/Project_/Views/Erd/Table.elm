@@ -15,7 +15,6 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Platform as Platform exposing (Platform)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Ned as Ned
-import Libs.Nel as Nel exposing (Nel)
 import Models.Position as Position
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.ColumnType as ColumnType
@@ -26,7 +25,7 @@ import PagesComponents.Organization_.Project_.Components.DetailsSidebar as Detai
 import PagesComponents.Organization_.Project_.Models exposing (Msg(..), VirtualRelationMsg(..))
 import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode exposing (CursorMode)
 import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn, ErdNestedColumns(..))
-import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps
+import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps exposing (ErdColumnProps)
 import PagesComponents.Organization_.Project_.Models.ErdColumnRef exposing (ErdColumnRef)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.ErdNotesTable exposing (ErdNotesTable)
@@ -165,7 +164,6 @@ buildColumn : Bool -> ErdNotesTable -> ErdTableLayout -> ErdColumn -> Table.Colu
 buildColumn useBasicTypes notes layout column =
     { index = column.index
     , path = column.path
-    , name = column.path |> ColumnPath.name
     , kind =
         if useBasicTypes then
             column.kindLabel |> ColumnType.asBasic
@@ -197,10 +195,10 @@ buildColumn useBasicTypes notes layout column =
         column.columns
             |> Maybe.map
                 (\(ErdNestedColumns cols) ->
-                    cols
-                        |> Ned.values
-                        |> Nel.toList
-                        |> List.filter (\c -> layout.columns |> ErdColumnProps.member c.path)
+                    layout.columns
+                        |> ErdColumnProps.find column.path
+                        |> Maybe.mapOrElse ErdColumnProps.children []
+                        |> List.filterMap (\p -> cols |> Ned.get p.name)
                         |> List.map (\c -> buildColumn useBasicTypes notes layout c)
                         |> Table.NestedColumns (cols |> Ned.size)
                 )

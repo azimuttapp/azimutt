@@ -17,7 +17,7 @@ log(chalk.hex('#4F46E5').bold(figlet.textSync('Azimutt.app', {horizontalLayout: 
 
 const program = new Command()
 program.name('azimutt')
-    .description('Adding new capabilities to https://azimutt.app \\o/')
+    .description('Adding new capabilities to https://azimutt.app \\o/\n- export local databases such as MongoDB, Couchbase and PostgreSQL')
     .version('0.0.1')
 
 program.command('export')

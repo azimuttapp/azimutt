@@ -1,4 +1,4 @@
-module Libs.Nel exposing (Nel, add, all, any, concatMap, filter, filterMap, filterNot, filterZip, find, from, fromList, indexedMap, join, length, map, member, merge, partition, prepend, sortBy, startsWith, toList, unique, uniqueBy, zip, zipWith)
+module Libs.Nel exposing (Nel, add, all, any, concatMap, filter, filterMap, filterNot, filterZip, find, from, fromList, indexedMap, join, last, length, map, member, merge, partition, prepend, sortBy, startsWith, toList, unique, uniqueBy, zip, zipWith)
 
 import Libs.List as List
 import Set
@@ -7,6 +7,11 @@ import Set
 type alias Nel a =
     -- Nel: NonEmptyList
     { head : a, tail : List a }
+
+
+last : Nel a -> a
+last nel =
+    nel.tail |> List.last |> Maybe.withDefault nel.head
 
 
 prepend : a -> Nel a -> Nel a

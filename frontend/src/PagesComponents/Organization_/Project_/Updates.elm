@@ -13,12 +13,14 @@ import Libs.Maybe as Maybe
 import Libs.Models exposing (SizeChange)
 import Libs.Models.Delta exposing (Delta)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
+import Libs.Nel as Nel
 import Libs.Task as T
 import Models.Area as Area
 import Models.Organization exposing (Organization)
 import Models.OrganizationId exposing (OrganizationId)
 import Models.Position as Position
 import Models.Project as Project
+import Models.Project.ColumnPath as ColumnPath
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.Source as Source
 import Models.Project.SourceId as SourceId
@@ -37,6 +39,7 @@ import PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, Model
 import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode
 import PagesComponents.Organization_.Project_.Models.DragState as DragState
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
+import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
 import PagesComponents.Organization_.Project_.Models.MemoId as MemoId
@@ -184,7 +187,7 @@ update currentLayout zone now urlOrganization organizations projects msg model =
                 ( model, Cmd.batch [ ProPlan.colorsModalBody organization ProPlanColors ProPlan.colorsInit |> CustomModalOpen |> T.send, Track.proPlanLimit Conf.features.tableColor.name model.erd |> Ports.track ] )
 
         MoveColumn column position ->
-            model |> mapErdM (\erd -> erd |> Erd.mapCurrentLayoutWithTime now (mapTables (List.updateBy .id column.table (mapColumns (List.moveBy .name column.column.head position))))) |> setDirty
+            model |> mapErdM (\erd -> erd |> Erd.mapCurrentLayoutWithTime now (mapTables (List.updateBy .id column.table (mapColumns (ErdColumnProps.updateAt (column.column |> ColumnPath.parent) (List.moveBy .name (column.column |> Nel.last) position)))))) |> setDirty
 
         ToggleHoverTable table on ->
             ( model |> setHoverTable (B.cond on (Just table) Nothing), Cmd.none )

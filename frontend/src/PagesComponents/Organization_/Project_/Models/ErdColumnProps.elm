@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Models.ErdColumnProps exposing (ErdColumnProps, ErdColumnPropsFlat, ErdColumnPropsNested(..), add, createAll, createFlat, filter, find, flatten, getIndex, initAll, map, member, nest, remove, unpackAll)
+module PagesComponents.Organization_.Project_.Models.ErdColumnProps exposing (ErdColumnProps, ErdColumnPropsFlat, ErdColumnPropsNested(..), add, children, createAll, createFlat, filter, find, flatten, getIndex, initAll, map, member, nest, remove, unpackAll, updateAt)
 
 import Dict
 import Libs.List as List
@@ -113,6 +113,11 @@ find path columns =
 member : ColumnPath -> List ErdColumnProps -> Bool
 member path columns =
     columns |> find path |> Maybe.isJust
+
+
+updateAt : Maybe ColumnPath -> (List ErdColumnProps -> List ErdColumnProps) -> List ErdColumnProps -> List ErdColumnProps
+updateAt path transform columns =
+    path |> Maybe.mapOrElse (\p -> columns |> List.map (mapChildren (updateAt (p.tail |> Nel.fromList) transform))) (transform columns)
 
 
 getIndex : ColumnPath -> List ErdColumnProps -> Maybe Int
