@@ -1,9 +1,25 @@
 {
   "name": "azimutt",
+  "version": "0.0.3",
   "description": "Export database schema from relational or document databases. Import it to https://azimutt.app",
-  "version": "0.0.2",
-  "author": "Loïc Knuchel",
+  "keywords": [
+    "database",
+    "database tool",
+    "database schema",
+    "diagram",
+    "erd",
+    "entity-relationship diagram"
+  ],
+  "homepage": "https://azimutt.app",
+  "author": "Loïc Knuchel <loicknuchel@gmail.com> (https://loicknuchel.fr)",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/azimuttapp/azimutt.git"
+  },
+  "bugs": {
+    "url": "https://github.com/azimuttapp/azimutt/issues"
+  },
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
   "bin": {
