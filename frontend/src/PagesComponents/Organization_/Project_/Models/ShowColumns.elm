@@ -3,9 +3,9 @@ module PagesComponents.Organization_.Project_.Models.ShowColumns exposing (ShowC
 import Dict
 import Libs.List as List
 import Models.Project.ColumnPath exposing (ColumnPath)
-import Models.Project.ColumnRef as ColumnRef
+import Models.Project.Relation as Relation
 import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps exposing (ErdColumnProps, ErdColumnPropsFlat)
-import PagesComponents.Organization_.Project_.Models.ErdRelation as ErdRelation exposing (ErdRelation)
+import PagesComponents.Organization_.Project_.Models.ErdRelation exposing (ErdRelation)
 import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable)
 
 
@@ -28,7 +28,7 @@ filterBy kind tableRelations table columns =
                                 True
 
                             Relations ->
-                                tableRelations |> List.filter (ErdRelation.linkedTo (ColumnRef.from table column)) |> List.nonEmpty
+                                column.path |> Relation.outRelation tableRelations |> List.nonEmpty
 
                             List cols ->
                                 cols |> List.member column.path
