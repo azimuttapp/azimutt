@@ -1,7 +1,7 @@
 {
-  "name": "@azimutt/azimutt",
+  "name": "azimutt",
   "description": "Export database schema from relational or document databases. Import it to https://azimutt.app",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "author": "Loïc Knuchel",
   "license": "MIT",
   "main": "./lib/index.js",
