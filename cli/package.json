@@ -5,6 +5,7 @@
   "author": "Loïc Knuchel",
   "license": "MIT",
   "main": "./lib/index.js",
+  "types": "./lib/index.d.ts",
   "bin": {
     "azimutt": "./lib/index.js"
   },
@@ -16,7 +17,8 @@
     "start": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/index.ts",
     "start:windows": "nodemon --watch 'src/**/*.ts' --exec \"npx ts-node\" src/index.ts",
     "local": "sudo npm install -g && azimutt",
-    "refresh": "rm -rf ./node_modules ./package-lock.json && npm install"
+    "refresh": "rm -rf ./node_modules ./package-lock.json && npm install",
+    "prepublish": "npm run build && npm pack"
   },
   "dependencies": {
     "chalk": "^4.1.2",
