@@ -9,7 +9,6 @@ defmodule AzimuttWeb.ElmController do
   def create(conn, _params), do: conn |> load_elm
   def embed(conn, _params), do: conn |> load_elm
   def new(conn, _params), do: conn |> load_elm
-  def projects_legacy(conn, _params), do: conn |> load_elm
   def orga_create(conn, _params), do: conn |> load_elm
   def orga_new(conn, _params), do: conn |> load_elm
 
@@ -25,13 +24,10 @@ defmodule AzimuttWeb.ElmController do
     current_user = conn.assigns.current_user
 
     if project_id |> String.length() == 36 do
-      # TODO: uncomment in 2023 when legacy projects are not supported anymore
-      # with {:ok, %Project{} = _project} <- Projects.get_project(project_id, conn.assigns.current_user),
-      #      do: conn |> load_elm
-      with {:ok, %Project{} = project} <- Projects.get_project(project_id, current_user),
-           do: Tracking.project_loaded(current_user, project)
-
-      conn |> load_elm
+      with {:ok, %Project{} = project} <- Projects.get_project(project_id, current_user) do
+        Tracking.project_loaded(current_user, project)
+        conn |> load_elm
+      end
     else
       {:error, :not_found}
     end

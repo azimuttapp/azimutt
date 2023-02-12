@@ -1,5 +1,5 @@
 import {ElementSize, ElmFlags, ElmMsg, ElmRuntime, GetLocalFile, Hotkey, HotkeyId, JsMsg} from "../types/ports";
-import {ColumnId, Project, ProjectId, ProjectInfoLocalLegacy, SourceId, TableId} from "../types/project";
+import {ColumnId, Project, ProjectId, SourceId, TableId} from "../types/project";
 import {Color, Delta, Position, ToastLevel} from "../types/basics";
 import {Logger} from "./logger";
 import * as Zod from "../utils/zod";
@@ -21,7 +21,6 @@ export class ElmApp {
         SetMeta: [],
         AutofocusWithin: [],
         Toast: [],
-        GetLegacyProjects: [],
         GetProject: [],
         CreateProjectTmp: [],
         UpdateProjectTmp: [],
@@ -71,10 +70,6 @@ export class ElmApp {
     noListeners = (): ElmMsg['kind'][] => (Object.keys(this.callbacks) as ElmMsg['kind'][]).filter(c => this.callbacks[c].length === 0)
 
     updateSizes = (sizes: ElementSize[]): void => this.send({kind: 'GotSizes', sizes})
-    gotLegacyProjects = (projects: ProjectInfoLocalLegacy[]): void => this.send({
-        kind: 'GotLegacyProjects',
-        projects: projects.map(p => [p.id, p])
-    })
     gotProject = (project: Project | undefined): void => {
         window.azimutt.project = project
         project ? this.send({kind: 'GotProject', project}) : this.send({kind: 'GotProject'})

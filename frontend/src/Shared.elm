@@ -1,9 +1,8 @@
-module Shared exposing (Confirm, Flags, GlobalConf, Model, Msg, Prompt, StoredProjects(..), init, subscriptions, update)
+module Shared exposing (Confirm, Flags, GlobalConf, Model, Msg, Prompt, init, subscriptions, update)
 
 import Components.Atoms.Icon exposing (Icon)
 import Html exposing (Html)
 import Libs.Bool as Bool
-import Libs.Json.Decode as Decode
 import Libs.Models.Env as Env exposing (Env)
 import Libs.Models.Platform as Platform exposing (Platform)
 import Libs.Result as Result
@@ -17,7 +16,6 @@ import Services.Backend as Backend
 import Services.Sort as Sort
 import Task
 import Time
-import Track
 
 
 type alias Flags =
@@ -39,7 +37,6 @@ type alias Model =
     , organizations : List Organization
     , projects : List ProjectInfo
     , projectsLoaded : Bool
-    , legacyProjects : StoredProjects
     }
 
 
@@ -49,11 +46,6 @@ type Msg
     | GotUser (Result Backend.Error (Maybe User))
     | GotBackendProjects (Result Backend.Error ( List Organization, List ProjectInfo ))
     | JsMessage JsMsg
-
-
-type StoredProjects
-    = Loading
-    | Loaded (List ProjectInfo)
 
 
 type alias Confirm msg =
@@ -100,14 +92,11 @@ init _ flags =
       , projects = []
       , organizations = []
       , projectsLoaded = False
-      , legacyProjects = Loading
       }
     , Cmd.batch
         [ Task.perform ZoneChanged Time.here
         , Backend.getCurrentUser GotUser
         , Backend.getOrganizationsAndProjects GotBackendProjects
-
-        --, called in pages, don't call here to avoid duplicate calls. Ports.getLegacyProjects
         ]
     )
 
@@ -137,22 +126,9 @@ update _ msg model =
                     (\err -> ( { model | projectsLoaded = True }, Bool.cond (Backend.errorStatus err == 401) Cmd.none (Ports.toast "error" ("Can't decode backend projects: " ++ Backend.errorToString err)) ))
                     (\( orgas, projects ) -> ( { model | organizations = orgas, projects = Sort.lastUpdatedFirst projects, projectsLoaded = True }, Cmd.none ))
 
-        JsMessage (Ports.GotLegacyProjects ( errors, projects )) ->
-            ( { model | legacyProjects = Loaded (Sort.lastUpdatedFirst projects) }
-            , Cmd.batch
-                (errors
-                    |> List.concatMap
-                        (\( name, err ) ->
-                            [ "Unable to read legacy project " ++ name ++ ": " ++ Decode.errorToHtml err |> Ports.toast "error"
-                            , Track.jsonError "decode-project" err |> Ports.track
-                            ]
-                        )
-                )
-            )
-
         JsMessage (Ports.ProjectDeleted projectId) ->
             ( { model | projects = model.projects |> List.filter (\p -> p.id /= projectId) }
-            , Cmd.batch [ Backend.getOrganizationsAndProjects GotBackendProjects, Ports.getLegacyProjects ]
+            , Backend.getOrganizationsAndProjects GotBackendProjects
             )
 
         JsMessage _ ->
