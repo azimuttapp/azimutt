@@ -7,6 +7,7 @@ export type Value = any
 export type ValueType = string
 
 export function schemaToColumns(schema: ValueSchema, flatten: number, path: string[] = []): AzimuttColumn[] {
+    // TODO: if string with few values (< 10% of docs), handle it like an enum and add values in comment
     if (schema.nested && flatten > 0) {
         return Object.entries(schema.nested).flatMap(([key, value]) => {
             return [{
@@ -66,6 +67,7 @@ function mergeNested(items: { [key: string]: ValueSchema }[]): { [key: string]: 
     items.forEach(i => Object.entries(i).forEach(([key, schema]) => {
         nested[key] = nested[key] ? [...nested[key], schema] : [schema]
     }))
+    // TODO: if more than 10 keys, they are all integers or uuids or have the same size or are hex values & have the same type inside => treat this as record instead of object
     return mapValues(nested, sumSchema)
 }
 

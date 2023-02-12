@@ -15,6 +15,8 @@ const figlet = require('figlet')
 clear()
 log(chalk.hex('#4F46E5').bold(figlet.textSync('Azimutt.app', {horizontalLayout: 'full'})))
 
+// TODO: `azimutt infer --path ~/my_db` or `azimutt export --url ~/my_db` (no 'protocol://') => recursively list .json files and infer them as a collection
+// TODO: use in-memory H2 to load liquibase & flyway migrations
 const program = new Command()
 program.name('azimutt')
     .description('Export database schema from relational or document databases. Import it to https://azimutt.app.\n' +

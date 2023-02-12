@@ -1,5 +1,5 @@
 src/
 tests/
-jest.config.json
+jest.config.js
 tsconfig.json
 *.tgz
