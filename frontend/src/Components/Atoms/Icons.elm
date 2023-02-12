@@ -23,13 +23,15 @@ notes =
     Icon.DocumentText
 
 
-columns : { primaryKey : Icon, foreignKey : Icon, unique : Icon, index : Icon, check : Icon }
+columns : { primaryKey : Icon, foreignKey : Icon, unique : Icon, index : Icon, check : Icon, nested : Icon, nestedOpen : Icon }
 columns =
     { primaryKey = Icon.Key
     , foreignKey = Icon.ExternalLink
     , unique = Icon.FingerPrint
     , index = Icon.SortDescending
     , check = Icon.Check
+    , nested = Icon.ChevronRight
+    , nestedOpen = Icon.ChevronDown
     }
 
 

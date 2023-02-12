@@ -15,7 +15,8 @@ import Libs.Maybe as Maybe
 import Libs.Models.DatabaseUrl exposing (DatabaseUrl)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Task as T
-import Models.Project.ColumnId exposing (ColumnId)
+import Models.Project.ColumnId as ColumnId exposing (ColumnId)
+import Models.Project.ColumnPath as ColumnPath
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.ColumnStats exposing (ColumnStats)
 import Models.Project.LayoutName exposing (LayoutName)
@@ -27,8 +28,9 @@ import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableStats exposing (TableStats)
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn)
-import PagesComponents.Organization_.Project_.Models.ErdColumnProps exposing (ErdColumnProps)
-import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable)
+import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps exposing (ErdColumnProps, ErdColumnPropsFlat)
+import PagesComponents.Organization_.Project_.Models.ErdNotes as ErdNotes
+import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.Notes as NotesRef exposing (Notes, NotesRef)
 import PagesComponents.Organization_.Project_.Models.NotesMsg exposing (NotesMsg(..))
@@ -166,11 +168,11 @@ columnView erd ref =
     (erd |> Erd.getTable ref.table)
         |> Maybe.mapOrElse
             (\table ->
-                (table.columns |> Dict.get ref.column)
+                (table |> ErdTable.getColumn ref.column)
                     |> Maybe.mapOrElse
                         (\column ->
                             ColumnView
-                                { id = { table = table.id, column = column.name }
+                                { id = { table = table.id, column = column.path }
                                 , schema = Details.buildSchemaHeading erd table.schema
                                 , table = Details.buildTableHeading erd table
                                 , column = Details.buildColumnHeading erd table column
@@ -209,7 +211,7 @@ view wrap showTable hideTable showColumn hideColumn loadLayout tableStats column
                     [ span [ class "font-bold" ]
                         [ span [ onClick (v.id.table |> ShowTable |> wrap), class "cursor-pointer" ] [ text (TableId.show erd.settings.defaultSchema v.id.table) ]
                         , text "."
-                        , span [] [ text v.id.column ]
+                        , span [] [ text (ColumnPath.show v.id.column) ]
                         ]
                     , text " column details"
                     ]
@@ -260,7 +262,7 @@ viewTable wrap _ _ loadLayout erd editNotes openedCollapse stats model =
     let
         notes : Notes
         notes =
-            erd.notes |> Dict.get model.id |> Maybe.andThen .table |> Maybe.withDefault ""
+            erd.notes |> ErdNotes.getTable model.id |> Maybe.withDefault ""
 
         notesModel : Details.NotesModel msg
         notesModel =
@@ -291,7 +293,7 @@ viewColumn wrap _ _ _ _ loadLayout erd editNotes openedCollapse stats model =
     let
         notes : Notes
         notes =
-            erd.notes |> Dict.get model.id.table |> Maybe.andThen (\n -> n.columns |> Dict.get model.id.column) |> Maybe.withDefault ""
+            erd.notes |> ErdNotes.getColumn model.id |> Maybe.withDefault ""
 
         notesModel : Details.NotesModel msg
         notesModel =
@@ -304,7 +306,7 @@ viewColumn wrap _ _ _ _ loadLayout erd editNotes openedCollapse stats model =
 
         inLayouts : List LayoutName
         inLayouts =
-            erd.layouts |> Dict.filter (\_ l -> l.tables |> List.memberWith (\t -> t.id == model.id.table && (t.columns |> List.memberBy .name model.id.column))) |> Dict.keys
+            erd.layouts |> Dict.filter (\_ l -> l.tables |> List.memberWith (\t -> t.id == model.id.table && (t.columns |> ErdColumnProps.member model.id.column))) |> Dict.keys
 
         inSources : List ( Origin, Source )
         inSources =
@@ -312,7 +314,7 @@ viewColumn wrap _ _ _ _ loadLayout erd editNotes openedCollapse stats model =
 
         columnStats : Dict SourceIdStr ColumnStats
         columnStats =
-            stats |> Dict.getOrElse ( model.id.table, model.id.column ) Dict.empty
+            stats |> Dict.getOrElse (ColumnId.fromRef model.id) Dict.empty
     in
     Details.viewColumn (ShowList |> wrap) (ShowSchema >> wrap) (ShowTable >> wrap) (ShowColumn >> wrap) loadLayout (ToggleCollapse >> wrap) openedCollapse erd.settings.defaultSchema model.schema model.table model.column notesModel inLayouts inSources columnStats
 
@@ -338,4 +340,4 @@ selected model =
             data.schema.item ++ "." ++ data.table.item.name
 
         ColumnView data ->
-            data.schema.item ++ "." ++ data.table.item.name ++ "." ++ data.column.item.name
+            data.schema.item ++ "." ++ data.table.item.name ++ "." ++ ColumnPath.toString data.column.item.path

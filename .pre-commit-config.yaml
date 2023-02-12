@@ -62,14 +62,21 @@ repos:
       language: system
       entry: npm run ts:test
       pass_filenames: false
-      files: \.ts*$
+      files: frontend/.*\.ts*$
 
     - id: ts-lint
       name: 'TypeScript lint'
       language: system
       entry: npm run ts:lint
       pass_filenames: false
-      files: \.ts*$
+      files: frontend/.*\.ts*$
+
+    - id: cli-test
+      name: 'CLI test'
+      language: system
+      entry: npm run cli:test
+      pass_filenames: false
+      files: cli/.*\.ts*$
 
 - repo: https://github.com/commitizen-tools/commitizen
   rev: v2.32.2

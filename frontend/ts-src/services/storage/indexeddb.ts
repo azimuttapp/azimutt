@@ -1,8 +1,7 @@
-import {migrateLegacyProject, ProjectId, ProjectJson, ProjectStored, ProjectStoredWithId} from "../../types/project";
+import {ProjectId, ProjectJson} from "../../types/project";
 import {StorageApi, StorageKind} from "./api";
 import {Logger} from "../logger";
 import * as Zod from "../../utils/zod";
-import {AnyError} from "../../utils/error";
 
 export class IndexedDBStorage implements StorageApi {
     static databaseName = 'azimutt'
@@ -28,35 +27,7 @@ export class IndexedDBStorage implements StorageApi {
     constructor(private db: IDBDatabase, private logger: Logger) {
     }
 
-    listProjects = (): Promise<[[ProjectId, AnyError][], ProjectStoredWithId[]]> => {
-        this.logger.debug(`indexedDb.listProjects()`)
-        return this.openStore('readonly').then(store => {
-            return new Promise<[[ProjectId, AnyError][], ProjectStoredWithId[]]>((resolve, reject) => {
-                const projects: ProjectStoredWithId[] = []
-                const errors: [ProjectId, AnyError][] = []
-                store.openCursor().onsuccess = (event: any) => {
-                    try {
-                        const cursor = event.target.result
-                        if (cursor) {
-                            try {
-                                projects.push([cursor.key, Zod.validate(migrateLegacyProject(cursor.value), ProjectStored, 'ProjectStored')])
-                            } catch (e) {
-                                errors.push([cursor.key, e])
-                            }
-                            cursor.continue()
-                        } else {
-                            resolve([errors, projects])
-                        }
-                    } catch (e) {
-                        // if anything throws, the promise is not automatically rejected as it only fails the `onsuccess` callback :(
-                        reject(e)
-                    }
-                }
-                (store as any).onerror = (err: any) => reject(`Unable to load projects: ${err}`)
-            })
-        })
-    }
-    loadProject = (id: ProjectId): Promise<ProjectStored> => {
+    loadProject = (id: ProjectId): Promise<ProjectJson> => {
         this.logger.debug(`indexedDb.loadProject(${id})`)
         return this.openStore('readonly')
             .then(store => this.getProject(store, id))
@@ -95,9 +66,9 @@ export class IndexedDBStorage implements StorageApi {
         return new Promise<IDBObjectStore>(resolve => resolve(this.db.transaction(IndexedDBStorage.dbProjects, mode).objectStore(IndexedDBStorage.dbProjects)))
     }
 
-    private getProject(store: IDBObjectStore, id: ProjectId): Promise<ProjectStored | undefined> {
-        return new Promise<ProjectStored | undefined>((resolve, reject) => {
-            store.get(id).onsuccess = (event: any) => resolve(Zod.validate(migrateLegacyProject(event.target.result), ProjectStored.optional(), 'ProjectStored?'));
+    private getProject(store: IDBObjectStore, id: ProjectId): Promise<ProjectJson | undefined> {
+        return new Promise<ProjectJson | undefined>((resolve, reject) => {
+            store.get(id).onsuccess = (event: any) => resolve(Zod.validate(event.target.result, ProjectJson.optional(), 'ProjectJson?'));
             (store as any).onerror = (err: any) => reject(`Unable to load project: ${err}`)
         })
     }

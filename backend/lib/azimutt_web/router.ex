@@ -224,7 +224,6 @@ defmodule AzimuttWeb.Router do
     pipe_through :browser
     get "/create", ElmController, :create
     get "/new", ElmController, :new
-    get "/projects", ElmController, :projects_legacy
     get "/:organization_id", ElmController, :orga_show
     get "/:organization_id/create", ElmController, :orga_create
     get "/:organization_id/new", ElmController, :orga_new

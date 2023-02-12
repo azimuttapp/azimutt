@@ -1,15 +1,4 @@
-import {
-    Layout,
-    parseTableId,
-    Project,
-    ProjectJson,
-    ProjectJsonLegacy,
-    ProjectStoredWithId,
-    Relation,
-    Source,
-    Table,
-    Type
-} from "./project";
+import {Layout, parseTableId, Project, ProjectJson, Relation, Source, Table, Type} from "./project";
 import {layout, project, relation, source, table, type} from "../utils/constants.test";
 
 describe('project', () => {
@@ -26,18 +15,6 @@ describe('project', () => {
         const {organization, id, storage, visibility, createdAt, updatedAt, ...json} = project
         const valid: ProjectJson = {...json, _type: 'json'}
         const res = ProjectJson.parse(valid)
-        expect(res).toEqual(valid)
-    })
-    test('project json legacy', () => {
-        const {organization, slug, description, storage, visibility, ...json} = project
-        const valid: ProjectJsonLegacy = {...json}
-        const res = ProjectJsonLegacy.parse(valid)
-        expect(res).toEqual(valid)
-    })
-    test('project stored with id', () => {
-        const {organization, id, storage, visibility, createdAt, updatedAt, ...json} = project
-        const valid: ProjectStoredWithId = [project.id, {...json, _type: 'json'}]
-        const res = ProjectStoredWithId.parse(valid)
         expect(res).toEqual(valid)
     })
     test('zod full', () => {

@@ -8,13 +8,13 @@ import Libs.Models.Position exposing (Position)
 import Libs.Tailwind exposing (Color)
 import Models.Area as Area
 import Models.Position as Position
-import Models.Project.ColumnName exposing (ColumnName)
+import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.RelationStyle exposing (RelationStyle)
 import Models.Size as Size
 import PagesComponents.Organization_.Project_.Models exposing (Msg(..))
 import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn)
-import PagesComponents.Organization_.Project_.Models.ErdColumnProps exposing (ErdColumnProps)
+import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps exposing (ErdColumnPropsFlat)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.ErdRelation as ErdRelation exposing (ErdRelation)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
@@ -24,12 +24,22 @@ import Svg.Attributes exposing (class, height, width)
 
 
 type alias ColumnInfo =
-    { table : ErdTableProps, column : ErdColumnProps, index : Int }
+    { table : ErdTableProps, index : Int, highlighted : Bool }
 
 
-buildColumnInfo : ColumnName -> Maybe ErdTableLayout -> Maybe ColumnInfo
+buildColumnInfo : ColumnPath -> Maybe ErdTableLayout -> Maybe ColumnInfo
 buildColumnInfo column layout =
-    layout |> Maybe.andThen (\t -> t.columns |> List.zipWithIndex |> List.findBy (Tuple.first >> .name) column |> Maybe.map (\( c, i ) -> ColumnInfo t.props c i))
+    layout |> Maybe.andThen (\t -> t.columns |> ErdColumnProps.flatten |> List.zipWithIndex |> findColumn column |> Maybe.map (\( c, i ) -> ColumnInfo t.props i c.highlighted))
+
+
+findColumn : ColumnPath -> List ( ErdColumnPropsFlat, Int ) -> Maybe ( ErdColumnPropsFlat, Int )
+findColumn column columns =
+    case columns |> List.findBy (Tuple.first >> .path) column of
+        Just res ->
+            Just res
+
+        Nothing ->
+            column |> ColumnPath.parent |> Maybe.andThen (\parent -> findColumn parent columns)
 
 
 viewRelation : SchemaName -> RelationStyle -> ErdConf -> Maybe ErdTableLayout -> Maybe ErdTableLayout -> ErdRelation -> Svg Msg
@@ -123,13 +133,13 @@ getColor : Maybe ColumnInfo -> Maybe ColumnInfo -> Maybe Color
 getColor src ref =
     case ( src, ref ) of
         ( Just s, Just r ) ->
-            B.maybe (s.table.selected || r.table.selected || (s.column.highlighted && r.column.highlighted)) s.table.color
+            B.maybe (s.table.selected || r.table.selected || (s.highlighted && r.highlighted)) s.table.color
 
         ( Just s, Nothing ) ->
-            B.maybe (s.table.selected || s.column.highlighted) s.table.color
+            B.maybe (s.table.selected || s.highlighted) s.table.color
 
         ( Nothing, Just r ) ->
-            B.maybe (r.table.selected || r.column.highlighted) r.table.color
+            B.maybe (r.table.selected || r.highlighted) r.table.color
 
         ( Nothing, Nothing ) ->
             Nothing

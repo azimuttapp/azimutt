@@ -22,7 +22,6 @@ init urlOrganization query =
     ( { selectedMenu = "New project"
       , mobileMenuOpen = False
       , openedCollapse = ""
-      , projects = []
       , samples = []
       , selectedTab = TabDatabase
       , databaseSource = Nothing
@@ -43,7 +42,6 @@ init urlOrganization query =
             , html = Just "h-full bg-gray-100"
             , body = Just "h-full"
             }
-         , Ports.getLegacyProjects
          , Backend.getSamples GotSamples
          ]
             ++ ((query |> Dict.get "database" |> Maybe.map (\value -> [ T.send (InitTab TabDatabase), T.sendAfter 1 (DatabaseSourceMsg (DatabaseSource.GetSchema value)) ]))

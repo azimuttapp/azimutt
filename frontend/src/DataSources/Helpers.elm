@@ -2,6 +2,7 @@ module DataSources.Helpers exposing (Line, SourceLine, defaultCheckName, default
 
 import Models.Project.CheckName exposing (CheckName)
 import Models.Project.ColumnName exposing (ColumnName)
+import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.IndexName exposing (IndexName)
 import Models.Project.PrimaryKeyName exposing (PrimaryKeyName)
 import Models.Project.RelationName exposing (RelationName)
@@ -22,9 +23,9 @@ defaultPkName table =
     table ++ "_pk_az"
 
 
-defaultRelName : TableName -> ColumnName -> RelationName
+defaultRelName : TableName -> ColumnPath -> RelationName
 defaultRelName table column =
-    table ++ "_" ++ column ++ "_fk_az"
+    table ++ "_" ++ ColumnPath.toString column ++ "_fk_az"
 
 
 defaultUniqueName : TableName -> ColumnName -> UniqueName

@@ -22,35 +22,38 @@ import Request
 import Services.DatabaseSource as DatabaseSource
 import Services.JsonSource as JsonSource
 import Services.Lenses exposing (mapDatabaseSourceMCmd, mapJsonSourceMCmd, mapSqlSourceMCmd, mapToastsCmd)
-import Services.Sort as Sort
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
 import Time
 import Track
 
 
-update : Request.With params -> Time.Posix -> Maybe OrganizationId -> Msg -> Model -> ( Model, Cmd Msg )
-update req now urlOrganization msg model =
+update : Request.With params -> Time.Posix -> List ProjectInfo -> Bool -> Maybe OrganizationId -> Msg -> Model -> ( Model, Cmd Msg )
+update req now projects projectsLoaded urlOrganization msg model =
     case msg of
         InitProject ->
-            let
-                name : ProjectName
-                name =
-                    req.query |> Dict.getOrElse "name" Conf.constants.newProjectName
+            if projectsLoaded then
+                let
+                    name : ProjectName
+                    name =
+                        req.query |> Dict.getOrElse "name" Conf.constants.newProjectName
 
-                storage : Maybe ProjectStorage
-                storage =
-                    req.query |> Dict.get "storage" |> Maybe.andThen ProjectStorage.fromString
-            in
-            ( (req.query |> Dict.get "database" |> Maybe.map (\_ -> { model | databaseSource = Just (DatabaseSource.init Nothing (createProject model.projects storage name)) }))
-                |> Maybe.orElse (req.query |> Dict.get "sql" |> Maybe.map (\_ -> { model | sqlSource = Just (SqlSource.init Nothing (Tuple.second >> createProject model.projects storage name)) }))
-                |> Maybe.orElse (req.query |> Dict.get "json" |> Maybe.map (\_ -> { model | jsonSource = Just (JsonSource.init Nothing (createProject model.projects storage name)) }))
-                |> Maybe.withDefault model
-            , (req.query |> Dict.get "database" |> Maybe.map (DatabaseSource.GetSchema >> DatabaseSourceMsg >> T.send))
-                |> Maybe.orElse (req.query |> Dict.get "sql" |> Maybe.map (SqlSource.GetRemoteFile >> SqlSourceMsg >> T.send))
-                |> Maybe.orElse (req.query |> Dict.get "json" |> Maybe.map (JsonSource.GetRemoteFile >> JsonSourceMsg >> T.send))
-                |> Maybe.withDefault (AmlSourceMsg storage name |> T.send)
-            )
+                    storage : Maybe ProjectStorage
+                    storage =
+                        req.query |> Dict.get "storage" |> Maybe.andThen ProjectStorage.fromString
+                in
+                ( (req.query |> Dict.get "database" |> Maybe.map (\_ -> { model | databaseSource = Just (DatabaseSource.init Nothing (createProject projects storage name)) }))
+                    |> Maybe.orElse (req.query |> Dict.get "sql" |> Maybe.map (\_ -> { model | sqlSource = Just (SqlSource.init Nothing (Tuple.second >> createProject projects storage name)) }))
+                    |> Maybe.orElse (req.query |> Dict.get "json" |> Maybe.map (\_ -> { model | jsonSource = Just (JsonSource.init Nothing (createProject projects storage name)) }))
+                    |> Maybe.withDefault model
+                , (req.query |> Dict.get "database" |> Maybe.map (DatabaseSource.GetSchema >> DatabaseSourceMsg >> T.send))
+                    |> Maybe.orElse (req.query |> Dict.get "sql" |> Maybe.map (SqlSource.GetRemoteFile >> SqlSourceMsg >> T.send))
+                    |> Maybe.orElse (req.query |> Dict.get "json" |> Maybe.map (JsonSource.GetRemoteFile >> JsonSourceMsg >> T.send))
+                    |> Maybe.withDefault (AmlSourceMsg storage name |> T.send)
+                )
+
+            else
+                ( model, InitProject |> T.sendAfter 500 )
 
         DatabaseSourceMsg message ->
             model |> mapDatabaseSourceMCmd (DatabaseSource.update DatabaseSourceMsg now Nothing message)
@@ -62,7 +65,7 @@ update req now urlOrganization msg model =
             model |> mapSqlSourceMCmd (SqlSource.update SqlSourceMsg now Nothing message)
 
         AmlSourceMsg storage name ->
-            ( model, SourceId.generator |> Random.generate (Source.aml Conf.constants.virtualRelationSourceName now >> Project.create model.projects name >> CreateProjectTmp storage) )
+            ( model, SourceId.generator |> Random.generate (Source.aml Conf.constants.virtualRelationSourceName now >> Project.create projects name >> CreateProjectTmp storage) )
 
         CreateProjectTmp storage project ->
             ( model
@@ -88,9 +91,6 @@ createProject projects storage name =
 handleJsMessage : Request.With params -> Maybe OrganizationId -> JsMsg -> Model -> ( Model, Cmd Msg )
 handleJsMessage req urlOrganization msg model =
     case msg of
-        GotLegacyProjects ( _, projects ) ->
-            ( { model | projects = Sort.lastUpdatedFirst projects }, T.send InitProject )
-
         GotProject project ->
             ( model
             , Request.pushRoute

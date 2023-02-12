@@ -17,12 +17,7 @@
             <%= if @current_user do %>
                 <%= link "Access your projects", to: Routes.user_dashboard_path(@conn, :index), class: "relative inline-flex items-center px-4 py-2 space-x-2 text-center text-white transition-all transition duration-200 ease-out bg-gray-800 rounded shadow-sm outline-none cursor-pointer font-regular outline-0 focus-visible:outline-4 focus-visible:outline-offset-1 hover:bg-gray-900 text-lo-contrast focus-visible:outline-brand-600" %>
             <% else %>
-                <div class="flex items-center space-x-2 sm:justify-center">
-                    <a href={Routes.elm_path(@conn, :new)} class="relative inline-flex items-center px-4 py-2 space-x-2 text-center text-white transition-all transition duration-200 ease-out bg-gray-800 rounded shadow-sm outline-none cursor-pointer font-regular outline-0 focus-visible:outline-4 focus-visible:outline-offset-1 hover:bg-gray-900 text-lo-contrast focus-visible:outline-brand-600">
-                        Explore your schema
-                    </a>
-                    <span>or <%= link "view old projects", to: Routes.elm_path(@conn, :projects_legacy), class: "underline" %></span>
-                </div>
+                <%= link "Explore your schema", to: Routes.elm_path(@conn, :new), class: "relative inline-flex items-center px-4 py-2 space-x-2 text-center text-white transition-all transition duration-200 ease-out bg-gray-800 rounded shadow-sm outline-none cursor-pointer font-regular outline-0 focus-visible:outline-4 focus-visible:outline-offset-1 hover:bg-gray-900 text-lo-contrast focus-visible:outline-brand-600" %>
             <% end %>
         </div>
     </:action_buttons>

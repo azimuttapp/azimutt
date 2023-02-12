@@ -45,7 +45,7 @@ import PagesComponents.Organization_.Project_.Views.Navbar as Navbar exposing (v
 import PagesComponents.Organization_.Project_.Views.Watermark exposing (viewWatermark)
 import Services.Backend as Backend
 import Services.Toasts as Toasts
-import Shared exposing (StoredProjects(..))
+import Shared
 import Url exposing (Url)
 import View exposing (View)
 
@@ -79,17 +79,7 @@ viewApp : Url -> Maybe OrganizationId -> Shared.Model -> Model -> HtmlId -> Erd 
 viewApp currentUrl urlOrganization shared model htmlId erd =
     div [ class "az-app h-full" ]
         [ if model.conf.showNavbar then
-            let
-                projects : List ProjectInfo
-                projects =
-                    case shared.legacyProjects of
-                        Loading ->
-                            []
-
-                        Loaded legacyProjects ->
-                            legacyProjects
-            in
-            Lazy.lazy8 viewNavbar shared.conf shared.user model.conf model.virtualRelation erd (shared.projects ++ projects) model.navbar (Navbar.argsToString currentUrl urlOrganization (shared.organizations |> List.map .id) (htmlId ++ "-nav") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-nav")) model.dirty)
+            Lazy.lazy8 viewNavbar shared.conf shared.user model.conf model.virtualRelation erd shared.projects model.navbar (Navbar.argsToString currentUrl urlOrganization (shared.organizations |> List.map .id) (htmlId ++ "-nav") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-nav")) model.dirty)
 
           else
             div [] []

@@ -6,6 +6,7 @@ import Libs.Dict as Dict
 import Libs.Nel exposing (Nel)
 import Models.Project.Column exposing (Column)
 import Models.Project.ColumnName exposing (ColumnName)
+import Models.Project.ColumnPath as ColumnPath
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.FindPathSettings exposing (FindPathSettings)
 import Models.Project.Relation as Relation
@@ -108,17 +109,17 @@ tableId name =
 
 buildTable : TableName -> List String -> ErdTable
 buildTable name columnNames =
-    Table (tableId name) defaultSchema name False (columnNames |> List.map buildColumn |> Dict.fromListMap .name) Nothing [] [] [] Nothing [] |> ErdTable.create defaultSchema Dict.empty Dict.empty []
+    Table (tableId name) defaultSchema name False (columnNames |> List.map buildColumn |> Dict.fromListMap .name) Nothing [] [] [] Nothing [] |> ErdTable.create defaultSchema Dict.empty []
 
 
 buildColumn : ColumnName -> Column
 buildColumn name =
-    Column 0 name "int" False Nothing Nothing []
+    Column 0 name "int" False Nothing Nothing Nothing []
 
 
 buildRelation : ( TableName, ColumnName ) -> ( TableName, ColumnName ) -> ErdRelation
 buildRelation ( fromTable, fromCol ) ( toTable, toCol ) =
-    Relation.new "" (ColumnRef (tableId fromTable) fromCol) (ColumnRef (tableId toTable) toCol) [] |> ErdRelation.create Dict.empty
+    Relation.new "" (ColumnRef (tableId fromTable) (ColumnPath.fromString fromCol)) (ColumnRef (tableId toTable) (ColumnPath.fromString toCol)) [] |> ErdRelation.create Dict.empty
 
 
 settings : FindPathSettings

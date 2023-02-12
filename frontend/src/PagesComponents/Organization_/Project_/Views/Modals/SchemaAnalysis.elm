@@ -16,11 +16,13 @@ import Libs.Html exposing (bText, extLink)
 import Libs.Html.Attributes exposing (css)
 import Libs.List as List
 import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.Nel as Nel
 import Libs.Regex as Regex
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (sm)
 import Models.Organization exposing (Organization)
-import Models.Project.ColumnName as ColumnName exposing (ColumnName)
+import Models.Project.ColumnName exposing (ColumnName)
+import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
 import Models.Project.ColumnType exposing (ColumnType)
 import Models.Project.SchemaName exposing (SchemaName)
@@ -134,7 +136,7 @@ viewMissingPrimaryKey htmlId organization opened defaultSchema missingPks =
 
 
 type alias ColumnInfo =
-    { table : TableId, column : ColumnName, kind : ColumnType }
+    { table : TableId, column : ColumnPath, kind : ColumnType }
 
 
 type alias MissingRelation =
@@ -161,8 +163,8 @@ computeMissingRelations tables =
             (\t ->
                 t.columns
                     |> Dict.values
-                    |> List.filter (\c -> (c.name |> String.toLower |> Regex.matchI "_ids?$") && not c.isPrimaryKey && (c.inRelations |> List.isEmpty) && (c.outRelations |> List.isEmpty))
-                    |> List.map (\c -> { table = t.id, column = c.name, kind = c.kind })
+                    |> List.filter (\c -> (c.path |> ColumnPath.toString |> String.toLower |> Regex.matchI "_ids?$") && not c.isPrimaryKey && (c.inRelations |> List.isEmpty) && (c.outRelations |> List.isEmpty))
+                    |> List.map (\c -> { table = t.id, column = c.path, kind = c.kind })
             )
         |> List.map (\src -> ( src, tables |> getRef src ))
         |> List.partition (\( _, maybeRef ) -> maybeRef /= Nothing)
@@ -175,7 +177,7 @@ getRef src tables =
     let
         words : List String
         words =
-            src.column |> String.toLower |> String.split "_" |> List.dropRight 1
+            src.column |> Nel.concatMap (String.toLower >> String.split "_") |> List.dropRight 1
 
         prefix : TableName
         prefix =
@@ -194,13 +196,13 @@ getRef src tables =
             (\t ->
                 t.columns
                     |> Dict.find (\name _ -> String.toLower name == "id" || String.toLower name == (prefix ++ "_id"))
-                    |> Maybe.map (\( _, c ) -> { table = t.id, column = c.name, kind = c.kind })
+                    |> Maybe.map (\( _, c ) -> { table = t.id, column = c.path, kind = c.kind })
             )
 
 
 kindMatch : MissingRelation -> Bool
 kindMatch rel =
-    if (rel.src.column |> String.toLower |> String.endsWith "_ids") && (rel.src.kind |> String.endsWith "[]") then
+    if (rel.src.column |> ColumnPath.toString |> String.toLower |> String.endsWith "_ids") && (rel.src.kind |> String.endsWith "[]") then
         (rel.src.kind |> String.dropRight 2) == rel.ref.kind
 
     else
@@ -220,10 +222,10 @@ viewMissingRelations htmlId organization opened defaultSchema ( missingRels, mis
                 div [ class "flex justify-between items-center py-1" ]
                     [ div []
                         [ text (TableId.show defaultSchema rel.ref.table)
-                        , span [ class "text-gray-500" ] [ text (ColumnName.withName rel.ref.column "") ]
+                        , span [ class "text-gray-500" ] [ text ("" |> ColumnPath.withName rel.ref.column) ]
                         , Icon.solid ArrowNarrowLeft "inline mx-1"
                         , text (TableId.show defaultSchema rel.src.table)
-                        , span [ class "text-gray-500" ] [ text (ColumnName.withName rel.src.column "") ]
+                        , span [ class "text-gray-500" ] [ text ("" |> ColumnPath.withName rel.src.column) ]
                         ]
                     , div [ class "ml-3" ]
                         [ B.cond (kindMatch rel) (span [] []) (span [ class "text-gray-400 mr-3" ] [ Icon.solid Exclamation "inline", text (" " ++ rel.ref.kind ++ " vs " ++ rel.src.kind) ])
@@ -242,7 +244,7 @@ viewMissingRelations htmlId organization opened defaultSchema ( missingRels, mis
                     (\rel ->
                         div [ class "ml-3" ]
                             [ text (TableId.show defaultSchema rel.src.table)
-                            , span [ class "text-gray-500" ] [ text (ColumnName.withName rel.src.column "") ]
+                            , span [ class "text-gray-500" ] [ text ("" |> ColumnPath.withName rel.src.column) ]
                             , span [ class "text-gray-400" ] [ text (" (" ++ rel.src.kind ++ ")") ]
                             ]
                     )
@@ -258,7 +260,7 @@ computeHeterogeneousTypes : Dict TableId ErdTable -> List ( ColumnName, List ( C
 computeHeterogeneousTypes tables =
     tables
         |> Dict.values
-        |> List.concatMap (\t -> t.columns |> Dict.values |> List.filter (\c -> c.kind /= Conf.schema.column.unknownType) |> List.map (\c -> { table = t.id, column = c.name, kind = c.kind }))
+        |> List.concatMap (\t -> t.columns |> Dict.values |> List.filter (\c -> c.kind /= Conf.schema.column.unknownType) |> List.map (\c -> { table = t.id, column = c.path |> ColumnPath.toString, kind = c.kind }))
         |> List.groupBy .column
         |> Dict.toList
         |> List.map (\( col, cols ) -> ( col, cols |> List.groupBy .kind |> Dict.map (\_ -> List.map .table) |> Dict.toList ))

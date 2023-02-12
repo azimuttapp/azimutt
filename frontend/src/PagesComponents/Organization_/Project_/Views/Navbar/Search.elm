@@ -15,19 +15,21 @@ import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind exposing (TwClass, focus, lg, sm)
+import Models.Project.ColumnPath as ColumnPath
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.Organization_.Project_.Models exposing (Msg(..), SearchModel, confirm)
 import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn)
+import PagesComponents.Organization_.Project_.Models.ErdNotes as ErdNotes exposing (ErdNotes)
+import PagesComponents.Organization_.Project_.Models.ErdNotesTable exposing (ErdNotesTable)
 import PagesComponents.Organization_.Project_.Models.ErdRelation exposing (ErdRelation)
 import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
-import PagesComponents.Organization_.Project_.Models.ErdTableNotes exposing (ErdTableNotes)
 import PagesComponents.Organization_.Project_.Models.Notes exposing (Notes)
 import Simple.Fuzzy
 
 
-viewNavbarSearch : SchemaName -> SearchModel -> Dict TableId ErdTable -> List ErdRelation -> Dict TableId ErdTableNotes -> List ErdTableLayout -> HtmlId -> HtmlId -> Html Msg
+viewNavbarSearch : SchemaName -> SearchModel -> Dict TableId ErdTable -> List ErdRelation -> ErdNotes -> List ErdTableLayout -> HtmlId -> HtmlId -> Html Msg
 viewNavbarSearch defaultSchema search tables relations notes shownTables htmlId openedDropdown =
     div [ class "ml-6 print:hidden" ]
         [ div [ css [ "max-w-lg w-full", lg [ "max-w-xs" ] ] ]
@@ -129,7 +131,7 @@ viewSearchResult searchId defaultSchema shownTables active index res =
             viewItem "table" table.id Icons.table [ text (TableId.show defaultSchema table.id) ] (shownTables |> List.memberBy .id table.id)
 
         FoundColumn table column ->
-            viewItem "column" table.id Icons.column [ span [ class "opacity-50" ] [ text (TableId.show defaultSchema table.id ++ ".") ], text column.name ] (shownTables |> List.memberBy .id table.id)
+            viewItem "column" table.id Icons.column [ span [ class "opacity-50" ] [ text (TableId.show defaultSchema table.id ++ ".") ], text (ColumnPath.show column.path) ] (shownTables |> List.memberBy .id table.id)
 
         FoundRelation relation ->
             if shownTables |> List.memberBy .id relation.src.table |> not then
@@ -142,7 +144,7 @@ viewSearchResult searchId defaultSchema shownTables active index res =
                 viewItem "relation" relation.src.table Icons.columns.foreignKey [ text relation.name ] True
 
 
-performSearch : Dict TableId ErdTable -> List ErdRelation -> Dict TableId ErdTableNotes -> String -> List SearchResult
+performSearch : Dict TableId ErdTable -> List ErdRelation -> ErdNotes -> String -> List SearchResult
 performSearch tables relations notes lQuery =
     let
         maxResults : Int
@@ -151,7 +153,7 @@ performSearch tables relations notes lQuery =
 
         tableResults : List ( Float, SearchResult )
         tableResults =
-            tables |> Dict.values |> List.filterMap (\t -> t |> tableMatch lQuery (notes |> Dict.get t.id |> Maybe.andThen .table))
+            tables |> Dict.values |> List.filterMap (\t -> t |> tableMatch lQuery (notes |> ErdNotes.getTable t.id))
 
         columnResults : List ( Float, SearchResult )
         columnResults =
@@ -165,7 +167,7 @@ performSearch tables relations notes lQuery =
                                 |> (\n ->
                                         table.columns
                                             |> Dict.values
-                                            |> List.filterMap (\c -> c |> columnMatch lQuery (n |> Maybe.andThen (.columns >> Dict.get c.name)) table)
+                                            |> List.filterMap (\c -> c |> columnMatch lQuery (n |> Maybe.andThen (.columns >> ColumnPath.get c.path)) table)
                                    )
                         )
 
@@ -219,16 +221,16 @@ tableMatch lQuery notes table =
 
 columnMatch : String -> Maybe Notes -> ErdTable -> ErdColumn -> Maybe ( Float, SearchResult )
 columnMatch lQuery notes table column =
-    if String.toLower column.name == lQuery then
+    if (column.path |> ColumnPath.toString |> String.toLower) == lQuery then
         Just ( 0.9, FoundColumn table column )
 
-    else if column.name |> String.toLower |> String.startsWith lQuery then
+    else if column.path |> ColumnPath.toString |> String.toLower |> String.startsWith lQuery then
         Just ( 0.8, FoundColumn table column )
 
-    else if column.name |> match lQuery then
+    else if column.path |> ColumnPath.toString |> match lQuery then
         Just ( 0.7, FoundColumn table column )
 
-    else if column.name |> fuzzy lQuery then
+    else if column.path |> ColumnPath.toString |> fuzzy lQuery then
         Just ( 0.6, FoundColumn table column )
 
     else if
@@ -264,8 +266,8 @@ relationMatch lQuery relation =
         Just ( 0.06, FoundRelation relation )
 
     else if
-        (relation.src.column |> match lQuery)
-            || (relation.ref.column |> match lQuery)
+        (relation.src.column |> ColumnPath.toString |> match lQuery)
+            || (relation.ref.column |> ColumnPath.toString |> match lQuery)
             || (relation.src.table |> Tuple.second |> match lQuery)
             || (relation.ref.table |> Tuple.second |> match lQuery)
     then

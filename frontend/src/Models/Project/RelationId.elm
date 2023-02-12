@@ -11,7 +11,7 @@ type alias RelationId =
 
 new : ColumnRefLike x -> ColumnRefLike x -> RelationId
 new src ref =
-    ( ColumnId.from src, ColumnId.from ref )
+    ( ColumnId.fromRef src, ColumnId.fromRef ref )
 
 
 show : SchemaName -> RelationId -> String

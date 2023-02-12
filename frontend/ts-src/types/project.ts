@@ -2,7 +2,6 @@ import {Color, Json, Position, Size, Slug, Timestamp} from "./basics";
 import {Uuid} from "./uuid";
 import {Organization} from "./organization";
 import * as array from "../utils/array";
-import * as object from "../utils/object";
 import {z} from "zod";
 import * as Zod from "../utils/zod";
 
@@ -135,12 +134,12 @@ export const Origin = z.object({
 
 export interface Comment {
     text: string
-    origins: Origin[]
+    origins?: Origin[]
 }
 
 export const Comment = z.object({
     text: z.string(),
-    origins: Origin.array()
+    origins: Origin.array().optional()
 }).strict()
 
 export interface Column {
@@ -149,70 +148,72 @@ export interface Column {
     nullable?: boolean
     default?: string
     comment?: Comment
-    origins: Origin[]
+    columns?: Column[]
+    origins?: Origin[]
 }
 
-export const Column = z.object({
+export const Column: z.ZodType<Column> = z.object({
     name: ColumnName,
     type: ColumnType,
     nullable: z.boolean().optional(),
     default: z.string().optional(),
     comment: Comment.optional(),
-    origins: Origin.array()
+    columns: z.lazy(() => Column.array().optional()),
+    origins: Origin.array().optional()
 }).strict()
 
 export interface PrimaryKey {
     name?: string
     columns: ColumnName[]
-    origins: Origin[]
+    origins?: Origin[]
 }
 
 export const PrimaryKey = z.object({
     name: z.string().optional(),
     columns: ColumnName.array(),
-    origins: Origin.array()
+    origins: Origin.array().optional()
 }).strict()
 
 export interface Unique {
     name: string
     columns: ColumnName[]
     definition?: string
-    origins: Origin[]
+    origins?: Origin[]
 }
 
 export const Unique = z.object({
     name: z.string(),
     columns: ColumnName.array(),
     definition: z.string().optional(),
-    origins: Origin.array()
+    origins: Origin.array().optional()
 }).strict()
 
 export interface Index {
     name: string
     columns: ColumnName[]
     definition?: string
-    origins: Origin[]
+    origins?: Origin[]
 }
 
 export const Index = z.object({
     name: z.string(),
     columns: ColumnName.array(),
     definition: z.string().optional(),
-    origins: Origin.array()
+    origins: Origin.array().optional()
 }).strict()
 
 export interface Check {
     name: string
     columns: ColumnName[]
     predicate?: string
-    origins: Origin[]
+    origins?: Origin[]
 }
 
 export const Check = z.object({
     name: z.string(),
     columns: ColumnName.array(),
     predicate: z.string().optional(),
-    origins: Origin.array()
+    origins: Origin.array().optional()
 }).strict()
 
 export interface Table {
@@ -225,7 +226,7 @@ export interface Table {
     indexes?: Index[]
     checks?: Check[]
     comment?: Comment
-    origins: Origin[]
+    origins?: Origin[]
 }
 
 export const Table = z.object({
@@ -238,7 +239,7 @@ export const Table = z.object({
     indexes: Index.array().optional(),
     checks: Check.array().optional(),
     comment: Comment.optional(),
-    origins: Origin.array()
+    origins: Origin.array().optional()
 }).strict()
 
 export interface ColumnRef {
@@ -255,28 +256,28 @@ export interface Relation {
     name: RelationName
     src: ColumnRef
     ref: ColumnRef
-    origins: Origin[]
+    origins?: Origin[]
 }
 
 export const Relation = z.object({
     name: RelationName,
     src: ColumnRef,
     ref: ColumnRef,
-    origins: Origin.array()
+    origins: Origin.array().optional()
 }).strict()
 
 export interface Type {
     schema: SchemaName
     name: TypeName
     value: { enum: string[] } | { definition: string }
-    origins: Origin[]
+    origins?: Origin[]
 }
 
 export const Type = z.object({
     schema: SchemaName,
     name: TypeName,
     value: z.union([z.object({enum: z.string().array()}).strict(), z.object({definition: z.string()}).strict()]),
-    origins: Origin.array()
+    origins: Origin.array().optional()
 }).strict()
 
 export interface Source {
@@ -453,12 +454,6 @@ export const Project = z.object({
 
 export type ProjectJson = Omit<Project, 'organization' | 'id' | 'storage' | 'visibility' | 'createdAt' | 'updatedAt'> & { _type: 'json' }
 export const ProjectJson = Project.omit({organization: true, id: true, storage: true, visibility: true, createdAt: true, updatedAt: true}).extend({_type: z.literal('json')}).strict()
-export type ProjectJsonLegacy = Omit<Project, 'organization' | 'slug' | 'description' | 'storage' | 'visibility'>
-export const ProjectJsonLegacy = Project.omit({organization: true, slug: true, description: true, storage: true, visibility: true}).strict()
-export type ProjectStored = ProjectJson | ProjectJsonLegacy
-export const ProjectStored = z.union([ProjectJson, ProjectJsonLegacy])
-export type ProjectStoredWithId = [ProjectId, ProjectStored]
-export const ProjectStoredWithId = z.tuple([ProjectId, ProjectStored])
 
 export interface ProjectStats {
     nbSources: number
@@ -516,8 +511,6 @@ export type ProjectInfoRemoteWithContent = ProjectInfoRemote & { content: Projec
 export type ProjectInfo = ProjectInfoLocal | ProjectInfoRemote
 export const ProjectInfo = z.discriminatedUnion('storage', [ProjectInfoLocal, ProjectInfoRemote])
 export type ProjectInfoWithContent = ProjectInfoLocal | ProjectInfoRemoteWithContent
-export type ProjectInfoLocalLegacy = Omit<ProjectInfoLocal, 'organization'>
-export const ProjectInfoLocalLegacy = ProjectInfoLocal.omit({organization: true}).strict()
 
 
 export function isLocal(p: ProjectInfo): p is ProjectInfoLocal {
@@ -528,75 +521,9 @@ export function isRemote(p: ProjectInfo): p is ProjectInfoRemote {
     return p.storage === ProjectStorage.enum.remote
 }
 
-export function isLegacy(p: ProjectStored): p is ProjectJsonLegacy {
-    return 'createdAt' in p
-}
-
 export function parseTableId(id: TableId): {schema: SchemaName, table: TableName} {
     const [schema, table] = id.split(".")
     return table === undefined ? {schema: "", table: schema} : {schema, table}
-}
-
-// required read transformations to satisfy Zod validations
-export function migrateLegacyProject(p: any | undefined): any {
-    if (!p) return p
-    if (p.createdAt) { // if legacy, remove storage and transform sources & layouts
-        const {storage, layout, ...res} = p
-        const layouts = Object.assign(layout ? {'initial layout': layout} : {}, res.layouts)
-        const usedLayout = layout ? 'initial layout' : res.usedLayout || Object.keys(res.layouts)[0]
-        return {
-            ...res,
-            sources: res.sources.map(migrateLegacySource),
-            layouts: object.mapValues(layouts, migrateLegacyLayout),
-            usedLayout
-        }
-    } else { // if not legacy, remove id
-        const {id, ...res} = p
-        return res
-    }
-}
-
-function migrateLegacySource(s: any) {
-    const kind = s.kind.kind === 'LocalFile' ? 'SqlLocalFile' :
-        s.kind.kind === 'RemoteFile' ? 'SqlRemoteFile' :
-            s.kind.kind === 'UserDefined' ? 'AmlEditor' : s.kind.kind
-
-    return {
-        ...s,
-        kind: {...s.kind, kind},
-        tables: s.tables.map((t: any) => ({
-            ...t,
-            columns: t.columns.map((c: any) => ({...c, origins: c.origins || []})),
-            primaryKey: t.primaryKey ? {...t.primaryKey, origins: t.primaryKey.origins || []} : t.primaryKey,
-            checks: t.checks?.map((c: any) => ({...c, columns: c.columns || []})),
-            origins: t.origins || []
-        })),
-        relations: s.relations?.map((r: any) => ({
-            ...r,
-            origins: r.origins || []
-        }))
-    }
-}
-
-function migrateLegacyLayout(l: any) {
-    return {
-        ...l,
-        tables: l.tables.map((t: any) => ({
-            ...t,
-            size: t.size || {width: 0, height: 0},
-            columns: t.columns || []
-        }))
-    }
-}
-
-export function buildProjectLegacy(id: ProjectId, p: ProjectJsonLegacy): Project {
-    return Zod.validate({
-        ...p,
-        id,
-        slug: id,
-        storage: ProjectStorage.enum.local,
-        visibility: ProjectVisibility.enum.none
-    }, Project, 'Project')
 }
 
 export function buildProjectDraft(id: ProjectId, {_type, ...p}: ProjectJson): Project {
@@ -640,7 +567,7 @@ export function buildProjectJson({organization, id, storage, visibility, created
     return Zod.validate({...p, _type: 'json'}, ProjectJson, 'ProjectJson')
 }
 
-export function computeStats(p: ProjectStored): ProjectStats {
+export function computeStats(p: ProjectJson): ProjectStats {
     // should be the same as `fromProject` in src/Models/ProjectInfo.elm
     const tables = array.groupBy(p.sources.flatMap(s => s.tables), t => `${t.schema}.${t.table}`)
     const types = array.groupBy(p.sources.flatMap(s => s.types || []), t => `${t.schema}.${t.name}`)

@@ -21,7 +21,7 @@ page shared req =
     in
     Page.element
         { init = Init.init urlOrganization
-        , update = Updates.update req shared.now urlOrganization
+        , update = Updates.update req shared.now shared.projects shared.projectsLoaded urlOrganization
         , view = Views.view
         , subscriptions = Subscriptions.subscriptions
         }

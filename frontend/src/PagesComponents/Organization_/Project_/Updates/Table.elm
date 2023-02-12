@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Updates.Table exposing (goToTable, hideColumn, hideColumns, hideRelatedTables, hideTable, hoverColumn, hoverNextColumn, mapTablePropOrSelected, showAllTables, showColumn, showColumns, showRelatedTables, showTable, showTables, sortColumns)
+module PagesComponents.Organization_.Project_.Updates.Table exposing (goToTable, hideColumn, hideColumns, hideRelatedTables, hideTable, hoverColumn, hoverNextColumn, mapTablePropOrSelected, showAllTables, showColumn, showColumns, showRelatedTables, showTable, showTables, sortColumns, toggleNestedColumn)
 
 import Conf
 import Dict
@@ -7,24 +7,27 @@ import Libs.Dict as Dict
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.Delta exposing (Delta)
+import Libs.Ned as Ned
+import Libs.Nel as Nel exposing (Nel)
 import Libs.Task as T
 import Models.Area as Area
 import Models.ColumnOrder as ColumnOrder exposing (ColumnOrder)
 import Models.ErdProps exposing (ErdProps)
 import Models.Position as Position
 import Models.Project.CanvasProps exposing (CanvasProps)
-import Models.Project.ColumnId exposing (ColumnId)
-import Models.Project.ColumnName exposing (ColumnName)
+import Models.Project.ColumnId as ColumnId exposing (ColumnId)
+import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.Relation as Relation
 import Models.Project.SchemaName exposing (SchemaName)
-import Models.Project.Table as Table
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Size as Size
 import PagesComponents.Organization_.Project_.Models exposing (Model, Msg(..))
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
-import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps exposing (ErdColumnProps)
-import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable)
+import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn, ErdNestedColumns(..))
+import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps exposing (ErdColumnProps, ErdColumnPropsFlat, ErdColumnPropsNested(..))
+import PagesComponents.Organization_.Project_.Models.ErdRelation as ErdRelation
+import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout as ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.ErdTableProps exposing (ErdTableProps)
 import PagesComponents.Organization_.Project_.Models.HideColumns as HideColumns exposing (HideColumns)
@@ -212,24 +215,24 @@ hideRelatedTables id erd =
     ( erd, Cmd.batch (related |> List.map (\t -> T.send (HideTable t))) )
 
 
-showColumn : Time.Posix -> TableId -> ColumnName -> Erd -> Erd
+showColumn : Time.Posix -> TableId -> ColumnPath -> Erd -> Erd
 showColumn now table column erd =
-    erd |> Erd.mapCurrentLayoutWithTime now (mapTablesL .id table (mapColumns (List.removeBy .name column >> List.prepend [ ErdColumnProps.create column ])))
+    erd |> Erd.mapCurrentLayoutWithTime now (mapTablesL .id table (mapColumns (ErdColumnProps.remove column >> ErdColumnProps.add column)))
 
 
-hideColumn : Time.Posix -> TableId -> ColumnName -> Erd -> Erd
+hideColumn : Time.Posix -> TableId -> ColumnPath -> Erd -> Erd
 hideColumn now table column erd =
-    erd |> Erd.mapCurrentLayoutWithTime now (mapTablesL .id table (mapColumns (List.removeBy .name column)))
+    erd |> Erd.mapCurrentLayoutWithTime now (mapTablesL .id table (mapColumns (ErdColumnProps.remove column)))
 
 
-hoverNextColumn : TableId -> ColumnName -> Model -> Model
+hoverNextColumn : TableId -> ColumnPath -> Model -> Model
 hoverNextColumn table column model =
     let
-        nextColumn : Maybe ColumnName
+        nextColumn : Maybe ColumnPath
         nextColumn =
             model.erd
                 |> Maybe.andThen (Erd.currentLayout >> .tables >> List.findBy .id table)
-                |> Maybe.andThen (.columns >> List.map .name >> List.dropUntil (\c -> c == column) >> List.drop 1 >> List.head)
+                |> Maybe.andThen (.columns >> ErdColumnProps.unpackAll >> List.dropUntil (\p -> p == column) >> List.drop 1 >> List.head)
     in
     model |> setHoverColumn (nextColumn |> Maybe.map (ColumnRef table))
 
@@ -258,18 +261,17 @@ hideColumns now id kind erd =
                 |> List.filter (Relation.linkedToTable id)
                 |> (\tableRelations ->
                         columns
-                            |> List.zipWith (\props -> table.columns |> Dict.get props.name)
-                            |> List.filter
-                                (\( props, col ) ->
-                                    case ( kind, col ) of
+                            |> ErdColumnProps.filter
+                                (\path _ ->
+                                    case ( kind, table |> ErdTable.getColumn path ) of
                                         ( HideColumns.Relations, Just _ ) ->
-                                            tableRelations |> List.filter (Relation.linkedTo ( id, props.name )) |> List.nonEmpty
+                                            path |> Relation.outRelation tableRelations |> List.nonEmpty
 
                                         ( HideColumns.Regular, Just _ ) ->
-                                            (props.name |> Table.inPrimaryKey table |> Maybe.isJust)
-                                                || (tableRelations |> List.filter (Relation.linkedTo ( id, props.name )) |> List.nonEmpty)
-                                                || (props.name |> Table.inUniques table |> List.nonEmpty)
-                                                || (props.name |> Table.inIndexes table |> List.nonEmpty)
+                                            (path |> ErdTable.inPrimaryKey table |> Maybe.isJust)
+                                                || (path |> Relation.outRelation tableRelations |> List.nonEmpty)
+                                                || (path |> ErdTable.inUniques table |> List.nonEmpty)
+                                                || (path |> ErdTable.inIndexes table |> List.nonEmpty)
 
                                         ( HideColumns.Nullable, Just c ) ->
                                             not c.nullable
@@ -280,12 +282,39 @@ hideColumns now id kind erd =
                                         _ ->
                                             False
                                 )
-                            |> List.map Tuple.first
                    )
         )
         erd
     , Cmd.none
     )
+
+
+toggleNestedColumn : Time.Posix -> TableId -> ColumnPath -> Bool -> Erd -> Erd
+toggleNestedColumn now id path open erd =
+    mapColumnsForTableOrSelectedProps now
+        id
+        (\table columns ->
+            columns
+                |> ErdColumnProps.map
+                    (\p col ->
+                        if p == path then
+                            if open then
+                                col
+                                    |> ErdColumnProps.createChildren
+                                        (table
+                                            |> ErdTable.getColumn path
+                                            |> Maybe.andThen .columns
+                                            |> Maybe.mapOrElse (\(ErdNestedColumns cols) -> cols |> Ned.values |> Nel.toList |> List.map (.path >> Nel.last)) []
+                                        )
+
+                            else
+                                col |> ErdColumnProps.createChildren []
+
+                        else
+                            col
+                    )
+        )
+        erd
 
 
 sortColumns : Time.Posix -> TableId -> ColumnOrder -> Erd -> ( Erd, Cmd Msg )
@@ -294,10 +323,18 @@ sortColumns now id kind erd =
         id
         (\table columns ->
             columns
-                |> List.map .name
-                |> List.filterMap (\name -> table.columns |> Dict.get name)
-                |> ColumnOrder.sortBy kind table erd.relations
-                |> List.map (.name >> ErdColumnProps.create)
+                |> ErdColumnProps.mapAll
+                    (\path cols ->
+                        cols
+                            |> List.filterMap
+                                (\col ->
+                                    table
+                                        |> ErdTable.getColumn (path |> Maybe.mapOrElse (ColumnPath.child col.name) (ColumnPath.fromString col.name))
+                                        |> Maybe.map (\c -> ( c, col ))
+                                )
+                            |> ColumnOrder.sortBy kind table erd.relations
+                            |> List.map Tuple.second
+                    )
         )
         erd
     , Cmd.none
@@ -307,24 +344,20 @@ sortColumns now id kind erd =
 hoverColumn : ColumnRef -> Bool -> Erd -> List ErdTableLayout -> List ErdTableLayout
 hoverColumn column enter erd tables =
     let
-        columnId : ColumnId
-        columnId =
-            ( column.table, column.column )
-
         highlightedColumns : Set ColumnId
         highlightedColumns =
             if enter then
                 erd.relationsByTable
                     |> Dict.getOrElse column.table []
-                    |> List.filter (Relation.linkedTo columnId)
-                    |> List.concatMap (\r -> [ ( r.src.table, r.src.column ), ( r.ref.table, r.ref.column ) ])
+                    |> List.filter (ErdRelation.linkedTo column)
+                    |> List.concatMap (\r -> [ ColumnId.fromRef r.src, ColumnId.fromRef r.ref ])
                     |> Set.fromList
-                    |> Set.insert columnId
+                    |> Set.insert (ColumnId.fromRef column)
 
             else
                 Set.empty
     in
-    tables |> List.map (\t -> t |> mapColumns (List.map (\c -> c |> setHighlighted (highlightedColumns |> Set.member ( t.id, c.name )))))
+    tables |> List.map (\t -> t |> mapColumns (ErdColumnProps.map (\p c -> c |> setHighlighted (highlightedColumns |> Set.member (ColumnId.from t { path = p })))))
 
 
 performHideTable : Time.Posix -> TableId -> Erd -> Erd
@@ -387,7 +420,7 @@ mapColumnsForTableOrSelectedProps now id transform erd =
                         if props.id == id || (selected && props.props.selected) then
                             erd.tables
                                 |> Dict.get props.id
-                                |> Maybe.map (\table -> props |> mapColumns (transform table >> List.filter (\c -> table.columns |> Dict.member c.name)))
+                                |> Maybe.map (\table -> props |> mapColumns (transform table >> ErdColumnProps.filter (\p _ -> table |> ErdTable.getColumn p |> Maybe.isJust)))
                                 |> Maybe.withDefault props
 
                         else

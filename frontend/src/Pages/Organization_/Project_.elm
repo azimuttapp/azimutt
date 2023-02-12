@@ -1,5 +1,6 @@
 module Pages.Organization_.Project_ exposing (Model, Msg, page)
 
+import Browser.Navigation as Navigation
 import Conf
 import Dict exposing (Dict)
 import Gen.Params.Organization_.Project_ exposing (Params)
@@ -17,6 +18,7 @@ import PagesComponents.Organization_.Project_.Updates as Updates
 import PagesComponents.Organization_.Project_.Views as Views
 import Ports
 import Request
+import Services.Backend as Backend
 import Services.Toasts as Toasts
 import Shared
 
@@ -33,7 +35,7 @@ page shared req =
     Page.element
         { init = init req.params urlToken urlSave
         , update = Updates.update urlLayout shared.zone shared.now urlOrganization shared.organizations shared.projects
-        , view = Views.view (Request.pushRoute Route.Projects req) req.url urlOrganization urlProject shared
+        , view = Views.view (Navigation.load (Backend.organizationUrl urlOrganization)) req.url urlOrganization urlProject shared
         , subscriptions = Subscriptions.subscriptions
         }
 
@@ -97,7 +99,6 @@ init params token save =
             , body = Just "h-full overflow-hidden"
             }
         , Ports.listenHotkeys Conf.hotkeys
-        , Ports.getLegacyProjects
         , Ports.getProject params.organization params.project token
         , Bool.cond save (T.sendAfter 1000 TriggerSaveProject) Cmd.none
         ]

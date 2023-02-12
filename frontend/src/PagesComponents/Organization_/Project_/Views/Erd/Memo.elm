@@ -13,6 +13,8 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Platform exposing (Platform)
 import Libs.Tailwind as Tw
 import Models.Area as Area
+import Models.Position as Position
+import Models.Size as Size
 import PagesComponents.Organization_.Project_.Models exposing (MemoMsg(..), Msg(..))
 import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode exposing (CursorMode)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
@@ -39,17 +41,19 @@ viewMemo platform conf cursorMode edit memo =
     edit
         |> Maybe.map
             (\v ->
-                div ([ id htmlId, class "absolute" ] ++ Area.stylesGrid memo)
+                div ([ id htmlId, class "absolute" ] ++ Position.stylesGrid memo.position)
                     [ textarea
-                        [ id (MemoId.toInputId memo.id)
-                        , name (MemoId.toInputId memo.id)
-                        , value v
-                        , onInput (MEditUpdate >> MemoMsg)
-                        , onBlur (MemoMsg MEditSave)
-                        , autofocus True
-                        , placeholder "Write any useful memo here!"
-                        , class "w-full h-full block rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                        ]
+                        ([ id (MemoId.toInputId memo.id)
+                         , name (MemoId.toInputId memo.id)
+                         , value v
+                         , onInput (MEditUpdate >> MemoMsg)
+                         , onBlur (MemoMsg MEditSave)
+                         , autofocus True
+                         , placeholder "Write any useful memo here!"
+                         , class "resize block rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                         ]
+                            ++ Size.stylesCanvas memo.size
+                        )
                         []
                     ]
             )

@@ -14,7 +14,9 @@ import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Platform as Platform exposing (Platform)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
+import Libs.Ned as Ned
 import Models.Position as Position
+import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.ColumnType as ColumnType
 import Models.Project.CustomTypeValue as CustomTypeValue
 import Models.Project.SchemaName exposing (SchemaName)
@@ -22,12 +24,13 @@ import Models.Size as Size
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
 import PagesComponents.Organization_.Project_.Models exposing (Msg(..), VirtualRelationMsg(..))
 import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode exposing (CursorMode)
-import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn)
+import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn, ErdNestedColumns(..))
+import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps exposing (ErdColumnProps)
 import PagesComponents.Organization_.Project_.Models.ErdColumnRef exposing (ErdColumnRef)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
+import PagesComponents.Organization_.Project_.Models.ErdNotesTable exposing (ErdNotesTable)
 import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
-import PagesComponents.Organization_.Project_.Models.ErdTableNotes exposing (ErdTableNotes)
 import PagesComponents.Organization_.Project_.Models.Notes as NoteRef
 import PagesComponents.Organization_.Project_.Models.NotesMsg exposing (NotesMsg(..))
 import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint(..))
@@ -58,14 +61,14 @@ stringToArgs args =
             ( ( Platform.PC, CursorMode.Drag, Conf.schema.empty ), ( ( "", "", 0 ), "" ), ( ( False, False ), ( False, False ) ) )
 
 
-viewTable : ErdConf -> ZoomLevel -> TableArgs -> ErdTableNotes -> ErdTableLayout -> ErdTable -> Html Msg
+viewTable : ErdConf -> ZoomLevel -> TableArgs -> ErdNotesTable -> ErdTableLayout -> ErdTable -> Html Msg
 viewTable conf zoom args notes layout table =
     let
         ( ( platform, cursorMode, defaultSchema ), ( ( openedDropdown, openedPopover, index ), selected ), ( ( isHover, dragging ), ( virtualRelation, useBasicTypes ) ) ) =
             stringToArgs args
 
         ( columns, hiddenColumns ) =
-            table.columns |> Dict.values |> List.map (buildColumn useBasicTypes notes layout) |> List.partition (\c -> layout.columns |> List.memberBy .name c.name)
+            table.columns |> Dict.values |> List.map (\c -> buildColumn useBasicTypes notes layout c) |> List.partition (\c -> layout.columns |> ErdColumnProps.member c.path)
 
         drag : List (Attribute Msg)
         drag =
@@ -77,8 +80,8 @@ viewTable conf zoom args notes layout table =
 
         ( selectedTable, selectedColumn ) =
             case selected |> String.split "." of
-                schemaName :: tableName :: columnName :: [] ->
-                    B.cond (schemaName == table.schema && tableName == table.name) ( True, [ columnName ] ) ( False, [] )
+                schemaName :: tableName :: columnPathStr :: [] ->
+                    B.cond (schemaName == table.schema && tableName == table.name) ( True, [ ColumnPath.fromString columnPathStr ] ) ( False, [] )
 
                 schemaName :: tableName :: [] ->
                     B.cond (schemaName == table.schema && tableName == table.name) ( True, [] ) ( False, [] )
@@ -94,13 +97,13 @@ viewTable conf zoom args notes layout table =
             , isView = table.view
             , comment = table.comment |> Maybe.map .text
             , notes = notes.table
-            , columns = layout.columns |> List.filterMap (\c -> columns |> List.findBy .name c.name)
+            , columns = layout.columns |> ErdColumnProps.flatten |> List.filterMap (\c -> columns |> List.findBy .path c.path)
             , hiddenColumns = hiddenColumns |> List.sortBy .index
             , dropdown = Just dropdown
             , state =
                 { color = layout.props.color
                 , isHover = isHover
-                , highlightedColumns = layout.columns |> List.filter .highlighted |> List.map .name |> List.append selectedColumn |> Set.fromList
+                , highlightedColumns = layout.columns |> ErdColumnProps.flatten |> List.filter .highlighted |> List.map .path |> List.append selectedColumn |> List.map ColumnPath.toString |> Set.fromList
                 , selected = layout.props.selected || selectedTable
                 , dragging = dragging
                 , collapsed = layout.props.collapsed
@@ -117,7 +120,7 @@ viewTable conf zoom args notes layout table =
                 , columnHover = \col on -> ToggleHoverColumn { table = table.id, column = col } on
                 , columnClick = B.maybe virtualRelation (\col e -> VirtualRelationMsg (VRUpdate { table = table.id, column = col } e.clientPos))
                 , columnDblClick = \col -> { table = table.id, column = col } |> DetailsSidebar.ShowColumn |> DetailsSidebarMsg
-                , columnRightClick = \i col -> ContextMenuCreate (B.cond (layout.columns |> List.memberBy .name col) ColumnContextMenu.view ColumnContextMenu.viewHidden platform i { table = table.id, column = col } (notes.columns |> Dict.get col))
+                , columnRightClick = \i col -> ContextMenuCreate (B.cond (layout.columns |> ErdColumnProps.member col) ColumnContextMenu.view ColumnContextMenu.viewHidden platform i { table = table.id, column = col } (notes.columns |> ColumnPath.get col))
                 , notesClick = \col -> NotesMsg (NOpen (col |> Maybe.mapOrElse (\c -> NoteRef.fromColumn { table = table.id, column = c }) (NoteRef.fromTable table.id)))
                 , relationsIconClick =
                     \cols isOut ->
@@ -133,6 +136,7 @@ viewTable conf zoom args notes layout table =
                                         _ ->
                                             ShowTables (cols |> List.map (\col -> ( col.column.schema, col.column.table ))) hint
                                )
+                , nestedIconClick = ToggleNestedColumn table.id
                 , hiddenColumnsHover = \id on -> PopoverSet (B.cond on id "")
                 , hiddenColumnsClick = ToggleHiddenColumns table.id
                 }
@@ -156,10 +160,10 @@ handleTablePointerDown htmlId e =
         Noop "No match on table pointer down"
 
 
-buildColumn : Bool -> ErdTableNotes -> ErdTableLayout -> ErdColumn -> Table.Column
+buildColumn : Bool -> ErdNotesTable -> ErdTableLayout -> ErdColumn -> Table.Column
 buildColumn useBasicTypes notes layout column =
     { index = column.index
-    , name = column.name
+    , path = column.path
     , kind =
         if useBasicTypes then
             column.kindLabel |> ColumnType.asBasic
@@ -180,13 +184,24 @@ buildColumn useBasicTypes notes layout column =
     , nullable = column.nullable
     , default = column.defaultLabel
     , comment = column.comment |> Maybe.map .text
-    , notes = notes.columns |> Dict.get column.name
+    , notes = notes.columns |> ColumnPath.get column.path
     , isPrimaryKey = column.isPrimaryKey
     , inRelations = column.inRelations |> List.map (buildColumnRelation layout)
     , outRelations = column.outRelations |> List.map (buildColumnRelation layout)
     , uniques = column.uniques |> List.map (\u -> { name = u })
     , indexes = column.indexes |> List.map (\i -> { name = i })
     , checks = column.checks |> List.map (\c -> { name = c })
+    , children =
+        column.columns
+            |> Maybe.map
+                (\(ErdNestedColumns cols) ->
+                    layout.columns
+                        |> ErdColumnProps.find column.path
+                        |> Maybe.mapOrElse ErdColumnProps.children []
+                        |> List.filterMap (\p -> cols |> Ned.get p.name)
+                        |> List.map (\c -> buildColumn useBasicTypes notes layout c)
+                        |> Table.NestedColumns (cols |> Ned.size)
+                )
     }
 
 

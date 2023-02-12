@@ -4,8 +4,9 @@ import Conf
 import Dict
 import Gen.Route as Route
 import Libs.Maybe as Maybe
+import Libs.Task as T
 import Models.OrganizationId exposing (OrganizationId)
-import PagesComponents.Create.Models exposing (Model, Msg)
+import PagesComponents.Create.Models exposing (Model, Msg(..))
 import PagesComponents.Create.Views as Views
 import Ports
 import Services.Toasts as Toasts
@@ -13,8 +14,7 @@ import Services.Toasts as Toasts
 
 init : Maybe OrganizationId -> ( Model, Cmd Msg )
 init urlOrganization =
-    ( { projects = []
-      , databaseSource = Nothing
+    ( { databaseSource = Nothing
       , sqlSource = Nothing
       , jsonSource = Nothing
       , toasts = Toasts.init
@@ -27,6 +27,6 @@ init urlOrganization =
             , html = Just "h-full"
             , body = Just "h-full"
             }
-        , Ports.getLegacyProjects
+        , T.send InitProject
         ]
     )

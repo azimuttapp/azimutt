@@ -4,9 +4,10 @@ import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
 import Libs.List as List
 import Libs.Maybe as Maybe
-import Models.Project.Column as Column exposing (ColumnLike)
+import Models.Project.ColumnPath as ColumnPath
 import Models.Project.Relation as Relation exposing (RelationLike)
-import Models.Project.Table as Table exposing (TableLike)
+import PagesComponents.Organization_.Project_.Models.ErdColumn as ErdColumn exposing (ErdColumn)
+import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable exposing (ErdTable)
 
 
 type ColumnOrder
@@ -37,7 +38,7 @@ show order =
             "By type"
 
 
-sortBy : ColumnOrder -> TableLike a b -> List (RelationLike c d) -> List (ColumnLike e) -> List (ColumnLike e)
+sortBy : ColumnOrder -> ErdTable -> List (RelationLike c d) -> List ( ErdColumn, a ) -> List ( ErdColumn, a )
 sortBy order table relations columns =
     let
         tableRelations : List (RelationLike c d)
@@ -46,22 +47,22 @@ sortBy order table relations columns =
     in
     case order of
         OrderByIndex ->
-            columns |> List.sortBy .index
+            columns |> List.sortBy (Tuple.first >> .index)
 
         OrderByProperty ->
             columns
                 |> List.sortBy
-                    (\c ->
-                        if c.name |> Table.inPrimaryKey table |> Maybe.isJust then
+                    (\( c, _ ) ->
+                        if c.path |> ErdTable.inPrimaryKey table |> Maybe.isJust then
                             ( 0 + sortOffset c.nullable, c.index )
 
-                        else if c.name |> Relation.inOutRelation tableRelations |> List.nonEmpty then
+                        else if c.path |> Relation.outRelation tableRelations |> List.nonEmpty then
                             ( 1 + sortOffset c.nullable, c.index )
 
-                        else if c.name |> Table.inUniques table |> List.nonEmpty then
+                        else if c.path |> ErdTable.inUniques table |> List.nonEmpty then
                             ( 2 + sortOffset c.nullable, c.index )
 
-                        else if c.name |> Table.inIndexes table |> List.nonEmpty then
+                        else if c.path |> ErdTable.inIndexes table |> List.nonEmpty then
                             ( 3 + sortOffset c.nullable, c.index )
 
                         else
@@ -69,10 +70,10 @@ sortBy order table relations columns =
                     )
 
         OderByName ->
-            columns |> List.sortBy (\c -> c.name |> String.toLower)
+            columns |> List.sortBy (Tuple.first >> .path >> ColumnPath.toString >> String.toLower)
 
         OderByType ->
-            columns |> List.sortBy (\c -> c.kind |> String.toLower |> Column.withNullable c)
+            columns |> List.sortBy (\( c, _ ) -> c.kind |> String.toLower |> ErdColumn.withNullable c)
 
 
 sortOffset : Bool -> Float

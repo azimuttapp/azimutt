@@ -8,6 +8,7 @@ import Expect
 import Libs.Dict as Dict
 import Libs.Nel as Nel
 import Models.Project.Column exposing (Column)
+import Models.Project.ColumnPath as ColumnPath
 import Models.Project.Comment exposing (Comment)
 import Models.Project.PrimaryKey exposing (PrimaryKey)
 import Models.Project.Relation exposing (Relation)
@@ -76,8 +77,8 @@ users =
                 , { column | index = 1, name = "slug", kind = "varchar", comment = Just { comment | text = "used in url" } }
                 , { column | index = 2, name = "role", kind = Conf.schema.column.unknownType }
                 ]
-        , primaryKey = Just { primaryKey | columns = Nel.from "id" }
-        , uniques = [ { unique | name = "users_slug_unique_az", columns = Nel.from "slug" } ]
+        , primaryKey = Just { primaryKey | columns = "id" |> ColumnPath.fromString |> Nel.from }
+        , uniques = [ { unique | name = "users_slug_unique_az", columns = "slug" |> ColumnPath.fromString |> Nel.from } ]
         , comment = Just { comment | text = "user list" }
     }
 
@@ -119,8 +120,8 @@ loginsFk : Relation
 loginsFk =
     { id = ( ( ( Conf.schema.empty, "logins" ), "user_id" ), ( ( "", "users" ), "id" ) )
     , name = "logins_user_id_fk_az"
-    , src = { table = ( Conf.schema.empty, "logins" ), column = "user_id" }
-    , ref = { table = ( Conf.schema.empty, "users" ), column = "id" }
+    , src = { table = ( Conf.schema.empty, "logins" ), column = "user_id" |> ColumnPath.fromString }
+    , ref = { table = ( Conf.schema.empty, "users" ), column = "id" |> ColumnPath.fromString }
     , origins = [ { id = source, lines = [] } ]
     }
 
@@ -151,17 +152,17 @@ table =
 
 column : Column
 column =
-    { index = 0, name = "", kind = "", nullable = False, default = Nothing, comment = Nothing, origins = [ { id = source, lines = [] } ] }
+    { index = 0, name = "", kind = "", nullable = False, default = Nothing, comment = Nothing, columns = Nothing, origins = [ { id = source, lines = [] } ] }
 
 
 primaryKey : PrimaryKey
 primaryKey =
-    { name = Nothing, columns = Nel.from "", origins = [ { id = source, lines = [] } ] }
+    { name = Nothing, columns = "" |> ColumnPath.fromString |> Nel.from, origins = [ { id = source, lines = [] } ] }
 
 
 unique : Unique
 unique =
-    { name = "", columns = Nel.from "", definition = Nothing, origins = [ { id = source, lines = [] } ] }
+    { name = "", columns = "" |> ColumnPath.fromString |> Nel.from, definition = Nothing, origins = [ { id = source, lines = [] } ] }
 
 
 comment : Comment
