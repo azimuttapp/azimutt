@@ -1,5 +1,6 @@
 module PagesComponents.Organization_.Project_.Models.Notes exposing (Notes, NotesKey, NotesRef(..), asKey, columnKey, fromColumn, fromKey, fromTable, tableKey)
 
+import Models.Project.ColumnPath as ColumnPath
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
 import Models.Project.TableId as TableId exposing (TableId)
 
@@ -45,7 +46,7 @@ fromKey key =
             TableNote ( schema, table )
 
         schema :: table :: column :: [] ->
-            ColumnNote { table = ( schema, table ), column = column }
+            ColumnNote { table = ( schema, table ), column = ColumnPath.fromString column }
 
         _ ->
             Invalid key

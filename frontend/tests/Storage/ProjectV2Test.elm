@@ -14,6 +14,7 @@ import Models.Project as Project exposing (Project)
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.Check as Check
 import Models.Project.Column as Column exposing (Column)
+import Models.Project.ColumnPath as ColumnPath
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
 import Models.Project.Comment as Comment exposing (Comment)
 import Models.Project.CustomType as CustomType
@@ -116,7 +117,7 @@ project0Json =
 
 tables1 : Dict TableId Table
 tables1 =
-    Dict.fromListMap .id [ Table ( "public", "users" ) "public" "users" False (Dict.fromListMap .name [ Column 0 "id" "int" False Nothing Nothing [] ]) Nothing [] [] [] Nothing [] ]
+    Dict.fromListMap .id [ Table ( "public", "users" ) "public" "users" False (Dict.fromListMap .name [ Column 0 "id" "int" False Nothing Nothing Nothing [] ]) Nothing [] [] [] Nothing [] ]
 
 
 project1 : Project
@@ -134,7 +135,7 @@ project1 =
     , usedLayout = "initial layout"
     , layouts =
         Dict.fromList
-            [ ( "initial layout", Layout (CanvasProps (canvasPos 10 20) 0.75) [ TableProps ( "public", "users" ) (gridPos 30 40) Size.zeroCanvas Tw.red [ "id" ] True False False ] [] (time 1200) (time 1201) )
+            [ ( "initial layout", Layout (CanvasProps (canvasPos 10 20) 0.75) [ TableProps ( "public", "users" ) (gridPos 30 40) Size.zeroCanvas Tw.red [ ColumnPath.fromString "id" ] True False False ] [] (time 1200) (time 1201) )
             , ( "empty", Layout (CanvasProps Position.zeroDiagram 0.5) [] [] (time 1202) (time 1203) )
             ]
     , settings = ProjectSettings (FindPathSettings 4 "" "") defaultSchema [] False "" (HiddenColumns "created_.+, updated_.+" 15 False False) OrderByProperty Bezier True False
@@ -149,7 +150,7 @@ project1 =
 project1Json : String
 project1Json =
     """{"id":"00000000-0000-0000-0000-000000000000","slug":"00000000-0000-0000-0000-000000000000","name":"Project 0","""
-        ++ """"sources":[{"id":"00000000-0000-0000-0000-000000000001","name":"source 1","kind":{"kind":"SqlLocalFile","name":"structure.sql","size":10000,"modified":200},"content":[],"tables":[{"schema":"public","table":"users","columns":[{"name":"id","type":"int","origins":[]}],"origins":[]}],"relations":[],"fromSample":"basic","createdAt":1100,"updatedAt":1101}],"""
+        ++ """"sources":[{"id":"00000000-0000-0000-0000-000000000001","name":"source 1","kind":{"kind":"SqlLocalFile","name":"structure.sql","size":10000,"modified":200},"content":[],"tables":[{"schema":"public","table":"users","columns":[{"name":"id","type":"int"}]}],"relations":[],"fromSample":"basic","createdAt":1100,"updatedAt":1101}],"""
         ++ """"usedLayout":"initial layout","layouts":{"empty":{"canvas":{"position":{"left":0,"top":0},"zoom":0.5},"tables":[],"createdAt":1202,"updatedAt":1203},"initial layout":{"canvas":{"position":{"left":10,"top":20},"zoom":0.75},"tables":[{"id":"public.users","position":{"left":30,"top":40},"size":{"width":0,"height":0},"color":"red","columns":["id"],"selected":true}],"createdAt":1200,"updatedAt":1201}},"""
         ++ """"settings":{"findPath":{"maxPathLength":4},"defaultSchema":"public"},"storage":"local","visibility":"none","createdAt":1000,"updatedAt":1001,"version":2}"""
 
@@ -163,10 +164,10 @@ tables2 =
           , view = False
           , columns =
                 Dict.fromListMap .name
-                    [ Column 0 "id" "int" False Nothing Nothing []
-                    , Column 1 "name" "varchar" True Nothing Nothing []
+                    [ Column 0 "id" "int" False Nothing Nothing Nothing []
+                    , Column 1 "name" "varchar" True Nothing Nothing Nothing []
                     ]
-          , primaryKey = Just (PrimaryKey (Just "users_pk") (Nel "id" []) [])
+          , primaryKey = Just (PrimaryKey (Just "users_pk") (Nel (ColumnPath.fromString "id") []) [])
           , uniques = []
           , indexes = []
           , checks = []
@@ -179,14 +180,14 @@ tables2 =
           , view = False
           , columns =
                 Dict.fromListMap .name
-                    [ Column 0 "user_id" "int" False Nothing Nothing [ Origin src1 [ 14 ] ]
-                    , Column 1 "login" "varchar" False Nothing Nothing [ Origin src1 [ 15 ] ]
-                    , Column 2 "pass" "varchar" False Nothing (Just (Comment "Encrypted field" [])) [ Origin src1 [ 16 ] ]
-                    , Column 3 "role" "varchar" True (Just "guest") Nothing [ Origin src1 [ 17 ] ]
+                    [ Column 0 "user_id" "int" False Nothing Nothing Nothing [ Origin src1 [ 14 ] ]
+                    , Column 1 "login" "varchar" False Nothing Nothing Nothing [ Origin src1 [ 15 ] ]
+                    , Column 2 "pass" "varchar" False Nothing (Just (Comment "Encrypted field" [])) Nothing [ Origin src1 [ 16 ] ]
+                    , Column 3 "role" "varchar" True (Just "guest") Nothing Nothing [ Origin src1 [ 17 ] ]
                     ]
           , primaryKey = Nothing
-          , uniques = [ Unique "unique_login" (Nel "login" []) (Just "(login)") [] ]
-          , indexes = [ Index "role_idx" (Nel "role" []) (Just "(role)") [] ]
+          , uniques = [ Unique "unique_login" (Nel (ColumnPath.fromString "login") []) (Just "(login)") [] ]
+          , indexes = [ Index "role_idx" (Nel (ColumnPath.fromString "role") []) (Just "(role)") [] ]
           , checks = []
           , comment = Just (Comment "To allow users to login" [])
           , origins = [ Origin src1 [ 13, 14, 15, 16, 17, 18 ] ]
@@ -196,7 +197,7 @@ tables2 =
 
 relations2 : List Relation
 relations2 =
-    [ Relation.new "creds_user_id" (ColumnRef ( "public", "creds" ) "user_id") (ColumnRef ( "public", "users" ) "id") [] ]
+    [ Relation.new "creds_user_id" (ColumnRef ( "public", "creds" ) (ColumnPath.fromString "user_id")) (ColumnRef ( "public", "users" ) (ColumnPath.fromString "id")) [] ]
 
 
 project2 : Project
@@ -247,9 +248,9 @@ project2 =
     , usedLayout = "users"
     , layouts =
         Dict.fromList
-            [ ( "initial layout", Layout (CanvasProps (canvasPos 10 20) 0.75) [ TableProps ( "public", "users" ) (gridPos 30 40) Size.zeroCanvas Tw.red [ "id" ] True False False ] [] (time 1200) (time 1201) )
+            [ ( "initial layout", Layout (CanvasProps (canvasPos 10 20) 0.75) [ TableProps ( "public", "users" ) (gridPos 30 40) Size.zeroCanvas Tw.red [ ColumnPath.fromString "id" ] True False False ] [] (time 1200) (time 1201) )
             , ( "empty", Layout (CanvasProps Position.zeroDiagram 0.5) [] [] (time 1202) (time 1203) )
-            , ( "users", Layout (CanvasProps (canvasPos 120 320) 1.5) [ TableProps ( "public", "users" ) (gridPos 90 100) Size.zeroCanvas Tw.red [ "id", "name" ] True False False ] [] (time 1202) (time 1203) )
+            , ( "users", Layout (CanvasProps (canvasPos 120 320) 1.5) [ TableProps ( "public", "users" ) (gridPos 90 100) Size.zeroCanvas Tw.red [ ColumnPath.fromString "id", ColumnPath.fromString "name" ] True False False ] [] (time 1202) (time 1203) )
             ]
     , settings = ProjectSettings (FindPathSettings 4 "users" "created_by") defaultSchema [] False "" (HiddenColumns "created_.+, updated_.+" 15 False False) OrderByProperty Bezier True False
     , storage = ProjectStorage.Local
@@ -264,9 +265,9 @@ project2Json : String
 project2Json =
     """{"id":"00000000-0000-0000-0000-000000000000","slug":"00000000-0000-0000-0000-000000000000","name":"Project 0","""
         ++ """"sources":[{"id":"00000000-0000-0000-0000-000000000001","name":"source 1","kind":{"kind":"SqlLocalFile","name":"structure.sql","size":10000,"modified":200},"content":["","","","","","","","","","","CREATE TABLE users","  (id int NOT NULL, name varchar);","","CREATE TABLE creds (","  user_id int NOT NULL,","  login varchar NOT NULL,","  pass varchar NOT NULL,","  role varchar",");"],"tables":["""
-        ++ """{"schema":"public","table":"creds","columns":[{"name":"user_id","type":"int","origins":[{"id":"00000000-0000-0000-0000-000000000001","lines":[14]}]},{"name":"login","type":"varchar","origins":[{"id":"00000000-0000-0000-0000-000000000001","lines":[15]}]},{"name":"pass","type":"varchar","comment":{"text":"Encrypted field","origins":[]},"origins":[{"id":"00000000-0000-0000-0000-000000000001","lines":[16]}]},{"name":"role","type":"varchar","nullable":true,"default":"guest","origins":[{"id":"00000000-0000-0000-0000-000000000001","lines":[17]}]}],"uniques":[{"name":"unique_login","columns":["login"],"definition":"(login)","origins":[]}],"indexes":[{"name":"role_idx","columns":["role"],"definition":"(role)","origins":[]}],"comment":{"text":"To allow users to login","origins":[]},"origins":[{"id":"00000000-0000-0000-0000-000000000001","lines":[13,14,15,16,17,18]}]},"""
-        ++ """{"schema":"public","table":"users","columns":[{"name":"id","type":"int","origins":[]},{"name":"name","type":"varchar","nullable":true,"origins":[]}],"primaryKey":{"name":"users_pk","columns":["id"],"origins":[]},"origins":[{"id":"00000000-0000-0000-0000-000000000001","lines":[10,11]}]}],"""
-        ++ """"relations":[{"name":"creds_user_id","src":{"table":"public.creds","column":"user_id"},"ref":{"table":"public.users","column":"id"},"origins":[]}],"createdAt":1100,"updatedAt":1101}],"""
+        ++ """{"schema":"public","table":"creds","columns":[{"name":"user_id","type":"int","origins":[{"id":"00000000-0000-0000-0000-000000000001","lines":[14]}]},{"name":"login","type":"varchar","origins":[{"id":"00000000-0000-0000-0000-000000000001","lines":[15]}]},{"name":"pass","type":"varchar","comment":{"text":"Encrypted field"},"origins":[{"id":"00000000-0000-0000-0000-000000000001","lines":[16]}]},{"name":"role","type":"varchar","nullable":true,"default":"guest","origins":[{"id":"00000000-0000-0000-0000-000000000001","lines":[17]}]}],"uniques":[{"name":"unique_login","columns":["login"],"definition":"(login)"}],"indexes":[{"name":"role_idx","columns":["role"],"definition":"(role)"}],"comment":{"text":"To allow users to login"},"origins":[{"id":"00000000-0000-0000-0000-000000000001","lines":[13,14,15,16,17,18]}]},"""
+        ++ """{"schema":"public","table":"users","columns":[{"name":"id","type":"int"},{"name":"name","type":"varchar","nullable":true}],"primaryKey":{"name":"users_pk","columns":["id"]},"origins":[{"id":"00000000-0000-0000-0000-000000000001","lines":[10,11]}]}],"""
+        ++ """"relations":[{"name":"creds_user_id","src":{"table":"public.creds","column":"user_id"},"ref":{"table":"public.users","column":"id"}}],"createdAt":1100,"updatedAt":1101}],"""
         ++ """"usedLayout":"users","layouts":{"""
         ++ """"empty":{"canvas":{"position":{"left":0,"top":0},"zoom":0.5},"tables":[],"createdAt":1202,"updatedAt":1203},"""
         ++ """"initial layout":{"canvas":{"position":{"left":10,"top":20},"zoom":0.75},"tables":[{"id":"public.users","position":{"left":30,"top":40},"size":{"width":0,"height":0},"color":"red","columns":["id"],"selected":true}],"createdAt":1200,"updatedAt":1201},"""

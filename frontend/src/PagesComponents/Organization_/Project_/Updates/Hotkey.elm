@@ -225,7 +225,7 @@ nextDetails model =
     onDetails model
         (\view -> view.schema.next |> Maybe.map DetailsSidebar.ShowSchema)
         (\view -> view.table.next |> Maybe.map (.id >> DetailsSidebar.ShowTable))
-        (\view -> view.column.next |> Maybe.map (\col -> { table = view.table.item.id, column = col.name } |> DetailsSidebar.ShowColumn))
+        (\view -> view.column.next |> Maybe.map (\col -> { table = view.table.item.id, column = col.path } |> DetailsSidebar.ShowColumn))
 
 
 prevDetails : Model -> Maybe (Cmd Msg)
@@ -233,7 +233,7 @@ prevDetails model =
     onDetails model
         (\view -> view.schema.prev |> Maybe.map DetailsSidebar.ShowSchema)
         (\view -> view.table.prev |> Maybe.map (.id >> DetailsSidebar.ShowTable))
-        (\view -> view.column.prev |> Maybe.map (\col -> { table = view.table.item.id, column = col.name } |> DetailsSidebar.ShowColumn))
+        (\view -> view.column.prev |> Maybe.map (\col -> { table = view.table.item.id, column = col.path } |> DetailsSidebar.ShowColumn))
 
 
 upDetails : Model -> Maybe (Cmd Msg)

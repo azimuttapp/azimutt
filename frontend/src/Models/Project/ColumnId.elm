@@ -1,20 +1,26 @@
-module Models.Project.ColumnId exposing (ColumnId, from, show)
+module Models.Project.ColumnId exposing (ColumnId, from, fromRef, show)
 
-import Models.Project.ColumnName as ColumnName exposing (ColumnName)
+import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath, ColumnPathStr)
 import Models.Project.ColumnRef exposing (ColumnRefLike)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.TableId as TableId exposing (TableId)
 
 
 type alias ColumnId =
-    ( TableId, ColumnName )
+    -- Like ColumnRef but comparable (tuple instead of record)
+    ( TableId, ColumnPathStr )
 
 
 show : SchemaName -> ColumnId -> String
 show defaultSchema ( table, column ) =
-    TableId.show defaultSchema table |> ColumnName.withName column
+    TableId.show defaultSchema table |> ColumnPath.withName (ColumnPath.fromString column)
 
 
-from : ColumnRefLike x -> ColumnId
-from ref =
-    ( ref.table, ref.column )
+from : { t | id : TableId } -> { c | path : ColumnPath } -> ColumnId
+from table column =
+    ( table.id, ColumnPath.toString column.path )
+
+
+fromRef : ColumnRefLike x -> ColumnId
+fromRef ref =
+    ( ref.table, ColumnPath.toString ref.column )

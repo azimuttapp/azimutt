@@ -6,9 +6,9 @@ import Libs.Models.Size exposing (Size)
 import Models.Position as Position
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.Layout exposing (Layout)
-import Models.Project.Relation exposing (Relation)
 import Models.Project.TableId exposing (TableId)
 import Models.Size as Size
+import PagesComponents.Organization_.Project_.Models.ErdRelation exposing (ErdRelation)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout as ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
 import PagesComponents.Organization_.Project_.Models.MemoId exposing (MemoId)
@@ -35,7 +35,7 @@ empty now =
     }
 
 
-create : Dict TableId (List Relation) -> Layout -> ErdLayout
+create : Dict TableId (List ErdRelation) -> Layout -> ErdLayout
 create relationsByTable layout =
     { canvas = layout.canvas
     , tables = layout.tables |> List.map (\t -> t |> ErdTableLayout.create (layout.tables |> List.map .id |> Set.fromList) (relationsByTable |> Dict.getOrElse t.id []))

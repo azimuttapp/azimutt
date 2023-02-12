@@ -1,4 +1,4 @@
-port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProject, createProjectTmp, deleteProject, downloadFile, fireworks, focus, fullscreen, getColumnStats, getLegacyProjects, getProject, getTableStats, listenHotkeys, mouseDown, moveProjectTo, observeLayout, observeSize, observeTableSize, observeTablesSize, onJsMessage, projectDirty, readLocalFile, scrollTo, setMeta, toast, track, unhandledJsMsgError, updateProject, updateProjectTmp)
+port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProject, createProjectTmp, deleteProject, downloadFile, fireworks, focus, fullscreen, getColumnStats, getLegacyProjects, getProject, getTableStats, listenHotkeys, mouseDown, moveProjectTo, observeLayout, observeMemoSize, observeSize, observeTableSize, observeTablesSize, onJsMessage, projectDirty, readLocalFile, scrollTo, setMeta, toast, track, unhandledJsMsgError, updateProject, updateProjectTmp)
 
 import Dict exposing (Dict)
 import FileValue exposing (File)
@@ -30,6 +30,7 @@ import Models.Route as Route exposing (Route)
 import Models.Size as Size
 import Models.TrackEvent as TrackEvent exposing (TrackEvent)
 import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
+import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
 import PagesComponents.Organization_.Project_.Models.MemoId as MemoId exposing (MemoId)
 import Storage.ProjectV2 exposing (decodeProject)
 
@@ -157,6 +158,11 @@ observeTableSize id =
 observeTablesSize : List TableId -> Cmd msg
 observeTablesSize ids =
     observeSizes (List.map TableId.toHtmlId ids)
+
+
+observeMemoSize : MemoId -> Cmd msg
+observeMemoSize id =
+    observeSizes [ MemoId.toHtmlId id ]
 
 
 observeLayout : ErdLayout -> Cmd msg

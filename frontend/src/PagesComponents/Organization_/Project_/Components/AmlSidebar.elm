@@ -22,6 +22,7 @@ import Libs.Tailwind as Tw exposing (focus)
 import Libs.Task as T
 import Models.Position as Position
 import Models.Project.ColumnId as ColumnId
+import Models.Project.ColumnPath as ColumnPath
 import Models.Project.Source as Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.SourceKind as SourceKind
@@ -31,6 +32,7 @@ import PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, AmlSi
 import PagesComponents.Organization_.Project_.Models.CursorMode exposing (CursorMode)
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
+import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint(..))
 import PagesComponents.Organization_.Project_.Models.ShowColumns as ShowColumns
@@ -219,11 +221,11 @@ view erd model =
         warnings =
             selectedSource
                 |> Maybe.mapOrElse .relations []
-                |> List.concatMap (\r -> [ ColumnId.from r.src, ColumnId.from r.ref ])
+                |> List.concatMap (\r -> [ ColumnId.fromRef r.src, ColumnId.fromRef r.ref ])
                 |> List.unique
                 |> List.filterMap
                     (\( table, column ) ->
-                        case erd |> Erd.getTable table |> Maybe.map (\t -> t.columns |> Dict.get column) of
+                        case erd |> Erd.getTable table |> Maybe.map (ErdTable.getColumn (ColumnPath.fromString column)) of
                             Just (Just _) ->
                                 Nothing
 

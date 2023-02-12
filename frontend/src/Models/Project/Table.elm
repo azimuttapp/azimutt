@@ -1,4 +1,4 @@
-module Models.Project.Table exposing (Table, TableLike, clearOrigins, decode, encode, inChecks, inIndexes, inPrimaryKey, inUniques, merge, new)
+module Models.Project.Table exposing (Table, TableLike, clearOrigins, decode, encode, getColumn, merge, new)
 
 import Dict exposing (Dict)
 import Json.Decode as Decode
@@ -12,6 +12,7 @@ import Libs.Nel as Nel
 import Models.Project.Check as Check exposing (Check)
 import Models.Project.Column as Column exposing (Column, ColumnLike)
 import Models.Project.ColumnName exposing (ColumnName)
+import Models.Project.ColumnPath exposing (ColumnPath)
 import Models.Project.Comment as Comment exposing (Comment)
 import Models.Project.Index as Index exposing (Index)
 import Models.Project.Origin as Origin exposing (Origin)
@@ -59,31 +60,6 @@ new schema name view columns primaryKey uniques indexes checks comment origins =
     Table ( schema, name ) schema name view columns primaryKey uniques indexes checks comment origins
 
 
-inPrimaryKey : TableLike x y -> ColumnName -> Maybe PrimaryKey
-inPrimaryKey table column =
-    table.primaryKey |> Maybe.filter (\{ columns } -> columns |> Nel.toList |> hasColumn column)
-
-
-inUniques : TableLike x y -> ColumnName -> List Unique
-inUniques table column =
-    table.uniques |> List.filter (\u -> u.columns |> Nel.toList |> hasColumn column)
-
-
-inIndexes : TableLike x y -> ColumnName -> List Index
-inIndexes table column =
-    table.indexes |> List.filter (\i -> i.columns |> Nel.toList |> hasColumn column)
-
-
-inChecks : TableLike x y -> ColumnName -> List Check
-inChecks table column =
-    table.checks |> List.filter (\i -> i.columns |> hasColumn column)
-
-
-hasColumn : ColumnName -> List ColumnName -> Bool
-hasColumn column columns =
-    columns |> List.any (\c -> c == column)
-
-
 merge : Table -> Table -> Table
 merge t1 t2 =
     { id = t1.id
@@ -98,6 +74,13 @@ merge t1 t2 =
     , comment = Maybe.merge Comment.merge t1.comment t2.comment
     , origins = t1.origins ++ t2.origins
     }
+
+
+getColumn : ColumnPath -> Table -> Maybe Column
+getColumn path table =
+    table.columns
+        |> Dict.get path.head
+        |> Maybe.andThen (\col -> path.tail |> Nel.fromList |> Maybe.mapOrElse (\next -> Column.getColumn next col) (Just col))
 
 
 clearOrigins : Table -> Table
@@ -124,7 +107,7 @@ encode value =
         , ( "indexes", value.indexes |> Encode.withDefault (Encode.list Index.encode) [] )
         , ( "checks", value.checks |> Encode.withDefault (Encode.list Check.encode) [] )
         , ( "comment", value.comment |> Encode.maybe Comment.encode )
-        , ( "origins", value.origins |> Encode.list Origin.encode )
+        , ( "origins", value.origins |> Origin.encodeList )
         ]
 
 

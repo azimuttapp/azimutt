@@ -39,69 +39,11 @@ jsonSchema =
           "schema": {"type": "string"},
           "table": {"type": "string"},
           "view": {"type": "boolean"},
-          "columns": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "required": ["name", "type"],
-              "additionalProperties": false,
-              "properties": {
-                "name": {"type": "string"},
-                "type": {"type": "string"},
-                "nullable": {"type": "boolean"},
-                "default": {"type": "string"},
-                "comment": {"type": "string"}
-              }
-            }
-          },
-          "primaryKey": {
-            "type": "object",
-            "required": ["columns"],
-            "additionalProperties": false,
-            "properties": {
-              "name": {"type": "string"},
-              "columns": {"type": "array", "items": {"type": "string"}}
-            }
-          },
-          "uniques": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "required": ["columns"],
-              "additionalProperties": false,
-              "properties": {
-                "name": {"type": "string"},
-                "columns": {"type": "array", "items": {"type": "string"}},
-                "definition": {"type": "string"}
-              }
-            }
-          },
-          "indexes": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "required": ["columns"],
-              "additionalProperties": false,
-              "properties": {
-                "name": {"type": "string"},
-                "columns": {"type": "array", "items": {"type": "string"}},
-                "definition": {"type": "string"}
-              }
-            }
-          },
-          "checks": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "required": ["columns"],
-              "additionalProperties": false,
-              "properties": {
-                "name": {"type": "string"},
-                "columns": {"type": "array", "items": {"type": "string"}},
-                "predicate": {"type": "string"}
-              }
-            }
-          },
+          "columns": {"type": "array", "items": {"$ref": "/column"}},
+          "primaryKey": {"$ref": "/primaryKey"},
+          "uniques": {"type": "array", "items": {"$ref": "/unique"}},
+          "indexes": {"type": "array", "items": {"$ref": "/index"}},
+          "checks": {"type": "array", "items": {"$ref": "/check"}},
           "comment": {"type": "string"}
         }
       }
@@ -114,26 +56,8 @@ jsonSchema =
         "additionalProperties": false,
         "properties": {
           "name": {"type": "string"},
-          "src": {
-            "type": "object",
-            "required": ["schema", "table", "column"],
-            "additionalProperties": false,
-            "properties": {
-              "schema": {"type": "string"},
-              "table": {"type": "string"},
-              "column": {"type": "string"}
-            }
-          },
-          "ref": {
-            "type": "object",
-            "required": ["schema", "table", "column"],
-            "additionalProperties": false,
-            "properties": {
-              "schema": {"type": "string"},
-              "table": {"type": "string"},
-              "column": {"type": "string"}
-            }
-          }
+          "src": {"$ref": "/columnRef"},
+          "ref": {"$ref": "/columnRef"}
         }
       }
     },
@@ -153,6 +77,76 @@ jsonSchema =
           {"required": ["values"]},
           {"required": ["definition"]}
         ]
+      }
+    }
+  },
+  "$defs": {
+    "column": {
+      "$id": "/column",
+      "type": "object",
+      "required": ["name", "type"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {"type": "string"},
+        "type": {"type": "string"},
+        "nullable": {"type": "boolean"},
+        "default": {"type": "string"},
+        "comment": {"type": "string"},
+        "columns": {"type": "array", "items": {"$ref": "/column"}}
+      }
+    },
+    "primaryKey": {
+      "$id": "/primaryKey",
+      "type": "object",
+      "required": ["columns"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {"type": "string"},
+        "columns": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "unique": {
+      "$id": "/unique",
+      "type": "object",
+      "required": ["columns"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {"type": "string"},
+        "columns": {"type": "array", "items": {"type": "string"}},
+        "definition": {"type": "string"}
+      }
+    },
+    "index": {
+      "$id": "/index",
+      "type": "object",
+      "required": ["columns"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {"type": "string"},
+        "columns": {"type": "array", "items": {"type": "string"}},
+        "definition": {"type": "string"}
+      }
+    },
+    "check": {
+      "$id": "/check",
+      "type": "object",
+      "required": ["columns"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {"type": "string"},
+        "columns": {"type": "array", "items": {"type": "string"}},
+        "predicate": {"type": "string"}
+      }
+    },
+    "columnRef": {
+      "$id": "/columnRef",
+      "type": "object",
+      "required": ["schema", "table", "column"],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {"type": "string"},
+        "table": {"type": "string"},
+        "column": {"type": "string"}
       }
     }
   }

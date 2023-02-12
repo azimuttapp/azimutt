@@ -1,6 +1,6 @@
-module DataSources.JsonMiner.Models.JsonTable exposing (JsonCheck, JsonColumn, JsonIndex, JsonPrimaryKey, JsonTable, JsonUnique, decode)
+module DataSources.JsonMiner.Models.JsonTable exposing (JsonCheck, JsonColumn, JsonIndex, JsonNestedColumns(..), JsonPrimaryKey, JsonTable, JsonUnique, decode, decodeJsonColumn)
 
-import Json.Decode as Decode
+import Json.Decode as Decode exposing (Decoder)
 import Libs.Json.Decode as Decode
 import Libs.Nel exposing (Nel)
 
@@ -24,7 +24,12 @@ type alias JsonColumn =
     , nullable : Maybe Bool
     , default : Maybe String
     , comment : Maybe String
+    , columns : Maybe JsonNestedColumns
     }
+
+
+type JsonNestedColumns
+    = JsonNestedColumns (Nel JsonColumn)
 
 
 type alias JsonPrimaryKey =
@@ -54,7 +59,7 @@ type alias JsonCheck =
     }
 
 
-decode : Decode.Decoder JsonTable
+decode : Decoder JsonTable
 decode =
     Decode.map9 JsonTable
         (Decode.field "schema" Decode.string)
@@ -68,24 +73,32 @@ decode =
         (Decode.maybeField "comment" Decode.string)
 
 
-decodeJsonColumn : Decode.Decoder JsonColumn
+decodeJsonColumn : Decoder JsonColumn
 decodeJsonColumn =
-    Decode.map5 JsonColumn
+    -- exposed for tests
+    Decode.map6 JsonColumn
         (Decode.field "name" Decode.string)
         (Decode.field "type" Decode.string)
         (Decode.maybeField "nullable" Decode.bool)
         (Decode.maybeField "default" Decode.string)
         (Decode.maybeField "comment" Decode.string)
+        (Decode.maybeField "columns" decodeJsonNestedColumns)
 
 
-decodeJsonPrimaryKey : Decode.Decoder JsonPrimaryKey
+decodeJsonNestedColumns : Decoder JsonNestedColumns
+decodeJsonNestedColumns =
+    Decode.map JsonNestedColumns
+        (Decode.nel (Decode.lazy (\_ -> decodeJsonColumn)))
+
+
+decodeJsonPrimaryKey : Decoder JsonPrimaryKey
 decodeJsonPrimaryKey =
     Decode.map2 JsonPrimaryKey
         (Decode.maybeField "name" Decode.string)
         (Decode.field "columns" (Decode.nel Decode.string))
 
 
-decodeJsonUnique : Decode.Decoder JsonUnique
+decodeJsonUnique : Decoder JsonUnique
 decodeJsonUnique =
     Decode.map3 JsonUnique
         (Decode.maybeField "name" Decode.string)
@@ -93,7 +106,7 @@ decodeJsonUnique =
         (Decode.maybeField "definition" Decode.string)
 
 
-decodeJsonIndex : Decode.Decoder JsonIndex
+decodeJsonIndex : Decoder JsonIndex
 decodeJsonIndex =
     Decode.map3 JsonIndex
         (Decode.maybeField "name" Decode.string)
@@ -101,7 +114,7 @@ decodeJsonIndex =
         (Decode.maybeField "definition" Decode.string)
 
 
-decodeJsonCheck : Decode.Decoder JsonCheck
+decodeJsonCheck : Decoder JsonCheck
 decodeJsonCheck =
     Decode.map3 JsonCheck
         (Decode.maybeField "name" Decode.string)

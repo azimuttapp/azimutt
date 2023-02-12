@@ -13,7 +13,7 @@ import Libs.Parser as Parser
 import Libs.Result as Result
 import Models.Project.Check exposing (Check)
 import Models.Project.Column exposing (Column)
-import Models.Project.ColumnName exposing (ColumnName)
+import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.Comment exposing (Comment)
 import Models.Project.CustomType exposing (CustomType)
 import Models.Project.CustomTypeId exposing (CustomTypeId)
@@ -46,7 +46,7 @@ type alias AmlSchemaError =
     }
 
 
-buildSource : SourceInfo -> Array String -> Result (List DeadEnd) (List AmlStatement) -> ( List AmlSchemaError, Source, Dict TableId (List ColumnName) )
+buildSource : SourceInfo -> Array String -> Result (List DeadEnd) (List AmlStatement) -> ( List AmlSchemaError, Source, Dict TableId (List ColumnPath) )
 buildSource source content result =
     let
         schema : AmlSchema
@@ -56,7 +56,7 @@ buildSource source content result =
                     (\err -> AmlSchema Dict.empty [] Dict.empty (err |> List.map (\e -> { row = e.row, col = e.col, problem = Parser.problemToString e.problem })))
                     (List.foldl (evolve source.id) (AmlSchema Dict.empty [] Dict.empty []))
 
-        orderedColumns : Dict TableId (List ColumnName)
+        orderedColumns : Dict TableId (List ColumnPath)
         orderedColumns =
             result |> Result.fold (\_ -> Dict.empty) (List.foldl tablesColumnsOrdered Dict.empty)
     in
@@ -77,11 +77,11 @@ buildSource source content result =
     )
 
 
-tablesColumnsOrdered : AmlStatement -> Dict TableId (List ColumnName) -> Dict TableId (List ColumnName)
+tablesColumnsOrdered : AmlStatement -> Dict TableId (List ColumnPath) -> Dict TableId (List ColumnPath)
 tablesColumnsOrdered statement tables =
     case statement of
         AmlTableStatement table ->
-            tables |> Dict.insert (createTableId table) (table.columns |> List.map .name)
+            tables |> Dict.insert (createTableId table) (table.columns |> List.map (.name >> ColumnPath.fromString))
 
         AmlRelationStatement _ ->
             tables
@@ -152,6 +152,7 @@ createColumn source index column =
     , nullable = column.nullable
     , default = column.default
     , comment = column.notes |> Maybe.map (createComment source)
+    , columns = Nothing -- nested columns not supported in AML
     , origins = [ { id = source, lines = [] } ]
     }
 
@@ -165,13 +166,13 @@ createPrimaryKey source columns =
         |> Maybe.map
             (\cols ->
                 { name = Nothing
-                , columns = cols
+                , columns = cols |> Nel.map ColumnPath.fromString
                 , origins = [ { id = source, lines = [] } ]
                 }
             )
 
 
-createConstraint : (AmlColumn -> Maybe String) -> (AmlColumnName -> String) -> List AmlColumn -> List ( String, Nel ColumnName )
+createConstraint : (AmlColumn -> Maybe String) -> (AmlColumnName -> String) -> List AmlColumn -> List ( String, Nel ColumnPath )
 createConstraint get defaultName columns =
     columns
         |> List.filter (\c -> get c /= Nothing)
@@ -180,10 +181,10 @@ createConstraint get defaultName columns =
         |> List.foldl
             (\( name, cols ) acc ->
                 if name == "" then
-                    (cols |> List.map (\c -> ( defaultName c.name, Nel.from c.name ))) ++ acc
+                    (cols |> List.map (\c -> ( defaultName c.name, c.name |> ColumnPath.fromString |> Nel.from ))) ++ acc
 
                 else
-                    ( name, cols |> List.map .name |> Nel.fromList |> Maybe.withDefault (Nel.from name) ) :: acc
+                    ( name, cols |> List.map (.name >> ColumnPath.fromString) |> Nel.fromList |> Maybe.withDefault (name |> ColumnPath.fromString |> Nel.from) ) :: acc
             )
             []
 
@@ -207,9 +208,9 @@ createRelation source from to =
             ( to.schema |> Maybe.withDefault Conf.schema.empty, to.table )
     in
     { id = ( ( fromId, from.column ), ( toId, to.column ) )
-    , name = defaultRelName from.table from.column
-    , src = { table = fromId, column = from.column }
-    , ref = { table = toId, column = to.column }
+    , name = defaultRelName from.table (ColumnPath.fromString from.column)
+    , src = { table = fromId, column = ColumnPath.fromString from.column }
+    , ref = { table = toId, column = ColumnPath.fromString to.column }
     , origins = [ { id = source, lines = [] } ]
     }
 

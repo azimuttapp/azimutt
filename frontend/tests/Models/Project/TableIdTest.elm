@@ -31,7 +31,7 @@ suite =
     describe "Models.Project.TableId"
         [ describe "asHtmlId"
             [ test "round-trip" (\_ -> tableId2 |> TableId.toHtmlId |> TableId.fromHtmlId |> Expect.equal (Just tableId2))
-            , test "serialize" (\_ -> tableId2 |> TableId.toHtmlId |> Expect.equal "table-public-users")
+            , test "serialize" (\_ -> tableId2 |> TableId.toHtmlId |> Expect.equal "table#public#users")
             ]
         , describe "asString"
             [ test "round-trip" (\_ -> tableId2 |> TableId.toString |> TableId.fromString |> Expect.equal (Just tableId2))

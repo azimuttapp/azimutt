@@ -14,6 +14,7 @@ import Models.Project.CheckName exposing (CheckName)
 import Models.Project.Column exposing (Column)
 import Models.Project.ColumnIndex exposing (ColumnIndex)
 import Models.Project.ColumnName exposing (ColumnName)
+import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.ColumnType exposing (ColumnType)
 import Models.Project.ColumnValue exposing (ColumnValue)
@@ -102,27 +103,27 @@ table =
 
 column : ColumnIndex -> Fuzzer Column
 column i =
-    Fuzz.map6 (Column i) columnName columnType Fuzz.bool (Fuzz.maybe columnValue) (Fuzz.maybe comment) (Fuzz.listN 1 origin)
+    Fuzz.map7 (Column i) columnName columnType Fuzz.bool (Fuzz.maybe columnValue) (Fuzz.maybe comment) (Fuzz.constant Nothing) (Fuzz.listN 1 origin)
 
 
 primaryKey : Fuzzer PrimaryKey
 primaryKey =
-    Fuzz.map3 PrimaryKey (Fuzz.maybe primaryKeyName) (nelSmall columnName) (Fuzz.listN 1 origin)
+    Fuzz.map3 PrimaryKey (Fuzz.maybe primaryKeyName) (nelSmall columnPath) (Fuzz.listN 1 origin)
 
 
 unique : Fuzzer Unique
 unique =
-    Fuzz.map4 Unique uniqueName (nelSmall columnName) (Fuzz.maybe text) (Fuzz.listN 1 origin)
+    Fuzz.map4 Unique uniqueName (nelSmall columnPath) (Fuzz.maybe text) (Fuzz.listN 1 origin)
 
 
 index : Fuzzer Index
 index =
-    Fuzz.map4 Index indexName (nelSmall columnName) (Fuzz.maybe text) (Fuzz.listN 1 origin)
+    Fuzz.map4 Index indexName (nelSmall columnPath) (Fuzz.maybe text) (Fuzz.listN 1 origin)
 
 
 check : Fuzzer Check
 check =
-    Fuzz.map4 Check checkName (listSmall columnName) (Fuzz.maybe text) (Fuzz.listN 1 origin)
+    Fuzz.map4 Check checkName (listSmall columnPath) (Fuzz.maybe text) (Fuzz.listN 1 origin)
 
 
 comment : Fuzzer Comment
@@ -155,7 +156,7 @@ relation =
 
 columnRef : Fuzzer ColumnRef
 columnRef =
-    Fuzz.map2 ColumnRef tableId columnName
+    Fuzz.map2 ColumnRef tableId columnPath
 
 
 origin : Fuzzer Origin
@@ -175,7 +176,7 @@ canvasProps =
 
 tableProps : Fuzzer TableProps
 tableProps =
-    Fuzz.map7 (\id p -> TableProps id p Size.zeroCanvas) tableId positionGrid color (listSmall columnName) Fuzz.bool Fuzz.bool Fuzz.bool
+    Fuzz.map7 (\id p -> TableProps id p Size.zeroCanvas) tableId positionGrid color (listSmall columnPath) Fuzz.bool Fuzz.bool Fuzz.bool
 
 
 memo : Fuzzer Memo
@@ -261,6 +262,11 @@ tableName =
 columnName : Fuzzer ColumnName
 columnName =
     identifier
+
+
+columnPath : Fuzzer ColumnPath
+columnPath =
+    identifier |> Fuzz.map ColumnPath.fromString
 
 
 columnType : Fuzzer ColumnType

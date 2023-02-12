@@ -5,6 +5,7 @@ module Services.Lenses exposing
     , mapCanvas
     , mapChecks
     , mapCollapseTableColumns
+    , mapColumn
     , mapColumnBasicTypes
     , mapColumns
     , mapCommentM
@@ -87,6 +88,7 @@ module Services.Lenses exposing
     , setCollapsed
     , setColor
     , setColors
+    , setColumn
     , setColumnBasicTypes
     , setColumnOrder
     , setColumns
@@ -273,6 +275,16 @@ setColor =
 setColors : v -> { item | colors : v } -> { item | colors : v }
 setColors =
     set_ .colors (\value item -> { item | colors = value })
+
+
+setColumn : v -> { item | column : v } -> { item | column : v }
+setColumn =
+    set_ .column (\value item -> { item | column = value })
+
+
+mapColumn : (v -> v) -> { item | column : v } -> { item | column : v }
+mapColumn =
+    map_ .column setColumn
 
 
 setColumns : v -> { item | columns : v } -> { item | columns : v }

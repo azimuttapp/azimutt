@@ -8,7 +8,7 @@ import Libs.List as List
 import Libs.Regex as Regex
 import Libs.String as String
 import Models.ColumnOrder as ColumnOrder exposing (ColumnOrder)
-import Models.Project.ColumnName exposing (ColumnName)
+import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.FindPathSettings as FindPathSettings exposing (FindPathSettings)
 import Models.Project.SchemaName as SchemaName exposing (SchemaName)
 import Models.Project.TableId exposing (TableId)
@@ -75,19 +75,19 @@ removeTable removedTables =
     \( _, tableName ) -> names |> List.any (\name -> tableName == name || Regex.matchI ("^" ++ name ++ "$") tableName)
 
 
-removeColumn : String -> ColumnName -> Bool
+removeColumn : String -> ColumnPath -> Bool
 removeColumn hiddenColumns =
     let
-        names : List String
-        names =
-            hiddenColumns |> String.split "," |> List.map String.trim |> List.filterNot String.isEmpty
+        hidePaths : List ColumnPath
+        hidePaths =
+            hiddenColumns |> String.split "," |> List.map String.trim |> List.filterNot String.isEmpty |> List.map ColumnPath.fromString
     in
-    \column -> names |> List.any (\name -> column == name || Regex.matchI ("^" ++ name ++ "$") column)
+    \path -> hidePaths |> List.any (\hidePath -> path |> ColumnPath.startsWith hidePath)
 
 
 hideColumn : HiddenColumns -> ErdColumn -> Bool
 hideColumn hiddenColumns column =
-    removeColumn hiddenColumns.list column.name
+    removeColumn hiddenColumns.list column.path
         || (hiddenColumns.relations && (column |> hasRelation |> not))
         || (hiddenColumns.props && (column |> hasProperty |> not))
 

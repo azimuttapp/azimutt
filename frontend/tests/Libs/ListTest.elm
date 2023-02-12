@@ -1,5 +1,6 @@
 module Libs.ListTest exposing (..)
 
+import Dict
 import Expect
 import Libs.List as List
 import Test exposing (Test, describe, test)
@@ -44,6 +45,12 @@ suite =
             ]
         , describe "uniqueBy"
             [ test "get unique values" (\_ -> [ { id = 1, name = "a" }, { id = 2, name = "b" }, { id = 1, name = "c" } ] |> List.uniqueBy .id |> Expect.equal [ { id = 1, name = "a" }, { id = 2, name = "b" } ])
+            ]
+        , describe "groupBy"
+            [ test "group values in Dict" (\_ -> [ "abc", "bc", "add" ] |> List.groupBy String.length |> Expect.equal (Dict.fromList [ ( 2, [ "bc" ] ), ( 3, [ "abc", "add" ] ) ]))
+            ]
+        , describe "groupByL"
+            [ test "group values in List" (\_ -> [ "abc", "bc", "add" ] |> List.groupByL String.length |> Expect.equal [ ( 3, [ "abc", "add" ] ), ( 2, [ "bc" ] ) ])
             ]
         , describe "mergeMaybe"
             [ test "merge similar values"

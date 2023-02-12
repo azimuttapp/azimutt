@@ -7,7 +7,7 @@ import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Nel as Nel
 import Libs.Task as T
-import Models.Project.ColumnName exposing (ColumnName)
+import Models.Project.ColumnPath exposing (ColumnPath)
 import Models.Project.FindPathSettings exposing (FindPathSettings)
 import Models.Project.ProjectSettings as ProjectSettings
 import Models.Project.TableId as TableId exposing (TableId)
@@ -97,7 +97,7 @@ filterRelations settings relations =
         removeTable =
             ProjectSettings.removeTable settings.ignoredTables
 
-        removeColumn : ColumnName -> Bool
+        removeColumn : ColumnPath -> Bool
         removeColumn =
             ProjectSettings.removeColumn settings.ignoredColumns
     in

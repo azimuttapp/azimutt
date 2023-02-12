@@ -6,7 +6,7 @@ import Libs.Task as T
 import PagesComponents.Organization_.Project_.Models exposing (Msg(..), NotesDialog)
 import PagesComponents.Organization_.Project_.Models.Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
-import PagesComponents.Organization_.Project_.Models.ErdTableNotes as ErdTableNotes
+import PagesComponents.Organization_.Project_.Models.ErdNotes as ErdNotes
 import PagesComponents.Organization_.Project_.Models.Notes exposing (Notes)
 import PagesComponents.Organization_.Project_.Models.NotesMsg exposing (NotesMsg(..))
 import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirtyCmd)
@@ -31,7 +31,7 @@ handleNotes msg model =
             let
                 notes : Notes
                 notes =
-                    model.erd |> Maybe.andThen (.notes >> ErdTableNotes.get ref) |> Maybe.withDefault ""
+                    model.erd |> Maybe.andThen (.notes >> ErdNotes.get ref) |> Maybe.withDefault ""
             in
             ( model |> setEditNotes (Just { id = Conf.ids.editNotesDialog, ref = ref, initialNotes = notes, notes = notes })
             , Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.editNotesDialog), Cmd.none ]
@@ -56,7 +56,7 @@ handleNotes msg model =
                     else
                         Track.notesUpdated notes model.erd |> Ports.track
             in
-            ( model |> setEditNotes Nothing |> mapErdM (mapNotes (ErdTableNotes.set ref (String.nonEmptyMaybe notes))), cmd ) |> setDirtyCmd
+            ( model |> setEditNotes Nothing |> mapErdM (mapNotes (ErdNotes.set ref (String.nonEmptyMaybe notes))), cmd ) |> setDirtyCmd
 
         NCancel ->
             ( model |> setEditNotes Nothing, Cmd.none )

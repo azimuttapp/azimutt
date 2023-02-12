@@ -38,13 +38,13 @@ import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode ex
 import PagesComponents.Organization_.Project_.Models.DragState exposing (DragState)
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn)
-import PagesComponents.Organization_.Project_.Models.ErdColumnProps exposing (ErdColumnProps)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
+import PagesComponents.Organization_.Project_.Models.ErdNotes exposing (ErdNotes)
+import PagesComponents.Organization_.Project_.Models.ErdNotesTable as ErdNotesTable exposing (ErdNotesTable)
 import PagesComponents.Organization_.Project_.Models.ErdRelation exposing (ErdRelation)
 import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
-import PagesComponents.Organization_.Project_.Models.ErdTableNotes as ErdTableNotes exposing (ErdTableNotes)
 import PagesComponents.Organization_.Project_.Models.ErdTableProps exposing (ErdTableProps)
 import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
 import PagesComponents.Organization_.Project_.Models.MemoId as MemoId
@@ -53,7 +53,7 @@ import PagesComponents.Organization_.Project_.Views.Erd.Memo as Memo
 import PagesComponents.Organization_.Project_.Views.Erd.Relation as Relation exposing (viewEmptyRelation, viewRelation, viewVirtualRelation)
 import PagesComponents.Organization_.Project_.Views.Erd.Table as Table exposing (viewTable)
 import PagesComponents.Organization_.Project_.Views.Modals.ErdContextMenu as ErdContextMenu
-import Set
+import Set exposing (Set)
 
 
 type alias ErdArgs =
@@ -105,7 +105,7 @@ viewErd conf erdElem erd selectionBox virtualRelation editMemo args dragging =
         displayedTables =
             tableProps |> List.filter (\t -> t.props.size /= Size.zeroCanvas)
 
-        displayedIds : Set.Set TableId
+        displayedIds : Set TableId
         displayedIds =
             displayedTables |> List.map .id |> Set.fromList
 
@@ -113,7 +113,7 @@ viewErd conf erdElem erd selectionBox virtualRelation editMemo args dragging =
         displayedRelations =
             erd.relations |> List.filter (\r -> [ r.src, r.ref ] |> List.any (\c -> displayedIds |> Set.member c.table))
 
-        virtualRelationInfo : Maybe ( ( Maybe { table : ErdTableProps, column : ErdColumnProps, index : Int }, ErdColumn ), Position.Canvas )
+        virtualRelationInfo : Maybe ( ( Maybe { table : ErdTableProps, index : Int, highlighted : Bool }, ErdColumn ), Position.Canvas )
         virtualRelationInfo =
             virtualRelation
                 |> Maybe.andThen
@@ -142,8 +142,8 @@ viewErd conf erdElem erd selectionBox virtualRelation editMemo args dragging =
             ]
          ]
             ++ B.cond (conf.move && not (List.isEmpty tableProps)) [ onWheel platform OnWheel ] []
-            ++ B.cond (conf.move || conf.select) [ stopPointerDown platform (handleErdPointerDown conf cursorMode) ] []
-            ++ B.cond conf.layout [ onDblClick platform (CanvasProps.eventCanvas erdElem canvas >> MCreate >> MemoMsg), onContextMenu platform (\e -> ContextMenuCreate (ErdContextMenu.view platform erdElem canvas e) e) ] []
+            ++ B.cond ((conf.move || conf.select) && virtualRelation == Nothing && editMemo == Nothing) [ stopPointerDown platform (handleErdPointerDown conf cursorMode) ] []
+            ++ B.cond (conf.layout && virtualRelation == Nothing && editMemo == Nothing) [ onDblClick platform (CanvasProps.eventCanvas erdElem canvas >> MCreate >> MemoMsg), onContextMenu platform (\e -> ContextMenuCreate (ErdContextMenu.view platform erdElem canvas e) e) ] []
         )
         [ div [ class "az-canvas origin-top-left", Position.styleTransformDiagram canvas.position canvas.zoom ]
             -- use HTML order instead of z-index, must be careful with it, this allows to have tooltips & popovers always on top
@@ -152,8 +152,8 @@ viewErd conf erdElem erd selectionBox virtualRelation editMemo args dragging =
               displayedRelations |> Lazy.lazy5 viewRelations conf erd.settings.defaultSchema erd.settings.relationStyle displayedTables
             , tableProps |> viewTables platform conf cursorMode virtualRelation openedDropdown openedPopover hoverTable dragging canvas.zoom erd.settings.defaultSchema selected erd.settings.columnBasicTypes erd.tables erd.notes
             , memos |> viewMemos platform conf cursorMode editMemo
-            , selectionBox |> Maybe.filterNot (\_ -> tableProps |> List.isEmpty) |> Maybe.mapOrElse viewSelectionBox (div [] [])
-            , virtualRelationInfo |> Maybe.mapOrElse (viewVirtualRelation erd.settings.relationStyle) viewEmptyRelation
+            , div [ class "az-selection-box pointer-events-none" ] (selectionBox |> Maybe.filterNot (\_ -> tableProps |> List.isEmpty) |> Maybe.mapOrElse viewSelectionBox [])
+            , div [ class "az-virtual-relation pointer-events-none" ] [ virtualRelationInfo |> Maybe.mapOrElse (\i -> viewVirtualRelation erd.settings.relationStyle i) viewEmptyRelation ]
             ]
         , if tableProps |> List.isEmpty then
             viewEmptyState erd.settings.defaultSchema erd.tables
@@ -206,7 +206,7 @@ handleErdPointerDown conf cursorMode e =
         Noop "No match on erd pointer down"
 
 
-viewTables : Platform -> ErdConf -> CursorMode -> Maybe VirtualRelation -> HtmlId -> HtmlId -> Maybe TableId -> Maybe DragState -> ZoomLevel -> SchemaName -> DetailsSidebar.Selected -> Bool -> Dict TableId ErdTable -> Dict TableId ErdTableNotes -> List ErdTableLayout -> Html Msg
+viewTables : Platform -> ErdConf -> CursorMode -> Maybe VirtualRelation -> HtmlId -> HtmlId -> Maybe TableId -> Maybe DragState -> ZoomLevel -> SchemaName -> DetailsSidebar.Selected -> Bool -> Dict TableId ErdTable -> ErdNotes -> List ErdTableLayout -> Html Msg
 viewTables platform conf cursorMode virtualRelation openedDropdown openedPopover hoverTable dragging zoom defaultSchema selected useBasicTypes tables notes tableLayouts =
     Keyed.node "div"
         [ class "az-tables" ]
@@ -233,7 +233,7 @@ viewTables platform conf cursorMode virtualRelation openedDropdown openedPopover
                             (virtualRelation /= Nothing)
                             useBasicTypes
                         )
-                        (notes |> Dict.getOrElse table.id ErdTableNotes.empty)
+                        (notes |> Dict.getOrElse table.id ErdNotesTable.empty)
                         tableLayout
                         table
                     )
@@ -261,9 +261,9 @@ viewRelations conf defaultSchema style tableLayouts relations =
         )
 
 
-viewSelectionBox : Area.Canvas -> Html Msg
+viewSelectionBox : Area.Canvas -> List (Html Msg)
 viewSelectionBox area =
-    div ([ css [ "az-selection-area absolute border-2 bg-opacity-25 z-max border-teal-400 bg-teal-400" ] ] ++ Area.styleTransformCanvas area) []
+    [ div ([ css [ "absolute border-2 bg-opacity-25 z-max border-teal-400 bg-teal-400" ] ] ++ Area.styleTransformCanvas area) [] ]
 
 
 viewEmptyState : SchemaName -> Dict TableId ErdTable -> Html Msg

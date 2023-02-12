@@ -135,12 +135,12 @@ export const Origin = z.object({
 
 export interface Comment {
     text: string
-    origins: Origin[]
+    origins?: Origin[]
 }
 
 export const Comment = z.object({
     text: z.string(),
-    origins: Origin.array()
+    origins: Origin.array().optional()
 }).strict()
 
 export interface Column {
@@ -149,70 +149,72 @@ export interface Column {
     nullable?: boolean
     default?: string
     comment?: Comment
-    origins: Origin[]
+    columns?: Column[]
+    origins?: Origin[]
 }
 
-export const Column = z.object({
+export const Column: z.ZodType<Column> = z.object({
     name: ColumnName,
     type: ColumnType,
     nullable: z.boolean().optional(),
     default: z.string().optional(),
     comment: Comment.optional(),
-    origins: Origin.array()
+    columns: z.lazy(() => Column.array().optional()),
+    origins: Origin.array().optional()
 }).strict()
 
 export interface PrimaryKey {
     name?: string
     columns: ColumnName[]
-    origins: Origin[]
+    origins?: Origin[]
 }
 
 export const PrimaryKey = z.object({
     name: z.string().optional(),
     columns: ColumnName.array(),
-    origins: Origin.array()
+    origins: Origin.array().optional()
 }).strict()
 
 export interface Unique {
     name: string
     columns: ColumnName[]
     definition?: string
-    origins: Origin[]
+    origins?: Origin[]
 }
 
 export const Unique = z.object({
     name: z.string(),
     columns: ColumnName.array(),
     definition: z.string().optional(),
-    origins: Origin.array()
+    origins: Origin.array().optional()
 }).strict()
 
 export interface Index {
     name: string
     columns: ColumnName[]
     definition?: string
-    origins: Origin[]
+    origins?: Origin[]
 }
 
 export const Index = z.object({
     name: z.string(),
     columns: ColumnName.array(),
     definition: z.string().optional(),
-    origins: Origin.array()
+    origins: Origin.array().optional()
 }).strict()
 
 export interface Check {
     name: string
     columns: ColumnName[]
     predicate?: string
-    origins: Origin[]
+    origins?: Origin[]
 }
 
 export const Check = z.object({
     name: z.string(),
     columns: ColumnName.array(),
     predicate: z.string().optional(),
-    origins: Origin.array()
+    origins: Origin.array().optional()
 }).strict()
 
 export interface Table {
@@ -225,7 +227,7 @@ export interface Table {
     indexes?: Index[]
     checks?: Check[]
     comment?: Comment
-    origins: Origin[]
+    origins?: Origin[]
 }
 
 export const Table = z.object({
@@ -238,7 +240,7 @@ export const Table = z.object({
     indexes: Index.array().optional(),
     checks: Check.array().optional(),
     comment: Comment.optional(),
-    origins: Origin.array()
+    origins: Origin.array().optional()
 }).strict()
 
 export interface ColumnRef {
@@ -255,28 +257,28 @@ export interface Relation {
     name: RelationName
     src: ColumnRef
     ref: ColumnRef
-    origins: Origin[]
+    origins?: Origin[]
 }
 
 export const Relation = z.object({
     name: RelationName,
     src: ColumnRef,
     ref: ColumnRef,
-    origins: Origin.array()
+    origins: Origin.array().optional()
 }).strict()
 
 export interface Type {
     schema: SchemaName
     name: TypeName
     value: { enum: string[] } | { definition: string }
-    origins: Origin[]
+    origins?: Origin[]
 }
 
 export const Type = z.object({
     schema: SchemaName,
     name: TypeName,
     value: z.union([z.object({enum: z.string().array()}).strict(), z.object({definition: z.string()}).strict()]),
-    origins: Origin.array()
+    origins: Origin.array().optional()
 }).strict()
 
 export interface Source {

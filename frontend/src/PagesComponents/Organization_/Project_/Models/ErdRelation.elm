@@ -1,7 +1,7 @@
-module PagesComponents.Organization_.Project_.Models.ErdRelation exposing (ErdRelation, create, label, new, unpack)
+module PagesComponents.Organization_.Project_.Models.ErdRelation exposing (ErdRelation, create, label, linkedTo, new, unpack)
 
 import Dict exposing (Dict)
-import Models.Project.ColumnRef as ColumnRef
+import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
 import Models.Project.Origin exposing (Origin)
 import Models.Project.Relation exposing (Relation)
 import Models.Project.RelationId as RelationId exposing (RelationId)
@@ -49,3 +49,8 @@ unpack relation =
 label : SchemaName -> ErdRelation -> String
 label defaultSchema relation =
     ColumnRef.show defaultSchema relation.src ++ " -> " ++ relation.name ++ " -> " ++ ColumnRef.show defaultSchema relation.ref
+
+
+linkedTo : ColumnRef -> ErdRelation -> Bool
+linkedTo column relation =
+    (relation.src.table == column.table && relation.src.column == column.column) || (relation.ref.table == column.table && relation.ref.column == column.column)

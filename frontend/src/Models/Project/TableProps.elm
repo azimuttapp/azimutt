@@ -6,7 +6,7 @@ import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
 import Libs.Tailwind as Tw exposing (Color)
 import Models.Position as Position
-import Models.Project.ColumnName as ColumnName exposing (ColumnName)
+import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Size as Size
 
@@ -16,7 +16,7 @@ type alias TableProps =
     , position : Position.Grid
     , size : Size.Canvas
     , color : Color
-    , columns : List ColumnName
+    , columns : List ColumnPath
     , selected : Bool
     , collapsed : Bool
     , hiddenColumns : Bool
@@ -30,7 +30,7 @@ encode value =
         , ( "position", value.position |> Position.encodeGrid )
         , ( "size", value.size |> Size.encodeCanvas )
         , ( "color", value.color |> Tw.encodeColor )
-        , ( "columns", value.columns |> Encode.list ColumnName.encode )
+        , ( "columns", value.columns |> Encode.list ColumnPath.encode )
         , ( "selected", value.selected |> Encode.withDefault Encode.bool False )
         , ( "collapsed", value.collapsed |> Encode.withDefault Encode.bool False )
         , ( "hiddenColumns", value.hiddenColumns |> Encode.withDefault Encode.bool False )
@@ -44,7 +44,7 @@ decode =
         (Decode.field "position" Position.decodeGrid)
         (Decode.defaultField "size" Size.decodeCanvas Size.zeroCanvas)
         (Decode.field "color" Tw.decodeColor)
-        (Decode.defaultField "columns" (Decode.list ColumnName.decode) [])
+        (Decode.defaultField "columns" (Decode.list ColumnPath.decode) [])
         (Decode.defaultField "selected" Decode.bool False)
         (Decode.defaultField "collapsed" Decode.bool False)
         (Decode.defaultField "hiddenColumns" Decode.bool False)
