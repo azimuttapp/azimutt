@@ -12,7 +12,7 @@ export function validate<T>(value: T, zod: z.ZodType<T>, label: string): T {
         const jsonErrors = res.error.issues.map(i => issueToJson(value, i))
         const strErrors = res.error.issues.map(i => issueToString(value, i))
         console.error(`invalid ${label}`, jsonErrors.length > 1 ? jsonErrors : jsonErrors[0], value)
-        throw Error(`invalid ${label} (${strErrors.length} errors): ${strErrors.join(', ')}`)
+        throw Error(`invalid ${label}${strErrors.length > 1 ? ` (${strErrors.length} errors)` : ''}: ${strErrors.join(', ')}`)
     }
 }
 

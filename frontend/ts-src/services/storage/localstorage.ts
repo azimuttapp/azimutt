@@ -20,7 +20,7 @@ export class LocalStorageStorage implements StorageApi {
 
     loadProject = (id: ProjectId): Promise<ProjectJson> => {
         this.logger.debug(`localStorage.loadProject(${id})`)
-        return Promise.resolve(this.getProject(this.idToKey(id))).then(p => p ? p : Promise.reject(`Project ${id} not found`))
+        return Promise.resolve(this.getProject(this.idToKey(id))).then(p => p ? p : Promise.reject(`Not found`))
     }
     createProject = (id: ProjectId, p: ProjectJson): Promise<ProjectJson> => {
         this.logger.debug(`localStorage.createProject(${id})`, p)
