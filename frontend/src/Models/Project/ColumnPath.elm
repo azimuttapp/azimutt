@@ -20,7 +20,7 @@ type alias ColumnPathStr =
 
 separator : String
 separator =
-    "%"
+    ":"
 
 
 fromString : ColumnPathStr -> ColumnPath
