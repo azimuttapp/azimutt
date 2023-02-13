@@ -116,3 +116,5 @@ frontend/node_modules
 frontend/review/elm-stuff
 frontend/public
 fly.toml
+_build/*
+deps/*

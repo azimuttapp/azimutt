@@ -12,9 +12,10 @@
 #   - https://pkgs.org/ - resource for finding needed packages
 #   - Ex: hexpm/elixir:1.12.0-erlang-24.0.1-debian-bullseye-20210902-slim
 #
+
 ARG ELIXIR_VERSION=1.14.3
-ARG OTP_VERSION=25.1.2.1
-ARG DEBIAN_VERSION=buster-20230109-slim
+ARG OTP_VERSION=25.2.2
+ARG DEBIAN_VERSION=bullseye-20230109-slim
 
 ARG CELLAR_ADDON_KEY_ID
 ARG CELLAR_ADDON_HOST
@@ -31,7 +32,7 @@ ARG DATABASE_URL
 ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
 ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
 
-FROM ${BUILDER_IMAGE} as builder
+FROM --platform=linux/amd64 ${BUILDER_IMAGE} as builder
 
 # install build dependencies
 RUN apt-get update -y && apt-get install -y build-essential git nodejs npm curl wget \
@@ -94,7 +95,7 @@ RUN mix release
 
 # start a new build stage so that the final image will only contain
 # the compiled release and other runtime necessities
-FROM ${RUNNER_IMAGE}
+FROM --platform=linux/amd64 ${RUNNER_IMAGE}
 
 RUN apt-get update -y && apt-get install -y libstdc++6 openssl libncurses5 locales \
   && apt-get clean && rm -f /var/lib/apt/lists/*_*
