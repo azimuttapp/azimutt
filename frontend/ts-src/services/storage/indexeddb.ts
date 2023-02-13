@@ -68,9 +68,18 @@ export class IndexedDBStorage implements StorageApi {
 
     private getProject(store: IDBObjectStore, id: ProjectId): Promise<ProjectJson | undefined> {
         return new Promise<ProjectJson | undefined>((resolve, reject) => {
-            store.get(id).onsuccess = (event: any) => resolve(Zod.validate(event.target.result, ProjectJson.optional(), 'ProjectJson?'));
+            store.get(id).onsuccess = (event: any) => resolve(Zod.validate(removeId(event.target.result), ProjectJson.optional(), 'ProjectJson?'));
             (store as any).onerror = (err: any) => reject(`Unable to load project: ${err}`)
         })
+    }
+}
+
+function removeId(value: any & {id: any}): any {
+    if (typeof value === 'object' && value !== null) {
+        const {id, ...rest} = value
+        return rest
+    } else {
+        return value
     }
 }
 
