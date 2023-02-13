@@ -35,7 +35,7 @@ defmodule Azimutt.Tracking do
   def login(%User{} = current_user, method),
     do: create_event("login", user_data(current_user), %{method: method}, current_user, nil, nil)
 
-  def project_loaded(%User{} = current_user, %Project{} = project),
+  def project_loaded(current_user, %Project{} = project),
     do: create_event("project_loaded", project_data(project), nil, current_user, project.organization.id, project.id)
 
   def project_created(%User{} = current_user, %Project{} = project),

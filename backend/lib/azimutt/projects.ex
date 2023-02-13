@@ -179,6 +179,14 @@ defmodule Azimutt.Projects do
     end)
   end
 
+  def load_project(project_id, maybe_current_user, token_id, now) do
+    if token_id do
+      access_project(project_id, token_id, now)
+    else
+      get_project(project_id, maybe_current_user)
+    end
+  end
+
   defp get_storage(attrs) do
     # FIXME: atom for seeds and string for api, how make it work for both?
     Storage.from_string_or_atom(attrs[:storage_kind] || attrs["storage_kind"])
