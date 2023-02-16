@@ -9,6 +9,10 @@
             <thead class="text-gray-100 bg-slate-800 text-xs font-semibold">
                 <tr>
                     <th class="group p-1" scope="col">
+                        Created at
+                        <%= render AzimuttWeb.PartialsView, "_page_sort.html", page: @projects, key: "created_at" %>
+                    </th>
+                    <th class="group p-1" scope="col">
                         Name
                         <%= render AzimuttWeb.PartialsView, "_page_sort.html", page: @projects, key: "name" %>
                     </th>
@@ -50,6 +54,10 @@
             <tbody class="divide-y divide-slate-800 text-slate-500 bg-slate-900">
                 <%= for project <- @projects.items do %>
                     <tr class="text-xs whitespace-nowrap hover:bg-slate-800 hover:text-slate-300">
+                        <td class="group p-1">
+                            <%= format_datetime(project.created_at) %>
+                            <%= render AzimuttWeb.PartialsView, "_page_filter.html", page: @projects, key: "created_at", value: format_date_filter(project.created_at) %>
+                        </td>
                         <td class="p-1" title={project.description}><%= link project.name, to: Routes.admin_project_path(@conn, :show, project), class: "underline" %></td>
                         <td class="p-1">
                             <span class="inline-block w-8 text-red-300" title="nb_sources"><%= project.nb_sources %></span> /

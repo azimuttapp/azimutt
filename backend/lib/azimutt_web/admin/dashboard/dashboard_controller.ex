@@ -9,7 +9,7 @@ defmodule AzimuttWeb.Admin.DashboardController do
   def index(conn, _params) do
     now = DateTime.utc_now()
     page = conn |> Page.from_conn(%{search_on: Event.search_fields(), sort: "-created_at", size: 40})
-    {:ok, start_stats} = "2022-11-01" |> Timex.parse("{YYYY}-{0M}-{0D}")
+    {:ok, start_stats} = "2022-12-01" |> Timex.parse("{YYYY}-{0M}-{0D}")
 
     conn
     |> render("index.html",
