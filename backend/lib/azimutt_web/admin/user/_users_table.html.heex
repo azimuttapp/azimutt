@@ -9,6 +9,10 @@
             <thead class="text-gray-100 bg-slate-800 text-xs font-semibold">
             <tr>
                 <th class="group p-1" scope="col">
+                    Created at
+                    <%= render AzimuttWeb.PartialsView, "_page_sort.html", page: @users, key: "created_at" %>
+                </th>
+                <th class="group p-1" scope="col">
                     Name
                     <%= render AzimuttWeb.PartialsView, "_page_sort.html", page: @users, key: "name" %>
                 </th>
@@ -28,6 +32,10 @@
             <tbody class="divide-y divide-slate-800 text-slate-500 bg-slate-900">
                 <%= for user <- @users.items do %>
                     <tr class=" text-xs whitespace-nowrap hover:bg-slate-800 hover:text-slate-300">
+                        <td class="group p-1">
+                            <%= format_datetime(user.created_at) %>
+                            <%= render AzimuttWeb.PartialsView, "_page_filter.html", page: @users, key: "created_at", value: format_date_filter(user.created_at) %>
+                        </td>
                         <td class="p-1" title={"Created on #{format_datetime(user.created_at)}"}>
                             <%= link to: Routes.admin_user_path(@conn, :show, user), class: "underline" do %>
                                 <%= img_tag(user.avatar, class: "inline-block h-4 w-4 rounded-md") %>

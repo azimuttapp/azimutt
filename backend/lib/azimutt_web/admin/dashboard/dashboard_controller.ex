@@ -81,14 +81,6 @@ defmodule AzimuttWeb.Admin.DashboardController do
           ],
           start_stats,
           now
-        ),
-      legacy_events:
-        Dataset.chartjs_daily_data(
-          [
-            Admin.daily_event("has-legacy-projects") |> Dataset.from_values("has-legacy-projects")
-          ],
-          start_stats,
-          now
         )
     )
   end
