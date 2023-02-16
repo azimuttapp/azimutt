@@ -140,7 +140,7 @@ defmodule Azimutt.Tracking do
     })
     |> Repo.insert()
     |> Result.tap(fn event ->
-      if event.created_by && Azimutt.config(:bento_site_key) do
+      if Mix.env() == :prod && Azimutt.config(:bento_site_key) && event.created_by do
         BentoSrv.send_event(%{
           email: event.created_by.email,
           type: event.name,
