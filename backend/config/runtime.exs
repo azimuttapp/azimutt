@@ -17,6 +17,8 @@ import Config
 # Alternatively, you can use `mix phx.gen.release` to generate a `bin/server`
 # script that automatically sets the env var above.
 
+# TODO: centralize reading environment variables
+
 if System.get_env("PHX_SERVER") do
   config :azimutt, AzimuttWeb.Endpoint, server: true
 end
@@ -24,13 +26,17 @@ end
 skip_public_site = System.get_env("SKIP_PUBLIC_SITE") == "true"
 global_organization = System.get_env("GLOBAL_ORGANIZATION")
 global_organization_alone = global_organization && System.get_env("GLOBAL_ORGANIZATION_ALONE") == "true"
-# TODO: GITHUB_ORGA: limit user only from this orga
+# TODO: REQUIRE_GITHUB_ORGANIZATION: allow users only from this github orga
 
 config :azimutt,
   skip_public_site: skip_public_site,
   global_organization: global_organization,
   global_organization_alone: global_organization_alone
 
+# TODO: add login/pass auth (AUTH_PASSWORD_ENABLED)
+# TODO: add SAML auth (AUTH_SAML_ENABLED)
+# TODO: github auth (AUTH_GITHUB_ENABLED, AUTH_GITHUB_CLIENT_ID, AUTH_GITHUB_CLIENT_SECRET)
+# use the xxx_ENABLED to allow several auth at the same time (could then add google, twitter, facebook...)
 github_client_id = System.get_env("GITHUB_CLIENT_ID")
 github_client_secret = System.get_env("GITHUB_CLIENT_SECRET")
 
@@ -91,12 +97,13 @@ if config_env() != :test do
   config :azimutt,
     domain: System.get_env("PHX_HOST") || raise("environment variable PHX_HOST is missing.")
 
-  # TODO: rename CELLAR to S3
+  # TODO: rename variables: FILE_STORAGE_S3_BUCKET, FILE_STORAGE_S3_HOST, FILE_STORAGE_S3_KEY_ID, FILE_STORAGE_S3_KEY_SECRET
   cellar_bucket = System.get_env("CELLAR_BUCKET") || raise "environment variable CELLAR_BUCKET is missing."
   cellar_host = System.get_env("CELLAR_ADDON_HOST")
   cellar_addon_key_id = System.get_env("CELLAR_ADDON_KEY_ID")
   cellar_addon_key_secret = System.get_env("CELLAR_ADDON_KEY_SECRET")
 
+  # https://hexdocs.pm/waffle/Waffle.Storage.S3.html
   if cellar_host != nil && cellar_host != '' do
     config :waffle,
       storage: Waffle.Storage.S3,
@@ -124,7 +131,7 @@ end
 
 if config_env() == :prod || config_env() == :staging do
   database_url =
-    System.get_env("DATABASE_URL") || raise "environment variable DATABASE_URL is missing. For example: ecto://USER:PASS@HOST/DATABASE"
+    System.get_env("DATABASE_URL") || raise "environment variable DATABASE_URL is missing. Expecting: ecto://USER:PASS@HOST/DATABASE"
 
   maybe_ipv6 = if System.get_env("ECTO_IPV6"), do: [:inet6], else: []
 
@@ -171,6 +178,7 @@ cond do
     mailgun_base_url = System.get_env("EMAIL_MAILGUN_BASE_URL")
 
     if mailgun_api_key && mailgun_domain && mailgun_base_url do
+      # https://hexdocs.pm/swoosh/Swoosh.Adapters.Mailgun.html
       config :azimutt, Azimutt.Mailer,
         adapter: Swoosh.Adapters.Mailgun,
         api_key: mailgun_api_key,
@@ -186,6 +194,7 @@ cond do
     gmail_access_token = System.get_env("EMAIL_GMAIL_ACCESS_TOKEN")
 
     if gmail_access_token do
+      # https://hexdocs.pm/swoosh/Swoosh.Adapters.Gmail.html
       config :azimutt, Azimutt.Mailer,
         adapter: Swoosh.Adapters.Gmail,
         access_token: gmail_access_token
