@@ -13,6 +13,7 @@ config :azimutt, AzimuttWeb.Endpoint, cache_static_manifest: "priv/static/cache_
 
 config :azimutt,
   environment: :prod,
+  # TODO: make this configurable
   support_email: "hey@azimutt.app",
   mailer_default_from_email: "hey@azimutt.app",
   pro_plan_price_id: "price_1LqeMcCaPXsf4veh2yBgWKiX"

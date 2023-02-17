@@ -24,6 +24,7 @@ end
 skip_public_site = System.get_env("SKIP_PUBLIC_SITE") == "true"
 global_organization = System.get_env("GLOBAL_ORGANIZATION")
 global_organization_alone = global_organization && System.get_env("GLOBAL_ORGANIZATION_ALONE") == "true"
+# TODO: GITHUB_ORGA: limit user only from this orga
 
 config :azimutt,
   skip_public_site: skip_public_site,
@@ -77,26 +78,35 @@ if config_env() != :test do
   config :azimutt,
     domain: System.get_env("PHX_HOST") || raise("environment variable PHX_HOST is missing.")
 
+  # TODO: rename CELLAR to S3
   cellar_bucket = System.get_env("CELLAR_BUCKET") || raise "environment variable CELLAR_BUCKET is missing."
-  cellar_host = System.get_env("CELLAR_ADDON_HOST") || raise "environment variable CELLAR_ADDON_HOST is missing."
-  cellar_addon_key_id = System.get_env("CELLAR_ADDON_KEY_ID") || raise "environment variable CELLAR_ADDON_KEY_ID is missing."
-  cellar_addon_key_secret = System.get_env("CELLAR_ADDON_KEY_SECRET") || raise "environment variable CELLAR_ADDON_KEY_SECRET is missing."
+  cellar_host = System.get_env("CELLAR_ADDON_HOST")
+  cellar_addon_key_id = System.get_env("CELLAR_ADDON_KEY_ID")
+  cellar_addon_key_secret = System.get_env("CELLAR_ADDON_KEY_SECRET")
 
-  config :waffle,
-    storage: Waffle.Storage.S3,
-    bucket: cellar_bucket,
-    asset_host: cellar_host
+  if cellar_host != nil && cellar_host != '' do
+    config :waffle,
+      storage: Waffle.Storage.S3,
+      bucket: cellar_bucket,
+      asset_host: cellar_host
 
-  config :ex_aws,
-    debug_requests: true,
-    json_codec: Jason,
-    access_key_id: cellar_addon_key_id,
-    secret_access_key: cellar_addon_key_secret
+    config :ex_aws, :s3,
+      scheme: "https://",
+      host: cellar_host,
+      region: "eu-west-1"
+  else
+    config :waffle,
+      storage: Waffle.Storage.S3,
+      bucket: cellar_bucket
+  end
 
-  config :ex_aws, :s3,
-    scheme: "https://",
-    host: cellar_host,
-    region: "eu-west-1"
+  if cellar_addon_key_id != nil && cellar_addon_key_id != '' && cellar_addon_key_secret != nil && cellar_addon_key_secret != '' do
+    config :ex_aws,
+      debug_requests: true,
+      json_codec: Jason,
+      access_key_id: cellar_addon_key_id,
+      secret_access_key: cellar_addon_key_secret
+  end
 end
 
 if config_env() == :prod || config_env() == :staging do
