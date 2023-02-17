@@ -13,6 +13,11 @@ defmodule AzimuttWeb.Admin.UserView do
     formatted
   end
 
+  def format_date_filter(date) do
+    {:ok, formatted} = Timex.format(date, "{YYYY}-{0M}-{0D}")
+    formatted
+  end
+
   def format_data(data) when is_nil(data), do: ""
   def format_data(%User.Data{} = data), do: data |> Map.from_struct() |> Jason.encode!()
 end

@@ -20,11 +20,12 @@ defmodule AzimuttWeb.ElmController do
     end
   end
 
-  def project_show(conn, %{"organization_id" => _organization_id, "project_id" => project_id}) do
+  def project_show(conn, %{"organization_id" => _organization_id, "project_id" => project_id} = params) do
+    now = DateTime.utc_now()
     current_user = conn.assigns.current_user
 
     if project_id |> String.length() == 36 do
-      with {:ok, %Project{} = project} <- Projects.get_project(project_id, current_user) do
+      with {:ok, %Project{} = project} <- Projects.load_project(project_id, current_user, params["token"], now) do
         Tracking.project_loaded(current_user, project)
         conn |> load_elm
       end

@@ -9,7 +9,7 @@ defmodule AzimuttWeb.Admin.DashboardController do
   def index(conn, _params) do
     now = DateTime.utc_now()
     page = conn |> Page.from_conn(%{search_on: Event.search_fields(), sort: "-created_at", size: 40})
-    {:ok, start_stats} = "2022-11-01" |> Timex.parse("{YYYY}-{0M}-{0D}")
+    {:ok, start_stats} = "2022-12-01" |> Timex.parse("{YYYY}-{0M}-{0D}")
 
     conn
     |> render("index.html",
@@ -78,14 +78,6 @@ defmodule AzimuttWeb.Admin.DashboardController do
             Admin.daily_event("editor_source_created") |> Dataset.from_values("source_created"),
             Admin.daily_event("editor_db_analysis_opened") |> Dataset.from_values("db_analysis_opened"),
             Admin.daily_event("editor_find_path_opened") |> Dataset.from_values("find_path_opened")
-          ],
-          start_stats,
-          now
-        ),
-      legacy_events:
-        Dataset.chartjs_daily_data(
-          [
-            Admin.daily_event("has-legacy-projects") |> Dataset.from_values("has-legacy-projects")
           ],
           start_stats,
           now

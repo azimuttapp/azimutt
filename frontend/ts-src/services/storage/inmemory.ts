@@ -11,7 +11,7 @@ export class InMemoryStorage implements StorageApi {
 
     loadProject = (id: ProjectId): Promise<ProjectJson> => {
         this.logger.debug(`inMemory.loadProject(${id})`)
-        return this.projects[id] ? Promise.resolve(Zod.validate(this.projects[id], ProjectJson, 'ProjectJson')) : Promise.reject(`Project ${id} not found`)
+        return this.projects[id] ? Promise.resolve(Zod.validate(this.projects[id], ProjectJson, 'ProjectJson')) : Promise.reject(`Not found`)
     }
     createProject = (id: ProjectId, p: ProjectJson): Promise<ProjectJson> => {
         this.logger.debug(`inMemory.createProject(${id})`, p)
