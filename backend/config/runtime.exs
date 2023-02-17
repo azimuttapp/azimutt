@@ -72,6 +72,19 @@ else
   IO.puts("Heroku addon not setup (HEROKU_ADDON_ID, HEROKU_PASSWORD and HEROKU_SSO_SALT env variables not found)")
 end
 
+bento_site_key = System.get_env("BENTO_SITE_KEY")
+bento_publishable_key = System.get_env("BENTO_PUBLISHABLE_KEY")
+bento_secret_key = System.get_env("BENTO_SECRET_KEY")
+
+if bento_site_key && bento_publishable_key && bento_secret_key do
+  IO.puts("Setup Bento integration")
+
+  config :azimutt,
+    bento_site_key: bento_site_key,
+    bento_publishable_key: bento_publishable_key,
+    bento_secret_key: bento_secret_key
+end
+
 if config_env() == :prod || config_env() == :staging do
   database_url =
     System.get_env("POSTGRESQL_ADDON_URI") ||
