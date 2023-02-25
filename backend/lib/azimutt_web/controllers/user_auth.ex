@@ -5,6 +5,7 @@ defmodule AzimuttWeb.UserAuth do
   alias Azimutt.Accounts
   alias Azimutt.Heroku
   alias Azimutt.Heroku.Resource
+  alias Azimutt.Tracking
   alias Azimutt.Utils.Result
   alias AzimuttWeb.Router.Helpers, as: Routes
 
@@ -35,16 +36,17 @@ defmodule AzimuttWeb.UserAuth do
   disconnected on log out. The line can be safely removed
   if you are not using LiveView.
   """
-  def log_in_user(conn, user, params \\ %{}) do
+  def log_in_user(conn, user, method, params \\ %{}) do
     user_return_to = get_session(conn, :user_return_to)
 
     conn
-    |> login_user(user, params)
+    |> login_user(user, method, params)
     |> redirect(to: user_return_to || signed_in_path(conn))
   end
 
   # no redirect
-  defp login_user(conn, user, params \\ %{}) do
+  defp login_user(conn, user, method, params \\ %{}) do
+    Tracking.user_login(user, method)
     token = Accounts.generate_user_session_token(user)
 
     conn
@@ -183,7 +185,7 @@ defmodule AzimuttWeb.UserAuth do
   # write @heroku_cookie to make the specified resource accessible
   def heroku_sso(conn, resource, user) do
     conn
-    |> login_user(user)
+    |> login_user(user, "heroku")
     |> put_resp_cookie(@heroku_cookie, %{resource_id: resource.id}, @heroku_options)
   end
 
@@ -222,6 +224,25 @@ defmodule AzimuttWeb.UserAuth do
       # TODO: can I render FallbackController {:error, :forbidden}?
       conn |> put_error_html(:forbidden, "403.html", "This section is for admins only.")
     end
+  end
+
+  def track_attribution(conn, _opts) do
+    attributes =
+      ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "ref", "via"]
+      |> Enum.reduce(%{}, fn attr, acc ->
+        value = conn.params[attr]
+        if value != nil && value != "", do: acc |> Map.put(attr, value), else: acc
+      end)
+
+    referer = get_req_header(conn, "referer") |> Enum.filter(fn h -> !String.contains?(h, Azimutt.config(:domain)) end) |> List.first()
+    headers = if referer != nil, do: %{referer: referer}, else: %{}
+    values = attributes |> Map.merge(headers)
+
+    if values |> map_size() > 0 do
+      Azimutt.Tracking.external_source(conn.assigns.current_user, conn.request_path, values)
+    end
+
+    conn
   end
 
   defp put_error_html(conn, status, view, message) do

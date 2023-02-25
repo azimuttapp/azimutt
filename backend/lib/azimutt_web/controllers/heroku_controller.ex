@@ -8,7 +8,6 @@ defmodule AzimuttWeb.HerokuController do
   alias Azimutt.Accounts
   alias Azimutt.Heroku
   alias Azimutt.Projects
-  alias Azimutt.Tracking
   alias Azimutt.Utils.Crypto
   alias Azimutt.Utils.Result
   alias Azimutt.Utils.Stringx
@@ -48,7 +47,6 @@ defmodule AzimuttWeb.HerokuController do
            {:ok, resource} <- Heroku.set_app_if_needed(resource, app, now),
            {:ok, resource} <- Heroku.set_organization_if_needed(resource, user, now),
            {:ok, _} <- Heroku.add_member_if_needed(resource, resource.organization, user) do
-        Tracking.login(user, "heroku")
         conn = conn |> UserAuth.heroku_sso(resource, user)
         project = Projects.list_projects(resource.organization, user) |> Enum.sort_by(& &1.updated_at, {:desc, DateTime}) |> List.first()
 

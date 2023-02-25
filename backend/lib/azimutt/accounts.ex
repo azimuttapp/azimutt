@@ -5,6 +5,7 @@ defmodule Azimutt.Accounts do
   alias Azimutt.Accounts.{User, UserNotifier, UserToken}
   alias Azimutt.Organizations
   alias Azimutt.Organizations.OrganizationMember
+  alias Azimutt.Tracking
   alias Azimutt.Utils.Crypto
   alias Azimutt.Utils.Result
 
@@ -34,11 +35,11 @@ defmodule Azimutt.Accounts do
   end
 
   def register_password_user(attrs, now) do
-    register_user(%User{} |> User.password_creation_changeset(attrs, now))
+    register_user(%User{} |> User.password_creation_changeset(attrs, now), "password")
   end
 
   def register_github_user(attrs, now) do
-    register_user(%User{} |> User.github_creation_changeset(attrs, now))
+    register_user(%User{} |> User.github_creation_changeset(attrs, now), "github")
   end
 
   def register_heroku_user(email, now) do
@@ -49,16 +50,18 @@ defmodule Azimutt.Accounts do
       provider: "heroku"
     }
 
-    register_user(%User{} |> User.heroku_creation_changeset(attrs, now))
+    register_user(%User{} |> User.heroku_creation_changeset(attrs, now), "heroku")
   end
 
-  defp register_user(changeset) do
+  defp register_user(changeset, method) do
     Ecto.Multi.new()
     |> Ecto.Multi.insert(:user, changeset)
     |> Ecto.Multi.run(:organization, fn _repo, %{user: user} -> Organizations.create_personal_organization(user) end)
     |> Repo.transaction()
     |> case do
       {:ok, %{user: user}} ->
+        Tracking.user_created(user, method)
+
         if Azimutt.config(:global_organization) do
           OrganizationMember.new_member_changeset(Azimutt.config(:global_organization), user) |> Repo.insert()
         end
