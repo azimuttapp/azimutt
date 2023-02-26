@@ -1,8 +1,8 @@
 <div x-data="{ annual: true }" class="flow-root bg-gray-900 py-16 sm:pt-32 lg:pb-0">
     <div class="mx-auto max-w-7xl px-6 lg:px-8">
         <div class="relative z-10">
-            <h1 class="mx-auto max-w-4xl text-center text-5xl font-bold tracking-tight text-white">Simple pricing, no commitment</h1>
-            <p class="mx-auto mt-4 max-w-2xl text-center text-lg leading-8 text-white/60">Lorem ipsum dolor sit, amet consectetur adipisicing elit. Velit numquam eligendi quos odit doloribus molestiae voluptatum quos odit doloribus.</p>
+            <h1 class="mx-auto max-w-4xl text-center text-5xl font-bold tracking-tight text-white"><%= @title %></h1>
+            <p class="mx-auto mt-4 max-w-2xl text-center text-lg leading-8 text-white/60"><%= @description %></p>
         </div>
         <div class="mt-16 flex justify-center relative z-10">
             <fieldset class="grid grid-cols-2 gap-x-1 rounded-full bg-white/5 p-1 text-center text-xs font-semibold leading-5 text-white">
@@ -30,73 +30,72 @@
             <div class="hidden lg:absolute lg:inset-x-px lg:bottom-0 lg:top-4 lg:block lg:rounded-t-2xl lg:bg-gray-800/80 lg:ring-1 lg:ring-white/10" aria-hidden="true"></div>
 
             <div class="relative rounded-2xl bg-gray-800/80 ring-1 ring-white/10 lg:bg-transparent lg:pb-14 lg:ring-0">
+                <% plan = @plans |> Enum.at(0) %>
                 <div class="p-8 lg:pt-12 xl:p-10 xl:pt-14">
-                    <h2 id="tier-starter" class="text-sm font-semibold leading-6 text-white">Starter</h2>
+                    <h2 id={"#{plan.id}-plan"} class="text-sm font-semibold leading-6 text-white"><%= plan.name %></h2>
                     <div class="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between lg:flex-col lg:items-stretch">
                         <div class="mt-2 flex items-center gap-x-4">
-                            <p class="text-4xl font-bold tracking-tight text-white" x-text="annual ? '$144' : '$15'">$144</p>
+                            <p class="text-4xl font-bold tracking-tight text-white" x-text={"annual ? '$#{plan.annually}' : '$#{plan.monthly}'"}>$<%= plan.annually %></p>
                             <div class="text-sm leading-5">
                                 <p class="text-white">USD</p>
                                 <p class="text-gray-400" x-text="annual ? 'Billed annually' : 'Billed monthly'">Billed annually</p>
                             </div>
                         </div>
-                        <a href="#" aria-describedby="tier-starter" class="rounded-md py-2 px-3 text-center text-sm leading-6 font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 bg-white/10 hover:bg-white/20 focus-visible:outline-white">Buy this plan</a>
+                        <a href={plan.buy} aria-describedby={"#{plan.id}-plan"} class="rounded-md py-2 px-3 text-center text-sm leading-6 font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 bg-white/10 hover:bg-white/20 focus-visible:outline-white">Buy this plan</a>
                     </div>
                     <div class="mt-8 flow-root sm:mt-10">
                         <ul role="list" class="-my-2 divide-y border-t text-sm leading-6 lg:border-t-0 divide-white/5 border-white/5 text-white">
-                            <li class="flex gap-x-3 py-2"><Icon.check kind="outline" class="w-5 text-gray-500" /> Basic invoicing</li>
-                            <li class="flex gap-x-3 py-2"><Icon.check kind="outline" class="w-5 text-gray-500" /> Easy to use accounting</li>
-                            <li class="flex gap-x-3 py-2"><Icon.check kind="outline" class="w-5 text-gray-500" /> Mutli-accounts</li>
+                            <%= for feature <- plan.features do %>
+                                <li class="flex gap-x-3 py-2"><Icon.check kind="outline" class="w-5 text-gray-500" /> <%= feature %></li>
+                            <% end %>
                         </ul>
                     </div>
                 </div>
             </div>
 
             <div class="relative rounded-2xl z-10 bg-white shadow-xl ring-1 ring-gray-900/10">
+                <% plan = @plans |> Enum.at(1) %>
                 <div class="p-8 lg:pt-12 xl:p-10 xl:pt-14">
-                    <h2 id="tier-scale" class="text-sm font-semibold leading-6 text-gray-900">Scale</h2>
+                    <h2 id={"#{plan.id}-plan"} class="text-sm font-semibold leading-6 text-gray-900"><%= plan.name %></h2>
                     <div class="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between lg:flex-col lg:items-stretch">
                         <div class="mt-2 flex items-center gap-x-4">
-                            <p class="text-4xl font-bold tracking-tight text-gray-900" x-text="annual ? '$576' : '$60'">$576</p>
+                            <p class="text-4xl font-bold tracking-tight text-gray-900" x-text={"annual ? '$#{plan.annually}' : '$#{plan.monthly}'"}>$<%= plan.annually %></p>
                             <div class="text-sm leading-5">
                                 <p class="text-gray-900">USD</p>
                                 <p class="text-gray-500" x-text="annual ? 'Billed annually' : 'Billed monthly'">Billed annually</p>
                             </div>
                         </div>
-                        <a href="#" aria-describedby="tier-scale" class="rounded-md py-2 px-3 text-center text-sm leading-6 font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 bg-indigo-600 shadow-sm hover:bg-indigo-500 focus-visible:outline-indigo-600">Buy this plan</a>
+                        <a href={plan.buy} aria-describedby={"#{plan.id}-plan"} class="rounded-md py-2 px-3 text-center text-sm leading-6 font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 bg-indigo-600 shadow-sm hover:bg-indigo-500 focus-visible:outline-indigo-600">Buy this plan</a>
                     </div>
                     <div class="mt-8 flow-root sm:mt-10">
                         <ul role="list" class="-my-2 divide-y border-t text-sm leading-6 lg:border-t-0 divide-gray-900/5 border-gray-900/5 text-gray-600">
-                            <li class="flex gap-x-3 py-2"><Icon.check kind="outline" class="w-5 text-indigo-600" /> Advanced invoicing</li>
-                            <li class="flex gap-x-3 py-2"><Icon.check kind="outline" class="w-5 text-indigo-600" /> Easy to use accounting</li>
-                            <li class="flex gap-x-3 py-2"><Icon.check kind="outline" class="w-5 text-indigo-600" /> Mutli-accounts</li>
-                            <li class="flex gap-x-3 py-2"><Icon.check kind="outline" class="w-5 text-indigo-600" /> Tax planning toolkit</li>
-                            <li class="flex gap-x-3 py-2"><Icon.check kind="outline" class="w-5 text-indigo-600" /> VAT & VATMOSS filing</li>
-                            <li class="flex gap-x-3 py-2"><Icon.check kind="outline" class="w-5 text-indigo-600" /> Free bank transfers</li>
+                            <%= for feature <- plan.features do %>
+                                <li class="flex gap-x-3 py-2"><Icon.check kind="outline" class="w-5 text-indigo-600" /> <%= feature %></li>
+                            <% end %>
                         </ul>
                     </div>
                 </div>
             </div>
 
             <div class="relative rounded-2xl bg-gray-800/80 ring-1 ring-white/10 lg:bg-transparent lg:pb-14 lg:ring-0">
+                <% plan = @plans |> Enum.at(2) %>
                 <div class="p-8 lg:pt-12 xl:p-10 xl:pt-14">
-                    <h2 id="tier-growth" class="text-sm font-semibold leading-6 text-white">Growth</h2>
+                    <h2 id={"#{plan.id}-plan"} class="text-sm font-semibold leading-6 text-white"><%= plan.name %></h2>
                     <div class="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between lg:flex-col lg:items-stretch">
                         <div class="mt-2 flex items-center gap-x-4">
-                            <p class="text-4xl font-bold tracking-tight text-white" x-text="annual ? '$288' : '$30'">$288</p>
+                            <p class="text-4xl font-bold tracking-tight text-white" x-text={"annual ? '$#{plan.annually}' : '$#{plan.monthly}'"}>$<%= plan.annually %></p>
                             <div class="text-sm leading-5">
                                 <p class="text-white">USD</p>
                                 <p class="text-gray-400" x-text="annual ? 'Billed annually' : 'Billed monthly'">Billed annually</p>
                             </div>
                         </div>
-                        <a href="#" aria-describedby="tier-growth" class="rounded-md py-2 px-3 text-center text-sm leading-6 font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 bg-white/10 hover:bg-white/20 focus-visible:outline-white">Buy this plan</a>
+                        <a href={plan.buy} aria-describedby={"#{plan.id}-plan"} class="rounded-md py-2 px-3 text-center text-sm leading-6 font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 bg-white/10 hover:bg-white/20 focus-visible:outline-white">Buy this plan</a>
                     </div>
                     <div class="mt-8 flow-root sm:mt-10">
                         <ul role="list" class="-my-2 divide-y border-t text-sm leading-6 lg:border-t-0 divide-white/5 border-white/5 text-white">
-                            <li class="flex gap-x-3 py-2"><Icon.check kind="outline" class="w-5 text-gray-500" /> Basic invoicing</li>
-                            <li class="flex gap-x-3 py-2"><Icon.check kind="outline" class="w-5 text-gray-500" /> Easy to use accounting</li>
-                            <li class="flex gap-x-3 py-2"><Icon.check kind="outline" class="w-5 text-gray-500" /> Mutli-accounts</li>
-                            <li class="flex gap-x-3 py-2"><Icon.check kind="outline" class="w-5 text-gray-500" /> Tax planning toolkit</li>
+                            <%= for feature <- plan.features do %>
+                                <li class="flex gap-x-3 py-2"><Icon.check kind="outline" class="w-5 text-gray-500" /> <%= feature %></li>
+                            <% end %>
                         </ul>
                     </div>
                 </div>
