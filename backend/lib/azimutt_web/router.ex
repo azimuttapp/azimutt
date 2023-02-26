@@ -45,10 +45,10 @@ defmodule AzimuttWeb.Router do
     pipe_through :browser
     get "/", WebsiteController, :index
     get "/last", WebsiteController, :last
-    get "/use-case/analyze", WebsiteController, :analyze
-    get "/use-case/design", WebsiteController, :design
-    get "/use-case/document", WebsiteController, :document
-    get "/use-case/explore", WebsiteController, :explore
+    get "/use-cases/design", WebsiteController, :design
+    get "/use-cases/explore", WebsiteController, :explore
+    get "/use-cases/document", WebsiteController, :document
+    get "/use-cases/analyze", WebsiteController, :analyze
     get "/features", WebsiteController, :features
     get "/pricing", WebsiteController, :pricing
     get "/blog", BlogController, :index

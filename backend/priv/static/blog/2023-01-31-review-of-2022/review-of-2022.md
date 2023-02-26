@@ -9,7 +9,7 @@ author: loic
 
 Last day of January, still time for a 2022 wrap up and wish you a Happy New Year 🍾
 
-2022 was a **huge year for Azimutt** with our motivation always high to push it every week. And we expect 2023 to be the same. In 2022, we went from a simple MVP with just enough features to be useful, to a usable product covering several complementary use cases such as [design](/use-case/design), [explore](/use-case/explore), [document](/use-case/document) and even [analyze](/use-case/analyze) your database.
+2022 was a **huge year for Azimutt** with our motivation always high to push it every week. And we expect 2023 to be the same. In 2022, we went from a simple MVP with just enough features to be useful, to a usable product covering several complementary use cases such as [design](/use-cases/design), [explore](/use-cases/explore), [document](/use-cases/document) and even [analyze](/use-cases/analyze) your database.
 
 ![Happy New Year 2023]({{base_link}}/2023-new-year.jpg)
 
