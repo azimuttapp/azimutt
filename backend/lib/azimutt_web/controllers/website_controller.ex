@@ -47,5 +47,6 @@ defmodule AzimuttWeb.WebsiteController do
   def document(conn, _params), do: conn |> render("use-case-document.html")
   def analyze(conn, _params), do: conn |> render("use-case-analyze.html")
   def features(conn, _params), do: conn |> render("features.html")
+  def see_what_you_need(conn, _params), do: conn |> render("features-see-what-you-need.html")
   def pricing(conn, _params), do: conn |> render("pricing.html")
 end
