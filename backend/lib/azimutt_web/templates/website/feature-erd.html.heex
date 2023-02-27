@@ -1,19 +1,12 @@
 <div class="relative isolate overflow-hidden bg-white px-6 py-24 lg:px-0 lg:overflow-visible">
     <%= render "_features2-squares.html" %>
     <div class="mx-auto grid max-w-2xl grid-cols-1 gap-y-16 gap-x-8 lg:mx-0 lg:max-w-none lg:grid-cols-2 lg:items-start lg:gap-y-10">
-        <%= render "_features2-heading.html",
-            title: "See what you need",
-            description: "Almost all database visualization tools show every table and column, which make them hardly usable with large databases. Azimutt let you choose what want, making it great for complex databases."
-        %>
-        <%= render "_features2-screenshot.html",
-            screenshot: %{src: Routes.static_path(@conn, "/images/screenshots/see-what-you-need.png"), alt: "See what you need screenshot"},
-            previous: %{text: "Previous", url: "#previous"},
-            next: %{text: "Next", url: "#next"}
-        %>
+        <%= render "_features2-heading.html", title: @feature.name, description: "Almost all database visualization tools show every table and column, which make them hardly usable with large databases. Azimutt let you choose what want, making it great for complex databases." %>
+        <%= render "_features2-screenshot.html", conn: @conn, feature: @feature, previous: @previous, next: @next %>
         <div class="lg:col-span-2 lg:col-start-1 lg:row-start-2 lg:row-span-4 lg:mx-auto lg:grid lg:w-full lg:max-w-7xl lg:grid-cols-2 lg:gap-x-8 lg:px-8">
             <div class="lg:pr-4">
                 <div class="max-w-xl text-base leading-7 text-gray-700 lg:max-w-lg">
-                    <p> Good understanding starts with a good visualization. Azimutt is the only Entity-Relationship diagram that let you choose what you want to see and how.</p>
+                    <p>Good understanding starts with a good visualization. Azimutt is the only Entity-Relationship diagram that let you choose what you want to see and how.</p>
                     <ul role="list" class="mt-8 space-y-8 text-gray-600">
                         <li class="flex gap-x-3">
                             <svg class="mt-1 h-5 w-5 flex-none text-indigo-600" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">

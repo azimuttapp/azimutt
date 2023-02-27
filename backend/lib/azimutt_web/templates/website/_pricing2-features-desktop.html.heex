@@ -19,7 +19,7 @@
                 <div class="relative -mx-8 mt-10">
                     <!-- Fake card backgrounds -->
                     <div class="absolute inset-y-0 inset-x-8 grid grid-cols-4 gap-x-8 before:block" aria-hidden="true">
-                        <%= for plan <- @plans do %>
+                        <%= for _ <- @plans do %>
                             <div class="h-full w-full rounded-lg bg-white shadow-sm"></div>
                         <% end %>
                     </div>

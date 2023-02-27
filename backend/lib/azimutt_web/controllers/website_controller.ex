@@ -46,7 +46,22 @@ defmodule AzimuttWeb.WebsiteController do
   def explore(conn, _params), do: conn |> render("use-case-explore.html")
   def document(conn, _params), do: conn |> render("use-case-document.html")
   def analyze(conn, _params), do: conn |> render("use-case-analyze.html")
-  def features(conn, _params), do: conn |> render("features.html")
-  def see_what_you_need(conn, _params), do: conn |> render("features-see-what-you-need.html")
+  def features_index(conn, _params), do: conn |> render("features.html")
+
+  def features_show(conn, %{"id" => id}) do
+    index = Azimutt.features() |> Enum.find_index(fn f -> f.id == id end)
+
+    if index != nil do
+      conn
+      |> render("feature-#{id}.html",
+        feature: Azimutt.features() |> Enum.at(index),
+        previous: if(index > 0, do: Azimutt.features() |> Enum.at(index - 1), else: nil),
+        next: Azimutt.features() |> Enum.at(index + 1)
+      )
+    else
+      {:error, :not_found}
+    end
+  end
+
   def pricing(conn, _params), do: conn |> render("pricing.html")
 end

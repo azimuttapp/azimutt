@@ -34,29 +34,12 @@
       <div x-show="open" @click.outside="open = false" style="display: none" class="absolute left-1/2 z-10 mt-3 w-screen max-w-6xl -translate-x-1/2 transform px-2 sm:px-0">
         <div class="overflow-hidden rounded-lg shadow-lg ring-1 ring-black ring-opacity-5">
           <div class="p-4 bg-white grid gap-3 grid-cols-4">
-            <%= for {url, icon, title, description} <- [
-              {"/", "check", "An ERD that scales", "Avoid unreadable diagram, choose what's displayed: tables, columns, order."},
-              {"/", "check", "A powerful search", "When you don't know, it will. Fuzzy search in names, comments and more."},
-              {"/", "check", "Explore following relations", "Find your starting point, then navigate from it: in and out relations."},
-              {"/", "check", "Path between tables", "When you don't know the path, Azimutt will. Choose the right one."},
-              {"/", "check", "Save your findings", "A great schema is worth 1000 words. Keep them for later use with layouts."},
-              {"/", "check", "Colors mean a lot", "Use colors to convey meaning, make your diagram cristal clear."},
-              {"/", "check", "Document and showcase", "Table and column notes for documentations, layout memos visual indications."},
-              {"/", "check", "Fast design with AML", "Minimal, intuitive & permissive DSL to design your database at your typing speed."},
-              {"/", "check", "Works with any database", "Relational and Document ones natively, but easily extended through JSON."},
-              {"/", "check", "A linter for your database", "Azimutt analysis will point you inconsistencies and possible improvements in your schema."},
-              {"/", "check", "Data access on demand", "When the schema is not enough, go deeper, digging in real data."},
-              {"/", "check", "Collaborate with your peers", "Solo investigation is cool, but sharing findings with others is even better."},
-              {"/", "check", "Gather all your databases", "Ideal for micro-services, CQRS, or drafting new features."},
-              {"/", "check", "Show to the world", "Embed your diagram wherever you want, secretly share with anyone."},
-              {"/", "check", "Made for developers", "Scriptable tools unleash tremendous power. You have no limit."},
-              {"/", "check", "Best in class support", "We're eager to help you succeed, reach out for a friendly help."},
-            ] do %>
-              <a href={url} class="flex items-start rounded-lg p-3 hover:bg-gray-50">
-                <Icon.draw name={icon} kind="outline" class="text-indigo-600 flex-shrink-0" />
+            <%= for feature <- Azimutt.features do %>
+              <a href={Routes.website_path(@conn, :features_show, feature.id)} class="flex items-start rounded-lg p-3 hover:bg-gray-50">
+                <Icon.draw name={feature.icon} kind="outline" class="text-indigo-600 flex-shrink-0" />
                 <div class="ml-4">
-                  <p class="text-base font-medium text-gray-900"><%= title %></p>
-                  <p class="mt-1 text-sm text-gray-500"><%= description %></p>
+                  <p class="text-base font-medium text-gray-900"><%= feature.name %></p>
+                  <p class="mt-1 text-sm text-gray-500"><%= feature.description %></p>
                 </div>
               </a>
             <% end %>

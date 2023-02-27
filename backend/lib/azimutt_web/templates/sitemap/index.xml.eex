@@ -5,7 +5,10 @@
   <url><loc><%= Routes.website_url(@conn, :explore) %></loc><lastmod>2023-01-20</lastmod></url>
   <url><loc><%= Routes.website_url(@conn, :document) %></loc><lastmod>2023-01-20</lastmod></url>
   <url><loc><%= Routes.website_url(@conn, :analyze) %></loc><lastmod>2023-01-20</lastmod></url>
-  <url><loc><%= Routes.website_url(@conn, :see_what_you_need) %></loc><lastmod>2023-03-06</lastmod></url>
+  <url><loc><%= Routes.website_url(@conn, :features_index) %></loc><lastmod>2023-03-06</lastmod></url>
+  <%= for feature <- Azimutt.features do %>
+  <url><loc><%= Routes.website_url(@conn, :features_show, feature.id) %></loc><lastmod>2023-03-06</lastmod></url>
+  <% end %>
   <url><loc><%= Routes.website_url(@conn, :pricing) %></loc><lastmod>2023-03-06</lastmod></url>
 
   <%= if length(@articles) > 0 do %>
