@@ -1,5 +1,10 @@
-<LandingPage.hero_section>
-    <:title>
+<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-20 pb-16 text-center lg:pt-32">
+    <!-- <div class="hidden sm:mb-8 sm:flex sm:justify-center">
+        <div class="relative rounded-full py-1 px-3 text-sm leading-6 text-gray-600 ring-1 ring-gray-900/10 hover:ring-gray-900/20">
+            Announcing our next round of funding. <a href="#" class="font-semibold text-indigo-600"><span class="absolute inset-0" aria-hidden="true"></span>Read more <span aria-hidden="true">&rarr;</span></a>
+        </div>
+    </div> -->
+    <h1 class="mx-auto max-w-4xl font-display text-5xl font-medium tracking-tight text-slate-900 sm:text-7xl">
         Boost your
         <span class="relative text-blue-600 whitespace-nowrap">
             <svg aria-hidden="true" viewBox="0 0 418 42" class="absolute top-2/3 left-0 h-[0.58em] w-full fill-blue-300/70" preserveAspectRatio="none">
@@ -8,28 +13,42 @@
             <span class="relative">database</span>
         </span>
         productivity. Right now!
-    </:title>
-    <:description>
+    </h1>
+    <p class="mx-auto mt-6 max-w-2xl text-lg tracking-tight text-slate-700">
         Search on tables, columns, relations and comments.
         Display only what is useful. Follow relations in one click. Find paths between tables.
         Design. Document. Analyse. Fly!
-    </:description>
-    <:action_buttons>
-        <div class="mt-10 flex justify-center gap-x-6">
-            <%= if @current_user do %>
-                <%= link "Access your projects", to: Routes.user_dashboard_path(@conn, :index), class: "relative inline-flex items-center px-4 py-2 space-x-2 text-center text-white transition-all transition duration-200 ease-out bg-gray-800 rounded shadow-sm outline-none cursor-pointer font-regular outline-0 focus-visible:outline-4 focus-visible:outline-offset-1 hover:bg-gray-900 text-lo-contrast focus-visible:outline-brand-600" %>
-            <% else %>
-                <%= link "Explore your schema", to: Routes.elm_path(@conn, :new), class: "relative inline-flex items-center px-4 py-2 space-x-2 text-center text-white transition-all transition duration-200 ease-out bg-gray-800 rounded shadow-sm outline-none cursor-pointer font-regular outline-0 focus-visible:outline-4 focus-visible:outline-offset-1 hover:bg-gray-900 text-lo-contrast focus-visible:outline-brand-600" %>
-            <% end %>
+    </p>
+    <div class="mt-10">
+        <%= if @current_user do %>
+            <%= link "Access your projects", to: Routes.user_dashboard_path(@conn, :index), class: "relative inline-flex items-center px-4 py-2 space-x-2 text-center text-white transition-all transition duration-200 ease-out bg-gray-800 rounded shadow-sm outline-none cursor-pointer font-regular outline-0 focus-visible:outline-4 focus-visible:outline-offset-1 hover:bg-gray-900 text-lo-contrast focus-visible:outline-brand-600" %>
+        <% else %>
+            <%= link "Explore your database schema", to: Routes.elm_path(@conn, :new), class: "relative inline-flex items-center px-4 py-3 space-x-2 text-center text-white transition-all transition duration-200 ease-out bg-gray-800 rounded shadow-sm outline-none cursor-pointer font-regular outline-0 focus-visible:outline-4 focus-visible:outline-offset-1 hover:bg-gray-900 text-lo-contrast focus-visible:outline-brand-600" %>
+            <p class="mt-1 text-sm text-gray-500"><b>No required signup.</b> Use our samples, your SQL file or connection url.</p>
+        <% end %>
+    </div>
+    <div class="mt-16">
+        <div id="logo-cloud" class="container px-4 mx-auto">
+            <p class="font-display text-base text-slate-900">
+                <u>Open source ❤️</u>, used by developers from companies all around the globe:
+            </p>
+            <div class="flex flex-wrap justify-center items-center">
+                <%= for logo <- [
+                    %{path: "/images/fundimmo_logo.png", name: "Fundimmo"},
+                    %{path: "/images/uncover_logo.png", name: "Uncover"},
+                    %{path: "/images/neocase_logo.png", name: "Neocase"}
+                ] do %>
+                    <div class="w-full p-4 w-1/3 md:w-1/6">
+                        <div class="py-4 lg:py-8"><img src={Routes.static_path(@conn, logo.path)} alt={"#{logo.name} logo"} /></div>
+                    </div>
+                <% end %>
+            </div>
         </div>
-    </:action_buttons>
+    </div>
+</div>
 
-    <:cloud_logo><img src={Routes.static_path(@conn, "/images/fundimmo_logo.png")} alt="Fundimmo logo"/></:cloud_logo>
-    <:cloud_logo><img src={Routes.static_path(@conn, "/images/uncover_logo.png")} alt="Uncover logo"/></:cloud_logo>
-    <:cloud_logo><img src={Routes.static_path(@conn, "/images/neocase_logo.png")} alt="Neocase logo"/></:cloud_logo>
-</LandingPage.hero_section>
+<%= render "_features_intro.html", conn: @conn %>
 <%= render "_problem_exposure.html" %>
-<!-- <%= render "_features_intro.html", conn: @conn %> -->
 <!-- <%= render "_features.html", conn: @conn %> -->
 <%= render "_testimonials.html" %>
 <%= render "_footer.html", conn: @conn %>

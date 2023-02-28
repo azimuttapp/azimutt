@@ -56,10 +56,9 @@
                     <div>
                         <h3 class="text-sm font-semibold leading-6 text-gray-900">Solutions</h3>
                         <ul role="list" class="mt-6 space-y-4">
-                            <li><a href={Routes.website_path(@conn, :design)} class="text-sm leading-6 text-gray-600 hover:text-gray-900">Design</a></li>
-                            <li><a href={Routes.website_path(@conn, :explore)} class="text-sm leading-6 text-gray-600 hover:text-gray-900">Explore</a></li>
-                            <li><a href={Routes.website_path(@conn, :document)} class="text-sm leading-6 text-gray-600 hover:text-gray-900">Document</a></li>
-                            <li><a href={Routes.website_path(@conn, :analyze)} class="text-sm leading-6 text-gray-600 hover:text-gray-900">Analyze</a></li>
+                            <%= for use_case <- Azimutt.use_cases do %>
+                                <li><a href={Routes.website_path(@conn, :use_cases_show, use_case.id)} class="text-sm leading-6 text-gray-600 hover:text-gray-900"><%= use_case.name %></a></li>
+                            <% end %>
                         </ul>
                     </div>
                     <div class="mt-10 md:mt-0">

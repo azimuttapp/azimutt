@@ -42,25 +42,29 @@ defmodule AzimuttWeb.WebsiteController do
     get_req_header(conn, "referer") |> Enum.any?(fn h -> h |> String.contains?(Azimutt.config(:domain)) end)
   end
 
-  def design(conn, _params), do: conn |> render("use-case-design.html")
-  def explore(conn, _params), do: conn |> render("use-case-explore.html")
-  def document(conn, _params), do: conn |> render("use-case-document.html")
-  def analyze(conn, _params), do: conn |> render("use-case-analyze.html")
+  def use_cases_index(conn, _params), do: conn |> render("use-cases.html")
+
+  def use_cases_show(conn, %{"id" => id}) do
+    Azimutt.use_cases()
+    |> Enum.find(fn u -> u.id == id end)
+    |> Result.from_nillable()
+    |> Result.map(fn use_case -> conn |> render("use-case-#{id}.html", use_case: use_case) end)
+  end
+
   def features_index(conn, _params), do: conn |> render("features.html")
 
   def features_show(conn, %{"id" => id}) do
-    index = Azimutt.features() |> Enum.find_index(fn f -> f.id == id end)
-
-    if index != nil do
+    Azimutt.features()
+    |> Enum.find_index(fn f -> f.id == id end)
+    |> Result.from_nillable()
+    |> Result.map(fn index ->
       conn
       |> render("feature-#{id}.html",
         feature: Azimutt.features() |> Enum.at(index),
         previous: if(index > 0, do: Azimutt.features() |> Enum.at(index - 1), else: nil),
         next: Azimutt.features() |> Enum.at(index + 1)
       )
-    else
-      {:error, :not_found}
-    end
+    end)
   end
 
   def pricing(conn, _params), do: conn |> render("pricing.html", dark: true)

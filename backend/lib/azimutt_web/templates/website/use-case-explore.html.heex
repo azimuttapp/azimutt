@@ -69,7 +69,7 @@
             <p>
                 As you may guess, we didn't stop there, at the MVP stage. We added tons of big and small features.
                 Some to support crucial use cases around the database:
-                <a href={Routes.website_path(@conn, :design)}>design</a>, <a href={Routes.website_path(@conn, :document)}>documentation</a> and <a href={Routes.website_path(@conn, :analyze)}>analysis</a>.
+                <a href={Routes.website_path(@conn, :use_cases_show, "design")}>design</a>, <a href={Routes.website_path(@conn, :use_cases_show, "document")}>documentation</a> and <a href={Routes.website_path(@conn, :use_cases_show, "analyze")}>analysis</a>.
                 Some to expand exploration capabilities (that's what we will cover right after).
                 And many other gold nuggets you will have to discover on your own ^^
             </p>
@@ -84,7 +84,7 @@
                 The find path feature will do this exploration for you and report all possible paths, you just have to choose the right one 🎉<br>
                 Two things about that.
                 First, your <strong>relations need to be declared</strong>. Azimutt build them from foreign keys but can't guess what is not in the schema (<em title="one day we could propose to monitor database requests to find relations based on used joins.">for now</em>).
-                If some are missing, declare them manually in Azimutt (or use the <a href={Routes.website_path(@conn, :analyze)}>analyze feature</a> to help you find missing ones).
+                If some are missing, declare them manually in Azimutt (or use the <a href={Routes.website_path(@conn, :use_cases_show, "analyze")}>analyze feature</a> to help you find missing ones).
                 Second, you will have <strong>tons of paths</strong> (every time I'm surprised). Use <em>find path settings</em> to ignore some tables and/or columns to keep only meaningful ones (for example the <code>created_by</code> columns or your <code>audit</code> table are rarely relevant).
             </p>
             <p>

@@ -10,17 +10,12 @@
       <div x-show="open" @click.outside="open = false" style="display: none" class="absolute left-1/2 z-10 mt-3 w-screen max-w-md -translate-x-1/2 transform px-2 sm:px-0">
         <div class="overflow-hidden rounded-lg shadow-lg ring-1 ring-black ring-opacity-5">
           <div class={"#{if assigns[:dark], do: "bg-gray-900", else: "bg-white"} p-4 grid gap-3"}>
-            <%= for {url, icon, title, description} <- [
-              {Routes.website_path(@conn, :design), "academic-cap", "Design", "Make beautiful diagrams at your typing speed using our minimal DSL."}, # icon options: academic-cap / adjustments-horizontal / sparkles
-              {Routes.website_path(@conn, :explore), "cursor-arrow-rays", "Explore", "The all-in-one tool to understand your database following your thought process."}, # icon options: cursor-arrow-rays / cursor-arrow-ripple / document-magnifying-glass / eye / globe-europe-africa / magnifying-glass-circle / map / rectangle-group
-              {Routes.website_path(@conn, :document), "book-open", "Document", "Nice and contextual documentation for databases is now finally a reality."}, # icon options: book-open / tag / archive-box / bars-3-center-left
-              {Routes.website_path(@conn, :analyze), "shield-check", "Analyze", "Identify database design warts and automate any check to keep it consistent."}, # icon options: shield-check / check-badge / beaker / clipboard-document-check / finger-print / funnel
-            ] do %>
-              <a href={url} class={"#{if assigns[:dark], do: "hover:bg-gray-800", else: "hover:bg-gray-50"} flex items-start rounded-lg p-3"}>
-                <Icon.draw name={icon} kind="outline" class="text-indigo-600 flex-shrink-0" />
+            <%= for use_case <- Azimutt.use_cases do %>
+              <a href={Routes.website_path(@conn, :use_cases_show, use_case.id)} class={"#{if assigns[:dark], do: "hover:bg-gray-800", else: "hover:bg-gray-50"} flex items-start rounded-lg p-3"}>
+                <Icon.draw name={use_case.icon} kind="outline" class="text-indigo-600 flex-shrink-0" />
                 <div class="ml-4">
-                  <p class={"#{if assigns[:dark], do: "text-white", else: "text-gray-900"} text-base font-medium"}><%= title %></p>
-                  <p class={"#{if assigns[:dark], do: "text-gray-300", else: "text-gray-500"} mt-1 text-sm"}><%= description %></p>
+                  <p class={"#{if assigns[:dark], do: "text-white", else: "text-gray-900"} text-base font-medium"}><%= use_case.name %></p>
+                  <p class={"#{if assigns[:dark], do: "text-gray-300", else: "text-gray-500"} mt-1 text-sm"}><%= use_case.description %></p>
                 </div>
               </a>
             <% end %>
@@ -67,10 +62,9 @@
   <:mobile_menu>
     <% link_style = "#{if assigns[:dark], do: "text-white hover:text-gray-100 hover:bg-gray-800 hover:border-blue-700", else: "text-gray-500 hover:text-blue-700 hover:bg-gray-50 hover:border-blue-300"} border-transparent block pl-3 pr-4 py-2 border-l-4 text-base font-medium" %>
     <a href={Routes.website_path(@conn, :index)} class={link_style}>Home</a>
-    <a href={Routes.website_path(@conn, :design)} class={link_style}>Design your database</a>
-    <a href={Routes.website_path(@conn, :explore)} class={link_style}>Explore your database</a>
-    <a href={Routes.website_path(@conn, :document)} class={link_style}>Document your database</a>
-    <a href={Routes.website_path(@conn, :analyze)} class={link_style}>Analyze your database</a>
+    <%= for use_case <- Azimutt.use_cases do %>
+      <a href={Routes.website_path(@conn, :use_cases_show, use_case.id)} class={link_style}><%= use_case.name %> your database</a>
+    <% end %>
     <a href={Routes.website_path(@conn, :features_index)} class={link_style}>Features</a>
     <a href={Routes.website_path(@conn, :pricing)} class={link_style}>Pricing</a>
     <a href={Routes.blog_path(@conn, :index)} class={link_style}>Blog</a>
