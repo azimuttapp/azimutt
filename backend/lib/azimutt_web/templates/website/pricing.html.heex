@@ -6,7 +6,19 @@
             description: "Explore your database for free. Then share and go deeper with your teammates, using documentation and analysis features!"
         %>
         <div class="relative bg-gray-50 lg:pt-14">
-            <div class="mx-auto max-w-7xl py-24 px-6 sm:py-32 lg:px-8">
+            <div class="mx-auto max-w-7xl py-12 px-6 lg:px-8">
+                <div class="flex flex-col items-start gap-y-6 gap-x-8 rounded-xl px-8 py-6 ring-1 ring-gray-900/10 lg:col-span-2 lg:flex-row lg:items-center">
+                    <div class="lg:min-w-0 lg:flex-1">
+                        <h3 class="text-lg font-semibold leading-8 tracking-tight text-indigo-600">Discounted prices</h3>
+                        <p class="mt-1 text-base leading-7 text-gray-600">
+                            <Icon.draw name="rocket-launch" kind="solid" class="inline" /> <b>Grow your startup</b> focused, we offer <u>50% discount for early startups</u> (less than 5 years and 50 employees).<br/>
+                            <Icon.draw name="academic-cap" kind="solid" class="inline" /> <b>Study</b> in full serenity, we offer <u>80% discount for students</u>.<br/>
+                        </p>
+                    </div>
+                    <a href={"mailto:#{Azimutt.config(:support_email)}"} target="_blank" rel="noopener" class="rounded-md px-3.5 py-2 text-sm font-semibold leading-6 text-indigo-600 ring-1 ring-inset ring-indigo-200 hover:ring-indigo-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Contact us <span aria-hidden="true">&rarr;</span></a>
+                </div>
+            </div>
+            <div class="mx-auto max-w-7xl py-12 px-6 lg:px-8">
                 <%
                 categories = [
                     %{name: "Design your database", features: [
