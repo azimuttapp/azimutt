@@ -23,6 +23,62 @@ defmodule Azimutt do
     Application.get_env(:azimutt, key, default)
   end
 
+  def plans do
+    # Next ones: Explore ($3), Expand ($13), Extend ($25)
+    [
+      %{
+        id: :free,
+        name: "Explorer",
+        description: "Design or Explore any kind of database, seamlessly.",
+        monthly: 0,
+        annually: 0,
+        features: [
+          "Database design with AML",
+          "Database exploration",
+          "Unlimited Projects",
+          "Unlimited Tables",
+          "Up to 3 layouts per project"
+        ],
+        buy: "/login?plan=free",
+        selected: false
+      },
+      %{
+        id: :pro,
+        name: "Pro",
+        description: "Remove limits, make Azimutt a central space for collaboration.",
+        monthly: 13,
+        annually: 130,
+        features: [
+          "Everything included in Explorer, plus...",
+          "Unlimited Notes & Memos",
+          "Unlimited Layouts",
+          "Layout customization",
+          "Database access",
+          "Extended schema analysis",
+          "Premium support"
+        ],
+        buy: "/login?plan=pro",
+        selected: true
+      },
+      %{
+        id: :enterprise,
+        name: "Enterprise",
+        description: "Features you only dreamed of to ease database understanding and management.",
+        monthly: nil,
+        annually: nil,
+        features: [
+          "Everything included in Pro, plus...",
+          "User roles",
+          "Schema change alerting",
+          "Advanced data access",
+          "AI query generation"
+        ],
+        buy: "mailto:#{Azimutt.config(:support_email)}",
+        selected: false
+      }
+    ]
+  end
+
   def features do
     [
       %{

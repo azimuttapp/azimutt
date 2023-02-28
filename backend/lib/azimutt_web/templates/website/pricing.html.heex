@@ -1,3 +1,51 @@
-<%= render "_pricing2.html" %>
-<%= # render "_pricing.html", conn: @conn %>
-<%= render "_footer.html" %>
+<main>
+    <div class="isolate overflow-hidden">
+        <%= render "_plans-3tier-dark.html",
+            plans: Azimutt.plans,
+            title: "Save hours, for the price of minutes",
+            description: "Explore your database for free. Then share and go deeper with your teammates, using documentation and analysis features!"
+        %>
+        <div class="relative bg-gray-50 lg:pt-14">
+            <div class="mx-auto max-w-7xl py-24 px-6 sm:py-32 lg:px-8">
+                <%
+                categories = [
+                    %{name: "Design your database", features: [
+                        %{name: "Define a schema using AML", free: true, pro: true, enterprise: true},
+                        %{name: "Custom colors", free: false, pro: true, enterprise: true}
+                    ]},
+                    %{name: "Explore your database", features: [
+                        %{name: "Import from connection, SQL, JSON", free: true, pro: true, enterprise: true},
+                        %{name: "Tables in project", free: "Unlimited", pro: "Unlimited", enterprise: "Unlimited"},
+                        %{name: "Layouts in project", free: "3 layouts", pro: "Unlimited layouts", enterprise: "Unlimited layouts"},
+                        %{name: "Search everywhere", free: true, pro: true, enterprise: true},
+                        %{name: "Path between tables", free: false, pro: true, enterprise: true},
+                        %{name: "Query live data", free: false, pro: "Show samples", enterprise: "Advanced queries"}
+                    ]},
+                    %{name: "Document your database", features: [
+                        %{name: "Notes on tables & columns", free: "Unlimited", pro: "Unlimited", enterprise: "Unlimited"},
+                        %{name: "Memos in layouts", free: "3 per layout", pro: "Unlimited", enterprise: "Unlimited"}
+                    ]},
+                    %{name: "Analyze your database", features: [
+                        %{name: "Tables without primary key", free: false, pro: true, enterprise: true},
+                        %{name: "Missing foreign keys", free: false, pro: true, enterprise: true},
+                        %{name: "Inconsistent column types", free: false, pro: true, enterprise: true},
+                        %{name: "Missing indexes", free: false, pro: false, enterprise: true}
+                    ]},
+                    %{name: "Other perks", features: [
+                        %{name: "Embed & private links", free: true, pro: true, enterprise: true},
+                        %{name: "Invite other people", free: "3 people", pro: true, enterprise: true},
+                        %{name: "Scriptable access", free: false, pro: true, enterprise: true}
+                    ]}
+                ]
+                %>
+                <%= render "_feature-comparison-desktop.html", plans: Azimutt.plans, categories: categories %>
+                <%= render "_feature-comparison-mobile.html", plans: Azimutt.plans, categories: categories %>
+            </div>
+        </div>
+    </div>
+    <%= render "_faq.html", title: "Frequently asked questions", questions: [
+        %{question: "Which databases are supported?", answer: "Azimutt is not tied to a specific database. If they can fit in an entity-relationship model, it's great for Azimutt. Still, some have full-support and other will need more work to integrate. PostgreSQL, MongoDB and Couchbase are supported using database connection, you only need to provide your connection url. Any SQL schema is supported as well, so PostgreSQL, MySQL, MariaDB, Oracle, SQL Server and others very easy to integrate. For the others, you need to extract their schema and format it as JSON to load it into Azimutt. The CLI has a JSON schema inference to help with this if you need. Don't hesitate to reach out for any help with this 😉"},
+        %{question: "What about data privacy?", answer: "We take data privacy very seriously and offer several ways around it. The code is Open Source, you can freely audit it to see what we do with your data (ie: nothing!). You can choose to share your database connection or just import the schema of the tables you want. Parsing the schema is done in browser, you can choose to keep your project local so Azimutt servers will never see your data. And finally, you can host yourself an Azimutt instance."},
+    ] %>
+</main>
+<%= render "_footer.html", conn: @conn %>

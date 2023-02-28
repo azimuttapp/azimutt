@@ -1,4 +1,4 @@
-<div x-data="{ annual: true }" class="flow-root bg-gray-900 py-16 sm:pt-32 lg:pb-0">
+<div x-data="{annual: false}" class="flow-root bg-gray-900 py-16 sm:pt-32 lg:pb-0">
     <div class="mx-auto max-w-7xl px-6 lg:px-8">
         <div class="relative z-10">
             <h1 class="mx-auto max-w-4xl text-center text-5xl font-bold tracking-tight text-white"><%= @title %></h1>
@@ -35,11 +35,18 @@
                     <h2 id={"#{plan.id}-plan"} class="text-sm font-semibold leading-6 text-white"><%= plan.name %></h2>
                     <div class="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between lg:flex-col lg:items-stretch">
                         <div class="mt-2 flex items-center gap-x-4">
-                            <p class="text-4xl font-bold tracking-tight text-white" x-text={"annual ? '$#{plan.annually}' : '$#{plan.monthly}'"}>$<%= plan.annually %></p>
-                            <div class="text-sm leading-5">
-                                <p class="text-white">USD</p>
-                                <p class="text-gray-400" x-text="annual ? 'Billed annually' : 'Billed monthly'">Billed annually</p>
-                            </div>
+                            <%= cond do %>
+                                <% plan.monthly == 0 -> %>
+                                    <p class="text-4xl font-bold tracking-tight text-white">Free</p>
+                                <% plan.monthly == nil -> %>
+                                    <p class="text-4xl font-bold tracking-tight text-white">Contact us</p>
+                                <% true -> %>
+                                    <p class="text-4xl font-bold tracking-tight text-white" x-text={"annual ? '$#{plan.annually}' : '$#{plan.monthly}'"}>$<%= plan.monthly %></p>
+                                    <div class="text-sm leading-5">
+                                        <p class="text-white">/user</p>
+                                        <p class="text-gray-400" x-text="annual ? 'Billed annually' : 'Billed monthly'">Billed monthly</p>
+                                    </div>
+                            <% end %>
                         </div>
                         <a href={plan.buy} aria-describedby={"#{plan.id}-plan"} class="rounded-md py-2 px-3 text-center text-sm leading-6 font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 bg-white/10 hover:bg-white/20 focus-visible:outline-white">Buy this plan</a>
                     </div>
@@ -59,11 +66,18 @@
                     <h2 id={"#{plan.id}-plan"} class="text-sm font-semibold leading-6 text-gray-900"><%= plan.name %></h2>
                     <div class="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between lg:flex-col lg:items-stretch">
                         <div class="mt-2 flex items-center gap-x-4">
-                            <p class="text-4xl font-bold tracking-tight text-gray-900" x-text={"annual ? '$#{plan.annually}' : '$#{plan.monthly}'"}>$<%= plan.annually %></p>
-                            <div class="text-sm leading-5">
-                                <p class="text-gray-900">USD</p>
-                                <p class="text-gray-500" x-text="annual ? 'Billed annually' : 'Billed monthly'">Billed annually</p>
-                            </div>
+                            <%= cond do %>
+                                <% plan.monthly == 0 -> %>
+                                    <p class="text-4xl font-bold tracking-tight text-gray-900">Free</p>
+                                <% plan.monthly == nil -> %>
+                                    <p class="text-4xl font-bold tracking-tight text-gray-900">Contact us</p>
+                                <% true -> %>
+                                    <p class="text-4xl font-bold tracking-tight text-gray-900" x-text={"annual ? '$#{plan.annually}' : '$#{plan.monthly}'"}>$<%= plan.monthly %></p>
+                                    <div class="text-sm leading-5">
+                                        <p class="text-gray-900">/user</p>
+                                        <p class="text-gray-500" x-text="annual ? 'Billed annually' : 'Billed monthly'">Billed monthly</p>
+                                    </div>
+                            <% end %>
                         </div>
                         <a href={plan.buy} aria-describedby={"#{plan.id}-plan"} class="rounded-md py-2 px-3 text-center text-sm leading-6 font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 bg-indigo-600 shadow-sm hover:bg-indigo-500 focus-visible:outline-indigo-600">Buy this plan</a>
                     </div>
@@ -83,11 +97,18 @@
                     <h2 id={"#{plan.id}-plan"} class="text-sm font-semibold leading-6 text-white"><%= plan.name %></h2>
                     <div class="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between lg:flex-col lg:items-stretch">
                         <div class="mt-2 flex items-center gap-x-4">
-                            <p class="text-4xl font-bold tracking-tight text-white" x-text={"annual ? '$#{plan.annually}' : '$#{plan.monthly}'"}>$<%= plan.annually %></p>
-                            <div class="text-sm leading-5">
-                                <p class="text-white">USD</p>
-                                <p class="text-gray-400" x-text="annual ? 'Billed annually' : 'Billed monthly'">Billed annually</p>
-                            </div>
+                            <%= cond do %>
+                                <% plan.monthly == 0 -> %>
+                                    <p class="text-4xl font-bold tracking-tight text-white">Free</p>
+                                <% plan.monthly == nil -> %>
+                                    <p class="text-4xl font-bold tracking-tight text-white">Contact us</p>
+                                <% true -> %>
+                                    <p class="text-4xl font-bold tracking-tight text-white" x-text={"annual ? '$#{plan.annually}' : '$#{plan.monthly}'"}>$<%= plan.monthly %></p>
+                                    <div class="text-sm leading-5">
+                                        <p class="text-white">/user</p>
+                                        <p class="text-gray-400" x-text="annual ? 'Billed annually' : 'Billed monthly'">Billed monthly</p>
+                                    </div>
+                            <% end %>
                         </div>
                         <a href={plan.buy} aria-describedby={"#{plan.id}-plan"} class="rounded-md py-2 px-3 text-center text-sm leading-6 font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 bg-white/10 hover:bg-white/20 focus-visible:outline-white">Buy this plan</a>
                     </div>
