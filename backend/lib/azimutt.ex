@@ -49,7 +49,7 @@ defmodule Azimutt do
         monthly: 13,
         annually: 130,
         features: [
-          "Everything included in Explorer, plus...",
+          "Everything included in Explorer",
           "Unlimited Notes & Memos",
           "Unlimited Layouts",
           "Layout customization",
@@ -67,7 +67,7 @@ defmodule Azimutt do
         monthly: nil,
         annually: nil,
         features: [
-          "Everything included in Pro, plus...",
+          "Everything included in Pro",
           "User roles",
           "Schema change alerting",
           "Advanced data access",
