@@ -17,20 +17,26 @@
                             Display only what is useful. Follow relations. Find paths between tables.
                             Design. Document. Analyse. <b>Fly!</b>
                         </p>
-                        <div class="mt-10 flex items-center justify-center gap-x-6">
-                            <%= if @current_user do %>
-                                <%= link "Access your projects", to: Routes.user_dashboard_path(@conn, :index), class: "relative inline-flex items-center px-4 py-2 space-x-2 text-center text-white transition-all transition duration-200 ease-out bg-gray-800 rounded shadow-sm outline-none cursor-pointer font-regular outline-0 focus-visible:outline-4 focus-visible:outline-offset-1 hover:bg-gray-900 text-lo-contrast focus-visible:outline-brand-600" %>
-                            <% else %>
-                                <%= link "Explore your database schema", to: Routes.elm_path(@conn, :new), class: "rounded-md bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" %>
-                            <% end %>
-                            <a href={Routes.gallery_path(@conn, :index)} class="text-sm font-semibold leading-6 text-gray-900">See samples <span aria-hidden="true">→</span></a>
-                        </div>
-                        <p class="mt-3 text-sm text-gray-500">Use our samples, your SQL file or connection url.<br><b>No required signup.</b></p>
+                        <%= if @current_user do %>
+                            <div class="mt-10">
+                                <a href={Routes.user_dashboard_path(@conn, :index)} class="rounded-md bg-indigo-600 px-8 py-4 font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+                                    Access your projects
+                                </a>
+                            </div>
+                        <% else %>
+                            <div class="mt-10 flex items-center justify-center gap-x-6">
+                                <a href={Routes.elm_path(@conn, :new)} class="rounded-md bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+                                    Explore your database schema
+                                </a>
+                                <a href={Routes.gallery_path(@conn, :index)} class="text-sm font-semibold leading-6 text-gray-900">See samples <span aria-hidden="true">→</span></a>
+                            </div>
+                            <p class="mt-3 text-sm text-gray-500">Use our samples, your SQL file or connection url.<br><b>No required signup.</b></p>
+                        <% end %>
                     </div>
                 </div>
                 <div class="relative overflow-hidden pt-16">
                     <div class="mx-auto max-w-7xl px-6 lg:px-8">
-                        <img src={Routes.static_path(@conn, "/images/screenshots/azimutt.png")} alt="App screenshot" class="mb-[-12%] rounded-xl shadow-2xl ring-1 ring-gray-900/10" width="2432" height="1442">
+                        <img src={Routes.static_path(@conn, "/images/screenshots/azimutt.png")} alt="App screenshot" width="1600" height="900" class="mb-[-7%] rounded-xl shadow-2xl ring-1 ring-gray-900/10">
                         <div class="relative" aria-hidden="true">
                             <div class="absolute -inset-x-20 bottom-0 bg-gradient-to-t from-white pt-[7%]"></div>
                         </div>
@@ -48,12 +54,7 @@
             </div>
             <div class="mx-auto mt-16 max-w-2xl sm:mt-20 lg:mt-24 lg:max-w-4xl">
                 <dl class="grid max-w-xl grid-cols-1 gap-y-10 gap-x-8 lg:max-w-none lg:grid-cols-2 lg:gap-y-16">
-                    <%= for use_case <- [
-                        %{icon: "academic-cap", name: "Design your database", description: "Use the simplest DSL out there to freely design your database as fast as possible."},
-                        %{icon: "cursor-arrow-rays", name: "Explore your database", description: "The all-in-one tool to understand your database following your thought process."},
-                        %{icon: "book-open", name: "Document your database", description: "Nice and contextual documentation for databases is now finally a reality."},
-                        %{icon: "shield-check", name: "Analyze your database", description: "Identify database design warts and automate any check to keep it consistent."}
-                    ] do %>
+                    <%= for use_case <- Azimutt.use_cases do %>
                         <div class="relative pl-16">
                             <dt class="text-base font-semibold leading-7 text-gray-900">
                                 <div class="absolute top-0 left-0 flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-600">
@@ -61,7 +62,12 @@
                                 </div>
                                 <%= use_case.name %>
                             </dt>
-                            <dd class="mt-2 text-base leading-7 text-gray-600"><%= use_case.description %></dd>
+                            <dd class="mt-2 text-base leading-7 text-gray-600">
+                                <%= use_case.description %>
+                                <p class="mt-3">
+                                    <a href={Routes.website_path(@conn, :use_cases_show, use_case.id)} class="text-sm font-semibold leading-6 text-indigo-600">Learn more <span aria-hidden="true">→</span></a>
+                                </p>
+                            </dd>
                         </div>
                     <% end %>
                 </dl>

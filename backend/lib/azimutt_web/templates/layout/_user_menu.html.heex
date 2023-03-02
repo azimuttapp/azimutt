@@ -28,7 +28,7 @@
         Features
         <Icon.chevron_down kind="mini" class="text-gray-400 ml-2 h-5 w-5 group-hover:text-gray-500" />
       </button>
-      <div x-show="open" @click.outside="open = false" style="display: none" class="absolute left-1/2 z-10 mt-3 w-screen max-w-6xl -translate-x-1/2 transform px-2 sm:px-0">
+      <div x-show="open" @click.outside="open = false" style="display: none" class="absolute z-10 mt-3 w-screen max-w-6xl -translate-x-1/4 transform px-2 sm:px-0">
         <div class="overflow-hidden rounded-lg shadow-lg ring-1 ring-black ring-opacity-5">
           <div class={"#{if assigns[:dark], do: "bg-gray-900", else: "bg-white"} p-4 grid gap-3 grid-cols-4"}>
             <%= for feature <- Azimutt.features do %>
