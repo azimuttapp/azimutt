@@ -1,5 +1,5 @@
 <div class="relative isolate overflow-hidden bg-white px-6 py-24 lg:px-0 lg:overflow-visible">
-    <%= render "_features2-squares.html" %>
+    <%= render AzimuttWeb.PartialsView, "_bg_grid.html" %>
     <div class="mx-auto grid max-w-2xl grid-cols-1 gap-y-16 gap-x-8 lg:mx-0 lg:max-w-none lg:grid-cols-2 lg:items-start lg:gap-y-10">
         <%= render "_features2-heading.html", title: @feature.name, description: "Almost all database visualization tools show every table and column, which make them hardly usable with large databases. Azimutt let you choose what want, making it great for complex databases." %>
         <%= render "_features2-screenshot.html", conn: @conn, feature: @feature, previous: @previous, next: @next %>

@@ -69,6 +69,8 @@
             </div>
         </div>
 
+        <%= render "_features_intro.html", conn: @conn %>
+
         <div class="my-32 mx-auto max-w-7xl sm:px-6 lg:px-8">
             <%= render AzimuttWeb.PartialsView, "_testimonial_card_black.html",
                 author: %{name: "Loïc Knuchel", description: "Co-founder of Azimutt"},
@@ -117,7 +119,7 @@
                     <a href={Azimutt.config(:slack_url)} target="_blank" rel="noopener" class="underline">Slack</a>,
                     <a href={Azimutt.config(:twitter_url)} target="_blank" rel="noopener" class="underline">Twitter</a>,
                     <a href={Azimutt.config(:github_issues)} target="_blank" rel="noopener" class="underline">GitHub</a> or
-                    <a href={"mailto:#{Azimutt.config(:support_email)}"} class="underline">Email</a>.
+                    <a href={"mailto:#{Azimutt.config(:support_email)}"} target="_blank" rel="noopener" class="underline">Email</a>.
                 </p>
                 <div class="mt-10 flex items-center justify-center gap-x-6">
                     <a href={Routes.user_session_path(@conn, :new)} class="rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Join 600+ early adopters</a>
