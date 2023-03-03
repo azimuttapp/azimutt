@@ -47,31 +47,12 @@
 
         <!-- Feature section -->
         <div class="my-32 mx-auto max-w-7xl px-6 lg:px-8">
-            <div class="mx-auto max-w-2xl lg:text-center">
-                <h2 class="text-base font-semibold leading-7 text-indigo-600">A powerful companion</h2>
-                <p class="mt-2 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Understand your database, at every step</p>
-                <p class="mt-6 text-lg leading-8 text-gray-600">From conception to afterward analysis, Azimutt can help you at any step in your database journey. Especially when trying to understand a large one.</p>
-            </div>
-            <div class="mx-auto mt-16 max-w-2xl sm:mt-20 lg:mt-24 lg:max-w-4xl">
-                <dl class="grid max-w-xl grid-cols-1 gap-y-10 gap-x-8 lg:max-w-none lg:grid-cols-2 lg:gap-y-16">
-                    <%= for use_case <- Azimutt.use_cases do %>
-                        <div class="relative pl-16">
-                            <dt class="text-base font-semibold leading-7 text-gray-900">
-                                <div class="absolute top-0 left-0 flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-600">
-                                    <Icon.draw name={use_case.icon} kind="outline" class="text-white" />
-                                </div>
-                                <%= use_case.name %>
-                            </dt>
-                            <dd class="mt-2 text-base leading-7 text-gray-600">
-                                <%= use_case.description %>
-                                <p class="mt-3">
-                                    <a href={Routes.website_path(@conn, :use_cases_show, use_case.id)} class="text-sm font-semibold leading-6 text-indigo-600">Learn more <span aria-hidden="true">→</span></a>
-                                </p>
-                            </dd>
-                        </div>
-                    <% end %>
-                </dl>
-            </div>
+            <%= render AzimuttWeb.PartialsView, "_features_2_columns.html",
+                section: "A powerful companion",
+                title: "Understand your database, at every step",
+                description: "From conception to afterward analysis, Azimutt can help you at any step in your database journey. Especially when trying to understand a large one.",
+                features: Azimutt.use_cases |> Enum.map(fn u -> %{icon: u.icon, name: u.name, description: u.description, url: Routes.website_path(@conn, :use_cases_show, u.id)} end)
+            %>
         </div>
 
         <!-- Logo cloud -->
@@ -88,235 +69,43 @@
             </div>
         </div>
 
-        <!-- Testimonial section -->
         <div class="my-32 mx-auto max-w-7xl sm:px-6 lg:px-8">
-            <div class="relative overflow-hidden bg-gray-900 py-20 px-6 shadow-xl sm:rounded-3xl sm:py-24 sm:px-10 md:px-12 lg:px-20">
-                <img class="absolute inset-0 h-full w-full object-cover brightness-150 saturate-0" src="https://images.unsplash.com/photo-1601381718415-a05fb0a261f3?ixid=MXwxMjA3fDB8MHxwcm9maWxlLXBhZ2V8ODl8fHxlbnwwfHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=1216&q=80" alt="">
-                <div class="absolute inset-0 bg-gray-900/90 mix-blend-multiply"></div>
-                <svg viewBox="0 0 1097 845" aria-hidden="true" class="absolute -top-56 -left-80 w-[68.5625rem] transform-gpu blur-3xl">
-                    <path fill="url(#68eb76c4-2bc9-4928-860e-70adf05719f4)" fill-opacity=".45" d="M301.174 646.641 193.541 844.786 0 546.172l301.174 100.469 193.845-356.855c1.241 164.891 42.802 431.935 199.124 180.978 195.402-313.696 143.295-588.18 284.729-419.266 113.148 135.13 124.068 367.989 115.378 467.527L811.753 372.553l20.102 451.119-530.681-177.031Z" />
-                    <defs>
-                        <linearGradient id="68eb76c4-2bc9-4928-860e-70adf05719f4" x1="1097.04" x2="-141.165" y1=".22" y2="363.075" gradientUnits="userSpaceOnUse">
-                            <stop stop-color="#776FFF" />
-                            <stop offset="1" stop-color="#FF4694" />
-                        </linearGradient>
-                    </defs>
-                </svg>
-                <svg viewBox="0 0 1097 845" aria-hidden="true" class="hidden md:absolute md:bottom-16 md:left-[50rem] md:block md:w-[68.5625rem] md:transform-gpu md:blur-3xl">
-                    <path fill="url(#68eb76c4-2bc9-4928-860e-70adf05719f4)" fill-opacity=".25" d="M301.174 646.641 193.541 844.786 0 546.172l301.174 100.469 193.845-356.855c1.241 164.891 42.802 431.935 199.124 180.978 195.402-313.696 143.295-588.18 284.729-419.266 113.148 135.13 124.068 367.989 115.378 467.527L811.753 372.553l20.102 451.119-530.681-177.031Z" />
-                </svg>
-                <div class="relative mx-auto max-w-2xl lg:mx-0">
-                    <figure>
-                        <blockquote class="mt-6 text-lg font-semibold text-white sm:text-xl sm:leading-8">
-                            <p>
-                                I've been there: reverse engineering large databases...<br/>
-                                I've been there: looking for a tool to help me...<br/>
-                                I've been there: sad, disappointed and giving up with every tool...<br/>
-                                So here I'm: building Azimutt, the perfect tool to explore databases...
-                            </p>
-                        </blockquote>
-                        <figcaption class="mt-6 text-base text-white">
-                            <div class="font-semibold">Loïc Knuchel</div>
-                            <div class="mt-1">Co-founder of Azimutt</div>
-                        </figcaption>
-                    </figure>
-                </div>
-            </div>
+            <%= render AzimuttWeb.PartialsView, "_testimonial_card_black.html",
+                author: %{name: "Loïc Knuchel", description: "Co-founder of Azimutt"},
+                quote: "I've been there: reverse engineering large databases...
+                        I've been there: looking for a tool to help me...
+                        I've been there: sad, disappointed and giving up with every tool...
+                        So here I'm: building Azimutt, the perfect tool to explore databases..."
+                        |> String.split("\n", trim: false) |> Enum.intersperse(Phoenix.HTML.Tag.tag(:br)),
+                background: "https://images.unsplash.com/photo-1601381718415-a05fb0a261f3?ixid=MXwxMjA3fDB8MHxwcm9maWxlLXBhZ2V8ODl8fHxlbnwwfHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=1216&q=80"
+            %>
         </div>
 
-        <!-- CTA section -->
-        <!-- <div class="relative bg-white py-16">
-            <div class="absolute inset-x-0 top-0 hidden h-1/2 bg-gray-50 lg:block" aria-hidden="true"></div>
-            <div class="mx-auto max-w-7xl bg-indigo-600 lg:bg-transparent lg:px-8">
-                <div class="lg:grid lg:grid-cols-12">
-                    <div class="relative z-10 lg:col-span-4 lg:col-start-1 lg:row-start-1 lg:bg-transparent lg:py-16">
-                        <div class="absolute inset-x-0 h-1/2 bg-gray-50 lg:hidden" aria-hidden="true"></div>
-                        <div class="mx-auto max-w-md px-6 sm:max-w-3xl lg:max-w-none lg:p-0">
-                            <div class="aspect-w-10 aspect-h-6 sm:aspect-w-2 sm:aspect-h-1 lg:aspect-w-1">
-                                <img class="rounded-3xl object-cover object-center shadow-2xl" src={Routes.static_path(@conn, "/images/early-adopters.jpg")} alt="Early adopters illustration">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="relative bg-indigo-600 lg:col-span-10 lg:col-start-3 lg:row-start-1 lg:grid lg:grid-cols-10 lg:items-center lg:rounded-3xl">
-                        <div class="absolute inset-0 hidden overflow-hidden rounded-3xl lg:block" aria-hidden="true">
-                            <svg class="absolute bottom-full left-full translate-y-1/3 -translate-x-2/3 transform xl:bottom-auto xl:top-0 xl:translate-y-0" width="404" height="384" fill="none" viewBox="0 0 404 384" aria-hidden="true">
-                                <defs>
-                                    <pattern id="64e643ad-2176-4f86-b3d7-f2c5da3b6a6d" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
-                                        <rect x="0" y="0" width="4" height="4" class="text-indigo-500" fill="currentColor" />
-                                    </pattern>
-                                </defs>
-                                <rect width="404" height="384" fill="url(#64e643ad-2176-4f86-b3d7-f2c5da3b6a6d)" />
-                            </svg>
-                            <svg class="absolute top-full -translate-y-1/3 -translate-x-1/3 transform xl:-translate-y-1/2" width="404" height="384" fill="none" viewBox="0 0 404 384" aria-hidden="true">
-                                <defs>
-                                    <pattern id="64e643ad-2176-4f86-b3d7-f2c5da3b6a6d" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
-                                        <rect x="0" y="0" width="4" height="4" class="text-indigo-500" fill="currentColor" />
-                                    </pattern>
-                                </defs>
-                                <rect width="404" height="384" fill="url(#64e643ad-2176-4f86-b3d7-f2c5da3b6a6d)" />
-                            </svg>
-                        </div>
-                        <div class="relative mx-auto max-w-md space-y-6 py-12 px-6 sm:max-w-3xl sm:py-16 lg:col-span-6 lg:col-start-4 lg:max-w-none lg:p-0">
-                            <h2 class="text-3xl font-bold tracking-tight text-white" id="join-heading">Join 600+ early adopters</h2>
-                            <p class="text-lg text-white">Varius facilisi mauris sed sit. Non sed et duis dui leo, vulputate id malesuada non. Cras aliquet purus dui laoreet diam sed lacus, fames.</p>
-                            <a href="#" class="block w-full rounded-md border border-transparent bg-white py-3 px-5 text-center text-base font-medium text-indigo-700 shadow-md hover:bg-gray-50 sm:inline-block sm:w-auto">Explore open positions</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div> -->
-
-
-        <!-- Testimonials section -->
-        <div class="my-32 relative isolate sm:pt-32">
-            <svg class="absolute inset-0 -z-10 hidden h-full w-full stroke-gray-200 [mask-image:radial-gradient(64rem_64rem_at_top,white,transparent)] sm:block" aria-hidden="true">
-                <defs>
-                    <pattern id="55d3d46d-692e-45f2-becd-d8bdc9344f45" width="200" height="200" x="50%" y="0" patternUnits="userSpaceOnUse">
-                        <path d="M.5 200V.5H200" fill="none" />
-                    </pattern>
-                </defs>
-                <svg x="50%" y="0" class="overflow-visible fill-gray-50">
-                    <path d="M-200.5 0h201v201h-201Z M599.5 0h201v201h-201Z M399.5 400h201v201h-201Z M-400.5 600h201v201h-201Z" stroke-width="0" />
-                </svg>
-                <rect width="100%" height="100%" stroke-width="0" fill="url(#55d3d46d-692e-45f2-becd-d8bdc9344f45)" />
-            </svg>
-            <div class="relative">
-                <div class="absolute inset-x-0 top-1/2 -z-10 -translate-y-1/2 transform-gpu overflow-hidden opacity-30 blur-3xl">
-                    <svg viewBox="0 0 1313 771" aria-hidden="true" class="ml-[max(50%,38rem)] w-[82.0625rem]">
-                        <path id="bc169a03-3518-42d4-ab1e-d3eadac65edc" fill="url(#85a0eca5-25f1-4ab9-af84-4e2d8d9cdbf3)" d="M360.508 589.796 231.671 770.522 0 498.159l360.508 91.637 232.034-325.485c1.485 150.396 51.235 393.965 238.354 165.069C1064.79 143.261 1002.42-107.094 1171.72 46.97c135.44 123.252 148.51 335.641 138.11 426.428L971.677 339.803l24.062 411.461-635.231-161.468Z" />
-                        <defs>
-                            <linearGradient id="85a0eca5-25f1-4ab9-af84-4e2d8d9cdbf3" x1="1313.17" x2="-88.881" y1=".201" y2="539.417" gradientUnits="userSpaceOnUse">
-                                <stop stop-color="#9089FC" />
-                                <stop offset="1" stop-color="#FF80B5" />
-                            </linearGradient>
-                        </defs>
-                    </svg>
-                </div>
-                <div class="absolute inset-x-0 top-0 -z-10 flex transform-gpu overflow-hidden pt-8 opacity-25 blur-3xl xl:justify-end">
-                    <svg viewBox="0 0 1313 771" aria-hidden="true" class="ml-[-22rem] w-[82.0625rem] flex-none origin-top-right rotate-[30deg] xl:ml-0 xl:mr-[calc(50%-12rem)]">
-                        <use href="#bc169a03-3518-42d4-ab1e-d3eadac65edc" />
-                    </svg>
-                </div>
-                <div class="mx-auto max-w-7xl px-6 lg:px-8">
-                    <div class="mx-auto max-w-xl sm:text-center">
-                        <h2 class="text-lg font-semibold leading-8 tracking-tight text-indigo-600">Testimonials</h2>
-                        <p class="mt-2 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">People are loving Azimutt, and have spread the word</p>
-                    </div>
-                    <div class="mx-auto mt-16 grid max-w-2xl grid-cols-1 grid-rows-1 gap-8 text-sm leading-6 text-gray-900 sm:mt-20 sm:grid-cols-2 xl:mx-0 xl:max-w-none xl:grid-flow-col xl:grid-cols-4">
-                        <figure class="col-span-2 hidden sm:block sm:rounded-2xl sm:bg-white sm:shadow-lg sm:ring-1 sm:ring-gray-900/5 xl:col-start-2 xl:row-end-1">
-                            <a href="https://www.linkedin.com/feed/update/urn%3Ali%3Aactivity%3A6963834821580099584" target="_blank" rel="noopener" class="p-12 block text-xl font-semibold leading-8 tracking-tight text-gray-900">
-                                <p>“Quick summer message to highlight Loïc Knuchel's incredible work on Azimutt app! It's an advanced ER Diagram tool that allows you to explore your database schema, prepare migrations, focus on a group of tables precisely and even ask for the shortest path between several relationships. If modeling is important to you, I recommend this tool!”</p>
-                            </a>
-                            <figcaption class="flex items-center gap-x-4 border-t border-gray-900/10 py-4 px-6">
-                                <img class="h-10 w-10 flex-none rounded-full bg-gray-50" src={Routes.static_path(@conn, "/images/jordan_temim.jpeg")} alt="Jordan Temim">
-                                <div class="flex-auto">
-                                    <div class="font-semibold">Jordan Temim</div>
-                                    <div class="text-gray-600">Head of Engineering at Swile</div>
-                                </div>
-                            </figcaption>
-                        </figure>
-                        <div class="space-y-8 xl:contents xl:space-y-0">
-                            <div class="space-y-8 xl:row-span-2">
-                                <figure class="rounded-2xl bg-white p-6 shadow-lg ring-1 ring-gray-900/5">
-                                    <a href="https://twitter.com/MiguelCoba_/status/1442434336653860874" target="_blank" rel="noopener" class="text-gray-900">
-                                        <p>“Wow that's a dope app. It looks very responsive. And the controls seem very  polished. Amazing job, Loïc! And congrats on the release.”</p>
-                                    </a>
-                                    <figcaption class="mt-6 flex items-center gap-x-4">
-                                        <img class="h-10 w-10 rounded-full bg-gray-50" src={Routes.static_path(@conn, "/images/miguel_coba.jpg")} alt="Miguel Cobá">
-                                        <div>
-                                            <div class="font-semibold">Miguel Cobá</div>
-                                            <div class="text-gray-600">Software developer</div>
-                                        </div>
-                                    </figcaption>
-                                </figure>
-                                <figure class="rounded-2xl bg-white p-6 shadow-lg ring-1 ring-gray-900/5">
-                                    <a href="https://discourse.elm-lang.org/t/azimutt-explore-your-database-thanks-to-elm/7734/13" target="_blank" rel="noopener" class="text-gray-900">
-                                        <p>“Nice! Really beautiful app and it works quite smoothly. I especially like that you can start from scratch and build up the graph with only the tables which you are interested in. In some other tools it’s always quite an info dump.”</p>
-                                    </a>
-                                    <figcaption class="mt-6 flex items-center gap-x-4">
-                                        <img class="h-10 w-10 rounded-full bg-gray-50" src={Routes.static_path(@conn, "/images/adrian_sieber.jpg")} alt="Adrian Sieber">
-                                        <div>
-                                            <div class="font-semibold">Adrian Sieber</div>
-                                            <div class="text-gray-600">CEO of feram.io</div>
-                                        </div>
-                                    </figcaption>
-                                </figure>
-                            </div>
-                            <div class="space-y-8 xl:row-start-1">
-                                <figure class="rounded-2xl bg-white p-6 shadow-lg ring-1 ring-gray-900/5">
-                                    <a href="https://twitter.com/nikosvg/status/1557975423186878464" target="_blank" rel="noopener" class="text-gray-900">
-                                        <p>“Azimutt has really made a difference. keep up the good work!”</p>
-                                    </a>
-                                    <figcaption class="mt-6 flex items-center gap-x-4">
-                                        <img class="h-10 w-10 rounded-full bg-gray-50" src={Routes.static_path(@conn, "/images/nikosv.jpg")} alt="nikosv">
-                                        <div>
-                                            <div class="font-semibold">nikosv</div>
-                                            <div class="text-gray-600">Techjournalism @i-programmer.info</div>
-                                        </div>
-                                    </figcaption>
-                                </figure>
-                            </div>
-                        </div>
-                        <div class="space-y-8 xl:contents xl:space-y-0">
-                            <div class="space-y-8 xl:row-start-1">
-                                <figure class="rounded-2xl bg-white p-6 shadow-lg ring-1 ring-gray-900/5">
-                                    <a href="https://twitter.com/jbuget/status/1561708207764029440" target="_blank" rel="noopener" class="text-gray-900">
-                                        <p>“Aujourd'hui j'ai découvert @azimuttapp, un service en ligne pour y voir plus clair et plus joli dans son schéma de données. Idéal pour les nouveaux-venus d'un projet.”</p>
-                                    </a>
-                                    <figcaption class="mt-6 flex items-center gap-x-4">
-                                        <img class="h-10 w-10 rounded-full bg-gray-50" src={Routes.static_path(@conn, "/images/jeremy_buget.jpg")} alt="Jérémy Buget">
-                                        <div>
-                                            <div class="font-semibold">Jérémy Buget</div>
-                                            <div class="text-gray-600">Co-founder & CTO of pix.fr</div>
-                                        </div>
-                                    </figcaption>
-                                </figure>
-                            </div>
-                            <div class="space-y-8 xl:row-span-2">
-                                <figure class="rounded-2xl bg-white p-6 shadow-lg ring-1 ring-gray-900/5">
-                                    <a href="https://twitter.com/tibo_maker/status/1443603421970386944" target="_blank" rel="noopener" class="text-gray-900">
-                                        <p>“As a dev, i love it!!”</p>
-                                    </a>
-                                    <figcaption class="mt-6 flex items-center gap-x-4">
-                                        <img class="h-10 w-10 rounded-full bg-gray-50" src={Routes.static_path(@conn, "/images/tibo.jpg")} alt="">
-                                        <div>
-                                            <div class="font-semibold">Tibo</div>
-                                            <div class="text-gray-600">Building tweethunter.io & taplio.com</div>
-                                        </div>
-                                    </figcaption>
-                                </figure>
-                                <figure class="rounded-2xl bg-white p-6 shadow-lg ring-1 ring-gray-900/5">
-                                    <a href="https://discourse.elm-lang.org/t/azimutt-explore-your-database-thanks-to-elm/7734/10" target="_blank" rel="noopener" class="text-gray-900">
-                                        <p>“I mainly wanted to add some praise. The app seems really well thought out, particularly the control you have over what to include in the diagram and the ability to save different views. This feels like the workflow I never knew I wanted until trying it just now.”</p>
-                                    </a>
-                                    <figcaption class="mt-6 flex items-center gap-x-4">
-                                        <img class="h-10 w-10 rounded-full bg-gray-50" src={Routes.static_path(@conn, "/images/oliver_searle_barnes.png")} alt="Oliver Searle Barnes">
-                                        <div>
-                                            <div class="font-semibold">Oliver Searle Barnes</div>
-                                            <div class="text-gray-600">Consultant at Boulevard</div>
-                                        </div>
-                                    </figcaption>
-                                </figure>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div class="my-32">
+            <%= render AzimuttWeb.PartialsView, "_testimonials.html",
+                section: "Testimonials",
+                title: "People are loving Azimutt, and have spread the word",
+                center: %{author: %{name: "Jordan Temim", description: "Head of Engineering at Swile", avatar: Routes.static_path(@conn, "/images/jordan_temim.jpeg")}, text: "Quick summer message to highlight Loïc Knuchel's incredible work on Azimutt app! It's an advanced ER Diagram tool that allows you to explore your database schema, prepare migrations, focus on a group of tables precisely and even ask for the shortest path between several relationships. If modeling is important to you, I recommend this tool!", url: "https://www.linkedin.com/feed/update/urn%3Ali%3Aactivity%3A6963834821580099584"},
+                left: [
+                    %{author: %{name: "Miguel Cobá", description: "Software developer", avatar: Routes.static_path(@conn, "/images/miguel_coba.jpg")}, text: "Wow that's a dope app. It looks very responsive. And the controls seem very  polished. Amazing job, Loïc! And congrats on the release.", url: "https://twitter.com/MiguelCoba_/status/1442434336653860874"},
+                    %{author: %{name: "CEO of feram.io", description: "Adrian Sieber", avatar: Routes.static_path(@conn, "/images/adrian_sieber.jpg")}, text: "Nice! Really beautiful app and it works quite smoothly. I especially like that you can start from scratch and build up the graph with only the tables which you are interested in. In some other tools it’s always quite an info dump.", url: "https://discourse.elm-lang.org/t/azimutt-explore-your-database-thanks-to-elm/7734/13"}
+                ],
+                center_left: [
+                    %{author: %{name: "nikosv", description: "Techjournalism @i-programmer.info", avatar: Routes.static_path(@conn, "/images/nikosv.jpg")}, text: "Azimutt has really made a difference. keep up the good work!", url: "https://twitter.com/nikosvg/status/1557975423186878464"}
+                ],
+                center_right: [
+                    %{author: %{name: "Jérémy Buget", description: "Co-founder & CTO of pix.fr", avatar: Routes.static_path(@conn, "/images/jeremy_buget.jpg")}, text: "Aujourd'hui j'ai découvert @azimuttapp, un service en ligne pour y voir plus clair et plus joli dans son schéma de données. Idéal pour les nouveaux-venus d'un projet.", url: "https://twitter.com/jbuget/status/1561708207764029440"}
+                ],
+                right: [
+                    %{author: %{name: "Tibo", description: "Building tweethunter.io & taplio.com", avatar: Routes.static_path(@conn, "/images/tibo.jpg")}, text: "As a dev, i love it!!", url: "https://twitter.com/tibo_maker/status/1443603421970386944"},
+                    %{author: %{name: "Oliver Searle Barnes", description: "Consultant at Boulevard", avatar: Routes.static_path(@conn, "/images/oliver_searle_barnes.png")}, text: "I mainly wanted to add some praise. The app seems really well thought out, particularly the control you have over what to include in the diagram and the ability to save different views. This feels like the workflow I never knew I wanted until trying it just now.", url: "https://discourse.elm-lang.org/t/azimutt-explore-your-database-thanks-to-elm/7734/10"}
+                ]
+            %>
         </div>
 
         <!-- CTA section -->
         <div class="relative -z-10 my-32 px-6 lg:px-8">
-            <div class="absolute inset-x-0 top-1/2 -z-10 flex -translate-y-1/2 transform-gpu justify-center overflow-hidden blur-3xl sm:right-[calc(50%-6rem)] sm:top-auto sm:bottom-0 sm:translate-y-0 sm:justify-end">
-                <svg viewBox="0 0 1108 632" aria-hidden="true" class="w-[69.25rem] flex-none">
-                    <path fill="url(#191ef669-4d29-44ea-9496-5d65eb27150d)" fill-opacity=".25" d="M235.233 229.055 57.541 310.091.83.615l234.404 228.44L555.251 83.11c-65.036 115.261-134.286 322.756 109.01 230.655C968.382 198.638 1031-19.583 1092.23 172.304c48.98 153.51-34.51 321.107-82.37 385.717L810.952 307.442 648.261 631.576 235.233 229.055Z" />
-                    <defs>
-                        <linearGradient id="191ef669-4d29-44ea-9496-5d65eb27150d" x1="1220.59" x2="-85.053" y1="198.898" y2="-7.05" gradientUnits="userSpaceOnUse">
-                            <stop stop-color="#9089FC" />
-                            <stop offset="1" stop-color="#FF80B5" />
-                        </linearGradient>
-                    </defs>
-                </svg>
-            </div>
+            <%= render AzimuttWeb.PartialsView, "_bg_gradient_light2.html" %>
             <div class="mx-auto max-w-2xl text-center">
                 <h2 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Boost your productivity.<br>Start using Azimutt today.</h2>
                 <p class="mx-auto mt-6 max-w-xl text-lg leading-8 text-gray-600">
@@ -332,17 +121,6 @@
                     <a href={Routes.user_session_path(@conn, :new)} class="rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Join 600+ early adopters</a>
                     <a href={Routes.gallery_path(@conn, :index)} class="text-sm font-semibold leading-6 text-gray-900">Browse samples <span aria-hidden="true">→</span></a>
                 </div>
-            </div>
-            <div class="absolute left-1/2 right-0 top-full -z-10 hidden -translate-y-1/2 transform-gpu overflow-hidden blur-3xl sm:block">
-                <svg viewBox="0 0 1155 678" aria-hidden="true" class="w-[72.1875rem]">
-                    <path fill="url(#23e1b96e-c791-45fa-975a-a04d29498207)" fill-opacity=".3" d="M317.219 518.975 203.852 678 0 438.341l317.219 80.634 204.172-286.402c1.307 132.337 45.083 346.658 209.733 145.248C936.936 126.058 882.053-94.234 1031.02 41.331c119.18 108.451 130.68 295.337 121.53 375.223L855 299l21.173 362.054-558.954-142.079Z" />
-                    <defs>
-                        <linearGradient id="23e1b96e-c791-45fa-975a-a04d29498207" x1="1155.49" x2="-78.208" y1=".177" y2="474.645" gradientUnits="userSpaceOnUse">
-                            <stop stop-color="#9089FC" />
-                            <stop offset="1" stop-color="#FF80B5" />
-                        </linearGradient>
-                    </defs>
-                </svg>
             </div>
         </div>
     </main>
