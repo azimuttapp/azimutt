@@ -21,7 +21,7 @@ services:
 databases:
   - name: azimutt-staging-db
     databaseName: azimutt_staging_db # optional (Render may add a suffix)
-    user: azimutt # optional
+    user: azimutt
 
 envVarGroups:
   - name: azimutt-env
@@ -59,3 +59,4 @@ envVarGroups:
       - key: STRIPE_API_KEY
         sync: false
       - key: STRIPE_WEBHOOK_SIGNING_SECRET
+        sync: false
