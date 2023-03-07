@@ -1,3 +1,8 @@
+databases:
+  - name: azimutdb
+    databaseName: azimuttdb
+    user: azimutt
+
 services:
   - type: web
     name: azimutt
@@ -22,10 +27,6 @@ services:
           name: azimuttdb
           property: connectionString
 
-databases:
-  - name: azimutdb
-    databaseName: azimuttdb
-    user: azimutt
 
 envVarGroups:
   - name: azimutt-env
