@@ -35,11 +35,14 @@ defmodule AzimuttWeb.Components.Icon do
       "cursor-arrow-rays" -> cursor_arrow_rays(assigns)
       "document" -> document(assigns)
       "document-text" -> document_text(assigns)
+      "ellipsis-horizontal" -> ellipsis_horizontal(assigns)
+      "eye" -> eye(assigns)
       "folder" -> folder(assigns)
       "funnel" -> funnel(assigns)
       "globe" -> globe(assigns)
       "heart" -> heart(assigns)
       "home" -> home(assigns)
+      "magnifying-glass" -> magnifying_glass(assigns)
       "magnifying-glass-circle" -> magnifying_glass_circle(assigns)
       "map" -> map(assigns)
       "megaphone" -> megaphone(assigns)
@@ -651,6 +654,48 @@ defmodule AzimuttWeb.Components.Icon do
     end
   end
 
+  def ellipsis_horizontal(assigns) do
+    classes = if assigns[:class], do: " #{assigns[:class]}", else: ""
+
+    case assigns[:kind] do
+      "outline" ->
+        ~H"""
+        <.outline classes={classes}><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM12.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM18.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" /></.outline>
+        """
+
+      "solid" ->
+        ~H"""
+        <.solid classes={classes}><path fill-rule="evenodd" d="M4.5 12a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zm6 0a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zm6 0a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0z" clip-rule="evenodd" /></.solid>
+        """
+
+      _ ->
+        ~H"""
+        <.mini classes={classes}><path d="M3 10a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zM8.5 10a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zM15.5 8.5a1.5 1.5 0 100 3 1.5 1.5 0 000-3z" /></.mini>
+        """
+    end
+  end
+
+  def eye(assigns) do
+    classes = if assigns[:class], do: " #{assigns[:class]}", else: ""
+
+    case assigns[:kind] do
+      "outline" ->
+        ~H"""
+        <.outline classes={classes}><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></.outline>
+        """
+
+      "solid" ->
+        ~H"""
+        <.solid classes={classes}><path d="M12 15a3 3 0 100-6 3 3 0 000 6z" /><path fill-rule="evenodd" d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.762 1.762 0 010-1.113zM17.25 12a5.25 5.25 0 11-10.5 0 5.25 5.25 0 0110.5 0z" clip-rule="evenodd" /></.solid>
+        """
+
+      _ ->
+        ~H"""
+        <.mini classes={classes}><path d="M10 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" /><path fill-rule="evenodd" d="M.664 10.59a1.651 1.651 0 010-1.186A10.004 10.004 0 0110 3c4.257 0 7.893 2.66 9.336 6.41.147.381.146.804 0 1.186A10.004 10.004 0 0110 17c-4.257 0-7.893-2.66-9.336-6.41zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" /></.mini>
+        """
+    end
+  end
+
   def folder(assigns) do
     classes = if assigns[:class], do: " #{assigns[:class]}", else: ""
 
@@ -765,6 +810,27 @@ defmodule AzimuttWeb.Components.Icon do
       _ ->
         ~H"""
         <.mini classes={classes}><path fill-rule="evenodd" d="M9.293 2.293a1 1 0 011.414 0l7 7A1 1 0 0117 11h-1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-3a1 1 0 00-1-1H9a1 1 0 00-1 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1v-6H3a1 1 0 01-.707-1.707l7-7z" clip-rule="evenodd" /></.mini>
+        """
+    end
+  end
+
+  def magnifying_glass(assigns) do
+    classes = if assigns[:class], do: " #{assigns[:class]}", else: ""
+
+    case assigns[:kind] do
+      "outline" ->
+        ~H"""
+        <.outline classes={classes}><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></.outline>
+        """
+
+      "solid" ->
+        ~H"""
+        <.solid classes={classes}><path fill-rule="evenodd" d="M10.5 3.75a6.75 6.75 0 100 13.5 6.75 6.75 0 000-13.5zM2.25 10.5a8.25 8.25 0 1114.59 5.28l4.69 4.69a.75.75 0 11-1.06 1.06l-4.69-4.69A8.25 8.25 0 012.25 10.5z" clip-rule="evenodd" /></.solid>
+        """
+
+      _ ->
+        ~H"""
+        <.mini classes={classes}><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clip-rule="evenodd" /></.mini>
         """
     end
   end

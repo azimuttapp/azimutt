@@ -1,0 +1,27 @@
+<div class="relative isolate overflow-hidden bg-white px-6 pt-24 lg:px-0 lg:overflow-visible">
+    <%= render AzimuttWeb.PartialsView, "_bg_grid.html" %>
+    <div class="mx-auto grid max-w-2xl grid-cols-1 gap-y-16 gap-x-8 lg:mx-0 lg:max-w-none lg:grid-cols-2 lg:items-start lg:gap-y-10">
+        <%= render "_features2-heading.html", title: @feature.name, description: "Working with relational databases is natural for an entity-relationship diagram. Azimutt extends to document databases and more..." %>
+        <%= render "_features2-screenshot.html", conn: @conn, feature: @feature, previous: @previous, next: @next %>
+        <div class="lg:col-span-2 lg:col-start-1 lg:row-start-2 lg:row-span-4 lg:mx-auto lg:grid lg:w-full lg:max-w-7xl lg:grid-cols-2 lg:gap-x-8 lg:px-8">
+            <div class="lg:pr-4">
+                <div class="prose max-w-xl text-base leading-7 text-gray-700 lg:max-w-lg">
+                    <p>
+                        Azimutt has its own SQL parser, very flexible and tolerant to work with most of SQL dialects.
+                        We tested it with PostgreSQL, MySQL, SQL Server and Oracle dialects.
+                        So if you have other databases like SQLite or MariaDB you should have no problem.
+                    </p>
+                    <p>
+                        Then we added a schema inference for json collections and nested columns, making document databases such as MongoDB and Couchbase explorable in Azimutt.
+                    </p>
+                    <p>
+                        We defined a JSON format to import database schema into Azimutt is whatever you have, if you can format it as entities and relations in JSON, you can explore it in Azimutt.
+                        It could be a REST API (we may add Open Api support at some point) or anything else we didn't even though about ;)
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%= render "_footer.html", conn: @conn %>

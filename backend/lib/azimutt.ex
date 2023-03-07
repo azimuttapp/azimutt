@@ -122,110 +122,110 @@ defmodule Azimutt do
         image: "/images/screenshots/see-what-you-need.png"
       },
       %{
-        id: "search",
-        icon: "magnifying-glass-circle",
-        name: "A powerful search",
-        description: "When you don't know, it will. Fuzzy search in names, comments and more.",
-        image: "/images/screenshots/see-what-you-need.png"
-      },
-      %{
-        id: "relations",
-        icon: "arrows-right-left",
-        name: "Explore following relations",
-        description: "Find your starting point, then navigate from it: in and out relations.",
-        image: "/images/screenshots/see-what-you-need.png"
-      },
-      %{
-        id: "find-path",
-        icon: "map",
-        name: "Path between tables",
-        description: "When you don't know the path, Azimutt will. Choose the right one.",
-        image: "/images/screenshots/see-what-you-need.png"
-      },
-      %{
-        id: "layouts",
-        icon: "book-open",
-        name: "Save your findings",
-        description: "A great schema is worth 1000 words. Keep them for later use with layouts.",
-        image: "/images/screenshots/see-what-you-need.png"
-      },
-      %{
-        id: "colors",
-        icon: "paint-brush",
-        name: "Colors mean a lot",
-        description: "Use colors to convey meaning, make your diagram cristal clear.",
-        image: "/images/screenshots/see-what-you-need.png"
+        id: "aml",
+        icon: "code-bracket",
+        name: "Design fast with AML",
+        description: "Minimal, intuitive & permissive DSL to design your database at your typing speed.",
+        image: "/images/screenshots/aml.png"
       },
       %{
         id: "notes",
         icon: "document-text",
         name: "Document and showcase",
         description: "Table and column notes for documentations, layout memos visual indications.",
-        image: "/images/screenshots/see-what-you-need.png"
-      },
-      %{
-        id: "aml",
-        icon: "code-bracket",
-        name: "Fast design with AML",
-        description: "Minimal, intuitive & permissive DSL to design your database at your typing speed.",
-        image: "/images/screenshots/see-what-you-need.png"
-      },
-      %{
-        id: "compatibility",
-        icon: "circle-stack",
-        name: "Works with any database",
-        description: "Relational and Document ones natively, but easily extended through JSON.",
-        image: "/images/screenshots/see-what-you-need.png"
+        image: "/images/screenshots/memos.png"
       },
       %{
         id: "analysis",
         icon: "shield-check",
         name: "A linter for your database",
         description: "Azimutt analysis will point you inconsistencies and possible improvements in your schema.",
-        image: "/images/screenshots/see-what-you-need.png"
+        image: "/images/screenshots/analysis.png"
       },
       %{
-        id: "data-explorer",
-        icon: "archive-box",
-        name: "Data access on demand",
-        description: "When the schema is not enough, go deeper, digging in real data.",
-        image: "/images/screenshots/see-what-you-need.png"
-      },
-      %{
-        id: "collaboration",
-        icon: "user-group",
-        name: "Collaborate with your peers",
-        description: "Solo investigation is cool, but sharing findings with others is even better.",
-        image: "/images/screenshots/see-what-you-need.png"
-      },
-      %{
-        id: "multi-sources",
-        icon: "arrows-pointing-in",
-        name: "Gather all your databases",
-        description: "Ideal for micro-services, CQRS, or drafting new features.",
-        image: "/images/screenshots/see-what-you-need.png"
+        id: "compatibility",
+        icon: "circle-stack",
+        name: "Works with any database",
+        description: "Relational and Document ones natively, but easily extended through JSON.",
+        image: "/images/screenshots/nested-columns.png"
       },
       %{
         id: "sharing",
         icon: "presentation-chart-bar",
         name: "Show to the world",
         description: "Embed your diagram wherever you want, secretly share with anyone.",
-        image: "/images/screenshots/see-what-you-need.png"
+        image: "/images/screenshots/private-link.png"
+      },
+      %{
+        id: "find-path",
+        icon: "map",
+        name: "Path between tables",
+        description: "When you don't know the path, Azimutt will. Choose the right one.",
+        image: "/images/screenshots/find-path.png"
+      },
+      %{
+        id: "relations",
+        icon: "arrows-right-left",
+        name: "Explore following relations",
+        description: "Find your starting point, then navigate from it: in and out relations.",
+        image: "/images/screenshots/follow-your-mind.png"
+      },
+      %{
+        id: "collaboration",
+        icon: "user-group",
+        name: "Collaborate with your peers",
+        description: "Solo investigation is cool, but sharing findings with others is even better.",
+        image: "/images/screenshots/???.png"
+      },
+      %{
+        id: "data-explorer",
+        icon: "archive-box",
+        name: "Data access on demand",
+        description: "When the schema is not enough, go deeper, digging in real data.",
+        image: "/images/screenshots/data-samples.png"
       },
       %{
         id: "scriptable",
         icon: "command-line",
         name: "Made for developers",
         description: "Scriptable tools unleash tremendous power. You have no limit.",
-        image: "/images/screenshots/see-what-you-need.png"
+        image: "/images/screenshots/js-console.png"
       },
       %{
         id: "support",
         icon: "sparkles",
         name: "Best in class support",
         description: "We're eager to help you succeed, reach out for a friendly help.",
-        image: "/images/screenshots/see-what-you-need.png"
+        image: "/images/screenshots/???.png"
       }
+      # %{
+      #   id: "search",
+      #   icon: "magnifying-glass-circle",
+      #   name: "A powerful search",
+      #   description: "When you don't know, it will. Fuzzy search in names, comments and more.",
+      #   image: "/images/screenshots/???.png"
+      # },
+      # %{
+      #   id: "layouts",
+      #   icon: "book-open",
+      #   name: "Save your findings",
+      #   description: "A great schema is worth 1000 words. Keep them for later use with layouts.",
+      #   image: "/images/screenshots/layouts.png"
+      # },
+      # %{
+      #   id: "colors",
+      #   icon: "paint-brush",
+      #   name: "Colors mean a lot",
+      #   description: "Use colors to convey meaning, make your diagram cristal clear.",
+      #   image: "/images/screenshots/???.png"
+      # },
+      # %{
+      #   id: "multi-sources",
+      #   icon: "arrows-pointing-in",
+      #   name: "Gather all your databases",
+      #   description: "Ideal for micro-services, CQRS, or drafting new features.",
+      #   image: "/images/screenshots/sources.png"
+      # },
     ]
   end
 end
