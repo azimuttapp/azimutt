@@ -1,6 +1,7 @@
 databases:
   - name: azimuttdb
     databaseName: azimuttdb
+    region: frankfurt
     user: azimutt
     plan: free
 
