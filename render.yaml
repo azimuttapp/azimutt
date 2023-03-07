@@ -17,10 +17,14 @@ services:
         generateValue: true
       - key: PORT
         value: 8080
+      - key: DATABASE_URL
+        fromDatabase:
+          name: azimutt-db
+          property: connectionString
 
 databases:
-  - name: azimutt-staging-db
-    databaseName: azimutt_staging_db # optional (Render may add a suffix)
+  - name: azimutt-db
+    databaseName: azimutt-db
     user: azimutt
 
 envVarGroups:
@@ -34,10 +38,6 @@ envVarGroups:
         sync: false
       - key: CELLAR_BUCKET
         sync: false
-      - key: DATABASE_URL
-        fromDatabase:
-          name: azimutt-staging-db
-          property: connectionString
       - key: GITHUB_CLIENT_ID
         sync: false
       - key: GITHUB_CLIENT_SECRET
