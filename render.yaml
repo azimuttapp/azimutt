@@ -2,6 +2,7 @@ databases:
   - name: azimuttdb
     databaseName: azimuttdb
     user: azimutt
+    plan: free
 
 services:
   - type: web
