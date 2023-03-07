@@ -1,5 +1,5 @@
 databases:
-  - name: azimutdb
+  - name: azimuttdb
     databaseName: azimuttdb
     user: azimutt
 
