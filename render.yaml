@@ -43,6 +43,7 @@ services:
     name: minio
     env: docker
     repo: https://github.com/render-examples/minio.git
+    region: frankfurt
     envVars:
     - key: MINIO_ROOT_PASSWORD
       generateValue: true
