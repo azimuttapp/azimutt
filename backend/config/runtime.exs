@@ -98,34 +98,34 @@ if config_env() != :test do
     domain: System.get_env("PHX_HOST") || raise("environment variable PHX_HOST is missing.")
 
   # TODO: rename variables: FILE_STORAGE_S3_BUCKET, FILE_STORAGE_S3_HOST, FILE_STORAGE_S3_KEY_ID, FILE_STORAGE_S3_KEY_SECRET
-  cellar_bucket = System.get_env("CELLAR_BUCKET") || raise "environment variable CELLAR_BUCKET is missing."
-  cellar_host = System.get_env("CELLAR_ADDON_HOST")
-  cellar_addon_key_id = System.get_env("CELLAR_ADDON_KEY_ID")
-  cellar_addon_key_secret = System.get_env("CELLAR_ADDON_KEY_SECRET")
+  s3_bucket = System.get_env("S3_BUCKET") || raise "environment variable S3_BUCKET is missing."
+  s3_host = System.get_env("S3_HOST")
+  s3_key_id = System.get_env("S3_KEY_ID")
+  s3_key_secret = System.get_env("S3_KEY_SECRET")
 
   # https://hexdocs.pm/waffle/Waffle.Storage.S3.html
-  if cellar_host != nil && cellar_host != '' do
+  if s3_host != nil && s3_host != '' do
     config :waffle,
       storage: Waffle.Storage.S3,
-      bucket: cellar_bucket,
-      asset_host: cellar_host
+      bucket: s3_bucket,
+      asset_host: s3_host
 
     config :ex_aws, :s3,
       scheme: "https://",
-      host: cellar_host,
+      host: s3_host,
       region: "eu-west-1"
   else
     config :waffle,
       storage: Waffle.Storage.S3,
-      bucket: cellar_bucket
+      bucket: s3_bucket
   end
 
-  if cellar_addon_key_id != nil && cellar_addon_key_id != '' && cellar_addon_key_secret != nil && cellar_addon_key_secret != '' do
+  if s3_key_id != nil && s3_key_id != '' && s3_key_secret != nil && s3_key_secret != '' do
     config :ex_aws,
       debug_requests: true,
       json_codec: Jason,
-      access_key_id: cellar_addon_key_id,
-      secret_access_key: cellar_addon_key_secret
+      access_key_id: s3_key_id,
+      secret_access_key: s3_key_secret
   end
 end
 

@@ -38,6 +38,15 @@ services:
           type: pserv
           name: minio
           envVarKey: MINIO_ROOT_USER
+      - key: S3_HOST
+        sync: false
+      - key: S3_KEY_ID
+        sync: false
+      - key: S3_KEY_SECRET
+        sync: false
+      - key: S3_BUCKET
+        sync: false
+      - fromGroup: azimutt-env
 
   - type: pserv
     name: minio
@@ -58,21 +67,13 @@ services:
 envVarGroups:
   - name: azimutt-env
     envVars:
-      - key: CELLAR_ADDON_HOST
-        sync: false
-      - key: CELLAR_ADDON_KEY_ID
-        sync: false
-      - key: CELLAR_ADDON_KEY_SECRET
-        sync: false
-      - key: CELLAR_BUCKET
-        sync: false
       - key: GITHUB_CLIENT_ID
         sync: false
       - key: GITHUB_CLIENT_SECRET
         sync: false
       - key: GUARDIAN_SECRET_KEY
         sync: false
-      - key: HEROKU_ADDON_ID
+      - key: HEROKU_ID
         sync: false
       - key: HEROKU_PASSWORD
         sync: false
