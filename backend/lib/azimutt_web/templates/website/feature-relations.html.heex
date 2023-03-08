@@ -1,0 +1,21 @@
+<div class="relative isolate overflow-hidden bg-white px-6 pt-24 lg:px-0 lg:overflow-visible">
+    <%= render AzimuttWeb.PartialsView, "_bg_grid.html" %>
+    <div class="mx-auto grid max-w-2xl grid-cols-1 gap-y-16 gap-x-8 lg:mx-0 lg:max-w-none lg:grid-cols-2 lg:items-start lg:gap-y-10">
+        <%= render "_feature-heading.html", title: @feature.name, description: "Relational databases are made of relations. But navigating through them can be challenging, especially incoming ones. Do you know how to find them?" %>
+        <%= render "_feature-screenshot.html", conn: @conn, feature: @feature, previous: @previous, next: @next %>
+        <div class="lg:col-span-2 lg:col-start-1 lg:row-start-2 lg:row-span-4 lg:mx-auto lg:grid lg:w-full lg:max-w-7xl lg:grid-cols-2 lg:gap-x-8 lg:px-8">
+            <div class="lg:pr-4">
+                <div class="prose max-w-xl text-base leading-7 text-gray-700 lg:max-w-lg">
+                    <p>With the awareness of the whole schema, Azimutt makes you follow relation easily.</p>
+                    <p>
+                        Outgoing relations (foreign keys) allows to show the target table with just one click on the icon.
+                        Incoming relations are shown in a dropdown when clicking on the icon. So you can choose which ones you want to show?
+                    </p>
+                    <p>With this, you will be able to browse your database schema as you like, without friction!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%= render "_footer.html", conn: @conn %>
