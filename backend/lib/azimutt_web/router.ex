@@ -50,8 +50,7 @@ defmodule AzimuttWeb.Router do
     get "/use-case/document", WebsiteController, :document
     get "/use-case/explore", WebsiteController, :explore
     get "/blog", BlogController, :index
-    if Mix.env() == :dev, do: get("/blog/cards", BlogController, :cards)
-    get "/blog/:id", BlogController, :show
+    if Azimutt.Application.env() in [:dev], do: get("/blog/cards", BlogController, :cards)
     get "/gallery", GalleryController, :index
     get "/gallery/:slug", GalleryController, :show
     get "/logout", UserSessionController, :delete
