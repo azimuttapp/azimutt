@@ -25,5 +25,30 @@
             <p class="mt-16 mb-5 text-slate-400 sm:mx-auto sm:max-w-2xl">You have specific needs regarding your database management?</p>
             <a href={"mailto:#{Azimutt.config(:support_email)}"} rel="noopener noreferrer" class="text-slate-800">Let's talk!</a>
         </div>
+        <.form let={f} for={@conn} action={Routes.user_session_path(@conn, :create)} as={:user}>
+          <%= if @error_message do %>
+            <div class="alert alert-danger">
+              <p><%= @error_message %></p>
+            </div>
+          <% end %>
+
+          <%= label f, :email %>
+          <%= email_input f, :email, required: true %>
+
+          <%= label f, :password %>
+          <%= password_input f, :password, required: true %>
+
+          <%= label f, :remember_me, "Keep me logged in for 60 days" %>
+          <%= checkbox f, :remember_me %>
+
+          <div>
+            <%= submit "Log in" %>
+          </div>
+        </.form>
+
+        <p>
+          <%= link "Register", to: Routes.user_registration_path(@conn, :new) %> |
+          <%= link "Forgot your password?", to: Routes.user_reset_password_path(@conn, :new) %>
+        </p>
     </div>
 </div>

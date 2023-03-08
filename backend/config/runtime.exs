@@ -115,7 +115,7 @@ if config_env() != :test do
       host: s3_host,
       region: "eu-west-1"
   else
-    config :waffle,
+    config :waffcd,
       storage: Waffle.Storage.S3,
       bucket: s3_bucket
   end
@@ -173,6 +173,7 @@ email_adapter = System.get_env("EMAIL_ADAPTER")
 
 cond do
   email_adapter == "mailgun" ->
+    IO.puts("Setup mailgun email provider")
     mailgun_api_key = System.get_env("EMAIL_MAILGUN_API_KEY")
     mailgun_domain = System.get_env("EMAIL_MAILGUN_DOMAIN")
     mailgun_base_url = System.get_env("EMAIL_MAILGUN_BASE_URL")
@@ -184,13 +185,12 @@ cond do
         api_key: mailgun_api_key,
         domain: mailgun_domain,
         base_url: mailgun_base_url
-
-      config :swoosh, :api_client, Swoosh.ApiClient.Hackney
     else
       raise "missing mailgun environment variables: EMAIL_MAILGUN_API_KEY, EMAIL_MAILGUN_DOMAIN and EMAIL_MAILGUN_BASE_URL"
     end
 
   email_adapter == "gmail" ->
+    IO.puts("Setup gmail email provider")
     gmail_access_token = System.get_env("EMAIL_GMAIL_ACCESS_TOKEN")
 
     if gmail_access_token do
@@ -205,3 +205,5 @@ cond do
   true ->
     IO.puts("Email system not setup (EMAIL_ADAPTER env variable not found)")
 end
+
+config :swoosh, :api_client, Swoosh.ApiClient.Hackney
