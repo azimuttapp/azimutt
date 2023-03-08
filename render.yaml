@@ -28,7 +28,31 @@ services:
         fromDatabase:
           name: azimuttdb
           property: connectionString
+      - key: MINIO_ROOT_PASSWORD
+        fromService:
+          type: pserv
+          name: minio
+          envVarKey: MINIO_ROOT_PASSWORD
+      - key: MINIO_ROOT_USER
+        fromService:
+          type: pserv
+          name: minio
+          envVarKey: MINIO_ROOT_USER
 
+  - type: pserv
+    name: minio
+    env: docker
+    repo: https://github.com/render-examples/minio.git
+    envVars:
+    - key: MINIO_ROOT_PASSWORD
+      generateValue: true
+    - key: MINIO_ROOT_USER
+      generateValue: true
+    - key: PORT
+      value: 10000
+    disk:
+      name: data
+      mountPath: /data
 
 envVarGroups:
   - name: azimutt-env
