@@ -12,7 +12,7 @@ services:
     repo: https://github.com/azimuttapp/azimutt.git
     region: frankfurt
     plan: free
-    branch: main
+    branch: feat/dockerize-app
     numInstances: 1
     healthCheckPath: /
     envVars:
