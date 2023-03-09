@@ -52,7 +52,7 @@
 
         <!-- Feature section -->
         <div class="my-32 mx-auto max-w-7xl px-6 lg:px-8">
-            <%= render AzimuttWeb.PartialsView, "_features_2_columns.html",
+            <%= render AzimuttWeb.PartialsView, "_features_2columns.html",
                 section: "A powerful companion",
                 title: "Understand your database, at every step",
                 description: "From conception to afterward analysis, Azimutt can help you at any step in your database journey. Especially when trying to understand a large one.",
@@ -102,7 +102,7 @@
                         </div>
                         <div class="mt-1">
                             <a href={Routes.elm_path(@conn, :new)} class="group inline-flex ring-1 items-center justify-center rounded-full py-2 px-4 text-sm focus:outline-none ring-slate-700 text-white hover:ring-slate-500 active:ring-slate-700 active:text-slate-400 focus-visible:outline-white mt-8">
-                                🎉 Let's try it!
+                                🎉 &nbsp; Let's try it!
                             </a>
                         </div>
                     </div>
@@ -118,10 +118,8 @@
         <div class="my-32 mx-auto max-w-7xl sm:px-6 lg:px-8">
             <%= render AzimuttWeb.PartialsView, "_testimonial_card_black.html",
                 author: %{name: "Loïc Knuchel", description: "Co-founder of Azimutt"},
-                quote: "I've been there: reverse engineering large databases...
-                I've been there: looking for a tool to help me...
-                I've been there: sad, disappointed and giving up with every tool...
-                So here I'm: building Azimutt, the perfect tool to explore databases..."
+                quote: "I've been there: reverse engineering large databases, looking for a tool to help me, sad, disappointed and giving up with every tool...
+                So here I'm, building Azimutt, the perfect tool to explore databases."
                 |> String.split("\n", trim: false) |> Enum.intersperse(Phoenix.HTML.Tag.tag(:br)),
                 background: "https://images.unsplash.com/photo-1601381718415-a05fb0a261f3?ixid=MXwxMjA3fDB8MHxwcm9maWxlLXBhZ2V8ODl8fHxlbnwwfHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=1216&q=80"
             %>

@@ -4,7 +4,7 @@
             <h1 class="mx-auto max-w-4xl text-center text-5xl font-bold tracking-tight text-white"><%= @title %></h1>
             <p class="mx-auto mt-4 max-w-2xl text-center text-lg leading-8 text-white/60"><%= @description %></p>
         </div>
-        <div class="mt-16 flex justify-center relative z-10">
+        <div class="mt-16 flex justify-center relative z-10 invisible">
             <fieldset class="grid grid-cols-2 gap-x-1 rounded-full bg-white/5 p-1 text-center text-xs font-semibold leading-5 text-white">
                 <legend class="sr-only">Payment frequency</legend>
                 <label @click="annual = false" :class="{'bg-indigo-500': !annual}" class="cursor-pointer rounded-full py-1 px-2.5">

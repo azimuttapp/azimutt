@@ -9,9 +9,9 @@
                     <p>Azimutt is not the silver bullet (especially as this part is just starting) but still can <b>help a lot</b> (at least, helped on every tested database yet).</p>
                     <p>Having the whole database schema as a data structure, it's quite easy to check simple rules at scale, exactly what is really hard for human beings. Azimutt will highlight:</p>
                     <ul>
-                        <li>Tables without primary keys: probably a mistake, at least worth checking if expected.</li>
-                        <li>Missing foreign keys: it's good to have them most of the time, at least adding relations in Azimutt will help navigation.</li>
-                        <li>Column type inconsistencies: they always appear over time, when different people work on different parts.</li>
+                        <li><b>Tables without primary keys</b>: probably a mistake, at least worth checking if expected.</li>
+                        <li><b>Missing foreign keys</b>: it's good to have them most of the time, at least adding relations in Azimutt will help navigation.</li>
+                        <li><b>Column type inconsistencies</b>: they always appear over time, when different people work on different parts.</li>
                         <li>Tables that are <a href={Routes.blog_path(@conn, :show, "why-you-should-avoid-tables-with-many-columns-and-how-to-fix-them")}>too big</a> and could be worth splitting.</li>
                     </ul>
                     <p>If you have other ideas to implement, come discuss with us. We are looking forward to extend this a lot!</p>

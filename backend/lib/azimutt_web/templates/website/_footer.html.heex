@@ -1,4 +1,4 @@
-<footer class="mt-24 sm:mt-56" aria-labelledby="footer-heading">
+<footer class="relative mt-24 sm:mt-56" aria-labelledby="footer-heading">
     <h2 id="footer-heading" class="sr-only">Footer</h2>
     <div class="mx-auto max-w-7xl px-6 pb-8 lg:px-8">
         <div class="xl:grid xl:grid-cols-3 xl:gap-8">
@@ -68,6 +68,7 @@
                             <li><a href="#soon" title="Sync local files, imported source or exported project, connect to local databases and more" class="text-sm leading-6 text-gray-600 hover:text-gray-900">Azimutt Desktop <span class="inline-flex items-center rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-800">soon</span></a></li>
                             <li><a href={Azimutt.config(:heroku_url)} target="_blank" rel="noopener" title="Connect your Heroku app/database with Azimutt" class="text-sm leading-6 text-gray-600 hover:text-gray-900">Heroku Add-on</a></li>
                             <li><a href={Azimutt.config(:browser_extension_url)} target="_blank" rel="noopener" title="Open any SQL schema in GitHub with Azimutt" class="text-sm leading-6 text-gray-600 hover:text-gray-900">Browser extension</a></li>
+                            <li><a href={Routes.gallery_path(@conn, :index)} title="Gallery of many database schemas, for inspiration" class="text-sm leading-6 text-gray-600 hover:text-gray-900">Schema gallery</a></li>
                         </ul>
                     </div>
                 </div>
