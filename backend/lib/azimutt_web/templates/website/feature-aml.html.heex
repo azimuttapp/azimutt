@@ -1,0 +1,36 @@
+<div class="relative isolate overflow-hidden bg-white px-6 pt-24 lg:px-0 lg:overflow-visible">
+    <%= render AzimuttWeb.PartialsView, "_bg_grid.html" %>
+    <div class="mx-auto grid max-w-2xl grid-cols-1 gap-y-16 gap-x-8 lg:mx-0 lg:max-w-none lg:grid-cols-2 lg:items-start lg:gap-y-10">
+        <%= render "_feature-heading.html", title: @feature.name, description: "We have been frustrated by tools with hundreds of inputs, one for every little value. So we didn't want to inflict this to our users." %>
+        <%= render "_feature-screenshot.html", conn: @conn, feature: @feature, previous: @previous, next: @next %>
+        <div class="lg:col-span-2 lg:col-start-1 lg:row-start-2 lg:row-span-4 lg:mx-auto lg:grid lg:w-full lg:max-w-7xl lg:grid-cols-2 lg:gap-x-8 lg:px-8">
+            <div class="lg:pr-4">
+                <div class="prose max-w-xl text-base leading-7 text-gray-700 lg:max-w-lg">
+                    <p><span class="underline decoration-dashed" title="Azimutt Markup Language">AML</span> is the <span class="underline decoration-dashed" title="Domain Specific Language">DSL</span> to define your database schema you <span class="underline">already know</span>:</p>
+                    <pre><code class="hljs aml">users
+  id uuid pk
+  email varchar unique
+  name varchar
+
+posts
+  id uuid pk
+  title varchar
+  status varchar(draft, published, deleted)
+  content text
+  author uuid fk users.id</code></pre>
+                    <p>It's simple and minimal to define schemas as fast as you can type:</p>
+                    <ul>
+                        <li>Very flexible</li>
+                        <li>No extra or weird characters</li>
+                        <li>No input juggling</li>
+                        <li>Copy/Paste anything</li>
+                    </ul>
+                    <p>Try it, there will be no turning back!</p>
+                    <p>See <a href="https://github.com/azimuttapp/azimutt/blob/main/docs/aml/README.md" target="_blank" rel="noopener">full documentation</a> for more details.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%= render "_footer.html", conn: @conn %>

@@ -1,58 +1,6 @@
 defmodule AzimuttWeb.Components.LandingPage do
-  @moduledoc """
-  A set of components for use in a landing page.
-  """
+  @moduledoc "A set of components for use in a landing page."
   use Phoenix.Component
-
-  def hero_section(assigns) do
-    assigns =
-      assigns
-      |> assign_new(:logo_cloud_title, fn -> nil end)
-      |> assign_new(:cloud_logo, fn -> nil end)
-
-    ~H"""
-    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-20 pb-16 text-center lg:pt-32">
-      <h1 class="mx-auto max-w-4xl font-display text-5xl font-medium tracking-tight text-slate-900 sm:text-7xl">
-        <%= render_slot(@title) %>
-      </h1>
-      <p class="mx-auto mt-6 max-w-2xl text-lg tracking-tight text-slate-700">
-         <%= render_slot(@description) %>
-      </p>
-      <%= render_slot(@action_buttons) %>
-      <%= if @cloud_logo do %>
-        <div class="mt-16">
-          <.logo_cloud title={@logo_cloud_title} cloud_logo={@cloud_logo} />
-        </div>
-      <% end %>
-    </div>
-
-    """
-  end
-
-  def logo_cloud(assigns) do
-    assigns =
-      assigns
-      |> assign_new(:title, fn -> nil end)
-      |> assign_new(:cloud_logo, fn -> nil end)
-
-    ~H"""
-    <div id="logo-cloud" class="container px-4 mx-auto">
-        <p>Open source ❤️</p>
-        <p class="font-display text-base text-slate-900">
-         and used by developers from companies all around the globe:
-        </p>
-      <div class="flex flex-wrap justify-center items-center">
-        <%= for logo <- @cloud_logo do %>
-          <div class="w-full p-4 w-1/3 md:w-1/6">
-            <div class="py-4 lg:py-8">
-              <%= render_slot(logo) %>
-            </div>
-          </div>
-        <% end %>
-      </div>
-    </div>
-    """
-  end
 
   def testimonial_card(assigns) do
     assigns =

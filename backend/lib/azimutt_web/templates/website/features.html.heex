@@ -1,0 +1,28 @@
+<div class="mx-auto max-w-2xl lg:text-center">
+    <h2 class="text-base font-semibold leading-7 text-indigo-600">Features</h2>
+    <p class="mt-2 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Azimutt has plenty of features</p>
+    <p class="mt-6 text-lg leading-8 text-gray-600">
+        We gathered here the most interesting features just for you.
+        If you have any question, suggestion or miss something, don't hesitate to <a href={"mailto:#{Azimutt.config(:support_email)}"} target="_blank" rel="noopener" class="underline">reach at us</a>.<br>
+        We love helping our users.
+    </p>
+</div>
+<div class="mt-12 mx-auto max-w-7xl divide-y divide-gray-200 overflow-hidden bg-gray-200 shadow sm:grid sm:grid-cols-3 sm:gap-px sm:divide-y-0">
+    <%= for feature <- Azimutt.features do %>
+        <div class="group relative bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-indigo-500">
+            <div class="inline-flex rounded-lg p-3 bg-indigo-50 text-indigo-700 ring-4 ring-white"><Icon.draw name={feature.icon} kind="outline" /></div>
+            <div class="mt-8">
+                <h3 class="text-base font-semibold leading-6 text-gray-900">
+                    <a href={Routes.website_path(@conn, :features_show, feature.id)} class="focus:outline-none">
+                        <!-- Extend touch target to entire panel -->
+                        <span class="absolute inset-0" aria-hidden="true"></span>
+                        <%= feature.name %>
+                    </a>
+                </h3>
+                <p class="mt-2 text-sm text-gray-500"><%= feature.description %></p>
+            </div>
+        </div>
+    <% end %>
+</div>
+
+<%= render "_footer.html", conn: @conn %>

@@ -1,0 +1,28 @@
+<div class="mx-auto max-w-2xl lg:text-center">
+    <h2 class="text-base font-semibold leading-7 text-indigo-600">Use cases</h2>
+    <p class="mt-2 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Azimutt was built around use cases</p>
+    <p class="mt-6 text-lg leading-8 text-gray-600">
+        We were sad to not find any good tool for our use cases, so we decided to build our own.
+        If you have such use cases, Azimutt is made for you. And if not a perfect fit,
+        <a href={"mailto:#{Azimutt.config(:support_email)}"} target="_blank" rel="noopener" class="underline">reach at us</a> so we can improve it 💪
+    </p>
+</div>
+<div class="mt-12 mx-auto max-w-7xl divide-y divide-gray-200 overflow-hidden bg-gray-200 shadow sm:grid sm:grid-cols-2 sm:gap-px sm:divide-y-0">
+    <%= for use_case <- Azimutt.use_cases do %>
+        <div class="group relative bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-indigo-500">
+            <div class="inline-flex rounded-lg p-3 bg-indigo-50 text-indigo-700 ring-4 ring-white"><Icon.draw name={use_case.icon} kind="outline" /></div>
+            <div class="mt-8">
+                <h3 class="text-base font-semibold leading-6 text-gray-900">
+                    <a href={Routes.website_path(@conn, :use_cases_show, use_case.id)} class="focus:outline-none">
+                        <!-- Extend touch target to entire panel -->
+                        <span class="absolute inset-0" aria-hidden="true"></span>
+                        <%= use_case.name %>
+                    </a>
+                </h3>
+                <p class="mt-2 text-sm text-gray-500"><%= use_case.description %></p>
+            </div>
+        </div>
+    <% end %>
+</div>
+
+<%= render "_footer.html", conn: @conn %>
