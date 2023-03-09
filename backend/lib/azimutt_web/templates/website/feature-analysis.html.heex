@@ -6,15 +6,16 @@
         <div class="lg:col-span-2 lg:col-start-1 lg:row-start-2 lg:row-span-4 lg:mx-auto lg:grid lg:w-full lg:max-w-7xl lg:grid-cols-2 lg:gap-x-8 lg:px-8">
             <div class="lg:pr-4">
                 <div class="prose max-w-xl text-base leading-7 text-gray-700 lg:max-w-lg">
-                    <p>Azimutt will not be the silver bullet (especially as this part is still at its beginnings) but still can <b>help a lot</b> (at least, helped on every tested database).</p>
+                    <p>Azimutt is not the silver bullet (especially as this part is just starting) but still can <b>help a lot</b> (at least, helped on every tested database yet).</p>
                     <p>Having the whole database schema as a data structure, it's quite easy to check simple rules at scale, exactly what is really hard for human beings. Azimutt will highlight:</p>
                     <ul>
-                        <li>Tables without primary keys: probably a mistake, at least worth checking</li>
-                        <li>Missing foreign keys: it's good to have them most of the time, at least adding relations in Azimutt will help</li>
-                        <li>Column types inconsistencies: they always appear over times when different people work on different parts</li>
-                        <li>Tables that are <a href={Routes.blog_path(@conn, :show, "why-you-should-avoid-tables-with-many-columns-and-how-to-fix-them")}>too big</a> and could be worth splitting</li>
+                        <li>Tables without primary keys: probably a mistake, at least worth checking if expected.</li>
+                        <li>Missing foreign keys: it's good to have them most of the time, at least adding relations in Azimutt will help navigation.</li>
+                        <li>Column type inconsistencies: they always appear over time, when different people work on different parts.</li>
+                        <li>Tables that are <a href={Routes.blog_path(@conn, :show, "why-you-should-avoid-tables-with-many-columns-and-how-to-fix-them")}>too big</a> and could be worth splitting.</li>
                     </ul>
                     <p>If you have other ideas to implement, come discuss with us. We are looking forward to extend this a lot!</p>
+                    <p>In the meantime, use <a href={Routes.website_path(@conn, :features_show, "scriptable")}>Azimutt scripting</a> to perform all the analysis you need 🎉</p>
                 </div>
             </div>
         </div>

@@ -118,7 +118,7 @@ defmodule Azimutt do
         id: "erd",
         icon: "rectangle-stack",
         name: "An ERD that scales",
-        description: "Avoid unreadable diagram, choose what's displayed: tables, columns, order.",
+        description: "Avoid unreadable diagram, choose what's displayed: tables, columns, relations, order...",
         image: "/images/screenshots/see-what-you-need.png"
       },
       %{
@@ -175,14 +175,14 @@ defmodule Azimutt do
         icon: "user-group",
         name: "Collaborate with your peers",
         description: "Solo investigation is cool, but sharing findings with others is even better.",
-        image: "/images/screenshots/???.png"
+        image: "/images/illustrations/team-collaboration.jpg"
       },
       %{
         id: "data-explorer",
         icon: "archive-box",
         name: "Data access on demand",
         description: "When the schema is not enough, go deeper, digging in real data.",
-        image: "/images/screenshots/data-samples.png"
+        image: "/images/screenshots/data-sample-table.png"
       },
       %{
         id: "scriptable",
@@ -196,7 +196,7 @@ defmodule Azimutt do
         icon: "sparkles",
         name: "Best in class support",
         description: "We're eager to help you succeed, reach out for a friendly help.",
-        image: "/images/screenshots/???.png"
+        image: "/images/illustrations/team-support.jpg"
       }
       # %{
       #   id: "search",
