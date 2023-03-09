@@ -5,11 +5,11 @@
   <%= for use_case <- Azimutt.use_cases do %>
   <url><loc><%= Routes.website_url(@conn, :use_cases_show, use_case.id) %></loc><lastmod>2023-01-20</lastmod></url>
   <% end %>
-  <url><loc><%= Routes.website_url(@conn, :features_index) %></loc><lastmod>2023-03-06</lastmod></url>
+  <url><loc><%= Routes.website_url(@conn, :features_index) %></loc><lastmod>2023-03-10</lastmod></url>
   <%= for feature <- Azimutt.features do %>
-  <url><loc><%= Routes.website_url(@conn, :features_show, feature.id) %></loc><lastmod>2023-03-06</lastmod></url>
+  <url><loc><%= Routes.website_url(@conn, :features_show, feature.id) %></loc><lastmod>2023-03-10</lastmod></url>
   <% end %>
-  <url><loc><%= Routes.website_url(@conn, :pricing) %></loc><lastmod>2023-03-06</lastmod></url>
+  <url><loc><%= Routes.website_url(@conn, :pricing) %></loc><lastmod>2023-03-10</lastmod></url>
 
   <%= if length(@articles) > 0 do %>
   <url>
