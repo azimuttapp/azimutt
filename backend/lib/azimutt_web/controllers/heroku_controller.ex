@@ -43,7 +43,9 @@ defmodule AzimuttWeb.HerokuController do
       {:error, :forbidden}
     else
       with {:ok, resource} <- Heroku.get_resource(resource_id),
-           {:ok, user} <- Accounts.get_user_by_email(email) |> Result.flat_map_error(fn _ -> Accounts.register_heroku_user(email, now) end),
+           {:ok, user} <-
+             Accounts.get_user_by_email(email)
+             |> Result.flat_map_error(fn _ -> Accounts.register_heroku_user(email, UserAuth.get_attribution(conn), now) end),
            {:ok, resource} <- Heroku.set_app_if_needed(resource, app, now),
            {:ok, resource} <- Heroku.set_organization_if_needed(resource, user, now),
            {:ok, _} <- Heroku.add_member_if_needed(resource, resource.organization, user) do

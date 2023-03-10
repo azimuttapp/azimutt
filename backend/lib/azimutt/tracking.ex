@@ -33,11 +33,11 @@ defmodule Azimutt.Tracking do
     |> Result.from_nillable()
   end
 
-  def external_source(current_user, path, attributes),
-    do: create_event("external_source", nil, attributes |> Map.put("path", path), current_user, nil, nil)
+  def attribution(current_user, details),
+    do: create_event("attribution", nil, details, current_user, nil, nil)
 
-  def user_created(%User{} = current_user, method),
-    do: create_event("user_created", user_data(current_user), %{method: method}, current_user, nil, nil)
+  def user_created(%User{} = current_user, method, attribution),
+    do: create_event("user_created", user_data(current_user), %{method: method, attribution: attribution}, current_user, nil, nil)
 
   def user_login(%User{} = current_user, method),
     do: create_event("user_login", user_data(current_user), %{method: method}, current_user, nil, nil)
@@ -159,6 +159,16 @@ defmodule Azimutt.Tracking do
   end
 
   defp user_data(%User{} = user) do
+    data =
+      if user.data do
+        %{
+          attribution: user.data.attribution,
+          attributed_to: user.data.attributed_to
+        }
+      else
+        nil
+      end
+
     %{
       slug: user.slug,
       name: user.name,
@@ -169,11 +179,25 @@ defmodule Azimutt.Tracking do
       twitter_username: user.twitter_username,
       is_admin: user.is_admin,
       last_signin: user.last_signin,
+      data: data,
       created_at: user.created_at
     }
   end
 
   defp org_data(%Organization{} = org) do
+    data =
+      if org.data do
+        %{
+          allowed_layouts: org.data.allowed_layouts,
+          allowed_memos: org.data.allowed_memos,
+          allow_table_color: org.data.allow_table_color,
+          allow_private_links: org.data.allow_private_links,
+          allow_database_analysis: org.data.allow_database_analysis
+        }
+      else
+        nil
+      end
+
     %{
       slug: org.slug,
       name: org.name,
@@ -187,6 +211,7 @@ defmodule Azimutt.Tracking do
       heroku: if(Ecto.assoc_loaded?(org.heroku_resource) && org.heroku_resource, do: org.heroku_resource.id, else: nil),
       members: if(Ecto.assoc_loaded?(org.members), do: org.members |> length, else: nil),
       projects: if(Ecto.assoc_loaded?(org.projects), do: org.projects |> length, else: nil),
+      data: data,
       created_at: org.created_at
     }
   end

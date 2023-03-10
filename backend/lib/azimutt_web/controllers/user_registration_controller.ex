@@ -14,7 +14,7 @@ defmodule AzimuttWeb.UserRegistrationController do
   def create(conn, %{"user" => user_params}) do
     now = DateTime.utc_now()
 
-    case Accounts.register_password_user(user_params, now) do
+    case Accounts.register_password_user(user_params, UserAuth.get_attribution(conn), now) do
       {:ok, user} ->
         {:ok, _} = Accounts.deliver_user_confirmation_instructions(user, &Routes.user_confirmation_url(conn, :edit, &1))
 

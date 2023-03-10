@@ -24,6 +24,9 @@ defmodule AzimuttWeb.UserAuth do
   @heroku_cookie "_azimutt_heroku_sso"
   @heroku_options [sign: true, max_age: 90 * @minutes, same_site: "Lax"]
 
+  @attribution_cookie "_azimutt_attribution"
+  @attribution_options [sign: true, max_age: 30 * @days, same_site: "Lax"]
+
   @doc """
   Logs the user in.
 
@@ -53,6 +56,7 @@ defmodule AzimuttWeb.UserAuth do
     |> renew_session()
     |> put_session(:user_token, token)
     |> put_session(:live_socket_id, "users_sessions:#{Base.url_encode64(token)}")
+    |> delete_resp_cookie(@attribution_cookie)
     |> maybe_write_remember_me_cookie(token, params)
   end
 
@@ -102,6 +106,7 @@ defmodule AzimuttWeb.UserAuth do
     |> renew_session()
     |> delete_resp_cookie(@remember_me_cookie)
     |> delete_resp_cookie(@heroku_cookie)
+    |> delete_resp_cookie(@attribution_cookie)
     |> redirect(to: Routes.website_path(conn, :index))
   end
 
@@ -239,10 +244,25 @@ defmodule AzimuttWeb.UserAuth do
     values = attributes |> Map.merge(headers)
 
     if values |> map_size() > 0 do
-      Azimutt.Tracking.external_source(conn.assigns.current_user, conn.request_path, values)
-    end
+      details = values |> Map.put("path", conn.request_path)
+      Azimutt.Tracking.attribution(conn.assigns.current_user, details)
 
-    conn
+      if conn.assigns.current_user == nil do
+        conn = fetch_cookies(conn, signed: [@attribution_cookie])
+        previous = conn.cookies[@attribution_cookie] || []
+        cookie = details |> Map.put("date", DateTime.utc_now())
+        conn |> put_resp_cookie(@attribution_cookie, [cookie | previous], @attribution_options)
+      else
+        conn
+      end
+    else
+      conn
+    end
+  end
+
+  def get_attribution(conn) do
+    conn = fetch_cookies(conn, signed: [@attribution_cookie])
+    conn.cookies[@attribution_cookie] || []
   end
 
   defp put_error_html(conn, status, view, message) do

@@ -34,15 +34,19 @@ defmodule Azimutt.Accounts do
     User.password_creation_changeset(user, attrs, now, hash_password: false)
   end
 
-  def register_password_user(attrs, now) do
-    register_user(%User{} |> User.password_creation_changeset(attrs, now), "password")
+  def register_password_user(attrs, attribution, now) do
+    %User{}
+    |> User.password_creation_changeset(attrs |> with_data(attribution), now)
+    |> register_user("password")
   end
 
-  def register_github_user(attrs, now) do
-    register_user(%User{} |> User.github_creation_changeset(attrs, now), "github")
+  def register_github_user(attrs, attribution, now) do
+    %User{}
+    |> User.github_creation_changeset(attrs |> with_data(attribution), now)
+    |> register_user("github")
   end
 
-  def register_heroku_user(email, now) do
+  def register_heroku_user(email, attribution, now) do
     attrs = %{
       name: email |> String.split("@") |> hd(),
       email: email,
@@ -50,7 +54,25 @@ defmodule Azimutt.Accounts do
       provider: "heroku"
     }
 
-    register_user(%User{} |> User.heroku_creation_changeset(attrs, now), "heroku")
+    %User{}
+    |> User.heroku_creation_changeset(attrs |> with_data(attribution), now)
+    |> register_user("heroku")
+  end
+
+  defp with_data(attrs, attribution) do
+    attributed_to =
+      if attribution && length(attribution) > 0 do
+        from = attribution |> hd()
+        from["ref"] || from["via"] || from["utm_source"] || from["referer"]
+      else
+        nil
+      end
+
+    attrs
+    |> Map.put(:data, %{
+      attribution: attribution,
+      attributed_to: attributed_to
+    })
   end
 
   defp register_user(changeset, method) do
@@ -60,7 +82,11 @@ defmodule Azimutt.Accounts do
     |> Repo.transaction()
     |> case do
       {:ok, %{user: user}} ->
-        Tracking.user_created(user, method)
+        Tracking.user_created(
+          user,
+          method,
+          if(user.data && user.data.attributed_to, do: user.data.attributed_to, else: nil)
+        )
 
         if Azimutt.config(:global_organization) do
           OrganizationMember.new_member_changeset(Azimutt.config(:global_organization), user) |> Repo.insert()

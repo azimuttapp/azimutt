@@ -46,7 +46,7 @@ defmodule Azimutt.AccountsTest do
     @tag :skip
     test "requires email and password to be set" do
       now = DateTime.utc_now()
-      {:error, changeset} = Accounts.register_password_user(%{}, now)
+      {:error, changeset} = Accounts.register_password_user(%{}, [], now)
 
       assert %{
                password: ["can't be blank"],
@@ -57,7 +57,7 @@ defmodule Azimutt.AccountsTest do
     @tag :skip
     test "validates email and password when given" do
       now = DateTime.utc_now()
-      {:error, changeset} = Accounts.register_password_user(%{email: "not valid", password: "not valid"}, now)
+      {:error, changeset} = Accounts.register_password_user(%{email: "not valid", password: "not valid"}, [], now)
 
       assert %{
                email: ["must have the @ sign and no spaces"],
@@ -70,7 +70,7 @@ defmodule Azimutt.AccountsTest do
       now = DateTime.utc_now()
       too_long = String.duplicate("db", 100)
 
-      {:error, changeset} = Accounts.register_password_user(%{email: too_long, password: too_long}, now)
+      {:error, changeset} = Accounts.register_password_user(%{email: too_long, password: too_long}, [], now)
 
       assert "should be at most 160 character(s)" in errors_on(changeset).email
       assert "should be at most 72 character(s)" in errors_on(changeset).password
@@ -80,11 +80,11 @@ defmodule Azimutt.AccountsTest do
     test "validates email uniqueness" do
       now = DateTime.utc_now()
       %{email: email} = user_fixture()
-      {:error, changeset} = Accounts.register_password_user(%{email: email}, now)
+      {:error, changeset} = Accounts.register_password_user(%{email: email}, [], now)
       assert "has already been taken" in errors_on(changeset).email
 
       # Now try with the upper cased email too, to check that email case is ignored.
-      {:error, changeset} = Accounts.register_password_user(%{email: String.upcase(email)}, now)
+      {:error, changeset} = Accounts.register_password_user(%{email: String.upcase(email)}, [], now)
       assert "has already been taken" in errors_on(changeset).email
     end
 
@@ -92,7 +92,7 @@ defmodule Azimutt.AccountsTest do
     test "registers users with a hashed password" do
       now = DateTime.utc_now()
       email = unique_user_email()
-      {:ok, user} = Accounts.register_password_user(valid_user_attributes(email: email), now)
+      {:ok, user} = Accounts.register_password_user(valid_user_attributes(email: email), [], now)
       assert user.email == email
       assert is_binary(user.hashed_password)
       assert is_nil(user.confirmed_at)
