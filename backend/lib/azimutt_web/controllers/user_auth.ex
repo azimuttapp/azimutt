@@ -232,7 +232,7 @@ defmodule AzimuttWeb.UserAuth do
   end
 
   def track_attribution(conn, _opts) do
-    attributes =
+    params =
       ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "ref", "via"]
       |> Enum.reduce(%{}, fn attr, acc ->
         value = conn.params[attr]
@@ -241,17 +241,16 @@ defmodule AzimuttWeb.UserAuth do
 
     referer = get_req_header(conn, "referer") |> Enum.filter(fn h -> !String.contains?(h, Azimutt.config(:domain)) end) |> List.first()
     headers = if referer != nil, do: %{referer: referer}, else: %{}
-    values = attributes |> Map.merge(headers)
+    attributes = params |> Map.merge(headers)
 
-    if values |> map_size() > 0 do
-      details = values |> Map.put("path", conn.request_path)
-      Azimutt.Tracking.attribution(conn.assigns.current_user, details)
+    if attributes |> map_size() > 0 do
+      details = attributes |> Map.put("path", conn.request_path)
+      Tracking.attribution(conn.assigns.current_user, details)
 
       if conn.assigns.current_user == nil do
-        conn = fetch_cookies(conn, signed: [@attribution_cookie])
-        previous = conn.cookies[@attribution_cookie] || []
+        attribution = get_attribution(conn)
         cookie = details |> Map.put("date", DateTime.utc_now())
-        conn |> put_resp_cookie(@attribution_cookie, [cookie | previous], @attribution_options)
+        conn |> put_resp_cookie(@attribution_cookie, [cookie | attribution], @attribution_options)
       else
         conn
       end

@@ -82,11 +82,7 @@ defmodule Azimutt.Accounts do
     |> Repo.transaction()
     |> case do
       {:ok, %{user: user}} ->
-        Tracking.user_created(
-          user,
-          method,
-          if(user.data && user.data.attributed_to, do: user.data.attributed_to, else: nil)
-        )
+        Tracking.user_created(user, method, if(user.data, do: user.data.attributed_to, else: nil))
 
         if Azimutt.config(:global_organization) do
           OrganizationMember.new_member_changeset(Azimutt.config(:global_organization), user) |> Repo.insert()

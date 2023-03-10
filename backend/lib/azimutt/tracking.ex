@@ -159,16 +159,6 @@ defmodule Azimutt.Tracking do
   end
 
   defp user_data(%User{} = user) do
-    data =
-      if user.data do
-        %{
-          attribution: user.data.attribution,
-          attributed_to: user.data.attributed_to
-        }
-      else
-        nil
-      end
-
     %{
       slug: user.slug,
       name: user.name,
@@ -179,25 +169,20 @@ defmodule Azimutt.Tracking do
       twitter_username: user.twitter_username,
       is_admin: user.is_admin,
       last_signin: user.last_signin,
-      data: data,
-      created_at: user.created_at
+      created_at: user.created_at,
+      data:
+        if user.data do
+          %{
+            attribution: user.data.attribution,
+            attributed_to: user.data.attributed_to
+          }
+        else
+          nil
+        end
     }
   end
 
   defp org_data(%Organization{} = org) do
-    data =
-      if org.data do
-        %{
-          allowed_layouts: org.data.allowed_layouts,
-          allowed_memos: org.data.allowed_memos,
-          allow_table_color: org.data.allow_table_color,
-          allow_private_links: org.data.allow_private_links,
-          allow_database_analysis: org.data.allow_database_analysis
-        }
-      else
-        nil
-      end
-
     %{
       slug: org.slug,
       name: org.name,
@@ -211,8 +196,19 @@ defmodule Azimutt.Tracking do
       heroku: if(Ecto.assoc_loaded?(org.heroku_resource) && org.heroku_resource, do: org.heroku_resource.id, else: nil),
       members: if(Ecto.assoc_loaded?(org.members), do: org.members |> length, else: nil),
       projects: if(Ecto.assoc_loaded?(org.projects), do: org.projects |> length, else: nil),
-      data: data,
-      created_at: org.created_at
+      created_at: org.created_at,
+      data:
+        if org.data do
+          %{
+            allowed_layouts: org.data.allowed_layouts,
+            allowed_memos: org.data.allowed_memos,
+            allow_table_color: org.data.allow_table_color,
+            allow_private_links: org.data.allow_private_links,
+            allow_database_analysis: org.data.allow_database_analysis
+          }
+        else
+          nil
+        end
     }
   end
 
