@@ -46,10 +46,11 @@ defmodule AzimuttWeb.Router do
     pipe_through :browser
     get "/", WebsiteController, :index
     get "/last", WebsiteController, :last
-    get "/use-case/analyze", WebsiteController, :analyze
-    get "/use-case/design", WebsiteController, :design
-    get "/use-case/document", WebsiteController, :document
-    get "/use-case/explore", WebsiteController, :explore
+    get "/use-cases", WebsiteController, :use_cases_index
+    get "/use-cases/:id", WebsiteController, :use_cases_show
+    get "/features", WebsiteController, :features_index
+    get "/features/:id", WebsiteController, :features_show
+    get "/pricing", WebsiteController, :pricing
     get "/blog", BlogController, :index
     if Mix.env() == :dev, do: get("/blog/cards", BlogController, :cards)
     get "/blog/:id", BlogController, :show

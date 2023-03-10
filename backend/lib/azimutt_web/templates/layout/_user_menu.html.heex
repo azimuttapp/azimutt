@@ -1,26 +1,21 @@
-<AzimuttWeb.Components.Header.header>
+<AzimuttWeb.Components.Header.header dark={assigns[:dark]}>
   <:menu>
-    <a href={"#{Routes.website_path(@conn, :index)}#features"} class="inline-block rounded-lg py-1 px-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900">Features</a>
-
+    <% link_style = "#{if assigns[:dark], do: "font-semibold text-white hover:text-gray-100", else: "text-slate-700 hover:bg-slate-100 hover:text-slate-900"} rounded-lg py-1 px-2 text-sm" %>
+    <% ring_style = "#{if assigns[:dark], do: "focus:ring-offset-gray-900", else: "focus:ring-offset-slate-100"} focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
     <div x-data="{ open: false }" class="relative">
-      <button @click="open = !open" type="button" class="group inline-flex items-center rounded-lg py-1 px-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" aria-expanded="false">
+      <button type="button" @click="open = !open" class={"group inline-flex items-center #{link_style} #{ring_style}"} aria-expanded="false">
         Use cases
         <Icon.chevron_down kind="mini" class="text-gray-400 ml-2 h-5 w-5 group-hover:text-gray-500" />
       </button>
-      <div x-show="open" @click.outside="open = false" class="absolute left-1/2 z-10 mt-3 w-screen max-w-md -translate-x-1/2 transform px-2 sm:px-0" style="display: none">
+      <div x-show="open" @click.outside="open = false" style="display: none" class="absolute left-1/2 z-10 mt-3 w-screen max-w-md -translate-x-1/2 transform px-2 sm:px-0">
         <div class="overflow-hidden rounded-lg shadow-lg ring-1 ring-black ring-opacity-5">
-          <div class="relative grid gap-6 bg-white px-5 py-6 sm:gap-8 sm:p-8">
-            <%= for {url, icon, title, description} <- [
-              {Routes.website_path(@conn, :design), "academic-cap", "Design", "Make beautiful diagrams at your typing speed using our minimal DSL."}, # icon options: academic-cap / adjustments-horizontal / sparkles
-              {Routes.website_path(@conn, :explore), "cursor-arrow-rays", "Explore", "The all-in-one tool to understand your database following your thought process."}, # icon options: cursor-arrow-rays / cursor-arrow-ripple / document-magnifying-glass / eye / globe-europe-africa / magnifying-glass-circle / map / rectangle-group
-              {Routes.website_path(@conn, :document), "book-open", "Document", "Nice and contextual documentation for databases is now finally a reality."}, # icon options: book-open / tag / archive-box / bars-3-center-left
-              {Routes.website_path(@conn, :analyze), "shield-check", "Analyze", "Identify database design warts and automate any check to keep it consistent."}, # icon options: shield-check / check-badge / beaker / clipboard-document-check / finger-print / funnel
-            ] do %>
-              <a href={url} class="-m-3 flex items-start rounded-lg p-3 transition duration-150 ease-in-out hover:bg-gray-50">
-                <Icon.draw name={icon} kind="outline" class="text-indigo-600 flex-shrink-0" />
+          <div class={"#{if assigns[:dark], do: "bg-gray-900", else: "bg-white"} p-4 grid gap-3"}>
+            <%= for use_case <- Azimutt.use_cases do %>
+              <a href={Routes.website_path(@conn, :use_cases_show, use_case.id)} class={"#{if assigns[:dark], do: "hover:bg-gray-800", else: "hover:bg-gray-50"} flex items-start rounded-lg p-3"}>
+                <Icon.draw name={use_case.icon} kind="outline" class="text-indigo-600 flex-shrink-0" />
                 <div class="ml-4">
-                  <p class="text-base font-medium text-gray-900"><%= title %></p>
-                  <p class="mt-1 text-sm text-gray-500"><%= description %></p>
+                  <p class={"#{if assigns[:dark], do: "text-white", else: "text-gray-900"} text-base font-medium"}><%= use_case.name %></p>
+                  <p class={"#{if assigns[:dark], do: "text-gray-300", else: "text-gray-500"} mt-1 text-sm"}><%= use_case.description %></p>
                 </div>
               </a>
             <% end %>
@@ -28,30 +23,58 @@
         </div>
       </div>
     </div>
-
-    <a href={"#{Routes.website_path(@conn, :index)}#testimonials"} class="inline-block rounded-lg py-1 px-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900">Testimonials</a>
-    <a href={"#{Routes.website_path(@conn, :index)}#pricing"} class="inline-block rounded-lg py-1 px-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900">Pricing</a>
-    <a href={Routes.blog_path(@conn, :index)} class="inline-block rounded-lg py-1 px-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900">Blog</a>
-    <a href={Routes.gallery_path(@conn, :index)} class="inline-block rounded-lg py-1 px-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900">Inspirations</a>
+    <div x-data="{ open: false }" class="relative">
+      <button type="button" @click="open = !open" class={"group inline-flex items-center #{link_style} #{ring_style}"} aria-expanded="false">
+        Features
+        <Icon.chevron_down kind="mini" class="text-gray-400 ml-2 h-5 w-5 group-hover:text-gray-500" />
+      </button>
+      <div x-show="open" @click.outside="open = false" style="display: none" class="absolute left-1/2 -translate-x-1/2 z-10 mt-3 w-screen max-w-3xl transform px-2 sm:px-0">
+        <div class="overflow-hidden rounded-lg shadow-lg ring-1 ring-black ring-opacity-5">
+          <div class={"#{if assigns[:dark], do: "bg-gray-900", else: "bg-white"} p-4 grid gap-3 grid-cols-2"}>
+            <%= for feature <- Azimutt.features |> Enum.take(7) do %>
+              <a href={Routes.website_path(@conn, :features_show, feature.id)} class={"#{if assigns[:dark], do: "hover:bg-gray-800", else: "hover:bg-gray-50"} flex items-start rounded-lg p-3"}>
+                <Icon.draw name={feature.icon} kind="outline" class="text-indigo-600 flex-shrink-0" />
+                <div class="ml-4">
+                  <p class={"#{if assigns[:dark], do: "text-white", else: "text-gray-900"} text-base font-medium"}><%= feature.name %></p>
+                  <p class={"#{if assigns[:dark], do: "text-gray-300", else: "text-gray-500"} mt-1 text-sm"}><%= feature.description %></p>
+                </div>
+              </a>
+            <% end %>
+            <a href={Routes.website_path(@conn, :features_index)} class={"#{if assigns[:dark], do: "hover:bg-gray-800", else: "hover:bg-gray-50"} flex items-start rounded-lg p-3"}>
+              <Icon.draw name="ellipsis-horizontal" kind="outline" class="text-indigo-600 flex-shrink-0" />
+              <div class="ml-4">
+                <p class={"#{if assigns[:dark], do: "text-white", else: "text-gray-900"} text-base font-medium"}>See all</p>
+                <p class={"#{if assigns[:dark], do: "text-gray-300", else: "text-gray-500"} mt-1 text-sm"}>Azimutt has plenty of features, discover them or try explorer free, no account required!</p>
+              </div>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <a href={Routes.website_path(@conn, :pricing)} class={"inline-block #{link_style}"}>Pricing</a>
+    <a href={Routes.blog_path(@conn, :index)} class={"inline-block #{link_style}"}>Blog</a>
+    <a href={Routes.gallery_path(@conn, :index)} class={"inline-block #{link_style}"}>Inspirations</a>
   </:menu>
   <:right_menu>
     <%= if @current_user do %>
-      <%= link @current_user.email, class: "inline-block rounded-lg py-1 px-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900", to: Routes.user_dashboard_path(@conn, :index) %>
-      <%= link "Log out", class: "relative cursor-pointer inline-flex items-center space-x-2 text-center font-regular transition ease-out duration-200 rounded outline-none transition-all outline-0 focus-visible:outline-4 focus-visible:outline-offset-1 text-scale-1200 bg-scale-100 hover:bg-scale-300 bordershadow-scale-600 hover:bordershadow-scale-700 focus-visible:outline-brand-600  shadow-sm text-sm px-4 py-2", to: Routes.user_session_path(@conn, :delete), method: :delete %>
+      <%= link @current_user.email, to: Routes.user_dashboard_path(@conn, :index), class: "#{if assigns[:dark], do: "text-slate-100 hover:text-slate-200 hover:bg-gray-800", else: "text-slate-700 hover:text-slate-900 hover:bg-slate-100"} inline-block rounded-lg py-1 px-2 text-sm" %>
+      <%= link "Log out", method: :delete, to: Routes.user_session_path(@conn, :delete), class: "#{if assigns[:dark], do: "text-white", else: "text-black"} relative cursor-pointer inline-flex items-center space-x-2 text-center font-regular transition ease-out duration-200 rounded outline-none transition-all outline-0 focus-visible:outline-4 focus-visible:outline-offset-1 text-scale-1200 bg-scale-100 hover:bg-scale-300 bordershadow-scale-600 hover:bordershadow-scale-700 focus-visible:outline-brand-600 shadow-sm text-sm px-4 py-2" %>
     <% else %>
-      <a href={Routes.user_oauth_path(@conn, :request, "github")} class="relative cursor-pointer inline-flex items-center space-x-2 text-center text-white font-regular transition ease-out duration-200 rounded outline-none transition-all outline-0 focus-visible:outline-4 focus-visible:outline-offset-1  bg-gray-800 hover:bg-gray-900 text-lo-contrast  focus-visible:outline-brand-600  shadow-sm text-sm px-4 py-2" >
+      <a href={Routes.user_oauth_path(@conn, :request, "github")} class={"#{if assigns[:dark], do: "hover:bg-gray-700", else: "hover:bg-gray-900"} relative cursor-pointer inline-flex items-center space-x-2 text-center text-white font-regular transition ease-out duration-200 rounded outline-none transition-all outline-0 focus-visible:outline-4 focus-visible:outline-offset-1 bg-gray-800 text-lo-contrast focus-visible:outline-brand-600 shadow-sm text-sm px-4 py-2"}>
         <Icon.github />
         <span class="truncate">Sign In with GitHub</span>
       </a>
     <% end %>
   </:right_menu>
   <:mobile_menu>
-    <a href={Routes.website_path(@conn, :index)} class="border-transparent text-gray-500 hover:bg-gray-50 hover:border-blue-300 hover:text-blue-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">Home</a>
-    <a href={Routes.website_path(@conn, :design)} class="border-transparent text-gray-500 hover:bg-gray-50 hover:border-blue-300 hover:text-blue-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">Design your database</a>
-    <a href={Routes.website_path(@conn, :explore)} class="border-transparent text-gray-500 hover:bg-gray-50 hover:border-blue-300 hover:text-blue-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">Explore your database</a>
-    <a href={Routes.website_path(@conn, :document)} class="border-transparent text-gray-500 hover:bg-gray-50 hover:border-blue-300 hover:text-blue-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">Document your database</a>
-    <a href={Routes.website_path(@conn, :analyze)} class="border-transparent text-gray-500 hover:bg-gray-50 hover:border-blue-300 hover:text-blue-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">Analyze your database</a>
-    <a href={Routes.blog_path(@conn, :index)} class="border-transparent text-gray-500 hover:bg-gray-50 hover:border-blue-300 hover:text-blue-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">Blog</a>
-    <a href={Routes.gallery_path(@conn, :index)} class="border-transparent text-gray-500 hover:bg-gray-50 hover:border-blue-300 hover:text-blue-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">Inspirations</a>
+    <% link_style = "#{if assigns[:dark], do: "text-white hover:text-gray-100 hover:bg-gray-800 hover:border-indigo-700", else: "text-gray-500 hover:text-indigo-700 hover:bg-gray-50 hover:border-indigo-300"} border-transparent block pl-3 pr-4 py-2 border-l-4 text-base font-medium" %>
+    <a href={Routes.website_path(@conn, :index)} class={link_style}>Home</a>
+    <%= for use_case <- Azimutt.use_cases do %>
+      <a href={Routes.website_path(@conn, :use_cases_show, use_case.id)} class={link_style}><%= use_case.name %> your database</a>
+    <% end %>
+    <a href={Routes.website_path(@conn, :features_index)} class={link_style}>Features</a>
+    <a href={Routes.website_path(@conn, :pricing)} class={link_style}>Pricing</a>
+    <a href={Routes.blog_path(@conn, :index)} class={link_style}>Blog</a>
+    <a href={Routes.gallery_path(@conn, :index)} class={link_style}>Inspirations</a>
   </:mobile_menu>
 </AzimuttWeb.Components.Header.header>

@@ -13,7 +13,7 @@ defmodule AzimuttWeb.Components.Brand do
     <%= if @variant do %>
       <img class={@class} src={"/images/logo_#{@variant}.svg"} alt="Azimutt Logo" />
     <% else %>
-      <img class={@class <> " block"} src="/images/logo_dark.svg" alt="Azimutt Logo" />
+      <img class={@class} src={if assigns[:dark], do: "/images/logo_light.svg", else: "/images/logo_dark.svg"} alt="Azimutt Logo" />
     <% end %>
     """
   end

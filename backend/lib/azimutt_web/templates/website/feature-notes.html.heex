@@ -1,0 +1,23 @@
+<div class="relative isolate overflow-hidden bg-white px-6 pt-24 lg:px-0 lg:overflow-visible">
+    <%= render AzimuttWeb.PartialsView, "_bg_grid.html" %>
+    <div class="mx-auto grid max-w-2xl grid-cols-1 gap-y-16 gap-x-8 lg:mx-0 lg:max-w-none lg:grid-cols-2 lg:items-start lg:gap-y-10">
+        <%= render "_feature-heading.html", title: @feature.name, description: "\"Documentation is a love letter that your write to your future self\" said Damian Conway. Agree or not, Azimutt provide awesome tools for it 😍" %>
+        <%= render "_feature-screenshot.html", conn: @conn, feature: @feature, previous: @previous, next: @next %>
+        <div class="lg:col-span-2 lg:col-start-1 lg:row-start-2 lg:row-span-4 lg:mx-auto lg:grid lg:w-full lg:max-w-7xl lg:grid-cols-2 lg:gap-x-8 lg:px-8">
+            <div class="lg:pr-4">
+                <div class="prose max-w-xl text-base leading-7 text-gray-700 lg:max-w-lg">
+                    <p>Let's be honest, table and column names are often not enough to understand well what is stored, how it works and should be used.</p>
+                    <p>We all don't like to write a lot of documentation, but leaving some contextual notes for the next users could save them a lot of pain.</p>
+                    <p>Azimutt have 3 ways for this:</p>
+                    <ul>
+                        <li><b>SQL comments</b>: they are read only from your database schema, if you have some or want to add some, that's awesome!</li>
+                        <li><b>Notes</b>: they are like SQL comments, on tables or columns, but stored in Azimutt instead of the database. Easier to add/edit!</li>
+                        <li><b>Memos</b>: free markdown text floating in layouts. Ideal for visual notes or content not related to just one table or column.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%= render "_footer.html", conn: @conn %>
