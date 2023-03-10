@@ -151,7 +151,12 @@ defmodule Azimutt.Tracking do
           email: event.created_by.email,
           type: event.name,
           fields: %{},
-          details: event.details |> Map.put("instance", Azimutt.config(:domain)),
+          details:
+            if event.details do
+              event.details |> Map.put("instance", Azimutt.config(:domain))
+            else
+              %{instance: Azimutt.config(:domain)}
+            end,
           date: event.created_at
         })
       end
