@@ -1,7 +1,6 @@
 defmodule AzimuttWeb.UserOauthController do
   use AzimuttWeb, :controller
   alias Azimutt.Accounts
-  alias Azimutt.Tracking
   alias Azimutt.Utils.Result
   alias AzimuttWeb.UserAuth
   action_fallback AzimuttWeb.FallbackController
@@ -28,9 +27,8 @@ defmodule AzimuttWeb.UserOauthController do
     }
 
     Accounts.get_user_by_email(user_params.email)
-    |> Result.flat_map_error(fn _ -> Accounts.register_github_user(user_params, now) end)
-    |> Result.tap(fn user -> Tracking.login(user, "github") end)
-    |> Result.map(fn user -> UserAuth.log_in_user(conn, user) end)
+    |> Result.flat_map_error(fn _ -> Accounts.register_github_user(user_params, UserAuth.get_attribution(conn), now) end)
+    |> Result.map(fn user -> UserAuth.log_in_user(conn, user, "github") end)
     |> Result.or_else(callback(conn, %{}))
   end
 

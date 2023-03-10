@@ -5,6 +5,7 @@ defmodule AzimuttWeb.UserAuth do
   alias Azimutt.Accounts
   alias Azimutt.Heroku
   alias Azimutt.Heroku.Resource
+  alias Azimutt.Tracking
   alias Azimutt.Utils.Result
   alias AzimuttWeb.Router.Helpers, as: Routes
 
@@ -23,6 +24,9 @@ defmodule AzimuttWeb.UserAuth do
   @heroku_cookie "_azimutt_heroku_sso"
   @heroku_options [sign: true, max_age: 90 * @minutes, same_site: "Lax"]
 
+  @attribution_cookie "_azimutt_attribution"
+  @attribution_options [sign: true, max_age: 30 * @days, same_site: "Lax"]
+
   @doc """
   Logs the user in.
 
@@ -35,22 +39,24 @@ defmodule AzimuttWeb.UserAuth do
   disconnected on log out. The line can be safely removed
   if you are not using LiveView.
   """
-  def log_in_user(conn, user, params \\ %{}) do
+  def log_in_user(conn, user, method, params \\ %{}) do
     user_return_to = get_session(conn, :user_return_to)
 
     conn
-    |> login_user(user, params)
+    |> login_user(user, method, params)
     |> redirect(to: user_return_to || signed_in_path(conn))
   end
 
   # no redirect
-  defp login_user(conn, user, params \\ %{}) do
+  defp login_user(conn, user, method, params \\ %{}) do
+    Tracking.user_login(user, method)
     token = Accounts.generate_user_session_token(user)
 
     conn
     |> renew_session()
     |> put_session(:user_token, token)
     |> put_session(:live_socket_id, "users_sessions:#{Base.url_encode64(token)}")
+    |> delete_resp_cookie(@attribution_cookie)
     |> maybe_write_remember_me_cookie(token, params)
   end
 
@@ -100,6 +106,7 @@ defmodule AzimuttWeb.UserAuth do
     |> renew_session()
     |> delete_resp_cookie(@remember_me_cookie)
     |> delete_resp_cookie(@heroku_cookie)
+    |> delete_resp_cookie(@attribution_cookie)
     |> redirect(to: Routes.website_path(conn, :index))
   end
 
@@ -183,7 +190,7 @@ defmodule AzimuttWeb.UserAuth do
   # write @heroku_cookie to make the specified resource accessible
   def heroku_sso(conn, resource, user) do
     conn
-    |> login_user(user)
+    |> login_user(user, "heroku")
     |> put_resp_cookie(@heroku_cookie, %{resource_id: resource.id}, @heroku_options)
   end
 
@@ -222,6 +229,39 @@ defmodule AzimuttWeb.UserAuth do
       # TODO: can I render FallbackController {:error, :forbidden}?
       conn |> put_error_html(:forbidden, "403.html", "This section is for admins only.")
     end
+  end
+
+  def track_attribution(conn, _opts) do
+    params =
+      ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "ref", "via"]
+      |> Enum.reduce(%{}, fn attr, acc ->
+        value = conn.params[attr]
+        if value != nil && value != "", do: acc |> Map.put(attr, value), else: acc
+      end)
+
+    referer = get_req_header(conn, "referer") |> Enum.filter(fn h -> !String.contains?(h, Azimutt.config(:domain)) end) |> List.first()
+    headers = if referer != nil, do: %{referer: referer}, else: %{}
+    attributes = params |> Map.merge(headers)
+
+    if attributes |> map_size() > 0 do
+      details = attributes |> Map.put("path", conn.request_path)
+      Tracking.attribution(conn.assigns.current_user, details)
+
+      if conn.assigns.current_user == nil do
+        attribution = get_attribution(conn)
+        cookie = details |> Map.put("date", DateTime.utc_now())
+        conn |> put_resp_cookie(@attribution_cookie, [cookie | attribution], @attribution_options)
+      else
+        conn
+      end
+    else
+      conn
+    end
+  end
+
+  def get_attribution(conn) do
+    conn = fetch_cookies(conn, signed: [@attribution_cookie])
+    conn.cookies[@attribution_cookie] || []
   end
 
   defp put_error_html(conn, status, view, message) do

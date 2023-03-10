@@ -13,6 +13,7 @@ defmodule AzimuttWeb.Router do
     plug :put_secure_browser_headers
     plug :fetch_current_user
     plug :fetch_heroku_resource
+    plug :track_attribution
   end
 
   pipeline :browser do

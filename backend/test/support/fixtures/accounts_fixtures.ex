@@ -20,7 +20,7 @@ defmodule Azimutt.AccountsFixtures do
     {:ok, user} =
       attrs
       |> valid_user_attributes()
-      |> Accounts.register_password_user(DateTime.utc_now())
+      |> Accounts.register_password_user([], DateTime.utc_now())
 
     user
   end

@@ -129,7 +129,7 @@ defmodule Azimutt.Organizations.Organization do
     |> cast_embed(:data, required: true, with: &data_allow_table_color_changeset/2)
   end
 
-  defp data_allow_table_color_changeset(data, attrs) do
+  defp data_allow_table_color_changeset(%Organization.Data{} = data, attrs) do
     data
     |> cast(attrs, [:allow_table_color])
     |> validate_required([:allow_table_color])
