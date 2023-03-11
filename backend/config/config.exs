@@ -10,14 +10,21 @@ import Config
 config :azimutt,
   business_name: "Azimutt",
   seo_title: "Azimutt · Database explorer and analyzer",
-  seo_description: "Next-Gen ERD: explore, analyze, document and design your SQL database schema.",
+  seo_description: "Next-Gen ERD: Design, Explore, Document and Analyze your database.",
   seo_keywords:
     "SQL,schema,database,entity relationship diagram,data analyst,schema explorer,schema analyzer,DDL,DBA,database schema,database diagram,explore,understand,visualization",
   mailer_default_from_name: "Support",
   logo_url_for_emails: "https://azimutt.app/android-chrome-512x512.png",
-  twitter_url: "https://twitter.com/azimuttapp",
+  cli_url: "https://www.npmjs.com/package/azimutt",
+  heroku_url: "https://elements.heroku.com/addons/azimutt",
+  browser_extension_url: "https://chrome.google.com/webstore/detail/azimutt/bpifdkechgdibghkkpaioccoijeoebjf",
+  documentation_url: "https://docs.azimutt.app",
   github_url: "https://github.com/azimuttapp/azimutt",
+  github_issues: "https://github.com/azimuttapp/azimutt/issues",
   github_new_issue: "https://github.com/azimuttapp/azimutt/issues/new",
+  twitter_url: "https://twitter.com/azimuttapp",
+  linkedin_url: "https://www.linkedin.com/company/azimuttapp",
+  slack_url: "https://join.slack.com/t/azimutt/shared_invite/zt-1pumru3pj-iBKIq7f~7ADOfySuxuFA2Q",
   pro_plan_seat_price: 13,
   free_plan_seats: 3,
   # MUST stay in sync with frontend/src/Conf.elm (`features`)
@@ -105,24 +112,7 @@ config :azimutt, :phoenix_swagger,
     ]
   }
 
-config :waffle, storage: Waffle.Storage.Local
-
-config :ex_aws, json_codec: Jason
-
 config :phoenix_swagger, json_library: Jason
-
-twitter_consumer_key = System.get_env("TWITTER_CONSUMER_KEY")
-twitter_consumer_secret = System.get_env("TWITTER_CONSUMER_SECRET")
-twitter_access_token = System.get_env("TWITTER_ACCESS_TOKEN")
-twitter_access_token_secret = System.get_env("TWITTER_ACCESS_SECRET")
-
-if twitter_consumer_key && twitter_consumer_secret && twitter_access_token && twitter_access_token_secret do
-  config :extwitter, :oauth,
-    consumer_key: twitter_consumer_key,
-    consumer_secret: twitter_consumer_secret,
-    access_token: twitter_access_token,
-    access_token_secret: twitter_access_token_secret
-end
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

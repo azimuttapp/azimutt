@@ -1,0 +1,16 @@
+<div class="-mt-12 -ml-12 p-12 lg:sticky lg:top-4 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:overflow-hidden">
+    <img class="w-[48rem] max-w-none rounded-xl shadow-xl ring-1 ring-gray-400/10 sm:w-[57rem]" src={@feature.image} alt={@feature.name}>
+    <div class="flex mt-10 gap-6">
+        <%= if @previous do %>
+            <a href={Routes.website_path(@conn, :features_show, @previous.id)} class="basis-1/2 border border-gray-300 bg-white px-6 py-5 rounded-lg shadow-sm hover:border-gray-400 hover:bg-gray-50 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">← <%= @previous.name %></a>
+        <% else %>
+            <span class="basis-1/2"></span>
+        <% end %>
+
+        <%= if @next do %>
+            <a href={Routes.website_path(@conn, :features_show, @next.id)} class="basis-1/2 border border-gray-300 bg-white px-6 py-5 rounded-lg shadow-sm hover:border-gray-400 hover:bg-gray-50 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 text-right"><%= @next.name %> →</a>
+        <% else %>
+            <span class="basis-1/2"></span>
+        <% end %>
+    </div>
+</div>

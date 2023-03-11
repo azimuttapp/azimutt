@@ -1,0 +1,19 @@
+<div class="relative overflow-hidden bg-gray-900 py-20 px-6 shadow-xl sm:rounded-3xl sm:py-24 sm:px-10 md:px-12 lg:px-20">
+    <img class="absolute inset-0 h-full w-full object-cover brightness-150 saturate-0" src={@background} alt="Background image">
+    <div class="absolute inset-0 bg-gray-900/90 mix-blend-multiply"></div>
+    <%= render AzimuttWeb.PartialsView, "_bg_gradient_light3.html" %>
+    <div class="relative mx-auto max-w-6xl lg:mx-0">
+        <%= if assigns[:logo] do %>
+            <img class="h-12 w-auto" src={assigns[:logo]} alt="">
+        <% end %>
+        <figure>
+            <blockquote class="mt-6 text-lg font-semibold text-white sm:text-xl sm:leading-8">
+                <%= @quote %>
+            </blockquote>
+            <figcaption class="mt-6 text-base text-white">
+                <div class="font-semibold"><%= @author.name %></div>
+                <div class="mt-1"><%= @author.description %></div>
+            </figcaption>
+        </figure>
+    </div>
+</div>

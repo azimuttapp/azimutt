@@ -1,0 +1,28 @@
+<div class="relative isolate overflow-hidden bg-white px-6 pt-24 lg:px-0 lg:overflow-visible">
+    <%= render AzimuttWeb.PartialsView, "_bg_grid.html" %>
+    <div class="mx-auto grid max-w-2xl grid-cols-1 gap-y-16 gap-x-8 lg:mx-0 lg:max-w-none lg:grid-cols-2 lg:items-start lg:gap-y-10">
+        <%= render "_feature-heading.html", title: @feature.name, description: "Privacy is great, until you want to share something... Azimutt offers options to choose between fully private project, only accessible on your machine to a public one." %>
+        <%= render "_feature-screenshot.html", conn: @conn, feature: @feature, previous: @previous, next: @next %>
+        <div class="lg:col-span-2 lg:col-start-1 lg:row-start-2 lg:row-span-4 lg:mx-auto lg:grid lg:w-full lg:max-w-7xl lg:grid-cols-2 lg:gap-x-8 lg:px-8">
+            <div class="lg:pr-4">
+                <div class="prose max-w-xl text-base leading-7 text-gray-700 lg:max-w-lg">
+                    <p>If you choose a <b>local project</b>, it's stored on your machine and even Azimutt server can't access it.</p>
+                    <p>If you <b>want to share</b>, you will need a remote project, stored on Azimutt servers, so people in your organization can access it.</p>
+                    <p>
+                        All projects are private to the organization they belong.
+                        But you may want to make them available to people not in the organization (great for feedback or documentation).
+                    </p>
+                    <p>
+                        For this, you can create a <b>private link</b> and share it with anyone you want (or publicly).
+                        Tokens have an expiration date and can be revoked at any time, so you are still in control.
+                    </p>
+                    <p>
+                        This is also a great way to <b>embed a diagram</b> in your documentation 👍️
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%= render "_footer.html", conn: @conn %>

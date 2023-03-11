@@ -1,5 +1,5 @@
 <div class="relative overflow-hidden bg-white py-16">
-    <%= render "_content_dots.html" %>
+    <%= render AzimuttWeb.PartialsView, "_bg_dots.html" %>
     <div class="relative px-6 lg:px-8">
         <div class="mx-auto max-w-prose text-lg">
             <h1>
@@ -104,4 +104,4 @@
         </div>
     </div>
 </div>
-<%= render "_footer.html" %>
+<%= render "_footer.html", conn: @conn %>

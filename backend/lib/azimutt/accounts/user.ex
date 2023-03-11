@@ -60,6 +60,7 @@ defmodule Azimutt.Accounts.User do
     |> validate_email()
     |> validate_password(opts)
     |> put_change(:last_signin, now)
+    |> cast_embed(:data, required: true, with: &User.Data.changeset/2)
     |> validate_required(required)
   end
 
@@ -70,6 +71,7 @@ defmodule Azimutt.Accounts.User do
     |> cast(attrs, required ++ [:provider_uid, :company, :location, :description, :github_username, :twitter_username])
     |> Slugme.generate_slug(:github_username)
     |> put_change(:last_signin, now)
+    |> cast_embed(:data, required: true, with: &User.Data.changeset/2)
     |> validate_required(required)
   end
 
@@ -80,6 +82,7 @@ defmodule Azimutt.Accounts.User do
     |> cast(attrs, required)
     |> Slugme.generate_slug(:name)
     |> put_change(:last_signin, now)
+    |> cast_embed(:data, required: true, with: &User.Data.changeset/2)
     |> validate_required(required)
   end
 

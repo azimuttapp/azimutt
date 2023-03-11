@@ -7,7 +7,8 @@ defmodule AzimuttWeb.SitemapController do
 
   def index(conn, _params) do
     with {:ok, articles} <- Blog.list_articles(),
-         samples <- Gallery.list_samples(),
-         do: conn |> put_resp_content_type("text/xml") |> render("index.xml", articles: articles, samples: samples)
+         samples <- Gallery.list_samples() do
+      conn |> put_resp_content_type("text/xml") |> render("index.xml", articles: articles, samples: samples)
+    end
   end
 end

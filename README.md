@@ -8,7 +8,7 @@
     </a>
 </p>
 <h3 align="center">Next-Gen ERD</h3>
-<p align="center">Explore, Analyze, Document and Design your database</p>
+<p align="center">Design, Explore, Document and Analyze your database</p>
 
 <p align="center">
   <a href="https://azimutt.app" target="_blank" rel="noopener">azimutt.app</a> •

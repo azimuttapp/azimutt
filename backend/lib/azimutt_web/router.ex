@@ -13,6 +13,7 @@ defmodule AzimuttWeb.Router do
     plug :put_secure_browser_headers
     plug :fetch_current_user
     plug :fetch_heroku_resource
+    plug :track_attribution
   end
 
   pipeline :browser do
@@ -45,12 +46,13 @@ defmodule AzimuttWeb.Router do
     pipe_through :browser
     get "/", WebsiteController, :index
     get "/last", WebsiteController, :last
-    get "/use-case/analyze", WebsiteController, :analyze
-    get "/use-case/design", WebsiteController, :design
-    get "/use-case/document", WebsiteController, :document
-    get "/use-case/explore", WebsiteController, :explore
+    get "/use-cases", WebsiteController, :use_cases_index
+    get "/use-cases/:id", WebsiteController, :use_cases_show
+    get "/features", WebsiteController, :features_index
+    get "/features/:id", WebsiteController, :features_show
+    get "/pricing", WebsiteController, :pricing
     get "/blog", BlogController, :index
-    if Azimutt.Application.env() in [:dev], do: get("/blog/cards", BlogController, :cards)
+    if Azimutt.Application.env() == :dev, do: get("/blog/cards", BlogController, :cards)
     get "/blog/:id", BlogController, :show
     get "/gallery", GalleryController, :index
     get "/gallery/:slug", GalleryController, :show

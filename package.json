@@ -1,7 +1,7 @@
 {
   "name": "azimutt",
   "version": "2.0.0",
-  "description": "Next-Gen ERD: explore, analyze, document and design your SQL database schema",
+  "description": "Next-Gen ERD: Design, Explore, Document and Analyze your database.",
   "keywords": [
     "erd",
     "entity-relationship diagram",

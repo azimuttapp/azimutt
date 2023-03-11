@@ -6,7 +6,7 @@ defmodule Azimutt.Services.GithubSrv do
 
   # generate token here: https://github.com/settings/tokens
   # needs `user:email` and `read:user` scopes
-  @token System.get_env("GITHUB_ACCESS_TOKEN")
+  @token Azimutt.config(:github_access_token)
   @max_size 100
 
   typedstruct module: Pagination, enforce: true do

@@ -2,9 +2,9 @@ defmodule Azimutt.Services.BentoSrv do
   @moduledoc false
   alias Azimutt.Utils.Result
 
-  @site_key System.get_env("BENTO_SITE_KEY")
-  @publishable_key System.get_env("BENTO_PUBLISHABLE_KEY")
-  @secret_key System.get_env("BENTO_SECRET_KEY")
+  @site_key Azimutt.config(:bento_site_key)
+  @publishable_key Azimutt.config(:bento_publishable_key)
+  @secret_key Azimutt.config(:bento_secret_key)
 
   # see https://docs.bentonow.com/batch-api/events
   def send_event(event) do

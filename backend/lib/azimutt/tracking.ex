@@ -33,8 +33,14 @@ defmodule Azimutt.Tracking do
     |> Result.from_nillable()
   end
 
-  def login(%User{} = current_user, method),
-    do: create_event("login", user_data(current_user), %{method: method}, current_user, nil, nil)
+  def attribution(current_user, details),
+    do: create_event("attribution", nil, details, current_user, nil, nil)
+
+  def user_created(%User{} = current_user, method, attribution),
+    do: create_event("user_created", user_data(current_user), %{method: method, attribution: attribution}, current_user, nil, nil)
+
+  def user_login(%User{} = current_user, method),
+    do: create_event("user_login", user_data(current_user), %{method: method}, current_user, nil, nil)
 
   def project_loaded(current_user, %Project{} = project),
     do: create_event("project_loaded", project_data(project), nil, current_user, project.organization.id, project.id)
@@ -145,7 +151,12 @@ defmodule Azimutt.Tracking do
           email: event.created_by.email,
           type: event.name,
           fields: %{},
-          details: event.details,
+          details:
+            if event.details do
+              event.details |> Map.put("instance", Azimutt.config(:domain))
+            else
+              %{instance: Azimutt.config(:domain)}
+            end,
           date: event.created_at
         })
       end
@@ -163,7 +174,16 @@ defmodule Azimutt.Tracking do
       twitter_username: user.twitter_username,
       is_admin: user.is_admin,
       last_signin: user.last_signin,
-      created_at: user.created_at
+      created_at: user.created_at,
+      data:
+        if user.data do
+          %{
+            attribution: user.data.attribution,
+            attributed_to: user.data.attributed_to
+          }
+        else
+          nil
+        end
     }
   end
 
@@ -181,7 +201,19 @@ defmodule Azimutt.Tracking do
       heroku: if(Ecto.assoc_loaded?(org.heroku_resource) && org.heroku_resource, do: org.heroku_resource.id, else: nil),
       members: if(Ecto.assoc_loaded?(org.members), do: org.members |> length, else: nil),
       projects: if(Ecto.assoc_loaded?(org.projects), do: org.projects |> length, else: nil),
-      created_at: org.created_at
+      created_at: org.created_at,
+      data:
+        if org.data do
+          %{
+            allowed_layouts: org.data.allowed_layouts,
+            allowed_memos: org.data.allowed_memos,
+            allow_table_color: org.data.allow_table_color,
+            allow_private_links: org.data.allow_private_links,
+            allow_database_analysis: org.data.allow_database_analysis
+          }
+        else
+          nil
+        end
     }
   end
 
