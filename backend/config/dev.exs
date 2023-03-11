@@ -2,8 +2,6 @@ import Config
 
 config :azimutt,
   environment: :dev,
-  domain: "localhost",
-  site_url: "localhost:4000",
   support_email: "hey@azimutt.local",
   mailer_default_from_email: "hey@azimutt.dev",
   pro_plan_price_id: "price_1LqdRzCaPXsf4vehSyyUn4pd"
@@ -76,8 +74,6 @@ config :azimutt, AzimuttWeb.Endpoint,
       ~r"lib/azimutt_web/*/*/.*(eex)$"
     ]
   ]
-
-config :waffle, storage: Waffle.Storage.Local
 
 # Do not include metadata nor timestamps in development logs
 config :logger, :console, format: "[$level] $message\n"

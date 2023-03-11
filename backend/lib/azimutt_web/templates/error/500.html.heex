@@ -12,7 +12,7 @@
                         <p class="mt-1 text-base text-gray-500"><%= assigns[:message] || "Oh! Seems our server is confused 🤔" %></p>
                     </div>
                     <div class="mt-10 flex space-x-3 sm:border-l sm:border-transparent sm:pl-6">
-                        <a href={Azimutt.config(:site_url)} class="inline-flex items-center rounded-md border border-transparent bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">Go back home</a>
+                        <a href={Routes.website_path(@conn, :index)} class="inline-flex items-center rounded-md border border-transparent bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">Go back home</a>
                         <a href={Azimutt.config(:github_new_issue)} class="inline-flex items-center rounded-md border border-transparent bg-red-100 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">Contact support</a>
                     </div>
                 </div>
