@@ -34,7 +34,7 @@ config :azimutt,
   free_plan_private_links: true,
   free_plan_db_analysis: false,
   free_plan_db_access: false,
-  app_env: config_env()
+  environment: config_env()
 
 config :azimutt,
   ecto_repos: [Azimutt.Repo]
@@ -49,18 +49,6 @@ config :azimutt, AzimuttWeb.Endpoint,
   render_errors: [view: AzimuttWeb.ErrorView, accepts: ~w(html json), layout: false],
   pubsub_server: Azimutt.PubSub,
   live_view: [signing_salt: "eIPt31PL"]
-
-# Configures the mailer
-#
-# By default it uses the "Local" adapter which stores the emails
-# locally. You can see the emails in your browser, at "/dev/mailbox".
-#
-# For production it's recommended to configure a different adapter
-# at the `config/runtime.exs`.
-config :azimutt, Azimutt.Mailer, adapter: Swoosh.Adapters.Local
-
-# Swoosh API client is needed for adapters other than SMTP.
-config :swoosh, :api_client, true
 
 # Configure esbuild (the version is required)
 config :esbuild,
