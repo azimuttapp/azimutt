@@ -49,7 +49,7 @@
     "tailwind:dev": "cd frontend && npm run tailwind:dev",
     "tailwind:build": "cd frontend && npm run tailwind:build",
     "cli:test": "cd cli && npm run test",
-    "update": "npm update --save-dev && npm update --save && npm install && cd frontend && npm update --save-dev && npm update --save && elm-json upgrade --unsafe && npm install && cd review && elm-json upgrade --unsafe",
+    "update": "npm update --save-dev && npm update --save && npm install && cd frontend && npm update --save-dev && npm update --save && elm-json upgrade --unsafe && npm install && cd review && elm-json upgrade --unsafe && cd ../../backend && mix deps.update --all",
     "clever": "npm run elm:setup && cd backend && mix deps.get && mix ecto.migrate && mix assets.deploy && mix phx.server"
   },
   "devDependencies": {
