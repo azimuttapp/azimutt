@@ -153,9 +153,9 @@ defmodule Azimutt.Tracking do
           fields: %{},
           details:
             if event.details do
-              event.details |> Map.put("instance", Azimutt.config(:domain))
+              event.details |> Map.put("instance", Azimutt.config(:host))
             else
-              %{instance: Azimutt.config(:domain)}
+              %{instance: Azimutt.config(:host)}
             end,
           date: event.created_at
         })
