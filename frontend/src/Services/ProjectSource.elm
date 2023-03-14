@@ -121,7 +121,7 @@ update wrap msg model =
         BuildProject ->
             model.parsedProject
                 |> Maybe.andThen Result.toMaybe
-                |> Maybe.map (\parsedProject -> ( model |> setProject (parsedProject |> Ok |> Just), Cmd.none ))
+                |> Maybe.map (\parsedProject -> ( model |> setProject (parsedProject |> Ok |> Just), Ports.createProjectTmp parsedProject ))
                 |> Maybe.withDefault ( model, Cmd.none )
 
         UiToggle htmlId ->

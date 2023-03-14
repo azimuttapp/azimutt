@@ -1,10 +1,12 @@
 module PagesComponents.Organization_.Project_.Updates.Project exposing (createProject, moveProject, triggerSaveProject, updateProject)
 
+import Http
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Task as T
 import Models.Organization exposing (Organization)
 import Models.OrganizationId exposing (OrganizationId)
+import Models.Project
 import Models.Project.ProjectId as ProjectId
 import Models.Project.ProjectName exposing (ProjectName)
 import Models.Project.ProjectStorage exposing (ProjectStorage)
@@ -30,7 +32,8 @@ triggerSaveProject urlOrganization organizations model =
                     |> Maybe.map (\_ -> UpdateProject |> T.send)
                     |> Maybe.withDefault
                         (if e.project.id == ProjectId.zero then
-                            Cmd.batch [ ProjectSaveDialog.Open e.project.name preselectedOrg |> ProjectSaveMsg |> T.send, e |> Erd.unpack |> Ports.updateProjectTmp, Ports.projectDirty False ]
+                            Http.post { url = "/post", body = Http.jsonBody (Models.Project.encode (Erd.unpack e)), expect = Http.expectWhatever (always UpdateProject) }
+                            --Cmd.batch [ ProjectSaveDialog.Open e.project.name preselectedOrg |> ProjectSaveMsg |> T.send, e |> Erd.unpack |> Ports.updateProjectTmp, Ports.projectDirty False ]
 
                          else
                             ProjectSaveDialog.Open e.project.name preselectedOrg |> ProjectSaveMsg |> T.send
