@@ -7,7 +7,7 @@ defmodule Azimutt.Application do
   alias Azimutt.Utils.Uuid
 
   def env do
-    Application.fetch_env!(:azimutt, :app_env)
+    Application.fetch_env!(:azimutt, :environment)
   end
 
   @impl true

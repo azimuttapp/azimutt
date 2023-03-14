@@ -10,7 +10,7 @@ defmodule Azimutt.Accounts.UserNotifier do
     email =
       new()
       |> to(recipient)
-      |> from({"Azimutt", Azimutt.config(:mailer_default_from_email)})
+      |> from({"Azimutt", Azimutt.config(:sender_email)})
       |> subject(subject)
       |> text_body(body)
 

@@ -11,13 +11,6 @@ import Config
 # before starting your production server.
 config :azimutt, AzimuttWeb.Endpoint, cache_static_manifest: "priv/static/cache_manifest.json"
 
-config :azimutt,
-  environment: :prod,
-  # TODO: make this configurable
-  support_email: "hey@azimutt.app",
-  mailer_default_from_email: "hey@azimutt.app",
-  pro_plan_price_id: "price_1LqeMcCaPXsf4veh2yBgWKiX"
-
 # Do not print debug messages in production
 config :logger, level: :info
 

@@ -3,11 +3,6 @@ import Config
 # Only in tests, remove the complexity from the password hashing algorithm
 config :bcrypt_elixir, :log_rounds, 1
 
-config :azimutt,
-  environment: :test,
-  mailer_default_from_email: "hey@azimutt.dev",
-  pro_plan_price_id: "price_1LqdRzCaPXsf4vehSyyUn4pd"
-
 # Configure your database
 #
 # The MIX_TEST_PARTITION environment variable can be used
@@ -21,9 +16,6 @@ config :azimutt, AzimuttWeb.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: 4002],
   secret_key_base: "dzev5qwQsHCg3zCMWwtwN4w0BdfkiEnWH21Tn8tGM7PmQNTKRkGp2RuHKbOQgLTt",
   server: false
-
-# In test we don't send emails.
-config :azimutt, Azimutt.Mailer, adapter: Swoosh.Adapters.Test
 
 # Print only warnings and errors during test
 config :logger, level: :warn

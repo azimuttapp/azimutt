@@ -27,7 +27,18 @@ config :azimutt,
   host: host,
   skip_public_site: skip_public_site,
   global_organization: global_organization,
-  global_organization_alone: global_organization_alone
+  global_organization_alone: global_organization_alone,
+  support_email: System.get_env("SUPPORT_EMAIL") || "contact@azimutt.app",
+  sender_email: System.get_env("SENDER_EMAIL") || "contact@azimutt.app"
+
+config :azimutt, Azimutt.Repo,
+  url: System.fetch_env!("DATABASE_URL"),
+  pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
+  socket_options: if(System.get_env("ECTO_IPV6") == "true", do: [:inet6], else: []),
+  show_sensitive_data_on_connection_error: config_env() == :dev,
+  stacktrace: config_env() == :dev
+
+if config_env() == :test, do: config(:azimutt, Azimutt.Repo, pool: Ecto.Adapters.SQL.Sandbox)
 
 config :azimutt, Azimutt.Repo,
   url: System.fetch_env!("DATABASE_URL"),
@@ -39,6 +50,8 @@ config :azimutt, Azimutt.Repo,
 if config_env() == :test, do: config(:azimutt, Azimutt.Repo, pool: Ecto.Adapters.SQL.Sandbox)
 
 if config_env() == :prod || config_env() == :staging do
+  if System.get_env("PHX_SERVER"), do: config(:azimutt, AzimuttWeb.Endpoint, server: true)
+
   config :azimutt, AzimuttWeb.Endpoint,
     server: System.get_env("PHX_SERVER") == "true",
     url: [host: host, port: 443, scheme: "https"],
@@ -118,15 +131,16 @@ case System.get_env("EMAIL_ADAPTER") do
       access_token: System.fetch_env!("GMAIL_ACCESS_TOKEN")
 
   _ ->
-    IO.puts("No email system setup (EMAIL_ADAPTER expecting values: mailgun or gmail)")
+    if config_env() == :test do
+      IO.puts("Setup Test email provider")
+      config :azimutt, Azimutt.Mailer, adapter: Swoosh.Adapters.Test
+    else
+      IO.puts("Setup Local email provider")
+      config :azimutt, Azimutt.Mailer, adapter: Swoosh.Adapters.Local
+    end
 end
 
 config :swoosh, :api_client, Swoosh.ApiClient.Hackney
-
-# TODO: add login/pass auth (AUTH_PASSWORD_ENABLED)
-# TODO: add SAML auth (AUTH_SAML_ENABLED)
-# TODO: github auth (AUTH_GITHUB_ENABLED, AUTH_GITHUB_CLIENT_ID, AUTH_GITHUB_CLIENT_SECRET)
-# use the xxx_ENABLED to allow several auth at the same time (could then add google, twitter, facebook...)
 
 if System.get_env("AUTH_PASSWORD") == "true" do
   IO.puts("Setup Password auth")
@@ -149,6 +163,16 @@ if System.get_env("AUTH_GITHUB") == "true" do
     client_secret: System.fetch_env!("GITHUB_CLIENT_SECRET")
 end
 
+if System.get_env("AUTH_SAML") == "true" do
+  IO.puts("Setup SAML auth")
+
+  config :azimutt,
+    auth_saml: true
+
+  # FIXME
+  raise "AUTH_SAML not implemented"
+end
+
 # https://dashboard.stripe.com/test/apikeys & https://dashboard.stripe.com/account/webhooks
 if System.get_env("STRIPE") == "true" do
   IO.puts("Setup Stripe")
@@ -156,6 +180,9 @@ if System.get_env("STRIPE") == "true" do
   config :stripity_stripe,
     api_key: System.fetch_env!("STRIPE_API_KEY"),
     signing_secret: System.fetch_env!("STRIPE_WEBHOOK_SIGNING_SECRET")
+
+  config :azimutt,
+    stripe_price_pro_monthly: System.fetch_env!("STRIPE_PRICE_PRO_MONTHLY")
 end
 
 if System.get_env("HEROKU") == "true" do
