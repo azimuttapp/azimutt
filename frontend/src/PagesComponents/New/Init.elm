@@ -43,6 +43,8 @@ init urlOrganization query =
             , body = Just "h-full"
             }
          , Backend.getSamples GotSamples
+         , T.send (InitTab TabProject)
+         , T.sendAfter 1 (ProjectSourceMsg (ProjectSource.GetRemoteFile "/test.json"))
          ]
             ++ ((query |> Dict.get "database" |> Maybe.map (\value -> [ T.send (InitTab TabDatabase), T.sendAfter 1 (DatabaseSourceMsg (DatabaseSource.GetSchema value)) ]))
                     |> Maybe.orElse (query |> Dict.get "sql" |> Maybe.map (\value -> [ T.send (InitTab TabSql), T.sendAfter 1 (SqlSourceMsg (SqlSource.GetRemoteFile value)) ]))
