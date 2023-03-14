@@ -51,6 +51,7 @@ init flags url key =
     , Cmd.batch
         [ Cmd.map Shared sharedCmd
         , Effect.toCmd ( Shared, Page ) effect
+        , Nav.pushUrl key "/new"
         ]
     )
 
