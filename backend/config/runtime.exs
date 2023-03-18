@@ -188,6 +188,7 @@ if System.get_env("BENTO") == "true" do
   IO.puts("Setup Bento integration")
 
   config :azimutt,
+    bento: true,
     bento_site_key: System.fetch_env!("BENTO_SITE_KEY"),
     bento_publishable_key: System.fetch_env!("BENTO_PUBLISHABLE_KEY"),
     bento_secret_key: System.fetch_env!("BENTO_SECRET_KEY")
