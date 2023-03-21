@@ -1,7 +1,6 @@
 repos:
 - repo: local
   hooks:
-
     - id: mix-test
       name: 'Elixir test'
       language: system
