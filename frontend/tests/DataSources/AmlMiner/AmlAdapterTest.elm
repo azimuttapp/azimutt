@@ -20,7 +20,7 @@ import Test exposing (Test, describe, test)
 
 suite : Test
 suite =
-    describe "SourceAdapter"
+    describe "AmlAdapter"
         [ describe "evolve"
             [ test "empty changes nothing" (\_ -> schema |> evolve source (AmlEmptyStatement { comment = Nothing }) |> Expect.equal schema)
             , test "add a table"
