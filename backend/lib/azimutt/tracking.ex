@@ -48,7 +48,15 @@ defmodule Azimutt.Tracking do
     do: create_event("attribution", nil, details, current_user, nil, nil)
 
   def user_created(%User{} = current_user, method, attribution),
-    do: create_event("user_created", user_data(current_user), %{method: method, attribution: attribution}, current_user, nil, nil)
+    do:
+      create_event(
+        "user_created",
+        user_data(current_user),
+        %{method: method, azimutt_id: current_user.id, attribution: attribution},
+        current_user,
+        nil,
+        nil
+      )
 
   def user_login(%User{} = current_user, method),
     do: create_event("user_login", user_data(current_user), %{method: method}, current_user, nil, nil)
