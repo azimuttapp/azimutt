@@ -13,7 +13,7 @@ import Models.Project.CustomTypeId exposing (CustomTypeId)
 import Models.Project.Relation exposing (Relation)
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
-import Test exposing (Test, describe, only, test)
+import Test exposing (Test, describe, test)
 
 
 suite : Test

@@ -222,7 +222,7 @@ createTable origin tables table =
       , schema = id |> Tuple.first
       , name = id |> Tuple.second
       , view = False
-      , columns = table.columns |> Nel.toList |> List.indexedMap (createColumn origin) |> Dict.fromListMap .name
+      , columns = table.columns |> Nel.toList |> List.indexedMap (createColumn origin table.primaryKey) |> Dict.fromListMap .name
       , primaryKey = table.primaryKey |> createPrimaryKey origin table.columns
       , uniques = table.uniques |> createUniques origin table.table table.columns
       , indexes = table.indexes |> createIndexes origin
@@ -235,12 +235,12 @@ createTable origin tables table =
     )
 
 
-createColumn : Origin -> Int -> ParsedColumn -> Column
-createColumn origin index column =
+createColumn : Origin -> Maybe ParsedPrimaryKey -> Int -> ParsedColumn -> Column
+createColumn origin pk index column =
     { index = index
     , name = column.name
     , kind = column.kind
-    , nullable = column.nullable
+    , nullable = column.nullable && (pk |> Maybe.any (\k -> k.columns |> Nel.any (\c -> c == column.name)))
     , default = column.default
     , comment = column.comment |> Maybe.map (createComment origin)
     , columns = Nothing -- nested columns not supported in SQL
