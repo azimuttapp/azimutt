@@ -237,10 +237,15 @@ createTable origin tables table =
 
 createColumn : Origin -> Maybe ParsedPrimaryKey -> Int -> ParsedColumn -> Column
 createColumn origin pk index column =
+    let
+        inPk : Bool
+        inPk =
+            (column.primaryKey |> Maybe.isJust) || (pk |> Maybe.any (\k -> k.columns |> Nel.any (\c -> c == column.name)))
+    in
     { index = index
     , name = column.name
     , kind = column.kind
-    , nullable = column.nullable && (pk |> Maybe.any (\k -> k.columns |> Nel.any (\c -> c == column.name)))
+    , nullable = column.nullable && not inPk
     , default = column.default
     , comment = column.comment |> Maybe.map (createComment origin)
     , columns = Nothing -- nested columns not supported in SQL

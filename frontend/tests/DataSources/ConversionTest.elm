@@ -9,7 +9,7 @@ import DataSources.SqlMiner.SqlParser as SqlParser
 import Dict exposing (Dict)
 import Expect
 import Libs.Dict as Dict
-import Libs.Nel as Nel
+import Libs.Nel as Nel exposing (Nel)
 import Models.Project.Column exposing (Column)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.CustomType exposing (CustomType)
@@ -39,6 +39,16 @@ crmSource : Schema
 crmSource =
     { tables =
         [ { emptyTable
+            | id = ( "", "contact_roles" )
+            , name = "contact_roles"
+            , columns =
+                [ { emptyColumn | name = "contact_id", kind = "uuid" }
+                , { emptyColumn | name = "role_id", kind = "uuid" }
+                ]
+                    |> buildColumns
+            , primaryKey = Just { name = Nothing, columns = Nel "contact_id" [ "role_id" ] |> Nel.map Nel.from, origins = [] }
+          }
+        , { emptyTable
             | id = ( "", "contacts" )
             , name = "contacts"
             , columns =
@@ -49,35 +59,86 @@ crmSource =
                     |> buildColumns
             , primaryKey = Just { name = Nothing, columns = Nel.from "id" |> Nel.map Nel.from, origins = [] }
           }
+        , { emptyTable
+            | id = ( "", "events" )
+            , name = "events"
+            , columns =
+                [ { emptyColumn | name = "id", kind = "uuid" }
+                , { emptyColumn | name = "contact_id", kind = "uuid", nullable = True }
+                , { emptyColumn | name = "instance_name", kind = "varchar" }
+                , { emptyColumn | name = "instance_id", kind = "uuid" }
+                ]
+                    |> buildColumns
+            , primaryKey = Just { name = Nothing, columns = Nel.from "id" |> Nel.map Nel.from, origins = [] }
+          }
+        , { emptyTable
+            | id = ( "", "roles" )
+            , name = "roles"
+            , columns =
+                [ { emptyColumn | name = "id", kind = "uuid" }
+                , { emptyColumn | name = "name", kind = "varchar" }
+                ]
+                    |> buildColumns
+            , primaryKey = Just { name = Nothing, columns = Nel.from "id" |> Nel.map Nel.from, origins = [] }
+          }
         ]
             |> buildTables
-    , relations = []
+    , relations =
+        [ ( "events_contact_id_fk_az", ( "", "events", "contact_id" ), ( "", "contacts", "id" ) )
+        , ( "contact_roles_contact_id_fk_az", ( "", "contact_roles", "contact_id" ), ( "", "contacts", "id" ) )
+        , ( "contact_roles_role_id_fk_az", ( "", "contact_roles", "role_id" ), ( "", "roles", "id" ) )
+        ]
+            |> List.map buildRelation
     , types = Dict.empty
     }
 
 
 crmAml : String
 crmAml =
-    """contacts
+    """contact_roles
+  contact_id uuid pk fk contacts.id
+  role_id uuid pk fk roles.id
+
+contacts
   id uuid pk
   name varchar
-  email varchar"""
+  email varchar
 
+events
+  id uuid pk
+  contact_id uuid nullable fk contacts.id
+  instance_name varchar
+  instance_id uuid
 
-
---events
---  id uuid pk
---  contact_id uuid nullable fk contacts.id
---  instance_name varchar
---  instance_id uuid
+roles
+  id uuid pk
+  name varchar"""
 
 
 crmPostgres : String
 crmPostgres =
-    """CREATE TABLE contacts (
+    """CREATE TABLE contact_roles (
+  contact_id uuid REFERENCES contacts(id),
+  role_id uuid REFERENCES roles(id),
+  PRIMARY KEY (contact_id, role_id)
+);
+
+CREATE TABLE contacts (
   id uuid PRIMARY KEY,
   name varchar NOT NULL,
   email varchar NOT NULL
+);
+
+CREATE TABLE events (
+  id uuid PRIMARY KEY,
+  contact_id uuid REFERENCES contacts(id),
+  instance_name varchar NOT NULL,
+  instance_id uuid NOT NULL
+);
+
+CREATE TABLE roles (
+  id uuid PRIMARY KEY,
+  name varchar NOT NULL
 );"""
 
 
@@ -111,7 +172,7 @@ removeOrigins schema =
                         , primaryKey = t.primaryKey |> Maybe.map (\pk -> { pk | origins = [] })
                     }
                 )
-    , relations = schema.relations
+    , relations = schema.relations |> List.map (\r -> { r | origins = [] })
     , types = schema.types
     }
 
@@ -134,3 +195,13 @@ buildTables tables =
 buildColumns : List Column -> Dict ColumnName Column
 buildColumns columns =
     columns |> List.indexedMap (\i c -> { c | index = i }) |> Dict.fromListMap .name
+
+
+buildRelation : ( String, ( String, String, String ), ( String, String, String ) ) -> Relation
+buildRelation ( name, ( srcSchema, srcTable, srcColumn ), ( refSchema, refTable, refColumn ) ) =
+    { id = ( ( ( srcSchema, srcTable ), srcColumn ), ( ( refSchema, refTable ), refColumn ) )
+    , name = name
+    , src = { table = ( srcSchema, srcTable ), column = Nel.from srcColumn }
+    , ref = { table = ( refSchema, refTable ), column = Nel.from refColumn }
+    , origins = []
+    }
