@@ -1,54 +1,121 @@
-<div class="mx-auto lg:mt-24 flex h-full max-w-screen-xl items-center justify-center px-8">
-    <div class="sm:text-center">
-        <h1 class="text-3xl">Explore your <span class="text-blue-600">database</span> like never before.</h1>
-        <p class="text-scale-1100 mb-10 text-base sm:mx-auto sm:max-w-2xl md:mt-5">
-            Search anywhere, show relevant tables and columns, follow relations, find path between tables, save layouts, document and much more. Works well with <b>thousands</b> of tables.
-        </p>
-        <div class="flex items-center space-x-2 sm:justify-center">
-            <a href={ Routes.user_oauth_path(@conn, :request, "github")} class="relative cursor-pointer inline-flex items-center space-x-2 text-center text-white font-regular transition ease-out duration-200 rounded outline-none transition-all outline-0 focus-visible:outline-4 focus-visible:outline-offset-1  bg-gray-800 hover:bg-gray-900 text-lo-contrast  focus-visible:outline-brand-600  shadow-sm text-sm px-4 py-2" >
-                <Icon.github />
-                <span class="truncate">Sign In with GitHub</span>
-            </a>
-            <a href={"#{Azimutt.config(:github_url)}/blob/main/docs/README.md"} class="relative cursor-pointer inline-flex items-center space-x-2 text-center font-regular transition ease-out duration-200 rounded outline-none transition-all outline-0 focus-visible:outline-4 focus-visible:outline-offset-1 text-scale-1200 bg-scale-100 hover:bg-scale-300 bordershadow-scale-600 hover:bordershadow-scale-700 focus-visible:outline-brand-600 shadow-sm text-sm px-4 py-2">
-                <span class="truncate">Docs</span>
-            </a>
-        </div>
-        <div class="sm:text-center">
-            <p class="text-scale-900 mt-8 mb-5 text-xs sm:mx-auto sm:max-w-sm">
-                By continuing, you agree to Azimutt's <a class="hover:text-scale-1100 underline" href="#">Terms of Service</a> and
-                <a class="hover:text-scale-1100" href="#">Privacy Policy</a>,
-                and to receive periodic emails with updates.
-            </p>
-        </div>
-        <hr class="mt-16 max-w-[75px] border-zinc-500 sm:mx-auto">
-        <div class="sm:text-center">
-            <p class="mt-16 mb-5 text-slate-400 sm:mx-auto sm:max-w-2xl">You have specific needs regarding your database management?</p>
-            <a href={"mailto:#{Azimutt.config(:support_email)}"} rel="noopener noreferrer" class="text-slate-800">Let's talk!</a>
-        </div>
-        <.form let={f} for={@conn} action={Routes.user_session_path(@conn, :create)} as={:user}>
-          <%= if @error_message do %>
-            <div class="alert alert-danger">
-              <p><%= @error_message %></p>
+<div class="flex min-h-full">
+    <div class="flex flex-1 flex-col justify-center py-12 px-4 sm:px-6 lg:flex-none lg:px-20 xl:px-24">
+        <div class="mx-auto w-full max-w-sm lg:w-96">
+            <div>
+                <h2 class="mt-6 text-3xl font-bold tracking-tight text-gray-900">Welcome back !</h2>
             </div>
-          <% end %>
 
-          <%= label f, :email %>
-          <%= email_input f, :email, required: true %>
+            <div class="mt-8">
+                <div>
+                    <div>
+                        <p class="text-sm font-medium leading-6 text-gray-900">Sign in with</p>
 
-          <%= label f, :password %>
-          <%= password_input f, :password, required: true %>
+                        <div class="mt-2 grid grid-cols-1 gap-3">
+                            <div>
+                                <a href={ Routes.user_oauth_path(@conn, :request, "github")} class="inline-flex w-full justify-center rounded-md bg-white py-2 px-3 text-gray-500 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:outline-offset-0">
+                                    <span class="sr-only">Sign in with GitHub</span>
+                                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                                        <path fill-rule="evenodd" d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z" clip-rule="evenodd" />
+                                    </svg>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
 
-          <%= label f, :remember_me, "Keep me logged in for 60 days" %>
-          <%= checkbox f, :remember_me %>
+                    <div class="relative mt-6">
+                        <div class="absolute inset-0 flex items-center" aria-hidden="true">
+                            <div class="w-full border-t border-gray-300"></div>
+                        </div>
+                        <div class="relative flex justify-center text-sm">
+                            <span class="bg-white px-2 text-gray-500">Or continue with</span>
+                        </div>
+                    </div>
+                </div>
 
-          <div>
-            <%= submit "Log in" %>
-          </div>
-        </.form>
+                <div class="mt-6">
+                    <.form let={f} for={@conn} action={Routes.user_session_path(@conn, :create)} as={:user}>
+                    <%= if @error_message do %>
+                    <div class="alert alert-danger">
+                        <p><%= @error_message %></p>
+                    </div>
+                    <% end %>
+                    <div class="space-y-1">
+                        <%= label f, :email, class: "block text-sm font-medium leading-6 text-gray-900" %>
+                        <div class="mt-2">
+                            <%= email_input f, :email, required: true, class: "block w-full rounded-md border-0 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" %>
+                            <%= error_tag f, :email %>
+                        </div>
+                    </div>
 
-        <p>
-          <%= link "Register", to: Routes.user_registration_path(@conn, :new) %> |
-          <%= link "Forgot your password?", to: Routes.user_reset_password_path(@conn, :new) %>
-        </p>
+                    <div class="space-y-1">
+                        <%= label f, :password, class: "block text-sm font-medium leading-6 text-gray-900" %>
+                        <div class="mt-2">
+                            <%= password_input f, :password, required: true, class: "block w-full rounded-md border-0 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" %>
+                            <%= error_tag f, :password %>
+                        </div>
+                    </div>
+                    <div class="space-y-1">
+                        <div class="my-2">
+                            <%= label f, :remember_me,  "Remember me", class: "text-gray-600" %>
+                            <%= checkbox f, :remember_me, class: "ml-2 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600" %>
+                        </div>
+                    </div>
+                    <div class="space-y-1">
+                        <button type="submit" class="ml-flex w-full justify-center  py-2 px-3 text-sm font-semibold text-white shadow-sm rounded-lg text-sm font-semibold py-3 px-4 bg-slate-900 text-white hover:bg-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Login</button>
+                    </div>
+                </.form>
+            </div>
+            <div class="relative flex justify-center mt-2 ">
+                <span class="bg-white px-2 text-gray-500">Don't have an account ?
+                    <%= link "Register", to: Routes.user_registration_path(@conn, :new), class: "font-bold text-gray-800" %>
+                </span>
+            </div>
+            <div class="relative flex justify-center mt-2 text-sm">
+                <span class="bg-white px-2 text-gray-500">
+                    <%= link "Forgot your password?", to: Routes.user_reset_password_path(@conn, :new) %>
+                </span>
+            </div>
+        </div>
     </div>
+</div>
+<div class="hidden lg:flex w-full flex flex-col justify-center items-center">
+    <div class="mx-auto w-3/4">
+        <div class="absolute top-0 left-1/2 right-0 -z-10 -ml-24 transform-gpu overflow-hidden blur-3xl lg:ml-24 xl:ml-48">
+            <svg viewBox="0 0 801 1036" aria-hidden="true" class="w-[20.0625rem]">
+                <path fill="url(#70656b7e-db44-4b9b-b7d2-1f06791bed52)" fill-opacity=".3" d="m282.279 843.371 32.285 192.609-313.61-25.32 281.325-167.289-58.145-346.888c94.5 92.652 277.002 213.246 251.009-45.597C442.651 127.331 248.072 10.369 449.268.891c160.956-7.583 301.235 116.434 351.256 179.39L507.001 307.557l270.983 241.04-495.705 294.774Z"></path>
+                <defs>
+                    <linearGradient id="70656b7e-db44-4b9b-b7d2-1f06791bed52" x1="508.179" x2="-28.677" y1="-116.221" y2="1091.63" gradientUnits="userSpaceOnUse">
+                        <stop stop-color="#9089FC"></stop>
+                        <stop offset="1" stop-color="#FF80B5"></stop>
+                    </linearGradient>
+                </defs>
+            </svg>
+        </div>
+        <svg class="absolute inset-x-0 top-0 -z-10 h-[32rem] w-full stroke-gray-200 [mask-image:radial-gradient(32rem_32rem_at_center,white,transparent)]" aria-hidden="true">
+            <defs>
+                <pattern id="1f932ae7-37de-4c0a-a8b0-a6e3b4d44b84" width="200" height="200" x="50%" y="-1" patternUnits="userSpaceOnUse">
+                    <path d="M.5 200V.5H200" fill="none"></path>
+                </pattern>
+            </defs>
+            <svg x="50%" y="-1" class="overflow-visible fill-gray-50">
+                <path d="M-200 0h201v201h-201Z M600 0h201v201h-201Z M-400 600h201v201h-201Z M200 800h201v201h-201Z" stroke-width="0"></path>
+            </svg>
+            <rect width="100%" height="100%" stroke-width="0" fill="url(#1f932ae7-37de-4c0a-a8b0-a6e3b4d44b84)"></rect>
+        </svg>
+
+        <img class="h-24 w-auto mb-8 text-right md:h-16 xl:h-24 right-0" src="/images/logo_dark.svg" alt="Azimutt">
+        <h2 class="text-2xl font-bold tracking-tight text-gray-900  md:text-3xl xl:text-4xl">Empower Your Team with Azimutt's Visualizations, <br> Sharing, and Optimization Tools</h2>
+        <p class="mb-4 relative mt-6 text-lg leading-8 text-gray-600 sm:max-w-md lg:max-w-none">Discover Azimutt, an open-source tool designed for developers to effortlessly visualize and understand their database structures. Collaborate with your team to optimize your database design and streamline your workflow.</p>
+    </div>
+    <footer class="mx-auto w-full max-w-container px-4 sm:px-6 lg:px-8">
+        <div class="border-t border-slate-900/5 py-10">
+            <div class="flex items-center justify-center space-x-4 text-sm font-semibold leading-6 text-slate-700">
+             <!--   <a href="/privacy-policy">Privacy policy</a>
+                <div class="h-4 w-px bg-slate-500/20"></div>
+                -->
+                <a href="https://github.com/azimuttapp/azimutt">GitHub</a>
+            </div>
+        </div>
+    </footer>
+</div>
 </div>

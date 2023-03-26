@@ -4,7 +4,7 @@ defmodule AzimuttWeb.UserSessionControllerTest do
 
   test "GET /login", %{conn: conn} do
     conn = get(conn, Routes.user_session_path(conn, :new))
-    assert html_response(conn, 200) =~ "Sign In with GitHub"
+    assert html_response(conn, 200) =~ "Forgot your password?"
   end
 
   describe "DELETE /logout" do

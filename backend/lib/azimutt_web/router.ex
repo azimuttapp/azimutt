@@ -41,6 +41,10 @@ defmodule AzimuttWeb.Router do
     plug :put_root_layout, {AzimuttWeb.LayoutView, :admin_dashboard}
   end
 
+  pipeline :register_and_login_layout do
+    plug :put_root_layout, {AzimuttWeb.LayoutView, :login}
+  end
+
   # public routes
   scope "/", AzimuttWeb do
     pipe_through :browser
@@ -67,7 +71,7 @@ defmodule AzimuttWeb.Router do
 
   # auth routes
   scope "/", AzimuttWeb do
-    pipe_through [:browser, :redirect_if_user_is_authed]
+    pipe_through [:browser, :redirect_if_user_is_authed, :register_and_login_layout]
     get "/auth/:provider", UserOauthController, :request
     get "/auth/:provider/callback", UserOauthController, :callback
     get "/register", UserRegistrationController, :new
