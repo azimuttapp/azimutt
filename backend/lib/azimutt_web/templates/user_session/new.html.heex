@@ -78,44 +78,5 @@
         </div>
     </div>
 </div>
-<div class="hidden lg:flex w-full flex flex-col justify-center items-center">
-    <div class="mx-auto w-3/4">
-        <div class="absolute top-0 left-1/2 right-0 -z-10 -ml-24 transform-gpu overflow-hidden blur-3xl lg:ml-24 xl:ml-48">
-            <svg viewBox="0 0 801 1036" aria-hidden="true" class="w-[20.0625rem]">
-                <path fill="url(#70656b7e-db44-4b9b-b7d2-1f06791bed52)" fill-opacity=".3" d="m282.279 843.371 32.285 192.609-313.61-25.32 281.325-167.289-58.145-346.888c94.5 92.652 277.002 213.246 251.009-45.597C442.651 127.331 248.072 10.369 449.268.891c160.956-7.583 301.235 116.434 351.256 179.39L507.001 307.557l270.983 241.04-495.705 294.774Z"></path>
-                <defs>
-                    <linearGradient id="70656b7e-db44-4b9b-b7d2-1f06791bed52" x1="508.179" x2="-28.677" y1="-116.221" y2="1091.63" gradientUnits="userSpaceOnUse">
-                        <stop stop-color="#9089FC"></stop>
-                        <stop offset="1" stop-color="#FF80B5"></stop>
-                    </linearGradient>
-                </defs>
-            </svg>
-        </div>
-        <svg class="absolute inset-x-0 top-0 -z-10 h-[32rem] w-full stroke-gray-200 [mask-image:radial-gradient(32rem_32rem_at_center,white,transparent)]" aria-hidden="true">
-            <defs>
-                <pattern id="1f932ae7-37de-4c0a-a8b0-a6e3b4d44b84" width="200" height="200" x="50%" y="-1" patternUnits="userSpaceOnUse">
-                    <path d="M.5 200V.5H200" fill="none"></path>
-                </pattern>
-            </defs>
-            <svg x="50%" y="-1" class="overflow-visible fill-gray-50">
-                <path d="M-200 0h201v201h-201Z M600 0h201v201h-201Z M-400 600h201v201h-201Z M200 800h201v201h-201Z" stroke-width="0"></path>
-            </svg>
-            <rect width="100%" height="100%" stroke-width="0" fill="url(#1f932ae7-37de-4c0a-a8b0-a6e3b4d44b84)"></rect>
-        </svg>
-
-        <img class="h-24 w-auto mb-8 text-right md:h-16 xl:h-24 right-0" src="/images/logo_dark.svg" alt="Azimutt">
-        <h2 class="text-2xl font-bold tracking-tight text-gray-900  md:text-3xl xl:text-4xl">Empower Your Team with Azimutt's Visualizations, <br> Sharing, and Optimization Tools</h2>
-        <p class="mb-4 relative mt-6 text-lg leading-8 text-gray-600 sm:max-w-md lg:max-w-none">Discover Azimutt, an open-source tool designed for developers to effortlessly visualize and understand their database structures. Collaborate with your team to optimize your database design and streamline your workflow.</p>
-    </div>
-    <footer class="mx-auto w-full max-w-container px-4 sm:px-6 lg:px-8">
-        <div class="border-t border-slate-900/5 py-10">
-            <div class="flex items-center justify-center space-x-4 text-sm font-semibold leading-6 text-slate-700">
-             <!--   <a href="/privacy-policy">Privacy policy</a>
-                <div class="h-4 w-px bg-slate-500/20"></div>
-                -->
-                <a href="https://github.com/azimuttapp/azimutt">GitHub</a>
-            </div>
-        </div>
-    </footer>
-</div>
+<%= render AzimuttWeb.PartialsView, "_login_register_right_section.html" %>
 </div>

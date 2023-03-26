@@ -1,15 +1,29 @@
-<h1>Forgot your password?</h1>
-
-<.form let={f} for={:user} action={Routes.user_reset_password_path(@conn, :create)}>
-  <%= label f, :email %>
-  <%= email_input f, :email, required: true %>
-
-  <div>
-    <%= submit "Send instructions to reset password" %>
+<div class="flex min-h-full">
+<div class="flex flex-1 flex-col justify-center py-12 px-4 sm:px-6 lg:flex-none lg:px-20 xl:px-24">
+  <div class="mx-auto w-full max-w-sm lg:w-96">
+    <div>
+      <h2 class="mt-6 text-3xl font-bold tracking-tight text-gray-900">Forgot your password?</h2>
+    </div>
+    <div class="mt-6">
+      <.form let={f} for={:user} action={Routes.user_reset_password_path(@conn, :create)}>
+        <div class="space-y-1">
+          <%= label f, :email, class: "block text-sm font-medium leading-6 text-gray-900" %>
+          <div class="mt-2">
+            <%= email_input f, :email, required: true, class: "block w-full rounded-md border-0 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" %>
+            <%= error_tag f, :email %>
+          </div>
+        </div>
+        <div class="space-y-1 mt-4">
+          <button type="submit" class="ml-flex w-full justify-center  py-2 px-3 text-sm font-semibold text-white shadow-sm rounded-lg text-sm font-semibold py-3 px-4 bg-slate-900 text-white hover:bg-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Send instructions to reset password</button>
+        </div>
+      </.form>
+    </div>
+  <div class="relative flex justify-center mt-2 ">
+  <span class="bg-white px-2 text-gray-500">Go back to the
+      <%= link "Login page", to: Routes.user_session_path(@conn, :new), class: "font-bold text-gray-800" %>
+  </span>
   </div>
-</.form>
-
-<p>
-  <%= link "Register", to: Routes.user_registration_path(@conn, :new) %> |
-  <%= link "Log in", to: Routes.user_session_path(@conn, :new) %>
-</p>
+</div>
+        </div>
+<%= render AzimuttWeb.PartialsView, "_login_register_right_section.html" %>
+        </div>
