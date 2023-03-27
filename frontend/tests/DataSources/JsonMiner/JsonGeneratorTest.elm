@@ -1,6 +1,6 @@
-module DataSources.SqlMiner.PostgreSqlGeneratorTest exposing (..)
+module DataSources.JsonMiner.JsonGeneratorTest exposing (..)
 
-import DataSources.SqlMiner.PostgreSqlGenerator as PostgreSqlGenerator
+import DataSources.JsonMiner.JsonGenerator as JsonGenerator
 import Dict exposing (Dict)
 import Expect
 import Libs.Dict as Dict
@@ -18,10 +18,22 @@ import Test exposing (Test, describe, test)
 
 suite : Test
 suite =
-    describe "PostgreSqlGenerator"
+    describe "AmlGenerator"
         [ describe "generate"
-            [ test "empty" (\_ -> emptySource |> PostgreSqlGenerator.generate |> Expect.equal "")
-            , test "empty table" (\_ -> { emptySource | tables = Dict.fromListMap .id [ { emptyTable | name = "users" } ] } |> PostgreSqlGenerator.generate |> Expect.equal "CREATE TABLE users (\n);")
+            [ test "empty" (\_ -> emptySource |> JsonGenerator.generate |> Expect.equal """{
+  "tables": [],
+  "relations": []
+}""")
+            , test "empty table" (\_ -> { emptySource | tables = Dict.fromListMap .id [ { emptyTable | name = "users" } ] } |> JsonGenerator.generate |> Expect.equal """{
+  "tables": [
+    {
+      "schema": "",
+      "table": "users",
+      "columns": []
+    }
+  ],
+  "relations": []
+}""")
             , test "table with columns"
                 (\_ ->
                     { emptySource
@@ -41,14 +53,44 @@ suite =
                             ]
                                 |> buildTables
                     }
-                        |> PostgreSqlGenerator.generate
-                        |> Expect.equal """CREATE TABLE public.users (
-  id uuid NOT NULL,
-  name varchar,
-  role varchar NOT NULL DEFAULT "guest",
-  bio text NOT NULL COMMENT "Hello :)",
-  age int DEFAULT 0 COMMENT "hey!"
-);"""
+                        |> JsonGenerator.generate
+                        |> Expect.equal """{
+  "tables": [
+    {
+      "schema": "public",
+      "table": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid"
+        },
+        {
+          "name": "name",
+          "type": "varchar",
+          "nullable": true
+        },
+        {
+          "name": "role",
+          "type": "varchar",
+          "default": "guest"
+        },
+        {
+          "name": "bio",
+          "type": "text",
+          "comment": "Hello :)"
+        },
+        {
+          "name": "age",
+          "type": "int",
+          "nullable": true,
+          "default": "0",
+          "comment": "hey!"
+        }
+      ]
+    }
+  ],
+  "relations": []
+}"""
                 )
             , test "table with constraints"
                 (\_ ->
@@ -74,16 +116,68 @@ suite =
                             ]
                                 |> buildTables
                     }
-                        |> PostgreSqlGenerator.generate
-                        |> Expect.equal """CREATE TABLE public.users (
-  id uuid PRIMARY KEY,
-  name varchar NOT NULL UNIQUE,
-  role varchar NOT NULL,
-  bio text NOT NULL,
-  age int NOT NULL CHECK
-);
-CREATE INDEX users_role_idx ON public.users (role);
-COMMENT ON TABLE public.users IS "all users";"""
+                        |> JsonGenerator.generate
+                        |> Expect.equal """{
+  "tables": [
+    {
+      "schema": "public",
+      "table": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid"
+        },
+        {
+          "name": "name",
+          "type": "varchar"
+        },
+        {
+          "name": "role",
+          "type": "varchar"
+        },
+        {
+          "name": "bio",
+          "type": "text"
+        },
+        {
+          "name": "age",
+          "type": "int"
+        }
+      ],
+      "primaryKey": {
+        "columns": [
+          "id"
+        ]
+      },
+      "uniques": [
+        {
+          "name": "users_name_unique",
+          "columns": [
+            "name"
+          ]
+        }
+      ],
+      "indexes": [
+        {
+          "name": "users_role_idx",
+          "columns": [
+            "role"
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "name": "users_age_chk",
+          "columns": [
+            "age"
+          ]
+        }
+      ],
+      "comment": "all users"
+    }
+  ],
+  "relations": []
+}"""
                 )
             , test "table with complex constraints"
                 (\_ ->
@@ -108,18 +202,72 @@ COMMENT ON TABLE public.users IS "all users";"""
                             ]
                                 |> buildTables
                     }
-                        |> PostgreSqlGenerator.generate
-                        |> Expect.equal """CREATE TABLE users (
-  kind varchar,
-  id uuid,
-  first_name varchar NOT NULL,
-  last_name varchar NOT NULL,
-  age int NOT NULL CHECK (age > 0),
-  PRIMARY KEY (kind, id),
-  UNIQUE (first_name, last_name)
-);
-CREATE INDEX users_name_idx ON users (first_name, last_name);
-COMMENT ON TABLE users IS "store \\"all\\" users";"""
+                        |> JsonGenerator.generate
+                        |> Expect.equal """{
+  "tables": [
+    {
+      "schema": "",
+      "table": "users",
+      "columns": [
+        {
+          "name": "kind",
+          "type": "varchar"
+        },
+        {
+          "name": "id",
+          "type": "uuid"
+        },
+        {
+          "name": "first_name",
+          "type": "varchar"
+        },
+        {
+          "name": "last_name",
+          "type": "varchar"
+        },
+        {
+          "name": "age",
+          "type": "int"
+        }
+      ],
+      "primaryKey": {
+        "columns": [
+          "kind",
+          "id"
+        ]
+      },
+      "uniques": [
+        {
+          "name": "users_name_unique",
+          "columns": [
+            "first_name",
+            "last_name"
+          ]
+        }
+      ],
+      "indexes": [
+        {
+          "name": "users_name_idx",
+          "columns": [
+            "first_name",
+            "last_name"
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "name": "users_age_chk",
+          "columns": [
+            "age"
+          ],
+          "predicate": "age > 0"
+        }
+      ],
+      "comment": "store \\"all\\" users"
+    }
+  ],
+  "relations": []
+}"""
                 )
             , test "table with foreign keys"
                 (\_ ->
@@ -131,11 +279,53 @@ COMMENT ON TABLE users IS "store \\"all\\" users";"""
                             ]
                                 |> List.map buildRelation
                     }
-                        |> PostgreSqlGenerator.generate
-                        |> Expect.equal """CREATE TABLE user_roles (
-  user_id uuid NOT NULL REFERENCES users(id),
-  role_id uuid NOT NULL REFERENCES public.roles(id)
-);"""
+                        |> JsonGenerator.generate
+                        |> Expect.equal """{
+  "tables": [
+    {
+      "schema": "",
+      "table": "user_roles",
+      "columns": [
+        {
+          "name": "user_id",
+          "type": "uuid"
+        },
+        {
+          "name": "role_id",
+          "type": "uuid"
+        }
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "name": "user_roles_user_fk",
+      "src": {
+        "schema": "",
+        "table": "user_roles",
+        "column": "user_id"
+      },
+      "ref": {
+        "schema": "",
+        "table": "users",
+        "column": "id"
+      }
+    },
+    {
+      "name": "user_roles_role_fk",
+      "src": {
+        "schema": "",
+        "table": "user_roles",
+        "column": "role_id"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "roles",
+        "column": "id"
+      }
+    }
+  ]
+}"""
                 )
             ]
         ]

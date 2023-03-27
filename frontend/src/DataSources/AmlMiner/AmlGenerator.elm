@@ -11,17 +11,16 @@ import Models.Project.Column exposing (Column)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnPath as ColumnPath
 import Models.Project.ColumnRef exposing (ColumnRef)
-import Models.Project.CustomType exposing (CustomType)
-import Models.Project.CustomTypeId exposing (CustomTypeId)
 import Models.Project.Index exposing (Index)
 import Models.Project.PrimaryKey exposing (PrimaryKey)
 import Models.Project.Relation exposing (Relation)
+import Models.Project.Schema exposing (Schema)
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
 import Models.Project.Unique exposing (Unique)
 
 
-generate : { s | tables : Dict TableId Table, relations : List Relation, types : Dict CustomTypeId CustomType } -> String
+generate : Schema -> String
 generate source =
     let
         relations : Dict TableId (Dict ColumnName (List Relation))

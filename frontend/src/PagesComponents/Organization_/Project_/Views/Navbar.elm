@@ -27,6 +27,7 @@ import Models.OrganizationId exposing (OrganizationId)
 import Models.ProjectInfo exposing (ProjectInfo)
 import Models.User exposing (User)
 import PagesComponents.Helpers as Helpers
+import PagesComponents.Organization_.Project_.Components.ExportDialog as ExportDialog
 import PagesComponents.Organization_.Project_.Components.ProjectSharing as ProjectSharing
 import PagesComponents.Organization_.Project_.Models exposing (AmlSidebarMsg(..), FindPathMsg(..), HelpMsg(..), Msg(..), NavbarModel, ProjectSettingsMsg(..), SchemaAnalysisMsg(..), VirtualRelation, VirtualRelationMsg(..))
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
@@ -77,6 +78,7 @@ viewNavbar gConf maybeUser eConf virtualRelation erd projects model args =
             , Maybe.when eConf.update { action = Right (AmlSidebarMsg AToggle), content = text "Update your schema", hotkeys = [] }
             , Maybe.when eConf.findPath { action = Right (FindPathMsg (FPOpen Nothing Nothing)), content = text "Find path between tables", hotkeys = Conf.hotkeys |> Dict.getOrElse "find-path" [] }
             , Just { action = Right (SchemaAnalysisMsg SAOpen), content = text "Analyze your schema 🔎", hotkeys = [] }
+            , Just { action = Right (ExportDialogMsg ExportDialog.Open), content = text "Export your schema", hotkeys = [] }
             , Just { action = Left Conf.constants.azimuttFeatureRequests, content = text "Suggest a feature 🚀", hotkeys = [] }
             ]
                 |> List.filterMap identity

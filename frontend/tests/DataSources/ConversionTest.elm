@@ -3,26 +3,26 @@ module DataSources.ConversionTest exposing (..)
 import DataSources.AmlMiner.AmlAdapter as AmlAdapter
 import DataSources.AmlMiner.AmlGenerator as AmlGenerator
 import DataSources.AmlMiner.AmlParser as AmlParser
+import DataSources.JsonMiner.JsonAdapter as JsonAdapter
+import DataSources.JsonMiner.JsonGenerator as JsonGenerator
+import DataSources.JsonMiner.JsonSchema as JsonSchema
 import DataSources.SqlMiner.PostgreSqlGenerator as PostgreSqlGenerator
 import DataSources.SqlMiner.SqlAdapter as SqlAdapter
 import DataSources.SqlMiner.SqlParser as SqlParser
 import Dict exposing (Dict)
 import Expect
+import Json.Decode as Decode
 import Libs.Dict as Dict
 import Libs.Nel as Nel exposing (Nel)
 import Models.Project.Column exposing (Column)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.CustomType exposing (CustomType)
-import Models.Project.CustomTypeId exposing (CustomTypeId)
 import Models.Project.Relation exposing (Relation)
+import Models.Project.Schema exposing (Schema)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
 import Test exposing (Test, describe, test)
-
-
-type alias Schema =
-    { tables : Dict TableId Table, relations : List Relation, types : Dict CustomTypeId CustomType }
 
 
 suite : Test
@@ -32,6 +32,8 @@ suite =
         , test "generate AML" (\_ -> crmSource |> AmlGenerator.generate |> Expect.equal crmAml)
         , test "parse PostgreSQL" (\_ -> crmPostgres |> parseSql |> Expect.equal crmSource)
         , test "generate PostgreSQL" (\_ -> crmSource |> PostgreSqlGenerator.generate |> Expect.equal crmPostgres)
+        , test "parse JSON" (\_ -> crmJson |> parseJson |> Expect.equal crmSource)
+        , test "generate JSON" (\_ -> crmSource |> JsonGenerator.generate |> Expect.equal crmJson)
         ]
 
 
@@ -142,6 +144,145 @@ CREATE TABLE roles (
 );"""
 
 
+crmJson : String
+crmJson =
+    """{
+  "tables": [
+    {
+      "schema": "",
+      "table": "contact_roles",
+      "columns": [
+        {
+          "name": "contact_id",
+          "type": "uuid"
+        },
+        {
+          "name": "role_id",
+          "type": "uuid"
+        }
+      ],
+      "primaryKey": {
+        "columns": [
+          "contact_id",
+          "role_id"
+        ]
+      }
+    },
+    {
+      "schema": "",
+      "table": "contacts",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid"
+        },
+        {
+          "name": "name",
+          "type": "varchar"
+        },
+        {
+          "name": "email",
+          "type": "varchar"
+        }
+      ],
+      "primaryKey": {
+        "columns": [
+          "id"
+        ]
+      }
+    },
+    {
+      "schema": "",
+      "table": "events",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid"
+        },
+        {
+          "name": "contact_id",
+          "type": "uuid",
+          "nullable": true
+        },
+        {
+          "name": "instance_name",
+          "type": "varchar"
+        },
+        {
+          "name": "instance_id",
+          "type": "uuid"
+        }
+      ],
+      "primaryKey": {
+        "columns": [
+          "id"
+        ]
+      }
+    },
+    {
+      "schema": "",
+      "table": "roles",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid"
+        },
+        {
+          "name": "name",
+          "type": "varchar"
+        }
+      ],
+      "primaryKey": {
+        "columns": [
+          "id"
+        ]
+      }
+    }
+  ],
+  "relations": [
+    {
+      "name": "events_contact_id_fk_az",
+      "src": {
+        "schema": "",
+        "table": "events",
+        "column": "contact_id"
+      },
+      "ref": {
+        "schema": "",
+        "table": "contacts",
+        "column": "id"
+      }
+    },
+    {
+      "name": "contact_roles_contact_id_fk_az",
+      "src": {
+        "schema": "",
+        "table": "contact_roles",
+        "column": "contact_id"
+      },
+      "ref": {
+        "schema": "",
+        "table": "contacts",
+        "column": "id"
+      }
+    },
+    {
+      "name": "contact_roles_role_id_fk_az",
+      "src": {
+        "schema": "",
+        "table": "contact_roles",
+        "column": "role_id"
+      },
+      "ref": {
+        "schema": "",
+        "table": "roles",
+        "column": "id"
+      }
+    }
+  ]
+}"""
+
+
 parseAml : String -> Schema
 parseAml aml =
     aml
@@ -158,6 +299,15 @@ parseSql sql =
         |> Tuple.second
         |> List.foldl (\c s -> s |> SqlAdapter.evolve SourceId.zero ( Nel.from { index = 0, text = "" }, c )) SqlAdapter.initSchema
         |> (\schema -> removeOrigins { tables = schema.tables, relations = schema.relations, types = schema.types |> Dict.fromListMap .id })
+
+
+parseJson : String -> Schema
+parseJson json =
+    json
+        |> Decode.decodeString JsonSchema.decode
+        |> Result.withDefault { tables = [], relations = [], types = [] }
+        |> JsonAdapter.buildSchema SourceId.zero
+        |> (\schema -> removeOrigins { tables = schema.tables, relations = schema.relations, types = schema.types })
 
 
 removeOrigins : Schema -> Schema

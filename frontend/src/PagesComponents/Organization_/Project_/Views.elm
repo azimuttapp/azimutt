@@ -25,6 +25,7 @@ import Models.User exposing (User)
 import PagesComponents.Organization_.Project_.Components.AmlSidebar as AmlSidebar
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
 import PagesComponents.Organization_.Project_.Components.EmbedSourceParsingDialog as EmbedSourceParsingDialog
+import PagesComponents.Organization_.Project_.Components.ExportDialog as ExportDialog
 import PagesComponents.Organization_.Project_.Components.ProjectSaveDialog as ProjectSaveDialog
 import PagesComponents.Organization_.Project_.Components.ProjectSharing as ProjectSharing
 import PagesComponents.Organization_.Project_.Components.SourceUpdateDialog as SourceUpdateDialog
@@ -151,6 +152,7 @@ viewModal currentUrl urlOrganization shared model _ =
          , model.editNotes |> Maybe.map2 (\e m -> ( m.id, viewEditNotes (model.openedDialogs |> List.member m.id) e m )) model.erd
          , model.findPath |> Maybe.map2 (\e m -> ( m.id, viewFindPath (model.openedDialogs |> List.member m.id) model.openedDropdown e.settings.defaultSchema e.tables e.settings.findPath m )) model.erd
          , model.schemaAnalysis |> Maybe.map2 (\e m -> ( m.id, viewSchemaAnalysis (e |> Erd.getOrganization urlOrganization) (model.openedDialogs |> List.member m.id) e.settings.defaultSchema e.tables m )) model.erd
+         , model.exportDialog |> Maybe.map (\m -> ( m.id, ExportDialog.view ExportDialogMsg Send ModalClose (model.openedDialogs |> List.member m.id) m ))
          , model.sharing |> Maybe.map2 (\e m -> ( m.id, ProjectSharing.view SharingMsg Send ModalClose confirmDanger shared.zone currentUrl (model.openedDialogs |> List.member m.id) e m )) model.erd
          , model.save |> Maybe.map2 (\e m -> ( m.id, ProjectSaveDialog.view ProjectSaveMsg ModalClose CreateProject currentUrl shared.user shared.organizations (model.openedDialogs |> List.member m.id) e m )) model.erd
          , model.settings |> Maybe.map2 (\e m -> ( m.id, viewProjectSettings shared.zone (model.openedDialogs |> List.member m.id) e m )) model.erd
