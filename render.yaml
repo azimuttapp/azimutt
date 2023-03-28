@@ -25,7 +25,7 @@ services:
       - key: PORT
         value: 8080
       - key: AUTH_GITHUB
-        sync: true
+        value: true
       - key: DATABASE_URL
         fromDatabase:
           name: azimutt_db
