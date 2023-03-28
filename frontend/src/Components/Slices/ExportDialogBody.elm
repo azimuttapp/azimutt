@@ -18,6 +18,7 @@ import Html.Attributes exposing (class, disabled, id)
 import Html.Events exposing (onClick)
 import Libs.Html.Attributes exposing (css)
 import Libs.Maybe as Maybe
+import Libs.Models.FileName exposing (FileName)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Remote as Remote exposing (Remote(..))
 import Libs.Tailwind as Tw exposing (sm)
@@ -53,11 +54,12 @@ type Msg
     = SetInput ExportInput
     | SetFormat ExportFormat
     | GetOutput ExportInput ExportFormat
-    | GotOutput ( String, String )
+    | GotOutput FileName String
 
 
 type ExportInput
     = Project
+    | AllTables
     | CurrentLayout
 
 
@@ -84,15 +86,21 @@ update wrap erd msg model =
         GetOutput source format ->
             ( { model | output = Fetching }, getOutput wrap source format erd )
 
-        GotOutput output ->
-            ( { model | output = Fetched output }, Cmd.none )
+        GotOutput file content ->
+            ( { model | output = Fetched ( file, content ) }, Cmd.none )
 
 
 shouldGetOutput : (Msg -> msg) -> Model -> ( Model, Cmd msg )
 shouldGetOutput wrap model =
     if model.output /= Fetching then
-        Maybe.map2 (\source format -> ( model, GetOutput source format |> wrap |> T.send )) model.input model.format
-            |> Maybe.withDefault ( model, Cmd.none )
+        ( { model | output = Pending }
+        , if model.input == Just Project then
+            GetOutput Project JSON |> wrap |> T.send
+
+          else
+            Maybe.map2 (\input format -> GetOutput input format |> wrap |> T.send) model.input model.format
+                |> Maybe.withDefault Cmd.none
+        )
 
     else
         ( model, Cmd.none )
@@ -100,31 +108,37 @@ shouldGetOutput wrap model =
 
 getOutput : (Msg -> msg) -> ExportInput -> ExportFormat -> Erd -> Cmd msg
 getOutput wrap input format erd =
-    let
-        ( toExport, name ) =
-            case input of
-                Project ->
-                    ( erd |> Erd.unpack |> Schema.from, erd.project.name )
+    case input of
+        Project ->
+            erd |> Erd.unpack |> Project.downloadContent |> (\output -> output |> GotOutput (erd.project.name ++ ".azimutt.json") |> wrap |> T.send)
 
-                CurrentLayout ->
-                    ( erd |> Erd.unpack |> Schema.from |> Schema.filter (erd.layouts |> Dict.get erd.currentLayout |> Maybe.mapOrElse (.tables >> List.map .id) []), erd.currentLayout )
+        AllTables ->
+            erd |> Erd.unpack |> Schema.from |> generateTables format |> (\( output, ext ) -> output |> GotOutput (erd.project.name ++ "." ++ ext) |> wrap |> T.send)
 
-        ( formatter, extension ) =
-            case format of
-                AML ->
-                    ( AmlGenerator.generate, "aml" )
+        CurrentLayout ->
+            erd
+                |> Erd.unpack
+                |> Schema.from
+                |> Schema.filter (erd.layouts |> Dict.get erd.currentLayout |> Maybe.mapOrElse (.tables >> List.map .id) [])
+                |> generateTables format
+                |> (\( output, ext ) -> output |> GotOutput (erd.project.name ++ "-" ++ erd.currentLayout ++ "." ++ ext) |> wrap |> T.send)
 
-                PostgreSQL ->
-                    ( PostgreSqlGenerator.generate, "sql" )
 
-                JSON ->
-                    ( JsonGenerator.generate, "json" )
-    in
-    toExport |> formatter |> (\r -> GotOutput ( name ++ "." ++ extension, r )) |> wrap |> T.send
+generateTables : ExportFormat -> Schema -> ( String, String )
+generateTables format schema =
+    case format of
+        AML ->
+            ( AmlGenerator.generate schema, "aml" )
+
+        PostgreSQL ->
+            ( PostgreSqlGenerator.generate schema, "sql" )
+
+        JSON ->
+            ( JsonGenerator.generate schema, "json" )
 
 
 view : (Msg -> msg) -> (Cmd msg -> msg) -> msg -> HtmlId -> Model -> Html msg
-view wrap send onCancel titleId model =
+view wrap send onClose titleId model =
     let
         inputId : HtmlId
         inputId =
@@ -143,39 +157,54 @@ view wrap send onCancel titleId model =
                         { name = inputId ++ "-source"
                         , label = "Export"
                         , legend = "Choose what to export"
-                        , options = [ ( Project, "Everything" ), ( CurrentLayout, "Current layout" ) ] |> List.map (\( v, t ) -> { value = v, text = t, disabled = False })
+                        , options = [ ( Project, "Full project" ), ( AllTables, "All tables" ), ( CurrentLayout, "Current layout" ) ] |> List.map (\( v, t ) -> { value = v, text = t, disabled = False })
                         , value = model.input
                         , link = Nothing
                         }
                     ]
-                , div [ class "mt-2" ]
-                    [ Radio.smallCards (.value >> SetFormat >> wrap)
-                        { name = inputId ++ "-output"
-                        , label = "Output format"
-                        , legend = "Choose an output format"
-                        , options = [ ( AML, "AML" ), ( PostgreSQL, "PostgreSQL" ), ( JSON, "JSON" ) ] |> List.map (\( v, t ) -> { value = v, text = t, disabled = False })
-                        , value = model.format
-                        , link = Nothing
-                        }
-                    ]
-                , pre [ class "mt-2 px-4 py-2 bg-gray-900 text-white text-sm font-mono rounded-md overflow-auto max-h-128 w-4xl" ]
-                    [ code []
-                        [ model.output
-                            |> Remote.fold
-                                (\_ -> text "Choose what you want to export and the format...")
-                                (\_ -> text "fetching...")
-                                (\e -> text ("Error: " ++ e))
-                                (\( _, r ) -> text r)
+                , model.input
+                    |> Maybe.filter (\i -> i /= Project)
+                    |> Maybe.map
+                        (\_ ->
+                            div [ class "mt-2" ]
+                                [ Radio.smallCards (.value >> SetFormat >> wrap)
+                                    { name = inputId ++ "-output"
+                                    , label = "Output format"
+                                    , legend = "Choose an output format"
+                                    , options = [ ( AML, "AML" ), ( PostgreSQL, "PostgreSQL" ), ( JSON, "JSON" ) ] |> List.map (\( v, t ) -> { value = v, text = t, disabled = False })
+                                    , value = model.format
+                                    , link = Nothing
+                                    }
+                                ]
+                        )
+                    |> Maybe.withDefault (div [] [])
+                , if model.output == Pending then
+                    pre [] []
+
+                  else
+                    pre [ class "mt-2 px-4 py-2 bg-gray-900 text-white text-sm font-mono rounded-md overflow-auto max-h-128 w-4xl" ]
+                        [ code []
+                            [ model.output
+                                |> Remote.fold
+                                    (\_ -> text "Choose what you want to export and the format...")
+                                    (\_ -> text "fetching...")
+                                    (\e -> text ("Error: " ++ e))
+                                    (\( _, content ) -> text content)
+                            ]
                         ]
-                    ]
                 ]
             ]
         , div [ class "px-6 py-3 mt-6 flex items-center flex-row-reverse bg-gray-50 rounded-b-lg" ]
             ((model.output
                 |> Remote.toList
-                |> List.map (\( file, output ) -> Button.primary3 Tw.primary [ onClick (output ++ "\n" |> Ports.downloadFile file |> send), disabled False, css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ Icon.solid Icon.Download "mr-1", text "Download file" ])
+                |> List.map
+                    (\( file, content ) ->
+                        Button.primary3 Tw.primary
+                            [ onClick (content ++ "\n" |> Ports.downloadFile file |> send), disabled False, css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ]
+                            [ Icon.solid Icon.Download "mr-1", text "Download file" ]
+                    )
              )
-                ++ [ Button.white3 Tw.gray [ onClick onCancel, css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text "Close" ] ]
+                ++ [ Button.white3 Tw.gray [ onClick onClose, css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text "Close" ] ]
             )
         ]
 
@@ -202,9 +231,9 @@ updateDocState msg =
     ElmBook.Actions.updateStateWithCmd (\s -> s.exportDialogDocState |> update updateDocState sampleErd msg |> Tuple.mapFirst (\r -> { s | exportDialogDocState = r }))
 
 
-sampleOnCancel : ElmBook.Msg state
-sampleOnCancel =
-    ElmBook.Actions.logAction "onCancel"
+sampleOnClose : ElmBook.Msg state
+sampleOnClose =
+    ElmBook.Actions.logAction "onClose"
 
 
 sampleTitleId : String
@@ -248,7 +277,7 @@ doc : Chapter (SharedDocState x)
 doc =
     Chapter.chapter "ExportDialogBody"
         |> Chapter.renderStatefulComponentList
-            [ component "exportDialog" (\model -> view updateDocState (\_ -> logAction "Download file") sampleOnCancel sampleTitleId model)
+            [ component "exportDialog" (\model -> view updateDocState (\_ -> logAction "Download file") sampleOnClose sampleTitleId model)
             ]
 
 
