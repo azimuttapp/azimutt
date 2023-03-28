@@ -62,7 +62,7 @@ services:
     - key: MINIO_ROOT_USER
       generateValue: true
     - key: PORT
-      value: 10000
+      value: 8080
     disk:
       name: data
       mountPath: /data
