@@ -100,13 +100,22 @@ ui =
     }
 
 
-features : { layouts : { name : String, free : number }, memos : { name : String, free : number }, tableColor : { name : String, free : Bool }, privateLinks : { name : String, free : Bool }, dbAnalysis : { name : String, free : Bool }, dbAccess : { name : String, free : Bool } }
+features :
+    { layouts : { name : String, free : number }
+    , memos : { name : String, free : number }
+    , tableColor : { name : String, free : Bool }
+    , privateLinks : { name : String, free : Bool }
+    , sqlExport : { name : String, free : Bool }
+    , dbAnalysis : { name : String, free : Bool }
+    , dbAccess : { name : String, free : Bool }
+    }
 features =
     -- MUST stay in sync with backend/config/config.exs (`free_plan_layouts`)
     { layouts = { name = "layouts", free = 3 }
     , memos = { name = "memos", free = 5 }
     , tableColor = { name = "table_color", free = False }
     , privateLinks = { name = "private_links", free = True }
+    , sqlExport = { name = "sql_export", free = False }
     , dbAnalysis = { name = "analysis", free = False }
     , dbAccess = { name = "data_access", free = False }
     }

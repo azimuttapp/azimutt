@@ -1,4 +1,4 @@
-module Components.Slices.ProPlan exposing (ColorsModel, ColorsMsg(..), DocState, SharedDocState, analysisResults, analysisWarning, colorsInit, colorsModalBody, colorsUpdate, doc, initDocState, layoutsModalBody, layoutsWarning, memosModalBody, privateLinkWarning)
+module Components.Slices.ProPlan exposing (ColorsModel, ColorsMsg(..), DocState, SharedDocState, analysisResults, analysisWarning, colorsInit, colorsModalBody, colorsUpdate, doc, initDocState, layoutsModalBody, layoutsWarning, memosModalBody, privateLinkWarning, sqlExportWarning)
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon
@@ -8,8 +8,8 @@ import Conf
 import ElmBook
 import ElmBook.Actions as Actions
 import ElmBook.Chapter as Chapter exposing (Chapter)
-import Html exposing (Html, a, blockquote, button, div, h3, input, label, p, text)
-import Html.Attributes exposing (class, for, href, id, name, placeholder, rel, style, target, type_, value)
+import Html exposing (Html, a, blockquote, button, div, h3, input, label, p, span, text)
+import Html.Attributes exposing (class, for, href, id, name, placeholder, rel, style, target, title, type_, value)
 import Html.Events exposing (onBlur, onClick, onInput)
 import Libs.Html exposing (bText, extLink, sendTweet)
 import Libs.Html.Attributes exposing (ariaDescribedby, ariaHidden, css)
@@ -288,6 +288,24 @@ privateLinkWarning organization =
         ]
 
 
+sqlExportWarning : Organization -> Html msg
+sqlExportWarning organization =
+    let
+        color : Color
+        color =
+            Tw.green
+    in
+    Alert.withActions
+        { color = color
+        , icon = Icon.Exclamation
+        , title = "SQL export is a pro feature!"
+        , actions = [ Link.secondary3 color [ href (Backend.organizationBillingUrl organization.id Conf.features.sqlExport.name), target "_blank", rel "noopener" ] [ Icon.outline Icon.TrendingUp "mr-1", text "Unleash more power!" ] ]
+        }
+        [ p [] [ text "Getting a pro plan is the best support you could give to Azimutt, allowing us to invest even more to make it always better." ]
+        , p [] [ text "It will unlock many features for you, check it out below. Or reach us if you have any question on ", span [ title "Azimutt" ] [ text "🧭" ] ]
+        ]
+
+
 analysisWarning : Organization -> Html msg
 analysisWarning organization =
     let
@@ -373,6 +391,7 @@ doc =
             , ( "colorsModalBody", \s -> colorsModalBody Organization.zero docColorsUpdate s.proPlanDocState.colors docClose docTitleId )
             , ( "colorsModalBody success", \s -> colorsModalBody Organization.zero docColorsUpdate (s.proPlanDocState.colors |> setResult (Just (Ok "Tweet.."))) docClose docTitleId )
             , ( "privateLinkWarning", \_ -> privateLinkWarning Organization.zero )
+            , ( "sqlExportWarning", \_ -> sqlExportWarning Organization.zero )
             , ( "analysisWarning", \_ -> analysisWarning Organization.zero )
             , ( "analysisResults", \_ -> analysisResults Organization.zero [ 1, 2, 3, 4, 5, 6 ] (\i -> p [] [ text ("Item " ++ String.fromInt i) ]) )
             ]

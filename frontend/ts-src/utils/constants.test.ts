@@ -21,6 +21,7 @@ export const plan: Plan = {
     memos: 1,
     colors: false,
     private_links: false,
+    sql_export: false,
     db_analysis: false,
     db_access: false
 }

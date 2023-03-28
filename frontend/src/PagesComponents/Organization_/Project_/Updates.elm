@@ -243,7 +243,7 @@ update currentLayout zone now urlOrganization organizations projects msg model =
             ( model |> setSchemaAnalysis Nothing, Cmd.none )
 
         ExportDialogMsg message ->
-            model.erd |> Maybe.mapOrElse (\erd -> model |> mapExportDialogCmd (ExportDialog.update ExportDialogMsg ModalOpen erd message)) ( model, Cmd.none )
+            model.erd |> Maybe.mapOrElse (\erd -> model |> mapExportDialogCmd (ExportDialog.update ExportDialogMsg ModalOpen urlOrganization erd message)) ( model, Cmd.none )
 
         SharingMsg message ->
             model |> mapSharingCmd (ProjectSharing.update SharingMsg ModalOpen Toast zone now model.erd message)
