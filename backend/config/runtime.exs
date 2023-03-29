@@ -210,3 +210,10 @@ if System.get_env("GITHUB") == "true" do
   config :azimutt,
     github_access_token: System.fetch_env!("GITHUB_ACCESS_TOKEN")
 end
+
+if System.get_env("OPENAI") == "true" do
+  IO.puts("Setup OpenAI integration")
+
+  config :azimutt,
+    openai_api_key: System.fetch_env!("OPENAI_API_KEY")
+end
