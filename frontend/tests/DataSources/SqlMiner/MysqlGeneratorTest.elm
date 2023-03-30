@@ -1,6 +1,6 @@
-module DataSources.SqlMiner.PostgreSqlGeneratorTest exposing (..)
+module DataSources.SqlMiner.MysqlGeneratorTest exposing (..)
 
-import DataSources.SqlMiner.PostgreSqlGenerator as PostgreSqlGenerator
+import DataSources.SqlMiner.MysqlGenerator as MysqlGenerator
 import Dict exposing (Dict)
 import Expect
 import Libs.Dict as Dict
@@ -18,10 +18,10 @@ import Test exposing (Test, describe, test)
 
 suite : Test
 suite =
-    describe "PostgreSqlGenerator"
+    describe "MysqlGenerator"
         [ describe "generate"
-            [ test "empty" (\_ -> emptySource |> PostgreSqlGenerator.generate |> Expect.equal "")
-            , test "empty table" (\_ -> { emptySource | tables = Dict.fromListMap .id [ { emptyTable | name = "users" } ] } |> PostgreSqlGenerator.generate |> Expect.equal "CREATE TABLE users (\n);")
+            [ test "empty" (\_ -> emptySource |> MysqlGenerator.generate |> Expect.equal "")
+            , test "empty table" (\_ -> { emptySource | tables = Dict.fromListMap .id [ { emptyTable | name = "users" } ] } |> MysqlGenerator.generate |> Expect.equal "CREATE TABLE users (\n);")
             , test "table with columns"
                 (\_ ->
                     { emptySource
@@ -41,7 +41,7 @@ suite =
                             ]
                                 |> buildTables
                     }
-                        |> PostgreSqlGenerator.generate
+                        |> MysqlGenerator.generate
                         |> Expect.equal """CREATE TABLE public.users (
   id uuid NOT NULL,
   name varchar,
@@ -74,16 +74,14 @@ suite =
                             ]
                                 |> buildTables
                     }
-                        |> PostgreSqlGenerator.generate
+                        |> MysqlGenerator.generate
                         |> Expect.equal """CREATE TABLE public.users (
   id uuid PRIMARY KEY,
   name varchar NOT NULL UNIQUE,
-  role varchar NOT NULL,
+  role varchar NOT NULL INDEX,
   bio text NOT NULL,
   age int NOT NULL CHECK
-);
-CREATE INDEX users_role_idx ON public.users (role);
-COMMENT ON TABLE public.users IS "all users";"""
+) COMMENT="all users";"""
                 )
             , test "table with complex constraints"
                 (\_ ->
@@ -108,7 +106,7 @@ COMMENT ON TABLE public.users IS "all users";"""
                             ]
                                 |> buildTables
                     }
-                        |> PostgreSqlGenerator.generate
+                        |> MysqlGenerator.generate
                         |> Expect.equal """CREATE TABLE users (
   kind varchar,
   id uuid,
@@ -116,10 +114,9 @@ COMMENT ON TABLE public.users IS "all users";"""
   last_name varchar NOT NULL,
   age int NOT NULL CHECK (age > 0),
   PRIMARY KEY (kind, id),
-  UNIQUE (first_name, last_name)
-);
-CREATE INDEX users_name_idx ON users (first_name, last_name);
-COMMENT ON TABLE users IS "store \\"all\\" users";"""
+  UNIQUE (first_name, last_name),
+  INDEX (first_name, last_name)
+) COMMENT="store \\"all\\" users";"""
                 )
             , test "table with foreign keys"
                 (\_ ->
@@ -136,7 +133,7 @@ COMMENT ON TABLE users IS "store \\"all\\" users";"""
                             ]
                                 |> List.map buildRelation
                     }
-                        |> PostgreSqlGenerator.generate
+                        |> MysqlGenerator.generate
                         |> Expect.equal """CREATE TABLE roles (
   id uuid NOT NULL
 );

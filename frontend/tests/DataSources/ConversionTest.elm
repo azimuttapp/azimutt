@@ -6,6 +6,7 @@ import DataSources.AmlMiner.AmlParser as AmlParser
 import DataSources.JsonMiner.JsonAdapter as JsonAdapter
 import DataSources.JsonMiner.JsonGenerator as JsonGenerator
 import DataSources.JsonMiner.JsonSchema as JsonSchema
+import DataSources.SqlMiner.MysqlGenerator as MysqlGenerator
 import DataSources.SqlMiner.PostgreSqlGenerator as PostgreSqlGenerator
 import DataSources.SqlMiner.SqlAdapter as SqlAdapter
 import DataSources.SqlMiner.SqlParser as SqlParser
@@ -16,6 +17,7 @@ import Libs.Dict as Dict
 import Libs.Nel as Nel exposing (Nel)
 import Models.Project.Column exposing (Column)
 import Models.Project.ColumnName exposing (ColumnName)
+import Models.Project.Comment exposing (Comment)
 import Models.Project.CustomType exposing (CustomType)
 import Models.Project.Relation exposing (Relation)
 import Models.Project.Schema exposing (Schema)
@@ -28,17 +30,19 @@ import Test exposing (Test, describe, test)
 suite : Test
 suite =
     describe "DataSourceConversion"
-        [ test "parse AML" (\_ -> crmAml |> parseAml |> Expect.equal crmSource)
-        , test "generate AML" (\_ -> crmSource |> AmlGenerator.generate |> Expect.equal crmAml)
-        , test "parse PostgreSQL" (\_ -> crmPostgres |> parseSql |> Expect.equal crmSource)
-        , test "generate PostgreSQL" (\_ -> crmSource |> PostgreSqlGenerator.generate |> Expect.equal crmPostgres)
-        , test "parse JSON" (\_ -> crmJson |> parseJson |> Expect.equal crmSource)
-        , test "generate JSON" (\_ -> crmSource |> JsonGenerator.generate |> Expect.equal crmJson)
+        [ test "parse AML" (\_ -> crmAml |> parseAml |> Expect.equal crmSchema)
+        , test "generate AML" (\_ -> crmSchema |> AmlGenerator.generate |> Expect.equal crmAml)
+        , test "parse PostgreSQL" (\_ -> crmPostgres |> parseSql |> Expect.equal crmSchema)
+        , test "generate PostgreSQL" (\_ -> crmSchema |> PostgreSqlGenerator.generate |> Expect.equal crmPostgres)
+        , test "parse MySQL" (\_ -> crmMysql |> parseSql |> Expect.equal crmSchema)
+        , test "generate MySQL" (\_ -> crmSchema |> MysqlGenerator.generate |> Expect.equal crmMysql)
+        , test "parse JSON" (\_ -> crmJson |> parseJson |> Expect.equal crmSchema)
+        , test "generate JSON" (\_ -> crmSchema |> JsonGenerator.generate |> Expect.equal crmJson)
         ]
 
 
-crmSource : Schema
-crmSource =
+crmSchema : Schema
+crmSchema =
     { tables =
         [ { emptyTable
             | id = ( "", "contact_roles" )
@@ -67,7 +71,7 @@ crmSource =
             , columns =
                 [ { emptyColumn | name = "id", kind = "uuid" }
                 , { emptyColumn | name = "contact_id", kind = "uuid", nullable = True }
-                , { emptyColumn | name = "instance_name", kind = "varchar" }
+                , { emptyColumn | name = "instance_name", kind = "varchar", comment = Just { emptyComment | text = "hostname" } }
                 , { emptyColumn | name = "instance_id", kind = "uuid" }
                 ]
                     |> buildColumns
@@ -86,9 +90,9 @@ crmSource =
         ]
             |> buildTables
     , relations =
-        [ ( "events_contact_id_fk_az", ( "", "events", "contact_id" ), ( "", "contacts", "id" ) )
-        , ( "contact_roles_contact_id_fk_az", ( "", "contact_roles", "contact_id" ), ( "", "contacts", "id" ) )
+        [ ( "contact_roles_contact_id_fk_az", ( "", "contact_roles", "contact_id" ), ( "", "contacts", "id" ) )
         , ( "contact_roles_role_id_fk_az", ( "", "contact_roles", "role_id" ), ( "", "roles", "id" ) )
+        , ( "events_contact_id_fk_az", ( "", "events", "contact_id" ), ( "", "contacts", "id" ) )
         ]
             |> List.map buildRelation
     , types = Dict.empty
@@ -109,7 +113,7 @@ contacts
 events
   id uuid pk
   contact_id uuid nullable fk contacts.id
-  instance_name varchar
+  instance_name varchar | hostname
   instance_id uuid
 
 roles
@@ -120,8 +124,8 @@ roles
 crmPostgres : String
 crmPostgres =
     """CREATE TABLE contact_roles (
-  contact_id uuid REFERENCES contacts(id),
-  role_id uuid REFERENCES roles(id),
+  contact_id uuid,
+  role_id uuid,
   PRIMARY KEY (contact_id, role_id)
 );
 
@@ -130,18 +134,49 @@ CREATE TABLE contacts (
   name varchar NOT NULL,
   email varchar NOT NULL
 );
+ALTER TABLE contact_roles ADD CONSTRAINT contact_roles_contact_id_fk_az FOREIGN KEY (contact_id) REFERENCES contacts(id);
 
 CREATE TABLE events (
   id uuid PRIMARY KEY,
   contact_id uuid REFERENCES contacts(id),
-  instance_name varchar NOT NULL,
+  instance_name varchar NOT NULL COMMENT "hostname",
   instance_id uuid NOT NULL
 );
 
 CREATE TABLE roles (
   id uuid PRIMARY KEY,
   name varchar NOT NULL
-);"""
+);
+ALTER TABLE contact_roles ADD CONSTRAINT contact_roles_role_id_fk_az FOREIGN KEY (role_id) REFERENCES roles(id);"""
+
+
+crmMysql : String
+crmMysql =
+    """CREATE TABLE contact_roles (
+  contact_id uuid,
+  role_id uuid,
+  PRIMARY KEY (contact_id, role_id)
+);
+
+CREATE TABLE contacts (
+  id uuid PRIMARY KEY,
+  name varchar NOT NULL,
+  email varchar NOT NULL
+);
+ALTER TABLE contact_roles ADD CONSTRAINT contact_roles_contact_id_fk_az FOREIGN KEY (contact_id) REFERENCES contacts(id);
+
+CREATE TABLE events (
+  id uuid PRIMARY KEY,
+  contact_id uuid REFERENCES contacts(id),
+  instance_name varchar NOT NULL COMMENT "hostname",
+  instance_id uuid NOT NULL
+);
+
+CREATE TABLE roles (
+  id uuid PRIMARY KEY,
+  name varchar NOT NULL
+);
+ALTER TABLE contact_roles ADD CONSTRAINT contact_roles_role_id_fk_az FOREIGN KEY (role_id) REFERENCES roles(id);"""
 
 
 crmJson : String
@@ -206,7 +241,8 @@ crmJson =
         },
         {
           "name": "instance_name",
-          "type": "varchar"
+          "type": "varchar",
+          "comment": "hostname"
         },
         {
           "name": "instance_id",
@@ -241,19 +277,6 @@ crmJson =
   ],
   "relations": [
     {
-      "name": "events_contact_id_fk_az",
-      "src": {
-        "schema": "",
-        "table": "events",
-        "column": "contact_id"
-      },
-      "ref": {
-        "schema": "",
-        "table": "contacts",
-        "column": "id"
-      }
-    },
-    {
       "name": "contact_roles_contact_id_fk_az",
       "src": {
         "schema": "",
@@ -278,6 +301,19 @@ crmJson =
         "table": "roles",
         "column": "id"
       }
+    },
+    {
+      "name": "events_contact_id_fk_az",
+      "src": {
+        "schema": "",
+        "table": "events",
+        "column": "contact_id"
+      },
+      "ref": {
+        "schema": "",
+        "table": "contacts",
+        "column": "id"
+      }
     }
   ]
 }"""
@@ -289,7 +325,7 @@ parseAml aml =
         |> AmlParser.parse
         |> Result.withDefault []
         |> List.foldl (\c s -> s |> AmlAdapter.evolve SourceId.zero c) AmlAdapter.initSchema
-        |> (\schema -> removeOrigins { tables = schema.tables, relations = schema.relations, types = schema.types })
+        |> (\schema -> removeOrigins { tables = schema.tables, relations = schema.relations |> List.sortBy .id, types = schema.types })
 
 
 parseSql : String -> Schema
@@ -298,7 +334,7 @@ parseSql sql =
         |> SqlParser.parse
         |> Tuple.second
         |> List.foldl (\c s -> s |> SqlAdapter.evolve SourceId.zero ( Nel.from { index = 0, text = "" }, c )) SqlAdapter.initSchema
-        |> (\schema -> removeOrigins { tables = schema.tables, relations = schema.relations, types = schema.types |> Dict.fromListMap .id })
+        |> (\schema -> removeOrigins { tables = schema.tables, relations = schema.relations |> List.sortBy .id, types = schema.types |> Dict.fromListMap .id })
 
 
 parseJson : String -> Schema
@@ -307,7 +343,7 @@ parseJson json =
         |> Decode.decodeString JsonSchema.decode
         |> Result.withDefault { tables = [], relations = [], types = [] }
         |> JsonAdapter.buildSchema SourceId.zero
-        |> (\schema -> removeOrigins { tables = schema.tables, relations = schema.relations, types = schema.types })
+        |> (\schema -> removeOrigins { tables = schema.tables, relations = schema.relations |> List.sortBy .id, types = schema.types })
 
 
 removeOrigins : Schema -> Schema
@@ -318,8 +354,9 @@ removeOrigins schema =
                 (\_ t ->
                     { t
                         | origins = []
-                        , columns = t.columns |> Dict.map (\_ c -> { c | origins = [] })
+                        , columns = t.columns |> Dict.map (\_ col -> { col | origins = [], comment = col.comment |> Maybe.map (\c -> { c | origins = [] }) })
                         , primaryKey = t.primaryKey |> Maybe.map (\pk -> { pk | origins = [] })
+                        , comment = t.comment |> Maybe.map (\c -> { c | origins = [] })
                     }
                 )
     , relations = schema.relations |> List.map (\r -> { r | origins = [] })
@@ -335,6 +372,11 @@ emptyTable =
 emptyColumn : Column
 emptyColumn =
     { index = 0, name = "", kind = "", nullable = False, default = Nothing, comment = Nothing, columns = Nothing, origins = [] }
+
+
+emptyComment : Comment
+emptyComment =
+    { text = "", origins = [] }
 
 
 buildTables : List Table -> Dict TableId Table

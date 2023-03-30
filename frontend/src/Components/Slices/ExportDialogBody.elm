@@ -10,6 +10,7 @@ import DataSources.AmlMiner.AmlAdapter as AmlAdapter
 import DataSources.AmlMiner.AmlGenerator as AmlGenerator
 import DataSources.AmlMiner.AmlParser as AmlParser
 import DataSources.JsonMiner.JsonGenerator as JsonGenerator
+import DataSources.SqlMiner.MysqlGenerator as MysqlGenerator
 import DataSources.SqlMiner.PostgreSqlGenerator as PostgreSqlGenerator
 import Dict
 import ElmBook
@@ -72,6 +73,7 @@ type ExportInput
 type ExportFormat
     = AML
     | PostgreSQL
+    | MySQL
     | JSON
 
 
@@ -115,8 +117,8 @@ shouldGetOutput wrap model =
 getOutput : (Msg -> msg) -> Maybe OrganizationId -> Erd -> ExportInput -> ExportFormat -> Cmd msg
 getOutput wrap urlOrganization erd input format =
     let
-        sqlExport : Bool
-        sqlExport =
+        sqlExportAllowed : Bool
+        sqlExportAllowed =
             erd |> Erd.getOrganization urlOrganization |> .plan |> .sqlExport
     in
     case input of
@@ -124,14 +126,14 @@ getOutput wrap urlOrganization erd input format =
             erd |> Erd.unpack |> Project.downloadContent |> (\output -> output |> GotOutput (erd.project.name ++ ".azimutt.json") |> wrap |> T.send)
 
         AllTables ->
-            if format == PostgreSQL && not sqlExport then
+            if format /= AML && format /= JSON && not sqlExportAllowed then
                 Cmd.batch [ GotOutput "" "plan_limit" |> wrap |> T.send, Track.proPlanLimit Conf.features.sqlExport.name (Just erd) |> Ports.track ]
 
             else
                 erd |> Erd.unpack |> Schema.from |> generateTables format |> (\( output, ext ) -> output |> GotOutput (erd.project.name ++ "." ++ ext) |> wrap |> T.send)
 
         CurrentLayout ->
-            if format == PostgreSQL && not sqlExport then
+            if format /= AML && format /= JSON && not sqlExportAllowed then
                 Cmd.batch [ GotOutput "" "plan_limit" |> wrap |> T.send, Track.proPlanLimit Conf.features.sqlExport.name (Just erd) |> Ports.track ]
 
             else
@@ -151,6 +153,9 @@ generateTables format schema =
 
         PostgreSQL ->
             ( PostgreSqlGenerator.generate schema, "sql" )
+
+        MySQL ->
+            ( MysqlGenerator.generate schema, "sql" )
 
         JSON ->
             ( JsonGenerator.generate schema, "json" )
@@ -190,7 +195,7 @@ view wrap send onClose titleId organization model =
                                     { name = inputId ++ "-output"
                                     , label = "Output format"
                                     , legend = "Choose an output format"
-                                    , options = [ ( AML, "AML" ), ( PostgreSQL, "PostgreSQL" ), ( JSON, "JSON" ) ] |> List.map (\( v, t ) -> { value = v, text = t, disabled = False })
+                                    , options = [ ( AML, "AML" ), ( PostgreSQL, "PostgreSQL" ), ( MySQL, "MySQL" ), ( JSON, "JSON" ) ] |> List.map (\( v, t ) -> { value = v, text = t, disabled = False })
                                     , value = model.format
                                     , link = Nothing
                                     }

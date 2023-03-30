@@ -1,4 +1,4 @@
-module DataSources.SqlMiner.PostgreSqlGenerator exposing (generate)
+module DataSources.SqlMiner.MysqlGenerator exposing (generate)
 
 import DataSources.SqlMiner.SqlGenerator exposing (organizeTablesAndRelations)
 import Dict exposing (Dict)
@@ -39,7 +39,7 @@ generateTable relations lazyRelation table =
             table.columns
                 |> Dict.values
                 |> List.sortBy .index
-                |> List.map (\c -> c |> generateColumn table.primaryKey table.uniques table.checks (relations |> Dict.getOrElse c.name []))
+                |> List.map (\c -> c |> generateColumn table.primaryKey table.uniques table.indexes table.checks (relations |> Dict.getOrElse c.name []))
 
         primaryKey : List String
         primaryKey =
@@ -53,12 +53,16 @@ generateTable relations lazyRelation table =
             table.uniques
                 |> List.filterNot (\u -> List.isEmpty u.columns.tail)
                 |> List.map (\u -> "UNIQUE (" ++ (u.columns |> Nel.toList |> List.map .head |> String.join ", ") ++ ")")
+
+        indexes : List String
+        indexes =
+            table.indexes
+                |> List.filterNot (\i -> List.isEmpty i.columns.tail)
+                |> List.map (\i -> "INDEX (" ++ (i.columns |> Nel.toList |> List.map .head |> String.join ", ") ++ ")")
     in
     ("CREATE TABLE " ++ generateTableName table ++ " (")
-        ++ ((columns ++ primaryKey ++ uniques) |> List.map (String.prepend "\n  ") |> String.join ",")
-        ++ "\n);"
-        ++ (table.indexes |> List.map (generateIndex table >> String.prepend "\n") |> String.join "")
-        ++ (table.comment |> Maybe.mapOrElse (generateTableComment table >> String.prepend "\n") "")
+        ++ ((columns ++ primaryKey ++ uniques ++ indexes) |> List.map (String.prepend "\n  ") |> String.join ",")
+        ++ ("\n)" ++ (table.comment |> Maybe.mapOrElse (generateTableComment >> String.prepend " ") "") ++ ";")
         ++ (lazyRelation |> List.map (generateLazyForeignKey >> String.prepend "\n") |> String.join "")
 
 
@@ -76,8 +80,8 @@ generateTableId ( schema, table ) =
         schema ++ "." ++ table
 
 
-generateColumn : Maybe PrimaryKey -> List Unique -> List Check -> List Relation -> Column -> String
-generateColumn pk uniques checks relations column =
+generateColumn : Maybe PrimaryKey -> List Unique -> List Index -> List Check -> List Relation -> Column -> String
+generateColumn pk uniques indexes checks relations column =
     column.name
         ++ " "
         ++ column.kind
@@ -97,6 +101,10 @@ generateColumn pk uniques checks relations column =
         ++ (uniques
                 |> List.find (\u -> u.columns.head.head == column.name && List.isEmpty u.columns.tail)
                 |> Maybe.mapOrElse (\_ -> " UNIQUE") ""
+           )
+        ++ (indexes
+                |> List.find (\i -> i.columns.head.head == column.name && List.isEmpty i.columns.tail)
+                |> Maybe.mapOrElse (\_ -> " INDEX") ""
            )
         ++ (checks
                 |> List.find (\c -> List.map .head c.columns == [ column.name ])
@@ -124,14 +132,9 @@ isStringType kind =
     (kind |> String.startsWith "varchar") || (kind |> String.startsWith "text")
 
 
-generateIndex : Table -> Index -> String
-generateIndex table index =
-    "CREATE INDEX " ++ index.name ++ " ON " ++ generateTableName table ++ " (" ++ (index.columns |> Nel.toList |> List.map .head |> String.join ", ") ++ ");"
-
-
-generateTableComment : Table -> Comment -> String
-generateTableComment table comment =
-    "COMMENT ON TABLE " ++ generateTableName table ++ " IS \"" ++ (comment.text |> String.replace "\"" "\\\"") ++ "\";"
+generateTableComment : Comment -> String
+generateTableComment comment =
+    "COMMENT=\"" ++ (comment.text |> String.replace "\"" "\\\"") ++ "\""
 
 
 generateLazyForeignKey : Relation -> String
