@@ -41,6 +41,10 @@ suite =
         ]
 
 
+
+-- FIXME: table comments are not well parsed :(
+
+
 crmSchema : Schema
 crmSchema =
     { tables =

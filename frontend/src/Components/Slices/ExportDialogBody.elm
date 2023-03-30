@@ -5,7 +5,7 @@ import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.Radio as Radio
 import Components.Slices.ProPlan as ProPlan
-import Conf
+import Conf exposing (constants)
 import DataSources.AmlMiner.AmlAdapter as AmlAdapter
 import DataSources.AmlMiner.AmlGenerator as AmlGenerator
 import DataSources.AmlMiner.AmlParser as AmlParser
@@ -16,9 +16,10 @@ import Dict
 import ElmBook
 import ElmBook.Actions exposing (logAction)
 import ElmBook.Chapter as Chapter exposing (Chapter)
-import Html exposing (Html, code, div, h3, pre, text)
+import Html exposing (Html, code, div, h3, p, pre, text)
 import Html.Attributes exposing (class, disabled, id)
 import Html.Events exposing (onClick)
+import Libs.Html exposing (extLink)
 import Libs.Html.Attributes exposing (css)
 import Libs.Maybe as Maybe
 import Libs.Models.FileName exposing (FileName)
@@ -195,7 +196,9 @@ view wrap send onClose titleId organization model =
                                     { name = inputId ++ "-output"
                                     , label = "Output format"
                                     , legend = "Choose an output format"
-                                    , options = [ ( AML, "AML" ), ( PostgreSQL, "PostgreSQL" ), ( MySQL, "MySQL" ), ( JSON, "JSON" ) ] |> List.map (\( v, t ) -> { value = v, text = t, disabled = False })
+                                    , options =
+                                        [ ( AML, "AML" ), ( PostgreSQL, "PostgreSQL" ), ( MySQL, "MySQL" ), ( JSON, "JSON" ) ]
+                                            |> List.map (\( v, t ) -> { value = v, text = t, disabled = False })
                                     , value = model.format
                                     , link = Nothing
                                     }
@@ -214,6 +217,12 @@ view wrap send onClose titleId organization model =
                             (\( _, content ) ->
                                 if content == "plan_limit" then
                                     div [ class "mt-3" ] [ ProPlan.sqlExportWarning organization ]
+
+                                else if model.format == Just PostgreSQL then
+                                    div [] [ viewCode content, viewSuggestPR "https://github.com/azimuttapp/azimutt/blob/main/frontend/src/DataSources/SqlMiner/PostgreSqlGenerator.elm#L26" ]
+
+                                else if model.format == Just MySQL then
+                                    div [] [ viewCode content, viewSuggestPR "https://github.com/azimuttapp/azimutt/blob/main/frontend/src/DataSources/SqlMiner/MysqlGenerator.elm#L26" ]
 
                                 else
                                     viewCode content
@@ -240,6 +249,17 @@ viewCode : String -> Html msg
 viewCode codeStr =
     pre [ class "mt-2 px-4 py-2 bg-gray-900 text-white text-sm font-mono rounded-md overflow-auto max-h-128 w-4xl" ]
         [ code [] [ text codeStr ] ]
+
+
+viewSuggestPR : String -> Html msg
+viewSuggestPR generatorUrl =
+    p [ class "mt-2 text-sm text-gray-500" ]
+        [ text "Do you see possible improvements? Please "
+        , extLink constants.azimuttBugReport [ class "link" ] [ text "open an issue" ]
+        , text " or even "
+        , extLink generatorUrl [ class "link" ] [ text "send a PR" ]
+        , text ". ❤️"
+        ]
 
 
 
