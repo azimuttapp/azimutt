@@ -100,6 +100,7 @@ init query =
       , virtualRelation = Nothing
       , findPath = Nothing
       , schemaAnalysis = Nothing
+      , exportDialog = Nothing
       , sharing = Nothing
       , save = Nothing
       , settings = Nothing

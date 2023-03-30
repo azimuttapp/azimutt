@@ -35,6 +35,7 @@ import Models.ProjectInfo exposing (ProjectInfo)
 import Models.RelationStyle exposing (RelationStyle)
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
 import PagesComponents.Organization_.Project_.Components.EmbedSourceParsingDialog as EmbedSourceParsingDialog
+import PagesComponents.Organization_.Project_.Components.ExportDialog as ExportDialog
 import PagesComponents.Organization_.Project_.Components.ProjectSaveDialog as ProjectSaveDialog
 import PagesComponents.Organization_.Project_.Components.ProjectSharing as ProjectSharing
 import PagesComponents.Organization_.Project_.Components.SourceUpdateDialog as SourceUpdateDialog
@@ -80,6 +81,7 @@ type alias Model =
     , virtualRelation : Maybe VirtualRelation
     , findPath : Maybe FindPathDialog
     , schemaAnalysis : Maybe SchemaAnalysisDialog
+    , exportDialog : Maybe ExportDialog.Model
     , sharing : Maybe ProjectSharing.Model
     , save : Maybe ProjectSaveDialog.Model
     , settings : Maybe ProjectSettingsDialog
@@ -200,6 +202,7 @@ type Msg
     | VirtualRelationMsg VirtualRelationMsg
     | FindPathMsg FindPathMsg
     | SchemaAnalysisMsg SchemaAnalysisMsg
+    | ExportDialogMsg ExportDialog.Msg
     | SharingMsg ProjectSharing.Msg
     | ProjectSaveMsg ProjectSaveDialog.Msg
     | ProjectSettingsMsg ProjectSettingsMsg

@@ -19,6 +19,7 @@ export interface Plan {
     memos: number | null
     colors: boolean
     private_links: boolean
+    sql_export: boolean
     db_analysis: boolean
     db_access: boolean
 }
@@ -30,6 +31,7 @@ export const Plan = z.object({
     memos: z.number().nullable(),
     colors: z.boolean(),
     private_links: z.boolean(),
+    sql_export: z.boolean(),
     db_analysis: z.boolean(),
     db_access: z.boolean()
 }).strict()

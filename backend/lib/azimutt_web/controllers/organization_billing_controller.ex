@@ -71,9 +71,10 @@ defmodule AzimuttWeb.OrganizationBillingController do
   def new(conn, %{"organization_id" => organization_id}) do
     current_user = conn.assigns.current_user
     {:ok, %Organization{} = organization} = Organizations.get_organization(organization_id, current_user)
+    plan = "pro"
     price = Azimutt.config(:stripe_price_pro_monthly)
     quantity = get_organization_seats(organization)
-    Tracking.subscribe_init(current_user, organization, price, quantity)
+    Tracking.subscribe_init(current_user, organization, plan, price, quantity)
 
     result =
       if organization.stripe_customer_id == nil do
@@ -95,12 +96,12 @@ defmodule AzimuttWeb.OrganizationBillingController do
     case result do
       {:ok, session} ->
         Logger.info("Stripe session is create with success")
-        Tracking.subscribe_start(current_user, organization, price, quantity)
+        Tracking.subscribe_start(current_user, organization, plan, price, quantity)
         redirect(conn, external: session.url)
 
       {:error, stripe_error} ->
         Logger.error("Cannot create Stripe Session for organization #{organization.id}: #{stripe_error}")
-        Tracking.subscribe_error(current_user, organization, price, quantity)
+        Tracking.subscribe_error(current_user, organization, plan, price, quantity)
 
         conn
         |> put_flash(:error, "Sorry something went wrong, please contact us at #{Azimutt.config(:support_email)}.")
@@ -139,12 +140,15 @@ defmodule AzimuttWeb.OrganizationBillingController do
 
   def success(conn, %{"organization_id" => organization_id}) do
     current_user = conn.assigns.current_user
-    {:ok, %Organization{} = organization} = Organizations.get_organization(organization_id, current_user)
-    Tracking.subscribe_success(current_user, organization)
 
-    conn
-    |> put_flash(:info, "Thanks for subscribing!")
-    |> redirect(to: Routes.organization_billing_path(conn, :index, organization, source: "billing-success"))
+    with {:ok, %Organization{} = organization} <- Organizations.get_organization(organization_id, current_user),
+         {:ok, subscribe_start} <- Tracking.last_subscribe_start(current_user) do
+      Tracking.subscribe_success(current_user, organization, subscribe_start.details)
+
+      conn
+      |> put_flash(:info, "Thanks for subscribing!")
+      |> redirect(to: Routes.organization_billing_path(conn, :index, organization, source: "billing-success"))
+    end
   end
 
   def cancel(conn, %{"organization_id" => organization_id}) do

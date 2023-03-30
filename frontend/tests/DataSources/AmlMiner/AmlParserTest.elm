@@ -1,6 +1,6 @@
 module DataSources.AmlMiner.AmlParserTest exposing (..)
 
-import DataSources.AmlMiner.AmlParser as AmlParser exposing (AmlColumn, AmlParsedColumnType, AmlStatement(..), AmlTable, parse)
+import DataSources.AmlMiner.AmlParser as AmlParser exposing (AmlColumn, AmlParsedColumnType, AmlStatement(..), AmlTable)
 import Dict
 import Expect
 import Libs.Nel as Nel exposing (Nel)
@@ -12,10 +12,7 @@ import Test exposing (Test, describe, test)
 suite : Test
 suite =
     describe "AmlParser"
-        [ describe "parse"
-            [ testParse ( "empty", parse ) "" []
-            ]
-        , describe "aml"
+        [ describe "aml"
             [ parserTest ( "empty", AmlParser.parser ) "" []
             , parserTest ( "script", AmlParser.parser )
                 ("\n"
@@ -289,11 +286,6 @@ column =
 parsedType : AmlParsedColumnType
 parsedType =
     { schema = Nothing, name = "", values = Nothing, default = Nothing }
-
-
-testParse : ( String, String -> Result e a ) -> String -> a -> Test
-testParse ( name, parse ) aml result =
-    test name (\_ -> aml |> parse |> Expect.equal (Ok result))
 
 
 parserTest : ( String, Parser a ) -> String -> a -> Test

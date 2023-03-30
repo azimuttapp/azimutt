@@ -1,4 +1,4 @@
-module DataSources.AmlMiner.AmlAdapter exposing (AmlSchema, AmlSchemaError, buildSource, evolve)
+module DataSources.AmlMiner.AmlAdapter exposing (AmlSchema, AmlSchemaError, buildSource, evolve, initSchema)
 
 import Array exposing (Array)
 import Conf
@@ -46,6 +46,11 @@ type alias AmlSchemaError =
     }
 
 
+initSchema : AmlSchema
+initSchema =
+    AmlSchema Dict.empty [] Dict.empty []
+
+
 buildSource : SourceInfo -> Array String -> Result (List DeadEnd) (List AmlStatement) -> ( List AmlSchemaError, Source, Dict TableId (List ColumnPath) )
 buildSource source content result =
     let
@@ -53,8 +58,8 @@ buildSource source content result =
         schema =
             result
                 |> Result.fold
-                    (\err -> AmlSchema Dict.empty [] Dict.empty (err |> List.map (\e -> { row = e.row, col = e.col, problem = Parser.problemToString e.problem })))
-                    (List.foldl (evolve source.id) (AmlSchema Dict.empty [] Dict.empty []))
+                    (\err -> { initSchema | errors = err |> List.map (\e -> { row = e.row, col = e.col, problem = Parser.problemToString e.problem }) })
+                    (List.foldl (evolve source.id) initSchema)
 
         orderedColumns : Dict TableId (List ColumnPath)
         orderedColumns =

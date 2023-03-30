@@ -33,11 +33,30 @@ defmodule Azimutt.Tracking do
     |> Result.from_nillable()
   end
 
+  def last_subscribe_start(%User{} = current_user), do: last_user_event(current_user, "subscribe_start")
+
+  defp last_user_event(%User{} = current_user, event_name) do
+    Event
+    |> where([e], e.created_by_id == ^current_user.id and e.name == ^event_name)
+    |> order_by([e], desc: e.created_at)
+    |> limit(1)
+    |> Repo.one()
+    |> Result.from_nillable()
+  end
+
   def attribution(current_user, details),
     do: create_event("attribution", nil, details, current_user, nil, nil)
 
   def user_created(%User{} = current_user, method, attribution),
-    do: create_event("user_created", user_data(current_user), %{method: method, attribution: attribution}, current_user, nil, nil)
+    do:
+      create_event(
+        "user_created",
+        user_data(current_user),
+        %{method: method, azimutt_id: current_user.id, attribution: attribution},
+        current_user,
+        nil,
+        nil
+      )
 
   def user_login(%User{} = current_user, method),
     do: create_event("user_login", user_data(current_user), %{method: method}, current_user, nil, nil)
@@ -57,17 +76,17 @@ defmodule Azimutt.Tracking do
   def billing_loaded(%User{} = current_user, %Organization{} = org, source),
     do: create_event("billing_loaded", org_data(org), %{source: source}, current_user, org.id, nil)
 
-  def subscribe_init(%User{} = current_user, %Organization{} = org, price, quantity),
-    do: create_event("subscribe_init", org_data(org), %{price: price, quantity: quantity}, current_user, org.id, nil)
+  def subscribe_init(%User{} = current_user, %Organization{} = org, plan, price, quantity),
+    do: create_event("subscribe_init", org_data(org), %{plan: plan, price: price, quantity: quantity}, current_user, org.id, nil)
 
-  def subscribe_start(%User{} = current_user, %Organization{} = org, price, quantity),
-    do: create_event("subscribe_start", org_data(org), %{price: price, quantity: quantity}, current_user, org.id, nil)
+  def subscribe_start(%User{} = current_user, %Organization{} = org, plan, price, quantity),
+    do: create_event("subscribe_start", org_data(org), %{plan: plan, price: price, quantity: quantity}, current_user, org.id, nil)
 
-  def subscribe_error(%User{} = current_user, %Organization{} = org, price, quantity),
-    do: create_event("subscribe_error", org_data(org), %{price: price, quantity: quantity}, current_user, org.id, nil)
+  def subscribe_error(%User{} = current_user, %Organization{} = org, plan, price, quantity),
+    do: create_event("subscribe_error", org_data(org), %{plan: plan, price: price, quantity: quantity}, current_user, org.id, nil)
 
-  def subscribe_success(%User{} = current_user, %Organization{} = org),
-    do: create_event("subscribe_success", org_data(org), nil, current_user, org.id, nil)
+  def subscribe_success(%User{} = current_user, %Organization{} = org, details),
+    do: create_event("subscribe_success", org_data(org), details, current_user, org.id, nil)
 
   def subscribe_abort(%User{} = current_user, %Organization{} = org),
     do: create_event("subscribe_abort", org_data(org), nil, current_user, org.id, nil)
@@ -146,7 +165,7 @@ defmodule Azimutt.Tracking do
     })
     |> Repo.insert()
     |> Result.tap(fn event ->
-      if Azimutt.Application.env() == :prod && Azimutt.config(:bento_site_key) && event.created_by do
+      if Azimutt.config(:bento) && event.created_by do
         BentoSrv.send_event(%{
           email: event.created_by.email,
           type: event.name,

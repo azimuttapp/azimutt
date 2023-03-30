@@ -2,6 +2,9 @@ module Services.Lenses exposing
     ( mapActive
     , mapAmlSidebarM
     , mapAmlSourceCmd
+    , mapBody
+    , mapBodyCmd
+    , mapBodyMCmd
     , mapCanvas
     , mapChecks
     , mapCollapseTableColumns
@@ -21,6 +24,7 @@ module Services.Lenses exposing
     , mapEnabled
     , mapErdM
     , mapErdMCmd
+    , mapExportDialogCmd
     , mapFindPath
     , mapFindPathM
     , mapHiddenColumns
@@ -82,6 +86,7 @@ module Services.Lenses exposing
     , setActive
     , setAmlSidebar
     , setAmlSource
+    , setBody
     , setCanvas
     , setChecks
     , setCollapseTableColumns
@@ -110,6 +115,7 @@ module Services.Lenses exposing
     , setErd
     , setErrors
     , setExpire
+    , setExportDialog
     , setFindPath
     , setFrom
     , setHiddenColumns
@@ -230,6 +236,26 @@ setAmlSource =
 mapAmlSourceCmd : (v -> ( v, Cmd msg )) -> { item | amlSource : v } -> ( { item | amlSource : v }, Cmd msg )
 mapAmlSourceCmd =
     mapCmd_ .amlSource setAmlSource
+
+
+setBody : v -> { item | body : v } -> { item | body : v }
+setBody =
+    set_ .body (\value item -> { item | body = value })
+
+
+mapBody : (v -> v) -> { item | body : v } -> { item | body : v }
+mapBody =
+    map_ .body setBody
+
+
+mapBodyCmd : (v -> ( v, Cmd msg )) -> { item | body : v } -> ( { item | body : v }, Cmd msg )
+mapBodyCmd =
+    mapCmd_ .body setBody
+
+
+mapBodyMCmd : (v -> ( v, Cmd msg )) -> { item | body : Maybe v } -> ( { item | body : Maybe v }, Cmd msg )
+mapBodyMCmd =
+    mapMCmd_ .body setBody
 
 
 setCanvas : v -> { item | canvas : v } -> { item | canvas : v }
@@ -465,6 +491,16 @@ setErrors =
 setExpire : v -> { item | expire : v } -> { item | expire : v }
 setExpire =
     set_ .expire (\value item -> { item | expire = value })
+
+
+setExportDialog : v -> { item | exportDialog : v } -> { item | exportDialog : v }
+setExportDialog =
+    set_ .exportDialog (\value item -> { item | exportDialog = value })
+
+
+mapExportDialogCmd : (v -> ( v, Cmd msg )) -> { item | exportDialog : v } -> ( { item | exportDialog : v }, Cmd msg )
+mapExportDialogCmd =
+    mapCmd_ .exportDialog setExportDialog
 
 
 setFindPath : v -> { item | findPath : v } -> { item | findPath : v }

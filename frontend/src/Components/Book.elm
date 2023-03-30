@@ -19,6 +19,7 @@ import Components.Molecules.InputText as InputText
 import Components.Molecules.ItemList as ItemList
 import Components.Molecules.Modal as Modal
 import Components.Molecules.Popover as Popover
+import Components.Molecules.Radio as Radio
 import Components.Molecules.Select as Select
 import Components.Molecules.Slideover as Slideover
 import Components.Molecules.Toast as Toast
@@ -28,6 +29,7 @@ import Components.Organisms.Details as Details
 import Components.Organisms.Navbar as Navbar
 import Components.Organisms.Relation as Relation
 import Components.Organisms.Table as Table
+import Components.Slices.ExportDialogBody as ExportDialogBody
 import Components.Slices.NewLayoutBody as NewLayoutBody
 import Components.Slices.NotFound as NotFound
 import Components.Slices.ProPlan as ProPlan
@@ -46,6 +48,7 @@ import Libs.Tailwind as Tw
 type alias DocState =
     { detailsDocState : Details.DocState
     , dropdownDocState : Dropdown.DocState
+    , exportDialogDocState : ExportDialogBody.DocState
     , formLabelDocState : FormLabel.DocState
     , inputDocState : Input.DocState
     , inputTextDocState : InputText.DocState
@@ -56,6 +59,7 @@ type alias DocState =
     , projectSaveDocState : ProjectSaveDialogBody.DocState
     , proPlanDocState : ProPlan.DocState
     , selectDocState : Select.DocState
+    , radioDocState : Radio.DocState
     , slideoverDocState : Slideover.DocState
     , tableDocState : Table.DocState
     , toastDocState : Toast.DocState
@@ -66,6 +70,7 @@ init : DocState
 init =
     { detailsDocState = Details.initDocState
     , dropdownDocState = Dropdown.initDocState
+    , exportDialogDocState = ExportDialogBody.initDocState
     , formLabelDocState = FormLabel.initDocState
     , inputDocState = Input.initDocState
     , inputTextDocState = InputText.initDocState
@@ -76,6 +81,7 @@ init =
     , projectSaveDocState = ProjectSaveDialogBody.initDocState
     , proPlanDocState = ProPlan.initDocState
     , selectDocState = Select.initDocState
+    , radioDocState = Radio.initDocState
     , slideoverDocState = Slideover.initDocState
     , tableDocState = Table.initDocState
     , toastDocState = Toast.initDocState
@@ -95,9 +101,9 @@ main =
         |> ElmBook.withChapterGroups
             -- sorted alphabetically
             [ ( "", [ docs ] )
-            , ( "Slices", [ NotFound.doc, NewLayoutBody.doc, ProjectSaveDialogBody.doc, ProPlan.doc ] )
+            , ( "Slices", [ ExportDialogBody.doc, NotFound.doc, NewLayoutBody.doc, ProjectSaveDialogBody.doc, ProPlan.doc ] )
             , ( "Organisms", [ ColorPicker.doc, Details.doc, Navbar.doc, Relation.doc, Table.doc ] )
-            , ( "Molecules", [ Alert.doc, Avatar.doc, Divider.doc, Dropdown.doc, Editor.doc, FileInput.doc, FormLabel.doc, InputText.doc, ItemList.doc, Modal.doc, Popover.doc, Select.doc, Slideover.doc, Toast.doc, Tooltip.doc ] )
+            , ( "Molecules", [ Alert.doc, Avatar.doc, Divider.doc, Dropdown.doc, Editor.doc, FileInput.doc, FormLabel.doc, InputText.doc, ItemList.doc, Modal.doc, Popover.doc, Radio.doc, Select.doc, Slideover.doc, Toast.doc, Tooltip.doc ] )
             , ( "Atoms", [ Badge.doc, Button.doc, colorsDoc, Icon.doc, Input.doc, Kbd.doc, Markdown.doc, Link.doc, Loader.doc ] )
             ]
 

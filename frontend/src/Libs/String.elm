@@ -9,6 +9,7 @@ module Libs.String exposing
     , pluralize
     , pluralizeD
     , pluralizeL
+    , prepend
     , stripLeft
     , stripRight
     , unique
@@ -33,6 +34,11 @@ nonEmptyMaybe str =
 
     else
         Just str
+
+
+prepend : String -> String -> String
+prepend prefix str =
+    prefix ++ str
 
 
 stripLeft : String -> String -> String
