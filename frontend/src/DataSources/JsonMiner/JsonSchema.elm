@@ -1,10 +1,12 @@
-module DataSources.JsonMiner.JsonSchema exposing (JsonSchema, decode, jsonSchema)
+module DataSources.JsonMiner.JsonSchema exposing (JsonSchema, decode, encode, jsonSchema)
 
 import DataSources.JsonMiner.Models.JsonRelation as JsonRelation exposing (JsonRelation)
 import DataSources.JsonMiner.Models.JsonTable as JsonTable exposing (JsonTable)
 import DataSources.JsonMiner.Models.JsonType as JsonType exposing (JsonType)
 import Json.Decode as Decode
+import Json.Encode as Encode exposing (Value)
 import Libs.Json.Decode as Decode
+import Libs.Json.Encode as Encode
 
 
 type alias JsonSchema =
@@ -20,6 +22,15 @@ decode =
         (Decode.field "tables" (Decode.list JsonTable.decode))
         (Decode.field "relations" (Decode.list JsonRelation.decode))
         (Decode.defaultField "types" (Decode.list JsonType.decode) [])
+
+
+encode : JsonSchema -> Value
+encode value =
+    Encode.notNullObject
+        [ ( "tables", value.tables |> Encode.list JsonTable.encode )
+        , ( "relations", value.relations |> Encode.list JsonRelation.encode )
+        , ( "types", value.types |> Encode.withDefault (Encode.list JsonType.encode) [] )
+        ]
 
 
 jsonSchema : String

@@ -1,4 +1,4 @@
-module Models.Plan exposing (Plan, decode, encode, free)
+module Models.Plan exposing (Plan, decode, encode, free, full)
 
 import Conf
 import Json.Decode as Decode
@@ -15,6 +15,7 @@ type alias Plan =
     , memos : Maybe Int
     , colors : Bool
     , privateLinks : Bool
+    , sqlExport : Bool
     , dbAnalysis : Bool
     , dbAccess : Bool
     }
@@ -29,8 +30,24 @@ free =
     , memos = Just Conf.features.memos.free
     , colors = Conf.features.tableColor.free
     , privateLinks = Conf.features.privateLinks.free
+    , sqlExport = Conf.features.sqlExport.free
     , dbAnalysis = Conf.features.dbAnalysis.free
     , dbAccess = Conf.features.dbAnalysis.free
+    }
+
+
+full : Plan
+full =
+    -- used in tests
+    { id = "full"
+    , name = "Full plan"
+    , layouts = Nothing
+    , memos = Nothing
+    , colors = True
+    , privateLinks = True
+    , sqlExport = True
+    , dbAnalysis = True
+    , dbAccess = True
     }
 
 
@@ -43,6 +60,7 @@ encode value =
         , ( "memos", value.memos |> Encode.maybe Encode.int )
         , ( "colors", value.colors |> Encode.bool )
         , ( "private_links", value.privateLinks |> Encode.bool )
+        , ( "sql_export", value.sqlExport |> Encode.bool )
         , ( "db_analysis", value.dbAnalysis |> Encode.bool )
         , ( "db_access", value.dbAccess |> Encode.bool )
         ]
@@ -50,12 +68,13 @@ encode value =
 
 decode : Decode.Decoder Plan
 decode =
-    Decode.map8 Plan
+    Decode.map9 Plan
         (Decode.field "id" Decode.string)
         (Decode.field "name" Decode.string)
         (Decode.maybeField "layouts" Decode.int)
         (Decode.maybeField "memos" Decode.int)
         (Decode.field "colors" Decode.bool)
         (Decode.field "private_links" Decode.bool)
+        (Decode.field "sql_export" Decode.bool)
         (Decode.field "db_analysis" Decode.bool)
         (Decode.field "db_access" Decode.bool)

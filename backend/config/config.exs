@@ -32,6 +32,7 @@ config :azimutt,
   free_plan_memos: 5,
   free_plan_colors: false,
   free_plan_private_links: true,
+  free_plan_sql_export: false,
   free_plan_db_analysis: false,
   free_plan_db_access: false,
   environment: config_env()

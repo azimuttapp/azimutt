@@ -1,7 +1,9 @@
-module DataSources.JsonMiner.Models.JsonTable exposing (JsonCheck, JsonColumn, JsonIndex, JsonNestedColumns(..), JsonPrimaryKey, JsonTable, JsonUnique, decode, decodeJsonColumn)
+module DataSources.JsonMiner.Models.JsonTable exposing (JsonCheck, JsonColumn, JsonIndex, JsonNestedColumns(..), JsonPrimaryKey, JsonTable, JsonUnique, decode, decodeJsonColumn, encode)
 
 import Json.Decode as Decode exposing (Decoder)
+import Json.Encode as Encode exposing (Value)
 import Libs.Json.Decode as Decode
+import Libs.Json.Encode as Encode
 import Libs.Nel exposing (Nel)
 
 
@@ -73,6 +75,21 @@ decode =
         (Decode.maybeField "comment" Decode.string)
 
 
+encode : JsonTable -> Value
+encode value =
+    Encode.notNullObject
+        [ ( "schema", value.schema |> Encode.string )
+        , ( "table", value.table |> Encode.string )
+        , ( "view", value.view |> Encode.maybe Encode.bool )
+        , ( "columns", value.columns |> Encode.list encodeJsonColumn )
+        , ( "primaryKey", value.primaryKey |> Encode.maybe encodeJsonPrimaryKey )
+        , ( "uniques", value.uniques |> Encode.withDefault (Encode.list encodeJsonUnique) [] )
+        , ( "indexes", value.indexes |> Encode.withDefault (Encode.list encodeJsonIndex) [] )
+        , ( "checks", value.checks |> Encode.withDefault (Encode.list encodeJsonCheck) [] )
+        , ( "comment", value.comment |> Encode.maybe Encode.string )
+        ]
+
+
 decodeJsonColumn : Decoder JsonColumn
 decodeJsonColumn =
     -- exposed for tests
@@ -85,10 +102,27 @@ decodeJsonColumn =
         (Decode.maybeField "columns" decodeJsonNestedColumns)
 
 
+encodeJsonColumn : JsonColumn -> Value
+encodeJsonColumn value =
+    Encode.notNullObject
+        [ ( "name", value.name |> Encode.string )
+        , ( "type", value.kind |> Encode.string )
+        , ( "nullable", value.nullable |> Encode.maybe Encode.bool )
+        , ( "default", value.default |> Encode.maybe Encode.string )
+        , ( "comment", value.comment |> Encode.maybe Encode.string )
+        , ( "columns", value.columns |> Encode.maybe encodeJsonNestedColumns )
+        ]
+
+
 decodeJsonNestedColumns : Decoder JsonNestedColumns
 decodeJsonNestedColumns =
     Decode.map JsonNestedColumns
         (Decode.nel (Decode.lazy (\_ -> decodeJsonColumn)))
+
+
+encodeJsonNestedColumns : JsonNestedColumns -> Value
+encodeJsonNestedColumns (JsonNestedColumns value) =
+    value |> Encode.nel encodeJsonColumn
 
 
 decodeJsonPrimaryKey : Decoder JsonPrimaryKey
@@ -96,6 +130,14 @@ decodeJsonPrimaryKey =
     Decode.map2 JsonPrimaryKey
         (Decode.maybeField "name" Decode.string)
         (Decode.field "columns" (Decode.nel Decode.string))
+
+
+encodeJsonPrimaryKey : JsonPrimaryKey -> Value
+encodeJsonPrimaryKey value =
+    Encode.notNullObject
+        [ ( "name", value.name |> Encode.maybe Encode.string )
+        , ( "columns", value.columns |> Encode.nel Encode.string )
+        ]
 
 
 decodeJsonUnique : Decoder JsonUnique
@@ -106,6 +148,15 @@ decodeJsonUnique =
         (Decode.maybeField "definition" Decode.string)
 
 
+encodeJsonUnique : JsonUnique -> Value
+encodeJsonUnique value =
+    Encode.notNullObject
+        [ ( "name", value.name |> Encode.maybe Encode.string )
+        , ( "columns", value.columns |> Encode.nel Encode.string )
+        , ( "definition", value.definition |> Encode.maybe Encode.string )
+        ]
+
+
 decodeJsonIndex : Decoder JsonIndex
 decodeJsonIndex =
     Decode.map3 JsonIndex
@@ -114,9 +165,27 @@ decodeJsonIndex =
         (Decode.maybeField "definition" Decode.string)
 
 
+encodeJsonIndex : JsonIndex -> Value
+encodeJsonIndex value =
+    Encode.notNullObject
+        [ ( "name", value.name |> Encode.maybe Encode.string )
+        , ( "columns", value.columns |> Encode.nel Encode.string )
+        , ( "definition", value.definition |> Encode.maybe Encode.string )
+        ]
+
+
 decodeJsonCheck : Decoder JsonCheck
 decodeJsonCheck =
     Decode.map3 JsonCheck
         (Decode.maybeField "name" Decode.string)
         (Decode.field "columns" (Decode.list Decode.string))
         (Decode.maybeField "predicate" Decode.string)
+
+
+encodeJsonCheck : JsonCheck -> Value
+encodeJsonCheck value =
+    Encode.notNullObject
+        [ ( "name", value.name |> Encode.maybe Encode.string )
+        , ( "columns", value.columns |> Encode.list Encode.string )
+        , ( "predicate", value.predicate |> Encode.maybe Encode.string )
+        ]
