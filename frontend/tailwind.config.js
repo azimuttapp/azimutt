@@ -29,6 +29,7 @@ module.exports = {
     },
     theme: {
         extend: {
+            width: {'xl': '36rem', '2xl': '42rem', '3xl': '48rem', '4xl': '56rem', '5xl': '64rem', '6xl': '72rem', '7xl': '80rem'},
             maxHeight: {'128': '32rem', '192': '48rem', '256': '64rem'},
             spacing: {'112': '28rem', '128': '32rem', '192': '48rem', '256': '64rem'},
             strokeWidth: {'3': '3'},

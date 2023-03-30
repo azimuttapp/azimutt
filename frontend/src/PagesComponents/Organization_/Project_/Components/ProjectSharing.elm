@@ -30,7 +30,7 @@ import Models.Plan exposing (Plan)
 import Models.Project as Project exposing (Project)
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectStorage as ProjectStorage
-import Models.Project.Source as Source
+import Models.Project.Source
 import Models.Project.SourceKind as SourceKind
 import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Models.ProjectToken exposing (ProjectToken)

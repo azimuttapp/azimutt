@@ -21,7 +21,7 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
 import Libs.Tailwind as Tw
 import Models.Organization exposing (Organization)
-import Models.Plan exposing (Plan)
+import Models.Plan as Plan exposing (Plan)
 import Models.Project.ProjectName exposing (ProjectName)
 import Models.Project.ProjectStorage as ProjectStorage exposing (ProjectStorage)
 
@@ -233,16 +233,11 @@ docProjectName =
     "MyProject"
 
 
-docPlan : Plan
-docPlan =
-    Plan "free" "Free plan" (Just 3) (Just 1) False False False False
-
-
 docOrganizations : List Organization
 docOrganizations =
-    [ Organization "00000000-0000-0000-0000-000000000001" "orga-1" "Orga 1" docPlan "logo" Nothing Nothing Nothing
-    , Organization "00000000-0000-0000-0000-000000000002" "orga-2" "Orga 2" docPlan "logo" Nothing Nothing Nothing
-    , Organization "00000000-0000-0000-0000-000000000003" "orga-3" "Orga 3" docPlan "logo" Nothing Nothing Nothing
+    [ Organization "00000000-0000-0000-0000-000000000001" "orga-1" "Orga 1" Plan.free "logo" Nothing Nothing Nothing
+    , Organization "00000000-0000-0000-0000-000000000002" "orga-2" "Orga 2" Plan.free "logo" Nothing Nothing Nothing
+    , Organization "00000000-0000-0000-0000-000000000003" "orga-3" "Orga 3" Plan.free "logo" Nothing Nothing Nothing
     ]
 
 

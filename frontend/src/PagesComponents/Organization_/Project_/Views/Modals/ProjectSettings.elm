@@ -1,6 +1,5 @@
 module PagesComponents.Organization_.Project_.Views.Modals.ProjectSettings exposing (viewProjectSettings)
 
-import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon)
 import Components.Atoms.Icons as Icons
 import Components.Atoms.Input as Input
@@ -17,9 +16,8 @@ import Libs.List as List
 import Libs.Models.DateTime as DateTime
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
-import Libs.Tailwind as Tw exposing (TwClass, focus, sm)
+import Libs.Tailwind exposing (TwClass, focus, sm)
 import Models.ColumnOrder as ColumnOrder
-import Models.Project as Project exposing (Project)
 import Models.Project.ProjectId exposing (ProjectId)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
@@ -29,8 +27,7 @@ import Models.Project.Table exposing (Table)
 import Models.RelationStyle as RelationStyle
 import PagesComponents.Organization_.Project_.Components.SourceUpdateDialog as SourceUpdateDialog
 import PagesComponents.Organization_.Project_.Models exposing (AmlSidebarMsg(..), Msg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), confirm)
-import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
-import Ports
+import PagesComponents.Organization_.Project_.Models.Erd exposing (Erd)
 import Time
 
 
@@ -43,11 +40,10 @@ viewProjectSettings zone opened erd model =
         , onClickClose = ModalClose (ProjectSettingsMsg PSClose)
         , onClickOverlay = ModalClose (ProjectSettingsMsg PSClose)
         }
-        (div []
+        (div [ class "pb-16" ]
             [ viewSourcesSection (model.id ++ "-sources") zone erd
             , viewSchemasSection (model.id ++ "-schemas") erd
             , viewDisplaySettingsSection (model.id ++ "-display") erd
-            , viewDownloadSection (model.id ++ "-download") erd
             ]
         )
 
@@ -226,24 +222,6 @@ viewDisplaySettingsSection htmlId erd =
             "Collapse table columns by default"
             erd.settings.collapseTableColumns
             (PSCollapseTableOnShowToggle |> ProjectSettingsMsg)
-        ]
-
-
-viewDownloadSection : HtmlId -> Erd -> Html Msg
-viewDownloadSection _ erd =
-    let
-        project : Project
-        project =
-            erd |> Erd.unpack
-    in
-    fieldset [ class "mt-6" ]
-        [ legend [ class "font-medium text-gray-900" ] [ text "Download project" ]
-        , p [ class "text-sm text-gray-500" ] [ text "To save it on you computer or share with others." ]
-        , div [ class "mt-1" ]
-            [ Button.primary3 Tw.primary
-                [ onClick (Send (Ports.downloadFile (project |> Project.downloadFilename) (project |> Project.downloadContent))) ]
-                [ text "Download project" ]
-            ]
         ]
 
 

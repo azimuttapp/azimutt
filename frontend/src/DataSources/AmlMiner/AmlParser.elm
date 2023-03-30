@@ -106,7 +106,11 @@ type alias AmlComment =
 
 parse : String -> Result (List DeadEnd) (List AmlStatement)
 parse input =
-    input |> Parser.run parser
+    if input |> String.endsWith "\n" then
+        input |> Parser.run parser
+
+    else
+        input ++ "\n" |> Parser.run parser
 
 
 parser : Parser (List AmlStatement)

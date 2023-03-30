@@ -1,6 +1,8 @@
 defmodule Azimutt.Services.BentoSrv do
   @moduledoc false
+  require Logger
   alias Azimutt.Utils.Result
+  alias Azimutt.Utils.Stringx
 
   # see https://docs.bentonow.com/batch-api/events
   def send_event(event) do
