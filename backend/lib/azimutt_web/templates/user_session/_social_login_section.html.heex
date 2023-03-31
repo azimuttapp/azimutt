@@ -1,0 +1,6 @@
+<%= if Azimutt.config(:auth_github) || Azimutt.config(:auth_google) || Azimutt.config(:auth_linkedin) || Azimutt.config(:auth_twitter) || Azimutt.config(:auth_facebook) do %>
+    <p class="text-sm font-medium leading-6 text-gray-900"><%= @title %></p>
+    <div class="mt-2 grid grid-cols-1 gap-3">
+        <%= if Azimutt.config(:auth_github) do %><%= render AzimuttWeb.UserSessionView, "_github_button.html", conn: @conn %><% end %>
+    </div>
+<% end %>

@@ -1,41 +1,20 @@
 <div class="flex min-h-full">
-<div class="flex flex-1 flex-col justify-center py-12 px-4 sm:px-6 lg:flex-none lg:px-20 xl:px-24">
-  <div class="mx-auto w-full max-w-sm lg:w-96">
-    <div>
-      <h2 class="mt-6 text-3xl font-bold tracking-tight text-gray-900">Reset password</h2>
+    <div class="flex flex-1 flex-col justify-center py-12 px-4 sm:px-6 lg:flex-none lg:px-20 xl:px-24">
+        <div class="mx-auto w-full max-w-sm lg:w-96">
+            <h2 class="mt-6 text-3xl font-bold tracking-tight text-gray-900">Reset password</h2>
+            <div class="mt-8">
+                <.form let={f} for={@changeset} action={Routes.user_reset_password_path(@conn, :update, @token)}>
+                    <%= if @changeset.action do %><div class="alert alert-danger">Oops, something went wrong! Please check the errors below.</div><% end %>
+                    <%= render AzimuttWeb.UserSessionView, "_input_text.html", f: f, field: :password, type: :password, label: "New password" %>
+                    <%= render AzimuttWeb.UserSessionView, "_input_text.html", f: f, field: :password_confirmation, type: :password, label: "Confirm new password" %>
+                    <%= render AzimuttWeb.UserSessionView, "_submit_button.html", text: "Change my password" %>
+                </.form>
+            </div>
+            <div class="mt-2 px-2 text-center text-gray-500">
+                Go back to the
+                <%= link "Login page", to: Routes.user_session_path(@conn, :new), class: "font-bold text-gray-800" %>
+            </div>
+        </div>
     </div>
-    <div class="mt-6">
-      <.form let={f} for={@changeset} action={Routes.user_reset_password_path(@conn, :update, @token)}>
-      <%= if @changeset.action do %>
-      <div class="alert alert-danger">
-        <p>Oops, something went wrong! Please check the errors below.</p>
-      </div>
-      <% end %>
-      <div class="space-y-1">
-        <%= label f, :password, "New password", class: "block text-sm font-medium leading-6 text-gray-900" %>
-        <div class="mt-2">
-          <%= password_input f, :password, required: true, class: "block w-full rounded-md border-0 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" %>
-          <%= error_tag f, :password %>
-        </div>
-      </div>
-      <div class="space-y-1">
-        <%= label f, :password_confirmation, "Confirm new password", class: "block text-sm font-medium leading-6 text-gray-900" %>
-        <div class="mt-2">
-          <%= password_input f, :password_confirmation, required: true, class: "block w-full rounded-md border-0 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" %>
-          <%= error_tag f, :password_confirmation %>
-        </div>
-      </div>
-      <div class="space-y-1 mt-4">
-        <button type="submit" class="ml-flex w-full justify-center  py-2 px-3 text-sm font-semibold text-white shadow-sm rounded-lg text-sm font-semibold py-3 px-4 bg-slate-900 text-white hover:bg-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Change my password</button>
-      </div>
-    </.form>
-  </div>
-  <div class="relative flex justify-center mt-2 ">
-  <span class="bg-white px-2 text-gray-500">Go back to the
-      <%= link "Login page", to: Routes.user_session_path(@conn, :new), class: "font-bold text-gray-800" %>
-  </span>
-  </div>
+    <%= render AzimuttWeb.UserSessionView, "_right_section.html" %>
 </div>
-</div>
-<%= render AzimuttWeb.PartialsView, "_login_register_right_section.html" %>
-        </div>

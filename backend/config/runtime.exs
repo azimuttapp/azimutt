@@ -147,9 +147,6 @@ if System.get_env("AUTH_PASSWORD") == "true" do
 
   config :azimutt,
     auth_password: true
-
-  # FIXME
-  raise "AUTH_PASSWORD not implemented"
 end
 
 if System.get_env("AUTH_GITHUB") == "true" do
@@ -163,13 +160,48 @@ if System.get_env("AUTH_GITHUB") == "true" do
     client_secret: System.fetch_env!("GITHUB_CLIENT_SECRET")
 end
 
+if System.get_env("AUTH_GOOGLE") == "true" do
+  IO.puts("Setup Google auth")
+
+  config :azimutt,
+    auth_google: true
+
+  raise "AUTH_GOOGLE not implemented"
+end
+
+if System.get_env("AUTH_LINKEDIN") == "true" do
+  IO.puts("Setup LinkedIn auth")
+
+  config :azimutt,
+    auth_linkedin: true
+
+  raise "AUTH_LINKEDIN not implemented"
+end
+
+if System.get_env("AUTH_TWITTER") == "true" do
+  IO.puts("Setup Twitter auth")
+
+  config :azimutt,
+    auth_twitter: true
+
+  raise "AUTH_TWITTER not implemented"
+end
+
+if System.get_env("AUTH_FACEBOOK") == "true" do
+  IO.puts("Setup Facebook auth")
+
+  config :azimutt,
+    auth_facebook: true
+
+  raise "AUTH_FACEBOOK not implemented"
+end
+
 if System.get_env("AUTH_SAML") == "true" do
   IO.puts("Setup SAML auth")
 
   config :azimutt,
     auth_saml: true
 
-  # FIXME
   raise "AUTH_SAML not implemented"
 end
 
