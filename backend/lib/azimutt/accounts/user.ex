@@ -82,6 +82,7 @@ defmodule Azimutt.Accounts.User do
     |> cast(attrs, required)
     |> Slugme.generate_slug(:name)
     |> put_change(:last_signin, now)
+    |> put_change(:confirmed_at, now)
     |> cast_embed(:data, required: true, with: &User.Data.changeset/2)
     |> validate_required(required)
   end

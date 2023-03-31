@@ -69,7 +69,7 @@ defmodule AzimuttWeb.Admin.DashboardController do
       feature_events:
         Dataset.chartjs_daily_data(
           [
-            Admin.daily_event("login") |> Dataset.from_values("login"),
+            Admin.daily_event("user_login") |> Dataset.from_values("login"),
             Admin.daily_event("editor_project_draft_created") |> Dataset.from_values("project_draft_created"),
             Admin.daily_event("project_created") |> Dataset.from_values("project_created"),
             Admin.daily_event("editor_layout_created") |> Dataset.from_values("layout_created"),

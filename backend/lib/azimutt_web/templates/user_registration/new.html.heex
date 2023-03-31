@@ -8,7 +8,6 @@
                 <%= if Azimutt.config(:auth_password) do %>
                     <div class="mt-6">
                         <.form let={f} for={@changeset} action={Routes.user_registration_path(@conn, :create)}>
-                            <%= if @changeset.action do %><div class="alert alert-danger"><%= @error_message %></div><% end %>
                             <%= render AzimuttWeb.UserSessionView, "_input_text.html", f: f, field: :email, type: :email %>
                             <%= render AzimuttWeb.UserSessionView, "_input_text.html", f: f, field: :name %>
                             <%= render AzimuttWeb.UserSessionView, "_input_text.html", f: f, field: :password, type: :password %>

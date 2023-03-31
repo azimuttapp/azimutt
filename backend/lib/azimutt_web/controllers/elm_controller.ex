@@ -24,13 +24,17 @@ defmodule AzimuttWeb.ElmController do
     now = DateTime.utc_now()
     current_user = conn.assigns.current_user
 
-    if project_id |> String.length() == 36 do
-      with {:ok, %Project{} = project} <- Projects.load_project(project_id, current_user, params["token"], now) do
-        Tracking.project_loaded(current_user, project)
-        conn |> load_elm
+    if !current_user || current_user.confirmed_at do
+      if project_id |> String.length() == 36 do
+        with {:ok, %Project{} = project} <- Projects.load_project(project_id, current_user, params["token"], now) do
+          Tracking.project_loaded(current_user, project)
+          conn |> load_elm
+        end
+      else
+        {:error, :not_found}
       end
     else
-      {:error, :not_found}
+      conn |> redirect(to: Routes.user_confirmation_path(conn, :new))
     end
   end
 

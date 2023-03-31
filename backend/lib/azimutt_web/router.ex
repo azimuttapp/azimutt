@@ -62,10 +62,6 @@ defmodule AzimuttWeb.Router do
     get "/gallery/:slug", GalleryController, :show
     get "/logout", UserSessionController, :delete
     delete "/logout", UserSessionController, :delete
-    get "/users/confirm", UserConfirmationController, :new
-    post "/users/confirm", UserConfirmationController, :create
-    get "/users/confirm/:token", UserConfirmationController, :edit
-    post "/users/confirm/:token", UserConfirmationController, :update
     get "/sitemap.xml", SitemapController, :index
   end
 
@@ -89,6 +85,9 @@ defmodule AzimuttWeb.Router do
     pipe_through [:browser, :require_authed_user, :account_dashboard_layout]
     get "/home", UserDashboardController, :index
     get "/login/redirect", UserSessionController, :redirect_to
+    get "/email-confirm", UserConfirmationController, :new
+    post "/email-confirm", UserConfirmationController, :create
+    get "/email-confirm/:token", UserConfirmationController, :confirm
 
     resources "/organizations", OrganizationController, except: [:index] do
       get "/billing", OrganizationBillingController, :index, as: :billing

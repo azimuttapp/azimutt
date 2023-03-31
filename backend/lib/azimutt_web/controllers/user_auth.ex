@@ -39,16 +39,14 @@ defmodule AzimuttWeb.UserAuth do
   disconnected on log out. The line can be safely removed
   if you are not using LiveView.
   """
-  def log_in_user(conn, user, method, params \\ %{}) do
-    user_return_to = get_session(conn, :user_return_to)
-
+  def login_user_and_redirect(conn, user, method, params \\ %{}) do
     conn
     |> login_user(user, method, params)
-    |> redirect(to: user_return_to || signed_in_path(conn))
+    |> after_login_redirect()
   end
 
   # no redirect
-  defp login_user(conn, user, method, params \\ %{}) do
+  def login_user(conn, user, method, params \\ %{}) do
     Tracking.user_login(user, method)
     token = Accounts.generate_user_session_token(user)
 
@@ -58,6 +56,11 @@ defmodule AzimuttWeb.UserAuth do
     |> put_session(:live_socket_id, "users_sessions:#{Base.url_encode64(token)}")
     |> delete_resp_cookie(@attribution_cookie)
     |> maybe_write_remember_me_cookie(token, params)
+  end
+
+  def after_login_redirect(conn) do
+    user_return_to = get_session(conn, :user_return_to)
+    conn |> redirect(to: user_return_to || signed_in_path(conn))
   end
 
   defp maybe_write_remember_me_cookie(conn, token, %{"remember_me" => "true"}) do
@@ -148,7 +151,11 @@ defmodule AzimuttWeb.UserAuth do
 
   def require_authed_user(conn, _opts) do
     if conn.assigns[:current_user] do
-      conn
+      if conn.assigns[:current_user].confirmed_at || conn.request_path |> String.starts_with?(Routes.user_confirmation_path(conn, :new)) do
+        conn
+      else
+        conn |> redirect(to: Routes.user_confirmation_path(conn, :new)) |> halt()
+      end
     else
       conn
       |> maybe_store_return_to()
@@ -288,5 +295,5 @@ defmodule AzimuttWeb.UserAuth do
 
   defp maybe_store_return_to(conn), do: conn
 
-  defp signed_in_path(_conn), do: "/"
+  defp signed_in_path(conn), do: Routes.user_dashboard_path(conn, :index)
 end

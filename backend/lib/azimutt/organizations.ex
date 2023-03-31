@@ -164,14 +164,14 @@ defmodule Azimutt.Organizations do
     |> Repo.one()
   end
 
-  def create_organization_invitation(attrs, invitation_url, organization_id, current_user, now) do
+  def create_organization_invitation(attrs, url_fun, organization_id, current_user, now) when is_function(url_fun, 1) do
     %OrganizationInvitation{}
     |> OrganizationInvitation.create_changeset(attrs, organization_id, current_user, Timex.shift(now, days: 7))
     |> Repo.insert()
     |> case do
       {:ok, organization_invitation} ->
         with {:ok, i} <- get_organization_invitation(organization_invitation.id),
-             do: UserNotifier.deliver_organization_invitation_instructions(i, i.organization, i.created_by, invitation_url.(i.id))
+             do: UserNotifier.send_organization_invitation(i, i.organization, i.created_by, url_fun.(i.id))
 
         {:ok, organization_invitation}
 
