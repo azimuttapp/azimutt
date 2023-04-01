@@ -40,8 +40,8 @@
     "book": "elm-book src/Components/Book.elm --dir=../backend/priv/static/elm --start-page=book.html --port 4002 -- --output=../backend/priv/static/elm/dist/book.js"
   },
   "dependencies": {
-    "@sentry/browser": "^7.42.0",
-    "@sentry/tracing": "^7.42.0",
+    "@sentry/browser": "^7.46.0",
+    "@sentry/tracing": "^7.46.0",
     "canvas-confetti": "^1.6.0",
     "jiff": "^0.7.3",
     "zod": "^3.21.4"
@@ -50,20 +50,20 @@
     "@tailwindcss/forms": "^0.5.3",
     "@tailwindcss/typography": "^0.5.9",
     "@types/canvas-confetti": "^1.6.0",
-    "@types/jest": "^29.4.0",
+    "@types/jest": "^29.5.0",
     "concurrently": "^7.6.0",
     "elm-book": "^1.0.1",
     "elm-coverage": "^0.4.1",
     "elm-format": "^0.8.6",
     "elm-go": "^5.0.19",
     "elm-json": "^0.2.13",
-    "elm-review": "^2.9.1",
+    "elm-review": "^2.9.2",
     "elm-spa": "^6.0.4",
     "elm-test": "^0.19.1-revision9",
-    "esbuild": "^0.17.11",
+    "esbuild": "^0.17.14",
     "jest": "^29.5.0",
     "jest-environment-jsdom": "^29.5.0",
-    "tailwindcss": "^3.2.7",
+    "tailwindcss": "^3.3.1",
     "ts-jest": "^29.0.5",
     "typescript": "^4.9.5"
   }
