@@ -72,7 +72,7 @@ update req now projects projectsLoaded urlOrganization msg model =
             , Cmd.batch
                 (Maybe.zip urlOrganization storage
                     |> Maybe.map (\( organizationId, s ) -> [ Ports.createProject organizationId s project ])
-                    |> Maybe.withDefault [ Ports.createProjectTmp project, Track.projectDraftCreated project |> Ports.track ]
+                    |> Maybe.withDefault [ Ports.createProjectTmp project, Track.projectDraftCreated project ]
                 )
             )
 

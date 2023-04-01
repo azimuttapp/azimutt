@@ -146,7 +146,7 @@ update wrap modalOpen toast zone now erd msg model =
                 erd |> Maybe.mapOrElse (\e -> Backend.getProjectTokens e.project (GotTokens >> wrap)) Cmd.none
 
               else
-                Track.planLimit .privateLinks erd |> Ports.track
+                Track.planLimit .privateLinks erd
             )
 
         DisableTokenForm ->

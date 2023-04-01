@@ -23,120 +23,121 @@ import Models.TrackEvent exposing (TrackClick, TrackEvent)
 import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.FindPathResult exposing (FindPathResult)
 import PagesComponents.Organization_.Project_.Models.Notes exposing (Notes)
+import Ports
 
 
 
 -- all tracking events should be declared here to have a good overview of all of them
 
 
-dbSourceCreated : Maybe ProjectInfo -> Result String Source -> TrackEvent
+dbSourceCreated : Maybe ProjectInfo -> Result String Source -> Cmd msg
 dbSourceCreated project source =
-    createEvent "editor_source_created" ([ ( "format", "database" |> Encode.string ) ] ++ dbSourceDetails source) project
+    sendEvent "editor_source_created" ([ ( "format", "database" |> Encode.string ) ] ++ dbSourceDetails source) project
 
 
-sqlSourceCreated : Maybe ProjectInfo -> SQLParsing msg -> Source -> TrackEvent
+sqlSourceCreated : Maybe ProjectInfo -> SQLParsing m -> Source -> Cmd msg
 sqlSourceCreated project parser source =
-    createEvent "editor_source_created" ([ ( "format", "sql" |> Encode.string ) ] ++ sqlSourceDetails parser source) project
+    sendEvent "editor_source_created" ([ ( "format", "sql" |> Encode.string ) ] ++ sqlSourceDetails parser source) project
 
 
-jsonSourceCreated : Maybe ProjectInfo -> Result String Source -> TrackEvent
+jsonSourceCreated : Maybe ProjectInfo -> Result String Source -> Cmd msg
 jsonSourceCreated project source =
-    createEvent "editor_source_created" ([ ( "format", "json" |> Encode.string ) ] ++ jsonSourceDetails source) project
+    sendEvent "editor_source_created" ([ ( "format", "json" |> Encode.string ) ] ++ jsonSourceDetails source) project
 
 
-amlSourceCreated : Maybe ProjectInfo -> Source -> TrackEvent
+amlSourceCreated : Maybe ProjectInfo -> Source -> Cmd msg
 amlSourceCreated project source =
-    createEvent "editor_source_created" ([ ( "format", "aml" |> Encode.string ) ] ++ sourceDetails source) project
+    sendEvent "editor_source_created" ([ ( "format", "aml" |> Encode.string ) ] ++ sourceDetails source) project
 
 
-projectDraftCreated : Project -> TrackEvent
+projectDraftCreated : Project -> Cmd msg
 projectDraftCreated project =
-    createEvent "editor_project_draft_created" (project |> ProjectInfo.fromProject |> projectDetails) (Just project)
+    sendEvent "editor_project_draft_created" (project |> ProjectInfo.fromProject |> projectDetails) (Just project)
 
 
-sourceAdded : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> Source -> TrackEvent
+sourceAdded : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> Source -> Cmd msg
 sourceAdded erd source =
-    createEvent "editor_source_added" (sourceDetails source) (erd |> Maybe.map .project)
+    sendEvent "editor_source_added" (sourceDetails source) (erd |> Maybe.map .project)
 
 
-sourceRefreshed : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> Source -> TrackEvent
+sourceRefreshed : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> Source -> Cmd msg
 sourceRefreshed erd source =
-    createEvent "editor_source_refreshed" (sourceDetails source) (erd |> Maybe.map .project)
+    sendEvent "editor_source_refreshed" (sourceDetails source) (erd |> Maybe.map .project)
 
 
-sourceDeleted : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> Source -> TrackEvent
+sourceDeleted : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> Source -> Cmd msg
 sourceDeleted erd source =
-    createEvent "editor_source_deleted" (sourceDetails source) (erd |> Maybe.map .project)
+    sendEvent "editor_source_deleted" (sourceDetails source) (erd |> Maybe.map .project)
 
 
-layoutCreated : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> ErdLayout -> TrackEvent
+layoutCreated : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> ErdLayout -> Cmd msg
 layoutCreated project layout =
-    createEvent "editor_layout_created" (layoutDetails layout) (Just project)
+    sendEvent "editor_layout_created" (layoutDetails layout) (Just project)
 
 
-layoutLoaded : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> ErdLayout -> TrackEvent
+layoutLoaded : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> ErdLayout -> Cmd msg
 layoutLoaded project layout =
-    createEvent "editor_layout_loaded" (layoutDetails layout) (Just project)
+    sendEvent "editor_layout_loaded" (layoutDetails layout) (Just project)
 
 
-layoutDeleted : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> ErdLayout -> TrackEvent
+layoutDeleted : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> ErdLayout -> Cmd msg
 layoutDeleted project layout =
-    createEvent "editor_layout_deleted" (layoutDetails layout) (Just project)
+    sendEvent "editor_layout_deleted" (layoutDetails layout) (Just project)
 
 
-searchClicked : String -> Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> TrackEvent
+searchClicked : String -> Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> Cmd msg
 searchClicked kind erd =
-    createEvent "editor_search_clicked" [ ( "kind", kind |> Encode.string ) ] (erd |> Maybe.map .project)
+    sendEvent "editor_search_clicked" [ ( "kind", kind |> Encode.string ) ] (erd |> Maybe.map .project)
 
 
-notesCreated : Notes -> Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> TrackEvent
+notesCreated : Notes -> Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> Cmd msg
 notesCreated content erd =
-    createEvent "editor_notes_created" [ ( "length", content |> String.length |> Encode.int ) ] (erd |> Maybe.map .project)
+    sendEvent "editor_notes_created" [ ( "length", content |> String.length |> Encode.int ) ] (erd |> Maybe.map .project)
 
 
-notesUpdated : Notes -> Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> TrackEvent
+notesUpdated : Notes -> Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> Cmd msg
 notesUpdated content erd =
-    createEvent "editor_notes_updated" [ ( "length", content |> String.length |> Encode.int ) ] (erd |> Maybe.map .project)
+    sendEvent "editor_notes_updated" [ ( "length", content |> String.length |> Encode.int ) ] (erd |> Maybe.map .project)
 
 
-notesDeleted : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> TrackEvent
+notesDeleted : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> Cmd msg
 notesDeleted erd =
-    createEvent "editor_notes_deleted" [] (erd |> Maybe.map .project)
+    sendEvent "editor_notes_deleted" [] (erd |> Maybe.map .project)
 
 
-memoSaved : Bool -> String -> Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> TrackEvent
+memoSaved : Bool -> String -> Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> Cmd msg
 memoSaved createMode content erd =
-    createEvent (Bool.cond createMode "editor_memo_created" "editor_memo_updated") [ ( "length", content |> String.length |> Encode.int ) ] (erd |> Maybe.map .project)
+    sendEvent (Bool.cond createMode "editor_memo_created" "editor_memo_updated") [ ( "length", content |> String.length |> Encode.int ) ] (erd |> Maybe.map .project)
 
 
-memoDeleted : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> TrackEvent
+memoDeleted : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> Cmd msg
 memoDeleted erd =
-    createEvent "editor_memo_deleted" [] (erd |> Maybe.map .project)
+    sendEvent "editor_memo_deleted" [] (erd |> Maybe.map .project)
 
 
-findPathOpened : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> TrackEvent
+findPathOpened : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> Cmd msg
 findPathOpened erd =
-    createEvent "editor_find_path_opened" [] (erd |> Maybe.map .project)
+    sendEvent "editor_find_path_opened" [] (erd |> Maybe.map .project)
 
 
-findPathResults : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> FindPathResult -> TrackEvent
+findPathResults : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> FindPathResult -> Cmd msg
 findPathResults erd result =
-    createEvent "editor_find_path_searched" (findPathDetails result) (erd |> Maybe.map .project)
+    sendEvent "editor_find_path_searched" (findPathDetails result) (erd |> Maybe.map .project)
 
 
-dbAnalysisOpened : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> TrackEvent
+dbAnalysisOpened : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> Cmd msg
 dbAnalysisOpened erd =
-    createEvent "editor_db_analysis_opened" [] (erd |> Maybe.map .project)
+    sendEvent "editor_db_analysis_opened" [] (erd |> Maybe.map .project)
 
 
-docOpened : String -> Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> TrackEvent
+docOpened : String -> Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> Cmd msg
 docOpened source erd =
-    createEvent "editor_doc_opened" [ ( "source", source |> Encode.string ) ] (erd |> Maybe.map .project)
+    sendEvent "editor_doc_opened" [ ( "source", source |> Encode.string ) ] (erd |> Maybe.map .project)
 
 
-planLimit : (Features -> Feature a) -> Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId, plan : { pl | id : String } }, id : ProjectId } } -> TrackEvent
+planLimit : (Features -> Feature a) -> Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId, plan : { pl | id : String } }, id : ProjectId } } -> Cmd msg
 planLimit getFeature erd =
-    createEvent "plan_limit"
+    sendEvent "plan_limit"
         [ ( "plan", erd |> Maybe.andThen (.project >> .organization) |> Maybe.mapOrElse (.plan >> .id) Plan.free.id |> Encode.string )
         , ( "feature", Conf.features |> getFeature |> .name |> Encode.string )
         ]
@@ -148,27 +149,28 @@ externalLink url =
     { name = "external_link_clicked", details = [ ( "source", "editor" ), ( "url", url ) ], organization = Nothing, project = Nothing }
 
 
-jsonError : String -> Decode.Error -> TrackEvent
+jsonError : String -> Decode.Error -> Cmd msg
 jsonError kind error =
-    createEvent "editor_json_error" [ ( "kind", kind |> Encode.string ), ( "message", Decode.errorToString error |> Encode.string ) ] Nothing
+    sendEvent "editor_json_error" [ ( "kind", kind |> Encode.string ), ( "message", Decode.errorToString error |> Encode.string ) ] Nothing
 
 
-notFound : String -> TrackEvent
+notFound : String -> Cmd msg
 notFound url =
-    createEvent "not_found" [ ( "url", url |> Encode.string ) ] Nothing
+    sendEvent "not_found" [ ( "url", url |> Encode.string ) ] Nothing
 
 
 
 -- HELPERS
 
 
-createEvent : String -> List ( String, Encode.Value ) -> Maybe { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> TrackEvent
-createEvent name details project =
+sendEvent : String -> List ( String, Encode.Value ) -> Maybe { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> Cmd msg
+sendEvent name details project =
     { name = name
     , details = details
     , organization = project |> Maybe.andThen .organization |> Maybe.map .id
     , project = project |> Maybe.map .id |> Maybe.filter (\id -> id /= ProjectId.zero)
     }
+        |> Ports.track
 
 
 

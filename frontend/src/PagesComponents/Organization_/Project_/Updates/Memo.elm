@@ -68,7 +68,7 @@ createMemo now position urlInfos erd model =
                )
 
     else
-        ( model, Cmd.batch [ erd |> Erd.getProjectRef urlInfos |> ProPlan.memosModalBody |> CustomModalOpen |> T.send, Track.planLimit .memos (Just erd) |> Ports.track ] )
+        ( model, Cmd.batch [ erd |> Erd.getProjectRef urlInfos |> ProPlan.memosModalBody |> CustomModalOpen |> T.send, Track.planLimit .memos (Just erd) ] )
 
 
 editMemo : Bool -> Memo -> Model x -> ( Model x, Cmd Msg )
@@ -91,7 +91,7 @@ saveMemo now edit model =
         ( model |> setEditMemo Nothing, Cmd.none )
 
     else
-        ( model |> setEditMemo Nothing |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapMemosL .id edit.id (setContent edit.content))), Track.memoSaved edit.createMode edit.content model.erd |> Ports.track ) |> setDirtyCmd
+        ( model |> setEditMemo Nothing |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapMemosL .id edit.id (setContent edit.content))), Track.memoSaved edit.createMode edit.content model.erd ) |> setDirtyCmd
 
 
 deleteMemo : Time.Posix -> MemoId -> Bool -> Model x -> ( Model x, Cmd Msg )
@@ -103,5 +103,5 @@ deleteMemo now id createMode model =
                     ( m, Cmd.none )
 
                 else
-                    ( m, Track.memoDeleted model.erd |> Ports.track ) |> setDirtyCmd
+                    ( m, Track.memoDeleted model.erd ) |> setDirtyCmd
            )

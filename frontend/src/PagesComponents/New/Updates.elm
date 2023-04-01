@@ -111,7 +111,7 @@ update req now projects urlOrganization msg model =
                 |> Tuple.mapSecond (\cmd -> B.cond (message == SampleSource.BuildProject) (Cmd.batch [ cmd, Ports.confetti "create-project-btn" ]) cmd)
 
         CreateProjectTmp project ->
-            ( model, Cmd.batch [ Ports.createProjectTmp project, Track.projectDraftCreated project |> Ports.track ] )
+            ( model, Cmd.batch [ Ports.createProjectTmp project, Track.projectDraftCreated project ] )
 
         CreateEmptyProject name ->
             ( model, SourceId.generator |> Random.generate (Source.aml Conf.constants.virtualRelationSourceName now >> Project.create projects name >> CreateProjectTmp) )
@@ -168,7 +168,7 @@ handleJsMessage req now urlOrganization msg model =
             ( model, message |> Toasts.create level |> Toast |> T.send )
 
         Error json err ->
-            ( model, Cmd.batch [ "Unable to decode JavaScript message: " ++ Decode.errorToString err ++ " in " ++ Encode.encode 0 json |> Toasts.error |> Toast |> T.send, Track.jsonError "js_message" err |> Ports.track ] )
+            ( model, Cmd.batch [ "Unable to decode JavaScript message: " ++ Decode.errorToString err ++ " in " ++ Encode.encode 0 json |> Toasts.error |> Toast |> T.send, Track.jsonError "js_message" err ] )
 
         GotSizes _ ->
             ( model, Cmd.none )

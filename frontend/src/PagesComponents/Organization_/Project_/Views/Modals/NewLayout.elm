@@ -16,7 +16,6 @@ import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout
 import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirtyCmd)
-import Ports
 import Services.Lenses exposing (mapErdMCmd, mapLayouts, mapNewLayoutMCmd, setCurrentLayout, setNewLayout)
 import Services.Toasts as Toasts
 import Time
@@ -59,7 +58,7 @@ update modalOpen toast customModalOpen now urlInfos msg model =
                 ( model
                 , Cmd.batch
                     [ model.erd |> Erd.getProjectRefM urlInfos |> ProPlan.layoutsModalBody |> customModalOpen |> T.send
-                    , Track.planLimit .layouts model.erd |> Ports.track
+                    , Track.planLimit .layouts model.erd
                     ]
                 )
 
@@ -82,7 +81,7 @@ createLayout toast from name now erd =
             (from
                 |> Maybe.andThen (\f -> erd.layouts |> Dict.get f)
                 |> Maybe.withDefault (ErdLayout.empty now)
-                |> (\layout -> ( erd |> setCurrentLayout name |> mapLayouts (Dict.insert name layout), Track.layoutCreated erd.project layout |> Ports.track ))
+                |> (\layout -> ( erd |> setCurrentLayout name |> mapLayouts (Dict.insert name layout), Track.layoutCreated erd.project layout ))
             )
 
 

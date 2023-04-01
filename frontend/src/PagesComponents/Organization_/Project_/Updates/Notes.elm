@@ -10,7 +10,6 @@ import PagesComponents.Organization_.Project_.Models.ErdNotes as ErdNotes
 import PagesComponents.Organization_.Project_.Models.Notes exposing (Notes)
 import PagesComponents.Organization_.Project_.Models.NotesMsg exposing (NotesMsg(..))
 import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirtyCmd)
-import Ports
 import Services.Lenses exposing (mapEditNotesM, mapErdM, mapNotes, setEditNotes, setNotes)
 import Track
 
@@ -48,13 +47,13 @@ handleNotes msg model =
                         Cmd.none
 
                     else if notes == "" then
-                        Track.notesDeleted model.erd |> Ports.track
+                        Track.notesDeleted model.erd
 
                     else if initialNotes == "" then
-                        Track.notesCreated notes model.erd |> Ports.track
+                        Track.notesCreated notes model.erd
 
                     else
-                        Track.notesUpdated notes model.erd |> Ports.track
+                        Track.notesUpdated notes model.erd
             in
             ( model |> setEditNotes Nothing |> mapErdM (mapNotes (ErdNotes.set ref (String.nonEmptyMaybe notes))), cmd ) |> setDirtyCmd
 
