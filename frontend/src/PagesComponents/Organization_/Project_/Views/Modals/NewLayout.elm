@@ -59,7 +59,7 @@ update modalOpen toast customModalOpen now urlInfos msg model =
                 ( model
                 , Cmd.batch
                     [ model.erd |> Erd.getProjectRefM urlInfos |> ProPlan.layoutsModalBody |> customModalOpen |> T.send
-                    , Track.proPlanLimit Conf.features.layouts.name model.erd |> Ports.track
+                    , Track.planLimit .layouts model.erd |> Ports.track
                     ]
                 )
 

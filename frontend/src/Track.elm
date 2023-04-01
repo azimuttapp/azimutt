@@ -1,5 +1,6 @@
-module Track exposing (SQLParsing, amlSourceCreated, dbAnalysisOpened, dbSourceCreated, docOpened, externalLink, findPathOpened, findPathResults, jsonError, jsonSourceCreated, layoutCreated, layoutDeleted, layoutLoaded, memoDeleted, memoSaved, notFound, notesCreated, notesDeleted, notesUpdated, proPlanLimit, projectDraftCreated, searchClicked, sourceAdded, sourceDeleted, sourceRefreshed, sqlSourceCreated)
+module Track exposing (SQLParsing, amlSourceCreated, dbAnalysisOpened, dbSourceCreated, docOpened, externalLink, findPathOpened, findPathResults, jsonError, jsonSourceCreated, layoutCreated, layoutDeleted, layoutLoaded, memoDeleted, memoSaved, notFound, notesCreated, notesDeleted, notesUpdated, planLimit, projectDraftCreated, searchClicked, sourceAdded, sourceDeleted, sourceRefreshed, sqlSourceCreated)
 
+import Conf exposing (Feature, Features)
 import DataSources.Helpers exposing (SourceLine)
 import DataSources.SqlMiner.SqlAdapter exposing (SqlSchema)
 import DataSources.SqlMiner.SqlParser exposing (Command)
@@ -12,6 +13,7 @@ import Libs.Dict as Dict
 import Libs.Maybe as Maybe
 import Libs.Result as Result
 import Models.OrganizationId exposing (OrganizationId)
+import Models.Plan as Plan
 import Models.Project exposing (Project)
 import Models.Project.ProjectId as ProjectId exposing (ProjectId)
 import Models.Project.Source exposing (Source)
@@ -132,9 +134,13 @@ docOpened source erd =
     createEvent "editor_doc_opened" [ ( "source", source |> Encode.string ) ] (erd |> Maybe.map .project)
 
 
-proPlanLimit : String -> Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> TrackEvent
-proPlanLimit feature erd =
-    createEvent "pro_plan_limit" [ ( "feature", feature |> Encode.string ) ] (erd |> Maybe.map .project)
+planLimit : (Features -> Feature a) -> Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId, plan : { pl | id : String } }, id : ProjectId } } -> TrackEvent
+planLimit getFeature erd =
+    createEvent "plan_limit"
+        [ ( "plan", erd |> Maybe.andThen (.project >> .organization) |> Maybe.mapOrElse (.plan >> .id) Plan.free.id |> Encode.string )
+        , ( "feature", Conf.features |> getFeature |> .name |> Encode.string )
+        ]
+        (erd |> Maybe.map .project)
 
 
 externalLink : String -> TrackClick
