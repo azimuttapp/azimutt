@@ -1,4 +1,4 @@
-module Components.Organisms.Details exposing (DocState, Heading, NotesModel, SharedDocState, buildColumnHeading, buildSchemaHeading, buildTableHeading, doc, initDocState, viewColumn, viewColumn2, viewList, viewList2, viewSchema, viewSchema2, viewTable, viewTable2)
+module Components.Organisms.Details exposing (DocState, Heading, NotesModel, SharedDocState, buildColumnHeading, buildSchemaHeading, buildTableHeading, doc, initDocState, viewColumn, viewColumn2, viewList, viewSchema, viewTable)
 
 import Array
 import Components.Atoms.Badge as Badge
@@ -71,8 +71,8 @@ type alias Heading item props =
     { item : item, prev : Maybe item, next : Maybe item, shown : Maybe props }
 
 
-viewList : (TableId -> msg) -> (String -> msg) -> HtmlId -> SchemaName -> List ErdTable -> String -> Html msg
-viewList goToTable updateSearch htmlId defaultSchema tables search =
+viewList : (TableId -> msg) -> (TableId -> msg) -> (String -> msg) -> HtmlId -> SchemaName -> List ErdTable -> String -> Html msg
+viewList goToTable showTable updateSearch htmlId defaultSchema tables search =
     let
         searchId : HtmlId
         searchId =
@@ -109,12 +109,13 @@ viewList goToTable updateSearch htmlId defaultSchema tables search =
                                         (\t ->
                                             li []
                                                 [ div [ class "relative px-6 py-5 flex items-center space-x-3 hover:bg-gray-50 focus-within:ring-2 focus-within:ring-inset focus-within:ring-primary-500" ]
-                                                    [ div [ class "flex-1 min-w-0" ]
-                                                        [ button [ type_ "button", onClick (t.id |> goToTable), class "text-left focus:outline-none" ]
-                                                            [ span [ class "absolute inset-0", ariaHidden True ] [] -- Extend touch target to entire panel
+                                                    [ div [ class "w-full flex justify-between" ]
+                                                        [ button [ type_ "button", onClick (t.id |> goToTable), class "block text-left focus:outline-none" ]
+                                                            [ span [ class "absolute inset-y-0 left-0 right-12", ariaHidden True ] [] -- Extend touch target to entire panel
                                                             , p [ class "text-sm text-gray-900 font-medium" ] [ text (TableId.show defaultSchema t.id) ]
                                                             , p [ class "text-sm text-gray-500 truncate" ] [ text (t.columns |> String.pluralizeD "column") ]
                                                             ]
+                                                        , t.id |> showTableBtn showTable
                                                         ]
                                                     ]
                                                 ]
@@ -126,8 +127,8 @@ viewList goToTable updateSearch htmlId defaultSchema tables search =
         ]
 
 
-viewSchema : msg -> (SchemaName -> msg) -> (TableId -> msg) -> SchemaName -> Heading SchemaName Never -> List ErdTable -> Html msg
-viewSchema goToList goToSchema goToTable defaultSchema schema tables =
+viewSchema : msg -> (SchemaName -> msg) -> (TableId -> msg) -> (TableId -> msg) -> SchemaName -> Heading SchemaName Never -> List ErdTable -> Html msg
+viewSchema goToList goToSchema goToTable showTable defaultSchema schema tables =
     div []
         [ viewSchemaHeading goToList goToSchema defaultSchema schema
         , div [ class "px-3" ]
@@ -139,11 +140,12 @@ viewSchema goToList goToSchema goToTable defaultSchema schema tables =
                             (\table ->
                                 li []
                                     [ div [ class "relative px-6 py-1 flex items-center space-x-3 hover:bg-gray-50 focus-within:ring-2 focus-within:ring-inset focus-within:ring-primary-500" ]
-                                        [ div [ class "flex-1 min-w-0" ]
+                                        [ div [ class "w-full flex justify-between" ]
                                             [ button [ type_ "button", onClick (table.id |> goToTable), class "focus:outline-none" ]
-                                                [ span [ class "absolute inset-0", ariaHidden True ] [] -- Extend touch target to entire panel
+                                                [ span [ class "absolute inset-y-0 left-0 right-12", ariaHidden True ] [] -- Extend touch target to entire panel
                                                 , p [ class "text-sm font-medium text-gray-900" ] [ text table.name ]
                                                 ]
+                                            , table.id |> showTableBtn showTable
                                             ]
                                         ]
                                     ]
@@ -159,6 +161,7 @@ viewTable :
     -> (SchemaName -> msg)
     -> (TableId -> msg)
     -> (ColumnRef -> msg)
+    -> (TableId -> msg)
     -> (LayoutName -> msg)
     -> (SourceName -> msg)
     -> SourceName
@@ -170,7 +173,7 @@ viewTable :
     -> List ( Origin, Source )
     -> Dict SourceIdStr TableStats
     -> Html msg
-viewTable goToList goToSchema goToTable goToColumn loadLayout _ _ defaultSchema schema table notes inLayouts inSources stats =
+viewTable goToList goToSchema goToTable goToColumn showTable loadLayout _ _ defaultSchema schema table notes inLayouts inSources stats =
     let
         columnValues : Dict ColumnPathStr ColumnValue
         columnValues =
@@ -188,7 +191,10 @@ viewTable goToList goToSchema goToTable goToColumn loadLayout _ _ defaultSchema 
         [ viewSchemaHeading goToList goToSchema defaultSchema schema
         , viewTableHeading goToSchema goToTable table
         , div [ class "px-3" ]
-            [ viewTitle table.item.name
+            [ div [ class "w-full flex justify-between" ]
+                [ viewTitle table.item.name
+                , table.item.id |> showTableBtn showTable
+                ]
             , table.item.comment |> Maybe.mapOrElse viewComment (div [] [])
             , viewNotes notes
             , outRelations |> List.nonEmptyMap (\r -> viewProp "References" (r |> List.sortBy .table |> List.map (viewTableRelation goToTable defaultSchema))) (div [] [])
@@ -228,6 +234,7 @@ viewColumn :
     -> (SchemaName -> msg)
     -> (TableId -> msg)
     -> (ColumnRef -> msg)
+    -> (TableId -> msg)
     -> (LayoutName -> msg)
     -> (SourceName -> msg)
     -> SourceName
@@ -240,13 +247,16 @@ viewColumn :
     -> List ( Origin, Source )
     -> Dict SourceIdStr ColumnStats
     -> Html msg
-viewColumn goToList goToSchema goToTable goToColumn loadLayout _ _ defaultSchema schema table column notes inLayouts inSources stats =
+viewColumn goToList goToSchema goToTable goToColumn showTable loadLayout _ _ defaultSchema schema table column notes inLayouts inSources stats =
     div []
         [ viewSchemaHeading goToList goToSchema defaultSchema schema
         , viewTableHeading goToSchema goToTable table
         , viewColumnHeading goToTable goToColumn table.item.id column
         , div [ class "px-3" ]
-            [ viewTitle (String.fromInt column.item.index ++ ". " ++ ColumnPath.show column.item.path)
+            [ div [ class "w-full flex justify-between" ]
+                [ viewTitle (String.fromInt column.item.index ++ ". " ++ ColumnPath.show column.item.path)
+                , table.item.id |> showTableBtn showTable
+                ]
             , div [ class "flex flex-row flex-wrap" ]
                 ([ Just ( Icon.Tag, column.item.kind )
                  , Just (Bool.cond column.item.nullable ( Icon.ShieldExclamation, "Nullable" ) ( Icon.ShieldCheck, "NOT NULL" ))
@@ -272,34 +282,9 @@ viewColumn goToList goToSchema goToTable goToColumn loadLayout _ _ defaultSchema
         ]
 
 
-viewList2 : (TableId -> msg) -> (String -> msg) -> HtmlId -> SchemaName -> List ErdTable -> String -> Html msg
-viewList2 _ _ _ _ _ _ =
-    div [] [ text "TODO viewList2" ]
-
-
-viewSchema2 : msg -> (SchemaName -> msg) -> (TableId -> msg) -> SchemaName -> Heading SchemaName Never -> List ErdTable -> Html msg
-viewSchema2 _ _ _ _ _ _ =
-    div [] [ text "TODO viewSchema2" ]
-
-
-viewTable2 :
-    msg
-    -> (SchemaName -> msg)
-    -> (TableId -> msg)
-    -> (ColumnRef -> msg)
-    -> (LayoutName -> msg)
-    -> (SourceName -> msg)
-    -> SourceName
-    -> SchemaName
-    -> Heading SchemaName Never
-    -> Heading ErdTable ErdTableLayout
-    -> NotesModel msg
-    -> List LayoutName
-    -> List ( Origin, Source )
-    -> Dict SourceIdStr TableStats
-    -> Html msg
-viewTable2 _ _ _ _ _ _ _ _ _ _ _ _ _ _ =
-    div [] [ text "TODO viewTable2" ]
+showTableBtn : (TableId -> msg) -> TableId -> Html msg
+showTableBtn showTable id =
+    button [ type_ "button", onClick (id |> showTable), title "Show table", class "block focus:outline-none" ] [ Icon.solid Icon.Eye "text-gray-400" ]
 
 
 viewColumn2 :
@@ -307,6 +292,7 @@ viewColumn2 :
     -> (SchemaName -> msg)
     -> (TableId -> msg)
     -> (ColumnRef -> msg)
+    -> (TableId -> msg)
     -> (LayoutName -> msg)
     -> (SourceName -> msg)
     -> SourceName
@@ -319,7 +305,7 @@ viewColumn2 :
     -> List ( Origin, Source )
     -> Dict SourceIdStr ColumnStats
     -> Html msg
-viewColumn2 _ _ _ _ _ _ _ defaultSchema schema table column _ _ _ _ =
+viewColumn2 _ _ _ _ _ _ _ _ defaultSchema schema table column _ _ _ _ =
     div []
         [ div [ class "lg:flex lg:items-center lg:justify-between" ]
             [ div [ class "flex-1 min-w-0" ]
@@ -914,12 +900,13 @@ doc =
             [ docComponent "viewList & viewList2"
                 (\s ->
                     div [ class "flex flex-row grow gap-3" ]
-                        ([ viewList, viewList2 ]
+                        ([ viewList ]
                             |> List.map
                                 (\renderView ->
                                     div [ class "w-112 border border-gray-300" ]
                                         [ renderView
                                             (\tableId -> s |> docSelectTable tableId |> docSetState)
+                                            (\tableId -> logAction ("showTable: " ++ TableId.toString tableId))
                                             (\search -> { s | search = search } |> docSetState)
                                             "html-id"
                                             s.defaultSchema
@@ -934,7 +921,7 @@ doc =
                     Maybe.map
                         (\( schema, tables ) ->
                             div [ class "flex flex-row grow gap-3" ]
-                                ([ viewSchema, viewSchema2 ]
+                                ([ viewSchema ]
                                     |> List.map
                                         (\renderView ->
                                             div [ class "w-112 border border-gray-300" ]
@@ -942,6 +929,7 @@ doc =
                                                     (docSelectList s |> docSetState)
                                                     (\schemaName -> s |> docSelectSchema schemaName |> docSetState)
                                                     (\tableId -> s |> docSelectTable tableId |> docSetState)
+                                                    (\tableId -> logAction ("showTable: " ++ TableId.toString tableId))
                                                     s.defaultSchema
                                                     schema
                                                     tables
@@ -957,7 +945,7 @@ doc =
                     Maybe.map2
                         (\( schema, _ ) table ->
                             div [ class "flex flex-row grow gap-3" ]
-                                ([ viewTable, viewTable2 ]
+                                ([ viewTable ]
                                     |> List.map
                                         (\renderView ->
                                             div [ class "w-112 border border-gray-300" ]
@@ -966,6 +954,7 @@ doc =
                                                     (\schemaName -> s |> docSelectSchema schemaName |> docSetState)
                                                     (\tableId -> s |> docSelectTable tableId |> docSetState)
                                                     (\columnRef -> s |> docSelectColumn columnRef |> docSetState)
+                                                    (\tableId -> logAction ("showTable: " ++ TableId.toString tableId))
                                                     (\layout -> logAction ("loadLayout " ++ layout))
                                                     (\source -> docSetState { s | openedCollapse = Bool.cond (s.openedCollapse == "viewTable-" ++ source) "" ("viewTable-" ++ source) })
                                                     (s.openedCollapse |> String.stripLeft "viewTable-")
@@ -1003,6 +992,7 @@ doc =
                                                     (\schemaName -> s |> docSelectSchema schemaName |> docSetState)
                                                     (\tableId -> s |> docSelectTable tableId |> docSetState)
                                                     (\columnRef -> s |> docSelectColumn columnRef |> docSetState)
+                                                    (\tableId -> logAction ("showTable: " ++ TableId.toString tableId))
                                                     (\layout -> logAction ("loadLayout " ++ layout))
                                                     (\source -> docSetState { s | openedCollapse = Bool.cond (s.openedCollapse == "viewColumn-" ++ source) "" ("viewColumn-" ++ source) })
                                                     (s.openedCollapse |> String.stripLeft "viewColumn-")

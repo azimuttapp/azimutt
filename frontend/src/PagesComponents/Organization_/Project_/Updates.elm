@@ -82,11 +82,7 @@ update currentLayout zone now urlOrganization organizations projects msg model =
             ( model |> mapNavbar (mapSearch (setText search >> setActive 0)), Cmd.none )
 
         SearchClicked kind table ->
-            if model.erd |> Maybe.mapOrElse (Erd.currentLayout >> .tables) [] |> List.any (\t -> t.id == table) then
-                ( model, Cmd.batch [ GoToTable table |> T.send, Track.searchClicked kind True model.erd |> Ports.track ] )
-
-            else
-                ( model, Cmd.batch [ ShowTable table Nothing |> T.send, Track.searchClicked kind False model.erd |> Ports.track ] )
+            ( model, Cmd.batch [ ShowTable table Nothing |> T.send, Track.searchClicked kind model.erd |> Ports.track ] )
 
         TriggerSaveProject ->
             model |> triggerSaveProject urlOrganization organizations
@@ -110,7 +106,11 @@ update currentLayout zone now urlOrganization organizations projects msg model =
             model |> mapErdMCmd (goToTable now id model.erdElem) |> setDirtyCmd
 
         ShowTable id hint ->
-            model |> mapErdMCmd (showTable now id hint) |> setDirtyCmd
+            if model.erd |> Maybe.mapOrElse (Erd.currentLayout >> .tables) [] |> List.any (\t -> t.id == id) then
+                ( model, GoToTable id |> T.send )
+
+            else
+                model |> mapErdMCmd (showTable now id hint) |> setDirtyCmd
 
         ShowTables ids hint ->
             model |> mapErdMCmd (showTables now ids hint) |> setDirtyCmd

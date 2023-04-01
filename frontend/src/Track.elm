@@ -82,9 +82,9 @@ layoutDeleted project layout =
     createEvent "editor_layout_deleted" (layoutDetails layout) (Just project)
 
 
-searchClicked : String -> Bool -> Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> TrackEvent
-searchClicked kind shown erd =
-    createEvent "editor_search_clicked" [ ( "kind", kind |> Encode.string ), ( "shown", shown |> Encode.bool ) ] (erd |> Maybe.map .project)
+searchClicked : String -> Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> TrackEvent
+searchClicked kind erd =
+    createEvent "editor_search_clicked" [ ( "kind", kind |> Encode.string ) ] (erd |> Maybe.map .project)
 
 
 notesCreated : Notes -> Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> TrackEvent
