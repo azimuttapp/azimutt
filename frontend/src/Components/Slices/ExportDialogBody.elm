@@ -29,8 +29,7 @@ import Libs.Tailwind as Tw exposing (sm)
 import Libs.Task as T
 import Libs.Time as Time
 import Libs.Tuple3 as Tuple3
-import Models.Organization as Organization exposing (Organization)
-import Models.OrganizationId exposing (OrganizationId)
+import Models.Organization exposing (Organization)
 import Models.Plan as Plan
 import Models.Position as Position
 import Models.Project as Project exposing (Project)
@@ -38,15 +37,17 @@ import Models.Project.ColumnPath as ColumnPath exposing (ColumnPathStr)
 import Models.Project.Schema as Schema exposing (Schema)
 import Models.Project.SourceId as SourceId
 import Models.Project.TableId as TableId exposing (TableIdStr)
+import Models.ProjectRef as ProjectRef exposing (ProjectRef)
 import Models.Size as Size
 import Models.SourceInfo as SourceInfo
+import Models.UrlInfos as UrlInfos exposing (UrlInfos)
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps
 import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.ErdTableProps exposing (ErdTableProps)
 import Ports
-import Services.Lenses exposing (mapProject, setCurrentLayout, setLayouts, setOrganization, setTables)
+import Services.Lenses exposing (mapOrganization, mapProject, setCurrentLayout, setLayouts, setOrganization, setTables)
 import Track
 
 
@@ -83,8 +84,8 @@ init id =
     { id = id, input = Nothing, format = Nothing, output = Pending }
 
 
-update : (Msg -> msg) -> Maybe OrganizationId -> Erd -> Msg -> Model -> ( Model, Cmd msg )
-update wrap urlOrganization erd msg model =
+update : (Msg -> msg) -> UrlInfos -> Erd -> Msg -> Model -> ( Model, Cmd msg )
+update wrap urlInfos erd msg model =
     case msg of
         SetInput source ->
             { model | input = Just source } |> shouldGetOutput wrap
@@ -93,7 +94,7 @@ update wrap urlOrganization erd msg model =
             { model | format = Just format } |> shouldGetOutput wrap
 
         GetOutput source format ->
-            ( { model | output = Fetching }, getOutput wrap urlOrganization erd source format )
+            ( { model | output = Fetching }, getOutput wrap urlInfos erd source format )
 
         GotOutput file content ->
             ( { model | output = Fetched ( file, content ) }, Cmd.none )
@@ -115,12 +116,12 @@ shouldGetOutput wrap model =
         ( model, Cmd.none )
 
 
-getOutput : (Msg -> msg) -> Maybe OrganizationId -> Erd -> ExportInput -> ExportFormat -> Cmd msg
-getOutput wrap urlOrganization erd input format =
+getOutput : (Msg -> msg) -> UrlInfos -> Erd -> ExportInput -> ExportFormat -> Cmd msg
+getOutput wrap urlInfos erd input format =
     let
         sqlExportAllowed : Bool
         sqlExportAllowed =
-            erd |> Erd.getOrganization urlOrganization |> .plan |> .sqlExport
+            erd |> Erd.getOrganization urlInfos.organization |> .plan |> .sqlExport
     in
     case input of
         Project ->
@@ -162,8 +163,8 @@ generateTables format schema =
             ( JsonGenerator.generate schema, "json" )
 
 
-view : (Msg -> msg) -> (Cmd msg -> msg) -> msg -> HtmlId -> Organization -> Model -> Html msg
-view wrap send onClose titleId organization model =
+view : (Msg -> msg) -> (Cmd msg -> msg) -> msg -> HtmlId -> ProjectRef -> Model -> Html msg
+view wrap send onClose titleId project model =
     let
         inputId : HtmlId
         inputId =
@@ -216,7 +217,7 @@ view wrap send onClose titleId organization model =
                             (\e -> viewCode ("Error: " ++ e))
                             (\( _, content ) ->
                                 if content == "plan_limit" then
-                                    div [ class "mt-3" ] [ ProPlan.sqlExportWarning organization ]
+                                    div [ class "mt-3" ] [ ProPlan.sqlExportWarning project ]
 
                                 else if model.format == Just PostgreSQL then
                                     div [] [ viewCode content, viewSuggestPR "https://github.com/azimuttapp/azimutt/blob/main/frontend/src/DataSources/SqlMiner/PostgreSqlGenerator.elm#L26" ]
@@ -281,25 +282,25 @@ initDocState =
     }
 
 
-updateDocState : Organization -> (DocState -> Model) -> (Model -> DocState -> DocState) -> Msg -> ElmBook.Msg (SharedDocState x)
-updateDocState org get set msg =
+updateDocState : ProjectRef -> (DocState -> Model) -> (Model -> DocState -> DocState) -> Msg -> ElmBook.Msg (SharedDocState x)
+updateDocState project get set msg =
     ElmBook.Actions.updateStateWithCmd
         (\s ->
             s.exportDialogDocState
                 |> get
-                |> update (updateDocState org get set) Nothing (sampleErd |> mapProject (setOrganization (Just org))) msg
+                |> update (updateDocState project get set) UrlInfos.empty (sampleErd |> mapProject (setOrganization (Just project.organization))) msg
                 |> Tuple.mapFirst (\r -> { s | exportDialogDocState = s.exportDialogDocState |> set r })
         )
 
 
 updateDocFreeState : Msg -> ElmBook.Msg (SharedDocState x)
 updateDocFreeState msg =
-    updateDocState freeOrg .free (\m s -> { s | free = m }) msg
+    updateDocState sampleFreePlan .free (\m s -> { s | free = m }) msg
 
 
 updateDocProState : Msg -> ElmBook.Msg (SharedDocState x)
 updateDocProState msg =
-    updateDocState proOrg .pro (\m s -> { s | pro = m }) msg
+    updateDocState sampleProPlan .pro (\m s -> { s | pro = m }) msg
 
 
 sampleOnClose : ElmBook.Msg state
@@ -339,14 +340,14 @@ organization_members
         |> setCurrentLayout "init layout"
 
 
-freeOrg : Organization
-freeOrg =
-    Organization.zero
+sampleFreePlan : ProjectRef
+sampleFreePlan =
+    ProjectRef.zero
 
 
-proOrg : Organization
-proOrg =
-    { freeOrg | plan = Plan.full }
+sampleProPlan : ProjectRef
+sampleProPlan =
+    sampleFreePlan |> mapOrganization (\o -> { o | plan = Plan.full })
 
 
 component : String -> (DocState -> Html msg) -> ( String, SharedDocState x -> Html msg )
@@ -358,8 +359,8 @@ doc : Chapter (SharedDocState x)
 doc =
     Chapter.chapter "ExportDialogBody"
         |> Chapter.renderStatefulComponentList
-            [ component "exportDialog" (\model -> view updateDocFreeState (\_ -> logAction "Download file") sampleOnClose sampleTitleId freeOrg model.free)
-            , component "exportDialog with pro org" (\model -> view updateDocProState (\_ -> logAction "Download file") sampleOnClose sampleTitleId proOrg model.pro)
+            [ component "exportDialog" (\model -> view updateDocFreeState (\_ -> logAction "Download file") sampleOnClose sampleTitleId sampleFreePlan model.free)
+            , component "exportDialog with pro org" (\model -> view updateDocProState (\_ -> logAction "Download file") sampleOnClose sampleTitleId sampleProPlan model.pro)
             ]
 
 

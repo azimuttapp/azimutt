@@ -17,7 +17,6 @@ import Libs.Nel as Nel
 import Libs.Task as T
 import Models.Area as Area
 import Models.Organization exposing (Organization)
-import Models.OrganizationId exposing (OrganizationId)
 import Models.Position as Position
 import Models.Project as Project
 import Models.Project.ColumnPath as ColumnPath
@@ -27,8 +26,10 @@ import Models.Project.SourceId as SourceId
 import Models.Project.SourceKind as SourceKind
 import Models.Project.TableId as TableId
 import Models.ProjectInfo exposing (ProjectInfo)
+import Models.ProjectRef exposing (ProjectRef)
 import Models.Size as Size
 import Models.SourceInfo as SourceInfo
+import Models.UrlInfos exposing (UrlInfos)
 import PagesComponents.Organization_.Project_.Components.AmlSidebar as AmlSidebar
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
 import PagesComponents.Organization_.Project_.Components.EmbedSourceParsingDialog as EmbedSourceParsingDialog
@@ -72,8 +73,8 @@ import Time
 import Track
 
 
-update : Maybe LayoutName -> Time.Zone -> Time.Posix -> Maybe OrganizationId -> List Organization -> List ProjectInfo -> Msg -> Model -> ( Model, Cmd Msg )
-update currentLayout zone now urlOrganization organizations projects msg model =
+update : Maybe LayoutName -> Time.Zone -> Time.Posix -> UrlInfos -> List Organization -> List ProjectInfo -> Msg -> Model -> ( Model, Cmd Msg )
+update currentLayout zone now urlInfos organizations projects msg model =
     case msg of
         ToggleMobileMenu ->
             ( model |> mapNavbar (mapMobileMenuOpen not), Cmd.none )
@@ -85,7 +86,7 @@ update currentLayout zone now urlOrganization organizations projects msg model =
             ( model, Cmd.batch [ ShowTable table Nothing |> T.send, Track.searchClicked kind model.erd |> Ports.track ] )
 
         TriggerSaveProject ->
-            model |> triggerSaveProject urlOrganization organizations
+            model |> triggerSaveProject urlInfos organizations
 
         CreateProject name organization storage ->
             model |> createProject name organization storage
@@ -177,15 +178,15 @@ update currentLayout zone now urlOrganization organizations projects msg model =
 
         TableColor id color ->
             let
-                organization : Organization
-                organization =
-                    model.erd |> Erd.getOrganizationM Nothing
+                project : ProjectRef
+                project =
+                    model.erd |> Erd.getProjectRefM urlInfos
             in
             if model.erd |> Erd.canChangeTableColor then
                 model |> mapErdMCmd (\erd -> erd |> Erd.mapCurrentLayoutCmd now (mapTablesCmd (mapTablePropOrSelected erd.settings.defaultSchema id (mapProps (setColor color))))) |> setDirtyCmd
 
             else
-                ( model, Cmd.batch [ ProPlan.colorsModalBody organization ProPlanColors ProPlan.colorsInit |> CustomModalOpen |> T.send, Track.proPlanLimit Conf.features.tableColor.name model.erd |> Ports.track ] )
+                ( model, Cmd.batch [ ProPlan.colorsModalBody project ProPlanColors ProPlan.colorsInit |> CustomModalOpen |> T.send, Track.proPlanLimit Conf.features.tableColor.name model.erd |> Ports.track ] )
 
         MoveColumn column position ->
             model |> mapErdM (\erd -> erd |> Erd.mapCurrentLayoutWithTime now (mapTables (List.updateBy .id column.table (mapColumns (ErdColumnProps.mapAt (column.column |> ColumnPath.parent) (List.moveBy .name (column.column |> Nel.last) position)))))) |> setDirty
@@ -210,7 +211,7 @@ update currentLayout zone now urlOrganization organizations projects msg model =
             model |> mapErdMCmd (Source.createRelation now src ref) |> setDirtyCmd
 
         NewLayoutMsg message ->
-            model |> NewLayout.update ModalOpen Toast CustomModalOpen now message
+            model |> NewLayout.update ModalOpen Toast CustomModalOpen now urlInfos message
 
         LayoutMsg message ->
             model |> handleLayout message
@@ -219,7 +220,7 @@ update currentLayout zone now urlOrganization organizations projects msg model =
             model |> handleNotes message
 
         MemoMsg message ->
-            model |> handleMemo now message
+            model |> handleMemo now urlInfos message
 
         AmlSidebarMsg message ->
             model |> AmlSidebar.update now message
@@ -243,7 +244,7 @@ update currentLayout zone now urlOrganization organizations projects msg model =
             ( model |> setSchemaAnalysis Nothing, Cmd.none )
 
         ExportDialogMsg message ->
-            model.erd |> Maybe.mapOrElse (\erd -> model |> mapExportDialogCmd (ExportDialog.update ExportDialogMsg ModalOpen urlOrganization erd message)) ( model, Cmd.none )
+            model.erd |> Maybe.mapOrElse (\erd -> model |> mapExportDialogCmd (ExportDialog.update ExportDialogMsg ModalOpen urlInfos erd message)) ( model, Cmd.none )
 
         SharingMsg message ->
             model |> mapSharingCmd (ProjectSharing.update SharingMsg ModalOpen Toast zone now model.erd message)
@@ -264,7 +265,7 @@ update currentLayout zone now urlOrganization organizations projects msg model =
             ( model |> mapErdM (mapProject (mapOrganizationM (mapPlan (setColors True)))), Ports.fireworks )
 
         ProPlanColors state message ->
-            state |> ProPlan.colorsUpdate ProPlanColors message |> Tuple.mapFirst (\s -> { model | modal = model.modal |> Maybe.map (\m -> { m | content = ProPlan.colorsModalBody (model.erd |> Erd.getOrganizationM Nothing) ProPlanColors s }) })
+            state |> ProPlan.colorsUpdate ProPlanColors message |> Tuple.mapFirst (\s -> { model | modal = model.modal |> Maybe.map (\m -> { m | content = ProPlan.colorsModalBody (model.erd |> Erd.getProjectRefM urlInfos) ProPlanColors s }) })
 
         HelpMsg message ->
             model |> handleHelp message

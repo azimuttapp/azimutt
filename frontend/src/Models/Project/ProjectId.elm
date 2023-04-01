@@ -1,4 +1,4 @@
-module Models.Project.ProjectId exposing (ProjectId, decode, encode, isSample, zero)
+module Models.Project.ProjectId exposing (ProjectId, decode, encode, isSample, one, zero)
 
 import Json.Decode as Decode exposing (Value)
 import Libs.Models.Uuid as Uuid exposing (Uuid)
@@ -11,6 +11,11 @@ type alias ProjectId =
 zero : ProjectId
 zero =
     Uuid.zero
+
+
+one : ProjectId
+one =
+    Uuid.one
 
 
 isSample : ProjectId -> Bool

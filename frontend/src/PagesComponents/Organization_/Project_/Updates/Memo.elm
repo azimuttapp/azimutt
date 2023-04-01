@@ -8,6 +8,7 @@ import Libs.Maybe as Maybe
 import Libs.Task as T
 import Models.ErdProps exposing (ErdProps)
 import Models.Position as Position
+import Models.UrlInfos exposing (UrlInfos)
 import PagesComponents.Organization_.Project_.Models exposing (MemoEdit, MemoMsg(..), Msg(..))
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
@@ -33,11 +34,11 @@ type alias Model x =
     }
 
 
-handleMemo : Time.Posix -> MemoMsg -> Model x -> ( Model x, Cmd Msg )
-handleMemo now msg model =
+handleMemo : Time.Posix -> UrlInfos -> MemoMsg -> Model x -> ( Model x, Cmd Msg )
+handleMemo now urlInfos msg model =
     case msg of
         MCreate pos ->
-            model.erd |> Maybe.mapOrElse (\erd -> model |> createMemo now pos erd) ( model, Cmd.none )
+            model.erd |> Maybe.mapOrElse (\erd -> model |> createMemo now pos urlInfos erd) ( model, Cmd.none )
 
         MEdit memo ->
             model |> editMemo False memo
@@ -55,8 +56,8 @@ handleMemo now msg model =
             model |> deleteMemo now id False
 
 
-createMemo : Time.Posix -> Position.Canvas -> Erd -> Model x -> ( Model x, Cmd Msg )
-createMemo now position erd model =
+createMemo : Time.Posix -> Position.Canvas -> UrlInfos -> Erd -> Model x -> ( Model x, Cmd Msg )
+createMemo now position urlInfos erd model =
     if model.erd |> Erd.canCreateMemo then
         ErdLayout.createMemo (erd |> Erd.currentLayout) position
             |> (\memo ->
@@ -67,7 +68,7 @@ createMemo now position erd model =
                )
 
     else
-        ( model, Cmd.batch [ erd |> Erd.getOrganization Nothing |> ProPlan.memosModalBody |> CustomModalOpen |> T.send, Track.proPlanLimit Conf.features.memos.name (Just erd) |> Ports.track ] )
+        ( model, Cmd.batch [ erd |> Erd.getProjectRef urlInfos |> ProPlan.memosModalBody |> CustomModalOpen |> T.send, Track.proPlanLimit Conf.features.memos.name (Just erd) |> Ports.track ] )
 
 
 editMemo : Bool -> Memo -> Model x -> ( Model x, Cmd Msg )

@@ -17,6 +17,7 @@ import Models.Project as Project
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectId exposing (ProjectId)
 import Models.ProjectTokenId exposing (ProjectTokenId)
+import Models.UrlInfos exposing (UrlInfos)
 import Page
 import PagesComponents.Organization_.Project_.Components.EmbedSourceParsingDialog as EmbedSourceParsingDialog
 import PagesComponents.Organization_.Project_.Models as Models exposing (Msg(..))
@@ -43,13 +44,14 @@ page shared req =
         query =
             parseQueryString req.query
 
-        ( urlOrganization, urlProject ) =
-            ( Nothing, query.projectId )
+        urlInfos : UrlInfos
+        urlInfos =
+            { organization = Nothing, project = query.projectId }
     in
     Page.element
         { init = init query
-        , update = Updates.update query.layout shared.zone shared.now urlOrganization shared.organizations shared.projects
-        , view = Views.view (Request.pushRoute Route.NotFound req) req.url urlOrganization urlProject shared
+        , update = Updates.update query.layout shared.zone shared.now urlInfos shared.organizations shared.projects
+        , view = Views.view (Request.pushRoute Route.NotFound req) req.url urlInfos shared
         , subscriptions = Subscriptions.subscriptions
         }
 

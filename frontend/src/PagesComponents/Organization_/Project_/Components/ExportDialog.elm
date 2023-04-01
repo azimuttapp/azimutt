@@ -5,8 +5,8 @@ import Components.Slices.ExportDialogBody as ExportDialogBody
 import Html exposing (Html)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Task as T
-import Models.Organization exposing (Organization)
-import Models.OrganizationId exposing (OrganizationId)
+import Models.ProjectRef exposing (ProjectRef)
+import Models.UrlInfos exposing (UrlInfos)
 import PagesComponents.Organization_.Project_.Models.Erd exposing (Erd)
 import Services.Lenses exposing (mapBodyCmd, mapMCmd)
 
@@ -31,8 +31,8 @@ init =
     { id = dialogId, body = ExportDialogBody.init dialogId }
 
 
-update : (Msg -> msg) -> (HtmlId -> msg) -> Maybe OrganizationId -> Erd -> Msg -> Maybe Model -> ( Maybe Model, Cmd msg )
-update wrap modalOpen urlOrganization erd msg model =
+update : (Msg -> msg) -> (HtmlId -> msg) -> UrlInfos -> Erd -> Msg -> Maybe Model -> ( Maybe Model, Cmd msg )
+update wrap modalOpen urlInfos erd msg model =
     case msg of
         Open ->
             ( Just init, Cmd.batch [ T.sendAfter 1 (modalOpen dialogId) ] )
@@ -41,11 +41,11 @@ update wrap modalOpen urlOrganization erd msg model =
             ( Nothing, Cmd.none )
 
         BodyMsg message ->
-            model |> mapMCmd (mapBodyCmd (ExportDialogBody.update (BodyMsg >> wrap) urlOrganization erd message))
+            model |> mapMCmd (mapBodyCmd (ExportDialogBody.update (BodyMsg >> wrap) urlInfos erd message))
 
 
-view : (Msg -> msg) -> (Cmd msg -> msg) -> (msg -> msg) -> Bool -> Organization -> Model -> Html msg
-view wrap send modalClose opened organization model =
+view : (Msg -> msg) -> (Cmd msg -> msg) -> (msg -> msg) -> Bool -> ProjectRef -> Model -> Html msg
+view wrap send modalClose opened project model =
     let
         titleId : HtmlId
         titleId =
@@ -57,5 +57,5 @@ view wrap send modalClose opened organization model =
         , isOpen = opened
         , onBackgroundClick = Close |> wrap |> modalClose
         }
-        [ ExportDialogBody.view (BodyMsg >> wrap) send (Close |> wrap |> modalClose) titleId organization model.body
+        [ ExportDialogBody.view (BodyMsg >> wrap) send (Close |> wrap |> modalClose) titleId project model.body
         ]

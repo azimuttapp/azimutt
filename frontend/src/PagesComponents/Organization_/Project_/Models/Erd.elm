@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Models.Erd exposing (Erd, canChangeTableColor, canCreateLayout, canCreateMemo, create, currentLayout, defaultSchemaM, getColumn, getColumnPos, getLayoutTable, getOrganization, getOrganizationM, getTable, isShown, mapCurrentLayout, mapCurrentLayoutCmd, mapCurrentLayoutWithTime, mapSettings, mapSource, mapSources, setSettings, setSources, unpack, viewportM, viewportToCanvas)
+module PagesComponents.Organization_.Project_.Models.Erd exposing (Erd, canChangeTableColor, canCreateLayout, canCreateMemo, create, currentLayout, defaultSchemaM, getColumn, getColumnPos, getLayoutTable, getOrganization, getOrganizationM, getProjectId, getProjectIdM, getProjectRef, getProjectRefM, getTable, isShown, mapCurrentLayout, mapCurrentLayoutCmd, mapCurrentLayoutWithTime, mapSettings, mapSource, mapSources, setSettings, setSources, unpack, viewportM, viewportToCanvas)
 
 import Conf
 import Dict exposing (Dict)
@@ -17,6 +17,7 @@ import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.CustomType exposing (CustomType)
 import Models.Project.CustomTypeId exposing (CustomTypeId)
 import Models.Project.LayoutName exposing (LayoutName)
+import Models.Project.ProjectId as ProjectId exposing (ProjectId)
 import Models.Project.ProjectSettings exposing (ProjectSettings)
 import Models.Project.Relation exposing (Relation)
 import Models.Project.SchemaName exposing (SchemaName)
@@ -25,7 +26,9 @@ import Models.Project.SourceId exposing (SourceId)
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
 import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
+import Models.ProjectRef exposing (ProjectRef)
 import Models.Size as Size
+import Models.UrlInfos exposing (UrlInfos)
 import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn)
 import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps
 import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout exposing (ErdLayout)
@@ -121,11 +124,31 @@ getOrganization urlOrganization erd =
 getOrganizationM : Maybe OrganizationId -> Maybe Erd -> Organization
 getOrganizationM urlOrganization erd =
     let
-        organization : Organization
-        organization =
+        zero : Organization
+        zero =
             Organization.zero
     in
-    erd |> Maybe.andThen (.project >> .organization) |> Maybe.withDefault (urlOrganization |> Maybe.mapOrElse (\id -> { organization | id = id }) organization)
+    erd |> Maybe.andThen (.project >> .organization) |> Maybe.withDefault (urlOrganization |> Maybe.mapOrElse (\id -> { zero | id = id }) zero)
+
+
+getProjectId : Maybe ProjectId -> Erd -> ProjectId
+getProjectId urlProjectId erd =
+    getProjectIdM urlProjectId (Just erd)
+
+
+getProjectIdM : Maybe ProjectId -> Maybe Erd -> ProjectId
+getProjectIdM urlProjectId erd =
+    erd |> Maybe.map (.project >> .id) |> Maybe.orElse urlProjectId |> Maybe.withDefault ProjectId.zero
+
+
+getProjectRef : UrlInfos -> Erd -> ProjectRef
+getProjectRef urlInfos erd =
+    getProjectRefM urlInfos (Just erd)
+
+
+getProjectRefM : UrlInfos -> Maybe Erd -> ProjectRef
+getProjectRefM urlInfos erd =
+    { organization = erd |> getOrganizationM urlInfos.organization, id = erd |> getProjectIdM urlInfos.project }
 
 
 canCreateLayout : Maybe Erd -> Bool
