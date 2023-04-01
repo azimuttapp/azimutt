@@ -35,10 +35,10 @@ defmodule Azimutt.Accounts.UserNotifier do
   end
 
   def send_email_update(user, previous_email, url) do
-    deliver(user.email, "Update email instructions", """
-    Hi #{user.email},
+    deliver(previous_email, "Update email instructions", """
+    Hi #{user.name},
 
-    You can change your email by visiting the URL below:
+    Your email has been changed to #{user.email} accept this change by visiting the URL below:
 
     #{url}
 
