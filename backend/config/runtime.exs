@@ -21,6 +21,7 @@ port = String.to_integer(System.fetch_env!("PORT"))
 skip_public_site = System.get_env("SKIP_PUBLIC_SITE") == "true"
 global_organization = System.get_env("GLOBAL_ORGANIZATION")
 global_organization_alone = global_organization && System.get_env("GLOBAL_ORGANIZATION_ALONE") == "true"
+# TODO: REQUIRE_GITHUB_ORGANIZATION: allow users only from this github orga
 
 config :azimutt,
   host: host,
@@ -131,14 +132,12 @@ end
 
 config :swoosh, :api_client, Swoosh.ApiClient.Hackney
 
+# FIXME: add env variable to require email validation or not
 if System.get_env("AUTH_PASSWORD") == "true" do
   IO.puts("Setup Password auth")
 
   config :azimutt,
     auth_password: true
-
-  # FIXME
-  raise "AUTH_PASSWORD not implemented"
 end
 
 if System.get_env("AUTH_GITHUB") == "true" do
@@ -150,6 +149,42 @@ if System.get_env("AUTH_GITHUB") == "true" do
   config :ueberauth, Ueberauth.Strategy.Github.OAuth,
     client_id: System.fetch_env!("GITHUB_CLIENT_ID"),
     client_secret: System.fetch_env!("GITHUB_CLIENT_SECRET")
+end
+
+if System.get_env("AUTH_GOOGLE") == "true" do
+  IO.puts("Setup Google auth")
+
+  config :azimutt,
+    auth_google: true
+
+  raise "AUTH_GOOGLE not implemented"
+end
+
+if System.get_env("AUTH_LINKEDIN") == "true" do
+  IO.puts("Setup LinkedIn auth")
+
+  config :azimutt,
+    auth_linkedin: true
+
+  raise "AUTH_LINKEDIN not implemented"
+end
+
+if System.get_env("AUTH_TWITTER") == "true" do
+  IO.puts("Setup Twitter auth")
+
+  config :azimutt,
+    auth_twitter: true
+
+  raise "AUTH_TWITTER not implemented"
+end
+
+if System.get_env("AUTH_FACEBOOK") == "true" do
+  IO.puts("Setup Facebook auth")
+
+  config :azimutt,
+    auth_facebook: true
+
+  raise "AUTH_FACEBOOK not implemented"
 end
 
 if System.get_env("AUTH_SAML") == "true" do

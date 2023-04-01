@@ -27,8 +27,11 @@ defmodule AzimuttWeb.UserOauthController do
     }
 
     Accounts.get_user_by_email(user_params.email)
-    |> Result.flat_map_error(fn _ -> Accounts.register_github_user(user_params, UserAuth.get_attribution(conn), now) end)
-    |> Result.map(fn user -> UserAuth.log_in_user(conn, user, "github") end)
+    |> Result.flat_map_error(fn _ ->
+      Accounts.register_github_user(user_params, UserAuth.get_attribution(conn), now)
+      |> Result.tap(fn user -> Accounts.send_email_confirmation(user, &Routes.user_confirmation_url(conn, :confirm, &1)) end)
+    end)
+    |> Result.map(fn user -> UserAuth.login_user_and_redirect(conn, user, "github") end)
     |> Result.or_else(callback(conn, %{}))
   end
 

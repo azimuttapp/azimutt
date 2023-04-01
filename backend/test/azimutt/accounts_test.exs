@@ -1,7 +1,8 @@
 defmodule Azimutt.AccountsTest do
   use Azimutt.DataCase
   alias Azimutt.Accounts
-  alias Azimutt.Accounts.{User, UserToken}
+  alias Azimutt.Accounts.User
+  alias Azimutt.Accounts.UserToken
   import Azimutt.AccountsFixtures
 
   describe "get_user_by_email/1" do
@@ -175,18 +176,14 @@ defmodule Azimutt.AccountsTest do
     end
   end
 
-  describe "deliver_update_email_instructions/3" do
+  describe "send_email_update/3" do
     setup do
       %{user: user_fixture()}
     end
 
     @tag :skip
     test "sends token through notification", %{user: user} do
-      token =
-        extract_user_token(fn url ->
-          Accounts.deliver_update_email_instructions(user, "current@example.com", url)
-        end)
-
+      token = extract_user_token(fn url -> Accounts.send_email_update(user, "current@example.com", url) end)
       {:ok, token} = Base.url_decode64(token, padding: false)
       assert user_token = Repo.get_by(UserToken, token: :crypto.hash(:sha256, token))
       assert user_token.user_id == user.id
@@ -195,16 +192,11 @@ defmodule Azimutt.AccountsTest do
     end
   end
 
-  describe "update_user_email/2" do
+  describe "update_user_email/3" do
     setup do
       user = user_fixture()
       email = unique_user_email()
-
-      token =
-        extract_user_token(fn url ->
-          Accounts.deliver_update_email_instructions(%{user | email: email}, user.email, url)
-        end)
-
+      token = extract_user_token(fn url -> Accounts.send_email_update(%{user | email: email}, user.email, url) end)
       %{user: user, token: token, email: email}
     end
 
@@ -382,42 +374,33 @@ defmodule Azimutt.AccountsTest do
     end
   end
 
-  describe "deliver_user_confirmation_instructions/2" do
+  describe "send_email_confirmation/2" do
     setup do
       %{user: user_fixture()}
     end
 
     @tag :skip
     test "sends token through notification", %{user: user} do
-      token =
-        extract_user_token(fn url ->
-          Accounts.deliver_user_confirmation_instructions(user, url)
-        end)
-
+      token = extract_user_token(fn url -> Accounts.send_email_confirmation(user, url) end)
       {:ok, token} = Base.url_decode64(token, padding: false)
       assert user_token = Repo.get_by(UserToken, token: :crypto.hash(:sha256, token))
       assert user_token.user_id == user.id
       assert user_token.sent_to == user.email
-      assert user_token.context == "confirm"
+      assert user_token.context == "confirm_email"
     end
   end
 
   describe "confirm_user/1" do
     setup do
       user = user_fixture()
-
-      token =
-        extract_user_token(fn url ->
-          Accounts.deliver_user_confirmation_instructions(user, url)
-        end)
-
+      token = extract_user_token(fn url -> Accounts.send_email_confirmation(user, url) end)
       %{user: user, token: token}
     end
 
     @tag :skip
     test "confirms the email with a valid token", %{user: user, token: token} do
       now = DateTime.utc_now()
-      assert {:ok, confirmed_user} = Accounts.confirm_user(token, now)
+      assert {:ok, confirmed_user} = Accounts.confirm_user(%User{}, token, now)
       assert confirmed_user.confirmed_at
       assert confirmed_user.confirmed_at != user.confirmed_at
       assert Repo.get!(User, user.id).confirmed_at
@@ -427,7 +410,7 @@ defmodule Azimutt.AccountsTest do
     @tag :skip
     test "does not confirm with invalid token", %{user: user} do
       now = DateTime.utc_now()
-      assert Accounts.confirm_user("oops", now) == :error
+      assert Accounts.confirm_user(%User{}, "oops", now) == :error
       refute Repo.get!(User, user.id).confirmed_at
       assert Repo.get_by(UserToken, user_id: user.id)
     end
@@ -436,24 +419,20 @@ defmodule Azimutt.AccountsTest do
     test "does not confirm email if token expired", %{user: user, token: token} do
       now = DateTime.utc_now()
       {1, nil} = Repo.update_all(UserToken, set: [inserted_at: ~N[2020-01-01 00:00:00]])
-      assert Accounts.confirm_user(token, now) == :error
+      assert Accounts.confirm_user(%User{}, token, now) == :error
       refute Repo.get!(User, user.id).confirmed_at
       assert Repo.get_by(UserToken, user_id: user.id)
     end
   end
 
-  describe "deliver_user_reset_password_instructions/2" do
+  describe "send_password_reset/2" do
     setup do
       %{user: user_fixture()}
     end
 
     @tag :skip
     test "sends token through notification", %{user: user} do
-      token =
-        extract_user_token(fn url ->
-          Accounts.deliver_user_reset_password_instructions(user, url)
-        end)
-
+      token = extract_user_token(fn url -> Accounts.send_password_reset(user, url) end)
       {:ok, token} = Base.url_decode64(token, padding: false)
       assert user_token = Repo.get_by(UserToken, token: :crypto.hash(:sha256, token))
       assert user_token.user_id == user.id
@@ -465,12 +444,7 @@ defmodule Azimutt.AccountsTest do
   describe "get_user_by_reset_password_token/1" do
     setup do
       user = user_fixture()
-
-      token =
-        extract_user_token(fn url ->
-          Accounts.deliver_user_reset_password_instructions(user, url)
-        end)
-
+      token = extract_user_token(fn url -> Accounts.send_password_reset(user, url) end)
       %{user: user, token: token}
     end
 

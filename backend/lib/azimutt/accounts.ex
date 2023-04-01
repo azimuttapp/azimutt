@@ -148,12 +148,11 @@ defmodule Azimutt.Accounts do
     |> Ecto.Multi.delete_all(:tokens, UserToken.user_and_contexts_query(user, [context]))
   end
 
-  def deliver_update_email_instructions(%User{} = user, current_email, update_email_url_fun)
-      when is_function(update_email_url_fun, 1) do
+  def send_email_update(%User{} = user, current_email, url_fun) when is_function(url_fun, 1) do
     {encoded_token, user_token} = UserToken.build_email_token(user, "change:#{current_email}")
 
     Repo.insert!(user_token)
-    UserNotifier.deliver_update_email_instructions(user, update_email_url_fun.(encoded_token))
+    UserNotifier.send_email_update(user, url_fun.(encoded_token))
   end
 
   def change_user_password(user, attrs \\ %{}) do
@@ -196,20 +195,20 @@ defmodule Azimutt.Accounts do
 
   ## Confirmation
 
-  def deliver_user_confirmation_instructions(%User{} = user, confirmation_url_fun)
-      when is_function(confirmation_url_fun, 1) do
+  def send_email_confirmation(%User{} = user, url_fun) when is_function(url_fun, 1) do
     if user.confirmed_at do
       {:error, :already_confirmed}
     else
-      {encoded_token, user_token} = UserToken.build_email_token(user, "confirm")
+      {encoded_token, user_token} = UserToken.build_email_token(user, "confirm_email")
       Repo.insert!(user_token)
-      UserNotifier.deliver_confirmation_instructions(user, confirmation_url_fun.(encoded_token))
+      UserNotifier.send_email_confirmation(user, url_fun.(encoded_token))
     end
   end
 
-  def confirm_user(token, now) do
-    with {:ok, query} <- UserToken.verify_email_token_query(token, "confirm"),
+  def confirm_user(%User{} = current_user, token, now) do
+    with {:ok, query} <- UserToken.verify_email_token_query(token, "confirm_email"),
          %User{} = user <- Repo.one(query),
+         :ok <- if(current_user.id == user.id, do: :ok, else: :error),
          {:ok, %{user: user}} <- Repo.transaction(confirm_user_multi(user, now)) do
       {:ok, user}
     else
@@ -220,16 +219,15 @@ defmodule Azimutt.Accounts do
   defp confirm_user_multi(user, now) do
     Ecto.Multi.new()
     |> Ecto.Multi.update(:user, User.confirm_changeset(user, now))
-    |> Ecto.Multi.delete_all(:tokens, UserToken.user_and_contexts_query(user, ["confirm"]))
+    |> Ecto.Multi.delete_all(:tokens, UserToken.user_and_contexts_query(user, ["confirm_email"]))
   end
 
   ## Reset password
 
-  def deliver_user_reset_password_instructions(%User{} = user, reset_password_url_fun)
-      when is_function(reset_password_url_fun, 1) do
+  def send_password_reset(%User{} = user, url_fun) when is_function(url_fun, 1) do
     {encoded_token, user_token} = UserToken.build_email_token(user, "reset_password")
     Repo.insert!(user_token)
-    UserNotifier.deliver_reset_password_instructions(user, reset_password_url_fun.(encoded_token))
+    UserNotifier.send_password_reset(user, url_fun.(encoded_token))
   end
 
   def get_user_by_reset_password_token(token) do

@@ -1,0 +1,10 @@
+<%= if Azimutt.config(:auth_password) && (Azimutt.config(:auth_github) || Azimutt.config(:auth_google) || Azimutt.config(:auth_linkedin) || Azimutt.config(:auth_twitter) || Azimutt.config(:auth_facebook)) do %>
+    <div class="relative mt-6">
+        <div class="absolute inset-0 flex items-center" aria-hidden="true">
+            <div class="w-full border-t border-gray-300"></div>
+        </div>
+        <div class="relative flex justify-center text-sm">
+            <span class="bg-white px-2 text-gray-500">Or continue with</span>
+        </div>
+    </div>
+<% end %>

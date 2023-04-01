@@ -1,26 +1,26 @@
-<h1>Register</h1>
-
-<.form let={f} for={@changeset} action={Routes.user_registration_path(@conn, :create)}>
-  <%= if @changeset.action do %>
-    <div class="alert alert-danger">
-      <p>Oops, something went wrong! Please check the errors below.</p>
+<div class="flex min-h-full">
+    <div class="flex flex-1 flex-col justify-center py-12 px-4 sm:px-6 lg:flex-none lg:px-20 xl:px-24">
+        <div class="mx-auto w-full max-w-sm lg:w-96">
+            <h2 class="mt-6 text-3xl font-bold tracking-tight text-gray-900">Create an <span title="Azimutt">🧭</span> account</h2>
+            <div class="mt-8">
+                <%= render AzimuttWeb.UserSessionView, "_social_login_section.html", conn: @conn, title: "Register in with" %>
+                <%= render AzimuttWeb.UserSessionView, "_auth_kind_separator.html" %>
+                <%= if Azimutt.config(:auth_password) do %>
+                    <div class="mt-6">
+                        <.form let={f} for={@changeset} action={Routes.user_registration_path(@conn, :create)}>
+                            <%= render AzimuttWeb.UserSessionView, "_input_text.html", f: f, field: :email, type: :email %>
+                            <%= render AzimuttWeb.UserSessionView, "_input_text.html", f: f, field: :name %>
+                            <%= render AzimuttWeb.UserSessionView, "_input_text.html", f: f, field: :password, type: :password %>
+                            <%= render AzimuttWeb.UserSessionView, "_submit_button.html", text: "Register" %>
+                        </.form>
+                    </div>
+                <% end %>
+                <div class="mt-2 px-2 text-center text-gray-500">
+                    Already have an account?
+                    <%= link "Login", to: Routes.user_session_path(@conn, :new), class: "font-bold text-gray-800" %>
+                </div>
+            </div>
+        </div>
     </div>
-  <% end %>
-
-  <%= label f, :email %>
-  <%= email_input f, :email, required: true %>
-  <%= error_tag f, :email %>
-
-  <%= label f, :password %>
-  <%= password_input f, :password, required: true %>
-  <%= error_tag f, :password %>
-
-  <div>
-    <%= submit "Register" %>
-  </div>
-</.form>
-
-<p>
-  <%= link "Log in", to: Routes.user_session_path(@conn, :new) %> |
-  <%= link "Forgot your password?", to: Routes.user_reset_password_path(@conn, :new) %>
-</p>
+    <%= render AzimuttWeb.UserSessionView, "_right_section.html" %>
+</div>

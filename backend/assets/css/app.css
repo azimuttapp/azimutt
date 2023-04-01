@@ -68,7 +68,7 @@ h5 {
 .invalid-feedback {
     color: #a94442;
     display: block;
-    margin: -1rem 0 2rem;
+    margin-top: 0.25rem;
 }
 
 /* LiveView specific classes for your customization */
