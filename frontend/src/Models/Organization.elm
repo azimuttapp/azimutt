@@ -1,4 +1,4 @@
-module Models.Organization exposing (Organization, decode, encode, zero)
+module Models.Organization exposing (Organization, decode, encode, one, zero)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
@@ -28,6 +28,19 @@ zero =
     { id = OrganizationId.zero
     , slug = OrganizationId.zero
     , name = "zero"
+    , plan = Plan.free
+    , logo = "https://azimutt.app/images/logo_dark.svg"
+    , location = Nothing
+    , description = Nothing
+    , heroku = Nothing
+    }
+
+
+one : Organization
+one =
+    { id = OrganizationId.one
+    , slug = OrganizationId.one
+    , name = "one"
     , plan = Plan.free
     , logo = "https://azimutt.app/images/logo_dark.svg"
     , location = Nothing

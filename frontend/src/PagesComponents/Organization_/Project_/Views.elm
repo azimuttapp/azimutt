@@ -19,9 +19,10 @@ import Libs.Tailwind exposing (hover, lg, sm)
 import Models.Organization exposing (Organization)
 import Models.OrganizationId exposing (OrganizationId)
 import Models.Position as Position
-import Models.Project.ProjectId exposing (ProjectId)
 import Models.Project.ProjectStorage as ProjectStorage
 import Models.ProjectInfo exposing (ProjectInfo)
+import Models.ProjectRef exposing (ProjectRef)
+import Models.UrlInfos exposing (UrlInfos)
 import Models.User exposing (User)
 import PagesComponents.Organization_.Project_.Components.AmlSidebar as AmlSidebar
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
@@ -57,21 +58,21 @@ title erd =
     erd |> Maybe.mapOrElse (\e -> e.project.name ++ " - Azimutt") Conf.constants.defaultTitle
 
 
-view : Cmd Msg -> Url -> Maybe OrganizationId -> Maybe ProjectId -> Shared.Model -> Model -> View Msg
-view onDelete currentUrl urlOrganization urlProject shared model =
+view : Cmd Msg -> Url -> UrlInfos -> Shared.Model -> Model -> View Msg
+view onDelete currentUrl urlInfos shared model =
     { title = model.erd |> title
-    , body = model |> viewProject onDelete currentUrl urlOrganization urlProject shared
+    , body = model |> viewProject onDelete currentUrl urlInfos shared
     }
 
 
-viewProject : Cmd Msg -> Url -> Maybe OrganizationId -> Maybe ProjectId -> Shared.Model -> Model -> List (Html Msg)
-viewProject onDelete currentUrl urlOrganization urlProject shared model =
+viewProject : Cmd Msg -> Url -> UrlInfos -> Shared.Model -> Model -> List (Html Msg)
+viewProject onDelete currentUrl urlInfos shared model =
     [ if model.loaded then
-        model.erd |> Maybe.mapOrElse (viewApp currentUrl urlOrganization shared model "app") (viewNotFound currentUrl urlOrganization urlProject shared.user shared.projects model.conf)
+        model.erd |> Maybe.mapOrElse (viewApp currentUrl urlInfos.organization shared model "app") (viewNotFound currentUrl urlInfos shared.user shared.projects model.conf)
 
       else
         Loader.fullScreen
-    , Lazy.lazy5 viewModal currentUrl urlOrganization shared model onDelete
+    , Lazy.lazy5 viewModal currentUrl urlInfos shared model onDelete
     , Lazy.lazy2 Toasts.view Toast model.toasts
     , Lazy.lazy viewContextMenu model.contextMenu
     ]
@@ -119,7 +120,7 @@ viewLeftSidebar model =
     let
         content : Maybe (Html Msg)
         content =
-            model.detailsSidebar |> Maybe.map2 (DetailsSidebar.view DetailsSidebarMsg (\id -> ShowTable id Nothing) HideTable ShowColumn HideColumn (LLoad >> LayoutMsg) model.tableStats model.columnStats) model.erd
+            model.detailsSidebar |> Maybe.map2 (DetailsSidebar.view DetailsSidebarMsg (\id -> ShowTable id Nothing) ShowColumn HideColumn (LLoad >> LayoutMsg) model.tableStats model.columnStats) model.erd
     in
     aside [ css [ "block flex-shrink-0 order-first" ] ]
         [ div [ css [ B.cond (content == Nothing) "-ml-112" "", "w-112 transition-[margin] ease-in-out duration-200 h-full relative flex flex-col border-r border-gray-200 bg-white overflow-y-auto" ] ]
@@ -142,29 +143,33 @@ viewRightSidebar model =
         ]
 
 
-viewModal : Url -> Maybe OrganizationId -> Shared.Model -> Model -> Cmd Msg -> Html Msg
-viewModal currentUrl urlOrganization shared model _ =
+viewModal : Url -> UrlInfos -> Shared.Model -> Model -> Cmd Msg -> Html Msg
+viewModal currentUrl urlInfos shared model _ =
     let
-        org : Organization
-        org =
-            model.erd |> Erd.getOrganizationM urlOrganization
+        project : ProjectRef
+        project =
+            model.erd |> Erd.getProjectRefM urlInfos
+
+        isOpen : { a | id : HtmlId } -> Bool
+        isOpen =
+            \m -> model.openedDialogs |> List.member m.id
     in
     Keyed.node "div"
         [ class "az-modals" ]
-        ([ model.modal |> Maybe.map (\m -> ( m.id, Modals.view (model.openedDialogs |> List.member m.id) m ))
-         , model.confirm |> Maybe.map (\m -> ( m.id, Modals.viewConfirm (model.openedDialogs |> List.member m.id) m ))
-         , model.prompt |> Maybe.map (\m -> ( m.id, Modals.viewPrompt (model.openedDialogs |> List.member m.id) m ))
-         , model.newLayout |> Maybe.map2 (\e m -> ( m.id, NewLayout.view NewLayoutMsg ModalClose (e |> Erd.getOrganization urlOrganization) (e.layouts |> Dict.keys) (model.openedDialogs |> List.member m.id) m )) model.erd
-         , model.editNotes |> Maybe.map2 (\e m -> ( m.id, viewEditNotes (model.openedDialogs |> List.member m.id) e m )) model.erd
-         , model.findPath |> Maybe.map2 (\e m -> ( m.id, viewFindPath (model.openedDialogs |> List.member m.id) model.openedDropdown e.settings.defaultSchema e.tables e.settings.findPath m )) model.erd
-         , model.schemaAnalysis |> Maybe.map2 (\e m -> ( m.id, viewSchemaAnalysis (e |> Erd.getOrganization urlOrganization) (model.openedDialogs |> List.member m.id) e.settings.defaultSchema e.tables m )) model.erd
-         , model.exportDialog |> Maybe.map (\m -> ( m.id, ExportDialog.view ExportDialogMsg Send ModalClose (model.openedDialogs |> List.member m.id) org m ))
-         , model.sharing |> Maybe.map2 (\e m -> ( m.id, ProjectSharing.view SharingMsg Send ModalClose confirmDanger shared.zone currentUrl (model.openedDialogs |> List.member m.id) e m )) model.erd
-         , model.save |> Maybe.map2 (\e m -> ( m.id, ProjectSaveDialog.view ProjectSaveMsg ModalClose CreateProject currentUrl shared.user shared.organizations (model.openedDialogs |> List.member m.id) e m )) model.erd
-         , model.settings |> Maybe.map2 (\e m -> ( m.id, viewProjectSettings shared.zone (model.openedDialogs |> List.member m.id) e m )) model.erd
-         , model.sourceUpdate |> Maybe.map (\m -> ( m.id, SourceUpdateDialog.view (PSSourceUpdate >> ProjectSettingsMsg) (PSSourceSet >> ProjectSettingsMsg) ModalClose Noop shared.zone shared.now (model.openedDialogs |> List.member m.id) m ))
-         , model.embedSourceParsing |> Maybe.map (\m -> ( m.id, EmbedSourceParsingDialog.view EmbedSourceParsingMsg SourceParsed ModalClose Noop (model.openedDialogs |> List.member m.id) m ))
-         , model.help |> Maybe.map (\m -> ( m.id, viewHelp (model.openedDialogs |> List.member m.id) m ))
+        ([ model.modal |> Maybe.map (\m -> ( m.id, Modals.view (isOpen m) m ))
+         , model.confirm |> Maybe.map (\m -> ( m.id, Modals.viewConfirm (isOpen m) m ))
+         , model.prompt |> Maybe.map (\m -> ( m.id, Modals.viewPrompt (isOpen m) m ))
+         , model.newLayout |> Maybe.map2 (\e m -> ( m.id, NewLayout.view NewLayoutMsg ModalClose project (e.layouts |> Dict.keys) (isOpen m) m )) model.erd
+         , model.editNotes |> Maybe.map2 (\e m -> ( m.id, viewEditNotes (isOpen m) e m )) model.erd
+         , model.findPath |> Maybe.map2 (\e m -> ( m.id, viewFindPath (isOpen m) model.openedDropdown e.settings.defaultSchema e.tables e.settings.findPath m )) model.erd
+         , model.schemaAnalysis |> Maybe.map2 (\e m -> ( m.id, viewSchemaAnalysis project (isOpen m) e.settings.defaultSchema e.tables m )) model.erd
+         , model.exportDialog |> Maybe.map (\m -> ( m.id, ExportDialog.view ExportDialogMsg Send ModalClose (isOpen m) project m ))
+         , model.sharing |> Maybe.map2 (\e m -> ( m.id, ProjectSharing.view SharingMsg Send ModalClose confirmDanger shared.zone currentUrl urlInfos (isOpen m) e m )) model.erd
+         , model.save |> Maybe.map2 (\e m -> ( m.id, ProjectSaveDialog.view ProjectSaveMsg ModalClose CreateProject currentUrl shared.user shared.organizations (isOpen m) e m )) model.erd
+         , model.settings |> Maybe.map2 (\e m -> ( m.id, viewProjectSettings shared.zone (isOpen m) e m )) model.erd
+         , model.sourceUpdate |> Maybe.map (\m -> ( m.id, SourceUpdateDialog.view (PSSourceUpdate >> ProjectSettingsMsg) (PSSourceSet >> ProjectSettingsMsg) ModalClose Noop shared.zone shared.now (isOpen m) m ))
+         , model.embedSourceParsing |> Maybe.map (\m -> ( m.id, EmbedSourceParsingDialog.view EmbedSourceParsingMsg SourceParsed ModalClose Noop (isOpen m) m ))
+         , model.help |> Maybe.map (\m -> ( m.id, viewHelp (isOpen m) m ))
          ]
             |> List.filterMap identity
             |> List.sortBy (\( id, _ ) -> model.openedDialogs |> List.indexOf id |> Maybe.withDefault 0 |> negate)
@@ -182,12 +187,12 @@ viewContextMenu menu =
             (div [ class "az-context-menu" ] [])
 
 
-viewNotFound : Url -> Maybe OrganizationId -> Maybe ProjectId -> Maybe User -> List ProjectInfo -> ErdConf -> Html Msg
-viewNotFound currentUrl urlOrganization urlProject user projects conf =
+viewNotFound : Url -> UrlInfos -> Maybe User -> List ProjectInfo -> ErdConf -> Html Msg
+viewNotFound currentUrl urlInfos user projects conf =
     let
         localProject : Maybe ProjectInfo
         localProject =
-            urlProject |> Maybe.andThen (\id -> projects |> List.find (\p -> p.id == id)) |> Maybe.filter (\p -> p.storage == ProjectStorage.Local)
+            urlInfos.project |> Maybe.andThen (\id -> projects |> List.find (\p -> p.id == id)) |> Maybe.filter (\p -> p.storage == ProjectStorage.Local)
     in
     div [ class "min-h-full pt-16 pb-12 flex flex-col bg-white" ]
         [ main_ [ css [ "flex-grow flex flex-col justify-center max-w-7xl w-full mx-auto px-4", sm [ "px-6" ], lg [ "px-8" ] ] ]
@@ -217,7 +222,7 @@ viewNotFound currentUrl urlOrganization urlProject user projects conf =
                         )
                     , div [ class "mt-6 flex justify-center space-x-4" ]
                         (((if conf.projectManagement then
-                            [ { url = urlOrganization |> Backend.organizationUrl, text = "Back to dashboard" } ]
+                            [ { url = urlInfos.organization |> Backend.organizationUrl, text = "Back to dashboard" } ]
 
                            else
                             [ { url = Conf.constants.azimuttWebsite, text = "Visit Azimutt" } ]

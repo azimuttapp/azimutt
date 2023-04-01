@@ -1,7 +1,6 @@
 defmodule AzimuttWeb.UserConfirmationController do
   use AzimuttWeb, :controller
   alias Azimutt.Accounts
-  alias Azimutt.Utils.Result
   action_fallback AzimuttWeb.FallbackController
 
   def new(conn, _params) do

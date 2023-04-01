@@ -17,7 +17,6 @@ import Libs.Nel as Nel
 import Libs.Task as T
 import Models.Area as Area
 import Models.Organization exposing (Organization)
-import Models.OrganizationId exposing (OrganizationId)
 import Models.Position as Position
 import Models.Project as Project
 import Models.Project.ColumnPath as ColumnPath
@@ -27,8 +26,10 @@ import Models.Project.SourceId as SourceId
 import Models.Project.SourceKind as SourceKind
 import Models.Project.TableId as TableId
 import Models.ProjectInfo exposing (ProjectInfo)
+import Models.ProjectRef exposing (ProjectRef)
 import Models.Size as Size
 import Models.SourceInfo as SourceInfo
+import Models.UrlInfos exposing (UrlInfos)
 import PagesComponents.Organization_.Project_.Components.AmlSidebar as AmlSidebar
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
 import PagesComponents.Organization_.Project_.Components.EmbedSourceParsingDialog as EmbedSourceParsingDialog
@@ -72,8 +73,8 @@ import Time
 import Track
 
 
-update : Maybe LayoutName -> Time.Zone -> Time.Posix -> Maybe OrganizationId -> List Organization -> List ProjectInfo -> Msg -> Model -> ( Model, Cmd Msg )
-update currentLayout zone now urlOrganization organizations projects msg model =
+update : Maybe LayoutName -> Time.Zone -> Time.Posix -> UrlInfos -> List Organization -> List ProjectInfo -> Msg -> Model -> ( Model, Cmd Msg )
+update currentLayout zone now urlInfos organizations projects msg model =
     case msg of
         ToggleMobileMenu ->
             ( model |> mapNavbar (mapMobileMenuOpen not), Cmd.none )
@@ -82,14 +83,10 @@ update currentLayout zone now urlOrganization organizations projects msg model =
             ( model |> mapNavbar (mapSearch (setText search >> setActive 0)), Cmd.none )
 
         SearchClicked kind table ->
-            if model.erd |> Maybe.mapOrElse (Erd.currentLayout >> .tables) [] |> List.any (\t -> t.id == table) then
-                ( model, Cmd.batch [ GoToTable table |> T.send, Track.searchClicked kind True model.erd |> Ports.track ] )
-
-            else
-                ( model, Cmd.batch [ ShowTable table Nothing |> T.send, Track.searchClicked kind False model.erd |> Ports.track ] )
+            ( model, Cmd.batch [ ShowTable table Nothing |> T.send, Track.searchClicked kind model.erd ] )
 
         TriggerSaveProject ->
-            model |> triggerSaveProject urlOrganization organizations
+            model |> triggerSaveProject urlInfos organizations
 
         CreateProject name organization storage ->
             model |> createProject name organization storage
@@ -110,7 +107,11 @@ update currentLayout zone now urlOrganization organizations projects msg model =
             model |> mapErdMCmd (goToTable now id model.erdElem) |> setDirtyCmd
 
         ShowTable id hint ->
-            model |> mapErdMCmd (showTable now id hint) |> setDirtyCmd
+            if model.erd |> Maybe.mapOrElse (Erd.currentLayout >> .tables) [] |> List.any (\t -> t.id == id) then
+                ( model, GoToTable id |> T.send )
+
+            else
+                model |> mapErdMCmd (showTable now id hint) |> setDirtyCmd
 
         ShowTables ids hint ->
             model |> mapErdMCmd (showTables now ids hint) |> setDirtyCmd
@@ -177,15 +178,15 @@ update currentLayout zone now urlOrganization organizations projects msg model =
 
         TableColor id color ->
             let
-                organization : Organization
-                organization =
-                    model.erd |> Erd.getOrganizationM Nothing
+                project : ProjectRef
+                project =
+                    model.erd |> Erd.getProjectRefM urlInfos
             in
             if model.erd |> Erd.canChangeTableColor then
                 model |> mapErdMCmd (\erd -> erd |> Erd.mapCurrentLayoutCmd now (mapTablesCmd (mapTablePropOrSelected erd.settings.defaultSchema id (mapProps (setColor color))))) |> setDirtyCmd
 
             else
-                ( model, Cmd.batch [ ProPlan.colorsModalBody organization ProPlanColors ProPlan.colorsInit |> CustomModalOpen |> T.send, Track.proPlanLimit Conf.features.tableColor.name model.erd |> Ports.track ] )
+                ( model, Cmd.batch [ ProPlan.colorsModalBody project ProPlanColors ProPlan.colorsInit |> CustomModalOpen |> T.send, Track.planLimit .tableColor model.erd ] )
 
         MoveColumn column position ->
             model |> mapErdM (\erd -> erd |> Erd.mapCurrentLayoutWithTime now (mapTables (List.updateBy .id column.table (mapColumns (ErdColumnProps.mapAt (column.column |> ColumnPath.parent) (List.moveBy .name (column.column |> Nel.last) position)))))) |> setDirty
@@ -210,7 +211,7 @@ update currentLayout zone now urlOrganization organizations projects msg model =
             model |> mapErdMCmd (Source.createRelation now src ref) |> setDirtyCmd
 
         NewLayoutMsg message ->
-            model |> NewLayout.update ModalOpen Toast CustomModalOpen now message
+            model |> NewLayout.update ModalOpen Toast CustomModalOpen now urlInfos message
 
         LayoutMsg message ->
             model |> handleLayout message
@@ -219,7 +220,7 @@ update currentLayout zone now urlOrganization organizations projects msg model =
             model |> handleNotes message
 
         MemoMsg message ->
-            model |> handleMemo now message
+            model |> handleMemo now urlInfos message
 
         AmlSidebarMsg message ->
             model |> AmlSidebar.update now message
@@ -234,7 +235,7 @@ update currentLayout zone now urlOrganization organizations projects msg model =
             model |> handleFindPath message
 
         SchemaAnalysisMsg SAOpen ->
-            ( model |> setSchemaAnalysis (Just { id = Conf.ids.schemaAnalysisDialog, opened = "" }), Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.schemaAnalysisDialog), Track.dbAnalysisOpened model.erd |> Ports.track ] )
+            ( model |> setSchemaAnalysis (Just { id = Conf.ids.schemaAnalysisDialog, opened = "" }), Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.schemaAnalysisDialog), Track.dbAnalysisOpened model.erd ] )
 
         SchemaAnalysisMsg (SASectionToggle section) ->
             ( model |> mapSchemaAnalysisM (mapOpened (\opened -> B.cond (opened == section) "" section)), Cmd.none )
@@ -243,7 +244,7 @@ update currentLayout zone now urlOrganization organizations projects msg model =
             ( model |> setSchemaAnalysis Nothing, Cmd.none )
 
         ExportDialogMsg message ->
-            model.erd |> Maybe.mapOrElse (\erd -> model |> mapExportDialogCmd (ExportDialog.update ExportDialogMsg ModalOpen urlOrganization erd message)) ( model, Cmd.none )
+            model.erd |> Maybe.mapOrElse (\erd -> model |> mapExportDialogCmd (ExportDialog.update ExportDialogMsg ModalOpen urlInfos erd message)) ( model, Cmd.none )
 
         SharingMsg message ->
             model |> mapSharingCmd (ProjectSharing.update SharingMsg ModalOpen Toast zone now model.erd message)
@@ -264,7 +265,7 @@ update currentLayout zone now urlOrganization organizations projects msg model =
             ( model |> mapErdM (mapProject (mapOrganizationM (mapPlan (setColors True)))), Ports.fireworks )
 
         ProPlanColors state message ->
-            state |> ProPlan.colorsUpdate ProPlanColors message |> Tuple.mapFirst (\s -> { model | modal = model.modal |> Maybe.map (\m -> { m | content = ProPlan.colorsModalBody (model.erd |> Erd.getOrganizationM Nothing) ProPlanColors s }) })
+            state |> ProPlan.colorsUpdate ProPlanColors message |> Tuple.mapFirst (\s -> { model | modal = model.modal |> Maybe.map (\m -> { m | content = ProPlan.colorsModalBody (model.erd |> Erd.getProjectRefM urlInfos) ProPlanColors s }) })
 
         HelpMsg message ->
             model |> handleHelp message
@@ -384,7 +385,7 @@ handleJsMessage now currentLayout msg model =
                     ( { model | loaded = True }, Cmd.none )
 
                 Just (Err err) ->
-                    ( { model | loaded = True }, Cmd.batch [ "Unable to read project: " ++ Decode.errorToHtml err |> Toasts.error |> Toast |> T.send, Track.jsonError "decode-project" err |> Ports.track ] )
+                    ( { model | loaded = True }, Cmd.batch [ "Unable to read project: " ++ Decode.errorToHtml err |> Toasts.error |> Toast |> T.send, Track.jsonError "decode-project" err ] )
 
                 Just (Ok project) ->
                     let
@@ -483,7 +484,7 @@ handleJsMessage now currentLayout msg model =
             ( model, T.send FitToScreen )
 
         Error json err ->
-            ( model, Cmd.batch [ "Unable to decode JavaScript message: " ++ Decode.errorToString err ++ " in " ++ Encode.encode 0 json |> Toasts.error |> Toast |> T.send, Track.jsonError "js_message" err |> Ports.track ] )
+            ( model, Cmd.batch [ "Unable to decode JavaScript message: " ++ Decode.errorToString err ++ " in " ++ Encode.encode 0 json |> Toasts.error |> Toast |> T.send, Track.jsonError "js_message" err ] )
 
 
 updateSizes : Time.Posix -> List SizeChange -> Model -> ( Model, Cmd Msg )

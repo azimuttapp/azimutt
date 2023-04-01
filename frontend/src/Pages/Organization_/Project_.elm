@@ -9,6 +9,7 @@ import Libs.Bool as Bool
 import Libs.Task as T
 import Models.ErdProps as ErdProps
 import Models.ProjectTokenId exposing (ProjectTokenId)
+import Models.UrlInfos exposing (UrlInfos)
 import Page
 import PagesComponents.Organization_.Project_.Models as Models exposing (Msg(..))
 import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode
@@ -26,16 +27,17 @@ import Shared
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
 page shared req =
     let
-        ( urlOrganization, urlProject ) =
-            ( Just req.params.organization, Just req.params.project )
+        urlInfos : UrlInfos
+        urlInfos =
+            { organization = Just req.params.organization, project = Just req.params.project }
 
         ( urlLayout, urlToken, urlSave ) =
             ( req.query |> Dict.get "layout", req.query |> Dict.get "token", req.query |> Dict.member "save" )
     in
     Page.element
         { init = init req.params urlToken urlSave
-        , update = Updates.update urlLayout shared.zone shared.now urlOrganization shared.organizations shared.projects
-        , view = Views.view (Navigation.load (Backend.organizationUrl urlOrganization)) req.url urlOrganization urlProject shared
+        , update = Updates.update urlLayout shared.zone shared.now urlInfos shared.organizations shared.projects
+        , view = Views.view (Navigation.load (Backend.organizationUrl urlInfos.organization)) req.url urlInfos shared
         , subscriptions = Subscriptions.subscriptions
         }
 

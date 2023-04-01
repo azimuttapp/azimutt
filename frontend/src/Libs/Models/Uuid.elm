@@ -1,4 +1,4 @@
-module Libs.Models.Uuid exposing (Uuid, decode, encode, generator, isValid, zero)
+module Libs.Models.Uuid exposing (Uuid, decode, encode, generator, isValid, one, zero)
 
 import Json.Decode as Decode exposing (Value)
 import Json.Encode as Encode
@@ -13,6 +13,11 @@ type alias Uuid =
 zero : Uuid
 zero =
     "00000000-0000-0000-0000-000000000000"
+
+
+one : Uuid
+one =
+    "00000000-0000-0000-0000-000000000001"
 
 
 generator : Random.Generator Uuid

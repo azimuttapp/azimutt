@@ -34,7 +34,7 @@ defmodule Azimutt.Accounts.UserNotifier do
     """)
   end
 
-  def send_email_update(user, url) do
+  def send_email_update(user, previous_email, url) do
     deliver(user.email, "Update email instructions", """
     Hi #{user.email},
 

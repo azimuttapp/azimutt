@@ -4,10 +4,10 @@ import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Task as T
 import Models.Organization exposing (Organization)
-import Models.OrganizationId exposing (OrganizationId)
 import Models.Project.ProjectId as ProjectId
 import Models.Project.ProjectName exposing (ProjectName)
 import Models.Project.ProjectStorage exposing (ProjectStorage)
+import Models.UrlInfos exposing (UrlInfos)
 import PagesComponents.Organization_.Project_.Components.ProjectSaveDialog as ProjectSaveDialog
 import PagesComponents.Organization_.Project_.Models exposing (Model, Msg(..))
 import PagesComponents.Organization_.Project_.Models.Erd as Erd
@@ -15,12 +15,12 @@ import Ports
 import Services.Toasts as Toasts
 
 
-triggerSaveProject : Maybe OrganizationId -> List Organization -> Model -> ( Model, Cmd Msg )
-triggerSaveProject urlOrganization organizations model =
+triggerSaveProject : UrlInfos -> List Organization -> Model -> ( Model, Cmd Msg )
+triggerSaveProject urlInfos organizations model =
     let
         preselectedOrg : Maybe Organization
         preselectedOrg =
-            urlOrganization |> Maybe.andThen (\id -> organizations |> List.findBy .id id) |> Maybe.orElse (organizations |> List.one)
+            urlInfos.organization |> Maybe.andThen (\id -> organizations |> List.findBy .id id) |> Maybe.orElse (organizations |> List.one)
     in
     ( model
     , model.erd

@@ -67,7 +67,7 @@ init req =
             , html = Just "h-full"
             , body = Just "h-full"
             }
-        , Track.notFound url |> Ports.track
+        , Track.notFound url
         ]
     )
 

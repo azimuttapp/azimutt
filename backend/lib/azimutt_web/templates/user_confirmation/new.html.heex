@@ -8,7 +8,7 @@
                     Please send confirmation email and click on the link inside.
                 </p>
                 <div class="mt-8">
-                    <.form let={f} for={:user} action={Routes.user_confirmation_path(@conn, :create)}>
+                    <.form let={_f} for={:user} action={Routes.user_confirmation_path(@conn, :create)}>
                         <%= render AzimuttWeb.UserSessionView, "_submit_button.html", text: "Send confirmation email" %>
                     </.form>
                 </div>
@@ -20,7 +20,7 @@
                     Or send another confirmation email ⬇️<br>
                 </p>
                 <div class="mt-8">
-                    <.form let={f} for={:user} action={Routes.user_confirmation_path(@conn, :create)}>
+                    <.form let={_f} for={:user} action={Routes.user_confirmation_path(@conn, :create)}>
                         <%= render AzimuttWeb.UserSessionView, "_submit_button.html", text: "Resend confirmation email" %>
                     </.form>
                 </div>

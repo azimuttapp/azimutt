@@ -21,8 +21,8 @@ export class Storage {
     getProject = (id: ProjectId): Promise<ProjectJson> => {
         this.logger.debug(`storage.getProject(${id})`)
         return this.indexedDb.then(s => s.loadProject(id))
-            .catch(e => e === 'Not found' ? this.localStorage.then(s => s.loadProject(id)) : Promise.reject(e))
-            .catch(e => e === 'Not found' ? this.inMemory.loadProject(id) : Promise.reject(e))
+            .catch(e => e !== 'Not found' ? this.localStorage.then(s => s.loadProject(id)) : Promise.reject(e))
+            .catch(e => e !== 'Not found' ? this.inMemory.loadProject(id) : Promise.reject(e))
             .catch(e => Promise.reject(e === 'Not found' ? `Not found project ${id}` : e))
     }
 

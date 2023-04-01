@@ -70,7 +70,7 @@ signIn modalClose loginUrl titleId =
                     [ text "Sign in to save your project." ]
                 , div [ class "mt-2" ]
                     [ p [ class "text-sm text-gray-500" ] [ text "Azimutt has ", bText "evolved", text "!" ]
-                    , p [ class "text-sm text-gray-500" ] [ text "Projects are not registered in your Azimutt account." ]
+                    , p [ class "text-sm text-gray-500" ] [ text "Projects are now registered in your Azimutt account." ]
                     , p [ class "text-sm text-gray-500" ] [ text "You can upload them and invite people to collaborate," ]
                     , p [ class "text-sm text-gray-500" ] [ text "or keep them local for total privacy!" ]
                     ]

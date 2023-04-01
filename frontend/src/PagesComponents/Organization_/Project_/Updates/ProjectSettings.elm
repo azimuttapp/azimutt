@@ -53,17 +53,17 @@ handleProjectSettings now msg model =
                 |> setDirtyCmd
 
         PSSourceDelete source ->
-            ( model |> mapErdM (Erd.mapSources (List.filter (\s -> s.id /= source.id))), Cmd.batch [ "Source " ++ source.name ++ " has been deleted from your project." |> Toasts.info |> Toast |> T.send, Track.sourceDeleted model.erd source |> Ports.track ] ) |> setDirtyCmd
+            ( model |> mapErdM (Erd.mapSources (List.filter (\s -> s.id /= source.id))), Cmd.batch [ "Source " ++ source.name ++ " has been deleted from your project." |> Toasts.info |> Toast |> T.send, Track.sourceDeleted model.erd source ] ) |> setDirtyCmd
 
         PSSourceUpdate message ->
             model |> mapSourceUpdateCmd (SourceUpdateDialog.update (PSSourceUpdate >> ProjectSettingsMsg) ModalOpen Noop now (model.erd |> Maybe.map .project) message)
 
         PSSourceSet source ->
             if model.erd |> Maybe.mapOrElse (\erd -> erd.sources |> List.memberBy .id source.id) False then
-                ( model |> mapErdM (Erd.mapSource source.id (Source.refreshWith source)), Cmd.batch [ T.send (ModalClose (SourceUpdateDialog.Close |> PSSourceUpdate |> ProjectSettingsMsg)), Track.sourceRefreshed model.erd source |> Ports.track ] ) |> setDirtyCmd
+                ( model |> mapErdM (Erd.mapSource source.id (Source.refreshWith source)), Cmd.batch [ T.send (ModalClose (SourceUpdateDialog.Close |> PSSourceUpdate |> ProjectSettingsMsg)), Track.sourceRefreshed model.erd source ] ) |> setDirtyCmd
 
             else
-                ( model |> mapErdM (Erd.mapSources (List.add source)), Cmd.batch [ T.send (ModalClose (SourceUpdateDialog.Close |> PSSourceUpdate |> ProjectSettingsMsg)), Track.sourceAdded model.erd source |> Ports.track ] ) |> setDirtyCmd
+                ( model |> mapErdM (Erd.mapSources (List.add source)), Cmd.batch [ T.send (ModalClose (SourceUpdateDialog.Close |> PSSourceUpdate |> ProjectSettingsMsg)), Track.sourceAdded model.erd source ] ) |> setDirtyCmd
 
         PSDefaultSchemaUpdate value ->
             model |> mapErdM (Erd.mapSettings (setDefaultSchema value)) |> setDirty

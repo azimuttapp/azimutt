@@ -47,10 +47,7 @@ defmodule AzimuttWeb.UserResetPasswordControllerTest do
 
   describe "GET /users/reset_password/:token" do
     setup %{user: user} do
-      token =
-        extract_user_token(fn url ->
-          Accounts.deliver_user_reset_password_instructions(user, url)
-        end)
+      token = extract_user_token(fn url -> Accounts.send_password_reset(user, url) end)
 
       %{token: token}
     end
@@ -71,10 +68,7 @@ defmodule AzimuttWeb.UserResetPasswordControllerTest do
 
   describe "PUT /users/reset_password/:token" do
     setup %{user: user} do
-      token =
-        extract_user_token(fn url ->
-          Accounts.deliver_user_reset_password_instructions(user, url)
-        end)
+      token = extract_user_token(fn url -> Accounts.send_password_reset(user, url) end)
 
       %{token: token}
     end

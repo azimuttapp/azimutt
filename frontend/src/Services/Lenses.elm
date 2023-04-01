@@ -48,6 +48,7 @@ module Services.Lenses exposing
     , mapOpened
     , mapOpenedDialogs
     , mapOpenedDropdown
+    , mapOrganization
     , mapOrganizationM
     , mapParsedSchemaM
     , mapPlan
@@ -761,6 +762,11 @@ mapOpenedDialogs =
 setOrganization : v -> { item | organization : v } -> { item | organization : v }
 setOrganization =
     set_ .organization (\value item -> { item | organization = value })
+
+
+mapOrganization : (v -> v) -> { item | organization : v } -> { item | organization : v }
+mapOrganization =
+    map_ .organization setOrganization
 
 
 mapOrganizationM : (v -> v) -> { item | organization : Maybe v } -> { item | organization : Maybe v }

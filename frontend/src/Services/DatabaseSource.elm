@@ -110,8 +110,8 @@ update wrap now project msg model =
                 |> (\source ->
                         ( { model | parsedSource = source }
                         , source
-                            |> Maybe.map (\s -> Cmd.batch [ s |> model.callback |> T.send, s |> Track.dbSourceCreated project |> Ports.track ])
-                            |> Maybe.withDefault (Err "Source not available" |> Track.dbSourceCreated project |> Ports.track)
+                            |> Maybe.map (\s -> Cmd.batch [ s |> model.callback |> T.send, s |> Track.dbSourceCreated project ])
+                            |> Maybe.withDefault (Err "Source not available" |> Track.dbSourceCreated project)
                         )
                    )
 

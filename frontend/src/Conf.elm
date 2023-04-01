@@ -1,4 +1,4 @@
-module Conf exposing (canvas, constants, features, hotkeys, ids, schema, ui)
+module Conf exposing (Feature, Features, canvas, constants, features, hotkeys, ids, schema, ui)
 
 import Dict exposing (Dict)
 import Libs.Models.Hotkey exposing (Hotkey, hotkey, target)
@@ -100,15 +100,22 @@ ui =
     }
 
 
-features :
-    { layouts : { name : String, free : number }
-    , memos : { name : String, free : number }
-    , tableColor : { name : String, free : Bool }
-    , privateLinks : { name : String, free : Bool }
-    , sqlExport : { name : String, free : Bool }
-    , dbAnalysis : { name : String, free : Bool }
-    , dbAccess : { name : String, free : Bool }
+type alias Features =
+    { layouts : Feature Int
+    , memos : Feature Int
+    , tableColor : Feature Bool
+    , privateLinks : Feature Bool
+    , sqlExport : Feature Bool
+    , dbAnalysis : Feature Bool
+    , dbAccess : Feature Bool
     }
+
+
+type alias Feature a =
+    { name : String, free : a }
+
+
+features : Features
 features =
     -- MUST stay in sync with backend/config/config.exs (`free_plan_layouts`)
     { layouts = { name = "layouts", free = 3 }

@@ -8,7 +8,6 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Models.Project.Source as Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.ProjectInfo exposing (ProjectInfo)
-import Ports
 import Random
 import Time
 import Track
@@ -58,7 +57,7 @@ update wrap now project msg model =
                 ( model, Cmd.none )
 
             else
-                Source.aml model.name now id |> (\source -> ( { model | parsedSource = source |> Ok |> Just }, Track.amlSourceCreated project source |> Ports.track ))
+                Source.aml model.name now id |> (\source -> ( { model | parsedSource = source |> Ok |> Just }, Track.amlSourceCreated project source ))
 
 
 

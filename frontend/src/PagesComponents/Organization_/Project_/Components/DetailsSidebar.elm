@@ -192,8 +192,8 @@ filterDatabaseSources sources =
 -- VIEW
 
 
-view : (Msg -> msg) -> (TableId -> msg) -> (TableId -> msg) -> (ColumnRef -> msg) -> (ColumnRef -> msg) -> (LayoutName -> msg) -> Dict TableId (Dict SourceIdStr TableStats) -> Dict ColumnId (Dict SourceIdStr ColumnStats) -> Erd -> Model -> Html msg
-view wrap showTable hideTable showColumn hideColumn loadLayout tableStats columnStats erd model =
+view : (Msg -> msg) -> (TableId -> msg) -> (ColumnRef -> msg) -> (ColumnRef -> msg) -> (LayoutName -> msg) -> Dict TableId (Dict SourceIdStr TableStats) -> Dict ColumnId (Dict SourceIdStr ColumnStats) -> Erd -> Model -> Html msg
+view wrap showTable showColumn hideColumn loadLayout tableStats columnStats erd model =
     let
         heading : List (Html msg)
         heading =
@@ -232,33 +232,33 @@ view wrap showTable hideTable showColumn hideColumn loadLayout tableStats column
             [ div [ class "absolute inset-0" ]
                 [ case model.view of
                     ListView ->
-                        viewTableList wrap (model.id ++ "-list") erd (erd.tables |> Dict.values) model.search
+                        viewTableList wrap showTable (model.id ++ "-list") erd (erd.tables |> Dict.values) model.search
 
                     SchemaView v ->
-                        viewSchema wrap erd v
+                        viewSchema wrap showTable erd v
 
                     TableView v ->
-                        viewTable wrap showTable hideTable loadLayout erd model.editNotes model.openedCollapse tableStats v
+                        viewTable wrap showTable loadLayout erd model.editNotes model.openedCollapse tableStats v
 
                     ColumnView v ->
-                        viewColumn wrap showTable hideTable showColumn hideColumn loadLayout erd model.editNotes model.openedCollapse columnStats v
+                        viewColumn wrap showTable showColumn hideColumn loadLayout erd model.editNotes model.openedCollapse columnStats v
                 ]
             ]
         ]
 
 
-viewTableList : (Msg -> msg) -> HtmlId -> Erd -> List ErdTable -> String -> Html msg
-viewTableList wrap htmlId erd tables search =
-    Details.viewList (ShowTable >> wrap) (SearchUpdate >> wrap) htmlId erd.settings.defaultSchema tables search
+viewTableList : (Msg -> msg) -> (TableId -> msg) -> HtmlId -> Erd -> List ErdTable -> String -> Html msg
+viewTableList wrap showTable htmlId erd tables search =
+    Details.viewList (ShowTable >> wrap) showTable (SearchUpdate >> wrap) htmlId erd.settings.defaultSchema tables search
 
 
-viewSchema : (Msg -> msg) -> Erd -> SchemaData -> Html msg
-viewSchema wrap erd model =
-    Details.viewSchema (ShowList |> wrap) (ShowSchema >> wrap) (ShowTable >> wrap) erd.settings.defaultSchema model.schema model.tables
+viewSchema : (Msg -> msg) -> (TableId -> msg) -> Erd -> SchemaData -> Html msg
+viewSchema wrap showTable erd model =
+    Details.viewSchema (ShowList |> wrap) (ShowSchema >> wrap) (ShowTable >> wrap) showTable erd.settings.defaultSchema model.schema model.tables
 
 
-viewTable : (Msg -> msg) -> (TableId -> msg) -> (TableId -> msg) -> (LayoutName -> msg) -> Erd -> Maybe Notes -> HtmlId -> Dict TableId (Dict SourceIdStr TableStats) -> TableData -> Html msg
-viewTable wrap _ _ loadLayout erd editNotes openedCollapse stats model =
+viewTable : (Msg -> msg) -> (TableId -> msg) -> (LayoutName -> msg) -> Erd -> Maybe Notes -> HtmlId -> Dict TableId (Dict SourceIdStr TableStats) -> TableData -> Html msg
+viewTable wrap showTable loadLayout erd editNotes openedCollapse stats model =
     let
         notes : Notes
         notes =
@@ -285,11 +285,11 @@ viewTable wrap _ _ loadLayout erd editNotes openedCollapse stats model =
         tableStats =
             stats |> Dict.getOrElse model.id Dict.empty
     in
-    Details.viewTable (ShowList |> wrap) (ShowSchema >> wrap) (ShowTable >> wrap) (ShowColumn >> wrap) loadLayout (ToggleCollapse >> wrap) openedCollapse erd.settings.defaultSchema model.schema model.table notesModel inLayouts inSources tableStats
+    Details.viewTable (ShowList |> wrap) (ShowSchema >> wrap) (ShowTable >> wrap) (ShowColumn >> wrap) showTable loadLayout (ToggleCollapse >> wrap) openedCollapse erd.settings.defaultSchema model.schema model.table notesModel inLayouts inSources tableStats
 
 
-viewColumn : (Msg -> msg) -> (TableId -> msg) -> (TableId -> msg) -> (ColumnRef -> msg) -> (ColumnRef -> msg) -> (LayoutName -> msg) -> Erd -> Maybe Notes -> HtmlId -> Dict ColumnId (Dict SourceIdStr ColumnStats) -> ColumnData -> Html msg
-viewColumn wrap _ _ _ _ loadLayout erd editNotes openedCollapse stats model =
+viewColumn : (Msg -> msg) -> (TableId -> msg) -> (ColumnRef -> msg) -> (ColumnRef -> msg) -> (LayoutName -> msg) -> Erd -> Maybe Notes -> HtmlId -> Dict ColumnId (Dict SourceIdStr ColumnStats) -> ColumnData -> Html msg
+viewColumn wrap showTable _ _ loadLayout erd editNotes openedCollapse stats model =
     let
         notes : Notes
         notes =
@@ -316,7 +316,7 @@ viewColumn wrap _ _ _ _ loadLayout erd editNotes openedCollapse stats model =
         columnStats =
             stats |> Dict.getOrElse (ColumnId.fromRef model.id) Dict.empty
     in
-    Details.viewColumn (ShowList |> wrap) (ShowSchema >> wrap) (ShowTable >> wrap) (ShowColumn >> wrap) loadLayout (ToggleCollapse >> wrap) openedCollapse erd.settings.defaultSchema model.schema model.table model.column notesModel inLayouts inSources columnStats
+    Details.viewColumn (ShowList |> wrap) (ShowSchema >> wrap) (ShowTable >> wrap) (ShowColumn >> wrap) showTable loadLayout (ToggleCollapse >> wrap) openedCollapse erd.settings.defaultSchema model.schema model.table model.column notesModel inLayouts inSources columnStats
 
 
 

@@ -59,7 +59,7 @@ defmodule AzimuttWeb.Admin.DashboardController do
       pro_events:
         Dataset.chartjs_daily_data(
           [
-            Admin.daily_event("pro_plan_limit") |> Dataset.from_values("pro_plan_limit"),
+            Admin.daily_event("plan_limit") |> Dataset.from_values("plan_limit"),
             Admin.daily_event("billing_loaded") |> Dataset.from_values("billing_loaded"),
             Admin.daily_event("stripe_open_billing_portal") |> Dataset.from_values("open_billing_portal")
           ],

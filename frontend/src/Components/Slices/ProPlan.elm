@@ -1,7 +1,7 @@
 module Components.Slices.ProPlan exposing (ColorsModel, ColorsMsg(..), DocState, SharedDocState, analysisResults, analysisWarning, colorsInit, colorsModalBody, colorsUpdate, doc, initDocState, layoutsModalBody, layoutsWarning, memosModalBody, privateLinkWarning, sqlExportWarning)
 
 import Components.Atoms.Button as Button
-import Components.Atoms.Icon as Icon
+import Components.Atoms.Icon as Icon exposing (Icon)
 import Components.Atoms.Link as Link
 import Components.Molecules.Alert as Alert
 import Conf
@@ -21,86 +21,87 @@ import Libs.Result as Result
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (Color, focus, sm)
 import Libs.Task as T
-import Models.Organization as Organization exposing (Organization)
+import Models.Organization exposing (Organization)
 import Models.OrganizationId exposing (OrganizationId)
+import Models.Project.ProjectId as ProjectId exposing (ProjectId)
+import Models.ProjectRef as ProjectRef exposing (ProjectRef)
 import Services.Backend as Backend exposing (TableColorTweet)
 import Services.Lenses exposing (setColors, setResult)
 
 
-layoutsWarning : Organization -> Html msg
-layoutsWarning organization =
+draftProjectModalBody : msg -> HtmlId -> Html msg
+draftProjectModalBody close titleId =
+    modalBody Tw.indigo
+        Icon.CubeTransparent
+        ( titleId, "Oh no! You are limited by your draft project 😕" )
+        [ p [ class "text-sm text-gray-500" ] [ text "As your project is ", bText "still in draft", text ", you have free plan limitations." ]
+        , p [ class "text-sm text-gray-500" ] [ text "Save it to an organization with a ", bText "pro plan", text " to unlock them." ]
+        , p [ class "text-sm text-gray-500" ] [ text "Subscribing to Azimutt pro plan will unlock its full power, ", extLink "/pricing" [ class "link" ] [ text "check it out" ], text "." ]
+        ]
+        [ Button.white3 Tw.gray [ onClick close, css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text "Close" ]
+        ]
+
+
+draftProjectWarning : Html msg
+draftProjectWarning =
+    warning Tw.indigo
+        "Oh no! You are limited by your draft project 😕"
+        [ p [] [ text "As your project is ", bText "still in draft", text ", you have free plan limitations." ]
+        , p [] [ text "Save it to an organization with a ", bText "pro plan", text " to unlock them." ]
+        , p [] [ text "Subscribing to Azimutt pro plan will unlock its full power, ", extLink "/pricing" [ class "link" ] [ text "check it out" ], text "." ]
+        ]
+        []
+
+
+layoutsWarning : ProjectRef -> Html msg
+layoutsWarning project =
     let
         color : Color
         color =
             Tw.rose
     in
-    Alert.withActions
-        { color = color
-        , icon = Icon.Exclamation
-        , title = "You've reached plan limit!"
-        , actions = [ Link.secondary3 color [ href (Backend.organizationBillingUrl organization.id (Conf.features.layouts.name ++ "_warning")), target "_blank", rel "noopener" ] [ Icon.outline Icon.Sparkles "mr-1", text "Upgrade plan" ] ]
-        }
+    -- don't use `showWarning` to avoid the "draft project" state as it's not blocking
+    warning color
+        "You've reached a plan limit!"
         [ p [] [ text "Hey! We are very happy you use and like layouts in Azimutt." ]
         , p [] [ text "They are an important feature but also a limited one. You've reached the limits of your current plan and will need to upgrade. We will let you create one last layout so you can keep working but ", bText "please upgrade as soon as possible", text "." ]
         ]
+        [ Link.secondary3 color [ href (Backend.organizationBillingUrl project.organization.id (Conf.features.layouts.name ++ "_warning")), target "_blank", rel "noopener" ] [ Icon.outline Icon.Sparkles "mr-1", text "Upgrade plan" ] ]
 
 
-layoutsModalBody : Organization -> msg -> HtmlId -> Html msg
-layoutsModalBody organization close titleId =
+layoutsModalBody : ProjectRef -> msg -> HtmlId -> Html msg
+layoutsModalBody project close titleId =
     let
         color : Color
         color =
             Tw.rose
     in
-    div [ class "max-w-2xl" ]
-        [ div [ css [ "px-6 pt-6", sm [ "flex items-start" ] ] ]
-            [ div [ css [ Tw.bg_100 color, "mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full", sm [ "mx-0 h-10 w-10" ] ] ]
-                [ Icon.outline Icon.Template (Tw.text_600 color)
-                ]
-            , div [ css [ "mt-3 text-center", sm [ "mt-0 ml-4 text-left" ] ] ]
-                [ h3 [ id titleId, class "text-lg leading-6 font-medium text-gray-900" ] [ text "New layout" ]
-                , div [ class "mt-3" ]
-                    [ p [ class "text-sm text-gray-500" ] [ text "Hey! It's so great to see people using Azimutt and we are quite proud to make this tool for you. It's already great but we have so much more to do to make it at full potential, we need your support to make it grow and help more and more people." ]
-                    , p [ class "text-sm text-gray-500" ] [ text "That's why we created a paid plan. Please consider your contribution to this awesome Azimutt community, it will ", bText "bring us much further together", text "." ]
-                    ]
-                ]
-            ]
-        , div [ class "px-6 py-3 mt-6 flex items-center flex-row-reverse bg-gray-50 rounded-b-lg" ]
-            [ Link.primary3 color [ href (Backend.organizationBillingUrl organization.id Conf.features.layouts.name), target "_blank", rel "noopener", css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ Icon.solid Icon.Sparkles "mr-1", text "Upgrade plan" ]
-            , Button.white3 Tw.gray [ onClick close, css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text "Cancel" ]
-            ]
+    showModalBody ( project, close, color )
+        Icon.Template
+        ( titleId, "New layout" )
+        [ p [ class "text-sm text-gray-500" ] [ text "Hey! It's so great to see people using Azimutt and we are quite proud to make this tool for you. It's already great but we have so much more to do to make it at full potential, we need your support to make it grow and help more and more people." ]
+        , p [ class "text-sm text-gray-500" ] [ text "That's why we created a paid plan. Please consider your contribution to this awesome Azimutt community, it will ", bText "bring us much further together", text "." ]
+        ]
+        [ Link.primary3 color [ href (Backend.organizationBillingUrl project.organization.id Conf.features.layouts.name), target "_blank", rel "noopener", css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ Icon.solid Icon.Sparkles "mr-1", text "Upgrade plan" ]
+        , Button.white3 Tw.gray [ onClick close, css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text "Cancel" ]
         ]
 
 
-memosModalBody : Organization -> msg -> HtmlId -> Html msg
-memosModalBody organization close titleId =
+memosModalBody : ProjectRef -> msg -> HtmlId -> Html msg
+memosModalBody project close titleId =
     let
-        color : Color
-        color =
-            Tw.amber
-
-        limit : Int
-        limit =
-            organization.plan.memos |> Maybe.withDefault Conf.features.memos.free
+        ( color, limit ) =
+            ( Tw.amber, project.organization.plan.memos |> Maybe.withDefault Conf.features.memos.free )
     in
-    div [ class "max-w-2xl" ]
-        [ div [ css [ "px-6 pt-6", sm [ "flex items-start" ] ] ]
-            [ div [ css [ Tw.bg_100 color, "mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full", sm [ "mx-0 h-10 w-10" ] ] ]
-                [ Icon.outline Icon.Newspaper (Tw.text_600 color)
-                ]
-            , div [ css [ "mt-3 text-center", sm [ "mt-0 ml-4 text-left" ] ] ]
-                [ h3 [ id titleId, class "text-lg leading-6 font-medium text-gray-900" ] [ text "Layout memos" ]
-                , div [ class "mt-3" ]
-                    [ p [ class "text-sm text-gray-500" ] [ bText ("You just hit a plan limit, you have only " ++ String.pluralize "memo" limit ++ " per layout!") ]
-                    , p [ class "mt-2 text-sm text-gray-500" ] [ text "I'm a huge fan of memos and it seems you too. They are awesome for documentation, quick notes or even branding as you can write any markdown, including links and images." ]
-                    , p [ class "text-sm text-gray-500" ] [ text "We see this as a long term feature to document database schema so it's reserved for pro accounts. ", bText "Consider subscribing", text " or ", a [ href ("mailto:" ++ Conf.constants.azimuttEmail), target "_blank", rel "noopener", class "link" ] [ text "reach at us" ], text " to contribute improving Azimutt." ]
-                    ]
-                ]
-            ]
-        , div [ class "px-6 py-3 mt-6 flex items-center flex-row-reverse bg-gray-50 rounded-b-lg" ]
-            [ Link.primary3 color [ href (Backend.organizationBillingUrl organization.id Conf.features.memos.name), target "_blank", rel "noopener", css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ Icon.solid Icon.ThumbUp "mr-1", text "Upgrade plan" ]
-            , Button.white3 Tw.gray [ onClick close, css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text "Cancel" ]
-            ]
+    showModalBody ( project, close, color )
+        Icon.Newspaper
+        ( titleId, "Layout memos" )
+        [ p [ class "text-sm text-gray-500" ] [ bText ("You just hit a plan limit, you have only " ++ String.pluralize "memo" limit ++ " per layout!") ]
+        , p [ class "mt-2 text-sm text-gray-500" ] [ text "I'm a huge fan of memos and it seems you too. They are awesome for documentation, quick notes or even branding as you can write any markdown, including links and images." ]
+        , p [ class "text-sm text-gray-500" ] [ text "We see this as a long term feature to document database schema so it's reserved for pro accounts. ", bText "Consider subscribing", text " or ", a [ href ("mailto:" ++ Conf.constants.azimuttEmail), target "_blank", rel "noopener", class "link" ] [ text "reach at us" ], text " to contribute improving Azimutt." ]
+        ]
+        [ Link.primary3 color [ href (Backend.organizationBillingUrl project.organization.id Conf.features.memos.name), target "_blank", rel "noopener", css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ Icon.solid Icon.ThumbUp "mr-1", text "Upgrade plan" ]
+        , Button.white3 Tw.gray [ onClick close, css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text "Cancel" ]
         ]
 
 
@@ -160,46 +161,37 @@ colorsTweetResult r =
     r.errors |> Nel.fromList |> Maybe.map (Nel.join ", ") |> Maybe.toResultErr r.tweet
 
 
-colorsModalBody : Organization -> (ColorsModel -> ColorsMsg -> msg) -> ColorsModel -> msg -> HtmlId -> Html msg
-colorsModalBody organization update model close titleId =
+colorsModalBody : ProjectRef -> (ColorsModel -> ColorsMsg -> msg) -> ColorsModel -> msg -> HtmlId -> Html msg
+colorsModalBody project update model close titleId =
     let
         ( wrap, color, tweetInput ) =
             ( update model, Tw.orange, "change-color-tweet" )
     in
-    div [ class "max-w-2xl" ]
-        [ div [ css [ "px-6 pt-6", sm [ "flex items-start" ] ] ]
-            [ div [ css [ "mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full", Tw.bg_100 color, sm [ "mx-0 h-10 w-10" ] ] ]
-                [ Icon.outline Icon.ColorSwatch (Tw.text_600 color)
-                ]
-            , div [ css [ "mt-3 text-center", sm [ "mt-0 ml-4 text-left" ] ] ]
-                [ h3 [ id titleId, class "text-lg leading-6 font-medium text-gray-900" ] [ text "Change colors" ]
-                , div [ class "mt-3" ]
-                    [ p [ class "text-sm text-gray-500" ] [ bText "Oh! You found a Pro feature!" ]
-                    , p [ class "mt-2 text-sm text-gray-500" ] [ text "I'm glad you are exploring Azimutt. We want to make it the ultimate tool to understand and analyze your database, and will bring much more in the coming months." ]
-                    , p [ class "text-sm text-gray-500" ] [ text "This would need a lot of resources and having a small contribution from you would be awesome. Onboard in Azimutt community, it will ", bText "bring us much further together", text "." ]
-                    ]
-                , colorsTweetDivider wrap color
-                , (model.result |> Maybe.andThen Result.toMaybe)
-                    |> Maybe.map (\_ -> colorsTweetSuccess close)
-                    |> Maybe.withDefault
-                        (if model.tweetOpen then
-                            div []
-                                [ colorsTweetInput wrap organization.id tweetInput model.tweetUrl color
-                                , (model.result |> Maybe.andThen Result.toError)
-                                    |> Maybe.map (\err -> p [ id (tweetInput ++ "-description"), class "mt-2 h-10 text-sm text-red-600" ] [ text err ])
-                                    |> Maybe.withDefault (p [ id (tweetInput ++ "-description"), class "mt-2 h-10 text-sm text-gray-500" ] [ text "Your tweet has to be published within the last 10 minutes, mention ", extLink Conf.constants.azimuttTwitter [ class "link" ] [ text "@azimuttapp" ], text " and have a link to ", extLink Conf.constants.azimuttWebsite [ class "link" ] [ text "azimutt.app" ], text "." ])
-                                , colorsTweetInspiration color
-                                ]
+    showModalBody ( project, close, color )
+        Icon.ColorSwatch
+        ( titleId, "Change colors" )
+        [ p [ class "text-sm text-gray-500" ] [ bText "Oh! You found a Pro feature!" ]
+        , p [ class "mt-2 text-sm text-gray-500" ] [ text "I'm glad you are exploring Azimutt. We want to make it the ultimate tool to understand and analyze your database, and will bring much more in the coming months." ]
+        , p [ class "text-sm text-gray-500" ] [ text "This would need a lot of resources and having a small contribution from you would be awesome. Onboard in Azimutt community, it will ", bText "bring us much further together", text "." ]
+        , colorsTweetDivider wrap color
+        , (model.result |> Maybe.andThen Result.toMaybe)
+            |> Maybe.map (\_ -> colorsTweetSuccess close)
+            |> Maybe.withDefault
+                (if model.tweetOpen then
+                    div []
+                        [ colorsTweetInput wrap project.organization.id tweetInput model.tweetUrl color
+                        , (model.result |> Maybe.andThen Result.toError)
+                            |> Maybe.map (\err -> p [ id (tweetInput ++ "-description"), class "mt-2 h-10 text-sm text-red-600" ] [ text err ])
+                            |> Maybe.withDefault (p [ id (tweetInput ++ "-description"), class "mt-2 h-10 text-sm text-gray-500" ] [ text "Your tweet has to be published within the last 10 minutes, mention ", extLink Conf.constants.azimuttTwitter [ class "link" ] [ text "@azimuttapp" ], text " and have a link to ", extLink Conf.constants.azimuttWebsite [ class "link" ] [ text "azimutt.app" ], text "." ])
+                        , colorsTweetInspiration color
+                        ]
 
-                         else
-                            div [] []
-                        )
-                ]
-            ]
-        , div [ class "px-6 py-3 mt-6 flex items-center flex-row-reverse bg-gray-50 rounded-b-lg" ]
-            [ Link.primary3 color [ href (Backend.organizationBillingUrl organization.id Conf.features.tableColor.name), target "_blank", rel "noopener", css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ Icon.solid Icon.Fire "mr-1", text "Upgrade plan" ]
-            , Button.white3 Tw.gray [ onClick close, css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text "Cancel" ]
-            ]
+                 else
+                    div [] []
+                )
+        ]
+        [ Link.primary3 color [ href (Backend.organizationBillingUrl project.organization.id Conf.features.tableColor.name), target "_blank", rel "noopener", css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ Icon.solid Icon.Fire "mr-1", text "Upgrade plan" ]
+        , Button.white3 Tw.gray [ onClick close, css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text "Cancel" ]
         ]
 
 
@@ -270,87 +262,125 @@ colorsTweetSuccess close =
         ]
 
 
-privateLinkWarning : Organization -> Html msg
-privateLinkWarning organization =
+privateLinkWarning : ProjectRef -> Html msg
+privateLinkWarning project =
     let
         color : Color
         color =
             Tw.cyan
     in
-    Alert.withActions
-        { color = color
-        , icon = Icon.Exclamation
-        , title = "Private links are a pro feature!"
-        , actions = [ Link.secondary3 color [ href (Backend.organizationBillingUrl organization.id Conf.features.privateLinks.name), target "_blank", rel "noopener" ] [ Icon.outline Icon.UserGroup "mr-1", text "Join us!" ] ]
-        }
+    showWarning ( project, color )
+        "Private links are a pro feature!"
         [ p [] [ text "They hold a great power to easily share projects or embed them in documentation." ]
         , p [] [ text "And thus, we keep them fresh for users wise enough to use our pro plan 😉" ]
         ]
+        [ Link.secondary3 color [ href (Backend.organizationBillingUrl project.organization.id Conf.features.privateLinks.name), target "_blank", rel "noopener" ] [ Icon.outline Icon.UserGroup "mr-1", text "Join us!" ] ]
 
 
-sqlExportWarning : Organization -> Html msg
-sqlExportWarning organization =
+sqlExportWarning : ProjectRef -> Html msg
+sqlExportWarning project =
     let
         color : Color
         color =
             Tw.green
     in
-    Alert.withActions
-        { color = color
-        , icon = Icon.Exclamation
-        , title = "SQL export is a pro feature!"
-        , actions = [ Link.secondary3 color [ href (Backend.organizationBillingUrl organization.id Conf.features.sqlExport.name), target "_blank", rel "noopener" ] [ Icon.outline Icon.TrendingUp "mr-1", text "Unleash more power!" ] ]
-        }
+    showWarning ( project, color )
+        "SQL export is a pro feature!"
         [ p [] [ text "Getting a pro plan is the best support you could give to Azimutt, allowing us to invest even more to make it always better." ]
         , p [] [ text "It will unlock many features for you, check it out below. Or reach us if you have any question on ", span [ title "Azimutt" ] [ text "🧭" ] ]
         ]
+        [ Link.secondary3 color [ href (Backend.organizationBillingUrl project.organization.id Conf.features.sqlExport.name), target "_blank", rel "noopener" ] [ Icon.outline Icon.TrendingUp "mr-1", text "Unleash more power!" ] ]
 
 
-analysisWarning : Organization -> Html msg
-analysisWarning organization =
+analysisWarning : ProjectRef -> Html msg
+analysisWarning project =
     let
         color : Color
         color =
             Tw.fuchsia
     in
-    Alert.withActions
-        { color = color
-        , icon = Icon.Exclamation
-        , title = "Get full analysis with Pro plan!"
-        , actions =
-            [ Link.secondary3 color
-                [ href (Backend.organizationBillingUrl organization.id Conf.features.dbAnalysis.name), target "_blank", rel "noopener" ]
-                [ Icon.outline Icon.ShieldCheck "mr-1"
-                , text "Upgrade plan"
-                ]
-            ]
-        }
+    showWarning ( project, color )
+        "Get full analysis with Pro plan!"
         [ p [] [ text "Schema analysis is still an early feature but a very important one in Azimutt." ]
         , p [] [ text "It analyzes your schema to give you insights on possible improvements. In free mode you can only see limited results." ]
         , p [] [ text "Consider upgrading to access to the full analysis and support Azimutt expansion ❤️" ]
         ]
+        [ Link.secondary3 color
+            [ href (Backend.organizationBillingUrl project.organization.id Conf.features.dbAnalysis.name), target "_blank", rel "noopener" ]
+            [ Icon.outline Icon.ShieldCheck "mr-1"
+            , text "Upgrade plan"
+            ]
+        ]
 
 
-analysisResults : Organization -> List a -> (a -> Html msg) -> Html msg
-analysisResults organization items render =
-    if organization.plan.dbAnalysis || List.length items <= 5 then
+analysisResults : ProjectRef -> List a -> (a -> Html msg) -> Html msg
+analysisResults project items render =
+    if project.organization.plan.dbAnalysis || List.length items <= 5 then
         div [] (items |> List.map render)
 
     else
         let
             color : Color
             color =
-                Tw.fuchsia
+                if isDraft project then
+                    Tw.indigo
+
+                else
+                    Tw.fuchsia
         in
         div [ class "relative" ]
             ((items |> List.take 5 |> List.map render)
                 ++ [ div [ class "absolute inset-x-0 pt-32 bg-gradient-to-t from-white text-center text-sm text-gray-500 pointer-events-none", style "bottom" "-2px" ]
                         [ text "See more with "
-                        , a [ href (Backend.organizationBillingUrl organization.id (Conf.features.dbAnalysis.name ++ "_results")), target "_blank", rel "noopener", css [ Tw.text_500 color, "underline pointer-events-auto" ] ] [ text "upgraded plan" ]
+                        , a [ href (Backend.organizationBillingUrl project.organization.id (Conf.features.dbAnalysis.name ++ "_results")), target "_blank", rel "noopener", css [ Tw.text_500 color, "underline pointer-events-auto" ] ] [ text "upgraded plan" ]
                         , text "."
                         ]
                    ]
             )
+
+
+showModalBody : ( ProjectRef, msg, Color ) -> Icon -> ( HtmlId, String ) -> List (Html msg) -> List (Html msg) -> Html msg
+showModalBody ( project, close, color ) icon ( titleId, title ) content buttons =
+    if isDraft project then
+        draftProjectModalBody close titleId
+
+    else
+        modalBody color icon ( titleId, title ) content buttons
+
+
+modalBody : Color -> Icon -> ( HtmlId, String ) -> List (Html msg) -> List (Html msg) -> Html msg
+modalBody color icon ( titleId, title ) content buttons =
+    div [ class "max-w-2xl" ]
+        [ div [ css [ "px-6 pt-6", sm [ "flex items-start" ] ] ]
+            [ div [ css [ Tw.bg_100 color, "mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full", sm [ "mx-0 h-10 w-10" ] ] ]
+                [ Icon.outline icon (Tw.text_600 color)
+                ]
+            , div [ css [ "mt-3 text-center", sm [ "mt-0 ml-4 text-left" ] ] ]
+                [ h3 [ id titleId, class "text-lg leading-6 font-medium text-gray-900" ] [ text title ]
+                , div [ class "mt-3" ] content
+                ]
+            ]
+        , div [ class "px-6 py-3 mt-6 flex items-center flex-row-reverse bg-gray-50 rounded-b-lg" ] buttons
+        ]
+
+
+showWarning : ( ProjectRef, Color ) -> String -> List (Html msg) -> List (Html msg) -> Html msg
+showWarning ( project, color ) title content buttons =
+    if isDraft project then
+        draftProjectWarning
+
+    else
+        warning color title content buttons
+
+
+warning : Color -> String -> List (Html msg) -> List (Html msg) -> Html msg
+warning color title content buttons =
+    Alert.withActions { color = color, icon = Icon.Exclamation, title = title, actions = buttons } content
+
+
+isDraft : ProjectRef -> Bool
+isDraft project =
+    project.id == ProjectId.zero
 
 
 
@@ -381,19 +411,26 @@ updateDocState msg =
             Actions.updateState (\s -> { s | proPlanDocState = s.proPlanDocState |> setColors (colorsUpdate docColorsUpdate message model |> Tuple.first) })
 
 
+projectRef : ProjectRef
+projectRef =
+    ProjectRef.one
+
+
 doc : Chapter (SharedDocState x)
 doc =
     Chapter.chapter "ProPlan"
         |> Chapter.renderStatefulComponentList
-            [ ( "layoutsWarning", \_ -> layoutsWarning Organization.zero )
-            , ( "layoutsModalBody", \_ -> layoutsModalBody Organization.zero docClose docTitleId )
-            , ( "memosModalBody", \_ -> memosModalBody Organization.zero docClose docTitleId )
-            , ( "colorsModalBody", \s -> colorsModalBody Organization.zero docColorsUpdate s.proPlanDocState.colors docClose docTitleId )
-            , ( "colorsModalBody success", \s -> colorsModalBody Organization.zero docColorsUpdate (s.proPlanDocState.colors |> setResult (Just (Ok "Tweet.."))) docClose docTitleId )
-            , ( "privateLinkWarning", \_ -> privateLinkWarning Organization.zero )
-            , ( "sqlExportWarning", \_ -> sqlExportWarning Organization.zero )
-            , ( "analysisWarning", \_ -> analysisWarning Organization.zero )
-            , ( "analysisResults", \_ -> analysisResults Organization.zero [ 1, 2, 3, 4, 5, 6 ] (\i -> p [] [ text ("Item " ++ String.fromInt i) ]) )
+            [ ( "draftProjectModalBody", \_ -> draftProjectModalBody docClose docTitleId )
+            , ( "draftProjectWarning", \_ -> draftProjectWarning )
+            , ( "layoutsWarning", \_ -> layoutsWarning projectRef )
+            , ( "layoutsModalBody", \_ -> layoutsModalBody projectRef docClose docTitleId )
+            , ( "memosModalBody", \_ -> memosModalBody projectRef docClose docTitleId )
+            , ( "colorsModalBody", \s -> colorsModalBody projectRef docColorsUpdate s.proPlanDocState.colors docClose docTitleId )
+            , ( "colorsModalBody success", \s -> colorsModalBody projectRef docColorsUpdate (s.proPlanDocState.colors |> setResult (Just (Ok "Tweet.."))) docClose docTitleId )
+            , ( "privateLinkWarning", \_ -> privateLinkWarning projectRef )
+            , ( "sqlExportWarning", \_ -> sqlExportWarning projectRef )
+            , ( "analysisWarning", \_ -> analysisWarning projectRef )
+            , ( "analysisResults", \_ -> analysisResults projectRef [ 1, 2, 3, 4, 5, 6 ] (\i -> p [] [ text ("Item " ++ String.fromInt i) ]) )
             ]
 
 
