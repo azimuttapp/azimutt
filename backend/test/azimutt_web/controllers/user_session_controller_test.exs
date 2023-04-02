@@ -2,9 +2,19 @@ defmodule AzimuttWeb.UserSessionControllerTest do
   use AzimuttWeb.ConnCase, async: true
   import Azimutt.AccountsFixtures
 
+  setup do
+    Application.put_env(:azimutt, :auth_password, true)
+    Application.put_env(:azimutt, :auth_github, true)
+
+    on_exit(fn ->
+      Application.delete_env(:azimutt, :auth_password)
+      Application.delete_env(:azimutt, :auth_github)
+    end)
+  end
+
   test "GET /login", %{conn: conn} do
     conn = get(conn, Routes.user_session_path(conn, :new))
-    assert html_response(conn, 200) =~ "Sign In with GitHub"
+    assert html_response(conn, 200) =~ "Forgot your password?"
   end
 
   describe "DELETE /logout" do

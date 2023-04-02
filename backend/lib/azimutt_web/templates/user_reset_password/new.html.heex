@@ -1,15 +1,18 @@
-<h1>Forgot your password?</h1>
-
-<.form let={f} for={:user} action={Routes.user_reset_password_path(@conn, :create)}>
-  <%= label f, :email %>
-  <%= email_input f, :email, required: true %>
-
-  <div>
-    <%= submit "Send instructions to reset password" %>
-  </div>
-</.form>
-
-<p>
-  <%= link "Register", to: Routes.user_registration_path(@conn, :new) %> |
-  <%= link "Log in", to: Routes.user_session_path(@conn, :new) %>
-</p>
+<div class="flex min-h-full">
+    <div class="flex flex-1 flex-col justify-center py-12 px-4 sm:px-6 lg:flex-none lg:px-20 xl:px-24">
+        <div class="mx-auto w-full max-w-sm lg:w-96">
+            <h2 class="mt-6 text-3xl font-bold tracking-tight text-gray-900">Forgot your password?</h2>
+            <div class="mt-8">
+                <.form let={f} for={:user} action={Routes.user_reset_password_path(@conn, :create)}>
+                    <%= render AzimuttWeb.UserSessionView, "_input_text.html", f: f, field: :email, type: :email %>
+                    <%= render AzimuttWeb.UserSessionView, "_submit_button.html", text: "Send instructions to reset password" %>
+                </.form>
+            </div>
+            <div class="mt-2 px-2 text-center text-gray-500">
+                Go back to the
+                <%= link "Login page", to: Routes.user_session_path(@conn, :new), class: "font-bold text-gray-800" %>
+            </div>
+        </div>
+    </div>
+    <%= render AzimuttWeb.UserSessionView, "_right_section.html" %>
+</div>

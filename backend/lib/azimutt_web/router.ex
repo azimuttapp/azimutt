@@ -41,6 +41,11 @@ defmodule AzimuttWeb.Router do
     plug :put_root_layout, {AzimuttWeb.LayoutView, :admin_dashboard}
   end
 
+  # FIXME: remove pipeline?
+  pipeline :register_and_login_layout do
+    plug :put_root_layout, {AzimuttWeb.LayoutView, :login}
+  end
+
   # public routes
   scope "/", AzimuttWeb do
     pipe_through :browser
@@ -58,16 +63,12 @@ defmodule AzimuttWeb.Router do
     get "/gallery/:slug", GalleryController, :show
     get "/logout", UserSessionController, :delete
     delete "/logout", UserSessionController, :delete
-    get "/users/confirm", UserConfirmationController, :new
-    post "/users/confirm", UserConfirmationController, :create
-    get "/users/confirm/:token", UserConfirmationController, :edit
-    post "/users/confirm/:token", UserConfirmationController, :update
     get "/sitemap.xml", SitemapController, :index
   end
 
   # auth routes
   scope "/", AzimuttWeb do
-    pipe_through [:browser, :redirect_if_user_is_authed]
+    pipe_through [:browser, :redirect_if_user_is_authed, :register_and_login_layout]
     get "/auth/:provider", UserOauthController, :request
     get "/auth/:provider/callback", UserOauthController, :callback
     get "/register", UserRegistrationController, :new
@@ -85,6 +86,9 @@ defmodule AzimuttWeb.Router do
     pipe_through [:browser, :require_authed_user, :account_dashboard_layout]
     get "/home", UserDashboardController, :index
     get "/login/redirect", UserSessionController, :redirect_to
+    get "/email-confirm", UserConfirmationController, :new
+    post "/email-confirm", UserConfirmationController, :create
+    get "/email-confirm/:token", UserConfirmationController, :confirm
 
     resources "/organizations", OrganizationController, except: [:index] do
       get "/billing", OrganizationBillingController, :index, as: :billing

@@ -11,9 +11,7 @@ defmodule AzimuttWeb.UserResetPasswordController do
 
   def create(conn, %{"user" => %{"email" => email}}) do
     Accounts.get_user_by_email(email)
-    |> Result.tap(fn user ->
-      Accounts.deliver_user_reset_password_instructions(user, &Routes.user_reset_password_url(conn, :edit, &1))
-    end)
+    |> Result.tap(fn user -> Accounts.send_password_reset(user, &Routes.user_reset_password_url(conn, :edit, &1)) end)
 
     conn
     |> put_flash(
