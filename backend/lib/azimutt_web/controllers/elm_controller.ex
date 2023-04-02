@@ -25,7 +25,7 @@ defmodule AzimuttWeb.ElmController do
     now = DateTime.utc_now()
     current_user = conn.assigns.current_user
 
-    if !current_user || current_user.confirmed_at do
+    if !current_user || current_user.confirmed_at || !Azimutt.config(:require_email_confirmation) do
       if project_id |> String.length() == 36 do
         if project_id == Uuid.zero() do
           conn |> load_elm

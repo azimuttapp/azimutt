@@ -1,3 +1,4 @@
+# Why have this in `azimutt_web/controllers`???
 defmodule AzimuttWeb.UserAuth do
   @moduledoc "base auth module generate by `mix phx.gen.auth`"
   import Plug.Conn
@@ -42,7 +43,7 @@ defmodule AzimuttWeb.UserAuth do
   def login_user_and_redirect(conn, user, method, params \\ %{}) do
     conn
     |> login_user(user, method, params)
-    |> after_login_redirect()
+    |> redirect(to: get_session(conn, :user_return_to) || Routes.user_dashboard_path(conn, :index))
   end
 
   def login_user(conn, user, method, params \\ %{}) do
@@ -55,11 +56,6 @@ defmodule AzimuttWeb.UserAuth do
     |> put_session(:live_socket_id, "users_sessions:#{Base.url_encode64(token)}")
     |> delete_resp_cookie(@attribution_cookie)
     |> maybe_write_remember_me_cookie(token, params)
-  end
-
-  def after_login_redirect(conn) do
-    user_return_to = get_session(conn, :user_return_to)
-    conn |> redirect(to: user_return_to || signed_in_path(conn))
   end
 
   defp maybe_write_remember_me_cookie(conn, token, %{"remember_me" => "true"}) do
@@ -141,7 +137,7 @@ defmodule AzimuttWeb.UserAuth do
   def redirect_if_user_is_authed(conn, _opts) do
     if conn.assigns[:current_user] do
       conn
-      |> redirect(to: signed_in_path(conn))
+      |> redirect(to: Routes.user_dashboard_path(conn, :index))
       |> halt()
     else
       conn
@@ -150,7 +146,8 @@ defmodule AzimuttWeb.UserAuth do
 
   def require_authed_user(conn, _opts) do
     if conn.assigns[:current_user] do
-      if conn.assigns[:current_user].confirmed_at || conn.request_path |> String.starts_with?(Routes.user_confirmation_path(conn, :new)) do
+      if conn.assigns[:current_user].confirmed_at || !Azimutt.config(:require_email_confirmation) ||
+           conn.request_path |> String.starts_with?(Routes.user_confirmation_path(conn, :new)) do
         conn
       else
         conn |> redirect(to: Routes.user_confirmation_path(conn, :new)) |> halt()
@@ -288,11 +285,6 @@ defmodule AzimuttWeb.UserAuth do
     |> halt()
   end
 
-  defp maybe_store_return_to(%{method: "GET"} = conn) do
-    put_session(conn, :user_return_to, current_path(conn))
-  end
-
+  defp maybe_store_return_to(%{method: "GET"} = conn), do: put_session(conn, :user_return_to, current_path(conn))
   defp maybe_store_return_to(conn), do: conn
-
-  defp signed_in_path(conn), do: Routes.user_dashboard_path(conn, :index)
 end

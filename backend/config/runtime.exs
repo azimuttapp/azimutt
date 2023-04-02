@@ -132,7 +132,9 @@ end
 
 config :swoosh, :api_client, Swoosh.ApiClient.Hackney
 
-# FIXME: add env variable to require email validation or not
+config :azimutt,
+  require_email_confirmation: System.get_env("REQUIRE_EMAIL_CONFIRMATION") == "true"
+
 if System.get_env("AUTH_PASSWORD") == "true" do
   IO.puts("Setup Password auth")
 
