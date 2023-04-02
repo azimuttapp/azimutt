@@ -193,7 +193,6 @@ if System.get_env("AUTH_SAML") == "true" do
   config :azimutt,
     auth_saml: true
 
-  # FIXME
   raise "AUTH_SAML not implemented"
 end
 
