@@ -41,6 +41,7 @@ defmodule AzimuttWeb.Router do
     plug :put_root_layout, {AzimuttWeb.LayoutView, :admin_dashboard}
   end
 
+  # FIXME: remove pipeline?
   pipeline :register_and_login_layout do
     plug :put_root_layout, {AzimuttWeb.LayoutView, :login}
   end

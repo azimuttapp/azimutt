@@ -184,7 +184,6 @@ defmodule Azimutt.AccountsTest do
     @tag :skip
     test "sends token through notification", %{user: user} do
       token = extract_user_token(fn url -> Accounts.send_email_update(user, "current@example.com", url) end)
-
       {:ok, token} = Base.url_decode64(token, padding: false)
       assert user_token = Repo.get_by(UserToken, token: :crypto.hash(:sha256, token))
       assert user_token.user_id == user.id
@@ -198,7 +197,6 @@ defmodule Azimutt.AccountsTest do
       user = user_fixture()
       email = unique_user_email()
       token = extract_user_token(fn url -> Accounts.send_email_update(%{user | email: email}, user.email, url) end)
-
       %{user: user, token: token, email: email}
     end
 
@@ -384,12 +382,11 @@ defmodule Azimutt.AccountsTest do
     @tag :skip
     test "sends token through notification", %{user: user} do
       token = extract_user_token(fn url -> Accounts.send_email_confirmation(user, url) end)
-
       {:ok, token} = Base.url_decode64(token, padding: false)
       assert user_token = Repo.get_by(UserToken, token: :crypto.hash(:sha256, token))
       assert user_token.user_id == user.id
       assert user_token.sent_to == user.email
-      assert user_token.context == "confirm"
+      assert user_token.context == "confirm_email"
     end
   end
 
@@ -397,7 +394,6 @@ defmodule Azimutt.AccountsTest do
     setup do
       user = user_fixture()
       token = extract_user_token(fn url -> Accounts.send_email_confirmation(user, url) end)
-
       %{user: user, token: token}
     end
 
@@ -437,7 +433,6 @@ defmodule Azimutt.AccountsTest do
     @tag :skip
     test "sends token through notification", %{user: user} do
       token = extract_user_token(fn url -> Accounts.send_password_reset(user, url) end)
-
       {:ok, token} = Base.url_decode64(token, padding: false)
       assert user_token = Repo.get_by(UserToken, token: :crypto.hash(:sha256, token))
       assert user_token.user_id == user.id
@@ -450,7 +445,6 @@ defmodule Azimutt.AccountsTest do
     setup do
       user = user_fixture()
       token = extract_user_token(fn url -> Accounts.send_password_reset(user, url) end)
-
       %{user: user, token: token}
     end
 

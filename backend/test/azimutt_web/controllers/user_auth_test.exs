@@ -16,7 +16,7 @@ defmodule AzimuttWeb.UserAuthTest do
     %{user: user_fixture(), conn: conn}
   end
 
-  describe "log_in_user/3" do
+  describe "login_user_and_redirect/3" do
     @tag :skip
     test "stores the user token in the session", %{conn: conn, user: user} do
       conn = UserAuth.login_user_and_redirect(conn, user, "test")

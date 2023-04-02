@@ -12,7 +12,7 @@
                             <%= render "_input_text.html", f: f, field: :email, type: :email %>
                             <%= render "_input_text.html", f: f, field: :password, type: :password %>
                             <div class="mt-3">
-                                <%= label f, :remember_me,  "Remember me", class: "text-gray-600" %>
+                                <%= label f, :remember_me, "Remember me", class: "text-gray-600" %>
                                 <%= checkbox f, :remember_me, class: "ml-2 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600" %>
                             </div>
                             <%= render AzimuttWeb.UserSessionView, "_submit_button.html", text: "Login" %>

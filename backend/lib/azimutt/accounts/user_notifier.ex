@@ -4,7 +4,7 @@ defmodule Azimutt.Accounts.UserNotifier do
   alias Azimutt.Mailer
 
   def send_email_confirmation(user, url) do
-    deliver(user.email, "Confirmation instructions", """
+    deliver(user.email, "Please confirm your email", """
     Hi #{user.name},
 
     Thank you for signing up to Azimutt.
@@ -19,8 +19,9 @@ defmodule Azimutt.Accounts.UserNotifier do
     """)
   end
 
+  # FIXME: check this
   def send_password_reset(user, url) do
-    deliver(user.email, "Reset password instructions", """
+    deliver(user.email, "Password reset request", """
     Hi #{user.email},
 
     You can reset your password by visiting the URL below:
@@ -34,11 +35,12 @@ defmodule Azimutt.Accounts.UserNotifier do
     """)
   end
 
-  def send_email_update(user, previous_email, url) do
-    deliver(previous_email, "Update email instructions", """
-    Hi #{user.name},
+  # FIXME: make it work
+  def send_email_update(user, url) do
+    deliver(user.email, "Email update request", """
+    Hi #{user.email},
 
-    Your email has been changed to #{user.email} accept this change by visiting the URL below:
+    You can change your email by visiting the URL below:
 
     #{url}
 

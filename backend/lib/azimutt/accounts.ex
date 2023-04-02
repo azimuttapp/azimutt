@@ -152,7 +152,7 @@ defmodule Azimutt.Accounts do
     {encoded_token, user_token} = UserToken.build_email_token(user, "change:#{current_email}")
 
     Repo.insert!(user_token)
-    UserNotifier.send_email_update(user, current_email, url_fun.(encoded_token))
+    UserNotifier.send_email_update(user, url_fun.(encoded_token))
   end
 
   def change_user_password(user, attrs \\ %{}) do

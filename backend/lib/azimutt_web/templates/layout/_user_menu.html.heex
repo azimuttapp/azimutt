@@ -61,7 +61,7 @@
       <%= link "Log out", method: :delete, to: Routes.user_session_path(@conn, :delete), class: "#{if assigns[:dark], do: "text-white", else: "text-black"} relative cursor-pointer inline-flex items-center space-x-2 text-center font-regular transition ease-out duration-200 rounded outline-none transition-all outline-0 focus-visible:outline-4 focus-visible:outline-offset-1 text-scale-1200 bg-scale-100 hover:bg-scale-300 bordershadow-scale-600 hover:bordershadow-scale-700 focus-visible:outline-brand-600 shadow-sm text-sm px-4 py-2" %>
     <% else %>
       <div class="lg:flex lg:flex-1 lg:justify-end">
-        <a href="/login" class="text-sm font-semibold leading-6 text-gray-900">Log in <span aria-hidden="true">→</span></a>
+        <a href={Routes.user_session_path(@conn, :new)} class="text-sm font-semibold leading-6 text-gray-900">Log in <span aria-hidden="true">→</span></a>
       </div>
     <% end %>
   </:right_menu>

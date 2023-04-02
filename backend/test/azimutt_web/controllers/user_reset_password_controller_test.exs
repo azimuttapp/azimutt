@@ -1,6 +1,5 @@
 defmodule AzimuttWeb.UserResetPasswordControllerTest do
   use AzimuttWeb.ConnCase, async: true
-
   alias Azimutt.Accounts
   alias Azimutt.Repo
   import Azimutt.AccountsFixtures
@@ -48,7 +47,6 @@ defmodule AzimuttWeb.UserResetPasswordControllerTest do
   describe "GET /users/reset_password/:token" do
     setup %{user: user} do
       token = extract_user_token(fn url -> Accounts.send_password_reset(user, url) end)
-
       %{token: token}
     end
 
@@ -69,7 +67,6 @@ defmodule AzimuttWeb.UserResetPasswordControllerTest do
   describe "PUT /users/reset_password/:token" do
     setup %{user: user} do
       token = extract_user_token(fn url -> Accounts.send_password_reset(user, url) end)
-
       %{token: token}
     end
 

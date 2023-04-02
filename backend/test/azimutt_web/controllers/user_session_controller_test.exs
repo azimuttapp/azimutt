@@ -4,9 +4,11 @@ defmodule AzimuttWeb.UserSessionControllerTest do
 
   setup do
     Application.put_env(:azimutt, :auth_password, true)
+    Application.put_env(:azimutt, :auth_github, true)
 
     on_exit(fn ->
       Application.delete_env(:azimutt, :auth_password)
+      Application.delete_env(:azimutt, :auth_github)
     end)
   end
 

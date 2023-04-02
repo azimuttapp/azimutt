@@ -45,7 +45,6 @@ defmodule AzimuttWeb.UserAuth do
     |> after_login_redirect()
   end
 
-  # no redirect
   def login_user(conn, user, method, params \\ %{}) do
     Tracking.user_login(user, method)
     token = Accounts.generate_user_session_token(user)

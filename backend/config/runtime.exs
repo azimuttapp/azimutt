@@ -142,6 +142,7 @@ end
 
 config :swoosh, :api_client, Swoosh.ApiClient.Hackney
 
+# FIXME: add env variable to require email validation or not
 if System.get_env("AUTH_PASSWORD") == "true" do
   IO.puts("Setup Password auth")
 

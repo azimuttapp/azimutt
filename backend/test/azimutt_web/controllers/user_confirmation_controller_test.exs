@@ -29,7 +29,7 @@ defmodule AzimuttWeb.UserConfirmationControllerTest do
 
       assert redirected_to(conn) == "/"
       assert get_flash(conn, :info) =~ "If your email is in our system"
-      assert Repo.get_by!(Accounts.UserToken, user_id: user.id).context == "confirm"
+      assert Repo.get_by!(Accounts.UserToken, user_id: user.id).context == "confirm_email"
     end
 
     @tag :skip
