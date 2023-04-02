@@ -390,7 +390,7 @@ defmodule Azimutt.AccountsTest do
     end
   end
 
-  describe "confirm_user/3" do
+  describe "confirm_user/1" do
     setup do
       user = user_fixture()
       token = extract_user_token(fn url -> Accounts.send_email_confirmation(user, url) end)
