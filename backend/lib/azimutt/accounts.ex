@@ -159,11 +159,11 @@ defmodule Azimutt.Accounts do
     User.password_changeset(user, attrs, hash_password: false)
   end
 
-  def update_user_password(%User{} = user, password, attrs) do
+  def update_user_password(%User{} = user, current_password, attrs) do
     changeset =
       user
       |> User.password_changeset(attrs)
-      |> User.validate_current_password(password)
+      |> User.validate_current_password(current_password)
 
     Ecto.Multi.new()
     |> Ecto.Multi.update(:user, changeset)

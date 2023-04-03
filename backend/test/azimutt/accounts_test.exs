@@ -239,13 +239,11 @@ defmodule Azimutt.AccountsTest do
   end
 
   describe "change_user_password/2" do
-    @tag :skip
     test "returns a user changeset" do
       assert %Ecto.Changeset{} = changeset = Accounts.change_user_password(%User{})
       assert changeset.required == [:password]
     end
 
-    @tag :skip
     test "allows fields to be set" do
       changeset =
         Accounts.change_user_password(%User{}, %{
@@ -263,7 +261,6 @@ defmodule Azimutt.AccountsTest do
       %{user: user_fixture()}
     end
 
-    @tag :skip
     test "validates password", %{user: user} do
       {:error, changeset} =
         Accounts.update_user_password(user, valid_user_password(), %{
@@ -277,7 +274,6 @@ defmodule Azimutt.AccountsTest do
              } = errors_on(changeset)
     end
 
-    @tag :skip
     test "validates maximum values for password for security", %{user: user} do
       too_long = String.duplicate("db", 100)
 
@@ -286,14 +282,12 @@ defmodule Azimutt.AccountsTest do
       assert "should be at most 72 character(s)" in errors_on(changeset).password
     end
 
-    @tag :skip
     test "validates current password", %{user: user} do
       {:error, changeset} = Accounts.update_user_password(user, "invalid", %{password: valid_user_password()})
 
       assert %{current_password: ["is not valid"]} = errors_on(changeset)
     end
 
-    @tag :skip
     test "updates the password", %{user: user} do
       {:ok, user} =
         Accounts.update_user_password(user, valid_user_password(), %{
@@ -304,7 +298,6 @@ defmodule Azimutt.AccountsTest do
       assert {:ok, _} = Accounts.get_user_by_email_and_password(user.email, "new valid password")
     end
 
-    @tag :skip
     test "deletes all tokens for the given user", %{user: user} do
       _ = Accounts.generate_user_session_token(user)
 

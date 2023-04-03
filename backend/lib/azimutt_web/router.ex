@@ -100,7 +100,7 @@ defmodule AzimuttWeb.Router do
       get "/", UserSettingsController, :show
       put "/account", UserSettingsController, :update_account
       post "/email", UserSettingsController, :update_email
-      post "/password", UserSettingsController, :update_password
+      put "/password", UserSettingsController, :update_password
     end
 
     resources "/organizations", OrganizationController, except: [:index] do

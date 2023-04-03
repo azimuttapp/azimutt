@@ -70,25 +70,25 @@
 
 <!-- Password -->
 <section aria-labelledby="password-heading">
-    <.form let={f} for={:user} action={Routes.user_settings_path(@conn, :update_password)}>
+    <.form let={f} for={@password_changeset} action={Routes.user_settings_path(@conn, :update_password)}>
         <div class="shadow sm:overflow-hidden sm:rounded-md">
             <div class="bg-white px-4 py-6 sm:p-6">
                 <h2 id="password-heading" class="text-lg font-medium leading-6 text-gray-900">Change your password</h2>
                 <div class="mt-6 grid gap-6">
                     <div>
-                        <%= label f, :password, "Current password", class: "block text-sm font-medium leading-6 text-gray-900" %>
-                        <%= text_input f, :password, type: :password, placeholder: "You know it, don't you?", required: true, class: "mt-2 block w-full rounded-md border-0 px-3 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-gray-900 sm:text-sm sm:leading-6" %>
+                        <%= label f, :current_password, "Current password", class: "block text-sm font-medium leading-6 text-gray-900" %>
+                        <%= text_input f, :current_password, type: :password, placeholder: "You know it, don't you?", required: true, class: "mt-2 block w-full rounded-md border-0 px-3 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-gray-900 sm:text-sm sm:leading-6" %>
+                        <%= error_tag f, :current_password %>
+                    </div>
+                    <div>
+                        <%= label f, :password, "New password", class: "block text-sm font-medium leading-6 text-gray-900" %>
+                        <%= text_input f, :password, type: :password, placeholder: "Choose a strong, 12+ chars password.", required: true, class: "mt-2 block w-full rounded-md border-0 px-3 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-gray-900 sm:text-sm sm:leading-6" %>
                         <%= error_tag f, :password %>
                     </div>
                     <div>
-                        <%= label f, :password_new, "New password", class: "block text-sm font-medium leading-6 text-gray-900" %>
-                        <%= text_input f, :password_new, type: :password, placeholder: "Choose a strong, 12+ chars password.", required: true, class: "mt-2 block w-full rounded-md border-0 px-3 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-gray-900 sm:text-sm sm:leading-6" %>
-                        <%= error_tag f, :password_new %>
-                    </div>
-                    <div>
-                        <%= label f, :password_new2, "New password again", class: "block text-sm font-medium leading-6 text-gray-900" %>
-                        <%= text_input f, :password_new2, type: :password, placeholder: "Make sure you haven't made a typo...", required: true, class: "mt-2 block w-full rounded-md border-0 px-3 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-gray-900 sm:text-sm sm:leading-6" %>
-                        <%= error_tag f, :password_new2 %>
+                        <%= label f, :password_confirmation, "New password again", class: "block text-sm font-medium leading-6 text-gray-900" %>
+                        <%= text_input f, :password_confirmation, type: :password, placeholder: "Make sure you haven't made a typo...", required: true, class: "mt-2 block w-full rounded-md border-0 px-3 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-gray-900 sm:text-sm sm:leading-6" %>
+                        <%= error_tag f, :password_confirmation %>
                     </div>
                 </div>
             </div>
