@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth h-full">
+    <%= render("_head.html", conn: @conn) %>
+    <body class="font-sans antialiased bg-gray-100 h-full">
+        <div class="relative min-h-full flex flex-col">
+            <%= render "_account_user_menu.html", conn: @conn, current_user: @current_user %>
+            <main class="mx-auto max-w-7xl pb-10 lg:px-8 lg:py-12">
+                <div class="lg:grid lg:grid-cols-12 lg:gap-x-5">
+                    <%= render "_settings_menu.html", conn: @conn %>
+                    <div class="space-y-6 sm:px-6 lg:col-span-9 lg:px-0">
+                        <%= render "_flash.html", conn: @conn %>
+                        <%= @inner_content %>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </body>
+</html>

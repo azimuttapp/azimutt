@@ -1,0 +1,17 @@
+<aside class="px-2 py-6 sm:px-6 lg:col-span-3 lg:px-0 lg:py-0">
+    <nav class="space-y-1">
+        <%= for {label, icon, url} <- [
+            {"Account", "user-circle", Routes.user_settings_path(@conn, :show)},
+            # {"Account", "cog", "#"},
+            # {"Password", "key", "#"},
+            # {"Notifications", "bell", "#"},
+            # {"Plan & Billing", "credit-card", "#"},
+            # {"Integrations", "squares-plus", "#"}
+        ] do %>
+            <a href={url} class={"#{if url == @conn.request_path, do: "text-indigo-600 bg-gray-50 hover:bg-white", else: "text-gray-900 hover:bg-gray-50 hover:text-gray-900"} group flex items-center rounded-md px-3 py-2 text-sm font-medium"}>
+                <Icon.draw name={icon} kind="outline" class={"#{if url == @conn.request_path, do: "text-indigo-500", else: "text-gray-400 group-hover:text-gray-500"} -ml-1 mr-3 flex-shrink-0"} />
+                <span class="truncate"><%= label %></span>
+            </a>
+        <% end %>
+    </nav>
+</aside>

@@ -37,6 +37,11 @@ defmodule AzimuttWeb.Router do
     plug :put_root_layout, {AzimuttWeb.LayoutView, :account_dashboard}
   end
 
+  pipeline :account_settings_layout do
+    plug :put_root_layout, {AzimuttWeb.LayoutView, :account_settings}
+    plug :put_layout, {AzimuttWeb.LayoutView, :empty}
+  end
+
   pipeline :admin_dashboard_layout do
     plug :put_root_layout, {AzimuttWeb.LayoutView, :admin_dashboard}
   end
@@ -90,6 +95,14 @@ defmodule AzimuttWeb.Router do
     post "/email-confirm", UserConfirmationController, :create
     get "/email-confirm/:token", UserConfirmationController, :confirm
 
+    scope "/settings" do
+      pipe_through [:account_settings_layout]
+      get "/", UserSettingsController, :show
+      post "/account", UserSettingsController, :update_account
+      post "/email", UserSettingsController, :update_email
+      post "/password", UserSettingsController, :update_password
+    end
+
     resources "/organizations", OrganizationController, except: [:index] do
       get "/billing", OrganizationBillingController, :index, as: :billing
       post "/billing/new", OrganizationBillingController, :new, as: :billing
@@ -132,7 +145,6 @@ defmodule AzimuttWeb.Router do
     resources "/organizations", Admin.OrganizationController, only: [:index, :show]
     resources "/projects", Admin.ProjectController, only: [:index, :show]
     resources "/events", Admin.EventController, only: [:index, :show]
-    resources "/email", Admin.EmailController, only: [:index, :create]
   end
 
   scope "/api/v1/swagger" do
