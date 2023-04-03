@@ -273,6 +273,17 @@ defmodule Azimutt.Utils.Result do
   def filter_not({:error, _err} = res, _p, _default_err), do: res
 
   @doc """
+  Transform a Result in a value, either if it's success or error
+  ## Examples
+      iex> {:ok, 1} |> Result.fold(fn e -> e <> "!" end, fn x -> inspect(x) end)
+      "1"
+      iex> {:error, "oh"} |> Result.fold(fn e -> e <> "!" end, fn x -> inspect(x) end)
+      "oh!"
+  """
+  def fold({:ok, val}, _e, f), do: f.(val)
+  def fold({:error, err}, e, _f), do: e.(err)
+
+  @doc """
   Check the value inside the Result with a predicate, always return false on errors
   ## Examples
       iex> {:ok, 1} |> Result.exists(fn x -> x == 1 end)

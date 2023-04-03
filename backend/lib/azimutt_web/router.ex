@@ -98,7 +98,7 @@ defmodule AzimuttWeb.Router do
     scope "/settings" do
       pipe_through [:account_settings_layout]
       get "/", UserSettingsController, :show
-      post "/account", UserSettingsController, :update_account
+      put "/account", UserSettingsController, :update_account
       post "/email", UserSettingsController, :update_email
       post "/password", UserSettingsController, :update_password
     end

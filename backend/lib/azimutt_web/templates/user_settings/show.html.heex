@@ -1,6 +1,6 @@
 <!-- General infos -->
 <section aria-labelledby="account-heading">
-    <.form let={f} for={:user} action={Routes.user_settings_path(@conn, :update_account)}>
+    <.form let={f} for={@infos_changeset} action={Routes.user_settings_path(@conn, :update_account)}>
         <div class="shadow sm:overflow-hidden sm:rounded-md">
             <div class="bg-white px-4 py-6 sm:p-6">
                 <h2 id="account-heading" class="text-lg font-medium leading-6 text-gray-900">Account infos</h2>
@@ -11,27 +11,27 @@
                 <div class="mt-6 grid grid-cols-4 gap-6">
                     <div class="col-span-4 sm:col-span-2">
                         <%= label f, :name, class: "block text-sm font-medium leading-6 text-gray-900" %>
-                        <%= text_input f, :name, value: @user.name, required: true, class: "mt-2 block w-full rounded-md border-0 px-3 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-gray-900 sm:text-sm sm:leading-6" %>
+                        <%= text_input f, :name, placeholder: "John Doe", required: true, class: "mt-2 block w-full rounded-md border-0 px-3 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-gray-900 sm:text-sm sm:leading-6" %>
                         <%= error_tag f, :name %>
                     </div>
                     <div class="col-span-4 sm:col-span-2">
                         <%= label f, :avatar, class: "block text-sm font-medium leading-6 text-gray-900" %>
-                        <%= text_input f, :avatar, value: @user.avatar, required: true, class: "mt-2 block w-full rounded-md border-0 px-3 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-gray-900 sm:text-sm sm:leading-6" %>
+                        <%= text_input f, :avatar, placeholder: "Image url, ex: https://...", required: true, class: "mt-2 block w-full rounded-md border-0 px-3 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-gray-900 sm:text-sm sm:leading-6" %>
                         <%= error_tag f, :avatar %>
                     </div>
                     <div class="col-span-4 sm:col-span-2">
                         <%= label f, :company, class: "block text-sm font-medium leading-6 text-gray-900" %>
-                        <%= text_input f, :company, value: @user.company, required: true, class: "mt-2 block w-full rounded-md border-0 px-3 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-gray-900 sm:text-sm sm:leading-6" %>
+                        <%= text_input f, :company, placeholder: "Azimutt", class: "mt-2 block w-full rounded-md border-0 px-3 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-gray-900 sm:text-sm sm:leading-6" %>
                         <%= error_tag f, :company %>
                     </div>
                     <div class="col-span-4 sm:col-span-2">
                         <%= label f, :location, class: "block text-sm font-medium leading-6 text-gray-900" %>
-                        <%= text_input f, :location, value: @user.location, required: true, class: "mt-2 block w-full rounded-md border-0 px-3 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-gray-900 sm:text-sm sm:leading-6" %>
+                        <%= text_input f, :location, placeholder: "Paris, France", class: "mt-2 block w-full rounded-md border-0 px-3 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-gray-900 sm:text-sm sm:leading-6" %>
                         <%= error_tag f, :location %>
                     </div>
                     <div class="col-span-4">
                         <%= label f, :description, "Your bio", class: "block text-sm font-medium leading-6 text-gray-900" %>
-                        <%= textarea f, :description, value: @user.description, rows: 4, class: "mt-2 block w-full rounded-md border-0 px-3 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-gray-900 sm:text-sm sm:leading-6" %>
+                        <%= textarea f, :description, placeholder: "Senior Software Engineer at Azimutt", rows: 4, class: "mt-2 block w-full rounded-md border-0 px-3 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-gray-900 sm:text-sm sm:leading-6" %>
                         <%= error_tag f, :description %>
                     </div>
                 </div>

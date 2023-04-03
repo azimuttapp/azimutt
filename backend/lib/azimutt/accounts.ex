@@ -97,22 +97,22 @@ defmodule Azimutt.Accounts do
 
   ## Settings
 
-  def change_user_email(user, attrs \\ %{}) do
-    User.email_changeset(user, attrs)
+  def change_user_infos(%User{} = user, attrs \\ %{}) do
+    User.infos_changeset(user, attrs)
   end
 
-  # FIXME : Dois être complètement changé
-  def change_user_profil(user, attrs, now) do
-    User.github_creation_changeset(user, attrs, now)
-  end
-
-  def update_user_profil(%User{} = user, attrs, now) do
+  def update_user_infos(%User{} = user, attrs, now) do
     user
-    |> change_user_profil(attrs, now)
+    |> User.infos_changeset(attrs)
+    |> Ecto.Changeset.put_change(:updated_at, now)
     |> Repo.update()
   end
 
-  def apply_user_email(user, password, attrs) do
+  def change_user_email(%User{} = user, attrs \\ %{}) do
+    User.email_changeset(user, attrs)
+  end
+
+  def apply_user_email(%User{} = user, password, attrs) do
     user
     |> User.email_changeset(attrs)
     |> User.validate_current_password(password)
@@ -125,7 +125,7 @@ defmodule Azimutt.Accounts do
   If the token matches, the user email is updated and the token is deleted.
   The confirmed_at date is also updated to the current time.
   """
-  def update_user_email(user, token, now) do
+  def update_user_email(%User{} = user, token, now) do
     context = "change:#{user.email}"
 
     with {:ok, query} <- UserToken.verify_change_email_token_query(token, context),
@@ -137,7 +137,7 @@ defmodule Azimutt.Accounts do
     end
   end
 
-  defp user_email_multi(user, email, context, now) do
+  defp user_email_multi(%User{} = user, email, context, now) do
     changeset =
       user
       |> User.email_changeset(%{email: email})
@@ -155,11 +155,11 @@ defmodule Azimutt.Accounts do
     UserNotifier.send_email_update(user, url_fun.(encoded_token))
   end
 
-  def change_user_password(user, attrs \\ %{}) do
+  def change_user_password(%User{} = user, attrs \\ %{}) do
     User.password_changeset(user, attrs, hash_password: false)
   end
 
-  def update_user_password(user, password, attrs) do
+  def update_user_password(%User{} = user, password, attrs) do
     changeset =
       user
       |> User.password_changeset(attrs)

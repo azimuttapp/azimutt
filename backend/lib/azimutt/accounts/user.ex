@@ -121,11 +121,12 @@ defmodule Azimutt.Accounts.User do
     end
   end
 
-  @doc """
-  A user changeset for changing the email.
+  def infos_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:name, :avatar, :company, :location, :description])
+    |> validate_required([:name, :avatar])
+  end
 
-  It requires the email to change otherwise an error is added.
-  """
   def email_changeset(user, attrs) do
     user
     |> cast(attrs, [:email])
