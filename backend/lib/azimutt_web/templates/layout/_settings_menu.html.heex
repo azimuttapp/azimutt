@@ -8,8 +8,8 @@
             # {"Plan & Billing", "credit-card", "#"},
             # {"Integrations", "squares-plus", "#"}
         ] do %>
-            <a href={url} class={"#{if url == @conn.request_path, do: "text-indigo-600 bg-gray-50 hover:bg-white", else: "text-gray-900 hover:bg-gray-50 hover:text-gray-900"} group flex items-center rounded-md px-3 py-2 text-sm font-medium"}>
-                <Icon.draw name={icon} kind="outline" class={"#{if url == @conn.request_path, do: "text-indigo-500", else: "text-gray-400 group-hover:text-gray-500"} -ml-1 mr-3 flex-shrink-0"} />
+            <a href={url} class={"#{if url == @conn.request_path, do: "text-gray-900 bg-gray-50 hover:bg-white", else: "text-gray-900 hover:bg-gray-50 hover:text-gray-900"} group flex items-center rounded-md px-3 py-2 text-sm font-medium"}>
+                <Icon.draw name={icon} kind="outline" class={"#{if url == @conn.request_path, do: "text-gray-900", else: "text-gray-400 group-hover:text-gray-500"} -ml-1 mr-3 flex-shrink-0"} />
                 <span class="truncate"><%= label %></span>
             </a>
         <% end %>

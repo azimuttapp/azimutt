@@ -13,21 +13,22 @@ defmodule AzimuttWeb.UserOauthController do
     user_params = %{
       name: user_info.name || user_info.nickname,
       email: user_info.email,
-      # FIXME
       provider: "github",
-      # FIXME
       provider_uid: user_info.nickname,
       avatar: user_info.image,
-      # FIXME
       company: nil,
       location: user_info.location,
       description: user_info.description,
       github_username: user_info.nickname,
-      # FIXME
       twitter_username: nil
     }
 
-    Accounts.get_user_by_email(user_params.email)
+    # FIXME: create a unique key (provider, provider_uid) => needs heroku provider_uid
+    Accounts.get_user_by_provider(user_params.provider, user_params.provider_uid)
+    |> Result.flat_map_error(fn _ ->
+      Accounts.get_user_by_email(user_params.email)
+      |> Result.tap(fn user -> user |> Accounts.set_user_provider(%{provider: "github", provider_uid: user_info.nickname}, now) end)
+    end)
     |> Result.flat_map_error(fn _ ->
       Accounts.register_github_user(user_params, UserAuth.get_attribution(conn), now)
       |> Result.tap(fn user -> Accounts.send_email_confirmation(user, &Routes.user_confirmation_url(conn, :confirm, &1)) end)

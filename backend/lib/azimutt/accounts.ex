@@ -17,6 +17,12 @@ defmodule Azimutt.Accounts do
     |> Result.from_nillable()
   end
 
+  def get_user_by_provider(provider, provider_uid) when is_binary(provider) and is_binary(provider_uid) do
+    Repo.get_by(User, provider: provider, provider_uid: provider_uid)
+    |> Repo.preload([:organizations])
+    |> Result.from_nillable()
+  end
+
   def get_user_by_email(email) when is_binary(email) do
     Repo.get_by(User, email: email)
     |> Repo.preload([:organizations])
@@ -104,7 +110,7 @@ defmodule Azimutt.Accounts do
   def update_user_infos(%User{} = user, attrs, now) do
     user
     |> User.infos_changeset(attrs)
-    |> Ecto.Changeset.put_change(:updated_at, now)
+    |> User.update_changeset(now)
     |> Repo.update()
   end
 
@@ -117,6 +123,14 @@ defmodule Azimutt.Accounts do
     |> User.email_changeset(attrs)
     |> User.validate_current_password(password)
     |> Ecto.Changeset.apply_action(:update)
+  end
+
+  # `user` object has email updated in-memory but not persisted
+  def send_email_update(%User{} = user, previous_email, url_fun) when is_function(url_fun, 1) do
+    {encoded_token, user_token} = UserToken.build_email_token(user, "change:#{previous_email}")
+
+    Repo.insert!(user_token)
+    UserNotifier.send_email_update(user, previous_email, url_fun.(encoded_token))
   end
 
   @doc """
@@ -142,28 +156,31 @@ defmodule Azimutt.Accounts do
       user
       |> User.email_changeset(%{email: email})
       |> User.confirm_changeset(now)
+      |> User.update_changeset(now)
 
     Ecto.Multi.new()
     |> Ecto.Multi.update(:user, changeset)
     |> Ecto.Multi.delete_all(:tokens, UserToken.user_and_contexts_query(user, [context]))
   end
 
-  def send_email_update(%User{} = user, current_email, url_fun) when is_function(url_fun, 1) do
-    {encoded_token, user_token} = UserToken.build_email_token(user, "change:#{current_email}")
-
-    Repo.insert!(user_token)
-    UserNotifier.send_email_update(user, url_fun.(encoded_token))
-  end
-
   def change_user_password(%User{} = user, attrs \\ %{}) do
     User.password_changeset(user, attrs, hash_password: false)
   end
 
-  def update_user_password(%User{} = user, current_password, attrs) do
+  def update_user_password(%User{} = user, current_password, attrs, now) do
+    perform_update_user_password(user, attrs, &User.validate_current_password(&1, current_password), now)
+  end
+
+  def set_user_password(%User{} = user, attrs, now) do
+    perform_update_user_password(user, attrs, &User.validate_no_password(&1), now)
+  end
+
+  defp perform_update_user_password(%User{} = user, attrs, validate, now) do
     changeset =
       user
       |> User.password_changeset(attrs)
-      |> User.validate_current_password(current_password)
+      |> validate.()
+      |> User.update_changeset(now)
 
     Ecto.Multi.new()
     |> Ecto.Multi.update(:user, changeset)
@@ -173,6 +190,20 @@ defmodule Azimutt.Accounts do
       {:ok, %{user: user}} -> {:ok, user}
       {:error, :user, changeset, _} -> {:error, changeset}
     end
+  end
+
+  def remove_user_password(%User{} = user, now) do
+    user
+    |> User.remove_password_changeset()
+    |> User.update_changeset(now)
+    |> Repo.update()
+  end
+
+  def set_user_provider(%User{} = user, attrs, now) do
+    user
+    |> User.provider_changeset(attrs)
+    |> User.update_changeset(now)
+    |> Repo.update()
   end
 
   ## Session

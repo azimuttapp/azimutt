@@ -99,8 +99,11 @@ defmodule AzimuttWeb.Router do
       pipe_through [:account_settings_layout]
       get "/", UserSettingsController, :show
       put "/account", UserSettingsController, :update_account
-      post "/email", UserSettingsController, :update_email
+      put "/email", UserSettingsController, :update_email
+      get "/email/:token", UserSettingsController, :confirm_update_email
       put "/password", UserSettingsController, :update_password
+      post "/password", UserSettingsController, :set_password
+      delete "/providers/:provider", UserSettingsController, :remove_provider
     end
 
     resources "/organizations", OrganizationController, except: [:index] do

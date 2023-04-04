@@ -156,11 +156,23 @@ defmodule Azimutt.Accounts.User do
     |> validate_password(opts)
   end
 
-  @doc """
-  Confirms the account by setting `confirmed_at`.
-  """
+  def remove_password_changeset(user) do
+    user
+    |> cast(%{hashed_password: nil}, [:hashed_password])
+  end
+
+  def provider_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:provider, :provider_uid])
+  end
+
+  @doc "Confirms the account by setting `confirmed_at`."
   def confirm_changeset(user, now) do
-    change(user, confirmed_at: now)
+    user |> change(confirmed_at: now)
+  end
+
+  def update_changeset(user, now) do
+    user |> change(updated_at: now)
   end
 
   @doc """
@@ -179,14 +191,20 @@ defmodule Azimutt.Accounts.User do
     false
   end
 
-  @doc """
-  Validates the current password otherwise adds an error to the changeset.
-  """
+  @doc "Validates the current password otherwise adds an error to the changeset."
   def validate_current_password(changeset, password) do
     if valid_password?(changeset.data, password) do
       changeset
     else
       add_error(changeset, :current_password, "is not valid")
+    end
+  end
+
+  def validate_no_password(changeset) do
+    if changeset.data.hashed_password == nil do
+      changeset
+    else
+      add_error(changeset, :current_password, "should not be set")
     end
   end
 end

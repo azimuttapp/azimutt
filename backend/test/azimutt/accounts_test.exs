@@ -181,7 +181,6 @@ defmodule Azimutt.AccountsTest do
       %{user: user_fixture()}
     end
 
-    @tag :skip
     test "sends token through notification", %{user: user} do
       token = extract_user_token(fn url -> Accounts.send_email_update(user, "current@example.com", url) end)
       {:ok, token} = Base.url_decode64(token, padding: false)
@@ -200,7 +199,6 @@ defmodule Azimutt.AccountsTest do
       %{user: user, token: token, email: email}
     end
 
-    @tag :skip
     test "updates the email with a valid token", %{user: user, token: token, email: email} do
       now = DateTime.utc_now()
       assert Accounts.update_user_email(user, token, now) == :ok
@@ -212,7 +210,6 @@ defmodule Azimutt.AccountsTest do
       refute Repo.get_by(UserToken, user_id: user.id)
     end
 
-    @tag :skip
     test "does not update email with invalid token", %{user: user} do
       now = DateTime.utc_now()
       assert Accounts.update_user_email(user, "oops", now) == :error
@@ -220,7 +217,6 @@ defmodule Azimutt.AccountsTest do
       assert Repo.get_by(UserToken, user_id: user.id)
     end
 
-    @tag :skip
     test "does not update email if user email changed", %{user: user, token: token} do
       now = DateTime.utc_now()
       assert Accounts.update_user_email(%{user | email: "current@example.com"}, token, now) == :error
@@ -228,10 +224,9 @@ defmodule Azimutt.AccountsTest do
       assert Repo.get_by(UserToken, user_id: user.id)
     end
 
-    @tag :skip
     test "does not update email if token expired", %{user: user, token: token} do
       now = DateTime.utc_now()
-      {1, nil} = Repo.update_all(UserToken, set: [inserted_at: ~N[2020-01-01 00:00:00]])
+      {1, nil} = Repo.update_all(UserToken, set: [created_at: ~N[2020-01-01 00:00:00]])
       assert Accounts.update_user_email(user, token, now) == :error
       assert Repo.get!(User, user.id).email == user.email
       assert Repo.get_by(UserToken, user_id: user.id)
@@ -256,17 +251,15 @@ defmodule Azimutt.AccountsTest do
     end
   end
 
-  describe "update_user_password/3" do
+  describe "update_user_password/4" do
     setup do
       %{user: user_fixture()}
     end
 
     test "validates password", %{user: user} do
-      {:error, changeset} =
-        Accounts.update_user_password(user, valid_user_password(), %{
-          password: "not valid",
-          password_confirmation: "another"
-        })
+      now = DateTime.utc_now()
+      attrs = %{password: "not valid", password_confirmation: "another"}
+      {:error, changeset} = Accounts.update_user_password(user, valid_user_password(), attrs, now)
 
       assert %{
                password: ["should be at least 12 character(s)"],
@@ -275,36 +268,32 @@ defmodule Azimutt.AccountsTest do
     end
 
     test "validates maximum values for password for security", %{user: user} do
+      now = DateTime.utc_now()
       too_long = String.duplicate("db", 100)
-
-      {:error, changeset} = Accounts.update_user_password(user, valid_user_password(), %{password: too_long})
+      {:error, changeset} = Accounts.update_user_password(user, valid_user_password(), %{password: too_long}, now)
 
       assert "should be at most 72 character(s)" in errors_on(changeset).password
     end
 
     test "validates current password", %{user: user} do
-      {:error, changeset} = Accounts.update_user_password(user, "invalid", %{password: valid_user_password()})
+      now = DateTime.utc_now()
+      {:error, changeset} = Accounts.update_user_password(user, "invalid", %{password: valid_user_password()}, now)
 
       assert %{current_password: ["is not valid"]} = errors_on(changeset)
     end
 
     test "updates the password", %{user: user} do
-      {:ok, user} =
-        Accounts.update_user_password(user, valid_user_password(), %{
-          password: "new valid password"
-        })
+      now = DateTime.utc_now()
+      {:ok, user} = Accounts.update_user_password(user, valid_user_password(), %{password: "new valid password"}, now)
 
       assert is_nil(user.password)
       assert {:ok, _} = Accounts.get_user_by_email_and_password(user.email, "new valid password")
     end
 
     test "deletes all tokens for the given user", %{user: user} do
+      now = DateTime.utc_now()
       _ = Accounts.generate_user_session_token(user)
-
-      {:ok, _} =
-        Accounts.update_user_password(user, valid_user_password(), %{
-          password: "new valid password"
-        })
+      {:ok, _} = Accounts.update_user_password(user, valid_user_password(), %{password: "new valid password"}, now)
 
       refute Repo.get_by(UserToken, user_id: user.id)
     end
