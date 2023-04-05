@@ -1,4 +1,4 @@
-module Components.Molecules.ContextMenu exposing (Action, Direction(..), ItemAction(..), MenuItem, SubMenuItem, btn, btnDisabled, btnHotkey, btnSubmenu, itemActiveStyles, itemCurrentStyles, itemDisabledActiveStyles, itemDisabledStyles, itemStyles, link, linkHtml, menu, menuStyles)
+module Components.Molecules.ContextMenu exposing (Action, Direction(..), ItemAction(..), MenuItem, SubMenuItem, btn, btnDisabled, btnHotkey, btnSubmenu, itemActiveStyles, itemCurrentStyles, itemDisabledActiveStyles, itemDisabledStyles, itemStyles, link, linkHtml, menu, menuStyles, submenuHtml)
 
 import Components.Atoms.Kbd as Kbd
 import Html exposing (Attribute, Html, a, button, div, text)
@@ -95,17 +95,10 @@ btnSubmenu item =
             btnHotkey "" action [ text item.label ] platform hotkeys
 
         SubMenu submenus ->
-            div [ css [ "group relative", itemStyles ] ]
-                [ text (item.label ++ " »")
-                , div [ css [ "group-hover:block hidden -top-1 left-full", menuStyles ] ]
-                    (submenus |> List.map (\submenu -> btnHotkey "" submenu.action [ text submenu.label ] submenu.platform submenu.hotkeys))
-                ]
+            submenuHtml [ text (item.label ++ " »") ] (submenus |> List.map (\submenu -> btnHotkey "" submenu.action [ text submenu.label ] submenu.platform submenu.hotkeys))
 
         Custom html ->
-            div [ css [ "group relative", itemStyles ] ]
-                [ text (item.label ++ " »")
-                , div [ css [ "group-hover:block hidden -top-1 left-full", menuStyles ] ] [ html ]
-                ]
+            submenuHtml [ text (item.label ++ " »") ] [ html ]
 
 
 link : Link -> Html msg
@@ -116,6 +109,15 @@ link l =
 linkHtml : String -> List (Attribute msg) -> List (Html msg) -> Html msg
 linkHtml url attrs content =
     a ([ href url, role "menuitem", tabindex -1, css [ "block", itemStyles ] ] ++ attrs) content
+
+
+submenuHtml : List (Html msg) -> List (Html msg) -> Html msg
+submenuHtml content items =
+    div [ css [ "group relative flex items-center", itemStyles ] ]
+        (content
+            ++ [ div [ css [ "group-hover:block hidden -top-1 left-full", menuStyles ] ] items
+               ]
+        )
 
 
 
