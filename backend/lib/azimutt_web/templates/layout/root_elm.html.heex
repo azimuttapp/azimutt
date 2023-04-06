@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en" data-root="root_elm">
     <head>
-        <%= render "_seo.html", conn: @conn %>
+        <%= render "_head_seo.html", conn: @conn %>
         <link rel="stylesheet" href={Routes.static_path(@conn, "/elm/dist/styles.css")} />
         <script type="text/javascript" src={Routes.static_path(@conn, "/elm/dist/elm.js")} />
     </head>

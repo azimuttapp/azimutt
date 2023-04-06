@@ -9,8 +9,8 @@ defmodule AzimuttWeb.WebsiteController do
 
   def index(conn, _params) do
     case conn |> last_used_project |> Result.filter_not(fn _p -> same_domain?(conn) end) do
-      # {:ok, p} -> conn |> redirect(to: Routes.organization_path(conn, :show, p.organization_id))
       {:ok, p} ->
+        # conn |> redirect(to: Routes.organization_path(conn, :show, p.organization_id))
         conn |> redirect(to: Routes.elm_path(conn, :project_show, p.organization_id, p.id))
 
       _ ->
@@ -39,7 +39,7 @@ defmodule AzimuttWeb.WebsiteController do
   end
 
   defp same_domain?(conn) do
-    get_req_header(conn, "referer") |> Enum.any?(fn h -> h |> String.contains?(Azimutt.config(:host)) end)
+    conn |> get_req_header("referer") |> Enum.any?(fn h -> h |> String.contains?(Azimutt.config(:host)) end)
   end
 
   def use_cases_index(conn, _params), do: conn |> render("use-cases.html")

@@ -30,13 +30,12 @@ defmodule AzimuttWeb.Router do
 
   pipeline :website_layout, do: plug(:put_root_layout, {AzimuttWeb.LayoutView, "root_website.html"})
   pipeline :hfull_layout, do: plug(:put_root_layout, {AzimuttWeb.LayoutView, "root_hfull.html"})
-  pipeline :account_session_layout, do: plug(:put_root_layout, {AzimuttWeb.LayoutView, "root_account.html"})
-  pipeline :account_dashboard_layout, do: plug(:put_root_layout, {AzimuttWeb.LayoutView, "root_account_dashboard.html"})
-  pipeline :admin_dashboard_layout, do: plug(:put_root_layout, {AzimuttWeb.LayoutView, "root_admin_dashboard.html"})
+  pipeline :organization_layout, do: plug(:put_root_layout, {AzimuttWeb.LayoutView, "root_organization.html"})
+  pipeline :admin_layout, do: plug(:put_root_layout, {AzimuttWeb.LayoutView, "root_admin.html"})
   pipeline :elm_layout, do: plug(:put_root_layout, {AzimuttWeb.LayoutView, "root_elm.html"})
 
-  pipeline :account_settings_layout do
-    plug :put_root_layout, {AzimuttWeb.LayoutView, "root_account_settings.html"}
+  pipeline :user_settings_layout do
+    plug :put_root_layout, {AzimuttWeb.LayoutView, "root_user_settings.html"}
     plug :put_layout, {AzimuttWeb.LayoutView, "empty.html"}
   end
 
@@ -77,7 +76,7 @@ defmodule AzimuttWeb.Router do
 
   # authed dashboard routes
   scope "/", AzimuttWeb do
-    pipe_through [:browser, :require_authed_user, :account_dashboard_layout]
+    pipe_through [:browser, :require_authed_user, :organization_layout]
     get "/home", UserDashboardController, :index
     get "/login/redirect", UserSessionController, :redirect_to
 
@@ -88,8 +87,13 @@ defmodule AzimuttWeb.Router do
       get "/:token", UserConfirmationController, :confirm
     end
 
+    scope "/onboarding" do
+      pipe_through [:hfull_layout]
+      get "/1", UserOnboardingController, :step1
+    end
+
     scope "/settings" do
-      pipe_through [:account_settings_layout]
+      pipe_through [:user_settings_layout]
       get "/", UserSettingsController, :show
       put "/account", UserSettingsController, :update_account
       put "/email", UserSettingsController, :update_email
@@ -135,7 +139,7 @@ defmodule AzimuttWeb.Router do
   end
 
   scope "/admin", AzimuttWeb, as: :admin do
-    pipe_through [:browser, :require_authed_user, :require_admin_user, :admin_dashboard_layout]
+    pipe_through [:browser, :require_authed_user, :require_admin_user, :admin_layout]
     get "/", Admin.DashboardController, :index
     resources "/users", Admin.UserController, only: [:index, :show]
     resources "/organizations", Admin.OrganizationController, only: [:index, :show]

@@ -14,13 +14,25 @@ defmodule AzimuttWeb.UserConfirmationController do
     end
   end
 
-  def create(conn, _params) do
+  def create(conn, params) do
     current_user = conn.assigns.current_user
     Accounts.send_email_confirmation(current_user, &Routes.user_confirmation_url(conn, :confirm, &1))
 
-    conn
-    |> put_flash(:info, "Your email confirmation is sent, click the link inside to confirm your email.")
-    |> redirect(to: Routes.user_confirmation_path(conn, :new))
+    referer =
+      conn
+      |> get_req_header("referer")
+      |> Enum.filter(fn h -> h |> String.contains?(Azimutt.config(:host)) end)
+      |> List.first()
+
+    if params["redirect"] == "referer" && referer do
+      conn
+      |> put_flash(:info, "Your email confirmation is sent, click the link inside to confirm your email.")
+      |> redirect(external: referer)
+    else
+      conn
+      |> put_flash(:info, "Your email confirmation is sent, click the link inside to confirm your email.")
+      |> redirect(to: Routes.user_confirmation_path(conn, :new))
+    end
   end
 
   def confirm(conn, %{"token" => token}) do

@@ -12,7 +12,7 @@ defmodule AzimuttWeb.OrganizationController do
     logo = Faker.Avatar.image_url()
 
     conn
-    |> put_root_layout({AzimuttWeb.LayoutView, "root_account.html"})
+    |> put_root_layout({AzimuttWeb.LayoutView, "root_organization_new.html"})
     |> render("new.html", changeset: changeset, logo: logo)
   end
 
@@ -27,7 +27,7 @@ defmodule AzimuttWeb.OrganizationController do
 
       {:error, %Ecto.Changeset{} = changeset} ->
         conn
-        |> put_root_layout({AzimuttWeb.LayoutView, "root_account.html"})
+        |> put_root_layout({AzimuttWeb.LayoutView, "root_organization_new.html"})
         |> render("new.html", changeset: changeset)
     end
   end

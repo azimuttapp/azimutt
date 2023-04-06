@@ -1,0 +1,8 @@
+<%= if !@current_user.confirmed_at do %>
+    <div class="relative flex items-center justify-center gap-x-6 bg-indigo-600 px-6 py-2.5 sm:px-3.5">
+        <p class="text-sm leading-6 text-white">
+            We just added email validation to avoid fake users.
+            <%= link "Confirm your email →", to: Routes.user_confirmation_path(@conn, :create, %{redirect: "referer"}), method: :post, class: "ml-3 px-3.5 py-1 bg-white text-indigo-600 hover:bg-indigo-100 hover:text-indigo-700 flex-none text-sm font-semibold shadow-sm rounded-full" %>
+        </p>
+    </div>
+<% end %>

@@ -3,7 +3,7 @@
     <%= render "_head.html", conn: @conn %>
     <body class="font-sans antialiased">
         <%= render "_hello_comment.html" %>
-        <%= render "_website_user_menu.html", conn: @conn, current_user: @current_user, dark: assigns[:dark] %>
+        <%= render "_website_navbar.html", conn: @conn, current_user: @current_user, dark: assigns[:dark] %>
         <%= @inner_content %>
     </body>
 </html>
