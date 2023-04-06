@@ -9,7 +9,6 @@ defmodule AzimuttWeb.Router do
     plug :accepts, ["html"]
     plug :fetch_session
     plug :fetch_live_flash
-    plug :put_root_layout, {AzimuttWeb.LayoutView, :root}
     plug :put_secure_browser_headers
     plug :fetch_current_user
     plug :fetch_heroku_resource
@@ -29,31 +28,21 @@ defmodule AzimuttWeb.Router do
     plug :fetch_heroku_resource
   end
 
-  pipeline :account_session_layout do
-    plug :put_root_layout, {AzimuttWeb.LayoutView, :account}
-  end
-
-  pipeline :account_dashboard_layout do
-    plug :put_root_layout, {AzimuttWeb.LayoutView, :account_dashboard}
-  end
+  pipeline :website_layout, do: plug(:put_root_layout, {AzimuttWeb.LayoutView, "root_website.html"})
+  pipeline :hfull_layout, do: plug(:put_root_layout, {AzimuttWeb.LayoutView, "root_hfull.html"})
+  pipeline :account_session_layout, do: plug(:put_root_layout, {AzimuttWeb.LayoutView, "root_account.html"})
+  pipeline :account_dashboard_layout, do: plug(:put_root_layout, {AzimuttWeb.LayoutView, "root_account_dashboard.html"})
+  pipeline :admin_dashboard_layout, do: plug(:put_root_layout, {AzimuttWeb.LayoutView, "root_admin_dashboard.html"})
+  pipeline :elm_layout, do: plug(:put_root_layout, {AzimuttWeb.LayoutView, "root_elm.html"})
 
   pipeline :account_settings_layout do
-    plug :put_root_layout, {AzimuttWeb.LayoutView, :account_settings}
-    plug :put_layout, {AzimuttWeb.LayoutView, :empty}
-  end
-
-  pipeline :admin_dashboard_layout do
-    plug :put_root_layout, {AzimuttWeb.LayoutView, :admin_dashboard}
-  end
-
-  # FIXME: remove pipeline?
-  pipeline :register_and_login_layout do
-    plug :put_root_layout, {AzimuttWeb.LayoutView, :login}
+    plug :put_root_layout, {AzimuttWeb.LayoutView, "root_account_settings.html"}
+    plug :put_layout, {AzimuttWeb.LayoutView, "empty.html"}
   end
 
   # public routes
   scope "/", AzimuttWeb do
-    pipe_through :browser
+    pipe_through [:browser, :website_layout]
     get "/", WebsiteController, :index
     get "/last", WebsiteController, :last
     get "/use-cases", WebsiteController, :use_cases_index
@@ -73,7 +62,7 @@ defmodule AzimuttWeb.Router do
 
   # auth routes
   scope "/", AzimuttWeb do
-    pipe_through [:browser, :redirect_if_user_is_authed, :register_and_login_layout]
+    pipe_through [:browser, :redirect_if_user_is_authed, :hfull_layout]
     get "/auth/:provider", UserOauthController, :request
     get "/auth/:provider/callback", UserOauthController, :callback
     get "/register", UserRegistrationController, :new
@@ -91,9 +80,13 @@ defmodule AzimuttWeb.Router do
     pipe_through [:browser, :require_authed_user, :account_dashboard_layout]
     get "/home", UserDashboardController, :index
     get "/login/redirect", UserSessionController, :redirect_to
-    get "/email-confirm", UserConfirmationController, :new
-    post "/email-confirm", UserConfirmationController, :create
-    get "/email-confirm/:token", UserConfirmationController, :confirm
+
+    scope "/email-confirm" do
+      pipe_through [:hfull_layout]
+      get "/", UserConfirmationController, :new
+      post "/", UserConfirmationController, :create
+      get "/:token", UserConfirmationController, :confirm
+    end
 
     scope "/settings" do
       pipe_through [:account_settings_layout]
@@ -235,14 +228,14 @@ defmodule AzimuttWeb.Router do
   end
 
   scope "/", AzimuttWeb do
-    pipe_through [:browser, AllowCrossOriginIframe]
+    pipe_through [:browser, :elm_layout, AllowCrossOriginIframe]
     get "/embed", ElmController, :embed
   end
 
   # elm routes, must be at the end (because of `/:organization_id/:project_id` "catch all")
   # routes listed in the same order than in `elm/src/Pages`
   scope "/", AzimuttWeb do
-    pipe_through :browser
+    pipe_through [:browser, :elm_layout]
     get "/create", ElmController, :create
     get "/new", ElmController, :new
     get "/:organization_id", ElmController, :orga_show

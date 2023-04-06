@@ -44,6 +44,6 @@ defmodule AzimuttWeb.ElmController do
   end
 
   defp load_elm(conn) do
-    conn |> put_root_layout({AzimuttWeb.LayoutView, "elm.html"}) |> render("index.html")
+    conn |> render("index.html")
   end
 end

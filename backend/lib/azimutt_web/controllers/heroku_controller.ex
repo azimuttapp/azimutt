@@ -68,13 +68,13 @@ defmodule AzimuttWeb.HerokuController do
         {:error, :too_many_members} ->
           conn
           |> put_layout({AzimuttWeb.LayoutView, "empty.html"})
-          |> put_root_layout({AzimuttWeb.LayoutView, "empty.html"})
+          |> put_root_layout({AzimuttWeb.LayoutView, "root_hfull.html"})
           |> render("error_too_many_members.html", heroku_app: app)
 
         {:error, :member_limit_reached} ->
           conn
           |> put_layout({AzimuttWeb.LayoutView, "empty.html"})
-          |> put_root_layout({AzimuttWeb.LayoutView, "empty.html"})
+          |> put_root_layout({AzimuttWeb.LayoutView, "root_hfull.html"})
           |> render("error_member_limit_reached.html", heroku_app: app)
 
         {:error, err} ->

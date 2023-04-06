@@ -1,24 +1,25 @@
 <!DOCTYPE html>
-<html lang="en" class="scroll-smooth h-full">
-    <%= render("_head.html", assigns) %>
+<html lang="en" class="scroll-smooth h-full" data-root="root_account_dashboard">
+    <%= render "_head.html", conn: @conn %>
     <div class="fixed top-0 left-0 w-1/2 h-full bg-white" aria-hidden="true"></div>
     <div class="fixed top-0 right-0 w-1/2 h-full bg-gray-50" aria-hidden="true"></div>
     <body class="font-sans antialiased bg-gray-50 h-full">
+        <%= render "_hello_comment.html" %>
         <div class="relative min-h-full flex flex-col">
-            <%= render "_account_user_menu.html", assigns %>
+            <%= render "_account_user_menu.html", conn: @conn, current_user: @current_user %>
 
             <div class="flex-grow w-full max-w-7xl mx-auto xl:px-8 lg:flex min-h-full">
                 <!-- Left sidebar & main wrapper -->
                 <div class="flex-1 min-w-0 w-full bg-white xl:flex">
                     <!-- Left panel -->
-                    <%= render "_left_panel.html", assigns %>
+                    <%= render "_left_panel.html", conn: @conn, current_user: @current_user, organization: @organization, plan: @plan %>
                     <!-- Main content -->
                     <div class="mx-auto w-full">
                         <%= @inner_content %>
                     </div>
                 </div>
                 <!-- Right panel (activity feed) -->
-                <%= render "_right_panel.html", assigns %>
+                <%= render "_right_panel.html" %>
             </div>
         </div>
     </body>

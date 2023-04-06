@@ -10,9 +10,7 @@ defmodule AzimuttWeb.UserConfirmationController do
     if current_user.confirmed_at do
       conn |> redirect(to: Routes.user_dashboard_path(conn, :index))
     else
-      conn
-      |> put_root_layout({AzimuttWeb.LayoutView, "login.html"})
-      |> render("new.html", user: current_user, now: now)
+      conn |> render("new.html", user: current_user, now: now)
     end
   end
 

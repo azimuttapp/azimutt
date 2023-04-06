@@ -65,7 +65,7 @@
                         <%= link "New Project", to: Routes.elm_path(@conn, :orga_new, @organization), class: "inline-flex items-center justify-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 xl:w-full" %>
                     </div>
                 </div>
-                <%= render "_left_panel_menu.html", assigns %>
+                <%= render "_left_panel_menu.html", conn: @conn, organization: @organization %>
             </div>
         </div>
     </div>

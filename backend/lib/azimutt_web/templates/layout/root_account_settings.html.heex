@@ -1,7 +1,8 @@
 <!DOCTYPE html>
-<html lang="en" class="scroll-smooth h-full">
-    <%= render("_head.html", conn: @conn) %>
-    <body class="font-sans antialiased bg-gray-100 h-full">
+<html lang="en" class="scroll-smooth h-full" data-root="root_account_settings">
+    <%= render "_head.html", conn: @conn %>
+    <body class="font-sans antialiased h-full bg-gray-100">
+        <%= render "_hello_comment.html" %>
         <div class="relative min-h-full flex flex-col">
             <%= render "_account_user_menu.html", conn: @conn, current_user: @current_user %>
             <main class="mx-auto max-w-7xl pb-10 lg:px-8 lg:py-12">
