@@ -194,15 +194,7 @@ defmodule Azimutt.Tracking do
       is_admin: user.is_admin,
       last_signin: user.last_signin,
       created_at: user.created_at,
-      data:
-        if user.data do
-          %{
-            attribution: user.data.attribution,
-            attributed_to: user.data.attributed_to
-          }
-        else
-          nil
-        end
+      data: if(user.data, do: %{attributed_to: user.data.attributed_to}, else: nil)
     }
   end
 

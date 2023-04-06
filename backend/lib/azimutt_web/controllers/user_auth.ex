@@ -251,9 +251,8 @@ defmodule AzimuttWeb.UserAuth do
       Tracking.attribution(conn.assigns.current_user, details)
 
       if conn.assigns.current_user == nil do
-        attribution = get_attribution(conn)
         cookie = details |> Map.put("date", DateTime.utc_now())
-        conn |> put_resp_cookie(@attribution_cookie, [cookie | attribution], @attribution_options)
+        conn |> put_resp_cookie(@attribution_cookie, cookie, @attribution_options)
       else
         conn
       end
@@ -264,7 +263,9 @@ defmodule AzimuttWeb.UserAuth do
 
   def get_attribution(conn) do
     conn = fetch_cookies(conn, signed: [@attribution_cookie])
-    conn.cookies[@attribution_cookie] || []
+    value = conn.cookies[@attribution_cookie]
+    # legacy: attribution stored a list before, get the first item in this case
+    if(is_list(value), do: hd(value), else: value)
   end
 
   defp put_error_html(conn, status, view, message) do
