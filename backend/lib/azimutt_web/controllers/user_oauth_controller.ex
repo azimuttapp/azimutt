@@ -6,34 +6,38 @@ defmodule AzimuttWeb.UserOauthController do
   action_fallback AzimuttWeb.FallbackController
   plug Ueberauth
 
-  def callback(%{assigns: %{ueberauth_auth: %{info: user_info}}} = conn, %{"provider" => "github"}) do
+  def callback(conn, %{"provider" => "github"}) do
     now = DateTime.utc_now()
-    auth_method = "github"
+    auth_info = conn.assigns.ueberauth_auth
+    provider = auth_info.provider |> Atom.to_string()
+    provider_uid = auth_info.uid |> Integer.to_string()
+    user = auth_info.extra.raw_info.user
 
     user_params = %{
-      name: user_info.name || user_info.nickname,
-      email: user_info.email,
-      provider: "github",
-      provider_uid: user_info.nickname,
-      avatar: user_info.image,
-      company: nil,
-      location: user_info.location,
-      description: user_info.description,
-      github_username: user_info.nickname,
-      twitter_username: nil
+      name: user["name"] || user["login"],
+      email: user["email"],
+      provider: provider,
+      provider_uid: provider_uid,
+      avatar: user["avatar_url"],
+      company: user["company"],
+      location: user["location"],
+      description: user["bio"],
+      github_username: user["login"],
+      twitter_username: user["twitter_username"]
     }
 
     # FIXME: create a unique key (provider, provider_uid) => needs heroku provider_uid
-    Accounts.get_user_by_provider(user_params.provider, user_params.provider_uid)
+    # TODO: if primary email is verified, mark it as verified as well in Azimutt
+    Accounts.get_user_by_provider(provider, provider_uid)
     |> Result.flat_map_error(fn _ ->
-      Accounts.get_user_by_email(user_params.email)
-      |> Result.tap(fn user -> user |> Accounts.set_user_provider(%{provider: "github", provider_uid: user_info.nickname}, now) end)
+      Accounts.get_user_by_email(user["email"])
+      |> Result.tap(fn user -> user |> Accounts.set_user_provider(%{provider: provider, provider_uid: provider_uid}, now) end)
     end)
     |> Result.flat_map_error(fn _ ->
       Accounts.register_github_user(user_params, UserAuth.get_attribution(conn), now)
       |> Result.tap(fn user -> Accounts.send_email_confirmation(user, &Routes.user_confirmation_url(conn, :confirm, &1)) end)
     end)
-    |> Result.map(fn user -> UserAuth.login_user_and_redirect(conn, user, auth_method) end)
+    |> Result.map(fn user -> UserAuth.login_user_and_redirect(conn, user, provider) end)
     |> Result.or_else(callback(conn, %{}))
   end
 
