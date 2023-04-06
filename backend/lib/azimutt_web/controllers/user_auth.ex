@@ -248,10 +248,14 @@ defmodule AzimuttWeb.UserAuth do
 
     if attributes |> map_size() > 0 do
       details = attributes |> Map.put("path", conn.request_path)
-      Tracking.attribution(conn.assigns.current_user, details)
+      event = Tracking.attribution(conn.assigns.current_user, details)
 
       if conn.assigns.current_user == nil do
-        cookie = details |> Map.put("date", DateTime.utc_now())
+        cookie =
+          details
+          |> Map.put("date", DateTime.utc_now())
+          |> Map.put("event", event |> Result.map(fn e -> e.id end) |> Result.or_else(nil))
+
         conn |> put_resp_cookie(@attribution_cookie, cookie, @attribution_options)
       else
         conn

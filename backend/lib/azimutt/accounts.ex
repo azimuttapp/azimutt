@@ -73,7 +73,7 @@ defmodule Azimutt.Accounts do
         nil
       end
 
-    attrs |> Map.put(:data, %{attributed_to: attributed_to})
+    attrs |> Map.put(:data, %{attributed_from: attribution["event"], attributed_to: attributed_to})
   end
 
   defp register_user(changeset, method) do

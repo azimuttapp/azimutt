@@ -7,11 +7,12 @@ defmodule Azimutt.Accounts.User.Data do
   @primary_key false
   embedded_schema do
     # see user_auth.ex#track_attribution cookie for format
+    field :attributed_from, :string
     field :attributed_to, :string
   end
 
   def changeset(%User.Data{} = data, attrs) do
     data
-    |> cast(attrs, [:attributed_to])
+    |> cast(attrs, [:attributed_from, :attributed_to])
   end
 end
