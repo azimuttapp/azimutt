@@ -144,13 +144,19 @@ defmodule AzimuttWeb.UserAuth do
   end
 
   def require_authed_user(conn, _opts) do
-    if conn.assigns[:current_user] do
-      if conn.assigns[:current_user].confirmed_at || !Azimutt.config(:require_email_confirmation) ||
-           conn.request_path |> String.starts_with?(Routes.user_confirmation_path(conn, :new)) ||
-           Date.compare(conn.assigns[:current_user].created_at, ~D[2023-04-06]) == :lt do
-        conn
-      else
-        conn |> redirect(to: Routes.user_confirmation_path(conn, :new)) |> halt()
+    user = conn.assigns[:current_user]
+
+    if user do
+      cond do
+        user.onboarding && !(conn.request_path |> String.starts_with?(Routes.user_onboarding_path(conn, :index))) ->
+          conn |> redirect(to: Routes.user_onboarding_path(conn, user.onboarding |> String.to_atom())) |> halt()
+
+        Azimutt.config(:require_email_confirmation) && !user.confirmed_at && Date.compare(user.created_at, ~D[2023-04-06]) == :gt &&
+            !(conn.request_path |> String.starts_with?(Routes.user_confirmation_path(conn, :new))) ->
+          conn |> redirect(to: Routes.user_confirmation_path(conn, :new)) |> halt()
+
+        true ->
+          conn
       end
     else
       conn

@@ -1,0 +1,11 @@
+<h1>Role</h1>
+<%= for role <- [
+    "Backend developer", "Frontend developer", "Mobile developer",
+    "Data engineer", "Data analyst", "Data scientist",
+    "Engineering manager", "CTO",
+    "Database administrator", "DevOps/SRE", "Architect",
+    "Product manager", "Scrum master", "QA", "UX Designer",
+    "Other"
+] do %>
+    <%= link role, to: Routes.user_onboarding_path(@conn, :role_next, %{role: role}), method: :post, class: "rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" %>
+<% end %>

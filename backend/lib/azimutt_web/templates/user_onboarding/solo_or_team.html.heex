@@ -1,0 +1,4 @@
+<h1>How will you use Azimutt?</h1>
+
+<%= link "Solo!", to: Routes.user_onboarding_path(@conn, :solo_or_team_next, %{usage: "solo"}), method: :post, class: "rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" %>
+<%= link "Team!", to: Routes.user_onboarding_path(@conn, :solo_or_team_next, %{usage: "team"}), method: :post, class: "rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" %>

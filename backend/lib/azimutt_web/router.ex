@@ -28,20 +28,18 @@ defmodule AzimuttWeb.Router do
     plug :fetch_heroku_resource
   end
 
-  pipeline :website_layout, do: plug(:put_root_layout, {AzimuttWeb.LayoutView, "root_website.html"})
-  pipeline :hfull_layout, do: plug(:put_root_layout, {AzimuttWeb.LayoutView, "root_hfull.html"})
-  pipeline :organization_layout, do: plug(:put_root_layout, {AzimuttWeb.LayoutView, "root_organization.html"})
-  pipeline :admin_layout, do: plug(:put_root_layout, {AzimuttWeb.LayoutView, "root_admin.html"})
-  pipeline :elm_layout, do: plug(:put_root_layout, {AzimuttWeb.LayoutView, "root_elm.html"})
+  pipeline :website_root_layout, do: plug(:put_root_layout, {AzimuttWeb.LayoutView, "root_website.html"})
+  pipeline :hfull_root_layout, do: plug(:put_root_layout, {AzimuttWeb.LayoutView, "root_hfull.html"})
+  pipeline :organization_root_layout, do: plug(:put_root_layout, {AzimuttWeb.LayoutView, "root_organization.html"})
+  pipeline :admin_root_layout, do: plug(:put_root_layout, {AzimuttWeb.LayoutView, "root_admin.html"})
+  pipeline :elm_root_layout, do: plug(:put_root_layout, {AzimuttWeb.LayoutView, "root_elm.html"})
+  pipeline :user_settings_root_layout, do: plug(:put_root_layout, {AzimuttWeb.LayoutView, "root_user_settings.html"})
 
-  pipeline :user_settings_layout do
-    plug :put_root_layout, {AzimuttWeb.LayoutView, "root_user_settings.html"}
-    plug :put_layout, {AzimuttWeb.LayoutView, "empty.html"}
-  end
+  pipeline :empty_layout, do: plug(:put_layout, {AzimuttWeb.LayoutView, "empty.html"})
 
   # public routes
   scope "/", AzimuttWeb do
-    pipe_through [:browser, :website_layout]
+    pipe_through [:browser, :website_root_layout]
     get "/", WebsiteController, :index
     get "/last", WebsiteController, :last
     get "/use-cases", WebsiteController, :use_cases_index
@@ -61,7 +59,7 @@ defmodule AzimuttWeb.Router do
 
   # auth routes
   scope "/", AzimuttWeb do
-    pipe_through [:browser, :redirect_if_user_is_authed, :hfull_layout]
+    pipe_through [:browser, :redirect_if_user_is_authed, :hfull_root_layout]
     get "/auth/:provider", UserOauthController, :request
     get "/auth/:provider/callback", UserOauthController, :callback
     get "/register", UserRegistrationController, :new
@@ -76,24 +74,44 @@ defmodule AzimuttWeb.Router do
 
   # authed dashboard routes
   scope "/", AzimuttWeb do
-    pipe_through [:browser, :require_authed_user, :organization_layout]
+    pipe_through [:browser, :require_authed_user, :organization_root_layout]
     get "/home", UserDashboardController, :index
     get "/login/redirect", UserSessionController, :redirect_to
 
     scope "/email-confirm" do
-      pipe_through [:hfull_layout]
+      pipe_through [:hfull_root_layout]
       get "/", UserConfirmationController, :new
       post "/", UserConfirmationController, :create
       get "/:token", UserConfirmationController, :confirm
     end
 
     scope "/onboarding" do
-      pipe_through [:hfull_layout]
-      get "/1", UserOnboardingController, :step1
+      pipe_through [:hfull_root_layout, :empty_layout]
+      get "/", UserOnboardingController, :index
+      get "/welcome", UserOnboardingController, :welcome
+      post "/welcome", UserOnboardingController, :welcome_next
+      get "/solo-or-team", UserOnboardingController, :solo_or_team
+      post "/solo-or-team", UserOnboardingController, :solo_or_team_next
+      get "/explore-or-design", UserOnboardingController, :explore_or_design
+      post "/explore-or-design", UserOnboardingController, :explore_or_design_next
+      get "/role", UserOnboardingController, :role
+      post "/role", UserOnboardingController, :role_next
+      get "/about-you", UserOnboardingController, :about_you
+      post "/about-you", UserOnboardingController, :about_you_next
+      get "/about-your-company", UserOnboardingController, :about_your_company
+      post "/about-your-company", UserOnboardingController, :about_your_company_next
+      get "/plan", UserOnboardingController, :plan
+      post "/plan", UserOnboardingController, :plan_next
+      get "/before-azimutt", UserOnboardingController, :before_azimutt
+      post "/before-azimutt", UserOnboardingController, :before_azimutt_next
+      get "/community", UserOnboardingController, :community
+      post "/community", UserOnboardingController, :community_next
+      get "/finalize", UserOnboardingController, :finalize
+      get "/:template", UserOnboardingController, :template
     end
 
     scope "/settings" do
-      pipe_through [:user_settings_layout]
+      pipe_through [:user_settings_root_layout, :empty_layout]
       get "/", UserSettingsController, :show
       put "/account", UserSettingsController, :update_account
       put "/email", UserSettingsController, :update_email
@@ -139,7 +157,7 @@ defmodule AzimuttWeb.Router do
   end
 
   scope "/admin", AzimuttWeb, as: :admin do
-    pipe_through [:browser, :require_authed_user, :require_admin_user, :admin_layout]
+    pipe_through [:browser, :require_authed_user, :require_admin_user, :admin_root_layout]
     get "/", Admin.DashboardController, :index
     resources "/users", Admin.UserController, only: [:index, :show]
     resources "/organizations", Admin.OrganizationController, only: [:index, :show]
@@ -232,14 +250,14 @@ defmodule AzimuttWeb.Router do
   end
 
   scope "/", AzimuttWeb do
-    pipe_through [:browser, :elm_layout, AllowCrossOriginIframe]
+    pipe_through [:browser, :elm_root_layout, AllowCrossOriginIframe]
     get "/embed", ElmController, :embed
   end
 
   # elm routes, must be at the end (because of `/:organization_id/:project_id` "catch all")
   # routes listed in the same order than in `elm/src/Pages`
   scope "/", AzimuttWeb do
-    pipe_through [:browser, :elm_layout]
+    pipe_through [:browser, :elm_root_layout]
     get "/create", ElmController, :create
     get "/new", ElmController, :new
     get "/:organization_id", ElmController, :orga_show

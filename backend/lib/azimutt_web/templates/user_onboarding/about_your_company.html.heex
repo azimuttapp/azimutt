@@ -1,0 +1,18 @@
+<h1>About your company</h1>
+<.form let={f} for={:user} action={Routes.user_onboarding_path(@conn, :about_your_company_next)}>
+    <div class="mt-6 grid grid-cols-4 gap-6">
+        <div class="col-span-4 sm:col-span-2">
+            <%= label f, :company, class: "block text-sm font-medium leading-6 text-gray-900" %>
+            <%= text_input f, :company, placeholder: "Azimutt", class: "mt-2 block w-full rounded-md border-0 px-3 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-gray-900 sm:text-sm sm:leading-6" %>
+            <%= error_tag f, :company %>
+        </div>
+        <div class="col-span-4 sm:col-span-2">
+            <%= label f, :company_size, class: "block text-sm font-medium leading-6 text-gray-900" %>
+            <%= text_input f, :company_size, placeholder: "1000", class: "mt-2 block w-full rounded-md border-0 px-3 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-gray-900 sm:text-sm sm:leading-6" %>
+            <%= error_tag f, :company_size %>
+        </div>
+    </div>
+    <div class="bg-gray-50 px-4 py-3 text-right sm:px-6">
+        <%= submit "Continue", class: "inline-flex justify-center rounded-md bg-gray-900 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900" %>
+    </div>
+</.form>

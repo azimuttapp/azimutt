@@ -1,0 +1,4 @@
+<h1>Why are you using Azimutt?</h1>
+
+<%= link "Explore", to: Routes.user_onboarding_path(@conn, :explore_or_design_next, %{usecase: "explore"}), method: :post, class: "rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" %>
+<%= link "Design", to: Routes.user_onboarding_path(@conn, :explore_or_design_next, %{usecase: "design"}), method: :post, class: "rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" %>

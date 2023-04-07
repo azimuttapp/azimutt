@@ -18,6 +18,7 @@ defmodule Azimutt.Accounts.User do
     field :company, :string
     field :location, :string
     field :description, :string
+    field :onboarding, :string
     field :github_username, :string
     field :twitter_username, :string
     field :is_admin, :boolean, default: false
