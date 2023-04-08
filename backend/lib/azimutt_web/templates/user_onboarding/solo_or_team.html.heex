@@ -1,4 +1,17 @@
-<h1>How will you use Azimutt?</h1>
-
-<%= link "Solo!", to: Routes.user_onboarding_path(@conn, :solo_or_team_next, %{usage: "solo"}), method: :post, class: "rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" %>
-<%= link "Team!", to: Routes.user_onboarding_path(@conn, :solo_or_team_next, %{usage: "team"}), method: :post, class: "rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" %>
+<div class="flex min-h-full">
+    <div class="flex flex-col align-center justify-center px-4 lg:flex-none lg:px-20 xl:px-24 text-center">
+        <div class="mx-auto w-full max-w-sm text-center lg:w-96">
+            <%= link "Solo", to: Routes.user_onboarding_path(@conn, :solo_or_team_next, %{usage: "solo"}), method: :post,
+                class: "rounded-md bg-gray-900 px-6 py-4 text-sm font-semibold text-white shadow-sm hover:bg-gray-700 text-center
+                focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600
+                mr-8"
+            %>
+            <span class="w-8 px-3 text-gray-600">or</span>
+            <%= link "Team", to: Routes.user_onboarding_path(@conn, :solo_or_team_next, %{usage: "team"}), method: :post,
+                class: "rounded-md bg-gray-900 px-6 py-4 text-sm font-semibold text-white shadow-sm hover:bg-gray-700 text-center
+                focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+            %>
+        </div>
+    </div>
+    <%= render "_simple_section.html", section: "How will you use Azimutt ?", description: "Get ready to explore the benefits of Azimutt tailored to your needs! Are you working on a personal project or looking to improve collaboration within a team? Choose the option that best fits your situation!" %>
+</div>

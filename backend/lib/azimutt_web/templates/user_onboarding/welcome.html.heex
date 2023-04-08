@@ -1,2 +1,12 @@
-<h1>Welcome!</h1>
-<%= link "Let's begin!", to: Routes.user_onboarding_path(@conn, :welcome_next), method: :post, class: "rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" %>
+<div class="flex min-h-full">
+    <div class="flex flex-1 flex-col justify-center py-12 px-4 sm:px-6 lg:flex-none lg:px-20 xl:px-24">
+        <div class="mx-auto w-full max-w-sm text-center lg:w-96">
+            <%= link "Let's begin!", to: Routes.user_onboarding_path(@conn, :welcome_next), method: :post,
+                class: "rounded-md bg-gray-900 px-6 py-4 text-sm font-semibold text-white shadow-sm
+                hover:bg-gray-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2
+                focus-visible:outline-indigo-600"
+            %>
+        </div>
+    </div>
+    <%= render "_simple_section.html", section: "Welcome !", description: "Welcome to Azimutt! Our mission is to help you unlock the full potential of your database through clear visualizations, intuitive understanding, and powerful optimization tools. With Azimutt, you'll be able to streamline your data workflows and improve your project's efficiency. Give it a try and experience the difference!" %>
+</div>

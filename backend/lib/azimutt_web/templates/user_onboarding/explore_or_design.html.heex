@@ -1,4 +1,17 @@
-<h1>Why are you using Azimutt?</h1>
-
-<%= link "Explore", to: Routes.user_onboarding_path(@conn, :explore_or_design_next, %{usecase: "explore"}), method: :post, class: "rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" %>
-<%= link "Design", to: Routes.user_onboarding_path(@conn, :explore_or_design_next, %{usecase: "design"}), method: :post, class: "rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" %>
+<div class="flex min-h-full">
+    <div class="flex flex-col align-center justify-center px-4 lg:flex-none lg:px-20 xl:px-24 text-center">
+        <div class="mx-auto w-full max-w-sm text-center lg:w-96">
+            <%= link "Explore", to: Routes.user_onboarding_path(@conn, :explore_or_design_next, %{usecase: "explore"}), method: :post,
+                class: "rounded-md bg-gray-900 px-6 py-4 text-sm font-semibold text-white shadow-sm hover:bg-gray-700 text-center
+                focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600
+                mr-8"
+            %>
+            <span class="w-8 px-3 text-gray-600">or</span>
+            <%=  link "Design", to: Routes.user_onboarding_path(@conn, :explore_or_design_next, %{usecase: "design"}), method: :post,
+                class: "rounded-md bg-gray-900 px-6 py-4 text-sm font-semibold text-white shadow-sm hover:bg-gray-700 text-center
+                focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+            %>
+        </div>
+    </div>
+    <%= render "_simple_section.html", section: "Why are you using Azimutt?", description: "We'd love to know how you plan to make the most of Azimutt's powerful features. Please select the option that best describes your primary goal" %>
+</div>
