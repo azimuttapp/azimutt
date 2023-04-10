@@ -2,7 +2,7 @@ defmodule Azimutt.Accounts do
   @moduledoc "The Accounts context."
   import Ecto.Query, warn: false
   alias Azimutt.Repo
-  alias Azimutt.Accounts.{User, UserNotifier, UserToken}
+  alias Azimutt.Accounts.{User, UserNotifier, UserProfile, UserToken}
   alias Azimutt.Organizations
   alias Azimutt.Organizations.OrganizationMember
   alias Azimutt.Tracking
@@ -94,6 +94,54 @@ defmodule Azimutt.Accounts do
       {:error, :user, changeset, _} ->
         {:error, changeset}
     end
+  end
+
+  ## Profile
+
+  def get_or_create_profile(%User{} = user) do
+    Repo.get_by(UserProfile, user_id: user.id)
+    |> Result.from_nillable()
+    |> Result.flat_map_error(fn _ -> create_profile(user) end)
+    |> Result.map(fn p -> p |> Repo.preload(:user) end)
+  end
+
+  defp create_profile(%User{} = user) do
+    %UserProfile{}
+    |> UserProfile.creation_changeset(user)
+    |> Repo.insert()
+  end
+
+  def change_profile_usage(%UserProfile{} = profile, now) do
+    profile
+    |> UserProfile.usage_changeset(%{}, now)
+  end
+
+  def set_profile_usage(%UserProfile{} = profile, usage, now) do
+    profile
+    |> UserProfile.usage_changeset(%{initial_usage: usage}, now)
+    |> Repo.update()
+  end
+
+  def change_profile_usecase(%UserProfile{} = profile, now) do
+    profile
+    |> UserProfile.usecase_changeset(%{}, now)
+  end
+
+  def set_profile_usecase(%UserProfile{} = profile, usecase, now) do
+    profile
+    |> UserProfile.usecase_changeset(%{initial_usecase: usecase}, now)
+    |> Repo.update()
+  end
+
+  def change_profile_role(%UserProfile{} = profile, now) do
+    profile
+    |> UserProfile.role_changeset(%{}, now)
+  end
+
+  def set_profile_role(%UserProfile{} = profile, role, now) do
+    profile
+    |> UserProfile.role_changeset(%{role: role}, now)
+    |> Repo.update()
   end
 
   ## Settings

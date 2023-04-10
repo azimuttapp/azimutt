@@ -1,6 +1,7 @@
 defmodule AzimuttWeb.UserOnboardingController do
   use AzimuttWeb, :controller
   alias Azimutt.Accounts
+  alias Azimutt.Utils.Result
   action_fallback AzimuttWeb.FallbackController
 
   # keep actions sorted in onboarding order
@@ -10,14 +11,18 @@ defmodule AzimuttWeb.UserOnboardingController do
   def welcome(conn, _params), do: conn |> render("welcome.html")
   def welcome_next(conn, _params), do: conn |> redirect(to: Routes.user_onboarding_path(conn, :solo_or_team))
 
-  def solo_or_team(conn, _params), do: conn |> render("solo_or_team.html")
-  def solo_or_team_next(conn, _params), do: conn |> redirect(to: Routes.user_onboarding_path(conn, :explore_or_design))
+  def solo_or_team(conn, _params), do: conn |> show("solo_or_team.html", &Accounts.change_profile_usage(&1, &2))
 
-  def explore_or_design(conn, _params), do: conn |> render("explore_or_design.html")
-  def explore_or_design_next(conn, _params), do: conn |> redirect(to: Routes.user_onboarding_path(conn, :role))
+  def solo_or_team_next(conn, %{"usage" => usage}),
+    do: conn |> update(usage, &Accounts.set_profile_usage(&1, &2, &3), "solo_or_team.html", :explore_or_design)
 
-  def role(conn, _params), do: conn |> render("role.html")
-  def role_next(conn, _params), do: conn |> redirect(to: Routes.user_onboarding_path(conn, :about_you))
+  def explore_or_design(conn, _params), do: conn |> show("explore_or_design.html", &Accounts.change_profile_usecase(&1, &2))
+
+  def explore_or_design_next(conn, %{"usecase" => usecase}),
+    do: conn |> update(usecase, &Accounts.set_profile_usecase(&1, &2, &3), "explore_or_design.html", :role)
+
+  def role(conn, _params), do: conn |> show("role.html", &Accounts.change_profile_role(&1, &2))
+  def role_next(conn, %{"role" => role}), do: conn |> update(role, &Accounts.set_profile_role(&1, &2, &3), "role.html", :about_you)
 
   def about_you(conn, _params), do: conn |> render("about_you.html")
   def about_you_next(conn, _params), do: conn |> redirect(to: Routes.user_onboarding_path(conn, :about_your_company))
@@ -37,4 +42,24 @@ defmodule AzimuttWeb.UserOnboardingController do
   def finalize(conn, _params), do: conn |> redirect(to: Routes.user_dashboard_path(conn, :index))
 
   def template(conn, %{"template" => template}), do: conn |> render("#{template}.html")
+
+  defp show(conn, template, changeset) do
+    current_user = conn.assigns.current_user
+    now = DateTime.utc_now()
+
+    Accounts.get_or_create_profile(current_user)
+    |> Result.map(fn p -> conn |> render(template, changeset: changeset.(p, now)) end)
+  end
+
+  defp update(conn, value, set, template, next) do
+    current_user = conn.assigns.current_user
+    now = DateTime.utc_now()
+
+    Accounts.get_or_create_profile(current_user)
+    |> Result.flat_map(fn p -> set.(p, value, now) end)
+    |> Result.fold(
+      fn err -> conn |> render(template, changeset: err) end,
+      fn _ -> conn |> redirect(to: Routes.user_onboarding_path(conn, next)) end
+    )
+  end
 end
