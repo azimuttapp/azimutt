@@ -24,8 +24,10 @@ defmodule AzimuttWeb.UserOnboardingController do
   def role(conn, _params), do: conn |> show("role.html", &Accounts.change_profile_role(&1, &2))
   def role_next(conn, %{"role" => role}), do: conn |> update(role, &Accounts.set_profile_role(&1, &2, &3), "role.html", :about_you)
 
-  def about_you(conn, _params), do: conn |> render("about_you.html")
-  def about_you_next(conn, _params), do: conn |> redirect(to: Routes.user_onboarding_path(conn, :about_your_company))
+  def about_you(conn, _params), do: conn |> show("about_you.html", &Accounts.change_profile_user_attrs(&1, &2))
+
+  def about_you_next(conn, %{"user" => about_you}),
+    do: conn |> update(about_you, &Accounts.set_profile_user_attrs(&1, &2, &3), "about_you.html", :about_your_company)
 
   def about_your_company(conn, _params), do: conn |> render("about_your_company.html")
   def about_your_company_next(conn, _params), do: conn |> redirect(to: Routes.user_onboarding_path(conn, :plan))
@@ -56,10 +58,15 @@ defmodule AzimuttWeb.UserOnboardingController do
     now = DateTime.utc_now()
 
     Accounts.get_or_create_profile(current_user)
-    |> Result.flat_map(fn p -> set.(p, value, now) end)
-    |> Result.fold(
-      fn err -> conn |> render(template, changeset: err) end,
-      fn _ -> conn |> redirect(to: Routes.user_onboarding_path(conn, next)) end
-    )
+    |> Result.flat_map(fn p ->
+      set.(p, value, now)
+      |> Result.fold(
+        fn err -> conn |> render(template, changeset: err) end,
+        fn _ ->
+          p.user |> Accounts.set_onboarding(next |> Atom.to_string(), now)
+          conn |> redirect(to: Routes.user_onboarding_path(conn, next))
+        end
+      )
+    end)
   end
 end

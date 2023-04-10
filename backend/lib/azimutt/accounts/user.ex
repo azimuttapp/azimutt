@@ -128,6 +128,18 @@ defmodule Azimutt.Accounts.User do
     |> validate_required([:name, :avatar])
   end
 
+  def onboarding_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:onboarding])
+    |> validate_required([:onboarding])
+  end
+
+  def about_you_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:location, :description])
+    |> validate_required([:location, :description])
+  end
+
   def email_changeset(user, attrs) do
     user
     |> cast(attrs, [:email])

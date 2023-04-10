@@ -1,5 +1,5 @@
 <h1>About you</h1>
-<.form let={f} for={:user} action={Routes.user_onboarding_path(@conn, :about_you_next)}>
+<.form let={f} for={@changeset} action={Routes.user_onboarding_path(@conn, :about_you_next)}>
     <div class="mt-6 grid grid-cols-4 gap-6">
         <div class="col-span-4 sm:col-span-2">
             <%= label f, :location, class: "block text-sm font-medium leading-6 text-gray-900" %>

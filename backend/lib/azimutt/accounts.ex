@@ -98,6 +98,13 @@ defmodule Azimutt.Accounts do
 
   ## Profile
 
+  def set_onboarding(%User{} = user, onboarding, now) do
+    user
+    |> User.onboarding_changeset(%{onboarding: onboarding})
+    |> User.update_changeset(now)
+    |> Repo.update()
+  end
+
   def get_or_create_profile(%User{} = user) do
     Repo.get_by(UserProfile, user_id: user.id)
     |> Result.from_nillable()
@@ -141,6 +148,18 @@ defmodule Azimutt.Accounts do
   def set_profile_role(%UserProfile{} = profile, role, now) do
     profile
     |> UserProfile.role_changeset(%{role: role}, now)
+    |> Repo.update()
+  end
+
+  def change_profile_user_attrs(%UserProfile{} = profile, _now) do
+    profile.user
+    |> User.about_you_changeset(%{})
+  end
+
+  def set_profile_user_attrs(%UserProfile{} = profile, attrs, now) do
+    profile.user
+    |> User.about_you_changeset(attrs)
+    |> User.update_changeset(now)
     |> Repo.update()
   end
 

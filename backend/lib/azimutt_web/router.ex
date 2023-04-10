@@ -97,7 +97,7 @@ defmodule AzimuttWeb.Router do
       get "/role", UserOnboardingController, :role
       post "/role", UserOnboardingController, :role_next
       get "/about-you", UserOnboardingController, :about_you
-      post "/about-you", UserOnboardingController, :about_you_next
+      put "/about-you", UserOnboardingController, :about_you_next
       get "/about-your-company", UserOnboardingController, :about_your_company
       post "/about-your-company", UserOnboardingController, :about_your_company_next
       get "/plan", UserOnboardingController, :plan
