@@ -6,5 +6,6 @@ declare global {
         Elm: { Main: ElmProgram<ElmFlags, JsMsg, ElmMsg> }
         azimutt: AzimuttApi
         isDirty: boolean
+        sentry_frontend_dsn?: string
     }
 }

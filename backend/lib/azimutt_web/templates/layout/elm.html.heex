@@ -6,6 +6,7 @@
     <script type="text/javascript" src={Routes.static_path(@conn, "/elm/dist/elm.js")} />
 </head>
 <body>
+    <%= if Azimutt.config(:sentry_frontend_dsn) do %><script>window.sentry_frontend_dsn = '<%= Azimutt.config(:sentry_frontend_dsn) %>'</script><% end %>
     <script type="text/javascript" src={Routes.static_path(@conn, "/elm/script.js")} />
 </body>
 </html>

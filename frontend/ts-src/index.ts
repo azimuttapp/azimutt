@@ -420,9 +420,9 @@ document.addEventListener('keyup', (e: KeyboardEvent) => {
     keyupHoldKey(e)
 })
 
-if (env === Env.enum.prod) {
+if (window.sentry_frontend_dsn) {
     Sentry.init({
-        dsn: "https://52a062c4168f402485783ad10fe2ccc2@o1353262.ingest.sentry.io/4504471109304320",
+        dsn: window.sentry_frontend_dsn,
         integrations: [new BrowserTracing()],
         tracesSampleRate: 1.0,
     })

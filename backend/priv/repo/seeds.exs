@@ -35,7 +35,7 @@ admin = Azimutt.Repo.insert!(admin_attrs)
 
 azimutt_org_attrs = %{
   name: "Azimutt",
-  contact_email: "hey@azimutt.app",
+  contact_email: "contact@azimutt.app",
   logo: Faker.Avatar.image_url(),
   location: "Paris",
   description: "Azimutt's organization.",

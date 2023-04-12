@@ -27,7 +27,7 @@ defmodule Azimutt.Utils.Markdown do
     |> String.replace("{{issues_link}}", "#{github}/issues?q=is%3Aissue+is%3Aopen+label%3A%22feature+request%22")
     |> String.replace("{{feedback_link}}", "#{github}/discussions")
     |> String.replace("{{azimutt_twitter}}", "https://twitter.com/azimuttapp")
-    |> String.replace("{{azimutt_email}}", "hey@azimutt.app")
+    |> String.replace("{{azimutt_email}}", "contact@azimutt.app")
   end
 
   def base_link(path), do: path |> String.split("/") |> Enum.drop(2) |> Enum.take(2) |> Enum.map_join(fn p -> "/#{p}" end)

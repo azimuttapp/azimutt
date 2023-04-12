@@ -33,16 +33,14 @@ config :azimutt,
 
 config :azimutt, Azimutt.Repo,
   url: System.fetch_env!("DATABASE_URL"),
-  pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
-  socket_options: if(System.get_env("ECTO_IPV6") == "true", do: [:inet6], else: []),
+  pool_size: String.to_integer(System.get_env("DATABASE_POOL_SIZE") || "10"),
+  socket_options: if(System.get_env("DATABASE_IPV6") == "true", do: [:inet6], else: []),
   show_sensitive_data_on_connection_error: config_env() == :dev,
   stacktrace: config_env() == :dev
 
 if config_env() == :test, do: config(:azimutt, Azimutt.Repo, pool: Ecto.Adapters.SQL.Sandbox)
 
 if config_env() == :prod || config_env() == :staging do
-  if System.get_env("PHX_SERVER"), do: config(:azimutt, AzimuttWeb.Endpoint, server: true)
-
   config :azimutt, AzimuttWeb.Endpoint,
     server: System.get_env("PHX_SERVER") == "true",
     url: [host: host, port: 443, scheme: "https"],
@@ -195,6 +193,28 @@ if System.get_env("AUTH_SAML") == "true" do
     auth_saml: true
 
   raise "AUTH_SAML not implemented"
+end
+
+if System.get_env("SENTRY") == "true" do
+  IO.puts("Setup Sentry")
+  sentry_backend_dsn = System.get_env("SENTRY_BACKEND_DSN")
+  sentry_frontend_dsn = System.get_env("SENTRY_FRONTEND_DSN")
+
+  if sentry_backend_dsn do
+    config :sentry,
+      dsn: sentry_backend_dsn,
+      environment_name: config_env(),
+      release: Mix.Project.config()[:version],
+      enable_source_code_context: true,
+      root_source_code_path: File.cwd!(),
+      tags: %{env: config_env() |> Atom.to_string()},
+      included_environments: [config_env()]
+  end
+
+  if sentry_frontend_dsn do
+    config :azimutt,
+      sentry_frontend_dsn: sentry_frontend_dsn
+  end
 end
 
 # https://dashboard.stripe.com/test/apikeys & https://dashboard.stripe.com/account/webhooks
