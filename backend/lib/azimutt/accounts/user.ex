@@ -14,10 +14,8 @@ defmodule Azimutt.Accounts.User do
     field :email, :string
     field :provider, :string
     field :provider_uid, :string
+    field :provider_data, :map
     field :avatar, :string
-    field :company, :string
-    field :location, :string
-    field :description, :string
     field :onboarding, :string
     field :github_username, :string
     field :twitter_username, :string
@@ -30,10 +28,11 @@ defmodule Azimutt.Accounts.User do
     field :confirmed_at, :utc_datetime_usec
     field :deleted_at, :utc_datetime_usec
 
+    has_one :profile, Azimutt.Accounts.UserProfile
     many_to_many :organizations, Organization, join_through: OrganizationMember
   end
 
-  def search_fields, do: [:slug, :name, :email, :company, :location, :description, :github_username, :twitter_username]
+  def search_fields, do: [:slug, :name, :email, :github_username, :twitter_username]
 
   @doc """
   A user changeset for registration.
@@ -56,7 +55,7 @@ defmodule Azimutt.Accounts.User do
     required = [:name, :email, :avatar]
 
     user
-    |> cast(attrs, required ++ [:password, :company, :location, :description, :github_username, :twitter_username])
+    |> cast(attrs, required ++ [:password, :github_username, :twitter_username])
     |> Slugme.generate_slug(:name)
     |> validate_email()
     |> validate_password(opts)
@@ -69,7 +68,7 @@ defmodule Azimutt.Accounts.User do
     required = [:name, :email, :avatar, :provider]
 
     user
-    |> cast(attrs, required ++ [:provider_uid, :company, :location, :description, :github_username, :twitter_username])
+    |> cast(attrs, required ++ [:provider_uid, :provider_data, :github_username, :twitter_username])
     |> Slugme.generate_slug(:github_username)
     |> put_change(:last_signin, now)
     |> cast_embed(:data, required: true, with: &User.Data.changeset/2)
@@ -124,7 +123,7 @@ defmodule Azimutt.Accounts.User do
 
   def infos_changeset(user, attrs) do
     user
-    |> cast(attrs, [:name, :avatar, :company, :location, :description])
+    |> cast(attrs, [:name, :avatar])
     |> validate_required([:name, :avatar])
   end
 
@@ -132,12 +131,6 @@ defmodule Azimutt.Accounts.User do
     user
     |> cast(attrs, [:onboarding])
     |> validate_required([:onboarding])
-  end
-
-  def about_you_changeset(user, attrs) do
-    user
-    |> cast(attrs, [:location, :description])
-    |> validate_required([:location, :description])
   end
 
   def email_changeset(user, attrs) do
@@ -176,7 +169,7 @@ defmodule Azimutt.Accounts.User do
 
   def provider_changeset(user, attrs) do
     user
-    |> cast(attrs, [:provider, :provider_uid])
+    |> cast(attrs, [:provider, :provider_uid, :provider_data])
   end
 
   @doc "Confirms the account by setting `confirmed_at`."

@@ -11,9 +11,12 @@ defmodule Azimutt.Accounts.UserProfile do
     field :initial_usage, Ecto.Enum, values: [:solo, :team]
     field :initial_usecase, Ecto.Enum, values: [:design, :explore]
     field :role, :string
+    field :location, :string
+    field :description, :string
+    field :company, :string
     field :company_size, :integer
     field :discovered_by, :string
-    field :previously_tried, :string
+    field :previously_tried, {:array, :string}
     field :product_updates, :boolean
     timestamps()
   end
@@ -46,6 +49,15 @@ defmodule Azimutt.Accounts.UserProfile do
 
   def role_changeset(%UserProfile{} = profile, attrs, now) do
     required = [:role]
+
+    profile
+    |> cast(attrs, required)
+    |> change(updated_at: now)
+    |> validate_required(required)
+  end
+
+  def about_you_changeset(%UserProfile{} = profile, attrs, now) do
+    required = [:location, :description]
 
     profile
     |> cast(attrs, required)

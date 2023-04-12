@@ -9,9 +9,6 @@ defmodule AzimuttWeb.Api.UserView do
       name: user.name,
       email: user.email,
       avatar: user.avatar,
-      company: user.company,
-      location: user.location,
-      description: user.description,
       github_username: user.github_username,
       twitter_username: user.twitter_username,
       is_admin: user.is_admin,
@@ -27,9 +24,6 @@ defmodule AzimuttWeb.Api.UserView do
       name: user.name,
       email: user.email,
       avatar: user.avatar,
-      company: user.company,
-      location: user.location,
-      description: user.description,
       github_username: user.github_username,
       twitter_username: user.twitter_username
     }

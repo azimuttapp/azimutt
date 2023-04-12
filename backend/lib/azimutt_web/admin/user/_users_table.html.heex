@@ -17,14 +17,8 @@
                     <%= render AzimuttWeb.PartialsView, "_page_sort.html", page: @users, key: "name" %>
                 </th>
                 <th class="p-1" scope="col">Email / Github / Twitter</th>
-                <th class="group p-1" scope="col">
-                    Company
-                    <%= render AzimuttWeb.PartialsView, "_page_sort.html", page: @users, key: "company" %>
-                </th>
-                <th class="group p-1" scope="col">
-                    Location
-                    <%= render AzimuttWeb.PartialsView, "_page_sort.html", page: @users, key: "location" %>
-                </th>
+                <th class="group p-1" scope="col">Company</th>
+                <th class="group p-1" scope="col">Location</th>
                 <th class="p-1" scope="col">Description</th>
                 <th class="p-1" scope="col">Data</th>
             </tr>
@@ -51,15 +45,9 @@
                                 - <a href={"https://twitter.com/#{user.twitter_username}"} title="Twitter account" class="underline">@<%= user.twitter_username %></a>
                             <% end %>
                         </td>
-                        <td class="group p-1">
-                            <%= user.company %>
-                            <%= render AzimuttWeb.PartialsView, "_page_filter.html", page: @users, key: "company", value: user.company %>
-                        </td>
-                        <td class="group p-1">
-                            <%= user.location %>
-                            <%= render AzimuttWeb.PartialsView, "_page_filter.html", page: @users, key: "location", value: user.location %>
-                        </td>
-                        <td class="p-1 truncate max-w-xs" title={user.description}><%= user.description %></td>
+                        <td class="group p-1"><%= user.profile.company %></td>
+                        <td class="group p-1"><%= user.profile.location %></td>
+                        <td class="p-1 truncate max-w-xs" title={user.profile.description}><%= user.profile.description %></td>
                         <td class="p-1 truncate max-w-xs" title={user.data |> format_data()}><%= user.data |> format_data() %></td>
                     </tr>
                 <% end %>

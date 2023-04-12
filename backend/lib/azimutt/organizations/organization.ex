@@ -60,7 +60,7 @@ defmodule Azimutt.Organizations.Organization do
         name: current_user.name,
         contact_email: current_user.email,
         logo: current_user.avatar,
-        location: current_user.location,
+        location: nil,
         github_username: current_user.github_username,
         twitter_username: current_user.twitter_username
       },

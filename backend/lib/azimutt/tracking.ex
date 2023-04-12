@@ -187,8 +187,6 @@ defmodule Azimutt.Tracking do
       slug: user.slug,
       name: user.name,
       email: user.email,
-      company: user.company,
-      location: user.location,
       github_username: user.github_username,
       twitter_username: user.twitter_username,
       is_admin: user.is_admin,

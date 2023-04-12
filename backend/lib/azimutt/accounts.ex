@@ -151,15 +151,14 @@ defmodule Azimutt.Accounts do
     |> Repo.update()
   end
 
-  def change_profile_user_attrs(%UserProfile{} = profile, _now) do
-    profile.user
-    |> User.about_you_changeset(%{})
+  def change_profile_user_attrs(%UserProfile{} = profile, now) do
+    profile
+    |> UserProfile.about_you_changeset(%{}, now)
   end
 
   def set_profile_user_attrs(%UserProfile{} = profile, attrs, now) do
-    profile.user
-    |> User.about_you_changeset(attrs)
-    |> User.update_changeset(now)
+    profile
+    |> UserProfile.about_you_changeset(attrs, now)
     |> Repo.update()
   end
 

@@ -77,7 +77,7 @@ defmodule AzimuttWeb.UserSettingsController do
 
     Accounts.set_user_password(current_user, user_params, now)
     |> Result.fold(
-      fn changeset_error ->
+      fn _changeset_error ->
         conn
         |> put_flash(:error, "Failed to set password 😕")
         |> redirect(to: Routes.user_settings_path(conn, :show))
@@ -101,10 +101,10 @@ defmodule AzimuttWeb.UserSettingsController do
       Accounts.set_user_provider(current_user, %{provider: nil, provider_uid: nil}, now)
     end
     |> Result.fold(
-      fn changeset_error ->
+      fn _changeset_error ->
         conn |> put_flash(:error, "Can't remove #{provider} auth 😕") |> redirect(to: Routes.user_settings_path(conn, :show))
       end,
-      fn user ->
+      fn _user ->
         conn |> put_flash(:info, "Removed #{provider} auth!") |> redirect(to: Routes.user_settings_path(conn, :show))
       end
     )
