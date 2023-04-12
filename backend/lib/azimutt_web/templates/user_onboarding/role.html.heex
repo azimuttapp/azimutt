@@ -1,7 +1,9 @@
 <div class="flex min-h-full">
-    <div class="flex flex-col align-center justify-center px-4 lg:flex-none lg:px-20 xl:px-24 text-center">
-        <div class="mx-auto w-full max-w-sm text-center lg:w-96">
-            <div class="grid grid-cols-1">
+    <AzimuttWeb.Components.Step.step steps={[{"Solo or Team", "complete"}, {"Goal", "complete"}, {"Role", "current"}, {"Bio", "upcoming"}, {"Company", "upcoming"}, {"Plan option", "upcoming"}, {"Before Azimutt", "upcoming"}, {"Community"}]} />
+    <div class="flex flex-col items-center justify-center px-4 py-12 mx-auto mt-0 sm:px-6 lg:px-8">
+        <div class="mx-auto">
+            <%= render "_simple_section.html", section: "Why are you using Azimutt?", description: "We'd love to know how you plan to make the most of Azimutt's powerful features. Please select the option that best describes your primary goal" %>
+            <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <%= for role <- [
                     "Sofware Engineer", "Data Engineer",
                     "Manager / CTO",
@@ -17,5 +19,4 @@
             <%= render "_error.html", changeset: @changeset %>
         </div>
     </div>
-    <%= render "_simple_section.html", section: "Why are you using Azimutt?", description: "We'd love to know how you plan to make the most of Azimutt's powerful features. Please select the option that best describes your primary goal" %>
 </div>

@@ -1,17 +1,20 @@
 <div class="flex min-h-full">
-    <div class="flex flex-col align-center justify-center px-4 lg:flex-none lg:px-20 xl:px-24 text-center">
-        <div class="mx-auto w-full max-w-sm text-center lg:w-96">
-            <%= link "Explore", to: Routes.user_onboarding_path(@conn, :explore_or_design_next, %{usecase: "explore"}), method: :post,
-                class: "inline-block rounded-md bg-gray-900 px-6 py-4 text-sm font-semibold text-white shadow-sm hover:bg-gray-700 text-center
-                focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-            %>
-            <span class="px-12 text-gray-600">or</span>
-            <%=  link "Design", to: Routes.user_onboarding_path(@conn, :explore_or_design_next, %{usecase: "design"}), method: :post,
-                class: "inline-block rounded-md bg-gray-900 px-6 py-4 text-sm font-semibold text-white shadow-sm hover:bg-gray-700 text-center
-                focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-            %>
+    <AzimuttWeb.Components.Step.step steps={[{"Solo or Team", "complete"}, {"Goal", "current"}, {"Role", "upcoming"}, {"Bio", "upcoming"}, {"Company", "upcoming"}, {"Plan option", "upcoming"}, {"Before Azimutt", "upcoming"}, {"Community"}]} />
+    <div class="flex flex-col items-center justify-center px-4 py-12 mx-auto mt-0 sm:px-6 lg:px-8">
+        <div class="mx-auto">
+            <%= render "_simple_section.html", section: "Why are you using Azimutt?", description: "We'd love to know how you plan to make the most of Azimutt's powerful features. Please select the option that best describes your primary goal" %>
+            <div class="py-4 text-center">
+                <%= link "Explore", to: Routes.user_onboarding_path(@conn, :explore_or_design_next, %{usecase: "explore"}), method: :post,
+                    class: "inline-block rounded-md bg-gray-900 px-6 py-4 text-sm font-semibold text-white shadow-sm hover:bg-gray-700 text-center
+                    focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                %>
+                <span class="px-12 text-gray-600">or</span>
+                <%=  link "Design", to: Routes.user_onboarding_path(@conn, :explore_or_design_next, %{usecase: "design"}), method: :post,
+                    class: "inline-block rounded-md bg-gray-900 px-6 py-4 text-sm font-semibold text-white shadow-sm hover:bg-gray-700 text-center
+                    focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                %>
+            </div>
+            <%= render "_error.html", changeset: @changeset %>
         </div>
-        <%= render "_error.html", changeset: @changeset %>
     </div>
-    <%= render "_simple_section.html", section: "Why are you using Azimutt?", description: "We'd love to know how you plan to make the most of Azimutt's powerful features. Please select the option that best describes your primary goal" %>
 </div>
