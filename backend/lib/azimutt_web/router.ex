@@ -224,6 +224,12 @@ defmodule AzimuttWeb.Router do
     get "/embed", ElmController, :embed
   end
 
+  scope "/", AzimuttWeb do
+    pipe_through [:api]
+    get "/ping", Api.HealthController, :ping
+    get "/health", Api.HealthController, :health
+  end
+
   # elm routes, must be at the end (because of `/:organization_id/:project_id` "catch all")
   # routes listed in the same order than in `elm/src/Pages`
   scope "/", AzimuttWeb do
