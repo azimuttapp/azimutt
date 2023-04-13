@@ -1,7 +1,7 @@
 <div class="flex min-h-full">
-    <AzimuttWeb.Components.Step.step steps={[{"Solo or Team", "current"}, {"Goal", "upcoming"}, {"Role", "upcoming"}, {"Bio", "upcoming"}, {"Company", "upcoming"}, {"Plan option", "upcoming"}, {"Before Azimutt", "upcoming"}, {"Community"}]} />
+    <AzimuttWeb.Components.Step.step steps={[{"Solo or Team", "current"}, {"Goal", "upcoming"}, {"Role", "upcoming"}, {"Bio", "upcoming"}, {"Company", "upcoming"}, {"Plan option", "upcoming"}, {"Before Azimutt", "upcoming"}, {"Community", "upcoming"}]} />
     <div class="flex flex-col items-center justify-center px-4 py-12 mx-auto mt-0 sm:px-6 lg:px-8">
-        <div class="mx-auto">
+        <div>
             <%= render "_simple_section.html", section: "How will you use Azimutt ?", description: "Get ready to explore the benefits of Azimutt tailored to your needs! Are you working on a personal project or looking to improve collaboration within a team? Choose the option that best fits your situation !" %>
             <div class="py-4 text-center">
                 <%= link "Solo", to: Routes.user_onboarding_path(@conn, :solo_or_team_next, %{usage: "solo"}), method: :post,

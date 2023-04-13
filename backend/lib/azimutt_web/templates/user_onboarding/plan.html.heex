@@ -1,4 +1,22 @@
-<h1>Plan</h1>
-<%= link "Free", to: Routes.user_onboarding_path(@conn, :plan_next, %{plan: "free"}), method: :post, class: "rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" %>
-<%= link "Pro", to: Routes.user_onboarding_path(@conn, :plan_next, %{plan: "pro"}), method: :post, class: "rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" %>
-<%= link "Enterprise", to: Routes.user_onboarding_path(@conn, :plan_next, %{plan: "enterprise"}), method: :post, class: "rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" %>
+<div class="flex min-h-full">
+  	<AzimuttWeb.Components.Step.step steps={[{"Solo or Team", "complete"}, {"Goal", "complete"}, {"Role", "complete"}, {"Bio", "complete"}, {"Company", "complete"}, {"Plan option", "current"}, {"Before Azimutt", "upcoming"}, {"Community", "upcoming"}]} />
+	<div class="flex flex-col items-center justify-center px-4 py-12 mx-auto mt-0 sm:px-6 lg:px-8">
+		<div>
+			<%= render "_simple_section.html", section: "Plan", description: "Choose the right plan for you" %>
+			<div class="py-4 space-x-2 text-center">
+				<%= link "Free", to: Routes.user_onboarding_path(@conn, :plan_next, %{plan: "free"}), method: :post,
+					class: "inline-block rounded-md bg-gray-900 px-6 py-4 text-sm font-semibold text-white shadow-sm hover:bg-gray-700 text-center
+					focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+				%>
+				<%= link "Pro", to: Routes.user_onboarding_path(@conn, :plan_next, %{plan: "pro"}), method: :post,
+					class: "inline-block rounded-md bg-gray-900 px-6 py-4 text-sm font-semibold text-white shadow-sm hover:bg-gray-700 text-center
+					focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+				%>
+				<%= link "Enterprise", to: Routes.user_onboarding_path(@conn, :plan_next, %{plan: "enterprise"}), method: :post,
+					class: "inline-block rounded-md bg-gray-900 px-6 py-4 text-sm font-semibold text-white shadow-sm hover:bg-gray-700 text-center
+					focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+				%>
+			</div>
+		</div>
+	</div>
+</div>
