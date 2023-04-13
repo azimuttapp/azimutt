@@ -1,7 +1,9 @@
 defmodule Azimutt.Accounts.UserNotifier do
   @moduledoc "base user notifier generate by `mix phx.gen.auth`"
+  require Logger
   import Swoosh.Email
   alias Azimutt.Mailer
+  alias Azimutt.Utils.Result
 
   def send_email_confirmation(user, url) do
     deliver(user.email, "Please confirm your email", """
@@ -82,5 +84,6 @@ defmodule Azimutt.Accounts.UserNotifier do
     with {:ok, _metadata} <- Mailer.deliver(email) do
       {:ok, email}
     end
+    |> Result.tap_error(fn {_, err} -> Logger.error("Error sending email: #{err.error.message}") end)
   end
 end
