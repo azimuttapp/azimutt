@@ -82,8 +82,16 @@ defmodule Azimutt.Tracking do
   def subscribe_start(%User{} = current_user, %Organization{} = org, plan, price, quantity),
     do: create_event("subscribe_start", org_data(org), %{plan: plan, price: price, quantity: quantity}, current_user, org.id, nil)
 
-  def subscribe_error(%User{} = current_user, %Organization{} = org, plan, price, quantity),
-    do: create_event("subscribe_error", org_data(org), %{plan: plan, price: price, quantity: quantity}, current_user, org.id, nil)
+  def subscribe_error(%User{} = current_user, %Organization{} = org, plan, price, quantity, %Stripe.Error{} = error),
+    do:
+      create_event(
+        "subscribe_error",
+        org_data(org),
+        %{plan: plan, price: price, quantity: quantity, error: error.message},
+        current_user,
+        org.id,
+        nil
+      )
 
   def subscribe_success(%User{} = current_user, %Organization{} = org, details),
     do: create_event("subscribe_success", org_data(org), details, current_user, org.id, nil)

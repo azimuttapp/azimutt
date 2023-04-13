@@ -2,6 +2,7 @@ defmodule AzimuttWeb.UserOnboardingController do
   use AzimuttWeb, :controller
   alias Azimutt.Accounts
   alias Azimutt.Utils.Result
+  alias AzimuttWeb.Services.BillingSrv
   action_fallback AzimuttWeb.FallbackController
 
   # keep actions sorted in onboarding order
@@ -35,7 +36,39 @@ defmodule AzimuttWeb.UserOnboardingController do
     do: conn |> update(profile, &Accounts.set_profile_company(&1, &2, &3), "about_your_company.html", :plan)
 
   def plan(conn, _params), do: conn |> render("plan.html")
-  def plan_next(conn, _params), do: conn |> redirect(to: Routes.user_onboarding_path(conn, :before_azimutt))
+
+  def plan_next(conn, %{"plan" => plan}) do
+    current_user = conn.assigns.current_user
+    now = DateTime.utc_now()
+
+    Accounts.get_or_create_profile(current_user)
+    |> Result.flat_map(fn p ->
+      Accounts.set_profile_plan(p, %{plan: plan}, now)
+      |> Result.fold(
+        fn err -> conn |> render("plan.html", changeset: err, profile: p) end,
+        fn _ ->
+          current = :plan
+          next = :before_azimutt
+          p.user |> Accounts.set_onboarding(next |> Atom.to_string(), now)
+
+          if plan == "pro" do
+            organization_id = p.team_organization_id || Accounts.get_user_default_organization(current_user).id
+
+            conn
+            |> BillingSrv.subscribe_pro(
+              current_user,
+              organization_id,
+              Routes.user_onboarding_url(conn, next),
+              Routes.user_onboarding_url(conn, current),
+              Routes.user_onboarding_path(conn, current)
+            )
+          else
+            conn |> redirect(to: Routes.user_onboarding_path(conn, next))
+          end
+        end
+      )
+    end)
+  end
 
   def before_azimutt(conn, _params), do: conn |> render("before_azimutt.html")
   def before_azimutt_next(conn, _params), do: conn |> redirect(to: Routes.user_onboarding_path(conn, :community))

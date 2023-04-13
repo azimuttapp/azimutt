@@ -183,10 +183,23 @@ defmodule Azimutt.Accounts do
       {:ok, nil}
     end
     |> Result.flat_map(fn organization_id ->
+      company_attrs = if organization_id, do: attrs |> Map.put("team_organization_id", organization_id), else: attrs
+
       profile
-      |> UserProfile.company_changeset(attrs |> Map.put("team_organization_id", organization_id), now)
+      |> UserProfile.company_changeset(company_attrs, now)
       |> Repo.update()
     end)
+  end
+
+  def change_profile_plan(%UserProfile{} = profile, now) do
+    profile
+    |> UserProfile.plan_changeset(%{}, now)
+  end
+
+  def set_profile_plan(%UserProfile{} = profile, attrs, now) do
+    profile
+    |> UserProfile.plan_changeset(attrs, now)
+    |> Repo.update()
   end
 
   ## Settings

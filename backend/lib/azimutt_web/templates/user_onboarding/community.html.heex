@@ -2,6 +2,7 @@
     <AzimuttWeb.Components.Step.step steps={[{"Solo or Team", "complete"}, {"Goal", "complete"}, {"Role", "complete"}, {"Bio", "complete"}, {"Company", "complete"}, {"Plan option", "complete"}, {"Before Azimutt", "complete"}, {"Community", "current"}]} />
     <div class="flex flex-col items-center justify-center px-4 py-12 mx-auto mt-0 sm:px-6 lg:px-8">
         <div>
+            <%= render AzimuttWeb.LayoutView, "_flash.html", conn: @conn %>
             <%= render "_simple_section.html", section: "Community", description: "Azimutt is a database tool, but it's also a community" %>
             <div class="py-4 text-center">
                 <p>Join us on slack to <b>meet people interested in database design</b> and evolution, but also:</p>

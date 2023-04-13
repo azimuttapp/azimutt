@@ -42,47 +42,16 @@ defmodule Azimutt.Accounts.UserProfile do
     |> put_change(:user, user)
   end
 
-  def usage_changeset(%UserProfile{} = profile, attrs, now) do
-    required = [:usage]
+  def usage_changeset(%UserProfile{} = p, attrs, now), do: changeset(p, attrs, now, [:usage])
+  def usecase_changeset(%UserProfile{} = p, attrs, now), do: changeset(p, attrs, now, [:usecase])
+  def role_changeset(%UserProfile{} = p, attrs, now), do: changeset(p, attrs, now, [:role])
+  def about_you_changeset(%UserProfile{} = p, attrs, now), do: changeset(p, attrs, now, [:location, :description])
+  def company_changeset(%UserProfile{} = p, attrs, now), do: changeset(p, attrs, now, [:company, :company_size], [:team_organization_id])
+  def plan_changeset(%UserProfile{} = p, attrs, now), do: changeset(p, attrs, now, [:plan])
 
+  defp changeset(%UserProfile{} = profile, attrs, now, required, others \\ []) do
     profile
-    |> cast(attrs, required)
-    |> change(updated_at: now)
-    |> validate_required(required)
-  end
-
-  def usecase_changeset(%UserProfile{} = profile, attrs, now) do
-    required = [:usecase]
-
-    profile
-    |> cast(attrs, required)
-    |> change(updated_at: now)
-    |> validate_required(required)
-  end
-
-  def role_changeset(%UserProfile{} = profile, attrs, now) do
-    required = [:role]
-
-    profile
-    |> cast(attrs, required)
-    |> change(updated_at: now)
-    |> validate_required(required)
-  end
-
-  def about_you_changeset(%UserProfile{} = profile, attrs, now) do
-    required = [:location, :description]
-
-    profile
-    |> cast(attrs, required)
-    |> change(updated_at: now)
-    |> validate_required(required)
-  end
-
-  def company_changeset(%UserProfile{} = profile, attrs, now) do
-    required = [:company, :company_size, :team_organization_id]
-
-    profile
-    |> cast(attrs, required)
+    |> cast(attrs, required ++ others)
     |> change(updated_at: now)
     |> validate_required(required)
   end

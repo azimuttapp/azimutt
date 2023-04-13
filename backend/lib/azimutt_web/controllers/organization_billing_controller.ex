@@ -7,9 +7,9 @@ defmodule AzimuttWeb.OrganizationBillingController do
   alias Azimutt.Organizations.Organization
   alias Azimutt.Services.StripeSrv
   alias Azimutt.Tracking
-  alias Azimutt.Utils.Result
   alias Azimutt.Utils.Uuid
   alias AzimuttWeb.Router.Helpers, as: Routes
+  alias AzimuttWeb.Services.BillingSrv
   action_fallback AzimuttWeb.FallbackController
 
   def index(conn, %{"organization_id" => organization_id} = params) do
@@ -70,47 +70,15 @@ defmodule AzimuttWeb.OrganizationBillingController do
 
   def new(conn, %{"organization_id" => organization_id}) do
     current_user = conn.assigns.current_user
-    {:ok, %Organization{} = organization} = Organizations.get_organization(organization_id, current_user)
-    plan = "pro"
-    price = Azimutt.config(:stripe_price_pro_monthly)
-    quantity = get_organization_seats(organization)
-    Tracking.subscribe_init(current_user, organization, plan, price, quantity)
 
-    result =
-      if organization.stripe_customer_id == nil do
-        Organizations.create_stripe_customer(organization, current_user)
-      else
-        {:ok, organization}
-      end
-      |> Result.flat_map(fn stripe_orga ->
-        StripeSrv.create_session(%{
-          customer: stripe_orga.stripe_customer_id,
-          success_url: Routes.organization_billing_url(conn, :success, organization_id),
-          cancel_url: Routes.organization_billing_url(conn, :cancel, organization_id),
-          # Get price_id from your Stripe dashboard for your product
-          price_id: price,
-          quantity: quantity
-        })
-      end)
-
-    case result do
-      {:ok, session} ->
-        Logger.info("Stripe session is create with success")
-        Tracking.subscribe_start(current_user, organization, plan, price, quantity)
-        redirect(conn, external: session.url)
-
-      {:error, stripe_error} ->
-        Logger.error("Cannot create Stripe Session for organization #{organization.id}: #{stripe_error}")
-        Tracking.subscribe_error(current_user, organization, plan, price, quantity)
-
-        conn
-        |> put_flash(:error, "Sorry something went wrong, please contact us at #{Azimutt.config(:support_email)}.")
-        |> redirect(to: Routes.organization_billing_path(conn, :index, organization, source: "billing-error"))
-    end
-  end
-
-  defp get_organization_seats(organization) do
-    organization.members |> length
+    conn
+    |> BillingSrv.subscribe_pro(
+      current_user,
+      organization_id,
+      Routes.organization_billing_url(conn, :success, organization_id),
+      Routes.organization_billing_url(conn, :cancel, organization_id),
+      Routes.organization_billing_path(conn, :index, organization_id, source: "billing-error")
+    )
   end
 
   def edit(conn, %{"organization_id" => organization_id}) do

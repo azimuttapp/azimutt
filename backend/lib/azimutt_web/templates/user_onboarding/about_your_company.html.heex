@@ -2,6 +2,7 @@
     <AzimuttWeb.Components.Step.step steps={[{"Solo or Team", "complete"}, {"Goal", "complete"}, {"Role", "complete"}, {"Bio", "complete"}, {"Company", "current"}, {"Plan option", "upcoming"}, {"Before Azimutt", "upcoming"}, {"Community", "upcoming"}]} />
     <div class="flex flex-col items-center justify-center px-4 py-12 mx-auto mt-0 sm:px-6 lg:px-8">
         <div>
+            <%= render AzimuttWeb.LayoutView, "_flash.html", conn: @conn %>
             <%= render "_simple_section.html", section: "About your company", description: nil %>
             <.form let={f} for={@changeset} action={Routes.user_onboarding_path(@conn, :about_your_company_next)}>
                 <div class="grid grid-cols-4 gap-6 mt-6 sm:max-w-md lg:max-w-lg">
