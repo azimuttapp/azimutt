@@ -46,10 +46,11 @@ defmodule Azimutt.Accounts do
     |> register_user("password")
   end
 
-  def register_github_user(attrs, attribution, now) do
+  def register_github_user(user_attrs, profile_attrs, attribution, now) do
     %User{}
-    |> User.github_creation_changeset(attrs |> with_data(attribution), now)
+    |> User.github_creation_changeset(user_attrs |> with_data(attribution), now)
     |> register_user("github")
+    |> Result.tap(fn user -> create_profile(user, profile_attrs) end)
   end
 
   def register_heroku_user(email, attribution, now) do
@@ -108,13 +109,13 @@ defmodule Azimutt.Accounts do
   def get_or_create_profile(%User{} = user) do
     Repo.get_by(UserProfile, user_id: user.id)
     |> Result.from_nillable()
-    |> Result.flat_map_error(fn _ -> create_profile(user) end)
+    |> Result.flat_map_error(fn _ -> create_profile(user, %{}) end)
     |> Result.map(fn p -> p |> Repo.preload(:user) end)
   end
 
-  defp create_profile(%User{} = user) do
+  defp create_profile(%User{} = user, attrs) do
     %UserProfile{}
-    |> UserProfile.creation_changeset(user)
+    |> UserProfile.creation_changeset(user, attrs)
     |> Repo.insert()
   end
 
@@ -125,7 +126,7 @@ defmodule Azimutt.Accounts do
 
   def set_profile_usage(%UserProfile{} = profile, usage, now) do
     profile
-    |> UserProfile.usage_changeset(%{initial_usage: usage}, now)
+    |> UserProfile.usage_changeset(%{usage: usage}, now)
     |> Repo.update()
   end
 
@@ -136,7 +137,7 @@ defmodule Azimutt.Accounts do
 
   def set_profile_usecase(%UserProfile{} = profile, usecase, now) do
     profile
-    |> UserProfile.usecase_changeset(%{initial_usecase: usecase}, now)
+    |> UserProfile.usecase_changeset(%{usecase: usecase}, now)
     |> Repo.update()
   end
 
@@ -160,6 +161,32 @@ defmodule Azimutt.Accounts do
     profile
     |> UserProfile.about_you_changeset(attrs, now)
     |> Repo.update()
+  end
+
+  def change_profile_company(%UserProfile{} = profile, now) do
+    profile
+    |> UserProfile.company_changeset(%{}, now)
+  end
+
+  def set_profile_company(%UserProfile{} = profile, attrs, now) do
+    if attrs["organization"] == "true" do
+      Organizations.create_non_personal_organization(
+        %{
+          name: attrs["organization_name"],
+          contact_email: attrs["organization_email"],
+          logo: Faker.Avatar.image_url()
+        },
+        profile.user
+      )
+      |> Result.map(fn org -> org.id end)
+    else
+      {:ok, nil}
+    end
+    |> Result.flat_map(fn organization_id ->
+      profile
+      |> UserProfile.company_changeset(attrs |> Map.put("team_organization_id", organization_id), now)
+      |> Repo.update()
+    end)
   end
 
   ## Settings

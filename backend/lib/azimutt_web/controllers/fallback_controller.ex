@@ -57,4 +57,17 @@ defmodule AzimuttWeb.FallbackController do
     |> put_root_layout({AzimuttWeb.LayoutView, "root_hfull.html"})
     |> render("500.html", message: message)
   end
+
+  def call(_conn, {:ok, response}) do
+    response
+  end
+
+  def call(conn, _params) do
+    conn
+    |> put_status(:internal_server_error)
+    |> put_view(AzimuttWeb.ErrorView)
+    |> put_layout({AzimuttWeb.LayoutView, "empty.html"})
+    |> put_root_layout({AzimuttWeb.LayoutView, "root_hfull.html"})
+    |> render("500.html", message: "Unexpected error :/")
+  end
 end

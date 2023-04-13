@@ -8,8 +8,8 @@ defmodule AzimuttWeb.UserOnboardingController do
 
   def index(conn, _params), do: conn |> redirect(to: Routes.user_onboarding_path(conn, :welcome))
 
-  def welcome(conn, _params), do: conn |> render("welcome.html")
-  def welcome_next(conn, _params), do: conn |> redirect(to: Routes.user_onboarding_path(conn, :solo_or_team))
+  def welcome(conn, _params), do: conn |> show("welcome.html", fn _, _ -> nil end)
+  def welcome_next(conn, _params), do: conn |> update(nil, fn _, _, _ -> :ok end, "welcome.html", :solo_or_team)
 
   def solo_or_team(conn, _params), do: conn |> show("solo_or_team.html", &Accounts.change_profile_usage(&1, &2))
 
@@ -26,11 +26,13 @@ defmodule AzimuttWeb.UserOnboardingController do
 
   def about_you(conn, _params), do: conn |> show("about_you.html", &Accounts.change_profile_user_attrs(&1, &2))
 
-  def about_you_next(conn, %{"user" => about_you}),
-    do: conn |> update(about_you, &Accounts.set_profile_user_attrs(&1, &2, &3), "about_you.html", :about_your_company)
+  def about_you_next(conn, %{"user_profile" => profile}),
+    do: conn |> update(profile, &Accounts.set_profile_user_attrs(&1, &2, &3), "about_you.html", :about_your_company)
 
-  def about_your_company(conn, _params), do: conn |> render("about_your_company.html")
-  def about_your_company_next(conn, _params), do: conn |> redirect(to: Routes.user_onboarding_path(conn, :plan))
+  def about_your_company(conn, _params), do: conn |> show("about_your_company.html", &Accounts.change_profile_company(&1, &2))
+
+  def about_your_company_next(conn, %{"user_profile" => profile}),
+    do: conn |> update(profile, &Accounts.set_profile_company(&1, &2, &3), "about_your_company.html", :plan)
 
   def plan(conn, _params), do: conn |> render("plan.html")
   def plan_next(conn, _params), do: conn |> redirect(to: Routes.user_onboarding_path(conn, :before_azimutt))
@@ -50,7 +52,7 @@ defmodule AzimuttWeb.UserOnboardingController do
     now = DateTime.utc_now()
 
     Accounts.get_or_create_profile(current_user)
-    |> Result.map(fn p -> conn |> render(template, changeset: changeset.(p, now)) end)
+    |> Result.map(fn p -> conn |> render(template, changeset: changeset.(p, now), profile: p) end)
   end
 
   defp update(conn, value, set, template, next) do
@@ -61,7 +63,7 @@ defmodule AzimuttWeb.UserOnboardingController do
     |> Result.flat_map(fn p ->
       set.(p, value, now)
       |> Result.fold(
-        fn err -> conn |> render(template, changeset: err) end,
+        fn err -> conn |> render(template, changeset: err, profile: p) end,
         fn _ ->
           p.user |> Accounts.set_onboarding(next |> Atom.to_string(), now)
           conn |> redirect(to: Routes.user_onboarding_path(conn, next))
