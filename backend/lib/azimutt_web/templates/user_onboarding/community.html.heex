@@ -4,15 +4,32 @@
         <div>
             <%= render AzimuttWeb.LayoutView, "_flash.html", conn: @conn %>
             <%= render "_simple_section.html", section: "Community", description: "Azimutt is a database tool, but it's also a community" %>
-            <div class="py-4 text-center">
-                <p>Join us on slack to <b>meet people interested in database design</b> and evolution, but also:</p>
-                <ul>
-                    <li>Lightning fast support</li>
-                    <li>Discuss about Azimutt evolutions (we have huge features to come, let's prioritize and design them together)</li>
-                    <li>Get feedback for your database questions, design, evolution or any trouble you may have</li>
+            <div class="text-base leading-7 text-gray-600">
+                <p>Join us on slack to <b>meet people interested in database design</b> and evolution, but also :</p>
+                <ul role="list" class="my-4 space-y-3 text-sm leading-6 text-gray-600">
+                    <li class="flex gap-x-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="flex-none w-5 h-6 text-gray-600">
+                            <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd"></path>
+                        </svg>
+                        Lightning fast support
+                    </li>
+                    <li class="flex gap-x-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="flex-none w-5 h-6 text-gray-600">
+                            <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd"></path>
+                        </svg>
+                        Discuss about Azimutt evolutions (we have huge features to come, let's prioritize and design them together)
+                    </li>
+                    <li class="flex gap-x-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="flex-none w-5 h-6 text-gray-600">
+                            <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd"></path>
+                        </svg>
+                        Get feedback for your database questions, design, evolution or any trouble you may have
+                    </li>
                 </ul>
-                <p><a href={Azimutt.config(:slack_url)} target="_blank" rel="noopener" class="text-sm leading-6 text-gray-600 hover:text-gray-900">Join Slack</a></p>
-                <p><%= link "Continue", to: Routes.user_onboarding_path(@conn, :community_next), method: :post, class: "rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" %></p>
+                <div class="pt-3">
+                    <a href={Azimutt.config(:slack_url)} target="_blank" rel="noopener" class="inline-flex justify-center px-3 py-2 text-sm font-semibold text-white bg-gray-900 rounded-md shadow-sm hover:bg-gray-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900">Join Slack</a>
+                    <%= link "Continue", to: Routes.user_onboarding_path(@conn, :community_next), method: :post, class: "inline-flex justify-center rounded-md bg-gray-900 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900" %>
+                </div>
             </div>
         </div>
     </div>

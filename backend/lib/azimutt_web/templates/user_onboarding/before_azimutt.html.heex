@@ -4,7 +4,7 @@
         <div>
             <%= render AzimuttWeb.LayoutView, "_flash.html", conn: @conn %>
             <%= render "_simple_section.html", section: "Before Azimutt", description: "How did you discover Azimutt?" %>
-            <.form let={f} for={:user} action={Routes.user_onboarding_path(@conn, :before_azimutt_next)}>
+            <.form let={_f} for={:user} action={Routes.user_onboarding_path(@conn, :before_azimutt_next)}>
                 <fieldset class="mt-4">
                     <div class="space-y-3">
                         <%= for item <- [
@@ -15,7 +15,7 @@
                             %{id: "product_hunt", label: "Product Hunt"}
                         ] do %>
                             <div class="flex items-center">
-                                <input id={item.id} name="notification-method" type="radio" class="w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-600">
+                                <input id={item.id} name="notification-method" type="radio" class="w-4 h-4 text-gray-600 border-gray-300 focus:ring-gray-600">
                                 <label for={item.id} class="block ml-3 text-sm font-medium leading-6 text-gray-900"><%= item.label %></label>
                             </div>
                         <% end %>
@@ -33,7 +33,7 @@
                         ] do %>
                             <div class="relative flex items-start">
                                 <div class="flex items-center h-6">
-                                    <input id={item.id} name={item.id} type="checkbox" aria-describedby={"#{item.id}-description"} class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-600">
+                                    <input id={item.id} name={item.id} type="checkbox" aria-describedby={"#{item.id}-description"} class="w-4 h-4 text-gray-600 border-gray-300 rounded focus:ring-gray-600">
                                 </div>
                                 <div class="ml-3 text-sm leading-6">
                                     <label for={item.id} class="font-medium text-gray-900"><%= item.label %></label>
@@ -43,7 +43,7 @@
                         <% end %>
                         <div class="relative flex items-start">
                             <div class="flex items-center h-6">
-                                <input id="candidates" aria-describedby="candidates-description" name="candidates" type="checkbox" class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-600">
+                                <input id="candidates" aria-describedby="candidates-description" name="candidates" type="checkbox" class="w-4 h-4 text-gray-600 border-gray-300 rounded focus:ring-gray-600">
                             </div>
                             <div class="ml-3 text-sm leading-6">
                                 <label for="candidates" class="font-medium text-gray-900">New candidates</label>
@@ -52,7 +52,7 @@
                         </div>
                         <div class="relative flex items-start">
                             <div class="flex items-center h-6">
-                                <input id="offers" aria-describedby="offers-description" name="offers" type="checkbox" class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-600">
+                                <input id="offers" aria-describedby="offers-description" name="offers" type="checkbox" class="w-4 h-4 text-gray-600 border-gray-300 rounded focus:ring-gray-600">
                             </div>
                             <div class="ml-3 text-sm leading-6">
                                 <label for="offers" class="font-medium text-gray-900">Offers</label>
@@ -63,7 +63,7 @@
                 </fieldset>
                 <div class="relative flex items-start mt-6">
                     <div class="flex items-center h-6">
-                        <input type="checkbox" name="subscribe" id="subscribe" aria-describedby="subscribe-description" class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-600" />
+                        <input type="checkbox" name="subscribe" id="subscribe" aria-describedby="subscribe-description" class="w-4 h-4 text-gray-600 border-gray-300 rounded focus:ring-gray-600" />
                     </div>
                     <div class="ml-3 text-sm leading-6">
                         <label for="subscribe" class="font-medium text-gray-900">Keep me updated on Azimutt big news</label>

@@ -7,12 +7,12 @@
             <div class="py-4 text-center">
                 <%= link "Explore", to: Routes.user_onboarding_path(@conn, :explore_or_design_next, %{usecase: "explore"}), method: :post,
                     class: "inline-block rounded-md bg-gray-900 px-6 py-4 text-sm font-semibold text-white shadow-sm hover:bg-gray-700 text-center
-                    focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                    focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-600"
                 %>
                 <span class="px-12 text-gray-600">or</span>
                 <%=  link "Design", to: Routes.user_onboarding_path(@conn, :explore_or_design_next, %{usecase: "design"}), method: :post,
                     class: "inline-block rounded-md bg-gray-900 px-6 py-4 text-sm font-semibold text-white shadow-sm hover:bg-gray-700 text-center
-                    focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                    focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-600"
                 %>
             </div>
             <%= render "_error.html", changeset: @changeset %>
