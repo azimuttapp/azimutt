@@ -4,7 +4,7 @@
         <div>
             <%= render AzimuttWeb.LayoutView, "_flash.html", conn: @conn %>
             <%= render "_simple_section.html", section: "Before Azimutt", description: "How did you discover Azimutt?" %>
-            <.form let={_f} for={:user} action={Routes.user_onboarding_path(@conn, :before_azimutt_next)}>
+            <.form let={f} for={@changeset} action={Routes.user_onboarding_path(@conn, :before_azimutt_next)}>
                 <fieldset class="mt-4">
                     <div class="space-y-3">
                         <%= for item <- [
@@ -15,8 +15,8 @@
                             %{id: "product_hunt", label: "Product Hunt"}
                         ] do %>
                             <div class="flex items-center">
-                                <input id={item.id} name="notification-method" type="radio" class="w-4 h-4 text-gray-600 border-gray-300 focus:ring-gray-600">
-                                <label for={item.id} class="block ml-3 text-sm font-medium leading-6 text-gray-900"><%= item.label %></label>
+                                <%= radio_button f, :discovered_by, item.id, class: "w-4 h-4 text-gray-600 border-gray-300 focus:ring-gray-600" %>
+                                <%= label f, "discovered_by_#{item.id}", item.label, class: "block ml-3 text-sm font-medium leading-6 text-gray-900" %>
                             </div>
                         <% end %>
                     </div>
@@ -33,41 +33,23 @@
                         ] do %>
                             <div class="relative flex items-start">
                                 <div class="flex items-center h-6">
-                                    <input id={item.id} name={item.id} type="checkbox" aria-describedby={"#{item.id}-description"} class="w-4 h-4 text-gray-600 border-gray-300 rounded focus:ring-gray-600">
+                                    <%= render "_checkbox_multi.html", f: f, field: :previously_tried, value: item.id, 'aria-describedby': "#{item.id}-description", class: "w-4 h-4 text-gray-600 border-gray-300 rounded focus:ring-gray-600" %>
                                 </div>
                                 <div class="ml-3 text-sm leading-6">
-                                    <label for={item.id} class="font-medium text-gray-900"><%= item.label %></label>
+                                    <%= label f, input_for(f, :previously_tried, item.id), item.label, class: "font-medium text-gray-900" %>
                                     <span id={"#{item.id}-description"} class="text-gray-500"><span class="sr-only"><%= item.label %></span><%= item.description %></span>
                                 </div>
                             </div>
                         <% end %>
-                        <div class="relative flex items-start">
-                            <div class="flex items-center h-6">
-                                <input id="candidates" aria-describedby="candidates-description" name="candidates" type="checkbox" class="w-4 h-4 text-gray-600 border-gray-300 rounded focus:ring-gray-600">
-                            </div>
-                            <div class="ml-3 text-sm leading-6">
-                                <label for="candidates" class="font-medium text-gray-900">New candidates</label>
-                                <span id="candidates-description" class="text-gray-500"><span class="sr-only">New candidates </span>who apply for any open postings.</span>
-                            </div>
-                        </div>
-                        <div class="relative flex items-start">
-                            <div class="flex items-center h-6">
-                                <input id="offers" aria-describedby="offers-description" name="offers" type="checkbox" class="w-4 h-4 text-gray-600 border-gray-300 rounded focus:ring-gray-600">
-                            </div>
-                            <div class="ml-3 text-sm leading-6">
-                                <label for="offers" class="font-medium text-gray-900">Offers</label>
-                                <span id="offers-description" class="text-gray-500"><span class="sr-only">Offers </span>when they are accepted or rejected by candidates.</span>
-                            </div>
-                        </div>
                     </div>
                 </fieldset>
                 <div class="relative flex items-start mt-6">
                     <div class="flex items-center h-6">
-                        <input type="checkbox" name="subscribe" id="subscribe" aria-describedby="subscribe-description" class="w-4 h-4 text-gray-600 border-gray-300 rounded focus:ring-gray-600" />
+                        <%= checkbox f, :product_updates, "aria-describedby": "product_updates-description", class: "w-4 h-4 text-gray-600 border-gray-300 rounded focus:ring-gray-600" %>
                     </div>
                     <div class="ml-3 text-sm leading-6">
-                        <label for="subscribe" class="font-medium text-gray-900">Keep me updated on Azimutt big news</label>
-                        <p id="subscribe-description" class="text-gray-500">We won't send a lot of emails, less than one a month, but as we are starting we sometimes introduce big changes you would like to know...</p>
+                        <%= label f, :product_updates, "Keep me updated on Azimutt big news", class: "font-medium text-gray-900" %>
+                        <p id="product_updates-description" class="text-gray-500">We won't send a lot of emails, less than one a month, but as we are starting we sometimes introduce big changes you would like to know...</p>
                     </div>
                 </div>
                 <div class="px-4 py-6 text-center sm:px-6">

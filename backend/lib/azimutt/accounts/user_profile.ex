@@ -49,6 +49,9 @@ defmodule Azimutt.Accounts.UserProfile do
   def company_changeset(%UserProfile{} = p, attrs, now), do: changeset(p, attrs, now, [:company, :company_size], [:team_organization_id])
   def plan_changeset(%UserProfile{} = p, attrs, now), do: changeset(p, attrs, now, [:plan])
 
+  def previous_changeset(%UserProfile{} = p, attrs, now),
+    do: changeset(p, attrs, now, [:discovered_by, :previously_tried, :product_updates])
+
   defp changeset(%UserProfile{} = profile, attrs, now, required, others \\ []) do
     profile
     |> cast(attrs, required ++ others)

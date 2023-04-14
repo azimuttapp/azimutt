@@ -130,7 +130,6 @@ defmodule Azimutt.Accounts.User do
   def onboarding_changeset(user, attrs) do
     user
     |> cast(attrs, [:onboarding])
-    |> validate_required([:onboarding])
   end
 
   def email_changeset(user, attrs) do

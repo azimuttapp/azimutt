@@ -202,6 +202,17 @@ defmodule Azimutt.Accounts do
     |> Repo.update()
   end
 
+  def change_profile_previous(%UserProfile{} = profile, now) do
+    profile
+    |> UserProfile.previous_changeset(%{}, now)
+  end
+
+  def set_profile_previous(%UserProfile{} = profile, attrs, now) do
+    profile
+    |> UserProfile.previous_changeset(attrs, now)
+    |> Repo.update()
+  end
+
   ## Settings
 
   def change_user_infos(%User{} = user, attrs \\ %{}) do

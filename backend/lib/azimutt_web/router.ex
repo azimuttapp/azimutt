@@ -103,11 +103,11 @@ defmodule AzimuttWeb.Router do
       get "/plan", UserOnboardingController, :plan
       post "/plan", UserOnboardingController, :plan_next
       get "/before-azimutt", UserOnboardingController, :before_azimutt
-      post "/before-azimutt", UserOnboardingController, :before_azimutt_next
+      put "/before-azimutt", UserOnboardingController, :before_azimutt_next
       get "/community", UserOnboardingController, :community
       post "/community", UserOnboardingController, :community_next
       get "/finalize", UserOnboardingController, :finalize
-      get "/:template", UserOnboardingController, :template
+      if Azimutt.Application.env() == :dev, do: get("/:template", UserOnboardingController, :template)
     end
 
     scope "/settings" do

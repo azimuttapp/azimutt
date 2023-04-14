@@ -70,13 +70,22 @@ defmodule AzimuttWeb.UserOnboardingController do
     end)
   end
 
-  def before_azimutt(conn, _params), do: conn |> render("before_azimutt.html")
-  def before_azimutt_next(conn, _params), do: conn |> redirect(to: Routes.user_onboarding_path(conn, :community))
+  def before_azimutt(conn, _params), do: conn |> show("before_azimutt.html", &Accounts.change_profile_previous(&1, &2))
+
+  def before_azimutt_next(conn, %{"user_profile" => profile}),
+    do: conn |> update(profile, &Accounts.set_profile_previous(&1, &2, &3), "before_azimutt.html", :community)
 
   def community(conn, _params), do: conn |> render("community.html")
   def community_next(conn, _params), do: conn |> redirect(to: Routes.user_onboarding_path(conn, :finalize))
 
-  def finalize(conn, _params), do: conn |> redirect(to: Routes.user_dashboard_path(conn, :index))
+  def finalize(conn, _params) do
+    current_user = conn.assigns.current_user
+    now = DateTime.utc_now()
+
+    current_user
+    |> Accounts.set_onboarding(nil, now)
+    |> Result.map(fn _ -> conn |> redirect(to: Routes.user_dashboard_path(conn, :index)) end)
+  end
 
   def template(conn, %{"template" => template}), do: conn |> render("#{template}.html")
 
