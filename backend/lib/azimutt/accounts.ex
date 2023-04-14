@@ -53,14 +53,7 @@ defmodule Azimutt.Accounts do
     |> Result.tap(fn user -> create_profile(user, profile_attrs) end)
   end
 
-  def register_heroku_user(email, attribution, now) do
-    attrs = %{
-      name: email |> String.split("@") |> hd(),
-      email: email,
-      avatar: "https://www.gravatar.com/avatar/#{Crypto.md5(email)}?s=150&d=robohash",
-      provider: "heroku"
-    }
-
+  def register_heroku_user(attrs, attribution, now) do
     %User{}
     |> User.heroku_creation_changeset(attrs |> with_data(attribution), now)
     |> register_user("heroku")
@@ -110,7 +103,7 @@ defmodule Azimutt.Accounts do
     Repo.get_by(UserProfile, user_id: user.id)
     |> Result.from_nillable()
     |> Result.flat_map_error(fn _ -> create_profile(user, %{}) end)
-    |> Result.map(fn p -> p |> Repo.preload(:user) end)
+    |> Result.map(fn p -> p |> Repo.preload(:user) |> Repo.preload(:team_organization) end)
   end
 
   defp create_profile(%User{} = user, attrs) do
@@ -169,21 +162,19 @@ defmodule Azimutt.Accounts do
   end
 
   def set_profile_company(%UserProfile{} = profile, attrs, now) do
-    if attrs["organization"] == "true" do
-      Organizations.create_non_personal_organization(
-        %{
-          name: attrs["organization_name"],
-          contact_email: attrs["organization_email"],
-          logo: Faker.Avatar.image_url()
-        },
-        profile.user
-      )
-      |> Result.map(fn org -> org.id end)
+    orga_attrs = attrs["team_organization"]
+
+    if orga_attrs["create"] == "true" do
+      if profile.team_organization do
+        Organizations.update_organization(orga_attrs, profile.team_organization, profile.user)
+      else
+        Organizations.create_non_personal_organization(orga_attrs |> Map.put("logo", Faker.Avatar.image_url()), profile.user)
+      end
     else
       {:ok, nil}
     end
-    |> Result.flat_map(fn organization_id ->
-      company_attrs = if organization_id, do: attrs |> Map.put("team_organization_id", organization_id), else: attrs
+    |> Result.flat_map(fn organization ->
+      company_attrs = if organization, do: attrs |> Map.put("team_organization", organization), else: attrs
 
       profile
       |> UserProfile.company_changeset(company_attrs, now)

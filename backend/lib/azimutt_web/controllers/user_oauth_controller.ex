@@ -13,6 +13,13 @@ defmodule AzimuttWeb.UserOauthController do
     provider_uid = auth_info.uid |> Integer.to_string()
     user = auth_info.extra.raw_info.user
 
+    email_verified =
+      user["emails"]
+      |> Enum.find(fn e -> e["email"] == user["email"] end)
+      |> Result.from_nillable()
+      |> Result.map(fn e -> e["verified"] == true end)
+      |> Result.or_else(false)
+
     user_params = %{
       name: user["name"] || user["login"],
       email: user["email"],
@@ -22,7 +29,7 @@ defmodule AzimuttWeb.UserOauthController do
       avatar: user["avatar_url"],
       github_username: user["login"],
       twitter_username: user["twitter_username"],
-      onboarding: 'welcome'
+      confirmed_at: if(email_verified, do: now, else: nil)
     }
 
     profile_params = %{
@@ -38,7 +45,9 @@ defmodule AzimuttWeb.UserOauthController do
     |> Result.tap(fn user -> user |> Accounts.set_user_provider(user_params, now) end)
     |> Result.flat_map_error(fn _ ->
       Accounts.register_github_user(user_params, profile_params, UserAuth.get_attribution(conn), now)
-      |> Result.tap(fn user -> Accounts.send_email_confirmation(user, &Routes.user_confirmation_url(conn, :confirm, &1)) end)
+      |> Result.tap(fn user ->
+        if !user.confirmed_at, do: Accounts.send_email_confirmation(user, &Routes.user_confirmation_url(conn, :confirm, &1))
+      end)
     end)
     |> Result.map(fn user -> UserAuth.login_user_and_redirect(conn, user, provider) end)
     |> Result.or_else(callback(conn, %{}))

@@ -59,28 +59,31 @@ defmodule Azimutt.Accounts.User do
     |> Slugme.generate_slug(:name)
     |> validate_email()
     |> validate_password(opts)
+    |> put_change(:onboarding, "welcome")
     |> put_change(:last_signin, now)
     |> cast_embed(:data, required: true, with: &User.Data.changeset/2)
     |> validate_required(required)
   end
 
   def github_creation_changeset(user, attrs, now) do
-    required = [:name, :email, :avatar, :provider]
+    required = [:name, :email, :avatar, :provider, :provider_uid, :provider_data, :github_username]
 
     user
-    |> cast(attrs, required ++ [:provider_uid, :provider_data, :github_username, :twitter_username])
+    |> cast(attrs, required ++ [:twitter_username, :confirmed_at])
     |> Slugme.generate_slug(:github_username)
+    |> put_change(:onboarding, "welcome")
     |> put_change(:last_signin, now)
     |> cast_embed(:data, required: true, with: &User.Data.changeset/2)
     |> validate_required(required)
   end
 
   def heroku_creation_changeset(user, attrs, now) do
-    required = [:name, :email, :avatar, :provider]
+    required = [:name, :email, :avatar, :provider, :provider_uid]
 
     user
-    |> cast(attrs, required)
+    |> cast(attrs, required ++ [:provider_data, :confirmed_at])
     |> Slugme.generate_slug(:name)
+    # |> put_change(:onboarding, "welcome") # no onboarding for Heroku users => rework on this
     |> put_change(:last_signin, now)
     |> put_change(:confirmed_at, now)
     |> cast_embed(:data, required: true, with: &User.Data.changeset/2)
