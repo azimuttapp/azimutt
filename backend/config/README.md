@@ -14,13 +14,18 @@
     - `S3_HOST` (optional): the s3 host (if you don't use s3 profiles)
     - `S3_KEY_ID` & `S3_KEY_SECRET` (optional): credentials to connect to the s3 (if you don't use s3 profiles)
     - `S3_PREFIX` (optional): if you need to prefix stored files with a specific value
-- `EMAIL_ADAPTER` (optional, values: `mailgun` or `gmail`): the service to use to send emails (user email confirmation & organization invitations)
+- `EMAIL_ADAPTER` (optional, values: `mailgun`, `gmail` or `smtp`): the service to use to send emails (user email confirmation & organization invitations)
   - if `mailgun`
     - `MAILGUN_DOMAIN` (required)
     - `MAILGUN_API_KEY` (required)
     - `MAILGUN_BASE_URL` (required)
   - if `gmail`
     - `GMAIL_ACCESS_TOKEN` (required)
+  - if `smtp`
+    - `SMTP_RELAY` (required)
+    - `SMTP_USERNAME` (required)
+    - `SMTP_PASSWORD` (required)
+    - `SMTP_PORT` (required)
 - `SECRET_KEY_BASE` (required): the secret used for encryption (cookies and others)
 - `SUPPORT_EMAIL` (optional, default `contact@azimutt.app`): email we show in several place if users need to ask questions
 - `SENDER_EMAIL` (optional, default `contact@azimutt.app`): email we set as sender for emails

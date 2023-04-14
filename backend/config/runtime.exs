@@ -122,6 +122,21 @@ case System.get_env("EMAIL_ADAPTER") do
       adapter: Swoosh.Adapters.Gmail,
       access_token: System.fetch_env!("GMAIL_ACCESS_TOKEN")
 
+  "smtp" ->
+    IO.puts("Setup SMTP email provider")
+    # https://hexdocs.pm/swoosh/Swoosh.Adapters.SMTP.html
+    config :azimutt, Azimutt.Mailer,
+      adapter: Swoosh.Adapters.SMTP,
+      relay: System.fetch_env!("SMTP_RELAY"),
+      username: System.fetch_env!("SMTP_USERNAME"),
+      password: System.fetch_env!("SMTP_PASSWORD"),
+      port: System.fetch_env!("SMTP_PORT"),
+      ssl: true,
+      tls: :always,
+      auth: :always,
+      retries: 2,
+      no_mx_lookups: false
+
   _ ->
     if config_env() == :test do
       IO.puts("Setup Test email provider")
