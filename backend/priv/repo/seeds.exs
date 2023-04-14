@@ -62,8 +62,9 @@ IO.inspect(basic_project_file, label: "basic_project_file")
       nb_relations: 3,
       nb_types: 0,
       nb_comments: 2,
+      nb_layouts: 1,
       nb_notes: 0,
-      nb_layouts: 1
+      nb_memos: 0
     },
     azimutt_org,
     admin
