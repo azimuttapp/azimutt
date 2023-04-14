@@ -26,8 +26,12 @@
                         Get feedback for your database questions, design, evolution or any trouble you may have
                     </li>
                 </ul>
-                <div class="pt-3">
-                    <a href={Azimutt.config(:slack_url)} target="_blank" rel="noopener" class="inline-flex justify-center px-3 py-2 text-sm font-semibold text-white bg-gray-900 rounded-md shadow-sm hover:bg-gray-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900">Join Slack</a>
+                <div class="flex items-center justify-center pt-3 gap-x-4">
+                    <div class="p-0.5 rounded bg-gradient-to-r from-blue-500 via-red-500 to-yellow-500">
+                        <form action={Azimutt.config(:slack_url)} method="get" target="_blank">
+                            <button type="submit" class="px-3 py-1.5 text-sm font-semibold text-gray-900 bg-white">Join Slack</button>
+                        </form>
+                    </div>
                     <%= link "Continue", to: Routes.user_onboarding_path(@conn, :community_next), method: :post, class: "inline-flex justify-center rounded-md bg-gray-900 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900" %>
                 </div>
             </div>
