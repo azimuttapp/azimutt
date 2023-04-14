@@ -24,7 +24,7 @@ defmodule AzimuttWeb.UserRegistrationController do
         conn
         |> put_flash(
           :info,
-          if Azimutt.config(:require_email_confirmation) do
+          if Azimutt.config(:require_email_confirmation) && !Azimutt.config(:skip_email_confirmation) do
             "Azimutt account created, please check your emails to validate it and then access Azimutt."
           else
             "Welcome to Azimutt 🥳"

@@ -59,7 +59,7 @@ defmodule Azimutt.Accounts.User do
     |> Slugme.generate_slug(:name)
     |> validate_email()
     |> validate_password(opts)
-    |> put_change(:onboarding, "welcome")
+    |> setup_onboarding()
     |> put_change(:last_signin, now)
     |> cast_embed(:data, required: true, with: &User.Data.changeset/2)
     |> validate_required(required)
@@ -71,7 +71,7 @@ defmodule Azimutt.Accounts.User do
     user
     |> cast(attrs, required ++ [:twitter_username, :confirmed_at])
     |> Slugme.generate_slug(:github_username)
-    |> put_change(:onboarding, "welcome")
+    |> setup_onboarding()
     |> put_change(:last_signin, now)
     |> cast_embed(:data, required: true, with: &User.Data.changeset/2)
     |> validate_required(required)
@@ -83,11 +83,19 @@ defmodule Azimutt.Accounts.User do
     user
     |> cast(attrs, required ++ [:provider_data, :confirmed_at])
     |> Slugme.generate_slug(:name)
-    # |> put_change(:onboarding, "welcome") # no onboarding for Heroku users => rework on this
+    # |> setup_onboarding() # no onboarding for Heroku users => rework on this
     |> put_change(:last_signin, now)
     |> put_change(:confirmed_at, now)
     |> cast_embed(:data, required: true, with: &User.Data.changeset/2)
     |> validate_required(required)
+  end
+
+  defp setup_onboarding(user) do
+    if Azimutt.config(:skip_onboarding_funnel) do
+      user
+    else
+      user |> put_change(:onboarding, "welcome")
+    end
   end
 
   defp validate_email(changeset) do

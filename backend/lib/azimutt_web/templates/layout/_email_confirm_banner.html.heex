@@ -1,4 +1,4 @@
-<%= if !@current_user.confirmed_at do %>
+<%= if !@current_user.confirmed_at && !Azimutt.config(:skip_email_confirmation) do %>
     <div class="relative flex items-center justify-center gap-x-6 bg-indigo-600 px-6 py-2.5 sm:px-3.5">
         <p class="text-sm leading-6 text-white">
             We just added email validation to avoid fake users.

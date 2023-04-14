@@ -46,7 +46,7 @@ defmodule AzimuttWeb.UserConfirmationController do
         {:ok, _} ->
           conn
           |> put_flash(:info, "Email successfully confirmed.")
-          |> redirect(to: Routes.user_onboarding_path(conn, :index))
+          |> redirect(to: Routes.user_dashboard_path(conn, :index))
 
         :error ->
           # If there is a current user and the account was already confirmed,
@@ -55,7 +55,7 @@ defmodule AzimuttWeb.UserConfirmationController do
           # a warning message.
           case conn.assigns do
             %{current_user: %{confirmed_at: confirmed_at}} when not is_nil(confirmed_at) ->
-              conn |> redirect(to: Routes.user_onboarding_path(conn, :index))
+              conn |> redirect(to: Routes.user_dashboard_path(conn, :index))
 
             %{} ->
               conn

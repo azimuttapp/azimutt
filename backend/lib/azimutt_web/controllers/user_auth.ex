@@ -144,26 +144,36 @@ defmodule AzimuttWeb.UserAuth do
   end
 
   def require_authed_user(conn, _opts) do
-    user = conn.assigns[:current_user]
-
-    if user do
-      cond do
-        user.onboarding && !(conn.request_path |> String.starts_with?(Routes.user_onboarding_path(conn, :index))) ->
-          conn |> redirect(to: Routes.user_onboarding_path(conn, user.onboarding |> String.to_atom())) |> halt()
-
-        Azimutt.config(:require_email_confirmation) && !user.confirmed_at && Date.compare(user.created_at, ~D[2023-04-06]) == :gt &&
-            !(conn.request_path |> String.starts_with?(Routes.user_confirmation_path(conn, :new))) ->
-          conn |> redirect(to: Routes.user_confirmation_path(conn, :new)) |> halt()
-
-        true ->
-          conn
-      end
+    if conn.assigns[:current_user] do
+      conn |> enforce_user_requirements(%{})
     else
       conn
       |> maybe_store_return_to()
       |> put_flash(:info, "Please login before accessing the required page.")
       |> redirect(to: Routes.user_session_path(conn, :new))
       |> halt()
+    end
+  end
+
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
+  def enforce_user_requirements(conn, _opts) do
+    user = conn.assigns[:current_user]
+    path = conn.request_path
+
+    cond do
+      !user ->
+        conn
+
+      user.onboarding && !Azimutt.config(:skip_onboarding_funnel) &&
+          !(path |> String.starts_with?(Routes.user_onboarding_path(conn, :index))) ->
+        conn |> redirect(to: Routes.user_onboarding_path(conn, user.onboarding |> String.to_atom())) |> halt()
+
+      !user.confirmed_at && Azimutt.config(:require_email_confirmation) && !Azimutt.config(:skip_email_confirmation) &&
+        !(path |> String.starts_with?(Routes.user_confirmation_path(conn, :new))) && Date.compare(user.created_at, ~D[2023-04-13]) == :gt ->
+        conn |> redirect(to: Routes.user_confirmation_path(conn, :new)) |> halt()
+
+      true ->
+        conn
     end
   end
 

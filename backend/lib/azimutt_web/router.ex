@@ -257,7 +257,7 @@ defmodule AzimuttWeb.Router do
   # elm routes, must be at the end (because of `/:organization_id/:project_id` "catch all")
   # routes listed in the same order than in `elm/src/Pages`
   scope "/", AzimuttWeb do
-    pipe_through [:browser, :elm_root_layout]
+    pipe_through [:browser, :enforce_user_requirements, :elm_root_layout]
     get "/create", ElmController, :create
     get "/new", ElmController, :new
     get "/:organization_id", ElmController, :orga_show
