@@ -90,11 +90,11 @@ defmodule Azimutt.Accounts.User do
     |> validate_required(required)
   end
 
-  defp setup_onboarding(user) do
+  defp setup_onboarding(user_changeset) do
     if Azimutt.config(:skip_onboarding_funnel) do
-      user
+      user_changeset
     else
-      user |> put_change(:onboarding, "welcome")
+      user_changeset |> put_change(:onboarding, "welcome")
     end
   end
 
@@ -102,9 +102,19 @@ defmodule Azimutt.Accounts.User do
     changeset
     |> validate_required([:email])
     |> validate_format(:email, ~r/^[^\s]+@[^\s]+$/, message: "must have the @ sign and no spaces")
+    |> validate_ends_with(:email, Azimutt.config(:require_email_ends_with))
     |> validate_length(:email, max: 160)
     |> unsafe_validate_unique(:email, Azimutt.Repo)
     |> unique_constraint(:email)
+  end
+
+  defp validate_ends_with(changeset, field, suffix) do
+    if suffix do
+      regex = "#{Regex.escape(suffix)}$" |> Regex.compile!()
+      changeset |> validate_format(field, regex, message: "must ends with '#{suffix}'")
+    else
+      changeset
+    end
   end
 
   defp validate_password(changeset, opts) do
