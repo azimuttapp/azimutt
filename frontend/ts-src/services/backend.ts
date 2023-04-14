@@ -148,14 +148,11 @@ export class Backend {
     }
 
     private withXhrHost(path: string): string {
-        return path
-        /* if (this.env == Env.enum.dev) {
-            return `${path}`
-        } else if (this.env == Env.enum.staging) {
-            return `https://azimutt.dev${path}`
+        if (this.env == Env.enum.dev) {
+            return path
         } else {
-            return `https://azimutt.app${path}`
-        } */
+            return `https://${window.host}${path}`
+        }
     }
 }
 
