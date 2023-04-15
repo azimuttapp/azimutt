@@ -1,15 +1,18 @@
 <div class="flex min-h-full">
-    <AzimuttWeb.Components.Step.step steps={[{"Solo or Team", "complete"}, {"Goal", "complete"}, {"Role", "current"}, {"Bio", "upcoming"}, {"Company", "upcoming"}, {"Plan option", "upcoming"}, {"Before Azimutt", "upcoming"}, {"Community", "upcoming"}]} />
+    <AzimuttWeb.Components.Step.step steps={[{"About you", "current"}, {"Your company", "upcoming"}, {"Azimutt setup", "upcoming"}, {"Community", "upcoming"}]} />
     <div class="flex flex-col items-center justify-center px-4 py-12 mx-auto mt-0 sm:px-6 lg:px-8">
         <div>
             <%= render AzimuttWeb.LayoutView, "_flash.html", conn: @conn %>
-            <%= render "_simple_section.html", section: "Why are you using Azimutt?", description: "We'd love to know how you plan to make the most of Azimutt's powerful features. Please select the option that best describes your primary goal" %>
+            <%= render "_background_grid.html" %>
+            <h2 class="text-2xl font-bold tracking-tight text-gray-900 md:text-3xl xl:text-4xl">What best describes your role?</h2>
+            <p class="mt-6 mb-4 text-lg leading-8 text-gray-600 sm:max-w-md lg:max-w-lg">
+                Knowing our users is key to define and prioritize future developments. Some stats are a great start but don't hesitate to come and say hi!
+            </p>
             <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <%= for role <- [
-                    "Sofware Engineer", "Data Engineer",
-                    "Manager / CTO",
+                    "Software Engineer", "Data Engineer",
+                    "Product Manager", "Manager / CTO",
                     "Database Administrator", "DevOps/SRE",
-                    "Product",
                     "Other"
                 ] do %>
                     <%= link role, to: Routes.user_onboarding_path(@conn, :role_next, %{role: role}), method: :post,

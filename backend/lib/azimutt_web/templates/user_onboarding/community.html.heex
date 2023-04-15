@@ -1,9 +1,13 @@
 <div class="flex min-h-full">
-    <AzimuttWeb.Components.Step.step steps={[{"Solo or Team", "complete"}, {"Goal", "complete"}, {"Role", "complete"}, {"Bio", "complete"}, {"Company", "complete"}, {"Plan option", "complete"}, {"Before Azimutt", "complete"}, {"Community", "current"}]} />
+    <AzimuttWeb.Components.Step.step steps={[{"About you", "complete"}, {"Your company", "complete"}, {"Azimutt setup", "complete"}, {"Community", "current"}]} />
     <div class="flex flex-col items-center justify-center px-4 py-12 mx-auto mt-0 sm:px-6 lg:px-8">
         <div>
             <%= render AzimuttWeb.LayoutView, "_flash.html", conn: @conn %>
-            <%= render "_simple_section.html", section: "Community", description: "Azimutt is a database tool, but it's also a community" %>
+            <%= render "_background_grid.html" %>
+            <h2 class="text-2xl font-bold tracking-tight text-gray-900 md:text-3xl xl:text-4xl">Community</h2>
+            <p class="mt-6 mb-4 text-lg leading-8 text-gray-600 sm:max-w-md lg:max-w-lg">
+                Azimutt is a database tool, but it's also a community
+            </p>
             <div class="text-base leading-7 text-gray-600">
                 <p>Join us on slack to <b>meet people interested in database design</b> and evolution, but also :</p>
                 <ul role="list" class="my-4 space-y-3 text-sm leading-6 text-gray-600">

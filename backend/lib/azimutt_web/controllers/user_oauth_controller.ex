@@ -39,7 +39,6 @@ defmodule AzimuttWeb.UserOauthController do
     }
 
     # FIXME: create a unique key (provider, provider_uid) => needs heroku provider_uid
-    # TODO: if primary email is verified, mark it as verified as well in Azimutt
     Accounts.get_user_by_provider(provider, provider_uid)
     |> Result.flat_map_error(fn _ -> Accounts.get_user_by_email(user_params[:email]) end)
     |> Result.tap(fn user -> user |> Accounts.set_user_provider(user_params, now) end)

@@ -90,10 +90,10 @@ defmodule AzimuttWeb.Router do
       get "/", UserOnboardingController, :index
       get "/welcome", UserOnboardingController, :welcome
       post "/welcome", UserOnboardingController, :welcome_next
-      get "/solo-or-team", UserOnboardingController, :solo_or_team
-      post "/solo-or-team", UserOnboardingController, :solo_or_team_next
       get "/explore-or-design", UserOnboardingController, :explore_or_design
       post "/explore-or-design", UserOnboardingController, :explore_or_design_next
+      get "/solo-or-team", UserOnboardingController, :solo_or_team
+      post "/solo-or-team", UserOnboardingController, :solo_or_team_next
       get "/role", UserOnboardingController, :role
       post "/role", UserOnboardingController, :role_next
       get "/about-you", UserOnboardingController, :about_you

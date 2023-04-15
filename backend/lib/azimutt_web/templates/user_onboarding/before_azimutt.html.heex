@@ -1,9 +1,13 @@
 <div class="flex min-h-full">
-  	<AzimuttWeb.Components.Step.step steps={[{"Solo or Team", "complete"}, {"Goal", "complete"}, {"Role", "complete"}, {"Bio", "complete"}, {"Company", "complete"}, {"Plan option", "complete"}, {"Before Azimutt", "current"}, {"Community", "upcoming"}]} />
+    <AzimuttWeb.Components.Step.step steps={[{"About you", "complete"}, {"Your company", "complete"}, {"Azimutt setup", "current"}, {"Community", "upcoming"}]} />
     <div class="flex flex-col items-center justify-center px-4 py-12 mx-auto mt-0 sm:px-6 lg:px-8">
         <div>
             <%= render AzimuttWeb.LayoutView, "_flash.html", conn: @conn %>
-            <%= render "_simple_section.html", section: "Before Azimutt", description: "How did you discover Azimutt?" %>
+            <%= render "_background_grid.html" %>
+            <h2 class="text-2xl font-bold tracking-tight text-gray-900 md:text-3xl xl:text-4xl">One last thing...</h2>
+            <p class="mt-6 mb-4 text-lg leading-8 text-gray-600 sm:max-w-md lg:max-w-lg">
+                How did you discover Azimutt?
+            </p>
             <.form let={f} for={@changeset} action={Routes.user_onboarding_path(@conn, :before_azimutt_next)}>
                 <fieldset class="mt-4">
                     <div class="space-y-3">
@@ -21,15 +25,17 @@
                         <% end %>
                     </div>
                 </fieldset>
-                <%= render "_simple_section.html", section: nil, description: "Which solutions did you try before Azimutt?" %>
+                <p class="mt-6 mb-4 text-lg leading-8 text-gray-600 sm:max-w-md lg:max-w-lg">
+                    Which solutions did you try before Azimutt?
+                </p>
                 <fieldset>
                     <div class="space-y-5">
                         <%= for item <- [
-                            %{id: "drawing-tool", label: "Drawing tool", description: " such as Lucidchart, Excalidraw..."},
+                            %{id: "drawing-tool", label: "Drawing tool", description: " such as Lucidchart, Miro, Excalidraw..."},
                             %{id: "sql-client", label: "SQL client", description: " such as DBeaver, Datagrip, Toad..."},
-                            %{id: "desktop-erd", label: "Desktop ERD", description: " MySQL Workench..."},
-                            %{id: "online-erd", label: "Online ERD", description: " DrawSQL, SqlDBM, dbdiagram, QuickDBD..."},
-                            %{id: "data-catalog", label: "Data Catalog", description: " DrawSQL, SqlDBM, dbdiagram, QuickDBD..."},
+                            %{id: "desktop-erd", label: "Desktop ERD", description: " such as MySQL Workench..."},
+                            %{id: "online-erd", label: "Online ERD", description: " such as DrawSQL, SqlDBM, dbdiagram, QuickDBD..."},
+                            %{id: "data-catalog", label: "Data Catalog", description: " such as Alation, DataGalaxy, Collibra, Castor..."},
                         ] do %>
                             <div class="relative flex items-start">
                                 <div class="flex items-center h-6">

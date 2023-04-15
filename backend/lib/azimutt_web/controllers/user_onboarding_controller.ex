@@ -10,17 +10,17 @@ defmodule AzimuttWeb.UserOnboardingController do
   def index(conn, _params), do: conn |> redirect(to: Routes.user_onboarding_path(conn, :welcome))
 
   def welcome(conn, _params), do: conn |> show("welcome.html", fn _, _ -> nil end)
-  def welcome_next(conn, _params), do: conn |> update(nil, fn _, _, _ -> :ok end, "welcome.html", :solo_or_team)
-
-  def solo_or_team(conn, _params), do: conn |> show("solo_or_team.html", &Accounts.change_profile_usage(&1, &2))
-
-  def solo_or_team_next(conn, %{"usage" => usage}),
-    do: conn |> update(usage, &Accounts.set_profile_usage(&1, &2, &3), "solo_or_team.html", :explore_or_design)
+  def welcome_next(conn, _params), do: conn |> update(nil, fn _, _, _ -> :ok end, "welcome.html", :explore_or_design)
 
   def explore_or_design(conn, _params), do: conn |> show("explore_or_design.html", &Accounts.change_profile_usecase(&1, &2))
 
   def explore_or_design_next(conn, %{"usecase" => usecase}),
-    do: conn |> update(usecase, &Accounts.set_profile_usecase(&1, &2, &3), "explore_or_design.html", :role)
+    do: conn |> update(usecase, &Accounts.set_profile_usecase(&1, &2, &3), "explore_or_design.html", :solo_or_team)
+
+  def solo_or_team(conn, _params), do: conn |> show("solo_or_team.html", &Accounts.change_profile_usage(&1, &2))
+
+  def solo_or_team_next(conn, %{"usage" => usage}),
+    do: conn |> update(usage, &Accounts.set_profile_usage(&1, &2, &3), "solo_or_team.html", :role)
 
   def role(conn, _params), do: conn |> show("role.html", &Accounts.change_profile_role(&1, &2))
   def role_next(conn, %{"role" => role}), do: conn |> update(role, &Accounts.set_profile_role(&1, &2, &3), "role.html", :about_you)

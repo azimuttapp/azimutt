@@ -15,16 +15,12 @@ defmodule AzimuttWeb.Components.Step do
 
     ~H"""
     <div class="flex-col justify-center hidden pl-4 sm:flex sm:pl-6 lg:pl-8">
-      <nav class="flex justify-center px-6 border-r sm:px-8 lg:px-10 border-gray-900/10" aria-label="Progress">
+      <p class="px-6 mb-6 block text-sm font-medium text-gray-900">1 minute<br>to meet each other:</p>
+      <nav class="px-6 border-r sm:px-8 lg:px-10 border-gray-900/10" aria-label="Progress">
         <ol role="list" class="space-y-6">
           <%= for {label, state} <- @steps do %>
-            <li>
-              <div class="flex items-start">
-                <.custom_step
-                  state={state}
-                  label={label}
-                />
-              </div>
+            <li class="flex items-start">
+              <.custom_step state={state} label={label} />
             </li>
           <% end %>
         </ol>
