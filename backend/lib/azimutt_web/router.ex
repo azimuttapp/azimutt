@@ -102,8 +102,12 @@ defmodule AzimuttWeb.Router do
       put "/about-your-company", UserOnboardingController, :about_your_company_next
       get "/plan", UserOnboardingController, :plan
       post "/plan", UserOnboardingController, :plan_next
-      get "/before-azimutt", UserOnboardingController, :before_azimutt
-      put "/before-azimutt", UserOnboardingController, :before_azimutt_next
+      get "/discovered-azimutt", UserOnboardingController, :discovered_azimutt
+      put "/discovered-azimutt", UserOnboardingController, :discovered_azimutt_next
+      get "/previous-solutions", UserOnboardingController, :previous_solutions
+      put "/previous-solutions", UserOnboardingController, :previous_solutions_next
+      get "/keep-in-touch", UserOnboardingController, :keep_in_touch
+      put "/keep-in-touch", UserOnboardingController, :keep_in_touch_next
       get "/community", UserOnboardingController, :community
       post "/community", UserOnboardingController, :community_next
       get "/finalize", UserOnboardingController, :finalize

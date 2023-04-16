@@ -1,0 +1,26 @@
+<div class="flex min-h-full">
+    <AzimuttWeb.Components.Step.step steps={get_steps("Azimutt setup")} />
+    <div class="flex flex-col items-center justify-center px-4 py-12 mx-auto mt-0 sm:px-6 lg:px-8">
+        <div>
+            <%= render AzimuttWeb.LayoutView, "_flash.html", conn: @conn %>
+            <%= render "_background_grid.html" %>
+            <h2 class="text-2xl font-bold tracking-tight text-gray-900 md:text-3xl xl:text-4xl">Let's stay in touch</h2>
+            <p class="mt-6 mb-4 text-lg leading-8 text-gray-600 sm:max-w-md lg:max-w-lg">
+            </p>
+            <.form let={f} for={@changeset} action={Routes.user_onboarding_path(@conn, :keep_in_touch_next)}>
+                <div class="relative flex items-start mt-6">
+                    <div class="flex items-center h-6">
+                        <%= checkbox f, :product_updates, "aria-describedby": "product_updates-description", class: "w-4 h-4 text-gray-600 border-gray-300 rounded focus:ring-gray-600" %>
+                    </div>
+                    <div class="ml-3 text-sm leading-6">
+                        <%= label f, :product_updates, "Keep me updated on Azimutt big news", class: "font-medium text-gray-900" %>
+                        <p id="product_updates-description" class="text-gray-500">We won't send a lot of emails, less than one a month, but as we are starting we sometimes introduce big changes you would like to know.</p>
+                    </div>
+                </div>
+                <div class="px-4 py-6 text-center sm:px-6">
+                    <%= submit "Continue", class: "inline-flex justify-center rounded-md bg-gray-900 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900" %>
+                </div>
+            </.form>
+        </div>
+    </div>
+</div>

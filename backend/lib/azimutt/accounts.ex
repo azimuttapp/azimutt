@@ -112,56 +112,23 @@ defmodule Azimutt.Accounts do
     |> Repo.insert()
   end
 
-  def change_profile_usage(%UserProfile{} = profile, now) do
+  def change_profile(%UserProfile{} = profile, now, allowed_attrs) do
+    {required_attrs, optional_attrs} = allowed_attrs
+
     profile
-    |> UserProfile.usage_changeset(%{}, now)
+    |> UserProfile.changeset(%{}, now, required_attrs, optional_attrs)
   end
 
-  def set_profile_usage(%UserProfile{} = profile, usage, now) do
+  def set_profile(%UserProfile{} = profile, attrs, now, allowed_attrs) do
+    {required_attrs, optional_attrs} = allowed_attrs
+
     profile
-    |> UserProfile.usage_changeset(%{usage: usage}, now)
-    |> Repo.update()
+    |> create_or_update_profile_organization(attrs)
+    |> Result.map(fn attrs -> profile |> UserProfile.changeset(attrs, now, required_attrs, optional_attrs) end)
+    |> Result.flat_map(fn changeset -> changeset |> Repo.update() end)
   end
 
-  def change_profile_usecase(%UserProfile{} = profile, now) do
-    profile
-    |> UserProfile.usecase_changeset(%{}, now)
-  end
-
-  def set_profile_usecase(%UserProfile{} = profile, usecase, now) do
-    profile
-    |> UserProfile.usecase_changeset(%{usecase: usecase}, now)
-    |> Repo.update()
-  end
-
-  def change_profile_role(%UserProfile{} = profile, now) do
-    profile
-    |> UserProfile.role_changeset(%{}, now)
-  end
-
-  def set_profile_role(%UserProfile{} = profile, role, now) do
-    profile
-    |> UserProfile.role_changeset(%{role: role}, now)
-    |> Repo.update()
-  end
-
-  def change_profile_user_attrs(%UserProfile{} = profile, now) do
-    profile
-    |> UserProfile.about_you_changeset(%{}, now)
-  end
-
-  def set_profile_user_attrs(%UserProfile{} = profile, attrs, now) do
-    profile
-    |> UserProfile.about_you_changeset(attrs, now)
-    |> Repo.update()
-  end
-
-  def change_profile_company(%UserProfile{} = profile, now) do
-    profile
-    |> UserProfile.company_changeset(%{}, now)
-  end
-
-  def set_profile_company(%UserProfile{} = profile, attrs, now) do
+  defp create_or_update_profile_organization(%UserProfile{} = profile, attrs) do
     orga_attrs = attrs["team_organization"]
 
     if orga_attrs["create"] == "true" do
@@ -173,35 +140,13 @@ defmodule Azimutt.Accounts do
     else
       {:ok, nil}
     end
-    |> Result.flat_map(fn organization ->
-      company_attrs = if organization, do: attrs |> Map.put("team_organization", organization), else: attrs
-
-      profile
-      |> UserProfile.company_changeset(company_attrs, now)
-      |> Repo.update()
+    |> Result.map(fn organization ->
+      if organization do
+        attrs |> Map.put("team_organization_id", organization.id)
+      else
+        attrs
+      end
     end)
-  end
-
-  def change_profile_plan(%UserProfile{} = profile, now) do
-    profile
-    |> UserProfile.plan_changeset(%{}, now)
-  end
-
-  def set_profile_plan(%UserProfile{} = profile, attrs, now) do
-    profile
-    |> UserProfile.plan_changeset(attrs, now)
-    |> Repo.update()
-  end
-
-  def change_profile_previous(%UserProfile{} = profile, now) do
-    profile
-    |> UserProfile.previous_changeset(%{}, now)
-  end
-
-  def set_profile_previous(%UserProfile{} = profile, attrs, now) do
-    profile
-    |> UserProfile.previous_changeset(attrs, now)
-    |> Repo.update()
   end
 
   ## Settings

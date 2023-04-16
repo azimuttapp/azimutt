@@ -15,7 +15,7 @@
                     "Database Administrator", "DevOps/SRE",
                     "Other"
                 ] do %>
-                    <%= link role, to: Routes.user_onboarding_path(@conn, :role_next, %{role: role}), method: :post,
+                    <%= link role, to: Routes.user_onboarding_path(@conn, :role_next, %{user_profile: %{role: role}}), method: :post,
                         class: "rounded-md bg-white px-3.5 py-2.5 mb-2 border border-gray-900 text-sm font-semibold text-gray-900 shadow-sm hover:bg-gray-900 hover:text-white"
                     %>
                 <% end %>

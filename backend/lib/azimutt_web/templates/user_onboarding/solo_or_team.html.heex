@@ -9,12 +9,12 @@
                 Let us build the best setup for you, allowing to configure everything you will need from the start without digging in all the features and settings 😉
             </p>
             <div class="py-4 text-center">
-                <%= link "I'm flying solo", to: Routes.user_onboarding_path(@conn, :solo_or_team_next, %{usage: "solo"}), method: :post,
+                <%= link "I'm flying solo", to: Routes.user_onboarding_path(@conn, :solo_or_team_next, %{user_profile: %{usage: "solo"}}), method: :post,
                     class: "inline-block rounded-md bg-gray-900 px-6 py-4 text-sm font-semibold text-white shadow-sm hover:bg-gray-700 text-center
                     focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-600"
                 %>
                 <span class="px-8 text-gray-600">or</span>
-                <%= link "I have teammates", to: Routes.user_onboarding_path(@conn, :solo_or_team_next, %{usage: "team"}), method: :post,
+                <%= link "I have teammates", to: Routes.user_onboarding_path(@conn, :solo_or_team_next, %{user_profile: %{usage: "team"}}), method: :post,
                     class: "inline-block rounded-md bg-gray-900 px-6 py-4 text-sm font-semibold text-white shadow-sm hover:bg-gray-700 text-center
                     focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-600"
                 %>

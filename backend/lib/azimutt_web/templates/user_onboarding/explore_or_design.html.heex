@@ -9,12 +9,12 @@
                 This onboarding is here to learn about your needs and personalise itself to best fit them, showing most relevant options and features.
             </p>
             <div class="py-4 text-center">
-                <%= link "Explore existing database", to: Routes.user_onboarding_path(@conn, :explore_or_design_next, %{usecase: "explore"}), method: :post,
+                <%= link "Explore existing database", to: Routes.user_onboarding_path(@conn, :explore_or_design_next, %{user_profile: %{usecase: "explore"}}), method: :post,
                     class: "inline-block rounded-md bg-gray-900 px-6 py-4 text-sm font-semibold text-white shadow-sm hover:bg-gray-700 text-center
                     focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-600"
                 %>
                 <span class="px-8 text-gray-600">or</span>
-                <%=  link "Design new database", to: Routes.user_onboarding_path(@conn, :explore_or_design_next, %{usecase: "design"}), method: :post,
+                <%=  link "Design new database", to: Routes.user_onboarding_path(@conn, :explore_or_design_next, %{user_profile: %{usecase: "design"}}), method: :post,
                     class: "inline-block rounded-md bg-gray-900 px-6 py-4 text-sm font-semibold text-white shadow-sm hover:bg-gray-700 text-center
                     focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-600"
                 %>

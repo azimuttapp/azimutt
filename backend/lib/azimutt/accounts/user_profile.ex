@@ -42,19 +42,9 @@ defmodule Azimutt.Accounts.UserProfile do
     |> put_change(:user, user)
   end
 
-  def usage_changeset(%UserProfile{} = p, attrs, now), do: changeset(p, attrs, now, [:usage])
-  def usecase_changeset(%UserProfile{} = p, attrs, now), do: changeset(p, attrs, now, [:usecase])
-  def role_changeset(%UserProfile{} = p, attrs, now), do: changeset(p, attrs, now, [:role])
-  def about_you_changeset(%UserProfile{} = p, attrs, now), do: changeset(p, attrs, now, [:location, :description])
-  def company_changeset(%UserProfile{} = p, attrs, now), do: changeset(p, attrs, now, [:company, :company_size], [:team_organization_id])
-  def plan_changeset(%UserProfile{} = p, attrs, now), do: changeset(p, attrs, now, [:plan])
-
-  def previous_changeset(%UserProfile{} = p, attrs, now),
-    do: changeset(p, attrs, now, [:discovered_by, :previously_tried, :product_updates])
-
-  defp changeset(%UserProfile{} = profile, attrs, now, required, others \\ []) do
+  def changeset(%UserProfile{} = profile, attrs, now, required, optional \\ []) do
     profile
-    |> cast(attrs, required ++ others)
+    |> cast(attrs, required ++ optional)
     |> change(updated_at: now)
     |> validate_required(required)
   end
