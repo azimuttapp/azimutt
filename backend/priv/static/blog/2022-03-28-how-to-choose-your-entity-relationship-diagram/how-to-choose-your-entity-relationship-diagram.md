@@ -281,7 +281,7 @@ Missing ones:
 
 You can [embed Azimutt diagrams](./embed-your-database-diagram-anywhere) to easily share them with anyone you want:
 
-<iframe width="100%" height="450px" src="https://azimutt.app/embed?project-url=https://raw.githubusercontent.com/azimuttapp/azimutt/main/public/samples/gospeak.azimutt.json&mode=layout" title="Embedded Azimutt diagram" frameborder="0" allowtransparency="true" allowfullscreen="true" scrolling="no" style="box-shadow: 0 2px 8px 0 rgba(63,69,81,0.16); border-radius:5px;"></iframe>
+<iframe width="100%" height="450px" src="https://azimutt.app/embed?project-id=adbe859a-08c4-4386-9af3-be165b30e000&mode=layout" title="Embedded Azimutt diagram" frameborder="0" allowtransparency="true" allowfullscreen="true" scrolling="no" style="box-shadow: 0 2px 8px 0 rgba(63,69,81,0.16); border-radius:5px;"></iframe>
 
 **My recommendation**: If you have a database you are trying to explore/understand, Azimutt is clearly the go-to tool, it can even detect and suggest some improvements. If you want to quickly draft your database ideas, prefer tools like [dbdiagram.io](#dbdiagram-io), [DrawSQL](#drawsql) or [Excalidraw](#excalidraw) which are more flexible.
 
