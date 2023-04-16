@@ -43,19 +43,25 @@ defmodule AzimuttWeb.UserAuth do
   def login_user_and_redirect(conn, user, method, params \\ %{}) do
     conn
     |> login_user(user, method, params)
-    |> redirect(to: get_session(conn, :user_return_to) || Routes.user_dashboard_path(conn, :index))
+    |> redirect_after_login()
   end
 
   def login_user(conn, user, method, params \\ %{}) do
     Tracking.user_login(user, method)
     token = Accounts.generate_user_session_token(user)
+    user_return_to = get_session(conn, :user_return_to)
 
     conn
     |> renew_session()
     |> put_session(:user_token, token)
     |> put_session(:live_socket_id, "users_sessions:#{Base.url_encode64(token)}")
+    |> put_session(:user_return_to, user_return_to)
     |> delete_resp_cookie(@attribution_cookie)
     |> maybe_write_remember_me_cookie(token, params)
+  end
+
+  def redirect_after_login(conn) do
+    conn |> redirect(to: get_session(conn, :user_return_to) || Routes.user_dashboard_path(conn, :index))
   end
 
   defp maybe_write_remember_me_cookie(conn, token, %{"remember_me" => "true"}) do
@@ -115,7 +121,7 @@ defmodule AzimuttWeb.UserAuth do
   def fetch_current_user(conn, _opts) do
     {user_token, conn} = ensure_user_token(conn)
     user = user_token && Accounts.get_user_by_session_token(user_token)
-    user = user |> Azimutt.Repo.preload(organizations: [:heroku_resource])
+    user = user |> Azimutt.Repo.preload(:profile) |> Azimutt.Repo.preload(organizations: [:heroku_resource])
     assign(conn, :current_user, user)
   end
 
@@ -309,6 +315,6 @@ defmodule AzimuttWeb.UserAuth do
     |> halt()
   end
 
-  defp maybe_store_return_to(%{method: "GET"} = conn), do: put_session(conn, :user_return_to, current_path(conn))
+  defp maybe_store_return_to(%{method: "GET"} = conn), do: conn |> put_session(:user_return_to, current_path(conn))
   defp maybe_store_return_to(conn), do: conn
 end

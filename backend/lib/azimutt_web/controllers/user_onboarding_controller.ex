@@ -4,6 +4,7 @@ defmodule AzimuttWeb.UserOnboardingController do
   alias Azimutt.Tracking
   alias Azimutt.Utils.Result
   alias AzimuttWeb.Services.BillingSrv
+  alias AzimuttWeb.UserAuth
   action_fallback AzimuttWeb.FallbackController
 
   # keep actions sorted in onboarding order
@@ -97,7 +98,7 @@ defmodule AzimuttWeb.UserOnboardingController do
 
     current_user
     |> Accounts.set_onboarding(nil, now)
-    |> Result.map(fn _ -> conn |> redirect(to: Routes.user_dashboard_path(conn, :index)) end)
+    |> Result.map(fn _ -> conn |> UserAuth.redirect_after_login() end)
   end
 
   def template(conn, %{"template" => template}), do: conn |> render("#{template}.html")

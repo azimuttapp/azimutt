@@ -6,7 +6,6 @@ defmodule Azimutt.Accounts do
   alias Azimutt.Organizations
   alias Azimutt.Organizations.OrganizationMember
   alias Azimutt.Tracking
-  alias Azimutt.Utils.Crypto
   alias Azimutt.Utils.Result
 
   ## Database getters
@@ -347,9 +346,14 @@ defmodule Azimutt.Accounts do
     end
   end
 
-  def get_user_personal_organization(%User{} = user) do
-    user.organizations
-    |> Enum.filter(fn orga -> orga.is_personal == true end)
-    |> List.first() || user.organizations |> List.first()
+  defp get_user_personal_organization(%User{} = user) do
+    if user.profile.team_organization do
+      profile = user.profile |> Repo.preload(:team_organization)
+      profile.team_organization
+    else
+      user.organizations
+      |> Enum.filter(fn orga -> orga.is_personal == true end)
+      |> List.first() || user.organizations |> List.first()
+    end
   end
 end

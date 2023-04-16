@@ -195,7 +195,6 @@ export interface OrganizationResponse {
     name: string
     plan: Plan
     logo: string
-    location: string | null
     description: string | null
     heroku?: HerokuResource
 }
@@ -206,7 +205,6 @@ export const OrganizationResponse = z.object({
     name: z.string(),
     plan: Plan,
     logo: z.string(),
-    location: z.string().nullable(),
     description: z.string().nullable(),
     heroku: HerokuResource.optional(),
 }).strict()
