@@ -50,7 +50,7 @@ appShell currentUrl urlOrganization user onNavigationClick onProfileClick model 
         [ Navbar.admin
             { brand = { url = logoUrl, src = Backend.resourceUrl "/logo_light.svg", alt = "Azimutt" }
             , navigation =
-                { links = [ { url = urlOrganization |> Backend.organizationUrl, text = "Dashboard" } ]
+                { links = user |> Maybe.mapOrElse (\_ -> [ { url = urlOrganization |> Backend.organizationUrl, text = "Dashboard" } ]) []
                 , onClick = onNavigationClick
                 }
             , search = Nothing

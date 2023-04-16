@@ -1,0 +1,34 @@
+<div class="flex min-h-full">
+    <AzimuttWeb.Components.Step.step steps={get_steps("Azimutt setup")} />
+    <div class="flex flex-col items-center justify-center px-4 py-12 mx-auto mt-0 sm:px-6 lg:px-8">
+        <div>
+            <%= render AzimuttWeb.LayoutView, "_flash.html", conn: @conn %>
+            <%= render "_background_grid.html" %>
+            <h2 class="text-2xl font-bold tracking-tight text-gray-900 md:text-3xl xl:text-4xl">How did you discover Azimutt?</h2>
+            <p class="mt-6 mb-4 text-lg leading-8 text-gray-600 sm:max-w-md lg:max-w-lg">
+            </p>
+            <.form let={f} for={@changeset} action={Routes.user_onboarding_path(@conn, :discovered_azimutt_next)}>
+                <fieldset class="mt-4">
+                    <div class="space-y-3">
+                        <%= for item <- [
+                            %{id: "word_of_mouth", label: "Friend/Colleague"},
+                            %{id: "seo", label: "Search on Google"},
+                            %{id: "twitter", label: "Twitter"},
+                            %{id: "linkedin", label: "LinkedIn"},
+                            %{id: "product_hunt", label: "Product Hunt"},
+                            %{id: "other", label: "Other"}
+                        ] do %>
+                            <div class="flex items-center">
+                                <%= radio_button f, :discovered_by, item.id, class: "w-4 h-4 text-gray-600 border-gray-300 focus:ring-gray-600" %>
+                                <%= label f, "discovered_by_#{item.id}", item.label, class: "block ml-3 text-sm font-medium leading-6 text-gray-900" %>
+                            </div>
+                        <% end %>
+                    </div>
+                </fieldset>
+                <div class="px-4 py-6 text-center sm:px-6">
+                    <%= submit "Continue", class: "inline-flex justify-center rounded-md bg-gray-900 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900" %>
+                </div>
+            </.form>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,16 @@
+<div class="flex min-h-full">
+	<AzimuttWeb.Components.Step.step steps={get_steps("Azimutt setup")} />
+	<div class="flex flex-col items-center justify-center px-4 py-12 mx-auto mt-0 sm:px-6 lg:px-8">
+		<div>
+			<%= render AzimuttWeb.LayoutView, "_flash.html", conn: @conn %>
+			<%= render "_background_grid.html" %>
+			<h2 class="text-2xl font-bold tracking-tight text-gray-900 md:text-3xl xl:text-4xl">Choose your plan</h2>
+			<p class="mt-6 mb-4 text-lg leading-8 text-gray-600 sm:max-w-md lg:max-w-lg">
+			</p>
+			<%= render AzimuttWeb.PartialsView, "_plans_onboarding.html", conn: @conn, plans: Azimutt.plans %>
+			<div class="mt-8 text-sm text-gray-700">
+				For more details, please visit <a href="/pricing" target="_blank" rel="noopener noreferrer" class="underline">our pricing page</a>.
+			</div>
+		</div>
+	</div>
+</div>

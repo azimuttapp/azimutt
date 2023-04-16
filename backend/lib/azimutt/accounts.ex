@@ -2,17 +2,22 @@ defmodule Azimutt.Accounts do
   @moduledoc "The Accounts context."
   import Ecto.Query, warn: false
   alias Azimutt.Repo
-  alias Azimutt.Accounts.{User, UserNotifier, UserToken}
+  alias Azimutt.Accounts.{User, UserNotifier, UserProfile, UserToken}
   alias Azimutt.Organizations
   alias Azimutt.Organizations.OrganizationMember
   alias Azimutt.Tracking
-  alias Azimutt.Utils.Crypto
   alias Azimutt.Utils.Result
 
   ## Database getters
 
   def get_user(id) when is_binary(id) do
     Repo.get(User, id)
+    |> Repo.preload([:organizations])
+    |> Result.from_nillable()
+  end
+
+  def get_user_by_provider(provider, provider_uid) when is_binary(provider) and is_binary(provider_uid) do
+    Repo.get_by(User, provider: provider, provider_uid: provider_uid)
     |> Repo.preload([:organizations])
     |> Result.from_nillable()
   end
@@ -40,20 +45,14 @@ defmodule Azimutt.Accounts do
     |> register_user("password")
   end
 
-  def register_github_user(attrs, attribution, now) do
+  def register_github_user(user_attrs, profile_attrs, attribution, now) do
     %User{}
-    |> User.github_creation_changeset(attrs |> with_data(attribution), now)
+    |> User.github_creation_changeset(user_attrs |> with_data(attribution), now)
     |> register_user("github")
+    |> Result.tap(fn user -> create_profile(user, profile_attrs) end)
   end
 
-  def register_heroku_user(email, attribution, now) do
-    attrs = %{
-      name: email |> String.split("@") |> hd(),
-      email: email,
-      avatar: "https://www.gravatar.com/avatar/#{Crypto.md5(email)}?s=150&d=robohash",
-      provider: "heroku"
-    }
-
+  def register_heroku_user(attrs, attribution, now) do
     %User{}
     |> User.heroku_creation_changeset(attrs |> with_data(attribution), now)
     |> register_user("heroku")
@@ -61,18 +60,13 @@ defmodule Azimutt.Accounts do
 
   defp with_data(attrs, attribution) do
     attributed_to =
-      if attribution && length(attribution) > 0 do
-        from = attribution |> hd()
-        from["ref"] || from["via"] || from["utm_source"] || from["referer"]
+      if attribution do
+        attribution["ref"] || attribution["via"] || attribution["utm_source"] || attribution["referer"]
       else
         nil
       end
 
-    attrs
-    |> Map.put(:data, %{
-      attribution: attribution,
-      attributed_to: attributed_to
-    })
+    attrs |> Map.put(:data, %{attributed_from: attribution["event"], attributed_to: attributed_to})
   end
 
   defp register_user(changeset, method) do
@@ -95,28 +89,95 @@ defmodule Azimutt.Accounts do
     end
   end
 
-  ## Settings
+  ## Profile
 
-  def change_user_email(user, attrs \\ %{}) do
-    User.email_changeset(user, attrs)
-  end
-
-  # FIXME : Dois être complètement changé
-  def change_user_profil(user, attrs, now) do
-    User.github_creation_changeset(user, attrs, now)
-  end
-
-  def update_user_profil(%User{} = user, attrs, now) do
+  def set_onboarding(%User{} = user, onboarding, now) do
     user
-    |> change_user_profil(attrs, now)
+    |> User.onboarding_changeset(%{onboarding: onboarding})
+    |> User.update_changeset(now)
     |> Repo.update()
   end
 
-  def apply_user_email(user, password, attrs) do
+  def get_or_create_profile(%User{} = user) do
+    Repo.get_by(UserProfile, user_id: user.id)
+    |> Result.from_nillable()
+    |> Result.flat_map_error(fn _ -> create_profile(user, %{}) end)
+    |> Result.map(fn p -> p |> Repo.preload(:user) |> Repo.preload(:team_organization) end)
+  end
+
+  defp create_profile(%User{} = user, attrs) do
+    %UserProfile{}
+    |> UserProfile.creation_changeset(user, attrs)
+    |> Repo.insert()
+  end
+
+  def change_profile(%UserProfile{} = profile, now, allowed_attrs) do
+    {required_attrs, optional_attrs} = allowed_attrs
+
+    profile
+    |> UserProfile.changeset(%{}, now, required_attrs, optional_attrs)
+  end
+
+  def set_profile(%UserProfile{} = profile, attrs, now, allowed_attrs) do
+    {required_attrs, optional_attrs} = allowed_attrs
+
+    profile
+    |> create_or_update_profile_organization(attrs)
+    |> Result.map(fn attrs -> profile |> UserProfile.changeset(attrs, now, required_attrs, optional_attrs) end)
+    |> Result.flat_map(fn changeset -> changeset |> Repo.update() end)
+  end
+
+  defp create_or_update_profile_organization(%UserProfile{} = profile, attrs) do
+    orga_attrs = attrs["team_organization"]
+
+    if orga_attrs["create"] == "true" do
+      if profile.team_organization do
+        Organizations.update_organization(orga_attrs, profile.team_organization, profile.user)
+      else
+        Organizations.create_non_personal_organization(orga_attrs |> Map.put("logo", Faker.Avatar.image_url()), profile.user)
+      end
+    else
+      {:ok, nil}
+    end
+    |> Result.map(fn organization ->
+      if organization do
+        attrs |> Map.put("team_organization_id", organization.id)
+      else
+        attrs
+      end
+    end)
+  end
+
+  ## Settings
+
+  def change_user_infos(%User{} = user, attrs \\ %{}) do
+    User.infos_changeset(user, attrs)
+  end
+
+  def update_user_infos(%User{} = user, attrs, now) do
+    user
+    |> User.infos_changeset(attrs)
+    |> User.update_changeset(now)
+    |> Repo.update()
+  end
+
+  def change_user_email(%User{} = user, attrs \\ %{}) do
+    User.email_changeset(user, attrs)
+  end
+
+  def apply_user_email(%User{} = user, password, attrs) do
     user
     |> User.email_changeset(attrs)
     |> User.validate_current_password(password)
     |> Ecto.Changeset.apply_action(:update)
+  end
+
+  # `user` object has email updated in-memory but not persisted
+  def send_email_update(%User{} = user, previous_email, url_fun) when is_function(url_fun, 1) do
+    {encoded_token, user_token} = UserToken.build_email_token(user, "change:#{previous_email}")
+
+    Repo.insert!(user_token)
+    UserNotifier.send_email_update(user, previous_email, url_fun.(encoded_token))
   end
 
   @doc """
@@ -125,7 +186,7 @@ defmodule Azimutt.Accounts do
   If the token matches, the user email is updated and the token is deleted.
   The confirmed_at date is also updated to the current time.
   """
-  def update_user_email(user, token, now) do
+  def update_user_email(%User{} = user, token, now) do
     context = "change:#{user.email}"
 
     with {:ok, query} <- UserToken.verify_change_email_token_query(token, context),
@@ -137,33 +198,36 @@ defmodule Azimutt.Accounts do
     end
   end
 
-  defp user_email_multi(user, email, context, now) do
+  defp user_email_multi(%User{} = user, email, context, now) do
     changeset =
       user
       |> User.email_changeset(%{email: email})
       |> User.confirm_changeset(now)
+      |> User.update_changeset(now)
 
     Ecto.Multi.new()
     |> Ecto.Multi.update(:user, changeset)
     |> Ecto.Multi.delete_all(:tokens, UserToken.user_and_contexts_query(user, [context]))
   end
 
-  def send_email_update(%User{} = user, current_email, url_fun) when is_function(url_fun, 1) do
-    {encoded_token, user_token} = UserToken.build_email_token(user, "change:#{current_email}")
-
-    Repo.insert!(user_token)
-    UserNotifier.send_email_update(user, url_fun.(encoded_token))
-  end
-
-  def change_user_password(user, attrs \\ %{}) do
+  def change_user_password(%User{} = user, attrs \\ %{}) do
     User.password_changeset(user, attrs, hash_password: false)
   end
 
-  def update_user_password(user, password, attrs) do
+  def update_user_password(%User{} = user, current_password, attrs, now) do
+    perform_update_user_password(user, attrs, &User.validate_current_password(&1, current_password), now)
+  end
+
+  def set_user_password(%User{} = user, attrs, now) do
+    perform_update_user_password(user, attrs, &User.validate_no_password(&1), now)
+  end
+
+  defp perform_update_user_password(%User{} = user, attrs, validate, now) do
     changeset =
       user
       |> User.password_changeset(attrs)
-      |> User.validate_current_password(password)
+      |> validate.()
+      |> User.update_changeset(now)
 
     Ecto.Multi.new()
     |> Ecto.Multi.update(:user, changeset)
@@ -173,6 +237,20 @@ defmodule Azimutt.Accounts do
       {:ok, %{user: user}} -> {:ok, user}
       {:error, :user, changeset, _} -> {:error, changeset}
     end
+  end
+
+  def remove_user_password(%User{} = user, now) do
+    user
+    |> User.remove_password_changeset()
+    |> User.update_changeset(now)
+    |> Repo.update()
+  end
+
+  def set_user_provider(%User{} = user, attrs, now) do
+    user
+    |> User.provider_changeset(attrs)
+    |> User.update_changeset(now)
+    |> Repo.update()
   end
 
   ## Session
@@ -268,9 +346,14 @@ defmodule Azimutt.Accounts do
     end
   end
 
-  def get_user_personal_organization(%User{} = user) do
-    user.organizations
-    |> Enum.filter(fn orga -> orga.is_personal == true end)
-    |> List.first() || user.organizations |> List.first()
+  defp get_user_personal_organization(%User{} = user) do
+    if user.profile.team_organization do
+      profile = user.profile |> Repo.preload(:team_organization)
+      profile.team_organization
+    else
+      user.organizations
+      |> Enum.filter(fn orga -> orga.is_personal == true end)
+      |> List.first() || user.organizations |> List.first()
+    end
   end
 end

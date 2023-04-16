@@ -17,10 +17,6 @@
                         <%= render AzimuttWeb.PartialsView, "_page_sort.html", page: @organizations, key: "name" %>
                     </th>
                     <th class="p-1" scope="col">Sub</th>
-                    <th class="group p-1" scope="col">
-                        Location
-                        <%= render AzimuttWeb.PartialsView, "_page_sort.html", page: @organizations, key: "location" %>
-                    </th>
                     <th class="p-1" scope="col">
                         <span title="members">M</span> /
                         <span title="projects">P</span> /
@@ -39,7 +35,7 @@
                             <%= format_datetime(organization.created_at) %>
                             <%= render AzimuttWeb.PartialsView, "_page_filter.html", page: @organizations, key: "created_at", value: format_date_filter(organization.created_at) %>
                         </td>
-                        <td class="p-1" title={organization.contact_email}>
+                        <td class="p-1">
                             <%= link to: Routes.admin_organization_path(@conn, :show, organization), class: "underline" do %>
                                 <%= img_tag(organization.logo, class: "inline-block h-4 w-4 rounded-md") %>
                                 <%= organization.name %>
@@ -52,10 +48,6 @@
                             <%= if organization.heroku_resource do %>
                                 <span title={organization.heroku_resource.name}>Heroku</span>
                             <% end %>
-                        </td>
-                        <td class="group p-1">
-                            <%= organization.location %>
-                            <%= render AzimuttWeb.PartialsView, "_page_filter.html", page: @organizations, key: "location", value: organization.location %>
                         </td>
                         <td class="group p-1">
                             <span title="members"><%= display_number(organization.members) %></span> /

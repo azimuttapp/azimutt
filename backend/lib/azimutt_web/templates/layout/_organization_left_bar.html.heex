@@ -65,7 +65,20 @@
                         <%= link "New Project", to: Routes.elm_path(@conn, :orga_new, @organization), class: "inline-flex items-center justify-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 xl:w-full" %>
                     </div>
                 </div>
-                <%= render "_left_panel_menu.html", assigns %>
+                <nav class="space-y-1">
+                    <% links = [
+                        %{label: "Projects", icon: "home", path: Routes.organization_path(@conn, :show, @organization)},
+                        if(!@organization.is_personal, do: %{label: "Members", icon: "user-group", path: Routes.organization_member_path(@conn, :index, @organization)}, else: nil),
+                        if(StripeSrv.stripe_configured?(), do: %{label: "Billing", icon: "credit-card", path: Routes.organization_billing_path(@conn, :index, @organization, source: "left-menu")}, else: nil),
+                        %{label: "Settings", icon: "adjustments-horizontal", path: Routes.organization_path(@conn, :edit, @organization)}
+                    ] |> Enum.filter(fn l -> l != nil end) %>
+                    <%= for link <- links do %>
+                        <a href={link.path} class={active(@conn.request_path, link.path)} data-phx-link="redirect" data-phx-link-state="push">
+                            <Icon.draw name={link.icon} kind="outline" class="-ml-1 mr-3 text-gray-400 flex-shrink-0 pointer-events-none" />
+                            <span class="truncate"><%= link.label %></span>
+                        </a>
+                    <% end %>
+                </nav>
             </div>
         </div>
     </div>

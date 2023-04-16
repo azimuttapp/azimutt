@@ -1,0 +1,44 @@
+<div class="flex min-h-full">
+    <AzimuttWeb.Components.Step.step steps={get_steps("Our community")} />
+    <div class="flex flex-col items-center justify-center px-4 py-12 mx-auto mt-0 sm:px-6 lg:px-8">
+        <div>
+            <%= render AzimuttWeb.LayoutView, "_flash.html", conn: @conn %>
+            <%= render "_background_grid.html" %>
+            <h2 class="text-2xl font-bold tracking-tight text-gray-900 md:text-3xl xl:text-4xl">Our community</h2>
+            <p class="mt-6 mb-4 text-lg leading-8 text-gray-600 sm:max-w-md lg:max-w-lg">
+                Azimutt is a database tool, but it's also a community
+            </p>
+            <div class="text-base leading-7 text-gray-600">
+                <p>Join us on slack to <b>meet people interested in database design</b> and evolution, but also :</p>
+                <ul role="list" class="my-4 space-y-3 text-sm leading-6 text-gray-600">
+                    <li class="flex gap-x-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="flex-none w-5 h-6 text-gray-600">
+                            <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd"></path>
+                        </svg>
+                        Lightning fast support
+                    </li>
+                    <li class="flex gap-x-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="flex-none w-5 h-6 text-gray-600">
+                            <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd"></path>
+                        </svg>
+                        Discuss about Azimutt evolutions (we have huge features to come, let's prioritize and design them together)
+                    </li>
+                    <li class="flex gap-x-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="flex-none w-5 h-6 text-gray-600">
+                            <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd"></path>
+                        </svg>
+                        Get feedback for your database questions, design, evolution or any trouble you may have
+                    </li>
+                </ul>
+                <div class="flex items-center justify-center pt-3 gap-x-4">
+                    <div class="p-0.5 rounded bg-gradient-to-r from-blue-500 via-red-500 to-yellow-500">
+                        <form action={Azimutt.config(:slack_url)} method="get" target="_blank">
+                            <button type="submit" class="px-3 py-1.5 text-sm font-semibold text-gray-900 bg-white">Join Slack</button>
+                        </form>
+                    </div>
+                    <%= link "Continue", to: Routes.user_onboarding_path(@conn, :community_next), method: :post, class: "inline-flex justify-center rounded-md bg-gray-900 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900" %>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

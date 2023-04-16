@@ -19,9 +19,6 @@ admin_attrs = %User{
   name: "Azimutt Admin",
   email: "admin@azimutt.app",
   avatar: Faker.Avatar.image_url(),
-  company: "Azimutt",
-  location: "Paris",
-  description: "Admin account for Azimutt",
   github_username: "azimuttapp",
   twitter_username: "azimuttapp",
   is_admin: true,
@@ -35,9 +32,7 @@ admin = Azimutt.Repo.insert!(admin_attrs)
 
 azimutt_org_attrs = %{
   name: "Azimutt",
-  contact_email: "hey@azimutt.app",
   logo: Faker.Avatar.image_url(),
-  location: "Paris",
   description: "Azimutt's organization.",
   github_username: "azimuttapp",
   twitter_username: "azimuttapp"
@@ -62,8 +57,9 @@ IO.inspect(basic_project_file, label: "basic_project_file")
       nb_relations: 3,
       nb_types: 0,
       nb_comments: 2,
+      nb_layouts: 1,
       nb_notes: 0,
-      nb_layouts: 1
+      nb_memos: 0
     },
     azimutt_org,
     admin

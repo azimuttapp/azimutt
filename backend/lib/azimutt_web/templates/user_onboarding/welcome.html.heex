@@ -1,0 +1,23 @@
+<div class="flex min-h-full">
+    <div class="flex flex-col items-center justify-center px-4 py-12 mx-auto mt-0 sm:px-6 lg:px-8">
+        <div>
+            <%= render "_background_grid.html" %>
+            <h2 class="text-2xl font-bold tracking-tight text-gray-900 md:text-3xl xl:text-4xl">Welcome to Azimutt!</h2>
+            <p class="mt-6 mb-4 text-lg leading-8 text-gray-600 sm:max-w-md lg:max-w-lg">
+                Our mission is to help you <b>get the most out of your database</b>, in the simplest way possible.
+                It starts with the best database schema <b>exploration</b> tool, then expand with <b>documentation</b>, <b>design</b>, <b>optimizations</b> and soon <b>data exploration</b>.
+                You will improve your project's efficiency. Give it a try and see the difference!
+            </p>
+            <p class="mt-6 text-lg leading-8 text-gray-600 sm:max-w-md lg:max-w-lg">
+                Let's take a few seconds to meet and set up your environment.
+            </p>
+            <div class="mt-6 text-center">
+                <%= link "Onboard now!", to: Routes.user_onboarding_path(@conn, :welcome_next), method: :post,
+                    class: "inline-block rounded-md bg-gray-900 px-6 py-4 text-sm font-semibold text-white shadow-sm
+                    hover:bg-gray-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2
+                    focus-visible:outline-gray-600"
+                %>
+            </div>
+        </div>
+    </div>
+</div>

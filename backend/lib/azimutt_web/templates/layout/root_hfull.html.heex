@@ -1,0 +1,8 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth h-full" data-root="root_hfull">
+    <%= render "_head.html", conn: @conn %>
+    <body class="font-sans antialiased h-full">
+        <%= render "_hello_comment.html" %>
+        <%= @inner_content %>
+    </body>
+</html>

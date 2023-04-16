@@ -28,14 +28,14 @@
   <%= if length(@samples) > 0 do %>
   <url>
     <loc><%= Routes.gallery_url(@conn, :index) %></loc>
-    <lastmod><%= Enum.max_by(@samples, & &1.updated_at, Date).updated_at %></lastmod>
+    <lastmod><%= Enum.max_by(@samples, & &1.updated_at, Date).updated_at |> Timex.format!("{YYYY}-{0M}-{0D}") %></lastmod>
     <changefreq>weekly</changefreq>
   </url>
   <% end %>
   <%= for sample <- @samples do %>
   <url>
     <loc><%= Routes.gallery_url(@conn, :show, sample.slug) %></loc>
-    <lastmod><%= sample.updated_at %></lastmod>
+    <lastmod><%= sample.updated_at |> Timex.format!("{YYYY}-{0M}-{0D}") %></lastmod>
   </url>
   <% end %>
 </urlset>

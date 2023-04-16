@@ -14,19 +14,14 @@ defmodule AzimuttWeb.UserResetPasswordController do
     |> Result.tap(fn user -> Accounts.send_password_reset(user, &Routes.user_reset_password_url(conn, :edit, &1)) end)
 
     conn
-    |> put_flash(
-      :info,
-      "If your email is in our system, you will receive instructions to reset your password shortly."
-    )
-    |> redirect(to: Routes.website_path(conn, :index))
+    |> put_flash(:info, "We sent you an email to reset your password 👍️")
+    |> redirect(to: Routes.user_session_path(conn, :new))
   end
 
   def edit(conn, _params) do
     render(conn, "edit.html", changeset: Accounts.change_user_password(conn.assigns.user))
   end
 
-  # Do not log in the user after reset password to avoid a
-  # leaked token giving the user access to the account.
   def update(conn, %{"user" => user_params}) do
     case Accounts.reset_user_password(conn.assigns.user, user_params) do
       {:ok, _} ->

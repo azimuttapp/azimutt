@@ -115,6 +115,11 @@ defmodule Azimutt.Utils.ResultTest do
       assert {:error, :bad} = {:ok, 1} |> Result.filter_not(fn x -> x == 1 end, :bad)
     end
 
+    test "fold" do
+      assert "1" = {:ok, 1} |> Result.fold(fn e -> e <> "!" end, fn x -> "#{x}" end)
+      assert "oh!" = {:error, "oh"} |> Result.fold(fn e -> e <> "!" end, fn x -> "#{x}" end)
+    end
+
     test "exists" do
       assert true == {:ok, 1} |> Result.exists(fn x -> x == 1 end)
       assert false == {:ok, 1} |> Result.exists(fn x -> x == 2 end)

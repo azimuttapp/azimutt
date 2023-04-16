@@ -61,6 +61,9 @@ defmodule Azimutt.Tracking do
   def user_login(%User{} = current_user, method),
     do: create_event("user_login", user_data(current_user), %{method: method}, current_user, nil, nil)
 
+  def user_onboarding(%User{} = current_user, step),
+    do: create_event("user_onboarding", user_data(current_user), %{step: step}, current_user, nil, nil)
+
   def project_loaded(current_user, %Project{} = project),
     do: create_event("project_loaded", project_data(project), nil, current_user, project.organization.id, project.id)
 
@@ -82,8 +85,16 @@ defmodule Azimutt.Tracking do
   def subscribe_start(%User{} = current_user, %Organization{} = org, plan, price, quantity),
     do: create_event("subscribe_start", org_data(org), %{plan: plan, price: price, quantity: quantity}, current_user, org.id, nil)
 
-  def subscribe_error(%User{} = current_user, %Organization{} = org, plan, price, quantity),
-    do: create_event("subscribe_error", org_data(org), %{plan: plan, price: price, quantity: quantity}, current_user, org.id, nil)
+  def subscribe_error(%User{} = current_user, %Organization{} = org, plan, price, quantity, %Stripe.Error{} = error),
+    do:
+      create_event(
+        "subscribe_error",
+        org_data(org),
+        %{plan: plan, price: price, quantity: quantity, error: error.message},
+        current_user,
+        org.id,
+        nil
+      )
 
   def subscribe_success(%User{} = current_user, %Organization{} = org, details),
     do: create_event("subscribe_success", org_data(org), details, current_user, org.id, nil)
@@ -187,22 +198,12 @@ defmodule Azimutt.Tracking do
       slug: user.slug,
       name: user.name,
       email: user.email,
-      company: user.company,
-      location: user.location,
       github_username: user.github_username,
       twitter_username: user.twitter_username,
       is_admin: user.is_admin,
       last_signin: user.last_signin,
       created_at: user.created_at,
-      data:
-        if user.data do
-          %{
-            attribution: user.data.attribution,
-            attributed_to: user.data.attributed_to
-          }
-        else
-          nil
-        end
+      data: if(user.data, do: %{attributed_to: user.data.attributed_to}, else: nil)
     }
   end
 
@@ -210,8 +211,6 @@ defmodule Azimutt.Tracking do
     %{
       slug: org.slug,
       name: org.name,
-      contact_email: org.contact_email,
-      location: org.location,
       github_username: org.github_username,
       twitter_username: org.twitter_username,
       stripe_customer_id: org.stripe_customer_id,

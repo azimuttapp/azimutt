@@ -1,1 +1,28 @@
-<%= render "form.html", Map.put(assigns, :action, Routes.organization_path(@conn, :update, @organization)) %>
+<div class="mt-12 max-w-lg mx-auto">
+    <.form let={f} for={@changeset} action={Routes.organization_path(@conn, :update, @organization)}>
+        <%= if @changeset.action do %><div class="alert alert-danger">Oops, something went wrong! Please check the errors below.</div><% end %>
+        <h3 class="text-xl leading-6 font-medium text-gray-900">Organization settings</h3>
+        <p class="mt-1 text-sm text-gray-500">This information will be displayed to all members.</p>
+
+        <div class="mt-6 grid grid-cols-1 gap-y-6 sm:grid-cols-6">
+            <div class="sm:col-span-6">
+                <%= label f, :name, "Organization name", class: "block text-sm font-medium text-gray-700" %>
+                <div class="mt-1">
+                    <%= text_input f, :name, class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" %>
+                    <%= error_tag f, :name %>
+                </div>
+            </div>
+            <div class="sm:col-span-6">
+                <%= label f, :description, class: "block text-sm font-medium text-gray-700" %>
+                <div class="mt-1">
+                    <%= textarea f, :description, class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border border-gray-300 rounded-md" %>
+                    <%= error_tag f, :description %>
+                </div>
+                <p class="mt-1 text-sm text-gray-500">Describe your organization in a few sentences.</p>
+            </div>
+            <div class="mt-3">
+                <%= submit "Save", class: "inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" %>
+            </div>
+        </div>
+    </.form>
+</div>

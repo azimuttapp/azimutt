@@ -16,9 +16,6 @@ type alias User =
     , name : Username
     , email : Email
     , avatar : String
-    , company : Maybe String
-    , location : Maybe String
-    , description : Maybe String
     , github : Maybe Username
     , twitter : Maybe Username
     , isAdmin : Bool
@@ -33,9 +30,6 @@ type alias UserLight =
     , name : Username
     , email : Email
     , avatar : String
-    , company : Maybe String
-    , location : Maybe String
-    , description : Maybe String
     , github : Maybe Username
     , twitter : Maybe Username
     }
@@ -43,15 +37,12 @@ type alias UserLight =
 
 decode : Decoder User
 decode =
-    Decode.map13 User
+    Decode.map10 User
         (Decode.field "id" UserId.decode)
         (Decode.field "slug" UserSlug.decode)
         (Decode.field "name" Username.decode)
         (Decode.field "email" Email.decode)
         (Decode.field "avatar" Decode.string)
-        (Decode.maybeField "company" Decode.string)
-        (Decode.maybeField "location" Decode.string)
-        (Decode.maybeField "description" Decode.string)
         (Decode.maybeField "github_username" Username.decode)
         (Decode.maybeField "twitter_username" Username.decode)
         (Decode.field "is_admin" Decode.bool)
@@ -61,14 +52,11 @@ decode =
 
 decodeLight : Decoder UserLight
 decodeLight =
-    Decode.map10 UserLight
+    Decode.map7 UserLight
         (Decode.field "id" UserId.decode)
         (Decode.field "slug" UserSlug.decode)
         (Decode.field "name" Username.decode)
         (Decode.field "email" Email.decode)
         (Decode.field "avatar" Decode.string)
-        (Decode.maybeField "company" Decode.string)
-        (Decode.maybeField "location" Decode.string)
-        (Decode.maybeField "description" Decode.string)
         (Decode.maybeField "github_username" Username.decode)
         (Decode.maybeField "twitter_username" Username.decode)

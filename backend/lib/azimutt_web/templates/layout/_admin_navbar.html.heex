@@ -1,5 +1,12 @@
 <nav x-data="{ open: false }" class="z-50 flex-shrink-0 bg-gray-900 shadow-sm font-sans">
     <!-- FIXME: move this in /admin folder -->
+    <% links = [
+        {"Dashboard", Routes.admin_dashboard_path(@conn, :index)},
+        {"Users", Routes.admin_user_path(@conn, :index)},
+        {"Organizations", Routes.admin_organization_path(@conn, :index)},
+        {"Projects", Routes.admin_project_path(@conn, :index)},
+        {"Events", Routes.admin_event_path(@conn, :index)}
+    ] %>
     <div class="px-2 mx-auto sm:px-4 lg:px-8">
         <div class="relative flex items-center justify-between h-16">
             <!-- Logo section -->
@@ -25,12 +32,9 @@
             <!-- Links section -->
             <div class="hidden lg:block lg:w-80">
                 <div class="flex items-center justify-end">
-                    <div class="flex"><%= link "Dashboard", to: Routes.admin_dashboard_path(@conn, :index), class: "rounded-lg py-1 px-2 text-sm text-slate-100 hover:bg-slate-700 hover:text-slate-200" %></div>
-                    <div class="flex"><%= link "Users", to: Routes.admin_user_path(@conn, :index), class: "rounded-lg py-1 px-2 text-sm text-slate-100 hover:bg-slate-700 hover:text-slate-200" %></div>
-                    <div class="flex"><%= link "Organizations", to: Routes.admin_organization_path(@conn, :index), class: "rounded-lg py-1 px-2 text-sm text-slate-100 hover:bg-slate-700 hover:text-slate-200" %></div>
-                    <div class="flex"><%= link "Projects", to: Routes.admin_project_path(@conn, :index), class: "rounded-lg py-1 px-2 text-sm text-slate-100 hover:bg-slate-700 hover:text-slate-200" %></div>
-                    <div class="flex"><%= link "Events", to: Routes.admin_event_path(@conn, :index), class: "rounded-lg py-1 px-2 text-sm text-slate-100 hover:bg-slate-700 hover:text-slate-200" %></div>
-                    <div class="flex"><%= link "Email", to: Routes.admin_email_path(@conn, :index), class: "rounded-lg py-1 px-2 text-sm text-slate-100 hover:bg-slate-700 hover:text-slate-200" %></div>
+                    <%= for {label, url} <- links do %>
+                        <%= link label, to: url, class: "rounded-lg py-1 px-2 text-sm text-slate-100 hover:bg-slate-700 hover:text-slate-200" %>
+                    <% end %>
                     <div @click.outside="open = false" class="relative ml-4 shrink-0" x-data="{ open: false }">
                         <div>
                             <button @click="open = !open" class="flex text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white" id="user-menu" aria-haspopup="true" x-bind:aria-expanded="open" aria-expanded="false">
@@ -53,7 +57,7 @@
                                                 <span class="px-2 text-sm font-medium text-slate-100">Admin</span>
                                             </div>
                                         </div>
-                                        <a class="block px-8 py-2 text-sm text-gray-100 hover:bg-slate-700" href="/admin">Administrateurs</a>
+                                        <a href={Routes.admin_dashboard_path(@conn, :index)} class="block px-8 py-2 text-sm text-gray-100 hover:bg-slate-700">Dashboard</a>
                                     </div>
                                 <% end %>
 
@@ -70,7 +74,8 @@
                                     </div>
                                 <% end %>
                                 <div class="py-1">
-                                    <%= link "Log out", class: "block px-4 py-2 text-sm text-slate-100 hover:bg-slate-700", to: Routes.user_session_path(@conn, :delete), method: :delete %>
+                                    <%= link "Settings", to: Routes.user_settings_path(@conn, :show), class: "block px-4 py-2 text-sm text-slate-100 hover:bg-slate-700" %>
+                                    <%= link "Log out", to: Routes.user_session_path(@conn, :delete), method: :delete, class: "block px-4 py-2 text-sm text-slate-100 hover:bg-slate-700" %>
                                 </div>
                             </div>
                         </div>
@@ -82,11 +87,14 @@
 
     <div x-description="Mobile menu, show/hide based on menu state." class="lg:hidden" id="mobile-menu" x-show="open" style="display: none;">
         <div class="px-2 pt-2 pb-3 space-y-1">
-            <a href="#" class="block px-3 py-2 text-base font-medium text-slate-100 bg-slate-800 rounded-md" x-state:on="Current" x-state:off="Default" aria-current="page" >Dashboard</a>
+            <%= for {label, url} <- links do %>
+                <%= link label, to: url, class: "block px-3 py-2 rounded-md text-base font-medium text-slate-100 hover:text-gray-50 hover:bg-slate-700" %>
+            <% end %>
         </div>
         <div class="pt-4 pb-3 border-t border-slate-800">
             <div class="px-2 space-y-1">
-                <a href="#" class="block px-3 py-2 text-base font-medium text-slate-100 rounded-md hover:text-gray-50 hover:bg-slate-700">Sign out</a>
+                <%= link "Settings", to: Routes.user_settings_path(@conn, :show), class: "block px-3 py-2 rounded-md text-base font-medium text-slate-100 hover:text-gray-50 hover:bg-slate-700" %>
+                <%= link "Log out", to: Routes.user_session_path(@conn, :delete), method: :delete, class: "block px-3 py-2 rounded-md text-base font-medium text-slate-100 hover:text-gray-50 hover:bg-slate-700" %>
             </div>
         </div>
     </div>

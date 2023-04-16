@@ -15,9 +15,7 @@ defmodule Azimutt.Organizations.Organization do
   schema "organizations" do
     field :slug, :string
     field :name, :string
-    field :contact_email, :string
     field :logo, :string
-    field :location, :string
     field :description, :string
     field :github_username, :string
     field :twitter_username, :string
@@ -41,8 +39,6 @@ defmodule Azimutt.Organizations.Organization do
     do: [
       :slug,
       :name,
-      :contact_email,
-      :location,
       :description,
       :github_username,
       :twitter_username,
@@ -52,19 +48,17 @@ defmodule Azimutt.Organizations.Organization do
 
   @doc false
   def create_personal_changeset(%Organization{} = organization, %User{} = current_user) do
-    required = [:name, :contact_email, :logo]
+    required = [:name, :logo]
 
     organization
     |> cast(
       %{
         name: current_user.name,
-        contact_email: current_user.email,
         logo: current_user.avatar,
-        location: current_user.location,
         github_username: current_user.github_username,
         twitter_username: current_user.twitter_username
       },
-      required ++ [:location, :description, :github_username, :twitter_username]
+      required ++ [:description, :github_username, :twitter_username]
     )
     |> Slugme.generate_slug(:name)
     |> put_change(:is_personal, true)
@@ -76,10 +70,10 @@ defmodule Azimutt.Organizations.Organization do
 
   @doc false
   def create_non_personal_changeset(%Organization{} = organization, %User{} = current_user, attrs \\ %{}) do
-    required = [:name, :contact_email, :logo]
+    required = [:name, :logo]
 
     organization
-    |> cast(attrs, required ++ [:location, :description, :github_username, :twitter_username])
+    |> cast(attrs, required ++ [:description, :github_username, :twitter_username])
     |> Slugme.generate_slug(:name)
     |> put_change(:is_personal, false)
     |> put_change(:created_by, current_user)
@@ -107,9 +101,7 @@ defmodule Azimutt.Organizations.Organization do
     organization
     |> cast(attrs, [
       :name,
-      :contact_email,
       :logo,
-      :location,
       :description,
       :github_username,
       :twitter_username

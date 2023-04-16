@@ -54,7 +54,9 @@ defmodule AzimuttWeb.LayoutView do
   end
 
   def active(current_path, path) do
-    if current_path === path do
+    real_path = path |> String.split("?") |> hd()
+
+    if current_path === real_path do
       "hover:bg-gray-50 hover:text-gray-900 group flex items-center px-3 py-2 text-sm font-medium rounded-md bg-gray-100 text-gray-900"
     else
       "hover:bg-gray-50 hover:text-gray-900 group flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-50 hover:text-gray-900"

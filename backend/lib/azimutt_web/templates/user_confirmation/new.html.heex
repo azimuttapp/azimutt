@@ -1,11 +1,11 @@
 <div class="flex min-h-full">
     <div class="flex flex-1 flex-col justify-center py-12 px-4 sm:px-6 lg:flex-none lg:px-20 xl:px-24">
         <div class="mx-auto w-full max-w-sm lg:w-96">
-            <%= if @user.provider == "github" do %>
+            <%= if Date.compare(@user.created_at, Timex.shift(@now, days: -1)) == :lt do %>
                 <h2 class="mt-6 text-3xl font-bold tracking-tight text-gray-900">Thanks for using Azimutt</h2>
                 <p class="mt-2 text-sm text-gray-500">
-                    We just added an email validation to avoid fake users as much as possible.<br>
-                    Please send confirmation email and click on the link inside.
+                    We just added an email validation to avoid fake users.<br>
+                    Please click the button to send confirmation email and follow the link inside 🙏
                 </p>
                 <div class="mt-8">
                     <.form let={_f} for={:user} action={Routes.user_confirmation_path(@conn, :create)}>
