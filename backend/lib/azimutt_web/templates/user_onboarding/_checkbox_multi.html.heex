@@ -1,0 +1,9 @@
+<%= tag :input,
+    type: "checkbox",
+    name: input_name(@f, @field) <> "[]",
+    id: input_id(@f, @field, @value),
+    value: @value,
+    checked: Enum.member?(Map.get(@f.data, @field) || [], @value),
+    class: assigns[:class],
+    'aria-describedby': assigns[:'aria-describedby']
+%>

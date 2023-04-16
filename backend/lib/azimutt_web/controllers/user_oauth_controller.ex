@@ -1,41 +1,62 @@
 defmodule AzimuttWeb.UserOauthController do
   use AzimuttWeb, :controller
+  plug Ueberauth
   alias Azimutt.Accounts
   alias Azimutt.Utils.Result
   alias AzimuttWeb.UserAuth
   action_fallback AzimuttWeb.FallbackController
-  plug Ueberauth
 
-  def callback(%{assigns: %{ueberauth_auth: %{info: user_info}}} = conn, %{"provider" => "github"}) do
+  def callback(conn, %{"provider" => "github"}) do
     now = DateTime.utc_now()
+    auth_info = conn.assigns.ueberauth_auth
+    provider = auth_info.provider |> Atom.to_string()
+    provider_uid = auth_info.uid |> Integer.to_string()
+    user = auth_info.extra.raw_info.user
+
+    email_verified =
+      user["emails"]
+      |> Enum.find(fn e -> e["email"] == user["email"] end)
+      |> Result.from_nillable()
+      |> Result.map(fn e -> e["verified"] == true end)
+      |> Result.or_else(false)
 
     user_params = %{
-      name: user_info.name || user_info.nickname,
-      email: user_info.email,
-      # FIXME
-      provider: "github",
-      # FIXME
-      provider_uid: user_info.nickname,
-      avatar: user_info.image,
-      # FIXME
-      company: nil,
-      location: user_info.location,
-      description: user_info.description,
-      github_username: user_info.nickname,
-      # FIXME
-      twitter_username: nil
+      name: user["name"] || user["login"],
+      email: user["email"],
+      provider: provider,
+      provider_uid: provider_uid,
+      provider_data: to_map(auth_info),
+      avatar: user["avatar_url"],
+      github_username: user["login"],
+      twitter_username: user["twitter_username"],
+      confirmed_at: if(email_verified, do: now, else: nil)
     }
 
-    Accounts.get_user_by_email(user_params.email)
+    profile_params = %{
+      company: user["company"],
+      location: user["location"],
+      description: user["bio"]
+    }
+
+    # FIXME: create a unique key (provider, provider_uid) => needs heroku provider_uid
+    Accounts.get_user_by_provider(provider, provider_uid)
+    |> Result.flat_map_error(fn _ -> Accounts.get_user_by_email(user_params[:email]) end)
+    |> Result.tap(fn user -> user |> Accounts.set_user_provider(user_params, now) end)
     |> Result.flat_map_error(fn _ ->
-      Accounts.register_github_user(user_params, UserAuth.get_attribution(conn), now)
-      |> Result.tap(fn user -> Accounts.send_email_confirmation(user, &Routes.user_confirmation_url(conn, :confirm, &1)) end)
+      Accounts.register_github_user(user_params, profile_params, UserAuth.get_attribution(conn), now)
+      |> Result.tap(fn user ->
+        if !user.confirmed_at, do: Accounts.send_email_confirmation(user, &Routes.user_confirmation_url(conn, :confirm, &1))
+      end)
     end)
-    |> Result.map(fn user -> UserAuth.login_user_and_redirect(conn, user, "github") end)
+    |> Result.map(fn user -> UserAuth.login_user_and_redirect(conn, user, provider) end)
     |> Result.or_else(callback(conn, %{}))
   end
 
   def callback(conn, _params) do
     conn |> put_flash(:error, "Authentication failed") |> redirect(to: Routes.website_path(conn, :index))
+  end
+
+  defp to_map(%Ueberauth.Auth{} = data) do
+    data.extra.raw_info.user
   end
 end

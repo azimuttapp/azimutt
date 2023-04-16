@@ -1,5 +1,5 @@
 <%= if @projects == [] do %>
-    <%= render "_project_list_empty.html", assigns %>
+    <%= render "_project_list_empty.html", conn: @conn, organization: @organization %>
 <% else %>
-    <%= render "_project_list.html", assigns %>
+    <%= render "_project_list.html", conn: @conn, projects: @projects %>
 <% end %>

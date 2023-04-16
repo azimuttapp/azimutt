@@ -18,7 +18,7 @@ defmodule AzimuttWeb.FallbackController do
     |> put_status(:unauthorized)
     |> put_view(AzimuttWeb.ErrorView)
     |> put_layout({AzimuttWeb.LayoutView, "empty.html"})
-    |> put_root_layout({AzimuttWeb.LayoutView, "empty.html"})
+    |> put_root_layout({AzimuttWeb.LayoutView, "root_hfull.html"})
     |> render("401.html", message: "Unauthorized")
   end
 
@@ -27,7 +27,7 @@ defmodule AzimuttWeb.FallbackController do
     |> put_status(:forbidden)
     |> put_view(AzimuttWeb.ErrorView)
     |> put_layout({AzimuttWeb.LayoutView, "empty.html"})
-    |> put_root_layout({AzimuttWeb.LayoutView, "empty.html"})
+    |> put_root_layout({AzimuttWeb.LayoutView, "root_hfull.html"})
     |> render("403.html", message: "Forbidden")
   end
 
@@ -36,7 +36,7 @@ defmodule AzimuttWeb.FallbackController do
     |> put_status(:not_found)
     |> put_view(AzimuttWeb.ErrorView)
     |> put_layout({AzimuttWeb.LayoutView, "empty.html"})
-    |> put_root_layout({AzimuttWeb.LayoutView, "empty.html"})
+    |> put_root_layout({AzimuttWeb.LayoutView, "root_hfull.html"})
     |> render("404.html", message: "Not Found")
   end
 
@@ -45,7 +45,7 @@ defmodule AzimuttWeb.FallbackController do
     |> put_status(:gone)
     |> put_view(AzimuttWeb.ErrorView)
     |> put_layout({AzimuttWeb.LayoutView, "empty.html"})
-    |> put_root_layout({AzimuttWeb.LayoutView, "empty.html"})
+    |> put_root_layout({AzimuttWeb.LayoutView, "root_hfull.html"})
     |> render("410.html", message: "Gone")
   end
 
@@ -54,7 +54,20 @@ defmodule AzimuttWeb.FallbackController do
     |> put_status(:internal_server_error)
     |> put_view(AzimuttWeb.ErrorView)
     |> put_layout({AzimuttWeb.LayoutView, "empty.html"})
-    |> put_root_layout({AzimuttWeb.LayoutView, "empty.html"})
+    |> put_root_layout({AzimuttWeb.LayoutView, "root_hfull.html"})
     |> render("500.html", message: message)
+  end
+
+  def call(_conn, {:ok, response}) do
+    response
+  end
+
+  def call(conn, _params) do
+    conn
+    |> put_status(:internal_server_error)
+    |> put_view(AzimuttWeb.ErrorView)
+    |> put_layout({AzimuttWeb.LayoutView, "empty.html"})
+    |> put_root_layout({AzimuttWeb.LayoutView, "root_hfull.html"})
+    |> render("500.html", message: "Unexpected error :/")
   end
 end

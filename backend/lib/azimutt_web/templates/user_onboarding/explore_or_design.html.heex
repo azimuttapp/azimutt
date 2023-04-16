@@ -1,0 +1,25 @@
+<div class="flex min-h-full">
+    <AzimuttWeb.Components.Step.step steps={get_steps("About you")} />
+    <div class="flex flex-col items-center justify-center px-4 py-12 mx-auto mt-0 sm:px-6 lg:px-8">
+        <div>
+            <%= render AzimuttWeb.LayoutView, "_flash.html", conn: @conn %>
+            <%= render "_background_grid.html" %>
+            <h2 class="text-2xl font-bold tracking-tight text-gray-900 md:text-3xl xl:text-4xl">What is your main purpose?</h2>
+            <p class="mt-6 mb-4 text-lg leading-8 text-gray-600 sm:max-w-md lg:max-w-lg">
+                This onboarding is here to learn about your needs and personalise itself to best fit them, showing most relevant options and features.
+            </p>
+            <div class="py-4 text-center">
+                <%= link "Explore existing database", to: Routes.user_onboarding_path(@conn, :explore_or_design_next, %{user_profile: %{usecase: "explore"}}), method: :post,
+                    class: "inline-block rounded-md bg-gray-900 px-6 py-4 text-sm font-semibold text-white shadow-sm hover:bg-gray-700 text-center
+                    focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-600"
+                %>
+                <span class="px-8 text-gray-600">or</span>
+                <%=  link "Design new database", to: Routes.user_onboarding_path(@conn, :explore_or_design_next, %{user_profile: %{usecase: "design"}}), method: :post,
+                    class: "inline-block rounded-md bg-gray-900 px-6 py-4 text-sm font-semibold text-white shadow-sm hover:bg-gray-700 text-center
+                    focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-600"
+                %>
+            </div>
+            <%= render "_error.html", changeset: @changeset %>
+        </div>
+    </div>
+</div>

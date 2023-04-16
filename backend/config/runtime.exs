@@ -18,16 +18,18 @@ import Config
 # script that automatically sets the env var above.
 host = System.fetch_env!("PHX_HOST")
 port = String.to_integer(System.fetch_env!("PORT"))
-skip_public_site = System.get_env("SKIP_PUBLIC_SITE") == "true"
 global_organization = System.get_env("GLOBAL_ORGANIZATION")
-global_organization_alone = global_organization && System.get_env("GLOBAL_ORGANIZATION_ALONE") == "true"
 # TODO: REQUIRE_GITHUB_ORGANIZATION: allow users only from this github orga
 
 config :azimutt,
   host: host,
-  skip_public_site: skip_public_site,
+  skip_public_site: System.get_env("SKIP_PUBLIC_SITE") == "true",
+  skip_onboarding_funnel: System.get_env("SKIP_ONBOARDING_FUNNEL") == "true",
+  skip_email_confirmation: System.get_env("SKIP_EMAIL_CONFIRMATION") == "true",
+  require_email_confirmation: System.get_env("REQUIRE_EMAIL_CONFIRMATION") == "true",
+  require_email_ends_with: System.get_env("REQUIRE_EMAIL_ENDS_WITH"),
   global_organization: global_organization,
-  global_organization_alone: global_organization_alone,
+  global_organization_alone: global_organization && System.get_env("GLOBAL_ORGANIZATION_ALONE") == "true",
   support_email: System.get_env("SUPPORT_EMAIL") || "contact@azimutt.app",
   sender_email: System.get_env("SENDER_EMAIL") || "contact@azimutt.app"
 
@@ -149,7 +151,6 @@ end
 
 config :swoosh, :api_client, Swoosh.ApiClient.Hackney
 
-# FIXME: add env variable to require email validation or not
 if System.get_env("AUTH_PASSWORD") == "true" do
   IO.puts("Setup Password auth")
 

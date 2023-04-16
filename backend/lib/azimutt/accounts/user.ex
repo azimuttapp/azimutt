@@ -14,10 +14,9 @@ defmodule Azimutt.Accounts.User do
     field :email, :string
     field :provider, :string
     field :provider_uid, :string
+    field :provider_data, :map
     field :avatar, :string
-    field :company, :string
-    field :location, :string
-    field :description, :string
+    field :onboarding, :string
     field :github_username, :string
     field :twitter_username, :string
     field :is_admin, :boolean, default: false
@@ -29,10 +28,11 @@ defmodule Azimutt.Accounts.User do
     field :confirmed_at, :utc_datetime_usec
     field :deleted_at, :utc_datetime_usec
 
+    has_one :profile, Azimutt.Accounts.UserProfile
     many_to_many :organizations, Organization, join_through: OrganizationMember
   end
 
-  def search_fields, do: [:slug, :name, :email, :company, :location, :description, :github_username, :twitter_username]
+  def search_fields, do: [:slug, :name, :email, :github_username, :twitter_username]
 
   @doc """
   A user changeset for registration.
@@ -55,45 +55,66 @@ defmodule Azimutt.Accounts.User do
     required = [:name, :email, :avatar]
 
     user
-    |> cast(attrs, required ++ [:password, :company, :location, :description, :github_username, :twitter_username])
+    |> cast(attrs, required ++ [:password, :github_username, :twitter_username])
     |> Slugme.generate_slug(:name)
     |> validate_email()
     |> validate_password(opts)
+    |> setup_onboarding()
     |> put_change(:last_signin, now)
     |> cast_embed(:data, required: true, with: &User.Data.changeset/2)
     |> validate_required(required)
   end
 
   def github_creation_changeset(user, attrs, now) do
-    required = [:name, :email, :avatar, :provider]
+    required = [:name, :email, :avatar, :provider, :provider_uid, :provider_data, :github_username]
 
     user
-    |> cast(attrs, required ++ [:provider_uid, :company, :location, :description, :github_username, :twitter_username])
+    |> cast(attrs, required ++ [:twitter_username, :confirmed_at])
     |> Slugme.generate_slug(:github_username)
+    |> setup_onboarding()
     |> put_change(:last_signin, now)
     |> cast_embed(:data, required: true, with: &User.Data.changeset/2)
     |> validate_required(required)
   end
 
   def heroku_creation_changeset(user, attrs, now) do
-    required = [:name, :email, :avatar, :provider]
+    required = [:name, :email, :avatar, :provider, :provider_uid]
 
     user
-    |> cast(attrs, required)
+    |> cast(attrs, required ++ [:provider_data, :confirmed_at])
     |> Slugme.generate_slug(:name)
+    # |> setup_onboarding() # no onboarding for Heroku users => rework on this
     |> put_change(:last_signin, now)
     |> put_change(:confirmed_at, now)
     |> cast_embed(:data, required: true, with: &User.Data.changeset/2)
     |> validate_required(required)
   end
 
+  defp setup_onboarding(user_changeset) do
+    if Azimutt.config(:skip_onboarding_funnel) do
+      user_changeset
+    else
+      user_changeset |> put_change(:onboarding, "welcome")
+    end
+  end
+
   defp validate_email(changeset) do
     changeset
     |> validate_required([:email])
     |> validate_format(:email, ~r/^[^\s]+@[^\s]+$/, message: "must have the @ sign and no spaces")
+    |> validate_ends_with(:email, Azimutt.config(:require_email_ends_with))
     |> validate_length(:email, max: 160)
     |> unsafe_validate_unique(:email, Azimutt.Repo)
     |> unique_constraint(:email)
+  end
+
+  defp validate_ends_with(changeset, field, suffix) do
+    if suffix do
+      regex = "#{Regex.escape(suffix)}$" |> Regex.compile!()
+      changeset |> validate_format(field, regex, message: "must ends with '#{suffix}'")
+    else
+      changeset
+    end
   end
 
   defp validate_password(changeset, opts) do
@@ -121,11 +142,17 @@ defmodule Azimutt.Accounts.User do
     end
   end
 
-  @doc """
-  A user changeset for changing the email.
+  def infos_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:name, :avatar])
+    |> validate_required([:name, :avatar])
+  end
 
-  It requires the email to change otherwise an error is added.
-  """
+  def onboarding_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:onboarding])
+  end
+
   def email_changeset(user, attrs) do
     user
     |> cast(attrs, [:email])
@@ -155,11 +182,23 @@ defmodule Azimutt.Accounts.User do
     |> validate_password(opts)
   end
 
-  @doc """
-  Confirms the account by setting `confirmed_at`.
-  """
+  def remove_password_changeset(user) do
+    user
+    |> cast(%{hashed_password: nil}, [:hashed_password])
+  end
+
+  def provider_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:provider, :provider_uid, :provider_data])
+  end
+
+  @doc "Confirms the account by setting `confirmed_at`."
   def confirm_changeset(user, now) do
-    change(user, confirmed_at: now)
+    user |> change(confirmed_at: now)
+  end
+
+  def update_changeset(user, now) do
+    user |> change(updated_at: now)
   end
 
   @doc """
@@ -178,14 +217,20 @@ defmodule Azimutt.Accounts.User do
     false
   end
 
-  @doc """
-  Validates the current password otherwise adds an error to the changeset.
-  """
+  @doc "Validates the current password otherwise adds an error to the changeset."
   def validate_current_password(changeset, password) do
     if valid_password?(changeset.data, password) do
       changeset
     else
       add_error(changeset, :current_password, "is not valid")
+    end
+  end
+
+  def validate_no_password(changeset) do
+    if changeset.data.hashed_password == nil do
+      changeset
+    else
+      add_error(changeset, :current_password, "should not be set")
     end
   end
 end

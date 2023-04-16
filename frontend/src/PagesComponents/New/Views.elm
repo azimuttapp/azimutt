@@ -1,6 +1,5 @@
 module PagesComponents.New.Views exposing (title, view)
 
-import Components.Atoms.Badge as Badge
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon)
 import Components.Atoms.Icons as Icons
@@ -73,10 +72,10 @@ viewNewProject shared currentUrl urlOrganization model =
             urlOrganization
             model
             { tabs =
-                [ { tab = TabDatabase, icon = Icons.sources.database, content = [ text "From database connection", Badge.basicFlex Tw.green [ class "ml-3" ] [ text "New" ] ] }
+                [ { tab = TabDatabase, icon = Icons.sources.database, content = [ text "From database connection" ] }
                 , { tab = TabSql, icon = Icons.sources.sql, content = [ text "From SQL structure" ] }
                 , { tab = TabJson, icon = Icons.sources.json, content = [ text "From JSON" ] }
-                , { tab = TabEmptyProject, icon = Icons.sources.empty, content = [ text "Empty project" ] }
+                , { tab = TabEmptyProject, icon = Icons.sources.empty, content = [ text "From scratch (db design)" ] }
                 , { tab = TabProject, icon = Icons.sources.project, content = [ text "Import project" ] }
                 , { tab = TabSamples, icon = Icons.sources.sample, content = [ text "Explore sample" ] }
                 ]

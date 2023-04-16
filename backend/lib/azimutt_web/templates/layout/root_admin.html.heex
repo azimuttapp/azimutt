@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html lang="en" class="scroll-smooth h-full">
-    <%= render("_head.html", assigns) %>
+<html lang="en" class="scroll-smooth h-full" data-root="root_admin">
+    <%= render "_head.html", conn: @conn %>
     <body class="font-mono antialiased bg-slate-900 h-full">
-        <%= render "_admin_user_menu.html", assigns %>
+        <%= render "_hello_comment.html" %>
+        <%= render "_admin_navbar.html", conn: @conn, current_user: @current_user %>
         <div class="mx-auto px-3">
             <%= @inner_content %>
         </div>

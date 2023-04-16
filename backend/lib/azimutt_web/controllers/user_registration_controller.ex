@@ -14,6 +14,7 @@ defmodule AzimuttWeb.UserRegistrationController do
 
   def create(conn, %{"user" => user_params}) do
     now = DateTime.utc_now()
+    auth_method = "password"
     attrs = user_params |> Mapx.atomize() |> Map.put(:avatar, Faker.Avatar.image_url())
 
     case Accounts.register_password_user(attrs, UserAuth.get_attribution(conn), now) do
@@ -21,9 +22,16 @@ defmodule AzimuttWeb.UserRegistrationController do
         Accounts.send_email_confirmation(user, &Routes.user_confirmation_url(conn, :confirm, &1))
 
         conn
-        |> put_flash(:info, "Azimutt account created, please check your emails to validate it and then access Azimutt.")
-        |> UserAuth.login_user(user, "password")
-        |> redirect(to: Routes.user_confirmation_path(conn, :new))
+        |> put_flash(
+          :info,
+          if Azimutt.config(:require_email_confirmation) && !Azimutt.config(:skip_email_confirmation) do
+            "Azimutt account created, please check your emails to validate it and then access Azimutt."
+          else
+            "Welcome to Azimutt 🥳"
+          end
+        )
+        |> UserAuth.login_user(user, auth_method)
+        |> redirect(to: Routes.user_dashboard_path(conn, :index))
 
       {:error, %Ecto.Changeset{} = changeset} ->
         conn |> render("new.html", changeset: changeset)

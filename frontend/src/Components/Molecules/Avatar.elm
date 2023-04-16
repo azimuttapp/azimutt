@@ -1,10 +1,17 @@
-module Components.Molecules.Avatar exposing (doc, xsWithIcon)
+module Components.Molecules.Avatar exposing (doc, xs, xsWithIcon)
 
 import Components.Atoms.Icon as Icon exposing (Icon)
 import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Html, div, img, span)
 import Html.Attributes exposing (alt, class, src, style)
 import Libs.Tailwind exposing (TwClass)
+
+
+xs : String -> String -> TwClass -> Html msg
+xs url name styles =
+    span [ class ("relative inline-block " ++ styles) ]
+        [ img [ class "h-6 w-6 rounded-full", src url, alt name ] []
+        ]
 
 
 xsWithIcon : String -> String -> Icon -> TwClass -> Html msg
@@ -72,7 +79,8 @@ doc : Chapter x
 doc =
     Chapter.chapter "Avatar"
         |> Chapter.renderComponentList
-            [ ( "xsWithIcon", xsWithIcon sampleUrl "" Icon.Fire "" )
+            [ ( "xs", xs sampleUrl "" "" )
+            , ( "xsWithIcon", xsWithIcon sampleUrl "" Icon.Fire "" )
             , ( "demo", demo )
             , ( "all", all )
             ]

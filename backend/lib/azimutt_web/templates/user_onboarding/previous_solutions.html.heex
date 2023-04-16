@@ -1,0 +1,38 @@
+<div class="flex min-h-full">
+    <AzimuttWeb.Components.Step.step steps={get_steps("Azimutt setup")} />
+    <div class="flex flex-col items-center justify-center px-4 py-12 mx-auto mt-0 sm:px-6 lg:px-8">
+        <div>
+            <%= render AzimuttWeb.LayoutView, "_flash.html", conn: @conn %>
+            <%= render "_background_grid.html" %>
+            <h2 class="text-2xl font-bold tracking-tight text-gray-900 md:text-3xl xl:text-4xl">Which solutions did you try before Azimutt?</h2>
+            <p class="mt-6 mb-4 text-lg leading-8 text-gray-600 sm:max-w-md lg:max-w-lg">
+            </p>
+            <.form let={f} for={@changeset} action={Routes.user_onboarding_path(@conn, :previous_solutions_next)}>
+                <fieldset>
+                    <div class="space-y-5">
+                        <%= for item <- [
+                            %{id: "drawing-tool", label: "Drawing tool", description: " such as Lucidchart, Miro, Excalidraw..."},
+                            %{id: "sql-client", label: "SQL client", description: " such as DBeaver, Datagrip, Toad..."},
+                            %{id: "desktop-erd", label: "Desktop ERD", description: " such as MySQL Workench..."},
+                            %{id: "online-erd", label: "Online ERD", description: " such as DrawSQL, SqlDBM, dbdiagram, QuickDBD..."},
+                            %{id: "data-catalog", label: "Data Catalog", description: " such as Alation, DataGalaxy, Collibra, Castor..."},
+                        ] do %>
+                            <div class="relative flex items-start">
+                                <div class="flex items-center h-6">
+                                    <%= render "_checkbox_multi.html", f: f, field: :previously_tried, value: item.id, 'aria-describedby': "#{item.id}-description", class: "w-4 h-4 text-gray-600 border-gray-300 rounded focus:ring-gray-600" %>
+                                </div>
+                                <div class="ml-3 text-sm leading-6">
+                                    <%= label f, input_for(f, :previously_tried, item.id), item.label, class: "font-medium text-gray-900" %>
+                                    <span id={"#{item.id}-description"} class="text-gray-500"><span class="sr-only"><%= item.label %></span><%= item.description %></span>
+                                </div>
+                            </div>
+                        <% end %>
+                    </div>
+                </fieldset>
+                <div class="px-4 py-6 text-center sm:px-6">
+                    <%= submit "Continue", class: "inline-flex justify-center rounded-md bg-gray-900 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900" %>
+                </div>
+            </.form>
+        </div>
+    </div>
+</div>

@@ -21,10 +21,9 @@ defmodule Azimutt.Accounts.UserNotifier do
     """)
   end
 
-  # FIXME: check this
   def send_password_reset(user, url) do
     deliver(user.email, "Password reset request", """
-    Hi #{user.email},
+    Hi #{user.name},
 
     You can reset your password by visiting the URL below:
 
@@ -37,12 +36,12 @@ defmodule Azimutt.Accounts.UserNotifier do
     """)
   end
 
-  # FIXME: make it work
-  def send_email_update(user, url) do
-    deliver(user.email, "Email update request", """
-    Hi #{user.email},
+  def send_email_update(user, previous_email, url) do
+    deliver(previous_email, "Email update request", """
+    Hi #{user.name},
 
-    You can change your email by visiting the URL below:
+    We got a request to change your Azimutt account email to #{user.email}
+    You can confirm this change by visiting the URL below:
 
     #{url}
 
@@ -77,7 +76,7 @@ defmodule Azimutt.Accounts.UserNotifier do
     email =
       new()
       |> to(recipient)
-      |> from({"Azimutt", Azimutt.config(:sender_email)})
+      |> from({"Azimutt team", Azimutt.config(:sender_email)})
       |> subject(subject)
       |> text_body(body)
 

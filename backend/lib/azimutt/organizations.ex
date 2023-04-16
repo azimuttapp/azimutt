@@ -88,7 +88,7 @@ defmodule Azimutt.Organizations do
       StripeSrv.create_customer(
         organization.id,
         organization.name,
-        organization.contact_email,
+        current_user.email,
         organization.description,
         organization.is_personal,
         current_user.name,

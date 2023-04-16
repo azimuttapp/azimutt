@@ -1,5 +1,6 @@
 defmodule AzimuttWeb.OrganizationController do
   use AzimuttWeb, :controller
+  alias Azimutt.Accounts
   alias Azimutt.Organizations
   alias Azimutt.Organizations.Organization
   alias Azimutt.Projects
@@ -12,7 +13,7 @@ defmodule AzimuttWeb.OrganizationController do
     logo = Faker.Avatar.image_url()
 
     conn
-    |> put_root_layout({AzimuttWeb.LayoutView, "account.html"})
+    |> put_root_layout({AzimuttWeb.LayoutView, "root_organization_new.html"})
     |> render("new.html", changeset: changeset, logo: logo)
   end
 
@@ -27,7 +28,7 @@ defmodule AzimuttWeb.OrganizationController do
 
       {:error, %Ecto.Changeset{} = changeset} ->
         conn
-        |> put_root_layout({AzimuttWeb.LayoutView, "account.html"})
+        |> put_root_layout({AzimuttWeb.LayoutView, "root_organization_new.html"})
         |> render("new.html", changeset: changeset)
     end
   end
@@ -36,7 +37,7 @@ defmodule AzimuttWeb.OrganizationController do
     current_user = conn.assigns.current_user
 
     if organization_id == Uuid.zero() do
-      organization = Azimutt.Accounts.get_user_default_organization(current_user)
+      organization = Accounts.get_user_default_organization(current_user)
       conn |> redirect(to: Routes.organization_path(conn, :show, organization))
     end
 
@@ -50,7 +51,7 @@ defmodule AzimuttWeb.OrganizationController do
     current_user = conn.assigns.current_user
 
     if organization_id == Uuid.zero() do
-      organization = Azimutt.Accounts.get_user_default_organization(current_user)
+      organization = Accounts.get_user_default_organization(current_user)
       conn |> redirect(to: Routes.organization_path(conn, :edit, organization))
     end
 

@@ -39,6 +39,7 @@ defmodule Azimutt do
           "Unlimited Tables",
           "Up to 3 layouts per project"
         ],
+        cta: "Select this plan",
         buy: "/login?plan=free",
         selected: false
       },
@@ -57,6 +58,7 @@ defmodule Azimutt do
           "Extended schema analysis",
           "Premium support"
         ],
+        cta: "Buy this plan",
         buy: "/login?plan=pro",
         selected: true
       },
@@ -73,6 +75,7 @@ defmodule Azimutt do
           "Advanced data access",
           "AI query generation"
         ],
+        cta: "Contact us",
         buy: "mailto:#{Azimutt.config(:support_email)}",
         selected: false
       }

@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth h-full" data-root="root_organization_new">
+    <%= render "_head.html", conn: @conn %>
+    <body class="font-sans antialiased h-full bg-gray-50">
+        <%= render "_hello_comment.html" %>
+        <div class="min-h-full">
+            <%= render "_user_navbar.html", conn: @conn, current_user: @current_user %>
+            <%= @inner_content %>
+        </div>
+    </body>
+</html>

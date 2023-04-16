@@ -39,13 +39,23 @@ defmodule AzimuttWeb.HerokuController do
     expected_token = heroku_token(resource_id, timestamp, salt)
     invalid_token = !Plug.Crypto.secure_compare(expected_token, token)
 
+    user_params = %{
+      name: email |> String.split("@") |> hd(),
+      email: email,
+      provider: "heroku",
+      provider_uid: email,
+      provider_data: %{app: app, resource_id: resource_id},
+      avatar: "https://www.gravatar.com/avatar/#{Crypto.md5(email)}?s=150&d=robohash",
+      confirmed_at: now
+    }
+
     if invalid_token || older_than_5_min do
       {:error, :forbidden}
     else
       with {:ok, resource} <- Heroku.get_resource(resource_id),
            {:ok, user} <-
              Accounts.get_user_by_email(email)
-             |> Result.flat_map_error(fn _ -> Accounts.register_heroku_user(email, UserAuth.get_attribution(conn), now) end),
+             |> Result.flat_map_error(fn _ -> Accounts.register_heroku_user(user_params, UserAuth.get_attribution(conn), now) end),
            {:ok, resource} <- Heroku.set_app_if_needed(resource, app, now),
            {:ok, resource} <- Heroku.set_organization_if_needed(resource, user, now),
            {:ok, _} <- Heroku.add_member_if_needed(resource, resource.organization, user) do
@@ -68,13 +78,13 @@ defmodule AzimuttWeb.HerokuController do
         {:error, :too_many_members} ->
           conn
           |> put_layout({AzimuttWeb.LayoutView, "empty.html"})
-          |> put_root_layout({AzimuttWeb.LayoutView, "empty.html"})
+          |> put_root_layout({AzimuttWeb.LayoutView, "root_hfull.html"})
           |> render("error_too_many_members.html", heroku_app: app)
 
         {:error, :member_limit_reached} ->
           conn
           |> put_layout({AzimuttWeb.LayoutView, "empty.html"})
-          |> put_root_layout({AzimuttWeb.LayoutView, "empty.html"})
+          |> put_root_layout({AzimuttWeb.LayoutView, "root_hfull.html"})
           |> render("error_member_limit_reached.html", heroku_app: app)
 
         {:error, err} ->

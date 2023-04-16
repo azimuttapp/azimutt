@@ -1,4 +1,7 @@
 <nav x-data="{ open: false }" class="z-50 flex-shrink-0 bg-white shadow-sm">
+    <% links = [
+        {"Dashboard", Routes.user_dashboard_path(@conn, :index)}
+    ] %>
     <div class="px-2 mx-auto max-w-7xl sm:px-4 lg:px-8">
         <div class="relative flex items-center justify-between h-16">
             <!-- Logo section -->
@@ -30,9 +33,9 @@
             <!-- Links section -->
             <div class="hidden lg:block lg:w-80">
                 <div class="flex items-center justify-end">
-                    <div class="flex">
-                        <%= link "Dashboard", to: Routes.user_dashboard_path(@conn, :index), class: "rounded-lg py-1 px-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900" %>
-                    </div>
+                    <%= for {label, url} <- links do %>
+                        <%= link label, to: url, class: "rounded-lg py-1 px-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900" %>
+                    <% end %>
                     <div @click.outside="open = false" class="relative ml-4 shrink-0" x-data="{ open: false }">
                         <div>
                             <button @click="open = !open" class="flex text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white" id="user-menu" aria-haspopup="true" x-bind:aria-expanded="open" aria-expanded="false">
@@ -52,28 +55,22 @@
                             </div>
 
                             <%= if @current_user.is_admin do %>
-                            <div class="py-1">
-                                <div class="px-4 py-3" role="none">
-                                    <div class="flex items-center text-sm" role="none">
-                                        <!-- FIXME: use icons -->
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"></path>
-                                        </svg>
-                                        <span class="px-2 text-sm font-medium text-gray-900">Admin</span>
+                                <div class="py-1">
+                                    <div class="px-4 py-3" role="none">
+                                        <div class="flex items-center text-sm" role="none">
+                                            <Icon.server_stack kind="outline" class="w-4 h-4" />
+                                            <span class="px-2 text-sm font-medium text-gray-900">Admin</span>
+                                        </div>
                                     </div>
+                                    <a href={Routes.admin_dashboard_path(@conn, :index)} class="block px-8 py-2 text-sm text-gray-700 hover:bg-gray-100">Dashboard</a>
                                 </div>
-                                <a href={Routes.admin_dashboard_path(@conn, :index)} class="block px-8 py-2 text-sm text-gray-700 hover:bg-gray-100">Administrateurs</a>
-                            </div>
                             <% end %>
 
                             <%= if Azimutt.Application.env() == :dev do %>
                                 <div class="py-1">
                                     <div class="px-4 py-3" role="none">
                                         <div class="flex items-center text-sm" role="none">
-                                            <!-- FIXME: use icons -->
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
-                                            </svg>
+                                            <Icon.beaker kind="outline" class="w-4 h-4" />
                                             <span class="px-2 text-sm font-medium text-gray-900">Developers tools</span>
                                         </div>
                                     </div>
@@ -82,7 +79,8 @@
                                 </div>
                             <% end %>
                             <div class="py-1">
-                                <%= link "Log out", class: "block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100", to: Routes.user_session_path(@conn, :delete), method: :delete %>
+                                <%= link "User settings", to: Routes.user_settings_path(@conn, :show), class: "block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" %>
+                                <%= link "Log out", to: Routes.user_session_path(@conn, :delete), method: :delete, class: "block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" %>
                             </div>
                         </div>
                     </div>
@@ -94,11 +92,14 @@
 
     <div x-description="Mobile menu, show/hide based on menu state." class="lg:hidden" id="mobile-menu" x-show="open" style="display: none;">
         <div class="px-2 pt-2 pb-3 space-y-1">
-            <a href="#" class="block px-3 py-2 text-base font-medium text-white bg-gray-800 rounded-md" x-state:on="Current" x-state:off="Default" aria-current="page" >Dashboard</a>
+            <%= for {label, url} <- links do %>
+                <%= link label, to: url, class: "block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-50 hover:bg-gray-600" %>
+            <% end %>
         </div>
         <div class="pt-4 pb-3 border-t border-gray-800">
             <div class="px-2 space-y-1">
-                <a href="#" class="block px-3 py-2 text-base font-medium text-gray-700 rounded-md hover:text-gray-50 hover:bg-gray-600">Sign out</a>
+                <%= link "User settings", to: Routes.user_settings_path(@conn, :show), class: "block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-50 hover:bg-gray-600" %>
+                <%= link "Log out", to: Routes.user_session_path(@conn, :delete), method: :delete, class: "block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-50 hover:bg-gray-600" %>
             </div>
         </div>
     </div>

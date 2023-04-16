@@ -1,3 +1,4 @@
+# Why have this in `azimutt_web/controllers`???
 defmodule AzimuttWeb.UserAuth do
   @moduledoc "base auth module generate by `mix phx.gen.auth`"
   import Plug.Conn
@@ -42,24 +43,25 @@ defmodule AzimuttWeb.UserAuth do
   def login_user_and_redirect(conn, user, method, params \\ %{}) do
     conn
     |> login_user(user, method, params)
-    |> after_login_redirect()
+    |> redirect_after_login()
   end
 
   def login_user(conn, user, method, params \\ %{}) do
     Tracking.user_login(user, method)
     token = Accounts.generate_user_session_token(user)
+    user_return_to = get_session(conn, :user_return_to)
 
     conn
     |> renew_session()
     |> put_session(:user_token, token)
     |> put_session(:live_socket_id, "users_sessions:#{Base.url_encode64(token)}")
+    |> put_session(:user_return_to, user_return_to)
     |> delete_resp_cookie(@attribution_cookie)
     |> maybe_write_remember_me_cookie(token, params)
   end
 
-  def after_login_redirect(conn) do
-    user_return_to = get_session(conn, :user_return_to)
-    conn |> redirect(to: user_return_to || signed_in_path(conn))
+  def redirect_after_login(conn) do
+    conn |> redirect(to: get_session(conn, :user_return_to) || Routes.user_dashboard_path(conn, :index))
   end
 
   defp maybe_write_remember_me_cookie(conn, token, %{"remember_me" => "true"}) do
@@ -119,8 +121,7 @@ defmodule AzimuttWeb.UserAuth do
   def fetch_current_user(conn, _opts) do
     {user_token, conn} = ensure_user_token(conn)
     user = user_token && Accounts.get_user_by_session_token(user_token)
-    user = user |> Azimutt.Repo.preload(:organizations)
-    # IO.inspect user
+    user = user |> Azimutt.Repo.preload(:profile) |> Azimutt.Repo.preload(organizations: [:heroku_resource])
     assign(conn, :current_user, user)
   end
 
@@ -141,7 +142,7 @@ defmodule AzimuttWeb.UserAuth do
   def redirect_if_user_is_authed(conn, _opts) do
     if conn.assigns[:current_user] do
       conn
-      |> redirect(to: signed_in_path(conn))
+      |> redirect(to: Routes.user_dashboard_path(conn, :index))
       |> halt()
     else
       conn
@@ -150,11 +151,7 @@ defmodule AzimuttWeb.UserAuth do
 
   def require_authed_user(conn, _opts) do
     if conn.assigns[:current_user] do
-      if conn.assigns[:current_user].confirmed_at || conn.request_path |> String.starts_with?(Routes.user_confirmation_path(conn, :new)) do
-        conn
-      else
-        conn |> redirect(to: Routes.user_confirmation_path(conn, :new)) |> halt()
-      end
+      conn |> enforce_user_requirements(%{})
     else
       conn
       |> maybe_store_return_to()
@@ -163,6 +160,31 @@ defmodule AzimuttWeb.UserAuth do
       |> halt()
     end
   end
+
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
+  def enforce_user_requirements(conn, _opts) do
+    user = conn.assigns[:current_user]
+    path = conn.request_path
+
+    cond do
+      !user ->
+        conn
+
+      !user.confirmed_at && Azimutt.config(:require_email_confirmation) && !Azimutt.config(:skip_email_confirmation) &&
+        !is_email_confirm_path(conn, path) && Date.compare(user.created_at, ~D[2023-04-13]) == :gt ->
+        conn |> redirect(to: Routes.user_confirmation_path(conn, :new)) |> halt()
+
+      user.onboarding && !Azimutt.config(:skip_onboarding_funnel) &&
+        !is_onboarding_path(conn, path) && !is_email_confirm_path(conn, path) ->
+        conn |> redirect(to: Routes.user_onboarding_path(conn, user.onboarding |> String.to_atom())) |> halt()
+
+      true ->
+        conn
+    end
+  end
+
+  defp is_email_confirm_path(conn, path), do: path |> String.starts_with?(Routes.user_confirmation_path(conn, :new))
+  defp is_onboarding_path(conn, path), do: path |> String.starts_with?(Routes.user_onboarding_path(conn, :index))
 
   def require_authed_user_api(conn, _opts) do
     if conn.assigns[:current_user] do
@@ -245,18 +267,21 @@ defmodule AzimuttWeb.UserAuth do
         if value != nil && value != "", do: acc |> Map.put(attr, value), else: acc
       end)
 
-    referer = get_req_header(conn, "referer") |> Enum.filter(fn h -> !String.contains?(h, Azimutt.config(:host)) end) |> List.first()
+    referer = conn |> get_req_header("referer") |> Enum.filter(fn h -> !String.contains?(h, Azimutt.config(:host)) end) |> List.first()
     headers = if referer != nil, do: %{referer: referer}, else: %{}
     attributes = params |> Map.merge(headers)
 
     if attributes |> map_size() > 0 do
       details = attributes |> Map.put("path", conn.request_path)
-      Tracking.attribution(conn.assigns.current_user, details)
+      event = Tracking.attribution(conn.assigns.current_user, details)
 
       if conn.assigns.current_user == nil do
-        attribution = get_attribution(conn)
-        cookie = details |> Map.put("date", DateTime.utc_now())
-        conn |> put_resp_cookie(@attribution_cookie, [cookie | attribution], @attribution_options)
+        cookie =
+          details
+          |> Map.put("date", DateTime.utc_now())
+          |> Map.put("event", event |> Result.map(fn e -> e.id end) |> Result.or_else(nil))
+
+        conn |> put_resp_cookie(@attribution_cookie, cookie, @attribution_options)
       else
         conn
       end
@@ -267,7 +292,9 @@ defmodule AzimuttWeb.UserAuth do
 
   def get_attribution(conn) do
     conn = fetch_cookies(conn, signed: [@attribution_cookie])
-    conn.cookies[@attribution_cookie] || []
+    value = conn.cookies[@attribution_cookie]
+    # legacy: attribution stored a list before, get the first item in this case
+    if(is_list(value), do: hd(value), else: value)
   end
 
   defp put_error_html(conn, status, view, message) do
@@ -288,11 +315,6 @@ defmodule AzimuttWeb.UserAuth do
     |> halt()
   end
 
-  defp maybe_store_return_to(%{method: "GET"} = conn) do
-    put_session(conn, :user_return_to, current_path(conn))
-  end
-
+  defp maybe_store_return_to(%{method: "GET"} = conn), do: conn |> put_session(:user_return_to, current_path(conn))
   defp maybe_store_return_to(conn), do: conn
-
-  defp signed_in_path(conn), do: Routes.user_dashboard_path(conn, :index)
 end

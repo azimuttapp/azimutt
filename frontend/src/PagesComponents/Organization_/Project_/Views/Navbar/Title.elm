@@ -23,8 +23,10 @@ import Libs.Models.Platform exposing (Platform)
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (focus, focus_ring_offset_600)
 import Libs.Task as T
-import Models.OrganizationId exposing (OrganizationId)
+import Models.Organization as Organization exposing (Organization)
+import Models.OrganizationId as OrganizationId exposing (OrganizationId)
 import Models.Project.LayoutName exposing (LayoutName)
+import Models.Project.ProjectId exposing (ProjectId)
 import Models.Project.ProjectStorage as ProjectStorage
 import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import PagesComponents.Organization_.Project_.Models exposing (LayoutMsg(..), Msg(..), confirmDanger, prompt)
@@ -83,9 +85,24 @@ viewNavbarTitle gConf eConf projects project layouts args =
 viewProjectsDropdown : Platform -> ErdConf -> List ProjectInfo -> ProjectInfo -> Bool -> HtmlId -> HtmlId -> Html Msg
 viewProjectsDropdown platform eConf projects project dirty htmlId openedDropdown =
     let
-        userOrganizations : List OrganizationId
-        userOrganizations =
-            projects |> List.filterMap .organization |> List.map .id |> List.unique
+        projectsPerOrganization : Dict OrganizationId (List ProjectInfo)
+        projectsPerOrganization =
+            projects |> List.groupBy (.organization >> Maybe.mapOrElse .id OrganizationId.zero)
+
+        currentOrganization : OrganizationId
+        currentOrganization =
+            project.organization |> Maybe.mapOrElse .id OrganizationId.zero
+
+        currentOrganizationProjects : List ProjectInfo
+        currentOrganizationProjects =
+            projectsPerOrganization |> Dict.getOrElse currentOrganization []
+
+        organizationProjects : List ( Organization, List ProjectInfo )
+        organizationProjects =
+            projectsPerOrganization
+                |> Dict.remove currentOrganization
+                |> Dict.toList
+                |> List.map (\( _, p ) -> ( p |> List.head |> Maybe.andThen .organization |> Maybe.withDefault (Organization.zero |> (\z -> { z | name = "Draft" })), p ))
     in
     Dropdown.dropdown { id = htmlId, direction = BottomRight, isOpen = openedDropdown == htmlId }
         (\m ->
@@ -97,38 +114,41 @@ viewProjectsDropdown platform eConf projects project dirty htmlId openedDropdown
         )
         (\_ ->
             div [ class "divide-y divide-gray-100" ]
-                (([ if eConf.save then
-                        [ ContextMenu.btnHotkey "" TriggerSaveProject [ text "Save project" ] platform (Conf.hotkeys |> Dict.getOrElse "save" [])
-                        , ContextMenu.btn "" (RenameProject |> prompt "Rename project" (text "") project.name) [ text "Rename project" ]
-                        , ContextMenu.btn "" (DeleteProject project |> confirmDanger "Delete project?" (text "This action is definitive!")) [ text "Delete project" ]
-                        ]
+                ([ if eConf.save then
+                    [ ContextMenu.btnHotkey "" TriggerSaveProject [ text "Save project" ] platform (Conf.hotkeys |> Dict.getOrElse "save" [])
+                    , ContextMenu.btn "" (RenameProject |> prompt "Rename project" (text "") project.name) [ text "Rename project" ]
+                    , ContextMenu.btn "" (DeleteProject project |> confirmDanger "Delete project?" (text "This action is definitive!")) [ text "Delete project" ]
+                    ]
 
-                    else
-                        [ ContextMenu.btnDisabled "" [ text "Save project" |> Tooltip.r "You are in read-one mode" ]
-                        , ContextMenu.btnDisabled "" [ text "Rename project" |> Tooltip.r "You are in read-one mode" ]
-                        , ContextMenu.btnDisabled "" [ text "Delete project" |> Tooltip.r "You are in read-one mode" ]
-                        ]
-                  ]
-                    ++ B.cond (List.isEmpty projects)
-                        []
-                        [ projects
-                            |> List.map
-                                (\p ->
-                                    ContextMenu.linkHtml (Route.toHref (Route.Organization___Project_ { organization = p |> ProjectInfo.organizationId, project = p.id }))
-                                        [ class "flex", classList [ ( "text-gray-400", p.id == project.id ) ] ]
-                                        [ p.organization
-                                            |> Maybe.map (\o -> Avatar.xsWithIcon o.logo o.name (ProjectInfo.icon p) "mr-2")
-                                            |> Maybe.withDefault (Icon.outline (ProjectInfo.icon p) "mr-2")
-                                        , text p.name
-                                        ]
-                                )
-                        ]
-                    ++ [ [ ContextMenu.link { url = project.organization |> Maybe.map .id |> Maybe.filter (\id -> userOrganizations |> List.member id) |> Backend.organizationUrl, text = "Back to dashboard" } ] ]
-                 )
+                   else
+                    [ ContextMenu.btnDisabled "" [ text "Save project" |> Tooltip.r "You are in read-one mode" ]
+                    , ContextMenu.btnDisabled "" [ text "Rename project" |> Tooltip.r "You are in read-one mode" ]
+                    , ContextMenu.btnDisabled "" [ text "Delete project" |> Tooltip.r "You are in read-one mode" ]
+                    ]
+                 , currentOrganizationProjects |> List.map (viewProjectsDropdownItem project.id)
+                 , organizationProjects
+                    |> List.map
+                        (\( org, orgProjects ) ->
+                            ContextMenu.submenuHtml [ Avatar.xs org.logo org.name "mr-2", span [] [ text (org.name ++ " »") ] ]
+                                (orgProjects |> List.map (viewProjectsDropdownItem project.id))
+                        )
+                 , [ ContextMenu.link { url = currentOrganization |> Just |> Maybe.filter (\id -> projectsPerOrganization |> Dict.member id) |> Backend.organizationUrl, text = "Back to dashboard" } ]
+                 ]
                     |> List.filterNot List.isEmpty
                     |> List.map (\section -> div [ role "none", class "py-1" ] section)
                 )
         )
+
+
+viewProjectsDropdownItem : ProjectId -> ProjectInfo -> Html msg
+viewProjectsDropdownItem current p =
+    ContextMenu.linkHtml (Route.toHref (Route.Organization___Project_ { organization = p |> ProjectInfo.organizationId, project = p.id }))
+        [ class "flex", classList [ ( "text-gray-400 bg-gray-100", p.id == current ) ], disabled (p.id == current) ]
+        [ p.organization
+            |> Maybe.map (\o -> Avatar.xsWithIcon o.logo o.name (ProjectInfo.icon p) "mr-2")
+            |> Maybe.withDefault (Icon.outline (ProjectInfo.icon p) "mr-2")
+        , text p.name
+        ]
 
 
 viewLayoutsMaybe : Platform -> ErdConf -> LayoutName -> Dict LayoutName ErdLayout -> HtmlId -> HtmlId -> List (Html Msg)

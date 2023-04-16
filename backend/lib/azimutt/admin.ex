@@ -19,13 +19,14 @@ defmodule Azimutt.Admin do
   def count_projects, do: Project |> Repo.aggregate(:count, :id)
 
   def list_users(%Page.Info{} = p) do
-    User |> Page.get(p)
+    User |> preload(:profile) |> Page.get(p)
   end
 
   def get_user(id) do
     User
     |> where([u], u.id == ^id)
     |> preload(organizations: [:heroku_resource, :created_by, :members, projects: [:organization]])
+    |> preload(:profile)
     |> Repo.one()
     |> Result.from_nillable()
   end

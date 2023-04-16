@@ -31,7 +31,6 @@ export const organization: Organization = {
     name: 'Valid',
     plan: plan,
     logo: 'https://azimutt.app/images/logo_dark.svg',
-    location: 'Paris',
     description: 'bla bla bla'
 }
 export const origins: Origin[] = [{id: uuid, lines: [1, 2]}]
