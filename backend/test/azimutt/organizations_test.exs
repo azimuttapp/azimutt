@@ -34,7 +34,7 @@ defmodule Azimutt.OrganizationsTest do
 
     @tag :skip
     test "create_non_personal_organization/1 with valid data creates a organization", %{user: user} do
-      valid_attrs = %{name: "Orga name", contact_email: "admin@mail.com", logo: Faker.Avatar.image_url()}
+      valid_attrs = %{name: "Orga name", logo: Faker.Avatar.image_url()}
       assert {:ok, %Organization{} = organization} = Organizations.create_non_personal_organization(valid_attrs, user)
       assert organization.name == "some name"
     end

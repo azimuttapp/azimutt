@@ -15,7 +15,6 @@ defmodule AzimuttWeb.Api.OrganizationView do
       slug: organization.slug,
       name: organization.name,
       logo: organization.logo,
-      location: organization.location,
       description: organization.description
     }
     |> put_plan(organization, ctx)

@@ -4,8 +4,8 @@ defmodule Azimutt.Repo.Migrations.AddUserProfiles do
   def change do
     create table(:user_profiles, comments: "store complementary data on users") do
       add :user_id, references(:users, on_delete: :delete_all), null: false
-      add :usage, :string
       add :usecase, :string
+      add :usage, :string
       add :role, :string
       add :location, :string
       add :description, :text

@@ -61,7 +61,7 @@ defmodule Azimutt.Heroku do
     if resource.organization do
       {:ok, resource}
     else
-      attrs = %{name: resource.app, contact_email: current_user.email, logo: Faker.Avatar.image_url()}
+      attrs = %{name: resource.app, logo: Faker.Avatar.image_url()}
 
       Organizations.create_non_personal_organization(attrs, current_user)
       |> Result.flat_map(fn organization ->

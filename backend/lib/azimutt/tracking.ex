@@ -61,6 +61,9 @@ defmodule Azimutt.Tracking do
   def user_login(%User{} = current_user, method),
     do: create_event("user_login", user_data(current_user), %{method: method}, current_user, nil, nil)
 
+  def user_onboarding(%User{} = current_user, step),
+    do: create_event("user_onboarding", user_data(current_user), %{step: step}, current_user, nil, nil)
+
   def project_loaded(current_user, %Project{} = project),
     do: create_event("project_loaded", project_data(project), nil, current_user, project.organization.id, project.id)
 
@@ -208,8 +211,6 @@ defmodule Azimutt.Tracking do
     %{
       slug: org.slug,
       name: org.name,
-      contact_email: org.contact_email,
-      location: org.location,
       github_username: org.github_username,
       twitter_username: org.twitter_username,
       stripe_customer_id: org.stripe_customer_id,

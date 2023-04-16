@@ -20,15 +20,11 @@
                     <% end %>
                 </div>
                 <div class="mt-1 text-xs font-medium text-slate-300">
-                    <a href={"mailto:#{@organization.contact_email}"} title="Contact email" class="underline"><%= @organization.contact_email %></a>
                     <%= if @organization.github_username do %>
                         - <a href={"https://github.com/#{@organization.github_username}"} title="GitHub profile" class="underline"><%= @organization.github_username %></a>
                     <% end %>
                     <%= if @organization.twitter_username do %>
                         - <a href={"https://twitter.com/#{@organization.twitter_username}"} title="Twitter account" class="underline">@<%= @organization.twitter_username %></a>
-                    <% end %>
-                    <%= if @organization.location != nil && @organization.location != "" do %>
-                        - <span title="location"><%= @organization.location %></span>
                     <% end %>
                     <%= if @organization.description != nil && @organization.description != "" do %>
                         - <span title="description"><%= @organization.description %></span>

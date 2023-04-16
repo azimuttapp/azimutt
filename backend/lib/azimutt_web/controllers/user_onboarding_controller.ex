@@ -1,6 +1,7 @@
 defmodule AzimuttWeb.UserOnboardingController do
   use AzimuttWeb, :controller
   alias Azimutt.Accounts
+  alias Azimutt.Tracking
   alias Azimutt.Utils.Result
   alias AzimuttWeb.Services.BillingSrv
   action_fallback AzimuttWeb.FallbackController
@@ -92,6 +93,7 @@ defmodule AzimuttWeb.UserOnboardingController do
   def finalize(conn, _params) do
     current_user = conn.assigns.current_user
     now = DateTime.utc_now()
+    Tracking.user_onboarding(current_user, :finalize)
 
     current_user
     |> Accounts.set_onboarding(nil, now)
@@ -103,6 +105,7 @@ defmodule AzimuttWeb.UserOnboardingController do
   defp show_step(conn, id) do
     current_user = conn.assigns.current_user
     now = DateTime.utc_now()
+    Tracking.user_onboarding(current_user, id)
 
     with {:ok, step} <- @steps |> Enum.find(fn s -> s.id == id end) |> Result.from_nillable(),
          {:ok, p} <- Accounts.get_or_create_profile(current_user),

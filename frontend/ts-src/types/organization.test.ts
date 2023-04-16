@@ -7,7 +7,7 @@ describe('organization', () => {
         expect(res).toEqual(organization)
     })
     test('zod empty', () => {
-        const valid: Organization = {...organization, location: undefined, description: undefined}
+        const valid: Organization = {...organization, description: undefined}
         const res: Organization = Organization.parse(valid)
         expect(res).toEqual(valid)
     })

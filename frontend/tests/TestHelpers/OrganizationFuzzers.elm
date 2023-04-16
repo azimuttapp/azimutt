@@ -13,7 +13,7 @@ import TestHelpers.HerokuFuzzers exposing (herokuResource)
 
 organization : Fuzzer Organization
 organization =
-    Fuzz.map8 Organization organizationId organizationSlug organizationName plan logo (Fuzz.maybe location) (Fuzz.maybe description) (Fuzz.maybe herokuResource)
+    Fuzz.map7 Organization organizationId organizationSlug organizationName plan logo (Fuzz.maybe description) (Fuzz.maybe herokuResource)
 
 
 organizationId : Fuzzer OrganizationId
@@ -49,11 +49,6 @@ planName =
 logo : Fuzzer String
 logo =
     stringSmall
-
-
-location : Fuzzer String
-location =
-    Fuzz.oneOf ([ "Paris", "Last Vegas" ] |> List.map Fuzz.constant)
 
 
 description : Fuzzer String

@@ -279,7 +279,6 @@ buildOrganization o =
     , name = o.name
     , plan = o.plan
     , logo = o.logo
-    , location = o.location
     , description = o.description
     , heroku = o.heroku
     }
@@ -291,7 +290,6 @@ type alias OrgaWithProjects =
     , name : String
     , plan : Plan
     , logo : String
-    , location : Maybe String
     , description : Maybe String
     , heroku : Maybe HerokuResource
     , projects : List OrgaProject
@@ -323,13 +321,12 @@ type alias OrgaProject =
 
 decodeOrga : Decode.Decoder OrgaWithProjects
 decodeOrga =
-    Decode.map9 OrgaWithProjects
+    Decode.map8 OrgaWithProjects
         (Decode.field "id" Decode.string)
         (Decode.field "slug" Decode.string)
         (Decode.field "name" Decode.string)
         (Decode.field "plan" Plan.decode)
         (Decode.defaultField "logo" Decode.string "")
-        (Decode.maybeField "location" Decode.string)
         (Decode.maybeField "description" Decode.string)
         (Decode.maybeField "heroku" HerokuResource.decode)
         (Decode.field "projects" (Decode.list decodeProject))
