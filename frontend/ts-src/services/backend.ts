@@ -149,7 +149,7 @@ export class Backend {
 
     private withXhrHost(path: string): string {
         if (this.env == Env.enum.dev) {
-            return path
+            return `${path}`
         } else {
             return `https://${window.host}${path}`
         }
