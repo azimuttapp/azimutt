@@ -57,8 +57,8 @@ defmodule AzimuttWeb.Api.ProjectView do
     if project.storage_kind == Storage.remote() do
       # FIXME: handle spaces in name
       file_url = ProjectFile.url({project.file, project}, signed: true)
-      IO.puts("project.file: #{project.file}")
-      IO.puts("file_url: #{file_url}")
+      IO.puts("project.file: #{inspect(project.file)}")
+      IO.puts("file_url: #{inspect(file_url)}")
 
       if Application.get_env(:waffle, :storage) == Waffle.Storage.Local do
         with {:ok, body} <- File.read("./#{file_url}"), do: body
