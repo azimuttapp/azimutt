@@ -347,19 +347,10 @@ defmodule Azimutt.Accounts do
   end
 
   defp get_user_personal_organization(%User{} = user) do
-    IO.puts("get_user_personal_organization: profile: #{inspect(user.profile)}")
-
-    if user.profile.team_organization do
-      IO.puts("Has team_organization")
-      IO.puts("team_organization_id: #{inspect(user.profile.team_organization_id)}")
-      IO.puts("team_organization: #{inspect(user.profile.team_organization)}")
+    if user.profile.team_organization_id do
       profile = user.profile |> Repo.preload(:team_organization)
-      org = profile.team_organization
-      IO.puts("organization: #{inspect(org)}")
-      org
+      profile.team_organization
     else
-      IO.puts("No team_organization")
-
       user.organizations
       |> Enum.filter(fn orga -> orga.is_personal == true end)
       |> List.first() || user.organizations |> List.first()
