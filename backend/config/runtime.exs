@@ -73,6 +73,7 @@ case System.fetch_env!("FILE_STORAGE_ADAPTER") do
     s3_host = System.get_env("S3_HOST") || ""
     s3_key_id = System.get_env("S3_KEY_ID") || ""
     s3_key_secret = System.get_env("S3_KEY_SECRET") || ""
+    s3_region = System.get_env("S3_REGION") || "eu-west-1"
     s3_bucket = System.fetch_env!("S3_BUCKET")
 
     config :azimutt,
@@ -88,11 +89,18 @@ case System.fetch_env!("FILE_STORAGE_ADAPTER") do
       config :ex_aws, :s3,
         scheme: "https://",
         host: s3_host,
-        region: "eu-west-1"
+        region: s3_region
     else
       config :waffle,
         storage: Waffle.Storage.S3,
         bucket: s3_bucket
+
+      config :ex_aws,
+        region: s3_region,
+        s3: [
+          scheme: "https://",
+          region: s3_region
+        ]
     end
 
     if s3_key_id != "" && s3_key_secret != "" do
