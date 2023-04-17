@@ -14,6 +14,7 @@
     - `S3_HOST` (optional): the s3 host (if you don't use s3 profiles)
     - `S3_KEY_ID` & `S3_KEY_SECRET` (optional): credentials to connect to the s3 (if you don't use s3 profiles)
     - `S3_FOLDER` (optional): if you want to store Azimutt files in a specific folder
+    - `S3_REGION` (optional, default: `eu-west-1`): to specify your AWS region
 - `EMAIL_ADAPTER` (optional, values: `mailgun`, `gmail` or `smtp`): the service to use to send emails (user email confirmation & organization invitations)
   - if `mailgun`
     - `MAILGUN_DOMAIN` (required)
