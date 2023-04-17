@@ -98,7 +98,7 @@ defmodule Azimutt.Projects.Project do
       :nb_memos
     ]
 
-    %Project{}
+    res = %Project{}
     |> cast(attrs, required ++ [:description])
     |> put_change(:id, uuid)
     |> Slugme.generate_slug(:name)
@@ -109,6 +109,8 @@ defmodule Azimutt.Projects.Project do
     |> put_change(:created_by, current_user)
     |> put_change(:updated_by, current_user)
     |> validate_required(required)
+    IO.inspect(res, label: "create_remote_changeset")
+    res
   end
 
   @doc false
