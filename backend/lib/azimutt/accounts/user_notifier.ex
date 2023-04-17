@@ -82,6 +82,6 @@ defmodule Azimutt.Accounts.UserNotifier do
 
     Mailer.deliver(email)
     |> Result.map(fn _metadata -> email end)
-    |> Result.tap_error(fn {_, err} -> Logger.error("Error sending email: #{err.error.message}") end)
+    |> Result.tap_error(fn {_, err} -> Logger.error("Error sending email: #{inspect(err)}") end)
   end
 end
