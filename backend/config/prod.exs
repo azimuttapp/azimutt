@@ -14,17 +14,6 @@ config :azimutt, AzimuttWeb.Endpoint, cache_static_manifest: "priv/static/cache_
 # Do not print debug messages in production
 config :logger, level: :info
 
-config :sentry,
-  dsn: "https://e9e1c774b12b459592c58405c6cf4102@o1353262.ingest.sentry.io/6635088",
-  environment_name: :prod,
-  release: Mix.Project.config()[:version],
-  enable_source_code_context: true,
-  root_source_code_path: File.cwd!(),
-  tags: %{
-    env: "production"
-  },
-  included_environments: [:prod]
-
 # ## SSL Support
 #
 # To get SSL working, you will need to add the `https` key

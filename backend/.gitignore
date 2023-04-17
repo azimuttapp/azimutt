@@ -32,4 +32,4 @@ azimutt-*.tar
 npm-debug.log
 /assets/node_modules/
 /priv/static/swagger*.json
-/uploads/
+/uploads

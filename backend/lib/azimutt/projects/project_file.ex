@@ -37,6 +37,7 @@ defmodule Azimutt.Projects.ProjectFile do
 
   # Override the persisted filenames:
   def filename(version, {_file, scope}) do
+    # version: :original, file: %{file_name: "#{project_name}.json"}, scope: %Project{}
     "#{scope.id}_#{version}"
   end
 
