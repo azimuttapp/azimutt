@@ -216,6 +216,7 @@ end
 
 if System.get_env("AUTH_SAML") == "true" do
   IO.puts("Setup SAML auth")
+  # https://github.com/wrren/ueberauth_saml
 
   config :azimutt,
     auth_saml: true
