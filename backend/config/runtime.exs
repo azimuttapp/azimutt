@@ -99,6 +99,7 @@ case System.fetch_env!("FILE_STORAGE_ADAPTER") do
         region: s3_region,
         s3: [
           scheme: "https://",
+          # host: "s3.#{s3_region}.amazonaws.com",
           region: s3_region
         ]
     end

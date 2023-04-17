@@ -13,7 +13,7 @@
     - `S3_BUCKET` (required): the bucket used to store project json
     - `S3_HOST` (optional): the s3 host (if you don't use s3 profiles)
     - `S3_KEY_ID` & `S3_KEY_SECRET` (optional): credentials to connect to the s3 (if you don't use s3 profiles)
-    - `S3_PREFIX` (optional): if you need to prefix stored files with a specific value
+    - `S3_PREFIX` (optional): if you need to prefix stored files with a specific value (tip: add a `/` at the end of the prefix if you want to make it like a folder)
 - `EMAIL_ADAPTER` (optional, values: `mailgun`, `gmail` or `smtp`): the service to use to send emails (user email confirmation & organization invitations)
   - if `mailgun`
     - `MAILGUN_DOMAIN` (required)
