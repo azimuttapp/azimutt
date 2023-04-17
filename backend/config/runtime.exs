@@ -141,7 +141,7 @@ case System.get_env("EMAIL_ADAPTER") do
       relay: System.fetch_env!("SMTP_RELAY"),
       username: System.fetch_env!("SMTP_USERNAME"),
       password: System.fetch_env!("SMTP_PASSWORD"),
-      port: System.fetch_env!("SMTP_PORT"),
+      port: String.to_integer(System.fetch_env!("SMTP_PORT")),
       # ssl: true,
       # tls: :always,
       # auth: :always,
