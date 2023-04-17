@@ -245,7 +245,7 @@ defmodule AzimuttWeb.Router do
         description: "API Documentation for Azimutt Backend",
         contact: %{
           name: "Azimutt",
-          email: "hey@azimutt.app"
+          email: "contact@azimutt.app"
         }
       },
       consumes: ["application/json"],

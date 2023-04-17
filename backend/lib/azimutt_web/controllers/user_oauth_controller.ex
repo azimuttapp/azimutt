@@ -1,6 +1,7 @@
 defmodule AzimuttWeb.UserOauthController do
   use AzimuttWeb, :controller
   plug Ueberauth
+  require Logger
   alias Azimutt.Accounts
   alias Azimutt.Utils.Result
   alias AzimuttWeb.UserAuth
@@ -52,7 +53,8 @@ defmodule AzimuttWeb.UserOauthController do
     |> Result.or_else(callback(conn, %{}))
   end
 
-  def callback(conn, _params) do
+  def callback(conn, params) do
+    Logger.error("Unhandled auth callback: #{inspect(params)}")
     conn |> put_flash(:error, "Authentication failed") |> redirect(to: Routes.website_path(conn, :index))
   end
 

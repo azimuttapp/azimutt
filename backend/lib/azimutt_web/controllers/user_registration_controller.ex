@@ -19,7 +19,7 @@ defmodule AzimuttWeb.UserRegistrationController do
 
     case Accounts.register_password_user(attrs, UserAuth.get_attribution(conn), now) do
       {:ok, user} ->
-        {:ok, _} = Accounts.send_email_confirmation(user, &Routes.user_confirmation_url(conn, :confirm, &1))
+        Accounts.send_email_confirmation(user, &Routes.user_confirmation_url(conn, :confirm, &1))
 
         conn
         |> put_flash(

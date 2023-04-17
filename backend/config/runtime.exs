@@ -35,17 +35,16 @@ config :azimutt,
 
 config :azimutt, Azimutt.Repo,
   url: System.fetch_env!("DATABASE_URL"),
-  pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
-  socket_options: if(System.get_env("ECTO_IPV6") == "true", do: [:inet6], else: []),
+  pool_size: String.to_integer(System.get_env("DATABASE_POOL_SIZE") || "10"),
+  socket_options: if(System.get_env("DATABASE_IPV6") == "true", do: [:inet6], else: []),
   show_sensitive_data_on_connection_error: config_env() == :dev,
   stacktrace: config_env() == :dev
 
 if config_env() == :test, do: config(:azimutt, Azimutt.Repo, pool: Ecto.Adapters.SQL.Sandbox)
 
 if config_env() == :prod || config_env() == :staging do
-  if System.get_env("PHX_SERVER"), do: config(:azimutt, AzimuttWeb.Endpoint, server: true)
-
   config :azimutt, AzimuttWeb.Endpoint,
+    server: System.get_env("PHX_SERVER") == "true",
     url: [host: host, port: 443, scheme: "https"],
     http: [
       # Enable IPv6 and bind on all interfaces.
@@ -74,7 +73,11 @@ case System.fetch_env!("FILE_STORAGE_ADAPTER") do
     s3_host = System.get_env("S3_HOST") || ""
     s3_key_id = System.get_env("S3_KEY_ID") || ""
     s3_key_secret = System.get_env("S3_KEY_SECRET") || ""
+    s3_region = System.get_env("S3_REGION") || "eu-west-1"
     s3_bucket = System.fetch_env!("S3_BUCKET")
+
+    config :azimutt,
+      s3_folder: System.get_env("S3_FOLDER")
 
     # https://hexdocs.pm/waffle/Waffle.Storage.S3.html
     if s3_host != "" do
@@ -86,11 +89,18 @@ case System.fetch_env!("FILE_STORAGE_ADAPTER") do
       config :ex_aws, :s3,
         scheme: "https://",
         host: s3_host,
-        region: "eu-west-1"
+        region: s3_region
     else
       config :waffle,
         storage: Waffle.Storage.S3,
         bucket: s3_bucket
+
+      config :ex_aws,
+        region: s3_region,
+        s3: [
+          scheme: "https://",
+          region: s3_region
+        ]
     end
 
     if s3_key_id != "" && s3_key_secret != "" do
@@ -121,6 +131,21 @@ case System.get_env("EMAIL_ADAPTER") do
     config :azimutt, Azimutt.Mailer,
       adapter: Swoosh.Adapters.Gmail,
       access_token: System.fetch_env!("GMAIL_ACCESS_TOKEN")
+
+  "smtp" ->
+    IO.puts("Setup SMTP email provider")
+    # https://hexdocs.pm/swoosh/Swoosh.Adapters.SMTP.html
+    config :azimutt, Azimutt.Mailer,
+      adapter: Swoosh.Adapters.SMTP,
+      relay: System.fetch_env!("SMTP_RELAY"),
+      username: System.fetch_env!("SMTP_USERNAME"),
+      password: System.fetch_env!("SMTP_PASSWORD"),
+      port: String.to_integer(System.fetch_env!("SMTP_PORT")),
+      # ssl: true,
+      # tls: :always,
+      # auth: :always,
+      retries: 2,
+      no_mx_lookups: false
 
   _ ->
     if config_env() == :test do
@@ -190,11 +215,34 @@ end
 
 if System.get_env("AUTH_SAML") == "true" do
   IO.puts("Setup SAML auth")
+  # https://github.com/wrren/ueberauth_saml
 
   config :azimutt,
     auth_saml: true
 
   raise "AUTH_SAML not implemented"
+end
+
+if System.get_env("SENTRY") == "true" do
+  IO.puts("Setup Sentry")
+  sentry_backend_dsn = System.get_env("SENTRY_BACKEND_DSN")
+  sentry_frontend_dsn = System.get_env("SENTRY_FRONTEND_DSN")
+
+  if sentry_backend_dsn do
+    config :sentry,
+      dsn: sentry_backend_dsn,
+      environment_name: config_env(),
+      release: Mix.Project.config()[:version],
+      enable_source_code_context: true,
+      root_source_code_path: File.cwd!(),
+      tags: %{env: config_env() |> Atom.to_string()},
+      included_environments: [config_env()]
+  end
+
+  if sentry_frontend_dsn do
+    config :azimutt,
+      sentry_frontend_dsn: sentry_frontend_dsn
+  end
 end
 
 # https://dashboard.stripe.com/test/apikeys & https://dashboard.stripe.com/account/webhooks
