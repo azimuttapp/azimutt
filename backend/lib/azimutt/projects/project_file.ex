@@ -44,7 +44,8 @@ defmodule Azimutt.Projects.ProjectFile do
   # Override the storage directory:
   def storage_dir(_version, {_file, _scope}) do
     # "uploads/user/avatars/#{scope.id}"
-    "#{Azimutt.config(:s3_prefix) || "uploads"}"
+    folder = Azimutt.config(:s3_folder) || "uploads"
+    "#{folder}/projects"
   end
 
   # Provide a default URL if there hasn't been a file uploaded

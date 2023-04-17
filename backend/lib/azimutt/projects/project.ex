@@ -98,21 +98,17 @@ defmodule Azimutt.Projects.Project do
       :nb_memos
     ]
 
-    res =
-      %Project{}
-      |> cast(attrs, required ++ [:description])
-      |> put_change(:id, uuid)
-      |> Slugme.generate_slug(:name)
-      |> cast_attachments(attrs, [:file])
-      |> put_change(:organization, organization)
-      |> put_change(:storage_kind, Storage.remote())
-      |> put_change(:visibility, :none)
-      |> put_change(:created_by, current_user)
-      |> put_change(:updated_by, current_user)
-      |> validate_required(required)
-
-    IO.puts("create_remote_changeset: #{inspect(res)}")
-    res
+    %Project{}
+    |> cast(attrs, required ++ [:description])
+    |> put_change(:id, uuid)
+    |> Slugme.generate_slug(:name)
+    |> cast_attachments(attrs, [:file])
+    |> put_change(:organization, organization)
+    |> put_change(:storage_kind, Storage.remote())
+    |> put_change(:visibility, :none)
+    |> put_change(:created_by, current_user)
+    |> put_change(:updated_by, current_user)
+    |> validate_required(required)
   end
 
   @doc false

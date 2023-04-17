@@ -58,7 +58,6 @@ defmodule Azimutt.Projects do
         |> Result.tap(fn p -> Tracking.project_created(current_user, p) end)
       rescue
         e ->
-          Logger.error("Can't create_project")
           Logger.error(Exception.format(:error, e, __STACKTRACE__))
           {:error, "can't insert project"}
       end
