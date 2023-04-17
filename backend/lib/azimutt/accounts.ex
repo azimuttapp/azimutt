@@ -351,8 +351,12 @@ defmodule Azimutt.Accounts do
 
     if user.profile.team_organization do
       IO.puts("Has team_organization")
+      IO.puts("team_organization_id: #{inspect(user.profile.team_organization_id)}")
+      IO.puts("team_organization: #{inspect(user.profile.team_organization)}")
       profile = user.profile |> Repo.preload(:team_organization)
-      profile.team_organization
+      org = profile.team_organization
+      IO.puts("organization: #{inspect(org)}")
+      org
     else
       IO.puts("No team_organization")
 
