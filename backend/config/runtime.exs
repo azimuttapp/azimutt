@@ -143,8 +143,8 @@ case System.get_env("EMAIL_ADAPTER") do
       password: System.fetch_env!("SMTP_PASSWORD"),
       port: System.fetch_env!("SMTP_PORT"),
       # ssl: true,
-      tls: :always,
-      auth: :always,
+      # tls: :always,
+      # auth: :always,
       retries: 2,
       no_mx_lookups: false
 

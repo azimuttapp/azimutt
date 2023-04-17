@@ -80,7 +80,11 @@ defmodule Azimutt.Accounts.UserNotifier do
       |> subject(subject)
       |> text_body(body)
 
-    Mailer.deliver(email)
+    IO.puts("Email.deliver: #{subject}")
+    res = Mailer.deliver(email)
+    IO.puts("Email.deliver: #{inspect(res)}")
+
+    res
     |> Result.map(fn _metadata -> email end)
     |> Result.tap_error(fn {_, err} -> Logger.error("Error sending email: #{inspect(err)}") end)
   end
