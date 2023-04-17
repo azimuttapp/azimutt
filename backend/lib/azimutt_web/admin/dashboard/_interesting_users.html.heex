@@ -1,0 +1,33 @@
+<div class="flex flex-col border-l border-1 border-slate-800 pl-3">
+    <div class="py-2 flex justify-between">
+        <div class="text-2xl font-bold text-slate-100"><%= @title %></div>
+    </div>
+
+    <div class="align-middle shadow sm:rounded-sm">
+        <table class="w-full text-left">
+            <thead class="text-gray-100 bg-slate-800 text-xs font-semibold">
+                <tr>
+                    <th>User</th>
+                    <%= for {field_name, field} <- @fields do %>
+                        <th title={field}><%= field_name %></th>
+                    <% end %>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800 text-slate-500 bg-slate-900">
+                <%= for user <- @users do %>
+                    <tr class=" text-xs whitespace-nowrap hover:bg-slate-800 hover:text-slate-300">
+                        <td class="p-1" title={user.email}>
+                            <%= link to: Routes.admin_user_path(@conn, :show, user.id), class: "underline" do %>
+                                <%= img_tag(user.avatar, class: "inline-block h-4 w-4 rounded-md") %>
+                                <%= user.name %>
+                            <% end %>
+                        </td>
+                        <%= for {_, field} <- @fields do %>
+                            <td><%= format_value(user[field]) %></td>
+                        <% end %>
+                    </tr>
+                <% end %>
+            </tbody>
+        </table>
+    </div>
+</div>

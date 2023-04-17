@@ -302,7 +302,7 @@ defmodule AzimuttWeb.UserAuth do
     |> put_status(status)
     |> put_view(AzimuttWeb.ErrorView)
     |> put_layout({AzimuttWeb.LayoutView, "empty.html"})
-    |> put_root_layout({AzimuttWeb.LayoutView, "empty.html"})
+    |> put_root_layout({AzimuttWeb.LayoutView, "root_hfull.html"})
     |> render(view, message: message)
     |> halt()
   end

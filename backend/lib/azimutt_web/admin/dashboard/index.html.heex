@@ -44,6 +44,10 @@
     </div>
 </div>
 
-<div class="my-3">
-    <%= render AzimuttWeb.Admin.EventView, "_events_table.html", conn: @conn, events: @events %>
+<div class="my-3 grid grid-cols-6 gap-3">
+    <%= render "_interesting_users.html", conn: @conn, title: "Last active users", users: @last_active_users, fields: [{"Days", :active_days}, {"Events", :nb_events}, {"Last", :last_activity}] %>
+    <%= render "_interesting_users.html", conn: @conn, title: "Most active users", users: @most_active_users, fields: [{"Days", :active_days}, {"Events", :nb_events}, {"Last", :last_activity}] %>
+    <%= render "_interesting_users.html", conn: @conn, title: "Lost active users", users: @lost_active_users, fields: [{"Days", :active_days}, {"Events", :nb_events}, {"Last", :last_activity}] %>
+    <%= render "_interesting_users.html", conn: @conn, title: "plan_limit users", users: @plan_limit_users, fields: [{"Count", :nb_plan_limit}, {"Last", :last_plan_limit}] %>
+    <%= render "_interesting_users.html", conn: @conn, title: "billing_loaded users", users: @billing_loaded_users, fields: [{"Count", :nb_billing_loaded}, {"Last", :last_billing_loaded}] %>
 </div>

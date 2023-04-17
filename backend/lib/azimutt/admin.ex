@@ -1,6 +1,7 @@
 defmodule Azimutt.Admin do
   @moduledoc "The Admin context."
   import Ecto.Query, warn: false
+  require Logger
   alias Azimutt.Accounts.User
   alias Azimutt.Heroku
   alias Azimutt.Organizations.Organization
@@ -9,6 +10,7 @@ defmodule Azimutt.Admin do
   alias Azimutt.Tracking.Event
   alias Azimutt.Utils.Page
   alias Azimutt.Utils.Result
+  alias Ecto.Adapters.SQL
 
   def count_users, do: User |> Repo.aggregate(:count, :id)
   def count_organizations, do: Organization |> Repo.aggregate(:count, :id)
@@ -212,4 +214,81 @@ defmodule Azimutt.Admin do
     |> order_by([e], fragment("to_char(?, 'yyyy-mm-dd')", e.created_at))
     |> Repo.all()
   end
+
+  def last_active_users(n) do
+    """
+    SELECT u.id, u.name, u.avatar, u.email, count(distinct to_char(e.created_at, 'yyyy-mm-dd')) as active_days, count(*) as nb_events, max(e.created_at) as last_activity
+    FROM users u LEFT OUTER JOIN events e on u.id = e.created_by
+    GROUP BY u.id
+    ORDER BY last_activity DESC
+    LIMIT $1;
+    """
+    |> raw_query([n])
+  end
+
+  def most_active_users(n) do
+    """
+    SELECT u.id, u.name, u.avatar, u.email, count(distinct to_char(e.created_at, 'yyyy-mm-dd')) as active_days, count(*) as nb_events, max(e.created_at) as last_activity
+    FROM users u LEFT OUTER JOIN events e on u.id = e.created_by
+    GROUP BY u.id
+    ORDER BY active_days DESC, nb_events DESC
+    LIMIT $1;
+    """
+    |> raw_query([n])
+  end
+
+  def lost_active_users(n) do
+    """
+    SELECT u.id, u.name, u.avatar, u.email, count(distinct to_char(e.created_at, 'yyyy-mm-dd')) as active_days, count(*) as nb_events, max(e.created_at) as last_activity
+    FROM users u LEFT OUTER JOIN events e ON u.id = e.created_by
+    GROUP BY u.id
+    HAVING count(distinct to_char(e.created_at, 'yyyy-mm-dd')) >= 7 AND max(e.created_at) < NOW() - INTERVAL '30 days'
+    ORDER BY last_activity DESC
+    LIMIT $1;
+    """
+    |> raw_query([n])
+  end
+
+  def plan_limit_users(n) do
+    """
+    SELECT u.id, u.name, u.avatar, u.email, count(*) as nb_plan_limit, max(e.created_at) as last_plan_limit
+    FROM events e JOIN users u on u.id = e.created_by
+    WHERE e.name='plan_limit'
+    GROUP BY u.id
+    ORDER BY last_plan_limit DESC
+    LIMIT $1;
+    """
+    |> raw_query([n])
+  end
+
+  def billing_loaded_users(n) do
+    """
+    SELECT u.id, u.name, u.avatar, u.email, count(*) as nb_billing_loaded, max(e.created_at) as last_billing_loaded
+    FROM events e JOIN users u on u.id = e.created_by
+    WHERE e.name='billing_loaded'
+    GROUP BY u.id
+    ORDER BY last_billing_loaded DESC
+    LIMIT $1;
+    """
+    |> raw_query([n])
+  end
+
+  defp raw_query(query, params) do
+    SQL.query(Azimutt.Repo, query, params)
+    |> Result.map(fn res -> format_result(res) end)
+    |> Result.tap_error(fn err -> Logger.error("Error in raw_query: #{inspect(err)}") end)
+    |> Result.or_else([])
+  end
+
+  defp format_result(%Postgrex.Result{} = res) do
+    columns = res.columns |> Enum.map(&String.to_atom/1)
+
+    res.rows
+    |> Enum.map(fn row -> row |> Enum.map(fn v -> format_value(v) end) end)
+    |> Enum.map(fn row -> [columns, row] |> List.zip() |> Map.new() end)
+  end
+
+  defp format_value(value) when is_binary(value) and byte_size(value) == 16, do: Ecto.UUID.cast!(value)
+  defp format_value(value) when is_binary(value), do: if(String.valid?(value), do: value, else: "<binary>")
+  defp format_value(value), do: value
 end

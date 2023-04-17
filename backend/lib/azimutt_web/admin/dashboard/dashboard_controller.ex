@@ -3,17 +3,14 @@ defmodule AzimuttWeb.Admin.DashboardController do
   alias Azimutt.Admin
   alias Azimutt.Admin.Dataset
   alias Azimutt.Tracking.Event
-  alias Azimutt.Utils.Page
   action_fallback AzimuttWeb.FallbackController
 
   def index(conn, _params) do
     now = DateTime.utc_now()
-    page = conn |> Page.from_conn(%{search_on: Event.search_fields(), sort: "-created_at", size: 40})
     {:ok, start_stats} = "2022-12-01" |> Timex.parse("{YYYY}-{0M}-{0D}")
 
     conn
     |> render("index.html",
-      events: Admin.list_events(page),
       users_count: Admin.count_users(),
       projects_count: Admin.count_projects(),
       organizations_count: Admin.count_non_personal_organizations(),
@@ -81,7 +78,12 @@ defmodule AzimuttWeb.Admin.DashboardController do
           ],
           start_stats,
           now
-        )
+        ),
+      last_active_users: Admin.last_active_users(50),
+      most_active_users: Admin.most_active_users(50),
+      lost_active_users: Admin.lost_active_users(50),
+      plan_limit_users: Admin.plan_limit_users(50),
+      billing_loaded_users: Admin.billing_loaded_users(50)
     )
   end
 end
