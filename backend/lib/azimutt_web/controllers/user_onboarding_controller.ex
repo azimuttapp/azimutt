@@ -15,7 +15,7 @@ defmodule AzimuttWeb.UserOnboardingController do
     %{id: :solo_or_team, fields: {[:usage], []}},
     %{id: :role, fields: {[:role], []}},
     %{id: :about_you, fields: {[:location], [:description]}},
-    %{id: :about_your_company, fields: {[:company, :company_size], [:team_organization_id]}},
+    %{id: :about_your_company, fields: {[:company], [:company_size, :team_organization_id]}},
     %{id: :plan, fields: {[:plan], []}},
     %{id: :discovered_azimutt, fields: {[:discovered_by], []}},
     %{id: :previous_solutions, fields: {[:previously_tried], []}},

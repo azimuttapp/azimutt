@@ -6,6 +6,8 @@
             <%= render "_background_grid.html" %>
             <h2 class="text-2xl font-bold tracking-tight text-gray-900 md:text-3xl xl:text-4xl">Let's stay in touch</h2>
             <p class="mt-6 mb-4 text-lg leading-8 text-gray-600 sm:max-w-md lg:max-w-lg">
+                Azimutt is evolving quickly, and we are still looking for the best combinaison of features and pricing model.
+                Things may change a lot.
             </p>
             <.form let={f} for={@changeset} action={Routes.user_onboarding_path(@conn, :keep_in_touch_next)}>
                 <div class="relative flex items-start mt-6">
@@ -13,8 +15,8 @@
                         <%= checkbox f, :product_updates, "aria-describedby": "product_updates-description", class: "w-4 h-4 text-gray-600 border-gray-300 rounded focus:ring-gray-600" %>
                     </div>
                     <div class="ml-3 text-sm leading-6">
-                        <%= label f, :product_updates, "Keep me updated on Azimutt big news", class: "font-medium text-gray-900" %>
-                        <p id="product_updates-description" class="text-gray-500">We won't send a lot of emails, less than one a month, but as we are starting we sometimes introduce big changes you would like to know.</p>
+                        <%= label f, :product_updates, "Keep me updated on Azimutt big changes", class: "font-medium text-gray-900" %>
+                        <p id="product_updates-description" class="text-gray-500">We won't send a lot of emails, less than one a month.</p>
                     </div>
                 </div>
                 <div class="px-4 py-6 text-center sm:px-6">
