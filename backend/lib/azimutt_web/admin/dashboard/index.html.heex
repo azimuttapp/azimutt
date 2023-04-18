@@ -45,9 +45,10 @@
 </div>
 
 <div class="my-3 grid grid-cols-6 gap-3">
-    <%= render "_interesting_users.html", conn: @conn, title: "Last active users", users: @last_active_users, fields: [{"Days", :active_days}, {"Events", :nb_events}, {"Last", :last_activity}] %>
-    <%= render "_interesting_users.html", conn: @conn, title: "Most active users", users: @most_active_users, fields: [{"Days", :active_days}, {"Events", :nb_events}, {"Last", :last_activity}] %>
-    <%= render "_interesting_users.html", conn: @conn, title: "Lost active users", users: @lost_active_users, fields: [{"Days", :active_days}, {"Events", :nb_events}, {"Last", :last_activity}] %>
-    <%= render "_interesting_users.html", conn: @conn, title: "plan_limit users", users: @plan_limit_users, fields: [{"Count", :nb_plan_limit}, {"Last", :last_plan_limit}] %>
-    <%= render "_interesting_users.html", conn: @conn, title: "billing_loaded users", users: @billing_loaded_users, fields: [{"Count", :nb_billing_loaded}, {"Last", :last_billing_loaded}] %>
+    <%= render "_interesting_users.html", conn: @conn, users: @last_active_users, fields: [{"Days", :active_days}, {"Events", :nb_events}, {"Last", :last_activity}], title: "Last active users", description: "Users by last activity (tracking event)" %>
+    <%= render "_interesting_users.html", conn: @conn, users: @most_active_users, fields: [{"Days", :active_days}, {"Events", :nb_events}, {"Last", :last_activity}], title: "Most active users", description: "Users by most active days" %>
+    <%= render "_interesting_users.html", conn: @conn, users: @lost_active_users, fields: [{"Days", :active_days}, {"Events", :nb_events}, {"Last", :last_activity}], title: "Lost active users", description: "Users with at least 7 days of activity and not seen since 30 days" %>
+    <%= render "_interesting_users.html", conn: @conn, users: @lost_users, fields: [{"Days", :active_days}, {"Events", :nb_events}, {"Last", :last_activity}], title: "Lost users", description: "Users not seen since 30 days" %>
+    <%= render "_interesting_users.html", conn: @conn, users: @plan_limit_users, fields: [{"Count", :nb_plan_limit}, {"Last", :last_plan_limit}], title: "plan_limit users", description: "Last users with a plan_limit event" %>
+    <%= render "_interesting_users.html", conn: @conn, users: @billing_loaded_users, fields: [{"Count", :nb_billing_loaded}, {"Last", :last_billing_loaded}], title: "billing users", description: "Last users with a billing_loaded event" %>
 </div>

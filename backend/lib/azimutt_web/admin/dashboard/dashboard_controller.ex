@@ -82,6 +82,7 @@ defmodule AzimuttWeb.Admin.DashboardController do
       last_active_users: Admin.last_active_users(50),
       most_active_users: Admin.most_active_users(50),
       lost_active_users: Admin.lost_active_users(50),
+      lost_users: Admin.lost_users(50),
       plan_limit_users: Admin.plan_limit_users(50),
       billing_loaded_users: Admin.billing_loaded_users(50)
     )

@@ -249,6 +249,18 @@ defmodule Azimutt.Admin do
     |> raw_query([n])
   end
 
+  def lost_users(n) do
+    """
+    SELECT u.id, u.name, u.avatar, u.email, count(distinct to_char(e.created_at, 'yyyy-mm-dd')) as active_days, count(*) as nb_events, max(e.created_at) as last_activity
+    FROM users u LEFT OUTER JOIN events e ON u.id = e.created_by
+    GROUP BY u.id
+    HAVING max(e.created_at) < NOW() - INTERVAL '30 days'
+    ORDER BY last_activity DESC
+    LIMIT $1;
+    """
+    |> raw_query([n])
+  end
+
   def plan_limit_users(n) do
     """
     SELECT u.id, u.name, u.avatar, u.email, count(*) as nb_plan_limit, max(e.created_at) as last_plan_limit
