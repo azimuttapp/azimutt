@@ -171,7 +171,7 @@ defmodule AzimuttWeb.UserAuth do
         conn
 
       !user.confirmed_at && Azimutt.config(:require_email_confirmation) && !Azimutt.config(:skip_email_confirmation) &&
-        !is_email_confirm_path(conn, path) && Date.compare(user.created_at, ~D[2023-04-13]) == :gt ->
+        !is_email_confirm_path(conn, path) && Date.compare(user.created_at, ~D[2023-04-19]) == :gt ->
         conn |> redirect(to: Routes.user_confirmation_path(conn, :new)) |> halt()
 
       user.onboarding && !Azimutt.config(:skip_onboarding_funnel) &&
@@ -302,7 +302,7 @@ defmodule AzimuttWeb.UserAuth do
     |> put_status(status)
     |> put_view(AzimuttWeb.ErrorView)
     |> put_layout({AzimuttWeb.LayoutView, "empty.html"})
-    |> put_root_layout({AzimuttWeb.LayoutView, "empty.html"})
+    |> put_root_layout({AzimuttWeb.LayoutView, "root_hfull.html"})
     |> render(view, message: message)
     |> halt()
   end

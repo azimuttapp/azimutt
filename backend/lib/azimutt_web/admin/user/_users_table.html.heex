@@ -45,9 +45,9 @@
                                 - <a href={"https://twitter.com/#{user.twitter_username}"} title="Twitter account" class="underline">@<%= user.twitter_username %></a>
                             <% end %>
                         </td>
-                        <td class="group p-1"><%= user.profile.company %></td>
-                        <td class="group p-1"><%= user.profile.location %></td>
-                        <td class="p-1 truncate max-w-xs" title={user.profile.description}><%= user.profile.description %></td>
+                        <td class="group p-1"><%= user.profile && user.profile.company %></td>
+                        <td class="group p-1"><%= user.profile && user.profile.location %></td>
+                        <td class="p-1 truncate max-w-xs" title={user.profile && user.profile.description}><%= user.profile && user.profile.description %></td>
                         <td class="p-1 truncate max-w-xs" title={user.data |> format_data()}><%= user.data |> format_data() %></td>
                     </tr>
                 <% end %>
