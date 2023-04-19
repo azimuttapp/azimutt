@@ -1,11 +1,10 @@
 repos:
 - repo: local
   hooks:
-    - id: mix-test
-      name: 'Elixir test'
+    - id: mix-format
+      name: 'Elixir format'
       language: system
-      entry: npm run ex:test
-      pass_filenames: false
+      entry: bash -c 'cd backend && exec mix format --check-formatted'
       files: \.exs*$
 
     - id: mix-lint
@@ -15,18 +14,19 @@ repos:
       pass_filenames: false
       files: \.exs*$
 
+    - id: mix-test
+      name: 'Elixir test'
+      language: system
+      entry: npm run ex:test
+      pass_filenames: false
+      files: \.exs*$
+
     - id: mix-build
       name: 'Elixir build'
       language: system
       entry: npm run ex:build
       pass_filenames: false
       files: \.ex$
-
-    - id: mix-format
-      name: 'Elixir format'
-      language: system
-      entry: bash -c 'cd backend && exec mix format --check-formatted'
-      files: \.exs*$
 
     - id: elm-test
       name: 'Elm test'

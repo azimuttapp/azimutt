@@ -2,7 +2,6 @@ defmodule AzimuttWeb.Admin.DashboardController do
   use AzimuttWeb, :controller
   alias Azimutt.Admin
   alias Azimutt.Admin.Dataset
-  alias Azimutt.Tracking.Event
   action_fallback AzimuttWeb.FallbackController
 
   def index(conn, _params) do

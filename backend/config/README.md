@@ -45,6 +45,7 @@
 - `SKIP_EMAIL_CONFIRMATION` (optional): if `true`, users will not be asked to confirm their email (either blocked or soft)
 - `REQUIRE_EMAIL_CONFIRMATION` (optional): if `true`, users will not be allowed to use the site until they confirm their email, otherwise they will have a soft confirmation banner
 - `REQUIRE_EMAIL_ENDS_WITH` (optional): force all users to use an email ending with your domain (for example)
+- `ORGANIZATION_DEFAULT_PLAN` (optional, values: `free` or `pro`): define the plan an organization has by default
 - `GLOBAL_ORGANIZATION` (optional): an organization id, all new users will be added to it if specified
     - `GLOBAL_ORGANIZATION_ALONE` (optional): if `true`, only the global organization is shown (allows to work like a mono-tenant app)
 - `STRIPE` (optional): if `true`, allow to purchase plans with [Stripe](https://stripe.com)
