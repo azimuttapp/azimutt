@@ -61,8 +61,8 @@ defmodule Azimutt.Tracking do
   def user_login(%User{} = current_user, method),
     do: create_event("user_login", user_data(current_user), %{method: method}, current_user, nil, nil)
 
-  def user_onboarding(%User{} = current_user, step),
-    do: create_event("user_onboarding", user_data(current_user), %{step: step}, current_user, nil, nil)
+  def user_onboarding(%User{} = current_user, step, data),
+    do: create_event("user_onboarding", user_data(current_user), data |> Map.put("step", step), current_user, nil, nil)
 
   def project_loaded(current_user, %Project{} = project),
     do: create_event("project_loaded", project_data(project), nil, current_user, project.organization.id, project.id)
