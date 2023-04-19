@@ -27,7 +27,11 @@ defmodule AzimuttWeb.Admin.OrganizationController do
         organization: organization,
         plan: plan,
         projects: organization.projects |> Enum.sort_by(& &1.updated_at, {:desc, Date}) |> Page.wrap(),
-        members: organization.members |> Enum.sort_by(& &1.created_at, {:desc, Date}) |> Enum.map(fn m -> m.user end) |> Page.wrap(),
+        members:
+          organization.members
+          |> Enum.sort_by(& &1.created_at, {:desc, Date})
+          |> Enum.map(fn m -> m.user |> Azimutt.Repo.preload(:profile) end)
+          |> Page.wrap(),
         invitations: organization.invitations |> Enum.sort_by(& &1.created_at, {:desc, Date}) |> Page.wrap(),
         activity:
           Dataset.chartjs_daily_data(

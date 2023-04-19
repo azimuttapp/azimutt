@@ -4,7 +4,6 @@ defmodule AzimuttWeb.Admin.DashboardView do
   use Phoenix.View, root: "lib/azimutt_web", namespace: AzimuttWeb
   import Phoenix.HTML.Link
   import Phoenix.HTML.Tag
-  alias Azimutt.Utils.Stringx
   alias AzimuttWeb.Router.Helpers, as: Routes
   # FIXME obligé pour le moment de réaliser les imports ci dessous manuellement dans chaque View Admin.
   # il faudra trouver comment faire avec la nouvelle structure
