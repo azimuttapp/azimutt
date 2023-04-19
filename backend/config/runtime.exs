@@ -31,7 +31,6 @@ config :azimutt,
   organization_default_plan: System.get_env("ORGANIZATION_DEFAULT_PLAN"),
   global_organization: global_organization,
   global_organization_alone: global_organization && System.get_env("GLOBAL_ORGANIZATION_ALONE") == "true",
-  organization_default_plan: System.get_env("ORGANIZATION_DEFAULT_PLAN"),
   support_email: System.get_env("SUPPORT_EMAIL") || "contact@azimutt.app",
   sender_email: System.get_env("SENDER_EMAIL") || "contact@azimutt.app"
 
