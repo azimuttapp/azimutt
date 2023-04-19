@@ -16,7 +16,7 @@
             <tbody class="divide-y divide-slate-800 text-slate-500 bg-slate-900">
                 <%= for user <- @users do %>
                     <tr class=" text-xs whitespace-nowrap hover:bg-slate-800 hover:text-slate-300">
-                        <td class="p-1 w-28 truncate" title={user.email}>
+                        <td class="p-1 block w-32 truncate" title={user.email}>
                             <%= link user.name, to: Routes.admin_user_path(@conn, :show, user.id), class: "underline" %>
                         </td>
                         <%= for {_, field} <- @fields do %>

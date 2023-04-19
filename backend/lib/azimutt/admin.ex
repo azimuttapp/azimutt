@@ -300,7 +300,9 @@ defmodule Azimutt.Admin do
     |> Enum.map(fn row -> [columns, row] |> List.zip() |> Map.new() end)
   end
 
-  defp format_value(value) when is_binary(value) and byte_size(value) == 16, do: Ecto.UUID.cast!(value)
+  defp format_value(value) when is_binary(value) and byte_size(value) == 16,
+    do: if(String.valid?(value), do: value, else: Ecto.UUID.cast!(value))
+
   defp format_value(value) when is_binary(value), do: if(String.valid?(value), do: value, else: "<binary>")
   defp format_value(value), do: value
 end
