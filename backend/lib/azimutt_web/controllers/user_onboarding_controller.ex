@@ -94,7 +94,7 @@ defmodule AzimuttWeb.UserOnboardingController do
   def finalize(conn, _params) do
     current_user = conn.assigns.current_user
     now = DateTime.utc_now()
-    Tracking.user_onboarding(current_user, :finalize)
+    Tracking.user_onboarding(current_user, :finalize, %{})
 
     current_user
     |> Accounts.set_onboarding(nil, now)
@@ -106,7 +106,7 @@ defmodule AzimuttWeb.UserOnboardingController do
   defp show_step(conn, id) do
     current_user = conn.assigns.current_user
     now = DateTime.utc_now()
-    Tracking.user_onboarding(current_user, id)
+    Tracking.user_onboarding(current_user, id, %{})
 
     with {:ok, step} <- @steps |> Enum.find(fn s -> s.id == id end) |> Result.from_nillable(),
          {:ok, p} <- Accounts.get_or_create_profile(current_user),
@@ -116,6 +116,7 @@ defmodule AzimuttWeb.UserOnboardingController do
   defp update_step(conn, id, profile_params) do
     current_user = conn.assigns.current_user
     now = DateTime.utc_now()
+    Tracking.user_onboarding(current_user, id, profile_params)
 
     with {:ok, step} <- @steps |> Enum.find(fn s -> s.id == id end) |> Result.from_nillable(),
          {:ok, p} <- Accounts.get_or_create_profile(current_user) do

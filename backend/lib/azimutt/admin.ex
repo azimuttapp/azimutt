@@ -218,7 +218,7 @@ defmodule Azimutt.Admin do
   def last_active_users(n) do
     """
     SELECT u.id, u.name, u.avatar, u.email, count(distinct to_char(e.created_at, 'yyyy-mm-dd')) as active_days, count(*) as nb_events, max(e.created_at) as last_activity
-    FROM users u LEFT OUTER JOIN events e on u.id = e.created_by
+    FROM events e JOIN users u on u.id = e.created_by
     GROUP BY u.id
     ORDER BY last_activity DESC
     LIMIT $1;
@@ -229,7 +229,7 @@ defmodule Azimutt.Admin do
   def most_active_users(n) do
     """
     SELECT u.id, u.name, u.avatar, u.email, count(distinct to_char(e.created_at, 'yyyy-mm-dd')) as active_days, count(*) as nb_events, max(e.created_at) as last_activity
-    FROM users u LEFT OUTER JOIN events e on u.id = e.created_by
+    FROM events e JOIN users u on u.id = e.created_by
     GROUP BY u.id
     ORDER BY active_days DESC, nb_events DESC
     LIMIT $1;
@@ -240,9 +240,9 @@ defmodule Azimutt.Admin do
   def lost_active_users(n) do
     """
     SELECT u.id, u.name, u.avatar, u.email, count(distinct to_char(e.created_at, 'yyyy-mm-dd')) as active_days, count(*) as nb_events, max(e.created_at) as last_activity
-    FROM users u LEFT OUTER JOIN events e ON u.id = e.created_by
+    FROM events e JOIN users u on u.id = e.created_by
     GROUP BY u.id
-    HAVING count(distinct to_char(e.created_at, 'yyyy-mm-dd')) >= 7 AND max(e.created_at) < NOW() - INTERVAL '30 days'
+    HAVING count(distinct to_char(e.created_at, 'yyyy-mm-dd')) >= 5 AND max(e.created_at) < NOW() - INTERVAL '30 days'
     ORDER BY last_activity DESC
     LIMIT $1;
     """
@@ -252,7 +252,7 @@ defmodule Azimutt.Admin do
   def lost_users(n) do
     """
     SELECT u.id, u.name, u.avatar, u.email, count(distinct to_char(e.created_at, 'yyyy-mm-dd')) as active_days, count(*) as nb_events, max(e.created_at) as last_activity
-    FROM users u LEFT OUTER JOIN events e ON u.id = e.created_by
+    FROM events e JOIN users u on u.id = e.created_by
     GROUP BY u.id
     HAVING max(e.created_at) < NOW() - INTERVAL '30 days'
     ORDER BY last_activity DESC
@@ -300,7 +300,9 @@ defmodule Azimutt.Admin do
     |> Enum.map(fn row -> [columns, row] |> List.zip() |> Map.new() end)
   end
 
-  defp format_value(value) when is_binary(value) and byte_size(value) == 16, do: Ecto.UUID.cast!(value)
+  defp format_value(value) when is_binary(value) and byte_size(value) == 16,
+    do: if(String.valid?(value), do: value, else: Ecto.UUID.cast!(value))
+
   defp format_value(value) when is_binary(value), do: if(String.valid?(value), do: value, else: "<binary>")
   defp format_value(value), do: value
 end

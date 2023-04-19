@@ -44,8 +44,9 @@ config :azimutt, Azimutt.Repo,
 if config_env() == :test, do: config(:azimutt, Azimutt.Repo, pool: Ecto.Adapters.SQL.Sandbox)
 
 if config_env() == :prod || config_env() == :staging do
+  if System.get_env("PHX_SERVER"), do: config(:azimutt, AzimuttWeb.Endpoint, server: true)
+
   config :azimutt, AzimuttWeb.Endpoint,
-    server: System.get_env("PHX_SERVER") == "true",
     url: [host: host, port: 443, scheme: "https"],
     http: [
       # Enable IPv6 and bind on all interfaces.
