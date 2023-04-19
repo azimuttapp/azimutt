@@ -52,7 +52,6 @@
     - `STRIPE_API_KEY` (required): Stripe api key (ex: `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`)
     - `STRIPE_WEBHOOK_SIGNING_SECRET` (required): Stripe webhook secret (ex: `whsec_ayZAyKqOLy34UKNeI3eq4icXVWJam0IW`)
     - `STRIPE_PRICE_PRO_MONTHLY` (required): the Stripe price for the pro plan (ex: `price_uJINukB78aAbajUQHy6Ra523`)
-- `ORGANIZATION_DEFAULT_PLAN` (optional, values: `free` or `pro`): define the plan an organization has by default
 - `TWITTER` (optional): if `true`, allow to use Twitter API to fetch tweets & unlock features (change table color)
     - `TWITTER_CONSUMER_KEY` (required)
     - `TWITTER_CONSUMER_SECRET` (required)
