@@ -54,11 +54,11 @@ initSchema =
 
 
 buildSource : SourceInfo -> List SourceLine -> SqlSchema -> Source
-buildSource source lines schema =
+buildSource source _ schema =
     { id = source.id
     , name = source.name
     , kind = source.kind
-    , content = lines |> List.map .text |> Array.fromList
+    , content = [] |> Array.fromList -- don't store the source anymore (not used but heavy)
     , tables = schema.tables
     , relations = schema.relations |> List.reverse
     , types = schema.types |> Dict.fromListMap .id
