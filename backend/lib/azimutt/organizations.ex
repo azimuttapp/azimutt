@@ -312,7 +312,7 @@ defmodule Azimutt.Organizations do
     cond do
       organization.heroku_resource -> heroku_plan(organization.heroku_resource)
       organization.stripe_subscription_id && StripeSrv.stripe_configured?() -> stripe_plan(organization.stripe_subscription_id)
-      true -> {:ok, OrganizationPlan.free()}
+      true -> default_plan()
     end
     |> Result.map(fn plan -> plan_overrides(organization, plan) end)
   end
@@ -334,6 +334,13 @@ defmodule Azimutt.Organizations do
         OrganizationPlan.free()
       end
     end)
+  end
+
+  def default_plan do
+    case Azimutt.config(:organization_default_plan) do
+      "pro" -> {:ok, OrganizationPlan.pro()}
+      _ -> {:ok, OrganizationPlan.free()}
+    end
   end
 
   defp plan_overrides(%Organization{} = organization, %OrganizationPlan{} = plan) do
