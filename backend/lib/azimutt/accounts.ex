@@ -347,7 +347,7 @@ defmodule Azimutt.Accounts do
   end
 
   defp get_user_personal_organization(%User{} = user) do
-    if user.profile.team_organization_id do
+    if user.profile && user.profile.team_organization_id do
       profile = user.profile |> Repo.preload(:team_organization)
       profile.team_organization
     else
