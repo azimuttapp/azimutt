@@ -35,7 +35,11 @@ config :azimutt,
   free_plan_sql_export: false,
   free_plan_db_analysis: false,
   free_plan_db_access: false,
-  environment: config_env()
+  environment: config_env(),
+  commit_hash: System.cmd("git", ["log", "-1", "--pretty=format:%h"]) |> elem(0) |> String.trim(),
+  commit_message: System.cmd("git", ["log", "-1", "--pretty=format:%s"]) |> elem(0) |> String.trim(),
+  commit_date: System.cmd("git", ["log", "-1", "--pretty=format:%aI"]) |> elem(0) |> String.trim(),
+  commit_author: System.cmd("git", ["log", "-1", "--pretty=format:%an"]) |> elem(0) |> String.trim()
 
 config :azimutt,
   ecto_repos: [Azimutt.Repo]
