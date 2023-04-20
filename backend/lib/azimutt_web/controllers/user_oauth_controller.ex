@@ -33,6 +33,12 @@ defmodule AzimuttWeb.UserOauthController do
       confirmed_at: if(email_verified, do: now, else: nil)
     }
 
+    if user_params[:email] == nil do
+      IO.puts("Invalid GitHub payload:")
+      IO.puts("user: #{inspect(user)}")
+      IO.puts("full: #{inspect(auth_info)}")
+    end
+
     profile_params = %{
       company: user["company"],
       location: user["location"],
