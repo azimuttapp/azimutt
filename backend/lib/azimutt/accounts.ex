@@ -16,22 +16,28 @@ defmodule Azimutt.Accounts do
     |> Result.from_nillable()
   end
 
-  def get_user_by_provider(provider, provider_uid) do
+  def get_user_by_provider(provider, provider_uid) when is_binary(provider) and is_binary(provider_uid) do
     Repo.get_by(User, provider: provider, provider_uid: provider_uid)
     |> Repo.preload([:organizations])
     |> Result.from_nillable()
   end
 
-  def get_user_by_email(email) do
+  def get_user_by_provider(provider, provider_uid), do: {:error, :not_found}
+
+  def get_user_by_email(email) when is_binary(email) do
     Repo.get_by(User, email: email)
     |> Repo.preload([:organizations])
     |> Result.from_nillable()
   end
 
-  def get_user_by_email_and_password(email, password) do
+  def get_user_by_email(email), do: {:error, :not_found}
+
+  def get_user_by_email_and_password(email, password) when is_binary(email) and is_binary(password) do
     get_user_by_email(email)
     |> Result.filter(fn user -> User.valid_password?(user, password) end, :not_found)
   end
+
+  def get_user_by_email_and_password(email, password), do: {:error, :not_found}
 
   ## User registration
 
