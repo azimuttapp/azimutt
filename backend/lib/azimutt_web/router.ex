@@ -9,6 +9,7 @@ defmodule AzimuttWeb.Router do
     plug :accepts, ["html"]
     plug :fetch_session
     plug :fetch_live_flash
+    plug :put_root_layout, {AzimuttWeb.LayoutView, :root_hfull}
     plug :put_secure_browser_headers
     plug :fetch_current_user
     plug :fetch_heroku_resource
