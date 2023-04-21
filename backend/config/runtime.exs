@@ -40,7 +40,8 @@ config :azimutt, Azimutt.Repo,
   pool_size: String.to_integer(System.get_env("DATABASE_POOL_SIZE") || "10"),
   socket_options: if(System.get_env("DATABASE_IPV6") == "true", do: [:inet6], else: []),
   show_sensitive_data_on_connection_error: config_env() == :dev,
-  stacktrace: config_env() == :dev
+  stacktrace: config_env() == :dev,
+  ssl: true
 
 if config_env() == :test, do: config(:azimutt, Azimutt.Repo, pool: Ecto.Adapters.SQL.Sandbox)
 
