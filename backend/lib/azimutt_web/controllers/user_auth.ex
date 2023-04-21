@@ -268,7 +268,7 @@ defmodule AzimuttWeb.UserAuth do
       end)
 
     referer = conn |> get_req_header("referer") |> Enum.filter(fn h -> !String.contains?(h, Azimutt.config(:host)) end) |> List.first()
-    headers = if referer != nil, do: %{referer: referer}, else: %{}
+    headers = if referer != nil, do: %{"referer" => referer}, else: %{}
     attributes = params |> Map.merge(headers)
 
     if attributes |> map_size() > 0 do

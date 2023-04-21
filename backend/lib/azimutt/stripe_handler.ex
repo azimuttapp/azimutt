@@ -28,10 +28,10 @@ defmodule Azimutt.StripeHandler do
     with {:ok, %Organization{} = organization} <- Organizations.get_organization_by_customer(subscription.customer),
          {:ok, %Event{} = last_billing} <- Tracking.last_billing_loaded(organization) do
       cond do
-        previous[:cancel_at] == nil && subscription[:cancel_at] != nil ->
+        previous[:cancel_at] == nil && subscription.cancel_at != nil ->
           Tracking.stripe_subscription_canceled(event, organization, last_billing.created_by, subscription.quantity)
 
-        previous[:cancel_at] != nil && subscription[:cancel_at] == nil ->
+        previous[:cancel_at] != nil && subscription.cancel_at == nil ->
           Tracking.stripe_subscription_renewed(event, organization, last_billing.created_by, subscription.quantity)
 
         previous[:quantity] ->
@@ -43,7 +43,7 @@ defmodule Azimutt.StripeHandler do
             previous.quantity
           )
 
-        previous[:status] == "incomplete" && subscription[:status] == "active" ->
+        previous[:status] == "incomplete" && subscription.status == "active" ->
           # saved in 'customer.subscription.created' event
           # Tracking.stripe_subscription_created(event, organization, last_billing.created_by, subscription.quantity)
           :ok

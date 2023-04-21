@@ -23,7 +23,7 @@ global_organization = System.get_env("GLOBAL_ORGANIZATION")
 
 config :azimutt,
   host: host,
-  skip_public_site: System.get_env("SKIP_PUBLIC_SITE") == "true",
+  skip_public_site: !(System.get_env("PUBLIC_SITE") == "true"),
   skip_onboarding_funnel: System.get_env("SKIP_ONBOARDING_FUNNEL") == "true",
   skip_email_confirmation: System.get_env("SKIP_EMAIL_CONFIRMATION") == "true",
   require_email_confirmation: System.get_env("REQUIRE_EMAIL_CONFIRMATION") == "true",
