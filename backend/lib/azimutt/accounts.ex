@@ -65,14 +65,15 @@ defmodule Azimutt.Accounts do
   end
 
   defp with_data(attrs, attribution) do
-    attributed_to =
-      if attribution do
-        attribution["ref"] || attribution["via"] || attribution["utm_source"] || attribution["referer"]
-      else
-        nil
-      end
-
-    attrs |> Map.put(:data, %{attributed_from: attribution["event"], attributed_to: attributed_to})
+    if attribution do
+      attrs
+      |> Map.put(:data, %{
+        attributed_from: attribution["event"],
+        attributed_to: attribution["ref"] || attribution["via"] || attribution["utm_source"] || attribution["referer"]
+      })
+    else
+      attrs |> Map.put(:data, %{})
+    end
   end
 
   defp register_user(changeset, method) do
