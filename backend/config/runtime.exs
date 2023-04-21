@@ -32,7 +32,8 @@ config :azimutt,
   global_organization: global_organization,
   global_organization_alone: global_organization && System.get_env("GLOBAL_ORGANIZATION_ALONE") == "true",
   support_email: System.get_env("SUPPORT_EMAIL") || "contact@azimutt.app",
-  sender_email: System.get_env("SENDER_EMAIL") || "contact@azimutt.app"
+  sender_email: System.get_env("SENDER_EMAIL") || "contact@azimutt.app",
+  server_started: DateTime.utc_now()
 
 config :azimutt, Azimutt.Repo,
   url: System.fetch_env!("DATABASE_URL"),
@@ -63,6 +64,8 @@ if config_env() == :prod || config_env() == :staging do
     # variable instead. You can generate one by calling: mix phx.gen.secret
     secret_key_base: System.fetch_env!("SECRET_KEY_BASE")
 end
+
+config :azimutt, file_storage: System.fetch_env!("FILE_STORAGE_ADAPTER")
 
 case System.fetch_env!("FILE_STORAGE_ADAPTER") do
   "local" ->
@@ -117,6 +120,8 @@ case System.fetch_env!("FILE_STORAGE_ADAPTER") do
     raise "unknown FILE_STORAGE_ADAPTER '#{adapter}', expected values: local or s3"
 end
 
+config :azimutt, email_service: System.get_env("EMAIL_ADAPTER")
+
 case System.get_env("EMAIL_ADAPTER") do
   "mailgun" ->
     IO.puts("Setup Mailgun email provider")
@@ -163,16 +168,12 @@ config :swoosh, :api_client, Swoosh.ApiClient.Hackney
 
 if System.get_env("AUTH_PASSWORD") == "true" do
   IO.puts("Setup Password auth")
-
-  config :azimutt,
-    auth_password: true
+  config :azimutt, auth_password: true
 end
 
 if System.get_env("AUTH_GITHUB") == "true" do
   IO.puts("Setup Github auth")
-
-  config :azimutt,
-    auth_github: true
+  config :azimutt, auth_github: true
 
   config :ueberauth, Ueberauth.Strategy.Github.OAuth,
     client_id: System.fetch_env!("GITHUB_CLIENT_ID"),
@@ -181,47 +182,32 @@ end
 
 if System.get_env("AUTH_GOOGLE") == "true" do
   IO.puts("Setup Google auth")
-
-  config :azimutt,
-    auth_google: true
-
+  config :azimutt, auth_google: true
   raise "AUTH_GOOGLE not implemented"
 end
 
 if System.get_env("AUTH_LINKEDIN") == "true" do
   IO.puts("Setup LinkedIn auth")
-
-  config :azimutt,
-    auth_linkedin: true
-
+  config :azimutt, auth_linkedin: true
   raise "AUTH_LINKEDIN not implemented"
 end
 
 if System.get_env("AUTH_TWITTER") == "true" do
   IO.puts("Setup Twitter auth")
-
-  config :azimutt,
-    auth_twitter: true
-
+  config :azimutt, auth_twitter: true
   raise "AUTH_TWITTER not implemented"
 end
 
 if System.get_env("AUTH_FACEBOOK") == "true" do
   IO.puts("Setup Facebook auth")
-
-  config :azimutt,
-    auth_facebook: true
-
+  config :azimutt, auth_facebook: true
   raise "AUTH_FACEBOOK not implemented"
 end
 
 if System.get_env("AUTH_SAML") == "true" do
   IO.puts("Setup SAML auth")
   # https://github.com/wrren/ueberauth_saml
-
-  config :azimutt,
-    auth_saml: true
-
+  config :azimutt, auth_saml: true
   raise "AUTH_SAML not implemented"
 end
 
@@ -229,6 +215,7 @@ if System.get_env("SENTRY") == "true" do
   IO.puts("Setup Sentry")
   sentry_backend_dsn = System.get_env("SENTRY_BACKEND_DSN")
   sentry_frontend_dsn = System.get_env("SENTRY_FRONTEND_DSN")
+  config :azimutt, sentry: true
 
   if sentry_backend_dsn do
     config :sentry,
@@ -251,12 +238,13 @@ end
 if System.get_env("STRIPE") == "true" do
   IO.puts("Setup Stripe")
 
+  config :azimutt,
+    stripe: true,
+    stripe_price_pro_monthly: System.fetch_env!("STRIPE_PRICE_PRO_MONTHLY")
+
   config :stripity_stripe,
     api_key: System.fetch_env!("STRIPE_API_KEY"),
     signing_secret: System.fetch_env!("STRIPE_WEBHOOK_SIGNING_SECRET")
-
-  config :azimutt,
-    stripe_price_pro_monthly: System.fetch_env!("STRIPE_PRICE_PRO_MONTHLY")
 end
 
 if System.get_env("HEROKU") == "true" do
@@ -281,6 +269,7 @@ end
 
 if System.get_env("TWITTER") == "true" do
   IO.puts("Setup Twitter integration")
+  config :azimutt, twitter: true
 
   config :extwitter, :oauth,
     consumer_key: System.fetch_env!("TWITTER_CONSUMER_KEY"),
@@ -291,6 +280,7 @@ end
 
 if System.get_env("GITHUB") == "true" do
   IO.puts("Setup Github integration")
+  config :azimutt, github: true
 
   config :azimutt,
     github_access_token: System.fetch_env!("GITHUB_ACCESS_TOKEN")
