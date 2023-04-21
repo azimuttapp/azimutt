@@ -14,16 +14,13 @@ defmodule AzimuttWeb.UserOauthController do
     provider_uid = auth_info.uid |> Integer.to_string()
     user = auth_info.extra.raw_info.user
 
-    email_verified =
-      user["emails"]
-      |> Enum.find(fn e -> e["email"] == user["email"] end)
-      |> Result.from_nillable()
-      |> Result.map(fn e -> e["verified"] == true end)
-      |> Result.or_else(false)
+    primary_email = user["emails"] |> Enum.find(fn e -> e["primary"] end) |> Result.from_nillable()
+    email_verified = primary_email |> Result.exists(fn e -> e["verified"] end)
+    email_address = primary_email |> Result.or_else(nil)
 
     user_params = %{
       name: user["name"] || user["login"],
-      email: user["email"],
+      email: email_address,
       provider: provider,
       provider_uid: provider_uid,
       provider_data: to_map(auth_info),
@@ -32,12 +29,6 @@ defmodule AzimuttWeb.UserOauthController do
       twitter_username: user["twitter_username"],
       confirmed_at: if(email_verified, do: now, else: nil)
     }
-
-    if user_params[:email] == nil do
-      IO.puts("Invalid GitHub payload:")
-      IO.puts("user: #{inspect(user)}")
-      IO.puts("full: #{inspect(auth_info)}")
-    end
 
     profile_params = %{
       company: user["company"],
