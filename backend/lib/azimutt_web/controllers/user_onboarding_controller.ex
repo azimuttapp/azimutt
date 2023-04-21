@@ -83,10 +83,11 @@ defmodule AzimuttWeb.UserOnboardingController do
   def discovered_azimutt_next(conn, %{"user_profile" => profile}), do: conn |> update_step(:discovered_azimutt, profile)
 
   def previous_solutions(conn, _params), do: conn |> show_step(:previous_solutions)
-  def previous_solutions_next(conn, %{"user_profile" => profile}), do: conn |> update_step(:previous_solutions, profile)
+  # If nothing is selected, the `user_profile` is not sent
+  def previous_solutions_next(conn, params), do: conn |> update_step(:previous_solutions, params["user_profile"] || %{})
 
   def keep_in_touch(conn, _params), do: conn |> show_step(:keep_in_touch)
-  def keep_in_touch_next(conn, %{"user_profile" => profile}), do: conn |> update_step(:keep_in_touch, profile)
+  def keep_in_touch_next(conn, %{"user_profile" => profile} = params), do: conn |> update_step(:keep_in_touch, profile)
 
   def community(conn, _params), do: conn |> show_step(:community)
   def community_next(conn, _params), do: conn |> update_step(:community, %{})
