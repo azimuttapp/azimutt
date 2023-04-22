@@ -28,11 +28,14 @@ ARG STRIPE_API_KEY
 ARG STRIPE_WEBHOOK_SIGNING_SECRET
 ARG PHX_SERVER
 ARG DATABASE_URL
+ARG DATABASE_USE_SSL
 
 ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
 ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
 
 FROM --platform=linux/amd64 ${BUILDER_IMAGE} as builder
+
+ENV DATABASE_USE_SSL=${DATABASE_USE_SSL}
 
 # install build dependencies
 RUN apt-get update -y && apt-get install -y build-essential git nodejs npm curl wget \
