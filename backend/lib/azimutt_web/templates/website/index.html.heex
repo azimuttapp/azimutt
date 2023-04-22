@@ -4,18 +4,18 @@
         <div class="relative">
             <div class="my-32">
                 <%= if Date.compare(DateTime.utc_now(), ~D[2023-04-24]) == :eq do %>
-                        <div class="-mt-20 mb-12 flex justify-center">
-                                <%= if @conn.query_params["ref"] == "producthunt" do %>
-                                    <p class="relative rounded-full px-4 py-1.5 text-sm leading-6 text-gray-600 ring-1 ring-inset ring-indigo-600">
-                                        <span class="hidden md:inline">Hello Product Hunt user! <span class="font-semibold text-indigo-600">Happy to see you there</span> 😉</span>
-                                    </p>
-                                <% else %>
-                                    <p class="relative rounded-full px-4 py-1.5 text-sm leading-6 text-gray-600 ring-1 ring-inset ring-indigo-600 hover:shadow hover:shadow-indigo-600/50">
-                                        <span class="hidden md:inline">🎉 We are live on Product Hunt</span>
-                                        <a href="#" class="font-semibold text-indigo-600"><span class="absolute inset-0" aria-hidden="true"></span>See our launch <span aria-hidden="true">&rarr;</span></a>
-                                    </p>
-                                <% end %>
-                        </div>
+                    <div class="-mt-20 mb-12 flex justify-center">
+                        <%= if @conn.query_params["ref"] == "producthunt" do %>
+                            <p class="relative rounded-full px-4 py-1.5 text-sm leading-6 text-gray-600 ring-1 ring-inset ring-indigo-600">
+                                <span class="hidden md:inline">Hello Product Hunt user! <span class="font-semibold text-indigo-600">Happy to see you there</span> 😉</span>
+                            </p>
+                        <% else %>
+                            <p class="relative rounded-full px-4 py-1.5 text-sm leading-6 text-gray-600 ring-1 ring-inset ring-indigo-600 hover:shadow hover:shadow-indigo-600/50">
+                                <span class="hidden md:inline">🎉 We are live on Product Hunt</span>
+                                <a href="#" class="font-semibold text-indigo-600"><span class="absolute inset-0" aria-hidden="true"></span>See our launch <span aria-hidden="true">&rarr;</span></a>
+                            </p>
+                        <% end %>
+                    </div>
                 <% else %>
                     <div class="-mt-20 mb-12 flex justify-center space-x-6">
                         <a href={Azimutt.config(:github_url)} target="_blank" rel="noopener" class="px-3 py-1 text-sm font-semibold leading-6 text-gray-600 bg-gray-50 rounded-full ring-1 ring-inset ring-gray-200 hover:bg-gray-100 hover:shadow-lg hover:scale-105 transition duration-300 ease-in-out">
