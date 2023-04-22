@@ -9,7 +9,6 @@ defmodule Azimutt.Blog do
   defp article_path, do: "priv/static/blog"
 
   def list_articles do
-    # FIXME: add caching for articles
     Path.wildcard("#{article_path()}/????-??-??-*/*.md")
     |> Enum.reject(&Phoenix.has_digest/1)
     |> Enum.map(&Article.path_to_id/1)

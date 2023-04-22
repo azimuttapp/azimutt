@@ -33,6 +33,7 @@ config :azimutt,
   global_organization_alone: global_organization && System.get_env("GLOBAL_ORGANIZATION_ALONE") == "true",
   support_email: System.get_env("SUPPORT_EMAIL") || "contact@azimutt.app",
   sender_email: System.get_env("SENDER_EMAIL") || "contact@azimutt.app",
+  database_use_ssl: System.get_env("DATABASE_USE_SSL") == "true",
   server_started: DateTime.utc_now()
 
 config :azimutt, Azimutt.Repo,
@@ -40,7 +41,12 @@ config :azimutt, Azimutt.Repo,
   pool_size: String.to_integer(System.get_env("DATABASE_POOL_SIZE") || "10"),
   socket_options: if(System.get_env("DATABASE_IPV6") == "true", do: [:inet6], else: []),
   show_sensitive_data_on_connection_error: config_env() == :dev,
-  stacktrace: config_env() == :dev
+  stacktrace: config_env() == :dev,
+  ssl: true,
+  ssl_opts: [
+    verify: :verify_none
+  ]
+
 
 if config_env() == :test, do: config(:azimutt, Azimutt.Repo, pool: Ecto.Adapters.SQL.Sandbox)
 
@@ -221,7 +227,7 @@ if System.get_env("SENTRY") == "true" do
     config :sentry,
       dsn: sentry_backend_dsn,
       environment_name: config_env(),
-      release: Mix.Project.config()[:version],
+      release: Azimutt.config(:version),
       enable_source_code_context: true,
       root_source_code_path: File.cwd!(),
       tags: %{env: config_env() |> Atom.to_string()},

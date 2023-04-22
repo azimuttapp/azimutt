@@ -75,22 +75,3 @@ jobs:
       - name: Run tests
         run: |
           npm run elm:test
-
-  deploy_staging:
-    name: "🐴 Deploy to staging"
-    environment:
-      name: staging
-      url: https://azimutt.dev
-    if: ${{ github.ref == 'refs/heads/main' }}
-    runs-on: ubuntu-latest
-    needs: [ test ]
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      - uses: 47ng/actions-clever-cloud@v1.2.0
-        with:
-          appID: ${{ secrets.CLEVER_APP_ID }}
-        env:
-          CLEVER_TOKEN: ${{ secrets.CLEVER_TOKEN }}
-          CLEVER_SECRET: ${{ secrets.CLEVER_SECRET }}
