@@ -11,7 +11,7 @@ name: Create and publish Docker image
 
 on:
   push:
-    branches: ['feat/dockerize-app'] # TODO : to change by main when tested.
+    branches: ['main']
 
 env:
   REGISTRY: ghcr.io
