@@ -6,8 +6,9 @@
 - `PHX_HOST` (required): host of the deployed website (ex: `azimutt.app` in our case), it's used to build absolute urls
 - `PHX_SERVER` (optional): if `true`, start the server in server mode
 - `DATABASE_URL` (required): the whole url to connect to the database (ex: `postgresql://<user>:<pass>@<host>:<port>/<database>`)
-    - `DATABASE_POOL_SIZE` (optional, default: `10`): the database connection pool size
     - `DATABASE_IPV6` (optional): if `true`, the database driver will use IPV6
+    - `DATABASE_USE_SSL` (optional): if `true`, the database driver will use SSL
+    - `DATABASE_POOL_SIZE` (optional, default: `10`): the database connection pool size
 - `FILE_STORAGE_ADAPTER` (required, values: `local` or `s3`): file storage is used to store project json files
     - if `s3`
         - `S3_BUCKET` (required): the bucket used to store project json
@@ -40,7 +41,7 @@
 
 ## Optional services
 
-- `SKIP_PUBLIC_SITE` (optional): if `true`, will not show the public site, home will redirect to login
+- `PUBLIC_SITE` (optional): if `true`, will show the public site, otherwise home will redirect to login
 - `SKIP_ONBOARDING_FUNNEL` (optional): if `true`, users will not go through the onboarding on account creation
 - `SKIP_EMAIL_CONFIRMATION` (optional): if `true`, users will not be asked to confirm their email (either blocked or soft)
 - `REQUIRE_EMAIL_CONFIRMATION` (optional): if `true`, users will not be allowed to use the site until they confirm their email, otherwise they will have a soft confirmation banner

@@ -47,7 +47,6 @@ config :azimutt, Azimutt.Repo,
     verify: :verify_none
   ]
 
-
 if config_env() == :test, do: config(:azimutt, Azimutt.Repo, pool: Ecto.Adapters.SQL.Sandbox)
 
 if config_env() == :prod || config_env() == :staging do
