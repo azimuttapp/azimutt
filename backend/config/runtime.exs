@@ -42,12 +42,14 @@ config :azimutt, Azimutt.Repo,
   socket_options: if(System.get_env("DATABASE_IPV6") == "true", do: [:inet6], else: []),
   show_sensitive_data_on_connection_error: config_env() == :dev,
   stacktrace: config_env() == :dev
-  if Azimutt.config(:database_use_ssl) do
-    ,ssl: true
-    ,ssl_opts: [
+
+if Azimutt.config(:database_use_ssl) do
+  config :azimutt, Azimutt.Repo,
+    ssl: true,
+    ssl_opts: [
       verify: :verify_none
     ]
-  end
+end
 
 if config_env() == :test, do: config(:azimutt, Azimutt.Repo, pool: Ecto.Adapters.SQL.Sandbox)
 
