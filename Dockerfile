@@ -129,7 +129,7 @@ ENV PHX_SERVER="true"
 # Only copy the final release from the build stage
 COPY --from=builder --chown=nobody:root /app/_build/${MIX_ENV}/rel/azimutt ./
 RUN mkdir -p ./app/bin/priv/static/
-COPY --from=builder --chown=nobody:root /app/backend/priv/static/blog /app/bin/priv/static
+COPY --from=builder --chown=nobody:root /app/priv/static/blog ./bin/priv/static
 
 USER nobody
 
