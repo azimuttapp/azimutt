@@ -9,8 +9,14 @@ defmodule Azimutt.Blog do
   defp article_path, do: "priv/static/blog"
 
   def list_articles do
+    IO.puts("list_articles")
+    IO.puts("wildcard: #{Path.wildcard("*")}")
+    IO.puts("File.cwd!: #{File.cwd!()}")
     # FIXME: add caching for articles
-    Path.wildcard("#{article_path()}/????-??-??-*/*.md")
+    found = Path.wildcard("#{article_path()}/????-??-??-*/*.md")
+    IO.puts("Found paths: #{found}")
+
+    found
     |> Enum.reject(&Phoenix.has_digest/1)
     |> Enum.map(&Article.path_to_id/1)
     |> Enum.map(&get_article/1)
@@ -19,8 +25,12 @@ defmodule Azimutt.Blog do
   end
 
   def get_article(id) do
+    IO.puts("get_article(#{id})")
+
     with {:ok, path} <- Path.wildcard("#{article_path()}/????-??-??-#{id}/#{id}.md") |> Enumx.one(),
+         _ = IO.puts("path: #{path}"),
          {:ok, content} <- File.read(path),
+         _ = IO.puts("content: #{content}"),
          {:ok, map} <- Frontmatter.parse(content),
          do: Article.build(path, map)
   end
