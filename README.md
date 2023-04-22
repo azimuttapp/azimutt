@@ -93,7 +93,7 @@ See more in the [stripe testing documentation](https://stripe.com/docs/testing)
 
 ## Stack
 
-* [Production](https://azimutt.app) & [Staging](https://azimutt.dev) on Clever Cloud
+* [Production](https://azimutt.app) & [Staging](https://azimutt.dev)
 * [Error logs](https://sentry.io/organizations/azimuttapp/issues/?project=6635088) with [Sentry](https://sentry.io)
 * Design using [TailwindCSS Framework](https://tailwindcss.com)
 * [Credo](http://credo-ci.org) for static code analysis (automatically run with pre-commit)
