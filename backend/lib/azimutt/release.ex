@@ -23,7 +23,7 @@ defmodule Azimutt.Release do
   end
 
   defp load_app do
-    if(Azimutt.config(:database_use_ssl), do: Application.ensure_all_started(:ssl))
+    Application.ensure_all_started(:ssl)
     Application.load(@app)
   end
 end
