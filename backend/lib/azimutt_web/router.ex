@@ -72,6 +72,7 @@ defmodule AzimuttWeb.Router do
     delete("/logout", UserSessionController, :delete)
     get("/sitemap.xml", SitemapController, :index)
     get("/terms", WebsiteController, :terms)
+    get("/privacy", WebsiteController, :privacy)
   end
 
   # auth routes
