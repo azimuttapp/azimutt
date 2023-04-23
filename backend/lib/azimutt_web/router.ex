@@ -5,203 +5,224 @@ defmodule AzimuttWeb.Router do
   alias AzimuttWeb.Plugs.AllowCrossOriginIframe
 
   pipeline :browser_no_csrf_protection do
-    plug Ueberauth
-    plug :accepts, ["html"]
-    plug :fetch_session
-    plug :fetch_live_flash
-    plug :put_root_layout, {AzimuttWeb.LayoutView, :root_hfull}
-    plug :put_secure_browser_headers
-    plug :fetch_current_user
-    plug :fetch_heroku_resource
-    plug :track_attribution
+    plug(Ueberauth)
+    plug(:accepts, ["html"])
+    plug(:fetch_session)
+    plug(:fetch_live_flash)
+    plug(:put_root_layout, {AzimuttWeb.LayoutView, :root_hfull})
+    plug(:put_secure_browser_headers)
+    plug(:fetch_current_user)
+    plug(:fetch_heroku_resource)
+    plug(:track_attribution)
   end
 
   pipeline :browser do
-    plug :browser_no_csrf_protection
-    plug :protect_from_forgery
+    plug(:browser_no_csrf_protection)
+    plug(:protect_from_forgery)
   end
 
   pipeline :api do
-    plug CORSPlug
-    plug :accepts, ["json"]
-    plug :fetch_session
-    plug :fetch_current_user
-    plug :fetch_heroku_resource
+    plug(CORSPlug)
+    plug(:accepts, ["json"])
+    plug(:fetch_session)
+    plug(:fetch_current_user)
+    plug(:fetch_heroku_resource)
   end
 
-  pipeline :website_root_layout, do: plug(:put_root_layout, {AzimuttWeb.LayoutView, "root_website.html"})
-  pipeline :hfull_root_layout, do: plug(:put_root_layout, {AzimuttWeb.LayoutView, "root_hfull.html"})
-  pipeline :organization_root_layout, do: plug(:put_root_layout, {AzimuttWeb.LayoutView, "root_organization.html"})
-  pipeline :admin_root_layout, do: plug(:put_root_layout, {AzimuttWeb.LayoutView, "root_admin.html"})
-  pipeline :elm_root_layout, do: plug(:put_root_layout, {AzimuttWeb.LayoutView, "root_elm.html"})
-  pipeline :user_settings_root_layout, do: plug(:put_root_layout, {AzimuttWeb.LayoutView, "root_user_settings.html"})
+  pipeline(:website_root_layout,
+    do: plug(:put_root_layout, {AzimuttWeb.LayoutView, "root_website.html"})
+  )
 
-  pipeline :empty_layout, do: plug(:put_layout, {AzimuttWeb.LayoutView, "empty.html"})
+  pipeline(:hfull_root_layout,
+    do: plug(:put_root_layout, {AzimuttWeb.LayoutView, "root_hfull.html"})
+  )
+
+  pipeline(:organization_root_layout,
+    do: plug(:put_root_layout, {AzimuttWeb.LayoutView, "root_organization.html"})
+  )
+
+  pipeline(:admin_root_layout,
+    do: plug(:put_root_layout, {AzimuttWeb.LayoutView, "root_admin.html"})
+  )
+
+  pipeline(:elm_root_layout, do: plug(:put_root_layout, {AzimuttWeb.LayoutView, "root_elm.html"}))
+
+  pipeline(:user_settings_root_layout,
+    do: plug(:put_root_layout, {AzimuttWeb.LayoutView, "root_user_settings.html"})
+  )
+
+  pipeline(:empty_layout, do: plug(:put_layout, {AzimuttWeb.LayoutView, "empty.html"}))
 
   # public routes
   scope "/", AzimuttWeb do
-    pipe_through [:browser, :website_root_layout]
-    get "/", WebsiteController, :index
-    get "/last", WebsiteController, :last
-    get "/use-cases", WebsiteController, :use_cases_index
-    get "/use-cases/:id", WebsiteController, :use_cases_show
-    get "/features", WebsiteController, :features_index
-    get "/features/:id", WebsiteController, :features_show
-    get "/pricing", WebsiteController, :pricing
-    get "/blog", BlogController, :index
+    pipe_through([:browser, :website_root_layout])
+    get("/", WebsiteController, :index)
+    get("/last", WebsiteController, :last)
+    get("/use-cases", WebsiteController, :use_cases_index)
+    get("/use-cases/:id", WebsiteController, :use_cases_show)
+    get("/features", WebsiteController, :features_index)
+    get("/features/:id", WebsiteController, :features_show)
+    get("/pricing", WebsiteController, :pricing)
+    get("/blog", BlogController, :index)
     if Azimutt.Application.env() == :dev, do: get("/blog/cards", BlogController, :cards)
-    get "/blog/:id", BlogController, :show
-    get "/gallery", GalleryController, :index
-    get "/gallery/:slug", GalleryController, :show
-    get "/logout", UserSessionController, :delete
-    delete "/logout", UserSessionController, :delete
-    get "/sitemap.xml", SitemapController, :index
+    get("/blog/:id", BlogController, :show)
+    get("/gallery", GalleryController, :index)
+    get("/gallery/:slug", GalleryController, :show)
+    get("/logout", UserSessionController, :delete)
+    delete("/logout", UserSessionController, :delete)
+    get("/sitemap.xml", SitemapController, :index)
+    get("/terms", WebsiteController, :terms)
+    get("/privacy", WebsiteController, :privacy)
   end
 
   # auth routes
   scope "/", AzimuttWeb do
-    pipe_through [:browser, :redirect_if_user_is_authed, :hfull_root_layout]
-    get "/auth/:provider", UserOauthController, :request
-    get "/auth/:provider/callback", UserOauthController, :callback
-    get "/register", UserRegistrationController, :new
-    post "/register", UserRegistrationController, :create
-    get "/login", UserSessionController, :new
-    post "/login", UserSessionController, :create
-    get "/reset-password", UserResetPasswordController, :new
-    post "/reset-password", UserResetPasswordController, :create
-    get "/reset-password/:token", UserResetPasswordController, :edit
-    put "/reset-password/:token", UserResetPasswordController, :update
+    pipe_through([:browser, :redirect_if_user_is_authed, :hfull_root_layout])
+    get("/auth/:provider", UserOauthController, :request)
+    get("/auth/:provider/callback", UserOauthController, :callback)
+    get("/register", UserRegistrationController, :new)
+    post("/register", UserRegistrationController, :create)
+    get("/login", UserSessionController, :new)
+    post("/login", UserSessionController, :create)
+    get("/reset-password", UserResetPasswordController, :new)
+    post("/reset-password", UserResetPasswordController, :create)
+    get("/reset-password/:token", UserResetPasswordController, :edit)
+    put("/reset-password/:token", UserResetPasswordController, :update)
   end
 
   # authed dashboard routes
   scope "/", AzimuttWeb do
-    pipe_through [:browser, :require_authed_user, :organization_root_layout]
-    get "/home", UserDashboardController, :index
-    get "/login/redirect", UserSessionController, :redirect_to
+    pipe_through([:browser, :require_authed_user, :organization_root_layout])
+    get("/home", UserDashboardController, :index)
+    get("/login/redirect", UserSessionController, :redirect_to)
 
     scope "/email-confirm" do
-      pipe_through [:hfull_root_layout]
-      get "/", UserConfirmationController, :new
-      post "/", UserConfirmationController, :create
-      get "/:token", UserConfirmationController, :confirm
+      pipe_through([:hfull_root_layout])
+      get("/", UserConfirmationController, :new)
+      post("/", UserConfirmationController, :create)
+      get("/:token", UserConfirmationController, :confirm)
     end
 
     scope "/onboarding" do
-      pipe_through [:hfull_root_layout, :empty_layout]
-      get "/", UserOnboardingController, :index
-      get "/welcome", UserOnboardingController, :welcome
-      post "/welcome", UserOnboardingController, :welcome_next
-      get "/explore-or-design", UserOnboardingController, :explore_or_design
-      post "/explore-or-design", UserOnboardingController, :explore_or_design_next
-      get "/solo-or-team", UserOnboardingController, :solo_or_team
-      post "/solo-or-team", UserOnboardingController, :solo_or_team_next
-      get "/role", UserOnboardingController, :role
-      post "/role", UserOnboardingController, :role_next
-      get "/about-you", UserOnboardingController, :about_you
-      put "/about-you", UserOnboardingController, :about_you_next
-      get "/about-your-company", UserOnboardingController, :about_your_company
-      put "/about-your-company", UserOnboardingController, :about_your_company_next
-      get "/plan", UserOnboardingController, :plan
-      post "/plan", UserOnboardingController, :plan_next
-      get "/discovered-azimutt", UserOnboardingController, :discovered_azimutt
-      put "/discovered-azimutt", UserOnboardingController, :discovered_azimutt_next
-      get "/previous-solutions", UserOnboardingController, :previous_solutions
-      put "/previous-solutions", UserOnboardingController, :previous_solutions_next
-      get "/keep-in-touch", UserOnboardingController, :keep_in_touch
-      put "/keep-in-touch", UserOnboardingController, :keep_in_touch_next
-      get "/community", UserOnboardingController, :community
-      post "/community", UserOnboardingController, :community_next
-      get "/finalize", UserOnboardingController, :finalize
-      if Azimutt.Application.env() == :dev, do: get("/:template", UserOnboardingController, :template)
+      pipe_through([:hfull_root_layout, :empty_layout])
+      get("/", UserOnboardingController, :index)
+      get("/welcome", UserOnboardingController, :welcome)
+      post("/welcome", UserOnboardingController, :welcome_next)
+      get("/explore-or-design", UserOnboardingController, :explore_or_design)
+      post("/explore-or-design", UserOnboardingController, :explore_or_design_next)
+      get("/solo-or-team", UserOnboardingController, :solo_or_team)
+      post("/solo-or-team", UserOnboardingController, :solo_or_team_next)
+      get("/role", UserOnboardingController, :role)
+      post("/role", UserOnboardingController, :role_next)
+      get("/about-you", UserOnboardingController, :about_you)
+      put("/about-you", UserOnboardingController, :about_you_next)
+      get("/about-your-company", UserOnboardingController, :about_your_company)
+      put("/about-your-company", UserOnboardingController, :about_your_company_next)
+      get("/plan", UserOnboardingController, :plan)
+      post("/plan", UserOnboardingController, :plan_next)
+      get("/discovered-azimutt", UserOnboardingController, :discovered_azimutt)
+      put("/discovered-azimutt", UserOnboardingController, :discovered_azimutt_next)
+      get("/previous-solutions", UserOnboardingController, :previous_solutions)
+      put("/previous-solutions", UserOnboardingController, :previous_solutions_next)
+      get("/keep-in-touch", UserOnboardingController, :keep_in_touch)
+      put("/keep-in-touch", UserOnboardingController, :keep_in_touch_next)
+      get("/community", UserOnboardingController, :community)
+      post("/community", UserOnboardingController, :community_next)
+      get("/finalize", UserOnboardingController, :finalize)
+
+      if Azimutt.Application.env() == :dev,
+        do: get("/:template", UserOnboardingController, :template)
     end
 
     scope "/settings" do
-      pipe_through [:user_settings_root_layout, :empty_layout]
-      get "/", UserSettingsController, :show
-      put "/account", UserSettingsController, :update_account
-      put "/email", UserSettingsController, :update_email
-      get "/email/:token", UserSettingsController, :confirm_update_email
-      put "/password", UserSettingsController, :update_password
-      post "/password", UserSettingsController, :set_password
-      delete "/providers/:provider", UserSettingsController, :remove_provider
+      pipe_through([:user_settings_root_layout, :empty_layout])
+      get("/", UserSettingsController, :show)
+      put("/account", UserSettingsController, :update_account)
+      put("/email", UserSettingsController, :update_email)
+      get("/email/:token", UserSettingsController, :confirm_update_email)
+      put("/password", UserSettingsController, :update_password)
+      post("/password", UserSettingsController, :set_password)
+      delete("/providers/:provider", UserSettingsController, :remove_provider)
     end
 
     resources "/organizations", OrganizationController, except: [:index] do
-      get "/billing", OrganizationBillingController, :index, as: :billing
-      post "/billing/new", OrganizationBillingController, :new, as: :billing
-      post "/billing/edit", OrganizationBillingController, :edit, as: :billing
-      get "/billing/success", OrganizationBillingController, :success, as: :billing
-      get "/billing/cancel", OrganizationBillingController, :cancel, as: :billing
-      get "/members", OrganizationMemberController, :index, as: :member
-      post "/members", OrganizationMemberController, :create_invitation, as: :member
-      patch "/members/:invitation_id/cancel", OrganizationMemberController, :cancel_invitation, as: :member
-      delete "/members/:user_id/remove", OrganizationMemberController, :remove, as: :member
+      get("/billing", OrganizationBillingController, :index, as: :billing)
+      post("/billing/new", OrganizationBillingController, :new, as: :billing)
+      post("/billing/edit", OrganizationBillingController, :edit, as: :billing)
+      get("/billing/success", OrganizationBillingController, :success, as: :billing)
+      get("/billing/cancel", OrganizationBillingController, :cancel, as: :billing)
+      get("/members", OrganizationMemberController, :index, as: :member)
+      post("/members", OrganizationMemberController, :create_invitation, as: :member)
+
+      patch("/members/:invitation_id/cancel", OrganizationMemberController, :cancel_invitation, as: :member)
+
+      delete("/members/:user_id/remove", OrganizationMemberController, :remove, as: :member)
     end
 
-    get "/invitations/:id", OrganizationInvitationController, :show, as: :invitation
-    patch "/invitations/:id/accept", OrganizationInvitationController, :accept, as: :invitation
-    patch "/invitations/:id/refuse", OrganizationInvitationController, :refuse, as: :invitation
+    get("/invitations/:id", OrganizationInvitationController, :show, as: :invitation)
+    patch("/invitations/:id/accept", OrganizationInvitationController, :accept, as: :invitation)
+    patch("/invitations/:id/refuse", OrganizationInvitationController, :refuse, as: :invitation)
   end
 
   scope "/heroku", AzimuttWeb do
-    pipe_through [:api, :require_heroku_basic_auth]
-    post "/resources", Api.HerokuController, :create
-    put "/resources/:id", Api.HerokuController, :update
-    delete "/resources/:id", Api.HerokuController, :delete
+    pipe_through([:api, :require_heroku_basic_auth])
+    post("/resources", Api.HerokuController, :create)
+    put("/resources/:id", Api.HerokuController, :update)
+    delete("/resources/:id", Api.HerokuController, :delete)
   end
 
   scope "/heroku", AzimuttWeb do
-    pipe_through [:browser_no_csrf_protection]
+    pipe_through([:browser_no_csrf_protection])
     if Azimutt.Application.env() == :dev, do: get("/", HerokuController, :index)
-    post "/login", HerokuController, :login
+    post("/login", HerokuController, :login)
   end
 
   scope "/heroku", AzimuttWeb do
-    pipe_through [:browser, :require_heroku_resource, :require_authed_user]
-    get "/resources/:id", HerokuController, :show
+    pipe_through([:browser, :require_heroku_resource, :require_authed_user])
+    get("/resources/:id", HerokuController, :show)
   end
 
   scope "/admin", AzimuttWeb, as: :admin do
-    pipe_through [:browser, :require_authed_user, :require_admin_user, :admin_root_layout]
-    get "/", Admin.DashboardController, :index
-    resources "/users", Admin.UserController, only: [:index, :show]
-    resources "/organizations", Admin.OrganizationController, only: [:index, :show]
-    resources "/projects", Admin.ProjectController, only: [:index, :show]
-    resources "/events", Admin.EventController, only: [:index, :show]
+    pipe_through([:browser, :require_authed_user, :require_admin_user, :admin_root_layout])
+    get("/", Admin.DashboardController, :index)
+    resources("/users", Admin.UserController, only: [:index, :show])
+    resources("/organizations", Admin.OrganizationController, only: [:index, :show])
+    resources("/projects", Admin.ProjectController, only: [:index, :show])
+    resources("/events", Admin.EventController, only: [:index, :show])
   end
 
   scope "/api/v1/swagger" do
-    forward "/", PhoenixSwagger.Plug.SwaggerUI, otp_app: :azimutt, swagger_file: "swagger.json"
+    forward("/", PhoenixSwagger.Plug.SwaggerUI, otp_app: :azimutt, swagger_file: "swagger.json")
   end
 
   # public APIs
   scope "/api/v1", AzimuttWeb do
-    pipe_through [:api]
+    pipe_through([:api])
     # GET is practical for development and POST allows to not have params in possible http logs
-    get "/analyzer/schema", Api.AnalyzerController, :schema
-    post "/analyzer/schema", Api.AnalyzerController, :schema
-    get "/analyzer/stats", Api.AnalyzerController, :stats
-    post "/analyzer/stats", Api.AnalyzerController, :stats
-    get "/analyzer/rows", Api.AnalyzerController, :rows
-    post "/analyzer/rows", Api.AnalyzerController, :rows
-    get "/analyzer/query", Api.AnalyzerController, :query
-    post "/analyzer/query", Api.AnalyzerController, :query
-    get "/gallery", Api.GalleryController, :index
-    get "/organizations/:organization_id/projects/:id", Api.ProjectController, :show
-    post "/events", Api.TrackingController, :create
+    get("/analyzer/schema", Api.AnalyzerController, :schema)
+    post("/analyzer/schema", Api.AnalyzerController, :schema)
+    get("/analyzer/stats", Api.AnalyzerController, :stats)
+    post("/analyzer/stats", Api.AnalyzerController, :stats)
+    get("/analyzer/rows", Api.AnalyzerController, :rows)
+    post("/analyzer/rows", Api.AnalyzerController, :rows)
+    get("/analyzer/query", Api.AnalyzerController, :query)
+    post("/analyzer/query", Api.AnalyzerController, :query)
+    get("/gallery", Api.GalleryController, :index)
+    get("/organizations/:organization_id/projects/:id", Api.ProjectController, :show)
+    post("/events", Api.TrackingController, :create)
   end
 
   # authed APIs
   scope "/api/v1", AzimuttWeb do
-    pipe_through [:api, :require_authed_user_api]
-    get "/users/current", Api.UserController, :current
+    pipe_through([:api, :require_authed_user_api])
+    get("/users/current", Api.UserController, :current)
 
     resources "/organizations", Api.OrganizationController, only: [:index] do
       resources "/projects", Api.ProjectController, except: [:new, :edit, :show] do
-        resources "/access-tokens", Api.ProjectTokenController, only: [:index, :create, :delete]
+        resources("/access-tokens", Api.ProjectTokenController, only: [:index, :create, :delete])
       end
 
-      post "/tweet-for-table-colors", Api.OrganizationController, :table_colors
+      post("/tweet-for-table-colors", Api.OrganizationController, :table_colors)
     end
   end
 
@@ -216,8 +237,8 @@ defmodule AzimuttWeb.Router do
     import Phoenix.LiveDashboard.Router
 
     scope "/" do
-      pipe_through :browser
-      live_dashboard "/dashboard", metrics: AzimuttWeb.Telemetry
+      pipe_through(:browser)
+      live_dashboard("/dashboard", metrics: AzimuttWeb.Telemetry)
     end
 
     live_storybook("/storybook",
@@ -232,9 +253,9 @@ defmodule AzimuttWeb.Router do
   # node running the Phoenix server.
   if Azimutt.Application.env() == :dev do
     scope "/dev" do
-      pipe_through :browser
+      pipe_through(:browser)
 
-      forward "/mailbox", Plug.Swoosh.MailboxPreview
+      forward("/mailbox", Plug.Swoosh.MailboxPreview)
     end
   end
 
@@ -255,25 +276,25 @@ defmodule AzimuttWeb.Router do
   end
 
   scope "/", AzimuttWeb do
-    pipe_through [:browser, :elm_root_layout, AllowCrossOriginIframe]
-    get "/embed", ElmController, :embed
+    pipe_through([:browser, :elm_root_layout, AllowCrossOriginIframe])
+    get("/embed", ElmController, :embed)
   end
 
   scope "/", AzimuttWeb do
-    pipe_through [:api]
-    get "/ping", Api.HealthController, :ping
-    get "/health", Api.HealthController, :health
+    pipe_through([:api])
+    get("/ping", Api.HealthController, :ping)
+    get("/health", Api.HealthController, :health)
   end
 
   # elm routes, must be at the end (because of `/:organization_id/:project_id` "catch all")
   # routes listed in the same order than in `elm/src/Pages`
   scope "/", AzimuttWeb do
-    pipe_through [:browser, :enforce_user_requirements, :elm_root_layout]
-    get "/create", ElmController, :create
-    get "/new", ElmController, :new
-    get "/:organization_id", ElmController, :orga_show
-    get "/:organization_id/create", ElmController, :orga_create
-    get "/:organization_id/new", ElmController, :orga_new
-    get "/:organization_id/:project_id", ElmController, :project_show
+    pipe_through([:browser, :enforce_user_requirements, :elm_root_layout])
+    get("/create", ElmController, :create)
+    get("/new", ElmController, :new)
+    get("/:organization_id", ElmController, :orga_show)
+    get("/:organization_id/create", ElmController, :orga_create)
+    get("/:organization_id/new", ElmController, :orga_new)
+    get("/:organization_id/:project_id", ElmController, :project_show)
   end
 end

@@ -68,4 +68,8 @@ defmodule AzimuttWeb.WebsiteController do
   end
 
   def pricing(conn, _params), do: conn |> render("pricing.html", dark: true)
+
+  def terms(conn, _params), do: conn |> render("terms.html")
+
+  def privacy(conn, _params), do: conn |> render("privacy.html")
 end
