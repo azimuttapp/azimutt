@@ -53,13 +53,13 @@ parse kind =
     if kind |> String.endsWith "[]" then
         Array (parse (kind |> String.dropRight 2))
 
-    else if (kind |> Regex.matchI "^(tiny|medium|long|ci)?text$") || (kind |> Regex.matchI "^character( varying)? ?(\\(\\d+\\))?$") || (kind |> Regex.matchI "^n?(var)?char ?(\\([^)]+\\))?$") then
+    else if (kind |> Regex.matchI "^(tiny|medium|long|ci)?text$") || (kind |> Regex.matchI "^character( varying)? ?(\\(\\d+\\))?$") || (kind |> Regex.matchI "^n?(var)?char ?(\\([^)]+\\))?( CHARACTER SET ascii)?$") then
         Text
 
     else if (kind |> Regex.matchI "integer|bit") || (kind |> Regex.matchI "number\\(\\d+(\\s*,\\s*0)?\\)") || (kind |> Regex.matchI "^(small)?serial$") || (kind |> Regex.matchI "^(tiny|small|big)?int ?(\\(\\d+\\))?( unsigned)?$") then
         Int
 
-    else if (kind |> Regex.matchI "double precision") || (kind |> Regex.matchI "number") || (kind |> Regex.matchI "^numeric ?(\\(\\d+,\\d+\\))?$") then
+    else if (kind |> Regex.matchI "double precision") || (kind |> Regex.matchI "number") || (kind |> Regex.matchI "^numeric ?(\\(\\d+,\\d+\\))?$") || (kind |> Regex.matchI "^decimal ?(\\(\\d+,\\d+\\))?$") then
         Float
 
     else if kind |> Regex.matchI "boolean" then
