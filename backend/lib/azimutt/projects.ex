@@ -43,6 +43,13 @@ defmodule Azimutt.Projects do
     |> Result.from_nillable()
   end
 
+  defp get_public_project(id) do
+    project_query_no_join()
+    |> where([p, _, om], p.id == ^id and p.storage_kind == :remote and p.visibility != :none)
+    |> Repo.one()
+    |> Result.from_nillable()
+  end
+
   def create_project(attrs, %Organization{} = organization, %User{} = current_user) do
     if organization |> Organizations.has_member?(current_user) do
       try do
