@@ -10,8 +10,9 @@ defmodule AzimuttWeb.WebsiteController do
   def index(conn, _params) do
     case conn |> last_used_project |> Result.filter_not(fn _p -> same_domain?(conn) end) do
       {:ok, p} ->
-        # conn |> redirect(to: Routes.organization_path(conn, :show, p.organization_id))
-        conn |> redirect(to: Routes.elm_path(conn, :project_show, p.organization_id, p.id))
+        conn |> redirect(to: Routes.organization_path(conn, :show, p.organization_id))
+
+      # conn |> redirect(to: Routes.elm_path(conn, :project_show, p.organization_id, p.id))
 
       _ ->
         if Azimutt.config(:skip_public_site) do
