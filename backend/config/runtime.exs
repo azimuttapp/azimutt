@@ -86,9 +86,7 @@ case System.fetch_env!("FILE_STORAGE_ADAPTER") do
     s3_key_secret = System.get_env("S3_KEY_SECRET") || ""
     s3_region = System.get_env("S3_REGION") || "eu-west-1"
     s3_bucket = System.fetch_env!("S3_BUCKET")
-
-    config :azimutt,
-      s3_folder: System.get_env("S3_FOLDER")
+    config :azimutt, s3_folder: System.get_env("S3_FOLDER")
 
     # https://hexdocs.pm/waffle/Waffle.Storage.S3.html
     if s3_host != "" do
