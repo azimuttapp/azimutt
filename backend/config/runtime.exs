@@ -19,7 +19,7 @@ import Config
 host = System.fetch_env!("PHX_HOST")
 port = String.to_integer(System.fetch_env!("PORT"))
 global_organization = System.get_env("GLOBAL_ORGANIZATION")
-ssl = System.get_env("SSL") || "false"
+database_enable_ssl = System.get_env("DATABASE_ENABLE_SSL") || "false"
 # TODO: REQUIRE_GITHUB_ORGANIZATION: allow users only from this github orga
 
 config :azimutt,
@@ -43,7 +43,7 @@ config :azimutt, Azimutt.Repo,
   show_sensitive_data_on_connection_error: config_env() == :dev,
   stacktrace: config_env() == :dev
 
-if ssl == "true" do
+if database_enable_ssl == "true" do
   config :azimutt, Azimutt.Repo,
     ssl: true,
     ssl_opts: [
