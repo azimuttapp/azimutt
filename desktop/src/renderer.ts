@@ -27,5 +27,17 @@
  */
 
 import './index.css';
+import {Versions} from "./types";
+
+declare global {
+    export interface Window {
+        versions: Versions
+    }
+}
 
 console.log('👋 This message is being logged by "renderer.js", included via webpack');
+
+const information = document.getElementById('info')
+information.innerText = `Cette application utilise Chrome (v${window.versions.chrome()}), Node.js (v${window.versions.node()}), et Electron (v${window.versions.electron()})`
+
+setTimeout(() => window.versions.ping().then(res => console.log(res)), 1000)
