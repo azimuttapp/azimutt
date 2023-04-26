@@ -27,17 +27,18 @@
  */
 
 import './index.css';
-import {Versions} from "../shared";
+import {ElectronBridge} from "../shared";
 
 declare global {
     export interface Window {
-        versions: Versions
+        electron: ElectronBridge
     }
 }
 
 console.log('👋 This message is being logged by "renderer.js", included via webpack');
 
+const versions = window.electron.versions
 const information = document.getElementById('info')
-information.innerText = `Cette application utilise Chrome (v${window.versions.chrome()}), Node.js (v${window.versions.node()}), et Electron (v${window.versions.electron()})`
+information.innerText = `Cette application utilise Chrome (v${versions.chrome()}), Node.js (v${versions.node()}), et Electron (v${versions.electron()})`
 
-setTimeout(() => window.versions.ping().then(res => console.log(res)), 1000)
+setTimeout(() => window.electron.ping().then(res => console.log(res)), 1000)

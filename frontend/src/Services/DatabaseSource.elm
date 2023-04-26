@@ -23,7 +23,6 @@ import Libs.Task as T
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.ProjectInfo exposing (ProjectInfo)
-import Ports
 import Random
 import Services.Backend as Backend
 import Services.Lenses exposing (mapShow)

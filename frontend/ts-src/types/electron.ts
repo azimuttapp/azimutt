@@ -1,4 +1,4 @@
-// MUST stay sync with ./frontend/ts-src/types/electron.ts
+// MUST stay sync with ./desktop/src/shared.ts
 
 export type ElectronBridge = {
     versions: {

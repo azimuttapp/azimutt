@@ -13,8 +13,7 @@ if (require('electron-squirrel-startup')) {
 const createWindow = (): void => {
     // Create the browser window.
     const mainWindow = new BrowserWindow({
-        height: 600,
-        width: 800,
+        autoHideMenuBar: true,
         webPreferences: {
             preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
         },
@@ -24,10 +23,12 @@ const createWindow = (): void => {
         return 'pong'
     })
     // and load the index.html of the app.
-    mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
+    // FIXME: remove all the render part, not useful (files + build + MAIN_WINDOW_WEBPACK_ENTRY)
+    mainWindow.loadURL('https://azimutt.app/home');
+    mainWindow.maximize()
 
     // Open the DevTools.
-    mainWindow.webContents.openDevTools();
+    !app.isPackaged && mainWindow.webContents.openDevTools();
 };
 
 // This method will be called when Electron has finished
