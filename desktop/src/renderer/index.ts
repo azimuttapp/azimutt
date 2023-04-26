@@ -22,23 +22,29 @@
  *    webPreferences: {
  *      nodeIntegration: true
  *    }
- *  });
+ *  })
  * ```
  */
 
-import './index.css';
-import {ElectronBridge} from "../shared";
+import './index.css'
+import {DesktopBridge} from "../shared"
 
 declare global {
     export interface Window {
-        electron: ElectronBridge
+        desktop: DesktopBridge
     }
 }
 
-console.log('👋 This message is being logged by "renderer.js", included via webpack');
+console.log('👋 This message is being logged by "renderer.js", included via webpack')
 
-const versions = window.electron.versions
+
+const bridge = window.desktop
+const versions = bridge.versions
 const information = document.getElementById('info')
 information.innerText = `Cette application utilise Chrome (v${versions.chrome()}), Node.js (v${versions.node()}), et Electron (v${versions.electron()})`
 
-setTimeout(() => window.electron.ping().then(res => console.log(res)), 1000)
+setTimeout(() => bridge.ping().then(res => console.log(res)), 1000)
+
+bridge.databaseQuery('postgresql://postgres:postgres@localhost:5432/azimutt_dev', 'SELECT * FROM projects LIMIT 1;')
+    .then(res => console.log('databaseQuery', res))
+    .catch(err => console.error('databaseQuery', err))

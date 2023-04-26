@@ -56,7 +56,7 @@ logger.info('Hi there! I hope you are enjoying Azimutt 👍️\n\n' +
     'Use `azimutt.help()` for more details!')
 
 window.azimutt = new AzimuttApi(app, logger)
-console.log('electron', window.electron)
+console.log('desktop', window.desktop)
 
 /* PWA service worker */
 

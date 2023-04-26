@@ -1,16 +1,20 @@
 // MUST stay sync with ./desktop/src/shared.ts
 
-export type ElectronBridge = {
+export type DesktopBridge = {
     versions: {
         node: () => string
         chrome: () => string
         electron: () => string
     }
     ping: () => Promise<string>
-    getDatabaseSchema: (url: DatabaseUrl) => Promise<DatabaseSchema>
-    getTableStats: (url: DatabaseUrl, table: TableId) => Promise<TableStats>
-    getColumnStats: (url: DatabaseUrl, column: ColumnRef) => Promise<ColumnStats>
-    execQuery: (url: DatabaseUrl, query: string) => Promise<QueryResults>
+    databaseQuery: (url: DatabaseUrl, query: string) => Promise<QueryResults>
+    databaseSchema: (url: DatabaseUrl) => Promise<DatabaseSchema>
+    tableStats: (url: DatabaseUrl, table: TableId) => Promise<TableStats>
+    columnStats: (url: DatabaseUrl, column: ColumnRef) => Promise<ColumnStats>
+}
+
+export interface QueryResults {
+    rows: object[]
 }
 
 export type DatabaseUrl = string
@@ -40,9 +44,4 @@ export interface ColumnStats {
     nulls: number
     cardinality: number
     common_values: {value: ColumnValue, count: number}[]
-}
-
-export interface QueryResults {
-    // TODO
-    values: object[]
 }

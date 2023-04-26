@@ -22,7 +22,8 @@ admin_attrs = %User{
   github_username: "azimuttapp",
   twitter_username: "azimuttapp",
   is_admin: true,
-  hashed_password: "$2b$12$MjhB/IpjXMy/kkXGA2EchOo/W9gjeORa4CQ7Odw3cRdTzdXtjLlWW",
+  # password: admin
+  hashed_password: "$2b$12$5TukDUCUtXm1zu0TECv34eg8SHueHqXUGQ9pvDZA55LUnH30ZEpUa",
   last_signin: now,
   confirmed_at: now
 }

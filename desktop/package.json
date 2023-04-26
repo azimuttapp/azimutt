@@ -29,6 +29,7 @@
   },
   "dependencies": {
     "electron-squirrel-startup": "^1.0.0",
+    "pg": "^8.10.0",
     "update-electron-app": "^2.0.1"
   },
   "devDependencies": {
@@ -39,6 +40,7 @@
     "@electron-forge/maker-zip": "^6.1.1",
     "@electron-forge/plugin-webpack": "^6.1.1",
     "@electron-forge/publisher-github": "^6.1.1",
+    "@types/pg": "^8.6.6",
     "@typescript-eslint/eslint-plugin": "^5.59.1",
     "@typescript-eslint/parser": "^5.59.1",
     "@vercel/webpack-asset-relocator-loader": "^1.7.3",

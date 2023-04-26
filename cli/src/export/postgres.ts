@@ -1,6 +1,6 @@
 import {Client} from "pg";
 import {AzimuttSchema, DbUrl} from "../utils/database";
-import {filterValues, removeUndefined} from "../utils/object";
+import {removeUndefined} from "../utils/object";
 import {groupBy, zip} from "../utils/array";
 
 export type PostgresSchema = { tables: PostgresTable[], relations: PostgresRelation[], types: PostgresType[] }
