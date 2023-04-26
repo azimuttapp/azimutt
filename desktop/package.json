@@ -1,8 +1,24 @@
 {
   "name": "azimutt-desktop",
-  "productName": "Azimutt Desktop",
-  "version": "0.1.0",
+  "productName": "azimutt-desktop",
+  "version": "0.0.1",
   "description": "Use Azimutt as a desktop app and access local databases directly",
+  "keywords": [
+    "erd",
+    "database tool"
+  ],
+  "homepage": "https://azimutt.app",
+  "author": {
+    "name": "Loïc Knuchel",
+    "email": "loicknuchel@gmail.com",
+    "url": "https://loicknuchel.fr"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/azimuttapp/azimutt.git",
+    "directory": "desktop"
+  },
   "main": ".webpack/main",
   "scripts": {
     "start": "electron-forge start",
@@ -11,14 +27,9 @@
     "publish": "electron-forge publish",
     "lint": "eslint --ext .ts,.tsx ."
   },
-  "keywords": [],
-  "author": {
-    "name": "Loïc Knuchel",
-    "email": "loicknuchel@gmail.com"
-  },
-  "license": "MIT",
   "dependencies": {
-    "electron-squirrel-startup": "^1.0.0"
+    "electron-squirrel-startup": "^1.0.0",
+    "update-electron-app": "^2.0.1"
   },
   "devDependencies": {
     "@electron-forge/cli": "^6.1.1",
@@ -27,6 +38,7 @@
     "@electron-forge/maker-squirrel": "^6.1.1",
     "@electron-forge/maker-zip": "^6.1.1",
     "@electron-forge/plugin-webpack": "^6.1.1",
+    "@electron-forge/publisher-github": "^6.1.1",
     "@typescript-eslint/eslint-plugin": "^5.59.1",
     "@typescript-eslint/parser": "^5.59.1",
     "@vercel/webpack-asset-relocator-loader": "^1.7.3",

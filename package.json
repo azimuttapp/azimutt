@@ -10,7 +10,11 @@
     "diagram"
   ],
   "homepage": "https://azimutt.app",
-  "author": "Loïc Knuchel <loicknuchel@gmail.com> (https://loicknuchel.fr)",
+  "author": {
+    "name": "Loïc Knuchel",
+    "email": "loicknuchel@gmail.com",
+    "url": "https://loicknuchel.fr"
+  },
   "license": "MIT",
   "repository": {
     "type": "git",

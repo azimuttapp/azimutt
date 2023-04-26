@@ -11,11 +11,16 @@
     "entity-relationship diagram"
   ],
   "homepage": "https://azimutt.app",
-  "author": "Loïc Knuchel <loicknuchel@gmail.com> (https://loicknuchel.fr)",
+  "author": {
+    "name": "Loïc Knuchel",
+    "email": "loicknuchel@gmail.com",
+    "url": "https://loicknuchel.fr"
+  },
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/azimuttapp/azimutt.git"
+    "url": "git+https://github.com/azimuttapp/azimutt.git",
+    "directory": "cli"
   },
   "bugs": {
     "url": "https://github.com/azimuttapp/azimutt/issues"
