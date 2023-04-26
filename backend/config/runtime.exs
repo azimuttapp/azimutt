@@ -19,6 +19,7 @@ import Config
 host = System.fetch_env!("PHX_HOST")
 port = String.to_integer(System.fetch_env!("PORT"))
 global_organization = System.get_env("GLOBAL_ORGANIZATION")
+ssl = System.get_env("SSL") || "false"
 # TODO: REQUIRE_GITHUB_ORGANIZATION: allow users only from this github orga
 
 config :azimutt,
@@ -42,15 +43,17 @@ config :azimutt, Azimutt.Repo,
   show_sensitive_data_on_connection_error: config_env() == :dev,
   stacktrace: config_env() == :dev
 
-if config_env() == :test, do: config(:azimutt, Azimutt.Repo, pool: Ecto.Adapters.SQL.Sandbox)
-
-if config_env() == :prod || config_env() == :staging do
+if ssl == "true" do
   config :azimutt, Azimutt.Repo,
     ssl: true,
     ssl_opts: [
       verify: :verify_none
     ]
+end
 
+if config_env() == :test, do: config(:azimutt, Azimutt.Repo, pool: Ecto.Adapters.SQL.Sandbox)
+
+if config_env() == :prod || config_env() == :staging do
   if System.get_env("PHX_SERVER"), do: config(:azimutt, AzimuttWeb.Endpoint, server: true)
 
   config :azimutt, AzimuttWeb.Endpoint,
