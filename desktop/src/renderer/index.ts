@@ -27,7 +27,7 @@
  */
 
 import './index.css';
-import {Versions} from "./types";
+import {Versions} from "../shared";
 
 declare global {
     export interface Window {
