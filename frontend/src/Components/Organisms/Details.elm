@@ -1,4 +1,4 @@
-module Components.Organisms.Details exposing (DocState, Heading, NotesModel, SharedDocState, buildColumnHeading, buildSchemaHeading, buildTableHeading, doc, initDocState, viewColumn, viewColumn2, viewList, viewSchema, viewTable)
+module Components.Organisms.Details exposing (DocState, Heading, NotesModel, SharedDocState, TagsModel, buildColumnHeading, buildSchemaHeading, buildTableHeading, doc, initDocState, viewColumn, viewColumn2, viewList, viewSchema, viewTable)
 
 import Array
 import Components.Atoms.Badge as Badge
@@ -23,6 +23,7 @@ import Libs.Html.Attributes exposing (ariaHidden, ariaLabel, css, role)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.Models.Tag as Tag exposing (Tag)
 import Libs.Nel as Nel exposing (Nel)
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (TwClass)
@@ -48,6 +49,7 @@ import Models.Project.SourceId as SourceId exposing (SourceIdStr)
 import Models.Project.SourceKind as SourceKind
 import Models.Project.SourceName exposing (SourceName)
 import Models.Project.TableId as TableId exposing (TableId, TableIdStr)
+import Models.Project.TableMeta as TableMeta exposing (TableMeta)
 import Models.Project.TableStats exposing (TableStats)
 import Models.Project.Unique exposing (Unique)
 import Models.Project.UniqueName exposing (UniqueName)
@@ -169,11 +171,12 @@ viewTable :
     -> Heading SchemaName Never
     -> Heading ErdTable ErdTableLayout
     -> NotesModel msg
+    -> TagsModel msg
     -> List LayoutName
     -> List ( Origin, Source )
     -> Dict SourceIdStr TableStats
     -> Html msg
-viewTable goToList goToSchema goToTable goToColumn showTable loadLayout _ _ defaultSchema schema table notes inLayouts inSources stats =
+viewTable goToList goToSchema goToTable goToColumn showTable loadLayout _ _ defaultSchema schema table notes tags inLayouts inSources stats =
     let
         columnValues : Dict ColumnPathStr ColumnValue
         columnValues =
@@ -196,7 +199,8 @@ viewTable goToList goToSchema goToTable goToColumn showTable loadLayout _ _ defa
                 , table.item.id |> showTableBtn showTable
                 ]
             , table.item.comment |> Maybe.mapOrElse viewComment (div [] [])
-            , viewNotes notes
+            , notes |> viewNotes
+            , tags |> viewTags
             , outRelations |> List.nonEmptyMap (\r -> viewProp "References" (r |> List.sortBy .table |> List.map (viewTableRelation goToTable defaultSchema))) (div [] [])
             , inRelations |> List.nonEmptyMap (\r -> viewProp "Referenced by" (r |> List.sortBy .table |> List.map (viewTableRelation goToTable defaultSchema))) (div [] [])
             , viewTableConstraints table.item
@@ -243,11 +247,12 @@ viewColumn :
     -> Heading ErdTable ErdTableLayout
     -> Heading ErdColumn ErdColumnProps
     -> NotesModel msg
+    -> TagsModel msg
     -> List LayoutName
     -> List ( Origin, Source )
     -> Dict SourceIdStr ColumnStats
     -> Html msg
-viewColumn goToList goToSchema goToTable goToColumn showTable loadLayout _ _ defaultSchema schema table column notes inLayouts inSources stats =
+viewColumn goToList goToSchema goToTable goToColumn showTable loadLayout _ _ defaultSchema schema table column notes tags inLayouts inSources stats =
     div []
         [ viewSchemaHeading goToList goToSchema defaultSchema schema
         , viewTableHeading goToSchema goToTable table
@@ -271,7 +276,8 @@ viewColumn goToList goToSchema goToTable goToColumn showTable loadLayout _ _ def
 
             -- TODO: show nested columns
             , column.item.comment |> Maybe.mapOrElse viewComment (div [] [])
-            , viewNotes notes
+            , notes |> viewNotes
+            , tags |> viewTags
             , viewColumnStats (inSources |> List.map Tuple.second) stats
             , column.item.outRelations |> List.nonEmptyMap (\r -> viewProp "References" (r |> List.sortBy ErdColumnRef.toId |> List.map (viewColumnRelation goToColumn defaultSchema))) (div [] [])
             , column.item.inRelations |> List.nonEmptyMap (\r -> viewProp "Referenced by" (r |> List.sortBy ErdColumnRef.toId |> List.map (viewColumnRelation goToColumn defaultSchema))) (div [] [])
@@ -301,11 +307,12 @@ viewColumn2 :
     -> Heading ErdTable ErdTableLayout
     -> Heading ErdColumn ErdColumnProps
     -> NotesModel msg
+    -> TagsModel msg
     -> List LayoutName
     -> List ( Origin, Source )
     -> Dict SourceIdStr ColumnStats
     -> Html msg
-viewColumn2 _ _ _ _ _ _ _ _ defaultSchema schema table column _ _ _ _ =
+viewColumn2 _ _ _ _ _ _ _ _ defaultSchema schema table column _ _ _ _ _ =
     div []
         [ div [ class "lg:flex lg:items-center lg:justify-between" ]
             [ div [ class "flex-1 min-w-0" ]
@@ -486,6 +493,47 @@ viewNotes model =
                     |> Maybe.withDefault (div [ onClick (model.edit inputId model.notes), class "w-full text-sm text-gray-400 italic underline cursor-pointer" ] [ text "Click to write notes" ])
                 )
         ]
+
+
+type alias TagsModel msg =
+    { tags : List Tag
+    , editing : Maybe String
+    , edit : HtmlId -> List Tag -> msg
+    , update : String -> msg
+    , save : String -> msg
+    }
+
+
+viewTags : TagsModel msg -> Html msg
+viewTags model =
+    let
+        inputId : HtmlId
+        inputId =
+            "edit-tags"
+    in
+    model.editing
+        |> Maybe.map
+            (\v ->
+                input
+                    [ type_ "text"
+                    , name inputId
+                    , id inputId
+                    , value v
+                    , onInput model.update
+                    , onBlur (model.save v)
+                    , autofocus True
+                    , placeholder "Write tags"
+                    , class "block w-full sm:text-sm border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                    ]
+                    []
+            )
+        |> Maybe.withDefault
+            (if model.tags |> List.isEmpty then
+                div [ onClick (model.edit inputId model.tags), class "w-full text-sm text-gray-400 italic underline cursor-pointer" ] [ text "No tags" ]
+
+             else
+                div [ onClick (model.edit inputId model.tags), class "w-full cursor-pointer" ] [ text (model.tags |> Tag.tagsToString) ]
+            )
 
 
 viewMarkdown : String -> Html msg
@@ -875,6 +923,8 @@ type alias DocState =
     , tableNotes : Dict TableId Notes
     , columnNotes : Dict ColumnId Notes
     , editNotes : Maybe Notes
+    , metadata : Dict TableId TableMeta
+    , editTags : Maybe String
     }
 
 
@@ -889,6 +939,8 @@ initDocState =
     , tableNotes = Dict.fromList [ ( ( "", "users" ), "Azimutt notes for **users**" ) ]
     , columnNotes = Dict.fromList [ ( ( ( "", "users" ), "id" ), "Azimutt notes for **users.id**" ) ]
     , editNotes = Nothing
+    , metadata = Dict.fromList [ ( ( "", "users" ), { tags = [ "first", "other" ], columns = Dict.empty } ) ]
+    , editTags = Nothing
     }
         |> docSelectColumn { table = ( Conf.schema.empty, "users" ), column = ColumnPath.fromString "id" }
 
@@ -897,7 +949,7 @@ doc : Chapter (SharedDocState x)
 doc =
     Chapter.chapter "Details"
         |> Chapter.renderStatefulComponentList
-            [ docComponent "viewList & viewList2"
+            [ docComponent "viewList"
                 (\s ->
                     div [ class "flex flex-row grow gap-3" ]
                         ([ viewList ]
@@ -916,7 +968,7 @@ doc =
                                 )
                         )
                 )
-            , docComponent "viewSchema & viewSchema2"
+            , docComponent "viewSchema"
                 (\s ->
                     Maybe.map
                         (\( schema, tables ) ->
@@ -940,7 +992,7 @@ doc =
                         s.currentSchema
                         |> Maybe.withDefault (div [] [ text "No selected schema" ])
                 )
-            , docComponent "viewTable & viewTable2"
+            , docComponent "viewTable"
                 (\s ->
                     Maybe.map2
                         (\( schema, _ ) table ->
@@ -966,6 +1018,12 @@ doc =
                                                     , edit = \_ content -> docSetState { s | editNotes = Just content }
                                                     , update = \content -> docSetState { s | editNotes = s.editNotes |> Maybe.map (\_ -> content) }
                                                     , save = \content -> docSetState { s | tableNotes = s.tableNotes |> Dict.insert table.item.id content }
+                                                    }
+                                                    { tags = s.metadata |> Dict.get table.item.id |> Maybe.map .tags |> Maybe.withDefault []
+                                                    , editing = s.editTags
+                                                    , edit = \_ tags -> docSetState { s | editTags = tags |> Tag.tagsToString |> Just }
+                                                    , update = \content -> docSetState { s | editTags = s.editTags |> Maybe.map (\_ -> content) }
+                                                    , save = \content -> docSetState { s | metadata = s.metadata |> Dict.update table.item.id (TableMeta.upsertTags Nothing (content |> Tag.tagsFromString) >> Just) }
                                                     }
                                                     (docErd.layouts |> Dict.filter (\_ l -> l.tables |> List.memberBy .id table.item.id) |> Dict.keys)
                                                     (table.item.origins |> List.filterZip (\o -> docErd.sources |> List.findBy .id o.id))
@@ -1005,6 +1063,12 @@ doc =
                                                     , edit = \_ content -> docSetState { s | editNotes = Just content }
                                                     , update = \content -> docSetState { s | editNotes = s.editNotes |> Maybe.map (\_ -> content) }
                                                     , save = \content -> docSetState { s | columnNotes = s.columnNotes |> Dict.insert (ColumnId.from table.item column.item) content }
+                                                    }
+                                                    { tags = s.metadata |> Dict.get table.item.id |> Maybe.andThen (.columns >> Dict.get column.item.path.head) |> Maybe.map .tags |> Maybe.withDefault []
+                                                    , editing = s.editTags
+                                                    , edit = \_ tags -> docSetState { s | editTags = tags |> Tag.tagsToString |> Just }
+                                                    , update = \content -> docSetState { s | editTags = s.editTags |> Maybe.map (\_ -> content) }
+                                                    , save = \content -> docSetState { s | metadata = s.metadata |> Dict.update table.item.id (TableMeta.upsertTags (Just column.item.path.head) (content |> Tag.tagsFromString) >> Just) }
                                                     }
                                                     (docErd.layouts |> Dict.filter (\_ l -> l.tables |> List.memberWith (\t -> t.id == table.item.id && (t.columns |> ErdColumnProps.member column.item.path))) |> Dict.keys)
                                                     (column.item.origins |> List.filterZip (\o -> docErd.sources |> List.findBy .id o.id))

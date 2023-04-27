@@ -70,6 +70,7 @@ init params token save =
       , selectionBox = Nothing
       , newLayout = Nothing
       , editNotes = Nothing
+      , editTags = Nothing
       , editMemo = Nothing
       , amlSidebar = Nothing
       , detailsSidebar = Nothing

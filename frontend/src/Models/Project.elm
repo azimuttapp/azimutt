@@ -26,7 +26,8 @@ import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source as Source exposing (Source)
 import Models.Project.Table as Table exposing (Table)
-import Models.Project.TableId exposing (TableId)
+import Models.Project.TableId as TableId exposing (TableId)
+import Models.Project.TableMeta as TableMeta exposing (TableMeta)
 import PagesComponents.Organization_.Project_.Models.Notes exposing (Notes, NotesKey)
 import Time
 
@@ -42,6 +43,7 @@ type alias Project =
     , relations : List Relation -- computed from sources, do not update directly (see compute function)
     , types : Dict CustomTypeId CustomType -- computed from sources, do not update directly (see compute function)
     , notes : Dict NotesKey Notes
+    , metadata : Dict TableId TableMeta
     , usedLayout : LayoutName
     , layouts : Dict LayoutName Layout
     , settings : ProjectSettings
@@ -53,8 +55,8 @@ type alias Project =
     }
 
 
-new : Maybe Organization -> ProjectId -> ProjectSlug -> ProjectName -> Maybe String -> List Source -> Dict NotesKey Notes -> LayoutName -> Dict LayoutName Layout -> ProjectSettings -> ProjectStorage -> ProjectVisibility -> ProjectEncodingVersion -> Time.Posix -> Time.Posix -> Project
-new organization id slug name description sources notes usedLayout layouts settings storage visibility version createdAt updatedAt =
+new : Maybe Organization -> ProjectId -> ProjectSlug -> ProjectName -> Maybe String -> List Source -> Dict NotesKey Notes -> Dict TableId TableMeta -> LayoutName -> Dict LayoutName Layout -> ProjectSettings -> ProjectStorage -> ProjectVisibility -> ProjectEncodingVersion -> Time.Posix -> Time.Posix -> Project
+new organization id slug name description sources notes metadata usedLayout layouts settings storage visibility version createdAt updatedAt =
     { organization = organization
     , id = id
     , slug = slug
@@ -65,6 +67,7 @@ new organization id slug name description sources notes usedLayout layouts setti
     , relations = []
     , types = Dict.empty
     , notes = notes
+    , metadata = metadata
     , usedLayout = usedLayout
     , layouts = layouts
     , settings = settings
@@ -85,6 +88,7 @@ create projects name source =
         (String.unique (projects |> List.map .name) name)
         Nothing
         [ source ]
+        Dict.empty
         Dict.empty
         Conf.constants.defaultLayout
         (Dict.fromList [ ( Conf.constants.defaultLayout, Layout.empty source.createdAt ) ])
@@ -209,6 +213,7 @@ encode value =
         , ( "description", value.description |> Encode.maybe Encode.string )
         , ( "sources", value.sources |> Encode.list Source.encode )
         , ( "notes", value.notes |> Encode.withDefault (Encode.dict identity Encode.string) Dict.empty )
+        , ( "metadata", value.metadata |> Encode.withDefault (Encode.dict TableId.toString TableMeta.encode) Dict.empty )
         , ( "usedLayout", value.usedLayout |> LayoutName.encode )
         , ( "layouts", value.layouts |> Encode.dict LayoutName.toString Layout.encode )
         , ( "settings", value.settings |> Encode.withDefaultDeep ProjectSettings.encode (ProjectSettings.init Conf.schema.empty) )
@@ -222,7 +227,7 @@ encode value =
 
 decode : Decode.Decoder Project
 decode =
-    Decode.map16 decodeProject
+    Decode.map17 decodeProject
         (Decode.maybeField "organization" Organization.decode)
         (Decode.field "id" ProjectId.decode)
         (Decode.maybeField "slug" ProjectSlug.decode)
@@ -230,6 +235,7 @@ decode =
         (Decode.maybeField "description" Decode.string)
         (Decode.field "sources" (Decode.list Source.decode))
         (Decode.defaultField "notes" (Decode.dict Decode.string) Dict.empty)
+        (Decode.defaultField "metadata" (Decode.customDict TableId.parse TableMeta.decode) Dict.empty)
         (Decode.defaultField "layout" Layout.decode (Layout.empty Time.zero))
         (Decode.defaultField "usedLayout" LayoutName.decode Conf.constants.defaultLayout)
         (Decode.defaultField "layouts" (Decode.customDict LayoutName.fromString Layout.decode) Dict.empty)
@@ -241,8 +247,8 @@ decode =
         (Decode.field "updatedAt" Time.decode)
 
 
-decodeProject : Maybe Organization -> ProjectId -> Maybe ProjectSlug -> ProjectName -> Maybe String -> List Source -> Dict NotesKey Notes -> Layout -> LayoutName -> Dict LayoutName Layout -> ProjectSettings -> ProjectStorage -> ProjectVisibility -> ProjectEncodingVersion -> Time.Posix -> Time.Posix -> Project
-decodeProject organization id maybeSlug name description sources notes layout usedLayout layouts settings storage visibility version createdAt updatedAt =
+decodeProject : Maybe Organization -> ProjectId -> Maybe ProjectSlug -> ProjectName -> Maybe String -> List Source -> Dict NotesKey Notes -> Dict TableId TableMeta -> Layout -> LayoutName -> Dict LayoutName Layout -> ProjectSettings -> ProjectStorage -> ProjectVisibility -> ProjectEncodingVersion -> Time.Posix -> Time.Posix -> Project
+decodeProject organization id maybeSlug name description sources notes metadata layout usedLayout layouts settings storage visibility version createdAt updatedAt =
     let
         allLayouts : Dict LayoutName Layout
         allLayouts =
@@ -258,4 +264,4 @@ decodeProject organization id maybeSlug name description sources notes layout us
             -- retro-compatibility with old projects
             maybeSlug |> Maybe.withDefault id
     in
-    new organization id slug name description sources notes usedLayout allLayouts settings storage visibility version createdAt updatedAt
+    new organization id slug name description sources notes metadata usedLayout allLayouts settings storage visibility version createdAt updatedAt

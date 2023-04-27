@@ -13,6 +13,7 @@ import Models.Project.Check exposing (Check)
 import Models.Project.CheckName exposing (CheckName)
 import Models.Project.Column exposing (Column)
 import Models.Project.ColumnIndex exposing (ColumnIndex)
+import Models.Project.ColumnMeta exposing (ColumnMeta)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.ColumnRef exposing (ColumnRef)
@@ -49,6 +50,7 @@ import Models.Project.SourceLine exposing (SourceLine)
 import Models.Project.SourceName exposing (SourceName)
 import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
+import Models.Project.TableMeta exposing (TableMeta)
 import Models.Project.TableName exposing (TableName)
 import Models.Project.TableProps exposing (TableProps)
 import Models.Project.Unique exposing (Unique)
@@ -63,7 +65,7 @@ import TestHelpers.OrganizationFuzzers exposing (organization)
 
 project : Fuzzer Project
 project =
-    Fuzz.map15 Project.new (Fuzz.maybe organization) projectId projectSlug projectName (Fuzz.maybe stringSmall) (listSmall source) (dictSmall stringSmall stringSmall) layoutName (dictSmall layoutName layout) projectSettings projectStorage projectVisibility projectEncodingVersion posix posix
+    Fuzz.map16 Project.new (Fuzz.maybe organization) projectId projectSlug projectName (Fuzz.maybe stringSmall) (listSmall source) (dictSmall stringSmall stringSmall) (dictSmall tableId tableMeta) layoutName (dictSmall layoutName layout) projectSettings projectStorage projectVisibility projectEncodingVersion posix posix
 
 
 source : Fuzzer Source
@@ -162,6 +164,16 @@ columnRef =
 origin : Fuzzer Origin
 origin =
     Fuzz.map2 Origin sourceId (listSmall fileLineIndex)
+
+
+tableMeta : Fuzzer TableMeta
+tableMeta =
+    Fuzz.map2 TableMeta (listSmall stringSmall) (dictSmall columnName columnMeta)
+
+
+columnMeta : Fuzzer ColumnMeta
+columnMeta =
+    Fuzz.map ColumnMeta (listSmall stringSmall)
 
 
 layout : Fuzzer Layout

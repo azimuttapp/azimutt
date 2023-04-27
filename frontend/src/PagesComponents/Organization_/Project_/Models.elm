@@ -53,6 +53,7 @@ import PagesComponents.Organization_.Project_.Models.Notes exposing (Notes, Note
 import PagesComponents.Organization_.Project_.Models.NotesMsg exposing (NotesMsg)
 import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint)
 import PagesComponents.Organization_.Project_.Models.ShowColumns exposing (ShowColumns)
+import PagesComponents.Organization_.Project_.Models.TagsMsg exposing (TagsMsg)
 import PagesComponents.Organization_.Project_.Views.Modals.NewLayout as NewLayout
 import Ports exposing (JsMsg)
 import Services.Toasts as Toasts
@@ -75,6 +76,7 @@ type alias Model =
     , selectionBox : Maybe Area.Canvas
     , newLayout : Maybe NewLayout.Model
     , editNotes : Maybe NotesDialog
+    , editTags : Maybe String
     , editMemo : Maybe MemoEdit
     , amlSidebar : Maybe AmlSidebar
     , detailsSidebar : Maybe DetailsSidebar.Model
@@ -196,6 +198,7 @@ type Msg
     | NewLayoutMsg NewLayout.Msg
     | LayoutMsg LayoutMsg
     | NotesMsg NotesMsg
+    | TagsMsg TagsMsg
     | MemoMsg MemoMsg
     | AmlSidebarMsg AmlSidebarMsg
     | DetailsSidebarMsg DetailsSidebar.Msg

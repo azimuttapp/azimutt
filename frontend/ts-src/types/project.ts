@@ -1,4 +1,4 @@
-import {Color, Json, Position, Size, Slug, Timestamp} from "./basics";
+import {Color, Json, Position, Size, Slug, Tag, Timestamp} from "./basics";
 import {Uuid} from "./uuid";
 import {Organization} from "./organization";
 import * as array from "../utils/array";
@@ -340,6 +340,24 @@ export const TableProps = z.object({
     hiddenColumns: z.boolean().optional()
 }).strict()
 
+export interface ColumnMeta {
+    tags?: Tag[]
+}
+
+export const ColumnMeta = z.object({
+    tags: Tag.array().optional()
+}).strict()
+
+export interface TableMeta {
+    tags?: Tag[]
+    columns: { [columnName: string]: ColumnMeta }
+}
+
+export const TableMeta = z.object({
+    tags: Tag.array().optional(),
+    columns: z.record(ColumnName, ColumnMeta)
+}).strict()
+
 export interface Memo {
     id: MemoId
     content: string
@@ -424,6 +442,7 @@ export interface Project {
     description?: string
     sources: Source[]
     notes?: { [ref: string]: string }
+    metadata?: { [tableId: string]: TableMeta }
     usedLayout: LayoutName
     layouts: { [name: LayoutName]: Layout }
     settings?: Settings
@@ -442,6 +461,7 @@ export const Project = z.object({
     description: z.string().optional(),
     sources: Source.array(),
     notes: z.record(z.string()).optional(),
+    metadata: z.record(TableId, TableMeta).optional(),
     usedLayout: LayoutName,
     layouts: z.record(LayoutName, Layout),
     settings: Settings.optional(),

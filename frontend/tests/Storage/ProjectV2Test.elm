@@ -97,6 +97,7 @@ project0 =
     , relations = []
     , types = Dict.empty
     , notes = Dict.empty
+    , metadata = Dict.empty
     , usedLayout = "initial layout"
     , layouts = Dict.fromList [ ( "initial layout", Layout (CanvasProps (canvasPos 10 20) 0.75) [] [] (time 1200) (time 1201) ) ]
     , settings = ProjectSettings.init defaultSchema
@@ -132,6 +133,7 @@ project1 =
     , relations = []
     , types = Dict.empty
     , notes = Dict.empty
+    , metadata = Dict.empty
     , usedLayout = "initial layout"
     , layouts =
         Dict.fromList
@@ -245,6 +247,7 @@ project2 =
     , relations = relations2
     , types = Dict.empty
     , notes = Dict.empty
+    , metadata = Dict.empty
     , usedLayout = "users"
     , layouts =
         Dict.fromList

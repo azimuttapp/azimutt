@@ -25,6 +25,7 @@ import Models.Project.Source exposing (Source)
 import Models.Project.SourceId exposing (SourceId)
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
+import Models.Project.TableMeta exposing (TableMeta)
 import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Models.ProjectRef exposing (ProjectRef)
 import Models.Size as Size
@@ -49,6 +50,7 @@ type alias Erd =
     , layouts : Dict LayoutName ErdLayout
     , currentLayout : LayoutName
     , notes : ErdNotes
+    , metadata : Dict TableId TableMeta
     , sources : List Source
     , settings : ProjectSettings
     }
@@ -68,6 +70,7 @@ create project =
     , layouts = project.layouts |> Dict.map (\_ -> ErdLayout.create relationsByTable)
     , currentLayout = project.usedLayout
     , notes = ErdNotes.create project.notes
+    , metadata = project.metadata
     , sources = project.sources
     , settings = project.settings
     }
@@ -85,6 +88,7 @@ unpack erd =
     , relations = erd.relations |> List.map ErdRelation.unpack
     , types = erd.types
     , notes = ErdNotes.unpack erd.notes
+    , metadata = erd.metadata
     , usedLayout = erd.currentLayout
     , layouts = erd.layouts |> Dict.map (\_ -> ErdLayout.unpack)
     , settings = erd.settings
