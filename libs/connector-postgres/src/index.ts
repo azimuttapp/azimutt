@@ -1,7 +1,12 @@
-import {Client} from "pg";
-import {AzimuttSchema, DbUrl} from "../utils/database";
-import {removeUndefined} from "../utils/object";
-import {groupBy, zip} from "../utils/array";
+import {Client, QueryResult} from "pg"
+import {AzimuttSchema, DatabaseUrlParsed} from "@azimutt/database-types";
+import {groupBy, removeUndefined, zip} from "@azimutt/utils";
+
+export async function query(url: DatabaseUrlParsed, query: string): Promise<QueryResult> {
+    return await connect(url, async client => {
+        return await client.query(query)
+    })
+}
 
 export type PostgresSchema = { tables: PostgresTable[], relations: PostgresRelation[], types: PostgresType[] }
 export type PostgresTable = { schema: PostgresSchemaName, table: PostgresTableName, view: boolean, columns: PostgresColumn[], primaryKey: PostgresPrimaryKey | null, uniques: PostgresUnique[], indexes: PostgresIndex[], checks: PostgresCheck[], comment: string | null }
@@ -22,7 +27,7 @@ export type PostgresRelationName = string
 export type PostgresTypeName = string
 export type PostgresTableId = string
 
-export async function fetchSchema(url: DbUrl, schema: PostgresSchemaName | undefined, sampleSize: number): Promise<PostgresSchema> {
+export async function fetchSchema(url: DatabaseUrlParsed, schema: PostgresSchemaName | undefined, sampleSize: number): Promise<PostgresSchema> {
     return await connect(url, async client => {
         const columns = await getColumns(client, schema).then(cols => groupBy(cols, toTableId))
         const columnsByIndex: { [tableId: string]: { [columnIndex: number]: RawColumn } } = Object.keys(columns).reduce((acc, tableId) => ({
@@ -147,10 +152,10 @@ export function transformSchema(schema: PostgresSchema, flatten: number, inferRe
     }
 }
 
-function connect<T>(url: DbUrl, exec: (c: Client) => Promise<T>): Promise<T> {
+function connect<T>(url: DatabaseUrlParsed, exec: (c: Client) => Promise<T>): Promise<T> {
     const client = new Client({
-        application_name: 'azimutt-cli',
-        connectionString: url.full,
+        application_name: 'azimutt-desktop',
+        connectionString: `postgresql://${url.user}:${url.pass}@${url.host}:${url.port}/${url.db}`,
         ssl: {rejectUnauthorized: false}
     })
     return client.connect().then(_ => {

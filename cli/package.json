@@ -42,6 +42,9 @@
     "prepublish": "npm run build && npm pack"
   },
   "dependencies": {
+    "@azimutt/connector-postgres": "file:../libs/connector-postgres",
+    "@azimutt/database-types": "file:../libs/database-types",
+    "@azimutt/utils": "file:../libs/utils",
     "chalk": "^4.1.2",
     "clear": "^0.1.0",
     "commander": "^10.0.0",

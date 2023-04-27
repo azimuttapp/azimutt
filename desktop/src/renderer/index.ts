@@ -27,7 +27,7 @@
  */
 
 import './index.css'
-import {DesktopBridge} from "../shared"
+import {DesktopBridge} from "@azimutt/shared";
 
 declare global {
     export interface Window {

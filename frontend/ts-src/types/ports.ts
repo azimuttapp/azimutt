@@ -1,6 +1,6 @@
+import {ColumnId, ColumnRef, ColumnStats, DatabaseUrl, TableId, TableStats} from "@azimutt/database-types";
 import {
     Color,
-    DatabaseUrl,
     Delta,
     FileContent,
     FileName,
@@ -15,21 +15,17 @@ import {
     ViewPosition
 } from "./basics";
 import {
-    ColumnId,
-    ColumnRef,
     Project,
     ProjectId,
     ProjectInfo,
     ProjectStorage,
     ProjectTokenId,
     SourceId,
-    SourceOrigin,
-    TableId
+    SourceOrigin
 } from "./project";
 import {OrganizationId} from "./organization";
 import {Env} from "../utils/env";
 import {z} from "zod";
-import {ColumnStats, TableStats} from "./stats";
 import {TrackEvent} from "./tracking";
 
 export interface ElmProgram<F, I, O> {

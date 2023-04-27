@@ -1,7 +1,8 @@
 // See the Electron documentation for details on how to use preload scripts:
 // https://www.electronjs.org/docs/latest/tutorial/process-model#preload-scripts
 
-import {ColumnRef, DatabaseUrl, DesktopBridge, TableId} from "./shared"
+import {ColumnRef, DatabaseUrl, TableId} from "@azimutt/database-types";
+import {DesktopBridge} from "@azimutt/shared";
 
 const {contextBridge, ipcRenderer} = require('electron')
 

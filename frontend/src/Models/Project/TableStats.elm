@@ -10,7 +10,7 @@ import Models.Project.TableName as TableName
 
 
 type alias TableStats =
-    -- keep sync with frontend/ts-src/types/stats.ts & backend/lib/azimutt/analyzer/table_stats.ex
+    -- keep sync with libs/database-types/src/schema.ts & backend/lib/azimutt/analyzer/table_stats.ex
     { id : TableId
     , rows : Int
     , sampleValues : Dict ColumnPathStr ColumnValue

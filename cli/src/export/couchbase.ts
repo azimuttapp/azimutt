@@ -1,10 +1,10 @@
 import chalk from "chalk";
 import {Cluster, Collection, connect as open, PlanningFailureError} from "couchbase";
-import {schemaFromValues, schemaToColumns, ValueSchema} from "./infer";
-import {AzimuttSchema, DbUrl} from "../utils/database";
-import {sequence} from "../utils/promise";
-import {log, warn} from "../utils/logger";
+import {sequence} from "@azimutt/utils";
+import {AzimuttSchema, DatabaseUrlParsed} from "@azimutt/database-types";
 import {errorToString} from "../utils/error";
+import {log, warn} from "../utils/logger";
+import {schemaFromValues, schemaToColumns, ValueSchema} from "./infer";
 
 export type CouchbaseSchema = { collections: CouchbaseCollection[] }
 export type CouchbaseCollection = { bucket: CouchbaseBucketName, scope: CouchbaseScopeName, collection: CouchbaseCollectionName, schema: ValueSchema, sampleDocs: number, totalDocs: number }
@@ -12,7 +12,7 @@ export type CouchbaseBucketName = string
 export type CouchbaseScopeName = string
 export type CouchbaseCollectionName = string
 
-export async function fetchSchema(url: DbUrl, bucketName: CouchbaseBucketName | undefined, sampleSize: number): Promise<CouchbaseSchema> {
+export async function fetchSchema(url: DatabaseUrlParsed, bucketName: CouchbaseBucketName | undefined, sampleSize: number): Promise<CouchbaseSchema> {
     return connect(url, async cluster => {
         log('Connected to cluster ...')
         const bucketNames: CouchbaseBucketName[] = bucketName ? [bucketName] : await listBuckets(cluster)
@@ -47,7 +47,7 @@ async function listBuckets(cluster: Cluster): Promise<CouchbaseBucketName[]> {
     return (await cluster.buckets().getAllBuckets()).map(b => b.name)
 }
 
-async function connect<T>(url: DbUrl, run: (c: Cluster) => Promise<T>): Promise<T> {
+async function connect<T>(url: DatabaseUrlParsed, run: (c: Cluster) => Promise<T>): Promise<T> {
     const cluster: Cluster = await open(url.full, {username: url.user, password: url.pass})
     try {
         return await run(cluster)

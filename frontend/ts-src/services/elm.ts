@@ -1,10 +1,10 @@
+import {ColumnId, ColumnStats, TableId, TableStats} from "@azimutt/database-types";
 import {ElementSize, ElmFlags, ElmMsg, ElmRuntime, GetLocalFile, Hotkey, HotkeyId, JsMsg} from "../types/ports";
-import {ColumnId, Project, ProjectId, SourceId, TableId} from "../types/project";
+import {Project, ProjectId, SourceId} from "../types/project";
 import {Color, Delta, Position, ToastLevel} from "../types/basics";
 import {Logger} from "./logger";
 import * as Zod from "../utils/zod";
 import {formatError} from "../utils/error";
-import {ColumnStats, TableStats} from "../types/stats";
 
 export class ElmApp {
     static init(flags: ElmFlags, logger: Logger) {

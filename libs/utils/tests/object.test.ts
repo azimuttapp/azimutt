@@ -1,7 +1,7 @@
 import {describe, expect, test} from "@jest/globals";
-import {filterValues, mapValues} from "../../src/utils/object";
+import {filterValues, mapValues} from "../src";
 
-describe('utils/object', () => {
+describe('object', () => {
     test('mapValues', () => {
         expect(mapValues({a: 'luc', b: 'jean'}, v => v.length)).toEqual({a: 3, b: 4})
     })

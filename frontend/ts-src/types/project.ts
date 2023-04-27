@@ -1,8 +1,9 @@
-import {Color, Json, Position, Size, Slug, Timestamp} from "./basics";
+import {z} from "zod";
+import {ColumnName, ColumnType, SchemaName, TableId, TableName} from "@azimutt/database-types";
+import {Color, Position, Size, Slug, Timestamp} from "./basics";
 import {Uuid} from "./uuid";
 import {Organization} from "./organization";
 import * as array from "../utils/array";
-import {z} from "zod";
 import * as Zod from "../utils/zod";
 
 export type ProjectId = Uuid
@@ -15,20 +16,6 @@ export type SourceId = Uuid
 export const SourceId = Uuid
 export type SourceName = string
 export const SourceName = z.string()
-export type TableId = string
-export const TableId = z.string()
-export type SchemaName = string
-export const SchemaName = z.string()
-export type TableName = string
-export const TableName = z.string()
-export type ColumnId = string
-export const ColumnId = z.string()
-export type ColumnName = string
-export const ColumnName = z.string()
-export type ColumnType = string
-export const ColumnType = z.string()
-export type ColumnValue = string | number | boolean | null | unknown
-export const ColumnValue = z.union([z.string(), z.number(), z.boolean(), z.null(), Json])
 export type Line = string
 export const Line = z.string()
 export type LineIndex = number

@@ -1,4 +1,5 @@
-import {ColumnId, Project, Relation, Table, TableId} from "../types/project";
+import {ColumnId, TableId} from "@azimutt/database-types";
+import {Project, Relation, Table} from "../types/project";
 import {Color, Px} from "../types/basics";
 import {ElmApp} from "./elm";
 import {Logger} from "./logger";

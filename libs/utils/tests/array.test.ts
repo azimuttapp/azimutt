@@ -1,7 +1,7 @@
 import {describe, expect, test} from "@jest/globals";
-import {groupBy, zip} from "../../src/utils/array";
+import {groupBy, zip} from "../src";
 
-describe('utils/array', () => {
+describe('array', () => {
     test('groupBy', () => {
         expect(groupBy([1, 2, 3], i => i % 2)).toEqual({0: [2], 1: [1, 3]})
     })

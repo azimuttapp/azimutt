@@ -1,7 +1,7 @@
+import {ColumnRef, ColumnStats, DatabaseUrl, TableId, TableStats} from "@azimutt/database-types";
 import {Logger} from "./logger";
 import {
     buildProjectJson,
-    ColumnRef,
     computeStats,
     isLocal,
     isRemote,
@@ -19,11 +19,10 @@ import {
     ProjectStorage,
     ProjectTokenId,
     ProjectVersion,
-    ProjectVisibility,
-    TableId
+    ProjectVisibility
 } from "../types/project";
 import {Organization, OrganizationId, OrganizationSlug, Plan} from "../types/organization";
-import {DatabaseUrl, DateTime} from "../types/basics";
+import {DateTime} from "../types/basics";
 import {Env} from "../utils/env";
 import * as Http from "../utils/http";
 import {z} from "zod";
@@ -31,7 +30,6 @@ import * as Zod from "../utils/zod";
 import * as Json from "../utils/json";
 import * as jiff from "jiff";
 import {HerokuResource} from "../types/heroku";
-import {ColumnStats, TableStats} from "../types/stats";
 import {TrackEvent} from "../types/tracking";
 
 export class Backend {

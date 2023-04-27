@@ -1,6 +1,6 @@
+import {DesktopBridge} from "@azimutt/shared";
 import {ElmFlags, ElmMsg, ElmProgram, JsMsg} from "./ports";
 import {AzimuttApi} from "../services/api";
-import {DesktopBridge} from "./desktop";
 
 declare global {
     export interface Window {

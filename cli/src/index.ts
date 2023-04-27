@@ -2,11 +2,11 @@
 
 import {Argument, Command} from "commander";
 import chalk from "chalk";
-import {exportDbSchema} from "./export";
-import {parseUrl} from "./utils/database";
-import {error, log} from "./utils/logger";
-import {safeParseInt} from "./utils/number";
+import {safeParseInt} from "@azimutt/utils";
+import {parseDatabaseUrl} from "@azimutt/database-types";
 import {errorToString} from "./utils/error";
+import {error, log} from "./utils/logger";
+import {exportDbSchema} from "./export";
 
 const clear = require('clear')
 const figlet = require('figlet')
@@ -37,7 +37,7 @@ program.command('export')
     .option('-f, --format <format>', 'Output format', 'json')
     .option('-o, --output <output>', "Path to write the schema, ex: ~/azimutt.json")
     .option('--debug', 'Add debug logs and show the full stacktrace instead of a shorter error')
-    .action((kind, url, args) => exec(exportDbSchema(kind, parseUrl(url), args), args))
+    .action((kind, url, args) => exec(exportDbSchema(kind, parseDatabaseUrl(url), args), args))
 
 program.parse(process.argv)
 

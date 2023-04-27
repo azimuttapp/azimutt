@@ -1,16 +1,15 @@
 import {ipcMain, IpcMainInvokeEvent} from "electron"
-import {DatabaseUrl, QueryResults} from "../shared";
-import {DbUrl, parseUrl} from "./database-url";
-import * as Postgres from "./postgres";
+import {DatabaseResults, DatabaseUrl, parseDatabaseUrl} from "@azimutt/database-types";
+import * as Postgres from "@azimutt/connector-postgres";
 
 export const setupBridge = (): void => {
     ipcMain.handle('ping', () => {
         console.log('ping')
         return 'pong'
     })
-    ipcMain.handle('databaseQuery', (e: IpcMainInvokeEvent, url: DatabaseUrl, query: string): Promise<QueryResults> => {
+    ipcMain.handle('databaseQuery', (e: IpcMainInvokeEvent, url: DatabaseUrl, query: string): Promise<DatabaseResults> => {
         console.log('databaseQuery', url, query)
-        const parsedUrl: DbUrl = parseUrl(url)
+        const parsedUrl = parseDatabaseUrl(url)
         if (parsedUrl.kind == 'postgres') {
             return Postgres.query(parsedUrl, query).then(res => {
                 return {rows: res.rows}

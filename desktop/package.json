@@ -28,6 +28,9 @@
     "lint": "eslint --ext .ts,.tsx ."
   },
   "dependencies": {
+    "@azimutt/connector-postgres": "file:../libs/connector-postgres",
+    "@azimutt/database-types": "file:../libs/database-types",
+    "@azimutt/shared": "file:../libs/shared",
     "electron-squirrel-startup": "^1.0.0",
     "pg": "^8.10.0",
     "update-electron-app": "^2.0.1"

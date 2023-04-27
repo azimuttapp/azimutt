@@ -49,6 +49,8 @@
     "book": "elm-book src/Components/Book.elm --dir=../backend/priv/static/elm --start-page=book.html --port 4002 -- --output=../backend/priv/static/elm/dist/book.js"
   },
   "dependencies": {
+    "@azimutt/database-types": "file:../libs/database-types",
+    "@azimutt/shared": "file:../libs/shared",
     "@sentry/browser": "^7.46.0",
     "@sentry/tracing": "^7.46.0",
     "canvas-confetti": "^1.6.0",

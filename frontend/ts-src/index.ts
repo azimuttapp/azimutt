@@ -1,3 +1,6 @@
+import * as Sentry from "@sentry/browser";
+import {BrowserTracing} from "@sentry/tracing";
+import {ColumnStats, TableStats} from "@azimutt/database-types";
 import {
     CreateProject,
     CreateProjectTmp,
@@ -35,9 +38,6 @@ import {HtmlId, Platform, ToastLevel, ViewPosition} from "./types/basics";
 import {Env, getEnv} from "./utils/env";
 import {AnyError, formatError} from "./utils/error";
 import * as url from "./utils/url";
-import {ColumnStats, TableStats} from "./types/stats";
-import * as Sentry from "@sentry/browser";
-import {BrowserTracing} from "@sentry/tracing";
 
 const env = getEnv()
 const platform = Utils.getPlatform()
