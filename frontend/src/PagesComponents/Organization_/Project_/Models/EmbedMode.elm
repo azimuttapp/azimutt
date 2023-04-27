@@ -13,7 +13,7 @@ type alias EmbedModeId =
 
 all : List EmbedMode
 all =
-    [ { id = frozen, description = "nothing move, like a image", conf = embedDefault }
+    [ { id = frozen, description = "nothing move, like an image", conf = embedDefault }
     , { id = static, description = "highlight on hover but no move", conf = { embedDefault | hover = True, select = True } }
     , { id = move, description = "can move things but not more", conf = { embedDefault | hover = True, select = True, move = True } }
     , { id = layout, description = "can update the layout", conf = { embedDefault | hover = True, select = True, move = True, layout = True } }
