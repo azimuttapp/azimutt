@@ -38,15 +38,14 @@ defmodule Azimutt.Projects.ProjectFile do
   # Override the persisted filenames:
   def filename(version, {_file, scope}) do
     # version: :original, file: %{file_name: "#{project_name}.json"}, scope: %Project{}
-    res = [Azimutt.config(:s3_folder) || "", "#{scope.id}_#{version}"] |> Path.join()
-    IO.puts("ProjectFile.filename: #{inspect(res)}")
-    res
+    "#{scope.id}_#{version}"
   end
 
   # Override the storage directory:
-  # def storage_dir(version, {file, scope}) do
-  #   "uploads/user/avatars/#{scope.id}"
-  # end
+  def storage_dir(version, {file, scope}) do
+    # "uploads/user/avatars/#{scope.id}"
+    Azimutt.config(:s3_folder) || "uploads"
+  end
 
   # Provide a default URL if there hasn't been a file uploaded
   # def default_url(version, scope) do
