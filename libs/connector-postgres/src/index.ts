@@ -1,6 +1,6 @@
 import {Client, QueryResult} from "pg"
 import {AzimuttSchema, DatabaseUrlParsed} from "@azimutt/database-types";
-import {groupBy, removeUndefined, zip} from "@azimutt/utils";
+import {groupBy, Logger, removeUndefined, zip} from "@azimutt/utils";
 
 export async function query(url: DatabaseUrlParsed, query: string): Promise<QueryResult> {
     return await connect(url, async client => {
@@ -27,7 +27,7 @@ export type PostgresRelationName = string
 export type PostgresTypeName = string
 export type PostgresTableId = string
 
-export async function fetchSchema(url: DatabaseUrlParsed, schema: PostgresSchemaName | undefined, sampleSize: number): Promise<PostgresSchema> {
+export async function fetchSchema(url: DatabaseUrlParsed, schema: PostgresSchemaName | undefined, sampleSize: number, logger: Logger): Promise<PostgresSchema> {
     return await connect(url, async client => {
         const columns = await getColumns(client, schema).then(cols => groupBy(cols, toTableId))
         const columnsByIndex: { [tableId: string]: { [columnIndex: number]: RawColumn } } = Object.keys(columns).reduce((acc, tableId) => ({

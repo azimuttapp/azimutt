@@ -42,16 +42,15 @@
     "prepublish": "npm run build && npm pack"
   },
   "dependencies": {
+    "@azimutt/connector-couchbase": "file:../libs/connector-couchbase",
+    "@azimutt/connector-mongodb": "file:../libs/connector-mongodb",
     "@azimutt/connector-postgres": "file:../libs/connector-postgres",
     "@azimutt/database-types": "file:../libs/database-types",
     "@azimutt/utils": "file:../libs/utils",
     "chalk": "^4.1.2",
     "clear": "^0.1.0",
     "commander": "^10.0.0",
-    "couchbase": "^4.2.0",
-    "figlet": "^1.5.2",
-    "mongodb": "^5.0.0",
-    "pg": "^8.9.0"
+    "figlet": "^1.5.2"
   },
   "devDependencies": {
     "@jest/globals": "^29.4.1",

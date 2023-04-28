@@ -2,18 +2,17 @@
 
 import {Argument, Command} from "commander";
 import chalk from "chalk";
-import {safeParseInt} from "@azimutt/utils";
+import {errorToString, safeParseInt} from "@azimutt/utils";
 import {parseDatabaseUrl} from "@azimutt/database-types";
-import {errorToString} from "./utils/error";
-import {error, log} from "./utils/logger";
 import {exportDbSchema} from "./export";
+import {logger} from "./utils/logger";
 
 const clear = require('clear')
 const figlet = require('figlet')
 // https://github.com/SBoudrias/Inquirer.js
 
 clear()
-log(chalk.hex('#4F46E5').bold(figlet.textSync('Azimutt.app', {horizontalLayout: 'full'})))
+logger.log(chalk.hex('#4F46E5').bold(figlet.textSync('Azimutt.app', {horizontalLayout: 'full'})))
 
 // TODO: `azimutt infer --path ~/my_db` or `azimutt export --url ~/my_db` (no 'protocol://') => recursively list .json files and infer them as a collection
 // TODO: use in-memory H2 to load liquibase & flyway migrations
@@ -47,6 +46,6 @@ if (!process.argv.slice(2).length) {
 
 function exec(res: Promise<void>, args: any) {
     if (!args.stackTrace) {
-        res.catch(e => error(chalk.red('Unexpected error: ' + errorToString(e))))
+        res.catch(e => logger.error('Unexpected error: ' + errorToString(e)))
     }
 }

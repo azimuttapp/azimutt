@@ -1,5 +1,5 @@
 import {describe, expect, test} from "@jest/globals";
-import {schemaFromValue, schemaFromValues, sumType} from "../../src/export/infer";
+import {schemaFromValue, schemaFromValues, sumType} from "../src";
 
 describe('export/infer', () => {
     test('infer primitive schema', () => {

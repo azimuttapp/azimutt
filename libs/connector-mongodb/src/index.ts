@@ -1,23 +1,22 @@
 import {Collection, MongoClient} from "mongodb";
-import {sequence} from "@azimutt/utils";
+import {Logger, sequence} from "@azimutt/utils";
 import {AzimuttSchema, DatabaseUrlParsed} from "@azimutt/database-types";
-import {log} from "../utils/logger";
-import {schemaFromValues, schemaToColumns, ValueSchema} from "./infer";
+import {schemaFromValues, schemaToColumns, ValueSchema} from "@azimutt/json-infer-schema";
 
 export type MongoSchema = { collections: MongoCollection[] }
 export type MongoCollection = { db: MongoDatabaseName, name: MongoCollectionName, schema: ValueSchema, sampleDocs: number, totalDocs: number }
 export type MongoDatabaseName = string
 export type MongoCollectionName = string
 
-export async function fetchSchema(url: DatabaseUrlParsed, databaseName: MongoDatabaseName | undefined, sampleSize: number): Promise<MongoSchema> {
+export async function fetchSchema(url: DatabaseUrlParsed, databaseName: MongoDatabaseName | undefined, sampleSize: number, logger: Logger): Promise<MongoSchema> {
     return await connect(url, async client => {
-        log('Connected to database ...')
+        logger.log('Connected to database ...')
         const databaseNames: MongoDatabaseName[] = databaseName ? [databaseName] : await listDatabases(client)
-        log(databaseName ? `Export for '${databaseName}' database ...` : `Found ${databaseNames.length} databases to export ...`)
+        logger.log(databaseName ? `Export for '${databaseName}' database ...` : `Found ${databaseNames.length} databases to export ...`)
         const collections: Collection[] = (await sequence(databaseNames, dbName => client.db(dbName).collections())).flat()
-        log(`Found ${collections.length} collections to export ...`)
-        const schemas: MongoCollection[] = await sequence(collections, collection => infer(collection, sampleSize))
-        log('✔︎ All collections exported!')
+        logger.log(`Found ${collections.length} collections to export ...`)
+        const schemas: MongoCollection[] = await sequence(collections, collection => infer(collection, sampleSize, logger))
+        logger.log('✔︎ All collections exported!')
         return {collections: schemas}
     })
 }
@@ -50,14 +49,14 @@ async function connect<T>(url: DatabaseUrlParsed, run: (c: MongoClient) => Promi
     }
 }
 
-async function infer(collection: Collection, sampleSize: number): Promise<MongoCollection> {
+async function infer(collection: Collection, sampleSize: number, logger: Logger): Promise<MongoCollection> {
     // FIXME: fetch index informations & more
     // console.log('options', await collection.options()) // empty
     // console.log('indexes', await collection.indexes())
     // console.log('listIndexes', await collection.listIndexes().toArray()) // same result as indexes()
     // console.log('indexInformation', await collection.indexInformation()) // not much
     // console.log('stats', await collection.stats()) // several info
-    log(`Exporting collection ${collection.dbName}.${collection.collectionName} ...`)
+    logger.log(`Exporting collection ${collection.dbName}.${collection.collectionName} ...`)
     const documents = await collection.find({}, {limit: sampleSize}).toArray()
     return {
         db: collection.dbName,
