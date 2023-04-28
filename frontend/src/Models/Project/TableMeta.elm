@@ -1,4 +1,4 @@
-module Models.Project.TableMeta exposing (TableMeta, decode, encode, upsertTags)
+module Models.Project.TableMeta exposing (TableMeta, decode, empty, encode, upsertTags)
 
 import Dict exposing (Dict)
 import Json.Decode as Decode
@@ -14,6 +14,11 @@ type alias TableMeta =
     { tags : List Tag
     , columns : Dict ColumnPathStr ColumnMeta
     }
+
+
+empty : TableMeta
+empty =
+    { tags = [], columns = Dict.empty }
 
 
 upsertTags : Maybe ColumnPath -> List Tag -> Maybe TableMeta -> Maybe TableMeta

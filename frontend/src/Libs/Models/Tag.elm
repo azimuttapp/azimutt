@@ -1,4 +1,4 @@
-module Libs.Models.Tag exposing (Tag, decode, encode, tagsFromString, tagsToString)
+module Libs.Models.Tag exposing (Tag, decode, deprecated, encode, tagsFromString, tagsToString)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
@@ -7,6 +7,12 @@ import Libs.String as String
 
 type alias Tag =
     String
+
+
+deprecated : Tag
+deprecated =
+    -- special tag to add a line-through on tables and columns
+    "deprecated"
 
 
 tagsToString : List Tag -> String

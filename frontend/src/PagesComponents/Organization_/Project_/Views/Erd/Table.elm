@@ -13,13 +13,16 @@ import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Platform as Platform exposing (Platform)
+import Libs.Models.Tag as Tag
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Ned as Ned
 import Models.Position as Position
+import Models.Project.ColumnMeta exposing (ColumnMeta)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.ColumnType as ColumnType
 import Models.Project.CustomTypeValue as CustomTypeValue
 import Models.Project.SchemaName exposing (SchemaName)
+import Models.Project.TableMeta exposing (TableMeta)
 import Models.Size as Size
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
 import PagesComponents.Organization_.Project_.Models exposing (Msg(..), VirtualRelationMsg(..))
@@ -61,14 +64,14 @@ stringToArgs args =
             ( ( Platform.PC, CursorMode.Drag, Conf.schema.empty ), ( ( "", "", 0 ), "" ), ( ( False, False ), ( False, False ) ) )
 
 
-viewTable : ErdConf -> ZoomLevel -> TableArgs -> ErdNotesTable -> ErdTableLayout -> ErdTable -> Html Msg
-viewTable conf zoom args notes layout table =
+viewTable : ErdConf -> ZoomLevel -> TableArgs -> ErdNotesTable -> TableMeta -> ErdTableLayout -> ErdTable -> Html Msg
+viewTable conf zoom args notes meta layout table =
     let
         ( ( platform, cursorMode, defaultSchema ), ( ( openedDropdown, openedPopover, index ), selected ), ( ( isHover, dragging ), ( virtualRelation, useBasicTypes ) ) ) =
             stringToArgs args
 
         ( columns, hiddenColumns ) =
-            table.columns |> Dict.values |> List.map (\c -> buildColumn useBasicTypes notes layout c) |> List.partition (\c -> layout.columns |> ErdColumnProps.member c.path)
+            table.columns |> Dict.values |> List.map (\c -> buildColumn useBasicTypes notes meta layout c) |> List.partition (\c -> layout.columns |> ErdColumnProps.member c.path)
 
         drag : List (Attribute Msg)
         drag =
@@ -97,6 +100,7 @@ viewTable conf zoom args notes layout table =
             , isView = table.view
             , comment = table.comment |> Maybe.map .text
             , notes = notes.table
+            , isDeprecated = meta.tags |> List.member Tag.deprecated
             , columns = layout.columns |> ErdColumnProps.flatten |> List.filterMap (\c -> columns |> List.findBy .path c.path)
             , hiddenColumns = hiddenColumns |> List.sortBy .index
             , dropdown = Just dropdown
@@ -160,8 +164,13 @@ handleTablePointerDown htmlId e =
         Noop "No match on table pointer down"
 
 
-buildColumn : Bool -> ErdNotesTable -> ErdTableLayout -> ErdColumn -> Table.Column
-buildColumn useBasicTypes notes layout column =
+buildColumn : Bool -> ErdNotesTable -> TableMeta -> ErdTableLayout -> ErdColumn -> Table.Column
+buildColumn useBasicTypes notes tableMeta layout column =
+    let
+        columnMeta : Maybe ColumnMeta
+        columnMeta =
+            tableMeta.columns |> ColumnPath.get column.path
+    in
     { index = column.index
     , path = column.path
     , kind =
@@ -191,6 +200,7 @@ buildColumn useBasicTypes notes layout column =
     , uniques = column.uniques |> List.map (\u -> { name = u })
     , indexes = column.indexes |> List.map (\i -> { name = i })
     , checks = column.checks |> List.map (\c -> { name = c })
+    , isDeprecated = (tableMeta.tags |> List.member Tag.deprecated) || (columnMeta |> Maybe.any (.tags >> List.member Tag.deprecated))
     , children =
         column.columns
             |> Maybe.map
@@ -199,7 +209,7 @@ buildColumn useBasicTypes notes layout column =
                         |> ErdColumnProps.find column.path
                         |> Maybe.mapOrElse ErdColumnProps.children []
                         |> List.filterMap (\p -> cols |> Ned.get p.name)
-                        |> List.map (\c -> buildColumn useBasicTypes notes layout c)
+                        |> List.map (\c -> buildColumn useBasicTypes notes tableMeta layout c)
                         |> Table.NestedColumns (cols |> Ned.size)
                 )
     }
