@@ -17,8 +17,7 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Tag as Tag exposing (Tag)
 import Libs.Task as T
 import Models.Project.ColumnId as ColumnId exposing (ColumnId)
-import Models.Project.ColumnName exposing (ColumnName)
-import Models.Project.ColumnPath as ColumnPath
+import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.ColumnStats exposing (ColumnStats)
 import Models.Project.LayoutName exposing (LayoutName)
@@ -84,7 +83,7 @@ type Msg
     | SaveNotes NotesRef Notes Notes
     | EditTags HtmlId (List Tag)
     | EditTagsUpdate String
-    | SaveTags TableId (Maybe ColumnName) (List Tag) (List Tag)
+    | SaveTags TableId (Maybe ColumnPath) (List Tag) (List Tag)
 
 
 
@@ -142,8 +141,8 @@ update noop notesMsg tagsMsg erd msg model =
         EditTagsUpdate content ->
             ( model |> Maybe.map (\m -> { m | editTags = m.editTags |> Maybe.map (\_ -> content) }), Cmd.none )
 
-        SaveTags tableId columnName initialTags updatedTags ->
-            ( model |> Maybe.map (\m -> { m | editTags = Nothing }), TSave tableId columnName initialTags updatedTags |> tagsMsg |> T.send )
+        SaveTags tableId columnPath initialTags updatedTags ->
+            ( model |> Maybe.map (\m -> { m | editTags = Nothing }), TSave tableId columnPath initialTags updatedTags |> tagsMsg |> T.send )
 
 
 setViewM : View -> Maybe Model -> Maybe Model
@@ -335,7 +334,7 @@ viewColumn wrap showTable _ _ loadLayout erd editNotes editTags openedCollapse s
 
         initialTags : List Tag
         initialTags =
-            erd.metadata |> Dict.get model.id.table |> Maybe.andThen (.columns >> Dict.get model.id.column.head) |> Maybe.map .tags |> Maybe.withDefault []
+            erd.metadata |> Dict.get model.id.table |> Maybe.andThen (.columns >> ColumnPath.get model.id.column) |> Maybe.map .tags |> Maybe.withDefault []
 
         tagsModel : Details.TagsModel msg
         tagsModel =
@@ -343,7 +342,7 @@ viewColumn wrap showTable _ _ loadLayout erd editNotes editTags openedCollapse s
             , editing = editTags
             , edit = \id tags -> EditTags id tags |> wrap
             , update = EditTagsUpdate >> wrap
-            , save = Tag.tagsFromString >> SaveTags model.id.table (Just model.id.column.head) initialTags >> wrap
+            , save = Tag.tagsFromString >> SaveTags model.id.table (Just model.id.column) initialTags >> wrap
             }
 
         inLayouts : List LayoutName

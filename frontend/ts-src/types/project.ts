@@ -25,6 +25,8 @@ export type ColumnId = string
 export const ColumnId = z.string()
 export type ColumnName = string
 export const ColumnName = z.string()
+export type ColumnPathStr = string
+export const ColumnPathStr = z.string()
 export type ColumnType = string
 export const ColumnType = z.string()
 export type ColumnValue = string | number | boolean | null | unknown
@@ -350,12 +352,12 @@ export const ColumnMeta = z.object({
 
 export interface TableMeta {
     tags?: Tag[]
-    columns: { [columnName: string]: ColumnMeta }
+    columns: { [column: ColumnPathStr]: ColumnMeta }
 }
 
 export const TableMeta = z.object({
     tags: Tag.array().optional(),
-    columns: z.record(ColumnName, ColumnMeta)
+    columns: z.record(ColumnPathStr, ColumnMeta)
 }).strict()
 
 export interface Memo {
@@ -442,7 +444,7 @@ export interface Project {
     description?: string
     sources: Source[]
     notes?: { [ref: string]: string }
-    metadata?: { [tableId: string]: TableMeta }
+    metadata?: { [table: TableId]: TableMeta }
     usedLayout: LayoutName
     layouts: { [name: LayoutName]: Layout }
     settings?: Settings

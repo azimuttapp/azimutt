@@ -15,7 +15,7 @@ import Models.Project.Column exposing (Column)
 import Models.Project.ColumnIndex exposing (ColumnIndex)
 import Models.Project.ColumnMeta exposing (ColumnMeta)
 import Models.Project.ColumnName exposing (ColumnName)
-import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
+import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath, ColumnPathStr)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.ColumnType exposing (ColumnType)
 import Models.Project.ColumnValue exposing (ColumnValue)
@@ -168,7 +168,7 @@ origin =
 
 tableMeta : Fuzzer TableMeta
 tableMeta =
-    Fuzz.map2 TableMeta (listSmall stringSmall) (dictSmall columnName columnMeta)
+    Fuzz.map2 TableMeta (listSmall stringSmall) (dictSmall columnPathStr columnMeta)
 
 
 columnMeta : Fuzzer ColumnMeta
@@ -279,6 +279,11 @@ columnName =
 columnPath : Fuzzer ColumnPath
 columnPath =
     identifier |> Fuzz.map ColumnPath.fromString
+
+
+columnPathStr : Fuzzer ColumnPathStr
+columnPathStr =
+    columnPath |> Fuzz.map ColumnPath.toString
 
 
 columnType : Fuzzer ColumnType

@@ -1023,7 +1023,7 @@ doc =
                                                     , editing = s.editTags
                                                     , edit = \_ tags -> docSetState { s | editTags = tags |> Tag.tagsToString |> Just }
                                                     , update = \content -> docSetState { s | editTags = s.editTags |> Maybe.map (\_ -> content) }
-                                                    , save = \content -> docSetState { s | metadata = s.metadata |> Dict.update table.item.id (TableMeta.upsertTags Nothing (content |> Tag.tagsFromString) >> Just) }
+                                                    , save = \content -> docSetState { s | metadata = s.metadata |> Dict.update table.item.id (TableMeta.upsertTags Nothing (content |> Tag.tagsFromString)) }
                                                     }
                                                     (docErd.layouts |> Dict.filter (\_ l -> l.tables |> List.memberBy .id table.item.id) |> Dict.keys)
                                                     (table.item.origins |> List.filterZip (\o -> docErd.sources |> List.findBy .id o.id))
@@ -1064,11 +1064,11 @@ doc =
                                                     , update = \content -> docSetState { s | editNotes = s.editNotes |> Maybe.map (\_ -> content) }
                                                     , save = \content -> docSetState { s | columnNotes = s.columnNotes |> Dict.insert (ColumnId.from table.item column.item) content }
                                                     }
-                                                    { tags = s.metadata |> Dict.get table.item.id |> Maybe.andThen (.columns >> Dict.get column.item.path.head) |> Maybe.map .tags |> Maybe.withDefault []
+                                                    { tags = s.metadata |> Dict.get table.item.id |> Maybe.andThen (.columns >> ColumnPath.get column.item.path) |> Maybe.map .tags |> Maybe.withDefault []
                                                     , editing = s.editTags
                                                     , edit = \_ tags -> docSetState { s | editTags = tags |> Tag.tagsToString |> Just }
                                                     , update = \content -> docSetState { s | editTags = s.editTags |> Maybe.map (\_ -> content) }
-                                                    , save = \content -> docSetState { s | metadata = s.metadata |> Dict.update table.item.id (TableMeta.upsertTags (Just column.item.path.head) (content |> Tag.tagsFromString) >> Just) }
+                                                    , save = \content -> docSetState { s | metadata = s.metadata |> Dict.update table.item.id (TableMeta.upsertTags (Just column.item.path) (content |> Tag.tagsFromString)) }
                                                     }
                                                     (docErd.layouts |> Dict.filter (\_ l -> l.tables |> List.memberWith (\t -> t.id == table.item.id && (t.columns |> ErdColumnProps.member column.item.path))) |> Dict.keys)
                                                     (column.item.origins |> List.filterZip (\o -> docErd.sources |> List.findBy .id o.id))

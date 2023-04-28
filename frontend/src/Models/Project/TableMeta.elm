@@ -7,39 +7,37 @@ import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
 import Libs.Models.Tag as Tag exposing (Tag)
 import Models.Project.ColumnMeta as ColumnMeta exposing (ColumnMeta)
-import Models.Project.ColumnName exposing (ColumnName)
+import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath, ColumnPathStr)
 
 
 type alias TableMeta =
     { tags : List Tag
-
-    -- FIXME: use ColumnPath instead of ColumnName
-    , columns : Dict ColumnName ColumnMeta
+    , columns : Dict ColumnPathStr ColumnMeta
     }
 
 
-upsertTags : Maybe ColumnName -> List Tag -> Maybe TableMeta -> TableMeta
+upsertTags : Maybe ColumnPath -> List Tag -> Maybe TableMeta -> Maybe TableMeta
 upsertTags column tags meta =
-    meta |> Maybe.map (updateTags column tags) |> Maybe.withDefault (createTags column tags)
+    meta |> Maybe.map (updateTags column tags) |> Maybe.withDefault (createTags column tags) |> Just
 
 
-createTags : Maybe ColumnName -> List Tag -> TableMeta
+createTags : Maybe ColumnPath -> List Tag -> TableMeta
 createTags column tags =
     column
-        |> Maybe.map (\c -> { tags = [], columns = Dict.fromList [ ( c, { tags = tags } ) ] })
+        |> Maybe.map (\c -> { tags = [], columns = Dict.fromList [ ( c |> ColumnPath.toString, { tags = tags } ) ] })
         |> Maybe.withDefault { tags = tags, columns = Dict.empty }
 
 
-updateTags : Maybe ColumnName -> List Tag -> TableMeta -> TableMeta
+updateTags : Maybe ColumnPath -> List Tag -> TableMeta -> TableMeta
 updateTags column tags meta =
     column
-        |> Maybe.map (\name -> { meta | columns = meta.columns |> updateColumnMetadata name tags })
+        |> Maybe.map (\name -> { meta | columns = meta.columns |> updateColumnMeta name tags })
         |> Maybe.withDefault { meta | tags = tags }
 
 
-updateColumnMetadata : ColumnName -> List Tag -> Dict ColumnName ColumnMeta -> Dict ColumnName ColumnMeta
-updateColumnMetadata name tags metadata =
-    metadata |> Dict.update name (\col -> col |> Maybe.map (\c -> c) |> Maybe.withDefault { tags = tags } |> Just)
+updateColumnMeta : ColumnPath -> List Tag -> Dict ColumnPathStr ColumnMeta -> Dict ColumnPathStr ColumnMeta
+updateColumnMeta column tags metadata =
+    metadata |> Dict.update (column |> ColumnPath.toString) (\col -> col |> Maybe.map (\c -> { c | tags = tags }) |> Maybe.withDefault { tags = tags } |> Just)
 
 
 encode : TableMeta -> Value

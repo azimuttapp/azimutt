@@ -8,6 +8,7 @@ import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.TagsMsg exposing (TagsMsg(..))
 import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirtyCmd)
 import Services.Lenses exposing (mapEditTagsM, mapErdM, mapMetadata, setEditTags)
+import Track
 
 
 type alias Model x =
@@ -33,15 +34,12 @@ handleTags msg model =
                         Cmd.none
 
                     else if tags == [] then
-                        -- Track.notesDeleted model.erd
-                        Cmd.none
+                        Track.tagsDeleted model.erd
 
                     else if initialTags == [] then
-                        -- Track.notesCreated tags model.erd
-                        Cmd.none
+                        Track.tagsCreated tags model.erd
 
                     else
-                        -- Track.notesUpdated tags model.erd
-                        Cmd.none
+                        Track.tagsUpdated tags model.erd
             in
-            ( model |> setEditTags Nothing |> mapErdM (mapMetadata (Dict.update table (TableMeta.upsertTags column tags >> Just))), cmd ) |> setDirtyCmd
+            ( model |> setEditTags Nothing |> mapErdM (mapMetadata (Dict.update table (TableMeta.upsertTags column tags))), cmd ) |> setDirtyCmd
