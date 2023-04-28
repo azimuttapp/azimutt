@@ -57,18 +57,16 @@ viewEditNotes opened erd model =
 
 buildName : Erd -> TableId -> Maybe ColumnPath -> Html msg
 buildName erd table column =
-    column
-        |> Maybe.map
-            (\c ->
-                erd.tables
-                    |> Dict.get table
-                    |> Maybe.andThen (ErdTable.getColumn c)
-                    |> Maybe.map (\_ -> span [] [ Badge.basicFlex Tw.gray [] [ text (ColumnRef.show erd.settings.defaultSchema { table = table, column = c }) ], text " column" ])
-                    |> Maybe.withDefault (text ("unknown column " ++ ColumnRef.show erd.settings.defaultSchema { table = table, column = c }))
-            )
-        |> Maybe.withDefault
-            (erd.tables
+    case column of
+        Nothing ->
+            erd.tables
                 |> Dict.get table
                 |> Maybe.map (\_ -> span [] [ Badge.basicFlex Tw.gray [] [ text (TableId.show erd.settings.defaultSchema table) ], text " table" ])
                 |> Maybe.withDefault (text ("unknown table " ++ TableId.show erd.settings.defaultSchema table))
-            )
+
+        Just c ->
+            erd.tables
+                |> Dict.get table
+                |> Maybe.andThen (ErdTable.getColumn c)
+                |> Maybe.map (\_ -> span [] [ Badge.basicFlex Tw.gray [] [ text (ColumnRef.show erd.settings.defaultSchema { table = table, column = c }) ], text " column" ])
+                |> Maybe.withDefault (text ("unknown column " ++ ColumnRef.show erd.settings.defaultSchema { table = table, column = c }))

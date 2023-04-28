@@ -924,10 +924,8 @@ type alias DocState =
     , currentSchema : Maybe ( Heading SchemaName Never, List ErdTable )
     , currentTable : Maybe (Heading ErdTable ErdTableLayout)
     , currentColumn : Maybe (Heading ErdColumn ErdColumnProps)
-    , tableNotes : Dict TableId Notes
-    , columnNotes : Dict ColumnId Notes
-    , editNotes : Maybe Notes
     , metadata : Metadata
+    , editNotes : Maybe Notes
     , editTags : Maybe String
     }
 
@@ -940,10 +938,16 @@ initDocState =
     , currentSchema = Nothing
     , currentTable = Nothing
     , currentColumn = Nothing
-    , tableNotes = Dict.fromList [ ( ( "", "users" ), "Azimutt notes for **users**" ) ]
-    , columnNotes = Dict.fromList [ ( ( ( "", "users" ), "id" ), "Azimutt notes for **users.id**" ) ]
+    , metadata =
+        Dict.fromList
+            [ ( ( "", "users" )
+              , { notes = Just "Azimutt notes for **users**"
+                , tags = [ "first", "other" ]
+                , columns = Dict.fromList [ ( "id", { notes = Just "Azimutt notes for **users.id**", tags = [] } ) ]
+                }
+              )
+            ]
     , editNotes = Nothing
-    , metadata = Dict.fromList [ ( ( "", "users" ), { notes = Nothing, tags = [ "first", "other" ], columns = Dict.empty } ) ]
     , editTags = Nothing
     }
         |> docSelectColumn { table = ( Conf.schema.empty, "users" ), column = ColumnPath.fromString "id" }
@@ -1017,11 +1021,11 @@ doc =
                                                     s.defaultSchema
                                                     schema
                                                     table
-                                                    { notes = s.tableNotes |> Dict.get table.item.id |> Maybe.withDefault ""
+                                                    { notes = s.metadata |> Metadata.getNotes table.item.id Nothing |> Maybe.withDefault ""
                                                     , editing = s.editNotes
                                                     , edit = \_ content -> docSetState { s | editNotes = Just content }
                                                     , update = \content -> docSetState { s | editNotes = s.editNotes |> Maybe.map (\_ -> content) }
-                                                    , save = \content -> docSetState { s | tableNotes = s.tableNotes |> Dict.insert table.item.id content }
+                                                    , save = \content -> docSetState { s | metadata = s.metadata |> Metadata.putNotes table.item.id Nothing (Just content) }
                                                     }
                                                     { tags = s.metadata |> Dict.get table.item.id |> Maybe.map .tags |> Maybe.withDefault []
                                                     , editing = s.editTags
@@ -1062,11 +1066,11 @@ doc =
                                                     schema
                                                     table
                                                     column
-                                                    { notes = s.columnNotes |> Dict.get (ColumnId.from table.item column.item) |> Maybe.withDefault ""
+                                                    { notes = s.metadata |> Metadata.getNotes table.item.id (Just column.item.path) |> Maybe.withDefault ""
                                                     , editing = s.editNotes
                                                     , edit = \_ content -> docSetState { s | editNotes = Just content }
                                                     , update = \content -> docSetState { s | editNotes = s.editNotes |> Maybe.map (\_ -> content) }
-                                                    , save = \content -> docSetState { s | columnNotes = s.columnNotes |> Dict.insert (ColumnId.from table.item column.item) content }
+                                                    , save = \content -> docSetState { s | metadata = s.metadata |> Metadata.putNotes table.item.id (Just column.item.path) (Just content) }
                                                     }
                                                     { tags = s.metadata |> Dict.get table.item.id |> Maybe.andThen (.columns >> ColumnPath.get column.item.path) |> Maybe.map .tags |> Maybe.withDefault []
                                                     , editing = s.editTags

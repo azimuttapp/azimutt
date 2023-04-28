@@ -318,17 +318,17 @@ viewTable wrap showTable loadLayout erd editNotes editTags openedCollapse stats 
 viewColumn : (Msg -> msg) -> (TableId -> msg) -> (ColumnRef -> msg) -> (ColumnRef -> msg) -> (LayoutName -> msg) -> Erd -> Maybe Notes -> Maybe String -> HtmlId -> Dict ColumnId (Dict SourceIdStr ColumnStats) -> ColumnData -> Html msg
 viewColumn wrap showTable _ _ loadLayout erd editNotes editTags openedCollapse stats model =
     let
-        notes : Notes
-        notes =
+        initialNotes : Notes
+        initialNotes =
             erd.metadata |> Metadata.getNotes model.id.table (Just model.id.column) |> Maybe.withDefault ""
 
         notesModel : Details.NotesModel msg
         notesModel =
-            { notes = notes
+            { notes = initialNotes
             , editing = editNotes
             , edit = \id content -> EditNotes id content |> wrap
             , update = EditNotesUpdate >> wrap
-            , save = SaveNotes model.id.table (Just model.id.column) notes >> wrap
+            , save = SaveNotes model.id.table (Just model.id.column) initialNotes >> wrap
             }
 
         initialTags : List Tag

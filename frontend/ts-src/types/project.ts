@@ -443,7 +443,7 @@ export interface Project {
     name: ProjectName
     description?: string
     sources: Source[]
-    notes?: { [ref: string]: string }
+    notes?: { [ref: string]: string } // legacy property, keep it for retro compatibility
     metadata?: { [table: TableId]: TableMeta }
     usedLayout: LayoutName
     layouts: { [name: LayoutName]: Layout }

@@ -12,7 +12,7 @@ import Libs.Models.Notes as Notes exposing (Notes, NotesKey)
 import Libs.String as String
 import Libs.Time as Time
 import Models.Organization as Organization exposing (Organization)
-import Models.Project.ColumnPath as ColumnPath
+import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.CustomType as CustomType exposing (CustomType)
 import Models.Project.CustomTypeId exposing (CustomTypeId)
 import Models.Project.Layout as Layout exposing (Layout)
@@ -276,14 +276,22 @@ mergeNotesInMetadata notes metadata =
         |> Dict.toList
         |> List.foldl
             (\( key, n ) meta ->
-                case key |> String.split "." of
-                    schema :: table :: [] ->
-                        meta |> Metadata.putNotes ( schema, table ) Nothing (Just n)
-
-                    schema :: table :: column :: [] ->
-                        meta |> Metadata.putNotes ( schema, table ) (Just (ColumnPath.fromString column)) (Just n)
-
-                    _ ->
-                        meta
+                key
+                    |> parseKey
+                    |> Maybe.map (\( table, column ) -> meta |> Metadata.putNotes table column (Just n))
+                    |> Maybe.withDefault meta
             )
             metadata
+
+
+parseKey : NotesKey -> Maybe ( TableId, Maybe ColumnPath )
+parseKey key =
+    case key |> String.split "." of
+        schema :: table :: [] ->
+            Just ( ( schema, table ), Nothing )
+
+        schema :: table :: column :: [] ->
+            Just ( ( schema, table ), Just (ColumnPath.fromString column) )
+
+        _ ->
+            Nothing
