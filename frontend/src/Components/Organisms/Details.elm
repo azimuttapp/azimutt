@@ -511,29 +511,32 @@ viewTags model =
         inputId =
             "edit-tags"
     in
-    model.editing
-        |> Maybe.map
-            (\v ->
-                input
-                    [ type_ "text"
-                    , name inputId
-                    , id inputId
-                    , value v
-                    , onInput model.update
-                    , onBlur (model.save v)
-                    , autofocus True
-                    , placeholder "Write tags"
-                    , class "block w-full sm:text-sm border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
-                    ]
-                    []
-            )
-        |> Maybe.withDefault
-            (if model.tags |> List.isEmpty then
-                div [ onClick (model.edit inputId model.tags), class "w-full text-sm text-gray-400 italic underline cursor-pointer" ] [ text "No tags" ]
+    div [ class "mt-1 flex flex-row" ]
+        [ Icon.outline Icons.tags "w-4 opacity-50 mr-1" |> Tooltip.r "Azimutt tags"
+        , model.editing
+            |> Maybe.map
+                (\v ->
+                    input
+                        [ type_ "text"
+                        , name inputId
+                        , id inputId
+                        , value v
+                        , onInput model.update
+                        , onBlur (model.save v)
+                        , autofocus True
+                        , placeholder "Write tags, comma separated"
+                        , class "block w-full sm:text-sm border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                        ]
+                        []
+                )
+            |> Maybe.withDefault
+                (if model.tags |> List.isEmpty then
+                    div [ onClick (model.edit inputId model.tags), class "w-full text-sm text-gray-400 italic underline cursor-pointer" ] [ text "No tags" ]
 
-             else
-                div [ onClick (model.edit inputId model.tags), class "w-full cursor-pointer" ] [ text (model.tags |> Tag.tagsToString) ]
-            )
+                 else
+                    div [ onClick (model.edit inputId model.tags), class "w-full cursor-pointer" ] (model.tags |> List.map (\t -> Badge.basic Tw.gray [ class "mr-1" ] [ text t ]))
+                )
+        ]
 
 
 viewMarkdown : String -> Html msg
