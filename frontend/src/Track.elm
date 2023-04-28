@@ -11,6 +11,7 @@ import Json.Encode as Encode
 import Libs.Bool as Bool
 import Libs.Dict as Dict
 import Libs.Maybe as Maybe
+import Libs.Models.Notes exposing (Notes)
 import Libs.Models.Tag exposing (Tag)
 import Libs.Result as Result
 import Models.OrganizationId exposing (OrganizationId)
@@ -23,7 +24,6 @@ import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Models.TrackEvent exposing (TrackClick, TrackEvent)
 import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.FindPathResult exposing (FindPathResult)
-import PagesComponents.Organization_.Project_.Models.Notes exposing (Notes)
 import Ports
 
 

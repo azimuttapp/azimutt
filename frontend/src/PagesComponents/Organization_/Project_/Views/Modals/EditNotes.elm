@@ -10,12 +10,12 @@ import Html.Events exposing (onClick, onInput)
 import Libs.Html.Attributes exposing (ariaHidden, css)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Tw exposing (sm)
+import Models.Project.ColumnPath exposing (ColumnPath)
 import Models.Project.ColumnRef as ColumnRef
-import Models.Project.TableId as TableId
+import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.Organization_.Project_.Models exposing (Msg(..), NotesDialog)
 import PagesComponents.Organization_.Project_.Models.Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable
-import PagesComponents.Organization_.Project_.Models.Notes exposing (NotesRef(..))
 import PagesComponents.Organization_.Project_.Models.NotesMsg exposing (NotesMsg(..))
 
 
@@ -37,7 +37,7 @@ viewEditNotes opened erd model =
         , onBackgroundClick = ModalClose (NotesMsg NCancel)
         }
         [ div [ class "m-4 relative" ]
-            [ label [ for inputId, class "block text-sm font-medium text-gray-700" ] [ text "Notes for ", refAsName erd model.ref ]
+            [ label [ for inputId, class "block text-sm font-medium text-gray-700" ] [ text "Notes for ", buildName erd model.table model.column ]
             , div [ class "mt-2 border border-gray-300 rounded-lg shadow-sm overflow-hidden focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500" ]
                 [ textarea [ rows 4, name inputId, id inputId, value model.notes, onInput (NEdit >> NotesMsg), autofocus True, placeholder "Write your notes...", class "block w-full py-3 border-0 resize-none focus:ring-0 sm:text-sm" ] []
                 , {- Spacer element to match the height of the toolbar -}
@@ -47,7 +47,7 @@ viewEditNotes opened erd model =
                 ]
             , div [ class "absolute bottom-0 inset-x-0 pl-3 pr-2 py-2 flex justify-end" ]
                 [ div [ class "flex flex-shrink-0 flex-row-reverse" ]
-                    [ Button.primary3 Tw.primary [ onClick (model.notes |> NSave model.ref model.initialNotes |> NotesMsg |> ModalClose), css [ "w-full text-base", sm [ "ml-2 w-auto text-sm" ] ] ] [ text "Save" ]
+                    [ Button.primary3 Tw.primary [ onClick (model.notes |> NSave model.table model.column model.initialNotes |> NotesMsg |> ModalClose), css [ "w-full text-base", sm [ "ml-2 w-auto text-sm" ] ] ] [ text "Save" ]
                     , Button.white3 Tw.gray [ onClick (NCancel |> NotesMsg |> ModalClose), css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text "Close" ]
                     ]
                 ]
@@ -55,21 +55,20 @@ viewEditNotes opened erd model =
         ]
 
 
-refAsName : Erd -> NotesRef -> Html msg
-refAsName erd ref =
-    case ref of
-        Invalid v ->
-            text ("invalid ref " ++ v)
-
-        TableNote table ->
-            erd.tables
+buildName : Erd -> TableId -> Maybe ColumnPath -> Html msg
+buildName erd table column =
+    column
+        |> Maybe.map
+            (\c ->
+                erd.tables
+                    |> Dict.get table
+                    |> Maybe.andThen (ErdTable.getColumn c)
+                    |> Maybe.map (\_ -> span [] [ Badge.basicFlex Tw.gray [] [ text (ColumnRef.show erd.settings.defaultSchema { table = table, column = c }) ], text " column" ])
+                    |> Maybe.withDefault (text ("unknown column " ++ ColumnRef.show erd.settings.defaultSchema { table = table, column = c }))
+            )
+        |> Maybe.withDefault
+            (erd.tables
                 |> Dict.get table
                 |> Maybe.map (\_ -> span [] [ Badge.basicFlex Tw.gray [] [ text (TableId.show erd.settings.defaultSchema table) ], text " table" ])
                 |> Maybe.withDefault (text ("unknown table " ++ TableId.show erd.settings.defaultSchema table))
-
-        ColumnNote column ->
-            erd.tables
-                |> Dict.get column.table
-                |> Maybe.andThen (ErdTable.getColumn column.column)
-                |> Maybe.map (\_ -> span [] [ Badge.basicFlex Tw.gray [] [ text (ColumnRef.show erd.settings.defaultSchema column) ], text " column" ])
-                |> Maybe.withDefault (text ("unknown column " ++ ColumnRef.show erd.settings.defaultSchema column))
+            )

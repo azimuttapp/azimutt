@@ -23,6 +23,7 @@ import Libs.Html.Attributes exposing (ariaHidden, ariaLabel, css, role)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.Models.Notes exposing (Notes)
 import Libs.Models.Tag as Tag exposing (Tag)
 import Libs.Nel as Nel exposing (Nel)
 import Libs.String as String
@@ -41,6 +42,7 @@ import Models.Project.ColumnValue exposing (ColumnValue)
 import Models.Project.Index exposing (Index)
 import Models.Project.IndexName exposing (IndexName)
 import Models.Project.LayoutName exposing (LayoutName)
+import Models.Project.Metadata as Metadata exposing (Metadata)
 import Models.Project.Origin exposing (Origin)
 import Models.Project.PrimaryKey exposing (PrimaryKey)
 import Models.Project.SchemaName as SchemaName exposing (SchemaName)
@@ -49,7 +51,7 @@ import Models.Project.SourceId as SourceId exposing (SourceIdStr)
 import Models.Project.SourceKind as SourceKind
 import Models.Project.SourceName exposing (SourceName)
 import Models.Project.TableId as TableId exposing (TableId, TableIdStr)
-import Models.Project.TableMeta as TableMeta exposing (TableMeta)
+import Models.Project.TableMeta exposing (TableMeta)
 import Models.Project.TableStats exposing (TableStats)
 import Models.Project.Unique exposing (Unique)
 import Models.Project.UniqueName exposing (UniqueName)
@@ -63,7 +65,6 @@ import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout expo
 import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.ErdTableProps exposing (ErdTableProps)
-import PagesComponents.Organization_.Project_.Models.Notes exposing (Notes)
 import Services.Lenses exposing (setLayouts, setTables)
 import Simple.Fuzzy
 import Time exposing (Posix)
@@ -926,7 +927,7 @@ type alias DocState =
     , tableNotes : Dict TableId Notes
     , columnNotes : Dict ColumnId Notes
     , editNotes : Maybe Notes
-    , metadata : Dict TableId TableMeta
+    , metadata : Metadata
     , editTags : Maybe String
     }
 
@@ -942,7 +943,7 @@ initDocState =
     , tableNotes = Dict.fromList [ ( ( "", "users" ), "Azimutt notes for **users**" ) ]
     , columnNotes = Dict.fromList [ ( ( ( "", "users" ), "id" ), "Azimutt notes for **users.id**" ) ]
     , editNotes = Nothing
-    , metadata = Dict.fromList [ ( ( "", "users" ), { tags = [ "first", "other" ], columns = Dict.empty } ) ]
+    , metadata = Dict.fromList [ ( ( "", "users" ), { notes = Nothing, tags = [ "first", "other" ], columns = Dict.empty } ) ]
     , editTags = Nothing
     }
         |> docSelectColumn { table = ( Conf.schema.empty, "users" ), column = ColumnPath.fromString "id" }
@@ -1026,7 +1027,7 @@ doc =
                                                     , editing = s.editTags
                                                     , edit = \_ tags -> docSetState { s | editTags = tags |> Tag.tagsToString |> Just }
                                                     , update = \content -> docSetState { s | editTags = s.editTags |> Maybe.map (\_ -> content) }
-                                                    , save = \content -> docSetState { s | metadata = s.metadata |> Dict.update table.item.id (TableMeta.upsertTags Nothing (content |> Tag.tagsFromString)) }
+                                                    , save = \content -> docSetState { s | metadata = s.metadata |> Metadata.putTags table.item.id Nothing (content |> Tag.tagsFromString) }
                                                     }
                                                     (docErd.layouts |> Dict.filter (\_ l -> l.tables |> List.memberBy .id table.item.id) |> Dict.keys)
                                                     (table.item.origins |> List.filterZip (\o -> docErd.sources |> List.findBy .id o.id))
@@ -1071,7 +1072,7 @@ doc =
                                                     , editing = s.editTags
                                                     , edit = \_ tags -> docSetState { s | editTags = tags |> Tag.tagsToString |> Just }
                                                     , update = \content -> docSetState { s | editTags = s.editTags |> Maybe.map (\_ -> content) }
-                                                    , save = \content -> docSetState { s | metadata = s.metadata |> Dict.update table.item.id (TableMeta.upsertTags (Just column.item.path) (content |> Tag.tagsFromString)) }
+                                                    , save = \content -> docSetState { s | metadata = s.metadata |> Metadata.putTags table.item.id (Just column.item.path) (content |> Tag.tagsFromString) }
                                                     }
                                                     (docErd.layouts |> Dict.filter (\_ l -> l.tables |> List.memberWith (\t -> t.id == table.item.id && (t.columns |> ErdColumnProps.member column.item.path))) |> Dict.keys)
                                                     (column.item.origins |> List.filterZip (\o -> docErd.sources |> List.findBy .id o.id))

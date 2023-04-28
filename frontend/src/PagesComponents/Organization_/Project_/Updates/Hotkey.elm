@@ -17,7 +17,6 @@ import PagesComponents.Organization_.Project_.Components.SourceUpdateDialog as S
 import PagesComponents.Organization_.Project_.Models exposing (AmlSidebarMsg(..), FindPathMsg(..), HelpMsg(..), MemoMsg(..), Model, Msg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..), VirtualRelationMsg(..))
 import PagesComponents.Organization_.Project_.Models.Erd as Erd
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
-import PagesComponents.Organization_.Project_.Models.Notes as NoteRef
 import PagesComponents.Organization_.Project_.Models.NotesMsg exposing (NotesMsg(..))
 import PagesComponents.Organization_.Project_.Views.Modals.NewLayout as NewLayout
 import Ports
@@ -131,8 +130,8 @@ handleHotkey _ model hotkey =
 
 notesElement : Model -> Cmd Msg
 notesElement model =
-    (model |> currentColumn |> Maybe.map (NoteRef.fromColumn >> NOpen >> NotesMsg >> T.send))
-        |> Maybe.orElse (model |> currentTable |> Maybe.map (NoteRef.fromTable >> NOpen >> NotesMsg >> T.send))
+    (model |> currentColumn |> Maybe.map (\r -> NOpen r.table (Just r.column) |> NotesMsg |> T.send))
+        |> Maybe.orElse (model |> currentTable |> Maybe.map (\r -> NOpen r Nothing |> NotesMsg |> T.send))
         |> Maybe.withDefault ("Can't find an element to collapse :(" |> Toasts.info |> Toast |> T.send)
 
 

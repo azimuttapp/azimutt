@@ -31,10 +31,8 @@ import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColu
 import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps exposing (ErdColumnProps)
 import PagesComponents.Organization_.Project_.Models.ErdColumnRef exposing (ErdColumnRef)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
-import PagesComponents.Organization_.Project_.Models.ErdNotesTable exposing (ErdNotesTable)
 import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
-import PagesComponents.Organization_.Project_.Models.Notes as NoteRef
 import PagesComponents.Organization_.Project_.Models.NotesMsg exposing (NotesMsg(..))
 import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint(..))
 import PagesComponents.Organization_.Project_.Views.Modals.ColumnContextMenu as ColumnContextMenu
@@ -64,14 +62,14 @@ stringToArgs args =
             ( ( Platform.PC, CursorMode.Drag, Conf.schema.empty ), ( ( "", "", 0 ), "" ), ( ( False, False ), ( False, False ) ) )
 
 
-viewTable : ErdConf -> ZoomLevel -> TableArgs -> ErdNotesTable -> TableMeta -> ErdTableLayout -> ErdTable -> Html Msg
-viewTable conf zoom args notes meta layout table =
+viewTable : ErdConf -> ZoomLevel -> TableArgs -> TableMeta -> ErdTableLayout -> ErdTable -> Html Msg
+viewTable conf zoom args meta layout table =
     let
         ( ( platform, cursorMode, defaultSchema ), ( ( openedDropdown, openedPopover, index ), selected ), ( ( isHover, dragging ), ( virtualRelation, useBasicTypes ) ) ) =
             stringToArgs args
 
         ( columns, hiddenColumns ) =
-            table.columns |> Dict.values |> List.map (\c -> buildColumn useBasicTypes notes meta layout c) |> List.partition (\c -> layout.columns |> ErdColumnProps.member c.path)
+            table.columns |> Dict.values |> List.map (\c -> buildColumn useBasicTypes meta layout c) |> List.partition (\c -> layout.columns |> ErdColumnProps.member c.path)
 
         drag : List (Attribute Msg)
         drag =
@@ -79,7 +77,7 @@ viewTable conf zoom args notes meta layout table =
 
         dropdown : Html Msg
         dropdown =
-            TableContextMenu.view platform conf index table layout notes.table
+            TableContextMenu.view platform conf index table layout meta.notes
 
         ( selectedTable, selectedColumn ) =
             case selected |> String.split "." of
@@ -99,7 +97,7 @@ viewTable conf zoom args notes meta layout table =
             , label = table.label
             , isView = table.view
             , comment = table.comment |> Maybe.map .text
-            , notes = notes.table
+            , notes = meta.notes
             , isDeprecated = meta.tags |> List.member Tag.deprecated
             , columns = layout.columns |> ErdColumnProps.flatten |> List.filterMap (\c -> columns |> List.findBy .path c.path)
             , hiddenColumns = hiddenColumns |> List.sortBy .index
@@ -124,8 +122,8 @@ viewTable conf zoom args notes meta layout table =
                 , columnHover = \col on -> ToggleHoverColumn { table = table.id, column = col } on
                 , columnClick = B.maybe virtualRelation (\col e -> VirtualRelationMsg (VRUpdate { table = table.id, column = col } e.clientPos))
                 , columnDblClick = \col -> { table = table.id, column = col } |> DetailsSidebar.ShowColumn |> DetailsSidebarMsg
-                , columnRightClick = \i col -> ContextMenuCreate (B.cond (layout.columns |> ErdColumnProps.member col) ColumnContextMenu.view ColumnContextMenu.viewHidden platform i { table = table.id, column = col } (notes.columns |> ColumnPath.get col))
-                , notesClick = \col -> NotesMsg (NOpen (col |> Maybe.mapOrElse (\c -> NoteRef.fromColumn { table = table.id, column = c }) (NoteRef.fromTable table.id)))
+                , columnRightClick = \i col -> ContextMenuCreate (B.cond (layout.columns |> ErdColumnProps.member col) ColumnContextMenu.view ColumnContextMenu.viewHidden platform i { table = table.id, column = col } (meta.columns |> ColumnPath.get col |> Maybe.andThen .notes))
+                , notesClick = \col -> NotesMsg (NOpen table.id col)
                 , relationsIconClick =
                     \cols isOut ->
                         Just (B.cond isOut (PlaceRight layout.props.position layout.props.size) (PlaceLeft layout.props.position))
@@ -164,8 +162,8 @@ handleTablePointerDown htmlId e =
         Noop "No match on table pointer down"
 
 
-buildColumn : Bool -> ErdNotesTable -> TableMeta -> ErdTableLayout -> ErdColumn -> Table.Column
-buildColumn useBasicTypes notes tableMeta layout column =
+buildColumn : Bool -> TableMeta -> ErdTableLayout -> ErdColumn -> Table.Column
+buildColumn useBasicTypes tableMeta layout column =
     let
         columnMeta : Maybe ColumnMeta
         columnMeta =
@@ -193,7 +191,7 @@ buildColumn useBasicTypes notes tableMeta layout column =
     , nullable = column.nullable
     , default = column.defaultLabel
     , comment = column.comment |> Maybe.map .text
-    , notes = notes.columns |> ColumnPath.get column.path
+    , notes = columnMeta |> Maybe.andThen .notes
     , isPrimaryKey = column.isPrimaryKey
     , inRelations = column.inRelations |> List.map (buildColumnRelation layout)
     , outRelations = column.outRelations |> List.map (buildColumnRelation layout)
@@ -209,7 +207,7 @@ buildColumn useBasicTypes notes tableMeta layout column =
                         |> ErdColumnProps.find column.path
                         |> Maybe.mapOrElse ErdColumnProps.children []
                         |> List.filterMap (\p -> cols |> Ned.get p.name)
-                        |> List.map (\c -> buildColumn useBasicTypes notes tableMeta layout c)
+                        |> List.map (\c -> buildColumn useBasicTypes tableMeta layout c)
                         |> Table.NestedColumns (cols |> Ned.size)
                 )
     }

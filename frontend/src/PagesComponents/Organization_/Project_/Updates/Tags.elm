@@ -1,7 +1,6 @@
 module PagesComponents.Organization_.Project_.Updates.Tags exposing (Model, handleTags)
 
-import Dict exposing (Dict)
-import Models.Project.TableMeta as TableMeta exposing (TableMeta)
+import Models.Project.Metadata as Metadata
 import PagesComponents.Organization_.Project_.Models exposing (Msg(..))
 import PagesComponents.Organization_.Project_.Models.Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
@@ -42,4 +41,4 @@ handleTags msg model =
                     else
                         Track.tagsUpdated tags model.erd
             in
-            ( model |> setEditTags Nothing |> mapErdM (mapMetadata (Dict.update table (TableMeta.upsertTags column tags))), cmd ) |> setDirtyCmd
+            ( model |> setEditTags Nothing |> mapErdM (mapMetadata (Metadata.putTags table column tags)), cmd ) |> setDirtyCmd

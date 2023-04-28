@@ -10,6 +10,7 @@ import Libs.Models exposing (ZoomDelta)
 import Libs.Models.Delta exposing (Delta)
 import Libs.Models.DragId exposing (DragId)
 import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.Models.Notes exposing (Notes)
 import Libs.Tailwind as Tw exposing (Color)
 import Libs.Task as T
 import Models.Area as Area
@@ -49,7 +50,6 @@ import PagesComponents.Organization_.Project_.Models.FindPathDialog exposing (Fi
 import PagesComponents.Organization_.Project_.Models.HideColumns exposing (HideColumns)
 import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
 import PagesComponents.Organization_.Project_.Models.MemoId exposing (MemoId)
-import PagesComponents.Organization_.Project_.Models.Notes exposing (Notes, NotesRef)
 import PagesComponents.Organization_.Project_.Models.NotesMsg exposing (NotesMsg)
 import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint)
 import PagesComponents.Organization_.Project_.Models.ShowColumns exposing (ShowColumns)
@@ -115,7 +115,7 @@ type alias SearchModel =
 
 
 type alias NotesDialog =
-    { id : HtmlId, ref : NotesRef, initialNotes : Notes, notes : Notes }
+    { id : HtmlId, table : TableId, column : Maybe ColumnPath, initialNotes : Notes, notes : Notes }
 
 
 type alias MemoEdit =

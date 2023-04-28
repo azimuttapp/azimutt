@@ -14,6 +14,7 @@ import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.DatabaseUrl exposing (DatabaseUrl)
 import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.Models.Notes exposing (Notes)
 import Libs.Models.Tag as Tag exposing (Tag)
 import Libs.Task as T
 import Models.Project.ColumnId as ColumnId exposing (ColumnId)
@@ -21,20 +22,18 @@ import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.ColumnStats exposing (ColumnStats)
 import Models.Project.LayoutName exposing (LayoutName)
+import Models.Project.Metadata as Metadata
 import Models.Project.Origin exposing (Origin)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source as Source exposing (Source)
 import Models.Project.SourceId exposing (SourceId, SourceIdStr)
 import Models.Project.TableId as TableId exposing (TableId)
-import Models.Project.TableMeta exposing (TableMeta)
 import Models.Project.TableStats exposing (TableStats)
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn)
 import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps exposing (ErdColumnProps, ErdColumnPropsFlat)
-import PagesComponents.Organization_.Project_.Models.ErdNotes as ErdNotes
 import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
-import PagesComponents.Organization_.Project_.Models.Notes as NotesRef exposing (Notes, NotesRef)
 import PagesComponents.Organization_.Project_.Models.NotesMsg exposing (NotesMsg(..))
 import PagesComponents.Organization_.Project_.Models.TagsMsg exposing (TagsMsg(..))
 import Ports
@@ -80,7 +79,7 @@ type Msg
     | ToggleCollapse HtmlId
     | EditNotes HtmlId Notes
     | EditNotesUpdate Notes
-    | SaveNotes NotesRef Notes Notes
+    | SaveNotes TableId (Maybe ColumnPath) Notes Notes
     | EditTags HtmlId (List Tag)
     | EditTagsUpdate String
     | SaveTags TableId (Maybe ColumnPath) (List Tag) (List Tag)
@@ -132,8 +131,8 @@ update noop notesMsg tagsMsg erd msg model =
         EditNotesUpdate content ->
             ( model |> Maybe.map (\m -> { m | editNotes = m.editNotes |> Maybe.map (\_ -> content) }), Cmd.none )
 
-        SaveNotes ref initialNotes updatedNotes ->
-            ( model |> Maybe.map (\m -> { m | editNotes = Nothing }), NSave ref initialNotes updatedNotes |> notesMsg |> T.send )
+        SaveNotes table column initialNotes updatedNotes ->
+            ( model |> Maybe.map (\m -> { m | editNotes = Nothing }), NSave table column initialNotes updatedNotes |> notesMsg |> T.send )
 
         EditTags id tags ->
             ( model |> Maybe.map (\m -> { m | editTags = tags |> Tag.tagsToString |> Just }), Dom.focus id |> Task.attempt (\_ -> noop "focus-tags-input") )
@@ -277,7 +276,7 @@ viewTable wrap showTable loadLayout erd editNotes editTags openedCollapse stats 
     let
         initialNotes : Notes
         initialNotes =
-            erd.notes |> ErdNotes.getTable model.id |> Maybe.withDefault ""
+            erd.metadata |> Metadata.getNotes model.id Nothing |> Maybe.withDefault ""
 
         notesModel : Details.NotesModel msg
         notesModel =
@@ -285,12 +284,12 @@ viewTable wrap showTable loadLayout erd editNotes editTags openedCollapse stats 
             , editing = editNotes
             , edit = \id content -> EditNotes id content |> wrap
             , update = EditNotesUpdate >> wrap
-            , save = SaveNotes (NotesRef.fromTable model.id) initialNotes >> wrap
+            , save = SaveNotes model.id Nothing initialNotes >> wrap
             }
 
         initialTags : List Tag
         initialTags =
-            erd.metadata |> Dict.get model.id |> Maybe.map .tags |> Maybe.withDefault []
+            erd.metadata |> Metadata.getTags model.id Nothing |> Maybe.withDefault []
 
         tagsModel : Details.TagsModel msg
         tagsModel =
@@ -321,7 +320,7 @@ viewColumn wrap showTable _ _ loadLayout erd editNotes editTags openedCollapse s
     let
         notes : Notes
         notes =
-            erd.notes |> ErdNotes.getColumn model.id |> Maybe.withDefault ""
+            erd.metadata |> Metadata.getNotes model.id.table (Just model.id.column) |> Maybe.withDefault ""
 
         notesModel : Details.NotesModel msg
         notesModel =
@@ -329,12 +328,12 @@ viewColumn wrap showTable _ _ loadLayout erd editNotes editTags openedCollapse s
             , editing = editNotes
             , edit = \id content -> EditNotes id content |> wrap
             , update = EditNotesUpdate >> wrap
-            , save = SaveNotes (NotesRef.fromColumn model.id) notes >> wrap
+            , save = SaveNotes model.id.table (Just model.id.column) notes >> wrap
             }
 
         initialTags : List Tag
         initialTags =
-            erd.metadata |> Dict.get model.id.table |> Maybe.andThen (.columns >> ColumnPath.get model.id.column) |> Maybe.map .tags |> Maybe.withDefault []
+            erd.metadata |> Metadata.getTags model.id.table (Just model.id.column) |> Maybe.withDefault []
 
         tagsModel : Details.TagsModel msg
         tagsModel =
