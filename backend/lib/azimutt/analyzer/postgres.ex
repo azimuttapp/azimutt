@@ -468,19 +468,20 @@ defmodule Azimutt.Analyzer.Postgres do
 
   defp build_relation(relation, column_index_to_name) do
     src_table_id = to_table_id(relation)
-
     ref_table_id = to_table_id(%{table_schema: relation.target_schema, table_name: relation.target_table})
 
     %Schema.Relation{
       name: relation.constraint_name,
-      src: %Schema.TableRef{schema: relation.table_schema, table: relation.table_name},
-      ref: %Schema.TableRef{schema: relation.target_schema, table: relation.target_table},
-      columns:
-        List.zip([
-          relation.columns |> Enum.map(&column_index_to_name.(src_table_id, &1)),
-          relation.target_columns |> Enum.map(&column_index_to_name.(ref_table_id, &1))
-        ])
-        |> Enum.map(fn {src, ref} -> %Schema.ColumnLink{src: src, ref: ref} end)
+      src: %Schema.ColumnRef{
+        schema: relation.table_schema,
+        table: relation.table_name,
+        column: column_index_to_name.(src_table_id, relation.columns |> hd())
+      },
+      ref: %Schema.ColumnRef{
+        schema: relation.target_schema,
+        table: relation.target_table,
+        column: column_index_to_name.(ref_table_id, relation.target_columns |> hd())
+      }
     }
   end
 

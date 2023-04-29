@@ -1,4 +1,4 @@
-module Services.Backend exposing (Error, Sample, SampleSchema, TableColorTweet, blogArticleUrl, blogUrl, createProjectToken, embedUrl, errorStatus, errorToString, getCurrentUser, getDatabaseSchema, getOrganizationsAndProjects, getProjectTokens, getSamples, getTableColorTweet, homeUrl, internal, loginUrl, logoutUrl, organizationBillingUrl, organizationUrl, resourceUrl, revokeProjectToken)
+module Services.Backend exposing (Error, Sample, SampleSchema, TableColorTweet, blogArticleUrl, blogUrl, createProjectToken, embedUrl, errorStatus, errorToString, getCurrentUser, getOrganizationsAndProjects, getProjectTokens, getSamples, getTableColorTweet, homeUrl, internal, loginUrl, logoutUrl, organizationBillingUrl, organizationUrl, resourceUrl, revokeProjectToken)
 
 import Components.Atoms.Icon as Icon exposing (Icon)
 import Either exposing (Either(..))
@@ -11,7 +11,6 @@ import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
 import Libs.Maybe as Maybe
 import Libs.Models exposing (TweetUrl)
-import Libs.Models.DatabaseUrl as DatabaseUrl exposing (DatabaseUrl)
 import Libs.Tailwind exposing (Color, decodeColor)
 import Libs.Time as Time
 import Libs.Url as Url
@@ -179,15 +178,6 @@ revokeProjectToken token project toMsg =
     riskyDelete
         { url = "/api/v1/organizations/" ++ (project |> ProjectInfo.organizationId) ++ "/projects/" ++ project.id ++ "/access-tokens/" ++ token.id
         , expect = expectEmpty toMsg
-        }
-
-
-getDatabaseSchema : DatabaseUrl -> (Result Error String -> msg) -> Cmd msg
-getDatabaseSchema url toMsg =
-    riskyPost
-        { url = "/api/v1/analyzer/schema"
-        , body = [ ( "url", url |> DatabaseUrl.encode ) ] |> Encode.object |> Http.jsonBody
-        , expect = Http.expectStringResponse toMsg handleResponse
         }
 
 

@@ -1,4 +1,12 @@
-import {ColumnId, ColumnRef, ColumnStats, DatabaseUrl, TableId, TableStats} from "@azimutt/database-types";
+import {
+    AzimuttSchema,
+    ColumnId,
+    ColumnRef,
+    ColumnStats,
+    DatabaseUrl,
+    TableId,
+    TableStats
+} from "@azimutt/database-types";
 import {
     Color,
     Delta,
@@ -128,6 +136,8 @@ export type DownloadFile = { kind: 'DownloadFile', filename: FileName, content: 
 export const DownloadFile = z.object({kind: z.literal('DownloadFile'), filename: FileName, content: FileContent}).strict()
 export type GetLocalFile = { kind: 'GetLocalFile', sourceKind: SourceOrigin, file: File }
 export const GetLocalFile = z.object({kind: z.literal('GetLocalFile'), sourceKind: SourceOrigin, file: FileObject}).strict()
+export type GetDatabaseSchema = { kind: 'GetDatabaseSchema', database: DatabaseUrl }
+export const GetDatabaseSchema = z.object({kind: z.literal('GetDatabaseSchema'), database: DatabaseUrl}).strict()
 export type GetTableStats = { kind: 'GetTableStats', source: SourceId, database: DatabaseUrl, table: TableId }
 export const GetTableStats = z.object({kind: z.literal('GetTableStats'), source: SourceId, database: DatabaseUrl, table: TableId}).strict()
 export type GetColumnStats = { kind: 'GetColumnStats', source: SourceId, database: DatabaseUrl, column: ColumnRef }
@@ -144,8 +154,8 @@ export type Fireworks = { kind: 'Fireworks' }
 export const Fireworks = z.object({kind: z.literal('Fireworks')}).strict()
 export type Track = { kind: 'Track', event: TrackEvent }
 export const Track = z.object({kind: z.literal('Track'), event: TrackEvent}).strict()
-export type ElmMsg = Click | MouseDown | Focus | Blur | ScrollTo | Fullscreen | SetMeta | AutofocusWithin | Toast | GetProject | CreateProjectTmp | UpdateProjectTmp | CreateProject | UpdateProject | MoveProjectTo | DeleteProject | ProjectDirty | DownloadFile | GetLocalFile | GetTableStats | GetColumnStats | ObserveSizes | ListenKeys | Confetti | ConfettiPride | Fireworks | Track
-export const ElmMsg = z.discriminatedUnion('kind', [Click, MouseDown, Focus, Blur, ScrollTo, Fullscreen, SetMeta, AutofocusWithin, Toast, GetProject, CreateProjectTmp, UpdateProjectTmp, CreateProject, UpdateProject, MoveProjectTo, DeleteProject, ProjectDirty, DownloadFile, GetLocalFile, GetTableStats, GetColumnStats, ObserveSizes, ListenKeys, Confetti, ConfettiPride, Fireworks, Track])
+export type ElmMsg = Click | MouseDown | Focus | Blur | ScrollTo | Fullscreen | SetMeta | AutofocusWithin | Toast | GetProject | CreateProjectTmp | UpdateProjectTmp | CreateProject | UpdateProject | MoveProjectTo | DeleteProject | ProjectDirty | DownloadFile | GetLocalFile | GetDatabaseSchema | GetTableStats | GetColumnStats | ObserveSizes | ListenKeys | Confetti | ConfettiPride | Fireworks | Track
+export const ElmMsg = z.discriminatedUnion('kind', [Click, MouseDown, Focus, Blur, ScrollTo, Fullscreen, SetMeta, AutofocusWithin, Toast, GetProject, CreateProjectTmp, UpdateProjectTmp, CreateProject, UpdateProject, MoveProjectTo, DeleteProject, ProjectDirty, DownloadFile, GetLocalFile, GetDatabaseSchema, GetTableStats, GetColumnStats, ObserveSizes, ListenKeys, Confetti, ConfettiPride, Fireworks, Track])
 
 
 export type GotSizes = { kind: 'GotSizes', sizes: ElementSize[] }
@@ -156,6 +166,8 @@ export type ProjectDeleted = { kind: 'ProjectDeleted', id: ProjectId }
 export const ProjectDeleted = z.object({kind: z.literal('ProjectDeleted'), id: ProjectId}).strict()
 export type GotLocalFile = { kind: 'GotLocalFile', sourceKind: SourceOrigin, file: File, content: string }
 export const GotLocalFile = z.object({kind: z.literal('GotLocalFile'), sourceKind: SourceOrigin, file: FileObject, content: z.string()}).strict()
+export type GotDatabaseSchema = { kind: 'GotDatabaseSchema', schema: AzimuttSchema }
+export const GotDatabaseSchema = z.object({kind: z.literal('GotDatabaseSchema'), schema: AzimuttSchema}).strict()
 export type GotTableStats = { kind: 'GotTableStats', source: SourceId, stats: TableStats }
 export const GotTableStats = z.object({kind: z.literal('GotTableStats'), source: SourceId, stats: TableStats}).strict()
 export type GotColumnStats = { kind: 'GotColumnStats', source: SourceId, stats: ColumnStats }
@@ -190,5 +202,5 @@ export type GotFitToScreen = { kind: 'GotFitToScreen' }
 export const GotFitToScreen = z.object({kind: z.literal('GotFitToScreen')}).strict()
 export type Error = { kind: 'Error', message: string }
 export const Error = z.object({kind: z.literal('Error'), message: z.string()}).strict()
-export type JsMsg = GotSizes | GotProject | ProjectDeleted | GotLocalFile | GotTableStats | GotColumnStats | GotHotkey | GotKeyHold | GotToast | GotTableShow | GotTableHide | GotTableToggleColumns | GotTablePosition | GotTableMove | GotTableSelect | GotTableColor | GotColumnShow | GotColumnHide | GotColumnMove | GotFitToScreen | Error
-export const JsMsg = z.discriminatedUnion('kind', [GotSizes, GotProject, ProjectDeleted, GotLocalFile, GotTableStats, GotColumnStats, GotHotkey, GotKeyHold, GotToast, GotTableShow, GotTableHide, GotTableToggleColumns, GotTablePosition, GotTableMove, GotTableSelect, GotTableColor, GotColumnShow, GotColumnHide, GotColumnMove, GotFitToScreen, Error])
+export type JsMsg = GotSizes | GotProject | ProjectDeleted | GotLocalFile | GotDatabaseSchema | GotTableStats | GotColumnStats | GotHotkey | GotKeyHold | GotToast | GotTableShow | GotTableHide | GotTableToggleColumns | GotTablePosition | GotTableMove | GotTableSelect | GotTableColor | GotColumnShow | GotColumnHide | GotColumnMove | GotFitToScreen | Error
+export const JsMsg = z.discriminatedUnion('kind', [GotSizes, GotProject, ProjectDeleted, GotLocalFile, GotDatabaseSchema, GotTableStats, GotColumnStats, GotHotkey, GotKeyHold, GotToast, GotTableShow, GotTableHide, GotTableToggleColumns, GotTablePosition, GotTableMove, GotTableSelect, GotTableColor, GotColumnShow, GotColumnHide, GotColumnMove, GotFitToScreen, Error])

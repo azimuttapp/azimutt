@@ -102,6 +102,9 @@ handleJsMessage req urlOrganization msg model =
                 req
             )
 
+        GotDatabaseSchema schema ->
+            ( model, schema |> DatabaseSource.GotSchema |> DatabaseSourceMsg |> T.send )
+
         GotToast level message ->
             ( model, message |> Toasts.create level |> Toast |> T.send )
 

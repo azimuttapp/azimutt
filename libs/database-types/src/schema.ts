@@ -27,37 +27,98 @@ export function parseTableId(id: TableId): { schema: SchemaName, table: TableNam
     return parts.length === 2 ? {schema: parts[0], table: parts[1]} : {schema: '', table: id}
 }
 
-export type AzimuttSchema = { tables: AzimuttTable[], relations: AzimuttRelation[], types?: AzimuttType[] }
+// use `.nullish()` instead of `.optional()` because the backend return nulls :/
+export type AzimuttSchemaName = string
+export const AzimuttSchemaName = z.string()
+export type AzimuttTableName = string
+export const AzimuttTableName = z.string()
+export type AzimuttColumnName = string
+export const AzimuttColumnName = z.string()
+export type AzimuttColumnType = string
+export const AzimuttColumnType = z.string()
+export type AzimuttColumnValue = string
+export const AzimuttColumnValue = z.string()
+export type AzimuttPrimaryKey = { name?: string | null, columns: AzimuttColumnName[] }
+export const AzimuttPrimaryKey = z.object({name: z.string().nullish(), columns: AzimuttColumnName.array()}).strict()
+export type AzimuttUnique = { name?: string | null, columns: AzimuttColumnName[], definition?: string | null }
+export const AzimuttUnique = z.object({
+    name: z.string().nullish(),
+    columns: AzimuttColumnName.array(),
+    definition: z.string().nullish()
+}).strict()
+export type AzimuttIndex = { name?: string | null, columns: AzimuttColumnName[], definition?: string | null }
+export const AzimuttIndex = z.object({
+    name: z.string().nullish(),
+    columns: AzimuttColumnName.array(),
+    definition: z.string().nullish()
+}).strict()
+export type AzimuttCheck = { name?: string | null, columns: AzimuttColumnName[], predicate?: string | null }
+export const AzimuttCheck = z.object({
+    name: z.string().nullish(),
+    columns: AzimuttColumnName.array(),
+    predicate: z.string().nullish()
+}).strict()
+export type AzimuttColumn = {
+    name: AzimuttColumnName,
+    type: AzimuttColumnType,
+    nullable?: boolean | null,
+    default?: AzimuttColumnValue | null,
+    comment?: string | null
+}
+export const AzimuttColumn = z.object({
+    name: AzimuttColumnName,
+    type: AzimuttColumnType,
+    nullable: z.boolean().nullish(),
+    default: AzimuttColumnValue.nullish(),
+    comment: z.string().nullish()
+}).strict()
 export type AzimuttTable = {
     schema: AzimuttSchemaName,
     table: AzimuttTableName,
     columns: AzimuttColumn[],
-    view?: boolean,
-    primaryKey?: AzimuttPrimaryKey,
-    uniques?: AzimuttUnique[],
-    indexes?: AzimuttIndex[],
-    checks?: AzimuttCheck[],
-    comment?: string
+    view?: boolean | null,
+    primaryKey?: AzimuttPrimaryKey | null,
+    uniques?: AzimuttUnique[] | null,
+    indexes?: AzimuttIndex[] | null,
+    checks?: AzimuttCheck[] | null,
+    comment?: string | null
 }
-export type AzimuttColumn = {
-    name: AzimuttColumnName,
-    type: AzimuttColumnType,
-    nullable?: boolean,
-    default?: AzimuttColumnValue,
-    comment?: string
-}
-export type AzimuttPrimaryKey = { name?: string, columns: AzimuttColumnName[] }
-export type AzimuttUnique = { name?: string, columns: AzimuttColumnName[], definition?: string }
-export type AzimuttIndex = { name?: string, columns: AzimuttColumnName[], definition?: string }
-export type AzimuttCheck = { name?: string, columns: AzimuttColumnName[], predicate?: string }
-export type AzimuttRelation = { name: string, src: AzimuttColumnRef, ref: AzimuttColumnRef }
+export const AzimuttTable = z.object({
+    schema: AzimuttSchemaName,
+    table: AzimuttTableName,
+    columns: AzimuttColumn.array(),
+    view: z.boolean().nullish(),
+    primaryKey: AzimuttPrimaryKey.nullish(),
+    uniques: AzimuttUnique.array().nullish(),
+    indexes: AzimuttIndex.array().nullish(),
+    checks: AzimuttCheck.array().nullish(),
+    comment: z.string().nullish().nullable()
+}).strict()
 export type AzimuttColumnRef = { schema: AzimuttSchemaName, table: AzimuttTableName, column: AzimuttColumnName }
-export type AzimuttType = { schema: AzimuttSchemaName, name: string } & ({ values: string[] } | { definition: string })
-export type AzimuttSchemaName = string
-export type AzimuttTableName = string
-export type AzimuttColumnName = string
-export type AzimuttColumnType = string
-export type AzimuttColumnValue = string
+export const AzimuttColumnRef = z.object({
+    schema: AzimuttSchemaName,
+    table: AzimuttTableName,
+    column: AzimuttColumnName
+}).strict()
+export type AzimuttRelation = { name: string, src: AzimuttColumnRef, ref: AzimuttColumnRef }
+export const AzimuttRelation = z.object({name: z.string(), src: AzimuttColumnRef, ref: AzimuttColumnRef}).strict()
+type AzimuttTypeContent = { values: string[] | null } | { definition: string }
+const AzimuttTypeContent = z.union([
+    z.object({values: z.string().array().nullable()}),
+    z.object({definition: z.string()})
+])
+export type AzimuttType = { schema: AzimuttSchemaName, name: string } & AzimuttTypeContent
+export const AzimuttType = z.object({
+    schema: AzimuttSchemaName,
+    name: z.string()
+}).and(AzimuttTypeContent)
+export type AzimuttSchema = { tables: AzimuttTable[], relations: AzimuttRelation[], types?: AzimuttType[] | null }
+export const AzimuttSchema = z.object({
+    tables: AzimuttTable.array(),
+    relations: AzimuttRelation.array(),
+    types: AzimuttType.array().nullish()
+}).strict()
+
 
 export type TableSampleValues = { [column: string]: ColumnValue }
 export const TableSampleValues = z.record(ColumnValue)

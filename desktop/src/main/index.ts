@@ -18,6 +18,7 @@ const createWindow = (): void => {
     const mainWindow = new BrowserWindow({
         autoHideMenuBar: true,
         webPreferences: {
+            nodeIntegration: false,
             preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
         },
     })

@@ -1,4 +1,4 @@
-import {ColumnRef, ColumnStats, DatabaseUrl, TableId, TableStats} from "@azimutt/database-types";
+import {AzimuttSchema, ColumnRef, ColumnStats, DatabaseUrl, TableId, TableStats} from "@azimutt/database-types";
 import {Logger} from "./logger";
 import {
     buildProjectJson,
@@ -123,6 +123,12 @@ export class Backend {
         const url = this.withXhrHost(`/api/v1/organizations/${o}/projects/${p}`)
         await Http.deleteNoContent(url)
         delete this.projects[p]
+    }
+
+    getDatabaseSchema = async (database: DatabaseUrl): Promise<AzimuttSchema> => {
+        this.logger.debug(`backend.getDatabaseSchema(${database})`)
+        const url = this.withXhrHost(`/api/v1/analyzer/schema`)
+        return Http.postJson(url, {url: database}, AzimuttSchema, 'AzimuttSchema')
     }
 
     getTableStats = async (database: DatabaseUrl, id: TableId): Promise<TableStats> => {

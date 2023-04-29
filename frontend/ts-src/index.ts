@@ -7,6 +7,7 @@ import {
     CreateProjectTmp,
     DeleteProject,
     GetColumnStats,
+    GetDatabaseSchema,
     GetLocalFile,
     GetProject,
     GetTableStats,
@@ -56,7 +57,6 @@ logger.info('Hi there! I hope you are enjoying Azimutt 👍️\n\n' +
     'Use `azimutt.help()` for more details!')
 
 window.azimutt = new AzimuttApi(app, logger)
-console.log('desktop', window.desktop)
 
 /* PWA service worker */
 
@@ -87,6 +87,7 @@ app.on('DeleteProject', deleteProject)
 app.on('ProjectDirty', projectDirty)
 app.on('DownloadFile', msg => Utils.downloadFile(msg.filename, msg.content))
 app.on('GetLocalFile', getLocalFile)
+app.on('GetDatabaseSchema', getDatabaseSchema)
 app.on('GetTableStats', getTableStats)
 app.on('GetColumnStats', getColumnStats)
 app.on('ObserveSizes', observeSizes)
@@ -261,6 +262,16 @@ function getLocalFile(msg: GetLocalFile) {
 }
 
 const tableStatsCache: { [key: string]: TableStats } = {}
+
+function getDatabaseSchema(msg: GetDatabaseSchema) {
+    (window.desktop ?
+            window.desktop.getDatabaseSchema(msg.database) :
+            backend.getDatabaseSchema(msg.database)
+    ).then(
+        schema => app.gotDatabaseSchema(schema),
+        err => err.statusCode !== 404 && reportError(`Can't get schema for ${msg.database}`, err)
+    )
+}
 
 function getTableStats(msg: GetTableStats) {
     const key = `${msg.source}-${msg.table}`

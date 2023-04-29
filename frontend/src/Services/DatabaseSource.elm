@@ -5,12 +5,11 @@ import Components.Molecules.Alert as Alert
 import Components.Molecules.Divider as Divider
 import Components.Molecules.Tooltip as Tooltip
 import Conf
-import DataSources.DatabaseMiner.DatabaseAdapter as DatabaseAdapter
-import DataSources.DatabaseMiner.DatabaseSchema as DatabaseSchema exposing (DatabaseSchema)
+import DataSources.JsonMiner.JsonAdapter as JsonAdapter
+import DataSources.JsonMiner.JsonSchema exposing (JsonSchema)
 import Html exposing (Html, div, img, input, p, span, text)
 import Html.Attributes exposing (class, disabled, id, name, placeholder, src, type_, value)
 import Html.Events exposing (onBlur, onInput)
-import Json.Decode as Decode
 import Libs.Bool as B
 import Libs.Html exposing (bText, extLink, iText)
 import Libs.Html.Attributes exposing (css)
@@ -23,6 +22,8 @@ import Libs.Task as T
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.ProjectInfo exposing (ProjectInfo)
+import Models.SourceInfo as SourceInfo
+import Ports
 import Random
 import Services.Backend as Backend
 import Services.Lenses exposing (mapShow)
@@ -35,8 +36,7 @@ type alias Model msg =
     { source : Maybe Source
     , url : String
     , selectedUrl : Maybe (Result String String)
-    , loadedSchema : Maybe (Result Backend.Error String)
-    , parsedSchema : Maybe (Result Decode.Error DatabaseSchema)
+    , parsedSchema : Maybe JsonSchema
     , parsedSource : Maybe (Result String Source)
     , callback : Result String Source -> msg
     , show : HtmlId
@@ -46,8 +46,7 @@ type alias Model msg =
 type Msg
     = UpdateUrl DatabaseUrl
     | GetSchema DatabaseUrl
-    | GotSchema (Result Backend.Error String)
-    | ParseSource
+    | GotSchema JsonSchema
     | BuildSource SourceId
     | UiToggle HtmlId
 
@@ -66,7 +65,6 @@ init src callback =
     { source = src
     , url = ""
     , selectedUrl = Nothing
-    , loadedSchema = Nothing
     , parsedSchema = Nothing
     , parsedSource = Nothing
     , callback = callback
@@ -90,22 +88,17 @@ update wrap now project msg model =
 
             else
                 ( init model.source model.callback |> (\m -> { m | url = schemaUrl, selectedUrl = Just (Ok schemaUrl) })
-                , Backend.getDatabaseSchema schemaUrl (GotSchema >> wrap)
+                , Ports.getDatabaseSchema schemaUrl
                 )
 
-        GotSchema result ->
-            ( { model | loadedSchema = Just result }, T.send (ParseSource |> wrap) )
-
-        ParseSource ->
-            ( { model | parsedSchema = model.loadedSchema |> Maybe.andThen Result.toMaybe |> Maybe.map (Decode.decodeString DatabaseSchema.decode) }, SourceId.generator |> Random.generate (BuildSource >> wrap) )
+        GotSchema schema ->
+            ( { model | parsedSchema = Just schema }, SourceId.generator |> Random.generate (BuildSource >> wrap) )
 
         BuildSource sourceId ->
             Maybe.map2
-                (\url -> Result.map (DatabaseAdapter.buildSource now (model.source |> Maybe.mapOrElse .id sourceId) url))
+                (\url -> JsonAdapter.buildSource (SourceInfo.database now (model.source |> Maybe.mapOrElse .id sourceId) url) >> Ok)
                 (model.selectedUrl |> Maybe.andThen Result.toMaybe)
-                ((model.parsedSchema |> Maybe.map (Result.mapError Decode.errorToString))
-                    |> Maybe.orElse (model.loadedSchema |> Maybe.map (Result.map (\_ -> DatabaseSchema.empty) >> Result.mapError Backend.errorToString))
-                )
+                model.parsedSchema
                 |> (\source ->
                         ( { model | parsedSource = source }
                         , source
@@ -163,7 +156,7 @@ viewInput wrap htmlId model =
                 , name (htmlId ++ "-url")
                 , placeholder ("ex: " ++ example)
                 , value model.url
-                , disabled ((model.selectedUrl |> Maybe.andThen Result.toMaybe) /= Nothing && model.loadedSchema == Nothing)
+                , disabled ((model.selectedUrl |> Maybe.andThen Result.toMaybe) /= Nothing && model.parsedSchema == Nothing)
                 , onInput (UpdateUrl >> wrap)
                 , onBlur (GetSchema model.url |> wrap)
                 , css [ inputStyles, "flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-r-md sm:text-sm", Tw.disabled [ "bg-slate-50 text-slate-500 border-slate-200" ] ]
@@ -197,15 +190,13 @@ viewParsing wrap model =
                         [ Divider.withLabel
                             ((model.parsedSource |> Maybe.map (\_ -> "Loaded!"))
                                 |> Maybe.orElse (model.parsedSchema |> Maybe.map (\_ -> "Building..."))
-                                |> Maybe.orElse (model.loadedSchema |> Maybe.map (\_ -> "Parsing..."))
                                 |> Maybe.withDefault "Fetching..."
                             )
                         ]
                     , SourceLogs.viewContainer
-                        [ SourceLogs.viewFile UiToggle model.show dbName (model.loadedSchema |> Maybe.andThen Result.toMaybe) |> Html.map wrap
-                        , model.loadedSchema |> Maybe.mapOrElse (Result.mapError Backend.errorToString >> SourceLogs.viewError) (div [] [])
-                        , model.parsedSchema |> Maybe.mapOrElse (SourceLogs.viewParsedSchema UiToggle model.show) (div [] []) |> Html.map wrap
-                        , model.parsedSource |> Maybe.mapOrElse SourceLogs.viewResult (div [] [])
+                        [ SourceLogs.viewFile UiToggle model.show dbName (model.parsedSchema |> Maybe.map (\_ -> "")) |> Html.map wrap
+                        , model.parsedSchema |> Maybe.mapOrElse (Ok >> SourceLogs.viewParsedSchema UiToggle model.show) (div [] []) |> Html.map wrap
+                        , model.parsedSource |> Maybe.mapOrElse (Ok >> SourceLogs.viewResult) (div [] [])
                         ]
                     , if model.parsedSource == Nothing then
                         div [] [ img [ class "mt-1 rounded-l-lg", src (Backend.resourceUrl "/assets/images/exploration.gif") ] [] ]

@@ -1,6 +1,16 @@
 import {errorToString} from "@azimutt/utils";
-import {ColumnId, ColumnStats, TableId, TableStats} from "@azimutt/database-types";
-import {ElementSize, ElmFlags, ElmMsg, ElmRuntime, GetLocalFile, Hotkey, HotkeyId, JsMsg} from "../types/ports";
+import {AzimuttSchema, ColumnId, ColumnStats, TableId, TableStats} from "@azimutt/database-types";
+import {
+    ElementSize,
+    ElmFlags,
+    ElmMsg,
+    ElmRuntime,
+    GetLocalFile,
+    GotDatabaseSchema,
+    Hotkey,
+    HotkeyId,
+    JsMsg
+} from "../types/ports";
 import {Project, ProjectId, SourceId} from "../types/project";
 import {Color, Delta, Position, ToastLevel} from "../types/basics";
 import * as Zod from "../utils/zod";
@@ -31,6 +41,7 @@ export class ElmApp {
         ProjectDirty: [],
         DownloadFile: [],
         GetLocalFile: [],
+        GetDatabaseSchema: [],
         GetTableStats: [],
         GetColumnStats: [],
         ObserveSizes: [],
@@ -81,6 +92,7 @@ export class ElmApp {
         file: msg.file,
         content
     })
+    gotDatabaseSchema = (schema: AzimuttSchema): void => this.send({kind: 'GotDatabaseSchema', schema})
     gotTableStats = (source: SourceId, stats: TableStats): void => this.send({kind: 'GotTableStats', source, stats})
     gotColumnStats = (source: SourceId, stats: ColumnStats): void => this.send({kind: 'GotColumnStats', source, stats})
     gotHotkey = (hotkey: Hotkey & { id: HotkeyId }): void => this.send({kind: 'GotHotkey', id: hotkey.id})
