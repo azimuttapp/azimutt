@@ -32,6 +32,8 @@ export const setupBridge = (): void => {
     ipcMain.handle('columnStats', (e: IpcMainInvokeEvent, url: DatabaseUrl, ref: ColumnRef) => bridge.columnStats(url, ref))
 }
 
+const application = 'azimutt-desktop'
+
 async function ping(): Promise<string> {
     return 'pong'
 }
@@ -39,7 +41,7 @@ async function ping(): Promise<string> {
 async function databaseQuery(url: DatabaseUrl, query: string): Promise<DatabaseResults> {
     const parsedUrl = parseDatabaseUrl(url)
     if (parsedUrl.kind == 'postgres') {
-        const res = await postgres.query(parsedUrl, query)
+        const res = await postgres.query(application, parsedUrl, query)
         return {rows: res.rows}
     } else {
         return Promise.reject(`databaseQuery is not supported for '${parsedUrl.kind || url}'`)
@@ -55,7 +57,7 @@ async function databaseSchema(url: DatabaseUrl): Promise<AzimuttSchema> {
         const rawSchema: mongodb.MongoSchema = await mongodb.getSchema(parsedUrl, undefined, 100, logger)
         return mongodb.formatSchema(rawSchema, 0, true)
     } else if (parsedUrl.kind === 'postgres') {
-        const rawSchema: postgres.PostgresSchema = await postgres.getSchema(parsedUrl, undefined, 100, logger)
+        const rawSchema: postgres.PostgresSchema = await postgres.getSchema(application, parsedUrl, undefined, 100, logger)
         return postgres.formatSchema(rawSchema, 0, true)
     } else {
         return Promise.reject(`databaseSchema is not supported for '${parsedUrl.kind || url}'`)
@@ -65,7 +67,7 @@ async function databaseSchema(url: DatabaseUrl): Promise<AzimuttSchema> {
 async function tableStats(url: DatabaseUrl, table: TableId): Promise<TableStats> {
     const parsedUrl = parseDatabaseUrl(url)
     if (parsedUrl.kind === 'postgres') {
-        return postgres.tableStats(parsedUrl, table)
+        return postgres.tableStats(application, parsedUrl, table)
     } else {
         return Promise.reject(`tableStats is not supported for '${parsedUrl.kind || url}'`)
     }
@@ -74,7 +76,7 @@ async function tableStats(url: DatabaseUrl, table: TableId): Promise<TableStats>
 async function columnStats(url: DatabaseUrl, ref: ColumnRef): Promise<ColumnStats> {
     const parsedUrl = parseDatabaseUrl(url)
     if (parsedUrl.kind === 'postgres') {
-        return postgres.columnStats(parsedUrl, ref)
+        return postgres.columnStats(application, parsedUrl, ref)
     } else {
         return Promise.reject(`columnStats is not supported for '${parsedUrl.kind || url}'`)
     }

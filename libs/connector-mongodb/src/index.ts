@@ -8,7 +8,7 @@ export type MongoCollection = { db: MongoDatabaseName, name: MongoCollectionName
 export type MongoDatabaseName = string
 export type MongoCollectionName = string
 
-export async function getSchema(url: DatabaseUrlParsed, databaseName: MongoDatabaseName | undefined, sampleSize: number, logger: Logger): Promise<MongoSchema> {
+export async function getSchema(application: string, url: DatabaseUrlParsed, databaseName: MongoDatabaseName | undefined, sampleSize: number, logger: Logger): Promise<MongoSchema> {
     return await connect(url, async client => {
         logger.log('Connected to database ...')
         const databaseNames: MongoDatabaseName[] = databaseName ? [databaseName] : await listDatabases(client)

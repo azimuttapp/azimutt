@@ -22,8 +22,8 @@ export type PostgresRelationName = string
 export type PostgresTypeName = string
 export type PostgresTableId = string
 
-export async function getSchema(url: DatabaseUrlParsed, schema: PostgresSchemaName | undefined, sampleSize: number, logger: Logger): Promise<PostgresSchema> {
-    return await connect(url, async client => {
+export async function getSchema(application: string, url: DatabaseUrlParsed, schema: PostgresSchemaName | undefined, sampleSize: number, logger: Logger): Promise<PostgresSchema> {
+    return await connect(application, url, async client => {
         const columns = await getColumns(client, schema).then(cols => groupBy(cols, toTableId))
         const columnsByIndex: { [tableId: string]: { [columnIndex: number]: RawColumn } } = Object.keys(columns).reduce((acc, tableId) => ({
             ...acc,

@@ -7,4 +7,5 @@ export const logger: Logger = {
     warn: (text: string): void => console.warn(text),
     error: (text: string): void => console.error(text)
 }
+export const application = 'azimutt-tests'
 export const url: DatabaseUrlParsed = parseDatabaseUrl('postgresql://postgres:postgres@localhost:5432/azimutt_dev')

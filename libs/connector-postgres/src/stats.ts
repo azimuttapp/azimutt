@@ -11,13 +11,14 @@ import {
     parseTableId,
     SchemaName,
     TableId,
-    TableName, TableSampleValues,
+    TableName,
+    TableSampleValues,
     TableStats
 } from "@azimutt/database-types";
 import {connect} from "./connect";
 
-export async function tableStats(url: DatabaseUrlParsed, id: TableId): Promise<TableStats> {
-    return await connect(url, async client => {
+export async function tableStats(application: string, url: DatabaseUrlParsed, id: TableId): Promise<TableStats> {
+    return await connect(application, url, async client => {
         const {schema, table} = parseTableId(id)
         const sqlTable = `${schema ? `${schema}.` : ''}${table}`
         const rows = await countRows(client, sqlTable)
@@ -26,8 +27,8 @@ export async function tableStats(url: DatabaseUrlParsed, id: TableId): Promise<T
     })
 }
 
-export async function columnStats(url: DatabaseUrlParsed, ref: ColumnRef): Promise<ColumnStats> {
-    return await connect(url, async client => {
+export async function columnStats(application: string, url: DatabaseUrlParsed, ref: ColumnRef): Promise<ColumnStats> {
+    return await connect(application, url, async client => {
         const {schema, table} = parseTableId(ref.table)
         const sqlTable = `${schema ? `${schema}.` : ''}${table}`
         const type = await getColumnType(client, schema, table, ref.column)

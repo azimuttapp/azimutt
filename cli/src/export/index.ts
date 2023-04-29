@@ -42,14 +42,15 @@ async function exportJsonSchema<T extends object>(
     kind: DatabaseKind,
     url: DatabaseUrlParsed,
     opts: Opts,
-    getSchema: (url: DatabaseUrlParsed, schema: string | undefined, sampleSize: number, logger: Logger) => Promise<T>,
+    getSchema: (application: string, url: DatabaseUrlParsed, schema: string | undefined, sampleSize: number, logger: Logger) => Promise<T>,
     formatSchema: (s: T, flatten: number, inferRelations: boolean) => AzimuttSchema,
     name: string
 ) {
     if (opts.format !== 'json') {
         return logger.error(`Unsupported format '${opts.format}' for ${name}, try 'json'.`)
     }
-    const rawSchema = await getSchema(url, opts.database || opts.bucket || opts.schema, opts.sampleSize, logger)
+    const application = 'azimutt-cli'
+    const rawSchema = await getSchema(application, url, opts.database || opts.bucket || opts.schema, opts.sampleSize, logger)
     const azimuttSchema = formatSchema(rawSchema, opts.flatten, opts.inferRelations)
     const schemas: string[] = [...new Set(azimuttSchema.tables.map(t => t.schema))]
     const file = filename(opts.output, url, schemas, opts.format)

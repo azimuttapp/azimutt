@@ -1,5 +1,5 @@
 import {describe, expect, test} from "@jest/globals";
-import {parseDatabaseUrl} from "../src/url";
+import {parseDatabaseUrl} from "../src";
 
 describe('url', () => {
     test('parse couchbase url', () => {
