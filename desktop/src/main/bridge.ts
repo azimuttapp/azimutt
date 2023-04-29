@@ -20,16 +20,16 @@ export const setupBridge = (): void => {
     const bridge: DesktopBridge = {
         versions: {node: (): string => "", chrome: (): string => "", electron: (): string => ""},
         ping: ping,
-        databaseQuery: databaseQuery,
-        databaseSchema: databaseSchema,
-        tableStats: tableStats,
-        columnStats: columnStats
+        queryDatabase: queryDatabase,
+        getDatabaseSchema: getDatabaseSchema,
+        getTableStats: getTableStats,
+        getColumnStats: getColumnStats
     }
     ipcMain.handle('ping', (e: IpcMainInvokeEvent) => bridge.ping())
-    ipcMain.handle('databaseQuery', (e: IpcMainInvokeEvent, url: DatabaseUrl, query: string) => bridge.databaseQuery(url, query))
-    ipcMain.handle('databaseSchema', (e: IpcMainInvokeEvent, url: DatabaseUrl) => bridge.databaseSchema(url))
-    ipcMain.handle('tableStats', (e: IpcMainInvokeEvent, url: DatabaseUrl, table: TableId) => bridge.tableStats(url, table))
-    ipcMain.handle('columnStats', (e: IpcMainInvokeEvent, url: DatabaseUrl, ref: ColumnRef) => bridge.columnStats(url, ref))
+    ipcMain.handle('queryDatabase', (e: IpcMainInvokeEvent, url: DatabaseUrl, query: string) => bridge.queryDatabase(url, query))
+    ipcMain.handle('getDatabaseSchema', (e: IpcMainInvokeEvent, url: DatabaseUrl) => bridge.getDatabaseSchema(url))
+    ipcMain.handle('getTableStats', (e: IpcMainInvokeEvent, url: DatabaseUrl, table: TableId) => bridge.getTableStats(url, table))
+    ipcMain.handle('getColumnStats', (e: IpcMainInvokeEvent, url: DatabaseUrl, ref: ColumnRef) => bridge.getColumnStats(url, ref))
 }
 
 const application = 'azimutt-desktop'
@@ -38,17 +38,17 @@ async function ping(): Promise<string> {
     return 'pong'
 }
 
-async function databaseQuery(url: DatabaseUrl, query: string): Promise<DatabaseResults> {
+async function queryDatabase(url: DatabaseUrl, query: string): Promise<DatabaseResults> {
     const parsedUrl = parseDatabaseUrl(url)
     if (parsedUrl.kind == 'postgres') {
         const res = await postgres.query(application, parsedUrl, query)
         return {rows: res.rows}
     } else {
-        return Promise.reject(`databaseQuery is not supported for '${parsedUrl.kind || url}'`)
+        return Promise.reject(`queryDatabase is not supported for '${parsedUrl.kind || url}'`)
     }
 }
 
-async function databaseSchema(url: DatabaseUrl): Promise<AzimuttSchema> {
+async function getDatabaseSchema(url: DatabaseUrl): Promise<AzimuttSchema> {
     const parsedUrl = parseDatabaseUrl(url)
     if (parsedUrl.kind === 'couchbase') {
         const rawSchema: couchbase.CouchbaseSchema = await couchbase.getSchema(application, parsedUrl, undefined, 100, logger)
@@ -60,24 +60,24 @@ async function databaseSchema(url: DatabaseUrl): Promise<AzimuttSchema> {
         const rawSchema: postgres.PostgresSchema = await postgres.getSchema(application, parsedUrl, undefined, 100, logger)
         return postgres.formatSchema(rawSchema, 0, true)
     } else {
-        return Promise.reject(`databaseSchema is not supported for '${parsedUrl.kind || url}'`)
+        return Promise.reject(`getDatabaseSchema is not supported for '${parsedUrl.kind || url}'`)
     }
 }
 
-async function tableStats(url: DatabaseUrl, table: TableId): Promise<TableStats> {
+async function getTableStats(url: DatabaseUrl, table: TableId): Promise<TableStats> {
     const parsedUrl = parseDatabaseUrl(url)
     if (parsedUrl.kind === 'postgres') {
         return postgres.tableStats(application, parsedUrl, table)
     } else {
-        return Promise.reject(`tableStats is not supported for '${parsedUrl.kind || url}'`)
+        return Promise.reject(`getTableStats is not supported for '${parsedUrl.kind || url}'`)
     }
 }
 
-async function columnStats(url: DatabaseUrl, ref: ColumnRef): Promise<ColumnStats> {
+async function getColumnStats(url: DatabaseUrl, ref: ColumnRef): Promise<ColumnStats> {
     const parsedUrl = parseDatabaseUrl(url)
     if (parsedUrl.kind === 'postgres') {
         return postgres.columnStats(application, parsedUrl, ref)
     } else {
-        return Promise.reject(`columnStats is not supported for '${parsedUrl.kind || url}'`)
+        return Promise.reject(`getColumnStats is not supported for '${parsedUrl.kind || url}'`)
     }
 }

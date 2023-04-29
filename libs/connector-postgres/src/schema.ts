@@ -167,6 +167,8 @@ async function getColumns(client: Client, schema: PostgresSchemaName | undefined
     // https://www.postgresql.org/docs/current/catalog-pg-class.html: catalogs tables and most everything else that has columns or is otherwise similar to a table. This includes indexes (but see also pg_index), sequences (but see also pg_sequence), views, materialized views, composite types, and TOAST tables; see relkind.
     // https://www.postgresql.org/docs/current/catalog-pg-namespace.html: stores namespaces. A namespace is the structure underlying SQL schemas: each namespace can have a separate collection of relations, types, etc. without name conflicts.
     // https://www.postgresql.org/docs/current/catalog-pg-attrdef.html: stores column default values.
+    // system columns have `attnum` < 0, avoid them
+    // deleted columns have `atttypid` at 0, avoid them
     return await client.query<RawColumn>(`
         SELECT n.nspname                            AS table_schema
              , c.relname                            AS table_name
@@ -182,6 +184,7 @@ async function getColumns(client: Client, schema: PostgresSchemaName | undefined
                  LEFT OUTER JOIN pg_attrdef d ON d.adrelid = c.oid AND d.adnum = a.attnum
         WHERE c.relkind IN ('r', 'v', 'm')
           AND a.attnum > 0
+          AND a.atttypid != 0
           AND ${filterSchema('n.nspname', schema)}
         ORDER BY table_schema, table_name, column_index`
     ).then(res => res.rows)
@@ -343,5 +346,5 @@ async function getTypes(client: Client, schema: PostgresSchemaName | undefined):
 }
 
 function filterSchema(field: string, schema: PostgresSchemaName | undefined) {
-    return `${field} ${schema ? `IN ('${schema}')` : `NOT IN ('information_schema', 'pg_catalog')`}`
+    return `${field} ${schema ? `= '${schema}'` : `NOT IN ('information_schema', 'pg_catalog')`}`
 }

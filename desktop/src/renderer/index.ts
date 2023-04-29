@@ -43,23 +43,27 @@ const versions = bridge.versions
 const information = document.getElementById('info')
 information.innerText = `Cette application utilise Chrome (v${versions.chrome()}), Node.js (v${versions.node()}), et Electron (v${versions.electron()})`
 
+const dbUrl = 'postgresql://postgres:postgres@localhost:5432/azimutt_dev'
 setTimeout(() => {
-    const dbUrl = 'postgresql://postgres:postgres@localhost:5432/azimutt_dev'
-    // bridge.ping().then(res => console.log(res))
-
-    // bridge.databaseQuery(dbUrl, 'SELECT * FROM projects LIMIT 1;')
-    //     .then(res => console.log('databaseQuery', res))
-    //     .catch(err => console.error('databaseQuery', err))
-
-    // bridge.databaseSchema(dbUrl)
-    //     .then(res => console.log('databaseSchema', res))
-    //     .catch(err => console.error('databaseSchema', err))
-
-    // bridge.tableStats(dbUrl, 'public.users')
-    //     .then(res => console.log('tableStats', res))
-    //     .catch(err => console.error('tableStats', err))
-
-    bridge.columnStats(dbUrl, {table: 'public.users', column: 'email'})
-        .then(res => console.log('columnStats', res))
-        .catch(err => console.error('columnStats', err))
+    bridge.ping().then(res => console.log(res))
 }, 1000)
+setTimeout(() => {
+    bridge.queryDatabase(dbUrl, 'SELECT * FROM projects LIMIT 1;')
+        .then(res => console.log('queryDatabase', res))
+        .catch(err => console.error('queryDatabase', err))
+}, 2000)
+setTimeout(() => {
+    bridge.getDatabaseSchema(dbUrl)
+        .then(res => console.log('getDatabaseSchema', res))
+        .catch(err => console.error('getDatabaseSchema', err))
+}, 3000)
+setTimeout(() => {
+    bridge.getTableStats(dbUrl, 'public.users')
+        .then(res => console.log('getTableStats', res))
+        .catch(err => console.error('getTableStats', err))
+}, 4000)
+setTimeout(() => {
+    bridge.getColumnStats(dbUrl, {table: 'public.users', column: 'email'})
+        .then(res => console.log('getColumnStats', res))
+        .catch(err => console.error('getColumnStats', err))
+}, 5000)

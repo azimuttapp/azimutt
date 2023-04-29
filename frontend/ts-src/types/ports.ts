@@ -44,6 +44,7 @@ export interface ElmFlags {
     conf: {
         env: Env
         platform: Platform
+        desktop: boolean
     }
 }
 

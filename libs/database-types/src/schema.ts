@@ -17,8 +17,8 @@ export type ColumnName = string
 export const ColumnName = z.string()
 export type ColumnType = string
 export const ColumnType = z.string()
-export type ColumnValue = string | number | boolean | null | unknown
-export const ColumnValue = z.union([z.string(), z.number(), z.boolean(), z.null(), Json])
+export type ColumnValue = string | number | boolean | Date | null | unknown
+export const ColumnValue = z.union([z.string(), z.number(), z.boolean(), z.date(), z.null(), Json])
 export type ColumnRef = { table: TableId, column: ColumnName }
 export const ColumnRef = z.object({table: TableId, column: ColumnName}).strict()
 

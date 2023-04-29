@@ -14,10 +14,10 @@ contextBridge.exposeInMainWorld('desktop', {
         electron: () => process.versions.electron
     },
     ping: () => ipcRenderer.invoke('ping'),
-    databaseQuery: (url: DatabaseUrl, query: string) => ipcRenderer.invoke('databaseQuery', url, query),
-    databaseSchema: (url: DatabaseUrl) => ipcRenderer.invoke('databaseSchema', url),
-    tableStats: (url: DatabaseUrl, table: TableId) => ipcRenderer.invoke('tableStats', url, table),
-    columnStats: (url: DatabaseUrl, column: ColumnRef) => ipcRenderer.invoke('columnStats', url, column)
+    queryDatabase: (url: DatabaseUrl, query: string) => ipcRenderer.invoke('queryDatabase', url, query),
+    getDatabaseSchema: (url: DatabaseUrl) => ipcRenderer.invoke('getDatabaseSchema', url),
+    getTableStats: (url: DatabaseUrl, table: TableId) => ipcRenderer.invoke('getTableStats', url, table),
+    getColumnStats: (url: DatabaseUrl, column: ColumnRef) => ipcRenderer.invoke('getColumnStats', url, column)
 } as DesktopBridge)
 
 window.addEventListener('DOMContentLoaded', () => {

@@ -42,7 +42,7 @@ import * as url from "./utils/url";
 const env = getEnv()
 const platform = Utils.getPlatform()
 const logger = new ConsoleLogger(env)
-const flags = {now: Date.now(), conf: {env, platform}}
+const flags = {now: Date.now(), conf: {env, platform, desktop: !!window.desktop}}
 logger.debug('flags', flags)
 const app = ElmApp.init(flags, logger)
 const storage = new Storage(logger)
@@ -267,7 +267,10 @@ function getTableStats(msg: GetTableStats) {
     if (tableStatsCache[key]) {
         app.gotTableStats(msg.source, tableStatsCache[key])
     } else {
-        backend.getTableStats(msg.database, msg.table).then(
+        (window.desktop ?
+            window.desktop.getTableStats(msg.database, msg.table) :
+            backend.getTableStats(msg.database, msg.table)
+        ).then(
             stats => app.gotTableStats(msg.source, tableStatsCache[key] = stats),
             err => err.statusCode !== 404 && reportError(`Can't get stats for ${msg.table}`, err)
         )
@@ -281,7 +284,10 @@ function getColumnStats(msg: GetColumnStats) {
     if (columnStatsCache[key]) {
         app.gotColumnStats(msg.source, columnStatsCache[key])
     } else {
-        backend.getColumnStats(msg.database, msg.column).then(
+        (window.desktop ?
+            window.desktop.getColumnStats(msg.database, msg.column) :
+            backend.getColumnStats(msg.database, msg.column)
+        ).then(
             stats => app.gotColumnStats(msg.source, columnStatsCache[key] = stats),
             err => err.statusCode !== 404 && reportError(`Can't get stats for ${msg.column}`, err)
         )
