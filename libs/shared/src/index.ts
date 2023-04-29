@@ -1,8 +1,8 @@
 import {
+    AzimuttSchema,
     ColumnRef,
     ColumnStats,
     DatabaseResults,
-    DatabaseSchema,
     DatabaseUrl,
     TableId,
     TableStats
@@ -16,7 +16,7 @@ export type DesktopBridge = {
     }
     ping: () => Promise<string>
     databaseQuery: (url: DatabaseUrl, query: string) => Promise<DatabaseResults>
-    databaseSchema: (url: DatabaseUrl) => Promise<DatabaseSchema>
+    databaseSchema: (url: DatabaseUrl) => Promise<AzimuttSchema>
     tableStats: (url: DatabaseUrl, table: TableId) => Promise<TableStats>
     columnStats: (url: DatabaseUrl, column: ColumnRef) => Promise<ColumnStats>
 }

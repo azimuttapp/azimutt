@@ -24,13 +24,13 @@ export async function exportDbSchema(kind: DatabaseKind, url: DatabaseUrlParsed,
     if (kind !== url.kind) {
         logger.warn(`${kind} not recognized from url (got ${JSON.stringify(url.kind)}), will try anyway but expect some errors...`)
     }
-    if (kind === 'mongodb') {
-        await exportJsonSchema(kind, url, opts, mongodb.fetchSchema, mongodb.transformSchema, 'MongoDB')
-    } else if (kind === 'couchbase') {
-        await exportJsonSchema(kind, url, opts, couchbase.fetchSchema, couchbase.transformSchema, 'Couchbase')
+    if (kind === 'couchbase') {
+        await exportJsonSchema(kind, url, opts, couchbase.getSchema, couchbase.formatSchema, 'Couchbase')
+    } else if (kind === 'mongodb') {
+        await exportJsonSchema(kind, url, opts, mongodb.getSchema, mongodb.formatSchema, 'MongoDB')
     } else if (kind === 'postgres') {
         // TODO handle 'sql' format using pg_dump
-        await exportJsonSchema(kind, url, opts, postgres.fetchSchema, postgres.transformSchema, 'PostgreSQL')
+        await exportJsonSchema(kind, url, opts, postgres.getSchema, postgres.formatSchema, 'PostgreSQL')
     } else {
         logger.log('')
         logger.error(`Source kind '${kind}' is not supported :(`)
@@ -42,15 +42,15 @@ async function exportJsonSchema<T extends object>(
     kind: DatabaseKind,
     url: DatabaseUrlParsed,
     opts: Opts,
-    fetchSchema: (url: DatabaseUrlParsed, schema: string | undefined, sampleSize: number, logger: Logger) => Promise<T>,
-    transformSchema: (s: T, flatten: number, inferRelations: boolean) => AzimuttSchema,
+    getSchema: (url: DatabaseUrlParsed, schema: string | undefined, sampleSize: number, logger: Logger) => Promise<T>,
+    formatSchema: (s: T, flatten: number, inferRelations: boolean) => AzimuttSchema,
     name: string
 ) {
     if (opts.format !== 'json') {
         return logger.error(`Unsupported format '${opts.format}' for ${name}, try 'json'.`)
     }
-    const rawSchema = await fetchSchema(url, opts.database || opts.bucket || opts.schema, opts.sampleSize, logger)
-    const azimuttSchema = transformSchema(rawSchema, opts.flatten, opts.inferRelations)
+    const rawSchema = await getSchema(url, opts.database || opts.bucket || opts.schema, opts.sampleSize, logger)
+    const azimuttSchema = formatSchema(rawSchema, opts.flatten, opts.inferRelations)
     const schemas: string[] = [...new Set(azimuttSchema.tables.map(t => t.schema))]
     const file = filename(opts.output, url, schemas, opts.format)
     logger.log(`Writing schema to ${file} file ...`)

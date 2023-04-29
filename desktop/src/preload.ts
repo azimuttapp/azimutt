@@ -15,9 +15,9 @@ contextBridge.exposeInMainWorld('desktop', {
     },
     ping: () => ipcRenderer.invoke('ping'),
     databaseQuery: (url: DatabaseUrl, query: string) => ipcRenderer.invoke('databaseQuery', url, query),
-    databaseSchema: (url: DatabaseUrl) => Promise.reject('not implemented'),
-    tableStats: (url: DatabaseUrl, table: TableId) => Promise.reject('not implemented'),
-    columnStats: (url: DatabaseUrl, column: ColumnRef) => Promise.reject('not implemented')
+    databaseSchema: (url: DatabaseUrl) => ipcRenderer.invoke('databaseSchema', url),
+    tableStats: (url: DatabaseUrl, table: TableId) => ipcRenderer.invoke('tableStats', url, table),
+    columnStats: (url: DatabaseUrl, column: ColumnRef) => ipcRenderer.invoke('columnStats', url, column)
 } as DesktopBridge)
 
 window.addEventListener('DOMContentLoaded', () => {

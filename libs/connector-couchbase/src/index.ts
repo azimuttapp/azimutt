@@ -9,7 +9,7 @@ export type CouchbaseBucketName = string
 export type CouchbaseScopeName = string
 export type CouchbaseCollectionName = string
 
-export async function fetchSchema(url: DatabaseUrlParsed, bucketName: CouchbaseBucketName | undefined, sampleSize: number, logger: Logger): Promise<CouchbaseSchema> {
+export async function getSchema(url: DatabaseUrlParsed, bucketName: CouchbaseBucketName | undefined, sampleSize: number, logger: Logger): Promise<CouchbaseSchema> {
     return connect(url, async cluster => {
         logger.log('Connected to cluster ...')
         const bucketNames: CouchbaseBucketName[] = bucketName ? [bucketName] : await listBuckets(cluster)
@@ -30,7 +30,7 @@ export async function fetchSchema(url: DatabaseUrlParsed, bucketName: CouchbaseB
     })
 }
 
-export function transformSchema(schema: CouchbaseSchema, flatten: number, inferRelations: boolean): AzimuttSchema {
+export function formatSchema(schema: CouchbaseSchema, flatten: number, inferRelations: boolean): AzimuttSchema {
     // FIXME: handle inferRelations
     const tables = schema.collections.map(c => ({
         schema: c.bucket,

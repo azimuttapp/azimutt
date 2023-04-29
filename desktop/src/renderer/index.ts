@@ -43,8 +43,25 @@ const versions = bridge.versions
 const information = document.getElementById('info')
 information.innerText = `Cette application utilise Chrome (v${versions.chrome()}), Node.js (v${versions.node()}), et Electron (v${versions.electron()})`
 
-setTimeout(() => bridge.ping().then(res => console.log(res)), 1000)
+setTimeout(() => {
+    // bridge.ping().then(res => console.log(res))
 
-bridge.databaseQuery('postgresql://postgres:postgres@localhost:5432/azimutt_dev', 'SELECT * FROM projects LIMIT 1;')
-    .then(res => console.log('databaseQuery', res))
-    .catch(err => console.error('databaseQuery', err))
+    // bridge.databaseQuery('postgresql://postgres:postgres@localhost:5432/azimutt_dev', 'SELECT * FROM projects LIMIT 1;')
+    //     .then(res => console.log('databaseQuery', res))
+    //     .catch(err => console.error('databaseQuery', err))
+
+    bridge.databaseSchema('postgresql://postgres:postgres@localhost:5432/azimutt_dev')
+        .then(res => console.log('databaseSchema', res))
+        .catch(err => console.error('databaseSchema', err))
+
+    // bridge.tableStats('postgresql://postgres:postgres@localhost:5432/azimutt_dev', 'public.users')
+    //     .then(res => console.log('tableStats', res))
+    //     .catch(err => console.error('tableStats', err))
+
+    // bridge.columnStats('postgresql://postgres:postgres@localhost:5432/azimutt_dev', {
+    //     table: 'public.users',
+    //     column: 'email'
+    // })
+    //     .then(res => console.log('columnStats', res))
+    //     .catch(err => console.error('columnStats', err))
+}, 1000)

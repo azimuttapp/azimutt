@@ -31,8 +31,8 @@ Get the help simply by running the CLI (`npx azimutt`) or for a specific command
 
 Start with `npm run init` to install dependencies and set up the CLI, then you have:
 
-- `npm run exec` to compile and launch the CLI (use `-- args` for CLI args, ex: `npm run exec -- --url mongodb://mongodb0.example.com:27017`), or `npm run build && node lib/index.js`
-- `npm run start` to launch it with live reaload (same, use `-- args` to pass arguments to the CLI)
+- `npm run exec` to compile and launch the CLI (use `-- args` for CLI args, ex: `npm run exec -- export postgres postgresql://postgres:postgres@localhost:5432/azimutt_dev`), or `npm run build && node lib/index.js`
+- `npm run start` to launch it with live reload (same, use `-- args` to pass arguments to the CLI)
 - `npm run test` to launch tests
 
 ## Publish

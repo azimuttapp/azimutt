@@ -8,7 +8,7 @@ export type MongoCollection = { db: MongoDatabaseName, name: MongoCollectionName
 export type MongoDatabaseName = string
 export type MongoCollectionName = string
 
-export async function fetchSchema(url: DatabaseUrlParsed, databaseName: MongoDatabaseName | undefined, sampleSize: number, logger: Logger): Promise<MongoSchema> {
+export async function getSchema(url: DatabaseUrlParsed, databaseName: MongoDatabaseName | undefined, sampleSize: number, logger: Logger): Promise<MongoSchema> {
     return await connect(url, async client => {
         logger.log('Connected to database ...')
         const databaseNames: MongoDatabaseName[] = databaseName ? [databaseName] : await listDatabases(client)
@@ -21,7 +21,7 @@ export async function fetchSchema(url: DatabaseUrlParsed, databaseName: MongoDat
     })
 }
 
-export function transformSchema(schema: MongoSchema, flatten: number, inferRelations: boolean): AzimuttSchema {
+export function formatSchema(schema: MongoSchema, flatten: number, inferRelations: boolean): AzimuttSchema {
     // FIXME: handle inferRelations
     const tables = schema.collections.map(c => ({
         schema: c.db,
