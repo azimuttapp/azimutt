@@ -1,3 +1,4 @@
+# same features than libs/connector-postgres/src/index.ts
 defmodule Azimutt.Analyzer.Postgres do
   @moduledoc "Analyzer implementation for PostgreSQL"
   use TypedStruct

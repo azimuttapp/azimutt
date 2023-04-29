@@ -1,10 +1,10 @@
+import {errorToString} from "@azimutt/utils";
 import {ColumnId, ColumnStats, TableId, TableStats} from "@azimutt/database-types";
 import {ElementSize, ElmFlags, ElmMsg, ElmRuntime, GetLocalFile, Hotkey, HotkeyId, JsMsg} from "../types/ports";
 import {Project, ProjectId, SourceId} from "../types/project";
 import {Color, Delta, Position, ToastLevel} from "../types/basics";
-import {Logger} from "./logger";
 import * as Zod from "../utils/zod";
-import {formatError} from "../utils/error";
+import {Logger} from "./logger";
 
 export class ElmApp {
     static init(flags: ElmFlags, logger: Logger) {
@@ -58,7 +58,7 @@ export class ElmApp {
                     }
                 }, 100)
             } catch (e) {
-                this.toast(ToastLevel.enum.error, formatError(e))
+                this.toast(ToastLevel.enum.error, errorToString(e))
             }
         })
     }
@@ -104,7 +104,7 @@ export class ElmApp {
             const valid: JsMsg = Zod.validate(msg, JsMsg, `JsMsg[${msg.kind}]`)
             this.elm.ports?.jsToElm.send(valid)
         } catch (e) {
-            this.toast(ToastLevel.enum.error, formatError(e))
+            this.toast(ToastLevel.enum.error, errorToString(e))
         }
     }
 }

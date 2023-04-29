@@ -1,4 +1,4 @@
-import {sequence, sequenceSafe, successes} from "./promise";
+import {sequence, sequenceSafe, successes} from "../src";
 
 describe('promise', () => {
     test('sequence', async () => {

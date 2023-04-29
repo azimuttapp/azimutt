@@ -1,5 +1,6 @@
 import * as Sentry from "@sentry/browser";
 import {BrowserTracing} from "@sentry/tracing";
+import {AnyError, errorToString} from "@azimutt/utils";
 import {ColumnStats, TableStats} from "@azimutt/database-types";
 import {
     CreateProject,
@@ -36,7 +37,6 @@ import {Backend} from "./services/backend";
 import * as Uuid from "./types/uuid";
 import {HtmlId, Platform, ToastLevel, ViewPosition} from "./types/basics";
 import {Env, getEnv} from "./utils/env";
-import {AnyError, formatError} from "./utils/error";
 import * as url from "./utils/url";
 
 const env = getEnv()
@@ -384,7 +384,7 @@ function reportError(label: string, error?: AnyError) {
         app.toast(ToastLevel.enum.error, label)
     } else {
         logger.error(label, error)
-        app.toast(ToastLevel.enum.error, `${label}: ${formatError(error)}`)
+        app.toast(ToastLevel.enum.error, `${label}: ${errorToString(error)}`)
     }
 }
 

@@ -51,6 +51,7 @@
   "dependencies": {
     "@azimutt/database-types": "file:../libs/database-types",
     "@azimutt/shared": "file:../libs/shared",
+    "@azimutt/utils": "file:../libs/utils",
     "@sentry/browser": "^7.46.0",
     "@sentry/tracing": "^7.46.0",
     "canvas-confetti": "^1.6.0",

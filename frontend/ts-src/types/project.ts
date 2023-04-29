@@ -1,9 +1,9 @@
 import {z} from "zod";
+import {groupBy} from "@azimutt/utils";
 import {ColumnName, ColumnType, SchemaName, TableId, TableName} from "@azimutt/database-types";
 import {Color, Position, Size, Slug, Timestamp} from "./basics";
 import {Uuid} from "./uuid";
 import {Organization} from "./organization";
-import * as array from "../utils/array";
 import * as Zod from "../utils/zod";
 
 export type ProjectId = Uuid
@@ -556,8 +556,8 @@ export function buildProjectJson({organization, id, storage, visibility, created
 
 export function computeStats(p: ProjectJson): ProjectStats {
     // should be the same as `fromProject` in src/Models/ProjectInfo.elm
-    const tables = array.groupBy(p.sources.flatMap(s => s.tables), t => `${t.schema}.${t.table}`)
-    const types = array.groupBy(p.sources.flatMap(s => s.types || []), t => `${t.schema}.${t.name}`)
+    const tables = groupBy(p.sources.flatMap(s => s.tables), t => `${t.schema}.${t.table}`)
+    const types = groupBy(p.sources.flatMap(s => s.types || []), t => `${t.schema}.${t.name}`)
 
     return Zod.validate({
         nbSources: p.sources.length,
