@@ -51,10 +51,10 @@ async function databaseQuery(url: DatabaseUrl, query: string): Promise<DatabaseR
 async function databaseSchema(url: DatabaseUrl): Promise<AzimuttSchema> {
     const parsedUrl = parseDatabaseUrl(url)
     if (parsedUrl.kind === 'couchbase') {
-        const rawSchema: couchbase.CouchbaseSchema = await couchbase.getSchema(parsedUrl, undefined, 100, logger)
+        const rawSchema: couchbase.CouchbaseSchema = await couchbase.getSchema(application, parsedUrl, undefined, 100, logger)
         return couchbase.formatSchema(rawSchema, 0, true)
     } else if (parsedUrl.kind === 'mongodb') {
-        const rawSchema: mongodb.MongoSchema = await mongodb.getSchema(parsedUrl, undefined, 100, logger)
+        const rawSchema: mongodb.MongoSchema = await mongodb.getSchema(application, parsedUrl, undefined, 100, logger)
         return mongodb.formatSchema(rawSchema, 0, true)
     } else if (parsedUrl.kind === 'postgres') {
         const rawSchema: postgres.PostgresSchema = await postgres.getSchema(application, parsedUrl, undefined, 100, logger)
