@@ -154,6 +154,9 @@ export function formatSchema(schema: PostgresSchema, inferRelations: boolean): A
     }
 }
 
+// 👇️ Private functions, some are exported only for tests
+// If you use them, beware of breaking changes!
+
 function toTableId<T extends { table_schema: string, table_name: string }>(value: T): PostgresTableId {
     return `${value.table_schema}.${value.table_name}`
 }

@@ -1,14 +1,14 @@
 import {
     Cluster,
     Collection,
-    connect as open,
+    connect as connectCB,
     PlanningFailureError,
     QueryResult,
     UnambiguousTimeoutError
 } from "couchbase";
 import {errorToString, Logger, sequence} from "@azimutt/utils";
 import {AzimuttSchema, DatabaseUrlParsed} from "@azimutt/database-types";
-import {valuesToSchema, schemaToColumns, ValueSchema} from "@azimutt/json-infer-schema";
+import {schemaToColumns, ValueSchema, valuesToSchema} from "@azimutt/json-infer-schema";
 
 
 export function execQuery(application: string, url: DatabaseUrlParsed, query: string, parameters: any[]): Promise<QueryResult> {
@@ -53,12 +53,16 @@ export function formatSchema(schema: CouchbaseSchema, inferRelations: boolean): 
     return {tables, relations: []}
 }
 
+// 👇️ Private functions, some are exported only for tests
+// If you use them, beware of breaking changes!
+
 async function listBuckets(cluster: Cluster): Promise<CouchbaseBucketName[]> {
-    return (await cluster.buckets().getAllBuckets()).map(b => b.name)
+    const buckets = await cluster.buckets().getAllBuckets()
+    return buckets.map(b => b.name)
 }
 
-async function connect<T>(url: DatabaseUrlParsed, run: (c: Cluster) => Promise<T>): Promise<T> {
-    const cluster: Cluster = await open(url.full, {username: url.user, password: url.pass})
+export async function connect<T>(url: DatabaseUrlParsed, run: (c: Cluster) => Promise<T>): Promise<T> {
+    const cluster: Cluster = await connectCB(url.full, {username: url.user, password: url.pass})
     try {
         return await run(cluster)
     } catch (e) {
@@ -73,8 +77,9 @@ async function infer(collection: Collection, sampleSize: number, logger: Logger)
     const scope = collection.scope
     logger.log(`Exporting collection ${collectionRef(collection)} ...`)
     const documents = await getSampleDocuments(collection, sampleSize, logger)
-    const count = (await scope.query(`SELECT count(*) as count
-                                      FROM ${collection.name}`)).rows[0].count
+    const query = `SELECT count(*) as count FROM ${collection.name}`
+    const res = await scope.query(query)
+    const count = res.rows[0].count
     return {
         bucket: scope.bucket.name,
         scope: scope.name,
@@ -87,9 +92,9 @@ async function infer(collection: Collection, sampleSize: number, logger: Logger)
 
 async function getSampleDocuments(collection: Collection, sampleSize: number, logger: Logger): Promise<any[]> {
     try {
-        return (await collection.scope.query(`SELECT ${collection.name}.*
-                                              FROM ${collection.name}
-                                              LIMIT ${sampleSize}`)).rows
+        const query = `SELECT Meta() as _meta, ${collection.name}.* FROM ${collection.name} LIMIT ${sampleSize}`
+        const res = await collection.scope.query(query)
+        return res.rows
     } catch (e) {
         let err
         if (e instanceof PlanningFailureError) {

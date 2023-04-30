@@ -57,6 +57,9 @@ export function formatSchema(schema: MongodbSchema, inferRelations: boolean): Az
     return {tables, relations: []}
 }
 
+// 👇️ Private functions, some are exported only for tests
+// If you use them, beware of breaking changes!
+
 async function listDatabases(client: MongoClient): Promise<MongodbDatabaseName[]> {
     const adminDb = client.db('admin')
     const dbs = await adminDb.admin().listDatabases()
