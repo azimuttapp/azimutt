@@ -3,7 +3,7 @@ import {DatabaseUrlParsed, parseDatabaseUrl} from "@azimutt/database-types";
 import {application} from "./constants";
 import {getColumnStats, getTableStats} from "../src";
 
-describe('index', () => {
+describe('stats', () => {
     // local url, install db or replace it to test
     const url: DatabaseUrlParsed = parseDatabaseUrl('postgresql://postgres:postgres@localhost:5432/azimutt_dev')
     test.skip('getTableStats', async () => {

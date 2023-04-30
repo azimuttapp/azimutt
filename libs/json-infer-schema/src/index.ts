@@ -37,7 +37,8 @@ export function schemaToColumns(schema: ValueSchema, flatten: number, path: stri
     }
 }
 
-// private functions, some are exported only for tests
+// 👇️ Private functions, some are exported only for tests
+// If you use them, beware of breaking changes!
 
 export function valueToSchema(value: Value): ValueSchema {
     if (Array.isArray(value) && value.length > 0) {

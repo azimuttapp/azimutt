@@ -44,7 +44,9 @@ async function queryDatabase(url: DatabaseUrl, query: string): Promise<DatabaseR
     // Missing file: couchbase_impl, looks like the couchbase binary is not loaded in electron
     // if (parsedUrl.kind === 'couchbase') {
     //     return couchbase.query(application, parsedUrl, query, [])
-    if (parsedUrl.kind == 'postgres') {
+    if (parsedUrl.kind == 'mongodb') {
+        return mongodb.query(application, parsedUrl, query, [])
+    } else if (parsedUrl.kind == 'postgres') {
         return postgres.query(application, parsedUrl, query, [])
     } else {
         return Promise.reject(`queryDatabase is not supported for '${parsedUrl.kind || url}'`)

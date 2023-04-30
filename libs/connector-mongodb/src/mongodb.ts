@@ -1,28 +1,30 @@
 import {Collection, MongoClient} from "mongodb";
 import {Logger, sequence} from "@azimutt/utils";
-import {AzimuttSchema, DatabaseResults, DatabaseUrlParsed} from "@azimutt/database-types";
-import {valuesToSchema, schemaToColumns, ValueSchema} from "@azimutt/json-infer-schema";
+import {AzimuttSchema, DatabaseUrlParsed} from "@azimutt/database-types";
+import {schemaToColumns, ValueSchema, valuesToSchema} from "@azimutt/json-infer-schema";
+
+export type QueryResult = { database: string, collection: string, operation: string, command: object, rows: object[] }
 
 // expects `query` to be in the form of: "db/collection/operation/command"
 // - `db`: name of the database to use
 // - `collection`: name of the collection to use
 // - `operation`: name of the collection method to call (see https://mongodb.github.io/node-mongodb-native/5.3/classes/Collection.html)
 // - `command`: the JSON given as parameter for the operation
-export function execQuery(application: string, url: DatabaseUrlParsed, query: string): Promise<DatabaseResults> {
+export function execQuery(application: string, url: DatabaseUrlParsed, query: string): Promise<QueryResult> {
     return connect(url, async client => {
         // Ugly hack to have a single string query perform any operation on MongoDB 🤮
         // If you see this and have an idea how to improve, please reach out (issue, PR, twitter, email, slack... ^^)
-        const [db, collection, operation, commandStr] = query.split('/').map(v => v.trim())
+        const [database, collection, operation, commandStr] = query.split('/').map(v => v.trim())
         let command
         try {
             command = JSON.parse(commandStr)
         } catch (e) {
             return Promise.reject(`'${commandStr}' is not a valid JSON (expected for the command)`)
         }
-        const coll = client.db(db).collection(collection) as any
+        const coll = client.db(database).collection(collection) as any
         if (typeof coll[operation] === 'function') {
             const rows = await coll[operation](command).toArray()
-            return {db, collection, operation, command, rows}
+            return {database, collection, operation, command, rows}
         } else {
             return Promise.reject(`'${operation}' is not a valid MongoDB operation`)
         }

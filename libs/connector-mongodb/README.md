@@ -4,7 +4,8 @@ This library is able to connect to [MongoDB](https://www.mongodb.com) and extrac
 
 It browses all databases and collections, fetch a sample of documents and then [infer](../json-infer-schema) a schema from them.
 
-This library is made by [Azimutt](https://azimutt.app) to allow people to explore their MongoDB database. It's accessible through the [Desktop app](../../desktop), the [CLI](../../cli) or even the website using a gateway server.
+This library is made by [Azimutt](https://azimutt.app) to allow people to explore their MongoDB database.
+It's accessible through the [Desktop app](../../desktop), the [CLI](https://www.npmjs.com/package/azimutt) or even the website using a gateway server.
 
 **Feel free to use it and even submit PR to improve it:**
 

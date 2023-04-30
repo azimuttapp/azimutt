@@ -39,18 +39,15 @@ export async function getColumnStats(application: string, url: DatabaseUrlParsed
 }
 
 async function countRows(client: Client, sqlTable: string): Promise<number> {
-    const res = await client.query<{ count: number }>(`
-        SELECT count(*)::int
-        FROM ${sqlTable}`)
+    const query = `SELECT count(*)::int FROM ${sqlTable}`
+    const res = await client.query<{ count: number }>(query)
     return res.rows[0].count
 }
 
 async function sampleValues(client: Client, sqlTable: string): Promise<TableSampleValues> {
     // take several raws to minimize empty columns and randomize samples from several raws
-    const res = await client.query(`
-        SELECT *
-        FROM ${sqlTable}
-        LIMIT 10`)
+    const query = `SELECT * FROM ${sqlTable} LIMIT 10`
+    const res = await client.query(query)
     const samples = await Promise.all(res.fields.map(async field => {
         const values = shuffle(res.rows.map(r => r[field.name]).filter(v => !!v))
         const value = await (values.length > 0 ? Promise.resolve(values[0]) : sampleValue(client, sqlTable, field.name))
@@ -61,11 +58,8 @@ async function sampleValues(client: Client, sqlTable: string): Promise<TableSamp
 
 async function sampleValue(client: Client, sqlTable: string, column: ColumnName): Promise<ColumnValue> {
     // select several raws to and then shuffle results to avoid showing samples from the same raw
-    const res = await client.query<{ value: any }>(`
-        SELECT ${column} as value
-        FROM ${sqlTable}
-        WHERE ${column} IS NOT NULL
-        LIMIT 10`)
+    const query = `SELECT ${column} as value FROM ${sqlTable} WHERE ${column} IS NOT NULL LIMIT 10`
+    const res = await client.query<{ value: any }>(query)
     return res.rows.length > 0 ? shuffle(res.rows)[0].value : null
 }
 
@@ -96,11 +90,7 @@ async function columnBasics(client: Client, sqlTable: string, column: ColumnName
 }
 
 async function commonValues(client: Client, sqlTable: string, column: ColumnName): Promise<ColumnCommonValue[]> {
-    const res = await client.query<ColumnCommonValue>(`
-        SELECT ${column} as value, count(*)::int
-        FROM ${sqlTable}
-        GROUP BY ${column}
-        ORDER BY count(*) DESC
-        LIMIT 10`)
+    const query = `SELECT ${column} as value, count(*)::int FROM ${sqlTable} GROUP BY ${column} ORDER BY count(*) DESC LIMIT 10`
+    const res = await client.query<ColumnCommonValue>(query)
     return res.rows
 }
