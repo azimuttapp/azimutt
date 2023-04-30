@@ -1,9 +1,11 @@
 import {describe, expect, test} from "@jest/globals";
-import {AzimuttSchema} from "@azimutt/database-types";
-import {application, logger, url} from "./constants";
+import {AzimuttSchema, DatabaseUrlParsed, parseDatabaseUrl} from "@azimutt/database-types";
+import {application, logger} from "./constants";
 import {formatSchema, getSchema, PostgresSchema} from "../src";
 
-describe('schema', () => {
+describe('postgres', () => {
+    // local url, install db or replace it to test
+    const url: DatabaseUrlParsed = parseDatabaseUrl('postgresql://postgres:postgres@localhost:5432/azimutt_dev')
     test.skip('getSchema', async () => {
         const schema = await getSchema(application, url, undefined, 10, logger)
         expect(schema.tables.length).toEqual(12)
@@ -11,6 +13,6 @@ describe('schema', () => {
     test('formatSchema', () => {
         const rawSchema: PostgresSchema = {tables: [], relations: [], types: []}
         const expectedSchema: AzimuttSchema = {tables: [], relations: [], types: []}
-        expect(formatSchema(rawSchema, 0, false)).toEqual(expectedSchema)
+        expect(formatSchema(rawSchema, false)).toEqual(expectedSchema)
     })
 })

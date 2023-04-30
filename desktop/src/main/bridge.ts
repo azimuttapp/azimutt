@@ -10,9 +10,9 @@ import {
     TableStats
 } from "@azimutt/database-types";
 import {DesktopBridge} from "@azimutt/shared";
-import * as couchbase from "@azimutt/connector-couchbase";
-import * as mongodb from "@azimutt/connector-mongodb";
-import * as postgres from "@azimutt/connector-postgres";
+import {couchbase} from "@azimutt/connector-couchbase";
+import {mongodb} from "@azimutt/connector-mongodb";
+import {postgres} from "@azimutt/connector-postgres";
 import {logger} from "./logger";
 
 export const setupBridge = (): void => {
@@ -41,7 +41,7 @@ async function ping(): Promise<string> {
 async function queryDatabase(url: DatabaseUrl, query: string): Promise<DatabaseResults> {
     const parsedUrl = parseDatabaseUrl(url)
     if (parsedUrl.kind == 'postgres') {
-        const res = await postgres.query(application, parsedUrl, query)
+        const res = await postgres.query(application, parsedUrl, query, [])
         return {rows: res.rows}
     } else {
         return Promise.reject(`queryDatabase is not supported for '${parsedUrl.kind || url}'`)
@@ -53,14 +53,11 @@ async function getDatabaseSchema(url: DatabaseUrl): Promise<AzimuttSchema> {
     // FIXME: got error: "Error: Could not locate the bindings file." :(
     // Missing file: couchbase_impl, looks like the couchbase binary is not loaded in electron
     // if (parsedUrl.kind === 'couchbase') {
-    //     const rawSchema: couchbase.CouchbaseSchema = await couchbase.getSchema(application, parsedUrl, undefined, 100, logger)
-    //     return couchbase.formatSchema(rawSchema, 0, true)
+    //     return couchbase.getSchema(application, parsedUrl, {logger, inferRelations: true})
     if (parsedUrl.kind === 'mongodb') {
-        const rawSchema: mongodb.MongoSchema = await mongodb.getSchema(application, parsedUrl, undefined, 100, logger)
-        return mongodb.formatSchema(rawSchema, 0, true)
+        return mongodb.getSchema(application, parsedUrl, {logger, inferRelations: true})
     } else if (parsedUrl.kind === 'postgres') {
-        const rawSchema: postgres.PostgresSchema = await postgres.getSchema(application, parsedUrl, undefined, 100, logger)
-        return postgres.formatSchema(rawSchema, 0, true)
+        return postgres.getSchema(application, parsedUrl, {logger, inferRelations: true})
     } else {
         return Promise.reject(`getDatabaseSchema is not supported for '${parsedUrl.kind || url}'`)
     }
@@ -69,7 +66,7 @@ async function getDatabaseSchema(url: DatabaseUrl): Promise<AzimuttSchema> {
 async function getTableStats(url: DatabaseUrl, table: TableId): Promise<TableStats> {
     const parsedUrl = parseDatabaseUrl(url)
     if (parsedUrl.kind === 'postgres') {
-        return postgres.tableStats(application, parsedUrl, table)
+        return postgres.getTableStats(application, parsedUrl, table)
     } else {
         return Promise.reject(`getTableStats is not supported for '${parsedUrl.kind || url}'`)
     }
@@ -78,7 +75,7 @@ async function getTableStats(url: DatabaseUrl, table: TableId): Promise<TableSta
 async function getColumnStats(url: DatabaseUrl, ref: ColumnRef): Promise<ColumnStats> {
     const parsedUrl = parseDatabaseUrl(url)
     if (parsedUrl.kind === 'postgres') {
-        return postgres.columnStats(application, parsedUrl, ref)
+        return postgres.getColumnStats(application, parsedUrl, ref)
     } else {
         return Promise.reject(`getColumnStats is not supported for '${parsedUrl.kind || url}'`)
     }

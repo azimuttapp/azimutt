@@ -12,17 +12,16 @@ Get the help simply by running the CLI (`npx azimutt`) or for a specific command
 ## Available commands
 
 - **export** (`npx azimutt export <kind> <url> [arguments]`)
-  - ex: `npx azimutt export mongodb "mongodb+srv://user:password@cluster3.md7h4xp.mongodb.net"`
   - ex: `npx azimutt export couchbase couchbases://cb.gfn6dh493pmfh613v.cloud.couchbase.com`
+  - ex: `npx azimutt export mongodb "mongodb+srv://user:password@cluster3.md7h4xp.mongodb.net"`
+  - ex: `npx azimutt export postgres postgresql://postgres:postgres@localhost:5432/azimutt_dev`
   - `kind` the database type you want to export (postgres, mongodb or couchbase)
   - `url` the database connection url, must contain everything needed (user, pass, port...)
   - `--database` is optional, restrict schema extraction to this database
   - `--schema` is optional, restrict schema extraction to this schema
   - `--bucket` is optional, restrict schema extraction to this bucket
   - `--sample-size` defines how many items are used to infer a schema (for document databases)
-  - `--raw-schema` writes another file with the intermediary representation of the database schema (more details & specificities)
   - `--infer-relations` build relations based on column names, for example a `user_id` will have a relation if a table `users` has an `id` column
-  - `--flatten` nested objects in specified levels, may be useful for document databases
   - `--format` is optional, default to `json` but for relational database it could also be `sql`
   - `--output` is optional, database name will be inferred from url and prefixed by the timestamp
   - `--debug` allows to see the full stack trace of the error (can be helpful to debug)

@@ -94,8 +94,7 @@ export async function getSchema(application: string, url: DatabaseUrlParsed, sch
     })
 }
 
-export function formatSchema(schema: PostgresSchema, flatten: number, inferRelations: boolean): AzimuttSchema {
-    // FIXME: handle flatten
+export function formatSchema(schema: PostgresSchema, inferRelations: boolean): AzimuttSchema {
     // FIXME: handle inferRelations
     return {
         tables: schema.tables.map(t => removeUndefined({
