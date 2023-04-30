@@ -39,7 +39,7 @@
     "ts:compile": "tsc --project tsconfig.json && rm -rf ./public",
     "ts:test": "jest",
     "tailwind:dev": "tailwindcss -i ../backend/priv/static/elm/styles.css -o ../backend/priv/static/elm/dist/styles.css --watch",
-    "tailwind:build": "tailwindcss -i ../backend/priv/static/elm/styles.css -o ../priv/static/elm/dist/styles.css --minify",
+    "tailwind:build": "tailwindcss -i ../backend/priv/static/elm/styles.css -o ../backend/priv/static/elm/dist/styles.css --minify",
     "tailwind:docker": "tailwindcss -i ../priv/static/elm/styles.css -o ../priv/static/elm/dist/styles.css --minify",
     "book": "elm-book src/Components/Book.elm --dir=../backend/priv/static/elm --start-page=book.html --port 4002 -- --output=../backend/priv/static/elm/dist/book.js"
   },
