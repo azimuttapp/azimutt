@@ -1,10 +1,13 @@
 import {describe, expect, test} from "@jest/globals";
-import {application, url} from "./constants";
-import {query} from "../src";
+import {DatabaseUrlParsed, parseDatabaseUrl} from "@azimutt/database-types";
+import {application} from "./constants";
+import {execQuery} from "../src";
 
 describe('query', () => {
-    test.skip('query', async () => {
-        const result = await query(application, url, 'SELECT * FROM users LIMIT 2;')
+    // local url, install db or replace it to test
+    const url: DatabaseUrlParsed = parseDatabaseUrl('postgresql://postgres:postgres@localhost:5432/azimutt_dev')
+    test.skip('execQuery', async () => {
+        const result = await execQuery(application, url, 'SELECT * FROM users LIMIT 2;', [])
         expect(result.rows.length).toEqual(2)
     })
 })

@@ -1,8 +1,11 @@
 import {describe, expect, test} from "@jest/globals";
-import {application, url} from "./constants";
+import {DatabaseUrlParsed, parseDatabaseUrl} from "@azimutt/database-types";
+import {application} from "./constants";
 import {getColumnStats, getTableStats} from "../src";
 
 describe('index', () => {
+    // local url, install db or replace it to test
+    const url: DatabaseUrlParsed = parseDatabaseUrl('postgresql://postgres:postgres@localhost:5432/azimutt_dev')
     test.skip('getTableStats', async () => {
         const stats = await getTableStats(application, url, 'public.users')
         expect(stats.rows).toEqual(2)
