@@ -35,7 +35,6 @@
     "@azimutt/shared": "file:../libs/shared",
     "@azimutt/utils": "file:../libs/utils",
     "electron-squirrel-startup": "^1.0.0",
-    "pg": "^8.10.0",
     "update-electron-app": "^2.0.1"
   },
   "devDependencies": {

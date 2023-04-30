@@ -50,10 +50,12 @@ async function queryDatabase(url: DatabaseUrl, query: string): Promise<DatabaseR
 
 async function getDatabaseSchema(url: DatabaseUrl): Promise<AzimuttSchema> {
     const parsedUrl = parseDatabaseUrl(url)
-    if (parsedUrl.kind === 'couchbase') {
-        const rawSchema: couchbase.CouchbaseSchema = await couchbase.getSchema(application, parsedUrl, undefined, 100, logger)
-        return couchbase.formatSchema(rawSchema, 0, true)
-    } else if (parsedUrl.kind === 'mongodb') {
+    // FIXME: got error: "Error: Could not locate the bindings file." :(
+    // Missing file: couchbase_impl, looks like the couchbase binary is not loaded in electron
+    // if (parsedUrl.kind === 'couchbase') {
+    //     const rawSchema: couchbase.CouchbaseSchema = await couchbase.getSchema(application, parsedUrl, undefined, 100, logger)
+    //     return couchbase.formatSchema(rawSchema, 0, true)
+    if (parsedUrl.kind === 'mongodb') {
         const rawSchema: mongodb.MongoSchema = await mongodb.getSchema(application, parsedUrl, undefined, 100, logger)
         return mongodb.formatSchema(rawSchema, 0, true)
     } else if (parsedUrl.kind === 'postgres') {
