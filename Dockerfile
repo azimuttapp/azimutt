@@ -76,9 +76,11 @@ COPY backend/priv priv
 # step down so that `lib` is available.
 COPY backend/assets assets
 
+COPY package.json .
 COPY frontend/ frontend
+COPY libs/ libs
 
-RUN npm run docker --prefix frontend
+RUN npm run docker
 
 # Compile the release
 COPY backend/lib lib

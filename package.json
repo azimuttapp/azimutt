@@ -54,6 +54,7 @@
     "tailwind:build": "cd frontend && npm run tailwind:build",
     "cli:test": "cd cli && npm run test",
     "libs:build": "cd libs/utils && npm install && npm run build && cd ../database-types && npm install && npm run build && cd ../shared && npm install && npm run build && cd ../json-infer-schema && npm install && npm run build && cd ../connector-couchbase && npm install && npm run build && cd ../connector-mongodb && npm install && npm run build && cd ../connector-postgres && npm install && npm run build",
+    "docker": "npm install && npm run libs:build && cd frontend && npm run docker",
     "update": "npm update --save-dev && npm update --save && npm install && cd frontend && npm update --save-dev && npm update --save && elm-json upgrade --unsafe && npm install && cd review && elm-json upgrade --unsafe && cd ../../backend && mix deps.update --all",
     "clever": "npm run elm:setup && cd backend && mix deps.get && mix ecto.migrate && mix assets.deploy && mix phx.server"
   },
