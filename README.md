@@ -12,7 +12,8 @@
 
 <p align="center">
   <a href="https://azimutt.app" target="_blank" rel="noopener">azimutt.app</a> •
-  <a href="https://github.com/azimuttapp/azimutt/projects/1" target="_blank" rel="noopener">roadmap</a> •
+  <a href="https://github.com/orgs/azimuttapp/projects/5" target="_blank" rel="noopener">roadmap</a> •
+  <a href="https://azimutt.app/slack" target="_blank" rel="noopener">slack community</a> •
   <a href="https://twitter.com/azimuttapp" target="_blank" rel="noopener">@azimuttapp</a>
 </p>
 
