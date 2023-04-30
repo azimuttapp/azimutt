@@ -40,9 +40,12 @@ async function ping(): Promise<string> {
 
 async function queryDatabase(url: DatabaseUrl, query: string): Promise<DatabaseResults> {
     const parsedUrl = parseDatabaseUrl(url)
+    // FIXME: got error: "Error: Could not locate the bindings file." :(
+    // Missing file: couchbase_impl, looks like the couchbase binary is not loaded in electron
+    // if (parsedUrl.kind === 'couchbase') {
+    //     return couchbase.query(application, parsedUrl, query, [])
     if (parsedUrl.kind == 'postgres') {
-        const res = await postgres.query(application, parsedUrl, query, [])
-        return {rows: res.rows}
+        return postgres.query(application, parsedUrl, query, [])
     } else {
         return Promise.reject(`queryDatabase is not supported for '${parsedUrl.kind || url}'`)
     }
@@ -50,8 +53,6 @@ async function queryDatabase(url: DatabaseUrl, query: string): Promise<DatabaseR
 
 async function getDatabaseSchema(url: DatabaseUrl): Promise<AzimuttSchema> {
     const parsedUrl = parseDatabaseUrl(url)
-    // FIXME: got error: "Error: Could not locate the bindings file." :(
-    // Missing file: couchbase_impl, looks like the couchbase binary is not loaded in electron
     // if (parsedUrl.kind === 'couchbase') {
     //     return couchbase.getSchema(application, parsedUrl, {logger, inferRelations: true})
     if (parsedUrl.kind === 'mongodb') {

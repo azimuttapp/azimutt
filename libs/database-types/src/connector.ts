@@ -5,7 +5,8 @@ import {AzimuttSchema, ColumnRef, ColumnStats, TableId, TableStats} from "./sche
 
 export interface Connector {
     name: string
-    query(application: string, url: DatabaseUrlParsed, query: string, values: any[]): Promise<DatabaseResults>
+    // use `$1`, `$2`... placeholders in the query to inject parameters
+    query(application: string, url: DatabaseUrlParsed, query: string, parameters: any[]): Promise<DatabaseResults>
     getSchema(application: string, url: DatabaseUrlParsed, opts: SchemaOpts): Promise<AzimuttSchema>
     getTableStats(application: string, url: DatabaseUrlParsed, id: TableId): Promise<TableStats>
     getColumnStats(application: string, url: DatabaseUrlParsed, ref: ColumnRef): Promise<ColumnStats>

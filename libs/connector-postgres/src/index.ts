@@ -1,10 +1,8 @@
 import {AzimuttSchema, Connector, DatabaseUrlParsed, SchemaOpts} from "@azimutt/database-types";
-import {formatSchema, getSchema} from "./postgres";
-import {execQuery} from "./query";
+import {execQuery, formatSchema, getSchema} from "./postgres";
 import {getColumnStats, getTableStats} from "./stats";
 
 export * from "./postgres"
-export * from "./query"
 export * from "./stats"
 
 export const postgres: Connector = {

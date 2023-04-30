@@ -1,7 +1,19 @@
-import {Cluster, Collection, connect as open, PlanningFailureError, UnambiguousTimeoutError} from "couchbase";
+import {
+    Cluster,
+    Collection,
+    connect as open,
+    PlanningFailureError,
+    QueryResult,
+    UnambiguousTimeoutError
+} from "couchbase";
 import {errorToString, Logger, sequence} from "@azimutt/utils";
 import {AzimuttSchema, DatabaseUrlParsed} from "@azimutt/database-types";
 import {schemaFromValues, schemaToColumns, ValueSchema} from "@azimutt/json-infer-schema";
+
+
+export function execQuery(application: string, url: DatabaseUrlParsed, query: string, parameters: any[]): Promise<QueryResult> {
+    return connect(url, cluster => cluster.query(query, {parameters}))
+}
 
 export type CouchbaseSchema = { collections: CouchbaseCollection[] }
 export type CouchbaseCollection = { bucket: CouchbaseBucketName, scope: CouchbaseScopeName, collection: CouchbaseCollectionName, schema: ValueSchema, sampleDocs: number, totalDocs: number }
@@ -32,9 +44,10 @@ export async function getSchema(application: string, url: DatabaseUrlParsed, buc
 
 export function formatSchema(schema: CouchbaseSchema, inferRelations: boolean): AzimuttSchema {
     // FIXME: handle inferRelations
+    // /!\ we choose to ignore the `bucket` as it's "similar" to the database level we don't handle in AzimuttSchema
     const tables = schema.collections.map(c => ({
-        schema: c.bucket,
-        table: `${c.scope}__${c.collection}`,
+        schema: c.scope,
+        table: c.collection,
         columns: schemaToColumns(c.schema, 0)
     }))
     return {tables, relations: []}
