@@ -40,10 +40,17 @@ defmodule AzimuttWeb.Api.FallbackController do
     conn
     |> put_status(:internal_server_error)
     |> put_view(AzimuttWeb.ErrorView)
-    |> render("error.json", message: message)
+    |> render("error.json", message: inspect(message))
   end
 
   def call(conn, :ok) do
     conn |> send_resp(:no_content, "")
+  end
+
+  def call(conn, other) do
+    conn
+    |> put_status(:internal_server_error)
+    |> put_view(AzimuttWeb.ErrorView)
+    |> render("error.json", message: inspect(other))
   end
 end

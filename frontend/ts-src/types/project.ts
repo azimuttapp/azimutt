@@ -1,4 +1,4 @@
-import {Color, Json, Position, Size, Slug, Timestamp} from "./basics";
+import {Color, Json, Position, Size, Slug, Tag, Timestamp} from "./basics";
 import {Uuid} from "./uuid";
 import {Organization} from "./organization";
 import * as array from "../utils/array";
@@ -25,6 +25,8 @@ export type ColumnId = string
 export const ColumnId = z.string()
 export type ColumnName = string
 export const ColumnName = z.string()
+export type ColumnPathStr = string
+export const ColumnPathStr = z.string()
 export type ColumnType = string
 export const ColumnType = z.string()
 export type ColumnValue = string | number | boolean | null | unknown
@@ -340,6 +342,24 @@ export const TableProps = z.object({
     hiddenColumns: z.boolean().optional()
 }).strict()
 
+export interface ColumnMeta {
+    tags?: Tag[]
+}
+
+export const ColumnMeta = z.object({
+    tags: Tag.array().optional()
+}).strict()
+
+export interface TableMeta {
+    tags?: Tag[]
+    columns: { [column: ColumnPathStr]: ColumnMeta }
+}
+
+export const TableMeta = z.object({
+    tags: Tag.array().optional(),
+    columns: z.record(ColumnPathStr, ColumnMeta)
+}).strict()
+
 export interface Memo {
     id: MemoId
     content: string
@@ -423,7 +443,8 @@ export interface Project {
     name: ProjectName
     description?: string
     sources: Source[]
-    notes?: { [ref: string]: string }
+    notes?: { [ref: string]: string } // legacy property, keep it for retro compatibility
+    metadata?: { [table: TableId]: TableMeta }
     usedLayout: LayoutName
     layouts: { [name: LayoutName]: Layout }
     settings?: Settings
@@ -442,6 +463,7 @@ export const Project = z.object({
     description: z.string().optional(),
     sources: Source.array(),
     notes: z.record(z.string()).optional(),
+    metadata: z.record(TableId, TableMeta).optional(),
     usedLayout: LayoutName,
     layouts: z.record(LayoutName, Layout),
     settings: Settings.optional(),

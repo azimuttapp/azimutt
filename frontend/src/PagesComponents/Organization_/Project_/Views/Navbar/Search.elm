@@ -14,23 +14,22 @@ import Libs.Html.Attributes exposing (css, role)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.Models.Notes exposing (Notes)
 import Libs.Tailwind exposing (TwClass, focus, lg, sm)
 import Models.Project.ColumnPath as ColumnPath
+import Models.Project.Metadata as Metadata exposing (Metadata)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.Organization_.Project_.Models exposing (Msg(..), SearchModel, confirm)
 import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn)
-import PagesComponents.Organization_.Project_.Models.ErdNotes as ErdNotes exposing (ErdNotes)
-import PagesComponents.Organization_.Project_.Models.ErdNotesTable exposing (ErdNotesTable)
 import PagesComponents.Organization_.Project_.Models.ErdRelation exposing (ErdRelation)
 import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
-import PagesComponents.Organization_.Project_.Models.Notes exposing (Notes)
 import Simple.Fuzzy
 
 
-viewNavbarSearch : SchemaName -> SearchModel -> Dict TableId ErdTable -> List ErdRelation -> ErdNotes -> List ErdTableLayout -> HtmlId -> HtmlId -> Html Msg
-viewNavbarSearch defaultSchema search tables relations notes shownTables htmlId openedDropdown =
+viewNavbarSearch : SchemaName -> SearchModel -> Dict TableId ErdTable -> List ErdRelation -> Metadata -> List ErdTableLayout -> HtmlId -> HtmlId -> Html Msg
+viewNavbarSearch defaultSchema search tables relations metadata shownTables htmlId openedDropdown =
     div [ class "ml-6 print:hidden" ]
         [ div [ css [ "max-w-lg w-full", lg [ "max-w-xs" ] ] ]
             [ label [ for htmlId, class "sr-only" ] [ text "Search" ]
@@ -80,7 +79,7 @@ viewNavbarSearch defaultSchema search tables relations notes shownTables htmlId 
                             ]
 
                     else
-                        performSearch tables relations notes (String.toLower search.text)
+                        performSearch tables relations metadata (String.toLower search.text)
                             |> (\results ->
                                     if results |> List.isEmpty then
                                         div []
@@ -144,8 +143,8 @@ viewSearchResult searchId defaultSchema shownTables active index res =
                 viewItem "relation" relation.src.table Icons.columns.foreignKey [ text relation.name ] True
 
 
-performSearch : Dict TableId ErdTable -> List ErdRelation -> ErdNotes -> String -> List SearchResult
-performSearch tables relations notes lQuery =
+performSearch : Dict TableId ErdTable -> List ErdRelation -> Metadata -> String -> List SearchResult
+performSearch tables relations metadata lQuery =
     let
         maxResults : Int
         maxResults =
@@ -153,7 +152,7 @@ performSearch tables relations notes lQuery =
 
         tableResults : List ( Float, SearchResult )
         tableResults =
-            tables |> Dict.values |> List.filterMap (\t -> t |> tableMatch lQuery (notes |> ErdNotes.getTable t.id))
+            tables |> Dict.values |> List.filterMap (\t -> t |> tableMatch lQuery (metadata |> Metadata.getNotes t.id Nothing))
 
         columnResults : List ( Float, SearchResult )
         columnResults =
@@ -162,12 +161,12 @@ performSearch tables relations notes lQuery =
                     |> Dict.values
                     |> List.concatMap
                         (\table ->
-                            notes
+                            metadata
                                 |> Dict.get table.id
                                 |> (\n ->
                                         table.columns
                                             |> Dict.values
-                                            |> List.filterMap (\c -> c |> columnMatch lQuery (n |> Maybe.andThen (.columns >> ColumnPath.get c.path)) table)
+                                            |> List.filterMap (\c -> c |> columnMatch lQuery (n |> Maybe.andThen (.columns >> ColumnPath.get c.path) |> Maybe.andThen .notes) table)
                                    )
                         )
 

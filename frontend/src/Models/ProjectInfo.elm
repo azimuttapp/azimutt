@@ -12,6 +12,7 @@ import Libs.Time as Time
 import Models.Organization as Organization exposing (Organization)
 import Models.OrganizationId as OrganizationId exposing (OrganizationId)
 import Models.Project exposing (Project)
+import Models.Project.Metadata as Metadata
 import Models.Project.ProjectEncodingVersion as ProjectEncodingVersion exposing (ProjectEncodingVersion)
 import Models.Project.ProjectId as ProjectId exposing (ProjectId)
 import Models.Project.ProjectName as ProjectName exposing (ProjectName)
@@ -69,7 +70,7 @@ fromProject p =
     , nbTypes = p.types |> Dict.size
     , nbComments = p.sources |> List.concatMap (.tables >> Dict.values >> List.concatMap (\t -> t.comment :: (t.columns |> Dict.values |> List.map .comment) |> List.filterMap identity)) |> List.length
     , nbLayouts = p.layouts |> Dict.size
-    , nbNotes = p.notes |> Dict.size
+    , nbNotes = p.metadata |> Metadata.countNotes
     , nbMemos = p.layouts |> Dict.values |> List.concatMap .memos |> List.length
     , createdAt = p.createdAt
     , updatedAt = p.updatedAt

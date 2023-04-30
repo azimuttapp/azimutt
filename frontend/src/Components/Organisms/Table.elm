@@ -40,6 +40,7 @@ type alias Model msg =
     , isView : Bool
     , comment : Maybe String
     , notes : Maybe String
+    , isDeprecated : Bool
     , columns : List Column
     , hiddenColumns : List Column
     , dropdown : Maybe (Html msg)
@@ -71,6 +72,7 @@ type alias Column =
     , uniques : List UniqueConstraint
     , indexes : List IndexConstraint
     , checks : List CheckConstraint
+    , isDeprecated : Bool
     , children : Maybe NestedColumns
     }
 
@@ -219,10 +221,10 @@ viewHeader model =
                 ++ Bool.cond model.conf.layout [ stopDoubleClick model.actions.headerDblClick, onContextMenu model.platform model.actions.headerRightClick ] []
             )
             ([ if model.isView then
-                span ([ class "text-xl italic underline decoration-dotted" ] ++ headerTextSize) [ text model.label ] |> Tooltip.t "This is a view"
+                span ([ class "text-xl italic underline decoration-dotted", classList [ ( "line-through", model.isDeprecated ) ] ] ++ headerTextSize) [ text model.label ] |> Tooltip.t "This is a view"
 
                else
-                span ([ class "text-xl" ] ++ headerTextSize) [ text model.label ]
+                span ([ class "text-xl", classList [ ( "line-through", model.isDeprecated ) ] ] ++ headerTextSize) [ text model.label ]
              ]
                 |> List.appendOn model.comment viewComment
                 |> List.appendOn model.notes (viewNotes model Nothing)
@@ -458,7 +460,7 @@ viewColumnIconDropdownItem message content =
 
 viewColumnName : Model msg -> Column -> Html msg
 viewColumnName model column =
-    div [ css [ "ml-1 flex flex-grow", Bool.cond column.isPrimaryKey "font-bold" "" ] ]
+    div [ css [ "ml-1 flex flex-grow", Bool.cond column.isPrimaryKey "font-bold" "", Bool.cond column.isDeprecated "line-through" "" ] ]
         ([ text (ColumnPath.name column.path) ]
             |> List.appendOn column.comment viewComment
             |> List.appendOn column.notes (viewNotes model (Just column.path))
@@ -573,7 +575,7 @@ updateDocState transform =
 
 sampleColumn : Column
 sampleColumn =
-    { index = 0, path = Nel "" [], kind = "", kindDetails = Nothing, nullable = False, default = Nothing, comment = Nothing, notes = Nothing, isPrimaryKey = False, inRelations = [], outRelations = [], uniques = [], indexes = [], checks = [], children = Nothing }
+    { index = 0, path = Nel "" [], kind = "", kindDetails = Nothing, nullable = False, default = Nothing, comment = Nothing, notes = Nothing, isPrimaryKey = False, inRelations = [], outRelations = [], uniques = [], indexes = [], checks = [], isDeprecated = False, children = Nothing }
 
 
 sample : Model (Msg x)
@@ -584,6 +586,7 @@ sample =
     , isView = False
     , comment = Nothing
     , notes = Nothing
+    , isDeprecated = False
     , columns =
         [ { sampleColumn | path = Nel "id" [], kind = "integer", isPrimaryKey = True, inRelations = [ { column = { schema = "demo", table = "accounts", column = ColumnPath.fromString "user" }, nullable = True, tableShown = False } ] }
         , { sampleColumn | path = Nel "name" [], kind = "character varying(120)", comment = Just "Should be unique", notes = Just "A nice note", uniques = [ { name = "users_name_unique" } ] }
@@ -591,7 +594,7 @@ sample =
         , { sampleColumn | path = Nel "bio" [], kind = "text", checks = [ { name = "users_bio_min_length" } ] }
         , { sampleColumn | path = Nel "organization" [], kind = "integer", nullable = True, outRelations = [ { column = { schema = "demo", table = "organizations", column = ColumnPath.fromString "id" }, nullable = True, tableShown = False } ] }
         , { sampleColumn | path = Nel "plan" [], kind = "object", children = Just (NestedColumns 1 []) }
-        , { sampleColumn | path = Nel "created" [], kind = "timestamp without time zone", default = Just "CURRENT_TIMESTAMP" }
+        , { sampleColumn | path = Nel "created" [], kind = "timestamp without time zone", default = Just "CURRENT_TIMESTAMP", isDeprecated = True }
         ]
     , hiddenColumns = []
     , dropdown =

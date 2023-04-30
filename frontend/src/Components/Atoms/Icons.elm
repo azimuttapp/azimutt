@@ -1,4 +1,4 @@
-module Components.Atoms.Icons exposing (column, columns, comment, notes, sources, table)
+module Components.Atoms.Icons exposing (column, columns, comment, notes, sources, table, tags)
 
 import Components.Atoms.Icon as Icon exposing (Icon)
 
@@ -21,6 +21,11 @@ comment =
 notes : Icon
 notes =
     Icon.DocumentText
+
+
+tags : Icon
+tags =
+    Icon.Hashtag
 
 
 columns : { primaryKey : Icon, foreignKey : Icon, unique : Icon, index : Icon, check : Icon, nested : Icon, nestedOpen : Icon }

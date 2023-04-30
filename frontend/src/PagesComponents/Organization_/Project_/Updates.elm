@@ -58,6 +58,7 @@ import PagesComponents.Organization_.Project_.Updates.Project exposing (createPr
 import PagesComponents.Organization_.Project_.Updates.ProjectSettings exposing (handleProjectSettings)
 import PagesComponents.Organization_.Project_.Updates.Source as Source
 import PagesComponents.Organization_.Project_.Updates.Table exposing (goToTable, hideColumn, hideColumns, hideRelatedTables, hideTable, hoverColumn, hoverNextColumn, mapTablePropOrSelected, showAllTables, showColumn, showColumns, showRelatedTables, showTable, showTables, sortColumns, toggleNestedColumn)
+import PagesComponents.Organization_.Project_.Updates.Tags exposing (handleTags)
 import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirty, setDirtyCmd)
 import PagesComponents.Organization_.Project_.Updates.VirtualRelation exposing (handleVirtualRelation)
 import PagesComponents.Organization_.Project_.Views as Views
@@ -219,6 +220,9 @@ update currentLayout zone now urlInfos organizations projects msg model =
         NotesMsg message ->
             model |> handleNotes message
 
+        TagsMsg message ->
+            model |> handleTags message
+
         MemoMsg message ->
             model |> handleMemo now urlInfos message
 
@@ -226,7 +230,7 @@ update currentLayout zone now urlInfos organizations projects msg model =
             model |> AmlSidebar.update now message
 
         DetailsSidebarMsg message ->
-            model.erd |> Maybe.mapOrElse (\erd -> model |> mapDetailsSidebarCmd (DetailsSidebar.update Noop NotesMsg erd message)) ( model, Cmd.none )
+            model.erd |> Maybe.mapOrElse (\erd -> model |> mapDetailsSidebarCmd (DetailsSidebar.update Noop NotesMsg TagsMsg erd message)) ( model, Cmd.none )
 
         VirtualRelationMsg message ->
             model |> handleVirtualRelation message
@@ -259,7 +263,7 @@ update currentLayout zone now urlInfos organizations projects msg model =
             model |> mapEmbedSourceParsingMCmd (EmbedSourceParsingDialog.update EmbedSourceParsingMsg now (model.erd |> Maybe.map .project) message)
 
         SourceParsed source ->
-            ( model, Project.create projects source.name source |> Ok |> Just |> GotProject |> JsMessage |> T.send )
+            ( model, source |> Project.create projects source.name |> Ok |> Just |> GotProject |> JsMessage |> T.send )
 
         ProPlanColors _ ProPlan.EnableTableChangeColor ->
             ( model |> mapErdM (mapProject (mapOrganizationM (mapPlan (setColors True)))), Ports.fireworks )
