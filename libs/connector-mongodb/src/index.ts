@@ -3,20 +3,19 @@ import {
     ColumnRef,
     ColumnStats,
     Connector,
-    DatabaseResults,
     DatabaseUrlParsed,
     SchemaOpts,
     TableId,
     TableStats
 } from "@azimutt/database-types";
-import {formatSchema, getSchema} from "./mongodb";
+import {execQuery, formatSchema, getSchema} from "./mongodb";
 
 export * from "./mongodb"
 
 const name = 'MongoDb'
 export const mongodb: Connector = {
     name,
-    query: (application: string, url: DatabaseUrlParsed, query: string, parameters: any[]): Promise<DatabaseResults> => Promise.reject(`'query' not implemented in ${name}`),
+    query: execQuery,
     getSchema: async (application: string, url: DatabaseUrlParsed, opts: SchemaOpts): Promise<AzimuttSchema> => {
         const schema = await getSchema(application, url, opts.schema, opts.sampleSize || 100, opts.logger)
         return formatSchema(schema, opts.inferRelations || false)

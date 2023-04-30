@@ -1,15 +1,41 @@
 import {Collection, MongoClient} from "mongodb";
 import {Logger, sequence} from "@azimutt/utils";
-import {AzimuttSchema, DatabaseUrlParsed} from "@azimutt/database-types";
+import {AzimuttSchema, DatabaseResults, DatabaseUrlParsed} from "@azimutt/database-types";
 import {schemaFromValues, schemaToColumns, ValueSchema} from "@azimutt/json-infer-schema";
 
+// expects `query` to be in the form of: "db/collection/operation/command"
+// - `db`: name of the database to use
+// - `collection`: name of the collection to use
+// - `operation`: name of the collection method to call (see https://mongodb.github.io/node-mongodb-native/5.3/classes/Collection.html)
+// - `command`: the JSON given as parameter for the operation
+export function execQuery(application: string, url: DatabaseUrlParsed, query: string): Promise<DatabaseResults> {
+    return connect(url, async client => {
+        // Ugly hack to have a single string query perform any operation on MongoDB 🤮
+        // If you see this and have an idea how to improve, please reach out (issue, PR, twitter, email, slack... ^^)
+        const [db, collection, operation, commandStr] = query.split('/').map(v => v.trim())
+        let command
+        try {
+            command = JSON.parse(commandStr)
+        } catch (e) {
+            return Promise.reject(`'${commandStr}' is not a valid JSON (expected for the command)`)
+        }
+        const coll = client.db(db).collection(collection) as any
+        if (typeof coll[operation] === 'function') {
+            const rows = await coll[operation](command).toArray()
+            return {db, collection, operation, command, rows}
+        } else {
+            return Promise.reject(`'${operation}' is not a valid MongoDB operation`)
+        }
+    })
+}
+
 export type MongodbSchema = { collections: MongodbCollection[] }
-export type MongodbCollection = { db: MongodbDatabaseName, name: MongodbCollectionName, schema: ValueSchema, sampleDocs: number, totalDocs: number }
+export type MongodbCollection = { database: MongodbDatabaseName, collection: MongodbCollectionName, schema: ValueSchema, sampleDocs: number, totalDocs: number }
 export type MongodbDatabaseName = string
 export type MongodbCollectionName = string
 
 export async function getSchema(application: string, url: DatabaseUrlParsed, databaseName: MongodbDatabaseName | undefined, sampleSize: number, logger: Logger): Promise<MongodbSchema> {
-    return await connect(url, async client => {
+    return connect(url, async client => {
         logger.log('Connected to database ...')
         const databaseNames: MongodbDatabaseName[] = databaseName ? [databaseName] : await listDatabases(client)
         logger.log(databaseName ? `Export for '${databaseName}' database ...` : `Found ${databaseNames.length} databases to export ...`)
@@ -24,8 +50,8 @@ export async function getSchema(application: string, url: DatabaseUrlParsed, dat
 export function formatSchema(schema: MongodbSchema, inferRelations: boolean): AzimuttSchema {
     // FIXME: handle inferRelations
     const tables = schema.collections.map(c => ({
-        schema: c.db,
-        table: c.name,
+        schema: c.database,
+        table: c.collection,
         columns: schemaToColumns(c.schema, 0)
     }))
     return {tables, relations: []}
@@ -59,8 +85,8 @@ async function infer(collection: Collection, sampleSize: number, logger: Logger)
     logger.log(`Exporting collection ${collection.dbName}.${collection.collectionName} ...`)
     const documents = await collection.find({}, {limit: sampleSize}).toArray()
     return {
-        db: collection.dbName,
-        name: collection.collectionName,
+        database: collection.dbName,
+        collection: collection.collectionName,
         schema: schemaFromValues(documents),
         sampleDocs: documents.length,
         totalDocs: await collection.estimatedDocumentCount()
