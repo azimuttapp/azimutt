@@ -1,7 +1,7 @@
+import {errorToString} from "@azimutt/utils";
 import {ProjectId, ProjectJson} from "../../types/project";
 import {StorageApi, StorageKind} from "./api";
 import {Logger} from "../logger";
-import {formatError} from "../../utils/error";
 import * as Zod from "../../utils/zod";
 import * as Json from "../../utils/json";
 
@@ -55,7 +55,7 @@ export class LocalStorageStorage implements StorageApi {
         try {
             return Promise.resolve(Zod.validate(Json.parse(value), ProjectJson, 'ProjectJson'))
         } catch (e) {
-            return Promise.reject(`Invalid JSON in localStorage ${JSON.stringify(key)}: ${formatError(e)}`)
+            return Promise.reject(`Invalid JSON in localStorage ${JSON.stringify(key)}: ${errorToString(e)}`)
         }
     }
     private setProject = (key: string, p: ProjectJson): Promise<ProjectJson> => {

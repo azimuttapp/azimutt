@@ -1,8 +1,13 @@
+import * as Sentry from "@sentry/browser";
+import {BrowserTracing} from "@sentry/tracing";
+import {AnyError, errorToString} from "@azimutt/utils";
+import {ColumnStats, TableStats} from "@azimutt/database-types";
 import {
     CreateProject,
     CreateProjectTmp,
     DeleteProject,
     GetColumnStats,
+    GetDatabaseSchema,
     GetLocalFile,
     GetProject,
     GetTableStats,
@@ -33,16 +38,12 @@ import {Backend} from "./services/backend";
 import * as Uuid from "./types/uuid";
 import {HtmlId, Platform, ToastLevel, ViewPosition} from "./types/basics";
 import {Env, getEnv} from "./utils/env";
-import {AnyError, formatError} from "./utils/error";
 import * as url from "./utils/url";
-import {ColumnStats, TableStats} from "./types/stats";
-import * as Sentry from "@sentry/browser";
-import {BrowserTracing} from "@sentry/tracing";
 
 const env = getEnv()
 const platform = Utils.getPlatform()
 const logger = new ConsoleLogger(env)
-const flags = {now: Date.now(), conf: {env, platform}}
+const flags = {now: Date.now(), conf: {env, platform, desktop: !!window.desktop}}
 logger.debug('flags', flags)
 const app = ElmApp.init(flags, logger)
 const storage = new Storage(logger)
@@ -86,6 +87,7 @@ app.on('DeleteProject', deleteProject)
 app.on('ProjectDirty', projectDirty)
 app.on('DownloadFile', msg => Utils.downloadFile(msg.filename, msg.content))
 app.on('GetLocalFile', getLocalFile)
+app.on('GetDatabaseSchema', getDatabaseSchema)
 app.on('GetTableStats', getTableStats)
 app.on('GetColumnStats', getColumnStats)
 app.on('ObserveSizes', observeSizes)
@@ -261,12 +263,25 @@ function getLocalFile(msg: GetLocalFile) {
 
 const tableStatsCache: { [key: string]: TableStats } = {}
 
+function getDatabaseSchema(msg: GetDatabaseSchema) {
+    (window.desktop ?
+            window.desktop.getDatabaseSchema(msg.database) :
+            backend.getDatabaseSchema(msg.database)
+    ).then(
+        schema => app.gotDatabaseSchema(schema),
+        err => err.statusCode !== 404 && reportError(`Can't get schema for ${msg.database}`, err)
+    )
+}
+
 function getTableStats(msg: GetTableStats) {
     const key = `${msg.source}-${msg.table}`
     if (tableStatsCache[key]) {
         app.gotTableStats(msg.source, tableStatsCache[key])
     } else {
-        backend.getTableStats(msg.database, msg.table).then(
+        (window.desktop ?
+            window.desktop.getTableStats(msg.database, msg.table) :
+            backend.getTableStats(msg.database, msg.table)
+        ).then(
             stats => app.gotTableStats(msg.source, tableStatsCache[key] = stats),
             err => err.statusCode !== 404 && reportError(`Can't get stats for ${msg.table}`, err)
         )
@@ -280,7 +295,10 @@ function getColumnStats(msg: GetColumnStats) {
     if (columnStatsCache[key]) {
         app.gotColumnStats(msg.source, columnStatsCache[key])
     } else {
-        backend.getColumnStats(msg.database, msg.column).then(
+        (window.desktop ?
+            window.desktop.getColumnStats(msg.database, msg.column) :
+            backend.getColumnStats(msg.database, msg.column)
+        ).then(
             stats => app.gotColumnStats(msg.source, columnStatsCache[key] = stats),
             err => err.statusCode !== 404 && reportError(`Can't get stats for ${msg.column}`, err)
         )
@@ -383,7 +401,7 @@ function reportError(label: string, error?: AnyError) {
         app.toast(ToastLevel.enum.error, label)
     } else {
         logger.error(label, error)
-        app.toast(ToastLevel.enum.error, `${label}: ${formatError(error)}`)
+        app.toast(ToastLevel.enum.error, `${label}: ${errorToString(error)}`)
     }
 }
 

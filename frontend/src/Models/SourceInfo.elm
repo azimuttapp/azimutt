@@ -1,7 +1,8 @@
-module Models.SourceInfo exposing (SourceInfo, aml, jsonLocal, jsonRemote, sqlLocal, sqlRemote)
+module Models.SourceInfo exposing (SourceInfo, aml, database, jsonLocal, jsonRemote, sqlLocal, sqlRemote)
 
 import FileValue exposing (File)
 import Libs.Models exposing (FileContent)
+import Libs.Models.DatabaseUrl as DatabaseUrl exposing (DatabaseUrl)
 import Libs.Models.FileUrl as FileUrl exposing (FileUrl)
 import Models.Project.SampleKey exposing (SampleKey)
 import Models.Project.SourceId exposing (SourceId)
@@ -19,6 +20,11 @@ type alias SourceInfo =
     , createdAt : Time.Posix
     , updatedAt : Time.Posix
     }
+
+
+database : Time.Posix -> SourceId -> DatabaseUrl -> SourceInfo
+database now sourceId url =
+    SourceInfo sourceId (DatabaseUrl.databaseName url) (DatabaseConnection url) True Nothing now now
 
 
 aml : Time.Posix -> SourceId -> SourceName -> SourceInfo

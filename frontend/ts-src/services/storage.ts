@@ -1,10 +1,10 @@
+import {successes} from "@azimutt/utils";
 import {IndexedDBStorage} from "./storage/indexeddb";
 import {LocalStorageStorage} from "./storage/localstorage";
 import {InMemoryStorage} from "./storage/inmemory";
 import {StorageKind} from "./storage/api";
 import {Logger} from "./logger";
 import {ProjectId, ProjectJson} from "../types/project";
-import {successes} from "../utils/promise";
 
 export class Storage {
     public kind: StorageKind = 'manager'

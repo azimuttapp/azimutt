@@ -66,6 +66,7 @@ import PagesComponents.Organization_.Project_.Views.Modals.NewLayout as NewLayou
 import Ports exposing (JsMsg(..))
 import Random
 import Services.Backend as Backend
+import Services.DatabaseSource as DatabaseSource
 import Services.JsonSource as JsonSource
 import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapConf, mapContextMenuM, mapDetailsSidebarCmd, mapEmbedSourceParsingMCmd, mapErdM, mapErdMCmd, mapExportDialogCmd, mapHoverTable, mapMemos, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapOrganizationM, mapPlan, mapPosition, mapProject, mapPromptM, mapProps, mapSaveCmd, mapSchemaAnalysisM, mapSearch, mapSelected, mapSharingCmd, mapShowHiddenColumns, mapTables, mapTablesCmd, mapToastsCmd, setActive, setCollapsed, setColor, setColors, setConfirm, setContextMenu, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setLast, setModal, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setSelected, setShow, setSize, setText)
 import Services.SqlSource as SqlSource
@@ -430,6 +431,13 @@ handleJsMessage now currentLayout msg model =
 
             else
                 ( model, "Unhandled local file kind '" ++ kind ++ "'" |> Toasts.error |> Toast |> T.send )
+
+        GotDatabaseSchema schema ->
+            if model.embedSourceParsing == Nothing then
+                ( model, schema |> DatabaseSource.GotSchema |> SourceUpdateDialog.DatabaseSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg |> T.send )
+
+            else
+                ( model, schema |> DatabaseSource.GotSchema |> EmbedSourceParsingDialog.EmbedDatabaseSource |> EmbedSourceParsingMsg |> T.send )
 
         GotTableStats source stats ->
             ( { model | tableStats = model.tableStats |> Dict.update stats.id (Maybe.withDefault Dict.empty >> Dict.insert (SourceId.toString source) stats >> Just) }, Cmd.none )

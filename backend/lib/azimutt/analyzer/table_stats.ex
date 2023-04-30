@@ -1,4 +1,4 @@
-# keep sync with frontend/ts-src/types/stats.ts & frontend/src/Models/Project/TableStats.elm
+# keep sync with libs/database-types/src/schema.ts & frontend/src/Models/Project/TableStats.elm
 defmodule Azimutt.Analyzer.TableStats do
   @moduledoc "Statistics for a table"
   use TypedStruct

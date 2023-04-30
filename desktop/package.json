@@ -1,0 +1,63 @@
+{
+  "name": "azimutt-desktop",
+  "productName": "azimutt-desktop",
+  "version": "0.0.1",
+  "description": "Use Azimutt as a desktop app and access local databases directly",
+  "keywords": [
+    "erd",
+    "database tool"
+  ],
+  "homepage": "https://azimutt.app",
+  "author": {
+    "name": "Loïc Knuchel",
+    "email": "loicknuchel@gmail.com",
+    "url": "https://loicknuchel.fr"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/azimuttapp/azimutt.git",
+    "directory": "desktop"
+  },
+  "main": ".webpack/main",
+  "scripts": {
+    "start": "electron-forge start",
+    "package": "electron-forge package",
+    "make": "electron-forge make",
+    "publish": "electron-forge publish",
+    "lint": "eslint --ext .ts,.tsx ."
+  },
+  "dependencies": {
+    "@azimutt/connector-couchbase": "file:../libs/connector-couchbase",
+    "@azimutt/connector-mongodb": "file:../libs/connector-mongodb",
+    "@azimutt/connector-postgres": "file:../libs/connector-postgres",
+    "@azimutt/database-types": "file:../libs/database-types",
+    "@azimutt/shared": "file:../libs/shared",
+    "@azimutt/utils": "file:../libs/utils",
+    "electron-squirrel-startup": "^1.0.0",
+    "update-electron-app": "^2.0.1"
+  },
+  "devDependencies": {
+    "@electron-forge/cli": "^6.1.1",
+    "@electron-forge/maker-deb": "^6.1.1",
+    "@electron-forge/maker-rpm": "^6.1.1",
+    "@electron-forge/maker-squirrel": "^6.1.1",
+    "@electron-forge/maker-zip": "^6.1.1",
+    "@electron-forge/plugin-webpack": "^6.1.1",
+    "@electron-forge/publisher-github": "^6.1.1",
+    "@types/pg": "^8.6.6",
+    "@typescript-eslint/eslint-plugin": "^5.59.1",
+    "@typescript-eslint/parser": "^5.59.1",
+    "@vercel/webpack-asset-relocator-loader": "^1.7.3",
+    "css-loader": "^6.7.3",
+    "electron": "24.1.2",
+    "eslint": "^8.39.0",
+    "eslint-plugin-import": "^2.27.5",
+    "fork-ts-checker-webpack-plugin": "^7.3.0",
+    "node-loader": "^2.0.0",
+    "style-loader": "^3.3.2",
+    "ts-loader": "^9.4.2",
+    "ts-node": "^10.9.1",
+    "typescript": "~4.5.4"
+  }
+}

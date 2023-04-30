@@ -54,6 +54,7 @@ jobs:
           key: build-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}
       - name: Install Dependencies
         run: |
+          npm run libs:build
           npm run ex:install
           npm run elm:setup
 

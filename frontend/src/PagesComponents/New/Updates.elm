@@ -164,6 +164,9 @@ handleJsMessage req now urlOrganization msg model =
             else
                 ( model, T.send (r |> SampleSource.GotProject |> SampleSourceMsg) )
 
+        GotDatabaseSchema schema ->
+            ( model, schema |> DatabaseSource.GotSchema |> DatabaseSourceMsg |> T.send )
+
         GotToast level message ->
             ( model, message |> Toasts.create level |> Toast |> T.send )
 
