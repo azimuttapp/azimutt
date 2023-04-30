@@ -8,7 +8,7 @@ import {
 } from "couchbase";
 import {errorToString, Logger, sequence} from "@azimutt/utils";
 import {AzimuttSchema, DatabaseUrlParsed} from "@azimutt/database-types";
-import {schemaFromValues, schemaToColumns, ValueSchema} from "@azimutt/json-infer-schema";
+import {valuesToSchema, schemaToColumns, ValueSchema} from "@azimutt/json-infer-schema";
 
 
 export function execQuery(application: string, url: DatabaseUrlParsed, query: string, parameters: any[]): Promise<QueryResult> {
@@ -79,7 +79,7 @@ async function infer(collection: Collection, sampleSize: number, logger: Logger)
         bucket: scope.bucket.name,
         scope: scope.name,
         collection: collection.name,
-        schema: schemaFromValues(documents),
+        schema: valuesToSchema(documents),
         sampleDocs: documents.length,
         totalDocs: count
     }

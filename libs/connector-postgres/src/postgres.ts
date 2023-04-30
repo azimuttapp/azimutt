@@ -1,6 +1,7 @@
 import {Client, QueryResult} from "pg";
-import {groupBy, Logger, removeUndefined, zip} from "@azimutt/utils";
+import {groupBy, Logger, removeUndefined, sequence, zip} from "@azimutt/utils";
 import {AzimuttSchema, DatabaseUrlParsed} from "@azimutt/database-types";
+import {schemaToColumns, ValueSchema, valuesToSchema} from "@azimutt/json-infer-schema";
 import {connect} from "./connect";
 
 export function execQuery(application: string, url: DatabaseUrlParsed, query: string, parameters: any[]): Promise<QueryResult> {
@@ -9,7 +10,7 @@ export function execQuery(application: string, url: DatabaseUrlParsed, query: st
 
 export type PostgresSchema = { tables: PostgresTable[], relations: PostgresRelation[], types: PostgresType[] }
 export type PostgresTable = { schema: PostgresSchemaName, table: PostgresTableName, view: boolean, columns: PostgresColumn[], primaryKey: PostgresPrimaryKey | null, uniques: PostgresUnique[], indexes: PostgresIndex[], checks: PostgresCheck[], comment: string | null }
-export type PostgresColumn = { name: PostgresColumnName, type: PostgresColumnType, nullable: boolean, default: string | null, comment: string | null }
+export type PostgresColumn = { name: PostgresColumnName, type: PostgresColumnType, nullable: boolean, default: string | null, comment: string | null, schema: ValueSchema | null }
 export type PostgresPrimaryKey = { name: string | null, columns: PostgresColumnName[] }
 export type PostgresUnique = { name: string, columns: PostgresColumnName[], definition: string | null }
 export type PostgresIndex = { name: string, columns: PostgresColumnName[], definition: string | null }
@@ -27,9 +28,10 @@ export type PostgresTypeName = string
 export type PostgresTableId = string
 
 export async function getSchema(application: string, url: DatabaseUrlParsed, schema: PostgresSchemaName | undefined, sampleSize: number, logger: Logger): Promise<PostgresSchema> {
-    // TODO: use `sampleSize` to infer schema on JSON columns
     return connect(application, url, async client => {
-        const columns = await getColumns(client, schema).then(cols => groupBy(cols, toTableId))
+        const columns = await getColumns(client, schema)
+            .then(cols => enrichColumnsWithSchema(client, cols, sampleSize))
+            .then(cols => groupBy(cols, toTableId))
         const columnsByIndex: { [tableId: string]: { [columnIndex: number]: RawColumn } } = Object.keys(columns).reduce((acc, tableId) => ({
             ...acc,
             [tableId]: columns[tableId].reduce((acc, c) => ({...acc, [c.column_index]: c}), {})
@@ -40,7 +42,6 @@ export async function getSchema(application: string, url: DatabaseUrlParsed, sch
         const comments = await getComments(client, schema).then(cols => groupBy(cols, toTableId))
         const relations = await getRelations(client, schema)
         const types = await getTypes(client, schema)
-        // FIXME: query `json` columns to get samples and infer schema
         return {
             tables: Object.entries(columns).map(([tableId, columns]) => {
                 const tableConstraints = constraints[tableId] || []
@@ -57,7 +58,8 @@ export async function getSchema(application: string, url: DatabaseUrlParsed, sch
                             type: col.column_type,
                             nullable: col.column_nullable,
                             default: col.column_default,
-                            comment: tableComments.find(c => c.column_name === col.column_name)?.comment || null
+                            comment: tableComments.find(c => c.column_name === col.column_name)?.comment || null,
+                            schema: col.column_schema || null
                         })),
                     primaryKey: tableConstraints.filter(c => c.constraint_type === 'p').map(c => ({
                         name: c.constraint_name,
@@ -110,7 +112,8 @@ export function formatSchema(schema: PostgresSchema, inferRelations: boolean): A
                 type: c.type,
                 nullable: c.nullable || undefined,
                 default: c.default || undefined,
-                comment: c.comment || undefined
+                comment: c.comment || undefined,
+                columns: c.schema ? schemaToColumns(c.schema, 0) : undefined
             })),
             view: t.view || undefined,
             primaryKey: t.primaryKey ? removeUndefined({
@@ -164,6 +167,7 @@ interface RawColumn {
     column_index: number
     column_default: string | null
     column_nullable: boolean
+    column_schema?: ValueSchema
 }
 
 async function getColumns(client: Client, schema: PostgresSchemaName | undefined): Promise<RawColumn[]> {
@@ -192,6 +196,23 @@ async function getColumns(client: Client, schema: PostgresSchemaName | undefined
           AND ${filterSchema('n.nspname', schema)}
         ORDER BY table_schema, table_name, column_index`
     ).then(res => res.rows)
+}
+
+function enrichColumnsWithSchema(client: Client, columns: RawColumn[], sampleSize: number): Promise<RawColumn[]> {
+    return sequence(columns, c => {
+        if (c.column_type === 'jsonb') {
+            return getColumnSchema(client, c.table_schema, c.table_name, c.column_name, sampleSize)
+                .then(column_schema => ({...c, column_schema}))
+        } else {
+            return Promise.resolve(c)
+        }
+    })
+}
+
+async function getColumnSchema(client: Client, schema: string, table: string, column: string, sampleSize: number): Promise<ValueSchema> {
+    const sqlTable = `${schema ? `${schema}.` : ''}${table}`
+    const result = await client.query(`SELECT ${column} FROM ${sqlTable} WHERE ${column} IS NOT NULL LIMIT ${sampleSize};`)
+    return valuesToSchema(result.rows.map(r => r[column]))
 }
 
 interface RawConstraint {

@@ -1,7 +1,7 @@
 import {Collection, MongoClient} from "mongodb";
 import {Logger, sequence} from "@azimutt/utils";
 import {AzimuttSchema, DatabaseResults, DatabaseUrlParsed} from "@azimutt/database-types";
-import {schemaFromValues, schemaToColumns, ValueSchema} from "@azimutt/json-infer-schema";
+import {valuesToSchema, schemaToColumns, ValueSchema} from "@azimutt/json-infer-schema";
 
 // expects `query` to be in the form of: "db/collection/operation/command"
 // - `db`: name of the database to use
@@ -87,7 +87,7 @@ async function infer(collection: Collection, sampleSize: number, logger: Logger)
     return {
         database: collection.dbName,
         collection: collection.collectionName,
-        schema: schemaFromValues(documents),
+        schema: valuesToSchema(documents),
         sampleDocs: documents.length,
         totalDocs: await collection.estimatedDocumentCount()
     }

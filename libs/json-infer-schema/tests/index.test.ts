@@ -1,22 +1,22 @@
 import {describe, expect, test} from "@jest/globals";
-import {schemaFromValue, schemaFromValues, sumType} from "../src";
+import {valueToSchema, valuesToSchema, sumType} from "../src";
 
 describe('export/infer', () => {
     test('infer primitive schema', () => {
-        expect(schemaFromValue('fr')).toEqual({type: 'string', values: ['fr']})
-        expect(schemaFromValue(2)).toEqual({type: 'number', values: [2]})
-        expect(schemaFromValue(true)).toEqual({type: 'boolean', values: [true]})
-        expect(schemaFromValue(null)).toEqual({type: 'null', values: [], nullable: true})
-        expect(schemaFromValue(undefined)).toEqual({type: 'null', values: [], nullable: true})
+        expect(valueToSchema('fr')).toEqual({type: 'string', values: ['fr']})
+        expect(valueToSchema(2)).toEqual({type: 'number', values: [2]})
+        expect(valueToSchema(true)).toEqual({type: 'boolean', values: [true]})
+        expect(valueToSchema(null)).toEqual({type: 'null', values: [], nullable: true})
+        expect(valueToSchema(undefined)).toEqual({type: 'null', values: [], nullable: true})
         const date = new Date()
-        expect(schemaFromValue(date)).toEqual({type: 'Date', values: [date]})
+        expect(valueToSchema(date)).toEqual({type: 'Date', values: [date]})
     })
     test('infer complex schema', () => {
-        expect(schemaFromValue([])).toEqual({type: '[]', values: [[]]})
-        expect(schemaFromValue(['fr', 'de'])).toEqual({type: 'string[]', values: ['fr', 'de']})
-        expect(schemaFromValue(['fr', 2])).toEqual({type: 'string|number[]', values: ['fr', 2]})
-        expect(schemaFromValue({})).toEqual({type: 'Object', values: [{}]})
-        expect(schemaFromValue({name: 'luc'})).toEqual({
+        expect(valueToSchema([])).toEqual({type: '[]', values: [[]]})
+        expect(valueToSchema(['fr', 'de'])).toEqual({type: 'string[]', values: ['fr', 'de']})
+        expect(valueToSchema(['fr', 2])).toEqual({type: 'string|number[]', values: ['fr', 2]})
+        expect(valueToSchema({})).toEqual({type: 'Object', values: [{}]})
+        expect(valueToSchema({name: 'luc'})).toEqual({
             type: 'Object',
             values: [{name: 'luc'}],
             nested: {
@@ -32,7 +32,7 @@ describe('export/infer', () => {
             friends: [user2, user3],
             tags: ['best', null, 'top']
         }
-        expect(schemaFromValue(user1)).toEqual({
+        expect(valueToSchema(user1)).toEqual({
             type: 'Object',
             values: [user1],
             nested: {
@@ -51,9 +51,9 @@ describe('export/infer', () => {
         })
     })
     test('infer schema for list of values', () => {
-        expect(schemaFromValues(['fr', 'de'])).toEqual({type: 'string', values: ['fr', 'de']})
-        expect(schemaFromValues(['fr', 2])).toEqual({type: 'string|number', values: ['fr', 2]})
-        expect(schemaFromValues([{id: 1}, {name: 'luc'}, {name: null}])).toEqual({
+        expect(valuesToSchema(['fr', 'de'])).toEqual({type: 'string', values: ['fr', 'de']})
+        expect(valuesToSchema(['fr', 2])).toEqual({type: 'string|number', values: ['fr', 2]})
+        expect(valuesToSchema([{id: 1}, {name: 'luc'}, {name: null}])).toEqual({
             type: 'Object', values: [{id: 1}, {name: 'luc'}, {name: null}], nested: {
                 id: {type: 'number', values: [1]},
                 name: {type: 'string', values: ['luc'], nullable: true}

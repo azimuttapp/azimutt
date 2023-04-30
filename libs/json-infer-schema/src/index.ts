@@ -5,6 +5,14 @@ export type ValueSchema = { type: ValueType, values: Value[], nullable?: boolean
 export type Value = any
 export type ValueType = string
 
+export function valuesToSchema(values: Value[]): ValueSchema {
+    if (values.length > 0) {
+        return sumSchema(values.map(valueToSchema))
+    } else {
+        return valueToSchema(undefined)
+    }
+}
+
 export function schemaToColumns(schema: ValueSchema, flatten: number, path: string[] = []): AzimuttColumn[] {
     // TODO: if string with few values (< 10% of docs), handle it like an enum and add values in comment
     if (schema.nested && flatten > 0) {
@@ -29,18 +37,11 @@ export function schemaToColumns(schema: ValueSchema, flatten: number, path: stri
     }
 }
 
-export function schemaFromValues(values: Value[]): ValueSchema {
-    if (values.length > 0) {
-        return sumSchema(values.map(schemaFromValue))
-    } else {
-        return schemaFromValue(undefined)
-    }
-}
+// private functions, some are exported only for tests
 
-// exported for tests
-export function schemaFromValue(value: Value): ValueSchema {
+export function valueToSchema(value: Value): ValueSchema {
     if (Array.isArray(value) && value.length > 0) {
-        const schemas = value.map(schemaFromValue)
+        const schemas = value.map(valueToSchema)
         return cleanSchema({
             type: sumType(schemas.map(s => s.type)) + '[]',
             values: schemas.flatMap(s => s.values),
@@ -52,7 +53,7 @@ export function schemaFromValue(value: Value): ValueSchema {
             type: getType(value),
             values: [value],
             nullable: isNullable(value),
-            nested: mapValues(value, schemaFromValue)
+            nested: mapValues(value, valueToSchema)
         })
     } else if (isNullable(value)) {
         return {type: getType(value), values: [], nullable: true}
@@ -102,7 +103,6 @@ function getType(value: Value): ValueType {
     }
 }
 
-// exported for tests
 export function sumType(types: ValueType[]): ValueType {
     types = distinct(types)
     types = types.some(t => t !== '[]' && t.endsWith('[]')) ? types.filter(t => t !== '[]') : types

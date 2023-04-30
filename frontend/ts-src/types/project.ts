@@ -205,6 +205,7 @@ export const Check = z.object({
     origins: Origin.array().optional()
 }).strict()
 
+// TODO: mutualise with AzimuttTable in libs/database-types/src/schema.ts:77
 export interface Table {
     schema: SchemaName
     table: TableName
