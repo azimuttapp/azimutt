@@ -1,4 +1,4 @@
-module Libs.Dict exposing (alter, count, filterMap, find, from, fromIndexedList, fromListMap, fuse, getOrElse, getResult, nonEmpty, notMember, set)
+module Libs.Dict exposing (alter, count, filterMap, find, from, fromIndexedList, fromListMap, fuse, getOrElse, getResult, mapKeys, nonEmpty, notMember, set)
 
 import Dict exposing (Dict)
 
@@ -41,6 +41,11 @@ notMember key dict =
 
         Nothing ->
             True
+
+
+mapKeys : (comparable -> comparable1) -> Dict comparable a -> Dict comparable1 a
+mapKeys f dict =
+    dict |> Dict.toList |> List.map (\( k, v ) -> ( f k, v )) |> Dict.fromList
 
 
 find : (comparable -> v -> Bool) -> Dict comparable v -> Maybe ( comparable, v )

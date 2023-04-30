@@ -1,4 +1,4 @@
-module Track exposing (SQLParsing, amlSourceCreated, dbAnalysisOpened, dbSourceCreated, docOpened, externalLink, findPathOpened, findPathResults, jsonError, jsonSourceCreated, layoutCreated, layoutDeleted, layoutLoaded, memoDeleted, memoSaved, notFound, notesCreated, notesDeleted, notesUpdated, planLimit, projectDraftCreated, searchClicked, sourceAdded, sourceDeleted, sourceRefreshed, sqlSourceCreated)
+module Track exposing (SQLParsing, amlSourceCreated, dbAnalysisOpened, dbSourceCreated, docOpened, externalLink, findPathOpened, findPathResults, jsonError, jsonSourceCreated, layoutCreated, layoutDeleted, layoutLoaded, memoDeleted, memoSaved, notFound, notesCreated, notesDeleted, notesUpdated, planLimit, projectDraftCreated, searchClicked, sourceAdded, sourceDeleted, sourceRefreshed, sqlSourceCreated, tagsCreated, tagsDeleted, tagsUpdated)
 
 import Conf exposing (Feature, Features)
 import DataSources.Helpers exposing (SourceLine)
@@ -11,6 +11,8 @@ import Json.Encode as Encode
 import Libs.Bool as Bool
 import Libs.Dict as Dict
 import Libs.Maybe as Maybe
+import Libs.Models.Notes exposing (Notes)
+import Libs.Models.Tag exposing (Tag)
 import Libs.Result as Result
 import Models.OrganizationId exposing (OrganizationId)
 import Models.Plan as Plan
@@ -22,7 +24,6 @@ import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Models.TrackEvent exposing (TrackClick, TrackEvent)
 import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.FindPathResult exposing (FindPathResult)
-import PagesComponents.Organization_.Project_.Models.Notes exposing (Notes)
 import Ports
 
 
@@ -103,6 +104,21 @@ notesUpdated content erd =
 notesDeleted : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> Cmd msg
 notesDeleted erd =
     sendEvent "editor_notes_deleted" [] (erd |> Maybe.map .project)
+
+
+tagsCreated : List Tag -> Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> Cmd msg
+tagsCreated content erd =
+    sendEvent "editor_tags_created" [ ( "length", content |> List.length |> Encode.int ) ] (erd |> Maybe.map .project)
+
+
+tagsUpdated : List Tag -> Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> Cmd msg
+tagsUpdated content erd =
+    sendEvent "editor_tags_updated" [ ( "length", content |> List.length |> Encode.int ) ] (erd |> Maybe.map .project)
+
+
+tagsDeleted : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> Cmd msg
+tagsDeleted erd =
+    sendEvent "editor_tags_deleted" [] (erd |> Maybe.map .project)
 
 
 memoSaved : Bool -> String -> Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> Cmd msg

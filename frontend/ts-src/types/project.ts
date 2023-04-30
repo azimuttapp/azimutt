@@ -1,7 +1,7 @@
 import {z} from "zod";
 import {groupBy} from "@azimutt/utils";
 import {ColumnName, ColumnType, SchemaName, TableId, TableName} from "@azimutt/database-types";
-import {Color, Position, Size, Slug, Timestamp} from "./basics";
+import {Color, Position, Size, Slug, Tag, Timestamp} from "./basics";
 import {Uuid} from "./uuid";
 import {Organization} from "./organization";
 import * as Zod from "../utils/zod";
@@ -16,6 +16,8 @@ export type SourceId = Uuid
 export const SourceId = Uuid
 export type SourceName = string
 export const SourceName = z.string()
+export type ColumnPathStr = string
+export const ColumnPathStr = z.string()
 export type Line = string
 export const Line = z.string()
 export type LineIndex = number
@@ -327,6 +329,24 @@ export const TableProps = z.object({
     hiddenColumns: z.boolean().optional()
 }).strict()
 
+export interface ColumnMeta {
+    tags?: Tag[]
+}
+
+export const ColumnMeta = z.object({
+    tags: Tag.array().optional()
+}).strict()
+
+export interface TableMeta {
+    tags?: Tag[]
+    columns: { [column: ColumnPathStr]: ColumnMeta }
+}
+
+export const TableMeta = z.object({
+    tags: Tag.array().optional(),
+    columns: z.record(ColumnPathStr, ColumnMeta)
+}).strict()
+
 export interface Memo {
     id: MemoId
     content: string
@@ -410,7 +430,8 @@ export interface Project {
     name: ProjectName
     description?: string
     sources: Source[]
-    notes?: { [ref: string]: string }
+    notes?: { [ref: string]: string } // legacy property, keep it for retro compatibility
+    metadata?: { [table: TableId]: TableMeta }
     usedLayout: LayoutName
     layouts: { [name: LayoutName]: Layout }
     settings?: Settings
@@ -429,6 +450,7 @@ export const Project = z.object({
     description: z.string().optional(),
     sources: Source.array(),
     notes: z.record(z.string()).optional(),
+    metadata: z.record(TableId, TableMeta).optional(),
     usedLayout: LayoutName,
     layouts: z.record(LayoutName, Layout),
     settings: Settings.optional(),

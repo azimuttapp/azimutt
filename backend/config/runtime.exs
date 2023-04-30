@@ -42,15 +42,17 @@ config :azimutt, Azimutt.Repo,
   show_sensitive_data_on_connection_error: config_env() == :dev,
   stacktrace: config_env() == :dev
 
-if config_env() == :test, do: config(:azimutt, Azimutt.Repo, pool: Ecto.Adapters.SQL.Sandbox)
-
-if config_env() == :prod || config_env() == :staging do
+if System.get_env("DATABASE_ENABLE_SSL") == "true" do
   config :azimutt, Azimutt.Repo,
     ssl: true,
     ssl_opts: [
       verify: :verify_none
     ]
+end
 
+if config_env() == :test, do: config(:azimutt, Azimutt.Repo, pool: Ecto.Adapters.SQL.Sandbox)
+
+if config_env() == :prod || config_env() == :staging do
   if System.get_env("PHX_SERVER"), do: config(:azimutt, AzimuttWeb.Endpoint, server: true)
 
   config :azimutt, AzimuttWeb.Endpoint,
