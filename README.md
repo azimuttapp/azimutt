@@ -1,20 +1,23 @@
 <p align="center">
     <a href="https://azimutt.app" target="_blank" rel="noopener">
         <picture>
-          <source media="(prefers-color-scheme: dark)" srcset="backend/priv/static/images/logo_light.svg">
-          <source media="(prefers-color-scheme: light)" srcset="backend/priv/static/images/logo_dark.svg">
-          <img alt="Azimutt logo" src="backend/priv/static/images/logo_dark.svg">
+          <source media="(prefers-color-scheme: dark)" srcset="assets/azimutt-logo-light.png">
+          <source media="(prefers-color-scheme: light)" srcset="assets/azimutt-logo-dark.png">
+          <img alt="Azimutt logo" src="assets/azimutt-logo-dark.png">
         </picture>
     </a>
 </p>
-<h3 align="center">Next-Gen ERD</h3>
-<p align="center">Design, Explore, Document and Analyze your database</p>
-
+<p align="center">
+    <b>Next-Gen ERD</b>: Design, Explore, Document and Analyze your database
+</p>
 <p align="center">
   <a href="https://azimutt.app" target="_blank" rel="noopener">azimutt.app</a> •
   <a href="https://github.com/orgs/azimuttapp/projects/5" target="_blank" rel="noopener">roadmap</a> •
-  <a href="https://azimutt.app/slack" target="_blank" rel="noopener">slack community</a> •
   <a href="https://twitter.com/azimuttapp" target="_blank" rel="noopener">@azimuttapp</a>
+</p>
+<p align="center">
+    <a href="https://www.producthunt.com/posts/azimutt?utm_source=badge-featured&utm_medium=badge&utm_souce=badge-azimutt" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=390699&theme=light" alt="Azimutt - Easily explore and analyze your database with your team | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a>
+    <a href="https://azimutt.app/slack" target="_blank"><img src="assets/slack-join.svg" alt="Join us on Slack" style="width: 216px; height: 54px;" width="216" height="54"></a>
 </p>
 
 Azimutt is an Entity Relationship Diagram (ERD) targeting real world database schema (big & messy).
