@@ -27,7 +27,7 @@
             "goyalarchit/elm-dagre": "3.0.0",
             "justinmimbs/time-extra": "1.1.1",
             "mpizenberg/elm-file": "1.0.0",
-            "mpizenberg/elm-pointer-events": "4.0.2",
+            "mpizenberg/elm-pointer-events": "5.0.0",
             "myrho/elm-round": "1.0.5",
             "rtfeldman/elm-iso8601-date-strings": "1.1.4",
             "ryannhg/elm-spa": "6.0.0",

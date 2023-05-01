@@ -50,7 +50,7 @@
     "fe:install": "cd frontend && npm install",
     "fe:build": "cd frontend && npm run build",
     "fe:docker": "cd frontend && npm run docker",
-    "fe:update": "cd frontend && npm update --save-dev && npm update --save && elm-json upgrade --unsafe && npm install && cd review && elm-json upgrade --unsafe",
+    "fe:update": "cd frontend && npm run update",
     "elm:start": "cd frontend && npm run elm:start",
     "elm:test": "cd frontend && npm run elm:test",
     "elm:format": "cd frontend && npm run elm:format",
