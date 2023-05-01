@@ -1,3 +1,4 @@
+import {describe, expect, test} from "@jest/globals";
 import {sequence, sequenceSafe, successes} from "../src";
 
 describe('promise', () => {

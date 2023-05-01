@@ -11,21 +11,21 @@ suite =
     describe "SQL Server"
         [ describe "CREATE TABLE"
             [ testStatement ( parseCommand, "with big primary key" )
-                """CREATE TABLE "CRPDTA"."F0000194" 
-                      (\t"SYEDUS" NCHAR(10), 
-                   \t"SYEDBT" NCHAR(15), 
-                   \t"SYEDTN" NCHAR(22), 
-                   \t"SYEDLN" NUMBER, 
-                   \t"SYEDSP" NCHAR(1), 
+                """CREATE TABLE "CRPDTA"."F0000194"
+                      (\t"SYEDUS" NCHAR(10),
+                   \t"SYEDBT" NCHAR(15),
+                   \t"SYEDTN" NCHAR(22),
+                   \t"SYEDLN" NUMBER,
+                   \t"SYEDSP" NCHAR(1),
                    \t CONSTRAINT "F0000194_PK" PRIMARY KEY ("SYEDUS", "SYEDBT", "SYEDTN", "SYEDLN")
-                     USING INDEX (CREATE UNIQUE INDEX "CRPDTA"."F0000194_0" ON "CRPDTA"."F0000194" ("SYEDUS", "SYEDBT", "SYEDTN", "SYEDLN") 
-                     PCTFREE 10 INITRANS 2 MAXTRANS 255 COMPUTE STATISTICS 
+                     USING INDEX (CREATE UNIQUE INDEX "CRPDTA"."F0000194_0" ON "CRPDTA"."F0000194" ("SYEDUS", "SYEDBT", "SYEDTN", "SYEDLN")
+                     PCTFREE 10 INITRANS 2 MAXTRANS 255 COMPUTE STATISTICS
                      STORAGE(INITIAL 65536 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645
                      PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1
                      BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
                      TABLESPACE "CRPDTAI" )  ENABLE
-                      ) SEGMENT CREATION IMMEDIATE 
-                     PCTFREE 10 PCTUSED 40 INITRANS 1 MAXTRANS 255 
+                      ) SEGMENT CREATION IMMEDIATE
+                     PCTFREE 10 PCTUSED 40 INITRANS 1 MAXTRANS 255
                     NOCOMPRESS LOGGING
                      STORAGE(INITIAL 65536 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645
                      PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1

@@ -10,7 +10,7 @@ import {
     TableStats
 } from "@azimutt/database-types";
 import {DesktopBridge} from "@azimutt/shared";
-import {couchbase} from "@azimutt/connector-couchbase";
+// import {couchbase} from "@azimutt/connector-couchbase";
 import {mongodb} from "@azimutt/connector-mongodb";
 import {postgres} from "@azimutt/connector-postgres";
 import {logger} from "./logger";
@@ -25,7 +25,7 @@ export const setupBridge = (): void => {
         getTableStats: getTableStats,
         getColumnStats: getColumnStats
     }
-    ipcMain.handle('ping', (e: IpcMainInvokeEvent) => bridge.ping())
+    ipcMain.handle('ping', () => bridge.ping())
     ipcMain.handle('queryDatabase', (e: IpcMainInvokeEvent, url: DatabaseUrl, query: string) => bridge.queryDatabase(url, query))
     ipcMain.handle('getDatabaseSchema', (e: IpcMainInvokeEvent, url: DatabaseUrl) => bridge.getDatabaseSchema(url))
     ipcMain.handle('getTableStats', (e: IpcMainInvokeEvent, url: DatabaseUrl, table: TableId) => bridge.getTableStats(url, table))

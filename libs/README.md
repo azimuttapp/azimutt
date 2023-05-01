@@ -3,7 +3,7 @@
 Shared libraries across several projects that could be published some time.
 For now, we depend on them using local dependencies (ex: `npm install ../libs/utils`) to use them in several projects (cli, desktop, frontend...).
 
-When developing, they need to be constructed, for this run `npm run build`, or to build all at once, use `npm run libs:build` from the root folder.
+When developing, they need to be constructed, for this run `npm run setup`, or to build all at once, use `npm run libs:setup` from the root folder.
 
 For each lib, look at `package.json` description to see what it does, but in short:
 

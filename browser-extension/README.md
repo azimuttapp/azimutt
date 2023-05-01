@@ -11,7 +11,7 @@ This extension is published on:
 
 ## Development
 
-Do an `npm install` and then run `npm run dev` to build the extension in live.
+Do an `npm install` and then run `npm start` to build the extension in live.
 
 To do a build you can do `npm run build` (needed when changing the manifest)
 

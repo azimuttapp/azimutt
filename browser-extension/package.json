@@ -15,8 +15,9 @@
     "directory": "browser-extension"
   },
   "scripts": {
-    "dev": "./build.watch.js",
-    "build": "./build.js"
+    "start": "./build.watch.js",
+    "build": "./build.js",
+    "update": "npm update --save-dev && npm update --save && npm install"
   },
   "dependencies": {
     "webextension-polyfill": "^0.8.0"
