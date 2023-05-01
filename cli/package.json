@@ -31,15 +31,16 @@
     "azimutt": "./lib/index.js"
   },
   "scripts": {
-    "init": "npm install && npm run build && chmod +x ./lib/index.js",
-    "build": "rm -rf ./lib && tsc",
-    "test": "jest",
-    "exec": "npm run build && node ./lib/index.js",
+    "setup": "npm install && npm run build && chmod +x ./lib/index.js",
     "start": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/index.ts",
     "start:windows": "nodemon --watch 'src/**/*.ts' --exec \"npx ts-node\" src/index.ts",
+    "test": "jest",
+    "build": "rm -rf ./lib && tsc",
+    "update": "npm update --save-dev && npm update --save && npm install",
+    "exec": "npm run build && node ./lib/index.js",
     "local": "sudo npm install -g && azimutt",
     "refresh": "rm -rf ./node_modules ./package-lock.json && npm install",
-    "prepublish": "npm run build && npm pack"
+    "drypublish": "npm run build && npm pack"
   },
   "dependencies": {
     "@azimutt/connector-couchbase": "file:../libs/connector-couchbase",

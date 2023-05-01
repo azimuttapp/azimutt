@@ -36,13 +36,10 @@ FROM --platform=linux/amd64 ${BUILDER_IMAGE} as builder
 
 
 # install build dependencies
-RUN apt-get update -y && apt-get install -y build-essential git nodejs npm curl wget \
-  && apt-get clean && rm -f /var/lib/apt/lists/*_*
-RUN curl -fsSL https://deb.nodesource.com/setup_19.x | bash - \
-  && apt-get install -y nodejs
+RUN apt-get update -y && apt-get install -y build-essential git nodejs npm curl wget && apt-get clean && rm -f /var/lib/apt/lists/*_*
+RUN curl -fsSL https://deb.nodesource.com/setup_19.x | bash - && apt-get install -y nodejs
 RUN npm install -g npm@latest
-RUN wget -O - 'https://github.com/elm/compiler/releases/download/0.19.1/binary-for-linux-64-bit.gz' \
-    | gunzip -c >/usr/local/bin/elm
+RUN wget -O - 'https://github.com/elm/compiler/releases/download/0.19.1/binary-for-linux-64-bit.gz' | gunzip -c >/usr/local/bin/elm
 
 # make the elm compiler executable
 RUN chmod +x /usr/local/bin/elm
@@ -51,8 +48,7 @@ RUN chmod +x /usr/local/bin/elm
 WORKDIR /app
 
 # install hex + rebar
-RUN mix local.hex --force && \
-    mix local.rebar --force
+RUN mix local.hex --force && mix local.rebar --force
 
 # set build ENV
 ENV MIX_ENV="prod"
@@ -77,8 +73,8 @@ COPY backend/priv priv
 COPY backend/assets assets
 
 COPY package.json .
-COPY frontend/ frontend
 COPY libs/ libs
+COPY frontend/ frontend
 
 RUN npm run docker
 
@@ -100,8 +96,7 @@ RUN mix release
 # the compiled release and other runtime necessities
 FROM --platform=linux/amd64 ${RUNNER_IMAGE}
 
-RUN apt-get update -y && apt-get install -y libstdc++6 openssl libncurses5 locales \
-  && apt-get clean && rm -f /var/lib/apt/lists/*_*
+RUN apt-get update -y && apt-get install -y libstdc++6 openssl libncurses5 locales && apt-get clean && rm -f /var/lib/apt/lists/*_*
 
 # Set the locale
 RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && locale-gen

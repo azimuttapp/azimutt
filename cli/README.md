@@ -28,7 +28,7 @@ Get the help simply by running the CLI (`npx azimutt`) or for a specific command
 
 ## Developing
 
-Start with `npm run init` to install dependencies and set up the CLI, then you have:
+Start with `npm run setup` to install dependencies and set up the CLI, then you have:
 
 - `npm run exec` to compile and launch the CLI (use `-- args` for CLI args, ex: `npm run exec -- export postgres postgresql://postgres:postgres@localhost:5432/azimutt_dev`), or `npm run build && node lib/index.js`
 - `npm run start` to launch it with live reload (same, use `-- args` to pass arguments to the CLI)
@@ -38,5 +38,5 @@ Start with `npm run init` to install dependencies and set up the CLI, then you h
 
 - connect to npm account
 - update `package.json` version
-- test with `npm run prepublish` and check `azimutt-x.y.z.tgz` content
+- test with `npm run drypublish` and check `azimutt-x.y.z.tgz` content
 - launch `npm publish`

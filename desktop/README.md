@@ -18,7 +18,7 @@ Setup:
 - install `rpmbuild`
 
 Build:
-- run `npm run make`
+- run `npm run build`
 
 ## Publish
 

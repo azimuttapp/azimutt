@@ -18,8 +18,10 @@
   "main": "./out/index.js",
   "types": "./out/index.d.ts",
   "scripts": {
+    "setup": "npm install && npm run build",
     "test": "jest",
-    "build": "rm -rf ./out && tsc"
+    "build": "rm -rf ./out && tsc",
+    "update": "npm update --save-dev && npm update --save && npm install"
   },
   "dependencies": {
     "@azimutt/database-types": "file:../database-types",

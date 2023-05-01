@@ -22,10 +22,11 @@
   "main": ".webpack/main",
   "scripts": {
     "start": "electron-forge start",
+    "lint": "eslint --ext .ts,.tsx .",
+    "build": "electron-forge make",
+    "update": "npm update --save-dev && npm update --save && npm install",
     "package": "electron-forge package",
-    "make": "electron-forge make",
-    "publish": "electron-forge publish",
-    "lint": "eslint --ext .ts,.tsx ."
+    "publish": "electron-forge publish"
   },
   "dependencies": {
     "@azimutt/connector-couchbase": "file:../libs/connector-couchbase",

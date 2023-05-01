@@ -70,6 +70,36 @@ Now you can visit :
 
 ⚠️ Please see [Setup Stripe](#setup-stripe).
 
+### npm command semantics
+
+We have a lot of projects with a lot of commands, here is how they are structured:
+
+- each project has its own commands (mostly npm but also elixir), the root project has global commands to launch them using a prefix
+- `setup` is a one time command to install what is required
+- `install` download dependencies, should be run when new ones are added
+- `start` launch project in dev mode
+- `test` allows to run tests
+- `format` allows to run execute code formatting
+- `lint` allows to run execute linters
+- `build` generate compilation output
+- `docker` same as `build` but in the docker image (paths are different 😕)
+- `update` bumps library versions
+
+Prefixes in front of the command in root folder:
+
+- `libs:` run the command for every library in `libs` folder
+- `ex:` meaning elixir, it targets the backend (mostly running `mix` commands)
+- `fe:` meaning frontend, target the frontend project with Elm, TypeScript & Tailwind
+- `elm:` targets only Elm in the frontend project
+- `ts:` targets only TypeScript in the frontend project
+- `cli:` run the command for the `cli` project
+- `desktop:` run the command for the `desktop` project
+- `be:` meaning browser extension run the command for the `browser-extension` project
+
+And then "special" commands:
+
+- `elm:book`: launch elm-book, the design system for Elm
+
 ### Development commands
 
 - `npm run elm:book` to launch the Elm design system
