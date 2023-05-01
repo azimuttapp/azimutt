@@ -8,6 +8,7 @@
 - `DATABASE_URL` (required): the whole url to connect to the database (ex: `postgresql://<user>:<pass>@<host>:<port>/<database>`)
     - `DATABASE_IPV6` (optional): if `true`, the database driver will use IPV6
     - `DATABASE_POOL_SIZE` (optional, default: `10`): the database connection pool size
+    - `DATABASE_ENABLE_SSL` (optional): if `true`, the database driver will require SSL
 - `FILE_STORAGE_ADAPTER` (required, values: `local` or `s3`): file storage is used to store project json files
     - if `s3`
         - `S3_BUCKET` (required): the bucket used to store project json

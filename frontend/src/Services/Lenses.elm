@@ -20,6 +20,7 @@ module Services.Lenses exposing
     , mapDetailsSidebarCmd
     , mapEditMemoM
     , mapEditNotesM
+    , mapEditTagsM
     , mapEmbedSourceParsingMCmd
     , mapEnabled
     , mapErdM
@@ -41,6 +42,7 @@ module Services.Lenses exposing
     , mapMCmd
     , mapMemos
     , mapMemosL
+    , mapMetadata
     , mapMobileMenuOpen
     , mapNavbar
     , mapNewLayoutMCmd
@@ -111,6 +113,7 @@ module Services.Lenses exposing
     , setDragging
     , setEditMemo
     , setEditNotes
+    , setEditTags
     , setEmbedSourceParsing
     , setEnabled
     , setErd
@@ -137,6 +140,7 @@ module Services.Lenses exposing
     , setList
     , setMax
     , setMemos
+    , setMetadata
     , setMobileMenuOpen
     , setModal
     , setMouse
@@ -183,6 +187,7 @@ module Services.Lenses exposing
     , setSqlSource
     , setTable
     , setTables
+    , setTags
     , setText
     , setTo
     , setToasts
@@ -449,6 +454,16 @@ mapEditNotesM =
     mapM_ .editNotes setEditNotes
 
 
+setEditTags : v -> { item | editTags : v } -> { item | editTags : v }
+setEditTags =
+    set_ .editTags (\value item -> { item | editTags = value })
+
+
+mapEditTagsM : (v -> v) -> { item | editTags : Maybe v } -> { item | editTags : Maybe v }
+mapEditTagsM =
+    mapM_ .editTags setEditTags
+
+
 setEmbedSourceParsing : v -> { item | embedSourceParsing : v } -> { item | embedSourceParsing : v }
 setEmbedSourceParsing =
     set_ .embedSourceParsing (\value item -> { item | embedSourceParsing = value })
@@ -667,6 +682,16 @@ mapMemos =
 mapMemosL : (v -> k) -> k -> (v -> v) -> { item | memos : List v } -> { item | memos : List v }
 mapMemosL =
     mapL_ .memos setMemos
+
+
+setMetadata : v -> { item | metadata : v } -> { item | metadata : v }
+setMetadata =
+    set_ .metadata (\value item -> { item | metadata = value })
+
+
+mapMetadata : (v -> v) -> { item | metadata : v } -> { item | metadata : v }
+mapMetadata =
+    map_ .metadata setMetadata
 
 
 setMobileMenuOpen : v -> { item | mobileMenuOpen : v } -> { item | mobileMenuOpen : v }
@@ -1087,6 +1112,11 @@ mapTablesL =
 mapTablesCmd : (v -> ( v, Cmd msg )) -> { item | tables : v } -> ( { item | tables : v }, Cmd msg )
 mapTablesCmd =
     mapCmd_ .tables setTables
+
+
+setTags : v -> { item | tags : v } -> { item | tags : v }
+setTags =
+    set_ .tags (\value item -> { item | tags = value })
 
 
 setText : v -> { item | text : v } -> { item | text : v }

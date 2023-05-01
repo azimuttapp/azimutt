@@ -1,5 +1,6 @@
-port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProject, createProjectTmp, deleteProject, downloadFile, fireworks, focus, fullscreen, getColumnStats, getProject, getTableStats, listenHotkeys, mouseDown, moveProjectTo, observeLayout, observeMemoSize, observeSize, observeTableSize, observeTablesSize, onJsMessage, projectDirty, readLocalFile, scrollTo, setMeta, toast, track, unhandledJsMsgError, updateProject, updateProjectTmp)
+port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProject, createProjectTmp, deleteProject, downloadFile, fireworks, focus, fullscreen, getColumnStats, getDatabaseSchema, getProject, getTableStats, listenHotkeys, mouseDown, moveProjectTo, observeLayout, observeMemoSize, observeSize, observeTableSize, observeTablesSize, onJsMessage, projectDirty, readLocalFile, scrollTo, setMeta, toast, track, unhandledJsMsgError, updateProject, updateProjectTmp)
 
+import DataSources.JsonMiner.JsonSchema as JsonSchema exposing (JsonSchema)
 import Dict exposing (Dict)
 import FileValue exposing (File)
 import Json.Decode as Decode exposing (Decoder, Value)
@@ -129,6 +130,11 @@ readLocalFile sourceKind file =
     messageToJs (GetLocalFile sourceKind file)
 
 
+getDatabaseSchema : DatabaseUrl -> Cmd msg
+getDatabaseSchema database =
+    messageToJs (GetDatabaseSchema database)
+
+
 getTableStats : TableId -> ( SourceId, DatabaseUrl ) -> Cmd msg
 getTableStats table ( source, database ) =
     messageToJs (GetTableStats source database table)
@@ -227,6 +233,7 @@ type ElmMsg
     | ProjectDirty Bool
     | DownloadFile FileName FileContent
     | GetLocalFile String File
+    | GetDatabaseSchema DatabaseUrl
     | GetTableStats SourceId DatabaseUrl TableId
     | GetColumnStats SourceId DatabaseUrl ColumnRef
     | ObserveSizes (List HtmlId)
@@ -242,6 +249,7 @@ type JsMsg
     | GotProject (Maybe (Result Decode.Error Project))
     | ProjectDeleted ProjectId
     | GotLocalFile String File FileContent
+    | GotDatabaseSchema JsonSchema
     | GotTableStats SourceId TableStats
     | GotColumnStats SourceId ColumnStats
     | GotHotkey String
@@ -346,6 +354,9 @@ elmEncoder elm =
         GetLocalFile sourceKind file ->
             Encode.object [ ( "kind", "GetLocalFile" |> Encode.string ), ( "sourceKind", sourceKind |> Encode.string ), ( "file", file |> FileValue.encode ) ]
 
+        GetDatabaseSchema database ->
+            Encode.object [ ( "kind", "GetDatabaseSchema" |> Encode.string ), ( "database", database |> DatabaseUrl.encode ) ]
+
         GetTableStats source database table ->
             Encode.object [ ( "kind", "GetTableStats" |> Encode.string ), ( "source", source |> SourceId.encode ), ( "database", database |> DatabaseUrl.encode ), ( "table", table |> TableId.encode ) ]
 
@@ -399,6 +410,9 @@ jsDecoder =
                         (Decode.field "sourceKind" Decode.string)
                         (Decode.field "file" FileValue.decoder)
                         (Decode.field "content" Decode.string)
+
+                "GotDatabaseSchema" ->
+                    Decode.map GotDatabaseSchema (Decode.field "schema" JsonSchema.decode)
 
                 "GotTableStats" ->
                     Decode.map2 GotTableStats (Decode.field "source" SourceId.decode) (Decode.field "stats" TableStats.decode)
@@ -475,6 +489,9 @@ unhandledJsMsgError msg =
 
                 GotLocalFile _ _ _ ->
                     "GotLocalFile"
+
+                GotDatabaseSchema _ ->
+                    "GotDatabaseSchemas"
 
                 GotTableStats _ _ ->
                     "GotTableStats"

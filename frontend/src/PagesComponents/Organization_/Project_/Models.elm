@@ -10,6 +10,7 @@ import Libs.Models exposing (ZoomDelta)
 import Libs.Models.Delta exposing (Delta)
 import Libs.Models.DragId exposing (DragId)
 import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.Models.Notes exposing (Notes)
 import Libs.Tailwind as Tw exposing (Color)
 import Libs.Task as T
 import Models.Area as Area
@@ -49,10 +50,10 @@ import PagesComponents.Organization_.Project_.Models.FindPathDialog exposing (Fi
 import PagesComponents.Organization_.Project_.Models.HideColumns exposing (HideColumns)
 import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
 import PagesComponents.Organization_.Project_.Models.MemoId exposing (MemoId)
-import PagesComponents.Organization_.Project_.Models.Notes exposing (Notes, NotesRef)
 import PagesComponents.Organization_.Project_.Models.NotesMsg exposing (NotesMsg)
 import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint)
 import PagesComponents.Organization_.Project_.Models.ShowColumns exposing (ShowColumns)
+import PagesComponents.Organization_.Project_.Models.TagsMsg exposing (TagsMsg)
 import PagesComponents.Organization_.Project_.Views.Modals.NewLayout as NewLayout
 import Ports exposing (JsMsg)
 import Services.Toasts as Toasts
@@ -75,6 +76,7 @@ type alias Model =
     , selectionBox : Maybe Area.Canvas
     , newLayout : Maybe NewLayout.Model
     , editNotes : Maybe NotesDialog
+    , editTags : Maybe String
     , editMemo : Maybe MemoEdit
     , amlSidebar : Maybe AmlSidebar
     , detailsSidebar : Maybe DetailsSidebar.Model
@@ -113,7 +115,7 @@ type alias SearchModel =
 
 
 type alias NotesDialog =
-    { id : HtmlId, ref : NotesRef, initialNotes : Notes, notes : Notes }
+    { id : HtmlId, table : TableId, column : Maybe ColumnPath, initialNotes : Notes, notes : Notes }
 
 
 type alias MemoEdit =
@@ -196,6 +198,7 @@ type Msg
     | NewLayoutMsg NewLayout.Msg
     | LayoutMsg LayoutMsg
     | NotesMsg NotesMsg
+    | TagsMsg TagsMsg
     | MemoMsg MemoMsg
     | AmlSidebarMsg AmlSidebarMsg
     | DetailsSidebarMsg DetailsSidebar.Msg

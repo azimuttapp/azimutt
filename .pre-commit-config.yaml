@@ -1,6 +1,55 @@
 repos:
 - repo: local
   hooks:
+    - id: libs-utils
+      name: 'Libs/Utils'
+      language: system
+      entry: bash -c 'cd libs/utils && exec npm run build && exec npm test'
+      pass_filenames: false
+      files: libs/utils/.*\.ts*$
+
+    - id: libs-database-types
+      name: 'Libs/Database types'
+      language: system
+      entry: bash -c 'cd libs/database-types && exec npm run build && exec npm test'
+      pass_filenames: false
+      files: libs/database-types/.*\.ts*$
+
+    - id: libs-shared
+      name: 'Libs/Shared'
+      language: system
+      entry: bash -c 'cd libs/shared && exec npm run build && exec npm test'
+      pass_filenames: false
+      files: libs/shared/.*\.ts*$
+
+    - id: libs-json-infer-schema
+      name: 'Libs/Json infer schema'
+      language: system
+      entry: bash -c 'cd libs/json-infer-schema && exec npm run build && exec npm test'
+      pass_filenames: false
+      files: libs/json-infer-schema/.*\.ts*$
+
+    - id: libs-connector-couchbase
+      name: 'Libs/Couchbase connector'
+      language: system
+      entry: bash -c 'cd libs/connector-couchbase && exec npm run build && exec npm test'
+      pass_filenames: false
+      files: libs/connector-couchbase/.*\.ts*$
+
+    - id: libs-connector-mongodb
+      name: 'Libs/MongoDB connector'
+      language: system
+      entry: bash -c 'cd libs/connector-mongodb && exec npm run build && exec npm test'
+      pass_filenames: false
+      files: libs/connector-mongodb/.*\.ts*$
+
+    - id: libs-connector-postgres
+      name: 'Libs/PostgreSQL connector'
+      language: system
+      entry: bash -c 'cd libs/connector-postgres && exec npm run build && exec npm test'
+      pass_filenames: false
+      files: libs/connector-postgres/.*\.ts*$
+
     - id: mix-format
       name: 'Elixir format'
       language: system
@@ -56,26 +105,29 @@ repos:
       pass_filenames: false
       files: \.elm*$
 
-    - id: ts-test
-      name: 'TypeScript test'
-      language: system
-      entry: npm run ts:test
-      pass_filenames: false
-      files: frontend/.*\.ts*$
-
-    - id: ts-lint
-      name: 'TypeScript lint'
+    - id: frontend-build
+      name: 'Frontend TS build'
       language: system
       entry: npm run ts:lint
       pass_filenames: false
       files: frontend/.*\.ts*$
 
-    - id: cli-test
-      name: 'CLI test'
+    - id: frontend-test
+      name: 'Frontend TS test'
       language: system
-      entry: npm run cli:test
+      entry: npm run ts:test
+      pass_filenames: false
+      files: frontend/.*\.ts*$
+
+    - id: cli
+      name: 'CLI'
+      language: system
+      entry: bash -c 'cd cli && exec npm run build && exec npm test'
       pass_filenames: false
       files: cli/.*\.ts*$
+
+    # No test or build for browser-extension
+    # No test or build for desktop
 
 - repo: https://github.com/commitizen-tools/commitizen
   rev: v2.32.2

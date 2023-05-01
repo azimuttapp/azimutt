@@ -2,18 +2,17 @@
 
 import {Argument, Command} from "commander";
 import chalk from "chalk";
+import {errorToString, safeParseInt} from "@azimutt/utils";
+import {parseDatabaseUrl} from "@azimutt/database-types";
 import {exportDbSchema} from "./export";
-import {parseUrl} from "./utils/database";
-import {error, log} from "./utils/logger";
-import {safeParseInt} from "./utils/number";
-import {errorToString} from "./utils/error";
+import {logger} from "./utils/logger";
 
 const clear = require('clear')
 const figlet = require('figlet')
 // https://github.com/SBoudrias/Inquirer.js
 
 clear()
-log(chalk.hex('#4F46E5').bold(figlet.textSync('Azimutt.app', {horizontalLayout: 'full'})))
+logger.log(chalk.hex('#4F46E5').bold(figlet.textSync('Azimutt.app', {horizontalLayout: 'full'})))
 
 // TODO: `azimutt infer --path ~/my_db` or `azimutt export --url ~/my_db` (no 'protocol://') => recursively list .json files and infer them as a collection
 // TODO: use in-memory H2 to load liquibase & flyway migrations
@@ -31,13 +30,11 @@ program.command('export')
     .option('-s, --schema <schema>', 'Limit to a specific schema (ex for PostgreSQL)')
     .option('-b, --bucket <bucket>', 'Limit to a specific bucket (ex for Couchbase)')
     .option('--sample-size <number>', 'Number of items used to infer a schema', safeParseInt, 10)
-    .option('--raw-schema', 'Generate an additional file specific to the database (more details)')
     .option('--infer-relations', 'Infer relations using column names')
-    .option('--flatten <number>', 'Make nested schema flat (useful as Azimutt does not handle nested structures for now)', safeParseInt, 0)
     .option('-f, --format <format>', 'Output format', 'json')
     .option('-o, --output <output>', "Path to write the schema, ex: ~/azimutt.json")
     .option('--debug', 'Add debug logs and show the full stacktrace instead of a shorter error')
-    .action((kind, url, args) => exec(exportDbSchema(kind, parseUrl(url), args), args))
+    .action((kind, url, args) => exec(exportDbSchema(kind, parseDatabaseUrl(url), args), args))
 
 program.parse(process.argv)
 
@@ -46,7 +43,10 @@ if (!process.argv.slice(2).length) {
 }
 
 function exec(res: Promise<void>, args: any) {
-    if (!args.stackTrace) {
-        res.catch(e => error(chalk.red('Unexpected error: ' + errorToString(e))))
+    if (!args.debug) {
+        res.catch(e => {
+            logger.error(`Unexpected error: ${errorToString(e)}`)
+            logger.log(`(use --debug option to see the full error)`)
+        })
     }
 }

@@ -11,11 +11,16 @@
     "entity-relationship diagram"
   ],
   "homepage": "https://azimutt.app",
-  "author": "Loïc Knuchel <loicknuchel@gmail.com> (https://loicknuchel.fr)",
+  "author": {
+    "name": "Loïc Knuchel",
+    "email": "loicknuchel@gmail.com",
+    "url": "https://loicknuchel.fr"
+  },
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/azimuttapp/azimutt.git"
+    "url": "git+https://github.com/azimuttapp/azimutt.git",
+    "directory": "cli"
   },
   "bugs": {
     "url": "https://github.com/azimuttapp/azimutt/issues"
@@ -26,24 +31,27 @@
     "azimutt": "./lib/index.js"
   },
   "scripts": {
-    "init": "npm install && npm run build && chmod +x ./lib/index.js",
-    "build": "rm -rf ./lib && tsc",
-    "test": "jest",
-    "exec": "npm run build && node ./lib/index.js",
+    "setup": "npm install && npm run build && chmod +x ./lib/index.js",
     "start": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/index.ts",
     "start:windows": "nodemon --watch 'src/**/*.ts' --exec \"npx ts-node\" src/index.ts",
+    "test": "jest",
+    "build": "rm -rf ./lib && tsc",
+    "update": "npm update --save-dev && npm update --save && npm install",
+    "exec": "npm run build && node ./lib/index.js",
     "local": "sudo npm install -g && azimutt",
     "refresh": "rm -rf ./node_modules ./package-lock.json && npm install",
-    "prepublish": "npm run build && npm pack"
+    "drypublish": "npm run build && npm pack"
   },
   "dependencies": {
+    "@azimutt/connector-couchbase": "file:../libs/connector-couchbase",
+    "@azimutt/connector-mongodb": "file:../libs/connector-mongodb",
+    "@azimutt/connector-postgres": "file:../libs/connector-postgres",
+    "@azimutt/database-types": "file:../libs/database-types",
+    "@azimutt/utils": "file:../libs/utils",
     "chalk": "^4.1.2",
     "clear": "^0.1.0",
     "commander": "^10.0.0",
-    "couchbase": "^4.2.0",
-    "figlet": "^1.5.2",
-    "mongodb": "^5.0.0",
-    "pg": "^8.9.0"
+    "figlet": "^1.5.2"
   },
   "devDependencies": {
     "@jest/globals": "^29.4.1",

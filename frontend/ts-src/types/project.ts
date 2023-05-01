@@ -1,8 +1,9 @@
-import {Color, Json, Position, Size, Slug, Timestamp} from "./basics";
+import {z} from "zod";
+import {groupBy} from "@azimutt/utils";
+import {ColumnName, ColumnType, SchemaName, TableId, TableName} from "@azimutt/database-types";
+import {Color, Position, Size, Slug, Tag, Timestamp} from "./basics";
 import {Uuid} from "./uuid";
 import {Organization} from "./organization";
-import * as array from "../utils/array";
-import {z} from "zod";
 import * as Zod from "../utils/zod";
 
 export type ProjectId = Uuid
@@ -15,20 +16,8 @@ export type SourceId = Uuid
 export const SourceId = Uuid
 export type SourceName = string
 export const SourceName = z.string()
-export type TableId = string
-export const TableId = z.string()
-export type SchemaName = string
-export const SchemaName = z.string()
-export type TableName = string
-export const TableName = z.string()
-export type ColumnId = string
-export const ColumnId = z.string()
-export type ColumnName = string
-export const ColumnName = z.string()
-export type ColumnType = string
-export const ColumnType = z.string()
-export type ColumnValue = string | number | boolean | null | unknown
-export const ColumnValue = z.union([z.string(), z.number(), z.boolean(), z.null(), Json])
+export type ColumnPathStr = string
+export const ColumnPathStr = z.string()
 export type Line = string
 export const Line = z.string()
 export type LineIndex = number
@@ -216,6 +205,7 @@ export const Check = z.object({
     origins: Origin.array().optional()
 }).strict()
 
+// TODO: mutualise with AzimuttTable in libs/database-types/src/schema.ts:77
 export interface Table {
     schema: SchemaName
     table: TableName
@@ -340,6 +330,24 @@ export const TableProps = z.object({
     hiddenColumns: z.boolean().optional()
 }).strict()
 
+export interface ColumnMeta {
+    tags?: Tag[]
+}
+
+export const ColumnMeta = z.object({
+    tags: Tag.array().optional()
+}).strict()
+
+export interface TableMeta {
+    tags?: Tag[]
+    columns: { [column: ColumnPathStr]: ColumnMeta }
+}
+
+export const TableMeta = z.object({
+    tags: Tag.array().optional(),
+    columns: z.record(ColumnPathStr, ColumnMeta)
+}).strict()
+
 export interface Memo {
     id: MemoId
     content: string
@@ -423,7 +431,8 @@ export interface Project {
     name: ProjectName
     description?: string
     sources: Source[]
-    notes?: { [ref: string]: string }
+    notes?: { [ref: string]: string } // legacy property, keep it for retro compatibility
+    metadata?: { [table: TableId]: TableMeta }
     usedLayout: LayoutName
     layouts: { [name: LayoutName]: Layout }
     settings?: Settings
@@ -442,6 +451,7 @@ export const Project = z.object({
     description: z.string().optional(),
     sources: Source.array(),
     notes: z.record(z.string()).optional(),
+    metadata: z.record(TableId, TableMeta).optional(),
     usedLayout: LayoutName,
     layouts: z.record(LayoutName, Layout),
     settings: Settings.optional(),
@@ -569,8 +579,8 @@ export function buildProjectJson({organization, id, storage, visibility, created
 
 export function computeStats(p: ProjectJson): ProjectStats {
     // should be the same as `fromProject` in src/Models/ProjectInfo.elm
-    const tables = array.groupBy(p.sources.flatMap(s => s.tables), t => `${t.schema}.${t.table}`)
-    const types = array.groupBy(p.sources.flatMap(s => s.types || []), t => `${t.schema}.${t.name}`)
+    const tables = groupBy(p.sources.flatMap(s => s.tables), t => `${t.schema}.${t.table}`)
+    const types = groupBy(p.sources.flatMap(s => s.types || []), t => `${t.schema}.${t.name}`)
 
     return Zod.validate({
         nbSources: p.sources.length,

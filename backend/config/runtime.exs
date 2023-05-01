@@ -40,11 +40,15 @@ config :azimutt, Azimutt.Repo,
   pool_size: String.to_integer(System.get_env("DATABASE_POOL_SIZE") || "10"),
   socket_options: if(System.get_env("DATABASE_IPV6") == "true", do: [:inet6], else: []),
   show_sensitive_data_on_connection_error: config_env() == :dev,
-  stacktrace: config_env() == :dev,
-  ssl: true,
-  ssl_opts: [
-    verify: :verify_none
-  ]
+  stacktrace: config_env() == :dev
+
+if System.get_env("DATABASE_ENABLE_SSL") == "true" do
+  config :azimutt, Azimutt.Repo,
+    ssl: true,
+    ssl_opts: [
+      verify: :verify_none
+    ]
+end
 
 if config_env() == :test, do: config(:azimutt, Azimutt.Repo, pool: Ecto.Adapters.SQL.Sandbox)
 
@@ -84,9 +88,7 @@ case System.fetch_env!("FILE_STORAGE_ADAPTER") do
     s3_key_secret = System.get_env("S3_KEY_SECRET") || ""
     s3_region = System.get_env("S3_REGION") || "eu-west-1"
     s3_bucket = System.fetch_env!("S3_BUCKET")
-
-    config :azimutt,
-      s3_folder: System.get_env("S3_FOLDER")
+    config :azimutt, s3_folder: System.get_env("S3_FOLDER")
 
     # https://hexdocs.pm/waffle/Waffle.Storage.S3.html
     if s3_host != "" do

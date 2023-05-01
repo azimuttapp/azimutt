@@ -20,12 +20,15 @@ import Time
 
 type alias Flags =
     { now : Int
-    , conf : { env : String, platform : String }
+    , conf : { env : String, platform : String, desktop : Bool }
     }
 
 
 type alias GlobalConf =
-    { env : Env, platform : Platform }
+    { env : Env
+    , platform : Platform
+    , desktop : Bool -- True when loaded from desktop app
+    }
 
 
 type alias Model =
@@ -86,6 +89,7 @@ init _ flags =
       , conf =
             { env = env
             , platform = Platform.fromString flags.conf.platform
+            , desktop = flags.conf.desktop
             }
       , user = Nothing
       , userLoaded = False

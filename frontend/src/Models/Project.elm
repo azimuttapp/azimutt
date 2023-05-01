@@ -8,13 +8,16 @@ import Libs.Dict as Dict
 import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
 import Libs.List as List
+import Libs.Models.Notes as Notes exposing (Notes, NotesKey)
 import Libs.String as String
 import Libs.Time as Time
 import Models.Organization as Organization exposing (Organization)
+import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.CustomType as CustomType exposing (CustomType)
 import Models.Project.CustomTypeId exposing (CustomTypeId)
 import Models.Project.Layout as Layout exposing (Layout)
 import Models.Project.LayoutName as LayoutName exposing (LayoutName)
+import Models.Project.Metadata as Metadata exposing (Metadata)
 import Models.Project.ProjectEncodingVersion as ProjectEncodingVersion exposing (ProjectEncodingVersion)
 import Models.Project.ProjectId as ProjectId exposing (ProjectId)
 import Models.Project.ProjectName as ProjectName exposing (ProjectName)
@@ -27,7 +30,6 @@ import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source as Source exposing (Source)
 import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
-import PagesComponents.Organization_.Project_.Models.Notes exposing (Notes, NotesKey)
 import Time
 
 
@@ -41,7 +43,7 @@ type alias Project =
     , tables : Dict TableId Table -- computed from sources, do not update directly (see compute function)
     , relations : List Relation -- computed from sources, do not update directly (see compute function)
     , types : Dict CustomTypeId CustomType -- computed from sources, do not update directly (see compute function)
-    , notes : Dict NotesKey Notes
+    , metadata : Metadata
     , usedLayout : LayoutName
     , layouts : Dict LayoutName Layout
     , settings : ProjectSettings
@@ -53,8 +55,8 @@ type alias Project =
     }
 
 
-new : Maybe Organization -> ProjectId -> ProjectSlug -> ProjectName -> Maybe String -> List Source -> Dict NotesKey Notes -> LayoutName -> Dict LayoutName Layout -> ProjectSettings -> ProjectStorage -> ProjectVisibility -> ProjectEncodingVersion -> Time.Posix -> Time.Posix -> Project
-new organization id slug name description sources notes usedLayout layouts settings storage visibility version createdAt updatedAt =
+new : Maybe Organization -> ProjectId -> ProjectSlug -> ProjectName -> Maybe String -> List Source -> Metadata -> LayoutName -> Dict LayoutName Layout -> ProjectSettings -> ProjectStorage -> ProjectVisibility -> ProjectEncodingVersion -> Time.Posix -> Time.Posix -> Project
+new organization id slug name description sources metadata usedLayout layouts settings storage visibility version createdAt updatedAt =
     { organization = organization
     , id = id
     , slug = slug
@@ -64,7 +66,7 @@ new organization id slug name description sources notes usedLayout layouts setti
     , tables = Dict.empty
     , relations = []
     , types = Dict.empty
-    , notes = notes
+    , metadata = metadata
     , usedLayout = usedLayout
     , layouts = layouts
     , settings = settings
@@ -186,7 +188,7 @@ downloadContent value =
         , ( "name", value.name |> ProjectName.encode )
         , ( "description", value.description |> Encode.maybe Encode.string )
         , ( "sources", value.sources |> Encode.list Source.encode )
-        , ( "notes", value.notes |> Encode.withDefault (Encode.dict identity Encode.string) Dict.empty )
+        , ( "metadata", value.metadata |> Metadata.encode )
         , ( "usedLayout", value.usedLayout |> LayoutName.encode )
         , ( "layouts", value.layouts |> Encode.dict LayoutName.toString Layout.encode )
         , ( "settings", value.settings |> Encode.withDefaultDeep ProjectSettings.encode (ProjectSettings.init Conf.schema.empty) )
@@ -208,7 +210,7 @@ encode value =
         , ( "name", value.name |> ProjectName.encode )
         , ( "description", value.description |> Encode.maybe Encode.string )
         , ( "sources", value.sources |> Encode.list Source.encode )
-        , ( "notes", value.notes |> Encode.withDefault (Encode.dict identity Encode.string) Dict.empty )
+        , ( "metadata", value.metadata |> Metadata.encode )
         , ( "usedLayout", value.usedLayout |> LayoutName.encode )
         , ( "layouts", value.layouts |> Encode.dict LayoutName.toString Layout.encode )
         , ( "settings", value.settings |> Encode.withDefaultDeep ProjectSettings.encode (ProjectSettings.init Conf.schema.empty) )
@@ -222,14 +224,16 @@ encode value =
 
 decode : Decode.Decoder Project
 decode =
-    Decode.map16 decodeProject
+    Decode.map17 decodeProject
         (Decode.maybeField "organization" Organization.decode)
         (Decode.field "id" ProjectId.decode)
         (Decode.maybeField "slug" ProjectSlug.decode)
         (Decode.field "name" ProjectName.decode)
         (Decode.maybeField "description" Decode.string)
         (Decode.field "sources" (Decode.list Source.decode))
-        (Decode.defaultField "notes" (Decode.dict Decode.string) Dict.empty)
+        -- continue to read "notes" for retro-compatibility, then merge it to `metadata` in decodeProject
+        (Decode.defaultField "notes" (Decode.dict Notes.decode) Dict.empty)
+        (Decode.defaultField "metadata" Metadata.decode Dict.empty)
         (Decode.defaultField "layout" Layout.decode (Layout.empty Time.zero))
         (Decode.defaultField "usedLayout" LayoutName.decode Conf.constants.defaultLayout)
         (Decode.defaultField "layouts" (Decode.customDict LayoutName.fromString Layout.decode) Dict.empty)
@@ -241,8 +245,8 @@ decode =
         (Decode.field "updatedAt" Time.decode)
 
 
-decodeProject : Maybe Organization -> ProjectId -> Maybe ProjectSlug -> ProjectName -> Maybe String -> List Source -> Dict NotesKey Notes -> Layout -> LayoutName -> Dict LayoutName Layout -> ProjectSettings -> ProjectStorage -> ProjectVisibility -> ProjectEncodingVersion -> Time.Posix -> Time.Posix -> Project
-decodeProject organization id maybeSlug name description sources notes layout usedLayout layouts settings storage visibility version createdAt updatedAt =
+decodeProject : Maybe Organization -> ProjectId -> Maybe ProjectSlug -> ProjectName -> Maybe String -> List Source -> Dict NotesKey Notes -> Metadata -> Layout -> LayoutName -> Dict LayoutName Layout -> ProjectSettings -> ProjectStorage -> ProjectVisibility -> ProjectEncodingVersion -> Time.Posix -> Time.Posix -> Project
+decodeProject organization id maybeSlug name description sources notes metadata layout usedLayout layouts settings storage visibility version createdAt updatedAt =
     let
         allLayouts : Dict LayoutName Layout
         allLayouts =
@@ -257,5 +261,37 @@ decodeProject organization id maybeSlug name description sources notes layout us
         slug =
             -- retro-compatibility with old projects
             maybeSlug |> Maybe.withDefault id
+
+        fullMetadata : Metadata
+        fullMetadata =
+            -- migrate notes to metadata
+            metadata |> mergeNotesInMetadata notes
     in
-    new organization id slug name description sources notes usedLayout allLayouts settings storage visibility version createdAt updatedAt
+    new organization id slug name description sources fullMetadata usedLayout allLayouts settings storage visibility version createdAt updatedAt
+
+
+mergeNotesInMetadata : Dict NotesKey Notes -> Metadata -> Metadata
+mergeNotesInMetadata notes metadata =
+    notes
+        |> Dict.toList
+        |> List.foldl
+            (\( key, n ) meta ->
+                key
+                    |> parseKey
+                    |> Maybe.map (\( table, column ) -> meta |> Metadata.putNotes table column (Just n))
+                    |> Maybe.withDefault meta
+            )
+            metadata
+
+
+parseKey : NotesKey -> Maybe ( TableId, Maybe ColumnPath )
+parseKey key =
+    case key |> String.split "." of
+        schema :: table :: [] ->
+            Just ( ( schema, table ), Nothing )
+
+        schema :: table :: column :: [] ->
+            Just ( ( schema, table ), Just (ColumnPath.fromString column) )
+
+        _ ->
+            Nothing

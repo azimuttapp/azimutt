@@ -14,12 +14,15 @@ import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.DatabaseUrl exposing (DatabaseUrl)
 import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.Models.Notes exposing (Notes)
+import Libs.Models.Tag as Tag exposing (Tag)
 import Libs.Task as T
 import Models.Project.ColumnId as ColumnId exposing (ColumnId)
-import Models.Project.ColumnPath as ColumnPath
+import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.ColumnStats exposing (ColumnStats)
 import Models.Project.LayoutName exposing (LayoutName)
+import Models.Project.Metadata as Metadata
 import Models.Project.Origin exposing (Origin)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source as Source exposing (Source)
@@ -29,18 +32,17 @@ import Models.Project.TableStats exposing (TableStats)
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn)
 import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps exposing (ErdColumnProps, ErdColumnPropsFlat)
-import PagesComponents.Organization_.Project_.Models.ErdNotes as ErdNotes
 import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
-import PagesComponents.Organization_.Project_.Models.Notes as NotesRef exposing (Notes, NotesRef)
 import PagesComponents.Organization_.Project_.Models.NotesMsg exposing (NotesMsg(..))
+import PagesComponents.Organization_.Project_.Models.TagsMsg exposing (TagsMsg(..))
 import Ports
 import Services.Lenses exposing (setEditNotes, setSearch, setView)
 import Task
 
 
 type alias Model =
-    { id : HtmlId, view : View, search : String, editNotes : Maybe Notes, openedCollapse : HtmlId }
+    { id : HtmlId, view : View, search : String, editNotes : Maybe Notes, editTags : Maybe String, openedCollapse : HtmlId }
 
 
 type View
@@ -77,7 +79,10 @@ type Msg
     | ToggleCollapse HtmlId
     | EditNotes HtmlId Notes
     | EditNotesUpdate Notes
-    | SaveNotes NotesRef Notes Notes
+    | SaveNotes TableId (Maybe ColumnPath) Notes Notes
+    | EditTags HtmlId (List Tag)
+    | EditTagsUpdate String
+    | SaveTags TableId (Maybe ColumnPath) (List Tag) (List Tag)
 
 
 
@@ -86,15 +91,15 @@ type Msg
 
 init : View -> Model
 init v =
-    { id = Conf.ids.detailsSidebarDialog, view = v, search = "", editNotes = Nothing, openedCollapse = "" }
+    { id = Conf.ids.detailsSidebarDialog, view = v, search = "", editNotes = Nothing, editTags = Nothing, openedCollapse = "" }
 
 
 
 -- UPDATE
 
 
-update : (String -> msg) -> (NotesMsg -> msg) -> Erd -> Msg -> Maybe Model -> ( Maybe Model, Cmd msg )
-update noop notesMsg erd msg model =
+update : (String -> msg) -> (NotesMsg -> msg) -> (TagsMsg -> msg) -> Erd -> Msg -> Maybe Model -> ( Maybe Model, Cmd msg )
+update noop notesMsg tagsMsg erd msg model =
     case msg of
         Close ->
             ( Nothing, Cmd.none )
@@ -126,8 +131,17 @@ update noop notesMsg erd msg model =
         EditNotesUpdate content ->
             ( model |> Maybe.map (\m -> { m | editNotes = m.editNotes |> Maybe.map (\_ -> content) }), Cmd.none )
 
-        SaveNotes ref initialNotes updatedNotes ->
-            ( model |> Maybe.map (\m -> { m | editNotes = Nothing }), NSave ref initialNotes updatedNotes |> notesMsg |> T.send )
+        SaveNotes table column initialNotes updatedNotes ->
+            ( model |> Maybe.map (\m -> { m | editNotes = Nothing }), NSave table column initialNotes updatedNotes |> notesMsg |> T.send )
+
+        EditTags id tags ->
+            ( model |> Maybe.map (\m -> { m | editTags = tags |> Tag.tagsToString |> Just }), Dom.focus id |> Task.attempt (\_ -> noop "focus-tags-input") )
+
+        EditTagsUpdate content ->
+            ( model |> Maybe.map (\m -> { m | editTags = m.editTags |> Maybe.map (\_ -> content) }), Cmd.none )
+
+        SaveTags tableId columnPath initialTags updatedTags ->
+            ( model |> Maybe.map (\m -> { m | editTags = Nothing }), TSave tableId columnPath initialTags updatedTags |> tagsMsg |> T.send )
 
 
 setViewM : View -> Maybe Model -> Maybe Model
@@ -238,10 +252,10 @@ view wrap showTable showColumn hideColumn loadLayout tableStats columnStats erd 
                         viewSchema wrap showTable erd v
 
                     TableView v ->
-                        viewTable wrap showTable loadLayout erd model.editNotes model.openedCollapse tableStats v
+                        viewTable wrap showTable loadLayout erd model.editNotes model.editTags model.openedCollapse tableStats v
 
                     ColumnView v ->
-                        viewColumn wrap showTable showColumn hideColumn loadLayout erd model.editNotes model.openedCollapse columnStats v
+                        viewColumn wrap showTable showColumn hideColumn loadLayout erd model.editNotes model.editTags model.openedCollapse columnStats v
                 ]
             ]
         ]
@@ -257,20 +271,33 @@ viewSchema wrap showTable erd model =
     Details.viewSchema (ShowList |> wrap) (ShowSchema >> wrap) (ShowTable >> wrap) showTable erd.settings.defaultSchema model.schema model.tables
 
 
-viewTable : (Msg -> msg) -> (TableId -> msg) -> (LayoutName -> msg) -> Erd -> Maybe Notes -> HtmlId -> Dict TableId (Dict SourceIdStr TableStats) -> TableData -> Html msg
-viewTable wrap showTable loadLayout erd editNotes openedCollapse stats model =
+viewTable : (Msg -> msg) -> (TableId -> msg) -> (LayoutName -> msg) -> Erd -> Maybe Notes -> Maybe String -> HtmlId -> Dict TableId (Dict SourceIdStr TableStats) -> TableData -> Html msg
+viewTable wrap showTable loadLayout erd editNotes editTags openedCollapse stats model =
     let
-        notes : Notes
-        notes =
-            erd.notes |> ErdNotes.getTable model.id |> Maybe.withDefault ""
+        initialNotes : Notes
+        initialNotes =
+            erd.metadata |> Metadata.getNotes model.id Nothing |> Maybe.withDefault ""
 
         notesModel : Details.NotesModel msg
         notesModel =
-            { notes = notes
+            { notes = initialNotes
             , editing = editNotes
             , edit = \id content -> EditNotes id content |> wrap
             , update = EditNotesUpdate >> wrap
-            , save = SaveNotes (NotesRef.fromTable model.id) notes >> wrap
+            , save = SaveNotes model.id Nothing initialNotes >> wrap
+            }
+
+        initialTags : List Tag
+        initialTags =
+            erd.metadata |> Metadata.getTags model.id Nothing |> Maybe.withDefault []
+
+        tagsModel : Details.TagsModel msg
+        tagsModel =
+            { tags = initialTags
+            , editing = editTags
+            , edit = \id tags -> EditTags id tags |> wrap
+            , update = EditTagsUpdate >> wrap
+            , save = Tag.tagsFromString >> SaveTags model.id Nothing initialTags >> wrap
             }
 
         inLayouts : List LayoutName
@@ -285,23 +312,36 @@ viewTable wrap showTable loadLayout erd editNotes openedCollapse stats model =
         tableStats =
             stats |> Dict.getOrElse model.id Dict.empty
     in
-    Details.viewTable (ShowList |> wrap) (ShowSchema >> wrap) (ShowTable >> wrap) (ShowColumn >> wrap) showTable loadLayout (ToggleCollapse >> wrap) openedCollapse erd.settings.defaultSchema model.schema model.table notesModel inLayouts inSources tableStats
+    Details.viewTable (ShowList |> wrap) (ShowSchema >> wrap) (ShowTable >> wrap) (ShowColumn >> wrap) showTable loadLayout (ToggleCollapse >> wrap) openedCollapse erd.settings.defaultSchema model.schema model.table notesModel tagsModel inLayouts inSources tableStats
 
 
-viewColumn : (Msg -> msg) -> (TableId -> msg) -> (ColumnRef -> msg) -> (ColumnRef -> msg) -> (LayoutName -> msg) -> Erd -> Maybe Notes -> HtmlId -> Dict ColumnId (Dict SourceIdStr ColumnStats) -> ColumnData -> Html msg
-viewColumn wrap showTable _ _ loadLayout erd editNotes openedCollapse stats model =
+viewColumn : (Msg -> msg) -> (TableId -> msg) -> (ColumnRef -> msg) -> (ColumnRef -> msg) -> (LayoutName -> msg) -> Erd -> Maybe Notes -> Maybe String -> HtmlId -> Dict ColumnId (Dict SourceIdStr ColumnStats) -> ColumnData -> Html msg
+viewColumn wrap showTable _ _ loadLayout erd editNotes editTags openedCollapse stats model =
     let
-        notes : Notes
-        notes =
-            erd.notes |> ErdNotes.getColumn model.id |> Maybe.withDefault ""
+        initialNotes : Notes
+        initialNotes =
+            erd.metadata |> Metadata.getNotes model.id.table (Just model.id.column) |> Maybe.withDefault ""
 
         notesModel : Details.NotesModel msg
         notesModel =
-            { notes = notes
+            { notes = initialNotes
             , editing = editNotes
             , edit = \id content -> EditNotes id content |> wrap
             , update = EditNotesUpdate >> wrap
-            , save = SaveNotes (NotesRef.fromColumn model.id) notes >> wrap
+            , save = SaveNotes model.id.table (Just model.id.column) initialNotes >> wrap
+            }
+
+        initialTags : List Tag
+        initialTags =
+            erd.metadata |> Metadata.getTags model.id.table (Just model.id.column) |> Maybe.withDefault []
+
+        tagsModel : Details.TagsModel msg
+        tagsModel =
+            { tags = initialTags
+            , editing = editTags
+            , edit = \id tags -> EditTags id tags |> wrap
+            , update = EditTagsUpdate >> wrap
+            , save = Tag.tagsFromString >> SaveTags model.id.table (Just model.id.column) initialTags >> wrap
             }
 
         inLayouts : List LayoutName
@@ -316,7 +356,7 @@ viewColumn wrap showTable _ _ loadLayout erd editNotes openedCollapse stats mode
         columnStats =
             stats |> Dict.getOrElse (ColumnId.fromRef model.id) Dict.empty
     in
-    Details.viewColumn (ShowList |> wrap) (ShowSchema >> wrap) (ShowTable >> wrap) (ShowColumn >> wrap) showTable loadLayout (ToggleCollapse >> wrap) openedCollapse erd.settings.defaultSchema model.schema model.table model.column notesModel inLayouts inSources columnStats
+    Details.viewColumn (ShowList |> wrap) (ShowSchema >> wrap) (ShowTable >> wrap) (ShowColumn >> wrap) showTable loadLayout (ToggleCollapse >> wrap) openedCollapse erd.settings.defaultSchema model.schema model.table model.column notesModel tagsModel inLayouts inSources columnStats
 
 
 

@@ -1,3 +1,4 @@
+# same features than libs/connector-postgres/src/index.ts
 defmodule Azimutt.Analyzer.Postgres do
   @moduledoc "Analyzer implementation for PostgreSQL"
   use TypedStruct
@@ -135,6 +136,8 @@ defmodule Azimutt.Analyzer.Postgres do
     # https://www.postgresql.org/docs/current/catalog-pg-class.html: catalogs tables and most everything else that has columns or is otherwise similar to a table. This includes indexes (but see also pg_index), sequences (but see also pg_sequence), views, materialized views, composite types, and TOAST tables; see relkind.
     # https://www.postgresql.org/docs/current/catalog-pg-namespace.html: stores namespaces. A namespace is the structure underlying SQL schemas: each namespace can have a separate collection of relations, types, etc. without name conflicts.
     # https://www.postgresql.org/docs/current/catalog-pg-attrdef.html: stores column default values.
+    # system columns have `attnum` < 0, avoid them
+    # deleted columns have `atttypid` at 0, avoid them
     Postgrex.query(
       pid,
       """
@@ -150,7 +153,7 @@ defmodule Azimutt.Analyzer.Postgres do
         JOIN pg_class c ON c.oid = a.attrelid
         JOIN pg_namespace n ON n.oid = c.relnamespace
         LEFT OUTER JOIN pg_attrdef d ON d.adrelid = c.oid AND d.adnum = a.attnum
-      WHERE c.relkind IN ('r', 'v', 'm') AND a.attnum > 0 AND n.nspname #{in_schema(schema)}
+      WHERE c.relkind IN ('r', 'v', 'm') AND a.attnum > 0 AND a.atttypid != 0 AND n.nspname #{in_schema(schema)}
       ORDER BY table_schema, table_name, column_index
       """,
       if(schema == nil, do: [], else: [schema])
@@ -465,19 +468,20 @@ defmodule Azimutt.Analyzer.Postgres do
 
   defp build_relation(relation, column_index_to_name) do
     src_table_id = to_table_id(relation)
-
     ref_table_id = to_table_id(%{table_schema: relation.target_schema, table_name: relation.target_table})
 
     %Schema.Relation{
       name: relation.constraint_name,
-      src: %Schema.TableRef{schema: relation.table_schema, table: relation.table_name},
-      ref: %Schema.TableRef{schema: relation.target_schema, table: relation.target_table},
-      columns:
-        List.zip([
-          relation.columns |> Enum.map(&column_index_to_name.(src_table_id, &1)),
-          relation.target_columns |> Enum.map(&column_index_to_name.(ref_table_id, &1))
-        ])
-        |> Enum.map(fn {src, ref} -> %Schema.ColumnLink{src: src, ref: ref} end)
+      src: %Schema.ColumnRef{
+        schema: relation.table_schema,
+        table: relation.table_name,
+        column: column_index_to_name.(src_table_id, relation.columns |> hd())
+      },
+      ref: %Schema.ColumnRef{
+        schema: relation.target_schema,
+        table: relation.target_table,
+        column: column_index_to_name.(ref_table_id, relation.target_columns |> hd())
+      }
     }
   end
 
@@ -651,7 +655,7 @@ defmodule Azimutt.Analyzer.Postgres do
 
   # HELPERS
 
-  defp in_schema(schema), do: if(schema == nil, do: "NOT IN ('information_schema', 'pg_catalog')", else: "IN ($1)")
+  defp in_schema(schema), do: if(schema == nil, do: "NOT IN ('information_schema', 'pg_catalog')", else: "= $1")
 
   defp format_result(%Postgrex.Result{} = res, struct) do
     columns = res.columns |> Enum.map(&String.to_atom/1)

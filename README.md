@@ -1,19 +1,23 @@
 <p align="center">
     <a href="https://azimutt.app" target="_blank" rel="noopener">
         <picture>
-          <source media="(prefers-color-scheme: dark)" srcset="backend/priv/static/images/logo_light.svg">
-          <source media="(prefers-color-scheme: light)" srcset="backend/priv/static/images/logo_dark.svg">
-          <img alt="Azimutt logo" src="backend/priv/static/images/logo_dark.svg">
+          <source media="(prefers-color-scheme: dark)" srcset="assets/azimutt-logo-light.png">
+          <source media="(prefers-color-scheme: light)" srcset="assets/azimutt-logo-dark.png">
+          <img alt="Azimutt logo" src="assets/azimutt-logo-dark.png">
         </picture>
     </a>
 </p>
-<h3 align="center">Next-Gen ERD</h3>
-<p align="center">Design, Explore, Document and Analyze your database</p>
-
+<p align="center">
+    <b>Next-Gen ERD</b>: Design, Explore, Document and Analyze your database
+</p>
 <p align="center">
   <a href="https://azimutt.app" target="_blank" rel="noopener">azimutt.app</a> •
-  <a href="https://github.com/azimuttapp/azimutt/projects/1" target="_blank" rel="noopener">roadmap</a> •
+  <a href="https://github.com/orgs/azimuttapp/projects/5" target="_blank" rel="noopener">roadmap</a> •
   <a href="https://twitter.com/azimuttapp" target="_blank" rel="noopener">@azimuttapp</a>
+</p>
+<p align="center">
+    <a href="https://www.producthunt.com/posts/azimutt?utm_source=badge-featured&utm_medium=badge&utm_souce=badge-azimutt" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=390699&theme=light" alt="Azimutt - Easily explore and analyze your database with your team | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a>
+    <a href="https://azimutt.app/slack" target="_blank"><img src="assets/slack-join.svg" alt="Join us on Slack" style="width: 216px; height: 54px;" width="216" height="54"></a>
 </p>
 
 Azimutt is an Entity Relationship Diagram (ERD) targeting real world database schema (big & messy).
@@ -68,6 +72,36 @@ Now you can visit :
 ⚠️ to launch the app you will need a few environment variables: `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `MAILGUN_DOMAIN`, `MAILGUN_API_KEY`, `STRIPE_API_KEY`, `STRIPE_WEBHOOK_SIGNING_SECRET`.
 
 ⚠️ Please see [Setup Stripe](#setup-stripe).
+
+### npm command semantics
+
+We have a lot of projects with a lot of commands, here is how they are structured:
+
+- each project has its own commands (mostly npm but also elixir), the root project has global commands to launch them using a prefix
+- `setup` is a one time command to install what is required
+- `install` download dependencies, should be run when new ones are added
+- `start` launch project in dev mode
+- `test` allows to run tests
+- `format` allows to run execute code formatting
+- `lint` allows to run execute linters
+- `build` generate compilation output
+- `docker` same as `build` but in the docker image (paths are different 😕)
+- `update` bumps library versions
+
+Prefixes in front of the command in root folder:
+
+- `libs:` run the command for every library in `libs` folder
+- `ex:` meaning elixir, it targets the backend (mostly running `mix` commands)
+- `fe:` meaning frontend, target the frontend project with Elm, TypeScript & Tailwind
+- `elm:` targets only Elm in the frontend project
+- `ts:` targets only TypeScript in the frontend project
+- `cli:` run the command for the `cli` project
+- `desktop:` run the command for the `desktop` project
+- `be:` meaning browser extension run the command for the `browser-extension` project
+
+And then "special" commands:
+
+- `elm:book`: launch elm-book, the design system for Elm
 
 ### Development commands
 

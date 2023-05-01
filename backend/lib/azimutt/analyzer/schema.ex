@@ -4,11 +4,11 @@ defmodule Azimutt.Analyzer.Schema do
   alias Azimutt.Analyzer.Schema.Check
   alias Azimutt.Analyzer.Schema.Column
   alias Azimutt.Analyzer.Schema.ColumnLink
+  alias Azimutt.Analyzer.Schema.ColumnRef
   alias Azimutt.Analyzer.Schema.Index
   alias Azimutt.Analyzer.Schema.PrimaryKey
   alias Azimutt.Analyzer.Schema.Relation
   alias Azimutt.Analyzer.Schema.Table
-  alias Azimutt.Analyzer.Schema.TableRef
   alias Azimutt.Analyzer.Schema.Type
   alias Azimutt.Analyzer.Schema.Unique
 
@@ -78,16 +78,16 @@ defmodule Azimutt.Analyzer.Schema do
     @moduledoc false
     @derive Jason.Encoder
     field :name, String.t()
-    field :src, TableRef.t()
-    field :ref, TableRef.t()
-    field :columns, nonempty_list(ColumnLink.t())
+    field :src, ColumnRef.t()
+    field :ref, ColumnRef.t()
   end
 
-  typedstruct module: TableRef, enforce: true do
+  typedstruct module: ColumnRef, enforce: true do
     @moduledoc false
     @derive Jason.Encoder
     field :schema, String.t()
     field :table, String.t()
+    field :column, String.t()
   end
 
   typedstruct module: ColumnLink, enforce: true do

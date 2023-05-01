@@ -2,9 +2,22 @@
   "name": "azimutt-browser-extension",
   "version": "1.0.0",
   "type": "module",
+  "homepage": "https://azimutt.app",
+  "author": {
+    "name": "Loïc Knuchel",
+    "email": "loicknuchel@gmail.com",
+    "url": "https://loicknuchel.fr"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/azimuttapp/azimutt.git",
+    "directory": "browser-extension"
+  },
   "scripts": {
-    "dev": "./build.watch.js",
-    "build": "./build.js"
+    "start": "./build.watch.js",
+    "build": "./build.js",
+    "update": "npm update --save-dev && npm update --save && npm install"
   },
   "dependencies": {
     "webextension-polyfill": "^0.8.0"

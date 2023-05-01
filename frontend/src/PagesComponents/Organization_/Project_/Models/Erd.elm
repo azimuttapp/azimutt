@@ -17,6 +17,7 @@ import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.CustomType exposing (CustomType)
 import Models.Project.CustomTypeId exposing (CustomTypeId)
 import Models.Project.LayoutName exposing (LayoutName)
+import Models.Project.Metadata exposing (Metadata)
 import Models.Project.ProjectId as ProjectId exposing (ProjectId)
 import Models.Project.ProjectSettings exposing (ProjectSettings)
 import Models.Project.Relation exposing (Relation)
@@ -25,6 +26,7 @@ import Models.Project.Source exposing (Source)
 import Models.Project.SourceId exposing (SourceId)
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
+import Models.Project.TableMeta exposing (TableMeta)
 import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Models.ProjectRef exposing (ProjectRef)
 import Models.Size as Size
@@ -32,7 +34,6 @@ import Models.UrlInfos exposing (UrlInfos)
 import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn)
 import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps
 import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout exposing (ErdLayout)
-import PagesComponents.Organization_.Project_.Models.ErdNotes as ErdNotes exposing (ErdNotes)
 import PagesComponents.Organization_.Project_.Models.ErdRelation as ErdRelation exposing (ErdRelation)
 import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
@@ -48,7 +49,7 @@ type alias Erd =
     , relationsByTable : Dict TableId (List ErdRelation)
     , layouts : Dict LayoutName ErdLayout
     , currentLayout : LayoutName
-    , notes : ErdNotes
+    , metadata : Metadata
     , sources : List Source
     , settings : ProjectSettings
     }
@@ -67,7 +68,7 @@ create project =
     , relationsByTable = relationsByTable
     , layouts = project.layouts |> Dict.map (\_ -> ErdLayout.create relationsByTable)
     , currentLayout = project.usedLayout
-    , notes = ErdNotes.create project.notes
+    , metadata = project.metadata
     , sources = project.sources
     , settings = project.settings
     }
@@ -84,7 +85,7 @@ unpack erd =
     , tables = erd.tables |> Dict.map (\_ -> ErdTable.unpack)
     , relations = erd.relations |> List.map ErdRelation.unpack
     , types = erd.types
-    , notes = ErdNotes.unpack erd.notes
+    , metadata = erd.metadata
     , usedLayout = erd.currentLayout
     , layouts = erd.layouts |> Dict.map (\_ -> ErdLayout.unpack)
     , settings = erd.settings

@@ -29,13 +29,7 @@
                             <path d="m0 1.28925c0-.712125.59175-1.28925 1.32187-1.28925h15.35623c.7301 0 1.3219.577125 1.3219 1.28925v15.42155c0 .7121-.5918 1.2892-1.3219 1.2892h-15.35623c-.73012 0-1.32187-.5771-1.32187-1.2892zm5.56087 13.77905v-8.12817h-2.70112v8.12817zm-1.34999-9.23855c.94162 0 1.52774-.62325 1.52774-1.404-.01687-.79762-.58499-1.404-1.50974-1.404s-1.52888.6075-1.52888 1.404c0 .78075.58613 1.404 1.49287 1.404zm5.5215 9.23855v-4.5394c0-.243.01799-.486.08999-.65928.19463-.48487.63903-.98775 1.38603-.98775.9776 0 1.368.74476 1.368 1.83823v4.3482h2.7011v-4.6621c0-2.49745-1.332-3.65845-3.1095-3.65845-1.4333 0-2.0756.7875-2.43562 1.34212v.02813h-.018c.00597-.00939.01197-.01877.018-.02813v-1.14974h-2.70001c.03375.76275 0 8.12817 0 8.12817z"></path>
                         </svg>
                     </a>
-                    <!--<a href="#" class="text-gray-400 hover:text-gray-500">
-                        <span class="sr-only">YouTube</span>
-                        <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                            <path fill-rule="evenodd" d="M19.812 5.418c.861.23 1.538.907 1.768 1.768C21.998 8.746 22 12 22 12s0 3.255-.418 4.814a2.504 2.504 0 0 1-1.768 1.768c-1.56.419-7.814.419-7.814.419s-6.255 0-7.814-.419a2.505 2.505 0 0 1-1.768-1.768C2 15.255 2 12 2 12s0-3.255.417-4.814a2.507 2.507 0 0 1 1.768-1.768C5.744 5 11.998 5 11.998 5s6.255 0 7.814.418ZM15.194 12 10 15V9l5.194 3Z" clip-rule="evenodd" />
-                        </svg>
-                    </a>-->
-                </div>
+    </div>
             </div>
             <div class="mt-16 grid grid-cols-2 gap-8 xl:col-span-2 xl:mt-0">
                 <div class="md:grid md:grid-cols-2 md:gap-8">
@@ -75,8 +69,8 @@
                             <li><a href={Routes.blog_path(@conn, :index)} class="text-sm leading-6 text-gray-600 hover:text-gray-900">Blog</a></li>
                             <!-- <li><a href="#" class="text-sm leading-6 text-gray-600 hover:text-gray-900">Partners</a></li> -->
                             <!-- <li><a href="#" class="text-sm leading-6 text-gray-600 hover:text-gray-900">Claim</a></li> -->
-                            <li><a href="#TODO" class="text-sm leading-6 text-gray-600 hover:text-gray-900">Privacy <span class="inline-flex items-center rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-800">soon</span></a></li>
-                            <li><a href="#TODO" class="text-sm leading-6 text-gray-600 hover:text-gray-900">Terms <span class="inline-flex items-center rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-800">soon</span></a></li>
+                            <li><a href={Routes.website_path(@conn, :privacy)} class="text-sm leading-6 text-gray-600 hover:text-gray-900">Privacy </a></li>
+                            <li><a href={Routes.website_path(@conn, :terms)} class="text-sm leading-6 text-gray-600 hover:text-gray-900">Terms </a></li>
                         </ul>
                     </div>
                 </div>
