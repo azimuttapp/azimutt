@@ -71,5 +71,9 @@ jobs:
           npm run build
 
       - name: Run tests
+        env:
+          PHX_HOST: localhost
+          PORT: 4000
+          FILE_STORAGE_ADAPTER: local
         run: |
           npm run test

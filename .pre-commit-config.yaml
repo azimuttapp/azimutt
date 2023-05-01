@@ -101,7 +101,7 @@ repos:
     - id: elm-format
       name: 'Elm format'
       language: system
-      entry: bash -c npm run elm:format
+      entry: npm run elm:format
       pass_filenames: false
       files: \.elm*$
 
