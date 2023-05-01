@@ -28,24 +28,17 @@ defmodule Azimutt.Projects do
     project_query()
     |> where(
       [p, _, om],
-      p.id == ^id and
-        (p.storage_kind == :remote or (p.storage_kind == :local and p.local_owner_id == ^current_user.id)) and
-        (om.user_id == ^current_user.id or p.visibility != :none)
+      p.id == ^id and om.user_id == ^current_user.id and
+        (p.storage_kind == :remote or (p.storage_kind == :local and p.local_owner_id == ^current_user.id))
     )
     |> Repo.one()
     |> Result.from_nillable()
+    |> Result.flat_map_error(fn err -> get_project(id, nil) |> Result.map_error(fn _ -> err end) end)
   end
 
   def get_project(id, current_user) when is_nil(current_user) do
-    project_query()
-    |> where([p, _, om], p.id == ^id and p.storage_kind == :remote and p.visibility != :none)
-    |> Repo.one()
-    |> Result.from_nillable()
-  end
-
-  defp get_public_project(id) do
     project_query_no_join()
-    |> where([p, _, om], p.id == ^id and p.storage_kind == :remote and p.visibility != :none)
+    |> where([p], p.id == ^id and p.storage_kind == :remote and p.visibility != :none)
     |> Repo.one()
     |> Result.from_nillable()
   end
@@ -212,7 +205,7 @@ defmodule Azimutt.Projects do
 
   defp project_query_no_join do
     Project
-    |> order_by([p, _, _], desc: p.updated_at)
+    |> order_by([p], desc: p.updated_at)
     |> preload(:organization)
     |> preload(organization: :heroku_resource)
     |> preload(:updated_by)
