@@ -55,8 +55,8 @@ jobs:
       - name: Install Dependencies
         run: |
           npm run libs:setup
+          npm run fe:setup
           npm run ex:install
-          npm run elm:setup
 
       - name: Check format
         run: |

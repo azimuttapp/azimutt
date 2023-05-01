@@ -24,7 +24,7 @@
     "url": "https://github.com/azimuttapp/azimutt/issues"
   },
   "scripts": {
-    "setup": "npm install && npm run libs:setup && npm run ex:setup && npm run fe:setup",
+    "setup": "npm run libs:setup && npm run fe:setup && npm run ex:setup",
     "install": "npm run libs:install && npm run ex:install && npm run fe:install && npm run cli:install && npm run desktop:install && npm run be:install",
     "start": "concurrently \"npm run tailwind:start\" \"npm run ts:start\" \"npm run elm:start\" \"npm run ex:start\"",
     "test": "npm run libs:test && npm run ex:test && npm run elm:test && npm run ts:test && npm run cli:test",
