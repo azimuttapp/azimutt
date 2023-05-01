@@ -60,6 +60,7 @@ jobs:
 
       - name: Check format
         run: |
+          npm run ex:install
           npm run format
 
       - name: Check lint
