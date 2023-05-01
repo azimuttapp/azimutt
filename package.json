@@ -48,6 +48,7 @@
     "ex:update": "cd backend && mix deps.update --all",
     "fe:setup": "cd frontend && npm run setup",
     "fe:install": "cd frontend && npm install",
+    "fe:build": "cd frontend && npm run build",
     "fe:docker": "cd frontend && npm run docker",
     "fe:update": "cd frontend && npm update --save-dev && npm update --save && elm-json upgrade --unsafe && npm install && cd review && elm-json upgrade --unsafe",
     "elm:start": "cd frontend && npm run elm:start",
