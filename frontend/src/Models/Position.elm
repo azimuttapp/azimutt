@@ -1,4 +1,4 @@
-module Models.Position exposing (Canvas, Diagram, Document, Grid, Viewport, canvas, canvasToViewport, debugDiagram, decodeDiagram, decodeDocument, decodeGrid, decodeViewport, diagram, diagramToCanvas, diffCanvas, diffViewport, divCanvas, encodeDiagram, encodeGrid, extractCanvas, extractGrid, extractViewport, fromEventViewport, grid, minCanvas, minGrid, moveCanvas, moveDiagram, moveGrid, moveViewport, multCanvas, negateGrid, offGrid, onGrid, roundDiagram, sizeCanvas, styleTransformCanvas, styleTransformDiagram, styleTransformViewport, stylesGrid, stylesViewport, toStringRoundDiagram, toStringRoundGrid, toStringRoundViewport, viewport, viewportToCanvas, zeroCanvas, zeroDiagram, zeroGrid, zeroViewport)
+module Models.Position exposing (Canvas, Diagram, Document, Grid, Viewport, canvas, canvasToViewport, debugDiagram, decodeDiagram, decodeDocument, decodeGrid, decodeViewport, diagram, diagramToCanvas, diffCanvas, diffViewport, divCanvas, encodeDiagram, encodeGrid, extractCanvas, extractGrid, extractViewport, fromEventViewport, grid, minCanvas, minGrid, moveCanvas, moveDiagram, moveGrid, moveViewport, multCanvas, negateGrid, offGrid, onGrid, roundDiagram, sizeCanvas, styleTransformCanvas, styleTransformDiagram, styleTransformViewport, stylesGrid, stylesViewport, subCanvas, toStringRoundDiagram, toStringRoundGrid, toStringRoundViewport, viewport, viewportToCanvas, zeroCanvas, zeroDiagram, zeroGrid, zeroViewport)
 
 import Html exposing (Attribute, Html)
 import Html.Attributes exposing (style)
@@ -158,6 +158,11 @@ minGrid (Grid p1) (Grid p2) =
 sizeCanvas : Canvas -> Canvas -> Size.Canvas
 sizeCanvas (Canvas p1) (Canvas p2) =
     Position.size p1 p2 |> Size.canvas
+
+
+subCanvas : Float -> Canvas -> Canvas
+subCanvas value (Canvas pos) =
+    Position.sub value pos |> canvas
 
 
 multCanvas : Float -> Canvas -> Canvas

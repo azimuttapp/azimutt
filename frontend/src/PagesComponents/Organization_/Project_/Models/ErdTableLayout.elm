@@ -1,6 +1,9 @@
-module PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout, buildRelatedTables, create, init, unpack)
+module PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout, buildGroupArea, buildRelatedTables, create, init, unpack)
 
 import Dict exposing (Dict)
+import Libs.List as List
+import Models.Area as Area
+import Models.Project.Group exposing (Group)
 import Models.Project.ProjectSettings exposing (ProjectSettings)
 import Models.Project.TableId exposing (TableId)
 import Models.Project.TableProps exposing (TableProps)
@@ -60,3 +63,12 @@ buildRelatedTables shownTables relations =
         |> List.concatMap (\r -> [ r.src.table, r.ref.table ])
         |> List.map (\t -> ( t, ErdRelationProps.create shownTables t ))
         |> Dict.fromList
+
+
+buildGroupArea : List ErdTableLayout -> Group -> Maybe ( Group, Area.Canvas )
+buildGroupArea displayedTables group =
+    group.tables
+        |> List.filterMap (\id -> displayedTables |> List.find (\t -> t.id == id))
+        |> List.map (.props >> Area.offGrid)
+        |> Area.mergeCanvas
+        |> Maybe.map (\area -> ( group, area |> Area.withPadding 30 ))

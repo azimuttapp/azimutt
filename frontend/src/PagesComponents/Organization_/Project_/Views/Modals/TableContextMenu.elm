@@ -12,7 +12,7 @@ import Libs.Models.Notes exposing (Notes)
 import Libs.Models.Platform exposing (Platform)
 import Models.ColumnOrder as ColumnOrder
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
-import PagesComponents.Organization_.Project_.Models exposing (FindPathMsg(..), Msg(..))
+import PagesComponents.Organization_.Project_.Models exposing (FindPathMsg(..), GroupMsg(..), Msg(..))
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
@@ -57,6 +57,7 @@ view platform conf index table layout notes =
                     , { label = "Send to back", action = TableOrder table.id 0, platform = platform, hotkeys = Conf.hotkeys |> Dict.getOrElse "move-to-back" [] }
                     ]
             }
+         , Just { label = "Create group", action = ContextMenu.Simple { action = GroupMsg GCreate, platform = platform, hotkeys = [] } }
          , Maybe.when conf.layout
             { label =
                 if layout.props.collapsed then

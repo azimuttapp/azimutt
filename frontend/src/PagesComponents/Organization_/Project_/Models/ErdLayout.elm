@@ -5,6 +5,7 @@ import Libs.Dict as Dict
 import Libs.Models.Size exposing (Size)
 import Models.Position as Position
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
+import Models.Project.Group exposing (Group)
 import Models.Project.Layout exposing (Layout)
 import Models.Project.TableId exposing (TableId)
 import Models.Size as Size
@@ -19,6 +20,7 @@ import Time
 type alias ErdLayout =
     { canvas : CanvasProps
     , tables : List ErdTableLayout -- list order is used for z-index
+    , groups : List Group
     , memos : List Memo
     , createdAt : Time.Posix
     , updatedAt : Time.Posix
@@ -29,6 +31,7 @@ empty : Time.Posix -> ErdLayout
 empty now =
     { canvas = CanvasProps.empty
     , tables = []
+    , groups = []
     , memos = []
     , createdAt = now
     , updatedAt = now
@@ -39,6 +42,7 @@ create : Dict TableId (List ErdRelation) -> Layout -> ErdLayout
 create relationsByTable layout =
     { canvas = layout.canvas
     , tables = layout.tables |> List.map (\t -> t |> ErdTableLayout.create (layout.tables |> List.map .id |> Set.fromList) (relationsByTable |> Dict.getOrElse t.id []))
+    , groups = layout.groups
     , memos = layout.memos
     , createdAt = layout.createdAt
     , updatedAt = layout.updatedAt
@@ -49,6 +53,7 @@ unpack : ErdLayout -> Layout
 unpack layout =
     { canvas = layout.canvas
     , tables = layout.tables |> List.map (\t -> t |> ErdTableLayout.unpack)
+    , groups = layout.groups
     , memos = layout.memos
     , createdAt = layout.createdAt
     , updatedAt = layout.updatedAt

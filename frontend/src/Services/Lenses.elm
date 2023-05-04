@@ -28,6 +28,7 @@ module Services.Lenses exposing
     , mapExportDialogCmd
     , mapFindPath
     , mapFindPathM
+    , mapGroups
     , mapHiddenColumns
     , mapHoverTable
     , mapIndex
@@ -122,6 +123,7 @@ module Services.Lenses exposing
     , setExportDialog
     , setFindPath
     , setFrom
+    , setGroups
     , setHiddenColumns
     , setHighlight
     , setHighlighted
@@ -537,6 +539,16 @@ mapFindPathM =
 setFrom : v -> { item | from : v } -> { item | from : v }
 setFrom =
     set_ .from (\value item -> { item | from = value })
+
+
+setGroups : v -> { item | groups : v } -> { item | groups : v }
+setGroups =
+    set_ .groups (\value item -> { item | groups = value })
+
+
+mapGroups : (v -> v) -> { item | groups : v } -> { item | groups : v }
+mapGroups =
+    map_ .groups setGroups
 
 
 setHiddenColumns : v -> { item | hiddenColumns : v } -> { item | hiddenColumns : v }

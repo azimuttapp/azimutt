@@ -1,4 +1,4 @@
-module Models.Area exposing (Canvas, CanvasLike, Diagram, Grid, GridLike, Viewport, ViewportLike, centerCanvas, centerCanvasGrid, centerViewport, debugCanvas, debugViewport, diagramToCanvas, divCanvas, fromCanvas, mergeCanvas, multCanvas, offGrid, overlapCanvas, styleTransformCanvas, styleTransformViewport, stylesGrid, stylesViewport, toStringRoundCanvas, toStringRoundViewport, topLeftCanvasGrid, topRightCanvasGrid, zeroCanvas)
+module Models.Area exposing (Canvas, CanvasLike, Diagram, Grid, GridLike, Viewport, ViewportLike, centerCanvas, centerCanvasGrid, centerViewport, debugCanvas, debugViewport, diagramToCanvas, divCanvas, fromCanvas, mergeCanvas, multCanvas, offGrid, overlapCanvas, styleTransformCanvas, styleTransformViewport, stylesGrid, stylesViewport, toStringRoundCanvas, toStringRoundViewport, topLeftCanvasGrid, topRightCanvasGrid, withPadding, zeroCanvas)
 
 import Html exposing (Attribute, Html, div, text)
 import Html.Attributes exposing (class)
@@ -106,6 +106,11 @@ overlapCanvas area2 area1 =
     Area.overlap
         (Area (Position.extractCanvas area2.position) (Size.extractCanvas area2.size))
         (Area (Position.extractCanvas area1.position) (Size.extractCanvas area1.size))
+
+
+withPadding : Float -> Canvas -> Canvas
+withPadding size area =
+    Canvas (area.position |> Position.subCanvas size) (area.size |> Size.addCanvas (2 * size))
 
 
 stylesViewport : ViewportLike a -> List (Attribute msg)

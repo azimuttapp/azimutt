@@ -22,7 +22,7 @@ import PagesComponents.Organization_.Project_.Models exposing (Msg(..))
 import PagesComponents.Organization_.Project_.Models.DiagramObject as DiagramObject exposing (DiagramObject)
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
-import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
+import PagesComponents.Organization_.Project_.Models.ErdTableLayout as ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.MemoId exposing (MemoId)
 import Services.Lenses exposing (mapCanvas, mapMemos, mapPosition, mapProps, mapTables, setPosition, setZoom)
 import Services.Toasts as Toasts
@@ -56,6 +56,7 @@ fitCanvasAlgo erdElem tables memos layout =
     -- (see headerTextSize in frontend/src/Components/Organisms/Table.elm:177)
     -- if you look to fix it, make sure to disable it before testing!
     ((layout.tables |> List.filterInBy .id tables |> List.map (.props >> Area.offGrid))
+        ++ (layout.groups |> List.filterMap (ErdTableLayout.buildGroupArea layout.tables) |> List.map Tuple.second)
         ++ (layout.memos |> List.filterInBy .id memos |> List.map Area.offGrid)
     )
         |> Area.mergeCanvas
