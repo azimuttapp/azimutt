@@ -23,7 +23,6 @@ import {
 } from "../types/project";
 import {Organization, OrganizationId, OrganizationSlug, Plan} from "../types/organization";
 import {DateTime} from "../types/basics";
-import {Env} from "../utils/env";
 import * as Http from "../utils/http";
 import {z} from "zod";
 import * as Zod from "../utils/zod";
@@ -35,7 +34,7 @@ import {TrackEvent} from "../types/tracking";
 export class Backend {
     private projects: { [id: ProjectId]: ProjectJson } = {}
 
-    constructor(private env: Env, private logger: Logger) {
+    constructor(private logger: Logger) {
     }
 
     loginUrl = (currentUrl: string | undefined): string =>
@@ -52,26 +51,26 @@ export class Backend {
 
     private fetchProject = (o: OrganizationId, p: ProjectId, t: ProjectTokenId | null): Promise<ProjectInfoWithContent> => {
         const token = t ? `token=${t}&` : ''
-        const url = this.withXhrHost(`/api/v1/organizations/${o}/projects/${p}?${token}expand=organization,organization.plan,content`)
-        return Http.getJson(url, ProjectWithContentResponse, 'ProjectWithContentResponse').then(toProjectInfoWithContent)
+        const path = `/api/v1/organizations/${o}/projects/${p}?${token}expand=organization,organization.plan,content`
+        return Http.getJson(path, ProjectWithContentResponse, 'ProjectWithContentResponse').then(toProjectInfoWithContent)
     }
 
     createProjectLocal = (o: OrganizationId, json: ProjectJson): Promise<ProjectInfoLocal> => {
         this.logger.debug(`backend.createProjectLocal(${o})`, json)
-        const url = this.withXhrHost(`/api/v1/organizations/${o}/projects?expand=organization,organization.plan`)
-        return Http.postJson(url, toProjectBody(json, ProjectStorage.enum.local), ProjectResponse, 'ProjectResponse').then(toProjectInfo)
+        const path = `/api/v1/organizations/${o}/projects?expand=organization,organization.plan`
+        return Http.postJson(path, toProjectBody(json, ProjectStorage.enum.local), ProjectResponse, 'ProjectResponse').then(toProjectInfo)
             .then(res => isLocal(res) ? res : Promise.reject('Expecting a local project'))
     }
 
     createProjectRemote = async (o: OrganizationId, json: ProjectJson): Promise<ProjectInfoRemote> => {
         this.logger.debug(`backend.createProjectRemote(${o})`, json)
-        const url = this.withXhrHost(`/api/v1/organizations/${o}/projects?expand=organization,organization.plan`)
+        const path = `/api/v1/organizations/${o}/projects?expand=organization,organization.plan`
         const formData: FormData = new FormData()
         Object.entries(toProjectBody(json, ProjectStorage.enum.remote))
             .filter(([_, value]) => value !== null && value !== undefined)
             .map(([key, value]) => formData.append(key, typeof value === 'string' ? value : JSON.stringify(value)))
         formData.append('file', new Blob([encodeContent(json)], {type: 'application/json'}), `${json.name}.json`)
-        const res = await Http.postMultipart(url, formData, ProjectResponse, 'ProjectResponse').then(toProjectInfo)
+        const res = await Http.postMultipart(path, formData, ProjectResponse, 'ProjectResponse').then(toProjectInfo)
         this.projects[res.id] = json
         return isRemote(res) ? res : Promise.reject('Expecting a remote project')
     }
@@ -80,9 +79,9 @@ export class Backend {
         this.logger.debug(`backend.updateProjectLocal(${p.organization?.id}, ${p.id})`, p)
         if (!p.organization) return Promise.reject('Expecting an organization to update project')
         if (p.storage !== ProjectStorage.enum.local) return Promise.reject('Expecting a local project')
-        const url = this.withXhrHost(`/api/v1/organizations/${p.organization.id}/projects/${p.id}?expand=organization,organization.plan`)
+        const path = `/api/v1/organizations/${p.organization.id}/projects/${p.id}?expand=organization,organization.plan`
         const json = buildProjectJson(p)
-        return Http.putJson(url, toProjectBody(json, ProjectStorage.enum.local), ProjectResponse, 'ProjectResponse').then(toProjectInfo)
+        return Http.putJson(path, toProjectBody(json, ProjectStorage.enum.local), ProjectResponse, 'ProjectResponse').then(toProjectInfo)
             .then(res => isLocal(res) ? res : Promise.reject('Expecting a local project'))
     }
 
@@ -107,56 +106,43 @@ export class Backend {
         }
 
         if (!p.organization) return Promise.reject('Expecting an organization to update project')
-        const url = this.withXhrHost(`/api/v1/organizations/${p.organization.id}/projects/${p.id}?expand=organization,organization.plan`)
+        const path = `/api/v1/organizations/${p.organization.id}/projects/${p.id}?expand=organization,organization.plan`
         const formData: FormData = new FormData()
         Object.entries(toProjectBody(json, ProjectStorage.enum.remote))
             .filter(([_, value]) => value !== null && value !== undefined)
             .map(([key, value]) => formData.append(key, typeof value === 'string' ? value : JSON.stringify(value)))
         formData.append('file', new Blob([encodeContent(json)], {type: 'application/json'}), `${p.organization.id}-${p.name}.json`)
-        const res = await Http.putMultipart(url, formData, ProjectResponse, 'ProjectResponse').then(toProjectInfo)
+        const res = await Http.putMultipart(path, formData, ProjectResponse, 'ProjectResponse').then(toProjectInfo)
         this.projects[p.id] = json
         return isRemote(res) ? res : Promise.reject('Expecting a remote project')
     }
 
     deleteProject = async (o: OrganizationId, p: ProjectId): Promise<void> => {
         this.logger.debug(`backend.deleteProject(${o}, ${p})`)
-        const url = this.withXhrHost(`/api/v1/organizations/${o}/projects/${p}`)
-        await Http.deleteNoContent(url)
+        await Http.deleteNoContent(`/api/v1/organizations/${o}/projects/${p}`)
         delete this.projects[p]
     }
 
     getDatabaseSchema = async (database: DatabaseUrl): Promise<AzimuttSchema> => {
         this.logger.debug(`backend.getDatabaseSchema(${database})`)
-        const url = this.withXhrHost(`/api/v1/analyzer/schema`)
-        return Http.postJson(url, {url: database}, AzimuttSchema, 'AzimuttSchema')
+        return Http.postJson(`/api/v1/analyzer/schema`, {url: database}, AzimuttSchema, 'AzimuttSchema')
     }
 
     getTableStats = async (database: DatabaseUrl, id: TableId): Promise<TableStats> => {
         this.logger.debug(`backend.getTableStats(${database}, ${id})`)
         const {schema, table} = parseTableId(id)
-        const url = this.withXhrHost(`/api/v1/analyzer/stats`)
-        return Http.postJson(url, {url: database, schema, table}, TableStats, 'TableStats')
+        return Http.postJson(`/api/v1/analyzer/stats`, {url: database, schema, table}, TableStats, 'TableStats')
     }
 
     getColumnStats = async (database: DatabaseUrl, column: ColumnRef): Promise<ColumnStats> => {
         this.logger.debug(`backend.getColumnStats(${database}, ${JSON.stringify(column)})`)
         const {schema, table} = parseTableId(column.table)
-        const url = this.withXhrHost(`/api/v1/analyzer/stats`)
-        return Http.postJson(url, {url: database, schema, table, column: column.column}, ColumnStats, 'ColumnStats')
+        return Http.postJson(`/api/v1/analyzer/stats`, {url: database, schema, table, column: column.column}, ColumnStats, 'ColumnStats')
     }
 
     trackEvent = (event: TrackEvent): void => {
         this.logger.debug(`backend.trackEvent(${JSON.stringify(event)})`)
-        const url = this.withXhrHost(`/api/v1/events`)
-        Http.postNoContent(url, event).then(_ => undefined)
-    }
-
-    private withXhrHost(path: string): string {
-        if (this.env == Env.enum.dev) {
-            return `${path}`
-        } else {
-            return `${window.location.protocol}//${window.host}${path}`
-        }
+        Http.postNoContent(`/api/v1/events`, event).then(_ => undefined)
     }
 }
 

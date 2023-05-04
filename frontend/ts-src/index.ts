@@ -37,17 +37,16 @@ import {Storage} from "./services/storage";
 import {Backend} from "./services/backend";
 import * as Uuid from "./types/uuid";
 import {HtmlId, Platform, ToastLevel, ViewPosition} from "./types/basics";
-import {Env, getEnv} from "./utils/env";
+import {Env} from "./utils/env";
 import * as url from "./utils/url";
 
-const env = getEnv()
 const platform = Utils.getPlatform()
-const logger = new ConsoleLogger(env)
-const flags = {now: Date.now(), conf: {env, platform, desktop: !!window.desktop}}
+const logger = new ConsoleLogger(window.env)
+const flags = {now: Date.now(), conf: {env: window.env, platform, desktop: !!window.desktop}}
 logger.debug('flags', flags)
 const app = ElmApp.init(flags, logger)
 const storage = new Storage(logger)
-const backend = new Backend(env, logger)
+const backend = new Backend(logger)
 logger.info('Hi there! I hope you are enjoying Azimutt 👍️\n\n' +
     'Did you know you can access your current project in the console?\n' +
     'And even trigger some actions in Azimutt?\n\n' +
@@ -60,7 +59,7 @@ window.azimutt = new AzimuttApi(app, logger)
 
 /* PWA service worker */
 
-if ('serviceWorker' in navigator && env === Env.enum.prod) {
+if ('serviceWorker' in navigator && window.env === Env.enum.prod) {
     navigator.serviceWorker.register("/service-worker.js")
     // .then(reg => logger.debug('service-worker registered!', reg))
     // .catch(err => logger.debug('service-worker failed to register!', err))
@@ -96,7 +95,7 @@ app.on('Confetti', msg => Utils.launchConfetti(msg.id))
 app.on('ConfettiPride', _ => Utils.launchConfettiPride())
 app.on('Fireworks', _ => Utils.launchFireworks())
 app.on('Track', msg => backend.trackEvent(msg.event))
-if (app.noListeners().length > 0 && env !== Env.enum.prod) {
+if (app.noListeners().length > 0 && window.env !== Env.enum.prod) {
     logger.error(`Do not listen to elm events: ${app.noListeners().join(', ')}`)
 }
 

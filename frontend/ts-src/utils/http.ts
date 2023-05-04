@@ -2,41 +2,25 @@ import {ZodType} from "zod/lib/types";
 import * as Zod from "./zod";
 import * as Json from "./json";
 
-export const getJson = <Response>(url: string, zod: ZodType<Response>, label: string): Promise<Response> => fetch(url, {credentials: 'include'}).then(buildJsonResponse(zod, label))
-export const postJson = <Body, Response>(url: string, body: Body, zod: ZodType<Response>, label: string): Promise<Response> => fetchJson('POST', url, body, zod, label)
-export const postNoContent = <Body>(url: string, body: Body): Promise<void> => fetchNoContent('POST', url, body)
-export const postMultipart = <Response>(url: string, body: FormData, zod: ZodType<Response>, label: string): Promise<Response> => fetchMultipart('POST', url, body, zod, label)
-export const putJson = <Body, Response>(url: string, body: Body, zod: ZodType<Response>, label: string): Promise<Response> => fetchJson('PUT', url, body, zod, label)
-export const putMultipart = <Response>(url: string, body: FormData, zod: ZodType<Response>, label: string): Promise<Response> => fetchMultipart('PUT', url, body, zod, label)
-export const deleteNoContent = (url: string): Promise<void> => fetch(url, {method: 'DELETE', credentials: 'include'}).then(buildNoContentResponse)
-
+export const getJson = <Response>(url: string, zod: ZodType<Response>, label: string): Promise<Response> => customFetch('GET', url, undefined, zod, label)
+export const postJson = <Body, Response>(url: string, body: Body, zod: ZodType<Response>, label: string): Promise<Response> => customFetch('POST', url, body, zod, label)
+export const postNoContent = <Body>(url: string, body: Body): Promise<void> => customFetch('POST', url, body)
+export const postMultipart = <Response>(url: string, body: FormData, zod: ZodType<Response>, label: string): Promise<Response> => customFetch('POST', url, body, zod, label)
+export const putJson = <Body, Response>(url: string, body: Body, zod: ZodType<Response>, label: string): Promise<Response> => customFetch('PUT', url, body, zod, label)
+export const putMultipart = <Response>(url: string, body: FormData, zod: ZodType<Response>, label: string): Promise<Response> => customFetch('PUT', url, body, zod, label)
+export const deleteNoContent = (url: string): Promise<void> => customFetch('DELETE', url)
 
 type Method = 'GET' | 'POST' | 'PUT' | 'DELETE'
 
-function fetchJson<Body, Response>(method: Method, url: string, body: Body, zod: ZodType<Response>, label: string): Promise<Response> {
-    return fetch(url, {
-        method,
-        credentials: 'include',
-        headers: {'Accept': 'application/json', 'Content-Type': 'application/json'},
-        body: JSON.stringify(body)
-    }).then(buildJsonResponse(zod, label))
-}
-
-function fetchNoContent<Body>(method: Method, url: string, body: Body): Promise<void> {
-    return fetch(url, {
-        method,
-        credentials: 'include',
-        headers: {'Accept': 'application/json', 'Content-Type': 'application/json'},
-        body: JSON.stringify(body)
-    }).then(buildNoContentResponse)
-}
-
-function fetchMultipart<Response>(method: Method, url: string, body: FormData, zod: ZodType<Response>, label: string): Promise<Response> {
-    return fetch(url, {
-        method,
-        credentials: 'include',
-        body: body
-    }).then(buildJsonResponse(zod, label))
+function customFetch<Body, Response>(method: Method, path: string, body?: Body, zod?: ZodType<Response>, label?: string): Promise<Response> {
+    const url = `${window.location.origin}${path}`
+    let opts: RequestInit = {method, credentials: 'include'}
+    if (body instanceof FormData) {
+        opts = {...opts, body: body}
+    } else if (typeof body === 'object' && body !== null) {
+        opts = {...opts, body: JSON.stringify(body), headers: {'Accept': 'application/json', 'Content-Type': 'application/json'}}
+    }
+    return fetch(url, opts).then(r => zod && label ? buildJsonResponse(zod, label)(r) : buildNoContentResponse(r) as Response)
 }
 
 const buildJsonResponse = <T>(zod: ZodType<T>, label: string) => (res: Response): Promise<T> =>
