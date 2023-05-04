@@ -155,7 +155,7 @@ export class Backend {
         if (this.env == Env.enum.dev) {
             return `${path}`
         } else {
-            return `https://${window.host}${path}`
+            return `${window.location.protocol}//${window.host}${path}`
         }
     }
 }
