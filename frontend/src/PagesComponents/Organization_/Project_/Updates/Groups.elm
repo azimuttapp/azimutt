@@ -1,30 +1,74 @@
 module PagesComponents.Organization_.Project_.Updates.Groups exposing (Model, handleGroups)
 
+import Browser.Dom as Dom
 import Libs.List as List
+import Libs.Maybe as Maybe
+import Libs.Task as T
 import Models.Project.Group as Group exposing (Group)
 import Models.Project.TableId exposing (TableId)
-import PagesComponents.Organization_.Project_.Models exposing (GroupMsg(..), Msg(..), NotesDialog)
+import PagesComponents.Organization_.Project_.Models exposing (GroupEdit, GroupMsg(..), Msg(..), NotesDialog)
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
+import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
-import Services.Lenses exposing (mapErdM, mapGroups, mapLayoutsD)
+import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirtyCmd)
+import Services.Lenses exposing (mapEditGroupM, mapErdM, mapGroups, setColor, setContent, setEditGroup, setName)
+import Services.Toasts as Toasts
+import Task
+import Time
+import Track
 
 
 type alias Model x =
-    { x | erd : Maybe Erd }
+    { x
+        | conf : ErdConf
+        , dirty : Bool
+        , erd : Maybe Erd
+        , editGroup : Maybe GroupEdit
+    }
 
 
-handleGroups : GroupMsg -> Model x -> ( Model x, Cmd Msg )
-handleGroups msg model =
+handleGroups : Time.Posix -> GroupMsg -> Model x -> ( Model x, Cmd Msg )
+handleGroups now msg model =
     case msg of
         GCreate ->
-            ( model |> mapErdM (\erd -> erd |> mapLayoutsD erd.currentLayout (mapGroups (List.add (createGroup erd)))), Cmd.none )
+            ( model |> mapErdM (Erd.mapCurrentLayoutWithTime now (\l -> l |> mapGroups (List.add (createGroup l)))), Track.groupCreated model.erd ) |> setDirtyCmd
+
+        GEdit index name ->
+            ( model |> setEditGroup (Just { index = index, content = name }), index |> Group.toInputId |> Dom.focus |> Task.attempt (\_ -> Noop "focus-group-input") )
+
+        GEditUpdate name ->
+            ( model |> mapEditGroupM (setContent name), Cmd.none )
+
+        GEditSave ->
+            model.editGroup |> Maybe.mapOrElse (\edit -> model |> saveGroup now edit) ( model, "No group to save" |> Toasts.create "warning" |> Toast |> T.send )
+
+        GSetColor index color ->
+            ( model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapGroups (List.mapAt index (setColor color)))), Cmd.none ) |> setDirtyCmd
+
+        GDelete index ->
+            ( model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapGroups (List.removeAt index))), Cmd.none ) |> setDirtyCmd
 
 
-createGroup : Erd -> Group
-createGroup erd =
+createGroup : ErdLayout -> Group
+createGroup layout =
     let
         selectedTables : List TableId
         selectedTables =
-            erd |> Erd.currentLayout |> .tables |> List.filter (.props >> .selected) |> List.map .id
+            layout |> .tables |> List.filter (.props >> .selected) |> List.map .id
     in
     Group.init selectedTables
+
+
+saveGroup : Time.Posix -> GroupEdit -> Model x -> ( Model x, Cmd Msg )
+saveGroup now edit model =
+    let
+        groupName : String
+        groupName =
+            model.erd |> Maybe.andThen (\erd -> erd |> Erd.currentLayout |> .groups |> List.get edit.index) |> Maybe.mapOrElse .name ""
+    in
+    if edit.content == groupName then
+        -- no change, don't save
+        ( model |> setEditGroup Nothing, Cmd.none )
+
+    else
+        ( model |> setEditGroup Nothing |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapGroups (List.mapAt edit.index (setName edit.content)))), Track.groupRenamed edit.content model.erd ) |> setDirtyCmd

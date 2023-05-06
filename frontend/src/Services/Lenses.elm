@@ -18,6 +18,7 @@ module Services.Lenses exposing
     , mapDatabaseSourceCmd
     , mapDatabaseSourceMCmd
     , mapDetailsSidebarCmd
+    , mapEditGroupM
     , mapEditMemoM
     , mapEditNotesM
     , mapEditTagsM
@@ -112,6 +113,7 @@ module Services.Lenses exposing
     , setDefaultSchema
     , setDetailsSidebar
     , setDragging
+    , setEditGroup
     , setEditMemo
     , setEditNotes
     , setEditTags
@@ -434,6 +436,16 @@ mapDetailsSidebarCmd =
 setDragging : v -> { item | dragging : v } -> { item | dragging : v }
 setDragging =
     set_ .dragging (\value item -> { item | dragging = value })
+
+
+setEditGroup : v -> { item | editGroup : v } -> { item | editGroup : v }
+setEditGroup =
+    set_ .editGroup (\value item -> { item | editGroup = value })
+
+
+mapEditGroupM : (v -> v) -> { item | editGroup : Maybe v } -> { item | editGroup : Maybe v }
+mapEditGroupM =
+    mapM_ .editGroup setEditGroup
 
 
 setEditMemo : v -> { item | editMemo : v } -> { item | editMemo : v }

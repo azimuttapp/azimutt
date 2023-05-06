@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, AmlSidebarMsg(..), ConfirmDialog, ContextMenu, FindPathMsg(..), GroupMsg(..), HelpDialog, HelpMsg(..), LayoutMsg(..), MemoEdit, MemoMsg(..), ModalDialog, Model, Msg(..), NavbarModel, NotesDialog, ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, VirtualRelation, VirtualRelationMsg(..), confirm, confirmDanger, prompt, simplePrompt)
+module PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, AmlSidebarMsg(..), ConfirmDialog, ContextMenu, FindPathMsg(..), GroupEdit, GroupMsg(..), HelpDialog, HelpMsg(..), LayoutMsg(..), MemoEdit, MemoMsg(..), ModalDialog, Model, Msg(..), NavbarModel, NotesDialog, ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, VirtualRelation, VirtualRelationMsg(..), confirm, confirmDanger, prompt, simplePrompt)
 
 import Components.Atoms.Icon exposing (Icon(..))
 import Components.Slices.ProPlan as ProPlan
@@ -77,6 +77,7 @@ type alias Model =
     , newLayout : Maybe NewLayout.Model
     , editNotes : Maybe NotesDialog
     , editTags : Maybe String
+    , editGroup : Maybe GroupEdit
     , editMemo : Maybe MemoEdit
     , amlSidebar : Maybe AmlSidebar
     , detailsSidebar : Maybe DetailsSidebar.Model
@@ -116,6 +117,10 @@ type alias SearchModel =
 
 type alias NotesDialog =
     { id : HtmlId, table : TableId, column : Maybe ColumnPath, initialNotes : Notes, notes : Notes }
+
+
+type alias GroupEdit =
+    { index : Int, content : String }
 
 
 type alias MemoEdit =
@@ -256,6 +261,11 @@ type LayoutMsg
 
 type GroupMsg
     = GCreate
+    | GEdit Int String
+    | GEditUpdate String
+    | GEditSave
+    | GSetColor Int Color
+    | GDelete Int
 
 
 type MemoMsg

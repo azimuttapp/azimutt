@@ -65,10 +65,10 @@ buildRelatedTables shownTables relations =
         |> Dict.fromList
 
 
-buildGroupArea : List ErdTableLayout -> Group -> Maybe ( Group, Area.Canvas )
-buildGroupArea displayedTables group =
+buildGroupArea : List ErdTableLayout -> ( Group, Int ) -> Maybe ( Int, Group, Area.Canvas )
+buildGroupArea displayedTables ( group, index ) =
     group.tables
         |> List.filterMap (\id -> displayedTables |> List.find (\t -> t.id == id))
         |> List.map (.props >> Area.offGrid)
         |> Area.mergeCanvas
-        |> Maybe.map (\area -> ( group, area |> Area.withPadding 30 ))
+        |> Maybe.map (\area -> ( index, group, area |> Area.withPadding 30 ))

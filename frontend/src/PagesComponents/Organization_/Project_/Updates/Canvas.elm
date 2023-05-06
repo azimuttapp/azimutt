@@ -12,6 +12,7 @@ import Libs.Models.Delta as Delta exposing (Delta)
 import Libs.Models.Position as Position
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Task as T
+import Libs.Tuple3 as Tuple3
 import Models.Area as Area
 import Models.ErdProps exposing (ErdProps)
 import Models.Position as Position
@@ -56,7 +57,7 @@ fitCanvasAlgo erdElem tables memos layout =
     -- (see headerTextSize in frontend/src/Components/Organisms/Table.elm:177)
     -- if you look to fix it, make sure to disable it before testing!
     ((layout.tables |> List.filterInBy .id tables |> List.map (.props >> Area.offGrid))
-        ++ (layout.groups |> List.filterMap (ErdTableLayout.buildGroupArea layout.tables) |> List.map Tuple.second)
+        ++ (layout.groups |> List.zipWithIndex |> List.filterMap (ErdTableLayout.buildGroupArea layout.tables) |> List.map Tuple3.third)
         ++ (layout.memos |> List.filterInBy .id memos |> List.map Area.offGrid)
     )
         |> Area.mergeCanvas

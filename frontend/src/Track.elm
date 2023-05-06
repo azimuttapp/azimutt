@@ -1,4 +1,4 @@
-module Track exposing (SQLParsing, amlSourceCreated, dbAnalysisOpened, dbSourceCreated, docOpened, externalLink, findPathOpened, findPathResults, jsonError, jsonSourceCreated, layoutCreated, layoutDeleted, layoutLoaded, memoDeleted, memoSaved, notFound, notesCreated, notesDeleted, notesUpdated, planLimit, projectDraftCreated, searchClicked, sourceAdded, sourceDeleted, sourceRefreshed, sqlSourceCreated, tagsCreated, tagsDeleted, tagsUpdated)
+module Track exposing (SQLParsing, amlSourceCreated, dbAnalysisOpened, dbSourceCreated, docOpened, externalLink, findPathOpened, findPathResults, groupCreated, groupDeleted, groupRenamed, jsonError, jsonSourceCreated, layoutCreated, layoutDeleted, layoutLoaded, memoDeleted, memoSaved, notFound, notesCreated, notesDeleted, notesUpdated, planLimit, projectDraftCreated, searchClicked, sourceAdded, sourceDeleted, sourceRefreshed, sqlSourceCreated, tagsCreated, tagsDeleted, tagsUpdated)
 
 import Conf exposing (Feature, Features)
 import DataSources.Helpers exposing (SourceLine)
@@ -119,6 +119,21 @@ tagsUpdated content erd =
 tagsDeleted : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> Cmd msg
 tagsDeleted erd =
     sendEvent "editor_tags_deleted" [] (erd |> Maybe.map .project)
+
+
+groupCreated : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> Cmd msg
+groupCreated erd =
+    sendEvent "editor_group_created" [] (erd |> Maybe.map .project)
+
+
+groupRenamed : String -> Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> Cmd msg
+groupRenamed name erd =
+    sendEvent "editor_group_renamed" [ ( "length", name |> String.length |> Encode.int ) ] (erd |> Maybe.map .project)
+
+
+groupDeleted : String -> Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> Cmd msg
+groupDeleted name erd =
+    sendEvent "editor_group_deleted" [ ( "length", name |> String.length |> Encode.int ) ] (erd |> Maybe.map .project)
 
 
 memoSaved : Bool -> String -> Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> Cmd msg

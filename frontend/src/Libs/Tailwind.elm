@@ -1,4 +1,4 @@
-module Libs.Tailwind exposing (Color, ColorLevel, TwClass, active, all, amber, batch, bg_100, bg_200, bg_300, bg_400, bg_50, bg_500, bg_600, bg_700, bg_800, bg_900, black, blue, border_400, border_500, border_800, cyan, decodeColor, default, disabled, emerald, encodeColor, extractColor, fill_500, focus, focusWithin, focus_ring_500, focus_ring_offset_600, focus_ring_within_600, from, fuchsia, gray, green, groupHover, hover, indigo, levels, lg, lime, list, md, orange, pink, placeholder_100, primary, purple, red, ring_200, ring_500, ring_600, ring_offset_600, ring_offset_900, rose, selectable, sky, sm, stroke_500, teal, text_100, text_200, text_300, text_400, text_500, text_600, text_700, text_800, toString, violet, white, xl, xxl, yellow)
+module Libs.Tailwind exposing (Color, ColorLevel, TwClass, active, all, amber, batch, bg_100, bg_200, bg_300, bg_400, bg_50, bg_500, bg_600, bg_700, bg_800, bg_900, black, blue, border_300, border_400, border_500, border_800, cyan, decodeColor, default, disabled, emerald, encodeColor, extractColor, fill_500, focus, focusWithin, focus_ring_500, focus_ring_offset_600, focus_ring_within_600, from, fuchsia, gray, green, groupHover, hover, indigo, levels, lg, lime, list, md, orange, pink, placeholder_100, primary, purple, red, ring_200, ring_500, ring_600, ring_offset_600, ring_offset_900, rose, selectable, sky, sm, stroke_500, teal, text_100, text_200, text_300, text_400, text_500, text_600, text_700, text_800, toString, violet, white, xl, xxl, yellow)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
@@ -154,6 +154,11 @@ bg_800 (Color color) =
 bg_900 : Color -> TwClass
 bg_900 (Color color) =
     "bg-" ++ color ++ "-900"
+
+
+border_300 : Color -> TwClass
+border_300 (Color color) =
+    "border-" ++ color ++ "-300"
 
 
 border_400 : Color -> TwClass

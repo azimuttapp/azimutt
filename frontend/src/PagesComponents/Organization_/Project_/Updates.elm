@@ -220,7 +220,7 @@ update currentLayout zone now urlInfos organizations projects msg model =
             model |> handleLayout message
 
         GroupMsg message ->
-            model |> handleGroups message
+            model |> handleGroups now message
 
         NotesMsg message ->
             model |> handleNotes message

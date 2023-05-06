@@ -22,6 +22,7 @@ module Libs.List exposing
     , indexOf
     , indexedFilter
     , last
+    , mapAt
     , maximumBy
     , memberBy
     , memberWith
@@ -239,6 +240,19 @@ moveBy matcher value position list =
 moveByRel : (a -> b) -> b -> Int -> List a -> List a
 moveByRel matcher value delta list =
     list |> findIndexBy matcher value |> Maybe.mapOrElse (\index -> list |> moveIndex index (index + delta)) list
+
+
+mapAt : Int -> (a -> a) -> List a -> List a
+mapAt index f list =
+    list
+        |> List.indexedMap
+            (\i a ->
+                if index == i then
+                    f a
+
+                else
+                    a
+            )
 
 
 removeAt : Int -> List a -> List a

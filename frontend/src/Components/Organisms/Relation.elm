@@ -75,7 +75,7 @@ buildSvg { src, ref, nullable, color, label, padding } svgContent =
             { left = min srcPos.left refPos.left - padding, top = min srcPos.top refPos.top - padding }
     in
     svg
-        [ class "az-relation absolute select-none"
+        [ class "az-relation absolute"
         , width (String.fromFloat (abs (srcPos.left - refPos.left) + (padding * 2)))
         , height (String.fromFloat (abs (srcPos.top - refPos.top) + (padding * 2)))
         , style ("left: " ++ String.fromFloat origin.left ++ "px; top: " ++ String.fromFloat origin.top ++ "px;")
