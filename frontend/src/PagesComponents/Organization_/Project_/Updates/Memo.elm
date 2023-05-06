@@ -47,7 +47,7 @@ handleMemo now urlInfos msg model =
             ( model |> mapEditMemoM (setContent content), Cmd.none )
 
         MEditSave ->
-            model.editMemo |> Maybe.map (\memo -> model |> saveMemo now memo) |> Maybe.withDefault ( model, "No memo to save" |> Toasts.create "warning" |> Toast |> T.send )
+            model.editMemo |> Maybe.mapOrElse (\edit -> model |> saveMemo now edit) ( model, "No memo to save" |> Toasts.create "warning" |> Toast |> T.send )
 
         MSetColor id color ->
             model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapMemosL .id id (setColor color))) |> setDirty

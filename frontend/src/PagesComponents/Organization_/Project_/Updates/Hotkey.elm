@@ -14,7 +14,7 @@ import PagesComponents.Organization_.Project_.Components.DetailsSidebar as Detai
 import PagesComponents.Organization_.Project_.Components.ProjectSaveDialog as ProjectSaveDialog
 import PagesComponents.Organization_.Project_.Components.ProjectSharing as ProjectSharing
 import PagesComponents.Organization_.Project_.Components.SourceUpdateDialog as SourceUpdateDialog
-import PagesComponents.Organization_.Project_.Models exposing (AmlSidebarMsg(..), FindPathMsg(..), HelpMsg(..), MemoMsg(..), Model, Msg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..), VirtualRelationMsg(..))
+import PagesComponents.Organization_.Project_.Models exposing (AmlSidebarMsg(..), FindPathMsg(..), GroupMsg(..), HelpMsg(..), MemoMsg(..), Model, Msg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..), VirtualRelationMsg(..))
 import PagesComponents.Organization_.Project_.Models.Erd as Erd
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.NotesMsg exposing (NotesMsg(..))
@@ -45,6 +45,9 @@ handleHotkey _ model hotkey =
 
         "new-memo" ->
             ( model, createMemo model )
+
+        "create-group" ->
+            ( model, createGroup model )
 
         "collapse" ->
             ( model, collapseElement model )
@@ -138,6 +141,11 @@ notesElement model =
 createMemo : Model -> Cmd Msg
 createMemo model =
     model.erd |> Maybe.mapOrElse (\erd -> erd |> Erd.currentLayout |> .canvas |> CanvasProps.viewport model.erdElem |> Area.centerCanvas |> MCreate |> MemoMsg |> T.send) Cmd.none
+
+
+createGroup : Model -> Cmd Msg
+createGroup model =
+    model.erd |> Maybe.mapOrElse (\erd -> erd |> Erd.currentLayout |> .tables |> List.filter (\t -> t.props.selected) |> List.map .id |> GCreate |> GroupMsg |> T.send) Cmd.none
 
 
 collapseElement : Model -> Cmd Msg

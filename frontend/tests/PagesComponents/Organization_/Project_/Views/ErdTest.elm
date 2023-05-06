@@ -13,15 +13,15 @@ suite =
         [ describe "viewErd.argsToString"
             [ test "test 1"
                 (\_ ->
-                    Erd.argsToString Platform.PC CursorMode.Drag Nothing "a" "b" "c"
+                    Erd.argsToString Platform.PC CursorMode.Drag Nothing "a" "b" "c" Nothing
                         |> Erd.stringToArgs
-                        |> Expect.equal ( ( Platform.PC, CursorMode.Drag, Nothing ), ( "a", "b", "c" ) )
+                        |> Expect.equal ( ( Platform.PC, CursorMode.Drag, Nothing ), ( "a", "b", "c" ), Nothing )
                 )
             , test "test 2"
                 (\_ ->
-                    Erd.argsToString Platform.Mac CursorMode.Select (Just ( "public", "users" )) "c" "d" "e"
+                    Erd.argsToString Platform.Mac CursorMode.Select (Just ( "public", "users" )) "c" "d" "e" (Just { index = 1, content = "f" })
                         |> Erd.stringToArgs
-                        |> Expect.equal ( ( Platform.Mac, CursorMode.Select, Just ( "public", "users" ) ), ( "c", "d", "e" ) )
+                        |> Expect.equal ( ( Platform.Mac, CursorMode.Select, Just ( "public", "users" ) ), ( "c", "d", "e" ), Just { index = 1, content = "f" } )
                 )
             ]
         ]

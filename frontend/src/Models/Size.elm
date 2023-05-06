@@ -1,4 +1,4 @@
-module Models.Size exposing (Canvas, Viewport, canvas, decodeCanvas, decodeViewport, deltaCanvas, diffCanvas, divCanvas, divViewport, encodeCanvas, extractCanvas, extractViewport, multCanvas, ratioCanvas, stylesCanvas, stylesViewport, subCanvas, toTupleCanvas, toTupleViewport, viewport, viewportToCanvas, zeroCanvas, zeroViewport)
+module Models.Size exposing (Canvas, Viewport, addCanvas, canvas, decodeCanvas, decodeViewport, deltaCanvas, diffCanvas, divCanvas, divViewport, encodeCanvas, extractCanvas, extractViewport, multCanvas, ratioCanvas, stylesCanvas, stylesViewport, subCanvas, toTupleCanvas, toTupleViewport, viewport, viewportToCanvas, zeroCanvas, zeroViewport)
 
 import Html exposing (Attribute)
 import Json.Decode as Decode
@@ -53,6 +53,11 @@ zeroViewport =
 zeroCanvas : Canvas
 zeroCanvas =
     Canvas Size.zero
+
+
+addCanvas : Float -> Canvas -> Canvas
+addCanvas amount (Canvas size) =
+    size |> Size.add amount |> canvas
 
 
 subCanvas : Float -> Canvas -> Canvas

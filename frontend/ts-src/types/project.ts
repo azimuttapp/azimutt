@@ -364,9 +364,24 @@ export const Memo = z.object({
     color: Color.optional()
 }).strict()
 
+export interface Group {
+    name: string
+    tables: TableId[]
+    color: Color
+    collapsed?: boolean
+}
+
+export const Group = z.object({
+    name: z.string(),
+    tables: TableId.array(),
+    color: Color,
+    collapsed: z.boolean().optional()
+}).strict()
+
 export interface Layout {
     canvas: CanvasProps
     tables: TableProps[]
+    groups?: Group[]
     memos?: Memo[]
     createdAt: Timestamp
     updatedAt: Timestamp
@@ -375,6 +390,7 @@ export interface Layout {
 export const Layout = z.object({
     canvas: CanvasProps,
     tables: TableProps.array(),
+    groups: Group.array().optional(),
     memos: Memo.array().optional(),
     createdAt: Timestamp,
     updatedAt: Timestamp

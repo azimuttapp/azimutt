@@ -25,6 +25,7 @@ import Models.Project.CustomTypeId exposing (CustomTypeId)
 import Models.Project.CustomTypeName exposing (CustomTypeName)
 import Models.Project.CustomTypeValue as CustomTypeValue exposing (CustomTypeValue)
 import Models.Project.FindPathSettings exposing (FindPathSettings)
+import Models.Project.Group exposing (Group)
 import Models.Project.Index exposing (Index)
 import Models.Project.IndexName exposing (IndexName)
 import Models.Project.Layout exposing (Layout)
@@ -178,7 +179,7 @@ columnMeta =
 
 layout : Fuzzer Layout
 layout =
-    Fuzz.map5 Layout canvasProps (listSmall tableProps) (listSmall memo) posix posix
+    Fuzz.map6 Layout canvasProps (listSmall tableProps) (listSmall group) (listSmall memo) posix posix
 
 
 canvasProps : Fuzzer CanvasProps
@@ -189,6 +190,11 @@ canvasProps =
 tableProps : Fuzzer TableProps
 tableProps =
     Fuzz.map7 (\id p -> TableProps id p Size.zeroCanvas) tableId positionGrid color (listSmall columnPath) Fuzz.bool Fuzz.bool Fuzz.bool
+
+
+group : Fuzzer Group
+group =
+    Fuzz.map4 Group stringSmall (listSmall tableId) color Fuzz.bool
 
 
 memo : Fuzzer Memo

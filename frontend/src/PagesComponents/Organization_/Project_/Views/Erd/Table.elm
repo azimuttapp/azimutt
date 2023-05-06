@@ -8,7 +8,7 @@ import Html.Attributes exposing (classList)
 import Html.Events.Extra.Mouse exposing (Button(..))
 import Libs.Bool as B
 import Libs.Html.Attributes exposing (css)
-import Libs.Html.Events exposing (PointerEvent, stopPointerDown)
+import Libs.Html.Events exposing (PointerEvent, onPointerDown)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
@@ -31,6 +31,7 @@ import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColu
 import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps exposing (ErdColumnProps)
 import PagesComponents.Organization_.Project_.Models.ErdColumnRef exposing (ErdColumnRef)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
+import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.NotesMsg exposing (NotesMsg(..))
@@ -62,22 +63,22 @@ stringToArgs args =
             ( ( Platform.PC, CursorMode.Drag, Conf.schema.empty ), ( ( "", "", 0 ), "" ), ( ( False, False ), ( False, False ) ) )
 
 
-viewTable : ErdConf -> ZoomLevel -> TableArgs -> TableMeta -> ErdTableLayout -> ErdTable -> Html Msg
-viewTable conf zoom args meta layout table =
+viewTable : ErdConf -> ZoomLevel -> TableArgs -> ErdLayout -> TableMeta -> ErdTableLayout -> ErdTable -> Html Msg
+viewTable conf zoom args layout meta tableLayout table =
     let
         ( ( platform, cursorMode, defaultSchema ), ( ( openedDropdown, openedPopover, index ), selected ), ( ( isHover, dragging ), ( virtualRelation, useBasicTypes ) ) ) =
             stringToArgs args
 
         ( columns, hiddenColumns ) =
-            table.columns |> Dict.values |> List.map (\c -> buildColumn useBasicTypes meta layout c) |> List.partition (\c -> layout.columns |> ErdColumnProps.member c.path)
+            table.columns |> Dict.values |> List.map (\c -> buildColumn useBasicTypes meta tableLayout c) |> List.partition (\c -> tableLayout.columns |> ErdColumnProps.member c.path)
 
         drag : List (Attribute Msg)
         drag =
-            B.cond (cursorMode == CursorMode.Drag || not conf.move) [] [ stopPointerDown platform (handleTablePointerDown table.htmlId) ]
+            B.cond (cursorMode == CursorMode.Drag || not conf.move) [] [ onPointerDown (handleTablePointerDown table.htmlId) platform ]
 
         dropdown : Html Msg
         dropdown =
-            TableContextMenu.view platform conf index table layout meta.notes
+            TableContextMenu.view platform conf defaultSchema layout index table tableLayout.props meta.notes
 
         ( selectedTable, selectedColumn ) =
             case selected |> String.split "." of
@@ -90,7 +91,7 @@ viewTable conf zoom args meta layout table =
                 _ ->
                     ( False, [] )
     in
-    div ([ css [ "select-none absolute" ], classList [ ( "z-max", layout.props.selected ), ( "invisible", layout.props.size == Size.zeroCanvas ) ] ] ++ Position.stylesGrid layout.props.position ++ drag)
+    div ([ css [ "select-none absolute" ], classList [ ( "z-max", tableLayout.props.selected ), ( "invisible", tableLayout.props.size == Size.zeroCanvas ) ] ] ++ Position.stylesGrid tableLayout.props.position ++ drag)
         [ Table.table
             { id = table.htmlId
             , ref = { schema = table.schema, table = table.name }
@@ -99,19 +100,19 @@ viewTable conf zoom args meta layout table =
             , comment = table.comment |> Maybe.map .text
             , notes = meta.notes
             , isDeprecated = meta.tags |> List.member Tag.deprecated
-            , columns = layout.columns |> ErdColumnProps.flatten |> List.filterMap (\c -> columns |> List.findBy .path c.path)
+            , columns = tableLayout.columns |> ErdColumnProps.flatten |> List.filterMap (\c -> columns |> List.findBy .path c.path)
             , hiddenColumns = hiddenColumns |> List.sortBy .index
             , dropdown = Just dropdown
             , state =
-                { color = layout.props.color
+                { color = tableLayout.props.color
                 , isHover = isHover
-                , highlightedColumns = layout.columns |> ErdColumnProps.flatten |> List.filter .highlighted |> List.map .path |> List.append selectedColumn |> List.map ColumnPath.toString |> Set.fromList
-                , selected = layout.props.selected || selectedTable
+                , highlightedColumns = tableLayout.columns |> ErdColumnProps.flatten |> List.filter .highlighted |> List.map .path |> List.append selectedColumn |> List.map ColumnPath.toString |> Set.fromList
+                , selected = tableLayout.props.selected || selectedTable
                 , dragging = dragging
-                , collapsed = layout.props.collapsed
+                , collapsed = tableLayout.props.collapsed
                 , openedDropdown = openedDropdown
                 , openedPopover = openedPopover
-                , showHiddenColumns = layout.props.showHiddenColumns
+                , showHiddenColumns = tableLayout.props.showHiddenColumns
                 }
             , actions =
                 { hover = ToggleHoverTable table.id
@@ -122,11 +123,11 @@ viewTable conf zoom args meta layout table =
                 , columnHover = \col on -> ToggleHoverColumn { table = table.id, column = col } on
                 , columnClick = B.maybe virtualRelation (\col e -> VirtualRelationMsg (VRUpdate { table = table.id, column = col } e.clientPos))
                 , columnDblClick = \col -> { table = table.id, column = col } |> DetailsSidebar.ShowColumn |> DetailsSidebarMsg
-                , columnRightClick = \i col -> ContextMenuCreate (B.cond (layout.columns |> ErdColumnProps.member col) ColumnContextMenu.view ColumnContextMenu.viewHidden platform i { table = table.id, column = col } (meta.columns |> ColumnPath.get col |> Maybe.andThen .notes))
+                , columnRightClick = \i col -> ContextMenuCreate (B.cond (tableLayout.columns |> ErdColumnProps.member col) ColumnContextMenu.view ColumnContextMenu.viewHidden platform i { table = table.id, column = col } (meta.columns |> ColumnPath.get col |> Maybe.andThen .notes))
                 , notesClick = \col -> NotesMsg (NOpen table.id col)
                 , relationsIconClick =
                     \cols isOut ->
-                        Just (B.cond isOut (PlaceRight layout.props.position layout.props.size) (PlaceLeft layout.props.position))
+                        Just (B.cond isOut (PlaceRight tableLayout.props.position tableLayout.props.size) (PlaceLeft tableLayout.props.position))
                             |> (\hint ->
                                     case cols of
                                         [] ->

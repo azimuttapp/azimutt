@@ -71,6 +71,7 @@ init params token save =
       , newLayout = Nothing
       , editNotes = Nothing
       , editTags = Nothing
+      , editGroup = Nothing
       , editMemo = Nothing
       , amlSidebar = Nothing
       , detailsSidebar = Nothing

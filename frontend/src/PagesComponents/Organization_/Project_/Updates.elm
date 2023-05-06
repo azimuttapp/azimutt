@@ -49,6 +49,7 @@ import PagesComponents.Organization_.Project_.Models.PositionHint exposing (Posi
 import PagesComponents.Organization_.Project_.Updates.Canvas exposing (arrangeTables, fitCanvas, handleWheel, zoomCanvas)
 import PagesComponents.Organization_.Project_.Updates.Drag exposing (handleDrag)
 import PagesComponents.Organization_.Project_.Updates.FindPath exposing (handleFindPath)
+import PagesComponents.Organization_.Project_.Updates.Groups exposing (handleGroups)
 import PagesComponents.Organization_.Project_.Updates.Help exposing (handleHelp)
 import PagesComponents.Organization_.Project_.Updates.Hotkey exposing (handleHotkey)
 import PagesComponents.Organization_.Project_.Updates.Layout exposing (handleLayout)
@@ -217,6 +218,9 @@ update currentLayout zone now urlInfos organizations projects msg model =
 
         LayoutMsg message ->
             model |> handleLayout message
+
+        GroupMsg message ->
+            model |> handleGroups now message
 
         NotesMsg message ->
             model |> handleNotes message

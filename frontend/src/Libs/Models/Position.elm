@@ -1,4 +1,4 @@
-module Libs.Models.Position exposing (Position, debug, decode, diff, distance, div, encode, fromTuple, min, move, mult, negate, round, size, styleTransform, styles, toString, toStringRound, toTuple, zero)
+module Libs.Models.Position exposing (Position, debug, decode, diff, distance, div, encode, fromTuple, min, move, mult, negate, round, size, styleTransform, styles, sub, toString, toStringRound, toTuple, zero)
 
 import Html exposing (Attribute, Html, text)
 import Html.Attributes exposing (class, style)
@@ -37,6 +37,11 @@ size p1 p2 =
 mult : Float -> Position -> Position
 mult factor pos =
     Position (pos.left * factor) (pos.top * factor)
+
+
+sub : Float -> Position -> Position
+sub value pos =
+    Position (pos.left - value) (pos.top - value)
 
 
 div : Float -> Position -> Position

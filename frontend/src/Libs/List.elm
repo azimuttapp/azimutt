@@ -22,6 +22,7 @@ module Libs.List exposing
     , indexOf
     , indexedFilter
     , last
+    , mapAt
     , maximumBy
     , memberBy
     , memberWith
@@ -40,6 +41,7 @@ module Libs.List exposing
     , prependOn
     , reduce
     , remove
+    , removeAll
     , removeAt
     , removeBy
     , replaceOrAppend
@@ -241,6 +243,19 @@ moveByRel matcher value delta list =
     list |> findIndexBy matcher value |> Maybe.mapOrElse (\index -> list |> moveIndex index (index + delta)) list
 
 
+mapAt : Int -> (a -> a) -> List a -> List a
+mapAt index f list =
+    list
+        |> List.indexedMap
+            (\i a ->
+                if index == i then
+                    f a
+
+                else
+                    a
+            )
+
+
 removeAt : Int -> List a -> List a
 removeAt index list =
     list |> List.indexedMap (\i a -> ( i, a )) |> List.filter (\( i, _ ) -> not (i == index)) |> List.map (\( _, a ) -> a)
@@ -254,6 +269,11 @@ remove item list =
 removeBy : (a -> comparable) -> comparable -> List a -> List a
 removeBy getKey item list =
     list |> List.filter (\i -> getKey i /= item)
+
+
+removeAll : List comparable -> List comparable -> List comparable
+removeAll items list =
+    list |> List.filter (\i -> items |> List.member i |> not)
 
 
 add : a -> List a -> List a

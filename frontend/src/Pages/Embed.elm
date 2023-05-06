@@ -97,6 +97,7 @@ init query =
       , newLayout = Nothing
       , editNotes = Nothing
       , editTags = Nothing
+      , editGroup = Nothing
       , editMemo = Nothing
       , amlSidebar = Nothing
       , detailsSidebar = Nothing

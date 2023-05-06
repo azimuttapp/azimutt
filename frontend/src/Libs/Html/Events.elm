@@ -1,7 +1,7 @@
-module Libs.Html.Events exposing (PointerEvent, WheelEvent, onContextMenu, onDblClick, onPointerDown, onPointerUp, onWheel, pointerDecoder, preventPointerDown, stopClick, stopDoubleClick, stopPointerDown, wheelDecoder)
+module Libs.Html.Events exposing (PointerEvent, WheelEvent, onContextMenu, onDblClick, onPointerDown, onPointerUp, onWheel, pointerDecoder, wheelDecoder)
 
 import Html exposing (Attribute)
-import Html.Events exposing (preventDefaultOn, stopPropagationOn)
+import Html.Events
 import Html.Events.Extra.Mouse as Button exposing (Button)
 import Json.Decode as Decode
 import Libs.Bool as B
@@ -25,24 +25,24 @@ type alias PointerEvent =
     }
 
 
-onContextMenu : Platform -> (PointerEvent -> msg) -> Attribute msg
-onContextMenu platform msg =
-    Html.Events.custom "contextmenu" (pointerDecoder platform |> Decode.map (\e -> { message = msg e, stopPropagation = True, preventDefault = True }))
+onContextMenu : (PointerEvent -> msg) -> Platform -> Attribute msg
+onContextMenu toMsg platform =
+    Html.Events.custom "contextmenu" (pointerDecoder platform |> Decode.map (\e -> { message = toMsg e, stopPropagation = True, preventDefault = True }))
 
 
-onPointerDown : Platform -> (PointerEvent -> msg) -> Attribute msg
-onPointerDown platform msg =
-    Html.Events.on "pointerdown" (pointerDecoder platform |> Decode.map msg)
+onPointerUp : (PointerEvent -> msg) -> Platform -> Attribute msg
+onPointerUp toMsg platform =
+    Html.Events.custom "pointerup" (pointerDecoder platform |> Decode.map (\e -> { message = toMsg e, stopPropagation = True, preventDefault = False }))
 
 
-onPointerUp : Platform -> (PointerEvent -> msg) -> Attribute msg
-onPointerUp platform msg =
-    Html.Events.on "pointerup" (pointerDecoder platform |> Decode.map msg)
+onPointerDown : (PointerEvent -> msg) -> Platform -> Attribute msg
+onPointerDown toMsg platform =
+    Html.Events.custom "pointerdown" (pointerDecoder platform |> Decode.map (\e -> { message = toMsg e, stopPropagation = True, preventDefault = False }))
 
 
-onDblClick : Platform -> (PointerEvent -> msg) -> Attribute msg
-onDblClick platform msg =
-    Html.Events.on "dblclick" (pointerDecoder platform |> Decode.map msg)
+onDblClick : (PointerEvent -> msg) -> Platform -> Attribute msg
+onDblClick toMsg platform =
+    Html.Events.custom "dblclick" (pointerDecoder platform |> Decode.map (\e -> { message = toMsg e, stopPropagation = True, preventDefault = False }))
 
 
 type alias FileEvent =
@@ -54,7 +54,7 @@ type alias FileInfo =
 
 
 onFileChange : (FileEvent -> msg) -> Attribute msg
-onFileChange callback =
+onFileChange toMsg =
     -- Elm: no error message when decoder fail, hard to get it correct :(
     let
         fileDecoder : Decode.Decoder FileInfo
@@ -65,20 +65,15 @@ onFileChange callback =
                 (Decode.field "size" Decode.int)
                 (Decode.field "lastModified" Decode.int)
 
-        decoder : Decode.Decoder msg
+        decoder : Decode.Decoder FileEvent
         decoder =
             Decode.field "target"
                 (Decode.map2 FileEvent
                     (Decode.field "id" Decode.string)
                     (Decode.field "files" (Decode.list fileDecoder))
                 )
-                |> Decode.map callback
-
-        preventDefaultAndStopPropagation : msg -> { message : msg, stopPropagation : Bool, preventDefault : Bool }
-        preventDefaultAndStopPropagation msg =
-            { message = msg, stopPropagation = True, preventDefault = True }
     in
-    Html.Events.custom "change" (Decode.map preventDefaultAndStopPropagation decoder)
+    Html.Events.custom "change" (decoder |> Decode.map (\e -> { message = toMsg e, stopPropagation = True, preventDefault = False }))
 
 
 type alias WheelEvent =
@@ -92,34 +87,9 @@ type alias WheelEvent =
     }
 
 
-onWheel : Platform -> (WheelEvent -> msg) -> Attribute msg
-onWheel platform callback =
-    let
-        preventDefaultAndStopPropagation : msg -> { message : msg, stopPropagation : Bool, preventDefault : Bool }
-        preventDefaultAndStopPropagation msg =
-            { message = msg, stopPropagation = True, preventDefault = True }
-    in
-    Html.Events.custom "wheel" (wheelDecoder platform |> Decode.map (callback >> preventDefaultAndStopPropagation))
-
-
-preventPointerDown : Platform -> (PointerEvent -> msg) -> Attribute msg
-preventPointerDown platform msg =
-    preventDefaultOn "pointerdown" (pointerDecoder platform |> Decode.map (\e -> ( msg e, True )))
-
-
-stopClick : msg -> Attribute msg
-stopClick m =
-    stopPropagationOn "click" (Decode.succeed ( m, True ))
-
-
-stopDoubleClick : msg -> Attribute msg
-stopDoubleClick m =
-    stopPropagationOn "dblclick" (Decode.succeed ( m, True ))
-
-
-stopPointerDown : Platform -> (PointerEvent -> msg) -> Attribute msg
-stopPointerDown platform msg =
-    stopPropagationOn "pointerdown" (pointerDecoder platform |> Decode.map (\e -> ( msg e, True )))
+onWheel : (WheelEvent -> msg) -> Platform -> Attribute msg
+onWheel toMsg platform =
+    Html.Events.custom "wheel" (wheelDecoder platform |> Decode.map (\e -> { message = toMsg e, stopPropagation = True, preventDefault = True }))
 
 
 

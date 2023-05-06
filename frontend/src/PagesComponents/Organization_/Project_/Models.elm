@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, AmlSidebarMsg(..), ConfirmDialog, ContextMenu, FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutMsg(..), MemoEdit, MemoMsg(..), ModalDialog, Model, Msg(..), NavbarModel, NotesDialog, ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, VirtualRelation, VirtualRelationMsg(..), confirm, confirmDanger, prompt, simplePrompt)
+module PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, AmlSidebarMsg(..), ConfirmDialog, ContextMenu, FindPathMsg(..), GroupEdit, GroupMsg(..), HelpDialog, HelpMsg(..), LayoutMsg(..), MemoEdit, MemoMsg(..), ModalDialog, Model, Msg(..), NavbarModel, NotesDialog, ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, VirtualRelation, VirtualRelationMsg(..), confirm, confirmDanger, prompt, simplePrompt)
 
 import Components.Atoms.Icon exposing (Icon(..))
 import Components.Slices.ProPlan as ProPlan
@@ -77,6 +77,7 @@ type alias Model =
     , newLayout : Maybe NewLayout.Model
     , editNotes : Maybe NotesDialog
     , editTags : Maybe String
+    , editGroup : Maybe GroupEdit
     , editMemo : Maybe MemoEdit
     , amlSidebar : Maybe AmlSidebar
     , detailsSidebar : Maybe DetailsSidebar.Model
@@ -116,6 +117,10 @@ type alias SearchModel =
 
 type alias NotesDialog =
     { id : HtmlId, table : TableId, column : Maybe ColumnPath, initialNotes : Notes, notes : Notes }
+
+
+type alias GroupEdit =
+    { index : Int, content : String }
 
 
 type alias MemoEdit =
@@ -199,6 +204,7 @@ type Msg
     | LayoutMsg LayoutMsg
     | NotesMsg NotesMsg
     | TagsMsg TagsMsg
+    | GroupMsg GroupMsg
     | MemoMsg MemoMsg
     | AmlSidebarMsg AmlSidebarMsg
     | DetailsSidebarMsg DetailsSidebar.Msg
@@ -251,6 +257,17 @@ type Msg
 type LayoutMsg
     = LLoad LayoutName
     | LDelete LayoutName
+
+
+type GroupMsg
+    = GCreate (List TableId)
+    | GEdit Int String
+    | GEditUpdate String
+    | GEditSave
+    | GSetColor Int Color
+    | GAddTables Int (List TableId)
+    | GRemoveTables Int (List TableId)
+    | GDelete Int
 
 
 type MemoMsg

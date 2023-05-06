@@ -92,7 +92,7 @@ viewApp currentUrl urlOrganization shared model htmlId erd =
             ]
             [ -- model.erdElem |> Area.debugViewport "erdElem" "border-red-500",
               section [ class "relative min-w-0 flex-1 h-full flex flex-col overflow-y-auto" ]
-                [ Lazy.lazy8 viewErd model.conf model.erdElem erd model.selectionBox model.virtualRelation model.editMemo (Erd.argsToString shared.conf.platform model.cursorMode model.hoverTable model.openedDropdown model.openedPopover (model.detailsSidebar |> Maybe.mapOrElse DetailsSidebar.selected "")) model.dragging
+                [ Lazy.lazy8 viewErd model.conf model.erdElem erd model.selectionBox model.virtualRelation model.editMemo (Erd.argsToString shared.conf.platform model.cursorMode model.hoverTable model.openedDropdown model.openedPopover (model.detailsSidebar |> Maybe.mapOrElse DetailsSidebar.selected "") model.editGroup) model.dragging
                 , if model.conf.fullscreen || model.conf.move then
                     let
                         layout : ErdLayout

@@ -1,4 +1,4 @@
-module Libs.Models.Size exposing (Size, SizeLike, decode, diff, div, encode, fromTuple, mult, ratio, round, styles, sub, toString, toStringRound, toTuple, zero)
+module Libs.Models.Size exposing (Size, SizeLike, add, decode, diff, div, encode, fromTuple, mult, ratio, round, styles, sub, toString, toStringRound, toTuple, zero)
 
 import Html exposing (Attribute)
 import Html.Attributes exposing (style)
@@ -39,6 +39,11 @@ mult factor size =
 div : Float -> Size -> Size
 div factor size =
     Size (size.width / factor) (size.height / factor)
+
+
+add : Float -> Size -> Size
+add amount size =
+    Size (size.width + amount) (size.height + amount)
 
 
 sub : Float -> Size -> Size

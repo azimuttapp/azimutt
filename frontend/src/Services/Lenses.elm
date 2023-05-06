@@ -18,6 +18,7 @@ module Services.Lenses exposing
     , mapDatabaseSourceCmd
     , mapDatabaseSourceMCmd
     , mapDetailsSidebarCmd
+    , mapEditGroupM
     , mapEditMemoM
     , mapEditNotesM
     , mapEditTagsM
@@ -28,6 +29,7 @@ module Services.Lenses exposing
     , mapExportDialogCmd
     , mapFindPath
     , mapFindPathM
+    , mapGroups
     , mapHiddenColumns
     , mapHoverTable
     , mapIndex
@@ -111,6 +113,7 @@ module Services.Lenses exposing
     , setDefaultSchema
     , setDetailsSidebar
     , setDragging
+    , setEditGroup
     , setEditMemo
     , setEditNotes
     , setEditTags
@@ -122,6 +125,7 @@ module Services.Lenses exposing
     , setExportDialog
     , setFindPath
     , setFrom
+    , setGroups
     , setHiddenColumns
     , setHighlight
     , setHighlighted
@@ -434,6 +438,16 @@ setDragging =
     set_ .dragging (\value item -> { item | dragging = value })
 
 
+setEditGroup : v -> { item | editGroup : v } -> { item | editGroup : v }
+setEditGroup =
+    set_ .editGroup (\value item -> { item | editGroup = value })
+
+
+mapEditGroupM : (v -> v) -> { item | editGroup : Maybe v } -> { item | editGroup : Maybe v }
+mapEditGroupM =
+    mapM_ .editGroup setEditGroup
+
+
 setEditMemo : v -> { item | editMemo : v } -> { item | editMemo : v }
 setEditMemo =
     set_ .editMemo (\value item -> { item | editMemo = value })
@@ -537,6 +551,16 @@ mapFindPathM =
 setFrom : v -> { item | from : v } -> { item | from : v }
 setFrom =
     set_ .from (\value item -> { item | from = value })
+
+
+setGroups : v -> { item | groups : v } -> { item | groups : v }
+setGroups =
+    set_ .groups (\value item -> { item | groups = value })
+
+
+mapGroups : (v -> v) -> { item | groups : v } -> { item | groups : v }
+mapGroups =
+    map_ .groups setGroups
 
 
 setHiddenColumns : v -> { item | hiddenColumns : v } -> { item | hiddenColumns : v }
