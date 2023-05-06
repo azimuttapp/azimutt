@@ -3,6 +3,7 @@ module PagesComponents.Organization_.Project_.Views.Modals.ErdContextMenu exposi
 import Components.Molecules.ContextMenu as ContextMenu
 import Conf
 import Html exposing (Html, div, text)
+import Html.Attributes exposing (class)
 import Libs.Dict as Dict
 import Libs.Html.Events exposing (PointerEvent)
 import Libs.Models.Platform exposing (Platform)
@@ -14,7 +15,7 @@ import PagesComponents.Organization_.Project_.Views.Modals.NewLayout as NewLayou
 
 view : Platform -> ErdProps -> CanvasProps -> PointerEvent -> Html Msg
 view platform erdElem canvasProps event =
-    div []
+    div [ class "z-max" ]
         [ ContextMenu.btnHotkey "" SelectAllTables [ text "Select all tables" ] platform (Conf.hotkeys |> Dict.getOrElse "select-all" [])
         , ContextMenu.btnHotkey "" (NewLayoutMsg (NewLayout.Open Nothing)) [ text "New layout" ] platform (Conf.hotkeys |> Dict.getOrElse "create-layout" [])
         , ContextMenu.btnHotkey "" (event |> CanvasProps.eventCanvas erdElem canvasProps |> MCreate |> MemoMsg) [ text "New memo" ] platform (Conf.hotkeys |> Dict.getOrElse "new-memo" [])

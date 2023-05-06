@@ -41,6 +41,7 @@ module Libs.List exposing
     , prependOn
     , reduce
     , remove
+    , removeAll
     , removeAt
     , removeBy
     , replaceOrAppend
@@ -268,6 +269,11 @@ remove item list =
 removeBy : (a -> comparable) -> comparable -> List a -> List a
 removeBy getKey item list =
     list |> List.filter (\i -> getKey i /= item)
+
+
+removeAll : List comparable -> List comparable -> List comparable
+removeAll items list =
+    list |> List.filter (\i -> items |> List.member i |> not)
 
 
 add : a -> List a -> List a

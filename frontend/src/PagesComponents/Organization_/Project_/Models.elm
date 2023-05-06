@@ -260,11 +260,13 @@ type LayoutMsg
 
 
 type GroupMsg
-    = GCreate
+    = GCreate (List TableId)
     | GEdit Int String
     | GEditUpdate String
     | GEditSave
     | GSetColor Int Color
+    | GAddTables Int (List TableId)
+    | GRemoveTables Int (List TableId)
     | GDelete Int
 
 
