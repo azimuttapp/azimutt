@@ -177,6 +177,7 @@ hotkeys =
         , ( "search-confirm", [ { hotkey | key = "Enter", target = Just { target | tag = Just "input", id = Just ids.searchInput } } ] )
         , ( "notes", [ { hotkey | key = "n" } ] )
         , ( "new-memo", [ { hotkey | key = "m" } ] )
+        , ( "create-group", [ { hotkey | key = "g" } ] )
         , ( "collapse", [ { hotkey | key = "c" } ] )
         , ( "expand", [ { hotkey | key = "ArrowRight", ctrl = True } ] )
         , ( "shrink", [ { hotkey | key = "ArrowLeft", ctrl = True } ] )

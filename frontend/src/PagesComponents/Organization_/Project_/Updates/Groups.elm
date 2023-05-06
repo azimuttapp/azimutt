@@ -30,7 +30,11 @@ handleGroups : Time.Posix -> GroupMsg -> Model x -> ( Model x, Cmd Msg )
 handleGroups now msg model =
     case msg of
         GCreate tables ->
-            ( model |> mapErdM (Erd.mapCurrentLayoutWithTime now (\l -> l |> mapGroups (List.add (Group.init tables)))), Track.groupCreated model.erd ) |> setDirtyCmd
+            if tables |> List.isEmpty then
+                ( model, Cmd.none )
+
+            else
+                ( model |> mapErdM (Erd.mapCurrentLayoutWithTime now (\l -> l |> mapGroups (List.add (Group.init tables)))), Track.groupCreated model.erd ) |> setDirtyCmd
 
         GEdit index name ->
             ( model |> setEditGroup (Just { index = index, content = name }), index |> Group.toInputId |> Dom.focus |> Task.attempt (\_ -> Noop "focus-group-input") )

@@ -149,7 +149,7 @@ viewErd conf erdElem erd selectionBox virtualRelation editMemo args dragging =
          ]
             ++ B.cond (conf.move && not (List.isEmpty layoutTables)) [ onWheel OnWheel platform ] []
             ++ B.cond ((conf.move || conf.select) && virtualRelation == Nothing && editMemo == Nothing) [ onPointerDown (handleErdPointerDown conf cursorMode) platform ] []
-            ++ B.cond (conf.layout && virtualRelation == Nothing && editMemo == Nothing) [ onDblClick (CanvasProps.eventCanvas erdElem canvas >> MCreate >> MemoMsg) platform, onContextMenu (\e -> ContextMenuCreate (ErdContextMenu.view platform erdElem canvas e) e) platform ] []
+            ++ B.cond (conf.layout && virtualRelation == Nothing && editMemo == Nothing) [ onDblClick (CanvasProps.eventCanvas erdElem canvas >> MCreate >> MemoMsg) platform, onContextMenu (\e -> ContextMenuCreate (ErdContextMenu.view platform erdElem canvas layout e) e) platform ] []
         )
         [ div [ class "az-canvas origin-top-left", Position.styleTransformDiagram canvas.position canvas.zoom ]
             -- use HTML order instead of z-index, must be careful with it, this allows to have tooltips & popovers always on top
@@ -240,11 +240,11 @@ viewGroup platform defaultSchema editGroup ( index, group, area ) =
                         , onInput (GEditUpdate >> GroupMsg)
                         , onBlur (GEditSave |> GroupMsg)
                         , autofocus True
-                        , css [ "shadow-sm block border-gray-300 rounded-md", focus [ Tw.ring_500 group.color, Tw.border_500 group.color ] ]
+                        , css [ "px-2 py-0 shadow-sm block border-gray-300 rounded-md", focus [ Tw.ring_500 group.color, Tw.border_500 group.color ] ]
                         ]
                         []
                 )
-                (div [ css [ "px-3 py-1 select-none", Tw.text_600 group.color ] ] [ text group.name ])
+                (div [ css [ "px-2 select-none", Tw.text_600 group.color ] ] [ text group.name ])
         ]
 
 
