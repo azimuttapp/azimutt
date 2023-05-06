@@ -7,7 +7,7 @@ import Html.Attributes exposing (autofocus, class, id, name, placeholder, value)
 import Html.Events exposing (onBlur, onInput)
 import Html.Events.Extra.Mouse exposing (Button(..))
 import Libs.Bool as Bool
-import Libs.Html.Events exposing (PointerEvent, onContextMenu, stopDoubleClick, stopPointerDown)
+import Libs.Html.Events exposing (PointerEvent, onContextMenu, onDblClick, onPointerDown)
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Platform exposing (Platform)
@@ -32,11 +32,11 @@ viewMemo platform conf cursorMode edit memo =
 
         dragMemo : List (Attribute Msg)
         dragMemo =
-            Bool.cond (cursorMode == CursorMode.Drag || not conf.move) [] [ stopPointerDown platform (handleMemoPointerDown htmlId) ]
+            Bool.cond (cursorMode == CursorMode.Drag || not conf.move) [] [ onPointerDown (handleMemoPointerDown htmlId) platform ]
 
         resizeMemo : List (Attribute Msg)
         resizeMemo =
-            Bool.cond (cursorMode == CursorMode.Drag || not conf.move) [] [ stopPointerDown platform (\_ -> Noop "no drag on memo resize") ]
+            Bool.cond (cursorMode == CursorMode.Drag || not conf.move) [] [ onPointerDown (\_ -> Noop "no drag on memo resize") platform ]
     in
     edit
         |> Maybe.map
@@ -62,7 +62,7 @@ viewMemo platform conf cursorMode edit memo =
                 ([ id htmlId
                  , class ("select-none absolute px-3 py-1 cursor-pointer overflow-hidden border border-transparent border-dashed hover:border-gray-300 hover:resize hover:overflow-auto" ++ (memo.color |> Maybe.mapOrElse (\c -> " shadow rounded " ++ Tw.bg_200 c) ""))
                  ]
-                    ++ Bool.cond conf.layout [ stopDoubleClick (MemoMsg (MEdit memo)), onContextMenu platform (ContextMenuCreate (MemoContextMenu.view platform conf memo)) ] []
+                    ++ Bool.cond conf.layout [ onDblClick (\_ -> MemoMsg (MEdit memo)) platform, onContextMenu (ContextMenuCreate (MemoContextMenu.view platform conf memo)) platform ] []
                     ++ Area.stylesGrid memo
                     ++ resizeMemo
                 )

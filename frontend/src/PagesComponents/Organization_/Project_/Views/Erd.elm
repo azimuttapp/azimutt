@@ -15,7 +15,7 @@ import Libs.Bool as B
 import Libs.Dict as Dict
 import Libs.Html exposing (bText, extLink, sendTweet)
 import Libs.Html.Attributes exposing (css)
-import Libs.Html.Events exposing (PointerEvent, onContextMenu, onDblClick, onDblClick2, onWheel, stopPointerDown)
+import Libs.Html.Events exposing (PointerEvent, onContextMenu, onDblClick, onPointerDown, onWheel)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
@@ -147,9 +147,9 @@ viewErd conf erdElem erd selectionBox virtualRelation editMemo args dragging =
             , ( "cursor-crosshair-all", virtualRelation /= Nothing )
             ]
          ]
-            ++ B.cond (conf.move && not (List.isEmpty tableProps)) [ onWheel platform OnWheel ] []
-            ++ B.cond ((conf.move || conf.select) && virtualRelation == Nothing && editMemo == Nothing) [ stopPointerDown platform (handleErdPointerDown conf cursorMode) ] []
-            ++ B.cond (conf.layout && virtualRelation == Nothing && editMemo == Nothing) [ onDblClick platform (CanvasProps.eventCanvas erdElem canvas >> MCreate >> MemoMsg), onContextMenu platform (\e -> ContextMenuCreate (ErdContextMenu.view platform erdElem canvas e) e) ] []
+            ++ B.cond (conf.move && not (List.isEmpty tableProps)) [ onWheel OnWheel platform ] []
+            ++ B.cond ((conf.move || conf.select) && virtualRelation == Nothing && editMemo == Nothing) [ onPointerDown (handleErdPointerDown conf cursorMode) platform ] []
+            ++ B.cond (conf.layout && virtualRelation == Nothing && editMemo == Nothing) [ onDblClick (CanvasProps.eventCanvas erdElem canvas >> MCreate >> MemoMsg) platform, onContextMenu (\e -> ContextMenuCreate (ErdContextMenu.view platform erdElem canvas e) e) platform ] []
         )
         [ div [ class "az-canvas origin-top-left", Position.styleTransformDiagram canvas.position canvas.zoom ]
             -- use HTML order instead of z-index, must be careful with it, this allows to have tooltips & popovers always on top
@@ -217,8 +217,8 @@ viewGroup : Platform -> Maybe GroupEdit -> ( Int, Group, Area.Canvas ) -> Html M
 viewGroup platform editGroup ( index, group, area ) =
     div
         ([ css [ "absolute border-2 bg-opacity-25", Tw.bg_300 group.color, Tw.border_300 group.color ]
-         , onDblClick2 (\_ -> GEdit index group.name |> GroupMsg) platform True
-         , onContextMenu platform (\e -> ContextMenuCreate (GroupContextMenu.view platform index group) e)
+         , onDblClick (\_ -> GEdit index group.name |> GroupMsg) platform
+         , onContextMenu (\e -> ContextMenuCreate (GroupContextMenu.view platform index group) e) platform
          ]
             ++ Area.styleTransformCanvas area
         )

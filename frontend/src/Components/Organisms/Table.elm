@@ -19,7 +19,7 @@ import Html.Lazy as Lazy
 import Libs.Bool as Bool
 import Libs.Html as Html exposing (bText)
 import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, css, role)
-import Libs.Html.Events exposing (PointerEvent, onContextMenu, onPointerUp, stopDoubleClick)
+import Libs.Html.Events exposing (PointerEvent, onContextMenu, onDblClick, onPointerUp)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
@@ -217,8 +217,8 @@ viewHeader model =
         ]
         [ div
             ([ class "flex-grow text-center whitespace-nowrap" ]
-                ++ Bool.cond model.conf.select [ onPointerUp model.platform model.actions.headerClick ] []
-                ++ Bool.cond model.conf.layout [ stopDoubleClick model.actions.headerDblClick, onContextMenu model.platform model.actions.headerRightClick ] []
+                ++ Bool.cond model.conf.select [ onPointerUp model.actions.headerClick model.platform ] []
+                ++ Bool.cond model.conf.layout [ onDblClick (\_ -> model.actions.headerDblClick) model.platform, onContextMenu model.actions.headerRightClick model.platform ] []
             )
             ([ if model.isView then
                 span ([ class "text-xl italic underline decoration-dotted", classList [ ( "line-through", model.isDeprecated ) ] ] ++ headerTextSize) [ text model.label ] |> Tooltip.t "This is a view"
@@ -338,8 +338,8 @@ viewColumn model styles isLast nestIndex column =
          , style "padding-right" "0.5rem"
          ]
             ++ Bool.cond model.conf.hover [ onMouseEnter (model.actions.columnHover column.path True), onMouseLeave (model.actions.columnHover column.path False) ] []
-            ++ Bool.cond model.conf.layout [ stopDoubleClick (model.actions.columnDblClick column.path), onContextMenu model.platform (model.actions.columnRightClick nestIndex column.path) ] []
-            ++ (model.actions.columnClick |> Maybe.mapOrElse (\action -> [ onPointerUp model.platform (action column.path) ]) [])
+            ++ Bool.cond model.conf.layout [ onDblClick (\_ -> model.actions.columnDblClick column.path) model.platform, onContextMenu (model.actions.columnRightClick nestIndex column.path) model.platform ] []
+            ++ (model.actions.columnClick |> Maybe.mapOrElse (\action -> [ onPointerUp (action column.path) model.platform ]) [])
         )
         [ viewColumnIcon model column |> viewColumnIconDropdown model column
         , viewColumnName model column

@@ -8,7 +8,7 @@ import Html.Attributes exposing (classList)
 import Html.Events.Extra.Mouse exposing (Button(..))
 import Libs.Bool as B
 import Libs.Html.Attributes exposing (css)
-import Libs.Html.Events exposing (PointerEvent, stopPointerDown)
+import Libs.Html.Events exposing (PointerEvent, onPointerDown)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
@@ -73,7 +73,7 @@ viewTable conf zoom args meta layout table =
 
         drag : List (Attribute Msg)
         drag =
-            B.cond (cursorMode == CursorMode.Drag || not conf.move) [] [ stopPointerDown platform (handleTablePointerDown table.htmlId) ]
+            B.cond (cursorMode == CursorMode.Drag || not conf.move) [] [ onPointerDown (handleTablePointerDown table.htmlId) platform ]
 
         dropdown : Html Msg
         dropdown =
