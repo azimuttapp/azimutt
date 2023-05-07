@@ -4,9 +4,10 @@ import Components.Atoms.Icon as Icon
 import Components.Molecules.Alert as Alert
 import Conf
 import Dict exposing (Dict)
-import Html exposing (Html, button, div, h3, option, p, select, span, table, td, text, textarea, th, tr)
-import Html.Attributes exposing (autofocus, class, disabled, id, name, placeholder, rows, selected, type_, value)
+import Html exposing (Html, button, div, h3, option, p, select, span, table, tbody, td, text, textarea, th, thead, tr)
+import Html.Attributes exposing (autofocus, class, classList, disabled, id, name, placeholder, rows, scope, selected, title, type_, value)
 import Html.Events exposing (onClick, onInput)
+import Libs.Bool as Bool
 import Libs.Dict as Dict
 import Libs.List as List
 import Libs.Maybe as Maybe
@@ -86,7 +87,7 @@ view wrap erd model =
         dbSources =
             erd.sources |> List.filterMap withUrl
     in
-    div [ class "h-full px-6 py-5" ]
+    div [ class "h-full py-5" ]
         ([ viewHeading wrap (model.id ++ "-heading") dbSources model.source
          ]
             ++ (model.source
@@ -107,7 +108,7 @@ viewHeading wrap htmlId dbSources source =
         sourceInput =
             htmlId ++ "-source"
     in
-    div [ class "flex space-x-3" ]
+    div [ class "flex px-6 space-x-3" ]
         [ div [ class "flex flex-1" ]
             [ h3 [ class "text-lg leading-6 font-medium text-gray-900" ] [ text "Query your database" ]
             , if List.length dbSources > 1 then
@@ -130,60 +131,70 @@ viewQueryEditor wrap htmlId ( source, databaseUrl ) input =
         queryInput =
             htmlId ++ "-editor"
     in
-    div [ class "mt-3 relative" ]
-        [ textarea
-            [ name queryInput
-            , id queryInput
-            , rows 4
-            , value input
-            , onInput (InputUpdate >> wrap)
-            , autofocus True
-            , placeholder ("Write your query for " ++ source.name ++ " database...")
-            , class "block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-            ]
-            []
-        , div [ class "absolute bottom-2 right-2" ]
-            [ button
-                [ type_ "button"
-                , onClick (input |> RunQuery databaseUrl |> wrap)
-                , disabled (input == "")
-                , class "inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:bg-indigo-300"
+    div [ class "mt-3 px-6" ]
+        [ div [ class "relative" ]
+            [ textarea
+                [ name queryInput
+                , id queryInput
+                , rows 3
+                , value input
+                , onInput (InputUpdate >> wrap)
+                , autofocus True
+                , placeholder ("Write your query for " ++ source.name ++ " database...")
+                , class "block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                 ]
-                [ text "Run" ]
+                []
+            , div [ class "absolute bottom-2 right-2" ]
+                [ button
+                    [ type_ "button"
+                    , onClick (input |> RunQuery databaseUrl |> wrap)
+                    , disabled (input == "")
+                    , class "inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:bg-indigo-300"
+                    ]
+                    [ text "Run" ]
+                ]
             ]
         ]
 
 
 viewQueryResults : Result String DatabaseQueryResults -> Html msg
 viewQueryResults results =
-    div [ class "mt-3" ]
-        [ results
-            |> Result.fold (\err -> div [] [ text ("Error: " ++ err) ])
+    div [ class "min-w-full max-w-full overflow-scroll" ]
+        (results
+            |> Result.fold (\err -> [ div [ class "mt-3" ] [ text ("Error: " ++ err) ] ])
                 (\res ->
-                    table []
-                        (tr [] (res.columns |> List.map (\col -> th [] [ text col ]))
-                            :: (res.rows |> List.map (viewQueryResultsRow res.columns))
-                        )
+                    [ p [ class "px-1 text-sm text-gray-500" ] [ text ((res.rows |> List.length |> String.fromInt) ++ " rows") ]
+                    , table [ class "min-w-full divide-y divide-gray-300" ]
+                        [ thead [] [ viewQueryResultsHeader res.columns ]
+                        , tbody [ class "divide-y divide-gray-200" ] (res.rows |> List.indexedMap (viewQueryResultsRow res.columns))
+                        ]
+                    ]
                 )
-        ]
+        )
 
 
-viewQueryResultsRow : List String -> Dict String JsValue -> Html msg
-viewQueryResultsRow columns row =
+viewQueryResultsHeader : List String -> Html msg
+viewQueryResultsHeader columns =
+    tr [] (("#" :: columns) |> List.map (\col -> th [ scope "col", class "whitespace-nowrap p-1 text-left text-sm font-semibold text-gray-900 max-w-xs truncate" ] [ text col ]))
+
+
+viewQueryResultsRow : List String -> Int -> Dict String JsValue -> Html msg
+viewQueryResultsRow columns i row =
     let
         rest : Dict String JsValue
         rest =
             row |> Dict.filter (\k _ -> columns |> List.member k |> not)
-
-        extended : List (Html msg)
-        extended =
-            if rest |> Dict.isEmpty then
-                []
-
-            else
-                [ td [] [ text (rest |> JsValue.Object |> JsValue.toString) ] ]
     in
-    tr [] ((columns |> List.map (\col -> row |> Dict.getOrElse col JsValue.Null |> (\v -> td [] [ text (JsValue.toString v) ]))) ++ extended)
+    tr [ class "hover:bg-gray-100", classList [ ( "bg-gray-50", modBy 2 i == 1 ) ] ]
+        ([ viewQueryResultsRowValue (JsValue.Int (i + 1)) ]
+            ++ (columns |> List.map (\col -> row |> Dict.getOrElse col JsValue.Null |> viewQueryResultsRowValue))
+            ++ Bool.cond (rest |> Dict.isEmpty) [] [ viewQueryResultsRowValue (rest |> JsValue.Object) ]
+        )
+
+
+viewQueryResultsRowValue : JsValue -> Html msg
+viewQueryResultsRowValue value =
+    td [ title (value |> JsValue.toString), class "whitespace-nowrap p-1 text-sm text-gray-500 max-w-xs truncate" ] [ text (value |> JsValue.toString) ]
 
 
 viewNoSourceWarning : Html msg
