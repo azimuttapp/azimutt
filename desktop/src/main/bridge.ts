@@ -3,7 +3,7 @@ import {
     AzimuttSchema,
     ColumnRef,
     ColumnStats,
-    DatabaseResults,
+    DatabaseQueryResults,
     DatabaseUrl,
     parseDatabaseUrl,
     TableId,
@@ -20,16 +20,16 @@ export const setupBridge = (): void => {
     const bridge: DesktopBridge = {
         versions: {node: (): string => "", chrome: (): string => "", electron: (): string => ""},
         ping: ping,
-        queryDatabase: queryDatabase,
         getDatabaseSchema: getDatabaseSchema,
         getTableStats: getTableStats,
-        getColumnStats: getColumnStats
+        getColumnStats: getColumnStats,
+        runDatabaseQuery: runDatabaseQuery
     }
     ipcMain.handle('ping', () => bridge.ping())
-    ipcMain.handle('queryDatabase', (e: IpcMainInvokeEvent, url: DatabaseUrl, query: string) => bridge.queryDatabase(url, query))
     ipcMain.handle('getDatabaseSchema', (e: IpcMainInvokeEvent, url: DatabaseUrl) => bridge.getDatabaseSchema(url))
     ipcMain.handle('getTableStats', (e: IpcMainInvokeEvent, url: DatabaseUrl, table: TableId) => bridge.getTableStats(url, table))
     ipcMain.handle('getColumnStats', (e: IpcMainInvokeEvent, url: DatabaseUrl, ref: ColumnRef) => bridge.getColumnStats(url, ref))
+    ipcMain.handle('runDatabaseQuery', (e: IpcMainInvokeEvent, url: DatabaseUrl, query: string) => bridge.runDatabaseQuery(url, query))
 }
 
 const application = 'azimutt-desktop'
@@ -38,7 +38,7 @@ async function ping(): Promise<string> {
     return 'pong'
 }
 
-async function queryDatabase(url: DatabaseUrl, query: string): Promise<DatabaseResults> {
+async function runDatabaseQuery(url: DatabaseUrl, query: string): Promise<DatabaseQueryResults> {
     const parsedUrl = parseDatabaseUrl(url)
     // FIXME: got error: "Error: Could not locate the bindings file." :(
     // Missing file: couchbase_impl, looks like the couchbase binary is not loaded in electron
@@ -49,7 +49,7 @@ async function queryDatabase(url: DatabaseUrl, query: string): Promise<DatabaseR
     } else if (parsedUrl.kind == 'postgres') {
         return postgres.query(application, parsedUrl, query, [])
     } else {
-        return Promise.reject(`queryDatabase is not supported for '${parsedUrl.kind || url}'`)
+        return Promise.reject(`runDatabaseQuery is not supported for '${parsedUrl.kind || url}'`)
     }
 }
 

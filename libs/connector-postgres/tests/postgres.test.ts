@@ -7,8 +7,9 @@ describe('postgres', () => {
     // local url, install db or replace it to test
     const url: DatabaseUrlParsed = parseDatabaseUrl('postgresql://postgres:postgres@localhost:5432/azimutt_dev')
     test.skip('execQuery', async () => {
-        const result = await execQuery(application, url, 'SELECT * FROM users WHERE email = $1 LIMIT 2;', ['admin@azimutt.app'])
-        expect(result.rows.length).toEqual(1)
+        const results = await execQuery(application, url, 'SELECT * FROM users WHERE email = $1 LIMIT 2;', ['admin@azimutt.app'])
+        console.log('results', results)
+        expect(results.rows.length).toEqual(1)
     })
     test.skip('getSchema', async () => {
         const schema = await getSchema(application, url, undefined, 10, logger)

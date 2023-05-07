@@ -1,4 +1,4 @@
-port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProject, createProjectTmp, deleteProject, downloadFile, fireworks, focus, fullscreen, getColumnStats, getDatabaseSchema, getProject, getTableStats, listenHotkeys, mouseDown, moveProjectTo, observeLayout, observeMemoSize, observeSize, observeTableSize, observeTablesSize, onJsMessage, projectDirty, readLocalFile, scrollTo, setMeta, toast, track, unhandledJsMsgError, updateProject, updateProjectTmp)
+port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProject, createProjectTmp, deleteProject, downloadFile, fireworks, focus, fullscreen, getColumnStats, getDatabaseSchema, getProject, getTableStats, listenHotkeys, mouseDown, moveProjectTo, observeLayout, observeMemoSize, observeSize, observeTableSize, observeTablesSize, onJsMessage, projectDirty, readLocalFile, runDatabaseQuery, scrollTo, setMeta, toast, track, unhandledJsMsgError, updateProject, updateProjectTmp)
 
 import DataSources.JsonMiner.JsonSchema as JsonSchema exposing (JsonSchema)
 import Dict exposing (Dict)
@@ -14,6 +14,7 @@ import Libs.Models.FileName exposing (FileName)
 import Libs.Models.Hotkey as Hotkey exposing (Hotkey)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Color exposing (Color)
+import Models.DatabaseQueryResults as DatabaseQueryResults exposing (DatabaseQueryResults)
 import Models.OrganizationId as OrganizationId exposing (OrganizationId)
 import Models.Position as Position
 import Models.Project as Project exposing (Project)
@@ -145,6 +146,11 @@ getColumnStats column ( source, database ) =
     messageToJs (GetColumnStats source database column)
 
 
+runDatabaseQuery : DatabaseUrl -> String -> Cmd msg
+runDatabaseQuery database query =
+    messageToJs (RunDatabaseQuery database query)
+
+
 observeSize : HtmlId -> Cmd msg
 observeSize id =
     observeSizes [ id ]
@@ -236,6 +242,7 @@ type ElmMsg
     | GetDatabaseSchema DatabaseUrl
     | GetTableStats SourceId DatabaseUrl TableId
     | GetColumnStats SourceId DatabaseUrl ColumnRef
+    | RunDatabaseQuery DatabaseUrl String
     | ObserveSizes (List HtmlId)
     | ListenKeys (Dict String (List Hotkey))
     | Confetti HtmlId
@@ -252,6 +259,7 @@ type JsMsg
     | GotDatabaseSchema JsonSchema
     | GotTableStats SourceId TableStats
     | GotColumnStats SourceId ColumnStats
+    | GotDatabaseQueryResults DatabaseQueryResults
     | GotHotkey String
     | GotKeyHold String Bool
     | GotToast String String
@@ -363,6 +371,9 @@ elmEncoder elm =
         GetColumnStats source database column ->
             Encode.object [ ( "kind", "GetColumnStats" |> Encode.string ), ( "source", source |> SourceId.encode ), ( "database", database |> DatabaseUrl.encode ), ( "column", column |> ColumnRef.encode ) ]
 
+        RunDatabaseQuery database query ->
+            Encode.object [ ( "kind", "RunDatabaseQuery" |> Encode.string ), ( "database", database |> DatabaseUrl.encode ), ( "query", query |> Encode.string ) ]
+
         ObserveSizes ids ->
             Encode.object [ ( "kind", "ObserveSizes" |> Encode.string ), ( "ids", ids |> Encode.list Encode.string ) ]
 
@@ -419,6 +430,9 @@ jsDecoder =
 
                 "GotColumnStats" ->
                     Decode.map2 GotColumnStats (Decode.field "source" SourceId.decode) (Decode.field "stats" ColumnStats.decode)
+
+                "GotDatabaseQueryResults" ->
+                    Decode.map GotDatabaseQueryResults (Decode.field "results" DatabaseQueryResults.decode)
 
                 "GotHotkey" ->
                     Decode.map GotHotkey (Decode.field "id" Decode.string)
@@ -498,6 +512,9 @@ unhandledJsMsgError msg =
 
                 GotColumnStats _ _ ->
                     "GotColumnStats"
+
+                GotDatabaseQueryResults _ ->
+                    "GotDatabaseQueryResults"
 
                 GotHotkey _ ->
                     "GotHotkey"

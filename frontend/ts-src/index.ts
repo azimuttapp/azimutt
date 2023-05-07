@@ -16,6 +16,7 @@ import {
     ListenKeys,
     ObserveSizes,
     ProjectDirty,
+    RunDatabaseQuery,
     SetMeta,
     Track,
     UpdateProject,
@@ -89,6 +90,7 @@ app.on('GetLocalFile', getLocalFile)
 app.on('GetDatabaseSchema', getDatabaseSchema)
 app.on('GetTableStats', getTableStats)
 app.on('GetColumnStats', getColumnStats)
+app.on('RunDatabaseQuery', runDatabaseQuery)
 app.on('ObserveSizes', observeSizes)
 app.on('ListenKeys', listenHotkeys)
 app.on('Confetti', msg => Utils.launchConfetti(msg.id))
@@ -302,6 +304,16 @@ function getColumnStats(msg: GetColumnStats) {
             err => err.statusCode !== 404 && reportError(`Can't get stats for ${msg.column}`, err)
         )
     }
+}
+
+function runDatabaseQuery(msg: RunDatabaseQuery) {
+    (window.desktop ?
+        window.desktop.runDatabaseQuery(msg.database, msg.query) :
+        backend.runDatabaseQuery(msg.database, msg.query)
+    ).then(
+        results => app.gotDatabaseQueryResults(results),
+        err => err.statusCode !== 404 && reportError(`Can't run '${msg.query}' query for ${msg.database}`, err)
+    )
 }
 
 const resizeObserver = new ResizeObserver(entries => {

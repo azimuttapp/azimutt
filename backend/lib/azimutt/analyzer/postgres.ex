@@ -109,7 +109,8 @@ defmodule Azimutt.Analyzer.Postgres do
       database: conf.database,
       username: conf.username,
       password: conf.password,
-      # ssl: true,
+      # `ssl` required to access Heroku db :/
+      ssl: true,
       # no retry on failed connection
       backoff_type: :stop
     )
@@ -646,8 +647,9 @@ defmodule Azimutt.Analyzer.Postgres do
       Postgrex.query(pid, query, params)
       |> Result.map_both(&format_error/1, fn res ->
         %QueryResults{
+          query: query,
           columns: res.columns,
-          values: res.rows |> Enum.map(fn row -> row |> Enum.map(&format_value/1) end)
+          rows: res.rows |> Enum.map(fn row -> Enum.zip([res.columns, row |> Enum.map(&format_value/1)]) |> Map.new() end)
         }
       end)
     end)

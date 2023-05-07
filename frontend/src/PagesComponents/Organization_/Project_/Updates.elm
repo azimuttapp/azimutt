@@ -36,6 +36,7 @@ import PagesComponents.Organization_.Project_.Components.EmbedSourceParsingDialo
 import PagesComponents.Organization_.Project_.Components.ExportDialog as ExportDialog
 import PagesComponents.Organization_.Project_.Components.ProjectSaveDialog as ProjectSaveDialog
 import PagesComponents.Organization_.Project_.Components.ProjectSharing as ProjectSharing
+import PagesComponents.Organization_.Project_.Components.QueryPane as QueryPane
 import PagesComponents.Organization_.Project_.Components.SourceUpdateDialog as SourceUpdateDialog
 import PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, Model, Msg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..))
 import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode
@@ -69,7 +70,7 @@ import Random
 import Services.Backend as Backend
 import Services.DatabaseSource as DatabaseSource
 import Services.JsonSource as JsonSource
-import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapConf, mapContextMenuM, mapDetailsSidebarCmd, mapEmbedSourceParsingMCmd, mapErdM, mapErdMCmd, mapExportDialogCmd, mapHoverTable, mapMemos, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapOrganizationM, mapPlan, mapPosition, mapProject, mapPromptM, mapProps, mapSaveCmd, mapSchemaAnalysisM, mapSearch, mapSelected, mapSharingCmd, mapShowHiddenColumns, mapTables, mapTablesCmd, mapToastsCmd, setActive, setCollapsed, setColor, setColors, setConfirm, setContextMenu, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setLast, setModal, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setSelected, setShow, setSize, setText)
+import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapConf, mapContextMenuM, mapDetailsSidebarCmd, mapEmbedSourceParsingMCmd, mapErdM, mapErdMCmd, mapExportDialogCmd, mapHoverTable, mapMemos, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapOrganizationM, mapPlan, mapPosition, mapProject, mapPromptM, mapProps, mapQueryPaneCmd, mapSaveCmd, mapSchemaAnalysisM, mapSearch, mapSelected, mapSharingCmd, mapShowHiddenColumns, mapTables, mapTablesCmd, mapToastsCmd, setActive, setCollapsed, setColor, setColors, setConfirm, setContextMenu, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setLast, setModal, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setSelected, setShow, setSize, setText)
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
 import Time
@@ -236,6 +237,9 @@ update currentLayout zone now urlInfos organizations projects msg model =
 
         DetailsSidebarMsg message ->
             model.erd |> Maybe.mapOrElse (\erd -> model |> mapDetailsSidebarCmd (DetailsSidebar.update Noop NotesMsg TagsMsg erd message)) ( model, Cmd.none )
+
+        QueryPaneMsg message ->
+            model.erd |> Maybe.mapOrElse (\erd -> model |> mapQueryPaneCmd (QueryPane.update erd message)) ( model, Cmd.none )
 
         VirtualRelationMsg message ->
             model |> handleVirtualRelation message
@@ -448,6 +452,9 @@ handleJsMessage now currentLayout msg model =
 
         GotColumnStats source stats ->
             ( { model | columnStats = model.columnStats |> Dict.update stats.id (Maybe.withDefault Dict.empty >> Dict.insert (SourceId.toString source) stats >> Just) }, Cmd.none )
+
+        GotDatabaseQueryResults results ->
+            ( model, results |> Ok |> QueryPane.GotResults |> QueryPaneMsg |> T.send )
 
         GotHotkey hotkey ->
             handleHotkey now model hotkey

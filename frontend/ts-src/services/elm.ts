@@ -1,11 +1,12 @@
 import {errorToString} from "@azimutt/utils";
-import {AzimuttSchema, ColumnId, ColumnStats, TableId, TableStats} from "@azimutt/database-types";
+import {AzimuttSchema, ColumnId, ColumnStats, DatabaseQueryResults, TableId, TableStats} from "@azimutt/database-types";
 import {
     ElementSize,
     ElmFlags,
     ElmMsg,
     ElmRuntime,
     GetLocalFile,
+    GotDatabaseQueryResults,
     GotDatabaseSchema,
     Hotkey,
     HotkeyId,
@@ -44,6 +45,7 @@ export class ElmApp {
         GetDatabaseSchema: [],
         GetTableStats: [],
         GetColumnStats: [],
+        RunDatabaseQuery: [],
         ObserveSizes: [],
         ListenKeys: [],
         Confetti: [],
@@ -95,6 +97,7 @@ export class ElmApp {
     gotDatabaseSchema = (schema: AzimuttSchema): void => this.send({kind: 'GotDatabaseSchema', schema})
     gotTableStats = (source: SourceId, stats: TableStats): void => this.send({kind: 'GotTableStats', source, stats})
     gotColumnStats = (source: SourceId, stats: ColumnStats): void => this.send({kind: 'GotColumnStats', source, stats})
+    gotDatabaseQueryResults = (results: DatabaseQueryResults): void => this.send({kind: 'GotDatabaseQueryResults', results})
     gotHotkey = (hotkey: Hotkey & { id: HotkeyId }): void => this.send({kind: 'GotHotkey', id: hotkey.id})
     gotKeyHold = (key: string, start: boolean): void => this.send({kind: 'GotKeyHold', key, start})
     toast = (level: ToastLevel, message: string): void => this.send({kind: 'GotToast', level, message})

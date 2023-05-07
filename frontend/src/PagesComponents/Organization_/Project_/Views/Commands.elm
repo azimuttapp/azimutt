@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Views.Commands exposing (viewCommands)
+module PagesComponents.Organization_.Project_.Views.Commands exposing (argsToString, viewCommands)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
@@ -15,14 +15,33 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Tailwind exposing (TwClass, batch, focus, hover)
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
+import PagesComponents.Organization_.Project_.Components.QueryPane as QueryPane
 import PagesComponents.Organization_.Project_.Models exposing (AmlSidebarMsg(..), Msg(..))
 import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode exposing (CursorMode)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 
 
-viewCommands : ErdConf -> CursorMode -> ZoomLevel -> HtmlId -> Bool -> HtmlId -> Bool -> Bool -> Html Msg
-viewCommands conf cursorMode canvasZoom htmlId hasTables openedDropdown amlSidebar detailsSidebar =
+argsToString : CursorMode -> HtmlId -> HtmlId -> Bool -> Bool -> Bool -> Bool -> String
+argsToString cursorMode htmlId openedDropdown hasTables amlSidebar detailsSidebar queryPane =
+    [ CursorMode.toString cursorMode, htmlId, openedDropdown, B.cond hasTables "Y" "N", B.cond amlSidebar "Y" "N", B.cond detailsSidebar "Y" "N", B.cond queryPane "Y" "N" ] |> String.join "~"
+
+
+stringToArgs : String -> ( ( CursorMode, HtmlId, HtmlId ), Bool, ( Bool, Bool, Bool ) )
+stringToArgs args =
+    case args |> String.split "~" of
+        [ cursorMode, htmlId, openedDropdown, hasTables, amlSidebar, detailsSidebar, queryPane ] ->
+            ( ( CursorMode.fromString cursorMode, htmlId, openedDropdown ), hasTables == "Y", ( amlSidebar == "Y", detailsSidebar == "Y", queryPane == "Y" ) )
+
+        _ ->
+            ( ( CursorMode.Select, "", "" ), True, ( True, True, True ) )
+
+
+viewCommands : ErdConf -> ZoomLevel -> String -> Html Msg
+viewCommands conf canvasZoom args =
     let
+        ( ( cursorMode, htmlId, openedDropdown ), hasTables, ( amlSidebar, detailsSidebar, queryPane ) ) =
+            stringToArgs args
+
         buttonStyles : TwClass
         buttonStyles =
             batch [ "relative inline-flex items-center p-2 border border-gray-300 text-sm font-medium", focus [ "z-10 outline-none ring-1 ring-primary-500 border-primary-500" ] ]
@@ -50,9 +69,8 @@ viewCommands conf cursorMode canvasZoom htmlId hasTables openedDropdown amlSideb
             span [ class "relative z-0 inline-flex shadow-sm rounded-md ml-2" ]
                 [ button [ type_ "button", onClick (DetailsSidebarMsg DetailsSidebar.Toggle), css [ "rounded-l-md", buttonStyles, B.cond detailsSidebar inverted classic ] ] [ Icon.solid Menu "" ]
                     |> B.cond (conf.select && hasTables) Tooltip.t Tooltip.tl "Open table list"
-
-                --, button [ type_ "button", onClick (AmlSidebarMsg AToggle), css [ "-ml-px", buttonStyles, B.cond amlSidebar inverted classic ] ] [ Icon.solid Code "" ]
-                --    |> B.cond (conf.move && hasTables) Tooltip.t Tooltip.tl "Query your database"
+                , button [ type_ "button", onClick (QueryPaneMsg QueryPane.Toggle), css [ "-ml-px", buttonStyles, B.cond queryPane inverted classic ] ] [ Icon.solid Code "" ]
+                    |> B.cond (conf.move && hasTables) Tooltip.t Tooltip.tl "Query your database"
                 , button [ type_ "button", onClick (AmlSidebarMsg AToggle), css [ "-ml-px rounded-r-md", buttonStyles, B.cond amlSidebar inverted classic ] ] [ Icon.solid Pencil "" ]
                     |> B.cond (conf.move && hasTables) Tooltip.t Tooltip.tl "Update your schema"
                 ]

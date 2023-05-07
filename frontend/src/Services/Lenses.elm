@@ -62,6 +62,7 @@ module Services.Lenses exposing
     , mapProjectSourceMCmd
     , mapPromptM
     , mapProps
+    , mapQueryPaneCmd
     , mapRelatedTables
     , mapRelations
     , mapRemoveViews
@@ -167,6 +168,7 @@ module Services.Lenses exposing
     , setProjectSource
     , setPrompt
     , setProps
+    , setQueryPane
     , setRelatedTables
     , setRelationStyle
     , setRelations
@@ -174,6 +176,7 @@ module Services.Lenses exposing
     , setRemovedSchemas
     , setRemovedTables
     , setResult
+    , setResults
     , setSampleSource
     , setSave
     , setSchemaAnalysis
@@ -187,6 +190,7 @@ module Services.Lenses exposing
     , setShowSettings
     , setShown
     , setSize
+    , setSource
     , setSourceUpdate
     , setSqlSource
     , setTable
@@ -913,6 +917,16 @@ mapProps =
     map_ .props setProps
 
 
+setQueryPane : v -> { item | queryPane : v } -> { item | queryPane : v }
+setQueryPane =
+    set_ .queryPane (\value item -> { item | queryPane = value })
+
+
+mapQueryPaneCmd : (v -> ( v, Cmd msg )) -> { item | queryPane : v } -> ( { item | queryPane : v }, Cmd msg )
+mapQueryPaneCmd =
+    mapCmd_ .queryPane setQueryPane
+
+
 setRelatedTables : v -> { item | relatedTables : v } -> { item | relatedTables : v }
 setRelatedTables =
     set_ .relatedTables (\value item -> { item | relatedTables = value })
@@ -971,6 +985,11 @@ setResult =
 mapResult : (v -> v) -> { item | result : v } -> { item | result : v }
 mapResult =
     map_ .result setResult
+
+
+setResults : v -> { item | results : v } -> { item | results : v }
+setResults =
+    set_ .results (\value item -> { item | results = value })
 
 
 setSampleSource : v -> { item | sampleSource : v } -> { item | sampleSource : v }
@@ -1086,6 +1105,11 @@ mapShowSettings =
 setSize : v -> { item | size : v } -> { item | size : v }
 setSize =
     set_ .size (\value item -> { item | size = value })
+
+
+setSource : v -> { item | source : v } -> { item | source : v }
+setSource =
+    set_ .source (\value item -> { item | source = value })
 
 
 setSourceUpdate : v -> { item | sourceUpdate : v } -> { item | sourceUpdate : v }

@@ -140,6 +140,7 @@ ids :
     , amlSidebarDialog : HtmlId
     , detailsSidebarDialog : HtmlId
     , findPathDialog : HtmlId
+    , queryPaneDialog : HtmlId
     , schemaAnalysisDialog : HtmlId
     , helpDialog : HtmlId
     , customDialog : HtmlId
@@ -159,6 +160,7 @@ ids =
     , amlSidebarDialog = "aml-sidebar"
     , detailsSidebarDialog = "details-sidebar"
     , findPathDialog = "find-path-dialog"
+    , queryPaneDialog = "query-pane-dialog"
     , schemaAnalysisDialog = "schema-analysis-dialog"
     , helpDialog = "help-dialog"
     , customDialog = "custom-dialog"

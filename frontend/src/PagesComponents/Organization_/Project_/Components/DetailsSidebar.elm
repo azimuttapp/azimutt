@@ -69,8 +69,8 @@ type alias Heading item props =
 
 
 type Msg
-    = Close
-    | Toggle
+    = Toggle
+    | Close
     | SearchUpdate String
     | ShowList
     | ShowSchema SchemaName
@@ -101,11 +101,11 @@ init v =
 update : (String -> msg) -> (NotesMsg -> msg) -> (TagsMsg -> msg) -> Erd -> Msg -> Maybe Model -> ( Maybe Model, Cmd msg )
 update noop notesMsg tagsMsg erd msg model =
     case msg of
-        Close ->
-            ( Nothing, Cmd.none )
-
         Toggle ->
             ( model |> Maybe.mapOrElse (\_ -> Nothing) (listView |> init |> Just), Cmd.none )
+
+        Close ->
+            ( Nothing, Cmd.none )
 
         SearchUpdate search ->
             ( model |> Maybe.map (setSearch search), Cmd.none )

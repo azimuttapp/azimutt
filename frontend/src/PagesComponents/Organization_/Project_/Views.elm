@@ -30,12 +30,13 @@ import PagesComponents.Organization_.Project_.Components.EmbedSourceParsingDialo
 import PagesComponents.Organization_.Project_.Components.ExportDialog as ExportDialog
 import PagesComponents.Organization_.Project_.Components.ProjectSaveDialog as ProjectSaveDialog
 import PagesComponents.Organization_.Project_.Components.ProjectSharing as ProjectSharing
+import PagesComponents.Organization_.Project_.Components.QueryPane as QueryPane
 import PagesComponents.Organization_.Project_.Components.SourceUpdateDialog as SourceUpdateDialog
 import PagesComponents.Organization_.Project_.Models exposing (ContextMenu, LayoutMsg(..), Model, Msg(..), ProjectSettingsMsg(..), confirmDanger)
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
-import PagesComponents.Organization_.Project_.Views.Commands exposing (viewCommands)
+import PagesComponents.Organization_.Project_.Views.Commands as Commands exposing (viewCommands)
 import PagesComponents.Organization_.Project_.Views.Erd as Erd exposing (viewErd)
 import PagesComponents.Organization_.Project_.Views.Modals.EditNotes exposing (viewEditNotes)
 import PagesComponents.Organization_.Project_.Views.Modals.FindPath exposing (viewFindPath)
@@ -80,6 +81,16 @@ viewProject onDelete currentUrl urlInfos shared model =
 
 viewApp : Url -> Maybe OrganizationId -> Shared.Model -> Model -> HtmlId -> Erd -> Html Msg
 viewApp currentUrl urlOrganization shared model htmlId erd =
+    let
+        erdTop : Float
+        erdTop =
+            model.erdElem.position |> Position.extractViewport |> .top
+
+        erdBottom : Float
+        erdBottom =
+            -- nb px from viewBottomSheet (h-96)
+            model.queryPane |> Maybe.mapOrElse (\_ -> 384) 0
+    in
     div [ class "az-app h-full" ]
         [ if model.conf.showNavbar then
             Lazy.lazy8 viewNavbar shared.conf shared.user model.conf model.virtualRelation erd shared.projects model.navbar (Navbar.argsToString currentUrl urlOrganization (shared.organizations |> List.map .id) (htmlId ++ "-nav") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-nav")) model.dirty)
@@ -87,8 +98,8 @@ viewApp currentUrl urlOrganization shared model htmlId erd =
           else
             div [] []
         , main_
-            [ class "flex-1 flex overflow-hidden"
-            , style "height" (B.cond model.conf.showNavbar ("calc(100% - " ++ (model.erdElem.position |> Position.extractViewport |> .top |> String.fromFloat) ++ "px)") "100%")
+            [ class "flex-1 flex overflow-hidden transition-[height] ease-in-out duration-200"
+            , style "height" (B.cond model.conf.showNavbar ("calc(100% - " ++ String.fromFloat (erdTop + erdBottom) ++ "px)") "100%")
             ]
             [ -- model.erdElem |> Area.debugViewport "erdElem" "border-red-500",
               section [ class "relative min-w-0 flex-1 h-full flex flex-col overflow-y-auto" ]
@@ -99,7 +110,18 @@ viewApp currentUrl urlOrganization shared model htmlId erd =
                         layout =
                             erd |> Erd.currentLayout
                     in
-                    Lazy.lazy8 viewCommands model.conf model.cursorMode layout.canvas.zoom (htmlId ++ "-commands") (layout.tables |> List.isEmpty |> not) (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-commands")) (model.amlSidebar /= Nothing) (model.detailsSidebar /= Nothing)
+                    Lazy.lazy3 viewCommands
+                        model.conf
+                        layout.canvas.zoom
+                        (Commands.argsToString
+                            model.cursorMode
+                            (htmlId ++ "-commands")
+                            (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-commands"))
+                            (layout.tables |> List.isEmpty |> not)
+                            (model.amlSidebar /= Nothing)
+                            (model.detailsSidebar /= Nothing)
+                            (model.queryPane /= Nothing)
+                        )
 
                   else
                     div [] []
@@ -112,6 +134,7 @@ viewApp currentUrl urlOrganization shared model htmlId erd =
             , viewLeftSidebar model
             , viewRightSidebar model
             ]
+        , viewBottomSheet model
         ]
 
 
@@ -138,6 +161,20 @@ viewRightSidebar model =
     in
     aside [ css [ "block flex-shrink-0 order-last" ] ]
         [ div [ css [ B.cond (content == Nothing) "-mr-112" "", "w-112 transition-[margin] ease-in-out duration-200 h-full relative flex flex-col border-l border-gray-200 bg-white overflow-y-auto" ] ]
+            [ content |> Maybe.withDefault (div [] [])
+            ]
+        ]
+
+
+viewBottomSheet : Model -> Html Msg
+viewBottomSheet model =
+    let
+        content : Maybe (Html Msg)
+        content =
+            model.queryPane |> Maybe.map2 (QueryPane.view QueryPaneMsg) model.erd
+    in
+    aside [ class "block flex-shrink-0" ]
+        [ div [ css [ B.cond (content == Nothing) "-mb-96" "", "h-96 transition-[margin] ease-in-out duration-200 relative border-t border-gray-200 bg-white overflow-y-auto" ] ]
             [ content |> Maybe.withDefault (div [] [])
             ]
         ]

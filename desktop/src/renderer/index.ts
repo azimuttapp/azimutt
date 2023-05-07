@@ -51,9 +51,9 @@ setTimeout(() => {
 }, 1000)
 
 setTimeout(() => {
-    bridge.queryDatabase(dbUrl, 'SELECT * FROM projects LIMIT 1;')
-        .then(res => console.log('queryDatabase', res))
-        .catch(err => console.error('queryDatabase', err))
+    bridge.runDatabaseQuery(dbUrl, 'SELECT * FROM projects LIMIT 1;')
+        .then(res => console.log('runDatabaseQuery', res))
+        .catch(err => console.error('runDatabaseQuery', err))
 }, 2000)
 
 setTimeout(() => {
