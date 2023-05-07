@@ -260,6 +260,7 @@ type JsMsg
     | GotTableStats SourceId TableStats
     | GotColumnStats SourceId ColumnStats
     | GotDatabaseQueryResults DatabaseQueryResults
+    | GotDatabaseQueryError String
     | GotHotkey String
     | GotKeyHold String Bool
     | GotToast String String
@@ -434,6 +435,9 @@ jsDecoder =
                 "GotDatabaseQueryResults" ->
                     Decode.map GotDatabaseQueryResults (Decode.field "results" DatabaseQueryResults.decode)
 
+                "GotDatabaseQueryError" ->
+                    Decode.map GotDatabaseQueryError (Decode.field "error" Decode.string)
+
                 "GotHotkey" ->
                     Decode.map GotHotkey (Decode.field "id" Decode.string)
 
@@ -515,6 +519,9 @@ unhandledJsMsgError msg =
 
                 GotDatabaseQueryResults _ ->
                     "GotDatabaseQueryResults"
+
+                GotDatabaseQueryError _ ->
+                    "GotDatabaseQueryError"
 
                 GotHotkey _ ->
                     "GotHotkey"

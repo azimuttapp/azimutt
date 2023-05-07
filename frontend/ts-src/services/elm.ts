@@ -98,6 +98,7 @@ export class ElmApp {
     gotTableStats = (source: SourceId, stats: TableStats): void => this.send({kind: 'GotTableStats', source, stats})
     gotColumnStats = (source: SourceId, stats: ColumnStats): void => this.send({kind: 'GotColumnStats', source, stats})
     gotDatabaseQueryResults = (results: DatabaseQueryResults): void => this.send({kind: 'GotDatabaseQueryResults', results})
+    gotDatabaseQueryError = (error: string): void => this.send({kind: 'GotDatabaseQueryError', error})
     gotHotkey = (hotkey: Hotkey & { id: HotkeyId }): void => this.send({kind: 'GotHotkey', id: hotkey.id})
     gotKeyHold = (key: string, start: boolean): void => this.send({kind: 'GotKeyHold', key, start})
     toast = (level: ToastLevel, message: string): void => this.send({kind: 'GotToast', level, message})

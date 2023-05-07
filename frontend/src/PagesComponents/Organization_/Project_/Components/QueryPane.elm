@@ -4,7 +4,7 @@ import Components.Atoms.Icon as Icon
 import Components.Molecules.Alert as Alert
 import Conf
 import Dict exposing (Dict)
-import Html exposing (Html, button, div, h3, option, p, select, span, table, tbody, td, text, textarea, th, thead, tr)
+import Html exposing (Html, button, div, h3, option, p, pre, select, span, table, tbody, td, text, textarea, th, thead, tr)
 import Html.Attributes exposing (autofocus, class, classList, disabled, id, name, placeholder, rows, scope, selected, title, type_, value)
 import Html.Events exposing (onClick, onInput)
 import Libs.Bool as Bool
@@ -21,11 +21,11 @@ import Models.Project.Source as Source exposing (Source)
 import Models.Project.SourceId as SourceId
 import PagesComponents.Organization_.Project_.Models.Erd exposing (Erd)
 import Ports
-import Services.Lenses exposing (setInput, setResults, setSource)
+import Services.Lenses exposing (setInput, setLoading, setResults, setSource)
 
 
 type alias Model =
-    { id : HtmlId, source : Maybe ( Source, DatabaseUrl ), input : String, results : Maybe (Result String DatabaseQueryResults) }
+    { id : HtmlId, source : Maybe ( Source, DatabaseUrl ), input : String, loading : Bool, results : Maybe (Result String DatabaseQueryResults) }
 
 
 type Msg
@@ -44,7 +44,7 @@ type Msg
 
 init : Erd -> Model
 init erd =
-    { id = Conf.ids.queryPaneDialog, source = erd.sources |> List.filterMap withUrl |> List.head, input = "", results = Nothing }
+    { id = Conf.ids.queryPaneDialog, source = erd.sources |> List.filterMap withUrl |> List.head, input = "", loading = False, results = Nothing }
 
 
 
@@ -67,10 +67,10 @@ update erd msg model =
             ( model |> Maybe.map (setInput input), Cmd.none )
 
         RunQuery databaseUrl query ->
-            ( model, Ports.runDatabaseQuery databaseUrl query )
+            ( model |> Maybe.map (setLoading True >> setResults Nothing), Ports.runDatabaseQuery databaseUrl query )
 
         GotResults results ->
-            ( model |> Maybe.map (setResults (Just results)), Cmd.none )
+            ( model |> Maybe.map (setLoading False >> setResults (Just results)), Cmd.none )
 
         ClearResults ->
             ( model |> Maybe.map (setResults Nothing), Cmd.none )
@@ -93,7 +93,7 @@ view wrap erd model =
             ++ (model.source
                     |> Maybe.mapOrElse
                         (\source ->
-                            [ viewQueryEditor wrap (model.id ++ "-editor") source model.input ]
+                            [ viewQueryEditor wrap (model.id ++ "-editor") source model.input model.loading ]
                                 ++ (model.results |> Maybe.mapOrElse (\results -> [ viewQueryResults results ]) [])
                         )
                         [ viewNoSourceWarning ]
@@ -124,8 +124,8 @@ viewHeading wrap htmlId dbSources source =
         ]
 
 
-viewQueryEditor : (Msg -> msg) -> HtmlId -> ( Source, DatabaseUrl ) -> String -> Html msg
-viewQueryEditor wrap htmlId ( source, databaseUrl ) input =
+viewQueryEditor : (Msg -> msg) -> HtmlId -> ( Source, DatabaseUrl ) -> String -> Bool -> Html msg
+viewQueryEditor wrap htmlId ( source, databaseUrl ) input loading =
     let
         queryInput : HtmlId
         queryInput =
@@ -148,10 +148,15 @@ viewQueryEditor wrap htmlId ( source, databaseUrl ) input =
                 [ button
                     [ type_ "button"
                     , onClick (input |> RunQuery databaseUrl |> wrap)
-                    , disabled (input == "")
+                    , disabled (input == "" || loading)
                     , class "inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:bg-indigo-300"
                     ]
-                    [ text "Run" ]
+                    (if loading then
+                        [ Icon.loading "-ml-1 mr-2 animate-spin", text "Run" ]
+
+                     else
+                        [ text "Run" ]
+                    )
                 ]
             ]
         ]
@@ -161,7 +166,13 @@ viewQueryResults : Result String DatabaseQueryResults -> Html msg
 viewQueryResults results =
     div [ class "min-w-full max-w-full overflow-scroll" ]
         (results
-            |> Result.fold (\err -> [ div [ class "mt-3" ] [ text ("Error: " ++ err) ] ])
+            |> Result.fold
+                (\err ->
+                    [ div [ class "mt-3 px-6" ]
+                        [ Alert.withDescription { color = Tw.red, icon = Icon.Exclamation, title = "Error 😱" } [ pre [] [ text err ] ]
+                        ]
+                    ]
+                )
                 (\res ->
                     [ p [ class "px-1 text-sm text-gray-500" ] [ text ((res.rows |> List.length |> String.fromInt) ++ " rows") ]
                     , table [ class "min-w-full divide-y divide-gray-300" ]

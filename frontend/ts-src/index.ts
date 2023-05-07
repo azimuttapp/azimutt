@@ -312,7 +312,7 @@ function runDatabaseQuery(msg: RunDatabaseQuery) {
         backend.runDatabaseQuery(msg.database, msg.query)
     ).then(
         results => app.gotDatabaseQueryResults(results),
-        err => err.statusCode !== 404 && reportError(`Can't run '${msg.query}' query for ${msg.database}`, err)
+        err => app.gotDatabaseQueryError(errorToString(err))
     )
 }
 

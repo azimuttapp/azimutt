@@ -33,14 +33,14 @@ defmodule AzimuttWeb.Api.FallbackController do
     conn
     |> put_status(status)
     |> put_view(AzimuttWeb.ErrorView)
-    |> render("error.json", message: message)
+    |> render("error.json", message: format(message))
   end
 
   def call(conn, {:error, message}) do
     conn
     |> put_status(:internal_server_error)
     |> put_view(AzimuttWeb.ErrorView)
-    |> render("error.json", message: inspect(message))
+    |> render("error.json", message: format(message))
   end
 
   def call(conn, :ok) do
@@ -51,6 +51,9 @@ defmodule AzimuttWeb.Api.FallbackController do
     conn
     |> put_status(:internal_server_error)
     |> put_view(AzimuttWeb.ErrorView)
-    |> render("error.json", message: inspect(other))
+    |> render("error.json", message: format(other))
   end
+
+  defp format(message) when is_binary(message), do: message
+  defp format(message), do: inspect(message)
 end

@@ -456,6 +456,9 @@ handleJsMessage now currentLayout msg model =
         GotDatabaseQueryResults results ->
             ( model, results |> Ok |> QueryPane.GotResults |> QueryPaneMsg |> T.send )
 
+        GotDatabaseQueryError error ->
+            ( model, error |> Err |> QueryPane.GotResults |> QueryPaneMsg |> T.send )
+
         GotHotkey hotkey ->
             handleHotkey now model hotkey
 

@@ -149,7 +149,7 @@ viewErd conf erdElem erd selectionBox virtualRelation editMemo args dragging =
          ]
             ++ B.cond (conf.move && not (List.isEmpty layoutTables)) [ onWheel OnWheel platform ] []
             ++ B.cond ((conf.move || conf.select) && virtualRelation == Nothing && editMemo == Nothing) [ onPointerDown (handleErdPointerDown conf cursorMode) platform ] []
-            ++ B.cond (conf.layout && virtualRelation == Nothing && editMemo == Nothing) [ onDblClick (CanvasProps.eventCanvas erdElem canvas >> MCreate >> MemoMsg) platform, onContextMenu (\e -> ContextMenuCreate (ErdContextMenu.view platform erdElem canvas layout e) e) platform ] []
+            ++ B.cond (conf.layout && virtualRelation == Nothing && editMemo == Nothing && layoutTables /= []) [ onDblClick (CanvasProps.eventCanvas erdElem canvas >> MCreate >> MemoMsg) platform, onContextMenu (\e -> ContextMenuCreate (ErdContextMenu.view platform erdElem canvas layout e) e) platform ] []
         )
         [ div [ class "az-canvas origin-top-left", Position.styleTransformDiagram canvas.position canvas.zoom ]
             -- use HTML order instead of z-index, must be careful with it, this allows to have tooltips & popovers always on top

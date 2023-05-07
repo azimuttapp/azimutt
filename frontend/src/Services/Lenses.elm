@@ -143,6 +143,7 @@ module Services.Lenses exposing
     , setLast
     , setLayouts
     , setList
+    , setLoading
     , setMax
     , setMemos
     , setMetadata
@@ -690,6 +691,11 @@ mapLayoutsDCmd =
 setList : v -> { item | list : v } -> { item | list : v }
 setList =
     set_ .list (\value item -> { item | list = value })
+
+
+setLoading : v -> { item | loading : v } -> { item | loading : v }
+setLoading =
+    set_ .loading (\value item -> { item | loading = value })
 
 
 setMax : v -> { item | max : v } -> { item | max : v }
