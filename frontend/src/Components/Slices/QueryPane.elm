@@ -1,9 +1,12 @@
-module PagesComponents.Organization_.Project_.Components.QueryPane exposing (Model, Msg(..), update, view)
+module Components.Slices.QueryPane exposing (Model, Msg(..), doc, update, view)
 
+import Array
 import Components.Atoms.Icon as Icon
 import Components.Molecules.Alert as Alert
 import Conf
 import Dict exposing (Dict)
+import ElmBook.Actions exposing (logAction)
+import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Html, button, div, h3, option, p, pre, select, span, table, tbody, td, text, textarea, th, thead, tr)
 import Html.Attributes exposing (autofocus, class, classList, disabled, id, name, placeholder, rows, scope, selected, title, type_, value)
 import Html.Events exposing (onClick, onInput)
@@ -13,13 +16,15 @@ import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.DatabaseUrl exposing (DatabaseUrl)
 import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.Nel as Nel
 import Libs.Result as Result
 import Libs.Tailwind as Tw
+import Libs.Time as Time
 import Models.DatabaseQueryResults exposing (DatabaseQueryResults, DatabaseQueryResultsColumn)
 import Models.JsValue as JsValue exposing (JsValue)
 import Models.Project.Source as Source exposing (Source)
 import Models.Project.SourceId as SourceId
-import PagesComponents.Organization_.Project_.Models.Erd exposing (Erd)
+import Models.Project.SourceKind exposing (SourceKind(..))
 import Ports
 import Services.Lenses exposing (setInput, setLoading, setResults, setSource)
 
@@ -42,20 +47,20 @@ type Msg
 -- INIT
 
 
-init : Erd -> Model
-init erd =
-    { id = Conf.ids.queryPaneDialog, source = erd.sources |> List.filterMap withUrl |> List.head, input = "", loading = False, results = Nothing }
+init : List Source -> Model
+init sources =
+    { id = Conf.ids.queryPaneDialog, source = sources |> List.filterMap withUrl |> List.head, input = "", loading = False, results = Nothing }
 
 
 
 -- UPDATE
 
 
-update : Erd -> Msg -> Maybe Model -> ( Maybe Model, Cmd msg )
-update erd msg model =
+update : List Source -> Msg -> Maybe Model -> ( Maybe Model, Cmd msg )
+update sources msg model =
     case msg of
         Toggle ->
-            ( model |> Maybe.mapOrElse (\_ -> Nothing) (init erd |> Just), Cmd.none )
+            ( model |> Maybe.mapOrElse (\_ -> Nothing) (init sources |> Just), Cmd.none )
 
         Close ->
             ( Nothing, Cmd.none )
@@ -80,12 +85,12 @@ update erd msg model =
 -- VIEW
 
 
-view : (Msg -> msg) -> Erd -> Model -> Html msg
-view wrap erd model =
+view : (Msg -> msg) -> List Source -> Model -> Html msg
+view wrap sources model =
     let
         dbSources : List ( Source, DatabaseUrl )
         dbSources =
-            erd.sources |> List.filterMap withUrl
+            sources |> List.filterMap withUrl
     in
     div [ class "h-full py-5" ]
         ([ viewHeading wrap (model.id ++ "-heading") dbSources model.source
@@ -216,7 +221,7 @@ viewQueryResultsRowValue value =
 
 viewNoSourceWarning : Html msg
 viewNoSourceWarning =
-    div [ class "mt-3" ]
+    div [ class "mt-3 px-6" ]
         [ Alert.withDescription
             { color = Tw.blue
             , icon = Icon.InformationCircle
@@ -235,3 +240,74 @@ viewNoSourceWarning =
 withUrl : Source -> Maybe ( Source, DatabaseUrl )
 withUrl source =
     source |> Source.databaseUrl |> Maybe.map (\url -> ( source, url ))
+
+
+
+-- DOCUMENTATION
+
+
+doc : Chapter x
+doc =
+    Chapter.chapter "QueryPane"
+        |> Chapter.renderComponentList
+            [ ( "no source", view (\_ -> logAction "msg") [] { docModel | source = Nothing } )
+            , ( "1 source", view (\_ -> logAction "msg") [ docSource1 ] docModel )
+            , ( "2 sources", view (\_ -> logAction "msg") docSources docModel )
+            , ( "with input", view (\_ -> logAction "msg") docSources { docModel | input = docQuery } )
+            , ( "loading", view (\_ -> logAction "msg") docSources { docModel | input = docQuery, loading = True } )
+            , ( "with result error", view (\_ -> logAction "msg") docSources { docModel | input = docQuery, results = Just docResultError } )
+            , ( "with empty result", view (\_ -> logAction "msg") docSources { docModel | input = docQuery, results = Just docResultEmpty } )
+            , ( "with results", view (\_ -> logAction "msg") docSources { docModel | input = docQuery, results = Just docResults } )
+            ]
+
+
+docModel : Model
+docModel =
+    { id = "html-id", source = Just ( docSource1, "url1" ), input = "", loading = False, results = Nothing }
+
+
+docQuery : String
+docQuery =
+    "SELECT * FROM users;"
+
+
+docResultError : Result String DatabaseQueryResults
+docResultError =
+    Err "Some unknown error..."
+
+
+docColumns : List DatabaseQueryResultsColumn
+docColumns =
+    [ { name = "id", ref = Just { table = ( "public", "users" ), column = Nel.from "id" } }, { name = "name", ref = Nothing }, { name = "data", ref = Nothing } ]
+
+
+docResultEmpty : Result String DatabaseQueryResults
+docResultEmpty =
+    Ok { query = docQuery, columns = docColumns, rows = [] }
+
+
+docResults : Result String DatabaseQueryResults
+docResults =
+    Ok
+        { query = docQuery
+        , columns = docColumns
+        , rows =
+            [ Dict.fromList [ ( "id", JsValue.Int 3 ), ( "name", JsValue.String "Loïc" ) ]
+            , Dict.fromList [ ( "id", JsValue.Int 4 ), ( "name", JsValue.String "Samir" ), ( "data", JsValue.Object (Dict.fromList [ ( "affiliation", JsValue.String "github" ) ]) ) ]
+            ]
+        }
+
+
+docSources : List Source
+docSources =
+    [ docSource1, docSource2 ]
+
+
+docSource1 : Source
+docSource1 =
+    { id = SourceId.zero, name = "source 1", kind = DatabaseConnection "url1", content = Array.empty, tables = Dict.empty, relations = [], types = Dict.empty, enabled = True, fromSample = Nothing, createdAt = Time.zero, updatedAt = Time.zero }
+
+
+docSource2 : Source
+docSource2 =
+    { docSource1 | id = SourceId.one, name = "source 2" }

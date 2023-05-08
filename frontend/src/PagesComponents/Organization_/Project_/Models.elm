@@ -2,6 +2,7 @@ module PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, AmlSi
 
 import Components.Atoms.Icon exposing (Icon(..))
 import Components.Slices.ProPlan as ProPlan
+import Components.Slices.QueryPane as QueryPane
 import DataSources.AmlMiner.AmlAdapter exposing (AmlSchemaError)
 import Dict exposing (Dict)
 import Html exposing (Html, text)
@@ -39,7 +40,6 @@ import PagesComponents.Organization_.Project_.Components.EmbedSourceParsingDialo
 import PagesComponents.Organization_.Project_.Components.ExportDialog as ExportDialog
 import PagesComponents.Organization_.Project_.Components.ProjectSaveDialog as ProjectSaveDialog
 import PagesComponents.Organization_.Project_.Components.ProjectSharing as ProjectSharing
-import PagesComponents.Organization_.Project_.Components.QueryPane as QueryPane
 import PagesComponents.Organization_.Project_.Components.SourceUpdateDialog as SourceUpdateDialog
 import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode exposing (CursorMode)
 import PagesComponents.Organization_.Project_.Models.DragState exposing (DragState)

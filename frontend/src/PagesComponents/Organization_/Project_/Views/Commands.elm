@@ -4,6 +4,7 @@ import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
 import Components.Molecules.Dropdown as Dropdown
 import Components.Molecules.Tooltip as Tooltip
+import Components.Slices.QueryPane as QueryPane
 import Html exposing (Html, button, div, span, text)
 import Html.Attributes exposing (class, id, type_)
 import Html.Events exposing (onClick)
@@ -15,7 +16,6 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Tailwind exposing (TwClass, batch, focus, hover)
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
-import PagesComponents.Organization_.Project_.Components.QueryPane as QueryPane
 import PagesComponents.Organization_.Project_.Models exposing (AmlSidebarMsg(..), Msg(..))
 import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode exposing (CursorMode)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)

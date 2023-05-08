@@ -2,6 +2,7 @@ module PagesComponents.Organization_.Project_.Views exposing (title, view)
 
 import Components.Atoms.Loader as Loader
 import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
+import Components.Slices.QueryPane as QueryPane
 import Conf
 import Dict
 import Html exposing (Html, a, aside, br, button, div, footer, h1, img, main_, nav, p, section, span, text)
@@ -30,7 +31,6 @@ import PagesComponents.Organization_.Project_.Components.EmbedSourceParsingDialo
 import PagesComponents.Organization_.Project_.Components.ExportDialog as ExportDialog
 import PagesComponents.Organization_.Project_.Components.ProjectSaveDialog as ProjectSaveDialog
 import PagesComponents.Organization_.Project_.Components.ProjectSharing as ProjectSharing
-import PagesComponents.Organization_.Project_.Components.QueryPane as QueryPane
 import PagesComponents.Organization_.Project_.Components.SourceUpdateDialog as SourceUpdateDialog
 import PagesComponents.Organization_.Project_.Models exposing (ContextMenu, LayoutMsg(..), Model, Msg(..), ProjectSettingsMsg(..), confirmDanger)
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
@@ -171,7 +171,7 @@ viewBottomSheet model =
     let
         content : Maybe (Html Msg)
         content =
-            model.queryPane |> Maybe.map2 (QueryPane.view QueryPaneMsg) model.erd
+            model.queryPane |> Maybe.map2 (\erd -> QueryPane.view QueryPaneMsg erd.sources) model.erd
     in
     aside [ class "block flex-shrink-0" ]
         [ div [ css [ B.cond (content == Nothing) "-mb-96" "", "h-96 transition-[margin] ease-in-out duration-200 relative border-t border-gray-200 bg-white overflow-y-auto" ] ]

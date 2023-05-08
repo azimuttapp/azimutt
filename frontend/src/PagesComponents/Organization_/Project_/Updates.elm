@@ -2,6 +2,7 @@ module PagesComponents.Organization_.Project_.Updates exposing (update)
 
 import Components.Molecules.Dropdown as Dropdown
 import Components.Slices.ProPlan as ProPlan
+import Components.Slices.QueryPane as QueryPane
 import Conf
 import Dict
 import Json.Decode as Decode
@@ -37,7 +38,6 @@ import PagesComponents.Organization_.Project_.Components.EmbedSourceParsingDialo
 import PagesComponents.Organization_.Project_.Components.ExportDialog as ExportDialog
 import PagesComponents.Organization_.Project_.Components.ProjectSaveDialog as ProjectSaveDialog
 import PagesComponents.Organization_.Project_.Components.ProjectSharing as ProjectSharing
-import PagesComponents.Organization_.Project_.Components.QueryPane as QueryPane
 import PagesComponents.Organization_.Project_.Components.SourceUpdateDialog as SourceUpdateDialog
 import PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, Model, Msg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..))
 import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode
@@ -240,7 +240,7 @@ update currentLayout zone now urlInfos organizations projects msg model =
             model.erd |> Maybe.mapOrElse (\erd -> model |> mapDetailsSidebarCmd (DetailsSidebar.update Noop NotesMsg TagsMsg erd message)) ( model, Cmd.none )
 
         QueryPaneMsg message ->
-            model.erd |> Maybe.mapOrElse (\erd -> model |> mapQueryPaneCmd (QueryPane.update erd message)) ( model, Cmd.none )
+            model.erd |> Maybe.mapOrElse (\erd -> model |> mapQueryPaneCmd (QueryPane.update erd.sources message)) ( model, Cmd.none )
 
         VirtualRelationMsg message ->
             model |> handleVirtualRelation message

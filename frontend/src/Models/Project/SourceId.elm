@@ -1,4 +1,4 @@
-module Models.Project.SourceId exposing (SourceId, SourceIdStr, decode, encode, fromString, generator, new, toString, zero)
+module Models.Project.SourceId exposing (SourceId, SourceIdStr, decode, encode, fromString, generator, new, one, toString, zero)
 
 import Json.Decode as Decode exposing (Value)
 import Libs.Models.Uuid as Uuid exposing (Uuid)
@@ -16,6 +16,11 @@ type alias SourceIdStr =
 zero : SourceId
 zero =
     SourceId Uuid.zero
+
+
+one : SourceId
+one =
+    SourceId Uuid.one
 
 
 new : String -> SourceId

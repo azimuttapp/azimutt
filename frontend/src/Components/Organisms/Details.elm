@@ -1112,7 +1112,7 @@ docNow =
 
 docErd : Erd
 docErd =
-    """
+    docAmlSource "test" """"
 groups
   id uuid pk
 
@@ -1129,9 +1129,6 @@ credentials
 demo.test
   key varchar
 """
-        |> AmlParser.parse
-        |> AmlAdapter.buildSource (SourceInfo.aml Time.zero SourceId.zero "test") Array.empty
-        |> Tuple3.second
         |> Project.create [] "Project name"
         |> Erd.create
         |> setLayouts
@@ -1140,6 +1137,14 @@ demo.test
                 , ( "overview", docBuildLayout [ ( "users", [ "id", "name", "group_id" ] ), ( "groups", [ "id" ] ), ( "credentials", [ "provider_id", "provider_key", "user_id" ] ) ] )
                 ]
             )
+
+
+docAmlSource : String -> String -> Source
+docAmlSource name aml =
+    aml
+        |> AmlParser.parse
+        |> AmlAdapter.buildSource (SourceInfo.aml Time.zero SourceId.zero name) Array.empty
+        |> Tuple3.second
 
 
 docSourceId : SourceIdStr
