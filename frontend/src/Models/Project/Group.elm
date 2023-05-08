@@ -17,11 +17,11 @@ type alias Group =
     }
 
 
-init : List TableId -> Group
-init tables =
+init : List TableId -> Color -> Group
+init tableIds color =
     { name = "New group"
-    , tables = tables
-    , color = Tw.indigo
+    , tables = tableIds
+    , color = color
     , collapsed = False
     }
 

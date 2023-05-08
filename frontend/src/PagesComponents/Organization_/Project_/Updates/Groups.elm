@@ -2,9 +2,10 @@ module PagesComponents.Organization_.Project_.Updates.Groups exposing (Model, ha
 
 import Browser.Dom as Dom
 import Components.Slices.ProPlan as ProPlan
+import Dict
 import Libs.List as List
 import Libs.Maybe as Maybe
-import Libs.Tailwind exposing (Color)
+import Libs.Tailwind as Tw exposing (Color)
 import Libs.Task as T
 import Models.Project.Group as Group exposing (Group)
 import Models.Project.TableId exposing (TableId)
@@ -65,10 +66,23 @@ createGroup now urlInfos tables model =
         ( model, Cmd.none )
 
     else if model.erd |> Erd.canCreateGroup then
-        ( model |> mapErdM (Erd.mapCurrentLayoutWithTime now (\l -> l |> mapGroups (List.add (Group.init tables)))), Track.groupCreated model.erd ) |> setDirtyCmd
+        ( model |> mapErdM (Erd.mapCurrentLayoutWithTime now (\l -> l |> mapGroups (List.add (Group.init tables (groupColor l tables))))), Track.groupCreated model.erd ) |> setDirtyCmd
 
     else
         ( model, model.erd |> Maybe.mapOrElse (\erd -> Cmd.batch [ erd |> Erd.getProjectRef urlInfos |> ProPlan.groupsModalBody |> CustomModalOpen |> T.send, Track.planLimit .groups (Just erd) ]) Cmd.none )
+
+
+groupColor : ErdLayout -> List TableId -> Color
+groupColor layout tableIds =
+    layout.tables
+        |> List.filter (\t -> tableIds |> List.member t.id)
+        |> List.map (.props >> .color)
+        |> List.groupBy Tw.toString
+        |> Dict.toList
+        |> List.filterMap (\( _, colors ) -> colors |> List.head |> Maybe.map (\color -> ( color, colors |> List.length )))
+        |> List.sortBy (Tuple.second >> negate)
+        |> List.head
+        |> Maybe.mapOrElse Tuple.first Tw.indigo
 
 
 setGroupColor : Time.Posix -> UrlInfos -> Int -> Color -> Model x -> ( Model x, Cmd Msg )
