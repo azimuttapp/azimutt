@@ -66,7 +66,7 @@ create defaultSchema types columnRelations table path column =
     , indexes = table.indexes |> List.filter (.columns >> Nel.member path) |> List.map .name
     , checks = table.checks |> List.filter (.columns >> List.member path) |> List.map .name
     , columns = column.columns |> Maybe.map (\(NestedColumns cols) -> cols |> Ned.map (\name -> create defaultSchema types columnRelations table (path |> ColumnPath.child name)) |> ErdNestedColumns)
-    , origins = table.origins
+    , origins = column.origins
     }
 
 

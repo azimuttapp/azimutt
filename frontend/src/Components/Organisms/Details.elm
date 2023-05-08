@@ -135,7 +135,7 @@ viewSchema : msg -> (SchemaName -> msg) -> (TableId -> msg) -> (TableId -> msg) 
 viewSchema goToList goToSchema goToTable showTable defaultSchema schema tables =
     div []
         [ viewSchemaHeading goToList goToSchema defaultSchema schema
-        , div [ class "px-3" ]
+        , div [ class "px-3 pb-3" ]
             [ viewTitle (schema.item |> SchemaName.show defaultSchema)
             , viewProp [ text (tables |> String.pluralizeL "table") ]
                 [ ul [ role "list", class "-mx-3 relative z-0 divide-y divide-gray-200" ]
@@ -195,7 +195,7 @@ viewTable goToList goToSchema goToTable goToColumn showTable loadLayout _ _ defa
     div []
         [ viewSchemaHeading goToList goToSchema defaultSchema schema
         , viewTableHeading goToSchema goToTable table
-        , div [ class "px-3" ]
+        , div [ class "px-3 pb-3" ]
             [ div [ class "w-full flex justify-between" ]
                 [ viewTitle table.item.name
                 , table.item.id |> showTableBtn showTable
@@ -216,13 +216,13 @@ viewTable goToList goToSchema goToTable goToColumn showTable loadLayout _ _ defa
                         |> List.map
                             (\column ->
                                 li []
-                                    [ div [ class "relative px-6 py-1 flex items-center space-x-3 hover:bg-gray-50 focus-within:ring-2 focus-within:ring-inset focus-within:ring-primary-500" ]
+                                    [ div [ class "relative px-3 py-1 flex items-center space-x-3 hover:bg-gray-50 focus-within:ring-2 focus-within:ring-inset focus-within:ring-primary-500" ]
                                         [ div [ class "flex-1 min-w-0" ]
                                             [ button [ type_ "button", onClick ({ table = table.item.id, column = column.path } |> goToColumn), class "w-full focus:outline-none" ]
                                                 [ span [ class "absolute inset-0", ariaHidden True ] [] -- Extend touch target to entire panel
                                                 , div [ class "flex justify-between" ]
                                                     [ span [ class "text-sm font-medium text-gray-900" ] [ text (column.path |> ColumnPath.name) ]
-                                                    , columnValues |> ColumnPath.get column.path |> Maybe.mapOrElse (\v -> Badge.basic Tw.gray [ class "ml-3 truncate" ] [ text v ]) (span [] [])
+                                                    , columnValues |> ColumnPath.get column.path |> Maybe.withDefault column.kind |> (\v -> Badge.basic Tw.gray [ class "ml-3 truncate" ] [ text v ])
                                                     ]
                                                 ]
                                             ]
@@ -259,7 +259,7 @@ viewColumn goToList goToSchema goToTable goToColumn showTable loadLayout _ _ def
         [ viewSchemaHeading goToList goToSchema defaultSchema schema
         , viewTableHeading goToSchema goToTable table
         , viewColumnHeading goToTable goToColumn table.item.id column
-        , div [ class "px-3" ]
+        , div [ class "px-3 pb-3" ]
             [ div [ class "w-full flex justify-between" ]
                 [ viewTitle (String.fromInt column.item.index ++ ". " ++ ColumnPath.show column.item.path)
                 , table.item.id |> showTableBtn showTable
