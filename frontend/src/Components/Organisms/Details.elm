@@ -40,6 +40,7 @@ import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath, ColumnPathS
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
 import Models.Project.ColumnStats exposing (ColumnStats, ColumnValueCount)
 import Models.Project.ColumnValue exposing (ColumnValue)
+import Models.Project.Comment as Comment
 import Models.Project.Index exposing (Index)
 import Models.Project.IndexName exposing (IndexName)
 import Models.Project.LayoutName exposing (LayoutName)
@@ -221,7 +222,10 @@ viewTable goToList goToSchema goToTable goToColumn showTable loadLayout _ _ defa
                                             [ button [ type_ "button", onClick ({ table = table.item.id, column = column.path } |> goToColumn), class "w-full focus:outline-none" ]
                                                 [ span [ class "absolute inset-0", ariaHidden True ] [] -- Extend touch target to entire panel
                                                 , div [ class "flex justify-between" ]
-                                                    [ span [ class "text-sm font-medium text-gray-900" ] [ text (column.path |> ColumnPath.name) ]
+                                                    [ span [ class "text-sm font-medium text-gray-900 whitespace-nowrap" ]
+                                                        ([ text (column.path |> ColumnPath.name) ]
+                                                            ++ (column.comment |> Maybe.mapOrElse (\c -> [ Icon.outline Icons.comment "w-4 h-4 ml-1 inline-block opacity-50" |> Tooltip.t (Comment.short c.text) ]) [])
+                                                        )
                                                     , columnValues |> ColumnPath.get column.path |> Maybe.withDefault column.kind |> (\v -> Badge.basic Tw.gray [ class "ml-3 truncate" ] [ text v ])
                                                     ]
                                                 ]

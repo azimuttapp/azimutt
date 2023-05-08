@@ -30,6 +30,7 @@ import Libs.Nel as Nel exposing (Nel)
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (Color, TwClass, batch, bg_50, border_500, focus, ring_500, text_500)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath, ColumnPathStr)
+import Models.Project.Comment as Comment
 import Set exposing (Set)
 
 
@@ -469,29 +470,14 @@ viewColumnName model column =
 
 viewComment : String -> Html msg
 viewComment comment =
-    Icon.outline Icons.comment "w-4 ml-1 opacity-50" |> Tooltip.t (buildTooltipContent comment)
+    Icon.outline Icons.comment "w-4 ml-1 opacity-50" |> Tooltip.t (Comment.short comment)
 
 
 viewNotes : Model msg -> Maybe ColumnPath -> String -> Html msg
 viewNotes model column notes =
     span ([ classList [ ( "cursor-pointer", model.conf.layout ) ] ] ++ Bool.cond model.conf.layout [ onClick (model.actions.notesClick column) ] [])
         [ Icon.outline Icons.notes "w-4 ml-1 opacity-50" ]
-        |> Tooltip.t (buildTooltipContent notes)
-
-
-buildTooltipContent : String -> String
-buildTooltipContent content =
-    let
-        trimmed : String
-        trimmed =
-            content |> String.trim
-    in
-    trimmed
-        |> String.split "\n"
-        |> List.head
-        |> Maybe.withDefault ""
-        |> String.left 50
-        |> (\show -> Bool.cond (show == trimmed) show (show ++ "… double click to see all"))
+        |> Tooltip.t (Comment.short notes)
 
 
 viewColumnKind : Model msg -> Column -> Html msg

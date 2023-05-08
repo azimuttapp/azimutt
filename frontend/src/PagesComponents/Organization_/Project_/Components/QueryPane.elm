@@ -112,7 +112,7 @@ viewHeading wrap htmlId dbSources source =
         [ div [ class "flex flex-1" ]
             [ h3 [ class "text-lg leading-6 font-medium text-gray-900" ] [ text "Query your database" ]
             , if List.length dbSources > 1 then
-                select [ name sourceInput, id sourceInput, onInput (SourceId.fromString >> Maybe.andThen (\id -> dbSources |> List.findBy (Tuple.first >> .id) id) >> UseSource >> wrap), class "ml-2 block rounded-md border-0 py-0 pl-2 pr-8 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6" ]
+                select [ name sourceInput, id sourceInput, onInput (SourceId.fromString >> Maybe.andThen (\id -> dbSources |> List.findBy (Tuple.first >> .id) id) >> UseSource >> wrap), class "ml-2 block border-0 py-0 pl-2 pr-8 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6" ]
                     (dbSources |> List.map (\( s, _ ) -> option [ value (SourceId.toString s.id), selected (source |> Maybe.hasBy (Tuple.first >> .id) s.id) ] [ text s.name ]))
 
               else
@@ -141,7 +141,7 @@ viewQueryEditor wrap htmlId ( source, databaseUrl ) input loading =
                 , onInput (InputUpdate >> wrap)
                 , autofocus True
                 , placeholder ("Write your query for " ++ source.name ++ " database...")
-                , class "block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                , class "block w-full border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                 ]
                 []
             , div [ class "absolute bottom-2 right-2" ]
@@ -149,13 +149,13 @@ viewQueryEditor wrap htmlId ( source, databaseUrl ) input loading =
                     [ type_ "button"
                     , onClick (input |> RunQuery databaseUrl |> wrap)
                     , disabled (input == "" || loading)
-                    , class "inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:bg-indigo-300"
+                    , class "inline-flex items-center bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:bg-indigo-300"
                     ]
                     (if loading then
-                        [ Icon.loading "-ml-1 mr-2 animate-spin", text "Run" ]
+                        [ Icon.loading "-ml-1 mr-2 animate-spin", text "Execute" ]
 
                      else
-                        [ text "Run" ]
+                        [ text "Execute" ]
                     )
                 ]
             ]
@@ -186,11 +186,11 @@ viewQueryResults results =
 
 viewQueryResultsHeader : List DatabaseQueryResultsColumn -> Html msg
 viewQueryResultsHeader columns =
-    tr []
+    tr [ class "bg-gray-100" ]
         (({ name = "#", ref = Nothing } :: columns)
             |> List.map
                 (\col ->
-                    th [ scope "col", class "whitespace-nowrap p-1 text-left text-sm font-semibold text-gray-900 max-w-xs truncate" ] [ text col.name ]
+                    th [ scope "col", class "whitespace-nowrap p-1 text-left text-xs font-semibold font-mono text-gray-900 max-w-xs truncate" ] [ text col.name ]
                 )
         )
 
@@ -211,7 +211,7 @@ viewQueryResultsRow columns i row =
 
 viewQueryResultsRowValue : JsValue -> Html msg
 viewQueryResultsRowValue value =
-    td [ title (value |> JsValue.toString), class "whitespace-nowrap p-1 text-sm text-gray-500 max-w-xs truncate" ] [ text (value |> JsValue.toString) ]
+    td [ title (value |> JsValue.toString), class "whitespace-nowrap p-1 text-xs font-mono text-gray-500 max-w-xs truncate" ] [ text (value |> JsValue.toString) ]
 
 
 viewNoSourceWarning : Html msg
