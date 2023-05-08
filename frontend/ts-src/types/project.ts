@@ -1,7 +1,7 @@
 import {z} from "zod";
 import {groupBy} from "@azimutt/utils";
 import {ColumnName, ColumnType, SchemaName, TableId, TableName} from "@azimutt/database-types";
-import {Color, Position, Size, Slug, Tag, Timestamp} from "./basics";
+import {Color, Notes, Position, Size, Slug, Tag, Timestamp} from "./basics";
 import {Uuid} from "./uuid";
 import {Organization} from "./organization";
 import * as Zod from "../utils/zod";
@@ -331,10 +331,12 @@ export const TableProps = z.object({
 }).strict()
 
 export interface ColumnMeta {
+    notes?: Notes
     tags?: Tag[]
 }
 
 export const ColumnMeta = z.object({
+    notes: Notes.optional(),
     tags: Tag.array().optional()
 }).strict()
 
