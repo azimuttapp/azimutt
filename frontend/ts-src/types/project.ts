@@ -341,11 +341,13 @@ export const ColumnMeta = z.object({
 }).strict()
 
 export interface TableMeta {
+    notes?: Notes
     tags?: Tag[]
     columns: { [column: ColumnPathStr]: ColumnMeta }
 }
 
 export const TableMeta = z.object({
+    notes: Notes.optional(),
     tags: Tag.array().optional(),
     columns: z.record(ColumnPathStr, ColumnMeta)
 }).strict()
