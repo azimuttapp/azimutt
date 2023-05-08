@@ -19,6 +19,7 @@ export const plan: Plan = {
     name: 'Free plan',
     layouts: 3,
     memos: 1,
+    groups: 1,
     colors: false,
     private_links: false,
     sql_export: false,

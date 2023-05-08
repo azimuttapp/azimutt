@@ -1,4 +1,4 @@
-module Components.Slices.ProPlan exposing (ColorsModel, ColorsMsg(..), DocState, SharedDocState, analysisResults, analysisWarning, colorsInit, colorsModalBody, colorsUpdate, doc, initDocState, layoutsModalBody, layoutsWarning, memosModalBody, privateLinkWarning, sqlExportWarning)
+module Components.Slices.ProPlan exposing (ColorsModel, ColorsMsg(..), DocState, SharedDocState, analysisResults, analysisWarning, colorsInit, colorsModalBody, colorsUpdate, doc, groupsModalBody, initDocState, layoutsModalBody, layoutsWarning, memosModalBody, privateLinkWarning, sqlExportWarning)
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon)
@@ -101,6 +101,24 @@ memosModalBody project close titleId =
         , p [ class "text-sm text-gray-500" ] [ text "We see this as a long term feature to document database schema so it's reserved for pro accounts. ", bText "Consider subscribing", text " or ", a [ href ("mailto:" ++ Conf.constants.azimuttEmail), target "_blank", rel "noopener", class "link" ] [ text "reach at us" ], text " to contribute improving Azimutt." ]
         ]
         [ Link.primary3 color [ href (Backend.organizationBillingUrl project.organization.id Conf.features.memos.name), target "_blank", rel "noopener", css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ Icon.solid Icon.ThumbUp "mr-1", text "Upgrade plan" ]
+        , Button.white3 Tw.gray [ onClick close, css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text "Cancel" ]
+        ]
+
+
+groupsModalBody : ProjectRef -> msg -> HtmlId -> Html msg
+groupsModalBody project close titleId =
+    let
+        ( color, limit ) =
+            ( Tw.purple, project.organization.plan.groups |> Maybe.withDefault Conf.features.groups.free )
+    in
+    showModalBody ( project, close, color )
+        Icon.ViewGrid
+        ( titleId, "Table groups" )
+        [ p [ class "text-sm text-gray-500" ] [ bText ("Oh no! Table groups are limited in your plan, you only have " ++ String.pluralize "group" limit ++ " per layout!") ]
+        , p [ class "mt-2 text-sm text-gray-500" ] [ text "Groups are great to show which tables work together and make it immediately explicit." ]
+        , p [ class "text-sm text-gray-500" ] [ text "We keep this feature for pro users as it really comes very useful with heavy usage. ", bText "Consider subscribing", text ", or ", a [ href ("mailto:" ++ Conf.constants.azimuttEmail), target "_blank", rel "noopener", class "link" ] [ text "reach at us" ], text " to contribute improving Azimutt and get it free." ]
+        ]
+        [ Link.primary3 color [ href (Backend.organizationBillingUrl project.organization.id Conf.features.groups.name), target "_blank", rel "noopener", css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ Icon.solid Icon.TrendingUp "mr-1", text "Upgrade plan" ]
         , Button.white3 Tw.gray [ onClick close, css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text "Cancel" ]
         ]
 
@@ -425,6 +443,7 @@ doc =
             , ( "layoutsWarning", \_ -> layoutsWarning projectRef )
             , ( "layoutsModalBody", \_ -> layoutsModalBody projectRef docClose docTitleId )
             , ( "memosModalBody", \_ -> memosModalBody projectRef docClose docTitleId )
+            , ( "groupsModalBody", \_ -> groupsModalBody projectRef docClose docTitleId )
             , ( "colorsModalBody", \s -> colorsModalBody projectRef docColorsUpdate s.proPlanDocState.colors docClose docTitleId )
             , ( "colorsModalBody success", \s -> colorsModalBody projectRef docColorsUpdate (s.proPlanDocState.colors |> setResult (Just (Ok "Tweet.."))) docClose docTitleId )
             , ( "privateLinkWarning", \_ -> privateLinkWarning projectRef )

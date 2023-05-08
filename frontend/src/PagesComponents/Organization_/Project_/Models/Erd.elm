@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Models.Erd exposing (Erd, canChangeTableColor, canCreateLayout, canCreateMemo, create, currentLayout, defaultSchemaM, getColumn, getColumnPos, getLayoutTable, getOrganization, getOrganizationM, getProjectId, getProjectIdM, getProjectRef, getProjectRefM, getTable, isShown, mapCurrentLayout, mapCurrentLayoutCmd, mapCurrentLayoutWithTime, mapSettings, mapSource, mapSources, setSettings, setSources, unpack, viewportM, viewportToCanvas)
+module PagesComponents.Organization_.Project_.Models.Erd exposing (Erd, canChangeColor, canCreateGroup, canCreateLayout, canCreateMemo, create, currentLayout, defaultSchemaM, getColumn, getColumnPos, getLayoutTable, getOrganization, getOrganizationM, getProjectId, getProjectIdM, getProjectRef, getProjectRefM, getTable, isShown, mapCurrentLayout, mapCurrentLayoutCmd, mapCurrentLayoutWithTime, mapSettings, mapSource, mapSources, setSettings, setSources, unpack, viewportM, viewportToCanvas)
 
 import Conf
 import Dict exposing (Dict)
@@ -26,7 +26,6 @@ import Models.Project.Source exposing (Source)
 import Models.Project.SourceId exposing (SourceId)
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
-import Models.Project.TableMeta exposing (TableMeta)
 import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Models.ProjectRef exposing (ProjectRef)
 import Models.Size as Size
@@ -162,8 +161,13 @@ canCreateMemo erd =
     erd |> getOrganizationM Nothing |> .plan |> .memos |> Maybe.all (\max -> max > List.length (erd |> Maybe.mapOrElse (currentLayout >> .memos) []))
 
 
-canChangeTableColor : Maybe Erd -> Bool
-canChangeTableColor erd =
+canCreateGroup : Maybe Erd -> Bool
+canCreateGroup erd =
+    erd |> getOrganizationM Nothing |> .plan |> .groups |> Maybe.all (\max -> max > List.length (erd |> Maybe.mapOrElse (currentLayout >> .groups) []))
+
+
+canChangeColor : Maybe Erd -> Bool
+canChangeColor erd =
     erd |> getOrganizationM Nothing |> .plan |> .colors
 
 

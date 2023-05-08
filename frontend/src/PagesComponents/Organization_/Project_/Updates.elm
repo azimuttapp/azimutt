@@ -185,7 +185,7 @@ update currentLayout zone now urlInfos organizations projects msg model =
                 project =
                     model.erd |> Erd.getProjectRefM urlInfos
             in
-            if model.erd |> Erd.canChangeTableColor then
+            if model.erd |> Erd.canChangeColor then
                 model |> mapErdMCmd (\erd -> erd |> Erd.mapCurrentLayoutCmd now (mapTablesCmd (mapTablePropOrSelected erd.settings.defaultSchema id (mapProps (setColor color))))) |> setDirtyCmd
 
             else
@@ -220,7 +220,7 @@ update currentLayout zone now urlInfos organizations projects msg model =
             model |> handleLayout message
 
         GroupMsg message ->
-            model |> handleGroups now message
+            model |> handleGroups now urlInfos message
 
         NotesMsg message ->
             model |> handleNotes message

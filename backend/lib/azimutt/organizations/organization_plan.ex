@@ -10,6 +10,7 @@ defmodule Azimutt.Organizations.OrganizationPlan do
     field :name, String.t()
     field :layouts, integer() | nil
     field :memos, integer() | nil
+    field :groups, integer() | nil
     field :colors, boolean()
     field :private_links, boolean()
     field :sql_export, boolean()
@@ -24,6 +25,7 @@ defmodule Azimutt.Organizations.OrganizationPlan do
       name: "Free plan",
       layouts: Azimutt.config(:free_plan_layouts),
       memos: Azimutt.config(:free_plan_memos),
+      groups: Azimutt.config(:free_plan_groups),
       colors: Azimutt.config(:free_plan_colors),
       private_links: Azimutt.config(:free_plan_private_links),
       sql_export: Azimutt.config(:free_plan_sql_export),
@@ -38,6 +40,7 @@ defmodule Azimutt.Organizations.OrganizationPlan do
       name: "Pro plan",
       layouts: nil,
       memos: nil,
+      groups: nil,
       colors: true,
       private_links: true,
       sql_export: true,
