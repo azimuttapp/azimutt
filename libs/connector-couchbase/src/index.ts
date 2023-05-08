@@ -27,7 +27,7 @@ export const couchbase: Connector = {
     query: (application: string, url: DatabaseUrlParsed, query: string, parameters: any[]): Promise<DatabaseQueryResults> =>
         execQuery(application, url, query, parameters).then(r => ({
             query,
-            columns: distinct(r.rows.flatMap(Object.keys)),
+            columns: distinct(r.rows.flatMap(Object.keys)).map(name => ({name})),
             rows: r.rows
         })),
 }

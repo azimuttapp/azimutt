@@ -13,15 +13,25 @@ export interface Connector {
     query(application: string, url: DatabaseUrlParsed, query: string, parameters: any[]): Promise<DatabaseQueryResults>
 }
 
+export interface DatabaseQueryResultsColumn {
+    name: string
+    ref?: ColumnRef
+}
+
+export const DatabaseQueryResultsColumn = z.object({
+    name: z.string(),
+    ref: ColumnRef.optional(),
+}).strict()
+
 export interface DatabaseQueryResults {
     query: string
-    columns: string[]
+    columns: DatabaseQueryResultsColumn[]
     rows: JsValue[]
 }
 
 export const DatabaseQueryResults = z.object({
     query: z.string(),
-    columns: z.string().array(),
+    columns: DatabaseQueryResultsColumn.array(),
     rows: JsValue.array(),
 }).strict()
 

@@ -15,7 +15,7 @@ import Libs.Models.DatabaseUrl exposing (DatabaseUrl)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Result as Result
 import Libs.Tailwind as Tw
-import Models.DatabaseQueryResults exposing (DatabaseQueryResults)
+import Models.DatabaseQueryResults exposing (DatabaseQueryResults, DatabaseQueryResultsColumn)
 import Models.JsValue as JsValue exposing (JsValue)
 import Models.Project.Source as Source exposing (Source)
 import Models.Project.SourceId as SourceId
@@ -184,21 +184,27 @@ viewQueryResults results =
         )
 
 
-viewQueryResultsHeader : List String -> Html msg
+viewQueryResultsHeader : List DatabaseQueryResultsColumn -> Html msg
 viewQueryResultsHeader columns =
-    tr [] (("#" :: columns) |> List.map (\col -> th [ scope "col", class "whitespace-nowrap p-1 text-left text-sm font-semibold text-gray-900 max-w-xs truncate" ] [ text col ]))
+    tr []
+        (({ name = "#", ref = Nothing } :: columns)
+            |> List.map
+                (\col ->
+                    th [ scope "col", class "whitespace-nowrap p-1 text-left text-sm font-semibold text-gray-900 max-w-xs truncate" ] [ text col.name ]
+                )
+        )
 
 
-viewQueryResultsRow : List String -> Int -> Dict String JsValue -> Html msg
+viewQueryResultsRow : List DatabaseQueryResultsColumn -> Int -> Dict String JsValue -> Html msg
 viewQueryResultsRow columns i row =
     let
         rest : Dict String JsValue
         rest =
-            row |> Dict.filter (\k _ -> columns |> List.member k |> not)
+            row |> Dict.filter (\k _ -> columns |> List.memberBy .name k |> not)
     in
     tr [ class "hover:bg-gray-100", classList [ ( "bg-gray-50", modBy 2 i == 1 ) ] ]
         ([ viewQueryResultsRowValue (JsValue.Int (i + 1)) ]
-            ++ (columns |> List.map (\col -> row |> Dict.getOrElse col JsValue.Null |> viewQueryResultsRowValue))
+            ++ (columns |> List.map (\col -> row |> Dict.getOrElse col.name JsValue.Null |> viewQueryResultsRowValue))
             ++ Bool.cond (rest |> Dict.isEmpty) [] [ viewQueryResultsRowValue (rest |> JsValue.Object) ]
         )
 

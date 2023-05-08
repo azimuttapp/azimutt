@@ -6,7 +6,6 @@ import {
     Connector,
     DatabaseQueryResults,
     DatabaseUrlParsed,
-    JsValue,
     SchemaOpts,
     TableId,
     TableStats
@@ -28,7 +27,7 @@ export const mongodb: Connector = {
     query: (application: string, url: DatabaseUrlParsed, query: string, parameters: any[]): Promise<DatabaseQueryResults> =>
         execQuery(application, url, query).then(r => ({
             query,
-            columns: distinct(r.rows.flatMap(Object.keys)),
+            columns: distinct(r.rows.flatMap(Object.keys)).map(name => ({name})),
             rows: r.rows.map(row => JSON.parse(JSON.stringify(row))) // serialize ObjectId & Date objects
         })),
 }

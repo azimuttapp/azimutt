@@ -646,13 +646,44 @@ defmodule Azimutt.Analyzer.Postgres do
     Resource.use(fn -> connect(conf) end, &disconnect(&1), fn pid ->
       Postgrex.query(pid, query, params)
       |> Result.map_both(&format_error/1, fn res ->
+        columns = build_columns(res.columns)
+
         %QueryResults{
           query: query,
-          columns: res.columns,
-          rows: res.rows |> Enum.map(fn row -> Enum.zip([res.columns, row |> Enum.map(&format_value/1)]) |> Map.new() end)
+          columns: columns,
+          rows:
+            res.rows
+            |> Enum.map(fn row ->
+              Enum.zip([
+                columns |> Enum.map(fn c -> c.name end),
+                row |> Enum.map(&format_value/1)
+              ])
+              |> Map.new()
+            end)
         }
       end)
     end)
+  end
+
+  defp build_columns(column_names) do
+    {_, res} =
+      column_names
+      |> Enum.reduce({%{}, []}, fn col, {taken_names, columns} ->
+        name = unique_name(col, taken_names)
+        {taken_names |> Map.put(name, true), [%QueryResults.Column{name: name} | columns]}
+      end)
+
+    res |> Enum.reverse()
+  end
+
+  defp unique_name(name, current_names, cpt \\ 1) do
+    new_name = if(cpt == 1, do: name, else: "#{name}_#{cpt}")
+
+    if current_names |> Map.get(new_name, false) do
+      unique_name(name, current_names, cpt + 1)
+    else
+      new_name
+    end
   end
 
   # HELPERS
