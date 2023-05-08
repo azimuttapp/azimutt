@@ -1,4 +1,4 @@
-module Models.Project.Source exposing (Source, addRelation, aml, databaseUrl, decode, encode, refreshWith, toInfo)
+module Models.Project.Source exposing (Source, addRelation, aml, databaseUrl, decode, encode, getColumn, getTable, refreshWith, toInfo)
 
 import Array exposing (Array)
 import Conf
@@ -12,6 +12,7 @@ import Libs.Json.Encode as Encode
 import Libs.List as List
 import Libs.Models.DatabaseUrl exposing (DatabaseUrl)
 import Libs.Time as Time
+import Models.Project.Column exposing (Column)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.CustomType as CustomType exposing (CustomType)
 import Models.Project.CustomTypeId exposing (CustomTypeId)
@@ -80,6 +81,16 @@ databaseUrl source =
 
         _ ->
             Nothing
+
+
+getTable : TableId -> Source -> Maybe Table
+getTable table source =
+    source.tables |> Dict.get table
+
+
+getColumn : ColumnRef -> Source -> Maybe Column
+getColumn column source =
+    source |> getTable column.table |> Maybe.andThen (Table.getColumn column.column)
 
 
 refreshWith : Source -> Source -> Source

@@ -258,7 +258,9 @@ type JsMsg
     | GotLocalFile String File FileContent
     | GotDatabaseSchema JsonSchema
     | GotTableStats SourceId TableStats
+    | GotTableStatsError SourceId TableId String
     | GotColumnStats SourceId ColumnStats
+    | GotColumnStatsError SourceId ColumnRef String
     | GotDatabaseQueryResults DatabaseQueryResults
     | GotDatabaseQueryError String
     | GotHotkey String
@@ -429,8 +431,14 @@ jsDecoder =
                 "GotTableStats" ->
                     Decode.map2 GotTableStats (Decode.field "source" SourceId.decode) (Decode.field "stats" TableStats.decode)
 
+                "GotTableStatsError" ->
+                    Decode.map3 GotTableStatsError (Decode.field "source" SourceId.decode) (Decode.field "table" TableId.decode) (Decode.field "error" Decode.string)
+
                 "GotColumnStats" ->
                     Decode.map2 GotColumnStats (Decode.field "source" SourceId.decode) (Decode.field "stats" ColumnStats.decode)
+
+                "GotColumnStatsError" ->
+                    Decode.map3 GotColumnStatsError (Decode.field "source" SourceId.decode) (Decode.field "column" ColumnRef.decode) (Decode.field "error" Decode.string)
 
                 "GotDatabaseQueryResults" ->
                     Decode.map GotDatabaseQueryResults (Decode.field "results" DatabaseQueryResults.decode)
@@ -514,8 +522,14 @@ unhandledJsMsgError msg =
                 GotTableStats _ _ ->
                     "GotTableStats"
 
+                GotTableStatsError _ _ _ ->
+                    "GotTableStatsError"
+
                 GotColumnStats _ _ ->
                     "GotColumnStats"
+
+                GotColumnStatsError _ _ _ ->
+                    "GotColumnStatsError"
 
                 GotDatabaseQueryResults _ ->
                     "GotDatabaseQueryResults"

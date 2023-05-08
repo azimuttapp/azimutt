@@ -19,6 +19,7 @@ import Models.Area as Area
 import Models.Organization exposing (Organization)
 import Models.Position as Position
 import Models.Project as Project
+import Models.Project.ColumnId as ColumnId
 import Models.Project.ColumnPath as ColumnPath
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.Source as Source
@@ -448,10 +449,16 @@ handleJsMessage now currentLayout msg model =
                 ( model, schema |> DatabaseSource.GotSchema |> EmbedSourceParsingDialog.EmbedDatabaseSource |> EmbedSourceParsingMsg |> T.send )
 
         GotTableStats source stats ->
-            ( { model | tableStats = model.tableStats |> Dict.update stats.id (Maybe.withDefault Dict.empty >> Dict.insert (SourceId.toString source) stats >> Just) }, Cmd.none )
+            ( { model | tableStats = model.tableStats |> Dict.update stats.id (Maybe.withDefault Dict.empty >> Dict.insert (SourceId.toString source) (Ok stats) >> Just) }, Cmd.none )
+
+        GotTableStatsError source table error ->
+            ( { model | tableStats = model.tableStats |> Dict.update table (Maybe.withDefault Dict.empty >> Dict.insert (SourceId.toString source) (Err error) >> Just) }, Cmd.none )
 
         GotColumnStats source stats ->
-            ( { model | columnStats = model.columnStats |> Dict.update stats.id (Maybe.withDefault Dict.empty >> Dict.insert (SourceId.toString source) stats >> Just) }, Cmd.none )
+            ( { model | columnStats = model.columnStats |> Dict.update stats.id (Maybe.withDefault Dict.empty >> Dict.insert (SourceId.toString source) (Ok stats) >> Just) }, Cmd.none )
+
+        GotColumnStatsError source column error ->
+            ( { model | columnStats = model.columnStats |> Dict.update (ColumnId.fromRef column) (Maybe.withDefault Dict.empty >> Dict.insert (SourceId.toString source) (Err error) >> Just) }, Cmd.none )
 
         GotDatabaseQueryResults results ->
             ( model, results |> Ok |> QueryPane.GotResults |> QueryPaneMsg |> T.send )

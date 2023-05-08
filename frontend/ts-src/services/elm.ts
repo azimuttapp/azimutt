@@ -1,5 +1,13 @@
 import {errorToString} from "@azimutt/utils";
-import {AzimuttSchema, ColumnId, ColumnStats, DatabaseQueryResults, TableId, TableStats} from "@azimutt/database-types";
+import {
+    AzimuttSchema,
+    ColumnId,
+    ColumnRef,
+    ColumnStats,
+    DatabaseQueryResults,
+    TableId,
+    TableStats
+} from "@azimutt/database-types";
 import {
     ElementSize,
     ElmFlags,
@@ -96,7 +104,9 @@ export class ElmApp {
     })
     gotDatabaseSchema = (schema: AzimuttSchema): void => this.send({kind: 'GotDatabaseSchema', schema})
     gotTableStats = (source: SourceId, stats: TableStats): void => this.send({kind: 'GotTableStats', source, stats})
+    gotTableStatsError = (source: SourceId, table: TableId, error: string): void => this.send({kind: 'GotTableStatsError', source, table, error})
     gotColumnStats = (source: SourceId, stats: ColumnStats): void => this.send({kind: 'GotColumnStats', source, stats})
+    gotColumnStatsError = (source: SourceId, column: ColumnRef, error: string): void => this.send({kind: 'GotColumnStatsError', source, column, error})
     gotDatabaseQueryResults = (results: DatabaseQueryResults): void => this.send({kind: 'GotDatabaseQueryResults', results})
     gotDatabaseQueryError = (error: string): void => this.send({kind: 'GotDatabaseQueryError', error})
     gotHotkey = (hotkey: Hotkey & { id: HotkeyId }): void => this.send({kind: 'GotHotkey', id: hotkey.id})

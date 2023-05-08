@@ -69,8 +69,8 @@ type alias Model =
     , loaded : Bool
     , dirty : Bool
     , erd : Maybe Erd
-    , tableStats : Dict TableId (Dict SourceIdStr TableStats)
-    , columnStats : Dict ColumnId (Dict SourceIdStr ColumnStats)
+    , tableStats : Dict TableId (Dict SourceIdStr (Result String TableStats))
+    , columnStats : Dict ColumnId (Dict SourceIdStr (Result String ColumnStats))
     , hoverTable : Maybe TableId
     , hoverColumn : Maybe ColumnRef
     , cursorMode : CursorMode

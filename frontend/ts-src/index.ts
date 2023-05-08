@@ -284,7 +284,7 @@ function getTableStats(msg: GetTableStats) {
             backend.getTableStats(msg.database, msg.table)
         ).then(
             stats => app.gotTableStats(msg.source, tableStatsCache[key] = stats),
-            err => err.statusCode !== 404 && reportError(`Can't get stats for ${msg.table}`, err)
+            err => app.gotTableStatsError(msg.source, msg.table, errorToString(err))
         )
     }
 }
@@ -301,7 +301,7 @@ function getColumnStats(msg: GetColumnStats) {
             backend.getColumnStats(msg.database, msg.column)
         ).then(
             stats => app.gotColumnStats(msg.source, columnStatsCache[key] = stats),
-            err => err.statusCode !== 404 && reportError(`Can't get stats for ${msg.column}`, err)
+            err => app.gotColumnStatsError(msg.source, msg.column, errorToString(err))
         )
     }
 }
