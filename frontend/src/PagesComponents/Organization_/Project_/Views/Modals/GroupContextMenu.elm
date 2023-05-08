@@ -15,7 +15,7 @@ view : Platform -> SchemaName -> Int -> Group -> Html Msg
 view platform defaultSchema index group =
     div [ class "z-max" ]
         ([ div [ class "px-4 py-1 text-sm font-medium leading-6 text-gray-500" ] [ text (group.name ++ " group") ] ]
-            ++ ([ { label = "Edit group", action = ContextMenu.Simple { action = GEdit index group.name |> GroupMsg, platform = platform, hotkeys = [] } }
+            ++ ([ { label = "Edit group name", action = ContextMenu.Simple { action = GEdit index group.name |> GroupMsg, platform = platform, hotkeys = [] } }
                 , { label = "Set color", action = ContextMenu.Custom (ColorPicker.view (GSetColor index >> GroupMsg)) }
                 , { label = "Remove table", action = ContextMenu.SubMenu (group.tables |> List.map (\id -> { label = TableId.show defaultSchema id, action = GRemoveTables index [ id ] |> GroupMsg, platform = platform, hotkeys = [] })) }
                 , { label = "Delete group", action = ContextMenu.Simple { action = GDelete index |> GroupMsg, platform = platform, hotkeys = [] } }

@@ -65,7 +65,7 @@ generateColumn : Maybe PrimaryKey -> List Unique -> List Index -> List Check -> 
 generateColumn pk uniques indexes checks relations column =
     column.name
         ++ " "
-        ++ column.kind
+        ++ quotesWhenNeeded column.kind
         ++ (column.default |> Maybe.mapOrElse (\d -> "=" ++ d) "")
         ++ (if column.nullable then
                 " nullable"

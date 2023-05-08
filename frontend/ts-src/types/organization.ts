@@ -17,6 +17,7 @@ export interface Plan {
     name: string
     layouts: number | null
     memos: number | null
+    groups: number | null
     colors: boolean
     private_links: boolean
     sql_export: boolean
@@ -29,6 +30,7 @@ export const Plan = z.object({
     name: z.string(),
     layouts: z.number().nullable(),
     memos: z.number().nullable(),
+    groups: z.number().nullable(),
     colors: z.boolean(),
     private_links: z.boolean(),
     sql_export: z.boolean(),

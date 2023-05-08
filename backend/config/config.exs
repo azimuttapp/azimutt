@@ -30,6 +30,7 @@ config :azimutt,
   # MUST stay in sync with frontend/src/Conf.elm (`features`)
   free_plan_layouts: 3,
   free_plan_memos: 5,
+  free_plan_groups: 1,
   free_plan_colors: false,
   free_plan_private_links: true,
   free_plan_sql_export: false,

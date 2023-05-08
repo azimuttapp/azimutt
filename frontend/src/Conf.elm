@@ -103,6 +103,7 @@ ui =
 type alias Features =
     { layouts : Feature Int
     , memos : Feature Int
+    , groups : Feature Int
     , tableColor : Feature Bool
     , privateLinks : Feature Bool
     , sqlExport : Feature Bool
@@ -120,6 +121,7 @@ features =
     -- MUST stay in sync with backend/config/config.exs (`free_plan_layouts`)
     { layouts = { name = "layouts", free = 3 }
     , memos = { name = "memos", free = 5 }
+    , groups = { name = "groups", free = 1 }
     , tableColor = { name = "table_color", free = False }
     , privateLinks = { name = "private_links", free = True }
     , sqlExport = { name = "sql_export", free = False }

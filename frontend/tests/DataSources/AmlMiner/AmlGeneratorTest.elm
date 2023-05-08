@@ -32,7 +32,7 @@ suite =
                                 , columns =
                                     [ { emptyColumn | name = "id", kind = "uuid" }
                                     , { emptyColumn | name = "name", kind = "varchar", nullable = True }
-                                    , { emptyColumn | name = "role", kind = "varchar", default = Just "guest" }
+                                    , { emptyColumn | name = "role", kind = "character varying(10)", default = Just "guest" }
                                     , { emptyColumn | name = "bio", kind = "text", comment = Just { emptyComment | text = "Hello :)" } }
                                     , { emptyColumn | name = "age", kind = "int", nullable = True, default = Just "0", comment = Just { emptyComment | text = "hey!" } }
                                     ]
@@ -45,7 +45,7 @@ suite =
                         |> Expect.equal """public.users
   id uuid
   name varchar nullable
-  role varchar=guest
+  role "character varying(10)"=guest
   bio text | Hello :)
   age int=0 nullable | hey!"""
                 )
