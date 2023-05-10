@@ -609,7 +609,7 @@ defmodule Azimutt.Analyzer.Postgres do
         {col,
          res.rows
          |> Enum.map(fn r -> r |> Enum.at(i) end)
-         |> Enum.filter(fn v -> v != nil end)
+         |> Enum.filter(fn v -> v != nil && v != "" end)
          |> Enum.shuffle()
          |> Enum.at(0, nil)
          |> then(fn v -> if(v == nil, do: sample_value_not_null(pid, table, col), else: v) end)
@@ -621,7 +621,7 @@ defmodule Azimutt.Analyzer.Postgres do
 
   @spec sample_value_not_null(pid(), String.t(), String.t()) :: any()
   defp sample_value_not_null(pid, table, column) do
-    Postgrex.query(pid, "SELECT #{column} FROM #{table} WHERE #{column} IS NOT NULL LIMIT 10", [])
+    Postgrex.query(pid, "SELECT #{column} FROM #{table} WHERE #{column} IS NOT NULL AND #{column} != '' LIMIT 10", [])
     |> Result.map(fn res -> res.rows |> Enum.shuffle() |> Enum.at(0, nil) end)
     |> Result.or_else(fn _ -> nil end)
   end

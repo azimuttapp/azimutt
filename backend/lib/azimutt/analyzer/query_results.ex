@@ -2,7 +2,7 @@ defmodule Azimutt.Analyzer.QueryResults do
   @moduledoc "Result of an arbitrary database query"
   use TypedStruct
   alias Azimutt.Analyzer.QueryResults.Column
-  alias Azimutt.Analyzer.Schema.ColumnRef
+  # alias Azimutt.Analyzer.Schema.ColumnRef
 
   typedstruct enforce: true do
     @derive Jason.Encoder

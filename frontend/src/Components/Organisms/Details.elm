@@ -459,7 +459,7 @@ viewTitle content =
 viewComment : { a | text : String } -> Html msg
 viewComment comment =
     div [ class "mt-1 flex flex-row" ]
-        [ Icon.outline Icons.comment "w-4 opacity-50 mr-1" |> Tooltip.r "SQL comment"
+        [ Icon.outline Icons.comment "opacity-50 mr-1" |> Tooltip.r "SQL comment"
         , viewMarkdown comment.text
         ]
 
@@ -481,7 +481,7 @@ viewNotes model =
             "edit-notes"
     in
     div [ class "mt-1 flex flex-row" ]
-        [ Icon.outline Icons.notes "w-4 opacity-50 mr-1" |> Tooltip.r "Azimutt notes"
+        [ Icon.outline Icons.notes "opacity-50 mr-1" |> Tooltip.r "Azimutt notes"
         , model.editing
             |> Maybe.map
                 (\content ->
@@ -524,7 +524,7 @@ viewTags model =
             "edit-tags"
     in
     div [ class "mt-1 flex flex-row" ]
-        [ Icon.outline Icons.tags "w-4 opacity-50 mr-1" |> Tooltip.r "Azimutt tags"
+        [ Icon.outline Icons.tags "opacity-50 mr-1" |> Tooltip.r "Azimutt tags"
         , model.editing
             |> Maybe.map
                 (\v ->
@@ -716,26 +716,26 @@ viewSource query table column rows ( _, source ) =
     div [ class "mt-1 flex flex-row" ]
         [ case source.kind of
             SourceKind.DatabaseConnection _ ->
-                Icon.solid Icons.sources.database "w-4 opacity-50 mr-1" |> Tooltip.r "Database source"
+                Icon.solid Icons.sources.database "opacity-50 mr-1" |> Tooltip.r "Database source"
 
             SourceKind.SqlLocalFile _ _ _ ->
-                Icon.solid Icons.sources.sql "w-4 opacity-50 mr-1" |> Tooltip.r "SQL source"
+                Icon.solid Icons.sources.sql "opacity-50 mr-1" |> Tooltip.r "SQL source"
 
             SourceKind.SqlRemoteFile _ _ ->
-                Icon.solid Icons.sources.sql "w-4 opacity-50 mr-1" |> Tooltip.r "SQL source"
+                Icon.solid Icons.sources.sql "opacity-50 mr-1" |> Tooltip.r "SQL source"
 
             SourceKind.JsonLocalFile _ _ _ ->
-                Icon.solid Icons.sources.json "w-4 opacity-50 mr-1" |> Tooltip.r "JSON source"
+                Icon.solid Icons.sources.json "opacity-50 mr-1" |> Tooltip.r "JSON source"
 
             SourceKind.JsonRemoteFile _ _ ->
-                Icon.solid Icons.sources.json "w-4 opacity-50 mr-1" |> Tooltip.r "JSON source"
+                Icon.solid Icons.sources.json "opacity-50 mr-1" |> Tooltip.r "JSON source"
 
             SourceKind.AmlEditor ->
-                Icon.solid Icons.sources.aml "w-4 opacity-50 mr-1" |> Tooltip.r "AML source"
+                Icon.solid Icons.sources.aml "opacity-50 mr-1" |> Tooltip.r "AML source"
         , text (source.name ++ (rows |> Maybe.mapOrElse (\r -> " (" ++ String.fromInt r ++ " rows)") ""))
         , case source.kind of
             SourceKind.DatabaseConnection url ->
-                button [ type_ "button", onClick (query source.id (DatabaseQueries.showData column table url)), class "ml-1" ] [ Icon.solid Icon.ArrowCircleRight "w-2 opacity-50" ] |> Tooltip.r "Browse data"
+                button [ type_ "button", onClick (query source.id (DatabaseQueries.showData column table url)), class "ml-1" ] [ Icon.solid Icon.ArrowCircleRight "opacity-50" ] |> Tooltip.r "Browse data"
 
             _ ->
                 text ""
