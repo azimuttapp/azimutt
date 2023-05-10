@@ -30,11 +30,12 @@ import Services.Lenses exposing (setInput, setLoading, setResults, setSource)
 
 
 type alias Model =
-    { id : HtmlId, source : Maybe ( Source, DatabaseUrl ), input : String, loading : Bool, results : Maybe (Result String DatabaseQueryResults) }
+    { id : HtmlId, sizeFull : Bool, source : Maybe ( Source, DatabaseUrl ), input : String, loading : Bool, results : Maybe (Result String DatabaseQueryResults) }
 
 
 type Msg
     = Toggle
+    | ToggleSizeFull
     | Close
     | UseSource (Maybe ( Source, DatabaseUrl ))
     | InputUpdate String
@@ -49,7 +50,7 @@ type Msg
 
 init : List Source -> Model
 init sources =
-    { id = Conf.ids.queryPaneDialog, source = sources |> List.filterMap withUrl |> List.head, input = "", loading = False, results = Nothing }
+    { id = Conf.ids.queryPaneDialog, sizeFull = False, source = sources |> List.filterMap withUrl |> List.head, input = "", loading = False, results = Nothing }
 
 
 
@@ -60,7 +61,10 @@ update : List Source -> Msg -> Maybe Model -> ( Maybe Model, Cmd msg )
 update sources msg model =
     case msg of
         Toggle ->
-            ( model |> Maybe.mapOrElse (\_ -> Nothing) (init sources |> Just), Cmd.none )
+            ( model |> Maybe.mapOrElse (\_ -> Nothing) (init sources |> Just), model |> Maybe.mapOrElse (\_ -> Cmd.none) (Ports.focus "query-pane-dialog-editor-query") )
+
+        ToggleSizeFull ->
+            ( model |> Maybe.map (\m -> { m | sizeFull = not m.sizeFull }), Cmd.none )
 
         Close ->
             ( Nothing, Cmd.none )
@@ -93,7 +97,7 @@ view wrap sources model =
             sources |> List.filterMap withUrl
     in
     div [ class "h-full py-5" ]
-        ([ viewHeading wrap (model.id ++ "-heading") dbSources model.source
+        ([ viewHeading wrap (model.id ++ "-heading") dbSources model.sizeFull model.source
          ]
             ++ (model.source
                     |> Maybe.mapOrElse
@@ -106,8 +110,8 @@ view wrap sources model =
         )
 
 
-viewHeading : (Msg -> msg) -> HtmlId -> List ( Source, DatabaseUrl ) -> Maybe ( Source, DatabaseUrl ) -> Html msg
-viewHeading wrap htmlId dbSources source =
+viewHeading : (Msg -> msg) -> HtmlId -> List ( Source, DatabaseUrl ) -> Bool -> Maybe ( Source, DatabaseUrl ) -> Html msg
+viewHeading wrap htmlId dbSources sizeFull source =
     let
         sourceInput : HtmlId
         sourceInput =
@@ -124,7 +128,14 @@ viewHeading wrap htmlId dbSources source =
                 span [] []
             ]
         , div [ class "flex-shrink-0 self-center flex" ]
-            [ button [ onClick (wrap Close), class "-m-2 p-2 rounded-full flex items-center text-gray-400 hover:text-gray-600" ] [ Icon.solid Icon.X "" ]
+            [ button [ onClick (wrap ToggleSizeFull), title (Bool.cond sizeFull "minimize" "maximize"), class "-m-2 p-2 rounded-full flex items-center text-gray-400 hover:text-gray-600" ]
+                [ if sizeFull then
+                    Icon.solid Icon.ChevronDoubleDown ""
+
+                  else
+                    Icon.solid Icon.ChevronDoubleUp ""
+                ]
+            , button [ onClick (wrap Close), title "close", class "-m-2 p-2 rounded-full flex items-center text-gray-400 hover:text-gray-600" ] [ Icon.solid Icon.X "" ]
             ]
         ]
 
@@ -134,7 +145,7 @@ viewQueryEditor wrap htmlId ( source, databaseUrl ) input loading =
     let
         queryInput : HtmlId
         queryInput =
-            htmlId ++ "-editor"
+            htmlId ++ "-query"
     in
     div [ class "mt-3 px-6" ]
         [ div [ class "relative" ]
@@ -263,7 +274,7 @@ doc =
 
 docModel : Model
 docModel =
-    { id = "html-id", source = Just ( docSource1, "url1" ), input = "", loading = False, results = Nothing }
+    { id = "html-id", sizeFull = False, source = Just ( docSource1, "url1" ), input = "", loading = False, results = Nothing }
 
 
 docQuery : String

@@ -81,16 +81,6 @@ viewProject onDelete currentUrl urlInfos shared model =
 
 viewApp : Url -> Maybe OrganizationId -> Shared.Model -> Model -> HtmlId -> Erd -> Html Msg
 viewApp currentUrl urlOrganization shared model htmlId erd =
-    let
-        erdTop : Float
-        erdTop =
-            model.erdElem.position |> Position.extractViewport |> .top
-
-        erdBottom : Float
-        erdBottom =
-            -- nb px from viewBottomSheet (h-96)
-            model.queryPane |> Maybe.mapOrElse (\_ -> 384) 0
-    in
     div [ class "az-app h-full" ]
         [ if model.conf.showNavbar then
             Lazy.lazy8 viewNavbar shared.conf shared.user model.conf model.virtualRelation erd shared.projects model.navbar (Navbar.argsToString currentUrl urlOrganization (shared.organizations |> List.map .id) (htmlId ++ "-nav") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-nav")) model.dirty)
@@ -99,7 +89,7 @@ viewApp currentUrl urlOrganization shared model htmlId erd =
             div [] []
         , main_
             [ class "flex-1 flex overflow-hidden transition-[height] ease-in-out duration-200"
-            , style "height" (B.cond model.conf.showNavbar ("calc(100% - " ++ String.fromFloat (erdTop + erdBottom) ++ "px)") "100%")
+            , style "height" ("calc(" ++ calcErdHeight model ++ ")")
             ]
             [ -- model.erdElem |> Area.debugViewport "erdElem" "border-red-500",
               section [ class "relative min-w-0 flex-1 h-full flex flex-col overflow-y-auto" ]
@@ -174,7 +164,7 @@ viewBottomSheet model =
             model.queryPane |> Maybe.map2 (\erd -> QueryPane.view QueryPaneMsg erd.sources) model.erd
     in
     aside [ class "block flex-shrink-0" ]
-        [ div [ css [ B.cond (content == Nothing) "-mb-96" "", "h-96 transition-[margin] ease-in-out duration-200 relative border-t border-gray-200 bg-white overflow-y-auto" ] ]
+        [ div [ style "height" ("calc(" ++ calcBottomSheetHeight model ++ ")"), css [ "relative border-t border-gray-200 bg-white overflow-y-auto" ] ]
             [ content |> Maybe.withDefault (div [] [])
             ]
         ]
@@ -283,3 +273,23 @@ viewNotFound currentUrl urlInfos user projects conf =
                 )
             ]
         ]
+
+
+calcNavbarHeight : Model -> String
+calcNavbarHeight model =
+    if model.conf.showNavbar then
+        (model.erdElem.position |> Position.extractViewport |> .top |> String.fromFloat) ++ "px"
+
+    else
+        "0px"
+
+
+calcBottomSheetHeight : Model -> String
+calcBottomSheetHeight model =
+    (model.queryPane |> Maybe.map .sizeFull)
+        |> Maybe.mapOrElse (\full -> B.cond full ("100vh - " ++ calcNavbarHeight model) "400px") "0px"
+
+
+calcErdHeight : Model -> String
+calcErdHeight model =
+    "100vh - (" ++ calcNavbarHeight model ++ ") - (" ++ calcBottomSheetHeight model ++ ")"

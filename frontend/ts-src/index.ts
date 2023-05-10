@@ -245,7 +245,7 @@ function deleteProject(msg: DeleteProject): void {
 // prompt users to save before leave project when not fully saved
 window.isDirty = false
 window.addEventListener('beforeunload', function (e: BeforeUnloadEvent) {
-    if (window.isDirty) {
+    if (window.isDirty && window.env !== 'dev') {
         const message = 'Your project is not saved, want to leave?'
         e.returnValue = message // Gecko, Trident, Chrome 34+
         return message          // Gecko, WebKit, Chrome <34
