@@ -8,11 +8,12 @@ import Components.Molecules.Tooltip as Tooltip
 import Dict
 import Html exposing (Html, button, div, fieldset, input, label, legend, p, span, text)
 import Html.Attributes exposing (checked, class, for, id, name, placeholder, type_, value)
-import Html.Events exposing (onClick, onInput)
+import Html.Events exposing (onBlur, onClick, onInput)
 import Libs.Bool as B
 import Libs.Html exposing (bText)
 import Libs.Html.Attributes exposing (ariaDescribedby, css)
 import Libs.List as List
+import Libs.Maybe as Maybe
 import Libs.Models.DateTime as DateTime
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
@@ -28,6 +29,7 @@ import Models.RelationStyle as RelationStyle
 import PagesComponents.Organization_.Project_.Components.SourceUpdateDialog as SourceUpdateDialog
 import PagesComponents.Organization_.Project_.Models exposing (AmlSidebarMsg(..), Msg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), confirm)
 import PagesComponents.Organization_.Project_.Models.Erd exposing (Erd)
+import Ports
 import Time
 
 
@@ -41,28 +43,32 @@ viewProjectSettings zone opened erd model =
         , onClickOverlay = ModalClose (ProjectSettingsMsg PSClose)
         }
         (div [ class "pb-16" ]
-            [ viewSourcesSection (model.id ++ "-sources") zone erd
+            [ viewSourcesSection (model.id ++ "-sources") zone erd model
             , viewSchemasSection (model.id ++ "-schemas") erd
             , viewDisplaySettingsSection (model.id ++ "-display") erd
             ]
         )
 
 
-viewSourcesSection : HtmlId -> Time.Zone -> Erd -> Html Msg
-viewSourcesSection htmlId zone erd =
+viewSourcesSection : HtmlId -> Time.Zone -> Erd -> ProjectSettingsDialog -> Html Msg
+viewSourcesSection htmlId zone erd model =
     fieldset []
         [ legend [ class "font-medium text-gray-900" ] [ text "Project sources" ]
         , p [ class "text-sm text-gray-500" ] [ text "Active sources are merged to create your current schema." ]
         , div [ class "mt-1 border border-gray-300 rounded-md shadow-sm divide-y divide-gray-300" ]
-            ((erd.sources |> List.map (viewSource htmlId erd.project.id zone)) ++ [ viewAddSource (htmlId ++ "-new") erd.project.id ])
+            ((erd.sources |> List.map (\s -> viewSource htmlId erd.project.id zone (model.sourceNameEdit |> Maybe.has s.id) s)) ++ [ viewAddSource (htmlId ++ "-new") erd.project.id ])
         ]
 
 
-viewSource : HtmlId -> ProjectId -> Time.Zone -> Source -> Html Msg
-viewSource htmlId _ zone source =
+viewSource : HtmlId -> ProjectId -> Time.Zone -> Bool -> Source -> Html Msg
+viewSource htmlId _ zone updating source =
     let
         ( views, tables ) =
             source.tables |> Dict.values |> List.partition .view
+
+        nameInput : HtmlId
+        nameInput =
+            htmlId ++ "-name-input"
 
         view : Icon -> String -> Time.Posix -> String -> Html Msg
         view =
@@ -71,7 +77,12 @@ viewSource htmlId _ zone source =
                     [ div [ class "flex justify-between" ]
                         [ viewCheckbox "mt-3"
                             (htmlId ++ "-" ++ SourceId.toString source.id)
-                            [ span [] [ Icon.solid icon "inline", text source.name ] |> Tooltip.b labelTitle ]
+                            (if updating then
+                                [ input [ type_ "text", name nameInput, id nameInput, value source.name, onInput (PSSourceNameUpdate source.id >> ProjectSettingsMsg), onBlur (PSSourceNameUpdateDone |> ProjectSettingsMsg), class "block w-full rounded-md border-0 py-0 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" ] [] ]
+
+                             else
+                                [ span [] [ Icon.solid icon "inline", text source.name ] |> Tooltip.b labelTitle ]
+                            )
                             source.enabled
                             (source |> PSSourceToggle |> ProjectSettingsMsg)
                         , div []
@@ -79,8 +90,11 @@ viewSource htmlId _ zone source =
                                 [ Icon.solid Icon.Refresh "inline" ]
                                 |> Tooltip.bl "Refresh this source"
                             , button [ type_ "button", onClick (Batch [ ModalClose (ProjectSettingsMsg PSClose), AmlSidebarMsg (AOpen (Just source.id)) ]), css [ focus [ "outline-none" ], B.cond (source.kind == AmlEditor) "" "hidden" ] ]
-                                [ Icon.solid Icon.Pencil "inline" ]
+                                [ Icon.solid Icon.Terminal "inline" ]
                                 |> Tooltip.bl "Update this source"
+                            , button [ type_ "button", onClick (Batch [ source.name |> PSSourceNameUpdate source.id |> ProjectSettingsMsg, Ports.focus nameInput |> Send ]), css [ focus [ "outline-none" ] ] ]
+                                [ Icon.solid Icon.Pencil "inline" ]
+                                |> Tooltip.bl "Update source name"
                             , button [ type_ "button", onClick (source |> PSSourceDelete |> ProjectSettingsMsg |> confirm ("Delete " ++ source.name ++ " source?") (text "Are you really sure?")), css [ focus [ "outline-none" ] ] ]
                                 [ Icon.solid Icon.Trash "inline" ]
                                 |> Tooltip.bl "Delete this source"

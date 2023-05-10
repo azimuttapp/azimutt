@@ -74,6 +74,7 @@ module Services.Lenses exposing
     , mapSearch
     , mapSelected
     , mapSettings
+    , mapSettingsM
     , mapSharingCmd
     , mapShow
     , mapShowHiddenColumns
@@ -1052,6 +1053,11 @@ setSettings =
 mapSettings : (v -> v) -> { item | settings : v } -> { item | settings : v }
 mapSettings =
     map_ .settings setSettings
+
+
+mapSettingsM : (v -> v) -> { item | settings : Maybe v } -> { item | settings : Maybe v }
+mapSettingsM =
+    mapM_ .settings setSettings
 
 
 setSelected : v -> { item | selected : v } -> { item | selected : v }
