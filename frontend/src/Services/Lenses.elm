@@ -113,6 +113,7 @@ module Services.Lenses exposing
     , setDatabaseSource
     , setDefaultSchema
     , setDetailsSidebar
+    , setDisplay
     , setDragging
     , setEditGroup
     , setEditMemo
@@ -436,6 +437,11 @@ setDetailsSidebar =
 mapDetailsSidebarCmd : (v -> ( v, Cmd msg )) -> { item | detailsSidebar : v } -> ( { item | detailsSidebar : v }, Cmd msg )
 mapDetailsSidebarCmd =
     mapCmd_ .detailsSidebar setDetailsSidebar
+
+
+setDisplay : v -> { item | display : v } -> { item | display : v }
+setDisplay =
+    set_ .display (\value item -> { item | display = value })
 
 
 setDragging : v -> { item | dragging : v } -> { item | dragging : v }

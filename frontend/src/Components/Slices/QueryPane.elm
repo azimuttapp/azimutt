@@ -1,4 +1,4 @@
-module Components.Slices.QueryPane exposing (Model, Msg(..), doc, update, view)
+module Components.Slices.QueryPane exposing (DisplayMode, Model, Msg(..), doc, update, view)
 
 import Array
 import Components.Atoms.Icon as Icon
@@ -7,8 +7,8 @@ import Conf
 import Dict exposing (Dict)
 import ElmBook.Actions exposing (logAction)
 import ElmBook.Chapter as Chapter exposing (Chapter)
-import Html exposing (Html, button, div, h3, option, p, pre, select, span, table, tbody, td, text, textarea, th, thead, tr)
-import Html.Attributes exposing (autofocus, class, classList, disabled, id, name, placeholder, rows, scope, selected, title, type_, value)
+import Html exposing (Html, button, div, h3, label, option, p, pre, select, span, table, tbody, td, text, textarea, th, thead, tr)
+import Html.Attributes exposing (autofocus, class, classList, disabled, for, id, name, placeholder, rows, scope, selected, title, type_, value)
 import Html.Events exposing (onClick, onInput)
 import Libs.Bool as Bool
 import Libs.Dict as Dict
@@ -19,55 +19,101 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Nel as Nel
 import Libs.Result as Result
 import Libs.Tailwind as Tw
+import Libs.Task as T
 import Libs.Time as Time
 import Models.DatabaseQueryResults exposing (DatabaseQueryResults, DatabaseQueryResultsColumn)
 import Models.JsValue as JsValue exposing (JsValue)
 import Models.Project.Source as Source exposing (Source)
-import Models.Project.SourceId as SourceId
+import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.SourceKind exposing (SourceKind(..))
 import Ports
-import Services.Lenses exposing (setInput, setLoading, setResults, setSource)
+import Services.Lenses exposing (setDisplay, setInput, setLoading, setResults, setSource)
 
 
 type alias Model =
-    { id : HtmlId, sizeFull : Bool, source : Maybe ( Source, DatabaseUrl ), input : String, loading : Bool, results : Maybe (Result String DatabaseQueryResults) }
+    { id : HtmlId, sizeFull : Bool, source : Maybe ( Source, DatabaseUrl ), input : String, loading : Bool, results : Maybe (Result String DatabaseQueryResults), display : DisplayMode }
+
+
+type DisplayMode
+    = DisplayTable
+    | DisplayDocument
+
+
+displayToString : DisplayMode -> String
+displayToString display =
+    case display of
+        DisplayTable ->
+            "table"
+
+        DisplayDocument ->
+            "document"
+
+
+stringToDisplay : String -> DisplayMode
+stringToDisplay value =
+    case value of
+        "document" ->
+            DisplayDocument
+
+        _ ->
+            DisplayTable
 
 
 type Msg
     = Toggle
-    | ToggleSizeFull
+    | Open (Maybe SourceId) (Maybe String)
     | Close
+    | ToggleSizeFull
     | UseSource (Maybe ( Source, DatabaseUrl ))
     | InputUpdate String
     | RunQuery DatabaseUrl String
     | GotResults (Result String DatabaseQueryResults)
     | ClearResults
+    | SetDisplay DisplayMode
 
 
 
 -- INIT
 
 
-init : List Source -> Model
-init sources =
-    { id = Conf.ids.queryPaneDialog, sizeFull = False, source = sources |> List.filterMap withUrl |> List.head, input = "", loading = False, results = Nothing }
+init : List Source -> Maybe SourceId -> Maybe String -> Model
+init sources source input =
+    { id = Conf.ids.queryPaneDialog, sizeFull = False, source = selectSource sources source, input = input |> Maybe.withDefault "", loading = False, results = Nothing, display = DisplayTable }
+
+
+selectSource : List Source -> Maybe SourceId -> Maybe ( Source, DatabaseUrl )
+selectSource sources source =
+    let
+        dbSources : List ( Source, DatabaseUrl )
+        dbSources =
+            sources |> List.filterMap withUrl
+    in
+    source |> Maybe.andThen (\id -> dbSources |> List.find (\( s, _ ) -> s.id == id)) |> Maybe.orElse (dbSources |> List.head)
 
 
 
 -- UPDATE
 
 
-update : List Source -> Msg -> Maybe Model -> ( Maybe Model, Cmd msg )
-update sources msg model =
+update : (Msg -> msg) -> List Source -> Msg -> Maybe Model -> ( Maybe Model, Cmd msg )
+update wrap sources msg model =
     case msg of
         Toggle ->
-            ( model |> Maybe.mapOrElse (\_ -> Nothing) (init sources |> Just), model |> Maybe.mapOrElse (\_ -> Cmd.none) (Ports.focus "query-pane-dialog-editor-query") )
+            ( model |> Maybe.mapOrElse (\_ -> Nothing) (init sources Nothing Nothing |> Just), model |> Maybe.mapOrElse (\_ -> Cmd.none) (Ports.focus "query-pane-dialog-editor-query") )
 
-        ToggleSizeFull ->
-            ( model |> Maybe.map (\m -> { m | sizeFull = not m.sizeFull }), Cmd.none )
+        Open source input ->
+            let
+                m : Model
+                m =
+                    model |> Maybe.map (setSource (selectSource sources source) >> setInput (input |> Maybe.withDefault "")) |> Maybe.withDefault (init sources source input)
+            in
+            ( m |> Just, Maybe.map2 (\i ( _, url ) -> RunQuery url i |> wrap |> T.send) input m.source |> Maybe.withDefault Cmd.none )
 
         Close ->
             ( Nothing, Cmd.none )
+
+        ToggleSizeFull ->
+            ( model |> Maybe.map (\m -> { m | sizeFull = not m.sizeFull }), Cmd.none )
 
         UseSource source ->
             ( model |> Maybe.map (setSource source), Cmd.none )
@@ -83,6 +129,9 @@ update sources msg model =
 
         ClearResults ->
             ( model |> Maybe.map (setResults Nothing), Cmd.none )
+
+        SetDisplay mode ->
+            ( model |> Maybe.map (setDisplay mode), Cmd.none )
 
 
 
@@ -103,7 +152,7 @@ view wrap sources model =
                     |> Maybe.mapOrElse
                         (\source ->
                             [ viewQueryEditor wrap (model.id ++ "-editor") source model.input model.loading ]
-                                ++ (model.results |> Maybe.mapOrElse (\results -> [ viewQueryResults results ]) [])
+                                ++ (model.results |> Maybe.mapOrElse (\results -> [ viewQueryResults wrap (model.id ++ "-results") model.display results ]) [])
                         )
                         [ viewNoSourceWarning ]
                )
@@ -178,8 +227,13 @@ viewQueryEditor wrap htmlId ( source, databaseUrl ) input loading =
         ]
 
 
-viewQueryResults : Result String DatabaseQueryResults -> Html msg
-viewQueryResults results =
+viewQueryResults : (Msg -> msg) -> HtmlId -> DisplayMode -> Result String DatabaseQueryResults -> Html msg
+viewQueryResults wrap htmlId display results =
+    let
+        displayId : HtmlId
+        displayId =
+            htmlId ++ "-display"
+    in
     div [ class "min-w-full max-w-full overflow-scroll" ]
         (results
             |> Result.fold
@@ -190,44 +244,68 @@ viewQueryResults results =
                     ]
                 )
                 (\res ->
-                    [ p [ class "px-1 text-sm text-gray-500" ] [ text ((res.rows |> List.length |> String.fromInt) ++ " rows") ]
-                    , table [ class "min-w-full divide-y divide-gray-300" ]
-                        [ thead [] [ viewQueryResultsHeader res.columns ]
-                        , tbody [ class "divide-y divide-gray-200" ] (res.rows |> List.indexedMap (viewQueryResultsRow res.columns))
+                    [ div [ class "flex justify-between py-1" ]
+                        [ p [ class "px-1 text-sm text-gray-500" ] [ text ((res.rows |> List.length |> String.fromInt) ++ " rows") ]
+                        , span [ class "px-1 inline-flex rounded-md shadow-sm" ]
+                            [ label [ for displayId, class "sr-only" ] [ text "View mode" ]
+                            , select [ id displayId, name displayId, onInput (stringToDisplay >> SetDisplay >> wrap), class "block w-full rounded-md border-0 bg-white py-0 pl-3 pr-9 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" ]
+                                ([ DisplayTable, DisplayDocument ] |> List.map (\d -> option [ value (displayToString d), selected (d == display) ] [ text (displayToString d ++ " view") ]))
+                            ]
                         ]
+                    , case display of
+                        DisplayTable ->
+                            viewQueryResultsTable DisplayTable res.columns res.rows
+
+                        DisplayDocument ->
+                            viewQueryResultsTable DisplayDocument [ { name = "document", ref = Nothing } ] (res.rows |> List.map (\r -> Dict.fromList [ ( "document", JsValue.Object r ) ]))
                     ]
                 )
         )
 
 
-viewQueryResultsHeader : List DatabaseQueryResultsColumn -> Html msg
-viewQueryResultsHeader columns =
+viewQueryResultsTable : DisplayMode -> List DatabaseQueryResultsColumn -> List (Dict String JsValue) -> Html msg
+viewQueryResultsTable display columns rows =
+    table [ class "min-w-full divide-y divide-gray-300" ]
+        [ thead [] [ viewQueryResultsTableHeader columns ]
+        , tbody [ class "divide-y divide-gray-200" ] (rows |> List.indexedMap (viewQueryResultsTableRow display columns))
+        ]
+
+
+viewQueryResultsTableHeader : List DatabaseQueryResultsColumn -> Html msg
+viewQueryResultsTableHeader columns =
     tr [ class "bg-gray-100" ]
         (({ name = "#", ref = Nothing } :: columns)
             |> List.map
                 (\col ->
-                    th [ scope "col", class "whitespace-nowrap p-1 text-left text-xs font-semibold font-mono text-gray-900 max-w-xs truncate" ] [ text col.name ]
+                    th [ scope "col", class "max-w-xs truncate p-1 whitespace-nowrap align-top text-left text-xs font-mono font-semibold text-gray-900" ] [ text col.name ]
                 )
         )
 
 
-viewQueryResultsRow : List DatabaseQueryResultsColumn -> Int -> Dict String JsValue -> Html msg
-viewQueryResultsRow columns i row =
+viewQueryResultsTableRow : DisplayMode -> List DatabaseQueryResultsColumn -> Int -> Dict String JsValue -> Html msg
+viewQueryResultsTableRow display columns i row =
     let
         rest : Dict String JsValue
         rest =
             row |> Dict.filter (\k _ -> columns |> List.memberBy .name k |> not)
     in
     tr [ class "hover:bg-gray-100", classList [ ( "bg-gray-50", modBy 2 i == 1 ) ] ]
-        ([ viewQueryResultsRowValue (JsValue.Int (i + 1)) ]
-            ++ (columns |> List.map (\col -> row |> Dict.getOrElse col.name JsValue.Null |> viewQueryResultsRowValue))
-            ++ Bool.cond (rest |> Dict.isEmpty) [] [ viewQueryResultsRowValue (rest |> JsValue.Object) ]
+        ([ viewQueryResultsRowValue display (JsValue.Int (i + 1)) ]
+            ++ (columns |> List.map (\col -> row |> Dict.getOrElse col.name JsValue.Null |> viewQueryResultsRowValue display))
+            ++ Bool.cond (rest |> Dict.isEmpty) [] [ viewQueryResultsRowValue display (rest |> JsValue.Object) ]
         )
 
 
-viewQueryResultsRowValue : JsValue -> Html msg
-viewQueryResultsRowValue value =
-    td [ title (value |> JsValue.toString), class "whitespace-nowrap p-1 text-xs font-mono text-gray-500 max-w-xs truncate" ] [ text (value |> JsValue.toString) ]
+viewQueryResultsRowValue : DisplayMode -> JsValue -> Html msg
+viewQueryResultsRowValue display value =
+    td [ title (value |> JsValue.toString), class "max-w-xs truncate p-1 whitespace-nowrap align-top text-left text-xs font-mono text-gray-500" ]
+        [ case display of
+            DisplayTable ->
+                text (value |> JsValue.toString)
+
+            DisplayDocument ->
+                pre [] [ text (value |> JsValue.format) ]
+        ]
 
 
 viewNoSourceWarning : Html msg
@@ -269,12 +347,13 @@ doc =
             , ( "with result error", view (\_ -> logAction "msg") docSources { docModel | input = docQuery, results = Just docResultError } )
             , ( "with empty result", view (\_ -> logAction "msg") docSources { docModel | input = docQuery, results = Just docResultEmpty } )
             , ( "with results", view (\_ -> logAction "msg") docSources { docModel | input = docQuery, results = Just docResults } )
+            , ( "with results as documents", view (\_ -> logAction "msg") docSources { docModel | input = docQuery, results = Just docResults, display = DisplayDocument } )
             ]
 
 
 docModel : Model
 docModel =
-    { id = "html-id", sizeFull = False, source = Just ( docSource1, "url1" ), input = "", loading = False, results = Nothing }
+    { id = "html-id", sizeFull = False, source = Just ( docSource1, "url1" ), input = "", loading = False, results = Nothing, display = DisplayTable }
 
 
 docQuery : String

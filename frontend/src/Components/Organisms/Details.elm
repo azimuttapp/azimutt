@@ -49,7 +49,7 @@ import Models.Project.Origin exposing (Origin)
 import Models.Project.PrimaryKey exposing (PrimaryKey)
 import Models.Project.SchemaName as SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
-import Models.Project.SourceId as SourceId exposing (SourceIdStr)
+import Models.Project.SourceId as SourceId exposing (SourceId, SourceIdStr)
 import Models.Project.SourceKind as SourceKind
 import Models.Project.SourceName exposing (SourceName)
 import Models.Project.TableId as TableId exposing (TableId, TableIdStr)
@@ -67,6 +67,7 @@ import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout expo
 import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.ErdTableProps exposing (ErdTableProps)
+import Services.DatabaseQueries as DatabaseQueries
 import Services.Lenses exposing (setLayouts, setTables)
 import Simple.Fuzzy
 import Time exposing (Posix)
@@ -168,6 +169,7 @@ viewTable :
     -> (ColumnRef -> msg)
     -> (TableId -> msg)
     -> (LayoutName -> msg)
+    -> (SourceId -> String -> msg)
     -> (SourceName -> msg)
     -> SourceName
     -> SchemaName
@@ -179,7 +181,7 @@ viewTable :
     -> List ( Origin, Source )
     -> Dict SourceIdStr (Result String TableStats)
     -> Html msg
-viewTable goToList goToSchema goToTable goToColumn showTable loadLayout _ _ defaultSchema schema table notes tags inLayouts inSources stats =
+viewTable goToList goToSchema goToTable goToColumn showTable loadLayout query _ _ defaultSchema schema table notes tags inLayouts inSources stats =
     let
         columnValues : Dict ColumnPathStr ColumnValue
         columnValues =
@@ -204,11 +206,11 @@ viewTable goToList goToSchema goToTable goToColumn showTable loadLayout _ _ defa
             , table.item.comment |> Maybe.mapOrElse viewComment (div [] [])
             , notes |> viewNotes
             , tags |> viewTags
+            , inLayouts |> List.nonEmptyMap (\l -> viewProp [ text "In layouts" ] (l |> List.sort |> List.map (viewLayout loadLayout))) (div [] [])
+            , inSources |> List.nonEmptyMap (\sources -> viewProp [ text "From sources" ] (sources |> List.sortBy (Tuple.second >> .name) |> List.map (\( o, s ) -> viewSource query table.item.id Nothing (stats |> Dict.get (SourceId.toString s.id) |> Maybe.andThen Result.toMaybe |> Maybe.map .rows) ( o, s )))) (div [] [])
             , outRelations |> List.nonEmptyMap (\r -> viewProp [ text "References" ] (r |> List.sortBy .table |> List.map (viewTableRelation goToTable defaultSchema))) (div [] [])
             , inRelations |> List.nonEmptyMap (\r -> viewProp [ text "Referenced by" ] (r |> List.sortBy .table |> List.map (viewTableRelation goToTable defaultSchema))) (div [] [])
             , viewTableConstraints table.item
-            , inLayouts |> List.nonEmptyMap (\l -> viewProp [ text "In layouts" ] (l |> List.sort |> List.map (viewLayout loadLayout))) (div [] [])
-            , inSources |> List.nonEmptyMap (\sources -> viewProp [ text "From sources" ] (sources |> List.sortBy (Tuple.second >> .name) |> List.map (\( o, s ) -> viewSource (stats |> Dict.get (SourceId.toString s.id) |> Maybe.andThen Result.toMaybe |> Maybe.map .rows) ( o, s )))) (div [] [])
             , viewProp [ text (table.item.columns |> String.pluralizeD "column") ]
                 [ ul [ role "list", class "-mx-3 relative z-0 divide-y divide-gray-200" ]
                     (table.item.columns
@@ -246,6 +248,7 @@ viewColumn :
     -> (ColumnRef -> msg)
     -> (TableId -> msg)
     -> (LayoutName -> msg)
+    -> (SourceId -> String -> msg)
     -> (SourceName -> msg)
     -> SourceName
     -> SchemaName
@@ -258,7 +261,7 @@ viewColumn :
     -> List ( Origin, Source )
     -> Dict SourceIdStr (Result String ColumnStats)
     -> Html msg
-viewColumn goToList goToSchema goToTable goToColumn showTable loadLayout _ _ defaultSchema schema table column notes tags inLayouts inSources stats =
+viewColumn goToList goToSchema goToTable goToColumn showTable loadLayout query _ _ defaultSchema schema table column notes tags inLayouts inSources stats =
     div []
         [ viewSchemaHeading goToList goToSchema defaultSchema schema
         , viewTableHeading goToSchema goToTable table
@@ -285,11 +288,11 @@ viewColumn goToList goToSchema goToTable goToColumn showTable loadLayout _ _ def
             , notes |> viewNotes
             , tags |> viewTags
             , viewColumnStats (inSources |> List.map Tuple.second) stats
+            , inLayouts |> List.nonEmptyMap (\l -> viewProp [ text "In layouts" ] (l |> List.sort |> List.map (viewLayout loadLayout))) (div [] [])
+            , inSources |> List.nonEmptyMap (\s -> viewProp [ text "From sources" ] (s |> List.sortBy (Tuple.second >> .name) |> List.map (viewSource query table.item.id (Just column.item.path) Nothing))) (div [] [])
             , column.item.outRelations |> List.nonEmptyMap (\r -> viewProp [ text "References" ] (r |> List.sortBy ErdColumnRef.toId |> List.map (viewColumnRelation goToColumn defaultSchema))) (div [] [])
             , column.item.inRelations |> List.nonEmptyMap (\r -> viewProp [ text "Referenced by" ] (r |> List.sortBy ErdColumnRef.toId |> List.map (viewColumnRelation goToColumn defaultSchema))) (div [] [])
             , viewColumnConstraints table.item column.item
-            , inLayouts |> List.nonEmptyMap (\l -> viewProp [ text "In layouts" ] (l |> List.sort |> List.map (viewLayout loadLayout))) (div [] [])
-            , inSources |> List.nonEmptyMap (\s -> viewProp [ text "From sources" ] (s |> List.sortBy (Tuple.second >> .name) |> List.map (viewSource Nothing))) (div [] [])
             ]
         ]
 
@@ -306,6 +309,7 @@ viewColumn2 :
     -> (ColumnRef -> msg)
     -> (TableId -> msg)
     -> (LayoutName -> msg)
+    -> (SourceId -> String -> msg)
     -> (SourceName -> msg)
     -> SourceName
     -> SchemaName
@@ -318,7 +322,7 @@ viewColumn2 :
     -> List ( Origin, Source )
     -> Dict SourceIdStr (Result String ColumnStats)
     -> Html msg
-viewColumn2 _ _ _ _ _ _ _ _ defaultSchema schema table column _ _ _ _ _ =
+viewColumn2 _ _ _ _ _ _ _ _ _ defaultSchema schema table column _ _ _ _ _ =
     div []
         [ div [ class "lg:flex lg:items-center lg:justify-between" ]
             [ div [ class "flex-1 min-w-0" ]
@@ -705,8 +709,8 @@ viewLayout loadLayout layout =
     div [] [ span [ class "underline cursor-pointer", onClick (loadLayout layout) ] [ text layout ] |> Tooltip.r "View layout" ]
 
 
-viewSource : Maybe Int -> ( Origin, Source ) -> Html msg
-viewSource rows ( _, source ) =
+viewSource : (SourceId -> String -> msg) -> TableId -> Maybe ColumnPath -> Maybe Int -> ( Origin, Source ) -> Html msg
+viewSource query table column rows ( _, source ) =
     div [ class "mt-1 flex flex-row" ]
         [ case source.kind of
             SourceKind.DatabaseConnection _ ->
@@ -727,6 +731,12 @@ viewSource rows ( _, source ) =
             SourceKind.AmlEditor ->
                 Icon.solid Icons.sources.aml "w-4 opacity-50 mr-1" |> Tooltip.r "AML source"
         , text (source.name ++ (rows |> Maybe.mapOrElse (\r -> " (" ++ String.fromInt r ++ " rows)") ""))
+        , case source.kind of
+            SourceKind.DatabaseConnection url ->
+                button [ type_ "button", onClick (query source.id (DatabaseQueries.showData column table url)), class "ml-1" ] [ Icon.solid Icon.ArrowCircleRight "w-2 opacity-50" ] |> Tooltip.r "Browse data"
+
+            _ ->
+                text ""
         ]
 
 
@@ -1026,6 +1036,7 @@ doc =
                                                     (\columnRef -> s |> docSelectColumn columnRef |> docSetState)
                                                     (\tableId -> logAction ("showTable: " ++ TableId.toString tableId))
                                                     (\layout -> logAction ("loadLayout " ++ layout))
+                                                    (\_ q -> logAction ("query: " ++ q))
                                                     (\source -> docSetState { s | openedCollapse = Bool.cond (s.openedCollapse == "viewTable-" ++ source) "" ("viewTable-" ++ source) })
                                                     (s.openedCollapse |> String.stripLeft "viewTable-")
                                                     s.defaultSchema
@@ -1070,6 +1081,7 @@ doc =
                                                     (\columnRef -> s |> docSelectColumn columnRef |> docSetState)
                                                     (\tableId -> logAction ("showTable: " ++ TableId.toString tableId))
                                                     (\layout -> logAction ("loadLayout " ++ layout))
+                                                    (\_ q -> logAction ("query: " ++ q))
                                                     (\source -> docSetState { s | openedCollapse = Bool.cond (s.openedCollapse == "viewColumn-" ++ source) "" ("viewColumn-" ++ source) })
                                                     (s.openedCollapse |> String.stripLeft "viewColumn-")
                                                     s.defaultSchema

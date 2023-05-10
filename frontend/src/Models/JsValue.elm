@@ -1,4 +1,4 @@
-module Models.JsValue exposing (JsValue(..), decode, encode, toString)
+module Models.JsValue exposing (JsValue(..), decode, encode, format, toString)
 
 import Dict exposing (Dict)
 import Json.Decode as Decode exposing (Decoder)
@@ -21,11 +21,29 @@ type JsValue
     | Object (Dict String JsValue)
 
 
+format : JsValue -> String
+format value =
+    formatWithPrefix "  " "" value
+
+
+formatWithPrefix : String -> String -> JsValue -> String
+formatWithPrefix prefix nesting value =
+    case value of
+        Array values ->
+            "[" ++ (values |> List.map (\v -> "\n" ++ nesting ++ prefix ++ formatWithPrefix prefix (nesting ++ prefix) v) |> String.join ",") ++ "\n" ++ nesting ++ "]"
+
+        Object values ->
+            "{" ++ (values |> Dict.toList |> List.map (\( k, v ) -> "\n" ++ nesting ++ prefix ++ k ++ ": " ++ formatWithPrefix prefix (nesting ++ prefix) v) |> String.join ",") ++ "\n" ++ nesting ++ "}"
+
+        _ ->
+            toString value
+
+
 toString : JsValue -> String
 toString value =
     case value of
         String v ->
-            v
+            "\"" ++ (v |> String.replace "\n" "\\n") ++ "\""
 
         Int v ->
             String.fromInt v
