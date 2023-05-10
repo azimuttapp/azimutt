@@ -179,9 +179,10 @@ viewTable :
     -> TagsModel msg
     -> List LayoutName
     -> List ( Origin, Source )
+    -> Maybe TableMeta
     -> Dict SourceIdStr (Result String TableStats)
     -> Html msg
-viewTable goToList goToSchema goToTable goToColumn showTable loadLayout query _ _ defaultSchema schema table notes tags inLayouts inSources stats =
+viewTable goToList goToSchema goToTable goToColumn showTable loadLayout query _ _ defaultSchema schema table notes tags inLayouts inSources meta stats =
     let
         columnValues : Dict ColumnPathStr ColumnValue
         columnValues =
@@ -226,7 +227,8 @@ viewTable goToList goToSchema goToTable goToColumn showTable loadLayout query _ 
                                                 , div [ class "flex justify-between" ]
                                                     [ span [ class "text-sm font-medium text-gray-900 whitespace-nowrap" ]
                                                         ([ text (column.path |> ColumnPath.name) ]
-                                                            ++ (column.comment |> Maybe.mapOrElse (\c -> [ Icon.outline Icons.comment "w-4 h-4 ml-1 inline-block opacity-50" |> Tooltip.t (Comment.short c.text) ]) [])
+                                                            ++ (column.comment |> Maybe.mapOrElse (\c -> [ Icon.outline Icons.comment "w-4 h-4 ml-1 opacity-50" |> Tooltip.tr (Comment.short c.text) ]) [])
+                                                            ++ (meta |> Maybe.andThen (.columns >> Dict.get (column.path |> ColumnPath.toString)) |> Maybe.andThen .notes |> Maybe.mapOrElse (\n -> [ Icon.outline Icons.notes "w-4 h-4 ml-1 opacity-50" |> Tooltip.tr (Comment.short n) ]) [])
                                                         )
                                                     , columnValues |> ColumnPath.get column.path |> Maybe.withDefault column.kind |> (\v -> Badge.basic Tw.gray [ class "ml-3 truncate" ] [ text v ])
                                                     ]
@@ -1056,6 +1058,7 @@ doc =
                                                     }
                                                     (docErd.layouts |> Dict.filter (\_ l -> l.tables |> List.memberBy .id table.item.id) |> Dict.keys)
                                                     (table.item.origins |> List.filterZip (\o -> docErd.sources |> List.findBy .id o.id))
+                                                    Nothing
                                                     (docTableStats |> Dict.getOrElse table.item.id Dict.empty)
                                                 ]
                                         )
