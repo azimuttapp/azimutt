@@ -1,7 +1,8 @@
-module PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, AmlSidebarMsg(..), ConfirmDialog, ContextMenu, FindPathMsg(..), GroupEdit, GroupMsg(..), HelpDialog, HelpMsg(..), LayoutMsg(..), MemoEdit, MemoMsg(..), ModalDialog, Model, Msg(..), NavbarModel, NotesDialog, ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, VirtualRelation, VirtualRelationMsg(..), confirm, confirmDanger, prompt, simplePrompt)
+module PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, AmlSidebarMsg(..), ConfirmDialog, ContextMenu, FindPathMsg(..), GroupEdit, GroupMsg(..), HelpDialog, HelpMsg(..), LayoutMsg(..), MemoEdit, MemoMsg(..), ModalDialog, Model, Msg(..), NavbarModel, NotesDialog, ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, VirtualRelation, VirtualRelationMsg(..), confirm, confirmDanger, emptyModel, prompt, simplePrompt)
 
 import Components.Atoms.Icon exposing (Icon(..))
 import Components.Slices.ProPlan as ProPlan
+import Components.Slices.QueryPane as QueryPane
 import DataSources.AmlMiner.AmlAdapter exposing (AmlSchemaError)
 import Dict exposing (Dict)
 import Html exposing (Html, text)
@@ -15,7 +16,7 @@ import Libs.Tailwind as Tw exposing (Color)
 import Libs.Task as T
 import Models.Area as Area
 import Models.ColumnOrder exposing (ColumnOrder)
-import Models.ErdProps exposing (ErdProps)
+import Models.ErdProps as ErdProps exposing (ErdProps)
 import Models.Organization exposing (Organization)
 import Models.Position as Position
 import Models.Project.ColumnId exposing (ColumnId)
@@ -40,10 +41,10 @@ import PagesComponents.Organization_.Project_.Components.ExportDialog as ExportD
 import PagesComponents.Organization_.Project_.Components.ProjectSaveDialog as ProjectSaveDialog
 import PagesComponents.Organization_.Project_.Components.ProjectSharing as ProjectSharing
 import PagesComponents.Organization_.Project_.Components.SourceUpdateDialog as SourceUpdateDialog
-import PagesComponents.Organization_.Project_.Models.CursorMode exposing (CursorMode)
+import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode exposing (CursorMode)
 import PagesComponents.Organization_.Project_.Models.DragState exposing (DragState)
 import PagesComponents.Organization_.Project_.Models.Erd exposing (Erd)
-import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
+import PagesComponents.Organization_.Project_.Models.ErdConf as ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.ErdRelation exposing (ErdRelation)
 import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.FindPathDialog exposing (FindPathDialog)
@@ -68,8 +69,8 @@ type alias Model =
     , loaded : Bool
     , dirty : Bool
     , erd : Maybe Erd
-    , tableStats : Dict TableId (Dict SourceIdStr TableStats)
-    , columnStats : Dict ColumnId (Dict SourceIdStr ColumnStats)
+    , tableStats : Dict TableId (Dict SourceIdStr (Result String TableStats))
+    , columnStats : Dict ColumnId (Dict SourceIdStr (Result String ColumnStats))
     , hoverTable : Maybe TableId
     , hoverColumn : Maybe ColumnRef
     , cursorMode : CursorMode
@@ -81,6 +82,7 @@ type alias Model =
     , editMemo : Maybe MemoEdit
     , amlSidebar : Maybe AmlSidebar
     , detailsSidebar : Maybe DetailsSidebar.Model
+    , queryPane : Maybe QueryPane.Model
     , virtualRelation : Maybe VirtualRelation
     , findPath : Maybe FindPathDialog
     , schemaAnalysis : Maybe SchemaAnalysisDialog
@@ -102,6 +104,50 @@ type alias Model =
     , confirm : Maybe ConfirmDialog
     , prompt : Maybe PromptDialog
     , openedDialogs : List HtmlId
+    }
+
+
+emptyModel : Model
+emptyModel =
+    { conf = ErdConf.embedDefault
+    , navbar = { mobileMenuOpen = False, search = { text = "", active = 0 } }
+    , erdElem = ErdProps.zero
+    , loaded = False
+    , dirty = False
+    , erd = Nothing
+    , tableStats = Dict.empty
+    , columnStats = Dict.empty
+    , hoverTable = Nothing
+    , hoverColumn = Nothing
+    , cursorMode = CursorMode.Select
+    , selectionBox = Nothing
+    , newLayout = Nothing
+    , editNotes = Nothing
+    , editTags = Nothing
+    , editGroup = Nothing
+    , editMemo = Nothing
+    , amlSidebar = Nothing
+    , detailsSidebar = Nothing
+    , queryPane = Nothing
+    , virtualRelation = Nothing
+    , findPath = Nothing
+    , schemaAnalysis = Nothing
+    , exportDialog = Nothing
+    , sharing = Nothing
+    , save = Nothing
+    , settings = Nothing
+    , sourceUpdate = Nothing
+    , embedSourceParsing = Nothing
+    , help = Nothing
+    , openedDropdown = ""
+    , openedPopover = ""
+    , contextMenu = Nothing
+    , dragging = Nothing
+    , toasts = Toasts.init
+    , modal = Nothing
+    , confirm = Nothing
+    , prompt = Nothing
+    , openedDialogs = []
     }
 
 
@@ -140,7 +186,7 @@ type alias SchemaAnalysisDialog =
 
 
 type alias ProjectSettingsDialog =
-    { id : HtmlId }
+    { id : HtmlId, sourceNameEdit : Maybe SourceId }
 
 
 type alias HelpDialog =
@@ -208,6 +254,7 @@ type Msg
     | MemoMsg MemoMsg
     | AmlSidebarMsg AmlSidebarMsg
     | DetailsSidebarMsg DetailsSidebar.Msg
+    | QueryPaneMsg QueryPane.Msg
     | VirtualRelationMsg VirtualRelationMsg
     | FindPathMsg FindPathMsg
     | SchemaAnalysisMsg SchemaAnalysisMsg
@@ -316,6 +363,8 @@ type ProjectSettingsMsg
     = PSOpen
     | PSClose
     | PSSourceToggle Source
+    | PSSourceNameUpdate SourceId String
+    | PSSourceNameUpdateDone
     | PSSourceDelete Source
     | PSSourceUpdate SourceUpdateDialog.Msg
     | PSSourceSet Source

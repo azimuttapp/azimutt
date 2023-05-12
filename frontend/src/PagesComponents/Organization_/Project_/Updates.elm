@@ -2,6 +2,7 @@ module PagesComponents.Organization_.Project_.Updates exposing (update)
 
 import Components.Molecules.Dropdown as Dropdown
 import Components.Slices.ProPlan as ProPlan
+import Components.Slices.QueryPane as QueryPane
 import Conf
 import Dict
 import Json.Decode as Decode
@@ -19,6 +20,7 @@ import Models.Area as Area
 import Models.Organization exposing (Organization)
 import Models.Position as Position
 import Models.Project as Project
+import Models.Project.ColumnId as ColumnId
 import Models.Project.ColumnPath as ColumnPath
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.Source as Source
@@ -69,7 +71,7 @@ import Random
 import Services.Backend as Backend
 import Services.DatabaseSource as DatabaseSource
 import Services.JsonSource as JsonSource
-import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapConf, mapContextMenuM, mapDetailsSidebarCmd, mapEmbedSourceParsingMCmd, mapErdM, mapErdMCmd, mapExportDialogCmd, mapHoverTable, mapMemos, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapOrganizationM, mapPlan, mapPosition, mapProject, mapPromptM, mapProps, mapSaveCmd, mapSchemaAnalysisM, mapSearch, mapSelected, mapSharingCmd, mapShowHiddenColumns, mapTables, mapTablesCmd, mapToastsCmd, setActive, setCollapsed, setColor, setColors, setConfirm, setContextMenu, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setLast, setModal, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setSelected, setShow, setSize, setText)
+import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapConf, mapContextMenuM, mapDetailsSidebarCmd, mapEmbedSourceParsingMCmd, mapErdM, mapErdMCmd, mapExportDialogCmd, mapHoverTable, mapMemos, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapOrganizationM, mapPlan, mapPosition, mapProject, mapPromptM, mapProps, mapQueryPaneCmd, mapSaveCmd, mapSchemaAnalysisM, mapSearch, mapSelected, mapSharingCmd, mapShowHiddenColumns, mapTables, mapTablesCmd, mapToastsCmd, setActive, setCollapsed, setColor, setColors, setConfirm, setContextMenu, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setLast, setModal, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setSelected, setShow, setSize, setText)
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
 import Time
@@ -236,6 +238,9 @@ update currentLayout zone now urlInfos organizations projects msg model =
 
         DetailsSidebarMsg message ->
             model.erd |> Maybe.mapOrElse (\erd -> model |> mapDetailsSidebarCmd (DetailsSidebar.update Noop NotesMsg TagsMsg erd message)) ( model, Cmd.none )
+
+        QueryPaneMsg message ->
+            model.erd |> Maybe.mapOrElse (\erd -> model |> mapQueryPaneCmd (QueryPane.update QueryPaneMsg erd.sources message)) ( model, Cmd.none )
 
         VirtualRelationMsg message ->
             model |> handleVirtualRelation message
@@ -444,10 +449,22 @@ handleJsMessage now currentLayout msg model =
                 ( model, schema |> DatabaseSource.GotSchema |> EmbedSourceParsingDialog.EmbedDatabaseSource |> EmbedSourceParsingMsg |> T.send )
 
         GotTableStats source stats ->
-            ( { model | tableStats = model.tableStats |> Dict.update stats.id (Maybe.withDefault Dict.empty >> Dict.insert (SourceId.toString source) stats >> Just) }, Cmd.none )
+            ( { model | tableStats = model.tableStats |> Dict.update stats.id (Maybe.withDefault Dict.empty >> Dict.insert (SourceId.toString source) (Ok stats) >> Just) }, Cmd.none )
+
+        GotTableStatsError source table error ->
+            ( { model | tableStats = model.tableStats |> Dict.update table (Maybe.withDefault Dict.empty >> Dict.insert (SourceId.toString source) (Err error) >> Just) }, Cmd.none )
 
         GotColumnStats source stats ->
-            ( { model | columnStats = model.columnStats |> Dict.update stats.id (Maybe.withDefault Dict.empty >> Dict.insert (SourceId.toString source) stats >> Just) }, Cmd.none )
+            ( { model | columnStats = model.columnStats |> Dict.update stats.id (Maybe.withDefault Dict.empty >> Dict.insert (SourceId.toString source) (Ok stats) >> Just) }, Cmd.none )
+
+        GotColumnStatsError source column error ->
+            ( { model | columnStats = model.columnStats |> Dict.update (ColumnId.fromRef column) (Maybe.withDefault Dict.empty >> Dict.insert (SourceId.toString source) (Err error) >> Just) }, Cmd.none )
+
+        GotDatabaseQueryResults results ->
+            ( model, results |> Ok |> QueryPane.GotResults |> QueryPaneMsg |> T.send )
+
+        GotDatabaseQueryError error ->
+            ( model, error |> Err |> QueryPane.GotResults |> QueryPaneMsg |> T.send )
 
         GotHotkey hotkey ->
             handleHotkey now model hotkey

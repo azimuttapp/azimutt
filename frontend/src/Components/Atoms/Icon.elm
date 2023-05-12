@@ -746,17 +746,27 @@ icons =
 
 outline : Icon -> TwClass -> Html msg
 outline icon styles =
-    icons |> Dict.get (icon |> toString |> Maybe.withDefault "") |> Maybe.mapOrElse .outline [] |> (\lines -> viewOutline lines ("h-6 w-6 " ++ styles))
+    icons |> Dict.get (icon |> toString |> Maybe.withDefault "") |> Maybe.mapOrElse .outline [] |> (\lines -> viewOutline lines (styles |> twDefault "h-6 w-6"))
 
 
 outline2x : Icon -> TwClass -> Html msg
 outline2x icon styles =
-    icons |> Dict.get (icon |> toString |> Maybe.withDefault "") |> Maybe.mapOrElse .outline [] |> (\lines -> viewOutline lines ("h-12 w-12 " ++ styles))
+    icons |> Dict.get (icon |> toString |> Maybe.withDefault "") |> Maybe.mapOrElse .outline [] |> (\lines -> viewOutline lines (styles |> twDefault "h-12 w-12"))
 
 
 solid : Icon -> TwClass -> Html msg
 solid icon styles =
-    icons |> Dict.get (icon |> toString |> Maybe.withDefault "") |> Maybe.mapOrElse .solid [] |> (\lines -> viewSolid lines ("h-5 w-5 " ++ styles))
+    icons |> Dict.get (icon |> toString |> Maybe.withDefault "") |> Maybe.mapOrElse .solid [] |> (\lines -> viewSolid lines (styles |> twDefault "h-5 w-5"))
+
+
+twDefault : String -> String -> String
+twDefault default styles =
+    -- quick hack, should be better but it works for now
+    if styles |> String.split " " |> List.memberWith (\v -> v |> String.startsWith "w-") then
+        styles
+
+    else
+        styles ++ " " ++ default
 
 
 

@@ -59,6 +59,14 @@ simple model =
 -- DOCUMENTATION
 
 
+doc : Chapter x
+doc =
+    Chapter.chapter "NotFound"
+        |> Chapter.renderComponentList
+            [ ( "simple", simple docModel )
+            ]
+
+
 docModel : SimpleModel
 docModel =
     { brand =
@@ -71,11 +79,3 @@ docModel =
     , links = [ { url = "#", text = "Go back home" } ]
     , footer = [ { url = "#", text = "Contact Support" }, { url = "#", text = "Status" }, { url = "#", text = "Twitter" } ]
     }
-
-
-doc : Chapter x
-doc =
-    Chapter.chapter "NotFound"
-        |> Chapter.renderComponentList
-            [ ( "simple", simple docModel )
-            ]

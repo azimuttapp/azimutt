@@ -1,9 +1,9 @@
 import {z} from "zod";
 
-const literalSchema = z.union([z.string(), z.number(), z.boolean(), z.null()])
-type Literal = z.infer<typeof literalSchema>
-type Json = Literal | { [key: string]: Json } | Json[]
-export const Json: z.ZodType<Json> = z.lazy(() => z.union([literalSchema, z.array(Json), z.record(Json)]))
+const jsValueLiteral = z.union([z.string(), z.number(), z.boolean(), z.null()])
+type JsValueLiteral = z.infer<typeof jsValueLiteral>
+export type JsValue = JsValueLiteral | { [key: string]: JsValue } | JsValue[]
+export const JsValue: z.ZodType<JsValue> = z.lazy(() => z.union([jsValueLiteral, z.array(JsValue), z.record(JsValue)]))
 
 export type TableId = string
 export const TableId = z.string()
@@ -18,7 +18,7 @@ export const ColumnName = z.string()
 export type ColumnType = string
 export const ColumnType = z.string()
 export type ColumnValue = string | number | boolean | Date | null | unknown
-export const ColumnValue = z.union([z.string(), z.number(), z.boolean(), z.date(), z.null(), Json])
+export const ColumnValue = z.union([z.string(), z.number(), z.boolean(), z.date(), z.null(), JsValue])
 export type ColumnRef = { table: TableId, column: ColumnName }
 export const ColumnRef = z.object({table: TableId, column: ColumnName}).strict()
 

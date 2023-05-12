@@ -14,7 +14,7 @@ export function execQuery(application: string, url: DatabaseUrlParsed, query: st
     return connect(url, async client => {
         // Ugly hack to have a single string query perform any operation on MongoDB 🤮
         // If you see this and have an idea how to improve, please reach out (issue, PR, twitter, email, slack... ^^)
-        const [database, collection, operation, commandStr] = query.split('/').map(v => v.trim())
+        const [database, collection, operation, commandStr, limit] = query.split('/').map(v => v.trim())
         let command
         try {
             command = JSON.parse(commandStr)
@@ -23,12 +23,17 @@ export function execQuery(application: string, url: DatabaseUrlParsed, query: st
         }
         const coll = client.db(database).collection(collection) as any
         if (typeof coll[operation] === 'function') {
-            const rows = await coll[operation](command).toArray()
+            const rows = await limitResults(coll[operation](command), limit).toArray()
             return {database, collection, operation, command, rows}
         } else {
             return Promise.reject(`'${operation}' is not a valid MongoDB operation`)
         }
     })
+}
+
+function limitResults(query: any, limit: string) {
+    const l = parseInt(limit)
+    return l ? query.limit(l) : query
 }
 
 export type MongodbSchema = { collections: MongodbCollection[] }

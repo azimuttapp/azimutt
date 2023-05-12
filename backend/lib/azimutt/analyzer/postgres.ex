@@ -109,7 +109,8 @@ defmodule Azimutt.Analyzer.Postgres do
       database: conf.database,
       username: conf.username,
       password: conf.password,
-      # ssl: true,
+      # `ssl` required to access Heroku db :/
+      ssl: true,
       # no retry on failed connection
       backoff_type: :stop
     )
@@ -608,7 +609,7 @@ defmodule Azimutt.Analyzer.Postgres do
         {col,
          res.rows
          |> Enum.map(fn r -> r |> Enum.at(i) end)
-         |> Enum.filter(fn v -> v != nil end)
+         |> Enum.filter(fn v -> v != nil && v != "" end)
          |> Enum.shuffle()
          |> Enum.at(0, nil)
          |> then(fn v -> if(v == nil, do: sample_value_not_null(pid, table, col), else: v) end)
@@ -620,7 +621,7 @@ defmodule Azimutt.Analyzer.Postgres do
 
   @spec sample_value_not_null(pid(), String.t(), String.t()) :: any()
   defp sample_value_not_null(pid, table, column) do
-    Postgrex.query(pid, "SELECT #{column} FROM #{table} WHERE #{column} IS NOT NULL LIMIT 10", [])
+    Postgrex.query(pid, "SELECT #{column} FROM #{table} WHERE #{column} IS NOT NULL AND #{column} != '' LIMIT 10", [])
     |> Result.map(fn res -> res.rows |> Enum.shuffle() |> Enum.at(0, nil) end)
     |> Result.or_else(fn _ -> nil end)
   end
@@ -645,12 +646,44 @@ defmodule Azimutt.Analyzer.Postgres do
     Resource.use(fn -> connect(conf) end, &disconnect(&1), fn pid ->
       Postgrex.query(pid, query, params)
       |> Result.map_both(&format_error/1, fn res ->
+        columns = build_columns(res.columns)
+
         %QueryResults{
-          columns: res.columns,
-          values: res.rows |> Enum.map(fn row -> row |> Enum.map(&format_value/1) end)
+          query: query,
+          columns: columns,
+          rows:
+            res.rows
+            |> Enum.map(fn row ->
+              Enum.zip([
+                columns |> Enum.map(fn c -> c.name end),
+                row |> Enum.map(&format_value/1)
+              ])
+              |> Map.new()
+            end)
         }
       end)
     end)
+  end
+
+  defp build_columns(column_names) do
+    {_, res} =
+      column_names
+      |> Enum.reduce({%{}, []}, fn col, {taken_names, columns} ->
+        name = unique_name(col, taken_names)
+        {taken_names |> Map.put(name, true), [%QueryResults.Column{name: name} | columns]}
+      end)
+
+    res |> Enum.reverse()
+  end
+
+  defp unique_name(name, current_names, cpt \\ 1) do
+    new_name = if(cpt == 1, do: name, else: "#{name}_#{cpt}")
+
+    if current_names |> Map.get(new_name, false) do
+      unique_name(name, current_names, cpt + 1)
+    else
+      new_name
+    end
   end
 
   # HELPERS

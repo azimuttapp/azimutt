@@ -13,7 +13,7 @@ import Dict exposing (Dict)
 import ElmBook exposing (Msg)
 import ElmBook.Actions as Actions exposing (logAction)
 import ElmBook.Chapter as Chapter exposing (Chapter)
-import Html exposing (Html, a, aside, button, div, form, h2, h3, img, input, label, li, nav, ol, p, span, text, textarea, ul)
+import Html exposing (Html, a, aside, button, div, form, h2, h3, img, input, label, li, nav, ol, p, pre, span, text, textarea, ul)
 import Html.Attributes exposing (action, alt, autofocus, class, disabled, for, href, id, name, placeholder, rows, src, title, type_, value)
 import Html.Events exposing (onBlur, onClick, onInput)
 import Libs.Basics as Basics
@@ -26,6 +26,7 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Notes exposing (Notes)
 import Libs.Models.Tag as Tag exposing (Tag)
 import Libs.Nel as Nel exposing (Nel)
+import Libs.Result as Result
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (TwClass)
 import Libs.Time as Time
@@ -39,6 +40,7 @@ import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath, ColumnPathS
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
 import Models.Project.ColumnStats exposing (ColumnStats, ColumnValueCount)
 import Models.Project.ColumnValue exposing (ColumnValue)
+import Models.Project.Comment as Comment
 import Models.Project.Index exposing (Index)
 import Models.Project.IndexName exposing (IndexName)
 import Models.Project.LayoutName exposing (LayoutName)
@@ -47,7 +49,7 @@ import Models.Project.Origin exposing (Origin)
 import Models.Project.PrimaryKey exposing (PrimaryKey)
 import Models.Project.SchemaName as SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
-import Models.Project.SourceId as SourceId exposing (SourceIdStr)
+import Models.Project.SourceId as SourceId exposing (SourceId, SourceIdStr)
 import Models.Project.SourceKind as SourceKind
 import Models.Project.SourceName exposing (SourceName)
 import Models.Project.TableId as TableId exposing (TableId, TableIdStr)
@@ -65,6 +67,7 @@ import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout expo
 import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.ErdTableProps exposing (ErdTableProps)
+import Services.DatabaseQueries as DatabaseQueries
 import Services.Lenses exposing (setLayouts, setTables)
 import Simple.Fuzzy
 import Time exposing (Posix)
@@ -134,9 +137,9 @@ viewSchema : msg -> (SchemaName -> msg) -> (TableId -> msg) -> (TableId -> msg) 
 viewSchema goToList goToSchema goToTable showTable defaultSchema schema tables =
     div []
         [ viewSchemaHeading goToList goToSchema defaultSchema schema
-        , div [ class "px-3" ]
+        , div [ class "px-3 pb-3" ]
             [ viewTitle (schema.item |> SchemaName.show defaultSchema)
-            , viewProp (tables |> String.pluralizeL "table")
+            , viewProp [ text (tables |> String.pluralizeL "table") ]
                 [ ul [ role "list", class "-mx-3 relative z-0 divide-y divide-gray-200" ]
                     (tables
                         |> List.map
@@ -166,6 +169,7 @@ viewTable :
     -> (ColumnRef -> msg)
     -> (TableId -> msg)
     -> (LayoutName -> msg)
+    -> (SourceId -> String -> msg)
     -> (SourceName -> msg)
     -> SourceName
     -> SchemaName
@@ -175,13 +179,14 @@ viewTable :
     -> TagsModel msg
     -> List LayoutName
     -> List ( Origin, Source )
-    -> Dict SourceIdStr TableStats
+    -> Maybe TableMeta
+    -> Dict SourceIdStr (Result String TableStats)
     -> Html msg
-viewTable goToList goToSchema goToTable goToColumn showTable loadLayout _ _ defaultSchema schema table notes tags inLayouts inSources stats =
+viewTable goToList goToSchema goToTable goToColumn showTable loadLayout query _ _ defaultSchema schema table notes tags inLayouts inSources meta stats =
     let
         columnValues : Dict ColumnPathStr ColumnValue
         columnValues =
-            stats |> Dict.toList |> List.foldl (\( _, s ) acc -> acc |> Dict.union s.sampleValues) Dict.empty
+            stats |> Dict.toList |> List.map (\( _, s ) -> s |> Result.fold (\_ -> Dict.empty) .sampleValues) |> List.foldl Dict.union Dict.empty
 
         outRelations : List ErdColumnRef
         outRelations =
@@ -194,7 +199,7 @@ viewTable goToList goToSchema goToTable goToColumn showTable loadLayout _ _ defa
     div []
         [ viewSchemaHeading goToList goToSchema defaultSchema schema
         , viewTableHeading goToSchema goToTable table
-        , div [ class "px-3" ]
+        , div [ class "px-3 pb-3" ]
             [ div [ class "w-full flex justify-between" ]
                 [ viewTitle table.item.name
                 , table.item.id |> showTableBtn showTable
@@ -202,12 +207,12 @@ viewTable goToList goToSchema goToTable goToColumn showTable loadLayout _ _ defa
             , table.item.comment |> Maybe.mapOrElse viewComment (div [] [])
             , notes |> viewNotes
             , tags |> viewTags
-            , outRelations |> List.nonEmptyMap (\r -> viewProp "References" (r |> List.sortBy .table |> List.map (viewTableRelation goToTable defaultSchema))) (div [] [])
-            , inRelations |> List.nonEmptyMap (\r -> viewProp "Referenced by" (r |> List.sortBy .table |> List.map (viewTableRelation goToTable defaultSchema))) (div [] [])
+            , inLayouts |> List.nonEmptyMap (\l -> viewProp [ text "In layouts" ] (l |> List.sort |> List.map (viewLayout loadLayout))) (div [] [])
+            , inSources |> List.nonEmptyMap (\sources -> viewProp [ text "From sources" ] (sources |> List.sortBy (Tuple.second >> .name) |> List.map (\( o, s ) -> viewSource query table.item.id Nothing (stats |> Dict.get (SourceId.toString s.id) |> Maybe.andThen Result.toMaybe |> Maybe.map .rows) ( o, s )))) (div [] [])
+            , outRelations |> List.nonEmptyMap (\r -> viewProp [ text "References" ] (r |> List.sortBy .table |> List.map (viewTableRelation goToTable defaultSchema))) (div [] [])
+            , inRelations |> List.nonEmptyMap (\r -> viewProp [ text "Referenced by" ] (r |> List.sortBy .table |> List.map (viewTableRelation goToTable defaultSchema))) (div [] [])
             , viewTableConstraints table.item
-            , inLayouts |> List.nonEmptyMap (\l -> viewProp "In layouts" (l |> List.sort |> List.map (viewLayout loadLayout))) (div [] [])
-            , inSources |> List.nonEmptyMap (\sources -> viewProp "From sources" (sources |> List.sortBy (Tuple.second >> .name) |> List.map (\( o, s ) -> viewSource (stats |> Dict.get (SourceId.toString s.id) |> Maybe.map .rows) ( o, s )))) (div [] [])
-            , viewProp (table.item.columns |> String.pluralizeD "column")
+            , viewProp [ text (table.item.columns |> String.pluralizeD "column") ]
                 [ ul [ role "list", class "-mx-3 relative z-0 divide-y divide-gray-200" ]
                     (table.item.columns
                         |> Dict.values
@@ -215,13 +220,17 @@ viewTable goToList goToSchema goToTable goToColumn showTable loadLayout _ _ defa
                         |> List.map
                             (\column ->
                                 li []
-                                    [ div [ class "relative px-6 py-1 flex items-center space-x-3 hover:bg-gray-50 focus-within:ring-2 focus-within:ring-inset focus-within:ring-primary-500" ]
+                                    [ div [ class "relative px-3 py-1 flex items-center space-x-3 hover:bg-gray-50 focus-within:ring-2 focus-within:ring-inset focus-within:ring-primary-500" ]
                                         [ div [ class "flex-1 min-w-0" ]
                                             [ button [ type_ "button", onClick ({ table = table.item.id, column = column.path } |> goToColumn), class "w-full focus:outline-none" ]
                                                 [ span [ class "absolute inset-0", ariaHidden True ] [] -- Extend touch target to entire panel
                                                 , div [ class "flex justify-between" ]
-                                                    [ span [ class "text-sm font-medium text-gray-900" ] [ text (column.path |> ColumnPath.name) ]
-                                                    , columnValues |> ColumnPath.get column.path |> Maybe.mapOrElse (\v -> Badge.basic Tw.gray [ class "ml-3 truncate" ] [ text v ]) (span [] [])
+                                                    [ span [ class "text-sm font-medium text-gray-900 whitespace-nowrap" ]
+                                                        ([ text (column.path |> ColumnPath.name) ]
+                                                            ++ (column.comment |> Maybe.mapOrElse (\c -> [ Icon.outline Icons.comment "w-4 h-4 ml-1 opacity-50" |> Tooltip.tr (Comment.short c.text) ]) [])
+                                                            ++ (meta |> Maybe.andThen (.columns >> Dict.get (column.path |> ColumnPath.toString)) |> Maybe.andThen .notes |> Maybe.mapOrElse (\n -> [ Icon.outline Icons.notes "w-4 h-4 ml-1 opacity-50" |> Tooltip.tr (Comment.short n) ]) [])
+                                                        )
+                                                    , columnValues |> ColumnPath.get column.path |> Maybe.withDefault column.kind |> (\v -> Badge.basic Tw.gray [ class "ml-3 truncate" ] [ text v ])
                                                     ]
                                                 ]
                                             ]
@@ -241,6 +250,7 @@ viewColumn :
     -> (ColumnRef -> msg)
     -> (TableId -> msg)
     -> (LayoutName -> msg)
+    -> (SourceId -> String -> msg)
     -> (SourceName -> msg)
     -> SourceName
     -> SchemaName
@@ -251,14 +261,14 @@ viewColumn :
     -> TagsModel msg
     -> List LayoutName
     -> List ( Origin, Source )
-    -> Dict SourceIdStr ColumnStats
+    -> Dict SourceIdStr (Result String ColumnStats)
     -> Html msg
-viewColumn goToList goToSchema goToTable goToColumn showTable loadLayout _ _ defaultSchema schema table column notes tags inLayouts inSources stats =
+viewColumn goToList goToSchema goToTable goToColumn showTable loadLayout query _ _ defaultSchema schema table column notes tags inLayouts inSources stats =
     div []
         [ viewSchemaHeading goToList goToSchema defaultSchema schema
         , viewTableHeading goToSchema goToTable table
         , viewColumnHeading goToTable goToColumn table.item.id column
-        , div [ class "px-3" ]
+        , div [ class "px-3 pb-3" ]
             [ div [ class "w-full flex justify-between" ]
                 [ viewTitle (String.fromInt column.item.index ++ ". " ++ ColumnPath.show column.item.path)
                 , table.item.id |> showTableBtn showTable
@@ -280,11 +290,11 @@ viewColumn goToList goToSchema goToTable goToColumn showTable loadLayout _ _ def
             , notes |> viewNotes
             , tags |> viewTags
             , viewColumnStats (inSources |> List.map Tuple.second) stats
-            , column.item.outRelations |> List.nonEmptyMap (\r -> viewProp "References" (r |> List.sortBy ErdColumnRef.toId |> List.map (viewColumnRelation goToColumn defaultSchema))) (div [] [])
-            , column.item.inRelations |> List.nonEmptyMap (\r -> viewProp "Referenced by" (r |> List.sortBy ErdColumnRef.toId |> List.map (viewColumnRelation goToColumn defaultSchema))) (div [] [])
+            , inLayouts |> List.nonEmptyMap (\l -> viewProp [ text "In layouts" ] (l |> List.sort |> List.map (viewLayout loadLayout))) (div [] [])
+            , inSources |> List.nonEmptyMap (\s -> viewProp [ text "From sources" ] (s |> List.sortBy (Tuple.second >> .name) |> List.map (viewSource query table.item.id (Just column.item.path) Nothing))) (div [] [])
+            , column.item.outRelations |> List.nonEmptyMap (\r -> viewProp [ text "References" ] (r |> List.sortBy ErdColumnRef.toId |> List.map (viewColumnRelation goToColumn defaultSchema))) (div [] [])
+            , column.item.inRelations |> List.nonEmptyMap (\r -> viewProp [ text "Referenced by" ] (r |> List.sortBy ErdColumnRef.toId |> List.map (viewColumnRelation goToColumn defaultSchema))) (div [] [])
             , viewColumnConstraints table.item column.item
-            , inLayouts |> List.nonEmptyMap (\l -> viewProp "In layouts" (l |> List.sort |> List.map (viewLayout loadLayout))) (div [] [])
-            , inSources |> List.nonEmptyMap (\s -> viewProp "From sources" (s |> List.sortBy (Tuple.second >> .name) |> List.map (viewSource Nothing))) (div [] [])
             ]
         ]
 
@@ -301,6 +311,7 @@ viewColumn2 :
     -> (ColumnRef -> msg)
     -> (TableId -> msg)
     -> (LayoutName -> msg)
+    -> (SourceId -> String -> msg)
     -> (SourceName -> msg)
     -> SourceName
     -> SchemaName
@@ -311,9 +322,9 @@ viewColumn2 :
     -> TagsModel msg
     -> List LayoutName
     -> List ( Origin, Source )
-    -> Dict SourceIdStr ColumnStats
+    -> Dict SourceIdStr (Result String ColumnStats)
     -> Html msg
-viewColumn2 _ _ _ _ _ _ _ _ defaultSchema schema table column _ _ _ _ _ =
+viewColumn2 _ _ _ _ _ _ _ _ _ defaultSchema schema table column _ _ _ _ _ =
     div []
         [ div [ class "lg:flex lg:items-center lg:justify-between" ]
             [ div [ class "flex-1 min-w-0" ]
@@ -448,7 +459,7 @@ viewTitle content =
 viewComment : { a | text : String } -> Html msg
 viewComment comment =
     div [ class "mt-1 flex flex-row" ]
-        [ Icon.outline Icons.comment "w-4 opacity-50 mr-1" |> Tooltip.r "SQL comment"
+        [ Icon.outline Icons.comment "opacity-50 mr-1" |> Tooltip.r "SQL comment"
         , viewMarkdown comment.text
         ]
 
@@ -470,7 +481,7 @@ viewNotes model =
             "edit-notes"
     in
     div [ class "mt-1 flex flex-row" ]
-        [ Icon.outline Icons.notes "w-4 opacity-50 mr-1" |> Tooltip.r "Azimutt notes"
+        [ Icon.outline Icons.notes "opacity-50 mr-1" |> Tooltip.r "Azimutt notes"
         , model.editing
             |> Maybe.map
                 (\content ->
@@ -513,7 +524,7 @@ viewTags model =
             "edit-tags"
     in
     div [ class "mt-1 flex flex-row" ]
-        [ Icon.outline Icons.tags "w-4 opacity-50 mr-1" |> Tooltip.r "Azimutt tags"
+        [ Icon.outline Icons.tags "opacity-50 mr-1" |> Tooltip.r "Azimutt tags"
         , model.editing
             |> Maybe.map
                 (\v ->
@@ -545,7 +556,7 @@ viewMarkdown content =
     Markdown.prose "prose-sm -mt-1" content
 
 
-viewColumnStats : List Source -> Dict SourceIdStr ColumnStats -> Html msg
+viewColumnStats : List Source -> Dict SourceIdStr (Result String ColumnStats) -> Html msg
 viewColumnStats sources stats =
     div []
         (stats
@@ -553,29 +564,34 @@ viewColumnStats sources stats =
             |> List.map (\( sourceId, s ) -> ( sources |> List.findBy (.id >> SourceId.toString) sourceId |> Maybe.mapOrElse .name sourceId, s ))
             |> List.sortBy Tuple.first
             |> List.map
-                (\( sourceName, s ) ->
-                    if s.rows == 0 then
-                        viewProp ("Values in " ++ sourceName ++ " source") [ div [] [ text ("Rows: " ++ String.fromInt s.rows) ] ]
+                (\( sourceName, res ) ->
+                    viewProp [ text "Values in ", span [ class "font-bold" ] [ text sourceName ], text " source:" ]
+                        (res
+                            |> Result.fold (\err -> [ pre [ class "text-red-500" ] [ text err ] ])
+                                (\s ->
+                                    if s.rows == 0 then
+                                        [ div [] [ text ("Rows: " ++ String.fromInt s.rows) ] ]
 
-                    else
-                        viewProp ("Values in " ++ sourceName ++ " source")
-                            [ div [] (text "Samples: " :: (s.commonValues |> List.take 5 |> List.map viewColumnValue))
-                            , div []
-                                ([ span [] [ text ("Rows: " ++ String.fromInt s.rows) ]
-                                 , span [] [ text ("Cardinality: " ++ String.fromInt s.cardinality) ]
-                                 , text ("Nulls: " ++ (s.nulls |> Basics.percent s.rows |> Basics.prettyNumber) ++ "%") |> Tooltip.t (String.fromInt s.nulls ++ " nulls")
-                                 ]
-                                    |> List.intersperse (text ", ")
+                                    else
+                                        [ div [] (text "Samples: " :: (s.commonValues |> List.take 5 |> List.map viewColumnValue))
+                                        , div []
+                                            ([ span [] [ text ("Rows: " ++ String.fromInt s.rows) ]
+                                             , span [] [ text ("Cardinality: " ++ String.fromInt s.cardinality) ]
+                                             , text ("Nulls: " ++ (s.nulls |> Basics.percent s.rows |> Basics.prettyNumber) ++ "%") |> Tooltip.t (String.fromInt s.nulls ++ " nulls")
+                                             ]
+                                                |> List.intersperse (text ", ")
+                                            )
+                                        ]
                                 )
-                            ]
+                        )
                 )
         )
 
 
-viewProp : String -> List (Html msg) -> Html msg
-viewProp label content =
+viewProp : List (Html msg) -> List (Html msg) -> Html msg
+viewProp heading content =
     div [ class "mt-3" ]
-        [ div [ class "text-sm font-medium text-gray-500" ] [ text label ]
+        [ div [ class "text-sm font-medium text-gray-500" ] heading
         , div [ class "mt-1 text-sm text-gray-900" ] content
         ]
 
@@ -596,7 +612,7 @@ viewTableConstraints table =
         div [] []
 
     else
-        viewProp "Constraints"
+        viewProp [ text "Constraints" ]
             (((table.primaryKey |> Maybe.toList |> List.map (\pk -> ( "Primary key", Icons.columns.primaryKey, viewTablePrimaryKey pk )))
                 ++ (table.uniques |> List.sortBy .name |> List.map (\u -> ( "Unique", Icons.columns.unique, viewTableUnique u )))
                 ++ (table.indexes |> List.sortBy .name |> List.map (\i -> ( "Index", Icons.columns.index, viewTableIndex i )))
@@ -640,7 +656,7 @@ viewColumnConstraints table column =
         div [] []
 
     else
-        viewProp "Constraints"
+        viewProp [ text "Constraints" ]
             (((column.isPrimaryKey |> Bool.list ( "Primary key", Icons.columns.primaryKey, viewColumnPrimaryKey table.primaryKey ))
                 ++ (column.uniques |> List.sort |> List.map (\u -> ( "Unique", Icons.columns.unique, viewColumnUnique table.uniques u )))
                 ++ (column.indexes |> List.sort |> List.map (\i -> ( "Index", Icons.columns.index, viewColumnIndex table.indexes i )))
@@ -695,28 +711,34 @@ viewLayout loadLayout layout =
     div [] [ span [ class "underline cursor-pointer", onClick (loadLayout layout) ] [ text layout ] |> Tooltip.r "View layout" ]
 
 
-viewSource : Maybe Int -> ( Origin, Source ) -> Html msg
-viewSource rows ( _, source ) =
+viewSource : (SourceId -> String -> msg) -> TableId -> Maybe ColumnPath -> Maybe Int -> ( Origin, Source ) -> Html msg
+viewSource query table column rows ( _, source ) =
     div [ class "mt-1 flex flex-row" ]
         [ case source.kind of
             SourceKind.DatabaseConnection _ ->
-                Icon.solid Icons.sources.database "w-4 opacity-50 mr-1" |> Tooltip.r "Database source"
+                Icon.solid Icons.sources.database "opacity-50 mr-1" |> Tooltip.r "Database source"
 
             SourceKind.SqlLocalFile _ _ _ ->
-                Icon.solid Icons.sources.sql "w-4 opacity-50 mr-1" |> Tooltip.r "SQL source"
+                Icon.solid Icons.sources.sql "opacity-50 mr-1" |> Tooltip.r "SQL source"
 
             SourceKind.SqlRemoteFile _ _ ->
-                Icon.solid Icons.sources.sql "w-4 opacity-50 mr-1" |> Tooltip.r "SQL source"
+                Icon.solid Icons.sources.sql "opacity-50 mr-1" |> Tooltip.r "SQL source"
 
             SourceKind.JsonLocalFile _ _ _ ->
-                Icon.solid Icons.sources.json "w-4 opacity-50 mr-1" |> Tooltip.r "JSON source"
+                Icon.solid Icons.sources.json "opacity-50 mr-1" |> Tooltip.r "JSON source"
 
             SourceKind.JsonRemoteFile _ _ ->
-                Icon.solid Icons.sources.json "w-4 opacity-50 mr-1" |> Tooltip.r "JSON source"
+                Icon.solid Icons.sources.json "opacity-50 mr-1" |> Tooltip.r "JSON source"
 
             SourceKind.AmlEditor ->
-                Icon.solid Icons.sources.aml "w-4 opacity-50 mr-1" |> Tooltip.r "AML source"
+                Icon.solid Icons.sources.aml "opacity-50 mr-1" |> Tooltip.r "AML source"
         , text (source.name ++ (rows |> Maybe.mapOrElse (\r -> " (" ++ String.fromInt r ++ " rows)") ""))
+        , case source.kind of
+            SourceKind.DatabaseConnection url ->
+                button [ type_ "button", onClick (query source.id (DatabaseQueries.showData column table url)), class "ml-1" ] [ Icon.solid Icon.ArrowCircleRight "opacity-50" ] |> Tooltip.r "Browse data"
+
+            _ ->
+                text ""
         ]
 
 
@@ -1016,6 +1038,7 @@ doc =
                                                     (\columnRef -> s |> docSelectColumn columnRef |> docSetState)
                                                     (\tableId -> logAction ("showTable: " ++ TableId.toString tableId))
                                                     (\layout -> logAction ("loadLayout " ++ layout))
+                                                    (\_ q -> logAction ("query: " ++ q))
                                                     (\source -> docSetState { s | openedCollapse = Bool.cond (s.openedCollapse == "viewTable-" ++ source) "" ("viewTable-" ++ source) })
                                                     (s.openedCollapse |> String.stripLeft "viewTable-")
                                                     s.defaultSchema
@@ -1035,6 +1058,7 @@ doc =
                                                     }
                                                     (docErd.layouts |> Dict.filter (\_ l -> l.tables |> List.memberBy .id table.item.id) |> Dict.keys)
                                                     (table.item.origins |> List.filterZip (\o -> docErd.sources |> List.findBy .id o.id))
+                                                    Nothing
                                                     (docTableStats |> Dict.getOrElse table.item.id Dict.empty)
                                                 ]
                                         )
@@ -1060,6 +1084,7 @@ doc =
                                                     (\columnRef -> s |> docSelectColumn columnRef |> docSetState)
                                                     (\tableId -> logAction ("showTable: " ++ TableId.toString tableId))
                                                     (\layout -> logAction ("loadLayout " ++ layout))
+                                                    (\_ q -> logAction ("query: " ++ q))
                                                     (\source -> docSetState { s | openedCollapse = Bool.cond (s.openedCollapse == "viewColumn-" ++ source) "" ("viewColumn-" ++ source) })
                                                     (s.openedCollapse |> String.stripLeft "viewColumn-")
                                                     s.defaultSchema
@@ -1102,7 +1127,7 @@ docNow =
 
 docErd : Erd
 docErd =
-    """
+    docAmlSource "test" """"
 groups
   id uuid pk
 
@@ -1119,9 +1144,6 @@ credentials
 demo.test
   key varchar
 """
-        |> AmlParser.parse
-        |> AmlAdapter.buildSource (SourceInfo.aml Time.zero SourceId.zero "test") Array.empty
-        |> Tuple3.second
         |> Project.create [] "Project name"
         |> Erd.create
         |> setLayouts
@@ -1132,21 +1154,39 @@ demo.test
             )
 
 
+docAmlSource : String -> String -> Source
+docAmlSource name aml =
+    aml
+        |> AmlParser.parse
+        |> AmlAdapter.buildSource (SourceInfo.aml Time.zero SourceId.zero name) Array.empty
+        |> Tuple3.second
+
+
 docSourceId : SourceIdStr
 docSourceId =
     docErd.sources |> List.head |> Maybe.mapOrElse (.id >> SourceId.toString) ""
 
 
-docColumnStats : Dict ColumnId (Dict SourceIdStr ColumnStats)
-docColumnStats =
+docColumnStatsSrc : Dict ColumnId (Dict SourceIdStr ColumnStats)
+docColumnStatsSrc =
     [ ( docSourceId, ColumnStats ( ( "", "users" ), "id" ) "uuid" 10 0 10 [ { value = "a53cbae3-8e35-46cd-b476-ebaa2a66a278", count = 1 } ] ) ]
         |> List.groupBy (\( _, s ) -> s.id)
         |> Dict.map (\_ -> Dict.fromList)
 
 
-docTableStats : Dict TableId (Dict SourceIdStr TableStats)
+docTableStatsSrc : Dict TableId (Dict SourceIdStr TableStats)
+docTableStatsSrc =
+    docColumnStatsSrc |> Dict.toList |> List.map (\( ( table, col ), dict ) -> ( table, dict |> Dict.map (\_ s -> { id = table, rows = s.rows, sampleValues = s.commonValues |> List.map (\v -> ( col, v.value )) |> Dict.fromList }) )) |> Dict.fromList
+
+
+docColumnStats : Dict ColumnId (Dict SourceIdStr (Result String ColumnStats))
+docColumnStats =
+    docColumnStatsSrc |> Dict.map (\_ -> Dict.map (\_ -> Ok))
+
+
+docTableStats : Dict TableId (Dict SourceIdStr (Result String TableStats))
 docTableStats =
-    docColumnStats |> Dict.toList |> List.map (\( ( table, col ), dict ) -> ( table, dict |> Dict.map (\_ s -> { id = table, rows = s.rows, sampleValues = s.commonValues |> List.map (\v -> ( col, v.value )) |> Dict.fromList }) )) |> Dict.fromList
+    docTableStatsSrc |> Dict.map (\_ -> Dict.map (\_ -> Ok))
 
 
 docBuildLayout : List ( TableIdStr, List ColumnPathStr ) -> ErdLayout

@@ -14,7 +14,7 @@ import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirty, setDirtyCmd)
 import Ports
-import Services.Lenses exposing (mapCollapseTableColumns, mapColumnBasicTypes, mapEnabled, mapErdM, mapHiddenColumns, mapProps, mapRelations, mapRemoveViews, mapRemovedSchemas, mapSourceUpdateCmd, setColumnOrder, setDefaultSchema, setList, setMax, setRelationStyle, setRemovedTables, setSettings)
+import Services.Lenses exposing (mapCollapseTableColumns, mapColumnBasicTypes, mapEnabled, mapErdM, mapHiddenColumns, mapProps, mapRelations, mapRemoveViews, mapRemovedSchemas, mapSettingsM, mapSourceUpdateCmd, setColumnOrder, setDefaultSchema, setList, setMax, setName, setRelationStyle, setRemovedTables, setSettings)
 import Services.Toasts as Toasts
 import Time
 import Track
@@ -34,7 +34,7 @@ handleProjectSettings : Time.Posix -> ProjectSettingsMsg -> Model x -> ( Model x
 handleProjectSettings now msg model =
     case msg of
         PSOpen ->
-            ( model |> setSettings (Just { id = Conf.ids.settingsDialog }), Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.settingsDialog) ] )
+            ( model |> setSettings (Just { id = Conf.ids.settingsDialog, sourceNameEdit = Nothing }), Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.settingsDialog) ] )
 
         PSClose ->
             ( model |> setSettings Nothing, Cmd.none )
@@ -51,6 +51,12 @@ handleProjectSettings now msg model =
                         )
                    )
                 |> setDirtyCmd
+
+        PSSourceNameUpdate source name ->
+            ( model |> mapSettingsM (\s -> { s | sourceNameEdit = Just source }) |> mapErdM (Erd.mapSource source (setName name)), Cmd.none )
+
+        PSSourceNameUpdateDone ->
+            ( model |> mapSettingsM (\s -> { s | sourceNameEdit = Nothing }), Cmd.none )
 
         PSSourceDelete source ->
             ( model |> mapErdM (Erd.mapSources (List.filter (\s -> s.id /= source.id))), Cmd.batch [ "Source " ++ source.name ++ " has been deleted from your project." |> Toasts.info |> Toast |> T.send, Track.sourceDeleted model.erd source ] ) |> setDirtyCmd

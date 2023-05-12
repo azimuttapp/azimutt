@@ -2,6 +2,7 @@ module PagesComponents.Organization_.Project_.Views exposing (title, view)
 
 import Components.Atoms.Loader as Loader
 import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
+import Components.Slices.QueryPane as QueryPane
 import Conf
 import Dict
 import Html exposing (Html, a, aside, br, button, div, footer, h1, img, main_, nav, p, section, span, text)
@@ -35,7 +36,7 @@ import PagesComponents.Organization_.Project_.Models exposing (ContextMenu, Layo
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
-import PagesComponents.Organization_.Project_.Views.Commands exposing (viewCommands)
+import PagesComponents.Organization_.Project_.Views.Commands as Commands exposing (viewCommands)
 import PagesComponents.Organization_.Project_.Views.Erd as Erd exposing (viewErd)
 import PagesComponents.Organization_.Project_.Views.Modals.EditNotes exposing (viewEditNotes)
 import PagesComponents.Organization_.Project_.Views.Modals.FindPath exposing (viewFindPath)
@@ -87,8 +88,8 @@ viewApp currentUrl urlOrganization shared model htmlId erd =
           else
             div [] []
         , main_
-            [ class "flex-1 flex overflow-hidden"
-            , style "height" (B.cond model.conf.showNavbar ("calc(100% - " ++ (model.erdElem.position |> Position.extractViewport |> .top |> String.fromFloat) ++ "px)") "100%")
+            [ class "flex-1 flex overflow-hidden transition-[height] ease-in-out duration-200"
+            , style "height" ("calc(" ++ calcErdHeight model ++ ")")
             ]
             [ -- model.erdElem |> Area.debugViewport "erdElem" "border-red-500",
               section [ class "relative min-w-0 flex-1 h-full flex flex-col overflow-y-auto" ]
@@ -99,7 +100,18 @@ viewApp currentUrl urlOrganization shared model htmlId erd =
                         layout =
                             erd |> Erd.currentLayout
                     in
-                    Lazy.lazy8 viewCommands model.conf model.cursorMode layout.canvas.zoom (htmlId ++ "-commands") (layout.tables |> List.isEmpty |> not) (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-commands")) (model.amlSidebar /= Nothing) (model.detailsSidebar /= Nothing)
+                    Lazy.lazy3 viewCommands
+                        model.conf
+                        layout.canvas.zoom
+                        (Commands.argsToString
+                            model.cursorMode
+                            (htmlId ++ "-commands")
+                            (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-commands"))
+                            (layout.tables |> List.isEmpty |> not)
+                            (model.amlSidebar /= Nothing)
+                            (model.detailsSidebar /= Nothing)
+                            (model.queryPane /= Nothing)
+                        )
 
                   else
                     div [] []
@@ -112,6 +124,7 @@ viewApp currentUrl urlOrganization shared model htmlId erd =
             , viewLeftSidebar model
             , viewRightSidebar model
             ]
+        , viewBottomSheet model
         ]
 
 
@@ -120,7 +133,7 @@ viewLeftSidebar model =
     let
         content : Maybe (Html Msg)
         content =
-            model.detailsSidebar |> Maybe.map2 (DetailsSidebar.view DetailsSidebarMsg (\id -> ShowTable id Nothing) ShowColumn HideColumn (LLoad >> LayoutMsg) model.tableStats model.columnStats) model.erd
+            model.detailsSidebar |> Maybe.map2 (DetailsSidebar.view DetailsSidebarMsg (\id -> ShowTable id Nothing) ShowColumn HideColumn (LLoad >> LayoutMsg) (\source q -> QueryPane.Open (Just source) (Just q) |> QueryPaneMsg) model.tableStats model.columnStats) model.erd
     in
     aside [ css [ "block flex-shrink-0 order-first" ] ]
         [ div [ css [ B.cond (content == Nothing) "-ml-112" "", "w-112 transition-[margin] ease-in-out duration-200 h-full relative flex flex-col border-r border-gray-200 bg-white overflow-y-auto" ] ]
@@ -138,6 +151,20 @@ viewRightSidebar model =
     in
     aside [ css [ "block flex-shrink-0 order-last" ] ]
         [ div [ css [ B.cond (content == Nothing) "-mr-112" "", "w-112 transition-[margin] ease-in-out duration-200 h-full relative flex flex-col border-l border-gray-200 bg-white overflow-y-auto" ] ]
+            [ content |> Maybe.withDefault (div [] [])
+            ]
+        ]
+
+
+viewBottomSheet : Model -> Html Msg
+viewBottomSheet model =
+    let
+        content : Maybe (Html Msg)
+        content =
+            model.queryPane |> Maybe.map2 (\erd -> QueryPane.view QueryPaneMsg erd.sources) model.erd
+    in
+    aside [ class "block flex-shrink-0" ]
+        [ div [ style "height" ("calc(" ++ calcBottomSheetHeight model ++ ")"), css [ "relative border-t border-gray-200 bg-white overflow-y-auto" ] ]
             [ content |> Maybe.withDefault (div [] [])
             ]
         ]
@@ -246,3 +273,23 @@ viewNotFound currentUrl urlInfos user projects conf =
                 )
             ]
         ]
+
+
+calcNavbarHeight : Model -> String
+calcNavbarHeight model =
+    if model.conf.showNavbar then
+        (model.erdElem.position |> Position.extractViewport |> .top |> String.fromFloat) ++ "px"
+
+    else
+        "0px"
+
+
+calcBottomSheetHeight : Model -> String
+calcBottomSheetHeight model =
+    (model.queryPane |> Maybe.map .sizeFull)
+        |> Maybe.mapOrElse (\full -> B.cond full ("100vh - " ++ calcNavbarHeight model) "400px") "0px"
+
+
+calcErdHeight : Model -> String
+calcErdHeight model =
+    "100vh - (" ++ calcNavbarHeight model ++ ") - (" ++ calcBottomSheetHeight model ++ ")"

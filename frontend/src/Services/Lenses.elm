@@ -62,6 +62,7 @@ module Services.Lenses exposing
     , mapProjectSourceMCmd
     , mapPromptM
     , mapProps
+    , mapQueryPaneCmd
     , mapRelatedTables
     , mapRelations
     , mapRemoveViews
@@ -73,6 +74,7 @@ module Services.Lenses exposing
     , mapSearch
     , mapSelected
     , mapSettings
+    , mapSettingsM
     , mapSharingCmd
     , mapShow
     , mapShowHiddenColumns
@@ -112,6 +114,7 @@ module Services.Lenses exposing
     , setDatabaseSource
     , setDefaultSchema
     , setDetailsSidebar
+    , setDisplay
     , setDragging
     , setEditGroup
     , setEditMemo
@@ -142,6 +145,7 @@ module Services.Lenses exposing
     , setLast
     , setLayouts
     , setList
+    , setLoading
     , setMax
     , setMemos
     , setMetadata
@@ -167,6 +171,7 @@ module Services.Lenses exposing
     , setProjectSource
     , setPrompt
     , setProps
+    , setQueryPane
     , setRelatedTables
     , setRelationStyle
     , setRelations
@@ -174,6 +179,7 @@ module Services.Lenses exposing
     , setRemovedSchemas
     , setRemovedTables
     , setResult
+    , setResults
     , setSampleSource
     , setSave
     , setSchemaAnalysis
@@ -187,6 +193,7 @@ module Services.Lenses exposing
     , setShowSettings
     , setShown
     , setSize
+    , setSource
     , setSourceUpdate
     , setSqlSource
     , setTable
@@ -431,6 +438,11 @@ setDetailsSidebar =
 mapDetailsSidebarCmd : (v -> ( v, Cmd msg )) -> { item | detailsSidebar : v } -> ( { item | detailsSidebar : v }, Cmd msg )
 mapDetailsSidebarCmd =
     mapCmd_ .detailsSidebar setDetailsSidebar
+
+
+setDisplay : v -> { item | display : v } -> { item | display : v }
+setDisplay =
+    set_ .display (\value item -> { item | display = value })
 
 
 setDragging : v -> { item | dragging : v } -> { item | dragging : v }
@@ -688,6 +700,11 @@ setList =
     set_ .list (\value item -> { item | list = value })
 
 
+setLoading : v -> { item | loading : v } -> { item | loading : v }
+setLoading =
+    set_ .loading (\value item -> { item | loading = value })
+
+
 setMax : v -> { item | max : v } -> { item | max : v }
 setMax =
     set_ .max (\value item -> { item | max = value })
@@ -913,6 +930,16 @@ mapProps =
     map_ .props setProps
 
 
+setQueryPane : v -> { item | queryPane : v } -> { item | queryPane : v }
+setQueryPane =
+    set_ .queryPane (\value item -> { item | queryPane = value })
+
+
+mapQueryPaneCmd : (v -> ( v, Cmd msg )) -> { item | queryPane : v } -> ( { item | queryPane : v }, Cmd msg )
+mapQueryPaneCmd =
+    mapCmd_ .queryPane setQueryPane
+
+
 setRelatedTables : v -> { item | relatedTables : v } -> { item | relatedTables : v }
 setRelatedTables =
     set_ .relatedTables (\value item -> { item | relatedTables = value })
@@ -973,6 +1000,11 @@ mapResult =
     map_ .result setResult
 
 
+setResults : v -> { item | results : v } -> { item | results : v }
+setResults =
+    set_ .results (\value item -> { item | results = value })
+
+
 setSampleSource : v -> { item | sampleSource : v } -> { item | sampleSource : v }
 setSampleSource =
     set_ .sampleSource (\value item -> { item | sampleSource = value })
@@ -1021,6 +1053,11 @@ setSettings =
 mapSettings : (v -> v) -> { item | settings : v } -> { item | settings : v }
 mapSettings =
     map_ .settings setSettings
+
+
+mapSettingsM : (v -> v) -> { item | settings : Maybe v } -> { item | settings : Maybe v }
+mapSettingsM =
+    mapM_ .settings setSettings
 
 
 setSelected : v -> { item | selected : v } -> { item | selected : v }
@@ -1086,6 +1123,11 @@ mapShowSettings =
 setSize : v -> { item | size : v } -> { item | size : v }
 setSize =
     set_ .size (\value item -> { item | size = value })
+
+
+setSource : v -> { item | source : v } -> { item | source : v }
+setSource =
+    set_ .source (\value item -> { item | source = value })
 
 
 setSourceUpdate : v -> { item | sourceUpdate : v } -> { item | sourceUpdate : v }

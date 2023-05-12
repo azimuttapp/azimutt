@@ -1,4 +1,12 @@
-import {AzimuttSchema, ColumnRef, ColumnStats, DatabaseUrl, TableId, TableStats} from "@azimutt/database-types";
+import {
+    AzimuttSchema,
+    ColumnRef,
+    ColumnStats,
+    DatabaseUrl,
+    DatabaseQueryResults,
+    TableId,
+    TableStats
+} from "@azimutt/database-types";
 import {Logger} from "./logger";
 import {
     buildProjectJson,
@@ -138,6 +146,11 @@ export class Backend {
         this.logger.debug(`backend.getColumnStats(${database}, ${JSON.stringify(column)})`)
         const {schema, table} = parseTableId(column.table)
         return Http.postJson(`/api/v1/analyzer/stats`, {url: database, schema, table, column: column.column}, ColumnStats, 'ColumnStats')
+    }
+
+    runDatabaseQuery = async (database: DatabaseUrl, query: string): Promise<DatabaseQueryResults> => {
+        this.logger.debug(`backend.runQuery(${database}, ${query})`)
+        return Http.postJson(`/api/v1/analyzer/query`, {url: database, query}, DatabaseQueryResults, 'DatabaseQueryResults')
     }
 
     trackEvent = (event: TrackEvent): void => {

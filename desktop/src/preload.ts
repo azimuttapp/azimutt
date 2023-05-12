@@ -13,7 +13,7 @@ contextBridge.exposeInMainWorld('desktop', {
         electron: () => process.versions.electron
     },
     ping: () => ipcRenderer.invoke('ping'),
-    queryDatabase: (url: DatabaseUrl, query: string) => ipcRenderer.invoke('queryDatabase', url, query),
+    runDatabaseQuery: (url: DatabaseUrl, query: string) => ipcRenderer.invoke('runDatabaseQuery', url, query),
     getDatabaseSchema: (url: DatabaseUrl) => ipcRenderer.invoke('getDatabaseSchema', url),
     getTableStats: (url: DatabaseUrl, table: TableId) => ipcRenderer.invoke('getTableStats', url, table),
     getColumnStats: (url: DatabaseUrl, column: ColumnRef) => ipcRenderer.invoke('getColumnStats', url, column)

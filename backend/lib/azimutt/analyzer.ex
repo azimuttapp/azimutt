@@ -60,19 +60,15 @@ defmodule Azimutt.Analyzer do
   @doc """
   Run a specific query on the required database.
   ## Examples
-      iex> Analyzer.run_query("postgres://user:pass@localhost:5432/my_db", "SELECT * FROM users")
+      iex> Analyzer.run_query("postgres://user:pass@localhost:5432/my_db", "SELECT * FROM users;")
       {:ok, %QueryResults{}}
   """
   @spec run_query(String.t(), String.t()) :: Result.s(QueryResults.t())
   def run_query(url, query) do
-    if String.starts_with?(query, "SELECT") && !String.contains?(query, ";") do
-      Postgres.run_query(url, query)
-      |> Result.flat_map_error(fn _ -> Mysql.run_query(url, query) end)
-      |> Result.or_else({:error, "Database url not recognized"})
-      |> Result.map_error(&format_error/1)
-    else
-      {:error, "Query must be a single SELECT."}
-    end
+    Postgres.run_query(url, query)
+    |> Result.flat_map_error(fn _ -> Mysql.run_query(url, query) end)
+    |> Result.or_else({:error, "Database url not recognized"})
+    |> Result.map_error(&format_error/1)
   end
 
   defp format_error(err) do

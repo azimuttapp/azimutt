@@ -69,8 +69,8 @@ type alias Heading item props =
 
 
 type Msg
-    = Close
-    | Toggle
+    = Toggle
+    | Close
     | SearchUpdate String
     | ShowList
     | ShowSchema SchemaName
@@ -101,11 +101,11 @@ init v =
 update : (String -> msg) -> (NotesMsg -> msg) -> (TagsMsg -> msg) -> Erd -> Msg -> Maybe Model -> ( Maybe Model, Cmd msg )
 update noop notesMsg tagsMsg erd msg model =
     case msg of
-        Close ->
-            ( Nothing, Cmd.none )
-
         Toggle ->
             ( model |> Maybe.mapOrElse (\_ -> Nothing) (listView |> init |> Just), Cmd.none )
+
+        Close ->
+            ( Nothing, Cmd.none )
 
         SearchUpdate search ->
             ( model |> Maybe.map (setSearch search), Cmd.none )
@@ -117,10 +117,10 @@ update noop notesMsg tagsMsg erd msg model =
             ( model |> setViewM (schemaView erd schema), Cmd.none )
 
         ShowTable table ->
-            ( model |> setViewM (tableView erd table), Cmd.batch (erd.sources |> filterDatabaseSources |> List.map (Ports.getTableStats table)) )
+            ( model |> setViewM (tableView erd table), Cmd.batch (erd.sources |> filterTableDbSources table |> List.map (Ports.getTableStats table)) )
 
         ShowColumn column ->
-            ( model |> setViewM (columnView erd column), Cmd.batch (erd.sources |> filterDatabaseSources |> List.map (Ports.getColumnStats column)) )
+            ( model |> setViewM (columnView erd column), Cmd.batch (erd.sources |> filterColumnDbSources column |> List.map (Ports.getColumnStats column)) )
 
         ToggleCollapse id ->
             ( model |> Maybe.map (\m -> { m | openedCollapse = Bool.cond (m.openedCollapse == id) "" id }), Cmd.none )
@@ -197,17 +197,22 @@ columnView erd ref =
             listView
 
 
-filterDatabaseSources : List Source -> List ( SourceId, DatabaseUrl )
-filterDatabaseSources sources =
-    sources |> List.filterMap (\s -> s |> Source.databaseUrl |> Maybe.map (\url -> ( s.id, url )))
+filterTableDbSources : TableId -> List Source -> List ( SourceId, DatabaseUrl )
+filterTableDbSources table sources =
+    sources |> List.filterMap (\s -> s |> Source.databaseUrl |> Maybe.filter (\_ -> s |> Source.getTable table |> Maybe.isJust) |> Maybe.map (\url -> ( s.id, url )))
+
+
+filterColumnDbSources : ColumnRef -> List Source -> List ( SourceId, DatabaseUrl )
+filterColumnDbSources column sources =
+    sources |> List.filterMap (\s -> s |> Source.databaseUrl |> Maybe.filter (\_ -> s |> Source.getColumn column |> Maybe.isJust) |> Maybe.map (\url -> ( s.id, url )))
 
 
 
 -- VIEW
 
 
-view : (Msg -> msg) -> (TableId -> msg) -> (ColumnRef -> msg) -> (ColumnRef -> msg) -> (LayoutName -> msg) -> Dict TableId (Dict SourceIdStr TableStats) -> Dict ColumnId (Dict SourceIdStr ColumnStats) -> Erd -> Model -> Html msg
-view wrap showTable showColumn hideColumn loadLayout tableStats columnStats erd model =
+view : (Msg -> msg) -> (TableId -> msg) -> (ColumnRef -> msg) -> (ColumnRef -> msg) -> (LayoutName -> msg) -> (SourceId -> String -> msg) -> Dict TableId (Dict SourceIdStr (Result String TableStats)) -> Dict ColumnId (Dict SourceIdStr (Result String ColumnStats)) -> Erd -> Model -> Html msg
+view wrap showTable showColumn hideColumn loadLayout query tableStats columnStats erd model =
     let
         heading : List (Html msg)
         heading =
@@ -252,10 +257,10 @@ view wrap showTable showColumn hideColumn loadLayout tableStats columnStats erd 
                         viewSchema wrap showTable erd v
 
                     TableView v ->
-                        viewTable wrap showTable loadLayout erd model.editNotes model.editTags model.openedCollapse tableStats v
+                        viewTable wrap showTable loadLayout query erd model.editNotes model.editTags model.openedCollapse tableStats v
 
                     ColumnView v ->
-                        viewColumn wrap showTable showColumn hideColumn loadLayout erd model.editNotes model.editTags model.openedCollapse columnStats v
+                        viewColumn wrap showTable showColumn hideColumn loadLayout query erd model.editNotes model.editTags model.openedCollapse columnStats v
                 ]
             ]
         ]
@@ -271,8 +276,8 @@ viewSchema wrap showTable erd model =
     Details.viewSchema (ShowList |> wrap) (ShowSchema >> wrap) (ShowTable >> wrap) showTable erd.settings.defaultSchema model.schema model.tables
 
 
-viewTable : (Msg -> msg) -> (TableId -> msg) -> (LayoutName -> msg) -> Erd -> Maybe Notes -> Maybe String -> HtmlId -> Dict TableId (Dict SourceIdStr TableStats) -> TableData -> Html msg
-viewTable wrap showTable loadLayout erd editNotes editTags openedCollapse stats model =
+viewTable : (Msg -> msg) -> (TableId -> msg) -> (LayoutName -> msg) -> (SourceId -> String -> msg) -> Erd -> Maybe Notes -> Maybe String -> HtmlId -> Dict TableId (Dict SourceIdStr (Result String TableStats)) -> TableData -> Html msg
+viewTable wrap showTable loadLayout query erd editNotes editTags openedCollapse stats model =
     let
         initialNotes : Notes
         initialNotes =
@@ -308,15 +313,15 @@ viewTable wrap showTable loadLayout erd editNotes editTags openedCollapse stats 
         inSources =
             model.table.item.origins |> List.filterZip (\o -> erd.sources |> List.findBy .id o.id)
 
-        tableStats : Dict SourceIdStr TableStats
+        tableStats : Dict SourceIdStr (Result String TableStats)
         tableStats =
             stats |> Dict.getOrElse model.id Dict.empty
     in
-    Details.viewTable (ShowList |> wrap) (ShowSchema >> wrap) (ShowTable >> wrap) (ShowColumn >> wrap) showTable loadLayout (ToggleCollapse >> wrap) openedCollapse erd.settings.defaultSchema model.schema model.table notesModel tagsModel inLayouts inSources tableStats
+    Details.viewTable (ShowList |> wrap) (ShowSchema >> wrap) (ShowTable >> wrap) (ShowColumn >> wrap) showTable loadLayout query (ToggleCollapse >> wrap) openedCollapse erd.settings.defaultSchema model.schema model.table notesModel tagsModel inLayouts inSources (erd.metadata |> Dict.get model.table.item.id) tableStats
 
 
-viewColumn : (Msg -> msg) -> (TableId -> msg) -> (ColumnRef -> msg) -> (ColumnRef -> msg) -> (LayoutName -> msg) -> Erd -> Maybe Notes -> Maybe String -> HtmlId -> Dict ColumnId (Dict SourceIdStr ColumnStats) -> ColumnData -> Html msg
-viewColumn wrap showTable _ _ loadLayout erd editNotes editTags openedCollapse stats model =
+viewColumn : (Msg -> msg) -> (TableId -> msg) -> (ColumnRef -> msg) -> (ColumnRef -> msg) -> (LayoutName -> msg) -> (SourceId -> String -> msg) -> Erd -> Maybe Notes -> Maybe String -> HtmlId -> Dict ColumnId (Dict SourceIdStr (Result String ColumnStats)) -> ColumnData -> Html msg
+viewColumn wrap showTable _ _ loadLayout query erd editNotes editTags openedCollapse stats model =
     let
         initialNotes : Notes
         initialNotes =
@@ -352,11 +357,11 @@ viewColumn wrap showTable _ _ loadLayout erd editNotes editTags openedCollapse s
         inSources =
             model.column.item.origins |> List.filterZip (\o -> erd.sources |> List.findBy .id o.id)
 
-        columnStats : Dict SourceIdStr ColumnStats
+        columnStats : Dict SourceIdStr (Result String ColumnStats)
         columnStats =
             stats |> Dict.getOrElse (ColumnId.fromRef model.id) Dict.empty
     in
-    Details.viewColumn (ShowList |> wrap) (ShowSchema >> wrap) (ShowTable >> wrap) (ShowColumn >> wrap) showTable loadLayout (ToggleCollapse >> wrap) openedCollapse erd.settings.defaultSchema model.schema model.table model.column notesModel tagsModel inLayouts inSources columnStats
+    Details.viewColumn (ShowList |> wrap) (ShowSchema >> wrap) (ShowTable >> wrap) (ShowColumn >> wrap) showTable loadLayout query (ToggleCollapse >> wrap) openedCollapse erd.settings.defaultSchema model.schema model.table model.column notesModel tagsModel inLayouts inSources columnStats
 
 
 

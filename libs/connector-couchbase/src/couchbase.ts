@@ -44,9 +44,9 @@ export async function getSchema(application: string, url: DatabaseUrlParsed, buc
 
 export function formatSchema(schema: CouchbaseSchema, inferRelations: boolean): AzimuttSchema {
     // FIXME: handle inferRelations
-    // /!\ we choose to ignore the `bucket` as it's "similar" to the database level we don't handle in AzimuttSchema
+    // /!\ we group `bucket` with `scope` as it's "similar" to the database level, grouping database & schema inside schema
     const tables = schema.collections.map(c => ({
-        schema: c.scope,
+        schema: `${c.bucket}__${c.scope}`,
         table: c.collection,
         columns: schemaToColumns(c.schema, 0)
     }))

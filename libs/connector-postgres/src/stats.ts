@@ -58,7 +58,7 @@ async function sampleValues(client: Client, sqlTable: string): Promise<TableSamp
 
 async function sampleValue(client: Client, sqlTable: string, column: ColumnName): Promise<ColumnValue> {
     // select several raws to and then shuffle results to avoid showing samples from the same raw
-    const query = `SELECT ${column} as value FROM ${sqlTable} WHERE ${column} IS NOT NULL LIMIT 10`
+    const query = `SELECT ${column} as value FROM ${sqlTable} WHERE ${column} IS NOT NULL AND ${column} != '' LIMIT 10`
     const res = await client.query<{ value: any }>(query)
     return res.rows.length > 0 ? shuffle(res.rows)[0].value : null
 }

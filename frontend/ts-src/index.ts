@@ -16,6 +16,7 @@ import {
     ListenKeys,
     ObserveSizes,
     ProjectDirty,
+    RunDatabaseQuery,
     SetMeta,
     Track,
     UpdateProject,
@@ -89,6 +90,7 @@ app.on('GetLocalFile', getLocalFile)
 app.on('GetDatabaseSchema', getDatabaseSchema)
 app.on('GetTableStats', getTableStats)
 app.on('GetColumnStats', getColumnStats)
+app.on('RunDatabaseQuery', runDatabaseQuery)
 app.on('ObserveSizes', observeSizes)
 app.on('ListenKeys', listenHotkeys)
 app.on('Confetti', msg => Utils.launchConfetti(msg.id))
@@ -243,7 +245,7 @@ function deleteProject(msg: DeleteProject): void {
 // prompt users to save before leave project when not fully saved
 window.isDirty = false
 window.addEventListener('beforeunload', function (e: BeforeUnloadEvent) {
-    if (window.isDirty) {
+    if (window.isDirty && window.env !== 'dev') {
         const message = 'Your project is not saved, want to leave?'
         e.returnValue = message // Gecko, Trident, Chrome 34+
         return message          // Gecko, WebKit, Chrome <34
@@ -282,7 +284,7 @@ function getTableStats(msg: GetTableStats) {
             backend.getTableStats(msg.database, msg.table)
         ).then(
             stats => app.gotTableStats(msg.source, tableStatsCache[key] = stats),
-            err => err.statusCode !== 404 && reportError(`Can't get stats for ${msg.table}`, err)
+            err => app.gotTableStatsError(msg.source, msg.table, errorToString(err))
         )
     }
 }
@@ -299,9 +301,19 @@ function getColumnStats(msg: GetColumnStats) {
             backend.getColumnStats(msg.database, msg.column)
         ).then(
             stats => app.gotColumnStats(msg.source, columnStatsCache[key] = stats),
-            err => err.statusCode !== 404 && reportError(`Can't get stats for ${msg.column}`, err)
+            err => app.gotColumnStatsError(msg.source, msg.column, errorToString(err))
         )
     }
+}
+
+function runDatabaseQuery(msg: RunDatabaseQuery) {
+    (window.desktop ?
+        window.desktop.runDatabaseQuery(msg.database, msg.query) :
+        backend.runDatabaseQuery(msg.database, msg.query)
+    ).then(
+        results => app.gotDatabaseQueryResults(results),
+        err => app.gotDatabaseQueryError(errorToString(err))
+    )
 }
 
 const resizeObserver = new ResizeObserver(entries => {

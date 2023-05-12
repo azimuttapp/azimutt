@@ -11,7 +11,6 @@ import Libs.Maybe as Maybe
 import Libs.Models.DatabaseUrl exposing (DatabaseUrl)
 import Libs.Models.FileUrl exposing (FileUrl)
 import Libs.Task as T
-import Models.ErdProps as ErdProps
 import Models.OrganizationId as OrganizationId
 import Models.Project as Project
 import Models.Project.LayoutName exposing (LayoutName)
@@ -20,8 +19,7 @@ import Models.ProjectTokenId exposing (ProjectTokenId)
 import Models.UrlInfos exposing (UrlInfos)
 import Page
 import PagesComponents.Organization_.Project_.Components.EmbedSourceParsingDialog as EmbedSourceParsingDialog
-import PagesComponents.Organization_.Project_.Models as Models exposing (Msg(..))
-import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode
+import PagesComponents.Organization_.Project_.Models as Models exposing (Msg(..), emptyModel)
 import PagesComponents.Organization_.Project_.Models.EmbedKind as EmbedKind
 import PagesComponents.Organization_.Project_.Models.EmbedMode as EmbedMode exposing (EmbedModeId)
 import PagesComponents.Organization_.Project_.Models.ErdConf as ErdConf
@@ -33,7 +31,6 @@ import Request
 import Services.DatabaseSource as DatabaseSource
 import Services.JsonSource as JsonSource
 import Services.SqlSource as SqlSource
-import Services.Toasts as Toasts
 import Shared
 
 
@@ -82,44 +79,10 @@ type alias Msg =
 
 init : QueryString -> ( Model, Cmd Msg )
 init query =
-    ( { conf = query.mode |> Maybe.andThen (\mode -> EmbedMode.all |> List.findBy .id mode) |> Maybe.mapOrElse .conf ErdConf.embedDefault
-      , navbar = { mobileMenuOpen = False, search = { text = "", active = 0 } }
-      , erdElem = ErdProps.zero
-      , loaded = [ query.projectId, query.projectUrl, query.databaseSource, query.sqlSource, query.jsonSource ] |> List.all (\a -> a == Nothing)
-      , dirty = False
-      , erd = Nothing
-      , tableStats = Dict.empty
-      , columnStats = Dict.empty
-      , hoverTable = Nothing
-      , hoverColumn = Nothing
-      , cursorMode = CursorMode.Select
-      , selectionBox = Nothing
-      , newLayout = Nothing
-      , editNotes = Nothing
-      , editTags = Nothing
-      , editGroup = Nothing
-      , editMemo = Nothing
-      , amlSidebar = Nothing
-      , detailsSidebar = Nothing
-      , virtualRelation = Nothing
-      , findPath = Nothing
-      , schemaAnalysis = Nothing
-      , exportDialog = Nothing
-      , sharing = Nothing
-      , save = Nothing
-      , settings = Nothing
-      , sourceUpdate = Nothing
-      , embedSourceParsing = EmbedSourceParsingDialog.init SourceParsed ModalClose Noop query.databaseSource query.sqlSource query.jsonSource
-      , help = Nothing
-      , openedDropdown = ""
-      , openedPopover = ""
-      , contextMenu = Nothing
-      , dragging = Nothing
-      , toasts = Toasts.init
-      , modal = Nothing
-      , confirm = Nothing
-      , prompt = Nothing
-      , openedDialogs = []
+    ( { emptyModel
+        | conf = query.mode |> Maybe.andThen (\mode -> EmbedMode.all |> List.findBy .id mode) |> Maybe.mapOrElse .conf ErdConf.embedDefault
+        , loaded = [ query.projectId, query.projectUrl, query.databaseSource, query.sqlSource, query.jsonSource ] |> List.all (\a -> a == Nothing)
+        , embedSourceParsing = EmbedSourceParsingDialog.init SourceParsed ModalClose Noop query.databaseSource query.sqlSource query.jsonSource
       }
     , Cmd.batch
         ([ Ports.setMeta
