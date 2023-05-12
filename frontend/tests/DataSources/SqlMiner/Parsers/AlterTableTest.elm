@@ -73,6 +73,9 @@ suite =
             , testStatement ( parseAlterTable, "with only" )
                 "ALTER TABLE ONLY public.t2 ADD CONSTRAINT t2_id_pkey PRIMARY KEY (id);"
                 (AddTableConstraint (Just "public") "t2" (ParsedPrimaryKey (Just "t2_id_pkey") (Nel "id" [])))
+            , testStatement ( parseAlterTable, "with foreign" )
+                "ALTER FOREIGN TABLE public.t2 OWNER TO root;"
+                (AddTableOwner (Just "public") "t2" "root")
             , testStatement ( parseAlterTable, "primary key with add" )
                 "ALTER TABLE public.t2 ADD PRIMARY KEY (`id`);"
                 (AddTableConstraint (Just "public") "t2" (ParsedPrimaryKey Nothing (Nel "id" [])))

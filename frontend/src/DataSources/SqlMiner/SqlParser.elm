@@ -154,10 +154,10 @@ parseCommand statement =
         firstLine =
             statement.head.text |> String.trim |> String.toUpper
     in
-    if firstLine |> startsWith "CREATE( UNLOGGED)? TABLE" then
+    if firstLine |> startsWith "CREATE( UNLOGGED| FOREIGN)? TABLE" then
         statement |> parseCreateTable |> Result.map CreateTable
 
-    else if firstLine |> startsWith "ALTER TABLE" then
+    else if firstLine |> startsWith "ALTER( UNLOGGED| FOREIGN)? TABLE" then
         statement |> parseAlterTable |> Result.map AlterTable
 
     else if firstLine |> startsWith "CREATE( OR REPLACE)?( MATERIALIZED)? VIEW" then
@@ -254,6 +254,9 @@ parseCommand statement =
         Ok (Ignored statement)
 
     else if firstLine |> startsWith "REVOKE" then
+        Ok (Ignored statement)
+
+    else if firstLine |> startsWith "ALTER DEFAULT PRIVILEGES" then
         Ok (Ignored statement)
 
     else if firstLine |> startsWith "START TRANSACTION" then

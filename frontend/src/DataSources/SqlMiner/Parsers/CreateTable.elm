@@ -61,7 +61,7 @@ type alias ParsedCheck =
 parseCreateTable : SqlStatement -> Result (List ParseError) ParsedTable
 parseCreateTable statement =
     -- TODO: handle https://www.postgresql.org/docs/current/ddl-inherit.html
-    case statement |> buildSqlLine |> Regex.matches "^CREATE(?:\\s+UNLOGGED)? TABLE(?:\\s+IF NOT EXISTS)?\\s+(?:(?<db>[^ .]+)\\.)?(?:(?<schema>[^ .]+)\\.)?(?<table>[^ .]+)\\s*(?<rest>\\(.+\\).*);$" of
+    case statement |> buildSqlLine |> Regex.matches "^CREATE(?:\\s+(?:UNLOGGED|FOREIGN))? TABLE(?:\\s+IF NOT EXISTS)?\\s+(?:(?<db>[^ .]+)\\.)?(?:(?<schema>[^ .]+)\\.)?(?<table>[^ .]+)\\s*(?<rest>\\(.+\\).*);$" of
         db :: schema :: (Just table) :: (Just rest) :: [] ->
             let
                 schemaName : Maybe SqlSchemaName
