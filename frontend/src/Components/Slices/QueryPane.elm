@@ -145,7 +145,7 @@ view wrap sources model =
         dbSources =
             sources |> List.filterMap withUrl
     in
-    div [ class "h-full py-5" ]
+    div [ class "py-5 h-full min-w-full max-w-full overflow-scroll" ]
         ([ viewHeading wrap (model.id ++ "-heading") dbSources model.sizeFull model.source
          ]
             ++ (model.source
@@ -234,7 +234,7 @@ viewQueryResults wrap htmlId display results =
         displayId =
             htmlId ++ "-display"
     in
-    div [ class "min-w-full max-w-full overflow-scroll" ]
+    div []
         (results
             |> Result.fold
                 (\err ->
