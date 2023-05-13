@@ -43,6 +43,11 @@
     "update": "npm update --save-dev && npm update --save && npm install"
   },
   "dependencies": {
+    "@azimutt/connector-couchbase": "file:../libs/connector-couchbase",
+    "@azimutt/connector-mongodb": "file:../libs/connector-mongodb",
+    "@azimutt/connector-postgres": "file:../libs/connector-postgres",
+    "@azimutt/database-types": "file:../libs/database-types",
+    "@azimutt/utils": "file:../libs/utils",
     "@sinclair/typebox": "^0.23.5",
     "ajv": "^8.12.0",
     "dotenv": "^16.0.3",

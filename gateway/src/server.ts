@@ -8,6 +8,7 @@ const server = fastify({
       removeAdditional: "all",
       coerceTypes: true,
       useDefaults: true,
+      keywords: ['kind', 'modifier']
     }
   },
   logger: {

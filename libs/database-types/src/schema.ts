@@ -95,7 +95,7 @@ export const AzimuttTable = z.object({
     uniques: AzimuttUnique.array().nullish(),
     indexes: AzimuttIndex.array().nullish(),
     checks: AzimuttCheck.array().nullish(),
-    comment: z.string().nullish().nullable()
+    comment: z.string().nullish()
 }).strict()
 export type AzimuttColumnRef = { schema: AzimuttSchemaName, table: AzimuttTableName, column: AzimuttColumnName }
 export const AzimuttColumnRef = z.object({
