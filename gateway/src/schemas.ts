@@ -1,8 +1,9 @@
-import {OptionalModifier, Static, TNull, TSchema, TUnion, Type} from "@sinclair/typebox";
+import {Static, TNull, TOptional, TSchema, TUnion, Type} from "@sinclair/typebox";
 
 export const sDatabaseUrl = Type.String()
 export const sSchemaName = Type.String()
 export const sTableName = Type.String()
+export const sTableId = Type.String()
 export const sColumnName = Type.String()
 export const sColumnType = Type.String()
 export const sRelationName = Type.String()
@@ -21,6 +22,10 @@ export const sType = Type.Intersect([
 export const sColumnRef = Type.Object({
     schema: sSchemaName,
     table: sTableName,
+    column: sColumnName,
+})
+export const sColumnRefId = Type.Object({
+    table: sTableId,
     column: sColumnName,
 })
 export const sRelation = Type.Object({
@@ -71,6 +76,24 @@ export const sAzimuttSchema = Type.Object({
     types: Nullish(Type.Array(sType))
 })
 
+export const sJsValue = Type.Recursive(Node => Type.Union([
+    Type.String(),
+    Type.Number(),
+    Type.Boolean(),
+    Type.Null(),
+    Type.Array(Node),
+    Type.Record(Type.String(), Node)
+]))
+export const sDatabaseQueryResultsColumn = Type.Object({
+    name: Type.String(),
+    ref: Type.Optional(sColumnRefId)
+})
+export const sDatabaseQueryResults = Type.Object({
+    query: Type.String(),
+    columns: Type.Array(sDatabaseQueryResultsColumn),
+    rows: Type.Array(sJsValue)
+})
+
 export const ErrorResponse = Type.Object({error: Type.String()})
 export type ErrorResponse = Static<typeof ErrorResponse>
 export const FailureResponse = Type.Object({
@@ -86,6 +109,11 @@ export type GetSchemaParams = Static<typeof GetSchemaParams>
 export const GetSchemaResponse = sAzimuttSchema
 export type GetSchemaResponse = Static<typeof GetSchemaResponse>
 
-function Nullish<T extends TSchema>(s: T): TUnion<[T, TNull]> & { modifier: typeof OptionalModifier } {
+export const DbQueryParams = Type.Object({url: sDatabaseUrl, query: Type.String()})
+export type DbQueryParams = Static<typeof DbQueryParams>
+export const DbQueryResponse = Type.Strict(sDatabaseQueryResults)
+export type DbQueryResponse = Static<typeof DbQueryResponse>
+
+function Nullish<T extends TSchema>(s: T): TOptional<TUnion<[T, TNull]>> {
     return Type.Optional(Type.Union([s, Type.Null()]))
 }
