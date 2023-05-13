@@ -91,6 +91,7 @@ export const sDatabaseQueryResultsColumn = Type.Object({
 export const sDatabaseQueryResults = Type.Object({
     query: Type.String(),
     columns: Type.Array(sDatabaseQueryResultsColumn),
+    // @ts-ignore
     rows: Type.Array(sJsValue)
 })
 

@@ -53,20 +53,20 @@
     "dotenv": "^16.0.3",
     "env-schema": "^5.2.0",
     "fastify": "^4.17.0",
-    "fastify-plugin": "^3.0.1"
+    "fastify-plugin": "^4.5.0"
   },
   "devDependencies": {
-    "@types/node": "^18.16.8",
+    "@types/node": "^20.1.4",
     "@typescript-eslint/eslint-plugin": "^5.59.5",
     "@typescript-eslint/parser": "^5.59.5",
-    "esbuild": "^0.14.54",
+    "esbuild": "^0.17.19",
     "eslint": "^8.40.0",
     "eslint-config-prettier": "^8.8.0",
     "eslint-plugin-prettier": "^4.2.1",
-    "pino-pretty": "^8.1.0",
+    "pino-pretty": "^10.0.0",
     "prettier": "^2.8.8",
     "tsx": "^3.12.7",
-    "typescript": "^4.9.5",
-    "vitest": "^0.25.8"
+    "typescript": "^5.0.4",
+    "vitest": "^0.31.0"
   }
 }
