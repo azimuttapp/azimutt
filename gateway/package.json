@@ -1,0 +1,67 @@
+{
+  "name": "azimutt-gateway",
+  "version": "0.0.1",
+  "description": "A Gateway to proxy database access for Azimutt frontend",
+  "keywords": [
+    "database",
+    "database tool",
+    "database schema",
+    "diagram",
+    "erd",
+    "entity-relationship diagram"
+  ],
+  "homepage": "https://azimutt.app",
+  "author": {
+    "name": "Loïc Knuchel",
+    "email": "loicknuchel@gmail.com",
+    "url": "https://loicknuchel.fr"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/azimuttapp/azimutt.git",
+    "directory": "gateway"
+  },
+  "bugs": {
+    "url": "https://github.com/azimuttapp/azimutt/issues"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "check:types": "tsc --noEmit",
+    "build": "esbuild `find src \\( -name '*.ts' \\)` --platform=node --outdir=build --resolve-extensions=.js",
+    "build:docker:prod": "docker build . -t my-fastify-app --build-arg APP_ENV=production",
+    "start": "node build",
+    "dev": "tsx watch src .env | pino-pretty --colorize",
+    "pretest": "npm run build",
+    "test": "vitest",
+    "test:watch": "vitest -w",
+    "update": "npm update --save-dev && npm update --save && npm install"
+  },
+  "dependencies": {
+    "@sinclair/typebox": "^0.23.5",
+    "ajv": "^8.12.0",
+    "dotenv": "^16.0.3",
+    "env-schema": "^5.2.0",
+    "fastify": "^4.17.0",
+    "fastify-plugin": "^3.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^18.16.8",
+    "@typescript-eslint/eslint-plugin": "^5.59.5",
+    "@typescript-eslint/parser": "^5.59.5",
+    "esbuild": "^0.14.54",
+    "eslint": "^8.40.0",
+    "eslint-config-prettier": "^8.8.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "pino-pretty": "^8.1.0",
+    "prettier": "^2.8.8",
+    "tsx": "^3.12.7",
+    "typescript": "^4.9.5",
+    "vitest": "^0.25.8"
+  }
+}
