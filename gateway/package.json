@@ -49,6 +49,7 @@
     "@azimutt/connector-postgres": "file:../libs/connector-postgres",
     "@azimutt/database-types": "file:../libs/database-types",
     "@azimutt/utils": "file:../libs/utils",
+    "@fastify/cors": "^8.2.1",
     "@sinclair/typebox": "^0.28.10",
     "ajv": "^8.12.0",
     "dotenv": "^16.0.3",

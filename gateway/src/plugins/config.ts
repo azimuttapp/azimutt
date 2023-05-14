@@ -16,6 +16,7 @@ const ConfigSchema = Type.Strict(
         LOG_LEVEL: Type.String(),
         API_HOST: Type.String(),
         API_PORT: Type.String(),
+        CORS_ALLOW_ORIGIN: Type.Optional(Type.String()),
     })
 )
 

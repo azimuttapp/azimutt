@@ -1,7 +1,8 @@
-import {Type} from "@sinclair/typebox"
-import {FastifyPluginAsync} from "fastify"
+import {TSchema, Type} from "@sinclair/typebox"
+import {FastifyPluginAsync, FastifyReply} from "fastify"
+import {RouteShorthandOptions} from "fastify/types/route"
 import {console, Logger} from "@azimutt/utils"
-import {parseDatabaseUrl} from "@azimutt/database-types"
+import {Connector, DatabaseUrl, DatabaseUrlParsed, parseDatabaseUrl} from "@azimutt/database-types"
 import {
     DbQueryParams,
     DbQueryResponse,
@@ -16,109 +17,88 @@ import {
 } from "../schemas.js"
 import {getConnector} from "../services/connector.js"
 
-const routes: FastifyPluginAsync = async (server) => {
-    const application = 'azimutt-gateway'
-    const logger: Logger = console
+const application = 'azimutt-gateway'
+const logger: Logger = console
 
+const routes: FastifyPluginAsync = async (server) => {
+    server.get('/', {schema: {response: {200: Type.Object({hello: Type.String()})}}}, async () => ({hello: 'world'}))
     server.get('/ping', async () => ({status: 200}))
 
-    server.get('/', {
-        schema: {
-            response: {
-                200: Type.Object({hello: Type.String()}),
-            },
-        },
-    }, async () => ({hello: 'world'}))
+    server.get<Get<GetSchemaParams, GetSchemaResponse>>('/gateway/schema', get(GetSchemaParams, GetSchemaResponse), async (req, res) => await getDatabaseSchema(req.query, res))
+    server.post<Post<GetSchemaParams, GetSchemaResponse>>('/gateway/schema', post(GetSchemaParams, GetSchemaResponse), async (req, res) => await getDatabaseSchema(req.body, res))
 
-    server.get<{
-        Querystring: GetSchemaParams,
-        Reply: GetSchemaResponse | ErrorResponse | FailureResponse
-    }>('/gateway/schema', {
+    server.get<Get<DbQueryParams, DbQueryResponse>>('/gateway/query', get(DbQueryParams, DbQueryResponse), async (req, res) => await queryDatabase(req.query, res))
+    server.post<Post<DbQueryParams, DbQueryResponse>>('/gateway/query', post(DbQueryParams, DbQueryResponse), async (req, res) => await queryDatabase(req.body, res))
+
+    server.get<Get<GetTableStatsParams, GetTableStatsResponse>>('/gateway/table-stats', get(GetTableStatsParams, GetTableStatsResponse), async (req, res) => await getTableStats(req.query, res))
+    server.post<Post<GetTableStatsParams, GetTableStatsResponse>>('/gateway/table-stats', post(GetTableStatsParams, GetTableStatsResponse), async (req, res) => await getTableStats(req.body, res))
+
+    server.get<Get<GetColumnStatsParams, GetColumnStatsResponse>>('/gateway/column-stats', get(GetColumnStatsParams, GetColumnStatsResponse), async (req, res) => await getColumnStats(req.query, res))
+    server.post<Post<GetColumnStatsParams, GetColumnStatsResponse>>('/gateway/column-stats', post(GetColumnStatsParams, GetColumnStatsResponse), async (req, res) => await getColumnStats(req.body, res))
+}
+
+function getDatabaseSchema(params: GetSchemaParams, res: FastifyReply): Promise<GetSchemaResponse | FastifyReply> {
+    return withConnector(params.url, res, (url, conn) => conn.getSchema(application, url, {logger, schema: params.schema}))
+}
+
+function queryDatabase(params: DbQueryParams, res: FastifyReply): Promise<DbQueryResponse | FastifyReply> {
+    return withConnector(params.url, res, (url, conn) => conn.query(application, url, params.query, []))
+}
+
+function getTableStats(params: GetTableStatsParams, res: FastifyReply): Promise<GetTableStatsResponse | FastifyReply> {
+    const tableId = params.schema ? `${params.schema}.${params.table}` : params.table
+    return withConnector(params.url, res, (url, conn) => conn.getTableStats(application, url, tableId))
+}
+
+function getColumnStats(params: GetColumnStatsParams, res: FastifyReply): Promise<GetColumnStatsResponse | FastifyReply> {
+    const tableId = params.schema ? `${params.schema}.${params.table}` : params.table
+    return withConnector(params.url, res, (url, conn) => conn.getColumnStats(application, url, {table: tableId, column: params.column}))
+}
+
+async function withConnector<T>(url: DatabaseUrl, res: FastifyReply, exec: (url: DatabaseUrlParsed, conn: Connector) => Promise<T>): Promise<T | FastifyReply> {
+    const parsedUrl = parseDatabaseUrl(url)
+    const connector = getConnector(parsedUrl)
+    if (connector) {
+        return await exec(parsedUrl, connector)
+    } else {
+        return res.status(400).send({error: `Not supported database: ${parsedUrl.kind || url}`})
+    }
+}
+
+type Get<Params, Response> = {
+    Querystring: Params,
+    Reply: Response | ErrorResponse | FailureResponse
+}
+
+function get(params: TSchema, response: TSchema): RouteShorthandOptions {
+    return {
         schema: {
-            querystring: GetSchemaParams,
+            querystring: params,
             response: {
-                200: GetSchemaResponse,
+                200: response,
                 400: ErrorResponse,
                 500: FailureResponse,
             },
         },
-    }, async (req, res) => {
-        const url = parseDatabaseUrl(req.query.url)
-        const connector = getConnector(url)
-        if (connector) {
-            return await connector.getSchema(application, url, {logger, schema: req.query.schema})
-        } else {
-            return res.status(400).send({error: `Not supported database: ${url.kind || url.full}`})
-        }
-    })
+    }
+}
 
-    server.get<{
-        Querystring: DbQueryParams,
-        Reply: DbQueryResponse | ErrorResponse | FailureResponse
-    }>('/gateway/query', {
+type Post<Params, Response> = {
+    Body: Params,
+    Reply: Response | ErrorResponse | FailureResponse
+}
+
+function post(params: TSchema, response: TSchema): RouteShorthandOptions {
+    return {
         schema: {
-            querystring: DbQueryParams,
+            body: params,
             response: {
-                200: DbQueryResponse,
+                200: response,
                 400: ErrorResponse,
                 500: FailureResponse,
             },
         },
-    }, async (req, res) => {
-        const url = parseDatabaseUrl(req.query.url)
-        const connector = getConnector(url)
-        if (connector) {
-            return await connector.query(application, url, req.query.query, [])
-        } else {
-            return res.status(400).send({error: `Not supported database: ${url.kind || url.full}`})
-        }
-    })
-
-    server.get<{
-        Querystring: GetTableStatsParams,
-        Reply: GetTableStatsResponse | ErrorResponse | FailureResponse
-    }>('/gateway/table-stats', {
-        schema: {
-            querystring: GetTableStatsParams,
-            response: {
-                200: GetTableStatsResponse,
-                400: ErrorResponse,
-                500: FailureResponse,
-            },
-        },
-    }, async (req, res) => {
-        const url = parseDatabaseUrl(req.query.url)
-        const connector = getConnector(url)
-        const tableId = req.query.schema ? `${req.query.schema}.${req.query.table}` : req.query.table
-        if (connector) {
-            return await connector.getTableStats(application, url, tableId)
-        } else {
-            return res.status(400).send({error: `Not supported database: ${url.kind || url.full}`})
-        }
-    })
-
-    server.get<{
-        Querystring: GetColumnStatsParams,
-        Reply: GetColumnStatsResponse | ErrorResponse | FailureResponse
-    }>('/gateway/column-stats', {
-        schema: {
-            querystring: GetColumnStatsParams,
-            response: {
-                200: GetColumnStatsResponse,
-                400: ErrorResponse,
-                500: FailureResponse,
-            },
-        },
-    }, async (req, res) => {
-        const url = parseDatabaseUrl(req.query.url)
-        const connector = getConnector(url)
-        const tableId = req.query.schema ? `${req.query.schema}.${req.query.table}` : req.query.table
-        if (connector) {
-            return await connector.getColumnStats(application, url, {table: tableId, column: req.query.column})
-        } else {
-            return res.status(400).send({error: `Not supported database: ${url.kind || url.full}`})
-        }
-    })
+    }
 }
 
 export default routes

@@ -13,7 +13,7 @@ export const deleteNoContent = (url: string): Promise<void> => customFetch('DELE
 type Method = 'GET' | 'POST' | 'PUT' | 'DELETE'
 
 function customFetch<Body, Response>(method: Method, path: string, body?: Body, zod?: ZodType<Response>, label?: string): Promise<Response> {
-    const url = `${window.location.origin}${path}`
+    const url = path.startsWith('http') ? path : `${window.location.origin}${path}`
     let opts: RequestInit = {method, credentials: 'include'}
     if (body instanceof FormData) {
         opts = {...opts, body: body}
