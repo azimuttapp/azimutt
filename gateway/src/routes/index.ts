@@ -7,8 +7,12 @@ import {
     DbQueryResponse,
     ErrorResponse,
     FailureResponse,
+    GetColumnStatsParams,
+    GetColumnStatsResponse,
     GetSchemaParams,
-    GetSchemaResponse
+    GetSchemaResponse,
+    GetTableStatsParams,
+    GetTableStatsResponse
 } from "../schemas";
 import {getConnector} from "../services/connector";
 
@@ -61,6 +65,46 @@ const routes: FastifyPluginAsync = async (server) => {
         const connector = getConnector(url)
         if (connector) {
             return await connector.query(application, url, req.query.query, [])
+        } else {
+            return res.status(400).send({error: `Not supported database: ${url.kind || url.full}`})
+        }
+    })
+
+    server.get<{Querystring: GetTableStatsParams, Reply: GetTableStatsResponse | ErrorResponse | FailureResponse}>('/gateway/table-stats', {
+        schema: {
+            querystring: GetTableStatsParams,
+            response: {
+                200: GetTableStatsResponse,
+                400: ErrorResponse,
+                500: FailureResponse,
+            },
+        },
+    }, async (req, res) => {
+        const url = parseDatabaseUrl(req.query.url)
+        const connector = getConnector(url)
+        const tableId = req.query.schema ? `${req.query.schema}.${req.query.table}` : req.query.table
+        if (connector) {
+            return await connector.getTableStats(application, url, tableId)
+        } else {
+            return res.status(400).send({error: `Not supported database: ${url.kind || url.full}`})
+        }
+    })
+
+    server.get<{Querystring: GetColumnStatsParams, Reply: GetColumnStatsResponse | ErrorResponse | FailureResponse}>('/gateway/column-stats', {
+        schema: {
+            querystring: GetColumnStatsParams,
+            response: {
+                200: GetColumnStatsResponse,
+                400: ErrorResponse,
+                500: FailureResponse,
+            },
+        },
+    }, async (req, res) => {
+        const url = parseDatabaseUrl(req.query.url)
+        const connector = getConnector(url)
+        const tableId = req.query.schema ? `${req.query.schema}.${req.query.table}` : req.query.table
+        if (connector) {
+            return await connector.getColumnStats(application, url, { table: tableId, column: req.query.column })
         } else {
             return res.status(400).send({error: `Not supported database: ${url.kind || url.full}`})
         }

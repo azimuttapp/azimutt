@@ -95,6 +95,32 @@ export const sDatabaseQueryResults = Type.Object({
     rows: Type.Array(sJsValue)
 })
 
+export const sColumnValue = Type.Union([Type.String(), Type.Number(), Type.Boolean(), Type.Date(), Type.Null(), Type.Unknown()])
+export const sTableSampleValues = Type.Record(sColumnName, sColumnValue)
+export const sTableStats = Type.Object({
+    schema: Type.Union([sSchemaName, Type.Null()]),
+    table: sTableName,
+    rows: Type.Number(),
+    sample_values: sTableSampleValues
+})
+
+export const sColumnCommonValue = Type.Object({
+    value: sColumnValue,
+    count: Type.Number()
+})
+export const sColumnStats = Type.Object({
+    schema: Type.Union([sSchemaName, Type.Null()]),
+    table: sTableName,
+    column: sColumnName,
+    type: sColumnType,
+    rows: Type.Number(),
+    nulls: Type.Number(),
+    cardinality: Type.Number(),
+    common_values: Type.Array(sColumnCommonValue)
+})
+
+// endpoints Params & Responses
+
 export const ErrorResponse = Type.Object({error: Type.String()})
 export type ErrorResponse = Static<typeof ErrorResponse>
 export const FailureResponse = Type.Object({
@@ -114,6 +140,16 @@ export const DbQueryParams = Type.Object({url: sDatabaseUrl, query: Type.String(
 export type DbQueryParams = Static<typeof DbQueryParams>
 export const DbQueryResponse = Type.Strict(sDatabaseQueryResults)
 export type DbQueryResponse = Static<typeof DbQueryResponse>
+
+export const GetTableStatsParams = Type.Object({url: sDatabaseUrl, schema: Type.Optional(sSchemaName), table: sTableName})
+export type GetTableStatsParams = Static<typeof GetTableStatsParams>
+export const GetTableStatsResponse = Type.Strict(sTableStats)
+export type GetTableStatsResponse = Static<typeof GetTableStatsResponse>
+
+export const GetColumnStatsParams = Type.Object({url: sDatabaseUrl, schema: Type.Optional(sSchemaName), table: sTableName, column: sColumnName})
+export type GetColumnStatsParams = Static<typeof GetColumnStatsParams>
+export const GetColumnStatsResponse = Type.Strict(sColumnStats)
+export type GetColumnStatsResponse = Static<typeof GetColumnStatsResponse>
 
 function Nullish<T extends TSchema>(s: T): TOptional<TUnion<[T, TNull]>> {
     return Type.Optional(Type.Union([s, Type.Null()]))
