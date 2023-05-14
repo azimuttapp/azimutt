@@ -8,6 +8,7 @@ import type {ForgeConfig} from '@electron-forge/shared-types';
 import {mainConfig} from './webpack.main.config';
 import {rendererConfig} from './webpack.renderer.config';
 
+// TODO: https://www.electronforge.io/guides/code-signing
 // TODO: https://www.electronjs.org/docs/latest/tutorial/tutorial-packaging#important-signing-your-code
 // TODO: see https://github.com/electron/fiddle/tree/fc906d7049f1e173c488fa53972d6db868132e84/.github/workflows for github workflow publish
 const config: ForgeConfig = {

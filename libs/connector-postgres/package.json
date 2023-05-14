@@ -27,7 +27,8 @@
     "@azimutt/database-types": "file:../database-types",
     "@azimutt/json-infer-schema": "file:../json-infer-schema",
     "@azimutt/utils": "file:../utils",
-    "pg": "^8.10.0"
+    "pg": "^8.10.0",
+    "pg-native": "^3.0.1"
   },
   "devDependencies": {
     "@jest/globals": "^29.5.0",
