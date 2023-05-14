@@ -1,23 +1,23 @@
-import fastify from 'fastify';
-import config from './plugins/config.js';
-import routes from './routes/index.js';
+import fastify from "fastify"
+import config from "./plugins/config.js"
+import routes from "./routes/index.js"
 
 const server = fastify({
-  ajv: {
-    customOptions: {
-      removeAdditional: "all",
-      coerceTypes: true,
-      useDefaults: true,
-      keywords: ['kind', 'modifier']
-    }
-  },
-  logger: {
-    level: process.env.LOG_LEVEL,
-  },
-});
+    ajv: {
+        customOptions: {
+            removeAdditional: "all",
+            coerceTypes: true,
+            useDefaults: true,
+            keywords: ['kind', 'modifier']
+        }
+    },
+    logger: {
+        level: process.env.LOG_LEVEL,
+    },
+})
 
-await server.register(config);
-await server.register(routes);
-await server.ready();
+await server.register(config)
+await server.register(routes)
+await server.ready()
 
-export default server;
+export default server

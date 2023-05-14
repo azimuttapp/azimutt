@@ -1,4 +1,4 @@
-import {Static, TNull, TOptional, TSchema, TUnion, Type} from "@sinclair/typebox";
+import {Static, TNull, TOptional, TSchema, TUnion, Type} from "@sinclair/typebox"
 
 export const sDatabaseUrl = Type.String()
 export const sSchemaName = Type.String()
@@ -91,7 +91,7 @@ export const sDatabaseQueryResultsColumn = Type.Object({
 export const sDatabaseQueryResults = Type.Object({
     query: Type.String(),
     columns: Type.Array(sDatabaseQueryResultsColumn),
-    // @ts-ignore
+    // @ts-expect-error: Type instantiation is excessively deep and possibly infinite.
     rows: Type.Array(sJsValue)
 })
 
@@ -141,12 +141,21 @@ export type DbQueryParams = Static<typeof DbQueryParams>
 export const DbQueryResponse = Type.Strict(sDatabaseQueryResults)
 export type DbQueryResponse = Static<typeof DbQueryResponse>
 
-export const GetTableStatsParams = Type.Object({url: sDatabaseUrl, schema: Type.Optional(sSchemaName), table: sTableName})
+export const GetTableStatsParams = Type.Object({
+    url: sDatabaseUrl,
+    schema: Type.Optional(sSchemaName),
+    table: sTableName
+})
 export type GetTableStatsParams = Static<typeof GetTableStatsParams>
 export const GetTableStatsResponse = Type.Strict(sTableStats)
 export type GetTableStatsResponse = Static<typeof GetTableStatsResponse>
 
-export const GetColumnStatsParams = Type.Object({url: sDatabaseUrl, schema: Type.Optional(sSchemaName), table: sTableName, column: sColumnName})
+export const GetColumnStatsParams = Type.Object({
+    url: sDatabaseUrl,
+    schema: Type.Optional(sSchemaName),
+    table: sTableName,
+    column: sColumnName
+})
 export type GetColumnStatsParams = Static<typeof GetColumnStatsParams>
 export const GetColumnStatsResponse = Type.Strict(sColumnStats)
 export type GetColumnStatsResponse = Static<typeof GetColumnStatsResponse>

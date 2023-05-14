@@ -1,7 +1,7 @@
-import {Type} from '@sinclair/typebox';
-import {FastifyPluginAsync} from 'fastify';
-import {console, Logger} from "@azimutt/utils";
-import {parseDatabaseUrl} from "@azimutt/database-types";
+import {Type} from "@sinclair/typebox"
+import {FastifyPluginAsync} from "fastify"
+import {console, Logger} from "@azimutt/utils"
+import {parseDatabaseUrl} from "@azimutt/database-types"
 import {
     DbQueryParams,
     DbQueryResponse,
@@ -13,8 +13,8 @@ import {
     GetSchemaResponse,
     GetTableStatsParams,
     GetTableStatsResponse
-} from "../schemas";
-import {getConnector} from "../services/connector";
+} from "../schemas.js"
+import {getConnector} from "../services/connector.js"
 
 const routes: FastifyPluginAsync = async (server) => {
     const application = 'azimutt-gateway'
@@ -32,7 +32,10 @@ const routes: FastifyPluginAsync = async (server) => {
         },
     }, async () => ({hello: 'world'}))
 
-    server.get<{Querystring: GetSchemaParams, Reply: GetSchemaResponse | ErrorResponse | FailureResponse}>('/gateway/schema', {
+    server.get<{
+        Querystring: GetSchemaParams,
+        Reply: GetSchemaResponse | ErrorResponse | FailureResponse
+    }>('/gateway/schema', {
         schema: {
             querystring: GetSchemaParams,
             response: {
@@ -51,7 +54,10 @@ const routes: FastifyPluginAsync = async (server) => {
         }
     })
 
-    server.get<{Querystring: DbQueryParams, Reply: DbQueryResponse | ErrorResponse | FailureResponse}>('/gateway/query', {
+    server.get<{
+        Querystring: DbQueryParams,
+        Reply: DbQueryResponse | ErrorResponse | FailureResponse
+    }>('/gateway/query', {
         schema: {
             querystring: DbQueryParams,
             response: {
@@ -70,7 +76,10 @@ const routes: FastifyPluginAsync = async (server) => {
         }
     })
 
-    server.get<{Querystring: GetTableStatsParams, Reply: GetTableStatsResponse | ErrorResponse | FailureResponse}>('/gateway/table-stats', {
+    server.get<{
+        Querystring: GetTableStatsParams,
+        Reply: GetTableStatsResponse | ErrorResponse | FailureResponse
+    }>('/gateway/table-stats', {
         schema: {
             querystring: GetTableStatsParams,
             response: {
@@ -90,7 +99,10 @@ const routes: FastifyPluginAsync = async (server) => {
         }
     })
 
-    server.get<{Querystring: GetColumnStatsParams, Reply: GetColumnStatsResponse | ErrorResponse | FailureResponse}>('/gateway/column-stats', {
+    server.get<{
+        Querystring: GetColumnStatsParams,
+        Reply: GetColumnStatsResponse | ErrorResponse | FailureResponse
+    }>('/gateway/column-stats', {
         schema: {
             querystring: GetColumnStatsParams,
             response: {
@@ -104,11 +116,11 @@ const routes: FastifyPluginAsync = async (server) => {
         const connector = getConnector(url)
         const tableId = req.query.schema ? `${req.query.schema}.${req.query.table}` : req.query.table
         if (connector) {
-            return await connector.getColumnStats(application, url, { table: tableId, column: req.query.column })
+            return await connector.getColumnStats(application, url, {table: tableId, column: req.query.column})
         } else {
             return res.status(400).send({error: `Not supported database: ${url.kind || url.full}`})
         }
     })
 }
 
-export default routes;
+export default routes
