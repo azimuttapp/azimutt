@@ -29,9 +29,20 @@ defmodule AzimuttWeb.Api.AnalyzerController do
          do: conn |> render("schema.json", schema: schema)
   end
 
-  def stats(conn, %{"url" => url, "table" => table} = params) do
+  def query(conn, %{"url" => url, "query" => query}) do
+    with {:ok, results} <- Analyzer.run_query(url, query),
+         do: conn |> render("query.json", results: results)
+  end
+
+  def table_stats(conn, %{"url" => url, "table" => table} = params) do
     schema = if params["schema"] != nil && params["schema"] != "", do: params["schema"], else: nil
-    column = if params["column"] != nil && params["column"] != "", do: params["column"], else: nil
+
+    with {:ok, stats} <- Analyzer.get_stats(url, schema, table, nil),
+         do: conn |> render("stats.json", stats: stats)
+  end
+
+  def column_stats(conn, %{"url" => url, "table" => table, "column" => column} = params) do
+    schema = if params["schema"] != nil && params["schema"] != "", do: params["schema"], else: nil
 
     with {:ok, stats} <- Analyzer.get_stats(url, schema, table, column),
          do: conn |> render("stats.json", stats: stats)
@@ -45,11 +56,6 @@ defmodule AzimuttWeb.Api.AnalyzerController do
 
     with {:ok, rows} <- Analyzer.get_rows(url, schema, table, column, value, limit),
          do: conn |> render("query.json", results: rows)
-  end
-
-  def query(conn, %{"url" => url, "query" => query}) do
-    with {:ok, results} <- Analyzer.run_query(url, query),
-         do: conn |> render("query.json", results: results)
   end
 
   def swagger_definitions do

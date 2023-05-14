@@ -136,21 +136,21 @@ export class Backend {
         return Http.postJson(`/api/v1/analyzer/schema`, {url: database}, AzimuttSchema, 'AzimuttSchema')
     }
 
+    runDatabaseQuery = async (database: DatabaseUrl, query: string): Promise<DatabaseQueryResults> => {
+        this.logger.debug(`backend.runQuery(${database}, ${query})`)
+        return Http.postJson(`/api/v1/analyzer/query`, {url: database, query}, DatabaseQueryResults, 'DatabaseQueryResults')
+    }
+
     getTableStats = async (database: DatabaseUrl, id: TableId): Promise<TableStats> => {
         this.logger.debug(`backend.getTableStats(${database}, ${id})`)
         const {schema, table} = parseTableId(id)
-        return Http.postJson(`/api/v1/analyzer/stats`, {url: database, schema, table}, TableStats, 'TableStats')
+        return Http.postJson(`/api/v1/analyzer/table-stats`, {url: database, schema, table}, TableStats, 'TableStats')
     }
 
     getColumnStats = async (database: DatabaseUrl, column: ColumnRef): Promise<ColumnStats> => {
         this.logger.debug(`backend.getColumnStats(${database}, ${JSON.stringify(column)})`)
         const {schema, table} = parseTableId(column.table)
-        return Http.postJson(`/api/v1/analyzer/stats`, {url: database, schema, table, column: column.column}, ColumnStats, 'ColumnStats')
-    }
-
-    runDatabaseQuery = async (database: DatabaseUrl, query: string): Promise<DatabaseQueryResults> => {
-        this.logger.debug(`backend.runQuery(${database}, ${query})`)
-        return Http.postJson(`/api/v1/analyzer/query`, {url: database, query}, DatabaseQueryResults, 'DatabaseQueryResults')
+        return Http.postJson(`/api/v1/analyzer/column-stats`, {url: database, schema, table, column: column.column}, ColumnStats, 'ColumnStats')
     }
 
     trackEvent = (event: TrackEvent): void => {

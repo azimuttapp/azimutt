@@ -16,7 +16,7 @@ npm install
 - Start the server in development mode:
 
 ```bash
-npm run dev
+npm start
 ```
 
 ## Env vars
@@ -29,9 +29,9 @@ There are a number of handy commands you can run to help with development.
 
 | Command              | Action                                                            |
 |----------------------|-------------------------------------------------------------------|
-| `npm run dev`        | Run the server in dev mode, automatically restarts on file change |
+| `npm start`          | Run the server in dev mode, automatically restarts on file change |
 | `npm run build`      | Compile TypeScript to JavaScript                                  |
-| `npm start`          | Start JavaScript from 'build' directory                           |
+| `npm run preview`    | Start JavaScript from 'build' directory                           |
 | `npm test`           | Run unit tests (run `npm run build` before)                       |
 | `npm run test:watch` | Run backend tests in watch mode, running on changed test files    |
 | `npm run lint`       | Run eslint                                                        |

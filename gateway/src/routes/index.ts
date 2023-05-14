@@ -25,9 +25,7 @@ const routes: FastifyPluginAsync = async (server) => {
     server.get('/', {
         schema: {
             response: {
-                200: Type.Object({
-                    hello: Type.String(),
-                }),
+                200: Type.Object({hello: Type.String()}),
             },
         },
     }, async () => ({hello: 'world'}))
