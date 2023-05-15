@@ -66,7 +66,7 @@ export function formatSchema(schema: MongodbSchema, inferRelations: boolean): Az
     // FIXME: handle inferRelations
     const tables = schema.collections.map(c => ({
         schema: c.database,
-        table: c.collection,
+        table: c.type && c.type.value ? `${c.collection}__${c.type.value}` : c.collection,
         columns: schemaToColumns(c.schema, 0)
     }))
     return {tables, relations: []}
