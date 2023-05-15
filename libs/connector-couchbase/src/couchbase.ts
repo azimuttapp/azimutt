@@ -99,12 +99,11 @@ async function getCollectionTypes(collection: Collection, mixedCollection: strin
 
 async function inferCollectionForType(collection: Collection, type: CouchbaseCollectionType | undefined, sampleSize: number, logger: Logger): Promise<CouchbaseCollection> {
     type && type.value && logger.log(`Exporting collection ${collectionRef(collection)} with ${type.field}=${type.value} ...`)
-    const scope = collection.scope
     const documents = await getSampleDocuments(collection, type, sampleSize, logger)
     const count = await countDocuments(collection, type)
     return {
-        bucket: scope.bucket.name,
-        scope: scope.name,
+        bucket: collection.scope.bucket.name,
+        scope: collection.scope.name,
         collection: collection.name,
         type,
         schema: valuesToSchema(documents),
@@ -113,18 +112,18 @@ async function inferCollectionForType(collection: Collection, type: CouchbaseCol
     }
 }
 
-async function countDocuments(collection: Collection, type: CouchbaseCollectionType | undefined): Promise<number> {
-    const rows = await query<{count: number}>(collection, `SELECT count(*) as count FROM ${collection.name}${whereFragment(type)}`)
-    return rows[0].count
-}
-
 async function getSampleDocuments(collection: Collection, type: CouchbaseCollectionType | undefined, sampleSize: number, logger: Logger): Promise<any[]> {
     try {
-        return await query(collection, `SELECT Meta() as _meta, ${collection.name}.* FROM ${collection.name}${whereFragment(type)} LIMIT ${sampleSize}`)
+        return await query(collection, `SELECT Meta() as _meta, ${collection.name}.* FROM ${collection.name}${filter(type)} LIMIT ${sampleSize}`)
     } catch (e) {
         logger.error(`Can't get sample documents for ${collectionRef(collection)}: ${formatError(e)}`)
         return []
     }
+}
+
+async function countDocuments(collection: Collection, type: CouchbaseCollectionType | undefined): Promise<number> {
+    const rows = await query<{count: number}>(collection, `SELECT count(*) as count FROM ${collection.name}${filter(type)}`)
+    return rows[0].count
 }
 
 async function query<T = any>(collection: Collection, q: string): Promise<T[]> {
@@ -132,7 +131,7 @@ async function query<T = any>(collection: Collection, q: string): Promise<T[]> {
     return res.rows
 }
 
-function whereFragment(type: CouchbaseCollectionType | undefined): string {
+function filter(type: CouchbaseCollectionType | undefined): string {
     return type && type.value ? ` WHERE ${type.field}='${type.value}'` : ''
 }
 
