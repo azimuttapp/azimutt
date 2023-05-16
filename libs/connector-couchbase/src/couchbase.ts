@@ -55,7 +55,7 @@ export function formatSchema(schema: CouchbaseSchema, inferRelations: boolean): 
     // /!\ we group `bucket` with `scope` as it's "similar" to the database level, grouping database & schema inside schema
     const tables = schema.collections.map(c => ({
         schema: `${c.bucket}__${c.scope}`,
-        table: c.type && c.type.value ? `${c.collection}__${c.type.value}` : c.collection,
+        table: c.type && c.type.value ? `${c.collection}__${c.type.field}__${c.type.value}` : c.collection,
         columns: schemaToColumns(c.schema, 0)
     }))
     return {tables, relations: []}
