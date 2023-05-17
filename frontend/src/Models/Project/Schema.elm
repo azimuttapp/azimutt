@@ -1,4 +1,4 @@
-module Models.Project.Schema exposing (Schema, filter, from)
+module Models.Project.Schema exposing (Schema, filter, from, fromErd)
 
 import Dict exposing (Dict)
 import Models.Project.CustomType exposing (CustomType)
@@ -6,16 +6,32 @@ import Models.Project.CustomTypeId exposing (CustomTypeId)
 import Models.Project.Relation exposing (Relation)
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
+import PagesComponents.Organization_.Project_.Models.ErdRelation as ErdRelation exposing (ErdRelation)
+import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable exposing (ErdTable)
 import Set exposing (Set)
 
 
 type alias Schema =
-    { tables : Dict TableId Table, relations : List Relation, types : Dict CustomTypeId CustomType }
+    { tables : Dict TableId Table
+    , relations : List Relation
+    , types : Dict CustomTypeId CustomType
+    }
 
 
 from : { s | tables : Dict TableId Table, relations : List Relation, types : Dict CustomTypeId CustomType } -> Schema
 from source =
-    { tables = source.tables, relations = source.relations, types = source.types }
+    { tables = source.tables
+    , relations = source.relations
+    , types = source.types
+    }
+
+
+fromErd : { s | tables : Dict TableId ErdTable, relations : List ErdRelation, types : Dict CustomTypeId CustomType } -> Schema
+fromErd source =
+    { tables = source.tables |> Dict.map (\_ -> ErdTable.unpack)
+    , relations = source.relations |> List.map ErdRelation.unpack
+    , types = source.types
+    }
 
 
 filter : List TableId -> Schema -> Schema

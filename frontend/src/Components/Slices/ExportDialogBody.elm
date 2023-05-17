@@ -132,7 +132,7 @@ getOutput wrap urlInfos erd input format =
                 Cmd.batch [ GotOutput "" "plan_limit" |> wrap |> T.send, Track.planLimit .sqlExport (Just erd) ]
 
             else
-                erd |> Erd.unpack |> Schema.from |> generateTables format |> (\( output, ext ) -> output |> GotOutput (erd.project.name ++ "." ++ ext) |> wrap |> T.send)
+                erd |> Schema.fromErd |> generateTables format |> (\( output, ext ) -> output |> GotOutput (erd.project.name ++ "." ++ ext) |> wrap |> T.send)
 
         CurrentLayout ->
             if format /= AML && format /= JSON && not sqlExportAllowed then
@@ -140,8 +140,7 @@ getOutput wrap urlInfos erd input format =
 
             else
                 erd
-                    |> Erd.unpack
-                    |> Schema.from
+                    |> Schema.fromErd
                     |> Schema.filter (erd.layouts |> Dict.get erd.currentLayout |> Maybe.mapOrElse (.tables >> List.map .id) [])
                     |> generateTables format
                     |> (\( output, ext ) -> output |> GotOutput (erd.project.name ++ "-" ++ erd.currentLayout ++ "." ++ ext) |> wrap |> T.send)

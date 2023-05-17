@@ -40,7 +40,7 @@ empty now =
 
 create : Dict TableId (List ErdRelation) -> Layout -> ErdLayout
 create relationsByTable layout =
-    { canvas = layout.canvas
+    { canvas = CanvasProps.empty
     , tables = layout.tables |> List.map (\t -> t |> ErdTableLayout.create (layout.tables |> List.map .id |> Set.fromList) (relationsByTable |> Dict.getOrElse t.id []))
     , groups = layout.groups
     , memos = layout.memos
@@ -51,8 +51,7 @@ create relationsByTable layout =
 
 unpack : ErdLayout -> Layout
 unpack layout =
-    { canvas = layout.canvas
-    , tables = layout.tables |> List.map (\t -> t |> ErdTableLayout.unpack)
+    { tables = layout.tables |> List.map (\t -> t |> ErdTableLayout.unpack)
     , groups = layout.groups
     , memos = layout.memos
     , createdAt = layout.createdAt
