@@ -39,5 +39,5 @@ Start with `npm run setup` to install dependencies and set up the CLI, then you 
 
 - connect to npm account
 - update `package.json` version
-- test with `npm run drypublish` and check `azimutt-x.y.z.tgz` content
+- test with `npm run dry-publish` and check `azimutt-x.y.z.tgz` content
 - launch `npm publish`

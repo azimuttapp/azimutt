@@ -21,10 +21,11 @@
     "setup": "npm install && npm run build",
     "test": "jest",
     "build": "rm -rf ./out && tsc",
-    "update": "npm update --save-dev && npm update --save && npm install"
+    "update": "npm update --save-dev && npm update --save && npm install",
+    "dry-publish": "npm run build && npm pack"
   },
   "dependencies": {
-    "@azimutt/utils": "file:../utils",
+    "@azimutt/utils": "^0.0.2",
     "zod": "^3.21.4"
   },
   "devDependencies": {
