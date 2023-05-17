@@ -1,4 +1,4 @@
-import {Collection, MongoClient} from "mongodb";
+import {Collection, Filter, MongoClient} from "mongodb";
 import {Logger, sequence} from "@azimutt/utils";
 import {AzimuttSchema, DatabaseUrlParsed} from "@azimutt/database-types";
 import {schemaToColumns, ValueSchema, valuesToSchema} from "@azimutt/json-infer-schema";
@@ -37,18 +37,26 @@ function limitResults(query: any, limit: string) {
 }
 
 export type MongodbSchema = { collections: MongodbCollection[] }
-export type MongodbCollection = { database: MongodbDatabaseName, collection: MongodbCollectionName, schema: ValueSchema, sampleDocs: number, totalDocs: number }
+export type MongodbCollection = {
+    database: MongodbDatabaseName,
+    collection: MongodbCollectionName,
+    type?: MongodbCollectionType,
+    schema: ValueSchema,
+    sampleDocs: number,
+    totalDocs: number
+}
 export type MongodbDatabaseName = string
 export type MongodbCollectionName = string
+export type MongodbCollectionType = {field: string, value: string | undefined}
 
-export async function getSchema(application: string, url: DatabaseUrlParsed, databaseName: MongodbDatabaseName | undefined, sampleSize: number, logger: Logger): Promise<MongodbSchema> {
+export async function getSchema(application: string, url: DatabaseUrlParsed, databaseName: MongodbDatabaseName | undefined, mixedCollection: string | undefined, sampleSize: number, logger: Logger): Promise<MongodbSchema> {
     return connect(url, async client => {
         logger.log('Connected to database ...')
         const databaseNames: MongodbDatabaseName[] = databaseName ? [databaseName] : await listDatabases(client)
         logger.log(databaseName ? `Export for '${databaseName}' database ...` : `Found ${databaseNames.length} databases to export ...`)
         const collections: Collection[] = (await sequence(databaseNames, dbName => client.db(dbName).collections())).flat()
         logger.log(`Found ${collections.length} collections to export ...`)
-        const schemas: MongodbCollection[] = await sequence(collections, collection => infer(collection, sampleSize, logger))
+        const schemas: MongodbCollection[] = (await sequence(collections, collection => inferCollection(collection, mixedCollection, sampleSize, logger))).flat()
         logger.log('✔︎ All collections exported!')
         return {collections: schemas}
     })
@@ -58,7 +66,7 @@ export function formatSchema(schema: MongodbSchema, inferRelations: boolean): Az
     // FIXME: handle inferRelations
     const tables = schema.collections.map(c => ({
         schema: c.database,
-        table: c.collection,
+        table: c.type && c.type.value ? `${c.collection}__${c.type.field}__${c.type.value}` : c.collection,
         columns: schemaToColumns(c.schema, 0)
     }))
     return {tables, relations: []}
@@ -85,20 +93,49 @@ async function connect<T>(url: DatabaseUrlParsed, run: (c: MongoClient) => Promi
     }
 }
 
-async function infer(collection: Collection, sampleSize: number, logger: Logger): Promise<MongodbCollection> {
+async function inferCollection(collection: Collection, mixedCollection: string | undefined, sampleSize: number, logger: Logger): Promise<MongodbCollection[]> {
     // FIXME: fetch index informations & more
     // console.log('options', await collection.options()) // empty
     // console.log('indexes', await collection.indexes())
     // console.log('listIndexes', await collection.listIndexes().toArray()) // same result as indexes()
     // console.log('indexInformation', await collection.indexInformation()) // not much
     // console.log('stats', await collection.stats()) // several info
-    logger.log(`Exporting collection ${collection.dbName}.${collection.collectionName} ...`)
-    const documents = await collection.find({}, {limit: sampleSize}).toArray()
+    logger.log(`Exporting collection ${collectionRef(collection)} ...`)
+    const types = mixedCollection ? await getCollectionTypes(collection, mixedCollection) : [undefined]
+    return sequence(types, type => inferCollectionForType(collection, type, sampleSize, logger))
+}
+
+async function getCollectionTypes(collection: Collection, mixedCollection: string): Promise<MongodbCollectionType[]> {
+    const values = await collection.distinct(mixedCollection)
+    return values.map(value => ({field: mixedCollection, value}))
+}
+
+async function inferCollectionForType(collection: Collection, type: MongodbCollectionType | undefined, sampleSize: number, logger: Logger): Promise<MongodbCollection> {
+    type && type.value && logger.log(`Exporting collection ${collectionRef(collection)} with ${type.field}=${type.value} ...`)
+    const documents = await getSampleDocuments(collection, type, sampleSize)
+    const count = await countDocuments(collection, type)
     return {
         database: collection.dbName,
         collection: collection.collectionName,
+        type,
         schema: valuesToSchema(documents),
         sampleDocs: documents.length,
-        totalDocs: await collection.estimatedDocumentCount()
+        totalDocs: count
     }
+}
+
+async function getSampleDocuments(collection: Collection, type: MongodbCollectionType | undefined, sampleSize: number): Promise<any[]> {
+    return await collection.find(filter(type)).limit(sampleSize).toArray()
+}
+
+async function countDocuments(collection: Collection, type: MongodbCollectionType | undefined): Promise<number> {
+    return await collection.countDocuments(filter(type))
+}
+
+function filter(type: MongodbCollectionType | undefined): Filter<any> {
+    return type && type.value ? {[type.field]: type.value} : {}
+}
+
+function collectionRef(collection: Collection): string {
+    return `${collection.dbName}.${collection.collectionName}`
 }
