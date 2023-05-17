@@ -71,7 +71,7 @@ import Random
 import Services.Backend as Backend
 import Services.DatabaseSource as DatabaseSource
 import Services.JsonSource as JsonSource
-import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapContextMenuM, mapDetailsSidebarCmd, mapEmbedSourceParsingMCmd, mapErdM, mapErdMCmd, mapExportDialogCmd, mapHoverTable, mapMemos, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapOrganizationM, mapPlan, mapPosition, mapProject, mapPromptM, mapProps, mapQueryPaneCmd, mapSaveCmd, mapSchemaAnalysisM, mapSearch, mapSelected, mapSharingCmd, mapShowHiddenColumns, mapTables, mapTablesCmd, mapToastsCmd, setActive, setCollapsed, setColor, setColors, setConfirm, setContextMenu, setCurrentLayout, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setLast, setModal, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setSelected, setShow, setSize, setText)
+import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapContextMenuM, mapDetailsSidebarCmd, mapEmbedSourceParsingMCmd, mapErdM, mapErdMCmd, mapExportDialogCmd, mapHoverTable, mapMemos, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapOrganizationM, mapPlan, mapPosition, mapProject, mapPromptM, mapProps, mapQueryPaneCmd, mapSaveCmd, mapSchemaAnalysisM, mapSearch, mapSelected, mapSharingCmd, mapShowHiddenColumns, mapTables, mapTablesCmd, mapToastsCmd, setActive, setCanvas, setCollapsed, setColor, setColors, setConfirm, setContextMenu, setCurrentLayout, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setLast, setModal, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setSelected, setShouldFitCanvas, setShow, setSize, setText)
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
 import Time
@@ -407,9 +407,21 @@ handleJsMessage now currentLayout msg model =
                         erd =
                             (project |> Erd.create)
                                 |> (\e ->
+                                        -- set current layout if given in url
                                         currentLayout
                                             |> Maybe.filter (\l -> project.layouts |> Dict.member l)
                                             |> Maybe.mapOrElse (\l -> e |> setCurrentLayout l) e
+                                   )
+                                |> (\e ->
+                                        -- keep current layout & layout position when project is updated
+                                        if model.erd |> Maybe.any (\current -> current.project.id == project.id) then
+                                            e
+                                                |> setShouldFitCanvas False
+                                                |> setCurrentLayout (model.erd |> Maybe.withDefault e |> .currentLayout)
+                                                |> Erd.mapCurrentLayout (\l -> l |> setCanvas (model.erd |> Maybe.withDefault e |> Erd.currentLayout |> .canvas))
+
+                                        else
+                                            e
                                    )
 
                         amlSidebar : Maybe AmlSidebar
