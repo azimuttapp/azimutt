@@ -18,10 +18,6 @@ export class AzimuttApi {
             .filter(t => !removedTables.find(r => t.table === r || new RegExp(r).test(t.table))) || []
     }
     getAllRelations = (): Relation[] => this.project?.sources.filter(s => s.enabled !== false).flatMap(s => s.relations) || []
-    getVisibleTables = (): Table[] => {
-        const tables: { [id: TableId]: Table } = this.getAllTables().reduce((acc, t) => ({...acc, [`${t.schema}.${t.table}`]: t}), {})
-        return this.project?.layouts[this.project?.usedLayout].tables.map(t => tables[t.id]).filter(t => t !== undefined) as Table[]
-    }
     showTable = (id: TableId, left?: Px, top?: Px): void => this.app.showTable(id, typeof left === 'number' && typeof top === 'number' ? {left, top} : undefined)
     hideTable = (id: TableId): void => this.app.hideTable(id)
     toggleTableColumns = (id: TableId): void => this.app.toggleTableColumns(id)

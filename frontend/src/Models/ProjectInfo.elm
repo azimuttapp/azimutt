@@ -6,12 +6,11 @@ import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
 import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
-import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Time as Time
 import Models.Organization as Organization exposing (Organization)
 import Models.OrganizationId as OrganizationId exposing (OrganizationId)
-import Models.Project exposing (Project)
+import Models.Project as Project exposing (Project)
 import Models.Project.Metadata as Metadata
 import Models.Project.ProjectEncodingVersion as ProjectEncodingVersion exposing (ProjectEncodingVersion)
 import Models.Project.ProjectId as ProjectId exposing (ProjectId)
@@ -50,10 +49,9 @@ type alias ProjectInfo =
 fromProject : Project -> ProjectInfo
 fromProject p =
     let
-        -- should be the same as `computeStats` in ts-src/types/project.ts
         tables : Dict TableId (List Table)
         tables =
-            p.sources |> List.concatMap (\s -> s.tables |> Dict.values) |> List.groupBy .id
+            p |> Project.tables
     in
     { organization = p.organization
     , id = p.id
@@ -66,8 +64,8 @@ fromProject p =
     , nbSources = p.sources |> List.length
     , nbTables = tables |> Dict.size
     , nbColumns = tables |> Dict.values |> List.map (List.map (.columns >> Dict.size) >> List.maximum >> Maybe.withDefault 0) |> List.sum
-    , nbRelations = p.sources |> List.foldl (\src acc -> acc + (src.relations |> List.length)) 0
-    , nbTypes = p.types |> Dict.size
+    , nbRelations = p |> Project.relations |> Dict.size
+    , nbTypes = p |> Project.types |> Dict.size
     , nbComments = p.sources |> List.concatMap (.tables >> Dict.values >> List.concatMap (\t -> t.comment :: (t.columns |> Dict.values |> List.map .comment) |> List.filterMap identity)) |> List.length
     , nbLayouts = p.layouts |> Dict.size
     , nbNotes = p.metadata |> Metadata.countNotes

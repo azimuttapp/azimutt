@@ -9,7 +9,7 @@ import PagesComponents.Organization_.Project_.Models.Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirtyCmd)
 import Ports
-import Services.Lenses exposing (mapErdMCmd, mapLayouts, setCurrentLayout)
+import Services.Lenses exposing (mapErdMCmd, mapLayouts, setCurrentLayout, setShouldFitCanvas)
 import Services.Toasts as Toasts
 import Track
 
@@ -22,7 +22,7 @@ handleLayout : LayoutMsg -> Model x -> ( Model x, Cmd Msg )
 handleLayout msg model =
     case msg of
         LLoad name ->
-            model |> mapErdMCmd (loadLayout name) |> setDirtyCmd
+            model |> mapErdMCmd (loadLayout name)
 
         LDelete name ->
             model |> mapErdMCmd (deleteLayout name) |> setDirtyCmd
@@ -34,7 +34,7 @@ loadLayout name erd =
         |> Dict.get name
         |> Maybe.mapOrElse
             (\layout ->
-                ( erd |> setCurrentLayout name
+                ( erd |> setCurrentLayout name |> setShouldFitCanvas True
                 , Cmd.batch [ Ports.observeLayout layout, Track.layoutLoaded erd.project layout ]
                 )
             )

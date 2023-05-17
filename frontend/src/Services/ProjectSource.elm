@@ -194,7 +194,7 @@ viewLogsProject zone project =
     div []
         [ div [] [ text ("Successfully decoded project " ++ project.name ++ ".") ]
         , div [] [ text ("It was created on " ++ DateTime.formatDate zone project.createdAt ++ " and last modified on " ++ DateTime.formatDate zone project.updatedAt ++ ".") ]
-        , div [] [ text ("It has " ++ String.pluralizeD "layout" project.layouts ++ " and " ++ String.pluralizeL "source" project.sources ++ ", containing " ++ String.pluralizeD "table" project.tables ++ " and " ++ String.pluralizeL "relation" project.relations ++ ".") ]
+        , div [] [ text ("It has " ++ String.pluralizeD "layout" project.layouts ++ " and " ++ String.pluralizeL "source" project.sources ++ ", containing " ++ (project |> Project.tables |> String.pluralizeD "table") ++ " and " ++ (project |> Project.relations |> String.pluralizeD "relation") ++ ".") ]
         ]
 
 
@@ -205,7 +205,7 @@ viewDiffAlert zone old new =
             [ div [] [ text "This project already exist in Azimutt (same id), compare the differences below to decide what to do:" ]
             , ul [ class "list-disc list-inside" ]
                 [ li [] [ text ("Existing project has been last modified on " ++ DateTime.formatDate zone old.updatedAt ++ " while imported one was updated on " ++ DateTime.formatDate zone new.updatedAt) ]
-                , li [] [ text ("Existing project has " ++ String.pluralizeD "table" old.tables ++ " and " ++ String.pluralizeL "relation" old.relations ++ ", the imported one has " ++ String.pluralizeD "table" new.tables ++ " and " ++ String.pluralizeL "relation" new.relations ++ ".") ]
+                , li [] [ text ("Existing project has " ++ (old |> Project.tables |> String.pluralizeD "table") ++ " and " ++ (old |> Project.relations |> String.pluralizeD "relation") ++ ", the imported one has " ++ (new |> Project.tables |> String.pluralizeD "table") ++ " and " ++ (new |> Project.relations |> String.pluralizeD "relation") ++ ".") ]
                 , li [] [ text ("Existing project has " ++ String.pluralizeD "layout" old.layouts ++ ", the imported one has " ++ String.pluralizeD "layout" new.layouts ++ ".") ]
                 ]
             ]

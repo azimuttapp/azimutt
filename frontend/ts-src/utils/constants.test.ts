@@ -84,7 +84,6 @@ export const source: Source = {
     updatedAt: now
 }
 export const layout: Layout = {
-    canvas: {position: {left: 0, top: 0}, zoom: 1},
     tables: [{
         id: 'public.users',
         position: {left: 0, top: 0},
@@ -104,8 +103,7 @@ export const project: Project = {
     name: 'Project',
     description: 'a description',
     sources: [source],
-    notes: {'public.users': 'users notes'},
-    usedLayout: 'init',
+    metadata: {'public.users': {notes: 'users notes', columns: {}}},
     layouts: {init: layout},
     settings: {removedTables: 'logs'},
     storage: ProjectStorage.enum.local,

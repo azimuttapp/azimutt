@@ -71,7 +71,7 @@ import Random
 import Services.Backend as Backend
 import Services.DatabaseSource as DatabaseSource
 import Services.JsonSource as JsonSource
-import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapConf, mapContextMenuM, mapDetailsSidebarCmd, mapEmbedSourceParsingMCmd, mapErdM, mapErdMCmd, mapExportDialogCmd, mapHoverTable, mapMemos, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapOrganizationM, mapPlan, mapPosition, mapProject, mapPromptM, mapProps, mapQueryPaneCmd, mapSaveCmd, mapSchemaAnalysisM, mapSearch, mapSelected, mapSharingCmd, mapShowHiddenColumns, mapTables, mapTablesCmd, mapToastsCmd, setActive, setCollapsed, setColor, setColors, setConfirm, setContextMenu, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setLast, setModal, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setSelected, setShow, setSize, setText)
+import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapContextMenuM, mapDetailsSidebarCmd, mapEmbedSourceParsingMCmd, mapErdM, mapErdMCmd, mapExportDialogCmd, mapHoverTable, mapMemos, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapOrganizationM, mapPlan, mapPosition, mapProject, mapPromptM, mapProps, mapQueryPaneCmd, mapSaveCmd, mapSchemaAnalysisM, mapSearch, mapSelected, mapSharingCmd, mapShowHiddenColumns, mapTables, mapTablesCmd, mapToastsCmd, setActive, setCollapsed, setColor, setColors, setConfirm, setContextMenu, setCurrentLayout, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setLast, setModal, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setSelected, setShow, setSize, setText)
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
 import Time
@@ -288,7 +288,7 @@ update currentLayout zone now urlInfos organizations projects msg model =
             ( model |> setCursorMode mode, Cmd.none )
 
         FitToScreen ->
-            model |> mapErdMCmd (fitCanvas now model.erdElem) |> setDirtyCmd
+            model |> mapErdMCmd (fitCanvas model.erdElem)
 
         ArrangeTables ->
             model |> mapErdMCmd (arrangeTables now model.erdElem) |> setDirtyCmd
@@ -391,7 +391,7 @@ handleJsMessage : Time.Posix -> Maybe LayoutName -> JsMsg -> Model -> ( Model, C
 handleJsMessage now currentLayout msg model =
     case msg of
         GotSizes sizes ->
-            model |> updateSizes now sizes
+            model |> updateSizes sizes
 
         GotProject res ->
             case res of
@@ -405,10 +405,12 @@ handleJsMessage now currentLayout msg model =
                     let
                         erd : Erd
                         erd =
-                            currentLayout
-                                |> Maybe.filter (\l -> project.layouts |> Dict.member l)
-                                |> Maybe.mapOrElse (\l -> { project | usedLayout = l }) project
-                                |> Erd.create
+                            (project |> Erd.create)
+                                |> (\e ->
+                                        currentLayout
+                                            |> Maybe.filter (\l -> project.layouts |> Dict.member l)
+                                            |> Maybe.mapOrElse (\l -> e |> setCurrentLayout l) e
+                                   )
 
                         amlSidebar : Maybe AmlSidebar
                         amlSidebar =
@@ -520,8 +522,8 @@ handleJsMessage now currentLayout msg model =
             ( model, Cmd.batch [ "Unable to decode JavaScript message: " ++ Decode.errorToString err ++ " in " ++ Encode.encode 0 json |> Toasts.error |> Toast |> T.send, Track.jsonError "js_message" err ] )
 
 
-updateSizes : Time.Posix -> List SizeChange -> Model -> ( Model, Cmd Msg )
-updateSizes now changes model =
+updateSizes : List SizeChange -> Model -> ( Model, Cmd Msg )
+updateSizes changes model =
     let
         erdChanged : Model
         erdChanged =
@@ -545,20 +547,15 @@ updateSizes now changes model =
                                 )
                     )
     in
-    if model.conf.fitOnLoad && (changes |> List.memberBy .id "erd") then
-        newModel
-            |> mapConf (\c -> { c | fitOnLoad = False })
-            |> mapErdMCmd
-                (\e ->
-                    if (e |> Erd.currentLayout |> .tables |> List.length) > 0 then
-                        e |> fitCanvas now newModel.erdElem
+    newModel
+        |> mapErdMCmd
+            (\e ->
+                if e.shouldFitCanvas && newModel.erdElem.size /= Size.zeroViewport && (e |> Erd.currentLayout |> .tables |> List.length) > 0 then
+                    e |> fitCanvas newModel.erdElem
 
-                    else
-                        ( e, Cmd.none )
-                )
-
-    else
-        ( newModel, Cmd.none )
+                else
+                    ( e, Cmd.none )
+            )
 
 
 updateMemos : ZoomLevel -> List SizeChange -> List Memo -> List Memo

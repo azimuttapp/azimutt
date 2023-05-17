@@ -4,8 +4,7 @@ import Models.ProjectTokenId exposing (ProjectTokenId)
 
 
 type alias ErdConf =
-    { fitOnLoad : Bool -- to run fit to screen on project load
-    , fullscreen : Bool -- to allow fullscreen button
+    { fullscreen : Bool -- to allow fullscreen button
     , save : Bool -- to allow to save the project
     , hover : Bool -- to be responsive to the hover (column & link highlight)
     , select : Bool -- to allow to select tables
@@ -25,8 +24,7 @@ project : Maybe ProjectTokenId -> ErdConf
 project token =
     -- used for real app
     -- if token is present, we are in sharing mode so disabled the sharing menu and the save action
-    { fitOnLoad = False
-    , fullscreen = False
+    { fullscreen = False
     , save = token == Nothing
     , hover = True
     , select = True
@@ -45,8 +43,7 @@ project token =
 embedDefault : ErdConf
 embedDefault =
     -- used for embed app
-    { fitOnLoad = True
-    , fullscreen = True
+    { fullscreen = True
     , save = False
     , hover = False
     , select = False

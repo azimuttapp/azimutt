@@ -11,20 +11,20 @@ import Models.ErdProps exposing (ErdProps)
 import Models.Organization as Organization exposing (Organization)
 import Models.OrganizationId exposing (OrganizationId)
 import Models.Position as Position
-import Models.Project as Project exposing (Project)
+import Models.Project exposing (Project)
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.ColumnRef exposing (ColumnRef)
-import Models.Project.CustomType exposing (CustomType)
+import Models.Project.CustomType as CustomType exposing (CustomType)
 import Models.Project.CustomTypeId exposing (CustomTypeId)
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.Metadata exposing (Metadata)
 import Models.Project.ProjectId as ProjectId exposing (ProjectId)
-import Models.Project.ProjectSettings exposing (ProjectSettings)
-import Models.Project.Relation exposing (Relation)
+import Models.Project.ProjectSettings as ProjectSettings exposing (ProjectSettings)
+import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId exposing (SourceId)
-import Models.Project.Table exposing (Table)
+import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
 import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Models.ProjectRef exposing (ProjectRef)
@@ -48,6 +48,7 @@ type alias Erd =
     , relationsByTable : Dict TableId (List ErdRelation)
     , layouts : Dict LayoutName ErdLayout
     , currentLayout : LayoutName
+    , shouldFitCanvas : Bool
     , metadata : Metadata
     , sources : List Source
     , settings : ProjectSettings
@@ -59,6 +60,12 @@ create project =
     let
         ( ( tables, relations, types ), relationsByTable ) =
             computeSources project.settings project.sources
+
+        layout : LayoutName
+        layout =
+            (project.layouts |> Dict.get Conf.constants.defaultLayout |> Maybe.map (\_ -> Conf.constants.defaultLayout))
+                |> Maybe.orElse (project.layouts |> Dict.keys |> List.sort |> List.head)
+                |> Maybe.withDefault Conf.constants.defaultLayout
     in
     { project = ProjectInfo.fromProject project
     , tables = tables
@@ -66,7 +73,8 @@ create project =
     , types = types
     , relationsByTable = relationsByTable
     , layouts = project.layouts |> Dict.map (\_ -> ErdLayout.create relationsByTable)
-    , currentLayout = project.usedLayout
+    , currentLayout = layout
+    , shouldFitCanvas = True
     , metadata = project.metadata
     , sources = project.sources
     , settings = project.settings
@@ -81,11 +89,7 @@ unpack erd =
     , name = erd.project.name
     , description = erd.project.description
     , sources = erd.sources
-    , tables = erd.tables |> Dict.map (\_ -> ErdTable.unpack)
-    , relations = erd.relations |> List.map ErdRelation.unpack
-    , types = erd.types
     , metadata = erd.metadata
-    , usedLayout = erd.currentLayout
     , layouts = erd.layouts |> Dict.map (\_ -> ErdLayout.unpack)
     , settings = erd.settings
     , storage = erd.project.storage
@@ -241,15 +245,15 @@ computeSources settings sources =
     let
         tables : Dict TableId Table
         tables =
-            sources |> Project.computeTables settings
+            sources |> computeTables settings
 
         relations : List Relation
         relations =
-            sources |> Project.computeRelations tables
+            sources |> computeRelations tables
 
         types : Dict CustomTypeId CustomType
         types =
-            sources |> Project.computeTypes
+            sources |> computeTypes
 
         erdRelations : List ErdRelation
         erdRelations =
@@ -264,6 +268,53 @@ computeSources settings sources =
             tables |> Dict.map (\id -> ErdTable.create settings.defaultSchema types (erdRelationsByTable |> Dict.getOrElse id []))
     in
     ( ( erdTables, erdRelations, types ), erdRelationsByTable )
+
+
+computeTables : ProjectSettings -> List Source -> Dict TableId Table
+computeTables settings sources =
+    sources
+        |> List.filter .enabled
+        |> List.map (\s -> s.tables |> Dict.filter (\_ -> shouldDisplayTable settings))
+        |> List.foldr (Dict.fuse Table.merge) Dict.empty
+
+
+shouldDisplayTable : ProjectSettings -> Table -> Bool
+shouldDisplayTable settings table =
+    let
+        isSchemaRemoved : Bool
+        isSchemaRemoved =
+            settings.removedSchemas |> List.member table.schema
+
+        isViewRemoved : Bool
+        isViewRemoved =
+            table.view && settings.removeViews
+
+        isTableRemoved : Bool
+        isTableRemoved =
+            table.id |> ProjectSettings.removeTable settings.removedTables
+    in
+    not isSchemaRemoved && not isViewRemoved && not isTableRemoved
+
+
+computeRelations : Dict TableId Table -> List Source -> List Relation
+computeRelations tables sources =
+    sources
+        |> List.filter .enabled
+        |> List.map (\s -> s.relations |> List.filter (shouldDisplayRelation tables))
+        |> List.foldr (List.merge .id Relation.merge) []
+
+
+shouldDisplayRelation : Dict TableId Table -> Relation -> Bool
+shouldDisplayRelation tables relation =
+    (tables |> Dict.member relation.src.table) && (tables |> Dict.member relation.ref.table)
+
+
+computeTypes : List Source -> Dict CustomTypeId CustomType
+computeTypes sources =
+    sources
+        |> List.filter .enabled
+        |> List.map .types
+        |> List.foldr (Dict.fuse CustomType.merge) Dict.empty
 
 
 buildRelationsByTable : List ErdRelation -> Dict TableId (List ErdRelation)

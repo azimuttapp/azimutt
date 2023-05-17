@@ -30,7 +30,7 @@ handleDrag now drag isEnd model =
     in
     if drag.id == Conf.ids.erd then
         if isEnd && drag.init /= drag.last then
-            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapCanvas (moveCanvas drag))) |> setDirty
+            ( model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapCanvas (moveCanvas drag))), Cmd.none )
 
         else
             ( model, Cmd.none )
