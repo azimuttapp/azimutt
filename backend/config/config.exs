@@ -45,9 +45,9 @@ config :azimutt,
 config :azimutt,
   ecto_repos: [Azimutt.Repo]
 
-config :azimutt, Azimutt.Repo, migration_primary_key: [type: :uuid]
-
-config :azimutt, Azimutt.Repo, migration_timestamps: [type: :utc_datetime_usec, inserted_at: :created_at]
+config :azimutt, Azimutt.Repo,
+  migration_primary_key: [type: :uuid],
+  migration_timestamps: [type: :utc_datetime_usec, inserted_at: :created_at]
 
 # Configures the endpoint
 config :azimutt, AzimuttWeb.Endpoint,
@@ -89,12 +89,6 @@ config :ueberauth, Ueberauth,
     # see https://docs.github.com/en/developers/apps/building-oauth-apps/scopes-for-oauth-apps
     github: {Ueberauth.Strategy.Github, [default_scope: "read:user,user:email"]}
   ]
-
-config :azimutt, AzimuttWeb.Storybook,
-  content_path: Path.expand("../lib/azimutt_web/storybook/", __DIR__),
-  css_path: "/assets/app.css",
-  js_path: "/assets/app.js",
-  title: "Azimutt Storybook"
 
 config :azimutt, :phoenix_swagger,
   swagger_files: %{

@@ -67,7 +67,6 @@ Now you can visit :
 
 - [`localhost:4000`](http://localhost:4000) for the main app
 - [`localhost:4000/api/v1/swagger`](http://localhost:4000/api/swagger) for the Swagger documentation
-- [`localhost:4000/storybook`](http://localhost:4000/storybook) for the Storybook
 
 ⚠️ to launch the app you will need a few environment variables: `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `MAILGUN_DOMAIN`, `MAILGUN_API_KEY`, `STRIPE_API_KEY`, `STRIPE_WEBHOOK_SIGNING_SECRET`.
 

@@ -1,6 +1,5 @@
 defmodule AzimuttWeb.Router do
   use AzimuttWeb, :router
-  import PhxLiveStorybook.Router
   import AzimuttWeb.UserAuth
   alias AzimuttWeb.Plugs.AllowCrossOriginIframe
 
@@ -240,11 +239,6 @@ defmodule AzimuttWeb.Router do
       pipe_through(:browser)
       live_dashboard("/dashboard", metrics: AzimuttWeb.Telemetry)
     end
-
-    live_storybook("/storybook",
-      otp_app: :azimutt,
-      backend_module: AzimuttWeb.Storybook
-    )
   end
 
   # Enables the Swoosh mailbox preview in development.

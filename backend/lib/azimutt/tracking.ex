@@ -44,6 +44,36 @@ defmodule Azimutt.Tracking do
     |> Result.from_nillable()
   end
 
+  def recent_organization_events(%Organization{} = organization) do
+    allowed_events = [
+      "editor_layout_created",
+      "editor_layout_deleted",
+      "editor_memo_created",
+      "editor_memo_deleted",
+      "editor_memo_updated",
+      "editor_notes_created",
+      "editor_notes_deleted",
+      "editor_notes_updated",
+      "editor_source_added",
+      "editor_source_deleted",
+      "editor_source_refreshed",
+      "project_created",
+      "project_deleted",
+      "project_loaded",
+      "project_updated"
+    ]
+
+    Event
+    |> where([e], e.organization_id == ^organization.id)
+    |> where([e], e.name in ^allowed_events)
+    |> preload(:created_by)
+    |> preload(:project)
+    |> order_by([e], desc: e.created_at)
+    |> limit(10)
+    |> Repo.all()
+    |> Result.from_nillable()
+  end
+
   def attribution(current_user, details),
     do: create_event("attribution", nil, details, current_user, nil, nil)
 
