@@ -11,12 +11,7 @@
                     <img src={event.created_by.avatar} alt="" class="relative flex-none w-6 h-6 mt-3 rounded-full bg-gray-50">
                     <p class="flex-auto py-0.5 text-xs leading-5 text-gray-500">
                       <span class="font-medium text-gray-900">
-                        <% %{action: action, author: author, destination: destination} = AzimuttWeb.OrganizationView.event_description(event) %>
-                        <div class="text-xs">
-                          <span class="font-semibold text-gray-900 "> <%= "#{author}"%></span>
-                          <span class="text-gray-800"> <%= "#{action}"%></span>
-                          <span class="font-semibold text-blue-500"> <%= "#{destination}"%></span>
-                        </div>
+                        <%= AzimuttWeb.OrganizationView.generate_html_event_description(event) %>
                       </span>
                     </p>
                     <time datetime={event.created_at} class="flex-none py-0.5 text-xs leading-5 text-gray-500"> <%= AzimuttWeb.OrganizationView.last_update(event.created_at)  %>  </time>
