@@ -21,8 +21,8 @@ jobs:
       MIX_ENV: test
     strategy:
       matrix:
-        elixir: [ '1.13', '1.14' ]
-        otp: [ '24', '25' ]
+        elixir: [ '1.14' ]
+        otp: [ '25' ]
     services:
       db:
         image: postgres:14
