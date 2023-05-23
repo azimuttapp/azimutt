@@ -1,7 +1,24 @@
-<div class="bg-gray-50 pr-4 sm:pr-6 lg:pr-8 lg:flex-shrink-0 lg:border-l lg:border-gray-200 xl:pr-0 min-h-full">
+<div class="min-h-full pr-4 bg-gray-50 sm:pr-6 lg:pr-8 lg:flex-shrink-0 lg:border-l lg:border-gray-200 xl:pr-0">
     <div class="pl-6 lg:w-80">
         <div class="pt-6 pb-2">
-            <h2 class="text-sm font-semibold"></h2>
+            <h2 class="text-sm font-semibold">Activities</h2>
+            <ul role="list" class="space-y-6">
+              <%= for event <- @organization_events do %>
+                <li class="relative flex gap-x-4">
+                    <div class="absolute top-0 left-0 flex justify-center w-6 -bottom-6">
+                      <div class="w-px bg-gray-200"></div>
+                    </div>
+                    <img src={event.created_by.avatar} alt="" class="relative flex-none w-6 h-6 mt-3 rounded-full bg-gray-50">
+                    <p class="flex-auto py-0.5 text-xs leading-5 text-gray-500">
+                      <span class="font-medium text-gray-900">
+                        <%= AzimuttWeb.OrganizationView.generate_html_event_description(event) %>
+                      </span>
+                    </p>
+                    <time datetime={event.created_at} class="flex-none py-0.5 text-xs leading-5 text-gray-500"> <%= AzimuttWeb.OrganizationView.last_update(event.created_at)  %>  </time>
+                  </li>
+              <% end %>
+            </ul>
+
         </div>
     </div>
 </div>

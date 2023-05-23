@@ -73,7 +73,6 @@ defmodule Azimutt.MixProject do
       {:timex, "~> 3.7"},
       {:stripity_stripe, "~> 2.15"},
       {:gen_smtp, "~> 1.2"},
-      {:phx_live_storybook, "~> 0.3.0"},
       {:phoenix_swagger, "~> 0.8.3"},
       {:ex_json_schema, "~> 0.5"},
       {:typed_struct, "~> 0.3.0"},
