@@ -1,6 +1,5 @@
 {
   "name": "azimutt-desktop",
-  "productName": "azimutt-desktop",
   "version": "0.0.1",
   "description": "Use Azimutt as a desktop app and access local databases directly",
   "keywords": [

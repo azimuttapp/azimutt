@@ -43,14 +43,15 @@ const config: ForgeConfig = {
     },
     makers: [
         new MakerSquirrel({
+            title: 'Azimutt · Database explorer',
             iconUrl: 'images/icon.ico',
             setupIcon: 'images/icon.ico',
             /* certificateFile: './cert.pfx',
             certificatePassword: process.env.CERTIFICATE_PASSWORD */
         }),
         new MakerZIP({}, ['darwin']),
-        new MakerRpm({}),
-        new MakerDeb({options: {icon: 'images/icon.png'}})
+        new MakerRpm({options: {productName: 'Azimutt · Database explorer'}}),
+        new MakerDeb({options: {productName: 'Azimutt · Database explorer', icon: 'images/icon.png'}})
     ],
     publishers: [
         new PublisherGithub({
