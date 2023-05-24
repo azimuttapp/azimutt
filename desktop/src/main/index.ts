@@ -1,5 +1,6 @@
-import {app, BrowserWindow} from 'electron'
+import {app, BrowserWindow, session} from 'electron'
 import {setupBridge} from "./bridge"
+import * as util from "util"
 
 require('update-electron-app')()
 
@@ -25,9 +26,10 @@ const createWindow = (): void => {
         },
     })
     setupBridge()
-    // and load the index.html of the app.
-    // mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY) // only used for debug (easier to call native functions from there)
-    mainWindow.loadURL(app.isPackaged ? 'https://azimutt.app/home' : 'http://localhost:4000/home')
+    makeCookiesPersistent()
+    // const url = MAIN_WINDOW_WEBPACK_ENTRY // only used for debug (easier to call native functions from `renderer/index.html`)
+    const url: string = app.isPackaged ? 'https://azimutt.app/home' : 'http://localhost:4000/home'
+    mainWindow.loadURL(url)
     mainWindow.maximize()
 
     // Open the DevTools.
@@ -58,3 +60,19 @@ app.on('activate', () => {
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and import them here.
+
+function makeCookiesPersistent(): void {
+    const cookies = session.defaultSession.cookies
+    cookies.on('changed', (event, cookie, cause, removed) => {
+        if (cookie.session && !removed) {
+            const protocol = cookie.secure ? 'https' : 'http'
+            const domain = cookie.domain.replace(/^\./, '')
+            const url = util.format('%s://%s%s', protocol, domain, cookie.path)
+            cookies.set({
+                ...cookie,
+                url: url,
+                expirationDate: new Date().setDate(new Date().getDate() + 30)
+            }).catch(err => console.error("Can't set cookie", err))
+        }
+    })
+}
