@@ -1,6 +1,7 @@
 import {app, BrowserWindow, session} from 'electron'
-import {setupBridge} from "./bridge"
+import * as process from "process";
 import * as util from "util"
+import {setupBridge} from "./bridge"
 
 require('update-electron-app')()
 
@@ -28,7 +29,7 @@ const createWindow = (): void => {
     setupBridge()
     makeCookiesPersistent()
     // const url = MAIN_WINDOW_WEBPACK_ENTRY // only used for debug (easier to call native functions from `renderer/index.html`)
-    const url: string = app.isPackaged ? 'https://azimutt.app/home' : 'http://localhost:4000/home'
+    const url: string = process.env.AZIMUTT_DESKTOP_URL || (app.isPackaged ? 'https://azimutt.app/home' : 'http://localhost:4000/home')
     mainWindow.loadURL(url)
     mainWindow.maximize()
 
