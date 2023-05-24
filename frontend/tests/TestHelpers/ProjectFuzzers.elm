@@ -7,7 +7,7 @@ import Libs.Dict as Dict
 import Libs.Fuzz as Fuzz
 import Libs.List as List
 import Models.ColumnOrder as ColumnOrder exposing (ColumnOrder)
-import Models.Project as Project exposing (Project)
+import Models.Project exposing (Project)
 import Models.Project.CanvasProps exposing (CanvasProps)
 import Models.Project.Check exposing (Check)
 import Models.Project.CheckName exposing (CheckName)
@@ -66,7 +66,7 @@ import TestHelpers.OrganizationFuzzers exposing (organization)
 
 project : Fuzzer Project
 project =
-    Fuzz.map15 Project.new (Fuzz.maybe organization) projectId projectSlug projectName (Fuzz.maybe stringSmall) (listSmall source) (dictSmall tableId tableMeta) layoutName (dictSmall layoutName layout) projectSettings projectStorage projectVisibility projectEncodingVersion posix posix
+    Fuzz.map14 Project (Fuzz.maybe organization) projectId projectSlug projectName (Fuzz.maybe stringSmall) (listSmall source) (dictSmall tableId tableMeta) (dictSmall layoutName layout) projectSettings projectStorage projectVisibility projectEncodingVersion posix posix
 
 
 source : Fuzzer Source
@@ -179,7 +179,7 @@ columnMeta =
 
 layout : Fuzzer Layout
 layout =
-    Fuzz.map6 Layout canvasProps (listSmall tableProps) (listSmall group) (listSmall memo) posix posix
+    Fuzz.map5 Layout (listSmall tableProps) (listSmall group) (listSmall memo) posix posix
 
 
 canvasProps : Fuzzer CanvasProps

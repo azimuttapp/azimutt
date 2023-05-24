@@ -1,6 +1,6 @@
 {
   "name": "@azimutt/utils",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Define common basic helpers for all projects",
   "keywords": [],
   "homepage": "https://azimutt.app",
@@ -21,7 +21,8 @@
     "setup": "npm install && npm run build",
     "test": "jest",
     "build": "rm -rf ./out && tsc",
-    "update": "npm update --save-dev && npm update --save && npm install"
+    "update": "npm update --save-dev && npm update --save && npm install",
+    "dry-publish": "npm run build && npm pack"
   },
   "devDependencies": {
     "@jest/globals": "^29.5.0",

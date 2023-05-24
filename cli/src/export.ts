@@ -10,6 +10,7 @@ export type Opts = {
     database: string | undefined
     schema: string | undefined
     bucket: string | undefined
+    mixedCollection: string | undefined
     sampleSize: number
     inferRelations: boolean
     format: FileFormat
@@ -42,6 +43,7 @@ async function exportJsonSchema(kind: DatabaseKind, url: DatabaseUrlParsed, opts
     const azimuttSchema = await connector.getSchema('azimutt-cli', url, {
         logger,
         schema: opts.database || opts.bucket || opts.schema,
+        mixedCollection: opts.mixedCollection,
         sampleSize: opts.sampleSize,
         inferRelations: opts.inferRelations
     })

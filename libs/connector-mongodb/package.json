@@ -21,12 +21,11 @@
     "setup": "npm install && npm run build",
     "test": "jest",
     "build": "rm -rf ./out && tsc",
-    "update": "npm update --save-dev && npm update --save && npm install"
+    "update": "npm update --save-dev && npm update --save && npm install",
+    "dry-publish": "npm run build && npm pack"
   },
   "dependencies": {
-    "@azimutt/database-types": "file:../database-types",
-    "@azimutt/json-infer-schema": "file:../json-infer-schema",
-    "@azimutt/utils": "file:../utils",
+    "@azimutt/json-infer-schema": "^0.0.1",
     "mongodb": "^5.3.0"
   },
   "devDependencies": {

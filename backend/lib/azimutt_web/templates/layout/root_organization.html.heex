@@ -1,26 +1,28 @@
 <!DOCTYPE html>
-<html lang="en" class="scroll-smooth h-full" data-root="root_organization">
+<html lang="en" class="h-full scroll-smooth" data-root="root_organization">
     <%= render "_head.html", conn: @conn %>
     <div class="fixed top-0 left-0 w-1/2 h-full bg-white" aria-hidden="true"></div>
     <div class="fixed top-0 right-0 w-1/2 h-full bg-gray-50" aria-hidden="true"></div>
-    <body class="font-sans antialiased bg-gray-50 h-full">
+    <body class="h-full font-sans antialiased bg-gray-50">
         <%= render "_hello_comment.html" %>
         <%= render "_email_confirm_banner.html", conn: @conn, current_user: @current_user %>
-        <div class="relative min-h-full flex flex-col">
+        <div class="relative flex flex-col min-h-full">
             <%= render "_user_navbar.html", conn: @conn, current_user: @current_user %>
 
-            <div class="flex-grow w-full max-w-7xl mx-auto xl:px-8 lg:flex min-h-full">
+            <div class="flex-grow w-full min-h-full mx-auto max-w-7xl xl:px-8 lg:flex">
                 <!-- Left sidebar & main wrapper -->
-                <div class="flex-1 min-w-0 w-full bg-white xl:flex">
+                <div class="flex-1 w-full min-w-0 bg-white xl:flex">
                     <!-- Left panel -->
                     <%= render "_organization_left_bar.html", conn: @conn, current_user: @current_user, organization: @organization, plan: @plan %>
                     <!-- Main content -->
-                    <div class="mx-auto w-full">
+                    <div class="w-full mx-auto">
                         <%= @inner_content %>
                     </div>
                 </div>
                 <!-- Right panel (activity feed) -->
-                <%= render "_organization_right_bar.html" %>
+                <%= if Phoenix.Controller.controller_module(@conn) == AzimuttWeb.OrganizationController && Phoenix.Controller.action_name(@conn) == :show do %>
+                    <%= render "_organization_right_bar.html", conn: @conn, current_user: @current_user, organization: @organization, plan: @plan, organization_events: @organization_events %>
+                <% end %>
             </div>
         </div>
     </body>

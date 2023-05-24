@@ -1,6 +1,6 @@
 {
   "name": "azimutt",
-  "version": "0.0.3",
+  "version": "0.0.8",
   "description": "Export database schema from relational or document databases. Import it to https://azimutt.app",
   "keywords": [
     "database",
@@ -40,14 +40,12 @@
     "exec": "npm run build && node ./lib/index.js",
     "local": "sudo npm install -g && azimutt",
     "refresh": "rm -rf ./node_modules ./package-lock.json && npm install",
-    "drypublish": "npm run build && npm pack"
+    "dry-publish": "npm run build && npm pack"
   },
   "dependencies": {
-    "@azimutt/connector-couchbase": "file:../libs/connector-couchbase",
-    "@azimutt/connector-mongodb": "file:../libs/connector-mongodb",
-    "@azimutt/connector-postgres": "file:../libs/connector-postgres",
-    "@azimutt/database-types": "file:../libs/database-types",
-    "@azimutt/utils": "file:../libs/utils",
+    "@azimutt/connector-couchbase": "^0.0.1",
+    "@azimutt/connector-mongodb": "^0.0.1",
+    "@azimutt/connector-postgres": "^0.0.1",
     "chalk": "^4.1.2",
     "clear": "^0.1.0",
     "commander": "^10.0.0",
