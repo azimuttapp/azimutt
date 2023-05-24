@@ -17,6 +17,7 @@ if (require('electron-squirrel-startup')) {
 const createWindow = (): void => {
     // Create the browser window.
     const mainWindow = new BrowserWindow({
+        icon: 'images/icon.png',
         autoHideMenuBar: true,
         webPreferences: {
             nodeIntegration: false,

@@ -32,6 +32,7 @@ const config: ForgeConfig = {
         }),
     ],
     packagerConfig: {
+        icon: 'images/icon'
         /* osxSign: {},
         osxNotarize: {
             tool: 'notarytool',
@@ -42,12 +43,14 @@ const config: ForgeConfig = {
     },
     makers: [
         new MakerSquirrel({
+            iconUrl: 'images/icon.ico',
+            setupIcon: 'images/icon.ico',
             /* certificateFile: './cert.pfx',
             certificatePassword: process.env.CERTIFICATE_PASSWORD */
         }),
         new MakerZIP({}, ['darwin']),
         new MakerRpm({}),
-        new MakerDeb({})
+        new MakerDeb({options: {icon: 'images/icon.png'}})
     ],
     publishers: [
         new PublisherGithub({
