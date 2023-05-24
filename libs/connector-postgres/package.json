@@ -1,6 +1,6 @@
 {
   "name": "@azimutt/connector-postgres",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Connect to PostgreSQL, extract schema, run analysis and queries",
   "keywords": [],
   "homepage": "https://azimutt.app",
@@ -25,9 +25,8 @@
     "dry-publish": "npm run build && npm pack"
   },
   "dependencies": {
-    "@azimutt/json-infer-schema": "^0.0.1",
-    "pg": "^8.10.0",
-    "pg-native": "^3.0.1"
+    "@azimutt/json-infer-schema": "0.0.1",
+    "pg": "8.10.0"
   },
   "devDependencies": {
     "@jest/globals": "^29.5.0",

@@ -30,10 +30,11 @@
     "publish": "electron-forge publish"
   },
   "dependencies": {
-    "@azimutt/connector-postgres": "^0.0.2",
-    "@azimutt/shared": "^0.0.1",
-    "electron-squirrel-startup": "^1.0.0",
-    "update-electron-app": "^2.0.1"
+    "@azimutt/connector-postgres": "0.0.3",
+    "@azimutt/shared": "0.0.1",
+    "electron-squirrel-startup": "1.0.0",
+    "pg-native": "3.0.1",
+    "update-electron-app": "2.0.1"
   },
   "devDependencies": {
     "@electron-forge/cli": "^6.1.1",
