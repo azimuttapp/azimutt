@@ -25,7 +25,7 @@ import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout as ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.MemoId exposing (MemoId)
-import Services.Lenses exposing (mapCanvas, mapMemos, mapPosition, mapProps, mapTables, setPosition, setZoom)
+import Services.Lenses exposing (mapCanvas, mapMemos, mapPosition, mapProps, mapTables, setPosition, setShouldFitCanvas, setZoom)
 import Services.Toasts as Toasts
 import Time
 
@@ -44,10 +44,10 @@ zoomCanvas delta erdElem canvas =
     canvas |> performZoom erdElem delta (erdElem |> Area.centerViewport)
 
 
-fitCanvas : Time.Posix -> ErdProps -> Erd -> ( Erd, Cmd Msg )
-fitCanvas now erdElem erd =
+fitCanvas : ErdProps -> Erd -> ( Erd, Cmd Msg )
+fitCanvas erdElem erd =
     (erd |> Erd.currentLayout |> objectsToFit)
-        |> Maybe.map (\( tables, memos, areas ) -> ( erd |> Erd.mapCurrentLayoutWithTime now (fitCanvasAlgo erdElem tables memos areas), Cmd.none ))
+        |> Maybe.map (\( tables, memos, areas ) -> ( erd |> setShouldFitCanvas False |> Erd.mapCurrentLayout (fitCanvasAlgo erdElem tables memos areas), Cmd.none ))
         |> Maybe.withDefault ( erd, "No table to fit into the canvas" |> Toasts.create "warning" |> Toast |> T.send )
 
 

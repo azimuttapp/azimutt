@@ -13,9 +13,9 @@ describe('couchbase', () => {
         expect(results.rows.length).toEqual(3)
     })
     test.skip('getSchema', async () => {
-        const schema = await getSchema(application, url, undefined, 10, logger)
+        const schema = await getSchema(application, url, undefined, undefined, 10, logger)
         expect(schema.collections.length).toEqual(16)
-    })
+    }, 60000)
     test.skip('explore indexes', async () => {
         // await connect(url, async cluster => {
         //     const bucket = cluster.bucket('travel-sample')

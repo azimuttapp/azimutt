@@ -188,6 +188,7 @@ module Services.Lenses exposing
     , setSelectionBox
     , setSettings
     , setSharing
+    , setShouldFitCanvas
     , setShow
     , setShowHiddenColumns
     , setShowSettings
@@ -1083,6 +1084,11 @@ setSharing =
 mapSharingCmd : (v -> ( v, Cmd msg )) -> { item | sharing : v } -> ( { item | sharing : v }, Cmd msg )
 mapSharingCmd =
     mapCmd_ .sharing setSharing
+
+
+setShouldFitCanvas : v -> { item | shouldFitCanvas : v } -> { item | shouldFitCanvas : v }
+setShouldFitCanvas =
+    set_ .shouldFitCanvas (\value item -> { item | shouldFitCanvas = value })
 
 
 setShow : v -> { item | show : v } -> { item | show : v }

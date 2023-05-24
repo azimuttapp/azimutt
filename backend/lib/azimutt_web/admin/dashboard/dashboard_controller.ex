@@ -65,15 +65,15 @@ defmodule AzimuttWeb.Admin.DashboardController do
       feature_events:
         Dataset.chartjs_daily_data(
           [
-            Admin.daily_event("user_login") |> Dataset.from_values("login"),
-            Admin.daily_event("editor_project_draft_created") |> Dataset.from_values("project_draft_created"),
-            Admin.daily_event("project_created") |> Dataset.from_values("project_created"),
-            Admin.daily_event("editor_layout_created") |> Dataset.from_values("layout_created"),
-            Admin.daily_event("editor_notes_created") |> Dataset.from_values("notes_created"),
-            Admin.daily_event("editor_memo_created") |> Dataset.from_values("memo_created"),
-            Admin.daily_event("editor_source_created") |> Dataset.from_values("source_created"),
-            Admin.daily_event("editor_db_analysis_opened") |> Dataset.from_values("db_analysis_opened"),
-            Admin.daily_event("editor_find_path_opened") |> Dataset.from_values("find_path_opened")
+            Admin.daily_event("user_login") |> Dataset.from_values("login")
+            # Admin.daily_event("editor_project_draft_created") |> Dataset.from_values("project_draft_created"),
+            # Admin.daily_event("project_created") |> Dataset.from_values("project_created"),
+            # Admin.daily_event("editor_layout_created") |> Dataset.from_values("layout_created"),
+            # Admin.daily_event("editor_notes_created") |> Dataset.from_values("notes_created"),
+            # Admin.daily_event("editor_memo_created") |> Dataset.from_values("memo_created"),
+            # Admin.daily_event("editor_source_created") |> Dataset.from_values("source_created"),
+            # Admin.daily_event("editor_db_analysis_opened") |> Dataset.from_values("db_analysis_opened"),
+            # Admin.daily_event("editor_find_path_opened") |> Dataset.from_values("find_path_opened")
           ],
           start_stats,
           now

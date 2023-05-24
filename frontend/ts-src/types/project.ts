@@ -383,7 +383,7 @@ export const Group = z.object({
 }).strict()
 
 export interface Layout {
-    canvas: CanvasProps
+    canvas?: CanvasProps // legacy property, keep it for retro compatibility
     tables: TableProps[]
     groups?: Group[]
     memos?: Memo[]
@@ -392,7 +392,7 @@ export interface Layout {
 }
 
 export const Layout = z.object({
-    canvas: CanvasProps,
+    canvas: CanvasProps.optional(),
     tables: TableProps.array(),
     groups: Group.array().optional(),
     memos: Memo.array().optional(),
@@ -453,7 +453,7 @@ export interface Project {
     sources: Source[]
     notes?: { [ref: string]: string } // legacy property, keep it for retro compatibility
     metadata?: { [table: TableId]: TableMeta }
-    usedLayout: LayoutName
+    usedLayout?: LayoutName // legacy property, keep it for retro compatibility
     layouts: { [name: LayoutName]: Layout }
     settings?: Settings
     storage: ProjectStorage
@@ -472,7 +472,7 @@ export const Project = z.object({
     sources: Source.array(),
     notes: z.record(z.string()).optional(),
     metadata: z.record(TableId, TableMeta).optional(),
-    usedLayout: LayoutName,
+    usedLayout: LayoutName.optional(),
     layouts: z.record(LayoutName, Layout),
     settings: Settings.optional(),
     storage: ProjectStorage,
@@ -598,15 +598,16 @@ export function buildProjectJson({organization, id, storage, visibility, created
 }
 
 export function computeStats(p: ProjectJson): ProjectStats {
-    // should be the same as `fromProject` in src/Models/ProjectInfo.elm
+    // should be the same as `tables`, `relations` and `types` in src/Models/Project.elm
     const tables = groupBy(p.sources.flatMap(s => s.tables), t => `${t.schema}.${t.table}`)
+    const relations = groupBy(p.sources.flatMap(s => s.relations), r => `${r.src.table}.${r.src.column}->${r.ref.table}.${r.ref.column}`)
     const types = groupBy(p.sources.flatMap(s => s.types || []), t => `${t.schema}.${t.name}`)
 
     return Zod.validate({
         nbSources: p.sources.length,
         nbTables: Object.keys(tables).length,
         nbColumns: Object.values(tables).map(same => Math.max(...same.map(t => t.columns.length))).reduce((acc, cols) => acc + cols, 0),
-        nbRelations: p.sources.reduce((acc, src) => acc + src.relations.length, 0),
+        nbRelations: Object.keys(relations).length,
         nbTypes: Object.keys(types).length,
         nbComments: p.sources.flatMap(s => s.tables.flatMap(t => [t.comment].concat(t.columns.map(c => c.comment)).filter(c => !!c))).length,
         nbLayouts: Object.keys(p.layouts).length,

@@ -44,6 +44,36 @@ defmodule Azimutt.Tracking do
     |> Result.from_nillable()
   end
 
+  def recent_organization_events(%Organization{} = organization) do
+    allowed_events = [
+      "editor_layout_created",
+      "editor_layout_deleted",
+      "editor_memo_created",
+      "editor_memo_deleted",
+      "editor_memo_updated",
+      "editor_notes_created",
+      "editor_notes_deleted",
+      "editor_notes_updated",
+      "editor_source_added",
+      "editor_source_deleted",
+      "editor_source_refreshed",
+      "project_created",
+      "project_deleted",
+      "project_loaded",
+      "project_updated"
+    ]
+
+    Event
+    |> where([e], e.organization_id == ^organization.id)
+    |> where([e], e.name in ^allowed_events)
+    |> preload(:created_by)
+    |> preload(:project)
+    |> order_by([e], desc: e.created_at)
+    |> limit(10)
+    |> Repo.all()
+    |> Result.from_nillable()
+  end
+
   def attribution(current_user, details),
     do: create_event("attribution", nil, details, current_user, nil, nil)
 
@@ -265,6 +295,136 @@ defmodule Azimutt.Tracking do
     %{
       id: event.id,
       type: event.type
+    }
+  end
+
+  def event_to_action(%{name: "editor_layout_created", created_by: user, project: project}) do
+    %{
+      author: user.name,
+      text: "created a new layout on",
+      destination: project.name
+    }
+  end
+
+  def event_to_action(%{name: "editor_layout_deleted", created_by: user, project: project}) do
+    %{
+      author: user.name,
+      text: "deleted a layout on",
+      destination: project.name
+    }
+  end
+
+  def event_to_action(%{name: "editor_memo_created", created_by: user, project: project}) do
+    %{
+      author: user.name,
+      text: "created a new memo on",
+      destination: project.name
+    }
+  end
+
+  def event_to_action(%{name: "editor_memo_deleted", created_by: user, project: project}) do
+    %{
+      author: user.name,
+      text: "deleted a memo on",
+      destination: project.name
+    }
+  end
+
+  def event_to_action(%{name: "editor_memo_updated", created_by: user, project: project}) do
+    %{
+      author: user.name,
+      text: "updated a new memo on ",
+      destination: project.name
+    }
+  end
+
+  def event_to_action(%{name: "editor_notes_created", created_by: user, project: project}) do
+    %{
+      author: user.name,
+      text: "created a new note on",
+      destination: project.name
+    }
+  end
+
+  def event_to_action(%{name: "editor_notes_deleted", created_by: user, project: project}) do
+    %{
+      author: user.name,
+      text: "deleted a note on",
+      destination: project.name
+    }
+  end
+
+  def event_to_action(%{name: "editor_notes_updated", created_by: user, project: project}) do
+    %{
+      author: user.name,
+      text: "updated a note on",
+      destination: project.name
+    }
+  end
+
+  def event_to_action(%{name: "editor_source_added", created_by: user, project: project}) do
+    %{
+      author: user.name,
+      text: "added a source on",
+      destination: project.name
+    }
+  end
+
+  def event_to_action(%{name: "editor_source_deleted", created_by: user, project: project}) do
+    %{
+      author: user.name,
+      text: "deleted a source on",
+      destination: project.name
+    }
+  end
+
+  def event_to_action(%{name: "editor_source_refreshed", created_by: user, project: project}) do
+    %{
+      author: user.name,
+      text: "refreshed a source on",
+      destination: project.name
+    }
+  end
+
+  def event_to_action(%{name: "project_created", created_by: user, project: project}) do
+    %{
+      author: user.name,
+      text: "created a new project named",
+      destination: project.name
+    }
+  end
+
+  def event_to_action(%{name: "project_deleted", created_by: user, project: project}) do
+    %{
+      author: user.name,
+      text: "deleted",
+      destination: project.name
+    }
+  end
+
+  def event_to_action(%{name: "project_loaded", created_by: user, project: project}) do
+    %{
+      author: user.name,
+      text: "has consulted",
+      destination: project.name
+    }
+  end
+
+  def event_to_action(%{name: "project_updated", created_by: user, project: project}) do
+    %{
+      author: user.name,
+      text: "updated",
+      destination: project.name
+    }
+  end
+
+  ### Here to handle unknown events and prevent the view to cash.
+  ### This is a temporary solution until we have a better way to handle events
+  def event_to_action(created_by: user, project: project) do
+    %{
+      author: user.name,
+      text: "have done something on",
+      destination: project.name
     }
   end
 end

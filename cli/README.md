@@ -20,6 +20,7 @@ Get the help simply by running the CLI (`npx azimutt`) or for a specific command
   - `--database` is optional, restrict schema extraction to this database
   - `--schema` is optional, restrict schema extraction to this schema
   - `--bucket` is optional, restrict schema extraction to this bucket
+  - `--mixed-collection` is optional, split collections given the specified field (if you have several kind of documents in the same collection)
   - `--sample-size` defines how many items are used to infer a schema (for document databases)
   - `--infer-relations` build relations based on column names, for example a `user_id` will have a relation if a table `users` has an `id` column
   - `--format` is optional, default to `json` but for relational database it could also be `sql`
@@ -38,5 +39,5 @@ Start with `npm run setup` to install dependencies and set up the CLI, then you 
 
 - connect to npm account
 - update `package.json` version
-- test with `npm run drypublish` and check `azimutt-x.y.z.tgz` content
+- test with `npm run dry-publish` and check `azimutt-x.y.z.tgz` content
 - launch `npm publish`

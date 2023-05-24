@@ -99,7 +99,7 @@ describe('project', () => {
             expect(res).toEqual(layout)
         })
         test('zod invalid', () => {
-            const {canvas, ...invalid} = layout
+            const {tables, ...invalid} = layout
             const res = Layout.safeParse(invalid)
             expect(res.success).toEqual(false)
         })
