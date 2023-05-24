@@ -72,6 +72,8 @@
     "desktop:lint": "cd desktop && npm run lint",
     "desktop:build": "cd desktop && npm run build",
     "desktop:update": "cd desktop && npm run update",
+    "desktop:make": "cd desktop && npm run make",
+    "desktop:publish": "cd desktop && npm run publish",
     "be:install": "cd browser-extension && npm install",
     "be:update": "cd browser-extension && npm run update"
   },
