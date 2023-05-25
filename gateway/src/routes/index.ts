@@ -1,7 +1,7 @@
 import {TSchema, Type} from "@sinclair/typebox"
 import {FastifyPluginAsync, FastifyReply} from "fastify"
 import {RouteShorthandOptions} from "fastify/types/route"
-import {console, Logger} from "@azimutt/utils"
+import {Logger} from "@azimutt/utils"
 import {Connector, DatabaseUrl, DatabaseUrlParsed, parseDatabaseUrl} from "@azimutt/database-types"
 import {
     DbQueryParams,
@@ -18,7 +18,12 @@ import {
 import {getConnector} from "../services/connector.js"
 
 const application = 'azimutt-gateway'
-const logger: Logger = console
+const logger: Logger = {
+    debug: (text: string) => console.debug(text),
+    log: (text: string) => console.log(text),
+    warn: (text: string) => console.warn(text),
+    error: (text: string) => console.error(text)
+}
 
 const routes: FastifyPluginAsync = async (server) => {
     server.get('/', {schema: {response: {200: Type.Object({hello: Type.String()})}}}, async () => ({hello: 'world'}))
