@@ -1,7 +1,7 @@
 {
   "name": "@azimutt/shared",
   "version": "0.0.1",
-  "description": "Elements shared between projects but can't be published as a standalone library",
+  "description": "Elements shared between Azimutt projects, but not useful elsewhere.",
   "keywords": [],
   "homepage": "https://azimutt.app",
   "author": {
@@ -21,10 +21,11 @@
     "setup": "npm install && npm run build",
     "test": "jest",
     "build": "rm -rf ./out && tsc",
-    "update": "npm update --save-dev && npm update --save && npm install"
+    "update": "npm update --save-dev && npm update --save && npm install",
+    "dry-publish": "npm run build && npm pack"
   },
   "dependencies": {
-    "@azimutt/database-types": "file:../database-types"
+    "@azimutt/database-types": "0.0.1"
   },
   "devDependencies": {
     "@jest/globals": "^29.5.0",

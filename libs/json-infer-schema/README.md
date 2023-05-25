@@ -11,3 +11,5 @@ It uses common types from [database-types](../database-types).
 - update `package.json` version
 - test with `npm run dry-publish` and check `azimutt-json-infer-schema-x.y.z.tgz` content
 - launch `npm publish --access public`
+
+View it on [npm](https://www.npmjs.com/package/@azimutt/json-infer-schema).

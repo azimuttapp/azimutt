@@ -25,7 +25,7 @@
     "dry-publish": "npm run build && npm pack"
   },
   "dependencies": {
-    "@azimutt/database-types": "^0.0.1"
+    "@azimutt/database-types": "0.0.1"
   },
   "devDependencies": {
     "@jest/globals": "^29.5.0",

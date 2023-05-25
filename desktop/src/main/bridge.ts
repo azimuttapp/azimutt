@@ -3,15 +3,17 @@ import {
     AzimuttSchema,
     ColumnRef,
     ColumnStats,
+    Connector,
     DatabaseQueryResults,
     DatabaseUrl,
+    DatabaseUrlParsed,
     parseDatabaseUrl,
     TableId,
     TableStats
 } from "@azimutt/database-types";
 import {DesktopBridge} from "@azimutt/shared";
 // import {couchbase} from "@azimutt/connector-couchbase";
-import {mongodb} from "@azimutt/connector-mongodb";
+// import {mongodb} from "@azimutt/connector-mongodb";
 import {postgres} from "@azimutt/connector-postgres";
 import {logger} from "./logger";
 
@@ -38,48 +40,32 @@ async function ping(): Promise<string> {
     return 'pong'
 }
 
-async function runDatabaseQuery(url: DatabaseUrl, query: string): Promise<DatabaseQueryResults> {
-    const parsedUrl = parseDatabaseUrl(url)
-    // FIXME: got error: "Error: Could not locate the bindings file." :(
-    // Missing file: couchbase_impl, looks like the couchbase binary is not loaded in electron
-    // if (parsedUrl.kind === 'couchbase') {
-    //     return couchbase.query(application, parsedUrl, query, [])
-    if (parsedUrl.kind == 'mongodb') {
-        return mongodb.query(application, parsedUrl, query, [])
-    } else if (parsedUrl.kind == 'postgres') {
-        return postgres.query(application, parsedUrl, query, [])
-    } else {
-        return Promise.reject(`runDatabaseQuery is not supported for '${parsedUrl.kind || url}'`)
-    }
+async function getDatabaseSchema(url: DatabaseUrl): Promise<AzimuttSchema> {
+    return withConnector(url, (parsedUrl, conn) => conn.getSchema(application, parsedUrl, {logger, inferRelations: true}))
 }
 
-async function getDatabaseSchema(url: DatabaseUrl): Promise<AzimuttSchema> {
-    const parsedUrl = parseDatabaseUrl(url)
-    // if (parsedUrl.kind === 'couchbase') {
-    //     return couchbase.getSchema(application, parsedUrl, {logger, inferRelations: true})
-    if (parsedUrl.kind === 'mongodb') {
-        return mongodb.getSchema(application, parsedUrl, {logger, inferRelations: true})
-    } else if (parsedUrl.kind === 'postgres') {
-        return postgres.getSchema(application, parsedUrl, {logger, inferRelations: true})
-    } else {
-        return Promise.reject(`getDatabaseSchema is not supported for '${parsedUrl.kind || url}'`)
-    }
+async function runDatabaseQuery(url: DatabaseUrl, query: string): Promise<DatabaseQueryResults> {
+    return withConnector(url, (parsedUrl, conn) => conn.query(application, parsedUrl, query, []))
 }
 
 async function getTableStats(url: DatabaseUrl, table: TableId): Promise<TableStats> {
-    const parsedUrl = parseDatabaseUrl(url)
-    if (parsedUrl.kind === 'postgres') {
-        return postgres.getTableStats(application, parsedUrl, table)
-    } else {
-        return Promise.reject(`getTableStats is not supported for '${parsedUrl.kind || url}'`)
-    }
+    return withConnector(url, (parsedUrl, conn) => conn.getTableStats(application, parsedUrl, table))
 }
 
 async function getColumnStats(url: DatabaseUrl, ref: ColumnRef): Promise<ColumnStats> {
+    return withConnector(url, (parsedUrl, conn) => conn.getColumnStats(application, parsedUrl, ref))
+}
+
+function withConnector<T>(url: DatabaseUrl, exec: (url: DatabaseUrlParsed, conn: Connector) => Promise<T>) {
     const parsedUrl = parseDatabaseUrl(url)
-    if (parsedUrl.kind === 'postgres') {
-        return postgres.getColumnStats(application, parsedUrl, ref)
+    // FIXME: got error: "Error: Could not locate the bindings file." :(
+    /* if (parsedUrl.kind === 'couchbase') {
+        return exec(parsedUrl, couchbase)
+    } else if (parsedUrl.kind === 'mongodb') {
+        return exec(parsedUrl, mongodb)
+    } else */ if (parsedUrl.kind === 'postgres') {
+        return exec(parsedUrl, postgres)
     } else {
-        return Promise.reject(`getColumnStats is not supported for '${parsedUrl.kind || url}'`)
+        return Promise.reject(`Not supported database: '${parsedUrl.kind || url}'`)
     }
 }
