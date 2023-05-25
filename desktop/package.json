@@ -1,6 +1,5 @@
 {
   "name": "azimutt-desktop",
-  "productName": "azimutt-desktop",
   "version": "0.0.1",
   "description": "Use Azimutt as a desktop app and access local databases directly",
   "keywords": [
@@ -26,17 +25,15 @@
     "build": "electron-forge make",
     "update": "npm update --save-dev && npm update --save && npm install",
     "package": "electron-forge package",
+    "make": "electron-forge make",
     "publish": "electron-forge publish"
   },
   "dependencies": {
-    "@azimutt/connector-couchbase": "file:../libs/connector-couchbase",
-    "@azimutt/connector-mongodb": "file:../libs/connector-mongodb",
-    "@azimutt/connector-postgres": "file:../libs/connector-postgres",
-    "@azimutt/database-types": "file:../libs/database-types",
-    "@azimutt/shared": "file:../libs/shared",
-    "@azimutt/utils": "file:../libs/utils",
-    "electron-squirrel-startup": "^1.0.0",
-    "update-electron-app": "^2.0.1"
+    "@azimutt/connector-postgres": "0.0.3",
+    "@azimutt/shared": "0.0.1",
+    "electron-squirrel-startup": "1.0.0",
+    "pg-native": "3.0.1",
+    "update-electron-app": "2.0.1"
   },
   "devDependencies": {
     "@electron-forge/cli": "^6.1.1",

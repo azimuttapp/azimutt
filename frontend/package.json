@@ -49,14 +49,13 @@
     "book": "elm-book src/Components/Book.elm --dir=../backend/priv/static/elm --start-page=book.html --port 4002 -- --output=../backend/priv/static/elm/dist/book.js"
   },
   "dependencies": {
-    "@azimutt/database-types": "file:../libs/database-types",
-    "@azimutt/shared": "file:../libs/shared",
-    "@azimutt/utils": "file:../libs/utils",
-    "@sentry/browser": "^7.50.0",
-    "@sentry/tracing": "^7.50.0",
-    "canvas-confetti": "^1.6.0",
-    "jiff": "^0.7.3",
-    "zod": "^3.21.4"
+    "@azimutt/database-types": "0.0.1",
+    "@azimutt/shared": "0.0.1",
+    "@sentry/browser": "7.53.0",
+    "@sentry/tracing": "7.53.0",
+    "canvas-confetti": "1.6.0",
+    "jiff": "0.7.3",
+    "zod": "3.21.4"
   },
   "devDependencies": {
     "@tailwindcss/forms": "^0.5.3",
@@ -69,10 +68,10 @@
     "elm-format": "^0.8.7",
     "elm-go": "^5.0.19",
     "elm-json": "^0.2.13",
-    "elm-review": "^2.10.1",
+    "elm-review": "^2.10.2",
     "elm-spa": "^6.0.4",
     "elm-test": "^0.19.1-revision9",
-    "esbuild": "^0.17.18",
+    "esbuild": "^0.17.19",
     "jest": "^29.5.0",
     "jest-environment-jsdom": "^29.5.0",
     "tailwindcss": "^3.3.2",

@@ -43,13 +43,13 @@
     "dry-publish": "npm run build && npm pack"
   },
   "dependencies": {
-    "@azimutt/connector-couchbase": "^0.0.1",
-    "@azimutt/connector-mongodb": "^0.0.1",
-    "@azimutt/connector-postgres": "^0.0.1",
-    "chalk": "^4.1.2",
-    "clear": "^0.1.0",
-    "commander": "^10.0.0",
-    "figlet": "^1.5.2"
+    "@azimutt/connector-couchbase": "0.0.1",
+    "@azimutt/connector-mongodb": "0.0.1",
+    "@azimutt/connector-postgres": "0.0.3",
+    "chalk": "5.2.0",
+    "clear": "0.1.0",
+    "commander": "10.0.1",
+    "figlet": "1.6.0"
   },
   "devDependencies": {
     "@jest/globals": "^29.4.1",

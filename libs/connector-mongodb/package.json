@@ -25,8 +25,8 @@
     "dry-publish": "npm run build && npm pack"
   },
   "dependencies": {
-    "@azimutt/json-infer-schema": "^0.0.1",
-    "mongodb": "^5.3.0"
+    "@azimutt/json-infer-schema": "0.0.1",
+    "mongodb": "5.5.0"
   },
   "devDependencies": {
     "@jest/globals": "^29.5.0",
