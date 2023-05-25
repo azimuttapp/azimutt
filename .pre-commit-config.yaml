@@ -126,6 +126,13 @@ repos:
       pass_filenames: false
       files: cli/.*\.ts*$
 
+    - id: gateway
+      name: 'Gateway'
+      language: system
+      entry: bash -c 'cd gateway && exec npm run lint && exec npm run check:types && exec npm test'
+      pass_filenames: false
+      files: gateway/.*\.ts*$
+
     # No test or build for browser-extension
     # No test or build for desktop
 
