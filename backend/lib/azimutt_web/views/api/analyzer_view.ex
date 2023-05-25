@@ -6,7 +6,7 @@ defmodule AzimuttWeb.Api.AnalyzerView do
   alias Azimutt.Analyzer.TableStats
 
   def render("schema.json", %{schema: %Schema{} = schema}), do: schema
+  def render("query.json", %{results: %QueryResults{} = results}), do: results
   def render("stats.json", %{stats: %TableStats{} = stats}), do: stats
   def render("stats.json", %{stats: %ColumnStats{} = stats}), do: stats
-  def render("query.json", %{results: %QueryResults{} = results}), do: results
 end
