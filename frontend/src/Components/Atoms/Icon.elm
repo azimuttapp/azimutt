@@ -339,7 +339,7 @@ iconNames =
     , ( DocumentDuplicate, [ "document-duplicate" ] )
     , ( DocumentRemove, [ "document-remove" ] )
     , ( DocumentReport, [ "document-report" ] )
-    , ( DocumentSearch, [ "document-search" ] )
+    , ( DocumentSearch, [ "document-search", "document-magnifying-glass" ] )
     , ( DocumentText, [ "document-text" ] )
     , ( DotsCircleHorizontal, [ "dots-circle-horizontal" ] )
     , ( DotsHorizontal, [ "dots-horizontal" ] )

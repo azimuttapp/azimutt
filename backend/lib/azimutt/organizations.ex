@@ -183,7 +183,9 @@ defmodule Azimutt.Organizations do
   def accept_organization_invitation(id, %User{} = current_user, now) do
     {:ok, invitation} = get_organization_invitation(id)
 
-    if is_valid(invitation, current_user, now) do
+    error = has_error(invitation, current_user, now)
+
+    if error === false do
       Ecto.Multi.new()
       |> Ecto.Multi.insert(:add_member, OrganizationMember.new_member_changeset(invitation.organization_id, current_user))
       |> Ecto.Multi.update(:accept_invitation, OrganizationInvitation.accept_changeset(invitation, current_user, now))
@@ -199,14 +201,15 @@ defmodule Azimutt.Organizations do
           {:error, changeset}
       end
     else
-      {:error, :invalid}
+      {:error, error}
     end
   end
 
   def refuse_organization_invitation(id, %User{} = current_user, now) do
     {:ok, invitation} = get_organization_invitation(id)
+    error = has_error(invitation, current_user, now)
 
-    if is_valid(invitation, current_user, now) do
+    if error === false do
       Ecto.Multi.new()
       |> Ecto.Multi.update(:refuse_invitation, OrganizationInvitation.refuse_changeset(invitation, current_user, now))
       |> Repo.transaction()
@@ -218,13 +221,19 @@ defmodule Azimutt.Organizations do
           {:error, changeset}
       end
     else
-      {:error, :invalid}
+      {:error, error}
     end
   end
 
-  defp is_valid(%OrganizationInvitation{} = invitation, %User{} = current_user, now) do
-    invitation.sent_to == current_user.email && invitation.cancel_at == nil && invitation.accepted_at == nil && invitation.refused_at == nil &&
-      invitation.expire_at > now
+  defp has_error(%OrganizationInvitation{} = invitation, %User{} = current_user, now) do
+    cond do
+      invitation.sent_to != current_user.email -> "email_not_matching"
+      invitation.cancel_at != nil -> "already_canceled"
+      invitation.accepted_at != nil -> "already_accepted"
+      invitation.refused_at != nil -> "already_refused"
+      Date.compare(invitation.expire_at, now) == :lt -> "already_expired"
+      true -> false
+    end
   end
 
   def cancel_organization_invitation(id, %User{} = current_user, now) do

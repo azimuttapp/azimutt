@@ -1,8 +1,9 @@
 defmodule AzimuttWeb.OrganizationInvitationController do
+  require Logger
   use AzimuttWeb, :controller
   alias Azimutt.Organizations
   alias Azimutt.Services.StripeSrv
-  action_fallback AzimuttWeb.FallbackController
+  action_fallback(AzimuttWeb.FallbackController)
 
   def show(conn, %{"id" => id}) do
     now = DateTime.utc_now()
@@ -10,7 +11,13 @@ defmodule AzimuttWeb.OrganizationInvitationController do
     {:ok, invitation} = Organizations.get_organization_invitation(id)
     organization = invitation.organization
     {:ok, plan} = Organizations.get_organization_plan(organization)
-    render(conn, "show.html", now: now, organization_invitation: invitation, organization: organization, plan: plan)
+
+    render(conn, "show.html",
+      now: now,
+      organization_invitation: invitation,
+      organization: organization,
+      plan: plan
+    )
   end
 
   def accept(conn, %{"id" => id}) do
@@ -21,16 +28,35 @@ defmodule AzimuttWeb.OrganizationInvitationController do
       {:ok, invitation} ->
         if invitation.organization.stripe_subscription_id do
           {:ok, organization} = Organizations.get_organization(invitation.organization_id, current_user)
-          StripeSrv.update_quantity(organization.stripe_subscription_id, length(organization.members))
+
+          StripeSrv.update_quantity(
+            organization.stripe_subscription_id,
+            length(organization.members)
+          )
         end
 
         conn
-        |> put_flash(:info, "Welcome! You are now part of #{invitation.organization.name} organization 👍️")
+        |> put_flash(
+          :info,
+          "Welcome! You are now part of #{invitation.organization.name} organization 👍️"
+        )
         |> redirect(to: Routes.organization_path(conn, :show, invitation.organization_id))
 
-      {:error, _} ->
+      {:error, err} ->
+        Logger.error("Error during invitation acceptation: #{inspect(err)}")
+
+        expl =
+          if is_binary(err) do
+            " with code error : #{err}"
+          else
+            ""
+          end
+
         conn
-        |> put_flash(:error, "Oups, this invitation failed on acceptation 😵")
+        |> put_flash(
+          :error,
+          "Oups, this invitation failed on acceptation#{expl} 😵"
+        )
         |> redirect(to: Routes.user_dashboard_path(conn, :index))
     end
   end

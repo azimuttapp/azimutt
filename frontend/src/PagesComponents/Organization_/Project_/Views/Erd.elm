@@ -141,7 +141,7 @@ viewErd conf erdElem erd selectionBox virtualRelation editMemo args dragging =
         ([ id Conf.ids.erd
          , class "az-erd h-full bg-gray-100 overflow-hidden"
          , classList
-            [ ( "invisible", erdElem.size == Size.zeroViewport || erd.shouldFitCanvas )
+            [ ( "invisible", List.nonEmpty layoutTables && (erdElem.size == Size.zeroViewport || erd.shouldFitCanvas) )
             , ( "cursor-grab-all", cursorMode == CursorMode.Drag && dragging == Nothing && virtualRelation == Nothing )
             , ( "cursor-grabbing-all", cursorMode == CursorMode.Drag && dragging /= Nothing && virtualRelation == Nothing )
             , ( "cursor-crosshair-all", virtualRelation /= Nothing )

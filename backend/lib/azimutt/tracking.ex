@@ -65,6 +65,7 @@ defmodule Azimutt.Tracking do
 
     Event
     |> where([e], e.organization_id == ^organization.id)
+    |> where([e], not is_nil(e.created_by))
     |> where([e], e.name in ^allowed_events)
     |> preload(:created_by)
     |> preload(:project)
