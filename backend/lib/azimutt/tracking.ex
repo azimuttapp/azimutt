@@ -396,11 +396,11 @@ defmodule Azimutt.Tracking do
     }
   end
 
-  def event_to_action(%{name: "project_deleted", created_by: user, project: project}) do
+  def event_to_action(%{name: "project_deleted", created_by: user}) do
     %{
       author: user.name,
       text: "deleted",
-      destination: project.name
+      destination: ""
     }
   end
 
@@ -416,14 +416,6 @@ defmodule Azimutt.Tracking do
     %{
       author: user.name,
       text: "updated",
-      destination: project.name
-    }
-  end
-
-  def event_to_action(%{name: "project_deleted", created_by: user, project: project}) do
-    %{
-      author: user.name,
-      text: "deleted",
       destination: project.name
     }
   end
