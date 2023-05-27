@@ -66,6 +66,7 @@ defmodule Azimutt.Tracking do
     Event
     |> where([e], e.organization_id == ^organization.id)
     |> where([e], not is_nil(e.created_by))
+    |> where([e], not is_nil(e.project_id))
     |> where([e], e.name in ^allowed_events)
     |> preload(:created_by)
     |> preload(:project)
@@ -419,9 +420,17 @@ defmodule Azimutt.Tracking do
     }
   end
 
+  def event_to_action(%{name: "project_deleted", created_by: user, project: project}) do
+    %{
+      author: user.name,
+      text: "deleted",
+      destination: project.name
+    }
+  end
+
   ### Here to handle unknown events and prevent the view to cash.
   ### This is a temporary solution until we have a better way to handle events
-  def event_to_action(created_by: user, project: project) do
+  def event_to_action(%{created_by: user, project: project}) do
     %{
       author: user.name,
       text: "have done something on",
