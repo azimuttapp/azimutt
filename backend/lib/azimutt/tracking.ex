@@ -58,7 +58,6 @@ defmodule Azimutt.Tracking do
       "editor_source_deleted",
       "editor_source_refreshed",
       "project_created",
-      "project_deleted",
       "project_loaded",
       "project_updated"
     ]
