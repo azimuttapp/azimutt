@@ -395,14 +395,6 @@ defmodule Azimutt.Tracking do
     }
   end
 
-  def event_to_action(%{name: "project_deleted", created_by: user}) do
-    %{
-      author: user.name,
-      text: "deleted",
-      destination: ""
-    }
-  end
-
   def event_to_action(%{name: "project_loaded", created_by: user, project: project}) do
     %{
       author: user.name,
@@ -421,11 +413,11 @@ defmodule Azimutt.Tracking do
 
   ### Here to handle unknown events and prevent the view to cash.
   ### This is a temporary solution until we have a better way to handle events
-  def event_to_action(%{created_by: user, project: project}) do
+  def event_to_action(_event) do
     %{
-      author: user.name,
+      author: "Someone",
       text: "have done something on",
-      destination: project.name
+      destination: "something"
     }
   end
 end
