@@ -58,6 +58,7 @@ defmodule Azimutt.Tracking do
       "editor_source_deleted",
       "editor_source_refreshed",
       "project_created",
+      "project_deleted",
       "project_loaded",
       "project_updated"
     ]
@@ -299,125 +300,31 @@ defmodule Azimutt.Tracking do
     }
   end
 
-  def event_to_action(%{name: "editor_layout_created", created_by: user, project: project}) do
-    %{
-      author: user.name,
-      text: "created a new layout on",
-      destination: project.name
-    }
+  def event_to_action(%{name: name, created_by: user, project: project}) do
+    project_name = if project, do: project.name, else: "[project deleted]"
+    user_name = if user, do: user.name, else: "Someone"
+    text = translate_event_name(name)
+    %{author: user_name, text: text, destination: project_name}
   end
 
-  def event_to_action(%{name: "editor_layout_deleted", created_by: user, project: project}) do
-    %{
-      author: user.name,
-      text: "deleted a layout on",
-      destination: project.name
-    }
-  end
-
-  def event_to_action(%{name: "editor_memo_created", created_by: user, project: project}) do
-    %{
-      author: user.name,
-      text: "created a new memo on",
-      destination: project.name
-    }
-  end
-
-  def event_to_action(%{name: "editor_memo_deleted", created_by: user, project: project}) do
-    %{
-      author: user.name,
-      text: "deleted a memo on",
-      destination: project.name
-    }
-  end
-
-  def event_to_action(%{name: "editor_memo_updated", created_by: user, project: project}) do
-    %{
-      author: user.name,
-      text: "updated a new memo on ",
-      destination: project.name
-    }
-  end
-
-  def event_to_action(%{name: "editor_notes_created", created_by: user, project: project}) do
-    %{
-      author: user.name,
-      text: "created a new note on",
-      destination: project.name
-    }
-  end
-
-  def event_to_action(%{name: "editor_notes_deleted", created_by: user, project: project}) do
-    %{
-      author: user.name,
-      text: "deleted a note on",
-      destination: project.name
-    }
-  end
-
-  def event_to_action(%{name: "editor_notes_updated", created_by: user, project: project}) do
-    %{
-      author: user.name,
-      text: "updated a note on",
-      destination: project.name
-    }
-  end
-
-  def event_to_action(%{name: "editor_source_added", created_by: user, project: project}) do
-    %{
-      author: user.name,
-      text: "added a source on",
-      destination: project.name
-    }
-  end
-
-  def event_to_action(%{name: "editor_source_deleted", created_by: user, project: project}) do
-    %{
-      author: user.name,
-      text: "deleted a source on",
-      destination: project.name
-    }
-  end
-
-  def event_to_action(%{name: "editor_source_refreshed", created_by: user, project: project}) do
-    %{
-      author: user.name,
-      text: "refreshed a source on",
-      destination: project.name
-    }
-  end
-
-  def event_to_action(%{name: "project_created", created_by: user, project: project}) do
-    %{
-      author: user.name,
-      text: "created a new project named",
-      destination: project.name
-    }
-  end
-
-  def event_to_action(%{name: "project_loaded", created_by: user, project: project}) do
-    %{
-      author: user.name,
-      text: "has consulted",
-      destination: project.name
-    }
-  end
-
-  def event_to_action(%{name: "project_updated", created_by: user, project: project}) do
-    %{
-      author: user.name,
-      text: "updated",
-      destination: project.name
-    }
-  end
-
-  ### Here to handle unknown events and prevent the view to cash.
-  ### This is a temporary solution until we have a better way to handle events
-  def event_to_action(_event) do
-    %{
-      author: "Someone",
-      text: "have done something on",
-      destination: "something"
-    }
+  defp translate_event_name(name) do
+    cond do
+      name == "editor_layout_created" -> "created a new layout on"
+      name == "editor_layout_deleted" -> "deleted a layout on"
+      name == "editor_memo_created" -> "created a new memo on"
+      name == "editor_memo_deleted" -> "deleted a memo on"
+      name == "editor_memo_updated" -> "updated a new memo on "
+      name == "editor_notes_created" -> "created a new note on"
+      name == "editor_notes_deleted" -> "deleted a note on"
+      name == "editor_notes_updated" -> "updated a note on"
+      name == "editor_source_added" -> "added a source on"
+      name == "editor_source_deleted" -> "deleted a source on"
+      name == "editor_source_refreshed" -> "refreshed a source on"
+      name == "project_created" -> "created a new project named"
+      name == "project_deleted" -> "deleted a project named"
+      name == "project_loaded" -> "has consulted"
+      name == "project_updated" -> "updated"
+      true -> "have done something on"
+    end
   end
 end
