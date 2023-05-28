@@ -1,5 +1,7 @@
 name: Build/release Electron App
-on: push
+on:
+  push:
+    branches: ['publish-electron-app', 'main']
 jobs:
   release:
     runs-on: ${{ matrix.os }}
