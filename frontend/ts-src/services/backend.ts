@@ -131,31 +131,40 @@ export class Backend {
         delete this.projects[p]
     }
 
+    trackEvent = (event: TrackEvent): void => {
+        this.logger.debug(`backend.trackEvent(${JSON.stringify(event)})`)
+        Http.postNoContent(`/api/v1/events`, event).then(_ => undefined)
+    }
+
     getDatabaseSchema = async (database: DatabaseUrl): Promise<AzimuttSchema> => {
         this.logger.debug(`backend.getDatabaseSchema(${database})`)
-        return Http.postJson(`${window.gateway_url}/schema`, {url: database}, AzimuttSchema, 'AzimuttSchema')
+        const gatewayUrl = await this.gatewayUrl()
+        return Http.postJson(`${gatewayUrl}/schema`, {url: database}, AzimuttSchema, 'AzimuttSchema')
     }
 
     runDatabaseQuery = async (database: DatabaseUrl, query: string): Promise<DatabaseQueryResults> => {
         this.logger.debug(`backend.runQuery(${database}, ${query})`)
-        return Http.postJson(`${window.gateway_url}/query`, {url: database, query}, DatabaseQueryResults, 'DatabaseQueryResults')
+        const gatewayUrl = await this.gatewayUrl()
+        return Http.postJson(`${gatewayUrl}/query`, {url: database, query}, DatabaseQueryResults, 'DatabaseQueryResults')
     }
 
     getTableStats = async (database: DatabaseUrl, id: TableId): Promise<TableStats> => {
         this.logger.debug(`backend.getTableStats(${database}, ${id})`)
+        const gatewayUrl = await this.gatewayUrl()
         const {schema, table} = parseTableId(id)
-        return Http.postJson(`${window.gateway_url}/table-stats`, {url: database, schema, table}, TableStats, 'TableStats')
+        return Http.postJson(`${gatewayUrl}/table-stats`, {url: database, schema, table}, TableStats, 'TableStats')
     }
 
     getColumnStats = async (database: DatabaseUrl, column: ColumnRef): Promise<ColumnStats> => {
         this.logger.debug(`backend.getColumnStats(${database}, ${JSON.stringify(column)})`)
+        const gatewayUrl = await this.gatewayUrl()
         const {schema, table} = parseTableId(column.table)
-        return Http.postJson(`${window.gateway_url}/column-stats`, {url: database, schema, table, column: column.column}, ColumnStats, 'ColumnStats')
+        return Http.postJson(`${gatewayUrl}/column-stats`, {url: database, schema, table, column: column.column}, ColumnStats, 'ColumnStats')
     }
 
-    trackEvent = (event: TrackEvent): void => {
-        this.logger.debug(`backend.trackEvent(${JSON.stringify(event)})`)
-        Http.postNoContent(`/api/v1/events`, event).then(_ => undefined)
+    private gatewayUrl = async (): Promise<string> => {
+        const cliGateway = 'http://localhost:4177'
+        return await fetch(`${cliGateway}/ping`).then(_ => `${cliGateway}/gateway`).catch(_ => window.gateway_url)
     }
 }
 

@@ -29,7 +29,7 @@
   },
   "scripts": {
     "setup": "npm install && npm run build",
-    "start": "tsx watch src .env | pino-pretty --colorize",
+    "start": "tsx watch ./src/start.ts .env | pino-pretty --colorize",
     "pretest": "npm run build",
     "test": "vitest run",
     "test:watch": "vitest watch",
