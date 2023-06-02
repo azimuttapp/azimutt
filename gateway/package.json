@@ -1,5 +1,5 @@
 {
-  "name": "azimutt-gateway",
+  "name": "@azimutt/gateway",
   "version": "0.0.1",
   "description": "A Gateway to proxy database access for Azimutt frontend",
   "keywords": [
@@ -22,15 +22,13 @@
     "url": "git+https://github.com/azimuttapp/azimutt.git",
     "directory": "gateway"
   },
+  "main": "./out/index.js",
+  "types": "./out/index.d.ts",
   "bugs": {
     "url": "https://github.com/azimuttapp/azimutt/issues"
   },
-  "type": "module",
-  "engines": {
-    "node": ">=16.0.0"
-  },
   "scripts": {
-    "setup": "npm install",
+    "setup": "npm install && npm run build",
     "start": "tsx watch src .env | pino-pretty --colorize",
     "pretest": "npm run build",
     "test": "vitest run",
@@ -38,10 +36,11 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "check:types": "tsc --noEmit",
-    "build": "rm -rf ./build && esbuild `find src \\( -name '*.ts' \\)` --platform=node --outdir=build --resolve-extensions=.js",
+    "build": "rm -rf ./out && tsc",
     "build:docker:prod": "docker build . -t azimutt-gateway --build-arg APP_ENV=production",
     "preview": "node build",
-    "update": "npm update --save-dev && npm update --save && npm install"
+    "update": "npm update --save-dev && npm update --save && npm install",
+    "dry-publish": "npm run build && npm pack"
   },
   "dependencies": {
     "@azimutt/connector-couchbase": "0.0.1",

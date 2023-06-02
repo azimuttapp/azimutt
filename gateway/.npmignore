@@ -1,0 +1,3 @@
+tests/
+tsconfig.json
+*.tgz

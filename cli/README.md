@@ -26,6 +26,7 @@ Get the help simply by running the CLI (`npx azimutt`) or for a specific command
   - `--format` is optional, default to `json` but for relational database it could also be `sql`
   - `--output` is optional, database name will be inferred from url and prefixed by the timestamp
   - `--debug` allows to see the full stack trace of the error (can be helpful to debug)
+- **gateway** (`npx azimutt gateway`)
 
 ## Developing
 

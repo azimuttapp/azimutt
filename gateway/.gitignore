@@ -1,21 +1,6 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+node_modules
+out
+*.tgz
 
-# dependencies
-/node_modules
-
-# build
-/build/
-
-# misc
-.DS_Store
 .env.production
-
-# debug
-npm-debug.log*
-
-.nyc_output
-coverage
-
 production.env
-
-pnpm-lock.yaml

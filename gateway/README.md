@@ -39,5 +39,13 @@ There are a number of handy commands you can run to help with development.
 
 ## CI
 
-Run tests on push/PR to 'main' branch
+Run tests on push/PR to `main` branch
 Check `.github/workflows/CI.yml`
+
+## Publish
+
+- update `package.json` version
+- test with `npm run dry-publish` and check `azimutt-gateway-x.y.z.tgz` content
+- launch `npm publish --access public`
+
+View it on [npm](https://www.npmjs.com/package/@azimutt/gateway).
