@@ -145,7 +145,7 @@ viewTabContent htmlId zone projects urlOrganization model =
 viewDatabaseSourceTab : HtmlId -> HtmlId -> List ProjectInfo -> DatabaseSource.Model Msg -> Html Msg
 viewDatabaseSourceTab htmlId openedCollapse projects model =
     div []
-        [ viewHeading "Extract your database schema" [ text "Sadly browsers can't directly connect to a database so this extraction will be made through Azimutt servers but nothing is stored." ]
+        [ viewHeading "Extract your database schema" [ text "Browsers can't connect to databases, schema extraction is done through a proxy, Azimutt Gateway or ", extLink "https://www.npmjs.com/package/azimutt" [ class "link" ] [ text "CLI" ], text ". Nothing is stored." ]
         , div [ class "mt-6" ] [ DatabaseSource.viewInput DatabaseSourceMsg htmlId model ]
         , DatabaseSource.viewParsing DatabaseSourceMsg model
         , viewSourceActionButtons (InitTab TabDatabase) projects model.parsedSource
