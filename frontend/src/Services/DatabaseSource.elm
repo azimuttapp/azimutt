@@ -1,5 +1,6 @@
-module Services.DatabaseSource exposing (Model, Msg(..), example, init, update, viewInput, viewParsing)
+module Services.DatabaseSource exposing (DatabaseKey, Model, Msg(..), example, init, update, viewInput, viewParsing)
 
+import Components.Atoms.Badge as Badge
 import Components.Atoms.Icon as Icon
 import Components.Molecules.Alert as Alert
 import Components.Molecules.Divider as Divider
@@ -7,12 +8,13 @@ import Components.Molecules.Tooltip as Tooltip
 import Conf
 import DataSources.JsonMiner.JsonAdapter as JsonAdapter
 import DataSources.JsonMiner.JsonSchema exposing (JsonSchema)
-import Html exposing (Html, div, img, input, p, span, text)
+import Html exposing (Html, button, div, img, input, p, span, text)
 import Html.Attributes exposing (class, disabled, id, name, placeholder, src, type_, value)
-import Html.Events exposing (onBlur, onInput)
+import Html.Events exposing (onBlur, onClick, onInput)
 import Libs.Bool as B
-import Libs.Html exposing (bText, extLink, iText)
+import Libs.Html exposing (extLink, iText)
 import Libs.Html.Attributes exposing (css)
+import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.DatabaseUrl as DatabaseUrl exposing (DatabaseUrl)
 import Libs.Models.HtmlId exposing (HtmlId)
@@ -34,6 +36,7 @@ import Track
 
 type alias Model msg =
     { source : Maybe Source
+    , selectedDb : DatabaseKey
     , url : String
     , selectedUrl : Maybe (Result String String)
     , parsedSchema : Maybe JsonSchema
@@ -43,12 +46,34 @@ type alias Model msg =
     }
 
 
+type alias DatabaseKey =
+    String
+
+
+type alias Database =
+    { key : DatabaseKey, sampleUrl : String, issue : Maybe String }
+
+
 type Msg
-    = UpdateUrl DatabaseUrl
+    = UpdateSelectedDb DatabaseKey
+    | UpdateUrl DatabaseUrl
     | GetSchema DatabaseUrl
     | GotSchema JsonSchema
     | BuildSource SourceId
     | UiToggle HtmlId
+
+
+databases : List Database
+databases =
+    [ { key = "postgres", sampleUrl = "postgres://<user>:<pass>@<host>:<port>/<db>", issue = Nothing }
+    , { key = "mongodb", sampleUrl = "mongodb+srv://<user>:<pass>@<host>", issue = Nothing }
+    , { key = "couchbase", sampleUrl = "couchbases://<user>:<pass>@<host>", issue = Nothing }
+    , { key = "mysql", sampleUrl = "mysql://<user>:<pass>@<host>:<port>/<db>", issue = Just "https://github.com/azimuttapp/azimutt/issues/114" }
+    , { key = "mariadb", sampleUrl = "mariadb://<user>:<pass>@<host>:<port>/<db>", issue = Just (Conf.constants.azimuttNewIssue "Support mariadb database import" "") }
+    , { key = "sqlserver", sampleUrl = "sqlserver://<user>:<pass>@<host>:<port>/<db>", issue = Just "https://github.com/azimuttapp/azimutt/issues/113" }
+    , { key = "oracle", sampleUrl = "oracle:thin:<user>/<pass>@<host>:<port>:<db>", issue = Just (Conf.constants.azimuttNewIssue "Support oracle database import" "") }
+    , { key = "sqlite", sampleUrl = "file:<path>", issue = Just "https://github.com/azimuttapp/azimutt/issues/115" }
+    ]
 
 
 
@@ -57,12 +82,13 @@ type Msg
 
 example : String
 example =
-    "postgres://<user>:<password>@<host>:<port>/<db_name>"
+    "<protocol>://<user>:<pass>@<host>:<port>/<db>"
 
 
 init : Maybe Source -> (Result String Source -> msg) -> Model msg
 init src callback =
     { source = src
+    , selectedDb = "postgres"
     , url = ""
     , selectedUrl = Nothing
     , parsedSchema = Nothing
@@ -79,6 +105,9 @@ init src callback =
 update : (Msg -> msg) -> Time.Posix -> Maybe ProjectInfo -> Msg -> Model msg -> ( Model msg, Cmd msg )
 update wrap now project msg model =
     case msg of
+        UpdateSelectedDb key ->
+            ( { model | selectedDb = key }, Cmd.none )
+
         UpdateUrl url ->
             ( { model | url = url }, Cmd.none )
 
@@ -127,25 +156,23 @@ viewInput wrap htmlId model =
             error
                 |> Maybe.mapOrElse (\_ -> "text-red-500 placeholder-red-300 border-red-300 focus:border-red-500 focus:ring-red-500")
                     "border-gray-300 focus:ring-indigo-500 focus:border-indigo-500"
+
+        sampleUrl : String
+        sampleUrl =
+            databases |> List.find (\db -> db.key == model.selectedDb) |> Maybe.orElse (databases |> List.head) |> Maybe.mapOrElse .sampleUrl example
     in
     div []
-        [ div [ class "flex space-x-10" ]
-            ([ ( "postgresql", Nothing )
-             , ( "mysql", Just "https://github.com/azimuttapp/azimutt/issues/114" )
-             , ( "oracle", Just (Conf.constants.azimuttNewIssue "Support oracle database import" "") )
-             , ( "sql-server", Just "https://github.com/azimuttapp/azimutt/issues/113" )
-             , ( "mariadb", Just (Conf.constants.azimuttNewIssue "Support mariadb database import" "") )
-             , ( "sqlite", Just "https://github.com/azimuttapp/azimutt/issues/115" )
-             ]
+        [ div [ class "flex space-x-4" ]
+            (databases
                 |> List.map
-                    (\( name, requestLink ) ->
-                        requestLink
+                    (\db ->
+                        db.issue
                             |> Maybe.mapOrElse
                                 (\link ->
-                                    extLink link [] [ img [ src (Backend.resourceUrl ("/assets/logos/" ++ name ++ ".png")), class "grayscale opacity-50" ] [] ]
+                                    extLink link [] [ img [ src (Backend.resourceUrl ("/assets/logos/" ++ db.key ++ ".png")), class "grayscale opacity-50" ] [] ]
                                         |> Tooltip.t "Click to ask support (done on demand)"
                                 )
-                                (span [] [ img [ src (Backend.resourceUrl ("/assets/logos/" ++ name ++ ".png")) ] [] ])
+                                (button [ type_ "button", onClick (UpdateSelectedDb db.key |> wrap) ] [ img [ src (Backend.resourceUrl ("/assets/logos/" ++ db.key ++ ".png")) ] [] ])
                     )
             )
         , div [ class "mt-3 flex rounded-md shadow-sm" ]
@@ -154,7 +181,7 @@ viewInput wrap htmlId model =
                 [ type_ "text"
                 , id (htmlId ++ "-url")
                 , name (htmlId ++ "-url")
-                , placeholder ("ex: " ++ example)
+                , placeholder ("ex: " ++ sampleUrl)
                 , value model.url
                 , disabled ((model.selectedUrl |> Maybe.andThen Result.toMaybe) /= Nothing && model.parsedSchema == Nothing)
                 , onInput (UpdateUrl >> wrap)
@@ -167,10 +194,13 @@ viewInput wrap htmlId model =
         , div [ class "mt-3" ]
             [ Alert.simple Tw.blue
                 Icon.QuestionMarkCircle
-                [ text "Database url is a "
-                , bText "very sensitive information"
-                , text ". It will be stored in your project, to allow schema refresh and show data statistics."
-                , text " For best security prefer to use a "
+                [ text "Use "
+                , extLink "https://www.npmjs.com/package/azimutt" [ class "link" ] [ text "Azimutt CLI" ]
+                , text " ("
+                , Badge.basic Tw.blue [] [ text "npx azimutt gateway" ] |> Tooltip.br "Starts the Azimutt Gateway on your computer to access local databases."
+                , text ") to access databases from your computer. "
+                , text "Otherwise we will use Azimutt Gateway, an online proxy to reach it."
+                , text " For security prefer to use a "
                 , iText "read-only user"
                 , text " and on a "
                 , iText "non-production database"

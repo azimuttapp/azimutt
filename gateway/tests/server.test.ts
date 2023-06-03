@@ -1,9 +1,8 @@
-import server from '../src/server.js';
 import {describe, expect, test} from 'vitest';
+import server from '../src/start';
 
 describe('Server', () => {
     test('Should return server instance', async () => {
         expect(typeof server).eq('object')
-        await server.close()
     })
 })

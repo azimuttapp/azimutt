@@ -1,6 +1,4 @@
 import "dotenv/config"
-import fp from "fastify-plugin"
-import {FastifyPluginAsync} from "fastify"
 import {Static, Type} from "@sinclair/typebox"
 import Ajv from "ajv"
 
@@ -30,13 +28,21 @@ const ajv = new Ajv({
 
 export type Config = Static<typeof ConfigSchema>
 
-const configPlugin: FastifyPluginAsync = async (server) => {
+export const configFromEnv = (): Config => {
     const validate = ajv.compile(ConfigSchema)
-    const valid = validate(process.env)
-    if (!valid) {
-        throw new Error(".env file validation failed - " + JSON.stringify(validate.errors, null, 2))
+    const env = process.env
+    const config = {
+        NODE_ENV: env.NODE_ENV,
+        LOG_LEVEL: env.LOG_LEVEL,
+        API_HOST: env.API_HOST,
+        API_PORT: env.API_PORT,
+        CORS_ALLOW_ORIGIN: env.CORS_ALLOW_ORIGIN,
     }
-    server.decorate("config", process.env)
+    if (validate(config)) {
+        return config as Config
+    } else {
+        throw new Error('invalid configuration - ' + JSON.stringify(validate.errors, null, 2))
+    }
 }
 
 declare module "fastify" {
@@ -44,5 +50,3 @@ declare module "fastify" {
         config: Config
     }
 }
-
-export default fp(configPlugin)

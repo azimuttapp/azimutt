@@ -14,16 +14,16 @@ type Method = 'GET' | 'POST' | 'PUT' | 'DELETE'
 
 function customFetch<Body, Response>(method: Method, path: string, body?: Body, zod?: ZodType<Response>, label?: string): Promise<Response> {
     const url = path.startsWith('http') ? path : `${window.location.origin}${path}`
-    let opts: RequestInit = {method, credentials: 'include'}
+    let opts: RequestInit = path.startsWith('http') ? {method} : {method, credentials: 'include'}
     if (body instanceof FormData) {
         opts = {...opts, body: body}
     } else if (typeof body === 'object' && body !== null) {
         opts = {...opts, body: JSON.stringify(body), headers: {'Accept': 'application/json', 'Content-Type': 'application/json'}}
     }
-    return fetch(url, opts).then(r => zod && label ? buildJsonResponse(zod, label)(r) : buildNoContentResponse(r) as Response)
+    return fetch(url, opts).then(r => zod && label ? buildJsonResponse(zod, label)(r) : buildNoContentResponse(r))
 }
 
 const buildJsonResponse = <T>(zod: ZodType<T>, label: string) => (res: Response): Promise<T> =>
     res.ok ? res.text().then(v => Zod.validate(Json.parse(v), zod, label)) : res.text().then(err => Promise.reject(Json.parse(err)))
-const buildNoContentResponse = (res: Response): Promise<void> =>
-    res.ok ? Promise.resolve() : res.text().then(err => Promise.reject(Json.parse(err)))
+const buildNoContentResponse = <T>(res: Response): Promise<T> =>
+    res.ok ? Promise.resolve() as Promise<T> : res.text().then(err => Promise.reject(Json.parse(err)))

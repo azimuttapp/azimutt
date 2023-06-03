@@ -1,9 +1,8 @@
 # Azimutt CLI
 
-This CLI is aimed at helping you work with databases, and more specifically (for now) exploring their schema.
-It works with SQL ones like **PostgreSQL** but also document ones like **MongoDB** or **Couchbase** 🎉
+Azimutt CLI is aimed at helping you explore databases, schema but also data.
 
-The schema can be easily imported to [Azimutt](https://azimutt.app) to explore it seamlessly.
+It works with relational and document ones, such as **PostgreSQL**, **MongoDB** and **Couchbase** 🎉
 
 Use this CLI without installing it thanks to [npx](https://www.npmjs.com/package/npx): `npx azimutt`.
 
@@ -11,7 +10,7 @@ Get the help simply by running the CLI (`npx azimutt`) or for a specific command
 
 ## Available commands
 
-- **export** (`npx azimutt export <kind> <url> [arguments]`)
+- **export** (`npx azimutt export <kind> <url> [arguments]`): export a database schema as JSON file to import in Azimutt
   - ex: `npx azimutt export couchbase couchbases://cb.gfn6dh493pmfh613v.cloud.couchbase.com`
   - ex: `npx azimutt export mongodb "mongodb+srv://user:password@cluster3.md7h4xp.mongodb.net"`
   - ex: `npx azimutt export postgres postgresql://postgres:postgres@localhost:5432/azimutt_dev`
@@ -26,6 +25,7 @@ Get the help simply by running the CLI (`npx azimutt`) or for a specific command
   - `--format` is optional, default to `json` but for relational database it could also be `sql`
   - `--output` is optional, database name will be inferred from url and prefixed by the timestamp
   - `--debug` allows to see the full stack trace of the error (can be helpful to debug)
+- **gateway** (`npx azimutt gateway`): launch the Gateway server locally to proxy database calls from your computer
 
 ## Developing
 
@@ -41,3 +41,5 @@ Start with `npm run setup` to install dependencies and set up the CLI, then you 
 - update `package.json` version
 - test with `npm run dry-publish` and check `azimutt-x.y.z.tgz` content
 - launch `npm publish`
+
+View it on [npm](https://www.npmjs.com/package/azimutt).

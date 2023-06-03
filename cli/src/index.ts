@@ -4,8 +4,9 @@ import {Argument, Command} from "commander";
 import chalk from "chalk";
 import {errorToString, safeParseInt} from "@azimutt/utils";
 import {parseDatabaseUrl} from "@azimutt/database-types";
-import {exportDbSchema} from "./export";
 import {logger} from "./utils/logger";
+import {exportDbSchema} from "./export";
+import {launchGateway} from "./gateway";
 
 const clear = require('clear')
 const figlet = require('figlet')
@@ -36,6 +37,10 @@ program.command('export')
     .option('-o, --output <output>', "Path to write the schema, ex: ~/azimutt.json")
     .option('--debug', 'Add debug logs and show the full stacktrace instead of a shorter error')
     .action((kind, url, args) => exec(exportDbSchema(kind, parseDatabaseUrl(url), args), args))
+
+program.command('gateway')
+    .description('Launch the gateway server to allow Azimutt to access your local databases.')
+    .action(() => launchGateway())
 
 program.parse(process.argv)
 

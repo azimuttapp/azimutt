@@ -14,8 +14,8 @@ import {
     GetSchemaResponse,
     GetTableStatsParams,
     GetTableStatsResponse
-} from "../schemas.js"
-import {getConnector} from "../services/connector.js"
+} from "../schemas"
+import {getConnector} from "../services/connector"
 
 const application = 'azimutt-gateway'
 const logger: Logger = {

@@ -1,5 +1,5 @@
 import {describe, expect, test} from "vitest"
-import server from "../../src/server"
+import server from "../../src/start"
 
 describe('GET /', () => {
     test('Should return hello world', async () => {
