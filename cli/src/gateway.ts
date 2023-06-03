@@ -6,6 +6,6 @@ export async function launchGateway(): Promise<void> {
         LOG_LEVEL: 'info',
         API_HOST: 'localhost',
         API_PORT: '4177',
-        CORS_ALLOW_ORIGIN: 'http://localhost:4000'
+        CORS_ALLOW_ORIGIN: '*'
     })
 }

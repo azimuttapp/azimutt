@@ -1,9 +1,8 @@
 # Azimutt Gateway
 
-This is a small Node.js server (Fastify), responsible to proxy database connections to enable browser clients to access database features.
-The other way is to use the [desktop app](../desktop) for this, keeping everything local and accessing local databases.
+Small Node server to proxy database connections and enable browsers to access database features.
 
-Project boilerplate from [yonathan06/fastify-typescript-starter](https://github.com/yonathan06/fastify-typescript-boilerplate).
+The other way is to use the [desktop app](../desktop) for this, keeping everything local and accessing local databases.
 
 ## Set Up
 

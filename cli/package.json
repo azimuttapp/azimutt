@@ -1,6 +1,6 @@
 {
   "name": "azimutt",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "Export database schema from relational or document databases. Import it to https://azimutt.app",
   "keywords": [
     "database",
@@ -46,7 +46,7 @@
     "@azimutt/connector-couchbase": "0.0.1",
     "@azimutt/connector-mongodb": "0.0.1",
     "@azimutt/connector-postgres": "0.0.3",
-    "@azimutt/gateway": "file:../gateway",
+    "@azimutt/gateway": "0.0.1",
     "chalk": "4.1.2",
     "clear": "0.1.0",
     "commander": "10.0.1",

@@ -42,3 +42,5 @@ Start with `npm run setup` to install dependencies and set up the CLI, then you 
 - update `package.json` version
 - test with `npm run dry-publish` and check `azimutt-x.y.z.tgz` content
 - launch `npm publish`
+
+View it on [npm](https://www.npmjs.com/package/azimutt).

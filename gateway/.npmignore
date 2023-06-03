@@ -1,3 +1,10 @@
 tests/
 tsconfig.json
 *.tgz
+.github
+Dockerfile
+.env*
+.eslintignore
+.eslintrc.cjs
+.nvmrc
+.prettierrc.js
