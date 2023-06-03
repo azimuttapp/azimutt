@@ -3,18 +3,6 @@ import cors from "@fastify/cors"
 import routes from "./routes/index"
 import {Config} from "./plugins/config";
 
-const exitOnError = (process: NodeJS.Process) => (err: string): void => {
-    console.error(err)
-    process.exit(1)
-}
-
-const closeAndExit = (process: NodeJS.Process, server: FastifyInstance, signal: string) => (): void => {
-    server.close().then(err => {
-        console.log(`close application on ${signal}`)
-        process.exit(err ? 1 : 0)
-    })
-}
-
 export async function startServer(config: Config): Promise<FastifyInstance> {
     const server = fastify({
         ajv: {
@@ -41,4 +29,16 @@ export async function startServer(config: Config): Promise<FastifyInstance> {
     const port = parseInt(config.API_PORT)
     await server.listen({host, port})
     return server
+}
+
+const exitOnError = (process: NodeJS.Process) => (err: string): void => {
+    console.error(err)
+    process.exit(1)
+}
+
+const closeAndExit = (process: NodeJS.Process, server: FastifyInstance, signal: string) => (): void => {
+    server.close().then(err => {
+        console.log(`close application on ${signal}`)
+        process.exit(err ? 1 : 0)
+    })
 }

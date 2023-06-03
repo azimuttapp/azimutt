@@ -23,7 +23,7 @@ type alias TableLike x y =
 
 viewContainer : List (Html msg) -> Html msg
 viewContainer content =
-    div [ class "mt-6 px-4 py-2 max-h-40 overflow-y-auto font-mono text-xs bg-gray-50 shadow rounded-lg", style "max-height" "24rem" ] content
+    div [ class "mt-6 px-4 py-2 max-h-96 overflow-y-auto font-mono text-xs bg-gray-50 shadow rounded-lg", style "max-height" "24rem" ] content
 
 
 viewFile : (HtmlId -> msg) -> HtmlId -> String -> Maybe FileContent -> Html msg
