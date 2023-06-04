@@ -1,16 +1,16 @@
-import {FieldDef} from "pg";
-import {DatabaseQueryResults, DatabaseQueryResultsColumn, DatabaseUrlParsed, JsValue} from "@azimutt/database-types";
+import {DatabaseQueryResults, DatabaseQueryResultsColumn, DatabaseUrlParsed} from "@azimutt/database-types";
 import {connect} from "./connect";
+import {FieldPacket, RowDataPacket} from "mysql2";
 
 export function execQuery(application: string, url: DatabaseUrlParsed, query: string, parameters: any[]): Promise<DatabaseQueryResults> {
-    return connect(application, url, client => {
-        return client.query({text: query, values: parameters, rowMode: 'array'}).then(r => {
-            return buildResults(query, r.fields, r.rows)
+    return connect(application, url, conn => {
+        return conn.query<RowDataPacket[][]>({sql: query, values: parameters, rowsAsArray: true}).then(([rows, fields]) => {
+            return buildResults(query, fields, rows)
         })
     })
 }
 
-function buildResults(query: string, fields: FieldDef[], rows: JsValue[][]): DatabaseQueryResults {
+function buildResults(query: string, fields: FieldPacket[], rows: RowDataPacket[][]): DatabaseQueryResults {
     const columns = buildColumns(fields)
     return {
         query,
@@ -19,7 +19,7 @@ function buildResults(query: string, fields: FieldDef[], rows: JsValue[][]): Dat
     }
 }
 
-function buildColumns(fields: FieldDef[]): DatabaseQueryResultsColumn[] {
+function buildColumns(fields: FieldPacket[]): DatabaseQueryResultsColumn[] {
     const keys: { [key: string]: true } = {}
     return fields.map(f => {
         const name = uniqueName(f.name, keys)

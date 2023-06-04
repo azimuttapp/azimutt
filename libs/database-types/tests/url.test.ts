@@ -35,6 +35,17 @@ describe('url', () => {
             options: 'secure=true'
         })
     })
+    test('parse mysql url', () => {
+        expect(parseDatabaseUrl('jdbc:mysql://user:pass@host.com:3306/db')).toEqual({
+            full: 'jdbc:mysql://user:pass@host.com:3306/db',
+            kind: 'mysql',
+            user: 'user',
+            pass: 'pass',
+            host: 'host.com',
+            port: 3306,
+            db: 'db',
+        })
+    })
     test('parse postgres url', () => {
         expect(parseDatabaseUrl('postgres://postgres0.example.com')).toEqual({
             full: 'postgres://postgres0.example.com',

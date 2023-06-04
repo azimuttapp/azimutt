@@ -1,6 +1,6 @@
 # MongoDB connector
 
-This library is able to connect to [MongoDB](https://www.mongodb.com) and extract its schema.
+This library is able to connect to [MongoDB](https://www.mongodb.com), extract its schema and more...
 
 It browses all databases and collections, fetch a sample of documents and then [infer](../json-infer-schema) a schema from them.
 
