@@ -1,8 +1,7 @@
 import {describe, expect, test} from "@jest/globals";
 import {AzimuttSchema, DatabaseUrlParsed, parseDatabaseUrl} from "@azimutt/database-types";
 import {application, logger} from "./constants";
-import {execQuery} from "../src/query";
-import {formatSchema, getSchema, MysqlSchema} from "../src/mysql";
+import {execQuery, formatSchema, getSchema, MysqlSchema} from "../src";
 
 describe('postgres', () => {
     // fake url, use a real one to test (see README for how-to)
