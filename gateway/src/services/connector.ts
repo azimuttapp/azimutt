@@ -1,6 +1,7 @@
 import {Connector, DatabaseUrlParsed} from "@azimutt/database-types"
 import {couchbase} from "@azimutt/connector-couchbase"
 import {mongodb} from "@azimutt/connector-mongodb"
+import {mysql} from "@azimutt/connector-mysql"
 import {postgres} from "@azimutt/connector-postgres"
 
 export function getConnector(url: DatabaseUrlParsed): Connector | undefined {
@@ -8,6 +9,8 @@ export function getConnector(url: DatabaseUrlParsed): Connector | undefined {
         return couchbase
     } else if (url.kind === 'mongodb') {
         return mongodb
+    } else if (url.kind === 'mysql') {
+        return mysql
     } else if (url.kind === 'postgres') {
         return postgres
     } else {

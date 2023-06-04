@@ -28,6 +28,7 @@ const logger: Logger = {
 const routes: FastifyPluginAsync = async (server) => {
     server.get('/', {schema: {response: {200: Type.Object({hello: Type.String()})}}}, async () => ({hello: 'world'}))
     server.get('/ping', async () => ({status: 200}))
+    server.get('/health', async () => ({status: 200, version: process.env.npm_package_version}))
 
     server.get<Get<GetSchemaParams, GetSchemaResponse>>('/gateway/schema', get(GetSchemaParams, GetSchemaResponse), async (req, res) => await getDatabaseSchema(req.query, res))
     server.post<Post<GetSchemaParams, GetSchemaResponse>>('/gateway/schema', post(GetSchemaParams, GetSchemaResponse), async (req, res) => await getDatabaseSchema(req.body, res))

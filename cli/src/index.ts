@@ -21,7 +21,7 @@ const program = new Command()
 program.name('azimutt')
     .description('Export database schema from relational or document databases. Import it to https://azimutt.app.\n' +
         '- export database schemas from PostgreSQL, MongoDB and Couchbase')
-    .version('0.0.1')
+    .version(process.env.npm_package_version || '0.0.0')
 
 program.command('export')
     .description('Export a database schema in a file to easily import it in Azimutt.\nWorks with PostgreSQL, MongoDB & Couchbase, issues and PR are welcome in https://github.com/azimuttapp/azimutt ;)')

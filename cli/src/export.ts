@@ -1,8 +1,6 @@
 import chalk from "chalk";
 import {Connector, DatabaseKind, DatabaseUrlParsed} from "@azimutt/database-types";
-import {couchbase} from "@azimutt/connector-couchbase";
-import {mongodb} from "@azimutt/connector-mongodb";
-import {postgres} from "@azimutt/connector-postgres";
+import {getConnector} from "@azimutt/gateway";
 import {FileFormat, FilePath, writeJsonFile} from "./utils/file";
 import {logger} from "./utils/logger";
 
@@ -22,13 +20,9 @@ export async function exportDbSchema(kind: DatabaseKind, url: DatabaseUrlParsed,
     if (kind !== url.kind) {
         logger.warn(`${kind} not recognized from url (got ${JSON.stringify(url.kind)}), will try anyway but expect some errors...`)
     }
-    if (kind === 'couchbase') {
-        await exportJsonSchema(kind, url, opts, couchbase)
-    } else if (kind === 'mongodb') {
-        await exportJsonSchema(kind, url, opts, mongodb)
-    } else if (kind === 'postgres') {
-        // TODO handle 'sql' format using pg_dump
-        await exportJsonSchema(kind, url, opts, postgres)
+    const connector = getConnector(url)
+    if (connector) {
+        await exportJsonSchema(kind, url, opts, connector)
     } else {
         logger.log('')
         logger.error(`Source kind '${kind}' is not supported :(`)
