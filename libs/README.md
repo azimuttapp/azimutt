@@ -13,6 +13,7 @@ For each lib, look at `package.json` description to see what it does, but in sho
 - `json-infer-schema`: a library to infer a schema from a list of json objects
 - `connector-couchbase`: extract database schema for Couchbase
 - `connector-mongodb`: extract database schema for MongoDB
+- `connector-mysql`: extract database schema for MySQL
 - `connector-postgres`: extract database schema for PostgreSQL
 
 If you want to improve connectors, feel free ;)

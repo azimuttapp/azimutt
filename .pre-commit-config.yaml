@@ -43,6 +43,13 @@ repos:
       pass_filenames: false
       files: libs/connector-mongodb/.*\.ts*$
 
+    - id: libs-connector-mysql
+      name: 'Libs/MySQL connector'
+      language: system
+      entry: bash -c 'cd libs/connector-mysql && exec npm run build && exec npm test'
+      pass_filenames: false
+      files: libs/connector-mysql/.*\.ts*$
+
     - id: libs-connector-postgres
       name: 'Libs/PostgreSQL connector'
       language: system

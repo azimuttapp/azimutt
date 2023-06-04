@@ -25,7 +25,7 @@
     "dry-publish": "npm run build && npm pack"
   },
   "dependencies": {
-    "@azimutt/json-infer-schema": "0.0.1",
+    "@azimutt/json-infer-schema": "0.0.2",
     "mysql2": "3.3.3"
   },
   "devDependencies": {

@@ -14,26 +14,32 @@ const p = /^(?:jdbc:)?postgres(?:ql)?:\/\/(?:([^:]+):([^@]+)@)?([^:/?]+)(?::(\d+
 
 export function parseDatabaseUrl(url: DatabaseUrl): DatabaseUrlParsed {
     const couchbase = url.match(couchbaseRegexp)
-    const mongo = couchbase ? null : url.match(mongoRegex)
-    const mysql = couchbase || mongo ? null : url.match(mysqlRegexp)
-    const postgres = couchbase || mongo || mysql ? null : url.match(p)
     if (couchbase) {
         const [, user, pass, host, port, db] = couchbase
         const opts = {kind: 'couchbase', user, pass, host, port: port ? parseInt(port) : undefined, db}
         return {...filterValues(opts, v => v !== undefined), full: url}
-    } else if (mongo) {
+    }
+
+    const mongo = url.match(mongoRegex)
+    if (mongo) {
         const [, user, pass, host, port, db, options] = mongo
         const opts = {kind: 'mongodb', user, pass, host, port: port ? parseInt(port) : undefined, db, options}
         return {...filterValues(opts, v => v !== undefined), full: url}
-    } else if (mysql) {
+    }
+
+    const mysql = url.match(mysqlRegexp)
+    if (mysql) {
         const [, user, pass, host, port, db] = mysql
         const opts = {kind: 'mysql', user, pass, host, port: port ? parseInt(port) : undefined, db}
         return {...filterValues(opts, v => v !== undefined), full: url}
-    } else if (postgres) {
+    }
+
+    const postgres = url.match(p)
+    if (postgres) {
         const [, user, pass, host, port, db] = postgres
         const opts = {kind: 'postgres', user, pass, host, port: port ? parseInt(port) : undefined, db}
         return {...filterValues(opts, v => v !== undefined), full: url}
-    } else {
-        return {full: url}
     }
+
+    return {full: url}
 }
