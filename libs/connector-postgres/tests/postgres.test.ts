@@ -13,6 +13,7 @@ describe('postgres', () => {
     })
     test.skip('getSchema', async () => {
         const schema = await getSchema(application, url, undefined, 10, logger)
+        console.log('schema', schema)
         expect(schema.tables.length).toEqual(12)
     })
     test('formatSchema', () => {
