@@ -1,4 +1,4 @@
-import mysql, {Connection} from "mysql2/promise";
+import mysql, {Connection, RowDataPacket} from "mysql2/promise";
 import {DatabaseUrlParsed} from "@azimutt/database-types";
 
 export async function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c: Connection) => Promise<T>): Promise<T> {
@@ -13,4 +13,8 @@ export async function connect<T>(application: string, url: DatabaseUrlParsed, ex
     return exec(connection)
         .then(res => connection.end().then(_ => res))
         .catch(err => connection.end().then(_ => Promise.reject(err)))
+}
+
+export async function query<T>(conn: Connection, sql: string, parameters: any[] = []): Promise<T[]> {
+    return conn.query<RowDataPacket[]>({sql, values: parameters}).then(([rows]) => rows as T[])
 }

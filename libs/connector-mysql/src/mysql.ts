@@ -2,7 +2,7 @@ import {Connection, RowDataPacket} from "mysql2/promise";
 import {groupBy, Logger, mapValues, removeUndefined, sequence} from "@azimutt/utils";
 import {AzimuttRelation, AzimuttSchema, AzimuttType, DatabaseUrlParsed} from "@azimutt/database-types";
 import {schemaToColumns, ValueSchema, valuesToSchema} from "@azimutt/json-infer-schema";
-import {connect} from "./connect";
+import {connect, query} from "./connect";
 
 export type MysqlSchema = { tables: MysqlTable[], relations: AzimuttRelation[], types: AzimuttType[] }
 export type MysqlTable = { schema: MysqlSchemaName, table: MysqlTableName, view: boolean, columns: MysqlColumn[], primaryKey: MysqlPrimaryKey | null, uniques: MysqlUnique[], indexes: MysqlIndex[], checks: MysqlCheck[], comment: string | null }
@@ -237,11 +237,11 @@ async function getConstraints(conn: Connection, schema: MysqlSchemaName | undefi
          WHERE ${filterSchema('c.CONSTRAINT_SCHEMA', schema)};`)
 }
 
-type ConstraintBase = {schema: MysqlSchemaName, table: MysqlTableName, constraint: MysqlConstraintName}
-type ConstraintPrimaryKey = ConstraintBase & {type: 'PRIMARY KEY', columns: MysqlColumnName[]}
-type ConstraintUnique = ConstraintBase & {type: 'UNIQUE', columns: MysqlColumnName[]}
-type ConstraintIndex = ConstraintBase & {type: 'INDEX', columns: MysqlColumnName[]}
-type ConstraintForeignKey = ConstraintBase & {type: 'FOREIGN KEY', columns: {src: MysqlColumnName, ref: MysqlColumnRef}[]}
+type ConstraintBase = { schema: MysqlSchemaName, table: MysqlTableName, constraint: MysqlConstraintName }
+type ConstraintPrimaryKey = ConstraintBase & { type: 'PRIMARY KEY', columns: MysqlColumnName[] }
+type ConstraintUnique = ConstraintBase & { type: 'UNIQUE', columns: MysqlColumnName[] }
+type ConstraintIndex = ConstraintBase & { type: 'INDEX', columns: MysqlColumnName[] }
+type ConstraintForeignKey = ConstraintBase & { type: 'FOREIGN KEY', columns: { src: MysqlColumnName, ref: MysqlColumnRef }[] }
 type ConstraintFormatted = ConstraintPrimaryKey | ConstraintUnique | ConstraintIndex | ConstraintForeignKey
 
 function buildTableConstraints(constraints: RawConstraint[]): ConstraintFormatted[] {
@@ -254,7 +254,10 @@ function buildTableConstraints(constraints: RawConstraint[]): ConstraintFormatte
                 table: first.table,
                 constraint: first.constraint,
                 type: first.type,
-                columns: sorted.map(c => ({src: c.column, ref: {schema: c.ref_schema || '', table: c.ref_table || '', column: c.ref_column || ''}}))
+                columns: sorted.map(c => ({
+                    src: c.column,
+                    ref: {schema: c.ref_schema || '', table: c.ref_table || '', column: c.ref_column || ''}
+                }))
             }
         } else {
             return {
@@ -268,10 +271,6 @@ function buildTableConstraints(constraints: RawConstraint[]): ConstraintFormatte
     })
 }
 
-async function query<T>(conn: Connection, sql: string): Promise<T[]> {
-    return conn.query<RowDataPacket[]>({sql}).then(([rows]) => rows as T[])
-}
-
 function filterSchema(field: string, schema: MysqlSchemaName | undefined) {
     return `${field} ${schema ? `= '${schema}'` : `!= 'information_schema'`}`
 }
@@ -282,6 +281,7 @@ function partition<T>(arr: T[], p: (i: T) => boolean): [T[], T[]] {
     arr.forEach(i => p(i) ? ok.push(i) : ko.push(i))
     return [ok, ko]
 }
+
 function mergeBy<T, K extends keyof any>(a1: T[], a2: T[], getKey: (i: T) => K, merge: (i1: T, i2: T) => T = (i1, i2) => ({...i1, ...i2})): T[] {
     let others = a2.map(i2 => ({key: getKey(i2), value: i2}))
     const merged = a1.map(i1 => {
