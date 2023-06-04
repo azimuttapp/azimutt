@@ -131,6 +131,20 @@ export const FailureResponse = Type.Object({
 })
 export type FailureResponse = Static<typeof FailureResponse>
 
+export const ParseUrlParams = Type.Object({url: sDatabaseUrl})
+export type ParseUrlParams = Static<typeof ParseUrlParams>
+export const ParseUrlResponse = Type.Object({
+    full: sDatabaseUrl,
+    kind: Type.Optional(Type.String()),
+    user: Type.Optional(Type.String()),
+    pass: Type.Optional(Type.String()),
+    host: Type.Optional(Type.String()),
+    port: Type.Optional(Type.Number()),
+    db: Type.Optional(Type.String()),
+    options: Type.Optional(Type.String())
+})
+export type ParseUrlResponse = Static<typeof ParseUrlResponse>
+
 export const GetSchemaParams = Type.Object({url: sDatabaseUrl, schema: Type.Optional(sSchemaName)})
 export type GetSchemaParams = Static<typeof GetSchemaParams>
 export const GetSchemaResponse = sAzimuttSchema

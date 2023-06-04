@@ -3,7 +3,7 @@ import {AzimuttSchema, DatabaseUrlParsed, parseDatabaseUrl} from "@azimutt/datab
 import {application, logger} from "./constants";
 import {execQuery, formatSchema, getSchema, MysqlSchema} from "../src";
 
-describe('postgres', () => {
+describe('mysql', () => {
     // fake url, use a real one to test (see README for how-to)
     const url: DatabaseUrlParsed = parseDatabaseUrl('jdbc:mysql://user:pass@host.com:3306/db')
     test.skip('execQuery', async () => {
