@@ -4,6 +4,7 @@ import {Argument, Command} from "commander";
 import chalk from "chalk";
 import {errorToString, safeParseInt} from "@azimutt/utils";
 import {parseDatabaseUrl} from "@azimutt/database-types";
+import {version} from "./version";
 import {logger} from "./utils/logger";
 import {exportDbSchema} from "./export";
 import {launchGateway} from "./gateway";
@@ -14,6 +15,8 @@ const figlet = require('figlet')
 
 clear()
 logger.log(chalk.hex('#4F46E5').bold(figlet.textSync('Azimutt.app', {horizontalLayout: 'full'})))
+logger.log(chalk.hex('#3f3f46')(version))
+logger.log('')
 
 // TODO: `azimutt infer --path ~/my_db` or `azimutt export --url ~/my_db` (no 'protocol://') => recursively list .json files and infer them as a collection
 // TODO: use in-memory H2 to load liquibase & flyway migrations
@@ -21,7 +24,7 @@ const program = new Command()
 program.name('azimutt')
     .description('Export database schema from relational or document databases. Import it to https://azimutt.app.\n' +
         '- export database schemas from PostgreSQL, MongoDB and Couchbase')
-    .version('0.0.14')
+    .version(version)
 
 program.command('export')
     .description('Export a database schema in a file to easily import it in Azimutt.\nWorks with PostgreSQL, MongoDB & Couchbase, issues and PR are welcome in https://github.com/azimuttapp/azimutt ;)')
@@ -40,7 +43,7 @@ program.command('export')
 
 program.command('gateway')
     .description('Launch the gateway server to allow Azimutt to access your local databases.')
-    .action(() => launchGateway())
+    .action(() => launchGateway(logger))
 
 program.parse(process.argv)
 

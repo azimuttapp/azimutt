@@ -3,6 +3,7 @@ import {FastifyPluginAsync, FastifyReply} from "fastify"
 import {RouteShorthandOptions} from "fastify/types/route"
 import {Logger} from "@azimutt/utils"
 import {Connector, DatabaseUrl, DatabaseUrlParsed, parseDatabaseUrl} from "@azimutt/database-types"
+import {version} from "../version";
 import {
     DbQueryParams,
     DbQueryResponse,
@@ -30,7 +31,7 @@ const logger: Logger = {
 const routes: FastifyPluginAsync = async (server) => {
     server.get('/', {schema: {response: {200: Type.Object({hello: Type.String()})}}}, async () => ({hello: 'world'}))
     server.get('/ping', async () => ({status: 200}))
-    server.get('/health', async () => ({status: 200, version: '0.0.4'}))
+    server.get('/health', async () => ({status: 200, version}))
 
     server.get<Get<ParseUrlParams, ParseUrlResponse>>('/gateway/parse-url', get(ParseUrlParams, ParseUrlResponse), async req => parseDatabaseUrl(req.query.url))
     server.post<Post<ParseUrlParams, ParseUrlResponse>>('/gateway/parse-url', post(ParseUrlParams, ParseUrlResponse), async req => parseDatabaseUrl(req.body.url))

@@ -44,6 +44,7 @@ import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode
 import PagesComponents.Organization_.Project_.Models.DragState as DragState
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps
+import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
 import PagesComponents.Organization_.Project_.Models.MemoId as MemoId
@@ -79,7 +80,7 @@ import Track
 
 
 update : Maybe LayoutName -> Time.Zone -> Time.Posix -> UrlInfos -> List Organization -> List ProjectInfo -> Msg -> Model -> ( Model, Cmd Msg )
-update currentLayout zone now urlInfos organizations projects msg model =
+update urlLayout zone now urlInfos organizations projects msg model =
     case msg of
         ToggleMobileMenu ->
             ( model |> mapNavbar (mapMobileMenuOpen not), Cmd.none )
@@ -273,7 +274,7 @@ update currentLayout zone now urlInfos organizations projects msg model =
             model |> mapEmbedSourceParsingMCmd (EmbedSourceParsingDialog.update EmbedSourceParsingMsg now (model.erd |> Maybe.map .project) message)
 
         SourceParsed source ->
-            ( model, source |> Project.create projects source.name |> Ok |> Just |> GotProject |> JsMessage |> T.send )
+            ( model, source |> Project.create projects source.name |> Ok |> Just |> GotProject "load" |> JsMessage |> T.send )
 
         ProPlanColors _ ProPlan.EnableTableChangeColor ->
             ( model |> mapErdM (mapProject (mapOrganizationM (mapPlan (setColors True)))), Ports.fireworks )
@@ -375,7 +376,7 @@ update currentLayout zone now urlInfos organizations projects msg model =
             ( model |> mapOpenedDialogs (List.drop 1), T.sendAfter Conf.ui.closeDuration message )
 
         JsMessage message ->
-            model |> handleJsMessage now currentLayout message
+            model |> handleJsMessage now urlLayout message
 
         Batch messages ->
             ( model, Cmd.batch (messages |> List.map T.send) )
@@ -388,12 +389,12 @@ update currentLayout zone now urlInfos organizations projects msg model =
 
 
 handleJsMessage : Time.Posix -> Maybe LayoutName -> JsMsg -> Model -> ( Model, Cmd Msg )
-handleJsMessage now currentLayout msg model =
+handleJsMessage now urlLayout msg model =
     case msg of
         GotSizes sizes ->
             model |> updateSizes sizes
 
-        GotProject res ->
+        GotProject context res ->
             case res of
                 Nothing ->
                     ( { model | loaded = True }, Cmd.none )
@@ -402,44 +403,7 @@ handleJsMessage now currentLayout msg model =
                     ( { model | loaded = True }, Cmd.batch [ "Unable to read project: " ++ Decode.errorToHtml err |> Toasts.error |> Toast |> T.send, Track.jsonError "decode-project" err ] )
 
                 Just (Ok project) ->
-                    let
-                        erd : Erd
-                        erd =
-                            (project |> Erd.create)
-                                |> (\e ->
-                                        -- set current layout if given in url
-                                        currentLayout
-                                            |> Maybe.filter (\l -> project.layouts |> Dict.member l)
-                                            |> Maybe.mapOrElse (\l -> e |> setCurrentLayout l) e
-                                   )
-                                |> (\e ->
-                                        -- keep current layout & layout position when project is updated
-                                        if model.erd |> Maybe.any (\current -> current.project.id == project.id) then
-                                            e
-                                                |> setShouldFitCanvas False
-                                                |> setCurrentLayout (model.erd |> Maybe.withDefault e |> .currentLayout)
-                                                |> Erd.mapCurrentLayout (\l -> l |> setCanvas (model.erd |> Maybe.withDefault e |> Erd.currentLayout |> .canvas))
-
-                                        else
-                                            e
-                                   )
-
-                        amlSidebar : Maybe AmlSidebar
-                        amlSidebar =
-                            -- if sidebar is present do nothing, if not, all sources are AML and it's not embed, then open it
-                            model.amlSidebar
-                                |> Maybe.orElse (B.maybe (model.conf.update && (project.sources |> List.all (\s -> s.kind == SourceKind.AmlEditor))) (AmlSidebar.init Nothing (Just erd)))
-                    in
-                    ( { model | loaded = True, dirty = False, erd = Just erd, amlSidebar = amlSidebar }
-                    , Cmd.batch
-                        ([ Ports.observeSize Conf.ids.erd
-                         , Ports.observeLayout (erd |> Erd.currentLayout)
-                         , Ports.setMeta { title = Just (Views.title (Just erd)), description = Nothing, canonical = Nothing, html = Nothing, body = Nothing }
-                         , Ports.projectDirty False
-                         ]
-                            ++ B.cond (model.save == Nothing) [] [ ProjectSaveDialog.Close |> ProjectSaveMsg |> ModalClose |> T.send, Ports.confettiPride ]
-                        )
-                    )
+                    model |> updateErd urlLayout context project
 
         ProjectDeleted _ ->
             -- handled in Shared
@@ -657,3 +621,46 @@ isSameTopRight a b =
             ( a.size |> Size.extractCanvas, b.size |> Size.extractCanvas )
     in
     aPos.top == bPos.top && aPos.left + aSize.width == bPos.left + bSize.width
+
+
+updateErd : Maybe LayoutName -> String -> Project.Project -> Model -> ( Model, Cmd Msg )
+updateErd urlLayout context project model =
+    -- context: load, draft, create, update
+    let
+        erd : Erd
+        erd =
+            (project |> Erd.create)
+                |> (\e ->
+                        if context == "load" then
+                            -- set current layout if given in url and loading context
+                            urlLayout
+                                |> Maybe.filter (\l -> project.layouts |> Dict.member l)
+                                |> Maybe.mapOrElse (\l -> e |> setCurrentLayout l) e
+
+                        else if context == "create" || context == "update" then
+                            -- keep current layout & layout position (`create` is an update from the `draft` context)
+                            e
+                                |> setShouldFitCanvas False
+                                |> setCurrentLayout (model.erd |> Maybe.withDefault e |> .currentLayout)
+                                |> Erd.mapCurrentLayout (\l -> l |> setCanvas (model.erd |> Maybe.withDefault e |> Erd.currentLayout |> .canvas))
+
+                        else
+                            e
+                   )
+
+        amlSidebar : Maybe AmlSidebar
+        amlSidebar =
+            -- if sidebar is present do nothing, if not, all sources are AML and it's not embed, then open it
+            model.amlSidebar
+                |> Maybe.orElse (B.maybe (model.conf.update && (project.sources |> List.all (\s -> s.kind == SourceKind.AmlEditor))) (AmlSidebar.init Nothing (Just erd)))
+    in
+    ( { model | loaded = True, dirty = False, erd = Just erd, amlSidebar = amlSidebar }
+    , Cmd.batch
+        ([ Ports.observeSize Conf.ids.erd
+         , Ports.observeLayout (erd |> Erd.currentLayout)
+         , Ports.setMeta { title = Just (Views.title (Just erd)), description = Nothing, canonical = Nothing, html = Nothing, body = Nothing }
+         , Ports.projectDirty False
+         ]
+            ++ B.cond (model.save == Nothing) [] [ ProjectSaveDialog.Close |> ProjectSaveMsg |> ModalClose |> T.send, Ports.confettiPride ]
+        )
+    )

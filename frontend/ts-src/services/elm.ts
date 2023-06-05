@@ -91,9 +91,9 @@ export class ElmApp {
     noListeners = (): ElmMsg['kind'][] => (Object.keys(this.callbacks) as ElmMsg['kind'][]).filter(c => this.callbacks[c].length === 0)
 
     updateSizes = (sizes: ElementSize[]): void => this.send({kind: 'GotSizes', sizes})
-    gotProject = (project: Project | undefined): void => {
+    gotProject = (context: string, project: Project | undefined): void => {
         window.azimutt.project = project
-        project ? this.send({kind: 'GotProject', project}) : this.send({kind: 'GotProject'})
+        project ? this.send({kind: 'GotProject', context, project}) : this.send({kind: 'GotProject', context})
     }
     dropProject = (id: ProjectId): void => this.send({kind: 'ProjectDeleted', id})
     gotLocalFile = (msg: GetLocalFile, content: string): void => this.send({

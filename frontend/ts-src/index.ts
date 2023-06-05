@@ -138,12 +138,12 @@ function getProject(msg: GetProject) {
                     return Promise.reject('Invalid storage')
                 }
             })
-    ).then(project => app.gotProject(project), err => {
+    ).then(project => app.gotProject('load', project), err => {
         if (err.statusCode === 401) {
             window.location.replace(backend.loginUrl(url.relative(window.location)))
         } else {
             reportError(`Can't load project`, err)
-            app.gotProject(undefined)
+            app.gotProject('load', undefined)
         }
     })
 }
@@ -152,7 +152,7 @@ function createProjectTmp(msg: CreateProjectTmp): void {
     const json = buildProjectJson(msg.project)
     storage.deleteProject(Uuid.zero)
         .then(_ => storage.createProject(Uuid.zero, json))
-        .then(_ => app.gotProject(buildProjectDraft(msg.project.id, json)),
+        .then(_ => app.gotProject('draft', buildProjectDraft(msg.project.id, json)),
             err => reportError(`Can't save draft project`, err))
 }
 
@@ -181,7 +181,7 @@ function createProject(msg: CreateProject): void {
             }).then(_ => {
                 app.toast(ToastLevel.enum.success, `Project created!`)
                 window.history.replaceState("", "", `/${msg.organization}/${p.id}`)
-                app.gotProject(p)
+                app.gotProject('create', p)
             })
         })
     } else if (msg.storage == ProjectStorage.enum.remote) {
@@ -193,7 +193,7 @@ function createProject(msg: CreateProject): void {
             }).then(_ => {
                 app.toast(ToastLevel.enum.success, `Project created!`)
                 window.history.replaceState("", "", `/${msg.organization}/${p.id}`)
-                app.gotProject(buildProjectRemote(p, json))
+                app.gotProject('create', buildProjectRemote(p, json))
             })
         }, err => reportError(`Can't save project to backend`, err))
     } else {
@@ -208,13 +208,13 @@ function updateProject(msg: UpdateProject): void {
         backend.updateProjectLocal(msg.project).then(res => {
             return storage.updateProject(res.id, json).then(_ => {
                 app.toast(ToastLevel.enum.success, 'Project saved')
-                app.gotProject(buildProjectLocal(res, json))
+                app.gotProject('update', buildProjectLocal(res, json))
             }, err => reportError(`Can't update project locally`, err))
         }, err => reportError(`Can't update project to backend`, err))
     } else if (msg.project.storage == ProjectStorage.enum.remote) {
         backend.updateProjectRemote(msg.project).then(res => {
             app.toast(ToastLevel.enum.success, 'Project saved')
-            app.gotProject(buildProjectRemote(res, json))
+            app.gotProject('update', buildProjectRemote(res, json))
         }, err => reportError(`Can't update project`, err))
     } else {
         reportError(`Unknown ProjectStorage`, msg.project.storage)

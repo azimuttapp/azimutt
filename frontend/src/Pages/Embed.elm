@@ -96,7 +96,7 @@ init query =
          ]
             -- org id is not used to get the project ^^
             ++ ((query.projectId |> Maybe.map (\id -> [ Ports.getProject OrganizationId.zero id query.token ]))
-                    |> Maybe.orElse (query.projectUrl |> Maybe.map (\url -> [ Http.get { url = url, expect = Http.decodeJson (Result.toMaybe >> GotProject >> JsMessage) Project.decode } ]))
+                    |> Maybe.orElse (query.projectUrl |> Maybe.map (\url -> [ Http.get { url = url, expect = Http.decodeJson (Result.toMaybe >> GotProject "load" >> JsMessage) Project.decode } ]))
                     |> Maybe.orElse (query.databaseSource |> Maybe.map (\url -> [ T.send (url |> DatabaseSource.GetSchema |> EmbedSourceParsingDialog.EmbedDatabaseSource |> EmbedSourceParsingMsg), T.sendAfter 1 (ModalOpen Conf.ids.sourceParsingDialog) ]))
                     |> Maybe.orElse (query.sqlSource |> Maybe.map (\url -> [ T.send (url |> SqlSource.GetRemoteFile |> EmbedSourceParsingDialog.EmbedSqlSource |> EmbedSourceParsingMsg), T.sendAfter 1 (ModalOpen Conf.ids.sourceParsingDialog) ]))
                     |> Maybe.orElse (query.jsonSource |> Maybe.map (\url -> [ T.send (url |> JsonSource.GetRemoteFile |> EmbedSourceParsingDialog.EmbedJsonSource |> EmbedSourceParsingMsg), T.sendAfter 1 (ModalOpen Conf.ids.sourceParsingDialog) ]))

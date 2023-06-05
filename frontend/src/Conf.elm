@@ -31,6 +31,8 @@ constants :
     , cheeringTweet : String
     , sharingTweet : String
     , canvasMargins : Float
+    , manyTablesLimit : Int
+    , fewTablesLimit : Int
     }
 constants =
     { azimuttWebsite = "https://azimutt.app"
@@ -53,6 +55,8 @@ constants =
     , cheeringTweet = "Hi team, I really like what you've done with @" ++ twitter ++ ". Keep up the good work 💪"
     , sharingTweet = "Hi @" ++ twitter ++ ", I just published my schema at ..., I would love if you can share 🚀"
     , canvasMargins = 20
+    , manyTablesLimit = 50
+    , fewTablesLimit = 20
     }
 
 

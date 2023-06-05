@@ -253,7 +253,7 @@ type ElmMsg
 
 type JsMsg
     = GotSizes (List SizeChange)
-    | GotProject (Maybe (Result Decode.Error Project))
+    | GotProject String (Maybe (Result Decode.Error Project))
     | ProjectDeleted ProjectId
     | GotLocalFile String File FileContent
     | GotDatabaseSchema JsonSchema
@@ -414,7 +414,7 @@ jsDecoder =
                         )
 
                 "GotProject" ->
-                    Decode.map GotProject (Decode.maybeField "project" projectDecoder)
+                    Decode.map2 GotProject (Decode.field "context" Decode.string) (Decode.maybeField "project" projectDecoder)
 
                 "ProjectDeleted" ->
                     Decode.map ProjectDeleted (Decode.field "id" ProjectId.decode)
@@ -507,7 +507,7 @@ unhandledJsMsgError msg =
                 GotSizes _ ->
                     "GotSizes"
 
-                GotProject _ ->
+                GotProject _ _ ->
                     "GotProject"
 
                 ProjectDeleted _ ->

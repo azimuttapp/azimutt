@@ -157,12 +157,12 @@ handleJsMessage req now urlOrganization msg model =
             else
                 ( model, "Unhandled local file kind '" ++ kind ++ "'" |> Toasts.error |> Toast |> T.send )
 
-        GotProject r ->
+        GotProject _ project ->
             if model.sampleSource == Nothing || (model.sampleSource |> Maybe.andThen .parsedProject) /= Nothing then
                 ( model, Request.pushRoute (Route.Organization___Project_ { organization = urlOrganization |> Maybe.withDefault OrganizationId.zero, project = ProjectId.zero }) req )
 
             else
-                ( model, T.send (r |> SampleSource.GotProject |> SampleSourceMsg) )
+                ( model, T.send (project |> SampleSource.GotProject |> SampleSourceMsg) )
 
         GotDatabaseSchema schema ->
             ( model, schema |> DatabaseSource.GotSchema |> DatabaseSourceMsg |> T.send )

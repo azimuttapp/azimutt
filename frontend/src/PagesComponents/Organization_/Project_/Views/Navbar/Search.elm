@@ -15,11 +15,13 @@ import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Notes exposing (Notes)
+import Libs.String exposing (pluralizeD)
 import Libs.Tailwind exposing (TwClass, focus, lg, sm)
 import Models.Project.ColumnPath as ColumnPath
 import Models.Project.Metadata as Metadata exposing (Metadata)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.TableId as TableId exposing (TableId)
+import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
 import PagesComponents.Organization_.Project_.Models exposing (Msg(..), SearchModel, confirm)
 import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn)
 import PagesComponents.Organization_.Project_.Models.ErdRelation exposing (ErdRelation)
@@ -70,12 +72,14 @@ viewNavbarSearch defaultSchema search tables relations metadata shownTables html
                                 [ text "Type to search into tables (", Icon.solid Icons.table "", text "), columns (", Icon.solid Icons.column "", text ") and relations (", Icon.solid Icons.columns.foreignKey "", text ")" ]
                             , button
                                 [ type_ "button"
-                                , onMouseDown (B.cond (Dict.size tables < 30) ShowAllTables (confirm "Show all tables" (text "You are about to add a lot of tables, it may show down your computer. Continue?") ShowAllTables))
+                                , onMouseDown (B.cond (Dict.size tables < Conf.constants.manyTablesLimit) ShowAllTables (confirm "Show all tables" (text ("You are about to show " ++ (tables |> pluralizeD "table") ++ ". That's a lot. It may slow down your browser and make Azimutt unresponsive. Continue?")) ShowAllTables))
                                 , role "menuitem"
                                 , tabindex -1
                                 , css [ "flex w-full items-center", focus [ "outline-none" ], ContextMenu.itemStyles ]
                                 ]
                                 [ text ("Show all tables (" ++ (tables |> Dict.size |> String.fromInt) ++ ")") ]
+                            , button [ type_ "button", onMouseDown (DetailsSidebarMsg DetailsSidebar.Toggle), role "menuitem", tabindex -1, css [ "flex w-full items-center", focus [ "outline-none" ], ContextMenu.itemStyles ] ]
+                                [ text "Browse table list" ]
                             ]
 
                     else

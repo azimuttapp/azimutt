@@ -155,8 +155,8 @@ export const ElmMsg = z.discriminatedUnion('kind', [Click, MouseDown, Focus, Blu
 
 export type GotSizes = { kind: 'GotSizes', sizes: ElementSize[] }
 export const GotSizes = z.object({kind: z.literal('GotSizes'), sizes: ElementSize.array()}).strict()
-export type GotProject = { kind: 'GotProject', project?: Project }
-export const GotProject = z.object({kind: z.literal('GotProject'), project: Project.optional()}).strict()
+export type GotProject = { kind: 'GotProject', context: string, project?: Project }
+export const GotProject = z.object({kind: z.literal('GotProject'), context: z.string(), project: Project.optional()}).strict()
 export type ProjectDeleted = { kind: 'ProjectDeleted', id: ProjectId }
 export const ProjectDeleted = z.object({kind: z.literal('ProjectDeleted'), id: ProjectId}).strict()
 export type GotLocalFile = { kind: 'GotLocalFile', sourceKind: SourceOrigin, file: File, content: string }

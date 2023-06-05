@@ -39,7 +39,7 @@ Start with `npm run setup` to install dependencies and set up the CLI, then you 
 ## Publish
 
 - connect to npm account
-- update `package.json` and `src/index.ts:24` versions
+- update `package.json` and `src/version.ts` versions
 - test with `npm run dry-publish` and check `azimutt-x.y.z.tgz` content
 - launch `npm publish`
 

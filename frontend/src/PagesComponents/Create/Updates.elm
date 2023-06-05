@@ -91,7 +91,7 @@ createProject projects storage name =
 handleJsMessage : Request.With params -> Maybe OrganizationId -> JsMsg -> Model -> ( Model, Cmd Msg )
 handleJsMessage req urlOrganization msg model =
     case msg of
-        GotProject project ->
+        GotProject _ project ->
             ( model
             , Request.pushRoute
                 (Route.Organization___Project_
