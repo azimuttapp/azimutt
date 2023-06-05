@@ -1,5 +1,5 @@
 import {Connection, RowDataPacket} from "mysql2/promise";
-import {groupBy, Logger, mapValues, removeUndefined, sequence} from "@azimutt/utils";
+import {groupBy, Logger, mapValues, mergeBy, removeUndefined, sequence} from "@azimutt/utils";
 import {AzimuttRelation, AzimuttSchema, AzimuttType, DatabaseUrlParsed} from "@azimutt/database-types";
 import {schemaToColumns, ValueSchema, valuesToSchema} from "@azimutt/json-infer-schema";
 import {connect, query} from "./connect";
@@ -273,22 +273,4 @@ function buildTableConstraints(constraints: RawConstraint[]): ConstraintFormatte
 
 function filterSchema(field: string, schema: MysqlSchemaName | undefined) {
     return `${field} ${schema ? `= '${schema}'` : `!= 'information_schema'`}`
-}
-
-function partition<T>(arr: T[], p: (i: T) => boolean): [T[], T[]] {
-    const ok = [] as T[]
-    const ko = [] as T[]
-    arr.forEach(i => p(i) ? ok.push(i) : ko.push(i))
-    return [ok, ko]
-}
-
-function mergeBy<T, K extends keyof any>(a1: T[], a2: T[], getKey: (i: T) => K, merge: (i1: T, i2: T) => T = (i1, i2) => ({...i1, ...i2})): T[] {
-    let others = a2.map(i2 => ({key: getKey(i2), value: i2}))
-    const merged = a1.map(i1 => {
-        const key = getKey(i1)
-        const [toMerge, rest] = partition(others, o => o.key === key)
-        others = rest
-        return toMerge.reduce((acc, cur) => merge(acc, cur.value), i1)
-    })
-    return merged.concat(others.map(o => o.value))
 }
