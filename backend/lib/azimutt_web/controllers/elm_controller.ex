@@ -1,9 +1,5 @@
 defmodule AzimuttWeb.ElmController do
   use AzimuttWeb, :controller
-  alias Azimutt.Projects
-  alias Azimutt.Projects.Project
-  alias Azimutt.Tracking
-  alias Azimutt.Utils.Uuid
   action_fallback AzimuttWeb.FallbackController
 
   # every action is the same, just load the Elm index but we need different actions for the reverse router
@@ -21,20 +17,12 @@ defmodule AzimuttWeb.ElmController do
     end
   end
 
-  def project_show(conn, %{"organization_id" => _organization_id, "project_id" => project_id} = params) do
-    now = DateTime.utc_now()
+  def project_show(conn, %{"organization_id" => _organization_id, "project_id" => project_id}) do
     current_user = conn.assigns.current_user
 
     if !current_user || current_user.confirmed_at || !Azimutt.config(:require_email_confirmation) do
       if project_id |> String.length() == 36 do
-        if project_id == Uuid.zero() do
-          conn |> load_elm
-        else
-          with {:ok, %Project{} = project} <- Projects.load_project(project_id, current_user, params["token"], now) do
-            Tracking.project_loaded(current_user, project)
-            conn |> load_elm
-          end
-        end
+        conn |> load_elm
       else
         {:error, :not_found}
       end

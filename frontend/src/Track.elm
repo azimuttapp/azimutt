@@ -1,4 +1,4 @@
-module Track exposing (SQLParsing, amlSourceCreated, dbAnalysisOpened, dbSourceCreated, docOpened, externalLink, findPathOpened, findPathResults, groupCreated, groupDeleted, groupRenamed, jsonError, jsonSourceCreated, layoutCreated, layoutDeleted, layoutLoaded, memoDeleted, memoSaved, notFound, notesCreated, notesDeleted, notesUpdated, planLimit, projectDraftCreated, searchClicked, sourceAdded, sourceDeleted, sourceRefreshed, sqlSourceCreated, tagsCreated, tagsDeleted, tagsUpdated)
+module Track exposing (SQLParsing, amlSourceCreated, dbAnalysisOpened, dbSourceCreated, docOpened, externalLink, findPathOpened, findPathResults, groupCreated, groupDeleted, groupRenamed, jsonError, jsonSourceCreated, layoutCreated, layoutDeleted, layoutLoaded, memoDeleted, memoSaved, notFound, notesCreated, notesDeleted, notesUpdated, planLimit, projectDraftCreated, projectLoaded, searchClicked, sourceAdded, sourceDeleted, sourceRefreshed, sqlSourceCreated, tagsCreated, tagsDeleted, tagsUpdated)
 
 import Conf exposing (Feature, Features)
 import DataSources.Helpers exposing (SourceLine)
@@ -54,6 +54,11 @@ amlSourceCreated project source =
 projectDraftCreated : Project -> Cmd msg
 projectDraftCreated project =
     sendEvent "editor_project_draft_created" (project |> ProjectInfo.fromProject |> projectDetails) (Just project)
+
+
+projectLoaded : Project -> Cmd msg
+projectLoaded project =
+    sendEvent "project_loaded" (project |> ProjectInfo.fromProject |> projectDetails) (Just project)
 
 
 sourceAdded : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> Source -> Cmd msg

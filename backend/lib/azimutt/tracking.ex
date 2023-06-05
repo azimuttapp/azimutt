@@ -96,9 +96,6 @@ defmodule Azimutt.Tracking do
   def user_onboarding(%User{} = current_user, step, data),
     do: create_event("user_onboarding", user_data(current_user), data |> Map.put("step", step), current_user, nil, nil)
 
-  def project_loaded(current_user, %Project{} = project),
-    do: create_event("project_loaded", project_data(project), nil, current_user, project.organization.id, project.id)
-
   def project_created(%User{} = current_user, %Project{} = project),
     do: create_event("project_created", project_data(project), nil, current_user, project.organization.id, project.id)
 
@@ -307,6 +304,7 @@ defmodule Azimutt.Tracking do
     %{author: user_name, text: text, destination: project_name}
   end
 
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defp translate_event_name(name) do
     cond do
       name == "editor_layout_created" -> "created a new layout on"

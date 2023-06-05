@@ -673,6 +673,7 @@ updateErd urlLayout context project model =
          , Ports.projectDirty False
          ]
             ++ B.cond (model.save == Nothing) [] [ ProjectSaveDialog.Close |> ProjectSaveMsg |> ModalClose |> T.send, Ports.confettiPride ]
+            ++ B.cond (context == "load") [ Track.projectLoaded project ] []
         )
     )
 
