@@ -4,6 +4,7 @@ import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.DatabaseKind as DatabaseKind
 import Libs.Models.DatabaseUrl exposing (DatabaseUrl)
+import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnPath exposing (ColumnPath)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.TableId exposing (TableId)
@@ -40,11 +41,19 @@ showTableData ( schema, table ) url =
             in
             schema ++ "/" ++ collection ++ "/find/" ++ query ++ "/" ++ limit
 
+        DatabaseKind.MySQL ->
+            defaultShowTableData schema table
+
         DatabaseKind.PostgreSQL ->
-            "SELECT * FROM " ++ tableRef schema table ++ " LIMIT " ++ limit ++ ";"
+            defaultShowTableData schema table
 
         DatabaseKind.Other ->
-            "SELECT * FROM " ++ tableRef schema table ++ " LIMIT " ++ limit ++ ";"
+            defaultShowTableData schema table
+
+
+defaultShowTableData : SchemaName -> TableName -> String
+defaultShowTableData schema table =
+    "SELECT * FROM " ++ tableRef schema table ++ " LIMIT " ++ limit ++ ";"
 
 
 showColumnData : ColumnPath -> TableId -> DatabaseUrl -> String
@@ -72,11 +81,19 @@ showColumnData column ( schema, table ) url =
             in
             schema ++ "/" ++ collection ++ "/aggregate/[" ++ whereClause ++ "{\"$sortByCount\":\"$" ++ column.head ++ "\"},{\"$project\":{\"_id\":0,\"" ++ column.head ++ "\":\"$_id\",\"count\":\"$count\"}}]/" ++ limit
 
+        DatabaseKind.MySQL ->
+            defaultShowColumnData schema table column.head
+
         DatabaseKind.PostgreSQL ->
             "SELECT " ++ column.head ++ ", count(*) FROM " ++ tableRef schema table ++ " GROUP BY " ++ column.head ++ " ORDER BY count DESC, " ++ column.head ++ " LIMIT " ++ limit ++ ";"
 
         DatabaseKind.Other ->
-            "SELECT " ++ column.head ++ ", count(*) FROM " ++ tableRef schema table ++ " GROUP BY " ++ column.head ++ " ORDER BY count DESC, " ++ column.head ++ " LIMIT " ++ limit ++ ";"
+            defaultShowColumnData schema table column.head
+
+
+defaultShowColumnData : SchemaName -> TableName -> ColumnName -> String
+defaultShowColumnData schema table column =
+    "SELECT " ++ column ++ ", count(*) as count FROM " ++ tableRef schema table ++ " GROUP BY " ++ column ++ " ORDER BY count DESC, " ++ column ++ " LIMIT " ++ limit ++ ";"
 
 
 tableRef : SchemaName -> TableName -> String
