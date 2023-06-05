@@ -1,6 +1,6 @@
 {
   "name": "@azimutt/json-infer-schema",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "description": "Allows to infer a schema from a JSON array (items should be 'similar')",
   "keywords": [],
   "homepage": "https://azimutt.app",
@@ -25,11 +25,11 @@
     "dry-publish": "npm run build && npm pack"
   },
   "dependencies": {
-    "@azimutt/database-types": "0.0.1"
+    "@azimutt/database-types": "0.0.3"
   },
   "devDependencies": {
     "@jest/globals": "^29.5.0",
-    "@types/jest": "^29.5.1",
+    "@types/jest": "^29.5.2",
     "jest": "^29.5.0",
     "ts-jest": "^29.1.0",
     "typescript": "^4.9.5"

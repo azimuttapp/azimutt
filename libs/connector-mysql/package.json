@@ -1,7 +1,7 @@
 {
-  "name": "@azimutt/database-types",
-  "version": "0.0.3",
-  "description": "Define common types and utils for other Azimutt packages like connectors",
+  "name": "@azimutt/connector-mysql",
+  "version": "0.0.2",
+  "description": "Connect to MySQL, extract schema, run analysis and queries",
   "keywords": [],
   "homepage": "https://azimutt.app",
   "author": {
@@ -13,7 +13,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/azimuttapp/azimutt.git",
-    "directory": "libs/database-types"
+    "directory": "libs/connector-mysql"
   },
   "main": "./out/index.js",
   "types": "./out/index.d.ts",
@@ -25,8 +25,8 @@
     "dry-publish": "npm run build && npm pack"
   },
   "dependencies": {
-    "@azimutt/utils": "0.0.3",
-    "zod": "3.21.4"
+    "@azimutt/json-infer-schema": "0.0.3",
+    "mysql2": "3.3.3"
   },
   "devDependencies": {
     "@jest/globals": "^29.5.0",

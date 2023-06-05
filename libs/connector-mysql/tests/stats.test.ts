@@ -4,16 +4,16 @@ import {application} from "./constants";
 import {getColumnStats, getTableStats} from "../src";
 
 describe('stats', () => {
-    // local url, install db or replace it to test
-    const url: DatabaseUrlParsed = parseDatabaseUrl('postgresql://postgres:postgres@localhost:5432/azimutt_dev')
+    // fake url, use a real one to test (see README for how-to)
+    const url: DatabaseUrlParsed = parseDatabaseUrl('jdbc:mysql://user:pass@host.com:3306/db')
     test.skip('getTableStats', async () => {
-        const stats = await getTableStats(application, url, 'public.users')
+        const stats = await getTableStats(application, url, 'users')
         console.log('getTableStats', stats)
         expect(stats.rows).toEqual(2)
     })
     test.skip('getColumnStats', async () => {
-        const stats = await getColumnStats(application, url, {table: 'public.users', column: 'name'})
+        const stats = await getColumnStats(application, url, {table: 'users', column: 'name'})
         console.log('getColumnStats', stats)
-        expect(stats.rows).toEqual(3)
+        expect(stats.rows).toEqual(2)
     })
 })

@@ -43,7 +43,7 @@ Check `.github/workflows/CI.yml`
 
 ## Publish
 
-- update `package.json` version
+- update `package.json` and `src/routes/index.ts:31` versions
 - test with `npm run dry-publish` and check `azimutt-gateway-x.y.z.tgz` content
 - launch `npm publish --access public`
 
