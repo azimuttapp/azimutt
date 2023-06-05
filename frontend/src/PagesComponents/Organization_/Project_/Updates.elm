@@ -8,6 +8,7 @@ import Dict
 import Json.Decode as Decode
 import Json.Encode as Encode
 import Libs.Bool as B
+import Libs.Dict as Dict
 import Libs.Json.Decode as Decode
 import Libs.List as List
 import Libs.Maybe as Maybe
@@ -16,6 +17,7 @@ import Libs.Models.Delta exposing (Delta)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Nel as Nel
 import Libs.Task as T
+import Libs.Time as Time
 import Models.Area as Area
 import Models.Organization exposing (Organization)
 import Models.Position as Position
@@ -45,7 +47,7 @@ import PagesComponents.Organization_.Project_.Models.DragState as DragState
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps
 import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
-import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
+import PagesComponents.Organization_.Project_.Models.ErdTableLayout as ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
 import PagesComponents.Organization_.Project_.Models.MemoId as MemoId
 import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint(..))
@@ -72,9 +74,10 @@ import Random
 import Services.Backend as Backend
 import Services.DatabaseSource as DatabaseSource
 import Services.JsonSource as JsonSource
-import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapContextMenuM, mapDetailsSidebarCmd, mapEmbedSourceParsingMCmd, mapErdM, mapErdMCmd, mapExportDialogCmd, mapHoverTable, mapMemos, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapOrganizationM, mapPlan, mapPosition, mapProject, mapPromptM, mapProps, mapQueryPaneCmd, mapSaveCmd, mapSchemaAnalysisM, mapSearch, mapSelected, mapSharingCmd, mapShowHiddenColumns, mapTables, mapTablesCmd, mapToastsCmd, setActive, setCanvas, setCollapsed, setColor, setColors, setConfirm, setContextMenu, setCurrentLayout, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setLast, setModal, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setSelected, setShouldFitCanvas, setShow, setSize, setText)
+import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapContextMenuM, mapDetailsSidebarCmd, mapEmbedSourceParsingMCmd, mapErdM, mapErdMCmd, mapExportDialogCmd, mapHoverTable, mapMemos, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapOrganizationM, mapPlan, mapPosition, mapProject, mapPromptM, mapProps, mapQueryPaneCmd, mapSaveCmd, mapSchemaAnalysisM, mapSearch, mapSelected, mapSharingCmd, mapShowHiddenColumns, mapTables, mapTablesCmd, mapToastsCmd, setActive, setCanvas, setCollapsed, setColor, setColors, setConfirm, setContextMenu, setCurrentLayout, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setLast, setLayoutOnLoad, setModal, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setSelected, setShow, setSize, setTables, setText)
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
+import Set
 import Time
 import Track
 
@@ -526,8 +529,15 @@ updateSizes changes model =
     newModel
         |> mapErdMCmd
             (\e ->
-                if e.shouldFitCanvas && newModel.erdElem.size /= Size.zeroViewport && (e |> Erd.currentLayout |> .tables |> List.length) > 0 then
-                    e |> fitCanvas newModel.erdElem
+                if e.layoutOnLoad /= "" && newModel.erdElem.size /= Size.zeroViewport && (e |> Erd.currentLayout |> .tables |> List.length) > 0 then
+                    if e.layoutOnLoad == "fit" then
+                        e |> fitCanvas newModel.erdElem
+
+                    else if e.layoutOnLoad == "arrange" then
+                        e |> arrangeTables Time.zero newModel.erdElem
+
+                    else
+                        ( e, Cmd.none )
 
                 else
                     ( e, Cmd.none )
@@ -634,13 +644,14 @@ updateErd urlLayout context project model =
                         if context == "load" then
                             -- set current layout if given in url and loading context
                             urlLayout
-                                |> Maybe.filter (\l -> project.layouts |> Dict.member l)
-                                |> Maybe.mapOrElse (\l -> e |> setCurrentLayout l) e
+                                |> Maybe.filter (\name -> project.layouts |> Dict.member name)
+                                |> Maybe.mapOrElse (\name -> e |> setCurrentLayout name) e
+                                |> setLayoutOnLoad "fit"
+                                |> showAllTablesIfNeeded
 
                         else if context == "create" || context == "update" then
                             -- keep current layout & layout position (`create` is an update from the `draft` context)
                             e
-                                |> setShouldFitCanvas False
                                 |> setCurrentLayout (model.erd |> Maybe.withDefault e |> .currentLayout)
                                 |> Erd.mapCurrentLayout (\l -> l |> setCanvas (model.erd |> Maybe.withDefault e |> Erd.currentLayout |> .canvas))
 
@@ -664,3 +675,14 @@ updateErd urlLayout context project model =
             ++ B.cond (model.save == Nothing) [] [ ProjectSaveDialog.Close |> ProjectSaveMsg |> ModalClose |> T.send, Ports.confettiPride ]
         )
     )
+
+
+showAllTablesIfNeeded : Erd -> Erd
+showAllTablesIfNeeded erd =
+    if erd.currentLayout == Conf.constants.defaultLayout && (erd |> Erd.currentLayout |> .tables |> List.isEmpty) && Dict.size erd.tables < Conf.constants.fewTablesLimit then
+        erd
+            |> Erd.mapCurrentLayout (setTables (erd.tables |> Dict.values |> List.map (\t -> t |> ErdTableLayout.init erd.settings Set.empty (erd.relationsByTable |> Dict.getOrElse t.id []) erd.settings.collapseTableColumns Nothing)))
+            |> setLayoutOnLoad "arrange"
+
+    else
+        erd

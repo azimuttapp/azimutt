@@ -25,7 +25,7 @@ import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout as ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.MemoId exposing (MemoId)
-import Services.Lenses exposing (mapCanvas, mapMemos, mapPosition, mapProps, mapTables, setPosition, setShouldFitCanvas, setZoom)
+import Services.Lenses exposing (mapCanvas, mapMemos, mapPosition, mapProps, mapTables, setLayoutOnLoad, setPosition, setZoom)
 import Services.Toasts as Toasts
 import Time
 
@@ -47,7 +47,7 @@ zoomCanvas delta erdElem canvas =
 fitCanvas : ErdProps -> Erd -> ( Erd, Cmd Msg )
 fitCanvas erdElem erd =
     (erd |> Erd.currentLayout |> objectsToFit)
-        |> Maybe.map (\( tables, memos, areas ) -> ( erd |> setShouldFitCanvas False |> Erd.mapCurrentLayout (fitCanvasAlgo erdElem tables memos areas), Cmd.none ))
+        |> Maybe.map (\( tables, memos, areas ) -> ( erd |> setLayoutOnLoad "" |> Erd.mapCurrentLayout (fitCanvasAlgo erdElem tables memos areas), Cmd.none ))
         |> Maybe.withDefault ( erd, "No table to fit into the canvas" |> Toasts.create "warning" |> Toast |> T.send )
 
 
@@ -79,7 +79,7 @@ arrangeTables : Time.Posix -> ErdProps -> Erd -> ( Erd, Cmd Msg )
 arrangeTables now erdElem erd =
     -- TODO: toggle this on show all tables if layout was empty before, see frontend/src/PagesComponents/Organization_/Project_/Updates/Table.elm:106#showAllTables
     (erd |> Erd.currentLayout |> objectsToFit)
-        |> Maybe.map (\( tables, memos, areas ) -> ( erd |> Erd.mapCurrentLayoutWithTime now (arrangeTablesAlgo tables memos >> fitCanvasAlgo erdElem tables memos areas), Cmd.none ))
+        |> Maybe.map (\( tables, memos, areas ) -> ( erd |> setLayoutOnLoad "" |> Erd.mapCurrentLayoutWithTime now (arrangeTablesAlgo tables memos >> fitCanvasAlgo erdElem tables memos areas), Cmd.none ))
         |> Maybe.withDefault ( erd, "No table to arrange in the canvas" |> Toasts.create "warning" |> Toast |> T.send )
 
 

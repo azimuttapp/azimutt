@@ -9,7 +9,7 @@ import PagesComponents.Organization_.Project_.Models.Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirtyCmd)
 import Ports
-import Services.Lenses exposing (mapErdMCmd, mapLayouts, setCurrentLayout, setShouldFitCanvas)
+import Services.Lenses exposing (mapErdMCmd, mapLayouts, setCurrentLayout, setLayoutOnLoad)
 import Services.Toasts as Toasts
 import Track
 
@@ -34,7 +34,7 @@ loadLayout name erd =
         |> Dict.get name
         |> Maybe.mapOrElse
             (\layout ->
-                ( erd |> setCurrentLayout name |> setShouldFitCanvas True
+                ( erd |> setCurrentLayout name |> setLayoutOnLoad "fit"
                 , Cmd.batch [ Ports.observeLayout layout, Track.layoutLoaded erd.project layout ]
                 )
             )

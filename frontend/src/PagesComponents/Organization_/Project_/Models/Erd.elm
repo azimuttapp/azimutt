@@ -48,7 +48,7 @@ type alias Erd =
     , relationsByTable : Dict TableId (List ErdRelation)
     , layouts : Dict LayoutName ErdLayout
     , currentLayout : LayoutName
-    , shouldFitCanvas : Bool
+    , layoutOnLoad : String -- enum: "", "fit", "arrange"
     , metadata : Metadata
     , sources : List Source
     , settings : ProjectSettings
@@ -74,7 +74,7 @@ create project =
     , relationsByTable = relationsByTable
     , layouts = project.layouts |> Dict.map (\_ -> ErdLayout.create relationsByTable)
     , currentLayout = layout
-    , shouldFitCanvas = True
+    , layoutOnLoad = ""
     , metadata = project.metadata
     , sources = project.sources
     , settings = project.settings
