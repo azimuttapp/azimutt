@@ -348,7 +348,7 @@ viewLogs filename model =
         [ SourceLogs.viewFile UiToggle show filename (model.parsedSchema |> Maybe.map .fileContent)
         , model.parsedSchema |> Maybe.andThen .lines |> Maybe.mapOrElse (viewLogsLines show) (div [] [])
         , model.parsedSchema |> Maybe.andThen .statements |> Maybe.mapOrElse (viewLogsStatements show) (div [] [])
-        , model.parsedSchema |> Maybe.andThen .commands |> Maybe.mapOrElse (viewLogsCommands (model.parsedSchema |> Maybe.andThen .statements)) (div [] [])
+        , model.parsedSchema |> Maybe.andThen .commands |> Maybe.mapOrElse (viewLogsCommands show (model.parsedSchema |> Maybe.andThen .statements)) (div [] [])
         , viewLogsErrors (model.parsedSchema |> Maybe.andThen .schema |> Maybe.mapOrElse .errors [])
         , model.parsedSchema |> Maybe.andThen .schema |> Maybe.mapOrElse (normalizeSchema >> Ok >> SourceLogs.viewParsedSchema UiToggle show) (div [] [])
         , model.parsedSource |> Maybe.mapOrElse SourceLogs.viewError (div [] [])
@@ -428,25 +428,37 @@ viewLogsStatements show statements =
         ]
 
 
-viewLogsCommands : Maybe (Dict Int SqlStatement) -> Dict Int ( SqlStatement, Result (List ParseError) Command ) -> Html msg
-viewLogsCommands statements commands =
-    div []
-        (commands
-            |> Dict.toList
-            |> List.sortBy (\( i, _ ) -> i)
-            |> List.map (\( _, ( s, r ) ) -> r |> Result.bimap (\e -> ( s, e )) (\c -> ( s, c )))
-            |> Result.partition
-            |> (\( errs, cmds ) ->
-                    if (cmds |> List.length) == (statements |> Maybe.mapOrElse Dict.size 0) then
-                        [ div [] [ text "All statements were correctly parsed." ] ]
+viewLogsCommands : HtmlId -> Maybe (Dict Int SqlStatement) -> Dict Int ( SqlStatement, Result (List ParseError) Command ) -> Html Msg
+viewLogsCommands show statements commands =
+    commands
+        |> Dict.toList
+        |> List.sortBy (\( i, _ ) -> i)
+        |> List.map (\( _, ( s, r ) ) -> r |> Result.bimap (\e -> ( s, e )) (\c -> ( s, c )))
+        |> Result.partition
+        |> (\( errs, cmds ) ->
+                if (cmds |> List.length) == (statements |> Maybe.mapOrElse Dict.size 0) then
+                    div [] [ text "All statements were correctly parsed." ]
 
-                    else if errs |> List.isEmpty then
-                        [ div [] [ text ((cmds |> List.length |> String.fromInt) ++ " statements were correctly parsed.") ] ]
+                else if errs |> List.isEmpty then
+                    div [] [ text ((cmds |> List.length |> String.fromInt) ++ " statements were correctly parsed.") ]
 
-                    else
-                        (errs |> List.map (\( s, e ) -> viewParseError s e))
-                            ++ [ div [] [ text ((cmds |> List.length |> String.fromInt) ++ " statements were correctly parsed, " ++ (errs |> List.length |> String.fromInt) ++ " were in error.") ] ]
-               )
+                else
+                    div []
+                        [ div [ class "cursor-pointer text-yellow-500", onClick (UiToggle "parsing-errors") ] [ text ("Got " ++ (errs |> String.pluralizeL "parsing warning") ++ ".") ]
+                        , if show == "parsing-errors" then
+                            div [] (errs |> List.indexedMap (\i ( s, e ) -> viewParseError i s e))
+
+                          else
+                            div [] []
+                        ]
+           )
+
+
+viewParseError : Int -> SqlStatement -> List ParseError -> Html msg
+viewParseError index statement errors =
+    div [ class "text-yellow-500" ]
+        (div [] [ text (String.fromInt (index + 1) ++ ". parsing error line " ++ (1 + statement.head.index |> String.fromInt) ++ ":") ]
+            :: (errors |> List.map (\error -> div [ class "pl-8" ] [ text error ]))
         )
 
 
@@ -462,25 +474,17 @@ viewLogsErrors schemaErrors =
             )
 
 
-normalizeSchema : SqlSchema -> { tables : List { schema : String, table : String, columns : List Column } }
-normalizeSchema schema =
-    { tables = schema.tables |> Dict.values |> List.map (\t -> { schema = t.schema, table = t.name, columns = t.columns |> Dict.values }) }
-
-
-viewParseError : SqlStatement -> List ParseError -> Html msg
-viewParseError statement errors =
-    div [ class "text-red-500" ]
-        (div [] [ text ("Parsing error line " ++ (1 + statement.head.index |> String.fromInt) ++ ":") ]
-            :: (errors |> List.map (\error -> div [ class "pl-3" ] [ text error ]))
-        )
-
-
 viewSchemaError : List SqlSchemaError -> Html msg
 viewSchemaError errors =
     div [ class "text-red-500" ]
         (div [] [ text "Schema error:" ]
             :: (errors |> List.map (\error -> div [ class "pl-3" ] [ text error ]))
         )
+
+
+normalizeSchema : SqlSchema -> { tables : List { schema : String, table : String, columns : List Column } }
+normalizeSchema schema =
+    { tables = schema.tables |> Dict.values |> List.map (\t -> { schema = t.schema, table = t.name, columns = t.columns |> Dict.values }) }
 
 
 viewErrorAlert : Maybe (SqlParsing msg) -> Html msg
@@ -500,17 +504,23 @@ viewErrorAlert model =
     else
         div [ class "mt-6" ]
             [ Alert.withActions
-                { color = Tw.red
+                { color = Tw.yellow
                 , icon = XCircle
-                , title = "Oh no! We had " ++ (((parseErrors |> List.length) + (schemaErrors |> List.length)) |> String.fromInt) ++ " errors."
-                , actions = [ Link.light2 Tw.red [ href (sendErrorReport parseErrors schemaErrors) ] [ text "Send error report" ] ]
+                , title = "Oh no! We had " ++ (((parseErrors |> List.length) + (schemaErrors |> List.length)) |> String.fromInt) ++ " errors 😥"
+                , actions = [ Link.light2 Tw.yellow [ href (sendErrorReport parseErrors schemaErrors) ] [ text "Send report" ] ]
                 }
                 [ p []
-                    [ text "Parsing every SQL dialect is not a trivial task. But every error report allows to improve it. "
-                    , bText "Please send it"
-                    , text ", you will be able to edit it if needed to remove your private information."
+                    [ text "Parsing every SQL dialect is not a trivial task. "
+                    , bText "Please send report"
+                    , text " so we can improve."
                     ]
-                , p [] [ text "In the meantime, you can look at the errors and your schema and try to simplify it. Or just use it as is, only not recognized statements will be missing." ]
+                , p []
+                    [ text "Meanwhile, you can "
+                    , bText "update your sql"
+                    , text " to avoid them. Or just "
+                    , bText "create your project"
+                    , text ", it will only miss not recognized statements."
+                    ]
                 ]
             ]
 
