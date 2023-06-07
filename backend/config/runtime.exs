@@ -213,6 +213,20 @@ if System.get_env("AUTH_SAML") == "true" do
   raise "AUTH_SAML not implemented"
 end
 
+if System.get_env("POSTHOG") == "true" do
+  config :azimutt, posthog: true
+  posthog_host = System.get_env("POSTHOG_HOST")
+  posthog_key = System.get_env("POSTHOG_KEY")
+
+  if posthog_host do
+    config :azimutt, posthog_host: posthog_host
+  end
+
+  if posthog_key do
+    config :azimutt, posthog_key: posthog_key
+  end
+end
+
 if System.get_env("SENTRY") == "true" do
   IO.puts("Setup Sentry")
   sentry_backend_dsn = System.get_env("SENTRY_BACKEND_DSN")

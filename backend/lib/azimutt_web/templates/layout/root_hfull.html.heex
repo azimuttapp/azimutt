@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html lang="en" class="scroll-smooth h-full" data-root="root_hfull">
+<html lang="en" class="h-full scroll-smooth" data-root="root_hfull">
     <%= render "_head.html", conn: @conn %>
-    <body class="font-sans antialiased h-full">
+    <body class="h-full font-sans antialiased">
         <%= render "_hello_comment.html" %>
         <%= @inner_content %>
+        <%= render "_scripts.html", conn: @conn %>
     </body>
 </html>
