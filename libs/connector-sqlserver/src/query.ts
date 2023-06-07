@@ -1,16 +1,19 @@
-import {FieldPacket, RowDataPacket} from "mysql2";
+import {IResult} from "mssql";
 import {DatabaseQueryResults, DatabaseQueryResultsColumn, DatabaseUrlParsed} from "@azimutt/database-types";
+import {ColumnMetadata} from "./types";
 import {connect} from "./connect";
 
 export function execQuery(application: string, url: DatabaseUrlParsed, query: string, parameters: any[]): Promise<DatabaseQueryResults> {
     return connect(application, url, conn => {
-        return conn.query<RowDataPacket[][]>({sql: query, values: parameters, rowsAsArray: true}).then(([rows, fields]) => {
-            return buildResults(query, fields, rows)
+        const request = conn.request() as any
+        request.arrayRowMode = true
+        return request.query(query, parameters).then((result: IResult<any> & {columns: ColumnMetadata[][]}) => {
+            return buildResults(query, result.columns[0], result.recordset)
         })
     })
 }
 
-function buildResults(query: string, fields: FieldPacket[], rows: RowDataPacket[][]): DatabaseQueryResults {
+function buildResults(query: string, fields: ColumnMetadata[], rows: any[][]): DatabaseQueryResults {
     const columns = buildColumns(fields)
     return {
         query,
@@ -19,7 +22,7 @@ function buildResults(query: string, fields: FieldPacket[], rows: RowDataPacket[
     }
 }
 
-function buildColumns(fields: FieldPacket[]): DatabaseQueryResultsColumn[] {
+function buildColumns(fields: ColumnMetadata[]): DatabaseQueryResultsColumn[] {
     const keys: { [key: string]: true } = {}
     return fields.map(f => {
         const name = uniqueName(f.name, keys)
