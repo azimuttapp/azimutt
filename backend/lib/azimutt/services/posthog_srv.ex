@@ -7,14 +7,17 @@ defmodule Azimutt.Services.PostHogSrv do
 
   # see https://posthog.com/docs/libraries/elixir
   def send_event(%Event{} = event) do
-    PostHog.capture(
+    Posthog.capture(
       event.name,
-      distinct_id: event.created_by.id,
-      name: event.created_by.name,
-      email: event.created_by.email,
-      organization_id: event.organization_id,
-      project_id: event.project_id,
-      details: event.details
+      Map.merge(event.details || %{}, %{
+        distinct_id: event.created_by.id,
+        name: event.created_by.name,
+        email: event.created_by.email,
+        organization_id: event.organization_id,
+        project_id: event.project_id,
+        "$lib": event.details["$lib"] || "back"
+      }),
+      event.created_at
     )
     |> Result.tap_error(fn err -> Logger.error("PostHogSrv.send_event: #{Stringx.inspect(err)}") end)
   end
