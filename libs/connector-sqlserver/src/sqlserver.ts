@@ -1,28 +1,29 @@
-import {groupBy, Logger, mapValues, mergeBy, removeUndefined, sequence} from "@azimutt/utils";
-import {AzimuttRelation, AzimuttSchema, AzimuttType, DatabaseUrlParsed} from "@azimutt/database-types";
+import {groupBy, Logger, mapValues, removeUndefined, sequence} from "@azimutt/utils";
+import {AzimuttRelation, AzimuttSchema, AzimuttType} from "@azimutt/database-types";
 import {schemaToColumns, ValueSchema, valuesToSchema} from "@azimutt/json-infer-schema";
 import {Conn} from "./common";
 
-export type MysqlSchema = { tables: MysqlTable[], relations: AzimuttRelation[], types: AzimuttType[] }
-export type MysqlTable = { schema: MysqlSchemaName, table: MysqlTableName, view: boolean, columns: MysqlColumn[], primaryKey: MysqlPrimaryKey | null, uniques: MysqlUnique[], indexes: MysqlIndex[], checks: MysqlCheck[], comment: string | null }
-export type MysqlColumn = { name: MysqlColumnName, type: MysqlColumnType, nullable: boolean, default: string | null, comment: string | null, schema: ValueSchema | null }
-export type MysqlPrimaryKey = { name: string | null, columns: MysqlColumnName[] }
-export type MysqlUnique = { name: string, columns: MysqlColumnName[], definition: string | null }
-export type MysqlIndex = { name: string, columns: MysqlColumnName[], definition: string | null }
-export type MysqlCheck = { name: string, columns: MysqlColumnName[], predicate: string | null }
-export type MysqlColumnRef = { schema: MysqlSchemaName, table: MysqlTableName, column: MysqlColumnName }
-export type MysqlSchemaName = string
-export type MysqlTableName = string
-export type MysqlColumnName = string
-export type MysqlColumnType = string
-export type MysqlConstraintName = string
-export type MysqlTableId = string
+export type SqlserverSchema = { tables: SqlserverTable[], relations: AzimuttRelation[], types: AzimuttType[] }
+export type SqlserverTable = { schema: SqlserverSchemaName, table: SqlserverTableName, view: boolean, columns: SqlserverColumn[], primaryKey: SqlserverPrimaryKey | null, uniques: SqlserverUnique[], indexes: SqlserverIndex[], checks: SqlserverCheck[], comment: string | null }
+export type SqlserverColumn = { name: SqlserverColumnName, type: SqlserverColumnType, nullable: boolean, default: string | null, comment: string | null, schema: ValueSchema | null }
+export type SqlserverPrimaryKey = { name: string | null, columns: SqlserverColumnName[] }
+export type SqlserverUnique = { name: string, columns: SqlserverColumnName[], definition: string | null }
+export type SqlserverIndex = { name: string, columns: SqlserverColumnName[], definition: string | null }
+export type SqlserverCheck = { name: string, columns: SqlserverColumnName[], predicate: string | null }
+export type SqlserverColumnRef = { schema: SqlserverSchemaName, table: SqlserverTableName, column: SqlserverColumnName }
+export type SqlserverSchemaName = string
+export type SqlserverTableName = string
+export type SqlserverColumnName = string
+export type SqlserverColumnType = string
+export type SqlserverConstraintName = string
+export type SqlserverTableId = string
 
-export const getSchema = (schema: MysqlSchemaName | undefined, sampleSize: number, logger: Logger) => async (conn: Conn): Promise<MysqlSchema> => {
+export const getSchema = (schema: SqlserverSchemaName | undefined, sampleSize: number, logger: Logger) => async (conn: Conn): Promise<SqlserverSchema> => {
     const columns = await getColumns(conn, schema)
         .then(cols => enrichColumnsWithSchema(conn, cols, sampleSize))
         .then(cols => groupBy(cols, toTableId))
-    const comments = await getTableComments(conn, schema).then(tables => groupBy(tables, toTableId))
+    // FIXME const comments = await getTableComments(conn, schema).then(tables => groupBy(tables, toTableId))
+    const comments = groupBy([] as RawTable[], toTableId)
     const constraints = await getAllConstraints(conn, schema).then(constraints => mapValues(groupBy(constraints, toTableId), buildTableConstraints))
     return {
         tables: Object.entries(columns).map(([tableId, columns]) => {
@@ -36,10 +37,10 @@ export const getSchema = (schema: MysqlSchemaName | undefined, sampleSize: numbe
                     .sort((a, b) => a.column_index - b.column_index)
                     .map(col => ({
                         name: col.column,
-                        type: col.column_type,
+                        type: 'unknown', // FIXME col.column_type,
                         nullable: col.column_nullable === 'YES',
                         default: col.column_default,
-                        comment: col.column_comment || null,
+                        comment: null, // FIXME col.column_comment || null,
                         schema: col.column_schema || null
                     })),
                 primaryKey: tableConstraints.filter((c): c is ConstraintPrimaryKey => c.type === 'PRIMARY KEY').map(c => ({
@@ -57,10 +58,10 @@ export const getSchema = (schema: MysqlSchemaName | undefined, sampleSize: numbe
                     definition: null
                 })) || [],
                 checks: /* TODO tableConstraints.filter(c => c.constraint_type === 'c').map(c => ({
-                name: c.constraint_name,
-                columns: c.columns.map(getColumnName(tableId)),
-                predicate: c.definition.replace(/^CHECK/, '').trim()
-            })) || */ [],
+                    name: c.constraint_name,
+                    columns: c.columns.map(getColumnName(tableId)),
+                    predicate: c.definition.replace(/^CHECK/, '').trim()
+                })) || */ [],
                 comment: tableComments[0]?.comment || null
             }
         }),
@@ -73,7 +74,7 @@ export const getSchema = (schema: MysqlSchemaName | undefined, sampleSize: numbe
     }
 }
 
-export function formatSchema(schema: MysqlSchema, inferRelations: boolean): AzimuttSchema {
+export function formatSchema(schema: SqlserverSchema, inferRelations: boolean): AzimuttSchema {
     // FIXME: handle inferRelations
     return {
         tables: schema.tables.map(t => removeUndefined({
@@ -117,34 +118,32 @@ export function formatSchema(schema: MysqlSchema, inferRelations: boolean): Azim
 // 👇️ Private functions, some are exported only for tests
 // If you use them, beware of breaking changes!
 
-function toTableId<T extends { schema: string, table: string }>(value: T): MysqlTableId {
+function toTableId<T extends { schema: string, table: string }>(value: T): SqlserverTableId {
     return `${value.schema}.${value.table}`
 }
 
 type RawColumn = {
-    schema: MysqlSchemaName
-    table: MysqlTableName
+    schema: SqlserverSchemaName
+    table: SqlserverTableName
     table_kind: 'BASE TABLE' | 'VIEW'
-    column: MysqlColumnName
-    column_type: MysqlColumnType
+    column: SqlserverColumnName
+    // FIXME column_type: SqlserverColumnType
     column_index: number
     column_default: string | null
     column_nullable: 'YES' | 'NO'
-    column_comment: string
+    // FIXME column_comment: string
     column_schema?: ValueSchema
 }
 
-function getColumns(conn: Conn, schema: MysqlSchemaName | undefined): Promise<RawColumn[]> {
+function getColumns(conn: Conn, schema: SqlserverSchemaName | undefined): Promise<RawColumn[]> {
     return conn.query<RawColumn>(
         `SELECT c.TABLE_SCHEMA     as "schema",
                 c.TABLE_NAME       as "table",
                 t.TABLE_TYPE       as table_kind,
                 c.COLUMN_NAME      as "column",
-                c.COLUMN_TYPE      as column_type,
                 c.ORDINAL_POSITION as column_index,
                 c.COLUMN_DEFAULT   as column_default,
-                c.IS_NULLABLE      as column_nullable,
-                c.COLUMN_COMMENT   as column_comment
+                c.IS_NULLABLE      as column_nullable
          FROM information_schema.COLUMNS c
                   JOIN information_schema.TABLES t ON c.TABLE_SCHEMA = t.TABLE_SCHEMA AND c.TABLE_NAME = t.TABLE_NAME
          WHERE ${filterSchema('c.TABLE_SCHEMA', schema)}
@@ -154,12 +153,12 @@ function getColumns(conn: Conn, schema: MysqlSchemaName | undefined): Promise<Ra
 
 function enrichColumnsWithSchema(conn: Conn, columns: RawColumn[], sampleSize: number): Promise<RawColumn[]> {
     return sequence(columns, c => {
-        if (c.column_type === 'jsonb') {
-            return getColumnSchema(conn, c.schema, c.table, c.column, sampleSize)
-                .then(column_schema => ({...c, column_schema}))
-        } else {
+        // FIXME if (c.column_type === 'jsonb') {
+        //     return getColumnSchema(conn, c.schema, c.table, c.column, sampleSize)
+        //         .then(column_schema => ({...c, column_schema}))
+        // } else {
             return Promise.resolve(c)
-        }
+        // }
     })
 }
 
@@ -170,12 +169,12 @@ async function getColumnSchema(conn: Conn, schema: string, table: string, column
 }
 
 type RawTable = {
-    schema: MysqlSchemaName
-    table: MysqlTableName
+    schema: SqlserverSchemaName
+    table: SqlserverTableName
     comment: string
 }
 
-function getTableComments(conn: Conn, schema: MysqlSchemaName | undefined): Promise<RawTable[]> {
+/* FIXME function getTableComments(conn: Conn, schema: SqlserverSchemaName | undefined): Promise<RawTable[]> {
     return conn.query<RawTable>(
         `SELECT TABLE_SCHEMA  as "schema",
                 TABLE_NAME    as "table",
@@ -185,26 +184,27 @@ function getTableComments(conn: Conn, schema: MysqlSchemaName | undefined): Prom
            AND TABLE_COMMENT != 'VIEW'
            AND ${filterSchema('TABLE_SCHEMA', schema)};`
     )
-}
+}*/
 
 type RawConstraint = {
-    schema: MysqlSchemaName
-    table: MysqlTableName
-    constraint: MysqlConstraintName
-    column: MysqlColumnName
+    schema: SqlserverSchemaName
+    table: SqlserverTableName
+    constraint: SqlserverConstraintName
+    column: SqlserverColumnName
     type: 'PRIMARY KEY' | 'UNIQUE' | 'FOREIGN KEY' | 'INDEX'
     index?: number
-    ref_schema?: MysqlSchemaName
-    ref_table?: MysqlTableName
-    ref_column?: MysqlColumnName
+    ref_schema?: SqlserverSchemaName
+    ref_table?: SqlserverTableName
+    ref_column?: SqlserverColumnName
 }
 
-async function getAllConstraints(conn: Conn, schema: MysqlSchemaName | undefined): Promise<RawConstraint[]> {
-    const [indexes, constraints] = await Promise.all([getIndexes(conn, schema), getConstraints(conn, schema)])
-    return mergeBy(indexes, constraints, c => `${c.schema}.${c.table}.${c.constraint}.${c.column}`)
+async function getAllConstraints(conn: Conn, schema: SqlserverSchemaName | undefined): Promise<RawConstraint[]> {
+    // FIXME const [indexes, constraints] = await Promise.all([getIndexes(conn, schema), getConstraints(conn, schema)])
+    // FIXME return mergeBy(indexes, constraints, c => `${c.schema}.${c.table}.${c.constraint}.${c.column}`)
+    return []
 }
 
-function getIndexes(conn: Conn, schema: MysqlSchemaName | undefined): Promise<RawConstraint[]> {
+/* FIXME function getIndexes(conn: Conn, schema: SqlserverSchemaName | undefined): Promise<RawConstraint[]> {
     return conn.query<RawConstraint>(
         `SELECT INDEX_SCHEMA as "schema",
                 TABLE_NAME   as "table",
@@ -215,9 +215,9 @@ function getIndexes(conn: Conn, schema: MysqlSchemaName | undefined): Promise<Ra
          FROM information_schema.STATISTICS
          WHERE ${filterSchema('INDEX_SCHEMA', schema)};`
     )
-}
+} */
 
-function getConstraints(conn: Conn, schema: MysqlSchemaName | undefined): Promise<RawConstraint[]> {
+/* FIXME function getConstraints(conn: Conn, schema: SqlserverSchemaName | undefined): Promise<RawConstraint[]> {
     return conn.query<RawConstraint>(
         `SELECT c.CONSTRAINT_SCHEMA       as "schema",
                 c.TABLE_NAME              as "table",
@@ -232,13 +232,13 @@ function getConstraints(conn: Conn, schema: MysqlSchemaName | undefined): Promis
                        ON c.CONSTRAINT_SCHEMA = u.CONSTRAINT_SCHEMA AND c.TABLE_NAME = u.TABLE_NAME AND
                           c.CONSTRAINT_NAME = u.CONSTRAINT_NAME
          WHERE ${filterSchema('c.CONSTRAINT_SCHEMA', schema)};`)
-}
+} */
 
-type ConstraintBase = { schema: MysqlSchemaName, table: MysqlTableName, constraint: MysqlConstraintName }
-type ConstraintPrimaryKey = ConstraintBase & { type: 'PRIMARY KEY', columns: MysqlColumnName[] }
-type ConstraintUnique = ConstraintBase & { type: 'UNIQUE', columns: MysqlColumnName[] }
-type ConstraintIndex = ConstraintBase & { type: 'INDEX', columns: MysqlColumnName[] }
-type ConstraintForeignKey = ConstraintBase & { type: 'FOREIGN KEY', columns: { src: MysqlColumnName, ref: MysqlColumnRef }[] }
+type ConstraintBase = { schema: SqlserverSchemaName, table: SqlserverTableName, constraint: SqlserverConstraintName }
+type ConstraintPrimaryKey = ConstraintBase & { type: 'PRIMARY KEY', columns: SqlserverColumnName[] }
+type ConstraintUnique = ConstraintBase & { type: 'UNIQUE', columns: SqlserverColumnName[] }
+type ConstraintIndex = ConstraintBase & { type: 'INDEX', columns: SqlserverColumnName[] }
+type ConstraintForeignKey = ConstraintBase & { type: 'FOREIGN KEY', columns: { src: SqlserverColumnName, ref: SqlserverColumnRef }[] }
 type ConstraintFormatted = ConstraintPrimaryKey | ConstraintUnique | ConstraintIndex | ConstraintForeignKey
 
 function buildTableConstraints(constraints: RawConstraint[]): ConstraintFormatted[] {
@@ -268,6 +268,6 @@ function buildTableConstraints(constraints: RawConstraint[]): ConstraintFormatte
     })
 }
 
-function filterSchema(field: string, schema: MysqlSchemaName | undefined) {
+function filterSchema(field: string, schema: SqlserverSchemaName | undefined) {
     return `${field} ${schema ? `= '${schema}'` : `!= 'information_schema'`}`
 }

@@ -47,6 +47,9 @@ showTableData ( schema, table ) url =
         DatabaseKind.PostgreSQL ->
             defaultShowTableData schema table
 
+        DatabaseKind.SQLServer ->
+            defaultShowTableData schema table
+
         DatabaseKind.Other ->
             defaultShowTableData schema table
 
@@ -86,6 +89,9 @@ showColumnData column ( schema, table ) url =
 
         DatabaseKind.PostgreSQL ->
             "SELECT " ++ column.head ++ ", count(*) FROM " ++ tableRef schema table ++ " GROUP BY " ++ column.head ++ " ORDER BY count DESC, " ++ column.head ++ " LIMIT " ++ limit ++ ";"
+
+        DatabaseKind.SQLServer ->
+            defaultShowColumnData schema table column.head
 
         DatabaseKind.Other ->
             defaultShowColumnData schema table column.head

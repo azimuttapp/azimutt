@@ -62,4 +62,15 @@ describe('url', () => {
             db: 'my_db',
         })
     })
+    test('parse sqlserver url', () => {
+        expect(parseDatabaseUrl('Server=host.com,1433;Database=db;User Id=user;Password=pass')).toEqual({
+            full: 'Server=host.com,1433;Database=db;User Id=user;Password=pass',
+            kind: 'sqlserver',
+            user: 'user',
+            pass: 'pass',
+            host: 'host.com',
+            port: 1433,
+            db: 'db',
+        })
+    })
 })

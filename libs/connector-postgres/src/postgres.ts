@@ -1,8 +1,7 @@
-import {Client} from "pg";
 import {groupBy, Logger, removeUndefined, sequence, zip} from "@azimutt/utils";
-import {AzimuttSchema, DatabaseUrlParsed} from "@azimutt/database-types";
+import {AzimuttSchema} from "@azimutt/database-types";
 import {schemaToColumns, ValueSchema, valuesToSchema} from "@azimutt/json-infer-schema";
-import {connect} from "./connect";
+import {Conn} from "./common";
 
 export type PostgresSchema = { tables: PostgresTable[], relations: PostgresRelation[], types: PostgresType[] }
 export type PostgresTable = { schema: PostgresSchemaName, table: PostgresTableName, view: boolean, columns: PostgresColumn[], primaryKey: PostgresPrimaryKey | null, uniques: PostgresUnique[], indexes: PostgresIndex[], checks: PostgresCheck[], comment: string | null }
@@ -23,78 +22,76 @@ export type PostgresRelationName = string
 export type PostgresTypeName = string
 export type PostgresTableId = string
 
-export async function getSchema(application: string, url: DatabaseUrlParsed, schema: PostgresSchemaName | undefined, sampleSize: number, logger: Logger): Promise<PostgresSchema> {
-    return connect(application, url, async client => {
-        const columns = await getColumns(client, schema)
-            .then(cols => enrichColumnsWithSchema(client, cols, sampleSize))
-            .then(cols => groupBy(cols, toTableId))
-        const columnsByIndex: { [tableId: string]: { [columnIndex: number]: RawColumn } } = Object.keys(columns).reduce((acc, tableId) => ({
-            ...acc,
-            [tableId]: columns[tableId].reduce((acc, c) => ({...acc, [c.column_index]: c}), {})
-        }), {})
-        const getColumnName = (tableId: string) => (columnIndex: number): string => columnsByIndex[tableId]?.[columnIndex]?.column_name || 'unknown'
-        const constraints = await getConstraints(client, schema).then(cols => groupBy(cols, toTableId))
-        const indexes = await getIndexes(client, schema).then(cols => groupBy(cols, toTableId))
-        const comments = await getComments(client, schema).then(cols => groupBy(cols, toTableId))
-        const relations = await getRelations(client, schema)
-        const types = await getTypes(client, schema)
-        return {
-            tables: Object.entries(columns).map(([tableId, columns]) => {
-                const tableConstraints = constraints[tableId] || []
-                const tableIndexes = indexes[tableId] || []
-                const tableComments = comments[tableId] || []
-                return {
-                    schema: columns[0].table_schema,
-                    table: columns[0].table_name,
-                    view: columns[0].table_kind !== 'r',
-                    columns: columns
-                        .sort((a, b) => a.column_index - b.column_index)
-                        .map(col => ({
-                            name: col.column_name,
-                            type: col.column_type,
-                            nullable: col.column_nullable,
-                            default: col.column_default,
-                            comment: tableComments.find(c => c.column_name === col.column_name)?.comment || null,
-                            schema: col.column_schema || null
-                        })),
-                    primaryKey: tableConstraints.filter(c => c.constraint_type === 'p').map(c => ({
-                        name: c.constraint_name,
-                        columns: c.columns.map(getColumnName(tableId))
-                    }))[0] || null,
-                    uniques: tableIndexes.filter(i => i.is_unique).map(i => ({
-                        name: i.index_name,
-                        columns: i.columns.map(getColumnName(tableId)),
-                        definition: i.definition
+export const getSchema = (schema: PostgresSchemaName | undefined, sampleSize: number, logger: Logger) => async (conn: Conn): Promise<PostgresSchema> => {
+    const columns = await getColumns(conn, schema)
+        .then(cols => enrichColumnsWithSchema(conn, cols, sampleSize))
+        .then(cols => groupBy(cols, toTableId))
+    const columnsByIndex: { [tableId: string]: { [columnIndex: number]: RawColumn } } = Object.keys(columns).reduce((acc, tableId) => ({
+        ...acc,
+        [tableId]: columns[tableId].reduce((acc, c) => ({...acc, [c.column_index]: c}), {})
+    }), {})
+    const getColumnName = (tableId: string) => (columnIndex: number): string => columnsByIndex[tableId]?.[columnIndex]?.column_name || 'unknown'
+    const constraints = await getConstraints(conn, schema).then(cols => groupBy(cols, toTableId))
+    const indexes = await getIndexes(conn, schema).then(cols => groupBy(cols, toTableId))
+    const comments = await getComments(conn, schema).then(cols => groupBy(cols, toTableId))
+    const relations = await getRelations(conn, schema)
+    const types = await getTypes(conn, schema)
+    return {
+        tables: Object.entries(columns).map(([tableId, columns]) => {
+            const tableConstraints = constraints[tableId] || []
+            const tableIndexes = indexes[tableId] || []
+            const tableComments = comments[tableId] || []
+            return {
+                schema: columns[0].table_schema,
+                table: columns[0].table_name,
+                view: columns[0].table_kind !== 'r',
+                columns: columns
+                    .sort((a, b) => a.column_index - b.column_index)
+                    .map(col => ({
+                        name: col.column_name,
+                        type: col.column_type,
+                        nullable: col.column_nullable,
+                        default: col.column_default,
+                        comment: tableComments.find(c => c.column_name === col.column_name)?.comment || null,
+                        schema: col.column_schema || null
                     })),
-                    indexes: tableIndexes.filter(i => !i.is_unique).map(i => ({
-                        name: i.index_name,
-                        columns: i.columns.map(getColumnName(tableId)),
-                        definition: i.definition
-                    })),
-                    checks: tableConstraints.filter(c => c.constraint_type === 'c').map(c => ({
-                        name: c.constraint_name,
-                        columns: c.columns.map(getColumnName(tableId)),
-                        predicate: c.definition.replace(/^CHECK/, '').trim()
-                    })),
-                    comment: tableComments.find(c => c.column_name === null)?.comment || null
-                }
-            }),
-            relations: relations.map(r => ({
-                name: r.constraint_name,
-                src: {schema: r.table_schema, table: r.table_name},
-                ref: {schema: r.target_schema, table: r.target_table},
-                columns: zip(r.columns.map(getColumnName(toTableId(r))), r.target_columns.map(getColumnName(toTableId({
-                    table_schema: r.target_schema,
-                    table_name: r.target_table
-                })))).map(([src, ref]) => ({src, ref}))
-            })),
-            types: types.map(t => ({
-                schema: t.type_schema,
-                name: t.type_name,
-                values: t.type_kind === 'e' ? t.enum_values : null
-            }))
-        }
-    })
+                primaryKey: tableConstraints.filter(c => c.constraint_type === 'p').map(c => ({
+                    name: c.constraint_name,
+                    columns: c.columns.map(getColumnName(tableId))
+                }))[0] || null,
+                uniques: tableIndexes.filter(i => i.is_unique).map(i => ({
+                    name: i.index_name,
+                    columns: i.columns.map(getColumnName(tableId)),
+                    definition: i.definition
+                })),
+                indexes: tableIndexes.filter(i => !i.is_unique).map(i => ({
+                    name: i.index_name,
+                    columns: i.columns.map(getColumnName(tableId)),
+                    definition: i.definition
+                })),
+                checks: tableConstraints.filter(c => c.constraint_type === 'c').map(c => ({
+                    name: c.constraint_name,
+                    columns: c.columns.map(getColumnName(tableId)),
+                    predicate: c.definition.replace(/^CHECK/, '').trim()
+                })),
+                comment: tableComments.find(c => c.column_name === null)?.comment || null
+            }
+        }),
+        relations: relations.map(r => ({
+            name: r.constraint_name,
+            src: {schema: r.table_schema, table: r.table_name},
+            ref: {schema: r.target_schema, table: r.target_table},
+            columns: zip(r.columns.map(getColumnName(toTableId(r))), r.target_columns.map(getColumnName(toTableId({
+                table_schema: r.target_schema,
+                table_name: r.target_table
+            })))).map(([src, ref]) => ({src, ref}))
+        })),
+        types: types.map(t => ({
+            schema: t.type_schema,
+            name: t.type_name,
+            values: t.type_kind === 'e' ? t.enum_values : null
+        }))
+    }
 }
 
 export function formatSchema(schema: PostgresSchema, inferRelations: boolean): AzimuttSchema {
@@ -157,7 +154,7 @@ function toTableId<T extends { table_schema: string, table_name: string }>(value
     return `${value.table_schema}.${value.table_name}`
 }
 
-interface RawColumn {
+type RawColumn = {
     table_schema: string
     table_name: string
     table_kind: 'r' | 'v' | 'm' // r: table, v: view, m: materialized view
@@ -169,14 +166,14 @@ interface RawColumn {
     column_schema?: ValueSchema
 }
 
-async function getColumns(client: Client, schema: PostgresSchemaName | undefined): Promise<RawColumn[]> {
+function getColumns(conn: Conn, schema: PostgresSchemaName | undefined): Promise<RawColumn[]> {
     // https://www.postgresql.org/docs/current/catalog-pg-attribute.html: stores information about table columns. There will be exactly one row for every column in every table in the database.
     // https://www.postgresql.org/docs/current/catalog-pg-class.html: catalogs tables and most everything else that has columns or is otherwise similar to a table. This includes indexes (but see also pg_index), sequences (but see also pg_sequence), views, materialized views, composite types, and TOAST tables; see relkind.
     // https://www.postgresql.org/docs/current/catalog-pg-namespace.html: stores namespaces. A namespace is the structure underlying SQL schemas: each namespace can have a separate collection of relations, types, etc. without name conflicts.
     // https://www.postgresql.org/docs/current/catalog-pg-attrdef.html: stores column default values.
     // system columns have `attnum` < 0, avoid them
     // deleted columns have `atttypid` at 0, avoid them
-    return await client.query<RawColumn>(`
+    return conn.query<RawColumn>(`
         SELECT n.nspname                            AS table_schema
              , c.relname                            AS table_name
              , c.relkind                            AS table_kind
@@ -194,13 +191,13 @@ async function getColumns(client: Client, schema: PostgresSchemaName | undefined
           AND a.atttypid != 0
           AND ${filterSchema('n.nspname', schema)}
         ORDER BY table_schema, table_name, column_index`
-    ).then(res => res.rows)
+    )
 }
 
-function enrichColumnsWithSchema(client: Client, columns: RawColumn[], sampleSize: number): Promise<RawColumn[]> {
+function enrichColumnsWithSchema(conn: Conn, columns: RawColumn[], sampleSize: number): Promise<RawColumn[]> {
     return sequence(columns, c => {
         if (c.column_type === 'jsonb') {
-            return getColumnSchema(client, c.table_schema, c.table_name, c.column_name, sampleSize)
+            return getColumnSchema(conn, c.table_schema, c.table_name, c.column_name, sampleSize)
                 .then(column_schema => ({...c, column_schema}))
         } else {
             return Promise.resolve(c)
@@ -208,13 +205,13 @@ function enrichColumnsWithSchema(client: Client, columns: RawColumn[], sampleSiz
     })
 }
 
-async function getColumnSchema(client: Client, schema: string, table: string, column: string, sampleSize: number): Promise<ValueSchema> {
+async function getColumnSchema(conn: Conn, schema: string, table: string, column: string, sampleSize: number): Promise<ValueSchema> {
     const sqlTable = `${schema ? `${schema}.` : ''}${table}`
-    const result = await client.query(`SELECT ${column} FROM ${sqlTable} WHERE ${column} IS NOT NULL LIMIT ${sampleSize};`)
-    return valuesToSchema(result.rows.map(r => r[column]))
+    const rows = await conn.query(`SELECT ${column} FROM ${sqlTable} WHERE ${column} IS NOT NULL LIMIT ${sampleSize};`)
+    return valuesToSchema(rows.map(row => row[column]))
 }
 
-interface RawConstraint {
+type RawConstraint = {
     constraint_type: 'p' | 'c' // p: primary key, c: check
     constraint_name: string
     table_schema: string
@@ -223,11 +220,11 @@ interface RawConstraint {
     definition: string
 }
 
-async function getConstraints(client: Client, schema: PostgresSchemaName | undefined): Promise<RawConstraint[]> {
+function getConstraints(conn: Conn, schema: PostgresSchemaName | undefined): Promise<RawConstraint[]> {
     // https://www.postgresql.org/docs/current/catalog-pg-constraint.html: stores check, primary key, unique, foreign key, and exclusion constraints on tables. Not-null constraints are represented in the pg_attribute catalog, not here.
     // https://www.postgresql.org/docs/current/catalog-pg-class.html: catalogs tables and most everything else that has columns or is otherwise similar to a table. This includes indexes (but see also pg_index), sequences (but see also pg_sequence), views, materialized views, composite types, and TOAST tables; see relkind.
     // https://www.postgresql.org/docs/current/catalog-pg-namespace.html: stores namespaces. A namespace is the structure underlying SQL schemas: each namespace can have a separate collection of relations, types, etc. without name conflicts.
-    return await client.query<RawConstraint>(`
+    return conn.query<RawConstraint>(`
         SELECT cn.contype                         AS constraint_type
              , cn.conname                         AS constraint_name
              , n.nspname                          AS table_schema
@@ -240,10 +237,10 @@ async function getConstraints(client: Client, schema: PostgresSchemaName | undef
         WHERE cn.contype IN ('p', 'c')
           AND ${filterSchema('n.nspname', schema)}
         ORDER BY table_schema, table_name, constraint_name`
-    ).then(res => res.rows)
+    )
 }
 
-interface RawIndex {
+type RawIndex = {
     index_name: string
     table_schema: string
     table_name: string
@@ -252,11 +249,11 @@ interface RawIndex {
     is_unique: boolean
 }
 
-async function getIndexes(client: Client, schema: PostgresSchemaName | undefined): Promise<RawIndex[]> {
+function getIndexes(conn: Conn, schema: PostgresSchemaName | undefined): Promise<RawIndex[]> {
     // https://www.postgresql.org/docs/current/catalog-pg-index.html: contains part of the information about indexes. The rest is mostly in pg_class.
     // https://www.postgresql.org/docs/current/catalog-pg-class.html: catalogs tables and most everything else that has columns or is otherwise similar to a table. This includes indexes (but see also pg_index), sequences (but see also pg_sequence), views, materialized views, composite types, and TOAST tables; see relkind.
     // https://www.postgresql.org/docs/current/catalog-pg-namespace.html: stores namespaces. A namespace is the structure underlying SQL schemas: each namespace can have a separate collection of relations, types, etc. without name conflicts.
-    return await client.query<RawIndex>(`
+    return conn.query<RawIndex>(`
         SELECT ic.relname                             AS index_name
              , tn.nspname                             AS table_schema
              , tc.relname                             AS table_name
@@ -270,25 +267,25 @@ async function getIndexes(client: Client, schema: PostgresSchemaName | undefined
         WHERE i.indisprimary = false
           AND ${filterSchema('tn.nspname', schema)}
         ORDER BY table_schema, table_name, index_name`
-    ).then(res => res.rows.map(r => ({
-        ...r,
-        definition: r.definition.indexOf(' USING ') > 0 ? r.definition.split(' USING ')[1].trim() : r.definition
+    ).then(rows => rows.map(row => ({
+        ...row,
+        definition: row.definition.indexOf(' USING ') > 0 ? row.definition.split(' USING ')[1].trim() : row.definition
     })))
 }
 
-interface RawComment {
+type RawComment = {
     table_schema: string
     table_name: string
     column_name: string | null
     comment: string
 }
 
-async function getComments(client: Client, schema: PostgresSchemaName | undefined): Promise<RawComment[]> {
+function getComments(conn: Conn, schema: PostgresSchemaName | undefined): Promise<RawComment[]> {
     // https://www.postgresql.org/docs/current/catalog-pg-description.html: stores optional descriptions (comments) for each database object.
     // https://www.postgresql.org/docs/current/catalog-pg-class.html: catalogs tables and most everything else that has columns or is otherwise similar to a table. This includes indexes (but see also pg_index), sequences (but see also pg_sequence), views, materialized views, composite types, and TOAST tables; see relkind.
     // https://www.postgresql.org/docs/current/catalog-pg-namespace.html: stores namespaces. A namespace is the structure underlying SQL schemas: each namespace can have a separate collection of relations, types, etc. without name conflicts.
     // https://www.postgresql.org/docs/current/catalog-pg-attribute.html: stores information about table columns. There will be exactly one row for every column in every table in the database.
-    return await client.query<RawComment>(`
+    return conn.query<RawComment>(`
         SELECT n.nspname     AS table_schema
              , c.relname     AS table_name
              , a.attname     AS column_name
@@ -300,10 +297,10 @@ async function getComments(client: Client, schema: PostgresSchemaName | undefine
         WHERE c.relkind IN ('r', 'v', 'm')
           AND ${filterSchema('n.nspname', schema)}
         ORDER BY table_schema, table_name, column_name`
-    ).then(res => res.rows)
+    )
 }
 
-interface RawRelation {
+type RawRelation = {
     constraint_name: string
     table_schema: string
     table_name: string
@@ -313,11 +310,11 @@ interface RawRelation {
     target_columns: number[]
 }
 
-async function getRelations(client: Client, schema: PostgresSchemaName | undefined): Promise<RawRelation[]> {
+function getRelations(conn: Conn, schema: PostgresSchemaName | undefined): Promise<RawRelation[]> {
     // https://www.postgresql.org/docs/current/catalog-pg-constraint.html: stores check, primary key, unique, foreign key, and exclusion constraints on tables. Not-null constraints are represented in the pg_attribute catalog, not here.
     // https://www.postgresql.org/docs/current/catalog-pg-class.html: catalogs tables and most everything else that has columns or is otherwise similar to a table. This includes indexes (but see also pg_index), sequences (but see also pg_sequence), views, materialized views, composite types, and TOAST tables; see relkind.
     // https://www.postgresql.org/docs/current/catalog-pg-namespace.html: stores namespaces. A namespace is the structure underlying SQL schemas: each namespace can have a separate collection of relations, types, etc. without name conflicts.
-    return await client.query<RawRelation>(`
+    return conn.query<RawRelation>(`
         SELECT cn.conname AS constraint_name
              , n.nspname  AS table_schema
              , c.relname  AS table_name
@@ -333,10 +330,10 @@ async function getRelations(client: Client, schema: PostgresSchemaName | undefin
         WHERE cn.contype IN ('f')
           AND ${filterSchema('n.nspname', schema)}
         ORDER BY table_schema, table_name, constraint_name`
-    ).then(res => res.rows)
+    )
 }
 
-interface RawType {
+type RawType = {
     type_schema: string
     type_name: string
     internal_name: string
@@ -345,12 +342,12 @@ interface RawType {
     type_comment: string | null
 }
 
-async function getTypes(client: Client, schema: PostgresSchemaName | undefined): Promise<RawType[]> {
+function getTypes(conn: Conn, schema: PostgresSchemaName | undefined): Promise<RawType[]> {
     // https://www.postgresql.org/docs/current/catalog-pg-enum.html: values and labels for each enum type
     // https://www.postgresql.org/docs/current/catalog-pg-type.html: stores data types
     // https://www.postgresql.org/docs/current/catalog-pg-class.html: catalogs tables and most everything else that has columns or is otherwise similar to a table. This includes indexes (but see also pg_index), sequences (but see also pg_sequence), views, materialized views, composite types, and TOAST tables; see relkind.
     // https://www.postgresql.org/docs/current/catalog-pg-namespace.html: stores namespaces. A namespace is the structure underlying SQL schemas: each namespace can have a separate collection of relations, types, etc. without name conflicts.
-    return await client.query<RawType>(`
+    return conn.query<RawType>(`
         SELECT n.nspname                                AS type_schema,
                format_type(t.oid, NULL)                 AS type_name,
                t.typname                                AS internal_name,
@@ -366,7 +363,7 @@ async function getTypes(client: Client, schema: PostgresSchemaName | undefined):
           AND NOT EXISTS(SELECT 1 FROM pg_type WHERE oid = t.typelem AND typarray = t.oid)
           AND ${filterSchema('n.nspname', schema)}
         ORDER BY type_schema, type_name`
-    ).then(res => res.rows)
+    )
 }
 
 function filterSchema(field: string, schema: PostgresSchemaName | undefined) {

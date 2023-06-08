@@ -12,6 +12,7 @@ type DatabaseKind
     | MongoDB
     | MySQL
     | PostgreSQL
+    | SQLServer
     | Other
 
 
@@ -28,6 +29,9 @@ fromUrl url =
 
     else if url |> String.contains "postgre" then
         PostgreSQL
+
+    else if url |> String.contains ";User Id=" then
+        SQLServer
 
     else
         Other

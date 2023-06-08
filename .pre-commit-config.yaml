@@ -57,6 +57,13 @@ repos:
       pass_filenames: false
       files: libs/connector-postgres/.*\.ts*$
 
+    - id: libs-connector-sqlserver
+      name: 'Libs/SQL Server connector'
+      language: system
+      entry: bash -c 'cd libs/connector-sqlserver && exec npm run build && exec npm test'
+      pass_filenames: false
+      files: libs/connector-sqlserver/.*\.ts*$
+
     - id: mix-format
       name: 'Elixir format'
       language: system

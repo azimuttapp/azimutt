@@ -11,11 +11,11 @@ import {
 } from "@azimutt/database-types";
 import {execQuery} from "./common";
 import {connect} from "./connect";
-import {formatSchema, getSchema} from "./postgres";
+import {formatSchema, getSchema} from "./sqlserver";
 import {getColumnStats, getTableStats} from "./stats";
 
-export const postgres: Connector = {
-    name: 'PostgreSQL',
+export const sqlserver: Connector = {
+    name: 'SQL Server',
     getSchema: async (application: string, url: DatabaseUrlParsed, opts: SchemaOpts): Promise<AzimuttSchema> => {
         const schema = await connect(application, url, getSchema(opts.schema, opts.sampleSize || 100, opts.logger))
         return formatSchema(schema, opts.inferRelations || false)
