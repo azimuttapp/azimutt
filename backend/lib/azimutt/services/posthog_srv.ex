@@ -15,6 +15,7 @@ defmodule Azimutt.Services.PostHogSrv do
         email: event.created_by.email,
         organization_id: event.organization_id,
         project_id: event.project_id,
+        instance: Azimutt.config(:host),
         "$lib": event.details["$lib"] || "back"
       }),
       event.created_at
