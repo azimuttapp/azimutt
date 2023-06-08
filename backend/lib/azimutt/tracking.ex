@@ -7,6 +7,7 @@ defmodule Azimutt.Tracking do
   alias Azimutt.Projects.Project
   alias Azimutt.Repo
   alias Azimutt.Services.BentoSrv
+  alias Azimutt.Services.PostHogSrv
   alias Azimutt.Tracking.Event
   alias Azimutt.Utils.Nil
   alias Azimutt.Utils.Result
@@ -205,20 +206,8 @@ defmodule Azimutt.Tracking do
     })
     |> Repo.insert()
     |> Result.tap(fn event ->
-      if Azimutt.config(:bento) && event.created_by do
-        BentoSrv.send_event(%{
-          email: event.created_by.email,
-          type: event.name,
-          fields: %{},
-          details:
-            if event.details do
-              event.details |> Map.put("instance", Azimutt.config(:host))
-            else
-              %{instance: Azimutt.config(:host)}
-            end,
-          date: event.created_at
-        })
-      end
+      if Azimutt.config(:bento) && event.created_by, do: BentoSrv.send_event(event)
+      if Azimutt.config(:posthog) && event.created_by, do: PostHogSrv.send_event(event)
     end)
   end
 
