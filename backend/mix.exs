@@ -86,6 +86,7 @@ defmodule Azimutt.MixProject do
       {:httpoison, "~> 1.8"},
       {:html_entities, "~> 0.5"},
       {:oauther, "~> 1.3"},
+      {:posthog, "~> 0.1"},
       {:extwitter, "~> 0.14"}
     ]
   end

@@ -214,10 +214,16 @@ if System.get_env("AUTH_SAML") == "true" do
 end
 
 if System.get_env("POSTHOG") == "true" do
+  IO.puts("Setup PostHog")
+
   config :azimutt,
     posthog: true,
     posthog_host: System.fetch_env!("POSTHOG_HOST"),
     posthog_key: System.fetch_env!("POSTHOG_KEY")
+
+  config :posthog,
+    api_url: System.fetch_env!("POSTHOG_HOST"),
+    api_key: System.fetch_env!("POSTHOG_KEY")
 end
 
 if System.get_env("SENTRY") == "true" do
