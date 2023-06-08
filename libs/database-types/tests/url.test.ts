@@ -72,5 +72,14 @@ describe('url', () => {
             port: 1433,
             db: 'db',
         })
+        expect(parseDatabaseUrl('jdbc:sqlserver://user:pass@host.com:1433/db')).toEqual({
+            full: 'jdbc:sqlserver://user:pass@host.com:1433/db',
+            kind: 'sqlserver',
+            user: 'user',
+            pass: 'pass',
+            host: 'host.com',
+            port: 1433,
+            db: 'db',
+        })
     })
 })
