@@ -133,7 +133,15 @@ export class Backend {
 
     trackEvent = (event: TrackEvent): void => {
         this.logger.debug(`backend.trackEvent(${JSON.stringify(event)})`)
-        Http.postNoContent(`/api/v1/events`, event).then(_ => undefined)
+        const eventWithUrl = {
+            ...event,
+            details: {
+                ...event.details,
+                $current_url: window.location.href,
+                $lib: 'front'
+            }
+        }
+        Http.postNoContent(`/api/v1/events`, eventWithUrl).then(_ => undefined)
     }
 
     getDatabaseSchema = async (database: DatabaseUrl): Promise<AzimuttSchema> => {
