@@ -218,16 +218,6 @@ if System.get_env("POSTHOG") == "true" do
     posthog: true,
     posthog_host: System.fetch_env!("POSTHOG_HOST"),
     posthog_key: System.fetch_env!("POSTHOG_KEY")
-  posthog_host = System.get_env("POSTHOG_HOST")
-  posthog_key = System.get_env("POSTHOG_KEY")
-
-  if posthog_host do
-    config :azimutt, posthog_host: posthog_host
-  end
-
-  if posthog_key do
-    config :azimutt, posthog_key: posthog_key
-  end
 end
 
 if System.get_env("SENTRY") == "true" do
