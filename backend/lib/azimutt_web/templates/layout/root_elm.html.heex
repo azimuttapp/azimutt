@@ -11,5 +11,6 @@
         <script>window.gateway_url = '<%= Azimutt.config(:gateway_url) %>'</script>
         <%= if Azimutt.config(:sentry_frontend_dsn) do %><script>window.sentry_frontend_dsn = '<%= Azimutt.config(:sentry_frontend_dsn) %>'</script><% end %>
         <script type="text/javascript" src={Routes.static_path(@conn, "/elm/script.js")} />
+        <%= render "_scripts.html", current_user: assigns[:current_user] %>
     </body>
 </html>

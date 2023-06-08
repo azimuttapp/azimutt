@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="en" class="scroll-smooth h-full" data-root="root_user_settings">
+<html lang="en" class="h-full scroll-smooth" data-root="root_user_settings">
     <%= render "_head.html", conn: @conn %>
-    <body class="font-sans antialiased h-full bg-gray-100">
+    <body class="h-full font-sans antialiased bg-gray-100">
         <%= render "_hello_comment.html" %>
         <%= render "_email_confirm_banner.html", conn: @conn, current_user: @current_user %>
-        <div class="relative min-h-full flex flex-col">
+        <div class="relative flex flex-col min-h-full">
             <%= render "_user_navbar.html", conn: @conn, current_user: @current_user %>
-            <main class="mx-auto max-w-7xl pb-10 lg:px-8 lg:py-12">
+            <main class="pb-10 mx-auto max-w-7xl lg:px-8 lg:py-12">
                 <div class="lg:grid lg:grid-cols-12 lg:gap-x-5">
                     <%= render "_user_settings_left_bar.html", conn: @conn %>
                     <div class="space-y-6 sm:px-6 lg:col-span-9 lg:px-0">
@@ -16,5 +16,6 @@
                 </div>
             </main>
         </div>
+        <%= render "_scripts.html", current_user: @current_user %>
     </body>
 </html>

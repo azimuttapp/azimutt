@@ -5,5 +5,6 @@
         <%= render "_hello_comment.html" %>
         <%= render "_website_navbar.html", conn: @conn, current_user: @current_user, dark: assigns[:dark] %>
         <%= @inner_content %>
+        <%= render "_scripts.html", current_user: @current_user %>
     </body>
 </html>
