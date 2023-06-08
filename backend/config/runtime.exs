@@ -214,7 +214,10 @@ if System.get_env("AUTH_SAML") == "true" do
 end
 
 if System.get_env("POSTHOG") == "true" do
-  config :azimutt, posthog: true
+  config :azimutt,
+    posthog: true,
+    posthog_host: System.fetch_env!("POSTHOG_HOST"),
+    posthog_key: System.fetch_env!("POSTHOG_KEY")
   posthog_host = System.get_env("POSTHOG_HOST")
   posthog_key = System.get_env("POSTHOG_KEY")
 
