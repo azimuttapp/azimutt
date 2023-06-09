@@ -22,8 +22,7 @@ export const getSchema = (schema: SqlserverSchemaName | undefined, sampleSize: n
     const columns = await getColumns(conn, schema)
         .then(cols => enrichColumnsWithSchema(conn, cols, sampleSize))
         .then(cols => groupBy(cols, toTableId))
-    // FIXME const comments = await getTableComments(conn, schema).then(tables => groupBy(tables, toTableId))
-    const comments = groupBy([] as RawTable[], toTableId)
+    const comments = await getTableComments(conn, schema).then(tables => groupBy(tables, toTableId))
     const constraints = await getAllConstraints(conn, schema).then(constraints => mapValues(groupBy(constraints, toTableId), buildTableConstraints))
     return {
         tables: Object.entries(columns).map(([tableId, columns]) => {
@@ -37,10 +36,10 @@ export const getSchema = (schema: SqlserverSchemaName | undefined, sampleSize: n
                     .sort((a, b) => a.column_index - b.column_index)
                     .map(col => ({
                         name: col.column,
-                        type: 'unknown', // FIXME col.column_type,
+                        type: col.column_type,
                         nullable: col.column_nullable === 'YES',
                         default: col.column_default,
-                        comment: null, // FIXME col.column_comment || null,
+                        comment: col.column_comment || null,
                         schema: col.column_schema || null
                     })),
                 primaryKey: tableConstraints.filter((c): c is ConstraintPrimaryKey => c.type === 'PRIMARY KEY').map(c => ({
@@ -127,23 +126,46 @@ type RawColumn = {
     table: SqlserverTableName
     table_kind: 'BASE TABLE' | 'VIEW'
     column: SqlserverColumnName
-    // FIXME column_type: SqlserverColumnType
+    column_type: SqlserverColumnType
     column_index: number
     column_default: string | null
     column_nullable: 'YES' | 'NO'
-    // FIXME column_comment: string
+    column_comment: string
     column_schema?: ValueSchema
 }
 
 function getColumns(conn: Conn, schema: SqlserverSchemaName | undefined): Promise<RawColumn[]> {
     return conn.query<RawColumn>(
-        `SELECT c.TABLE_SCHEMA     as "schema",
-                c.TABLE_NAME       as "table",
-                t.TABLE_TYPE       as table_kind,
-                c.COLUMN_NAME      as "column",
-                c.ORDINAL_POSITION as column_index,
-                c.COLUMN_DEFAULT   as column_default,
-                c.IS_NULLABLE      as column_nullable
+        `SELECT c.TABLE_SCHEMA                  as "schema",
+                c.TABLE_NAME                    as "table",
+                t.TABLE_TYPE                    as table_kind,
+                c.COLUMN_NAME                   as "column",
+                c.DATA_TYPE
+                    + CASE
+                          WHEN c.DATA_TYPE IN ('char', 'nchar', 'varchar', 'nvarchar', 'binary', 'varbinary')
+                              AND c.CHARACTER_MAXIMUM_LENGTH > 0 THEN
+                              COALESCE('(' + CONVERT(varchar, c.CHARACTER_MAXIMUM_LENGTH) + ')', '')
+                          ELSE '' END
+                    + CASE
+                          WHEN DATA_TYPE IN ('decimal', 'numeric') THEN
+                              COALESCE('(' + CONVERT(varchar, c.NUMERIC_PRECISION) + ',' +
+                                       CONVERT(varchar, c.NUMERIC_SCALE) +
+                                       ')', '')
+                          ELSE '' END
+                                                AS column_type,
+                c.ORDINAL_POSITION              as column_index,
+                c.COLUMN_DEFAULT                as column_default,
+                c.IS_NULLABLE                   as column_nullable,
+                (SELECT cc.value
+                 FROM sys.columns sc
+                          JOIN sys.objects st ON sc.object_id = st.object_id
+                          JOIN sys.sysusers ss ON st.schema_id = ss.uid
+                          JOIN sys.extended_properties cc
+                               ON cc.major_id = sc.object_id AND cc.minor_id = sc.column_id AND
+                                  cc.name = 'MS_Description'
+                 WHERE ss.name = c.TABLE_SCHEMA
+                   AND st.name = c.TABLE_NAME
+                   AND sc.name = c.COLUMN_NAME) as column_comment
          FROM information_schema.COLUMNS c
                   JOIN information_schema.TABLES t ON c.TABLE_SCHEMA = t.TABLE_SCHEMA AND c.TABLE_NAME = t.TABLE_NAME
          WHERE ${filterSchema('c.TABLE_SCHEMA', schema)}
@@ -174,17 +196,18 @@ type RawTable = {
     comment: string
 }
 
-/* FIXME function getTableComments(conn: Conn, schema: SqlserverSchemaName | undefined): Promise<RawTable[]> {
+function getTableComments(conn: Conn, schema: SqlserverSchemaName | undefined): Promise<RawTable[]> {
     return conn.query<RawTable>(
-        `SELECT TABLE_SCHEMA  as "schema",
-                TABLE_NAME    as "table",
-                TABLE_COMMENT as comment
-         FROM information_schema.TABLES
-         WHERE TABLE_COMMENT != ''
-           AND TABLE_COMMENT != 'VIEW'
-           AND ${filterSchema('TABLE_SCHEMA', schema)};`
+        `SELECT s.name   AS "schema",
+                t.name   AS "table",
+                ep.value AS comment
+         FROM sys.sysobjects t
+                  JOIN sys.sysusers s ON s.uid = t.uid
+                  JOIN sys.extended_properties ep ON ep.major_id = t.id AND ep.minor_id = 0 AND ep.name = 'MS_Description'
+         WHERE (t.type = 'U' OR t.type = 'V') AND ep.value IS NOT NULL AND ${filterSchema('s.name', schema)}
+         ORDER BY s.name, t.name;`
     )
-}*/
+}
 
 type RawConstraint = {
     schema: SqlserverSchemaName
