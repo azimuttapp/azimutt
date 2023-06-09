@@ -8,5 +8,5 @@
             <%= @inner_content %>
         </div>
     </body>
-    <%= render "_scripts.html", current_user: @current_user %>
+    <%= render "_scripts.html", conn: @conn, current_user: @current_user %>
 </html>

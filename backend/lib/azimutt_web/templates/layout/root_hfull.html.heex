@@ -4,6 +4,6 @@
     <body class="h-full font-sans antialiased">
         <%= render "_hello_comment.html" %>
         <%= @inner_content %>
-        <%= render "_scripts.html", current_user: assigns[:current_user] %>
+        <%= render "_scripts.html", conn: @conn, current_user: assigns[:current_user] %>
     </body>
 </html>
