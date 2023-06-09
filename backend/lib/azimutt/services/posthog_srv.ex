@@ -7,6 +7,7 @@ defmodule Azimutt.Services.PostHogSrv do
 
   # see https://posthog.com/docs/libraries/elixir
   def send_event(%Event{} = event) do
+    # TODO: set group settings (https://posthog.com/docs/getting-started/group-analytics#setting-and-updating-group-properties)
     Posthog.capture(
       event.name,
       Map.merge(event.details || %{}, %{
