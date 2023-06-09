@@ -11,14 +11,18 @@ defmodule Azimutt.Services.PostHogSrv do
       event.name,
       Map.merge(event.details || %{}, %{
         distinct_id: event.created_by.id,
-        user_id: event.created_by.id,
-        name: event.created_by.name,
-        email: event.created_by.email,
-        profile: "https://#{Azimutt.config(:host)}/admin/users/#{event.created_by.id}",
+        "$lib": event.details["$lib"] || "back",
+        instance: Azimutt.config(:host),
         organization_id: event.organization_id,
         project_id: event.project_id,
-        instance: Azimutt.config(:host),
-        "$lib": event.details["$lib"] || "back"
+        # see https://posthog.com/docs/getting-started/user-properties
+        "$set": %{
+          user_id: event.created_by.id,
+          name: event.created_by.name,
+          email: event.created_by.email,
+          onboarding: event.created_by.onboarding,
+          profile: "https://#{Azimutt.config(:host)}/admin/users/#{event.created_by.id}"
+        }
       }),
       event.created_at
     )
