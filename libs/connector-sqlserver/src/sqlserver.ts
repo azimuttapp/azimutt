@@ -2,6 +2,7 @@ import {groupBy, Logger, mapValues, removeUndefined, sequence} from "@azimutt/ut
 import {AzimuttRelation, AzimuttSchema, AzimuttType} from "@azimutt/database-types";
 import {schemaToColumns, ValueSchema, valuesToSchema} from "@azimutt/json-infer-schema";
 import {Conn} from "./common";
+import {buildColumnType} from "./helpers";
 
 export type SqlserverSchema = { tables: SqlserverTable[], relations: AzimuttRelation[], types: AzimuttType[] }
 export type SqlserverTable = { schema: SqlserverSchemaName, table: SqlserverTableName, view: boolean, columns: SqlserverColumn[], primaryKey: SqlserverPrimaryKey | null, uniques: SqlserverUnique[], indexes: SqlserverIndex[], checks: SqlserverCheck[], comment: string | null }
@@ -140,19 +141,7 @@ function getColumns(conn: Conn, schema: SqlserverSchemaName | undefined): Promis
                 c.TABLE_NAME                    as "table",
                 t.TABLE_TYPE                    as table_kind,
                 c.COLUMN_NAME                   as "column",
-                c.DATA_TYPE
-                    + CASE
-                          WHEN c.DATA_TYPE IN ('char', 'nchar', 'varchar', 'nvarchar', 'binary', 'varbinary')
-                              AND c.CHARACTER_MAXIMUM_LENGTH > 0 THEN
-                              COALESCE('(' + CONVERT(varchar, c.CHARACTER_MAXIMUM_LENGTH) + ')', '')
-                          ELSE '' END
-                    + CASE
-                          WHEN DATA_TYPE IN ('decimal', 'numeric') THEN
-                              COALESCE('(' + CONVERT(varchar, c.NUMERIC_PRECISION) + ',' +
-                                       CONVERT(varchar, c.NUMERIC_SCALE) +
-                                       ')', '')
-                          ELSE '' END
-                                                AS column_type,
+                ${buildColumnType('c')}         as column_type,
                 c.ORDINAL_POSITION              as column_index,
                 c.COLUMN_DEFAULT                as column_default,
                 c.IS_NULLABLE                   as column_nullable,

@@ -48,7 +48,7 @@ showTableData ( schema, table ) url =
             defaultShowTableData schema table
 
         DatabaseKind.SQLServer ->
-            defaultShowTableData schema table
+            "SELECT TOP " ++ limit ++ " * FROM " ++ tableRef schema table ++ ";"
 
         DatabaseKind.Other ->
             defaultShowTableData schema table
@@ -91,7 +91,7 @@ showColumnData column ( schema, table ) url =
             "SELECT " ++ column.head ++ ", count(*) FROM " ++ tableRef schema table ++ " GROUP BY " ++ column.head ++ " ORDER BY count DESC, " ++ column.head ++ " LIMIT " ++ limit ++ ";"
 
         DatabaseKind.SQLServer ->
-            defaultShowColumnData schema table column.head
+            "SELECT TOP " ++ limit ++ " " ++ column.head ++ ", count(*) as count FROM " ++ tableRef schema table ++ " GROUP BY " ++ column.head ++ " ORDER BY count DESC, " ++ column.head ++ ";"
 
         DatabaseKind.Other ->
             defaultShowColumnData schema table column.head
