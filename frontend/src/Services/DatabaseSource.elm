@@ -66,12 +66,12 @@ type Msg
 databases : List Database
 databases =
     [ { key = "postgres", sampleUrl = "postgres://<user>:<pass>@<host>:<port>/<db>", issue = Nothing }
-    , { key = "sqlserver", sampleUrl = "sqlserver://<user>:<pass>@<host>:<port>/<db>", issue = Nothing }
+    , { key = "sqlserver", sampleUrl = "Server=<host>,<port>;Database=<db>;User Id=<user>;Password=<pass>", issue = Nothing }
     , { key = "mariadb", sampleUrl = "mariadb://<user>:<pass>@<host>:<port>/<db>", issue = Just (Conf.constants.azimuttNewIssue "Support mariadb database import" "") }
     , { key = "mysql", sampleUrl = "mysql://<user>:<pass>@<host>:<port>/<db>", issue = Nothing }
     , { key = "couchbase", sampleUrl = "couchbases://<user>:<pass>@<host>", issue = Nothing }
     , { key = "mongodb", sampleUrl = "mongodb+srv://<user>:<pass>@<host>", issue = Nothing }
-    , { key = "oracle", sampleUrl = "oracle:thin:<user>/<pass>@<host>:<port>:<db>", issue = Just (Conf.constants.azimuttNewIssue "Support oracle database import" "") }
+    , { key = "oracle", sampleUrl = "oracle:thin:<user>/<pass>@<host>:<port>:<db>", issue = Just "https://github.com/azimuttapp/azimutt/issues/217" }
     , { key = "sqlite", sampleUrl = "file:<path>", issue = Just "https://github.com/azimuttapp/azimutt/issues/115" }
     ]
 

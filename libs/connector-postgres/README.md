@@ -1,6 +1,6 @@
 # PostgreSQL connector
 
-This library is able to connect to [PostgreSQL](https://www.postgresql.org) and extract its schema.
+This library is able to connect to [PostgreSQL](https://www.postgresql.org), extract its schema and more...
 
 It lists all schemas, tables, columns, relations and types and format them in a JSON Schema.
 

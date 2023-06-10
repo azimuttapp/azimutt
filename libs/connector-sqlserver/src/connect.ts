@@ -1,4 +1,4 @@
-import mssql, {ConnectionPool, IResult, ISqlType} from 'mssql'
+import mssql, {ConnectionPool, IResult, ISqlType} from "mssql";
 import {ColumnValue, DatabaseUrlParsed} from "@azimutt/database-types";
 import {Conn, QueryResultArrayMode, QueryResultRow} from "./common";
 

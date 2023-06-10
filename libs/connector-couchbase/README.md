@@ -1,6 +1,6 @@
 # Couchbase connector
 
-This library is able to connect to [Couchbase](https://www.couchbase.com) and extract its schema.
+This library is able to connect to [Couchbase](https://www.couchbase.com), extract its schema and more...
 
 It browses all buckets, scopes and collections, fetch a sample of documents and then [infer](../json-infer-schema) a schema from them.
 

@@ -30,7 +30,7 @@ fromUrl url =
     else if url |> String.contains "postgre" then
         PostgreSQL
 
-    else if url |> String.contains ";User Id=" then
+    else if (url |> String.contains "sqlserver") || (url |> String.contains "Server=") then
         SQLServer
 
     else
