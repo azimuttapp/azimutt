@@ -57,19 +57,19 @@ export const getSchema = (schema: SqlserverSchemaName | undefined, sampleSize: n
                     columns: c.columns,
                     definition: null
                 })) || [],
-                checks: /* TODO tableConstraints.filter(c => c.constraint_type === 'c').map(c => ({
-                    name: c.constraint_name,
-                    columns: c.columns.map(getColumnName(tableId)),
-                    predicate: c.definition.replace(/^CHECK/, '').trim()
-                })) || */ [],
+                checks: tableConstraints.filter((c): c is ConstraintCheck => c.type === 'CHECK').map(c => ({
+                    name: c.constraint,
+                    columns: c.columns,
+                    predicate: c.definition ? removeSurroundingParentheses(c.definition) : null
+                })) || [],
                 comment: tableComments[0]?.comment || null
             }
-        }),
+        }).sort((a, b) => `${a.schema}.${a.table}`.localeCompare(`${b.schema}.${b.table}`)),
         relations: Object.values(constraints).flat().filter((c): c is ConstraintForeignKey => c.type === 'FOREIGN KEY').flatMap(c => c.columns.map(col => ({
             name: c.constraint,
             src: {schema: c.schema, table: c.table, column: col.src},
             ref: {schema: col.ref.schema, table: col.ref.table, column: col.ref.column}
-        }))),
+        }))).sort((a, b) => a.name.localeCompare(b.name)),
         types: [] // TODO
     }
 }
@@ -200,18 +200,23 @@ type RawConstraint = {
     schema: SqlserverSchemaName
     table: SqlserverTableName
     constraint: SqlserverConstraintName
-    column: SqlserverColumnName
-    type: 'PRIMARY KEY' | 'UNIQUE' | 'FOREIGN KEY' | 'INDEX'
+    type: 'PRIMARY KEY' | 'FOREIGN KEY' | 'UNIQUE' | 'INDEX' | 'CHECK'
+    column?: SqlserverColumnName
     index?: number
     ref_schema?: SqlserverSchemaName
     ref_table?: SqlserverTableName
     ref_column?: SqlserverColumnName
+    definition?: string
 }
 
 async function getAllConstraints(conn: Conn, schema: SqlserverSchemaName | undefined): Promise<RawConstraint[]> {
     // FIXME const [indexes, constraints] = await Promise.all([getIndexes(conn, schema), getConstraints(conn, schema)])
     // FIXME return mergeBy(indexes, constraints, c => `${c.schema}.${c.table}.${c.constraint}.${c.column}`)
-    return Promise.all([getPrimaryKeys(conn, schema), getForeignKeys(conn, schema)]).then(constraints => constraints.flat())
+    return Promise.all([
+        getPrimaryKeys(conn, schema),
+        getForeignKeys(conn, schema),
+        getChecks(conn, schema),
+    ]).then(constraints => constraints.flat())
 }
 
 function getPrimaryKeys(conn: Conn, schema: SqlserverSchemaName | undefined): Promise<RawConstraint[]> {
@@ -219,8 +224,8 @@ function getPrimaryKeys(conn: Conn, schema: SqlserverSchemaName | undefined): Pr
         `SELECT TABLE_SCHEMA     AS "schema",
                 TABLE_NAME       AS "table",
                 CONSTRAINT_NAME  AS "constraint",
-                COLUMN_NAME      AS "column",
                 'PRIMARY KEY'    AS type,
+                COLUMN_NAME      AS "column",
                 ORDINAL_POSITION AS "index"
          FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
          WHERE ${filterSchema('TABLE_SCHEMA', schema)}
@@ -233,8 +238,8 @@ function getForeignKeys(conn: Conn, schema: SqlserverSchemaName | undefined): Pr
         `SELECT sch1.name                AS "schema",
                 tab1.name                AS "table",
                 obj.name                 AS "constraint",
-                col1.name                AS "column",
                 'FOREIGN KEY'            AS type,
+                col1.name                AS "column",
                 fkc.constraint_column_id AS "index",
                 sch2.name                AS "ref_schema",
                 tab2.name                AS "ref_table",
@@ -248,6 +253,23 @@ function getForeignKeys(conn: Conn, schema: SqlserverSchemaName | undefined): Pr
                   JOIN sys.schemas sch2 ON tab2.schema_id = sch2.schema_id
                   JOIN sys.columns col2 ON col2.column_id = referenced_column_id AND col2.object_id = tab2.object_id
          WHERE ${filterSchema('sch1.name', schema)};`
+    )
+}
+
+function getChecks(conn: Conn, schema: SqlserverSchemaName | undefined): Promise<RawConstraint[]> {
+    return conn.query<RawConstraint>(
+        `SELECT SCHEMA_NAME(t.schema_id) AS "schema",
+                t.name                   AS "table",
+                con.name                 AS "constraint",
+                'CHECK'                  AS type,
+                c.name                   AS "column",
+                con.definition
+         FROM sys.check_constraints con
+                  LEFT OUTER JOIN sys.objects t ON con.parent_object_id = t.object_id
+                  LEFT OUTER JOIN sys.all_columns c
+                                  ON con.parent_column_id = c.column_id AND con.parent_object_id = c.object_id
+         WHERE con.is_disabled = 'false'
+           AND ${filterSchema('SCHEMA_NAME(t.schema_id)', schema)};`
     )
 }
 
@@ -283,10 +305,11 @@ function getForeignKeys(conn: Conn, schema: SqlserverSchemaName | undefined): Pr
 
 type ConstraintBase = { schema: SqlserverSchemaName, table: SqlserverTableName, constraint: SqlserverConstraintName }
 type ConstraintPrimaryKey = ConstraintBase & { type: 'PRIMARY KEY', columns: SqlserverColumnName[] }
+type ConstraintForeignKey = ConstraintBase & { type: 'FOREIGN KEY', columns: { src: SqlserverColumnName, ref: SqlserverColumnRef }[] }
 type ConstraintUnique = ConstraintBase & { type: 'UNIQUE', columns: SqlserverColumnName[] }
 type ConstraintIndex = ConstraintBase & { type: 'INDEX', columns: SqlserverColumnName[] }
-type ConstraintForeignKey = ConstraintBase & { type: 'FOREIGN KEY', columns: { src: SqlserverColumnName, ref: SqlserverColumnRef }[] }
-type ConstraintFormatted = ConstraintPrimaryKey | ConstraintUnique | ConstraintIndex | ConstraintForeignKey
+type ConstraintCheck = ConstraintBase & { type: 'CHECK', columns: SqlserverColumnName[], definition?: string }
+type ConstraintFormatted = ConstraintPrimaryKey | ConstraintForeignKey | ConstraintUnique | ConstraintIndex | ConstraintCheck
 
 function buildTableConstraints(constraints: RawConstraint[]): ConstraintFormatted[] {
     return Object.values(groupBy(constraints, c => c.constraint)).map(columns => {
@@ -299,9 +322,18 @@ function buildTableConstraints(constraints: RawConstraint[]): ConstraintFormatte
                 constraint: first.constraint,
                 type: first.type,
                 columns: sorted.map(c => ({
-                    src: c.column,
+                    src: c.column || '',
                     ref: {schema: c.ref_schema || '', table: c.ref_table || '', column: c.ref_column || ''}
-                }))
+                })).filter(c => !!c.src)
+            }
+        } else if(first.type === 'CHECK') {
+            return {
+                schema: first.schema,
+                table: first.table,
+                constraint: first.constraint,
+                type: first.type,
+                columns: sorted.map(c => c.column || '').filter(c => !!c),
+                definition: first.definition
             }
         } else {
             return {
@@ -309,7 +341,7 @@ function buildTableConstraints(constraints: RawConstraint[]): ConstraintFormatte
                 table: first.table,
                 constraint: first.constraint,
                 type: first.type,
-                columns: sorted.map(c => c.column)
+                columns: sorted.map(c => c.column || '').filter(c => !!c)
             }
         }
     })
@@ -317,4 +349,13 @@ function buildTableConstraints(constraints: RawConstraint[]): ConstraintFormatte
 
 function filterSchema(field: string, schema: SqlserverSchemaName | undefined) {
     return `${field} ${schema ? `= '${schema}'` : `!= 'information_schema'`}`
+}
+
+// TODO: use from utils/string...
+function removeSurroundingParentheses(value: string): string {
+    if (value.startsWith('(') && value.endsWith(')')) {
+        return removeSurroundingParentheses(value.slice(1, -1))
+    } else {
+        return value
+    }
 }
