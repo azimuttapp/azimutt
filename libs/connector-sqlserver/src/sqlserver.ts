@@ -20,11 +20,11 @@ export type SqlserverConstraintName = string
 export type SqlserverTableId = string
 
 export const getSchema = (schema: SqlserverSchemaName | undefined, sampleSize: number, logger: Logger) => async (conn: Conn): Promise<SqlserverSchema> => {
+    const constraints = await getAllConstraints(conn, schema).then(constraints => mapValues(groupBy(constraints, toTableId), buildTableConstraints))
     const columns = await getColumns(conn, schema)
-        .then(cols => enrichColumnsWithSchema(conn, cols, sampleSize))
+        .then(cols => enrichColumnsWithSchema(conn, cols, constraints, sampleSize))
         .then(cols => groupBy(cols, toTableId))
     const comments = await getTableComments(conn, schema).then(tables => groupBy(tables, toTableId))
-    const constraints = await getAllConstraints(conn, schema).then(constraints => mapValues(groupBy(constraints, toTableId), buildTableConstraints))
     return {
         tables: Object.entries(columns).map(([tableId, columns]) => {
             const tableConstraints = constraints[tableId] || []
@@ -161,21 +161,22 @@ function getColumns(conn: Conn, schema: SqlserverSchemaName | undefined): Promis
     )
 }
 
-function enrichColumnsWithSchema(conn: Conn, columns: RawColumn[], sampleSize: number): Promise<RawColumn[]> {
-    return sequence(columns, c => {
-        // FIXME if (c.column_type === 'jsonb') {
-        //     return getColumnSchema(conn, c.schema, c.table, c.column, sampleSize)
-        //         .then(column_schema => ({...c, column_schema}))
-        // } else {
-            return Promise.resolve(c)
-        // }
+function enrichColumnsWithSchema(conn: Conn, columns: RawColumn[], constraints: Record<SqlserverTableId, ConstraintFormatted[]>, sampleSize: number): Promise<RawColumn[]> {
+    return sequence(columns, (c: RawColumn) => {
+        if (c.column_type === 'nvarchar') {
+            if (constraints[toTableId(c)]?.find(ct => ct.type === 'CHECK' && ct.schema == c.schema && ct.table == c.table && ct.columns.indexOf(c.column) >= 0 && ct.definition?.includes('isjson'))) {
+                return getColumnSchema(conn, c.schema, c.table, c.column, sampleSize)
+                    .then(column_schema => ({...c, column_schema}))
+            }
+        }
+        return Promise.resolve(c)
     })
 }
 
 async function getColumnSchema(conn: Conn, schema: string, table: string, column: string, sampleSize: number): Promise<ValueSchema> {
     const sqlTable = `${schema ? `${schema}.` : ''}${table}`
-    const rows = await conn.query(`SELECT ${column} FROM ${sqlTable} WHERE ${column} IS NOT NULL LIMIT ${sampleSize};`)
-    return valuesToSchema(rows.map(row => row[column]))
+    const rows = await conn.query(`SELECT TOP ${sampleSize} ${column} FROM ${sqlTable} WHERE ${column} IS NOT NULL;`)
+    return valuesToSchema(rows.map(row => safeJsonParse(row[column] as string)))
 }
 
 type RawTable = {
@@ -330,6 +331,13 @@ function removeSurroundingParentheses(value: string): string {
     if (value.startsWith('(') && value.endsWith(')')) {
         return removeSurroundingParentheses(value.slice(1, -1))
     } else {
+        return value
+    }
+}
+function safeJsonParse(value: string): any {
+    try {
+        return JSON.parse(value)
+    } catch (e) {
         return value
     }
 }

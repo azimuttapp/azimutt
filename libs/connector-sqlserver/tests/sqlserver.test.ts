@@ -1,9 +1,9 @@
 import {describe, expect, test} from "@jest/globals";
-import {DatabaseUrlParsed, parseDatabaseUrl} from "@azimutt/database-types";
+import {AzimuttSchema, DatabaseUrlParsed, parseDatabaseUrl} from "@azimutt/database-types";
 import {application, logger} from "./constants";
 import {execQuery} from "../src/common";
 import {connect} from "../src/connect";
-import {getSchema} from "../src/sqlserver";
+import {formatSchema, getSchema, SqlserverSchema} from "../src/sqlserver";
 
 describe('sqlserver', () => {
     // fake url, use a real one to test (see README for how-to)
@@ -18,9 +18,9 @@ describe('sqlserver', () => {
         console.log('schema', schema)
         expect(schema.tables.length).toEqual(32)
     })
-    /* test('formatSchema', () => {
+    test('formatSchema', () => {
         const rawSchema: SqlserverSchema = {tables: [], relations: [], types: []}
         const expectedSchema: AzimuttSchema = {tables: [], relations: [], types: []}
         expect(formatSchema(rawSchema, false)).toEqual(expectedSchema)
-    }) */
+    })
 })
