@@ -137,14 +137,14 @@ type RawColumn = {
 
 function getColumns(conn: Conn, schema: SqlserverSchemaName | undefined): Promise<RawColumn[]> {
     return conn.query<RawColumn>(
-        `SELECT c.TABLE_SCHEMA                  as "schema",
-                c.TABLE_NAME                    as "table",
-                t.TABLE_TYPE                    as table_kind,
-                c.COLUMN_NAME                   as "column",
-                ${buildColumnType('c')}         as column_type,
-                c.ORDINAL_POSITION              as column_index,
-                c.COLUMN_DEFAULT                as column_default,
-                c.IS_NULLABLE                   as column_nullable,
+        `SELECT c.TABLE_SCHEMA                  AS "schema",
+                c.TABLE_NAME                    AS "table",
+                t.TABLE_TYPE                    AS table_kind,
+                c.COLUMN_NAME                   AS "column",
+                ${buildColumnType('c')}         AS column_type,
+                c.ORDINAL_POSITION              AS column_index,
+                c.COLUMN_DEFAULT                AS column_default,
+                c.IS_NULLABLE                   AS column_nullable,
                 (SELECT cc.value
                  FROM sys.columns sc
                           JOIN sys.objects st ON sc.object_id = st.object_id
@@ -154,11 +154,10 @@ function getColumns(conn: Conn, schema: SqlserverSchemaName | undefined): Promis
                                   cc.name = 'MS_Description'
                  WHERE ss.name = c.TABLE_SCHEMA
                    AND st.name = c.TABLE_NAME
-                   AND sc.name = c.COLUMN_NAME) as column_comment
+                   AND sc.name = c.COLUMN_NAME) AS column_comment
          FROM information_schema.COLUMNS c
                   JOIN information_schema.TABLES t ON c.TABLE_SCHEMA = t.TABLE_SCHEMA AND c.TABLE_NAME = t.TABLE_NAME
-         WHERE ${filterSchema('c.TABLE_SCHEMA', schema)}
-         ORDER BY "schema", "table", column_index;`
+         WHERE ${filterSchema('c.TABLE_SCHEMA', schema)};`
     )
 }
 
@@ -193,8 +192,7 @@ function getTableComments(conn: Conn, schema: SqlserverSchemaName | undefined): 
          FROM sys.sysobjects t
                   JOIN sys.sysusers s ON s.uid = t.uid
                   JOIN sys.extended_properties ep ON ep.major_id = t.id AND ep.minor_id = 0 AND ep.name = 'MS_Description'
-         WHERE (t.type = 'U' OR t.type = 'V') AND ep.value IS NOT NULL AND ${filterSchema('s.name', schema)}
-         ORDER BY s.name, t.name;`
+         WHERE (t.type = 'U' OR t.type = 'V') AND ep.value IS NOT NULL AND ${filterSchema('s.name', schema)};`
     )
 }
 
@@ -213,17 +211,54 @@ type RawConstraint = {
 async function getAllConstraints(conn: Conn, schema: SqlserverSchemaName | undefined): Promise<RawConstraint[]> {
     // FIXME const [indexes, constraints] = await Promise.all([getIndexes(conn, schema), getConstraints(conn, schema)])
     // FIXME return mergeBy(indexes, constraints, c => `${c.schema}.${c.table}.${c.constraint}.${c.column}`)
-    return []
+    return Promise.all([getPrimaryKeys(conn, schema), getForeignKeys(conn, schema)]).then(constraints => constraints.flat())
+}
+
+function getPrimaryKeys(conn: Conn, schema: SqlserverSchemaName | undefined): Promise<RawConstraint[]> {
+    return conn.query<RawConstraint>(
+        `SELECT TABLE_SCHEMA     AS "schema",
+                TABLE_NAME       AS "table",
+                CONSTRAINT_NAME  AS "constraint",
+                COLUMN_NAME      AS "column",
+                'PRIMARY KEY'    AS type,
+                ORDINAL_POSITION AS "index"
+         FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+         WHERE ${filterSchema('TABLE_SCHEMA', schema)}
+           AND OBJECTPROPERTY(OBJECT_ID(CONSTRAINT_SCHEMA + '.' + QUOTENAME(CONSTRAINT_NAME)), 'IsPrimaryKey') = 1;`
+    )
+}
+
+function getForeignKeys(conn: Conn, schema: SqlserverSchemaName | undefined): Promise<RawConstraint[]> {
+    return conn.query<RawConstraint>(
+        `SELECT sch1.name                AS "schema",
+                tab1.name                AS "table",
+                obj.name                 AS "constraint",
+                col1.name                AS "column",
+                'FOREIGN KEY'            AS type,
+                fkc.constraint_column_id AS "index",
+                sch2.name                AS "ref_schema",
+                tab2.name                AS "ref_table",
+                col2.name                AS "ref_column"
+         FROM sys.foreign_key_columns fkc
+                  JOIN sys.objects obj ON obj.object_id = fkc.constraint_object_id
+                  JOIN sys.tables tab1 ON tab1.object_id = fkc.parent_object_id
+                  JOIN sys.schemas sch1 ON tab1.schema_id = sch1.schema_id
+                  JOIN sys.columns col1 ON col1.column_id = parent_column_id AND col1.object_id = tab1.object_id
+                  JOIN sys.tables tab2 ON tab2.object_id = fkc.referenced_object_id
+                  JOIN sys.schemas sch2 ON tab2.schema_id = sch2.schema_id
+                  JOIN sys.columns col2 ON col2.column_id = referenced_column_id AND col2.object_id = tab2.object_id
+         WHERE ${filterSchema('sch1.name', schema)};`
+    )
 }
 
 /* FIXME function getIndexes(conn: Conn, schema: SqlserverSchemaName | undefined): Promise<RawConstraint[]> {
     return conn.query<RawConstraint>(
-        `SELECT INDEX_SCHEMA as "schema",
-                TABLE_NAME   as "table",
-                INDEX_NAME   as "constraint",
-                COLUMN_NAME  as "column",
-                SEQ_IN_INDEX as "index",
-                "INDEX"      as type
+        `SELECT INDEX_SCHEMA AS "schema",
+                TABLE_NAME   AS "table",
+                INDEX_NAME   AS "constraint",
+                COLUMN_NAME  AS "column",
+                SEQ_IN_INDEX AS "index",
+                "INDEX"      AS type
          FROM information_schema.STATISTICS
          WHERE ${filterSchema('INDEX_SCHEMA', schema)};`
     )
@@ -231,14 +266,14 @@ async function getAllConstraints(conn: Conn, schema: SqlserverSchemaName | undef
 
 /* FIXME function getConstraints(conn: Conn, schema: SqlserverSchemaName | undefined): Promise<RawConstraint[]> {
     return conn.query<RawConstraint>(
-        `SELECT c.CONSTRAINT_SCHEMA       as "schema",
-                c.TABLE_NAME              as "table",
-                c.CONSTRAINT_NAME         as "constraint",
-                u.COLUMN_NAME             as "column",
-                c.CONSTRAINT_TYPE         as type,
-                u.REFERENCED_TABLE_SCHEMA as ref_schema,
-                u.REFERENCED_TABLE_NAME   as ref_table,
-                u.REFERENCED_COLUMN_NAME  as ref_column
+        `SELECT c.CONSTRAINT_SCHEMA       AS "schema",
+                c.TABLE_NAME              AS "table",
+                c.CONSTRAINT_NAME         AS "constraint",
+                u.COLUMN_NAME             AS "column",
+                c.CONSTRAINT_TYPE         AS type,
+                u.REFERENCED_TABLE_SCHEMA AS ref_schema,
+                u.REFERENCED_TABLE_NAME   AS ref_table,
+                u.REFERENCED_COLUMN_NAME  AS ref_column
          FROM information_schema.TABLE_CONSTRAINTS c
                   JOIN information_schema.KEY_COLUMN_USAGE u
                        ON c.CONSTRAINT_SCHEMA = u.CONSTRAINT_SCHEMA AND c.TABLE_NAME = u.TABLE_NAME AND

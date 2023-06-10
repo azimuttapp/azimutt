@@ -1,5 +1,5 @@
 import {groupBy, Logger, mapValues, mergeBy, removeUndefined, sequence} from "@azimutt/utils";
-import {AzimuttRelation, AzimuttSchema, AzimuttType, DatabaseUrlParsed} from "@azimutt/database-types";
+import {AzimuttRelation, AzimuttSchema, AzimuttType} from "@azimutt/database-types";
 import {schemaToColumns, ValueSchema, valuesToSchema} from "@azimutt/json-infer-schema";
 import {Conn} from "./common";
 
@@ -136,15 +136,15 @@ type RawColumn = {
 
 function getColumns(conn: Conn, schema: MysqlSchemaName | undefined): Promise<RawColumn[]> {
     return conn.query<RawColumn>(
-        `SELECT c.TABLE_SCHEMA     as "schema",
-                c.TABLE_NAME       as "table",
-                t.TABLE_TYPE       as table_kind,
-                c.COLUMN_NAME      as "column",
-                c.COLUMN_TYPE      as column_type,
-                c.ORDINAL_POSITION as column_index,
-                c.COLUMN_DEFAULT   as column_default,
-                c.IS_NULLABLE      as column_nullable,
-                c.COLUMN_COMMENT   as column_comment
+        `SELECT c.TABLE_SCHEMA     AS "schema",
+                c.TABLE_NAME       AS "table",
+                t.TABLE_TYPE       AS table_kind,
+                c.COLUMN_NAME      AS "column",
+                c.COLUMN_TYPE      AS column_type,
+                c.ORDINAL_POSITION AS column_index,
+                c.COLUMN_DEFAULT   AS column_default,
+                c.IS_NULLABLE      AS column_nullable,
+                c.COLUMN_COMMENT   AS column_comment
          FROM information_schema.COLUMNS c
                   JOIN information_schema.TABLES t ON c.TABLE_SCHEMA = t.TABLE_SCHEMA AND c.TABLE_NAME = t.TABLE_NAME
          WHERE ${filterSchema('c.TABLE_SCHEMA', schema)}
@@ -177,9 +177,9 @@ type RawTable = {
 
 function getTableComments(conn: Conn, schema: MysqlSchemaName | undefined): Promise<RawTable[]> {
     return conn.query<RawTable>(
-        `SELECT TABLE_SCHEMA  as "schema",
-                TABLE_NAME    as "table",
-                TABLE_COMMENT as comment
+        `SELECT TABLE_SCHEMA  AS "schema",
+                TABLE_NAME    AS "table",
+                TABLE_COMMENT AS comment
          FROM information_schema.TABLES
          WHERE TABLE_COMMENT != ''
            AND TABLE_COMMENT != 'VIEW'
@@ -206,12 +206,12 @@ async function getAllConstraints(conn: Conn, schema: MysqlSchemaName | undefined
 
 function getIndexes(conn: Conn, schema: MysqlSchemaName | undefined): Promise<RawConstraint[]> {
     return conn.query<RawConstraint>(
-        `SELECT INDEX_SCHEMA as "schema",
-                TABLE_NAME   as "table",
-                INDEX_NAME   as "constraint",
-                COLUMN_NAME  as "column",
-                SEQ_IN_INDEX as "index",
-                "INDEX"      as type
+        `SELECT INDEX_SCHEMA AS "schema",
+                TABLE_NAME   AS "table",
+                INDEX_NAME   AS "constraint",
+                COLUMN_NAME  AS "column",
+                SEQ_IN_INDEX AS "index",
+                "INDEX"      AS type
          FROM information_schema.STATISTICS
          WHERE ${filterSchema('INDEX_SCHEMA', schema)};`
     )
@@ -219,14 +219,14 @@ function getIndexes(conn: Conn, schema: MysqlSchemaName | undefined): Promise<Ra
 
 function getConstraints(conn: Conn, schema: MysqlSchemaName | undefined): Promise<RawConstraint[]> {
     return conn.query<RawConstraint>(
-        `SELECT c.CONSTRAINT_SCHEMA       as "schema",
-                c.TABLE_NAME              as "table",
-                c.CONSTRAINT_NAME         as "constraint",
-                u.COLUMN_NAME             as "column",
-                c.CONSTRAINT_TYPE         as type,
-                u.REFERENCED_TABLE_SCHEMA as ref_schema,
-                u.REFERENCED_TABLE_NAME   as ref_table,
-                u.REFERENCED_COLUMN_NAME  as ref_column
+        `SELECT c.CONSTRAINT_SCHEMA       AS "schema",
+                c.TABLE_NAME              AS "table",
+                c.CONSTRAINT_NAME         AS "constraint",
+                u.COLUMN_NAME             AS "column",
+                c.CONSTRAINT_TYPE         AS type,
+                u.REFERENCED_TABLE_SCHEMA AS ref_schema,
+                u.REFERENCED_TABLE_NAME   AS ref_table,
+                u.REFERENCED_COLUMN_NAME  AS ref_column
          FROM information_schema.TABLE_CONSTRAINTS c
                   JOIN information_schema.KEY_COLUMN_USAGE u
                        ON c.CONSTRAINT_SCHEMA = u.CONSTRAINT_SCHEMA AND c.TABLE_NAME = u.TABLE_NAME AND

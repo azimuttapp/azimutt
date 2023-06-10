@@ -15,44 +15,44 @@ const sqlser = /^(?:jdbc:)?sqlserver(?:ql)?:\/\/(?:([^:]+):([^@]+)@)?([^:/?]+)(?
 const sqlserverRegex = /^Server=([^,]+),(\d+);Database=([^;]+);User Id=([^;]+);Password=([^;]+)$/
 
 export function parseDatabaseUrl(url: DatabaseUrl): DatabaseUrlParsed {
-    const couchbase = url.match(couchbaseRegexpLonger)
-    if (couchbase) {
-        const [, user, pass, host, port, db] = couchbase
+    const couchbaseMatches = url.match(couchbaseRegexpLonger)
+    if (couchbaseMatches) {
+        const [, user, pass, host, port, db] = couchbaseMatches
         const opts = {kind: 'couchbase', user, pass, host, port: port ? parseInt(port) : undefined, db}
         return {...filterValues(opts, v => v !== undefined), full: url}
     }
 
-    const mongo = url.match(mongoRegexLonger)
-    if (mongo) {
-        const [, user, pass, host, port, db, options] = mongo
+    const mongodbMatches = url.match(mongoRegexLonger)
+    if (mongodbMatches) {
+        const [, user, pass, host, port, db, options] = mongodbMatches
         const opts = {kind: 'mongodb', user, pass, host, port: port ? parseInt(port) : undefined, db, options}
         return {...filterValues(opts, v => v !== undefined), full: url}
     }
 
-    const mysql = url.match(mysqlRegexpLonger)
-    if (mysql) {
-        const [, user, pass, host, port, db] = mysql
+    const mysqlMatches = url.match(mysqlRegexpLonger)
+    if (mysqlMatches) {
+        const [, user, pass, host, port, db] = mysqlMatches
         const opts = {kind: 'mysql', user, pass, host, port: port ? parseInt(port) : undefined, db}
         return {...filterValues(opts, v => v !== undefined), full: url}
     }
 
-    const postgres = url.match(postres)
-    if (postgres) {
-        const [, user, pass, host, port, db] = postgres
+    const postgresMatches = url.match(postres)
+    if (postgresMatches) {
+        const [, user, pass, host, port, db] = postgresMatches
         const opts = {kind: 'postgres', user, pass, host, port: port ? parseInt(port) : undefined, db}
         return {...filterValues(opts, v => v !== undefined), full: url}
     }
 
-    const sqlserver = url.match(sqlser)
-    if (sqlserver) {
-        const [, user, pass, host, port, db] = sqlserver
+    const sqlserverMatches = url.match(sqlser)
+    if (sqlserverMatches) {
+        const [, user, pass, host, port, db] = sqlserverMatches
         const opts = {kind: 'sqlserver', user, pass, host, port: port ? parseInt(port) : undefined, db}
         return {...filterValues(opts, v => v !== undefined), full: url}
     }
 
-    const sqlserver2 = url.match(sqlserverRegex)
-    if (sqlserver2) {
-        const [, host, port, db, user, pass] = sqlserver2
+    const sqlserverMatches2 = url.match(sqlserverRegex)
+    if (sqlserverMatches2) {
+        const [, host, port, db, user, pass] = sqlserverMatches2
         const opts = {kind: 'sqlserver', user, pass, host, port: port ? parseInt(port) : undefined, db}
         return {...filterValues(opts, v => v !== undefined), full: url}
     }
