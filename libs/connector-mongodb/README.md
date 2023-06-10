@@ -24,6 +24,7 @@ It's accessible through the [Desktop app](../../desktop) (soon), the [CLI](https
 ## Publish
 
 - update `package.json` version
+- update lib versions & run `npm install`
 - test with `npm run dry-publish` and check `azimutt-connector-mongodb-x.y.z.tgz` content
 - launch `npm publish --access public`
 

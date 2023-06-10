@@ -33,13 +33,14 @@ export const sRelation = Type.Object({
     src: sColumnRef,
     ref: sColumnRef,
 })
-export const sColumn = Type.Object({
+export const sColumn = Type.Recursive(Node => Type.Object({
     name: sColumnName,
     type: sColumnType,
     nullable: Nullish(Type.Boolean()),
     default: Nullish(Type.String()),
     comment: Nullish(sComment),
-})
+    columns: Nullish(Type.Array(Node)),
+}))
 export const sCheck = Type.Object({
     name: Nullish(Type.String()),
     columns: Type.Array(sColumnName),

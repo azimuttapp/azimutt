@@ -1,6 +1,6 @@
 # PostgreSQL connector
 
-This library is able to connect to [PostgreSQL](https://www.postgresql.org) and extract its schema.
+This library is able to connect to [PostgreSQL](https://www.postgresql.org), extract its schema and more...
 
 It lists all schemas, tables, columns, relations and types and format them in a JSON Schema.
 
@@ -14,6 +14,7 @@ It's accessible through the [Desktop app](../../desktop) (soon), the [CLI](https
 ## Publish
 
 - update `package.json` version
+- update lib versions & run `npm install`
 - test with `npm run dry-publish` and check `azimutt-connector-postgres-x.y.z.tgz` content
 - launch `npm publish --access public`
 

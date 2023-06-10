@@ -18,13 +18,13 @@ It's accessible through the [Desktop app](../../desktop) (soon), the [CLI](https
     - Reset password and login
     - Click on "MySQL Hosting" in to top menu
     - Create your database
-- Get your connection url with the "Connect" button, ex: `mongodb+srv://user:password@cluster2.gu2a9mr.mongodb.net`
 - Get your credentials by email and build the url like: `mysql://<user>:<pass>@<host>:<port>/<db>` ("Server" is the host, "Name" is the db name)
 - Load data in your instance, if you don't have, you can use schemas from [Prisma schema examples](https://github.com/prisma/database-schema-examples/blob/main/mysql)
 
 ## Publish
 
 - update `package.json` version
+- update lib versions & run `npm install`
 - test with `npm run dry-publish` and check `azimutt-connector-mysql-x.y.z.tgz` content
 - launch `npm publish --access public`
 

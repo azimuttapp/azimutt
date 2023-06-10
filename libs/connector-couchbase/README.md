@@ -1,6 +1,6 @@
 # Couchbase connector
 
-This library is able to connect to [Couchbase](https://www.couchbase.com) and extract its schema.
+This library is able to connect to [Couchbase](https://www.couchbase.com), extract its schema and more...
 
 It browses all buckets, scopes and collections, fetch a sample of documents and then [infer](../json-infer-schema) a schema from them.
 
@@ -23,6 +23,7 @@ It's accessible through the [Desktop app](../../desktop) (soon), the [CLI](https
 ## Publish
 
 - update `package.json` version
+- update lib versions & run `npm install`
 - test with `npm run dry-publish` and check `azimutt-connector-couchbase-x.y.z.tgz` content
 - launch `npm publish --access public`
 

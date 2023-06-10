@@ -1,8 +1,7 @@
-import {Connection, RowDataPacket} from "mysql2/promise";
 import {groupBy, Logger, mapValues, mergeBy, removeUndefined, sequence} from "@azimutt/utils";
-import {AzimuttRelation, AzimuttSchema, AzimuttType, DatabaseUrlParsed} from "@azimutt/database-types";
+import {AzimuttRelation, AzimuttSchema, AzimuttType} from "@azimutt/database-types";
 import {schemaToColumns, ValueSchema, valuesToSchema} from "@azimutt/json-infer-schema";
-import {connect, query} from "./connect";
+import {Conn} from "./common";
 
 export type MysqlSchema = { tables: MysqlTable[], relations: AzimuttRelation[], types: AzimuttType[] }
 export type MysqlTable = { schema: MysqlSchemaName, table: MysqlTableName, view: boolean, columns: MysqlColumn[], primaryKey: MysqlPrimaryKey | null, uniques: MysqlUnique[], indexes: MysqlIndex[], checks: MysqlCheck[], comment: string | null }
@@ -19,61 +18,59 @@ export type MysqlColumnType = string
 export type MysqlConstraintName = string
 export type MysqlTableId = string
 
-export async function getSchema(application: string, url: DatabaseUrlParsed, schema: MysqlSchemaName | undefined, sampleSize: number, logger: Logger): Promise<MysqlSchema> {
-    return connect(application, url, async conn => {
-        const columns = await getColumns(conn, schema)
-            .then(cols => enrichColumnsWithSchema(conn, cols, sampleSize))
-            .then(cols => groupBy(cols, toTableId))
-        const comments = await getTableComments(conn, schema).then(tables => groupBy(tables, toTableId))
-        const constraints = await getAllConstraints(conn, schema).then(constraints => mapValues(groupBy(constraints, toTableId), buildTableConstraints))
-        return {
-            tables: Object.entries(columns).map(([tableId, columns]) => {
-                const tableConstraints = constraints[tableId] || []
-                const tableComments = comments[tableId] || []
-                return {
-                    schema: columns[0].schema,
-                    table: columns[0].table,
-                    view: columns[0].table_kind === 'VIEW',
-                    columns: columns
-                        .sort((a, b) => a.column_index - b.column_index)
-                        .map(col => ({
-                            name: col.column,
-                            type: col.column_type,
-                            nullable: col.column_nullable === 'YES',
-                            default: col.column_default,
-                            comment: col.column_comment || null,
-                            schema: col.column_schema || null
-                        })),
-                    primaryKey: tableConstraints.filter((c): c is ConstraintPrimaryKey => c.type === 'PRIMARY KEY').map(c => ({
-                        name: c.constraint,
-                        columns: c.columns
-                    }))[0] || null,
-                    uniques: tableConstraints.filter((c): c is ConstraintUnique => c.type === 'UNIQUE').map(c => ({
-                        name: c.constraint,
-                        columns: c.columns,
-                        definition: null
-                    })) || [],
-                    indexes: tableConstraints.filter((c): c is ConstraintIndex => c.type === 'INDEX').map(c => ({
-                        name: c.constraint,
-                        columns: c.columns,
-                        definition: null
-                    })) || [],
-                    checks: /* TODO tableConstraints.filter(c => c.constraint_type === 'c').map(c => ({
-                        name: c.constraint_name,
-                        columns: c.columns.map(getColumnName(tableId)),
-                        predicate: c.definition.replace(/^CHECK/, '').trim()
-                    })) || */ [],
-                    comment: tableComments[0]?.comment || null
-                }
-            }),
-            relations: Object.values(constraints).flat().filter((c): c is ConstraintForeignKey => c.type === 'FOREIGN KEY').flatMap(c => c.columns.map(col => ({
-                name: c.constraint,
-                src: {schema: c.schema, table: c.table, column: col.src},
-                ref: {schema: col.ref.schema, table: col.ref.table, column: col.ref.column}
-            }))),
-            types: [] // TODO
-        }
-    })
+export const getSchema = (schema: MysqlSchemaName | undefined, sampleSize: number, logger: Logger) => async (conn: Conn): Promise<MysqlSchema> => {
+    const columns = await getColumns(conn, schema)
+        .then(cols => enrichColumnsWithSchema(conn, cols, sampleSize))
+        .then(cols => groupBy(cols, toTableId))
+    const comments = await getTableComments(conn, schema).then(tables => groupBy(tables, toTableId))
+    const constraints = await getAllConstraints(conn, schema).then(constraints => mapValues(groupBy(constraints, toTableId), buildTableConstraints))
+    return {
+        tables: Object.entries(columns).map(([tableId, columns]) => {
+            const tableConstraints = constraints[tableId] || []
+            const tableComments = comments[tableId] || []
+            return {
+                schema: columns[0].schema,
+                table: columns[0].table,
+                view: columns[0].table_kind === 'VIEW',
+                columns: columns
+                    .sort((a, b) => a.column_index - b.column_index)
+                    .map(col => ({
+                        name: col.column,
+                        type: col.column_type,
+                        nullable: col.column_nullable === 'YES',
+                        default: col.column_default,
+                        comment: col.column_comment || null,
+                        schema: col.column_schema || null
+                    })),
+                primaryKey: tableConstraints.filter((c): c is ConstraintPrimaryKey => c.type === 'PRIMARY KEY').map(c => ({
+                    name: c.constraint,
+                    columns: c.columns
+                }))[0] || null,
+                uniques: tableConstraints.filter((c): c is ConstraintUnique => c.type === 'UNIQUE').map(c => ({
+                    name: c.constraint,
+                    columns: c.columns,
+                    definition: null
+                })) || [],
+                indexes: tableConstraints.filter((c): c is ConstraintIndex => c.type === 'INDEX').map(c => ({
+                    name: c.constraint,
+                    columns: c.columns,
+                    definition: null
+                })) || [],
+                checks: /* TODO tableConstraints.filter(c => c.constraint_type === 'c').map(c => ({
+                name: c.constraint_name,
+                columns: c.columns.map(getColumnName(tableId)),
+                predicate: c.definition.replace(/^CHECK/, '').trim()
+            })) || */ [],
+                comment: tableComments[0]?.comment || null
+            }
+        }),
+        relations: Object.values(constraints).flat().filter((c): c is ConstraintForeignKey => c.type === 'FOREIGN KEY').flatMap(c => c.columns.map(col => ({
+            name: c.constraint,
+            src: {schema: c.schema, table: c.table, column: col.src},
+            ref: {schema: col.ref.schema, table: col.ref.table, column: col.ref.column}
+        }))),
+        types: [] // TODO
+    }
 }
 
 export function formatSchema(schema: MysqlSchema, inferRelations: boolean): AzimuttSchema {
@@ -124,7 +121,7 @@ function toTableId<T extends { schema: string, table: string }>(value: T): Mysql
     return `${value.schema}.${value.table}`
 }
 
-interface RawColumn {
+type RawColumn = {
     schema: MysqlSchemaName
     table: MysqlTableName
     table_kind: 'BASE TABLE' | 'VIEW'
@@ -137,17 +134,17 @@ interface RawColumn {
     column_schema?: ValueSchema
 }
 
-async function getColumns(conn: Connection, schema: MysqlSchemaName | undefined): Promise<RawColumn[]> {
-    return query<RawColumn>(conn,
-        `SELECT c.TABLE_SCHEMA     as "schema",
-                c.TABLE_NAME       as "table",
-                t.TABLE_TYPE       as table_kind,
-                c.COLUMN_NAME      as "column",
-                c.COLUMN_TYPE      as column_type,
-                c.ORDINAL_POSITION as column_index,
-                c.COLUMN_DEFAULT   as column_default,
-                c.IS_NULLABLE      as column_nullable,
-                c.COLUMN_COMMENT   as column_comment
+function getColumns(conn: Conn, schema: MysqlSchemaName | undefined): Promise<RawColumn[]> {
+    return conn.query<RawColumn>(
+        `SELECT c.TABLE_SCHEMA     AS "schema",
+                c.TABLE_NAME       AS "table",
+                t.TABLE_TYPE       AS table_kind,
+                c.COLUMN_NAME      AS "column",
+                c.COLUMN_TYPE      AS column_type,
+                c.ORDINAL_POSITION AS column_index,
+                c.COLUMN_DEFAULT   AS column_default,
+                c.IS_NULLABLE      AS column_nullable,
+                c.COLUMN_COMMENT   AS column_comment
          FROM information_schema.COLUMNS c
                   JOIN information_schema.TABLES t ON c.TABLE_SCHEMA = t.TABLE_SCHEMA AND c.TABLE_NAME = t.TABLE_NAME
          WHERE ${filterSchema('c.TABLE_SCHEMA', schema)}
@@ -155,7 +152,7 @@ async function getColumns(conn: Connection, schema: MysqlSchemaName | undefined)
     )
 }
 
-function enrichColumnsWithSchema(conn: Connection, columns: RawColumn[], sampleSize: number): Promise<RawColumn[]> {
+function enrichColumnsWithSchema(conn: Conn, columns: RawColumn[], sampleSize: number): Promise<RawColumn[]> {
     return sequence(columns, c => {
         if (c.column_type === 'jsonb') {
             return getColumnSchema(conn, c.schema, c.table, c.column, sampleSize)
@@ -166,23 +163,23 @@ function enrichColumnsWithSchema(conn: Connection, columns: RawColumn[], sampleS
     })
 }
 
-async function getColumnSchema(conn: Connection, schema: string, table: string, column: string, sampleSize: number): Promise<ValueSchema> {
+async function getColumnSchema(conn: Conn, schema: string, table: string, column: string, sampleSize: number): Promise<ValueSchema> {
     const sqlTable = `${schema ? `${schema}.` : ''}${table}`
-    const [result] = await conn.query<RowDataPacket[]>(`SELECT ${column} FROM ${sqlTable} WHERE ${column} IS NOT NULL LIMIT ${sampleSize};`)
-    return valuesToSchema(result.map(r => r[column]))
+    const rows = await conn.query(`SELECT ${column} FROM ${sqlTable} WHERE ${column} IS NOT NULL LIMIT ${sampleSize};`)
+    return valuesToSchema(rows.map(row => row[column]))
 }
 
-interface RawTable {
+type RawTable = {
     schema: MysqlSchemaName
     table: MysqlTableName
     comment: string
 }
 
-async function getTableComments(conn: Connection, schema: MysqlSchemaName | undefined): Promise<RawTable[]> {
-    return query<RawTable>(conn,
-        `SELECT TABLE_SCHEMA  as "schema",
-                TABLE_NAME    as "table",
-                TABLE_COMMENT as comment
+function getTableComments(conn: Conn, schema: MysqlSchemaName | undefined): Promise<RawTable[]> {
+    return conn.query<RawTable>(
+        `SELECT TABLE_SCHEMA  AS "schema",
+                TABLE_NAME    AS "table",
+                TABLE_COMMENT AS comment
          FROM information_schema.TABLES
          WHERE TABLE_COMMENT != ''
            AND TABLE_COMMENT != 'VIEW'
@@ -190,7 +187,7 @@ async function getTableComments(conn: Connection, schema: MysqlSchemaName | unde
     )
 }
 
-interface RawConstraint {
+type RawConstraint = {
     schema: MysqlSchemaName
     table: MysqlTableName
     constraint: MysqlConstraintName
@@ -202,34 +199,34 @@ interface RawConstraint {
     ref_column?: MysqlColumnName
 }
 
-async function getAllConstraints(conn: Connection, schema: MysqlSchemaName | undefined): Promise<RawConstraint[]> {
+async function getAllConstraints(conn: Conn, schema: MysqlSchemaName | undefined): Promise<RawConstraint[]> {
     const [indexes, constraints] = await Promise.all([getIndexes(conn, schema), getConstraints(conn, schema)])
     return mergeBy(indexes, constraints, c => `${c.schema}.${c.table}.${c.constraint}.${c.column}`)
 }
 
-async function getIndexes(conn: Connection, schema: MysqlSchemaName | undefined): Promise<RawConstraint[]> {
-    return query<RawConstraint>(conn,
-        `SELECT INDEX_SCHEMA as "schema",
-                TABLE_NAME   as "table",
-                INDEX_NAME   as "constraint",
-                COLUMN_NAME  as "column",
-                SEQ_IN_INDEX as "index",
-                "INDEX"      as type
+function getIndexes(conn: Conn, schema: MysqlSchemaName | undefined): Promise<RawConstraint[]> {
+    return conn.query<RawConstraint>(
+        `SELECT INDEX_SCHEMA AS "schema",
+                TABLE_NAME   AS "table",
+                INDEX_NAME   AS "constraint",
+                COLUMN_NAME  AS "column",
+                SEQ_IN_INDEX AS "index",
+                "INDEX"      AS type
          FROM information_schema.STATISTICS
          WHERE ${filterSchema('INDEX_SCHEMA', schema)};`
     )
 }
 
-async function getConstraints(conn: Connection, schema: MysqlSchemaName | undefined): Promise<RawConstraint[]> {
-    return query<RawConstraint>(conn,
-        `SELECT c.CONSTRAINT_SCHEMA       as "schema",
-                c.TABLE_NAME              as "table",
-                c.CONSTRAINT_NAME         as "constraint",
-                u.COLUMN_NAME             as "column",
-                c.CONSTRAINT_TYPE         as type,
-                u.REFERENCED_TABLE_SCHEMA as ref_schema,
-                u.REFERENCED_TABLE_NAME   as ref_table,
-                u.REFERENCED_COLUMN_NAME  as ref_column
+function getConstraints(conn: Conn, schema: MysqlSchemaName | undefined): Promise<RawConstraint[]> {
+    return conn.query<RawConstraint>(
+        `SELECT c.CONSTRAINT_SCHEMA       AS "schema",
+                c.TABLE_NAME              AS "table",
+                c.CONSTRAINT_NAME         AS "constraint",
+                u.COLUMN_NAME             AS "column",
+                c.CONSTRAINT_TYPE         AS type,
+                u.REFERENCED_TABLE_SCHEMA AS ref_schema,
+                u.REFERENCED_TABLE_NAME   AS ref_table,
+                u.REFERENCED_COLUMN_NAME  AS ref_column
          FROM information_schema.TABLE_CONSTRAINTS c
                   JOIN information_schema.KEY_COLUMN_USAGE u
                        ON c.CONSTRAINT_SCHEMA = u.CONSTRAINT_SCHEMA AND c.TABLE_NAME = u.TABLE_NAME AND

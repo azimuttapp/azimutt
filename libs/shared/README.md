@@ -5,6 +5,7 @@ Elements shared between Azimutt projects, but not useful elsewhere.
 ## Publish
 
 - update `package.json` version
+- update lib versions & run `npm install`
 - test with `npm run dry-publish` and check `azimutt-shared-x.y.z.tgz` content
 - launch `npm publish --access public`
 

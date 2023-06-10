@@ -7,39 +7,58 @@ export type DatabaseUrlParsed = { full: string, kind?: DatabaseKind, user?: stri
 export type DatabaseKind = 'couchbase' | 'mariadb' | 'mongodb' | 'mysql' | 'oracle' | 'postgres' | 'sqlite' | 'sqlserver'
 
 // vertically align regexes with variable names ^^
-const couchbaseRegexp = /^couchbases?:\/\/(?:([^:]+):([^@]+)@)?([^:/?]+)(?::(\d+))?(?:\/([^?]+))?$/
-const mongoRegex = /mongodb(?:\+srv)?:\/\/(?:([^:]+):([^@]+)@)?([^:/?]+)(?::(\d+))?(?:\/([^?]+))?(?:\?(.+))?/
-const mysqlRegexp = /^(?:jdbc:)?mysql:\/\/(?:([^:]+):([^@]+)@)?([^:/?]+)(?::(\d+))?(?:\/([^?]+))?$/
-const p = /^(?:jdbc:)?postgres(?:ql)?:\/\/(?:([^:]+):([^@]+)@)?([^:/?]+)(?::(\d+))?(?:\/([^?]+))?$/
+const couchbaseRegexpLonger = /^couchbases?:\/\/(?:([^:]+):([^@]+)@)?([^:/?]+)(?::(\d+))?(?:\/([^?]+))?$/
+const mongoRegexLonger = /mongodb(?:\+srv)?:\/\/(?:([^:]+):([^@]+)@)?([^:/?]+)(?::(\d+))?(?:\/([^?]+))?(?:\?(.+))?/
+const mysqlRegexpLonger = /^(?:jdbc:)?mysql:\/\/(?:([^:]+):([^@]+)@)?([^:/?]+)(?::(\d+))?(?:\/([^?]+))?$/
+const postres = /^(?:jdbc:)?postgres(?:ql)?:\/\/(?:([^:]+):([^@]+)@)?([^:/?]+)(?::(\d+))?(?:\/([^?]+))?$/
+const sqlser = /^(?:jdbc:)?sqlserver(?:ql)?:\/\/(?:([^:]+):([^@]+)@)?([^:/?]+)(?::(\d+))?(?:\/([^?]+))?$/
 
 export function parseDatabaseUrl(url: DatabaseUrl): DatabaseUrlParsed {
-    const couchbase = url.match(couchbaseRegexp)
-    if (couchbase) {
-        const [, user, pass, host, port, db] = couchbase
+    const couchbaseMatches = url.match(couchbaseRegexpLonger)
+    if (couchbaseMatches) {
+        const [, user, pass, host, port, db] = couchbaseMatches
         const opts = {kind: 'couchbase', user, pass, host, port: port ? parseInt(port) : undefined, db}
         return {...filterValues(opts, v => v !== undefined), full: url}
     }
 
-    const mongo = url.match(mongoRegex)
-    if (mongo) {
-        const [, user, pass, host, port, db, options] = mongo
+    const mongodbMatches = url.match(mongoRegexLonger)
+    if (mongodbMatches) {
+        const [, user, pass, host, port, db, options] = mongodbMatches
         const opts = {kind: 'mongodb', user, pass, host, port: port ? parseInt(port) : undefined, db, options}
         return {...filterValues(opts, v => v !== undefined), full: url}
     }
 
-    const mysql = url.match(mysqlRegexp)
-    if (mysql) {
-        const [, user, pass, host, port, db] = mysql
+    const mysqlMatches = url.match(mysqlRegexpLonger)
+    if (mysqlMatches) {
+        const [, user, pass, host, port, db] = mysqlMatches
         const opts = {kind: 'mysql', user, pass, host, port: port ? parseInt(port) : undefined, db}
         return {...filterValues(opts, v => v !== undefined), full: url}
     }
 
-    const postgres = url.match(p)
-    if (postgres) {
-        const [, user, pass, host, port, db] = postgres
+    const postgresMatches = url.match(postres)
+    if (postgresMatches) {
+        const [, user, pass, host, port, db] = postgresMatches
         const opts = {kind: 'postgres', user, pass, host, port: port ? parseInt(port) : undefined, db}
         return {...filterValues(opts, v => v !== undefined), full: url}
     }
 
+    const sqlserverMatches = url.match(sqlser) || parseSqlServerUrl(url)
+    if (sqlserverMatches) {
+        const [, user, pass, host, port, db] = sqlserverMatches
+        const opts = {kind: 'sqlserver', user, pass, host, port: port ? parseInt(port) : undefined, db}
+        return {...filterValues(opts, v => v !== undefined), full: url}
+    }
+
     return {full: url}
+}
+
+function parseSqlServerUrl(url: DatabaseUrl): string[] | null {
+    const props = Object.fromEntries(url.split(';').map(part => part.split('=')))
+    if (props['Server'] && props['Database'] && props['User Id'] && props['Password']) {
+        const [host, port] = props['Server'].split(',')
+        if (host && port) {
+            return [url, props['User Id'], props['Password'], host, port, props['Database']]
+        }
+    }
+    return null
 }

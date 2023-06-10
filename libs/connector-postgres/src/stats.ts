@@ -1,4 +1,3 @@
-import {Client} from "pg";
 import {shuffle} from "@azimutt/utils";
 import {
     ColumnCommonValue,
@@ -7,7 +6,6 @@ import {
     ColumnStats,
     ColumnType,
     ColumnValue,
-    DatabaseUrlParsed,
     parseTableId,
     SchemaName,
     TableId,
@@ -15,57 +13,53 @@ import {
     TableSampleValues,
     TableStats
 } from "@azimutt/database-types";
-import {connect, query} from "./connect";
+import {Conn} from "./common";
 
-export async function getTableStats(application: string, url: DatabaseUrlParsed, id: TableId): Promise<TableStats> {
-    return await connect(application, url, async client => {
-        const {schema, table} = parseTableId(id)
-        const sqlTable = `${schema ? `${schema}.` : ''}${table}`
-        const rows = await countRows(client, sqlTable)
-        const sample_values = await sampleValues(client, sqlTable)
-        return {schema, table, rows, sample_values}
-    })
+export const getTableStats = (id: TableId) => async (conn: Conn): Promise<TableStats> => {
+    const {schema, table} = parseTableId(id)
+    const sqlTable = `${schema ? `${schema}.` : ''}${table}`
+    const rows = await countRows(conn, sqlTable)
+    const sample_values = await sampleValues(conn, sqlTable)
+    return {schema, table, rows, sample_values}
 }
 
-export async function getColumnStats(application: string, url: DatabaseUrlParsed, ref: ColumnRef): Promise<ColumnStats> {
-    return await connect(application, url, async client => {
-        const {schema, table} = parseTableId(ref.table)
-        const sqlTable = `${schema ? `${schema}.` : ''}${table}`
-        const type = await getColumnType(client, schema, table, ref.column)
-        const basics = await columnBasics(client, sqlTable, ref.column)
-        const common_values = await commonValues(client, sqlTable, ref.column)
-        return {schema, table, column: ref.column, type, ...basics, common_values}
-    })
+export const getColumnStats = (ref: ColumnRef) => async (conn: Conn): Promise<ColumnStats> => {
+    const {schema, table} = parseTableId(ref.table)
+    const sqlTable = `${schema ? `${schema}.` : ''}${table}`
+    const type = await getColumnType(conn, schema, table, ref.column)
+    const basics = await columnBasics(conn, sqlTable, ref.column)
+    const common_values = await commonValues(conn, sqlTable, ref.column)
+    return {schema, table, column: ref.column, type, ...basics, common_values}
 }
 
-async function countRows(client: Client, sqlTable: string): Promise<number> {
+async function countRows(conn: Conn, sqlTable: string): Promise<number> {
     const sql = `SELECT count(*)::int FROM ${sqlTable}`
-    const rows = await query<{ count: number }>(client, sql)
+    const rows = await conn.query<{ count: number }>(sql)
     return rows[0].count
 }
 
-async function sampleValues(client: Client, sqlTable: string): Promise<TableSampleValues> {
+async function sampleValues(conn: Conn, sqlTable: string): Promise<TableSampleValues> {
     // take several raws to minimize empty columns and randomize samples from several raws
     const sql = `SELECT * FROM ${sqlTable} LIMIT 10`
-    const res = await client.query(sql)
-    const samples = await Promise.all(res.fields.map(async field => {
-        const values = shuffle(res.rows.map(r => r[field.name]).filter(v => !!v))
-        const value = await (values.length > 0 ? Promise.resolve(values[0]) : sampleValue(client, sqlTable, field.name))
-        return [field.name, value] as [string, any]
+    const result = await conn.queryArrayMode(sql)
+    const samples = await Promise.all(result.fields.map(async (field, fieldIndex) => {
+        const values = shuffle(result.rows.map(row => row[fieldIndex]).filter(v => !!v))
+        const value = await (values.length > 0 ? Promise.resolve(values[0]) : sampleValue(conn, sqlTable, field.name))
+        return [field.name, value] as [string, ColumnValue]
     }))
     return Object.fromEntries(samples)
 }
 
-async function sampleValue(client: Client, sqlTable: string, column: ColumnName): Promise<ColumnValue> {
+async function sampleValue(conn: Conn, sqlTable: string, column: ColumnName): Promise<ColumnValue> {
     // select several raws to and then shuffle results to avoid showing samples from the same raw
     const sql = `SELECT ${column} as value FROM ${sqlTable} WHERE ${column} IS NOT NULL LIMIT 10`
-    const rows = await query<{ value: any }>(client, sql)
+    const rows = await conn.query<{ value: ColumnValue }>(sql)
     return rows.length > 0 ? shuffle(rows)[0].value : null
 }
 
-async function getColumnType(client: Client, schema: SchemaName, table: TableName, column: ColumnName): Promise<ColumnType> {
+async function getColumnType(conn: Conn, schema: SchemaName, table: TableName, column: ColumnName): Promise<ColumnType> {
     // category: https://www.postgresql.org/docs/current/catalog-pg-type.html#CATALOG-TYPCATEGORY-TABLE
-    const rows = await query<{ formatted: ColumnType, name: string, category: string }>(client, `
+    const rows = await conn.query<{ formatted: ColumnType, name: string, category: string }>(`
         SELECT format_type(a.atttypid, a.atttypmod) AS formatted
              , t.typname                            AS name
              , t.typcategory                        AS category
@@ -80,8 +74,8 @@ async function getColumnType(client: Client, schema: SchemaName, table: TableNam
 
 type ColumnBasics = { rows: number, nulls: number, cardinality: number }
 
-async function columnBasics(client: Client, sqlTable: string, column: ColumnName): Promise<ColumnBasics> {
-    const rows = await query<ColumnBasics>(client, `
+async function columnBasics(conn: Conn, sqlTable: string, column: ColumnName): Promise<ColumnBasics> {
+    const rows = await conn.query<ColumnBasics>(`
         SELECT count(*)::int                                                   AS rows
              , (SELECT count(*)::int FROM ${sqlTable} WHERE ${column} IS NULL) AS nulls
              , count(distinct ${column})::int                                  AS cardinality
@@ -89,7 +83,7 @@ async function columnBasics(client: Client, sqlTable: string, column: ColumnName
     return rows[0]
 }
 
-function commonValues(client: Client, sqlTable: string, column: ColumnName): Promise<ColumnCommonValue[]> {
+function commonValues(conn: Conn, sqlTable: string, column: ColumnName): Promise<ColumnCommonValue[]> {
     const sql = `SELECT ${column} as value, count(*)::int FROM ${sqlTable} GROUP BY ${column} ORDER BY count(*) DESC LIMIT 10`
-    return query<ColumnCommonValue>(client, sql)
+    return conn.query<ColumnCommonValue>(sql)
 }

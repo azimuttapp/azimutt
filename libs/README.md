@@ -15,9 +15,10 @@ For each lib, look at `package.json` description to see what it does, but in sho
 - `connector-mongodb`: extract database schema for MongoDB
 - `connector-mysql`: extract database schema for MySQL
 - `connector-postgres`: extract database schema for PostgreSQL
+- `connector-sqlserver`: extract database schema for SQL Server
 
 If you want to improve connectors, feel free ;)
-You can also create other connectors to integrate into Azimutt (MySQL, SQL Server, Oracle, SQLite...).
+You can also create other connectors to integrate into Azimutt (Oracle, SQLite...).
 If you want to use such libraries in your own projects, reach at us, we can publish them on npm.
 
 Other libs that will come:

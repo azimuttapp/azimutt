@@ -9,6 +9,7 @@ It uses common types from [database-types](../database-types).
 ## Publish
 
 - update `package.json` version
+- update lib versions & run `npm install`
 - test with `npm run dry-publish` and check `azimutt-json-infer-schema-x.y.z.tgz` content
 - launch `npm publish --access public`
 
