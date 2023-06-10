@@ -210,26 +210,30 @@ type RawConstraint = {
 }
 
 async function getAllConstraints(conn: Conn, schema: SqlserverSchemaName | undefined): Promise<RawConstraint[]> {
-    // FIXME const [indexes, constraints] = await Promise.all([getIndexes(conn, schema), getConstraints(conn, schema)])
-    // FIXME return mergeBy(indexes, constraints, c => `${c.schema}.${c.table}.${c.constraint}.${c.column}`)
     return Promise.all([
-        getPrimaryKeys(conn, schema),
+        getPKsUniquesAndIndexes(conn, schema),
         getForeignKeys(conn, schema),
         getChecks(conn, schema),
     ]).then(constraints => constraints.flat())
 }
 
-function getPrimaryKeys(conn: Conn, schema: SqlserverSchemaName | undefined): Promise<RawConstraint[]> {
+function getPKsUniquesAndIndexes(conn: Conn, schema: SqlserverSchemaName | undefined): Promise<RawConstraint[]> {
     return conn.query<RawConstraint>(
-        `SELECT TABLE_SCHEMA     AS "schema",
-                TABLE_NAME       AS "table",
-                CONSTRAINT_NAME  AS "constraint",
-                'PRIMARY KEY'    AS type,
-                COLUMN_NAME      AS "column",
-                ORDINAL_POSITION AS "index"
-         FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
-         WHERE ${filterSchema('TABLE_SCHEMA', schema)}
-           AND OBJECTPROPERTY(OBJECT_ID(CONSTRAINT_SCHEMA + '.' + QUOTENAME(CONSTRAINT_NAME)), 'IsPrimaryKey') = 1;`
+        `SELECT OBJECT_SCHEMA_NAME(i.object_id)     AS "schema",
+                OBJECT_NAME(i.object_id)            AS "table",
+                i.name                              AS "constraint",
+                CASE
+                    WHEN OBJECTPROPERTY(OBJECT_ID(OBJECT_SCHEMA_NAME(i.object_id) + '.' + QUOTENAME(i.name)),
+                                        'IsPrimaryKey') = 1
+                        THEN 'PRIMARY KEY'
+                    WHEN i.is_unique = 1
+                        THEN 'UNIQUE'
+                    ELSE 'INDEX' END                AS type,
+                COL_NAME(i.object_id, ic.column_id) AS "column",
+                ic.key_ordinal                      as "index"
+         FROM sys.indexes i
+                  JOIN sys.index_columns ic ON i.object_id = ic.object_id AND i.index_id = ic.index_id
+         WHERE ${filterSchema('OBJECT_SCHEMA_NAME(i.object_id)', schema)};`
     )
 }
 
@@ -272,36 +276,6 @@ function getChecks(conn: Conn, schema: SqlserverSchemaName | undefined): Promise
            AND ${filterSchema('SCHEMA_NAME(t.schema_id)', schema)};`
     )
 }
-
-/* FIXME function getIndexes(conn: Conn, schema: SqlserverSchemaName | undefined): Promise<RawConstraint[]> {
-    return conn.query<RawConstraint>(
-        `SELECT INDEX_SCHEMA AS "schema",
-                TABLE_NAME   AS "table",
-                INDEX_NAME   AS "constraint",
-                COLUMN_NAME  AS "column",
-                SEQ_IN_INDEX AS "index",
-                "INDEX"      AS type
-         FROM information_schema.STATISTICS
-         WHERE ${filterSchema('INDEX_SCHEMA', schema)};`
-    )
-} */
-
-/* FIXME function getConstraints(conn: Conn, schema: SqlserverSchemaName | undefined): Promise<RawConstraint[]> {
-    return conn.query<RawConstraint>(
-        `SELECT c.CONSTRAINT_SCHEMA       AS "schema",
-                c.TABLE_NAME              AS "table",
-                c.CONSTRAINT_NAME         AS "constraint",
-                u.COLUMN_NAME             AS "column",
-                c.CONSTRAINT_TYPE         AS type,
-                u.REFERENCED_TABLE_SCHEMA AS ref_schema,
-                u.REFERENCED_TABLE_NAME   AS ref_table,
-                u.REFERENCED_COLUMN_NAME  AS ref_column
-         FROM information_schema.TABLE_CONSTRAINTS c
-                  JOIN information_schema.KEY_COLUMN_USAGE u
-                       ON c.CONSTRAINT_SCHEMA = u.CONSTRAINT_SCHEMA AND c.TABLE_NAME = u.TABLE_NAME AND
-                          c.CONSTRAINT_NAME = u.CONSTRAINT_NAME
-         WHERE ${filterSchema('c.CONSTRAINT_SCHEMA', schema)};`)
-} */
 
 type ConstraintBase = { schema: SqlserverSchemaName, table: SqlserverTableName, constraint: SqlserverConstraintName }
 type ConstraintPrimaryKey = ConstraintBase & { type: 'PRIMARY KEY', columns: SqlserverColumnName[] }
@@ -348,7 +322,7 @@ function buildTableConstraints(constraints: RawConstraint[]): ConstraintFormatte
 }
 
 function filterSchema(field: string, schema: SqlserverSchemaName | undefined) {
-    return `${field} ${schema ? `= '${schema}'` : `!= 'information_schema'`}`
+    return `${field} ${schema ? `= '${schema}'` : `NOT IN ('information_schema', 'sys')`}`
 }
 
 // TODO: use from utils/string...
