@@ -12,7 +12,6 @@ const mongoRegexLonger = /mongodb(?:\+srv)?:\/\/(?:([^:]+):([^@]+)@)?([^:/?]+)(?
 const mysqlRegexpLonger = /^(?:jdbc:)?mysql:\/\/(?:([^:]+):([^@]+)@)?([^:/?]+)(?::(\d+))?(?:\/([^?]+))?$/
 const postres = /^(?:jdbc:)?postgres(?:ql)?:\/\/(?:([^:]+):([^@]+)@)?([^:/?]+)(?::(\d+))?(?:\/([^?]+))?$/
 const sqlser = /^(?:jdbc:)?sqlserver(?:ql)?:\/\/(?:([^:]+):([^@]+)@)?([^:/?]+)(?::(\d+))?(?:\/([^?]+))?$/
-const sqlserverRegex = /^Server=([^,]+),(\d+);Database=([^;]+);User Id=([^;]+);Password=([^;]+)$/
 
 export function parseDatabaseUrl(url: DatabaseUrl): DatabaseUrlParsed {
     const couchbaseMatches = url.match(couchbaseRegexpLonger)
@@ -43,19 +42,23 @@ export function parseDatabaseUrl(url: DatabaseUrl): DatabaseUrlParsed {
         return {...filterValues(opts, v => v !== undefined), full: url}
     }
 
-    const sqlserverMatches = url.match(sqlser)
+    const sqlserverMatches = url.match(sqlser) || parseSqlServerUrl(url)
     if (sqlserverMatches) {
         const [, user, pass, host, port, db] = sqlserverMatches
         const opts = {kind: 'sqlserver', user, pass, host, port: port ? parseInt(port) : undefined, db}
         return {...filterValues(opts, v => v !== undefined), full: url}
     }
 
-    const sqlserverMatches2 = url.match(sqlserverRegex)
-    if (sqlserverMatches2) {
-        const [, host, port, db, user, pass] = sqlserverMatches2
-        const opts = {kind: 'sqlserver', user, pass, host, port: port ? parseInt(port) : undefined, db}
-        return {...filterValues(opts, v => v !== undefined), full: url}
-    }
-
     return {full: url}
+}
+
+function parseSqlServerUrl(url: DatabaseUrl): string[] | null {
+    const props = Object.fromEntries(url.split(';').map(part => part.split('=')))
+    if (props['Server'] && props['Database'] && props['User Id'] && props['Password']) {
+        const [host, port] = props['Server'].split(',')
+        if (host && port) {
+            return [url, props['User Id'], props['Password'], host, port, props['Database']]
+        }
+    }
+    return null
 }
