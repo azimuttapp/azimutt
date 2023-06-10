@@ -18,6 +18,12 @@ describe('postgres', () => {
         console.log('schema', schema)
         expect(schema.tables.length).toEqual(12)
     })
+    test('get queries', async () => {
+        const query: string = `SELECT backend_start, query, usename, application_name FROM pg_stat_activity WHERE query != '' ORDER BY query_start DESC;`
+        // const query = 'SELECT * FROM pg_stat_statements;'
+        const results = await execQuery(application, url, query, [])
+        console.log('results', results.rows)
+    })
     test('formatSchema', () => {
         const rawSchema: PostgresSchema = {tables: [], relations: [], types: []}
         const expectedSchema: AzimuttSchema = {tables: [], relations: [], types: []}
