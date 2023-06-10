@@ -1,4 +1,12 @@
-import {groupBy, Logger, mapValues, removeUndefined, sequence} from "@azimutt/utils";
+import {
+    groupBy,
+    Logger,
+    mapValues,
+    removeSurroundingParentheses,
+    removeUndefined,
+    safeJsonParse,
+    sequence
+} from "@azimutt/utils";
 import {AzimuttRelation, AzimuttSchema, AzimuttType} from "@azimutt/database-types";
 import {schemaToColumns, ValueSchema, valuesToSchema} from "@azimutt/json-infer-schema";
 import {Conn} from "./common";
@@ -39,7 +47,7 @@ export const getSchema = (schema: SqlserverSchemaName | undefined, sampleSize: n
                         name: col.column,
                         type: col.column_type,
                         nullable: col.column_nullable === 'YES',
-                        default: col.column_default,
+                        default: col.column_default ? removeSurroundingParentheses(col.column_default) : null,
                         comment: col.column_comment || null,
                         schema: col.column_schema || null
                     })),
@@ -324,20 +332,4 @@ function buildTableConstraints(constraints: RawConstraint[]): ConstraintFormatte
 
 function filterSchema(field: string, schema: SqlserverSchemaName | undefined) {
     return `${field} ${schema ? `= '${schema}'` : `NOT IN ('information_schema', 'sys')`}`
-}
-
-// TODO: use from utils/string...
-function removeSurroundingParentheses(value: string): string {
-    if (value.startsWith('(') && value.endsWith(')')) {
-        return removeSurroundingParentheses(value.slice(1, -1))
-    } else {
-        return value
-    }
-}
-function safeJsonParse(value: string): any {
-    try {
-        return JSON.parse(value)
-    } catch (e) {
-        return value
-    }
 }
