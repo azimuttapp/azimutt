@@ -36,6 +36,7 @@ export type AzimuttColumnName = string
 export const AzimuttColumnName = z.string()
 export type AzimuttColumnType = string
 export const AzimuttColumnType = z.string()
+export const azimuttColumnTypeUnknown: AzimuttColumnType = 'unknown'
 export type AzimuttColumnValue = string
 export const AzimuttColumnValue = z.string()
 export type AzimuttPrimaryKey = { name?: string | null, columns: AzimuttColumnName[] }
@@ -59,10 +60,10 @@ export const AzimuttCheck = z.object({
     predicate: z.string().nullish()
 }).strict()
 export type AzimuttColumn = {
-    name: AzimuttColumnName,
-    type: AzimuttColumnType,
-    nullable?: boolean | null,
-    default?: AzimuttColumnValue | null,
+    name: AzimuttColumnName
+    type: AzimuttColumnType
+    nullable?: boolean | null
+    default?: AzimuttColumnValue | null
     comment?: string | null
     columns?: AzimuttColumn[] | null
 }
@@ -76,14 +77,14 @@ export const AzimuttColumn: z.ZodType<AzimuttColumn> = z.object({
 }).strict()
 // TODO: mutualise with Table in frontend/ts-src/types/project.ts:208?
 export type AzimuttTable = {
-    schema: AzimuttSchemaName,
-    table: AzimuttTableName,
-    columns: AzimuttColumn[],
-    view?: boolean | null,
-    primaryKey?: AzimuttPrimaryKey | null,
-    uniques?: AzimuttUnique[] | null,
-    indexes?: AzimuttIndex[] | null,
-    checks?: AzimuttCheck[] | null,
+    schema: AzimuttSchemaName
+    table: AzimuttTableName
+    columns: AzimuttColumn[]
+    view?: boolean | null
+    primaryKey?: AzimuttPrimaryKey | null
+    uniques?: AzimuttUnique[] | null
+    indexes?: AzimuttIndex[] | null
+    checks?: AzimuttCheck[] | null
     comment?: string | null
 }
 export const AzimuttTable = z.object({
