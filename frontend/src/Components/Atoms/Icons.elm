@@ -40,10 +40,11 @@ columns =
     }
 
 
-sources : { database : Icon, sql : Icon, json : Icon, aml : Icon, empty : Icon, project : Icon, sample : Icon, remote : Icon }
+sources : { database : Icon, sql : Icon, prisma : Icon, json : Icon, aml : Icon, empty : Icon, project : Icon, sample : Icon, remote : Icon }
 sources =
     { database = Icon.Database
     , sql = Icon.DocumentText
+    , prisma = Icon.DocumentText
     , json = Icon.Code
     , aml = Icon.User
     , empty = Icon.Document

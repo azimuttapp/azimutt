@@ -1,4 +1,4 @@
-module Models.SourceInfo exposing (SourceInfo, aml, database, jsonLocal, jsonRemote, sqlLocal, sqlRemote)
+module Models.SourceInfo exposing (SourceInfo, aml, database, jsonLocal, jsonRemote, prismaLocal, prismaRemote, sqlLocal, sqlRemote)
 
 import FileValue exposing (File)
 import Libs.Models exposing (FileContent)
@@ -40,6 +40,16 @@ sqlLocal now sourceId file =
 sqlRemote : Time.Posix -> SourceId -> FileUrl -> FileContent -> Maybe SampleKey -> SourceInfo
 sqlRemote now sourceId url content sample =
     SourceInfo sourceId (url |> FileUrl.filename) (SqlRemoteFile url (String.length content)) True sample now now
+
+
+prismaLocal : Time.Posix -> SourceId -> File -> SourceInfo
+prismaLocal now sourceId file =
+    SourceInfo sourceId file.name (PrismaLocalFile file.name file.size file.lastModified) True Nothing now now
+
+
+prismaRemote : Time.Posix -> SourceId -> FileUrl -> FileContent -> Maybe SampleKey -> SourceInfo
+prismaRemote now sourceId url content sample =
+    SourceInfo sourceId (url |> FileUrl.filename) (PrismaRemoteFile url (String.length content)) True sample now now
 
 
 jsonLocal : Time.Posix -> SourceId -> File -> SourceInfo

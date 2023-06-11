@@ -32,6 +32,7 @@ import PagesComponents.New.Models exposing (ConfirmDialog, Model, Msg(..), Tab(.
 import Services.Backend as Backend exposing (Sample)
 import Services.DatabaseSource as DatabaseSource
 import Services.JsonSource as JsonSource
+import Services.PrismaSource as PrismaSource
 import Services.ProjectSource as ProjectSource
 import Services.SampleSource as SampleSource
 import Services.SqlSource as SqlSource
@@ -74,6 +75,7 @@ viewNewProject shared currentUrl urlOrganization model =
             { tabs =
                 [ { tab = TabDatabase, icon = Icons.sources.database, content = [ text "From database connection" ] }
                 , { tab = TabSql, icon = Icons.sources.sql, content = [ text "From SQL structure" ] }
+                , { tab = TabPrisma, icon = Icons.sources.prisma, content = [ text "From Prisma Schema" ] }
                 , { tab = TabJson, icon = Icons.sources.json, content = [ text "From JSON" ] }
                 , { tab = TabEmptyProject, icon = Icons.sources.empty, content = [ text "From scratch (db design)" ] }
                 , { tab = TabProject, icon = Icons.sources.project, content = [ text "Import project" ] }
@@ -129,6 +131,9 @@ viewTabContent htmlId zone projects urlOrganization model =
         TabSql ->
             model.sqlSource |> Maybe.mapOrElse (viewSqlSourceTab (htmlId ++ "-sql") model.openedCollapse projects) (div [] [])
 
+        TabPrisma ->
+            model.prismaSource |> Maybe.mapOrElse (viewPrismaSourceTab (htmlId ++ "-prisma") model.openedCollapse projects) (div [] [])
+
         TabJson ->
             model.jsonSource |> Maybe.mapOrElse (viewJsonSourceTab (htmlId ++ "-json") model.openedCollapse projects) (div [] [])
 
@@ -165,12 +170,24 @@ viewSqlSourceTab htmlId openedCollapse projects model =
         ]
 
 
+viewPrismaSourceTab : HtmlId -> HtmlId -> List ProjectInfo -> PrismaSource.Model Msg -> Html Msg
+viewPrismaSourceTab htmlId openedCollapse projects model =
+    div []
+        [ viewHeading "Import your Prisma Schema" [ text "Everything stay on your machine, don't worry about your schema privacy." ]
+        , div [ class "mt-6" ] [ PrismaSource.viewInput PrismaSourceMsg Noop htmlId model ]
+        , div [ class "mt-3" ] [ viewDataPrivacyCollapse htmlId openedCollapse ]
+        , PrismaSource.viewParsing PrismaSourceMsg model
+        , viewSourceActionButtons (InitTab TabSql) projects model.parsedSource
+        ]
+
+
 viewJsonSourceTab : HtmlId -> HtmlId -> List ProjectInfo -> JsonSource.Model Msg -> Html Msg
 viewJsonSourceTab htmlId openedCollapse projects model =
     div []
         [ viewHeading "Import your custom source in JSON" [ text "If you have a data source not (yet) supported by Azimutt, you can extract and format its schema into JSON to import it here." ]
         , div [ class "mt-6" ] [ JsonSource.viewInput JsonSourceMsg Noop htmlId model ]
         , div [ class "mt-3" ] [ viewJsonSourceSchemaCollapse htmlId openedCollapse ]
+        , viewDataPrivacyCollapse htmlId openedCollapse
         , JsonSource.viewParsing JsonSourceMsg model
         , viewSourceActionButtons (InitTab TabJson) projects model.parsedSource
         ]

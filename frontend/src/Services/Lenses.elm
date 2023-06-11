@@ -58,6 +58,8 @@ module Services.Lenses exposing
     , mapPlan
     , mapPosition
     , mapPrimaryKeyM
+    , mapPrismaSourceCmd
+    , mapPrismaSourceMCmd
     , mapProject
     , mapProjectSourceMCmd
     , mapPromptM
@@ -168,6 +170,7 @@ module Services.Lenses exposing
     , setPlan
     , setPosition
     , setPrimaryKey
+    , setPrismaSource
     , setProject
     , setProjectSource
     , setPrompt
@@ -894,6 +897,21 @@ setPrimaryKey =
 mapPrimaryKeyM : (v -> v) -> { item | primaryKey : Maybe v } -> { item | primaryKey : Maybe v }
 mapPrimaryKeyM =
     mapM_ .primaryKey setPrimaryKey
+
+
+setPrismaSource : v -> { item | prismaSource : v } -> { item | prismaSource : v }
+setPrismaSource =
+    set_ .prismaSource (\value item -> { item | prismaSource = value })
+
+
+mapPrismaSourceCmd : (v -> ( v, Cmd msg )) -> { item | prismaSource : v } -> ( { item | prismaSource : v }, Cmd msg )
+mapPrismaSourceCmd =
+    mapCmd_ .prismaSource setPrismaSource
+
+
+mapPrismaSourceMCmd : (v -> ( v, Cmd msg )) -> { item | prismaSource : Maybe v } -> ( { item | prismaSource : Maybe v }, Cmd msg )
+mapPrismaSourceMCmd =
+    mapMCmd_ .prismaSource setPrismaSource
 
 
 setProject : v -> { item | project : v } -> { item | project : v }

@@ -1,4 +1,4 @@
-module Track exposing (SQLParsing, amlSourceCreated, dbAnalysisOpened, dbSourceCreated, docOpened, externalLink, findPathOpened, findPathResults, groupCreated, groupDeleted, groupRenamed, jsonError, jsonSourceCreated, layoutCreated, layoutDeleted, layoutLoaded, memoDeleted, memoSaved, notFound, notesCreated, notesDeleted, notesUpdated, planLimit, projectDraftCreated, projectLoaded, searchClicked, sourceAdded, sourceDeleted, sourceRefreshed, sqlSourceCreated, tagsCreated, tagsDeleted, tagsUpdated)
+module Track exposing (SQLParsing, amlSourceCreated, dbAnalysisOpened, dbSourceCreated, docOpened, externalLink, findPathOpened, findPathResults, groupCreated, groupDeleted, groupRenamed, jsonError, jsonSourceCreated, layoutCreated, layoutDeleted, layoutLoaded, memoDeleted, memoSaved, notFound, notesCreated, notesDeleted, notesUpdated, planLimit, prismaSourceCreated, projectDraftCreated, projectLoaded, searchClicked, sourceAdded, sourceDeleted, sourceRefreshed, sqlSourceCreated, tagsCreated, tagsDeleted, tagsUpdated)
 
 import Conf exposing (Feature, Features)
 import DataSources.Helpers exposing (SourceLine)
@@ -39,6 +39,11 @@ dbSourceCreated project source =
 sqlSourceCreated : Maybe ProjectInfo -> SQLParsing m -> Source -> Cmd msg
 sqlSourceCreated project parser source =
     sendEvent "editor_source_created" ([ ( "format", "sql" |> Encode.string ) ] ++ sqlSourceDetails parser source) project
+
+
+prismaSourceCreated : Maybe ProjectInfo -> Result String Source -> Cmd msg
+prismaSourceCreated project source =
+    sendEvent "editor_source_created" ([ ( "format", "prisma" |> Encode.string ) ] ++ jsonSourceDetails source) project
 
 
 jsonSourceCreated : Maybe ProjectInfo -> Result String Source -> Cmd msg

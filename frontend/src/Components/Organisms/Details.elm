@@ -724,6 +724,12 @@ viewSource query table column rows ( _, source ) =
             SourceKind.SqlRemoteFile _ _ ->
                 Icon.solid Icons.sources.sql "opacity-50 mr-1" |> Tooltip.r "SQL source"
 
+            SourceKind.PrismaLocalFile _ _ _ ->
+                Icon.solid Icons.sources.prisma "opacity-50 mr-1" |> Tooltip.r "Prisma source"
+
+            SourceKind.PrismaRemoteFile _ _ ->
+                Icon.solid Icons.sources.prisma "opacity-50 mr-1" |> Tooltip.r "Prisma source"
+
             SourceKind.JsonLocalFile _ _ _ ->
                 Icon.solid Icons.sources.json "opacity-50 mr-1" |> Tooltip.r "JSON source"
 

@@ -1,4 +1,14 @@
-module Libs.Tuple3 exposing (first, mapFirst, mapSecond, mapThird, second, third)
+module Libs.Tuple3 exposing (apply, first, mapFirst, mapSecond, mapThird, new, second, third)
+
+
+new : a -> b -> c -> ( a, b, c )
+new a b c =
+    ( a, b, c )
+
+
+apply : (a -> b -> c -> d) -> ( a, b, c ) -> d
+apply f ( a, b, c ) =
+    f a b c
 
 
 first : ( a, b, c ) -> a

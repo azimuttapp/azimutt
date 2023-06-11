@@ -9,12 +9,26 @@ import Libs.Models.FileName as FileName exposing (FileName)
 import Libs.Models.FileSize as FileSize exposing (FileSize)
 import Libs.Models.FileUpdatedAt as FileUpdatedAt exposing (FileUpdatedAt)
 import Libs.Models.FileUrl as FileUrl exposing (FileUrl)
+import Libs.Tuple as Tuple
+import Libs.Tuple3 as Tuple3
+
+
+
+-- TODO: make source more flexible: connector vs parser
+--   - connector:
+--     - storage: Couchbase, MongoDB, MySQL, Oracle, PostgreSQL, SQLServer, SQLite
+--   - parser:
+--     - format: SQL, Prisma, Json, AML
+--     - location: Local, Remote, Editor
+-- also, fetch local file with gateway?
 
 
 type SourceKind
     = DatabaseConnection DatabaseUrl
     | SqlLocalFile FileName FileSize FileUpdatedAt
     | SqlRemoteFile FileUrl FileSize
+    | PrismaLocalFile FileName FileSize FileUpdatedAt
+    | PrismaRemoteFile FileUrl FileSize
     | JsonLocalFile FileName FileSize FileUpdatedAt
     | JsonRemoteFile FileUrl FileSize
     | AmlEditor
@@ -52,6 +66,12 @@ path sourceContent =
         SqlRemoteFile url _ ->
             url
 
+        PrismaLocalFile name _ _ ->
+            name
+
+        PrismaRemoteFile url _ ->
+            url
+
         JsonLocalFile name _ _ ->
             name
 
@@ -72,6 +92,12 @@ same k2 k1 =
             True
 
         ( SqlRemoteFile _ _, SqlRemoteFile _ _ ) ->
+            True
+
+        ( PrismaLocalFile _ _ _, PrismaLocalFile _ _ _ ) ->
+            True
+
+        ( PrismaRemoteFile _ _, PrismaRemoteFile _ _ ) ->
             True
 
         ( JsonLocalFile _ _ _, JsonLocalFile _ _ _ ) ->
@@ -99,6 +125,12 @@ toString value =
         SqlRemoteFile _ _ ->
             "SqlRemoteFile"
 
+        PrismaLocalFile _ _ _ ->
+            "PrismaLocalFile"
+
+        PrismaRemoteFile _ _ ->
+            "PrismaRemoteFile"
+
         JsonLocalFile _ _ _ ->
             "JsonLocalFile"
 
@@ -119,37 +151,44 @@ encode value =
                 ]
 
         SqlLocalFile name size modified ->
-            Encode.notNullObject
-                [ ( "kind", "SqlLocalFile" |> Encode.string )
-                , ( "name", name |> FileName.encode )
-                , ( "size", size |> FileSize.encode )
-                , ( "modified", modified |> FileUpdatedAt.encode )
-                ]
+            encodeLocal "SqlLocalFile" name size modified
 
         SqlRemoteFile name size ->
-            Encode.notNullObject
-                [ ( "kind", "SqlRemoteFile" |> Encode.string )
-                , ( "url", name |> FileUrl.encode )
-                , ( "size", size |> FileSize.encode )
-                ]
+            encodeRemote "SqlRemoteFile" name size
+
+        PrismaLocalFile name size modified ->
+            encodeLocal "PrismaLocalFile" name size modified
+
+        PrismaRemoteFile name size ->
+            encodeRemote "PrismaRemoteFile" name size
 
         JsonLocalFile name size modified ->
-            Encode.notNullObject
-                [ ( "kind", "JsonLocalFile" |> Encode.string )
-                , ( "name", name |> FileName.encode )
-                , ( "size", size |> FileSize.encode )
-                , ( "modified", modified |> FileUpdatedAt.encode )
-                ]
+            encodeLocal "JsonLocalFile" name size modified
 
         JsonRemoteFile name size ->
-            Encode.notNullObject
-                [ ( "kind", "JsonRemoteFile" |> Encode.string )
-                , ( "url", name |> FileUrl.encode )
-                , ( "size", size |> FileSize.encode )
-                ]
+            encodeRemote "JsonRemoteFile" name size
 
         AmlEditor ->
             Encode.notNullObject [ ( "kind", "AmlEditor" |> Encode.string ) ]
+
+
+encodeLocal : String -> FileName -> FileSize -> FileUpdatedAt -> Value
+encodeLocal kind name size modified =
+    Encode.notNullObject
+        [ ( "kind", kind |> Encode.string )
+        , ( "name", name |> FileName.encode )
+        , ( "size", size |> FileSize.encode )
+        , ( "modified", modified |> FileUpdatedAt.encode )
+        ]
+
+
+encodeRemote : String -> FileUrl -> FileSize -> Value
+encodeRemote kind name size =
+    Encode.notNullObject
+        [ ( "kind", kind |> Encode.string )
+        , ( "url", name |> FileUrl.encode )
+        , ( "size", size |> FileSize.encode )
+        ]
 
 
 decode : Decode.Decoder SourceKind
@@ -161,29 +200,35 @@ decode =
                     decodeDatabaseConnection
 
                 "SqlLocalFile" ->
-                    decodeSqlLocalFile
+                    decodeLocalFile |> Decode.map (Tuple3.apply SqlLocalFile)
 
                 "SqlRemoteFile" ->
-                    decodeSqlRemoteFile
+                    decodeRemoteFile |> Decode.map (Tuple.apply SqlRemoteFile)
+
+                "PrismaLocalFile" ->
+                    decodeLocalFile |> Decode.map (Tuple3.apply PrismaLocalFile)
+
+                "PrismaRemoteFile" ->
+                    decodeRemoteFile |> Decode.map (Tuple.apply PrismaRemoteFile)
 
                 "JsonLocalFile" ->
-                    decodeJsonLocalFile
+                    decodeLocalFile |> Decode.map (Tuple3.apply JsonLocalFile)
 
                 "JsonRemoteFile" ->
-                    decodeJsonRemoteFile
+                    decodeRemoteFile |> Decode.map (Tuple.apply JsonRemoteFile)
 
                 "AmlEditor" ->
-                    decodeAmlEditor
+                    Decode.succeed AmlEditor
 
                 -- legacy names:
                 "LocalFile" ->
-                    decodeSqlLocalFile
+                    decodeLocalFile |> Decode.map (Tuple3.apply SqlLocalFile)
 
                 "RemoteFile" ->
-                    decodeSqlRemoteFile
+                    decodeRemoteFile |> Decode.map (Tuple.apply SqlRemoteFile)
 
                 "UserDefined" ->
-                    decodeAmlEditor
+                    Decode.succeed AmlEditor
 
                 other ->
                     Decode.fail ("Not supported kind of SourceKind '" ++ other ++ "'")
@@ -196,36 +241,16 @@ decodeDatabaseConnection =
         (Decode.field "url" DatabaseUrl.decode)
 
 
-decodeSqlLocalFile : Decode.Decoder SourceKind
-decodeSqlLocalFile =
-    Decode.map3 SqlLocalFile
+decodeLocalFile : Decode.Decoder ( FileName, FileSize, FileUpdatedAt )
+decodeLocalFile =
+    Decode.map3 Tuple3.new
         (Decode.field "name" FileName.decode)
         (Decode.field "size" FileSize.decode)
         (Decode.field "modified" FileUpdatedAt.decode)
 
 
-decodeSqlRemoteFile : Decode.Decoder SourceKind
-decodeSqlRemoteFile =
-    Decode.map2 SqlRemoteFile
+decodeRemoteFile : Decode.Decoder ( FileUrl, FileSize )
+decodeRemoteFile =
+    Decode.map2 Tuple.new
         (Decode.field "url" FileUrl.decode)
         (Decode.field "size" FileSize.decode)
-
-
-decodeJsonLocalFile : Decode.Decoder SourceKind
-decodeJsonLocalFile =
-    Decode.map3 JsonLocalFile
-        (Decode.field "name" FileName.decode)
-        (Decode.field "size" FileSize.decode)
-        (Decode.field "modified" FileUpdatedAt.decode)
-
-
-decodeJsonRemoteFile : Decode.Decoder SourceKind
-decodeJsonRemoteFile =
-    Decode.map2 JsonRemoteFile
-        (Decode.field "url" FileUrl.decode)
-        (Decode.field "size" FileSize.decode)
-
-
-decodeAmlEditor : Decode.Decoder SourceKind
-decodeAmlEditor =
-    Decode.succeed AmlEditor

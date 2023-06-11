@@ -108,8 +108,8 @@ export const AmlEditor = z.object({
 export type SourceKind = DatabaseConnection | SqlLocalFile | SqlRemoteFile | JsonLocalFile | JsonRemoteFile | AmlEditor
 export const SourceKind = z.discriminatedUnion('kind', [DatabaseConnection, SqlLocalFile, SqlRemoteFile, JsonLocalFile, JsonRemoteFile, AmlEditor])
 
-export type SourceOrigin = 'import-project' | 'sql-source' | 'json-source'
-export const SourceOrigin = z.enum(['import-project', 'sql-source', 'json-source'])
+export type SourceOrigin = 'import-project' | 'sql-source' | 'prisma-source' | 'json-source'
+export const SourceOrigin = z.enum(['import-project', 'sql-source', 'prisma-source', 'json-source'])
 
 export interface Origin {
     id: SourceId

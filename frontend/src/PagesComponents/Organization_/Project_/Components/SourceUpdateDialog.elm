@@ -26,7 +26,8 @@ import Models.ProjectInfo exposing (ProjectInfo)
 import Services.AmlSource as AmlSource
 import Services.DatabaseSource as DatabaseSource
 import Services.JsonSource as JsonSource
-import Services.Lenses exposing (mapAmlSourceCmd, mapDatabaseSourceCmd, mapJsonSourceCmd, mapMCmd, mapSqlSourceCmd)
+import Services.Lenses exposing (mapAmlSourceCmd, mapDatabaseSourceCmd, mapJsonSourceCmd, mapMCmd, mapPrismaSourceCmd, mapSqlSourceCmd)
+import Services.PrismaSource as PrismaSource
 import Services.SourceDiff as SourceDiff
 import Services.SqlSource as SqlSource
 import Time
@@ -37,6 +38,7 @@ type alias Model msg =
     , source : Maybe Source
     , databaseSource : DatabaseSource.Model msg
     , sqlSource : SqlSource.Model msg
+    , prismaSource : PrismaSource.Model msg
     , jsonSource : JsonSource.Model msg
     , amlSource : AmlSource.Model
     , newSourceTab : Tab
@@ -46,6 +48,7 @@ type alias Model msg =
 type Tab
     = TabDatabase
     | TabSql
+    | TabPrisma
     | TabJson
     | TabAml
 
@@ -55,6 +58,7 @@ type Msg
     | Close
     | DatabaseSourceMsg DatabaseSource.Msg
     | SqlSourceMsg SqlSource.Msg
+    | PrismaSourceMsg PrismaSource.Msg
     | JsonSourceMsg JsonSource.Msg
     | AmlSourceMsg AmlSource.Msg
     | UpdateTab Tab
@@ -66,6 +70,7 @@ init noop dialogId source =
     , source = source
     , databaseSource = DatabaseSource.init source (\_ -> noop "project-settings-database-source-callback")
     , sqlSource = SqlSource.init source (\_ -> noop "project-settings-sql-source-callback")
+    , prismaSource = PrismaSource.init source (\_ -> noop "project-settings-prisma-source-callback")
     , jsonSource = JsonSource.init source (\_ -> noop "project-settings-json-source-callback")
     , amlSource = AmlSource.init
     , newSourceTab = TabDatabase
@@ -86,6 +91,9 @@ update wrap modalOpen noop now project msg model =
 
         SqlSourceMsg message ->
             model |> mapMCmd (mapSqlSourceCmd (SqlSource.update (SqlSourceMsg >> wrap) now project message))
+
+        PrismaSourceMsg message ->
+            model |> mapMCmd (mapPrismaSourceCmd (PrismaSource.update (PrismaSourceMsg >> wrap) now project message))
 
         JsonSourceMsg message ->
             model |> mapMCmd (mapJsonSourceCmd (JsonSource.update (JsonSourceMsg >> wrap) now project message))
@@ -126,6 +134,12 @@ view wrap sourceSet modalClose noop zone now opened model =
 
                         SqlRemoteFile url _ ->
                             sqlRemoteFileModal wrap sourceSet close zone now titleId source url model.sqlSource
+
+                        PrismaLocalFile filename _ updatedAt ->
+                            prismaLocalFileModal wrap sourceSet close noop zone now (model.id ++ "-prisma") titleId source filename updatedAt model.prismaSource
+
+                        PrismaRemoteFile url _ ->
+                            prismaRemoteFileModal wrap sourceSet close zone now titleId source url model.prismaSource
 
                         JsonLocalFile filename _ updatedAt ->
                             jsonLocalFileModal wrap sourceSet close noop zone now (model.id ++ "-json") titleId source filename updatedAt model.jsonSource
@@ -189,6 +203,44 @@ sqlRemoteFileModal wrap sourceSet close zone now titleId source fileUrl model =
             [ Button.primary5 Tw.primary [ onClick (fileUrl |> SqlSource.GetRemoteFile |> SqlSourceMsg >> wrap) ] [ text "Fetch file again" ]
             ]
         , SqlSource.viewParsing (SqlSourceMsg >> wrap) model
+        , viewSourceDiff model
+        ]
+    , updateSourceButtons sourceSet close model.parsedSource
+    ]
+
+
+prismaLocalFileModal : (Msg -> msg) -> (Source -> msg) -> msg -> (String -> msg) -> Time.Zone -> Time.Posix -> HtmlId -> HtmlId -> Source -> FileName -> FileUpdatedAt -> PrismaSource.Model msg -> List (Html msg)
+prismaLocalFileModal wrap sourceSet close noop zone now htmlId titleId source fileName updatedAt model =
+    [ div [ class "max-w-3xl mx-6 mt-6" ]
+        [ div [ css [ "mt-3", sm [ "mt-5" ] ] ]
+            [ modalTitle titleId ("Refresh " ++ source.name ++ " source")
+            , div [ class "mt-2" ] [ localFileInfo zone now fileName updatedAt ]
+            ]
+        , div [ class "mt-3" ] [ PrismaSource.viewLocalInput (PrismaSourceMsg >> wrap) noop (htmlId ++ "-local-file") ]
+        , case ( source.kind, model.loadedSchema |> Maybe.map (\( src, _ ) -> src.kind) ) of
+            ( PrismaLocalFile name1 _ updated1, Just (PrismaLocalFile name2 _ updated2) ) ->
+                localFileWarnings ( name1, name2 ) ( updated1, updated2 )
+
+            _ ->
+                div [] []
+        , PrismaSource.viewParsing (PrismaSourceMsg >> wrap) model
+        , viewSourceDiff model
+        ]
+    , updateSourceButtons sourceSet close model.parsedSource
+    ]
+
+
+prismaRemoteFileModal : (Msg -> msg) -> (Source -> msg) -> msg -> Time.Zone -> Time.Posix -> HtmlId -> Source -> FileUrl -> PrismaSource.Model msg -> List (Html msg)
+prismaRemoteFileModal wrap sourceSet close zone now titleId source fileUrl model =
+    [ div [ class "max-w-3xl mx-6 mt-6" ]
+        [ div [ css [ "mt-3", sm [ "mt-5" ] ] ]
+            [ modalTitle titleId ("Refresh " ++ source.name ++ " source")
+            , div [ class "mt-2" ] [ remoteFileInfo zone now fileUrl source.updatedAt ]
+            ]
+        , div [ class "mt-3 flex justify-center" ]
+            [ Button.primary5 Tw.primary [ onClick (fileUrl |> PrismaSource.GetRemoteFile |> PrismaSourceMsg >> wrap) ] [ text "Fetch file again" ]
+            ]
+        , PrismaSource.viewParsing (PrismaSourceMsg >> wrap) model
         , viewSourceDiff model
         ]
     , updateSourceButtons sourceSet close model.parsedSource
@@ -285,6 +337,11 @@ newSourceModal wrap sourceSet close noop htmlId titleId model =
                     , SqlSource.viewParsing (SqlSourceMsg >> wrap) model.sqlSource
                     ]
 
+                TabPrisma ->
+                    [ PrismaSource.viewInput (PrismaSourceMsg >> wrap) noop (htmlId ++ "-prisma") model.prismaSource
+                    , PrismaSource.viewParsing (PrismaSourceMsg >> wrap) model.prismaSource
+                    ]
+
                 TabJson ->
                     [ JsonSource.viewInput (JsonSourceMsg >> wrap) noop (htmlId ++ "-json") model.jsonSource
                     , JsonSource.viewParsing (JsonSourceMsg >> wrap) model.jsonSource
@@ -301,6 +358,9 @@ newSourceModal wrap sourceSet close noop htmlId titleId model =
 
         TabSql ->
             newSourceButtons sourceSet close model.sqlSource.parsedSource
+
+        TabPrisma ->
+            newSourceButtons sourceSet close model.prismaSource.parsedSource
 
         TabJson ->
             newSourceButtons sourceSet close model.jsonSource.parsedSource
