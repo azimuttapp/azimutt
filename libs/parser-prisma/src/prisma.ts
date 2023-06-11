@@ -8,10 +8,16 @@ import {
     SchemaArgument,
     SchemaExpression
 } from "@loancrate/prisma-schema-parser/dist/ast";
-import {removeUndefined, zip} from "@azimutt/utils";
+import {errorToString, removeUndefined, zip} from "@azimutt/utils";
 import {AzimuttColumn, AzimuttRelation, AzimuttSchema, AzimuttTable} from "@azimutt/database-types";
 
-export const parseSchema = (schema: string): PrismaSchema => parsePrismaSchema(schema)
+export const parseSchema = (schema: string): Promise<PrismaSchema> => {
+    try {
+        return Promise.resolve(parsePrismaSchema(schema))
+    } catch (e) {
+        return Promise.reject(errorToString(e))
+    }
+}
 
 export function formatSchema(schema: PrismaSchema): AzimuttSchema {
     const tables = schema.declarations.filter((d): d is ModelDeclaration => d.kind === 'model').map(formatTable)
