@@ -11,7 +11,7 @@ import {
     SchemaArgument,
     SchemaExpression
 } from "@loancrate/prisma-schema-parser/dist/ast";
-import {errorToString, removeUndefined, zip} from "@azimutt/utils";
+import {collectOne, collect, errorToString, removeUndefined, zip} from "@azimutt/utils";
 import {AzimuttColumn, AzimuttRelation, AzimuttSchema, AzimuttTable, AzimuttType} from "@azimutt/database-types";
 
 export const parseSchema = (schema: string): Promise<PrismaSchema> => {
@@ -47,26 +47,26 @@ function formatTable(model: ModelDeclaration, comment: CommentBlock | undefined)
         return member.kind === 'field' ? [formatColumn(member, prev?.kind === 'commentBlock' ? prev : undefined)] : []
     })
     const fields = model.members.filter((m): m is FieldDeclaration => m.kind === 'field')
-    const columnPk = fields.filter(f => f.attributes?.find(a => a.path.value.indexOf('id') >= 0)).map(f => ({columns: [f.name.value]}))
+    const columnPk = collectOne(fields, f => f.attributes?.find(a => a.path.value.indexOf('id') >= 0) ? {columns: [f.name.value]} : undefined)
     const columnUniques = fields.filter(f => f.attributes?.find(a => a.path.value.indexOf('unique') >= 0)).map(f => ({columns: [f.name.value]}))
     const relations = fields.flatMap(f => f.attributes?.filter(a => a.path.value.indexOf('relation') >= 0).flatMap(a => formatRelation(model, f, a)) || [])
     const attributes = model.members.filter((m): m is BlockAttribute => m.kind === 'blockAttribute')
     const schema = attributes.find(a => a.path.value[0] === 'schema')
     const dbName = attributes.find(a => a.path.value[0] === 'map')
-    const tablePk = attributes.filter(a => a.path.value[0] === 'id').map(formatConstraint)
-    const tableUniques = attributes.filter(a => a.path.value[0] === 'unique').map(formatConstraint)
-    const tableIndexes = attributes.filter(a => a.path.value[0] === 'index').map(formatConstraint)
+    const tablePk = collectOne(attributes, a => a.path.value[0] === 'id' ? formatConstraint(a) : undefined)
+    const tableUniques = collect(attributes, a => a.path.value[0] === 'unique' ? formatConstraint(a) : undefined)
+    const tableIndexes = collect(attributes, a => a.path.value[0] === 'index' ? formatConstraint(a) : undefined)
     const uniques = columnUniques.concat(tableUniques)
     return {
         table: removeUndefined({
             schema: schema ? (schema.args || []).map(formatSchemaArgument).join('_') : '',
             table: dbName ? (dbName.args || []).map(formatSchemaArgument).join('_') : model.name.value,
             columns: columns,
-            // view: false,
-            primaryKey: (tablePk.length > 0 ? tablePk[0] : undefined) || (columnPk.length > 0 ? columnPk[0] : undefined),
+            // view: false, // views are not parsed by @loancrate/prisma-schema-parser :/
+            primaryKey: tablePk || columnPk,
             uniques: uniques.length > 0 ? uniques : undefined,
             indexes: tableIndexes.length > 0 ? tableIndexes : undefined,
-            // checks?: AzimuttCheck[] | null,
+            checks: undefined, // no CHECK constraint in Prisma Schema :/
             comment: comment ? comment.comments.map(c => c.text).join('\n') : undefined
         }),
         relations: relations
@@ -194,23 +194,4 @@ function formatSchemaExpression(expr: SchemaExpression): string {
 
 function findArgument(attr: {args?: SchemaArgument[]}, name: string): NamedArgument | undefined {
     return attr.args?.find((a): a is NamedArgument => a.kind === 'namedArgument' && a.name.value === name)
-}
-
-// TODO: move to utils
-export function deeplyRemoveFields(obj: any, keysToRemove: string[]): any {
-    if (Array.isArray(obj)) {
-        return obj.map(item => deeplyRemoveFields(item, keysToRemove))
-    }
-
-    if (typeof obj === 'object' && obj !== null) {
-        const res: { [key: string]: any } = {}
-        Object.keys(obj).forEach((key) => {
-            if (keysToRemove.indexOf(key) < 0) {
-                res[key] = deeplyRemoveFields(obj[key], keysToRemove)
-            }
-        })
-        return res
-    }
-
-    return obj
 }

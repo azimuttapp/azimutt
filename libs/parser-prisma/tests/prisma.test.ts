@@ -1,5 +1,5 @@
 import {describe, expect, test} from "@jest/globals";
-import * as fs from "fs";
+// import * as fs from "fs";
 import {AzimuttSchema} from "@azimutt/database-types";
 import {formatSchema, parseSchema} from "../src/prisma";
 
@@ -115,6 +115,7 @@ type Photo {
   width  Int
   url    String
 }`)
+        // fs.writeFileSync('tests/resources/example.prisma.json', JSON.stringify(deeplyRemoveFields(ast, ['location']), null, 2))
         const azimuttSchema: AzimuttSchema = {
             tables: [{
                 schema: 'auth',
@@ -148,22 +149,14 @@ type Photo {
                 src: {schema: '', table: 'Post', column: 'authorId'},
                 ref: {schema: '', table: 'User', column: 'id'}
             }],
-            types: [{schema: '', name: 'Role', values: ['USER', 'ADMIN']}, {schema: '', name: 'Photo', definition: '{height: Int, width: Int, url: String}'}]
+            types: [
+                {schema: '', name: 'Role', values: ['USER', 'ADMIN']},
+                {schema: '', name: 'Photo', definition: '{height: Int, width: Int, url: String}'}
+            ]
         }
         expect(formatSchema(ast)).toEqual(azimuttSchema)
     })
     test('handles errors', async () => {
         await expect(parseSchema(`model User`)).rejects.toEqual('Expected "{", [0-9a-z_\\-], or horizontal whitespace but end of input found.')
-    })
-
-    test.skip('debug', async () => {
-        const prismaSchema = fs.readFileSync('tests/resources/schema.prisma', {encoding: 'utf8', flag: 'r'})
-        // console.log('prismaSchema', prismaSchema)
-        const prismaAst = await parseSchema(prismaSchema)
-        fs.writeFileSync('tests/resources/schema.prisma.json', JSON.stringify(prismaAst, null, 2))
-        // console.log('prismaAst', prismaAst)
-        const azimuttSchema = formatSchema(prismaAst)
-        fs.writeFileSync('tests/resources/schema.azimutt.json', JSON.stringify(azimuttSchema, null, 2))
-        console.log('azimuttSchema', azimuttSchema)
     })
 })

@@ -25,7 +25,7 @@
     "dry-publish": "npm run build && npm pack"
   },
   "dependencies": {
-    "@azimutt/database-types": "0.0.4",
+    "@azimutt/database-types": "0.0.6",
     "@loancrate/prisma-schema-parser": "2.0.0"
   },
   "devDependencies": {
