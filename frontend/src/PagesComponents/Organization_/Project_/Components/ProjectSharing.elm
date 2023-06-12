@@ -44,6 +44,7 @@ import Services.Backend as Backend
 import Services.DatabaseSource as DatabaseSource
 import Services.JsonSource as JsonSource
 import Services.Lenses exposing (mapTokenFormM, setExpire, setName, setToken, setTokenForm, setTokens)
+import Services.PrismaSource as PrismaSource
 import Services.ProjectSource as ProjectSource
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
@@ -333,6 +334,9 @@ embedKindPlaceholder kind =
 
         EmbedKind.EmbedSqlSource ->
             SqlSource.example
+
+        EmbedKind.EmbedPrismaSource ->
+            PrismaSource.example
 
         EmbedKind.EmbedJsonSource ->
             JsonSource.example

@@ -6,12 +6,13 @@ type EmbedKind
     | EmbedProjectUrl
     | EmbedDatabaseSource
     | EmbedSqlSource
+    | EmbedPrismaSource
     | EmbedJsonSource
 
 
 all : List EmbedKind
 all =
-    [ EmbedProjectId, EmbedProjectUrl, EmbedDatabaseSource, EmbedSqlSource, EmbedJsonSource ]
+    [ EmbedProjectId, EmbedProjectUrl, EmbedDatabaseSource, EmbedSqlSource, EmbedPrismaSource, EmbedJsonSource ]
 
 
 label : EmbedKind -> String
@@ -28,6 +29,9 @@ label kind =
 
         EmbedSqlSource ->
             "SQL source"
+
+        EmbedPrismaSource ->
+            "Prisma source"
 
         EmbedJsonSource ->
             "JSON source"
@@ -48,6 +52,9 @@ value kind =
         EmbedSqlSource ->
             sqlSource
 
+        EmbedPrismaSource ->
+            prismaSource
+
         EmbedJsonSource ->
             jsonSource
 
@@ -65,6 +72,9 @@ fromValue kind =
 
     else if kind == sqlSource then
         Just EmbedSqlSource
+
+    else if kind == prismaSource then
+        Just EmbedPrismaSource
 
     else if kind == jsonSource then
         Just EmbedJsonSource

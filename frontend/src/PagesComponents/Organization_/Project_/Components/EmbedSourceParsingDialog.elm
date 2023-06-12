@@ -46,6 +46,7 @@ init : (Source -> msg) -> (msg -> msg) -> (String -> msg) -> Maybe String -> May
 init sourceParsed modalClose noop databaseSource sqlSource prismaSource jsonSource =
     databaseSource
         |> Maybe.orElse sqlSource
+        |> Maybe.orElse prismaSource
         |> Maybe.orElse jsonSource
         |> Maybe.map
             (\_ ->

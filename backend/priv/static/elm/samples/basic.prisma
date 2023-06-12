@@ -1,0 +1,55 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+/// A table to store all users and in a single diagram control them, for the better or worse!
+model User {
+  id          Int          @id /// The user id which is automatically defined based on subscription order. Should never change!
+  first_name  String
+  last_name   String
+  email       String?      @unique
+  external_id Int
+  Credential  Credential[]
+  RoleUser    RoleUser[]
+
+  @@index([first_name, last_name])
+  @@index([external_id])
+}
+
+model Role {
+  id          Int        @id
+  slug        String
+  name        String
+  description String?
+  createdAt   DateTime   @map("created_at")
+  updatedAt   DateTime   @map("updated_at")
+  RoleUser    RoleUser[]
+
+  @@index([slug])
+  @@index([name])
+}
+
+model Credential {
+  user     User   @relation(fields: [userId], references: [id])
+  userId   Int
+  login    String @unique
+  password String
+}
+
+model RoleUser {
+  id        Int      @id
+  role      Role     @relation(fields: [roleId], references: [id])
+  roleId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  createdAt DateTime @map("created_at")
+  updatedAt DateTime @map("updated_at")
+}
