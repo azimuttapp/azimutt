@@ -116,6 +116,12 @@ viewSource htmlId _ zone updating source =
         SqlRemoteFile url _ ->
             view Icons.sources.remote "Last fetched on " source.updatedAt ("File from " ++ url)
 
+        PrismaLocalFile path _ modified ->
+            view Icons.sources.prisma "File last modified on " modified (path ++ " file")
+
+        PrismaRemoteFile url _ ->
+            view Icons.sources.remote "Last fetched on " source.updatedAt ("File from " ++ url)
+
         JsonLocalFile path _ modified ->
             view Icons.sources.json "File last modified on " modified (path ++ " file")
 

@@ -1,16 +1,15 @@
-module Services.JsonSource exposing (Model, Msg(..), example, init, kind, update, viewInput, viewLocalInput, viewParsing, viewRemoteInput)
+module Services.PrismaSource exposing (Model, Msg(..), example, init, kind, update, viewInput, viewLocalInput, viewParsing, viewRemoteInput)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.Divider as Divider
 import Components.Molecules.FileInput as FileInput
 import DataSources.JsonMiner.JsonAdapter as JsonAdapter
-import DataSources.JsonMiner.JsonSchema as JsonSchema exposing (JsonSchema)
+import DataSources.JsonMiner.JsonSchema exposing (JsonSchema)
 import FileValue exposing (File)
 import Html exposing (Html, div, input, p, span, text)
 import Html.Attributes exposing (class, id, name, placeholder, type_, value)
 import Html.Events exposing (onBlur, onInput)
 import Http
-import Json.Decode as Decode
 import Libs.Bool as B
 import Libs.Html.Attributes exposing (css)
 import Libs.Http as Http
@@ -39,7 +38,7 @@ type alias Model msg =
     , selectedLocalFile : Maybe File
     , selectedRemoteFile : Maybe (Result String FileUrl)
     , loadedSchema : Maybe ( SourceInfo, FileContent )
-    , parsedSchema : Maybe (Result Decode.Error JsonSchema)
+    , parsedSchema : Maybe (Result String JsonSchema)
     , parsedSource : Maybe (Result String Source)
     , callback : Result String Source -> msg
     , show : HtmlId
@@ -52,7 +51,7 @@ type Msg
     | GotRemoteFile FileUrl (Result Http.Error FileContent)
     | GetLocalFile File
     | GotFile SourceInfo FileContent
-    | ParseSource
+    | GotSchema (Result String JsonSchema)
     | BuildSource
     | UiToggle HtmlId
 
@@ -63,12 +62,12 @@ type Msg
 
 kind : String
 kind =
-    "json-source"
+    "prisma-source"
 
 
 example : String
 example =
-    "https://azimutt.app/elm/samples/basic.json"
+    "https://azimutt.app/elm/samples/basic.prisma"
 
 
 init : Maybe Source -> (Result String Source -> msg) -> Model msg
@@ -110,7 +109,7 @@ update wrap now project msg model =
         GotRemoteFile url result ->
             case result of
                 Ok content ->
-                    ( model, SourceId.generator |> Random.generate (\sourceId -> GotFile (SourceInfo.jsonRemote now sourceId url content Nothing) content |> wrap) )
+                    ( model, SourceId.generator |> Random.generate (\sourceId -> GotFile (SourceInfo.prismaRemote now sourceId url content Nothing) content |> wrap) )
 
                 Err err ->
                     ( model |> setParsedSource (err |> Http.errorToString |> Err |> Just), T.send (model.callback (err |> Http.errorToString |> Err)) )
@@ -122,19 +121,19 @@ update wrap now project msg model =
 
         GotFile sourceInfo fileContent ->
             ( { model | loadedSchema = Just ( sourceInfo |> setId (model.source |> Maybe.mapOrElse .id sourceInfo.id), fileContent ) }
-            , T.send (ParseSource |> wrap)
+            , Ports.getPrismaSchema fileContent
             )
 
-        ParseSource ->
+        GotSchema schema ->
             model.loadedSchema
-                |> Maybe.map (\( _, json ) -> ( model |> setParsedSchema (json |> Decode.decodeString JsonSchema.decode |> Just), T.send (BuildSource |> wrap) ))
+                |> Maybe.map (\_ -> ( model |> setParsedSchema (schema |> Just), BuildSource |> wrap |> T.send ))
                 |> Maybe.withDefault ( model, Cmd.none )
 
         BuildSource ->
-            Maybe.map2 (\( info, _ ) schema -> schema |> Result.map (JsonAdapter.buildSource info) |> Result.mapError Decode.errorToString)
+            Maybe.map2 (\( info, _ ) schema -> schema |> Result.map (JsonAdapter.buildSource info))
                 model.loadedSchema
                 model.parsedSchema
-                |> Maybe.map (\source -> ( model |> setParsedSource (source |> Just), Cmd.batch [ T.send (model.callback source), Track.jsonSourceCreated project source ] ))
+                |> Maybe.map (\source -> ( model |> setParsedSource (source |> Just), Cmd.batch [ T.send (model.callback source), Track.prismaSourceCreated project source ] ))
                 |> Maybe.withDefault ( model, Cmd.none )
 
         UiToggle htmlId ->
@@ -165,10 +164,10 @@ viewLocalInput wrap noop htmlId =
         , content =
             div [ css [ "space-y-1 text-center" ] ]
                 [ Icon.outline2x DocumentAdd "mx-auto"
-                , p [] [ span [ css [ "text-primary-600" ] ] [ text "Upload your JSON schema" ], text " or drag and drop" ]
-                , p [ css [ "text-xs" ] ] [ text ".json file only" ]
+                , p [] [ span [ css [ "text-primary-600" ] ] [ text "Upload your Prisma Schema" ], text " or drag and drop" ]
+                , p [ css [ "text-xs" ] ] [ text ".prisma file only" ]
                 ]
-        , mimes = [ ".json" ]
+        , mimes = [ ".prisma" ]
         }
 
 
@@ -216,7 +215,7 @@ viewParsing wrap model =
                         ]
                     , SourceLogs.viewContainer
                         [ SourceLogs.viewFile UiToggle model.show fileName (model.loadedSchema |> Maybe.map Tuple.second) |> Html.map wrap
-                        , model.parsedSchema |> Maybe.mapOrElse (Result.mapError Decode.errorToString >> SourceLogs.viewParsedSchema UiToggle model.show) (div [] []) |> Html.map wrap
+                        , model.parsedSchema |> Maybe.mapOrElse (SourceLogs.viewParsedSchema UiToggle model.show) (div [] []) |> Html.map wrap
                         , model.parsedSource |> Maybe.mapOrElse SourceLogs.viewError (div [] [])
                         , model.parsedSource |> Maybe.mapOrElse SourceLogs.viewResult (div [] [])
                         ]

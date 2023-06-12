@@ -11,6 +11,7 @@ import Ports exposing (JsMsg)
 import Services.Backend as Backend exposing (Sample)
 import Services.DatabaseSource as DatabaseSource
 import Services.JsonSource as JsonSource
+import Services.PrismaSource as PrismaSource
 import Services.ProjectSource as ProjectSource exposing (Model, Msg)
 import Services.SampleSource as SampleSource
 import Services.SqlSource as SqlSource
@@ -26,6 +27,7 @@ type alias Model =
     , selectedTab : Tab
     , databaseSource : Maybe (DatabaseSource.Model Msg)
     , sqlSource : Maybe (SqlSource.Model Msg)
+    , prismaSource : Maybe (PrismaSource.Model Msg)
     , jsonSource : Maybe (JsonSource.Model Msg)
     , projectSource : Maybe ProjectSource.Model
     , sampleSource : Maybe SampleSource.Model
@@ -41,6 +43,7 @@ type alias Model =
 type Tab
     = TabDatabase
     | TabSql
+    | TabPrisma
     | TabJson
     | TabEmptyProject
     | TabProject
@@ -58,6 +61,7 @@ type Msg
     | InitTab Tab
     | DatabaseSourceMsg DatabaseSource.Msg
     | SqlSourceMsg SqlSource.Msg
+    | PrismaSourceMsg PrismaSource.Msg
     | JsonSourceMsg JsonSource.Msg
     | ProjectSourceMsg ProjectSource.Msg
     | SampleSourceMsg SampleSource.Msg

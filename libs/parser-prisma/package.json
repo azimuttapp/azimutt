@@ -1,7 +1,7 @@
 {
-  "name": "@azimutt/utils",
-  "version": "0.0.5",
-  "description": "Define common basic helpers for all projects",
+  "name": "@azimutt/parser-prisma",
+  "version": "0.0.2",
+  "description": "Parse a prisma schema and format it in JSON for Azimutt",
   "keywords": [],
   "homepage": "https://azimutt.app",
   "author": {
@@ -13,7 +13,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/azimuttapp/azimutt.git",
-    "directory": "libs/utils"
+    "directory": "libs/parser-prisma"
   },
   "main": "./out/index.js",
   "types": "./out/index.d.ts",
@@ -23,6 +23,10 @@
     "build": "rm -rf ./out && tsc",
     "update": "npm update --save-dev && npm update --save && npm install",
     "dry-publish": "npm run build && npm pack"
+  },
+  "dependencies": {
+    "@azimutt/database-types": "0.0.6",
+    "@loancrate/prisma-schema-parser": "2.0.0"
   },
   "devDependencies": {
     "@jest/globals": "^29.5.0",

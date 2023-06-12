@@ -21,7 +21,8 @@ import Random
 import Request
 import Services.DatabaseSource as DatabaseSource
 import Services.JsonSource as JsonSource
-import Services.Lenses exposing (mapDatabaseSourceMCmd, mapJsonSourceMCmd, mapSqlSourceMCmd, mapToastsCmd)
+import Services.Lenses exposing (mapDatabaseSourceMCmd, mapJsonSourceMCmd, mapPrismaSourceMCmd, mapSqlSourceMCmd, mapToastsCmd)
+import Services.PrismaSource as PrismaSource
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
 import Time
@@ -44,10 +45,12 @@ update req now projects projectsLoaded urlOrganization msg model =
                 in
                 ( (req.query |> Dict.get "database" |> Maybe.map (\_ -> { model | databaseSource = Just (DatabaseSource.init Nothing (createProject projects storage name)) }))
                     |> Maybe.orElse (req.query |> Dict.get "sql" |> Maybe.map (\_ -> { model | sqlSource = Just (SqlSource.init Nothing (Tuple.second >> createProject projects storage name)) }))
+                    |> Maybe.orElse (req.query |> Dict.get "prisma" |> Maybe.map (\_ -> { model | prismaSource = Just (PrismaSource.init Nothing (createProject projects storage name)) }))
                     |> Maybe.orElse (req.query |> Dict.get "json" |> Maybe.map (\_ -> { model | jsonSource = Just (JsonSource.init Nothing (createProject projects storage name)) }))
                     |> Maybe.withDefault model
                 , (req.query |> Dict.get "database" |> Maybe.map (DatabaseSource.GetSchema >> DatabaseSourceMsg >> T.send))
                     |> Maybe.orElse (req.query |> Dict.get "sql" |> Maybe.map (SqlSource.GetRemoteFile >> SqlSourceMsg >> T.send))
+                    |> Maybe.orElse (req.query |> Dict.get "prisma" |> Maybe.map (PrismaSource.GetRemoteFile >> PrismaSourceMsg >> T.send))
                     |> Maybe.orElse (req.query |> Dict.get "json" |> Maybe.map (JsonSource.GetRemoteFile >> JsonSourceMsg >> T.send))
                     |> Maybe.withDefault (AmlSourceMsg storage name |> T.send)
                 )
@@ -58,11 +61,14 @@ update req now projects projectsLoaded urlOrganization msg model =
         DatabaseSourceMsg message ->
             model |> mapDatabaseSourceMCmd (DatabaseSource.update DatabaseSourceMsg now Nothing message)
 
-        JsonSourceMsg message ->
-            model |> mapJsonSourceMCmd (JsonSource.update JsonSourceMsg now Nothing message)
-
         SqlSourceMsg message ->
             model |> mapSqlSourceMCmd (SqlSource.update SqlSourceMsg now Nothing message)
+
+        PrismaSourceMsg message ->
+            model |> mapPrismaSourceMCmd (PrismaSource.update PrismaSourceMsg now Nothing message)
+
+        JsonSourceMsg message ->
+            model |> mapJsonSourceMCmd (JsonSource.update JsonSourceMsg now Nothing message)
 
         AmlSourceMsg storage name ->
             ( model, SourceId.generator |> Random.generate (Source.aml Conf.constants.virtualRelationSourceName now >> Project.create projects name >> CreateProjectTmp storage) )
@@ -104,6 +110,12 @@ handleJsMessage req urlOrganization msg model =
 
         GotDatabaseSchema schema ->
             ( model, schema |> DatabaseSource.GotSchema |> DatabaseSourceMsg |> T.send )
+
+        GotPrismaSchema schema ->
+            ( model, Ok schema |> PrismaSource.GotSchema |> PrismaSourceMsg |> T.send )
+
+        GotPrismaSchemaError error ->
+            ( model, Err error |> PrismaSource.GotSchema |> PrismaSourceMsg |> T.send )
 
         GotToast level message ->
             ( model, message |> Toasts.create level |> Toast |> T.send )

@@ -24,7 +24,8 @@ import Request
 import Services.Backend as Backend
 import Services.DatabaseSource as DatabaseSource
 import Services.JsonSource as JsonSource
-import Services.Lenses exposing (mapDatabaseSourceMCmd, mapJsonSourceMCmd, mapOpenedDialogs, mapProjectSourceMCmd, mapSampleSourceMCmd, mapSqlSourceMCmd, mapToastsCmd, setConfirm)
+import Services.Lenses exposing (mapDatabaseSourceMCmd, mapJsonSourceMCmd, mapOpenedDialogs, mapPrismaSourceMCmd, mapProjectSourceMCmd, mapSampleSourceMCmd, mapSqlSourceMCmd, mapToastsCmd, setConfirm)
+import Services.PrismaSource as PrismaSource
 import Services.ProjectSource as ProjectSource
 import Services.SampleSource as SampleSource
 import Services.SqlSource as SqlSource
@@ -68,6 +69,9 @@ update req now projects urlOrganization msg model =
                 TabSql ->
                     { clean | sqlSource = Just (SqlSource.init Nothing (\_ -> Noop "select-tab-sql-source")) }
 
+                TabPrisma ->
+                    { clean | prismaSource = Just (PrismaSource.init Nothing (\_ -> Noop "select-tab-prisma-source")) }
+
                 TabJson ->
                     { clean | jsonSource = Just (JsonSource.init Nothing (\_ -> Noop "select-tab-json-source")) }
 
@@ -97,6 +101,10 @@ update req now projects urlOrganization msg model =
         SqlSourceMsg message ->
             (model |> mapSqlSourceMCmd (SqlSource.update SqlSourceMsg now Nothing message))
                 |> Tuple.mapSecond (\cmd -> B.cond (message == SqlSource.BuildSource) (Cmd.batch [ cmd, Ports.confetti "create-project-btn" ]) cmd)
+
+        PrismaSourceMsg message ->
+            (model |> mapPrismaSourceMCmd (PrismaSource.update PrismaSourceMsg now Nothing message))
+                |> Tuple.mapSecond (\cmd -> B.cond (message == PrismaSource.BuildSource) (Cmd.batch [ cmd, Ports.confetti "create-project-btn" ]) cmd)
 
         JsonSourceMsg message ->
             (model |> mapJsonSourceMCmd (JsonSource.update JsonSourceMsg now Nothing message))
@@ -151,6 +159,9 @@ handleJsMessage req now urlOrganization msg model =
             else if kind == SqlSource.kind then
                 ( model, SourceId.generator |> Random.generate (\sourceId -> content |> SqlSource.GotFile (SourceInfo.sqlLocal now sourceId file) |> SqlSourceMsg) )
 
+            else if kind == PrismaSource.kind then
+                ( model, SourceId.generator |> Random.generate (\sourceId -> content |> PrismaSource.GotFile (SourceInfo.prismaLocal now sourceId file) |> PrismaSourceMsg) )
+
             else if kind == JsonSource.kind then
                 ( model, SourceId.generator |> Random.generate (\sourceId -> content |> JsonSource.GotFile (SourceInfo.jsonLocal now sourceId file) |> JsonSourceMsg) )
 
@@ -166,6 +177,12 @@ handleJsMessage req now urlOrganization msg model =
 
         GotDatabaseSchema schema ->
             ( model, schema |> DatabaseSource.GotSchema |> DatabaseSourceMsg |> T.send )
+
+        GotPrismaSchema schema ->
+            ( model, Ok schema |> PrismaSource.GotSchema |> PrismaSourceMsg |> T.send )
+
+        GotPrismaSchemaError error ->
+            ( model, Err error |> PrismaSource.GotSchema |> PrismaSourceMsg |> T.send )
 
         GotToast level message ->
             ( model, message |> Toasts.create level |> Toast |> T.send )

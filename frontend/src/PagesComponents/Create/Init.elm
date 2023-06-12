@@ -16,6 +16,7 @@ init : Maybe OrganizationId -> ( Model, Cmd Msg )
 init urlOrganization =
     ( { databaseSource = Nothing
       , sqlSource = Nothing
+      , prismaSource = Nothing
       , jsonSource = Nothing
       , toasts = Toasts.init
       }

@@ -16,7 +16,8 @@ import Models.Project.Source exposing (Source)
 import Models.ProjectInfo exposing (ProjectInfo)
 import Services.DatabaseSource as DatabaseSource
 import Services.JsonSource as JsonSource
-import Services.Lenses exposing (mapDatabaseSourceMCmd, mapJsonSourceMCmd, mapSqlSourceMCmd)
+import Services.Lenses exposing (mapDatabaseSourceMCmd, mapJsonSourceMCmd, mapPrismaSourceMCmd, mapSqlSourceMCmd)
+import Services.PrismaSource as PrismaSource
 import Services.SqlSource as SqlSource
 import Time
 
@@ -25,6 +26,7 @@ type alias Model msg =
     { id : HtmlId
     , databaseSource : Maybe (DatabaseSource.Model msg)
     , sqlSource : Maybe (SqlSource.Model msg)
+    , prismaSource : Maybe (PrismaSource.Model msg)
     , jsonSource : Maybe (JsonSource.Model msg)
     }
 
@@ -32,6 +34,7 @@ type alias Model msg =
 type Msg
     = EmbedDatabaseSource DatabaseSource.Msg
     | EmbedSqlSource SqlSource.Msg
+    | EmbedPrismaSource PrismaSource.Msg
     | EmbedJsonSource JsonSource.Msg
 
 
@@ -39,10 +42,11 @@ type Msg
 -- INIT
 
 
-init : (Source -> msg) -> (msg -> msg) -> (String -> msg) -> Maybe String -> Maybe String -> Maybe String -> Maybe (Model msg)
-init sourceParsed modalClose noop databaseSource sqlSource jsonSource =
+init : (Source -> msg) -> (msg -> msg) -> (String -> msg) -> Maybe String -> Maybe String -> Maybe String -> Maybe String -> Maybe (Model msg)
+init sourceParsed modalClose noop databaseSource sqlSource prismaSource jsonSource =
     databaseSource
         |> Maybe.orElse sqlSource
+        |> Maybe.orElse prismaSource
         |> Maybe.orElse jsonSource
         |> Maybe.map
             (\_ ->
@@ -62,6 +66,7 @@ init sourceParsed modalClose noop databaseSource sqlSource jsonSource =
                                             source |> Result.fold (\_ -> noop "embed-load-sql-has-errors") (sourceParsed >> modalClose)
                                     )
                             )
+                , prismaSource = prismaSource |> Maybe.map (\_ -> PrismaSource.init Nothing (Result.fold (\_ -> noop "embed-load-prisma-has-errors") (sourceParsed >> modalClose)))
                 , jsonSource = jsonSource |> Maybe.map (\_ -> JsonSource.init Nothing (Result.fold (\_ -> noop "embed-load-json-has-errors") (sourceParsed >> modalClose)))
                 }
             )
@@ -79,6 +84,9 @@ update wrap now project msg model =
 
         EmbedSqlSource message ->
             model |> mapSqlSourceMCmd (SqlSource.update (EmbedSqlSource >> wrap) now project message)
+
+        EmbedPrismaSource message ->
+            model |> mapPrismaSourceMCmd (PrismaSource.update (EmbedPrismaSource >> wrap) now project message)
 
         EmbedJsonSource message ->
             model |> mapJsonSourceMCmd (JsonSource.update (EmbedJsonSource >> wrap) now project message)
@@ -103,6 +111,7 @@ view wrap sourceParsed modalClose noop opened model =
         }
         ((model.databaseSource |> Maybe.map (viewDatabaseSourceParsing wrap sourceParsed modalClose))
             |> Maybe.orElse (model.sqlSource |> Maybe.map (viewSqlSourceParsing wrap sourceParsed modalClose))
+            |> Maybe.orElse (model.prismaSource |> Maybe.map (viewPrismaSourceParsing wrap sourceParsed modalClose))
             |> Maybe.orElse (model.jsonSource |> Maybe.map (viewJsonSourceParsing wrap sourceParsed modalClose))
             -- default case should not happen, see init function if it happen (at least one should be present)
             |> Maybe.withDefault [ div [] [ text "No source to parse in embed... Should never happen!" ] ]
@@ -131,6 +140,19 @@ viewSqlSourceParsing wrap sourceParsed modalClose model =
             |> Maybe.withDefault "your"
         )
         (SqlSource.viewParsing (EmbedSqlSource >> wrap) model)
+        model.parsedSource
+
+
+viewPrismaSourceParsing : (Msg -> msg) -> (Source -> msg) -> (msg -> msg) -> PrismaSource.Model msg -> List (Html msg)
+viewPrismaSourceParsing wrap sourceParsed modalClose model =
+    viewParsing
+        sourceParsed
+        modalClose
+        ((model.selectedLocalFile |> Maybe.map .name)
+            |> Maybe.orElse (model.selectedRemoteFile |> Maybe.andThen Result.toMaybe |> Maybe.map FileUrl.filename)
+            |> Maybe.withDefault "your"
+        )
+        (PrismaSource.viewParsing (EmbedPrismaSource >> wrap) model)
         model.parsedSource
 
 
