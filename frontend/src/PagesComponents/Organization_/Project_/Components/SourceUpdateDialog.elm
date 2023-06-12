@@ -322,6 +322,7 @@ newSourceModal wrap sourceSet close noop htmlId titleId model =
         , div [ class "mt-3" ]
             [ Bool.cond (model.newSourceTab == TabDatabase) Button.primary1 Button.white1 Tw.primary [ onClick (TabDatabase |> UpdateTab |> wrap) ] [ text "Database" ]
             , Bool.cond (model.newSourceTab == TabSql) Button.primary1 Button.white1 Tw.primary [ onClick (TabSql |> UpdateTab |> wrap), class "ml-3" ] [ text "SQL" ]
+            , Bool.cond (model.newSourceTab == TabPrisma) Button.primary1 Button.white1 Tw.primary [ onClick (TabPrisma |> UpdateTab |> wrap), class "ml-3" ] [ text "Prisma" ]
             , Bool.cond (model.newSourceTab == TabJson) Button.primary1 Button.white1 Tw.primary [ onClick (TabJson |> UpdateTab |> wrap), class "ml-3" ] [ text "JSON" ]
             , Bool.cond (model.newSourceTab == TabAml) Button.primary1 Button.white1 Tw.primary [ onClick (TabAml |> UpdateTab |> wrap), class "ml-3" ] [ text "AML" ]
             ]
