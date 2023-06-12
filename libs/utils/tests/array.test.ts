@@ -1,7 +1,13 @@
 import {describe, expect, test} from "@jest/globals";
-import {distinct, groupBy, mergeBy, partition, shuffle, zip} from "../src";
+import {collect, collectOne, distinct, groupBy, mergeBy, partition, shuffle, zip} from "../src";
 
 describe('array', () => {
+    test('collect', () => {
+        expect(collect([1, 2, 3, 4, 5], i => i % 2 === 0 ? i.toString() : undefined)).toEqual(['2', '4'])
+    })
+    test('collectOne', () => {
+        expect(collectOne([1, 2, 3, 4, 5], i => i % 2 === 0 ? i.toString() : undefined)).toEqual('2')
+    })
     test('distinct', () => {
         expect(distinct([1, 1, 2, 3, 5, 3])).toEqual([1, 2, 3, 5])
     })

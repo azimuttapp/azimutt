@@ -1,4 +1,14 @@
 // functions sorted alphabetically
+export const collect = <T, U>(arr: T[], f: (t: T) => U | undefined): U[] => arr.map(f).filter((u): u is U => u !== undefined)
+export const collectOne = <T, U>(arr: T[], f: (t: T) => U | undefined): U | undefined => {
+    for(const i of arr) {
+        const u = f(i)
+        if (u !== undefined) {
+            return u
+        }
+    }
+    return undefined
+}
 export const distinct = <T>(arr: T[]): T[] => arr.filter((t, i) => arr.indexOf(t) === i)
 export const partition = <T>(arr: T[], p: (i: T) => boolean): [T[], T[]] => {
     const ok = [] as T[]

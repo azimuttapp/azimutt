@@ -1,6 +1,7 @@
 import {describe, expect, test} from "@jest/globals";
 import * as fs from "fs";
-import {deeplyRemoveFields, formatSchema, parseSchema} from "../src/prisma";
+import {AzimuttSchema} from "@azimutt/database-types";
+import {formatSchema, parseSchema} from "../src/prisma";
 
 describe('prisma', () => {
     test('parse a basic schema', async () => {
@@ -78,60 +79,78 @@ model Post {
             types: []
         })
     })
-    test('parse a prisma schema', async () => {
-        const parsed = await parseSchema(`
+    test('parse a complex schema', async () => {
+        // https://www.prisma.io/docs/reference/api-reference/prisma-schema-reference
+        const ast = await parseSchema(`
 /// User 1
 /// User 2
 model User {
   /// User.id 1
   /// User.id 2
-  id    Int     @id @default(autoincrement()) /// User.id 3
-  email String  @unique
-  name  String?
-  role  Role    @default(USER)
-  posts Post[]
+  id         Int     @id @default(autoincrement()) /// User.id 3
+  email      String  @unique @db.VarChar(128)
+  firstName  String? @map("first_name")
+  lastName   String? @map("last_name")
+  role       Role    @default(USER)
+  posts      Post[]
+  @@map("users")
+  @@schema("auth")
+  @@unique(fields: [first_name, last_name], name: "uq_userName")
 }
 model Post {
-  id       Int  @id @default(autoincrement())
-  author   User @relation(fields: [authorId], references: [id])
+  category String
+  title    String
+  banner   Photo
+  author   User   @relation(fields: [authorId], references: [id])
   authorId Int
+  @@id([category, title])
+  @@index([title, author])
 }
 enum Role {
   USER
   ADMIN
+}
+type Photo {
+  height Int
+  width  Int
+  url    String
 }`)
-        fs.writeFileSync('tests/resources/example.prisma.json', JSON.stringify(deeplyRemoveFields(parsed, ['location']), null, 2))
-        expect(formatSchema(parsed)).toEqual({
+        const azimuttSchema: AzimuttSchema = {
             tables: [{
-                schema: '',
-                table: 'User',
+                schema: 'auth',
+                table: 'users',
                 columns: [
                     {name: 'id', type: 'Int', default: 'autoincrement()', comment: 'User.id 1\nUser.id 2\nUser.id 3'},
-                    {name: 'email', type: 'String'},
-                    {name: 'name', type: 'String', nullable: true},
+                    {name: 'email', type: 'VarChar(128)'},
+                    {name: 'first_name', type: 'String', nullable: true},
+                    {name: 'last_name', type: 'String', nullable: true},
                     {name: 'role', type: 'Role', default: 'USER'},
                     {name: 'posts', type: 'Post[]'},
                 ],
                 primaryKey: {columns: ['id']},
-                uniques: [{columns: ['email']}],
+                uniques: [{columns: ['email']}, {name: 'uq_userName', columns: ['first_name', 'last_name']}],
                 comment: 'User 1\nUser 2'
             }, {
                 schema: '',
                 table: 'Post',
                 columns: [
-                    {name: 'id', type: 'Int', default: 'autoincrement()'},
+                    {name: 'category', type: 'String'},
+                    {name: 'title', type: 'String'},
+                    {name: 'banner', type: 'Photo'},
                     {name: 'author', type: 'User'},
                     {name: 'authorId', type: 'Int'},
                 ],
-                primaryKey: {columns: ['id']}
+                primaryKey: {columns: ['category', 'title']},
+                indexes: [{columns: ['title', 'author']}]
             }],
             relations: [{
                 name: 'fk_Post_authorId_User_id',
                 src: {schema: '', table: 'Post', column: 'authorId'},
                 ref: {schema: '', table: 'User', column: 'id'}
             }],
-            types: [{schema: '', name: 'Role', values: ['USER', 'ADMIN']}]
-        })
+            types: [{schema: '', name: 'Role', values: ['USER', 'ADMIN']}, {schema: '', name: 'Photo', definition: '{height: Int, width: Int, url: String}'}]
+        }
+        expect(formatSchema(ast)).toEqual(azimuttSchema)
     })
     test('handles errors', async () => {
         await expect(parseSchema(`model User`)).rejects.toEqual('Expected "{", [0-9a-z_\\-], or horizontal whitespace but end of input found.')

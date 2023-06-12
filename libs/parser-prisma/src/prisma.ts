@@ -1,5 +1,6 @@
 import {EnumDeclaration, parsePrismaSchema, PrismaSchema} from "@loancrate/prisma-schema-parser";
 import {
+    BlockAttribute,
     CommentBlock,
     EnumValue,
     FieldAttribute,
@@ -26,10 +27,12 @@ export function formatSchema(schema: PrismaSchema): AzimuttSchema {
         const prev = array[index-1]
         return declaration.kind === 'model' ? [formatTable(declaration, prev?.kind === 'commentBlock' ? prev : undefined)] : []
     })
+    const enums = schema.declarations.filter((d): d is EnumDeclaration => d.kind === 'enum').map(formatEnum)
+    const types = schema.declarations.filter((d): d is ModelDeclaration => d.kind === 'type').map(formatType)
     return {
         tables: tables.map(t => t.table),
         relations: tables.flatMap(t => t.relations),
-        types: schema.declarations.filter((d): d is EnumDeclaration => d.kind === 'enum').map(formatType)
+        types: enums.concat(types)
     }
 }
 
@@ -44,18 +47,25 @@ function formatTable(model: ModelDeclaration, comment: CommentBlock | undefined)
         return member.kind === 'field' ? [formatColumn(member, prev?.kind === 'commentBlock' ? prev : undefined)] : []
     })
     const fields = model.members.filter((m): m is FieldDeclaration => m.kind === 'field')
-    const pk = fields.filter(f => f.attributes?.find(a => a.path.value.indexOf('id') >= 0)).map(f => f.name.value)
-    const uniques = fields.filter(f => f.attributes?.find(a => a.path.value.indexOf('unique') >= 0)).map(f => [f.name.value])
+    const columnPk = fields.filter(f => f.attributes?.find(a => a.path.value.indexOf('id') >= 0)).map(f => ({columns: [f.name.value]}))
+    const columnUniques = fields.filter(f => f.attributes?.find(a => a.path.value.indexOf('unique') >= 0)).map(f => ({columns: [f.name.value]}))
     const relations = fields.flatMap(f => f.attributes?.filter(a => a.path.value.indexOf('relation') >= 0).flatMap(a => formatRelation(model, f, a)) || [])
+    const attributes = model.members.filter((m): m is BlockAttribute => m.kind === 'blockAttribute')
+    const schema = attributes.find(a => a.path.value[0] === 'schema')
+    const dbName = attributes.find(a => a.path.value[0] === 'map')
+    const tablePk = attributes.filter(a => a.path.value[0] === 'id').map(formatConstraint)
+    const tableUniques = attributes.filter(a => a.path.value[0] === 'unique').map(formatConstraint)
+    const tableIndexes = attributes.filter(a => a.path.value[0] === 'index').map(formatConstraint)
+    const uniques = columnUniques.concat(tableUniques)
     return {
         table: removeUndefined({
-            schema: '',
-            table: model.name.value,
+            schema: schema ? (schema.args || []).map(formatSchemaArgument).join('_') : '',
+            table: dbName ? (dbName.args || []).map(formatSchemaArgument).join('_') : model.name.value,
             columns: columns,
             // view: false,
-            primaryKey: pk.length > 0 ? {columns: pk} : undefined,
-            uniques: uniques.length > 0 ? uniques.map(u => ({columns: u})) : undefined,
-            // indexes?: AzimuttIndex[] | null,
+            primaryKey: (tablePk.length > 0 ? tablePk[0] : undefined) || (columnPk.length > 0 ? columnPk[0] : undefined),
+            uniques: uniques.length > 0 ? uniques : undefined,
+            indexes: tableIndexes.length > 0 ? tableIndexes : undefined,
             // checks?: AzimuttCheck[] | null,
             comment: comment ? comment.comments.map(c => c.text).join('\n') : undefined
         }),
@@ -65,9 +75,11 @@ function formatTable(model: ModelDeclaration, comment: CommentBlock | undefined)
 
 function formatColumn(field: FieldDeclaration, comment: CommentBlock | undefined): AzimuttColumn {
     const comments = (comment?.comments || []).concat(field.comment ? [field.comment] : [])
+    const dbName = field.attributes?.find(a => a.path.value[0] === 'map')
+    const dbType = field.attributes?.find(a => a.path.value[0] === 'db')
     return removeUndefined({
-        name: field.name.value,
-        type: formatPrismaType(field.type),
+        name: dbName ? (dbName.args || []).map(formatSchemaArgument).join('_') : field.name.value,
+        type: (dbType ? formatDbType(dbType) : undefined) || formatPrismaType(field.type),
         nullable: field.type.kind === 'optional' ? true : undefined,
         default: field.attributes
             ?.find(a => a.path.value.indexOf('default') >= 0)
@@ -77,12 +89,21 @@ function formatColumn(field: FieldDeclaration, comment: CommentBlock | undefined
     })
 }
 
+function formatConstraint(attr: BlockAttribute): {name?: string | null, columns: string[]} {
+    const columns = formatFields(findArgument(attr, 'fields')?.expression || attr.args?.find((a): a is SchemaExpression => a.kind !== 'namedArgument'))
+    const name = findArgument(attr, 'name')?.expression
+    return removeUndefined({
+        name: name ? formatSchemaExpression(name) : undefined,
+        columns
+    })
+}
+
 function formatRelation(model: ModelDeclaration, field: FieldDeclaration, attr: FieldAttribute): AzimuttRelation[] {
     const modelSrc = model.name.value
     const modelRef = formatPrismaType(field.type)
     return zip(
-        formatRelationColumns(findArgument(attr, 'fields')),
-        formatRelationColumns(findArgument(attr, 'references'))
+        formatFields(findArgument(attr, 'fields')?.expression),
+        formatFields(findArgument(attr, 'references')?.expression)
     ).map(([src, ref]) => {
         return {
             name: `fk_${modelSrc}_${src}_${modelRef}_${ref}`,
@@ -92,15 +113,15 @@ function formatRelation(model: ModelDeclaration, field: FieldDeclaration, attr: 
     })
 }
 
-function formatRelationColumns(arg: NamedArgument | undefined): string[] {
-    if (arg?.expression.kind === 'array') {
-        return arg.expression.items.map(formatSchemaExpression)
+function formatFields(expr: SchemaExpression | undefined): string[] {
+    if (expr?.kind === 'array') {
+        return expr?.items.map(formatSchemaExpression)
     } else {
         return []
     }
 }
 
-function formatType(e: EnumDeclaration): AzimuttType {
+function formatEnum(e: EnumDeclaration): AzimuttType {
     return {
         schema: '',
         name: e.name.value,
@@ -108,7 +129,27 @@ function formatType(e: EnumDeclaration): AzimuttType {
     }
 }
 
+function formatType(model: ModelDeclaration): AzimuttType {
+    const columns = model.members.flatMap((member, index, array) => {
+        const prev = array[index-1]
+        return member.kind === 'field' ? [formatColumn(member, prev?.kind === 'commentBlock' ? prev : undefined)] : []
+    })
+    return {
+        schema: '',
+        name: model.name.value,
+        definition: '{'+ columns.map(c => `${c.name}: ${c.type}`).join(', ') +'}'
+    }
+}
+
 // Prisma helpers
+
+function formatDbType(attr: FieldAttribute): string | undefined {
+    if (attr.path.value[0] === 'db') {
+        return attr.path.value[1] + '(' + (attr.args || []).map(formatSchemaArgument).join(', ') + ')'
+    } else {
+        return undefined
+    }
+}
 
 function formatPrismaType(type: PrismaType): string {
     if (type.kind === 'typeId') {
@@ -151,7 +192,7 @@ function formatSchemaExpression(expr: SchemaExpression): string {
     }
 }
 
-function findArgument(attr: FieldAttribute, name: string): NamedArgument | undefined {
+function findArgument(attr: {args?: SchemaArgument[]}, name: string): NamedArgument | undefined {
     return attr.args?.find((a): a is NamedArgument => a.kind === 'namedArgument' && a.name.value === name)
 }
 
