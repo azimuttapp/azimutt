@@ -1,6 +1,6 @@
 import {describe, expect, test} from "@jest/globals";
 import * as fs from "fs";
-import {formatSchema, parseSchema} from "../src/prisma";
+import {deeplyRemoveFields, formatSchema, parseSchema} from "../src/prisma";
 
 describe('prisma', () => {
     test('parse a basic schema', async () => {
@@ -74,22 +74,30 @@ model Post {
                     src: {schema: "", table: "Post", column: "authorId"},
                     ref: {schema: "", table: "User", column: "id"}
                 }
-            ]
+            ],
+            types: []
         })
     })
     test('parse a prisma schema', async () => {
         const parsed = await parseSchema(`
+/// store all users
+/// using multi-line comment
 model User {
-  id    Int     @id @default(autoincrement())
+  /// this is user id
+  /// using multiline comment ^^
+  id    Int     @id @default(autoincrement()) /// and a trailing one...
 }`)
+        fs.writeFileSync('tests/resources/example.prisma.json', JSON.stringify(deeplyRemoveFields(parsed, ['location']), null, 2))
         expect(formatSchema(parsed)).toEqual({
             tables: [{
                 schema: '',
                 table: 'User',
-                columns: [{name: 'id', type: 'Int', default: 'autoincrement()'}],
-                primaryKey: {columns: ['id']}
+                columns: [{name: 'id', type: 'Int', default: 'autoincrement()', comment: 'this is user id\nusing multiline comment ^^\nand a trailing one...'}],
+                primaryKey: {columns: ['id']},
+                comment: 'store all users\nusing multi-line comment'
             }],
-            relations: []
+            relations: [],
+            types: []
         })
     })
     test('handles errors', async () => {

@@ -3,7 +3,8 @@ import {
     CommentBlock,
     FieldAttribute,
     FieldDeclaration,
-    ModelDeclaration, NamedArgument,
+    ModelDeclaration,
+    NamedArgument,
     PrismaType,
     SchemaArgument,
     SchemaExpression
@@ -20,10 +21,14 @@ export const parseSchema = (schema: string): Promise<PrismaSchema> => {
 }
 
 export function formatSchema(schema: PrismaSchema): AzimuttSchema {
-    const tables = schema.declarations.filter((d): d is ModelDeclaration => d.kind === 'model').map(formatTable)
+    const tables = schema.declarations.flatMap((declaration, index, array) => {
+        const prev = array[index-1]
+        return declaration.kind === 'model' ? [formatTable(declaration, prev?.kind === 'commentBlock' ? prev : undefined)] : []
+    })
     return {
         tables: tables.map(t => t.table),
-        relations: tables.flatMap(t => t.relations)
+        relations: tables.flatMap(t => t.relations),
+        types: [] // enum Role, cf https://www.prisma.io/docs/concepts/components/prisma-schema#example
     }
 }
 
@@ -32,29 +37,33 @@ export function formatSchema(schema: PrismaSchema): AzimuttSchema {
 
 // Azimutt helpers
 
-function formatTable(model: ModelDeclaration): { table: AzimuttTable, relations: AzimuttRelation[] } {
+function formatTable(model: ModelDeclaration, comment: CommentBlock | undefined): { table: AzimuttTable, relations: AzimuttRelation[] } {
+    const columns = model.members.flatMap((member, index, array) => {
+        const prev = array[index-1]
+        return member.kind === 'field' ? [formatColumn(member, prev?.kind === 'commentBlock' ? prev : undefined)] : []
+    })
     const fields = model.members.filter((m): m is FieldDeclaration => m.kind === 'field')
     const pk = fields.filter(f => f.attributes?.find(a => a.path.value.indexOf('id') >= 0)).map(f => f.name.value)
     const uniques = fields.filter(f => f.attributes?.find(a => a.path.value.indexOf('unique') >= 0)).map(f => [f.name.value])
     const relations = fields.flatMap(f => f.attributes?.filter(a => a.path.value.indexOf('relation') >= 0).flatMap(a => formatRelation(model, f, a)) || [])
-    const comments = model.members.filter((m): m is CommentBlock => m.kind === 'commentBlock').flatMap(cb => cb.comments.map(c => c.text))
     return {
         table: removeUndefined({
             schema: '',
             table: model.name.value,
-            columns: fields.map(formatColumn),
+            columns: columns,
             // view: false,
             primaryKey: pk.length > 0 ? {columns: pk} : undefined,
             uniques: uniques.length > 0 ? uniques.map(u => ({columns: u})) : undefined,
             // indexes?: AzimuttIndex[] | null,
             // checks?: AzimuttCheck[] | null,
-            comment: comments.length > 0 ? comments.join('\n\n') : undefined
+            comment: comment ? comment.comments.map(c => c.text).join('\n') : undefined
         }),
         relations: relations
     }
 }
 
-function formatColumn(field: FieldDeclaration): AzimuttColumn {
+function formatColumn(field: FieldDeclaration, comment: CommentBlock | undefined): AzimuttColumn {
+    const comments = (comment?.comments || []).concat(field.comment ? [field.comment] : [])
     return removeUndefined({
         name: field.name.value,
         type: formatPrismaType(field.type),
@@ -63,7 +72,7 @@ function formatColumn(field: FieldDeclaration): AzimuttColumn {
             ?.find(a => a.path.value.indexOf('default') >= 0)
             ?.args
             ?.map(formatSchemaArgument).join(', ') || undefined,
-        comment: field.comment?.text || undefined
+        comment: comments.length > 0 ? comments.map(c => c.text).join('\n') : undefined
     })
 }
 
@@ -135,4 +144,23 @@ function formatSchemaExpression(expr: SchemaExpression): string {
 
 function findArgument(attr: FieldAttribute, name: string): NamedArgument | undefined {
     return attr.args?.find((a): a is NamedArgument => a.kind === 'namedArgument' && a.name.value === name)
+}
+
+// TODO: move to utils
+export function deeplyRemoveFields(obj: any, keysToRemove: string[]): any {
+    if (Array.isArray(obj)) {
+        return obj.map(item => deeplyRemoveFields(item, keysToRemove))
+    }
+
+    if (typeof obj === 'object' && obj !== null) {
+        const res: { [key: string]: any } = {}
+        Object.keys(obj).forEach((key) => {
+            if (keysToRemove.indexOf(key) < 0) {
+                res[key] = deeplyRemoveFields(obj[key], keysToRemove)
+            }
+        })
+        return res
+    }
+
+    return obj
 }
