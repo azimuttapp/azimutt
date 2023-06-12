@@ -22,6 +22,7 @@ model User {
 
   @@index([first_name, last_name])
   @@index([external_id])
+  @@map("users")
 }
 
 model Role {
@@ -35,21 +36,26 @@ model Role {
 
   @@index([slug])
   @@index([name])
+  @@map("roles")
 }
 
 model Credential {
   user     User   @relation(fields: [userId], references: [id])
-  userId   Int
+  userId   Int    @map("user_id")
   login    String @unique
   password String
+
+  @@map("credentials")
 }
 
 model RoleUser {
   id        Int      @id
   role      Role     @relation(fields: [roleId], references: [id])
-  roleId    Int
+  roleId    Int      @map("role_id")
   user      User     @relation(fields: [userId], references: [id])
-  userId    Int
+  userId    Int      @map("user_id")
   createdAt DateTime @map("created_at")
   updatedAt DateTime @map("updated_at")
+
+  @@map("role_users")
 }

@@ -50,7 +50,7 @@
   },
   "dependencies": {
     "@azimutt/database-types": "0.0.6",
-    "@azimutt/parser-prisma": "0.0.1",
+    "@azimutt/parser-prisma": "0.0.2",
     "@azimutt/shared": "0.0.2",
     "@sentry/browser": "7.53.0",
     "@sentry/tracing": "7.53.0",

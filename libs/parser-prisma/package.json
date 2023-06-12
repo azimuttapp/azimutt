@@ -1,6 +1,6 @@
 {
   "name": "@azimutt/parser-prisma",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Parse a prisma schema and format it in JSON for Azimutt",
   "keywords": [],
   "homepage": "https://azimutt.app",

@@ -1,11 +1,13 @@
 import {describe, expect, test} from "@jest/globals";
 // import * as fs from "fs";
+// import {deeplyRemoveFields} from "@azimutt/utils";
 import {AzimuttSchema} from "@azimutt/database-types";
 import {formatSchema, parseSchema} from "../src/prisma";
 
+// https://www.prisma.io/docs/reference/api-reference/prisma-schema-reference
 describe('prisma', () => {
     test('parse a basic schema', async () => {
-        const prismaSchema: string = `
+        const ast = await parseSchema(`
 // This is your Prisma schema file from https://github.com/prisma/prisma-examples/blob/latest/typescript/remix/prisma/schema.prisma
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
@@ -35,10 +37,8 @@ model Post {
   viewCount Int      @default(0)
   author    User?    @relation(fields: [authorId], references: [id])
   authorId  Int?
-}`
-        const parsedSchema = await parseSchema(prismaSchema)
-        const azimuttSchema = formatSchema(parsedSchema)
-        expect(azimuttSchema).toEqual({
+}`)
+        const azimuttSchema: AzimuttSchema = {
             tables: [
                 {
                     schema: "",
@@ -77,10 +77,11 @@ model Post {
                 }
             ],
             types: []
-        })
+        }
+        // fs.writeFileSync('tests/ast.prisma.json', JSON.stringify(deeplyRemoveFields(ast, ['location']), null, 2))
+        expect(formatSchema(ast)).toEqual(azimuttSchema)
     })
     test('parse a complex schema', async () => {
-        // https://www.prisma.io/docs/reference/api-reference/prisma-schema-reference
         const ast = await parseSchema(`
 /// User 1
 /// User 2
@@ -115,7 +116,6 @@ type Photo {
   width  Int
   url    String
 }`)
-        // fs.writeFileSync('tests/resources/example.prisma.json', JSON.stringify(deeplyRemoveFields(ast, ['location']), null, 2))
         const azimuttSchema: AzimuttSchema = {
             tables: [{
                 schema: 'auth',
@@ -154,6 +154,45 @@ type Photo {
                 {schema: '', name: 'Photo', definition: '{height: Int, width: Int, url: String}'}
             ]
         }
+        // fs.writeFileSync('tests/ast.prisma.json', JSON.stringify(deeplyRemoveFields(ast, ['location']), null, 2))
+        expect(formatSchema(ast)).toEqual(azimuttSchema)
+    })
+    test('keep relations with @map', async () => {
+        const ast = await parseSchema(`
+model User {
+  id    Int    @id @map("_id")
+  posts Post[]
+  @@schema("public")
+  @@map("users")
+}
+
+model Post {
+  id       Int  @id
+  author   User @relation(fields: [authorId], references: [id])
+  authorId Int  @map("author_id")
+  @@schema("public")
+  @@map("posts")
+}`)
+        const azimuttSchema: AzimuttSchema = {
+            tables: [{
+                schema: 'public',
+                table: 'users',
+                columns: [{name: '_id', type: 'Int'}, {name: 'posts', type: 'Post[]'}],
+                primaryKey: {columns: ['id']}
+            }, {
+                schema: 'public',
+                table: 'posts',
+                columns: [{name: 'id', type: 'Int'}, {name: 'author', type: 'User'}, {name: 'author_id', type: 'Int'}],
+                primaryKey: {columns: ['id']}
+            }],
+            relations: [{
+                name: 'fk_posts_author_id_users__id',
+                src: {schema: 'public', table: 'posts', column: 'author_id'},
+                ref: {schema: 'public', table: 'users', column: '_id'}
+            }],
+            types: []
+        }
+        // fs.writeFileSync('tests/ast.prisma.json', JSON.stringify(deeplyRemoveFields(ast, ['location']), null, 2))
         expect(formatSchema(ast)).toEqual(azimuttSchema)
     })
     test('handles errors', async () => {
