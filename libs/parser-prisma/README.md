@@ -2,7 +2,9 @@
 
 This library is able to parse [Prisma Schema](https://www.prisma.io/docs/concepts/components/prisma-schema) and format it in JSON for Azimutt.
 
-**Feel free to use it and even submit PR to improve it**
+**Feel free to use it and even submit PR to improve it:**
+
+- improve [Prisma format](./src/prisma.ts) (look at `formatSchema` function)
 
 ## Publish
 

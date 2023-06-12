@@ -13,7 +13,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/azimuttapp/azimutt.git",
-    "directory": "libs/parser-schema"
+    "directory": "libs/parser-prisma"
   },
   "main": "./out/index.js",
   "types": "./out/index.d.ts",
