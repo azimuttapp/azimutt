@@ -30,6 +30,7 @@ import Ports exposing (JsMsg(..))
 import Request
 import Services.DatabaseSource as DatabaseSource
 import Services.JsonSource as JsonSource
+import Services.PrismaSource as PrismaSource
 import Services.SqlSource as SqlSource
 import Shared
 
@@ -58,6 +59,7 @@ type alias QueryString =
     , projectUrl : Maybe FileUrl
     , databaseSource : Maybe DatabaseUrl
     , sqlSource : Maybe FileUrl
+    , prismaSource : Maybe FileUrl
     , jsonSource : Maybe FileUrl
     , layout : Maybe LayoutName
     , mode : Maybe EmbedModeId
@@ -82,7 +84,7 @@ init query =
     ( { emptyModel
         | conf = query.mode |> Maybe.andThen (\mode -> EmbedMode.all |> List.findBy .id mode) |> Maybe.mapOrElse .conf ErdConf.embedDefault
         , loaded = [ query.projectId, query.projectUrl, query.databaseSource, query.sqlSource, query.jsonSource ] |> List.all (\a -> a == Nothing)
-        , embedSourceParsing = EmbedSourceParsingDialog.init SourceParsed ModalClose Noop query.databaseSource query.sqlSource query.jsonSource
+        , embedSourceParsing = EmbedSourceParsingDialog.init SourceParsed ModalClose Noop query.databaseSource query.sqlSource query.prismaSource query.jsonSource
       }
     , Cmd.batch
         ([ Ports.setMeta
@@ -99,6 +101,7 @@ init query =
                     |> Maybe.orElse (query.projectUrl |> Maybe.map (\url -> [ Http.get { url = url, expect = Http.decodeJson (Result.toMaybe >> GotProject "load" >> JsMessage) Project.decode } ]))
                     |> Maybe.orElse (query.databaseSource |> Maybe.map (\url -> [ T.send (url |> DatabaseSource.GetSchema |> EmbedSourceParsingDialog.EmbedDatabaseSource |> EmbedSourceParsingMsg), T.sendAfter 1 (ModalOpen Conf.ids.sourceParsingDialog) ]))
                     |> Maybe.orElse (query.sqlSource |> Maybe.map (\url -> [ T.send (url |> SqlSource.GetRemoteFile |> EmbedSourceParsingDialog.EmbedSqlSource |> EmbedSourceParsingMsg), T.sendAfter 1 (ModalOpen Conf.ids.sourceParsingDialog) ]))
+                    |> Maybe.orElse (query.prismaSource |> Maybe.map (\url -> [ T.send (url |> PrismaSource.GetRemoteFile |> EmbedSourceParsingDialog.EmbedPrismaSource |> EmbedSourceParsingMsg), T.sendAfter 1 (ModalOpen Conf.ids.sourceParsingDialog) ]))
                     |> Maybe.orElse (query.jsonSource |> Maybe.map (\url -> [ T.send (url |> JsonSource.GetRemoteFile |> EmbedSourceParsingDialog.EmbedJsonSource |> EmbedSourceParsingMsg), T.sendAfter 1 (ModalOpen Conf.ids.sourceParsingDialog) ]))
                     |> Maybe.withDefault []
                )
@@ -112,6 +115,7 @@ parseQueryString query =
     , projectUrl = query |> Dict.get EmbedKind.projectUrl
     , databaseSource = query |> Dict.get EmbedKind.databaseSource
     , sqlSource = query |> Dict.get EmbedKind.sqlSource |> Maybe.orElse (query |> Dict.get EmbedKind.sourceUrl)
+    , prismaSource = query |> Dict.get EmbedKind.prismaSource
     , jsonSource = query |> Dict.get EmbedKind.jsonSource
     , layout = query |> Dict.get "layout"
     , mode = query |> Dict.get EmbedMode.key
@@ -126,6 +130,7 @@ serializeQueryString query =
          , ( EmbedKind.projectUrl, query.projectUrl )
          , ( EmbedKind.databaseSource, query.databaseSource )
          , ( EmbedKind.sqlSource, query.sqlSource )
+         , ( EmbedKind.prismaSource, query.prismaSource )
          , ( EmbedKind.jsonSource, query.jsonSource )
          , ( "layout", query.layout )
          , ( EmbedMode.key, query.mode )

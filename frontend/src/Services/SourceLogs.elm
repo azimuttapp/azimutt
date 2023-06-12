@@ -4,7 +4,6 @@ import Conf
 import Html exposing (Html, div, pre, text)
 import Html.Attributes exposing (class, style)
 import Html.Events exposing (onClick)
-import Json.Decode as Decode
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models exposing (FileContent)
@@ -43,7 +42,7 @@ viewFile toggle show filename content =
             (div [] [ div [] [ text ("Loading " ++ filename ++ ".") ] ])
 
 
-viewParsedSchema : (HtmlId -> msg) -> HtmlId -> Result Decode.Error (SchemaLike x y z) -> Html msg
+viewParsedSchema : (HtmlId -> msg) -> HtmlId -> Result String (SchemaLike x y z) -> Html msg
 viewParsedSchema toggle show result =
     case result of
         Ok schema ->
@@ -82,7 +81,7 @@ viewParsedSchema toggle show result =
                 ]
 
         Err err ->
-            div [ class "text-red-500" ] [ text (Decode.errorToString err) ]
+            div [ class "text-red-500" ] [ text err ]
 
 
 viewResult : Result String a -> Html msg

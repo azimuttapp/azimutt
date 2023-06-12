@@ -71,6 +71,32 @@ export const SqlRemoteFile = z.object({
     size: z.number()
 }).strict()
 
+export interface PrismaLocalFile {
+    kind: 'PrismaLocalFile',
+    name: string,
+    size: number,
+    modified: Timestamp
+}
+
+export const PrismaLocalFile = z.object({
+    kind: z.literal('PrismaLocalFile'),
+    name: z.string(),
+    size: z.number(),
+    modified: Timestamp
+}).strict()
+
+export interface PrismaRemoteFile {
+    kind: 'PrismaRemoteFile',
+    url: string,
+    size: number
+}
+
+export const PrismaRemoteFile = z.object({
+    kind: z.literal('PrismaRemoteFile'),
+    url: z.string(),
+    size: z.number()
+}).strict()
+
 export interface JsonLocalFile {
     kind: 'JsonLocalFile',
     name: string,
@@ -105,8 +131,8 @@ export const AmlEditor = z.object({
     kind: z.literal('AmlEditor')
 }).strict()
 
-export type SourceKind = DatabaseConnection | SqlLocalFile | SqlRemoteFile | JsonLocalFile | JsonRemoteFile | AmlEditor
-export const SourceKind = z.discriminatedUnion('kind', [DatabaseConnection, SqlLocalFile, SqlRemoteFile, JsonLocalFile, JsonRemoteFile, AmlEditor])
+export type SourceKind = DatabaseConnection | SqlLocalFile | SqlRemoteFile | PrismaLocalFile | PrismaRemoteFile | JsonLocalFile | JsonRemoteFile | AmlEditor
+export const SourceKind = z.discriminatedUnion('kind', [DatabaseConnection, SqlLocalFile, SqlRemoteFile, PrismaLocalFile, PrismaRemoteFile, JsonLocalFile, JsonRemoteFile, AmlEditor])
 
 export type SourceOrigin = 'import-project' | 'sql-source' | 'prisma-source' | 'json-source'
 export const SourceOrigin = z.enum(['import-project', 'sql-source', 'prisma-source', 'json-source'])

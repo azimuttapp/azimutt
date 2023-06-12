@@ -1,4 +1,4 @@
-port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProject, createProjectTmp, deleteProject, downloadFile, fireworks, focus, fullscreen, getColumnStats, getDatabaseSchema, getProject, getTableStats, listenHotkeys, mouseDown, moveProjectTo, observeLayout, observeMemoSize, observeSize, observeTableSize, observeTablesSize, onJsMessage, projectDirty, readLocalFile, runDatabaseQuery, scrollTo, setMeta, toast, track, unhandledJsMsgError, updateProject, updateProjectTmp)
+port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProject, createProjectTmp, deleteProject, downloadFile, fireworks, focus, fullscreen, getColumnStats, getDatabaseSchema, getPrismaSchema, getProject, getTableStats, listenHotkeys, mouseDown, moveProjectTo, observeLayout, observeMemoSize, observeSize, observeTableSize, observeTablesSize, onJsMessage, projectDirty, readLocalFile, runDatabaseQuery, scrollTo, setMeta, toast, track, unhandledJsMsgError, updateProject, updateProjectTmp)
 
 import DataSources.JsonMiner.JsonSchema as JsonSchema exposing (JsonSchema)
 import Dict exposing (Dict)
@@ -151,6 +151,11 @@ runDatabaseQuery database query =
     messageToJs (RunDatabaseQuery database query)
 
 
+getPrismaSchema : String -> Cmd msg
+getPrismaSchema content =
+    messageToJs (GetPrismaSchema content)
+
+
 observeSize : HtmlId -> Cmd msg
 observeSize id =
     observeSizes [ id ]
@@ -243,6 +248,7 @@ type ElmMsg
     | GetTableStats SourceId DatabaseUrl TableId
     | GetColumnStats SourceId DatabaseUrl ColumnRef
     | RunDatabaseQuery DatabaseUrl String
+    | GetPrismaSchema String
     | ObserveSizes (List HtmlId)
     | ListenKeys (Dict String (List Hotkey))
     | Confetti HtmlId
@@ -263,6 +269,8 @@ type JsMsg
     | GotColumnStatsError SourceId ColumnRef String
     | GotDatabaseQueryResults DatabaseQueryResults
     | GotDatabaseQueryError String
+    | GotPrismaSchema JsonSchema
+    | GotPrismaSchemaError String
     | GotHotkey String
     | GotKeyHold String Bool
     | GotToast String String
@@ -377,6 +385,9 @@ elmEncoder elm =
         RunDatabaseQuery database query ->
             Encode.object [ ( "kind", "RunDatabaseQuery" |> Encode.string ), ( "database", database |> DatabaseUrl.encode ), ( "query", query |> Encode.string ) ]
 
+        GetPrismaSchema content ->
+            Encode.object [ ( "kind", "GetPrismaSchema" |> Encode.string ), ( "content", content |> Encode.string ) ]
+
         ObserveSizes ids ->
             Encode.object [ ( "kind", "ObserveSizes" |> Encode.string ), ( "ids", ids |> Encode.list Encode.string ) ]
 
@@ -445,6 +456,12 @@ jsDecoder =
 
                 "GotDatabaseQueryError" ->
                     Decode.map GotDatabaseQueryError (Decode.field "error" Decode.string)
+
+                "GotPrismaSchema" ->
+                    Decode.map GotPrismaSchema (Decode.field "schema" JsonSchema.decode)
+
+                "GotPrismaSchemaError" ->
+                    Decode.map GotPrismaSchemaError (Decode.field "error" Decode.string)
 
                 "GotHotkey" ->
                     Decode.map GotHotkey (Decode.field "id" Decode.string)
@@ -536,6 +553,12 @@ unhandledJsMsgError msg =
 
                 GotDatabaseQueryError _ ->
                     "GotDatabaseQueryError"
+
+                GotPrismaSchema _ ->
+                    "GotPrismaSchema"
+
+                GotPrismaSchemaError _ ->
+                    "GotPrismaSchemaError"
 
                 GotHotkey _ ->
                     "GotHotkey"

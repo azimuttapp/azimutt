@@ -54,6 +54,7 @@ export class ElmApp {
         GetTableStats: [],
         GetColumnStats: [],
         RunDatabaseQuery: [],
+        GetPrismaSchema: [],
         ObserveSizes: [],
         ListenKeys: [],
         Confetti: [],
@@ -109,6 +110,8 @@ export class ElmApp {
     gotColumnStatsError = (source: SourceId, column: ColumnRef, error: string): void => this.send({kind: 'GotColumnStatsError', source, column, error})
     gotDatabaseQueryResults = (results: DatabaseQueryResults): void => this.send({kind: 'GotDatabaseQueryResults', results})
     gotDatabaseQueryError = (error: string): void => this.send({kind: 'GotDatabaseQueryError', error})
+    gotPrismaSchema = (schema: AzimuttSchema): void => this.send({kind: 'GotPrismaSchema', schema})
+    gotPrismaSchemaError = (error: string): void => this.send({kind: 'GotPrismaSchemaError', error})
     gotHotkey = (hotkey: Hotkey & { id: HotkeyId }): void => this.send({kind: 'GotHotkey', id: hotkey.id})
     gotKeyHold = (key: string, start: boolean): void => this.send({kind: 'GotKeyHold', key, start})
     toast = (level: ToastLevel, message: string): void => this.send({kind: 'GotToast', level, message})

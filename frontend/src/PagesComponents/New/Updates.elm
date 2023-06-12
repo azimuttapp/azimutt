@@ -178,6 +178,12 @@ handleJsMessage req now urlOrganization msg model =
         GotDatabaseSchema schema ->
             ( model, schema |> DatabaseSource.GotSchema |> DatabaseSourceMsg |> T.send )
 
+        GotPrismaSchema schema ->
+            ( model, Ok schema |> PrismaSource.GotSchema |> PrismaSourceMsg |> T.send )
+
+        GotPrismaSchemaError error ->
+            ( model, Err error |> PrismaSource.GotSchema |> PrismaSourceMsg |> T.send )
+
         GotToast level message ->
             ( model, message |> Toasts.create level |> Toast |> T.send )
 

@@ -4,13 +4,12 @@ import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.Divider as Divider
 import Components.Molecules.FileInput as FileInput
 import DataSources.JsonMiner.JsonAdapter as JsonAdapter
-import DataSources.JsonMiner.JsonSchema as JsonSchema exposing (JsonSchema)
+import DataSources.JsonMiner.JsonSchema exposing (JsonSchema)
 import FileValue exposing (File)
 import Html exposing (Html, div, input, p, span, text)
 import Html.Attributes exposing (class, id, name, placeholder, type_, value)
 import Html.Events exposing (onBlur, onInput)
 import Http
-import Json.Decode as Decode
 import Libs.Bool as B
 import Libs.Html.Attributes exposing (css)
 import Libs.Http as Http
@@ -39,7 +38,7 @@ type alias Model msg =
     , selectedLocalFile : Maybe File
     , selectedRemoteFile : Maybe (Result String FileUrl)
     , loadedSchema : Maybe ( SourceInfo, FileContent )
-    , parsedSchema : Maybe (Result Decode.Error JsonSchema)
+    , parsedSchema : Maybe (Result String JsonSchema)
     , parsedSource : Maybe (Result String Source)
     , callback : Result String Source -> msg
     , show : HtmlId
@@ -52,7 +51,7 @@ type Msg
     | GotRemoteFile FileUrl (Result Http.Error FileContent)
     | GetLocalFile File
     | GotFile SourceInfo FileContent
-    | ParseSource
+    | GotSchema (Result String JsonSchema)
     | BuildSource
     | UiToggle HtmlId
 
@@ -122,16 +121,16 @@ update wrap now project msg model =
 
         GotFile sourceInfo fileContent ->
             ( { model | loadedSchema = Just ( sourceInfo |> setId (model.source |> Maybe.mapOrElse .id sourceInfo.id), fileContent ) }
-            , T.send (ParseSource |> wrap)
+            , Ports.getPrismaSchema fileContent
             )
 
-        ParseSource ->
+        GotSchema schema ->
             model.loadedSchema
-                |> Maybe.map (\( _, prisma ) -> ( model |> setParsedSchema (prisma |> Decode.decodeString JsonSchema.decode |> Just), T.send (BuildSource |> wrap) ))
+                |> Maybe.map (\_ -> ( model |> setParsedSchema (schema |> Just), BuildSource |> wrap |> T.send ))
                 |> Maybe.withDefault ( model, Cmd.none )
 
         BuildSource ->
-            Maybe.map2 (\( info, _ ) schema -> schema |> Result.map (JsonAdapter.buildSource info) |> Result.mapError Decode.errorToString)
+            Maybe.map2 (\( info, _ ) schema -> schema |> Result.map (JsonAdapter.buildSource info))
                 model.loadedSchema
                 model.parsedSchema
                 |> Maybe.map (\source -> ( model |> setParsedSource (source |> Just), Cmd.batch [ T.send (model.callback source), Track.prismaSourceCreated project source ] ))

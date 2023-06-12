@@ -2,6 +2,7 @@ import * as Sentry from "@sentry/browser";
 import {BrowserTracing} from "@sentry/tracing";
 import {AnyError, errorToString} from "@azimutt/utils";
 import {ColumnStats, TableStats} from "@azimutt/database-types";
+import {prisma} from "@azimutt/parser-prisma";
 import {
     CreateProject,
     CreateProjectTmp,
@@ -9,6 +10,7 @@ import {
     GetColumnStats,
     GetDatabaseSchema,
     GetLocalFile,
+    GetPrismaSchema,
     GetProject,
     GetTableStats,
     Hotkey,
@@ -91,6 +93,7 @@ app.on('GetDatabaseSchema', getDatabaseSchema)
 app.on('GetTableStats', getTableStats)
 app.on('GetColumnStats', getColumnStats)
 app.on('RunDatabaseQuery', runDatabaseQuery)
+app.on('GetPrismaSchema', getPrismaSchema)
 app.on('ObserveSizes', observeSizes)
 app.on('ListenKeys', listenHotkeys)
 app.on('Confetti', msg => Utils.launchConfetti(msg.id))
@@ -313,6 +316,13 @@ function runDatabaseQuery(msg: RunDatabaseQuery) {
     ).then(
         results => app.gotDatabaseQueryResults(results),
         err => app.gotDatabaseQueryError(errorToString(err))
+    )
+}
+
+function getPrismaSchema(msg: GetPrismaSchema) {
+    prisma.parse(msg.content).then(
+        schema => app.gotPrismaSchema(schema),
+        err => app.gotPrismaSchemaError(errorToString(err))
     )
 }
 

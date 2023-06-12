@@ -451,6 +451,20 @@ handleJsMessage now urlLayout msg model =
         GotDatabaseQueryError error ->
             ( model, error |> Err |> QueryPane.GotResults |> QueryPaneMsg |> T.send )
 
+        GotPrismaSchema schema ->
+            if model.embedSourceParsing == Nothing then
+                ( model, Ok schema |> PrismaSource.GotSchema |> SourceUpdateDialog.PrismaSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg |> T.send )
+
+            else
+                ( model, Ok schema |> PrismaSource.GotSchema |> EmbedSourceParsingDialog.EmbedPrismaSource |> EmbedSourceParsingMsg |> T.send )
+
+        GotPrismaSchemaError error ->
+            if model.embedSourceParsing == Nothing then
+                ( model, Err error |> PrismaSource.GotSchema |> SourceUpdateDialog.PrismaSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg |> T.send )
+
+            else
+                ( model, Err error |> PrismaSource.GotSchema |> EmbedSourceParsingDialog.EmbedPrismaSource |> EmbedSourceParsingMsg |> T.send )
+
         GotHotkey hotkey ->
             handleHotkey now model hotkey
 

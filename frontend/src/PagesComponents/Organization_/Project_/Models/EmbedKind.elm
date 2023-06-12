@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Models.EmbedKind exposing (EmbedKind(..), all, databaseSource, fromValue, jsonSource, label, projectId, projectUrl, sourceUrl, sqlSource, value)
+module PagesComponents.Organization_.Project_.Models.EmbedKind exposing (EmbedKind(..), all, databaseSource, fromValue, jsonSource, label, prismaSource, projectId, projectUrl, sourceUrl, sqlSource, value)
 
 
 type EmbedKind
@@ -91,6 +91,11 @@ databaseSource =
 sqlSource : String
 sqlSource =
     "sql-source"
+
+
+prismaSource : String
+prismaSource =
+    "prisma-source"
 
 
 jsonSource : String
