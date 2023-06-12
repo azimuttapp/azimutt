@@ -80,24 +80,57 @@ model Post {
     })
     test('parse a prisma schema', async () => {
         const parsed = await parseSchema(`
-/// store all users
-/// using multi-line comment
+/// User 1
+/// User 2
 model User {
-  /// this is user id
-  /// using multiline comment ^^
-  id    Int     @id @default(autoincrement()) /// and a trailing one...
+  /// User.id 1
+  /// User.id 2
+  id    Int     @id @default(autoincrement()) /// User.id 3
+  email String  @unique
+  name  String?
+  role  Role    @default(USER)
+  posts Post[]
+}
+model Post {
+  id       Int  @id @default(autoincrement())
+  author   User @relation(fields: [authorId], references: [id])
+  authorId Int
+}
+enum Role {
+  USER
+  ADMIN
 }`)
         fs.writeFileSync('tests/resources/example.prisma.json', JSON.stringify(deeplyRemoveFields(parsed, ['location']), null, 2))
         expect(formatSchema(parsed)).toEqual({
             tables: [{
                 schema: '',
                 table: 'User',
-                columns: [{name: 'id', type: 'Int', default: 'autoincrement()', comment: 'this is user id\nusing multiline comment ^^\nand a trailing one...'}],
+                columns: [
+                    {name: 'id', type: 'Int', default: 'autoincrement()', comment: 'User.id 1\nUser.id 2\nUser.id 3'},
+                    {name: 'email', type: 'String'},
+                    {name: 'name', type: 'String', nullable: true},
+                    {name: 'role', type: 'Role', default: 'USER'},
+                    {name: 'posts', type: 'Post[]'},
+                ],
                 primaryKey: {columns: ['id']},
-                comment: 'store all users\nusing multi-line comment'
+                uniques: [{columns: ['email']}],
+                comment: 'User 1\nUser 2'
+            }, {
+                schema: '',
+                table: 'Post',
+                columns: [
+                    {name: 'id', type: 'Int', default: 'autoincrement()'},
+                    {name: 'author', type: 'User'},
+                    {name: 'authorId', type: 'Int'},
+                ],
+                primaryKey: {columns: ['id']}
             }],
-            relations: [],
-            types: []
+            relations: [{
+                name: 'fk_Post_authorId_User_id',
+                src: {schema: '', table: 'Post', column: 'authorId'},
+                ref: {schema: '', table: 'User', column: 'id'}
+            }],
+            types: [{schema: '', name: 'Role', values: ['USER', 'ADMIN']}]
         })
     })
     test('handles errors', async () => {

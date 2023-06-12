@@ -1,6 +1,7 @@
-import {parsePrismaSchema, PrismaSchema} from "@loancrate/prisma-schema-parser";
+import {EnumDeclaration, parsePrismaSchema, PrismaSchema} from "@loancrate/prisma-schema-parser";
 import {
     CommentBlock,
+    EnumValue,
     FieldAttribute,
     FieldDeclaration,
     ModelDeclaration,
@@ -10,7 +11,7 @@ import {
     SchemaExpression
 } from "@loancrate/prisma-schema-parser/dist/ast";
 import {errorToString, removeUndefined, zip} from "@azimutt/utils";
-import {AzimuttColumn, AzimuttRelation, AzimuttSchema, AzimuttTable} from "@azimutt/database-types";
+import {AzimuttColumn, AzimuttRelation, AzimuttSchema, AzimuttTable, AzimuttType} from "@azimutt/database-types";
 
 export const parseSchema = (schema: string): Promise<PrismaSchema> => {
     try {
@@ -28,7 +29,7 @@ export function formatSchema(schema: PrismaSchema): AzimuttSchema {
     return {
         tables: tables.map(t => t.table),
         relations: tables.flatMap(t => t.relations),
-        types: [] // enum Role, cf https://www.prisma.io/docs/concepts/components/prisma-schema#example
+        types: schema.declarations.filter((d): d is EnumDeclaration => d.kind === 'enum').map(formatType)
     }
 }
 
@@ -96,6 +97,14 @@ function formatRelationColumns(arg: NamedArgument | undefined): string[] {
         return arg.expression.items.map(formatSchemaExpression)
     } else {
         return []
+    }
+}
+
+function formatType(e: EnumDeclaration): AzimuttType {
+    return {
+        schema: '',
+        name: e.name.value,
+        values: e.members.filter((m): m is EnumValue => m.kind === 'enumValue').map(v => v.name.value)
     }
 }
 
