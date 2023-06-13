@@ -16,7 +16,8 @@ defmodule Azimutt.Tracking do
     Event
     |> where(
       [e],
-      e.created_by_id == ^current_user.id and (e.name == "project_loaded" or e.name == "project_created" or e.name == "project_updated")
+      e.created_by_id == ^current_user.id and not is_nil(e.project_id) and
+        (e.name == "project_loaded" or e.name == "project_created" or e.name == "project_updated")
     )
     |> order_by([e], desc: e.created_at)
     |> limit(1)
