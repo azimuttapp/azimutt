@@ -8,6 +8,7 @@ export type DatabaseKind = 'couchbase' | 'mariadb' | 'mongodb' | 'mysql' | 'orac
 
 // vertically align regexes with variable names ^^
 const couchbaseRegexpLonger = /^couchbases?:\/\/(?:([^:]+):([^@]+)@)?([^:/?]+)(?::(\d+))?(?:\/([^?]+))?$/
+const mariadbRegexpLo = /^(?:jdbc:)?mariadb:\/\/(?:([^:]+):([^@]+)@)?([^:/?]+)(?::(\d+))?(?:\/([^?]+))?$/
 const mongoRegexLonger = /mongodb(?:\+srv)?:\/\/(?:([^:]+):([^@]+)@)?([^:/?]+)(?::(\d+))?(?:\/([^?]+))?(?:\?(.+))?/
 const mysqlRegexpLonger = /^(?:jdbc:)?mysql:\/\/(?:([^:]+):([^@]+)@)?([^:/?]+)(?::(\d+))?(?:\/([^?]+))?$/
 const postres = /^(?:jdbc:)?postgres(?:ql)?:\/\/(?:([^:]+):([^@]+)@)?([^:/?]+)(?::(\d+))?(?:\/([^?]+))?$/
@@ -18,6 +19,13 @@ export function parseDatabaseUrl(url: DatabaseUrl): DatabaseUrlParsed {
     if (couchbaseMatches) {
         const [, user, pass, host, port, db] = couchbaseMatches
         const opts = {kind: 'couchbase', user, pass, host, port: port ? parseInt(port) : undefined, db}
+        return {...filterValues(opts, v => v !== undefined), full: url}
+    }
+
+    const mariadbMatches = url.match(mariadbRegexpLo)
+    if (mariadbMatches) {
+        const [, user, pass, host, port, db] = mariadbMatches
+        const opts = {kind: 'mariadb', user, pass, host, port: port ? parseInt(port) : undefined, db}
         return {...filterValues(opts, v => v !== undefined), full: url}
     }
 

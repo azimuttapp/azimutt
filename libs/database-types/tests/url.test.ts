@@ -18,6 +18,17 @@ describe('url', () => {
             db: 'bucket',
         })
     })
+    test('parse mariadb url', () => {
+        expect(parseDatabaseUrl('mariadb://user:pass@host.com:3306/db')).toEqual({
+            full: 'mariadb://user:pass@host.com:3306/db',
+            kind: 'mariadb',
+            user: 'user',
+            pass: 'pass',
+            host: 'host.com',
+            port: 3306,
+            db: 'db',
+        })
+    })
     test('parse mongo url', () => {
         expect(parseDatabaseUrl('mongodb://mongodb0.example.com')).toEqual({
             full: 'mongodb://mongodb0.example.com',
