@@ -36,6 +36,13 @@ repos:
       pass_filenames: false
       files: libs/connector-couchbase/.*\.ts*$
 
+    - id: libs-connector-mariadb
+      name: 'Libs/MariaDB connector'
+      language: system
+      entry: bash -c 'cd libs/connector-mariadb && exec npm run build && exec npm test'
+      pass_filenames: false
+      files: libs/connector-mariadb/.*\.ts*$
+
     - id: libs-connector-mongodb
       name: 'Libs/MongoDB connector'
       language: system
