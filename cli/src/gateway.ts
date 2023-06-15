@@ -11,3 +11,5 @@ export async function launchGateway(logger: Logger): Promise<void> {
         CORS_ALLOW_ORIGIN: '*'
     })
 }
+
+export {availableConnectors} from "@azimutt/gateway/out/services/connector";

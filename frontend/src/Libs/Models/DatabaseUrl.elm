@@ -12,8 +12,8 @@ type alias DatabaseUrl =
 
 databaseName : DatabaseUrl -> String
 databaseName url =
-    if url |> String.contains "Database=" then
-        url |> String.split ";" |> List.find (\p -> p |> String.startsWith "Database") |> Maybe.mapOrElse (\p -> p |> String.replace "Database=" "") url
+    if url |> String.toLower |> String.contains "Database=" then
+        url |> String.split ";" |> List.find (\p -> p |> String.toLower |> String.startsWith "Database") |> Maybe.mapOrElse (\p -> p |> String.split "=" |> List.get 1 |> Maybe.withDefault url) url
 
     else
         url |> String.split "/" |> List.reverse |> List.head |> Maybe.withDefault url

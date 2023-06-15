@@ -7,7 +7,7 @@ import {parseDatabaseUrl} from "@azimutt/database-types";
 import {version} from "./version";
 import {logger} from "./utils/logger";
 import {exportDbSchema} from "./export";
-import {launchGateway} from "./gateway";
+import {availableConnectors, launchGateway} from "./gateway";
 
 const clear = require('clear')
 const figlet = require('figlet')
@@ -27,8 +27,8 @@ program.name('azimutt')
     .version(version)
 
 program.command('export')
-    .description('Export a database schema in a file to easily import it in Azimutt.\nWorks with PostgreSQL, MongoDB & Couchbase, issues and PR are welcome in https://github.com/azimuttapp/azimutt ;)')
-    .addArgument(new Argument('<kind>', 'the source kind of the export').choices(['postgres', 'mongodb', 'couchbase']))
+    .description('Export a database schema in a file to easily import it in Azimutt.\nWorks with Couchbase, MariaDB, MongoDB, MySQL, PostgreSQL..., issues and PR are welcome in https://github.com/azimuttapp/azimutt ;)')
+    .addArgument(new Argument('<kind>', 'the source kind of the export').choices(availableConnectors()))
     .argument('<url>', 'the url to connect to the source, including credentials')
     .option('-d, --database <database>', 'Limit to a specific database (ex for MongoDB)')
     .option('-s, --schema <schema>', 'Limit to a specific schema (ex for PostgreSQL)')

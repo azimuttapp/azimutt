@@ -30,6 +30,9 @@ showTableData ( schema, table ) url =
             in
             "SELECT " ++ couchbaseEscape collection ++ ".* FROM " ++ couchbaseCollectionRef schema collection ++ whereClause ++ " LIMIT " ++ limit ++ ";"
 
+        DatabaseKind.MariaDB ->
+            defaultShowTableData schema table
+
         DatabaseKind.MongoDB ->
             let
                 ( collection, filter ) =
@@ -72,6 +75,9 @@ showColumnData column ( schema, table ) url =
                     filter |> Maybe.mapOrElse (\( field, value ) -> " WHERE " ++ field ++ "='" ++ value ++ "'") ""
             in
             "SELECT " ++ couchbaseEscape collection ++ "." ++ column.head ++ ", COUNT(*) as count FROM " ++ couchbaseCollectionRef schema collection ++ whereClause ++ " GROUP BY " ++ column.head ++ " ORDER BY count DESC LIMIT " ++ limit ++ ";"
+
+        DatabaseKind.MariaDB ->
+            defaultShowColumnData schema table column.head
 
         DatabaseKind.MongoDB ->
             let
