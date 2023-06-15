@@ -74,6 +74,7 @@ describe('url', () => {
         })
     })
     test('parse sqlserver url', () => {
+        // usual url
         expect(parseDatabaseUrl('jdbc:sqlserver://user:pass@host.com:1433/db')).toEqual({
             full: 'jdbc:sqlserver://user:pass@host.com:1433/db',
             kind: 'sqlserver',
@@ -83,6 +84,7 @@ describe('url', () => {
             port: 1433,
             db: 'db',
         })
+        // classical url
         expect(parseDatabaseUrl('Server=host.com,1433;Database=db;User Id=user;Password=pass')).toEqual({
             full: 'Server=host.com,1433;Database=db;User Id=user;Password=pass',
             kind: 'sqlserver',
@@ -92,8 +94,9 @@ describe('url', () => {
             port: 1433,
             db: 'db',
         })
-        expect(parseDatabaseUrl('User Id=user;Password=pass;Server=host.com,1433;Database=db')).toEqual({
-            full: 'User Id=user;Password=pass;Server=host.com,1433;Database=db',
+        // other order & case
+        expect(parseDatabaseUrl('user id=user;password=pass;server=host.com,1433;database=db')).toEqual({
+            full: 'user id=user;password=pass;server=host.com,1433;database=db',
             kind: 'sqlserver',
             user: 'user',
             pass: 'pass',
@@ -101,5 +104,7 @@ describe('url', () => {
             port: 1433,
             db: 'db',
         })
+        // TODO: handle parameters like: TrustServerCertificate=true;, Encrypt=true;
+        // TODO: handle Data Source instead of Server
     })
 })
