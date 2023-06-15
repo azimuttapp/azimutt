@@ -2,7 +2,7 @@
 
 Azimutt CLI is aimed at helping you explore databases, schema but also data.
 
-It works with relational and document ones, such as **PostgreSQL**, **MySQL**, **SQL Server**, **MongoDB** and **Couchbase** 🎉
+It works with relational and document ones, such as **Couchbase**, **MariaDB**, **MongoDB**, **MySQL**, **PostgreSQL**, **SQL Server**  🎉
 
 Use this CLI without installing it thanks to [npx](https://www.npmjs.com/package/npx): `npx azimutt`.
 
@@ -13,8 +13,9 @@ Get the help simply by running the CLI (`npx azimutt`) or for a specific command
 - **gateway** (`npx azimutt gateway`): launch the Gateway server locally to proxy database calls from your computer
 - **export** (`npx azimutt export <kind> <url> [arguments]`): export a database schema as JSON file to import in Azimutt
   - ex: `npx azimutt export couchbase couchbases://cb.gfn6dh493pmfh613v.cloud.couchbase.com`
-  - ex: `npx azimutt export mysql "mysql://user:password@my.host.com:3306/my_db"`
+  - ex: `npx azimutt export mariadb mariadb://user:password@my.host.com:3306/my_db`
   - ex: `npx azimutt export mongodb "mongodb+srv://user:password@cluster3.md7h4xp.mongodb.net"`
+  - ex: `npx azimutt export mysql mysql://user:password@my.host.com:3306/my_db`
   - ex: `npx azimutt export postgres postgresql://postgres:postgres@localhost:5432/azimutt_dev`
   - ex: `npx azimutt export sqlserver Server=host.com,1433;Database=db;User Id=user;Password=pass`
   - `kind` the database type you want to export (postgres, mongodb or couchbase)

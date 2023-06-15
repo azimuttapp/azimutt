@@ -12,10 +12,12 @@ For each lib, look at `package.json` description to see what it does, but in sho
 - `shared`: code that is not meant to be release but needs to be shared between several projects
 - `json-infer-schema`: a library to infer a schema from a list of json objects
 - `connector-couchbase`: extract database schema for Couchbase
+- `connector-mariadb`: extract database schema for MariaDB
 - `connector-mongodb`: extract database schema for MongoDB
 - `connector-mysql`: extract database schema for MySQL
 - `connector-postgres`: extract database schema for PostgreSQL
 - `connector-sqlserver`: extract database schema for SQL Server
+- `parser-prisma`: to parse Prisma Schema
 
 If you want to improve connectors, feel free ;)
 You can also create other connectors to integrate into Azimutt (Oracle, SQLite...).
@@ -23,6 +25,8 @@ If you want to use such libraries in your own projects, reach at us, we can publ
 
 Other libs that will come:
 
+- `connector-oracle`: extract database schema for Oracle database
+- `connector-sqlite`: extract database schema for SQLite
 - `parser-aml`: to parse AML language
 - `parser-sql`: to parse SQL language
 

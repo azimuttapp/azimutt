@@ -7,8 +7,7 @@ import {parseDatabaseUrl} from "@azimutt/database-types";
 import {version} from "./version";
 import {logger} from "./utils/logger";
 import {exportDbSchema} from "./export";
-import {launchGateway} from "./gateway";
-import {availableConnectors} from "@azimutt/gateway/out/services/connector";
+import {availableConnectors, launchGateway} from "./gateway";
 
 const clear = require('clear')
 const figlet = require('figlet')

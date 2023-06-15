@@ -5,7 +5,6 @@ import Components.Atoms.Icon as Icon
 import Components.Molecules.Alert as Alert
 import Components.Molecules.Divider as Divider
 import Components.Molecules.Tooltip as Tooltip
-import Conf
 import DataSources.JsonMiner.JsonAdapter as JsonAdapter
 import DataSources.JsonMiner.JsonSchema exposing (JsonSchema)
 import Html exposing (Html, button, div, img, input, p, span, text)
@@ -67,7 +66,7 @@ databases : List Database
 databases =
     [ { key = "postgres", sampleUrl = "postgres://<user>:<pass>@<host>:<port>/<db>", issue = Nothing }
     , { key = "sqlserver", sampleUrl = "Server=<host>,<port>;Database=<db>;User Id=<user>;Password=<pass>", issue = Nothing }
-    , { key = "mariadb", sampleUrl = "mariadb://<user>:<pass>@<host>:<port>/<db>", issue = Just (Conf.constants.azimuttNewIssue "Support mariadb database import" "") }
+    , { key = "mariadb", sampleUrl = "mariadb://<user>:<pass>@<host>:<port>/<db>", issue = Nothing }
     , { key = "mysql", sampleUrl = "mysql://<user>:<pass>@<host>:<port>/<db>", issue = Nothing }
     , { key = "couchbase", sampleUrl = "couchbases://<user>:<pass>@<host>", issue = Nothing }
     , { key = "mongodb", sampleUrl = "mongodb+srv://<user>:<pass>@<host>", issue = Nothing }

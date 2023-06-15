@@ -61,11 +61,11 @@ export function parseDatabaseUrl(url: DatabaseUrl): DatabaseUrlParsed {
 }
 
 function parseSqlServerUrl(url: DatabaseUrl): string[] | null {
-    const props = Object.fromEntries(url.split(';').map(part => part.split('=')))
-    if (props['Server'] && props['Database'] && props['User Id'] && props['Password']) {
-        const [host, port] = props['Server'].split(',')
+    const props = Object.fromEntries(url.split(';').map(part => part.split('=')).map(([key, value]) => [key.toLowerCase(), value]))
+    if (props['server'] && props['database'] && props['user id'] && props['password']) {
+        const [host, port] = props['server'].split(',')
         if (host && port) {
-            return [url, props['User Id'], props['Password'], host, port, props['Database']]
+            return [url, props['user id'], props['password'], host, port, props['database']]
         }
     }
     return null
