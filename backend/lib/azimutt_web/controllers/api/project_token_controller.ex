@@ -19,11 +19,11 @@ defmodule AzimuttWeb.Api.ProjectTokenController do
          do: conn |> send_resp(:no_content, "")
   end
 
-  def delete(conn, %{"organization_id" => _, "project_id" => _, "id" => id}) do
+  def delete(conn, %{"organization_id" => _, "project_id" => _, "token_id" => token_id}) do
     now = DateTime.utc_now()
     current_user = conn.assigns.current_user
 
-    with {:ok, %ProjectToken{} = _} <- Projects.revoke_project_token(id, current_user, now),
+    with {:ok, %ProjectToken{} = _} <- Projects.revoke_project_token(token_id, current_user, now),
          do: conn |> send_resp(:no_content, "")
   end
 end

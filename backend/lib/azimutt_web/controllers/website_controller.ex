@@ -45,22 +45,22 @@ defmodule AzimuttWeb.WebsiteController do
 
   def use_cases_index(conn, _params), do: conn |> render("use-cases.html")
 
-  def use_cases_show(conn, %{"id" => id}) do
+  def use_cases_show(conn, %{"use_case_id" => use_case_id}) do
     Azimutt.use_cases()
-    |> Enum.find(fn u -> u.id == id end)
+    |> Enum.find(fn u -> u.id == use_case_id end)
     |> Result.from_nillable()
-    |> Result.map(fn use_case -> conn |> render("use-case-#{id}.html", use_case: use_case) end)
+    |> Result.map(fn use_case -> conn |> render("use-case-#{use_case_id}.html", use_case: use_case) end)
   end
 
   def features_index(conn, _params), do: conn |> render("features.html")
 
-  def features_show(conn, %{"id" => id}) do
+  def features_show(conn, %{"feature_id" => feature_id}) do
     Azimutt.features()
-    |> Enum.find_index(fn f -> f.id == id end)
+    |> Enum.find_index(fn f -> f.id == feature_id end)
     |> Result.from_nillable()
     |> Result.map(fn index ->
       conn
-      |> render("feature-#{id}.html",
+      |> render("feature-#{feature_id}.html",
         feature: Azimutt.features() |> Enum.at(index),
         previous: if(index > 0, do: Azimutt.features() |> Enum.at(index - 1), else: nil),
         next: Azimutt.features() |> Enum.at(index + 1)

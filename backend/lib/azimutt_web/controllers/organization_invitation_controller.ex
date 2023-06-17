@@ -5,10 +5,10 @@ defmodule AzimuttWeb.OrganizationInvitationController do
   alias Azimutt.Services.StripeSrv
   action_fallback(AzimuttWeb.FallbackController)
 
-  def show(conn, %{"id" => id}) do
+  def show(conn, %{"invitation_id" => invitation_id}) do
     now = DateTime.utc_now()
     # FIXME: remove `get_organization_plan`
-    {:ok, invitation} = Organizations.get_organization_invitation(id)
+    {:ok, invitation} = Organizations.get_organization_invitation(invitation_id)
     organization = invitation.organization
     {:ok, plan} = Organizations.get_organization_plan(organization)
 
@@ -20,11 +20,11 @@ defmodule AzimuttWeb.OrganizationInvitationController do
     )
   end
 
-  def accept(conn, %{"id" => id}) do
+  def accept(conn, %{"invitation_id" => invitation_id}) do
     now = DateTime.utc_now()
     current_user = conn.assigns.current_user
 
-    case Organizations.accept_organization_invitation(id, current_user, now) do
+    case Organizations.accept_organization_invitation(invitation_id, current_user, now) do
       {:ok, invitation} ->
         if invitation.organization.stripe_subscription_id do
           {:ok, organization} = Organizations.get_organization(invitation.organization_id, current_user)
@@ -61,11 +61,11 @@ defmodule AzimuttWeb.OrganizationInvitationController do
     end
   end
 
-  def refuse(conn, %{"id" => id}) do
+  def refuse(conn, %{"invitation_id" => invitation_id}) do
     now = DateTime.utc_now()
     current_user = conn.assigns.current_user
 
-    case Organizations.refuse_organization_invitation(id, current_user, now) do
+    case Organizations.refuse_organization_invitation(invitation_id, current_user, now) do
       {:ok, invitation} ->
         conn
         |> put_flash(:info, "Ok, let's not join #{invitation.organization.name} organization 🤷")
