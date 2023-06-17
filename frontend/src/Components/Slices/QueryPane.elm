@@ -99,7 +99,9 @@ update : (Msg -> msg) -> List Source -> Msg -> Maybe Model -> ( Maybe Model, Cmd
 update wrap sources msg model =
     case msg of
         Toggle ->
-            ( model |> Maybe.mapOrElse (\_ -> Nothing) (init sources Nothing Nothing |> Just), model |> Maybe.mapOrElse (\_ -> Cmd.none) (Ports.focus "query-pane-dialog-editor-query") )
+            model
+                |> Maybe.mapOrElse (\_ -> Nothing) (init sources Nothing Nothing |> Just)
+                |> Maybe.mapOrElse (\m -> ( Just m, m.source |> Maybe.mapOrElse (\_ -> Ports.focus "query-pane-dialog-editor-query") Cmd.none )) ( Nothing, Cmd.none )
 
         Open source input ->
             let
