@@ -128,7 +128,7 @@ extractBody rest =
 
 parseCreateTableColumn : RawSql -> Result ParseError ParsedColumn
 parseCreateTableColumn sql =
-    case sql |> Regex.matches "^(?<name>[^ ]+)\\s+(?<type>.*?)(?:\\s+COLLATE [^ ]+)?(?:\\s+DEFAULT\\s+(?<default1>.*?))?( PRIMARY KEY)?(?<nullable>\\s+NOT NULL)?(?:\\s+COLLATE [^ ]+)?(?:\\s+DEFAULT\\s+(?<default2>.*?))?(?:\\s+CONSTRAINT\\s+(?<constraint>.*))?(?:\\s+(?<reference>REFERENCES\\s+.*?))?(?<nullable2>\\s+NOT NULL)?(?: AUTO_INCREMENT)?( PRIMARY KEY)?( UNIQUE)?(?: CHECK\\((?<check>.*?)\\))?( GENERATED .*?)?(?:\\s+COMMENT '(?<comment>(?:[^']|'')+)')?(?:\\s+COMMENT \"(?<comment2>(?:[^\"]|\"\")+)\")?$" of
+    case sql |> Regex.matches "^(?<name>[^ ]+)\\s+(?<type>.*?)(?:\\s+COLLATE [^ ]+)?(?:\\s+DEFAULT\\s+(?<default1>.*?))?( PRIMARY KEY)?(?<nullable>\\s+NOT NULL)?(?:\\s+COLLATE [^ ]+)?(?:\\s+DEFAULT\\s+(?<default2>.*?))?(?:\\s+CONSTRAINT\\s+(?<constraint>.*))?(?:\\s+(?<reference>REFERENCES\\s+.*?))?(?<nullable2>\\s+NOT NULL)?(?: AUTO_INCREMENT)?( PRIMARY KEY)?( UNIQUE)?(?: CHECK ?\\((?<check>.*?)\\))?( GENERATED .*?)?(?:\\s+COMMENT '(?<comment>(?:[^']|'')+)')?(?:\\s+COMMENT \"(?<comment2>(?:[^\"]|\"\")+)\")?$" of
         (Just name) :: (Just kind) :: default1 :: maybePrimary :: nullable :: default2 :: maybeConstraints :: maybeReference :: nullable2 :: maybePrimary2 :: maybeUnique :: maybeCheck :: maybeGenerated :: maybeComment :: maybeComment2 :: [] ->
             maybeConstraints
                 |> Maybe.mapOrElse (Regex.split (Regex.asRegexI " *constraint *")) []

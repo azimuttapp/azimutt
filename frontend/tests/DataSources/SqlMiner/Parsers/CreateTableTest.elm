@@ -109,6 +109,9 @@ suite =
             , testSql ( parseCreateTableColumn, "with check" )
                 "state text check(state in (NULL, 'Done', 'Obsolete', 'Deletable'))"
                 { parsedColumn | name = "state", kind = "text", check = Just "state in (NULL, 'Done', 'Obsolete', 'Deletable')" }
+            , testSql ( parseCreateTableColumn, "with check and not null" )
+                "flag smallint(5) unsigned NOT NULL CHECK (`flag` >= 0)"
+                { parsedColumn | name = "flag", kind = "smallint(5) unsigned", nullable = False, check = Just "`flag` >= 0" }
             , testSql ( parseCreateTableColumn, "with comment" )
                 "order varchar COMMENT 'Possible values: ''asc'',''desc'''"
                 { parsedColumn | name = "order", kind = "varchar", comment = Just "Possible values: 'asc','desc'" }

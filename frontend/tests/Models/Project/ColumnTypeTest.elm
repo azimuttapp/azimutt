@@ -25,6 +25,7 @@ suite =
             , testParse "character varying" "Text"
             , testParse "character varying(10)" "Text"
             , testParse "varchar(10)" "Text"
+            , testParse "varchar(100) CHARACTER SET utf8mb4" "Text"
             , testParse "nchar(10)" "Text"
             , testParse "integer" "Int"
             , testParse "number(2)" "Int"
