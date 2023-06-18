@@ -26,12 +26,21 @@ import Models.JsValue as JsValue exposing (JsValue)
 import Models.Project.Source as Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.SourceKind exposing (SourceKind(..))
+import PagesComponents.Organization_.Project_.Models.Erd exposing (Erd)
 import Ports
 import Services.Lenses exposing (setDisplay, setInput, setLoading, setResults, setSource)
+import Track
 
 
 type alias Model =
-    { id : HtmlId, sizeFull : Bool, source : Maybe ( Source, DatabaseUrl ), input : String, loading : Bool, results : Maybe (Result String DatabaseQueryResults), display : DisplayMode }
+    { id : HtmlId
+    , sizeFull : Bool
+    , source : Maybe ( Source, DatabaseUrl )
+    , input : String
+    , loading : Bool
+    , results : Maybe (Result String DatabaseQueryResults)
+    , display : DisplayMode
+    }
 
 
 type DisplayMode
@@ -95,24 +104,25 @@ selectSource sources source =
 -- UPDATE
 
 
-update : (Msg -> msg) -> List Source -> Msg -> Maybe Model -> ( Maybe Model, Cmd msg )
-update wrap sources msg model =
+update : (Msg -> msg) -> Erd -> Msg -> Maybe Model -> ( Maybe Model, Cmd msg )
+update wrap erd msg model =
     case msg of
         Toggle ->
             model
-                |> Maybe.mapOrElse (\_ -> Nothing) (init sources Nothing Nothing |> Just)
-                |> Maybe.mapOrElse (\m -> ( Just m, m.source |> Maybe.mapOrElse (\_ -> Ports.focus "query-pane-dialog-editor-query") Cmd.none )) ( Nothing, Cmd.none )
+                |> Maybe.mapOrElse (\_ -> Nothing) (init erd.sources Nothing Nothing |> Just)
+                |> Maybe.map (\m -> ( Just m, Cmd.batch [ m.source |> Maybe.mapOrElse (\_ -> Ports.focus "query-pane-dialog-editor-query") Cmd.none, Track.queryPaneOpened erd.sources erd ] ))
+                |> Maybe.withDefault ( Nothing, Track.queryPaneClosed erd )
 
         Open source input ->
             let
                 m : Model
                 m =
-                    model |> Maybe.map (setSource (selectSource sources source) >> setInput (input |> Maybe.withDefault "")) |> Maybe.withDefault (init sources source input)
+                    model |> Maybe.map (setSource (selectSource erd.sources source) >> setInput (input |> Maybe.withDefault "")) |> Maybe.withDefault (init erd.sources source input)
             in
-            ( m |> Just, Maybe.map2 (\i ( _, url ) -> RunQuery url i |> wrap |> T.send) input m.source |> Maybe.withDefault Cmd.none )
+            ( m |> Just, Cmd.batch [ Maybe.map2 (\i ( _, url ) -> RunQuery url i |> wrap |> T.send) input m.source |> Maybe.withDefault Cmd.none, Track.queryPaneOpened erd.sources erd ] )
 
         Close ->
-            ( Nothing, Cmd.none )
+            ( Nothing, Track.queryPaneClosed erd )
 
         ToggleSizeFull ->
             ( model |> Maybe.map (\m -> { m | sizeFull = not m.sizeFull }), Cmd.none )
