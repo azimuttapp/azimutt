@@ -8,6 +8,10 @@ defmodule AzimuttWeb.UserOauthController do
   action_fallback AzimuttWeb.FallbackController
 
   def callback(conn, %{"provider" => "github"}) do
+    if conn.assigns[:ueberauth_failure] do
+      callback(conn, conn.assigns.ueberauth_failure.errors)
+    end
+
     now = DateTime.utc_now()
     auth_info = conn.assigns.ueberauth_auth
     provider = auth_info.provider |> Atom.to_string()

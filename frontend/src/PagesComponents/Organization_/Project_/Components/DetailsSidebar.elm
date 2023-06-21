@@ -39,6 +39,7 @@ import PagesComponents.Organization_.Project_.Models.TagsMsg exposing (TagsMsg(.
 import Ports
 import Services.Lenses exposing (setEditNotes, setSearch, setView)
 import Task
+import Track
 
 
 type alias Model =
@@ -102,25 +103,25 @@ update : (String -> msg) -> (NotesMsg -> msg) -> (TagsMsg -> msg) -> Erd -> Msg 
 update noop notesMsg tagsMsg erd msg model =
     case msg of
         Toggle ->
-            ( model |> Maybe.mapOrElse (\_ -> Nothing) (listView |> init |> Just), Cmd.none )
+            model |> Maybe.mapOrElse (\_ -> ( Nothing, Track.detailSidebarClosed erd )) ( listView |> init |> Just, Track.detailSidebarOpened "table-list" erd )
 
         Close ->
-            ( Nothing, Cmd.none )
+            ( Nothing, Track.detailSidebarClosed erd )
 
         SearchUpdate search ->
             ( model |> Maybe.map (setSearch search), Cmd.none )
 
         ShowList ->
-            ( model |> setViewM listView, Cmd.none )
+            ( model |> setViewM listView, Track.detailSidebarOpened "table-list" erd )
 
         ShowSchema schema ->
-            ( model |> setViewM (schemaView erd schema), Cmd.none )
+            ( model |> setViewM (schemaView erd schema), Track.detailSidebarOpened "schema" erd )
 
         ShowTable table ->
-            ( model |> setViewM (tableView erd table), Cmd.batch (erd.sources |> filterTableDbSources table |> List.map (Ports.getTableStats table)) )
+            ( model |> setViewM (tableView erd table), Cmd.batch (Track.detailSidebarOpened "table" erd :: (erd.sources |> filterTableDbSources table |> List.map (Ports.getTableStats table))) )
 
         ShowColumn column ->
-            ( model |> setViewM (columnView erd column), Cmd.batch (erd.sources |> filterColumnDbSources column |> List.map (Ports.getColumnStats column)) )
+            ( model |> setViewM (columnView erd column), Cmd.batch (Track.detailSidebarOpened "column" erd :: (erd.sources |> filterColumnDbSources column |> List.map (Ports.getColumnStats column))) )
 
         ToggleCollapse id ->
             ( model |> Maybe.map (\m -> { m | openedCollapse = Bool.cond (m.openedCollapse == id) "" id }), Cmd.none )

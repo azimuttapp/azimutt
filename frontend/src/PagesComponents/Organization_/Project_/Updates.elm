@@ -245,7 +245,7 @@ update urlLayout zone now urlInfos organizations projects msg model =
             model.erd |> Maybe.mapOrElse (\erd -> model |> mapDetailsSidebarCmd (DetailsSidebar.update Noop NotesMsg TagsMsg erd message)) ( model, Cmd.none )
 
         QueryPaneMsg message ->
-            model.erd |> Maybe.mapOrElse (\erd -> model |> mapQueryPaneCmd (QueryPane.update QueryPaneMsg erd.sources message)) ( model, Cmd.none )
+            model.erd |> Maybe.mapOrElse (\erd -> model |> mapQueryPaneCmd (QueryPane.update QueryPaneMsg erd message)) ( model, Cmd.none )
 
         VirtualRelationMsg message ->
             model |> handleVirtualRelation message

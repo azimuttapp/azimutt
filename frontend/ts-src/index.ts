@@ -464,6 +464,7 @@ if (window.sentry_frontend_dsn) {
         dsn: window.sentry_frontend_dsn,
         integrations: [new BrowserTracing()],
         tracesSampleRate: 1.0,
+        ignoreErrors: ['Non-Error promise rejection captured']
     })
 }
 

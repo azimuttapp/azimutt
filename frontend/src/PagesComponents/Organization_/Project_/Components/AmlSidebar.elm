@@ -40,6 +40,7 @@ import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirtyCm
 import Services.Lenses exposing (mapAmlSidebarM, mapErdM, setAmlSidebar, setContent, setErrors, setSelected, setUpdatedAt)
 import Set exposing (Set)
 import Time
+import Track
 
 
 type alias Model x =
@@ -79,10 +80,10 @@ update : Time.Posix -> AmlSidebarMsg -> Model x -> ( Model x, Cmd Msg )
 update now msg model =
     case msg of
         AOpen id ->
-            ( model |> setAmlSidebar (Just (init id model.erd)), Cmd.none )
+            ( model |> setAmlSidebar (Just (init id model.erd)), Track.sourceEditorOpened model.erd )
 
         AClose ->
-            ( model |> setAmlSidebar Nothing, Cmd.none )
+            ( model |> setAmlSidebar Nothing, Track.sourceEditorClosed model.erd )
 
         AToggle ->
             ( model, T.send (AmlSidebarMsg (Bool.cond (model.amlSidebar == Nothing) (AOpen Nothing) AClose)) )
