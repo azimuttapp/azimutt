@@ -8,7 +8,7 @@ defmodule AzimuttWeb.UserOauthController do
   action_fallback AzimuttWeb.FallbackController
 
   def callback(conn, %{"provider" => "github"}) do
-    if conn.assigns[:ueberauth_failure] do
+    if !conn.assigns[:ueberauth_auth] && conn.assigns[:ueberauth_failure] do
       callback(conn, conn.assigns.ueberauth_failure.errors)
     end
 
