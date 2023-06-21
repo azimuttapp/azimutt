@@ -9,7 +9,7 @@ defmodule AzimuttWeb.OrganizationMemberController do
   alias Azimutt.Utils.Uuid
   action_fallback AzimuttWeb.FallbackController
 
-  def index(conn, %{"organization_id" => organization_id}) do
+  def index(conn, %{"organization_organization_id" => organization_id}) do
     now = DateTime.utc_now()
     current_user = conn.assigns.current_user
 
@@ -27,7 +27,7 @@ defmodule AzimuttWeb.OrganizationMemberController do
   end
 
   def create_invitation(conn, %{
-        "organization_id" => organization_id,
+        "organization_organization_id" => organization_id,
         "organization_invitation" => organization_invitation_params
       }) do
     now = DateTime.utc_now()
@@ -51,7 +51,7 @@ defmodule AzimuttWeb.OrganizationMemberController do
     end
   end
 
-  def cancel_invitation(conn, %{"organization_id" => organization_id, "invitation_id" => invitation_id}) do
+  def cancel_invitation(conn, %{"organization_organization_id" => organization_id, "invitation_id" => invitation_id}) do
     now = DateTime.utc_now()
     current_user = conn.assigns.current_user
 
@@ -70,7 +70,7 @@ defmodule AzimuttWeb.OrganizationMemberController do
     end
   end
 
-  def remove(conn, %{"organization_id" => organization_id, "user_id" => user_id}) do
+  def remove(conn, %{"organization_organization_id" => organization_id, "user_id" => user_id}) do
     current_user = conn.assigns.current_user
 
     with {:ok, %Organization{} = organization} <- Organizations.get_organization(organization_id, current_user),

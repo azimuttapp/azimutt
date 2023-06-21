@@ -12,7 +12,7 @@ defmodule AzimuttWeb.OrganizationBillingController do
   alias AzimuttWeb.Services.BillingSrv
   action_fallback AzimuttWeb.FallbackController
 
-  def index(conn, %{"organization_id" => organization_id} = params) do
+  def index(conn, %{"organization_organization_id" => organization_id} = params) do
     source = params["source"]
     current_user = conn.assigns.current_user
 
@@ -68,7 +68,7 @@ defmodule AzimuttWeb.OrganizationBillingController do
     end
   end
 
-  def new(conn, %{"organization_id" => organization_id}) do
+  def new(conn, %{"organization_organization_id" => organization_id}) do
     current_user = conn.assigns.current_user
 
     conn
@@ -81,7 +81,7 @@ defmodule AzimuttWeb.OrganizationBillingController do
     )
   end
 
-  def edit(conn, %{"organization_id" => organization_id}) do
+  def edit(conn, %{"organization_organization_id" => organization_id}) do
     current_user = conn.assigns.current_user
     {:ok, organization} = Organizations.get_organization(organization_id, current_user)
 
@@ -106,7 +106,7 @@ defmodule AzimuttWeb.OrganizationBillingController do
     end
   end
 
-  def success(conn, %{"organization_id" => organization_id}) do
+  def success(conn, %{"organization_organization_id" => organization_id}) do
     current_user = conn.assigns.current_user
 
     with {:ok, %Organization{} = organization} <- Organizations.get_organization(organization_id, current_user),
@@ -119,7 +119,7 @@ defmodule AzimuttWeb.OrganizationBillingController do
     end
   end
 
-  def cancel(conn, %{"organization_id" => organization_id}) do
+  def cancel(conn, %{"organization_organization_id" => organization_id}) do
     current_user = conn.assigns.current_user
     {:ok, %Organization{} = organization} = Organizations.get_organization(organization_id, current_user)
     Tracking.subscribe_abort(current_user, organization)

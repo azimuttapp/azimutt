@@ -46,7 +46,7 @@ defmodule AzimuttWeb.Api.ProjectController do
     response(400, "Client Error")
   end
 
-  def create(conn, %{"organization_id" => organization_id} = params) do
+  def create(conn, %{"organization_organization_id" => organization_id} = params) do
     current_user = conn.assigns.current_user
     ctx = CtxParams.from_params(params)
 
@@ -57,7 +57,7 @@ defmodule AzimuttWeb.Api.ProjectController do
          do: conn |> put_status(:created) |> render("show.json", project: project, ctx: ctx)
   end
 
-  def update(conn, %{"organization_id" => _organization_id, "project_id" => project_id} = params) do
+  def update(conn, %{"organization_organization_id" => _organization_id, "project_id" => project_id} = params) do
     now = DateTime.utc_now()
     current_user = conn.assigns.current_user
     ctx = CtxParams.from_params(params)
@@ -69,7 +69,7 @@ defmodule AzimuttWeb.Api.ProjectController do
          do: conn |> render("show.json", project: project, ctx: ctx)
   end
 
-  def delete(conn, %{"organization_id" => _organization_id, "project_id" => project_id}) do
+  def delete(conn, %{"organization_organization_id" => _organization_id, "project_id" => project_id}) do
     current_user = conn.assigns.current_user
 
     with {:ok, %Project{} = project} <- Projects.get_project(project_id, current_user),
