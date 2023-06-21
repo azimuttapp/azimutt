@@ -96,11 +96,11 @@ defmodule AzimuttWeb.HerokuController do
     end
   end
 
-  def show(conn, %{"id" => id}) do
+  def show(conn, %{"resource_id" => resource_id}) do
     current_user = conn.assigns.current_user
     resource = conn.assigns.heroku
 
-    if resource.id == id do
+    if resource.id == resource_id do
       conn
       |> put_layout({AzimuttWeb.LayoutView, "empty.html"})
       |> put_root_layout({AzimuttWeb.LayoutView, "empty.html"})

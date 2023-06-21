@@ -34,7 +34,7 @@ defmodule AzimuttWeb.OrganizationController do
     end
   end
 
-  def show(conn, %{"id" => organization_id}) do
+  def show(conn, %{"organization_id" => organization_id}) do
     current_user = conn.assigns.current_user
 
     if organization_id == Uuid.zero() do
@@ -49,7 +49,7 @@ defmodule AzimuttWeb.OrganizationController do
          do: render(conn, "show.html", organization: organization, projects: projects, plan: plan, organization_events: organization_events)
   end
 
-  def edit(conn, %{"id" => organization_id}) do
+  def edit(conn, %{"organization_id" => organization_id}) do
     current_user = conn.assigns.current_user
 
     if organization_id == Uuid.zero() do
@@ -64,9 +64,9 @@ defmodule AzimuttWeb.OrganizationController do
     end
   end
 
-  def update(conn, %{"id" => id, "organization" => organization_attrs}) do
+  def update(conn, %{"organization_id" => organization_id, "organization" => organization_attrs}) do
     current_user = conn.assigns.current_user
-    {:ok, organization} = Organizations.get_organization(id, current_user)
+    {:ok, organization} = Organizations.get_organization(organization_id, current_user)
 
     case Organizations.update_organization(organization_attrs, organization, current_user) do
       {:ok, organization} ->
@@ -80,10 +80,10 @@ defmodule AzimuttWeb.OrganizationController do
     end
   end
 
-  def delete(conn, %{"id" => id}) do
+  def delete(conn, %{"organization_id" => organization_id}) do
     now = DateTime.utc_now()
     current_user = conn.assigns.current_user
-    {:ok, organization} = Organizations.get_organization(id, current_user)
+    {:ok, organization} = Organizations.get_organization(organization_id, current_user)
     {:ok, _organization} = Organizations.delete_organization(organization, now)
 
     conn

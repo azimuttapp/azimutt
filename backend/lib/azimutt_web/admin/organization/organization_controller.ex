@@ -14,7 +14,7 @@ defmodule AzimuttWeb.Admin.OrganizationController do
     conn |> render("index.html", organizations: Admin.list_organizations(page))
   end
 
-  def show(conn, %{"id" => organization_id}) do
+  def show(conn, %{"organization_id" => organization_id}) do
     now = DateTime.utc_now()
     events_page = conn |> Page.from_conn(%{prefix: "events", search_on: Event.search_fields(), sort: "-created_at", size: 40})
     {:ok, start_stats} = "2022-11-01" |> Timex.parse("{YYYY}-{0M}-{0D}")

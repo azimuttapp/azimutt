@@ -12,7 +12,7 @@ defmodule AzimuttWeb.Admin.UserController do
     conn |> render("index.html", users: Admin.list_users(page))
   end
 
-  def show(conn, %{"id" => user_id}) do
+  def show(conn, %{"user_id" => user_id}) do
     now = DateTime.utc_now()
     events_page = conn |> Page.from_conn(%{prefix: "events", search_on: Event.search_fields(), sort: "-created_at", size: 40})
     {:ok, start_stats} = "2022-11-01" |> Timex.parse("{YYYY}-{0M}-{0D}")

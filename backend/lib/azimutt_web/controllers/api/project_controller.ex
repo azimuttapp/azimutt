@@ -26,7 +26,7 @@ defmodule AzimuttWeb.Api.ProjectController do
          do: conn |> render("index.json", projects: organization.projects)
   end
 
-  def show(conn, %{"organization_id" => _organization_id, "id" => project_id} = params) do
+  def show(conn, %{"organization_id" => _organization_id, "project_id" => project_id} = params) do
     now = DateTime.utc_now()
     maybe_current_user = conn.assigns.current_user
     ctx = CtxParams.from_params(params)
@@ -57,22 +57,22 @@ defmodule AzimuttWeb.Api.ProjectController do
          do: conn |> put_status(:created) |> render("show.json", project: project, ctx: ctx)
   end
 
-  def update(conn, %{"organization_id" => _organization_id, "id" => id} = params) do
+  def update(conn, %{"organization_id" => _organization_id, "project_id" => project_id} = params) do
     now = DateTime.utc_now()
     current_user = conn.assigns.current_user
     ctx = CtxParams.from_params(params)
 
-    with {:ok, %Project{} = project} <- Projects.get_project(id, current_user),
+    with {:ok, %Project{} = project} <- Projects.get_project(project_id, current_user),
          {:ok, %Project{} = updated} <- Projects.update_project(project, params, current_user, now),
          # needed to get preloads
          {:ok, %Project{} = project} <- Projects.get_project(updated.id, current_user),
          do: conn |> render("show.json", project: project, ctx: ctx)
   end
 
-  def delete(conn, %{"organization_id" => _organization_id, "id" => id}) do
+  def delete(conn, %{"organization_id" => _organization_id, "project_id" => project_id}) do
     current_user = conn.assigns.current_user
 
-    with {:ok, %Project{} = project} <- Projects.get_project(id, current_user),
+    with {:ok, %Project{} = project} <- Projects.get_project(project_id, current_user),
          {:ok, %Project{}} <- Projects.delete_project(project, current_user),
          do: conn |> send_resp(:no_content, "")
   end

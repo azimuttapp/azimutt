@@ -58,13 +58,13 @@ defmodule AzimuttWeb.Router do
     get("/", WebsiteController, :index)
     get("/last", WebsiteController, :last)
     get("/use-cases", WebsiteController, :use_cases_index)
-    get("/use-cases/:id", WebsiteController, :use_cases_show)
+    get("/use-cases/:use_case_id", WebsiteController, :use_cases_show)
     get("/features", WebsiteController, :features_index)
-    get("/features/:id", WebsiteController, :features_show)
+    get("/features/:feature_id", WebsiteController, :features_show)
     get("/pricing", WebsiteController, :pricing)
     get("/blog", BlogController, :index)
     if Azimutt.Application.env() == :dev, do: get("/blog/cards", BlogController, :cards)
-    get("/blog/:id", BlogController, :show)
+    get("/blog/:article_id", BlogController, :show)
     get("/gallery", GalleryController, :index)
     get("/gallery/:slug", GalleryController, :show)
     get("/logout", UserSessionController, :delete)
@@ -144,7 +144,7 @@ defmodule AzimuttWeb.Router do
       delete("/providers/:provider", UserSettingsController, :remove_provider)
     end
 
-    resources "/organizations", OrganizationController, except: [:index] do
+    resources "/organizations", OrganizationController, param: "organization_id", except: [:index] do
       get("/billing", OrganizationBillingController, :index, as: :billing)
       post("/billing/new", OrganizationBillingController, :new, as: :billing)
       post("/billing/edit", OrganizationBillingController, :edit, as: :billing)
@@ -158,16 +158,16 @@ defmodule AzimuttWeb.Router do
       delete("/members/:user_id/remove", OrganizationMemberController, :remove, as: :member)
     end
 
-    get("/invitations/:id", OrganizationInvitationController, :show, as: :invitation)
-    patch("/invitations/:id/accept", OrganizationInvitationController, :accept, as: :invitation)
-    patch("/invitations/:id/refuse", OrganizationInvitationController, :refuse, as: :invitation)
+    get("/invitations/:invitation_id", OrganizationInvitationController, :show, as: :invitation)
+    patch("/invitations/:invitation_id/accept", OrganizationInvitationController, :accept, as: :invitation)
+    patch("/invitations/:invitation_id/refuse", OrganizationInvitationController, :refuse, as: :invitation)
   end
 
   scope "/heroku", AzimuttWeb do
     pipe_through([:api, :require_heroku_basic_auth])
     post("/resources", Api.HerokuController, :create)
-    put("/resources/:id", Api.HerokuController, :update)
-    delete("/resources/:id", Api.HerokuController, :delete)
+    put("/resources/:resource_id", Api.HerokuController, :update)
+    delete("/resources/:resource_id", Api.HerokuController, :delete)
   end
 
   scope "/heroku", AzimuttWeb do
@@ -178,16 +178,16 @@ defmodule AzimuttWeb.Router do
 
   scope "/heroku", AzimuttWeb do
     pipe_through([:browser, :require_heroku_resource, :require_authed_user])
-    get("/resources/:id", HerokuController, :show)
+    get("/resources/:resource_id", HerokuController, :show)
   end
 
   scope "/admin", AzimuttWeb, as: :admin do
     pipe_through([:browser, :require_authed_user, :require_admin_user, :admin_root_layout])
     get("/", Admin.DashboardController, :index)
-    resources("/users", Admin.UserController, only: [:index, :show])
-    resources("/organizations", Admin.OrganizationController, only: [:index, :show])
-    resources("/projects", Admin.ProjectController, only: [:index, :show])
-    resources("/events", Admin.EventController, only: [:index, :show])
+    resources("/users", Admin.UserController, param: "user_id", only: [:index, :show])
+    resources("/organizations", Admin.OrganizationController, param: "organization_id", only: [:index, :show])
+    resources("/projects", Admin.ProjectController, param: "project_id", only: [:index, :show])
+    resources("/events", Admin.EventController, param: "event_id", only: [:index, :show])
   end
 
   scope "/api/v1/swagger" do
@@ -209,7 +209,7 @@ defmodule AzimuttWeb.Router do
     get("/analyzer/rows", Api.AnalyzerController, :rows)
     post("/analyzer/rows", Api.AnalyzerController, :rows)
     get("/gallery", Api.GalleryController, :index)
-    get("/organizations/:organization_id/projects/:id", Api.ProjectController, :show)
+    get("/organizations/:organization_id/projects/:project_id", Api.ProjectController, :show)
     post("/events", Api.TrackingController, :create)
   end
 
@@ -218,9 +218,9 @@ defmodule AzimuttWeb.Router do
     pipe_through([:api, :require_authed_user_api])
     get("/users/current", Api.UserController, :current)
 
-    resources "/organizations", Api.OrganizationController, only: [:index] do
-      resources "/projects", Api.ProjectController, except: [:new, :edit, :show] do
-        resources("/access-tokens", Api.ProjectTokenController, only: [:index, :create, :delete])
+    resources "/organizations", Api.OrganizationController, param: "organization_id", only: [:index] do
+      resources "/projects", Api.ProjectController, param: "project_id", except: [:new, :edit, :show] do
+        resources("/access-tokens", Api.ProjectTokenController, param: "token_id", only: [:index, :create, :delete])
       end
 
       post("/tweet-for-table-colors", Api.OrganizationController, :table_colors)

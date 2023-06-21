@@ -10,7 +10,7 @@ defmodule AzimuttWeb.Admin.EventController do
     conn |> render("index.html", events: Admin.list_events(page))
   end
 
-  def show(conn, %{"id" => event_id}) do
+  def show(conn, %{"event_id" => event_id}) do
     events_page = conn |> Page.from_conn(%{prefix: "events", search_on: Event.search_fields(), sort: "-created_at", size: 120})
 
     with {:ok, event} <- Admin.get_event(event_id) do

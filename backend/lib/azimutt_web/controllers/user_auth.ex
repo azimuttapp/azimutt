@@ -121,7 +121,7 @@ defmodule AzimuttWeb.UserAuth do
   def fetch_current_user(conn, _opts) do
     {user_token, conn} = ensure_user_token(conn)
     user = user_token && Accounts.get_user_by_session_token(user_token)
-    user = user |> Azimutt.Repo.preload(:profile) |> Azimutt.Repo.preload(organizations: [:heroku_resource])
+    user = user |> Azimutt.Repo.preload(:profile) |> Azimutt.Repo.preload(organizations: [:heroku_resource, :projects])
     assign(conn, :current_user, user)
   end
 

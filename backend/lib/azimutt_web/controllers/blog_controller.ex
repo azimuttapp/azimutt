@@ -17,8 +17,8 @@ defmodule AzimuttWeb.BlogController do
            )
   end
 
-  def show(conn, %{"id" => id}) do
-    with {:ok, article} <- Blog.get_article(id),
+  def show(conn, %{"article_id" => article_id}) do
+    with {:ok, article} <- Blog.get_article(article_id),
          do:
            render(conn, "show.html",
              article: article,
