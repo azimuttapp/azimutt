@@ -90,20 +90,20 @@ The Azimutt application should now be running on your local machine and accessib
 | `PHX_SERVER` | Boolean flag indicating whether the Phoenix server should be launched. | Required | true/false |
 | `PHX_HOST` | The host of the Phoenix server. | Required | localhost |
 | `PORT` | The port on which the server will operate. | Required | 4000 |
-| `DATABASE_URL` | The URL of the database. | Required | postgresql://user:password@localhost/database |
+| `DATABASE_URL` | The URL of the **postgres** database for running the application. | Required | postgresql://user:password@localhost/database |
 | `DATABASE_POOL_SIZE` | The size of the database connection pool. | Optional | 10 |
 | `DATABASE_ENABLE_SSL` | Boolean flag indicating whether to enable SSL for database connections. | Optional | true/false |
 | `SECRET_KEY_BASE` | A secret key for verifying the integrity of signed cookies. | Required | abc...def |
-| `SUPPORT_EMAIL` | The support email address for your application. | Optional | support@myapp.com |
-| `SENDER_EMAIL` | The sender email address for your application. | Optional | sender@myapp.com |
-| `GLOBAL_ORGANIZATION` | The global organization setting for your application. | Optional | my_organization |
-| `PUBLIC_SITE` | Boolean flag indicating if your site is public. | Optional | true/false |
+| `SUPPORT_EMAIL` | The email address that will be shown in the application to contact support. | Optional | support@myapp.com |
+| `SENDER_EMAIL` | The email address used when sending emails (email confirmation, password reset, organization invitation...). | Optional | sender@myapp.com |
+| `GLOBAL_ORGANIZATION` | If you want all new users to be added to a specific organization. | Optional | The value of the organization -> organization_id (uuid) |
+| `PUBLIC_SITE` | Boolean flag indicating if the site should be shown (please keep it to false on your instance :D ). | Optional | true/false |
 | `SKIP_ONBOARDING_FUNNEL` | Flag for skipping the onboarding funnel. | Optional | true/false |
 | `SKIP_EMAIL_CONFIRMATION` | Flag for skipping email confirmation upon sign up. | Optional | true/false |
 | `REQUIRE_EMAIL_CONFIRMATION` | Flag for requiring email confirmation upon sign up. | Optional | true/false |
 | `REQUIRE_EMAIL_ENDS_WITH` | Flag for requiring email addresses to end with a specific string upon sign up. | Optional | @mydomain.com |
-| `ORGANIZATION_DEFAULT_PLAN` | The default plan for organizations in your application. | Optional | basic |
-| `GLOBAL_ORGANIZATION_ALONE` | Flag for the global organization setting. | Optional | true/false |
+| `ORGANIZATION_DEFAULT_PLAN` | The default plan for organizations in your application. | Optional | `free` or `pro` |
+| `GLOBAL_ORGANIZATION_ALONE` | If activated in combination with the `GLOBAL_ORGANIZATION`, only this one is visible and no other one can be created, this fake a mono-tenancy app for simpler UI | Optional | true/false |
 | `FILE_STORAGE_ADAPTER` | The file storage adapter to use. | Required | `local` or `s3` |
 | `S3_BUCKET` | The name of the S3 bucket for file storage. | If `FILE_STORAGE_ADAPTER` is `s3` | my-s3-bucket |
 | `S3_HOST` | The host for the S3 bucket. | If `FILE_STORAGE_ADAPTER` is `s3` | s3.amazonaws.com |
@@ -120,11 +120,11 @@ The Azimutt application should now be running on your local machine and accessib
 | `SMTP_USERNAME` | The username for SMTP email service. | If `EMAIL_ADAPTER` is `smtp` | smtp_user |
 | `SMTP_PASSWORD` | The password for SMTP email service. | If `EMAIL_ADAPTER` is `smtp` | smtp_password |
 | `SMTP_PORT` | The port for SMTP email service. | If `EMAIL_ADAPTER` is `smtp` | 2525 |
+| `AUTH_PASSWORD` | Boolean flag indicating whether to enable password authentication. | Optional | true/false |
 | `AUTH_GITHUB` | Boolean flag indicating whether to enable GitHub authentication. | Optional | true/false |
 | `GITHUB_CLIENT_ID` | The client ID for GitHub authentication. | If `AUTH_GITHUB` is `true` | Iv1.1234567890abcdef |
 | `GITHUB_CLIENT_SECRET` | The client secret for GitHub authentication. | If `AUTH_GITHUB` is `true` | 1234567890abcdef |
 | `GITHUB_ACCESS_TOKEN` | The access token for GitHub authentication. | If `AUTH_GITHUB` is `true` | ghp_9Zt7AJKJJKL5H7GHIJKL |
-| `AUTH_PASSWORD` | Boolean flag indicating whether to enable password authentication. | Optional | true/false |
 | `AUTH_LINKEDIN` | Boolean flag indicating whether to enable LinkedIn authentication. (Not supported yet) | Optional | true/false |
 | `AUTH_GOOGLE` | Boolean flag indicating whether to enable Google authentication. (Not supported yet) | Optional | true/false |
 | `AUTH_TWITTER` | Boolean flag indicating whether to enable Twitter authentication. (Not supported yet) | Optional | true/false |
@@ -140,15 +140,15 @@ The Azimutt application should now be running on your local machine and accessib
 | `STRIPE_API_KEY` | The API key for Stripe (required if Stripe is enabled). | If `STRIPE` is `true` | sk_test_4eC39HqLyjWDarjtT1zdp7dc |
 | `STRIPE_WEBHOOK_SIGNING_SECRET` | The webhook signing secret for Stripe (required if Stripe is enabled). | If `STRIPE` is `true` | whsec_123456 |
 | `STRIPE_PRICE_PRO_MONTHLY` | The monthly price in cents for Stripe (required if Stripe is enabled). | If `STRIPE` is `true` | 999 |
-| `HEROKU` | Boolean flag indicating whether to enable Heroku integration. | No | true |
+| `HEROKU` | Boolean flag indicating whether to enable Heroku integration. | Optional | true |
 | `HEROKU_ADDON_ID` | The addon ID for Heroku. | If `HEROKU` is `true` | abcdefgh-ijkl-mnop-qrst-uvwxyz012345 |
 | `HEROKU_PASSWORD` | The password for Heroku. | If `HEROKU` is `true` | myHerokuPassword |
 | `HEROKU_SSO_SALT` | The SSO salt for Heroku. | If `HEROKU` is `true` | myHerokuSSOSalt |
-| `BENTO` | Boolean flag indicating whether to enable Bento. | No | true |
+| `BENTO` | Boolean flag indicating whether to enable Bento. | Optional | true |
 | `BENTO_SITE_KEY` | The site key for Bento. | If `BENTO` is `true` | myBentoSiteKey |
 | `BENTO_PUBLISHABLE_KEY` | The publishable key for Bento. | If `BENTO` is `true` | myBentoPublishableKey |
 | `BENTO_SECRET_KEY` | The secret key for Bento. | If `BENTO` is `true` | myBentoSecretKey |
-| `TWITTER` | Boolean flag indicating whether to enable Twitter integration. | No | true |
+| `TWITTER` | Boolean flag indicating whether to enable Twitter integration. (This is used to unlock features with a tweet) | Optional | true/false |
 | `TWITTER_CONSUMER_KEY` | The consumer key for Twitter. | If `TWITTER` is `true` | myTwitterConsumerKey |
 | `TWITTER_CONSUMER_SECRET` | The consumer secret for Twitter. | If `TWITTER` is `true` | myTwitterConsumerSecret |
 | `TWITTER_ACCESS_TOKEN` | The access token for Twitter. | If `TWITTER` is `true` | 1234567890-ZYXWVUTSR |
