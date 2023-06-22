@@ -116,15 +116,13 @@ ENV GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}
 ENV GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}
 ENV STRIPE_API_KEY=${STRIPE_API_KEY}
 ENV STRIPE_WEBHOOK_SIGNING_SECRET=${STRIPE_WEBHOOK_SIGNING_SECRET}
-ENV PHX_SERVER="true"
 ENV DATABASE_URL=${DATABASE_URL}
+ENV MIX_ENV="prod"
+ENV PHX_SERVER="true"
 
 WORKDIR "/app"
 RUN chown nobody /app
 
-# set runner ENV
-ENV MIX_ENV="prod"
-ENV PHX_SERVER="true"
 
 # Only copy the final release from the build stage
 COPY --from=builder --chown=nobody:root /app/_build/${MIX_ENV}/rel/azimutt ./

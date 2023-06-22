@@ -10,6 +10,9 @@ Make sure that you have Docker and Docker Compose installed on your local machin
 
 Follow the steps below to run the Azimutt container on your local machine:
 
+
+### From source code
+
 ### Step 1: Clone the Azimutt repository
 
 Clone the Azimutt repository from GitHub to your local machine.
@@ -33,8 +36,31 @@ cp .env.example .env
 ```
 
 Edit the `.env` file and replace the placeholder values with your actual values for each environment variable. The possible environment variables are listed in the `.env.example` file available in the repository. 
+On linux and Windows remove the `export` on the file.
 
-### Step 3: Pull the Docker Image
+### Step 3: Build the docker image
+
+```bash
+docker build -t azimutt:latest .
+```
+
+### Step 4: Run the Docker Container
+
+Now, we'll need to run the container using the image we've just pulled. We'll use the `--env-file` option to supply our environment variables to the container. Note that you need to replace `<path_to_your_env_file>` with the actual path to your `.env` file:
+
+```bash
+docker run -d --name azimutt \
+--env-file <path_to_your_env_file> \
+-p 4000:4000 \
+azimutt:latest
+```
+
+The Azimutt application should now be running on your local machine and accessible at `http://localhost:4000`.
+
+
+
+### From Docker Registry
+### Step 1: Pull the Docker Image
 
 Pull the Docker image from the registry:
 
@@ -42,7 +68,7 @@ Pull the Docker image from the registry:
 docker pull ghcr.io/azimuttapp/azimutt:main
 ```
 
-### Step 4: Run the Docker Container
+### Step 2: Run the Docker Container
 
 Now, we'll need to run the container using the image we've just pulled. We'll use the `--env-file` option to supply our environment variables to the container. Note that you need to replace `<path_to_your_env_file>` with the actual path to your `.env` file:
 
@@ -81,23 +107,23 @@ The Azimutt application should now be running on your local machine and accessib
 | `FILE_STORAGE_ADAPTER` | The file storage adapter to use. | Required | `local` or `s3` |
 | `S3_BUCKET` | The name of the S3 bucket for file storage. | If `FILE_STORAGE_ADAPTER` is `s3` | my-s3-bucket |
 | `S3_HOST` | The host for the S3 bucket. | If `FILE_STORAGE_ADAPTER` is `s3` | s3.amazonaws.com |
-| `S3_KEY_ID` | The key ID for the S3 bucket. | If `FILE_STORAGE_ADAPTER` is `s3` | AKIAIOSFODNN7EXAMPLE |
-| `S3_KEY_SECRET` | The secret key for the S3 bucket. | If `FILE_STORAGE_ADAPTER` is `s3` | wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY |
+| `S3_KEY_ID` | The key ID for the S3 bucket. | If `FILE_STORAGE_ADAPTER` is `s3` | AKIAIOSFODN |
+| `S3_KEY_SECRET` | The secret key for the S3 bucket. | If `FILE_STORAGE_ADAPTER` is `s3` | wJalrXUtnFEMI/K7MDEN |
 | `S3_REGION` | The region of the S3 bucket. | If `FILE_STORAGE_ADAPTER` is `s3` | us-west-1 |
 | `S3_FOLDER` | The folder within the S3 bucket for file storage. | Optional | my-app-data |
 | `EMAIL_ADAPTER` | The email adapter to use. | Required | `mailgun`, `gmail`, or `smtp` |
 | `MAILGUN_DOMAIN` | The domain for Mailgun email service. | If `EMAIL_ADAPTER` is `mailgun` | sandbox123.mailgun.org |
-| `MAILGUN_API_KEY` | The API key for Mailgun email service. | If `EMAIL_ADAPTER` is `mailgun` | key-3ax6xnjp29jd6fds4gc373sgvjxteol0 |
+| `MAILGUN_API_KEY` | The API key for Mailgun email service. | If `EMAIL_ADAPTER` is `mailgun` | key-3ax6xnjp29jd6fds |
 | `MAILGUN_BASE_URL` | The base URL for Mailgun email service. | If `EMAIL_ADAPTER` is `mailgun` | https://api.mailgun.net/v3 |
-| `GMAIL_ACCESS_TOKEN` | The access token for Gmail email service. | If `EMAIL_ADAPTER` is `gmail` | ya29.A0AfH6SMDtBmTm-tuex7w7eXg8GG_abcdef |
+| `GMAIL_ACCESS_TOKEN` | The access token for Gmail email service. | If `EMAIL_ADAPTER` is `gmail` | ya29.A0AfH6SMDtBmTm- |
 | `SMTP_RELAY` | The relay for SMTP email service. | If `EMAIL_ADAPTER` is `smtp` | smtp.mailtrap.io |
 | `SMTP_USERNAME` | The username for SMTP email service. | If `EMAIL_ADAPTER` is `smtp` | smtp_user |
 | `SMTP_PASSWORD` | The password for SMTP email service. | If `EMAIL_ADAPTER` is `smtp` | smtp_password |
 | `SMTP_PORT` | The port for SMTP email service. | If `EMAIL_ADAPTER` is `smtp` | 2525 |
 | `AUTH_GITHUB` | Boolean flag indicating whether to enable GitHub authentication. | Optional | true/false |
 | `GITHUB_CLIENT_ID` | The client ID for GitHub authentication. | If `AUTH_GITHUB` is `true` | Iv1.1234567890abcdef |
-| `GITHUB_CLIENT_SECRET` | The client secret for GitHub authentication. | If `AUTH_GITHUB` is `true` | 1234567890abcdef1234567890abcdef12345678 |
-| `GITHUB_ACCESS_TOKEN` | The access token for GitHub authentication. | If `AUTH_GITHUB` is `true` | ghp_9Zt7AJKJJKL5H7GHIJKLMNOPQRSTuvwx |
+| `GITHUB_CLIENT_SECRET` | The client secret for GitHub authentication. | If `AUTH_GITHUB` is `true` | 1234567890abcdef |
+| `GITHUB_ACCESS_TOKEN` | The access token for GitHub authentication. | If `AUTH_GITHUB` is `true` | ghp_9Zt7AJKJJKL5H7GHIJKL |
 | `AUTH_PASSWORD` | Boolean flag indicating whether to enable password authentication. | Optional | true/false |
 | `AUTH_LINKEDIN` | Boolean flag indicating whether to enable LinkedIn authentication. (Not supported yet) | Optional | true/false |
 | `AUTH_GOOGLE` | Boolean flag indicating whether to enable Google authentication. (Not supported yet) | Optional | true/false |
@@ -112,7 +138,7 @@ The Azimutt application should now be running on your local machine and accessib
 | `SENTRY_FRONTEND_DSN` | The DSN for Sentry frontend. | If `SENTRY` is `true` | https://123abc@o123.ingest.sentry.io/1234 |
 | `STRIPE` | Boolean flag indicating whether to enable Stripe for payment processing. | Optional | true/false  |
 | `STRIPE_API_KEY` | The API key for Stripe (required if Stripe is enabled). | If `STRIPE` is `true` | sk_test_4eC39HqLyjWDarjtT1zdp7dc |
-| `STRIPE_WEBHOOK_SIGNING_SECRET` | The webhook signing secret for Stripe (required if Stripe is enabled). | If `STRIPE` is `true` | whsec_1234567890abcdef |
+| `STRIPE_WEBHOOK_SIGNING_SECRET` | The webhook signing secret for Stripe (required if Stripe is enabled). | If `STRIPE` is `true` | whsec_123456 |
 | `STRIPE_PRICE_PRO_MONTHLY` | The monthly price in cents for Stripe (required if Stripe is enabled). | If `STRIPE` is `true` | 999 |
 | `HEROKU` | Boolean flag indicating whether to enable Heroku integration. | No | true |
 | `HEROKU_ADDON_ID` | The addon ID for Heroku. | If `HEROKU` is `true` | abcdefgh-ijkl-mnop-qrst-uvwxyz012345 |
@@ -125,7 +151,7 @@ The Azimutt application should now be running on your local machine and accessib
 | `TWITTER` | Boolean flag indicating whether to enable Twitter integration. | No | true |
 | `TWITTER_CONSUMER_KEY` | The consumer key for Twitter. | If `TWITTER` is `true` | myTwitterConsumerKey |
 | `TWITTER_CONSUMER_SECRET` | The consumer secret for Twitter. | If `TWITTER` is `true` | myTwitterConsumerSecret |
-| `TWITTER_ACCESS_TOKEN` | The access token for Twitter. | If `TWITTER` is `true` | 1234567890-ZYXWVUTSRQPONMLKJIHGFEDCBA |
-| `TWITTER_ACCESS_SECRET` | The access secret for Twitter. | If `TWITTER` is `true` | abcdefghijklmnopqrstuvwxyz0123456789 |
+| `TWITTER_ACCESS_TOKEN` | The access token for Twitter. | If `TWITTER` is `true` | 1234567890-ZYXWVUTSR |
+| `TWITTER_ACCESS_SECRET` | The access secret for Twitter. | If `TWITTER` is `true` | abcdefghijklmnopqr |
 
 Please replace all the examples with your real data. Never share your secrets or keys in public spaces.
