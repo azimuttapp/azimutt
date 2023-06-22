@@ -13,9 +13,9 @@
 #   - Ex: hexpm/elixir:1.12.0-erlang-24.0.1-debian-bullseye-20210902-slim
 #
 
-ARG ELIXIR_VERSION=1.14.3
-ARG OTP_VERSION=25.2.2
-ARG DEBIAN_VERSION=bullseye-20230109-slim
+ARG ELIXIR_VERSION=1.15.0
+ARG OTP_VERSION=26.0.1
+ARG DEBIAN_VERSION=bullseye-20230522
 
 ARG S3_KEY_ID
 ARG S3_HOST
@@ -48,13 +48,15 @@ RUN chmod +x /usr/local/bin/elm
 WORKDIR /app
 
 # install hex + rebar
-RUN mix local.hex --force && mix local.rebar --force
+RUN mix local.hex --force && \
+    mix local.rebar --force
 
 # set build ENV
 ENV MIX_ENV="prod"
 
 # install mix dependencies
 COPY backend/mix.exs backend/mix.lock ./
+
 RUN mix deps.get --only $MIX_ENV
 RUN mkdir config
 
