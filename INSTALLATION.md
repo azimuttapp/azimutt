@@ -54,3 +54,78 @@ ghcr.io/azimuttapp/azimutt:main
 ```
 
 The Azimutt application should now be running on your local machine and accessible at `http://localhost:4000`.
+
+
+## Env detail
+
+
+| Environment Variable | Description | Required | Example |
+| --- | --- | --- | --- |
+| `PHX_SERVER` | Boolean flag indicating whether the Phoenix server should be launched. | Required | true/false |
+| `PHX_HOST` | The host of the Phoenix server. | Required | localhost |
+| `PORT` | The port on which the server will operate. | Required | 4000 |
+| `DATABASE_URL` | The URL of the database. | Required | postgresql://user:password@localhost/database |
+| `DATABASE_POOL_SIZE` | The size of the database connection pool. | Optional | 10 |
+| `DATABASE_ENABLE_SSL` | Boolean flag indicating whether to enable SSL for database connections. | Optional | true/false |
+| `SECRET_KEY_BASE` | A secret key for verifying the integrity of signed cookies. | Required | abc...def |
+| `SUPPORT_EMAIL` | The support email address for your application. | Optional | support@myapp.com |
+| `SENDER_EMAIL` | The sender email address for your application. | Optional | sender@myapp.com |
+| `GLOBAL_ORGANIZATION` | The global organization setting for your application. | Optional | my_organization |
+| `PUBLIC_SITE` | Boolean flag indicating if your site is public. | Optional | true/false |
+| `SKIP_ONBOARDING_FUNNEL` | Flag for skipping the onboarding funnel. | Optional | true/false |
+| `SKIP_EMAIL_CONFIRMATION` | Flag for skipping email confirmation upon sign up. | Optional | true/false |
+| `REQUIRE_EMAIL_CONFIRMATION` | Flag for requiring email confirmation upon sign up. | Optional | true/false |
+| `REQUIRE_EMAIL_ENDS_WITH` | Flag for requiring email addresses to end with a specific string upon sign up. | Optional | @mydomain.com |
+| `ORGANIZATION_DEFAULT_PLAN` | The default plan for organizations in your application. | Optional | basic |
+| `GLOBAL_ORGANIZATION_ALONE` | Flag for the global organization setting. | Optional | true/false |
+| `FILE_STORAGE_ADAPTER` | The file storage adapter to use. | Required | `local` or `s3` |
+| `S3_BUCKET` | The name of the S3 bucket for file storage. | If `FILE_STORAGE_ADAPTER` is `s3` | my-s3-bucket |
+| `S3_HOST` | The host for the S3 bucket. | If `FILE_STORAGE_ADAPTER` is `s3` | s3.amazonaws.com |
+| `S3_KEY_ID` | The key ID for the S3 bucket. | If `FILE_STORAGE_ADAPTER` is `s3` | AKIAIOSFODNN7EXAMPLE |
+| `S3_KEY_SECRET` | The secret key for the S3 bucket. | If `FILE_STORAGE_ADAPTER` is `s3` | wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY |
+| `S3_REGION` | The region of the S3 bucket. | If `FILE_STORAGE_ADAPTER` is `s3` | us-west-1 |
+| `S3_FOLDER` | The folder within the S3 bucket for file storage. | Optional | my-app-data |
+| `EMAIL_ADAPTER` | The email adapter to use. | Required | `mailgun`, `gmail`, or `smtp` |
+| `MAILGUN_DOMAIN` | The domain for Mailgun email service. | If `EMAIL_ADAPTER` is `mailgun` | sandbox123.mailgun.org |
+| `MAILGUN_API_KEY` | The API key for Mailgun email service. | If `EMAIL_ADAPTER` is `mailgun` | key-3ax6xnjp29jd6fds4gc373sgvjxteol0 |
+| `MAILGUN_BASE_URL` | The base URL for Mailgun email service. | If `EMAIL_ADAPTER` is `mailgun` | https://api.mailgun.net/v3 |
+| `GMAIL_ACCESS_TOKEN` | The access token for Gmail email service. | If `EMAIL_ADAPTER` is `gmail` | ya29.A0AfH6SMDtBmTm-tuex7w7eXg8GG_abcdef |
+| `SMTP_RELAY` | The relay for SMTP email service. | If `EMAIL_ADAPTER` is `smtp` | smtp.mailtrap.io |
+| `SMTP_USERNAME` | The username for SMTP email service. | If `EMAIL_ADAPTER` is `smtp` | smtp_user |
+| `SMTP_PASSWORD` | The password for SMTP email service. | If `EMAIL_ADAPTER` is `smtp` | smtp_password |
+| `SMTP_PORT` | The port for SMTP email service. | If `EMAIL_ADAPTER` is `smtp` | 2525 |
+| `AUTH_GITHUB` | Boolean flag indicating whether to enable GitHub authentication. | Optional | true/false |
+| `GITHUB_CLIENT_ID` | The client ID for GitHub authentication. | If `AUTH_GITHUB` is `true` | Iv1.1234567890abcdef |
+| `GITHUB_CLIENT_SECRET` | The client secret for GitHub authentication. | If `AUTH_GITHUB` is `true` | 1234567890abcdef1234567890abcdef12345678 |
+| `GITHUB_ACCESS_TOKEN` | The access token for GitHub authentication. | If `AUTH_GITHUB` is `true` | ghp_9Zt7AJKJJKL5H7GHIJKLMNOPQRSTuvwx |
+| `AUTH_PASSWORD` | Boolean flag indicating whether to enable password authentication. | Optional | true/false |
+| `AUTH_LINKEDIN` | Boolean flag indicating whether to enable LinkedIn authentication. (Not supported yet) | Optional | true/false |
+| `AUTH_GOOGLE` | Boolean flag indicating whether to enable Google authentication. (Not supported yet) | Optional | true/false |
+| `AUTH_TWITTER` | Boolean flag indicating whether to enable Twitter authentication. (Not supported yet) | Optional | true/false |
+| `AUTH_FACEBOOK` | Boolean flag indicating whether to enable Facebook authentication. (Not supported yet) | Optional | true/false |
+| `AUTH_SAML` | Boolean flag indicating whether to enable SAML authentication. | Optional | true/false |
+| `POSTHOG` | Boolean flag indicating whether to enable Posthog for product analytics. | Optional | true/false |
+| `POSTHOG_HOST` | The host for Posthog service. | If `POSTHOG` is `true` | app.posthog.com |
+| `POSTHOG_KEY` | The key for Posthog service. | If `POSTHOG` is `true` | phc_ABCD_abcdefgh |
+| `SENTRY` | Boolean flag indicating whether to enable Sentry for error tracking. | Optional | true/false |
+| `SENTRY_BACKEND_DSN` | The DSN for Sentry backend. | If `SENTRY` is `true` | https://123abc@o123.ingest.sentry.io/1234 |
+| `SENTRY_FRONTEND_DSN` | The DSN for Sentry frontend. | If `SENTRY` is `true` | https://123abc@o123.ingest.sentry.io/1234 |
+| `STRIPE` | Boolean flag indicating whether to enable Stripe for payment processing. | Optional | true/false  |
+| `STRIPE_API_KEY` | The API key for Stripe (required if Stripe is enabled). | If `STRIPE` is `true` | sk_test_4eC39HqLyjWDarjtT1zdp7dc |
+| `STRIPE_WEBHOOK_SIGNING_SECRET` | The webhook signing secret for Stripe (required if Stripe is enabled). | If `STRIPE` is `true` | whsec_1234567890abcdef |
+| `STRIPE_PRICE_PRO_MONTHLY` | The monthly price in cents for Stripe (required if Stripe is enabled). | If `STRIPE` is `true` | 999 |
+| `HEROKU` | Boolean flag indicating whether to enable Heroku integration. | No | true |
+| `HEROKU_ADDON_ID` | The addon ID for Heroku. | If `HEROKU` is `true` | abcdefgh-ijkl-mnop-qrst-uvwxyz012345 |
+| `HEROKU_PASSWORD` | The password for Heroku. | If `HEROKU` is `true` | myHerokuPassword |
+| `HEROKU_SSO_SALT` | The SSO salt for Heroku. | If `HEROKU` is `true` | myHerokuSSOSalt |
+| `BENTO` | Boolean flag indicating whether to enable Bento. | No | true |
+| `BENTO_SITE_KEY` | The site key for Bento. | If `BENTO` is `true` | myBentoSiteKey |
+| `BENTO_PUBLISHABLE_KEY` | The publishable key for Bento. | If `BENTO` is `true` | myBentoPublishableKey |
+| `BENTO_SECRET_KEY` | The secret key for Bento. | If `BENTO` is `true` | myBentoSecretKey |
+| `TWITTER` | Boolean flag indicating whether to enable Twitter integration. | No | true |
+| `TWITTER_CONSUMER_KEY` | The consumer key for Twitter. | If `TWITTER` is `true` | myTwitterConsumerKey |
+| `TWITTER_CONSUMER_SECRET` | The consumer secret for Twitter. | If `TWITTER` is `true` | myTwitterConsumerSecret |
+| `TWITTER_ACCESS_TOKEN` | The access token for Twitter. | If `TWITTER` is `true` | 1234567890-ZYXWVUTSRQPONMLKJIHGFEDCBA |
+| `TWITTER_ACCESS_SECRET` | The access secret for Twitter. | If `TWITTER` is `true` | abcdefghijklmnopqrstuvwxyz0123456789 |
+
+Please replace all the examples with your real data. Never share your secrets or keys in public spaces.
