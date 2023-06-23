@@ -126,6 +126,7 @@ These are the basic variables you will **need** to set up Azimutt:
 - `PHX_SERVER` (optional): if `true`, start the Phoenix server in server mode
 - `PHX_HOST` (required): host of the deployed website (ex: `localhost` or `azimutt.app`), it's used to build absolute urls
 - `PORT` (required): the port the server will listen to (ex: `4000`)
+- `SECRET_KEY_BASE` (required): the secret used for server encryption (cookies and others)
 - `DATABASE_URL` (required): the whole url to connect to your PostgreSQL database (ex: `postgresql://<user>:<pass>@<host>:<port>/<database>`)
     - `DATABASE_IPV6` (optional): if `true`, the database driver will use IPV6
     - `DATABASE_POOL_SIZE` (optional, default: `10`): the database connection pool size
@@ -149,7 +150,6 @@ These are the basic variables you will **need** to set up Azimutt:
         - `SMTP_USERNAME` (required)
         - `SMTP_PASSWORD` (required)
         - `SMTP_PORT` (required)
-- `SECRET_KEY_BASE` (required): the secret used for server encryption (cookies and others)
 - `SUPPORT_EMAIL` (optional, default `contact@azimutt.app`): email shown in Azimutt when users need support
 - `SENDER_EMAIL` (optional, default `contact@azimutt.app`): email Azimutt will us to send emails
 
@@ -186,6 +186,9 @@ These are the basic variables you will **need** to set up Azimutt:
 - `PUBLIC_SITE` (optional): if `true`, will show the public site, otherwise home will redirect to login page (you probably don't want it)
 - `GITHUB` (optional): if `true`, allow to use GitHub API, no real usage for now
     - `GITHUB_ACCESS_TOKEN` (required)
+- `POSTHOG` (optional): if `true`, enable [PostHog](https://posthog.com) integration
+    - `POSTHOG_HOST` (required)
+    - `POSTHOG_KEY` (required)
 - `BENTO` (optional): if `true`, forward events to [Bento](https://bentonow.com)
     - `BENTO_SITE_KEY` (required)
     - `BENTO_PUBLISHABLE_KEY` (required)
