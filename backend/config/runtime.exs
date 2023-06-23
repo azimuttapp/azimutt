@@ -54,7 +54,7 @@ end
 if config_env() == :test, do: config(:azimutt, Azimutt.Repo, pool: Ecto.Adapters.SQL.Sandbox)
 
 if config_env() == :prod || config_env() == :staging do
-  if System.get_env("PHX_SERVER"), do: config(:azimutt, AzimuttWeb.Endpoint, server: true)
+  if System.get_env("PHX_SERVER") == "true", do: config(:azimutt, AzimuttWeb.Endpoint, server: true)
 
   config :azimutt, AzimuttWeb.Endpoint,
     url: [host: host, port: 443, scheme: "https"],
