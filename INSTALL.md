@@ -74,7 +74,7 @@ git clone git@github.com:azimuttapp/azimutt.git
 ```
 
 
-### Step 2: Set up environment variables
+#### Step 2: Set up environment variables
 
 Define your [environment variables](#environment-variables), you can copy the `.env.exemple` to `.env` and edit it with your values:
 
@@ -85,14 +85,14 @@ cp .env.example .env
 On linux and Windows remove the `export` in front of the variables in the file.
 
 
-### Step 3: Build the Docker image
+#### Step 3: Build the Docker image
 
 ```bash
 docker build -t azimutt:latest .
 ```
 
 
-### Step 4: Run the Docker container
+#### Step 4: Run the Docker container
 
 Now, we'll need to run the container using the image we've just built.
 We'll use the `--env-file` option to supply your environment variables to the container:
