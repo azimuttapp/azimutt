@@ -46,6 +46,7 @@ docker pull ghcr.io/azimuttapp/azimutt:main
 #### Step 2: Run the Docker container
 
 Now, we'll need to run the container using the image we've just pulled.
+But just before, you need to configure [environment variables](#environment-variables) and give them to your Docker container. For that you can use the `--env-file` option with a the `.env.example` file set up with your configuration.
 
 ```bash
 docker run -d --name azimutt \
