@@ -164,6 +164,7 @@ These are the basic variables you will **need** to set up Azimutt:
 
 ### Optional features & services
 
+- `GATEWAY_URL` (optional): if you deployed the [gateway](./gateway), the url where it can be reached out
 - `SKIP_ONBOARDING_FUNNEL` (optional): if `true`, users will not go through the onboarding funnel on account creation
 - `SKIP_EMAIL_CONFIRMATION` (optional): if `true`, users will not be asked to confirm their email (either blocked or soft)
 - `REQUIRE_EMAIL_CONFIRMATION` (optional): if `true`, users will not be allowed to use Azimutt until they confirm their email, otherwise they will have a soft confirmation banner
