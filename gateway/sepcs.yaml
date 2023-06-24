@@ -39,9 +39,9 @@ services:
 - build_command: npm run setup
   environment_slug: node-js
   github:
-    branch: deploy-gateway
-    deploy_on_push: true
     repo: azimuttapp/azimutt
+    branch: main
+    deploy_on_push: true
   health_check:
     http_path: /ping
   http_port: 8080
