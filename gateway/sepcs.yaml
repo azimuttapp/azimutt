@@ -1,0 +1,52 @@
+alerts:
+- rule: DEPLOYMENT_FAILED
+- rule: DOMAIN_FAILED
+domains:
+- domain: gateway.azimutt.app
+  type: PRIMARY
+envs:
+- key: NODE_ENV
+  scope: BUILD_TIME
+  value: development
+- key: NODE_ENV
+  scope: RUN_TIME
+  value: production
+- key: API_HOST
+  scope: RUN_TIME
+  value: 0.0.0.0
+- key: API_PORT
+  scope: RUN_TIME
+  value: "8080"
+- key: CORS_ALLOW_ORIGIN
+  scope: RUN_TIME
+  value: '*'
+- key: LOG_LEVEL
+  scope: RUN_TIME
+  value: info
+- key: PORT
+  scope: RUN_AND_BUILD_TIME
+  value: "8080"
+ingress:
+  rules:
+  - component:
+      name: gateway
+    match:
+      path:
+        prefix: /
+name: gateway
+region: fra
+services:
+- build_command: npm run setup
+  environment_slug: node-js
+  github:
+    repo: azimuttapp/azimutt
+    branch: main
+    deploy_on_push: true
+  health_check:
+    http_path: /ping
+  http_port: 8080
+  instance_count: 1
+  instance_size_slug: basic-xxs
+  name: gateway
+  run_command: npm run preview
+  source_dir: gateway

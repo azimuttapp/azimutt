@@ -38,7 +38,7 @@
     "check:types": "tsc --noEmit",
     "build": "rm -rf ./out && tsc",
     "build:docker:prod": "docker build . -t azimutt-gateway --build-arg APP_ENV=production",
-    "preview": "node build",
+    "preview": "node out/start.js",
     "update": "npm update --save-dev && npm update --save && npm install",
     "dry-publish": "npm run build && npm pack"
   },
