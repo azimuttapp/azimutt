@@ -24,7 +24,7 @@ envs:
   value: production
 - key: API_HOST
   scope: RUN_TIME
-  value: gateway.azimutt.app
+  value: ${APP_URL}
 - key: API_PORT
   scope: RUN_TIME
   value: "8080"
