@@ -29,7 +29,7 @@ const logger: Logger = {
 }
 
 const routes: FastifyPluginAsync = async (server) => {
-    server.get('/', {schema: {response: {200: Type.Object({hello: Type.String()})}}}, async () => ({hello: 'world'}))
+    server.get('/', async () => ({status: 200, version}))
     server.get('/ping', async () => ({status: 200}))
     server.get('/health', async () => ({status: 200, version}))
 
