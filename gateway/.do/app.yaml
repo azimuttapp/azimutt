@@ -41,9 +41,6 @@ ingress:
     match:
       path:
         prefix: /azimutt-gateway
-domains:
-  - domain: gateway.azimutt.app
-    type: PRIMARY
 alerts:
 - rule: DEPLOYMENT_FAILED
 - rule: DOMAIN_FAILED
