@@ -61,7 +61,7 @@ type alias ParsedCheck =
 parseCreateTable : SqlStatement -> Result (List ParseError) ParsedTable
 parseCreateTable statement =
     -- TODO: handle https://www.postgresql.org/docs/current/ddl-inherit.html
-    case statement |> buildSqlLine |> Regex.matches "^CREATE(?:\\s+(?:UNLOGGED|FOREIGN))? TABLE(?:\\s+IF NOT EXISTS)?\\s+(?:(?<db>[^ .]+)\\.)?(?:(?<schema>[^ .]+)\\.)?(?<table>[^ .]+)\\s*(?<rest>\\(.+\\).*);$" of
+    case statement |> buildSqlLine |> Regex.matches "^CREATE(?:\\s+(?:UNLOGGED|FOREIGN))? TABLE(?:\\s+IF NOT EXISTS)?\\s+(?:(?<db>[^ .]+)\\.)?(?:(?<schema>[^ .]+)\\.)?(?<table>[^ .]+)\\s*(?<rest>\\(.+\\).*);?$" of
         db :: schema :: (Just table) :: (Just rest) :: [] ->
             let
                 schemaName : Maybe SqlSchemaName
@@ -128,7 +128,7 @@ extractBody rest =
 
 parseCreateTableColumn : RawSql -> Result ParseError ParsedColumn
 parseCreateTableColumn sql =
-    case sql |> Regex.matches "^(?<name>[^ ]+)\\s+(?<type>.*?)(?:\\s+COLLATE [^ ]+)?(?:\\s+DEFAULT\\s+(?<default1>.*?))?( PRIMARY KEY)?(?<nullable>\\s+NOT NULL)?(?:\\s+COLLATE [^ ]+)?(?:\\s+DEFAULT\\s+(?<default2>.*?))?(?:\\s+CONSTRAINT\\s+(?<constraint>.*))?(?:\\s+(?<reference>REFERENCES\\s+.*?))?(?<nullable2>\\s+NOT NULL)?(?: AUTO_INCREMENT)?( PRIMARY KEY)?( UNIQUE)?(?: CHECK ?\\((?<check>.*?)\\))?( GENERATED .*?)?(?:\\s+COMMENT '(?<comment>(?:[^']|'')+)')?(?:\\s+COMMENT \"(?<comment2>(?:[^\"]|\"\")+)\")?$" of
+    case sql |> Regex.matches "^(?<name>[^ ]+)\\s+(?<type>.*?)(?:\\s+COLLATE [^ ]+)?(?:\\s+DEFAULT\\s+(?<default1>.*?))?( PRIMARY KEY)?(?<nullable>\\s+NOT NULL)?(?:\\s+NULL)?(?:\\s+COLLATE [^ ]+)?(?:\\s+DEFAULT\\s+(?<default2>.*?))?(?:\\s+CONSTRAINT\\s+(?<constraint>.*))?(?:\\s+(?<reference>REFERENCES\\s+.*?))?(?<nullable2>\\s+NOT NULL)?(?: AUTO_INCREMENT)?( PRIMARY KEY)?( UNIQUE)?(?: CHECK ?\\((?<check>.*?)\\))?( GENERATED .*?)?(?:\\s+COMMENT '(?<comment>(?:[^']|'')+)')?(?:\\s+COMMENT \"(?<comment2>(?:[^\"]|\"\")+)\")?$" of
         (Just name) :: (Just kind) :: default1 :: maybePrimary :: nullable :: default2 :: maybeConstraints :: maybeReference :: nullable2 :: maybePrimary2 :: maybeUnique :: maybeCheck :: maybeGenerated :: maybeComment :: maybeComment2 :: [] ->
             maybeConstraints
                 |> Maybe.mapOrElse (Regex.split (Regex.asRegexI " *constraint *")) []

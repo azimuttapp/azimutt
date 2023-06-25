@@ -56,6 +56,16 @@ suite =
             , testStatement ( parseCreateTable, "with multiple constraints" )
                 "CREATE TABLE t1 (id int constraint t1_pk primary key constraint t1_t2_fk references t2);"
                 { parsedTable | schema = Nothing, table = "t1", columns = Nel { parsedColumn | name = "id", kind = "int", primaryKey = Just "t1_pk", foreignKey = Just ( Just "t1_t2_fk", { schema = Nothing, table = "t2", column = Nothing } ) } [] }
+            , testStatement ( parseCreateTable, "sql server escaped types" )
+                "CREATE TABLE [dbo].[table1]( [Id] [bigint] IDENTITY(1,1) NOT NULL, [Name] [varchar](20) NULL) ON [PRIMARY]"
+                { parsedTable
+                    | schema = Just "dbo"
+                    , table = "table1"
+                    , columns =
+                        Nel { parsedColumn | name = "Id", kind = "bigint", nullable = False, primaryKey = Just "" }
+                            [ { parsedColumn | name = "Name", kind = "varchar(20)" }
+                            ]
+                }
             ]
         , describe "parseCreateTableColumn"
             [ testSql ( parseCreateTableColumn, "basic" )
