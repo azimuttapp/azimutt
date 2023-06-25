@@ -5,6 +5,13 @@ defmodule Azimutt.Services.CockpitSrv do
   alias Azimutt.Utils.Result
   alias Azimutt.Utils.Stringx
 
+  # @base_url "http://localhost:3001"
+  @base_url "https://cockpit.azimutt.app"
+
+  def boot_check do
+    # TODO: count users & projects and send check to cockpit
+  end
+
   def send_event(%Event{} = event) do
     user =
       if event.created_by do
@@ -28,7 +35,7 @@ defmodule Azimutt.Services.CockpitSrv do
     }
 
     HTTPoison.post(
-      "https://cockpit.azimutt.app/api/events",
+      "#{@base_url}/api/events",
       Jason.encode!(cockpit_event),
       [{"Content-Type", "application/json"}]
     )
