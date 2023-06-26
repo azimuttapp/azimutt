@@ -10,15 +10,12 @@ defmodule Azimutt.Services.CockpitSrv do
   alias Azimutt.Utils.Result
   alias Azimutt.Utils.Stringx
 
-  # @base_url "http://localhost:3000"
-  @base_url "https://cockpit.azimutt.app"
-
   def boot_check do
     # TODO: add code version
     post(
       "/api/check",
       %{
-        instance: System.fetch_env!("PHX_HOST"),
+        instance: Azimutt.config(:host),
         environment: Azimutt.config(:environment),
         db:
           %{
@@ -60,7 +57,7 @@ defmodule Azimutt.Services.CockpitSrv do
               |> Map.filter(fn {_, val} -> val != nil end),
             service:
               %{
-                file: System.fetch_env!("FILE_STORAGE_ADAPTER"),
+                file: System.get_env("FILE_STORAGE_ADAPTER"),
                 email: System.get_env("EMAIL_ADAPTER"),
                 twitter: System.get_env("TWITTER"),
                 github: System.get_env("GITHUB"),
@@ -83,6 +80,7 @@ defmodule Azimutt.Services.CockpitSrv do
       %{
         id: event.id,
         instance: Azimutt.config(:host),
+        environment: Azimutt.config(:environment),
         name: event.name,
         details:
           %{
@@ -118,11 +116,18 @@ defmodule Azimutt.Services.CockpitSrv do
   end
 
   defp post(path, body) do
-    HTTPoison.post(
-      "#{@base_url}#{path}",
-      Jason.encode!(body),
-      [{"Content-Type", "application/json"}]
-    )
-    |> Result.flat_map(fn res -> Jason.decode(res.body) end)
+    cond do
+      Azimutt.config(:environment) == :test ->
+        {:ok, %{status: 200}}
+
+      Azimutt.config(:environment) == :dev && Azimutt.config(:host) == "localhost" && System.get_env("COCKPIT") == "off" ->
+        HTTPoison.post("http://localhost:3000#{path}", Jason.encode!(body), [{"Content-Type", "application/json"}])
+        |> Result.flat_map(fn res -> Jason.decode(res.body) end)
+        |> Result.tap_error(fn err -> Logger.error("CockpitSrv.post: #{Stringx.inspect(err)}") end)
+
+      true ->
+        HTTPoison.post("https://cockpit.azimutt.app#{path}", Jason.encode!(body), [{"Content-Type", "application/json"}])
+        |> Result.flat_map(fn res -> Jason.decode(res.body) end)
+    end
   end
 end
