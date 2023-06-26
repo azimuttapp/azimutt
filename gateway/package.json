@@ -1,6 +1,6 @@
 {
   "name": "@azimutt/gateway",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "A Gateway to proxy database access for Azimutt frontend",
   "keywords": [
     "database",

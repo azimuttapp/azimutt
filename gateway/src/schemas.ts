@@ -9,7 +9,7 @@ export const sColumnType = Type.String()
 export const sRelationName = Type.String()
 export const sTypeName = Type.String()
 export const sComment = Type.String()
-export const sType = Type.Intersect([
+/* export const sType = Type.Intersect([
     Type.Object({
         schema: sSchemaName,
         name: sTypeName,
@@ -18,7 +18,14 @@ export const sType = Type.Intersect([
         Type.Object({values: Type.Union([Type.Array(Type.String()), Type.Null()])}),
         Type.Object({definition: Type.String()})
     ])
-])
+]) */
+// FIXME: this definition is less correct than the one above but, the previous one does not serialize `values` and `definition` and I can't fix it 🤔
+export const sType = Type.Object({
+    schema: sSchemaName,
+    name: sTypeName,
+    values: Nullish(Type.Union([Type.Array(Type.String()), Type.Null()])),
+    definition: Nullish(Type.String())
+})
 export const sColumnRef = Type.Object({
     schema: sSchemaName,
     table: sTableName,
