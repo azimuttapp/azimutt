@@ -10,7 +10,7 @@ defmodule Azimutt.Services.CockpitSrv do
   alias Azimutt.Utils.Result
   alias Azimutt.Utils.Stringx
 
-  # @base_url "http://localhost:3001"
+  # @base_url "http://localhost:3000"
   @base_url "https://cockpit.azimutt.app"
 
   def boot_check do
@@ -84,17 +84,31 @@ defmodule Azimutt.Services.CockpitSrv do
         id: event.id,
         instance: Azimutt.config(:host),
         name: event.name,
-        details: event.details || %{},
+        details:
+          %{
+            organization_id: event.organization_id,
+            project_id: event.project_id
+          }
+          |> Map.merge(event.details || %{})
+          |> Map.filter(fn {_, val} -> val != nil end),
         createdAt: event.created_at
       }
       |> Map.merge(
         if event.created_by do
           %{
-            createdBy: %{
-              id: event.created_by.id,
-              name: event.created_by.name,
-              email: event.created_by.email
-            }
+            createdBy:
+              %{
+                id: event.created_by.id,
+                name: event.created_by.name,
+                email: event.created_by.email,
+                avatar: event.created_by.avatar,
+                github: event.created_by.github_username,
+                twitter: event.created_by.twitter_username,
+                data: event.created_by.data |> Map.from_struct(),
+                is_admin: if(event.created_by.is_admin, do: true, else: nil),
+                created_at: event.created_by.created_at
+              }
+              |> Map.filter(fn {_, val} -> val != nil end)
           }
         else
           %{}
