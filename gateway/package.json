@@ -1,6 +1,6 @@
 {
   "name": "@azimutt/gateway",
-  "version": "0.0.7",
+  "version": "0.0.9",
   "description": "A Gateway to proxy database access for Azimutt frontend",
   "keywords": [
     "database",
@@ -47,9 +47,9 @@
     "@azimutt/connector-mariadb": "0.0.1",
     "@azimutt/connector-mongodb": "0.0.2",
     "@azimutt/connector-mysql": "0.0.2",
-    "@azimutt/connector-postgres": "0.0.4",
+    "@azimutt/connector-postgres": "0.0.5",
     "@azimutt/connector-sqlserver": "0.0.2",
-    "@azimutt/database-types": "0.0.7",
+    "@azimutt/database-types": "0.0.8",
     "@fastify/cors": "8.2.1",
     "@sinclair/typebox": "0.28.10",
     "ajv": "8.12.0",

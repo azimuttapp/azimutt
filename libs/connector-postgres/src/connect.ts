@@ -26,5 +26,6 @@ export function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c
 function buildUrl(url: DatabaseUrlParsed): string {
     const userPass = url.user && url.pass ? `${url.user}:${url.pass}@` : ''
     const port = url.port ? `:${url.port}` : ''
-    return `postgresql://${userPass}${url.host}${port}/${url.db}`
+    const options = url.options ? `?${url.options}` : ''
+    return `postgresql://${userPass}${url.host}${port}/${url.db}${options}`
 }

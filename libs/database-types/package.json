@@ -1,6 +1,6 @@
 {
   "name": "@azimutt/database-types",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "Define common types and utils for other Azimutt packages like connectors",
   "keywords": [],
   "homepage": "https://azimutt.app",
