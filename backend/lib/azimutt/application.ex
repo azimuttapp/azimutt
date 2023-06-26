@@ -4,6 +4,7 @@ defmodule Azimutt.Application do
   @moduledoc false
   use Application
   alias Azimutt.Admin
+  alias Azimutt.Services.CockpitSrv
   alias Azimutt.Utils.Uuid
 
   def env do
@@ -31,6 +32,7 @@ defmodule Azimutt.Application do
     res = Supervisor.start_link(children, opts)
 
     check_global_organization()
+    CockpitSrv.boot_check()
 
     res
   end
