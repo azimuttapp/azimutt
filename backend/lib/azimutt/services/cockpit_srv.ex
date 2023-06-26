@@ -102,7 +102,7 @@ defmodule Azimutt.Services.CockpitSrv do
                 avatar: event.created_by.avatar,
                 github: event.created_by.github_username,
                 twitter: event.created_by.twitter_username,
-                data: event.created_by.data |> Map.from_struct(),
+                data: if(event.created_by.data, do: event.created_by.data |> Map.from_struct(), else: nil),
                 is_admin: if(event.created_by.is_admin, do: true, else: nil),
                 created_at: event.created_by.created_at
               }
