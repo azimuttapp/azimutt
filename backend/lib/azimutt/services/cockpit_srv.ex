@@ -78,26 +78,29 @@ defmodule Azimutt.Services.CockpitSrv do
   end
 
   def send_event(%Event{} = event) do
-    user =
-      if event.created_by do
-        %{
-          user: %{
-            id: event.created_by.id,
-            name: event.created_by.name,
-            email: event.created_by.email
+    post(
+      "/api/events",
+      %{
+        id: event.id,
+        instance: Azimutt.config(:host),
+        name: event.name,
+        details: event.details || %{},
+        createdAt: event.created_at
+      }
+      |> Map.merge(
+        if event.created_by do
+          %{
+            createdBy: %{
+              id: event.created_by.id,
+              name: event.created_by.name,
+              email: event.created_by.email
+            }
           }
-        }
-      else
-        %{}
-      end
-
-    post("/api/events", %{
-      id: event.id,
-      instance: Azimutt.config(:host),
-      name: event.name,
-      details: Map.merge(event.details || %{}, user),
-      createdAt: event.created_at
-    })
+        else
+          %{}
+        end
+      )
+    )
   end
 
   defp post(path, body) do
