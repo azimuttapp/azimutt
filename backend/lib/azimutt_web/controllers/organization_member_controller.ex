@@ -62,7 +62,7 @@ defmodule AzimuttWeb.OrganizationMemberController do
         |> redirect(to: Routes.organization_member_path(conn, :index, invitation.organization_id))
 
       {:error, err} ->
-        message = if err == :not_owner, do: "Only the issuer can cancel an invitation.", else: "Failed to cancel invitation 😵"
+        message = if err == :not_allowed, do: "You don't have the rights to cancel this invitation.", else: "Failed to cancel invitation 😵"
 
         conn
         |> put_flash(:error, message)

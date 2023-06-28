@@ -273,7 +273,7 @@ function getDatabaseSchema(msg: GetDatabaseSchema) {
             backend.getDatabaseSchema(msg.database)
     ).then(
         schema => app.gotDatabaseSchema(schema),
-        err => err.statusCode !== 404 && reportError(`Can't get schema for ${msg.database}`, err)
+        err => app.gotDatabaseSchemaError(errorToString(err))
     )
 }
 

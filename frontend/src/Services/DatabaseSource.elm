@@ -9,7 +9,7 @@ import DataSources.JsonMiner.JsonAdapter as JsonAdapter
 import DataSources.JsonMiner.JsonSchema exposing (JsonSchema)
 import Html exposing (Html, button, div, img, input, p, span, text)
 import Html.Attributes exposing (class, disabled, id, name, placeholder, src, type_, value)
-import Html.Events exposing (onBlur, onClick, onInput)
+import Html.Events exposing (onClick, onInput)
 import Libs.Bool as B
 import Libs.Html exposing (extLink, iText)
 import Libs.Html.Attributes exposing (css)
@@ -38,7 +38,7 @@ type alias Model msg =
     , selectedDb : DatabaseKey
     , url : String
     , selectedUrl : Maybe (Result String String)
-    , parsedSchema : Maybe JsonSchema
+    , parsedSchema : Maybe (Result String JsonSchema)
     , parsedSource : Maybe (Result String Source)
     , callback : Result String Source -> msg
     , show : HtmlId
@@ -57,7 +57,7 @@ type Msg
     = UpdateSelectedDb DatabaseKey
     | UpdateUrl DatabaseUrl
     | GetSchema DatabaseUrl
-    | GotSchema JsonSchema
+    | GotSchema (Result String JsonSchema)
     | BuildSource SourceId
     | UiToggle HtmlId
 
@@ -108,7 +108,7 @@ update wrap now project msg model =
             ( { model | selectedDb = key }, Cmd.none )
 
         UpdateUrl url ->
-            ( { model | url = url }, Cmd.none )
+            ( { model | url = url, selectedUrl = Nothing, parsedSchema = Nothing, parsedSource = Nothing }, Cmd.none )
 
         GetSchema schemaUrl ->
             if schemaUrl == "" then
@@ -119,19 +119,19 @@ update wrap now project msg model =
                 , Ports.getDatabaseSchema schemaUrl
                 )
 
-        GotSchema schema ->
-            ( { model | parsedSchema = Just schema }, SourceId.generator |> Random.generate (BuildSource >> wrap) )
+        GotSchema result ->
+            ( { model | parsedSchema = Just result }, SourceId.generator |> Random.generate (BuildSource >> wrap) )
 
         BuildSource sourceId ->
             Maybe.map2
                 (\url -> JsonAdapter.buildSource (SourceInfo.database now (model.source |> Maybe.mapOrElse .id sourceId) url) >> Ok)
                 (model.selectedUrl |> Maybe.andThen Result.toMaybe)
-                model.parsedSchema
+                (model.parsedSchema |> Maybe.andThen Result.toMaybe)
                 |> (\source ->
-                        ( { model | parsedSource = source }
+                        ( { model | parsedSource = Just (source |> Maybe.withDefault (Err "Can't build source")) }
                         , source
-                            |> Maybe.map (\s -> Cmd.batch [ s |> model.callback |> T.send, s |> Track.dbSourceCreated project ])
-                            |> Maybe.withDefault (Err "Source not available" |> Track.dbSourceCreated project)
+                            |> Maybe.map (\s -> Cmd.batch [ s |> model.callback |> T.send, s |> Track.sourceCreated project "database" ])
+                            |> Maybe.withDefault (Err "Can't build source" |> Track.sourceCreated project "database")
                         )
                    )
 
@@ -184,7 +184,6 @@ viewInput wrap htmlId model =
                 , value model.url
                 , disabled ((model.selectedUrl |> Maybe.andThen Result.toMaybe) /= Nothing && model.parsedSchema == Nothing)
                 , onInput (UpdateUrl >> wrap)
-                , onBlur (GetSchema model.url |> wrap)
                 , css [ inputStyles, "flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-r-md sm:text-sm", Tw.disabled [ "bg-slate-50 text-slate-500 border-slate-200" ] ]
                 ]
                 []
@@ -224,7 +223,7 @@ viewParsing wrap model =
                         ]
                     , SourceLogs.viewContainer
                         [ SourceLogs.viewFile UiToggle model.show dbName (model.parsedSchema |> Maybe.map (\_ -> "")) |> Html.map wrap
-                        , model.parsedSchema |> Maybe.mapOrElse (Ok >> SourceLogs.viewParsedSchema UiToggle model.show) (div [] []) |> Html.map wrap
+                        , model.parsedSchema |> Maybe.mapOrElse (SourceLogs.viewParsedSchema UiToggle model.show) (div [] []) |> Html.map wrap
                         , model.parsedSource |> Maybe.mapOrElse (Ok >> SourceLogs.viewResult) (div [] [])
                         ]
                     , if model.parsedSource == Nothing then

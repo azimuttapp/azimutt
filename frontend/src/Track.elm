@@ -1,4 +1,4 @@
-module Track exposing (SQLParsing, amlSourceCreated, dbAnalysisOpened, dbSourceCreated, detailSidebarClosed, detailSidebarOpened, docOpened, externalLink, findPathOpened, findPathResults, groupCreated, groupDeleted, groupRenamed, jsonError, jsonSourceCreated, layoutCreated, layoutDeleted, layoutLoaded, memoDeleted, memoSaved, notFound, notesCreated, notesDeleted, notesUpdated, planLimit, prismaSourceCreated, projectDraftCreated, projectLoaded, queryPaneClosed, queryPaneOpened, searchClicked, sourceAdded, sourceDeleted, sourceEditorClosed, sourceEditorOpened, sourceRefreshed, sqlSourceCreated, tagsCreated, tagsDeleted, tagsUpdated)
+module Track exposing (SQLParsing, amlSourceCreated, dbAnalysisOpened, detailSidebarClosed, detailSidebarOpened, docOpened, externalLink, findPathOpened, findPathResults, groupCreated, groupDeleted, groupRenamed, jsonError, layoutCreated, layoutDeleted, layoutLoaded, memoDeleted, memoSaved, notFound, notesCreated, notesDeleted, notesUpdated, planLimit, projectDraftCreated, projectLoaded, queryPaneClosed, queryPaneOpened, searchClicked, sourceAdded, sourceCreated, sourceDeleted, sourceEditorClosed, sourceEditorOpened, sourceRefreshed, sqlSourceCreated, tagsCreated, tagsDeleted, tagsUpdated)
 
 import Conf exposing (Feature, Features)
 import DataSources.Helpers exposing (SourceLine)
@@ -31,24 +31,19 @@ import Ports
 -- all tracking events should be declared here to have a good overview of all of them
 
 
-dbSourceCreated : Maybe ProjectInfo -> Result String Source -> Cmd msg
-dbSourceCreated project source =
-    sendEvent "editor_source_created" ([ ( "format", "database" |> Encode.string ) ] ++ dbSourceDetails source) project
+sourceCreated : Maybe ProjectInfo -> String -> Result String Source -> Cmd msg
+sourceCreated project format sourceRes =
+    case sourceRes of
+        Ok source ->
+            sendEvent "editor_source_created" ([ ( "format", format |> Encode.string ) ] ++ sourceDetails source) project
+
+        Err err ->
+            sendEvent "editor_source_creation_error" [ ( "format", format |> Encode.string ), ( "error", err |> Encode.string ) ] project
 
 
 sqlSourceCreated : Maybe ProjectInfo -> SQLParsing m -> Source -> Cmd msg
 sqlSourceCreated project parser source =
     sendEvent "editor_source_created" ([ ( "format", "sql" |> Encode.string ) ] ++ sqlSourceDetails parser source) project
-
-
-prismaSourceCreated : Maybe ProjectInfo -> Result String Source -> Cmd msg
-prismaSourceCreated project source =
-    sendEvent "editor_source_created" ([ ( "format", "prisma" |> Encode.string ) ] ++ jsonSourceDetails source) project
-
-
-jsonSourceCreated : Maybe ProjectInfo -> Result String Source -> Cmd msg
-jsonSourceCreated project source =
-    sendEvent "editor_source_created" ([ ( "format", "json" |> Encode.string ) ] ++ jsonSourceDetails source) project
 
 
 amlSourceCreated : Maybe ProjectInfo -> Source -> Cmd msg
@@ -250,11 +245,6 @@ sendEvent name details project =
 --    { name = name, details = details, organization = project |> Maybe.andThen .organization |> Maybe.map .id, project = project |> Maybe.map .id }
 
 
-dbSourceDetails : Result String Source -> List ( String, Encode.Value )
-dbSourceDetails source =
-    source |> Result.fold (\e -> [ ( "error", e |> Encode.string ) ]) sourceDetails
-
-
 type alias SQLParsing x =
     { x
         | lines : Maybe (List SourceLine)
@@ -272,11 +262,6 @@ sqlSourceDetails parser source =
     , ( "nb_schema_errors", parser.schema |> Maybe.mapOrElse .errors [] |> List.length |> Encode.int )
     ]
         ++ sourceDetails source
-
-
-jsonSourceDetails : Result String Source -> List ( String, Encode.Value )
-jsonSourceDetails source =
-    source |> Result.fold (\e -> [ ( "error", e |> Encode.string ) ]) sourceDetails
 
 
 projectDetails : ProjectInfo -> List ( String, Encode.Value )

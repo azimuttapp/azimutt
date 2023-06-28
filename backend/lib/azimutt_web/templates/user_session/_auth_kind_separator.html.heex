@@ -8,3 +8,9 @@
         </div>
     </div>
 <% end %>
+<%= if !Azimutt.config(:auth_password) && !Azimutt.config(:auth_github) && !Azimutt.config(:auth_google) && !Azimutt.config(:auth_linkedin) && !Azimutt.config(:auth_twitter) && !Azimutt.config(:auth_facebook) do %>
+    <div class="relative mt-6">
+        <p>No auth method defined 😕</p>
+        <p>You should define at least one, for example password, with the env variable: <b>AUTH_PASSWORD=true</b></p>
+    </div>
+<% end %>

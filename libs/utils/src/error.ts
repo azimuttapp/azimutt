@@ -1,3 +1,5 @@
+import {isObject} from "./validations";
+
 export type AnyError = any
 export type StrError = string
 
@@ -6,10 +8,12 @@ export function errorToString(err: AnyError): string {
         return err.message + showCause(err)
     } else if (typeof err === 'string') {
         return err
-    } else if (typeof err === 'object' && err.json && typeof err.json.message === 'string') {
-        return err.json.message
-    } else if (typeof err === 'object' && err && typeof err.statusCode === 'number' && typeof err.message === 'string') {
+    } else if (isObject(err) && typeof err.error === 'string') {
+        return err.error
+    } else if (isObject(err) && typeof err.message === 'string') {
         return err.message
+    } else if (isObject(err) && isObject(err.json) && typeof err.json.message === 'string') {
+        return err.json.message
     } else {
         return JSON.stringify(err)
     }

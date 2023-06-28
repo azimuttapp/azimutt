@@ -121,7 +121,7 @@ defmodule Azimutt.Services.CockpitSrv do
         {:ok, %{status: 200}}
 
       Azimutt.config(:environment) == :dev && Azimutt.config(:host) == "localhost" && System.get_env("COCKPIT") == "off" ->
-        HTTPoison.post("http://localhost:3000#{path}", Jason.encode!(body), [{"Content-Type", "application/json"}])
+        HTTPoison.post("http://localhost:3001#{path}", Jason.encode!(body), [{"Content-Type", "application/json"}])
         |> Result.flat_map(fn res -> Jason.decode(res.body) end)
         |> Result.tap_error(fn err -> Logger.error("CockpitSrv.post: #{Stringx.inspect(err)}") end)
 

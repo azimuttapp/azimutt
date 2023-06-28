@@ -152,9 +152,9 @@ viewDatabaseSourceTab htmlId openedCollapse projects model =
     div []
         [ viewHeading "Extract your database schema" [ text "Browsers can't connect to databases, schema extraction is done through a proxy, Azimutt Gateway or ", extLink "https://www.npmjs.com/package/azimutt" [ class "link" ] [ text "CLI" ], text ". Nothing is stored." ]
         , div [ class "mt-6" ] [ DatabaseSource.viewInput DatabaseSourceMsg htmlId model ]
-        , DatabaseSource.viewParsing DatabaseSourceMsg model
-        , viewSourceActionButtons (InitTab TabDatabase) projects model.parsedSource
         , div [ class "mt-3" ] [ viewDataPrivacyCollapse htmlId openedCollapse ]
+        , DatabaseSource.viewParsing DatabaseSourceMsg model
+        , viewSourceActionButtons (InitTab TabDatabase) (DatabaseSource.GetSchema >> DatabaseSourceMsg) projects model.url model.parsedSource
         ]
 
 
@@ -166,7 +166,7 @@ viewSqlSourceTab htmlId openedCollapse projects model =
         , div [ class "mt-3" ] [ viewHowToGetSchemaCollapse htmlId openedCollapse ]
         , viewDataPrivacyCollapse htmlId openedCollapse
         , SqlSource.viewParsing SqlSourceMsg model
-        , viewSourceActionButtons (InitTab TabSql) projects model.parsedSource
+        , viewSourceActionButtons (InitTab TabSql) (SqlSource.GetRemoteFile >> SqlSourceMsg) projects model.url model.parsedSource
         ]
 
 
@@ -177,7 +177,7 @@ viewPrismaSourceTab htmlId openedCollapse projects model =
         , div [ class "mt-6" ] [ PrismaSource.viewInput PrismaSourceMsg Noop htmlId model ]
         , div [ class "mt-3" ] [ viewDataPrivacyCollapse htmlId openedCollapse ]
         , PrismaSource.viewParsing PrismaSourceMsg model
-        , viewSourceActionButtons (InitTab TabSql) projects model.parsedSource
+        , viewSourceActionButtons (InitTab TabSql) (PrismaSource.GetRemoteFile >> PrismaSourceMsg) projects model.url model.parsedSource
         ]
 
 
@@ -189,7 +189,7 @@ viewJsonSourceTab htmlId openedCollapse projects model =
         , div [ class "mt-3" ] [ viewJsonSourceSchemaCollapse htmlId openedCollapse ]
         , viewDataPrivacyCollapse htmlId openedCollapse
         , JsonSource.viewParsing JsonSourceMsg model
-        , viewSourceActionButtons (InitTab TabJson) projects model.parsedSource
+        , viewSourceActionButtons (InitTab TabJson) (JsonSource.GetRemoteFile >> JsonSourceMsg) projects model.url model.parsedSource
         ]
 
 
@@ -338,24 +338,28 @@ viewJsonSourceSchemaCollapse htmlId openedCollapse =
         ]
 
 
-viewSourceActionButtons : Msg -> List ProjectInfo -> Maybe (Result String Source) -> Html Msg
-viewSourceActionButtons drop projects parsedSource =
-    parsedSource
-        |> Maybe.mapOrElse
-            (\source ->
-                div [ css [ "mt-6" ] ]
-                    [ div [ css [ "flex justify-end" ] ]
-                        (source
-                            |> Result.fold (\_ -> [ Button.white3 Tw.primary [ onClick drop ] [ text "Clear" ] ])
-                                (\src ->
-                                    [ Button.white3 Tw.primary [ onClick drop ] [ text "Trash this" ]
-                                    , Button.primary3 Tw.primary [ onClick (CreateProjectTmp (Project.create projects src.name src)), id "create-project-btn", css [ "ml-3" ] ] [ text "Create project!" ]
-                                    ]
-                                )
-                        )
-                    ]
+viewSourceActionButtons : Msg -> (String -> Msg) -> List ProjectInfo -> String -> Maybe (Result String Source) -> Html Msg
+viewSourceActionButtons drop extractSchema projects url parsedSource =
+    div [ css [ "mt-6" ] ]
+        [ div [ css [ "flex justify-end" ] ]
+            (case ( url, parsedSource ) of
+                ( _, Just source ) ->
+                    source
+                        |> Result.fold (\_ -> [ Button.white3 Tw.primary [ onClick drop ] [ text "Clear" ] ])
+                            (\src ->
+                                [ Button.white3 Tw.primary [ onClick drop ] [ text "Trash this" ]
+                                , Button.primary3 Tw.primary [ onClick (CreateProjectTmp (Project.create projects src.name src)), id "create-project-btn", css [ "ml-3" ] ] [ text "Create project!" ]
+                                ]
+                            )
+
+                ( u, _ ) ->
+                    if u /= "" then
+                        [ Button.primary3 Tw.primary [ onClick (extractSchema url) ] [ text "Extract schema" ] ]
+
+                    else
+                        []
             )
-            (div [] [])
+        ]
 
 
 viewModal : Model -> Html Msg

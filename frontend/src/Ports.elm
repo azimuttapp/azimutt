@@ -263,6 +263,7 @@ type JsMsg
     | ProjectDeleted ProjectId
     | GotLocalFile String File FileContent
     | GotDatabaseSchema JsonSchema
+    | GotDatabaseSchemaError String
     | GotTableStats SourceId TableStats
     | GotTableStatsError SourceId TableId String
     | GotColumnStats SourceId ColumnStats
@@ -439,6 +440,9 @@ jsDecoder =
                 "GotDatabaseSchema" ->
                     Decode.map GotDatabaseSchema (Decode.field "schema" JsonSchema.decode)
 
+                "GotDatabaseSchemaError" ->
+                    Decode.map GotDatabaseSchemaError (Decode.field "error" Decode.string)
+
                 "GotTableStats" ->
                     Decode.map2 GotTableStats (Decode.field "source" SourceId.decode) (Decode.field "stats" TableStats.decode)
 
@@ -534,7 +538,10 @@ unhandledJsMsgError msg =
                     "GotLocalFile"
 
                 GotDatabaseSchema _ ->
-                    "GotDatabaseSchemas"
+                    "GotDatabaseSchema"
+
+                GotDatabaseSchemaError _ ->
+                    "GotDatabaseSchemaError"
 
                 GotTableStats _ _ ->
                     "GotTableStats"

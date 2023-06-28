@@ -8,7 +8,7 @@ import DataSources.JsonMiner.JsonSchema exposing (JsonSchema)
 import FileValue exposing (File)
 import Html exposing (Html, div, input, p, span, text)
 import Html.Attributes exposing (class, id, name, placeholder, type_, value)
-import Html.Events exposing (onBlur, onInput)
+import Html.Events exposing (onInput)
 import Http
 import Libs.Bool as B
 import Libs.Html.Attributes exposing (css)
@@ -92,7 +92,7 @@ update : (Msg -> msg) -> Time.Posix -> Maybe ProjectInfo -> Msg -> Model msg -> 
 update wrap now project msg model =
     case msg of
         UpdateRemoteFile url ->
-            ( { model | url = url }, Cmd.none )
+            ( { model | url = url, selectedLocalFile = Nothing, selectedRemoteFile = Nothing, loadedSchema = Nothing, parsedSchema = Nothing, parsedSource = Nothing }, Cmd.none )
 
         GetRemoteFile schemaUrl ->
             if schemaUrl == "" then
@@ -133,7 +133,7 @@ update wrap now project msg model =
             Maybe.map2 (\( info, _ ) schema -> schema |> Result.map (JsonAdapter.buildSource info))
                 model.loadedSchema
                 model.parsedSchema
-                |> Maybe.map (\source -> ( model |> setParsedSource (source |> Just), Cmd.batch [ T.send (model.callback source), Track.prismaSourceCreated project source ] ))
+                |> Maybe.map (\source -> ( model |> setParsedSource (source |> Just), Cmd.batch [ T.send (model.callback source), Track.sourceCreated project "prisma" source ] ))
                 |> Maybe.withDefault ( model, Cmd.none )
 
         UiToggle htmlId ->
@@ -190,7 +190,6 @@ viewRemoteInput wrap htmlId model error =
                 , placeholder ("ex: " ++ example)
                 , value model
                 , onInput (UpdateRemoteFile >> wrap)
-                , onBlur (model |> GetRemoteFile |> wrap)
                 , css [ inputStyles, "flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-r-md sm:text-sm" ]
                 ]
                 []

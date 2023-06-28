@@ -104,6 +104,7 @@ export class ElmApp {
         content
     })
     gotDatabaseSchema = (schema: AzimuttSchema): void => this.send({kind: 'GotDatabaseSchema', schema})
+    gotDatabaseSchemaError = (error: string): void => this.send({kind: 'GotDatabaseSchemaError', error})
     gotTableStats = (source: SourceId, stats: TableStats): void => this.send({kind: 'GotTableStats', source, stats})
     gotTableStatsError = (source: SourceId, table: TableId, error: string): void => this.send({kind: 'GotTableStatsError', source, table, error})
     gotColumnStats = (source: SourceId, stats: ColumnStats): void => this.send({kind: 'GotColumnStats', source, stats})

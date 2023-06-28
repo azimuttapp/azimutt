@@ -239,7 +239,8 @@ defmodule Azimutt.Organizations do
   def cancel_organization_invitation(id, %User{} = current_user, now) do
     {:ok, invitation} = get_organization_invitation(id)
 
-    if invitation.created_by_id == current_user.id do
+    # only orga members can cancel orga invitations
+    if current_user.organizations |> Enum.find(fn o -> o.id == invitation.organization_id end) do
       Ecto.Multi.new()
       |> Ecto.Multi.update(:cancel_invitation, OrganizationInvitation.cancel_changeset(invitation, current_user, now))
       |> Repo.transaction()
@@ -251,7 +252,7 @@ defmodule Azimutt.Organizations do
           {:error, changeset}
       end
     else
-      {:error, :not_owner}
+      {:error, :not_allowed}
     end
   end
 

@@ -355,26 +355,46 @@ newSourceModal wrap sourceSet close noop htmlId titleId model =
         ]
     , case model.newSourceTab of
         TabDatabase ->
-            newSourceButtons sourceSet close model.databaseSource.parsedSource
+            newSourceButtons (DatabaseSource.GetSchema >> DatabaseSourceMsg >> wrap) sourceSet close model.databaseSource.url model.databaseSource.parsedSource
 
         TabSql ->
-            newSourceButtons sourceSet close model.sqlSource.parsedSource
+            newSourceButtons (SqlSource.GetRemoteFile >> SqlSourceMsg >> wrap) sourceSet close model.sqlSource.url model.sqlSource.parsedSource
 
         TabPrisma ->
-            newSourceButtons sourceSet close model.prismaSource.parsedSource
+            newSourceButtons (PrismaSource.GetRemoteFile >> PrismaSourceMsg >> wrap) sourceSet close model.prismaSource.url model.prismaSource.parsedSource
 
         TabJson ->
-            newSourceButtons sourceSet close model.jsonSource.parsedSource
+            newSourceButtons (JsonSource.GetRemoteFile >> JsonSourceMsg >> wrap) sourceSet close model.jsonSource.url model.jsonSource.parsedSource
 
         TabAml ->
-            newSourceButtons sourceSet close model.amlSource.parsedSource
+            newSourceButtonsNoRemote sourceSet close model.amlSource.parsedSource
     ]
 
 
-newSourceButtons : (Source -> msg) -> msg -> Maybe (Result String Source) -> Html msg
-newSourceButtons sourceSet close parsedSource =
+newSourceButtons : (String -> msg) -> (Source -> msg) -> msg -> String -> Maybe (Result String Source) -> Html msg
+newSourceButtons extractSchema sourceSet close url parsedSource =
     div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50 rounded-b-lg" ]
-        [ primaryBtn (parsedSource |> Maybe.andThen Result.toMaybe |> Maybe.map sourceSet) "Add source"
+        (case ( url, parsedSource |> Maybe.andThen Result.toMaybe ) of
+            ( _, Just source ) ->
+                [ primaryBtn (source |> sourceSet |> Just) "Add source to project"
+                , closeBtn close
+                ]
+
+            _ ->
+                if url /= "" then
+                    [ primaryBtn (url |> extractSchema |> Just) "Extract source"
+                    , closeBtn close
+                    ]
+
+                else
+                    [ closeBtn close ]
+        )
+
+
+newSourceButtonsNoRemote : (Source -> msg) -> msg -> Maybe (Result String Source) -> Html msg
+newSourceButtonsNoRemote sourceSet close parsedSource =
+    div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50 rounded-b-lg" ]
+        [ primaryBtn (parsedSource |> Maybe.andThen Result.toMaybe |> Maybe.map sourceSet) "Add source to project"
         , closeBtn close
         ]
 

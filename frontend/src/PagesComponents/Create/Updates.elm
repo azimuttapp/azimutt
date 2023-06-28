@@ -109,7 +109,10 @@ handleJsMessage req urlOrganization msg model =
             )
 
         GotDatabaseSchema schema ->
-            ( model, schema |> DatabaseSource.GotSchema |> DatabaseSourceMsg |> T.send )
+            ( model, Ok schema |> DatabaseSource.GotSchema |> DatabaseSourceMsg |> T.send )
+
+        GotDatabaseSchemaError error ->
+            ( model, Err error |> DatabaseSource.GotSchema |> DatabaseSourceMsg |> T.send )
 
         GotPrismaSchema schema ->
             ( model, Ok schema |> PrismaSource.GotSchema |> PrismaSourceMsg |> T.send )

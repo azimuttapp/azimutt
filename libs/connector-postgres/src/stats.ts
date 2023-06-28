@@ -14,10 +14,11 @@ import {
     TableStats
 } from "@azimutt/database-types";
 import {Conn} from "./common";
+import {buildSqlTable} from "./helpers";
 
 export const getTableStats = (id: TableId) => async (conn: Conn): Promise<TableStats> => {
     const {schema, table} = parseTableId(id)
-    const sqlTable = `${schema ? `${schema}.` : ''}${table}`
+    const sqlTable = buildSqlTable(schema, table)
     const rows = await countRows(conn, sqlTable)
     const sample_values = await sampleValues(conn, sqlTable)
     return {schema, table, rows, sample_values}
@@ -25,7 +26,7 @@ export const getTableStats = (id: TableId) => async (conn: Conn): Promise<TableS
 
 export const getColumnStats = (ref: ColumnRef) => async (conn: Conn): Promise<ColumnStats> => {
     const {schema, table} = parseTableId(ref.table)
-    const sqlTable = `${schema ? `${schema}.` : ''}${table}`
+    const sqlTable = buildSqlTable(schema, table)
     const type = await getColumnType(conn, schema, table, ref.column)
     const basics = await columnBasics(conn, sqlTable, ref.column)
     const common_values = await commonValues(conn, sqlTable, ref.column)

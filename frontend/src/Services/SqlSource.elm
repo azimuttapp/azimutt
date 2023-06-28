@@ -15,7 +15,7 @@ import Dict exposing (Dict)
 import FileValue exposing (File)
 import Html exposing (Html, div, input, p, pre, span, text)
 import Html.Attributes exposing (class, href, id, name, placeholder, type_, value)
-import Html.Events exposing (onBlur, onClick, onInput)
+import Html.Events exposing (onClick, onInput)
 import Http
 import Libs.Bool as B
 import Libs.Dict as Dict
@@ -139,7 +139,7 @@ update : (Msg -> msg) -> Time.Posix -> Maybe ProjectInfo -> Msg -> Model msg -> 
 update wrap now project msg model =
     case msg of
         UpdateRemoteFile url ->
-            ( { model | url = url }, Cmd.none )
+            ( { model | url = url, selectedLocalFile = Nothing, selectedRemoteFile = Nothing, loadedFile = Nothing, parsedSchema = Nothing, parsedSource = Nothing }, Cmd.none )
 
         GetRemoteFile schemaUrl ->
             if schemaUrl == "" then
@@ -307,7 +307,6 @@ viewRemoteInput wrap htmlId model error =
                 , placeholder ("ex: " ++ example)
                 , value model
                 , onInput (UpdateRemoteFile >> wrap)
-                , onBlur (model |> GetRemoteFile |> wrap)
                 , css [ inputStyles, "flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-r-md sm:text-sm" ]
                 ]
                 []

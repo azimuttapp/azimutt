@@ -213,6 +213,10 @@ if System.get_env("AUTH_SAML") == "true" do
   raise "AUTH_SAML not implemented"
 end
 
+if System.get_env("AUTH_PASSWORD") != "true" && System.get_env("AUTH_GITHUB") != "true" do
+  raise "No auth method defined, please set one, for example: AUTH_PASSWORD=true"
+end
+
 if System.get_env("POSTHOG") == "true" do
   IO.puts("Setup PostHog")
 
