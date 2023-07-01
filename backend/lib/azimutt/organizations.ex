@@ -4,8 +4,8 @@ defmodule Azimutt.Organizations do
   import Ecto.Query, warn: false
   alias Azimutt.Accounts.User
   alias Azimutt.Accounts.UserNotifier
+  alias Azimutt.CleverCloud
   alias Azimutt.Heroku
-  alias Azimutt.Heroku.Resource
   alias Azimutt.Organizations.Organization
   alias Azimutt.Organizations.OrganizationInvitation
   alias Azimutt.Organizations.OrganizationMember
@@ -23,6 +23,7 @@ defmodule Azimutt.Organizations do
     |> preload(members: [:user, :created_by, :updated_by])
     # TODO: can filter projects? (ignore local projects not owned by the current_user)
     |> preload(:projects)
+    |> preload(:clever_cloud_resource)
     |> preload(:heroku_resource)
     |> preload(:invitations)
     |> preload(:created_by)
@@ -48,6 +49,7 @@ defmodule Azimutt.Organizations do
     |> where([o, om], om.user_id == ^current_user.id and is_nil(o.deleted_at))
     |> preload(:members)
     |> preload(:projects)
+    |> preload(:clever_cloud_resource)
     |> preload(:heroku_resource)
     |> preload(:invitations)
     |> Repo.all()
@@ -145,7 +147,7 @@ defmodule Azimutt.Organizations do
     OrganizationInvitation
     |> where([oi], oi.id == ^id)
     |> preload(:organization)
-    |> preload(organization: :heroku_resource)
+    |> preload(organization: [:clever_cloud_resource, :heroku_resource])
     |> preload(:created_by)
     |> preload(:answered_by)
     |> Repo.one()
@@ -160,7 +162,7 @@ defmodule Azimutt.Organizations do
         is_nil(oi.accepted_at) and is_nil(oi.refused_at)
     )
     |> preload(:organization)
-    |> preload(organization: :heroku_resource)
+    |> preload(organization: [:clever_cloud_resource, :heroku_resource])
     |> Repo.one()
   end
 
@@ -300,6 +302,9 @@ defmodule Azimutt.Organizations do
 
   def get_allowed_members(%Organization{} = organization, %OrganizationPlan{} = plan) do
     cond do
+      organization.clever_cloud_resource ->
+        CleverCloud.allowed_members(organization.clever_cloud_resource.plan)
+
       organization.heroku_resource ->
         Heroku.allowed_members(organization.heroku_resource.plan)
 
@@ -320,6 +325,7 @@ defmodule Azimutt.Organizations do
 
   def get_organization_plan(%Organization{} = organization) do
     cond do
+      organization.clever_cloud_resource -> clever_cloud_plan(organization.clever_cloud_resource)
       organization.heroku_resource -> heroku_plan(organization.heroku_resource)
       organization.stripe_subscription_id && StripeSrv.stripe_configured?() -> stripe_plan(organization.stripe_subscription_id)
       true -> default_plan()
@@ -327,7 +333,15 @@ defmodule Azimutt.Organizations do
     |> Result.map(fn plan -> plan_overrides(organization, plan) end)
   end
 
-  defp heroku_plan(%Resource{} = resource) do
+  defp clever_cloud_plan(%CleverCloud.Resource{} = resource) do
+    if resource.plan |> String.starts_with?("pro-") do
+      {:ok, OrganizationPlan.pro()}
+    else
+      {:ok, OrganizationPlan.free()}
+    end
+  end
+
+  defp heroku_plan(%Heroku.Resource{} = resource) do
     if resource.plan |> String.starts_with?("pro-") do
       {:ok, OrganizationPlan.pro()}
     else

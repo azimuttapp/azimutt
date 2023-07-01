@@ -5,7 +5,8 @@ defmodule Azimutt.Organizations.Organization do
   use TypedStruct
   import Ecto.Changeset
   alias Azimutt.Accounts.User
-  alias Azimutt.Heroku.Resource
+  alias Azimutt.CleverCloud
+  alias Azimutt.Heroku
   alias Azimutt.Organizations.Organization
   alias Azimutt.Organizations.OrganizationInvitation
   alias Azimutt.Organizations.OrganizationMember
@@ -32,7 +33,8 @@ defmodule Azimutt.Organizations.Organization do
     has_many :members, OrganizationMember, on_replace: :delete
     has_many :projects, Project
     has_many :invitations, OrganizationInvitation
-    has_one :heroku_resource, Resource
+    has_one :clever_cloud_resource, CleverCloud.Resource
+    has_one :heroku_resource, Heroku.Resource
   end
 
   def search_fields,

@@ -11,6 +11,7 @@ defmodule AzimuttWeb.Router do
     plug(:put_root_layout, {AzimuttWeb.LayoutView, :root_hfull})
     plug(:put_secure_browser_headers)
     plug(:fetch_current_user)
+    plug(:fetch_clever_cloud_resource)
     plug(:fetch_heroku_resource)
     plug(:track_attribution)
   end
@@ -25,6 +26,7 @@ defmodule AzimuttWeb.Router do
     plug(:accepts, ["json"])
     plug(:fetch_session)
     plug(:fetch_current_user)
+    plug(:fetch_clever_cloud_resource)
     plug(:fetch_heroku_resource)
   end
 
@@ -129,8 +131,7 @@ defmodule AzimuttWeb.Router do
       post("/community", UserOnboardingController, :community_next)
       get("/finalize", UserOnboardingController, :finalize)
 
-      if Azimutt.Application.env() == :dev,
-        do: get("/:template", UserOnboardingController, :template)
+      if Azimutt.Application.env() == :dev, do: get("/:template", UserOnboardingController, :template)
     end
 
     scope "/settings" do
@@ -152,9 +153,7 @@ defmodule AzimuttWeb.Router do
       get("/billing/cancel", OrganizationBillingController, :cancel, as: :billing)
       get("/members", OrganizationMemberController, :index, as: :member)
       post("/members", OrganizationMemberController, :create_invitation, as: :member)
-
       patch("/members/:invitation_id/cancel", OrganizationMemberController, :cancel_invitation, as: :member)
-
       delete("/members/:user_id/remove", OrganizationMemberController, :remove, as: :member)
     end
 
@@ -179,6 +178,24 @@ defmodule AzimuttWeb.Router do
   scope "/heroku", AzimuttWeb do
     pipe_through([:browser, :require_heroku_resource, :require_authed_user])
     get("/resources/:resource_id", HerokuController, :show)
+  end
+
+  scope "/clevercloud", AzimuttWeb do
+    pipe_through([:api, :require_clever_cloud_basic_auth])
+    post("/resources", Api.CleverCloudController, :create)
+    put("/resources/:resource_id", Api.CleverCloudController, :update)
+    delete("/resources/:resource_id", Api.CleverCloudController, :delete)
+  end
+
+  scope "/clevercloud", AzimuttWeb do
+    pipe_through([:browser_no_csrf_protection])
+    if Azimutt.Application.env() == :dev, do: get("/", CleverCloudController, :index)
+    post("/login", CleverCloudController, :login)
+  end
+
+  scope "/clevercloud", AzimuttWeb do
+    pipe_through([:browser, :require_clever_cloud_resource, :require_authed_user])
+    get("/resources/:resource_id", CleverCloudController, :show)
   end
 
   scope "/admin", AzimuttWeb, as: :admin do

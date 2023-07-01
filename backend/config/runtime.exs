@@ -266,6 +266,16 @@ if System.get_env("STRIPE") == "true" do
     signing_secret: System.fetch_env!("STRIPE_WEBHOOK_SIGNING_SECRET")
 end
 
+if System.get_env("CLEVER_CLOUD") == "true" do
+  IO.puts("Setup Clever Cloud addon")
+
+  config :azimutt,
+    auth_clever_cloud: true,
+    clever_cloud_addon_id: System.fetch_env!("CLEVER_CLOUD_ADDON_ID"),
+    clever_cloud_password: System.fetch_env!("CLEVER_CLOUD_PASSWORD"),
+    clever_cloud_sso_salt: System.fetch_env!("CLEVER_CLOUD_SSO_SALT")
+end
+
 if System.get_env("HEROKU") == "true" do
   IO.puts("Setup Heroku addon")
 

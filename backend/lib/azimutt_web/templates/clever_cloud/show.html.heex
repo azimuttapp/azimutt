@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth bg-[#3a2778]" data-root="clever_cloud/show">
+    <%= render AzimuttWeb.LayoutView, "_head.html", conn: @conn %>
+    <body class="font-sans antialiased">
+        <%= render AzimuttWeb.LayoutView, "_hello_comment.html" %>
+        <div class="relative overflow-hidden">
+            <header class="relative">
+                <div class="pt-6">
+                    <nav class="relative mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6" aria-label="Global">
+                        <div class="flex flex-1 items-center">
+                            <div class="flex w-auto items-center justify-between">
+                                <span class="sr-only">Clever Cloud x Azimutt</span>
+                                <a href={CleverCloud.app_url()} target="_blank" rel="noopener noreferrer">
+                                    <img class="h-8 sm:h-10" src="/images/heroku-logotype-horizontal-white.svg" alt="Clever Cloud logo">
+                                </a>
+                                <Icon.x_mark class="mx-2 text-white" />
+                                <a href={Routes.user_dashboard_path(@conn, :index)} target="_blank" rel="noopener noreferrer">
+                                    <img class="h-8 sm:h-10" src="/images/logo_light.svg" alt="Azimutt logo">
+                                </a>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-6">
+                            <span class="text-base font-medium text-white hover:text-gray-300">Logged as: <%= @user.email %></span>
+                        </div>
+                    </nav>
+                </div>
+            </header>
+            <main>
+                <div class="pt-10 sm:pt-16 lg:overflow-hidden lg:pt-8 lg:pb-8">
+                    <div class="mx-auto max-w-7xl lg:px-8">
+                        <div class="lg:grid lg:grid-cols-2 lg:gap-8">
+                            <div class="mx-auto max-w-md px-4 sm:max-w-2xl sm:px-6 sm:text-center lg:flex lg:items-center lg:px-0 lg:text-left">
+                                <div class="lg:py-24">
+                                    <h1 class="mt-4 text-4xl font-bold tracking-tight text-white sm:mt-5 sm:text-6xl lg:mt-6 xl:text-6xl">
+                                        <span class="block">Azimutt Add-on</span>
+                                        <span class="block">for <span class="text-[#79589f]"><%= @resource.owner_name %></span></span>
+                                    </h1>
+                                    <p class="mt-3 text-base text-gray-300 sm:mt-5 sm:text-xl lg:text-lg xl:text-xl">
+                                        Welcome to <span class="font-bold">Azimutt</span>! Your Add-on has been well provisioned.<br>
+                                        You are almost setup to <span class="italic font-bold">explore and document your database</span>, just connect it now 👇️
+                                    </p>
+                                    <div class="mt-10 sm:mt-12">
+                                        <%= form_for @conn, Routes.elm_path(@conn, :orga_create, @resource.organization.id), [method: :get, class: "sm:mx-auto sm:max-w-xl lg:mx-0"], fn _ -> %>
+                                            <input type="hidden" name="storage" value="remote">
+                                            <input type="hidden" name="name" value={@resource.owner_name}>
+                                            <div class="sm:flex">
+                                                <div class="min-w-0 flex-1">
+                                                    <label for="database" class="sr-only">Database Url</label>
+                                                    <input type="text" name="database" id="database" placeholder="Enter your database url" required class="block w-full rounded-md border-0 px-4 py-3 text-base text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:ring-offset-2 focus:ring-offset-gray-900">
+                                                </div>
+                                                <div class="mt-3 sm:mt-0 sm:ml-3">
+                                                    <button type="submit" class="bg-[#79589f] hover:bg-[#61467f] block w-full rounded-md py-3 px-4 font-medium text-white shadow focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:ring-offset-2 focus:ring-offset-gray-900">Connect database</button>
+                                                </div>
+                                            </div>
+                                            <p class="mt-3 text-sm text-gray-300 sm:mt-4">
+                                                To get your database url, open <a href={CleverCloud.app_settings_url()} target="_blank" rel="noopener noreferrer" class="font-medium text-white underline">your app settings</a>,
+                                                click on "<span class="italic font-bold">Reveal Config Vars</span>" and look for the "<span class="italic font-bold">DATABASE_URL</span>" one.
+                                                It looks like: <span class="italic whitespace-nowrap">postgres://user:password@host:port/db</span><br>
+                                                <a href={"mailto:#{Azimutt.config(:support_email)}"} rel="noopener noreferrer" class="font-medium text-white underline">Contact us</a> if you have any trouble.
+                                            </p>
+                                        <% end %>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-12 lg:relative lg:m-0">
+                                <div class="mx-auto max-w-md px-4 sm:max-w-2xl sm:px-6 lg:max-w-none lg:px-0">
+                                    <img src="/images/illustration-cloud.svg" alt="Clever Cloud Add-on illustration" class="w-full lg:absolute lg:inset-y-0 lg:left-0 lg:h-full lg:w-auto lg:max-w-none">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <img src="/images/heroku-art.svg" alt="Clever Cloud art" class="w-full hidden lg:block">
+            </main>
+        </div>
+    </body>
+</html>

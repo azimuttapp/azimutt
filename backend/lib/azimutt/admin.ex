@@ -3,6 +3,7 @@ defmodule Azimutt.Admin do
   import Ecto.Query, warn: false
   require Logger
   alias Azimutt.Accounts.User
+  alias Azimutt.CleverCloud
   alias Azimutt.Heroku
   alias Azimutt.Organizations.Organization
   alias Azimutt.Projects.Project
@@ -17,6 +18,7 @@ defmodule Azimutt.Admin do
   def count_personal_organizations, do: Organization |> where([o], o.is_personal == true) |> Repo.aggregate(:count, :id)
   def count_non_personal_organizations, do: Organization |> where([o], o.is_personal == false) |> Repo.aggregate(:count, :id)
   def count_stripe_subscriptions, do: Organization |> where([o], not is_nil(o.stripe_subscription_id)) |> Repo.aggregate(:count, :id)
+  def count_clever_cloud_resources, do: CleverCloud.Resource |> Repo.aggregate(:count, :id)
   def count_heroku_resources, do: Heroku.Resource |> Repo.aggregate(:count, :id)
   def count_projects, do: Project |> Repo.aggregate(:count, :id)
 
@@ -27,7 +29,7 @@ defmodule Azimutt.Admin do
   def get_user(id) do
     User
     |> where([u], u.id == ^id)
-    |> preload(organizations: [:heroku_resource, :created_by, :members, projects: [:organization]])
+    |> preload(organizations: [:clever_cloud_resource, :heroku_resource, :created_by, :members, projects: [:organization]])
     |> preload(:profile)
     |> Repo.one()
     |> Result.from_nillable()
@@ -38,6 +40,7 @@ defmodule Azimutt.Admin do
     |> preload(:projects)
     |> preload(:members)
     |> preload(:invitations)
+    |> preload(:clever_cloud_resource)
     |> preload(:heroku_resource)
     |> preload(:created_by)
     |> Page.get(p)
@@ -49,6 +52,7 @@ defmodule Azimutt.Admin do
     |> preload(projects: [:organization])
     |> preload(members: [:user, :created_by, :updated_by])
     |> preload(invitations: [:answered_by, :created_by])
+    |> preload(:clever_cloud_resource)
     |> preload(:heroku_resource)
     |> preload(:created_by)
     |> preload(:updated_by)

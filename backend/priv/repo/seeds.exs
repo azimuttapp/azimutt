@@ -1,4 +1,5 @@
 alias Azimutt.Accounts.User
+alias Azimutt.CleverCloud
 alias Azimutt.Heroku
 alias Azimutt.Organizations.Organization
 alias Azimutt.Organizations.OrganizationMember
@@ -101,6 +102,19 @@ IO.inspect(basic_project_file, label: "basic_project_file")
   basic_project
   |> Ecto.Changeset.cast(%{visibility: :read}, [:visibility])
   |> Azimutt.Repo.update()
+
+{:ok, _clever_cloud} =
+  CleverCloud.create_resource(%{
+    addon_id: "addon_xxx",
+    owner_id: "orga_xxx",
+    owner_name: "My Company",
+    user_id: "user_yyy",
+    plan: "basic",
+    region: "EU",
+    callback_url: "https://api.clever-cloud.com/v2/vendor/apps/addon_xxx",
+    logplex_token: "logtoken_yyy",
+    options: nil
+  })
 
 {:ok, _heroku} =
   Heroku.create_resource(%{

@@ -235,9 +235,9 @@ docProjectName =
 
 docOrganizations : List Organization
 docOrganizations =
-    [ Organization "00000000-0000-0000-0000-000000000001" "orga-1" "Orga 1" Plan.free "logo" Nothing Nothing
-    , Organization "00000000-0000-0000-0000-000000000002" "orga-2" "Orga 2" Plan.free "logo" Nothing Nothing
-    , Organization "00000000-0000-0000-0000-000000000003" "orga-3" "Orga 3" Plan.free "logo" Nothing Nothing
+    [ Organization "00000000-0000-0000-0000-000000000001" "orga-1" "Orga 1" Plan.free "logo" Nothing Nothing Nothing
+    , Organization "00000000-0000-0000-0000-000000000002" "orga-2" "Orga 2" Plan.free "logo" Nothing Nothing Nothing
+    , Organization "00000000-0000-0000-0000-000000000003" "orga-3" "Orga 3" Plan.free "logo" Nothing Nothing Nothing
     ]
 
 

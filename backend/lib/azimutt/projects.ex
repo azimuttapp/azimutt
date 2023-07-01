@@ -199,7 +199,7 @@ defmodule Azimutt.Projects do
     |> join(:inner, [_, o], om in OrganizationMember, on: om.organization_id == o.id)
     |> order_by([p, _, _], desc: p.updated_at)
     |> preload(:organization)
-    |> preload(organization: :heroku_resource)
+    |> preload(organization: [:clever_cloud_resource, :heroku_resource])
     |> preload(:updated_by)
   end
 
@@ -207,7 +207,7 @@ defmodule Azimutt.Projects do
     Project
     |> order_by([p], desc: p.updated_at)
     |> preload(:organization)
-    |> preload(organization: :heroku_resource)
+    |> preload(organization: [:clever_cloud_resource, :heroku_resource])
     |> preload(:updated_by)
   end
 end

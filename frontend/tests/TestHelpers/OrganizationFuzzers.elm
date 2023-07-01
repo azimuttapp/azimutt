@@ -7,13 +7,14 @@ import Models.OrganizationId exposing (OrganizationId)
 import Models.OrganizationName exposing (OrganizationName)
 import Models.OrganizationSlug exposing (OrganizationSlug)
 import Models.Plan exposing (Plan)
+import TestHelpers.CleverCloudFuzzers exposing (cleverCloudResource)
 import TestHelpers.Fuzzers exposing (identifier, intPosSmall, stringSmall, uuid)
 import TestHelpers.HerokuFuzzers exposing (herokuResource)
 
 
 organization : Fuzzer Organization
 organization =
-    Fuzz.map7 Organization organizationId organizationSlug organizationName plan logo (Fuzz.maybe description) (Fuzz.maybe herokuResource)
+    Fuzz.map8 Organization organizationId organizationSlug organizationName plan logo (Fuzz.maybe description) (Fuzz.maybe cleverCloudResource) (Fuzz.maybe herokuResource)
 
 
 organizationId : Fuzzer OrganizationId

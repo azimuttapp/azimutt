@@ -14,6 +14,7 @@ defmodule AzimuttWeb.Admin.DashboardController do
       projects_count: Admin.count_projects(),
       organizations_count: Admin.count_non_personal_organizations(),
       stripe_count: Admin.count_stripe_subscriptions(),
+      clever_cloud_count: Admin.count_clever_cloud_resources(),
       heroku_count: Admin.count_heroku_resources(),
       connected_chart:
         Dataset.chartjs_daily_data(

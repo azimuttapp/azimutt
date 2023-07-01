@@ -2,6 +2,7 @@ defmodule AzimuttWeb.OrganizationBillingController do
   use AzimuttWeb, :controller
   require Logger
   alias Azimutt.Accounts
+  alias Azimutt.CleverCloud
   alias Azimutt.Heroku
   alias Azimutt.Organizations
   alias Azimutt.Organizations.Organization
@@ -25,6 +26,7 @@ defmodule AzimuttWeb.OrganizationBillingController do
       Tracking.billing_loaded(current_user, organization, source)
 
       cond do
+        organization.clever_cloud_resource -> conn |> redirect(external: CleverCloud.app_addons_url())
         organization.heroku_resource -> conn |> redirect(external: Heroku.app_addons_url(organization.heroku_resource.app))
         organization.stripe_subscription_id -> conn |> stripe_subscription_view(organization)
         true -> generate_billing_view(conn, "subscribe.html", organization, "You haven't got subscribe yet !")

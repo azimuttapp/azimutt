@@ -45,6 +45,9 @@
                             <%= if organization.stripe_subscription_id do %>
                                 <%= link "Stripe", to: StripeSrv.subscription_url(organization.stripe_subscription_id), class: "underline" %>
                             <% end %>
+                            <%= if organization.clever_cloud_resource do %>
+                                <span title={organization.clever_cloud_resource.owner_name}>Clever Cloud</span>
+                            <% end %>
                             <%= if organization.heroku_resource do %>
                                 <span title={organization.heroku_resource.name}>Heroku</span>
                             <% end %>

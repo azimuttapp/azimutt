@@ -28,7 +28,7 @@ defmodule AzimuttWeb.Api.HerokuController do
                oauth_type: params["oauth_grant"]["type"],
                oauth_expire: params["oauth_grant"]["expires_at"]
              }) do
-          {:ok, resource} -> conn |> render("show.json", resource: resource, message: "Your add-on is now provisioned.")
+          {:ok, resource} -> conn |> render("show.json", resource: resource, message: "Your Azimutt add-on is now provisioned.")
           {:error, _err} -> conn |> send_resp(:unprocessable_entity, "")
         end
 
@@ -45,7 +45,7 @@ defmodule AzimuttWeb.Api.HerokuController do
     case Heroku.get_resource(resource_id) do
       {:ok, resource} ->
         case Heroku.update_resource_plan(resource, %{plan: plan}, now) do
-          {:ok, _} -> conn |> render("show.json", resource: resource, message: "Plan changed from #{resource.plan} to #{plan}.")
+          {:ok, _} -> conn |> render("show.json", resource: resource, message: "Azimutt plan changed from #{resource.plan} to #{plan}.")
           {:error, _err} -> conn |> send_resp(:unprocessable_entity, "")
         end
 

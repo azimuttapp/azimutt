@@ -63,6 +63,7 @@ defmodule Azimutt.Services.CockpitSrv do
                 github: System.get_env("GITHUB"),
                 posthog: System.get_env("POSTHOG"),
                 bento: System.get_env("BENTO"),
+                clever_cloud: System.get_env("CLEVER_CLOUD"),
                 heroku: System.get_env("HEROKU"),
                 stripe: System.get_env("STRIPE")
               }

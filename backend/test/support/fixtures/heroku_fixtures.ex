@@ -2,7 +2,7 @@ defmodule Azimutt.HerokuFixtures do
   @moduledoc false
   alias Azimutt.Heroku
 
-  def resource_fixture(attrs \\ %{}) do
+  def heroku_resource_fixture(attrs \\ %{}) do
     {:ok, resource} =
       attrs
       |> Enum.into(%{

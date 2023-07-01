@@ -1,17 +1,17 @@
-defmodule Azimutt.Heroku do
-  @moduledoc "Context for the Heroku addon"
+defmodule Azimutt.CleverCloud do
+  @moduledoc "Context for the Clever Cloud addon"
   import Ecto.Query, warn: false
   alias Azimutt.Accounts.User
-  alias Azimutt.Heroku.Resource
+  alias Azimutt.CleverCloud.Resource
   alias Azimutt.Organizations
   alias Azimutt.Organizations.Organization
   alias Azimutt.Organizations.OrganizationMember
   alias Azimutt.Repo
   alias Azimutt.Utils.Result
 
-  def app_url(app), do: "https://dashboard.heroku.com/apps/#{app}"
-  def app_addons_url(app), do: "https://dashboard.heroku.com/apps/#{app}/resources"
-  def app_settings_url(app), do: "https://dashboard.heroku.com/apps/#{app}/settings"
+  def app_url, do: "#TODO"
+  def app_addons_url, do: "#TODO"
+  def app_settings_url, do: "#TODO"
 
   def allowed_members(plan) do
     team_members = Regex.named_captures(~r/pro-(?<members>[0-9]+)/, plan)
@@ -23,7 +23,7 @@ defmodule Azimutt.Heroku do
     end
   end
 
-  # use only for HerokuController.index local helper
+  # use only for CleverCloudController.index local helper
   def all_resources do
     Resource
     |> order_by([r], desc: [r.deleted_at, r.created_at])
@@ -46,22 +46,11 @@ defmodule Azimutt.Heroku do
     |> Repo.insert()
   end
 
-  def set_app_if_needed(%Resource{} = resource, app, now) do
-    if resource.app == app do
-      {:ok, resource}
-    else
-      resource
-      |> Resource.update_app_changeset(app, now)
-      |> Repo.update()
-      |> Result.flat_map(fn _ -> get_resource(resource.id) end)
-    end
-  end
-
   def set_organization_if_needed(%Resource{} = resource, %User{} = current_user, now) do
     if resource.organization do
       {:ok, resource}
     else
-      attrs = %{name: resource.app, logo: Faker.Avatar.image_url()}
+      attrs = %{name: resource.owner_name, logo: Faker.Avatar.image_url()}
 
       Organizations.create_non_personal_organization(attrs, current_user)
       |> Result.flat_map(fn organization ->

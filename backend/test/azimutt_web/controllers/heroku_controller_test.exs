@@ -12,24 +12,27 @@ defmodule AzimuttWeb.HerokuControllerTest do
   end
 
   # https://devcenter.heroku.com/articles/add-on-single-sign-on
-  test "login and access heroku resource", %{conn: conn} do
+  test "login and access Heroku resource", %{conn: conn} do
     now_ts = System.os_time(:second)
-    resource = resource_fixture()
+    resource = heroku_resource_fixture()
     app = "demo-app"
     email = "user@mail.com"
-
-    attrs = %{
-      resource_id: resource.id,
-      timestamp: now_ts,
-      resource_token: Crypto.sha1("#{resource.id}:#{@sso_salt}:#{now_ts}"),
-      app: app,
-      email: email
-    }
 
     conn = get(conn, Routes.heroku_path(conn, :show, resource.id))
     assert conn.status == 403
 
-    conn = post(conn, Routes.heroku_path(conn, :login, attrs))
+    conn =
+      post(
+        conn,
+        Routes.heroku_path(conn, :login, %{
+          resource_id: resource.id,
+          timestamp: now_ts,
+          resource_token: Crypto.sha1("#{resource.id}:#{@sso_salt}:#{now_ts}"),
+          app: app,
+          email: email
+        })
+      )
+
     assert redirected_to(conn, 302) =~ Routes.heroku_path(conn, :show, resource.id)
 
     {:ok, resource} = Heroku.get_resource(resource.id)
