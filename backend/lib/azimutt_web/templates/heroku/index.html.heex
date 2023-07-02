@@ -2,12 +2,13 @@
     <div class="grow">
         <h1>Create Heroku resource</h1>
         <%= form_for @conn, Routes.heroku_path(@conn, :create), [], fn f -> %>
+        <% uuid = Ecto.UUID.generate() %>
         <%= for field <- [
-            %{id: :uuid, label: "Id (randomly generated)", value: Ecto.UUID.generate()},
+            %{id: :uuid, label: "Id (randomly generated)", value: uuid},
             %{id: :name, label: "Name", value: "heroku-app"},
             %{id: :plan, label: "Plan", value: "free"},
             %{id: :region, label: "Region", value: "us"},
-            %{id: :callback_url, label: "Callback", value: "https://api.heroku.com/addons/816de863-66ce-42ff-8b1d-b8fd7d713ba0"},
+            %{id: :callback_url, label: "Callback", value: "https://api.heroku.com/addons/#{uuid}"},
         ] do %>
             <div>
                 <label class="block text-sm font-medium text-gray-700" for={field.id}><%= field.label %></label>
@@ -93,12 +94,12 @@
         </script>
     </div>
 </div>
-<div class="mt-6 max-w-5xl mx-auto">
+<div class="mt-6 max-w-7xl mx-auto">
     <h1>Heroku resources</h1>
     <table class="min-w-full divide-y divide-gray-300">
         <thead class="bg-gray-50">
             <tr>
-                <th scope="col" class="whitespace-nowrap py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Id</th>
+                <th scope="col" class="whitespace-nowrap px-2 py-3.5 text-left text-sm font-semibold text-gray-900">Id</th>
                 <th scope="col" class="whitespace-nowrap px-2 py-3.5 text-left text-sm font-semibold text-gray-900">Name</th>
                 <th scope="col" class="whitespace-nowrap px-2 py-3.5 text-left text-sm font-semibold text-gray-900">App</th>
                 <th scope="col" class="whitespace-nowrap px-2 py-3.5 text-left text-sm font-semibold text-gray-900">Plan</th>
@@ -110,7 +111,7 @@
         <tbody class="divide-y divide-gray-200 bg-white">
             <%= for resource <- @resources do %>
                 <tr>
-                    <td class="whitespace-nowrap py-2 pl-4 pr-3 text-sm text-gray-500 sm:pl-6"><%= resource.id %></td>
+                    <td class="whitespace-nowrap py-2 py-2 text-sm text-gray-900"><%= resource.id %></td>
                     <td class="whitespace-nowrap px-2 py-2 text-sm text-gray-900"><%= resource.name %></td>
                     <td class="whitespace-nowrap px-2 py-2 text-sm text-gray-900"><%= resource.app %></td>
                     <td class="whitespace-nowrap px-2 py-2 text-sm text-gray-900"><%= resource.plan %></td>

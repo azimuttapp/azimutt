@@ -96,7 +96,14 @@ defmodule AzimuttWeb.CleverCloudController do
       conn
       |> put_layout({AzimuttWeb.LayoutView, "empty.html"})
       |> put_root_layout({AzimuttWeb.LayoutView, "empty.html"})
-      |> render("show.html", resource: resource, user: current_user)
+      |> render("show.html",
+        resource: resource,
+        user: current_user,
+        color: "#d74d4e",
+        dark_20: "#bf2b2c",
+        dark_50: "#771b1b",
+        light_20: "#df7171"
+      )
     else
       {:error, :forbidden}
     end

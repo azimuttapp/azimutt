@@ -2,12 +2,16 @@
     <div class="grow">
         <h1>Create Clever Cloud resource</h1>
         <%= form_for @conn, Routes.clever_cloud_path(@conn, :create), [], fn f -> %>
+        <% addon_id = "addon_#{Ecto.UUID.generate() |> String.split("-") |> hd()}" %>
         <%= for field <- [
-            %{id: :uuid, label: "Id (randomly generated)", value: Ecto.UUID.generate()},
-            %{id: :name, label: "Name", value: "clever-cloud-app"},
+            %{id: :addon_id, label: "Addon id", value: addon_id},
+            %{id: :owner_id, label: "Owner id", value: "owner_#{Ecto.UUID.generate() |> String.split("-") |> hd()}"},
+            %{id: :owner_name, label: "Owner name", value: "Clever Cloud App"},
+            %{id: :user_id, label: "User id", value: "user_#{Ecto.UUID.generate() |> String.split("-") |> hd()}"},
             %{id: :plan, label: "Plan", value: "free"},
-            %{id: :region, label: "Region", value: "us"},
-            %{id: :callback_url, label: "Callback", value: "https://api.clever-cloud.com/v2/vendor/apps/816de863-66ce-42ff-8b1d-b8fd7d713ba0"},
+            %{id: :region, label: "Region", value: "EU"},
+            %{id: :callback_url, label: "Callback", value: "https://api.clever-cloud.com/v2/vendor/apps/#{addon_id}"},
+            %{id: :logplex_token, label: "Log token", value: "logtoken_#{Ecto.UUID.generate() |> String.split("-") |> hd()}"},
         ] do %>
             <div>
                 <label class="block text-sm font-medium text-gray-700" for={field.id}><%= field.label %></label>
@@ -27,11 +31,6 @@
                 event.preventDefault()
                 const form = event.target
                 const data = Object.fromEntries(new FormData(form).entries())
-                data.oauth_grant = { // not used, so add static data
-                    code: 'c85cdb57-1037-4c68-a2a7-d759eb92dab1',
-                    expires_at: '2016-03-03T18:01:31-0800',
-                    type: 'authorization_code'
-                }
                 fetch(form.getAttribute('action'), {
                     method: form.getAttribute('method'),
                     headers: {
@@ -49,11 +48,11 @@
         <%= form_for @conn, Routes.clever_cloud_path(@conn, :login), [class: "login-form"], fn f -> %>
             <%= for field <- [
                 %{id: :email, label: "Email", value: "user@mail.com"},
-                %{id: :resource_id, label: "Resource id", value: resource.id},
-                %{id: :app, label: "App name", value: resource.app},
+                # %{id: "nav-data", label: "Nav data", value: ""},
+                %{id: :id, label: "Resource id", value: if(resource, do: resource.id, else: "")},
                 %{id: :timestamp, label: "Timestamp", value: System.os_time(:second)},
                 %{id: :salt, label: "SSO Salt", value: @clever_cloud.sso_salt},
-                %{id: :resource_token, label: "Token", value: ""}
+                %{id: :token, label: "Token", value: ""}
             ] do %>
                 <div>
                     <label class="block text-sm font-medium text-gray-700" for={field.id}><%= field.label %></label>
@@ -69,11 +68,10 @@
         <% end %>
         <script>
             const loginForm = document.querySelector('.login-form')
-            const app = document.querySelector('#app')
-            const resourceId = document.querySelector('#resource_id')
+            const resourceId = document.querySelector('#id')
             const timestamp = document.querySelector('#timestamp')
             const salt = document.querySelector('#salt')
-            const resourceToken = document.querySelector('#resource_token')
+            const resourceToken = document.querySelector('#token')
 
             computeToken()
             resourceId.addEventListener('change', () => computeToken())
@@ -93,15 +91,18 @@
         </script>
     </div>
 </div>
-<div class="mt-6 max-w-5xl mx-auto">
+<div class="mt-6 max-w-7xl mx-auto">
     <h1>Clever Cloud resources</h1>
     <table class="min-w-full divide-y divide-gray-300">
         <thead class="bg-gray-50">
             <tr>
-                <th scope="col" class="whitespace-nowrap py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Id</th>
-                <th scope="col" class="whitespace-nowrap px-2 py-3.5 text-left text-sm font-semibold text-gray-900">Name</th>
-                <th scope="col" class="whitespace-nowrap px-2 py-3.5 text-left text-sm font-semibold text-gray-900">App</th>
+                <th scope="col" class="whitespace-nowrap px-2 py-3.5 text-left text-sm font-semibold text-gray-900">Id</th>
+                <th scope="col" class="whitespace-nowrap px-2 py-3.5 text-left text-sm font-semibold text-gray-900">Addon id</th>
+                <th scope="col" class="whitespace-nowrap px-2 py-3.5 text-left text-sm font-semibold text-gray-900">Owner id</th>
+                <th scope="col" class="whitespace-nowrap px-2 py-3.5 text-left text-sm font-semibold text-gray-900">Owner name</th>
+                <th scope="col" class="whitespace-nowrap px-2 py-3.5 text-left text-sm font-semibold text-gray-900">User id</th>
                 <th scope="col" class="whitespace-nowrap px-2 py-3.5 text-left text-sm font-semibold text-gray-900">Plan</th>
+                <th scope="col" class="whitespace-nowrap px-2 py-3.5 text-left text-sm font-semibold text-gray-900">Region</th>
                 <th scope="col" class="whitespace-nowrap px-2 py-3.5 text-left text-sm font-semibold text-gray-900">Organization</th>
                 <th scope="col" class="whitespace-nowrap px-2 py-3.5 text-left text-sm font-semibold text-gray-900">Projects</th>
                 <th scope="col" class="whitespace-nowrap px-2 py-3.5 text-left text-sm font-semibold text-gray-900">Actions</th>
@@ -110,10 +111,13 @@
         <tbody class="divide-y divide-gray-200 bg-white">
             <%= for resource <- @resources do %>
                 <tr>
-                    <td class="whitespace-nowrap py-2 pl-4 pr-3 text-sm text-gray-500 sm:pl-6"><%= resource.id %></td>
-                    <td class="whitespace-nowrap px-2 py-2 text-sm text-gray-900"><%= resource.name %></td>
-                    <td class="whitespace-nowrap px-2 py-2 text-sm text-gray-900"><%= resource.app %></td>
+                    <td class="whitespace-nowrap px-2 py-2 text-sm text-gray-900"><%= resource.id %></td>
+                    <td class="whitespace-nowrap px-2 py-2 text-sm text-gray-900"><%= resource.addon_id %></td>
+                    <td class="whitespace-nowrap px-2 py-2 text-sm text-gray-900"><%= resource.owner_id %></td>
+                    <td class="whitespace-nowrap px-2 py-2 text-sm text-gray-900"><%= resource.owner_name %></td>
+                    <td class="whitespace-nowrap px-2 py-2 text-sm text-gray-900"><%= resource.user_id %></td>
                     <td class="whitespace-nowrap px-2 py-2 text-sm text-gray-900"><%= resource.plan %></td>
+                    <td class="whitespace-nowrap px-2 py-2 text-sm text-gray-900"><%= resource.region %></td>
                     <%= if resource.organization do %>
                         <td class="whitespace-nowrap px-2 py-2 text-sm text-gray-900">
                             <a href={Routes.organization_path(@conn, :show, resource.organization)} title={resource.organization.id} class="underline"><%= resource.organization.name %></a>
@@ -131,7 +135,7 @@
                         <%= if resource.deleted_at do %>
                             Deleted at <%= resource.deleted_at %>
                         <% else %>
-                            <a href="#" class="underline cursor-pointer resource-login" data-id={resource.id} data-app={resource.app}>login</a> •
+                            <a href="#" class="underline cursor-pointer resource-login" data-id={resource.id} data-app={resource.owner_name}>login</a> •
                             <a href={Routes.clever_cloud_path(@conn, :delete, resource.id)} method="delete" class="underline cursor-pointer">delete</a>
                         <% end %>
                     </td>
@@ -156,7 +160,6 @@
             action.addEventListener('click', (event) => {
                 event.preventDefault()
                 resourceId.value = event.target.getAttribute('data-id')
-                app.value = event.target.getAttribute('data-app')
                 computeToken().then(() => loginForm.submit())
             })
         })
