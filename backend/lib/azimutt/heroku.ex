@@ -41,6 +41,7 @@ defmodule Azimutt.Heroku do
   end
 
   def create_resource(attrs) do
+    # Can't create organization here because of the `current_user` and `name` need :/
     %Resource{}
     |> Resource.create_changeset(attrs)
     |> Repo.insert()

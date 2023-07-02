@@ -41,6 +41,7 @@ defmodule Azimutt.CleverCloud do
   end
 
   def create_resource(attrs) do
+    # Can't create organization here because of the `current_user` need :/
     %Resource{}
     |> Resource.create_changeset(attrs)
     |> Repo.insert()
