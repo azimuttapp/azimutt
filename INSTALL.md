@@ -197,13 +197,17 @@ At least one of authentication methods should be defined:
     - `BENTO_SITE_KEY` (required)
     - `BENTO_PUBLISHABLE_KEY` (required)
     - `BENTO_SECRET_KEY` (required)
-- `HEROKU` (optional): if `true`, enable auth & hooks for [Heroku Add-on](https://elements.heroku.com/addons)
-    - `HEROKU_ADDON_ID` (required)
-    - `HEROKU_PASSWORD` (required)
-    - `HEROKU_SSO_SALT` (required)
 - `STRIPE` (optional): if `true`, allow to purchase plans with [Stripe](https://stripe.com), you probably don't need it ^^
     - `STRIPE_API_KEY` (required): Stripe api key (ex: `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`)
     - `STRIPE_WEBHOOK_SIGNING_SECRET` (required): Stripe webhook secret (ex: `whsec_ayZAyKqOLy34UKNeI3eq4icXVWJam0IW`)
     - `STRIPE_PRICE_PRO_MONTHLY` (required): the Stripe price for the pro plan (ex: `price_uJINukB78aAbajUQHy6Ra523`)
+- `CLEVER_CLOUD` (optional): if `true`, enable auth & hooks for [Clever Cloud Add-on](https://www.clever-cloud.com/doc/extend/add-ons-api)
+    - `CLEVER_CLOUD_ADDON_ID` (required)
+    - `CLEVER_CLOUD_PASSWORD` (required)
+    - `CLEVER_CLOUD_SSO_SALT` (required)
+- `HEROKU` (optional): if `true`, enable auth & hooks for [Heroku Add-on](https://elements.heroku.com/addons)
+    - `HEROKU_ADDON_ID` (required)
+    - `HEROKU_PASSWORD` (required)
+    - `HEROKU_SSO_SALT` (required)
 
 **Never share your secrets or keys in public spaces.**

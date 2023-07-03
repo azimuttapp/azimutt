@@ -1,6 +1,7 @@
 import {Uuid} from "./uuid";
 import {Slug} from "./basics";
 import {z} from "zod";
+import {CleverCloudResource} from "./clevercloud";
 import {HerokuResource} from "./heroku";
 
 export type OrganizationId = Uuid
@@ -45,6 +46,7 @@ export interface Organization {
     plan: Plan
     logo: string
     description?: string
+    clever_cloud?: CleverCloudResource
     heroku?: HerokuResource
 }
 
@@ -55,5 +57,6 @@ export const Organization = z.object({
     plan: Plan,
     logo: z.string().url(),
     description: z.string().optional(),
+    clever_cloud: CleverCloudResource.optional(),
     heroku: HerokuResource.optional(),
 }).strict()

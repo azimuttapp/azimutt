@@ -4,6 +4,7 @@ import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
 import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
+import Models.CleverCloudResource as CleverCloudResource exposing (CleverCloudResource)
 import Models.HerokuResource as HerokuResource exposing (HerokuResource)
 import Models.OrganizationId as OrganizationId exposing (OrganizationId)
 import Models.OrganizationName as OrganizationName exposing (OrganizationName)
@@ -18,6 +19,7 @@ type alias Organization =
     , plan : Plan
     , logo : String
     , description : Maybe String
+    , cleverCloud : Maybe CleverCloudResource
     , heroku : Maybe HerokuResource
     }
 
@@ -30,6 +32,7 @@ zero =
     , plan = Plan.free
     , logo = "https://azimutt.app/images/logo_dark.svg"
     , description = Nothing
+    , cleverCloud = Nothing
     , heroku = Nothing
     }
 
@@ -42,6 +45,7 @@ one =
     , plan = Plan.free
     , logo = "https://azimutt.app/images/logo_dark.svg"
     , description = Nothing
+    , cleverCloud = Nothing
     , heroku = Nothing
     }
 
@@ -55,17 +59,19 @@ encode value =
         , ( "plan", value.plan |> Plan.encode )
         , ( "logo", value.logo |> Encode.string )
         , ( "description", value.description |> Encode.maybe Encode.string )
+        , ( "clever_cloud", value.cleverCloud |> Encode.maybe CleverCloudResource.encode )
         , ( "heroku", value.heroku |> Encode.maybe HerokuResource.encode )
         ]
 
 
 decode : Decode.Decoder Organization
 decode =
-    Decode.map7 Organization
+    Decode.map8 Organization
         (Decode.field "id" OrganizationId.decode)
         (Decode.field "slug" OrganizationSlug.decode)
         (Decode.field "name" OrganizationName.decode)
         (Decode.field "plan" Plan.decode)
         (Decode.field "logo" Decode.string)
         (Decode.maybeField "description" Decode.string)
+        (Decode.maybeField "clever_cloud" CleverCloudResource.decode)
         (Decode.maybeField "heroku" HerokuResource.decode)

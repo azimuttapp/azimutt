@@ -36,6 +36,7 @@ import {z} from "zod";
 import * as Zod from "../utils/zod";
 import * as Json from "../utils/json";
 import * as jiff from "jiff";
+import {CleverCloudResource} from "../types/clevercloud";
 import {HerokuResource} from "../types/heroku";
 import {TrackEvent} from "../types/tracking";
 
@@ -214,6 +215,7 @@ export interface OrganizationResponse {
     plan: Plan
     logo: string
     description: string | null
+    clever_cloud?: CleverCloudResource
     heroku?: HerokuResource
 }
 
@@ -224,6 +226,7 @@ export const OrganizationResponse = z.object({
     plan: Plan,
     logo: z.string(),
     description: z.string().nullable(),
+    clever_cloud: CleverCloudResource.optional(),
     heroku: HerokuResource.optional(),
 }).strict()
 
@@ -309,6 +312,7 @@ function toOrganization(o: OrganizationResponse): Organization {
         plan: o.plan,
         logo: o.logo,
         description: o.description || undefined,
+        clever_cloud: o.clever_cloud,
         heroku: o.heroku,
     }
 }

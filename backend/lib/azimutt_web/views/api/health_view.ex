@@ -50,6 +50,7 @@ defmodule AzimuttWeb.Api.HealthView do
       auth_linkedin: Azimutt.config(:auth_linkedin),
       auth_twitter: Azimutt.config(:auth_twitter),
       auth_facebook: Azimutt.config(:auth_facebook),
+      auth_clever_cloud: Azimutt.config(:auth_clever_cloud),
       auth_heroku: Azimutt.config(:auth_heroku),
       auth_saml: Azimutt.config(:auth_saml),
       sentry: Azimutt.config(:sentry),

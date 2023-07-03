@@ -14,6 +14,7 @@ import Libs.Models exposing (TweetUrl)
 import Libs.Tailwind exposing (Color, decodeColor)
 import Libs.Time as Time
 import Libs.Url as Url
+import Models.CleverCloudResource as CleverCloudResource exposing (CleverCloudResource)
 import Models.HerokuResource as HerokuResource exposing (HerokuResource)
 import Models.Organization exposing (Organization)
 import Models.OrganizationId as OrganizationId exposing (OrganizationId)
@@ -270,6 +271,7 @@ buildOrganization o =
     , plan = o.plan
     , logo = o.logo
     , description = o.description
+    , cleverCloud = o.cleverCloud
     , heroku = o.heroku
     }
 
@@ -281,6 +283,7 @@ type alias OrgaWithProjects =
     , plan : Plan
     , logo : String
     , description : Maybe String
+    , cleverCloud : Maybe CleverCloudResource
     , heroku : Maybe HerokuResource
     , projects : List OrgaProject
     }
@@ -311,13 +314,14 @@ type alias OrgaProject =
 
 decodeOrga : Decode.Decoder OrgaWithProjects
 decodeOrga =
-    Decode.map8 OrgaWithProjects
+    Decode.map9 OrgaWithProjects
         (Decode.field "id" Decode.string)
         (Decode.field "slug" Decode.string)
         (Decode.field "name" Decode.string)
         (Decode.field "plan" Plan.decode)
         (Decode.defaultField "logo" Decode.string "")
         (Decode.maybeField "description" Decode.string)
+        (Decode.maybeField "clever_cloud" CleverCloudResource.decode)
         (Decode.maybeField "heroku" HerokuResource.decode)
         (Decode.field "projects" (Decode.list decodeProject))
 

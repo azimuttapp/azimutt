@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="scroll-smooth bg-[#3a2778]" data-root="heroku/show">
+<html lang="en" class="scroll-smooth bg-[#3c2c4f]" data-root="heroku/show">
     <%= render AzimuttWeb.LayoutView, "_head.html", conn: @conn %>
     <body class="font-sans antialiased">
         <%= render AzimuttWeb.LayoutView, "_hello_comment.html" %>
@@ -11,7 +11,7 @@
                             <div class="flex w-auto items-center justify-between">
                                 <span class="sr-only">Heroku x Azimutt</span>
                                 <a href={Heroku.app_url(@resource.app)} target="_blank" rel="noopener noreferrer">
-                                    <img class="h-8 sm:h-10" src="/images/heroku-logotype-horizontal-white.svg" alt="Heroku logo">
+                                    <img class="h-8 sm:h-10" src="/images/heroku_logo_white.svg" alt="Heroku logo">
                                 </a>
                                 <Icon.x_mark class="mx-2 text-white" />
                                 <a href={Routes.user_dashboard_path(@conn, :index)} target="_blank" rel="noopener noreferrer">
@@ -64,14 +64,14 @@
                             </div>
                             <div class="mt-12 lg:relative lg:m-0">
                                 <div class="mx-auto max-w-md px-4 sm:max-w-2xl sm:px-6 lg:max-w-none lg:px-0">
-                                    <img src="/images/illustration-cloud.svg" alt="Heroku Add-on illustration" class="w-full lg:absolute lg:inset-y-0 lg:left-0 lg:h-full lg:w-auto lg:max-w-none">
+                                    <img src="/images/heroku_illustration.svg" alt="Heroku Add-on illustration" class="w-full lg:absolute lg:inset-y-0 lg:left-0 lg:h-full lg:w-auto lg:max-w-none">
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <img src="/images/heroku-art.svg" alt="Heroku art" class="w-full hidden lg:block">
+                <img src="/images/heroku_footer.svg" alt="Heroku art" class="w-full hidden lg:block">
             </main>
         </div>
     </body>

@@ -3,6 +3,8 @@
         <span title="Local project"><Icon.folder kind="outline" class="text-gray-400" /></span>
     <% @project.visibility != :none -> %>
         <span title="Public project"><Icon.globe kind="outline" class="text-gray-400" /></span>
+    <% @project.organization.clever_cloud_resource -> %>
+        <span title="Clever Cloud project"><Icon.puzzle_piece kind="outline" class="text-gray-400" /></span>
     <% @project.organization.heroku_resource -> %>
         <span title="Heroku project"><Icon.puzzle_piece kind="outline" class="text-gray-400" /></span>
     <% true -> %>

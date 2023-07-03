@@ -4,8 +4,8 @@ defmodule AzimuttWeb.UserAuth do
   import Plug.Conn
   import Phoenix.Controller
   alias Azimutt.Accounts
+  alias Azimutt.CleverCloud
   alias Azimutt.Heroku
-  alias Azimutt.Heroku.Resource
   alias Azimutt.Tracking
   alias Azimutt.Utils.Result
   alias AzimuttWeb.Router.Helpers, as: Routes
@@ -20,6 +20,10 @@ defmodule AzimuttWeb.UserAuth do
   # the token expiry itself in UserToken.
   @remember_me_cookie "_azimutt_web_user_remember_me"
   @remember_me_options [sign: true, max_age: 60 * @days, same_site: "Lax"]
+
+  # cf https://www.clever-cloud.com/doc/extend/add-ons-api/#sso
+  @clever_cloud_cookie "_azimutt_clever_cloud_sso"
+  @clever_cloud_options [sign: true, max_age: 90 * @minutes, same_site: "Lax"]
 
   # cf https://devcenter.heroku.com/articles/add-on-single-sign-on
   @heroku_cookie "_azimutt_heroku_sso"
@@ -109,6 +113,7 @@ defmodule AzimuttWeb.UserAuth do
     conn
     |> renew_session()
     |> delete_resp_cookie(@remember_me_cookie)
+    |> delete_resp_cookie(@clever_cloud_cookie)
     |> delete_resp_cookie(@heroku_cookie)
     |> delete_resp_cookie(@attribution_cookie)
     |> redirect(to: Routes.website_path(conn, :index))
@@ -121,7 +126,10 @@ defmodule AzimuttWeb.UserAuth do
   def fetch_current_user(conn, _opts) do
     {user_token, conn} = ensure_user_token(conn)
     user = user_token && Accounts.get_user_by_session_token(user_token)
-    user = user |> Azimutt.Repo.preload(:profile) |> Azimutt.Repo.preload(organizations: [:heroku_resource, :projects])
+
+    user =
+      user |> Azimutt.Repo.preload(:profile) |> Azimutt.Repo.preload(organizations: [:clever_cloud_resource, :heroku_resource, :projects])
+
     assign(conn, :current_user, user)
   end
 
@@ -194,25 +202,35 @@ defmodule AzimuttWeb.UserAuth do
     end
   end
 
-  def require_heroku_basic_auth(conn, _opts) do
-    heroku_addon_id = Azimutt.config(:heroku_addon_id)
-    heroku_password = Azimutt.config(:heroku_password)
+  def require_clever_cloud_basic_auth(conn, _opts),
+    do: require_basic_auth(conn, "Clever Cloud", Azimutt.config(:clever_cloud_addon_id), Azimutt.config(:clever_cloud_password))
 
-    if heroku_addon_id && heroku_password do
+  def require_heroku_basic_auth(conn, _opts),
+    do: require_basic_auth(conn, "Heroku", Azimutt.config(:heroku_addon_id), Azimutt.config(:heroku_password))
+
+  defp require_basic_auth(conn, name, expected_user, expected_pass) do
+    if expected_user && expected_pass do
       case Plug.BasicAuth.parse_basic_auth(conn) do
         {user, pass} ->
-          if Plug.Crypto.secure_compare(user, heroku_addon_id) && Plug.Crypto.secure_compare(pass, heroku_password) do
+          if Plug.Crypto.secure_compare(user, expected_user) && Plug.Crypto.secure_compare(pass, expected_pass) do
             conn
           else
-            conn |> put_error_api(:unauthorized, "Invalid credentials for heroku basic auth")
+            conn |> put_error_api(:unauthorized, "Invalid credentials for #{name} basic auth")
           end
 
         :error ->
-          conn |> put_error_api(:unauthorized, "Invalid or missing heroku basic auth")
+          conn |> put_error_api(:unauthorized, "Invalid or missing #{name} basic auth")
       end
     else
-      conn |> put_error_api(:unauthorized, "Heroku basic auth not set up")
+      conn |> put_error_api(:unauthorized, "#{name} basic auth not set up")
     end
+  end
+
+  # write @clever_cloud_cookie to make the specified resource accessible
+  def clever_cloud_sso(conn, resource, user) do
+    conn
+    |> login_user(user, "clever_cloud")
+    |> put_resp_cookie(@clever_cloud_cookie, %{resource_id: resource.id}, @clever_cloud_options)
   end
 
   # write @heroku_cookie to make the specified resource accessible
@@ -222,31 +240,43 @@ defmodule AzimuttWeb.UserAuth do
     |> put_resp_cookie(@heroku_cookie, %{resource_id: resource.id}, @heroku_options)
   end
 
+  # read @clever_cloud_cookie and make resource available in conn
+  def fetch_clever_cloud_resource(conn, _opts) do
+    conn = fetch_cookies(conn, signed: [@clever_cloud_cookie])
+
+    with(
+      {:ok, cookie} <- Result.from_nillable(conn.cookies[@clever_cloud_cookie]),
+      {:ok, %CleverCloud.Resource{} = resource} <- CleverCloud.get_resource(cookie.resource_id),
+      do: {:ok, conn |> assign(:clever_cloud, resource)}
+    )
+    |> Result.or_else(conn)
+  end
+
   # read @heroku_cookie and make resource available in conn
   def fetch_heroku_resource(conn, _opts) do
     conn = fetch_cookies(conn, signed: [@heroku_cookie])
 
     with(
       {:ok, cookie} <- Result.from_nillable(conn.cookies[@heroku_cookie]),
-      {:ok, %Resource{} = resource} <- Heroku.get_resource(cookie.resource_id),
+      {:ok, %Heroku.Resource{} = resource} <- Heroku.get_resource(cookie.resource_id),
       do: {:ok, conn |> assign(:heroku, resource)}
     )
     |> Result.or_else(conn)
+  end
+
+  def require_clever_cloud_resource(conn, _opts) do
+    if conn.assigns[:clever_cloud] do
+      conn
+    else
+      conn |> put_error_html(:forbidden, "403.html", "Please access this resource through Clever Cloud add-on SSO.")
+    end
   end
 
   def require_heroku_resource(conn, _opts) do
     if conn.assigns[:heroku] do
       conn
     else
-      conn |> put_error_html(:forbidden, "403.html", "Please access this resource through heroku add-on SSO.")
-    end
-  end
-
-  def require_heroku_resource_api(conn, _opts) do
-    if conn.assigns[:heroku] do
-      conn
-    else
-      conn |> put_error_api(:unauthorized, "Not accessible heroku resource, access it from heroku dashboard.")
+      conn |> put_error_html(:forbidden, "403.html", "Please access this resource through Heroku add-on SSO.")
     end
   end
 

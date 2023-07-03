@@ -19,6 +19,7 @@ defmodule AzimuttWeb.Api.OrganizationView do
     }
     |> put_plan(organization, ctx)
     |> put_projects(organization, ctx)
+    |> put_clever_cloud_resource(organization, ctx)
     |> put_heroku_resource(organization, ctx)
   end
 
@@ -42,6 +43,14 @@ defmodule AzimuttWeb.Api.OrganizationView do
     if ctx.expand |> Enum.member?("projects") do
       project_ctx = ctx |> CtxParams.nested("projects")
       json |> Map.put(:projects, render_many(organization.projects, AzimuttWeb.Api.ProjectView, "show.json", ctx: project_ctx))
+    else
+      json
+    end
+  end
+
+  defp put_clever_cloud_resource(json, %Organization{} = organization, %CtxParams{} = _ctx) do
+    if organization.clever_cloud_resource do
+      json |> Map.put(:clever_cloud, %{id: organization.clever_cloud_resource.id})
     else
       json
     end

@@ -213,9 +213,9 @@ if System.get_env("AUTH_SAML") == "true" do
   raise "AUTH_SAML not implemented"
 end
 
-if System.get_env("AUTH_PASSWORD") != "true" && System.get_env("AUTH_GITHUB") != "true" do
-  raise "No auth method defined, please set one, for example: AUTH_PASSWORD=true"
-end
+# if System.get_env("AUTH_PASSWORD") != "true" && System.get_env("AUTH_GITHUB") != "true" do
+#   raise "No auth method defined, please set one, for example: AUTH_PASSWORD=true"
+# end
 
 if System.get_env("POSTHOG") == "true" do
   IO.puts("Setup PostHog")
@@ -264,6 +264,16 @@ if System.get_env("STRIPE") == "true" do
   config :stripity_stripe,
     api_key: System.fetch_env!("STRIPE_API_KEY"),
     signing_secret: System.fetch_env!("STRIPE_WEBHOOK_SIGNING_SECRET")
+end
+
+if System.get_env("CLEVER_CLOUD") == "true" do
+  IO.puts("Setup Clever Cloud addon")
+
+  config :azimutt,
+    auth_clever_cloud: true,
+    clever_cloud_addon_id: System.fetch_env!("CLEVER_CLOUD_ADDON_ID"),
+    clever_cloud_password: System.fetch_env!("CLEVER_CLOUD_PASSWORD"),
+    clever_cloud_sso_salt: System.fetch_env!("CLEVER_CLOUD_SSO_SALT")
 end
 
 if System.get_env("HEROKU") == "true" do

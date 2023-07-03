@@ -34,13 +34,13 @@ defmodule AzimuttWeb.Api.HerokuControllerTest do
     }
 
     conn = conn |> authed() |> post(Routes.heroku_path(conn, :create, resource))
-    assert json_response(conn, 200) == %{"id" => id, "message" => "Your add-on is now provisioned."}
+    assert json_response(conn, 200) == %{"id" => id, "message" => "Your Azimutt add-on is now provisioned."}
 
     conn = conn |> recycle() |> authed() |> post(Routes.heroku_path(conn, :create, resource))
     assert json_response(conn, 200) == %{"id" => id, "message" => "This resource was already created."}
 
     conn = conn |> recycle() |> authed() |> put(Routes.heroku_path(conn, :update, id, %{plan: "pro"}))
-    assert json_response(conn, 200) == %{"id" => id, "message" => "Plan changed from basic to pro."}
+    assert json_response(conn, 200) == %{"id" => id, "message" => "Azimutt plan changed from basic to pro."}
 
     conn = conn |> recycle() |> authed() |> delete(Routes.heroku_path(conn, :delete, id))
     assert conn.status == 204

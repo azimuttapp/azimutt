@@ -81,9 +81,22 @@ defmodule Azimutt.Accounts.User do
     required = [:name, :email, :avatar, :provider, :provider_uid]
 
     user
-    |> cast(attrs, required ++ [:provider_data, :confirmed_at])
+    |> cast(attrs, required ++ [:provider_data])
     |> Slugme.generate_slug(:name)
     # |> setup_onboarding() # no onboarding for Heroku users => rework on this
+    |> put_change(:last_signin, now)
+    |> put_change(:confirmed_at, now)
+    |> cast_embed(:data, required: true, with: &User.Data.changeset/2)
+    |> validate_required(required)
+  end
+
+  def clever_cloud_creation_changeset(user, attrs, now) do
+    required = [:name, :email, :avatar, :provider, :provider_uid]
+
+    user
+    |> cast(attrs, required ++ [:provider_data])
+    |> Slugme.generate_slug(:name)
+    # |> setup_onboarding() # no onboarding for Clever Cloud users => rework on this
     |> put_change(:last_signin, now)
     |> put_change(:confirmed_at, now)
     |> cast_embed(:data, required: true, with: &User.Data.changeset/2)

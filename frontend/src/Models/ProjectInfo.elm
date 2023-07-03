@@ -89,6 +89,9 @@ icon project =
     else if project.visibility /= ProjectVisibility.None then
         Icon.GlobeAlt
 
+    else if (project.organization |> Maybe.andThen .cleverCloud) /= Nothing then
+        Icon.Puzzle
+
     else if (project.organization |> Maybe.andThen .heroku) /= Nothing then
         Icon.Puzzle
 
@@ -103,6 +106,9 @@ title project =
 
     else if project.visibility /= ProjectVisibility.None then
         "Public project"
+
+    else if (project.organization |> Maybe.andThen .cleverCloud) /= Nothing then
+        "Clever Cloud Add-on project"
 
     else if (project.organization |> Maybe.andThen .heroku) /= Nothing then
         "Heroku Add-on project"

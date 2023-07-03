@@ -36,17 +36,16 @@ defmodule AzimuttWeb.HerokuController do
     now_ts = System.os_time(:second)
     salt = Azimutt.config(:heroku_sso_salt)
     older_than_5_min = String.to_integer(timestamp) < now_ts - 5 * 60
-    expected_token = heroku_token(resource_id, timestamp, salt)
+    expected_token = build_token(resource_id, salt, timestamp)
     invalid_token = !Plug.Crypto.secure_compare(expected_token, token)
 
     user_params = %{
       name: email |> String.split("@") |> hd(),
       email: email,
+      avatar: "https://www.gravatar.com/avatar/#{Crypto.md5(email)}?s=150&d=robohash",
       provider: "heroku",
       provider_uid: email,
-      provider_data: %{app: app, resource_id: resource_id},
-      avatar: "https://www.gravatar.com/avatar/#{Crypto.md5(email)}?s=150&d=robohash",
-      confirmed_at: now
+      provider_data: %{app: app, resource_id: resource_id}
     }
 
     if invalid_token || older_than_5_min do
@@ -104,12 +103,18 @@ defmodule AzimuttWeb.HerokuController do
       conn
       |> put_layout({AzimuttWeb.LayoutView, "empty.html"})
       |> put_root_layout({AzimuttWeb.LayoutView, "empty.html"})
-      # Heroku color: #79589f, 20% darker: #61467f, 20% lighter: #9377b4
-      |> render("show.html", resource: resource, user: current_user)
+      |> render("show.html",
+        resource: resource,
+        user: current_user,
+        color: "#79589f",
+        dark_20: "#61467f",
+        dark_50: "#3c2c4f",
+        light_20: "#9478b4"
+      )
     else
       {:error, :forbidden}
     end
   end
 
-  defp heroku_token(resource_id, timestamp, salt), do: Crypto.sha1("#{resource_id}:#{salt}:#{timestamp}")
+  defp build_token(resource_id, salt, timestamp), do: Crypto.sha1("#{resource_id}:#{salt}:#{timestamp}")
 end

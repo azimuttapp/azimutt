@@ -58,6 +58,12 @@ defmodule Azimutt.Accounts do
     |> Result.tap(fn user -> create_profile(user, profile_attrs) end)
   end
 
+  def register_clever_cloud_user(attrs, attribution, now) do
+    %User{}
+    |> User.clever_cloud_creation_changeset(attrs |> with_data(attribution), now)
+    |> register_user("clever_cloud")
+  end
+
   def register_heroku_user(attrs, attribution, now) do
     %User{}
     |> User.heroku_creation_changeset(attrs |> with_data(attribution), now)

@@ -10,7 +10,7 @@ defmodule Azimutt.HerokuTest do
 
   describe "resources" do
     test "get_resource/1 returns the resource with given id" do
-      resource = resource_fixture()
+      resource = heroku_resource_fixture()
       assert {:ok, resource.id} == Heroku.get_resource(resource.id) |> Result.map(fn r -> r.id end)
     end
 
@@ -50,7 +50,7 @@ defmodule Azimutt.HerokuTest do
 
     test "update_resource_plan/2 with valid data updates the resource" do
       now = DateTime.utc_now()
-      resource = resource_fixture()
+      resource = heroku_resource_fixture()
 
       update_attrs = %{
         id: "7488a646-e31f-11e4-aace-600308960668",
@@ -78,7 +78,7 @@ defmodule Azimutt.HerokuTest do
 
     test "update_resource_plan/2 with invalid data returns error changeset" do
       now = DateTime.utc_now()
-      resource = resource_fixture()
+      resource = heroku_resource_fixture()
       assert {:error, %Ecto.Changeset{}} = Heroku.update_resource_plan(resource, %{plan: nil}, now)
       assert {:ok, resource.id} == Heroku.get_resource(resource.id) |> Result.map(fn r -> r.id end)
     end
@@ -86,7 +86,7 @@ defmodule Azimutt.HerokuTest do
     test "delete_resource/2 deletes the resource" do
       now = DateTime.utc_now()
       user = user_fixture()
-      resource = resource_fixture()
+      resource = heroku_resource_fixture()
       {:ok, resource} = Heroku.set_app_if_needed(resource, "app", now)
       {:ok, resource} = Heroku.set_organization_if_needed(resource, user, now)
       project = project_fixture(resource.organization, user)
