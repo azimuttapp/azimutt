@@ -4,6 +4,7 @@ defmodule Azimutt.Admin.Dataset do
   alias Azimutt.Admin.Dataset
   alias Azimutt.Admin.Dataset.Data
   alias Azimutt.Utils.Enumx
+  alias Azimutt.Utils.Result
 
   typedstruct enforce: true do
     @derive Jason.Encoder
@@ -39,19 +40,41 @@ defmodule Azimutt.Admin.Dataset do
     }
   end
 
-  def chartjs_daily_data(datasets, from, to) do
-    generate_date_labels(from, to, "{YYYY}-{0M}-{0D}", fn d -> Timex.shift(d, days: 1) end)
+  def chartjs_daily_data(datasets, from \\ nil, to \\ nil) do
+    [start, stop] = build_interval(datasets, "{YYYY}-{0M}-{0D}", from, to)
+
+    generate_date_labels(start, stop, "{YYYY}-{0M}-{0D}", fn d -> Timex.shift(d, days: 1) end)
     |> build_chartjs(datasets)
   end
 
-  def chartjs_weekly_data(datasets, from, to) do
-    generate_date_labels(from |> Timex.beginning_of_week(:mon), to, "{YYYY}-{0M}-{0D}", fn d -> Timex.shift(d, days: 7) end)
+  def chartjs_weekly_data(datasets, from \\ nil, to \\ nil) do
+    [start, stop] = build_interval(datasets, "{YYYY}-{0M}-{0D}", from, to)
+
+    generate_date_labels(start |> Timex.beginning_of_week(:mon), stop, "{YYYY}-{0M}-{0D}", fn d -> Timex.shift(d, days: 7) end)
     |> build_chartjs(datasets)
   end
 
-  def chartjs_monthly_data(datasets, from, to) do
-    generate_date_labels(from, to, "{YYYY}-{0M}", fn d -> Timex.shift(d, months: 1) end)
+  def chartjs_monthly_data(datasets, from \\ nil, to \\ nil) do
+    [start, stop] = build_interval(datasets, "{YYYY}-{0M}", from, to)
+
+    generate_date_labels(start, stop, "{YYYY}-{0M}", fn d -> Timex.shift(d, months: 1) end)
     |> build_chartjs(datasets)
+  end
+
+  defp build_interval(datasets, format, from \\ nil, to \\ nil) do
+    if from == nil || to == nil do
+      now = DateTime.utc_now()
+
+      dates =
+        datasets
+        |> Enum.flat_map(fn dataset -> dataset.data |> Enum.flat_map(fn d -> d.label |> Timex.parse(format) |> Result.to_list() end) end)
+
+      start = if from == nil, do: dates |> Enum.min(Date, fn -> now end), else: from
+      stop = if to == nil, do: dates |> Enum.max(Date, fn -> now end), else: to
+      [start, stop]
+    else
+      [from, to]
+    end
   end
 
   defp generate_date_labels(from, to, format, step) do

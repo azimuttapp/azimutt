@@ -6,7 +6,8 @@ defmodule AzimuttWeb.Admin.DashboardController do
 
   def index(conn, _params) do
     now = DateTime.utc_now()
-    {:ok, start_stats} = "2022-12-01" |> Timex.parse("{YYYY}-{0M}-{0D}")
+    three_months_ago = DateTime.utc_now() |> Timex.shift(months: -3)
+    one_year_ago = DateTime.utc_now() |> Timex.shift(months: -12)
 
     conn
     |> render("index.html",
@@ -22,7 +23,7 @@ defmodule AzimuttWeb.Admin.DashboardController do
             Admin.daily_connected_users() |> Dataset.from_values("Daily users"),
             Admin.daily_used_projects() |> Dataset.from_values("Daily projects")
           ],
-          start_stats,
+          three_months_ago,
           now
         ),
       weekly_connected_chart:
@@ -31,18 +32,14 @@ defmodule AzimuttWeb.Admin.DashboardController do
             Admin.weekly_connected_users() |> Dataset.from_values("Weekly users"),
             Admin.weekly_used_projects() |> Dataset.from_values("Weekly projects")
           ],
-          start_stats,
+          one_year_ago,
           now
         ),
       monthly_connected_chart:
-        Dataset.chartjs_monthly_data(
-          [
-            Admin.monthly_connected_users() |> Dataset.from_values("Monthly users"),
-            Admin.monthly_used_projects() |> Dataset.from_values("Monthly projects")
-          ],
-          start_stats,
-          now
-        ),
+        Dataset.chartjs_monthly_data([
+          Admin.monthly_connected_users() |> Dataset.from_values("Monthly users"),
+          Admin.monthly_used_projects() |> Dataset.from_values("Monthly projects")
+        ]),
       created_chart:
         Dataset.chartjs_daily_data(
           [
@@ -50,7 +47,7 @@ defmodule AzimuttWeb.Admin.DashboardController do
             Admin.daily_created_projects() |> Dataset.from_values("Created projects"),
             Admin.daily_created_non_personal_organizations() |> Dataset.from_values("Created organizations")
           ],
-          start_stats,
+          three_months_ago,
           now
         ),
       pro_events:
@@ -60,7 +57,7 @@ defmodule AzimuttWeb.Admin.DashboardController do
             Admin.daily_event("billing_loaded") |> Dataset.from_values("billing_loaded"),
             Admin.daily_event("stripe_open_billing_portal") |> Dataset.from_values("open_billing_portal")
           ],
-          start_stats,
+          three_months_ago,
           now
         ),
       feature_events:
@@ -76,7 +73,7 @@ defmodule AzimuttWeb.Admin.DashboardController do
             # Admin.daily_event("editor_db_analysis_opened") |> Dataset.from_values("db_analysis_opened"),
             # Admin.daily_event("editor_find_path_opened") |> Dataset.from_values("find_path_opened")
           ],
-          start_stats,
+          three_months_ago,
           now
         ),
       last_active_users: Admin.last_active_users(50),
