@@ -1,7 +1,9 @@
 // functions sorted alphabetically
+
 export const collect = <T, U>(arr: T[], f: (t: T) => U | undefined): U[] => arr.map(f).filter((u): u is U => u !== undefined)
+
 export const collectOne = <T, U>(arr: T[], f: (t: T) => U | undefined): U | undefined => {
-    for(const i of arr) {
+    for (const i of arr) {
         const u = f(i)
         if (u !== undefined) {
             return u
@@ -9,13 +11,23 @@ export const collectOne = <T, U>(arr: T[], f: (t: T) => U | undefined): U | unde
     }
     return undefined
 }
+
 export const distinct = <T>(arr: T[]): T[] => arr.filter((t, i) => arr.indexOf(t) === i)
+
+// similar to group by but keys must be unique so values are not a list
+export const indexBy = <T, K extends keyof any>(list: T[], getKey: (item: T) => K): Record<K, T> =>
+    list.reduce((acc, item) => {
+        acc[getKey(item)] = item
+        return acc
+    }, {} as Record<K, T>)
+
 export const partition = <T>(arr: T[], p: (i: T) => boolean): [T[], T[]] => {
     const ok = [] as T[]
     const ko = [] as T[]
     arr.forEach(i => p(i) ? ok.push(i) : ko.push(i))
     return [ok, ko]
 }
+
 export const mergeBy = <T, K extends keyof any>(a1: T[], a2: T[], getKey: (i: T) => K, merge: (i1: T, i2: T) => T = (i1, i2) => ({...i1, ...i2})): T[] => {
     let others = a2.map(i2 => ({key: getKey(i2), value: i2}))
     const merged = a1.map(i1 => {
@@ -26,6 +38,7 @@ export const mergeBy = <T, K extends keyof any>(a1: T[], a2: T[], getKey: (i: T)
     })
     return merged.concat(others.map(o => o.value))
 }
+
 export const groupBy = <T, K extends keyof any>(list: T[], getKey: (item: T) => K): Record<K, T[]> =>
     list.reduce((acc, item) => {
         const key = getKey(item)
@@ -33,6 +46,7 @@ export const groupBy = <T, K extends keyof any>(list: T[], getKey: (item: T) => 
         acc[key].push(item)
         return acc
     }, {} as Record<K, T[]>)
+
 export const shuffle = <T>(array: T[]): T[] => {
     // Fisher-Yates shuffle
     const arr = [...array] // shallow copy of array to avoid in-place updates
@@ -47,4 +61,5 @@ export const shuffle = <T>(array: T[]): T[] => {
     }
     return arr
 }
+
 export const zip = <T, U>(list1: T[], list2: U[]): [T, U][] => list1.slice(0, list2.length).map((t, i) => [t, list2[i]])
