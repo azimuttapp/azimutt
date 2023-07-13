@@ -50,10 +50,3 @@
 </script>
 
 <%= csrf_meta_tag() %>
-
-<%= if Azimutt.Application.env() == :prod do %>
-  <script defer data-domain="azimutt.app" src="https://plausible.io/js/plausible.js"></script>
-<% end %>
-<%= if Azimutt.Application.env() == :staging do %>
-  <script defer data-domain="azimutt.dev" src="https://plausible.io/js/plausible.js"></script>
-<% end %>
