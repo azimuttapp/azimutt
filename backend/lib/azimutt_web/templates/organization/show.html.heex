@@ -3,3 +3,39 @@
 <% else %>
     <%= render "_project_list.html", conn: @conn, projects: @projects %>
 <% end %>
+<% user = @conn.assigns.current_user %>
+<script>
+    window.fetch && window.location.hostname !== 'localhost' && fetch(`https://cockpit.azimutt.app/api/events`, {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            id: '<%= Ecto.UUID.generate() %>',
+            instance: '<%= Azimutt.config(:host) %>',
+            environment: '<%= Azimutt.config(:environment) %>',
+            name: 'organization_loaded',
+            details: {
+                id: '<%= @organization.id %>',
+                name: '<%= @organization.name %>',
+                plan: '<%= @plan.id %>',
+                host: window.location.host,
+                members: parseInt('<%= length(@organization.members) %>'),
+                projects: parseInt('<%= length(@projects) %>')
+            },
+            createdBy: {
+                id: '<%= user.id %>',
+                name: '<%= user.name %>',
+                email: '<%= user.email %>',
+                avatar: '<%= user.avatar %>',
+                github: '<%= user.github_username %>',
+                twitter: '<%= user.twitter_username %>',
+                data: JSON.parse('<%= raw if(user.data, do: user.data |> Map.from_struct() |> Jason.encode!(), else: "{}") %>'),
+                is_admin: '<%= if(user.is_admin, do: "true", else: "null") %>' === 'true',
+                created_at: '<%= user.created_at %>'
+            },
+            createdAt: '<%= DateTime.utc_now() %>'
+        })
+    })
+</script>

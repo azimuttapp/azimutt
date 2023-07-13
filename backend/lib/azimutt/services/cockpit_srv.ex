@@ -92,12 +92,18 @@ defmodule Azimutt.Services.CockpitSrv do
   end
 
   defp db_stats do
+    last_30_days = Timex.now() |> Timex.shift(days: -30)
+
     %{
       users: User |> Repo.aggregate(:count),
+      active_users: Event |> where([e], e.created_at > ^last_30_days) |> select([e], count(e.created_by_id, :distinct)) |> Repo.one(),
       admins: User |> where([u], u.is_admin == true) |> Repo.aggregate(:count),
       organizations: Organization |> Repo.aggregate(:count),
       np_organizations: Organization |> where([o], o.is_personal == false) |> Repo.aggregate(:count),
+      active_organizations:
+        Event |> where([e], e.created_at > ^last_30_days) |> select([e], count(e.organization_id, :distinct)) |> Repo.one(),
       projects: Project |> Repo.aggregate(:count),
+      active_projects: Event |> where([e], e.created_at > ^last_30_days) |> select([e], count(e.project_id, :distinct)) |> Repo.one(),
       events: Event |> Repo.aggregate(:count),
       first_event: Event |> Repo.aggregate(:min, :created_at),
       last_event: Event |> Repo.aggregate(:max, :created_at),
