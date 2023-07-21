@@ -16,7 +16,7 @@ defmodule AzimuttWeb.Api.OrganizationController do
     conn |> render("index.json", organizations: organizations, ctx: ctx)
   end
 
-  def table_colors(conn, %{"organization_id" => organization_id, "tweet_url" => tweet_url}) do
+  def table_colors(conn, %{"organization_organization_id" => organization_id, "tweet_url" => tweet_url}) do
     now = DateTime.utc_now()
     current_user = conn.assigns.current_user
 
