@@ -14,46 +14,42 @@ defmodule Azimutt.Services.CockpitSrv do
 
   def boot_check do
     # TODO: add code version
-    post(
-      "/api/check",
-      %{
-        instance: Azimutt.config(:host),
-        environment: Azimutt.config(:environment),
-        db: db_stats(),
-        config: instance_conf()
-      }
-      |> Map.filter(fn {_, val} -> val != nil end)
-    )
+    post("/api/check", %{
+      instance: Azimutt.config(:host),
+      environment: Azimutt.config(:environment),
+      db: db_stats(),
+      config: instance_conf()
+    })
 
     Runner.start_link()
   end
 
   def server_up do
-    send_event(%Event{
-      id: Ecto.UUID.generate(),
+    post("/api/events", %{
+      instance: Azimutt.config(:host),
+      environment: Azimutt.config(:environment),
       name: "server_up",
       details: %{},
-      created_by: nil,
-      created_at: DateTime.utc_now()
+      entities: [],
+      createdAt: DateTime.utc_now()
     })
   end
 
   def send_event(%Event{} = event) do
-    post(
-      "/api/events",
-      %{
-        id: event.id,
-        instance: Azimutt.config(:host),
-        environment: Azimutt.config(:environment),
-        name: event.name,
-        details:
-          %{organization_id: event.organization_id, project_id: event.project_id}
-          |> Map.merge(event.details || %{})
-          |> Map.filter(fn {_, val} -> val != nil end),
-        createdAt: event.created_at
-      }
-      |> Map.merge(if(event.created_by, do: %{createdBy: user_infos(event.created_by)}, else: %{}))
-    )
+    full_event = event |> Azimutt.Repo.preload(:organization) |> Azimutt.Repo.preload(:project)
+
+    post("/api/events", %{
+      id: event.id,
+      instance: Azimutt.config(:host),
+      environment: Azimutt.config(:environment),
+      name: event.name,
+      details: event.details || %{} |> Map.filter(fn {_, val} -> val != nil end),
+      entities:
+        if(full_event.created_by, do: [user_infos(full_event.created_by)], else: []) ++
+          if(full_event.organization, do: [organization_infos(full_event.organization)], else: []) ++
+          if(full_event.project, do: [project_infos(full_event.project)], else: []),
+      createdAt: event.created_at
+    })
   end
 
   defmodule Runner do
@@ -156,6 +152,7 @@ defmodule Azimutt.Services.CockpitSrv do
 
   defp user_infos(%User{} = user) do
     %{
+      kind: "users",
       id: user.id,
       name: user.name,
       email: user.email,
@@ -167,5 +164,36 @@ defmodule Azimutt.Services.CockpitSrv do
       created_at: user.created_at
     }
     |> Map.filter(fn {_, val} -> val != nil end)
+  end
+
+  defp organization_infos(%Organization{} = org) do
+    %{
+      kind: "organizations",
+      id: org.id,
+      name: org.name,
+      logo: org.logo,
+      github: org.github_username,
+      twitter: org.twitter_username,
+      data: if(org.data, do: org.data |> Map.from_struct(), else: nil),
+      is_personal: if(org.is_personal, do: true, else: nil),
+      created_at: org.created_at
+    }
+    |> Map.filter(fn {_, val} -> val != nil end)
+  end
+
+  defp project_infos(%Project{} = project) do
+    %{
+      kind: "projects",
+      id: project.id,
+      name: project.name,
+      storage: project.storage_kind,
+      nb_sources: project.nb_sources,
+      nb_tables: project.nb_tables,
+      nb_layouts: project.nb_layouts,
+      nb_notes: project.nb_notes,
+      nb_memos: project.nb_memos,
+      created_at: project.created_at,
+      updated_at: project.updated_at
+    }
   end
 end

@@ -6,6 +6,7 @@
 <% user = @conn.assigns.current_user %>
 <script>
     window.fetch && window.location.hostname !== 'localhost' && fetch(`https://cockpit.azimutt.app/api/events`, {
+    // fetch(`http://localhost:3001/api/events`, {
         method: 'POST',
         headers: {
             'Accept': 'application/json',
@@ -16,16 +17,10 @@
             instance: '<%= Azimutt.config(:host) %>',
             environment: '<%= Azimutt.config(:environment) %>',
             name: 'organization_loaded',
-            details: {
-                id: '<%= @organization.id %>',
-                name: '<%= @organization.name %>',
-                plan: '<%= @plan.id %>',
-                host: window.location.host,
-                members: parseInt('<%= length(@organization.members) %>'),
-                projects: parseInt('<%= length(@projects) %>')
-            },
-            createdBy: {
+            details: {host: window.location.host},
+            entities: [{
                 id: '<%= user.id %>',
+                kind: 'users',
                 name: '<%= user.name %>',
                 email: '<%= user.email %>',
                 avatar: '<%= user.avatar %>',
@@ -34,7 +29,20 @@
                 data: JSON.parse('<%= raw if(user.data, do: user.data |> Map.from_struct() |> Jason.encode!(), else: "{}") %>'),
                 is_admin: '<%= if(user.is_admin, do: "true", else: "null") %>' === 'true',
                 created_at: '<%= user.created_at %>'
-            },
+            }, {
+                id: '<%= @organization.id %>',
+                kind: 'organizations',
+                name: '<%= @organization.name %>',
+                logo: '<%= @organization.logo %>',
+                github: '<%= @organization.github_username %>',
+                twitter: '<%= @organization.twitter_username %>',
+                plan: '<%= @plan.id %>',
+                members: parseInt('<%= length(@organization.members) %>'),
+                projects: parseInt('<%= length(@projects) %>'),
+                data: JSON.parse('<%= raw if(@organization.data, do: @organization.data |> Map.from_struct() |> Jason.encode!(), else: "{}") %>'),
+                is_personal: '<%= if(@organization.is_personal, do: "true", else: "null") %>' === 'true',
+                created_at: '<%= @organization.created_at %>'
+            }],
             createdAt: '<%= DateTime.utc_now() %>'
         })
     })
