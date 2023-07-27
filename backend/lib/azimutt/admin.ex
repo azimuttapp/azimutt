@@ -187,6 +187,21 @@ defmodule Azimutt.Admin do
     |> Repo.all()
   end
 
+  def daily_connected_users_returning, do: connected_users_returning("to_char(e.created_at, 'yyyy-mm-dd')", "1 day")
+  def weekly_connected_users_returning, do: connected_users_returning("to_char(date_trunc('week', e.created_at), 'yyyy-mm-dd')", "1 week")
+  def monthly_connected_users_returning, do: connected_users_returning("to_char(e.created_at, 'yyyy-mm')", "1 month")
+
+  defp connected_users_returning(field, period) do
+    res = SQL.query!(Repo, "
+      SELECT #{field}                                                                                       as period,
+             count(distinct e.created_by)                                                                   as all_users,
+             count(distinct e.created_by) FILTER (WHERE u.created_at + interval '#{period}' < e.created_at) as not_new_users
+      FROM events e LEFT OUTER JOIN users u on u.id = e.created_by
+      GROUP BY #{field}
+      ORDER BY #{field} DESC")
+    res.rows |> Enum.map(fn row -> {row |> Enum.at(0), row |> Enum.at(2)} end)
+  end
+
   def monthly_connected_users do
     Event
     |> select([e], {fragment("to_char(?, 'yyyy-mm')", e.created_at), count(e.created_by_id, :distinct)})

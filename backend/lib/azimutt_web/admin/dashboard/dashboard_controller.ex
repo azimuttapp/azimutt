@@ -21,7 +21,8 @@ defmodule AzimuttWeb.Admin.DashboardController do
         Dataset.chartjs_daily_data(
           [
             Admin.daily_connected_users() |> Dataset.from_values("Daily users"),
-            Admin.daily_used_projects() |> Dataset.from_values("Daily projects")
+            Admin.daily_used_projects() |> Dataset.from_values("Daily projects"),
+            Admin.daily_connected_users_returning() |> Dataset.from_values("Daily returning users")
           ],
           three_months_ago,
           now
@@ -30,7 +31,8 @@ defmodule AzimuttWeb.Admin.DashboardController do
         Dataset.chartjs_weekly_data(
           [
             Admin.weekly_connected_users() |> Dataset.from_values("Weekly users"),
-            Admin.weekly_used_projects() |> Dataset.from_values("Weekly projects")
+            Admin.weekly_used_projects() |> Dataset.from_values("Weekly projects"),
+            Admin.weekly_connected_users_returning() |> Dataset.from_values("Weekly returning users")
           ],
           one_year_ago,
           now
@@ -38,7 +40,8 @@ defmodule AzimuttWeb.Admin.DashboardController do
       monthly_connected_chart:
         Dataset.chartjs_monthly_data([
           Admin.monthly_connected_users() |> Dataset.from_values("Monthly users"),
-          Admin.monthly_used_projects() |> Dataset.from_values("Monthly projects")
+          Admin.monthly_used_projects() |> Dataset.from_values("Monthly projects"),
+          Admin.monthly_connected_users_returning() |> Dataset.from_values("Monthly returning users")
         ]),
       created_chart:
         Dataset.chartjs_daily_data(
