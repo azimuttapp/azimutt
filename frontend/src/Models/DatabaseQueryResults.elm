@@ -1,4 +1,4 @@
-module Models.DatabaseQueryResults exposing (DatabaseQueryResults, DatabaseQueryResultsColumn, decode)
+module Models.DatabaseQueryResults exposing (DatabaseQueryResults, DatabaseQueryResultsColumn, DatabaseQueryResultsRow, decode)
 
 import Dict exposing (Dict)
 import Json.Decode as Decode
@@ -10,12 +10,16 @@ import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
 type alias DatabaseQueryResults =
     { query : String
     , columns : List DatabaseQueryResultsColumn
-    , rows : List (Dict String JsValue)
+    , rows : List DatabaseQueryResultsRow
     }
 
 
 type alias DatabaseQueryResultsColumn =
     { name : String, ref : Maybe ColumnRef }
+
+
+type alias DatabaseQueryResultsRow =
+    Dict String JsValue
 
 
 decode : Decode.Decoder DatabaseQueryResults

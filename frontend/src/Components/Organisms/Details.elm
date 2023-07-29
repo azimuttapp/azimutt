@@ -10,7 +10,7 @@ import Conf
 import DataSources.AmlMiner.AmlAdapter as AmlAdapter
 import DataSources.AmlMiner.AmlParser as AmlParser
 import Dict exposing (Dict)
-import ElmBook exposing (Msg)
+import ElmBook
 import ElmBook.Actions as Actions exposing (logAction)
 import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Html, a, aside, button, div, form, h2, h3, img, input, label, li, nav, ol, p, pre, span, text, textarea, ul)
@@ -1216,7 +1216,7 @@ docComponent name render =
     ( name, \{ detailsDocState } -> render detailsDocState )
 
 
-docSetState : DocState -> Msg (SharedDocState x)
+docSetState : DocState -> ElmBook.Msg (SharedDocState x)
 docSetState state =
     Actions.updateState (\s -> { s | detailsDocState = state })
 

@@ -43,7 +43,7 @@ toString : JsValue -> String
 toString value =
     case value of
         String v ->
-            "\"" ++ (v |> String.replace "\n" "\\n") ++ "\""
+            v |> String.replace "\n" "\\n"
 
         Int v ->
             String.fromInt v

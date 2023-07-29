@@ -26,10 +26,12 @@ module Services.Lenses exposing
     , mapEnabled
     , mapErdM
     , mapErdMCmd
+    , mapExecutions
     , mapExportDialogCmd
     , mapFindPath
     , mapFindPathM
     , mapGroups
+    , mapHead
     , mapHiddenColumns
     , mapHoverTable
     , mapIndex
@@ -84,6 +86,7 @@ module Services.Lenses exposing
     , mapSourceUpdateCmd
     , mapSqlSourceCmd
     , mapSqlSourceMCmd
+    , mapState
     , mapTables
     , mapTablesCmd
     , mapTablesL
@@ -126,11 +129,13 @@ module Services.Lenses exposing
     , setEnabled
     , setErd
     , setErrors
+    , setExecutions
     , setExpire
     , setExportDialog
     , setFindPath
     , setFrom
     , setGroups
+    , setHead
     , setHiddenColumns
     , setHighlight
     , setHighlighted
@@ -200,6 +205,7 @@ module Services.Lenses exposing
     , setSource
     , setSourceUpdate
     , setSqlSource
+    , setState
     , setTable
     , setTables
     , setTags
@@ -534,6 +540,16 @@ setErrors =
     set_ .errors (\value item -> { item | errors = value })
 
 
+setExecutions : v -> { item | executions : v } -> { item | executions : v }
+setExecutions =
+    set_ .executions (\value item -> { item | executions = value })
+
+
+mapExecutions : (v -> v) -> { item | executions : v } -> { item | executions : v }
+mapExecutions =
+    map_ .executions setExecutions
+
+
 setExpire : v -> { item | expire : v } -> { item | expire : v }
 setExpire =
     set_ .expire (\value item -> { item | expire = value })
@@ -577,6 +593,16 @@ setGroups =
 mapGroups : (v -> v) -> { item | groups : v } -> { item | groups : v }
 mapGroups =
     map_ .groups setGroups
+
+
+setHead : v -> { item | head : v } -> { item | head : v }
+setHead =
+    set_ .head (\value item -> { item | head = value })
+
+
+mapHead : (v -> v) -> { item | head : v } -> { item | head : v }
+mapHead =
+    map_ .head setHead
 
 
 setHiddenColumns : v -> { item | hiddenColumns : v } -> { item | hiddenColumns : v }
@@ -1177,6 +1203,16 @@ mapSqlSourceCmd =
 mapSqlSourceMCmd : (v -> ( v, Cmd msg )) -> { item | sqlSource : Maybe v } -> ( { item | sqlSource : Maybe v }, Cmd msg )
 mapSqlSourceMCmd =
     mapMCmd_ .sqlSource setSqlSource
+
+
+setState : v -> { item | state : v } -> { item | state : v }
+setState =
+    set_ .state (\value item -> { item | state = value })
+
+
+mapState : (v -> v) -> { item | state : v } -> { item | state : v }
+mapState =
+    map_ .state setState
 
 
 setTable : v -> { item | table : v } -> { item | table : v }

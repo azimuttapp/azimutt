@@ -18,6 +18,7 @@ import Components.Molecules.FormLabel as FormLabel
 import Components.Molecules.InputText as InputText
 import Components.Molecules.ItemList as ItemList
 import Components.Molecules.Modal as Modal
+import Components.Molecules.Pagination as Pagination
 import Components.Molecules.Popover as Popover
 import Components.Molecules.Radio as Radio
 import Components.Molecules.Select as Select
@@ -29,6 +30,9 @@ import Components.Organisms.Details as Details
 import Components.Organisms.Navbar as Navbar
 import Components.Organisms.Relation as Relation
 import Components.Organisms.Table as Table
+import Components.Slices.DataExplorer as DataExplorer
+import Components.Slices.DataExplorerQuery as DataExplorerQuery
+import Components.Slices.DataExplorerRow as DataExplorerRow
 import Components.Slices.ExportDialogBody as ExportDialogBody
 import Components.Slices.NewLayoutBody as NewLayoutBody
 import Components.Slices.NotFound as NotFound
@@ -47,7 +51,8 @@ import Libs.Tailwind as Tw
 
 
 type alias DocState =
-    { detailsDocState : Details.DocState
+    { dataExplorerQueryDocState : DataExplorerQuery.DocState
+    , detailsDocState : Details.DocState
     , dropdownDocState : Dropdown.DocState
     , exportDialogDocState : ExportDialogBody.DocState
     , formLabelDocState : FormLabel.DocState
@@ -69,7 +74,8 @@ type alias DocState =
 
 init : DocState
 init =
-    { detailsDocState = Details.initDocState
+    { dataExplorerQueryDocState = DataExplorerQuery.initDocState
+    , detailsDocState = Details.initDocState
     , dropdownDocState = Dropdown.initDocState
     , exportDialogDocState = ExportDialogBody.initDocState
     , formLabelDocState = FormLabel.initDocState
@@ -102,9 +108,9 @@ main =
         |> ElmBook.withChapterGroups
             -- sorted alphabetically
             [ ( "", [ docs ] )
-            , ( "Slices", [ ExportDialogBody.doc, NotFound.doc, NewLayoutBody.doc, ProjectSaveDialogBody.doc, ProPlan.doc, QueryPane.doc ] )
+            , ( "Slices", [ DataExplorer.doc, DataExplorerQuery.doc, DataExplorerRow.doc, ExportDialogBody.doc, NotFound.doc, NewLayoutBody.doc, ProjectSaveDialogBody.doc, ProPlan.doc, QueryPane.doc ] )
             , ( "Organisms", [ ColorPicker.doc, Details.doc, Navbar.doc, Relation.doc, Table.doc ] )
-            , ( "Molecules", [ Alert.doc, Avatar.doc, Divider.doc, Dropdown.doc, Editor.doc, FileInput.doc, FormLabel.doc, InputText.doc, ItemList.doc, Modal.doc, Popover.doc, Radio.doc, Select.doc, Slideover.doc, Toast.doc, Tooltip.doc ] )
+            , ( "Molecules", [ Alert.doc, Avatar.doc, Divider.doc, Dropdown.doc, Editor.doc, FileInput.doc, FormLabel.doc, InputText.doc, ItemList.doc, Modal.doc, Pagination.doc, Popover.doc, Radio.doc, Select.doc, Slideover.doc, Toast.doc, Tooltip.doc ] )
             , ( "Atoms", [ Badge.doc, Button.doc, colorsDoc, Icon.doc, Input.doc, Kbd.doc, Markdown.doc, Link.doc, Loader.doc ] )
             ]
 
