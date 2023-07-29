@@ -1,4 +1,4 @@
-module Models.JsValue exposing (JsValue(..), decode, encode, format, toString)
+module Models.JsValue exposing (JsValue(..), decode, encode, format, isArray, isObject, toString)
 
 import Dict exposing (Dict)
 import Json.Decode as Decode exposing (Decoder)
@@ -19,6 +19,26 @@ type JsValue
     | Null
     | Array (List JsValue)
     | Object (Dict String JsValue)
+
+
+isArray : JsValue -> Bool
+isArray value =
+    case value of
+        Array _ ->
+            True
+
+        _ ->
+            False
+
+
+isObject : JsValue -> Bool
+isObject value =
+    case value of
+        Object _ ->
+            True
+
+        _ ->
+            False
 
 
 format : JsValue -> String
@@ -43,7 +63,7 @@ toString : JsValue -> String
 toString value =
     case value of
         String v ->
-            v |> String.replace "\n" "\\n"
+            "\"" ++ (v |> String.replace "\n" "\\n") ++ "\""
 
         Int v ->
             String.fromInt v

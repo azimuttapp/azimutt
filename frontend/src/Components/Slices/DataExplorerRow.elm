@@ -4,6 +4,7 @@ import Dict exposing (Dict)
 import ElmBook.Actions exposing (logAction)
 import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Html, div, text)
+import Html.Events exposing (onClick)
 import Libs.Nel exposing (Nel)
 import Libs.Task as T
 import Libs.Time as Time
@@ -13,6 +14,7 @@ import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.SourceId as SourceId
+import Models.Project.TableId as TableId
 import Models.Project.TableName exposing (TableName)
 import Models.SourceInfo as SourceInfo exposing (SourceInfo)
 import Services.QueryBuilder exposing (RowQuery)
@@ -76,7 +78,10 @@ update wrap msg model =
 
 view : (Msg -> msg) -> Model -> Html msg
 view wrap model =
-    div [] [ text "Data Explorer Row" ]
+    div []
+        [ text "Data Explorer Row"
+        , div [ onClick (wrap Noop) ] [ text ("Loading " ++ TableId.show "" model.query.table) ]
+        ]
 
 
 

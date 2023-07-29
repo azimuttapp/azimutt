@@ -1,6 +1,6 @@
 module Services.QueryBuilder exposing (ColumnMatch, FilterOperation(..), FilterOperator(..), RowQuery, TableFilter, TableQuery, filterTable, findRow, limitResults)
 
-import Libs.Models.DatabaseKind exposing (DatabaseKind)
+import Libs.Models.DatabaseKind as DatabaseKind exposing (DatabaseKind)
 import Libs.Nel as Nel exposing (Nel)
 import Libs.Regex as Regex
 import Models.Project.ColumnPath exposing (ColumnPath)
@@ -42,115 +42,158 @@ type FilterOperation
 
 filterTable : DatabaseKind -> TableQuery -> String
 filterTable db query =
-    -- FIXME: make it database specific like DatabaseQueries
-    query.table |> Maybe.map (\table -> "SELECT * FROM " ++ formatTable db table ++ formatFilters db query.filters ++ ";") |> Maybe.withDefault ""
+    if db == DatabaseKind.PostgreSQL then
+        query.table |> Maybe.map (\table -> "SELECT * FROM " ++ formatTable db table ++ formatFilters db query.filters ++ ";") |> Maybe.withDefault ""
+
+    else
+        ""
 
 
 findRow : DatabaseKind -> RowQuery -> String
 findRow db query =
-    "SELECT * FROM " ++ formatTable db query.table ++ " WHERE " ++ formatMatcher db query.primaryKey ++ " LIMIT 1;"
+    if db == DatabaseKind.PostgreSQL then
+        "SELECT * FROM " ++ formatTable db query.table ++ " WHERE " ++ formatMatcher db query.primaryKey ++ " LIMIT 1;"
+
+    else
+        ""
 
 
 limitResults : DatabaseKind -> String -> String
 limitResults db query =
-    case query |> Regex.matches "^(.+?)( limit \\d+)?( offset \\d+)?;$" of
-        (Just q) :: Nothing :: Nothing :: [] ->
-            q ++ " LIMIT 100;"
+    if db == DatabaseKind.PostgreSQL then
+        case query |> Regex.matches "^(.+?)( limit \\d+)?( offset \\d+)?;$" of
+            (Just q) :: Nothing :: Nothing :: [] ->
+                q ++ " LIMIT 100;"
 
-        (Just q) :: Nothing :: (Just offset) :: [] ->
-            q ++ " LIMIT 100" ++ offset ++ ";"
+            (Just q) :: Nothing :: (Just offset) :: [] ->
+                q ++ " LIMIT 100" ++ offset ++ ";"
 
-        _ ->
-            query
+            _ ->
+                query
+
+    else
+        ""
 
 
 formatTable : DatabaseKind -> TableId -> String
 formatTable db ( schema, table ) =
-    if schema == "" then
-        table
+    if db == DatabaseKind.PostgreSQL then
+        if schema == "" then
+            table
+
+        else
+            schema ++ "." ++ table
 
     else
-        schema ++ "." ++ table
+        ""
 
 
 formatFilters : DatabaseKind -> List TableFilter -> String
 formatFilters db filters =
-    if filters |> List.isEmpty then
-        ""
+    if db == DatabaseKind.PostgreSQL then
+        if filters |> List.isEmpty then
+            ""
+
+        else
+            " WHERE "
+                ++ (filters
+                        |> List.indexedMap
+                            (\i f ->
+                                if i == 0 then
+                                    formatFilter db f
+
+                                else
+                                    formatOperator db f.operator ++ " " ++ formatFilter db f
+                            )
+                        |> String.join " "
+                   )
 
     else
-        " WHERE "
-            ++ (filters
-                    |> List.indexedMap
-                        (\i f ->
-                            if i == 0 then
-                                formatFilter db f
-
-                            else
-                                formatOperator db f.operator ++ " " ++ formatFilter db f
-                        )
-                    |> String.join " "
-               )
+        ""
 
 
 formatFilter : DatabaseKind -> TableFilter -> String
 formatFilter db filter =
-    formatColumn db filter.column ++ formatOperation db filter.operation filter.kind filter.value
+    if db == DatabaseKind.PostgreSQL then
+        formatColumn db filter.column ++ formatOperation db filter.operation filter.kind filter.value
+
+    else
+        ""
 
 
 formatOperation : DatabaseKind -> FilterOperation -> ColumnType -> String -> String
 formatOperation db op kind value =
-    case op of
-        OpEqual ->
-            "=" ++ formatValue db kind value
+    if db == DatabaseKind.PostgreSQL then
+        case op of
+            OpEqual ->
+                "=" ++ formatValue db kind value
 
-        OpNotEqual ->
-            "!=" ++ formatValue db kind value
+            OpNotEqual ->
+                "!=" ++ formatValue db kind value
 
-        OpIsNull ->
-            " IS NULL"
+            OpIsNull ->
+                " IS NULL"
 
-        OpIsNotNull ->
-            " IS NOT NULL"
+            OpIsNotNull ->
+                " IS NOT NULL"
 
-        OpGreaterThan ->
-            ">" ++ formatValue db kind value
+            OpGreaterThan ->
+                ">" ++ formatValue db kind value
 
-        OpLesserThan ->
-            "<" ++ formatValue db kind value
+            OpLesserThan ->
+                "<" ++ formatValue db kind value
 
-        OpLike ->
-            " LIKE " ++ formatValue db kind value
+            OpLike ->
+                " LIKE " ++ formatValue db kind value
+
+    else
+        ""
 
 
 formatMatcher : DatabaseKind -> Nel ColumnMatch -> String
 formatMatcher db matches =
-    matches |> Nel.toList |> List.map (\m -> formatColumn db m.column ++ "=" ++ formatValue db m.kind m.value) |> String.join " AND "
+    if db == DatabaseKind.PostgreSQL then
+        matches |> Nel.toList |> List.map (\m -> formatColumn db m.column ++ "=" ++ formatValue db m.kind m.value) |> String.join " AND "
+
+    else
+        ""
 
 
 formatColumn : DatabaseKind -> ColumnPath -> String
 formatColumn db column =
-    column.head
+    if db == DatabaseKind.PostgreSQL then
+        column.head
+
+    else
+        ""
 
 
 formatValue : DatabaseKind -> ColumnType -> String -> String
 formatValue db kind value =
-    case ColumnType.parse kind of
-        ColumnType.Int ->
-            value
+    if db == DatabaseKind.PostgreSQL then
+        case ColumnType.parse kind of
+            ColumnType.Int ->
+                value
 
-        ColumnType.Bool ->
-            value
+            ColumnType.Bool ->
+                value
 
-        _ ->
-            "'" ++ value ++ "'"
+            _ ->
+                "'" ++ value ++ "'"
+
+    else
+        ""
 
 
 formatOperator : DatabaseKind -> FilterOperator -> String
 formatOperator db op =
-    case op of
-        OpAnd ->
-            "AND"
+    if db == DatabaseKind.PostgreSQL then
+        case op of
+            OpAnd ->
+                "AND"
 
-        OpOr ->
-            "OR"
+            OpOr ->
+                "OR"
+
+    else
+        ""

@@ -4,7 +4,8 @@ import Components.Slices.DataExplorerQuery as DataExplorerQuery
 import Components.Slices.DataExplorerRow as DataExplorerRow
 import ElmBook.Actions exposing (logAction)
 import ElmBook.Chapter as Chapter exposing (Chapter)
-import Html exposing (Html, div, text)
+import Html exposing (Html, div, li, text, ul)
+import Html.Events exposing (onClick)
 import Libs.Maybe as Maybe
 import Libs.Task as T
 import Models.Project.Source exposing (Source)
@@ -85,7 +86,22 @@ update wrap msg model =
 
 view : (Msg -> msg) -> List Source -> Model -> Html msg
 view wrap sources model =
-    div [] [ text "Data Explorer" ]
+    div []
+        [ text "Data Explorer"
+        , case model.activeTab of
+            BasicTab ->
+                div []
+                    [ text "BasicTab"
+                    , div []
+                        [ text "Sources"
+                        , ul []
+                            (sources |> List.map (\s -> li [ onClick (wrap Noop) ] [ text s.name ]))
+                        ]
+                    ]
+
+            SqlTab ->
+                div [] [ text "SqlTab" ]
+        ]
 
 
 

@@ -11,11 +11,15 @@ import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Html, button, div, p, pre, span, table, tbody, td, text, th, thead, tr)
 import Html.Attributes exposing (class, classList, id, scope, title, type_)
 import Html.Events exposing (onClick)
+import Libs.Bool as Bool
+import Libs.Dict as Dict
 import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, css)
+import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Nel exposing (Nel)
 import Libs.Tailwind exposing (focus)
+import Libs.Task as T
 import Libs.Time as Time
 import Models.DatabaseQueryResults exposing (DatabaseQueryResultsColumn, DatabaseQueryResultsRow)
 import Models.JsValue as JsValue exposing (JsValue)
@@ -54,7 +58,9 @@ type alias SuccessState =
     , durationMs : Int
     , succeededAt : Time.Posix
     , page : Int
+    , expanded : Dict Int Bool
     , documentMode : Bool
+    , showQuery : Bool
     , search : String
     , sortBy : Maybe String
     , fullScreen : Bool
@@ -67,7 +73,6 @@ type alias FailureState =
 
 type Msg
     = FullScreen
-    | ToggleQuery
     | Refresh -- run again the query
     | Export -- export results in csv or json (or copy in clipboard)
     | Cancel -- stop a query in a running state (only UI?)
@@ -75,6 +80,9 @@ type Msg
     | OpenRow ColumnRef -- open a single row in sidebar
       -- used message ^^
     | ChangePage Int
+    | ExpandRow Int
+    | ToggleQuery
+    | Noop
 
 
 
@@ -96,9 +104,18 @@ update wrap msg model =
         ChangePage p ->
             ( model |> mapExecutions (mapHead (mapState (mapSuccess (\s -> { s | page = p })))), Cmd.none )
 
+        ExpandRow i ->
+            ( model |> mapExecutions (mapHead (mapState (mapSuccess (\s -> { s | expanded = s.expanded |> Dict.update i (Maybe.mapOrElse not True >> Just) })))), Cmd.none )
+
+        ToggleQuery ->
+            ( model |> mapExecutions (mapHead (mapState (mapSuccess (\s -> { s | showQuery = not s.showQuery })))), Cmd.none )
+
+        Noop ->
+            ( model, Cmd.none )
+
         _ ->
             -- FIXME to remove
-            ( model, Cmd.none )
+            ( model, Noop |> wrap |> T.send )
 
 
 mapSuccess : (SuccessState -> SuccessState) -> QueryState -> QueryState
@@ -155,7 +172,18 @@ view wrap openDropdown now openedDropdown model =
                     , span [] [ text (String.fromInt (Time.posixToMillis res.succeededAt - Time.posixToMillis model.executions.head.startedAt) ++ " ms") ]
                     ]
                 )
-                (div [ class "mt-3" ] [ viewSuccess wrap res ])
+                (div []
+                    [ if res.showQuery then
+                        div [ class "relative mt-3" ]
+                            [ button [ type_ "button", onClick (wrap ToggleQuery), class "absolute top-0 right-0 p-3 text-gray-500" ] [ Icon.solid Icon.X "w-3 h-3" ]
+                            , viewQuery model.query
+                            ]
+
+                      else
+                        div [] []
+                    , div [ class "mt-3" ] [ viewSuccess wrap res ]
+                    ]
+                )
                 (Dropdown.dropdown { id = dropdownId, direction = BottomLeft, isOpen = openedDropdown == dropdownId }
                     (\m ->
                         button
@@ -172,7 +200,7 @@ view wrap openDropdown now openedDropdown model =
                     )
                     (\_ ->
                         div []
-                            ([ { label = "Show query", content = ContextMenu.Simple { action = wrap ToggleQuery } }
+                            ([ { label = Bool.cond res.showQuery "Hide query" "Show query", content = ContextMenu.Simple { action = wrap ToggleQuery } }
                              , { label = "Explore in full screen", content = ContextMenu.Simple { action = wrap FullScreen } }
                              , { label = "Refresh data", content = ContextMenu.Simple { action = wrap Refresh } }
                              , { label = "Export data"
@@ -199,7 +227,7 @@ view wrap openDropdown now openedDropdown model =
                 )
                 (div []
                     [ p [ class "mt-3 text-sm font-semibold text-gray-900" ] [ text "Error" ]
-                    , pre [ class "px-6 py-4 block whitespace-pre overflow-x-scroll rounded bg-red-50 border border-red-200" ] [ text res.error ]
+                    , pre [ class "px-6 py-4 block text-sm whitespace-pre overflow-x-scroll rounded bg-red-50 border border-red-200" ] [ text res.error ]
                     , p [ class "mt-3 text-sm font-semibold text-gray-900" ] [ text "SQL" ]
                     , viewQuery model.query
                     ]
@@ -227,7 +255,7 @@ viewCard cardTitle cardSubtitle cardBody cardActions =
 
 viewQuery : String -> Html msg
 viewQuery query =
-    pre [ class "px-6 py-4 block whitespace-pre overflow-x-scroll rounded bg-gray-50 border border-gray-200" ] [ text query ]
+    pre [ class "px-6 py-4 block text-sm whitespace-pre overflow-x-scroll rounded bg-gray-50 border border-gray-200" ] [ text query ]
 
 
 viewActionButton : String -> Icon -> Html msg
@@ -237,41 +265,57 @@ viewActionButton name icon =
 
 
 viewSuccess : (Msg -> msg) -> SuccessState -> Html msg
-viewSuccess wrap success =
+viewSuccess wrap res =
     let
         pagination : Pagination.Model
         pagination =
-            { currentPage = success.page, pageSize = 10, totalItems = success.rows |> List.length }
+            { currentPage = res.page, pageSize = 10, totalItems = res.rows |> List.length }
 
         pageRows : List ( Int, DatabaseQueryResultsRow )
         pageRows =
-            Pagination.paginate success.rows pagination
+            Pagination.paginate res.rows pagination
     in
     div []
-        [ viewTable success.columns pageRows
+        [ viewTable wrap res.columns pageRows res.expanded
         , Pagination.view (\p -> ChangePage p |> wrap) pagination
         ]
 
 
-viewTable : List DatabaseQueryResultsColumn -> List ( Int, DatabaseQueryResultsRow ) -> Html msg
-viewTable columns rows =
+viewTable : (Msg -> msg) -> List DatabaseQueryResultsColumn -> List ( Int, DatabaseQueryResultsRow ) -> Dict Int Bool -> Html msg
+viewTable wrap columns rows expanded =
     div [ class "flow-root" ]
-        [ div [ class "-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8" ]
-            [ div [ class "inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8" ]
+        [ div [ class "overflow-x-auto" ]
+            [ div [ class "inline-block min-w-full align-middle" ]
                 [ table [ class "min-w-full divide-y divide-gray-300" ]
                     [ thead []
                         [ tr [ class "bg-gray-100" ]
-                            (th [ scope "col", class "text-left text-sm font-semibold text-gray-900" ] [ text "#" ]
-                                :: (columns |> List.map (\c -> th [ scope "col", class "text-left text-sm font-semibold text-gray-900" ] [ text c.name ]))
+                            (th [ scope "col", class "px-1 text-left text-sm font-semibold text-gray-900" ] [ text "#" ]
+                                :: (columns |> List.map (\c -> th [ scope "col", class "px-1 text-left text-sm font-semibold text-gray-900" ] [ text c.name ]))
                             )
                         ]
-                    , tbody [ class "divide-y divide-gray-200" ]
+                    , tbody []
                         (rows
                             |> List.map
                                 (\( i, r ) ->
                                     tr [ class "hover:bg-gray-100", classList [ ( "bg-gray-50", modBy 2 i == 1 ) ] ]
-                                        (td [ class "whitespace-nowrap text-sm text-gray-900" ] [ text (i |> String.fromInt) ]
-                                            :: (columns |> List.map (\c -> td [ class "whitespace-nowrap text-sm text-gray-500" ] [ text (r |> Dict.get c.name |> Maybe.mapOrElse JsValue.format "") ]))
+                                        (td [ class "px-1 text-sm text-gray-900" ] [ text (i |> String.fromInt) ]
+                                            :: (columns
+                                                    |> List.map (\c -> r |> Dict.get c.name)
+                                                    |> List.map
+                                                        (\value ->
+                                                            if value |> Maybe.any (\v -> JsValue.isArray v || JsValue.isObject v) then
+                                                                td [ onClick (ExpandRow i |> wrap), class "px-1 text-sm text-gray-500 whitespace-nowrap max-w-xs truncate cursor-pointer" ]
+                                                                    [ if expanded |> Dict.getOrElse i False then
+                                                                        pre [ class "text-xs" ] [ text (value |> Maybe.mapOrElse JsValue.format "") ]
+
+                                                                      else
+                                                                        viewJsValueOpt value
+                                                                    ]
+
+                                                            else
+                                                                td [ class "px-1 text-sm text-gray-500 whitespace-nowrap max-w-xs truncate" ] [ viewJsValueOpt value ]
+                                                        )
+                                               )
                                         )
                                 )
                         )
@@ -279,6 +323,41 @@ viewTable columns rows =
                 ]
             ]
         ]
+
+
+viewJsValueOpt : Maybe JsValue -> Html msg
+viewJsValueOpt value =
+    case value of
+        Just v ->
+            viewJsValue v
+
+        Nothing ->
+            text ""
+
+
+viewJsValue : JsValue -> Html msg
+viewJsValue value =
+    case value of
+        JsValue.String str ->
+            text str
+
+        JsValue.Int i ->
+            text (String.fromInt i)
+
+        JsValue.Float f ->
+            text (String.fromFloat f)
+
+        JsValue.Bool b ->
+            text (Bool.toString b)
+
+        JsValue.Null ->
+            span [ class "opacity-50 italic" ] [ text "null" ]
+
+        JsValue.Array a ->
+            span [] (text "[" :: (a |> List.map viewJsValue |> List.intersperse (text ", ")) |> List.add (text "]"))
+
+        JsValue.Object o ->
+            span [] (text "{" :: (o |> Dict.toList |> List.map (\( k, v ) -> span [] [ text (k ++ ": "), viewJsValue v ]) |> List.intersperse (text ", ")) |> List.add (text "}"))
 
 
 
@@ -290,12 +369,15 @@ type alias SharedDocState x =
 
 
 type alias DocState =
-    { openedDropdown : HtmlId, success : Model }
+    { openedDropdown : HtmlId, success : Model, longLines : Model }
 
 
 initDocState : DocState
 initDocState =
-    { openedDropdown = "", success = docModel }
+    { openedDropdown = ""
+    , success = docModel
+    , longLines = { docModel | id = 1, executions = Nel { startedAt = Time.zero, state = StateSuccess docSuccessState2 } [] }
+    }
 
 
 doc : Chapter (SharedDocState x)
@@ -303,6 +385,7 @@ doc =
     Chapter.chapter "DataExplorerQuery"
         |> Chapter.renderStatefulComponentList
             [ docComponentState "success" .success (\s m -> { s | success = m })
+            , docComponentState "long lines & json" .longLines (\s m -> { s | longLines = m })
 
             -- long lines
             , docComponent "failure" (\s -> view docWrap docOpenDropdown Time.zero s.openedDropdown { docModel | executions = Nel { startedAt = Time.zero, state = StateFailure docFailureState } [] })
@@ -322,7 +405,14 @@ docModel =
 
 docComplexQuery : String
 docComplexQuery =
-    """SELECT u.id, u.name, u.avatar, u.email, count(distinct to_char(e.created_at, 'yyyy-mm-dd')) as active_days, count(*) as nb_events, max(e.created_at) as last_activity
+    """SELECT
+    u.id,
+    u.name,
+    u.avatar,
+    u.email,
+    count(distinct to_char(e.created_at, 'yyyy-mm-dd')) as active_days,
+    count(*) as nb_events,
+    max(e.created_at) as last_activity
 FROM events e JOIN users u on u.id = e.created_by
 GROUP BY u.id
 HAVING count(distinct to_char(e.created_at, 'yyyy-mm-dd')) >= 5 AND max(e.created_at) < NOW() - INTERVAL '30 days'
@@ -331,7 +421,7 @@ ORDER BY last_activity DESC;"""
 
 docSuccessState : SuccessState
 docSuccessState =
-    { columns = docCityColumns
+    { columns = [ "id", "name", "country_code", "district", "population" ] |> List.map (docColumn "public" "city")
     , rows =
         [ docCityColumnValues 1 "Kabul" "AFG" "Kabol" 1780000
         , docCityColumnValues 2 "Qandahar" "AFG" "Qandahar" 237500
@@ -360,6 +450,27 @@ docSuccessState =
     , durationMs = 934
     , succeededAt = Time.zero
     , page = 1
+    , expanded = Dict.empty
+    , showQuery = False
+    , documentMode = False
+    , search = ""
+    , sortBy = Nothing
+    , fullScreen = False
+    }
+
+
+docSuccessState2 : SuccessState
+docSuccessState2 =
+    { columns = [ "id", "slug", "name", "email", "provider", "provider_uid", "avatar", "github_username", "twitter_username", "is_admin", "hashed_password", "last_signin", "created_at", "updated_at", "confirmed_at", "deleted_at", "data", "onboarding", "provider_data", "tags" ] |> List.map (docColumn "" "users")
+    , rows =
+        [ docUsersColumnValues "4a3ea674-cff6-44de-b217-3befbe907a95" "admin" "Azimutt Admin" "admin@azimutt.app" Nothing Nothing "https://robohash.org/set_set3/bgset_bg2/VghiKo" (Just "azimuttapp") (Just "azimuttapp") True (Just "$2b$12$5TukDUCUtXm1zu0TECv34eg8SHueHqXUGQ9pvDZA55LUnH30ZEpUa") "2023-04-26T18:28:27.343Z" "2023-04-26T18:28:27.355Z" "2023-04-26T18:28:27.355Z" "2023-04-26T18:28:27.343Z" Nothing (Dict.fromList [ ( "attributed_from", JsValue.String "root" ), ( "attributed_to", JsValue.Null ) ]) Dict.empty [ JsValue.String "admin" ]
+        , docUsersColumnValues "11bd9544-d56a-43d7-9065-6f1f25addf8a" "loicknuchel" "Loïc Knuchel" "loicknuchel@gmail.com" (Just "github") (Just "653009") "https://avatars.githubusercontent.com/u/653009?v=4" (Just "loicknuchel") (Just "loicknuchel") True Nothing "2023-04-27T15:55:11.582Z" "2023-04-27T15:55:11.612Z" "2023-07-19T18:57:53.438Z" "2023-04-27T15:55:11.582Z" Nothing (Dict.fromList [ ( "attributed_from", JsValue.Null ), ( "attributed_to", JsValue.Null ) ]) Dict.empty [ JsValue.Null, JsValue.String "user" ]
+        ]
+    , durationMs = 934
+    , succeededAt = Time.zero
+    , page = 1
+    , expanded = Dict.empty
+    , showQuery = False
     , documentMode = False
     , search = ""
     , sortBy = Nothing
@@ -377,11 +488,6 @@ docQueryCanceled =
     { canceledAt = Time.zero }
 
 
-docCityColumns : List DatabaseQueryResultsColumn
-docCityColumns =
-    [ "id", "name", "country_code", "district", "population" ] |> List.map (docColumn "public" "city")
-
-
 docColumn : SchemaName -> TableName -> ColumnName -> DatabaseQueryResultsColumn
 docColumn schema table column =
     { name = column, ref = Just { table = ( schema, table ), column = Nel column [] } }
@@ -390,6 +496,32 @@ docColumn schema table column =
 docCityColumnValues : Int -> String -> String -> String -> Int -> DatabaseQueryResultsRow
 docCityColumnValues id name country_code district population =
     Dict.fromList [ ( "id", JsValue.Int id ), ( "name", JsValue.String name ), ( "country_code", JsValue.String country_code ), ( "district", JsValue.String district ), ( "population", JsValue.Int population ) ]
+
+
+docUsersColumnValues : String -> String -> String -> String -> Maybe String -> Maybe String -> String -> Maybe String -> Maybe String -> Bool -> Maybe String -> String -> String -> String -> String -> Maybe String -> Dict String JsValue -> Dict String JsValue -> List JsValue -> DatabaseQueryResultsRow
+docUsersColumnValues id slug name email provider provider_uid avatar github_username twitter_username is_admin hashed_password last_signin created_at updated_at confirmed_at deleted_at data provider_data tags =
+    let
+        str : List ( String, JsValue )
+        str =
+            [ ( "id", id ), ( "slug", slug ), ( "name", name ), ( "email", email ), ( "avatar", avatar ), ( "last_signin", last_signin ), ( "created_at", created_at ), ( "updated_at", updated_at ), ( "confirmed_at", confirmed_at ) ] |> List.map (\( key, value ) -> ( key, JsValue.String value ))
+
+        strOpt : List ( String, JsValue )
+        strOpt =
+            [ ( "provider", provider ), ( "provider_uid", provider_uid ), ( "github_username", github_username ), ( "twitter_username", twitter_username ), ( "hashed_password", hashed_password ), ( "deleted_at", deleted_at ) ] |> List.map (\( key, value ) -> ( key, value |> Maybe.mapOrElse (\v -> JsValue.String v) JsValue.Null ))
+
+        bool : List ( String, JsValue )
+        bool =
+            [ ( "is_admin", is_admin ) ] |> List.map (\( key, value ) -> ( key, JsValue.Bool value ))
+
+        arr : List ( String, JsValue )
+        arr =
+            [ ( "tags", tags ) ] |> List.map (\( key, value ) -> ( key, JsValue.Array value ))
+
+        obj : List ( String, JsValue )
+        obj =
+            [ ( "data", data ), ( "provider_data", provider_data ) ] |> List.map (\( key, value ) -> ( key, JsValue.Object value ))
+    in
+    Dict.fromList (str ++ strOpt ++ bool ++ arr ++ obj)
 
 
 
