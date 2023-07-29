@@ -1,4 +1,4 @@
-module Components.Slices.DataExplorerRow exposing (Model, Msg(..), RowState(..), doc, init, update, view)
+module Components.Slices.DataExplorerRow exposing (FailureState, Model, Msg(..), RowState(..), SuccessState, doc, init, update, view)
 
 import Dict exposing (Dict)
 import ElmBook.Actions exposing (logAction)
@@ -12,7 +12,6 @@ import Models.JsValue as JsValue exposing (JsValue)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.SchemaName exposing (SchemaName)
-import Models.Project.Source exposing (Source)
 import Models.Project.SourceId as SourceId
 import Models.Project.TableName exposing (TableName)
 import Models.SourceInfo as SourceInfo exposing (SourceInfo)
@@ -88,9 +87,9 @@ doc : Chapter x
 doc =
     Chapter.chapter "DataExplorerRow"
         |> Chapter.renderComponentList
-            [ ( "success", view (\_ -> logAction "msg") [] docModel )
-            , ( "failure", view (\_ -> logAction "msg") [] { docModel | state = StateFailure docFailureState } )
-            , ( "loading", view (\_ -> logAction "msg") [] { docModel | state = StateLoading } )
+            [ ( "success", view (\_ -> logAction "msg") docModel )
+            , ( "failure", view (\_ -> logAction "msg") { docModel | state = StateFailure docFailureState } )
+            , ( "loading", view (\_ -> logAction "msg") { docModel | state = StateLoading } )
             ]
 
 

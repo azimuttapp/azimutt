@@ -15,7 +15,6 @@ import Libs.Bool as B
 import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup)
 import Libs.Json.Decode as Decode
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Models.Platform as Platform
 import Libs.Tailwind as Tw
 import Services.Lenses exposing (mapOpenedDropdown)
 
@@ -112,8 +111,8 @@ doc =
                                 [ ContextMenu.btn "" (logAction "btn") [ text "btn" ]
                                 , ContextMenu.btnDisabled "" [ text "btnDisabled" ]
                                 , ContextMenu.link { url = "#", text = "link" }
-                                , ContextMenu.btnSubmenu { label = "submenuButton Right", action = Simple { action = logAction "submenuButton Right", platform = Platform.PC, hotkeys = [] } }
-                                , ContextMenu.btnSubmenu { label = "submenuButton Left", action = SubMenu ([ "Item 1", "Item 2", "Item 3" ] |> List.map (\label -> { label = label, action = logAction label, platform = Platform.PC, hotkeys = [] })) }
+                                , ContextMenu.btnSubmenu { label = "submenuButton Right", content = Simple { action = logAction "submenuButton Right" } }
+                                , ContextMenu.btnSubmenu { label = "submenuButton Left", content = SubMenu ([ "Item 1", "Item 2", "Item 3" ] |> List.map (\label -> { label = label, action = logAction label })) BottomRight }
                                 ]
                         )
                 )

@@ -129,7 +129,8 @@ viewProjectsDropdown platform eConf projects project dirty htmlId openedDropdown
                  , organizationProjects
                     |> List.map
                         (\( org, orgProjects ) ->
-                            ContextMenu.submenuHtml [ Avatar.xs org.logo org.name "mr-2", span [] [ text (org.name ++ " »") ] ]
+                            ContextMenu.submenuHtml ContextMenu.BottomRight
+                                [ Avatar.xs org.logo org.name "mr-2", span [] [ text (org.name ++ " »") ] ]
                                 (orgProjects |> List.map (viewProjectsDropdownItem project.id))
                         )
                  , [ ContextMenu.link { url = currentOrganization |> Just |> Maybe.filter (\id -> projectsPerOrganization |> Dict.member id) |> Backend.organizationUrl, text = "Back to dashboard" } ]

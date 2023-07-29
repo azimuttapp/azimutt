@@ -1,4 +1,4 @@
-module Components.Molecules.ContextMenu exposing (Action, Direction(..), ItemAction(..), MenuItem, SubMenuItem, btn, btnDisabled, btnHotkey, btnSubmenu, itemActiveStyles, itemCurrentStyles, itemDisabledActiveStyles, itemDisabledStyles, itemStyles, link, linkHtml, menu, menuStyles, submenuHtml)
+module Components.Molecules.ContextMenu exposing (Action, ActionHotkey, Direction(..), ItemAction(..), MenuItem, SubMenuItem, SubMenuItemHotkey, btn, btnDisabled, btnHotkey, btnSubmenu, itemActiveStyles, itemCurrentStyles, itemDisabledActiveStyles, itemDisabledStyles, itemStyles, link, linkHtml, menu, menuStyles, submenuHtml)
 
 import Components.Atoms.Kbd as Kbd
 import Html exposing (Attribute, Html, a, button, div, text)
@@ -71,34 +71,50 @@ btnDisabled styles content =
 
 
 type alias MenuItem msg =
-    { label : String, action : ItemAction msg }
+    { label : String, content : ItemAction msg }
 
 
 type ItemAction msg
     = Simple (Action msg)
-    | SubMenu (List (SubMenuItem msg))
-    | Custom (Html msg)
+    | SimpleHotkey (ActionHotkey msg)
+    | SubMenu (List (SubMenuItem msg)) Direction
+    | SubMenuHotkey (List (SubMenuItemHotkey msg)) Direction
+    | Custom (Html msg) Direction
 
 
 type alias Action msg =
+    { action : msg }
+
+
+type alias ActionHotkey msg =
     { action : msg, platform : Platform, hotkeys : List Hotkey }
 
 
 type alias SubMenuItem msg =
+    { label : String, action : msg }
+
+
+type alias SubMenuItemHotkey msg =
     { label : String, action : msg, platform : Platform, hotkeys : List Hotkey }
 
 
 btnSubmenu : MenuItem msg -> Html msg
 btnSubmenu item =
-    case item.action of
-        Simple { action, platform, hotkeys } ->
+    case item.content of
+        Simple { action } ->
+            btn "" action [ text item.label ]
+
+        SimpleHotkey { action, platform, hotkeys } ->
             btnHotkey "" action [ text item.label ] platform hotkeys
 
-        SubMenu submenus ->
-            submenuHtml [ text (item.label ++ " »") ] (submenus |> List.map (\submenu -> btnHotkey "" submenu.action [ text submenu.label ] submenu.platform submenu.hotkeys))
+        SubMenu submenus dir ->
+            submenuHtml dir [ text (item.label ++ " »") ] (submenus |> List.map (\submenu -> btn "" submenu.action [ text submenu.label ]))
 
-        Custom html ->
-            submenuHtml [ text (item.label ++ " »") ] [ html ]
+        SubMenuHotkey submenus dir ->
+            submenuHtml dir [ text (item.label ++ " »") ] (submenus |> List.map (\submenu -> btnHotkey "" submenu.action [ text submenu.label ] submenu.platform submenu.hotkeys))
+
+        Custom html dir ->
+            submenuHtml dir [ text (item.label ++ " »") ] [ html ]
 
 
 link : Link -> Html msg
@@ -111,11 +127,27 @@ linkHtml url attrs content =
     a ([ href url, role "menuitem", tabindex -1, css [ "block", itemStyles ] ] ++ attrs) content
 
 
-submenuHtml : List (Html msg) -> List (Html msg) -> Html msg
-submenuHtml content items =
+submenuHtml : Direction -> List (Html msg) -> List (Html msg) -> Html msg
+submenuHtml dir content items =
+    let
+        dirClasses : TwClass
+        dirClasses =
+            case dir of
+                BottomRight ->
+                    "-top-1 left-full"
+
+                BottomLeft ->
+                    "-top-1 right-full"
+
+                TopRight ->
+                    "-bottom-1 left-full"
+
+                TopLeft ->
+                    "-bottom-1 right-full"
+    in
     div [ css [ "group relative flex items-center", itemStyles ] ]
         (content
-            ++ [ div [ css [ "group-hover:block hidden -top-1 left-full", menuStyles ] ] items
+            ++ [ div [ css [ "group-hover:block hidden", dirClasses, menuStyles ] ] items
                ]
         )
 

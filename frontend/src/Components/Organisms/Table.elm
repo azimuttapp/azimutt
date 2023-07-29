@@ -586,13 +586,14 @@ sample =
     , dropdown =
         Just
             (div [ class "z-max" ]
-                ([ { label = "Menu item 1", action = Simple { action = logAction "menu item 1", platform = Platform.PC, hotkeys = [] } }
+                ([ { label = "Menu item 1", content = Simple { action = logAction "menu item 1" } }
                  , { label = "Menu item 2"
-                   , action =
+                   , content =
                         SubMenu
-                            [ { label = "Menu item 2.1", action = logAction "menu item 2.1", platform = Platform.PC, hotkeys = [] }
-                            , { label = "Menu item 2.2", action = logAction "menu item 2.2", platform = Platform.PC, hotkeys = [] }
+                            [ { label = "Menu item 2.1", action = logAction "menu item 2.1" }
+                            , { label = "Menu item 2.2", action = logAction "menu item 2.2" }
                             ]
+                            BottomRight
                    }
                  ]
                     |> List.map ContextMenu.btnSubmenu

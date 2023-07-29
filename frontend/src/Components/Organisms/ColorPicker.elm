@@ -41,7 +41,7 @@ doc =
               , div [ class "max-w-xs" ]
                     [ ContextMenu.btnSubmenu
                         { label = "Choose color"
-                        , action = ContextMenu.Custom (view (Tw.toString >> Actions.logActionWithString "pickColor"))
+                        , content = ContextMenu.Custom (view (Tw.toString >> Actions.logActionWithString "pickColor")) ContextMenu.BottomRight
                         }
                     ]
               )

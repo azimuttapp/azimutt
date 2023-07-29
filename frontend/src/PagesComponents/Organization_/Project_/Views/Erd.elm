@@ -218,7 +218,7 @@ viewGroup platform defaultSchema editGroup ( index, group, area ) =
     div
         ([ css [ "absolute border-2 bg-opacity-25", Tw.bg_300 group.color, Tw.border_300 group.color ]
          , onDblClick (\_ -> GEdit index group.name |> GroupMsg) platform
-         , onContextMenu (\e -> ContextMenuCreate (GroupContextMenu.view platform defaultSchema index group) e) platform
+         , onContextMenu (\e -> ContextMenuCreate (GroupContextMenu.view defaultSchema index group) e) platform
          ]
             ++ Area.styleTransformCanvas area
         )
