@@ -167,6 +167,7 @@ update wrap msg model =
             ( { model | queryEditor = content }, Cmd.none )
 
         RunQuery query ->
+            -- TODO: add tracking with editor source (visual or query)
             ( model, Time.now |> Task.perform (TimedQuery query >> wrap) )
 
         TimedQuery query now ->

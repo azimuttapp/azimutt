@@ -53,6 +53,7 @@ import Libs.Tailwind as Tw
 type alias DocState =
     { dataExplorerDocState : DataExplorer.DocState
     , dataExplorerQueryDocState : DataExplorerQuery.DocState
+    , dataExplorerRowDocState : DataExplorerRow.DocState
     , detailsDocState : Details.DocState
     , dropdownDocState : Dropdown.DocState
     , exportDialogDocState : ExportDialogBody.DocState
@@ -77,6 +78,7 @@ init : DocState
 init =
     { dataExplorerDocState = DataExplorer.docInit
     , dataExplorerQueryDocState = DataExplorerQuery.docInit
+    , dataExplorerRowDocState = DataExplorerRow.docInit
     , detailsDocState = Details.docInit
     , dropdownDocState = Dropdown.docInit
     , exportDialogDocState = ExportDialogBody.docInit
