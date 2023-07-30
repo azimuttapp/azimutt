@@ -1,4 +1,4 @@
-module Components.Slices.DataExplorerQuery exposing (CanceledState, DocState, FailureState, Model, Msg(..), QueryState(..), SharedDocState, SuccessState, doc, docInit, docSuccessState1, docSuccessState2, init, update, view)
+module Components.Slices.DataExplorerQuery exposing (CanceledState, DocState, FailureState, Model, Msg(..), QueryId, QueryState(..), RowIndex, SharedDocState, SuccessState, doc, docInit, docSuccessState1, docSuccessState2, init, update, view)
 
 import Components.Atoms.Icon as Icon exposing (Icon)
 import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
@@ -33,8 +33,16 @@ import Services.Lenses exposing (mapExecutions, mapHead, mapState)
 import Time
 
 
+type alias QueryId =
+    Int
+
+
+type alias RowIndex =
+    Int
+
+
 type alias Model =
-    { id : Int
+    { id : QueryId
     , source : SourceInfo
     , query : String
     , executions : Nel { startedAt : Time.Posix, state : QueryState }
@@ -58,7 +66,7 @@ type alias SuccessState =
     , durationMs : Int
     , succeededAt : Time.Posix
     , page : Int
-    , expanded : Dict Int Bool
+    , expanded : Dict RowIndex Bool
     , documentMode : Bool
     , showQuery : Bool
     , search : String
@@ -76,11 +84,10 @@ type Msg
     | Refresh -- run again the query
     | Export -- export results in csv or json (or copy in clipboard)
     | Cancel -- stop a query in a running state (only UI?)
-    | Remove -- delete a query
     | OpenRow ColumnRef -- open a single row in sidebar
       -- used message ^^
     | ChangePage Int
-    | ExpandRow Int
+    | ExpandRow RowIndex
     | ToggleQuery
     | Noop
 
@@ -89,7 +96,7 @@ type Msg
 -- INIT
 
 
-init : Int -> SourceInfo -> String -> Time.Posix -> Model
+init : QueryId -> SourceInfo -> String -> Time.Posix -> Model
 init id source query startedAt =
     { id = id, source = source, query = query, executions = Nel { startedAt = startedAt, state = StateRunning } [] }
 
@@ -132,12 +139,13 @@ mapSuccess f state =
 -- VIEW
 
 
-view : (Msg -> msg) -> (HtmlId -> msg) -> Time.Posix -> HtmlId -> Model -> Html msg
-view wrap openDropdown now openedDropdown model =
+view : (Msg -> msg) -> (HtmlId -> msg) -> msg -> Time.Posix -> HtmlId -> HtmlId -> Model -> Html msg
+view wrap openDropdown deleteQuery now openedDropdown htmlId model =
     case model.executions.head.state of
         StateRunning ->
-            viewCard ("#" ++ String.fromInt model.id ++ " " ++ model.source.name)
-                (p [ class "mt-1 text-sm text-gray-500 space-x-2" ]
+            viewCard
+                [ p [ class "text-sm font-semibold text-gray-900" ] [ text ("#" ++ String.fromInt model.id ++ " " ++ model.source.name) ]
+                , p [ class "mt-1 text-sm text-gray-500 space-x-2" ]
                     [ span [ class "font-bold text-amber-500" ] [ text "Running..." ]
                     , span [ class "relative inline-flex h-2 w-2" ]
                         [ span [ class "animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" ] []
@@ -145,33 +153,34 @@ view wrap openDropdown now openedDropdown model =
                         ]
                     , span [] [ text (String.fromInt (Time.posixToMillis now - Time.posixToMillis model.executions.head.startedAt) ++ " ms") ]
                     ]
-                )
+                ]
                 (div [ class "mt-3" ] [ viewQuery model.query ])
                 (div [ class "relative flex space-x-1 text-left" ] [ viewActionButton "Cancel execution" Icon.XCircle ])
 
         StateCanceled res ->
-            viewCard ("#" ++ String.fromInt model.id ++ " " ++ model.source.name)
-                (p [ class "mt-1 text-sm text-gray-500 space-x-2" ]
+            viewCard
+                [ p [ class "text-sm font-semibold text-gray-900" ] [ text ("#" ++ String.fromInt model.id ++ " " ++ model.source.name) ]
+                , p [ class "mt-1 text-sm text-gray-500 space-x-2" ]
                     [ span [ class "font-bold" ] [ text "Canceled!" ]
                     , span [] [ text (String.fromInt (Time.posixToMillis res.canceledAt - Time.posixToMillis model.executions.head.startedAt) ++ " ms") ]
                     ]
-                )
+                ]
                 (div [ class "mt-3" ] [ viewQuery model.query ])
-                (div [ class "relative flex space-x-1 text-left" ] [ viewActionButton "Remove" Icon.Trash ])
+                (div [ class "relative flex space-x-1 text-left" ] [ viewActionButton "Delete" Icon.Trash ])
 
         StateSuccess res ->
             let
                 dropdownId : HtmlId
                 dropdownId =
-                    "data-explorer-query-" ++ String.fromInt model.id ++ "-settings"
+                    htmlId ++ "-settings"
             in
-            viewCard ("#" ++ String.fromInt model.id ++ " " ++ model.source.name)
-                (p [ class "mt-1 text-sm text-gray-500 space-x-1" ]
-                    [ span [ class "font-bold text-green-500" ] [ text "Success" ]
+            viewCard
+                [ p [ class "text-sm text-gray-500 space-x-1" ]
+                    [ span [ class "font-semibold text-gray-900" ] [ text ("#" ++ String.fromInt model.id ++ " " ++ model.source.name) ]
                     , span [] [ text ("(" ++ (res.rows |> List.length |> String.fromInt) ++ " rows)") ]
                     , span [] [ text (String.fromInt (Time.posixToMillis res.succeededAt - Time.posixToMillis model.executions.head.startedAt) ++ " ms") ]
                     ]
-                )
+                ]
                 (div []
                     [ if res.showQuery then
                         div [ class "relative mt-3" ]
@@ -195,7 +204,7 @@ view wrap openDropdown now openedDropdown model =
                             , css [ "flex text-sm opacity-25", focus [ "outline-none" ] ]
                             ]
                             [ span [ class "sr-only" ] [ text "Open table settings" ]
-                            , Icon.solid Icon.DotsVertical ""
+                            , Icon.solid Icon.DotsVertical "w-4 h-4"
                             ]
                     )
                     (\_ ->
@@ -211,7 +220,7 @@ view wrap openDropdown now openedDropdown model =
                                         ]
                                         ContextMenu.BottomLeft
                                }
-                             , { label = "Remove", content = ContextMenu.Simple { action = wrap Remove } }
+                             , { label = "Delete", content = ContextMenu.Simple { action = deleteQuery } }
                              ]
                                 |> List.map ContextMenu.btnSubmenu
                             )
@@ -219,12 +228,13 @@ view wrap openDropdown now openedDropdown model =
                 )
 
         StateFailure res ->
-            viewCard ("#" ++ String.fromInt model.id ++ " " ++ model.source.name)
-                (p [ class "mt-1 text-sm text-gray-500 space-x-1" ]
+            viewCard
+                [ p [ class "text-sm font-semibold text-gray-900" ] [ text ("#" ++ String.fromInt model.id ++ " " ++ model.source.name) ]
+                , p [ class "mt-1 text-sm text-gray-500 space-x-1" ]
                     [ span [ class "font-bold text-red-500" ] [ text "Failed" ]
                     , span [] [ text (String.fromInt (Time.posixToMillis res.failedAt - Time.posixToMillis model.executions.head.startedAt) ++ " ms") ]
                     ]
-                )
+                ]
                 (div []
                     [ p [ class "mt-3 text-sm font-semibold text-gray-900" ] [ text "Error" ]
                     , pre [ class "px-6 py-4 block text-sm whitespace-pre overflow-x-auto rounded bg-red-50 border border-red-200" ] [ text res.error ]
@@ -234,20 +244,17 @@ view wrap openDropdown now openedDropdown model =
                 )
                 (div [ class "relative flex space-x-1 text-left" ]
                     [ viewActionButton "Run again execution" Icon.Refresh
-                    , viewActionButton "Remove" Icon.Trash
+                    , viewActionButton "Delete" Icon.Trash
                     ]
                 )
 
 
-viewCard : String -> Html msg -> Html msg -> Html msg -> Html msg
-viewCard cardTitle cardSubtitle cardBody cardActions =
+viewCard : List (Html msg) -> Html msg -> Html msg -> Html msg
+viewCard cardTitle cardBody cardActions =
     div [ class "bg-white" ]
-        [ div [ class "flex space-x-3" ]
-            [ div [ class "min-w-0 flex-1" ]
-                [ p [ class "text-sm font-semibold text-gray-900" ] [ text cardTitle ]
-                , cardSubtitle
-                ]
-            , div [ class "flex flex-shrink-0 self-center" ] [ cardActions ]
+        [ div [ class "flex items-start space-x-3" ]
+            [ div [ class "min-w-0 flex-1" ] cardTitle
+            , div [ class "flex flex-shrink-0" ] [ cardActions ]
             ]
         , cardBody
         ]
@@ -261,7 +268,7 @@ viewQuery query =
 viewActionButton : String -> Icon -> Html msg
 viewActionButton name icon =
     button [ type_ "button", title name, class "flex items-center rounded-full text-gray-400 hover:text-gray-600" ]
-        [ span [ class "sr-only" ] [ text name ], Icon.outline icon "h-5 w-5" ]
+        [ span [ class "sr-only" ] [ text name ], Icon.outline icon "w-4 h-4" ]
 
 
 viewSuccess : (Msg -> msg) -> SuccessState -> Html msg
@@ -271,7 +278,7 @@ viewSuccess wrap res =
         pagination =
             { currentPage = res.page, pageSize = 10, totalItems = res.rows |> List.length }
 
-        pageRows : List ( Int, DatabaseQueryResultsRow )
+        pageRows : List ( RowIndex, DatabaseQueryResultsRow )
         pageRows =
             Pagination.paginate res.rows pagination
     in
@@ -281,7 +288,7 @@ viewSuccess wrap res =
         ]
 
 
-viewTable : (Msg -> msg) -> List DatabaseQueryResultsColumn -> List ( Int, DatabaseQueryResultsRow ) -> Dict Int Bool -> Html msg
+viewTable : (Msg -> msg) -> List DatabaseQueryResultsColumn -> List ( RowIndex, DatabaseQueryResultsRow ) -> Dict RowIndex Bool -> Html msg
 viewTable wrap columns rows expanded =
     div [ class "flow-root" ]
         [ div [ class "overflow-x-auto" ]
@@ -376,7 +383,7 @@ docInit : DocState
 docInit =
     { openedDropdown = ""
     , success = docModel
-    , longLines = { docModel | id = 1, executions = Nel { startedAt = Time.zero, state = StateSuccess docSuccessState2 } [] }
+    , longLines = { docModel | id = 2, executions = Nel { startedAt = Time.zero, state = StateSuccess docSuccessState2 } [] }
     }
 
 
@@ -386,17 +393,20 @@ doc =
         |> Chapter.renderStatefulComponentList
             [ docComponentState "success" .success (\s m -> { s | success = m })
             , docComponentState "long lines & json" .longLines (\s m -> { s | longLines = m })
-
-            -- long lines
-            , docComponent "failure" (\s -> view docWrap docOpenDropdown Time.zero s.openedDropdown { docModel | executions = Nel { startedAt = Time.zero, state = StateFailure docFailureState } [] })
-            , docComponent "running" (\s -> view docWrap docOpenDropdown Time.zero s.openedDropdown { docModel | executions = Nel { startedAt = Time.zero, state = StateRunning } [] })
-            , docComponent "canceled" (\s -> view docWrap docOpenDropdown Time.zero s.openedDropdown { docModel | executions = Nel { startedAt = Time.zero, state = StateCanceled docQueryCanceled } [] })
+            , docComponent "failure" (\s -> view docWrap docDropdown docDelete Time.zero s.openedDropdown docHtmlId { docModel | id = 3, executions = Nel { startedAt = Time.zero, state = StateFailure docFailureState } [] })
+            , docComponent "running" (\s -> view docWrap docDropdown docDelete Time.zero s.openedDropdown docHtmlId { docModel | id = 4, executions = Nel { startedAt = Time.zero, state = StateRunning } [] })
+            , docComponent "canceled" (\s -> view docWrap docDropdown docDelete Time.zero s.openedDropdown docHtmlId { docModel | id = 5, executions = Nel { startedAt = Time.zero, state = StateCanceled docQueryCanceled } [] })
             ]
+
+
+docHtmlId : HtmlId
+docHtmlId =
+    "data-explorer-query"
 
 
 docModel : Model
 docModel =
-    { id = 0
+    { id = 1
     , source = SourceInfo.database Time.zero SourceId.zero "azimutt_dev"
     , query = docComplexQuery -- "SELECT * FROM city;"
     , executions = Nel { startedAt = Time.zero, state = StateSuccess docSuccessState1 } []
@@ -528,11 +538,6 @@ docUsersColumnValues id slug name email provider provider_uid avatar github_user
 -- DOC HELPERS
 
 
-docSetState : DocState -> ElmBook.Msg (SharedDocState x)
-docSetState state =
-    Actions.updateState (\s -> { s | dataExplorerQueryDocState = state })
-
-
 docComponent : String -> (DocState -> Html msg) -> ( String, SharedDocState x -> Html msg )
 docComponent name render =
     ( name, \{ dataExplorerQueryDocState } -> render dataExplorerQueryDocState )
@@ -540,7 +545,7 @@ docComponent name render =
 
 docComponentState : String -> (DocState -> Model) -> (DocState -> Model -> DocState) -> ( String, SharedDocState x -> Html (ElmBook.Msg (SharedDocState x)) )
 docComponentState name get set =
-    ( name, \{ dataExplorerQueryDocState } -> dataExplorerQueryDocState |> (\s -> view (docUpdate s get set) (docUpdateDropdown s) Time.zero s.openedDropdown (get s)) )
+    ( name, \{ dataExplorerQueryDocState } -> dataExplorerQueryDocState |> (\s -> get s |> (\m -> view (docUpdate s get set) (docOpenDropdown s) docDelete Time.zero s.openedDropdown (docHtmlId ++ "-" ++ String.fromInt m.id) m)) )
 
 
 docUpdate : DocState -> (DocState -> Model) -> (DocState -> Model -> DocState) -> Msg -> ElmBook.Msg (SharedDocState x)
@@ -548,8 +553,8 @@ docUpdate s get set m =
     s |> get |> update docWrap m |> Tuple.first |> set s |> docSetState
 
 
-docUpdateDropdown : DocState -> HtmlId -> ElmBook.Msg (SharedDocState x)
-docUpdateDropdown s id =
+docOpenDropdown : DocState -> HtmlId -> ElmBook.Msg (SharedDocState x)
+docOpenDropdown s id =
     if s.openedDropdown == id then
         docSetState { s | openedDropdown = "" }
 
@@ -557,11 +562,21 @@ docUpdateDropdown s id =
         docSetState { s | openedDropdown = id }
 
 
+docSetState : DocState -> ElmBook.Msg (SharedDocState x)
+docSetState state =
+    Actions.updateState (\s -> { s | dataExplorerQueryDocState = state })
+
+
 docWrap : Msg -> ElmBook.Msg state
 docWrap =
     \_ -> logAction "wrap"
 
 
-docOpenDropdown : HtmlId -> ElmBook.Msg state
-docOpenDropdown =
+docDropdown : HtmlId -> ElmBook.Msg state
+docDropdown =
     \_ -> logAction "openDropdown"
+
+
+docDelete : ElmBook.Msg state
+docDelete =
+    logAction "delete"
