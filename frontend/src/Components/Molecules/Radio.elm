@@ -1,4 +1,4 @@
-module Components.Molecules.Radio exposing (DocState, Link, RadioOption, SharedDocState, SmallCardsModel, doc, initDocState, smallCards)
+module Components.Molecules.Radio exposing (DocState, Link, RadioOption, SharedDocState, SmallCardsModel, doc, docInit, smallCards)
 
 import ElmBook
 import ElmBook.Actions as Actions
@@ -78,8 +78,8 @@ type alias DocState =
     { smallCards : SmallCardsModel Int }
 
 
-initDocState : DocState
-initDocState =
+docInit : DocState
+docInit =
     { smallCards =
         { name = "memory"
         , label = "RAM"

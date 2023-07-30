@@ -1,4 +1,4 @@
-module Components.Molecules.InputText exposing (DocState, SharedDocState, doc, initDocState, simple)
+module Components.Molecules.InputText exposing (DocState, SharedDocState, doc, docInit, simple)
 
 import ElmBook exposing (Msg)
 import ElmBook.Actions as Actions
@@ -26,8 +26,8 @@ type alias DocState =
     { value : String }
 
 
-initDocState : DocState
-initDocState =
+docInit : DocState
+docInit =
     { value = "" }
 
 

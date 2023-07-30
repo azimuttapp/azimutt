@@ -51,7 +51,8 @@ import Libs.Tailwind as Tw
 
 
 type alias DocState =
-    { dataExplorerQueryDocState : DataExplorerQuery.DocState
+    { dataExplorerDocState : DataExplorer.DocState
+    , dataExplorerQueryDocState : DataExplorerQuery.DocState
     , detailsDocState : Details.DocState
     , dropdownDocState : Dropdown.DocState
     , exportDialogDocState : ExportDialogBody.DocState
@@ -74,24 +75,25 @@ type alias DocState =
 
 init : DocState
 init =
-    { dataExplorerQueryDocState = DataExplorerQuery.initDocState
-    , detailsDocState = Details.initDocState
-    , dropdownDocState = Dropdown.initDocState
-    , exportDialogDocState = ExportDialogBody.initDocState
-    , formLabelDocState = FormLabel.initDocState
-    , inputDocState = Input.initDocState
-    , inputTextDocState = InputText.initDocState
-    , modalDocState = Modal.initDocState
-    , navbarDocState = Navbar.initDocState
-    , newLayoutDocState = NewLayoutBody.initDocState
-    , popoverDocState = Popover.initDocState
-    , projectSaveDocState = ProjectSaveDialogBody.initDocState
-    , proPlanDocState = ProPlan.initDocState
-    , selectDocState = Select.initDocState
-    , radioDocState = Radio.initDocState
-    , slideoverDocState = Slideover.initDocState
-    , tableDocState = Table.initDocState
-    , toastDocState = Toast.initDocState
+    { dataExplorerDocState = DataExplorer.docInit
+    , dataExplorerQueryDocState = DataExplorerQuery.docInit
+    , detailsDocState = Details.docInit
+    , dropdownDocState = Dropdown.docInit
+    , exportDialogDocState = ExportDialogBody.docInit
+    , formLabelDocState = FormLabel.docInit
+    , inputDocState = Input.docInit
+    , inputTextDocState = InputText.docInit
+    , modalDocState = Modal.docInit
+    , navbarDocState = Navbar.docInit
+    , newLayoutDocState = NewLayoutBody.docInit
+    , popoverDocState = Popover.docInit
+    , projectSaveDocState = ProjectSaveDialogBody.docInit
+    , proPlanDocState = ProPlan.docInit
+    , selectDocState = Select.docInit
+    , radioDocState = Radio.docInit
+    , slideoverDocState = Slideover.docInit
+    , tableDocState = Table.docInit
+    , toastDocState = Toast.docInit
     }
 
 

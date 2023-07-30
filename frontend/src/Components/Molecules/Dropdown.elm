@@ -1,4 +1,4 @@
-module Components.Molecules.Dropdown exposing (DocState, Model, SharedDocState, doc, dropdown, initDocState, subs, update)
+module Components.Molecules.Dropdown exposing (DocState, Model, SharedDocState, doc, docInit, dropdown, subs, update)
 
 import Browser.Events
 import Components.Atoms.Button as Button
@@ -72,8 +72,8 @@ type alias DocState =
     { opened : String }
 
 
-initDocState : DocState
-initDocState =
+docInit : DocState
+docInit =
     { opened = "" }
 
 

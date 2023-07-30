@@ -1,4 +1,4 @@
-module Components.Slices.ProPlan exposing (ColorsModel, ColorsMsg(..), DocState, SharedDocState, analysisResults, analysisWarning, colorsInit, colorsModalBody, colorsUpdate, doc, groupsModalBody, initDocState, layoutsModalBody, layoutsWarning, memosModalBody, privateLinkWarning, sqlExportWarning)
+module Components.Slices.ProPlan exposing (ColorsModel, ColorsMsg(..), DocState, SharedDocState, analysisResults, analysisWarning, colorsInit, colorsModalBody, colorsUpdate, doc, docInit, groupsModalBody, layoutsModalBody, layoutsWarning, memosModalBody, privateLinkWarning, sqlExportWarning)
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon)
@@ -413,8 +413,8 @@ type alias DocState =
     { colors : ColorsModel }
 
 
-initDocState : DocState
-initDocState =
+docInit : DocState
+docInit =
     { colors = colorsInit }
 
 

@@ -1,4 +1,4 @@
-module Components.Slices.ProjectSaveDialogBody exposing (DocState, Model, Msg(..), SharedDocState, doc, init, initDocState, selectSave, signIn, update)
+module Components.Slices.ProjectSaveDialogBody exposing (DocState, Model, Msg(..), SharedDocState, doc, docInit, init, selectSave, signIn, update)
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon
@@ -193,8 +193,8 @@ type alias DocState =
     Model
 
 
-initDocState : DocState
-initDocState =
+docInit : DocState
+docInit =
     { id = "modal-id", name = "MyProject", organization = Nothing, storage = ProjectStorage.Remote }
 
 

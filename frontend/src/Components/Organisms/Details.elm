@@ -1,4 +1,4 @@
-module Components.Organisms.Details exposing (DocState, Heading, NotesModel, SharedDocState, TagsModel, buildColumnHeading, buildSchemaHeading, buildTableHeading, doc, initDocState, viewColumn, viewColumn2, viewList, viewSchema, viewTable)
+module Components.Organisms.Details exposing (DocState, Heading, NotesModel, SharedDocState, TagsModel, buildColumnHeading, buildSchemaHeading, buildTableHeading, doc, docInit, viewColumn, viewColumn2, viewList, viewSchema, viewTable)
 
 import Array
 import Components.Atoms.Badge as Badge
@@ -958,8 +958,8 @@ type alias DocState =
     }
 
 
-initDocState : DocState
-initDocState =
+docInit : DocState
+docInit =
     { openedCollapse = ""
     , defaultSchema = "public"
     , search = ""

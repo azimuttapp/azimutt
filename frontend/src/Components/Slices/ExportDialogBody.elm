@@ -1,4 +1,4 @@
-module Components.Slices.ExportDialogBody exposing (DocState, ExportFormat, ExportInput, Model, Msg, SharedDocState, doc, init, initDocState, update, view)
+module Components.Slices.ExportDialogBody exposing (DocState, ExportFormat, ExportInput, Model, Msg, SharedDocState, doc, docInit, init, update, view)
 
 import Array
 import Components.Atoms.Button as Button
@@ -274,8 +274,8 @@ type alias DocState =
     { free : Model, pro : Model }
 
 
-initDocState : DocState
-initDocState =
+docInit : DocState
+docInit =
     { free = { id = "free-modal-id", input = Nothing, format = Nothing, output = Pending }
     , pro = { id = "pro-modal-id", input = Nothing, format = Nothing, output = Pending }
     }

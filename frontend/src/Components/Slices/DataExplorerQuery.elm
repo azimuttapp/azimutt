@@ -1,4 +1,4 @@
-module Components.Slices.DataExplorerQuery exposing (CanceledState, DocState, FailureState, Model, Msg(..), QueryState(..), SharedDocState, SuccessState, doc, initDocState)
+module Components.Slices.DataExplorerQuery exposing (CanceledState, DocState, FailureState, Model, Msg(..), QueryState(..), SharedDocState, SuccessState, doc, docInit, docSuccessState1, docSuccessState2, init, update, view)
 
 import Components.Atoms.Icon as Icon exposing (Icon)
 import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
@@ -136,7 +136,7 @@ view : (Msg -> msg) -> (HtmlId -> msg) -> Time.Posix -> HtmlId -> Model -> Html 
 view wrap openDropdown now openedDropdown model =
     case model.executions.head.state of
         StateRunning ->
-            viewCard model.source.name
+            viewCard ("#" ++ String.fromInt model.id ++ " " ++ model.source.name)
                 (p [ class "mt-1 text-sm text-gray-500 space-x-2" ]
                     [ span [ class "font-bold text-amber-500" ] [ text "Running..." ]
                     , span [ class "relative inline-flex h-2 w-2" ]
@@ -150,7 +150,7 @@ view wrap openDropdown now openedDropdown model =
                 (div [ class "relative flex space-x-1 text-left" ] [ viewActionButton "Cancel execution" Icon.XCircle ])
 
         StateCanceled res ->
-            viewCard model.source.name
+            viewCard ("#" ++ String.fromInt model.id ++ " " ++ model.source.name)
                 (p [ class "mt-1 text-sm text-gray-500 space-x-2" ]
                     [ span [ class "font-bold" ] [ text "Canceled!" ]
                     , span [] [ text (String.fromInt (Time.posixToMillis res.canceledAt - Time.posixToMillis model.executions.head.startedAt) ++ " ms") ]
@@ -165,7 +165,7 @@ view wrap openDropdown now openedDropdown model =
                 dropdownId =
                     "data-explorer-query-" ++ String.fromInt model.id ++ "-settings"
             in
-            viewCard model.source.name
+            viewCard ("#" ++ String.fromInt model.id ++ " " ++ model.source.name)
                 (p [ class "mt-1 text-sm text-gray-500 space-x-1" ]
                     [ span [ class "font-bold text-green-500" ] [ text "Success" ]
                     , span [] [ text ("(" ++ (res.rows |> List.length |> String.fromInt) ++ " rows)") ]
@@ -219,7 +219,7 @@ view wrap openDropdown now openedDropdown model =
                 )
 
         StateFailure res ->
-            viewCard model.source.name
+            viewCard ("#" ++ String.fromInt model.id ++ " " ++ model.source.name)
                 (p [ class "mt-1 text-sm text-gray-500 space-x-1" ]
                     [ span [ class "font-bold text-red-500" ] [ text "Failed" ]
                     , span [] [ text (String.fromInt (Time.posixToMillis res.failedAt - Time.posixToMillis model.executions.head.startedAt) ++ " ms") ]
@@ -227,7 +227,7 @@ view wrap openDropdown now openedDropdown model =
                 )
                 (div []
                     [ p [ class "mt-3 text-sm font-semibold text-gray-900" ] [ text "Error" ]
-                    , pre [ class "px-6 py-4 block text-sm whitespace-pre overflow-x-scroll rounded bg-red-50 border border-red-200" ] [ text res.error ]
+                    , pre [ class "px-6 py-4 block text-sm whitespace-pre overflow-x-auto rounded bg-red-50 border border-red-200" ] [ text res.error ]
                     , p [ class "mt-3 text-sm font-semibold text-gray-900" ] [ text "SQL" ]
                     , viewQuery model.query
                     ]
@@ -255,7 +255,7 @@ viewCard cardTitle cardSubtitle cardBody cardActions =
 
 viewQuery : String -> Html msg
 viewQuery query =
-    pre [ class "px-6 py-4 block text-sm whitespace-pre overflow-x-scroll rounded bg-gray-50 border border-gray-200" ] [ text query ]
+    pre [ class "px-6 py-4 block text-sm whitespace-pre overflow-x-auto rounded bg-gray-50 border border-gray-200" ] [ text query ]
 
 
 viewActionButton : String -> Icon -> Html msg
@@ -372,8 +372,8 @@ type alias DocState =
     { openedDropdown : HtmlId, success : Model, longLines : Model }
 
 
-initDocState : DocState
-initDocState =
+docInit : DocState
+docInit =
     { openedDropdown = ""
     , success = docModel
     , longLines = { docModel | id = 1, executions = Nel { startedAt = Time.zero, state = StateSuccess docSuccessState2 } [] }
@@ -399,7 +399,7 @@ docModel =
     { id = 0
     , source = SourceInfo.database Time.zero SourceId.zero "azimutt_dev"
     , query = docComplexQuery -- "SELECT * FROM city;"
-    , executions = Nel { startedAt = Time.zero, state = StateSuccess docSuccessState } []
+    , executions = Nel { startedAt = Time.zero, state = StateSuccess docSuccessState1 } []
     }
 
 
@@ -419,8 +419,8 @@ HAVING count(distinct to_char(e.created_at, 'yyyy-mm-dd')) >= 5 AND max(e.create
 ORDER BY last_activity DESC;"""
 
 
-docSuccessState : SuccessState
-docSuccessState =
+docSuccessState1 : SuccessState
+docSuccessState1 =
     { columns = [ "id", "name", "country_code", "district", "population" ] |> List.map (docColumn "public" "city")
     , rows =
         [ docCityColumnValues 1 "Kabul" "AFG" "Kabol" 1780000

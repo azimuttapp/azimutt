@@ -1,4 +1,4 @@
-module Components.Molecules.Popover exposing (DocState, SharedDocState, b, bl, br, doc, initDocState, l, r, t, tl, tr)
+module Components.Molecules.Popover exposing (DocState, SharedDocState, b, bl, br, doc, docInit, l, r, t, tl, tr)
 
 import Components.Atoms.Button as Button
 import ElmBook exposing (Msg)
@@ -74,8 +74,8 @@ type alias DocState =
     { opened : String }
 
 
-initDocState : DocState
-initDocState =
+docInit : DocState
+docInit =
     { opened = "" }
 
 

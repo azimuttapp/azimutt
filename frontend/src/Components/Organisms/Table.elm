@@ -1,4 +1,4 @@
-module Components.Organisms.Table exposing (Actions, CheckConstraint, Column, ColumnName, ColumnRef, DocState, IndexConstraint, Model, NestedColumns(..), OrganizationId, ProjectId, ProjectInfo, Relation, SchemaName, SharedDocState, State, TableConf, TableName, TableRef, UniqueConstraint, doc, initDocState, table)
+module Components.Organisms.Table exposing (Actions, CheckConstraint, Column, ColumnName, ColumnRef, DocState, IndexConstraint, Model, NestedColumns(..), OrganizationId, ProjectId, ProjectInfo, Relation, SchemaName, SharedDocState, State, TableConf, TableName, TableRef, UniqueConstraint, doc, docInit, table)
 
 import Components.Atoms.Icon as Icon
 import Components.Atoms.Icons as Icons
@@ -549,8 +549,8 @@ type alias DocState =
     State
 
 
-initDocState : DocState
-initDocState =
+docInit : DocState
+docInit =
     sample.state
 
 
