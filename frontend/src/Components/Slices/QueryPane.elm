@@ -11,7 +11,6 @@ import Html exposing (Html, button, div, h3, label, option, p, pre, select, span
 import Html.Attributes exposing (autofocus, class, classList, disabled, for, id, name, placeholder, rows, scope, selected, title, type_, value)
 import Html.Events exposing (onClick, onInput)
 import Libs.Bool as Bool
-import Libs.Dict as Dict
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.DatabaseUrl exposing (DatabaseUrl)
@@ -302,21 +301,21 @@ viewQueryResultsTableRow display columns i row =
             row |> Dict.filter (\k _ -> columns |> List.memberBy .name k |> not)
     in
     tr [ class "hover:bg-gray-100", classList [ ( "bg-gray-50", modBy 2 i == 1 ) ] ]
-        ([ viewQueryResultsRowValue display (JsValue.Int (i + 1)) ]
-            ++ (columns |> List.map (\col -> row |> Dict.getOrElse col.name JsValue.Null |> viewQueryResultsRowValue display))
-            ++ Bool.cond (rest |> Dict.isEmpty) [] [ viewQueryResultsRowValue display (rest |> JsValue.Object) ]
+        ([ viewQueryResultsRowValue display (JsValue.Int (i + 1) |> Just) ]
+            ++ (columns |> List.map (\col -> row |> Dict.get col.name |> viewQueryResultsRowValue display))
+            ++ Bool.cond (rest |> Dict.isEmpty) [] [ viewQueryResultsRowValue display (rest |> JsValue.Object |> Just) ]
         )
 
 
-viewQueryResultsRowValue : DisplayMode -> JsValue -> Html msg
+viewQueryResultsRowValue : DisplayMode -> Maybe JsValue -> Html msg
 viewQueryResultsRowValue display value =
-    td [ title (value |> JsValue.toString), class "max-w-xs truncate p-1 whitespace-nowrap align-top text-left text-xs font-mono text-gray-500" ]
+    td [ title (value |> Maybe.mapOrElse JsValue.toString ""), class "max-w-xs truncate p-1 whitespace-nowrap align-top text-left text-xs font-mono text-gray-500" ]
         [ case display of
             DisplayTable ->
-                text (value |> JsValue.toString)
+                JsValue.view value
 
             DisplayDocument ->
-                pre [] [ text (value |> JsValue.format) ]
+                JsValue.viewRaw value
         ]
 
 

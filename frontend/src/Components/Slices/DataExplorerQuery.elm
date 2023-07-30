@@ -14,7 +14,6 @@ import Html.Events exposing (onClick)
 import Libs.Bool as Bool
 import Libs.Dict as Dict
 import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, css)
-import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Nel exposing (Nel)
@@ -52,12 +51,16 @@ type alias Model =
 type QueryState
     = StateRunning
     | StateCanceled CanceledState
-    | StateSuccess SuccessState
     | StateFailure FailureState
+    | StateSuccess SuccessState
 
 
 type alias CanceledState =
     { canceledAt : Time.Posix }
+
+
+type alias FailureState =
+    { error : String, failedAt : Time.Posix }
 
 
 type alias SuccessState =
@@ -73,10 +76,6 @@ type alias SuccessState =
     , sortBy : Maybe String
     , fullScreen : Bool
     }
-
-
-type alias FailureState =
-    { error : String, failedAt : Time.Posix }
 
 
 type Msg
@@ -168,6 +167,27 @@ view wrap openDropdown deleteQuery now openedDropdown htmlId model =
                 (div [ class "mt-3" ] [ viewQuery model.query ])
                 (div [ class "relative flex space-x-1 text-left" ] [ viewActionButton "Delete" Icon.Trash ])
 
+        StateFailure res ->
+            viewCard
+                [ p [ class "text-sm font-semibold text-gray-900" ] [ text ("#" ++ String.fromInt model.id ++ " " ++ model.source.name) ]
+                , p [ class "mt-1 text-sm text-gray-500 space-x-1" ]
+                    [ span [ class "font-bold text-red-500" ] [ text "Failed" ]
+                    , span [] [ text (String.fromInt (Time.posixToMillis res.failedAt - Time.posixToMillis model.executions.head.startedAt) ++ " ms") ]
+                    ]
+                ]
+                (div []
+                    [ p [ class "mt-3 text-sm font-semibold text-gray-900" ] [ text "Error" ]
+                    , pre [ class "px-6 py-4 block text-sm whitespace-pre overflow-x-auto rounded bg-red-50 border border-red-200" ] [ text res.error ]
+                    , p [ class "mt-3 text-sm font-semibold text-gray-900" ] [ text "SQL" ]
+                    , viewQuery model.query
+                    ]
+                )
+                (div [ class "relative flex space-x-1 text-left" ]
+                    [ viewActionButton "Run again execution" Icon.Refresh
+                    , viewActionButton "Delete" Icon.Trash
+                    ]
+                )
+
         StateSuccess res ->
             let
                 dropdownId : HtmlId
@@ -225,27 +245,6 @@ view wrap openDropdown deleteQuery now openedDropdown htmlId model =
                                 |> List.map ContextMenu.btnSubmenu
                             )
                     )
-                )
-
-        StateFailure res ->
-            viewCard
-                [ p [ class "text-sm font-semibold text-gray-900" ] [ text ("#" ++ String.fromInt model.id ++ " " ++ model.source.name) ]
-                , p [ class "mt-1 text-sm text-gray-500 space-x-1" ]
-                    [ span [ class "font-bold text-red-500" ] [ text "Failed" ]
-                    , span [] [ text (String.fromInt (Time.posixToMillis res.failedAt - Time.posixToMillis model.executions.head.startedAt) ++ " ms") ]
-                    ]
-                ]
-                (div []
-                    [ p [ class "mt-3 text-sm font-semibold text-gray-900" ] [ text "Error" ]
-                    , pre [ class "px-6 py-4 block text-sm whitespace-pre overflow-x-auto rounded bg-red-50 border border-red-200" ] [ text res.error ]
-                    , p [ class "mt-3 text-sm font-semibold text-gray-900" ] [ text "SQL" ]
-                    , viewQuery model.query
-                    ]
-                )
-                (div [ class "relative flex space-x-1 text-left" ]
-                    [ viewActionButton "Run again execution" Icon.Refresh
-                    , viewActionButton "Delete" Icon.Trash
-                    ]
                 )
 
 
@@ -313,14 +312,14 @@ viewTable wrap columns rows expanded =
                                                             if value |> Maybe.any (\v -> JsValue.isArray v || JsValue.isObject v) then
                                                                 td [ onClick (ExpandRow i |> wrap), class "px-1 text-sm text-gray-500 whitespace-nowrap max-w-xs truncate cursor-pointer" ]
                                                                     [ if expanded |> Dict.getOrElse i False then
-                                                                        pre [ class "text-xs" ] [ text (value |> Maybe.mapOrElse JsValue.format "") ]
+                                                                        JsValue.viewRaw value
 
                                                                       else
-                                                                        viewJsValueOpt value
+                                                                        JsValue.view value
                                                                     ]
 
                                                             else
-                                                                td [ class "px-1 text-sm text-gray-500 whitespace-nowrap max-w-xs truncate" ] [ viewJsValueOpt value ]
+                                                                td [ class "px-1 text-sm text-gray-500 whitespace-nowrap max-w-xs truncate" ] [ JsValue.view value ]
                                                         )
                                                )
                                         )
@@ -330,41 +329,6 @@ viewTable wrap columns rows expanded =
                 ]
             ]
         ]
-
-
-viewJsValueOpt : Maybe JsValue -> Html msg
-viewJsValueOpt value =
-    case value of
-        Just v ->
-            viewJsValue v
-
-        Nothing ->
-            text ""
-
-
-viewJsValue : JsValue -> Html msg
-viewJsValue value =
-    case value of
-        JsValue.String str ->
-            text str
-
-        JsValue.Int i ->
-            text (String.fromInt i)
-
-        JsValue.Float f ->
-            text (String.fromFloat f)
-
-        JsValue.Bool b ->
-            text (Bool.toString b)
-
-        JsValue.Null ->
-            span [ class "opacity-50 italic" ] [ text "null" ]
-
-        JsValue.Array a ->
-            span [] (text "[" :: (a |> List.map viewJsValue |> List.intersperse (text ", ")) |> List.add (text "]"))
-
-        JsValue.Object o ->
-            span [] (text "{" :: (o |> Dict.toList |> List.map (\( k, v ) -> span [] [ text (k ++ ": "), viewJsValue v ]) |> List.intersperse (text ", ")) |> List.add (text "}"))
 
 
 
@@ -429,6 +393,16 @@ HAVING count(distinct to_char(e.created_at, 'yyyy-mm-dd')) >= 5 AND max(e.create
 ORDER BY last_activity DESC;"""
 
 
+docQueryCanceled : CanceledState
+docQueryCanceled =
+    { canceledAt = Time.zero }
+
+
+docFailureState : FailureState
+docFailureState =
+    { error = "Error: relation \"events\" does not exist\nError Code: 42P01", failedAt = Time.zero }
+
+
 docSuccessState1 : SuccessState
 docSuccessState1 =
     { columns = [ "id", "name", "country_code", "district", "population" ] |> List.map (docColumn "public" "city")
@@ -486,16 +460,6 @@ docSuccessState2 =
     , sortBy = Nothing
     , fullScreen = False
     }
-
-
-docFailureState : FailureState
-docFailureState =
-    { error = "Error: relation \"events\" does not exist\nError Code: 42P01", failedAt = Time.zero }
-
-
-docQueryCanceled : CanceledState
-docQueryCanceled =
-    { canceledAt = Time.zero }
 
 
 docColumn : SchemaName -> TableName -> ColumnName -> DatabaseQueryResultsColumn

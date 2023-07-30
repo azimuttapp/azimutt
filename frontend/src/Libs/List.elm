@@ -50,6 +50,7 @@ module Libs.List exposing
     , toggle
     , unique
     , uniqueBy
+    , updateAt
     , updateBy
     , zip
     , zipBy
@@ -198,6 +199,19 @@ memberWith matcher list =
 indexOf : a -> List a -> Maybe Int
 indexOf item xs =
     xs |> List.indexedMap (\i a -> ( i, a )) |> find (\( _, a ) -> a == item) |> Maybe.map Tuple.first
+
+
+updateAt : Int -> (a -> a) -> List a -> List a
+updateAt index transform list =
+    list
+        |> List.indexedMap
+            (\i a ->
+                if index == i then
+                    transform a
+
+                else
+                    a
+            )
 
 
 updateBy : (a -> b) -> b -> (a -> a) -> List a -> List a

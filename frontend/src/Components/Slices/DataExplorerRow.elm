@@ -5,12 +5,11 @@ import Dict exposing (Dict)
 import ElmBook
 import ElmBook.Actions as Actions exposing (logAction)
 import ElmBook.Chapter as Chapter exposing (Chapter)
-import Html exposing (Html, button, div, h2, p, span, text)
+import Html exposing (Html, button, dd, div, dt, h2, p, pre, span, text)
 import Html.Attributes exposing (class, id, type_)
 import Html.Events exposing (onClick)
 import Libs.Html.Attributes exposing (ariaLabelledby, ariaModal, css, role)
 import Libs.List as List
-import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Nel exposing (Nel)
 import Libs.Task as T
@@ -38,8 +37,12 @@ type alias Model =
 
 type RowState
     = StateLoading
-    | StateSuccess SuccessState
     | StateFailure FailureState
+    | StateSuccess SuccessState
+
+
+type alias FailureState =
+    { error : String, failedAt : Time.Posix }
 
 
 type alias SuccessState =
@@ -49,10 +52,6 @@ type alias SuccessState =
     , succeededAt : Time.Posix
     , documentMode : Bool
     }
-
-
-type alias FailureState =
-    { error : String, failedAt : Time.Posix }
 
 
 type Msg
@@ -94,32 +93,7 @@ view wrap close defaultSchema htmlId openDepth model =
         [ ariaLabelledby titleId
         , role "dialog"
         , ariaModal True
-        , css
-            [ "relative"
-            , openDepth
-                |> Maybe.mapOrElse
-                    (\i ->
-                        case i of
-                            4 ->
-                                "z-10"
-
-                            3 ->
-                                "z-11"
-
-                            2 ->
-                                "z-12"
-
-                            1 ->
-                                "z-13"
-
-                            0 ->
-                                "z-14"
-
-                            _ ->
-                                "z-10"
-                    )
-                    "z-10"
-            ]
+        , css [ "relative", openDepth |> Maybe.andThen (\i -> [ "z-16", "z-15", "z-14", "z-13", "z-12", "z-11" ] |> List.get i) |> Maybe.withDefault "z-10" ]
         ]
         [ div [ class "fixed inset-0 overflow-hidden pointer-events-none" ]
             [ div [ class "absolute inset-0 overflow-hidden" ]
@@ -137,29 +111,10 @@ view wrap close defaultSchema htmlId openDepth model =
                       div
                         [ css
                             [ "pointer-events-auto w-screen max-w-md transform transition ease-in-out duration-200 sm:duration-400"
-                            , openDepth
-                                |> Maybe.mapOrElse
-                                    (\i ->
-                                        case i of
-                                            4 ->
-                                                "-translate-x-36"
-
-                                            3 ->
-                                                "-translate-x-27"
-
-                                            2 ->
-                                                "-translate-x-18"
-
-                                            1 ->
-                                                "-translate-x-9"
-
-                                            _ ->
-                                                "translate-x-0"
-                                    )
-                                    "translate-x-full"
+                            , openDepth |> Maybe.andThen (\i -> [ "translate-x-0", "-translate-x-6", "-translate-x-12", "-translate-x-16", "-translate-x-20" ] |> List.get i) |> Maybe.withDefault "translate-x-full"
                             ]
                         ]
-                        [ viewSlideOverContent wrap close defaultSchema titleId openDepth model
+                        [ viewSlideOverContent wrap close defaultSchema titleId model
                         ]
                     ]
                 ]
@@ -167,13 +122,13 @@ view wrap close defaultSchema htmlId openDepth model =
         ]
 
 
-viewSlideOverContent : (Msg -> msg) -> msg -> SchemaName -> HtmlId -> Maybe Int -> Model -> Html msg
-viewSlideOverContent wrap close defaultSchema titleId openDepth model =
+viewSlideOverContent : (Msg -> msg) -> msg -> SchemaName -> HtmlId -> Model -> Html msg
+viewSlideOverContent wrap close defaultSchema titleId model =
     div [ class "flex h-full flex-col overflow-y-auto bg-white py-6 shadow-xl" ]
         [ div [ class "px-4 sm:px-6" ]
             [ div [ class "flex items-start justify-between" ]
-                [ h2 [ id titleId, class "text-base font-semibold leading-6 text-gray-900" ]
-                    [ text "Panel title" ]
+                [ h2 [ onClick (wrap Noop), id titleId, class "text-base font-semibold leading-6 text-gray-900" ]
+                    [ text (TableId.show defaultSchema model.query.table) ]
                 , div [ class "ml-3 flex h-7 items-center" ]
                     [ button [ type_ "button", onClick close, class "relative rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" ]
                         [ span [ class "absolute -inset-2.5" ] []
@@ -183,23 +138,26 @@ viewSlideOverContent wrap close defaultSchema titleId openDepth model =
                     ]
                 ]
             ]
-        , div [ class "relative mt-6 flex-1 px-4 sm:px-6" ]
-            [ p [ onClick (wrap Noop) ] [ text "Your content" ]
-            , p [] [ text (openDepth |> Maybe.mapOrElse (\i -> "Open in " ++ String.fromInt i) "Closed") ]
-            , p []
-                [ text
-                    (case model.state of
-                        StateLoading ->
-                            "StateLoading " ++ TableId.show defaultSchema model.query.table
+        , div [ class "relative flex-1 mt-3 space-y-3 px-4 sm:px-6" ]
+            (case model.state of
+                StateLoading ->
+                    [ text "Loading... " ]
 
-                        StateSuccess _ ->
-                            "StateSuccess " ++ TableId.show defaultSchema model.query.table
+                StateFailure res ->
+                    [ p [ class "mt-3 text-sm font-semibold text-gray-900" ] [ text "Error" ]
+                    , pre [ class "px-6 py-4 block text-sm whitespace-pre overflow-x-auto rounded bg-red-50 border border-red-200" ] [ text res.error ]
+                    ]
 
-                        StateFailure _ ->
-                            "StateFailure " ++ TableId.show defaultSchema model.query.table
-                    )
-                ]
-            ]
+                StateSuccess res ->
+                    res.columns
+                        |> List.map
+                            (\col ->
+                                div []
+                                    [ dt [ class "text-sm font-medium text-gray-500 sm:w-40 sm:flex-shrink-0" ] [ text col.name ]
+                                    , dd [ class "text-sm text-gray-900 sm:col-span-2" ] [ JsValue.view (res.values |> Dict.get col.name) ]
+                                    ]
+                            )
+            )
         ]
 
 
@@ -212,26 +170,48 @@ type alias SharedDocState x =
 
 
 type alias DocState =
-    { success : Model, failure : Model, loading : Model, opened : List String }
+    { details : List Model }
 
 
 docInit : DocState
 docInit =
-    { success = { docModel | state = StateSuccess docSuccessState }
-    , failure = { docModel | state = StateFailure docFailureState }
-    , loading = docModel
-    , opened = []
-    }
+    { details = [] }
 
 
 doc : Chapter (SharedDocState x)
 doc =
     Chapter.chapter "DataExplorerRow"
         |> Chapter.renderStatefulComponentList
-            [ docComponentState "success" .success (\s m -> { s | success = m })
-            , docComponentState "failure" .failure (\s m -> { s | failure = m })
-            , docComponentState "loading" .loading (\s m -> { s | loading = m })
+            [ ( "app"
+              , \{ dataExplorerRowDocState } ->
+                    let
+                        s : DocState
+                        s =
+                            dataExplorerRowDocState
+                    in
+                    div []
+                        [ docButton "Open loading" (docOpen docModel s)
+                        , docButton "Open failure" (docOpen { docModel | state = StateFailure docFailureState } s)
+                        , docButton "Open success" (docOpen { docModel | state = StateSuccess docSuccessState } s)
+                        , div []
+                            (s.details
+                                |> List.indexedMap
+                                    (\i m ->
+                                        div [ class "mt-1" ]
+                                            [ view (docUpdate i s) (docClose i s) "public" ("data-explorer-row-" ++ String.fromInt i) (Just i) m
+                                            , docButton ("Close " ++ String.fromInt i) (docClose i s)
+                                            ]
+                                    )
+                                |> List.reverse
+                            )
+                        ]
+              )
             ]
+
+
+docButton : String -> ElmBook.Msg (SharedDocState x) -> Html (ElmBook.Msg (SharedDocState x))
+docButton name msg =
+    button [ type_ "button", onClick msg, class "mr-3 rounded-md bg-white px-3.5 py-2.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50" ] [ text name ]
 
 
 docModel : Model
@@ -244,24 +224,19 @@ docSource =
     SourceInfo.database Time.zero SourceId.zero ""
 
 
-docSuccessState : SuccessState
-docSuccessState =
-    { columns = docCityColumns
-    , values = docCityColumnValues 1 "Kabul" "AFG" "Kabol" 1780000
-    , durationMs = 12
-    , succeededAt = Time.zero
-    , documentMode = False
-    }
-
-
 docFailureState : FailureState
 docFailureState =
     { error = "Error: relation \"events\" does not exist\nError Code: 42P01", failedAt = Time.zero }
 
 
-docCityColumns : List DatabaseQueryResultsColumn
-docCityColumns =
-    [ "id", "name", "country_code", "district", "population" ] |> List.map (docColumn "public" "city")
+docSuccessState : SuccessState
+docSuccessState =
+    { columns = [ "id", "name", "country_code", "district", "population" ] |> List.map (docColumn "public" "city")
+    , values = docCityColumnValues 1 "Kabul" "AFG" "Kabol" 1780000
+    , durationMs = 12
+    , succeededAt = Time.zero
+    , documentMode = False
+    }
 
 
 docColumn : SchemaName -> TableName -> ColumnName -> DatabaseQueryResultsColumn
@@ -278,39 +253,19 @@ docCityColumnValues id name country_code district population =
 -- DOC HELPERS
 
 
-docComponentState : String -> (DocState -> Model) -> (DocState -> Model -> DocState) -> ( String, SharedDocState x -> Html (ElmBook.Msg (SharedDocState x)) )
-docComponentState name get set =
-    ( name
-    , \{ dataExplorerRowDocState } ->
-        let
-            s : DocState
-            s =
-                dataExplorerRowDocState
-
-            openDepth : Maybe Int
-            openDepth =
-                s.opened |> List.findIndex (\o -> o == name)
-        in
-        div []
-            [ button [ type_ "button", onClick (docToggle name s), class "rounded-md bg-white px-3.5 py-2.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50" ]
-                [ text (openDepth |> Maybe.mapOrElse (\_ -> "Close") "Open") ]
-            , view (docUpdate s get set) (docToggle name s) "public" ("data-explorer-row-" ++ name) openDepth (get s)
-            ]
-    )
+docUpdate : Int -> DocState -> Msg -> ElmBook.Msg (SharedDocState x)
+docUpdate i s msg =
+    docSetState { s | details = s.details |> List.updateAt i (update docWrap msg >> Tuple.first) }
 
 
-docUpdate : DocState -> (DocState -> Model) -> (DocState -> Model -> DocState) -> Msg -> ElmBook.Msg (SharedDocState x)
-docUpdate s get set m =
-    s |> get |> update docWrap m |> Tuple.first |> set s |> docSetState
+docOpen : Model -> DocState -> ElmBook.Msg (SharedDocState x)
+docOpen m s =
+    docSetState { s | details = m :: s.details }
 
 
-docToggle : HtmlId -> DocState -> ElmBook.Msg (SharedDocState x)
-docToggle id s =
-    if s.opened |> List.any (\o -> o == id) then
-        docSetState { s | opened = s.opened |> List.filter (\o -> o /= id) }
-
-    else
-        docSetState { s | opened = id :: s.opened }
+docClose : Int -> DocState -> ElmBook.Msg (SharedDocState x)
+docClose i s =
+    docSetState { s | details = s.details |> List.removeAt i }
 
 
 docSetState : DocState -> ElmBook.Msg (SharedDocState x)

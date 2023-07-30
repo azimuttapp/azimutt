@@ -1,9 +1,13 @@
-module Models.JsValue exposing (JsValue(..), decode, encode, format, isArray, isObject, toString)
+module Models.JsValue exposing (JsValue(..), decode, encode, isArray, isObject, toString, view, viewRaw)
 
 import Dict exposing (Dict)
+import Html exposing (Html, pre, span, text)
+import Html.Attributes exposing (class)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 import Libs.Bool as Bool
+import Libs.List as List
+import Libs.Maybe as Maybe
 
 
 
@@ -41,24 +45,6 @@ isObject value =
             False
 
 
-format : JsValue -> String
-format value =
-    formatWithPrefix "  " "" value
-
-
-formatWithPrefix : String -> String -> JsValue -> String
-formatWithPrefix prefix nesting value =
-    case value of
-        Array values ->
-            "[" ++ (values |> List.map (\v -> "\n" ++ nesting ++ prefix ++ formatWithPrefix prefix (nesting ++ prefix) v) |> String.join ",") ++ "\n" ++ nesting ++ "]"
-
-        Object values ->
-            "{" ++ (values |> Dict.toList |> List.map (\( k, v ) -> "\n" ++ nesting ++ prefix ++ k ++ ": " ++ formatWithPrefix prefix (nesting ++ prefix) v) |> String.join ",") ++ "\n" ++ nesting ++ "}"
-
-        _ ->
-            toString value
-
-
 toString : JsValue -> String
 toString value =
     case value of
@@ -82,6 +68,60 @@ toString value =
 
         Object values ->
             "{" ++ (values |> Dict.toList |> List.map (\( k, v ) -> k ++ ": " ++ toString v) |> String.join ", ") ++ "}"
+
+
+view : Maybe JsValue -> Html msg
+view value =
+    case value of
+        Just v ->
+            viewJsValue v
+
+        Nothing ->
+            text ""
+
+
+viewJsValue : JsValue -> Html msg
+viewJsValue value =
+    case value of
+        String str ->
+            text str
+
+        Int i ->
+            text (String.fromInt i)
+
+        Float f ->
+            text (String.fromFloat f)
+
+        Bool b ->
+            text (Bool.toString b)
+
+        Null ->
+            span [ class "opacity-50 italic" ] [ text "null" ]
+
+        Array a ->
+            span [] (text "[" :: (a |> List.map viewJsValue |> List.intersperse (text ", ")) |> List.add (text "]"))
+
+        Object o ->
+            span [] (text "{" :: (o |> Dict.toList |> List.map (\( k, v ) -> span [] [ text (k ++ ": "), viewJsValue v ]) |> List.intersperse (text ", ")) |> List.add (text "}"))
+
+
+viewRaw : Maybe JsValue -> Html msg
+viewRaw value =
+    pre [ class "text-xs" ] [ text (value |> Maybe.mapOrElse (format "  " "") "") ]
+
+
+format : String -> String -> JsValue -> String
+format prefix nesting value =
+    -- like `toString` but with line return & indentation formatting on Array & Object
+    case value of
+        Array values ->
+            "[" ++ (values |> List.map (\v -> "\n" ++ nesting ++ prefix ++ format prefix (nesting ++ prefix) v) |> String.join ",") ++ "\n" ++ nesting ++ "]"
+
+        Object values ->
+            "{" ++ (values |> Dict.toList |> List.map (\( k, v ) -> "\n" ++ nesting ++ prefix ++ k ++ ": " ++ format prefix (nesting ++ prefix) v) |> String.join ",") ++ "\n" ++ nesting ++ "}"
+
+        _ ->
+            toString value
 
 
 encode : JsValue -> Value
