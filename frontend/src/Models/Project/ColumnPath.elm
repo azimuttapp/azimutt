@@ -30,13 +30,13 @@ fromString path =
 
 toString : ColumnPath -> ColumnPathStr
 toString path =
+    -- use `show` to display info instead
     path |> Nel.toList |> String.join separator
 
 
 show : ColumnPath -> String
 show path =
-    -- use `show` to display info instead of `toString`
-    toString path
+    path |> Nel.toList |> String.join "."
 
 
 withName : ColumnPath -> String -> String

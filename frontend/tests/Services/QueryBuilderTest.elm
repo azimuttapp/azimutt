@@ -3,7 +3,7 @@ module Services.QueryBuilderTest exposing (..)
 import Expect
 import Libs.Models.DatabaseKind exposing (DatabaseKind(..))
 import Libs.Nel as Nel exposing (Nel)
-import Models.Project.ColumnName exposing (ColumnName)
+import Models.Project.ColumnPath as ColumnPath
 import Models.Project.ColumnType exposing (ColumnType)
 import Models.Project.TableId exposing (TableId)
 import Services.QueryBuilder exposing (FilterOperation(..), FilterOperator(..), TableFilter, filterTable, findRow, limitResults)
@@ -18,6 +18,7 @@ suite =
             , test "table only" (\_ -> fTable PostgreSQL publicUsers [] |> Expect.equal "SELECT * FROM public.users;")
             , test "with eq filter" (\_ -> fTable PostgreSQL users [ filter OpAnd "id" OpEqual "3" "int" ] |> Expect.equal "SELECT * FROM users WHERE id=3;")
             , test "with 2 filters" (\_ -> fTable PostgreSQL users [ filter OpAnd "id" OpNotEqual "3" "int", filter OpAnd "name" OpIsNotNull "" "text" ] |> Expect.equal "SELECT * FROM users WHERE id!=3 AND name IS NOT NULL;")
+            , test "with json" (\_ -> fTable PostgreSQL users [ filter OpAnd "data:id" OpEqual "3" "int" ] |> Expect.equal "SELECT * FROM users WHERE data->>'id'=3;")
             ]
         , describe "findRow"
             [ test "with id" (\_ -> fRow PostgreSQL ( "public", "users" ) [ ( "id", "3", "int" ) ] |> Expect.equal "SELECT * FROM public.users WHERE id=3 LIMIT 1;")
@@ -52,6 +53,6 @@ users =
     Just ( "", "users" )
 
 
-filter : FilterOperator -> ColumnName -> FilterOperation -> String -> ColumnType -> TableFilter
-filter operator column operation value kind =
-    { operator = operator, column = Nel column [], kind = kind, operation = operation, value = value }
+filter : FilterOperator -> String -> FilterOperation -> String -> ColumnType -> TableFilter
+filter operator path operation value kind =
+    { operator = operator, column = ColumnPath.fromString path, kind = kind, nullable = True, operation = operation, value = value }

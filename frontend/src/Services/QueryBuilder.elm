@@ -1,4 +1,4 @@
-module Services.QueryBuilder exposing (ColumnMatch, FilterOperation(..), FilterOperator(..), RowQuery, TableFilter, TableQuery, filterTable, findRow, limitResults)
+module Services.QueryBuilder exposing (ColumnMatch, FilterOperation(..), FilterOperator(..), RowQuery, TableFilter, TableQuery, filterTable, findRow, limitResults, operationHasValue, operationToString, operations, operationsForType, operatorToString, operators, stringToOperation, stringToOperator)
 
 import Libs.Models.DatabaseKind as DatabaseKind exposing (DatabaseKind)
 import Libs.Nel as Nel exposing (Nel)
@@ -13,7 +13,7 @@ type alias TableQuery =
 
 
 type alias TableFilter =
-    { operator : FilterOperator, column : ColumnPath, kind : ColumnType, operation : FilterOperation, value : String }
+    { operator : FilterOperator, column : ColumnPath, kind : ColumnType, nullable : Bool, operation : FilterOperation, value : String }
 
 
 type alias RowQuery =
@@ -22,22 +22,6 @@ type alias RowQuery =
 
 type alias ColumnMatch =
     { column : ColumnPath, kind : ColumnType, value : String }
-
-
-type FilterOperator
-    = OpAnd
-    | OpOr
-
-
-type FilterOperation
-    = -- TODO: filters by column kind?
-      OpEqual
-    | OpNotEqual
-    | OpIsNull
-    | OpIsNotNull
-    | OpGreaterThan
-    | OpLesserThan
-    | OpLike
 
 
 filterTable : DatabaseKind -> TableQuery -> String
@@ -73,6 +57,199 @@ limitResults db query =
 
     else
         ""
+
+
+type FilterOperator
+    = OpAnd
+    | OpOr
+
+
+operators : List FilterOperator
+operators =
+    [ OpAnd, OpOr ]
+
+
+operatorToString : FilterOperator -> String
+operatorToString op =
+    case op of
+        OpAnd ->
+            "AND"
+
+        OpOr ->
+            "OR"
+
+
+stringToOperator : String -> Maybe FilterOperator
+stringToOperator op =
+    case op of
+        "AND" ->
+            Just OpAnd
+
+        "OR" ->
+            Just OpOr
+
+        _ ->
+            Nothing
+
+
+type FilterOperation
+    = OpEqual
+    | OpNotEqual
+    | OpIsNull
+    | OpIsNotNull
+    | OpGreaterThan
+    | OpLesserThan
+    | OpLike
+
+
+operations : List FilterOperation
+operations =
+    [ OpEqual, OpNotEqual, OpIsNull, OpIsNotNull, OpGreaterThan, OpLesserThan, OpLike ]
+
+
+operationsForType : ColumnType -> Bool -> List FilterOperation
+operationsForType kind nullable =
+    (case ColumnType.parse kind of
+        ColumnType.Unknown _ ->
+            operations
+
+        ColumnType.Array _ ->
+            operations
+
+        ColumnType.Text ->
+            operationsText
+
+        ColumnType.Int ->
+            operationsNumber
+
+        ColumnType.Float ->
+            operationsNumber
+
+        ColumnType.Bool ->
+            operationsBool
+
+        ColumnType.Date ->
+            operationsDate
+
+        ColumnType.Time ->
+            operationsDate
+
+        ColumnType.Instant ->
+            operationsDate
+
+        ColumnType.Interval ->
+            operationsDefault
+
+        ColumnType.Uuid ->
+            operationsDefault
+
+        ColumnType.Ip ->
+            operationsDefault
+
+        ColumnType.Json ->
+            operationsDefault
+
+        ColumnType.Binary ->
+            operationsDefault
+    )
+        |> filterNullableOperations nullable
+
+
+filterNullableOperations : Bool -> List FilterOperation -> List FilterOperation
+filterNullableOperations nullable ops =
+    if nullable then
+        ops
+
+    else
+        ops |> List.filter (isNullOperation >> not)
+
+
+operationsText : List FilterOperation
+operationsText =
+    [ OpEqual, OpNotEqual, OpIsNull, OpIsNotNull, OpGreaterThan, OpLesserThan, OpLike ]
+
+
+operationsNumber : List FilterOperation
+operationsNumber =
+    [ OpEqual, OpNotEqual, OpIsNull, OpIsNotNull, OpGreaterThan, OpLesserThan ]
+
+
+operationsBool : List FilterOperation
+operationsBool =
+    [ OpEqual, OpNotEqual, OpIsNull, OpIsNotNull ]
+
+
+operationsDate : List FilterOperation
+operationsDate =
+    [ OpEqual, OpNotEqual, OpIsNull, OpIsNotNull, OpGreaterThan, OpLesserThan ]
+
+
+operationsDefault : List FilterOperation
+operationsDefault =
+    [ OpEqual, OpNotEqual, OpIsNull, OpIsNotNull ]
+
+
+operationToString : FilterOperation -> String
+operationToString op =
+    case op of
+        OpEqual ->
+            "equal"
+
+        OpNotEqual ->
+            "not equal"
+
+        OpIsNull ->
+            "is null"
+
+        OpIsNotNull ->
+            "is not null"
+
+        OpGreaterThan ->
+            "greater than"
+
+        OpLesserThan ->
+            "lesser than"
+
+        OpLike ->
+            "like"
+
+
+stringToOperation : String -> Maybe FilterOperation
+stringToOperation op =
+    case op of
+        "equal" ->
+            Just OpEqual
+
+        "not equal" ->
+            Just OpNotEqual
+
+        "is null" ->
+            Just OpIsNull
+
+        "is not null" ->
+            Just OpIsNotNull
+
+        "greater than" ->
+            Just OpGreaterThan
+
+        "lesser than" ->
+            Just OpLesserThan
+
+        "like" ->
+            Just OpLike
+
+        _ ->
+            Nothing
+
+
+operationHasValue : FilterOperation -> Bool
+operationHasValue op =
+    isNullOperation op |> not
+
+
+isNullOperation : FilterOperation -> Bool
+isNullOperation op =
+    op == OpIsNull || op == OpIsNotNull
 
 
 formatTable : DatabaseKind -> TableId -> String
@@ -162,7 +339,7 @@ formatMatcher db matches =
 formatColumn : DatabaseKind -> ColumnPath -> String
 formatColumn db column =
     if db == DatabaseKind.PostgreSQL then
-        column.head
+        column.head ++ (column.tail |> List.map (\c -> "->>'" ++ c ++ "'") |> String.join "")
 
     else
         ""

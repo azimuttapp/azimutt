@@ -28,6 +28,8 @@ module Services.Lenses exposing
     , mapErdMCmd
     , mapExecutions
     , mapExportDialogCmd
+    , mapFilter
+    , mapFilters
     , mapFindPath
     , mapFindPathM
     , mapGroups
@@ -66,6 +68,7 @@ module Services.Lenses exposing
     , mapProjectSourceMCmd
     , mapPromptM
     , mapProps
+    , mapQuery
     , mapQueryPaneCmd
     , mapRelatedTables
     , mapRelations
@@ -95,6 +98,7 @@ module Services.Lenses exposing
     , mapTokenFormM
     , mapUniques
     , mapVirtualRelationM
+    , mapVisualEditor
     , setActive
     , setAmlSidebar
     , setAmlSource
@@ -132,6 +136,8 @@ module Services.Lenses exposing
     , setExecutions
     , setExpire
     , setExportDialog
+    , setFilter
+    , setFilters
     , setFindPath
     , setFrom
     , setGroups
@@ -168,6 +174,8 @@ module Services.Lenses exposing
     , setOpenedDialogs
     , setOpenedDropdown
     , setOpenedPopover
+    , setOperation
+    , setOperator
     , setOrganization
     , setOrigins
     , setParsedSchema
@@ -180,6 +188,7 @@ module Services.Lenses exposing
     , setProjectSource
     , setPrompt
     , setProps
+    , setQuery
     , setQueryPane
     , setRelatedTables
     , setRelationStyle
@@ -220,6 +229,7 @@ module Services.Lenses exposing
     , setValue
     , setView
     , setVirtualRelation
+    , setVisualEditor
     , setZoom
     )
 
@@ -565,6 +575,26 @@ mapExportDialogCmd =
     mapCmd_ .exportDialog setExportDialog
 
 
+setFilter : v -> { item | filter : v } -> { item | filter : v }
+setFilter =
+    set_ .filter (\value item -> { item | filter = value })
+
+
+mapFilter : (v -> v) -> { item | filter : v } -> { item | filter : v }
+mapFilter =
+    map_ .filter setFilter
+
+
+setFilters : v -> { item | filters : v } -> { item | filters : v }
+setFilters =
+    set_ .filters (\value item -> { item | filters = value })
+
+
+mapFilters : (v -> v) -> { item | filters : v } -> { item | filters : v }
+mapFilters =
+    map_ .filters setFilters
+
+
 setFindPath : v -> { item | findPath : v } -> { item | findPath : v }
 setFindPath =
     set_ .findPath (\value item -> { item | findPath = value })
@@ -860,6 +890,16 @@ mapOpenedDialogs =
     map_ .openedDialogs setOpenedDialogs
 
 
+setOperation : v -> { item | operation : v } -> { item | operation : v }
+setOperation =
+    set_ .operation (\value item -> { item | operation = value })
+
+
+setOperator : v -> { item | operator : v } -> { item | operator : v }
+setOperator =
+    set_ .operator (\value item -> { item | operator = value })
+
+
 setOrganization : v -> { item | organization : v } -> { item | organization : v }
 setOrganization =
     set_ .organization (\value item -> { item | organization = value })
@@ -978,6 +1018,16 @@ setProps =
 mapProps : (v -> v) -> { item | props : v } -> { item | props : v }
 mapProps =
     map_ .props setProps
+
+
+setQuery : v -> { item | query : v } -> { item | query : v }
+setQuery =
+    set_ .query (\value item -> { item | query = value })
+
+
+mapQuery : (v -> v) -> { item | query : v } -> { item | query : v }
+mapQuery =
+    map_ .query setQuery
 
 
 setQueryPane : v -> { item | queryPane : v } -> { item | queryPane : v }
@@ -1323,6 +1373,16 @@ setVirtualRelation =
 mapVirtualRelationM : (v -> v) -> { item | virtualRelation : Maybe v } -> { item | virtualRelation : Maybe v }
 mapVirtualRelationM =
     mapM_ .virtualRelation setVirtualRelation
+
+
+setVisualEditor : v -> { item | visualEditor : v } -> { item | visualEditor : v }
+setVisualEditor =
+    set_ .visualEditor (\value item -> { item | visualEditor = value })
+
+
+mapVisualEditor : (v -> v) -> { item | visualEditor : v } -> { item | visualEditor : v }
+mapVisualEditor =
+    map_ .visualEditor setVisualEditor
 
 
 setZoom : v -> { item | zoom : v } -> { item | zoom : v }

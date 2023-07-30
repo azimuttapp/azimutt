@@ -1,4 +1,4 @@
-module Models.Project.Column exposing (Column, ColumnLike, NestedColumns(..), clearOrigins, decode, encode, getColumn, merge)
+module Models.Project.Column exposing (Column, ColumnLike, NestedColumns(..), clearOrigins, decode, encode, flatten, getColumn, merge)
 
 import Conf
 import Json.Decode as Decode exposing (Decoder)
@@ -7,10 +7,10 @@ import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
 import Libs.Maybe as Maybe
 import Libs.Ned as Ned exposing (Ned)
-import Libs.Nel as Nel
+import Libs.Nel as Nel exposing (Nel)
 import Models.Project.ColumnIndex exposing (ColumnIndex)
 import Models.Project.ColumnName as ColumnName exposing (ColumnName)
-import Models.Project.ColumnPath exposing (ColumnPath)
+import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.ColumnType as ColumnType exposing (ColumnType)
 import Models.Project.ColumnValue as ColumnValue exposing (ColumnValue)
 import Models.Project.Comment as Comment exposing (Comment)
@@ -67,6 +67,16 @@ merge c1 c2 =
 mergeNested : NestedColumns -> NestedColumns -> NestedColumns
 mergeNested (NestedColumns c1) (NestedColumns c2) =
     Ned.merge merge c1 c2 |> NestedColumns
+
+
+flatten : Column -> List { path : ColumnPath, column : Column }
+flatten col =
+    Nel col.name [] |> (\path -> { path = path, column = col } :: (col.columns |> Maybe.mapOrElse (flattenNested path) []))
+
+
+flattenNested : ColumnPath -> NestedColumns -> List { path : ColumnPath, column : Column }
+flattenNested path (NestedColumns cols) =
+    cols |> Ned.values |> Nel.toList |> List.concatMap (\col -> path |> ColumnPath.child col.name |> (\p -> [ { path = p, column = col } ] ++ (col.columns |> Maybe.mapOrElse (flattenNested p) [])))
 
 
 getColumn : ColumnPath -> Column -> Maybe Column
