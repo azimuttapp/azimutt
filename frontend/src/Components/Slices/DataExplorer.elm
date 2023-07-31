@@ -1,6 +1,5 @@
 module Components.Slices.DataExplorer exposing (DataExplorerTab(..), DocState, Model, Msg(..), QueryEditor, SavedQuery, SharedDocState, VisualEditor, doc, docInit, init)
 
-import Array
 import Components.Atoms.Badge as Badge
 import Components.Atoms.Icon as Icon
 import Components.Molecules.Alert as Alert
@@ -28,17 +27,17 @@ import Libs.Nel exposing (Nel)
 import Libs.Tailwind as Tw exposing (TwClass)
 import Libs.Task as T
 import Libs.Time as Time
+import Models.JsValue exposing (JsValue)
 import Models.Project.Column as Column exposing (Column, NestedColumns(..))
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
+import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.ColumnType exposing (ColumnType)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source as Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId)
-import Models.Project.SourceKind exposing (SourceKind(..))
 import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
-import Models.Project.TableName exposing (TableName)
 import Models.UserId exposing (UserId)
 import Services.Lenses exposing (mapFilters, mapVisualEditor, setOperation, setOperator, setValue)
 import Services.QueryBuilder as QueryBuilder
@@ -211,8 +210,8 @@ update wrap msg model =
 -- VIEW
 
 
-view : (Msg -> msg) -> (HtmlId -> msg) -> Time.Posix -> HtmlId -> SchemaName -> HtmlId -> List Source -> Model -> Html msg
-view wrap openDropdown now openedDropdown defaultSchema htmlId sources model =
+view : (Msg -> msg) -> (HtmlId -> msg) -> (ColumnRef -> ColumnType -> JsValue -> msg) -> Time.Posix -> HtmlId -> SchemaName -> HtmlId -> List Source -> Model -> Html msg
+view wrap openDropdown openRow now openedDropdown defaultSchema htmlId sources model =
     div [ class "h-full flex" ]
         [ div [ class "flex-1 overflow-y-auto flex flex-col border-r" ]
             -- TODO: put header on the whole width
@@ -226,7 +225,7 @@ view wrap openDropdown now openedDropdown defaultSchema htmlId sources model =
                     model.source |> Maybe.mapOrElse (\s -> viewQueryEditor wrap (htmlId ++ "-query-editor") s model.queryEditor) (div [] [])
             ]
         , div [ class "flex-1 overflow-y-auto bg-gray-50 pb-28" ]
-            [ viewResults wrap openDropdown now openedDropdown (htmlId ++ "-results") model.results ]
+            [ viewResults wrap openDropdown openRow now openedDropdown defaultSchema (htmlId ++ "-results") model.results ]
         ]
 
 
@@ -475,8 +474,8 @@ viewQueryEditor wrap htmlId ( source, _ ) model =
         ]
 
 
-viewResults : (Msg -> msg) -> (HtmlId -> msg) -> Time.Posix -> HtmlId -> HtmlId -> List DataExplorerQuery.Model -> Html msg
-viewResults wrap openDropdown now openedDropdown htmlId results =
+viewResults : (Msg -> msg) -> (HtmlId -> msg) -> (ColumnRef -> ColumnType -> JsValue -> msg) -> Time.Posix -> HtmlId -> SchemaName -> HtmlId -> List DataExplorerQuery.Model -> Html msg
+viewResults wrap openDropdown openRow now openedDropdown defaultSchema htmlId results =
     if results |> List.isEmpty then
         div [ class "m-3 p-12 block rounded-lg border-2 border-dashed border-gray-200 text-gray-300 text-center text-sm font-semibold" ] [ text "Query results" ]
 
@@ -486,7 +485,7 @@ viewResults wrap openDropdown now openedDropdown htmlId results =
                 |> List.map
                     (\r ->
                         div [ class "m-3 px-3 py-2 rounded-md bg-white shadow" ]
-                            [ DataExplorerQuery.view (QueryMsg r.id >> wrap) openDropdown (DeleteQuery r.id |> wrap) now openedDropdown (htmlId ++ "-" ++ String.fromInt r.id) r
+                            [ DataExplorerQuery.view (QueryMsg r.id >> wrap) openDropdown openRow (DeleteQuery r.id |> wrap) now openedDropdown defaultSchema docSources (htmlId ++ "-" ++ String.fromInt r.id) r
                             ]
                     )
             )
@@ -516,7 +515,7 @@ type alias DocState =
 docInit : DocState
 docInit =
     { openedDropdown = ""
-    , model = init docSources [] Nothing Nothing |> (\m -> { m | resultsSeq = 3, results = docQueryResults })
+    , model = init docSources [] Nothing Nothing |> (\m -> { m | resultsSeq = List.length docQueryResults + 1, results = docQueryResults })
     , oneSource = init (docSources |> List.take 1) [] Nothing Nothing
     , noSource = init [] [] Nothing Nothing
     }
@@ -534,15 +533,20 @@ doc =
 
 docQueryResults : List DataExplorerQuery.Model
 docQueryResults =
-    [ { id = 2
+    [ { id = 3
       , source = Source.toInfo docSource1
-      , query = "SELECT * FROM city;"
-      , executions = Nel { startedAt = Time.zero, state = DataExplorerQuery.StateSuccess DataExplorerQuery.docSuccessState1 } []
+      , query = DataExplorerQuery.docCityQuery
+      , executions = Nel { startedAt = Time.zero, state = DataExplorerQuery.docCitySuccess } []
+      }
+    , { id = 2
+      , source = Source.toInfo docSource1
+      , query = DataExplorerQuery.docProjectsQuery
+      , executions = Nel { startedAt = Time.zero, state = DataExplorerQuery.docProjectsSuccess } []
       }
     , { id = 1
       , source = Source.toInfo docSource1
-      , query = "SELECT * FROM users;"
-      , executions = Nel { startedAt = Time.zero, state = DataExplorerQuery.StateSuccess DataExplorerQuery.docSuccessState2 } []
+      , query = DataExplorerQuery.docUsersQuery
+      , executions = Nel { startedAt = Time.zero, state = DataExplorerQuery.docUsersSuccess } []
       }
     ]
 
@@ -554,22 +558,7 @@ docSources =
 
 docSource1 : Source
 docSource1 =
-    { id = SourceId.zero
-    , name = "azimutt_dev"
-    , kind = DatabaseConnection "postgresql://postgres:postgres@localhost:5432/azimutt_dev"
-    , content = Array.empty
-    , tables =
-        [ docTable "public" "users" [ ( "id", "int", False ), ( "slug", "varchar", False ), ( "name", "varchar", False ), ( "email", "varchar", False ), ( "provider", "varchar", True ), ( "provider_uid", "varchar", True ), ( "avatar", "varchar", False ), ( "github_username", "varchar", True ), ( "twitter_username", "varchar", True ), ( "is_admin", "boolean", False ), ( "hashed_password", "varchar", True ), ( "last_signin", "timestamp", False ), ( "created_at", "timestamp", False ), ( "updated_at", "timestamp", False ), ( "confirmed_at", "timestamp", True ), ( "deleted_at", "timestamp", True ), ( "data", "json", False ), ( "onboarding", "json", False ), ( "provider_data", "json", True ), ( "tags", "varchar[]", False ) ]
-        , docTable "public" "cities" [ ( "id", "int", False ), ( "name", "varchar", False ), ( "country_code", "varchar", False ), ( "district", "varchar", False ), ( "population", "int", False ) ]
-        ]
-            |> Dict.fromListMap .id
-    , relations = []
-    , types = Dict.empty
-    , enabled = True
-    , fromSample = Nothing
-    , createdAt = Time.zero
-    , updatedAt = Time.zero
-    }
+    DataExplorerQuery.docSource
 
 
 docSource2 : Source
@@ -578,16 +567,17 @@ docSource2 =
         | id = SourceId.one
         , name = "azimutt_prod"
         , tables =
-            [ docTable "public" "users" [ ( "id", "int", False ), ( "name", "varchar", False ), ( "email", "varchar", False ), ( "created_at", "timestamp", False ) ]
+            [ DataExplorerQuery.docTable "public" "users" [ ( "id", "int", False ), ( "name", "varchar", False ), ( "email", "varchar", False ), ( "created_at", "timestamp", False ) ]
             , Table.new "" "key_values" False docKeyValueColumns Nothing [] [] [] Nothing []
             ]
                 |> Dict.fromListMap .id
+        , relations = []
     }
 
 
 docSource3 : Source
 docSource3 =
-    { docSource1 | id = SourceId.two, name = "new", tables = Dict.empty }
+    { docSource1 | id = SourceId.two, name = "new", tables = Dict.empty, relations = [] }
 
 
 docKeyValueColumns : Dict ColumnName Column
@@ -615,29 +605,13 @@ docVisualEditor =
     }
 
 
-docTable : SchemaName -> TableName -> List ( ColumnName, ColumnType, Bool ) -> Table
-docTable schema name columns =
-    { id = ( schema, name )
-    , schema = schema
-    , name = name
-    , view = False
-    , columns = columns |> List.indexedMap (\i ( col, kind, nullable ) -> { index = i, name = col, kind = kind, nullable = nullable, default = Nothing, comment = Nothing, columns = Nothing, origins = [] }) |> Dict.fromListMap .name
-    , primaryKey = Nothing
-    , uniques = []
-    , indexes = []
-    , checks = []
-    , comment = Nothing
-    , origins = []
-    }
-
-
 
 -- DOC HELPERS
 
 
 docComponentState : String -> (DocState -> Model) -> (DocState -> Model -> DocState) -> List Source -> ( String, SharedDocState x -> Html (ElmBook.Msg (SharedDocState x)) )
 docComponentState name get set sources =
-    ( name, \{ dataExplorerDocState } -> dataExplorerDocState |> (\s -> div [ style "height" "500px" ] [ view (docUpdate s get set) (docOpenDropdown s) Time.zero s.openedDropdown "public" "data-explorer" sources (get s) ]) )
+    ( name, \{ dataExplorerDocState } -> dataExplorerDocState |> (\s -> div [ style "height" "500px" ] [ view (docUpdate s get set) (docOpenDropdown s) docOpenRow Time.zero s.openedDropdown "public" "data-explorer" sources (get s) ]) )
 
 
 docUpdate : DocState -> (DocState -> Model) -> (DocState -> Model -> DocState) -> Msg -> ElmBook.Msg (SharedDocState x)
@@ -662,3 +636,8 @@ docSetState state =
 docWrap : Msg -> ElmBook.Msg state
 docWrap =
     \_ -> logAction "wrap"
+
+
+docOpenRow : ColumnRef -> ColumnType -> JsValue -> ElmBook.Msg state
+docOpenRow =
+    \_ _ _ -> logAction "openRow"
