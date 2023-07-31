@@ -12,7 +12,6 @@ import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Html, button, div, p, pre, span, table, tbody, td, text, th, thead, tr)
 import Html.Attributes exposing (class, classList, id, scope, title, type_)
 import Html.Events exposing (onClick)
-import Libs.Bool as Bool
 import Libs.Dict as Dict
 import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, css)
 import Libs.List as List
@@ -163,7 +162,7 @@ view wrap openDropdown openRow deleteQuery now openedDropdown defaultSchema sour
                     , span [] [ text (String.fromInt (Time.posixToMillis now - Time.posixToMillis model.executions.head.startedAt) ++ " ms") ]
                     ]
                 ]
-                (div [ class "mt-3" ] [ viewQuery model.query ])
+                (div [ class "mt-3" ] [ viewQuery "px-6 py-4 text-sm" model.query ])
                 (div [ class "relative flex space-x-1 text-left" ] [ viewActionButton "Cancel execution" Icon.XCircle ])
 
         StateCanceled res ->
@@ -174,7 +173,7 @@ view wrap openDropdown openRow deleteQuery now openedDropdown defaultSchema sour
                     , span [] [ text (String.fromInt (Time.posixToMillis res.canceledAt - Time.posixToMillis model.executions.head.startedAt) ++ " ms") ]
                     ]
                 ]
-                (div [ class "mt-3" ] [ viewQuery model.query ])
+                (div [ class "mt-3" ] [ viewQuery "px-6 py-4 text-sm" model.query ])
                 (div [ class "relative flex space-x-1 text-left" ] [ viewActionButton "Delete" Icon.Trash ])
 
         StateFailure res ->
@@ -189,7 +188,7 @@ view wrap openDropdown openRow deleteQuery now openedDropdown defaultSchema sour
                     [ p [ class "mt-3 text-sm font-semibold text-gray-900" ] [ text "Error" ]
                     , pre [ class "px-6 py-4 block text-sm whitespace-pre overflow-x-auto rounded bg-red-50 border border-red-200" ] [ text res.error ]
                     , p [ class "mt-3 text-sm font-semibold text-gray-900" ] [ text "SQL" ]
-                    , viewQuery model.query
+                    , viewQuery "px-6 py-4 text-sm" model.query
                     ]
                 )
                 (div [ class "relative flex space-x-1 text-left" ]
@@ -215,11 +214,12 @@ view wrap openDropdown openRow deleteQuery now openedDropdown defaultSchema sour
                     [ if res.showQuery then
                         div [ class "relative mt-3" ]
                             [ button [ type_ "button", onClick (wrap ToggleQuery), class "absolute top-0 right-0 p-3 text-gray-500" ] [ Icon.solid Icon.X "w-3 h-3" ]
-                            , viewQuery model.query
+                            , viewQuery "px-6 py-4 text-sm" model.query
                             ]
 
                       else
-                        div [] []
+                        div [ class "relative mt-3", onClick (wrap ToggleQuery) ]
+                            [ viewQuery "px-2 py-1 text-xs cursor-pointer" (model.query |> String.split "\n" |> List.head |> Maybe.withDefault "") ]
                     , div [ class "mt-3" ] [ viewSuccess wrap (openRow model.source) defaultSchema (sources |> List.find (\s -> s.id == model.source.id)) res ]
                     ]
                 )
@@ -239,8 +239,7 @@ view wrap openDropdown openRow deleteQuery now openedDropdown defaultSchema sour
                     )
                     (\_ ->
                         div []
-                            ([ { label = Bool.cond res.showQuery "Hide query" "Show query", content = ContextMenu.Simple { action = wrap ToggleQuery } }
-                             , { label = "Explore in full screen", content = ContextMenu.Simple { action = wrap FullScreen } }
+                            ([ { label = "Explore in full screen", content = ContextMenu.Simple { action = wrap FullScreen } }
                              , { label = "Refresh data", content = ContextMenu.Simple { action = wrap Refresh } }
                              , { label = "Export data"
                                , content =
@@ -269,9 +268,9 @@ viewCard cardTitle cardBody cardActions =
         ]
 
 
-viewQuery : String -> Html msg
-viewQuery query =
-    pre [ class "px-6 py-4 block text-sm whitespace-pre overflow-x-auto rounded bg-gray-50 border border-gray-200" ] [ text query ]
+viewQuery : TwClass -> String -> Html msg
+viewQuery classes query =
+    pre [ css [ "block whitespace-pre overflow-x-auto rounded bg-gray-50 border border-gray-200", classes ] ] [ text query ]
 
 
 viewActionButton : String -> Icon -> Html msg
