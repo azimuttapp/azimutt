@@ -17,6 +17,7 @@ module Services.Lenses exposing
     , mapContextMenuM
     , mapDatabaseSourceCmd
     , mapDatabaseSourceMCmd
+    , mapDetailsCmd
     , mapDetailsSidebarCmd
     , mapEditGroupM
     , mapEditMemoM
@@ -75,6 +76,7 @@ module Services.Lenses exposing
     , mapRemoveViews
     , mapRemovedSchemas
     , mapResult
+    , mapResultsCmd
     , mapSampleSourceMCmd
     , mapSaveCmd
     , mapSchemaAnalysisM
@@ -122,6 +124,7 @@ module Services.Lenses exposing
     , setCursorMode
     , setDatabaseSource
     , setDefaultSchema
+    , setDetails
     , setDetailsSidebar
     , setDisplay
     , setDragging
@@ -448,6 +451,16 @@ mapDatabaseSourceMCmd =
 setDefaultSchema : v -> { item | defaultSchema : v } -> { item | defaultSchema : v }
 setDefaultSchema =
     set_ .defaultSchema (\value item -> { item | defaultSchema = value })
+
+
+setDetails : v -> { item | details : v } -> { item | details : v }
+setDetails =
+    set_ .details (\value item -> { item | details = value })
+
+
+mapDetailsCmd : (v -> ( v, Cmd msg )) -> { item | details : v } -> ( { item | details : v }, Cmd msg )
+mapDetailsCmd =
+    mapCmd_ .details setDetails
 
 
 setDetailsSidebar : v -> { item | detailsSidebar : v } -> { item | detailsSidebar : v }
@@ -1103,6 +1116,11 @@ mapResult =
 setResults : v -> { item | results : v } -> { item | results : v }
 setResults =
     set_ .results (\value item -> { item | results = value })
+
+
+mapResultsCmd : (v -> ( v, Cmd msg )) -> { item | results : v } -> ( { item | results : v }, Cmd msg )
+mapResultsCmd =
+    mapCmd_ .results setResults
 
 
 setSampleSource : v -> { item | sampleSource : v } -> { item | sampleSource : v }

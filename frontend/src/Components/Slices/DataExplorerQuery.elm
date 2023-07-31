@@ -38,6 +38,7 @@ import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableName exposing (TableName)
 import Models.SourceInfo exposing (SourceInfo)
 import Services.Lenses exposing (mapExecutions, mapHead, mapState)
+import Services.QueryBuilder as QueryBuilder
 import Time
 
 
@@ -147,7 +148,7 @@ mapSuccess f state =
 -- VIEW
 
 
-view : (Msg -> msg) -> (HtmlId -> msg) -> (ColumnRef -> ColumnType -> JsValue -> msg) -> msg -> Time.Posix -> HtmlId -> SchemaName -> List Source -> HtmlId -> Model -> Html msg
+view : (Msg -> msg) -> (HtmlId -> msg) -> (SourceInfo -> QueryBuilder.RowQuery -> msg) -> msg -> Time.Posix -> HtmlId -> SchemaName -> List Source -> HtmlId -> Model -> Html msg
 view wrap openDropdown openRow deleteQuery now openedDropdown defaultSchema sources htmlId model =
     case model.executions.head.state of
         StateRunning ->
@@ -219,7 +220,7 @@ view wrap openDropdown openRow deleteQuery now openedDropdown defaultSchema sour
 
                       else
                         div [] []
-                    , div [ class "mt-3" ] [ viewSuccess wrap openRow defaultSchema (sources |> List.find (\s -> s.id == model.source.id)) res ]
+                    , div [ class "mt-3" ] [ viewSuccess wrap (openRow model.source) defaultSchema (sources |> List.find (\s -> s.id == model.source.id)) res ]
                     ]
                 )
                 (Dropdown.dropdown { id = dropdownId, direction = BottomLeft, isOpen = openedDropdown == dropdownId }
@@ -279,7 +280,7 @@ viewActionButton name icon =
         [ span [ class "sr-only" ] [ text name ], Icon.outline icon "w-4 h-4" ]
 
 
-viewSuccess : (Msg -> msg) -> (ColumnRef -> ColumnType -> JsValue -> msg) -> SchemaName -> Maybe Source -> SuccessState -> Html msg
+viewSuccess : (Msg -> msg) -> (QueryBuilder.RowQuery -> msg) -> SchemaName -> Maybe Source -> SuccessState -> Html msg
 viewSuccess wrap openRow defaultSchema source res =
     let
         pagination : Pagination.Model
@@ -296,7 +297,7 @@ viewSuccess wrap openRow defaultSchema source res =
         ]
 
 
-viewTable : (Msg -> msg) -> (ColumnRef -> ColumnType -> JsValue -> msg) -> SchemaName -> Maybe Source -> List DatabaseQueryResultsColumn -> List ( RowIndex, DatabaseQueryResultsRow ) -> Dict RowIndex Bool -> Html msg
+viewTable : (Msg -> msg) -> (QueryBuilder.RowQuery -> msg) -> SchemaName -> Maybe Source -> List DatabaseQueryResultsColumn -> List ( RowIndex, DatabaseQueryResultsRow ) -> Dict RowIndex Bool -> Html msg
 viewTable wrap openRow defaultSchema source columns rows expanded =
     -- TODO sort columns
     -- TODO document mode
@@ -354,7 +355,7 @@ targetColumn tables relations ref =
     target |> Maybe.andThen (\r -> tables |> Dict.get r.table |> Maybe.andThen (\t -> t |> Table.getColumn r.column) |> Maybe.map (\c -> { ref = r, kind = c.kind }))
 
 
-viewTableValue : (Msg -> msg) -> (ColumnRef -> ColumnType -> JsValue -> msg) -> SchemaName -> RowIndex -> DatabaseQueryResultsRow -> Dict RowIndex Bool -> { name : String, open : Maybe { ref : ColumnRef, kind : ColumnType } } -> Html msg
+viewTableValue : (Msg -> msg) -> (QueryBuilder.RowQuery -> msg) -> SchemaName -> RowIndex -> DatabaseQueryResultsRow -> Dict RowIndex Bool -> { name : String, open : Maybe { ref : ColumnRef, kind : ColumnType } } -> Html msg
 viewTableValue wrap openRow defaultSchema i row expanded column =
     let
         value : Maybe JsValue
@@ -381,7 +382,7 @@ viewTableValue wrap openRow defaultSchema i row expanded column =
                     [ JsValue.view value
                     , button
                         [ type_ "button"
-                        , onClick (openRow o.ref o.kind v)
+                        , onClick (openRow { table = o.ref.table, primaryKey = Nel { column = o.ref.column, kind = o.kind, value = JsValue.toString v } [] })
                         , title ("Open " ++ TableId.show defaultSchema o.ref.table ++ " with " ++ ColumnPath.show o.ref.column ++ "=" ++ JsValue.toString v)
                         ]
                         [ Icon.solid Icon.ExternalLink "ml-1 w-4 h-4 inline" ]
@@ -706,9 +707,9 @@ docDropdown =
     \_ -> logAction "openDropdown"
 
 
-docOpenRow : ColumnRef -> ColumnType -> JsValue -> ElmBook.Msg state
+docOpenRow : SourceInfo -> QueryBuilder.RowQuery -> ElmBook.Msg state
 docOpenRow =
-    \_ _ _ -> logAction "openRow"
+    \_ _ -> logAction "openRow"
 
 
 docDelete : ElmBook.Msg state

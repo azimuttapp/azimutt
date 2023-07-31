@@ -1,4 +1,4 @@
-module Models.JsValue exposing (JsValue(..), decode, encode, isArray, isObject, toString, view, viewRaw)
+module Models.JsValue exposing (JsValue(..), decode, encode, isArray, isObject, toJson, toString, view, viewRaw)
 
 import Dict exposing (Dict)
 import Html exposing (Html, pre, span, text)
@@ -49,7 +49,7 @@ toString : JsValue -> String
 toString value =
     case value of
         String v ->
-            "\"" ++ (v |> String.replace "\n" "\\n") ++ "\""
+            v
 
         Int v ->
             String.fromInt v
@@ -68,6 +68,31 @@ toString value =
 
         Object values ->
             "{" ++ (values |> Dict.toList |> List.map (\( k, v ) -> k ++ ": " ++ toString v) |> String.join ", ") ++ "}"
+
+
+toJson : JsValue -> String
+toJson value =
+    case value of
+        String v ->
+            "\"" ++ (v |> String.replace "\n" "\\n") ++ "\""
+
+        Int v ->
+            String.fromInt v
+
+        Float v ->
+            String.fromFloat v
+
+        Bool v ->
+            Bool.toString v
+
+        Null ->
+            "null"
+
+        Array values ->
+            "[" ++ (values |> List.map toJson |> String.join ", ") ++ "]"
+
+        Object values ->
+            "{" ++ (values |> Dict.toList |> List.map (\( k, v ) -> k ++ ": " ++ toJson v) |> String.join ", ") ++ "}"
 
 
 view : Maybe JsValue -> Html msg
@@ -121,7 +146,7 @@ format prefix nesting value =
             "{" ++ (values |> Dict.toList |> List.map (\( k, v ) -> "\n" ++ nesting ++ prefix ++ k ++ ": " ++ format prefix (nesting ++ prefix) v) |> String.join ",") ++ "\n" ++ nesting ++ "}"
 
         _ ->
-            toString value
+            toJson value
 
 
 encode : JsValue -> Value

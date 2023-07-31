@@ -255,7 +255,7 @@ docCityColumnValues id name country_code district population =
 
 docUpdate : Int -> DocState -> Msg -> ElmBook.Msg (SharedDocState x)
 docUpdate i s msg =
-    docSetState { s | details = s.details |> List.updateAt i (update docWrap msg >> Tuple.first) }
+    docSetState { s | details = s.details |> List.mapAt i (update docWrap msg >> Tuple.first) }
 
 
 docOpen : Model -> DocState -> ElmBook.Msg (SharedDocState x)

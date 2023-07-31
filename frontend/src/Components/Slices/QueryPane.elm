@@ -309,7 +309,7 @@ viewQueryResultsTableRow display columns i row =
 
 viewQueryResultsRowValue : DisplayMode -> Maybe JsValue -> Html msg
 viewQueryResultsRowValue display value =
-    td [ title (value |> Maybe.mapOrElse JsValue.toString ""), class "max-w-xs truncate p-1 whitespace-nowrap align-top text-left text-xs font-mono text-gray-500" ]
+    td [ title (value |> Maybe.mapOrElse JsValue.toJson ""), class "max-w-xs truncate p-1 whitespace-nowrap align-top text-left text-xs font-mono text-gray-500" ]
         [ case display of
             DisplayTable ->
                 JsValue.view value

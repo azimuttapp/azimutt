@@ -27,21 +27,18 @@ import Libs.Nel exposing (Nel)
 import Libs.Tailwind as Tw exposing (TwClass)
 import Libs.Task as T
 import Libs.Time as Time
-import Models.JsValue exposing (JsValue)
 import Models.Project.Column as Column exposing (Column, NestedColumns(..))
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
-import Models.Project.ColumnRef exposing (ColumnRef)
-import Models.Project.ColumnType exposing (ColumnType)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source as Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
+import Models.SourceInfo exposing (SourceInfo)
 import Models.UserId exposing (UserId)
-import Services.Lenses exposing (mapFilters, mapVisualEditor, setOperation, setOperator, setValue)
+import Services.Lenses exposing (mapDetailsCmd, mapFilters, mapResultsCmd, mapVisualEditor, setOperation, setOperator, setValue)
 import Services.QueryBuilder as QueryBuilder
-import Task
 import Time
 
 
@@ -97,8 +94,11 @@ type Msg
     | UpdateQuery String
     | RunQuery String
     | TimedQuery String Time.Posix
-    | QueryMsg DataExplorerQuery.QueryId DataExplorerQuery.Msg
     | DeleteQuery DataExplorerQuery.QueryId
+    | QueryMsg DataExplorerQuery.QueryId DataExplorerQuery.Msg
+    | OpenDetails SourceInfo QueryBuilder.RowQuery
+    | CloseDetails Int
+    | DetailsMsg Int DataExplorerRow.Msg
     | Close
     | ToggleFullSize
 
@@ -167,19 +167,24 @@ update wrap msg model =
 
         RunQuery query ->
             -- TODO: add tracking with editor source (visual or query)
-            ( model, Time.now |> Task.perform (TimedQuery query >> wrap) )
+            -- FIXME: ( model, Time.now |> Task.perform (TimedQuery query >> wrap) )
+            model.source
+                |> Maybe.map
+                    (\( source, _ ) ->
+                        ( { model | resultsSeq = model.resultsSeq + 1, results = DataExplorerQuery.init model.resultsSeq (Source.toInfo source) query Time.zero :: model.results }
+                        , Cmd.none
+                        )
+                    )
+                |> Maybe.withDefault ( model, Cmd.none )
 
         TimedQuery query now ->
             -- TODO: launch query with Cmd
             model.source
                 |> Maybe.map
                     (\( source, _ ) ->
-                        let
-                            result : DataExplorerQuery.Model
-                            result =
-                                DataExplorerQuery.init model.resultsSeq (Source.toInfo source) query now
-                        in
-                        ( { model | resultsSeq = model.resultsSeq + 1, results = result :: model.results }, Cmd.none )
+                        ( { model | resultsSeq = model.resultsSeq + 1, results = DataExplorerQuery.init model.resultsSeq (Source.toInfo source) query now :: model.results }
+                        , Cmd.none
+                        )
                     )
                 |> Maybe.withDefault ( model, Cmd.none )
 
@@ -187,20 +192,18 @@ update wrap msg model =
             ( { model | results = model.results |> List.filter (\r -> r.id /= id) }, Cmd.none )
 
         QueryMsg id m ->
-            let
-                ( results, cmds ) =
-                    model.results
-                        |> List.map
-                            (\r ->
-                                if r.id == id then
-                                    DataExplorerQuery.update (QueryMsg r.id >> wrap) m r
+            model |> mapResultsCmd (List.mapByCmd .id id (DataExplorerQuery.update (QueryMsg id >> wrap) m))
 
-                                else
-                                    ( r, Cmd.none )
-                            )
-                        |> List.unzip
-            in
-            ( { model | results = results }, Cmd.batch cmds )
+        OpenDetails source query ->
+            -- FIXME: trigger query to get row
+            -- FIXME: get time correctly
+            ( { model | details = { source = source, query = query, startedAt = Time.zero, state = DataExplorerRow.StateLoading } :: model.details }, Cmd.none )
+
+        CloseDetails index ->
+            ( { model | details = model.details |> List.removeAt index }, Cmd.none )
+
+        DetailsMsg index m ->
+            model |> mapDetailsCmd (List.mapAtCmd index (DataExplorerRow.update (DetailsMsg index >> wrap) m))
 
         _ ->
             ( model, Noop |> wrap |> T.send )
@@ -210,8 +213,8 @@ update wrap msg model =
 -- VIEW
 
 
-view : (Msg -> msg) -> (HtmlId -> msg) -> (ColumnRef -> ColumnType -> JsValue -> msg) -> Time.Posix -> HtmlId -> SchemaName -> HtmlId -> List Source -> Model -> Html msg
-view wrap openDropdown openRow now openedDropdown defaultSchema htmlId sources model =
+view : (Msg -> msg) -> (HtmlId -> msg) -> Time.Posix -> HtmlId -> SchemaName -> HtmlId -> List Source -> Model -> Html msg
+view wrap openDropdown now openedDropdown defaultSchema htmlId sources model =
     div [ class "h-full flex" ]
         [ div [ class "flex-1 overflow-y-auto flex flex-col border-r" ]
             -- TODO: put header on the whole width
@@ -225,7 +228,8 @@ view wrap openDropdown openRow now openedDropdown defaultSchema htmlId sources m
                     model.source |> Maybe.mapOrElse (\s -> viewQueryEditor wrap (htmlId ++ "-query-editor") s model.queryEditor) (div [] [])
             ]
         , div [ class "flex-1 overflow-y-auto bg-gray-50 pb-28" ]
-            [ viewResults wrap openDropdown openRow now openedDropdown defaultSchema (htmlId ++ "-results") model.results ]
+            [ viewResults wrap openDropdown (\s q -> OpenDetails s q |> wrap) now openedDropdown defaultSchema (htmlId ++ "-results") model.results ]
+        , viewDetails wrap defaultSchema (htmlId ++ "-details") model.details
         ]
 
 
@@ -474,7 +478,7 @@ viewQueryEditor wrap htmlId ( source, _ ) model =
         ]
 
 
-viewResults : (Msg -> msg) -> (HtmlId -> msg) -> (ColumnRef -> ColumnType -> JsValue -> msg) -> Time.Posix -> HtmlId -> SchemaName -> HtmlId -> List DataExplorerQuery.Model -> Html msg
+viewResults : (Msg -> msg) -> (HtmlId -> msg) -> (SourceInfo -> QueryBuilder.RowQuery -> msg) -> Time.Posix -> HtmlId -> SchemaName -> HtmlId -> List DataExplorerQuery.Model -> Html msg
 viewResults wrap openDropdown openRow now openedDropdown defaultSchema htmlId results =
     if results |> List.isEmpty then
         div [ class "m-3 p-12 block rounded-lg border-2 border-dashed border-gray-200 text-gray-300 text-center text-sm font-semibold" ] [ text "Query results" ]
@@ -489,6 +493,15 @@ viewResults wrap openDropdown openRow now openedDropdown defaultSchema htmlId re
                             ]
                     )
             )
+
+
+viewDetails : (Msg -> msg) -> SchemaName -> HtmlId -> List DataExplorerRow.Model -> Html msg
+viewDetails wrap defaultSchema htmlId details =
+    div []
+        (details
+            |> List.indexedMap (\i m -> DataExplorerRow.view (DetailsMsg i >> wrap) (CloseDetails i |> wrap) defaultSchema (htmlId ++ "-" ++ String.fromInt i) (Just i) m)
+            |> List.reverse
+        )
 
 
 
@@ -611,7 +624,7 @@ docVisualEditor =
 
 docComponentState : String -> (DocState -> Model) -> (DocState -> Model -> DocState) -> List Source -> ( String, SharedDocState x -> Html (ElmBook.Msg (SharedDocState x)) )
 docComponentState name get set sources =
-    ( name, \{ dataExplorerDocState } -> dataExplorerDocState |> (\s -> div [ style "height" "500px" ] [ view (docUpdate s get set) (docOpenDropdown s) docOpenRow Time.zero s.openedDropdown "public" "data-explorer" sources (get s) ]) )
+    ( name, \{ dataExplorerDocState } -> dataExplorerDocState |> (\s -> div [ style "height" "500px" ] [ view (docUpdate s get set) (docOpenDropdown s) Time.zero s.openedDropdown "public" "data-explorer" sources (get s) ]) )
 
 
 docUpdate : DocState -> (DocState -> Model) -> (DocState -> Model -> DocState) -> Msg -> ElmBook.Msg (SharedDocState x)
@@ -636,8 +649,3 @@ docSetState state =
 docWrap : Msg -> ElmBook.Msg state
 docWrap =
     \_ -> logAction "wrap"
-
-
-docOpenRow : ColumnRef -> ColumnType -> JsValue -> ElmBook.Msg state
-docOpenRow =
-    \_ _ _ -> logAction "openRow"

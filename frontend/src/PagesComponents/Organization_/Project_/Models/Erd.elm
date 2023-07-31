@@ -353,7 +353,7 @@ mapSources transform erd =
 
 mapSource : SourceId -> (Source -> Source) -> Erd -> Erd
 mapSource id transform erd =
-    setSources (List.updateBy .id id transform erd.sources) erd
+    setSources (List.mapBy .id id transform erd.sources) erd
 
 
 setSettings : ProjectSettings -> Erd -> Erd

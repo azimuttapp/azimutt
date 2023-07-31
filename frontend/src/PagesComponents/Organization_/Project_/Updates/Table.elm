@@ -397,10 +397,10 @@ mapTablePropOrSelected defaultSchema id transform tableLayouts =
         |> Maybe.map
             (\tableLayout ->
                 if tableLayout.props.selected then
-                    ( tableLayouts |> List.updateBy (.props >> .selected) True transform, Cmd.none )
+                    ( tableLayouts |> List.mapBy (.props >> .selected) True transform, Cmd.none )
 
                 else
-                    ( tableLayouts |> List.updateBy .id id transform, Cmd.none )
+                    ( tableLayouts |> List.mapBy .id id transform, Cmd.none )
             )
         |> Maybe.withDefault ( tableLayouts, "Table " ++ TableId.show defaultSchema id ++ " not found" |> Toasts.info |> Toast |> T.send )
 

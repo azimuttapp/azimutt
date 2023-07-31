@@ -23,6 +23,9 @@ module Libs.List exposing
     , indexedFilter
     , last
     , mapAt
+    , mapAtCmd
+    , mapBy
+    , mapByCmd
     , maximumBy
     , memberBy
     , memberWith
@@ -50,8 +53,6 @@ module Libs.List exposing
     , toggle
     , unique
     , uniqueBy
-    , updateAt
-    , updateBy
     , zip
     , zipBy
     , zipWith
@@ -201,21 +202,21 @@ indexOf item xs =
     xs |> List.indexedMap (\i a -> ( i, a )) |> find (\( _, a ) -> a == item) |> Maybe.map Tuple.first
 
 
-updateAt : Int -> (a -> a) -> List a -> List a
-updateAt index transform list =
+mapAt : Int -> (a -> a) -> List a -> List a
+mapAt index f list =
     list
         |> List.indexedMap
             (\i a ->
                 if index == i then
-                    transform a
+                    f a
 
                 else
                     a
             )
 
 
-updateBy : (a -> b) -> b -> (a -> a) -> List a -> List a
-updateBy matcher value transform list =
+mapBy : (a -> b) -> b -> (a -> a) -> List a -> List a
+mapBy matcher value transform list =
     list
         |> List.map
             (\a ->
@@ -225,6 +226,36 @@ updateBy matcher value transform list =
                 else
                     a
             )
+
+
+mapAtCmd : Int -> (a -> ( a, Cmd msg )) -> List a -> ( List a, Cmd msg )
+mapAtCmd index f list =
+    list
+        |> List.indexedMap
+            (\i a ->
+                if index == i then
+                    f a
+
+                else
+                    ( a, Cmd.none )
+            )
+        |> List.unzip
+        |> Tuple.mapSecond Cmd.batch
+
+
+mapByCmd : (a -> b) -> b -> (a -> ( a, Cmd msg )) -> List a -> ( List a, Cmd msg )
+mapByCmd matcher value f list =
+    list
+        |> List.map
+            (\a ->
+                if matcher a == value then
+                    f a
+
+                else
+                    ( a, Cmd.none )
+            )
+        |> List.unzip
+        |> Tuple.mapSecond Cmd.batch
 
 
 zip : List b -> List a -> List ( a, b )
@@ -255,19 +286,6 @@ moveBy matcher value position list =
 moveByRel : (a -> b) -> b -> Int -> List a -> List a
 moveByRel matcher value delta list =
     list |> findIndexBy matcher value |> Maybe.mapOrElse (\index -> list |> moveIndex index (index + delta)) list
-
-
-mapAt : Int -> (a -> a) -> List a -> List a
-mapAt index f list =
-    list
-        |> List.indexedMap
-            (\i a ->
-                if index == i then
-                    f a
-
-                else
-                    a
-            )
 
 
 removeAt : Int -> List a -> List a
