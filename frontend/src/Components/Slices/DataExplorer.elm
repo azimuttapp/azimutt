@@ -1,4 +1,4 @@
-module Components.Slices.DataExplorer exposing (DataExplorerTab(..), DocState, Model, Msg(..), QueryEditor, SavedQuery, SharedDocState, VisualEditor, doc, docInit, init)
+module Components.Slices.DataExplorer exposing (DataExplorerDisplay(..), DataExplorerTab(..), DocState, Model, Msg(..), QueryEditor, SharedDocState, VisualEditor, doc, docInit, init, update, view)
 
 import Components.Atoms.Badge as Badge
 import Components.Atoms.Icon as Icon
@@ -13,7 +13,6 @@ import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Html, button, div, h3, input, label, nav, option, p, select, table, td, text, textarea, tr)
 import Html.Attributes exposing (autofocus, class, disabled, for, id, name, placeholder, selected, style, title, type_, value)
 import Html.Events exposing (onClick, onInput)
-import Libs.Bool as Bool
 import Libs.Dict as Dict
 import Libs.Html exposing (bText, extLink)
 import Libs.Html.Attributes exposing (css)
@@ -36,7 +35,6 @@ import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.SourceInfo exposing (SourceInfo)
-import Models.UserId exposing (UserId)
 import Services.Lenses exposing (mapDetailsCmd, mapFilters, mapResultsCmd, mapVisualEditor, setOperation, setOperator, setValue)
 import Services.QueryBuilder as QueryBuilder
 import Time
@@ -45,21 +43,26 @@ import Time
 
 -- TODO:
 --  - ERD data exploration: show a row in ERD (from the sidebar) and allow to explore data relations
+--  - Add filter button on results which can change editor (visual or query) and allow to trigger a new query
 --  - Linked rows in the side bar
 --  - handle time better, remove all Time.zero not in doc
 
 
 type alias Model =
-    { activeTab : DataExplorerTab
+    { display : Maybe DataExplorerDisplay
+    , activeTab : DataExplorerTab
     , source : Maybe ( Source, DatabaseUrl )
     , visualEditor : VisualEditor
     , queryEditor : QueryEditor
-    , savedQueries : List SavedQuery
     , resultsSeq : Int
     , results : List DataExplorerQuery.Model
     , details : List DataExplorerRow.Model
-    , fullSize : Bool
     }
+
+
+type DataExplorerDisplay
+    = BottomDisplay
+    | FullScreenDisplay
 
 
 type DataExplorerTab
@@ -75,12 +78,15 @@ type alias QueryEditor =
     String
 
 
-type alias SavedQuery =
-    { name : String, description : String, query : String, createdAt : Time.Posix, createdBy : UserId }
+
+-- TODO type alias SavedQuery =
+--    { name : String, description : String, query : String, createdAt : Time.Posix, createdBy : UserId }
 
 
 type Msg
-    = Noop
+    = OpenExplorer (Maybe SourceId) (Maybe String)
+    | CloseExplorer
+    | UpdateExplorerDisplay (Maybe DataExplorerDisplay)
     | UpdateTab DataExplorerTab
     | UpdateSource (Maybe ( Source, DatabaseUrl ))
     | UpdateTable (Maybe TableId)
@@ -97,45 +103,58 @@ type Msg
     | OpenDetails SourceInfo QueryBuilder.RowQuery
     | CloseDetails Int
     | DetailsMsg Int DataExplorerRow.Msg
-    | Close
-    | ToggleFullSize
 
 
 
 -- INIT
 
 
-init : List Source -> List SavedQuery -> Maybe SourceId -> Maybe String -> Model
-init sources savedQueries source query =
-    { activeTab = query |> Maybe.mapOrElse (\_ -> QueryEditorTab) VisualEditorTab
-    , source = selectSource sources source
+init : Model
+init =
+    { display = Nothing
+    , activeTab = VisualEditorTab
+    , source = Nothing
     , visualEditor = { table = Nothing, filters = [] }
-    , queryEditor = query |> Maybe.withDefault ""
-    , savedQueries = savedQueries
+    , queryEditor = ""
     , resultsSeq = 1
     , results = []
     , details = []
-    , fullSize = False
     }
-
-
-selectSource : List Source -> Maybe SourceId -> Maybe ( Source, DatabaseUrl )
-selectSource sources source =
-    let
-        dbSources : List ( Source, DatabaseUrl )
-        dbSources =
-            sources |> List.filterMap withUrl
-    in
-    source |> Maybe.andThen (\id -> dbSources |> List.find (\( s, _ ) -> s.id == id)) |> Maybe.orElse (dbSources |> List.head)
 
 
 
 -- UPDATE
 
 
-update : (Msg -> msg) -> Msg -> Model -> ( Model, Cmd msg )
-update wrap msg model =
+update : (Msg -> msg) -> List Source -> Msg -> Model -> ( Model, Cmd msg )
+update wrap sources msg model =
     case msg of
+        OpenExplorer source query ->
+            let
+                dbSources : List ( Source, DatabaseUrl )
+                dbSources =
+                    sources |> List.filterMap withUrl
+            in
+            ( { model
+                | display = Just BottomDisplay
+                , activeTab = query |> Maybe.mapOrElse (\_ -> QueryEditorTab) model.activeTab
+                , source =
+                    source
+                        |> Maybe.andThen (\id -> dbSources |> List.find (\( s, _ ) -> s.id == id))
+                        |> Maybe.orElse model.source
+                        |> Maybe.orElse (dbSources |> List.head)
+                , queryEditor = query |> Maybe.withDefault model.queryEditor
+              }
+              -- TODO: run query if present with source
+            , Cmd.none
+            )
+
+        CloseExplorer ->
+            ( { model | display = Nothing }, Cmd.none )
+
+        UpdateExplorerDisplay d ->
+            ( { model | display = d }, Cmd.none )
+
         UpdateTab tab ->
             ( { model | activeTab = tab }, Cmd.none )
 
@@ -193,7 +212,7 @@ update wrap msg model =
             model |> mapResultsCmd (List.mapByCmd .id id (DataExplorerQuery.update (QueryMsg id >> wrap) m))
 
         OpenDetails source query ->
-            -- FIXME: trigger query to get row
+            -- FIXME: trigger query to get data row
             -- FIXME: get time correctly
             ( { model | details = { source = source, query = query, startedAt = Time.zero, state = DataExplorerRow.StateLoading } :: model.details }, Cmd.none )
 
@@ -203,20 +222,18 @@ update wrap msg model =
         DetailsMsg index m ->
             model |> mapDetailsCmd (List.mapAtCmd index (DataExplorerRow.update (DetailsMsg index >> wrap) m))
 
-        _ ->
-            ( model, Noop |> wrap |> T.send )
-
 
 
 -- VIEW
 
 
-view : (Msg -> msg) -> (HtmlId -> msg) -> Time.Posix -> HtmlId -> SchemaName -> HtmlId -> List Source -> Model -> Html msg
-view wrap openDropdown now openedDropdown defaultSchema htmlId sources model =
+view : (Msg -> msg) -> (HtmlId -> msg) -> Time.Posix -> HtmlId -> SchemaName -> HtmlId -> List Source -> Model -> DataExplorerDisplay -> Html msg
+view wrap openDropdown now openedDropdown defaultSchema htmlId sources model display =
     div [ class "h-full flex" ]
+        -- TODO: change width: 1/3 for editor and 2/3 for results
         [ div [ class "flex-1 overflow-y-auto flex flex-col border-r" ]
             -- TODO: put header on the whole width
-            [ viewHeader wrap model.activeTab model.fullSize
+            [ viewHeader wrap model.activeTab display
             , viewSources wrap (htmlId ++ "-sources") sources model.source
             , case model.activeTab of
                 VisualEditorTab ->
@@ -231,8 +248,8 @@ view wrap openDropdown now openedDropdown defaultSchema htmlId sources model =
         ]
 
 
-viewHeader : (Msg -> msg) -> DataExplorerTab -> Bool -> Html msg
-viewHeader wrap activeTab sizeFull =
+viewHeader : (Msg -> msg) -> DataExplorerTab -> DataExplorerDisplay -> Html msg
+viewHeader wrap activeTab display =
     div [ class "px-3 flex justify-between border-b border-gray-200" ]
         [ div [ class "sm:flex sm:items-baseline" ]
             [ h3 [ class "text-base font-semibold leading-6 text-gray-900" ] [ text "Data explorer" ]
@@ -241,15 +258,16 @@ viewHeader wrap activeTab sizeFull =
                     ([ VisualEditorTab, QueryEditorTab ] |> List.map (viewHeaderTab wrap activeTab))
                 ]
             ]
-        , div [ class "pb-2 flex flex-shrink-0 self-center" ]
-            [ button [ onClick (wrap ToggleFullSize), title (Bool.cond sizeFull "minimize" "maximize"), class "rounded-full flex items-center text-gray-400 hover:text-gray-600" ]
-                [ if sizeFull then
-                    Icon.solid Icon.ChevronDoubleDown ""
+        , div [ class "py-2 flex flex-shrink-0 self-center" ]
+            [ case display of
+                FullScreenDisplay ->
+                    button [ onClick (Just BottomDisplay |> UpdateExplorerDisplay |> wrap), title "minimize", class "rounded-full flex items-center text-gray-400 hover:text-gray-600" ]
+                        [ Icon.solid Icon.ChevronDoubleDown "" ]
 
-                  else
-                    Icon.solid Icon.ChevronDoubleUp ""
-                ]
-            , button [ onClick (wrap Close), title "close", class "rounded-full flex items-center text-gray-400 hover:text-gray-600" ] [ Icon.solid Icon.X "" ]
+                BottomDisplay ->
+                    button [ onClick (Just FullScreenDisplay |> UpdateExplorerDisplay |> wrap), title "maximize", class "rounded-full flex items-center text-gray-400 hover:text-gray-600" ]
+                        [ Icon.solid Icon.ChevronDoubleUp "" ]
+            , button [ onClick (wrap CloseExplorer), title "close", class "rounded-full flex items-center text-gray-400 hover:text-gray-600" ] [ Icon.solid Icon.X "" ]
             ]
         ]
 
@@ -265,7 +283,7 @@ viewHeaderTab wrap active tab =
             else
                 "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
     in
-    button [ type_ "button", onClick (UpdateTab tab |> wrap), css [ style, "whitespace-nowrap border-b-2 px-1 pb-2 text-sm font-medium" ] ]
+    button [ type_ "button", onClick (UpdateTab tab |> wrap), css [ style, "whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium" ] ]
         [ text
             (case tab of
                 VisualEditorTab ->
@@ -305,6 +323,7 @@ viewSources wrap htmlId sources selectedSource =
                 ]
 
         _ :: [] ->
+            -- TODO: if source is not selected, select it
             div [] []
 
         dbSources ->
@@ -315,7 +334,7 @@ viewSources wrap htmlId sources selectedSource =
                     , onInput (SourceId.fromString >> Maybe.andThen (\id -> dbSources |> List.findBy (Tuple.first >> .id) id) >> UpdateSource >> wrap)
                     , class "mt-3 mx-3 block rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
                     ]
-                    (dbSources |> List.map (\( s, _ ) -> option [ value (SourceId.toString s.id), selected (selectedSource |> Maybe.hasBy (Tuple.first >> .id) s.id) ] [ text s.name ]))
+                    (option [] [ text "-- select a source" ] :: (dbSources |> List.map (\( s, _ ) -> option [ value (SourceId.toString s.id), selected (selectedSource |> Maybe.hasBy (Tuple.first >> .id) s.id) ] [ text s.name ])))
                 ]
 
 
@@ -526,9 +545,9 @@ type alias DocState =
 docInit : DocState
 docInit =
     { openedDropdown = ""
-    , model = init docSources [] Nothing Nothing |> (\m -> { m | resultsSeq = List.length docQueryResults + 1, results = docQueryResults })
-    , oneSource = init (docSources |> List.take 1) [] Nothing Nothing
-    , noSource = init [] [] Nothing Nothing
+    , model = { init | source = withUrl docSource1, resultsSeq = List.length docQueryResults + 1, results = docQueryResults }
+    , oneSource = init
+    , noSource = init
     }
 
 
@@ -622,12 +641,12 @@ docVisualEditor =
 
 docComponentState : String -> (DocState -> Model) -> (DocState -> Model -> DocState) -> List Source -> ( String, SharedDocState x -> Html (ElmBook.Msg (SharedDocState x)) )
 docComponentState name get set sources =
-    ( name, \{ dataExplorerDocState } -> dataExplorerDocState |> (\s -> div [ style "height" "500px" ] [ view (docUpdate s get set) (docOpenDropdown s) Time.zero s.openedDropdown "public" "data-explorer" sources (get s) ]) )
+    ( name, \{ dataExplorerDocState } -> dataExplorerDocState |> (\s -> div [ style "height" "500px" ] [ view (docUpdate s get set sources) (docOpenDropdown s) Time.zero s.openedDropdown "public" "data-explorer" sources (get s) (get s |> .display |> Maybe.withDefault BottomDisplay) ]) )
 
 
-docUpdate : DocState -> (DocState -> Model) -> (DocState -> Model -> DocState) -> Msg -> ElmBook.Msg (SharedDocState x)
-docUpdate s get set m =
-    s |> get |> update docWrap m |> Tuple.first |> set s |> docSetState
+docUpdate : DocState -> (DocState -> Model) -> (DocState -> Model -> DocState) -> List Source -> Msg -> ElmBook.Msg (SharedDocState x)
+docUpdate s get set sources m =
+    s |> get |> update docWrap sources m |> Tuple.first |> set s |> docSetState
 
 
 docOpenDropdown : DocState -> HtmlId -> ElmBook.Msg (SharedDocState x)

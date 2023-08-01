@@ -15,6 +15,7 @@ module Services.Lenses exposing
     , mapConf
     , mapContent
     , mapContextMenuM
+    , mapDataExplorerCmd
     , mapDatabaseSourceCmd
     , mapDatabaseSourceMCmd
     , mapDetailsCmd
@@ -122,6 +123,7 @@ module Services.Lenses exposing
     , setContextMenu
     , setCurrentLayout
     , setCursorMode
+    , setDataExplorer
     , setDatabaseSource
     , setDefaultSchema
     , setDetails
@@ -446,6 +448,16 @@ mapDatabaseSourceCmd =
 mapDatabaseSourceMCmd : (v -> ( v, Cmd msg )) -> { item | databaseSource : Maybe v } -> ( { item | databaseSource : Maybe v }, Cmd msg )
 mapDatabaseSourceMCmd =
     mapMCmd_ .databaseSource setDatabaseSource
+
+
+setDataExplorer : v -> { item | dataExplorer : v } -> { item | dataExplorer : v }
+setDataExplorer =
+    set_ .dataExplorer (\value item -> { item | dataExplorer = value })
+
+
+mapDataExplorerCmd : (v -> ( v, Cmd msg )) -> { item | dataExplorer : v } -> ( { item | dataExplorer : v }, Cmd msg )
+mapDataExplorerCmd =
+    mapCmd_ .dataExplorer setDataExplorer
 
 
 setDefaultSchema : v -> { item | defaultSchema : v } -> { item | defaultSchema : v }

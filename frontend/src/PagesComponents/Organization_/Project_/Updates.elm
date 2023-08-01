@@ -1,6 +1,7 @@
 module PagesComponents.Organization_.Project_.Updates exposing (update)
 
 import Components.Molecules.Dropdown as Dropdown
+import Components.Slices.DataExplorer as DataExplorer
 import Components.Slices.ProPlan as ProPlan
 import Components.Slices.QueryPane as QueryPane
 import Conf
@@ -74,7 +75,7 @@ import Random
 import Services.Backend as Backend
 import Services.DatabaseSource as DatabaseSource
 import Services.JsonSource as JsonSource
-import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapContextMenuM, mapDetailsSidebarCmd, mapEmbedSourceParsingMCmd, mapErdM, mapErdMCmd, mapExportDialogCmd, mapHoverTable, mapMemos, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapOrganizationM, mapPlan, mapPosition, mapProject, mapPromptM, mapProps, mapQueryPaneCmd, mapSaveCmd, mapSchemaAnalysisM, mapSearch, mapSelected, mapSharingCmd, mapShowHiddenColumns, mapTables, mapTablesCmd, mapToastsCmd, setActive, setCanvas, setCollapsed, setColor, setColors, setConfirm, setContextMenu, setCurrentLayout, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setLast, setLayoutOnLoad, setModal, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setSelected, setShow, setSize, setTables, setText)
+import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapContextMenuM, mapDataExplorerCmd, mapDetailsSidebarCmd, mapEmbedSourceParsingMCmd, mapErdM, mapErdMCmd, mapExportDialogCmd, mapHoverTable, mapMemos, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapOrganizationM, mapPlan, mapPosition, mapProject, mapPromptM, mapProps, mapQueryPaneCmd, mapSaveCmd, mapSchemaAnalysisM, mapSearch, mapSelected, mapSharingCmd, mapShowHiddenColumns, mapTables, mapTablesCmd, mapToastsCmd, setActive, setCanvas, setCollapsed, setColor, setColors, setConfirm, setContextMenu, setCurrentLayout, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setLast, setLayoutOnLoad, setModal, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setSelected, setShow, setSize, setTables, setText)
 import Services.PrismaSource as PrismaSource
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
@@ -246,6 +247,9 @@ update urlLayout zone now urlInfos organizations projects msg model =
 
         QueryPaneMsg message ->
             model.erd |> Maybe.mapOrElse (\erd -> model |> mapQueryPaneCmd (QueryPane.update QueryPaneMsg erd message)) ( model, Cmd.none )
+
+        DataExplorerMsg message ->
+            model.erd |> Maybe.mapOrElse (\erd -> model |> mapDataExplorerCmd (DataExplorer.update DataExplorerMsg erd.sources message)) ( model, Cmd.none )
 
         VirtualRelationMsg message ->
             model |> handleVirtualRelation message

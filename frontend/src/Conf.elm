@@ -147,6 +147,7 @@ ids :
     , detailsSidebarDialog : HtmlId
     , findPathDialog : HtmlId
     , queryPaneDialog : HtmlId
+    , dataExplorerDialog : HtmlId
     , schemaAnalysisDialog : HtmlId
     , helpDialog : HtmlId
     , customDialog : HtmlId
@@ -167,6 +168,7 @@ ids =
     , detailsSidebarDialog = "details-sidebar"
     , findPathDialog = "find-path-dialog"
     , queryPaneDialog = "query-pane-dialog"
+    , dataExplorerDialog = "data-explorer-dialog"
     , schemaAnalysisDialog = "schema-analysis-dialog"
     , helpDialog = "help-dialog"
     , customDialog = "custom-dialog"

@@ -2,6 +2,7 @@ module PagesComponents.Organization_.Project_.Views exposing (title, view)
 
 import Components.Atoms.Loader as Loader
 import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
+import Components.Slices.DataExplorer as DataExplorer
 import Components.Slices.QueryPane as QueryPane
 import Conf
 import Dict
@@ -110,7 +111,7 @@ viewApp currentUrl urlOrganization shared model htmlId erd =
                             (layout.tables |> List.isEmpty |> not)
                             (model.amlSidebar /= Nothing)
                             (model.detailsSidebar /= Nothing)
-                            (model.queryPane /= Nothing)
+                            (model.dataExplorer.display /= Nothing)
                         )
 
                   else
@@ -124,7 +125,7 @@ viewApp currentUrl urlOrganization shared model htmlId erd =
             , viewLeftSidebar model
             , viewRightSidebar model
             ]
-        , viewBottomSheet model
+        , viewBottomSheet shared model
         ]
 
 
@@ -156,12 +157,13 @@ viewRightSidebar model =
         ]
 
 
-viewBottomSheet : Model -> Html Msg
-viewBottomSheet model =
+viewBottomSheet : Shared.Model -> Model -> Html Msg
+viewBottomSheet shared model =
     let
         content : Maybe (Html Msg)
         content =
-            model.queryPane |> Maybe.map2 (\erd -> QueryPane.view QueryPaneMsg erd.sources) model.erd
+            (model.dataExplorer.display |> Maybe.map2 (\erd -> DataExplorer.view DataExplorerMsg DropdownToggle shared.now model.openedDropdown erd.settings.defaultSchema Conf.ids.dataExplorerDialog erd.sources model.dataExplorer) model.erd)
+                |> Maybe.orElse (model.queryPane |> Maybe.map2 (\erd -> QueryPane.view QueryPaneMsg erd.sources) model.erd)
     in
     aside [ class "block flex-shrink-0" ]
         [ div [ style "height" ("calc(" ++ calcBottomSheetHeight model ++ ")"), css [ "relative border-t border-gray-200 bg-white overflow-y-auto" ] ]
@@ -286,7 +288,8 @@ calcNavbarHeight model =
 
 calcBottomSheetHeight : Model -> String
 calcBottomSheetHeight model =
-    (model.queryPane |> Maybe.map .sizeFull)
+    (model.dataExplorer.display |> Maybe.map (\d -> d == DataExplorer.FullScreenDisplay))
+        |> Maybe.orElse (model.queryPane |> Maybe.map .sizeFull)
         |> Maybe.mapOrElse (\full -> B.cond full ("100vh - " ++ calcNavbarHeight model) "400px") "0px"
 
 

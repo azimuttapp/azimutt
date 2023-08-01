@@ -1,6 +1,7 @@
 module PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, AmlSidebarMsg(..), ConfirmDialog, ContextMenu, FindPathMsg(..), GroupEdit, GroupMsg(..), HelpDialog, HelpMsg(..), LayoutMsg(..), MemoEdit, MemoMsg(..), ModalDialog, Model, Msg(..), NavbarModel, NotesDialog, ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, VirtualRelation, VirtualRelationMsg(..), confirm, confirmDanger, emptyModel, prompt, simplePrompt)
 
 import Components.Atoms.Icon exposing (Icon(..))
+import Components.Slices.DataExplorer as DataExplorer
 import Components.Slices.ProPlan as ProPlan
 import Components.Slices.QueryPane as QueryPane
 import DataSources.AmlMiner.AmlAdapter exposing (AmlSchemaError)
@@ -83,6 +84,7 @@ type alias Model =
     , amlSidebar : Maybe AmlSidebar
     , detailsSidebar : Maybe DetailsSidebar.Model
     , queryPane : Maybe QueryPane.Model
+    , dataExplorer : DataExplorer.Model
     , virtualRelation : Maybe VirtualRelation
     , findPath : Maybe FindPathDialog
     , schemaAnalysis : Maybe SchemaAnalysisDialog
@@ -129,6 +131,7 @@ emptyModel =
     , amlSidebar = Nothing
     , detailsSidebar = Nothing
     , queryPane = Nothing
+    , dataExplorer = DataExplorer.init
     , virtualRelation = Nothing
     , findPath = Nothing
     , schemaAnalysis = Nothing
@@ -255,6 +258,7 @@ type Msg
     | AmlSidebarMsg AmlSidebarMsg
     | DetailsSidebarMsg DetailsSidebar.Msg
     | QueryPaneMsg QueryPane.Msg
+    | DataExplorerMsg DataExplorer.Msg
     | VirtualRelationMsg VirtualRelationMsg
     | FindPathMsg FindPathMsg
     | SchemaAnalysisMsg SchemaAnalysisMsg
