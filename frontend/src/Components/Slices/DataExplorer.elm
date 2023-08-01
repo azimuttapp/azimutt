@@ -44,11 +44,9 @@ import Time
 
 
 -- TODO:
---  - Simple exploration vs SQL editor on the left
---  - List of Query Results on the right
---  - Row details in the side bar
+--  - ERD data exploration: show a row in ERD (from the sidebar) and allow to explore data relations
 --  - Linked rows in the side bar
---  - stackable side bars
+--  - handle time better, remove all Time.zero not in doc
 
 
 type alias Model =

@@ -91,9 +91,8 @@ type Msg
     = FullScreen
     | Refresh -- run again the query
     | Export -- export results in csv or json (or copy in clipboard)
-    | Cancel -- stop a query in a running state (only UI?)
-    | OpenRow ColumnRef -- open a single row in sidebar
       -- used message ^^
+    | Cancel
     | ChangePage Int
     | ExpandRow RowIndex
     | ToggleQuery
@@ -116,6 +115,9 @@ init id source query startedAt =
 update : (Msg -> msg) -> Msg -> Model -> ( Model, Cmd msg )
 update wrap msg model =
     case msg of
+        Cancel ->
+            ( model |> mapExecutions (mapHead (mapState (mapRunning (\_ -> StateCanceled { canceledAt = Time.zero })))), Cmd.none )
+
         ChangePage p ->
             ( model |> mapExecutions (mapHead (mapState (mapSuccess (\s -> { s | page = p })))), Cmd.none )
 
@@ -131,6 +133,16 @@ update wrap msg model =
         _ ->
             -- FIXME to remove
             ( model, Noop |> wrap |> T.send )
+
+
+mapRunning : (() -> QueryState) -> QueryState -> QueryState
+mapRunning f state =
+    case state of
+        StateRunning ->
+            f ()
+
+        _ ->
+            state
 
 
 mapSuccess : (SuccessState -> SuccessState) -> QueryState -> QueryState
@@ -162,8 +174,8 @@ view wrap openDropdown openRow deleteQuery now openedDropdown defaultSchema sour
                     , span [] [ text (String.fromInt (Time.posixToMillis now - Time.posixToMillis model.executions.head.startedAt) ++ " ms") ]
                     ]
                 ]
-                (div [ class "mt-3" ] [ viewQuery "px-6 py-4 text-sm" model.query ])
-                (div [ class "relative flex space-x-1 text-left" ] [ viewActionButton "Cancel execution" Icon.XCircle ])
+                (div [ class "mt-3" ] [ viewQuery "px-3 py-2 text-sm" model.query ])
+                (div [ class "relative flex space-x-1 text-left" ] [ viewActionButton Icon.XCircle "Cancel execution" (wrap Cancel) ])
 
         StateCanceled res ->
             viewCard
@@ -173,8 +185,8 @@ view wrap openDropdown openRow deleteQuery now openedDropdown defaultSchema sour
                     , span [] [ text (String.fromInt (Time.posixToMillis res.canceledAt - Time.posixToMillis model.executions.head.startedAt) ++ " ms") ]
                     ]
                 ]
-                (div [ class "mt-3" ] [ viewQuery "px-6 py-4 text-sm" model.query ])
-                (div [ class "relative flex space-x-1 text-left" ] [ viewActionButton "Delete" Icon.Trash ])
+                (div [ class "mt-3" ] [ viewQuery "px-3 py-2 text-sm" model.query ])
+                (div [ class "relative flex space-x-1 text-left" ] [ viewActionButton Icon.Trash "Delete" deleteQuery ])
 
         StateFailure res ->
             viewCard
@@ -188,12 +200,12 @@ view wrap openDropdown openRow deleteQuery now openedDropdown defaultSchema sour
                     [ p [ class "mt-3 text-sm font-semibold text-gray-900" ] [ text "Error" ]
                     , pre [ class "px-6 py-4 block text-sm whitespace-pre overflow-x-auto rounded bg-red-50 border border-red-200" ] [ text res.error ]
                     , p [ class "mt-3 text-sm font-semibold text-gray-900" ] [ text "SQL" ]
-                    , viewQuery "px-6 py-4 text-sm" model.query
+                    , viewQuery "px-3 py-2 text-sm" model.query
                     ]
                 )
                 (div [ class "relative flex space-x-1 text-left" ]
-                    [ viewActionButton "Run again execution" Icon.Refresh
-                    , viewActionButton "Delete" Icon.Trash
+                    [ viewActionButton Icon.Refresh "Run again execution" (wrap Noop)
+                    , viewActionButton Icon.Trash "Delete" deleteQuery
                     ]
                 )
 
@@ -214,7 +226,7 @@ view wrap openDropdown openRow deleteQuery now openedDropdown defaultSchema sour
                     [ if res.showQuery then
                         div [ class "relative mt-3" ]
                             [ button [ type_ "button", onClick (wrap ToggleQuery), class "absolute top-0 right-0 p-3 text-gray-500" ] [ Icon.solid Icon.X "w-3 h-3" ]
-                            , viewQuery "px-6 py-4 text-sm" model.query
+                            , viewQuery "px-3 py-2 text-sm" model.query
                             ]
 
                       else
@@ -273,9 +285,9 @@ viewQuery classes query =
     pre [ css [ "block whitespace-pre overflow-x-auto rounded bg-gray-50 border border-gray-200", classes ] ] [ text query ]
 
 
-viewActionButton : String -> Icon -> Html msg
-viewActionButton name icon =
-    button [ type_ "button", title name, class "flex items-center rounded-full text-gray-400 hover:text-gray-600" ]
+viewActionButton : Icon -> String -> msg -> Html msg
+viewActionButton icon name msg =
+    button [ type_ "button", onClick msg, title name, class "flex items-center rounded-full text-gray-400 hover:text-gray-600" ]
         [ span [ class "sr-only" ] [ text name ], Icon.outline icon "w-4 h-4" ]
 
 
