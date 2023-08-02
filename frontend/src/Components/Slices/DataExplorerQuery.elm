@@ -1,4 +1,4 @@
-module Components.Slices.DataExplorerQuery exposing (CanceledState, DocState, FailureState, Model, Msg(..), QueryId, QueryState(..), RowIndex, SharedDocState, SuccessState, doc, docCityQuery, docCitySuccess, docInit, docProjectsQuery, docProjectsSuccess, docRelation, docSource, docTable, docUsersQuery, docUsersSuccess, init, update, view)
+module Components.Slices.DataExplorerQuery exposing (DocState, FailureState, Model, Msg(..), QueryId, QueryState(..), RowIndex, SharedDocState, SuccessState, doc, docCityQuery, docCitySuccess, docInit, docProjectsQuery, docProjectsSuccess, docRelation, docSource, docTable, docUsersQuery, docUsersSuccess, init, update, view)
 
 import Array
 import Components.Atoms.Icon as Icon exposing (Icon)
@@ -18,10 +18,11 @@ import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Nel exposing (Nel)
+import Libs.Result as Result
 import Libs.Tailwind exposing (TwClass, focus)
 import Libs.Task as T
 import Libs.Time as Time
-import Models.DatabaseQueryResults exposing (DatabaseQueryResultsColumn, DatabaseQueryResultsRow)
+import Models.DatabaseQueryResults exposing (DatabaseQueryResults, DatabaseQueryResultsRow, QueryResultColumn)
 import Models.JsValue as JsValue exposing (JsValue)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnPath as ColumnPath
@@ -36,7 +37,7 @@ import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableName exposing (TableName)
 import Models.SourceInfo exposing (SourceInfo)
-import Services.Lenses exposing (mapExecutions, mapHead, mapState)
+import Services.Lenses exposing (mapQuery, mapState)
 import Services.QueryBuilder as QueryBuilder
 import Time
 
@@ -53,29 +54,25 @@ type alias Model =
     { id : QueryId
     , source : SourceInfo
     , query : String
-    , executions : Nel { startedAt : Time.Posix, state : QueryState }
+    , state : QueryState
     }
 
 
 type QueryState
     = StateRunning
-    | StateCanceled CanceledState
+    | StateCanceled
     | StateFailure FailureState
     | StateSuccess SuccessState
 
 
-type alias CanceledState =
-    { canceledAt : Time.Posix }
-
-
 type alias FailureState =
-    { error : String, failedAt : Time.Posix }
+    { error : String, startedAt : Time.Posix, failedAt : Time.Posix }
 
 
 type alias SuccessState =
-    { columns : List DatabaseQueryResultsColumn
+    { columns : List QueryResultColumn
     , rows : List DatabaseQueryResultsRow
-    , durationMs : Int
+    , startedAt : Time.Posix
     , succeededAt : Time.Posix
     , page : Int
     , expanded : Dict RowIndex Bool
@@ -93,6 +90,7 @@ type Msg
     | Export -- export results in csv or json (or copy in clipboard)
       -- used message ^^
     | Cancel
+    | GotResult (Result String DatabaseQueryResults) Time.Posix Time.Posix
     | ChangePage Int
     | ExpandRow RowIndex
     | ToggleQuery
@@ -103,9 +101,31 @@ type Msg
 -- INIT
 
 
-init : QueryId -> SourceInfo -> String -> Time.Posix -> Model
-init id source query startedAt =
-    { id = id, source = source, query = query, executions = Nel { startedAt = startedAt, state = StateRunning } [] }
+init : QueryId -> SourceInfo -> String -> Model
+init id source query =
+    { id = id, source = source, query = query, state = StateRunning }
+
+
+initSuccess : Time.Posix -> Time.Posix -> DatabaseQueryResults -> QueryState
+initSuccess started finished res =
+    StateSuccess
+        { columns = res.columns
+        , rows = res.rows
+        , startedAt = started
+        , succeededAt = finished
+        , page = 1
+        , expanded = Dict.empty
+        , documentMode = False
+        , showQuery = False
+        , search = ""
+        , sortBy = Nothing
+        , fullScreen = False
+        }
+
+
+initFailure : Time.Posix -> Time.Posix -> String -> QueryState
+initFailure started finished err =
+    StateFailure { error = err, startedAt = started, failedAt = finished }
 
 
 
@@ -116,16 +136,19 @@ update : (Msg -> msg) -> Msg -> Model -> ( Model, Cmd msg )
 update wrap msg model =
     case msg of
         Cancel ->
-            ( model |> mapExecutions (mapHead (mapState (mapRunning (\_ -> StateCanceled { canceledAt = Time.zero })))), Cmd.none )
+            ( model |> mapState (mapRunning (\_ -> StateCanceled)), Cmd.none )
+
+        GotResult result started finished ->
+            ( model |> mapQuery (\q -> result |> Result.map .query |> Result.withDefault q) |> mapState (mapRunning (\_ -> result |> Result.fold (initFailure started finished) (initSuccess started finished))), Cmd.none )
 
         ChangePage p ->
-            ( model |> mapExecutions (mapHead (mapState (mapSuccess (\s -> { s | page = p })))), Cmd.none )
+            ( model |> mapState (mapSuccess (\s -> { s | page = p })), Cmd.none )
 
         ExpandRow i ->
-            ( model |> mapExecutions (mapHead (mapState (mapSuccess (\s -> { s | expanded = s.expanded |> Dict.update i (Maybe.mapOrElse not True >> Just) })))), Cmd.none )
+            ( model |> mapState (mapSuccess (\s -> { s | expanded = s.expanded |> Dict.update i (Maybe.mapOrElse not True >> Just) })), Cmd.none )
 
         ToggleQuery ->
-            ( model |> mapExecutions (mapHead (mapState (mapSuccess (\s -> { s | showQuery = not s.showQuery })))), Cmd.none )
+            ( model |> mapState (mapSuccess (\s -> { s | showQuery = not s.showQuery })), Cmd.none )
 
         Noop ->
             ( model, Cmd.none )
@@ -159,9 +182,9 @@ mapSuccess f state =
 -- VIEW
 
 
-view : (Msg -> msg) -> (HtmlId -> msg) -> (SourceInfo -> QueryBuilder.RowQuery -> msg) -> msg -> Time.Posix -> HtmlId -> SchemaName -> List Source -> HtmlId -> Model -> Html msg
-view wrap openDropdown openRow deleteQuery now openedDropdown defaultSchema sources htmlId model =
-    case model.executions.head.state of
+view : (Msg -> msg) -> (HtmlId -> msg) -> (SourceInfo -> QueryBuilder.RowQuery -> msg) -> msg -> HtmlId -> SchemaName -> List Source -> HtmlId -> Model -> Html msg
+view wrap openDropdown openRow deleteQuery openedDropdown defaultSchema sources htmlId model =
+    case model.state of
         StateRunning ->
             viewCard
                 [ p [ class "text-sm font-semibold text-gray-900" ] [ text ("#" ++ String.fromInt model.id ++ " " ++ model.source.name) ]
@@ -171,18 +194,20 @@ view wrap openDropdown openRow deleteQuery now openedDropdown defaultSchema sour
                         [ span [ class "animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" ] []
                         , span [ class "relative inline-flex rounded-full h-2 w-2 bg-amber-500" ] []
                         ]
-                    , span [] [ text (String.fromInt (Time.posixToMillis now - Time.posixToMillis model.executions.head.startedAt) ++ " ms") ]
+
+                    --, span [] [ text (String.fromInt (Time.posixToMillis now - Time.posixToMillis model.startedAt) ++ " ms") ]
                     ]
                 ]
                 (div [ class "mt-3" ] [ viewQuery "px-3 py-2 text-sm" model.query ])
                 (div [ class "relative flex space-x-1 text-left" ] [ viewActionButton Icon.XCircle "Cancel execution" (wrap Cancel) ])
 
-        StateCanceled res ->
+        StateCanceled ->
             viewCard
                 [ p [ class "text-sm font-semibold text-gray-900" ] [ text ("#" ++ String.fromInt model.id ++ " " ++ model.source.name) ]
                 , p [ class "mt-1 text-sm text-gray-500 space-x-2" ]
                     [ span [ class "font-bold" ] [ text "Canceled!" ]
-                    , span [] [ text (String.fromInt (Time.posixToMillis res.canceledAt - Time.posixToMillis model.executions.head.startedAt) ++ " ms") ]
+
+                    --, span [] [ text (String.fromInt (Time.posixToMillis res.canceledAt - Time.posixToMillis model.startedAt) ++ " ms") ]
                     ]
                 ]
                 (div [ class "mt-3" ] [ viewQuery "px-3 py-2 text-sm" model.query ])
@@ -193,7 +218,7 @@ view wrap openDropdown openRow deleteQuery now openedDropdown defaultSchema sour
                 [ p [ class "text-sm font-semibold text-gray-900" ] [ text ("#" ++ String.fromInt model.id ++ " " ++ model.source.name) ]
                 , p [ class "mt-1 text-sm text-gray-500 space-x-1" ]
                     [ span [ class "font-bold text-red-500" ] [ text "Failed" ]
-                    , span [] [ text (String.fromInt (Time.posixToMillis res.failedAt - Time.posixToMillis model.executions.head.startedAt) ++ " ms") ]
+                    , span [] [ text (String.fromInt (Time.posixToMillis res.failedAt - Time.posixToMillis res.startedAt) ++ " ms") ]
                     ]
                 ]
                 (div []
@@ -219,7 +244,7 @@ view wrap openDropdown openRow deleteQuery now openedDropdown defaultSchema sour
                 [ p [ class "text-sm text-gray-500 space-x-1" ]
                     [ span [ class "font-semibold text-gray-900" ] [ text ("#" ++ String.fromInt model.id ++ " " ++ model.source.name) ]
                     , span [] [ text ("(" ++ (res.rows |> List.length |> String.fromInt) ++ " rows)") ]
-                    , span [] [ text (String.fromInt (Time.posixToMillis res.succeededAt - Time.posixToMillis model.executions.head.startedAt) ++ " ms") ]
+                    , span [] [ text (String.fromInt (Time.posixToMillis res.succeededAt - Time.posixToMillis res.startedAt) ++ " ms") ]
                     ]
                 ]
                 (div []
@@ -308,7 +333,7 @@ viewSuccess wrap openRow defaultSchema source res =
         ]
 
 
-viewTable : (Msg -> msg) -> (QueryBuilder.RowQuery -> msg) -> SchemaName -> Maybe Source -> List DatabaseQueryResultsColumn -> List ( RowIndex, DatabaseQueryResultsRow ) -> Dict RowIndex Bool -> Html msg
+viewTable : (Msg -> msg) -> (QueryBuilder.RowQuery -> msg) -> SchemaName -> Maybe Source -> List QueryResultColumn -> List ( RowIndex, DatabaseQueryResultsRow ) -> Dict RowIndex Bool -> Html msg
 viewTable wrap openRow defaultSchema source columns rows expanded =
     -- TODO sort columns
     -- TODO document mode
@@ -430,15 +455,15 @@ doc =
         |> Chapter.renderStatefulComponentList
             [ docComponentState "success" .success (\s m -> { s | success = m })
             , docComponentState "long lines & json" .longLines (\s m -> { s | longLines = m })
-            , docComponent "failure" (\s -> view docWrap docDropdown docOpenRow docDelete Time.zero s.openedDropdown docDefaultSchema docSources docHtmlId (docModel 3 docComplexQuery docStateFailure))
-            , docComponent "running" (\s -> view docWrap docDropdown docOpenRow docDelete Time.zero s.openedDropdown docDefaultSchema docSources docHtmlId (docModel 4 docComplexQuery docStateRunning))
-            , docComponent "canceled" (\s -> view docWrap docDropdown docOpenRow docDelete Time.zero s.openedDropdown docDefaultSchema docSources docHtmlId (docModel 5 docComplexQuery docStateCanceled))
+            , docComponent "failure" (\s -> view docWrap docDropdown docOpenRow docDelete s.openedDropdown docDefaultSchema docSources docHtmlId (docModel 3 docComplexQuery docStateFailure))
+            , docComponent "running" (\s -> view docWrap docDropdown docOpenRow docDelete s.openedDropdown docDefaultSchema docSources docHtmlId (docModel 4 docComplexQuery docStateRunning))
+            , docComponent "canceled" (\s -> view docWrap docDropdown docOpenRow docDelete s.openedDropdown docDefaultSchema docSources docHtmlId (docModel 5 docComplexQuery docStateCanceled))
             ]
 
 
 docModel : Int -> String -> QueryState -> Model
 docModel id query state =
-    { id = id, source = Source.toInfo docSource, query = query, executions = Nel { startedAt = Time.zero, state = state } [] }
+    { id = id, source = Source.toInfo docSource, query = query, state = state }
 
 
 docComplexQuery : String
@@ -479,12 +504,12 @@ docStateRunning =
 
 docStateCanceled : QueryState
 docStateCanceled =
-    { canceledAt = Time.zero } |> StateCanceled
+    StateCanceled
 
 
 docStateFailure : QueryState
 docStateFailure =
-    { error = "Error: relation \"events\" does not exist\nError Code: 42P01", failedAt = Time.zero } |> StateFailure
+    { error = "Error: relation \"events\" does not exist\nError Code: 42P01", startedAt = Time.zero, failedAt = Time.zero } |> StateFailure
 
 
 docCityQuery : String
@@ -494,7 +519,8 @@ docCityQuery =
 
 docCitySuccess : QueryState
 docCitySuccess =
-    { columns = [ "id", "name", "country_code", "district", "population" ] |> List.map (docColumn "public" "city")
+    { query = docCityQuery
+    , columns = [ "id", "name", "country_code", "district", "population" ] |> List.map (docColumn "public" "city")
     , rows =
         [ docCityColumnValues 1 "Kabul" "AFG" "Kabol" 1780000
         , docCityColumnValues 2 "Qandahar" "AFG" "Qandahar" 237500
@@ -520,17 +546,8 @@ docCitySuccess =
         , docCityColumnValues 22 "Maastricht" "NLD" "Limburg" 122087
         , docCityColumnValues 23 "Dordrecht" "NLD" "Zuid-Holland" 119811
         ]
-    , durationMs = 934
-    , succeededAt = Time.zero
-    , page = 1
-    , expanded = Dict.empty
-    , showQuery = False
-    , documentMode = False
-    , search = ""
-    , sortBy = Nothing
-    , fullScreen = False
     }
-        |> StateSuccess
+        |> initSuccess Time.zero Time.zero
 
 
 docUsersQuery : String
@@ -540,22 +557,14 @@ docUsersQuery =
 
 docUsersSuccess : QueryState
 docUsersSuccess =
-    { columns = [ "id", "slug", "name", "email", "provider", "provider_uid", "avatar", "github_username", "twitter_username", "is_admin", "hashed_password", "last_signin", "created_at", "updated_at", "confirmed_at", "deleted_at", "data", "onboarding", "provider_data", "tags" ] |> List.map (docColumn "public" "users")
+    { query = docUsersQuery
+    , columns = [ "id", "slug", "name", "email", "provider", "provider_uid", "avatar", "github_username", "twitter_username", "is_admin", "hashed_password", "last_signin", "created_at", "updated_at", "confirmed_at", "deleted_at", "data", "onboarding", "provider_data", "tags" ] |> List.map (docColumn "public" "users")
     , rows =
         [ docUsersColumnValues "4a3ea674-cff6-44de-b217-3befbe907a95" "admin" "Azimutt Admin" "admin@azimutt.app" Nothing Nothing "https://robohash.org/set_set3/bgset_bg2/VghiKo" (Just "azimuttapp") (Just "azimuttapp") True (Just "$2b$12$5TukDUCUtXm1zu0TECv34eg8SHueHqXUGQ9pvDZA55LUnH30ZEpUa") "2023-04-26T18:28:27.343Z" "2023-04-26T18:28:27.355Z" "2023-04-26T18:28:27.355Z" "2023-04-26T18:28:27.343Z" Nothing (Dict.fromList [ ( "attributed_from", JsValue.String "root" ), ( "attributed_to", JsValue.Null ) ]) Dict.empty [ JsValue.String "admin" ]
         , docUsersColumnValues "11bd9544-d56a-43d7-9065-6f1f25addf8a" "loicknuchel" "Loïc Knuchel" "loicknuchel@gmail.com" (Just "github") (Just "653009") "https://avatars.githubusercontent.com/u/653009?v=4" (Just "loicknuchel") (Just "loicknuchel") True Nothing "2023-04-27T15:55:11.582Z" "2023-04-27T15:55:11.612Z" "2023-07-19T18:57:53.438Z" "2023-04-27T15:55:11.582Z" Nothing (Dict.fromList [ ( "attributed_from", JsValue.Null ), ( "attributed_to", JsValue.Null ) ]) Dict.empty [ JsValue.Null, JsValue.String "user" ]
         ]
-    , durationMs = 934
-    , succeededAt = Time.zero
-    , page = 1
-    , expanded = Dict.empty
-    , showQuery = False
-    , documentMode = False
-    , search = ""
-    , sortBy = Nothing
-    , fullScreen = False
     }
-        |> StateSuccess
+        |> initSuccess Time.zero Time.zero
 
 
 docProjectsQuery : String
@@ -565,25 +574,17 @@ docProjectsQuery =
 
 docProjectsSuccess : QueryState
 docProjectsSuccess =
-    { columns = [ "id", "organization_id", "slug", "name", "created_by", "created_at" ] |> List.map (docColumn "public" "projects")
+    { query = docProjectsQuery
+    , columns = [ "id", "organization_id", "slug", "name", "created_by", "created_at" ] |> List.map (docColumn "public" "projects")
     , rows =
         [ docProjectsColumnValues "9505930b-9d15-4c40-98f2-c730fcbef2dd" "104af15e-54ae-4c12-b293-8846be293203" "basic" "Basic" "4a3ea674-cff6-44de-b217-3befbe907a95" "2023-04-26 20:28:28.436054"
         , docProjectsColumnValues "e2b89bfc-2b4d-4c31-a92c-9ca6584c348c" "2d803b04-90d7-4e05-940f-5e887470b595" "gospeak-sql" "gospeak.sql" "11bd9544-d56a-43d7-9065-6f1f25addf8a" "2023-04-27 18:05:28.643297"
         ]
-    , durationMs = 934
-    , succeededAt = Time.zero
-    , page = 1
-    , expanded = Dict.empty
-    , showQuery = False
-    , documentMode = False
-    , search = ""
-    , sortBy = Nothing
-    , fullScreen = False
     }
-        |> StateSuccess
+        |> initSuccess Time.zero Time.zero
 
 
-docColumn : SchemaName -> TableName -> ColumnName -> DatabaseQueryResultsColumn
+docColumn : SchemaName -> TableName -> ColumnName -> QueryResultColumn
 docColumn schema table column =
     { name = column, ref = Just { table = ( schema, table ), column = Nel column [] } }
 
@@ -686,7 +687,7 @@ docComponent name render =
 
 docComponentState : String -> (DocState -> Model) -> (DocState -> Model -> DocState) -> ( String, SharedDocState x -> Html (ElmBook.Msg (SharedDocState x)) )
 docComponentState name get set =
-    ( name, \{ dataExplorerQueryDocState } -> dataExplorerQueryDocState |> (\s -> get s |> (\m -> view (docUpdate s get set) (docOpenDropdown s) docOpenRow docDelete Time.zero s.openedDropdown docDefaultSchema docSources (docHtmlId ++ "-" ++ String.fromInt m.id) m)) )
+    ( name, \{ dataExplorerQueryDocState } -> dataExplorerQueryDocState |> (\s -> get s |> (\m -> view (docUpdate s get set) (docOpenDropdown s) docOpenRow docDelete s.openedDropdown docDefaultSchema docSources (docHtmlId ++ "-" ++ String.fromInt m.id) m)) )
 
 
 docUpdate : DocState -> (DocState -> Model) -> (DocState -> Model -> DocState) -> Msg -> ElmBook.Msg (SharedDocState x)

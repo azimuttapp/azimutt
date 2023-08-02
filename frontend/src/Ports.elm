@@ -8,12 +8,14 @@ import Json.Encode as Encode
 import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
 import Libs.Models exposing (FileContent, SizeChange)
+import Libs.Models.DatabaseKind as DatabaseKind
 import Libs.Models.DatabaseUrl as DatabaseUrl exposing (DatabaseUrl)
 import Libs.Models.Delta as Delta exposing (Delta)
 import Libs.Models.FileName exposing (FileName)
 import Libs.Models.Hotkey as Hotkey exposing (Hotkey)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Color exposing (Color)
+import Libs.Time as Time
 import Models.DatabaseQueryResults as DatabaseQueryResults exposing (DatabaseQueryResults)
 import Models.OrganizationId as OrganizationId exposing (OrganizationId)
 import Models.Position as Position
@@ -33,7 +35,9 @@ import Models.TrackEvent as TrackEvent exposing (TrackEvent)
 import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
 import PagesComponents.Organization_.Project_.Models.MemoId as MemoId exposing (MemoId)
+import Services.QueryBuilder as QueryBuilder
 import Storage.ProjectV2 exposing (decodeProject)
+import Time
 
 
 click : HtmlId -> Cmd msg
@@ -146,9 +150,9 @@ getColumnStats column ( source, database ) =
     messageToJs (GetColumnStats source database column)
 
 
-runDatabaseQuery : DatabaseUrl -> String -> Cmd msg
-runDatabaseQuery database query =
-    messageToJs (RunDatabaseQuery database query)
+runDatabaseQuery : String -> DatabaseUrl -> String -> Cmd msg
+runDatabaseQuery context database query =
+    messageToJs (RunDatabaseQuery context database query)
 
 
 getPrismaSchema : String -> Cmd msg
@@ -247,7 +251,7 @@ type ElmMsg
     | GetDatabaseSchema DatabaseUrl
     | GetTableStats SourceId DatabaseUrl TableId
     | GetColumnStats SourceId DatabaseUrl ColumnRef
-    | RunDatabaseQuery DatabaseUrl String
+    | RunDatabaseQuery String DatabaseUrl String
     | GetPrismaSchema String
     | ObserveSizes (List HtmlId)
     | ListenKeys (Dict String (List Hotkey))
@@ -268,8 +272,8 @@ type JsMsg
     | GotTableStatsError SourceId TableId String
     | GotColumnStats SourceId ColumnStats
     | GotColumnStatsError SourceId ColumnRef String
-    | GotDatabaseQueryResults DatabaseQueryResults
-    | GotDatabaseQueryError String
+    | GotDatabaseQueryResults String DatabaseQueryResults Time.Posix Time.Posix
+    | GotDatabaseQueryError String String Time.Posix Time.Posix
     | GotPrismaSchema JsonSchema
     | GotPrismaSchemaError String
     | GotHotkey String
@@ -383,8 +387,8 @@ elmEncoder elm =
         GetColumnStats source database column ->
             Encode.object [ ( "kind", "GetColumnStats" |> Encode.string ), ( "source", source |> SourceId.encode ), ( "database", database |> DatabaseUrl.encode ), ( "column", column |> ColumnRef.encode ) ]
 
-        RunDatabaseQuery database query ->
-            Encode.object [ ( "kind", "RunDatabaseQuery" |> Encode.string ), ( "database", database |> DatabaseUrl.encode ), ( "query", query |> Encode.string ) ]
+        RunDatabaseQuery context database query ->
+            Encode.object [ ( "kind", "RunDatabaseQuery" |> Encode.string ), ( "context", context |> Encode.string ), ( "database", database |> DatabaseUrl.encode ), ( "query", query |> QueryBuilder.limitResults (DatabaseKind.fromUrl database) |> Encode.string ) ]
 
         GetPrismaSchema content ->
             Encode.object [ ( "kind", "GetPrismaSchema" |> Encode.string ), ( "content", content |> Encode.string ) ]
@@ -456,10 +460,10 @@ jsDecoder =
                     Decode.map3 GotColumnStatsError (Decode.field "source" SourceId.decode) (Decode.field "column" ColumnRef.decode) (Decode.field "error" Decode.string)
 
                 "GotDatabaseQueryResults" ->
-                    Decode.map GotDatabaseQueryResults (Decode.field "results" DatabaseQueryResults.decode)
+                    Decode.map4 GotDatabaseQueryResults (Decode.field "context" Decode.string) (Decode.field "results" DatabaseQueryResults.decode) (Decode.field "started" Time.decode) (Decode.field "finished" Time.decode)
 
                 "GotDatabaseQueryError" ->
-                    Decode.map GotDatabaseQueryError (Decode.field "error" Decode.string)
+                    Decode.map4 GotDatabaseQueryError (Decode.field "context" Decode.string) (Decode.field "error" Decode.string) (Decode.field "started" Time.decode) (Decode.field "finished" Time.decode)
 
                 "GotPrismaSchema" ->
                     Decode.map GotPrismaSchema (Decode.field "schema" JsonSchema.decode)
@@ -555,10 +559,10 @@ unhandledJsMsgError msg =
                 GotColumnStatsError _ _ _ ->
                     "GotColumnStatsError"
 
-                GotDatabaseQueryResults _ ->
+                GotDatabaseQueryResults _ _ _ _ ->
                     "GotDatabaseQueryResults"
 
-                GotDatabaseQueryError _ ->
+                GotDatabaseQueryError _ _ _ _ ->
                     "GotDatabaseQueryError"
 
                 GotPrismaSchema _ ->

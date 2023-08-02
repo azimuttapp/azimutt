@@ -24,8 +24,8 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Ned as Ned exposing (Ned)
 import Libs.Nel exposing (Nel)
 import Libs.Tailwind as Tw exposing (TwClass)
-import Libs.Task as T
 import Libs.Time as Time
+import Models.DatabaseQueryResults exposing (DatabaseQueryResults)
 import Models.Project.Column as Column exposing (Column, NestedColumns(..))
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
@@ -35,6 +35,7 @@ import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.SourceInfo exposing (SourceInfo)
+import Ports
 import Services.Lenses exposing (mapDetailsCmd, mapFilters, mapResultsCmd, mapVisualEditor, setOperation, setOperator, setValue)
 import Services.QueryBuilder as QueryBuilder
 import Time
@@ -97,7 +98,7 @@ type Msg
     | DeleteFilter Int
     | UpdateQuery String
     | RunQuery String
-    | TimedQuery String Time.Posix
+    | GotQueryResults String (Result String DatabaseQueryResults) Time.Posix Time.Posix
     | DeleteQuery DataExplorerQuery.QueryId
     | QueryMsg DataExplorerQuery.QueryId DataExplorerQuery.Msg
     | OpenDetails SourceInfo QueryBuilder.RowQuery
@@ -183,27 +184,26 @@ update wrap sources msg model =
             ( { model | queryEditor = content }, Cmd.none )
 
         RunQuery query ->
-            -- TODO: add tracking with editor source (visual or query)
-            -- FIXME: ( model, Time.now |> Task.perform (TimedQuery query >> wrap) )
             model.source
                 |> Maybe.map
-                    (\( source, _ ) ->
-                        ( { model | resultsSeq = model.resultsSeq + 1, results = DataExplorerQuery.init model.resultsSeq (Source.toInfo source) query Time.zero :: model.results }
-                        , Cmd.none
+                    (\( source, url ) ->
+                        ( { model | resultsSeq = model.resultsSeq + 1, results = DataExplorerQuery.init model.resultsSeq (Source.toInfo source) query :: model.results }
+                          -- TODO: add tracking with editor source (visual or query)
+                        , Ports.runDatabaseQuery ("data-explorer-query/" ++ String.fromInt model.resultsSeq) url query
                         )
                     )
                 |> Maybe.withDefault ( model, Cmd.none )
 
-        TimedQuery query now ->
-            -- TODO: launch query with Cmd
-            model.source
-                |> Maybe.map
-                    (\( source, _ ) ->
-                        ( { model | resultsSeq = model.resultsSeq + 1, results = DataExplorerQuery.init model.resultsSeq (Source.toInfo source) query now :: model.results }
-                        , Cmd.none
-                        )
-                    )
-                |> Maybe.withDefault ( model, Cmd.none )
+        GotQueryResults context result started finished ->
+            case context |> String.split "/" of
+                "data-explorer-query" :: idStr :: [] ->
+                    idStr
+                        |> String.toInt
+                        |> Maybe.map (\id -> model |> mapResultsCmd (List.mapByCmd .id id (DataExplorerQuery.update (QueryMsg id >> wrap) (DataExplorerQuery.GotResult result started finished))))
+                        |> Maybe.withDefault ( model, Cmd.none )
+
+                _ ->
+                    ( model, Cmd.none )
 
         DeleteQuery id ->
             ( { model | results = model.results |> List.filter (\r -> r.id /= id) }, Cmd.none )
@@ -227,8 +227,8 @@ update wrap sources msg model =
 -- VIEW
 
 
-view : (Msg -> msg) -> (HtmlId -> msg) -> Time.Posix -> HtmlId -> SchemaName -> HtmlId -> List Source -> Model -> DataExplorerDisplay -> Html msg
-view wrap openDropdown now openedDropdown defaultSchema htmlId sources model display =
+view : (Msg -> msg) -> (HtmlId -> msg) -> HtmlId -> SchemaName -> HtmlId -> List Source -> Model -> DataExplorerDisplay -> Html msg
+view wrap openDropdown openedDropdown defaultSchema htmlId sources model display =
     div [ class "h-full flex" ]
         -- TODO: change width: 1/3 for editor and 2/3 for results
         [ div [ class "flex-1 overflow-y-auto flex flex-col border-r" ]
@@ -243,7 +243,7 @@ view wrap openDropdown now openedDropdown defaultSchema htmlId sources model dis
                     model.source |> Maybe.mapOrElse (\s -> viewQueryEditor wrap (htmlId ++ "-query-editor") s model.queryEditor) (div [] [])
             ]
         , div [ class "flex-1 overflow-y-auto bg-gray-50 pb-28" ]
-            [ viewResults wrap openDropdown (\s q -> OpenDetails s q |> wrap) now openedDropdown defaultSchema (htmlId ++ "-results") model.results ]
+            [ viewResults wrap openDropdown (\s q -> OpenDetails s q |> wrap) openedDropdown defaultSchema (htmlId ++ "-results") model.results ]
         , viewDetails wrap defaultSchema (htmlId ++ "-details") model.details
         ]
 
@@ -495,8 +495,8 @@ viewQueryEditor wrap htmlId ( source, _ ) model =
         ]
 
 
-viewResults : (Msg -> msg) -> (HtmlId -> msg) -> (SourceInfo -> QueryBuilder.RowQuery -> msg) -> Time.Posix -> HtmlId -> SchemaName -> HtmlId -> List DataExplorerQuery.Model -> Html msg
-viewResults wrap openDropdown openRow now openedDropdown defaultSchema htmlId results =
+viewResults : (Msg -> msg) -> (HtmlId -> msg) -> (SourceInfo -> QueryBuilder.RowQuery -> msg) -> HtmlId -> SchemaName -> HtmlId -> List DataExplorerQuery.Model -> Html msg
+viewResults wrap openDropdown openRow openedDropdown defaultSchema htmlId results =
     if results |> List.isEmpty then
         div [ class "m-3 p-12 block rounded-lg border-2 border-dashed border-gray-200 text-gray-300 text-center text-sm font-semibold" ] [ text "Query results" ]
 
@@ -506,7 +506,7 @@ viewResults wrap openDropdown openRow now openedDropdown defaultSchema htmlId re
                 |> List.map
                     (\r ->
                         div [ class "m-3 px-3 py-2 rounded-md bg-white shadow" ]
-                            [ DataExplorerQuery.view (QueryMsg r.id >> wrap) openDropdown openRow (DeleteQuery r.id |> wrap) now openedDropdown defaultSchema docSources (htmlId ++ "-" ++ String.fromInt r.id) r
+                            [ DataExplorerQuery.view (QueryMsg r.id >> wrap) openDropdown openRow (DeleteQuery r.id |> wrap) openedDropdown defaultSchema docSources (htmlId ++ "-" ++ String.fromInt r.id) r
                             ]
                     )
             )
@@ -566,17 +566,17 @@ docQueryResults =
     [ { id = 3
       , source = Source.toInfo docSource1
       , query = DataExplorerQuery.docCityQuery
-      , executions = Nel { startedAt = Time.zero, state = DataExplorerQuery.docCitySuccess } []
+      , state = DataExplorerQuery.docCitySuccess
       }
     , { id = 2
       , source = Source.toInfo docSource1
       , query = DataExplorerQuery.docProjectsQuery
-      , executions = Nel { startedAt = Time.zero, state = DataExplorerQuery.docProjectsSuccess } []
+      , state = DataExplorerQuery.docProjectsSuccess
       }
     , { id = 1
       , source = Source.toInfo docSource1
       , query = DataExplorerQuery.docUsersQuery
-      , executions = Nel { startedAt = Time.zero, state = DataExplorerQuery.docUsersSuccess } []
+      , state = DataExplorerQuery.docUsersSuccess
       }
     ]
 
@@ -641,7 +641,7 @@ docVisualEditor =
 
 docComponentState : String -> (DocState -> Model) -> (DocState -> Model -> DocState) -> List Source -> ( String, SharedDocState x -> Html (ElmBook.Msg (SharedDocState x)) )
 docComponentState name get set sources =
-    ( name, \{ dataExplorerDocState } -> dataExplorerDocState |> (\s -> div [ style "height" "500px" ] [ view (docUpdate s get set sources) (docOpenDropdown s) Time.zero s.openedDropdown "public" "data-explorer" sources (get s) (get s |> .display |> Maybe.withDefault BottomDisplay) ]) )
+    ( name, \{ dataExplorerDocState } -> dataExplorerDocState |> (\s -> div [ style "height" "500px" ] [ view (docUpdate s get set sources) (docOpenDropdown s) s.openedDropdown "public" "data-explorer" sources (get s) (get s |> .display |> Maybe.withDefault BottomDisplay) ]) )
 
 
 docUpdate : DocState -> (DocState -> Model) -> (DocState -> Model -> DocState) -> List Source -> Msg -> ElmBook.Msg (SharedDocState x)

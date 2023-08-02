@@ -1,7 +1,7 @@
 import * as Sentry from "@sentry/browser";
 import {BrowserTracing} from "@sentry/tracing";
 import {AnyError, errorToString} from "@azimutt/utils";
-import {ColumnStats, TableStats} from "@azimutt/database-types";
+import {ColumnStats, DatabaseQueryResults, TableStats} from "@azimutt/database-types";
 import {prisma} from "@azimutt/parser-prisma";
 import {
     CreateProject,
@@ -310,12 +310,13 @@ function getColumnStats(msg: GetColumnStats) {
 }
 
 function runDatabaseQuery(msg: RunDatabaseQuery) {
+    const start = Date.now();
     (window.desktop ?
         window.desktop.runDatabaseQuery(msg.database, msg.query) :
         backend.runDatabaseQuery(msg.database, msg.query)
     ).then(
-        results => app.gotDatabaseQueryResults(results),
-        err => app.gotDatabaseQueryError(errorToString(err))
+        (results: DatabaseQueryResults) => app.gotDatabaseQueryResults(msg.context, results, start, Date.now()),
+        (err: any) => app.gotDatabaseQueryError(msg.context, errorToString(err), start, Date.now())
     )
 }
 

@@ -20,7 +20,7 @@ import Libs.Result as Result
 import Libs.Tailwind as Tw
 import Libs.Task as T
 import Libs.Time as Time
-import Models.DatabaseQueryResults exposing (DatabaseQueryResults, DatabaseQueryResultsColumn)
+import Models.DatabaseQueryResults exposing (DatabaseQueryResults, QueryResultColumn)
 import Models.JsValue as JsValue exposing (JsValue)
 import Models.Project.Source as Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId)
@@ -133,7 +133,7 @@ update wrap erd msg model =
             ( model |> Maybe.map (setInput input), Cmd.none )
 
         RunQuery databaseUrl query ->
-            ( model |> Maybe.map (setLoading True >> setResults Nothing), Ports.runDatabaseQuery databaseUrl query )
+            ( model |> Maybe.map (setLoading True >> setResults Nothing), Ports.runDatabaseQuery "query-pane" databaseUrl query )
 
         GotResults results ->
             ( model |> Maybe.map (setLoading False >> setResults (Just results)), Cmd.none )
@@ -274,7 +274,7 @@ viewQueryResults wrap htmlId display results =
         )
 
 
-viewQueryResultsTable : DisplayMode -> List DatabaseQueryResultsColumn -> List (Dict String JsValue) -> Html msg
+viewQueryResultsTable : DisplayMode -> List QueryResultColumn -> List (Dict String JsValue) -> Html msg
 viewQueryResultsTable display columns rows =
     table [ class "min-w-full divide-y divide-gray-300" ]
         [ thead [] [ viewQueryResultsTableHeader columns ]
@@ -282,7 +282,7 @@ viewQueryResultsTable display columns rows =
         ]
 
 
-viewQueryResultsTableHeader : List DatabaseQueryResultsColumn -> Html msg
+viewQueryResultsTableHeader : List QueryResultColumn -> Html msg
 viewQueryResultsTableHeader columns =
     tr [ class "bg-gray-100" ]
         (({ name = "#", ref = Nothing } :: columns)
@@ -293,7 +293,7 @@ viewQueryResultsTableHeader columns =
         )
 
 
-viewQueryResultsTableRow : DisplayMode -> List DatabaseQueryResultsColumn -> Int -> Dict String JsValue -> Html msg
+viewQueryResultsTableRow : DisplayMode -> List QueryResultColumn -> Int -> Dict String JsValue -> Html msg
 viewQueryResultsTableRow display columns i row =
     let
         rest : Dict String JsValue
@@ -377,7 +377,7 @@ docResultError =
     Err "Some unknown error..."
 
 
-docColumns : List DatabaseQueryResultsColumn
+docColumns : List QueryResultColumn
 docColumns =
     [ { name = "id", ref = Just { table = ( "public", "users" ), column = Nel.from "id" } }, { name = "name", ref = Nothing }, { name = "data", ref = Nothing } ]
 

@@ -14,7 +14,7 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Nel exposing (Nel)
 import Libs.Task as T
 import Libs.Time as Time
-import Models.DatabaseQueryResults exposing (DatabaseQueryResultsColumn, DatabaseQueryResultsRow)
+import Models.DatabaseQueryResults exposing (DatabaseQueryResultsRow, QueryResultColumn)
 import Models.JsValue as JsValue exposing (JsValue)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnRef exposing (ColumnRef)
@@ -46,7 +46,7 @@ type alias FailureState =
 
 
 type alias SuccessState =
-    { columns : List DatabaseQueryResultsColumn
+    { columns : List QueryResultColumn
     , values : DatabaseQueryResultsRow
     , durationMs : Int
     , succeededAt : Time.Posix
@@ -239,7 +239,7 @@ docSuccessState =
     }
 
 
-docColumn : SchemaName -> TableName -> ColumnName -> DatabaseQueryResultsColumn
+docColumn : SchemaName -> TableName -> ColumnName -> QueryResultColumn
 docColumn schema table column =
     { name = column, ref = Just { table = ( schema, table ), column = Nel column [] } }
 

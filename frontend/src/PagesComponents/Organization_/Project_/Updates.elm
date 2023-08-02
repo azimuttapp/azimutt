@@ -20,6 +20,7 @@ import Libs.Nel as Nel
 import Libs.Task as T
 import Libs.Time as Time
 import Models.Area as Area
+import Models.DatabaseQueryResults exposing (DatabaseQueryResults)
 import Models.Organization exposing (Organization)
 import Models.Position as Position
 import Models.Project as Project
@@ -456,11 +457,11 @@ handleJsMessage now urlLayout msg model =
         GotColumnStatsError source column error ->
             ( { model | columnStats = model.columnStats |> Dict.update (ColumnId.fromRef column) (Maybe.withDefault Dict.empty >> Dict.insert (SourceId.toString source) (Err error) >> Just) }, Cmd.none )
 
-        GotDatabaseQueryResults results ->
-            ( model, results |> Ok |> QueryPane.GotResults |> QueryPaneMsg |> T.send )
+        GotDatabaseQueryResults context results started finished ->
+            model |> handleDatabaseQueryResponse context (Ok results) started finished
 
-        GotDatabaseQueryError error ->
-            ( model, error |> Err |> QueryPane.GotResults |> QueryPaneMsg |> T.send )
+        GotDatabaseQueryError context error started finished ->
+            model |> handleDatabaseQueryResponse context (Err error) started finished
 
         GotPrismaSchema schema ->
             if model.embedSourceParsing == Nothing then
@@ -716,3 +717,15 @@ showAllTablesIfNeeded erd =
 
     else
         erd
+
+
+handleDatabaseQueryResponse : String -> Result String DatabaseQueryResults -> Time.Posix -> Time.Posix -> Model -> ( Model, Cmd Msg )
+handleDatabaseQueryResponse context result started finished model =
+    if context == "query-pane" then
+        ( model, QueryPane.GotResults result |> QueryPaneMsg |> T.send )
+
+    else if context |> String.startsWith "data-explorer-query/" then
+        ( model, DataExplorer.GotQueryResults context result started finished |> DataExplorerMsg |> T.send )
+
+    else
+        ( model, "Unknown db query context: " ++ context |> Toasts.warning |> Toast |> T.send )

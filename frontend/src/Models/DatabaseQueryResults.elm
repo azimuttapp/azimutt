@@ -1,20 +1,35 @@
-module Models.DatabaseQueryResults exposing (DatabaseQueryResults, DatabaseQueryResultsColumn, DatabaseQueryResultsRow, decode)
+module Models.DatabaseQueryResults exposing (DatabaseQueryResults, DatabaseQueryResultsRow, QueryResultColumn, decode)
 
 import Dict exposing (Dict)
 import Json.Decode as Decode
 import Libs.Json.Decode as Decode
 import Models.JsValue as JsValue exposing (JsValue)
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
+import Time
 
 
-type alias DatabaseQueryResults =
+type alias QueryResult =
     { query : String
-    , columns : List DatabaseQueryResultsColumn
+    , result : Result String QueryResultSuccess
+    , started : Time.Posix
+    , finished : Time.Posix
+    }
+
+
+type alias QueryResultSuccess =
+    { columns : List QueryResultColumn
     , rows : List DatabaseQueryResultsRow
     }
 
 
-type alias DatabaseQueryResultsColumn =
+type alias DatabaseQueryResults =
+    { query : String
+    , columns : List QueryResultColumn
+    , rows : List DatabaseQueryResultsRow
+    }
+
+
+type alias QueryResultColumn =
     { name : String, ref : Maybe ColumnRef }
 
 
@@ -30,8 +45,8 @@ decode =
         (Decode.field "rows" (Decode.list (Decode.dict JsValue.decode)))
 
 
-decodeColumn : Decode.Decoder DatabaseQueryResultsColumn
+decodeColumn : Decode.Decoder QueryResultColumn
 decodeColumn =
-    Decode.map2 DatabaseQueryResultsColumn
+    Decode.map2 QueryResultColumn
         (Decode.field "name" Decode.string)
         (Decode.maybeField "ref" ColumnRef.decode)
