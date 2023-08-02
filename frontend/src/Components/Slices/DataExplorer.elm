@@ -242,7 +242,7 @@ view wrap openDropdown openedDropdown defaultSchema htmlId sources model display
                     model.source |> Maybe.mapOrElse (\s -> viewQueryEditor wrap (htmlId ++ "-query-editor") s model.queryEditor) (div [] [])
             ]
         , div [ class "flex-1 overflow-y-auto bg-gray-50 pb-28" ]
-            [ viewResults wrap openDropdown (\s q -> OpenDetails s q |> wrap) openedDropdown defaultSchema (htmlId ++ "-results") model.results ]
+            [ viewResults wrap openDropdown (\s q -> OpenDetails s q |> wrap) openedDropdown defaultSchema sources (htmlId ++ "-results") model.results ]
         , viewDetails wrap defaultSchema (htmlId ++ "-details") model.details
         ]
 
@@ -494,8 +494,8 @@ viewQueryEditor wrap htmlId ( source, _ ) model =
         ]
 
 
-viewResults : (Msg -> msg) -> (HtmlId -> msg) -> (SourceInfo -> QueryBuilder.RowQuery -> msg) -> HtmlId -> SchemaName -> HtmlId -> List DataExplorerQuery.Model -> Html msg
-viewResults wrap openDropdown openRow openedDropdown defaultSchema htmlId results =
+viewResults : (Msg -> msg) -> (HtmlId -> msg) -> (SourceInfo -> QueryBuilder.RowQuery -> msg) -> HtmlId -> SchemaName -> List Source -> HtmlId -> List DataExplorerQuery.Model -> Html msg
+viewResults wrap openDropdown openRow openedDropdown defaultSchema sources htmlId results =
     if results |> List.isEmpty then
         div [ class "m-3 p-12 block rounded-lg border-2 border-dashed border-gray-200 text-gray-300 text-center text-sm font-semibold" ] [ text "Query results" ]
 
@@ -505,7 +505,7 @@ viewResults wrap openDropdown openRow openedDropdown defaultSchema htmlId result
                 |> List.map
                     (\r ->
                         div [ class "m-3 px-3 py-2 rounded-md bg-white shadow" ]
-                            [ DataExplorerQuery.view (QueryMsg r.id >> wrap) openDropdown openRow (DeleteQuery r.id |> wrap) openedDropdown defaultSchema docSources (htmlId ++ "-" ++ String.fromInt r.id) r
+                            [ DataExplorerQuery.view (QueryMsg r.id >> wrap) openDropdown openRow (DeleteQuery r.id |> wrap) openedDropdown defaultSchema sources (htmlId ++ "-" ++ String.fromInt r.id) r
                             ]
                     )
             )

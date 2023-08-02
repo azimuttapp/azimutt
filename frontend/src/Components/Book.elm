@@ -30,6 +30,7 @@ import Components.Organisms.Details as Details
 import Components.Organisms.Navbar as Navbar
 import Components.Organisms.Relation as Relation
 import Components.Organisms.Table as Table
+import Components.Organisms.TableRow as TableRow
 import Components.Slices.DataExplorer as DataExplorer
 import Components.Slices.DataExplorerQuery as DataExplorerQuery
 import Components.Slices.DataExplorerRow as DataExplorerRow
@@ -70,6 +71,7 @@ type alias DocState =
     , radioDocState : Radio.DocState
     , slideoverDocState : Slideover.DocState
     , tableDocState : Table.DocState
+    , tableRowDocState : TableRow.DocState
     , toastDocState : Toast.DocState
     }
 
@@ -95,6 +97,7 @@ init =
     , radioDocState = Radio.docInit
     , slideoverDocState = Slideover.docInit
     , tableDocState = Table.docInit
+    , tableRowDocState = TableRow.docInit
     , toastDocState = Toast.docInit
     }
 
@@ -113,7 +116,7 @@ main =
             -- sorted alphabetically
             [ ( "", [ docs ] )
             , ( "Slices", [ DataExplorer.doc, DataExplorerQuery.doc, DataExplorerRow.doc, ExportDialogBody.doc, NotFound.doc, NewLayoutBody.doc, ProjectSaveDialogBody.doc, ProPlan.doc, QueryPane.doc ] )
-            , ( "Organisms", [ ColorPicker.doc, Details.doc, Navbar.doc, Relation.doc, Table.doc ] )
+            , ( "Organisms", [ ColorPicker.doc, Details.doc, Navbar.doc, Relation.doc, Table.doc, TableRow.doc ] )
             , ( "Molecules", [ Alert.doc, Avatar.doc, Divider.doc, Dropdown.doc, Editor.doc, FileInput.doc, FormLabel.doc, InputText.doc, ItemList.doc, Modal.doc, Pagination.doc, Popover.doc, Radio.doc, Select.doc, Slideover.doc, Toast.doc, Tooltip.doc ] )
             , ( "Atoms", [ Badge.doc, Button.doc, colorsDoc, Icon.doc, Input.doc, Kbd.doc, Markdown.doc, Link.doc, Loader.doc ] )
             ]
