@@ -4,8 +4,8 @@ import Components.Atoms.Badge as Badge
 import Components.Atoms.Icon as Icon
 import Components.Molecules.Alert as Alert
 import Components.Molecules.Tooltip as Tooltip
+import Components.Slices.DataExplorerDetails as DataExplorerDetails
 import Components.Slices.DataExplorerQuery as DataExplorerQuery
-import Components.Slices.DataExplorerRow as DataExplorerRow
 import Dict exposing (Dict)
 import ElmBook
 import ElmBook.Actions as Actions exposing (logAction)
@@ -18,23 +18,20 @@ import Libs.Html exposing (bText, extLink)
 import Libs.Html.Attributes exposing (css)
 import Libs.List as List
 import Libs.Maybe as Maybe
-import Libs.Models.DatabaseKind as DatabaseKind exposing (DatabaseKind)
-import Libs.Models.DatabaseUrl exposing (DatabaseUrl)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Ned as Ned exposing (Ned)
 import Libs.Nel exposing (Nel)
 import Libs.Tailwind as Tw exposing (TwClass)
-import Libs.Time as Time
+import Models.DbSource as DbSource exposing (DbSource)
+import Models.DbSourceInfo as DbSourceInfo exposing (DbSourceInfo)
 import Models.Project.Column as Column exposing (Column, NestedColumns(..))
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.SchemaName exposing (SchemaName)
-import Models.Project.Source as Source exposing (Source)
+import Models.Project.Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
-import Models.QueryResult exposing (QueryResult)
-import Models.SourceInfo exposing (SourceInfo)
 import Ports
 import Services.Lenses exposing (mapDetailsCmd, mapFilters, mapResultsCmd, mapVisualEditor, setOperation, setOperator, setValue)
 import Services.QueryBuilder as QueryBuilder
@@ -51,12 +48,13 @@ import Services.QueryBuilder as QueryBuilder
 type alias Model =
     { display : Maybe DataExplorerDisplay
     , activeTab : DataExplorerTab
-    , source : Maybe ( Source, DatabaseUrl )
+    , source : Maybe DbSource
     , visualEditor : VisualEditor
     , queryEditor : QueryEditor
-    , resultsSeq : Int
     , results : List DataExplorerQuery.Model
-    , details : List DataExplorerRow.Model
+    , resultsSeq : Int
+    , details : List DataExplorerDetails.Model
+    , detailsSeq : Int
     }
 
 
@@ -88,7 +86,7 @@ type Msg
     | CloseExplorer
     | UpdateExplorerDisplay (Maybe DataExplorerDisplay)
     | UpdateTab DataExplorerTab
-    | UpdateSource (Maybe ( Source, DatabaseUrl ))
+    | UpdateSource (Maybe DbSource)
     | UpdateTable (Maybe TableId)
     | AddFilter Table ColumnPath
     | UpdateFilterOperator Int QueryBuilder.FilterOperator
@@ -96,13 +94,12 @@ type Msg
     | UpdateFilterValue Int String
     | DeleteFilter Int
     | UpdateQuery String
-    | RunQuery String
-    | GotQueryResult QueryResult
-    | DeleteQuery DataExplorerQuery.QueryId
-    | QueryMsg DataExplorerQuery.QueryId DataExplorerQuery.Msg
-    | OpenDetails SourceInfo QueryBuilder.RowQuery
+    | RunQuery DbSource String
+    | DeleteQuery DataExplorerQuery.Id
+    | QueryMsg DataExplorerQuery.Id DataExplorerQuery.Msg
+    | OpenDetails DbSourceInfo QueryBuilder.RowQuery
     | CloseDetails Int
-    | DetailsMsg Int DataExplorerRow.Msg
+    | DetailsMsg DataExplorerDetails.Id DataExplorerDetails.Msg
 
 
 
@@ -116,9 +113,10 @@ init =
     , source = Nothing
     , visualEditor = { table = Nothing, filters = [] }
     , queryEditor = ""
-    , resultsSeq = 1
     , results = []
+    , resultsSeq = 1
     , details = []
+    , detailsSeq = 1
     }
 
 
@@ -131,16 +129,16 @@ update wrap sources msg model =
     case msg of
         OpenExplorer source query ->
             let
-                dbSources : List ( Source, DatabaseUrl )
+                dbSources : List DbSource
                 dbSources =
-                    sources |> List.filterMap withUrl
+                    sources |> List.filterMap DbSource.fromSource
             in
             ( { model
                 | display = Just BottomDisplay
                 , activeTab = query |> Maybe.mapOrElse (\_ -> QueryEditorTab) model.activeTab
                 , source =
                     source
-                        |> Maybe.andThen (\id -> dbSources |> List.find (\( s, _ ) -> s.id == id))
+                        |> Maybe.andThen (\id -> dbSources |> List.find (\s -> s.id == id))
                         |> Maybe.orElse model.source
                         |> Maybe.orElse (dbSources |> List.head)
                 , queryEditor = query |> Maybe.withDefault model.queryEditor
@@ -182,27 +180,16 @@ update wrap sources msg model =
         UpdateQuery content ->
             ( { model | queryEditor = content }, Cmd.none )
 
-        RunQuery query ->
-            model.source
-                |> Maybe.map
-                    (\( source, url ) ->
-                        ( { model | resultsSeq = model.resultsSeq + 1, results = DataExplorerQuery.init model.resultsSeq (Source.toInfo source) query :: model.results }
-                          -- TODO: add tracking with editor source (visual or query)
-                        , Ports.runDatabaseQuery ("data-explorer-query/" ++ String.fromInt model.resultsSeq) url query
-                        )
-                    )
-                |> Maybe.withDefault ( model, Cmd.none )
-
-        GotQueryResult result ->
-            case result.context |> String.split "/" of
-                "data-explorer-query" :: idStr :: [] ->
-                    idStr
-                        |> String.toInt
-                        |> Maybe.map (\id -> model |> mapResultsCmd (List.mapByCmd .id id (DataExplorerQuery.update (QueryMsg id >> wrap) (DataExplorerQuery.GotResult result))))
-                        |> Maybe.withDefault ( model, Cmd.none )
-
-                _ ->
-                    ( model, Cmd.none )
+        RunQuery source query ->
+            let
+                safeQuery : String
+                safeQuery =
+                    query |> QueryBuilder.limitResults source.db.kind
+            in
+            ( { model | results = DataExplorerQuery.init model.resultsSeq (DbSource.toInfo source) safeQuery :: model.results, resultsSeq = model.resultsSeq + 1 }
+              -- TODO: add tracking with editor source (visual or query)
+            , Ports.runDatabaseQuery ("data-explorer-query/" ++ String.fromInt model.resultsSeq) source.db.url safeQuery
+            )
 
         DeleteQuery id ->
             ( { model | results = model.results |> List.filter (\r -> r.id /= id) }, Cmd.none )
@@ -211,15 +198,16 @@ update wrap sources msg model =
             model |> mapResultsCmd (List.mapByCmd .id id (DataExplorerQuery.update (QueryMsg id >> wrap) m))
 
         OpenDetails source query ->
-            -- FIXME: trigger query to get data row
-            -- FIXME: get time correctly
-            ( { model | details = { source = source, query = query, startedAt = Time.zero, state = DataExplorerRow.StateLoading } :: model.details }, Cmd.none )
+            ( { model | details = DataExplorerDetails.init model.detailsSeq source query :: model.details, detailsSeq = model.detailsSeq + 1 }
+              -- TODO: add tracking with editor source (visual or query)
+            , Ports.runDatabaseQuery ("data-explorer-details/" ++ String.fromInt model.detailsSeq) source.db.url (QueryBuilder.findRow source.db.kind query)
+            )
 
         CloseDetails index ->
             ( { model | details = model.details |> List.removeAt index }, Cmd.none )
 
-        DetailsMsg index m ->
-            model |> mapDetailsCmd (List.mapAtCmd index (DataExplorerRow.update (DetailsMsg index >> wrap) m))
+        DetailsMsg id m ->
+            model |> mapDetailsCmd (List.mapByCmd .id id (DataExplorerDetails.update (DetailsMsg id >> wrap) m))
 
 
 
@@ -229,8 +217,7 @@ update wrap sources msg model =
 view : (Msg -> msg) -> (HtmlId -> msg) -> HtmlId -> SchemaName -> HtmlId -> List Source -> Model -> DataExplorerDisplay -> Html msg
 view wrap openDropdown openedDropdown defaultSchema htmlId sources model display =
     div [ class "h-full flex" ]
-        -- TODO: change width: 1/3 for editor and 2/3 for results
-        [ div [ class "flex-1 overflow-y-auto flex flex-col border-r" ]
+        [ div [ class "basis-1/3 flex-1 overflow-y-auto flex flex-col border-r" ]
             -- TODO: put header on the whole width
             [ viewHeader wrap model.activeTab display
             , viewSources wrap (htmlId ++ "-sources") sources model.source
@@ -241,7 +228,7 @@ view wrap openDropdown openedDropdown defaultSchema htmlId sources model display
                 QueryEditorTab ->
                     model.source |> Maybe.mapOrElse (\s -> viewQueryEditor wrap (htmlId ++ "-query-editor") s model.queryEditor) (div [] [])
             ]
-        , div [ class "flex-1 overflow-y-auto bg-gray-50 pb-28" ]
+        , div [ class "basis-2/3 flex-1 overflow-y-auto bg-gray-50 pb-28" ]
             [ viewResults wrap openDropdown (\s q -> OpenDetails s q |> wrap) openedDropdown defaultSchema sources (htmlId ++ "-results") model.results ]
         , viewDetails wrap defaultSchema (htmlId ++ "-details") model.details
         ]
@@ -294,14 +281,14 @@ viewHeaderTab wrap active tab =
         ]
 
 
-viewSources : (Msg -> msg) -> HtmlId -> List Source -> Maybe ( Source, DatabaseUrl ) -> Html msg
+viewSources : (Msg -> msg) -> HtmlId -> List Source -> Maybe DbSource -> Html msg
 viewSources wrap htmlId sources selectedSource =
     let
         sourceInput : HtmlId
         sourceInput =
             htmlId ++ "-input"
     in
-    case sources |> List.filterMap withUrl of
+    case sources |> List.filterMap DbSource.fromSource of
         [] ->
             div [ class "mt-3 mx-3" ]
                 [ Alert.withDescription
@@ -330,15 +317,15 @@ viewSources wrap htmlId sources selectedSource =
                 [ select
                     [ id sourceInput
                     , name sourceInput
-                    , onInput (SourceId.fromString >> Maybe.andThen (\id -> dbSources |> List.findBy (Tuple.first >> .id) id) >> UpdateSource >> wrap)
+                    , onInput (SourceId.fromString >> Maybe.andThen (\id -> dbSources |> List.findBy .id id) >> UpdateSource >> wrap)
                     , class "mt-3 mx-3 block rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
                     ]
-                    (option [] [ text "-- select a source" ] :: (dbSources |> List.map (\( s, _ ) -> option [ value (SourceId.toString s.id), selected (selectedSource |> Maybe.hasBy (Tuple.first >> .id) s.id) ] [ text s.name ])))
+                    (option [] [ text "-- select a source" ] :: (dbSources |> List.map (\s -> option [ value (SourceId.toString s.id), selected (selectedSource |> Maybe.hasBy .id s.id) ] [ text s.name ])))
                 ]
 
 
-viewVisualExplorer : (Msg -> msg) -> SchemaName -> HtmlId -> ( Source, DatabaseUrl ) -> VisualEditor -> Html msg
-viewVisualExplorer wrap defaultSchema htmlId ( source, dbUrl ) model =
+viewVisualExplorer : (Msg -> msg) -> SchemaName -> HtmlId -> DbSource -> VisualEditor -> Html msg
+viewVisualExplorer wrap defaultSchema htmlId source model =
     let
         tables : List TableId
         tables =
@@ -355,7 +342,7 @@ viewVisualExplorer wrap defaultSchema htmlId ( source, dbUrl ) model =
             [ viewVisualExplorerTable wrap defaultSchema (htmlId ++ "-table-input") tables model.table
             , model.table |> Maybe.andThen (\id -> source.tables |> Dict.get id) |> Maybe.mapOrElse (viewVisualExplorerFilterAdd wrap (htmlId ++ "-filter-add")) (div [] [])
             , viewVisualExplorerFilterShow wrap (htmlId ++ "-filter") model.filters
-            , viewVisualExplorerSubmit wrap (DatabaseKind.fromUrl dbUrl) model
+            , viewVisualExplorerSubmit wrap source model
             ]
 
 
@@ -451,21 +438,21 @@ viewVisualExplorerFilterShow wrap htmlId filters =
             ]
 
 
-viewVisualExplorerSubmit : (Msg -> msg) -> DatabaseKind -> QueryBuilder.TableQuery -> Html msg
-viewVisualExplorerSubmit wrap db model =
+viewVisualExplorerSubmit : (Msg -> msg) -> DbSource -> QueryBuilder.TableQuery -> Html msg
+viewVisualExplorerSubmit wrap source model =
     let
         query : String
         query =
-            QueryBuilder.filterTable db model
+            model |> QueryBuilder.filterTable source.db.kind
     in
     div [ class "mt-3 flex items-center justify-end" ]
-        [ button [ type_ "button", onClick (query |> RunQuery |> wrap), disabled (query == ""), class "inline-flex items-center bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:bg-indigo-300" ]
+        [ button [ type_ "button", onClick (query |> RunQuery source |> wrap), disabled (query == ""), class "inline-flex items-center bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:bg-indigo-300" ]
             [ text "Fetch data" ]
         ]
 
 
-viewQueryEditor : (Msg -> msg) -> HtmlId -> ( Source, DatabaseUrl ) -> QueryEditor -> Html msg
-viewQueryEditor wrap htmlId ( source, _ ) model =
+viewQueryEditor : (Msg -> msg) -> HtmlId -> DbSource -> QueryEditor -> Html msg
+viewQueryEditor wrap htmlId source model =
     let
         inputId : HtmlId
         inputId =
@@ -485,7 +472,7 @@ viewQueryEditor wrap htmlId ( source, _ ) model =
         , div [ class "absolute bottom-6 right-6" ]
             [ button
                 [ type_ "button"
-                , onClick (model |> RunQuery |> wrap)
+                , onClick (model |> RunQuery source |> wrap)
                 , disabled (model == "")
                 , class "inline-flex items-center bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:bg-indigo-300"
                 ]
@@ -494,7 +481,7 @@ viewQueryEditor wrap htmlId ( source, _ ) model =
         ]
 
 
-viewResults : (Msg -> msg) -> (HtmlId -> msg) -> (SourceInfo -> QueryBuilder.RowQuery -> msg) -> HtmlId -> SchemaName -> List Source -> HtmlId -> List DataExplorerQuery.Model -> Html msg
+viewResults : (Msg -> msg) -> (HtmlId -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> msg) -> HtmlId -> SchemaName -> List Source -> HtmlId -> List DataExplorerQuery.Model -> Html msg
 viewResults wrap openDropdown openRow openedDropdown defaultSchema sources htmlId results =
     if results |> List.isEmpty then
         div [ class "m-3 p-12 block rounded-lg border-2 border-dashed border-gray-200 text-gray-300 text-center text-sm font-semibold" ] [ text "Query results" ]
@@ -511,22 +498,13 @@ viewResults wrap openDropdown openRow openedDropdown defaultSchema sources htmlI
             )
 
 
-viewDetails : (Msg -> msg) -> SchemaName -> HtmlId -> List DataExplorerRow.Model -> Html msg
+viewDetails : (Msg -> msg) -> SchemaName -> HtmlId -> List DataExplorerDetails.Model -> Html msg
 viewDetails wrap defaultSchema htmlId details =
     div []
         (details
-            |> List.indexedMap (\i m -> DataExplorerRow.view (DetailsMsg i >> wrap) (CloseDetails i |> wrap) defaultSchema (htmlId ++ "-" ++ String.fromInt i) (Just i) m)
+            |> List.indexedMap (\i m -> DataExplorerDetails.view (DetailsMsg i >> wrap) (CloseDetails i |> wrap) defaultSchema (htmlId ++ "-" ++ String.fromInt i) (Just i) m)
             |> List.reverse
         )
-
-
-
--- HELPERS
-
-
-withUrl : Source -> Maybe ( Source, DatabaseUrl )
-withUrl source =
-    source |> Source.databaseUrl |> Maybe.map (\url -> ( source, url ))
 
 
 
@@ -544,7 +522,7 @@ type alias DocState =
 docInit : DocState
 docInit =
     { openedDropdown = ""
-    , model = { init | source = withUrl docSource1, resultsSeq = List.length docQueryResults + 1, results = docQueryResults }
+    , model = { init | source = DbSource.fromSource docSource1, results = docQueryResults, resultsSeq = List.length docQueryResults + 1 }
     , oneSource = init
     , noSource = init
     }
@@ -563,17 +541,17 @@ doc =
 docQueryResults : List DataExplorerQuery.Model
 docQueryResults =
     [ { id = 3
-      , source = Source.toInfo docSource1
+      , source = docSource1 |> DbSourceInfo.fromSource |> Maybe.withDefault DbSourceInfo.zero
       , query = DataExplorerQuery.docCityQuery
       , state = DataExplorerQuery.docCitySuccess
       }
     , { id = 2
-      , source = Source.toInfo docSource1
+      , source = docSource1 |> DbSourceInfo.fromSource |> Maybe.withDefault DbSourceInfo.zero
       , query = DataExplorerQuery.docProjectsQuery
       , state = DataExplorerQuery.docProjectsSuccess
       }
     , { id = 1
-      , source = Source.toInfo docSource1
+      , source = docSource1 |> DbSourceInfo.fromSource |> Maybe.withDefault DbSourceInfo.zero
       , query = DataExplorerQuery.docUsersQuery
       , state = DataExplorerQuery.docUsersSuccess
       }

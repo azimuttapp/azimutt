@@ -2,6 +2,8 @@ module PagesComponents.Organization_.Project_.Updates exposing (update)
 
 import Components.Molecules.Dropdown as Dropdown
 import Components.Slices.DataExplorer as DataExplorer
+import Components.Slices.DataExplorerDetails as DataExplorerDetails
+import Components.Slices.DataExplorerQuery as DataExplorerQuery
 import Components.Slices.ProPlan as ProPlan
 import Components.Slices.QueryPane as QueryPane
 import Conf
@@ -718,11 +720,15 @@ showAllTablesIfNeeded erd =
 
 handleDatabaseQueryResponse : QueryResult -> Model -> ( Model, Cmd Msg )
 handleDatabaseQueryResponse result model =
-    if result.context == "query-pane" then
-        ( model, QueryPane.GotResult result |> QueryPaneMsg |> T.send )
+    case result.context |> String.split "/" of
+        "query-pane" :: [] ->
+            ( model, QueryPane.GotResult result |> QueryPaneMsg |> T.send )
 
-    else if result.context |> String.startsWith "data-explorer-query/" then
-        ( model, DataExplorer.GotQueryResult result |> DataExplorerMsg |> T.send )
+        "data-explorer-query" :: idStr :: [] ->
+            ( model, idStr |> String.toInt |> Maybe.map (\id -> DataExplorerQuery.GotResult result |> DataExplorer.QueryMsg id |> DataExplorerMsg |> T.send) |> Maybe.withDefault ("Invalid data explorer query context: " ++ result.context |> Toasts.warning |> Toast |> T.send) )
 
-    else
-        ( model, "Unknown db query context: " ++ result.context |> Toasts.warning |> Toast |> T.send )
+        "data-explorer-details" :: idStr :: [] ->
+            ( model, idStr |> String.toInt |> Maybe.map (\id -> DataExplorerDetails.GotResult result |> DataExplorer.DetailsMsg id |> DataExplorerMsg |> T.send) |> Maybe.withDefault ("Invalid data explorer details context: " ++ result.context |> Toasts.warning |> Toast |> T.send) )
+
+        _ ->
+            ( model, "Unknown db query context: " ++ result.context |> Toasts.warning |> Toast |> T.send )

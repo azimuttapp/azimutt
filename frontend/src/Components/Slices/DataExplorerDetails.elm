@@ -1,4 +1,4 @@
-module Components.Slices.DataExplorerRow exposing (DocState, FailureState, Model, Msg(..), RowState(..), SharedDocState, SuccessState, doc, docInit, init, update, view)
+module Components.Slices.DataExplorerDetails exposing (DocState, FailureState, Id, Model, Msg(..), SharedDocState, State(..), SuccessState, doc, docInit, init, update, view)
 
 import Components.Atoms.Icon as Icon
 import Dict exposing (Dict)
@@ -12,59 +12,81 @@ import Libs.Html.Attributes exposing (ariaLabelledby, ariaModal, css, role)
 import Libs.List as List
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Nel exposing (Nel)
+import Libs.Result as Result
 import Libs.Task as T
 import Libs.Time as Time
+import Models.DbSourceInfo as DbSourceInfo exposing (DbSourceInfo)
 import Models.JsValue as JsValue exposing (JsValue)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.SchemaName exposing (SchemaName)
-import Models.Project.SourceId as SourceId
 import Models.Project.TableId as TableId
 import Models.Project.TableName exposing (TableName)
-import Models.QueryResult exposing (QueryResultColumn, QueryResultRow)
-import Models.SourceInfo as SourceInfo exposing (SourceInfo)
+import Models.QueryResult exposing (QueryResult, QueryResultColumn, QueryResultRow, QueryResultSuccess)
+import Services.Lenses exposing (mapState)
 import Services.QueryBuilder exposing (RowQuery)
 import Time
 
 
 type alias Model =
-    { source : SourceInfo
+    { id : Id
+    , source : DbSourceInfo
     , query : RowQuery
-    , startedAt : Time.Posix
-    , state : RowState
+    , state : State
     }
 
 
-type RowState
+type alias Id =
+    Int
+
+
+type State
     = StateLoading
     | StateFailure FailureState
     | StateSuccess SuccessState
 
 
 type alias FailureState =
-    { error : String, failedAt : Time.Posix }
+    { error : String, startedAt : Time.Posix, failedAt : Time.Posix }
 
 
 type alias SuccessState =
     { columns : List QueryResultColumn
     , values : QueryResultRow
-    , durationMs : Int
+    , startedAt : Time.Posix
     , succeededAt : Time.Posix
     , documentMode : Bool
     }
 
 
 type Msg
-    = Noop
+    = GotResult QueryResult
+    | Noop
 
 
 
 -- INIT
 
 
-init : SourceInfo -> RowQuery -> Time.Posix -> Model
-init source query startedAt =
-    { source = source, query = query, startedAt = startedAt, state = StateLoading }
+init : Id -> DbSourceInfo -> RowQuery -> Model
+init id source query =
+    { id = id, source = source, query = query, state = StateLoading }
+
+
+initFailure : Time.Posix -> Time.Posix -> String -> State
+initFailure started finished err =
+    StateFailure { error = err, startedAt = started, failedAt = finished }
+
+
+initSuccess : Time.Posix -> Time.Posix -> QueryResultSuccess -> State
+initSuccess started finished res =
+    StateSuccess
+        { columns = res.columns
+        , values = res.rows |> List.head |> Maybe.withDefault Dict.empty
+        , startedAt = started
+        , succeededAt = finished
+        , documentMode = False
+        }
 
 
 
@@ -74,7 +96,11 @@ init source query startedAt =
 update : (Msg -> msg) -> Msg -> Model -> ( Model, Cmd msg )
 update wrap msg model =
     case msg of
+        GotResult res ->
+            ( model |> mapState (\_ -> res.result |> Result.fold (initFailure res.started res.finished) (initSuccess res.started res.finished)), Cmd.none )
+
         _ ->
+            -- FIXME to remove
             ( model, Noop |> wrap |> T.send )
 
 
@@ -166,7 +192,7 @@ viewSlideOverContent wrap close defaultSchema titleId model =
 
 
 type alias SharedDocState x =
-    { x | dataExplorerRowDocState : DocState }
+    { x | dataExplorerDetailsDocState : DocState }
 
 
 type alias DocState =
@@ -180,14 +206,14 @@ docInit =
 
 doc : Chapter (SharedDocState x)
 doc =
-    Chapter.chapter "DataExplorerRow"
+    Chapter.chapter "DataExplorerDetails"
         |> Chapter.renderStatefulComponentList
             [ ( "app"
-              , \{ dataExplorerRowDocState } ->
+              , \{ dataExplorerDetailsDocState } ->
                     let
                         s : DocState
                         s =
-                            dataExplorerRowDocState
+                            dataExplorerDetailsDocState
                     in
                     div []
                         [ docButton "Open loading" (docOpen docModel s)
@@ -198,7 +224,7 @@ doc =
                                 |> List.indexedMap
                                     (\i m ->
                                         div [ class "mt-1" ]
-                                            [ view (docUpdate i s) (docClose i s) "public" ("data-explorer-row-" ++ String.fromInt i) (Just i) m
+                                            [ view (docUpdate i s) (docClose i s) "public" ("data-explorer-details-" ++ String.fromInt i) (Just i) m
                                             , docButton ("Close " ++ String.fromInt i) (docClose i s)
                                             ]
                                     )
@@ -216,24 +242,24 @@ docButton name msg =
 
 docModel : Model
 docModel =
-    init docSource { table = ( "public", "city" ), primaryKey = Nel { column = Nel "id" [], kind = "int", value = "1" } [] } Time.zero
+    init 1 docSource { table = ( "public", "city" ), primaryKey = Nel { column = Nel "id" [], kind = "int", value = "1" } [] }
 
 
-docSource : SourceInfo
+docSource : DbSourceInfo
 docSource =
-    SourceInfo.database Time.zero SourceId.zero ""
+    DbSourceInfo.zero
 
 
 docFailureState : FailureState
 docFailureState =
-    { error = "Error: relation \"events\" does not exist\nError Code: 42P01", failedAt = Time.zero }
+    { error = "Error: relation \"events\" does not exist\nError Code: 42P01", startedAt = Time.zero, failedAt = Time.zero }
 
 
 docSuccessState : SuccessState
 docSuccessState =
     { columns = [ "id", "name", "country_code", "district", "population" ] |> List.map (docColumn "public" "city")
     , values = docCityColumnValues 1 "Kabul" "AFG" "Kabol" 1780000
-    , durationMs = 12
+    , startedAt = Time.zero
     , succeededAt = Time.zero
     , documentMode = False
     }
@@ -270,7 +296,7 @@ docClose i s =
 
 docSetState : DocState -> ElmBook.Msg (SharedDocState x)
 docSetState state =
-    Actions.updateState (\s -> { s | dataExplorerRowDocState = state })
+    Actions.updateState (\s -> { s | dataExplorerDetailsDocState = state })
 
 
 docWrap : Msg -> ElmBook.Msg state

@@ -1,4 +1,4 @@
-module Components.Slices.DataExplorerQuery exposing (DocState, FailureState, Model, Msg(..), QueryId, QueryState(..), RowIndex, SharedDocState, SuccessState, doc, docCityQuery, docCitySuccess, docInit, docProjectsQuery, docProjectsSuccess, docRelation, docSource, docTable, docUsersQuery, docUsersSuccess, init, update, view)
+module Components.Slices.DataExplorerQuery exposing (DocState, FailureState, Id, Model, Msg(..), RowIndex, SharedDocState, State(..), SuccessState, doc, docCityQuery, docCitySuccess, docInit, docProjectsQuery, docProjectsSuccess, docRelation, docSource, docTable, docUsersQuery, docUsersSuccess, init, update, view)
 
 import Array
 import Components.Atoms.Icon as Icon exposing (Icon)
@@ -22,6 +22,7 @@ import Libs.Result as Result
 import Libs.Tailwind exposing (TwClass, focus)
 import Libs.Task as T
 import Libs.Time as Time
+import Models.DbSourceInfo as DbSourceInfo exposing (DbSourceInfo)
 import Models.JsValue as JsValue exposing (JsValue)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnPath as ColumnPath
@@ -29,20 +30,27 @@ import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.ColumnType exposing (ColumnType)
 import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.SchemaName exposing (SchemaName)
-import Models.Project.Source as Source exposing (Source)
+import Models.Project.Source exposing (Source)
 import Models.Project.SourceId as SourceId
 import Models.Project.SourceKind exposing (SourceKind(..))
 import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableName exposing (TableName)
 import Models.QueryResult exposing (QueryResult, QueryResultColumn, QueryResultRow, QueryResultSuccess)
-import Models.SourceInfo exposing (SourceInfo)
 import Services.Lenses exposing (mapState, setQuery)
 import Services.QueryBuilder as QueryBuilder
 import Time
 
 
-type alias QueryId =
+type alias Model =
+    { id : Id
+    , source : DbSourceInfo
+    , query : String
+    , state : State
+    }
+
+
+type alias Id =
     Int
 
 
@@ -50,15 +58,7 @@ type alias RowIndex =
     Int
 
 
-type alias Model =
-    { id : QueryId
-    , source : SourceInfo
-    , query : String
-    , state : QueryState
-    }
-
-
-type QueryState
+type State
     = StateRunning
     | StateCanceled
     | StateFailure FailureState
@@ -101,12 +101,17 @@ type Msg
 -- INIT
 
 
-init : QueryId -> SourceInfo -> String -> Model
+init : Id -> DbSourceInfo -> String -> Model
 init id source query =
     { id = id, source = source, query = query, state = StateRunning }
 
 
-initSuccess : Time.Posix -> Time.Posix -> QueryResultSuccess -> QueryState
+initFailure : Time.Posix -> Time.Posix -> String -> State
+initFailure started finished err =
+    StateFailure { error = err, startedAt = started, failedAt = finished }
+
+
+initSuccess : Time.Posix -> Time.Posix -> QueryResultSuccess -> State
 initSuccess started finished res =
     StateSuccess
         { columns = res.columns
@@ -123,11 +128,6 @@ initSuccess started finished res =
         }
 
 
-initFailure : Time.Posix -> Time.Posix -> String -> QueryState
-initFailure started finished err =
-    StateFailure { error = err, startedAt = started, failedAt = finished }
-
-
 
 -- UPDATE
 
@@ -136,10 +136,10 @@ update : (Msg -> msg) -> Msg -> Model -> ( Model, Cmd msg )
 update wrap msg model =
     case msg of
         Cancel ->
-            ( model |> mapState (mapRunning (\_ -> StateCanceled)), Cmd.none )
+            ( model |> mapState (\_ -> StateCanceled), Cmd.none )
 
         GotResult res ->
-            ( model |> setQuery res.query |> mapState (mapRunning (\_ -> res.result |> Result.fold (initFailure res.started res.finished) (initSuccess res.started res.finished))), Cmd.none )
+            ( model |> setQuery res.query |> mapState (\_ -> res.result |> Result.fold (initFailure res.started res.finished) (initSuccess res.started res.finished)), Cmd.none )
 
         ChangePage p ->
             ( model |> mapState (mapSuccess (\s -> { s | page = p })), Cmd.none )
@@ -150,25 +150,12 @@ update wrap msg model =
         ToggleQuery ->
             ( model |> mapState (mapSuccess (\s -> { s | showQuery = not s.showQuery })), Cmd.none )
 
-        Noop ->
-            ( model, Cmd.none )
-
         _ ->
             -- FIXME to remove
             ( model, Noop |> wrap |> T.send )
 
 
-mapRunning : (() -> QueryState) -> QueryState -> QueryState
-mapRunning f state =
-    case state of
-        StateRunning ->
-            f ()
-
-        _ ->
-            state
-
-
-mapSuccess : (SuccessState -> SuccessState) -> QueryState -> QueryState
+mapSuccess : (SuccessState -> SuccessState) -> State -> State
 mapSuccess f state =
     case state of
         StateSuccess s ->
@@ -182,7 +169,7 @@ mapSuccess f state =
 -- VIEW
 
 
-view : (Msg -> msg) -> (HtmlId -> msg) -> (SourceInfo -> QueryBuilder.RowQuery -> msg) -> msg -> HtmlId -> SchemaName -> List Source -> HtmlId -> Model -> Html msg
+view : (Msg -> msg) -> (HtmlId -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> msg) -> msg -> HtmlId -> SchemaName -> List Source -> HtmlId -> Model -> Html msg
 view wrap openDropdown openRow deleteQuery openedDropdown defaultSchema sources htmlId model =
     case model.state of
         StateRunning ->
@@ -380,6 +367,7 @@ viewTable wrap openRow defaultSchema source columns rows expanded =
 targetColumn : Dict TableId Table -> Dict TableId (List Relation) -> ColumnRef -> Maybe { ref : ColumnRef, kind : ColumnType }
 targetColumn tables relations ref =
     let
+        -- FIXME: relations without fk don't get the link :/ Should use relations from any source? Same for primary key?
         target : Maybe ColumnRef
         target =
             if tables |> Dict.get ref.table |> Maybe.andThen .primaryKey |> Maybe.any (\pk -> pk.columns == Nel ref.column []) then
@@ -425,7 +413,7 @@ viewTableValue wrap openRow defaultSchema i row expanded column =
                     ]
             )
             column.open
-            value
+            (value |> Maybe.filter (\v -> v /= JsValue.Null))
             |> Maybe.withDefault (td [ class classes ] [ JsValue.view value ])
 
 
@@ -461,9 +449,9 @@ doc =
             ]
 
 
-docModel : Int -> String -> QueryState -> Model
+docModel : Int -> String -> State -> Model
 docModel id query state =
-    { id = id, source = Source.toInfo docSource, query = query, state = state }
+    { id = id, source = docSource |> DbSourceInfo.fromSource |> Maybe.withDefault DbSourceInfo.zero, query = query, state = state }
 
 
 docComplexQuery : String
@@ -497,17 +485,17 @@ docHtmlId =
     "data-explorer-query"
 
 
-docStateRunning : QueryState
+docStateRunning : State
 docStateRunning =
     StateRunning
 
 
-docStateCanceled : QueryState
+docStateCanceled : State
 docStateCanceled =
     StateCanceled
 
 
-docStateFailure : QueryState
+docStateFailure : State
 docStateFailure =
     { error = "Error: relation \"events\" does not exist\nError Code: 42P01", startedAt = Time.zero, failedAt = Time.zero } |> StateFailure
 
@@ -517,7 +505,7 @@ docCityQuery =
     "SELECT * FROM city;"
 
 
-docCitySuccess : QueryState
+docCitySuccess : State
 docCitySuccess =
     { columns = [ "id", "name", "country_code", "district", "population" ] |> List.map (docColumn "public" "city")
     , rows =
@@ -554,7 +542,7 @@ docUsersQuery =
     "SELECT * FROM users;"
 
 
-docUsersSuccess : QueryState
+docUsersSuccess : State
 docUsersSuccess =
     { columns = [ "id", "slug", "name", "email", "provider", "provider_uid", "avatar", "github_username", "twitter_username", "is_admin", "hashed_password", "last_signin", "created_at", "updated_at", "confirmed_at", "deleted_at", "data", "onboarding", "provider_data", "tags" ] |> List.map (docColumn "public" "users")
     , rows =
@@ -570,7 +558,7 @@ docProjectsQuery =
     "SELECT * FROM projects;"
 
 
-docProjectsSuccess : QueryState
+docProjectsSuccess : State
 docProjectsSuccess =
     { columns = [ "id", "organization_id", "slug", "name", "created_by", "created_at" ] |> List.map (docColumn "public" "projects")
     , rows =
@@ -716,7 +704,7 @@ docDropdown =
     \_ -> logAction "openDropdown"
 
 
-docOpenRow : SourceInfo -> QueryBuilder.RowQuery -> ElmBook.Msg state
+docOpenRow : DbSourceInfo -> QueryBuilder.RowQuery -> ElmBook.Msg state
 docOpenRow =
     \_ _ -> logAction "openRow"
 

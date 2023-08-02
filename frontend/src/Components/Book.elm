@@ -32,8 +32,8 @@ import Components.Organisms.Relation as Relation
 import Components.Organisms.Table as Table
 import Components.Organisms.TableRow as TableRow
 import Components.Slices.DataExplorer as DataExplorer
+import Components.Slices.DataExplorerDetails as DataExplorerDetails
 import Components.Slices.DataExplorerQuery as DataExplorerQuery
-import Components.Slices.DataExplorerRow as DataExplorerRow
 import Components.Slices.ExportDialogBody as ExportDialogBody
 import Components.Slices.NewLayoutBody as NewLayoutBody
 import Components.Slices.NotFound as NotFound
@@ -53,8 +53,8 @@ import Libs.Tailwind as Tw
 
 type alias DocState =
     { dataExplorerDocState : DataExplorer.DocState
+    , dataExplorerDetailsDocState : DataExplorerDetails.DocState
     , dataExplorerQueryDocState : DataExplorerQuery.DocState
-    , dataExplorerRowDocState : DataExplorerRow.DocState
     , detailsDocState : Details.DocState
     , dropdownDocState : Dropdown.DocState
     , exportDialogDocState : ExportDialogBody.DocState
@@ -79,8 +79,8 @@ type alias DocState =
 init : DocState
 init =
     { dataExplorerDocState = DataExplorer.docInit
+    , dataExplorerDetailsDocState = DataExplorerDetails.docInit
     , dataExplorerQueryDocState = DataExplorerQuery.docInit
-    , dataExplorerRowDocState = DataExplorerRow.docInit
     , detailsDocState = Details.docInit
     , dropdownDocState = Dropdown.docInit
     , exportDialogDocState = ExportDialogBody.docInit
@@ -115,7 +115,7 @@ main =
         |> ElmBook.withChapterGroups
             -- sorted alphabetically
             [ ( "", [ docs ] )
-            , ( "Slices", [ DataExplorer.doc, DataExplorerQuery.doc, DataExplorerRow.doc, ExportDialogBody.doc, NotFound.doc, NewLayoutBody.doc, ProjectSaveDialogBody.doc, ProPlan.doc, QueryPane.doc ] )
+            , ( "Slices", [ DataExplorer.doc, DataExplorerDetails.doc, DataExplorerQuery.doc, ExportDialogBody.doc, NotFound.doc, NewLayoutBody.doc, ProjectSaveDialogBody.doc, ProPlan.doc, QueryPane.doc ] )
             , ( "Organisms", [ ColorPicker.doc, Details.doc, Navbar.doc, Relation.doc, Table.doc, TableRow.doc ] )
             , ( "Molecules", [ Alert.doc, Avatar.doc, Divider.doc, Dropdown.doc, Editor.doc, FileInput.doc, FormLabel.doc, InputText.doc, ItemList.doc, Modal.doc, Pagination.doc, Popover.doc, Radio.doc, Select.doc, Slideover.doc, Toast.doc, Tooltip.doc ] )
             , ( "Atoms", [ Badge.doc, Button.doc, colorsDoc, Icon.doc, Input.doc, Kbd.doc, Markdown.doc, Link.doc, Loader.doc ] )
