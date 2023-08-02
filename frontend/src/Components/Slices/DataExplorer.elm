@@ -25,7 +25,6 @@ import Libs.Ned as Ned exposing (Ned)
 import Libs.Nel exposing (Nel)
 import Libs.Tailwind as Tw exposing (TwClass)
 import Libs.Time as Time
-import Models.DatabaseQueryResults exposing (DatabaseQueryResults)
 import Models.Project.Column as Column exposing (Column, NestedColumns(..))
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
@@ -34,11 +33,11 @@ import Models.Project.Source as Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
+import Models.QueryResult exposing (QueryResult)
 import Models.SourceInfo exposing (SourceInfo)
 import Ports
 import Services.Lenses exposing (mapDetailsCmd, mapFilters, mapResultsCmd, mapVisualEditor, setOperation, setOperator, setValue)
 import Services.QueryBuilder as QueryBuilder
-import Time
 
 
 
@@ -98,7 +97,7 @@ type Msg
     | DeleteFilter Int
     | UpdateQuery String
     | RunQuery String
-    | GotQueryResults String (Result String DatabaseQueryResults) Time.Posix Time.Posix
+    | GotQueryResult QueryResult
     | DeleteQuery DataExplorerQuery.QueryId
     | QueryMsg DataExplorerQuery.QueryId DataExplorerQuery.Msg
     | OpenDetails SourceInfo QueryBuilder.RowQuery
@@ -194,12 +193,12 @@ update wrap sources msg model =
                     )
                 |> Maybe.withDefault ( model, Cmd.none )
 
-        GotQueryResults context result started finished ->
-            case context |> String.split "/" of
+        GotQueryResult result ->
+            case result.context |> String.split "/" of
                 "data-explorer-query" :: idStr :: [] ->
                     idStr
                         |> String.toInt
-                        |> Maybe.map (\id -> model |> mapResultsCmd (List.mapByCmd .id id (DataExplorerQuery.update (QueryMsg id >> wrap) (DataExplorerQuery.GotResult result started finished))))
+                        |> Maybe.map (\id -> model |> mapResultsCmd (List.mapByCmd .id id (DataExplorerQuery.update (QueryMsg id >> wrap) (DataExplorerQuery.GotResult result))))
                         |> Maybe.withDefault ( model, Cmd.none )
 
                 _ ->

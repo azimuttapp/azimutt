@@ -22,7 +22,6 @@ import Libs.Result as Result
 import Libs.Tailwind exposing (TwClass, focus)
 import Libs.Task as T
 import Libs.Time as Time
-import Models.DatabaseQueryResults exposing (DatabaseQueryResults, DatabaseQueryResultsRow, QueryResultColumn)
 import Models.JsValue as JsValue exposing (JsValue)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnPath as ColumnPath
@@ -36,8 +35,9 @@ import Models.Project.SourceKind exposing (SourceKind(..))
 import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableName exposing (TableName)
+import Models.QueryResult exposing (QueryResult, QueryResultColumn, QueryResultRow, QueryResultSuccess)
 import Models.SourceInfo exposing (SourceInfo)
-import Services.Lenses exposing (mapQuery, mapState)
+import Services.Lenses exposing (mapState, setQuery)
 import Services.QueryBuilder as QueryBuilder
 import Time
 
@@ -71,7 +71,7 @@ type alias FailureState =
 
 type alias SuccessState =
     { columns : List QueryResultColumn
-    , rows : List DatabaseQueryResultsRow
+    , rows : List QueryResultRow
     , startedAt : Time.Posix
     , succeededAt : Time.Posix
     , page : Int
@@ -90,7 +90,7 @@ type Msg
     | Export -- export results in csv or json (or copy in clipboard)
       -- used message ^^
     | Cancel
-    | GotResult (Result String DatabaseQueryResults) Time.Posix Time.Posix
+    | GotResult QueryResult
     | ChangePage Int
     | ExpandRow RowIndex
     | ToggleQuery
@@ -106,7 +106,7 @@ init id source query =
     { id = id, source = source, query = query, state = StateRunning }
 
 
-initSuccess : Time.Posix -> Time.Posix -> DatabaseQueryResults -> QueryState
+initSuccess : Time.Posix -> Time.Posix -> QueryResultSuccess -> QueryState
 initSuccess started finished res =
     StateSuccess
         { columns = res.columns
@@ -138,8 +138,8 @@ update wrap msg model =
         Cancel ->
             ( model |> mapState (mapRunning (\_ -> StateCanceled)), Cmd.none )
 
-        GotResult result started finished ->
-            ( model |> mapQuery (\q -> result |> Result.map .query |> Result.withDefault q) |> mapState (mapRunning (\_ -> result |> Result.fold (initFailure started finished) (initSuccess started finished))), Cmd.none )
+        GotResult res ->
+            ( model |> setQuery res.query |> mapState (mapRunning (\_ -> res.result |> Result.fold (initFailure res.started res.finished) (initSuccess res.started res.finished))), Cmd.none )
 
         ChangePage p ->
             ( model |> mapState (mapSuccess (\s -> { s | page = p })), Cmd.none )
@@ -223,9 +223,9 @@ view wrap openDropdown openRow deleteQuery openedDropdown defaultSchema sources 
                 ]
                 (div []
                     [ p [ class "mt-3 text-sm font-semibold text-gray-900" ] [ text "Error" ]
-                    , pre [ class "px-6 py-4 block text-sm whitespace-pre overflow-x-auto rounded bg-red-50 border border-red-200" ] [ text res.error ]
+                    , pre [ class "mt-1 px-6 py-4 block text-sm whitespace-pre overflow-x-auto rounded bg-red-50 border border-red-200" ] [ text res.error ]
                     , p [ class "mt-3 text-sm font-semibold text-gray-900" ] [ text "SQL" ]
-                    , viewQuery "px-3 py-2 text-sm" model.query
+                    , viewQuery "mt-1 px-3 py-2 text-sm" model.query
                     ]
                 )
                 (div [ class "relative flex space-x-1 text-left" ]
@@ -323,7 +323,7 @@ viewSuccess wrap openRow defaultSchema source res =
         pagination =
             { currentPage = res.page, pageSize = 10, totalItems = res.rows |> List.length }
 
-        pageRows : List ( RowIndex, DatabaseQueryResultsRow )
+        pageRows : List ( RowIndex, QueryResultRow )
         pageRows =
             Pagination.paginate res.rows pagination
     in
@@ -333,7 +333,7 @@ viewSuccess wrap openRow defaultSchema source res =
         ]
 
 
-viewTable : (Msg -> msg) -> (QueryBuilder.RowQuery -> msg) -> SchemaName -> Maybe Source -> List QueryResultColumn -> List ( RowIndex, DatabaseQueryResultsRow ) -> Dict RowIndex Bool -> Html msg
+viewTable : (Msg -> msg) -> (QueryBuilder.RowQuery -> msg) -> SchemaName -> Maybe Source -> List QueryResultColumn -> List ( RowIndex, QueryResultRow ) -> Dict RowIndex Bool -> Html msg
 viewTable wrap openRow defaultSchema source columns rows expanded =
     -- TODO sort columns
     -- TODO document mode
@@ -391,7 +391,7 @@ targetColumn tables relations ref =
     target |> Maybe.andThen (\r -> tables |> Dict.get r.table |> Maybe.andThen (\t -> t |> Table.getColumn r.column) |> Maybe.map (\c -> { ref = r, kind = c.kind }))
 
 
-viewTableValue : (Msg -> msg) -> (QueryBuilder.RowQuery -> msg) -> SchemaName -> RowIndex -> DatabaseQueryResultsRow -> Dict RowIndex Bool -> { name : String, open : Maybe { ref : ColumnRef, kind : ColumnType } } -> Html msg
+viewTableValue : (Msg -> msg) -> (QueryBuilder.RowQuery -> msg) -> SchemaName -> RowIndex -> QueryResultRow -> Dict RowIndex Bool -> { name : String, open : Maybe { ref : ColumnRef, kind : ColumnType } } -> Html msg
 viewTableValue wrap openRow defaultSchema i row expanded column =
     let
         value : Maybe JsValue
@@ -519,8 +519,7 @@ docCityQuery =
 
 docCitySuccess : QueryState
 docCitySuccess =
-    { query = docCityQuery
-    , columns = [ "id", "name", "country_code", "district", "population" ] |> List.map (docColumn "public" "city")
+    { columns = [ "id", "name", "country_code", "district", "population" ] |> List.map (docColumn "public" "city")
     , rows =
         [ docCityColumnValues 1 "Kabul" "AFG" "Kabol" 1780000
         , docCityColumnValues 2 "Qandahar" "AFG" "Qandahar" 237500
@@ -557,8 +556,7 @@ docUsersQuery =
 
 docUsersSuccess : QueryState
 docUsersSuccess =
-    { query = docUsersQuery
-    , columns = [ "id", "slug", "name", "email", "provider", "provider_uid", "avatar", "github_username", "twitter_username", "is_admin", "hashed_password", "last_signin", "created_at", "updated_at", "confirmed_at", "deleted_at", "data", "onboarding", "provider_data", "tags" ] |> List.map (docColumn "public" "users")
+    { columns = [ "id", "slug", "name", "email", "provider", "provider_uid", "avatar", "github_username", "twitter_username", "is_admin", "hashed_password", "last_signin", "created_at", "updated_at", "confirmed_at", "deleted_at", "data", "onboarding", "provider_data", "tags" ] |> List.map (docColumn "public" "users")
     , rows =
         [ docUsersColumnValues "4a3ea674-cff6-44de-b217-3befbe907a95" "admin" "Azimutt Admin" "admin@azimutt.app" Nothing Nothing "https://robohash.org/set_set3/bgset_bg2/VghiKo" (Just "azimuttapp") (Just "azimuttapp") True (Just "$2b$12$5TukDUCUtXm1zu0TECv34eg8SHueHqXUGQ9pvDZA55LUnH30ZEpUa") "2023-04-26T18:28:27.343Z" "2023-04-26T18:28:27.355Z" "2023-04-26T18:28:27.355Z" "2023-04-26T18:28:27.343Z" Nothing (Dict.fromList [ ( "attributed_from", JsValue.String "root" ), ( "attributed_to", JsValue.Null ) ]) Dict.empty [ JsValue.String "admin" ]
         , docUsersColumnValues "11bd9544-d56a-43d7-9065-6f1f25addf8a" "loicknuchel" "Loïc Knuchel" "loicknuchel@gmail.com" (Just "github") (Just "653009") "https://avatars.githubusercontent.com/u/653009?v=4" (Just "loicknuchel") (Just "loicknuchel") True Nothing "2023-04-27T15:55:11.582Z" "2023-04-27T15:55:11.612Z" "2023-07-19T18:57:53.438Z" "2023-04-27T15:55:11.582Z" Nothing (Dict.fromList [ ( "attributed_from", JsValue.Null ), ( "attributed_to", JsValue.Null ) ]) Dict.empty [ JsValue.Null, JsValue.String "user" ]
@@ -574,8 +572,7 @@ docProjectsQuery =
 
 docProjectsSuccess : QueryState
 docProjectsSuccess =
-    { query = docProjectsQuery
-    , columns = [ "id", "organization_id", "slug", "name", "created_by", "created_at" ] |> List.map (docColumn "public" "projects")
+    { columns = [ "id", "organization_id", "slug", "name", "created_by", "created_at" ] |> List.map (docColumn "public" "projects")
     , rows =
         [ docProjectsColumnValues "9505930b-9d15-4c40-98f2-c730fcbef2dd" "104af15e-54ae-4c12-b293-8846be293203" "basic" "Basic" "4a3ea674-cff6-44de-b217-3befbe907a95" "2023-04-26 20:28:28.436054"
         , docProjectsColumnValues "e2b89bfc-2b4d-4c31-a92c-9ca6584c348c" "2d803b04-90d7-4e05-940f-5e887470b595" "gospeak-sql" "gospeak.sql" "11bd9544-d56a-43d7-9065-6f1f25addf8a" "2023-04-27 18:05:28.643297"
@@ -589,17 +586,17 @@ docColumn schema table column =
     { name = column, ref = Just { table = ( schema, table ), column = Nel column [] } }
 
 
-docCityColumnValues : Int -> String -> String -> String -> Int -> DatabaseQueryResultsRow
+docCityColumnValues : Int -> String -> String -> String -> Int -> QueryResultRow
 docCityColumnValues id name country_code district population =
     Dict.fromList [ ( "id", JsValue.Int id ), ( "name", JsValue.String name ), ( "country_code", JsValue.String country_code ), ( "district", JsValue.String district ), ( "population", JsValue.Int population ) ]
 
 
-docProjectsColumnValues : String -> String -> String -> String -> String -> String -> DatabaseQueryResultsRow
+docProjectsColumnValues : String -> String -> String -> String -> String -> String -> QueryResultRow
 docProjectsColumnValues id organization_id slug name created_by created_at =
     [ ( "id", id ), ( "organization_id", organization_id ), ( "slug", slug ), ( "name", name ), ( "created_by", created_by ), ( "created_at", created_at ) ] |> List.map (\( key, value ) -> ( key, JsValue.String value )) |> Dict.fromList
 
 
-docUsersColumnValues : String -> String -> String -> String -> Maybe String -> Maybe String -> String -> Maybe String -> Maybe String -> Bool -> Maybe String -> String -> String -> String -> String -> Maybe String -> Dict String JsValue -> Dict String JsValue -> List JsValue -> DatabaseQueryResultsRow
+docUsersColumnValues : String -> String -> String -> String -> Maybe String -> Maybe String -> String -> Maybe String -> Maybe String -> Bool -> Maybe String -> String -> String -> String -> String -> Maybe String -> Dict String JsValue -> Dict String JsValue -> List JsValue -> QueryResultRow
 docUsersColumnValues id slug name email provider provider_uid avatar github_username twitter_username is_admin hashed_password last_signin created_at updated_at confirmed_at deleted_at data provider_data tags =
     let
         str : List ( String, JsValue )

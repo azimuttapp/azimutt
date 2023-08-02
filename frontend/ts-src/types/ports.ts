@@ -3,8 +3,9 @@ import {
     ColumnId,
     ColumnRef,
     ColumnStats,
-    DatabaseQueryResults,
+    DatabaseQueryResultsColumn,
     DatabaseUrl,
+    JsValue,
     TableId,
     TableStats
 } from "@azimutt/database-types";
@@ -175,10 +176,8 @@ export type GotColumnStats = { kind: 'GotColumnStats', source: SourceId, stats: 
 export const GotColumnStats = z.object({kind: z.literal('GotColumnStats'), source: SourceId, stats: ColumnStats}).strict()
 export type GotColumnStatsError = { kind: 'GotColumnStatsError', source: SourceId, column: ColumnRef, error: string }
 export const GotColumnStatsError = z.object({kind: z.literal('GotColumnStatsError'), source: SourceId, column: ColumnRef, error: z.string()}).strict()
-export type GotDatabaseQueryResults = { kind: 'GotDatabaseQueryResults', context: string, results: DatabaseQueryResults, started: number, finished: number }
-export const GotDatabaseQueryResults = z.object({kind: z.literal('GotDatabaseQueryResults'), context: z.string(), results: DatabaseQueryResults, started: z.number(), finished: z.number()}).strict()
-export type GotDatabaseQueryError = { kind: 'GotDatabaseQueryError', context: string, error: string, started: number, finished: number }
-export const GotDatabaseQueryError = z.object({kind: z.literal('GotDatabaseQueryError'), context: z.string(), error: z.string(), started: z.number(), finished: z.number()}).strict()
+export type GotDatabaseQueryResult = { kind: 'GotDatabaseQueryResult', context: string, query: string, result: string | {columns: DatabaseQueryResultsColumn[], rows: JsValue[]}, started: number, finished: number }
+export const GotDatabaseQueryResult = z.object({kind: z.literal('GotDatabaseQueryResult'), context: z.string(), query: z.string(), result: z.union([z.string(), z.object({columns: DatabaseQueryResultsColumn.array(), rows: JsValue.array() })]), started: z.number(), finished: z.number()}).strict()
 export type GotPrismaSchema = { kind: 'GotPrismaSchema', schema: AzimuttSchema }
 export const GotPrismaSchema = z.object({kind: z.literal('GotPrismaSchema'), schema: AzimuttSchema}).strict()
 export type GotPrismaSchemaError = { kind: 'GotPrismaSchemaError', error: string }
@@ -213,5 +212,5 @@ export type GotFitToScreen = { kind: 'GotFitToScreen' }
 export const GotFitToScreen = z.object({kind: z.literal('GotFitToScreen')}).strict()
 export type Error = { kind: 'Error', message: string }
 export const Error = z.object({kind: z.literal('Error'), message: z.string()}).strict()
-export type JsMsg = GotSizes | GotProject | ProjectDeleted | GotLocalFile | GotDatabaseSchema | GotDatabaseSchemaError | GotTableStats | GotTableStatsError | GotColumnStats | GotColumnStatsError | GotDatabaseQueryResults | GotDatabaseQueryError | GotPrismaSchema | GotPrismaSchemaError | GotHotkey | GotKeyHold | GotToast | GotTableShow | GotTableHide | GotTableToggleColumns | GotTablePosition | GotTableMove | GotTableSelect | GotTableColor | GotColumnShow | GotColumnHide | GotColumnMove | GotFitToScreen | Error
-export const JsMsg = z.discriminatedUnion('kind', [GotSizes, GotProject, ProjectDeleted, GotLocalFile, GotDatabaseSchema, GotDatabaseSchemaError, GotTableStats, GotTableStatsError, GotColumnStats, GotColumnStatsError, GotDatabaseQueryResults, GotDatabaseQueryError, GotPrismaSchema, GotPrismaSchemaError, GotHotkey, GotKeyHold, GotToast, GotTableShow, GotTableHide, GotTableToggleColumns, GotTablePosition, GotTableMove, GotTableSelect, GotTableColor, GotColumnShow, GotColumnHide, GotColumnMove, GotFitToScreen, Error])
+export type JsMsg = GotSizes | GotProject | ProjectDeleted | GotLocalFile | GotDatabaseSchema | GotDatabaseSchemaError | GotTableStats | GotTableStatsError | GotColumnStats | GotColumnStatsError | GotDatabaseQueryResult | GotPrismaSchema | GotPrismaSchemaError | GotHotkey | GotKeyHold | GotToast | GotTableShow | GotTableHide | GotTableToggleColumns | GotTablePosition | GotTableMove | GotTableSelect | GotTableColor | GotColumnShow | GotColumnHide | GotColumnMove | GotFitToScreen | Error
+export const JsMsg = z.discriminatedUnion('kind', [GotSizes, GotProject, ProjectDeleted, GotLocalFile, GotDatabaseSchema, GotDatabaseSchemaError, GotTableStats, GotTableStatsError, GotColumnStats, GotColumnStatsError, GotDatabaseQueryResult, GotPrismaSchema, GotPrismaSchemaError, GotHotkey, GotKeyHold, GotToast, GotTableShow, GotTableHide, GotTableToggleColumns, GotTablePosition, GotTableMove, GotTableSelect, GotTableColor, GotColumnShow, GotColumnHide, GotColumnMove, GotFitToScreen, Error])

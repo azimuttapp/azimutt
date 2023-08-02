@@ -14,7 +14,6 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Nel exposing (Nel)
 import Libs.Task as T
 import Libs.Time as Time
-import Models.DatabaseQueryResults exposing (DatabaseQueryResultsRow, QueryResultColumn)
 import Models.JsValue as JsValue exposing (JsValue)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnRef exposing (ColumnRef)
@@ -22,6 +21,7 @@ import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.SourceId as SourceId
 import Models.Project.TableId as TableId
 import Models.Project.TableName exposing (TableName)
+import Models.QueryResult exposing (QueryResultColumn, QueryResultRow)
 import Models.SourceInfo as SourceInfo exposing (SourceInfo)
 import Services.QueryBuilder exposing (RowQuery)
 import Time
@@ -47,7 +47,7 @@ type alias FailureState =
 
 type alias SuccessState =
     { columns : List QueryResultColumn
-    , values : DatabaseQueryResultsRow
+    , values : QueryResultRow
     , durationMs : Int
     , succeededAt : Time.Posix
     , documentMode : Bool
@@ -244,7 +244,7 @@ docColumn schema table column =
     { name = column, ref = Just { table = ( schema, table ), column = Nel column [] } }
 
 
-docCityColumnValues : Int -> String -> String -> String -> Int -> DatabaseQueryResultsRow
+docCityColumnValues : Int -> String -> String -> String -> Int -> QueryResultRow
 docCityColumnValues id name country_code district population =
     Dict.fromList [ ( "id", JsValue.Int id ), ( "name", JsValue.String name ), ( "country_code", JsValue.String country_code ), ( "district", JsValue.String district ), ( "population", JsValue.Int population ) ]
 

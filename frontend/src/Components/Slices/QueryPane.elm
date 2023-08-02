@@ -20,14 +20,14 @@ import Libs.Result as Result
 import Libs.Tailwind as Tw
 import Libs.Task as T
 import Libs.Time as Time
-import Models.DatabaseQueryResults exposing (DatabaseQueryResults, QueryResultColumn)
 import Models.JsValue as JsValue exposing (JsValue)
 import Models.Project.Source as Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.SourceKind exposing (SourceKind(..))
+import Models.QueryResult exposing (QueryResult, QueryResultColumn)
 import PagesComponents.Organization_.Project_.Models.Erd exposing (Erd)
 import Ports
-import Services.Lenses exposing (setDisplay, setInput, setLoading, setResults, setSource)
+import Services.Lenses exposing (setDisplay, setInput, setLoading, setResult, setSource)
 import Track
 
 
@@ -37,7 +37,7 @@ type alias Model =
     , source : Maybe ( Source, DatabaseUrl )
     , input : String
     , loading : Bool
-    , results : Maybe (Result String DatabaseQueryResults)
+    , result : Maybe QueryResult
     , display : DisplayMode
     }
 
@@ -75,8 +75,8 @@ type Msg
     | UseSource (Maybe ( Source, DatabaseUrl ))
     | InputUpdate String
     | RunQuery DatabaseUrl String
-    | GotResults (Result String DatabaseQueryResults)
-    | ClearResults
+    | GotResult QueryResult
+    | ClearResult
     | SetDisplay DisplayMode
 
 
@@ -86,7 +86,7 @@ type Msg
 
 init : List Source -> Maybe SourceId -> Maybe String -> Model
 init sources source input =
-    { id = Conf.ids.queryPaneDialog, sizeFull = False, source = selectSource sources source, input = input |> Maybe.withDefault "", loading = False, results = Nothing, display = DisplayTable }
+    { id = Conf.ids.queryPaneDialog, sizeFull = False, source = selectSource sources source, input = input |> Maybe.withDefault "", loading = False, result = Nothing, display = DisplayTable }
 
 
 selectSource : List Source -> Maybe SourceId -> Maybe ( Source, DatabaseUrl )
@@ -133,13 +133,13 @@ update wrap erd msg model =
             ( model |> Maybe.map (setInput input), Cmd.none )
 
         RunQuery databaseUrl query ->
-            ( model |> Maybe.map (setLoading True >> setResults Nothing), Ports.runDatabaseQuery "query-pane" databaseUrl query )
+            ( model |> Maybe.map (setLoading True >> setResult Nothing), Ports.runDatabaseQuery "query-pane" databaseUrl query )
 
-        GotResults results ->
-            ( model |> Maybe.map (setLoading False >> setResults (Just results)), Cmd.none )
+        GotResult result ->
+            ( model |> Maybe.map (setLoading False >> setResult (Just result)), Cmd.none )
 
-        ClearResults ->
-            ( model |> Maybe.map (setResults Nothing), Cmd.none )
+        ClearResult ->
+            ( model |> Maybe.map (setResult Nothing), Cmd.none )
 
         SetDisplay mode ->
             ( model |> Maybe.map (setDisplay mode), Cmd.none )
@@ -163,7 +163,7 @@ view wrap sources model =
                     |> Maybe.mapOrElse
                         (\source ->
                             [ viewQueryEditor wrap (model.id ++ "-editor") source model.input model.loading ]
-                                ++ (model.results |> Maybe.mapOrElse (\results -> [ viewQueryResults wrap (model.id ++ "-results") model.display results ]) [])
+                                ++ (model.result |> Maybe.mapOrElse (\result -> [ viewQueryResults wrap (model.id ++ "-results") model.display result ]) [])
                         )
                         [ viewNoSourceWarning ]
                )
@@ -238,15 +238,15 @@ viewQueryEditor wrap htmlId ( source, databaseUrl ) input loading =
         ]
 
 
-viewQueryResults : (Msg -> msg) -> HtmlId -> DisplayMode -> Result String DatabaseQueryResults -> Html msg
-viewQueryResults wrap htmlId display results =
+viewQueryResults : (Msg -> msg) -> HtmlId -> DisplayMode -> QueryResult -> Html msg
+viewQueryResults wrap htmlId display model =
     let
         displayId : HtmlId
         displayId =
             htmlId ++ "-display"
     in
     div []
-        (results
+        (model.result
             |> Result.fold
                 (\err ->
                     [ div [ class "mt-3 px-6" ]
@@ -355,16 +355,16 @@ doc =
             , ( "2 sources", view (\_ -> logAction "msg") docSources docModel )
             , ( "with input", view (\_ -> logAction "msg") docSources { docModel | input = docQuery } )
             , ( "loading", view (\_ -> logAction "msg") docSources { docModel | input = docQuery, loading = True } )
-            , ( "with result error", view (\_ -> logAction "msg") docSources { docModel | input = docQuery, results = Just docResultError } )
-            , ( "with empty result", view (\_ -> logAction "msg") docSources { docModel | input = docQuery, results = Just docResultEmpty } )
-            , ( "with results", view (\_ -> logAction "msg") docSources { docModel | input = docQuery, results = Just docResults } )
-            , ( "with results as documents", view (\_ -> logAction "msg") docSources { docModel | input = docQuery, results = Just docResults, display = DisplayDocument } )
+            , ( "with result error", view (\_ -> logAction "msg") docSources { docModel | input = docQuery, result = Just docResultError } )
+            , ( "with empty result", view (\_ -> logAction "msg") docSources { docModel | input = docQuery, result = Just docResultEmpty } )
+            , ( "with results", view (\_ -> logAction "msg") docSources { docModel | input = docQuery, result = Just docResults } )
+            , ( "with results as documents", view (\_ -> logAction "msg") docSources { docModel | input = docQuery, result = Just docResults, display = DisplayDocument } )
             ]
 
 
 docModel : Model
 docModel =
-    { id = "html-id", sizeFull = False, source = Just ( docSource1, "url1" ), input = "", loading = False, results = Nothing, display = DisplayTable }
+    { id = "html-id", sizeFull = False, source = Just ( docSource1, "url1" ), input = "", loading = False, result = Nothing, display = DisplayTable }
 
 
 docQuery : String
@@ -372,9 +372,9 @@ docQuery =
     "SELECT * FROM users;"
 
 
-docResultError : Result String DatabaseQueryResults
+docResultError : QueryResult
 docResultError =
-    Err "Some unknown error..."
+    { context = "query-pane", query = docQuery, result = Err "Some unknown error...", started = Time.zero, finished = Time.zero }
 
 
 docColumns : List QueryResultColumn
@@ -382,21 +382,23 @@ docColumns =
     [ { name = "id", ref = Just { table = ( "public", "users" ), column = Nel.from "id" } }, { name = "name", ref = Nothing }, { name = "data", ref = Nothing } ]
 
 
-docResultEmpty : Result String DatabaseQueryResults
+docResultEmpty : QueryResult
 docResultEmpty =
-    Ok { query = docQuery, columns = docColumns, rows = [] }
+    { docResultError | result = Ok { columns = docColumns, rows = [] } }
 
 
-docResults : Result String DatabaseQueryResults
+docResults : QueryResult
 docResults =
-    Ok
-        { query = docQuery
-        , columns = docColumns
-        , rows =
-            [ Dict.fromList [ ( "id", JsValue.Int 3 ), ( "name", JsValue.String "Loïc" ) ]
-            , Dict.fromList [ ( "id", JsValue.Int 4 ), ( "name", JsValue.String "Samir" ), ( "data", JsValue.Object (Dict.fromList [ ( "affiliation", JsValue.String "github" ) ]) ) ]
-            ]
-        }
+    { docResultError
+        | result =
+            Ok
+                { columns = docColumns
+                , rows =
+                    [ Dict.fromList [ ( "id", JsValue.Int 3 ), ( "name", JsValue.String "Loïc" ) ]
+                    , Dict.fromList [ ( "id", JsValue.Int 4 ), ( "name", JsValue.String "Samir" ), ( "data", JsValue.Object (Dict.fromList [ ( "affiliation", JsValue.String "github" ) ]) ) ]
+                    ]
+                }
+    }
 
 
 docSources : List Source

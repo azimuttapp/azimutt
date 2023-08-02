@@ -15,8 +15,6 @@ import Libs.Models.FileName exposing (FileName)
 import Libs.Models.Hotkey as Hotkey exposing (Hotkey)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Color exposing (Color)
-import Libs.Time as Time
-import Models.DatabaseQueryResults as DatabaseQueryResults exposing (DatabaseQueryResults)
 import Models.OrganizationId as OrganizationId exposing (OrganizationId)
 import Models.Position as Position
 import Models.Project as Project exposing (Project)
@@ -29,6 +27,7 @@ import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableStats as TableStats exposing (TableStats)
 import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Models.ProjectTokenId as ProjectTokenId exposing (ProjectTokenId)
+import Models.QueryResult as QueryResult exposing (QueryResult)
 import Models.Route as Route exposing (Route)
 import Models.Size as Size
 import Models.TrackEvent as TrackEvent exposing (TrackEvent)
@@ -37,7 +36,6 @@ import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
 import PagesComponents.Organization_.Project_.Models.MemoId as MemoId exposing (MemoId)
 import Services.QueryBuilder as QueryBuilder
 import Storage.ProjectV2 exposing (decodeProject)
-import Time
 
 
 click : HtmlId -> Cmd msg
@@ -272,8 +270,7 @@ type JsMsg
     | GotTableStatsError SourceId TableId String
     | GotColumnStats SourceId ColumnStats
     | GotColumnStatsError SourceId ColumnRef String
-    | GotDatabaseQueryResults String DatabaseQueryResults Time.Posix Time.Posix
-    | GotDatabaseQueryError String String Time.Posix Time.Posix
+    | GotDatabaseQueryResult QueryResult
     | GotPrismaSchema JsonSchema
     | GotPrismaSchemaError String
     | GotHotkey String
@@ -459,11 +456,8 @@ jsDecoder =
                 "GotColumnStatsError" ->
                     Decode.map3 GotColumnStatsError (Decode.field "source" SourceId.decode) (Decode.field "column" ColumnRef.decode) (Decode.field "error" Decode.string)
 
-                "GotDatabaseQueryResults" ->
-                    Decode.map4 GotDatabaseQueryResults (Decode.field "context" Decode.string) (Decode.field "results" DatabaseQueryResults.decode) (Decode.field "started" Time.decode) (Decode.field "finished" Time.decode)
-
-                "GotDatabaseQueryError" ->
-                    Decode.map4 GotDatabaseQueryError (Decode.field "context" Decode.string) (Decode.field "error" Decode.string) (Decode.field "started" Time.decode) (Decode.field "finished" Time.decode)
+                "GotDatabaseQueryResult" ->
+                    Decode.map GotDatabaseQueryResult QueryResult.decode
 
                 "GotPrismaSchema" ->
                     Decode.map GotPrismaSchema (Decode.field "schema" JsonSchema.decode)
@@ -559,11 +553,8 @@ unhandledJsMsgError msg =
                 GotColumnStatsError _ _ _ ->
                     "GotColumnStatsError"
 
-                GotDatabaseQueryResults _ _ _ _ ->
-                    "GotDatabaseQueryResults"
-
-                GotDatabaseQueryError _ _ _ _ ->
-                    "GotDatabaseQueryError"
+                GotDatabaseQueryResult _ ->
+                    "GotDatabaseQueryResult"
 
                 GotPrismaSchema _ ->
                     "GotPrismaSchema"

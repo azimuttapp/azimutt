@@ -20,7 +20,6 @@ import Libs.Nel as Nel
 import Libs.Task as T
 import Libs.Time as Time
 import Models.Area as Area
-import Models.DatabaseQueryResults exposing (DatabaseQueryResults)
 import Models.Organization exposing (Organization)
 import Models.Position as Position
 import Models.Project as Project
@@ -33,6 +32,7 @@ import Models.Project.SourceKind as SourceKind
 import Models.Project.TableId as TableId
 import Models.ProjectInfo exposing (ProjectInfo)
 import Models.ProjectRef exposing (ProjectRef)
+import Models.QueryResult exposing (QueryResult)
 import Models.Size as Size
 import Models.SourceInfo as SourceInfo
 import Models.UrlInfos exposing (UrlInfos)
@@ -457,11 +457,8 @@ handleJsMessage now urlLayout msg model =
         GotColumnStatsError source column error ->
             ( { model | columnStats = model.columnStats |> Dict.update (ColumnId.fromRef column) (Maybe.withDefault Dict.empty >> Dict.insert (SourceId.toString source) (Err error) >> Just) }, Cmd.none )
 
-        GotDatabaseQueryResults context results started finished ->
-            model |> handleDatabaseQueryResponse context (Ok results) started finished
-
-        GotDatabaseQueryError context error started finished ->
-            model |> handleDatabaseQueryResponse context (Err error) started finished
+        GotDatabaseQueryResult result ->
+            model |> handleDatabaseQueryResponse result
 
         GotPrismaSchema schema ->
             if model.embedSourceParsing == Nothing then
@@ -719,13 +716,13 @@ showAllTablesIfNeeded erd =
         erd
 
 
-handleDatabaseQueryResponse : String -> Result String DatabaseQueryResults -> Time.Posix -> Time.Posix -> Model -> ( Model, Cmd Msg )
-handleDatabaseQueryResponse context result started finished model =
-    if context == "query-pane" then
-        ( model, QueryPane.GotResults result |> QueryPaneMsg |> T.send )
+handleDatabaseQueryResponse : QueryResult -> Model -> ( Model, Cmd Msg )
+handleDatabaseQueryResponse result model =
+    if result.context == "query-pane" then
+        ( model, QueryPane.GotResult result |> QueryPaneMsg |> T.send )
 
-    else if context |> String.startsWith "data-explorer-query/" then
-        ( model, DataExplorer.GotQueryResults context result started finished |> DataExplorerMsg |> T.send )
+    else if result.context |> String.startsWith "data-explorer-query/" then
+        ( model, DataExplorer.GotQueryResult result |> DataExplorerMsg |> T.send )
 
     else
-        ( model, "Unknown db query context: " ++ context |> Toasts.warning |> Toast |> T.send )
+        ( model, "Unknown db query context: " ++ result.context |> Toasts.warning |> Toast |> T.send )

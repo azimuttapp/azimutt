@@ -315,8 +315,8 @@ function runDatabaseQuery(msg: RunDatabaseQuery) {
         window.desktop.runDatabaseQuery(msg.database, msg.query) :
         backend.runDatabaseQuery(msg.database, msg.query)
     ).then(
-        (results: DatabaseQueryResults) => app.gotDatabaseQueryResults(msg.context, results, start, Date.now()),
-        (err: any) => app.gotDatabaseQueryError(msg.context, errorToString(err), start, Date.now())
+        (results: DatabaseQueryResults) => app.gotDatabaseQueryResult(msg.context, msg.query, results, start, Date.now()),
+        (err: any) => app.gotDatabaseQueryResult(msg.context, msg.query, errorToString(err), start, Date.now())
     )
 }
 

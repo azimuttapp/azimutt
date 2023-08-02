@@ -38,7 +38,7 @@ view changePage model =
 
         pages : Int
         pages =
-            1 + model.totalItems // model.pageSize
+            toFloat model.totalItems / toFloat model.pageSize |> ceiling
     in
     if pages < 2 then
         div [] []
@@ -139,7 +139,7 @@ doc : Chapter x
 doc =
     Chapter.chapter "Pagination"
         |> Chapter.renderComponentList
-            [ ( "page 1", view (logActionWith String.fromInt "changePage") (docModel 1 98) )
+            [ ( "page 1", view (logActionWith String.fromInt "changePage") (docModel 1 100) )
             , ( "page 2", view (logActionWith String.fromInt "changePage") (docModel 2 98) )
             , ( "page 3", view (logActionWith String.fromInt "changePage") (docModel 3 98) )
             , ( "page 4", view (logActionWith String.fromInt "changePage") (docModel 4 98) )
