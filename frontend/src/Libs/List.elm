@@ -40,6 +40,7 @@ module Libs.List exposing
     , nonEmptyMap
     , one
     , prepend
+    , prependCmd
     , prependIf
     , prependOn
     , reduce
@@ -327,9 +328,14 @@ addAt item index list =
         list |> List.foldr (\a ( res, i ) -> ( B.cond (i == index) (item :: a :: res) (a :: res), i - 1 )) ( [], List.length list - 1 ) |> Tuple.first
 
 
-prepend : List a -> List a -> List a
-prepend xs ys =
-    List.append ys xs
+prepend : a -> List a -> List a
+prepend item list =
+    item :: list
+
+
+prependCmd : ( a, Cmd msg ) -> List a -> ( List a, Cmd msg )
+prependCmd ( item, cmd ) list =
+    ( item :: list, cmd )
 
 
 prependIf : Bool -> a -> List a -> List a

@@ -8,7 +8,7 @@ import Components.Slices.DataExplorerDetails as DataExplorerDetails
 import Components.Slices.DataExplorerQuery as DataExplorerQuery
 import Dict exposing (Dict)
 import ElmBook
-import ElmBook.Actions as Actions exposing (logAction)
+import ElmBook.Actions as Actions
 import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Html, button, div, h3, input, label, nav, option, p, select, table, td, text, textarea, tr)
 import Html.Attributes exposing (autofocus, class, disabled, for, id, name, placeholder, selected, style, title, type_, value)
@@ -20,7 +20,6 @@ import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Ned as Ned exposing (Ned)
-import Libs.Nel exposing (Nel)
 import Libs.Tailwind as Tw exposing (TwClass)
 import Models.DbSource as DbSource exposing (DbSource)
 import Models.DbSourceInfo as DbSourceInfo exposing (DbSourceInfo)
@@ -32,13 +31,15 @@ import Models.Project.Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
-import Ports
 import Services.Lenses exposing (mapDetailsCmd, mapFilters, mapResultsCmd, mapVisualEditor, setOperation, setOperator, setValue)
 import Services.QueryBuilder as QueryBuilder
 
 
 
 -- TODO:
+--  - shorten uuid to its first component in results
+--  - pin a column and replace the fk by it
+--  - add search within results (left of 3 dots)
 --  - ERD data exploration: show a row in ERD (from the sidebar) and allow to explore data relations
 --  - Add filter button on results which can change editor (visual or query) and allow to trigger a new query
 --  - Linked rows in the side bar
@@ -98,7 +99,7 @@ type Msg
     | DeleteQuery DataExplorerQuery.Id
     | QueryMsg DataExplorerQuery.Id DataExplorerQuery.Msg
     | OpenDetails DbSourceInfo QueryBuilder.RowQuery
-    | CloseDetails Int
+    | CloseDetails DataExplorerQuery.Id
     | DetailsMsg DataExplorerDetails.Id DataExplorerDetails.Msg
 
 
@@ -124,8 +125,8 @@ init =
 -- UPDATE
 
 
-update : (Msg -> msg) -> List Source -> Msg -> Model -> ( Model, Cmd msg )
-update wrap sources msg model =
+update : List Source -> Msg -> Model -> ( Model, Cmd msg )
+update sources msg model =
     case msg of
         OpenExplorer source query ->
             let
@@ -181,41 +182,32 @@ update wrap sources msg model =
             ( { model | queryEditor = content }, Cmd.none )
 
         RunQuery source query ->
-            let
-                safeQuery : String
-                safeQuery =
-                    query |> QueryBuilder.limitResults source.db.kind
-            in
-            ( { model | results = DataExplorerQuery.init model.resultsSeq (DbSource.toInfo source) safeQuery :: model.results, resultsSeq = model.resultsSeq + 1 }
-              -- TODO: add tracking with editor source (visual or query)
-            , Ports.runDatabaseQuery ("data-explorer-query/" ++ String.fromInt model.resultsSeq) source.db.url safeQuery
-            )
+            { model | resultsSeq = model.resultsSeq + 1 } |> mapResultsCmd (List.prependCmd (DataExplorerQuery.init model.resultsSeq (DbSource.toInfo source) (query |> QueryBuilder.limitResults source.db.kind)))
 
         DeleteQuery id ->
             ( { model | results = model.results |> List.filter (\r -> r.id /= id) }, Cmd.none )
 
         QueryMsg id m ->
-            model |> mapResultsCmd (List.mapByCmd .id id (DataExplorerQuery.update (QueryMsg id >> wrap) m))
+            --model |> mapResultsCmd (List.mapByCmd .id id (DataExplorerQuery.update (QueryMsg id >> wrap) m))
+            model |> mapResultsCmd (List.mapByCmd .id id (DataExplorerQuery.update m))
 
         OpenDetails source query ->
-            ( { model | details = DataExplorerDetails.init model.detailsSeq source query :: model.details, detailsSeq = model.detailsSeq + 1 }
-              -- TODO: add tracking with editor source (visual or query)
-            , Ports.runDatabaseQuery ("data-explorer-details/" ++ String.fromInt model.detailsSeq) source.db.url (QueryBuilder.findRow source.db.kind query)
-            )
+            { model | detailsSeq = model.detailsSeq + 1 } |> mapDetailsCmd (List.prependCmd (DataExplorerDetails.init model.detailsSeq source query))
 
-        CloseDetails index ->
-            ( { model | details = model.details |> List.removeAt index }, Cmd.none )
+        CloseDetails id ->
+            ( { model | details = model.details |> List.removeBy .id id }, Cmd.none )
 
         DetailsMsg id m ->
-            model |> mapDetailsCmd (List.mapByCmd .id id (DataExplorerDetails.update (DetailsMsg id >> wrap) m))
+            --model |> mapDetailsCmd (List.mapByCmd .id id (DataExplorerDetails.update (DetailsMsg id >> wrap) m))
+            model |> mapDetailsCmd (List.mapByCmd .id id (DataExplorerDetails.update m))
 
 
 
 -- VIEW
 
 
-view : (Msg -> msg) -> (HtmlId -> msg) -> HtmlId -> SchemaName -> HtmlId -> List Source -> Model -> DataExplorerDisplay -> Html msg
-view wrap openDropdown openedDropdown defaultSchema htmlId sources model display =
+view : (Msg -> msg) -> (HtmlId -> msg) -> String -> HtmlId -> SchemaName -> HtmlId -> List Source -> Model -> DataExplorerDisplay -> Html msg
+view wrap openDropdown navbarHeight openedDropdown defaultSchema htmlId sources model display =
     div [ class "h-full flex" ]
         [ div [ class "basis-1/3 flex-1 overflow-y-auto flex flex-col border-r" ]
             -- TODO: put header on the whole width
@@ -230,7 +222,7 @@ view wrap openDropdown openedDropdown defaultSchema htmlId sources model display
             ]
         , div [ class "basis-2/3 flex-1 overflow-y-auto bg-gray-50 pb-28" ]
             [ viewResults wrap openDropdown (\s q -> OpenDetails s q |> wrap) openedDropdown defaultSchema sources (htmlId ++ "-results") model.results ]
-        , viewDetails wrap defaultSchema (htmlId ++ "-details") model.details
+        , viewDetails wrap (\s q -> OpenDetails s q |> wrap) navbarHeight defaultSchema sources (htmlId ++ "-details") model.details
         ]
 
 
@@ -498,11 +490,11 @@ viewResults wrap openDropdown openRow openedDropdown defaultSchema sources htmlI
             )
 
 
-viewDetails : (Msg -> msg) -> SchemaName -> HtmlId -> List DataExplorerDetails.Model -> Html msg
-viewDetails wrap defaultSchema htmlId details =
+viewDetails : (Msg -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> msg) -> String -> SchemaName -> List Source -> HtmlId -> List DataExplorerDetails.Model -> Html msg
+viewDetails wrap openRow navbarHeight defaultSchema sources htmlId details =
     div []
         (details
-            |> List.indexedMap (\i m -> DataExplorerDetails.view (DetailsMsg i >> wrap) (CloseDetails i |> wrap) defaultSchema (htmlId ++ "-" ++ String.fromInt i) (Just i) m)
+            |> List.indexedMap (\i m -> DataExplorerDetails.view (DetailsMsg m.id >> wrap) (CloseDetails m.id |> wrap) (openRow m.source) navbarHeight defaultSchema sources (htmlId ++ "-" ++ String.fromInt m.id) (Just i) m)
             |> List.reverse
         )
 
@@ -602,28 +594,18 @@ docKeyValueNestedColumns =
         ]
 
 
-docVisualEditor : QueryBuilder.TableQuery
-docVisualEditor =
-    { table = Just ( "public", "users" )
-    , filters =
-        [ { operator = QueryBuilder.OpAnd, column = Nel "name" [], kind = "varchar", nullable = False, operation = QueryBuilder.OpEqual, value = "Kabul" }
-        , { operator = QueryBuilder.OpOr, column = Nel "name" [], kind = "varchar", nullable = False, operation = QueryBuilder.OpIsNull, value = "" }
-        ]
-    }
-
-
 
 -- DOC HELPERS
 
 
 docComponentState : String -> (DocState -> Model) -> (DocState -> Model -> DocState) -> List Source -> ( String, SharedDocState x -> Html (ElmBook.Msg (SharedDocState x)) )
 docComponentState name get set sources =
-    ( name, \{ dataExplorerDocState } -> dataExplorerDocState |> (\s -> div [ style "height" "500px" ] [ view (docUpdate s get set sources) (docOpenDropdown s) s.openedDropdown "public" "data-explorer" sources (get s) (get s |> .display |> Maybe.withDefault BottomDisplay) ]) )
+    ( name, \{ dataExplorerDocState } -> dataExplorerDocState |> (\s -> div [ style "height" "500px" ] [ view (docUpdate s get set sources) (docOpenDropdown s) "0px" s.openedDropdown "public" "data-explorer" sources (get s) (get s |> .display |> Maybe.withDefault BottomDisplay) ]) )
 
 
 docUpdate : DocState -> (DocState -> Model) -> (DocState -> Model -> DocState) -> List Source -> Msg -> ElmBook.Msg (SharedDocState x)
 docUpdate s get set sources m =
-    s |> get |> update docWrap sources m |> Tuple.first |> set s |> docSetState
+    s |> get |> update sources m |> Tuple.first |> set s |> docSetState
 
 
 docOpenDropdown : DocState -> HtmlId -> ElmBook.Msg (SharedDocState x)
@@ -638,8 +620,3 @@ docOpenDropdown s id =
 docSetState : DocState -> ElmBook.Msg (SharedDocState x)
 docSetState state =
     Actions.updateState (\s -> { s | dataExplorerDocState = state })
-
-
-docWrap : Msg -> ElmBook.Msg state
-docWrap =
-    \_ -> logAction "wrap"

@@ -1,30 +1,34 @@
 module Components.Slices.DataExplorerDetails exposing (DocState, FailureState, Id, Model, Msg(..), SharedDocState, State(..), SuccessState, doc, docInit, init, update, view)
 
 import Components.Atoms.Icon as Icon
+import Components.Slices.DataExplorerValue as DataExplorerValue
 import Dict exposing (Dict)
 import ElmBook
 import ElmBook.Actions as Actions exposing (logAction)
 import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Html, button, dd, div, dt, h2, p, pre, span, text)
-import Html.Attributes exposing (class, id, type_)
+import Html.Attributes exposing (class, id, style, title, type_)
 import Html.Events exposing (onClick)
+import Libs.Dict as Dict
 import Libs.Html.Attributes exposing (ariaLabelledby, ariaModal, css, role)
 import Libs.List as List
+import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Nel exposing (Nel)
+import Libs.Nel as Nel exposing (Nel)
 import Libs.Result as Result
-import Libs.Task as T
 import Libs.Time as Time
 import Models.DbSourceInfo as DbSourceInfo exposing (DbSourceInfo)
 import Models.JsValue as JsValue exposing (JsValue)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.SchemaName exposing (SchemaName)
+import Models.Project.Source exposing (Source)
 import Models.Project.TableId as TableId
 import Models.Project.TableName exposing (TableName)
-import Models.QueryResult exposing (QueryResult, QueryResultColumn, QueryResultRow, QueryResultSuccess)
+import Models.QueryResult as QueryResult exposing (QueryResult, QueryResultColumn, QueryResultRow, QueryResultSuccess)
+import Ports
 import Services.Lenses exposing (mapState)
-import Services.QueryBuilder exposing (RowQuery)
+import Services.QueryBuilder as QueryBuilder exposing (RowQuery)
 import Time
 
 
@@ -33,6 +37,7 @@ type alias Model =
     , source : DbSourceInfo
     , query : RowQuery
     , state : State
+    , expanded : Dict ColumnName Bool
     }
 
 
@@ -61,16 +66,19 @@ type alias SuccessState =
 
 type Msg
     = GotResult QueryResult
-    | Noop
+    | ExpandValue ColumnName
 
 
 
 -- INIT
 
 
-init : Id -> DbSourceInfo -> RowQuery -> Model
+init : Id -> DbSourceInfo -> RowQuery -> ( Model, Cmd msg )
 init id source query =
-    { id = id, source = source, query = query, state = StateLoading }
+    ( { id = id, source = source, query = query, state = StateLoading, expanded = Dict.empty }
+      -- TODO: add tracking with editor source (visual or query)
+    , Ports.runDatabaseQuery ("data-explorer-details/" ++ String.fromInt id) source.db.url (QueryBuilder.findRow source.db.kind query)
+    )
 
 
 initFailure : Time.Posix -> Time.Posix -> String -> State
@@ -93,23 +101,22 @@ initSuccess started finished res =
 -- UPDATE
 
 
-update : (Msg -> msg) -> Msg -> Model -> ( Model, Cmd msg )
-update wrap msg model =
+update : Msg -> Model -> ( Model, Cmd msg )
+update msg model =
     case msg of
         GotResult res ->
             ( model |> mapState (\_ -> res.result |> Result.fold (initFailure res.started res.finished) (initSuccess res.started res.finished)), Cmd.none )
 
-        _ ->
-            -- FIXME to remove
-            ( model, Noop |> wrap |> T.send )
+        ExpandValue column ->
+            ( { model | expanded = model.expanded |> Dict.update column (Maybe.mapOrElse not True >> Just) }, Cmd.none )
 
 
 
 -- VIEW
 
 
-view : (Msg -> msg) -> msg -> SchemaName -> HtmlId -> Maybe Int -> Model -> Html msg
-view wrap close defaultSchema htmlId openDepth model =
+view : (Msg -> msg) -> msg -> (QueryBuilder.RowQuery -> msg) -> String -> SchemaName -> List Source -> HtmlId -> Maybe Int -> Model -> Html msg
+view wrap close openRow navbarHeight defaultSchema sources htmlId openDepth model =
     let
         titleId : HtmlId
         titleId =
@@ -123,7 +130,7 @@ view wrap close defaultSchema htmlId openDepth model =
         ]
         [ div [ class "fixed inset-0 overflow-hidden pointer-events-none" ]
             [ div [ class "absolute inset-0 overflow-hidden" ]
-                [ div [ class "pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10" ]
+                [ div [ class "pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10", style "top" navbarHeight ]
                     [ {-
                          Slide-over panel, show/hide based on slide-over state.
 
@@ -140,7 +147,7 @@ view wrap close defaultSchema htmlId openDepth model =
                             , openDepth |> Maybe.andThen (\i -> [ "translate-x-0", "-translate-x-6", "-translate-x-12", "-translate-x-16", "-translate-x-20" ] |> List.get i) |> Maybe.withDefault "translate-x-full"
                             ]
                         ]
-                        [ viewSlideOverContent wrap close defaultSchema titleId model
+                        [ viewSlideOverContent wrap close openRow defaultSchema (sources |> List.findBy .id model.source.id) titleId model
                         ]
                     ]
                 ]
@@ -148,15 +155,20 @@ view wrap close defaultSchema htmlId openDepth model =
         ]
 
 
-viewSlideOverContent : (Msg -> msg) -> msg -> SchemaName -> HtmlId -> Model -> Html msg
-viewSlideOverContent wrap close defaultSchema titleId model =
-    div [ class "flex h-full flex-col overflow-y-auto bg-white py-6 shadow-xl" ]
-        [ div [ class "px-4 sm:px-6" ]
+viewSlideOverContent : (Msg -> msg) -> msg -> (QueryBuilder.RowQuery -> msg) -> SchemaName -> Maybe Source -> HtmlId -> Model -> Html msg
+viewSlideOverContent wrap close openRow defaultSchema source titleId model =
+    let
+        panelTitle : String
+        panelTitle =
+            TableId.show defaultSchema model.query.table ++ ": " ++ (model.query.primaryKey |> Nel.toList |> List.map .value |> String.join "/")
+    in
+    div [ class "flex h-full flex-col overflow-y-auto bg-white shadow-xl" ]
+        [ div [ class "p-6 bg-indigo-700" ]
             [ div [ class "flex items-start justify-between" ]
-                [ h2 [ onClick (wrap Noop), id titleId, class "text-base font-semibold leading-6 text-gray-900" ]
-                    [ text (TableId.show defaultSchema model.query.table) ]
+                [ h2 [ id titleId, title panelTitle, class "text-base font-semibold leading-6 text-white truncate" ]
+                    [ text panelTitle ]
                 , div [ class "ml-3 flex h-7 items-center" ]
-                    [ button [ type_ "button", onClick close, class "relative rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" ]
+                    [ button [ type_ "button", onClick close, class "relative rounded-md bg-indigo-700 text-indigo-200 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2" ]
                         [ span [ class "absolute -inset-2.5" ] []
                         , span [ class "sr-only" ] [ text "Close panel" ]
                         , Icon.solid Icon.X "h-6 w-6"
@@ -164,7 +176,7 @@ viewSlideOverContent wrap close defaultSchema titleId model =
                     ]
                 ]
             ]
-        , div [ class "relative flex-1 mt-3 space-y-3 px-4 sm:px-6" ]
+        , div [ class "relative flex-1 pt-3 pb-6 px-6 space-y-3 overflow-y-auto" ]
             (case model.state of
                 StateLoading ->
                     [ text "Loading... " ]
@@ -175,12 +187,14 @@ viewSlideOverContent wrap close defaultSchema titleId model =
                     ]
 
                 StateSuccess res ->
-                    res.columns
+                    (res.columns |> QueryResult.buildColumnTargets source)
                         |> List.map
-                            (\col ->
+                            (\c ->
                                 div []
-                                    [ dt [ class "text-sm font-medium text-gray-500 sm:w-40 sm:flex-shrink-0" ] [ text col.name ]
-                                    , dd [ class "text-sm text-gray-900 sm:col-span-2" ] [ JsValue.view (res.values |> Dict.get col.name) ]
+                                    [ dt [ class "text-sm font-medium text-gray-500 sm:w-40 sm:flex-shrink-0" ] [ text c.name ]
+                                    , dd [ class "text-sm text-gray-900 sm:col-span-2 overflow-hidden text-ellipsis" ]
+                                        [ DataExplorerValue.view openRow (ExpandValue c.name |> wrap) defaultSchema (model.expanded |> Dict.getOrElse c.name False) (res.values |> Dict.get c.name) c
+                                        ]
                                     ]
                             )
             )
@@ -224,7 +238,7 @@ doc =
                                 |> List.indexedMap
                                     (\i m ->
                                         div [ class "mt-1" ]
-                                            [ view (docUpdate i s) (docClose i s) "public" ("data-explorer-details-" ++ String.fromInt i) (Just i) m
+                                            [ view (docUpdate i s) (docClose i s) docOpenRow "0px" "public" [] ("data-explorer-details-" ++ String.fromInt i) (Just i) m
                                             , docButton ("Close " ++ String.fromInt i) (docClose i s)
                                             ]
                                     )
@@ -242,7 +256,7 @@ docButton name msg =
 
 docModel : Model
 docModel =
-    init 1 docSource { table = ( "public", "city" ), primaryKey = Nel { column = Nel "id" [], kind = "int", value = "1" } [] }
+    init 1 docSource { table = ( "public", "city" ), primaryKey = Nel { column = Nel "id" [], kind = "int", value = "1" } [] } |> Tuple.first
 
 
 docSource : DbSourceInfo
@@ -257,7 +271,7 @@ docFailureState =
 
 docSuccessState : SuccessState
 docSuccessState =
-    { columns = [ "id", "name", "country_code", "district", "population" ] |> List.map (docColumn "public" "city")
+    { columns = [ "id", "name", "country_code", "district", "population" ] ++ (List.range 1 15 |> List.map (\i -> "col" ++ String.fromInt i)) |> List.map (docColumn "public" "city")
     , values = docCityColumnValues 1 "Kabul" "AFG" "Kabol" 1780000
     , startedAt = Time.zero
     , succeededAt = Time.zero
@@ -272,7 +286,7 @@ docColumn schema table column =
 
 docCityColumnValues : Int -> String -> String -> String -> Int -> QueryResultRow
 docCityColumnValues id name country_code district population =
-    Dict.fromList [ ( "id", JsValue.Int id ), ( "name", JsValue.String name ), ( "country_code", JsValue.String country_code ), ( "district", JsValue.String district ), ( "population", JsValue.Int population ) ]
+    [ ( "id", JsValue.Int id ), ( "name", JsValue.String name ), ( "country_code", JsValue.String country_code ), ( "district", JsValue.String district ), ( "population", JsValue.Int population ) ] ++ (List.range 1 15 |> List.map (\i -> ( "col" ++ String.fromInt i, JsValue.String ("value" ++ String.fromInt i) ))) |> Dict.fromList
 
 
 
@@ -281,7 +295,7 @@ docCityColumnValues id name country_code district population =
 
 docUpdate : Int -> DocState -> Msg -> ElmBook.Msg (SharedDocState x)
 docUpdate i s msg =
-    docSetState { s | details = s.details |> List.mapAt i (update docWrap msg >> Tuple.first) }
+    docSetState { s | details = s.details |> List.mapAt i (update msg >> Tuple.first) }
 
 
 docOpen : Model -> DocState -> ElmBook.Msg (SharedDocState x)
@@ -299,6 +313,6 @@ docSetState state =
     Actions.updateState (\s -> { s | dataExplorerDetailsDocState = state })
 
 
-docWrap : Msg -> ElmBook.Msg state
-docWrap =
-    \_ -> logAction "wrap"
+docOpenRow : QueryBuilder.RowQuery -> ElmBook.Msg state
+docOpenRow =
+    \_ -> logAction "openRow"

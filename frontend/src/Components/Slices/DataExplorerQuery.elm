@@ -5,6 +5,7 @@ import Components.Atoms.Icon as Icon exposing (Icon)
 import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
 import Components.Molecules.Dropdown as Dropdown
 import Components.Molecules.Pagination as Pagination
+import Components.Slices.DataExplorerValue as DataExplorerValue
 import Dict exposing (Dict)
 import ElmBook
 import ElmBook.Actions as Actions exposing (logAction)
@@ -20,12 +21,10 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Nel exposing (Nel)
 import Libs.Result as Result
 import Libs.Tailwind exposing (TwClass, focus)
-import Libs.Task as T
 import Libs.Time as Time
 import Models.DbSourceInfo as DbSourceInfo exposing (DbSourceInfo)
 import Models.JsValue as JsValue exposing (JsValue)
 import Models.Project.ColumnName exposing (ColumnName)
-import Models.Project.ColumnPath as ColumnPath
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.ColumnType exposing (ColumnType)
 import Models.Project.Relation as Relation exposing (Relation)
@@ -33,10 +32,10 @@ import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId as SourceId
 import Models.Project.SourceKind exposing (SourceKind(..))
-import Models.Project.Table as Table exposing (Table)
-import Models.Project.TableId as TableId exposing (TableId)
+import Models.Project.Table exposing (Table)
 import Models.Project.TableName exposing (TableName)
-import Models.QueryResult exposing (QueryResult, QueryResultColumn, QueryResultRow, QueryResultSuccess)
+import Models.QueryResult as QueryResult exposing (QueryResult, QueryResultColumn, QueryResultColumnTarget, QueryResultRow, QueryResultSuccess)
+import Ports
 import Services.Lenses exposing (mapState, setQuery)
 import Services.QueryBuilder as QueryBuilder
 import Time
@@ -94,16 +93,18 @@ type Msg
     | ChangePage Int
     | ExpandRow RowIndex
     | ToggleQuery
-    | Noop
 
 
 
 -- INIT
 
 
-init : Id -> DbSourceInfo -> String -> Model
+init : Id -> DbSourceInfo -> String -> ( Model, Cmd msg )
 init id source query =
-    { id = id, source = source, query = query, state = StateRunning }
+    ( { id = id, source = source, query = query, state = StateRunning }
+      -- TODO: add tracking with editor source (visual or query)
+    , Ports.runDatabaseQuery ("data-explorer-query/" ++ String.fromInt id) source.db.url query
+    )
 
 
 initFailure : Time.Posix -> Time.Posix -> String -> State
@@ -132,8 +133,8 @@ initSuccess started finished res =
 -- UPDATE
 
 
-update : (Msg -> msg) -> Msg -> Model -> ( Model, Cmd msg )
-update wrap msg model =
+update : Msg -> Model -> ( Model, Cmd msg )
+update msg model =
     case msg of
         Cancel ->
             ( model |> mapState (\_ -> StateCanceled), Cmd.none )
@@ -150,9 +151,15 @@ update wrap msg model =
         ToggleQuery ->
             ( model |> mapState (mapSuccess (\s -> { s | showQuery = not s.showQuery })), Cmd.none )
 
-        _ ->
-            -- FIXME to remove
-            ( model, Noop |> wrap |> T.send )
+        -- FIXME implement
+        FullScreen ->
+            ( model, Cmd.none )
+
+        Refresh ->
+            ( model, Cmd.none )
+
+        Export ->
+            ( model, Cmd.none )
 
 
 mapSuccess : (SuccessState -> SuccessState) -> State -> State
@@ -216,7 +223,7 @@ view wrap openDropdown openRow deleteQuery openedDropdown defaultSchema sources 
                     ]
                 )
                 (div [ class "relative flex space-x-1 text-left" ]
-                    [ viewActionButton Icon.Refresh "Run again execution" (wrap Noop)
+                    [ viewActionButton Icon.Refresh "Run again execution" (wrap Refresh)
                     , viewActionButton Icon.Trash "Delete" deleteQuery
                     ]
                 )
@@ -268,8 +275,8 @@ view wrap openDropdown openRow deleteQuery openedDropdown defaultSchema sources 
                              , { label = "Export data"
                                , content =
                                     ContextMenu.SubMenu
-                                        [ { label = "CSV", action = wrap Refresh }
-                                        , { label = "JSON", action = wrap Refresh }
+                                        [ { label = "CSV", action = wrap Export }
+                                        , { label = "JSON", action = wrap Export }
                                         ]
                                         ContextMenu.BottomLeft
                                }
@@ -315,29 +322,16 @@ viewSuccess wrap openRow defaultSchema source res =
             Pagination.paginate res.rows pagination
     in
     div []
-        [ viewTable wrap openRow defaultSchema source res.columns pageRows res.expanded
+        [ viewTable wrap openRow defaultSchema (res.columns |> QueryResult.buildColumnTargets source) pageRows res.expanded
         , Pagination.view (\p -> ChangePage p |> wrap) pagination
         ]
 
 
-viewTable : (Msg -> msg) -> (QueryBuilder.RowQuery -> msg) -> SchemaName -> Maybe Source -> List QueryResultColumn -> List ( RowIndex, QueryResultRow ) -> Dict RowIndex Bool -> Html msg
-viewTable wrap openRow defaultSchema source columns rows expanded =
+viewTable : (Msg -> msg) -> (QueryBuilder.RowQuery -> msg) -> SchemaName -> List QueryResultColumnTarget -> List ( RowIndex, QueryResultRow ) -> Dict RowIndex Bool -> Html msg
+viewTable wrap openRow defaultSchema columns rows expanded =
     -- TODO sort columns
     -- TODO document mode
     -- TODO open row sidebar
-    let
-        tables : Dict TableId Table
-        tables =
-            source |> Maybe.mapOrElse .tables Dict.empty
-
-        relations : Dict TableId (List Relation)
-        relations =
-            source |> Maybe.mapOrElse (.relations >> List.groupBy (.src >> .table)) Dict.empty
-
-        columns2 : List { name : String, open : Maybe { ref : ColumnRef, kind : ColumnType } }
-        columns2 =
-            columns |> List.map (\c -> { name = c.name, open = c.ref |> Maybe.andThen (targetColumn tables relations) })
-    in
     div [ class "flow-root" ]
         [ div [ class "overflow-x-auto" ]
             [ div [ class "inline-block min-w-full align-middle" ]
@@ -345,7 +339,7 @@ viewTable wrap openRow defaultSchema source columns rows expanded =
                     [ thead []
                         [ tr [ class "bg-gray-100" ]
                             (th [ scope "col", class "px-1 text-left text-sm font-semibold text-gray-900" ] [ text "#" ]
-                                :: (columns2 |> List.map (\c -> th [ scope "col", class "px-1 text-left text-sm font-semibold text-gray-900" ] [ text c.name ]))
+                                :: (columns |> List.map (\c -> th [ scope "col", class "px-1 text-left text-sm font-semibold text-gray-900" ] [ text c.name ]))
                             )
                         ]
                     , tbody []
@@ -354,7 +348,7 @@ viewTable wrap openRow defaultSchema source columns rows expanded =
                                 (\( i, r ) ->
                                     tr [ class "hover:bg-gray-100", classList [ ( "bg-gray-50", modBy 2 i == 1 ) ] ]
                                         (td [ class "px-1 text-sm text-gray-900" ] [ text (i |> String.fromInt) ]
-                                            :: (columns2 |> List.map (viewTableValue wrap openRow defaultSchema i r expanded))
+                                            :: (columns |> List.map (\c -> td [ class "px-1 text-sm text-gray-500 whitespace-nowrap max-w-xs truncate" ] [ DataExplorerValue.view openRow (ExpandRow i |> wrap) defaultSchema (expanded |> Dict.getOrElse i False) (r |> Dict.get c.name) c ]))
                                         )
                                 )
                         )
@@ -362,59 +356,6 @@ viewTable wrap openRow defaultSchema source columns rows expanded =
                 ]
             ]
         ]
-
-
-targetColumn : Dict TableId Table -> Dict TableId (List Relation) -> ColumnRef -> Maybe { ref : ColumnRef, kind : ColumnType }
-targetColumn tables relations ref =
-    let
-        -- FIXME: relations without fk don't get the link :/ Should use relations from any source? Same for primary key?
-        target : Maybe ColumnRef
-        target =
-            if tables |> Dict.get ref.table |> Maybe.andThen .primaryKey |> Maybe.any (\pk -> pk.columns == Nel ref.column []) then
-                Just ref
-
-            else
-                relations |> Dict.getOrElse ref.table [] |> List.find (\r -> r.src == ref) |> Maybe.map .ref
-    in
-    target |> Maybe.andThen (\r -> tables |> Dict.get r.table |> Maybe.andThen (\t -> t |> Table.getColumn r.column) |> Maybe.map (\c -> { ref = r, kind = c.kind }))
-
-
-viewTableValue : (Msg -> msg) -> (QueryBuilder.RowQuery -> msg) -> SchemaName -> RowIndex -> QueryResultRow -> Dict RowIndex Bool -> { name : String, open : Maybe { ref : ColumnRef, kind : ColumnType } } -> Html msg
-viewTableValue wrap openRow defaultSchema i row expanded column =
-    let
-        value : Maybe JsValue
-        value =
-            row |> Dict.get column.name
-
-        classes : TwClass
-        classes =
-            "px-1 text-sm text-gray-500 whitespace-nowrap max-w-xs truncate"
-    in
-    if value |> Maybe.any (\v -> JsValue.isArray v || JsValue.isObject v) then
-        td [ onClick (ExpandRow i |> wrap), class (classes ++ " cursor-pointer") ]
-            [ if expanded |> Dict.getOrElse i False then
-                JsValue.viewRaw value
-
-              else
-                JsValue.view value
-            ]
-
-    else
-        Maybe.map2
-            (\o v ->
-                td [ class classes ]
-                    [ JsValue.view value
-                    , button
-                        [ type_ "button"
-                        , onClick (openRow { table = o.ref.table, primaryKey = Nel { column = o.ref.column, kind = o.kind, value = JsValue.toString v } [] })
-                        , title ("Open " ++ TableId.show defaultSchema o.ref.table ++ " with " ++ ColumnPath.show o.ref.column ++ "=" ++ JsValue.toString v)
-                        ]
-                        [ Icon.solid Icon.ExternalLink "ml-1 w-4 h-4 inline" ]
-                    ]
-            )
-            column.open
-            (value |> Maybe.filter (\v -> v /= JsValue.Null))
-            |> Maybe.withDefault (td [ class classes ] [ JsValue.view value ])
 
 
 
@@ -677,7 +618,7 @@ docComponentState name get set =
 
 docUpdate : DocState -> (DocState -> Model) -> (DocState -> Model -> DocState) -> Msg -> ElmBook.Msg (SharedDocState x)
 docUpdate s get set m =
-    s |> get |> update docWrap m |> Tuple.first |> set s |> docSetState
+    s |> get |> update m |> Tuple.first |> set s |> docSetState
 
 
 docOpenDropdown : DocState -> HtmlId -> ElmBook.Msg (SharedDocState x)
