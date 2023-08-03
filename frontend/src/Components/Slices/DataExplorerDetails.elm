@@ -9,13 +9,12 @@ import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Html, button, dd, div, dt, h2, p, pre, span, text)
 import Html.Attributes exposing (class, id, style, title, type_)
 import Html.Events exposing (onClick)
-import Libs.Dict as Dict
 import Libs.Html.Attributes exposing (ariaLabelledby, ariaModal, css, role)
 import Libs.List as List
-import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Nel as Nel exposing (Nel)
 import Libs.Result as Result
+import Libs.Set as Set
 import Libs.Time as Time
 import Models.DbSourceInfo as DbSourceInfo exposing (DbSourceInfo)
 import Models.JsValue as JsValue exposing (JsValue)
@@ -29,6 +28,7 @@ import Models.QueryResult as QueryResult exposing (QueryResult, QueryResultColum
 import Ports
 import Services.Lenses exposing (mapState)
 import Services.QueryBuilder as QueryBuilder exposing (RowQuery)
+import Set exposing (Set)
 import Time
 
 
@@ -37,7 +37,7 @@ type alias Model =
     , source : DbSourceInfo
     , query : RowQuery
     , state : State
-    , expanded : Dict ColumnName Bool
+    , expanded : Set ColumnName
     }
 
 
@@ -75,7 +75,7 @@ type Msg
 
 init : Id -> DbSourceInfo -> RowQuery -> ( Model, Cmd msg )
 init id source query =
-    ( { id = id, source = source, query = query, state = StateLoading, expanded = Dict.empty }
+    ( { id = id, source = source, query = query, state = StateLoading, expanded = Set.empty }
       -- TODO: add tracking with editor source (visual or query)
     , Ports.runDatabaseQuery ("data-explorer-details/" ++ String.fromInt id) source.db.url (QueryBuilder.findRow source.db.kind query)
     )
@@ -108,7 +108,7 @@ update msg model =
             ( model |> mapState (\_ -> res.result |> Result.fold (initFailure res.started res.finished) (initSuccess res.started res.finished)), Cmd.none )
 
         ExpandValue column ->
-            ( { model | expanded = model.expanded |> Dict.update column (Maybe.mapOrElse not True >> Just) }, Cmd.none )
+            ( { model | expanded = model.expanded |> Set.toggle column }, Cmd.none )
 
 
 
@@ -193,7 +193,7 @@ viewSlideOverContent wrap close openRow defaultSchema source titleId model =
                                 div []
                                     [ dt [ class "text-sm font-medium text-gray-500 sm:w-40 sm:flex-shrink-0" ] [ text c.name ]
                                     , dd [ class "text-sm text-gray-900 sm:col-span-2 overflow-hidden text-ellipsis" ]
-                                        [ DataExplorerValue.view openRow (ExpandValue c.name |> wrap) defaultSchema (model.expanded |> Dict.getOrElse c.name False) (res.values |> Dict.get c.name) c
+                                        [ DataExplorerValue.view openRow (ExpandValue c.name |> wrap) defaultSchema (model.expanded |> Set.member c.name) (res.values |> Dict.get c.name) c
                                         ]
                                     ]
                             )

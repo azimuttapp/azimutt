@@ -20,6 +20,7 @@ import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Nel exposing (Nel)
 import Libs.Result as Result
+import Libs.Set as Set
 import Libs.Tailwind exposing (TwClass, focus)
 import Libs.Time as Time
 import Models.DbSourceInfo as DbSourceInfo exposing (DbSourceInfo)
@@ -38,6 +39,7 @@ import Models.QueryResult as QueryResult exposing (QueryResult, QueryResultColum
 import Ports
 import Services.Lenses exposing (mapState, setQuery)
 import Services.QueryBuilder as QueryBuilder
+import Set exposing (Set)
 import Time
 
 
@@ -74,7 +76,7 @@ type alias SuccessState =
     , startedAt : Time.Posix
     , succeededAt : Time.Posix
     , page : Int
-    , expanded : Dict RowIndex Bool
+    , expanded : Set RowIndex
     , documentMode : Bool
     , showQuery : Bool
     , search : String
@@ -120,7 +122,7 @@ initSuccess started finished res =
         , startedAt = started
         , succeededAt = finished
         , page = 1
-        , expanded = Dict.empty
+        , expanded = Set.empty
         , documentMode = False
         , showQuery = False
         , search = ""
@@ -146,7 +148,7 @@ update msg model =
             ( model |> mapState (mapSuccess (\s -> { s | page = p })), Cmd.none )
 
         ExpandRow i ->
-            ( model |> mapState (mapSuccess (\s -> { s | expanded = s.expanded |> Dict.update i (Maybe.mapOrElse not True >> Just) })), Cmd.none )
+            ( model |> mapState (mapSuccess (\s -> { s | expanded = s.expanded |> Set.toggle i })), Cmd.none )
 
         ToggleQuery ->
             ( model |> mapState (mapSuccess (\s -> { s | showQuery = not s.showQuery })), Cmd.none )
@@ -177,7 +179,7 @@ mapSuccess f state =
 
 
 view : (Msg -> msg) -> (HtmlId -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> msg) -> msg -> HtmlId -> SchemaName -> List Source -> HtmlId -> Model -> Html msg
-view wrap openDropdown openRow deleteQuery openedDropdown defaultSchema sources htmlId model =
+view wrap toggleDropdown openRow deleteQuery openedDropdown defaultSchema sources htmlId model =
     case model.state of
         StateRunning ->
             viewCard
@@ -259,7 +261,7 @@ view wrap openDropdown openRow deleteQuery openedDropdown defaultSchema sources 
                         button
                             [ type_ "button"
                             , id m.id
-                            , onClick (openDropdown m.id)
+                            , onClick (toggleDropdown m.id)
                             , ariaExpanded m.isOpen
                             , ariaHaspopup "true"
                             , css [ "flex text-sm opacity-25", focus [ "outline-none" ] ]
@@ -327,7 +329,7 @@ viewSuccess wrap openRow defaultSchema source res =
         ]
 
 
-viewTable : (Msg -> msg) -> (QueryBuilder.RowQuery -> msg) -> SchemaName -> List QueryResultColumnTarget -> List ( RowIndex, QueryResultRow ) -> Dict RowIndex Bool -> Html msg
+viewTable : (Msg -> msg) -> (QueryBuilder.RowQuery -> msg) -> SchemaName -> List QueryResultColumnTarget -> List ( RowIndex, QueryResultRow ) -> Set RowIndex -> Html msg
 viewTable wrap openRow defaultSchema columns rows expanded =
     -- TODO sort columns
     -- TODO document mode
@@ -348,7 +350,7 @@ viewTable wrap openRow defaultSchema columns rows expanded =
                                 (\( i, r ) ->
                                     tr [ class "hover:bg-gray-100", classList [ ( "bg-gray-50", modBy 2 i == 1 ) ] ]
                                         (td [ class "px-1 text-sm text-gray-900" ] [ text (i |> String.fromInt) ]
-                                            :: (columns |> List.map (\c -> td [ class "px-1 text-sm text-gray-500 whitespace-nowrap max-w-xs truncate" ] [ DataExplorerValue.view openRow (ExpandRow i |> wrap) defaultSchema (expanded |> Dict.getOrElse i False) (r |> Dict.get c.name) c ]))
+                                            :: (columns |> List.map (\c -> td [ class "px-1 text-sm text-gray-500 whitespace-nowrap max-w-xs truncate" ] [ DataExplorerValue.view openRow (ExpandRow i |> wrap) defaultSchema (expanded |> Set.member i) (r |> Dict.get c.name) c ]))
                                         )
                                 )
                         )
@@ -384,9 +386,9 @@ doc =
         |> Chapter.renderStatefulComponentList
             [ docComponentState "success" .success (\s m -> { s | success = m })
             , docComponentState "long lines & json" .longLines (\s m -> { s | longLines = m })
-            , docComponent "failure" (\s -> view docWrap docDropdown docOpenRow docDelete s.openedDropdown docDefaultSchema docSources docHtmlId (docModel 3 docComplexQuery docStateFailure))
-            , docComponent "running" (\s -> view docWrap docDropdown docOpenRow docDelete s.openedDropdown docDefaultSchema docSources docHtmlId (docModel 4 docComplexQuery docStateRunning))
-            , docComponent "canceled" (\s -> view docWrap docDropdown docOpenRow docDelete s.openedDropdown docDefaultSchema docSources docHtmlId (docModel 5 docComplexQuery docStateCanceled))
+            , docComponent "failure" (\s -> view docWrap (docToggleDropdown s) docOpenRow docDelete s.openedDropdown docDefaultSchema docSources docHtmlId (docModel 3 docComplexQuery docStateFailure))
+            , docComponent "running" (\s -> view docWrap (docToggleDropdown s) docOpenRow docDelete s.openedDropdown docDefaultSchema docSources docHtmlId (docModel 4 docComplexQuery docStateRunning))
+            , docComponent "canceled" (\s -> view docWrap (docToggleDropdown s) docOpenRow docDelete s.openedDropdown docDefaultSchema docSources docHtmlId (docModel 5 docComplexQuery docStateCanceled))
             ]
 
 
@@ -613,7 +615,7 @@ docComponent name render =
 
 docComponentState : String -> (DocState -> Model) -> (DocState -> Model -> DocState) -> ( String, SharedDocState x -> Html (ElmBook.Msg (SharedDocState x)) )
 docComponentState name get set =
-    ( name, \{ dataExplorerQueryDocState } -> dataExplorerQueryDocState |> (\s -> get s |> (\m -> view (docUpdate s get set) (docOpenDropdown s) docOpenRow docDelete s.openedDropdown docDefaultSchema docSources (docHtmlId ++ "-" ++ String.fromInt m.id) m)) )
+    ( name, \{ dataExplorerQueryDocState } -> dataExplorerQueryDocState |> (\s -> get s |> (\m -> view (docUpdate s get set) (docToggleDropdown s) docOpenRow docDelete s.openedDropdown docDefaultSchema docSources (docHtmlId ++ "-" ++ String.fromInt m.id) m)) )
 
 
 docUpdate : DocState -> (DocState -> Model) -> (DocState -> Model -> DocState) -> Msg -> ElmBook.Msg (SharedDocState x)
@@ -621,8 +623,8 @@ docUpdate s get set m =
     s |> get |> update m |> Tuple.first |> set s |> docSetState
 
 
-docOpenDropdown : DocState -> HtmlId -> ElmBook.Msg (SharedDocState x)
-docOpenDropdown s id =
+docToggleDropdown : DocState -> HtmlId -> ElmBook.Msg (SharedDocState x)
+docToggleDropdown s id =
     if s.openedDropdown == id then
         docSetState { s | openedDropdown = "" }
 
@@ -638,11 +640,6 @@ docSetState state =
 docWrap : Msg -> ElmBook.Msg state
 docWrap =
     \_ -> logAction "wrap"
-
-
-docDropdown : HtmlId -> ElmBook.Msg state
-docDropdown =
-    \_ -> logAction "openDropdown"
 
 
 docOpenRow : DbSourceInfo -> QueryBuilder.RowQuery -> ElmBook.Msg state

@@ -42,7 +42,7 @@ import Services.QueryBuilder as QueryBuilder
 --  - add search within results (left of 3 dots)
 --  - ERD data exploration: show a row in ERD (from the sidebar) and allow to explore data relations
 --  - Add filter button on results which can change editor (visual or query) and allow to trigger a new query
---  - Linked rows in the side bar
+--  - Incoming rows in the side bar (and results?)
 --  - handle time better, remove all Time.zero not in doc
 
 
@@ -207,7 +207,7 @@ update sources msg model =
 
 
 view : (Msg -> msg) -> (HtmlId -> msg) -> String -> HtmlId -> SchemaName -> HtmlId -> List Source -> Model -> DataExplorerDisplay -> Html msg
-view wrap openDropdown navbarHeight openedDropdown defaultSchema htmlId sources model display =
+view wrap toggleDropdown navbarHeight openedDropdown defaultSchema htmlId sources model display =
     div [ class "h-full flex" ]
         [ div [ class "basis-1/3 flex-1 overflow-y-auto flex flex-col border-r" ]
             -- TODO: put header on the whole width
@@ -221,7 +221,7 @@ view wrap openDropdown navbarHeight openedDropdown defaultSchema htmlId sources 
                     model.source |> Maybe.mapOrElse (\s -> viewQueryEditor wrap (htmlId ++ "-query-editor") s model.queryEditor) (div [] [])
             ]
         , div [ class "basis-2/3 flex-1 overflow-y-auto bg-gray-50 pb-28" ]
-            [ viewResults wrap openDropdown (\s q -> OpenDetails s q |> wrap) openedDropdown defaultSchema sources (htmlId ++ "-results") model.results ]
+            [ viewResults wrap toggleDropdown (\s q -> OpenDetails s q |> wrap) openedDropdown defaultSchema sources (htmlId ++ "-results") model.results ]
         , viewDetails wrap (\s q -> OpenDetails s q |> wrap) navbarHeight defaultSchema sources (htmlId ++ "-details") model.details
         ]
 
@@ -474,7 +474,7 @@ viewQueryEditor wrap htmlId source model =
 
 
 viewResults : (Msg -> msg) -> (HtmlId -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> msg) -> HtmlId -> SchemaName -> List Source -> HtmlId -> List DataExplorerQuery.Model -> Html msg
-viewResults wrap openDropdown openRow openedDropdown defaultSchema sources htmlId results =
+viewResults wrap toggleDropdown openRow openedDropdown defaultSchema sources htmlId results =
     if results |> List.isEmpty then
         div [ class "m-3 p-12 block rounded-lg border-2 border-dashed border-gray-200 text-gray-300 text-center text-sm font-semibold" ] [ text "Query results" ]
 
@@ -484,7 +484,7 @@ viewResults wrap openDropdown openRow openedDropdown defaultSchema sources htmlI
                 |> List.map
                     (\r ->
                         div [ class "m-3 px-3 py-2 rounded-md bg-white shadow" ]
-                            [ DataExplorerQuery.view (QueryMsg r.id >> wrap) openDropdown openRow (DeleteQuery r.id |> wrap) openedDropdown defaultSchema sources (htmlId ++ "-" ++ String.fromInt r.id) r
+                            [ DataExplorerQuery.view (QueryMsg r.id >> wrap) toggleDropdown openRow (DeleteQuery r.id |> wrap) openedDropdown defaultSchema sources (htmlId ++ "-" ++ String.fromInt r.id) r
                             ]
                     )
             )
@@ -600,7 +600,7 @@ docKeyValueNestedColumns =
 
 docComponentState : String -> (DocState -> Model) -> (DocState -> Model -> DocState) -> List Source -> ( String, SharedDocState x -> Html (ElmBook.Msg (SharedDocState x)) )
 docComponentState name get set sources =
-    ( name, \{ dataExplorerDocState } -> dataExplorerDocState |> (\s -> div [ style "height" "500px" ] [ view (docUpdate s get set sources) (docOpenDropdown s) "0px" s.openedDropdown "public" "data-explorer" sources (get s) (get s |> .display |> Maybe.withDefault BottomDisplay) ]) )
+    ( name, \{ dataExplorerDocState } -> dataExplorerDocState |> (\s -> div [ style "height" "500px" ] [ view (docUpdate s get set sources) (docToggleDropdown s) "0px" s.openedDropdown "public" "data-explorer" sources (get s) (get s |> .display |> Maybe.withDefault BottomDisplay) ]) )
 
 
 docUpdate : DocState -> (DocState -> Model) -> (DocState -> Model -> DocState) -> List Source -> Msg -> ElmBook.Msg (SharedDocState x)
@@ -608,8 +608,8 @@ docUpdate s get set sources m =
     s |> get |> update sources m |> Tuple.first |> set s |> docSetState
 
 
-docOpenDropdown : DocState -> HtmlId -> ElmBook.Msg (SharedDocState x)
-docOpenDropdown s id =
+docToggleDropdown : DocState -> HtmlId -> ElmBook.Msg (SharedDocState x)
+docToggleDropdown s id =
     if s.openedDropdown == id then
         docSetState { s | openedDropdown = "" }
 

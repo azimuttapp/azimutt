@@ -9,6 +9,7 @@ module Libs.String exposing
     , pluralize
     , pluralizeD
     , pluralizeL
+    , pluralizeS
     , prepend
     , stripLeft
     , stripRight
@@ -20,6 +21,7 @@ import Dict exposing (Dict)
 import Libs.Maybe as Maybe
 import Libs.Regex as Regex
 import MD5
+import Set exposing (Set)
 
 
 nonEmpty : String -> Bool
@@ -144,6 +146,11 @@ pluralize word count =
 pluralizeL : String -> List a -> String
 pluralizeL word list =
     list |> List.length |> pluralize word
+
+
+pluralizeS : String -> Set a -> String
+pluralizeS word set =
+    set |> Set.size |> pluralize word
 
 
 pluralizeD : String -> Dict k a -> String

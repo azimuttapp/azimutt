@@ -1,4 +1,4 @@
-module Libs.Models.DateTime exposing (format, formatDate, formatDatetime, formatTime, formatUtc, greaterThan, human, minus, parse, unsafeParse)
+module Libs.Models.DateTime exposing (format, formatDate, formatDatetime, formatTime, formatUtc, greaterThan, human, minus, parse, toIso, unsafeParse)
 
 import Iso8601
 import Libs.Models.Duration as Duration exposing (Duration)
@@ -25,6 +25,11 @@ unsafeParse date =
 parse : String -> Result String Time.Posix
 parse date =
     Iso8601.toTime date |> Result.mapError (\_ -> "'" ++ date ++ "' is not a valid iso date")
+
+
+toIso : Time.Posix -> String
+toIso date =
+    Iso8601.fromTime date
 
 
 formatDatetime : Time.Zone -> Time.Posix -> String
@@ -82,22 +87,19 @@ human now date =
         "a few seconds" |> humanDirection diff
 
     else if abs diff < anHour then
-        humanText diff aMinute "a minute" "minutes"
+        humanText diff aMinute "a minute" "a few minutes"
 
     else if abs diff < aDay then
-        humanText diff anHour "an hour" "hours"
+        humanText diff anHour "an hour" "a few hours"
 
     else if abs diff < aMonth then
-        humanText diff aDay "a day" "days"
+        humanText diff aDay "a day" "a few days"
 
     else if abs diff < aYear then
-        humanText diff aMonth "a month" "months"
+        humanText diff aMonth "a month" "a few months"
 
     else if abs diff < aDecade then
-        humanText diff aYear "a year" "years"
-
-    else if abs diff < aCentury then
-        humanText diff aYear "a year" "years"
+        humanText diff aYear "a year" "a few years"
 
     else
         "a long time" |> humanDirection diff

@@ -83,7 +83,7 @@ toJson value =
             String.fromFloat v
 
         Bool v ->
-            Bool.toString v
+            Bool.cond v "true" "false"
 
         Null ->
             "null"

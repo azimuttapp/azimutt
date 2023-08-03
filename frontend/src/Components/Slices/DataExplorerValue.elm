@@ -14,10 +14,6 @@ import Models.QueryResult exposing (QueryResultColumnTarget)
 import Services.QueryBuilder as QueryBuilder
 
 
-
--- TODO: finish good integration with queries & details
-
-
 view : (QueryBuilder.RowQuery -> msg) -> msg -> SchemaName -> Bool -> Maybe JsValue -> QueryResultColumnTarget -> Html msg
 view openRow expandRow defaultSchema expanded value column =
     let
