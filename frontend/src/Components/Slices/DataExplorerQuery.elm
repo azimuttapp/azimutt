@@ -10,17 +10,20 @@ import Dict exposing (Dict)
 import ElmBook
 import ElmBook.Actions as Actions exposing (logAction)
 import ElmBook.Chapter as Chapter exposing (Chapter)
-import Html exposing (Html, button, div, p, pre, span, table, tbody, td, text, th, thead, tr)
-import Html.Attributes exposing (class, classList, id, scope, title, type_)
-import Html.Events exposing (onClick)
+import Html exposing (Html, button, div, input, p, pre, span, table, tbody, td, text, th, thead, tr)
+import Html.Attributes exposing (class, classList, id, name, placeholder, scope, title, type_, value)
+import Html.Events exposing (onClick, onInput)
+import Libs.Bool as Bool
 import Libs.Dict as Dict
 import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, css)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Nel exposing (Nel)
+import Libs.Order as Order exposing (compareMaybe)
 import Libs.Result as Result
 import Libs.Set as Set
+import Libs.String as String
 import Libs.Tailwind exposing (TwClass, focus)
 import Libs.Time as Time
 import Models.DbSourceInfo as DbSourceInfo exposing (DbSourceInfo)
@@ -40,6 +43,7 @@ import Ports
 import Services.Lenses exposing (mapState, setQuery)
 import Services.QueryBuilder as QueryBuilder
 import Set exposing (Set)
+import Simple.Fuzzy
 import Time
 
 
@@ -77,11 +81,11 @@ type alias SuccessState =
     , succeededAt : Time.Posix
     , page : Int
     , expanded : Set RowIndex
-    , documentMode : Bool
+    , documentMode : Bool -- TODO
     , showQuery : Bool
     , search : String
     , sortBy : Maybe String
-    , fullScreen : Bool
+    , fullScreen : Bool -- TODO
     }
 
 
@@ -95,6 +99,8 @@ type Msg
     | ChangePage Int
     | ExpandRow RowIndex
     | ToggleQuery
+    | UpdateSearch String
+    | UpdateSort (Maybe String)
 
 
 
@@ -152,6 +158,12 @@ update msg model =
 
         ToggleQuery ->
             ( model |> mapState (mapSuccess (\s -> { s | showQuery = not s.showQuery })), Cmd.none )
+
+        UpdateSearch search ->
+            ( model |> mapState (mapSuccess (\s -> { s | search = search, page = 1 })), Cmd.none )
+
+        UpdateSort sort ->
+            ( model |> mapState (mapSuccess (\s -> { s | sortBy = sort, page = 1 })), Cmd.none )
 
         -- FIXME implement
         FullScreen ->
@@ -256,37 +268,52 @@ view wrap toggleDropdown openRow deleteQuery openedDropdown defaultSchema source
                     , div [ class "mt-3" ] [ viewSuccess wrap (openRow model.source) defaultSchema (sources |> List.find (\s -> s.id == model.source.id)) res ]
                     ]
                 )
-                (Dropdown.dropdown { id = dropdownId, direction = BottomLeft, isOpen = openedDropdown == dropdownId }
-                    (\m ->
-                        button
-                            [ type_ "button"
-                            , id m.id
-                            , onClick (toggleDropdown m.id)
-                            , ariaExpanded m.isOpen
-                            , ariaHaspopup "true"
-                            , css [ "flex text-sm opacity-25", focus [ "outline-none" ] ]
+                (div []
+                    [ if List.length res.rows > 10 then
+                        input
+                            [ type_ "search"
+                            , name (htmlId ++ "-search")
+                            , placeholder "Search in results"
+                            , value res.search
+                            , onInput (UpdateSearch >> wrap)
+                            , class "mr-1 rounded-full border-0 px-2 py-0 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                             ]
-                            [ span [ class "sr-only" ] [ text "Open table settings" ]
-                            , Icon.solid Icon.DotsVertical "w-4 h-4"
-                            ]
-                    )
-                    (\_ ->
-                        div []
-                            ([ { label = "Explore in full screen", content = ContextMenu.Simple { action = wrap FullScreen } }
-                             , { label = "Refresh data", content = ContextMenu.Simple { action = wrap Refresh } }
-                             , { label = "Export data"
-                               , content =
-                                    ContextMenu.SubMenu
-                                        [ { label = "CSV", action = wrap Export }
-                                        , { label = "JSON", action = wrap Export }
-                                        ]
-                                        ContextMenu.BottomLeft
-                               }
-                             , { label = "Delete", content = ContextMenu.Simple { action = deleteQuery } }
-                             ]
-                                |> List.map ContextMenu.btnSubmenu
-                            )
-                    )
+                            []
+
+                      else
+                        text ""
+                    , Dropdown.dropdown { id = dropdownId, direction = BottomLeft, isOpen = openedDropdown == dropdownId }
+                        (\m ->
+                            button
+                                [ type_ "button"
+                                , id m.id
+                                , onClick (toggleDropdown m.id)
+                                , ariaExpanded m.isOpen
+                                , ariaHaspopup "true"
+                                , css [ "flex text-sm opacity-25", focus [ "outline-none" ] ]
+                                ]
+                                [ span [ class "sr-only" ] [ text "Open table settings" ]
+                                , Icon.solid Icon.DotsVertical "w-4 h-4"
+                                ]
+                        )
+                        (\_ ->
+                            div []
+                                ([ { label = "Explore in full screen", content = ContextMenu.Simple { action = wrap FullScreen } }
+                                 , { label = "Refresh data", content = ContextMenu.Simple { action = wrap Refresh } }
+                                 , { label = "Export data"
+                                   , content =
+                                        ContextMenu.SubMenu
+                                            [ { label = "CSV", action = wrap Export }
+                                            , { label = "JSON", action = wrap Export }
+                                            ]
+                                            ContextMenu.BottomLeft
+                                   }
+                                 , { label = "Delete", content = ContextMenu.Simple { action = deleteQuery } }
+                                 ]
+                                    |> List.map ContextMenu.btnSubmenu
+                                )
+                        )
+                    ]
                 )
 
 
@@ -315,22 +342,26 @@ viewActionButton icon name msg =
 viewSuccess : (Msg -> msg) -> (QueryBuilder.RowQuery -> msg) -> SchemaName -> Maybe Source -> SuccessState -> Html msg
 viewSuccess wrap openRow defaultSchema source res =
     let
+        items : List QueryResultRow
+        items =
+            res.rows |> filterValues res.search |> sortValues res.sortBy
+
         pagination : Pagination.Model
         pagination =
-            { currentPage = res.page, pageSize = 10, totalItems = res.rows |> List.length }
+            { currentPage = res.page, pageSize = 10, totalItems = items |> List.length }
 
         pageRows : List ( RowIndex, QueryResultRow )
         pageRows =
-            Pagination.paginate res.rows pagination
+            Pagination.paginate items pagination
     in
     div []
-        [ viewTable wrap openRow defaultSchema (res.columns |> QueryResult.buildColumnTargets source) pageRows res.expanded
+        [ viewTable wrap openRow defaultSchema (res.columns |> QueryResult.buildColumnTargets source) pageRows res.sortBy res.expanded
         , Pagination.view (\p -> ChangePage p |> wrap) pagination
         ]
 
 
-viewTable : (Msg -> msg) -> (QueryBuilder.RowQuery -> msg) -> SchemaName -> List QueryResultColumnTarget -> List ( RowIndex, QueryResultRow ) -> Set RowIndex -> Html msg
-viewTable wrap openRow defaultSchema columns rows expanded =
+viewTable : (Msg -> msg) -> (QueryBuilder.RowQuery -> msg) -> SchemaName -> List QueryResultColumnTarget -> List ( RowIndex, QueryResultRow ) -> Maybe String -> Set RowIndex -> Html msg
+viewTable wrap openRow defaultSchema columns rows sortBy expanded =
     -- TODO sort columns
     -- TODO document mode
     -- TODO open row sidebar
@@ -340,8 +371,8 @@ viewTable wrap openRow defaultSchema columns rows expanded =
                 [ table [ class "min-w-full divide-y divide-gray-300" ]
                     [ thead []
                         [ tr [ class "bg-gray-100" ]
-                            (th [ scope "col", class "px-1 text-left text-sm font-semibold text-gray-900" ] [ text "#" ]
-                                :: (columns |> List.map (\c -> th [ scope "col", class "px-1 text-left text-sm font-semibold text-gray-900" ] [ text c.name ]))
+                            (th [ scope "col", onClick (UpdateSort Nothing |> wrap), class "px-1 text-left text-sm font-semibold text-gray-900 cursor-pointer" ] [ text "#" ]
+                                :: (columns |> List.map (\c -> viewTableHeader wrap sortBy c.name))
                             )
                         ]
                     , tbody []
@@ -358,6 +389,53 @@ viewTable wrap openRow defaultSchema columns rows expanded =
                 ]
             ]
         ]
+
+
+viewTableHeader : (Msg -> msg) -> Maybe String -> String -> Html msg
+viewTableHeader wrap sortBy column =
+    let
+        sort : Maybe ( String, Bool )
+        sort =
+            sortBy
+                |> Maybe.map extractSort
+                |> Maybe.filter (\( col, _ ) -> col == column)
+    in
+    th [ scope "col", onClick (sort |> Maybe.mapOrElse (\( col, asc ) -> Bool.cond asc ("-" ++ col) col) column |> Just |> UpdateSort |> wrap), class "px-1 text-left text-sm font-semibold text-gray-900 whitespace-nowrap group cursor-pointer" ]
+        [ text column
+        , sort
+            |> Maybe.map (\( _, asc ) -> Icon.solid (Bool.cond asc Icon.ArrowDown Icon.ArrowUp) "ml-1 w-3 h-3 inline")
+            |> Maybe.withDefault (Icon.solid Icon.ArrowDown "ml-1 w-3 h-3 inline invisible group-hover:visible")
+        ]
+
+
+filterValues : String -> List QueryResultRow -> List QueryResultRow
+filterValues search items =
+    if String.length search > 0 then
+        let
+            ( exactMatch, noMatch ) =
+                items |> List.partition (Dict.any (\_ -> JsValue.toString >> String.contains search))
+
+            ( fuzzyMatch, _ ) =
+                noMatch |> List.partition (Dict.any (\_ -> JsValue.toString >> Simple.Fuzzy.match search))
+        in
+        exactMatch ++ fuzzyMatch
+
+    else
+        items
+
+
+sortValues : Maybe String -> List QueryResultRow -> List QueryResultRow
+sortValues sort items =
+    sort |> Maybe.mapOrElse (extractSort >> (\( col, dir ) -> items |> List.sortWith (\a b -> compareMaybe JsValue.compare (a |> Dict.get col) (b |> Dict.get col) |> Order.dir dir))) items
+
+
+extractSort : String -> ( String, Bool )
+extractSort sortBy =
+    if sortBy |> String.startsWith "-" then
+        ( sortBy |> String.stripLeft "-", False )
+
+    else
+        ( sortBy, True )
 
 
 

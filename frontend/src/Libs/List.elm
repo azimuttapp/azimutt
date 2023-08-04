@@ -260,8 +260,8 @@ mapByCmd matcher value f list =
 
 
 zip : List b -> List a -> List ( a, b )
-zip lb la =
-    List.map2 (\a b -> ( a, b )) la lb
+zip list2 list1 =
+    List.map2 (\i1 i2 -> ( i1, i2 )) list1 list2
 
 
 filterZip : (a -> Maybe b) -> List a -> List ( a, b )

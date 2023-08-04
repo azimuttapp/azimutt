@@ -39,11 +39,10 @@ import Services.QueryBuilder as QueryBuilder
 -- TODO:
 --  - shorten uuid to its first component in results
 --  - pin a column and replace the fk by it
---  - add search within results (left of 3 dots)
+--  - add document mode
 --  - ERD data exploration: show a row in ERD (from the sidebar) and allow to explore data relations
 --  - Add filter button on results which can change editor (visual or query) and allow to trigger a new query
---  - Incoming rows in the side bar (and results?)
---  - handle time better, remove all Time.zero not in doc
+--  - Show incoming rows in the side bar (and results?)
 
 
 type alias Model =

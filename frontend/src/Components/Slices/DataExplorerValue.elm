@@ -1,7 +1,7 @@
 module Components.Slices.DataExplorerValue exposing (view)
 
 import Components.Atoms.Icon as Icon
-import Html exposing (Html, button, span)
+import Html exposing (Html, button, div)
 import Html.Attributes exposing (class, title, type_)
 import Html.Events exposing (onClick)
 import Libs.Maybe as Maybe
@@ -17,12 +17,13 @@ import Services.QueryBuilder as QueryBuilder
 view : (QueryBuilder.RowQuery -> msg) -> msg -> SchemaName -> Bool -> Maybe JsValue -> QueryResultColumnTarget -> Html msg
 view openRow expandRow defaultSchema expanded value column =
     let
+        -- TODO: contextual formatting: numbers, uuid, dates, may depend on context (results vs side bar)
         valueText : String
         valueText =
             value |> Maybe.mapOrElse JsValue.toString ""
     in
     if value |> Maybe.any (\v -> JsValue.isArray v || JsValue.isObject v) then
-        span [ onClick expandRow, title valueText, class "cursor-pointer" ]
+        div [ onClick expandRow, title valueText, class "cursor-pointer" ]
             [ if expanded then
                 JsValue.viewRaw value
 
@@ -33,7 +34,7 @@ view openRow expandRow defaultSchema expanded value column =
     else
         Maybe.map2
             (\o v ->
-                span [ title valueText ]
+                div [ title valueText ]
                     [ JsValue.view value
                     , button
                         [ type_ "button"
@@ -45,4 +46,4 @@ view openRow expandRow defaultSchema expanded value column =
             )
             column.open
             (value |> Maybe.filter (\v -> v /= JsValue.Null))
-            |> Maybe.withDefault (span [ title valueText ] [ JsValue.view value ])
+            |> Maybe.withDefault (div [ title valueText ] [ JsValue.view value ])

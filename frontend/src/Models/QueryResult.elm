@@ -13,7 +13,6 @@ import Models.JsValue as JsValue exposing (JsValue)
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
 import Models.Project.ColumnType exposing (ColumnType)
 import Models.Project.Relation exposing (Relation)
-import Models.Project.Source exposing (Source)
 import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
 import Time

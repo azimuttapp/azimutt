@@ -187,16 +187,23 @@ viewSlideOverContent wrap close openRow defaultSchema source titleId model =
                     ]
 
                 StateSuccess res ->
-                    (res.columns |> QueryResult.buildColumnTargets source)
-                        |> List.map
-                            (\c ->
-                                div []
-                                    [ dt [ class "text-sm font-medium text-gray-500 sm:w-40 sm:flex-shrink-0" ] [ text c.name ]
-                                    , dd [ class "text-sm text-gray-900 sm:col-span-2 overflow-hidden text-ellipsis" ]
-                                        [ DataExplorerValue.view openRow (ExpandValue c.name |> wrap) defaultSchema (model.expanded |> Set.member c.name) (res.values |> Dict.get c.name) c
+                    [ div [ class "flex flex-wrap space-x-3" ]
+                        [ button [ type_ "button", class "inline-flex w-full flex-1 items-center justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50" ]
+                            [ text "Add to layout" ]
+                        ]
+                    , div [ class "space-y-3" ]
+                        ((res.columns |> QueryResult.buildColumnTargets source)
+                            |> List.map
+                                (\c ->
+                                    div []
+                                        [ dt [ class "text-sm font-medium text-gray-500 sm:w-40 sm:flex-shrink-0" ] [ text c.name ]
+                                        , dd [ class "text-sm text-gray-900 sm:col-span-2 overflow-hidden text-ellipsis" ]
+                                            [ DataExplorerValue.view openRow (ExpandValue c.name |> wrap) defaultSchema (model.expanded |> Set.member c.name) (res.values |> Dict.get c.name) c
+                                            ]
                                         ]
-                                    ]
-                            )
+                                )
+                        )
+                    ]
             )
         ]
 

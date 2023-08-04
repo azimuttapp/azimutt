@@ -1,4 +1,4 @@
-module Models.JsValue exposing (JsValue(..), decode, encode, isArray, isObject, toJson, toString, view, viewRaw)
+module Models.JsValue exposing (JsValue(..), compare, decode, encode, isArray, isObject, toJson, toString, view, viewRaw)
 
 import Dict exposing (Dict)
 import Html exposing (Html, pre, span, text)
@@ -8,6 +8,7 @@ import Json.Encode as Encode exposing (Value)
 import Libs.Bool as Bool
 import Libs.List as List
 import Libs.Maybe as Maybe
+import Libs.Order exposing (compareBool, compareDict, compareList)
 
 
 
@@ -93,6 +94,31 @@ toJson value =
 
         Object values ->
             "{" ++ (values |> Dict.toList |> List.map (\( k, v ) -> k ++ ": " ++ toJson v) |> String.join ", ") ++ "}"
+
+
+compare : JsValue -> JsValue -> Order
+compare value1 value2 =
+    case ( value1, value2 ) of
+        ( String v1, String v2 ) ->
+            Basics.compare v1 v2
+
+        ( Int v1, Int v2 ) ->
+            Basics.compare v1 v2
+
+        ( Float v1, Float v2 ) ->
+            Basics.compare v1 v2
+
+        ( Bool v1, Bool v2 ) ->
+            compareBool v1 v2
+
+        ( Array v1, Array v2 ) ->
+            compareList compare v1 v2
+
+        ( Object v1, Object v2 ) ->
+            compareDict compare v1 v2
+
+        _ ->
+            EQ
 
 
 view : Maybe JsValue -> Html msg

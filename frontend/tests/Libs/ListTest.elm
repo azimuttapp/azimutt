@@ -59,4 +59,5 @@ suite =
                         |> Expect.equal [ { key = Nothing, value = "a" }, { key = Just "b", value = "bd" }, { key = Nothing, value = "c" } ]
                 )
             ]
+        , describe "sortWith" [ test "asc" (\_ -> [ 3, 1, 2 ] |> List.sortWith (\v1 v2 -> compare v1 v2) |> Expect.equal [ 1, 2, 3 ]) ]
         ]
