@@ -23,6 +23,7 @@ import Libs.Models.Platform as Platform exposing (Platform)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (focus)
+import Libs.Time as Time
 import Libs.Tuple as Tuple
 import Models.Area as Area
 import Models.ErdProps exposing (ErdProps)
@@ -31,8 +32,10 @@ import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.Group as Group exposing (Group)
 import Models.Project.Metadata exposing (Metadata)
 import Models.Project.SchemaName exposing (SchemaName)
+import Models.Project.Source exposing (Source)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableMeta as TableMeta exposing (TableMeta)
+import Models.Project.TableRow as TableRow exposing (TableRow)
 import Models.RelationStyle exposing (RelationStyle)
 import Models.Size as Size
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
@@ -53,34 +56,36 @@ import PagesComponents.Organization_.Project_.Updates.Drag as Drag
 import PagesComponents.Organization_.Project_.Views.Erd.Memo as Memo
 import PagesComponents.Organization_.Project_.Views.Erd.Relation as Relation exposing (viewEmptyRelation, viewRelation, viewVirtualRelation)
 import PagesComponents.Organization_.Project_.Views.Erd.Table as Table exposing (viewTable)
+import PagesComponents.Organization_.Project_.Views.Erd.TableRow as TableRow exposing (viewTableRow)
 import PagesComponents.Organization_.Project_.Views.Modals.ErdContextMenu as ErdContextMenu
 import PagesComponents.Organization_.Project_.Views.Modals.GroupContextMenu as GroupContextMenu
 import Set exposing (Set)
+import Time
 
 
 type alias ErdArgs =
     String
 
 
-argsToString : Platform -> CursorMode -> Maybe TableId -> String -> String -> DetailsSidebar.Selected -> Maybe GroupEdit -> ErdArgs
-argsToString platform cursorMode hoverTable openedDropdown openedPopover selected editGroup =
-    [ Platform.toString platform, CursorMode.toString cursorMode, hoverTable |> Maybe.mapOrElse TableId.toString "", openedDropdown, openedPopover, selected, editGroup |> Maybe.mapOrElse (.index >> String.fromInt) "", editGroup |> Maybe.mapOrElse .content "" ] |> String.join "~"
+argsToString : Platform -> CursorMode -> Maybe TableId -> String -> String -> DetailsSidebar.Selected -> Maybe GroupEdit -> Time.Posix -> ErdArgs
+argsToString platform cursorMode hoverTable openedDropdown openedPopover selected editGroup now =
+    [ Platform.toString platform, CursorMode.toString cursorMode, hoverTable |> Maybe.mapOrElse TableId.toString "", openedDropdown, openedPopover, selected, editGroup |> Maybe.mapOrElse (.index >> String.fromInt) "", editGroup |> Maybe.mapOrElse .content "", Time.posixToMillis now |> String.fromInt ] |> String.join "~"
 
 
-stringToArgs : ErdArgs -> ( ( Platform, CursorMode, Maybe TableId ), ( String, String, DetailsSidebar.Selected ), Maybe GroupEdit )
+stringToArgs : ErdArgs -> ( ( Platform, CursorMode, Maybe TableId ), ( String, String, DetailsSidebar.Selected ), ( Maybe GroupEdit, Time.Posix ) )
 stringToArgs args =
     case args |> String.split "~" of
-        [ platform, cursorMode, hoverTable, openedDropdown, openedPopover, selected, editGroupIndex, editGroupContent ] ->
-            ( ( Platform.fromString platform, CursorMode.fromString cursorMode, hoverTable |> TableId.fromString ), ( openedDropdown, openedPopover, selected ), editGroupIndex |> String.toInt |> Maybe.map (\index -> { index = index, content = editGroupContent }) )
+        [ platform, cursorMode, hoverTable, openedDropdown, openedPopover, selected, editGroupIndex, editGroupContent, now ] ->
+            ( ( Platform.fromString platform, CursorMode.fromString cursorMode, hoverTable |> TableId.fromString ), ( openedDropdown, openedPopover, selected ), ( editGroupIndex |> String.toInt |> Maybe.map (\index -> { index = index, content = editGroupContent }), now |> String.toInt |> Maybe.withDefault 0 |> Time.millisToPosix ) )
 
         _ ->
-            ( ( Platform.PC, CursorMode.Select, Nothing ), ( "", "", "" ), Nothing )
+            ( ( Platform.PC, CursorMode.Select, Nothing ), ( "", "", "" ), ( Nothing, Time.zero ) )
 
 
 viewErd : ErdConf -> ErdProps -> Erd -> Maybe Area.Canvas -> Maybe VirtualRelation -> Maybe MemoEdit -> ErdArgs -> Maybe DragState -> Html Msg
 viewErd conf erdElem erd selectionBox virtualRelation editMemo args dragging =
     let
-        ( ( platform, cursorMode, hoverTable ), ( openedDropdown, openedPopover, selected ), editGroup ) =
+        ( ( platform, cursorMode, hoverTable ), ( openedDropdown, openedPopover, selected ), ( editGroup, now ) ) =
             stringToArgs args
 
         layout : ErdLayout
@@ -159,6 +164,7 @@ viewErd conf erdElem erd selectionBox virtualRelation editMemo args dragging =
             , displayedRelations |> Lazy.lazy5 viewRelations conf erd.settings.defaultSchema erd.settings.relationStyle displayedTables
             , layoutTables |> viewTables platform conf cursorMode virtualRelation openedDropdown openedPopover hoverTable dragging canvas.zoom erd.settings.defaultSchema selected erd.settings.columnBasicTypes erd.tables erd.metadata layout
             , memos |> viewMemos platform conf cursorMode editMemo
+            , layout.tableRows |> viewTableRows now erd.settings.defaultSchema openedDropdown erd.sources
             , div [ class "az-selection-box pointer-events-none" ] (selectionBox |> Maybe.filterNot (\_ -> layoutTables |> List.isEmpty) |> Maybe.mapOrElse viewSelectionBox [])
             , div [ class "az-virtual-relation pointer-events-none" ] [ virtualRelationInfo |> Maybe.mapOrElse (\i -> viewVirtualRelation erd.settings.relationStyle i) viewEmptyRelation ]
             ]
@@ -179,6 +185,20 @@ viewMemos platform conf cursorMode editMemo memos =
                 (\memo ->
                     ( MemoId.toHtmlId memo.id
                     , Lazy.lazy5 Memo.viewMemo platform conf cursorMode (editMemo |> Maybe.filterBy .id memo.id |> Maybe.map .content) memo
+                    )
+                )
+        )
+
+
+viewTableRows : Time.Posix -> SchemaName -> HtmlId -> List Source -> List TableRow -> Html Msg
+viewTableRows now defaultSchema openedDropdown sources tableRows =
+    Keyed.node "div"
+        [ class "az-table-rows" ]
+        (tableRows
+            |> List.map
+                (\tableRow ->
+                    ( TableRow.toHtmlId tableRow
+                    , viewTableRow now defaultSchema openedDropdown (TableRow.toHtmlId tableRow) sources tableRow
                     )
                 )
         )

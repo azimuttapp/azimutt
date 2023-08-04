@@ -6,7 +6,7 @@ import Libs.Nel as Nel exposing (Nel)
 import Models.Project.Column as Column exposing (Column, NestedColumns(..))
 import Models.Project.Comment exposing (Comment)
 import Test exposing (Test, describe)
-import TestHelpers.JsonTest exposing (jsonTest)
+import TestHelpers.Helpers exposing (testSerdeJson)
 
 
 suite : Test
@@ -41,4 +41,4 @@ suite =
 
 testSerialization : String -> String -> Column -> Test
 testSerialization name json column =
-    jsonTest ("Column " ++ name) column json Column.encode (Column.decode |> Decode.map (\f -> f 1))
+    testSerdeJson ("Column " ++ name) Column.encode (Column.decode |> Decode.map (\f -> f 1)) column json

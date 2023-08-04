@@ -1,6 +1,7 @@
 module PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, AmlSidebarMsg(..), ConfirmDialog, ContextMenu, FindPathMsg(..), GroupEdit, GroupMsg(..), HelpDialog, HelpMsg(..), LayoutMsg(..), MemoEdit, MemoMsg(..), ModalDialog, Model, Msg(..), NavbarModel, NotesDialog, ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, VirtualRelation, VirtualRelationMsg(..), confirm, confirmDanger, emptyModel, prompt, simplePrompt)
 
 import Components.Atoms.Icon exposing (Icon(..))
+import Components.Organisms.TableRow as TableRow
 import Components.Slices.DataExplorer as DataExplorer
 import Components.Slices.ProPlan as ProPlan
 import Components.Slices.QueryPane as QueryPane
@@ -17,6 +18,7 @@ import Libs.Tailwind as Tw exposing (Color)
 import Libs.Task as T
 import Models.Area as Area
 import Models.ColumnOrder exposing (ColumnOrder)
+import Models.DbSourceInfo exposing (DbSourceInfo)
 import Models.ErdProps as ErdProps exposing (ErdProps)
 import Models.Organization exposing (Organization)
 import Models.Position as Position
@@ -33,6 +35,7 @@ import Models.Project.Source exposing (Source)
 import Models.Project.SourceId exposing (SourceId, SourceIdStr)
 import Models.Project.SourceName exposing (SourceName)
 import Models.Project.TableId exposing (TableId)
+import Models.Project.TableRow as TableRow
 import Models.Project.TableStats exposing (TableStats)
 import Models.ProjectInfo exposing (ProjectInfo)
 import Models.RelationStyle exposing (RelationStyle)
@@ -58,6 +61,7 @@ import PagesComponents.Organization_.Project_.Models.ShowColumns exposing (ShowC
 import PagesComponents.Organization_.Project_.Models.TagsMsg exposing (TagsMsg)
 import PagesComponents.Organization_.Project_.Views.Modals.NewLayout as NewLayout
 import Ports exposing (JsMsg)
+import Services.QueryBuilder as QueryBuilder
 import Services.Toasts as Toasts
 import Set exposing (Set)
 import Shared exposing (Confirm, Prompt)
@@ -255,6 +259,9 @@ type Msg
     | TagsMsg TagsMsg
     | GroupMsg GroupMsg
     | MemoMsg MemoMsg
+    | AddTableRow DbSourceInfo QueryBuilder.RowQuery
+    | DeleteTableRow TableRow.Id
+    | TableRowMsg TableRow.Id TableRow.Msg
     | AmlSidebarMsg AmlSidebarMsg
     | DetailsSidebarMsg DetailsSidebar.Msg
     | QueryPaneMsg QueryPane.Msg

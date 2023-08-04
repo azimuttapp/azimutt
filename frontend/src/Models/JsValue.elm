@@ -1,4 +1,4 @@
-module Models.JsValue exposing (JsValue(..), compare, decode, encode, isArray, isObject, toJson, toString, view, viewRaw)
+module Models.JsValue exposing (JsValue(..), compare, decode, encode, fromString, isArray, isObject, toJson, toString, view, viewRaw)
 
 import Dict exposing (Dict)
 import Html exposing (Html, pre, span, text)
@@ -9,6 +9,7 @@ import Libs.Bool as Bool
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Order exposing (compareBool, compareDict, compareList)
+import Models.Project.ColumnType as ColumnType exposing (ColumnType)
 
 
 
@@ -44,6 +45,26 @@ isObject value =
 
         _ ->
             False
+
+
+fromString : ColumnType -> String -> JsValue
+fromString kind value =
+    case ColumnType.parse kind of
+        ColumnType.Int ->
+            value |> String.toInt |> Maybe.map Int |> Maybe.withDefault (String value)
+
+        ColumnType.Float ->
+            value |> String.toFloat |> Maybe.map Float |> Maybe.withDefault (String value)
+
+        ColumnType.Bool ->
+            value |> Bool.fromString |> Maybe.map Bool |> Maybe.withDefault (String value)
+
+        _ ->
+            if value == "null" then
+                Null
+
+            else
+                String value
 
 
 toString : JsValue -> String

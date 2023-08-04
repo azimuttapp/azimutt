@@ -1,6 +1,7 @@
 module PagesComponents.Organization_.Project_.Updates exposing (update)
 
 import Components.Molecules.Dropdown as Dropdown
+import Components.Organisms.TableRow as TableRow
 import Components.Slices.DataExplorer as DataExplorer
 import Components.Slices.DataExplorerDetails as DataExplorerDetails
 import Components.Slices.DataExplorerQuery as DataExplorerQuery
@@ -32,6 +33,7 @@ import Models.Project.Source as Source
 import Models.Project.SourceId as SourceId
 import Models.Project.SourceKind as SourceKind
 import Models.Project.TableId as TableId
+import Models.Project.TableRow as TableRow
 import Models.ProjectInfo exposing (ProjectInfo)
 import Models.ProjectRef exposing (ProjectRef)
 import Models.QueryResult exposing (QueryResult)
@@ -78,7 +80,7 @@ import Random
 import Services.Backend as Backend
 import Services.DatabaseSource as DatabaseSource
 import Services.JsonSource as JsonSource
-import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapContextMenuM, mapDataExplorerCmd, mapDetailsSidebarCmd, mapEmbedSourceParsingMCmd, mapErdM, mapErdMCmd, mapExportDialogCmd, mapHoverTable, mapMemos, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapOrganizationM, mapPlan, mapPosition, mapProject, mapPromptM, mapProps, mapQueryPaneCmd, mapSaveCmd, mapSchemaAnalysisM, mapSearch, mapSelected, mapSharingCmd, mapShowHiddenColumns, mapTables, mapTablesCmd, mapToastsCmd, setActive, setCanvas, setCollapsed, setColor, setColors, setConfirm, setContextMenu, setCurrentLayout, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setLast, setLayoutOnLoad, setModal, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setSelected, setShow, setSize, setTables, setText)
+import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapContextMenuM, mapDataExplorerCmd, mapDetailsSidebarCmd, mapEmbedSourceParsingMCmd, mapErdM, mapErdMCmd, mapExportDialogCmd, mapHoverTable, mapMemos, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapOrganizationM, mapPlan, mapPosition, mapProject, mapPromptM, mapProps, mapQueryPaneCmd, mapSaveCmd, mapSchemaAnalysisM, mapSearch, mapSelected, mapSharingCmd, mapShowHiddenColumns, mapTableRows, mapTableRowsCmd, mapTableRowsSeq, mapTables, mapTablesCmd, mapToastsCmd, setActive, setCanvas, setCollapsed, setColor, setColors, setConfirm, setContextMenu, setCurrentLayout, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setLast, setLayoutOnLoad, setModal, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setSelected, setShow, setSize, setTables, setText)
 import Services.PrismaSource as PrismaSource
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
@@ -148,7 +150,7 @@ update urlLayout zone now urlInfos organizations projects msg model =
                 collapsed =
                     model.erd |> Maybe.andThen (Erd.currentLayout >> .tables >> List.findBy .id id) |> Maybe.mapOrElse (.props >> .collapsed) False
             in
-            model |> mapErdMCmd (\erd -> erd |> Erd.mapCurrentLayoutCmd now (mapTablesCmd (mapTablePropOrSelected erd.settings.defaultSchema id (mapProps (setCollapsed (not collapsed)))))) |> setDirtyCmd
+            model |> mapErdMCmd (\erd -> erd |> Erd.mapCurrentLayoutWithTimeCmd now (mapTablesCmd (mapTablePropOrSelected erd.settings.defaultSchema id (mapProps (setCollapsed (not collapsed)))))) |> setDirtyCmd
 
         ShowColumn { table, column } ->
             model |> mapErdM (showColumn now table column) |> setDirty
@@ -197,7 +199,7 @@ update urlLayout zone now urlInfos organizations projects msg model =
                     model.erd |> Erd.getProjectRefM urlInfos
             in
             if model.erd |> Erd.canChangeColor then
-                model |> mapErdMCmd (\erd -> erd |> Erd.mapCurrentLayoutCmd now (mapTablesCmd (mapTablePropOrSelected erd.settings.defaultSchema id (mapProps (setColor color))))) |> setDirtyCmd
+                model |> mapErdMCmd (\erd -> erd |> Erd.mapCurrentLayoutWithTimeCmd now (mapTablesCmd (mapTablePropOrSelected erd.settings.defaultSchema id (mapProps (setColor color))))) |> setDirtyCmd
 
             else
                 ( model, Cmd.batch [ ProPlan.colorsModalBody project ProPlanColors ProPlan.colorsInit |> CustomModalOpen |> T.send, Track.planLimit .tableColor model.erd ] )
@@ -241,6 +243,15 @@ update urlLayout zone now urlInfos organizations projects msg model =
 
         MemoMsg message ->
             model |> handleMemo now urlInfos message
+
+        AddTableRow source query ->
+            model |> mapErdMCmd (Erd.mapCurrentLayoutWithTimeCmd now (\l -> l |> mapTableRowsSeq (\s -> s + 1) |> mapTableRowsCmd (List.prependCmd (TableRow.init l.tableRowsSeq now source query)))) |> setDirtyCmd
+
+        DeleteTableRow id ->
+            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTableRows (List.removeBy .id id))) |> setDirty
+
+        TableRowMsg id message ->
+            model |> mapErdMCmd (\e -> e |> Erd.mapCurrentLayoutWithTimeCmd now (mapTableRowsCmd (List.mapByCmd .id id (TableRow.update now e.sources message))))
 
         AmlSidebarMsg message ->
             model |> AmlSidebar.update now message
@@ -730,6 +741,9 @@ handleDatabaseQueryResponse result model =
 
         "data-explorer-details" :: idStr :: [] ->
             ( model, idStr |> String.toInt |> Maybe.map (\id -> DataExplorerDetails.GotResult result |> DataExplorer.DetailsMsg id |> DataExplorerMsg |> T.send) |> Maybe.withDefault ("Invalid data explorer details context: " ++ result.context |> Toasts.warning |> Toast |> T.send) )
+
+        "table-row" :: idStr :: [] ->
+            ( model, idStr |> String.toInt |> Maybe.map (\id -> TableRow.GotResult result |> TableRowMsg id |> T.send) |> Maybe.withDefault ("Invalid table row context: " ++ result.context |> Toasts.warning |> Toast |> T.send) )
 
         _ ->
             ( model, "Unknown db query context: " ++ result.context |> Toasts.warning |> Toast |> T.send )

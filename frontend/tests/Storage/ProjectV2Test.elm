@@ -36,11 +36,13 @@ import Models.Project.SourceKind exposing (SourceKind(..))
 import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
 import Models.Project.TableProps as TableProps exposing (TableProps)
+import Models.Project.TableRow as TableRow
 import Models.Project.Unique as Unique exposing (Unique)
 import Models.RelationStyle exposing (RelationStyle(..))
 import Models.Size as Size
+import Services.QueryBuilder as QueryBuilder
 import Test exposing (Test, describe)
-import TestHelpers.JsonTest exposing (jsonFuzz, jsonTest)
+import TestHelpers.Helpers exposing (fuzzSerde, testSerdeJson)
 import TestHelpers.ProjectFuzzers as ProjectFuzzers
 import Time
 
@@ -49,28 +51,30 @@ suite : Test
 suite =
     describe "Storage.Project"
         [ describe "json"
-            [ jsonTest "project0" project0 project0Json Project.encode Project.decode
-            , jsonTest "project1" project1 project1Json Project.encode Project.decode
-            , jsonTest "project2" project2 project2Json Project.encode Project.decode
+            [ testSerdeJson "project0" Project.encode Project.decode project0 project0Json
+            , testSerdeJson "project1" Project.encode Project.decode project1 project1Json
+            , testSerdeJson "project2" Project.encode Project.decode project2 project2Json
 
             -- , jsonFuzz "Project" ProjectFuzzers.project Project.encode Project.decode -- This test failed because it threw an exception: "RangeError: Maximum call stack size exceeded"
             -- , jsonFuzz "Source" ProjectFuzzers.source Source.encode Source.decode
             -- , jsonFuzz "SourceKind" ProjectFuzzers.sourceKind SourceKind.encode SourceKind.decode
-            , jsonFuzz "Table" ProjectFuzzers.table Table.encode Table.decode
-            , jsonFuzz "Column" (ProjectFuzzers.column 0) Column.encode (Column.decode |> Decode.map (\c -> c 0))
-            , jsonFuzz "PrimaryKey" ProjectFuzzers.primaryKey PrimaryKey.encode PrimaryKey.decode
-            , jsonFuzz "Unique" ProjectFuzzers.unique Unique.encode Unique.decode
-            , jsonFuzz "Index" ProjectFuzzers.index Index.encode Index.decode
-            , jsonFuzz "Check" ProjectFuzzers.check Check.encode Check.decode
-            , jsonFuzz "Comment" ProjectFuzzers.comment Comment.encode Comment.decode
-            , jsonFuzz "Relation" ProjectFuzzers.relation Relation.encode Relation.decode
-            , jsonFuzz "ColumnRef" ProjectFuzzers.columnRef ColumnRef.encode ColumnRef.decode
-            , jsonFuzz "CustomType" ProjectFuzzers.customType CustomType.encode CustomType.decode
-            , jsonFuzz "Source" ProjectFuzzers.origin Origin.encode Origin.decode
-            , jsonFuzz "Layout" ProjectFuzzers.layout Layout.encode Layout.decode
-            , jsonFuzz "CanvasProps" ProjectFuzzers.canvasProps CanvasProps.encode CanvasProps.decode
-            , jsonFuzz "TableProps" ProjectFuzzers.tableProps TableProps.encode TableProps.decode
-            , jsonFuzz "ProjectSettings" ProjectFuzzers.projectSettings (ProjectSettings.encode (ProjectSettings.init defaultSchema)) (ProjectSettings.decode (ProjectSettings.init defaultSchema))
+            , fuzzSerde "Table" Table.encode Table.decode ProjectFuzzers.table
+            , fuzzSerde "Column" Column.encode (Column.decode |> Decode.map (\c -> c 0)) (ProjectFuzzers.column 0)
+            , fuzzSerde "PrimaryKey" PrimaryKey.encode PrimaryKey.decode ProjectFuzzers.primaryKey
+            , fuzzSerde "Unique" Unique.encode Unique.decode ProjectFuzzers.unique
+            , fuzzSerde "Index" Index.encode Index.decode ProjectFuzzers.index
+            , fuzzSerde "Check" Check.encode Check.decode ProjectFuzzers.check
+            , fuzzSerde "Comment" Comment.encode Comment.decode ProjectFuzzers.comment
+            , fuzzSerde "Relation" Relation.encode Relation.decode ProjectFuzzers.relation
+            , fuzzSerde "ColumnRef" ColumnRef.encode ColumnRef.decode ProjectFuzzers.columnRef
+            , fuzzSerde "CustomType" CustomType.encode CustomType.decode ProjectFuzzers.customType
+            , fuzzSerde "Source" Origin.encode Origin.decode ProjectFuzzers.origin
+            , fuzzSerde "RowQuery" QueryBuilder.encodeRowQuery QueryBuilder.decodeRowQuery ProjectFuzzers.rowQuery
+            , fuzzSerde "TableRow" TableRow.encode TableRow.decode ProjectFuzzers.tableRow
+            , fuzzSerde "Layout" Layout.encode Layout.decode ProjectFuzzers.layout
+            , fuzzSerde "CanvasProps" CanvasProps.encode CanvasProps.decode ProjectFuzzers.canvasProps
+            , fuzzSerde "TableProps" TableProps.encode TableProps.decode ProjectFuzzers.tableProps
+            , fuzzSerde "ProjectSettings" (ProjectSettings.encode (ProjectSettings.init defaultSchema)) (ProjectSettings.decode (ProjectSettings.init defaultSchema)) ProjectFuzzers.projectSettings
             ]
         ]
 
@@ -94,7 +98,7 @@ project0 =
     , description = Nothing
     , sources = [ Source src1 "source 1" (SqlLocalFile "structure.sql" 10000 (time 1102)) Array.empty Dict.empty [] Dict.empty True Nothing (time 1100) (time 1101) ]
     , metadata = Dict.empty
-    , layouts = Dict.fromList [ ( "initial layout", Layout [] [] [] (time 1200) (time 1201) ) ]
+    , layouts = Dict.fromList [ ( "initial layout", Layout [] [] [] [] 1 (time 1200) (time 1201) ) ]
     , settings = ProjectSettings.init defaultSchema
     , storage = ProjectStorage.Local
     , visibility = ProjectVisibility.None
@@ -127,8 +131,8 @@ project1 =
     , metadata = Dict.empty
     , layouts =
         Dict.fromList
-            [ ( "initial layout", Layout [ TableProps ( "public", "users" ) (gridPos 30 40) Size.zeroCanvas Tw.red [ ColumnPath.fromString "id" ] True False False ] [] [] (time 1200) (time 1201) )
-            , ( "empty", Layout [] [] [] (time 1202) (time 1203) )
+            [ ( "initial layout", Layout [ TableProps ( "public", "users" ) (gridPos 30 40) Size.zeroCanvas Tw.red [ ColumnPath.fromString "id" ] True False False ] [] [] [] 1 (time 1200) (time 1201) )
+            , ( "empty", Layout [] [] [] [] 1 (time 1202) (time 1203) )
             ]
     , settings = ProjectSettings (FindPathSettings 4 "" "") defaultSchema [] False "" (HiddenColumns "created_.+, updated_.+" 15 False False) OrderByProperty Bezier True False
     , storage = ProjectStorage.Local
@@ -236,9 +240,9 @@ project2 =
     , metadata = Dict.empty
     , layouts =
         Dict.fromList
-            [ ( "initial layout", Layout [ TableProps ( "public", "users" ) (gridPos 30 40) Size.zeroCanvas Tw.red [ ColumnPath.fromString "id" ] True False False ] [] [] (time 1200) (time 1201) )
-            , ( "empty", Layout [] [] [] (time 1202) (time 1203) )
-            , ( "users", Layout [ TableProps ( "public", "users" ) (gridPos 90 100) Size.zeroCanvas Tw.red [ ColumnPath.fromString "id", ColumnPath.fromString "name" ] True False False ] [] [] (time 1202) (time 1203) )
+            [ ( "initial layout", Layout [ TableProps ( "public", "users" ) (gridPos 30 40) Size.zeroCanvas Tw.red [ ColumnPath.fromString "id" ] True False False ] [] [] [] 1 (time 1200) (time 1201) )
+            , ( "empty", Layout [] [] [] [] 1 (time 1202) (time 1203) )
+            , ( "users", Layout [ TableProps ( "public", "users" ) (gridPos 90 100) Size.zeroCanvas Tw.red [ ColumnPath.fromString "id", ColumnPath.fromString "name" ] True False False ] [] [] [] 1 (time 1202) (time 1203) )
             ]
     , settings = ProjectSettings (FindPathSettings 4 "users" "created_by") defaultSchema [] False "" (HiddenColumns "created_.+, updated_.+" 15 False False) OrderByProperty Bezier True False
     , storage = ProjectStorage.Local

@@ -115,8 +115,8 @@ update msg model =
 -- VIEW
 
 
-view : (Msg -> msg) -> msg -> (QueryBuilder.RowQuery -> msg) -> String -> SchemaName -> List Source -> HtmlId -> Maybe Int -> Model -> Html msg
-view wrap close openRow navbarHeight defaultSchema sources htmlId openDepth model =
+view : (Msg -> msg) -> msg -> (RowQuery -> msg) -> (DbSourceInfo -> RowQuery -> msg) -> String -> SchemaName -> List Source -> HtmlId -> Maybe Int -> Model -> Html msg
+view wrap close openRow addToLayout navbarHeight defaultSchema sources htmlId openDepth model =
     let
         titleId : HtmlId
         titleId =
@@ -147,7 +147,7 @@ view wrap close openRow navbarHeight defaultSchema sources htmlId openDepth mode
                             , openDepth |> Maybe.andThen (\i -> [ "translate-x-0", "-translate-x-6", "-translate-x-12", "-translate-x-16", "-translate-x-20" ] |> List.get i) |> Maybe.withDefault "translate-x-full"
                             ]
                         ]
-                        [ viewSlideOverContent wrap close openRow defaultSchema (sources |> List.findBy .id model.source.id) titleId model
+                        [ viewSlideOverContent wrap close openRow addToLayout defaultSchema (sources |> List.findBy .id model.source.id) titleId model
                         ]
                     ]
                 ]
@@ -155,12 +155,12 @@ view wrap close openRow navbarHeight defaultSchema sources htmlId openDepth mode
         ]
 
 
-viewSlideOverContent : (Msg -> msg) -> msg -> (QueryBuilder.RowQuery -> msg) -> SchemaName -> Maybe Source -> HtmlId -> Model -> Html msg
-viewSlideOverContent wrap close openRow defaultSchema source titleId model =
+viewSlideOverContent : (Msg -> msg) -> msg -> (RowQuery -> msg) -> (DbSourceInfo -> RowQuery -> msg) -> SchemaName -> Maybe Source -> HtmlId -> Model -> Html msg
+viewSlideOverContent wrap close openRow addToLayout defaultSchema source titleId model =
     let
         panelTitle : String
         panelTitle =
-            TableId.show defaultSchema model.query.table ++ ": " ++ (model.query.primaryKey |> Nel.toList |> List.map .value |> String.join "/")
+            TableId.show defaultSchema model.query.table ++ ": " ++ (model.query.primaryKey |> Nel.toList |> List.map (.value >> JsValue.toString) |> String.join "/")
     in
     div [ class "flex h-full flex-col overflow-y-auto bg-white shadow-xl" ]
         [ div [ class "p-6 bg-indigo-700" ]
@@ -188,7 +188,7 @@ viewSlideOverContent wrap close openRow defaultSchema source titleId model =
 
                 StateSuccess res ->
                     [ div [ class "flex flex-wrap space-x-3" ]
-                        [ button [ type_ "button", class "inline-flex w-full flex-1 items-center justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50" ]
+                        [ button [ type_ "button", onClick (addToLayout model.source model.query), class "inline-flex w-full flex-1 items-center justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50" ]
                             [ text "Add to layout" ]
                         ]
                     , div [ class "space-y-3" ]
@@ -245,7 +245,7 @@ doc =
                                 |> List.indexedMap
                                     (\i m ->
                                         div [ class "mt-1" ]
-                                            [ view (docUpdate i s) (docClose i s) docOpenRow "0px" "public" [] ("data-explorer-details-" ++ String.fromInt i) (Just i) m
+                                            [ view (docUpdate i s) (docClose i s) docOpenRow docAddToLayout "0px" "public" [] ("data-explorer-details-" ++ String.fromInt i) (Just i) m
                                             , docButton ("Close " ++ String.fromInt i) (docClose i s)
                                             ]
                                     )
@@ -263,7 +263,7 @@ docButton name msg =
 
 docModel : Model
 docModel =
-    init 1 docSource { table = ( "public", "city" ), primaryKey = Nel { column = Nel "id" [], kind = "int", value = "1" } [] } |> Tuple.first
+    init 1 docSource { table = ( "public", "city" ), primaryKey = Nel { column = Nel "id" [], value = JsValue.Int 1 } [] } |> Tuple.first
 
 
 docSource : DbSourceInfo
@@ -320,6 +320,11 @@ docSetState state =
     Actions.updateState (\s -> { s | dataExplorerDetailsDocState = state })
 
 
-docOpenRow : QueryBuilder.RowQuery -> ElmBook.Msg state
+docOpenRow : RowQuery -> ElmBook.Msg state
 docOpenRow =
     \_ -> logAction "openRow"
+
+
+docAddToLayout : DbSourceInfo -> RowQuery -> ElmBook.Msg state
+docAddToLayout =
+    \_ _ -> logAction "addToLayout"

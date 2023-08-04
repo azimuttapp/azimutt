@@ -16,10 +16,34 @@ import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Ned as Ned exposing (Ned)
 import Libs.Nel exposing (Nel)
 import Libs.Tailwind as Tw exposing (Color)
+import Models.JsValue as JsValue exposing (JsValue)
 import Models.Position as Position
 import Models.Size as Size
 import Random
+import Set exposing (Set)
 import Time
+
+
+jsValue : Fuzzer JsValue
+jsValue =
+    Fuzz.oneOf
+        [ stringSmall |> Fuzz.map JsValue.String
+        , Fuzz.int |> Fuzz.map JsValue.Int
+        , Fuzz.float
+            |> Fuzz.map
+                (\f ->
+                    if isNaN f then
+                        JsValue.Float 0.5
+
+                    else if ceiling f == floor f then
+                        JsValue.Float 0.5
+
+                    else
+                        JsValue.Float f
+                )
+        , Fuzz.bool |> Fuzz.map JsValue.Bool
+        , Fuzz.constant JsValue.Null
+        ]
 
 
 positionViewport : Fuzzer Position.Viewport
@@ -105,6 +129,11 @@ listSmall fuzz =
     -- TODO: should find a way to randomize list size but keep it small efficiently
     -- Fuzz.list can generate long lists & F.listN generate only size of n list, generating a random int then chaining with listN will be best
     Fuzz.listN 3 fuzz
+
+
+setSmall : Fuzzer comparable -> Fuzzer (Set comparable)
+setSmall fuzz =
+    listSmall fuzz |> Fuzz.map Set.fromList
 
 
 nelSmall : Fuzzer a -> Fuzzer (Nel a)

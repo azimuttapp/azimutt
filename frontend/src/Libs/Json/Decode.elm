@@ -1,10 +1,11 @@
-module Libs.Json.Decode exposing (customDict, customNed, defaultField, defaultFieldDeep, errorToHtml, errorToStringNoValue, filter, map10, map11, map12, map13, map14, map15, map16, map17, map18, map19, map20, map9, matchOn, maybeField, maybeWithDefault, nel, tuple)
+module Libs.Json.Decode exposing (customDict, customNed, defaultField, defaultFieldDeep, errorToHtml, errorToStringNoValue, filter, map10, map11, map12, map13, map14, map15, map16, map17, map18, map19, map20, map9, matchOn, maybeField, maybeWithDefault, nel, set, tuple)
 
 import Dict exposing (Dict)
 import Json.Decode as Decode exposing (Decoder)
 import Libs.Maybe as Maybe
 import Libs.Ned as Ned exposing (Ned)
 import Libs.Nel exposing (Nel)
+import Set exposing (Set)
 
 
 filter : (a -> Bool) -> Decoder a -> Decoder a
@@ -35,6 +36,11 @@ customDict buildKey decoder =
 nel : Decode.Decoder a -> Decode.Decoder (Nel a)
 nel decoder =
     Decode.oneOrMore Nel decoder
+
+
+set : Decode.Decoder comparable -> Decode.Decoder (Set comparable)
+set decoder =
+    Decode.list decoder |> Decode.map Set.fromList
 
 
 customNed : (String -> comparable) -> Decode.Decoder a -> Decode.Decoder (Ned comparable a)

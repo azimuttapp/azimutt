@@ -54,13 +54,15 @@ import Models.Project.TableId exposing (TableId)
 import Models.Project.TableMeta exposing (TableMeta)
 import Models.Project.TableName exposing (TableName)
 import Models.Project.TableProps exposing (TableProps)
+import Models.Project.TableRow as TableRow exposing (TableRow)
 import Models.Project.Unique exposing (Unique)
 import Models.Project.UniqueName exposing (UniqueName)
 import Models.RelationStyle as RelationStyle exposing (RelationStyle)
 import Models.Size as Size
 import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
 import PagesComponents.Organization_.Project_.Models.MemoId exposing (MemoId)
-import TestHelpers.Fuzzers exposing (color, dictSmall, fileLineIndex, fileModified, fileName, fileSize, fileUrl, identifier, intPosSmall, listSmall, nelSmall, positionDiagram, positionGrid, posix, sizeCanvas, stringSmall, text, uuid, zoomLevel)
+import Services.QueryBuilder as QueryBuilder
+import TestHelpers.Fuzzers exposing (color, dictSmall, fileLineIndex, fileModified, fileName, fileSize, fileUrl, identifier, intPosSmall, jsValue, listSmall, nelSmall, positionDiagram, positionGrid, posix, setSmall, sizeCanvas, stringSmall, text, uuid, zoomLevel)
 import TestHelpers.OrganizationFuzzers exposing (organization)
 
 
@@ -179,7 +181,7 @@ columnMeta =
 
 layout : Fuzzer Layout
 layout =
-    Fuzz.map5 Layout (listSmall tableProps) (listSmall group) (listSmall memo) posix posix
+    Fuzz.map7 Layout (listSmall tableProps) (listSmall group) (listSmall memo) (listSmall tableRow) intPosSmall posix posix
 
 
 canvasProps : Fuzzer CanvasProps
@@ -205,6 +207,55 @@ memo =
 memoId : Fuzzer MemoId
 memoId =
     intPosSmall
+
+
+tableRow : Fuzzer TableRow
+tableRow =
+    Fuzz.map6 TableRow tableRowId positionGrid sizeCanvas sourceId rowQuery tableRowState
+
+
+tableRowId : Fuzzer TableRow.Id
+tableRowId =
+    intPosSmall
+
+
+tableRowState : Fuzzer TableRow.State
+tableRowState =
+    Fuzz.oneOf
+        [ tableRowLoading |> Fuzz.map TableRow.StateLoading
+        , tableRowFailure |> Fuzz.map TableRow.StateFailure
+        , tableRowSuccess |> Fuzz.map TableRow.StateSuccess
+        ]
+
+
+tableRowLoading : Fuzzer TableRow.LoadingState
+tableRowLoading =
+    Fuzz.map2 TableRow.LoadingState stringSmall posix
+
+
+tableRowFailure : Fuzzer TableRow.FailureState
+tableRowFailure =
+    Fuzz.map4 TableRow.FailureState stringSmall stringSmall posix posix
+
+
+tableRowSuccess : Fuzzer TableRow.SuccessState
+tableRowSuccess =
+    Fuzz.map6 TableRow.SuccessState (listSmall tableRowValue) (setSmall columnName) (setSmall columnName) Fuzz.bool posix posix
+
+
+tableRowValue : Fuzzer TableRow.TableRowValue
+tableRowValue =
+    Fuzz.map2 TableRow.TableRowValue columnName jsValue
+
+
+rowQuery : Fuzzer QueryBuilder.RowQuery
+rowQuery =
+    Fuzz.map2 QueryBuilder.RowQuery tableId (nelSmall columnMatch)
+
+
+columnMatch : Fuzzer QueryBuilder.ColumnMatch
+columnMatch =
+    Fuzz.map2 QueryBuilder.ColumnMatch columnPath jsValue
 
 
 projectSettings : Fuzzer ProjectSettings

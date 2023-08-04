@@ -93,6 +93,9 @@ module Services.Lenses exposing
     , mapSqlSourceCmd
     , mapSqlSourceMCmd
     , mapState
+    , mapTableRows
+    , mapTableRowsCmd
+    , mapTableRowsSeq
     , mapTables
     , mapTablesCmd
     , mapTablesL
@@ -221,6 +224,8 @@ module Services.Lenses exposing
     , setSqlSource
     , setState
     , setTable
+    , setTableRows
+    , setTableRowsSeq
     , setTables
     , setTags
     , setText
@@ -1318,6 +1323,31 @@ mapTablesL =
 mapTablesCmd : (v -> ( v, Cmd msg )) -> { item | tables : v } -> ( { item | tables : v }, Cmd msg )
 mapTablesCmd =
     mapCmd_ .tables setTables
+
+
+setTableRows : v -> { item | tableRows : v } -> { item | tableRows : v }
+setTableRows =
+    set_ .tableRows (\value item -> { item | tableRows = value })
+
+
+mapTableRows : (v -> v) -> { item | tableRows : v } -> { item | tableRows : v }
+mapTableRows =
+    map_ .tableRows setTableRows
+
+
+mapTableRowsCmd : (v -> ( v, Cmd msg )) -> { item | tableRows : v } -> ( { item | tableRows : v }, Cmd msg )
+mapTableRowsCmd =
+    mapCmd_ .tableRows setTableRows
+
+
+setTableRowsSeq : v -> { item | tableRowsSeq : v } -> { item | tableRowsSeq : v }
+setTableRowsSeq =
+    set_ .tableRowsSeq (\value item -> { item | tableRowsSeq = value })
+
+
+mapTableRowsSeq : (v -> v) -> { item | tableRowsSeq : v } -> { item | tableRowsSeq : v }
+mapTableRowsSeq =
+    map_ .tableRowsSeq setTableRowsSeq
 
 
 setTags : v -> { item | tags : v } -> { item | tags : v }

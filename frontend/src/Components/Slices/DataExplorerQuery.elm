@@ -362,9 +362,7 @@ viewSuccess wrap openRow defaultSchema source res =
 
 viewTable : (Msg -> msg) -> (QueryBuilder.RowQuery -> msg) -> SchemaName -> List QueryResultColumnTarget -> List ( RowIndex, QueryResultRow ) -> Maybe String -> Set RowIndex -> Html msg
 viewTable wrap openRow defaultSchema columns rows sortBy expanded =
-    -- TODO sort columns
     -- TODO document mode
-    -- TODO open row sidebar
     div [ class "flow-root" ]
         [ div [ class "overflow-x-auto" ]
             [ div [ class "inline-block min-w-full align-middle" ]

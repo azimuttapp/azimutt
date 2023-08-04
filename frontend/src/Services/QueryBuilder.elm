@@ -1,11 +1,17 @@
-module Services.QueryBuilder exposing (ColumnMatch, FilterOperation(..), FilterOperator(..), RowQuery, TableFilter, TableQuery, filterTable, findRow, limitResults, operationHasValue, operationToString, operations, operationsForType, operatorToString, operators, stringToOperation, stringToOperator)
+module Services.QueryBuilder exposing (ColumnMatch, FilterOperation(..), FilterOperator(..), RowQuery, TableFilter, TableQuery, decodeRowQuery, encodeColumnMatch, encodeRowQuery, filterTable, findRow, limitResults, operationHasValue, operationToString, operations, operationsForType, operatorToString, operators, stringToOperation, stringToOperator)
 
+import Json.Decode as Decode exposing (Decoder)
+import Json.Encode as Encode exposing (Value)
+import Libs.Bool as Bool
+import Libs.Json.Decode as Decode
+import Libs.Json.Encode as Encode
 import Libs.Models.DatabaseKind as DatabaseKind exposing (DatabaseKind)
 import Libs.Nel as Nel exposing (Nel)
 import Libs.Regex as Regex
-import Models.Project.ColumnPath exposing (ColumnPath)
+import Models.JsValue as JsValue exposing (JsValue)
+import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.ColumnType as ColumnType exposing (ColumnType)
-import Models.Project.TableId exposing (TableId)
+import Models.Project.TableId as TableId exposing (TableId)
 
 
 type alias TableQuery =
@@ -13,7 +19,7 @@ type alias TableQuery =
 
 
 type alias TableFilter =
-    { operator : FilterOperator, column : ColumnPath, kind : ColumnType, nullable : Bool, operation : FilterOperation, value : String }
+    { operator : FilterOperator, column : ColumnPath, kind : ColumnType, nullable : Bool, operation : FilterOperation, value : JsValue }
 
 
 type alias RowQuery =
@@ -21,7 +27,7 @@ type alias RowQuery =
 
 
 type alias ColumnMatch =
-    { column : ColumnPath, kind : ColumnType, value : String }
+    { column : ColumnPath, value : JsValue }
 
 
 filterTable : DatabaseKind -> TableQuery -> String
@@ -292,21 +298,21 @@ formatFilters db filters =
 formatFilter : DatabaseKind -> TableFilter -> String
 formatFilter db filter =
     if db == DatabaseKind.PostgreSQL then
-        formatColumn db filter.column ++ formatOperation db filter.operation filter.kind filter.value
+        formatColumn db filter.column ++ formatOperation db filter.operation filter.value
 
     else
         ""
 
 
-formatOperation : DatabaseKind -> FilterOperation -> ColumnType -> String -> String
-formatOperation db op kind value =
+formatOperation : DatabaseKind -> FilterOperation -> JsValue -> String
+formatOperation db op value =
     if db == DatabaseKind.PostgreSQL then
         case op of
             OpEqual ->
-                "=" ++ formatValue db kind value
+                "=" ++ formatValue db value
 
             OpNotEqual ->
-                "!=" ++ formatValue db kind value
+                "!=" ++ formatValue db value
 
             OpIsNull ->
                 " IS NULL"
@@ -315,13 +321,13 @@ formatOperation db op kind value =
                 " IS NOT NULL"
 
             OpGreaterThan ->
-                ">" ++ formatValue db kind value
+                ">" ++ formatValue db value
 
             OpLesserThan ->
-                "<" ++ formatValue db kind value
+                "<" ++ formatValue db value
 
             OpLike ->
-                " LIKE " ++ formatValue db kind value
+                " LIKE " ++ formatValue db value
 
     else
         ""
@@ -330,7 +336,7 @@ formatOperation db op kind value =
 formatMatcher : DatabaseKind -> Nel ColumnMatch -> String
 formatMatcher db matches =
     if db == DatabaseKind.PostgreSQL then
-        matches |> Nel.toList |> List.map (\m -> formatColumn db m.column ++ "=" ++ formatValue db m.kind m.value) |> String.join " AND "
+        matches |> Nel.toList |> List.map (\m -> formatColumn db m.column ++ "=" ++ formatValue db m.value) |> String.join " AND "
 
     else
         ""
@@ -345,18 +351,27 @@ formatColumn db column =
         ""
 
 
-formatValue : DatabaseKind -> ColumnType -> String -> String
-formatValue db kind value =
+formatValue : DatabaseKind -> JsValue -> String
+formatValue db value =
     if db == DatabaseKind.PostgreSQL then
-        case ColumnType.parse kind of
-            ColumnType.Int ->
-                value
+        case value of
+            JsValue.String s ->
+                "'" ++ s ++ "'"
 
-            ColumnType.Bool ->
-                value
+            JsValue.Int i ->
+                String.fromInt i
+
+            JsValue.Float f ->
+                String.fromFloat f
+
+            JsValue.Bool b ->
+                Bool.cond b "true" "false"
+
+            JsValue.Null ->
+                "null"
 
             _ ->
-                "'" ++ value ++ "'"
+                "'" ++ JsValue.toJson value ++ "'"
 
     else
         ""
@@ -374,3 +389,33 @@ formatOperator db op =
 
     else
         ""
+
+
+encodeRowQuery : RowQuery -> Value
+encodeRowQuery value =
+    Encode.object
+        [ ( "table", value.table |> TableId.encode )
+        , ( "primaryKey", value.primaryKey |> Encode.nel encodeColumnMatch )
+        ]
+
+
+decodeRowQuery : Decoder RowQuery
+decodeRowQuery =
+    Decode.map2 RowQuery
+        (Decode.field "table" TableId.decode)
+        (Decode.field "primaryKey" (Decode.nel decodeColumnMatch))
+
+
+encodeColumnMatch : ColumnMatch -> Value
+encodeColumnMatch value =
+    Encode.object
+        [ ( "column", value.column |> ColumnPath.encode )
+        , ( "value", value.value |> JsValue.encode )
+        ]
+
+
+decodeColumnMatch : Decoder ColumnMatch
+decodeColumnMatch =
+    Decode.map2 ColumnMatch
+        (Decode.field "column" ColumnPath.decode)
+        (Decode.field "value" JsValue.decode)

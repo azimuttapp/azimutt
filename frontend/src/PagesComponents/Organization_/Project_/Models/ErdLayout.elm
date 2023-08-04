@@ -8,6 +8,7 @@ import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.Group exposing (Group)
 import Models.Project.Layout exposing (Layout)
 import Models.Project.TableId exposing (TableId)
+import Models.Project.TableRow exposing (TableRow)
 import Models.Size as Size
 import PagesComponents.Organization_.Project_.Models.ErdRelation exposing (ErdRelation)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout as ErdTableLayout exposing (ErdTableLayout)
@@ -22,6 +23,8 @@ type alias ErdLayout =
     , tables : List ErdTableLayout -- list order is used for z-index
     , groups : List Group
     , memos : List Memo
+    , tableRows : List TableRow
+    , tableRowsSeq : Int
     , createdAt : Time.Posix
     , updatedAt : Time.Posix
     }
@@ -33,6 +36,8 @@ empty now =
     , tables = []
     , groups = []
     , memos = []
+    , tableRows = []
+    , tableRowsSeq = 1
     , createdAt = now
     , updatedAt = now
     }
@@ -44,6 +49,8 @@ create relationsByTable layout =
     , tables = layout.tables |> List.map (\t -> t |> ErdTableLayout.create (layout.tables |> List.map .id |> Set.fromList) (relationsByTable |> Dict.getOrElse t.id []))
     , groups = layout.groups
     , memos = layout.memos
+    , tableRows = layout.tableRows
+    , tableRowsSeq = layout.tableRowsSeq
     , createdAt = layout.createdAt
     , updatedAt = layout.updatedAt
     }
@@ -54,6 +61,8 @@ unpack layout =
     { tables = layout.tables |> List.map (\t -> t |> ErdTableLayout.unpack)
     , groups = layout.groups
     , memos = layout.memos
+    , tableRows = layout.tableRows
+    , tableRowsSeq = layout.tableRowsSeq
     , createdAt = layout.createdAt
     , updatedAt = layout.updatedAt
     }

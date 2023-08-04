@@ -8,7 +8,7 @@ import Components.Slices.DataExplorerDetails as DataExplorerDetails
 import Components.Slices.DataExplorerQuery as DataExplorerQuery
 import Dict exposing (Dict)
 import ElmBook
-import ElmBook.Actions as Actions
+import ElmBook.Actions as Actions exposing (logAction)
 import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Html, button, div, h3, input, label, nav, option, p, select, table, td, text, textarea, tr)
 import Html.Attributes exposing (autofocus, class, disabled, for, id, name, placeholder, selected, style, title, type_, value)
@@ -23,6 +23,7 @@ import Libs.Ned as Ned exposing (Ned)
 import Libs.Tailwind as Tw exposing (TwClass)
 import Models.DbSource as DbSource exposing (DbSource)
 import Models.DbSourceInfo as DbSourceInfo exposing (DbSourceInfo)
+import Models.JsValue as JsValue exposing (JsValue)
 import Models.Project.Column as Column exposing (Column, NestedColumns(..))
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
@@ -37,6 +38,9 @@ import Services.QueryBuilder as QueryBuilder
 
 
 -- TODO:
+--  - global table row id (not specific to layout)
+--  - drag table row => define initial position + get size
+--  - no duplicate table row (navigate to the existing one if exists)
 --  - shorten uuid to its first component in results
 --  - pin a column and replace the fk by it
 --  - add document mode
@@ -91,7 +95,7 @@ type Msg
     | AddFilter Table ColumnPath
     | UpdateFilterOperator Int QueryBuilder.FilterOperator
     | UpdateFilterOperation Int QueryBuilder.FilterOperation
-    | UpdateFilterValue Int String
+    | UpdateFilterValue Int JsValue
     | DeleteFilter Int
     | UpdateQuery String
     | RunQuery DbSource String
@@ -163,7 +167,7 @@ update sources msg model =
             ( { model | visualEditor = { table = table, filters = [] } }, Cmd.none )
 
         AddFilter table path ->
-            ( table |> Table.getColumn path |> Maybe.mapOrElse (\col -> model |> mapVisualEditor (mapFilters (List.add { operator = QueryBuilder.OpAnd, column = path, kind = col.kind, nullable = col.nullable, operation = QueryBuilder.OpEqual, value = "" }))) model, Cmd.none )
+            ( table |> Table.getColumn path |> Maybe.mapOrElse (\col -> model |> mapVisualEditor (mapFilters (List.add { operator = QueryBuilder.OpAnd, column = path, kind = col.kind, nullable = col.nullable, operation = QueryBuilder.OpEqual, value = JsValue.String "" }))) model, Cmd.none )
 
         UpdateFilterOperator i operator ->
             ( model |> mapVisualEditor (mapFilters (List.mapAt i (setOperator operator))), Cmd.none )
@@ -205,8 +209,8 @@ update sources msg model =
 -- VIEW
 
 
-view : (Msg -> msg) -> (HtmlId -> msg) -> String -> HtmlId -> SchemaName -> HtmlId -> List Source -> Model -> DataExplorerDisplay -> Html msg
-view wrap toggleDropdown navbarHeight openedDropdown defaultSchema htmlId sources model display =
+view : (Msg -> msg) -> (HtmlId -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> msg) -> String -> HtmlId -> SchemaName -> HtmlId -> List Source -> Model -> DataExplorerDisplay -> Html msg
+view wrap toggleDropdown addToLayout navbarHeight openedDropdown defaultSchema htmlId sources model display =
     div [ class "h-full flex" ]
         [ div [ class "basis-1/3 flex-1 overflow-y-auto flex flex-col border-r" ]
             -- TODO: put header on the whole width
@@ -221,7 +225,7 @@ view wrap toggleDropdown navbarHeight openedDropdown defaultSchema htmlId source
             ]
         , div [ class "basis-2/3 flex-1 overflow-y-auto bg-gray-50 pb-28" ]
             [ viewResults wrap toggleDropdown (\s q -> OpenDetails s q |> wrap) openedDropdown defaultSchema sources (htmlId ++ "-results") model.results ]
-        , viewDetails wrap (\s q -> OpenDetails s q |> wrap) navbarHeight defaultSchema sources (htmlId ++ "-details") model.details
+        , viewDetails wrap (\s q -> OpenDetails s q |> wrap) addToLayout navbarHeight defaultSchema sources (htmlId ++ "-details") model.details
         ]
 
 
@@ -413,8 +417,8 @@ viewVisualExplorerFilterShow wrap htmlId filters =
                                         input
                                             [ type_ "text"
                                             , name (htmlId ++ "-" ++ String.fromInt i ++ "-value")
-                                            , value f.value
-                                            , onInput (UpdateFilterValue i >> wrap)
+                                            , value (f.value |> JsValue.toString)
+                                            , onInput (JsValue.fromString f.kind >> UpdateFilterValue i >> wrap)
                                             , class "block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                                             ]
                                             []
@@ -489,11 +493,11 @@ viewResults wrap toggleDropdown openRow openedDropdown defaultSchema sources htm
             )
 
 
-viewDetails : (Msg -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> msg) -> String -> SchemaName -> List Source -> HtmlId -> List DataExplorerDetails.Model -> Html msg
-viewDetails wrap openRow navbarHeight defaultSchema sources htmlId details =
+viewDetails : (Msg -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> msg) -> String -> SchemaName -> List Source -> HtmlId -> List DataExplorerDetails.Model -> Html msg
+viewDetails wrap openRow addToLayout navbarHeight defaultSchema sources htmlId details =
     div []
         (details
-            |> List.indexedMap (\i m -> DataExplorerDetails.view (DetailsMsg m.id >> wrap) (CloseDetails m.id |> wrap) (openRow m.source) navbarHeight defaultSchema sources (htmlId ++ "-" ++ String.fromInt m.id) (Just i) m)
+            |> List.indexedMap (\i m -> DataExplorerDetails.view (DetailsMsg m.id >> wrap) (CloseDetails m.id |> wrap) (openRow m.source) addToLayout navbarHeight defaultSchema sources (htmlId ++ "-" ++ String.fromInt m.id) (Just i) m)
             |> List.reverse
         )
 
@@ -599,7 +603,7 @@ docKeyValueNestedColumns =
 
 docComponentState : String -> (DocState -> Model) -> (DocState -> Model -> DocState) -> List Source -> ( String, SharedDocState x -> Html (ElmBook.Msg (SharedDocState x)) )
 docComponentState name get set sources =
-    ( name, \{ dataExplorerDocState } -> dataExplorerDocState |> (\s -> div [ style "height" "500px" ] [ view (docUpdate s get set sources) (docToggleDropdown s) "0px" s.openedDropdown "public" "data-explorer" sources (get s) (get s |> .display |> Maybe.withDefault BottomDisplay) ]) )
+    ( name, \{ dataExplorerDocState } -> dataExplorerDocState |> (\s -> div [ style "height" "500px" ] [ view (docUpdate s get set sources) (docToggleDropdown s) docAddToLayout "0px" s.openedDropdown "public" "data-explorer" sources (get s) (get s |> .display |> Maybe.withDefault BottomDisplay) ]) )
 
 
 docUpdate : DocState -> (DocState -> Model) -> (DocState -> Model -> DocState) -> List Source -> Msg -> ElmBook.Msg (SharedDocState x)
@@ -619,3 +623,8 @@ docToggleDropdown s id =
 docSetState : DocState -> ElmBook.Msg (SharedDocState x)
 docSetState state =
     Actions.updateState (\s -> { s | dataExplorerDocState = state })
+
+
+docAddToLayout : DbSourceInfo -> QueryBuilder.RowQuery -> ElmBook.Msg state
+docAddToLayout =
+    \_ _ -> logAction "addToLayout"

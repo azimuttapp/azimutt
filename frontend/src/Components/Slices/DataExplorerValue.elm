@@ -38,7 +38,7 @@ view openRow expandRow defaultSchema expanded value column =
                     [ JsValue.view value
                     , button
                         [ type_ "button"
-                        , onClick (openRow { table = o.ref.table, primaryKey = Nel { column = o.ref.column, kind = o.kind, value = JsValue.toString v } [] })
+                        , onClick (openRow { table = o.ref.table, primaryKey = Nel { column = o.ref.column, value = v } [] })
                         , title ("Open " ++ TableId.show defaultSchema o.ref.table ++ " with " ++ ColumnPath.show o.ref.column ++ "=" ++ JsValue.toString v)
                         ]
                         [ Icon.solid Icon.ExternalLink "ml-1 w-4 h-4 inline" ]
