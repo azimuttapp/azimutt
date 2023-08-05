@@ -66,6 +66,11 @@ type Msg
 -- INIT
 
 
+dbPrefix : String
+dbPrefix =
+    "table-row"
+
+
 init : TableRow.Id -> Time.Posix -> DbSourceInfo -> RowQuery -> ( TableRow, Cmd msg )
 init id now source query =
     let
@@ -81,7 +86,7 @@ init id now source query =
       , state = StateLoading { query = queryStr, startedAt = now }
       }
       -- TODO: add tracking with editor source (visual or query)
-    , Ports.runDatabaseQuery ("table-row/" ++ String.fromInt id) source.db.url queryStr
+    , Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt id) source.db.url queryStr
     )
 
 
@@ -135,7 +140,7 @@ update now sources msg model =
                                 QueryBuild.findRow s.db.kind model.query
                         in
                         ( model |> setState (StateLoading { query = queryStr, startedAt = now })
-                        , Ports.runDatabaseQuery ("table-row/" ++ String.fromInt model.id) s.db.url queryStr
+                        , Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt model.id) s.db.url queryStr
                         )
                     )
                     ( model, Cmd.none )

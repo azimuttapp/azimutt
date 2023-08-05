@@ -40,7 +40,7 @@ import Models.Project.Table exposing (Table)
 import Models.Project.TableName exposing (TableName)
 import Models.QueryResult as QueryResult exposing (QueryResult, QueryResultColumn, QueryResultColumnTarget, QueryResultRow, QueryResultSuccess)
 import Ports
-import Services.Lenses exposing (mapState, setQuery)
+import Services.Lenses exposing (mapState, setQuery, setState)
 import Services.QueryBuilder as QueryBuilder
 import Set exposing (Set)
 import Simple.Fuzzy
@@ -81,7 +81,7 @@ type alias SuccessState =
     , succeededAt : Time.Posix
     , page : Int
     , expanded : Set RowIndex
-    , documentMode : Bool -- TODO
+    , documentMode : Bool
     , showQuery : Bool
     , search : String
     , sortBy : Maybe String
@@ -91,7 +91,6 @@ type alias SuccessState =
 
 type Msg
     = FullScreen
-    | Refresh -- run again the query
     | Export -- export results in csv or json (or copy in clipboard)
       -- used message ^^
     | Cancel
@@ -99,19 +98,26 @@ type Msg
     | ChangePage Int
     | ExpandRow RowIndex
     | ToggleQuery
+    | ToggleDocumentMode
     | UpdateSearch String
     | UpdateSort (Maybe String)
+    | Refresh
 
 
 
 -- INIT
 
 
+dbPrefix : String
+dbPrefix =
+    "data-explorer-query"
+
+
 init : Id -> DbSourceInfo -> String -> ( Model, Cmd msg )
 init id source query =
     ( { id = id, source = source, query = query, state = StateRunning }
       -- TODO: add tracking with editor source (visual or query)
-    , Ports.runDatabaseQuery ("data-explorer-query/" ++ String.fromInt id) source.db.url query
+    , Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt id) source.db.url query
     )
 
 
@@ -159,17 +165,20 @@ update msg model =
         ToggleQuery ->
             ( model |> mapState (mapSuccess (\s -> { s | showQuery = not s.showQuery })), Cmd.none )
 
+        ToggleDocumentMode ->
+            ( model |> mapState (mapSuccess (\s -> { s | documentMode = not s.documentMode })), Cmd.none )
+
         UpdateSearch search ->
             ( model |> mapState (mapSuccess (\s -> { s | search = search, page = 1 })), Cmd.none )
 
         UpdateSort sort ->
             ( model |> mapState (mapSuccess (\s -> { s | sortBy = sort, page = 1 })), Cmd.none )
 
+        Refresh ->
+            ( model |> setState StateRunning, Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt model.id) model.source.db.url model.query )
+
         -- FIXME implement
         FullScreen ->
-            ( model, Cmd.none )
-
-        Refresh ->
             ( model, Cmd.none )
 
         Export ->
@@ -299,6 +308,7 @@ view wrap toggleDropdown openRow deleteQuery openedDropdown defaultSchema source
                         (\_ ->
                             div []
                                 ([ { label = "Explore in full screen", content = ContextMenu.Simple { action = wrap FullScreen } }
+                                 , { label = Bool.cond res.documentMode "Table mode" "Document mode", content = ContextMenu.Simple { action = wrap ToggleDocumentMode } }
                                  , { label = "Refresh data", content = ContextMenu.Simple { action = wrap Refresh } }
                                  , { label = "Export data"
                                    , content =
@@ -353,16 +363,22 @@ viewSuccess wrap openRow defaultSchema source res =
         pageRows : List ( RowIndex, QueryResultRow )
         pageRows =
             Pagination.paginate items pagination
+
+        ( column, rows ) =
+            if res.documentMode then
+                ( [ { name = "document", open = Nothing } ], pageRows |> List.map (Tuple.mapSecond (\r -> Dict.fromList [ ( "document", DbObject r ) ])) )
+
+            else
+                ( res.columns |> QueryResult.buildColumnTargets source, pageRows )
     in
     div []
-        [ viewTable wrap openRow defaultSchema (res.columns |> QueryResult.buildColumnTargets source) pageRows res.sortBy res.expanded
+        [ viewTable wrap openRow defaultSchema column rows res.documentMode res.sortBy res.expanded
         , Pagination.view (\p -> ChangePage p |> wrap) pagination
         ]
 
 
-viewTable : (Msg -> msg) -> (QueryBuilder.RowQuery -> msg) -> SchemaName -> List QueryResultColumnTarget -> List ( RowIndex, QueryResultRow ) -> Maybe String -> Set RowIndex -> Html msg
-viewTable wrap openRow defaultSchema columns rows sortBy expanded =
-    -- TODO document mode
+viewTable : (Msg -> msg) -> (QueryBuilder.RowQuery -> msg) -> SchemaName -> List QueryResultColumnTarget -> List ( RowIndex, QueryResultRow ) -> Bool -> Maybe String -> Set RowIndex -> Html msg
+viewTable wrap openRow defaultSchema columns rows documentMode sortBy expanded =
     div [ class "flow-root" ]
         [ div [ class "overflow-x-auto" ]
             [ div [ class "inline-block min-w-full align-middle" ]
@@ -377,9 +393,15 @@ viewTable wrap openRow defaultSchema columns rows sortBy expanded =
                         (rows
                             |> List.map
                                 (\( i, r ) ->
+                                    let
+                                        rest : Dict String DbValue
+                                        rest =
+                                            r |> Dict.filter (\k _ -> columns |> List.memberBy .name k |> not)
+                                    in
                                     tr [ class "hover:bg-gray-100", classList [ ( "bg-gray-50", modBy 2 i == 1 ) ] ]
-                                        (td [ class "px-1 text-sm text-gray-900" ] [ text (i |> String.fromInt) ]
-                                            :: (columns |> List.map (\c -> td [ class "px-1 text-sm text-gray-500 whitespace-nowrap max-w-xs truncate" ] [ DataExplorerValue.view openRow (ExpandRow i |> wrap) defaultSchema (expanded |> Set.member i) (r |> Dict.get c.name) c ]))
+                                        ([ td [ class "px-1 text-sm text-gray-900" ] [ text (i |> String.fromInt) ] ]
+                                            ++ (columns |> List.map (\c -> viewTableValue openRow (ExpandRow i |> wrap) defaultSchema documentMode (expanded |> Set.member i) (r |> Dict.get c.name) c))
+                                            ++ Bool.cond (rest |> Dict.isEmpty) [] [ viewTableValue openRow (ExpandRow i |> wrap) defaultSchema documentMode (expanded |> Set.member i) (rest |> DbObject |> Just) { name = "rest", open = Nothing } ]
                                         )
                                 )
                         )
@@ -404,6 +426,12 @@ viewTableHeader wrap sortBy column =
             |> Maybe.map (\( _, asc ) -> Icon.solid (Bool.cond asc Icon.ArrowDown Icon.ArrowUp) "ml-1 w-3 h-3 inline")
             |> Maybe.withDefault (Icon.solid Icon.ArrowDown "ml-1 w-3 h-3 inline invisible group-hover:visible")
         ]
+
+
+viewTableValue : (QueryBuilder.RowQuery -> msg) -> msg -> SchemaName -> Bool -> Bool -> Maybe DbValue -> QueryResultColumnTarget -> Html msg
+viewTableValue openRow expandRow defaultSchema documentMode expanded value column =
+    td [ class "px-1 text-sm text-gray-500 whitespace-nowrap max-w-xs truncate" ]
+        [ DataExplorerValue.view openRow expandRow defaultSchema documentMode expanded value column ]
 
 
 filterValues : String -> List QueryResultRow -> List QueryResultRow

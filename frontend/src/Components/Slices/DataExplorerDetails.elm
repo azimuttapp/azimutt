@@ -60,7 +60,6 @@ type alias SuccessState =
     , values : QueryResultRow
     , startedAt : Time.Posix
     , succeededAt : Time.Posix
-    , documentMode : Bool
     }
 
 
@@ -73,11 +72,16 @@ type Msg
 -- INIT
 
 
+dbPrefix : String
+dbPrefix =
+    "data-explorer-details"
+
+
 init : Id -> DbSourceInfo -> RowQuery -> ( Model, Cmd msg )
 init id source query =
     ( { id = id, source = source, query = query, state = StateLoading, expanded = Set.empty }
       -- TODO: add tracking with editor source (visual or query)
-    , Ports.runDatabaseQuery ("data-explorer-details/" ++ String.fromInt id) source.db.url (QueryBuilder.findRow source.db.kind query)
+    , Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt id) source.db.url (QueryBuilder.findRow source.db.kind query)
     )
 
 
@@ -93,7 +97,6 @@ initSuccess started finished res =
         , values = res.rows |> List.head |> Maybe.withDefault Dict.empty
         , startedAt = started
         , succeededAt = finished
-        , documentMode = False
         }
 
 
@@ -198,7 +201,7 @@ viewSlideOverContent wrap close openRow addToLayout defaultSchema source titleId
                                     div []
                                         [ dt [ class "text-sm font-medium text-gray-500 sm:w-40 sm:flex-shrink-0" ] [ text c.name ]
                                         , dd [ class "text-sm text-gray-900 sm:col-span-2 overflow-hidden text-ellipsis" ]
-                                            [ DataExplorerValue.view openRow (ExpandValue c.name |> wrap) defaultSchema (model.expanded |> Set.member c.name) (res.values |> Dict.get c.name) c
+                                            [ DataExplorerValue.view openRow (ExpandValue c.name |> wrap) defaultSchema False (model.expanded |> Set.member c.name) (res.values |> Dict.get c.name) c
                                             ]
                                         ]
                                 )
@@ -282,7 +285,6 @@ docSuccessState =
     , values = docCityColumnValues 1 "Kabul" "AFG" "Kabol" 1780000
     , startedAt = Time.zero
     , succeededAt = Time.zero
-    , documentMode = False
     }
 
 

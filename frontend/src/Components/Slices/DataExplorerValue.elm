@@ -14,8 +14,8 @@ import Models.QueryResult exposing (QueryResultColumnTarget)
 import Services.QueryBuilder as QueryBuilder
 
 
-view : (QueryBuilder.RowQuery -> msg) -> msg -> SchemaName -> Bool -> Maybe DbValue -> QueryResultColumnTarget -> Html msg
-view openRow expandRow defaultSchema expanded value column =
+view : (QueryBuilder.RowQuery -> msg) -> msg -> SchemaName -> Bool -> Bool -> Maybe DbValue -> QueryResultColumnTarget -> Html msg
+view openRow expandRow defaultSchema documentMode expanded value column =
     let
         -- TODO: contextual formatting: numbers, uuid, dates, may depend on context (results vs side bar)
         valueText : String
@@ -23,13 +23,14 @@ view openRow expandRow defaultSchema expanded value column =
             value |> Maybe.mapOrElse DbValue.toString ""
     in
     if value |> Maybe.any (\v -> DbValue.isArray v || DbValue.isObject v) then
-        div [ onClick expandRow, title valueText, class "cursor-pointer" ]
-            [ if expanded then
-                DbValue.viewRaw value
+        if documentMode then
+            div [] [ DbValue.viewRaw value ]
 
-              else
-                DbValue.view value
-            ]
+        else if expanded then
+            div [ onClick expandRow, class "cursor-pointer" ] [ DbValue.viewRaw value ]
+
+        else
+            div [ onClick expandRow, title valueText, class "cursor-pointer" ] [ DbValue.view value ]
 
     else
         Maybe.map2
