@@ -41,9 +41,9 @@ import Services.QueryBuilder as QueryBuilder
 --  - global table row id (not specific to layout)
 --  - drag table row => define initial position + get size
 --  - no duplicate table row (navigate to the existing one if exists)
+--  - column stats in query header
 --  - shorten uuid to its first component in results
 --  - pin a column and replace the fk by it
---  - add document mode
 --  - ERD data exploration: show a row in ERD (from the sidebar) and allow to explore data relations
 --  - Add filter button on results which can change editor (visual or query) and allow to trigger a new query
 --  - Show incoming rows in the side bar (and results?)

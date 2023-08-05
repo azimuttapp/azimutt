@@ -64,6 +64,7 @@ fromString kind value =
 
 toString : DbValue -> String
 toString value =
+    -- FIXME: better semantic between toString & toJson, maybe introduce a prettyString?
     case value of
         DbString v ->
             v
@@ -81,10 +82,10 @@ toString value =
             "null"
 
         DbArray values ->
-            "[" ++ (values |> List.map toString |> String.join ", ") ++ "]"
+            "[" ++ (values |> List.map toJson |> String.join ", ") ++ "]"
 
         DbObject values ->
-            "{" ++ (values |> Dict.toList |> List.map (\( k, v ) -> k ++ ": " ++ toString v) |> String.join ", ") ++ "}"
+            "{" ++ (values |> Dict.toList |> List.map (\( k, v ) -> k ++ ": " ++ toJson v) |> String.join ", ") ++ "}"
 
 
 toJson : DbValue -> String

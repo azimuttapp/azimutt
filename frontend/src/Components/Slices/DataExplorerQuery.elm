@@ -13,6 +13,7 @@ import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Html, button, div, input, p, pre, span, table, tbody, td, text, th, thead, tr)
 import Html.Attributes exposing (class, classList, id, name, placeholder, scope, title, type_, value)
 import Html.Events exposing (onClick, onInput)
+import Json.Encode as Encode
 import Libs.Bool as Bool
 import Libs.Dict as Dict
 import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, css)
@@ -90,9 +91,7 @@ type alias SuccessState =
 
 
 type Msg
-    = Export -- export results in csv or json (or copy in clipboard)
-      -- used message ^^
-    | Cancel
+    = Cancel
     | GotResult QueryResult
     | ChangePage Int
     | ExpandRow RowIndex
@@ -102,6 +101,7 @@ type Msg
     | UpdateSearch String
     | UpdateSort (Maybe String)
     | Refresh
+    | ExportData String
 
 
 
@@ -180,9 +180,14 @@ update msg model =
         Refresh ->
             ( model |> setState StateRunning, Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt model.id) model.source.db.url model.query )
 
-        -- FIXME implement
-        Export ->
-            ( model, Cmd.none )
+        ExportData extension ->
+            case model.state of
+                StateSuccess s ->
+                    ( model, Ports.downloadFile (model |> fileName extension) (s |> fileContent extension) )
+
+                _ ->
+                    -- FIXME: show error toast
+                    ( model, Cmd.none )
 
 
 mapSuccess : (SuccessState -> SuccessState) -> State -> State
@@ -193,6 +198,57 @@ mapSuccess f state =
 
         _ ->
             state
+
+
+fileName : String -> Model -> String
+fileName extension model =
+    model.source.name ++ "-results-" ++ String.fromInt model.id ++ "." ++ extension
+
+
+fileContent : String -> SuccessState -> String
+fileContent extension state =
+    if extension == "json" then
+        jsonFile state
+
+    else
+        csvFile state
+
+
+jsonFile : SuccessState -> String
+jsonFile state =
+    (state.rows |> Encode.list QueryResult.encodeQueryResultRow |> Encode.encode 2) ++ "\n"
+
+
+csvFile : SuccessState -> String
+csvFile state =
+    let
+        separator : String
+        separator =
+            ","
+
+        header : String
+        header =
+            state.columns |> List.map (\c -> csvEscape c.name) |> String.join separator
+
+        rows : List String
+        rows =
+            state.rows |> List.map (\r -> state.columns |> List.map (\c -> r |> Dict.get c.name |> Maybe.mapOrElse DbValue.toString "" |> csvEscape) |> String.join separator)
+    in
+    (header :: rows |> String.join "\n") ++ "\n"
+
+
+csvEscape : String -> String
+csvEscape value =
+    let
+        escaped : String
+        escaped =
+            value |> String.replace "\"" "\"\"" |> String.replace "\u{000D}" "\\r" |> String.replace "\n" "\\n"
+    in
+    if (value |> String.contains ",") || (value |> String.contains "\"") then
+        "\"" ++ escaped ++ "\""
+
+    else
+        escaped
 
 
 
@@ -307,14 +363,14 @@ view wrap toggleDropdown openRow deleteQuery openedDropdown defaultSchema source
                         )
                         (\_ ->
                             div []
-                                ([ { label = Bool.cond res.fullScreen "Exit full screen" "Full screen", content = ContextMenu.Simple { action = wrap ToggleFullScreen } }
-                                 , { label = Bool.cond res.documentMode "Table mode" "Document mode", content = ContextMenu.Simple { action = wrap ToggleDocumentMode } }
-                                 , { label = "Refresh data", content = ContextMenu.Simple { action = wrap Refresh } }
+                                ([ { label = Bool.cond res.fullScreen "Exit full screen" "Full screen", content = ContextMenu.Simple { action = ToggleFullScreen |> wrap } }
+                                 , { label = Bool.cond res.documentMode "Table mode" "Document mode", content = ContextMenu.Simple { action = ToggleDocumentMode |> wrap } }
+                                 , { label = "Refresh data", content = ContextMenu.Simple { action = Refresh |> wrap } }
                                  , { label = "Export data"
                                    , content =
                                         ContextMenu.SubMenu
-                                            [ { label = "CSV", action = wrap Export }
-                                            , { label = "JSON", action = wrap Export }
+                                            [ { label = "CSV", action = ExportData "csv" |> wrap }
+                                            , { label = "JSON", action = ExportData "json" |> wrap }
                                             ]
                                             ContextMenu.BottomLeft
                                    }

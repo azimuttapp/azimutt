@@ -1,7 +1,8 @@
-module Models.QueryResult exposing (QueryResult, QueryResultColumn, QueryResultColumnTarget, QueryResultRow, QueryResultSuccess, buildColumnTargets, decode)
+module Models.QueryResult exposing (QueryResult, QueryResultColumn, QueryResultColumnTarget, QueryResultRow, QueryResultSuccess, buildColumnTargets, decode, encodeQueryResultRow)
 
 import Dict exposing (Dict)
 import Json.Decode as Decode
+import Json.Encode as Encode exposing (Value)
 import Libs.Dict as Dict
 import Libs.Json.Decode as Decode
 import Libs.List as List
@@ -88,7 +89,7 @@ decodeSuccess : Decode.Decoder QueryResultSuccess
 decodeSuccess =
     Decode.map2 QueryResultSuccess
         (Decode.field "columns" (Decode.list decodeColumn))
-        (Decode.field "rows" (Decode.list (Decode.dict DbValue.decode)))
+        (Decode.field "rows" (Decode.list decodeQueryResultRow))
 
 
 decodeColumn : Decode.Decoder QueryResultColumn
@@ -96,3 +97,13 @@ decodeColumn =
     Decode.map2 QueryResultColumn
         (Decode.field "name" Decode.string)
         (Decode.maybeField "ref" ColumnRef.decode)
+
+
+decodeQueryResultRow : Decode.Decoder QueryResultRow
+decodeQueryResultRow =
+    Decode.dict DbValue.decode
+
+
+encodeQueryResultRow : QueryResultRow -> Value
+encodeQueryResultRow value =
+    value |> Encode.dict identity DbValue.encode
