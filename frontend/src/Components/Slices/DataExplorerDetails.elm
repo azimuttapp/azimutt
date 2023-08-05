@@ -118,22 +118,38 @@ update msg model =
 -- VIEW
 
 
-view : (Msg -> msg) -> msg -> (RowQuery -> msg) -> (DbSourceInfo -> RowQuery -> msg) -> String -> SchemaName -> List Source -> HtmlId -> Maybe Int -> Model -> Html msg
-view wrap close openRow addToLayout navbarHeight defaultSchema sources htmlId openDepth model =
+view : (Msg -> msg) -> msg -> (RowQuery -> msg) -> (DbSourceInfo -> RowQuery -> msg) -> String -> Bool -> SchemaName -> List Source -> HtmlId -> Maybe Int -> Model -> Html msg
+view wrap close openRow addToLayout navbarHeight hasFullScreen defaultSchema sources htmlId openDepth model =
     let
         titleId : HtmlId
         titleId =
             htmlId ++ "-title"
+
+        zIndex : String
+        zIndex =
+            if hasFullScreen then
+                "z-max"
+
+            else
+                openDepth |> Maybe.andThen (\i -> [ "z-16", "z-15", "z-14", "z-13", "z-12", "z-11" ] |> List.get i) |> Maybe.withDefault "z-10"
+
+        top : String
+        top =
+            if hasFullScreen then
+                "0px"
+
+            else
+                navbarHeight
     in
     div
         [ ariaLabelledby titleId
         , role "dialog"
         , ariaModal True
-        , css [ "relative", openDepth |> Maybe.andThen (\i -> [ "z-16", "z-15", "z-14", "z-13", "z-12", "z-11" ] |> List.get i) |> Maybe.withDefault "z-10" ]
+        , css [ "relative", zIndex ]
         ]
         [ div [ class "fixed inset-0 overflow-hidden pointer-events-none" ]
             [ div [ class "absolute inset-0 overflow-hidden" ]
-                [ div [ class "pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10", style "top" navbarHeight ]
+                [ div [ class "pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10", style "top" top ]
                     [ {-
                          Slide-over panel, show/hide based on slide-over state.
 
@@ -248,7 +264,7 @@ doc =
                                 |> List.indexedMap
                                     (\i m ->
                                         div [ class "mt-1" ]
-                                            [ view (docUpdate i s) (docClose i s) docOpenRow docAddToLayout "0px" "public" [] ("data-explorer-details-" ++ String.fromInt i) (Just i) m
+                                            [ view (docUpdate i s) (docClose i s) docOpenRow docAddToLayout "0px" False "public" [] ("data-explorer-details-" ++ String.fromInt i) (Just i) m
                                             , docButton ("Close " ++ String.fromInt i) (docClose i s)
                                             ]
                                     )

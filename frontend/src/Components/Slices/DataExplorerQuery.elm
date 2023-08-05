@@ -85,13 +85,12 @@ type alias SuccessState =
     , showQuery : Bool
     , search : String
     , sortBy : Maybe String
-    , fullScreen : Bool -- TODO
+    , fullScreen : Bool
     }
 
 
 type Msg
-    = FullScreen
-    | Export -- export results in csv or json (or copy in clipboard)
+    = Export -- export results in csv or json (or copy in clipboard)
       -- used message ^^
     | Cancel
     | GotResult QueryResult
@@ -99,6 +98,7 @@ type Msg
     | ExpandRow RowIndex
     | ToggleQuery
     | ToggleDocumentMode
+    | ToggleFullScreen
     | UpdateSearch String
     | UpdateSort (Maybe String)
     | Refresh
@@ -168,6 +168,9 @@ update msg model =
         ToggleDocumentMode ->
             ( model |> mapState (mapSuccess (\s -> { s | documentMode = not s.documentMode })), Cmd.none )
 
+        ToggleFullScreen ->
+            ( model |> mapState (mapSuccess (\s -> { s | fullScreen = not s.fullScreen })), Cmd.none )
+
         UpdateSearch search ->
             ( model |> mapState (mapSuccess (\s -> { s | search = search, page = 1 })), Cmd.none )
 
@@ -178,9 +181,6 @@ update msg model =
             ( model |> setState StateRunning, Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt model.id) model.source.db.url model.query )
 
         -- FIXME implement
-        FullScreen ->
-            ( model, Cmd.none )
-
         Export ->
             ( model, Cmd.none )
 
@@ -203,7 +203,7 @@ view : (Msg -> msg) -> (HtmlId -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery
 view wrap toggleDropdown openRow deleteQuery openedDropdown defaultSchema sources htmlId model =
     case model.state of
         StateRunning ->
-            viewCard
+            viewCard False
                 [ p [ class "text-sm font-semibold text-gray-900" ] [ text ("#" ++ String.fromInt model.id ++ " " ++ model.source.name) ]
                 , p [ class "mt-1 text-sm text-gray-500 space-x-2" ]
                     [ span [ class "font-bold text-amber-500" ] [ text "Running..." ]
@@ -219,7 +219,7 @@ view wrap toggleDropdown openRow deleteQuery openedDropdown defaultSchema source
                 (div [ class "relative flex space-x-1 text-left" ] [ viewActionButton Icon.XCircle "Cancel execution" (wrap Cancel) ])
 
         StateCanceled ->
-            viewCard
+            viewCard False
                 [ p [ class "text-sm font-semibold text-gray-900" ] [ text ("#" ++ String.fromInt model.id ++ " " ++ model.source.name) ]
                 , p [ class "mt-1 text-sm text-gray-500 space-x-2" ]
                     [ span [ class "font-bold" ] [ text "Canceled!" ]
@@ -231,7 +231,7 @@ view wrap toggleDropdown openRow deleteQuery openedDropdown defaultSchema source
                 (div [ class "relative flex space-x-1 text-left" ] [ viewActionButton Icon.Trash "Delete" deleteQuery ])
 
         StateFailure res ->
-            viewCard
+            viewCard False
                 [ p [ class "text-sm font-semibold text-gray-900" ] [ text ("#" ++ String.fromInt model.id ++ " " ++ model.source.name) ]
                 , p [ class "mt-1 text-sm text-gray-500 space-x-1" ]
                     [ span [ class "font-bold text-red-500" ] [ text "Failed" ]
@@ -257,7 +257,7 @@ view wrap toggleDropdown openRow deleteQuery openedDropdown defaultSchema source
                 dropdownId =
                     htmlId ++ "-settings"
             in
-            viewCard
+            viewCard res.fullScreen
                 [ p [ class "text-sm text-gray-500 space-x-1" ]
                     [ span [ class "font-semibold text-gray-900" ] [ text ("#" ++ String.fromInt model.id ++ " " ++ model.source.name) ]
                     , span [] [ text ("(" ++ (res.rows |> List.length |> String.fromInt) ++ " rows)") ]
@@ -307,7 +307,7 @@ view wrap toggleDropdown openRow deleteQuery openedDropdown defaultSchema source
                         )
                         (\_ ->
                             div []
-                                ([ { label = "Explore in full screen", content = ContextMenu.Simple { action = wrap FullScreen } }
+                                ([ { label = Bool.cond res.fullScreen "Exit full screen" "Full screen", content = ContextMenu.Simple { action = wrap ToggleFullScreen } }
                                  , { label = Bool.cond res.documentMode "Table mode" "Document mode", content = ContextMenu.Simple { action = wrap ToggleDocumentMode } }
                                  , { label = "Refresh data", content = ContextMenu.Simple { action = wrap Refresh } }
                                  , { label = "Export data"
@@ -327,9 +327,9 @@ view wrap toggleDropdown openRow deleteQuery openedDropdown defaultSchema source
                 )
 
 
-viewCard : List (Html msg) -> Html msg -> Html msg -> Html msg
-viewCard cardTitle cardBody cardActions =
-    div [ class "bg-white" ]
+viewCard : Bool -> List (Html msg) -> Html msg -> Html msg -> Html msg
+viewCard fullScreen cardTitle cardBody cardActions =
+    div [ class "bg-white", classList [ ( "p-3 fixed inset-0 overflow-y-auto z-max", fullScreen ) ] ]
         [ div [ class "flex items-start space-x-3" ]
             [ div [ class "min-w-0 flex-1" ] cardTitle
             , div [ class "flex flex-shrink-0" ] [ cardActions ]
@@ -358,7 +358,11 @@ viewSuccess wrap openRow defaultSchema source res =
 
         pagination : Pagination.Model
         pagination =
-            { currentPage = res.page, pageSize = 10, totalItems = items |> List.length }
+            if res.fullScreen then
+                { currentPage = 1, pageSize = items |> List.length, totalItems = items |> List.length }
+
+            else
+                { currentPage = res.page, pageSize = 10, totalItems = items |> List.length }
 
         pageRows : List ( RowIndex, QueryResultRow )
         pageRows =

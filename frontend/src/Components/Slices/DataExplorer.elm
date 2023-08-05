@@ -211,6 +211,20 @@ update sources msg model =
 
 view : (Msg -> msg) -> (HtmlId -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> msg) -> String -> HtmlId -> SchemaName -> HtmlId -> List Source -> Model -> DataExplorerDisplay -> Html msg
 view wrap toggleDropdown addToLayout navbarHeight openedDropdown defaultSchema htmlId sources model display =
+    let
+        hasFullScreen : Bool
+        hasFullScreen =
+            model.results
+                |> List.any
+                    (\r ->
+                        case r.state of
+                            DataExplorerQuery.StateSuccess s ->
+                                s.fullScreen
+
+                            _ ->
+                                False
+                    )
+    in
     div [ class "h-full flex" ]
         [ div [ class "basis-1/3 flex-1 overflow-y-auto flex flex-col border-r" ]
             -- TODO: put header on the whole width
@@ -225,7 +239,7 @@ view wrap toggleDropdown addToLayout navbarHeight openedDropdown defaultSchema h
             ]
         , div [ class "basis-2/3 flex-1 overflow-y-auto bg-gray-50 pb-28" ]
             [ viewResults wrap toggleDropdown (\s q -> OpenDetails s q |> wrap) openedDropdown defaultSchema sources (htmlId ++ "-results") model.results ]
-        , viewDetails wrap (\s q -> OpenDetails s q |> wrap) addToLayout navbarHeight defaultSchema sources (htmlId ++ "-details") model.details
+        , viewDetails wrap (\s q -> OpenDetails s q |> wrap) addToLayout navbarHeight hasFullScreen defaultSchema sources (htmlId ++ "-details") model.details
         ]
 
 
@@ -493,11 +507,11 @@ viewResults wrap toggleDropdown openRow openedDropdown defaultSchema sources htm
             )
 
 
-viewDetails : (Msg -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> msg) -> String -> SchemaName -> List Source -> HtmlId -> List DataExplorerDetails.Model -> Html msg
-viewDetails wrap openRow addToLayout navbarHeight defaultSchema sources htmlId details =
+viewDetails : (Msg -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> msg) -> String -> Bool -> SchemaName -> List Source -> HtmlId -> List DataExplorerDetails.Model -> Html msg
+viewDetails wrap openRow addToLayout navbarHeight hasFullScreen defaultSchema sources htmlId details =
     div []
         (details
-            |> List.indexedMap (\i m -> DataExplorerDetails.view (DetailsMsg m.id >> wrap) (CloseDetails m.id |> wrap) (openRow m.source) addToLayout navbarHeight defaultSchema sources (htmlId ++ "-" ++ String.fromInt m.id) (Just i) m)
+            |> List.indexedMap (\i m -> DataExplorerDetails.view (DetailsMsg m.id >> wrap) (CloseDetails m.id |> wrap) (openRow m.source) addToLayout navbarHeight hasFullScreen defaultSchema sources (htmlId ++ "-" ++ String.fromInt m.id) (Just i) m)
             |> List.reverse
         )
 
