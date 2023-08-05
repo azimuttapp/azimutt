@@ -62,7 +62,7 @@ import Models.Size as Size
 import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
 import PagesComponents.Organization_.Project_.Models.MemoId exposing (MemoId)
 import Services.QueryBuilder as QueryBuilder
-import TestHelpers.Fuzzers exposing (color, dictSmall, fileLineIndex, fileModified, fileName, fileSize, fileUrl, identifier, intPosSmall, jsValue, listSmall, nelSmall, positionDiagram, positionGrid, posix, setSmall, sizeCanvas, stringSmall, text, uuid, zoomLevel)
+import TestHelpers.Fuzzers exposing (color, dbValue, dictSmall, fileLineIndex, fileModified, fileName, fileSize, fileUrl, identifier, intPosSmall, listSmall, nelSmall, positionDiagram, positionGrid, posix, setSmall, sizeCanvas, stringSmall, text, uuid, zoomLevel)
 import TestHelpers.OrganizationFuzzers exposing (organization)
 
 
@@ -245,7 +245,7 @@ tableRowSuccess =
 
 tableRowValue : Fuzzer TableRow.TableRowValue
 tableRowValue =
-    Fuzz.map2 TableRow.TableRowValue columnName jsValue
+    Fuzz.map2 TableRow.TableRowValue columnName dbValue
 
 
 rowQuery : Fuzzer QueryBuilder.RowQuery
@@ -255,7 +255,7 @@ rowQuery =
 
 columnMatch : Fuzzer QueryBuilder.ColumnMatch
 columnMatch =
-    Fuzz.map2 QueryBuilder.ColumnMatch columnPath jsValue
+    Fuzz.map2 QueryBuilder.ColumnMatch columnPath dbValue
 
 
 projectSettings : Fuzzer ProjectSettings

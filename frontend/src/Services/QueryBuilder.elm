@@ -8,7 +8,7 @@ import Libs.Json.Encode as Encode
 import Libs.Models.DatabaseKind as DatabaseKind exposing (DatabaseKind)
 import Libs.Nel as Nel exposing (Nel)
 import Libs.Regex as Regex
-import Models.JsValue as JsValue exposing (JsValue)
+import Models.DbValue as DbValue exposing (DbValue(..))
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.ColumnType as ColumnType exposing (ColumnType)
 import Models.Project.TableId as TableId exposing (TableId)
@@ -19,7 +19,7 @@ type alias TableQuery =
 
 
 type alias TableFilter =
-    { operator : FilterOperator, column : ColumnPath, kind : ColumnType, nullable : Bool, operation : FilterOperation, value : JsValue }
+    { operator : FilterOperator, column : ColumnPath, kind : ColumnType, nullable : Bool, operation : FilterOperation, value : DbValue }
 
 
 type alias RowQuery =
@@ -27,7 +27,7 @@ type alias RowQuery =
 
 
 type alias ColumnMatch =
-    { column : ColumnPath, value : JsValue }
+    { column : ColumnPath, value : DbValue }
 
 
 filterTable : DatabaseKind -> TableQuery -> String
@@ -304,7 +304,7 @@ formatFilter db filter =
         ""
 
 
-formatOperation : DatabaseKind -> FilterOperation -> JsValue -> String
+formatOperation : DatabaseKind -> FilterOperation -> DbValue -> String
 formatOperation db op value =
     if db == DatabaseKind.PostgreSQL then
         case op of
@@ -351,27 +351,27 @@ formatColumn db column =
         ""
 
 
-formatValue : DatabaseKind -> JsValue -> String
+formatValue : DatabaseKind -> DbValue -> String
 formatValue db value =
     if db == DatabaseKind.PostgreSQL then
         case value of
-            JsValue.String s ->
+            DbString s ->
                 "'" ++ s ++ "'"
 
-            JsValue.Int i ->
+            DbInt i ->
                 String.fromInt i
 
-            JsValue.Float f ->
+            DbFloat f ->
                 String.fromFloat f
 
-            JsValue.Bool b ->
+            DbBool b ->
                 Bool.cond b "true" "false"
 
-            JsValue.Null ->
+            DbNull ->
                 "null"
 
             _ ->
-                "'" ++ JsValue.toJson value ++ "'"
+                "'" ++ DbValue.toJson value ++ "'"
 
     else
         ""
@@ -410,7 +410,7 @@ encodeColumnMatch : ColumnMatch -> Value
 encodeColumnMatch value =
     Encode.object
         [ ( "column", value.column |> ColumnPath.encode )
-        , ( "value", value.value |> JsValue.encode )
+        , ( "value", value.value |> DbValue.encode )
         ]
 
 
@@ -418,4 +418,4 @@ decodeColumnMatch : Decoder ColumnMatch
 decodeColumnMatch =
     Decode.map2 ColumnMatch
         (Decode.field "column" ColumnPath.decode)
-        (Decode.field "value" JsValue.decode)
+        (Decode.field "value" DbValue.decode)

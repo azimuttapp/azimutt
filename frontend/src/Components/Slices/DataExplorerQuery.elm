@@ -27,7 +27,7 @@ import Libs.String as String
 import Libs.Tailwind exposing (TwClass, focus)
 import Libs.Time as Time
 import Models.DbSourceInfo as DbSourceInfo exposing (DbSourceInfo)
-import Models.JsValue as JsValue exposing (JsValue)
+import Models.DbValue as DbValue exposing (DbValue(..))
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.ColumnType exposing (ColumnType)
@@ -411,10 +411,10 @@ filterValues search items =
     if String.length search > 0 then
         let
             ( exactMatch, noMatch ) =
-                items |> List.partition (Dict.any (\_ -> JsValue.toString >> String.contains search))
+                items |> List.partition (Dict.any (\_ -> DbValue.toString >> String.contains search))
 
             ( fuzzyMatch, _ ) =
-                noMatch |> List.partition (Dict.any (\_ -> JsValue.toString >> Simple.Fuzzy.match search))
+                noMatch |> List.partition (Dict.any (\_ -> DbValue.toString >> Simple.Fuzzy.match search))
         in
         exactMatch ++ fuzzyMatch
 
@@ -424,7 +424,7 @@ filterValues search items =
 
 sortValues : Maybe String -> List QueryResultRow -> List QueryResultRow
 sortValues sort items =
-    sort |> Maybe.mapOrElse (extractSort >> (\( col, dir ) -> items |> List.sortWith (\a b -> compareMaybe JsValue.compare (a |> Dict.get col) (b |> Dict.get col) |> Order.dir dir))) items
+    sort |> Maybe.mapOrElse (extractSort >> (\( col, dir ) -> items |> List.sortWith (\a b -> compareMaybe DbValue.compare (a |> Dict.get col) (b |> Dict.get col) |> Order.dir dir))) items
 
 
 extractSort : String -> ( String, Bool )
@@ -565,8 +565,8 @@ docUsersSuccess : State
 docUsersSuccess =
     { columns = [ "id", "slug", "name", "email", "provider", "provider_uid", "avatar", "github_username", "twitter_username", "is_admin", "hashed_password", "last_signin", "created_at", "updated_at", "confirmed_at", "deleted_at", "data", "onboarding", "provider_data", "tags" ] |> List.map (docColumn "public" "users")
     , rows =
-        [ docUsersColumnValues "4a3ea674-cff6-44de-b217-3befbe907a95" "admin" "Azimutt Admin" "admin@azimutt.app" Nothing Nothing "https://robohash.org/set_set3/bgset_bg2/VghiKo" (Just "azimuttapp") (Just "azimuttapp") True (Just "$2b$12$5TukDUCUtXm1zu0TECv34eg8SHueHqXUGQ9pvDZA55LUnH30ZEpUa") "2023-04-26T18:28:27.343Z" "2023-04-26T18:28:27.355Z" "2023-04-26T18:28:27.355Z" "2023-04-26T18:28:27.343Z" Nothing (Dict.fromList [ ( "attributed_from", JsValue.String "root" ), ( "attributed_to", JsValue.Null ) ]) Dict.empty [ JsValue.String "admin" ]
-        , docUsersColumnValues "11bd9544-d56a-43d7-9065-6f1f25addf8a" "loicknuchel" "Loïc Knuchel" "loicknuchel@gmail.com" (Just "github") (Just "653009") "https://avatars.githubusercontent.com/u/653009?v=4" (Just "loicknuchel") (Just "loicknuchel") True Nothing "2023-04-27T15:55:11.582Z" "2023-04-27T15:55:11.612Z" "2023-07-19T18:57:53.438Z" "2023-04-27T15:55:11.582Z" Nothing (Dict.fromList [ ( "attributed_from", JsValue.Null ), ( "attributed_to", JsValue.Null ) ]) Dict.empty [ JsValue.Null, JsValue.String "user" ]
+        [ docUsersColumnValues "4a3ea674-cff6-44de-b217-3befbe907a95" "admin" "Azimutt Admin" "admin@azimutt.app" Nothing Nothing "https://robohash.org/set_set3/bgset_bg2/VghiKo" (Just "azimuttapp") (Just "azimuttapp") True (Just "$2b$12$5TukDUCUtXm1zu0TECv34eg8SHueHqXUGQ9pvDZA55LUnH30ZEpUa") "2023-04-26T18:28:27.343Z" "2023-04-26T18:28:27.355Z" "2023-04-26T18:28:27.355Z" "2023-04-26T18:28:27.343Z" Nothing (Dict.fromList [ ( "attributed_from", DbString "root" ), ( "attributed_to", DbNull ) ]) Dict.empty [ DbString "admin" ]
+        , docUsersColumnValues "11bd9544-d56a-43d7-9065-6f1f25addf8a" "loicknuchel" "Loïc Knuchel" "loicknuchel@gmail.com" (Just "github") (Just "653009") "https://avatars.githubusercontent.com/u/653009?v=4" (Just "loicknuchel") (Just "loicknuchel") True Nothing "2023-04-27T15:55:11.582Z" "2023-04-27T15:55:11.612Z" "2023-07-19T18:57:53.438Z" "2023-04-27T15:55:11.582Z" Nothing (Dict.fromList [ ( "attributed_from", DbNull ), ( "attributed_to", DbNull ) ]) Dict.empty [ DbNull, DbString "user" ]
         ]
     }
         |> initSuccess Time.zero Time.zero
@@ -595,36 +595,36 @@ docColumn schema table column =
 
 docCityColumnValues : Int -> String -> String -> String -> Int -> QueryResultRow
 docCityColumnValues id name country_code district population =
-    Dict.fromList [ ( "id", JsValue.Int id ), ( "name", JsValue.String name ), ( "country_code", JsValue.String country_code ), ( "district", JsValue.String district ), ( "population", JsValue.Int population ) ]
+    Dict.fromList [ ( "id", DbInt id ), ( "name", DbString name ), ( "country_code", DbString country_code ), ( "district", DbString district ), ( "population", DbInt population ) ]
 
 
 docProjectsColumnValues : String -> String -> String -> String -> String -> String -> QueryResultRow
 docProjectsColumnValues id organization_id slug name created_by created_at =
-    [ ( "id", id ), ( "organization_id", organization_id ), ( "slug", slug ), ( "name", name ), ( "created_by", created_by ), ( "created_at", created_at ) ] |> List.map (\( key, value ) -> ( key, JsValue.String value )) |> Dict.fromList
+    [ ( "id", id ), ( "organization_id", organization_id ), ( "slug", slug ), ( "name", name ), ( "created_by", created_by ), ( "created_at", created_at ) ] |> List.map (\( key, value ) -> ( key, DbString value )) |> Dict.fromList
 
 
-docUsersColumnValues : String -> String -> String -> String -> Maybe String -> Maybe String -> String -> Maybe String -> Maybe String -> Bool -> Maybe String -> String -> String -> String -> String -> Maybe String -> Dict String JsValue -> Dict String JsValue -> List JsValue -> QueryResultRow
+docUsersColumnValues : String -> String -> String -> String -> Maybe String -> Maybe String -> String -> Maybe String -> Maybe String -> Bool -> Maybe String -> String -> String -> String -> String -> Maybe String -> Dict String DbValue -> Dict String DbValue -> List DbValue -> QueryResultRow
 docUsersColumnValues id slug name email provider provider_uid avatar github_username twitter_username is_admin hashed_password last_signin created_at updated_at confirmed_at deleted_at data provider_data tags =
     let
-        str : List ( String, JsValue )
+        str : List ( String, DbValue )
         str =
-            [ ( "id", id ), ( "slug", slug ), ( "name", name ), ( "email", email ), ( "avatar", avatar ), ( "last_signin", last_signin ), ( "created_at", created_at ), ( "updated_at", updated_at ), ( "confirmed_at", confirmed_at ) ] |> List.map (\( key, value ) -> ( key, JsValue.String value ))
+            [ ( "id", id ), ( "slug", slug ), ( "name", name ), ( "email", email ), ( "avatar", avatar ), ( "last_signin", last_signin ), ( "created_at", created_at ), ( "updated_at", updated_at ), ( "confirmed_at", confirmed_at ) ] |> List.map (\( key, value ) -> ( key, DbString value ))
 
-        strOpt : List ( String, JsValue )
+        strOpt : List ( String, DbValue )
         strOpt =
-            [ ( "provider", provider ), ( "provider_uid", provider_uid ), ( "github_username", github_username ), ( "twitter_username", twitter_username ), ( "hashed_password", hashed_password ), ( "deleted_at", deleted_at ) ] |> List.map (\( key, value ) -> ( key, value |> Maybe.mapOrElse (\v -> JsValue.String v) JsValue.Null ))
+            [ ( "provider", provider ), ( "provider_uid", provider_uid ), ( "github_username", github_username ), ( "twitter_username", twitter_username ), ( "hashed_password", hashed_password ), ( "deleted_at", deleted_at ) ] |> List.map (\( key, value ) -> ( key, value |> Maybe.mapOrElse (\v -> DbString v) DbNull ))
 
-        bool : List ( String, JsValue )
+        bool : List ( String, DbValue )
         bool =
-            [ ( "is_admin", is_admin ) ] |> List.map (\( key, value ) -> ( key, JsValue.Bool value ))
+            [ ( "is_admin", is_admin ) ] |> List.map (\( key, value ) -> ( key, DbBool value ))
 
-        arr : List ( String, JsValue )
+        arr : List ( String, DbValue )
         arr =
-            [ ( "tags", tags ) ] |> List.map (\( key, value ) -> ( key, JsValue.Array value ))
+            [ ( "tags", tags ) ] |> List.map (\( key, value ) -> ( key, DbArray value ))
 
-        obj : List ( String, JsValue )
+        obj : List ( String, DbValue )
         obj =
-            [ ( "data", data ), ( "provider_data", provider_data ) ] |> List.map (\( key, value ) -> ( key, JsValue.Object value ))
+            [ ( "data", data ), ( "provider_data", provider_data ) ] |> List.map (\( key, value ) -> ( key, DbObject value ))
     in
     Dict.fromList (str ++ strOpt ++ bool ++ arr ++ obj)
 

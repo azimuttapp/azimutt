@@ -28,7 +28,7 @@ import Libs.String as String
 import Libs.Tailwind exposing (TwClass, focus)
 import Libs.Time as Time
 import Models.DbSourceInfo as DbSourceInfo exposing (DbSourceInfo)
-import Models.JsValue as JsValue
+import Models.DbValue as DbValue exposing (DbValue(..))
 import Models.Position as Position
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnType exposing (ColumnType)
@@ -167,7 +167,7 @@ mapSuccess f state =
 
 view : (Msg -> msg) -> (HtmlId -> msg) -> msg -> Time.Posix -> SchemaName -> HtmlId -> HtmlId -> List Source -> TableRow -> Html msg
 view wrap toggleDropdown delete now defaultSchema openedDropdown htmlId sources model =
-    div [ class "max-w-xs border text-xs" ]
+    div [ class "max-w-xs bg-white text-default-500 text-xs border" ]
         [ viewHeader wrap toggleDropdown delete defaultSchema openedDropdown (htmlId ++ "-header") model.query
         , case model.state of
             StateLoading s ->
@@ -195,7 +195,7 @@ viewHeader wrap toggleDropdown delete defaultSchema openedDropdown htmlId query 
 
         filter : String
         filter =
-            query.primaryKey |> Nel.toList |> List.map (.value >> JsValue.toString) |> String.join "/"
+            query.primaryKey |> Nel.toList |> List.map (.value >> DbValue.toString) |> String.join "/"
     in
     div [ class "p-2 flex items-center bg-default-50 border-b border-gray-200" ]
         [ div [ title (table ++ ": " ++ filter), class "flex-grow text-center truncate" ] [ bText table, text (": " ++ filter) ]
@@ -226,7 +226,7 @@ viewHeader wrap toggleDropdown delete defaultSchema openedDropdown htmlId query 
 
 viewLoading : LoadingState -> Html msg
 viewLoading res =
-    div [ class "p-3 bg-white" ]
+    div [ class "p-3" ]
         [ p [ class "text-sm font-semibold text-gray-900" ] [ Icon.loading "mr-2 inline animate-spin", text "Loading..." ]
         , viewQuery "mt-2 px-3 py-2 text-sm" res.query
         ]
@@ -234,11 +234,11 @@ viewLoading res =
 
 viewFailure : FailureState -> Html msg
 viewFailure res =
-    div [ class "p-3 bg-white" ]
+    div [ class "p-3" ]
         [ p [ class "text-sm font-semibold text-gray-900" ] [ text "Error" ]
-        , div [ class "mt-1 px-6 py-4 block text-sm overflow-x-auto rounded bg-red-50 border border-red-200" ] [ text res.error ]
+        , div [ class "mt-1 px-6 py-4 block overflow-x-auto rounded bg-red-50 border border-red-200" ] [ text res.error ]
         , p [ class "mt-3 text-sm font-semibold text-gray-900" ] [ text "SQL" ]
-        , viewQuery "mt-1 px-3 py-2 text-sm" res.query
+        , viewQuery "mt-1 px-3 py-2" res.query
         ]
 
 
@@ -248,16 +248,16 @@ viewSuccess wrap res =
         ( hiddenValues, values ) =
             res.values |> List.partition (\v -> res.hidden |> Set.member v.column)
     in
-    div [ class "bg-white" ]
+    div []
         [ Keyed.node "dl" [ class "divide-y divide-gray-200" ] (values |> List.map (\v -> ( v.column, viewValue wrap v )))
-        , if List.length hiddenValues > 0 then
-            div [ onClick (ToggleHiddenValues |> wrap), class "px-2 py-1 font-medium text-gray-500 cursor-pointer opacity-75" ]
+        , if hiddenValues |> List.isEmpty |> not then
+            div [ onClick (ToggleHiddenValues |> wrap), class "px-2 py-1 font-medium border-t border-gray-200 opacity-75 cursor-pointer" ]
                 [ text ("... " ++ (hiddenValues |> String.pluralizeL " more value")) ]
 
           else
             div [] []
-        , if res.showHidden then
-            Keyed.node "dl" [ class "divide-y divide-gray-200 border-t border-b border-gray-200 opacity-50" ] (hiddenValues |> List.map (\v -> ( v.column, viewValue wrap v )))
+        , if res.showHidden && (hiddenValues |> List.isEmpty |> not) then
+            Keyed.node "dl" [ class "divide-y divide-gray-200 border-t border-gray-200 opacity-50" ] (hiddenValues |> List.map (\v -> ( v.column, viewValue wrap v )))
 
           else
             dl [] []
@@ -267,9 +267,9 @@ viewSuccess wrap res =
 viewValue : (Msg -> msg) -> TableRowValue -> Html msg
 viewValue wrap value =
     div [ onDblClick (\_ -> ToggleValue value.column |> wrap) Platform.PC, class "px-2 py-1 flex justify-between font-medium hover:bg-gray-50" ]
-        [ dt [ class "text-gray-500" ] [ text value.column ]
-        , dd [ title (JsValue.toString value.value), class "ml-3 text-gray-900 truncate" ]
-            [ text (JsValue.toJson value.value)
+        [ dt [] [ text value.column ]
+        , dd [ title (DbValue.toString value.value), class "ml-3 opacity-50 truncate" ]
+            [ text (DbValue.toJson value.value)
             ]
         ]
 
@@ -294,7 +294,7 @@ viewFooter now sources model =
                 StateSuccess s ->
                     s.loadedAt
     in
-    div [ class "px-3 py-1 bg-default-50 text-gray-500 text-right italic border-t border-gray-200" ]
+    div [ class "px-3 py-1 bg-default-50 text-right italic border-t border-gray-200" ]
         [ text "from "
         , sources |> List.findBy .id model.source |> Maybe.mapOrElse (\s -> text s.name) (span [ title (SourceId.toString model.source) ] [ text "unknown source" ])
         , text " "
@@ -341,29 +341,29 @@ docSuccessUser =
     , position = Position.zeroGrid
     , size = Size.zeroCanvas
     , source = SourceId.zero
-    , query = { table = ( "public", "users" ), primaryKey = Nel { column = Nel "id" [], value = JsValue.String "11bd9544-d56a-43d7-9065-6f1f25addf8a" } [] }
+    , query = { table = ( "public", "users" ), primaryKey = Nel { column = Nel "id" [], value = DbString "11bd9544-d56a-43d7-9065-6f1f25addf8a" } [] }
     , state =
         StateSuccess
             { values =
-                [ { column = "id", value = JsValue.String "11bd9544-d56a-43d7-9065-6f1f25addf8a" }
-                , { column = "slug", value = JsValue.String "loicknuchel" }
-                , { column = "name", value = JsValue.String "Loïc Knuchel" }
-                , { column = "email", value = JsValue.String "loicknuchel@gmail.com" }
-                , { column = "provider", value = JsValue.String "github" }
-                , { column = "provider_uid", value = JsValue.String "653009" }
-                , { column = "avatar", value = JsValue.String "https://avatars.githubusercontent.com/u/653009?v=4" }
-                , { column = "github_username", value = JsValue.String "loicknuchel" }
-                , { column = "twitter_username", value = JsValue.String "loicknuchel" }
-                , { column = "is_admin", value = JsValue.Bool True }
-                , { column = "hashed_password", value = JsValue.Null }
-                , { column = "last_signin", value = JsValue.String "2023-04-27 17:55:11.582485" }
-                , { column = "created_at", value = JsValue.String "2023-04-27 17:55:11.612429" }
-                , { column = "updated_at", value = JsValue.String "2023-07-19 20:57:53.438550" }
-                , { column = "confirmed_at", value = JsValue.String "2023-04-27 17:55:11.582485" }
-                , { column = "deleted_at", value = JsValue.Null }
-                , { column = "data", value = JsValue.Object (Dict.fromList [ ( "attributed_to", JsValue.Null ), ( "attributed_from", JsValue.Null ) ]) }
-                , { column = "onboarding", value = JsValue.Null }
-                , { column = "provider_data", value = JsValue.Object (Dict.fromList [ ( "id", JsValue.Int 653009 ), ( "bio", JsValue.String "Principal engineer at Doctolib" ), ( "blog", JsValue.String "https://loicknuchel.fr" ), ( "plan", JsValue.Object (Dict.fromList [ ( "name", JsValue.String "free" ) ]) ) ]) }
+                [ { column = "id", value = DbString "11bd9544-d56a-43d7-9065-6f1f25addf8a" }
+                , { column = "slug", value = DbString "loicknuchel" }
+                , { column = "name", value = DbString "Loïc Knuchel" }
+                , { column = "email", value = DbString "loicknuchel@gmail.com" }
+                , { column = "provider", value = DbString "github" }
+                , { column = "provider_uid", value = DbString "653009" }
+                , { column = "avatar", value = DbString "https://avatars.githubusercontent.com/u/653009?v=4" }
+                , { column = "github_username", value = DbString "loicknuchel" }
+                , { column = "twitter_username", value = DbString "loicknuchel" }
+                , { column = "is_admin", value = DbBool True }
+                , { column = "hashed_password", value = DbNull }
+                , { column = "last_signin", value = DbString "2023-04-27 17:55:11.582485" }
+                , { column = "created_at", value = DbString "2023-04-27 17:55:11.612429" }
+                , { column = "updated_at", value = DbString "2023-07-19 20:57:53.438550" }
+                , { column = "confirmed_at", value = DbString "2023-04-27 17:55:11.582485" }
+                , { column = "deleted_at", value = DbNull }
+                , { column = "data", value = DbObject (Dict.fromList [ ( "attributed_to", DbNull ), ( "attributed_from", DbNull ) ]) }
+                , { column = "onboarding", value = DbNull }
+                , { column = "provider_data", value = DbObject (Dict.fromList [ ( "id", DbInt 653009 ), ( "bio", DbString "Principal engineer at Doctolib" ), ( "blog", DbString "https://loicknuchel.fr" ), ( "plan", DbObject (Dict.fromList [ ( "name", DbString "free" ) ]) ) ]) }
                 ]
             , hidden = Set.fromList [ "provider", "provider_uid", "last_signin", "created_at", "updated_at", "confirmed_at", "deleted_at", "hashed_password" ]
             , expanded = Set.empty
@@ -380,18 +380,18 @@ docSuccessEvent =
     , position = Position.zeroGrid
     , size = Size.zeroCanvas
     , source = docSource1.id
-    , query = { table = ( "public", "events" ), primaryKey = Nel { column = Nel "id" [], value = JsValue.String "dcecf4fe-aa35-44fb-a90c-eba7d2103f4e" } [] }
+    , query = { table = ( "public", "events" ), primaryKey = Nel { column = Nel "id" [], value = DbString "dcecf4fe-aa35-44fb-a90c-eba7d2103f4e" } [] }
     , state =
         StateSuccess
             { values =
-                [ { column = "id", value = JsValue.String "dcecf4fe-aa35-44fb-a90c-eba7d2103f4e" }
-                , { column = "name", value = JsValue.String "editor_source_created" }
-                , { column = "data", value = JsValue.Null }
-                , { column = "details", value = JsValue.Object (Dict.fromList [ ( "kind", JsValue.String "DatabaseConnection" ), ( "format", JsValue.String "database" ), ( "nb_table", JsValue.Int 12 ), ( "nb_relation", JsValue.Int 25 ) ]) }
-                , { column = "created_by", value = JsValue.String "11bd9544-d56a-43d7-9065-6f1f25addf8a" }
-                , { column = "created_at", value = JsValue.String "2023-04-29 15:25:40.659800" }
-                , { column = "organization_id", value = JsValue.String "2d803b04-90d7-4e05-940f-5e887470b595" }
-                , { column = "project_id", value = JsValue.String "a2cf8a87-0316-40eb-98ce-72659dae9420" }
+                [ { column = "id", value = DbString "dcecf4fe-aa35-44fb-a90c-eba7d2103f4e" }
+                , { column = "name", value = DbString "editor_source_created" }
+                , { column = "data", value = DbNull }
+                , { column = "details", value = DbObject (Dict.fromList [ ( "kind", DbString "DatabaseConnection" ), ( "format", DbString "database" ), ( "nb_table", DbInt 12 ), ( "nb_relation", DbInt 25 ) ]) }
+                , { column = "created_by", value = DbString "11bd9544-d56a-43d7-9065-6f1f25addf8a" }
+                , { column = "created_at", value = DbString "2023-04-29 15:25:40.659800" }
+                , { column = "organization_id", value = DbString "2d803b04-90d7-4e05-940f-5e887470b595" }
+                , { column = "project_id", value = DbString "a2cf8a87-0316-40eb-98ce-72659dae9420" }
                 ]
             , hidden = Set.fromList []
             , expanded = Set.empty
@@ -408,7 +408,7 @@ docLoading =
     , position = Position.zeroGrid
     , size = Size.zeroCanvas
     , source = docSource1.id
-    , query = { table = ( "public", "events" ), primaryKey = Nel { column = Nel "id" [], value = JsValue.String "dcecf4fe-aa35-44fb-a90c-eba7d2103f4e" } [] }
+    , query = { table = ( "public", "events" ), primaryKey = Nel { column = Nel "id" [], value = DbString "dcecf4fe-aa35-44fb-a90c-eba7d2103f4e" } [] }
     , state = StateLoading { query = "SELECT * FROM public.events WHERE id='dcecf4fe-aa35-44fb-a90c-eba7d2103f4e';", startedAt = Time.millisToPosix 1691079663421 }
     }
 
@@ -419,7 +419,7 @@ docFailure =
     , position = Position.zeroGrid
     , size = Size.zeroCanvas
     , source = docSource1.id
-    , query = { table = ( "public", "events" ), primaryKey = Nel { column = Nel "id" [], value = JsValue.String "dcecf4fe-aa35-44fb-a90c-eba7d2103f4e" } [] }
+    , query = { table = ( "public", "events" ), primaryKey = Nel { column = Nel "id" [], value = DbString "dcecf4fe-aa35-44fb-a90c-eba7d2103f4e" } [] }
     , state = StateFailure { query = "SELECT * FROM public.event WHERE id='dcecf4fe-aa35-44fb-a90c-eba7d2103f4e';", error = "relation \"public.event\" does not exist", startedAt = Time.millisToPosix 1691079663421, failedAt = Time.millisToPosix 1691079663421 }
     }
 

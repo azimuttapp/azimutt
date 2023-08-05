@@ -9,7 +9,7 @@ import Libs.Maybe as Maybe
 import Libs.Nel exposing (Nel)
 import Libs.Result as Result
 import Libs.Time as Time
-import Models.JsValue as JsValue exposing (JsValue)
+import Models.DbValue as DbValue exposing (DbValue)
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
 import Models.Project.ColumnType exposing (ColumnType)
 import Models.Project.Relation exposing (Relation)
@@ -38,7 +38,7 @@ type alias QueryResultColumn =
 
 
 type alias QueryResultRow =
-    Dict String JsValue
+    Dict String DbValue
 
 
 type alias QueryResultColumnTarget =
@@ -88,7 +88,7 @@ decodeSuccess : Decode.Decoder QueryResultSuccess
 decodeSuccess =
     Decode.map2 QueryResultSuccess
         (Decode.field "columns" (Decode.list decodeColumn))
-        (Decode.field "rows" (Decode.list (Decode.dict JsValue.decode)))
+        (Decode.field "rows" (Decode.list (Decode.dict DbValue.decode)))
 
 
 decodeColumn : Decode.Decoder QueryResultColumn

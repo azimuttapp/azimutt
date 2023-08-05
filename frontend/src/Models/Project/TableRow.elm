@@ -6,7 +6,7 @@ import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Time as Time
-import Models.JsValue as JsValue exposing (JsValue)
+import Models.DbValue as DbValue exposing (DbValue)
 import Models.Position as Position
 import Models.Project.ColumnName as ColumnName exposing (ColumnName)
 import Models.Project.SourceId as SourceId exposing (SourceId)
@@ -55,7 +55,7 @@ type alias SuccessState =
 
 
 type alias TableRowValue =
-    { column : ColumnName, value : JsValue }
+    { column : ColumnName, value : DbValue }
 
 
 toHtmlId : TableRow -> HtmlId
@@ -169,7 +169,7 @@ encodeTableRowValue : TableRowValue -> Value
 encodeTableRowValue value =
     Encode.object
         [ ( "column", value.column |> ColumnName.encode )
-        , ( "value", value.value |> JsValue.encode )
+        , ( "value", value.value |> DbValue.encode )
         ]
 
 
@@ -177,4 +177,4 @@ decodeTableRowValue : Decoder TableRowValue
 decodeTableRowValue =
     Decode.map2 TableRowValue
         (Decode.field "column" ColumnName.decode)
-        (Decode.field "value" JsValue.decode)
+        (Decode.field "value" DbValue.decode)

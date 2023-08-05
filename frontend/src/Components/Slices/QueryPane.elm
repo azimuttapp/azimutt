@@ -20,7 +20,7 @@ import Libs.Result as Result
 import Libs.Tailwind as Tw
 import Libs.Task as T
 import Libs.Time as Time
-import Models.JsValue as JsValue exposing (JsValue)
+import Models.DbValue as DbValue exposing (DbValue(..))
 import Models.Project.Source as Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.SourceKind exposing (SourceKind(..))
@@ -268,13 +268,13 @@ viewQueryResults wrap htmlId display model =
                             viewQueryResultsTable DisplayTable res.columns res.rows
 
                         DisplayDocument ->
-                            viewQueryResultsTable DisplayDocument [ { name = "document", ref = Nothing } ] (res.rows |> List.map (\r -> Dict.fromList [ ( "document", JsValue.Object r ) ]))
+                            viewQueryResultsTable DisplayDocument [ { name = "document", ref = Nothing } ] (res.rows |> List.map (\r -> Dict.fromList [ ( "document", DbObject r ) ]))
                     ]
                 )
         )
 
 
-viewQueryResultsTable : DisplayMode -> List QueryResultColumn -> List (Dict String JsValue) -> Html msg
+viewQueryResultsTable : DisplayMode -> List QueryResultColumn -> List (Dict String DbValue) -> Html msg
 viewQueryResultsTable display columns rows =
     table [ class "min-w-full divide-y divide-gray-300" ]
         [ thead [] [ viewQueryResultsTableHeader columns ]
@@ -293,29 +293,29 @@ viewQueryResultsTableHeader columns =
         )
 
 
-viewQueryResultsTableRow : DisplayMode -> List QueryResultColumn -> Int -> Dict String JsValue -> Html msg
+viewQueryResultsTableRow : DisplayMode -> List QueryResultColumn -> Int -> Dict String DbValue -> Html msg
 viewQueryResultsTableRow display columns i row =
     let
-        rest : Dict String JsValue
+        rest : Dict String DbValue
         rest =
             row |> Dict.filter (\k _ -> columns |> List.memberBy .name k |> not)
     in
     tr [ class "hover:bg-gray-100", classList [ ( "bg-gray-50", modBy 2 i == 1 ) ] ]
-        ([ viewQueryResultsRowValue display (JsValue.Int (i + 1) |> Just) ]
+        ([ viewQueryResultsRowValue display (DbInt (i + 1) |> Just) ]
             ++ (columns |> List.map (\col -> row |> Dict.get col.name |> viewQueryResultsRowValue display))
-            ++ Bool.cond (rest |> Dict.isEmpty) [] [ viewQueryResultsRowValue display (rest |> JsValue.Object |> Just) ]
+            ++ Bool.cond (rest |> Dict.isEmpty) [] [ viewQueryResultsRowValue display (rest |> DbObject |> Just) ]
         )
 
 
-viewQueryResultsRowValue : DisplayMode -> Maybe JsValue -> Html msg
+viewQueryResultsRowValue : DisplayMode -> Maybe DbValue -> Html msg
 viewQueryResultsRowValue display value =
-    td [ title (value |> Maybe.mapOrElse JsValue.toJson ""), class "max-w-xs truncate p-1 whitespace-nowrap align-top text-left text-xs font-mono text-gray-500" ]
+    td [ title (value |> Maybe.mapOrElse DbValue.toJson ""), class "max-w-xs truncate p-1 whitespace-nowrap align-top text-left text-xs font-mono text-gray-500" ]
         [ case display of
             DisplayTable ->
-                JsValue.view value
+                DbValue.view value
 
             DisplayDocument ->
-                JsValue.viewRaw value
+                DbValue.viewRaw value
         ]
 
 
@@ -394,8 +394,8 @@ docResults =
             Ok
                 { columns = docColumns
                 , rows =
-                    [ Dict.fromList [ ( "id", JsValue.Int 3 ), ( "name", JsValue.String "Loïc" ) ]
-                    , Dict.fromList [ ( "id", JsValue.Int 4 ), ( "name", JsValue.String "Samir" ), ( "data", JsValue.Object (Dict.fromList [ ( "affiliation", JsValue.String "github" ) ]) ) ]
+                    [ Dict.fromList [ ( "id", DbInt 3 ), ( "name", DbString "Loïc" ) ]
+                    , Dict.fromList [ ( "id", DbInt 4 ), ( "name", DbString "Samir" ), ( "data", DbObject (Dict.fromList [ ( "affiliation", DbString "github" ) ]) ) ]
                     ]
                 }
     }

@@ -17,7 +17,7 @@ import Libs.Result as Result
 import Libs.Set as Set
 import Libs.Time as Time
 import Models.DbSourceInfo as DbSourceInfo exposing (DbSourceInfo)
-import Models.JsValue as JsValue exposing (JsValue)
+import Models.DbValue as DbValue exposing (DbValue(..))
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.SchemaName exposing (SchemaName)
@@ -160,7 +160,7 @@ viewSlideOverContent wrap close openRow addToLayout defaultSchema source titleId
     let
         panelTitle : String
         panelTitle =
-            TableId.show defaultSchema model.query.table ++ ": " ++ (model.query.primaryKey |> Nel.toList |> List.map (.value >> JsValue.toString) |> String.join "/")
+            TableId.show defaultSchema model.query.table ++ ": " ++ (model.query.primaryKey |> Nel.toList |> List.map (.value >> DbValue.toString) |> String.join "/")
     in
     div [ class "flex h-full flex-col overflow-y-auto bg-white shadow-xl" ]
         [ div [ class "p-6 bg-indigo-700" ]
@@ -263,7 +263,7 @@ docButton name msg =
 
 docModel : Model
 docModel =
-    init 1 docSource { table = ( "public", "city" ), primaryKey = Nel { column = Nel "id" [], value = JsValue.Int 1 } [] } |> Tuple.first
+    init 1 docSource { table = ( "public", "city" ), primaryKey = Nel { column = Nel "id" [], value = DbInt 1 } [] } |> Tuple.first
 
 
 docSource : DbSourceInfo
@@ -293,7 +293,7 @@ docColumn schema table column =
 
 docCityColumnValues : Int -> String -> String -> String -> Int -> QueryResultRow
 docCityColumnValues id name country_code district population =
-    [ ( "id", JsValue.Int id ), ( "name", JsValue.String name ), ( "country_code", JsValue.String country_code ), ( "district", JsValue.String district ), ( "population", JsValue.Int population ) ] ++ (List.range 1 15 |> List.map (\i -> ( "col" ++ String.fromInt i, JsValue.String ("value" ++ String.fromInt i) ))) |> Dict.fromList
+    [ ( "id", DbInt id ), ( "name", DbString name ), ( "country_code", DbString country_code ), ( "district", DbString district ), ( "population", DbInt population ) ] ++ (List.range 1 15 |> List.map (\i -> ( "col" ++ String.fromInt i, DbString ("value" ++ String.fromInt i) ))) |> Dict.fromList
 
 
 

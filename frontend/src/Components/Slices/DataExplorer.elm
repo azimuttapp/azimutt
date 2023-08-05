@@ -23,7 +23,7 @@ import Libs.Ned as Ned exposing (Ned)
 import Libs.Tailwind as Tw exposing (TwClass)
 import Models.DbSource as DbSource exposing (DbSource)
 import Models.DbSourceInfo as DbSourceInfo exposing (DbSourceInfo)
-import Models.JsValue as JsValue exposing (JsValue)
+import Models.DbValue as DbValue exposing (DbValue(..))
 import Models.Project.Column as Column exposing (Column, NestedColumns(..))
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
@@ -95,7 +95,7 @@ type Msg
     | AddFilter Table ColumnPath
     | UpdateFilterOperator Int QueryBuilder.FilterOperator
     | UpdateFilterOperation Int QueryBuilder.FilterOperation
-    | UpdateFilterValue Int JsValue
+    | UpdateFilterValue Int DbValue
     | DeleteFilter Int
     | UpdateQuery String
     | RunQuery DbSource String
@@ -167,7 +167,7 @@ update sources msg model =
             ( { model | visualEditor = { table = table, filters = [] } }, Cmd.none )
 
         AddFilter table path ->
-            ( table |> Table.getColumn path |> Maybe.mapOrElse (\col -> model |> mapVisualEditor (mapFilters (List.add { operator = QueryBuilder.OpAnd, column = path, kind = col.kind, nullable = col.nullable, operation = QueryBuilder.OpEqual, value = JsValue.String "" }))) model, Cmd.none )
+            ( table |> Table.getColumn path |> Maybe.mapOrElse (\col -> model |> mapVisualEditor (mapFilters (List.add { operator = QueryBuilder.OpAnd, column = path, kind = col.kind, nullable = col.nullable, operation = QueryBuilder.OpEqual, value = DbString "" }))) model, Cmd.none )
 
         UpdateFilterOperator i operator ->
             ( model |> mapVisualEditor (mapFilters (List.mapAt i (setOperator operator))), Cmd.none )
@@ -417,8 +417,8 @@ viewVisualExplorerFilterShow wrap htmlId filters =
                                         input
                                             [ type_ "text"
                                             , name (htmlId ++ "-" ++ String.fromInt i ++ "-value")
-                                            , value (f.value |> JsValue.toString)
-                                            , onInput (JsValue.fromString f.kind >> UpdateFilterValue i >> wrap)
+                                            , value (f.value |> DbValue.toString)
+                                            , onInput (DbValue.fromString f.kind >> UpdateFilterValue i >> wrap)
                                             , class "block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                                             ]
                                             []

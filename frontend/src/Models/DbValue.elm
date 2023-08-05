@@ -1,4 +1,4 @@
-module Models.JsValue exposing (JsValue(..), compare, decode, encode, fromString, isArray, isObject, toJson, toString, view, viewRaw)
+module Models.DbValue exposing (DbValue(..), compare, decode, encode, fromString, isArray, isObject, toJson, toString, view, viewRaw)
 
 import Dict exposing (Dict)
 import Html exposing (Html, pre, span, text)
@@ -12,223 +12,218 @@ import Libs.Order exposing (compareBool, compareDict, compareList)
 import Models.Project.ColumnType as ColumnType exposing (ColumnType)
 
 
-
--- represent a JSON value
--- TODO: add tests
-
-
-type JsValue
-    = String String
-    | Int Int
-    | Float Float
-    | Bool Bool
-    | Null
-    | Array (List JsValue)
-    | Object (Dict String JsValue)
+type DbValue
+    = DbString String
+    | DbInt Int
+    | DbFloat Float
+    | DbBool Bool
+    | DbNull
+    | DbArray (List DbValue)
+    | DbObject (Dict String DbValue)
 
 
-isArray : JsValue -> Bool
+isArray : DbValue -> Bool
 isArray value =
     case value of
-        Array _ ->
+        DbArray _ ->
             True
 
         _ ->
             False
 
 
-isObject : JsValue -> Bool
+isObject : DbValue -> Bool
 isObject value =
     case value of
-        Object _ ->
+        DbObject _ ->
             True
 
         _ ->
             False
 
 
-fromString : ColumnType -> String -> JsValue
+fromString : ColumnType -> String -> DbValue
 fromString kind value =
     case ColumnType.parse kind of
         ColumnType.Int ->
-            value |> String.toInt |> Maybe.map Int |> Maybe.withDefault (String value)
+            value |> String.toInt |> Maybe.map DbInt |> Maybe.withDefault (DbString value)
 
         ColumnType.Float ->
-            value |> String.toFloat |> Maybe.map Float |> Maybe.withDefault (String value)
+            value |> String.toFloat |> Maybe.map DbFloat |> Maybe.withDefault (DbString value)
 
         ColumnType.Bool ->
-            value |> Bool.fromString |> Maybe.map Bool |> Maybe.withDefault (String value)
+            value |> Bool.fromString |> Maybe.map DbBool |> Maybe.withDefault (DbString value)
 
         _ ->
             if value == "null" then
-                Null
+                DbNull
 
             else
-                String value
+                DbString value
 
 
-toString : JsValue -> String
+toString : DbValue -> String
 toString value =
     case value of
-        String v ->
+        DbString v ->
             v
 
-        Int v ->
+        DbInt v ->
             String.fromInt v
 
-        Float v ->
+        DbFloat v ->
             String.fromFloat v
 
-        Bool v ->
+        DbBool v ->
             Bool.toString v
 
-        Null ->
+        DbNull ->
             "null"
 
-        Array values ->
+        DbArray values ->
             "[" ++ (values |> List.map toString |> String.join ", ") ++ "]"
 
-        Object values ->
+        DbObject values ->
             "{" ++ (values |> Dict.toList |> List.map (\( k, v ) -> k ++ ": " ++ toString v) |> String.join ", ") ++ "}"
 
 
-toJson : JsValue -> String
+toJson : DbValue -> String
 toJson value =
     case value of
-        String v ->
+        DbString v ->
             "\"" ++ (v |> String.replace "\n" "\\n") ++ "\""
 
-        Int v ->
+        DbInt v ->
             String.fromInt v
 
-        Float v ->
+        DbFloat v ->
             String.fromFloat v
 
-        Bool v ->
+        DbBool v ->
             Bool.cond v "true" "false"
 
-        Null ->
+        DbNull ->
             "null"
 
-        Array values ->
+        DbArray values ->
             "[" ++ (values |> List.map toJson |> String.join ", ") ++ "]"
 
-        Object values ->
+        DbObject values ->
             "{" ++ (values |> Dict.toList |> List.map (\( k, v ) -> k ++ ": " ++ toJson v) |> String.join ", ") ++ "}"
 
 
-compare : JsValue -> JsValue -> Order
+compare : DbValue -> DbValue -> Order
 compare value1 value2 =
     case ( value1, value2 ) of
-        ( String v1, String v2 ) ->
+        ( DbString v1, DbString v2 ) ->
             Basics.compare v1 v2
 
-        ( Int v1, Int v2 ) ->
+        ( DbInt v1, DbInt v2 ) ->
             Basics.compare v1 v2
 
-        ( Float v1, Float v2 ) ->
+        ( DbFloat v1, DbFloat v2 ) ->
             Basics.compare v1 v2
 
-        ( Bool v1, Bool v2 ) ->
+        ( DbBool v1, DbBool v2 ) ->
             compareBool v1 v2
 
-        ( Array v1, Array v2 ) ->
+        ( DbArray v1, DbArray v2 ) ->
             compareList compare v1 v2
 
-        ( Object v1, Object v2 ) ->
+        ( DbObject v1, DbObject v2 ) ->
             compareDict compare v1 v2
 
         _ ->
             EQ
 
 
-view : Maybe JsValue -> Html msg
+view : Maybe DbValue -> Html msg
 view value =
     case value of
         Just v ->
-            viewJsValue v
+            viewDbValue v
 
         Nothing ->
             text ""
 
 
-viewJsValue : JsValue -> Html msg
-viewJsValue value =
+viewDbValue : DbValue -> Html msg
+viewDbValue value =
     case value of
-        String str ->
+        DbString str ->
             text str
 
-        Int i ->
+        DbInt i ->
             text (String.fromInt i)
 
-        Float f ->
+        DbFloat f ->
             text (String.fromFloat f)
 
-        Bool b ->
+        DbBool b ->
             text (Bool.toString b)
 
-        Null ->
+        DbNull ->
             span [ class "opacity-50 italic" ] [ text "null" ]
 
-        Array a ->
-            span [] (text "[" :: (a |> List.map viewJsValue |> List.intersperse (text ", ")) |> List.add (text "]"))
+        DbArray a ->
+            span [] (text "[" :: (a |> List.map viewDbValue |> List.intersperse (text ", ")) |> List.add (text "]"))
 
-        Object o ->
-            span [] (text "{" :: (o |> Dict.toList |> List.map (\( k, v ) -> span [] [ text (k ++ ": "), viewJsValue v ]) |> List.intersperse (text ", ")) |> List.add (text "}"))
+        DbObject o ->
+            span [] (text "{" :: (o |> Dict.toList |> List.map (\( k, v ) -> span [] [ text (k ++ ": "), viewDbValue v ]) |> List.intersperse (text ", ")) |> List.add (text "}"))
 
 
-viewRaw : Maybe JsValue -> Html msg
+viewRaw : Maybe DbValue -> Html msg
 viewRaw value =
     pre [ class "text-xs" ] [ text (value |> Maybe.mapOrElse (format "  " "") "") ]
 
 
-format : String -> String -> JsValue -> String
+format : String -> String -> DbValue -> String
 format prefix nesting value =
     -- like `toString` but with line return & indentation formatting on Array & Object
     case value of
-        Array values ->
+        DbArray values ->
             "[" ++ (values |> List.map (\v -> "\n" ++ nesting ++ prefix ++ format prefix (nesting ++ prefix) v) |> String.join ",") ++ "\n" ++ nesting ++ "]"
 
-        Object values ->
+        DbObject values ->
             "{" ++ (values |> Dict.toList |> List.map (\( k, v ) -> "\n" ++ nesting ++ prefix ++ k ++ ": " ++ format prefix (nesting ++ prefix) v) |> String.join ",") ++ "\n" ++ nesting ++ "}"
 
         _ ->
             toJson value
 
 
-encode : JsValue -> Value
+encode : DbValue -> Value
 encode value =
     case value of
-        String v ->
+        DbString v ->
             Encode.string v
 
-        Int v ->
+        DbInt v ->
             Encode.int v
 
-        Float v ->
+        DbFloat v ->
             Encode.float v
 
-        Bool v ->
+        DbBool v ->
             Encode.bool v
 
-        Null ->
+        DbNull ->
             Encode.null
 
-        Array values ->
+        DbArray values ->
             values |> Encode.list encode
 
-        Object values ->
+        DbObject values ->
             values |> Encode.dict identity encode
 
 
-decode : Decoder JsValue
+decode : Decoder DbValue
 decode =
     Decode.oneOf
-        [ Decode.string |> Decode.map String
-        , Decode.int |> Decode.map Int
-        , Decode.float |> Decode.map Float
-        , Decode.bool |> Decode.map Bool
-        , Decode.null () |> Decode.map (\_ -> Null)
-        , Decode.list (Decode.lazy (\_ -> decode)) |> Decode.map Array
-        , Decode.dict (Decode.lazy (\_ -> decode)) |> Decode.map Object
+        [ Decode.string |> Decode.map DbString
+        , Decode.int |> Decode.map DbInt
+        , Decode.float |> Decode.map DbFloat
+        , Decode.bool |> Decode.map DbBool
+        , Decode.null () |> Decode.map (\_ -> DbNull)
+        , Decode.list (Decode.lazy (\_ -> decode)) |> Decode.map DbArray
+        , Decode.dict (Decode.lazy (\_ -> decode)) |> Decode.map DbObject
         ]

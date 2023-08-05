@@ -16,7 +16,7 @@ import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Ned as Ned exposing (Ned)
 import Libs.Nel exposing (Nel)
 import Libs.Tailwind as Tw exposing (Color)
-import Models.JsValue as JsValue exposing (JsValue)
+import Models.DbValue exposing (DbValue(..))
 import Models.Position as Position
 import Models.Size as Size
 import Random
@@ -24,25 +24,22 @@ import Set exposing (Set)
 import Time
 
 
-jsValue : Fuzzer JsValue
-jsValue =
+dbValue : Fuzzer DbValue
+dbValue =
     Fuzz.oneOf
-        [ stringSmall |> Fuzz.map JsValue.String
-        , Fuzz.int |> Fuzz.map JsValue.Int
+        [ stringSmall |> Fuzz.map DbString
+        , Fuzz.int |> Fuzz.map DbInt
         , Fuzz.float
             |> Fuzz.map
                 (\f ->
-                    if isNaN f then
-                        JsValue.Float 0.5
-
-                    else if ceiling f == floor f then
-                        JsValue.Float 0.5
+                    if isNaN f || ceiling f == floor f then
+                        DbFloat 0.5
 
                     else
-                        JsValue.Float f
+                        DbFloat f
                 )
-        , Fuzz.bool |> Fuzz.map JsValue.Bool
-        , Fuzz.constant JsValue.Null
+        , Fuzz.bool |> Fuzz.map DbBool
+        , Fuzz.constant DbNull
         ]
 
 
