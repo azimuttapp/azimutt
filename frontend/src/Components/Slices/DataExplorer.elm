@@ -47,6 +47,7 @@ import Services.QueryBuilder as QueryBuilder
 --  - ERD data exploration: show a row in ERD (from the sidebar) and allow to explore data relations
 --  - Add filter button on results which can change editor (visual or query) and allow to trigger a new query
 --  - Show incoming rows in the side bar (and results?)
+--  - Double click on a value to edit it, add a submit option to push them to the database
 
 
 type alias Model =

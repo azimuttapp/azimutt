@@ -330,7 +330,7 @@ view wrap toggleDropdown openRow deleteQuery openedDropdown defaultSchema source
                       else
                         div [ class "relative mt-3", onClick (wrap ToggleQuery) ]
                             [ viewQuery "px-2 py-1 text-xs cursor-pointer" (model.query |> String.split "\n" |> List.head |> Maybe.withDefault "") ]
-                    , div [ class "mt-3" ] [ viewSuccess wrap (openRow model.source) defaultSchema (sources |> List.find (\s -> s.id == model.source.id)) res ]
+                    , viewSuccess wrap (openRow model.source) defaultSchema (sources |> List.find (\s -> s.id == model.source.id)) res
                     ]
                 )
                 (div []
@@ -431,7 +431,7 @@ viewSuccess wrap openRow defaultSchema source res =
             else
                 ( res.columns |> QueryResult.buildColumnTargets source, pageRows )
     in
-    div []
+    div [ class "mt-3" ]
         [ viewTable wrap openRow defaultSchema column rows res.documentMode res.sortBy res.expanded
         , Pagination.view (\p -> ChangePage p |> wrap) pagination
         ]
@@ -442,10 +442,11 @@ viewTable wrap openRow defaultSchema columns rows documentMode sortBy expanded =
     div [ class "flow-root" ]
         [ div [ class "overflow-x-auto" ]
             [ div [ class "inline-block min-w-full align-middle" ]
-                [ table [ class "min-w-full divide-y divide-gray-300" ]
+                [ table [ class "table-auto min-w-full border-separate border-spacing-0" ]
+                    -- sticky header: https://reacthustle.com/blog/how-to-create-react-table-sticky-headers-with-tailwindcss
                     [ thead []
                         [ tr [ class "bg-gray-100" ]
-                            (th [ scope "col", onClick (UpdateSort Nothing |> wrap), class "px-1 text-left text-sm font-semibold text-gray-900 cursor-pointer" ] [ text "#" ]
+                            (th [ scope "col", onClick (UpdateSort Nothing |> wrap), class "px-1 sticky left-0 text-left text-sm font-semibold text-gray-900 border-b border-r border-gray-300 bg-gray-100 cursor-pointer" ] [ text "#" ]
                                 :: (columns |> List.map (\c -> viewTableHeader wrap sortBy c.name))
                             )
                         ]
@@ -459,7 +460,7 @@ viewTable wrap openRow defaultSchema columns rows documentMode sortBy expanded =
                                             r |> Dict.filter (\k _ -> columns |> List.memberBy .name k |> not)
                                     in
                                     tr [ class "hover:bg-gray-100", classList [ ( "bg-gray-50", modBy 2 i == 1 ) ] ]
-                                        ([ td [ class "px-1 text-sm text-gray-900" ] [ text (i |> String.fromInt) ] ]
+                                        ([ td [ class ("px-1 sticky left-0 z-10 text-sm text-gray-900 border-r border-gray-300 hover:bg-gray-100 " ++ Bool.cond (modBy 2 i == 1) "bg-gray-50" "bg-white") ] [ text (i |> String.fromInt) ] ]
                                             ++ (columns |> List.map (\c -> viewTableValue openRow (ExpandRow i |> wrap) defaultSchema documentMode (expanded |> Set.member i) (r |> Dict.get c.name) c))
                                             ++ Bool.cond (rest |> Dict.isEmpty) [] [ viewTableValue openRow (ExpandRow i |> wrap) defaultSchema documentMode (expanded |> Set.member i) (rest |> DbObject |> Just) { name = "rest", open = Nothing } ]
                                         )
@@ -480,7 +481,7 @@ viewTableHeader wrap sortBy column =
                 |> Maybe.map extractSort
                 |> Maybe.filter (\( col, _ ) -> col == column)
     in
-    th [ scope "col", onClick (sort |> Maybe.mapOrElse (\( col, asc ) -> Bool.cond asc ("-" ++ col) col) column |> Just |> UpdateSort |> wrap), class "px-1 text-left text-sm font-semibold text-gray-900 whitespace-nowrap group cursor-pointer" ]
+    th [ scope "col", onClick (sort |> Maybe.mapOrElse (\( col, asc ) -> Bool.cond asc ("-" ++ col) col) column |> Just |> UpdateSort |> wrap), class "px-1 text-left text-sm font-semibold text-gray-900 border-b border-gray-300 whitespace-nowrap group cursor-pointer" ]
         [ text column
         , sort
             |> Maybe.map (\( _, asc ) -> Icon.solid (Bool.cond asc Icon.ArrowDown Icon.ArrowUp) "ml-1 w-3 h-3 inline")
@@ -639,6 +640,30 @@ docCitySuccess =
         , docCityColumnValues 21 "Amersfoort" "NLD" "Utrecht" 126270
         , docCityColumnValues 22 "Maastricht" "NLD" "Limburg" 122087
         , docCityColumnValues 23 "Dordrecht" "NLD" "Zuid-Holland" 119811
+        , docCityColumnValues 24 "Leiden" "NLD" "Zuid-Holland" 117196
+        , docCityColumnValues 25 "Haarlemmermeer" "NLD" "Noord-Holland" 110722
+        , docCityColumnValues 26 "Zoetermeer" "NLD" "Zuid-Holland" 110214
+        , docCityColumnValues 27 "Emmen" "NLD" "Drenthe" 105853
+        , docCityColumnValues 28 "Zwolle" "NLD" "Overijssel" 105819
+        , docCityColumnValues 29 "Ede" "NLD" "Gelderland" 101574
+        , docCityColumnValues 30 "Delft" "NLD" "Zuid-Holland" 95268
+        , docCityColumnValues 31 "Heerlen" "NLD" "Limburg" 95052
+        , docCityColumnValues 32 "Alkmaar" "NLD" "Noord-Holland" 92713
+        , docCityColumnValues 33 "Willemstad" "ANT" "Curaçao" 2345
+        , docCityColumnValues 34 "Tirana" "ALB" "Tirana" 270000
+        , docCityColumnValues 35 "Alger" "DZA" "Alger" 2168000
+        , docCityColumnValues 36 "Oran" "DZA" "Oran" 609823
+        , docCityColumnValues 37 "Constantine" "DZA" "Constantine" 443727
+        , docCityColumnValues 38 "Annaba" "DZA" "Annaba" 222518
+        , docCityColumnValues 39 "Batna" "DZA" "Batna" 183377
+        , docCityColumnValues 40 "Sétif" "DZA" "Sétif" 179055
+        , docCityColumnValues 41 "Sidi Bel Abbès" "DZA" "Sidi Bel Abbès" 153106
+        , docCityColumnValues 42 "Skikda" "DZA" "Skikda" 128747
+        , docCityColumnValues 43 "Biskra" "DZA" "Biskra" 128281
+        , docCityColumnValues 44 "Blida (el-Boulaida)" "DZA" "Blida" 127284
+        , docCityColumnValues 45 "Béjaïa" "DZA" "Béjaïa" 117162
+        , docCityColumnValues 46 "Mostaganem" "DZA" "Mostaganem" 115212
+        , docCityColumnValues 47 "Tébessa" "DZA" "Tébessa" 112007
         ]
     }
         |> initSuccess Time.zero Time.zero

@@ -58,7 +58,7 @@ viewItems first last total =
         [ text "Showing "
         , span [ class "font-medium" ] [ text (String.fromInt first) ]
         , text " to "
-        , span [ class "font-medium" ] [ text (String.fromInt last) ]
+        , span [ class "font-medium" ] [ text (String.fromInt (min last total)) ]
         , text " of "
         , span [ class "font-medium" ] [ text (String.fromInt total) ]
         , text " results"
