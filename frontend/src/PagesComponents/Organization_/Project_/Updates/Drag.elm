@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Updates.Drag exposing (handleDrag, moveCanvas, moveMemos, moveTables)
+module PagesComponents.Organization_.Project_.Updates.Drag exposing (handleDrag, moveCanvas, moveMemos, moveTableRows, moveTables)
 
 import Conf
 import Libs.List as List
@@ -10,6 +10,7 @@ import Models.ErdProps exposing (ErdProps)
 import Models.Position as Position
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.TableId as TableId exposing (TableId)
+import Models.Project.TableRow as TableRow exposing (TableRow)
 import PagesComponents.Organization_.Project_.Models exposing (Model)
 import PagesComponents.Organization_.Project_.Models.DragState exposing (DragState)
 import PagesComponents.Organization_.Project_.Models.Erd as Erd
@@ -17,7 +18,7 @@ import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (Er
 import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
 import PagesComponents.Organization_.Project_.Models.MemoId as MemoId
 import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirty)
-import Services.Lenses exposing (mapCanvas, mapErdM, mapMemos, mapPosition, mapProps, mapTables, setSelected, setSelectionBox)
+import Services.Lenses exposing (mapCanvas, mapErdM, mapMemos, mapPosition, mapProps, mapTableRows, mapTables, setSelected, setSelectionBox)
 import Time
 
 
@@ -53,6 +54,9 @@ handleDrag now drag isEnd model =
     else if isEnd && drag.init /= drag.last then
         if MemoId.isHtmlId drag.id then
             model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapMemos (moveMemos drag canvas.zoom))) |> setDirty
+
+        else if TableRow.isHtmlId drag.id then
+            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTableRows (moveTableRows drag canvas.zoom))) |> setDirty
 
         else
             model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (moveTables drag canvas.zoom))) |> setDirty
@@ -98,6 +102,19 @@ moveMemos drag zoom memos =
 
                 else
                     m
+            )
+
+
+moveTableRows : DragState -> ZoomLevel -> List TableRow -> List TableRow
+moveTableRows drag zoom tableRows =
+    tableRows
+        |> List.map
+            (\r ->
+                if drag.id == TableRow.toHtmlId r.id then
+                    r |> mapPosition (Position.moveGrid (buildDelta drag zoom))
+
+                else
+                    r
             )
 
 

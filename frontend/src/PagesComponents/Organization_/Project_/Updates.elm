@@ -33,7 +33,7 @@ import Models.Project.Source as Source
 import Models.Project.SourceId as SourceId
 import Models.Project.SourceKind as SourceKind
 import Models.Project.TableId as TableId
-import Models.Project.TableRow as TableRow
+import Models.Project.TableRow as TableRow exposing (TableRow)
 import Models.ProjectInfo exposing (ProjectInfo)
 import Models.ProjectRef exposing (ProjectRef)
 import Models.QueryResult exposing (QueryResult)
@@ -52,7 +52,7 @@ import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode
 import PagesComponents.Organization_.Project_.Models.DragState as DragState
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps
-import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
+import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout as ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
 import PagesComponents.Organization_.Project_.Models.MemoId as MemoId
@@ -70,6 +70,7 @@ import PagesComponents.Organization_.Project_.Updates.Project exposing (createPr
 import PagesComponents.Organization_.Project_.Updates.ProjectSettings exposing (handleProjectSettings)
 import PagesComponents.Organization_.Project_.Updates.Source as Source
 import PagesComponents.Organization_.Project_.Updates.Table exposing (goToTable, hideColumn, hideColumns, hideRelatedTables, hideTable, hoverColumn, hoverNextColumn, mapTablePropOrSelected, showAllTables, showColumn, showColumns, showRelatedTables, showTable, showTables, sortColumns, toggleNestedColumn)
+import PagesComponents.Organization_.Project_.Updates.TableRow exposing (addTableRow, moveToTableRow)
 import PagesComponents.Organization_.Project_.Updates.Tags exposing (handleTags)
 import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirty, setDirtyCmd)
 import PagesComponents.Organization_.Project_.Updates.VirtualRelation exposing (handleVirtualRelation)
@@ -80,7 +81,7 @@ import Random
 import Services.Backend as Backend
 import Services.DatabaseSource as DatabaseSource
 import Services.JsonSource as JsonSource
-import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapContextMenuM, mapDataExplorerCmd, mapDetailsSidebarCmd, mapEmbedSourceParsingMCmd, mapErdM, mapErdMCmd, mapExportDialogCmd, mapHoverTable, mapMemos, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapOrganizationM, mapPlan, mapPosition, mapProject, mapPromptM, mapProps, mapQueryPaneCmd, mapSaveCmd, mapSchemaAnalysisM, mapSearch, mapSelected, mapSharingCmd, mapShowHiddenColumns, mapTableRows, mapTableRowsCmd, mapTableRowsSeq, mapTables, mapTablesCmd, mapToastsCmd, setActive, setCanvas, setCollapsed, setColor, setColors, setConfirm, setContextMenu, setCurrentLayout, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setLast, setLayoutOnLoad, setModal, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setSelected, setShow, setSize, setTables, setText)
+import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapContextMenuM, mapDataExplorerCmd, mapDetailsSidebarCmd, mapEmbedSourceParsingMCmd, mapErdM, mapErdMCmd, mapExportDialogCmd, mapHoverTable, mapMemos, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapOrganizationM, mapPlan, mapPosition, mapProject, mapPromptM, mapProps, mapQueryPaneCmd, mapSaveCmd, mapSchemaAnalysisM, mapSearch, mapSelected, mapSharingCmd, mapShowHiddenColumns, mapTableRows, mapTableRowsCmd, mapTables, mapTablesCmd, mapToastsCmd, setActive, setCanvas, setCollapsed, setColor, setColors, setConfirm, setContextMenu, setCurrentLayout, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setLast, setLayoutOnLoad, setModal, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setSelected, setShow, setSize, setTables, setText)
 import Services.PrismaSource as PrismaSource
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
@@ -245,7 +246,9 @@ update urlLayout zone now urlInfos organizations projects msg model =
             model |> handleMemo now urlInfos message
 
         AddTableRow source query ->
-            model |> mapErdMCmd (Erd.mapCurrentLayoutWithTimeCmd now (\l -> l |> mapTableRowsSeq (\s -> s + 1) |> mapTableRowsCmd (List.prependCmd (TableRow.init l.tableRowsSeq now source query)))) |> setDirtyCmd
+            (model.erd |> Maybe.andThen (Erd.currentLayout >> .tableRows >> List.find (\r -> r.source == source.id && r.query == query)))
+                |> Maybe.map (\r -> model |> mapErdMCmd (moveToTableRow now model.erdElem r))
+                |> Maybe.withDefault (model |> mapErdMCmd (addTableRow now source query) |> setDirtyCmd)
 
         DeleteTableRow id ->
             model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTableRows (List.removeBy .id id))) |> setDirty
@@ -557,14 +560,13 @@ updateSizes changes model =
         newModel =
             erdChanged
                 |> mapErdM
-                    (\erd ->
-                        erd
-                            |> Erd.mapCurrentLayout
-                                (\l ->
-                                    l
-                                        |> mapMemos (updateMemos l.canvas.zoom changes)
-                                        |> mapTables (updateTables l.canvas.zoom erdViewport changes)
-                                )
+                    (Erd.mapCurrentLayout
+                        (\l ->
+                            l
+                                |> mapMemos (updateMemos l.canvas.zoom changes)
+                                |> mapTableRows (updateTableRows l.canvas.zoom erdViewport changes)
+                                |> mapTables (updateTables l.canvas.zoom erdViewport changes)
+                        )
                     )
     in
     newModel
@@ -587,26 +589,82 @@ updateSizes changes model =
 
 updateMemos : ZoomLevel -> List SizeChange -> List Memo -> List Memo
 updateMemos zoom changes memos =
-    changes |> List.foldl (\c mms -> mms |> List.map (\memo -> B.cond (c.id == MemoId.toHtmlId memo.id) (memo |> setSize (c.size |> Size.viewportToCanvas zoom)) memo)) memos
+    changes
+        |> List.foldl
+            (\c ->
+                List.map
+                    (\memo ->
+                        if c.id == MemoId.toHtmlId memo.id then
+                            memo |> setSize (c.size |> Size.viewportToCanvas zoom)
+
+                        else
+                            memo
+                    )
+            )
+            memos
+
+
+updateTableRows : ZoomLevel -> Area.Canvas -> List SizeChange -> List TableRow -> List TableRow
+updateTableRows zoom erdViewport changes rows =
+    changes
+        |> List.foldl
+            (\c ->
+                List.map
+                    (\row ->
+                        if c.id == TableRow.toHtmlId row.id then
+                            updateTableRow zoom erdViewport row c
+
+                        else
+                            row
+                    )
+            )
+            rows
+
+
+updateTableRow : ZoomLevel -> Area.Canvas -> TableRow -> SizeChange -> TableRow
+updateTableRow zoom erdViewport row change =
+    let
+        size : Size.Canvas
+        size =
+            change.size |> Size.viewportToCanvas zoom
+    in
+    if row.size == Size.zeroCanvas && row.position == Position.zeroGrid then
+        row |> setSize size |> setPosition (size |> placeAtCenter erdViewport)
+
+    else
+        row |> setSize size
 
 
 updateTables : ZoomLevel -> Area.Canvas -> List SizeChange -> List ErdTableLayout -> List ErdTableLayout
 updateTables zoom erdViewport changes tables =
-    changes |> List.foldl (\c tbls -> tbls |> List.map (\tbl -> B.cond (c.id == TableId.toHtmlId tbl.id) (updateTable zoom tbls erdViewport tbl c) tbl)) tables
+    changes
+        |> List.foldl
+            (\c currentTables ->
+                currentTables
+                    |> List.map
+                        (\table ->
+                            if c.id == TableId.toHtmlId table.id then
+                                updateTable zoom currentTables erdViewport table c
+
+                            else
+                                table
+                        )
+            )
+            tables
 
 
 updateTable : ZoomLevel -> List ErdTableLayout -> Area.Canvas -> ErdTableLayout -> SizeChange -> ErdTableLayout
 updateTable zoom tables erdViewport table change =
     let
-        newSize : Size.Canvas
-        newSize =
+        size : Size.Canvas
+        size =
             change.size |> Size.viewportToCanvas zoom
     in
     if table.props.size == Size.zeroCanvas && table.props.position == Position.zeroGrid then
-        table |> mapProps (setSize newSize >> setPosition (computeInitialPosition tables erdViewport newSize change.seeds table.props.positionHint))
+        table |> mapProps (setSize size >> setPosition (computeInitialPosition tables erdViewport size change.seeds table.props.positionHint))
 
     else
-        table |> mapProps (setSize newSize)
+        table |> mapProps (setSize size)
 
 
 computeInitialPosition : List ErdTableLayout -> Area.Canvas -> Size.Canvas -> Delta -> Maybe PositionHint -> Position.Grid
@@ -721,7 +779,7 @@ updateErd urlLayout context project model =
 
 showAllTablesIfNeeded : Erd -> Erd
 showAllTablesIfNeeded erd =
-    if erd.currentLayout == Conf.constants.defaultLayout && (erd |> Erd.currentLayout |> .tables |> List.isEmpty) && Dict.size erd.tables < Conf.constants.fewTablesLimit then
+    if erd.currentLayout == Conf.constants.defaultLayout && (erd |> Erd.currentLayout |> ErdLayout.isEmpty) && Dict.size erd.tables < Conf.constants.fewTablesLimit then
         erd
             |> Erd.mapCurrentLayout (setTables (erd.tables |> Dict.values |> List.map (\t -> t |> ErdTableLayout.init erd.settings Set.empty (erd.relationsByTable |> Dict.getOrElse t.id []) erd.settings.collapseTableColumns Nothing)))
             |> setLayoutOnLoad "arrange"

@@ -1,6 +1,6 @@
 import {z} from "zod";
 import {groupBy} from "@azimutt/utils";
-import {ColumnName, ColumnType, SchemaName, TableId, TableName} from "@azimutt/database-types";
+import {ColumnName, ColumnType, JsValue, SchemaName, TableId, TableName} from "@azimutt/database-types";
 import {Color, Notes, Position, Size, Slug, Tag, Timestamp} from "./basics";
 import {Uuid} from "./uuid";
 import {Organization} from "./organization";
@@ -26,6 +26,8 @@ export type RelationName = string
 export const RelationName = z.string()
 export type TypeName = string
 export const TypeName = z.string()
+export type TableRowId = number
+export const TableRowId = z.number()
 export type MemoId = number
 export const MemoId = z.number()
 export type LayoutName = string
@@ -394,6 +396,79 @@ export const Memo = z.object({
     color: Color.optional()
 }).strict()
 
+export interface RowQuery {
+    table: TableId
+    primaryKey: { column: ColumnPathStr, value: JsValue }[]
+}
+
+export const RowQuery = z.object({
+    table: TableId,
+    primaryKey: z.object({column: ColumnPathStr, value: JsValue}).strict().array()
+}).strict()
+
+export interface TableRowStateSuccess {
+    values: { column: ColumnName, value: JsValue }[]
+    hidden: ColumnName[]
+    expanded: ColumnName[]
+    showHidden: boolean
+    startedAt: Timestamp
+    loadedAt: Timestamp
+}
+
+export const TableRowStateSuccess = z.object({
+    values: z.object({column: ColumnName, value: JsValue}).strict().array(),
+    hidden: ColumnName.array(),
+    expanded: ColumnName.array(),
+    showHidden: z.boolean(),
+    startedAt: Timestamp,
+    loadedAt: Timestamp
+}).strict()
+
+export interface TableRowStateFailure {
+    query : string
+    error : string
+    startedAt: Timestamp
+    failedAt: Timestamp
+}
+
+export const TableRowStateFailure = z.object({
+    query : z.string(),
+    error : z.string(),
+    startedAt: Timestamp,
+    failedAt: Timestamp
+}).strict()
+
+export interface TableRowStateLoading {
+    query : string
+    startedAt: Timestamp
+}
+
+export const TableRowStateLoading = z.object({
+    query : z.string(),
+    startedAt: Timestamp
+}).strict()
+
+export type TableRowState = TableRowStateSuccess | TableRowStateFailure | TableRowStateLoading
+export const TableRowState = z.union([TableRowStateSuccess, TableRowStateFailure, TableRowStateLoading])
+
+export interface TableRow {
+    id: TableRowId
+    position: Position
+    size: Size
+    source : SourceId
+    query : RowQuery
+    state : TableRowState
+}
+
+export const TableRow = z.object({
+    id: TableRowId,
+    position: Position,
+    size: Size,
+    source : SourceId,
+    query : RowQuery,
+    state : TableRowState
+}).strict()
+
 export interface Group {
     name: string
     tables: TableId[]
@@ -411,6 +486,7 @@ export const Group = z.object({
 export interface Layout {
     canvas?: CanvasProps // legacy property, keep it for retro compatibility
     tables: TableProps[]
+    tableRows?: TableRow[]
     groups?: Group[]
     memos?: Memo[]
     createdAt: Timestamp
@@ -420,6 +496,7 @@ export interface Layout {
 export const Layout = z.object({
     canvas: CanvasProps.optional(),
     tables: TableProps.array(),
+    tableRows: TableRow.array().optional(),
     groups: Group.array().optional(),
     memos: Memo.array().optional(),
     createdAt: Timestamp,
@@ -481,6 +558,7 @@ export interface Project {
     metadata?: { [table: TableId]: TableMeta }
     usedLayout?: LayoutName // legacy property, keep it for retro compatibility
     layouts: { [name: LayoutName]: Layout }
+    tableRowsSeq?: number
     settings?: Settings
     storage: ProjectStorage
     visibility: ProjectVisibility
@@ -500,6 +578,7 @@ export const Project = z.object({
     metadata: z.record(TableId, TableMeta).optional(),
     usedLayout: LayoutName.optional(),
     layouts: z.record(LayoutName, Layout),
+    tableRowsSeq: z.number().optional(),
     settings: Settings.optional(),
     storage: ProjectStorage,
     visibility: ProjectVisibility,

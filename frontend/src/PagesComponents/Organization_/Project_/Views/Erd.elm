@@ -26,6 +26,7 @@ import Libs.Tailwind as Tw exposing (focus)
 import Libs.Time as Time
 import Libs.Tuple as Tuple
 import Models.Area as Area
+import Models.DbSource as DbSource
 import Models.ErdProps exposing (ErdProps)
 import Models.Position as Position
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
@@ -45,7 +46,7 @@ import PagesComponents.Organization_.Project_.Models.DragState exposing (DragSta
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
-import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
+import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.ErdRelation exposing (ErdRelation)
 import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout as ErdTableLayout exposing (ErdTableLayout)
@@ -104,6 +105,10 @@ viewErd conf erdElem erd selectionBox virtualRelation editMemo args dragging =
         layoutTables =
             dragging |> Maybe.filter (\d -> d.id /= Conf.ids.erd) |> Maybe.mapOrElse (\d -> layout.tables |> Drag.moveTables d canvas.zoom) layout.tables
 
+        tableRows : List TableRow
+        tableRows =
+            dragging |> Maybe.filter (.id >> TableRow.isHtmlId) |> Maybe.mapOrElse (\d -> layout.tableRows |> Drag.moveTableRows d canvas.zoom) layout.tableRows
+
         memos : List Memo
         memos =
             dragging |> Maybe.filter (.id >> MemoId.isHtmlId) |> Maybe.mapOrElse (\d -> layout.memos |> Drag.moveMemos d canvas.zoom) layout.memos
@@ -161,14 +166,14 @@ viewErd conf erdElem erd selectionBox virtualRelation editMemo args dragging =
             [ -- canvas.position |> Position.debugDiagram "canvas" "bg-black"
               -- , layout.tables |> List.map (.props >> Area.offGrid) |> Area.mergeCanvas |> Maybe.mapOrElse (Area.debugCanvas "tablesArea" "border-blue-500") (div [] []),
               div [ class "az-groups" ] (groups |> List.map (viewGroup platform erd.settings.defaultSchema editGroup))
+            , tableRows |> viewTableRows now platform conf cursorMode erd.settings.defaultSchema openedDropdown erd.sources erd.metadata
             , displayedRelations |> Lazy.lazy5 viewRelations conf erd.settings.defaultSchema erd.settings.relationStyle displayedTables
             , layoutTables |> viewTables platform conf cursorMode virtualRelation openedDropdown openedPopover hoverTable dragging canvas.zoom erd.settings.defaultSchema selected erd.settings.columnBasicTypes erd.tables erd.metadata layout
             , memos |> viewMemos platform conf cursorMode editMemo
-            , layout.tableRows |> viewTableRows now erd.settings.defaultSchema openedDropdown erd.sources
             , div [ class "az-selection-box pointer-events-none" ] (selectionBox |> Maybe.filterNot (\_ -> layoutTables |> List.isEmpty) |> Maybe.mapOrElse viewSelectionBox [])
             , div [ class "az-virtual-relation pointer-events-none" ] [ virtualRelationInfo |> Maybe.mapOrElse (\i -> viewVirtualRelation erd.settings.relationStyle i) viewEmptyRelation ]
             ]
-        , if layoutTables |> List.isEmpty then
+        , if layout |> ErdLayout.isEmpty then
             viewEmptyState erd.settings.defaultSchema erd.tables
 
           else
@@ -190,15 +195,26 @@ viewMemos platform conf cursorMode editMemo memos =
         )
 
 
-viewTableRows : Time.Posix -> SchemaName -> HtmlId -> List Source -> List TableRow -> Html Msg
-viewTableRows now defaultSchema openedDropdown sources tableRows =
+viewTableRows : Time.Posix -> Platform -> ErdConf -> CursorMode -> SchemaName -> HtmlId -> List Source -> Metadata -> List TableRow -> Html Msg
+viewTableRows now platform conf cursorMode defaultSchema openedDropdown sources metadata tableRows =
     Keyed.node "div"
         [ class "az-table-rows" ]
         (tableRows
+            -- last one added on top
+            |> List.reverse
             |> List.map
-                (\tableRow ->
-                    ( TableRow.toHtmlId tableRow
-                    , viewTableRow now defaultSchema openedDropdown (TableRow.toHtmlId tableRow) sources tableRow
+                (\r ->
+                    ( TableRow.toHtmlId r.id
+                    , viewTableRow now
+                        platform
+                        conf
+                        cursorMode
+                        defaultSchema
+                        openedDropdown
+                        (TableRow.toHtmlId r.id)
+                        (sources |> List.findBy .id r.source |> Maybe.andThen DbSource.fromSource)
+                        (metadata |> Dict.get r.query.table)
+                        r
                     )
                 )
         )

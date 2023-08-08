@@ -1,4 +1,4 @@
-port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProject, createProjectTmp, deleteProject, downloadFile, fireworks, focus, fullscreen, getColumnStats, getDatabaseSchema, getPrismaSchema, getProject, getTableStats, listenHotkeys, mouseDown, moveProjectTo, observeLayout, observeMemoSize, observeSize, observeTableSize, observeTablesSize, onJsMessage, projectDirty, readLocalFile, runDatabaseQuery, scrollTo, setMeta, toast, track, unhandledJsMsgError, updateProject, updateProjectTmp)
+port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProject, createProjectTmp, deleteProject, downloadFile, fireworks, focus, fullscreen, getColumnStats, getDatabaseSchema, getPrismaSchema, getProject, getTableStats, listenHotkeys, mouseDown, moveProjectTo, observeLayout, observeMemoSize, observeSize, observeTableRowSize, observeTableSize, observeTablesSize, onJsMessage, projectDirty, readLocalFile, runDatabaseQuery, scrollTo, setMeta, toast, track, unhandledJsMsgError, updateProject, updateProjectTmp)
 
 import DataSources.JsonMiner.JsonSchema as JsonSchema exposing (JsonSchema)
 import Dict exposing (Dict)
@@ -23,6 +23,7 @@ import Models.Project.ProjectId as ProjectId exposing (ProjectId)
 import Models.Project.ProjectStorage as ProjectStorage exposing (ProjectStorage)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.TableId as TableId exposing (TableId)
+import Models.Project.TableRow as TableRow exposing (TableRow)
 import Models.Project.TableStats as TableStats exposing (TableStats)
 import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Models.ProjectTokenId as ProjectTokenId exposing (ProjectTokenId)
@@ -176,9 +177,18 @@ observeMemoSize id =
     observeSizes [ MemoId.toHtmlId id ]
 
 
+observeTableRowSize : TableRow.Id -> Cmd msg
+observeTableRowSize id =
+    observeSizes [ TableRow.toHtmlId id ]
+
+
 observeLayout : ErdLayout -> Cmd msg
 observeLayout layout =
-    observeSizes ((layout.tables |> List.map (.id >> TableId.toHtmlId)) ++ (layout.memos |> List.map (.id >> MemoId.toHtmlId)))
+    observeSizes
+        ((layout.tables |> List.map (.id >> TableId.toHtmlId))
+            ++ (layout.tableRows |> List.map (.id >> TableRow.toHtmlId))
+            ++ (layout.memos |> List.map (.id >> MemoId.toHtmlId))
+        )
 
 
 observeSizes : List HtmlId -> Cmd msg

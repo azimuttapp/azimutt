@@ -38,13 +38,12 @@ import Services.QueryBuilder as QueryBuilder
 
 
 -- TODO:
---  - global table row id (not specific to layout)
---  - drag table row => define initial position + get size
---  - no duplicate table row (navigate to the existing one if exists)
---  - column stats in query header
+--  - open new table row next the the previous one on FK (hint)
+--  - table row relations
+--  - show table/column docs (comments, notes) in data exploration screens (queries, details, table row)
+--  - column stats in query header (quick analysis on query results)
 --  - shorten uuid to its first component in results
 --  - pin a column and replace the fk by it
---  - ERD data exploration: show a row in ERD (from the sidebar) and allow to explore data relations
 --  - Add filter button on results which can change editor (visual or query) and allow to trigger a new query
 --  - Show incoming rows in the side bar (and results?)
 --  - Double click on a value to edit it, add a submit option to push them to the database

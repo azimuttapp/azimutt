@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout, create, createMemo, empty, unpack)
+module PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout, create, createMemo, empty, isEmpty, unpack)
 
 import Dict exposing (Dict)
 import Libs.Dict as Dict
@@ -21,10 +21,9 @@ import Time
 type alias ErdLayout =
     { canvas : CanvasProps
     , tables : List ErdTableLayout -- list order is used for z-index
+    , tableRows : List TableRow
     , groups : List Group
     , memos : List Memo
-    , tableRows : List TableRow
-    , tableRowsSeq : Int
     , createdAt : Time.Posix
     , updatedAt : Time.Posix
     }
@@ -34,23 +33,26 @@ empty : Time.Posix -> ErdLayout
 empty now =
     { canvas = CanvasProps.empty
     , tables = []
+    , tableRows = []
     , groups = []
     , memos = []
-    , tableRows = []
-    , tableRowsSeq = 1
     , createdAt = now
     , updatedAt = now
     }
+
+
+isEmpty : ErdLayout -> Bool
+isEmpty layout =
+    List.isEmpty layout.tables && List.isEmpty layout.tableRows && List.isEmpty layout.memos
 
 
 create : Dict TableId (List ErdRelation) -> Layout -> ErdLayout
 create relationsByTable layout =
     { canvas = CanvasProps.empty
     , tables = layout.tables |> List.map (\t -> t |> ErdTableLayout.create (layout.tables |> List.map .id |> Set.fromList) (relationsByTable |> Dict.getOrElse t.id []))
+    , tableRows = layout.tableRows
     , groups = layout.groups
     , memos = layout.memos
-    , tableRows = layout.tableRows
-    , tableRowsSeq = layout.tableRowsSeq
     , createdAt = layout.createdAt
     , updatedAt = layout.updatedAt
     }
@@ -59,10 +61,9 @@ create relationsByTable layout =
 unpack : ErdLayout -> Layout
 unpack layout =
     { tables = layout.tables |> List.map (\t -> t |> ErdTableLayout.unpack)
+    , tableRows = layout.tableRows
     , groups = layout.groups
     , memos = layout.memos
-    , tableRows = layout.tableRows
-    , tableRowsSeq = layout.tableRowsSeq
     , createdAt = layout.createdAt
     , updatedAt = layout.updatedAt
     }

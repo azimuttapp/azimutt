@@ -78,6 +78,7 @@ module Services.Lenses exposing
     , mapRemovedSchemas
     , mapResult
     , mapResultsCmd
+    , mapRow
     , mapSampleSourceMCmd
     , mapSaveCmd
     , mapSchemaAnalysisM
@@ -206,6 +207,7 @@ module Services.Lenses exposing
     , setRemovedTables
     , setResult
     , setResults
+    , setRow
     , setSampleSource
     , setSave
     , setSchemaAnalysis
@@ -1138,6 +1140,16 @@ setResults =
 mapResultsCmd : (v -> ( v, Cmd msg )) -> { item | results : v } -> ( { item | results : v }, Cmd msg )
 mapResultsCmd =
     mapCmd_ .results setResults
+
+
+setRow : v -> { item | row : v } -> { item | row : v }
+setRow =
+    set_ .row (\value item -> { item | row = value })
+
+
+mapRow : (v -> v) -> { item | row : v } -> { item | row : v }
+mapRow =
+    map_ .row setRow
 
 
 setSampleSource : v -> { item | sampleSource : v } -> { item | sampleSource : v }

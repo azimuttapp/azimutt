@@ -49,6 +49,7 @@ type alias Erd =
     , layouts : Dict LayoutName ErdLayout
     , currentLayout : LayoutName
     , layoutOnLoad : String -- enum: "", "fit", "arrange"
+    , tableRowsSeq : Int
     , metadata : Metadata
     , sources : List Source
     , settings : ProjectSettings
@@ -75,6 +76,7 @@ create project =
     , layouts = project.layouts |> Dict.map (\_ -> ErdLayout.create relationsByTable)
     , currentLayout = layout
     , layoutOnLoad = ""
+    , tableRowsSeq = project.tableRowsSeq
     , metadata = project.metadata
     , sources = project.sources
     , settings = project.settings
@@ -91,6 +93,7 @@ unpack erd =
     , sources = erd.sources
     , metadata = erd.metadata
     , layouts = erd.layouts |> Dict.map (\_ -> ErdLayout.unpack)
+    , tableRowsSeq = erd.tableRowsSeq
     , settings = erd.settings
     , storage = erd.project.storage
     , visibility = erd.project.visibility

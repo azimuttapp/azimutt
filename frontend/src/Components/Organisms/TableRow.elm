@@ -2,9 +2,10 @@ module Components.Organisms.TableRow exposing (DocState, Model, Msg(..), SharedD
 
 import Array
 import Components.Atoms.Icon as Icon
+import Components.Atoms.Icons as Icons
 import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
 import Components.Molecules.Dropdown as Dropdown
-import Dict
+import Dict exposing (Dict)
 import ElmBook
 import ElmBook.Actions as Actions exposing (logAction)
 import ElmBook.Chapter as Chapter exposing (Chapter)
@@ -27,25 +28,30 @@ import Libs.Set as Set
 import Libs.String as String
 import Libs.Tailwind exposing (TwClass, focus)
 import Libs.Time as Time
+import Models.DbSource as DbSource exposing (DbSource)
 import Models.DbSourceInfo as DbSourceInfo exposing (DbSourceInfo)
 import Models.DbValue as DbValue exposing (DbValue(..))
 import Models.Position as Position
+import Models.Project.Column exposing (Column)
+import Models.Project.ColumnMeta exposing (ColumnMeta)
 import Models.Project.ColumnName exposing (ColumnName)
+import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.ColumnType exposing (ColumnType)
 import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
-import Models.Project.SourceId as SourceId
+import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.SourceKind exposing (SourceKind(..))
 import Models.Project.Table exposing (Table)
-import Models.Project.TableId as TableId
+import Models.Project.TableId as TableId exposing (TableId)
+import Models.Project.TableMeta exposing (TableMeta)
 import Models.Project.TableName exposing (TableName)
 import Models.Project.TableRow as TableRow exposing (FailureState, LoadingState, State(..), SuccessState, TableRow, TableRowValue)
 import Models.QueryResult exposing (QueryResult, QueryResultSuccess)
 import Models.Size as Size
 import Ports
 import Services.Lenses exposing (mapState, setState)
-import Services.QueryBuilder as QueryBuild exposing (RowQuery)
+import Services.QueryBuilder as QueryBuilder exposing (RowQuery)
 import Set
 import Time
 
@@ -76,7 +82,7 @@ init id now source query =
     let
         queryStr : String
         queryStr =
-            QueryBuild.findRow source.db.kind query
+            QueryBuilder.findRow source.db.kind query
     in
     ( { id = id
       , position = Position.zeroGrid
@@ -137,7 +143,7 @@ update now sources msg model =
                         let
                             queryStr : String
                             queryStr =
-                                QueryBuild.findRow s.db.kind model.query
+                                QueryBuilder.findRow s.db.kind model.query
                         in
                         ( model |> setState (StateLoading { query = queryStr, startedAt = now })
                         , Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt model.id) s.db.url queryStr
@@ -170,8 +176,17 @@ mapSuccess f state =
 -- VIEW
 
 
-view : (Msg -> msg) -> (HtmlId -> msg) -> msg -> Time.Posix -> SchemaName -> HtmlId -> HtmlId -> List Source -> TableRow -> Html msg
-view wrap toggleDropdown delete now defaultSchema openedDropdown htmlId sources model =
+view : (Msg -> msg) -> (HtmlId -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> msg) -> msg -> Time.Posix -> SchemaName -> HtmlId -> HtmlId -> Maybe DbSource -> Maybe TableMeta -> TableRow -> Html msg
+view wrap toggleDropdown openTableRow delete now defaultSchema openedDropdown htmlId source tableMeta model =
+    let
+        table : Maybe Table
+        table =
+            source |> Maybe.andThen (.tables >> Dict.get model.query.table)
+
+        relations : List Relation
+        relations =
+            source |> Maybe.mapOrElse (.relations >> List.filter (\r -> r.src.table == model.query.table || r.ref.table == model.query.table)) []
+    in
     div [ class "max-w-xs bg-white text-default-500 text-xs border" ]
         [ viewHeader wrap toggleDropdown delete defaultSchema openedDropdown (htmlId ++ "-header") model.query
         , case model.state of
@@ -182,8 +197,8 @@ view wrap toggleDropdown delete now defaultSchema openedDropdown htmlId sources 
                 viewFailure s
 
             StateSuccess s ->
-                viewSuccess wrap s
-        , viewFooter now sources model
+                viewSuccess wrap openTableRow source tableMeta table relations model s
+        , viewFooter now source model
         ]
 
 
@@ -247,14 +262,14 @@ viewFailure res =
         ]
 
 
-viewSuccess : (Msg -> msg) -> SuccessState -> Html msg
-viewSuccess wrap res =
+viewSuccess : (Msg -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> msg) -> Maybe DbSource -> Maybe TableMeta -> Maybe Table -> List Relation -> TableRow -> SuccessState -> Html msg
+viewSuccess wrap openTableRow source tableMeta table relations row res =
     let
         ( hiddenValues, values ) =
             res.values |> List.partition (\v -> res.hidden |> Set.member v.column)
     in
     div []
-        [ Keyed.node "dl" [ class "divide-y divide-gray-200" ] (values |> List.map (\v -> ( v.column, viewValue wrap v )))
+        [ Keyed.node "dl" [ class "divide-y divide-gray-200" ] (values |> List.map (\v -> ( v.column, viewValue wrap openTableRow source row.query.table tableMeta table relations v )))
         , if hiddenValues |> List.isEmpty |> not then
             div [ onClick (ToggleHiddenValues |> wrap), class "px-2 py-1 font-medium border-t border-gray-200 opacity-75 cursor-pointer" ]
                 [ text ("... " ++ (hiddenValues |> String.pluralizeL " more value")) ]
@@ -262,20 +277,61 @@ viewSuccess wrap res =
           else
             div [] []
         , if res.showHidden && (hiddenValues |> List.isEmpty |> not) then
-            Keyed.node "dl" [ class "divide-y divide-gray-200 border-t border-gray-200 opacity-50" ] (hiddenValues |> List.map (\v -> ( v.column, viewValue wrap v )))
+            Keyed.node "dl" [ class "divide-y divide-gray-200 border-t border-gray-200 opacity-50" ] (hiddenValues |> List.map (\v -> ( v.column, viewValue wrap openTableRow source row.query.table tableMeta table relations v )))
 
           else
             dl [] []
         ]
 
 
-viewValue : (Msg -> msg) -> TableRowValue -> Html msg
-viewValue wrap value =
+viewValue : (Msg -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> msg) -> Maybe DbSource -> TableId -> Maybe TableMeta -> Maybe Table -> List Relation -> TableRowValue -> Html msg
+viewValue wrap openTableRow source id tableMeta table relations value =
+    let
+        column : Maybe Column
+        column =
+            table |> Maybe.andThen (\t -> t.columns |> Dict.get value.column)
+
+        meta : Maybe ColumnMeta
+        meta =
+            tableMeta |> Maybe.andThen (\m -> m.columns |> Dict.get value.column)
+
+        linkTo : Maybe ColumnRef
+        linkTo =
+            if value.value == DbNull then
+                Nothing
+
+            else
+                relations |> List.find (\r -> r.src.table == id && r.src.column.head == value.column) |> Maybe.map .ref
+
+        linkedBy : List ColumnRef
+        linkedBy =
+            if value.value == DbNull then
+                []
+
+            else
+                relations |> List.filter (\r -> r.ref.table == id && r.ref.column.head == value.column) |> List.map .src
+    in
     div [ onDblClick (\_ -> ToggleValue value.column |> wrap) Platform.PC, class "px-2 py-1 flex justify-between font-medium hover:bg-gray-50" ]
-        [ dt [] [ text value.column ]
-        , dd [ title (DbValue.toString value.value), class "ml-3 opacity-50 truncate" ]
-            [ text (DbValue.toJson value.value)
+        [ dt [ class "whitespace-pre" ]
+            [ text value.column
+            , column |> Maybe.andThen .comment |> Maybe.mapOrElse (\c -> span [ title c.text, class "ml-1 opacity-50" ] [ Icon.outline Icons.comment "w-3 h-3 inline" ]) (text "")
+            , meta |> Maybe.andThen .notes |> Maybe.mapOrElse (\notes -> span [ title notes, class "ml-1 opacity-50" ] [ Icon.outline Icons.notes "w-3 h-3 inline" ]) (text "")
             ]
+        , dd [ title (DbValue.toString value.value), class "ml-3 opacity-50 truncate" ]
+            [ text (DbValue.toString value.value)
+            ]
+        , Maybe.map2
+            (\r s ->
+                button
+                    [ type_ "button"
+                    , onClick (openTableRow (DbSource.toInfo s) { table = r.table, primaryKey = Nel { column = r.column, value = value.value } [] })
+                    , class "ml-1 opacity-50"
+                    ]
+                    [ Icon.solid Icon.ExternalLink "w-3 h-3 inline" ]
+            )
+            linkTo
+            source
+            |> Maybe.withDefault (text "")
         ]
 
 
@@ -284,8 +340,8 @@ viewQuery classes query =
     div [ css [ "block overflow-x-auto rounded bg-gray-50 border border-gray-200", classes ] ] [ text query ]
 
 
-viewFooter : Time.Posix -> List Source -> Model -> Html msg
-viewFooter now sources model =
+viewFooter : Time.Posix -> Maybe DbSource -> Model -> Html msg
+viewFooter now source model =
     let
         time : Time.Posix
         time =
@@ -301,7 +357,7 @@ viewFooter now sources model =
     in
     div [ class "px-3 py-1 bg-default-50 text-right italic border-t border-gray-200" ]
         [ text "from "
-        , sources |> List.findBy .id model.source |> Maybe.mapOrElse (\s -> text s.name) (span [ title (SourceId.toString model.source) ] [ text "unknown source" ])
+        , source |> Maybe.mapOrElse (\s -> text s.name) (span [ title (SourceId.toString model.source) ] [ text "unknown source" ])
         , text " "
         , span [ title (DateTime.toIso time) ] [ text (DateTime.human now time) ]
         ]
@@ -316,7 +372,7 @@ type alias SharedDocState x =
 
 
 type alias DocState =
-    { openedDropdown : HtmlId, user : TableRow, event : TableRow }
+    { openedDropdown : HtmlId, user : Model, event : Model }
 
 
 docInit : DocState
@@ -331,12 +387,12 @@ doc =
             [ ( "table row"
               , \{ tableRowDocState } ->
                     div [ class "p-3 bg-gray-100 flex items-start space-x-3" ]
-                        [ view (docUpdate tableRowDocState .user (\s m -> { s | user = m })) (docToggleDropdown tableRowDocState) docDelete docNow docDefaultSchema tableRowDocState.openedDropdown "table-row-users" docSources tableRowDocState.user
-                        , view (docUpdate tableRowDocState .event (\s m -> { s | event = m })) (docToggleDropdown tableRowDocState) docDelete docNow docDefaultSchema tableRowDocState.openedDropdown "table-row-events" docSources tableRowDocState.event
+                        [ view (docUpdate tableRowDocState .user (\s m -> { s | user = m })) (docToggleDropdown tableRowDocState) docOpenTableRow docDelete docNow docDefaultSchema tableRowDocState.openedDropdown "table-row-users" (docSource |> DbSource.fromSource) (Just docTableMeta) tableRowDocState.user
+                        , view (docUpdate tableRowDocState .event (\s m -> { s | event = m })) (docToggleDropdown tableRowDocState) docOpenTableRow docDelete docNow docDefaultSchema tableRowDocState.openedDropdown "table-row-events" (docSource |> DbSource.fromSource) (Just docTableMeta) tableRowDocState.event
                         ]
               )
-            , ( "error", \{ tableRowDocState } -> div [ class "p-3 bg-gray-100" ] [ view docWrap (docToggleDropdown tableRowDocState) docDelete docNow docDefaultSchema tableRowDocState.openedDropdown "table-row-error" docSources docFailure ] )
-            , ( "loading", \{ tableRowDocState } -> div [ class "p-3 bg-gray-100" ] [ view docWrap (docToggleDropdown tableRowDocState) docDelete docNow docDefaultSchema tableRowDocState.openedDropdown "table-row-loading" docSources docLoading ] )
+            , ( "error", \{ tableRowDocState } -> div [ class "p-3 bg-gray-100" ] [ view docWrap (docToggleDropdown tableRowDocState) docOpenTableRow docDelete docNow docDefaultSchema tableRowDocState.openedDropdown "table-row-error" (docSource |> DbSource.fromSource) (Just docTableMeta) docFailure ] )
+            , ( "loading", \{ tableRowDocState } -> div [ class "p-3 bg-gray-100" ] [ view docWrap (docToggleDropdown tableRowDocState) docOpenTableRow docDelete docNow docDefaultSchema tableRowDocState.openedDropdown "table-row-loading" (docSource |> DbSource.fromSource) (Just docTableMeta) docLoading ] )
             ]
 
 
@@ -384,7 +440,7 @@ docSuccessEvent =
     { id = 2
     , position = Position.zeroGrid
     , size = Size.zeroCanvas
-    , source = docSource1.id
+    , source = docSource.id
     , query = { table = ( "public", "events" ), primaryKey = Nel { column = Nel "id" [], value = DbString "dcecf4fe-aa35-44fb-a90c-eba7d2103f4e" } [] }
     , state =
         StateSuccess
@@ -412,7 +468,7 @@ docLoading =
     { id = 3
     , position = Position.zeroGrid
     , size = Size.zeroCanvas
-    , source = docSource1.id
+    , source = docSource.id
     , query = { table = ( "public", "events" ), primaryKey = Nel { column = Nel "id" [], value = DbString "dcecf4fe-aa35-44fb-a90c-eba7d2103f4e" } [] }
     , state = StateLoading { query = "SELECT * FROM public.events WHERE id='dcecf4fe-aa35-44fb-a90c-eba7d2103f4e';", startedAt = Time.millisToPosix 1691079663421 }
     }
@@ -423,7 +479,7 @@ docFailure =
     { id = 4
     , position = Position.zeroGrid
     , size = Size.zeroCanvas
-    , source = docSource1.id
+    , source = docSource.id
     , query = { table = ( "public", "events" ), primaryKey = Nel { column = Nel "id" [], value = DbString "dcecf4fe-aa35-44fb-a90c-eba7d2103f4e" } [] }
     , state = StateFailure { query = "SELECT * FROM public.event WHERE id='dcecf4fe-aa35-44fb-a90c-eba7d2103f4e';", error = "relation \"public.event\" does not exist", startedAt = Time.millisToPosix 1691079663421, failedAt = Time.millisToPosix 1691079663421 }
     }
@@ -439,13 +495,8 @@ docDefaultSchema =
     "public"
 
 
-docSources : List Source
-docSources =
-    [ docSource1 ]
-
-
-docSource1 : Source
-docSource1 =
+docSource : Source
+docSource =
     { id = SourceId.one
     , name = "azimutt_dev"
     , kind = DatabaseConnection "postgresql://postgres:postgres@localhost:5432/azimutt_dev"
@@ -474,6 +525,14 @@ docSource1 =
     }
 
 
+docTableMeta : TableMeta
+docTableMeta =
+    { notes = Nothing
+    , tags = []
+    , columns = Dict.empty
+    }
+
+
 docTable : SchemaName -> TableName -> List ( ColumnName, ColumnType, Bool ) -> Table
 docTable schema name columns =
     { id = ( schema, name )
@@ -497,7 +556,7 @@ docRelation ( fromSchema, fromTable, fromColumn ) ( toSchema, toTable, toColumn 
 
 docUpdate : DocState -> (DocState -> Model) -> (DocState -> Model -> DocState) -> Msg -> ElmBook.Msg (SharedDocState x)
 docUpdate s get set msg =
-    s |> get |> update Time.zero docSources msg |> Tuple.first |> set s |> docSetState
+    s |> get |> update Time.zero [ docSource ] msg |> Tuple.first |> set s |> docSetState
 
 
 docSetState : DocState -> ElmBook.Msg (SharedDocState x)
@@ -517,6 +576,11 @@ docToggleDropdown s id =
 docWrap : Msg -> ElmBook.Msg state
 docWrap =
     \_ -> logAction "wrap"
+
+
+docOpenTableRow : DbSourceInfo -> QueryBuilder.RowQuery -> ElmBook.Msg state
+docOpenTableRow =
+    \_ _ -> logAction "openTableRow"
 
 
 docDelete : ElmBook.Msg state

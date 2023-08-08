@@ -30,9 +30,9 @@ viewMemo platform conf cursorMode edit memo =
         htmlId =
             MemoId.toHtmlId memo.id
 
-        dragMemo : List (Attribute Msg)
-        dragMemo =
-            Bool.cond (cursorMode == CursorMode.Drag || not conf.move) [] [ onPointerDown (handleMemoPointerDown htmlId) platform ]
+        dragAttrs : List (Attribute Msg)
+        dragAttrs =
+            Bool.cond (cursorMode == CursorMode.Drag || not conf.move) [] [ onPointerDown (handlePointerDown htmlId) platform ]
 
         resizeMemo : List (Attribute Msg)
         resizeMemo =
@@ -66,7 +66,7 @@ viewMemo platform conf cursorMode edit memo =
                     ++ Area.stylesGrid memo
                     ++ resizeMemo
                 )
-                [ div ([ class "w-full h-full" ] ++ dragMemo) [ viewMarkdown memo.content ]
+                [ div ([ class "w-full h-full" ] ++ dragAttrs) [ viewMarkdown memo.content ]
                 ]
             )
 
@@ -76,8 +76,8 @@ viewMarkdown content =
     Markdown.prose "prose-img:pointer-events-none" content
 
 
-handleMemoPointerDown : HtmlId -> PointerEvent -> Msg
-handleMemoPointerDown htmlId e =
+handlePointerDown : HtmlId -> PointerEvent -> Msg
+handlePointerDown htmlId e =
     if e.button == MainButton then
         e |> .clientPos |> DragStart htmlId
 

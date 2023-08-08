@@ -70,7 +70,7 @@ showTable now id hint erd =
                 ( erd, "Table " ++ TableId.show erd.settings.defaultSchema id ++ " already shown" |> Toasts.info |> Toast |> T.send )
 
             else
-                ( erd |> performShowTable now table hint, Cmd.batch [ Ports.observeTableSize table.id ] )
+                ( erd |> performShowTable now table hint, Ports.observeTableSize table.id )
 
         Nothing ->
             ( erd, "Can't show table " ++ TableId.show erd.settings.defaultSchema id ++ ": not found" |> Toasts.error |> Toast |> T.send )

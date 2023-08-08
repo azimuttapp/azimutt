@@ -1,18 +1,45 @@
 module PagesComponents.Organization_.Project_.Views.Erd.TableRow exposing (viewTableRow)
 
 import Components.Organisms.TableRow as TableRow
-import Html exposing (Html, div)
-import Html.Attributes exposing (id)
+import Conf
+import Html exposing (Attribute, Html, div)
+import Html.Attributes exposing (class, classList, id)
+import Html.Events.Extra.Mouse exposing (Button(..))
+import Libs.Bool as Bool
+import Libs.Html.Events exposing (PointerEvent, onPointerDown)
 import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.Models.Platform exposing (Platform)
+import Models.DbSource exposing (DbSource)
+import Models.Position as Position
 import Models.Project.SchemaName exposing (SchemaName)
-import Models.Project.Source exposing (Source)
+import Models.Project.TableMeta exposing (TableMeta)
 import Models.Project.TableRow exposing (TableRow)
+import Models.Size as Size
 import PagesComponents.Organization_.Project_.Models exposing (MemoMsg(..), Msg(..))
+import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode exposing (CursorMode)
+import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import Time
 
 
-viewTableRow : Time.Posix -> SchemaName -> HtmlId -> HtmlId -> List Source -> TableRow -> Html Msg
-viewTableRow now defaultSchema openedDropdown htmlId sources row =
-    div [ id htmlId ]
-        [ TableRow.view (TableRowMsg row.id) DropdownToggle (DeleteTableRow row.id) now defaultSchema openedDropdown htmlId sources row
+viewTableRow : Time.Posix -> Platform -> ErdConf -> CursorMode -> SchemaName -> HtmlId -> HtmlId -> Maybe DbSource -> Maybe TableMeta -> TableRow -> Html Msg
+viewTableRow now platform conf cursorMode defaultSchema openedDropdown htmlId source tableMeta row =
+    let
+        dragAttrs : List (Attribute Msg)
+        dragAttrs =
+            Bool.cond (cursorMode == CursorMode.Drag || not conf.move) [] [ onPointerDown (handlePointerDown htmlId) platform ]
+    in
+    div ([ id htmlId, class "select-none absolute cursor-pointer", classList [ ( "invisible", row.size == Size.zeroCanvas ) ] ] ++ Position.stylesGrid row.position ++ dragAttrs)
+        [ TableRow.view (TableRowMsg row.id) DropdownToggle AddTableRow (DeleteTableRow row.id) now defaultSchema openedDropdown htmlId source tableMeta row
         ]
+
+
+handlePointerDown : HtmlId -> PointerEvent -> Msg
+handlePointerDown htmlId e =
+    if e.button == MainButton then
+        e |> .clientPos |> DragStart htmlId
+
+    else if e.button == MiddleButton then
+        e |> .clientPos |> DragStart Conf.ids.erd
+
+    else
+        Noop "No match on table row pointer down"

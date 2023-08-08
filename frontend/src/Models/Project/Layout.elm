@@ -14,10 +14,9 @@ import Time
 
 type alias Layout =
     { tables : List TableProps
+    , tableRows : List TableRow
     , groups : List Group
     , memos : List Memo
-    , tableRows : List TableRow
-    , tableRowsSeq : Int
     , createdAt : Time.Posix
     , updatedAt : Time.Posix
     }
@@ -25,17 +24,16 @@ type alias Layout =
 
 empty : Time.Posix -> Layout
 empty now =
-    { tables = [], groups = [], memos = [], tableRows = [], tableRowsSeq = 1, createdAt = now, updatedAt = now }
+    { tables = [], tableRows = [], groups = [], memos = [], createdAt = now, updatedAt = now }
 
 
 encode : Layout -> Value
 encode value =
     Encode.notNullObject
         [ ( "tables", value.tables |> Encode.list TableProps.encode )
+        , ( "tableRows", value.tableRows |> Encode.withDefault (Encode.list TableRow.encode) [] )
         , ( "groups", value.groups |> Encode.withDefault (Encode.list Group.encode) [] )
         , ( "memos", value.memos |> Encode.withDefault (Encode.list Memo.encode) [] )
-        , ( "tableRows", value.tableRows |> Encode.withDefault (Encode.list TableRow.encode) [] )
-        , ( "tableRowsSeq", value.tableRowsSeq |> Encode.withDefault Encode.int 1 )
         , ( "createdAt", value.createdAt |> Time.encode )
         , ( "updatedAt", value.updatedAt |> Time.encode )
         ]
@@ -43,11 +41,10 @@ encode value =
 
 decode : Decode.Decoder Layout
 decode =
-    Decode.map7 Layout
+    Decode.map6 Layout
         (Decode.field "tables" (Decode.list TableProps.decode))
+        (Decode.defaultField "tableRows" (Decode.list TableRow.decode) [])
         (Decode.defaultField "groups" (Decode.list Group.decode) [])
         (Decode.defaultField "memos" (Decode.list Memo.decode) [])
-        (Decode.defaultField "tableRows" (Decode.list TableRow.decode) [])
-        (Decode.defaultField "tableRowsSeq" Decode.int 1)
         (Decode.field "createdAt" Time.decode)
         (Decode.field "updatedAt" Time.decode)

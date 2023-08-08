@@ -68,7 +68,7 @@ import TestHelpers.OrganizationFuzzers exposing (organization)
 
 project : Fuzzer Project
 project =
-    Fuzz.map14 Project (Fuzz.maybe organization) projectId projectSlug projectName (Fuzz.maybe stringSmall) (listSmall source) (dictSmall tableId tableMeta) (dictSmall layoutName layout) projectSettings projectStorage projectVisibility projectEncodingVersion posix posix
+    Fuzz.map15 Project (Fuzz.maybe organization) projectId projectSlug projectName (Fuzz.maybe stringSmall) (listSmall source) (dictSmall tableId tableMeta) (dictSmall layoutName layout) intPosSmall projectSettings projectStorage projectVisibility projectEncodingVersion posix posix
 
 
 source : Fuzzer Source
@@ -181,7 +181,7 @@ columnMeta =
 
 layout : Fuzzer Layout
 layout =
-    Fuzz.map7 Layout (listSmall tableProps) (listSmall group) (listSmall memo) (listSmall tableRow) intPosSmall posix posix
+    Fuzz.map6 Layout (listSmall tableProps) (listSmall tableRow) (listSmall group) (listSmall memo) posix posix
 
 
 canvasProps : Fuzzer CanvasProps

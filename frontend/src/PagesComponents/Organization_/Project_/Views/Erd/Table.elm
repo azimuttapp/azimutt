@@ -72,8 +72,8 @@ viewTable conf zoom args layout meta tableLayout table =
         ( columns, hiddenColumns ) =
             table.columns |> Dict.values |> List.map (\c -> buildColumn useBasicTypes meta tableLayout c) |> List.partition (\c -> tableLayout.columns |> ErdColumnProps.member c.path)
 
-        drag : List (Attribute Msg)
-        drag =
+        dragAttrs : List (Attribute Msg)
+        dragAttrs =
             B.cond (cursorMode == CursorMode.Drag || not conf.move) [] [ onPointerDown (handleTablePointerDown table.htmlId) platform ]
 
         dropdown : Html Msg
@@ -91,7 +91,7 @@ viewTable conf zoom args layout meta tableLayout table =
                 _ ->
                     ( False, [] )
     in
-    div ([ css [ "select-none absolute" ], classList [ ( "z-max", tableLayout.props.selected ), ( "invisible", tableLayout.props.size == Size.zeroCanvas ) ] ] ++ Position.stylesGrid tableLayout.props.position ++ drag)
+    div ([ css [ "select-none absolute" ], classList [ ( "z-max", tableLayout.props.selected ), ( "invisible", tableLayout.props.size == Size.zeroCanvas ) ] ] ++ Position.stylesGrid tableLayout.props.position ++ dragAttrs)
         [ Table.table
             { id = table.htmlId
             , ref = { schema = table.schema, table = table.name }

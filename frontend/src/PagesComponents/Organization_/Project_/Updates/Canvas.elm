@@ -18,14 +18,16 @@ import Models.ErdProps exposing (ErdProps)
 import Models.Position as Position
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.TableId exposing (TableId)
+import Models.Project.TableRow as TableRow exposing (TableRow)
 import Models.Size as Size
 import PagesComponents.Organization_.Project_.Models exposing (Msg(..))
 import PagesComponents.Organization_.Project_.Models.DiagramObject as DiagramObject exposing (DiagramObject)
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout as ErdTableLayout exposing (ErdTableLayout)
+import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
 import PagesComponents.Organization_.Project_.Models.MemoId exposing (MemoId)
-import Services.Lenses exposing (mapCanvas, mapMemos, mapPosition, mapProps, mapTables, setLayoutOnLoad, setPosition, setZoom)
+import Services.Lenses exposing (mapCanvas, mapMemos, mapPosition, mapProps, mapTableRows, mapTables, setLayoutOnLoad, setPosition, setZoom)
 import Services.Toasts as Toasts
 import Time
 
@@ -47,18 +49,19 @@ zoomCanvas delta erdElem canvas =
 fitCanvas : ErdProps -> Erd -> ( Erd, Cmd Msg )
 fitCanvas erdElem erd =
     (erd |> Erd.currentLayout |> objectsToFit)
-        |> Maybe.map (\( tables, memos, areas ) -> ( erd |> setLayoutOnLoad "" |> Erd.mapCurrentLayout (fitCanvasAlgo erdElem tables memos areas), Cmd.none ))
+        |> Maybe.map (\( tables, ( rows, memos, groups ) ) -> ( erd |> setLayoutOnLoad "" |> Erd.mapCurrentLayout (fitCanvasAlgo erdElem tables rows memos groups), Cmd.none ))
         |> Maybe.withDefault ( erd, "No table to fit into the canvas" |> Toasts.create "warning" |> Toast |> T.send )
 
 
-fitCanvasAlgo : ErdProps -> List TableId -> List MemoId -> List Area.Canvas -> ErdLayout -> ErdLayout
-fitCanvasAlgo erdElem tables memos areas layout =
+fitCanvasAlgo : ErdProps -> List TableId -> List TableRow.Id -> List MemoId -> List Area.Canvas -> ErdLayout -> ErdLayout
+fitCanvasAlgo erdElem tables rows memos groups layout =
     -- WARNING: the computation looks good but the diagram changes on resize due to table header size change
     -- (see headerTextSize in frontend/src/Components/Organisms/Table.elm:177)
     -- if you look to fix it, make sure to disable it before testing!
     ((layout.tables |> List.filterInBy .id tables |> List.map (.props >> Area.offGrid))
+        ++ (layout.tableRows |> List.filterInBy .id rows |> List.map Area.offGrid)
         ++ (layout.memos |> List.filterInBy .id memos |> List.map Area.offGrid)
-        ++ areas
+        ++ groups
     )
         |> Area.mergeCanvas
         |> Maybe.map
@@ -70,6 +73,7 @@ fitCanvasAlgo erdElem tables memos areas layout =
                 layout
                     |> mapCanvas (setPosition Position.zeroDiagram >> setZoom newZoom)
                     |> mapTables (List.map (mapProps (mapPosition (centerOffset |> Position.moveGrid))))
+                    |> mapTableRows (List.map (mapPosition (centerOffset |> Position.moveGrid)))
                     |> mapMemos (List.map (mapPosition (centerOffset |> Position.moveGrid)))
             )
         |> Maybe.withDefault layout
@@ -79,16 +83,17 @@ arrangeTables : Time.Posix -> ErdProps -> Erd -> ( Erd, Cmd Msg )
 arrangeTables now erdElem erd =
     -- TODO: toggle this on show all tables if layout was empty before, see frontend/src/PagesComponents/Organization_/Project_/Updates/Table.elm:106#showAllTables
     (erd |> Erd.currentLayout |> objectsToFit)
-        |> Maybe.map (\( tables, memos, areas ) -> ( erd |> setLayoutOnLoad "" |> Erd.mapCurrentLayoutWithTime now (arrangeTablesAlgo tables memos >> fitCanvasAlgo erdElem tables memos areas), Cmd.none ))
+        |> Maybe.map (\( tables, ( rows, memos, groups ) ) -> ( erd |> setLayoutOnLoad "" |> Erd.mapCurrentLayoutWithTime now (arrangeTablesAlgo tables rows memos >> fitCanvasAlgo erdElem tables rows memos groups), Cmd.none ))
         |> Maybe.withDefault ( erd, "No table to arrange in the canvas" |> Toasts.create "warning" |> Toast |> T.send )
 
 
-arrangeTablesAlgo : List TableId -> List MemoId -> ErdLayout -> ErdLayout
-arrangeTablesAlgo tables memos layout =
+arrangeTablesAlgo : List TableId -> List TableRow.Id -> List MemoId -> ErdLayout -> ErdLayout
+arrangeTablesAlgo tables rows memos layout =
     let
         nodes : List (Graph.Node DiagramObject)
         nodes =
             ((layout.tables |> List.filterInBy .id tables |> List.map DiagramObject.fromTable)
+                ++ (layout.tableRows |> List.filterInBy .id rows |> List.map DiagramObject.fromTableRow)
                 ++ (layout.memos |> List.filterInBy .id memos |> List.map DiagramObject.fromMemo)
             )
                 |> List.indexedMap Graph.Node
@@ -100,6 +105,10 @@ arrangeTablesAlgo tables memos layout =
         tableNodeId : Dict TableId Graph.NodeId
         tableNodeId =
             nodes |> List.filterMap (\n -> n.label |> DiagramObject.toTable |> Maybe.map (\t -> ( t.id, n.id ))) |> Dict.fromList
+
+        tableRowNodeId : Dict TableRow.Id Graph.NodeId
+        tableRowNodeId =
+            nodes |> List.filterMap (\n -> n.label |> DiagramObject.toTableRow |> Maybe.map (\r -> ( r.id, n.id ))) |> Dict.fromList
 
         memoNodeId : Dict MemoId Graph.NodeId
         memoNodeId =
@@ -139,10 +148,11 @@ arrangeTablesAlgo tables memos layout =
     in
     layout
         |> mapTables (List.map (\t -> tableNodeId |> Dict.get t.id |> Maybe.andThen getPosition |> Maybe.mapOrElse (\p -> t |> mapProps (setPosition p)) t))
+        |> mapTableRows (List.map (\r -> tableRowNodeId |> Dict.get r.id |> Maybe.andThen getPosition |> Maybe.mapOrElse (\p -> r |> setPosition p) r))
         |> mapMemos (List.map (\m -> memoNodeId |> Dict.get m.id |> Maybe.andThen getPosition |> Maybe.mapOrElse (\p -> m |> setPosition p) m))
 
 
-objectsToFit : ErdLayout -> Maybe ( List TableId, List MemoId, List Area.Canvas )
+objectsToFit : ErdLayout -> Maybe ( List TableId, ( List TableRow.Id, List MemoId, List Area.Canvas ) )
 objectsToFit layout =
     let
         selectedTables : List ErdTableLayout
@@ -150,13 +160,15 @@ objectsToFit layout =
             layout.tables |> List.filter (.props >> .selected)
     in
     if selectedTables /= [] then
-        Just ( selectedTables |> List.map .id, [], [] )
+        Just ( selectedTables |> List.map .id, ( [], [], [] ) )
 
-    else if layout.tables /= [] then
+    else if layout.tables /= [] || layout.tableRows /= [] || layout.memos /= [] then
         Just
             ( layout.tables |> List.map .id
-            , layout.memos |> List.map .id
-            , layout.groups |> List.zipWithIndex |> List.filterMap (ErdTableLayout.buildGroupArea layout.tables) |> List.map Tuple3.third
+            , ( layout.tableRows |> List.map .id
+              , layout.memos |> List.map .id
+              , layout.groups |> List.zipWithIndex |> List.filterMap (ErdTableLayout.buildGroupArea layout.tables) |> List.map Tuple3.third
+              )
             )
 
     else

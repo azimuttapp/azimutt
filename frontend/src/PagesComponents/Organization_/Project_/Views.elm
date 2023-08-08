@@ -36,7 +36,7 @@ import PagesComponents.Organization_.Project_.Components.SourceUpdateDialog as S
 import PagesComponents.Organization_.Project_.Models exposing (ContextMenu, LayoutMsg(..), Model, Msg(..), ProjectSettingsMsg(..), confirmDanger)
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
-import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
+import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Views.Commands as Commands exposing (viewCommands)
 import PagesComponents.Organization_.Project_.Views.Erd as Erd exposing (viewErd)
 import PagesComponents.Organization_.Project_.Views.Modals.EditNotes exposing (viewEditNotes)
@@ -108,7 +108,7 @@ viewApp currentUrl urlOrganization shared model htmlId erd =
                             model.cursorMode
                             (htmlId ++ "-commands")
                             (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-commands"))
-                            (layout.tables |> List.isEmpty |> not)
+                            (layout |> ErdLayout.isEmpty |> not)
                             (model.amlSidebar /= Nothing)
                             (model.detailsSidebar /= Nothing)
                             (model.dataExplorer.display /= Nothing)

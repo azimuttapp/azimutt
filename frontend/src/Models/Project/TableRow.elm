@@ -1,4 +1,4 @@
-module Models.Project.TableRow exposing (FailureState, Id, LoadingState, State(..), SuccessState, TableRow, TableRowValue, decode, encode, toHtmlId)
+module Models.Project.TableRow exposing (FailureState, Id, LoadingState, State(..), SuccessState, TableRow, TableRowValue, decode, encode, isHtmlId, toHtmlId)
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
@@ -58,9 +58,19 @@ type alias TableRowValue =
     { column : ColumnName, value : DbValue }
 
 
-toHtmlId : TableRow -> HtmlId
-toHtmlId row =
-    "az-table-row-" ++ String.fromInt row.id
+htmlIdPrefix : HtmlId
+htmlIdPrefix =
+    "az-table-row-"
+
+
+toHtmlId : Id -> HtmlId
+toHtmlId id =
+    htmlIdPrefix ++ String.fromInt id
+
+
+isHtmlId : HtmlId -> Bool
+isHtmlId id =
+    id |> String.startsWith htmlIdPrefix
 
 
 encode : TableRow -> Value

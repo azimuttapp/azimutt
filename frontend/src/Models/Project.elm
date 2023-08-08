@@ -42,6 +42,7 @@ type alias Project =
     , sources : List Source
     , metadata : Metadata
     , layouts : Dict LayoutName Layout
+    , tableRowsSeq : Int
     , settings : ProjectSettings
     , storage : ProjectStorage
     , visibility : ProjectVisibility
@@ -62,6 +63,7 @@ create projects name source =
         [ source ]
         Dict.empty
         (Dict.fromList [ ( Conf.constants.defaultLayout, Layout.empty source.createdAt ) ])
+        1
         (ProjectSettings.init (mostUsedSchema source.tables))
         ProjectStorage.Local
         ProjectVisibility.None
@@ -122,6 +124,7 @@ downloadContent value =
         , ( "sources", value.sources |> Encode.list Source.encode )
         , ( "metadata", value.metadata |> Metadata.encode )
         , ( "layouts", value.layouts |> Encode.dict LayoutName.toString Layout.encode )
+        , ( "tableRowsSeq", value.tableRowsSeq |> Encode.withDefault Encode.int 1 )
         , ( "settings", value.settings |> Encode.withDefaultDeep ProjectSettings.encode (ProjectSettings.init Conf.schema.empty) )
         , ( "createdAt", value.createdAt |> Time.encode )
         , ( "updatedAt", value.updatedAt |> Time.encode )
@@ -143,6 +146,7 @@ encode value =
         , ( "sources", value.sources |> Encode.list Source.encode )
         , ( "metadata", value.metadata |> Metadata.encode )
         , ( "layouts", value.layouts |> Encode.dict LayoutName.toString Layout.encode )
+        , ( "tableRowsSeq", value.tableRowsSeq |> Encode.withDefault Encode.int 1 )
         , ( "settings", value.settings |> Encode.withDefaultDeep ProjectSettings.encode (ProjectSettings.init Conf.schema.empty) )
         , ( "storage", value.storage |> ProjectStorage.encode )
         , ( "visibility", value.visibility |> ProjectVisibility.encode )
@@ -154,7 +158,7 @@ encode value =
 
 decode : Decode.Decoder Project
 decode =
-    Decode.map16 decodeProject
+    Decode.map17 decodeProject
         (Decode.maybeField "organization" Organization.decode)
         (Decode.field "id" ProjectId.decode)
         (Decode.maybeField "slug" ProjectSlug.decode)
@@ -166,6 +170,7 @@ decode =
         (Decode.defaultField "metadata" Metadata.decode Dict.empty)
         (Decode.defaultField "layout" Layout.decode (Layout.empty Time.zero))
         (Decode.defaultField "layouts" (Decode.customDict LayoutName.fromString Layout.decode) Dict.empty)
+        (Decode.defaultField "tableRowsSeq" Decode.int 1)
         (Decode.defaultFieldDeep "settings" ProjectSettings.decode (ProjectSettings.init Conf.schema.empty))
         (Decode.defaultField "storage" ProjectStorage.decode ProjectStorage.Local)
         (Decode.defaultField "visibility" ProjectVisibility.decode ProjectVisibility.None)
@@ -174,8 +179,8 @@ decode =
         (Decode.field "updatedAt" Time.decode)
 
 
-decodeProject : Maybe Organization -> ProjectId -> Maybe ProjectSlug -> ProjectName -> Maybe String -> List Source -> Dict NotesKey Notes -> Metadata -> Layout -> Dict LayoutName Layout -> ProjectSettings -> ProjectStorage -> ProjectVisibility -> ProjectEncodingVersion -> Time.Posix -> Time.Posix -> Project
-decodeProject organization id maybeSlug name description sources notes metadata layout layouts settings storage visibility version createdAt updatedAt =
+decodeProject : Maybe Organization -> ProjectId -> Maybe ProjectSlug -> ProjectName -> Maybe String -> List Source -> Dict NotesKey Notes -> Metadata -> Layout -> Dict LayoutName Layout -> Int -> ProjectSettings -> ProjectStorage -> ProjectVisibility -> ProjectEncodingVersion -> Time.Posix -> Time.Posix -> Project
+decodeProject organization id maybeSlug name description sources notes metadata layout layouts tableRowsSeq settings storage visibility version createdAt updatedAt =
     let
         allLayouts : Dict LayoutName Layout
         allLayouts =
@@ -196,7 +201,7 @@ decodeProject organization id maybeSlug name description sources notes metadata 
             -- migrate notes to metadata
             metadata |> mergeNotesInMetadata notes
     in
-    Project organization id slug name description sources fullMetadata allLayouts settings storage visibility version createdAt updatedAt
+    Project organization id slug name description sources fullMetadata allLayouts tableRowsSeq settings storage visibility version createdAt updatedAt
 
 
 mergeNotesInMetadata : Dict NotesKey Notes -> Metadata -> Metadata
