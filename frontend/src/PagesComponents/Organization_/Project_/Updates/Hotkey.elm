@@ -222,7 +222,7 @@ cancelElement model =
                     (\_ ->
                         (model.dataExplorer.details |> List.head |> Maybe.map (\d -> DataExplorer.CloseDetails d.id))
                             |> Maybe.orElse (model.dataExplorer.results |> List.find (DataExplorerQuery.stateSuccess >> Maybe.mapOrElse .fullScreen False) |> Maybe.map (\r -> DataExplorerQuery.ToggleFullScreen |> DataExplorer.QueryMsg r.id))
-                            |> Maybe.withDefault DataExplorer.CloseExplorer
+                            |> Maybe.withDefault DataExplorer.Close
                             |> DataExplorerMsg
                     )
             )

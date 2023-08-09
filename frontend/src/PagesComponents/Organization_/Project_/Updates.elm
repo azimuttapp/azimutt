@@ -6,7 +6,6 @@ import Components.Slices.DataExplorer as DataExplorer
 import Components.Slices.DataExplorerDetails as DataExplorerDetails
 import Components.Slices.DataExplorerQuery as DataExplorerQuery
 import Components.Slices.ProPlan as ProPlan
-import Components.Slices.QueryPane as QueryPane
 import Conf
 import Dict
 import Json.Decode as Decode
@@ -81,7 +80,7 @@ import Random
 import Services.Backend as Backend
 import Services.DatabaseSource as DatabaseSource
 import Services.JsonSource as JsonSource
-import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapContextMenuM, mapDataExplorerCmd, mapDetailsSidebarCmd, mapEmbedSourceParsingMCmd, mapErdM, mapErdMCmd, mapExportDialogCmd, mapHoverTable, mapMemos, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapOrganizationM, mapPlan, mapPosition, mapProject, mapPromptM, mapProps, mapQueryPaneCmd, mapSaveCmd, mapSchemaAnalysisM, mapSearch, mapSelected, mapSharingCmd, mapShowHiddenColumns, mapTableRows, mapTableRowsCmd, mapTables, mapTablesCmd, mapToastsCmd, setActive, setCanvas, setCollapsed, setColor, setColors, setConfirm, setContextMenu, setCurrentLayout, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setLast, setLayoutOnLoad, setModal, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setSelected, setShow, setSize, setTables, setText)
+import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapContextMenuM, mapDataExplorerCmd, mapDetailsSidebarCmd, mapEmbedSourceParsingMCmd, mapErdM, mapErdMCmd, mapExportDialogCmd, mapHoverTable, mapMemos, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapOrganizationM, mapPlan, mapPosition, mapProject, mapPromptM, mapProps, mapSaveCmd, mapSchemaAnalysisM, mapSearch, mapSelected, mapSharingCmd, mapShowHiddenColumns, mapTableRows, mapTableRowsCmd, mapTables, mapTablesCmd, mapToastsCmd, setActive, setCanvas, setCollapsed, setColor, setColors, setConfirm, setContextMenu, setCurrentLayout, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setLast, setLayoutOnLoad, setModal, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setSelected, setShow, setSize, setTables, setText)
 import Services.PrismaSource as PrismaSource
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
@@ -270,12 +269,8 @@ update urlLayout zone now urlInfos organizations projects msg model =
         DetailsSidebarMsg message ->
             model.erd |> Maybe.mapOrElse (\erd -> model |> mapDetailsSidebarCmd (DetailsSidebar.update Noop NotesMsg TagsMsg erd message)) ( model, Cmd.none )
 
-        QueryPaneMsg message ->
-            model.erd |> Maybe.mapOrElse (\erd -> model |> mapQueryPaneCmd (QueryPane.update QueryPaneMsg erd message)) ( model, Cmd.none )
-
         DataExplorerMsg message ->
-            --model.erd |> Maybe.mapOrElse (\erd -> model |> mapDataExplorerCmd (DataExplorer.update DataExplorerMsg erd.sources message)) ( model, Cmd.none )
-            model.erd |> Maybe.mapOrElse (\erd -> model |> mapDataExplorerCmd (DataExplorer.update erd.sources message)) ( model, Cmd.none )
+            model.erd |> Maybe.mapOrElse (\erd -> model |> mapDataExplorerCmd (DataExplorer.update DataExplorerMsg erd.project erd.sources message)) ( model, Cmd.none )
 
         VirtualRelationMsg message ->
             model |> handleVirtualRelation message
@@ -799,9 +794,6 @@ showAllTablesIfNeeded erd =
 handleDatabaseQueryResponse : QueryResult -> Model -> ( Model, Cmd Msg )
 handleDatabaseQueryResponse result model =
     case result.context |> String.split "/" of
-        "query-pane" :: [] ->
-            ( model, QueryPane.GotResult result |> QueryPaneMsg |> T.send )
-
         "data-explorer-query" :: idStr :: [] ->
             ( model, idStr |> String.toInt |> Maybe.map (\id -> DataExplorerQuery.GotResult result |> DataExplorer.QueryMsg id |> DataExplorerMsg |> T.send) |> Maybe.withDefault ("Invalid data explorer query context: " ++ result.context |> Toasts.warning |> Toast |> T.send) )
 

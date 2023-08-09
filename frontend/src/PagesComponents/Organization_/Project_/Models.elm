@@ -4,7 +4,6 @@ import Components.Atoms.Icon exposing (Icon(..))
 import Components.Organisms.TableRow as TableRow
 import Components.Slices.DataExplorer as DataExplorer
 import Components.Slices.ProPlan as ProPlan
-import Components.Slices.QueryPane as QueryPane
 import DataSources.AmlMiner.AmlAdapter exposing (AmlSchemaError)
 import Dict exposing (Dict)
 import Html exposing (Html, text)
@@ -87,7 +86,6 @@ type alias Model =
     , editMemo : Maybe MemoEdit
     , amlSidebar : Maybe AmlSidebar
     , detailsSidebar : Maybe DetailsSidebar.Model
-    , queryPane : Maybe QueryPane.Model
     , dataExplorer : DataExplorer.Model
     , virtualRelation : Maybe VirtualRelation
     , findPath : Maybe FindPathDialog
@@ -134,7 +132,6 @@ emptyModel =
     , editMemo = Nothing
     , amlSidebar = Nothing
     , detailsSidebar = Nothing
-    , queryPane = Nothing
     , dataExplorer = DataExplorer.init
     , virtualRelation = Nothing
     , findPath = Nothing
@@ -264,7 +261,6 @@ type Msg
     | TableRowMsg TableRow.Id TableRow.Msg
     | AmlSidebarMsg AmlSidebarMsg
     | DetailsSidebarMsg DetailsSidebar.Msg
-    | QueryPaneMsg QueryPane.Msg
     | DataExplorerMsg DataExplorer.Msg
     | VirtualRelationMsg VirtualRelationMsg
     | FindPathMsg FindPathMsg

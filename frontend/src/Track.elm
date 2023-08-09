@@ -1,4 +1,4 @@
-module Track exposing (SQLParsing, amlSourceCreated, dbAnalysisOpened, detailSidebarClosed, detailSidebarOpened, docOpened, externalLink, findPathOpened, findPathResults, groupCreated, groupDeleted, groupRenamed, jsonError, layoutCreated, layoutDeleted, layoutLoaded, memoDeleted, memoSaved, notFound, notesCreated, notesDeleted, notesUpdated, planLimit, projectDraftCreated, projectLoaded, queryPaneClosed, queryPaneOpened, searchClicked, sourceAdded, sourceCreated, sourceDeleted, sourceEditorClosed, sourceEditorOpened, sourceRefreshed, sqlSourceCreated, tagsCreated, tagsDeleted, tagsUpdated)
+module Track exposing (SQLParsing, amlSourceCreated, dataExplorerClosed, dataExplorerOpened, dbAnalysisOpened, detailSidebarClosed, detailSidebarOpened, docOpened, externalLink, findPathOpened, findPathResults, groupCreated, groupDeleted, groupRenamed, jsonError, layoutCreated, layoutDeleted, layoutLoaded, memoDeleted, memoSaved, notFound, notesCreated, notesDeleted, notesUpdated, planLimit, projectDraftCreated, projectLoaded, searchClicked, sourceAdded, sourceCreated, sourceDeleted, sourceEditorClosed, sourceEditorOpened, sourceRefreshed, sqlSourceCreated, tagsCreated, tagsDeleted, tagsUpdated)
 
 import Conf exposing (Feature, Features)
 import DataSources.Helpers exposing (SourceLine)
@@ -191,14 +191,14 @@ sourceEditorClosed erd =
     sendEvent "editor__source_editor__closed" [] (erd |> Maybe.map .project)
 
 
-queryPaneOpened : List Source -> { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> Cmd msg
-queryPaneOpened sources erd =
-    sendEvent "editor__query_pane__opened" [ ( "nb_sources", sources |> List.length |> Encode.int ), ( "nb_db_sources", sources |> List.filter (.kind >> SourceKind.isDatabase) |> List.length |> Encode.int ) ] (Just erd.project)
+dataExplorerOpened : List Source -> { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> Cmd msg
+dataExplorerOpened sources erd =
+    sendEvent "editor__data_explorer__opened" [ ( "nb_sources", sources |> List.length |> Encode.int ), ( "nb_db_sources", sources |> List.filter (.kind >> SourceKind.isDatabase) |> List.length |> Encode.int ) ] (Just erd.project)
 
 
-queryPaneClosed : { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> Cmd msg
-queryPaneClosed erd =
-    sendEvent "editor__query_pane__closed" [] (Just erd.project)
+dataExplorerClosed : { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> Cmd msg
+dataExplorerClosed erd =
+    sendEvent "editor__data_explorer__closed" [] (Just erd.project)
 
 
 planLimit : (Features -> Feature a) -> Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId, plan : { pl | id : String } }, id : ProjectId } } -> Cmd msg

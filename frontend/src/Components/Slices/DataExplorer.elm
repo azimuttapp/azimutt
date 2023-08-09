@@ -21,6 +21,7 @@ import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Ned as Ned exposing (Ned)
 import Libs.Tailwind as Tw exposing (TwClass)
+import Libs.Task as T
 import Libs.Time as Time
 import Models.DbSource as DbSource exposing (DbSource)
 import Models.DbSourceInfo as DbSourceInfo exposing (DbSourceInfo)
@@ -29,18 +30,25 @@ import Models.Project.Column as Column exposing (Column, NestedColumns(..))
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.Metadata exposing (Metadata)
+import Models.Project.ProjectEncodingVersion as ProjectEncodingVersion
+import Models.Project.ProjectId as ProjectId
+import Models.Project.ProjectStorage as ProjectStorage
+import Models.Project.ProjectVisibility as ProjectVisibility
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
+import Models.ProjectInfo exposing (ProjectInfo)
 import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout exposing (ErdLayout)
 import Services.Lenses exposing (mapDetailsCmd, mapFilters, mapResultsCmd, mapVisualEditor, setOperation, setOperator, setValue)
 import Services.QueryBuilder as QueryBuilder
+import Track
 
 
 
 -- TODO:
+--  - bug: count(*) return a string instead of an int in the gateway :/
 --  - open new table row next the the previous one on FK (hint)
 --  - table row relations
 --  - column stats in query header (quick analysis on query results)
@@ -88,9 +96,9 @@ type alias QueryEditor =
 
 
 type Msg
-    = OpenExplorer (Maybe SourceId) (Maybe String)
-    | CloseExplorer
-    | UpdateExplorerDisplay (Maybe DataExplorerDisplay)
+    = Open (Maybe SourceId) (Maybe String)
+    | Close
+    | UpdateDisplay (Maybe DataExplorerDisplay)
     | UpdateTab DataExplorerTab
     | UpdateSource (Maybe DbSource)
     | UpdateTable (Maybe TableId)
@@ -130,10 +138,10 @@ init =
 -- UPDATE
 
 
-update : List Source -> Msg -> Model -> ( Model, Cmd msg )
-update sources msg model =
+update : (Msg -> msg) -> ProjectInfo -> List Source -> Msg -> Model -> ( Model, Cmd msg )
+update wrap project sources msg model =
     case msg of
-        OpenExplorer source query ->
+        Open source query ->
             let
                 dbSources : List DbSource
                 dbSources =
@@ -150,13 +158,16 @@ update sources msg model =
                 , queryEditor = query |> Maybe.withDefault model.queryEditor
               }
               -- TODO: run query if present with source
-            , Cmd.none
+            , Cmd.batch
+                (Track.dataExplorerOpened sources { project = project }
+                    :: (Maybe.map2 (\src q -> RunQuery src q |> wrap |> T.send) (source |> Maybe.andThen (\id -> dbSources |> List.findBy .id id)) query |> Maybe.toList)
+                )
             )
 
-        CloseExplorer ->
-            ( { model | display = Nothing }, Cmd.none )
+        Close ->
+            ( { model | display = Nothing }, Track.dataExplorerClosed { project = project } )
 
-        UpdateExplorerDisplay d ->
+        UpdateDisplay d ->
             ( { model | display = d }, Cmd.none )
 
         UpdateTab tab ->
@@ -258,13 +269,13 @@ viewHeader wrap activeTab display =
         , div [ class "py-2 flex flex-shrink-0 self-center" ]
             [ case display of
                 FullScreenDisplay ->
-                    button [ onClick (Just BottomDisplay |> UpdateExplorerDisplay |> wrap), title "minimize", class "rounded-full flex items-center text-gray-400 hover:text-gray-600" ]
+                    button [ onClick (Just BottomDisplay |> UpdateDisplay |> wrap), title "minimize", class "rounded-full flex items-center text-gray-400 hover:text-gray-600" ]
                         [ Icon.solid Icon.ChevronDoubleDown "" ]
 
                 BottomDisplay ->
-                    button [ onClick (Just FullScreenDisplay |> UpdateExplorerDisplay |> wrap), title "maximize", class "rounded-full flex items-center text-gray-400 hover:text-gray-600" ]
+                    button [ onClick (Just FullScreenDisplay |> UpdateDisplay |> wrap), title "maximize", class "rounded-full flex items-center text-gray-400 hover:text-gray-600" ]
                         [ Icon.solid Icon.ChevronDoubleUp "" ]
-            , button [ onClick (wrap CloseExplorer), title "close", class "rounded-full flex items-center text-gray-400 hover:text-gray-600" ] [ Icon.solid Icon.X "" ]
+            , button [ onClick (wrap Close), title "close", class "rounded-full flex items-center text-gray-400 hover:text-gray-600" ] [ Icon.solid Icon.X "" ]
             ]
         ]
 
@@ -623,6 +634,30 @@ docLayout =
     ErdLayout.empty Time.zero
 
 
+docProject : ProjectInfo
+docProject =
+    { organization = Nothing
+    , id = ProjectId.zero
+    , slug = "p"
+    , name = "P"
+    , description = Nothing
+    , storage = ProjectStorage.Local
+    , visibility = ProjectVisibility.None
+    , version = ProjectEncodingVersion.current
+    , nbSources = 0
+    , nbTables = 0
+    , nbColumns = 0
+    , nbRelations = 0
+    , nbTypes = 0
+    , nbComments = 0
+    , nbLayouts = 0
+    , nbNotes = 0
+    , nbMemos = 0
+    , createdAt = Time.zero
+    , updatedAt = Time.zero
+    }
+
+
 
 -- DOC HELPERS
 
@@ -634,7 +669,7 @@ docComponentState name get set sources =
 
 docUpdate : DocState -> (DocState -> Model) -> (DocState -> Model -> DocState) -> List Source -> Msg -> ElmBook.Msg (SharedDocState x)
 docUpdate s get set sources m =
-    s |> get |> update sources m |> Tuple.first |> set s |> docSetState
+    s |> get |> update docWrap docProject sources m |> Tuple.first |> set s |> docSetState
 
 
 docToggleDropdown : DocState -> HtmlId -> ElmBook.Msg (SharedDocState x)
@@ -649,6 +684,11 @@ docToggleDropdown s id =
 docSetState : DocState -> ElmBook.Msg (SharedDocState x)
 docSetState state =
     Actions.updateState (\s -> { s | dataExplorerDocState = state })
+
+
+docWrap : Msg -> ElmBook.Msg state
+docWrap _ =
+    logAction "wrap"
 
 
 docShowTable : TableId -> ElmBook.Msg state

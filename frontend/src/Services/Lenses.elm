@@ -71,7 +71,6 @@ module Services.Lenses exposing
     , mapPromptM
     , mapProps
     , mapQuery
-    , mapQueryPaneCmd
     , mapRelatedTables
     , mapRelations
     , mapRemoveViews
@@ -198,7 +197,6 @@ module Services.Lenses exposing
     , setPrompt
     , setProps
     , setQuery
-    , setQueryPane
     , setRelatedTables
     , setRelationStyle
     , setRelations
@@ -1060,16 +1058,6 @@ setQuery =
 mapQuery : (v -> v) -> { item | query : v } -> { item | query : v }
 mapQuery =
     map_ .query setQuery
-
-
-setQueryPane : v -> { item | queryPane : v } -> { item | queryPane : v }
-setQueryPane =
-    set_ .queryPane (\value item -> { item | queryPane = value })
-
-
-mapQueryPaneCmd : (v -> ( v, Cmd msg )) -> { item | queryPane : v } -> ( { item | queryPane : v }, Cmd msg )
-mapQueryPaneCmd =
-    mapCmd_ .queryPane setQueryPane
 
 
 setRelatedTables : v -> { item | relatedTables : v } -> { item | relatedTables : v }

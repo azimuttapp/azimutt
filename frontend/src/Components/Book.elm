@@ -39,7 +39,6 @@ import Components.Slices.NewLayoutBody as NewLayoutBody
 import Components.Slices.NotFound as NotFound
 import Components.Slices.ProPlan as ProPlan
 import Components.Slices.ProjectSaveDialogBody as ProjectSaveDialogBody
-import Components.Slices.QueryPane as QueryPane
 import ElmBook
 import ElmBook.Chapter as Chapter exposing (Chapter)
 import ElmBook.ComponentOptions
@@ -115,7 +114,7 @@ main =
         |> ElmBook.withChapterGroups
             -- sorted alphabetically
             [ ( "", [ docs ] )
-            , ( "Slices", [ DataExplorer.doc, DataExplorerDetails.doc, DataExplorerQuery.doc, ExportDialogBody.doc, NotFound.doc, NewLayoutBody.doc, ProjectSaveDialogBody.doc, ProPlan.doc, QueryPane.doc ] )
+            , ( "Slices", [ DataExplorer.doc, DataExplorerDetails.doc, DataExplorerQuery.doc, ExportDialogBody.doc, NotFound.doc, NewLayoutBody.doc, ProjectSaveDialogBody.doc, ProPlan.doc ] )
             , ( "Organisms", [ ColorPicker.doc, Details.doc, Navbar.doc, Relation.doc, Table.doc, TableRow.doc ] )
             , ( "Molecules", [ Alert.doc, Avatar.doc, Divider.doc, Dropdown.doc, Editor.doc, FileInput.doc, FormLabel.doc, InputText.doc, ItemList.doc, Modal.doc, Pagination.doc, Popover.doc, Radio.doc, Select.doc, Slideover.doc, Toast.doc, Tooltip.doc ] )
             , ( "Atoms", [ Badge.doc, Button.doc, colorsDoc, Icon.doc, Input.doc, Kbd.doc, Markdown.doc, Link.doc, Loader.doc ] )

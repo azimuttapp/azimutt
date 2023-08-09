@@ -3,7 +3,6 @@ module PagesComponents.Organization_.Project_.Views exposing (title, view)
 import Components.Atoms.Loader as Loader
 import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
 import Components.Slices.DataExplorer as DataExplorer
-import Components.Slices.QueryPane as QueryPane
 import Conf
 import Dict
 import Html exposing (Html, a, aside, br, button, div, footer, h1, img, main_, nav, p, section, span, text)
@@ -134,7 +133,7 @@ viewLeftSidebar model =
     let
         content : Maybe (Html Msg)
         content =
-            model.detailsSidebar |> Maybe.map2 (DetailsSidebar.view DetailsSidebarMsg (\id -> ShowTable id Nothing) ShowColumn HideColumn (LLoad >> LayoutMsg) (\source q -> QueryPane.Open (Just source) (Just q) |> QueryPaneMsg) model.tableStats model.columnStats) model.erd
+            model.detailsSidebar |> Maybe.map2 (DetailsSidebar.view DetailsSidebarMsg (\id -> ShowTable id Nothing) ShowColumn HideColumn (LLoad >> LayoutMsg) (\source q -> DataExplorer.Open (Just source) (Just q) |> DataExplorerMsg) model.tableStats model.columnStats) model.erd
     in
     aside [ css [ "block flex-shrink-0 order-first" ] ]
         [ div [ css [ B.cond (content == Nothing) "-ml-112" "", "w-112 transition-[margin] ease-in-out duration-200 h-full relative flex flex-col border-r border-gray-200 bg-white overflow-y-auto" ] ]
@@ -162,8 +161,7 @@ viewBottomSheet model =
     let
         content : Maybe (Html Msg)
         content =
-            (model.dataExplorer.display |> Maybe.map2 (\erd -> DataExplorer.view DataExplorerMsg DropdownToggle (\id -> ShowTable id Nothing) AddTableRow (calcNavbarHeight model) model.openedDropdown erd.settings.defaultSchema Conf.ids.dataExplorerDialog erd.sources (erd |> Erd.currentLayout) erd.metadata model.dataExplorer) model.erd)
-                |> Maybe.orElse (model.queryPane |> Maybe.map2 (\erd -> QueryPane.view QueryPaneMsg erd.sources) model.erd)
+            model.dataExplorer.display |> Maybe.map2 (\erd -> DataExplorer.view DataExplorerMsg DropdownToggle (\id -> ShowTable id Nothing) AddTableRow (calcNavbarHeight model) model.openedDropdown erd.settings.defaultSchema Conf.ids.dataExplorerDialog erd.sources (erd |> Erd.currentLayout) erd.metadata model.dataExplorer) model.erd
     in
     aside [ class "block flex-shrink-0" ]
         [ div [ style "height" ("calc(" ++ calcBottomSheetHeight model ++ ")"), css [ "relative border-t border-gray-200 bg-white overflow-y-auto" ] ]
@@ -289,7 +287,6 @@ calcNavbarHeight model =
 calcBottomSheetHeight : Model -> String
 calcBottomSheetHeight model =
     (model.dataExplorer.display |> Maybe.map (\d -> d == DataExplorer.FullScreenDisplay))
-        |> Maybe.orElse (model.queryPane |> Maybe.map .sizeFull)
         |> Maybe.mapOrElse (\full -> B.cond full ("100vh - " ++ calcNavbarHeight model) "400px") "0px"
 
 

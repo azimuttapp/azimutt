@@ -147,4 +147,4 @@ mixedCollection table =
 
 limit : String
 limit =
-    "30"
+    "100"

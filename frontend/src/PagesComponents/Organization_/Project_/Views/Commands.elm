@@ -69,7 +69,7 @@ viewCommands conf canvasZoom args =
             span [ class "relative z-0 inline-flex shadow-sm rounded-md ml-2" ]
                 [ button [ type_ "button", onClick (DetailsSidebarMsg DetailsSidebar.Toggle), css [ "rounded-l-md", buttonStyles, B.cond detailsSidebar inverted classic ] ] [ Icon.solid Menu "" ]
                     |> B.cond (conf.select && layoutNonEmpty) Tooltip.t Tooltip.tl "Open table list"
-                , button [ type_ "button", onClick (DataExplorerMsg (B.cond dataExplorer DataExplorer.CloseExplorer (DataExplorer.OpenExplorer Nothing Nothing))), css [ "-ml-px", buttonStyles, B.cond dataExplorer inverted classic ] ] [ Icon.solid Code "" ]
+                , button [ type_ "button", onClick (DataExplorerMsg (B.cond dataExplorer DataExplorer.Close (DataExplorer.Open Nothing Nothing))), css [ "-ml-px", buttonStyles, B.cond dataExplorer inverted classic ] ] [ Icon.solid Code "" ]
                     |> B.cond (conf.move && layoutNonEmpty) Tooltip.t Tooltip.tl "Explore your data"
                 , button [ type_ "button", onClick (AmlSidebarMsg AToggle), css [ "-ml-px rounded-r-md", buttonStyles, B.cond amlSidebar inverted classic ] ] [ Icon.solid Pencil "" ]
                     |> B.cond (conf.move && layoutNonEmpty) Tooltip.t Tooltip.tl "Update your schema"
