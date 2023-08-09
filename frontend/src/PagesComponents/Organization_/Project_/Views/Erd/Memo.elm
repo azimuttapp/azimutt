@@ -61,7 +61,7 @@ viewMemo platform conf cursorMode edit memo =
             (div
                 ([ id htmlId
                  , onPointerUp (\e -> SelectItem htmlId (e.ctrl || e.shift)) platform
-                 , class ("select-none absolute px-3 py-1 cursor-pointer overflow-hidden rounded border border-transparent border-dashed hover:border-gray-300 hover:resize hover:overflow-auto" ++ (memo.color |> Maybe.mapOrElse (\c -> " shadow " ++ Tw.bg_200 c) ""))
+                 , class ("select-none absolute px-3 py-1 cursor-pointer overflow-hidden rounded border border-transparent border-dashed hover:border-gray-300 hover:resize" ++ (memo.color |> Maybe.mapOrElse (\c -> " shadow " ++ Tw.bg_200 c) ""))
                  , classList [ ( "ring-2 " ++ Tw.ring_300 (memo.color |> Maybe.withDefault Tw.gray), memo.selected ) ]
                  ]
                     ++ Bool.cond conf.layout [ onDblClick (\_ -> MemoMsg (MEdit memo)) platform, onContextMenu (ContextMenuCreate (MemoContextMenu.view conf memo)) platform ] []

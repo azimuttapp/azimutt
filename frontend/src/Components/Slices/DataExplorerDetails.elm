@@ -1,6 +1,7 @@
 module Components.Slices.DataExplorerDetails exposing (DocState, FailureState, Id, Model, Msg(..), SharedDocState, State(..), SuccessState, doc, docInit, init, update, view)
 
 import Components.Atoms.Icon as Icon
+import Components.Atoms.Icons as Icons
 import Components.Slices.DataExplorerValue as DataExplorerValue
 import Dict exposing (Dict)
 import ElmBook
@@ -11,20 +12,28 @@ import Html.Attributes exposing (class, id, style, title, type_)
 import Html.Events exposing (onClick)
 import Libs.Html.Attributes exposing (ariaLabelledby, ariaModal, css, role)
 import Libs.List as List
+import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Nel as Nel exposing (Nel)
 import Libs.Result as Result
 import Libs.Set as Set
+import Libs.Tailwind as Tw
 import Libs.Time as Time
 import Models.DbSourceInfo as DbSourceInfo exposing (DbSourceInfo)
 import Models.DbValue as DbValue exposing (DbValue(..))
+import Models.Project.Column exposing (Column)
+import Models.Project.ColumnMeta exposing (ColumnMeta)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
-import Models.Project.TableId as TableId
+import Models.Project.Table exposing (Table)
+import Models.Project.TableId as TableId exposing (TableId)
+import Models.Project.TableMeta exposing (TableMeta)
 import Models.Project.TableName exposing (TableName)
 import Models.QueryResult as QueryResult exposing (QueryResult, QueryResultColumn, QueryResultRow, QueryResultSuccess)
+import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
+import PagesComponents.Organization_.Project_.Models.ErdTableProps as ErdTableProps
 import Ports
 import Services.Lenses exposing (mapState)
 import Services.QueryBuilder as QueryBuilder exposing (RowQuery)
@@ -118,8 +127,8 @@ update msg model =
 -- VIEW
 
 
-view : (Msg -> msg) -> msg -> (RowQuery -> msg) -> (DbSourceInfo -> RowQuery -> msg) -> String -> Bool -> SchemaName -> List Source -> HtmlId -> Maybe Int -> Model -> Html msg
-view wrap close openRow addToLayout navbarHeight hasFullScreen defaultSchema sources htmlId openDepth model =
+view : (Msg -> msg) -> msg -> (TableId -> msg) -> (RowQuery -> msg) -> (DbSourceInfo -> RowQuery -> msg) -> String -> Bool -> SchemaName -> Maybe Source -> Maybe ErdTableLayout -> Maybe TableMeta -> HtmlId -> Maybe Int -> Model -> Html msg
+view wrap close showTable openRow addToLayout navbarHeight hasFullScreen defaultSchema source tableLayout tableMeta htmlId openDepth model =
     let
         titleId : HtmlId
         titleId =
@@ -166,7 +175,7 @@ view wrap close openRow addToLayout navbarHeight hasFullScreen defaultSchema sou
                             , openDepth |> Maybe.andThen (\i -> [ "translate-x-0", "-translate-x-6", "-translate-x-12", "-translate-x-16", "-translate-x-20" ] |> List.get i) |> Maybe.withDefault "translate-x-full"
                             ]
                         ]
-                        [ viewSlideOverContent wrap close openRow addToLayout defaultSchema (sources |> List.findBy .id model.source.id) titleId model
+                        [ viewSlideOverContent wrap close showTable openRow addToLayout defaultSchema source tableLayout tableMeta titleId model
                         ]
                     ]
                 ]
@@ -174,20 +183,34 @@ view wrap close openRow addToLayout navbarHeight hasFullScreen defaultSchema sou
         ]
 
 
-viewSlideOverContent : (Msg -> msg) -> msg -> (RowQuery -> msg) -> (DbSourceInfo -> RowQuery -> msg) -> SchemaName -> Maybe Source -> HtmlId -> Model -> Html msg
-viewSlideOverContent wrap close openRow addToLayout defaultSchema source titleId model =
+viewSlideOverContent : (Msg -> msg) -> msg -> (TableId -> msg) -> (RowQuery -> msg) -> (DbSourceInfo -> RowQuery -> msg) -> SchemaName -> Maybe Source -> Maybe ErdTableLayout -> Maybe TableMeta -> HtmlId -> Model -> Html msg
+viewSlideOverContent wrap close showTable openRow addToLayout defaultSchema source tableLayout tableMeta titleId model =
     let
+        table : Maybe Table
+        table =
+            source |> Maybe.andThen (.tables >> Dict.get model.query.table)
+
+        color : Tw.Color
+        color =
+            tableLayout |> Maybe.mapOrElse (.props >> .color) (ErdTableProps.computeColor model.query.table)
+
+        tableLabel : String
+        tableLabel =
+            TableId.show defaultSchema model.query.table
+
         panelTitle : String
         panelTitle =
-            TableId.show defaultSchema model.query.table ++ ": " ++ (model.query.primaryKey |> Nel.toList |> List.map (.value >> DbValue.toString) |> String.join "/")
+            tableLabel ++ ": " ++ (model.query.primaryKey |> Nel.toList |> List.map (.value >> DbValue.toString) |> String.join "/")
     in
     div [ class "flex h-full flex-col overflow-y-auto bg-white shadow-xl" ]
-        [ div [ class "p-6 bg-indigo-700" ]
+        [ div [ css [ Tw.bg_500 color, "p-6" ] ]
             [ div [ class "flex items-start justify-between" ]
                 [ h2 [ id titleId, title panelTitle, class "text-base font-semibold leading-6 text-white truncate" ]
-                    [ text panelTitle ]
+                    [ button [ onClick (showTable model.query.table), title ("Show " ++ tableLabel ++ " table"), class "mr-1" ] [ Icon.solid Icon.Eye "w-4 h-4 inline" ]
+                    , text panelTitle
+                    ]
                 , div [ class "ml-3 flex h-7 items-center" ]
-                    [ button [ type_ "button", onClick close, class "relative rounded-md bg-indigo-700 text-indigo-200 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2" ]
+                    [ button [ type_ "button", onClick close, css [ Tw.bg_500 color, Tw.text_200 color, "relative rounded-md hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2" ] ]
                         [ span [ class "absolute -inset-2.5" ] []
                         , span [ class "sr-only" ] [ text "Close panel" ]
                         , Icon.solid Icon.X "h-6 w-6"
@@ -213,11 +236,24 @@ viewSlideOverContent wrap close openRow addToLayout defaultSchema source titleId
                     , div [ class "space-y-3" ]
                         ((res.columns |> QueryResult.buildColumnTargets source)
                             |> List.map
-                                (\c ->
+                                (\col ->
+                                    let
+                                        column : Maybe Column
+                                        column =
+                                            table |> Maybe.andThen (.columns >> Dict.get col.name)
+
+                                        meta : Maybe ColumnMeta
+                                        meta =
+                                            tableMeta |> Maybe.andThen (.columns >> Dict.get col.name)
+                                    in
                                     div []
-                                        [ dt [ class "text-sm font-medium text-gray-500 sm:w-40 sm:flex-shrink-0" ] [ text c.name ]
+                                        [ dt [ class "text-sm font-medium text-gray-500 sm:w-40 sm:flex-shrink-0" ]
+                                            [ text col.name
+                                            , column |> Maybe.andThen .comment |> Maybe.mapOrElse (\c -> span [ title c.text, class "ml-1 opacity-50" ] [ Icon.outline Icons.comment "w-3 h-3 inline" ]) (text "")
+                                            , meta |> Maybe.andThen .notes |> Maybe.mapOrElse (\notes -> span [ title notes, class "ml-1 opacity-50" ] [ Icon.outline Icons.notes "w-3 h-3 inline" ]) (text "")
+                                            ]
                                         , dd [ class "text-sm text-gray-900 sm:col-span-2 overflow-hidden text-ellipsis" ]
-                                            [ DataExplorerValue.view openRow (ExpandValue c.name |> wrap) defaultSchema False (model.expanded |> Set.member c.name) (res.values |> Dict.get c.name) c
+                                            [ DataExplorerValue.view openRow (ExpandValue col.name |> wrap) defaultSchema False (model.expanded |> Set.member col.name) (res.values |> Dict.get col.name) col
                                             ]
                                         ]
                                 )
@@ -264,7 +300,7 @@ doc =
                                 |> List.indexedMap
                                     (\i m ->
                                         div [ class "mt-1" ]
-                                            [ view (docUpdate i s) (docClose i s) docOpenRow docAddToLayout "0px" False "public" [] ("data-explorer-details-" ++ String.fromInt i) (Just i) m
+                                            [ view (docUpdate i s) (docClose i s) docShowTable docOpenRow docAddToLayout "0px" False "public" Nothing docTableLayout docTableMeta ("data-explorer-details-" ++ String.fromInt i) (Just i) m
                                             , docButton ("Close " ++ String.fromInt i) (docClose i s)
                                             ]
                                     )
@@ -314,6 +350,16 @@ docCityColumnValues id name country_code district population =
     [ ( "id", DbInt id ), ( "name", DbString name ), ( "country_code", DbString country_code ), ( "district", DbString district ), ( "population", DbInt population ) ] ++ (List.range 1 15 |> List.map (\i -> ( "col" ++ String.fromInt i, DbString ("value" ++ String.fromInt i) ))) |> Dict.fromList
 
 
+docTableLayout : Maybe ErdTableLayout
+docTableLayout =
+    Nothing
+
+
+docTableMeta : Maybe TableMeta
+docTableMeta =
+    Nothing
+
+
 
 -- DOC HELPERS
 
@@ -338,11 +384,16 @@ docSetState state =
     Actions.updateState (\s -> { s | dataExplorerDetailsDocState = state })
 
 
+docShowTable : TableId -> ElmBook.Msg state
+docShowTable _ =
+    logAction "showTable"
+
+
 docOpenRow : RowQuery -> ElmBook.Msg state
-docOpenRow =
-    \_ -> logAction "openRow"
+docOpenRow _ =
+    logAction "openRow"
 
 
 docAddToLayout : DbSourceInfo -> RowQuery -> ElmBook.Msg state
-docAddToLayout =
-    \_ _ -> logAction "addToLayout"
+docAddToLayout _ _ =
+    logAction "addToLayout"

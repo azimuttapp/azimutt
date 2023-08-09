@@ -170,7 +170,7 @@ viewErd conf erdElem erd selectionBox virtualRelation editMemo args dragging =
             [ -- canvas.position |> Position.debugDiagram "canvas" "bg-black"
               -- , layout.tables |> List.map (.props >> Area.offGrid) |> Area.mergeCanvas |> Maybe.mapOrElse (Area.debugCanvas "tablesArea" "border-blue-500") (div [] []),
               div [ class "az-groups" ] (groups |> List.map (viewGroup platform erd.settings.defaultSchema editGroup))
-            , tableRows |> viewTableRows now platform conf cursorMode erd.settings.defaultSchema openedDropdown erd.sources erd.metadata
+            , tableRows |> viewTableRows now platform conf cursorMode erd.settings.defaultSchema openedDropdown erd.sources layout erd.metadata
             , displayedRelations |> Lazy.lazy5 viewRelations conf erd.settings.defaultSchema erd.settings.relationStyle displayedTables
             , layoutTables |> viewTables platform conf cursorMode virtualRelation openedDropdown openedPopover hoverTable dragging canvas.zoom erd.settings.defaultSchema selected erd.settings.columnBasicTypes erd.tables erd.metadata layout
             , memos |> viewMemos platform conf cursorMode editMemo
@@ -199,8 +199,8 @@ viewMemos platform conf cursorMode editMemo memos =
         )
 
 
-viewTableRows : Time.Posix -> Platform -> ErdConf -> CursorMode -> SchemaName -> HtmlId -> List Source -> Metadata -> List TableRow -> Html Msg
-viewTableRows now platform conf cursorMode defaultSchema openedDropdown sources metadata tableRows =
+viewTableRows : Time.Posix -> Platform -> ErdConf -> CursorMode -> SchemaName -> HtmlId -> List Source -> ErdLayout -> Metadata -> List TableRow -> Html Msg
+viewTableRows now platform conf cursorMode defaultSchema openedDropdown sources layout metadata tableRows =
     Keyed.node "div"
         [ class "az-table-rows" ]
         (tableRows
@@ -217,6 +217,7 @@ viewTableRows now platform conf cursorMode defaultSchema openedDropdown sources 
                         openedDropdown
                         (TableRow.toHtmlId r.id)
                         (sources |> List.findBy .id r.source |> Maybe.andThen DbSource.fromSource)
+                        (layout.tables |> List.findBy .id r.query.table)
                         (metadata |> Dict.get r.query.table)
                         r
                     )

@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Models.ErdTableProps exposing (ErdTableProps, create, init)
+module PagesComponents.Organization_.Project_.Models.ErdTableProps exposing (ErdTableProps, computeColor, create, init)
 
 import Libs.List as List
 import Libs.String as String

@@ -43,7 +43,7 @@ type alias QueryResultRow =
 
 
 type alias QueryResultColumnTarget =
-    { name : String, open : Maybe { ref : ColumnRef, kind : ColumnType } }
+    { name : String, ref : Maybe ColumnRef, fk : Maybe { ref : ColumnRef, kind : ColumnType } }
 
 
 buildColumnTargets : Maybe { s | tables : Dict TableId Table, relations : List Relation } -> List QueryResultColumn -> List QueryResultColumnTarget
@@ -57,7 +57,7 @@ buildColumnTargets source columns =
         relations =
             source |> Maybe.mapOrElse (.relations >> List.groupBy (.src >> .table)) Dict.empty
     in
-    columns |> List.map (\c -> { name = c.name, open = c.ref |> Maybe.andThen (targetColumn tables relations) })
+    columns |> List.map (\c -> { name = c.name, ref = c.ref, fk = c.ref |> Maybe.andThen (targetColumn tables relations) })
 
 
 targetColumn : Dict TableId Table -> Dict TableId (List Relation) -> ColumnRef -> Maybe { ref : ColumnRef, kind : ColumnType }

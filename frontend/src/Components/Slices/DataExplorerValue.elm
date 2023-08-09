@@ -45,6 +45,6 @@ view openRow expandRow defaultSchema documentMode expanded value column =
                         [ Icon.solid Icon.ExternalLink "ml-1 w-4 h-4 inline" ]
                     ]
             )
-            column.open
+            column.fk
             (value |> Maybe.filter (\v -> v /= DbNull))
             |> Maybe.withDefault (div [ title valueText ] [ DbValue.view value ])

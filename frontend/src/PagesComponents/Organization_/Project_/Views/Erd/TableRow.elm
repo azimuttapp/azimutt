@@ -18,18 +18,19 @@ import Models.Size as Size
 import PagesComponents.Organization_.Project_.Models exposing (MemoMsg(..), Msg(..))
 import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode exposing (CursorMode)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
+import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import Time
 
 
-viewTableRow : Time.Posix -> Platform -> ErdConf -> CursorMode -> SchemaName -> HtmlId -> HtmlId -> Maybe DbSource -> Maybe TableMeta -> TableRow -> Html Msg
-viewTableRow now platform conf cursorMode defaultSchema openedDropdown htmlId source tableMeta row =
+viewTableRow : Time.Posix -> Platform -> ErdConf -> CursorMode -> SchemaName -> HtmlId -> HtmlId -> Maybe DbSource -> Maybe ErdTableLayout -> Maybe TableMeta -> TableRow -> Html Msg
+viewTableRow now platform conf cursorMode defaultSchema openedDropdown htmlId source tableLayout tableMeta row =
     let
         dragAttrs : List (Attribute Msg)
         dragAttrs =
             Bool.cond (cursorMode == CursorMode.Drag || not conf.move) [] [ onPointerDown (handlePointerDown htmlId) platform ]
     in
     div ([ id htmlId, class "select-none absolute cursor-pointer", classList [ ( "invisible", row.size == Size.zeroCanvas ) ] ] ++ Position.stylesGrid row.position ++ dragAttrs)
-        [ TableRow.view (TableRowMsg row.id) DropdownToggle SelectItem AddTableRow (DeleteTableRow row.id) now platform defaultSchema openedDropdown htmlId source tableMeta row
+        [ TableRow.view (TableRowMsg row.id) DropdownToggle SelectItem (\id -> ShowTable id Nothing) AddTableRow (DeleteTableRow row.id) now platform defaultSchema openedDropdown htmlId source tableLayout tableMeta row
         ]
 
 

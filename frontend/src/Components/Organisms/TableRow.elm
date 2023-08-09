@@ -14,7 +14,6 @@ import Html.Attributes exposing (class, classList, id, title, type_)
 import Html.Events exposing (onClick)
 import Html.Keyed as Keyed
 import Libs.Dict as Dict
-import Libs.Html exposing (bText)
 import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, css)
 import Libs.Html.Events exposing (onDblClick, onPointerUp)
 import Libs.List as List
@@ -26,7 +25,7 @@ import Libs.Nel as Nel exposing (Nel)
 import Libs.Result as Result
 import Libs.Set as Set
 import Libs.String as String
-import Libs.Tailwind exposing (TwClass, focus)
+import Libs.Tailwind as Tw exposing (Color, TwClass, focus)
 import Libs.Time as Time
 import Models.DbSource as DbSource exposing (DbSource)
 import Models.DbSourceInfo as DbSourceInfo exposing (DbSourceInfo)
@@ -49,6 +48,8 @@ import Models.Project.TableName exposing (TableName)
 import Models.Project.TableRow as TableRow exposing (FailureState, LoadingState, State(..), SuccessState, TableRow, TableRowValue)
 import Models.QueryResult exposing (QueryResult, QueryResultSuccess)
 import Models.Size as Size
+import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
+import PagesComponents.Organization_.Project_.Models.ErdTableProps as ErdTableProps
 import Ports
 import Services.Lenses exposing (mapSelected, mapState, setState)
 import Services.QueryBuilder as QueryBuilder exposing (RowQuery)
@@ -177,8 +178,8 @@ mapSuccess f state =
 -- VIEW
 
 
-view : (Msg -> msg) -> (HtmlId -> msg) -> (HtmlId -> Bool -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> msg) -> msg -> Time.Posix -> Platform -> SchemaName -> HtmlId -> HtmlId -> Maybe DbSource -> Maybe TableMeta -> TableRow -> Html msg
-view wrap toggleDropdown selectItem openTableRow delete now platform defaultSchema openedDropdown htmlId source tableMeta model =
+view : (Msg -> msg) -> (HtmlId -> msg) -> (HtmlId -> Bool -> msg) -> (TableId -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> msg) -> msg -> Time.Posix -> Platform -> SchemaName -> HtmlId -> HtmlId -> Maybe DbSource -> Maybe ErdTableLayout -> Maybe TableMeta -> TableRow -> Html msg
+view wrap toggleDropdown selectItem showTable openTableRow delete now platform defaultSchema openedDropdown htmlId source tableLayout tableMeta model =
     let
         table : Maybe Table
         table =
@@ -187,9 +188,13 @@ view wrap toggleDropdown selectItem openTableRow delete now platform defaultSche
         relations : List Relation
         relations =
             source |> Maybe.mapOrElse (.relations >> List.filter (\r -> r.src.table == model.query.table || r.ref.table == model.query.table)) []
+
+        color : Tw.Color
+        color =
+            tableLayout |> Maybe.mapOrElse (.props >> .color) (ErdTableProps.computeColor model.query.table)
     in
     div [ class "max-w-xs bg-white text-default-500 text-xs border", classList [ ( "ring-2 ring-gray-300", model.selected ) ] ]
-        [ viewHeader wrap toggleDropdown selectItem delete platform defaultSchema openedDropdown (htmlId ++ "-header") model
+        [ viewHeader wrap toggleDropdown selectItem showTable delete platform defaultSchema openedDropdown (htmlId ++ "-header") color model
         , case model.state of
             StateLoading s ->
                 viewLoading s
@@ -203,23 +208,27 @@ view wrap toggleDropdown selectItem openTableRow delete now platform defaultSche
         ]
 
 
-viewHeader : (Msg -> msg) -> (HtmlId -> msg) -> (HtmlId -> Bool -> msg) -> msg -> Platform -> SchemaName -> HtmlId -> HtmlId -> TableRow -> Html msg
-viewHeader wrap toggleDropdown selectItem delete platform defaultSchema openedDropdown htmlId model =
+viewHeader : (Msg -> msg) -> (HtmlId -> msg) -> (HtmlId -> Bool -> msg) -> (TableId -> msg) -> msg -> Platform -> SchemaName -> HtmlId -> HtmlId -> Color -> TableRow -> Html msg
+viewHeader wrap toggleDropdown selectItem showTable delete platform defaultSchema openedDropdown htmlId color model =
     let
         dropdownId : HtmlId
         dropdownId =
             htmlId ++ "-settings"
 
-        table : String
-        table =
+        tableLabel : String
+        tableLabel =
             TableId.show defaultSchema model.query.table
 
         filter : String
         filter =
             model.query.primaryKey |> Nel.toList |> List.map (.value >> DbValue.toString) |> String.join "/"
     in
-    div [ onPointerUp (\e -> selectItem (TableRow.toHtmlId model.id) (e.ctrl || e.shift)) platform, class "p-2 flex items-center bg-default-50 border-b border-gray-200 cursor-pointer" ]
-        [ div [ title (table ++ ": " ++ filter), class "flex-grow text-center truncate" ] [ bText table, text (": " ++ filter) ]
+    div [ onPointerUp (\e -> selectItem (TableRow.toHtmlId model.id) (e.ctrl || e.shift)) platform, css [ "p-2 flex items-center border-b border-gray-200 cursor-pointer", Tw.bg_50 color ] ]
+        [ div [ title (tableLabel ++ ": " ++ filter), class "flex-grow text-center truncate" ]
+            [ button [ onClick (showTable model.query.table), title ("Show " ++ tableLabel ++ " table"), css [ Tw.text_500 color, "mr-1 opacity-50" ] ] [ Icon.solid Icon.Eye "w-3 h-3 inline" ]
+            , span [ css [ Tw.text_500 color, "font-bold" ] ] [ text tableLabel ]
+            , text (": " ++ filter)
+            ]
         , Dropdown.dropdown { id = dropdownId, direction = BottomLeft, isOpen = openedDropdown == dropdownId }
             (\m ->
                 button
@@ -409,7 +418,7 @@ doc =
 
 docView : DocState -> (DocState -> Model) -> (DocState -> Model -> DocState) -> HtmlId -> Html (ElmBook.Msg (SharedDocState x))
 docView s get set htmlId =
-    view (docUpdate s get set) (docToggleDropdown s) (docSelectItem s get set) docOpenTableRow docDelete docNow docPlatform docDefaultSchema s.openedDropdown htmlId (docSource |> DbSource.fromSource) (Just docTableMeta) (get s)
+    view (docUpdate s get set) (docToggleDropdown s) (docSelectItem s get set) docShowTable docOpenTableRow docDelete docNow docPlatform docDefaultSchema s.openedDropdown htmlId (docSource |> DbSource.fromSource) (Just docTableLayout) (Just docTableMeta) (get s)
 
 
 docSuccessUser : TableRow
@@ -553,6 +562,15 @@ docTableMeta =
     }
 
 
+docTableLayout : ErdTableLayout
+docTableLayout =
+    { id = ( "public", "users" )
+    , props = { positionHint = Nothing, position = Position.zeroGrid, size = Size.zeroCanvas, color = Tw.indigo, selected = False, collapsed = False, showHiddenColumns = False }
+    , columns = []
+    , relatedTables = Dict.empty
+    }
+
+
 docTable : SchemaName -> TableName -> List ( ColumnName, ColumnType, Bool ) -> Table
 docTable schema name columns =
     { id = ( schema, name )
@@ -601,6 +619,11 @@ docToggleDropdown s id =
 docSelectItem : DocState -> (DocState -> Model) -> (DocState -> Model -> DocState) -> HtmlId -> Bool -> ElmBook.Msg (SharedDocState x)
 docSelectItem s get set _ _ =
     s |> get |> mapSelected not |> set s |> docSetState
+
+
+docShowTable : TableId -> ElmBook.Msg state
+docShowTable _ =
+    logAction "showTable"
 
 
 docOpenTableRow : DbSourceInfo -> QueryBuilder.RowQuery -> ElmBook.Msg state

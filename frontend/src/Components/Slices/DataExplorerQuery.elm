@@ -2,6 +2,7 @@ module Components.Slices.DataExplorerQuery exposing (DocState, FailureState, Id,
 
 import Array
 import Components.Atoms.Icon as Icon exposing (Icon)
+import Components.Atoms.Icons as Icons
 import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
 import Components.Molecules.Dropdown as Dropdown
 import Components.Molecules.Pagination as Pagination
@@ -29,12 +30,16 @@ import Libs.Tailwind exposing (TwClass, focus)
 import Libs.Time as Time
 import Models.DbSourceInfo as DbSourceInfo exposing (DbSourceInfo)
 import Models.DbValue as DbValue exposing (DbValue(..))
+import Models.Project.Column exposing (Column)
+import Models.Project.ColumnMeta exposing (ColumnMeta)
 import Models.Project.ColumnName exposing (ColumnName)
+import Models.Project.ColumnPath as ColumnPath
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.ColumnType exposing (ColumnType)
+import Models.Project.Metadata exposing (Metadata)
 import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.SchemaName exposing (SchemaName)
-import Models.Project.Source exposing (Source)
+import Models.Project.Source as Source exposing (Source)
 import Models.Project.SourceId as SourceId
 import Models.Project.SourceKind exposing (SourceKind(..))
 import Models.Project.Table exposing (Table)
@@ -265,8 +270,8 @@ csvEscape value =
 -- VIEW
 
 
-view : (Msg -> msg) -> (HtmlId -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> msg) -> msg -> HtmlId -> SchemaName -> List Source -> HtmlId -> Model -> Html msg
-view wrap toggleDropdown openRow deleteQuery openedDropdown defaultSchema sources htmlId model =
+view : (Msg -> msg) -> (HtmlId -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> msg) -> msg -> HtmlId -> SchemaName -> Maybe Source -> Metadata -> HtmlId -> Model -> Html msg
+view wrap toggleDropdown openRow deleteQuery openedDropdown defaultSchema source metadata htmlId model =
     case model.state of
         StateRunning ->
             viewCard False
@@ -340,7 +345,7 @@ view wrap toggleDropdown openRow deleteQuery openedDropdown defaultSchema source
                       else
                         div [ class "relative mt-3", onClick (wrap ToggleQuery) ]
                             [ viewQuery "px-2 py-1 text-xs cursor-pointer" (model.query |> String.split "\n" |> List.head |> Maybe.withDefault "") ]
-                    , viewSuccess wrap (openRow model.source) defaultSchema (sources |> List.find (\s -> s.id == model.source.id)) res
+                    , viewSuccess wrap (openRow model.source) defaultSchema source metadata res
                     ]
                 )
                 (div []
@@ -415,8 +420,8 @@ viewActionButton icon name msg =
         [ span [ class "sr-only" ] [ text name ], Icon.outline icon "w-4 h-4" ]
 
 
-viewSuccess : (Msg -> msg) -> (QueryBuilder.RowQuery -> msg) -> SchemaName -> Maybe Source -> SuccessState -> Html msg
-viewSuccess wrap openRow defaultSchema source res =
+viewSuccess : (Msg -> msg) -> (QueryBuilder.RowQuery -> msg) -> SchemaName -> Maybe Source -> Metadata -> SuccessState -> Html msg
+viewSuccess wrap openRow defaultSchema source metadata res =
     let
         items : List QueryResultRow
         items =
@@ -436,19 +441,19 @@ viewSuccess wrap openRow defaultSchema source res =
 
         ( column, rows ) =
             if res.documentMode then
-                ( [ { name = "document", open = Nothing } ], pageRows |> List.map (Tuple.mapSecond (\r -> Dict.fromList [ ( "document", DbObject r ) ])) )
+                ( [ { name = "document", ref = Nothing, fk = Nothing } ], pageRows |> List.map (Tuple.mapSecond (\r -> Dict.fromList [ ( "document", DbObject r ) ])) )
 
             else
                 ( res.columns |> QueryResult.buildColumnTargets source, pageRows )
     in
     div [ class "mt-3" ]
-        [ viewTable wrap openRow defaultSchema column rows res.documentMode res.sortBy res.expanded
+        [ viewTable wrap openRow defaultSchema source metadata column rows res.documentMode res.sortBy res.expanded
         , Pagination.view (\p -> ChangePage p |> wrap) pagination
         ]
 
 
-viewTable : (Msg -> msg) -> (QueryBuilder.RowQuery -> msg) -> SchemaName -> List QueryResultColumnTarget -> List ( RowIndex, QueryResultRow ) -> Bool -> Maybe String -> Set RowIndex -> Html msg
-viewTable wrap openRow defaultSchema columns rows documentMode sortBy expanded =
+viewTable : (Msg -> msg) -> (QueryBuilder.RowQuery -> msg) -> SchemaName -> Maybe Source -> Metadata -> List QueryResultColumnTarget -> List ( RowIndex, QueryResultRow ) -> Bool -> Maybe String -> Set RowIndex -> Html msg
+viewTable wrap openRow defaultSchema source metadata columns rows documentMode sortBy expanded =
     div [ class "flow-root" ]
         [ div [ class "overflow-x-auto" ]
             [ div [ class "inline-block min-w-full align-middle" ]
@@ -457,7 +462,7 @@ viewTable wrap openRow defaultSchema columns rows documentMode sortBy expanded =
                     [ thead []
                         [ tr [ class "bg-gray-100" ]
                             (th [ scope "col", onClick (UpdateSort Nothing |> wrap), class "px-1 sticky left-0 text-left text-sm font-semibold text-gray-900 border-b border-r border-gray-300 bg-gray-100 cursor-pointer" ] [ text "#" ]
-                                :: (columns |> List.map (\c -> viewTableHeader wrap sortBy c.name))
+                                :: (columns |> List.map (viewTableHeader wrap source metadata sortBy))
                             )
                         ]
                     , tbody []
@@ -472,7 +477,12 @@ viewTable wrap openRow defaultSchema columns rows documentMode sortBy expanded =
                                     tr [ class "hover:bg-gray-100", classList [ ( "bg-gray-50", modBy 2 i == 1 ) ] ]
                                         ([ td [ class ("px-1 sticky left-0 z-10 text-sm text-gray-900 border-r border-gray-300 hover:bg-gray-100 " ++ Bool.cond (modBy 2 i == 1) "bg-gray-50" "bg-white") ] [ text (i |> String.fromInt) ] ]
                                             ++ (columns |> List.map (\c -> viewTableValue openRow (ExpandRow i |> wrap) defaultSchema documentMode (expanded |> Set.member i) (r |> Dict.get c.name) c))
-                                            ++ Bool.cond (rest |> Dict.isEmpty) [] [ viewTableValue openRow (ExpandRow i |> wrap) defaultSchema documentMode (expanded |> Set.member i) (rest |> DbObject |> Just) { name = "rest", open = Nothing } ]
+                                            ++ (if rest |> Dict.isEmpty then
+                                                    []
+
+                                                else
+                                                    [ viewTableValue openRow (ExpandRow i |> wrap) defaultSchema documentMode (expanded |> Set.member i) (rest |> DbObject |> Just) { name = "rest", ref = Nothing, fk = Nothing } ]
+                                               )
                                         )
                                 )
                         )
@@ -482,17 +492,27 @@ viewTable wrap openRow defaultSchema columns rows documentMode sortBy expanded =
         ]
 
 
-viewTableHeader : (Msg -> msg) -> Maybe String -> String -> Html msg
-viewTableHeader wrap sortBy column =
+viewTableHeader : (Msg -> msg) -> Maybe Source -> Metadata -> Maybe String -> QueryResultColumnTarget -> Html msg
+viewTableHeader wrap source metadata sortBy resultColumn =
     let
+        tableColumn : Maybe Column
+        tableColumn =
+            resultColumn.ref |> Maybe.andThen (\ref -> source |> Maybe.andThen (Source.getColumn ref))
+
+        meta : Maybe ColumnMeta
+        meta =
+            resultColumn.ref |> Maybe.andThen (\ref -> metadata |> Dict.get ref.table |> Maybe.andThen (.columns >> Dict.get (ref.column |> ColumnPath.toString)))
+
         sort : Maybe ( String, Bool )
         sort =
             sortBy
                 |> Maybe.map extractSort
-                |> Maybe.filter (\( col, _ ) -> col == column)
+                |> Maybe.filter (\( col, _ ) -> col == resultColumn.name)
     in
-    th [ scope "col", onClick (sort |> Maybe.mapOrElse (\( col, asc ) -> Bool.cond asc ("-" ++ col) col) column |> Just |> UpdateSort |> wrap), class "px-1 text-left text-sm font-semibold text-gray-900 border-b border-gray-300 whitespace-nowrap group cursor-pointer" ]
-        [ text column
+    th [ scope "col", onClick (sort |> Maybe.mapOrElse (\( col, asc ) -> Bool.cond asc ("-" ++ col) col) resultColumn.name |> Just |> UpdateSort |> wrap), class "px-1 text-left text-sm font-semibold text-gray-900 border-b border-gray-300 whitespace-nowrap group cursor-pointer" ]
+        [ text resultColumn.name
+        , tableColumn |> Maybe.andThen .comment |> Maybe.mapOrElse (\c -> span [ title c.text, class "ml-1 opacity-50" ] [ Icon.outline Icons.comment "w-3 h-3 inline" ]) (text "")
+        , meta |> Maybe.andThen .notes |> Maybe.mapOrElse (\notes -> span [ title notes, class "ml-1 opacity-50" ] [ Icon.outline Icons.notes "w-3 h-3 inline" ]) (text "")
         , sort
             |> Maybe.map (\( _, asc ) -> Icon.solid (Bool.cond asc Icon.ArrowDown Icon.ArrowUp) "ml-1 w-3 h-3 inline")
             |> Maybe.withDefault (Icon.solid Icon.ArrowDown "ml-1 w-3 h-3 inline invisible group-hover:visible")
@@ -561,9 +581,9 @@ doc =
         |> Chapter.renderStatefulComponentList
             [ docComponentState "success" .success (\s m -> { s | success = m })
             , docComponentState "long lines & json" .longLines (\s m -> { s | longLines = m })
-            , docComponent "failure" (\s -> view docWrap (docToggleDropdown s) docOpenRow docDelete s.openedDropdown docDefaultSchema docSources docHtmlId (docModel 3 docComplexQuery docStateFailure))
-            , docComponent "running" (\s -> view docWrap (docToggleDropdown s) docOpenRow docDelete s.openedDropdown docDefaultSchema docSources docHtmlId (docModel 4 docComplexQuery docStateRunning))
-            , docComponent "canceled" (\s -> view docWrap (docToggleDropdown s) docOpenRow docDelete s.openedDropdown docDefaultSchema docSources docHtmlId (docModel 5 docComplexQuery docStateCanceled))
+            , docComponent "failure" (\s -> view docWrap (docToggleDropdown s) docOpenRow docDelete s.openedDropdown docDefaultSchema (Just docSource) docMetadata docHtmlId (docModel 3 docComplexQuery docStateFailure))
+            , docComponent "running" (\s -> view docWrap (docToggleDropdown s) docOpenRow docDelete s.openedDropdown docDefaultSchema (Just docSource) docMetadata docHtmlId (docModel 4 docComplexQuery docStateRunning))
+            , docComponent "canceled" (\s -> view docWrap (docToggleDropdown s) docOpenRow docDelete s.openedDropdown docDefaultSchema (Just docSource) docMetadata docHtmlId (docModel 5 docComplexQuery docStateCanceled))
             ]
 
 
@@ -591,11 +611,6 @@ ORDER BY last_activity DESC;"""
 docDefaultSchema : SchemaName
 docDefaultSchema =
     "public"
-
-
-docSources : List Source
-docSources =
-    [ docSource ]
 
 
 docHtmlId : HtmlId
@@ -803,6 +818,11 @@ docRelation ( fromSchema, fromTable, fromColumn ) ( toSchema, toTable, toColumn 
     Relation.new (fromTable ++ "." ++ fromColumn ++ "->" ++ toTable ++ "." ++ toColumn) { table = ( fromSchema, fromTable ), column = Nel fromColumn [] } { table = ( toSchema, toTable ), column = Nel toColumn [] } []
 
 
+docMetadata : Metadata
+docMetadata =
+    Dict.empty
+
+
 
 -- DOC HELPERS
 
@@ -814,7 +834,7 @@ docComponent name render =
 
 docComponentState : String -> (DocState -> Model) -> (DocState -> Model -> DocState) -> ( String, SharedDocState x -> Html (ElmBook.Msg (SharedDocState x)) )
 docComponentState name get set =
-    ( name, \{ dataExplorerQueryDocState } -> dataExplorerQueryDocState |> (\s -> get s |> (\m -> view (docUpdate s get set) (docToggleDropdown s) docOpenRow docDelete s.openedDropdown docDefaultSchema docSources (docHtmlId ++ "-" ++ String.fromInt m.id) m)) )
+    ( name, \{ dataExplorerQueryDocState } -> dataExplorerQueryDocState |> (\s -> get s |> (\m -> view (docUpdate s get set) (docToggleDropdown s) docOpenRow docDelete s.openedDropdown docDefaultSchema (Just docSource) docMetadata (docHtmlId ++ "-" ++ String.fromInt m.id) m)) )
 
 
 docUpdate : DocState -> (DocState -> Model) -> (DocState -> Model -> DocState) -> Msg -> ElmBook.Msg (SharedDocState x)
