@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Updates.Drag exposing (handleDrag, moveCanvas, moveMemos, moveTableRows, moveTables)
+module PagesComponents.Organization_.Project_.Updates.Drag exposing (handleDrag, moveCanvas, moveInLayout)
 
 import Conf
 import Libs.List as List
@@ -14,6 +14,7 @@ import Models.Project.TableRow as TableRow exposing (TableRow)
 import PagesComponents.Organization_.Project_.Models exposing (Model)
 import PagesComponents.Organization_.Project_.Models.DragState exposing (DragState)
 import PagesComponents.Organization_.Project_.Models.Erd as Erd
+import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
 import PagesComponents.Organization_.Project_.Models.MemoId as MemoId
@@ -46,20 +47,19 @@ handleDrag now drag isEnd model =
                 |> (\area ->
                         model
                             |> setSelectionBox (Just area)
-                            |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.map (mapProps (\p -> p |> setSelected (Area.overlapCanvas area { position = p.position |> Position.offGrid, size = p.size }))))))
+                            |> mapErdM
+                                (Erd.mapCurrentLayoutWithTime now
+                                    (mapTables (List.map (mapProps (\p -> p |> setSelected (Area.overlapCanvas area { position = p.position |> Position.offGrid, size = p.size }))))
+                                        >> mapTableRows (List.map (\r -> r |> setSelected (Area.overlapCanvas area { position = r.position |> Position.offGrid, size = r.size })))
+                                        >> mapMemos (List.map (\m -> m |> setSelected (Area.overlapCanvas area { position = m.position |> Position.offGrid, size = m.size })))
+                                    )
+                                )
                    )
             , Cmd.none
             )
 
     else if isEnd && drag.init /= drag.last then
-        if MemoId.isHtmlId drag.id then
-            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapMemos (moveMemos drag canvas.zoom))) |> setDirty
-
-        else if TableRow.isHtmlId drag.id then
-            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTableRows (moveTableRows drag canvas.zoom))) |> setDirty
-
-        else
-            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (moveTables drag canvas.zoom))) |> setDirty
+        model |> mapErdM (Erd.mapCurrentLayoutWithTime now (moveInLayout drag canvas.zoom)) |> setDirty
 
     else
         ( model, Cmd.none )
@@ -70,51 +70,49 @@ moveCanvas drag canvas =
     canvas |> mapPosition (Position.moveDiagram (buildDelta drag 1))
 
 
-moveTables : DragState -> ZoomLevel -> List ErdTableLayout -> List ErdTableLayout
-moveTables drag zoom tables =
+moveInLayout : DragState -> ZoomLevel -> ErdLayout -> ErdLayout
+moveInLayout drag zoom layout =
     let
-        tableId : Maybe TableId
-        tableId =
-            TableId.fromHtmlId drag.id
-
         dragSelected : Bool
         dragSelected =
-            tableId |> Maybe.mapOrElse (\id -> tables |> List.findBy .id id |> Maybe.mapOrElse (.props >> .selected) False) False
+            (drag.id |> TableId.fromHtmlId |> Maybe.andThen (\id -> layout.tables |> List.find (\t -> t.id == id)) |> Maybe.mapOrElse (.props >> .selected) False)
+                || (drag.id |> TableRow.fromHtmlId |> Maybe.andThen (\id -> layout.tableRows |> List.find (\r -> r.id == id)) |> Maybe.mapOrElse .selected False)
+                || (drag.id |> MemoId.fromHtmlId |> Maybe.andThen (\id -> layout.memos |> List.find (\m -> m.id == id)) |> Maybe.mapOrElse .selected False)
+
+        delta : Delta
+        delta =
+            buildDelta drag zoom
     in
-    tables
-        |> List.map
-            (\t ->
-                if Just t.id == tableId || (dragSelected && t.props.selected) then
-                    t |> mapProps (mapPosition (Position.moveGrid (buildDelta drag zoom)))
+    layout
+        |> mapTables
+            (List.map
+                (\t ->
+                    if drag.id == TableId.toHtmlId t.id || (dragSelected && t.props.selected) then
+                        t |> mapProps (mapPosition (Position.moveGrid delta))
 
-                else
-                    t
+                    else
+                        t
+                )
             )
+        |> mapTableRows
+            (List.map
+                (\r ->
+                    if drag.id == TableRow.toHtmlId r.id || (dragSelected && r.selected) then
+                        r |> mapPosition (Position.moveGrid delta)
 
-
-moveMemos : DragState -> ZoomLevel -> List Memo -> List Memo
-moveMemos drag zoom memos =
-    memos
-        |> List.map
-            (\m ->
-                if drag.id == MemoId.toHtmlId m.id then
-                    m |> mapPosition (Position.moveGrid (buildDelta drag zoom))
-
-                else
-                    m
+                    else
+                        r
+                )
             )
+        |> mapMemos
+            (List.map
+                (\m ->
+                    if drag.id == MemoId.toHtmlId m.id || (dragSelected && m.selected) then
+                        m |> mapPosition (Position.moveGrid delta)
 
-
-moveTableRows : DragState -> ZoomLevel -> List TableRow -> List TableRow
-moveTableRows drag zoom tableRows =
-    tableRows
-        |> List.map
-            (\r ->
-                if drag.id == TableRow.toHtmlId r.id then
-                    r |> mapPosition (Position.moveGrid (buildDelta drag zoom))
-
-                else
-                    r
+                    else
+                        m
+                )
             )
 
 

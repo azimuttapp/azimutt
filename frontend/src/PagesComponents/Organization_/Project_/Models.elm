@@ -241,8 +241,8 @@ type Msg
     | SortColumns TableId ColumnOrder
     | ToggleNestedColumn TableId ColumnPath Bool
     | ToggleHiddenColumns TableId
-    | SelectTable TableId Bool
-    | SelectAllTables
+    | SelectItem HtmlId Bool
+    | SelectAll
     | TableMove TableId Delta
     | TablePosition TableId Position.Grid
     | TableOrder TableId Int

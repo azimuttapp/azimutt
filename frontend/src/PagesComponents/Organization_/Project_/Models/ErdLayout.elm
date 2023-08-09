@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout, create, createMemo, empty, isEmpty, unpack)
+module PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout, create, createMemo, empty, isEmpty, nonEmpty, unpack)
 
 import Dict exposing (Dict)
 import Libs.Dict as Dict
@@ -46,6 +46,11 @@ isEmpty layout =
     List.isEmpty layout.tables && List.isEmpty layout.tableRows && List.isEmpty layout.memos
 
 
+nonEmpty : ErdLayout -> Bool
+nonEmpty layout =
+    not (isEmpty layout)
+
+
 create : Dict TableId (List ErdRelation) -> Layout -> ErdLayout
 create relationsByTable layout =
     { canvas = CanvasProps.empty
@@ -81,4 +86,5 @@ createMemo layout position =
     , position = position |> Position.moveCanvas { dx = -75, dy = -75 } |> Position.onGrid
     , size = Size 150 150 |> Size.canvas
     , color = Nothing
+    , selected = False
     }

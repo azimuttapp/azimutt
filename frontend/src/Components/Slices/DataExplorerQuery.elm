@@ -1,4 +1,4 @@
-module Components.Slices.DataExplorerQuery exposing (DocState, FailureState, Id, Model, Msg(..), RowIndex, SharedDocState, State(..), SuccessState, doc, docCityQuery, docCitySuccess, docInit, docProjectsQuery, docProjectsSuccess, docRelation, docSource, docTable, docUsersQuery, docUsersSuccess, init, update, view)
+module Components.Slices.DataExplorerQuery exposing (DocState, FailureState, Id, Model, Msg(..), RowIndex, SharedDocState, State(..), SuccessState, doc, docCityQuery, docCitySuccess, docInit, docProjectsQuery, docProjectsSuccess, docRelation, docSource, docTable, docUsersQuery, docUsersSuccess, init, stateSuccess, update, view)
 
 import Array
 import Components.Atoms.Icon as Icon exposing (Icon)
@@ -188,6 +188,16 @@ update msg model =
                 _ ->
                     -- FIXME: show error toast
                     ( model, Cmd.none )
+
+
+stateSuccess : Model -> Maybe SuccessState
+stateSuccess model =
+    case model.state of
+        StateSuccess s ->
+            Just s
+
+        _ ->
+            Nothing
 
 
 mapSuccess : (SuccessState -> SuccessState) -> State -> State

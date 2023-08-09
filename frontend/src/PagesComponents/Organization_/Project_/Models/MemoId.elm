@@ -1,6 +1,7 @@
-module PagesComponents.Organization_.Project_.Models.MemoId exposing (MemoId, fromString, isHtmlId, toHtmlId, toInputId, toString)
+module PagesComponents.Organization_.Project_.Models.MemoId exposing (MemoId, fromHtmlId, fromString, isHtmlId, toHtmlId, toInputId, toString)
 
 import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.String as String
 
 
 type alias MemoId =
@@ -22,14 +23,23 @@ htmlIdPrefix =
     "az-memo-"
 
 
+isHtmlId : HtmlId -> Bool
+isHtmlId id =
+    id |> String.startsWith htmlIdPrefix
+
+
 toHtmlId : MemoId -> HtmlId
 toHtmlId id =
     htmlIdPrefix ++ String.fromInt id
 
 
-isHtmlId : HtmlId -> Bool
-isHtmlId id =
-    id |> String.startsWith htmlIdPrefix
+fromHtmlId : HtmlId -> Maybe MemoId
+fromHtmlId id =
+    if isHtmlId id then
+        id |> String.stripLeft htmlIdPrefix |> String.toInt
+
+    else
+        Nothing
 
 
 toInputId : MemoId -> HtmlId

@@ -174,15 +174,23 @@ update urlLayout zone now urlInfos organizations projects msg model =
         ToggleHiddenColumns id ->
             model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.mapBy .id id (mapProps (mapShowHiddenColumns not))))) |> setDirty
 
-        SelectTable tableId ctrl ->
+        SelectItem htmlId ctrl ->
             if model.dragging |> Maybe.any DragState.hasMoved then
                 ( model, Cmd.none )
 
             else
-                model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.map (\t -> t |> mapProps (mapSelected (\s -> B.cond (t.id == tableId) (not s) (B.cond ctrl s False))))))) |> setDirty
+                model
+                    |> mapErdM
+                        (Erd.mapCurrentLayoutWithTime now
+                            (mapTables (List.map (\t -> t |> mapProps (mapSelected (\s -> B.cond (TableId.toHtmlId t.id == htmlId) (not s) (B.cond ctrl s False)))))
+                                >> mapTableRows (List.map (\r -> r |> mapSelected (\s -> B.cond (TableRow.toHtmlId r.id == htmlId) (not s) (B.cond ctrl s False))))
+                                >> mapMemos (List.map (\m -> m |> mapSelected (\s -> B.cond (MemoId.toHtmlId m.id == htmlId) (not s) (B.cond ctrl s False))))
+                            )
+                        )
+                    |> setDirty
 
-        SelectAllTables ->
-            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.map (mapProps (setSelected True))))) |> setDirty
+        SelectAll ->
+            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.map (mapProps (setSelected True))) >> mapTableRows (List.map (setSelected True)) >> mapMemos (List.map (setSelected True)))) |> setDirty
 
         TableMove id delta ->
             model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.mapBy .id id (mapProps (mapPosition (Position.moveGrid delta)))))) |> setDirty
@@ -524,7 +532,7 @@ handleJsMessage now urlLayout msg model =
             ( model, T.send (TableMove id delta) )
 
         GotTableSelect id ->
-            ( model, T.send (SelectTable id False) )
+            ( model, T.send (SelectItem (TableId.toHtmlId id) False) )
 
         GotTableColor id color ->
             ( model, T.send (TableColor id color) )

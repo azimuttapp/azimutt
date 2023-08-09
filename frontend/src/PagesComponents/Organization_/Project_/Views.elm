@@ -108,7 +108,7 @@ viewApp currentUrl urlOrganization shared model htmlId erd =
                             model.cursorMode
                             (htmlId ++ "-commands")
                             (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-commands"))
-                            (layout |> ErdLayout.isEmpty |> not)
+                            (layout |> ErdLayout.nonEmpty)
                             (model.amlSidebar /= Nothing)
                             (model.detailsSidebar /= Nothing)
                             (model.dataExplorer.display /= Nothing)

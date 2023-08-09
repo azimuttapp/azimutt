@@ -101,17 +101,21 @@ viewErd conf erdElem erd selectionBox virtualRelation editMemo args dragging =
         --canvasViewport : Area.Canvas
         --canvasViewport =
         --    canvas |> CanvasProps.viewport erdElem
+        draggedLayout : ErdLayout
+        draggedLayout =
+            dragging |> Maybe.mapOrElse (\d -> layout |> Drag.moveInLayout d canvas.zoom) layout
+
         layoutTables : List ErdTableLayout
         layoutTables =
-            dragging |> Maybe.filter (\d -> d.id /= Conf.ids.erd) |> Maybe.mapOrElse (\d -> layout.tables |> Drag.moveTables d canvas.zoom) layout.tables
+            draggedLayout.tables
 
         tableRows : List TableRow
         tableRows =
-            dragging |> Maybe.filter (.id >> TableRow.isHtmlId) |> Maybe.mapOrElse (\d -> layout.tableRows |> Drag.moveTableRows d canvas.zoom) layout.tableRows
+            draggedLayout.tableRows
 
         memos : List Memo
         memos =
-            dragging |> Maybe.filter (.id >> MemoId.isHtmlId) |> Maybe.mapOrElse (\d -> layout.memos |> Drag.moveMemos d canvas.zoom) layout.memos
+            draggedLayout.memos
 
         displayedTables : List ErdTableLayout
         displayedTables =
@@ -157,9 +161,9 @@ viewErd conf erdElem erd selectionBox virtualRelation editMemo args dragging =
             , ( "cursor-crosshair-all", virtualRelation /= Nothing )
             ]
          ]
-            ++ B.cond (conf.move && not (List.isEmpty layoutTables)) [ onWheel OnWheel platform ] []
+            ++ B.cond (conf.move && ErdLayout.nonEmpty layout) [ onWheel OnWheel platform ] []
             ++ B.cond ((conf.move || conf.select) && virtualRelation == Nothing && editMemo == Nothing) [ onPointerDown (handleErdPointerDown conf cursorMode) platform ] []
-            ++ B.cond (conf.layout && virtualRelation == Nothing && editMemo == Nothing && layoutTables /= []) [ onDblClick (CanvasProps.eventCanvas erdElem canvas >> MCreate >> MemoMsg) platform, onContextMenu (\e -> ContextMenuCreate (ErdContextMenu.view platform erdElem canvas layout e) e) platform ] []
+            ++ B.cond (conf.layout && virtualRelation == Nothing && editMemo == Nothing && ErdLayout.nonEmpty layout) [ onDblClick (CanvasProps.eventCanvas erdElem canvas >> MCreate >> MemoMsg) platform, onContextMenu (\e -> ContextMenuCreate (ErdContextMenu.view platform erdElem canvas layout e) e) platform ] []
         )
         [ div [ class "az-canvas origin-top-left", Position.styleTransformDiagram canvas.position canvas.zoom ]
             -- use HTML order instead of z-index, must be careful with it, this allows to have tooltips & popovers always on top
@@ -170,7 +174,7 @@ viewErd conf erdElem erd selectionBox virtualRelation editMemo args dragging =
             , displayedRelations |> Lazy.lazy5 viewRelations conf erd.settings.defaultSchema erd.settings.relationStyle displayedTables
             , layoutTables |> viewTables platform conf cursorMode virtualRelation openedDropdown openedPopover hoverTable dragging canvas.zoom erd.settings.defaultSchema selected erd.settings.columnBasicTypes erd.tables erd.metadata layout
             , memos |> viewMemos platform conf cursorMode editMemo
-            , div [ class "az-selection-box pointer-events-none" ] (selectionBox |> Maybe.filterNot (\_ -> layoutTables |> List.isEmpty) |> Maybe.mapOrElse viewSelectionBox [])
+            , div [ class "az-selection-box pointer-events-none" ] (selectionBox |> Maybe.filter (\_ -> layout |> ErdLayout.nonEmpty) |> Maybe.mapOrElse viewSelectionBox [])
             , div [ class "az-virtual-relation pointer-events-none" ] [ virtualRelationInfo |> Maybe.mapOrElse (\i -> viewVirtualRelation erd.settings.relationStyle i) viewEmptyRelation ]
             ]
         , if layout |> ErdLayout.isEmpty then

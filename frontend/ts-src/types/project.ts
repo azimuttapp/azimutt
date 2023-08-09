@@ -386,6 +386,7 @@ export interface Memo {
     position: Position
     size: Size
     color?: Color
+    selected?: boolean
 }
 
 export const Memo = z.object({
@@ -393,7 +394,8 @@ export const Memo = z.object({
     content: z.string(),
     position: Position,
     size: Size,
-    color: Color.optional()
+    color: Color.optional(),
+    selected: z.boolean().optional()
 }).strict()
 
 export interface RowQuery {
@@ -408,43 +410,43 @@ export const RowQuery = z.object({
 
 export interface TableRowStateSuccess {
     values: { column: ColumnName, value: JsValue }[]
-    hidden: ColumnName[]
-    expanded: ColumnName[]
-    showHidden: boolean
+    hidden?: ColumnName[]
+    expanded?: ColumnName[]
+    showHidden?: boolean
     startedAt: Timestamp
     loadedAt: Timestamp
 }
 
 export const TableRowStateSuccess = z.object({
     values: z.object({column: ColumnName, value: JsValue}).strict().array(),
-    hidden: ColumnName.array(),
-    expanded: ColumnName.array(),
-    showHidden: z.boolean(),
+    hidden: ColumnName.array().optional(),
+    expanded: ColumnName.array().optional(),
+    showHidden: z.boolean().optional(),
     startedAt: Timestamp,
     loadedAt: Timestamp
 }).strict()
 
 export interface TableRowStateFailure {
-    query : string
-    error : string
+    query: string
+    error: string
     startedAt: Timestamp
     failedAt: Timestamp
 }
 
 export const TableRowStateFailure = z.object({
-    query : z.string(),
-    error : z.string(),
+    query: z.string(),
+    error: z.string(),
     startedAt: Timestamp,
     failedAt: Timestamp
 }).strict()
 
 export interface TableRowStateLoading {
-    query : string
+    query: string
     startedAt: Timestamp
 }
 
 export const TableRowStateLoading = z.object({
-    query : z.string(),
+    query: z.string(),
     startedAt: Timestamp
 }).strict()
 
@@ -455,18 +457,20 @@ export interface TableRow {
     id: TableRowId
     position: Position
     size: Size
-    source : SourceId
-    query : RowQuery
-    state : TableRowState
+    source: SourceId
+    query: RowQuery
+    state: TableRowState
+    selected?: boolean
 }
 
 export const TableRow = z.object({
     id: TableRowId,
     position: Position,
     size: Size,
-    source : SourceId,
-    query : RowQuery,
-    state : TableRowState
+    source: SourceId,
+    query: RowQuery,
+    state: TableRowState,
+    selected: z.boolean().optional()
 }).strict()
 
 export interface Group {

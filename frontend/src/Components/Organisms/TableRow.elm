@@ -10,18 +10,18 @@ import ElmBook
 import ElmBook.Actions as Actions exposing (logAction)
 import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Html, button, dd, div, dl, dt, p, span, text)
-import Html.Attributes exposing (class, id, title, type_)
+import Html.Attributes exposing (class, classList, id, title, type_)
 import Html.Events exposing (onClick)
 import Html.Keyed as Keyed
 import Libs.Dict as Dict
 import Libs.Html exposing (bText)
 import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, css)
-import Libs.Html.Events exposing (onDblClick)
+import Libs.Html.Events exposing (onDblClick, onPointerUp)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.DateTime as DateTime
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Models.Platform as Platform
+import Libs.Models.Platform as Platform exposing (Platform)
 import Libs.Nel as Nel exposing (Nel)
 import Libs.Result as Result
 import Libs.Set as Set
@@ -50,7 +50,7 @@ import Models.Project.TableRow as TableRow exposing (FailureState, LoadingState,
 import Models.QueryResult exposing (QueryResult, QueryResultSuccess)
 import Models.Size as Size
 import Ports
-import Services.Lenses exposing (mapState, setState)
+import Services.Lenses exposing (mapSelected, mapState, setState)
 import Services.QueryBuilder as QueryBuilder exposing (RowQuery)
 import Set
 import Time
@@ -90,6 +90,7 @@ init id now source query =
       , source = source.id
       , query = query
       , state = StateLoading { query = queryStr, startedAt = now }
+      , selected = False
       }
       -- TODO: add tracking with editor source (visual or query)
     , Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt id) source.db.url queryStr
@@ -176,8 +177,8 @@ mapSuccess f state =
 -- VIEW
 
 
-view : (Msg -> msg) -> (HtmlId -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> msg) -> msg -> Time.Posix -> SchemaName -> HtmlId -> HtmlId -> Maybe DbSource -> Maybe TableMeta -> TableRow -> Html msg
-view wrap toggleDropdown openTableRow delete now defaultSchema openedDropdown htmlId source tableMeta model =
+view : (Msg -> msg) -> (HtmlId -> msg) -> (HtmlId -> Bool -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> msg) -> msg -> Time.Posix -> Platform -> SchemaName -> HtmlId -> HtmlId -> Maybe DbSource -> Maybe TableMeta -> TableRow -> Html msg
+view wrap toggleDropdown selectItem openTableRow delete now platform defaultSchema openedDropdown htmlId source tableMeta model =
     let
         table : Maybe Table
         table =
@@ -187,8 +188,8 @@ view wrap toggleDropdown openTableRow delete now defaultSchema openedDropdown ht
         relations =
             source |> Maybe.mapOrElse (.relations >> List.filter (\r -> r.src.table == model.query.table || r.ref.table == model.query.table)) []
     in
-    div [ class "max-w-xs bg-white text-default-500 text-xs border" ]
-        [ viewHeader wrap toggleDropdown delete defaultSchema openedDropdown (htmlId ++ "-header") model.query
+    div [ class "max-w-xs bg-white text-default-500 text-xs border", classList [ ( "ring-2 ring-gray-300", model.selected ) ] ]
+        [ viewHeader wrap toggleDropdown selectItem delete platform defaultSchema openedDropdown (htmlId ++ "-header") model
         , case model.state of
             StateLoading s ->
                 viewLoading s
@@ -202,8 +203,8 @@ view wrap toggleDropdown openTableRow delete now defaultSchema openedDropdown ht
         ]
 
 
-viewHeader : (Msg -> msg) -> (HtmlId -> msg) -> msg -> SchemaName -> HtmlId -> HtmlId -> RowQuery -> Html msg
-viewHeader wrap toggleDropdown delete defaultSchema openedDropdown htmlId query =
+viewHeader : (Msg -> msg) -> (HtmlId -> msg) -> (HtmlId -> Bool -> msg) -> msg -> Platform -> SchemaName -> HtmlId -> HtmlId -> TableRow -> Html msg
+viewHeader wrap toggleDropdown selectItem delete platform defaultSchema openedDropdown htmlId model =
     let
         dropdownId : HtmlId
         dropdownId =
@@ -211,13 +212,13 @@ viewHeader wrap toggleDropdown delete defaultSchema openedDropdown htmlId query 
 
         table : String
         table =
-            TableId.show defaultSchema query.table
+            TableId.show defaultSchema model.query.table
 
         filter : String
         filter =
-            query.primaryKey |> Nel.toList |> List.map (.value >> DbValue.toString) |> String.join "/"
+            model.query.primaryKey |> Nel.toList |> List.map (.value >> DbValue.toString) |> String.join "/"
     in
-    div [ class "p-2 flex items-center bg-default-50 border-b border-gray-200" ]
+    div [ onPointerUp (\e -> selectItem (TableRow.toHtmlId model.id) (e.ctrl || e.shift)) platform, class "p-2 flex items-center bg-default-50 border-b border-gray-200 cursor-pointer" ]
         [ div [ title (table ++ ": " ++ filter), class "flex-grow text-center truncate" ] [ bText table, text (": " ++ filter) ]
         , Dropdown.dropdown { id = dropdownId, direction = BottomLeft, isOpen = openedDropdown == dropdownId }
             (\m ->
@@ -358,7 +359,7 @@ viewFooter now source model =
     div [ class "px-3 py-1 bg-default-50 text-right italic border-t border-gray-200" ]
         [ text "from "
         , source |> Maybe.mapOrElse (\s -> text s.name) (span [ title (SourceId.toString model.source) ] [ text "unknown source" ])
-        , text " "
+        , text ", "
         , span [ title (DateTime.toIso time) ] [ text (DateTime.human now time) ]
         ]
 
@@ -372,12 +373,22 @@ type alias SharedDocState x =
 
 
 type alias DocState =
-    { openedDropdown : HtmlId, user : Model, event : Model }
+    { openedDropdown : HtmlId
+    , user : Model
+    , event : Model
+    , failure : Model
+    , loading : Model
+    }
 
 
 docInit : DocState
 docInit =
-    { openedDropdown = "", user = docSuccessUser, event = docSuccessEvent }
+    { openedDropdown = ""
+    , user = docSuccessUser
+    , event = docSuccessEvent
+    , failure = docFailure
+    , loading = docLoading
+    }
 
 
 doc : Chapter (SharedDocState x)
@@ -387,13 +398,18 @@ doc =
             [ ( "table row"
               , \{ tableRowDocState } ->
                     div [ class "p-3 bg-gray-100 flex items-start space-x-3" ]
-                        [ view (docUpdate tableRowDocState .user (\s m -> { s | user = m })) (docToggleDropdown tableRowDocState) docOpenTableRow docDelete docNow docDefaultSchema tableRowDocState.openedDropdown "table-row-users" (docSource |> DbSource.fromSource) (Just docTableMeta) tableRowDocState.user
-                        , view (docUpdate tableRowDocState .event (\s m -> { s | event = m })) (docToggleDropdown tableRowDocState) docOpenTableRow docDelete docNow docDefaultSchema tableRowDocState.openedDropdown "table-row-events" (docSource |> DbSource.fromSource) (Just docTableMeta) tableRowDocState.event
+                        [ docView tableRowDocState .user (\s m -> { s | user = m }) "table-row-users"
+                        , docView tableRowDocState .event (\s m -> { s | event = m }) "table-row-event"
                         ]
               )
-            , ( "error", \{ tableRowDocState } -> div [ class "p-3 bg-gray-100" ] [ view docWrap (docToggleDropdown tableRowDocState) docOpenTableRow docDelete docNow docDefaultSchema tableRowDocState.openedDropdown "table-row-error" (docSource |> DbSource.fromSource) (Just docTableMeta) docFailure ] )
-            , ( "loading", \{ tableRowDocState } -> div [ class "p-3 bg-gray-100" ] [ view docWrap (docToggleDropdown tableRowDocState) docOpenTableRow docDelete docNow docDefaultSchema tableRowDocState.openedDropdown "table-row-loading" (docSource |> DbSource.fromSource) (Just docTableMeta) docLoading ] )
+            , ( "error", \{ tableRowDocState } -> div [ class "p-3 bg-gray-100" ] [ docView tableRowDocState .failure (\s m -> { s | failure = m }) "table-row-failure" ] )
+            , ( "loading", \{ tableRowDocState } -> div [ class "p-3 bg-gray-100" ] [ docView tableRowDocState .loading (\s m -> { s | loading = m }) "table-row-loading" ] )
             ]
+
+
+docView : DocState -> (DocState -> Model) -> (DocState -> Model -> DocState) -> HtmlId -> Html (ElmBook.Msg (SharedDocState x))
+docView s get set htmlId =
+    view (docUpdate s get set) (docToggleDropdown s) (docSelectItem s get set) docOpenTableRow docDelete docNow docPlatform docDefaultSchema s.openedDropdown htmlId (docSource |> DbSource.fromSource) (Just docTableMeta) (get s)
 
 
 docSuccessUser : TableRow
@@ -432,6 +448,7 @@ docSuccessUser =
             , startedAt = Time.millisToPosix 1690964408438
             , loadedAt = Time.millisToPosix 1690964408438
             }
+    , selected = False
     }
 
 
@@ -460,6 +477,7 @@ docSuccessEvent =
             , startedAt = Time.millisToPosix 1691079663421
             , loadedAt = Time.millisToPosix 1691079663421
             }
+    , selected = False
     }
 
 
@@ -471,6 +489,7 @@ docLoading =
     , source = docSource.id
     , query = { table = ( "public", "events" ), primaryKey = Nel { column = Nel "id" [], value = DbString "dcecf4fe-aa35-44fb-a90c-eba7d2103f4e" } [] }
     , state = StateLoading { query = "SELECT * FROM public.events WHERE id='dcecf4fe-aa35-44fb-a90c-eba7d2103f4e';", startedAt = Time.millisToPosix 1691079663421 }
+    , selected = False
     }
 
 
@@ -482,6 +501,7 @@ docFailure =
     , source = docSource.id
     , query = { table = ( "public", "events" ), primaryKey = Nel { column = Nel "id" [], value = DbString "dcecf4fe-aa35-44fb-a90c-eba7d2103f4e" } [] }
     , state = StateFailure { query = "SELECT * FROM public.event WHERE id='dcecf4fe-aa35-44fb-a90c-eba7d2103f4e';", error = "relation \"public.event\" does not exist", startedAt = Time.millisToPosix 1691079663421, failedAt = Time.millisToPosix 1691079663421 }
+    , selected = False
     }
 
 
@@ -554,6 +574,11 @@ docRelation ( fromSchema, fromTable, fromColumn ) ( toSchema, toTable, toColumn 
     Relation.new (fromTable ++ "." ++ fromColumn ++ "->" ++ toTable ++ "." ++ toColumn) { table = ( fromSchema, fromTable ), column = Nel fromColumn [] } { table = ( toSchema, toTable ), column = Nel toColumn [] } []
 
 
+docPlatform : Platform
+docPlatform =
+    Platform.PC
+
+
 docUpdate : DocState -> (DocState -> Model) -> (DocState -> Model -> DocState) -> Msg -> ElmBook.Msg (SharedDocState x)
 docUpdate s get set msg =
     s |> get |> update Time.zero [ docSource ] msg |> Tuple.first |> set s |> docSetState
@@ -573,14 +598,14 @@ docToggleDropdown s id =
         docSetState { s | openedDropdown = id }
 
 
-docWrap : Msg -> ElmBook.Msg state
-docWrap =
-    \_ -> logAction "wrap"
+docSelectItem : DocState -> (DocState -> Model) -> (DocState -> Model -> DocState) -> HtmlId -> Bool -> ElmBook.Msg (SharedDocState x)
+docSelectItem s get set _ _ =
+    s |> get |> mapSelected not |> set s |> docSetState
 
 
 docOpenTableRow : DbSourceInfo -> QueryBuilder.RowQuery -> ElmBook.Msg state
-docOpenTableRow =
-    \_ _ -> logAction "openTableRow"
+docOpenTableRow _ _ =
+    logAction "openTableRow"
 
 
 docDelete : ElmBook.Msg state

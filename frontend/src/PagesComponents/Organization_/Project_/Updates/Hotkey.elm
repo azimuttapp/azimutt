@@ -1,5 +1,7 @@
 module PagesComponents.Organization_.Project_.Updates.Hotkey exposing (handleHotkey)
 
+import Components.Slices.DataExplorer as DataExplorer
+import Components.Slices.DataExplorerQuery as DataExplorerQuery
 import Conf
 import Libs.List as List
 import Libs.Maybe as Maybe
@@ -9,7 +11,8 @@ import Libs.Tuple as Tuple
 import Models.Area as Area
 import Models.Project.CanvasProps as CanvasProps
 import Models.Project.ColumnRef exposing (ColumnRef)
-import Models.Project.TableId exposing (TableId)
+import Models.Project.TableId as TableId exposing (TableId)
+import Models.Project.TableRow as TableRow
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
 import PagesComponents.Organization_.Project_.Components.ProjectSaveDialog as ProjectSaveDialog
 import PagesComponents.Organization_.Project_.Components.ProjectSharing as ProjectSharing
@@ -17,6 +20,7 @@ import PagesComponents.Organization_.Project_.Components.SourceUpdateDialog as S
 import PagesComponents.Organization_.Project_.Models exposing (AmlSidebarMsg(..), FindPathMsg(..), GroupMsg(..), HelpMsg(..), MemoMsg(..), Model, Msg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..), VirtualRelationMsg(..))
 import PagesComponents.Organization_.Project_.Models.Erd as Erd
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
+import PagesComponents.Organization_.Project_.Models.MemoId as MemoId
 import PagesComponents.Organization_.Project_.Models.NotesMsg exposing (NotesMsg(..))
 import PagesComponents.Organization_.Project_.Views.Modals.NewLayout as NewLayout
 import Ports
@@ -96,7 +100,7 @@ handleHotkey _ model hotkey =
             ( model, moveTablesOrder -1000 model )
 
         "select-all" ->
-            ( model, T.send SelectAllTables )
+            ( model, T.send SelectAll )
 
         "create-layout" ->
             ( model, Nothing |> NewLayout.Open |> NewLayoutMsg |> T.send )
@@ -192,6 +196,7 @@ currentColumn model =
 
 cancelElement : Model -> Cmd Msg
 cancelElement model =
+    -- FIXME: keep a list of cancel actions so they can be canceled in order, but they need to be removed when not cancelable anymore :/
     (model.contextMenu |> Maybe.map (\_ -> ContextMenuClose))
         |> Maybe.orElse (model.confirm |> Maybe.map (\c -> ModalClose (ConfirmAnswer False c.content.onConfirm)))
         |> Maybe.orElse (model.prompt |> Maybe.map (\_ -> ModalClose (PromptAnswer Cmd.none)))
@@ -202,13 +207,25 @@ cancelElement model =
         |> Maybe.orElse (model.editNotes |> Maybe.map (\_ -> ModalClose (NotesMsg NCancel)))
         |> Maybe.orElse (model.save |> Maybe.map (\_ -> ModalClose (ProjectSaveMsg ProjectSaveDialog.Close)))
         |> Maybe.orElse (model.schemaAnalysis |> Maybe.map (\_ -> ModalClose (SchemaAnalysisMsg SAClose)))
-        |> Maybe.orElse (model.amlSidebar |> Maybe.map (\_ -> AmlSidebarMsg AClose))
         |> Maybe.orElse (model.findPath |> Maybe.map (\_ -> ModalClose (FindPathMsg FPClose)))
         |> Maybe.orElse (model.sourceUpdate |> Maybe.map (\_ -> ModalClose (SourceUpdateDialog.Close |> PSSourceUpdate |> ProjectSettingsMsg)))
         |> Maybe.orElse (model.sharing |> Maybe.map (\_ -> ModalClose (SharingMsg ProjectSharing.Close)))
-        |> Maybe.orElse (model.settings |> Maybe.map (\_ -> ModalClose (ProjectSettingsMsg PSClose)))
         |> Maybe.orElse (model.help |> Maybe.map (\_ -> ModalClose (HelpMsg HClose)))
-        |> Maybe.orElse (model.erd |> Maybe.andThen (Erd.currentLayout >> .tables >> List.find (.props >> .selected)) |> Maybe.map (\p -> SelectTable p.id False))
+        |> Maybe.orElse (model.settings |> Maybe.map (\_ -> ModalClose (ProjectSettingsMsg PSClose)))
+        |> Maybe.orElse (model.erd |> Maybe.andThen (Erd.currentLayout >> .tables >> List.find (.props >> .selected)) |> Maybe.map (\t -> SelectItem (TableId.toHtmlId t.id) False))
+        |> Maybe.orElse (model.erd |> Maybe.andThen (Erd.currentLayout >> .tableRows >> List.find .selected) |> Maybe.map (\r -> SelectItem (TableRow.toHtmlId r.id) False))
+        |> Maybe.orElse (model.erd |> Maybe.andThen (Erd.currentLayout >> .memos >> List.find .selected) |> Maybe.map (\m -> SelectItem (MemoId.toHtmlId m.id) False))
+        |> Maybe.orElse (model.amlSidebar |> Maybe.map (\_ -> AmlSidebarMsg AClose))
+        |> Maybe.orElse
+            (model.dataExplorer.display
+                |> Maybe.map
+                    (\_ ->
+                        (model.dataExplorer.details |> List.head |> Maybe.map (\d -> DataExplorer.CloseDetails d.id))
+                            |> Maybe.orElse (model.dataExplorer.results |> List.find (DataExplorerQuery.stateSuccess >> Maybe.mapOrElse .fullScreen False) |> Maybe.map (\r -> DataExplorerQuery.ToggleFullScreen |> DataExplorer.QueryMsg r.id))
+                            |> Maybe.withDefault DataExplorer.CloseExplorer
+                            |> DataExplorerMsg
+                    )
+            )
         |> Maybe.map T.send
         |> Maybe.withDefault ("Nothing to cancel" |> Toasts.info |> Toast |> T.send)
 

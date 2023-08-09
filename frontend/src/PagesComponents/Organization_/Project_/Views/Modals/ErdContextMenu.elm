@@ -23,7 +23,7 @@ view platform erdElem canvasProps layout event =
             layout.tables |> List.filter (\t -> t.props.selected) |> List.map .id
     in
     div [ class "z-max" ]
-        [ ContextMenu.btnHotkey "" SelectAllTables [ text "Select all tables" ] platform (Conf.hotkeys |> Dict.getOrElse "select-all" [])
+        [ ContextMenu.btnHotkey "" SelectAll [ text "Select all" ] platform (Conf.hotkeys |> Dict.getOrElse "select-all" [])
         , ContextMenu.btnHotkey "" (NewLayoutMsg (NewLayout.Open Nothing)) [ text "New layout" ] platform (Conf.hotkeys |> Dict.getOrElse "create-layout" [])
         , ContextMenu.btnHotkey "" (event |> CanvasProps.eventCanvas erdElem canvasProps |> MCreate |> MemoMsg) [ text "New memo" ] platform (Conf.hotkeys |> Dict.getOrElse "new-memo" [])
         , if selectedTables |> List.isEmpty then

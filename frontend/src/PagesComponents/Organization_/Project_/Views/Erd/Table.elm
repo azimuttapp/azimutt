@@ -22,6 +22,7 @@ import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.ColumnType as ColumnType
 import Models.Project.CustomTypeValue as CustomTypeValue
 import Models.Project.SchemaName exposing (SchemaName)
+import Models.Project.TableId as TableId
 import Models.Project.TableMeta exposing (TableMeta)
 import Models.Size as Size
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
@@ -116,7 +117,7 @@ viewTable conf zoom args layout meta tableLayout table =
                 }
             , actions =
                 { hover = ToggleHoverTable table.id
-                , headerClick = \e -> B.cond (e.button == MainButton) (SelectTable table.id (e.ctrl || e.shift)) (Noop "non-main-button-table-header-click")
+                , headerClick = \e -> B.cond (e.button == MainButton) (SelectItem (TableId.toHtmlId table.id) (e.ctrl || e.shift)) (Noop "non-main-button-table-header-click")
                 , headerDblClick = DetailsSidebarMsg (DetailsSidebar.ShowTable table.id)
                 , headerRightClick = ContextMenuCreate dropdown
                 , headerDropdownClick = DropdownToggle

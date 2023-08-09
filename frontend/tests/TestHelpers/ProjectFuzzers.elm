@@ -201,7 +201,7 @@ group =
 
 memo : Fuzzer Memo
 memo =
-    Fuzz.map5 Memo memoId stringSmall positionGrid sizeCanvas (Fuzz.maybe color)
+    Fuzz.map6 Memo memoId stringSmall positionGrid sizeCanvas (Fuzz.maybe color) Fuzz.bool
 
 
 memoId : Fuzzer MemoId
@@ -211,7 +211,7 @@ memoId =
 
 tableRow : Fuzzer TableRow
 tableRow =
-    Fuzz.map6 TableRow tableRowId positionGrid sizeCanvas sourceId rowQuery tableRowState
+    Fuzz.map7 TableRow tableRowId positionGrid sizeCanvas sourceId rowQuery tableRowState Fuzz.bool
 
 
 tableRowId : Fuzzer TableRow.Id

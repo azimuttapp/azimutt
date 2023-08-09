@@ -87,19 +87,19 @@ human now date =
         "a few seconds" |> humanDirection diff
 
     else if abs diff < anHour then
-        humanText diff aMinute "a minute" "a few minutes"
+        humanText diff aMinute "a minute" "minutes"
 
     else if abs diff < aDay then
-        humanText diff anHour "an hour" "a few hours"
+        humanText diff anHour "an hour" "hours"
 
     else if abs diff < aMonth then
-        humanText diff aDay "a day" "a few days"
+        humanText diff aDay "a day" "days"
 
     else if abs diff < aYear then
-        humanText diff aMonth "a month" "a few months"
+        humanText diff aMonth "a month" "months"
 
     else if abs diff < aDecade then
-        humanText diff aYear "a year" "a few years"
+        humanText diff aYear "a year" "years"
 
     else
         "a long time" |> humanDirection diff
@@ -107,7 +107,12 @@ human now date =
 
 humanText : Int -> Int -> String -> String -> String
 humanText diff unit one many =
-    toFloat diff / toFloat unit |> round |> abs |> String.inflect one one many |> humanDirection diff
+    let
+        nb : Int
+        nb =
+            toFloat diff / toFloat unit |> round |> abs
+    in
+    nb |> String.inflect one one (String.fromInt nb ++ " " ++ many) |> humanDirection diff
 
 
 humanDirection : Int -> String -> String

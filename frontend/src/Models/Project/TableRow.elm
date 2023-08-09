@@ -1,10 +1,11 @@
-module Models.Project.TableRow exposing (FailureState, Id, LoadingState, State(..), SuccessState, TableRow, TableRowValue, decode, encode, isHtmlId, toHtmlId)
+module Models.Project.TableRow exposing (FailureState, Id, LoadingState, State(..), SuccessState, TableRow, TableRowValue, decode, encode, fromHtmlId, isHtmlId, toHtmlId)
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
 import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.String as String
 import Libs.Time as Time
 import Models.DbValue as DbValue exposing (DbValue)
 import Models.Position as Position
@@ -27,6 +28,7 @@ type alias TableRow =
     , source : SourceId
     , query : RowQuery
     , state : State
+    , selected : Bool
     }
 
 
@@ -63,14 +65,23 @@ htmlIdPrefix =
     "az-table-row-"
 
 
+isHtmlId : HtmlId -> Bool
+isHtmlId id =
+    id |> String.startsWith htmlIdPrefix
+
+
 toHtmlId : Id -> HtmlId
 toHtmlId id =
     htmlIdPrefix ++ String.fromInt id
 
 
-isHtmlId : HtmlId -> Bool
-isHtmlId id =
-    id |> String.startsWith htmlIdPrefix
+fromHtmlId : HtmlId -> Maybe Id
+fromHtmlId id =
+    if isHtmlId id then
+        id |> String.stripLeft htmlIdPrefix |> String.toInt
+
+    else
+        Nothing
 
 
 encode : TableRow -> Value
@@ -82,18 +93,20 @@ encode value =
         , ( "source", value.source |> SourceId.encode )
         , ( "query", value.query |> encodeRowQuery )
         , ( "state", value.state |> encodeState )
+        , ( "selected", value.selected |> Encode.withDefault Encode.bool False )
         ]
 
 
 decode : Decoder TableRow
 decode =
-    Decode.map6 TableRow
+    Decode.map7 TableRow
         (Decode.field "id" Decode.int)
         (Decode.field "position" Position.decodeGrid)
         (Decode.field "size" Size.decodeCanvas)
         (Decode.field "source" SourceId.decode)
         (Decode.field "query" decodeRowQuery)
         (Decode.field "state" decodeState)
+        (Decode.defaultField "selected" Decode.bool False)
 
 
 encodeState : State -> Value
@@ -156,9 +169,9 @@ encodeSuccessState : SuccessState -> Value
 encodeSuccessState value =
     Encode.notNullObject
         [ ( "values", value.values |> Encode.list encodeTableRowValue )
-        , ( "hidden", value.hidden |> Encode.set ColumnName.encode )
-        , ( "expanded", value.expanded |> Encode.set ColumnName.encode )
-        , ( "showHidden", value.showHidden |> Encode.bool )
+        , ( "hidden", value.hidden |> Encode.withDefault (Encode.set ColumnName.encode) Set.empty )
+        , ( "expanded", value.expanded |> Encode.withDefault (Encode.set ColumnName.encode) Set.empty )
+        , ( "showHidden", value.showHidden |> Encode.withDefault Encode.bool False )
         , ( "startedAt", value.startedAt |> Time.encode )
         , ( "loadedAt", value.loadedAt |> Time.encode )
         ]
@@ -168,9 +181,9 @@ decodeSuccessState : Decoder SuccessState
 decodeSuccessState =
     Decode.map6 SuccessState
         (Decode.field "values" (Decode.list decodeTableRowValue))
-        (Decode.field "hidden" (Decode.set ColumnName.decode))
-        (Decode.field "expanded" (Decode.set ColumnName.decode))
-        (Decode.field "showHidden" Decode.bool)
+        (Decode.defaultField "hidden" (Decode.set ColumnName.decode) Set.empty)
+        (Decode.defaultField "expanded" (Decode.set ColumnName.decode) Set.empty)
+        (Decode.defaultField "showHidden" Decode.bool False)
         (Decode.field "startedAt" Time.decode)
         (Decode.field "loadedAt" Time.decode)
 
