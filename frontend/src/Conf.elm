@@ -93,14 +93,14 @@ schema =
 ui :
     { openDuration : Int
     , closeDuration : Int
-    , tableHeaderHeight : Float
-    , tableColumnHeight : Float
+    , table : { headerHeight : Float, columnHeight : Float }
+    , tableRow : { headerHeight : Float, columnHeight : Float }
     }
 ui =
     { openDuration = 200
     , closeDuration = 300
-    , tableHeaderHeight = 45
-    , tableColumnHeight = 24
+    , table = { headerHeight = 45, columnHeight = 24 }
+    , tableRow = { headerHeight = 34, columnHeight = 25 }
     }
 
 

@@ -206,12 +206,12 @@ getColumnPos ref erd =
             (\( t, index ) ->
                 (if t.collapsed then
                     { dx = (Size.extractCanvas t.size).width / 2
-                    , dy = Conf.ui.tableHeaderHeight * 0.5
+                    , dy = Conf.ui.table.headerHeight * 0.5
                     }
 
                  else
                     { dx = (Size.extractCanvas t.size).width / 2
-                    , dy = Conf.ui.tableHeaderHeight + (Conf.ui.tableColumnHeight * (0.5 + (index |> toFloat)))
+                    , dy = Conf.ui.table.headerHeight + (Conf.ui.table.columnHeight * (0.5 + (index |> toFloat)))
                     }
                 )
                     |> (\delta -> t.position |> Position.offGrid |> Position.moveCanvas delta)

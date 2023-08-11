@@ -48,9 +48,12 @@ import Track
 
 
 -- TODO:
---  - bug: count(*) return a string instead of an int in the gateway :/
+--  - bug: count(*) return a string instead of an int in the gateway => publish postgres lib and others...
 --  - open new table row next the the previous one on FK (hint)
---  - table row relations
+--  - highlight relation & matching row on table row hover
+--  - table row context menu (table & column)
+--  - if incoming relations: on click fetch incoming items and show them (needs to store them)
+--  - allow to edit notes from db queries, db sidebar & table row
 --  - column stats in query header (quick analysis on query results)
 --  - shorten uuid to its first component in results
 --  - pin a column and replace the fk by it

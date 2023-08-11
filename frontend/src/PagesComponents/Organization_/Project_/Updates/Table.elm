@@ -79,7 +79,7 @@ showTable now id hint erd =
 showTables : Time.Posix -> List TableId -> Maybe PositionHint -> Erd -> ( Erd, Cmd Msg )
 showTables now ids hint erd =
     ids
-        |> List.indexedMap (\i id -> ( id, erd |> Erd.getTable id, hint |> Maybe.map (PositionHint.move { dx = 0, dy = Conf.ui.tableHeaderHeight * toFloat i }) ))
+        |> List.indexedMap (\i id -> ( id, erd |> Erd.getTable id, hint |> Maybe.map (PositionHint.move { dx = 0, dy = Conf.ui.table.headerHeight * toFloat i }) ))
         |> List.foldl
             (\( id, maybeTable, tableHint ) ( e, ( found, shown, notFound ) ) ->
                 case maybeTable of
@@ -191,8 +191,8 @@ showRelatedTables id erd =
 
 guessHeight : TableId -> Erd -> Float
 guessHeight id erd =
-    (erd |> Erd.currentLayout |> .tables |> List.findBy .id id |> Maybe.map (\t -> Conf.ui.tableHeaderHeight + (Conf.ui.tableColumnHeight * (t.columns |> List.length |> toFloat))))
-        |> Maybe.orElse (erd |> Erd.getTable id |> Maybe.map (\t -> Conf.ui.tableHeaderHeight + (Conf.ui.tableColumnHeight * (t.columns |> Dict.size |> toFloat |> min 15))))
+    (erd |> Erd.currentLayout |> .tables |> List.findBy .id id |> Maybe.map (\t -> Conf.ui.table.headerHeight + (Conf.ui.table.columnHeight * (t.columns |> List.length |> toFloat))))
+        |> Maybe.orElse (erd |> Erd.getTable id |> Maybe.map (\t -> Conf.ui.table.headerHeight + (Conf.ui.table.columnHeight * (t.columns |> Dict.size |> toFloat |> min 15))))
         |> Maybe.withDefault 200
 
 

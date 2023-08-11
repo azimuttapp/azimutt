@@ -717,7 +717,7 @@ placeAtCenter erdViewport newSize =
 moveDownIfExists : List ErdTableLayout -> Size.Canvas -> Position.Grid -> Position.Grid
 moveDownIfExists tables size position =
     if tables |> List.any (\t -> t.props.position == position || isSameTopRight t.props { position = position, size = size }) then
-        position |> Position.moveGrid { dx = 0, dy = Conf.ui.tableHeaderHeight } |> moveDownIfExists tables size
+        position |> Position.moveGrid { dx = 0, dy = Conf.ui.table.headerHeight } |> moveDownIfExists tables size
 
     else
         position

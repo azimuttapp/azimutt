@@ -1,8 +1,9 @@
-import {Client} from "pg";
+import {Client, types} from "pg";
 import {DatabaseUrlParsed} from "@azimutt/database-types";
 import {Conn, QueryResultArrayMode, QueryResultRow} from "./common";
 
 export function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c: Conn) => Promise<T>): Promise<T> {
+    types.setTypeParser(types.builtins.INT8, (val: string) => parseInt(val, 10))
     const client = new Client({
         application_name: application,
         connectionString: buildUrl(url),

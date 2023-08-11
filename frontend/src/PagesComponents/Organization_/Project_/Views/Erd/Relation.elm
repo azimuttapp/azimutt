@@ -1,6 +1,6 @@
-module PagesComponents.Organization_.Project_.Views.Erd.Relation exposing (ColumnInfo, buildColumnInfo, viewEmptyRelation, viewRelation, viewVirtualRelation)
+module PagesComponents.Organization_.Project_.Views.Erd.Relation exposing (ColumnInfo, buildColumnInfo, deltaTop, positionLeft, viewEmptyRelation, viewRelation, viewVirtualRelation)
 
-import Components.Organisms.Relation as Relation exposing (Direction(..), RelationConf)
+import Components.Organisms.Relation as Relation
 import Conf
 import Libs.Bool as B
 import Libs.List as List
@@ -10,7 +10,7 @@ import Models.Area as Area
 import Models.Position as Position
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.SchemaName exposing (SchemaName)
-import Models.RelationStyle exposing (RelationStyle)
+import Models.RelationStyle as RelationStyle exposing (RelationStyle)
 import Models.Size as Size
 import PagesComponents.Organization_.Project_.Models exposing (Msg(..))
 import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn)
@@ -19,8 +19,8 @@ import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.ErdRelation as ErdRelation exposing (ErdRelation)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.ErdTableProps exposing (ErdTableProps)
-import Svg exposing (Svg, svg)
-import Svg.Attributes exposing (class, height, width)
+import Svg exposing (Attribute, Svg, svg)
+import Svg.Attributes exposing (class, height, strokeDasharray, width)
 
 
 type alias ColumnInfo =
@@ -50,8 +50,8 @@ viewRelation defaultSchema style conf srcTable refTable relation =
         label =
             ErdRelation.label defaultSchema relation
 
-        relConf : RelationConf
-        relConf =
+        model : Relation.Model
+        model =
             { hover = conf.hover }
 
         ( src, ref ) =
@@ -74,16 +74,16 @@ viewRelation defaultSchema style conf srcTable refTable relation =
                 viewEmptyRelation
 
             else
-                (s.table |> Area.topRightCanvasGrid |> Position.moveCanvas { dx = 0, dy = deltaTop s.index s.table.collapsed })
-                    |> (\srcPos -> Relation.straight relConf ( srcPos, Left ) ( srcPos |> Position.moveCanvas { dx = 20, dy = 0 }, Right ) relation.src.nullable color label onHover)
+                (s.table |> Area.topRightCanvasGrid |> Position.moveCanvas { dx = 0, dy = deltaTop Conf.ui.table s.index s.table.collapsed })
+                    |> (\srcPos -> Relation.show RelationStyle.Straight model ( srcPos, Relation.Left ) ( srcPos |> Position.moveCanvas { dx = 20, dy = 0 }, Relation.Right ) (buildStyle relation.src.nullable) color label onHover)
 
         ( Nothing, Just r ) ->
             if r.table.collapsed then
                 viewEmptyRelation
 
             else
-                (r.table |> Area.topLeftCanvasGrid |> Position.moveCanvas { dx = 0, dy = deltaTop r.index r.table.collapsed })
-                    |> (\refPos -> Relation.straight relConf ( refPos |> Position.moveCanvas { dx = -20, dy = 0 }, Left ) ( refPos, Right ) relation.src.nullable color label onHover)
+                (r.table |> Area.topLeftCanvasGrid |> Position.moveCanvas { dx = 0, dy = deltaTop Conf.ui.table r.index r.table.collapsed })
+                    |> (\refPos -> Relation.show RelationStyle.Straight model ( refPos |> Position.moveCanvas { dx = -20, dy = 0 }, Relation.Left ) ( refPos, Relation.Right ) (buildStyle relation.src.nullable) color label onHover)
 
         ( Just s, Just r ) ->
             let
@@ -94,9 +94,9 @@ viewRelation defaultSchema style conf srcTable refTable relation =
                     positionLeft s.table r.table
 
                 ( srcY, refY ) =
-                    ( sPos.top + deltaTop s.index s.table.collapsed, rPos.top + deltaTop r.index r.table.collapsed )
+                    ( sPos.top + deltaTop Conf.ui.table s.index s.table.collapsed, rPos.top + deltaTop Conf.ui.table r.index r.table.collapsed )
             in
-            Relation.show style relConf ( Position.canvas { left = srcX, top = srcY }, srcDir ) ( Position.canvas { left = refX, top = refY }, refDir ) relation.src.nullable color label onHover
+            Relation.show style model ( Position.canvas { left = srcX, top = srcY }, srcDir ) ( Position.canvas { left = refX, top = refY }, refDir ) (buildStyle relation.src.nullable) color label onHover
 
 
 viewVirtualRelation : RelationStyle -> ( ( Maybe ColumnInfo, ErdColumn ), Position.Canvas ) -> Svg Msg
@@ -113,9 +113,9 @@ viewVirtualRelation style ( ( maybeProps, column ), position ) =
             in
             Relation.show style
                 { hover = False }
-                ( props.table.position |> Position.offGrid |> Position.moveCanvas { dx = B.cond isRight tableSize.width 0, dy = deltaTop props.index props.table.collapsed }, B.cond isRight Relation.Right Relation.Left )
+                ( props.table.position |> Position.offGrid |> Position.moveCanvas { dx = B.cond isRight tableSize.width 0, dy = deltaTop Conf.ui.table props.index props.table.collapsed }, B.cond isRight Relation.Right Relation.Left )
                 ( position, B.cond isRight Relation.Left Relation.Right )
-                column.nullable
+                (buildStyle column.nullable)
                 (Just props.table.color)
                 "virtual relation"
                 (\_ -> Noop "hover new virtual relation")
@@ -127,6 +127,11 @@ viewVirtualRelation style ( ( maybeProps, column ), position ) =
 viewEmptyRelation : Svg msg
 viewEmptyRelation =
     svg [ class "az-empty-relation", width "0px", height "0px" ] []
+
+
+buildStyle : Bool -> List (Attribute msg)
+buildStyle nullable =
+    [ strokeDasharray (B.cond nullable "4" "0") ]
 
 
 getColor : Maybe ColumnInfo -> Maybe ColumnInfo -> Maybe Color
@@ -145,47 +150,24 @@ getColor src ref =
             Nothing
 
 
-deltaTop : Int -> Bool -> Float
-deltaTop index collapsed =
-    if collapsed then
-        Conf.ui.tableHeaderHeight * 0.5
-
-    else
-        Conf.ui.tableHeaderHeight + (Conf.ui.tableColumnHeight * (0.5 + (index |> toFloat)))
-
-
-positionLeft : ErdTableProps -> ErdTableProps -> ( ( Float, Relation.Direction ), ( Float, Relation.Direction ) )
+positionLeft : Area.GridLike x -> Area.GridLike x -> ( ( Float, Relation.Direction ), ( Float, Relation.Direction ) )
 positionLeft src ref =
     case ( leftCenterRight src, leftCenterRight ref ) of
         ( ( srcLeft, srcCenter, srcRight ), ( refLeft, refCenter, refRight ) ) ->
-            (if srcRight < refLeft then
+            if srcRight < refLeft then
                 ( ( srcRight, Relation.Right ), ( refLeft, Relation.Left ) )
 
-             else if srcCenter < refCenter then
+            else if srcCenter < refCenter then
                 ( ( srcRight, Relation.Right ), ( refRight, Relation.Right ) )
 
-             else if srcLeft < refRight then
+            else if srcLeft < refRight then
                 ( ( srcLeft, Relation.Left ), ( refLeft, Relation.Left ) )
 
-             else
+            else
                 ( ( srcLeft, Relation.Left ), ( refRight, Relation.Right ) )
-            )
-                |> (\( ( srcPos, srcDir ), ( refPos, refDir ) ) ->
-                        ( if src.collapsed then
-                            ( srcCenter, Relation.None )
-
-                          else
-                            ( srcPos, srcDir )
-                        , if ref.collapsed then
-                            ( refCenter, Relation.None )
-
-                          else
-                            ( refPos, refDir )
-                        )
-                   )
 
 
-leftCenterRight : { x | position : Position.Grid, size : Size.Canvas } -> ( Float, Float, Float )
+leftCenterRight : Area.GridLike x -> ( Float, Float, Float )
 leftCenterRight { position, size } =
     let
         pos : Position
@@ -197,3 +179,12 @@ leftCenterRight { position, size } =
             size |> Size.extractCanvas |> .width
     in
     ( pos.left, pos.left + (width / 2), pos.left + width )
+
+
+deltaTop : { headerHeight : Float, columnHeight : Float } -> Int -> Bool -> Float
+deltaTop conf index collapsed =
+    if collapsed then
+        conf.headerHeight * 0.5
+
+    else
+        conf.headerHeight + (conf.columnHeight * (0.5 + (index |> toFloat)))

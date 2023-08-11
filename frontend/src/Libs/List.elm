@@ -20,7 +20,10 @@ module Libs.List exposing
     , groupBy
     , groupByL
     , indexOf
+    , indexedConcatMap
     , indexedFilter
+    , indexedFilterMap
+    , indexedFind
     , last
     , mapAt
     , mapAtCmd
@@ -134,23 +137,28 @@ find predicate list =
                 find predicate rest
 
 
+indexedFind : (Int -> a -> Bool) -> List a -> Maybe a
+indexedFind predicate list =
+    indexedFindInner 0 predicate list |> Maybe.map Tuple.second
+
+
 findIndex : (a -> Bool) -> List a -> Maybe Int
-findIndex =
-    findIndexInner 0
+findIndex predicate list =
+    indexedFindInner 0 (\_ -> predicate) list |> Maybe.map Tuple.first
 
 
-findIndexInner : Int -> (a -> Bool) -> List a -> Maybe Int
-findIndexInner index predicate list =
+indexedFindInner : Int -> (Int -> a -> Bool) -> List a -> Maybe ( Int, a )
+indexedFindInner i predicate list =
     case list of
         [] ->
             Nothing
 
         first :: rest ->
-            if predicate first then
-                Just index
+            if predicate i first then
+                Just ( i, first )
 
             else
-                findIndexInner (index + 1) predicate rest
+                indexedFindInner (i + 1) predicate rest
 
 
 findBy : (a -> b) -> b -> List a -> Maybe a
@@ -188,6 +196,21 @@ indexedFilter p xs =
     xs |> List.indexedMap (\i a -> B.cond (p i a) (Just a) Nothing) |> List.filterMap identity
 
 
+indexedFilterMap : (Int -> a -> Maybe b) -> List a -> List b
+indexedFilterMap f xs =
+    List.foldr (\a ( i, acc ) -> ( i + 1, maybeCons (f i) a acc )) ( 0, [] ) xs |> Tuple.second
+
+
+maybeCons : (a -> Maybe b) -> a -> List b -> List b
+maybeCons f mx xs =
+    case f mx of
+        Just x ->
+            x :: xs
+
+        Nothing ->
+            xs
+
+
 memberBy : (a -> b) -> b -> List a -> Bool
 memberBy matcher value list =
     findBy matcher value list |> Maybe.isJust
@@ -201,6 +224,11 @@ memberWith matcher list =
 indexOf : a -> List a -> Maybe Int
 indexOf item xs =
     xs |> List.indexedMap (\i a -> ( i, a )) |> find (\( _, a ) -> a == item) |> Maybe.map Tuple.first
+
+
+indexedConcatMap : (Int -> a -> List b) -> List a -> List b
+indexedConcatMap f list =
+    List.concat (List.indexedMap f list)
 
 
 mapAt : Int -> (a -> a) -> List a -> List a

@@ -21,22 +21,27 @@ import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Platform as Platform exposing (Platform)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
+import Libs.Nel as Nel exposing (Nel)
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (focus)
 import Libs.Time as Time
 import Libs.Tuple as Tuple
 import Models.Area as Area
 import Models.DbSource as DbSource
+import Models.DbValue as DbValue exposing (DbValue)
 import Models.ErdProps exposing (ErdProps)
 import Models.Position as Position
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
+import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.Group as Group exposing (Group)
 import Models.Project.Metadata exposing (Metadata)
+import Models.Project.Relation exposing (Relation)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
+import Models.Project.SourceId as SourceId exposing (SourceId, SourceIdStr)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableMeta as TableMeta exposing (TableMeta)
-import Models.Project.TableRow as TableRow exposing (TableRow)
+import Models.Project.TableRow as TableRow exposing (TableRow, TableRowSuccess, TableRowValue)
 import Models.RelationStyle exposing (RelationStyle)
 import Models.Size as Size
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
@@ -56,10 +61,12 @@ import PagesComponents.Organization_.Project_.Models.MemoId as MemoId
 import PagesComponents.Organization_.Project_.Updates.Drag as Drag
 import PagesComponents.Organization_.Project_.Views.Erd.Memo as Memo
 import PagesComponents.Organization_.Project_.Views.Erd.Relation as Relation exposing (viewEmptyRelation, viewRelation, viewVirtualRelation)
+import PagesComponents.Organization_.Project_.Views.Erd.RelationRow exposing (viewRelationRow)
 import PagesComponents.Organization_.Project_.Views.Erd.Table as Table exposing (viewTable)
 import PagesComponents.Organization_.Project_.Views.Erd.TableRow as TableRow exposing (viewTableRow)
 import PagesComponents.Organization_.Project_.Views.Modals.ErdContextMenu as ErdContextMenu
 import PagesComponents.Organization_.Project_.Views.Modals.GroupContextMenu as GroupContextMenu
+import Services.QueryBuilder exposing (RowQuery)
 import Set exposing (Set)
 import Time
 
@@ -125,14 +132,6 @@ viewErd conf erdElem erd selectionBox virtualRelation editMemo args dragging =
         groups =
             layout.groups |> List.zipWithIndex |> List.filterMap (ErdTableLayout.buildGroupArea displayedTables)
 
-        displayedIds : Set TableId
-        displayedIds =
-            displayedTables |> List.map .id |> Set.fromList
-
-        displayedRelations : List ErdRelation
-        displayedRelations =
-            erd.relations |> List.filter (\r -> [ r.src, r.ref ] |> List.any (\c -> displayedIds |> Set.member c.table))
-
         virtualRelationInfo : Maybe ( ( Maybe { table : ErdTableProps, index : Int, highlighted : Bool }, ErdColumn ), Position.Canvas )
         virtualRelationInfo =
             virtualRelation
@@ -170,8 +169,9 @@ viewErd conf erdElem erd selectionBox virtualRelation editMemo args dragging =
             [ -- canvas.position |> Position.debugDiagram "canvas" "bg-black"
               -- , layout.tables |> List.map (.props >> Area.offGrid) |> Area.mergeCanvas |> Maybe.mapOrElse (Area.debugCanvas "tablesArea" "border-blue-500") (div [] []),
               div [ class "az-groups" ] (groups |> List.map (viewGroup platform erd.settings.defaultSchema editGroup))
+            , viewRelationRows conf erd.settings.relationStyle erd.sources tableRows
             , tableRows |> viewTableRows now platform conf cursorMode erd.settings.defaultSchema openedDropdown erd.sources layout erd.metadata
-            , displayedRelations |> Lazy.lazy5 viewRelations conf erd.settings.defaultSchema erd.settings.relationStyle displayedTables
+            , erd.relations |> Lazy.lazy5 viewRelations conf erd.settings.defaultSchema erd.settings.relationStyle displayedTables
             , layoutTables |> viewTables platform conf cursorMode virtualRelation openedDropdown openedPopover hoverTable dragging canvas.zoom erd.settings.defaultSchema selected erd.settings.columnBasicTypes erd.tables erd.metadata layout
             , memos |> viewMemos platform conf cursorMode editMemo
             , div [ class "az-selection-box pointer-events-none" ] (selectionBox |> Maybe.filter (\_ -> layout |> ErdLayout.nonEmpty) |> Maybe.mapOrElse viewSelectionBox [])
@@ -182,110 +182,6 @@ viewErd conf erdElem erd selectionBox virtualRelation editMemo args dragging =
 
           else
             div [] []
-        ]
-
-
-viewMemos : Platform -> ErdConf -> CursorMode -> Maybe MemoEdit -> List Memo -> Html Msg
-viewMemos platform conf cursorMode editMemo memos =
-    Keyed.node "div"
-        [ class "az-memos" ]
-        (memos
-            |> List.map
-                (\memo ->
-                    ( MemoId.toHtmlId memo.id
-                    , Lazy.lazy5 Memo.viewMemo platform conf cursorMode (editMemo |> Maybe.filterBy .id memo.id |> Maybe.map .content) memo
-                    )
-                )
-        )
-
-
-viewTableRows : Time.Posix -> Platform -> ErdConf -> CursorMode -> SchemaName -> HtmlId -> List Source -> ErdLayout -> Metadata -> List TableRow -> Html Msg
-viewTableRows now platform conf cursorMode defaultSchema openedDropdown sources layout metadata tableRows =
-    Keyed.node "div"
-        [ class "az-table-rows" ]
-        (tableRows
-            -- last one added on top
-            |> List.reverse
-            |> List.map
-                (\r ->
-                    ( TableRow.toHtmlId r.id
-                    , viewTableRow now
-                        platform
-                        conf
-                        cursorMode
-                        defaultSchema
-                        openedDropdown
-                        (TableRow.toHtmlId r.id)
-                        (sources |> List.findBy .id r.source |> Maybe.andThen DbSource.fromSource)
-                        (layout.tables |> List.findBy .id r.query.table)
-                        (metadata |> Dict.get r.query.table)
-                        r
-                    )
-                )
-        )
-
-
-handleErdPointerDown : ErdConf -> CursorMode -> PointerEvent -> Msg
-handleErdPointerDown conf cursorMode e =
-    if e.button == MainButton then
-        case cursorMode of
-            CursorMode.Drag ->
-                if conf.move then
-                    e |> .clientPos |> DragStart Conf.ids.erd
-
-                else
-                    Noop "No erd drag"
-
-            CursorMode.Select ->
-                if conf.select then
-                    e |> .clientPos |> DragStart Conf.ids.selectionBox
-
-                else
-                    Noop "No selection box"
-
-    else if e.button == MiddleButton then
-        if conf.move then
-            e |> .clientPos |> DragStart Conf.ids.erd
-
-        else
-            Noop "No middle button erd drag"
-
-    else
-        Noop "No match on erd pointer down"
-
-
-viewGroup : Platform -> SchemaName -> Maybe GroupEdit -> ( Int, Group, Area.Canvas ) -> Html Msg
-viewGroup platform defaultSchema editGroup ( index, group, area ) =
-    div
-        ([ css [ "absolute border-2 bg-opacity-25", Tw.bg_300 group.color, Tw.border_300 group.color ]
-         , onDblClick (\_ -> GEdit index group.name |> GroupMsg) platform
-         , onContextMenu (\e -> ContextMenuCreate (GroupContextMenu.view defaultSchema index group) e) platform
-         ]
-            ++ Area.styleTransformCanvas area
-        )
-        [ editGroup
-            |> Maybe.filter (\edit -> edit.index == index)
-            |> Maybe.mapOrElse
-                (\edit ->
-                    let
-                        inputId : HtmlId
-                        inputId =
-                            Group.toInputId index
-                    in
-                    input
-                        [ type_ "text"
-                        , name inputId
-                        , id inputId
-                        , placeholder "Group name"
-                        , value edit.content
-                        , onInput (GEditUpdate >> GroupMsg)
-                        , onBlur (GEditSave |> GroupMsg)
-                        , autofocus True
-                        , css [ "px-2 py-0 shadow-sm block border-gray-300 rounded-md", focus [ Tw.ring_500 group.color, Tw.border_500 group.color ] ]
-                        ]
-                        []
-                )
-                (div [ css [ "px-2 select-none", Tw.text_600 group.color ] ] [ text group.name ])
         ]
 
 
@@ -327,9 +223,18 @@ viewTables platform conf cursorMode virtualRelation openedDropdown openedPopover
 
 viewRelations : ErdConf -> SchemaName -> RelationStyle -> List ErdTableLayout -> List ErdRelation -> Html Msg
 viewRelations conf defaultSchema style tableLayouts relations =
+    let
+        displayedIds : Set TableId
+        displayedIds =
+            tableLayouts |> List.map .id |> Set.fromList
+
+        displayedRelations : List ErdRelation
+        displayedRelations =
+            relations |> List.filter (\r -> [ r.src, r.ref ] |> List.any (\c -> displayedIds |> Set.member c.table))
+    in
     Keyed.node "div"
         [ class "az-relations select-none pointer-events-none" ]
-        (relations
+        (displayedRelations
             |> List.map
                 (\r ->
                     ( r.name
@@ -343,6 +248,144 @@ viewRelations conf defaultSchema style tableLayouts relations =
                     )
                 )
         )
+
+
+viewTableRows : Time.Posix -> Platform -> ErdConf -> CursorMode -> SchemaName -> HtmlId -> List Source -> ErdLayout -> Metadata -> List TableRow -> Html Msg
+viewTableRows now platform conf cursorMode defaultSchema openedDropdown sources layout metadata tableRows =
+    Keyed.node "div"
+        [ class "az-table-rows" ]
+        (tableRows
+            -- last one added on top
+            |> List.reverse
+            |> List.map
+                (\r ->
+                    ( TableRow.toHtmlId r.id
+                    , viewTableRow now
+                        platform
+                        conf
+                        cursorMode
+                        defaultSchema
+                        openedDropdown
+                        (TableRow.toHtmlId r.id)
+                        (sources |> List.findBy .id r.source |> Maybe.andThen DbSource.fromSource)
+                        (layout.tables |> List.findBy .id r.query.table)
+                        (metadata |> Dict.get r.query.table)
+                        r
+                    )
+                )
+        )
+
+
+viewRelationRows : ErdConf -> RelationStyle -> List Source -> List TableRow -> Html Msg
+viewRelationRows conf style sources rows =
+    let
+        successRows : Dict SourceIdStr (Dict TableId (List TableRowSuccess))
+        successRows =
+            rows
+                |> List.filterMap (\r -> r |> TableRow.stateSuccess |> Maybe.map (\s -> { row = r, state = s }))
+                |> List.groupBy (.row >> .source >> SourceId.toString)
+                |> Dict.map (\_ -> List.groupBy (.row >> .query >> .table))
+
+        sourceRelations : Dict SourceIdStr (Dict ( TableId, ColumnName ) (List Relation))
+        sourceRelations =
+            sources
+                |> List.filter (\s -> successRows |> Dict.member (SourceId.toString s.id))
+                |> List.map (\s -> ( SourceId.toString s.id, s ))
+                |> List.map (Tuple.mapSecond (.relations >> List.groupBy (\r -> ( r.src.table, r.src.column.head ))))
+                |> Dict.fromList
+
+        getRelations : SourceId -> TableId -> ColumnName -> List Relation
+        getRelations source table column =
+            sourceRelations |> Dict.get (SourceId.toString source) |> Maybe.andThen (Dict.get ( table, column )) |> Maybe.withDefault []
+
+        getRowValues : SourceId -> TableId -> TableRowValue -> List ( TableRowSuccess, Int, TableRowValue )
+        getRowValues source table value =
+            successRows
+                |> Dict.get (SourceId.toString source)
+                |> Maybe.andThen (Dict.get table)
+                |> Maybe.withDefault []
+                |> List.filterMap (\r -> r.state.values |> List.zipWithIndex |> List.find (\( v, _ ) -> v == value) |> Maybe.map (\( v, i ) -> ( r, i, v )))
+
+        relations : List ( ( TableRowSuccess, Int, TableRowValue ), ( TableRowSuccess, Int, TableRowValue ) )
+        relations =
+            successRows
+                |> Dict.toList
+                |> List.concatMap (Tuple.second >> Dict.toList >> List.concatMap Tuple.second)
+                |> List.concatMap
+                    (\r ->
+                        r.state.values
+                            |> List.filter (\v -> r.state.hidden |> Set.member v.column |> not)
+                            |> List.indexedConcatMap
+                                (\i v ->
+                                    getRelations r.row.source r.row.query.table v.column
+                                        |> List.concatMap (\rel -> getRowValues r.row.source rel.ref.table { column = rel.ref.column.head, value = v.value })
+                                        |> List.map (\ref -> ( ( r, i, v ), ref ))
+                                )
+                    )
+
+        rowId : RowQuery -> String
+        rowId query =
+            TableId.toString query.table :: (query.primaryKey |> Nel.toList |> List.map (.value >> DbValue.toString)) |> String.join "-"
+    in
+    Keyed.node "div"
+        [ class "az-relations select-none pointer-events-none" ]
+        (relations
+            |> List.map
+                (\( ( src, srcValueIndex, srcValue ), ( ref, refValueIndex, refValue ) ) ->
+                    ( [ SourceId.toString src.row.source, rowId src.row.query, String.fromInt srcValueIndex, rowId ref.row.query, String.fromInt refValueIndex ] |> String.join "-"
+                    , viewRelationRow conf style ( ( src, srcValueIndex, srcValue ), ( ref, refValueIndex, refValue ) )
+                    )
+                )
+        )
+
+
+viewMemos : Platform -> ErdConf -> CursorMode -> Maybe MemoEdit -> List Memo -> Html Msg
+viewMemos platform conf cursorMode editMemo memos =
+    Keyed.node "div"
+        [ class "az-memos" ]
+        (memos
+            |> List.map
+                (\memo ->
+                    ( MemoId.toHtmlId memo.id
+                    , Lazy.lazy5 Memo.viewMemo platform conf cursorMode (editMemo |> Maybe.filterBy .id memo.id |> Maybe.map .content) memo
+                    )
+                )
+        )
+
+
+viewGroup : Platform -> SchemaName -> Maybe GroupEdit -> ( Int, Group, Area.Canvas ) -> Html Msg
+viewGroup platform defaultSchema editGroup ( index, group, area ) =
+    div
+        ([ css [ "absolute border-2 bg-opacity-25", Tw.bg_300 group.color, Tw.border_300 group.color ]
+         , onDblClick (\_ -> GEdit index group.name |> GroupMsg) platform
+         , onContextMenu (\e -> ContextMenuCreate (GroupContextMenu.view defaultSchema index group) e) platform
+         ]
+            ++ Area.styleTransformCanvas area
+        )
+        [ editGroup
+            |> Maybe.filter (\edit -> edit.index == index)
+            |> Maybe.mapOrElse
+                (\edit ->
+                    let
+                        inputId : HtmlId
+                        inputId =
+                            Group.toInputId index
+                    in
+                    input
+                        [ type_ "text"
+                        , name inputId
+                        , id inputId
+                        , placeholder "Group name"
+                        , value edit.content
+                        , onInput (GEditUpdate >> GroupMsg)
+                        , onBlur (GEditSave |> GroupMsg)
+                        , autofocus True
+                        , css [ "px-2 py-0 shadow-sm block border-gray-300 rounded-md", focus [ Tw.ring_500 group.color, Tw.border_500 group.color ] ]
+                        ]
+                        []
+                )
+                (div [ css [ "px-2 select-none", Tw.text_600 group.color ] ] [ text group.name ])
+        ]
 
 
 viewSelectionBox : Area.Canvas -> List (Html Msg)
@@ -411,3 +454,32 @@ viewEmptyState defaultSchema tables =
                 ]
             ]
         ]
+
+
+handleErdPointerDown : ErdConf -> CursorMode -> PointerEvent -> Msg
+handleErdPointerDown conf cursorMode e =
+    if e.button == MainButton then
+        case cursorMode of
+            CursorMode.Drag ->
+                if conf.move then
+                    e |> .clientPos |> DragStart Conf.ids.erd
+
+                else
+                    Noop "No erd drag"
+
+            CursorMode.Select ->
+                if conf.select then
+                    e |> .clientPos |> DragStart Conf.ids.selectionBox
+
+                else
+                    Noop "No selection box"
+
+    else if e.button == MiddleButton then
+        if conf.move then
+            e |> .clientPos |> DragStart Conf.ids.erd
+
+        else
+            Noop "No middle button erd drag"
+
+    else
+        Noop "No match on erd pointer down"

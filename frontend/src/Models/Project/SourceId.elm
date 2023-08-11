@@ -39,12 +39,12 @@ generator =
     Uuid.generator |> Random.map new
 
 
-toString : SourceId -> String
+toString : SourceId -> SourceIdStr
 toString (SourceId id) =
     id
 
 
-fromString : String -> Maybe SourceId
+fromString : SourceIdStr -> Maybe SourceId
 fromString value =
     if Uuid.isValid value then
         Just (new value)
