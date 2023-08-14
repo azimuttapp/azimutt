@@ -345,7 +345,7 @@ defmodule Azimutt.Accounts do
     if Azimutt.config(:global_organization) && Azimutt.config(:global_organization_alone) do
       user.organizations |> Enum.filter(fn orga -> orga.id == Azimutt.config(:global_organization) end)
     else
-      user.organizations
+      user.organizations |> Enum.filter(fn orga -> orga.deleted_at == nil end)
     end
   end
 

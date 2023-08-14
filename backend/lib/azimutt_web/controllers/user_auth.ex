@@ -9,7 +9,6 @@ defmodule AzimuttWeb.UserAuth do
   alias Azimutt.Heroku
   alias Azimutt.Tracking
   alias Azimutt.Utils.Result
-  alias Azimutt.Utils.Stringx
   alias AzimuttWeb.Router.Helpers, as: Routes
 
   @seconds 1
@@ -23,9 +22,9 @@ defmodule AzimuttWeb.UserAuth do
   @remember_me_cookie "_azimutt_web_user_remember_me"
   @remember_me_options [sign: true, max_age: 60 * @days, same_site: "Lax"]
 
-  # cf https://www.clever-cloud.com/doc/extend/add-ons-api/#sso
+  # cf https://www.clever-cloud.com/doc/extend/add-ons-api/#sso, same_site should be None to allow iframe cookies
   @clever_cloud_cookie "_azimutt_clever_cloud_sso"
-  @clever_cloud_options [sign: true, max_age: 90 * @minutes, same_site: "Lax"]
+  @clever_cloud_options [sign: true, max_age: 90 * @minutes, same_site: "None", secure: true]
 
   # cf https://devcenter.heroku.com/articles/add-on-single-sign-on
   @heroku_cookie "_azimutt_heroku_sso"
@@ -211,8 +210,6 @@ defmodule AzimuttWeb.UserAuth do
     do: require_basic_auth(conn, "Heroku", Azimutt.config(:heroku_addon_id), Azimutt.config(:heroku_password))
 
   defp require_basic_auth(conn, name, expected_user, expected_pass) do
-    Logger.info("UserAuth.require_basic_auth(#{Stringx.inspect(%{name: name, user: expected_user, pass: expected_pass})})")
-
     if expected_user && expected_pass do
       case Plug.BasicAuth.parse_basic_auth(conn) do
         {user, pass} ->
@@ -269,8 +266,6 @@ defmodule AzimuttWeb.UserAuth do
   end
 
   def require_clever_cloud_resource(conn, _opts) do
-    Logger.info("UserAuth.require_clever_cloud_resource()")
-
     if conn.assigns[:clever_cloud] do
       conn
     else

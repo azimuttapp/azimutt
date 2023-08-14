@@ -4,6 +4,7 @@ import Expect
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.TableId as TableId exposing (TableId)
 import Test exposing (Test, describe, test)
+import TestHelpers.Helpers exposing (testEncode, testSerde)
 
 
 defaultSchema : SchemaName
@@ -47,5 +48,15 @@ suite =
             , test "with default schema" (\_ -> "public.users" |> TableId.parse |> Expect.equal tableId2)
             , test "with empty schema" (\_ -> ".users" |> TableId.parse |> Expect.equal tableId3)
             , test "with no schema" (\_ -> "users" |> TableId.parse |> Expect.equal tableId3)
+            ]
+        , describe "encode"
+            [ testEncode "empty schema" TableId.encode ( "", "users" ) "\".users\""
+            , testEncode "with schema" TableId.encode ( "public", "users" ) "\"public.users\""
+            , testEncode "name with dot" TableId.encode ( "", "users.aa" ) "\".users.aa\""
+            ]
+        , describe "serde"
+            [ testSerde "empty schema" TableId.encode TableId.decode ( "", "users" )
+            , testSerde "with schema" TableId.encode TableId.decode ( "public", "users" )
+            , testSerde "name with dot" TableId.encode TableId.decode ( "", "users.aa" )
             ]
         ]

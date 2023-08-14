@@ -173,7 +173,7 @@ export class Backend {
 
     private gatewayUrl = async (): Promise<string> => {
         const cliGateway = 'http://localhost:4177'
-        return await fetch(`${cliGateway}/ping`).then(_ => `${cliGateway}/gateway`).catch(_ => `${window.gateway_url}/gateway`)
+        return await fetch(`${cliGateway}/ping`, {cache: 'no-store'}).then(_ => `${cliGateway}/gateway`).catch(_ => `${window.gateway_url}/gateway`)
     }
 }
 

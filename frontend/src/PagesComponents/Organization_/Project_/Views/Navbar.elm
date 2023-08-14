@@ -82,12 +82,16 @@ viewNavbar gConf maybeUser eConf virtualRelation erd projects model args =
             , Just { action = Left Conf.constants.azimuttFeatureRequests, content = text "Suggest a feature 🚀", hotkeys = [] }
             ]
                 |> List.filterMap identity
+
+        notCleverCloud : Bool
+        notCleverCloud =
+            (erd.project.organization |> Maybe.andThen .cleverCloud) == Nothing
     in
     nav [ css [ "az-navbar relative z-max bg-primary-600" ] ]
         [ div [ css [ "mx-auto px-2", sm [ "px-4" ], lg [ "px-8" ] ] ]
             [ div [ class "relative flex items-center justify-between h-16" ]
                 [ div [ css [ "flex items-center px-2", lg [ "px-0" ] ] ]
-                    [ viewNavbarBrand (erd.project.organization |> Maybe.map .id |> Maybe.orElse urlOrganization |> Maybe.filter (\id -> userOrganizations |> List.member id)) eConf
+                    [ viewNavbarBrand (erd.project.organization |> Maybe.map .id |> Maybe.orElse urlOrganization |> Maybe.filter (\id -> userOrganizations |> List.member id)) (eConf.dashboardLink && notCleverCloud)
                     , Lazy.lazy8 viewNavbarSearch erd.settings.defaultSchema model.search erd.tables erd.relations erd.metadata (erd |> Erd.currentLayout |> .tables) (htmlId ++ "-search") (openedDropdown |> String.filterStartsWith (htmlId ++ "-search"))
                     , viewNavbarHelp
                     ]
@@ -109,12 +113,12 @@ viewNavbar gConf maybeUser eConf virtualRelation erd projects model args =
         ]
 
 
-viewNavbarBrand : Maybe OrganizationId -> ErdConf -> Html msg
-viewNavbarBrand organization conf =
+viewNavbarBrand : Maybe OrganizationId -> Bool -> Html msg
+viewNavbarBrand organization dashboardLink =
     let
         attrs : List (Attribute msg)
         attrs =
-            if conf.dashboardLink then
+            if dashboardLink then
                 [ href (organization |> Backend.organizationUrl) ]
 
             else
