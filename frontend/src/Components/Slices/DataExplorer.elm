@@ -51,6 +51,7 @@ import Track
 --  - bug: count(*) return a string instead of an int in the gateway => publish postgres lib and others...
 --  - open new table row next the the previous one on FK (hint)
 --  - highlight relation & matching row on table row hover
+--  - popover with JSON when hover a JSON value in table row
 --  - table row context menu (table & column)
 --  - if incoming relations: on click fetch incoming items and show them (needs to store them)
 --  - allow to edit notes from db queries, db sidebar & table row
