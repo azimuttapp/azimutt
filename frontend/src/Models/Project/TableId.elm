@@ -51,8 +51,8 @@ toString ( s, t ) =
 fromString : String -> Maybe TableId
 fromString id =
     case String.split "." id of
-        s :: t :: [] ->
-            Just ( s, t )
+        s :: t :: rest ->
+            Just ( s, (t :: rest) |> String.join "." )
 
         _ ->
             Nothing

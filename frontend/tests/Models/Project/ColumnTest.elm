@@ -1,26 +1,27 @@
 module Models.Project.ColumnTest exposing (..)
 
-import Json.Decode as Decode
 import Libs.Ned as Ned exposing (Ned)
 import Libs.Nel as Nel exposing (Nel)
 import Models.Project.Column as Column exposing (Column, NestedColumns(..))
 import Models.Project.Comment exposing (Comment)
 import Test exposing (Test, describe)
-import TestHelpers.Helpers exposing (testSerdeJson)
+import TestHelpers.Helpers exposing (testEncode)
 
 
 suite : Test
 suite =
     describe "Column"
         [ describe "serialization"
-            [ testSerialization "basic"
-                """{"name":"id","type":"int"}"""
+            [ testEncode "basic"
+                Column.encode
                 (Column 1 "id" "int" False Nothing Nothing Nothing [])
-            , testSerialization "full"
-                """{"name":"id","type":"int","nullable":true,"default":"0","comment":{"text":"id col"}}"""
+                """{"name":"id","type":"int"}"""
+            , testEncode "full"
+                Column.encode
                 (Column 1 "id" "int" True (Just "0") (Just (Comment "id col" [])) Nothing [])
-            , testSerialization "nested"
-                """{"name":"id","type":"Object","columns":[{"name":"kind","type":"string"},{"name":"value","type":"number"}]}"""
+                """{"name":"id","type":"int","nullable":true,"default":"0","comment":{"text":"id col"}}"""
+            , testEncode "nested"
+                Column.encode
                 (Column 1
                     "id"
                     "Object"
@@ -35,10 +36,6 @@ suite =
                     )
                     []
                 )
+                """{"name":"id","type":"Object","columns":[{"name":"kind","type":"string"},{"name":"value","type":"number"}]}"""
             ]
         ]
-
-
-testSerialization : String -> String -> Column -> Test
-testSerialization name json column =
-    testSerdeJson ("Column " ++ name) Column.encode (Column.decode |> Decode.map (\f -> f 1)) column json

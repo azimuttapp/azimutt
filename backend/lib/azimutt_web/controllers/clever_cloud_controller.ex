@@ -12,8 +12,7 @@ defmodule AzimuttWeb.CleverCloudController do
   action_fallback AzimuttWeb.FallbackController
 
   # helper to ease clever cloud testing in local
-  def index(conn, params) do
-    Logger.info("CleverCloudController.index(#{Stringx.inspect(params)})")
+  def index(conn, _params) do
     # defined as env variable (see .env), don't use env vars to make leak impossible
     clever_cloud = %{
       addon_id: "azimutt-dev",
@@ -28,7 +27,6 @@ defmodule AzimuttWeb.CleverCloudController do
   # https://www.clever-cloud.com/doc/extend/add-ons-api/#sso
   # TODO: how to get user_id in SSO? Get it from the resource? What happen if several users from Clever Cloud???
   def login(conn, %{"id" => resource_id, "token" => token, "timestamp" => timestamp, "email" => email} = params) do
-    Logger.info("CleverCloudController.login(#{Stringx.inspect(params)})")
     now = DateTime.utc_now()
     now_ts = System.os_time(:second)
     salt = Azimutt.config(:clever_cloud_sso_salt)
@@ -91,8 +89,7 @@ defmodule AzimuttWeb.CleverCloudController do
     end
   end
 
-  def show(conn, %{"resource_id" => resource_id} = params) do
-    Logger.info("CleverCloudController.show(#{Stringx.inspect(params)})")
+  def show(conn, %{"resource_id" => resource_id}) do
     current_user = conn.assigns.current_user
     resource = conn.assigns.clever_cloud
 

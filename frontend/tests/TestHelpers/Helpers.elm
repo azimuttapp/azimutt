@@ -7,6 +7,16 @@ import Json.Encode as Encode
 import Test exposing (Test, fuzz, test)
 
 
+testEncode : String -> (a -> Encode.Value) -> a -> String -> Test
+testEncode name encode value json =
+    test name (\_ -> value |> encode |> Encode.encode 0 |> Expect.equal json)
+
+
+testDecode : String -> Decode.Decoder a -> String -> a -> Test
+testDecode name decode json value =
+    test name (\_ -> json |> Decode.decodeString decode |> Expect.equal (Ok value))
+
+
 testSerde : String -> (a -> Encode.Value) -> Decode.Decoder a -> a -> Test
 testSerde name encode decode value =
     test name (\_ -> value |> encode |> Encode.encode 0 |> Decode.decodeString decode |> Expect.equal (Ok value))
