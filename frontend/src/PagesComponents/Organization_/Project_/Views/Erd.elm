@@ -174,7 +174,7 @@ viewErd conf erdElem erd selectionBox virtualRelation editMemo args dragging =
               -- , layout.tables |> List.map (.props >> Area.offGrid) |> Area.mergeCanvas |> Maybe.mapOrElse (Area.debugCanvas "tablesArea" "border-blue-500") (div [] []),
               div [ class "az-groups" ] (groups |> List.map (viewGroup platform erd.settings.defaultSchema editGroup))
             , tableRowRelations |> viewRelationRows conf erd.settings.relationStyle hoverTableRow
-            , tableRows |> viewTableRows now platform conf cursorMode erd.settings.defaultSchema openedDropdown erd.sources hoverTableRow tableRowRelations erd.metadata
+            , tableRows |> viewTableRows now platform conf cursorMode erd.settings.defaultSchema openedDropdown openedPopover erd.sources hoverTableRow tableRowRelations erd.metadata
             , erd.relations |> Lazy.lazy5 viewRelations conf erd.settings.defaultSchema erd.settings.relationStyle displayedTables
             , layoutTables |> viewTables platform conf cursorMode virtualRelation openedDropdown openedPopover hoverTable dragging canvas.zoom erd.settings.defaultSchema selected erd.settings.columnBasicTypes erd.tables erd.metadata layout
             , memos |> viewMemos platform conf cursorMode editMemo
@@ -254,8 +254,8 @@ viewRelations conf defaultSchema style tableLayouts relations =
         )
 
 
-viewTableRows : Time.Posix -> Platform -> ErdConf -> CursorMode -> SchemaName -> HtmlId -> List Source -> Maybe TableRowHover -> List TableRowRelation -> Metadata -> List ( TableRow, Color ) -> Html Msg
-viewTableRows now platform conf cursorMode defaultSchema openedDropdown sources hoverRow rowRelations metadata tableRows =
+viewTableRows : Time.Posix -> Platform -> ErdConf -> CursorMode -> SchemaName -> HtmlId -> HtmlId -> List Source -> Maybe TableRowHover -> List TableRowRelation -> Metadata -> List ( TableRow, Color ) -> Html Msg
+viewTableRows now platform conf cursorMode defaultSchema openedDropdown openedPopover sources hoverRow rowRelations metadata tableRows =
     let
         rowRelationsBySrc : Dict TableRow.Id (List TableRowRelation)
         rowRelationsBySrc =
@@ -279,6 +279,7 @@ viewTableRows now platform conf cursorMode defaultSchema openedDropdown sources 
                         cursorMode
                         defaultSchema
                         openedDropdown
+                        openedPopover
                         (TableRow.toHtmlId row.id)
                         (sources |> List.findBy .id row.source |> Maybe.andThen DbSource.fromSource)
                         hoverRow

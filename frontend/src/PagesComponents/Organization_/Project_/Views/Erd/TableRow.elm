@@ -22,15 +22,15 @@ import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import Time
 
 
-viewTableRow : Time.Posix -> Platform -> ErdConf -> CursorMode -> SchemaName -> HtmlId -> HtmlId -> Maybe DbSource -> Maybe TableRowHover -> List TableRowRelation -> Color -> Maybe TableMeta -> TableRow -> Html Msg
-viewTableRow now platform conf cursorMode defaultSchema openedDropdown htmlId source hoverRow rowRelations color tableMeta row =
+viewTableRow : Time.Posix -> Platform -> ErdConf -> CursorMode -> SchemaName -> HtmlId -> HtmlId -> HtmlId -> Maybe DbSource -> Maybe TableRowHover -> List TableRowRelation -> Color -> Maybe TableMeta -> TableRow -> Html Msg
+viewTableRow now platform conf cursorMode defaultSchema openedDropdown openedPopover htmlId source hoverRow rowRelations color tableMeta row =
     let
         dragAttrs : List (Attribute Msg)
         dragAttrs =
             Bool.cond (cursorMode == CursorMode.Drag || not conf.move) [] [ onPointerDown (handlePointerDown htmlId) platform ]
     in
     div ([ id htmlId, class "select-none absolute cursor-pointer", classList [ ( "invisible", row.size == Size.zeroCanvas ) ] ] ++ Position.stylesGrid row.position ++ dragAttrs)
-        [ TableRow.view (TableRowMsg row.id) DropdownToggle SelectItem (\id -> ShowTable id Nothing) HoverTableRow ShowTableRow (DeleteTableRow row.id) now platform defaultSchema openedDropdown htmlId source hoverRow rowRelations color tableMeta row
+        [ TableRow.view (TableRowMsg row.id) DropdownToggle PopoverSet SelectItem (\id -> ShowTable id Nothing) HoverTableRow ShowTableRow (DeleteTableRow row.id) now platform defaultSchema openedDropdown openedPopover htmlId source hoverRow rowRelations color tableMeta row
         ]
 
 

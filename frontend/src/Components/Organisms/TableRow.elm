@@ -6,6 +6,7 @@ import Components.Atoms.Icon as Icon
 import Components.Atoms.Icons as Icons
 import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
 import Components.Molecules.Dropdown as Dropdown
+import Components.Molecules.Popover as Popover
 import Dict exposing (Dict)
 import ElmBook
 import ElmBook.Actions as Actions exposing (logAction)
@@ -238,8 +239,8 @@ mapSuccess f state =
 -- VIEW
 
 
-view : (Msg -> msg) -> (HtmlId -> msg) -> (HtmlId -> Bool -> msg) -> (TableId -> msg) -> (TableRowHover -> Bool -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> msg -> Time.Posix -> Platform -> SchemaName -> HtmlId -> HtmlId -> Maybe DbSource -> Maybe TableRowHover -> List TableRowRelation -> Color -> Maybe TableMeta -> TableRow -> Html msg
-view wrap toggleDropdown selectItem showTable hover showTableRow delete now platform defaultSchema openedDropdown htmlId source hoverRow rowRelations color tableMeta model =
+view : (Msg -> msg) -> (HtmlId -> msg) -> (HtmlId -> msg) -> (HtmlId -> Bool -> msg) -> (TableId -> msg) -> (TableRowHover -> Bool -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> msg -> Time.Posix -> Platform -> SchemaName -> HtmlId -> HtmlId -> HtmlId -> Maybe DbSource -> Maybe TableRowHover -> List TableRowRelation -> Color -> Maybe TableMeta -> TableRow -> Html msg
+view wrap toggleDropdown openPopover selectItem showTable hover showTableRow delete now platform defaultSchema openedDropdown openedPopover htmlId source hoverRow rowRelations color tableMeta model =
     let
         table : Maybe Table
         table =
@@ -264,7 +265,7 @@ view wrap toggleDropdown selectItem showTable hover showTableRow delete now plat
                 viewFailure wrap delete s
 
             StateSuccess s ->
-                viewSuccess wrap hover showTableRow source hoverRow tableMeta table relations rowRelations color model s
+                viewSuccess wrap openPopover hover showTableRow source openedPopover (htmlId ++ "-body") hoverRow tableMeta table relations rowRelations color model s
         , viewFooter now source model
         ]
 
@@ -343,25 +344,49 @@ viewFailure wrap delete res =
         ]
 
 
-viewSuccess : (Msg -> msg) -> (TableRowHover -> Bool -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> Maybe DbSource -> Maybe TableRowHover -> Maybe TableMeta -> Maybe Table -> List Relation -> List TableRowRelation -> Color -> TableRow -> TableRow.SuccessState -> Html msg
-viewSuccess wrap hover showTableRow source hoverRow tableMeta table relations rowRelations color row res =
+viewSuccess : (Msg -> msg) -> (HtmlId -> msg) -> (TableRowHover -> Bool -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> Maybe DbSource -> HtmlId -> HtmlId -> Maybe TableRowHover -> Maybe TableMeta -> Maybe Table -> List Relation -> List TableRowRelation -> Color -> TableRow -> TableRow.SuccessState -> Html msg
+viewSuccess wrap openPopover hover showTableRow source openedPopover htmlId hoverRow tableMeta table relations rowRelations color row res =
     let
         ( hiddenValues, values ) =
             res.values |> List.partition (\v -> res.hidden |> Set.member v.column)
+
+        hasHiddenValues : Bool
+        hasHiddenValues =
+            hiddenValues |> List.isEmpty |> not
     in
     div []
         [ Keyed.node "dl" [ class "divide-y divide-gray-200" ] (values |> List.map (\v -> ( v.column, viewValue wrap hover showTableRow source hoverRow row.query.table tableMeta table relations rowRelations color row v )))
-        , if hiddenValues |> List.isEmpty |> not then
-            div [ onClick (ToggleHiddenValues |> wrap), class "px-2 py-1 font-medium border-t border-gray-200 opacity-75 cursor-pointer" ]
-                [ text ("... " ++ (hiddenValues |> String.pluralizeL " more value")) ]
+        , if hasHiddenValues then
+            let
+                popoverId : HtmlId
+                popoverId =
+                    htmlId ++ "-hidden-values-popover"
+
+                showPopover : Bool
+                showPopover =
+                    not res.showHidden && openedPopover == popoverId
+
+                popover : Html msg
+                popover =
+                    if showPopover then
+                        Keyed.node "dl" [ class "divide-y divide-gray-200 shadow-md" ] (hiddenValues |> List.map (\v -> ( v.column, viewValue wrap hover showTableRow source hoverRow row.query.table tableMeta table relations rowRelations color row v )))
+
+                    else
+                        div [] []
+            in
+            div []
+                [ div [ onClick (ToggleHiddenValues |> wrap), onMouseEnter (openPopover popoverId), onMouseLeave (openPopover ""), class "px-2 py-1 font-medium border-t border-gray-200 opacity-75 cursor-pointer" ]
+                    [ text ("... " ++ (hiddenValues |> String.pluralizeL " more value")) ]
+                    |> Popover.r popover showPopover
+                , if res.showHidden then
+                    Keyed.node "dl" [ class "divide-y divide-gray-200 border-t border-gray-200 opacity-50" ] (hiddenValues |> List.map (\v -> ( v.column, viewValue wrap hover showTableRow source hoverRow row.query.table tableMeta table relations rowRelations color row v )))
+
+                  else
+                    dl [] []
+                ]
 
           else
             div [] []
-        , if res.showHidden && (hiddenValues |> List.isEmpty |> not) then
-            Keyed.node "dl" [ class "divide-y divide-gray-200 border-t border-gray-200 opacity-50" ] (hiddenValues |> List.map (\v -> ( v.column, viewValue wrap hover showTableRow source hoverRow row.query.table tableMeta table relations rowRelations color row v )))
-
-          else
-            dl [] []
         ]
 
 
@@ -478,6 +503,7 @@ type alias SharedDocState x =
 
 type alias DocState =
     { openedDropdown : HtmlId
+    , openedPopover : HtmlId
     , user : Model
     , event : Model
     , failure : Model
@@ -488,6 +514,7 @@ type alias DocState =
 docInit : DocState
 docInit =
     { openedDropdown = ""
+    , openedPopover = ""
     , user = docSuccessUser
     , event = docSuccessEvent
     , failure = docFailure
@@ -525,7 +552,7 @@ doc =
 
 docView : DocState -> (DocState -> Model) -> (DocState -> Model -> DocState) -> HtmlId -> Html (ElmBook.Msg (SharedDocState x))
 docView s get set htmlId =
-    view (docUpdate s get set) (docToggleDropdown s) (docSelectItem s get set) docShowTable docHoverTableRow docShowTableRow docDelete docNow docPlatform docDefaultSchema s.openedDropdown htmlId (docSource |> DbSource.fromSource) Nothing [] Tw.indigo (Just docTableMeta) (get s)
+    view (docUpdate s get set) (docToggleDropdown s) (docOpenPopover s) (docSelectItem s get set) docShowTable docHoverTableRow docShowTableRow docDelete docNow docPlatform docDefaultSchema s.openedDropdown s.openedPopover htmlId (docSource |> DbSource.fromSource) Nothing [] Tw.indigo (Just docTableMeta) (get s)
 
 
 docSuccessUser : TableRow
@@ -716,6 +743,11 @@ docToggleDropdown s id =
 
     else
         docSetState { s | openedDropdown = id }
+
+
+docOpenPopover : DocState -> HtmlId -> ElmBook.Msg (SharedDocState x)
+docOpenPopover s id =
+    docSetState { s | openedPopover = id }
 
 
 docSelectItem : DocState -> (DocState -> Model) -> (DocState -> Model -> DocState) -> HtmlId -> Bool -> ElmBook.Msg (SharedDocState x)
