@@ -51,7 +51,6 @@ import Track
 -- TODO:
 --  - bug: count(*) return a string instead of an int in the gateway => publish postgres lib and others...
 --  - open new table row next the the previous one on FK (hint)
---  - highlight relation & matching row on table row hover
 --  - popover with JSON when hover a JSON value in table row
 --  - table row context menu (table & column)
 --  - if incoming relations: on click fetch incoming items and show them (needs to store them)
@@ -59,10 +58,14 @@ import Track
 --  - column stats in query header (quick analysis on query results)
 --  - shorten uuid to its first component in results
 --  - pin a column and replace the fk by it
---  - Add filter button on results which can change editor (visual or query) and allow to trigger a new query
+--  - Focus on data explorer open or tab change (visual editor or query editor)
+--  - Nested queries like Trevor: on rows & group by
+--  - Add filter button on results to change editor (visual or query) and allow to trigger a new query
 --  - Show incoming rows in the side bar (and results?)
---  - Double click on a value to edit it, add a submit option to push them to the database
---  - Make sure data explorer is visible (erd context menu, sources, table?, details sidebar)
+--  - Double click on a value to edit it, add a submit option to push them to the database (like datagrip)
+--  - Make sure data explorer is visible (erd/table/column context menu, sources, table?, details sidebar)
+--  - Check embed mode to remove drag, hover & others
+--  - Enable data exploration for other db: MySQL, SQL Server, MongoDB, Couchbase... (QueryBuilder...)
 --  - Tracking plan
 
 

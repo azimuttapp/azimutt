@@ -1,4 +1,4 @@
-module Models.Project.TableRow exposing (FailureState, Id, LoadingState, State(..), SuccessState, TableRow, TableRowSuccess, TableRowValue, decode, encode, fromHtmlId, isHtmlId, stateSuccess, toHtmlId)
+module Models.Project.TableRow exposing (FailureState, Id, LoadingState, State(..), SuccessState, TableRow, TableRowValue, decode, encode, fromHtmlId, isHtmlId, stateSuccess, toHtmlId)
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
@@ -58,10 +58,6 @@ type alias SuccessState =
 
 type alias TableRowValue =
     { column : ColumnName, value : DbValue }
-
-
-type alias TableRowSuccess =
-    { row : TableRow, state : SuccessState }
 
 
 stateSuccess : TableRow -> Maybe SuccessState

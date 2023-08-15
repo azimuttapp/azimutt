@@ -1,10 +1,13 @@
 module PagesComponents.Organization_.Project_.Views.Erd.RelationRow exposing (viewRelationRow)
 
 import Components.Organisms.Relation as Relation
+import Components.Organisms.TableRow exposing (TableRowHover, TableRowRelation, TableRowSuccess)
 import Conf
+import Libs.Maybe as Maybe
 import Libs.Models.Position exposing (Position)
+import Libs.Tailwind exposing (Color)
 import Models.Position as Position
-import Models.Project.TableRow exposing (TableRow, TableRowSuccess, TableRowValue)
+import Models.Project.TableRow exposing (TableRow, TableRowValue)
 import Models.RelationStyle exposing (RelationStyle)
 import PagesComponents.Organization_.Project_.Models exposing (Msg(..))
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
@@ -13,20 +16,24 @@ import Svg exposing (Svg)
 import Svg.Attributes exposing (strokeDasharray)
 
 
-viewRelationRow : ErdConf -> RelationStyle -> ( ( TableRowSuccess, Int, TableRowValue ), ( TableRowSuccess, Int, TableRowValue ) ) -> Svg Msg
-viewRelationRow conf style ( ( src, srcIndex, _ ), ( ref, refIndex, _ ) ) =
+viewRelationRow : ErdConf -> RelationStyle -> Maybe TableRowHover -> TableRowRelation -> Svg Msg
+viewRelationRow conf style hoverRow rel =
     let
         model : Relation.Model
         model =
             { hover = conf.hover }
 
         ( sPos, rPos ) =
-            ( src.row.position |> Position.extractGrid, ref.row.position |> Position.extractGrid )
+            ( rel.src.row.position |> Position.extractGrid, rel.ref.row.position |> Position.extractGrid )
 
         ( ( srcX, srcDir ), ( refX, refDir ) ) =
-            Relation.positionLeft src.row ref.row
+            Relation.positionLeft rel.src.row rel.ref.row
 
         ( srcY, refY ) =
-            ( sPos.top + Relation.deltaTop Conf.ui.tableRow srcIndex False, rPos.top + Relation.deltaTop Conf.ui.tableRow refIndex False )
+            ( sPos.top + Relation.deltaTop Conf.ui.tableRow rel.src.index False, rPos.top + Relation.deltaTop Conf.ui.tableRow rel.ref.index False )
+
+        color : Maybe Color
+        color =
+            hoverRow |> Maybe.filter (\h -> h == ( rel.src.row.id, Just rel.src.value.column ) || h == ( rel.ref.row.id, Just rel.ref.value.column )) |> Maybe.map (\_ -> rel.src.color)
     in
-    Relation.show style model ( Position.canvas { left = srcX, top = srcY }, srcDir ) ( Position.canvas { left = refX, top = refY }, refDir ) [ strokeDasharray "2" ] Nothing "TODO" (\_ -> Noop "hover-relation-row")
+    Relation.show style model ( Position.canvas { left = srcX, top = srcY }, srcDir ) ( Position.canvas { left = refX, top = refY }, refDir ) [ strokeDasharray "2" ] color rel.id (\_ -> Noop "hover-relation-row")

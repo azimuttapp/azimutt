@@ -1,5 +1,6 @@
 module PagesComponents.Organization_.Project_.Updates.Hotkey exposing (handleHotkey)
 
+import Components.Organisms.TableRow as TableRow
 import Components.Slices.DataExplorer as DataExplorer
 import Components.Slices.DataExplorerQuery as DataExplorerQuery
 import Conf
@@ -10,6 +11,7 @@ import Libs.Task as T
 import Libs.Tuple as Tuple
 import Models.Area as Area
 import Models.Project.CanvasProps as CanvasProps
+import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableRow as TableRow
@@ -154,7 +156,8 @@ createGroup model =
 
 collapseElement : Model -> Cmd Msg
 collapseElement model =
-    (model |> currentTable |> Maybe.map (ToggleColumns >> T.send))
+    (model |> currentTableRow |> Maybe.map (\id -> TableRow.ToggleHiddenValues |> TableRowMsg id |> T.send))
+        |> Maybe.orElse (model |> currentTable |> Maybe.map (ToggleColumns >> T.send))
         |> Maybe.withDefault ("Can't find an element to collapse :(" |> Toasts.info |> Toast |> T.send)
 
 
@@ -172,14 +175,17 @@ shrinkElement model =
 
 showElement : Model -> Cmd Msg
 showElement model =
-    (model |> currentColumn |> Maybe.map (ShowColumn >> T.send))
+    (model |> currentColumnRow |> Maybe.map (\( id, col ) -> TableRow.ToggleValue col |> TableRowMsg id |> T.send))
+        |> Maybe.orElse (model |> currentColumn |> Maybe.map (ShowColumn >> T.send))
         |> Maybe.orElse (model |> currentTable |> Maybe.map (\t -> ShowTable t Nothing |> T.send))
         |> Maybe.withDefault ("Can't find an element to show :(" |> Toasts.info |> Toast |> T.send)
 
 
 hideElement : Model -> Cmd Msg
 hideElement model =
-    (model |> currentColumn |> Maybe.map (HideColumn >> T.send))
+    (model |> currentColumnRow |> Maybe.map (\( id, col ) -> TableRow.ToggleValue col |> TableRowMsg id |> T.send))
+        |> Maybe.orElse (model |> currentTableRow |> Maybe.map (DeleteTableRow >> T.send))
+        |> Maybe.orElse (model |> currentColumn |> Maybe.map (HideColumn >> T.send))
         |> Maybe.orElse (model |> currentTable |> Maybe.map (HideTable >> T.send))
         |> Maybe.withDefault ("Can't find an element to hide :(" |> Toasts.info |> Toast |> T.send)
 
@@ -192,6 +198,16 @@ currentTable model =
 currentColumn : Model -> Maybe ColumnRef
 currentColumn model =
     model.hoverColumn
+
+
+currentColumnRow : Model -> Maybe ( TableRow.Id, ColumnName )
+currentColumnRow model =
+    model.hoverTableRow |> Maybe.andThen (\( id, col ) -> col |> Maybe.map (\c -> ( id, c )))
+
+
+currentTableRow : Model -> Maybe TableRow.Id
+currentTableRow model =
+    model.hoverTableRow |> Maybe.map Tuple.first
 
 
 cancelElement : Model -> Cmd Msg
@@ -215,7 +231,6 @@ cancelElement model =
         |> Maybe.orElse (model.erd |> Maybe.andThen (Erd.currentLayout >> .tables >> List.find (.props >> .selected)) |> Maybe.map (\t -> SelectItem (TableId.toHtmlId t.id) False))
         |> Maybe.orElse (model.erd |> Maybe.andThen (Erd.currentLayout >> .tableRows >> List.find .selected) |> Maybe.map (\r -> SelectItem (TableRow.toHtmlId r.id) False))
         |> Maybe.orElse (model.erd |> Maybe.andThen (Erd.currentLayout >> .memos >> List.find .selected) |> Maybe.map (\m -> SelectItem (MemoId.toHtmlId m.id) False))
-        |> Maybe.orElse (model.amlSidebar |> Maybe.map (\_ -> AmlSidebarMsg AClose))
         |> Maybe.orElse
             (model.dataExplorer.display
                 |> Maybe.map
@@ -226,6 +241,8 @@ cancelElement model =
                             |> DataExplorerMsg
                     )
             )
+        |> Maybe.orElse (model.detailsSidebar |> Maybe.map (\_ -> DetailsSidebarMsg DetailsSidebar.Close))
+        |> Maybe.orElse (model.amlSidebar |> Maybe.map (\_ -> AmlSidebarMsg AClose))
         |> Maybe.map T.send
         |> Maybe.withDefault ("Nothing to cancel" |> Toasts.info |> Toast |> T.send)
 

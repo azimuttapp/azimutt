@@ -1,4 +1,4 @@
-module Components.Organisms.TableRow exposing (DocState, Model, Msg(..), SharedDocState, doc, docInit, init, update, view)
+module Components.Organisms.TableRow exposing (DocState, Model, Msg(..), SharedDocState, TableRowHover, TableRowRelation, TableRowRelationColumn, TableRowSuccess, doc, docInit, init, initRelation, initRelationColumn, update, view)
 
 import Array
 import Components.Atoms.Button as Button
@@ -12,7 +12,7 @@ import ElmBook.Actions as Actions exposing (logAction)
 import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Html, button, dd, div, dl, dt, p, span, text)
 import Html.Attributes exposing (class, classList, id, title, type_)
-import Html.Events exposing (onClick)
+import Html.Events exposing (onClick, onMouseEnter, onMouseLeave)
 import Html.Keyed as Keyed
 import Libs.Dict as Dict
 import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, css)
@@ -46,11 +46,9 @@ import Models.Project.Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableMeta exposing (TableMeta)
 import Models.Project.TableName exposing (TableName)
-import Models.Project.TableRow as TableRow exposing (FailureState, LoadingState, State(..), SuccessState, TableRow, TableRowValue)
+import Models.Project.TableRow as TableRow exposing (State(..), TableRow, TableRowValue)
 import Models.QueryResult exposing (QueryResult, QueryResultSuccess)
 import Models.Size as Size
-import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
-import PagesComponents.Organization_.Project_.Models.ErdTableProps as ErdTableProps
 import Ports
 import Services.Lenses exposing (mapSelected, mapState, setPrevious, setState)
 import Services.QueryBuilder as QueryBuilder exposing (RowQuery)
@@ -69,7 +67,23 @@ type Msg
     | ToggleHiddenValues
     | Cancel
     | Refresh
-    | Restore SuccessState
+    | Restore TableRow.SuccessState
+
+
+type alias TableRowSuccess =
+    { row : TableRow, state : TableRow.SuccessState, color : Color }
+
+
+type alias TableRowRelation =
+    { id : String, src : TableRowRelationColumn, ref : TableRowRelationColumn }
+
+
+type alias TableRowRelationColumn =
+    { row : TableRow, state : TableRow.SuccessState, color : Color, value : TableRowValue, index : Int }
+
+
+type alias TableRowHover =
+    ( TableRow.Id, Maybe ColumnName )
 
 
 
@@ -81,7 +95,7 @@ dbPrefix =
     "table-row"
 
 
-init : TableRow.Id -> Time.Posix -> DbSourceInfo -> RowQuery -> Maybe SuccessState -> ( TableRow, Cmd msg )
+init : TableRow.Id -> Time.Posix -> DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> ( TableRow, Cmd msg )
 init id now source query previous =
     let
         queryStr : String
@@ -101,7 +115,7 @@ init id now source query previous =
     )
 
 
-initFailure : String -> Maybe SuccessState -> Time.Posix -> Time.Posix -> String -> State
+initFailure : String -> Maybe TableRow.SuccessState -> Time.Posix -> Time.Posix -> String -> TableRow.State
 initFailure query previous started finished err =
     StateFailure { query = query, error = err, startedAt = started, failedAt = finished, previous = previous }
 
@@ -116,6 +130,21 @@ initSuccess started finished res =
         , startedAt = started
         , loadedAt = finished
         }
+
+
+initRelationColumn : TableRowSuccess -> ( TableRowValue, Int ) -> TableRowRelationColumn
+initRelationColumn row ( value, index ) =
+    { row = row.row, state = row.state, color = row.color, value = value, index = index }
+
+
+initRelation : TableRowRelationColumn -> TableRowRelationColumn -> TableRowRelation
+initRelation src ref =
+    let
+        rowId : RowQuery -> String
+        rowId query =
+            TableId.toString query.table :: (query.primaryKey |> Nel.toList |> List.map (.value >> DbValue.toString)) |> String.join "-"
+    in
+    { id = [ SourceId.toString src.row.source, rowId src.row.query, String.fromInt src.index, rowId ref.row.query, String.fromInt ref.index ] |> String.join "-", src = src, ref = ref }
 
 
 
@@ -163,7 +192,7 @@ update now sources msg model =
             ( model |> setState (StateSuccess success), Cmd.none )
 
 
-mapStateLoading : (LoadingState -> State) -> TableRow -> TableRow
+mapStateLoading : (TableRow.LoadingState -> State) -> TableRow -> TableRow
 mapStateLoading f row =
     case row.state of
         StateLoading s ->
@@ -173,7 +202,7 @@ mapStateLoading f row =
             row
 
 
-mapLoading : (LoadingState -> LoadingState) -> State -> State
+mapLoading : (TableRow.LoadingState -> TableRow.LoadingState) -> State -> State
 mapLoading f state =
     case state of
         StateLoading s ->
@@ -183,7 +212,7 @@ mapLoading f state =
             state
 
 
-mapFailure : (FailureState -> FailureState) -> State -> State
+mapFailure : (TableRow.FailureState -> TableRow.FailureState) -> State -> State
 mapFailure f state =
     case state of
         StateFailure s ->
@@ -193,7 +222,7 @@ mapFailure f state =
             state
 
 
-mapSuccess : (SuccessState -> SuccessState) -> State -> State
+mapSuccess : (TableRow.SuccessState -> TableRow.SuccessState) -> State -> State
 mapSuccess f state =
     case state of
         StateSuccess s ->
@@ -207,8 +236,8 @@ mapSuccess f state =
 -- VIEW
 
 
-view : (Msg -> msg) -> (HtmlId -> msg) -> (HtmlId -> Bool -> msg) -> (TableId -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> msg) -> msg -> Time.Posix -> Platform -> SchemaName -> HtmlId -> HtmlId -> Maybe DbSource -> Maybe ErdTableLayout -> Maybe TableMeta -> TableRow -> Html msg
-view wrap toggleDropdown selectItem showTable showTableRow delete now platform defaultSchema openedDropdown htmlId source tableLayout tableMeta model =
+view : (Msg -> msg) -> (HtmlId -> msg) -> (HtmlId -> Bool -> msg) -> (TableId -> msg) -> (TableRowHover -> Bool -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> msg) -> msg -> Time.Posix -> Platform -> SchemaName -> HtmlId -> HtmlId -> Maybe DbSource -> Maybe TableRowHover -> List TableRowRelation -> Color -> Maybe TableMeta -> TableRow -> Html msg
+view wrap toggleDropdown selectItem showTable hover showTableRow delete now platform defaultSchema openedDropdown htmlId source hoverRow rowRelations color tableMeta model =
     let
         table : Maybe Table
         table =
@@ -217,12 +246,13 @@ view wrap toggleDropdown selectItem showTable showTableRow delete now platform d
         relations : List Relation
         relations =
             source |> Maybe.mapOrElse (.relations >> List.filter (\r -> r.src.table == model.query.table || r.ref.table == model.query.table)) []
-
-        color : Tw.Color
-        color =
-            tableLayout |> Maybe.mapOrElse (.props >> .color) (ErdTableProps.computeColor model.query.table)
     in
-    div [ class "max-w-xs bg-white text-default-500 text-xs border", classList [ ( "ring-2 ring-gray-300", model.selected ) ] ]
+    div
+        [ onMouseEnter (hover ( model.id, Nothing ) True)
+        , onMouseLeave (hover ( model.id, Nothing ) False)
+        , class "max-w-xs bg-white text-default-500 text-xs border hover:shadow-md"
+        , classList [ ( "ring-2 ring-gray-300", model.selected ) ]
+        ]
         [ viewHeader wrap toggleDropdown selectItem showTable delete platform defaultSchema openedDropdown (htmlId ++ "-header") color model
         , case model.state of
             StateLoading s ->
@@ -232,7 +262,7 @@ view wrap toggleDropdown selectItem showTable showTableRow delete now platform d
                 viewFailure wrap delete s
 
             StateSuccess s ->
-                viewSuccess wrap showTableRow source tableMeta table relations model s
+                viewSuccess wrap hover showTableRow source hoverRow tableMeta table relations rowRelations color model s
         , viewFooter now source model
         ]
 
@@ -283,7 +313,7 @@ viewHeader wrap toggleDropdown selectItem showTable delete platform defaultSchem
         ]
 
 
-viewLoading : (Msg -> msg) -> msg -> LoadingState -> Html msg
+viewLoading : (Msg -> msg) -> msg -> TableRow.LoadingState -> Html msg
 viewLoading wrap delete res =
     div [ class "p-3" ]
         [ p [ class "text-sm font-semibold text-gray-900" ] [ Icon.loading "mr-2 inline animate-spin", text "Loading..." ]
@@ -296,7 +326,7 @@ viewLoading wrap delete res =
         ]
 
 
-viewFailure : (Msg -> msg) -> msg -> FailureState -> Html msg
+viewFailure : (Msg -> msg) -> msg -> TableRow.FailureState -> Html msg
 viewFailure wrap delete res =
     div [ class "p-3" ]
         [ p [ class "text-sm font-semibold text-gray-900" ] [ text "Error" ]
@@ -311,14 +341,14 @@ viewFailure wrap delete res =
         ]
 
 
-viewSuccess : (Msg -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> msg) -> Maybe DbSource -> Maybe TableMeta -> Maybe Table -> List Relation -> TableRow -> SuccessState -> Html msg
-viewSuccess wrap showTableRow source tableMeta table relations row res =
+viewSuccess : (Msg -> msg) -> (TableRowHover -> Bool -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> msg) -> Maybe DbSource -> Maybe TableRowHover -> Maybe TableMeta -> Maybe Table -> List Relation -> List TableRowRelation -> Color -> TableRow -> TableRow.SuccessState -> Html msg
+viewSuccess wrap hover showTableRow source hoverRow tableMeta table relations rowRelations color row res =
     let
         ( hiddenValues, values ) =
             res.values |> List.partition (\v -> res.hidden |> Set.member v.column)
     in
     div []
-        [ Keyed.node "dl" [ class "divide-y divide-gray-200" ] (values |> List.map (\v -> ( v.column, viewValue wrap showTableRow source row.query.table tableMeta table relations v )))
+        [ Keyed.node "dl" [ class "divide-y divide-gray-200" ] (values |> List.map (\v -> ( v.column, viewValue wrap hover showTableRow source hoverRow row.query.table tableMeta table relations rowRelations color row v )))
         , if hiddenValues |> List.isEmpty |> not then
             div [ onClick (ToggleHiddenValues |> wrap), class "px-2 py-1 font-medium border-t border-gray-200 opacity-75 cursor-pointer" ]
                 [ text ("... " ++ (hiddenValues |> String.pluralizeL " more value")) ]
@@ -326,15 +356,15 @@ viewSuccess wrap showTableRow source tableMeta table relations row res =
           else
             div [] []
         , if res.showHidden && (hiddenValues |> List.isEmpty |> not) then
-            Keyed.node "dl" [ class "divide-y divide-gray-200 border-t border-gray-200 opacity-50" ] (hiddenValues |> List.map (\v -> ( v.column, viewValue wrap showTableRow source row.query.table tableMeta table relations v )))
+            Keyed.node "dl" [ class "divide-y divide-gray-200 border-t border-gray-200 opacity-50" ] (hiddenValues |> List.map (\v -> ( v.column, viewValue wrap hover showTableRow source hoverRow row.query.table tableMeta table relations rowRelations color row v )))
 
           else
             dl [] []
         ]
 
 
-viewValue : (Msg -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> msg) -> Maybe DbSource -> TableId -> Maybe TableMeta -> Maybe Table -> List Relation -> TableRowValue -> Html msg
-viewValue wrap showTableRow source id tableMeta table relations value =
+viewValue : (Msg -> msg) -> (TableRowHover -> Bool -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> msg) -> Maybe DbSource -> Maybe TableRowHover -> TableId -> Maybe TableMeta -> Maybe Table -> List Relation -> List TableRowRelation -> Color -> TableRow -> TableRowValue -> Html msg
+viewValue wrap hover showTableRow source hoverRow id tableMeta table relations rowRelations color row value =
     let
         column : Maybe Column
         column =
@@ -359,8 +389,32 @@ viewValue wrap showTableRow source id tableMeta table relations value =
 
             else
                 relations |> List.filter (\r -> r.ref.table == id && r.ref.column.head == value.column) |> List.map .src
+
+        isColumn : TableRowRelationColumn -> Bool
+        isColumn c =
+            c.row.id == row.id && c.value.column == value.column
+
+        isHover : TableRowRelationColumn -> TableRowHover -> Bool
+        isHover c h =
+            h == ( c.row.id, Just c.value.column )
+
+        highlight : Bool
+        highlight =
+            hoverRow |> Maybe.any (\h -> h == ( row.id, Just value.column ) || (rowRelations |> List.any (\r -> (isColumn r.src && isHover r.ref h) || (isColumn r.ref && isHover r.src h))))
     in
-    div [ onDblClick (\_ -> ToggleValue value.column |> wrap) Platform.PC, class "px-2 py-1 flex justify-between font-medium hover:bg-gray-50" ]
+    div
+        [ onDblClick (\_ -> ToggleValue value.column |> wrap) Platform.PC
+        , onMouseEnter (hover ( row.id, Just value.column ) True)
+        , onMouseLeave (hover ( row.id, Just value.column ) False)
+        , css
+            [ "px-2 py-1 flex justify-between font-medium"
+            , if highlight then
+                Tw.batch [ Tw.text_500 color, Tw.bg_50 color ]
+
+              else
+                "text-default-500 bg-white"
+            ]
+        ]
         [ dt [ class "whitespace-pre" ]
             [ text value.column
             , column |> Maybe.andThen .comment |> Maybe.mapOrElse (\c -> span [ title c.text, class "ml-1 opacity-50" ] [ Icon.outline Icons.comment "w-3 h-3 inline" ]) (text "")
@@ -469,7 +523,7 @@ doc =
 
 docView : DocState -> (DocState -> Model) -> (DocState -> Model -> DocState) -> HtmlId -> Html (ElmBook.Msg (SharedDocState x))
 docView s get set htmlId =
-    view (docUpdate s get set) (docToggleDropdown s) (docSelectItem s get set) docShowTable docShowTableRow docDelete docNow docPlatform docDefaultSchema s.openedDropdown htmlId (docSource |> DbSource.fromSource) (Just docTableLayout) (Just docTableMeta) (get s)
+    view (docUpdate s get set) (docToggleDropdown s) (docSelectItem s get set) docShowTable docHoverTableRow docShowTableRow docDelete docNow docPlatform docDefaultSchema s.openedDropdown htmlId (docSource |> DbSource.fromSource) Nothing [] Tw.indigo (Just docTableMeta) (get s)
 
 
 docSuccessUser : TableRow
@@ -613,15 +667,6 @@ docTableMeta =
     }
 
 
-docTableLayout : ErdTableLayout
-docTableLayout =
-    { id = ( "public", "users" )
-    , props = { positionHint = Nothing, position = Position.zeroGrid, size = Size.zeroCanvas, color = Tw.indigo, selected = False, collapsed = False, showHiddenColumns = False }
-    , columns = []
-    , relatedTables = Dict.empty
-    }
-
-
 docTable : SchemaName -> TableName -> List ( ColumnName, ColumnType, Bool ) -> Table
 docTable schema name columns =
     { id = ( schema, name )
@@ -675,6 +720,11 @@ docSelectItem s get set _ _ =
 docShowTable : TableId -> ElmBook.Msg state
 docShowTable _ =
     logAction "showTable"
+
+
+docHoverTableRow : TableRowHover -> Bool -> ElmBook.Msg state
+docHoverTableRow _ _ =
+    logAction "hoverTableRow"
 
 
 docShowTableRow : DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> ElmBook.Msg state

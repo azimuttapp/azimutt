@@ -1,7 +1,7 @@
 module PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, AmlSidebarMsg(..), ConfirmDialog, ContextMenu, FindPathMsg(..), GroupEdit, GroupMsg(..), HelpDialog, HelpMsg(..), LayoutMsg(..), MemoEdit, MemoMsg(..), ModalDialog, Model, Msg(..), NavbarModel, NotesDialog, ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, VirtualRelation, VirtualRelationMsg(..), confirm, confirmDanger, emptyModel, prompt, simplePrompt)
 
 import Components.Atoms.Icon exposing (Icon(..))
-import Components.Organisms.TableRow as TableRow
+import Components.Organisms.TableRow as TableRow exposing (TableRowHover)
 import Components.Slices.DataExplorer as DataExplorer
 import Components.Slices.ProPlan as ProPlan
 import DataSources.AmlMiner.AmlAdapter exposing (AmlSchemaError)
@@ -77,6 +77,7 @@ type alias Model =
     , columnStats : Dict ColumnId (Dict SourceIdStr (Result String ColumnStats))
     , hoverTable : Maybe TableId
     , hoverColumn : Maybe ColumnRef
+    , hoverTableRow : Maybe TableRowHover
     , cursorMode : CursorMode
     , selectionBox : Maybe Area.Canvas
     , newLayout : Maybe NewLayout.Model
@@ -123,6 +124,7 @@ emptyModel =
     , columnStats = Dict.empty
     , hoverTable = Nothing
     , hoverColumn = Nothing
+    , hoverTableRow = Nothing
     , cursorMode = CursorMode.Select
     , selectionBox = Nothing
     , newLayout = Nothing
@@ -247,6 +249,7 @@ type Msg
     | MoveColumn ColumnRef Int
     | ToggleHoverTable TableId Bool
     | ToggleHoverColumn ColumnRef Bool
+    | HoverTableRow TableRowHover Bool
     | CreateUserSource SourceName
     | CreateUserSourceWithId Source
     | CreateRelation ColumnRef ColumnRef

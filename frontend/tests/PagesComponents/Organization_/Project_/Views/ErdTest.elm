@@ -15,15 +15,15 @@ suite =
         [ describe "viewErd.argsToString"
             [ test "test 1"
                 (\_ ->
-                    Erd.argsToString Platform.PC CursorMode.Drag Nothing "a" "b" "c" Nothing Time.zero
+                    Erd.argsToString Time.zero Platform.PC CursorMode.Drag "a" "b" "c" Nothing Nothing Nothing
                         |> Erd.stringToArgs
-                        |> Expect.equal ( ( Platform.PC, CursorMode.Drag, Nothing ), ( "a", "b", "c" ), ( Nothing, Time.zero ) )
+                        |> Expect.equal ( ( Time.zero, Platform.PC, CursorMode.Drag ), ( "a", "b", "c" ), ( Nothing, Nothing, Nothing ) )
                 )
             , test "test 2"
                 (\_ ->
-                    Erd.argsToString Platform.Mac CursorMode.Select (Just ( "public", "users" )) "c" "d" "e" (Just { index = 1, content = "f" }) (Time.millisToPosix 12)
+                    Erd.argsToString (Time.millisToPosix 12) Platform.Mac CursorMode.Select "c" "d" "e" (Just ( "public", "users" )) (Just ( 1, Just "name" )) (Just { index = 1, content = "f" })
                         |> Erd.stringToArgs
-                        |> Expect.equal ( ( Platform.Mac, CursorMode.Select, Just ( "public", "users" ) ), ( "c", "d", "e" ), ( Just { index = 1, content = "f" }, Time.millisToPosix 12 ) )
+                        |> Expect.equal ( ( Time.millisToPosix 12, Platform.Mac, CursorMode.Select ), ( "c", "d", "e" ), ( Just ( "public", "users" ), Just ( 1, Just "name" ), Just { index = 1, content = "f" } ) )
                 )
             ]
         ]
