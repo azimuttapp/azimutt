@@ -211,7 +211,7 @@ memoId =
 
 tableRow : Fuzzer TableRow
 tableRow =
-    Fuzz.map7 TableRow tableRowId positionGrid sizeCanvas sourceId rowQuery tableRowState Fuzz.bool
+    Fuzz.map8 TableRow tableRowId (Fuzz.constant Nothing) positionGrid sizeCanvas sourceId rowQuery tableRowState Fuzz.bool
 
 
 tableRowId : Fuzzer TableRow.Id

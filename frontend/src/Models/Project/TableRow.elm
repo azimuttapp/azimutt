@@ -12,6 +12,7 @@ import Models.Position as Position
 import Models.Project.ColumnName as ColumnName exposing (ColumnName)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Size as Size
+import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint)
 import Services.QueryBuilder exposing (ColumnMatch, RowQuery, decodeRowQuery, encodeRowQuery)
 import Set exposing (Set)
 import Time
@@ -23,6 +24,7 @@ type alias Id =
 
 type alias TableRow =
     { id : Id
+    , positionHint : Maybe PositionHint
     , position : Position.Grid
     , size : Size.Canvas
     , source : SourceId
@@ -109,8 +111,9 @@ encode value =
 
 decode : Decoder TableRow
 decode =
-    Decode.map7 TableRow
+    Decode.map8 TableRow
         (Decode.field "id" Decode.int)
+        (Decode.succeed Nothing)
         (Decode.field "position" Position.decodeGrid)
         (Decode.field "size" Size.decodeCanvas)
         (Decode.field "source" SourceId.decode)

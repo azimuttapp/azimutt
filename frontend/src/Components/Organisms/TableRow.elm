@@ -49,6 +49,7 @@ import Models.Project.TableName exposing (TableName)
 import Models.Project.TableRow as TableRow exposing (State(..), TableRow, TableRowValue)
 import Models.QueryResult exposing (QueryResult, QueryResultSuccess)
 import Models.Size as Size
+import PagesComponents.Organization_.Project_.Models.PositionHint as PositionHint exposing (PositionHint)
 import Ports
 import Services.Lenses exposing (mapSelected, mapState, setPrevious, setState)
 import Services.QueryBuilder as QueryBuilder exposing (RowQuery)
@@ -95,14 +96,15 @@ dbPrefix =
     "table-row"
 
 
-init : TableRow.Id -> Time.Posix -> DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> ( TableRow, Cmd msg )
-init id now source query previous =
+init : TableRow.Id -> Time.Posix -> DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> ( TableRow, Cmd msg )
+init id now source query previous hint =
     let
         queryStr : String
         queryStr =
             QueryBuilder.findRow source.db.kind query
     in
     ( { id = id
+      , positionHint = hint
       , position = Position.zeroGrid
       , size = Size.zeroCanvas
       , source = source.id
@@ -236,7 +238,7 @@ mapSuccess f state =
 -- VIEW
 
 
-view : (Msg -> msg) -> (HtmlId -> msg) -> (HtmlId -> Bool -> msg) -> (TableId -> msg) -> (TableRowHover -> Bool -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> msg) -> msg -> Time.Posix -> Platform -> SchemaName -> HtmlId -> HtmlId -> Maybe DbSource -> Maybe TableRowHover -> List TableRowRelation -> Color -> Maybe TableMeta -> TableRow -> Html msg
+view : (Msg -> msg) -> (HtmlId -> msg) -> (HtmlId -> Bool -> msg) -> (TableId -> msg) -> (TableRowHover -> Bool -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> msg -> Time.Posix -> Platform -> SchemaName -> HtmlId -> HtmlId -> Maybe DbSource -> Maybe TableRowHover -> List TableRowRelation -> Color -> Maybe TableMeta -> TableRow -> Html msg
 view wrap toggleDropdown selectItem showTable hover showTableRow delete now platform defaultSchema openedDropdown htmlId source hoverRow rowRelations color tableMeta model =
     let
         table : Maybe Table
@@ -341,7 +343,7 @@ viewFailure wrap delete res =
         ]
 
 
-viewSuccess : (Msg -> msg) -> (TableRowHover -> Bool -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> msg) -> Maybe DbSource -> Maybe TableRowHover -> Maybe TableMeta -> Maybe Table -> List Relation -> List TableRowRelation -> Color -> TableRow -> TableRow.SuccessState -> Html msg
+viewSuccess : (Msg -> msg) -> (TableRowHover -> Bool -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> Maybe DbSource -> Maybe TableRowHover -> Maybe TableMeta -> Maybe Table -> List Relation -> List TableRowRelation -> Color -> TableRow -> TableRow.SuccessState -> Html msg
 viewSuccess wrap hover showTableRow source hoverRow tableMeta table relations rowRelations color row res =
     let
         ( hiddenValues, values ) =
@@ -363,7 +365,7 @@ viewSuccess wrap hover showTableRow source hoverRow tableMeta table relations ro
         ]
 
 
-viewValue : (Msg -> msg) -> (TableRowHover -> Bool -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> msg) -> Maybe DbSource -> Maybe TableRowHover -> TableId -> Maybe TableMeta -> Maybe Table -> List Relation -> List TableRowRelation -> Color -> TableRow -> TableRowValue -> Html msg
+viewValue : (Msg -> msg) -> (TableRowHover -> Bool -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> Maybe DbSource -> Maybe TableRowHover -> TableId -> Maybe TableMeta -> Maybe Table -> List Relation -> List TableRowRelation -> Color -> TableRow -> TableRowValue -> Html msg
 viewValue wrap hover showTableRow source hoverRow id tableMeta table relations rowRelations color row value =
     let
         column : Maybe Column
@@ -427,7 +429,7 @@ viewValue wrap hover showTableRow source hoverRow id tableMeta table relations r
             (\r s ->
                 button
                     [ type_ "button"
-                    , onClick (showTableRow (DbSource.toInfo s) { table = r.table, primaryKey = Nel { column = r.column, value = value.value } [] } Nothing)
+                    , onClick (showTableRow (DbSource.toInfo s) { table = r.table, primaryKey = Nel { column = r.column, value = value.value } [] } Nothing (Just (PositionHint.PlaceRight row.position row.size)))
                     , class "ml-1 opacity-50"
                     ]
                     [ Icon.solid Icon.ExternalLink "w-3 h-3 inline" ]
@@ -529,6 +531,7 @@ docView s get set htmlId =
 docSuccessUser : TableRow
 docSuccessUser =
     { id = 1
+    , positionHint = Nothing
     , position = Position.zeroGrid
     , size = Size.zeroCanvas
     , source = SourceId.zero
@@ -569,6 +572,7 @@ docSuccessUser =
 docSuccessEvent : TableRow
 docSuccessEvent =
     { id = 2
+    , positionHint = Nothing
     , position = Position.zeroGrid
     , size = Size.zeroCanvas
     , source = docSource.id
@@ -598,6 +602,7 @@ docSuccessEvent =
 docLoading : TableRow
 docLoading =
     { id = 3
+    , positionHint = Nothing
     , position = Position.zeroGrid
     , size = Size.zeroCanvas
     , source = docSource.id
@@ -610,6 +615,7 @@ docLoading =
 docFailure : TableRow
 docFailure =
     { id = 4
+    , positionHint = Nothing
     , position = Position.zeroGrid
     , size = Size.zeroCanvas
     , source = docSource.id
@@ -727,8 +733,8 @@ docHoverTableRow _ _ =
     logAction "hoverTableRow"
 
 
-docShowTableRow : DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> ElmBook.Msg state
-docShowTableRow _ _ _ =
+docShowTableRow : DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> ElmBook.Msg state
+docShowTableRow _ _ _ _ =
     logAction "showTableRow"
 
 

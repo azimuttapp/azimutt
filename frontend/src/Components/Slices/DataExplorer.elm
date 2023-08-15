@@ -42,6 +42,7 @@ import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableRow as TableRow
 import Models.ProjectInfo exposing (ProjectInfo)
 import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout exposing (ErdLayout)
+import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint)
 import Services.Lenses exposing (mapDetailsCmd, mapFilters, mapResultsCmd, mapVisualEditor, setOperation, setOperator, setValue)
 import Services.QueryBuilder as QueryBuilder
 import Track
@@ -50,7 +51,6 @@ import Track
 
 -- TODO:
 --  - bug: count(*) return a string instead of an int in the gateway => publish postgres lib and others...
---  - open new table row next the the previous one on FK (hint)
 --  - popover with JSON when hover a JSON value in table row
 --  - table row context menu (table & column)
 --  - if incoming relations: on click fetch incoming items and show them (needs to store them)
@@ -232,7 +232,7 @@ update wrap project sources msg model =
 -- VIEW
 
 
-view : (Msg -> msg) -> (HtmlId -> msg) -> (TableId -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> msg) -> String -> HtmlId -> SchemaName -> HtmlId -> List Source -> ErdLayout -> Metadata -> Model -> DataExplorerDisplay -> Html msg
+view : (Msg -> msg) -> (HtmlId -> msg) -> (TableId -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> String -> HtmlId -> SchemaName -> HtmlId -> List Source -> ErdLayout -> Metadata -> Model -> DataExplorerDisplay -> Html msg
 view wrap toggleDropdown showTable showTableRow navbarHeight openedDropdown defaultSchema htmlId sources layout metadata model display =
     let
         hasFullScreen : Bool
@@ -530,7 +530,7 @@ viewResults wrap toggleDropdown openRow openedDropdown defaultSchema sources met
             )
 
 
-viewDetails : (Msg -> msg) -> (TableId -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> msg) -> String -> Bool -> SchemaName -> List Source -> ErdLayout -> Metadata -> HtmlId -> List DataExplorerDetails.Model -> Html msg
+viewDetails : (Msg -> msg) -> (TableId -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> msg) -> String -> Bool -> SchemaName -> List Source -> ErdLayout -> Metadata -> HtmlId -> List DataExplorerDetails.Model -> Html msg
 viewDetails wrap showTable showTableRow openRowDetails navbarHeight hasFullScreen defaultSchema sources layout metadata htmlId details =
     div []
         (details
@@ -706,6 +706,6 @@ docShowTable _ =
     logAction "showTable"
 
 
-docShowTableRow : DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> ElmBook.Msg state
-docShowTableRow _ _ _ =
+docShowTableRow : DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> ElmBook.Msg state
+docShowTableRow _ _ _ _ =
     logAction "showTableRow"

@@ -11,17 +11,18 @@ import Models.Project.CanvasProps exposing (CanvasProps)
 import Models.Project.TableRow as TableRow exposing (TableRow)
 import PagesComponents.Organization_.Project_.Models exposing (Model, Msg(..))
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
+import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint)
 import Ports
 import Services.Lenses exposing (mapCanvas, mapPosition, mapTableRows, mapTableRowsSeq)
 import Services.QueryBuilder as QueryBuilder
 import Time
 
 
-showTableRow : Time.Posix -> DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> Erd -> ( Erd, Cmd Msg )
-showTableRow now source query previous erd =
+showTableRow : Time.Posix -> DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> Erd -> ( Erd, Cmd Msg )
+showTableRow now source query previous hint erd =
     let
         ( row, cmd ) =
-            TableRow.init erd.tableRowsSeq now source query previous
+            TableRow.init erd.tableRowsSeq now source query previous hint
     in
     ( erd
         |> mapTableRowsSeq (\i -> i + 1)

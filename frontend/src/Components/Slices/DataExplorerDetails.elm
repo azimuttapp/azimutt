@@ -35,6 +35,7 @@ import Models.Project.TableRow as TableRow
 import Models.QueryResult as QueryResult exposing (QueryResult, QueryResultColumn, QueryResultRow, QueryResultSuccess)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.ErdTableProps as ErdTableProps
+import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint)
 import Ports
 import Services.Lenses exposing (mapState)
 import Services.QueryBuilder as QueryBuilder exposing (RowQuery)
@@ -128,7 +129,7 @@ update msg model =
 -- VIEW
 
 
-view : (Msg -> msg) -> msg -> (TableId -> msg) -> (DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> msg) -> (RowQuery -> msg) -> String -> Bool -> SchemaName -> Maybe Source -> Maybe ErdTableLayout -> Maybe TableMeta -> HtmlId -> Maybe Int -> Model -> Html msg
+view : (Msg -> msg) -> msg -> (TableId -> msg) -> (DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> (RowQuery -> msg) -> String -> Bool -> SchemaName -> Maybe Source -> Maybe ErdTableLayout -> Maybe TableMeta -> HtmlId -> Maybe Int -> Model -> Html msg
 view wrap close showTable showTableRow openRowDetails navbarHeight hasFullScreen defaultSchema source tableLayout tableMeta htmlId openDepth model =
     let
         titleId : HtmlId
@@ -184,7 +185,7 @@ view wrap close showTable showTableRow openRowDetails navbarHeight hasFullScreen
         ]
 
 
-viewSlideOverContent : (Msg -> msg) -> msg -> (TableId -> msg) -> (DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> msg) -> (RowQuery -> msg) -> SchemaName -> Maybe Source -> Maybe ErdTableLayout -> Maybe TableMeta -> HtmlId -> Model -> Html msg
+viewSlideOverContent : (Msg -> msg) -> msg -> (TableId -> msg) -> (DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> (RowQuery -> msg) -> SchemaName -> Maybe Source -> Maybe ErdTableLayout -> Maybe TableMeta -> HtmlId -> Model -> Html msg
 viewSlideOverContent wrap close showTable showTableRow openRowDetails defaultSchema source tableLayout tableMeta titleId model =
     let
         table : Maybe Table
@@ -231,7 +232,7 @@ viewSlideOverContent wrap close showTable showTableRow openRowDetails defaultSch
 
                 StateSuccess res ->
                     [ div [ class "flex flex-wrap space-x-3" ]
-                        [ button [ type_ "button", onClick (showTableRow model.source model.query (res |> toRow |> Just)), class "inline-flex w-full flex-1 items-center justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50" ]
+                        [ button [ type_ "button", onClick (showTableRow model.source model.query (res |> toRow |> Just) Nothing), class "inline-flex w-full flex-1 items-center justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50" ]
                             [ text "Add to layout" ]
                         ]
                     , div [ class "space-y-3" ]
@@ -401,8 +402,8 @@ docShowTable _ =
     logAction "showTable"
 
 
-docShowTableRow : DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> ElmBook.Msg state
-docShowTableRow _ _ _ =
+docShowTableRow : DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> ElmBook.Msg state
+docShowTableRow _ _ _ _ =
     logAction "showTableRow"
 
 

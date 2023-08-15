@@ -255,10 +255,10 @@ update urlLayout zone now urlInfos organizations projects msg model =
         MemoMsg message ->
             model |> handleMemo now urlInfos message
 
-        ShowTableRow source query previous ->
+        ShowTableRow source query previous hint ->
             (model.erd |> Maybe.andThen (Erd.currentLayout >> .tableRows >> List.find (\r -> r.source == source.id && r.query == query)))
                 |> Maybe.map (\r -> model |> mapErdMCmd (moveToTableRow now model.erdElem r))
-                |> Maybe.withDefault (model |> mapErdMCmd (showTableRow now source query previous) |> setDirtyCmd)
+                |> Maybe.withDefault (model |> mapErdMCmd (showTableRow now source query previous hint) |> setDirtyCmd)
 
         DeleteTableRow id ->
             model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTableRows (List.removeBy .id id))) |> setDirty
@@ -635,10 +635,28 @@ updateTableRow zoom erdViewport row change =
             change.size |> Size.viewportToCanvas zoom
     in
     if row.size == Size.zeroCanvas && row.position == Position.zeroGrid then
-        row |> setSize size |> setPosition (size |> placeAtCenter erdViewport)
+        row |> setSize size |> setPosition (tableRowInitialPosition erdViewport size row.positionHint)
 
     else
         row |> setSize size
+
+
+tableRowInitialPosition : Area.Canvas -> Size.Canvas -> Maybe PositionHint -> Position.Grid
+tableRowInitialPosition erdViewport newSize hint =
+    hint
+        |> Maybe.mapOrElse
+            (\h ->
+                case h of
+                    PlaceLeft position ->
+                        position |> Position.moveGrid { dx = (Size.extractCanvas newSize).width + 50 |> negate, dy = 0 }
+
+                    PlaceRight position size ->
+                        position |> Position.moveGrid { dx = (Size.extractCanvas size).width + 50, dy = 0 }
+
+                    PlaceAt position ->
+                        position
+            )
+            (newSize |> placeAtCenter erdViewport)
 
 
 updateTables : ZoomLevel -> Area.Canvas -> List SizeChange -> List ErdTableLayout -> List ErdTableLayout
@@ -667,14 +685,14 @@ updateTable zoom tables erdViewport table change =
             change.size |> Size.viewportToCanvas zoom
     in
     if table.props.size == Size.zeroCanvas && table.props.position == Position.zeroGrid then
-        table |> mapProps (setSize size >> setPosition (computeInitialPosition tables erdViewport size change.seeds table.props.positionHint))
+        table |> mapProps (setSize size >> setPosition (tableInitialPosition tables erdViewport size change.seeds table.props.positionHint))
 
     else
         table |> mapProps (setSize size)
 
 
-computeInitialPosition : List ErdTableLayout -> Area.Canvas -> Size.Canvas -> Delta -> Maybe PositionHint -> Position.Grid
-computeInitialPosition tables erdViewport newSize _ hint =
+tableInitialPosition : List ErdTableLayout -> Area.Canvas -> Size.Canvas -> Delta -> Maybe PositionHint -> Position.Grid
+tableInitialPosition tables erdViewport newSize _ hint =
     hint
         |> Maybe.mapOrElse
             (\h ->
