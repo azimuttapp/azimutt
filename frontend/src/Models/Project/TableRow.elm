@@ -39,11 +39,11 @@ type State
 
 
 type alias LoadingState =
-    { query : String, startedAt : Time.Posix }
+    { query : String, startedAt : Time.Posix, previous : Maybe SuccessState }
 
 
 type alias FailureState =
-    { query : String, error : String, startedAt : Time.Posix, failedAt : Time.Posix }
+    { query : String, error : String, startedAt : Time.Posix, failedAt : Time.Posix, previous : Maybe SuccessState }
 
 
 type alias SuccessState =
@@ -150,14 +150,16 @@ encodeLoadingState value =
     Encode.notNullObject
         [ ( "query", value.query |> Encode.string )
         , ( "startedAt", value.startedAt |> Time.encode )
+        , ( "previous", value.previous |> Encode.maybe encodeSuccessState )
         ]
 
 
 decodeLoadingState : Decoder LoadingState
 decodeLoadingState =
-    Decode.map2 LoadingState
+    Decode.map3 LoadingState
         (Decode.field "query" Decode.string)
         (Decode.field "startedAt" Time.decode)
+        (Decode.maybeField "previous" decodeSuccessState)
 
 
 encodeFailureState : FailureState -> Value
@@ -167,16 +169,18 @@ encodeFailureState value =
         , ( "error", value.error |> Encode.string )
         , ( "startedAt", value.startedAt |> Time.encode )
         , ( "failedAt", value.failedAt |> Time.encode )
+        , ( "previous", value.previous |> Encode.maybe encodeSuccessState )
         ]
 
 
 decodeFailureState : Decoder FailureState
 decodeFailureState =
-    Decode.map4 FailureState
+    Decode.map5 FailureState
         (Decode.field "query" Decode.string)
         (Decode.field "error" Decode.string)
         (Decode.field "startedAt" Time.decode)
         (Decode.field "failedAt" Time.decode)
+        (Decode.maybeField "previous" decodeSuccessState)
 
 
 encodeSuccessState : SuccessState -> Value

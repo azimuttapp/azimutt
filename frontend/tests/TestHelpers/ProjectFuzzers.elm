@@ -230,12 +230,12 @@ tableRowState =
 
 tableRowLoading : Fuzzer TableRow.LoadingState
 tableRowLoading =
-    Fuzz.map2 TableRow.LoadingState stringSmall posix
+    Fuzz.map3 TableRow.LoadingState stringSmall posix (Fuzz.maybe tableRowSuccess)
 
 
 tableRowFailure : Fuzzer TableRow.FailureState
 tableRowFailure =
-    Fuzz.map4 TableRow.FailureState stringSmall stringSmall posix posix
+    Fuzz.map5 TableRow.FailureState stringSmall stringSmall posix posix (Fuzz.maybe tableRowSuccess)
 
 
 tableRowSuccess : Fuzzer TableRow.SuccessState

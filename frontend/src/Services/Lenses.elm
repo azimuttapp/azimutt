@@ -63,6 +63,7 @@ module Services.Lenses exposing
     , mapParsedSchemaM
     , mapPlan
     , mapPosition
+    , mapPrevious
     , mapPrimaryKeyM
     , mapPrismaSourceCmd
     , mapPrismaSourceMCmd
@@ -190,6 +191,7 @@ module Services.Lenses exposing
     , setParsedSource
     , setPlan
     , setPosition
+    , setPrevious
     , setPrimaryKey
     , setPrismaSource
     , setProject
@@ -983,6 +985,16 @@ setPosition =
 mapPosition : (v -> v) -> { item | position : v } -> { item | position : v }
 mapPosition =
     map_ .position setPosition
+
+
+setPrevious : v -> { item | previous : v } -> { item | previous : v }
+setPrevious =
+    set_ .previous (\value item -> { item | previous = value })
+
+
+mapPrevious : (v -> v) -> { item | previous : v } -> { item | previous : v }
+mapPrevious =
+    map_ .previous setPrevious
 
 
 setPrimaryKey : v -> { item | primaryKey : v } -> { item | primaryKey : v }

@@ -5,7 +5,7 @@ import Components.Atoms.Icon as Icon exposing (Icon)
 import Components.Atoms.Icons as Icons
 import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
 import Components.Molecules.Dropdown as Dropdown
-import Components.Molecules.Pagination as Pagination
+import Components.Molecules.Pagination as Pagination exposing (PageIndex)
 import Components.Slices.DataExplorerValue as DataExplorerValue
 import Dict exposing (Dict)
 import ElmBook
@@ -49,7 +49,6 @@ import Ports
 import Services.Lenses exposing (mapState, setQuery, setState)
 import Services.QueryBuilder as QueryBuilder
 import Set exposing (Set)
-import Simple.Fuzzy
 import Time
 
 
@@ -292,7 +291,7 @@ view wrap toggleDropdown openRow deleteQuery openedDropdown defaultSchema source
                     --, span [] [ text (String.fromInt (Time.posixToMillis now - Time.posixToMillis model.startedAt) ++ " ms") ]
                     ]
                 ]
-                (div [ class "mt-3" ] [ viewQuery "px-3 py-2 text-sm" model.query ])
+                (div [ class "mt-3" ] [ model.query |> viewQuery False ])
                 (div [ class "relative flex space-x-1 text-left" ] [ viewActionButton Icon.XCircle "Cancel execution" (wrap Cancel) ])
 
         StateCanceled ->
@@ -304,7 +303,7 @@ view wrap toggleDropdown openRow deleteQuery openedDropdown defaultSchema source
                     --, span [] [ text (String.fromInt (Time.posixToMillis res.canceledAt - Time.posixToMillis model.startedAt) ++ " ms") ]
                     ]
                 ]
-                (div [ class "mt-3" ] [ viewQuery "px-3 py-2 text-sm" model.query ])
+                (div [ class "mt-3" ] [ model.query |> viewQuery False ])
                 (div [ class "relative flex space-x-1 text-left" ] [ viewActionButton Icon.Trash "Delete" deleteQuery ])
 
         StateFailure res ->
@@ -319,7 +318,7 @@ view wrap toggleDropdown openRow deleteQuery openedDropdown defaultSchema source
                     [ p [ class "mt-3 text-sm font-semibold text-gray-900" ] [ text "Error" ]
                     , pre [ class "mt-1 px-6 py-4 block text-sm whitespace-pre overflow-x-auto rounded bg-red-50 border border-red-200" ] [ text res.error ]
                     , p [ class "mt-3 text-sm font-semibold text-gray-900" ] [ text "SQL" ]
-                    , viewQuery "mt-1 px-3 py-2 text-sm" model.query
+                    , div [ class "mt-1" ] [ model.query |> viewQuery False ]
                     ]
                 )
                 (div [ class "relative flex space-x-1 text-left" ]
@@ -343,14 +342,14 @@ view wrap toggleDropdown openRow deleteQuery openedDropdown defaultSchema source
                 ]
                 (div []
                     [ if res.showQuery then
-                        div [ class "relative mt-3" ]
+                        div [ class "mt-1 relative" ]
                             [ button [ type_ "button", onClick (wrap ToggleQuery), class "absolute top-0 right-0 p-3 text-gray-500" ] [ Icon.solid Icon.X "w-3 h-3" ]
-                            , viewQuery "px-3 py-2 text-sm" model.query
+                            , model.query |> viewQuery False
                             ]
 
                       else
-                        div [ class "relative mt-3", onClick (wrap ToggleQuery) ]
-                            [ viewQuery "px-2 py-1 text-xs cursor-pointer" (model.query |> String.split "\n" |> List.head |> Maybe.withDefault "") ]
+                        div [ class "mt-1 relative cursor-pointer", onClick (wrap ToggleQuery) ]
+                            [ model.query |> viewQuery True ]
                     , viewSuccess wrap (openRow model.source) defaultSchema source metadata res
                     ]
                 )
@@ -415,9 +414,11 @@ viewCard fullScreen cardTitle cardBody cardActions =
         ]
 
 
-viewQuery : TwClass -> String -> Html msg
-viewQuery classes query =
-    pre [ css [ "block whitespace-pre overflow-x-auto rounded bg-gray-50 border border-gray-200", classes ] ] [ text query ]
+viewQuery : Bool -> String -> Html msg
+viewQuery collapsed query =
+    div [ css [ "block rounded bg-gray-50 border border-gray-200", Bool.cond collapsed "px-2 py-1 text-xs truncate" "px-3 py-2 text-sm whitespace-pre overflow-x-auto" ] ]
+        [ text query
+        ]
 
 
 viewActionButton : Icon -> String -> msg -> Html msg
@@ -429,9 +430,9 @@ viewActionButton icon name msg =
 viewSuccess : (Msg -> msg) -> (QueryBuilder.RowQuery -> msg) -> SchemaName -> Maybe Source -> Metadata -> SuccessState -> Html msg
 viewSuccess wrap openRow defaultSchema source metadata res =
     let
-        items : List QueryResultRow
+        items : List ( QueryResultRow, RowIndex )
         items =
-            res.rows |> filterValues res.search |> sortValues res.sortBy
+            res.rows |> List.zipWithIndex |> filterValues res.search |> sortValues res.sortBy
 
         pagination : Pagination.Model
         pagination =
@@ -441,24 +442,24 @@ viewSuccess wrap openRow defaultSchema source metadata res =
             else
                 { currentPage = res.page, pageSize = 10, totalItems = items |> List.length }
 
-        pageRows : List ( RowIndex, QueryResultRow )
+        pageRows : List ( PageIndex, ( QueryResultRow, RowIndex ) )
         pageRows =
             Pagination.paginate items pagination
 
         ( column, rows ) =
             if res.documentMode then
-                ( [ { name = "document", ref = Nothing, fk = Nothing } ], pageRows |> List.map (Tuple.mapSecond (\r -> Dict.fromList [ ( "document", DbObject r ) ])) )
+                ( [ { name = "document", ref = Nothing, fk = Nothing } ], pageRows |> List.map (Tuple.mapSecond (Tuple.mapFirst (\r -> Dict.fromList [ ( "document", DbObject r ) ]))) )
 
             else
                 ( res.columns |> QueryResult.buildColumnTargets source, pageRows )
     in
-    div [ class "mt-3" ]
+    div [ class "mt-1" ]
         [ viewTable wrap openRow defaultSchema source metadata column rows res.documentMode res.sortBy res.expanded res.collapsed
         , Pagination.view (\p -> ChangePage p |> wrap) pagination
         ]
 
 
-viewTable : (Msg -> msg) -> (QueryBuilder.RowQuery -> msg) -> SchemaName -> Maybe Source -> Metadata -> List QueryResultColumnTarget -> List ( RowIndex, QueryResultRow ) -> Bool -> Maybe String -> Set RowIndex -> Set ColumnName -> Html msg
+viewTable : (Msg -> msg) -> (QueryBuilder.RowQuery -> msg) -> SchemaName -> Maybe Source -> Metadata -> List QueryResultColumnTarget -> List ( PageIndex, ( QueryResultRow, RowIndex ) ) -> Bool -> Maybe String -> Set RowIndex -> Set ColumnName -> Html msg
 viewTable wrap openRow defaultSchema source metadata columns rows documentMode sortBy expanded collapsed =
     div [ class "flow-root" ]
         [ div [ class "overflow-x-auto" ]
@@ -474,20 +475,20 @@ viewTable wrap openRow defaultSchema source metadata columns rows documentMode s
                     , tbody []
                         (rows
                             |> List.map
-                                (\( i, r ) ->
+                                (\( pi, ( r, ri ) ) ->
                                     let
                                         rest : Dict String DbValue
                                         rest =
                                             r |> Dict.filter (\k _ -> columns |> List.memberBy .name k |> not)
                                     in
-                                    tr [ class "hover:bg-gray-100", classList [ ( "bg-gray-50", modBy 2 i == 1 ) ] ]
-                                        ([ td [ class ("px-1 sticky left-0 z-10 text-sm text-gray-900 border-r border-gray-300 hover:bg-gray-100 " ++ Bool.cond (modBy 2 i == 1) "bg-gray-50" "bg-white") ] [ text (i |> String.fromInt) ] ]
-                                            ++ (columns |> List.map (\c -> viewTableValue openRow (ExpandRow i |> wrap) defaultSchema documentMode (expanded |> Set.member i) (collapsed |> Set.member c.name) (r |> Dict.get c.name) c))
+                                    tr [ class "hover:bg-gray-100", classList [ ( "bg-gray-50", modBy 2 pi == 1 ) ] ]
+                                        ([ td [ class ("px-1 sticky left-0 z-10 text-sm text-gray-900 border-r border-gray-300 hover:bg-gray-100 " ++ Bool.cond (modBy 2 pi == 1) "bg-gray-50" "bg-white") ] [ text (ri + 1 |> String.fromInt) ] ]
+                                            ++ (columns |> List.map (\c -> viewTableValue openRow (ExpandRow ri |> wrap) defaultSchema documentMode (expanded |> Set.member ri) (collapsed |> Set.member c.name) (r |> Dict.get c.name) c))
                                             ++ (if rest |> Dict.isEmpty then
                                                     []
 
                                                 else
-                                                    [ viewTableValue openRow (ExpandRow i |> wrap) defaultSchema documentMode (expanded |> Set.member i) (collapsed |> Set.member "rest") (rest |> DbObject |> Just) { name = "rest", ref = Nothing, fk = Nothing } ]
+                                                    [ viewTableValue openRow (ExpandRow ri |> wrap) defaultSchema documentMode (expanded |> Set.member ri) (collapsed |> Set.member "rest") (rest |> DbObject |> Just) { name = "rest", ref = Nothing, fk = Nothing } ]
                                                )
                                         )
                                 )
@@ -516,8 +517,8 @@ viewTableHeader wrap source metadata collapsed sortBy column =
                 |> Maybe.filter (\( c, _ ) -> c == column.name)
     in
     if collapsed |> Set.member column.name then
-        th [ scope "col", onClick (CollapseColumn column.name |> wrap), title column.name, class "px-1 text-left text-sm font-semibold text-gray-900 border-b border-gray-300 cursor-pointer" ]
-            [ Icon.outline Icon.PlusCircle "w-3 h-3"
+        th [ scope "col", title column.name, class "px-1 text-left text-sm font-semibold text-gray-900 border-b border-gray-300" ]
+            [ button [ type_ "button", onClick (CollapseColumn column.name |> wrap), class "ml-1 opacity-50" ] [ Icon.outline Icon.PlusCircle "w-3 h-3 inline" ]
             ]
 
     else
@@ -525,12 +526,12 @@ viewTableHeader wrap source metadata collapsed sortBy column =
             [ text column.name
             , tableColumn |> Maybe.andThen .comment |> Maybe.mapOrElse (\c -> span [ title c.text, class "ml-1 opacity-50" ] [ Icon.outline Icons.comment "w-3 h-3 inline" ]) (text "")
             , meta |> Maybe.andThen .notes |> Maybe.mapOrElse (\notes -> span [ title notes, class "ml-1 opacity-50" ] [ Icon.outline Icons.notes "w-3 h-3 inline" ]) (text "")
-            , button [ type_ "button", onClick (sort |> Maybe.mapOrElse (\( col, asc ) -> Bool.cond asc ("-" ++ col) col) column.name |> Just |> UpdateSort |> wrap), title "Sort column", class "ml-1" ]
+            , button [ type_ "button", onClick (sort |> Maybe.mapOrElse (\( col, asc ) -> Bool.cond asc ("-" ++ col) col) column.name |> Just |> UpdateSort |> wrap), title "Sort column", class "ml-1 opacity-50" ]
                 [ sort
                     |> Maybe.map (\( _, asc ) -> Icon.solid (Bool.cond asc Icon.SortDescending Icon.SortAscending) "w-3 h-3 inline")
                     |> Maybe.withDefault (Icon.solid Icon.SortDescending "w-3 h-3 inline invisible group-hover:visible")
                 ]
-            , button [ type_ "button", onClick (CollapseColumn column.name |> wrap), title "Collapse column", class "ml-1" ] [ Icon.outline Icon.MinusCircle "w-3 h-3 inline invisible group-hover:visible" ]
+            , button [ type_ "button", onClick (CollapseColumn column.name |> wrap), title "Collapse column", class "ml-1 opacity-50" ] [ Icon.outline Icon.MinusCircle "w-3 h-3 inline invisible group-hover:visible" ]
             ]
 
 
@@ -545,25 +546,26 @@ viewTableValue openRow expandRow defaultSchema documentMode expanded collapsed v
         ]
 
 
-filterValues : String -> List QueryResultRow -> List QueryResultRow
+filterValues : String -> List ( QueryResultRow, RowIndex ) -> List ( QueryResultRow, RowIndex )
 filterValues search items =
     if String.length search > 0 then
         let
-            ( exactMatch, noMatch ) =
-                items |> List.partition (Dict.any (\_ -> DbValue.toString >> String.contains search))
+            ( exactMatch, _ ) =
+                items |> List.partition (Tuple.first >> Dict.any (\_ -> DbValue.toString >> String.contains search))
 
-            ( fuzzyMatch, _ ) =
-                noMatch |> List.partition (Dict.any (\_ -> DbValue.toString >> Simple.Fuzzy.match search))
+            --( fuzzyMatch, _ ) =
+            --    noMatch |> List.partition (Tuple.first >> Dict.any (\_ -> DbValue.toString >> Simple.Fuzzy.match search))
         in
-        exactMatch ++ fuzzyMatch
+        --exactMatch ++ fuzzyMatch
+        exactMatch
 
     else
         items
 
 
-sortValues : Maybe String -> List QueryResultRow -> List QueryResultRow
+sortValues : Maybe String -> List ( QueryResultRow, RowIndex ) -> List ( QueryResultRow, RowIndex )
 sortValues sort items =
-    sort |> Maybe.mapOrElse (extractSort >> (\( col, dir ) -> items |> List.sortWith (\a b -> compareMaybe DbValue.compare (a |> Dict.get col) (b |> Dict.get col) |> Order.dir dir))) items
+    sort |> Maybe.mapOrElse (extractSort >> (\( col, dir ) -> items |> List.sortWith (\( a, _ ) ( b, _ ) -> compareMaybe DbValue.compare (a |> Dict.get col) (b |> Dict.get col) |> Order.dir dir))) items
 
 
 extractSort : String -> ( String, Bool )

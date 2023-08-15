@@ -31,6 +31,7 @@ import Models.Project.Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableMeta exposing (TableMeta)
 import Models.Project.TableName exposing (TableName)
+import Models.Project.TableRow as TableRow
 import Models.QueryResult as QueryResult exposing (QueryResult, QueryResultColumn, QueryResultRow, QueryResultSuccess)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.ErdTableProps as ErdTableProps
@@ -127,8 +128,8 @@ update msg model =
 -- VIEW
 
 
-view : (Msg -> msg) -> msg -> (TableId -> msg) -> (RowQuery -> msg) -> (DbSourceInfo -> RowQuery -> msg) -> String -> Bool -> SchemaName -> Maybe Source -> Maybe ErdTableLayout -> Maybe TableMeta -> HtmlId -> Maybe Int -> Model -> Html msg
-view wrap close showTable openRow addToLayout navbarHeight hasFullScreen defaultSchema source tableLayout tableMeta htmlId openDepth model =
+view : (Msg -> msg) -> msg -> (TableId -> msg) -> (DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> msg) -> (RowQuery -> msg) -> String -> Bool -> SchemaName -> Maybe Source -> Maybe ErdTableLayout -> Maybe TableMeta -> HtmlId -> Maybe Int -> Model -> Html msg
+view wrap close showTable showTableRow openRowDetails navbarHeight hasFullScreen defaultSchema source tableLayout tableMeta htmlId openDepth model =
     let
         titleId : HtmlId
         titleId =
@@ -175,7 +176,7 @@ view wrap close showTable openRow addToLayout navbarHeight hasFullScreen default
                             , openDepth |> Maybe.andThen (\i -> [ "translate-x-0", "-translate-x-6", "-translate-x-12", "-translate-x-16", "-translate-x-20" ] |> List.get i) |> Maybe.withDefault "translate-x-full"
                             ]
                         ]
-                        [ viewSlideOverContent wrap close showTable openRow addToLayout defaultSchema source tableLayout tableMeta titleId model
+                        [ viewSlideOverContent wrap close showTable showTableRow openRowDetails defaultSchema source tableLayout tableMeta titleId model
                         ]
                     ]
                 ]
@@ -183,8 +184,8 @@ view wrap close showTable openRow addToLayout navbarHeight hasFullScreen default
         ]
 
 
-viewSlideOverContent : (Msg -> msg) -> msg -> (TableId -> msg) -> (RowQuery -> msg) -> (DbSourceInfo -> RowQuery -> msg) -> SchemaName -> Maybe Source -> Maybe ErdTableLayout -> Maybe TableMeta -> HtmlId -> Model -> Html msg
-viewSlideOverContent wrap close showTable openRow addToLayout defaultSchema source tableLayout tableMeta titleId model =
+viewSlideOverContent : (Msg -> msg) -> msg -> (TableId -> msg) -> (DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> msg) -> (RowQuery -> msg) -> SchemaName -> Maybe Source -> Maybe ErdTableLayout -> Maybe TableMeta -> HtmlId -> Model -> Html msg
+viewSlideOverContent wrap close showTable showTableRow openRowDetails defaultSchema source tableLayout tableMeta titleId model =
     let
         table : Maybe Table
         table =
@@ -230,7 +231,7 @@ viewSlideOverContent wrap close showTable openRow addToLayout defaultSchema sour
 
                 StateSuccess res ->
                     [ div [ class "flex flex-wrap space-x-3" ]
-                        [ button [ type_ "button", onClick (addToLayout model.source model.query), class "inline-flex w-full flex-1 items-center justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50" ]
+                        [ button [ type_ "button", onClick (showTableRow model.source model.query (res |> toRow |> Just)), class "inline-flex w-full flex-1 items-center justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50" ]
                             [ text "Add to layout" ]
                         ]
                     , div [ class "space-y-3" ]
@@ -253,7 +254,7 @@ viewSlideOverContent wrap close showTable openRow addToLayout defaultSchema sour
                                             , meta |> Maybe.andThen .notes |> Maybe.mapOrElse (\notes -> span [ title notes, class "ml-1 opacity-50" ] [ Icon.outline Icons.notes "w-3 h-3 inline" ]) (text "")
                                             ]
                                         , dd [ class "text-sm text-gray-900 sm:col-span-2 overflow-hidden text-ellipsis" ]
-                                            [ DataExplorerValue.view openRow (ExpandValue col.name |> wrap) defaultSchema False (model.expanded |> Set.member col.name) (res.values |> Dict.get col.name) col
+                                            [ DataExplorerValue.view openRowDetails (ExpandValue col.name |> wrap) defaultSchema False (model.expanded |> Set.member col.name) (res.values |> Dict.get col.name) col
                                             ]
                                         ]
                                 )
@@ -261,6 +262,17 @@ viewSlideOverContent wrap close showTable openRow addToLayout defaultSchema sour
                     ]
             )
         ]
+
+
+toRow : SuccessState -> TableRow.SuccessState
+toRow state =
+    { values = state.columns |> List.filterMap (\c -> state.values |> Dict.get c.name |> Maybe.map (\v -> { column = c.name, value = v }))
+    , hidden = Set.empty
+    , expanded = Set.empty
+    , showHidden = False
+    , startedAt = state.startedAt
+    , loadedAt = state.succeededAt
+    }
 
 
 
@@ -300,7 +312,7 @@ doc =
                                 |> List.indexedMap
                                     (\i m ->
                                         div [ class "mt-1" ]
-                                            [ view (docUpdate i s) (docClose i s) docShowTable docOpenRow docAddToLayout "0px" False "public" Nothing docTableLayout docTableMeta ("data-explorer-details-" ++ String.fromInt i) (Just i) m
+                                            [ view (docUpdate i s) (docClose i s) docShowTable docShowTableRow docOpenRowDetails "0px" False "public" Nothing docTableLayout docTableMeta ("data-explorer-details-" ++ String.fromInt i) (Just i) m
                                             , docButton ("Close " ++ String.fromInt i) (docClose i s)
                                             ]
                                     )
@@ -389,11 +401,11 @@ docShowTable _ =
     logAction "showTable"
 
 
-docOpenRow : RowQuery -> ElmBook.Msg state
-docOpenRow _ =
-    logAction "openRow"
+docShowTableRow : DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> ElmBook.Msg state
+docShowTableRow _ _ _ =
+    logAction "showTableRow"
 
 
-docAddToLayout : DbSourceInfo -> RowQuery -> ElmBook.Msg state
-docAddToLayout _ _ =
-    logAction "addToLayout"
+docOpenRowDetails : RowQuery -> ElmBook.Msg state
+docOpenRowDetails _ =
+    logAction "openRowDetails"

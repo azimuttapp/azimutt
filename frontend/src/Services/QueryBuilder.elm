@@ -51,7 +51,7 @@ findRow db query =
 limitResults : DatabaseKind -> String -> String
 limitResults db query =
     if db == DatabaseKind.PostgreSQL then
-        case query |> Regex.matches "^(.+?)( limit \\d+)?( offset \\d+)?;$" of
+        case query |> String.trim |> Regex.matches "^([\\s\\S]+?)( limit \\d+)?( offset \\d+)?;$" of
             (Just q) :: Nothing :: Nothing :: [] ->
                 q ++ " LIMIT 100;"
 

@@ -11,7 +11,7 @@ import ElmBook
 import ElmBook.Actions as Actions exposing (logAction)
 import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Html, button, div, h3, input, label, nav, option, p, select, table, td, text, textarea, tr)
-import Html.Attributes exposing (autofocus, class, disabled, for, id, name, placeholder, selected, style, title, type_, value)
+import Html.Attributes exposing (autofocus, class, classList, disabled, for, id, name, placeholder, selected, style, title, type_, value)
 import Html.Events exposing (onClick, onInput)
 import Libs.Dict as Dict
 import Libs.Html exposing (bText, extLink)
@@ -39,6 +39,7 @@ import Models.Project.Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
+import Models.Project.TableRow as TableRow
 import Models.ProjectInfo exposing (ProjectInfo)
 import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout exposing (ErdLayout)
 import Services.Lenses exposing (mapDetailsCmd, mapFilters, mapResultsCmd, mapVisualEditor, setOperation, setOperator, setValue)
@@ -61,6 +62,8 @@ import Track
 --  - Add filter button on results which can change editor (visual or query) and allow to trigger a new query
 --  - Show incoming rows in the side bar (and results?)
 --  - Double click on a value to edit it, add a submit option to push them to the database
+--  - Make sure data explorer is visible (erd context menu, sources, table?, details sidebar)
+--  - Tracking plan
 
 
 type alias Model =
@@ -226,8 +229,8 @@ update wrap project sources msg model =
 -- VIEW
 
 
-view : (Msg -> msg) -> (HtmlId -> msg) -> (TableId -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> msg) -> String -> HtmlId -> SchemaName -> HtmlId -> List Source -> ErdLayout -> Metadata -> Model -> DataExplorerDisplay -> Html msg
-view wrap toggleDropdown showTable addToLayout navbarHeight openedDropdown defaultSchema htmlId sources layout metadata model display =
+view : (Msg -> msg) -> (HtmlId -> msg) -> (TableId -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> msg) -> String -> HtmlId -> SchemaName -> HtmlId -> List Source -> ErdLayout -> Metadata -> Model -> DataExplorerDisplay -> Html msg
+view wrap toggleDropdown showTable showTableRow navbarHeight openedDropdown defaultSchema htmlId sources layout metadata model display =
     let
         hasFullScreen : Bool
         hasFullScreen =
@@ -256,7 +259,7 @@ view wrap toggleDropdown showTable addToLayout navbarHeight openedDropdown defau
             ]
         , div [ class "basis-2/3 flex-1 overflow-y-auto bg-gray-50 pb-28" ]
             [ viewResults wrap toggleDropdown (\s q -> OpenDetails s q |> wrap) openedDropdown defaultSchema sources metadata (htmlId ++ "-results") model.results ]
-        , viewDetails wrap showTable (\s q -> OpenDetails s q |> wrap) addToLayout navbarHeight hasFullScreen defaultSchema sources layout metadata (htmlId ++ "-details") model.details
+        , viewDetails wrap showTable showTableRow (\s q -> OpenDetails s q |> wrap) navbarHeight hasFullScreen defaultSchema sources layout metadata (htmlId ++ "-details") model.details
         ]
 
 
@@ -515,20 +518,20 @@ viewResults wrap toggleDropdown openRow openedDropdown defaultSchema sources met
     else
         div []
             (results
-                |> List.map
-                    (\r ->
-                        div [ class "m-3 px-3 py-2 rounded-md bg-white shadow" ]
+                |> List.indexedMap
+                    (\i r ->
+                        div [ class "m-3 px-2 py-1 rounded-md bg-white shadow", classList [ ( "mb-6", i == 0 ) ] ]
                             [ DataExplorerQuery.view (QueryMsg r.id >> wrap) toggleDropdown openRow (DeleteQuery r.id |> wrap) openedDropdown defaultSchema (sources |> List.find (\s -> s.id == r.source.id)) metadata (htmlId ++ "-" ++ String.fromInt r.id) r
                             ]
                     )
             )
 
 
-viewDetails : (Msg -> msg) -> (TableId -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> msg) -> String -> Bool -> SchemaName -> List Source -> ErdLayout -> Metadata -> HtmlId -> List DataExplorerDetails.Model -> Html msg
-viewDetails wrap showTable openRow addToLayout navbarHeight hasFullScreen defaultSchema sources layout metadata htmlId details =
+viewDetails : (Msg -> msg) -> (TableId -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> msg) -> String -> Bool -> SchemaName -> List Source -> ErdLayout -> Metadata -> HtmlId -> List DataExplorerDetails.Model -> Html msg
+viewDetails wrap showTable showTableRow openRowDetails navbarHeight hasFullScreen defaultSchema sources layout metadata htmlId details =
     div []
         (details
-            |> List.indexedMap (\i m -> DataExplorerDetails.view (DetailsMsg m.id >> wrap) (CloseDetails m.id |> wrap) showTable (openRow m.source) addToLayout navbarHeight hasFullScreen defaultSchema (sources |> List.findBy .id m.source.id) (layout.tables |> List.findBy .id m.query.table) (metadata |> Dict.get m.query.table) (htmlId ++ "-" ++ String.fromInt m.id) (Just i) m)
+            |> List.indexedMap (\i m -> DataExplorerDetails.view (DetailsMsg m.id >> wrap) (CloseDetails m.id |> wrap) showTable showTableRow (openRowDetails m.source) navbarHeight hasFullScreen defaultSchema (sources |> List.findBy .id m.source.id) (layout.tables |> List.findBy .id m.query.table) (metadata |> Dict.get m.query.table) (htmlId ++ "-" ++ String.fromInt m.id) (Just i) m)
             |> List.reverse
         )
 
@@ -668,7 +671,7 @@ docProject =
 
 docComponentState : String -> (DocState -> Model) -> (DocState -> Model -> DocState) -> List Source -> ( String, SharedDocState x -> Html (ElmBook.Msg (SharedDocState x)) )
 docComponentState name get set sources =
-    ( name, \{ dataExplorerDocState } -> dataExplorerDocState |> (\s -> div [ style "height" "500px" ] [ view (docUpdate s get set sources) (docToggleDropdown s) docShowTable docAddToLayout "0px" s.openedDropdown "public" "data-explorer" sources docLayout docMetadata (get s) (get s |> .display |> Maybe.withDefault BottomDisplay) ]) )
+    ( name, \{ dataExplorerDocState } -> dataExplorerDocState |> (\s -> div [ style "height" "500px" ] [ view (docUpdate s get set sources) (docToggleDropdown s) docShowTable docShowTableRow "0px" s.openedDropdown "public" "data-explorer" sources docLayout docMetadata (get s) (get s |> .display |> Maybe.withDefault BottomDisplay) ]) )
 
 
 docUpdate : DocState -> (DocState -> Model) -> (DocState -> Model -> DocState) -> List Source -> Msg -> ElmBook.Msg (SharedDocState x)
@@ -700,6 +703,6 @@ docShowTable _ =
     logAction "showTable"
 
 
-docAddToLayout : DbSourceInfo -> QueryBuilder.RowQuery -> ElmBook.Msg state
-docAddToLayout _ _ =
-    logAction "addToLayout"
+docShowTableRow : DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> ElmBook.Msg state
+docShowTableRow _ _ _ =
+    logAction "showTableRow"

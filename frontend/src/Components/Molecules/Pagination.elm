@@ -1,4 +1,4 @@
-module Components.Molecules.Pagination exposing (Model, doc, paginate, view)
+module Components.Molecules.Pagination exposing (Model, PageIndex, doc, paginate, view)
 
 import ElmBook.Actions exposing (logActionWith)
 import ElmBook.Chapter as Chapter exposing (Chapter)
@@ -15,7 +15,11 @@ type alias Model =
     }
 
 
-paginate : List a -> Model -> List ( Int, a )
+type alias PageIndex =
+    Int
+
+
+paginate : List a -> Model -> List ( PageIndex, a )
 paginate list model =
     let
         first : Int

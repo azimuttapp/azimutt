@@ -1,6 +1,7 @@
 module Components.Organisms.TableRow exposing (DocState, Model, Msg(..), SharedDocState, doc, docInit, init, update, view)
 
 import Array
+import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon
 import Components.Atoms.Icons as Icons
 import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
@@ -51,7 +52,7 @@ import Models.Size as Size
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.ErdTableProps as ErdTableProps
 import Ports
-import Services.Lenses exposing (mapSelected, mapState, setState)
+import Services.Lenses exposing (mapSelected, mapState, setPrevious, setState)
 import Services.QueryBuilder as QueryBuilder exposing (RowQuery)
 import Set
 import Time
@@ -66,7 +67,9 @@ type Msg
     | ExpandValue ColumnName
     | ToggleValue ColumnName
     | ToggleHiddenValues
+    | Cancel
     | Refresh
+    | Restore SuccessState
 
 
 
@@ -78,8 +81,8 @@ dbPrefix =
     "table-row"
 
 
-init : TableRow.Id -> Time.Posix -> DbSourceInfo -> RowQuery -> ( TableRow, Cmd msg )
-init id now source query =
+init : TableRow.Id -> Time.Posix -> DbSourceInfo -> RowQuery -> Maybe SuccessState -> ( TableRow, Cmd msg )
+init id now source query previous =
     let
         queryStr : String
         queryStr =
@@ -90,17 +93,17 @@ init id now source query =
       , size = Size.zeroCanvas
       , source = source.id
       , query = query
-      , state = StateLoading { query = queryStr, startedAt = now }
+      , state = previous |> Maybe.mapOrElse StateSuccess (StateLoading { query = queryStr, startedAt = now, previous = Nothing })
       , selected = False
       }
       -- TODO: add tracking with editor source (visual or query)
-    , Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt id) source.db.url queryStr
+    , previous |> Maybe.mapOrElse (\_ -> Cmd.none) (Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt id) source.db.url queryStr)
     )
 
 
-initFailure : String -> Time.Posix -> Time.Posix -> String -> State
-initFailure query started finished err =
-    StateFailure { query = query, error = err, startedAt = started, failedAt = finished }
+initFailure : String -> Maybe SuccessState -> Time.Posix -> Time.Posix -> String -> State
+initFailure query previous started finished err =
+    StateFailure { query = query, error = err, startedAt = started, failedAt = finished, previous = previous }
 
 
 initSuccess : Time.Posix -> Time.Posix -> QueryResultSuccess -> State
@@ -123,7 +126,7 @@ update : Time.Posix -> List Source -> Msg -> Model -> ( Model, Cmd msg )
 update now sources msg model =
     case msg of
         GotResult res ->
-            ( model |> mapState (mapLoading (\l -> res.result |> Result.fold (initFailure l.query res.started res.finished) (initSuccess res.started res.finished))), Cmd.none )
+            ( model |> mapStateLoading (\l -> res.result |> Result.fold (initFailure l.query l.previous res.started res.finished) (initSuccess res.started res.finished)), Cmd.none )
 
         ExpandValue column ->
             ( model |> mapState (mapSuccess (\s -> { s | expanded = s.expanded |> Set.toggle column })), Cmd.none )
@@ -134,9 +137,12 @@ update now sources msg model =
         ToggleHiddenValues ->
             ( model |> mapState (mapSuccess (\s -> { s | showHidden = not s.showHidden })), Cmd.none )
 
+        Cancel ->
+            ( model |> mapStateLoading (\l -> initFailure l.query l.previous l.startedAt now "Query canceled"), Cmd.none )
+
         Refresh ->
             sources
-                -- TODO: show error if can't find source or if not database
+                -- TODO: show error toast if can't find source or if not database
                 -- TODO: allow to change source for a table row? (click on the footer)
                 |> List.findBy .id model.source
                 |> Maybe.andThen DbSourceInfo.fromSource
@@ -147,18 +153,41 @@ update now sources msg model =
                             queryStr =
                                 QueryBuilder.findRow s.db.kind model.query
                         in
-                        ( model |> setState (StateLoading { query = queryStr, startedAt = now })
+                        ( model |> setState (StateLoading { query = queryStr, startedAt = now, previous = model |> TableRow.stateSuccess })
                         , Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt model.id) s.db.url queryStr
                         )
                     )
                     ( model, Cmd.none )
 
+        Restore success ->
+            ( model |> setState (StateSuccess success), Cmd.none )
 
-mapLoading : (LoadingState -> State) -> State -> State
+
+mapStateLoading : (LoadingState -> State) -> TableRow -> TableRow
+mapStateLoading f row =
+    case row.state of
+        StateLoading s ->
+            { row | state = f s }
+
+        _ ->
+            row
+
+
+mapLoading : (LoadingState -> LoadingState) -> State -> State
 mapLoading f state =
     case state of
         StateLoading s ->
-            f s
+            StateLoading (f s)
+
+        _ ->
+            state
+
+
+mapFailure : (FailureState -> FailureState) -> State -> State
+mapFailure f state =
+    case state of
+        StateFailure s ->
+            StateFailure (f s)
 
         _ ->
             state
@@ -178,8 +207,8 @@ mapSuccess f state =
 -- VIEW
 
 
-view : (Msg -> msg) -> (HtmlId -> msg) -> (HtmlId -> Bool -> msg) -> (TableId -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> msg) -> msg -> Time.Posix -> Platform -> SchemaName -> HtmlId -> HtmlId -> Maybe DbSource -> Maybe ErdTableLayout -> Maybe TableMeta -> TableRow -> Html msg
-view wrap toggleDropdown selectItem showTable openTableRow delete now platform defaultSchema openedDropdown htmlId source tableLayout tableMeta model =
+view : (Msg -> msg) -> (HtmlId -> msg) -> (HtmlId -> Bool -> msg) -> (TableId -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> msg) -> msg -> Time.Posix -> Platform -> SchemaName -> HtmlId -> HtmlId -> Maybe DbSource -> Maybe ErdTableLayout -> Maybe TableMeta -> TableRow -> Html msg
+view wrap toggleDropdown selectItem showTable showTableRow delete now platform defaultSchema openedDropdown htmlId source tableLayout tableMeta model =
     let
         table : Maybe Table
         table =
@@ -197,13 +226,13 @@ view wrap toggleDropdown selectItem showTable openTableRow delete now platform d
         [ viewHeader wrap toggleDropdown selectItem showTable delete platform defaultSchema openedDropdown (htmlId ++ "-header") color model
         , case model.state of
             StateLoading s ->
-                viewLoading s
+                viewLoading wrap delete s
 
             StateFailure s ->
-                viewFailure s
+                viewFailure wrap delete s
 
             StateSuccess s ->
-                viewSuccess wrap openTableRow source tableMeta table relations model s
+                viewSuccess wrap showTableRow source tableMeta table relations model s
         , viewFooter now source model
         ]
 
@@ -254,32 +283,42 @@ viewHeader wrap toggleDropdown selectItem showTable delete platform defaultSchem
         ]
 
 
-viewLoading : LoadingState -> Html msg
-viewLoading res =
+viewLoading : (Msg -> msg) -> msg -> LoadingState -> Html msg
+viewLoading wrap delete res =
     div [ class "p-3" ]
         [ p [ class "text-sm font-semibold text-gray-900" ] [ Icon.loading "mr-2 inline animate-spin", text "Loading..." ]
         , viewQuery "mt-2 px-3 py-2 text-sm" res.query
+        , div [ class "mt-6 flex justify-around" ]
+            [ Button.white1 Tw.indigo [ onClick (Cancel |> wrap), title "Cancel fetching data" ] [ text "Cancel" ]
+            , res.previous |> Maybe.map (\p -> Button.white1 Tw.emerald [ onClick (Restore p |> wrap), title "Restore previous data" ] [ text "Restore" ]) |> Maybe.withDefault (text "")
+            , Button.white1 Tw.red [ onClick delete, title "Remove this row" ] [ text "Delete" ]
+            ]
         ]
 
 
-viewFailure : FailureState -> Html msg
-viewFailure res =
+viewFailure : (Msg -> msg) -> msg -> FailureState -> Html msg
+viewFailure wrap delete res =
     div [ class "p-3" ]
         [ p [ class "text-sm font-semibold text-gray-900" ] [ text "Error" ]
         , div [ class "mt-1 px-6 py-4 block overflow-x-auto rounded bg-red-50 border border-red-200" ] [ text res.error ]
         , p [ class "mt-3 text-sm font-semibold text-gray-900" ] [ text "SQL" ]
         , viewQuery "mt-1 px-3 py-2" res.query
+        , div [ class "mt-6 flex justify-around" ]
+            [ Button.white1 Tw.indigo [ onClick (Refresh |> wrap), title "Retry fetching data" ] [ text "Refresh" ]
+            , res.previous |> Maybe.map (\p -> Button.white1 Tw.emerald [ onClick (Restore p |> wrap), title "Restore previous data" ] [ text "Restore" ]) |> Maybe.withDefault (text "")
+            , Button.white1 Tw.red [ onClick delete, title "Remove this row" ] [ text "Delete" ]
+            ]
         ]
 
 
-viewSuccess : (Msg -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> msg) -> Maybe DbSource -> Maybe TableMeta -> Maybe Table -> List Relation -> TableRow -> SuccessState -> Html msg
-viewSuccess wrap openTableRow source tableMeta table relations row res =
+viewSuccess : (Msg -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> msg) -> Maybe DbSource -> Maybe TableMeta -> Maybe Table -> List Relation -> TableRow -> SuccessState -> Html msg
+viewSuccess wrap showTableRow source tableMeta table relations row res =
     let
         ( hiddenValues, values ) =
             res.values |> List.partition (\v -> res.hidden |> Set.member v.column)
     in
     div []
-        [ Keyed.node "dl" [ class "divide-y divide-gray-200" ] (values |> List.map (\v -> ( v.column, viewValue wrap openTableRow source row.query.table tableMeta table relations v )))
+        [ Keyed.node "dl" [ class "divide-y divide-gray-200" ] (values |> List.map (\v -> ( v.column, viewValue wrap showTableRow source row.query.table tableMeta table relations v )))
         , if hiddenValues |> List.isEmpty |> not then
             div [ onClick (ToggleHiddenValues |> wrap), class "px-2 py-1 font-medium border-t border-gray-200 opacity-75 cursor-pointer" ]
                 [ text ("... " ++ (hiddenValues |> String.pluralizeL " more value")) ]
@@ -287,15 +326,15 @@ viewSuccess wrap openTableRow source tableMeta table relations row res =
           else
             div [] []
         , if res.showHidden && (hiddenValues |> List.isEmpty |> not) then
-            Keyed.node "dl" [ class "divide-y divide-gray-200 border-t border-gray-200 opacity-50" ] (hiddenValues |> List.map (\v -> ( v.column, viewValue wrap openTableRow source row.query.table tableMeta table relations v )))
+            Keyed.node "dl" [ class "divide-y divide-gray-200 border-t border-gray-200 opacity-50" ] (hiddenValues |> List.map (\v -> ( v.column, viewValue wrap showTableRow source row.query.table tableMeta table relations v )))
 
           else
             dl [] []
         ]
 
 
-viewValue : (Msg -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> msg) -> Maybe DbSource -> TableId -> Maybe TableMeta -> Maybe Table -> List Relation -> TableRowValue -> Html msg
-viewValue wrap openTableRow source id tableMeta table relations value =
+viewValue : (Msg -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> msg) -> Maybe DbSource -> TableId -> Maybe TableMeta -> Maybe Table -> List Relation -> TableRowValue -> Html msg
+viewValue wrap showTableRow source id tableMeta table relations value =
     let
         column : Maybe Column
         column =
@@ -334,7 +373,7 @@ viewValue wrap openTableRow source id tableMeta table relations value =
             (\r s ->
                 button
                     [ type_ "button"
-                    , onClick (openTableRow (DbSource.toInfo s) { table = r.table, primaryKey = Nel { column = r.column, value = value.value } [] })
+                    , onClick (showTableRow (DbSource.toInfo s) { table = r.table, primaryKey = Nel { column = r.column, value = value.value } [] } Nothing)
                     , class "ml-1 opacity-50"
                     ]
                     [ Icon.solid Icon.ExternalLink "w-3 h-3 inline" ]
@@ -411,14 +450,26 @@ doc =
                         , docView tableRowDocState .event (\s m -> { s | event = m }) "table-row-event"
                         ]
               )
-            , ( "error", \{ tableRowDocState } -> div [ class "p-3 bg-gray-100" ] [ docView tableRowDocState .failure (\s m -> { s | failure = m }) "table-row-failure" ] )
-            , ( "loading", \{ tableRowDocState } -> div [ class "p-3 bg-gray-100" ] [ docView tableRowDocState .loading (\s m -> { s | loading = m }) "table-row-loading" ] )
+            , ( "error"
+              , \{ tableRowDocState } ->
+                    div [ class "p-3 bg-gray-100 flex items-start space-x-3" ]
+                        [ docView tableRowDocState .failure (\s m -> { s | failure = m }) "table-row-failure"
+                        , docView tableRowDocState (.failure >> mapState (mapFailure (setPrevious (TableRow.stateSuccess docSuccessUser)))) (\s m -> { s | failure = m }) "table-row-failure-with-previous"
+                        ]
+              )
+            , ( "loading"
+              , \{ tableRowDocState } ->
+                    div [ class "p-3 bg-gray-100 flex items-start space-x-3" ]
+                        [ docView tableRowDocState .loading (\s m -> { s | loading = m }) "table-row-loading"
+                        , docView tableRowDocState (.loading >> mapState (mapLoading (setPrevious (TableRow.stateSuccess docSuccessUser)))) (\s m -> { s | loading = m }) "table-row-loading-with-previous"
+                        ]
+              )
             ]
 
 
 docView : DocState -> (DocState -> Model) -> (DocState -> Model -> DocState) -> HtmlId -> Html (ElmBook.Msg (SharedDocState x))
 docView s get set htmlId =
-    view (docUpdate s get set) (docToggleDropdown s) (docSelectItem s get set) docShowTable docOpenTableRow docDelete docNow docPlatform docDefaultSchema s.openedDropdown htmlId (docSource |> DbSource.fromSource) (Just docTableLayout) (Just docTableMeta) (get s)
+    view (docUpdate s get set) (docToggleDropdown s) (docSelectItem s get set) docShowTable docShowTableRow docDelete docNow docPlatform docDefaultSchema s.openedDropdown htmlId (docSource |> DbSource.fromSource) (Just docTableLayout) (Just docTableMeta) (get s)
 
 
 docSuccessUser : TableRow
@@ -497,7 +548,7 @@ docLoading =
     , size = Size.zeroCanvas
     , source = docSource.id
     , query = { table = ( "public", "events" ), primaryKey = Nel { column = Nel "id" [], value = DbString "dcecf4fe-aa35-44fb-a90c-eba7d2103f4e" } [] }
-    , state = StateLoading { query = "SELECT * FROM public.events WHERE id='dcecf4fe-aa35-44fb-a90c-eba7d2103f4e';", startedAt = Time.millisToPosix 1691079663421 }
+    , state = StateLoading { query = "SELECT * FROM public.events WHERE id='dcecf4fe-aa35-44fb-a90c-eba7d2103f4e';", startedAt = Time.millisToPosix 1691079663421, previous = Nothing }
     , selected = False
     }
 
@@ -509,7 +560,7 @@ docFailure =
     , size = Size.zeroCanvas
     , source = docSource.id
     , query = { table = ( "public", "events" ), primaryKey = Nel { column = Nel "id" [], value = DbString "dcecf4fe-aa35-44fb-a90c-eba7d2103f4e" } [] }
-    , state = StateFailure { query = "SELECT * FROM public.event WHERE id='dcecf4fe-aa35-44fb-a90c-eba7d2103f4e';", error = "relation \"public.event\" does not exist", startedAt = Time.millisToPosix 1691079663421, failedAt = Time.millisToPosix 1691079663421 }
+    , state = StateFailure { query = "SELECT * FROM public.event WHERE id='dcecf4fe-aa35-44fb-a90c-eba7d2103f4e';", error = "relation \"public.event\" does not exist", startedAt = Time.millisToPosix 1691079663421, failedAt = Time.millisToPosix 1691079663421, previous = Nothing }
     , selected = False
     }
 
@@ -626,9 +677,9 @@ docShowTable _ =
     logAction "showTable"
 
 
-docOpenTableRow : DbSourceInfo -> QueryBuilder.RowQuery -> ElmBook.Msg state
-docOpenTableRow _ _ =
-    logAction "openTableRow"
+docShowTableRow : DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> ElmBook.Msg state
+docShowTableRow _ _ _ =
+    logAction "showTableRow"
 
 
 docDelete : ElmBook.Msg state

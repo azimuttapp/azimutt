@@ -30,7 +30,7 @@ viewTableRow now platform conf cursorMode defaultSchema openedDropdown htmlId so
             Bool.cond (cursorMode == CursorMode.Drag || not conf.move) [] [ onPointerDown (handlePointerDown htmlId) platform ]
     in
     div ([ id htmlId, class "select-none absolute cursor-pointer", classList [ ( "invisible", row.size == Size.zeroCanvas ) ] ] ++ Position.stylesGrid row.position ++ dragAttrs)
-        [ TableRow.view (TableRowMsg row.id) DropdownToggle SelectItem (\id -> ShowTable id Nothing) AddTableRow (DeleteTableRow row.id) now platform defaultSchema openedDropdown htmlId source tableLayout tableMeta row
+        [ TableRow.view (TableRowMsg row.id) DropdownToggle SelectItem (\id -> ShowTable id Nothing) ShowTableRow (DeleteTableRow row.id) now platform defaultSchema openedDropdown htmlId source tableLayout tableMeta row
         ]
 
 

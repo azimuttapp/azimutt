@@ -69,7 +69,7 @@ import PagesComponents.Organization_.Project_.Updates.Project exposing (createPr
 import PagesComponents.Organization_.Project_.Updates.ProjectSettings exposing (handleProjectSettings)
 import PagesComponents.Organization_.Project_.Updates.Source as Source
 import PagesComponents.Organization_.Project_.Updates.Table exposing (goToTable, hideColumn, hideColumns, hideRelatedTables, hideTable, hoverColumn, hoverNextColumn, mapTablePropOrSelected, showAllTables, showColumn, showColumns, showRelatedTables, showTable, showTables, sortColumns, toggleNestedColumn)
-import PagesComponents.Organization_.Project_.Updates.TableRow exposing (addTableRow, moveToTableRow)
+import PagesComponents.Organization_.Project_.Updates.TableRow exposing (moveToTableRow, showTableRow)
 import PagesComponents.Organization_.Project_.Updates.Tags exposing (handleTags)
 import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirty, setDirtyCmd)
 import PagesComponents.Organization_.Project_.Updates.VirtualRelation exposing (handleVirtualRelation)
@@ -252,10 +252,10 @@ update urlLayout zone now urlInfos organizations projects msg model =
         MemoMsg message ->
             model |> handleMemo now urlInfos message
 
-        AddTableRow source query ->
+        ShowTableRow source query previous ->
             (model.erd |> Maybe.andThen (Erd.currentLayout >> .tableRows >> List.find (\r -> r.source == source.id && r.query == query)))
                 |> Maybe.map (\r -> model |> mapErdMCmd (moveToTableRow now model.erdElem r))
-                |> Maybe.withDefault (model |> mapErdMCmd (addTableRow now source query) |> setDirtyCmd)
+                |> Maybe.withDefault (model |> mapErdMCmd (showTableRow now source query previous) |> setDirtyCmd)
 
         DeleteTableRow id ->
             model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTableRows (List.removeBy .id id))) |> setDirty

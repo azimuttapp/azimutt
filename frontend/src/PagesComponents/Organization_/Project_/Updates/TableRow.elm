@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Updates.TableRow exposing (addTableRow, moveToTableRow)
+module PagesComponents.Organization_.Project_.Updates.TableRow exposing (moveToTableRow, showTableRow)
 
 import Components.Organisms.TableRow as TableRow
 import Libs.List as List
@@ -8,7 +8,7 @@ import Models.DbSourceInfo exposing (DbSourceInfo)
 import Models.ErdProps exposing (ErdProps)
 import Models.Position as Position
 import Models.Project.CanvasProps exposing (CanvasProps)
-import Models.Project.TableRow exposing (TableRow)
+import Models.Project.TableRow as TableRow exposing (TableRow)
 import PagesComponents.Organization_.Project_.Models exposing (Model, Msg(..))
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import Ports
@@ -17,11 +17,11 @@ import Services.QueryBuilder as QueryBuilder
 import Time
 
 
-addTableRow : Time.Posix -> DbSourceInfo -> QueryBuilder.RowQuery -> Erd -> ( Erd, Cmd Msg )
-addTableRow now source query erd =
+showTableRow : Time.Posix -> DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> Erd -> ( Erd, Cmd Msg )
+showTableRow now source query previous erd =
     let
         ( row, cmd ) =
-            TableRow.init erd.tableRowsSeq now source query
+            TableRow.init erd.tableRowsSeq now source query previous
     in
     ( erd
         |> mapTableRowsSeq (\i -> i + 1)

@@ -15,7 +15,7 @@ import Services.QueryBuilder as QueryBuilder
 
 
 view : (QueryBuilder.RowQuery -> msg) -> msg -> SchemaName -> Bool -> Bool -> Maybe DbValue -> QueryResultColumnTarget -> Html msg
-view openRow expandRow defaultSchema documentMode expanded value column =
+view openRowDetails expandRow defaultSchema documentMode expanded value column =
     let
         -- TODO: contextual formatting: numbers, uuid, dates, may depend on context (results vs side bar)
         valueText : String
@@ -39,7 +39,7 @@ view openRow expandRow defaultSchema documentMode expanded value column =
                     [ DbValue.view value
                     , button
                         [ type_ "button"
-                        , onClick (openRow { table = o.ref.table, primaryKey = Nel { column = o.ref.column, value = v } [] })
+                        , onClick (openRowDetails { table = o.ref.table, primaryKey = Nel { column = o.ref.column, value = v } [] })
                         , title ("Open " ++ TableId.show defaultSchema o.ref.table ++ " with " ++ ColumnPath.show o.ref.column ++ "=" ++ DbValue.toString v)
                         ]
                         [ Icon.solid Icon.ExternalLink "ml-1 w-4 h-4 inline" ]

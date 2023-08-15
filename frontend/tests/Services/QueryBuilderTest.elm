@@ -31,6 +31,15 @@ suite =
             , test "with limit" (\_ -> limitResults PostgreSQL "SELECT * FROM users LIMIT 10;" |> Expect.equal "SELECT * FROM users LIMIT 10;")
             , test "with offset" (\_ -> limitResults PostgreSQL "SELECT * FROM users OFFSET 10;" |> Expect.equal "SELECT * FROM users LIMIT 100 OFFSET 10;")
             , test "with limit & offset" (\_ -> limitResults PostgreSQL "SELECT * FROM users LIMIT 10 OFFSET 10;" |> Expect.equal "SELECT * FROM users LIMIT 10 OFFSET 10;")
+            , test "multiline" (\_ -> limitResults PostgreSQL """SELECT
+                                                                 e.id,
+                                                                 e.name
+                                                               FROM events e
+                                                               WHERE e.name='project_loaded';  """ |> Expect.equal """SELECT
+                                                                 e.id,
+                                                                 e.name
+                                                               FROM events e
+                                                               WHERE e.name='project_loaded' LIMIT 100;""")
             ]
         , describe "serde"
             [ testSerde "RowQuery" encodeRowQuery decodeRowQuery { table = ( "", "" ), primaryKey = { head = { column = { head = "", tail = [] }, value = DbNull }, tail = [] } } ]

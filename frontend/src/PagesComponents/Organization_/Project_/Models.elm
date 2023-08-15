@@ -256,7 +256,7 @@ type Msg
     | TagsMsg TagsMsg
     | GroupMsg GroupMsg
     | MemoMsg MemoMsg
-    | AddTableRow DbSourceInfo QueryBuilder.RowQuery
+    | ShowTableRow DbSourceInfo QueryBuilder.RowQuery (Maybe TableRow.SuccessState)
     | DeleteTableRow TableRow.Id
     | TableRowMsg TableRow.Id TableRow.Msg
     | AmlSidebarMsg AmlSidebarMsg

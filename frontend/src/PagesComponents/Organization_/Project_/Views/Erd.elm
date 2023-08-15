@@ -282,7 +282,7 @@ viewRelationRows conf style sources rows =
         successRows : Dict SourceIdStr (Dict TableId (List TableRowSuccess))
         successRows =
             rows
-                |> List.filterMap (\r -> r |> TableRow.stateSuccess |> Maybe.map (\s -> { row = r, state = s }))
+                |> List.filterMap (\r -> r |> TableRow.stateSuccess |> Maybe.filter (\_ -> r.size /= Size.zeroCanvas) |> Maybe.map (\s -> { row = r, state = s }))
                 |> List.groupBy (.row >> .source >> SourceId.toString)
                 |> Dict.map (\_ -> List.groupBy (.row >> .query >> .table))
 
