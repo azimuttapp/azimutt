@@ -194,7 +194,7 @@ viewLayoutItem isCurrent name layout =
         , button [ type_ "button", onClick (name |> LLoad |> LayoutMsg), css [ "flex-grow text-left ml-3", focus [ "outline-none" ] ] ]
             [ text name
             , text " "
-            , small [] [ text ("(" ++ (layout.tables |> String.pluralizeL "table") ++ ")") ]
+            , small [] [ text ("(" ++ ((List.length layout.tables + List.length layout.tableRows + List.length layout.memos) |> String.pluralize "item") ++ ")") ]
             ]
         ]
 

@@ -11,6 +11,7 @@ import Libs.Nel exposing (Nel)
 import Libs.Result as Result
 import Libs.Time as Time
 import Models.DbValue as DbValue exposing (DbValue)
+import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
 import Models.Project.ColumnType exposing (ColumnType)
 import Models.Project.Relation exposing (Relation)
@@ -35,7 +36,7 @@ type alias QueryResultSuccess =
 
 
 type alias QueryResultColumn =
-    { name : String, ref : Maybe ColumnRef }
+    { name : ColumnName, ref : Maybe ColumnRef }
 
 
 type alias QueryResultRow =
@@ -43,7 +44,7 @@ type alias QueryResultRow =
 
 
 type alias QueryResultColumnTarget =
-    { name : String, ref : Maybe ColumnRef, fk : Maybe { ref : ColumnRef, kind : ColumnType } }
+    { name : ColumnName, ref : Maybe ColumnRef, fk : Maybe { ref : ColumnRef, kind : ColumnType } }
 
 
 buildColumnTargets : Maybe { s | tables : Dict TableId Table, relations : List Relation } -> List QueryResultColumn -> List QueryResultColumnTarget

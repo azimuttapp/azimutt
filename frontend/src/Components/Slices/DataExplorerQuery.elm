@@ -87,6 +87,7 @@ type alias SuccessState =
     , succeededAt : Time.Posix
     , page : Int
     , expanded : Set RowIndex
+    , collapsed : Set ColumnName
     , documentMode : Bool
     , showQuery : Bool
     , search : String
@@ -100,6 +101,7 @@ type Msg
     | GotResult QueryResult
     | ChangePage Int
     | ExpandRow RowIndex
+    | CollapseColumn ColumnName
     | ToggleQuery
     | ToggleDocumentMode
     | ToggleFullScreen
@@ -140,6 +142,7 @@ initSuccess started finished res =
         , succeededAt = finished
         , page = 1
         , expanded = Set.empty
+        , collapsed = Set.empty
         , documentMode = False
         , showQuery = False
         , search = ""
@@ -166,6 +169,9 @@ update msg model =
 
         ExpandRow i ->
             ( model |> mapState (mapSuccess (\s -> { s | expanded = s.expanded |> Set.toggle i })), Cmd.none )
+
+        CollapseColumn name ->
+            ( model |> mapState (mapSuccess (\s -> { s | collapsed = s.collapsed |> Set.toggle name })), Cmd.none )
 
         ToggleQuery ->
             ( model |> mapState (mapSuccess (\s -> { s | showQuery = not s.showQuery })), Cmd.none )
@@ -447,13 +453,13 @@ viewSuccess wrap openRow defaultSchema source metadata res =
                 ( res.columns |> QueryResult.buildColumnTargets source, pageRows )
     in
     div [ class "mt-3" ]
-        [ viewTable wrap openRow defaultSchema source metadata column rows res.documentMode res.sortBy res.expanded
+        [ viewTable wrap openRow defaultSchema source metadata column rows res.documentMode res.sortBy res.expanded res.collapsed
         , Pagination.view (\p -> ChangePage p |> wrap) pagination
         ]
 
 
-viewTable : (Msg -> msg) -> (QueryBuilder.RowQuery -> msg) -> SchemaName -> Maybe Source -> Metadata -> List QueryResultColumnTarget -> List ( RowIndex, QueryResultRow ) -> Bool -> Maybe String -> Set RowIndex -> Html msg
-viewTable wrap openRow defaultSchema source metadata columns rows documentMode sortBy expanded =
+viewTable : (Msg -> msg) -> (QueryBuilder.RowQuery -> msg) -> SchemaName -> Maybe Source -> Metadata -> List QueryResultColumnTarget -> List ( RowIndex, QueryResultRow ) -> Bool -> Maybe String -> Set RowIndex -> Set ColumnName -> Html msg
+viewTable wrap openRow defaultSchema source metadata columns rows documentMode sortBy expanded collapsed =
     div [ class "flow-root" ]
         [ div [ class "overflow-x-auto" ]
             [ div [ class "inline-block min-w-full align-middle" ]
@@ -462,7 +468,7 @@ viewTable wrap openRow defaultSchema source metadata columns rows documentMode s
                     [ thead []
                         [ tr [ class "bg-gray-100" ]
                             (th [ scope "col", onClick (UpdateSort Nothing |> wrap), class "px-1 sticky left-0 text-left text-sm font-semibold text-gray-900 border-b border-r border-gray-300 bg-gray-100 cursor-pointer" ] [ text "#" ]
-                                :: (columns |> List.map (viewTableHeader wrap source metadata sortBy))
+                                :: (columns |> List.map (viewTableHeader wrap source metadata collapsed sortBy))
                             )
                         ]
                     , tbody []
@@ -476,12 +482,12 @@ viewTable wrap openRow defaultSchema source metadata columns rows documentMode s
                                     in
                                     tr [ class "hover:bg-gray-100", classList [ ( "bg-gray-50", modBy 2 i == 1 ) ] ]
                                         ([ td [ class ("px-1 sticky left-0 z-10 text-sm text-gray-900 border-r border-gray-300 hover:bg-gray-100 " ++ Bool.cond (modBy 2 i == 1) "bg-gray-50" "bg-white") ] [ text (i |> String.fromInt) ] ]
-                                            ++ (columns |> List.map (\c -> viewTableValue openRow (ExpandRow i |> wrap) defaultSchema documentMode (expanded |> Set.member i) (r |> Dict.get c.name) c))
+                                            ++ (columns |> List.map (\c -> viewTableValue openRow (ExpandRow i |> wrap) defaultSchema documentMode (expanded |> Set.member i) (collapsed |> Set.member c.name) (r |> Dict.get c.name) c))
                                             ++ (if rest |> Dict.isEmpty then
                                                     []
 
                                                 else
-                                                    [ viewTableValue openRow (ExpandRow i |> wrap) defaultSchema documentMode (expanded |> Set.member i) (rest |> DbObject |> Just) { name = "rest", ref = Nothing, fk = Nothing } ]
+                                                    [ viewTableValue openRow (ExpandRow i |> wrap) defaultSchema documentMode (expanded |> Set.member i) (collapsed |> Set.member "rest") (rest |> DbObject |> Just) { name = "rest", ref = Nothing, fk = Nothing } ]
                                                )
                                         )
                                 )
@@ -492,37 +498,51 @@ viewTable wrap openRow defaultSchema source metadata columns rows documentMode s
         ]
 
 
-viewTableHeader : (Msg -> msg) -> Maybe Source -> Metadata -> Maybe String -> QueryResultColumnTarget -> Html msg
-viewTableHeader wrap source metadata sortBy resultColumn =
+viewTableHeader : (Msg -> msg) -> Maybe Source -> Metadata -> Set ColumnName -> Maybe String -> QueryResultColumnTarget -> Html msg
+viewTableHeader wrap source metadata collapsed sortBy column =
     let
         tableColumn : Maybe Column
         tableColumn =
-            resultColumn.ref |> Maybe.andThen (\ref -> source |> Maybe.andThen (Source.getColumn ref))
+            column.ref |> Maybe.andThen (\ref -> source |> Maybe.andThen (Source.getColumn ref))
 
         meta : Maybe ColumnMeta
         meta =
-            resultColumn.ref |> Maybe.andThen (\ref -> metadata |> Dict.get ref.table |> Maybe.andThen (.columns >> Dict.get (ref.column |> ColumnPath.toString)))
+            column.ref |> Maybe.andThen (\ref -> metadata |> Dict.get ref.table |> Maybe.andThen (.columns >> Dict.get (ref.column |> ColumnPath.toString)))
 
         sort : Maybe ( String, Bool )
         sort =
             sortBy
                 |> Maybe.map extractSort
-                |> Maybe.filter (\( col, _ ) -> col == resultColumn.name)
+                |> Maybe.filter (\( c, _ ) -> c == column.name)
     in
-    th [ scope "col", onClick (sort |> Maybe.mapOrElse (\( col, asc ) -> Bool.cond asc ("-" ++ col) col) resultColumn.name |> Just |> UpdateSort |> wrap), class "px-1 text-left text-sm font-semibold text-gray-900 border-b border-gray-300 whitespace-nowrap group cursor-pointer" ]
-        [ text resultColumn.name
-        , tableColumn |> Maybe.andThen .comment |> Maybe.mapOrElse (\c -> span [ title c.text, class "ml-1 opacity-50" ] [ Icon.outline Icons.comment "w-3 h-3 inline" ]) (text "")
-        , meta |> Maybe.andThen .notes |> Maybe.mapOrElse (\notes -> span [ title notes, class "ml-1 opacity-50" ] [ Icon.outline Icons.notes "w-3 h-3 inline" ]) (text "")
-        , sort
-            |> Maybe.map (\( _, asc ) -> Icon.solid (Bool.cond asc Icon.ArrowDown Icon.ArrowUp) "ml-1 w-3 h-3 inline")
-            |> Maybe.withDefault (Icon.solid Icon.ArrowDown "ml-1 w-3 h-3 inline invisible group-hover:visible")
-        ]
+    if collapsed |> Set.member column.name then
+        th [ scope "col", onClick (CollapseColumn column.name |> wrap), title column.name, class "px-1 text-left text-sm font-semibold text-gray-900 border-b border-gray-300 cursor-pointer" ]
+            [ Icon.outline Icon.PlusCircle "w-3 h-3"
+            ]
+
+    else
+        th [ scope "col", class "px-1 text-left text-sm font-semibold text-gray-900 border-b border-gray-300 whitespace-nowrap group" ]
+            [ text column.name
+            , tableColumn |> Maybe.andThen .comment |> Maybe.mapOrElse (\c -> span [ title c.text, class "ml-1 opacity-50" ] [ Icon.outline Icons.comment "w-3 h-3 inline" ]) (text "")
+            , meta |> Maybe.andThen .notes |> Maybe.mapOrElse (\notes -> span [ title notes, class "ml-1 opacity-50" ] [ Icon.outline Icons.notes "w-3 h-3 inline" ]) (text "")
+            , button [ type_ "button", onClick (sort |> Maybe.mapOrElse (\( col, asc ) -> Bool.cond asc ("-" ++ col) col) column.name |> Just |> UpdateSort |> wrap), title "Sort column", class "ml-1" ]
+                [ sort
+                    |> Maybe.map (\( _, asc ) -> Icon.solid (Bool.cond asc Icon.SortDescending Icon.SortAscending) "w-3 h-3 inline")
+                    |> Maybe.withDefault (Icon.solid Icon.SortDescending "w-3 h-3 inline invisible group-hover:visible")
+                ]
+            , button [ type_ "button", onClick (CollapseColumn column.name |> wrap), title "Collapse column", class "ml-1" ] [ Icon.outline Icon.MinusCircle "w-3 h-3 inline invisible group-hover:visible" ]
+            ]
 
 
-viewTableValue : (QueryBuilder.RowQuery -> msg) -> msg -> SchemaName -> Bool -> Bool -> Maybe DbValue -> QueryResultColumnTarget -> Html msg
-viewTableValue openRow expandRow defaultSchema documentMode expanded value column =
+viewTableValue : (QueryBuilder.RowQuery -> msg) -> msg -> SchemaName -> Bool -> Bool -> Bool -> Maybe DbValue -> QueryResultColumnTarget -> Html msg
+viewTableValue openRow expandRow defaultSchema documentMode expanded collapsed value column =
     td [ class "px-1 text-sm text-gray-500 whitespace-nowrap max-w-xs truncate" ]
-        [ DataExplorerValue.view openRow expandRow defaultSchema documentMode expanded value column ]
+        [ if collapsed then
+            div [] []
+
+          else
+            DataExplorerValue.view openRow expandRow defaultSchema documentMode expanded value column
+        ]
 
 
 filterValues : String -> List QueryResultRow -> List QueryResultRow
