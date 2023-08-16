@@ -523,7 +523,7 @@ viewColumnRow wrap createContextMenu hover showTableRow openNotes platform sourc
         , onMouseLeave (hover ( row.id, Just value.column ) False)
         , onContextMenu (createContextMenu (Bool.cond hidden (ColumnRowContextMenu.viewHidden (ShowColumn >> wrap)) (ColumnRowContextMenu.view (HideColumn >> wrap)) openNotes platform row value notes)) platform
         , css
-            [ "px-2 py-1 flex justify-between font-medium"
+            [ "px-2 py-1 flex font-medium"
             , if highlight then
                 Tw.batch [ Tw.text_500 color, Tw.bg_50 color ]
 
@@ -536,7 +536,7 @@ viewColumnRow wrap createContextMenu hover showTableRow openNotes platform sourc
             , comment |> Maybe.mapOrElse (\c -> span [ title c, class "ml-1 opacity-50" ] [ Icon.outline Icons.comment "w-3 h-3 inline" ]) (text "")
             , notes |> Maybe.mapOrElse (\n -> button [ type_ "button", onClick (openNotes row.query.table (value.column |> ColumnPath.fromString |> Just)), title n, class "ml-1 opacity-50" ] [ Icon.outline Icons.notes "w-3 h-3 inline" ]) (text "")
             ]
-        , dd [ title (DbValue.toString value.value), class "ml-3 opacity-50 truncate" ]
+        , dd [ title (DbValue.toString value.value), class "ml-3 flex-grow text-right opacity-50 truncate" ]
             [ text (DbValue.toString value.value)
             ]
         , Maybe.map2
