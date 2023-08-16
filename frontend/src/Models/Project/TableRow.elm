@@ -31,6 +31,7 @@ type alias TableRow =
     , query : RowQuery
     , state : State
     , selected : Bool
+    , collapsed : Bool
     }
 
 
@@ -106,12 +107,13 @@ encode value =
         , ( "query", value.query |> encodeRowQuery )
         , ( "state", value.state |> encodeState )
         , ( "selected", value.selected |> Encode.withDefault Encode.bool False )
+        , ( "collapsed", value.collapsed |> Encode.withDefault Encode.bool False )
         ]
 
 
 decode : Decoder TableRow
 decode =
-    Decode.map8 TableRow
+    Decode.map9 TableRow
         (Decode.field "id" Decode.int)
         (Decode.succeed Nothing)
         (Decode.field "position" Position.decodeGrid)
@@ -120,6 +122,7 @@ decode =
         (Decode.field "query" decodeRowQuery)
         (Decode.field "state" decodeState)
         (Decode.defaultField "selected" Decode.bool False)
+        (Decode.defaultField "collapsed" Decode.bool False)
 
 
 encodeState : State -> Value

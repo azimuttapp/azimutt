@@ -1,10 +1,10 @@
-module Components.Organisms.TableRow exposing (DocState, Model, Msg(..), SharedDocState, TableRowHover, TableRowRelation, TableRowRelationColumn, TableRowSuccess, doc, docInit, init, initRelation, initRelationColumn, update, view)
+module Components.Organisms.TableRow exposing (DocState, Model, Msg(..), SharedDocState, TableRowHover, TableRowRelation, TableRowRelationColumn, TableRowSuccess, canBroadcast, doc, docInit, init, initRelation, initRelationColumn, update, view)
 
 import Array
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon
 import Components.Atoms.Icons as Icons
-import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
+import Components.Molecules.ContextMenu exposing (Direction(..))
 import Components.Molecules.Dropdown as Dropdown
 import Components.Molecules.Popover as Popover
 import Dict exposing (Dict)
@@ -14,14 +14,17 @@ import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Html, button, dd, div, dl, dt, p, span, text)
 import Html.Attributes exposing (class, classList, id, title, type_)
 import Html.Events exposing (onClick, onMouseEnter, onMouseLeave)
+import Html.Events.Extra.Mouse exposing (Button(..))
 import Html.Keyed as Keyed
+import Libs.Bool as Bool
 import Libs.Dict as Dict
 import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, css)
-import Libs.Html.Events exposing (onDblClick, onPointerUp)
+import Libs.Html.Events exposing (PointerEvent, onContextMenu, onDblClick, onPointerUp)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.DateTime as DateTime
 import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.Models.Notes exposing (Notes)
 import Libs.Models.Platform as Platform exposing (Platform)
 import Libs.Nel as Nel exposing (Nel)
 import Libs.Result as Result
@@ -36,6 +39,7 @@ import Models.Position as Position
 import Models.Project.Column exposing (Column)
 import Models.Project.ColumnMeta exposing (ColumnMeta)
 import Models.Project.ColumnName exposing (ColumnName)
+import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.ColumnType exposing (ColumnType)
 import Models.Project.Relation as Relation exposing (Relation)
@@ -50,7 +54,10 @@ import Models.Project.TableName exposing (TableName)
 import Models.Project.TableRow as TableRow exposing (State(..), TableRow, TableRowValue)
 import Models.QueryResult exposing (QueryResult, QueryResultSuccess)
 import Models.Size as Size
+import PagesComponents.Organization_.Project_.Models.ErdConf as ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.PositionHint as PositionHint exposing (PositionHint)
+import PagesComponents.Organization_.Project_.Views.Modals.ColumnRowContextMenu as ColumnRowContextMenu
+import PagesComponents.Organization_.Project_.Views.Modals.TableRowContextMenu as TableRowContextMenu
 import Ports
 import Services.Lenses exposing (mapSelected, mapState, setPrevious, setState)
 import Services.QueryBuilder as QueryBuilder exposing (RowQuery)
@@ -64,12 +71,15 @@ type alias Model =
 
 type Msg
     = GotResult QueryResult
-    | ExpandValue ColumnName
-    | ToggleValue ColumnName
-    | ToggleHiddenValues
-    | Cancel
     | Refresh
+    | Cancel
     | Restore TableRow.SuccessState
+    | Collapse
+    | Expand
+    | ShowColumn ColumnName
+    | HideColumn ColumnName
+    | ToggleHiddenColumns
+    | ExpandColumn ColumnName
 
 
 type alias TableRowSuccess =
@@ -112,6 +122,7 @@ init id now source query previous hint =
       , query = query
       , state = previous |> Maybe.mapOrElse StateSuccess (StateLoading { query = queryStr, startedAt = now, previous = Nothing })
       , selected = False
+      , collapsed = False
       }
       -- TODO: add tracking with editor source (visual or query)
     , previous |> Maybe.mapOrElse (\_ -> Cmd.none) (Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt id) source.db.url queryStr)
@@ -123,13 +134,13 @@ initFailure query previous started finished err =
     StateFailure { query = query, error = err, startedAt = started, failedAt = finished, previous = previous }
 
 
-initSuccess : Time.Posix -> Time.Posix -> QueryResultSuccess -> State
-initSuccess started finished res =
+initSuccess : Maybe TableRow.SuccessState -> Time.Posix -> Time.Posix -> QueryResultSuccess -> State
+initSuccess previous started finished res =
     StateSuccess
         { values = res.columns |> List.filterMap (\c -> res.rows |> List.head |> Maybe.andThen (Dict.get c.name) |> Maybe.map (\v -> { column = c.name, value = v }))
-        , hidden = Set.empty
-        , expanded = Set.empty
-        , showHidden = False
+        , hidden = previous |> Maybe.mapOrElse .hidden Set.empty
+        , expanded = previous |> Maybe.mapOrElse .expanded Set.empty
+        , showHidden = previous |> Maybe.mapOrElse .showHidden False
         , startedAt = started
         , loadedAt = finished
         }
@@ -158,19 +169,7 @@ update : Time.Posix -> List Source -> Msg -> Model -> ( Model, Cmd msg )
 update now sources msg model =
     case msg of
         GotResult res ->
-            ( model |> mapStateLoading (\l -> res.result |> Result.fold (initFailure l.query l.previous res.started res.finished) (initSuccess res.started res.finished)), Cmd.none )
-
-        ExpandValue column ->
-            ( model |> mapState (mapSuccess (\s -> { s | expanded = s.expanded |> Set.toggle column })), Cmd.none )
-
-        ToggleValue column ->
-            ( model |> mapState (mapSuccess (\s -> { s | hidden = s.hidden |> Set.toggle column })), Cmd.none )
-
-        ToggleHiddenValues ->
-            ( model |> mapState (mapSuccess (\s -> { s | showHidden = not s.showHidden })), Cmd.none )
-
-        Cancel ->
-            ( model |> mapStateLoading (\l -> initFailure l.query l.previous l.startedAt now "Query canceled"), Cmd.none )
+            ( model |> mapStateLoading (\l -> res.result |> Result.fold (initFailure l.query l.previous res.started res.finished) (initSuccess l.previous res.started res.finished)), Cmd.none )
 
         Refresh ->
             sources
@@ -191,8 +190,63 @@ update now sources msg model =
                     )
                     ( model, Cmd.none )
 
+        Cancel ->
+            ( model |> mapStateLoading (\l -> initFailure l.query l.previous l.startedAt now "Query canceled"), Cmd.none )
+
         Restore success ->
             ( model |> setState (StateSuccess success), Cmd.none )
+
+        Collapse ->
+            ( { model | collapsed = True }, Cmd.none )
+
+        Expand ->
+            ( { model | collapsed = False }, Cmd.none )
+
+        ShowColumn column ->
+            ( model |> mapState (mapSuccess (\s -> { s | hidden = s.hidden |> Set.remove column })), Cmd.none )
+
+        HideColumn column ->
+            ( model |> mapState (mapSuccess (\s -> { s | hidden = s.hidden |> Set.insert column })), Cmd.none )
+
+        ToggleHiddenColumns ->
+            ( model |> mapState (mapSuccess (\s -> { s | showHidden = not s.showHidden })), Cmd.none )
+
+        ExpandColumn column ->
+            ( model |> mapState (mapSuccess (\s -> { s | expanded = s.expanded |> Set.toggle column })), Cmd.none )
+
+
+canBroadcast : Msg -> Bool
+canBroadcast msg =
+    case msg of
+        GotResult _ ->
+            False
+
+        Refresh ->
+            True
+
+        Cancel ->
+            True
+
+        Restore _ ->
+            True
+
+        Collapse ->
+            True
+
+        Expand ->
+            True
+
+        ShowColumn _ ->
+            True
+
+        HideColumn _ ->
+            True
+
+        ToggleHiddenColumns ->
+            True
+
+        ExpandColumn _ ->
+            True
 
 
 mapStateLoading : (TableRow.LoadingState -> State) -> TableRow -> TableRow
@@ -239,8 +293,8 @@ mapSuccess f state =
 -- VIEW
 
 
-view : (Msg -> msg) -> (HtmlId -> msg) -> (HtmlId -> msg) -> (HtmlId -> Bool -> msg) -> (TableId -> msg) -> (TableRowHover -> Bool -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> msg -> Time.Posix -> Platform -> SchemaName -> HtmlId -> HtmlId -> HtmlId -> Maybe DbSource -> Maybe TableRowHover -> List TableRowRelation -> Color -> Maybe TableMeta -> TableRow -> Html msg
-view wrap toggleDropdown openPopover selectItem showTable hover showTableRow delete now platform defaultSchema openedDropdown openedPopover htmlId source hoverRow rowRelations color tableMeta model =
+view : (Msg -> msg) -> (String -> msg) -> (HtmlId -> msg) -> (HtmlId -> msg) -> (Html msg -> PointerEvent -> msg) -> (HtmlId -> Bool -> msg) -> (TableId -> msg) -> (TableRowHover -> Bool -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> msg -> (TableId -> Maybe ColumnPath -> msg) -> Time.Posix -> Platform -> ErdConf -> SchemaName -> HtmlId -> HtmlId -> HtmlId -> Maybe DbSource -> Maybe TableRowHover -> List TableRowRelation -> Color -> Maybe TableMeta -> TableRow -> Html msg
+view wrap noop toggleDropdown openPopover createContextMenu selectItem showTable hover showTableRow delete openNotes now platform conf defaultSchema openedDropdown openedPopover htmlId source hoverRow rowRelations color tableMeta model =
     let
         table : Maybe Table
         table =
@@ -251,45 +305,72 @@ view wrap toggleDropdown openPopover selectItem showTable hover showTableRow del
             source |> Maybe.mapOrElse (.relations >> List.filter (\r -> r.src.table == model.query.table || r.ref.table == model.query.table)) []
     in
     div
-        [ onMouseEnter (hover ( model.id, Nothing ) True)
-        , onMouseLeave (hover ( model.id, Nothing ) False)
-        , class "max-w-xs bg-white text-default-500 text-xs border hover:shadow-md"
-        , classList [ ( "ring-2 ring-gray-300", model.selected ) ]
+        ([ id htmlId
+         , class "max-w-xs bg-white text-default-500 text-xs border hover:shadow-md"
+         , classList [ ( Tw.batch [ "ring-2", Tw.ring_300 color ], model.selected ) ]
+         ]
+            ++ Bool.cond conf.hover [ onMouseEnter (hover ( model.id, Nothing ) True), onMouseLeave (hover ( model.id, Nothing ) False) ] []
+        )
+        [ viewHeader wrap noop toggleDropdown createContextMenu selectItem showTable delete openNotes platform conf defaultSchema openedDropdown (htmlId ++ "-header") color table tableMeta model
+        , if model.collapsed then
+            div [] []
+
+          else
+            case model.state of
+                StateLoading s ->
+                    viewLoading wrap delete s
+
+                StateFailure s ->
+                    viewFailure wrap delete s
+
+                StateSuccess s ->
+                    viewSuccess wrap openPopover createContextMenu hover showTableRow openNotes platform conf source openedPopover (htmlId ++ "-body") hoverRow tableMeta table relations rowRelations color model s
+        , if model.collapsed then
+            div [] []
+
+          else
+            viewFooter now source model
         ]
-        [ viewHeader wrap toggleDropdown selectItem showTable delete platform defaultSchema openedDropdown (htmlId ++ "-header") color model
-        , case model.state of
-            StateLoading s ->
-                viewLoading wrap delete s
-
-            StateFailure s ->
-                viewFailure wrap delete s
-
-            StateSuccess s ->
-                viewSuccess wrap openPopover hover showTableRow source openedPopover (htmlId ++ "-body") hoverRow tableMeta table relations rowRelations color model s
-        , viewFooter now source model
-        ]
 
 
-viewHeader : (Msg -> msg) -> (HtmlId -> msg) -> (HtmlId -> Bool -> msg) -> (TableId -> msg) -> msg -> Platform -> SchemaName -> HtmlId -> HtmlId -> Color -> TableRow -> Html msg
-viewHeader wrap toggleDropdown selectItem showTable delete platform defaultSchema openedDropdown htmlId color model =
+viewHeader : (Msg -> msg) -> (String -> msg) -> (HtmlId -> msg) -> (Html msg -> PointerEvent -> msg) -> (HtmlId -> Bool -> msg) -> (TableId -> msg) -> msg -> (TableId -> Maybe ColumnPath -> msg) -> Platform -> ErdConf -> SchemaName -> HtmlId -> HtmlId -> Color -> Maybe Table -> Maybe TableMeta -> TableRow -> Html msg
+viewHeader wrap noop toggleDropdown createContextMenu selectItem showTable delete openNotes platform conf defaultSchema openedDropdown htmlId color table tableMeta row =
     let
+        comment : Maybe String
+        comment =
+            table |> Maybe.andThen .comment |> Maybe.map .text
+
+        notes : Maybe Notes
+        notes =
+            tableMeta |> Maybe.andThen .notes
+
         dropdownId : HtmlId
         dropdownId =
             htmlId ++ "-settings"
 
+        dropdown : Html msg
+        dropdown =
+            TableRowContextMenu.view (wrap Refresh) openNotes (wrap Collapse) (wrap Expand) delete platform conf defaultSchema row notes
+
         tableLabel : String
         tableLabel =
-            TableId.show defaultSchema model.query.table
+            TableId.show defaultSchema row.query.table
 
         filter : String
         filter =
-            model.query.primaryKey |> Nel.toList |> List.map (.value >> DbValue.toString) |> String.join "/"
+            row.query.primaryKey |> Nel.toList |> List.map (.value >> DbValue.toString) |> String.join "/"
     in
-    div [ onPointerUp (\e -> selectItem (TableRow.toHtmlId model.id) (e.ctrl || e.shift)) platform, css [ "p-2 flex items-center border-b border-gray-200 cursor-pointer", Tw.bg_50 color ] ]
-        [ div [ title (tableLabel ++ ": " ++ filter), class "flex-grow text-center truncate" ]
-            [ button [ onClick (showTable model.query.table), title ("Show " ++ tableLabel ++ " table"), css [ Tw.text_500 color, "mr-1 opacity-50" ] ] [ Icon.solid Icon.Eye "w-3 h-3 inline" ]
-            , span [ css [ Tw.text_500 color, "font-bold" ] ] [ text tableLabel ]
-            , text (": " ++ filter)
+    div
+        [ css [ "p-2 flex items-center border-b border-gray-200 cursor-pointer", Tw.bg_50 color ] ]
+        [ div
+            ([ title (tableLabel ++ ": " ++ filter), class "flex flex-grow truncate" ]
+                ++ Bool.cond conf.layout [ onContextMenu (createContextMenu dropdown) platform ] []
+            )
+            [ button [ onClick (showTable row.query.table), title ("Show table: " ++ tableLabel), css [ Tw.text_500 color, "mr-1 opacity-50" ] ] [ Icon.solid Icon.Eye "w-3 h-3 inline" ]
+            , comment |> Maybe.mapOrElse (\c -> span [ title c, css [ Tw.text_500 color, "mr-1 opacity-50" ] ] [ Icon.outline Icons.comment "w-3 h-3 inline" ]) (text "")
+            , notes |> Maybe.mapOrElse (\n -> button [ type_ "button", onClick (openNotes row.query.table Nothing), title n, css [ Tw.text_500 color, "mr-1 opacity-50" ] ] [ Icon.outline Icons.notes "w-3 h-3 inline" ]) (text "")
+            , span ([ class "flex-grow text-left truncate" ] ++ Bool.cond conf.select [ onPointerUp (\e -> Bool.cond (e.button == MainButton) (selectItem (TableRow.toHtmlId row.id) (e.ctrl || e.shift)) (noop "")) platform ] [])
+                [ span [ css [ Tw.text_500 color, "font-bold" ] ] [ text tableLabel ], text (": " ++ filter) ]
             ]
         , Dropdown.dropdown { id = dropdownId, direction = BottomLeft, isOpen = openedDropdown == dropdownId }
             (\m ->
@@ -305,14 +386,7 @@ viewHeader wrap toggleDropdown selectItem showTable delete platform defaultSchem
                     , Icon.solid Icon.DotsVertical "w-4 h-4"
                     ]
             )
-            (\_ ->
-                div []
-                    ([ { label = "Refresh data", content = ContextMenu.Simple { action = wrap Refresh } }
-                     , { label = "Delete", content = ContextMenu.Simple { action = delete } }
-                     ]
-                        |> List.map ContextMenu.btnSubmenu
-                    )
-            )
+            (\_ -> dropdown)
         ]
 
 
@@ -344,8 +418,8 @@ viewFailure wrap delete res =
         ]
 
 
-viewSuccess : (Msg -> msg) -> (HtmlId -> msg) -> (TableRowHover -> Bool -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> Maybe DbSource -> HtmlId -> HtmlId -> Maybe TableRowHover -> Maybe TableMeta -> Maybe Table -> List Relation -> List TableRowRelation -> Color -> TableRow -> TableRow.SuccessState -> Html msg
-viewSuccess wrap openPopover hover showTableRow source openedPopover htmlId hoverRow tableMeta table relations rowRelations color row res =
+viewSuccess : (Msg -> msg) -> (HtmlId -> msg) -> (Html msg -> PointerEvent -> msg) -> (TableRowHover -> Bool -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> Platform -> ErdConf -> Maybe DbSource -> HtmlId -> HtmlId -> Maybe TableRowHover -> Maybe TableMeta -> Maybe Table -> List Relation -> List TableRowRelation -> Color -> TableRow -> TableRow.SuccessState -> Html msg
+viewSuccess wrap openPopover createContextMenu hover showTableRow openNotes platform conf source openedPopover htmlId hoverRow tableMeta table relations rowRelations color row res =
     let
         ( hiddenValues, values ) =
             res.values |> List.partition (\v -> res.hidden |> Set.member v.column)
@@ -355,7 +429,7 @@ viewSuccess wrap openPopover hover showTableRow source openedPopover htmlId hove
             hiddenValues |> List.isEmpty |> not
     in
     div []
-        [ Keyed.node "dl" [ class "divide-y divide-gray-200" ] (values |> List.map (\v -> ( v.column, viewValue wrap hover showTableRow source hoverRow row.query.table tableMeta table relations rowRelations color row v )))
+        [ Keyed.node "dl" [ class "divide-y divide-gray-200" ] (values |> List.map (\v -> ( v.column, viewColumnRow wrap createContextMenu hover showTableRow openNotes platform source hoverRow row.query.table tableMeta table relations rowRelations color row v False )))
         , if hasHiddenValues then
             let
                 popoverId : HtmlId
@@ -369,17 +443,23 @@ viewSuccess wrap openPopover hover showTableRow source openedPopover htmlId hove
                 popover : Html msg
                 popover =
                     if showPopover then
-                        Keyed.node "dl" [ class "divide-y divide-gray-200 shadow-md" ] (hiddenValues |> List.map (\v -> ( v.column, viewValue wrap hover showTableRow source hoverRow row.query.table tableMeta table relations rowRelations color row v )))
+                        Keyed.node "dl" [ class "divide-y divide-gray-200 shadow-md" ] (hiddenValues |> List.map (\v -> ( v.column, viewColumnRow wrap createContextMenu hover showTableRow openNotes platform source hoverRow row.query.table tableMeta table relations rowRelations color row v True )))
 
                     else
                         div [] []
             in
             div []
-                [ div [ onClick (ToggleHiddenValues |> wrap), onMouseEnter (openPopover popoverId), onMouseLeave (openPopover ""), class "px-2 py-1 font-medium border-t border-gray-200 opacity-75 cursor-pointer" ]
-                    [ text ("... " ++ (hiddenValues |> String.pluralizeL " more value")) ]
+                [ div
+                    ([ class "px-2 py-1 font-medium border-t border-gray-200 opacity-50 hover:opacity-75"
+                     , classList [ ( "cursor-pointer", conf.layout ) ]
+                     ]
+                        ++ Bool.cond conf.hover [ onMouseEnter (openPopover popoverId), onMouseLeave (openPopover "") ] []
+                        ++ Bool.cond conf.layout [ onClick (ToggleHiddenColumns |> wrap) ] []
+                    )
+                    [ text ("... " ++ (hiddenValues |> String.pluralizeL " more column")) ]
                     |> Popover.r popover showPopover
                 , if res.showHidden then
-                    Keyed.node "dl" [ class "divide-y divide-gray-200 border-t border-gray-200 opacity-50" ] (hiddenValues |> List.map (\v -> ( v.column, viewValue wrap hover showTableRow source hoverRow row.query.table tableMeta table relations rowRelations color row v )))
+                    Keyed.node "dl" [ class "divide-y divide-gray-200 border-t border-gray-200 opacity-50" ] (hiddenValues |> List.map (\v -> ( v.column, viewColumnRow wrap createContextMenu hover showTableRow openNotes platform source hoverRow row.query.table tableMeta table relations rowRelations color row v True )))
 
                   else
                     dl [] []
@@ -390,16 +470,24 @@ viewSuccess wrap openPopover hover showTableRow source openedPopover htmlId hove
         ]
 
 
-viewValue : (Msg -> msg) -> (TableRowHover -> Bool -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> Maybe DbSource -> Maybe TableRowHover -> TableId -> Maybe TableMeta -> Maybe Table -> List Relation -> List TableRowRelation -> Color -> TableRow -> TableRowValue -> Html msg
-viewValue wrap hover showTableRow source hoverRow id tableMeta table relations rowRelations color row value =
+viewColumnRow : (Msg -> msg) -> (Html msg -> PointerEvent -> msg) -> (TableRowHover -> Bool -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> Platform -> Maybe DbSource -> Maybe TableRowHover -> TableId -> Maybe TableMeta -> Maybe Table -> List Relation -> List TableRowRelation -> Color -> TableRow -> TableRowValue -> Bool -> Html msg
+viewColumnRow wrap createContextMenu hover showTableRow openNotes platform source hoverRow id tableMeta table relations rowRelations color row value hidden =
     let
         column : Maybe Column
         column =
             table |> Maybe.andThen (\t -> t.columns |> Dict.get value.column)
 
+        comment : Maybe String
+        comment =
+            column |> Maybe.andThen .comment |> Maybe.map .text
+
         meta : Maybe ColumnMeta
         meta =
             tableMeta |> Maybe.andThen (\m -> m.columns |> Dict.get value.column)
+
+        notes : Maybe Notes
+        notes =
+            meta |> Maybe.andThen .notes
 
         linkTo : Maybe ColumnRef
         linkTo =
@@ -430,9 +518,10 @@ viewValue wrap hover showTableRow source hoverRow id tableMeta table relations r
             hoverRow |> Maybe.any (\h -> h == ( row.id, Just value.column ) || (rowRelations |> List.any (\r -> (isColumn r.src && isHover r.ref h) || (isColumn r.ref && isHover r.src h))))
     in
     div
-        [ onDblClick (\_ -> ToggleValue value.column |> wrap) Platform.PC
+        [ onDblClick (\_ -> value.column |> Bool.cond hidden ShowColumn HideColumn |> wrap) platform
         , onMouseEnter (hover ( row.id, Just value.column ) True)
         , onMouseLeave (hover ( row.id, Just value.column ) False)
+        , onContextMenu (createContextMenu (Bool.cond hidden (ColumnRowContextMenu.viewHidden (ShowColumn >> wrap)) (ColumnRowContextMenu.view (HideColumn >> wrap)) openNotes platform row value notes)) platform
         , css
             [ "px-2 py-1 flex justify-between font-medium"
             , if highlight then
@@ -444,8 +533,8 @@ viewValue wrap hover showTableRow source hoverRow id tableMeta table relations r
         ]
         [ dt [ class "whitespace-pre" ]
             [ text value.column
-            , column |> Maybe.andThen .comment |> Maybe.mapOrElse (\c -> span [ title c.text, class "ml-1 opacity-50" ] [ Icon.outline Icons.comment "w-3 h-3 inline" ]) (text "")
-            , meta |> Maybe.andThen .notes |> Maybe.mapOrElse (\notes -> span [ title notes, class "ml-1 opacity-50" ] [ Icon.outline Icons.notes "w-3 h-3 inline" ]) (text "")
+            , comment |> Maybe.mapOrElse (\c -> span [ title c, class "ml-1 opacity-50" ] [ Icon.outline Icons.comment "w-3 h-3 inline" ]) (text "")
+            , notes |> Maybe.mapOrElse (\n -> button [ type_ "button", onClick (openNotes row.query.table (value.column |> ColumnPath.fromString |> Just)), title n, class "ml-1 opacity-50" ] [ Icon.outline Icons.notes "w-3 h-3 inline" ]) (text "")
             ]
         , dd [ title (DbValue.toString value.value), class "ml-3 opacity-50 truncate" ]
             [ text (DbValue.toString value.value)
@@ -504,6 +593,7 @@ type alias SharedDocState x =
 type alias DocState =
     { openedDropdown : HtmlId
     , openedPopover : HtmlId
+    , tableRowHover : Maybe TableRowHover
     , user : Model
     , event : Model
     , failure : Model
@@ -515,6 +605,7 @@ docInit : DocState
 docInit =
     { openedDropdown = ""
     , openedPopover = ""
+    , tableRowHover = Nothing
     , user = docSuccessUser
     , event = docSuccessEvent
     , failure = docFailure
@@ -552,7 +643,7 @@ doc =
 
 docView : DocState -> (DocState -> Model) -> (DocState -> Model -> DocState) -> HtmlId -> Html (ElmBook.Msg (SharedDocState x))
 docView s get set htmlId =
-    view (docUpdate s get set) (docToggleDropdown s) (docOpenPopover s) (docSelectItem s get set) docShowTable docHoverTableRow docShowTableRow docDelete docNow docPlatform docDefaultSchema s.openedDropdown s.openedPopover htmlId (docSource |> DbSource.fromSource) Nothing [] Tw.indigo (Just docTableMeta) (get s)
+    view (docUpdate s get set) docNoop (docToggleDropdown s) (docOpenPopover s) docCreateContextMenu (docSelectItem s get set) docShowTable (docHoverTableRow s) docShowTableRow docDelete docOpenNotes docNow docPlatform docErdConf docDefaultSchema s.openedDropdown s.openedPopover htmlId (docSource |> DbSource.fromSource) s.tableRowHover [] Tw.indigo (Just docTableMeta) (get s)
 
 
 docSuccessUser : TableRow
@@ -593,6 +684,7 @@ docSuccessUser =
             , loadedAt = Time.millisToPosix 1690964408438
             }
     , selected = False
+    , collapsed = False
     }
 
 
@@ -623,6 +715,7 @@ docSuccessEvent =
             , loadedAt = Time.millisToPosix 1691079663421
             }
     , selected = False
+    , collapsed = False
     }
 
 
@@ -636,6 +729,7 @@ docLoading =
     , query = { table = ( "public", "events" ), primaryKey = Nel { column = Nel "id" [], value = DbString "dcecf4fe-aa35-44fb-a90c-eba7d2103f4e" } [] }
     , state = StateLoading { query = "SELECT * FROM public.events WHERE id='dcecf4fe-aa35-44fb-a90c-eba7d2103f4e';", startedAt = Time.millisToPosix 1691079663421, previous = Nothing }
     , selected = False
+    , collapsed = False
     }
 
 
@@ -649,12 +743,23 @@ docFailure =
     , query = { table = ( "public", "events" ), primaryKey = Nel { column = Nel "id" [], value = DbString "dcecf4fe-aa35-44fb-a90c-eba7d2103f4e" } [] }
     , state = StateFailure { query = "SELECT * FROM public.event WHERE id='dcecf4fe-aa35-44fb-a90c-eba7d2103f4e';", error = "relation \"public.event\" does not exist", startedAt = Time.millisToPosix 1691079663421, failedAt = Time.millisToPosix 1691079663421, previous = Nothing }
     , selected = False
+    , collapsed = False
     }
 
 
 docNow : Time.Posix
 docNow =
     Time.millisToPosix 1691079793039
+
+
+docPlatform : Platform
+docPlatform =
+    Platform.PC
+
+
+docErdConf : ErdConf
+docErdConf =
+    ErdConf.project Nothing
 
 
 docDefaultSchema : SchemaName
@@ -721,11 +826,6 @@ docRelation ( fromSchema, fromTable, fromColumn ) ( toSchema, toTable, toColumn 
     Relation.new (fromTable ++ "." ++ fromColumn ++ "->" ++ toTable ++ "." ++ toColumn) { table = ( fromSchema, fromTable ), column = Nel fromColumn [] } { table = ( toSchema, toTable ), column = Nel toColumn [] } []
 
 
-docPlatform : Platform
-docPlatform =
-    Platform.PC
-
-
 docUpdate : DocState -> (DocState -> Model) -> (DocState -> Model -> DocState) -> Msg -> ElmBook.Msg (SharedDocState x)
 docUpdate s get set msg =
     s |> get |> update Time.zero [ docSource ] msg |> Tuple.first |> set s |> docSetState
@@ -750,6 +850,25 @@ docOpenPopover s id =
     docSetState { s | openedPopover = id }
 
 
+docHoverTableRow : DocState -> TableRowHover -> Bool -> ElmBook.Msg (SharedDocState x)
+docHoverTableRow s hover on =
+    if on then
+        docSetState { s | tableRowHover = Just hover }
+
+    else
+        docSetState { s | tableRowHover = Nothing }
+
+
+docNoop : String -> ElmBook.Msg state
+docNoop _ =
+    logAction "noop"
+
+
+docCreateContextMenu : Html msg -> PointerEvent -> ElmBook.Msg state
+docCreateContextMenu _ _ =
+    logAction "createContextMenu"
+
+
 docSelectItem : DocState -> (DocState -> Model) -> (DocState -> Model -> DocState) -> HtmlId -> Bool -> ElmBook.Msg (SharedDocState x)
 docSelectItem s get set _ _ =
     s |> get |> mapSelected not |> set s |> docSetState
@@ -760,11 +879,6 @@ docShowTable _ =
     logAction "showTable"
 
 
-docHoverTableRow : TableRowHover -> Bool -> ElmBook.Msg state
-docHoverTableRow _ _ =
-    logAction "hoverTableRow"
-
-
 docShowTableRow : DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> ElmBook.Msg state
 docShowTableRow _ _ _ _ =
     logAction "showTableRow"
@@ -773,3 +887,8 @@ docShowTableRow _ _ _ _ =
 docDelete : ElmBook.Msg state
 docDelete =
     logAction "delete"
+
+
+docOpenNotes : TableId -> Maybe ColumnPath -> ElmBook.Msg state
+docOpenNotes _ _ =
+    logAction "openNotes"

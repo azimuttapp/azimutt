@@ -192,16 +192,6 @@ viewHeader model =
         dropdownId : HtmlId
         dropdownId =
             model.id ++ "-dropdown"
-
-        headerTextSize : List (Attribute msg)
-        headerTextSize =
-            if model.zoom < 0.5 then
-                -- EXPERIMENT: disable table title magnification when small so the diagram doesn't change and makes the fit-to-screen flaky
-                -- [ style "font-size" (String.fromFloat (1.25 * 0.5 / model.zoom) ++ "rem") ]
-                []
-
-            else
-                []
     in
     div
         [ title model.label
@@ -222,10 +212,10 @@ viewHeader model =
                 ++ Bool.cond model.conf.layout [ onDblClick (\_ -> model.actions.headerDblClick) model.platform, onContextMenu model.actions.headerRightClick model.platform ] []
             )
             ([ if model.isView then
-                span ([ class "text-xl italic underline decoration-dotted", classList [ ( "line-through", model.isDeprecated ) ] ] ++ headerTextSize) [ text model.label ] |> Tooltip.t "This is a view"
+                span [ class "text-xl italic underline decoration-dotted", classList [ ( "line-through", model.isDeprecated ) ] ] [ text model.label ] |> Tooltip.t "This is a view"
 
                else
-                span ([ class "text-xl", classList [ ( "line-through", model.isDeprecated ) ] ] ++ headerTextSize) [ text model.label ]
+                span [ class "text-xl", classList [ ( "line-through", model.isDeprecated ) ] ] [ text model.label ]
              ]
                 |> List.appendOn model.comment viewComment
                 |> List.appendOn model.notes (viewNotes model Nothing)
@@ -312,7 +302,7 @@ viewHiddenColumns model =
             (( label
              , div
                 ([ title label
-                 , class "h-6 pl-7 pr-2 whitespace-nowrap text-default-500 opacity-50 hover:opacity-100"
+                 , class "h-6 pl-7 pr-2 whitespace-nowrap text-default-500 opacity-50 hover:opacity-75"
                  , classList [ ( "cursor-pointer", model.conf.layout ) ]
                  ]
                     ++ Bool.cond model.conf.hover [ onMouseEnter (model.actions.hiddenColumnsHover popoverId True), onMouseLeave (model.actions.hiddenColumnsHover popoverId False) ] []

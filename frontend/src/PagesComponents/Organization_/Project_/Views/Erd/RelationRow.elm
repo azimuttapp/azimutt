@@ -30,7 +30,7 @@ viewRelationRow conf style hoverRow rel =
             Relation.positionLeft rel.src.row rel.ref.row
 
         ( srcY, refY ) =
-            ( sPos.top + Relation.deltaTop Conf.ui.tableRow rel.src.index False, rPos.top + Relation.deltaTop Conf.ui.tableRow rel.ref.index False )
+            ( sPos.top + Relation.deltaTop Conf.ui.tableRow rel.src.index rel.src.row.collapsed, rPos.top + Relation.deltaTop Conf.ui.tableRow rel.ref.index rel.ref.row.collapsed )
 
         color : Maybe Color
         color =

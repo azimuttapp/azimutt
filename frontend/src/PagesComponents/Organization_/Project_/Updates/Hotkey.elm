@@ -4,6 +4,7 @@ import Components.Organisms.TableRow as TableRow
 import Components.Slices.DataExplorer as DataExplorer
 import Components.Slices.DataExplorerQuery as DataExplorerQuery
 import Conf
+import Libs.Bool as Bool
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.Delta exposing (Delta)
@@ -12,9 +13,10 @@ import Libs.Tuple as Tuple
 import Models.Area as Area
 import Models.Project.CanvasProps as CanvasProps
 import Models.Project.ColumnName exposing (ColumnName)
+import Models.Project.ColumnPath as ColumnPath
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.TableId as TableId exposing (TableId)
-import Models.Project.TableRow as TableRow
+import Models.Project.TableRow as TableRow exposing (TableRow, TableRowValue)
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
 import PagesComponents.Organization_.Project_.Components.ProjectSaveDialog as ProjectSaveDialog
 import PagesComponents.Organization_.Project_.Components.ProjectSharing as ProjectSharing
@@ -139,9 +141,11 @@ handleHotkey _ model hotkey =
 
 notesElement : Model -> Cmd Msg
 notesElement model =
-    (model |> currentColumn |> Maybe.map (\r -> NOpen r.table (Just r.column) |> NotesMsg |> T.send))
+    (model |> currentColumnRow |> Maybe.andThen (getColumnRow model) |> Maybe.map (\( r, c ) -> NOpen r.query.table (ColumnPath.fromString c.column |> Just) |> NotesMsg |> T.send))
+        |> Maybe.orElse (model |> currentTableRow |> Maybe.andThen (getTableRow model) |> Maybe.map (\r -> NOpen r.query.table Nothing |> NotesMsg |> T.send))
+        |> Maybe.orElse (model |> currentColumn |> Maybe.map (\r -> NOpen r.table (Just r.column) |> NotesMsg |> T.send))
         |> Maybe.orElse (model |> currentTable |> Maybe.map (\r -> NOpen r Nothing |> NotesMsg |> T.send))
-        |> Maybe.withDefault ("Can't find an element to collapse :(" |> Toasts.info |> Toast |> T.send)
+        |> Maybe.withDefault ("Can't find an element with notes :(" |> Toasts.info |> Toast |> T.send)
 
 
 createMemo : Model -> Cmd Msg
@@ -156,8 +160,8 @@ createGroup model =
 
 collapseElement : Model -> Cmd Msg
 collapseElement model =
-    (model |> currentTableRow |> Maybe.map (\id -> TableRow.ToggleHiddenValues |> TableRowMsg id |> T.send))
-        |> Maybe.orElse (model |> currentTable |> Maybe.map (ToggleColumns >> T.send))
+    (model |> currentTableRow |> Maybe.andThen (getTableRow model) |> Maybe.map (\r -> Bool.cond r.collapsed TableRow.Expand TableRow.Collapse |> TableRowMsg r.id |> T.send))
+        |> Maybe.orElse (model |> currentTable |> Maybe.map (ToggleCollapseTable >> T.send))
         |> Maybe.withDefault ("Can't find an element to collapse :(" |> Toasts.info |> Toast |> T.send)
 
 
@@ -175,7 +179,7 @@ shrinkElement model =
 
 showElement : Model -> Cmd Msg
 showElement model =
-    (model |> currentColumnRow |> Maybe.map (\( id, col ) -> TableRow.ToggleValue col |> TableRowMsg id |> T.send))
+    (model |> currentColumnRow |> Maybe.map (\( id, col ) -> TableRow.ShowColumn col |> TableRowMsg id |> T.send))
         |> Maybe.orElse (model |> currentColumn |> Maybe.map (ShowColumn >> T.send))
         |> Maybe.orElse (model |> currentTable |> Maybe.map (\t -> ShowTable t Nothing |> T.send))
         |> Maybe.withDefault ("Can't find an element to show :(" |> Toasts.info |> Toast |> T.send)
@@ -183,7 +187,7 @@ showElement model =
 
 hideElement : Model -> Cmd Msg
 hideElement model =
-    (model |> currentColumnRow |> Maybe.map (\( id, col ) -> TableRow.ToggleValue col |> TableRowMsg id |> T.send))
+    (model |> currentColumnRow |> Maybe.map (\( id, col ) -> TableRow.HideColumn col |> TableRowMsg id |> T.send))
         |> Maybe.orElse (model |> currentTableRow |> Maybe.map (DeleteTableRow >> T.send))
         |> Maybe.orElse (model |> currentColumn |> Maybe.map (HideColumn >> T.send))
         |> Maybe.orElse (model |> currentTable |> Maybe.map (HideTable >> T.send))
@@ -208,6 +212,16 @@ currentColumnRow model =
 currentTableRow : Model -> Maybe TableRow.Id
 currentTableRow model =
     model.hoverTableRow |> Maybe.map Tuple.first
+
+
+getTableRow : Model -> TableRow.Id -> Maybe TableRow
+getTableRow model id =
+    model.erd |> Maybe.andThen (Erd.currentLayout >> .tableRows >> List.findBy .id id)
+
+
+getColumnRow : Model -> ( TableRow.Id, ColumnName ) -> Maybe ( TableRow, TableRowValue )
+getColumnRow model ( id, col ) =
+    getTableRow model id |> Maybe.andThen (\r -> r |> TableRow.stateSuccess |> Maybe.andThen (.values >> List.findBy .column col) |> Maybe.map (\v -> ( r, v )))
 
 
 cancelElement : Model -> Cmd Msg

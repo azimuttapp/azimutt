@@ -19,6 +19,7 @@ import Models.Size as Size
 import PagesComponents.Organization_.Project_.Models exposing (MemoMsg(..), Msg(..))
 import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode exposing (CursorMode)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
+import PagesComponents.Organization_.Project_.Models.NotesMsg as NotesMsg
 import Time
 
 
@@ -29,8 +30,8 @@ viewTableRow now platform conf cursorMode defaultSchema openedDropdown openedPop
         dragAttrs =
             Bool.cond (cursorMode == CursorMode.Drag || not conf.move) [] [ onPointerDown (handlePointerDown htmlId) platform ]
     in
-    div ([ id htmlId, class "select-none absolute cursor-pointer", classList [ ( "invisible", row.size == Size.zeroCanvas ) ] ] ++ Position.stylesGrid row.position ++ dragAttrs)
-        [ TableRow.view (TableRowMsg row.id) DropdownToggle PopoverSet SelectItem (\id -> ShowTable id Nothing) HoverTableRow ShowTableRow (DeleteTableRow row.id) now platform defaultSchema openedDropdown openedPopover htmlId source hoverRow rowRelations color tableMeta row
+    div ([ class "select-none absolute", classList [ ( "z-max", row.selected ), ( "invisible", row.size == Size.zeroCanvas ) ] ] ++ Position.stylesGrid row.position ++ dragAttrs)
+        [ TableRow.view (TableRowMsg row.id) Noop DropdownToggle PopoverSet ContextMenuCreate SelectItem (\id -> ShowTable id Nothing) HoverTableRow ShowTableRow (DeleteTableRow row.id) (\t c -> NotesMsg.NOpen t c |> NotesMsg) now platform conf defaultSchema openedDropdown openedPopover htmlId source hoverRow rowRelations color tableMeta row
         ]
 
 

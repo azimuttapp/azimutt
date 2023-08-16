@@ -24,6 +24,7 @@ import Models.DbValue as DbValue exposing (DbValue(..))
 import Models.Project.Column exposing (Column)
 import Models.Project.ColumnMeta exposing (ColumnMeta)
 import Models.Project.ColumnName exposing (ColumnName)
+import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
@@ -129,8 +130,8 @@ update msg model =
 -- VIEW
 
 
-view : (Msg -> msg) -> msg -> (TableId -> msg) -> (DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> (RowQuery -> msg) -> String -> Bool -> SchemaName -> Maybe Source -> Maybe ErdTableLayout -> Maybe TableMeta -> HtmlId -> Maybe Int -> Model -> Html msg
-view wrap close showTable showTableRow openRowDetails navbarHeight hasFullScreen defaultSchema source tableLayout tableMeta htmlId openDepth model =
+view : (Msg -> msg) -> msg -> (TableId -> msg) -> (DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> (RowQuery -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> String -> Bool -> SchemaName -> Maybe Source -> Maybe ErdTableLayout -> Maybe TableMeta -> HtmlId -> Maybe Int -> Model -> Html msg
+view wrap close showTable showTableRow openRowDetails openNotes navbarHeight hasFullScreen defaultSchema source tableLayout tableMeta htmlId openDepth model =
     let
         titleId : HtmlId
         titleId =
@@ -177,7 +178,7 @@ view wrap close showTable showTableRow openRowDetails navbarHeight hasFullScreen
                             , openDepth |> Maybe.andThen (\i -> [ "translate-x-0", "-translate-x-6", "-translate-x-12", "-translate-x-16", "-translate-x-20" ] |> List.get i) |> Maybe.withDefault "translate-x-full"
                             ]
                         ]
-                        [ viewSlideOverContent wrap close showTable showTableRow openRowDetails defaultSchema source tableLayout tableMeta titleId model
+                        [ viewSlideOverContent wrap close showTable showTableRow openRowDetails openNotes defaultSchema source tableLayout tableMeta titleId model
                         ]
                     ]
                 ]
@@ -185,8 +186,8 @@ view wrap close showTable showTableRow openRowDetails navbarHeight hasFullScreen
         ]
 
 
-viewSlideOverContent : (Msg -> msg) -> msg -> (TableId -> msg) -> (DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> (RowQuery -> msg) -> SchemaName -> Maybe Source -> Maybe ErdTableLayout -> Maybe TableMeta -> HtmlId -> Model -> Html msg
-viewSlideOverContent wrap close showTable showTableRow openRowDetails defaultSchema source tableLayout tableMeta titleId model =
+viewSlideOverContent : (Msg -> msg) -> msg -> (TableId -> msg) -> (DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> (RowQuery -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> SchemaName -> Maybe Source -> Maybe ErdTableLayout -> Maybe TableMeta -> HtmlId -> Model -> Html msg
+viewSlideOverContent wrap close showTable showTableRow openRowDetails openNotes defaultSchema source tableLayout tableMeta titleId model =
     let
         table : Maybe Table
         table =
@@ -208,7 +209,9 @@ viewSlideOverContent wrap close showTable showTableRow openRowDetails defaultSch
         [ div [ css [ Tw.bg_500 color, "p-6" ] ]
             [ div [ class "flex items-start justify-between" ]
                 [ h2 [ id titleId, title panelTitle, class "text-base font-semibold leading-6 text-white truncate" ]
-                    [ button [ onClick (showTable model.query.table), title ("Show " ++ tableLabel ++ " table"), class "mr-1" ] [ Icon.solid Icon.Eye "w-4 h-4 inline" ]
+                    [ button [ type_ "button", onClick (showTable model.query.table), title ("Show table: " ++ tableLabel), class "mr-1" ] [ Icon.solid Icon.Eye "w-4 h-4 inline" ]
+                    , table |> Maybe.andThen .comment |> Maybe.mapOrElse (\c -> span [ title c.text, class "mr-1" ] [ Icon.outline Icons.comment "w-4 h-4 inline" ]) (text "")
+                    , tableMeta |> Maybe.andThen .notes |> Maybe.mapOrElse (\n -> button [ type_ "button", onClick (openNotes model.query.table Nothing), title n, class "mr-1" ] [ Icon.outline Icons.notes "w-4 h-4 inline" ]) (text "")
                     , text panelTitle
                     ]
                 , div [ class "ml-3 flex h-7 items-center" ]
@@ -252,7 +255,7 @@ viewSlideOverContent wrap close showTable showTableRow openRowDetails defaultSch
                                         [ dt [ class "text-sm font-medium text-gray-500 sm:w-40 sm:flex-shrink-0" ]
                                             [ text col.name
                                             , column |> Maybe.andThen .comment |> Maybe.mapOrElse (\c -> span [ title c.text, class "ml-1 opacity-50" ] [ Icon.outline Icons.comment "w-3 h-3 inline" ]) (text "")
-                                            , meta |> Maybe.andThen .notes |> Maybe.mapOrElse (\notes -> span [ title notes, class "ml-1 opacity-50" ] [ Icon.outline Icons.notes "w-3 h-3 inline" ]) (text "")
+                                            , meta |> Maybe.andThen .notes |> Maybe.mapOrElse (\n -> button [ type_ "button", onClick (openNotes model.query.table (ColumnPath.fromString col.name |> Just)), title n, class "ml-1 opacity-50" ] [ Icon.outline Icons.notes "w-3 h-3 inline" ]) (text "")
                                             ]
                                         , dd [ class "text-sm text-gray-900 sm:col-span-2 overflow-hidden text-ellipsis" ]
                                             [ DataExplorerValue.view openRowDetails (ExpandValue col.name |> wrap) defaultSchema False (model.expanded |> Set.member col.name) (res.values |> Dict.get col.name) col
@@ -313,7 +316,7 @@ doc =
                                 |> List.indexedMap
                                     (\i m ->
                                         div [ class "mt-1" ]
-                                            [ view (docUpdate i s) (docClose i s) docShowTable docShowTableRow docOpenRowDetails "0px" False "public" Nothing docTableLayout docTableMeta ("data-explorer-details-" ++ String.fromInt i) (Just i) m
+                                            [ view (docUpdate i s) (docClose i s) docShowTable docShowTableRow docOpenRowDetails docOpenNotes "0px" False "public" Nothing docTableLayout docTableMeta ("data-explorer-details-" ++ String.fromInt i) (Just i) m
                                             , docButton ("Close " ++ String.fromInt i) (docClose i s)
                                             ]
                                     )
@@ -410,3 +413,8 @@ docShowTableRow _ _ _ _ =
 docOpenRowDetails : RowQuery -> ElmBook.Msg state
 docOpenRowDetails _ =
     logAction "openRowDetails"
+
+
+docOpenNotes : TableId -> Maybe ColumnPath -> ElmBook.Msg state
+docOpenNotes _ _ =
+    logAction "openNotes"

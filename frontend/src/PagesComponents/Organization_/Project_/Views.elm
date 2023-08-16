@@ -36,6 +36,7 @@ import PagesComponents.Organization_.Project_.Models exposing (ContextMenu, Layo
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout exposing (ErdLayout)
+import PagesComponents.Organization_.Project_.Models.NotesMsg as NotesMsg
 import PagesComponents.Organization_.Project_.Views.Commands as Commands exposing (viewCommands)
 import PagesComponents.Organization_.Project_.Views.Erd as Erd exposing (viewErd)
 import PagesComponents.Organization_.Project_.Views.Modals.EditNotes exposing (viewEditNotes)
@@ -161,7 +162,7 @@ viewBottomSheet model =
     let
         content : Maybe (Html Msg)
         content =
-            model.dataExplorer.display |> Maybe.map2 (\erd -> DataExplorer.view DataExplorerMsg DropdownToggle (\id -> ShowTable id Nothing) ShowTableRow (calcNavbarHeight model) model.openedDropdown erd.settings.defaultSchema Conf.ids.dataExplorerDialog erd.sources (erd |> Erd.currentLayout) erd.metadata model.dataExplorer) model.erd
+            model.dataExplorer.display |> Maybe.map2 (\erd -> DataExplorer.view DataExplorerMsg DropdownToggle (\id -> ShowTable id Nothing) ShowTableRow (\t c -> NotesMsg.NOpen t c |> NotesMsg) (calcNavbarHeight model) model.openedDropdown erd.settings.defaultSchema Conf.ids.dataExplorerDialog erd.sources (erd |> Erd.currentLayout) erd.metadata model.dataExplorer) model.erd
     in
     aside [ class "block flex-shrink-0" ]
         [ div [ style "height" ("calc(" ++ calcBottomSheetHeight model ++ ")"), css [ "relative border-t border-gray-200 bg-white overflow-y-auto" ] ]

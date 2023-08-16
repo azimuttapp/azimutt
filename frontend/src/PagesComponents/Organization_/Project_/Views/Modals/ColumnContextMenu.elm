@@ -29,7 +29,7 @@ view platform index column notes =
         ]
 
 
-viewHidden : Platform -> Int -> ColumnRef -> Maybe String -> Html Msg
+viewHidden : Platform -> Int -> ColumnRef -> Maybe Notes -> Html Msg
 viewHidden platform _ column _ =
     div []
         [ ContextMenu.btnHotkey "" (ShowColumn column) [ text "Show column" ] platform (Conf.hotkeys |> Dict.getOrElse "show" [])

@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Updates.TableRow exposing (moveToTableRow, showTableRow)
+module PagesComponents.Organization_.Project_.Updates.TableRow exposing (mapTableRowOrSelectedCmd, moveToTableRow, showTableRow)
 
 import Components.Organisms.TableRow as TableRow
 import Libs.List as List
@@ -16,6 +16,21 @@ import Ports
 import Services.Lenses exposing (mapCanvas, mapPosition, mapTableRows, mapTableRowsSeq)
 import Services.QueryBuilder as QueryBuilder
 import Time
+
+
+mapTableRowOrSelectedCmd : TableRow.Id -> TableRow.Msg -> (TableRow -> ( TableRow, Cmd msg )) -> List TableRow -> ( List TableRow, Cmd msg )
+mapTableRowOrSelectedCmd id msg f rows =
+    rows
+        |> List.findBy .id id
+        |> Maybe.map
+            (\r ->
+                if r.selected && TableRow.canBroadcast msg then
+                    rows |> List.mapByCmd .selected True f
+
+                else
+                    rows |> List.mapByCmd .id id f
+            )
+        |> Maybe.withDefault ( rows, Cmd.none )
 
 
 showTableRow : Time.Posix -> DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> Erd -> ( Erd, Cmd Msg )

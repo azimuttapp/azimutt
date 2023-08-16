@@ -232,7 +232,7 @@ type Msg
     | HideTable TableId
     | ShowRelatedTables TableId
     | HideRelatedTables TableId
-    | ToggleColumns TableId
+    | ToggleCollapseTable TableId
     | ShowColumn ColumnRef
     | HideColumn ColumnRef
     | ShowColumns TableId ShowColumns

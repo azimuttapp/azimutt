@@ -69,7 +69,7 @@ import PagesComponents.Organization_.Project_.Updates.Project exposing (createPr
 import PagesComponents.Organization_.Project_.Updates.ProjectSettings exposing (handleProjectSettings)
 import PagesComponents.Organization_.Project_.Updates.Source as Source
 import PagesComponents.Organization_.Project_.Updates.Table exposing (goToTable, hideColumn, hideColumns, hideRelatedTables, hideTable, hoverColumn, hoverNextColumn, mapTablePropOrSelected, showAllTables, showColumn, showColumns, showRelatedTables, showTable, showTables, sortColumns, toggleNestedColumn)
-import PagesComponents.Organization_.Project_.Updates.TableRow exposing (moveToTableRow, showTableRow)
+import PagesComponents.Organization_.Project_.Updates.TableRow exposing (mapTableRowOrSelectedCmd, moveToTableRow, showTableRow)
 import PagesComponents.Organization_.Project_.Updates.Tags exposing (handleTags)
 import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirty, setDirtyCmd)
 import PagesComponents.Organization_.Project_.Updates.VirtualRelation exposing (handleVirtualRelation)
@@ -144,7 +144,7 @@ update urlLayout zone now urlInfos organizations projects msg model =
         HideRelatedTables id ->
             model |> mapErdMCmd (hideRelatedTables id) |> setDirtyCmd
 
-        ToggleColumns id ->
+        ToggleCollapseTable id ->
             let
                 collapsed : Bool
                 collapsed =
@@ -264,7 +264,7 @@ update urlLayout zone now urlInfos organizations projects msg model =
             model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTableRows (List.removeBy .id id))) |> setDirty
 
         TableRowMsg id message ->
-            model |> mapErdMCmd (\e -> e |> Erd.mapCurrentLayoutWithTimeCmd now (mapTableRowsCmd (List.mapByCmd .id id (TableRow.update now e.sources message))))
+            model |> mapErdMCmd (\e -> e |> Erd.mapCurrentLayoutWithTimeCmd now (mapTableRowsCmd (mapTableRowOrSelectedCmd id message (TableRow.update now e.sources message))))
 
         AmlSidebarMsg message ->
             model |> AmlSidebar.update now message
@@ -521,7 +521,7 @@ handleJsMessage now urlLayout msg model =
             ( model, T.send (HideTable id) )
 
         GotTableToggleColumns id ->
-            ( model, T.send (ToggleColumns id) )
+            ( model, T.send (ToggleCollapseTable id) )
 
         GotTablePosition id pos ->
             ( model, T.send (TablePosition id pos) )

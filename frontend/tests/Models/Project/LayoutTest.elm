@@ -29,7 +29,7 @@ suite =
                 """{"tables":[{"id":".users","position":{"left":0,"top":0},"size":{"width":0,"height":0},"color":"gray","columns":[]}],"createdAt":0,"updatedAt":0}"""
             , testEncode "empty table row"
                 Layout.encode
-                (Layout [] [ TableRow 1 Nothing Position.zeroGrid Size.zeroCanvas SourceId.zero (RowQuery ( "", "users" ) (Nel (ColumnMatch (Nel "id" []) DbNull) [])) (TableRow.StateSuccess (TableRow.SuccessState [] Set.empty Set.empty False Time.zero Time.zero)) False ] [] [] Time.zero Time.zero)
+                (Layout [] [ TableRow 1 Nothing Position.zeroGrid Size.zeroCanvas SourceId.zero (RowQuery ( "", "users" ) (Nel (ColumnMatch (Nel "id" []) DbNull) [])) (TableRow.StateSuccess (TableRow.SuccessState [] Set.empty Set.empty False Time.zero Time.zero)) False False ] [] [] Time.zero Time.zero)
                 """{"tables":[],"tableRows":[{"id":1,"position":{"left":0,"top":0},"size":{"width":0,"height":0},"source":"00000000-0000-0000-0000-000000000000","query":{"table":".users","primaryKey":[{"column":"id","value":null}]},"state":{"values":[],"startedAt":0,"loadedAt":0}}],"createdAt":0,"updatedAt":0}"""
             , testEncode "empty group"
                 Layout.encode
