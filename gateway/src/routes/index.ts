@@ -1,4 +1,4 @@
-import {TSchema, Type} from "@sinclair/typebox"
+import {TSchema} from "@sinclair/typebox"
 import {FastifyPluginAsync, FastifyReply} from "fastify"
 import {RouteShorthandOptions} from "fastify/types/route"
 import {Logger} from "@azimutt/utils"

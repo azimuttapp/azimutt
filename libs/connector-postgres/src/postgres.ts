@@ -2,7 +2,7 @@ import {groupBy, Logger, removeUndefined, sequence, zip} from "@azimutt/utils";
 import {AzimuttSchema} from "@azimutt/database-types";
 import {schemaToColumns, ValueSchema, valuesToSchema} from "@azimutt/json-infer-schema";
 import {Conn} from "./common";
-import {buildSqlTable} from "./helpers";
+import {buildSqlColumn, buildSqlTable} from "./helpers";
 
 export type PostgresSchema = { tables: PostgresTable[], relations: PostgresRelation[], types: PostgresType[] }
 export type PostgresTable = { schema: PostgresSchemaName, table: PostgresTableName, view: boolean, columns: PostgresColumn[], primaryKey: PostgresPrimaryKey | null, uniques: PostgresUnique[], indexes: PostgresIndex[], checks: PostgresCheck[], comment: string | null }
@@ -207,7 +207,7 @@ function enrichColumnsWithSchema(conn: Conn, columns: RawColumn[], sampleSize: n
 }
 
 async function getColumnSchema(conn: Conn, schema: string, table: string, column: string, sampleSize: number): Promise<ValueSchema> {
-    const rows = await conn.query(`SELECT ${column} FROM ${buildSqlTable(schema, table)} WHERE ${column} IS NOT NULL LIMIT ${sampleSize};`)
+    const rows = await conn.query(`SELECT ${buildSqlColumn(column)} FROM ${buildSqlTable(schema, table)} WHERE ${buildSqlColumn(column)} IS NOT NULL LIMIT ${sampleSize};`)
     return valuesToSchema(rows.map(row => row[column]))
 }
 
