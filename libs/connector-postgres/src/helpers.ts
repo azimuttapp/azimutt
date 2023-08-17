@@ -3,6 +3,10 @@ export function buildSqlTable(schema: string, table: string) {
     return `${sqlSchema}${escapeIfNeeded(table)}`
 }
 
+export function buildSqlColumn(column: string): string {
+    return `'${column}'`
+}
+
 function escapeIfNeeded(name: string): string {
     return /[A-Z]/.test(name) ? `"${name}"` : name
 }
