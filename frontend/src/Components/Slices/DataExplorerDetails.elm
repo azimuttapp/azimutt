@@ -33,6 +33,7 @@ import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableMeta exposing (TableMeta)
 import Models.Project.TableName exposing (TableName)
 import Models.Project.TableRow as TableRow
+import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Models.QueryResult as QueryResult exposing (QueryResult, QueryResultColumn, QueryResultRow, QueryResultSuccess)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.ErdTableProps as ErdTableProps
@@ -42,6 +43,7 @@ import Services.Lenses exposing (mapState)
 import Services.QueryBuilder as QueryBuilder exposing (RowQuery)
 import Set exposing (Set)
 import Time
+import Track
 
 
 type alias Model =
@@ -89,11 +91,10 @@ dbPrefix =
     "data-explorer-details"
 
 
-init : Id -> DbSourceInfo -> RowQuery -> ( Model, Cmd msg )
-init id source query =
+init : ProjectInfo -> Id -> DbSourceInfo -> RowQuery -> ( Model, Cmd msg )
+init project id source query =
     ( { id = id, source = source, query = query, state = StateLoading, expanded = Set.empty }
-      -- TODO: add tracking with editor source (visual or query)
-    , Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt id) source.db.url (QueryBuilder.findRow source.db.kind query)
+    , Cmd.batch [ Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt id) source.db.url (QueryBuilder.findRow source.db.kind query), Track.dataExplorerDetailsOpened project ]
     )
 
 
@@ -116,11 +117,11 @@ initSuccess started finished res =
 -- UPDATE
 
 
-update : Msg -> Model -> ( Model, Cmd msg )
-update msg model =
+update : ProjectInfo -> Msg -> Model -> ( Model, Cmd msg )
+update project msg model =
     case msg of
         GotResult res ->
-            ( model |> mapState (\_ -> res.result |> Result.fold (initFailure res.started res.finished) (initSuccess res.started res.finished)), Cmd.none )
+            ( model |> mapState (\_ -> res.result |> Result.fold (initFailure res.started res.finished) (initSuccess res.started res.finished)), Track.dataExplorerDetailsResult res project )
 
         ExpandValue column ->
             ( { model | expanded = model.expanded |> Set.toggle column }, Cmd.none )
@@ -331,7 +332,7 @@ docButton name msg =
 
 docModel : Model
 docModel =
-    init 1 docSource { table = ( "public", "city" ), primaryKey = Nel { column = Nel "id" [], value = DbInt 1 } [] } |> Tuple.first
+    init ProjectInfo.zero 1 docSource { table = ( "public", "city" ), primaryKey = Nel { column = Nel "id" [], value = DbInt 1 } [] } |> Tuple.first
 
 
 docSource : DbSourceInfo
@@ -379,7 +380,7 @@ docTableMeta =
 
 docUpdate : Int -> DocState -> Msg -> ElmBook.Msg (SharedDocState x)
 docUpdate i s msg =
-    docSetState { s | details = s.details |> List.mapAt i (update msg >> Tuple.first) }
+    docSetState { s | details = s.details |> List.mapAt i (update ProjectInfo.zero msg >> Tuple.first) }
 
 
 docOpen : Model -> DocState -> ElmBook.Msg (SharedDocState x)

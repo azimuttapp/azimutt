@@ -1,4 +1,4 @@
-module Models.ProjectInfo exposing (ProjectInfo, decode, encode, fromProject, icon, organizationId, title)
+module Models.ProjectInfo exposing (ProjectInfo, decode, encode, fromProject, icon, organizationId, title, zero)
 
 import Components.Atoms.Icon as Icon
 import Dict exposing (Dict)
@@ -43,6 +43,30 @@ type alias ProjectInfo =
     , nbMemos : Int
     , createdAt : Time.Posix
     , updatedAt : Time.Posix
+    }
+
+
+zero : ProjectInfo
+zero =
+    { organization = Nothing
+    , id = ProjectId.zero
+    , slug = "zero"
+    , name = "Zero"
+    , description = Nothing
+    , storage = ProjectStorage.Local
+    , visibility = ProjectVisibility.None
+    , version = ProjectEncodingVersion.current
+    , nbSources = 0
+    , nbTables = 0
+    , nbColumns = 0
+    , nbRelations = 0
+    , nbTypes = 0
+    , nbComments = 0
+    , nbLayouts = 0
+    , nbNotes = 0
+    , nbMemos = 0
+    , createdAt = Time.zero
+    , updatedAt = Time.zero
     }
 
 

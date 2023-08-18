@@ -46,12 +46,14 @@ import Models.Project.SourceKind exposing (SourceKind(..))
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
 import Models.Project.TableName exposing (TableName)
+import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Models.QueryResult as QueryResult exposing (QueryResult, QueryResultColumn, QueryResultColumnTarget, QueryResultRow, QueryResultSuccess)
 import Ports
 import Services.Lenses exposing (mapState, setQuery, setState)
-import Services.QueryBuilder as QueryBuilder
+import Services.QueryBuilder as QueryBuilder exposing (SqlQuery)
 import Set exposing (Set)
 import Time
+import Track
 
 
 type alias Model =
@@ -121,11 +123,10 @@ dbPrefix =
     "data-explorer-query"
 
 
-init : Id -> DbSourceInfo -> String -> ( Model, Cmd msg )
-init id source query =
+init : ProjectInfo -> Bool -> Id -> DbSourceInfo -> SqlQuery -> ( Model, Cmd msg )
+init project sqlTab id source query =
     ( { id = id, source = source, query = query, state = StateRunning }
-      -- TODO: add tracking with editor source (visual or query)
-    , Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt id) source.db.url query
+    , Cmd.batch [ Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt id) source.db.url query, Track.dataExplorerQueryOpened sqlTab project ]
     )
 
 
@@ -156,14 +157,14 @@ initSuccess started finished res =
 -- UPDATE
 
 
-update : Msg -> Model -> ( Model, Cmd msg )
-update msg model =
+update : ProjectInfo -> Msg -> Model -> ( Model, Cmd msg )
+update project msg model =
     case msg of
         Cancel ->
             ( model |> mapState (\_ -> StateCanceled), Cmd.none )
 
         GotResult res ->
-            ( model |> setQuery res.query |> mapState (\_ -> res.result |> Result.fold (initFailure res.started res.finished) (initSuccess res.started res.finished)), Cmd.none )
+            ( model |> setQuery res.query |> mapState (\_ -> res.result |> Result.fold (initFailure res.started res.finished) (initSuccess res.started res.finished)), Track.dataExplorerQueryResult res project )
 
         ChangePage p ->
             ( model |> mapState (mapSuccess (\s -> { s | page = p })), Cmd.none )
@@ -863,7 +864,7 @@ docComponentState name get set =
 
 docUpdate : DocState -> (DocState -> Model) -> (DocState -> Model -> DocState) -> Msg -> ElmBook.Msg (SharedDocState x)
 docUpdate s get set m =
-    s |> get |> update m |> Tuple.first |> set s |> docSetState
+    s |> get |> update ProjectInfo.zero m |> Tuple.first |> set s |> docSetState
 
 
 docToggleDropdown : DocState -> HtmlId -> ElmBook.Msg (SharedDocState x)

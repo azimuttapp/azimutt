@@ -45,7 +45,7 @@ showTableRow now source query previous hint erd =
             erd |> Erd.currentLayout |> .tableRows |> List.find (\r -> r.source == source.id && r.table == query.table) |> Maybe.mapOrElse .hidden Set.empty
 
         ( row, cmd ) =
-            TableRow.init erd.tableRowsSeq now source query hidden previous hint
+            TableRow.init erd.project erd.tableRowsSeq now source query hidden previous hint
     in
     ( erd
         |> mapTableRowsSeq (\i -> i + 1)

@@ -1,4 +1,4 @@
-module Track exposing (SQLParsing, amlSourceCreated, dataExplorerClosed, dataExplorerOpened, dbAnalysisOpened, detailSidebarClosed, detailSidebarOpened, docOpened, externalLink, findPathOpened, findPathResults, groupCreated, groupDeleted, groupRenamed, jsonError, layoutCreated, layoutDeleted, layoutLoaded, memoDeleted, memoSaved, notFound, notesCreated, notesDeleted, notesUpdated, planLimit, projectDraftCreated, projectLoaded, searchClicked, sourceAdded, sourceCreated, sourceDeleted, sourceEditorClosed, sourceEditorOpened, sourceRefreshed, sqlSourceCreated, tagsCreated, tagsDeleted, tagsUpdated)
+module Track exposing (SQLParsing, amlSourceCreated, dataExplorerDetailsOpened, dataExplorerDetailsResult, dataExplorerOpened, dataExplorerQueryOpened, dataExplorerQueryResult, dbAnalysisOpened, detailSidebarClosed, detailSidebarOpened, docOpened, externalLink, findPathOpened, findPathResults, groupCreated, groupDeleted, groupRenamed, jsonError, layoutCreated, layoutDeleted, layoutLoaded, memoDeleted, memoSaved, notFound, notesCreated, notesDeleted, notesUpdated, planLimit, projectDraftCreated, projectLoaded, searchClicked, sourceAdded, sourceCreated, sourceDeleted, sourceEditorClosed, sourceEditorOpened, sourceRefreshed, sqlSourceCreated, tableRowOpened, tableRowResult, tagsCreated, tagsDeleted, tagsUpdated)
 
 import Conf exposing (Feature, Features)
 import DataSources.Helpers exposing (SourceLine)
@@ -20,11 +20,15 @@ import Models.Project exposing (Project)
 import Models.Project.ProjectId as ProjectId exposing (ProjectId)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceKind as SourceKind
+import Models.Project.TableRow as TableRow
 import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
+import Models.QueryResult exposing (QueryResult)
 import Models.TrackEvent exposing (TrackClick, TrackEvent)
 import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.FindPathResult exposing (FindPathResult)
 import Ports
+import Services.QueryBuilder exposing (SqlQuery)
+import Time
 
 
 
@@ -191,14 +195,39 @@ sourceEditorClosed erd =
     sendEvent "editor__source_editor__closed" [] (erd |> Maybe.map .project)
 
 
-dataExplorerOpened : List Source -> { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> Cmd msg
-dataExplorerOpened sources erd =
-    sendEvent "editor__data_explorer__opened" [ ( "nb_sources", sources |> List.length |> Encode.int ), ( "nb_db_sources", sources |> List.filter (.kind >> SourceKind.isDatabase) |> List.length |> Encode.int ) ] (Just erd.project)
+dataExplorerOpened : List Source -> Maybe SqlQuery -> { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> Cmd msg
+dataExplorerOpened sources query project =
+    sendEvent "editor__data_explorer__opened" [ ( "nb_sources", sources |> List.length |> Encode.int ), ( "nb_db_sources", sources |> List.filter (.kind >> SourceKind.isDatabase) |> List.length |> Encode.int ), ( "with_query", query /= Nothing |> Encode.bool ) ] (Just project)
 
 
-dataExplorerClosed : { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> Cmd msg
-dataExplorerClosed erd =
-    sendEvent "editor__data_explorer__closed" [] (Just erd.project)
+dataExplorerQueryOpened : Bool -> { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> Cmd msg
+dataExplorerQueryOpened sql project =
+    sendEvent "data_explorer__query__opened" [ ( "sql", sql |> Encode.bool ) ] (Just project)
+
+
+dataExplorerQueryResult : QueryResult -> { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> Cmd msg
+dataExplorerQueryResult res project =
+    sendEvent "data_explorer__query__result" (queryResultDetails res) (Just project)
+
+
+dataExplorerDetailsOpened : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> Cmd msg
+dataExplorerDetailsOpened project =
+    sendEvent "data_explorer__details__opened" [] (Just project)
+
+
+dataExplorerDetailsResult : QueryResult -> { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> Cmd msg
+dataExplorerDetailsResult res project =
+    sendEvent "data_explorer__details__result" (queryResultDetails res) (Just project)
+
+
+tableRowOpened : Maybe TableRow.SuccessState -> { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> Cmd msg
+tableRowOpened previous project =
+    sendEvent "data_explorer__table_row__opened" [ ( "with_data", previous /= Nothing |> Encode.bool ) ] (Just project)
+
+
+tableRowResult : QueryResult -> { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> Cmd msg
+tableRowResult res project =
+    sendEvent "data_explorer__table_row__result" (queryResultDetails res) (Just project)
 
 
 planLimit : (Features -> Feature a) -> Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId, plan : { pl | id : String } }, id : ProjectId } } -> Cmd msg
@@ -300,3 +329,17 @@ findPathDetails result =
     , ( "nb_ignored_tables", result.settings.ignoredTables |> String.split "," |> List.length |> Encode.int )
     , ( "path_max_length", result.settings.maxPathLength |> Encode.int )
     ]
+
+
+queryResultDetails : QueryResult -> List ( String, Encode.Value )
+queryResultDetails res =
+    (res.result
+        |> Result.fold (\err -> [ ( "error", err |> Encode.string ) ])
+            (\r ->
+                [ ( "rows", r.rows |> List.length |> Encode.int )
+                , ( "columns", r.columns |> List.length |> Encode.int )
+                , ( "column_refs", r.columns |> List.filter (\c -> c.ref /= Nothing) |> List.length |> Encode.int )
+                ]
+            )
+    )
+        ++ [ ( "duration", Time.posixToMillis res.finished - Time.posixToMillis res.started |> Encode.int ) ]

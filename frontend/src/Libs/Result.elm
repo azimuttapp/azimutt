@@ -1,4 +1,4 @@
-module Libs.Result exposing (ap, ap3, ap4, ap5, bimap, decode, filter, fold, isErr, isOk, map6, partition, swap, toError)
+module Libs.Result exposing (ap, ap3, ap4, ap5, bimap, decode, filter, fold, isErr, isOk, map6, mapOrElse, partition, swap, toError)
 
 import Json.Decode as Decode exposing (Decoder)
 import Libs.Bool as B
@@ -33,6 +33,11 @@ toError result =
 
         Err e ->
             Just e
+
+
+mapOrElse : (a -> b) -> b -> Result e a -> b
+mapOrElse f default result =
+    result |> Result.map f |> Result.withDefault default
 
 
 swap : Result e a -> Result a e

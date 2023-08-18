@@ -53,6 +53,7 @@ import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableMeta exposing (TableMeta)
 import Models.Project.TableName exposing (TableName)
 import Models.Project.TableRow as TableRow exposing (State(..), TableRow, TableRowColumn)
+import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Models.QueryResult exposing (QueryResult, QueryResultSuccess)
 import Models.Size as Size
 import PagesComponents.Organization_.Project_.Models.ErdConf as ErdConf exposing (ErdConf)
@@ -64,6 +65,7 @@ import Services.Lenses exposing (mapColumns, mapHidden, mapSelected, mapShowHidd
 import Services.QueryBuilder as QueryBuilder exposing (RowQuery, SqlQuery)
 import Set exposing (Set)
 import Time
+import Track
 
 
 type alias Model =
@@ -109,8 +111,8 @@ dbPrefix =
     "table-row"
 
 
-init : TableRow.Id -> Time.Posix -> DbSourceInfo -> RowQuery -> Set ColumnName -> Maybe TableRow.SuccessState -> Maybe PositionHint -> ( Model, Cmd msg )
-init id now source query hidden previous hint =
+init : ProjectInfo -> TableRow.Id -> Time.Posix -> DbSourceInfo -> RowQuery -> Set ColumnPathStr -> Maybe TableRow.SuccessState -> Maybe PositionHint -> ( Model, Cmd msg )
+init project id now source query hidden previous hint =
     let
         queryStr : String
         queryStr =
@@ -124,13 +126,17 @@ init id now source query hidden previous hint =
       , table = query.table
       , primaryKey = query.primaryKey
       , state = previous |> Maybe.mapOrElse StateSuccess (StateLoading { query = queryStr, startedAt = now, previous = Nothing })
-      , hidden = hidden
+      , hidden =
+            if Set.isEmpty hidden then
+                previous |> Maybe.mapOrElse defaultHidden Set.empty
+
+            else
+                hidden
       , showHiddenColumns = False
       , selected = False
       , collapsed = False
       }
-      -- TODO: add tracking with editor source (visual or query)
-    , previous |> Maybe.mapOrElse (\_ -> Cmd.none) (Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt id) source.db.url queryStr)
+    , Cmd.batch [ previous |> Maybe.mapOrElse (\_ -> Cmd.none) (Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt id) source.db.url queryStr), Track.tableRowOpened previous project ]
     )
 
 
@@ -167,11 +173,22 @@ initRelation src ref =
 -- UPDATE
 
 
-update : (HtmlId -> msg) -> Time.Posix -> List Source -> HtmlId -> Msg -> Model -> ( Model, Cmd msg )
-update toggleDropdown now sources openedDropdown msg model =
+update : (HtmlId -> msg) -> Time.Posix -> ProjectInfo -> List Source -> HtmlId -> Msg -> Model -> ( Model, Cmd msg )
+update toggleDropdown now project sources openedDropdown msg model =
     case msg of
         GotResult res ->
-            ( model |> mapStateLoading (\l -> res.result |> Result.fold (initFailure l.query l.previous res.started res.finished) (initSuccess res.started res.finished)), Cmd.none )
+            ( model
+                |> mapStateLoading (\l -> res.result |> Result.fold (initFailure l.query l.previous res.started res.finished) (initSuccess res.started res.finished))
+                |> mapHidden
+                    (\h ->
+                        if Set.isEmpty h then
+                            res.result |> Result.mapOrElse defaultHidden Set.empty
+
+                        else
+                            h
+                    )
+            , Track.tableRowResult res project
+            )
 
         Refresh ->
             -- TODO: allow to change source for a table row? (click on the footer)
@@ -317,6 +334,11 @@ mapSuccess f state =
 
         _ ->
             state
+
+
+defaultHidden : { a | columns : List { b | pathStr : ColumnPathStr } } -> Set ColumnPathStr
+defaultHidden res =
+    res.columns |> List.drop 10 |> List.map .pathStr |> Set.fromList
 
 
 
@@ -941,7 +963,7 @@ docRelation ( fromSchema, fromTable, fromColumn ) ( toSchema, toTable, toColumn 
 
 docUpdate : DocState -> (DocState -> Model) -> (DocState -> Model -> DocState) -> Msg -> ElmBook.Msg (SharedDocState x)
 docUpdate s get set msg =
-    s |> get |> update (docToggleDropdown s) Time.zero [ docSource ] s.openedDropdown msg |> Tuple.first |> set s |> docSetState
+    s |> get |> update (docToggleDropdown s) Time.zero ProjectInfo.zero [ docSource ] s.openedDropdown msg |> Tuple.first |> set s |> docSetState
 
 
 docSetState : DocState -> ElmBook.Msg (SharedDocState x)

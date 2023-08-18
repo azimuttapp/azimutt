@@ -264,7 +264,7 @@ update urlLayout zone now urlInfos organizations projects msg model =
             model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTableRows (List.removeBy .id id))) |> setDirty
 
         TableRowMsg id message ->
-            model |> mapErdMCmd (\e -> e |> Erd.mapCurrentLayoutWithTimeCmd now (mapTableRowsCmd (mapTableRowOrSelectedCmd id message (TableRow.update DropdownToggle now e.sources model.openedDropdown message))))
+            model |> mapErdMCmd (\e -> e |> Erd.mapCurrentLayoutWithTimeCmd now (mapTableRowsCmd (mapTableRowOrSelectedCmd id message (TableRow.update DropdownToggle now e.project e.sources model.openedDropdown message))))
 
         AmlSidebarMsg message ->
             model |> AmlSidebar.update now message

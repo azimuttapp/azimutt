@@ -31,19 +31,16 @@ import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.ColumnType exposing (ColumnType)
 import Models.Project.Metadata exposing (Metadata)
-import Models.Project.ProjectEncodingVersion as ProjectEncodingVersion
-import Models.Project.ProjectId as ProjectId
-import Models.Project.ProjectStorage as ProjectStorage
-import Models.Project.ProjectVisibility as ProjectVisibility
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableRow as TableRow
-import Models.ProjectInfo exposing (ProjectInfo)
+import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint)
+import Ports
 import Services.Lenses exposing (mapDetailsCmd, mapFilters, mapResultsCmd, mapVisualEditor, setOperation, setOperator, setValue)
 import Services.QueryBuilder as QueryBuilder exposing (SqlQuery)
 import Track
@@ -52,14 +49,11 @@ import Track
 
 -- TODO:
 --  - popover with JSON when hover a JSON value in table row => bad CSS? hard to setup :/
---  - On new table row: get other rows hidden columns or max 10 columns shown
---  - Focus on data explorer open or tab change (visual editor or query editor)
 --  - Show incoming rows in the side bar (and results?)
 --  - Make sure data explorer is visible (erd/table/column context menu, sources, table?, details sidebar)
 --  - Check embed mode to remove drag, hover & others
 --  - Enable data exploration for other db: MySQL, SQL Server, MongoDB, Couchbase... (QueryBuilder...)
 --  - Better error handling on connectors (cf PostgreSQL)
---  - Tracking plan
 --
 --  - column stats in query header (quick analysis on query results)
 --  - pin a column and replace the fk by it
@@ -161,10 +155,14 @@ update wrap project sources msg model =
                 dbSources : List DbSource
                 dbSources =
                     sources |> List.filterMap DbSource.fromSource
+
+                tab : DataExplorerTab
+                tab =
+                    query |> Maybe.mapOrElse (\_ -> QueryEditorTab) model.activeTab
             in
             ( { model
                 | display = Just BottomDisplay
-                , activeTab = query |> Maybe.mapOrElse (\_ -> QueryEditorTab) model.activeTab
+                , activeTab = tab
                 , source =
                     source
                         |> Maybe.andThen (\id -> dbSources |> List.find (\s -> s.id == id))
@@ -172,21 +170,21 @@ update wrap project sources msg model =
                         |> Maybe.orElse (dbSources |> List.head)
                 , queryEditor = query |> Maybe.withDefault model.queryEditor
               }
-              -- TODO: run query if present with source
             , Cmd.batch
-                (Track.dataExplorerOpened sources { project = project }
+                (Track.dataExplorerOpened sources query project
+                    :: focusMainInput tab
                     :: (Maybe.map2 (\src q -> RunQuery src q |> wrap |> T.send) (source |> Maybe.andThen (\id -> dbSources |> List.findBy .id id)) query |> Maybe.toList)
                 )
             )
 
         Close ->
-            ( { model | display = Nothing }, Track.dataExplorerClosed { project = project } )
+            ( { model | display = Nothing }, Cmd.none )
 
         UpdateDisplay d ->
             ( { model | display = d }, Cmd.none )
 
         UpdateTab tab ->
-            ( { model | activeTab = tab }, Cmd.none )
+            ( { model | activeTab = tab }, focusMainInput tab )
 
         UpdateSource source ->
             ( { model | source = source, visualEditor = { table = Nothing, filters = [] } }, Cmd.none )
@@ -213,24 +211,34 @@ update wrap project sources msg model =
             ( { model | queryEditor = content }, Cmd.none )
 
         RunQuery source query ->
-            { model | resultsSeq = model.resultsSeq + 1 } |> mapResultsCmd (List.prependCmd (DataExplorerQuery.init model.resultsSeq (DbSource.toInfo source) (query |> QueryBuilder.limitResults source.db.kind)))
+            { model | resultsSeq = model.resultsSeq + 1 } |> mapResultsCmd (List.prependCmd (DataExplorerQuery.init project (model.activeTab == QueryEditorTab) model.resultsSeq (DbSource.toInfo source) (query |> QueryBuilder.limitResults source.db.kind)))
 
         DeleteQuery id ->
             ( { model | results = model.results |> List.filter (\r -> r.id /= id) }, Cmd.none )
 
         QueryMsg id m ->
             --model |> mapResultsCmd (List.mapByCmd .id id (DataExplorerQuery.update (QueryMsg id >> wrap) m))
-            model |> mapResultsCmd (List.mapByCmd .id id (DataExplorerQuery.update m))
+            model |> mapResultsCmd (List.mapByCmd .id id (DataExplorerQuery.update project m))
 
         OpenDetails source query ->
-            { model | detailsSeq = model.detailsSeq + 1 } |> mapDetailsCmd (List.prependCmd (DataExplorerDetails.init model.detailsSeq source query))
+            { model | detailsSeq = model.detailsSeq + 1 } |> mapDetailsCmd (List.prependCmd (DataExplorerDetails.init project model.detailsSeq source query))
 
         CloseDetails id ->
             ( { model | details = model.details |> List.removeBy .id id }, Cmd.none )
 
         DetailsMsg id m ->
             --model |> mapDetailsCmd (List.mapByCmd .id id (DataExplorerDetails.update (DetailsMsg id >> wrap) m))
-            model |> mapDetailsCmd (List.mapByCmd .id id (DataExplorerDetails.update m))
+            model |> mapDetailsCmd (List.mapByCmd .id id (DataExplorerDetails.update project m))
+
+
+focusMainInput : DataExplorerTab -> Cmd msg
+focusMainInput tab =
+    case tab of
+        VisualEditorTab ->
+            Ports.focus "data-explorer-dialog-visual-editor-table-input"
+
+        QueryEditorTab ->
+            Ports.focus "data-explorer-dialog-query-editor-input"
 
 
 
@@ -649,30 +657,6 @@ docLayout =
     ErdLayout.empty Time.zero
 
 
-docProject : ProjectInfo
-docProject =
-    { organization = Nothing
-    , id = ProjectId.zero
-    , slug = "p"
-    , name = "P"
-    , description = Nothing
-    , storage = ProjectStorage.Local
-    , visibility = ProjectVisibility.None
-    , version = ProjectEncodingVersion.current
-    , nbSources = 0
-    , nbTables = 0
-    , nbColumns = 0
-    , nbRelations = 0
-    , nbTypes = 0
-    , nbComments = 0
-    , nbLayouts = 0
-    , nbNotes = 0
-    , nbMemos = 0
-    , createdAt = Time.zero
-    , updatedAt = Time.zero
-    }
-
-
 
 -- DOC HELPERS
 
@@ -684,7 +668,7 @@ docComponentState name get set sources =
 
 docUpdate : DocState -> (DocState -> Model) -> (DocState -> Model -> DocState) -> List Source -> Msg -> ElmBook.Msg (SharedDocState x)
 docUpdate s get set sources m =
-    s |> get |> update docWrap docProject sources m |> Tuple.first |> set s |> docSetState
+    s |> get |> update docWrap ProjectInfo.zero sources m |> Tuple.first |> set s |> docSetState
 
 
 docToggleDropdown : DocState -> HtmlId -> ElmBook.Msg (SharedDocState x)
