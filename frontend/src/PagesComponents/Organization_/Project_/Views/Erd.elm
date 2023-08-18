@@ -36,12 +36,13 @@ import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.Group as Group exposing (Group)
 import Models.Project.Metadata exposing (Metadata)
 import Models.Project.Relation exposing (Relation)
+import Models.Project.RowValue exposing (RowValue)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId, SourceIdStr)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableMeta as TableMeta exposing (TableMeta)
-import Models.Project.TableRow as TableRow exposing (TableRow, TableRowValue)
+import Models.Project.TableRow as TableRow exposing (TableRow, TableRowColumn)
 import Models.RelationStyle exposing (RelationStyle)
 import Models.Size as Size
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
@@ -66,7 +67,6 @@ import PagesComponents.Organization_.Project_.Views.Erd.Table as Table exposing 
 import PagesComponents.Organization_.Project_.Views.Erd.TableRow as TableRow exposing (viewTableRow)
 import PagesComponents.Organization_.Project_.Views.Modals.ErdContextMenu as ErdContextMenu
 import PagesComponents.Organization_.Project_.Views.Modals.GroupContextMenu as GroupContextMenu
-import Services.QueryBuilder exposing (RowQuery)
 import Set exposing (Set)
 import Time
 
@@ -118,7 +118,7 @@ viewErd conf erdElem erd selectionBox virtualRelation editMemo args dragging =
 
         tableRows : List ( TableRow, Color )
         tableRows =
-            draggedLayout.tableRows |> List.map (\r -> ( r, layout.tables |> List.findBy .id r.query.table |> Maybe.mapOrElse (.props >> .color) (ErdTableProps.computeColor r.query.table) ))
+            draggedLayout.tableRows |> List.map (\r -> ( r, layout.tables |> List.findBy .id r.table |> Maybe.mapOrElse (.props >> .color) (ErdTableProps.computeColor r.table) ))
 
         tableRowRelations : List TableRowRelation
         tableRowRelations =
@@ -285,7 +285,7 @@ viewTableRows now platform conf cursorMode defaultSchema openedDropdown openedPo
                         hoverRow
                         ((rowRelationsBySrc |> Dict.getOrElse row.id []) ++ (rowRelationsByRef |> Dict.getOrElse row.id []))
                         color
-                        (metadata |> Dict.get row.query.table)
+                        (metadata |> Dict.get row.table)
                         row
                     )
                 )
@@ -468,7 +468,7 @@ buildRowRelations sources rows =
             rows
                 |> List.filterMap (\( r, c ) -> r |> TableRow.stateSuccess |> Maybe.filter (\_ -> r.size /= Size.zeroCanvas) |> Maybe.map (\s -> { row = r, state = s, color = c }))
                 |> List.groupBy (.row >> .source >> SourceId.toString)
-                |> Dict.map (\_ -> List.groupBy (.row >> .query >> .table))
+                |> Dict.map (\_ -> List.groupBy (.row >> .table))
 
         sourceRelations : Dict SourceIdStr (Dict ( TableId, ColumnName ) (List Relation))
         sourceRelations =
@@ -482,13 +482,13 @@ buildRowRelations sources rows =
         getRelations source table column =
             sourceRelations |> Dict.get (SourceId.toString source) |> Maybe.andThen (Dict.get ( table, column )) |> Maybe.withDefault []
 
-        getRowValues : SourceId -> TableId -> TableRowValue -> List TableRowRelationColumn
+        getRowValues : SourceId -> TableId -> RowValue -> List TableRowRelationColumn
         getRowValues source table value =
             successRows
                 |> Dict.get (SourceId.toString source)
                 |> Maybe.andThen (Dict.get table)
                 |> Maybe.withDefault []
-                |> List.filterMap (\r -> r.state.values |> List.zipWithIndex |> List.find (\( v, _ ) -> v == value) |> Maybe.map (TableRow.initRelationColumn r))
+                |> List.filterMap (\r -> r.state.columns |> List.zipWithIndex |> List.find (\( v, _ ) -> v.name == value.column.head && v.value == value.value) |> Maybe.map (TableRow.initRelationColumn r))
 
         relations : List TableRowRelation
         relations =
@@ -497,13 +497,13 @@ buildRowRelations sources rows =
                 |> List.concatMap (Tuple.second >> Dict.toList >> List.concatMap Tuple.second)
                 |> List.concatMap
                     (\r ->
-                        r.state.values
-                            |> List.filter (\v -> r.state.hidden |> Set.member v.column |> not)
-                            |> List.indexedMap (\i v -> TableRow.initRelationColumn r ( v, i ))
+                        r.state.columns
+                            |> List.filter (\c -> r.row.hidden |> Set.member c.name |> not)
+                            |> List.indexedMap (\i c -> TableRow.initRelationColumn r ( c, i ))
                             |> List.concatMap
                                 (\src ->
-                                    getRelations src.row.source src.row.query.table src.value.column
-                                        |> List.concatMap (\rel -> getRowValues src.row.source rel.ref.table { column = rel.ref.column.head, value = src.value.value })
+                                    getRelations src.row.source src.row.table src.column.name
+                                        |> List.concatMap (\rel -> getRowValues src.row.source rel.ref.table { column = rel.ref.column, value = src.column.value })
                                         |> List.map (TableRow.initRelation src)
                                 )
                     )

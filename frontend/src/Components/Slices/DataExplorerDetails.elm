@@ -270,10 +270,7 @@ viewSlideOverContent wrap close showTable showTableRow openRowDetails openNotes 
 
 toRow : SuccessState -> TableRow.SuccessState
 toRow state =
-    { values = state.columns |> List.filterMap (\c -> state.values |> Dict.get c.name |> Maybe.map (\v -> { column = c.name, value = v }))
-    , hidden = Set.empty
-    , expanded = Set.empty
-    , showHidden = False
+    { columns = state.columns |> List.filterMap (\c -> state.values |> Dict.get c.name |> Maybe.map (\v -> { name = c.name, value = v, linkedBy = Dict.empty }))
     , startedAt = state.startedAt
     , loadedAt = state.succeededAt
     }

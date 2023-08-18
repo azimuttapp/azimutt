@@ -11,21 +11,21 @@ import Libs.Models.Platform exposing (Platform)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.TableId exposing (TableId)
-import Models.Project.TableRow exposing (TableRow, TableRowValue)
+import Models.Project.TableRow exposing (TableRow, TableRowColumn)
 
 
-view : (ColumnName -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> Platform -> TableRow -> TableRowValue -> Maybe Notes -> Html msg
-view toggleColumn openNotes platform row value notes =
+view : (ColumnName -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> Platform -> TableRow -> TableRowColumn -> Maybe Notes -> Html msg
+view toggleColumn openNotes platform row rowColumn notes =
     div [ class "z-max" ]
-        [ div [ class "px-4 py-1 text-sm font-medium leading-6 text-gray-500" ] [ text (value.column ++ " column") ]
-        , ContextMenu.btnHotkey "" (toggleColumn value.column) [ text "Hide column" ] platform (Conf.hotkeys |> Dict.getOrElse "hide" [])
-        , ContextMenu.btnHotkey "" (openNotes row.query.table (value.column |> ColumnPath.fromString |> Just)) [ text (notes |> Maybe.mapOrElse (\_ -> "Update notes") "Add notes") ] platform (Conf.hotkeys |> Dict.getOrElse "notes" [])
+        [ div [ class "px-4 py-1 text-sm font-medium leading-6 text-gray-500" ] [ text (rowColumn.name ++ " column") ]
+        , ContextMenu.btnHotkey "" (toggleColumn rowColumn.name) [ text "Hide column" ] platform (Conf.hotkeys |> Dict.getOrElse "hide" [])
+        , ContextMenu.btnHotkey "" (openNotes row.table (rowColumn.name |> ColumnPath.fromString |> Just)) [ text (notes |> Maybe.mapOrElse (\_ -> "Update notes") "Add notes") ] platform (Conf.hotkeys |> Dict.getOrElse "notes" [])
         ]
 
 
-viewHidden : (ColumnName -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> Platform -> TableRow -> TableRowValue -> Maybe Notes -> Html msg
-viewHidden toggleColumn openNotes platform row value notes =
+viewHidden : (ColumnName -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> Platform -> TableRow -> TableRowColumn -> Maybe Notes -> Html msg
+viewHidden toggleColumn openNotes platform row rowColumn notes =
     div []
-        [ ContextMenu.btnHotkey "" (toggleColumn value.column) [ text "Show column" ] platform (Conf.hotkeys |> Dict.getOrElse "show" [])
-        , ContextMenu.btnHotkey "" (openNotes row.query.table (value.column |> ColumnPath.fromString |> Just)) [ text (notes |> Maybe.mapOrElse (\_ -> "Update notes") "Add notes") ] platform (Conf.hotkeys |> Dict.getOrElse "notes" [])
+        [ ContextMenu.btnHotkey "" (toggleColumn rowColumn.name) [ text "Show column" ] platform (Conf.hotkeys |> Dict.getOrElse "show" [])
+        , ContextMenu.btnHotkey "" (openNotes row.table (rowColumn.name |> ColumnPath.fromString |> Just)) [ text (notes |> Maybe.mapOrElse (\_ -> "Update notes") "Add notes") ] platform (Conf.hotkeys |> Dict.getOrElse "notes" [])
         ]

@@ -398,30 +398,39 @@ export const Memo = z.object({
     selected: z.boolean().optional()
 }).strict()
 
-export interface RowQuery {
-    table: TableId
-    primaryKey: { column: ColumnPathStr, value: JsValue }[]
+export interface RowValue {
+    column: ColumnPathStr
+    value: JsValue
 }
 
-export const RowQuery = z.object({
-    table: TableId,
-    primaryKey: z.object({column: ColumnPathStr, value: JsValue}).strict().array()
+export const RowValue = z.object({
+    column: ColumnPathStr,
+    value: JsValue
+}).strict()
+
+export type RowPrimaryKey = RowValue[]
+export const RowPrimaryKey = RowValue.array()
+
+export interface TableRowColumn {
+    name: ColumnName
+    value: JsValue
+    linkedBy?: Record<TableId, RowPrimaryKey[]>
+}
+
+export const TableRowColumn = z.object({
+    name: ColumnName,
+    value: JsValue,
+    linkedBy: z.record(TableId, RowPrimaryKey.array()).optional()
 }).strict()
 
 export interface TableRowStateSuccess {
-    values: { column: ColumnName, value: JsValue }[]
-    hidden?: ColumnName[]
-    expanded?: ColumnName[]
-    showHidden?: boolean
+    columns: TableRowColumn[]
     startedAt: Timestamp
     loadedAt: Timestamp
 }
 
 export const TableRowStateSuccess = z.object({
-    values: z.object({column: ColumnName, value: JsValue}).strict().array(),
-    hidden: ColumnName.array().optional(),
-    expanded: ColumnName.array().optional(),
-    showHidden: z.boolean().optional(),
+    columns: TableRowColumn.array(),
     startedAt: Timestamp,
     loadedAt: Timestamp
 }).strict()
@@ -458,9 +467,14 @@ export interface TableRow {
     position: Position
     size: Size
     source: SourceId
-    query: RowQuery
+    table: TableId
+    primaryKey: RowPrimaryKey
     state: TableRowState
+    hidden?: ColumnName[]
+    expanded?: ColumnName[]
+    showHiddenColumns?: boolean
     selected?: boolean
+    collapsed?: boolean
 }
 
 export const TableRow = z.object({
@@ -468,9 +482,14 @@ export const TableRow = z.object({
     position: Position,
     size: Size,
     source: SourceId,
-    query: RowQuery,
+    table: TableId,
+    primaryKey: RowPrimaryKey,
     state: TableRowState,
-    selected: z.boolean().optional()
+    hidden: ColumnName.array().optional(),
+    expanded: ColumnName.array().optional(),
+    showHiddenColumns: z.boolean().optional(),
+    selected: z.boolean().optional(),
+    collapsed: z.boolean().optional()
 }).strict()
 
 export interface Group {

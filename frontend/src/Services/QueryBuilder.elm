@@ -1,17 +1,24 @@
-module Services.QueryBuilder exposing (ColumnMatch, FilterOperation(..), FilterOperator(..), RowQuery, TableFilter, TableQuery, decodeRowQuery, encodeColumnMatch, encodeRowQuery, filterTable, findRow, limitResults, operationHasValue, operationToString, operations, operationsForType, operatorToString, operators, stringToOperation, stringToOperator)
+module Services.QueryBuilder exposing (FilterOperation(..), FilterOperator(..), IncomingRowsQuery, RowQuery, SqlQuery, TableFilter, TableQuery, filterTable, findRow, incomingRows, incomingRowsLimit, limitResults, operationHasValue, operationToString, operations, operationsForType, operatorFromString, operatorToString, operators, stringToOperation)
 
-import Json.Decode as Decode exposing (Decoder)
-import Json.Encode as Encode exposing (Value)
+import Dict exposing (Dict)
 import Libs.Bool as Bool
-import Libs.Json.Decode as Decode
-import Libs.Json.Encode as Encode
 import Libs.Models.DatabaseKind as DatabaseKind exposing (DatabaseKind)
 import Libs.Nel as Nel exposing (Nel)
 import Libs.Regex as Regex
 import Models.DbValue as DbValue exposing (DbValue(..))
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.ColumnType as ColumnType exposing (ColumnType)
+import Models.Project.RowPrimaryKey exposing (RowPrimaryKey)
+import Models.Project.RowValue exposing (RowValue)
 import Models.Project.TableId as TableId exposing (TableId)
+
+
+type alias SqlQuery =
+    String
+
+
+type alias SqlFragment =
+    String
 
 
 type alias TableQuery =
@@ -22,15 +29,7 @@ type alias TableFilter =
     { operator : FilterOperator, column : ColumnPath, kind : ColumnType, nullable : Bool, operation : FilterOperation, value : DbValue }
 
 
-type alias RowQuery =
-    { table : TableId, primaryKey : Nel ColumnMatch }
-
-
-type alias ColumnMatch =
-    { column : ColumnPath, value : DbValue }
-
-
-filterTable : DatabaseKind -> TableQuery -> String
+filterTable : DatabaseKind -> TableQuery -> SqlQuery
 filterTable db query =
     if db == DatabaseKind.PostgreSQL then
         query.table |> Maybe.map (\table -> "SELECT * FROM " ++ formatTable db table ++ formatFilters db query.filters ++ ";") |> Maybe.withDefault ""
@@ -39,7 +38,11 @@ filterTable db query =
         ""
 
 
-findRow : DatabaseKind -> RowQuery -> String
+type alias RowQuery =
+    { table : TableId, primaryKey : RowPrimaryKey }
+
+
+findRow : DatabaseKind -> RowQuery -> SqlQuery
 findRow db query =
     if db == DatabaseKind.PostgreSQL then
         "SELECT * FROM " ++ formatTable db query.table ++ " WHERE " ++ formatMatcher db query.primaryKey ++ " LIMIT 1;"
@@ -48,7 +51,7 @@ findRow db query =
         ""
 
 
-limitResults : DatabaseKind -> String -> String
+limitResults : DatabaseKind -> SqlQuery -> SqlQuery
 limitResults db query =
     if db == DatabaseKind.PostgreSQL then
         case query |> String.trim |> Regex.matches "^([\\s\\S]+?)( limit \\d+)?( offset \\d+)?;$" of
@@ -60,6 +63,48 @@ limitResults db query =
 
             _ ->
                 query
+
+    else
+        ""
+
+
+type alias IncomingRowsQuery =
+    { primaryKey : Nel ColumnPath, foreignKeys : List ColumnPath }
+
+
+incomingRowsLimit : Int
+incomingRowsLimit =
+    20
+
+
+incomingRows : DatabaseKind -> Dict TableId IncomingRowsQuery -> RowQuery -> SqlQuery
+incomingRows db relations query =
+    if db == DatabaseKind.PostgreSQL then
+        "SELECT "
+            ++ (relations
+                    |> Dict.toList
+                    |> List.map
+                        (\( table, q ) ->
+                            "array(SELECT json_build_object("
+                                ++ (q.primaryKey |> Nel.toList |> List.map (\col -> "'" ++ (col |> ColumnPath.toString) ++ "', s." ++ formatColumn db col) |> String.join ", ")
+                                ++ ")"
+                                ++ " FROM "
+                                ++ formatTable db table
+                                ++ " s WHERE "
+                                ++ (q.foreignKeys |> List.map (\fk -> "s." ++ formatColumn db fk ++ " = m." ++ formatColumn db query.primaryKey.head.column) |> String.join " OR ")
+                                ++ " LIMIT "
+                                ++ String.fromInt incomingRowsLimit
+                                ++ ") as \""
+                                ++ TableId.toString table
+                                ++ "\""
+                        )
+                    |> String.join ", "
+               )
+            ++ " FROM "
+            ++ formatTable db query.table
+            ++ " m WHERE "
+            ++ formatMatcher db query.primaryKey
+            ++ " LIMIT 1;"
 
     else
         ""
@@ -85,8 +130,8 @@ operatorToString op =
             "OR"
 
 
-stringToOperator : String -> Maybe FilterOperator
-stringToOperator op =
+operatorFromString : String -> Maybe FilterOperator
+operatorFromString op =
     case op of
         "AND" ->
             Just OpAnd
@@ -333,7 +378,7 @@ formatOperation db op value =
         ""
 
 
-formatMatcher : DatabaseKind -> Nel ColumnMatch -> String
+formatMatcher : DatabaseKind -> Nel RowValue -> String
 formatMatcher db matches =
     if db == DatabaseKind.PostgreSQL then
         matches |> Nel.toList |> List.map (\m -> formatColumn db m.column ++ "=" ++ formatValue db m.value) |> String.join " AND "
@@ -389,33 +434,3 @@ formatOperator db op =
 
     else
         ""
-
-
-encodeRowQuery : RowQuery -> Value
-encodeRowQuery value =
-    Encode.object
-        [ ( "table", value.table |> TableId.encode )
-        , ( "primaryKey", value.primaryKey |> Encode.nel encodeColumnMatch )
-        ]
-
-
-decodeRowQuery : Decoder RowQuery
-decodeRowQuery =
-    Decode.map2 RowQuery
-        (Decode.field "table" TableId.decode)
-        (Decode.field "primaryKey" (Decode.nel decodeColumnMatch))
-
-
-encodeColumnMatch : ColumnMatch -> Value
-encodeColumnMatch value =
-    Encode.object
-        [ ( "column", value.column |> ColumnPath.encode )
-        , ( "value", value.value |> DbValue.encode )
-        ]
-
-
-decodeColumnMatch : Decoder ColumnMatch
-decodeColumnMatch =
-    Decode.map2 ColumnMatch
-        (Decode.field "column" ColumnPath.decode)
-        (Decode.field "value" DbValue.decode)

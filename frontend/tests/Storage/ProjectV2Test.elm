@@ -40,7 +40,6 @@ import Models.Project.TableRow as TableRow
 import Models.Project.Unique as Unique exposing (Unique)
 import Models.RelationStyle exposing (RelationStyle(..))
 import Models.Size as Size
-import Services.QueryBuilder as QueryBuilder
 import Test exposing (Test, describe)
 import TestHelpers.Helpers exposing (fuzzSerde, testSerdeJson)
 import TestHelpers.ProjectFuzzers as ProjectFuzzers
@@ -69,7 +68,6 @@ suite =
             , fuzzSerde "ColumnRef" ColumnRef.encode ColumnRef.decode ProjectFuzzers.columnRef
             , fuzzSerde "CustomType" CustomType.encode CustomType.decode ProjectFuzzers.customType
             , fuzzSerde "Source" Origin.encode Origin.decode ProjectFuzzers.origin
-            , fuzzSerde "RowQuery" QueryBuilder.encodeRowQuery QueryBuilder.decodeRowQuery ProjectFuzzers.rowQuery
             , fuzzSerde "TableRow" TableRow.encode TableRow.decode ProjectFuzzers.tableRow
             , fuzzSerde "Layout" Layout.encode Layout.decode ProjectFuzzers.layout
             , fuzzSerde "CanvasProps" CanvasProps.encode CanvasProps.decode ProjectFuzzers.canvasProps

@@ -29,6 +29,7 @@ module Services.Lenses exposing
     , mapErdM
     , mapErdMCmd
     , mapExecutions
+    , mapExpanded
     , mapExportDialogCmd
     , mapFilter
     , mapFilters
@@ -36,6 +37,7 @@ module Services.Lenses exposing
     , mapFindPathM
     , mapGroups
     , mapHead
+    , mapHidden
     , mapHiddenColumns
     , mapHoverTable
     , mapIndex
@@ -104,6 +106,7 @@ module Services.Lenses exposing
     , mapToastsCmd
     , mapTokenFormM
     , mapUniques
+    , mapValues
     , mapVirtualRelationM
     , mapVisualEditor
     , setActive
@@ -143,6 +146,7 @@ module Services.Lenses exposing
     , setErd
     , setErrors
     , setExecutions
+    , setExpanded
     , setExpire
     , setExportDialog
     , setFilter
@@ -151,6 +155,7 @@ module Services.Lenses exposing
     , setFrom
     , setGroups
     , setHead
+    , setHidden
     , setHiddenColumns
     , setHighlight
     , setHighlighted
@@ -240,6 +245,7 @@ module Services.Lenses exposing
     , setUniques
     , setUpdatedAt
     , setValue
+    , setValues
     , setView
     , setVirtualRelation
     , setVisualEditor
@@ -593,6 +599,16 @@ mapExecutions =
     map_ .executions setExecutions
 
 
+setExpanded : v -> { item | expanded : v } -> { item | expanded : v }
+setExpanded =
+    set_ .expanded (\value item -> { item | expanded = value })
+
+
+mapExpanded : (v -> v) -> { item | expanded : v } -> { item | expanded : v }
+mapExpanded =
+    map_ .expanded setExpanded
+
+
 setExpire : v -> { item | expire : v } -> { item | expire : v }
 setExpire =
     set_ .expire (\value item -> { item | expire = value })
@@ -666,6 +682,16 @@ setHead =
 mapHead : (v -> v) -> { item | head : v } -> { item | head : v }
 mapHead =
     map_ .head setHead
+
+
+setHidden : v -> { item | hidden : v } -> { item | hidden : v }
+setHidden =
+    set_ .hidden (\value item -> { item | hidden = value })
+
+
+mapHidden : (v -> v) -> { item | hidden : v } -> { item | hidden : v }
+mapHidden =
+    map_ .hidden setHidden
 
 
 setHiddenColumns : v -> { item | hiddenColumns : v } -> { item | hiddenColumns : v }
@@ -1436,6 +1462,16 @@ setUpdatedAt =
 setValue : v -> { item | value : v } -> { item | value : v }
 setValue =
     set_ .value (\value item -> { item | value = value })
+
+
+setValues : v -> { item | values : v } -> { item | values : v }
+setValues =
+    set_ .values (\value item -> { item | values = value })
+
+
+mapValues : (v -> v) -> { item | values : v } -> { item | values : v }
+mapValues =
+    map_ .values setValues
 
 
 setView : v -> { item | view : v } -> { item | view : v }

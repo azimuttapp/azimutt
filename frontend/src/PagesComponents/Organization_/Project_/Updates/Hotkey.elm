@@ -16,7 +16,7 @@ import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnPath as ColumnPath
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.TableId as TableId exposing (TableId)
-import Models.Project.TableRow as TableRow exposing (TableRow, TableRowValue)
+import Models.Project.TableRow as TableRow exposing (TableRow, TableRowColumn)
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
 import PagesComponents.Organization_.Project_.Components.ProjectSaveDialog as ProjectSaveDialog
 import PagesComponents.Organization_.Project_.Components.ProjectSharing as ProjectSharing
@@ -24,7 +24,7 @@ import PagesComponents.Organization_.Project_.Components.SourceUpdateDialog as S
 import PagesComponents.Organization_.Project_.Models exposing (AmlSidebarMsg(..), FindPathMsg(..), GroupMsg(..), HelpMsg(..), MemoMsg(..), Model, Msg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..), VirtualRelationMsg(..))
 import PagesComponents.Organization_.Project_.Models.Erd as Erd
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
-import PagesComponents.Organization_.Project_.Models.MemoId as MemoId
+import PagesComponents.Organization_.Project_.Models.MemoId as MemoId exposing (MemoId)
 import PagesComponents.Organization_.Project_.Models.NotesMsg exposing (NotesMsg(..))
 import PagesComponents.Organization_.Project_.Views.Modals.NewLayout as NewLayout
 import Ports
@@ -141,8 +141,8 @@ handleHotkey _ model hotkey =
 
 notesElement : Model -> Cmd Msg
 notesElement model =
-    (model |> currentColumnRow |> Maybe.andThen (getColumnRow model) |> Maybe.map (\( r, c ) -> NOpen r.query.table (ColumnPath.fromString c.column |> Just) |> NotesMsg |> T.send))
-        |> Maybe.orElse (model |> currentTableRow |> Maybe.andThen (getTableRow model) |> Maybe.map (\r -> NOpen r.query.table Nothing |> NotesMsg |> T.send))
+    (model |> currentColumnRow |> Maybe.andThen (getColumnRow model) |> Maybe.map (\( r, c ) -> NOpen r.table (ColumnPath.fromString c.name |> Just) |> NotesMsg |> T.send))
+        |> Maybe.orElse (model |> currentTableRow |> Maybe.andThen (getTableRow model) |> Maybe.map (\r -> NOpen r.table Nothing |> NotesMsg |> T.send))
         |> Maybe.orElse (model |> currentColumn |> Maybe.map (\r -> NOpen r.table (Just r.column) |> NotesMsg |> T.send))
         |> Maybe.orElse (model |> currentTable |> Maybe.map (\r -> NOpen r Nothing |> NotesMsg |> T.send))
         |> Maybe.withDefault ("Can't find an element with notes :(" |> Toasts.info |> Toast |> T.send)
@@ -191,12 +191,13 @@ hideElement model =
         |> Maybe.orElse (model |> currentTableRow |> Maybe.map (DeleteTableRow >> T.send))
         |> Maybe.orElse (model |> currentColumn |> Maybe.map (HideColumn >> T.send))
         |> Maybe.orElse (model |> currentTable |> Maybe.map (HideTable >> T.send))
+        |> Maybe.orElse (model |> selectedItems |> Maybe.map (\( tables, rows, memos ) -> Cmd.batch ((tables |> List.map (HideTable >> T.send)) ++ (rows |> List.map (DeleteTableRow >> T.send)) ++ (memos |> List.map (MDelete >> MemoMsg >> T.send)))))
         |> Maybe.withDefault ("Can't find an element to hide :(" |> Toasts.info |> Toast |> T.send)
 
 
 currentTable : Model -> Maybe TableId
 currentTable model =
-    model.hoverTable |> Maybe.orElse (model.erd |> Maybe.andThen (Erd.currentLayout >> .tables >> List.find (.props >> .selected) >> Maybe.map .id))
+    model.hoverTable
 
 
 currentColumn : Model -> Maybe ColumnRef
@@ -209,6 +210,20 @@ currentColumnRow model =
     model.hoverTableRow |> Maybe.andThen (\( id, col ) -> col |> Maybe.map (\c -> ( id, c )))
 
 
+selectedItems : Model -> Maybe ( List TableId, List TableRow.Id, List MemoId )
+selectedItems model =
+    model.erd
+        |> Maybe.map Erd.currentLayout
+        |> Maybe.map
+            (\l ->
+                ( l.tables |> List.filter (.props >> .selected) |> List.map .id
+                , l.tableRows |> List.filter .selected |> List.map .id
+                , l.memos |> List.filter .selected |> List.map .id
+                )
+            )
+        |> Maybe.filter (\( tables, rows, memos ) -> List.nonEmpty tables || List.nonEmpty rows || List.nonEmpty memos)
+
+
 currentTableRow : Model -> Maybe TableRow.Id
 currentTableRow model =
     model.hoverTableRow |> Maybe.map Tuple.first
@@ -219,9 +234,9 @@ getTableRow model id =
     model.erd |> Maybe.andThen (Erd.currentLayout >> .tableRows >> List.findBy .id id)
 
 
-getColumnRow : Model -> ( TableRow.Id, ColumnName ) -> Maybe ( TableRow, TableRowValue )
+getColumnRow : Model -> ( TableRow.Id, ColumnName ) -> Maybe ( TableRow, TableRowColumn )
 getColumnRow model ( id, col ) =
-    getTableRow model id |> Maybe.andThen (\r -> r |> TableRow.stateSuccess |> Maybe.andThen (.values >> List.findBy .column col) |> Maybe.map (\v -> ( r, v )))
+    getTableRow model id |> Maybe.andThen (\r -> r |> TableRow.stateSuccess |> Maybe.andThen (.columns >> List.findBy .name col) |> Maybe.map (\v -> ( r, v )))
 
 
 cancelElement : Model -> Cmd Msg

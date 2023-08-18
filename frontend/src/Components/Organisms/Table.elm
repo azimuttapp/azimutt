@@ -393,7 +393,7 @@ viewColumnIconDropdown model column icon =
 
         tablesToShow : List Relation
         tablesToShow =
-            column.inRelations |> List.filterNot .tableShown
+            column.inRelations |> List.filterNot .tableShown |> List.groupBy (\c -> ( c.column.schema, c.column.table )) |> Dict.values |> List.filterMap List.head
     in
     if List.isEmpty column.inRelations || not model.conf.layout then
         div [] [ button [ type_ "button", id dropdownId, css [ "cursor-default", focus [ "outline-none" ] ] ] [ icon ] ]

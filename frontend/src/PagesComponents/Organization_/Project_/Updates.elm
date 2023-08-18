@@ -256,7 +256,7 @@ update urlLayout zone now urlInfos organizations projects msg model =
             model |> handleMemo now urlInfos message
 
         ShowTableRow source query previous hint ->
-            (model.erd |> Maybe.andThen (Erd.currentLayout >> .tableRows >> List.find (\r -> r.source == source.id && r.query == query)))
+            (model.erd |> Maybe.andThen (Erd.currentLayout >> .tableRows >> List.find (\r -> r.source == source.id && r.table == query.table && r.primaryKey == query.primaryKey)))
                 |> Maybe.map (\r -> model |> mapErdMCmd (moveToTableRow now model.erdElem r))
                 |> Maybe.withDefault (model |> mapErdMCmd (showTableRow now source query previous hint) |> setDirtyCmd)
 
@@ -264,7 +264,7 @@ update urlLayout zone now urlInfos organizations projects msg model =
             model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTableRows (List.removeBy .id id))) |> setDirty
 
         TableRowMsg id message ->
-            model |> mapErdMCmd (\e -> e |> Erd.mapCurrentLayoutWithTimeCmd now (mapTableRowsCmd (mapTableRowOrSelectedCmd id message (TableRow.update now e.sources message))))
+            model |> mapErdMCmd (\e -> e |> Erd.mapCurrentLayoutWithTimeCmd now (mapTableRowsCmd (mapTableRowOrSelectedCmd id message (TableRow.update DropdownToggle now e.sources model.openedDropdown message))))
 
         AmlSidebarMsg message ->
             model |> AmlSidebar.update now message
@@ -823,6 +823,9 @@ handleDatabaseQueryResponse result model =
 
         "table-row" :: idStr :: [] ->
             ( model, idStr |> String.toInt |> Maybe.map (\id -> TableRow.GotResult result |> TableRowMsg id |> T.send) |> Maybe.withDefault ("Invalid table row context: " ++ result.context |> Toasts.warning |> Toast |> T.send) )
+
+        "table-row" :: idStr :: column :: [] ->
+            ( model, idStr |> String.toInt |> Maybe.map (\id -> TableRow.GotIncomingRows column result |> TableRowMsg id |> T.send) |> Maybe.withDefault ("Invalid incoming table row context: " ++ result.context |> Toasts.warning |> Toast |> T.send) )
 
         _ ->
             ( model, "Unknown db query context: " ++ result.context |> Toasts.warning |> Toast |> T.send )

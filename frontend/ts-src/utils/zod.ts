@@ -28,7 +28,7 @@ function issueToString(value: any, issue: z.ZodIssue): string {
     } else if (issue.code === z.ZodIssueCode.invalid_union_discriminator) {
         return `at ${pathToString(issue.path)}: expect \`${issue.options.map(o => JSON.stringify(o)).join(' | ')}\` but got ${JSON.stringify(getValue(value, issue.path))}`
     } else if (issue.code === z.ZodIssueCode.invalid_union) {
-        return `at ${pathToString(issue.path)}: invalid union for ${JSON.stringify(anyTrim(getValue(value, issue.path), 2))}`
+        return `at ${pathToString(issue.path)}: invalid union for ${JSON.stringify(anyTrim(getValue(value, issue.path), 3))}`
     } else {
         return issue.message
     }

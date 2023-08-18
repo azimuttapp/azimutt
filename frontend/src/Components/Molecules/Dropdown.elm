@@ -27,7 +27,16 @@ dropdown : Model -> (Model -> Html msg) -> (Model -> Html msg) -> Html msg
 dropdown model elt content =
     div [ class "relative inline-block text-left" ]
         [ elt model
-        , ContextMenu.menu model.id model.direction 2 model.isOpen (content model)
+        , ContextMenu.menu model.id
+            model.direction
+            2
+            model.isOpen
+            (if model.isOpen then
+                content model
+
+             else
+                div [] []
+            )
         ]
 
 

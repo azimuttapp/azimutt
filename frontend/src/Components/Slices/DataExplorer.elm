@@ -50,9 +50,10 @@ import Track
 
 
 -- TODO:
---  - bug: count(*) return a string instead of an int in the gateway => publish postgres lib and others...
 --  - popover with JSON when hover a JSON value in table row => bad CSS? hard to setup :/
+--  - On new table row: get other rows hidden columns or max 10 columns shown
 --  - if incoming relations: on click fetch incoming items and show them (needs to store them)
+--  - TableRowColumn with a ColumnPath? And ColumnPath from db queries?
 --  - column stats in query header (quick analysis on query results)
 --  - shorten uuid to its first component in results
 --  - pin a column and replace the fk by it
@@ -64,6 +65,8 @@ import Track
 --  - Make sure data explorer is visible (erd/table/column context menu, sources, table?, details sidebar)
 --  - Check embed mode to remove drag, hover & others
 --  - Enable data exploration for other db: MySQL, SQL Server, MongoDB, Couchbase... (QueryBuilder...)
+--  - Better error handling on connectors (cf PostgreSQL)
+--  - Polymorphic relations??? Composite primary key???
 --  - Tracking plan
 
 
@@ -433,7 +436,7 @@ viewVisualExplorerFilterShow wrap htmlId filters =
                                       else
                                         select
                                             [ name (htmlId ++ "-" ++ String.fromInt i ++ "-operator")
-                                            , onInput (QueryBuilder.stringToOperator >> Maybe.withDefault QueryBuilder.OpAnd >> UpdateFilterOperator i >> wrap)
+                                            , onInput (QueryBuilder.operatorFromString >> Maybe.withDefault QueryBuilder.OpAnd >> UpdateFilterOperator i >> wrap)
                                             , class "py-1.5 pl-3 pr-10 block rounded-md border-0 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
                                             ]
                                             (QueryBuilder.operators |> List.map (\o -> option [ value (QueryBuilder.operatorToString o), selected (o == f.operator) ] [ text (QueryBuilder.operatorToString o) ]))

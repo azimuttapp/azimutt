@@ -42,6 +42,8 @@ import Models.Project.ProjectStorage as ProjectStrorage exposing (ProjectStorage
 import Models.Project.ProjectVisibility as ProjectVisibility exposing (ProjectVisibility)
 import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.RelationName exposing (RelationName)
+import Models.Project.RowPrimaryKey exposing (RowPrimaryKey)
+import Models.Project.RowValue exposing (RowValue)
 import Models.Project.SampleKey exposing (SampleKey)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
@@ -61,7 +63,6 @@ import Models.RelationStyle as RelationStyle exposing (RelationStyle)
 import Models.Size as Size
 import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
 import PagesComponents.Organization_.Project_.Models.MemoId exposing (MemoId)
-import Services.QueryBuilder as QueryBuilder
 import TestHelpers.Fuzzers exposing (color, dbValue, dictSmall, fileLineIndex, fileModified, fileName, fileSize, fileUrl, identifier, intPosSmall, listSmall, nelSmall, positionDiagram, positionGrid, posix, setSmall, sizeCanvas, stringSmall, text, uuid, zoomLevel)
 import TestHelpers.OrganizationFuzzers exposing (organization)
 
@@ -211,7 +212,7 @@ memoId =
 
 tableRow : Fuzzer TableRow
 tableRow =
-    Fuzz.map9 TableRow tableRowId (Fuzz.constant Nothing) positionGrid sizeCanvas sourceId rowQuery tableRowState Fuzz.bool Fuzz.bool
+    Fuzz.map13 TableRow tableRowId (Fuzz.constant Nothing) positionGrid sizeCanvas sourceId tableId rowPrimaryKey tableRowState (setSmall columnName) (setSmall columnName) Fuzz.bool Fuzz.bool Fuzz.bool
 
 
 tableRowId : Fuzzer TableRow.Id
@@ -240,22 +241,22 @@ tableRowFailure =
 
 tableRowSuccess : Fuzzer TableRow.SuccessState
 tableRowSuccess =
-    Fuzz.map6 TableRow.SuccessState (listSmall tableRowValue) (setSmall columnName) (setSmall columnName) Fuzz.bool posix posix
+    Fuzz.map3 TableRow.SuccessState (listSmall tableRowColumn) posix posix
 
 
-tableRowValue : Fuzzer TableRow.TableRowValue
-tableRowValue =
-    Fuzz.map2 TableRow.TableRowValue columnName dbValue
+tableRowColumn : Fuzzer TableRow.TableRowColumn
+tableRowColumn =
+    Fuzz.map3 TableRow.TableRowColumn columnName dbValue (Fuzz.constant Dict.empty)
 
 
-rowQuery : Fuzzer QueryBuilder.RowQuery
-rowQuery =
-    Fuzz.map2 QueryBuilder.RowQuery tableId (nelSmall columnMatch)
+rowPrimaryKey : Fuzzer RowPrimaryKey
+rowPrimaryKey =
+    nelSmall rowValue
 
 
-columnMatch : Fuzzer QueryBuilder.ColumnMatch
-columnMatch =
-    Fuzz.map2 QueryBuilder.ColumnMatch columnPath dbValue
+rowValue : Fuzzer RowValue
+rowValue =
+    Fuzz.map2 RowValue columnPath dbValue
 
 
 projectSettings : Fuzzer ProjectSettings

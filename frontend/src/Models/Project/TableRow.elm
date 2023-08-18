@@ -1,19 +1,22 @@
-module Models.Project.TableRow exposing (FailureState, Id, LoadingState, State(..), SuccessState, TableRow, TableRowValue, decode, encode, fromHtmlId, isHtmlId, stateSuccess, toHtmlId)
+module Models.Project.TableRow exposing (FailureState, Id, LoadingState, State(..), SuccessState, TableRow, TableRowColumn, decode, encode, fromHtmlId, isHtmlId, stateSuccess, toHtmlId)
 
+import Dict exposing (Dict)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
+import Libs.List as List
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
 import Libs.Time as Time
 import Models.DbValue as DbValue exposing (DbValue)
 import Models.Position as Position
 import Models.Project.ColumnName as ColumnName exposing (ColumnName)
+import Models.Project.RowPrimaryKey as RowPrimaryKey exposing (RowPrimaryKey)
 import Models.Project.SourceId as SourceId exposing (SourceId)
+import Models.Project.TableId as TableId exposing (TableId)
 import Models.Size as Size
 import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint)
-import Services.QueryBuilder exposing (ColumnMatch, RowQuery, decodeRowQuery, encodeRowQuery)
 import Set exposing (Set)
 import Time
 
@@ -28,8 +31,12 @@ type alias TableRow =
     , position : Position.Grid
     , size : Size.Canvas
     , source : SourceId
-    , query : RowQuery
+    , table : TableId
+    , primaryKey : RowPrimaryKey
     , state : State
+    , hidden : Set ColumnName
+    , expanded : Set ColumnName
+    , showHiddenColumns : Bool
     , selected : Bool
     , collapsed : Bool
     }
@@ -50,17 +57,14 @@ type alias FailureState =
 
 
 type alias SuccessState =
-    { values : List TableRowValue
-    , hidden : Set ColumnName
-    , expanded : Set ColumnName
-    , showHidden : Bool
+    { columns : List TableRowColumn
     , startedAt : Time.Posix
     , loadedAt : Time.Posix
     }
 
 
-type alias TableRowValue =
-    { column : ColumnName, value : DbValue }
+type alias TableRowColumn =
+    { name : ColumnName, value : DbValue, linkedBy : Dict TableId (List RowPrimaryKey) }
 
 
 stateSuccess : TableRow -> Maybe SuccessState
@@ -104,8 +108,12 @@ encode value =
         , ( "position", value.position |> Position.encodeGrid )
         , ( "size", value.size |> Size.encodeCanvas )
         , ( "source", value.source |> SourceId.encode )
-        , ( "query", value.query |> encodeRowQuery )
+        , ( "table", value.table |> TableId.encode )
+        , ( "primaryKey", value.primaryKey |> RowPrimaryKey.encode )
         , ( "state", value.state |> encodeState )
+        , ( "hidden", value.hidden |> Encode.withDefault (Encode.set ColumnName.encode) Set.empty )
+        , ( "expanded", value.expanded |> Encode.withDefault (Encode.set ColumnName.encode) Set.empty )
+        , ( "showHiddenColumns", value.showHiddenColumns |> Encode.withDefault Encode.bool False )
         , ( "selected", value.selected |> Encode.withDefault Encode.bool False )
         , ( "collapsed", value.collapsed |> Encode.withDefault Encode.bool False )
         ]
@@ -113,14 +121,18 @@ encode value =
 
 decode : Decoder TableRow
 decode =
-    Decode.map9 TableRow
+    Decode.map13 TableRow
         (Decode.field "id" Decode.int)
         (Decode.succeed Nothing)
         (Decode.field "position" Position.decodeGrid)
         (Decode.field "size" Size.decodeCanvas)
         (Decode.field "source" SourceId.decode)
-        (Decode.field "query" decodeRowQuery)
+        (Decode.field "table" TableId.decode)
+        (Decode.field "primaryKey" RowPrimaryKey.decode)
         (Decode.field "state" decodeState)
+        (Decode.defaultField "hidden" (Decode.set ColumnName.decode) Set.empty)
+        (Decode.defaultField "expanded" (Decode.set ColumnName.decode) Set.empty)
+        (Decode.defaultField "showHiddenColumns" Decode.bool False)
         (Decode.defaultField "selected" Decode.bool False)
         (Decode.defaultField "collapsed" Decode.bool False)
 
@@ -188,10 +200,7 @@ decodeFailureState =
 encodeSuccessState : SuccessState -> Value
 encodeSuccessState value =
     Encode.notNullObject
-        [ ( "values", value.values |> Encode.list encodeTableRowValue )
-        , ( "hidden", value.hidden |> Encode.withDefault (Encode.set ColumnName.encode) Set.empty )
-        , ( "expanded", value.expanded |> Encode.withDefault (Encode.set ColumnName.encode) Set.empty )
-        , ( "showHidden", value.showHidden |> Encode.withDefault Encode.bool False )
+        [ ( "columns", value.columns |> Encode.list encodeTableRowColumn )
         , ( "startedAt", value.startedAt |> Time.encode )
         , ( "loadedAt", value.loadedAt |> Time.encode )
         ]
@@ -199,25 +208,27 @@ encodeSuccessState value =
 
 decodeSuccessState : Decoder SuccessState
 decodeSuccessState =
-    Decode.map6 SuccessState
-        (Decode.field "values" (Decode.list decodeTableRowValue))
-        (Decode.defaultField "hidden" (Decode.set ColumnName.decode) Set.empty)
-        (Decode.defaultField "expanded" (Decode.set ColumnName.decode) Set.empty)
-        (Decode.defaultField "showHidden" Decode.bool False)
+    Decode.map3 SuccessState
+        (Decode.field "columns" (Decode.list decodeTableRowColumn))
         (Decode.field "startedAt" Time.decode)
         (Decode.field "loadedAt" Time.decode)
 
 
-encodeTableRowValue : TableRowValue -> Value
-encodeTableRowValue value =
+encodeTableRowColumn : TableRowColumn -> Value
+encodeTableRowColumn value =
     Encode.object
-        [ ( "column", value.column |> ColumnName.encode )
-        , ( "value", value.value |> DbValue.encode )
-        ]
+        ([ ( "name", value.name |> ColumnName.encode )
+         , ( "value", value.value |> DbValue.encode )
+         , ( "linkedBy", value.linkedBy |> Encode.withDefault (Encode.dict TableId.toString (Encode.list RowPrimaryKey.encode)) Dict.empty )
+         ]
+            -- ugly but DbValue must be present, even with null, but not linkedBy if empty
+            |> List.filterNot (\( k, v ) -> k == "linkedBy" && v == Encode.null)
+        )
 
 
-decodeTableRowValue : Decoder TableRowValue
-decodeTableRowValue =
-    Decode.map2 TableRowValue
-        (Decode.field "column" ColumnName.decode)
+decodeTableRowColumn : Decoder TableRowColumn
+decodeTableRowColumn =
+    Decode.map3 TableRowColumn
+        (Decode.field "name" ColumnName.decode)
         (Decode.field "value" DbValue.decode)
+        (Decode.defaultField "linkedBy" (Decode.customDict TableId.parse (Decode.list RowPrimaryKey.decode)) Dict.empty)

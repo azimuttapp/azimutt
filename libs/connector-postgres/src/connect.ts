@@ -11,10 +11,10 @@ export function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c
     })
     const conn: Conn = {
         query<T extends QueryResultRow>(sql: string, parameters: any[] = []): Promise<T[]> {
-            return client.query<T>(sql, parameters).then(res => res.rows)
+            return client.query<T>(sql, parameters).then(res => res.rows, err => Promise.reject(queryError(sql, err)))
         },
         queryArrayMode(sql: string, parameters: any[] = []): Promise<QueryResultArrayMode> {
-            return client.query({text: sql, values: parameters, rowMode: 'array'})
+            return client.query({text: sql, values: parameters, rowMode: 'array'}).then(null, err => Promise.reject(queryError(sql, err)))
         }
     }
     return client.connect().then(_ => {
@@ -29,4 +29,14 @@ function buildUrl(url: DatabaseUrlParsed): string {
     const port = url.port ? `:${url.port}` : ''
     const options = url.options ? `?${url.options}` : ''
     return `postgresql://${userPass}${url.host}${port}/${url.db}${options}`
+}
+
+function queryError(sql: string, err: unknown): Error {
+    if (typeof err === 'object' && err !== null) {
+        return new Error(`${err.constructor.name}${'code' in err ? ` ${err.code}` : ''}${'message' in err ? `: ${err.message}` : ''} on '${sql}'`)
+    } else if (err) {
+        return new Error(`error ${JSON.stringify(err)} on '${sql}'`)
+    } else {
+        return new Error(`error on '${sql}'`)
+    }
 }
