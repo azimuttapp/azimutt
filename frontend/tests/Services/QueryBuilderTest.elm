@@ -7,7 +7,6 @@ import Libs.Nel as Nel exposing (Nel)
 import Models.DbValue exposing (DbValue(..))
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
-import Models.Project.ColumnType exposing (ColumnType)
 import Models.Project.TableId exposing (TableId)
 import Services.QueryBuilder exposing (FilterOperation(..), FilterOperator(..), IncomingRowsQuery, RowQuery, TableFilter, filterTable, findRow, incomingRows, limitResults)
 import Test exposing (Test, describe, test)
@@ -17,11 +16,10 @@ suite : Test
 suite =
     describe "QueryBuilder"
         [ describe "filterTable"
-            [ test "empty" (\_ -> fTable PostgreSQL Nothing [] |> Expect.equal "")
-            , test "table only" (\_ -> fTable PostgreSQL publicUsers [] |> Expect.equal "SELECT * FROM public.users;")
-            , test "with eq filter" (\_ -> fTable PostgreSQL users [ filter OpAnd "id" OpEqual (DbInt 3) "int" ] |> Expect.equal "SELECT * FROM users WHERE id=3;")
-            , test "with 2 filters" (\_ -> fTable PostgreSQL users [ filter OpAnd "id" OpNotEqual (DbInt 3) "int", filter OpAnd "name" OpIsNotNull (DbString "") "text" ] |> Expect.equal "SELECT * FROM users WHERE id!=3 AND name IS NOT NULL;")
-            , test "with json" (\_ -> fTable PostgreSQL users [ filter OpAnd "data:id" OpEqual (DbInt 3) "int" ] |> Expect.equal "SELECT * FROM users WHERE data->>'id'=3;")
+            [ test "table only" (\_ -> fTable PostgreSQL publicUsers [] |> Expect.equal "SELECT * FROM public.users;")
+            , test "with eq filter" (\_ -> fTable PostgreSQL users [ filter OpAnd "id" OpEqual (DbInt 3) ] |> Expect.equal "SELECT * FROM users WHERE id=3;")
+            , test "with 2 filters" (\_ -> fTable PostgreSQL users [ filter OpAnd "id" OpNotEqual (DbInt 3), filter OpAnd "name" OpIsNotNull (DbString "") ] |> Expect.equal "SELECT * FROM users WHERE id!=3 AND name IS NOT NULL;")
+            , test "with json" (\_ -> fTable PostgreSQL users [ filter OpAnd "data:id" OpEqual (DbInt 3) ] |> Expect.equal "SELECT * FROM users WHERE data->>'id'=3;")
             ]
         , describe "findRow"
             [ test "with id" (\_ -> fRow PostgreSQL ( "public", "users" ) [ ( "id", DbInt 3 ) ] |> Expect.equal "SELECT * FROM public.users WHERE id=3 LIMIT 1;")
@@ -58,7 +56,7 @@ suite =
         ]
 
 
-fTable : DatabaseKind -> Maybe TableId -> List TableFilter -> String
+fTable : DatabaseKind -> TableId -> List TableFilter -> String
 fTable db table filters =
     filterTable db { table = table, filters = filters }
 
@@ -68,19 +66,19 @@ fRow db table matches =
     matches |> Nel.fromList |> Maybe.map (\primaryKey -> findRow db { table = table, primaryKey = primaryKey |> Nel.map (\( col, value ) -> { column = Nel col [], value = value }) }) |> Maybe.withDefault ""
 
 
-publicUsers : Maybe TableId
+publicUsers : TableId
 publicUsers =
-    Just ( "public", "users" )
+    ( "public", "users" )
 
 
-users : Maybe TableId
+users : TableId
 users =
-    Just ( "", "users" )
+    ( "", "users" )
 
 
-filter : FilterOperator -> String -> FilterOperation -> DbValue -> ColumnType -> TableFilter
-filter operator path operation value kind =
-    { operator = operator, column = ColumnPath.fromString path, kind = kind, nullable = True, operation = operation, value = value }
+filter : FilterOperator -> String -> FilterOperation -> DbValue -> TableFilter
+filter operator path operation value =
+    { operator = operator, column = ColumnPath.fromString path, operation = operation, value = value }
 
 
 rowQuery : TableId -> ColumnName -> DbValue -> RowQuery

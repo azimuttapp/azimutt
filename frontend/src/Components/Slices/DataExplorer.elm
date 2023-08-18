@@ -1,4 +1,4 @@
-module Components.Slices.DataExplorer exposing (DataExplorerDisplay(..), DataExplorerTab(..), DocState, Model, Msg(..), QueryEditor, SharedDocState, VisualEditor, doc, docInit, init, update, view)
+module Components.Slices.DataExplorer exposing (DataExplorerDisplay(..), DataExplorerTab(..), DocState, Model, Msg(..), QueryEditor, SharedDocState, VisualEditor, VisualEditorFilter, doc, docInit, init, update, view)
 
 import Components.Atoms.Badge as Badge
 import Components.Atoms.Icon as Icon
@@ -29,6 +29,7 @@ import Models.DbValue as DbValue exposing (DbValue(..))
 import Models.Project.Column as Column exposing (Column, NestedColumns(..))
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
+import Models.Project.ColumnType exposing (ColumnType)
 import Models.Project.Metadata exposing (Metadata)
 import Models.Project.ProjectEncodingVersion as ProjectEncodingVersion
 import Models.Project.ProjectId as ProjectId
@@ -44,7 +45,7 @@ import Models.ProjectInfo exposing (ProjectInfo)
 import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint)
 import Services.Lenses exposing (mapDetailsCmd, mapFilters, mapResultsCmd, mapVisualEditor, setOperation, setOperator, setValue)
-import Services.QueryBuilder as QueryBuilder
+import Services.QueryBuilder as QueryBuilder exposing (SqlQuery)
 import Track
 
 
@@ -52,22 +53,21 @@ import Track
 -- TODO:
 --  - popover with JSON when hover a JSON value in table row => bad CSS? hard to setup :/
 --  - On new table row: get other rows hidden columns or max 10 columns shown
---  - if incoming relations: on click fetch incoming items and show them (needs to store them)
---  - TableRowColumn with a ColumnPath? And ColumnPath from db queries?
---  - column stats in query header (quick analysis on query results)
---  - shorten uuid to its first component in results
---  - pin a column and replace the fk by it
 --  - Focus on data explorer open or tab change (visual editor or query editor)
---  - Nested queries like Trevor: on rows & group by
---  - Add filter button on results to change editor (visual or query) and allow to trigger a new query
 --  - Show incoming rows in the side bar (and results?)
---  - Double click on a value to edit it, add a submit option to push them to the database (like datagrip)
 --  - Make sure data explorer is visible (erd/table/column context menu, sources, table?, details sidebar)
 --  - Check embed mode to remove drag, hover & others
 --  - Enable data exploration for other db: MySQL, SQL Server, MongoDB, Couchbase... (QueryBuilder...)
 --  - Better error handling on connectors (cf PostgreSQL)
---  - Polymorphic relations??? Composite primary key???
 --  - Tracking plan
+--
+--  - column stats in query header (quick analysis on query results)
+--  - pin a column and replace the fk by it
+--  - Nested queries like Trevor: on rows & group by
+--  - Double click on a value to edit it, add a submit option to push them to the database (like datagrip)
+--  - shorten uuid to its first component in results
+--  - Add filter button on results to change editor (visual or query) and allow to trigger a new query
+--  - Polymorphic relations??? Composite primary key???
 
 
 type alias Model =
@@ -94,11 +94,15 @@ type DataExplorerTab
 
 
 type alias VisualEditor =
-    QueryBuilder.TableQuery
+    { table : Maybe TableId, filters : List VisualEditorFilter }
+
+
+type alias VisualEditorFilter =
+    { operator : QueryBuilder.FilterOperator, column : ColumnPath, kind : ColumnType, nullable : Bool, operation : QueryBuilder.FilterOperation, value : DbValue }
 
 
 type alias QueryEditor =
-    String
+    SqlQuery
 
 
 
@@ -107,7 +111,7 @@ type alias QueryEditor =
 
 
 type Msg
-    = Open (Maybe SourceId) (Maybe String)
+    = Open (Maybe SourceId) (Maybe SqlQuery)
     | Close
     | UpdateDisplay (Maybe DataExplorerDisplay)
     | UpdateTab DataExplorerTab
@@ -118,8 +122,8 @@ type Msg
     | UpdateFilterOperation Int QueryBuilder.FilterOperation
     | UpdateFilterValue Int DbValue
     | DeleteFilter Int
-    | UpdateQuery String
-    | RunQuery DbSource String
+    | UpdateQuery SqlQuery
+    | RunQuery DbSource SqlQuery
     | DeleteQuery DataExplorerQuery.Id
     | QueryMsg DataExplorerQuery.Id DataExplorerQuery.Msg
     | OpenDetails DbSourceInfo QueryBuilder.RowQuery
@@ -417,7 +421,7 @@ viewVisualExplorerFilterAdd wrap htmlId table =
         ]
 
 
-viewVisualExplorerFilterShow : (Msg -> msg) -> HtmlId -> List QueryBuilder.TableFilter -> Html msg
+viewVisualExplorerFilterShow : (Msg -> msg) -> HtmlId -> List VisualEditorFilter -> Html msg
 viewVisualExplorerFilterShow wrap htmlId filters =
     if filters |> List.isEmpty then
         div [] []
@@ -471,12 +475,12 @@ viewVisualExplorerFilterShow wrap htmlId filters =
             ]
 
 
-viewVisualExplorerSubmit : (Msg -> msg) -> DbSource -> QueryBuilder.TableQuery -> Html msg
+viewVisualExplorerSubmit : (Msg -> msg) -> DbSource -> VisualEditor -> Html msg
 viewVisualExplorerSubmit wrap source model =
     let
         query : String
         query =
-            model |> QueryBuilder.filterTable source.db.kind
+            model.table |> Maybe.mapOrElse (\table -> QueryBuilder.filterTable source.db.kind { table = table, filters = model.filters |> List.map (\f -> { operator = f.operator, column = f.column, operation = f.operation, value = f.value }) }) ""
     in
     div [ class "mt-3 flex items-center justify-end" ]
         [ button [ type_ "button", onClick (query |> RunQuery source |> wrap), disabled (query == ""), class "inline-flex items-center bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:bg-indigo-300" ]

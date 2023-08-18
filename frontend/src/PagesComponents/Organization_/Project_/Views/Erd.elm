@@ -33,6 +33,7 @@ import Models.ErdProps exposing (ErdProps)
 import Models.Position as Position
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.ColumnName exposing (ColumnName)
+import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath, ColumnPathStr)
 import Models.Project.Group as Group exposing (Group)
 import Models.Project.Metadata exposing (Metadata)
 import Models.Project.Relation exposing (Relation)
@@ -447,14 +448,14 @@ handleErdPointerDown conf cursorMode e =
 
 hoverRowToString : Maybe TableRowHover -> String
 hoverRowToString hover =
-    hover |> Maybe.mapOrElse (\( id, col ) -> String.fromInt id ++ "/" ++ (col |> Maybe.withDefault "")) ""
+    hover |> Maybe.mapOrElse (\( id, col ) -> String.fromInt id ++ "/" ++ (col |> Maybe.mapOrElse ColumnPath.toString "")) ""
 
 
 hoverRowFromString : String -> Maybe TableRowHover
 hoverRowFromString str =
     case str |> String.split "/" of
         idStr :: col ->
-            idStr |> String.toInt |> Maybe.map (\id -> ( id, col |> List.head ))
+            idStr |> String.toInt |> Maybe.map (\id -> ( id, col |> List.head |> Maybe.map ColumnPath.fromString ))
 
         _ ->
             Nothing
@@ -478,7 +479,7 @@ buildRowRelations sources rows =
                 |> List.map (Tuple.mapSecond (.relations >> List.groupBy (\r -> ( r.src.table, r.src.column.head ))))
                 |> Dict.fromList
 
-        getRelations : SourceId -> TableId -> ColumnName -> List Relation
+        getRelations : SourceId -> TableId -> ColumnPathStr -> List Relation
         getRelations source table column =
             sourceRelations |> Dict.get (SourceId.toString source) |> Maybe.andThen (Dict.get ( table, column )) |> Maybe.withDefault []
 
@@ -488,7 +489,7 @@ buildRowRelations sources rows =
                 |> Dict.get (SourceId.toString source)
                 |> Maybe.andThen (Dict.get table)
                 |> Maybe.withDefault []
-                |> List.filterMap (\r -> r.state.columns |> List.zipWithIndex |> List.find (\( v, _ ) -> v.name == value.column.head && v.value == value.value) |> Maybe.map (TableRow.initRelationColumn r))
+                |> List.filterMap (\r -> r.state.columns |> List.zipWithIndex |> List.find (\( v, _ ) -> v.path == value.column && v.value == value.value) |> Maybe.map (TableRow.initRelationColumn r))
 
         relations : List TableRowRelation
         relations =
@@ -498,11 +499,11 @@ buildRowRelations sources rows =
                 |> List.concatMap
                     (\r ->
                         r.state.columns
-                            |> List.filter (\c -> r.row.hidden |> Set.member c.name |> not)
+                            |> List.filter (\c -> r.row.hidden |> Set.member c.pathStr |> not)
                             |> List.indexedMap (\i c -> TableRow.initRelationColumn r ( c, i ))
                             |> List.concatMap
                                 (\src ->
-                                    getRelations src.row.source src.row.table src.column.name
+                                    getRelations src.row.source src.row.table src.column.pathStr
                                         |> List.concatMap (\rel -> getRowValues src.row.source rel.ref.table { column = rel.ref.column, value = src.column.value })
                                         |> List.map (TableRow.initRelation src)
                                 )

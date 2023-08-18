@@ -825,7 +825,7 @@ handleDatabaseQueryResponse result model =
             ( model, idStr |> String.toInt |> Maybe.map (\id -> TableRow.GotResult result |> TableRowMsg id |> T.send) |> Maybe.withDefault ("Invalid table row context: " ++ result.context |> Toasts.warning |> Toast |> T.send) )
 
         "table-row" :: idStr :: column :: [] ->
-            ( model, idStr |> String.toInt |> Maybe.map (\id -> TableRow.GotIncomingRows column result |> TableRowMsg id |> T.send) |> Maybe.withDefault ("Invalid incoming table row context: " ++ result.context |> Toasts.warning |> Toast |> T.send) )
+            ( model, idStr |> String.toInt |> Maybe.map (\id -> TableRow.GotIncomingRows (ColumnPath.fromString column) result |> TableRowMsg id |> T.send) |> Maybe.withDefault ("Invalid incoming table row context: " ++ result.context |> Toasts.warning |> Toast |> T.send) )
 
         _ ->
             ( model, "Unknown db query context: " ++ result.context |> Toasts.warning |> Toast |> T.send )

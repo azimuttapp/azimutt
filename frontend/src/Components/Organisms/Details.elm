@@ -69,6 +69,7 @@ import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (Er
 import PagesComponents.Organization_.Project_.Models.ErdTableProps exposing (ErdTableProps)
 import Services.DatabaseQueries as DatabaseQueries
 import Services.Lenses exposing (setLayouts, setTables)
+import Services.QueryBuilder exposing (SqlQuery)
 import Simple.Fuzzy
 import Time exposing (Posix)
 
@@ -169,7 +170,7 @@ viewTable :
     -> (ColumnRef -> msg)
     -> (TableId -> msg)
     -> (LayoutName -> msg)
-    -> (SourceId -> String -> msg)
+    -> (SourceId -> SqlQuery -> msg)
     -> (SourceName -> msg)
     -> SourceName
     -> SchemaName
@@ -182,7 +183,7 @@ viewTable :
     -> Maybe TableMeta
     -> Dict SourceIdStr (Result String TableStats)
     -> Html msg
-viewTable goToList goToSchema goToTable goToColumn showTable loadLayout query _ _ defaultSchema schema table notes tags inLayouts inSources meta stats =
+viewTable goToList goToSchema goToTable goToColumn showTable loadLayout openDataExplorer _ _ defaultSchema schema table notes tags inLayouts inSources meta stats =
     let
         columnValues : Dict ColumnPathStr ColumnValue
         columnValues =
@@ -208,7 +209,7 @@ viewTable goToList goToSchema goToTable goToColumn showTable loadLayout query _ 
             , notes |> viewNotes
             , tags |> viewTags
             , inLayouts |> List.nonEmptyMap (\l -> viewProp [ text "In layouts" ] (l |> List.sort |> List.map (viewLayout loadLayout))) (div [] [])
-            , inSources |> List.nonEmptyMap (\sources -> viewProp [ text "From sources" ] (sources |> List.sortBy (Tuple.second >> .name) |> List.map (\( o, s ) -> viewSource query table.item.id Nothing (stats |> Dict.get (SourceId.toString s.id) |> Maybe.andThen Result.toMaybe |> Maybe.map .rows) ( o, s )))) (div [] [])
+            , inSources |> List.nonEmptyMap (\sources -> viewProp [ text "From sources" ] (sources |> List.sortBy (Tuple.second >> .name) |> List.map (\( o, s ) -> viewSource openDataExplorer table.item.id Nothing (stats |> Dict.get (SourceId.toString s.id) |> Maybe.andThen Result.toMaybe |> Maybe.map .rows) ( o, s )))) (div [] [])
             , outRelations |> List.nonEmptyMap (\r -> viewProp [ text "References" ] (r |> List.sortBy .table |> List.map (viewTableRelation goToTable defaultSchema))) (div [] [])
             , inRelations |> List.nonEmptyMap (\r -> viewProp [ text "Referenced by" ] (r |> List.sortBy .table |> List.map (viewTableRelation goToTable defaultSchema))) (div [] [])
             , viewTableConstraints table.item
@@ -250,7 +251,7 @@ viewColumn :
     -> (ColumnRef -> msg)
     -> (TableId -> msg)
     -> (LayoutName -> msg)
-    -> (SourceId -> String -> msg)
+    -> (SourceId -> SqlQuery -> msg)
     -> (SourceName -> msg)
     -> SourceName
     -> SchemaName
@@ -263,7 +264,7 @@ viewColumn :
     -> List ( Origin, Source )
     -> Dict SourceIdStr (Result String ColumnStats)
     -> Html msg
-viewColumn goToList goToSchema goToTable goToColumn showTable loadLayout query _ _ defaultSchema schema table column notes tags inLayouts inSources stats =
+viewColumn goToList goToSchema goToTable goToColumn showTable loadLayout openDataExplorer _ _ defaultSchema schema table column notes tags inLayouts inSources stats =
     div []
         [ viewSchemaHeading goToList goToSchema defaultSchema schema
         , viewTableHeading goToSchema goToTable table
@@ -291,7 +292,7 @@ viewColumn goToList goToSchema goToTable goToColumn showTable loadLayout query _
             , tags |> viewTags
             , viewColumnStats (inSources |> List.map Tuple.second) stats
             , inLayouts |> List.nonEmptyMap (\l -> viewProp [ text "In layouts" ] (l |> List.sort |> List.map (viewLayout loadLayout))) (div [] [])
-            , inSources |> List.nonEmptyMap (\s -> viewProp [ text "From sources" ] (s |> List.sortBy (Tuple.second >> .name) |> List.map (viewSource query table.item.id (Just column.item.path) Nothing))) (div [] [])
+            , inSources |> List.nonEmptyMap (\s -> viewProp [ text "From sources" ] (s |> List.sortBy (Tuple.second >> .name) |> List.map (viewSource openDataExplorer table.item.id (Just column.item.path) Nothing))) (div [] [])
             , column.item.outRelations |> List.nonEmptyMap (\r -> viewProp [ text "References" ] (r |> List.sortBy ErdColumnRef.toId |> List.map (viewColumnRelation goToColumn defaultSchema))) (div [] [])
             , column.item.inRelations |> List.nonEmptyMap (\r -> viewProp [ text "Referenced by" ] (r |> List.sortBy ErdColumnRef.toId |> List.map (viewColumnRelation goToColumn defaultSchema))) (div [] [])
             , viewColumnConstraints table.item column.item
@@ -711,8 +712,8 @@ viewLayout loadLayout layout =
     div [] [ span [ class "underline cursor-pointer", onClick (loadLayout layout) ] [ text layout ] |> Tooltip.r "View layout" ]
 
 
-viewSource : (SourceId -> String -> msg) -> TableId -> Maybe ColumnPath -> Maybe Int -> ( Origin, Source ) -> Html msg
-viewSource query table column rows ( _, source ) =
+viewSource : (SourceId -> SqlQuery -> msg) -> TableId -> Maybe ColumnPath -> Maybe Int -> ( Origin, Source ) -> Html msg
+viewSource openDataExplorer table column rows ( _, source ) =
     div [ class "mt-1 flex flex-row" ]
         [ case source.kind of
             SourceKind.DatabaseConnection _ ->
@@ -741,7 +742,7 @@ viewSource query table column rows ( _, source ) =
         , text (source.name ++ (rows |> Maybe.mapOrElse (\r -> " (" ++ String.fromInt r ++ " rows)") ""))
         , case source.kind of
             SourceKind.DatabaseConnection url ->
-                button [ type_ "button", onClick (query source.id (DatabaseQueries.showData column table url)), class "ml-1" ] [ Icon.solid Icon.ArrowCircleRight "opacity-50" ] |> Tooltip.r "Browse data"
+                button [ type_ "button", onClick (openDataExplorer source.id (DatabaseQueries.showData column table url)), class "ml-1" ] [ Icon.solid Icon.ArrowCircleRight "opacity-50" ] |> Tooltip.r "Browse data"
 
             _ ->
                 text ""

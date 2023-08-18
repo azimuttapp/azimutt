@@ -29,7 +29,7 @@ suite =
                 """{"tables":[{"id":".users","position":{"left":0,"top":0},"size":{"width":0,"height":0},"color":"gray","columns":[]}],"createdAt":0,"updatedAt":0}"""
             , testEncode "empty table row"
                 Layout.encode
-                (Layout [] [ TableRow 1 Nothing Position.zeroGrid Size.zeroCanvas SourceId.zero ( "", "users" ) (Nel (RowValue (Nel "id" []) DbNull) []) (TableRow.StateSuccess (TableRow.SuccessState [] Time.zero Time.zero)) Set.empty Set.empty False False False ] [] [] Time.zero Time.zero)
+                (Layout [] [ TableRow 1 Nothing Position.zeroGrid Size.zeroCanvas SourceId.zero ( "", "users" ) (Nel (RowValue (Nel "id" []) DbNull) []) (TableRow.StateSuccess (TableRow.SuccessState [] Time.zero Time.zero)) Set.empty False False False ] [] [] Time.zero Time.zero)
                 """{"tables":[],"tableRows":[{"id":1,"position":{"left":0,"top":0},"size":{"width":0,"height":0},"source":"00000000-0000-0000-0000-000000000000","table":".users","primaryKey":[{"column":"id","value":null}],"state":{"columns":[],"startedAt":0,"loadedAt":0}}],"createdAt":0,"updatedAt":0}"""
             , testEncode "empty group"
                 Layout.encode

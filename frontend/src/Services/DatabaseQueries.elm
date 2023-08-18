@@ -9,14 +9,19 @@ import Models.Project.ColumnPath exposing (ColumnPath)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.TableId exposing (TableId)
 import Models.Project.TableName exposing (TableName)
+import Services.QueryBuilder exposing (SqlQuery)
 
 
-showData : Maybe ColumnPath -> TableId -> DatabaseUrl -> String
+
+-- FIXME merge into QueryBuilder
+
+
+showData : Maybe ColumnPath -> TableId -> DatabaseUrl -> SqlQuery
 showData column =
     column |> Maybe.map showColumnData |> Maybe.withDefault showTableData
 
 
-showTableData : TableId -> DatabaseUrl -> String
+showTableData : TableId -> DatabaseUrl -> SqlQuery
 showTableData ( schema, table ) url =
     case DatabaseKind.fromUrl url of
         DatabaseKind.Couchbase ->

@@ -13,6 +13,10 @@ import Models.Project.RowValue exposing (RowValue)
 import Models.Project.TableId as TableId exposing (TableId)
 
 
+
+-- FIXME merge DatabaseQueries here
+
+
 type alias SqlQuery =
     String
 
@@ -22,17 +26,17 @@ type alias SqlFragment =
 
 
 type alias TableQuery =
-    { table : Maybe TableId, filters : List TableFilter }
+    { table : TableId, filters : List TableFilter }
 
 
 type alias TableFilter =
-    { operator : FilterOperator, column : ColumnPath, kind : ColumnType, nullable : Bool, operation : FilterOperation, value : DbValue }
+    { operator : FilterOperator, column : ColumnPath, operation : FilterOperation, value : DbValue }
 
 
 filterTable : DatabaseKind -> TableQuery -> SqlQuery
 filterTable db query =
     if db == DatabaseKind.PostgreSQL then
-        query.table |> Maybe.map (\table -> "SELECT * FROM " ++ formatTable db table ++ formatFilters db query.filters ++ ";") |> Maybe.withDefault ""
+        "SELECT * FROM " ++ formatTable db query.table ++ formatFilters db query.filters ++ ";"
 
     else
         ""

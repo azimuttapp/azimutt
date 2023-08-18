@@ -412,13 +412,13 @@ export type RowPrimaryKey = RowValue[]
 export const RowPrimaryKey = RowValue.array()
 
 export interface TableRowColumn {
-    name: ColumnName
+    path: ColumnPathStr
     value: JsValue
     linkedBy?: Record<TableId, RowPrimaryKey[]>
 }
 
 export const TableRowColumn = z.object({
-    name: ColumnName,
+    path: ColumnPathStr,
     value: JsValue,
     linkedBy: z.record(TableId, RowPrimaryKey.array()).optional()
 }).strict()
@@ -470,8 +470,7 @@ export interface TableRow {
     table: TableId
     primaryKey: RowPrimaryKey
     state: TableRowState
-    hidden?: ColumnName[]
-    expanded?: ColumnName[]
+    hidden?: ColumnPathStr[]
     showHiddenColumns?: boolean
     selected?: boolean
     collapsed?: boolean
@@ -485,8 +484,7 @@ export const TableRow = z.object({
     table: TableId,
     primaryKey: RowPrimaryKey,
     state: TableRowState,
-    hidden: ColumnName.array().optional(),
-    expanded: ColumnName.array().optional(),
+    hidden: ColumnPathStr.array().optional(),
     showHiddenColumns: z.boolean().optional(),
     selected: z.boolean().optional(),
     collapsed: z.boolean().optional()

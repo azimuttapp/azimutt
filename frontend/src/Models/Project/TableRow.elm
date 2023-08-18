@@ -11,7 +11,8 @@ import Libs.String as String
 import Libs.Time as Time
 import Models.DbValue as DbValue exposing (DbValue)
 import Models.Position as Position
-import Models.Project.ColumnName as ColumnName exposing (ColumnName)
+import Models.Project.ColumnName exposing (ColumnName)
+import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath, ColumnPathStr)
 import Models.Project.RowPrimaryKey as RowPrimaryKey exposing (RowPrimaryKey)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.TableId as TableId exposing (TableId)
@@ -35,7 +36,6 @@ type alias TableRow =
     , primaryKey : RowPrimaryKey
     , state : State
     , hidden : Set ColumnName
-    , expanded : Set ColumnName
     , showHiddenColumns : Bool
     , selected : Bool
     , collapsed : Bool
@@ -64,7 +64,7 @@ type alias SuccessState =
 
 
 type alias TableRowColumn =
-    { name : ColumnName, value : DbValue, linkedBy : Dict TableId (List RowPrimaryKey) }
+    { path : ColumnPath, pathStr : ColumnPathStr, value : DbValue, linkedBy : Dict TableId (List RowPrimaryKey) }
 
 
 stateSuccess : TableRow -> Maybe SuccessState
@@ -111,8 +111,7 @@ encode value =
         , ( "table", value.table |> TableId.encode )
         , ( "primaryKey", value.primaryKey |> RowPrimaryKey.encode )
         , ( "state", value.state |> encodeState )
-        , ( "hidden", value.hidden |> Encode.withDefault (Encode.set ColumnName.encode) Set.empty )
-        , ( "expanded", value.expanded |> Encode.withDefault (Encode.set ColumnName.encode) Set.empty )
+        , ( "hidden", value.hidden |> Encode.withDefault (Encode.set ColumnPath.encodeStr) Set.empty )
         , ( "showHiddenColumns", value.showHiddenColumns |> Encode.withDefault Encode.bool False )
         , ( "selected", value.selected |> Encode.withDefault Encode.bool False )
         , ( "collapsed", value.collapsed |> Encode.withDefault Encode.bool False )
@@ -121,7 +120,7 @@ encode value =
 
 decode : Decoder TableRow
 decode =
-    Decode.map13 TableRow
+    Decode.map12 TableRow
         (Decode.field "id" Decode.int)
         (Decode.succeed Nothing)
         (Decode.field "position" Position.decodeGrid)
@@ -130,8 +129,7 @@ decode =
         (Decode.field "table" TableId.decode)
         (Decode.field "primaryKey" RowPrimaryKey.decode)
         (Decode.field "state" decodeState)
-        (Decode.defaultField "hidden" (Decode.set ColumnName.decode) Set.empty)
-        (Decode.defaultField "expanded" (Decode.set ColumnName.decode) Set.empty)
+        (Decode.defaultField "hidden" (Decode.set ColumnPath.decodeStr) Set.empty)
         (Decode.defaultField "showHiddenColumns" Decode.bool False)
         (Decode.defaultField "selected" Decode.bool False)
         (Decode.defaultField "collapsed" Decode.bool False)
@@ -217,7 +215,7 @@ decodeSuccessState =
 encodeTableRowColumn : TableRowColumn -> Value
 encodeTableRowColumn value =
     Encode.object
-        ([ ( "name", value.name |> ColumnName.encode )
+        ([ ( "path", value.path |> ColumnPath.encode )
          , ( "value", value.value |> DbValue.encode )
          , ( "linkedBy", value.linkedBy |> Encode.withDefault (Encode.dict TableId.toString (Encode.list RowPrimaryKey.encode)) Dict.empty )
          ]
@@ -228,7 +226,8 @@ encodeTableRowColumn value =
 
 decodeTableRowColumn : Decoder TableRowColumn
 decodeTableRowColumn =
-    Decode.map3 TableRowColumn
-        (Decode.field "name" ColumnName.decode)
+    Decode.map4 TableRowColumn
+        (Decode.field "path" ColumnPath.decode)
+        (Decode.field "path" ColumnPath.decodeStr)
         (Decode.field "value" DbValue.decode)
         (Decode.defaultField "linkedBy" (Decode.customDict TableId.parse (Decode.list RowPrimaryKey.decode)) Dict.empty)

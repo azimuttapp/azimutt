@@ -24,7 +24,7 @@ import Models.DbValue as DbValue exposing (DbValue(..))
 import Models.Project.Column exposing (Column)
 import Models.Project.ColumnMeta exposing (ColumnMeta)
 import Models.Project.ColumnName exposing (ColumnName)
-import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
+import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath, ColumnPathStr)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
@@ -77,7 +77,7 @@ type alias SuccessState =
 
 type Msg
     = GotResult QueryResult
-    | ExpandValue ColumnName
+    | ExpandValue ColumnPathStr
 
 
 
@@ -245,20 +245,20 @@ viewSlideOverContent wrap close showTable showTableRow openRowDetails openNotes 
                                     let
                                         column : Maybe Column
                                         column =
-                                            table |> Maybe.andThen (.columns >> Dict.get col.name)
+                                            table |> Maybe.andThen (.columns >> Dict.get col.pathStr)
 
                                         meta : Maybe ColumnMeta
                                         meta =
-                                            tableMeta |> Maybe.andThen (.columns >> Dict.get col.name)
+                                            tableMeta |> Maybe.andThen (.columns >> Dict.get col.pathStr)
                                     in
                                     div []
                                         [ dt [ class "text-sm font-medium text-gray-500 sm:w-40 sm:flex-shrink-0" ]
-                                            [ text col.name
+                                            [ text (ColumnPath.show col.path)
                                             , column |> Maybe.andThen .comment |> Maybe.mapOrElse (\c -> span [ title c.text, class "ml-1 opacity-50" ] [ Icon.outline Icons.comment "w-3 h-3 inline" ]) (text "")
-                                            , meta |> Maybe.andThen .notes |> Maybe.mapOrElse (\n -> button [ type_ "button", onClick (openNotes model.query.table (ColumnPath.fromString col.name |> Just)), title n, class "ml-1 opacity-50" ] [ Icon.outline Icons.notes "w-3 h-3 inline" ]) (text "")
+                                            , meta |> Maybe.andThen .notes |> Maybe.mapOrElse (\n -> button [ type_ "button", onClick (openNotes model.query.table (Just col.path)), title n, class "ml-1 opacity-50" ] [ Icon.outline Icons.notes "w-3 h-3 inline" ]) (text "")
                                             ]
                                         , dd [ class "text-sm text-gray-900 sm:col-span-2 overflow-hidden text-ellipsis" ]
-                                            [ DataExplorerValue.view openRowDetails (ExpandValue col.name |> wrap) defaultSchema False (model.expanded |> Set.member col.name) (res.values |> Dict.get col.name) col
+                                            [ DataExplorerValue.view openRowDetails (ExpandValue col.pathStr |> wrap) defaultSchema False (model.expanded |> Set.member col.pathStr) (res.values |> Dict.get col.pathStr) col
                                             ]
                                         ]
                                 )
@@ -270,7 +270,7 @@ viewSlideOverContent wrap close showTable showTableRow openRowDetails openNotes 
 
 toRow : SuccessState -> TableRow.SuccessState
 toRow state =
-    { columns = state.columns |> List.filterMap (\c -> state.values |> Dict.get c.name |> Maybe.map (\v -> { name = c.name, value = v, linkedBy = Dict.empty }))
+    { columns = state.columns |> List.filterMap (\c -> state.values |> Dict.get c.pathStr |> Maybe.map (\v -> { path = c.path, pathStr = c.pathStr, value = v, linkedBy = Dict.empty }))
     , startedAt = state.startedAt
     , loadedAt = state.succeededAt
     }
@@ -353,9 +353,9 @@ docSuccessState =
     }
 
 
-docColumn : SchemaName -> TableName -> ColumnName -> QueryResultColumn
+docColumn : SchemaName -> TableName -> ColumnPathStr -> QueryResultColumn
 docColumn schema table column =
-    { name = column, ref = Just { table = ( schema, table ), column = Nel column [] } }
+    { path = ColumnPath.fromString column, pathStr = column, ref = Just { table = ( schema, table ), column = ColumnPath.fromString column } }
 
 
 docCityColumnValues : Int -> String -> String -> String -> Int -> QueryResultRow

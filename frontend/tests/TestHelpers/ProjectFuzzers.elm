@@ -212,7 +212,7 @@ memoId =
 
 tableRow : Fuzzer TableRow
 tableRow =
-    Fuzz.map13 TableRow tableRowId (Fuzz.constant Nothing) positionGrid sizeCanvas sourceId tableId rowPrimaryKey tableRowState (setSmall columnName) (setSmall columnName) Fuzz.bool Fuzz.bool Fuzz.bool
+    Fuzz.map12 TableRow tableRowId (Fuzz.constant Nothing) positionGrid sizeCanvas sourceId tableId rowPrimaryKey tableRowState (setSmall columnName) Fuzz.bool Fuzz.bool Fuzz.bool
 
 
 tableRowId : Fuzzer TableRow.Id
@@ -246,7 +246,7 @@ tableRowSuccess =
 
 tableRowColumn : Fuzzer TableRow.TableRowColumn
 tableRowColumn =
-    Fuzz.map3 TableRow.TableRowColumn columnName dbValue (Fuzz.constant Dict.empty)
+    Fuzz.map3 (\p v l -> TableRow.TableRowColumn p (ColumnPath.toString p) v l) columnPath dbValue (Fuzz.constant Dict.empty)
 
 
 rowPrimaryKey : Fuzzer RowPrimaryKey

@@ -1,4 +1,4 @@
-module Models.Project.ColumnPath exposing (ColumnPath, ColumnPathStr, child, decode, decodeStr, encode, fromString, get, isRoot, merge, name, parent, rootName, show, startsWith, toString, update, withName)
+module Models.Project.ColumnPath exposing (ColumnPath, ColumnPathStr, child, decode, decodeStr, encode, encodeStr, fromString, get, isRoot, merge, name, parent, rootName, show, startsWith, toString, update, withName)
 
 import Dict exposing (Dict)
 import Json.Decode as Decode exposing (Decoder, Value)
@@ -97,6 +97,11 @@ encode value =
 decode : Decoder ColumnPath
 decode =
     Decode.string |> Decode.map fromString
+
+
+encodeStr : ColumnPathStr -> Value
+encodeStr value =
+    value |> Encode.string
 
 
 decodeStr : Decoder ColumnPathStr

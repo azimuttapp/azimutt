@@ -3,6 +3,7 @@ module PagesComponents.Organization_.Project_.Views.ErdTest exposing (..)
 import Expect
 import Libs.Models.Platform as Platform
 import Libs.Time as Time
+import Models.Project.ColumnPath as ColumnPath
 import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode
 import PagesComponents.Organization_.Project_.Views.Erd as Erd
 import Test exposing (Test, describe, test)
@@ -21,9 +22,9 @@ suite =
                 )
             , test "test 2"
                 (\_ ->
-                    Erd.argsToString (Time.millisToPosix 12) Platform.Mac CursorMode.Select "c" "d" "e" (Just ( "public", "users" )) (Just ( 1, Just "name" )) (Just { index = 1, content = "f" })
+                    Erd.argsToString (Time.millisToPosix 12) Platform.Mac CursorMode.Select "c" "d" "e" (Just ( "public", "users" )) (Just ( 1, Just (ColumnPath.fromString "name") )) (Just { index = 1, content = "f" })
                         |> Erd.stringToArgs
-                        |> Expect.equal ( ( Time.millisToPosix 12, Platform.Mac, CursorMode.Select ), ( "c", "d", "e" ), ( Just ( "public", "users" ), Just ( 1, Just "name" ), Just { index = 1, content = "f" } ) )
+                        |> Expect.equal ( ( Time.millisToPosix 12, Platform.Mac, CursorMode.Select ), ( "c", "d", "e" ), ( Just ( "public", "users" ), Just ( 1, Just (ColumnPath.fromString "name") ), Just { index = 1, content = "f" } ) )
                 )
             ]
         ]

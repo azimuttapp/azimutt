@@ -11,7 +11,7 @@ import Libs.Nel exposing (Nel)
 import Libs.Result as Result
 import Libs.Time as Time
 import Models.DbValue as DbValue exposing (DbValue)
-import Models.Project.ColumnName exposing (ColumnName)
+import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath, ColumnPathStr)
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
 import Models.Project.ColumnType exposing (ColumnType)
 import Models.Project.Relation exposing (Relation)
@@ -36,15 +36,15 @@ type alias QueryResultSuccess =
 
 
 type alias QueryResultColumn =
-    { name : ColumnName, ref : Maybe ColumnRef }
+    { path : ColumnPath, pathStr : ColumnPathStr, ref : Maybe ColumnRef }
 
 
 type alias QueryResultRow =
-    Dict String DbValue
+    Dict ColumnPathStr DbValue
 
 
 type alias QueryResultColumnTarget =
-    { name : ColumnName, ref : Maybe ColumnRef, fk : Maybe { ref : ColumnRef, kind : ColumnType } }
+    { path : ColumnPath, pathStr : ColumnPathStr, ref : Maybe ColumnRef, fk : Maybe { ref : ColumnRef, kind : ColumnType } }
 
 
 buildColumnTargets : Maybe { s | tables : Dict TableId Table, relations : List Relation } -> List QueryResultColumn -> List QueryResultColumnTarget
@@ -58,7 +58,7 @@ buildColumnTargets source columns =
         relations =
             source |> Maybe.mapOrElse (.relations >> List.groupBy (.src >> .table)) Dict.empty
     in
-    columns |> List.map (\c -> { name = c.name, ref = c.ref, fk = c.ref |> Maybe.andThen (targetColumn tables relations) })
+    columns |> List.map (\c -> { path = c.path, pathStr = c.pathStr, ref = c.ref, fk = c.ref |> Maybe.andThen (targetColumn tables relations) })
 
 
 targetColumn : Dict TableId Table -> Dict TableId (List Relation) -> ColumnRef -> Maybe { ref : ColumnRef, kind : ColumnType }
@@ -95,8 +95,10 @@ decodeSuccess =
 
 decodeColumn : Decode.Decoder QueryResultColumn
 decodeColumn =
-    Decode.map2 QueryResultColumn
-        (Decode.field "name" Decode.string)
+    -- /!\ the column name is parsed as a path, and so we change the attribute name
+    Decode.map3 QueryResultColumn
+        (Decode.field "name" ColumnPath.decode)
+        (Decode.field "name" ColumnPath.decodeStr)
         (Decode.maybeField "ref" ColumnRef.decode)
 
 

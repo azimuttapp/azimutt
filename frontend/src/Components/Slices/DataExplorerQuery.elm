@@ -34,7 +34,7 @@ import Models.DbValue as DbValue exposing (DbValue(..))
 import Models.Project.Column exposing (Column)
 import Models.Project.ColumnMeta exposing (ColumnMeta)
 import Models.Project.ColumnName exposing (ColumnName)
-import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
+import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath, ColumnPathStr)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.ColumnType exposing (ColumnType)
 import Models.Project.Metadata exposing (Metadata)
@@ -88,7 +88,7 @@ type alias SuccessState =
     , succeededAt : Time.Posix
     , page : Int
     , expanded : Set RowIndex
-    , collapsed : Set ColumnName
+    , collapsed : Set ColumnPathStr
     , documentMode : Bool
     , showQuery : Bool
     , search : String
@@ -102,7 +102,7 @@ type Msg
     | GotResult QueryResult
     | ChangePage Int
     | ExpandRow RowIndex
-    | CollapseColumn ColumnName
+    | CollapseColumn ColumnPathStr
     | ToggleQuery
     | ToggleDocumentMode
     | ToggleFullScreen
@@ -171,8 +171,8 @@ update msg model =
         ExpandRow i ->
             ( model |> mapState (mapSuccess (\s -> { s | expanded = s.expanded |> Set.toggle i })), Cmd.none )
 
-        CollapseColumn name ->
-            ( model |> mapState (mapSuccess (\s -> { s | collapsed = s.collapsed |> Set.toggle name })), Cmd.none )
+        CollapseColumn pathStr ->
+            ( model |> mapState (mapSuccess (\s -> { s | collapsed = s.collapsed |> Set.toggle pathStr })), Cmd.none )
 
         ToggleQuery ->
             ( model |> mapState (mapSuccess (\s -> { s | showQuery = not s.showQuery })), Cmd.none )
@@ -250,11 +250,11 @@ csvFile state =
 
         header : String
         header =
-            state.columns |> List.map (\c -> csvEscape c.name) |> String.join separator
+            state.columns |> List.map (.pathStr >> csvEscape) |> String.join separator
 
         rows : List String
         rows =
-            state.rows |> List.map (\r -> state.columns |> List.map (\c -> r |> Dict.get c.name |> Maybe.mapOrElse DbValue.toString "" |> csvEscape) |> String.join separator)
+            state.rows |> List.map (\r -> state.columns |> List.map (\c -> r |> Dict.get c.pathStr |> Maybe.mapOrElse DbValue.toString "" |> csvEscape) |> String.join separator)
     in
     (header :: rows |> String.join "\n") ++ "\n"
 
@@ -450,7 +450,7 @@ viewSuccess wrap openRow openNotes defaultSchema source metadata res =
 
         ( column, rows ) =
             if res.documentMode then
-                ( [ { name = "document", ref = Nothing, fk = Nothing } ], pageRows |> List.map (Tuple.mapSecond (Tuple.mapFirst (\r -> Dict.fromList [ ( "document", DbObject r ) ]))) )
+                "document" |> (\pathStr -> ( [ { path = ColumnPath.fromString pathStr, pathStr = pathStr, ref = Nothing, fk = Nothing } ], pageRows |> List.map (Tuple.mapSecond (Tuple.mapFirst (\r -> Dict.fromList [ ( pathStr, DbObject r ) ]))) ))
 
             else
                 ( res.columns |> QueryResult.buildColumnTargets source, pageRows )
@@ -479,18 +479,18 @@ viewTable wrap openRow openNotes defaultSchema source metadata columns rows docu
                             |> List.map
                                 (\( pi, ( r, ri ) ) ->
                                     let
-                                        rest : Dict String DbValue
+                                        rest : Dict ColumnPathStr DbValue
                                         rest =
-                                            r |> Dict.filter (\k _ -> columns |> List.memberBy .name k |> not)
+                                            r |> Dict.filter (\k _ -> columns |> List.memberBy .pathStr k |> not)
                                     in
                                     tr [ class "hover:bg-gray-100", classList [ ( "bg-gray-50", modBy 2 pi == 1 ) ] ]
                                         ([ td [ class ("px-1 sticky left-0 z-10 text-sm text-gray-900 border-r border-gray-300 hover:bg-gray-100 " ++ Bool.cond (modBy 2 pi == 1) "bg-gray-50" "bg-white") ] [ text (ri + 1 |> String.fromInt) ] ]
-                                            ++ (columns |> List.map (\c -> viewTableValue openRow (ExpandRow ri |> wrap) defaultSchema documentMode (expanded |> Set.member ri) (collapsed |> Set.member c.name) (r |> Dict.get c.name) c))
+                                            ++ (columns |> List.map (\c -> viewTableValue openRow (ExpandRow ri |> wrap) defaultSchema documentMode (expanded |> Set.member ri) (collapsed |> Set.member c.pathStr) (r |> Dict.get c.pathStr) c))
                                             ++ (if rest |> Dict.isEmpty then
                                                     []
 
                                                 else
-                                                    [ viewTableValue openRow (ExpandRow ri |> wrap) defaultSchema documentMode (expanded |> Set.member ri) (collapsed |> Set.member "rest") (rest |> DbObject |> Just) { name = "rest", ref = Nothing, fk = Nothing } ]
+                                                    [ viewTableValue openRow (ExpandRow ri |> wrap) defaultSchema documentMode (expanded |> Set.member ri) (collapsed |> Set.member "rest") (rest |> DbObject |> Just) { path = Nel "rest" [], pathStr = "rest", ref = Nothing, fk = Nothing } ]
                                                )
                                         )
                                 )
@@ -516,24 +516,24 @@ viewTableHeader wrap openNotes source metadata collapsed sortBy column =
         sort =
             sortBy
                 |> Maybe.map extractSort
-                |> Maybe.filter (\( c, _ ) -> c == column.name)
+                |> Maybe.filter (\( c, _ ) -> c == column.pathStr)
     in
-    if collapsed |> Set.member column.name then
-        th [ scope "col", title column.name, class "px-1 text-left text-sm font-semibold text-gray-900 border-b border-gray-300" ]
-            [ button [ type_ "button", onClick (CollapseColumn column.name |> wrap), class "ml-1 opacity-50" ] [ Icon.outline Icon.PlusCircle "w-3 h-3 inline" ]
+    if collapsed |> Set.member column.pathStr then
+        th [ scope "col", title (ColumnPath.show column.path), class "px-1 text-left text-sm font-semibold text-gray-900 border-b border-gray-300" ]
+            [ button [ type_ "button", onClick (CollapseColumn column.pathStr |> wrap), class "ml-1 opacity-50" ] [ Icon.outline Icon.PlusCircle "w-3 h-3 inline" ]
             ]
 
     else
         th [ scope "col", class "px-1 text-left text-sm font-semibold text-gray-900 border-b border-gray-300 whitespace-nowrap group" ]
-            [ text column.name
+            [ text (ColumnPath.show column.path)
             , tableColumn |> Maybe.andThen .comment |> Maybe.mapOrElse (\c -> span [ title c.text, class "ml-1 opacity-50" ] [ Icon.outline Icons.comment "w-3 h-3 inline" ]) (text "")
             , notes |> Maybe.mapOrElse (\( n, ref ) -> button [ type_ "button", onClick (openNotes ref.table (Just ref.column)), title n, class "ml-1 opacity-50" ] [ Icon.outline Icons.notes "w-3 h-3 inline" ]) (text "")
-            , button [ type_ "button", onClick (sort |> Maybe.mapOrElse (\( col, asc ) -> Bool.cond asc ("-" ++ col) col) column.name |> Just |> UpdateSort |> wrap), title "Sort column", class "ml-1 opacity-50" ]
+            , button [ type_ "button", onClick (sort |> Maybe.mapOrElse (\( col, asc ) -> Bool.cond asc ("-" ++ col) col) column.pathStr |> Just |> UpdateSort |> wrap), title "Sort column", class "ml-1 opacity-50" ]
                 [ sort
                     |> Maybe.map (\( _, asc ) -> Icon.solid (Bool.cond asc Icon.SortDescending Icon.SortAscending) "w-3 h-3 inline")
                     |> Maybe.withDefault (Icon.solid Icon.SortDescending "w-3 h-3 inline invisible group-hover:visible")
                 ]
-            , button [ type_ "button", onClick (CollapseColumn column.name |> wrap), title "Collapse column", class "ml-1 opacity-50" ] [ Icon.outline Icon.MinusCircle "w-3 h-3 inline invisible group-hover:visible" ]
+            , button [ type_ "button", onClick (CollapseColumn column.pathStr |> wrap), title "Collapse column", class "ml-1 opacity-50" ] [ Icon.outline Icon.MinusCircle "w-3 h-3 inline invisible group-hover:visible" ]
             ]
 
 
@@ -570,7 +570,7 @@ sortValues sort items =
     sort |> Maybe.mapOrElse (extractSort >> (\( col, dir ) -> items |> List.sortWith (\( a, _ ) ( b, _ ) -> compareMaybe DbValue.compare (a |> Dict.get col) (b |> Dict.get col) |> Order.dir dir))) items
 
 
-extractSort : String -> ( String, Bool )
+extractSort : String -> ( ColumnPathStr, Bool )
 extractSort sortBy =
     if sortBy |> String.startsWith "-" then
         ( sortBy |> String.stripLeft "-", False )
@@ -750,9 +750,9 @@ docProjectsSuccess =
         |> initSuccess Time.zero Time.zero
 
 
-docColumn : SchemaName -> TableName -> ColumnName -> QueryResultColumn
-docColumn schema table column =
-    { name = column, ref = Just { table = ( schema, table ), column = Nel column [] } }
+docColumn : SchemaName -> TableName -> ColumnPathStr -> QueryResultColumn
+docColumn schema table pathStr =
+    { path = ColumnPath.fromString pathStr, pathStr = pathStr, ref = Just { table = ( schema, table ), column = ColumnPath.fromString pathStr } }
 
 
 docCityColumnValues : Int -> String -> String -> String -> Int -> QueryResultRow
