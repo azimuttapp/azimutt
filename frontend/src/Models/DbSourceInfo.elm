@@ -27,8 +27,8 @@ type alias DbSourceInfo =
 zero : DbSourceInfo
 zero =
     { id = SourceId.zero
-    , name = "default source"
-    , db = { url = "postgres://localhost/default", kind = DatabaseKind.PostgreSQL }
+    , name = "zero"
+    , db = { url = "postgres://localhost/zero", kind = DatabaseKind.PostgreSQL }
     , createdAt = Time.zero
     , updatedAt = Time.zero
     }

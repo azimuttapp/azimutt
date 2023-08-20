@@ -55,14 +55,14 @@ menu id direction offset isOpen content =
 -- ITEMS
 
 
-btn : TwClass -> msg -> List (Html msg) -> Html msg
-btn styles message content =
-    button [ type_ "button", onClick message, role "menuitem", tabindex -1, css [ "block w-full text-left", focus [ "outline-none" ], itemStyles, styles ] ] content
+btn : TwClass -> msg -> List (Attribute msg) -> List (Html msg) -> Html msg
+btn styles message attrs content =
+    button ([ type_ "button", onClick message, role "menuitem", tabindex -1, css [ "block w-full text-left", focus [ "outline-none" ], itemStyles, styles ] ] ++ attrs) content
 
 
-btnHotkey : TwClass -> msg -> List (Html msg) -> Platform -> List Hotkey -> Html msg
-btnHotkey styles action content platform hotkey =
-    btn (styles ++ " flex justify-between") action (content ++ (hotkey |> List.head |> Maybe.mapOrElse (\k -> [ Kbd.badge [ class "ml-3" ] (Hotkey.keys platform k) ]) []))
+btnHotkey : TwClass -> msg -> List (Attribute msg) -> List (Html msg) -> Platform -> List Hotkey -> Html msg
+btnHotkey styles action attrs content platform hotkey =
+    btn (styles ++ " flex justify-between") action attrs (content ++ (hotkey |> List.head |> Maybe.mapOrElse (\k -> [ Kbd.badge [ class "ml-3" ] (Hotkey.keys platform k) ]) []))
 
 
 btnDisabled : TwClass -> List (Html msg) -> Html msg
@@ -102,16 +102,16 @@ btnSubmenu : MenuItem msg -> Html msg
 btnSubmenu item =
     case item.content of
         Simple { action } ->
-            btn "" action [ text item.label ]
+            btn "" action [] [ text item.label ]
 
         SimpleHotkey { action, platform, hotkeys } ->
-            btnHotkey "" action [ text item.label ] platform hotkeys
+            btnHotkey "" action [] [ text item.label ] platform hotkeys
 
         SubMenu submenus dir ->
-            submenuHtml dir [ text (item.label ++ " »") ] (submenus |> List.map (\submenu -> btn "" submenu.action [ text submenu.label ]))
+            submenuHtml dir [ text (item.label ++ " »") ] (submenus |> List.map (\submenu -> btn "" submenu.action [] [ text submenu.label ]))
 
         SubMenuHotkey submenus dir ->
-            submenuHtml dir [ text (item.label ++ " »") ] (submenus |> List.map (\submenu -> btnHotkey "" submenu.action [ text submenu.label ] submenu.platform submenu.hotkeys))
+            submenuHtml dir [ text (item.label ++ " »") ] (submenus |> List.map (\submenu -> btnHotkey "" submenu.action [] [ text submenu.label ] submenu.platform submenu.hotkeys))
 
         Custom html dir ->
             submenuHtml dir [ text (item.label ++ " »") ] [ html ]

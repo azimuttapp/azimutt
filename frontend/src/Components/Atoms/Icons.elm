@@ -40,7 +40,7 @@ columns =
     }
 
 
-sources : { database : Icon, sql : Icon, prisma : Icon, json : Icon, aml : Icon, empty : Icon, project : Icon, sample : Icon, remote : Icon }
+sources : { database : Icon, sql : Icon, prisma : Icon, json : Icon, aml : Icon, empty : Icon, project : Icon, sample : Icon, remote : Icon, missing : Icon }
 sources =
     { database = Icon.Database
     , sql = Icon.DocumentText
@@ -51,4 +51,5 @@ sources =
     , project = Icon.FolderDownload
     , sample = Icon.Gift
     , remote = Icon.CloudDownload
+    , missing = Icon.XCircle
     }

@@ -16,6 +16,7 @@ module Libs.List exposing
     , findBy
     , findIndex
     , findIndexBy
+    , findMap
     , get
     , groupBy
     , groupByL
@@ -135,6 +136,16 @@ find predicate list =
 
             else
                 find predicate rest
+
+
+findMap : (a -> Maybe b) -> List a -> Maybe b
+findMap f list =
+    case list of
+        [] ->
+            Nothing
+
+        first :: rest ->
+            f first |> Maybe.map Just |> Maybe.withDefault (findMap f rest)
 
 
 indexedFind : (Int -> a -> Bool) -> List a -> Maybe a

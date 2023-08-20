@@ -33,7 +33,7 @@ import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumn
 import PagesComponents.Organization_.Project_.Models.ErdColumnRef exposing (ErdColumnRef)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
-import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable)
+import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.NotesMsg exposing (NotesMsg(..))
 import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint(..))
@@ -124,7 +124,7 @@ viewTable conf zoom args layout meta tableLayout table =
                 , columnHover = \col on -> ToggleHoverColumn { table = table.id, column = col } on
                 , columnClick = B.maybe virtualRelation (\col e -> VirtualRelationMsg (VRUpdate { table = table.id, column = col } e.clientPos))
                 , columnDblClick = \col -> { table = table.id, column = col } |> DetailsSidebar.ShowColumn |> DetailsSidebarMsg
-                , columnRightClick = \i col -> ContextMenuCreate (B.cond (tableLayout.columns |> ErdColumnProps.member col) ColumnContextMenu.view ColumnContextMenu.viewHidden platform i { table = table.id, column = col } (meta.columns |> ColumnPath.get col |> Maybe.andThen .notes))
+                , columnRightClick = \i col -> ContextMenuCreate (B.cond (tableLayout.columns |> ErdColumnProps.member col) ColumnContextMenu.view ColumnContextMenu.viewHidden platform i { table = table.id, column = col } (table |> ErdTable.getColumn col) (meta.columns |> ColumnPath.get col |> Maybe.andThen .notes))
                 , notesClick = \col -> NotesMsg (NOpen table.id col)
                 , relationsIconClick =
                     \cols isOut ->

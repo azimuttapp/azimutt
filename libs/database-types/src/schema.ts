@@ -15,12 +15,15 @@ export type ColumnId = string
 export const ColumnId = z.string()
 export type ColumnName = string
 export const ColumnName = z.string()
+export type ColumnPathStr = string
+export const ColumnPathStr = z.string()
+export const columnPathSeparator = ":"
 export type ColumnType = string
 export const ColumnType = z.string()
 export type ColumnValue = string | number | boolean | Date | null | unknown
 export const ColumnValue = z.union([z.string(), z.number(), z.boolean(), z.date(), z.null(), JsValue])
-export type ColumnRef = { table: TableId, column: ColumnName }
-export const ColumnRef = z.object({table: TableId, column: ColumnName}).strict()
+export type ColumnRef = { table: TableId, column: ColumnPathStr }
+export const ColumnRef = z.object({table: TableId, column: ColumnPathStr}).strict()
 
 export function parseTableId(id: TableId): { schema: SchemaName, table: TableName } {
     const parts = id.split('.')

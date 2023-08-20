@@ -1,5 +1,6 @@
 module Services.DatabaseQueries exposing (showColumnData, showData, showTableData)
 
+import Libs.Bool as Bool
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.DatabaseKind as DatabaseKind
@@ -9,7 +10,7 @@ import Models.Project.ColumnPath exposing (ColumnPath)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.TableId exposing (TableId)
 import Models.Project.TableName exposing (TableName)
-import Services.QueryBuilder exposing (SqlQuery)
+import Services.QueryBuilder exposing (SqlFragment, SqlQuery)
 
 
 
@@ -62,12 +63,12 @@ showTableData ( schema, table ) url =
             defaultShowTableData schema table
 
 
-defaultShowTableData : SchemaName -> TableName -> String
+defaultShowTableData : SchemaName -> TableName -> SqlQuery
 defaultShowTableData schema table =
     "SELECT * FROM " ++ tableRef schema table ++ " LIMIT " ++ limit ++ ";"
 
 
-showColumnData : ColumnPath -> TableId -> DatabaseUrl -> String
+showColumnData : ColumnPath -> TableId -> DatabaseUrl -> SqlQuery
 showColumnData column ( schema, table ) url =
     case DatabaseKind.fromUrl url of
         DatabaseKind.Couchbase ->
@@ -99,7 +100,8 @@ showColumnData column ( schema, table ) url =
             defaultShowColumnData schema table column.head
 
         DatabaseKind.PostgreSQL ->
-            "SELECT " ++ column.head ++ ", count(*) FROM " ++ tableRef schema table ++ " GROUP BY " ++ column.head ++ " ORDER BY count DESC, " ++ column.head ++ " LIMIT " ++ limit ++ ";"
+            ( postgresColumn column, postgresColumnAlias column )
+                |> (\( col, alias ) -> "SELECT " ++ Bool.cond (col == alias) col (col ++ " as " ++ alias) ++ ", count(*) FROM " ++ tableRef schema table ++ " GROUP BY " ++ col ++ " ORDER BY count DESC, " ++ alias ++ " LIMIT " ++ limit ++ ";")
 
         DatabaseKind.SQLServer ->
             "SELECT TOP " ++ limit ++ " " ++ column.head ++ ", count(*) as count FROM " ++ tableRef schema table ++ " GROUP BY " ++ column.head ++ " ORDER BY count DESC, " ++ column.head ++ ";"
@@ -116,10 +118,20 @@ defaultShowColumnData schema table column =
 tableRef : SchemaName -> TableName -> String
 tableRef schema table =
     if schema /= "" then
-        schema ++ "." ++ table
+        "\"" ++ schema ++ "\".\"" ++ table ++ "\""
 
     else
-        table
+        "\"" ++ table ++ "\""
+
+
+postgresColumn : ColumnPath -> SqlFragment
+postgresColumn column =
+    "\"" ++ column.head ++ "\"" ++ (column.tail |> List.map (\c -> "->'" ++ c ++ "'") |> String.join "")
+
+
+postgresColumnAlias : ColumnPath -> SqlFragment
+postgresColumnAlias column =
+    "\"" ++ (column.tail |> List.last |> Maybe.withDefault column.head) ++ "\""
 
 
 couchbaseCollectionRef : SchemaName -> TableName -> String

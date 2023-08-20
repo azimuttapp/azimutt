@@ -1,5 +1,5 @@
 import {groupBy, Logger, removeUndefined, sequence, zip} from "@azimutt/utils";
-import {AzimuttSchema} from "@azimutt/database-types";
+import {AzimuttSchema, ColumnName, SchemaName, TableName} from "@azimutt/database-types";
 import {schemaToColumns, ValueSchema, valuesToSchema} from "@azimutt/json-infer-schema";
 import {Conn} from "./common";
 import {buildSqlColumn, buildSqlTable} from "./helpers";
@@ -206,8 +206,10 @@ function enrichColumnsWithSchema(conn: Conn, columns: RawColumn[], sampleSize: n
     })
 }
 
-async function getColumnSchema(conn: Conn, schema: string, table: string, column: string, sampleSize: number): Promise<ValueSchema> {
-    const rows = await conn.query(`SELECT ${buildSqlColumn(column)} FROM ${buildSqlTable(schema, table)} WHERE ${buildSqlColumn(column)} IS NOT NULL LIMIT ${sampleSize};`)
+async function getColumnSchema(conn: Conn, schema: SchemaName, table: TableName, column: ColumnName, sampleSize: number): Promise<ValueSchema> {
+    const sqlTable = buildSqlTable(schema, table)
+    const sqlColumn = buildSqlColumn(column)
+    const rows = await conn.query(`SELECT ${sqlColumn} FROM ${sqlTable} WHERE ${sqlColumn} IS NOT NULL LIMIT ${sampleSize};`)
     return valuesToSchema(rows.map(row => row[column]))
 }
 

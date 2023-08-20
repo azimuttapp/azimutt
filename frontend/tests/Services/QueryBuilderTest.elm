@@ -19,7 +19,7 @@ suite =
             [ test "table only" (\_ -> fTable PostgreSQL publicUsers [] |> Expect.equal "SELECT * FROM public.users;")
             , test "with eq filter" (\_ -> fTable PostgreSQL users [ filter OpAnd "id" OpEqual (DbInt 3) ] |> Expect.equal "SELECT * FROM users WHERE id=3;")
             , test "with 2 filters" (\_ -> fTable PostgreSQL users [ filter OpAnd "id" OpNotEqual (DbInt 3), filter OpAnd "name" OpIsNotNull (DbString "") ] |> Expect.equal "SELECT * FROM users WHERE id!=3 AND name IS NOT NULL;")
-            , test "with json" (\_ -> fTable PostgreSQL users [ filter OpAnd "data:id" OpEqual (DbInt 3) ] |> Expect.equal "SELECT * FROM users WHERE data->>'id'=3;")
+            , test "with json" (\_ -> fTable PostgreSQL users [ filter OpAnd "data:id" OpEqual (DbInt 3) ] |> Expect.equal "SELECT * FROM users WHERE data->'id'=3;")
             ]
         , describe "findRow"
             [ test "with id" (\_ -> fRow PostgreSQL ( "public", "users" ) [ ( "id", DbInt 3 ) ] |> Expect.equal "SELECT * FROM public.users WHERE id=3 LIMIT 1;")
@@ -50,7 +50,7 @@ suite =
             , test "composite pk & json"
                 (\_ ->
                     incomingRows PostgreSQL ([ ( ( "", "events" ), inQuery [ "id", "details.id" ] [ "details.created_by" ] ) ] |> Dict.fromList) (rowQuery ( "", "users" ) "id" (DbInt 1))
-                        |> Expect.equal "SELECT array(SELECT json_build_object('id', s.id, 'details:id', s.details->>'id') FROM events s WHERE s.details->>'created_by' = m.id LIMIT 20) as \".events\" FROM users m WHERE id=1 LIMIT 1;"
+                        |> Expect.equal "SELECT array(SELECT json_build_object('id', s.id, 'details:id', s.details->'id') FROM events s WHERE s.details->'created_by' = m.id LIMIT 20) as \".events\" FROM users m WHERE id=1 LIMIT 1;"
                 )
             ]
         ]

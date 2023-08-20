@@ -23,7 +23,6 @@ import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.ColumnStats exposing (ColumnStats)
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.Metadata as Metadata
-import Models.Project.Origin exposing (Origin)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source as Source exposing (Source)
 import Models.Project.SourceId exposing (SourceId, SourceIdStr)
@@ -311,15 +310,11 @@ viewTable wrap showTable loadLayout openDataExplorer erd editNotes editTags open
         inLayouts =
             erd.layouts |> Dict.filter (\_ l -> l.tables |> List.memberBy .id model.id) |> Dict.keys
 
-        inSources : List ( Origin, Source )
-        inSources =
-            model.table.item.origins |> List.filterZip (\o -> erd.sources |> List.findBy .id o.id)
-
         tableStats : Dict SourceIdStr (Result String TableStats)
         tableStats =
             stats |> Dict.getOrElse model.id Dict.empty
     in
-    Details.viewTable (ShowList |> wrap) (ShowSchema >> wrap) (ShowTable >> wrap) (ShowColumn >> wrap) showTable loadLayout openDataExplorer (ToggleCollapse >> wrap) openedCollapse erd.settings.defaultSchema model.schema model.table notesModel tagsModel inLayouts inSources (erd.metadata |> Dict.get model.table.item.id) tableStats
+    Details.viewTable (ShowList |> wrap) (ShowSchema >> wrap) (ShowTable >> wrap) (ShowColumn >> wrap) showTable loadLayout openDataExplorer (ToggleCollapse >> wrap) openedCollapse erd.settings.defaultSchema model.schema model.table notesModel tagsModel inLayouts (erd.metadata |> Dict.get model.table.item.id) tableStats
 
 
 viewColumn : (Msg -> msg) -> (TableId -> msg) -> (ColumnRef -> msg) -> (ColumnRef -> msg) -> (LayoutName -> msg) -> (SourceId -> SqlQuery -> msg) -> Erd -> Maybe Notes -> Maybe String -> HtmlId -> Dict ColumnId (Dict SourceIdStr (Result String ColumnStats)) -> ColumnData -> Html msg
@@ -355,15 +350,11 @@ viewColumn wrap showTable _ _ loadLayout openDataExplorer erd editNotes editTags
         inLayouts =
             erd.layouts |> Dict.filter (\_ l -> l.tables |> List.memberWith (\t -> t.id == model.id.table && (t.columns |> ErdColumnProps.member model.id.column))) |> Dict.keys
 
-        inSources : List ( Origin, Source )
-        inSources =
-            model.column.item.origins |> List.filterZip (\o -> erd.sources |> List.findBy .id o.id)
-
         columnStats : Dict SourceIdStr (Result String ColumnStats)
         columnStats =
             stats |> Dict.getOrElse (ColumnId.fromRef model.id) Dict.empty
     in
-    Details.viewColumn (ShowList |> wrap) (ShowSchema >> wrap) (ShowTable >> wrap) (ShowColumn >> wrap) showTable loadLayout openDataExplorer (ToggleCollapse >> wrap) openedCollapse erd.settings.defaultSchema model.schema model.table model.column notesModel tagsModel inLayouts inSources columnStats
+    Details.viewColumn (ShowList |> wrap) (ShowSchema >> wrap) (ShowTable >> wrap) (ShowColumn >> wrap) showTable loadLayout openDataExplorer (ToggleCollapse >> wrap) openedCollapse erd.settings.defaultSchema model.schema model.table model.column notesModel tagsModel inLayouts columnStats
 
 
 

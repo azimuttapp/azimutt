@@ -45,7 +45,6 @@ import Models.Project.Index exposing (Index)
 import Models.Project.IndexName exposing (IndexName)
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.Metadata as Metadata exposing (Metadata)
-import Models.Project.Origin exposing (Origin)
 import Models.Project.PrimaryKey exposing (PrimaryKey)
 import Models.Project.SchemaName as SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
@@ -64,6 +63,7 @@ import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColu
 import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps exposing (ErdColumnProps, ErdColumnPropsFlat)
 import PagesComponents.Organization_.Project_.Models.ErdColumnRef as ErdColumnRef exposing (ErdColumnRef)
 import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout exposing (ErdLayout)
+import PagesComponents.Organization_.Project_.Models.ErdOrigin exposing (ErdOrigin)
 import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.ErdTableProps exposing (ErdTableProps)
@@ -179,11 +179,10 @@ viewTable :
     -> NotesModel msg
     -> TagsModel msg
     -> List LayoutName
-    -> List ( Origin, Source )
     -> Maybe TableMeta
     -> Dict SourceIdStr (Result String TableStats)
     -> Html msg
-viewTable goToList goToSchema goToTable goToColumn showTable loadLayout openDataExplorer _ _ defaultSchema schema table notes tags inLayouts inSources meta stats =
+viewTable goToList goToSchema goToTable goToColumn showTable loadLayout openDataExplorer _ _ defaultSchema schema table notes tags inLayouts meta stats =
     let
         columnValues : Dict ColumnPathStr ColumnValue
         columnValues =
@@ -209,7 +208,7 @@ viewTable goToList goToSchema goToTable goToColumn showTable loadLayout openData
             , notes |> viewNotes
             , tags |> viewTags
             , inLayouts |> List.nonEmptyMap (\l -> viewProp [ text "In layouts" ] (l |> List.sort |> List.map (viewLayout loadLayout))) (div [] [])
-            , inSources |> List.nonEmptyMap (\sources -> viewProp [ text "From sources" ] (sources |> List.sortBy (Tuple.second >> .name) |> List.map (\( o, s ) -> viewSource openDataExplorer table.item.id Nothing (stats |> Dict.get (SourceId.toString s.id) |> Maybe.andThen Result.toMaybe |> Maybe.map .rows) ( o, s )))) (div [] [])
+            , table.item.origins |> List.nonEmptyMap (\origin -> viewProp [ text "From sources" ] (origin |> List.sortBy (\o -> o.source |> Maybe.mapOrElse .name (SourceId.toString o.id)) |> List.map (\o -> viewSource openDataExplorer table.item.id Nothing (stats |> Dict.get (SourceId.toString o.id) |> Maybe.andThen Result.toMaybe |> Maybe.map .rows) o))) (div [] [])
             , outRelations |> List.nonEmptyMap (\r -> viewProp [ text "References" ] (r |> List.sortBy .table |> List.map (viewTableRelation goToTable defaultSchema))) (div [] [])
             , inRelations |> List.nonEmptyMap (\r -> viewProp [ text "Referenced by" ] (r |> List.sortBy .table |> List.map (viewTableRelation goToTable defaultSchema))) (div [] [])
             , viewTableConstraints table.item
@@ -261,10 +260,9 @@ viewColumn :
     -> NotesModel msg
     -> TagsModel msg
     -> List LayoutName
-    -> List ( Origin, Source )
     -> Dict SourceIdStr (Result String ColumnStats)
     -> Html msg
-viewColumn goToList goToSchema goToTable goToColumn showTable loadLayout openDataExplorer _ _ defaultSchema schema table column notes tags inLayouts inSources stats =
+viewColumn goToList goToSchema goToTable goToColumn showTable loadLayout openDataExplorer _ _ defaultSchema schema table column notes tags inLayouts stats =
     div []
         [ viewSchemaHeading goToList goToSchema defaultSchema schema
         , viewTableHeading goToSchema goToTable table
@@ -290,9 +288,9 @@ viewColumn goToList goToSchema goToTable goToColumn showTable loadLayout openDat
             , column.item.comment |> Maybe.mapOrElse viewComment (div [] [])
             , notes |> viewNotes
             , tags |> viewTags
-            , viewColumnStats (inSources |> List.map Tuple.second) stats
+            , viewColumnStats column.item.origins stats
             , inLayouts |> List.nonEmptyMap (\l -> viewProp [ text "In layouts" ] (l |> List.sort |> List.map (viewLayout loadLayout))) (div [] [])
-            , inSources |> List.nonEmptyMap (\s -> viewProp [ text "From sources" ] (s |> List.sortBy (Tuple.second >> .name) |> List.map (viewSource openDataExplorer table.item.id (Just column.item.path) Nothing))) (div [] [])
+            , column.item.origins |> List.nonEmptyMap (\origin -> viewProp [ text "From sources" ] (origin |> List.sortBy (\o -> o.source |> Maybe.mapOrElse .name (SourceId.toString o.id)) |> List.map (viewSource openDataExplorer table.item.id (Just column.item.path) Nothing))) (div [] [])
             , column.item.outRelations |> List.nonEmptyMap (\r -> viewProp [ text "References" ] (r |> List.sortBy ErdColumnRef.toId |> List.map (viewColumnRelation goToColumn defaultSchema))) (div [] [])
             , column.item.inRelations |> List.nonEmptyMap (\r -> viewProp [ text "Referenced by" ] (r |> List.sortBy ErdColumnRef.toId |> List.map (viewColumnRelation goToColumn defaultSchema))) (div [] [])
             , viewColumnConstraints table.item column.item
@@ -322,10 +320,9 @@ viewColumn2 :
     -> NotesModel msg
     -> TagsModel msg
     -> List LayoutName
-    -> List ( Origin, Source )
     -> Dict SourceIdStr (Result String ColumnStats)
     -> Html msg
-viewColumn2 _ _ _ _ _ _ _ _ _ defaultSchema schema table column _ _ _ _ _ =
+viewColumn2 _ _ _ _ _ _ _ _ _ defaultSchema schema table column _ _ _ _ =
     div []
         [ div [ class "lg:flex lg:items-center lg:justify-between" ]
             [ div [ class "flex-1 min-w-0" ]
@@ -557,12 +554,12 @@ viewMarkdown content =
     Markdown.prose "prose-sm -mt-1" content
 
 
-viewColumnStats : List Source -> Dict SourceIdStr (Result String ColumnStats) -> Html msg
-viewColumnStats sources stats =
+viewColumnStats : List ErdOrigin -> Dict SourceIdStr (Result String ColumnStats) -> Html msg
+viewColumnStats origins stats =
     div []
         (stats
             |> Dict.toList
-            |> List.map (\( sourceId, s ) -> ( sources |> List.findBy (.id >> SourceId.toString) sourceId |> Maybe.mapOrElse .name sourceId, s ))
+            |> List.map (\( sourceId, s ) -> ( origins |> List.findBy (.id >> SourceId.toString) sourceId |> Maybe.andThen .source |> Maybe.mapOrElse .name sourceId, s ))
             |> List.sortBy Tuple.first
             |> List.map
                 (\( sourceName, res ) ->
@@ -712,40 +709,41 @@ viewLayout loadLayout layout =
     div [] [ span [ class "underline cursor-pointer", onClick (loadLayout layout) ] [ text layout ] |> Tooltip.r "View layout" ]
 
 
-viewSource : (SourceId -> SqlQuery -> msg) -> TableId -> Maybe ColumnPath -> Maybe Int -> ( Origin, Source ) -> Html msg
-viewSource openDataExplorer table column rows ( _, source ) =
+viewSource : (SourceId -> SqlQuery -> msg) -> TableId -> Maybe ColumnPath -> Maybe Int -> ErdOrigin -> Html msg
+viewSource openDataExplorer table column rows origin =
     div [ class "mt-1 flex flex-row" ]
-        [ case source.kind of
-            SourceKind.DatabaseConnection _ ->
+        [ case origin.source |> Maybe.map .kind of
+            Just (SourceKind.DatabaseConnection _) ->
                 Icon.solid Icons.sources.database "opacity-50 mr-1" |> Tooltip.r "Database source"
 
-            SourceKind.SqlLocalFile _ _ _ ->
+            Just (SourceKind.SqlLocalFile _ _ _) ->
                 Icon.solid Icons.sources.sql "opacity-50 mr-1" |> Tooltip.r "SQL source"
 
-            SourceKind.SqlRemoteFile _ _ ->
+            Just (SourceKind.SqlRemoteFile _ _) ->
                 Icon.solid Icons.sources.sql "opacity-50 mr-1" |> Tooltip.r "SQL source"
 
-            SourceKind.PrismaLocalFile _ _ _ ->
+            Just (SourceKind.PrismaLocalFile _ _ _) ->
                 Icon.solid Icons.sources.prisma "opacity-50 mr-1" |> Tooltip.r "Prisma source"
 
-            SourceKind.PrismaRemoteFile _ _ ->
+            Just (SourceKind.PrismaRemoteFile _ _) ->
                 Icon.solid Icons.sources.prisma "opacity-50 mr-1" |> Tooltip.r "Prisma source"
 
-            SourceKind.JsonLocalFile _ _ _ ->
+            Just (SourceKind.JsonLocalFile _ _ _) ->
                 Icon.solid Icons.sources.json "opacity-50 mr-1" |> Tooltip.r "JSON source"
 
-            SourceKind.JsonRemoteFile _ _ ->
+            Just (SourceKind.JsonRemoteFile _ _) ->
                 Icon.solid Icons.sources.json "opacity-50 mr-1" |> Tooltip.r "JSON source"
 
-            SourceKind.AmlEditor ->
+            Just SourceKind.AmlEditor ->
                 Icon.solid Icons.sources.aml "opacity-50 mr-1" |> Tooltip.r "AML source"
-        , text (source.name ++ (rows |> Maybe.mapOrElse (\r -> " (" ++ String.fromInt r ++ " rows)") ""))
-        , case source.kind of
-            SourceKind.DatabaseConnection url ->
-                button [ type_ "button", onClick (openDataExplorer source.id (DatabaseQueries.showData column table url)), class "ml-1" ] [ Icon.solid Icon.ArrowCircleRight "opacity-50" ] |> Tooltip.r "Browse data"
 
-            _ ->
-                text ""
+            Nothing ->
+                Icon.solid Icons.sources.missing "opacity-50 mr-1" |> Tooltip.r "Missing source"
+        , text ((origin.source |> Maybe.mapOrElse .name (SourceId.toString origin.id)) ++ (rows |> Maybe.mapOrElse (\r -> " (" ++ String.fromInt r ++ " rows)") ""))
+        , origin.source
+            |> Maybe.andThen .db
+            |> Maybe.map (\url -> button [ type_ "button", onClick (openDataExplorer origin.id (DatabaseQueries.showData column table url)), class "ml-1" ] [ Icon.solid Icon.ArrowCircleRight "opacity-50" ] |> Tooltip.r "Browse data")
+            |> Maybe.withDefault (text "")
         ]
 
 
@@ -1064,7 +1062,6 @@ doc =
                                                     , save = \content -> docSetState { s | metadata = s.metadata |> Metadata.putTags table.item.id Nothing (content |> Tag.tagsFromString) }
                                                     }
                                                     (docErd.layouts |> Dict.filter (\_ l -> l.tables |> List.memberBy .id table.item.id) |> Dict.keys)
-                                                    (table.item.origins |> List.filterZip (\o -> docErd.sources |> List.findBy .id o.id))
                                                     Nothing
                                                     (docTableStats |> Dict.getOrElse table.item.id Dict.empty)
                                                 ]
@@ -1111,7 +1108,6 @@ doc =
                                                     , save = \content -> docSetState { s | metadata = s.metadata |> Metadata.putTags table.item.id (Just column.item.path) (content |> Tag.tagsFromString) }
                                                     }
                                                     (docErd.layouts |> Dict.filter (\_ l -> l.tables |> List.memberWith (\t -> t.id == table.item.id && (t.columns |> ErdColumnProps.member column.item.path))) |> Dict.keys)
-                                                    (column.item.origins |> List.filterZip (\o -> docErd.sources |> List.findBy .id o.id))
                                                     (docColumnStats |> Dict.getOrElse (ColumnId.from table.item column.item) Dict.empty)
                                                 ]
                                         )

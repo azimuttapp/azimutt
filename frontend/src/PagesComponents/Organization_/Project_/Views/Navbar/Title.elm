@@ -115,9 +115,9 @@ viewProjectsDropdown platform eConf projects project dirty htmlId openedDropdown
         (\_ ->
             div [ class "divide-y divide-gray-100" ]
                 ([ if eConf.save then
-                    [ ContextMenu.btnHotkey "" TriggerSaveProject [ text "Save project" ] platform (Conf.hotkeys |> Dict.getOrElse "save" [])
-                    , ContextMenu.btn "" (RenameProject |> prompt "Rename project" (text "") project.name) [ text "Rename project" ]
-                    , ContextMenu.btn "" (DeleteProject project |> confirmDanger "Delete project?" (text "This action is definitive!")) [ text "Delete project" ]
+                    [ ContextMenu.btnHotkey "" TriggerSaveProject [] [ text "Save project" ] platform (Conf.hotkeys |> Dict.getOrElse "save" [])
+                    , ContextMenu.btn "" (RenameProject |> prompt "Rename project" (text "") project.name) [] [ text "Rename project" ]
+                    , ContextMenu.btn "" (DeleteProject project |> confirmDanger "Delete project?" (text "This action is definitive!")) [] [ text "Delete project" ]
                     ]
 
                    else
@@ -175,7 +175,7 @@ viewLayouts platform currentLayout layouts htmlId openedDropdown =
         (\_ ->
             div [ class "min-w-max divide-y divide-gray-100" ]
                 [ div [ role "none", class "py-1" ]
-                    [ ContextMenu.btnHotkey "" (NewLayout.Open Nothing |> NewLayoutMsg) [ text "Create new layout" ] platform (Conf.hotkeys |> Dict.getOrElse "create-layout" []) ]
+                    [ ContextMenu.btnHotkey "" (NewLayout.Open Nothing |> NewLayoutMsg) [] [ text "Create new layout" ] platform (Conf.hotkeys |> Dict.getOrElse "create-layout" []) ]
                 , div [ role "none", class "py-1" ]
                     (layouts
                         |> Dict.toList

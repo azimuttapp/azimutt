@@ -109,7 +109,7 @@ tableId name =
 
 buildTable : TableName -> List String -> ErdTable
 buildTable name columnNames =
-    Table (tableId name) defaultSchema name False (columnNames |> List.map buildColumn |> Dict.fromListMap .name) Nothing [] [] [] Nothing [] |> ErdTable.create defaultSchema Dict.empty []
+    Table (tableId name) defaultSchema name False (columnNames |> List.map buildColumn |> Dict.fromListMap .name) Nothing [] [] [] Nothing [] |> ErdTable.create defaultSchema [] Dict.empty []
 
 
 buildColumn : ColumnName -> Column

@@ -120,7 +120,7 @@ buildColumn origins index column =
     , nullable = column.nullable |> Maybe.withDefault False
     , default = column.default
     , comment = column.comment |> Maybe.map (buildComment origins)
-    , columns = column.columns |> Maybe.map buildNestedColumns
+    , columns = column.columns |> Maybe.map (buildNestedColumns origins)
     , origins = origins
     }
 
@@ -136,9 +136,9 @@ unpackColumn column =
     }
 
 
-buildNestedColumns : JsonNestedColumns -> NestedColumns
-buildNestedColumns (JsonNestedColumns columns) =
-    columns |> Nel.indexedMap (buildColumn []) |> Ned.fromNelMap .name |> NestedColumns
+buildNestedColumns : List Origin -> JsonNestedColumns -> NestedColumns
+buildNestedColumns origins (JsonNestedColumns columns) =
+    columns |> Nel.indexedMap (buildColumn origins) |> Ned.fromNelMap .name |> NestedColumns
 
 
 unpackNestedColumns : NestedColumns -> JsonNestedColumns

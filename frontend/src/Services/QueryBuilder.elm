@@ -1,4 +1,4 @@
-module Services.QueryBuilder exposing (FilterOperation(..), FilterOperator(..), IncomingRowsQuery, RowQuery, SqlQuery, TableFilter, TableQuery, filterTable, findRow, incomingRows, incomingRowsLimit, limitResults, operationHasValue, operationToString, operations, operationsForType, operatorFromString, operatorToString, operators, stringToOperation)
+module Services.QueryBuilder exposing (FilterOperation(..), FilterOperator(..), IncomingRowsQuery, RowQuery, SqlFragment, SqlQuery, TableFilter, TableQuery, filterTable, findRow, incomingRows, incomingRowsLimit, limitResults, operationHasValue, operationToString, operations, operationsForType, operatorFromString, operatorToString, operators, stringToOperation)
 
 import Dict exposing (Dict)
 import Libs.Bool as Bool
@@ -394,7 +394,7 @@ formatMatcher db matches =
 formatColumn : DatabaseKind -> ColumnPath -> String
 formatColumn db column =
     if db == DatabaseKind.PostgreSQL then
-        column.head ++ (column.tail |> List.map (\c -> "->>'" ++ c ++ "'") |> String.join "")
+        column.head ++ (column.tail |> List.map (\c -> "->'" ++ c ++ "'") |> String.join "")
 
     else
         ""

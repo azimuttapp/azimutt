@@ -33,9 +33,9 @@ function buildUrl(url: DatabaseUrlParsed): string {
 
 function queryError(sql: string, err: unknown): Error {
     if (typeof err === 'object' && err !== null) {
-        return new Error(`${err.constructor.name}${'code' in err ? ` ${err.code}` : ''}${'message' in err ? `: ${err.message}` : ''} on '${sql}'`)
+        return new Error(`${err.constructor.name}${'code' in err ? ` ${err.code}` : ''}${'message' in err ? `:\n ${err.message}` : ''}\n on '${sql}'`)
     } else if (err) {
-        return new Error(`error ${JSON.stringify(err)} on '${sql}'`)
+        return new Error(`error ${JSON.stringify(err)}\n on '${sql}'`)
     } else {
         return new Error(`error on '${sql}'`)
     }

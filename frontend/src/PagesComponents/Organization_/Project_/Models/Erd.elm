@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Models.Erd exposing (Erd, canChangeColor, canCreateGroup, canCreateLayout, canCreateMemo, create, currentLayout, defaultSchemaM, getColumn, getColumnPos, getLayoutTable, getOrganization, getOrganizationM, getProjectId, getProjectIdM, getProjectRef, getProjectRefM, getTable, isShown, mapCurrentLayout, mapCurrentLayoutWithTime, mapCurrentLayoutWithTimeCmd, mapSettings, mapSource, mapSources, setSettings, setSources, unpack, viewportM, viewportToCanvas)
+module PagesComponents.Organization_.Project_.Models.Erd exposing (Erd, canChangeColor, canCreateGroup, canCreateLayout, canCreateMemo, create, currentLayout, defaultSchemaM, getColumn, getColumnPos, getLayoutTable, getOrganization, getOrganizationM, getProjectId, getProjectIdM, getProjectRef, getProjectRefM, getTable, isShown, mapCurrentLayout, mapCurrentLayoutWithTime, mapCurrentLayoutWithTimeCmd, mapSettings, mapSource, mapSources, setSettings, setSources, toSchema, unpack, viewportM, viewportToCanvas)
 
 import Conf
 import Dict exposing (Dict)
@@ -21,6 +21,7 @@ import Models.Project.Metadata exposing (Metadata)
 import Models.Project.ProjectId as ProjectId exposing (ProjectId)
 import Models.Project.ProjectSettings as ProjectSettings exposing (ProjectSettings)
 import Models.Project.Relation as Relation exposing (Relation)
+import Models.Project.Schema exposing (Schema)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId exposing (SourceId)
@@ -100,6 +101,14 @@ unpack erd =
     , version = erd.project.version
     , createdAt = erd.project.createdAt
     , updatedAt = erd.project.updatedAt
+    }
+
+
+toSchema : { s | tables : Dict TableId ErdTable, relations : List ErdRelation, types : Dict CustomTypeId CustomType } -> Schema
+toSchema source =
+    { tables = source.tables |> Dict.map (\_ -> ErdTable.unpack)
+    , relations = source.relations |> List.map ErdRelation.unpack
+    , types = source.types
     }
 
 
@@ -268,7 +277,7 @@ computeSources settings sources =
 
         erdTables : Dict TableId ErdTable
         erdTables =
-            tables |> Dict.map (\id -> ErdTable.create settings.defaultSchema types (erdRelationsByTable |> Dict.getOrElse id []))
+            tables |> Dict.map (\id -> ErdTable.create settings.defaultSchema sources types (erdRelationsByTable |> Dict.getOrElse id []))
     in
     ( ( erdTables, erdRelations, types ), erdRelationsByTable )
 

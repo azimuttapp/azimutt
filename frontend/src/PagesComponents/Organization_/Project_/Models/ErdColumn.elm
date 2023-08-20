@@ -15,11 +15,12 @@ import Models.Project.Comment exposing (Comment)
 import Models.Project.CustomType as CustomType exposing (CustomType)
 import Models.Project.CustomTypeId exposing (CustomTypeId)
 import Models.Project.IndexName exposing (IndexName)
-import Models.Project.Origin exposing (Origin)
 import Models.Project.SchemaName exposing (SchemaName)
+import Models.Project.Source exposing (Source)
 import Models.Project.Table exposing (Table)
 import Models.Project.UniqueName exposing (UniqueName)
 import PagesComponents.Organization_.Project_.Models.ErdColumnRef exposing (ErdColumnRef)
+import PagesComponents.Organization_.Project_.Models.ErdOrigin as ErdOrigin exposing (ErdOrigin)
 import PagesComponents.Organization_.Project_.Models.ErdRelation exposing (ErdRelation)
 
 
@@ -40,7 +41,7 @@ type alias ErdColumn =
     , indexes : List IndexName
     , checks : List CheckName
     , columns : Maybe ErdNestedColumns
-    , origins : List Origin
+    , origins : List ErdOrigin
     }
 
 
@@ -48,8 +49,8 @@ type ErdNestedColumns
     = ErdNestedColumns (Ned ColumnName ErdColumn)
 
 
-create : SchemaName -> Dict CustomTypeId CustomType -> List ErdRelation -> Table -> ColumnPath -> Column -> ErdColumn
-create defaultSchema types columnRelations table path column =
+create : SchemaName -> List Source -> Dict CustomTypeId CustomType -> List ErdRelation -> Table -> ColumnPath -> Column -> ErdColumn
+create defaultSchema sources types columnRelations table path column =
     { index = column.index
     , path = path
     , kind = column.kind
@@ -65,8 +66,8 @@ create defaultSchema types columnRelations table path column =
     , uniques = table.uniques |> List.filter (.columns >> Nel.member path) |> List.map .name
     , indexes = table.indexes |> List.filter (.columns >> Nel.member path) |> List.map .name
     , checks = table.checks |> List.filter (.columns >> List.member path) |> List.map .name
-    , columns = column.columns |> Maybe.map (\(NestedColumns cols) -> cols |> Ned.map (\name -> create defaultSchema types columnRelations table (path |> ColumnPath.child name)) |> ErdNestedColumns)
-    , origins = column.origins
+    , columns = column.columns |> Maybe.map (\(NestedColumns cols) -> cols |> Ned.map (\name -> create defaultSchema sources types columnRelations table (path |> ColumnPath.child name)) |> ErdNestedColumns)
+    , origins = column.origins |> List.map (ErdOrigin.create sources)
     }
 
 
@@ -79,7 +80,7 @@ unpack column =
     , default = column.default
     , comment = column.comment
     , columns = column.columns |> Maybe.map (\(ErdNestedColumns cols) -> cols |> Ned.map (\_ -> unpack) |> NestedColumns)
-    , origins = column.origins
+    , origins = column.origins |> List.map ErdOrigin.unpack
     }
 
 

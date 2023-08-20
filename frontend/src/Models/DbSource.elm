@@ -1,14 +1,15 @@
-module Models.DbSource exposing (DbSource, fromSource, toInfo)
+module Models.DbSource exposing (DbSource, fromSource, toInfo, zero)
 
 import Dict exposing (Dict)
 import Libs.Models.DatabaseKind as DatabaseKind exposing (DatabaseKind)
 import Libs.Models.DatabaseUrl exposing (DatabaseUrl)
+import Libs.Time as Time
 import Models.DbSourceInfo exposing (DbSourceInfo)
 import Models.Project.CustomType exposing (CustomType)
 import Models.Project.CustomTypeId exposing (CustomTypeId)
 import Models.Project.Relation exposing (Relation)
 import Models.Project.Source exposing (Source)
-import Models.Project.SourceId exposing (SourceId)
+import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.SourceKind as SourceKind
 import Models.Project.SourceName exposing (SourceName)
 import Models.Project.Table exposing (Table)
@@ -29,6 +30,19 @@ type alias DbSource =
     , types : Dict CustomTypeId CustomType
     , createdAt : Time.Posix
     , updatedAt : Time.Posix
+    }
+
+
+zero : DbSource
+zero =
+    { id = SourceId.zero
+    , name = "zero"
+    , db = { url = "postgres://localhost/zero", kind = DatabaseKind.PostgreSQL }
+    , tables = Dict.empty
+    , relations = []
+    , types = Dict.empty
+    , createdAt = Time.zero
+    , updatedAt = Time.zero
     }
 
 

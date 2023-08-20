@@ -1,11 +1,13 @@
 module Components.Slices.DataExplorer exposing (DataExplorerDisplay(..), DataExplorerTab(..), DocState, Model, Msg(..), QueryEditor, SharedDocState, VisualEditor, VisualEditorFilter, doc, docInit, init, update, view)
 
 import Components.Atoms.Badge as Badge
+import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon
 import Components.Molecules.Alert as Alert
 import Components.Molecules.Tooltip as Tooltip
 import Components.Slices.DataExplorerDetails as DataExplorerDetails
 import Components.Slices.DataExplorerQuery as DataExplorerQuery
+import Conf
 import Dict exposing (Dict)
 import ElmBook
 import ElmBook.Actions as Actions exposing (logAction)
@@ -49,9 +51,8 @@ import Track
 
 -- TODO:
 --  - popover with JSON when hover a JSON value in table row => bad CSS? hard to setup :/
---  - Show incoming rows in the side bar (and results?)
---  - Make sure data explorer is visible (erd/table/column context menu, sources, table?, details sidebar)
 --  - Check embed mode to remove drag, hover & others
+--  - Show incoming rows in the side bar (and results?)
 --  - Enable data exploration for other db: MySQL, SQL Server, MongoDB, Couchbase... (QueryBuilder...)
 --  - Better error handling on connectors (cf PostgreSQL)
 --
@@ -264,7 +265,7 @@ view wrap toggleDropdown showTable showTableRow openNotes navbarHeight openedDro
     div [ class "h-full flex" ]
         [ div [ class "basis-1/3 flex-1 overflow-y-auto flex flex-col border-r" ]
             -- TODO: put header on the whole width
-            [ viewHeader wrap model.activeTab display
+            [ viewHeader wrap model.activeTab model.source display
             , viewSources wrap (htmlId ++ "-sources") sources model.source
             , case model.activeTab of
                 VisualEditorTab ->
@@ -279,15 +280,20 @@ view wrap toggleDropdown showTable showTableRow openNotes navbarHeight openedDro
         ]
 
 
-viewHeader : (Msg -> msg) -> DataExplorerTab -> DataExplorerDisplay -> Html msg
-viewHeader wrap activeTab display =
+viewHeader : (Msg -> msg) -> DataExplorerTab -> Maybe DbSource -> DataExplorerDisplay -> Html msg
+viewHeader wrap activeTab source display =
     div [ class "px-3 flex justify-between border-b border-gray-200" ]
         [ div [ class "sm:flex sm:items-baseline" ]
             [ h3 [ class "text-base font-semibold leading-6 text-gray-900" ] [ text "Data explorer" ]
-            , div [ class "ml-6 mt-0" ]
-                [ nav [ class "flex space-x-6" ]
-                    ([ VisualEditorTab, QueryEditorTab ] |> List.map (viewHeaderTab wrap activeTab))
-                ]
+            , source
+                |> Maybe.map
+                    (\_ ->
+                        div [ class "ml-6 mt-0" ]
+                            [ nav [ class "flex space-x-6" ]
+                                ([ VisualEditorTab, QueryEditorTab ] |> List.map (viewHeaderTab wrap activeTab))
+                            ]
+                    )
+                |> Maybe.withDefault (div [] [])
             ]
         , div [ class "py-2 flex flex-shrink-0 self-center" ]
             [ case display of
@@ -341,8 +347,8 @@ viewSources wrap htmlId sources selectedSource =
                     , icon = Icon.InformationCircle
                     , title = "No database source in project"
                     }
-                    [ p [] [ text "Azimutt is able to query your database if you add a source with a database url." ]
-                    , p [] [ text "To access this, open settings (top right cog), click on 'add source' and fill your connection." ]
+                    [ p [] [ text "Azimutt can explore nicely your database if you have a source with a database url." ]
+                    , p [] [ text "To add one, open settings (top right cog), click on 'add source' and provide your database url." ]
                     , p []
                         [ text "Local databases are accessible with "
                         , extLink "https://www.npmjs.com/package/azimutt" [ class "link" ] [ text "Azimutt CLI" ]
@@ -353,9 +359,26 @@ viewSources wrap htmlId sources selectedSource =
                     ]
                 ]
 
-        _ :: [] ->
-            -- TODO: if source is not selected, select it
-            div [] []
+        db :: [] ->
+            selectedSource
+                |> Maybe.map (\_ -> div [] [])
+                |> Maybe.withDefault
+                    (div [ class "mt-3 mx-3" ]
+                        [ Alert.withActions
+                            { color = Tw.red
+                            , icon = Icon.ExclamationCircle
+                            , title = "Ooops"
+                            , actions = [ Button.secondary2 Tw.red [ onClick (Just db |> UpdateSource |> wrap) ] [ text ("Select " ++ db.name ++ " source") ] ]
+                            }
+                            [ p [] [ text "You project has one database source but it's not selected in data explorer." ]
+                            , p []
+                                [ text "This is not expected, if you see this, please report to "
+                                , extLink ("mailto:" ++ Conf.constants.azimuttEmail) [ class "link" ] [ text "Azimutt team" ]
+                                , text "."
+                                ]
+                            ]
+                        ]
+                    )
 
         dbSources ->
             div []
