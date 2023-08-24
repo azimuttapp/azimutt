@@ -65,7 +65,7 @@ showTableData ( schema, table ) url =
 
 defaultShowTableData : SchemaName -> TableName -> SqlQuery
 defaultShowTableData schema table =
-    "SELECT * FROM " ++ tableRef schema table ++ " LIMIT " ++ limit ++ ";"
+    "SELECT *\nFROM " ++ tableRef schema table ++ "\nLIMIT " ++ limit ++ ";\n"
 
 
 showColumnData : ColumnPath -> TableId -> DatabaseUrl -> SqlQuery
@@ -101,7 +101,7 @@ showColumnData column ( schema, table ) url =
 
         DatabaseKind.PostgreSQL ->
             ( postgresColumn column, postgresColumnAlias column )
-                |> (\( col, alias ) -> "SELECT " ++ Bool.cond (col == alias) col (col ++ " as " ++ alias) ++ ", count(*) FROM " ++ tableRef schema table ++ " GROUP BY " ++ col ++ " ORDER BY count DESC, " ++ alias ++ " LIMIT " ++ limit ++ ";")
+                |> (\( col, alias ) -> "SELECT\n  " ++ Bool.cond (col == alias) col (col ++ " as " ++ alias) ++ ",\n  count(*)\nFROM " ++ tableRef schema table ++ "\nGROUP BY " ++ col ++ "\nORDER BY count DESC, " ++ alias ++ "\nLIMIT " ++ limit ++ ";\n")
 
         DatabaseKind.SQLServer ->
             "SELECT TOP " ++ limit ++ " " ++ column.head ++ ", count(*) as count FROM " ++ tableRef schema table ++ " GROUP BY " ++ column.head ++ " ORDER BY count DESC, " ++ column.head ++ ";"

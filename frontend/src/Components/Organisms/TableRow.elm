@@ -48,7 +48,7 @@ import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.SourceKind exposing (SourceKind(..))
-import Models.Project.Table exposing (Table)
+import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableMeta exposing (TableMeta)
 import Models.Project.TableName exposing (TableName)
@@ -559,7 +559,21 @@ viewColumnRow wrap noop createContextMenu hover showTableRow openNotes openDataE
                     |> List.filter (\r -> r.ref.table == row.table && r.ref.column == rowColumn.path)
                     |> List.map .src
                     |> List.groupBy .table
-                    |> Dict.filterMap (\id cols -> source |> Maybe.andThen (.tables >> Dict.get id) |> Maybe.andThen .primaryKey |> Maybe.map (\pk -> { primaryKey = pk.columns, foreignKeys = cols |> List.map .column }))
+                    |> Dict.filterMap
+                        (\id cols ->
+                            source
+                                |> Maybe.andThen (.tables >> Dict.get id)
+                                |> Maybe.andThen
+                                    (\t ->
+                                        t.primaryKey
+                                            |> Maybe.map
+                                                (\pk ->
+                                                    { primaryKey = pk.columns |> Nel.map (\c -> ( c, t |> Table.getColumn c |> Maybe.mapOrElse .kind "" ))
+                                                    , foreignKeys = cols |> List.map (\c -> ( c.column, t |> Table.getColumn c.column |> Maybe.mapOrElse .kind "" ))
+                                                    }
+                                                )
+                                    )
+                        )
 
         isColumn : TableRowRelationColumn -> Bool
         isColumn c =
@@ -672,7 +686,7 @@ viewColumnRowIncomingRows noop showTableRow openDataExplorer defaultSchema sourc
                                 , action = showTableRow source { table = tableId, primaryKey = r } Nothing (Just (PositionHint.PlaceRight row.position row.size))
                                 }
                             )
-                        |> List.add { label = "See all", action = openDataExplorer (Just source.id) (Just (QueryBuilder.filterTable source.db.kind { table = tableId, filters = query.foreignKeys |> List.map (\fk -> QueryBuilder.TableFilter QueryBuilder.OpOr fk QueryBuilder.OpEqual rowColumn.value) })) }
+                        |> List.add { label = "See all", action = openDataExplorer (Just source.id) (Just (QueryBuilder.filterTable source.db.kind { table = tableId, filters = query.foreignKeys |> List.map (\( fk, _ ) -> QueryBuilder.TableFilter QueryBuilder.OpOr fk QueryBuilder.OpEqual rowColumn.value) })) }
                     )
                     ContextMenu.BottomRight
         }

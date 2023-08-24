@@ -77,29 +77,56 @@ suite =
                 [ test "with schema"
                     (\_ ->
                         showTableData ( "schema", "table" ) postgresUrl
-                            |> Expect.equal """SELECT * FROM "schema"."table" LIMIT 100;"""
+                            |> Expect.equal """SELECT *
+FROM "schema"."table"
+LIMIT 100;
+"""
                     )
                 , test "with empty schema"
                     (\_ ->
                         showTableData ( "", "table" ) postgresUrl
-                            |> Expect.equal """SELECT * FROM "table" LIMIT 100;"""
+                            |> Expect.equal """SELECT *
+FROM "table"
+LIMIT 100;
+"""
                     )
                 ]
             , describe "showColumnData"
                 [ test "with schema"
                     (\_ ->
                         showColumnData (ColumnPath.fromString "column") ( "schema", "table" ) postgresUrl
-                            |> Expect.equal """SELECT "column", count(*) FROM "schema"."table" GROUP BY "column" ORDER BY count DESC, "column" LIMIT 100;"""
+                            |> Expect.equal """SELECT
+  "column",
+  count(*)
+FROM "schema"."table"
+GROUP BY "column"
+ORDER BY count DESC, "column"
+LIMIT 100;
+"""
                     )
                 , test "with empty schema"
                     (\_ ->
                         showColumnData (ColumnPath.fromString "column") ( "", "table" ) postgresUrl
-                            |> Expect.equal """SELECT "column", count(*) FROM "table" GROUP BY "column" ORDER BY count DESC, "column" LIMIT 100;"""
+                            |> Expect.equal """SELECT
+  "column",
+  count(*)
+FROM "table"
+GROUP BY "column"
+ORDER BY count DESC, "column"
+LIMIT 100;
+"""
                     )
                 , test "with json column"
                     (\_ ->
                         showColumnData (ColumnPath.fromString "data:email") ( "", "table" ) postgresUrl
-                            |> Expect.equal """SELECT "data"->'email' as "email", count(*) FROM "table" GROUP BY "data"->'email' ORDER BY count DESC, "email" LIMIT 100;"""
+                            |> Expect.equal """SELECT
+  "data"->'email' as "email",
+  count(*)
+FROM "table"
+GROUP BY "data"->'email'
+ORDER BY count DESC, "email"
+LIMIT 100;
+"""
                     )
                 ]
             ]

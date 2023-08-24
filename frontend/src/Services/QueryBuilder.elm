@@ -7,7 +7,7 @@ import Libs.Nel as Nel exposing (Nel)
 import Libs.Regex as Regex
 import Models.DbValue as DbValue exposing (DbValue(..))
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
-import Models.Project.ColumnType as ColumnType exposing (ColumnType)
+import Models.Project.ColumnType as ColumnType exposing (ColumnType, ParsedColumnType)
 import Models.Project.RowPrimaryKey exposing (RowPrimaryKey)
 import Models.Project.RowValue exposing (RowValue)
 import Models.Project.TableId as TableId exposing (TableId)
@@ -36,7 +36,7 @@ type alias TableFilter =
 filterTable : DatabaseKind -> TableQuery -> SqlQuery
 filterTable db query =
     if db == DatabaseKind.PostgreSQL then
-        "SELECT * FROM " ++ formatTable db query.table ++ formatFilters db query.filters ++ ";"
+        "SELECT *\nFROM " ++ formatTable db query.table ++ formatFilters db query.filters ++ ";\n"
 
     else
         ""
@@ -49,7 +49,7 @@ type alias RowQuery =
 findRow : DatabaseKind -> RowQuery -> SqlQuery
 findRow db query =
     if db == DatabaseKind.PostgreSQL then
-        "SELECT * FROM " ++ formatTable db query.table ++ " WHERE " ++ formatMatcher db query.primaryKey ++ " LIMIT 1;"
+        "SELECT *\nFROM " ++ formatTable db query.table ++ "\nWHERE " ++ formatMatcher db query.primaryKey ++ "\nLIMIT 1;\n"
 
     else
         ""
@@ -58,12 +58,12 @@ findRow db query =
 limitResults : DatabaseKind -> SqlQuery -> SqlQuery
 limitResults db query =
     if db == DatabaseKind.PostgreSQL then
-        case query |> String.trim |> Regex.matches "^([\\s\\S]+?)( limit \\d+)?( offset \\d+)?;$" of
+        case query |> String.trim |> Regex.matches "^([\\s\\S]+?)(\\slimit \\d+)?(\\soffset \\d+)?;$" of
             (Just q) :: Nothing :: Nothing :: [] ->
-                q ++ " LIMIT 100;"
+                q ++ "\nLIMIT 100;\n"
 
             (Just q) :: Nothing :: (Just offset) :: [] ->
-                q ++ " LIMIT 100" ++ offset ++ ";"
+                q ++ "\nLIMIT 100" ++ offset ++ ";\n"
 
             _ ->
                 query
@@ -73,7 +73,7 @@ limitResults db query =
 
 
 type alias IncomingRowsQuery =
-    { primaryKey : Nel ColumnPath, foreignKeys : List ColumnPath }
+    { primaryKey : Nel ( ColumnPath, ColumnType ), foreignKeys : List ( ColumnPath, ColumnType ) }
 
 
 incomingRowsLimit : Int
@@ -84,31 +84,31 @@ incomingRowsLimit =
 incomingRows : DatabaseKind -> Dict TableId IncomingRowsQuery -> RowQuery -> SqlQuery
 incomingRows db relations query =
     if db == DatabaseKind.PostgreSQL then
-        "SELECT "
+        "SELECT\n"
             ++ (relations
                     |> Dict.toList
                     |> List.map
                         (\( table, q ) ->
-                            "array(SELECT json_build_object("
-                                ++ (q.primaryKey |> Nel.toList |> List.map (\col -> "'" ++ (col |> ColumnPath.toString) ++ "', s." ++ formatColumn db col) |> String.join ", ")
+                            "  array(SELECT json_build_object("
+                                ++ (q.primaryKey |> Nel.toList |> List.map (\( col, kind ) -> "'" ++ (col |> ColumnPath.toString) ++ "', " ++ formatColumn db "s" col (ColumnType.parse kind)) |> String.join ", ")
                                 ++ ")"
                                 ++ " FROM "
                                 ++ formatTable db table
                                 ++ " s WHERE "
-                                ++ (q.foreignKeys |> List.map (\fk -> "s." ++ formatColumn db fk ++ " = m." ++ formatColumn db query.primaryKey.head.column) |> String.join " OR ")
+                                ++ (q.foreignKeys |> List.map (\( fk, kind ) -> formatColumn db "s" fk (ColumnType.parse kind) ++ " = " ++ formatColumn db "m" query.primaryKey.head.column (DbValue.toType query.primaryKey.head.value)) |> String.join " OR ")
                                 ++ " LIMIT "
                                 ++ String.fromInt incomingRowsLimit
                                 ++ ") as \""
                                 ++ TableId.toString table
                                 ++ "\""
                         )
-                    |> String.join ", "
+                    |> String.join ",\n"
                )
-            ++ " FROM "
+            ++ "\nFROM "
             ++ formatTable db query.table
-            ++ " m WHERE "
+            ++ " m\nWHERE "
             ++ formatMatcher db query.primaryKey
-            ++ " LIMIT 1;"
+            ++ "\nLIMIT 1;\n"
 
     else
         ""
@@ -311,10 +311,10 @@ formatTable : DatabaseKind -> TableId -> String
 formatTable db ( schema, table ) =
     if db == DatabaseKind.PostgreSQL then
         if schema == "" then
-            table
+            "\"" ++ table ++ "\""
 
         else
-            schema ++ "." ++ table
+            "\"" ++ schema ++ "\"" ++ "." ++ "\"" ++ table ++ "\""
 
     else
         ""
@@ -327,7 +327,7 @@ formatFilters db filters =
             ""
 
         else
-            " WHERE "
+            "\nWHERE "
                 ++ (filters
                         |> List.indexedMap
                             (\i f ->
@@ -347,7 +347,7 @@ formatFilters db filters =
 formatFilter : DatabaseKind -> TableFilter -> String
 formatFilter db filter =
     if db == DatabaseKind.PostgreSQL then
-        formatColumn db filter.column ++ formatOperation db filter.operation filter.value
+        formatColumn db "" filter.column (DbValue.toType filter.value) ++ formatOperation db filter.operation filter.value
 
     else
         ""
@@ -385,19 +385,52 @@ formatOperation db op value =
 formatMatcher : DatabaseKind -> Nel RowValue -> String
 formatMatcher db matches =
     if db == DatabaseKind.PostgreSQL then
-        matches |> Nel.toList |> List.map (\m -> formatColumn db m.column ++ "=" ++ formatValue db m.value) |> String.join " AND "
+        matches |> Nel.toList |> List.map (\m -> formatColumn db "" m.column (DbValue.toType m.value) ++ "=" ++ formatValue db m.value) |> String.join " AND "
 
     else
         ""
 
 
-formatColumn : DatabaseKind -> ColumnPath -> String
-formatColumn db column =
+formatColumn : DatabaseKind -> String -> ColumnPath -> ParsedColumnType -> String
+formatColumn db prefix column kind =
     if db == DatabaseKind.PostgreSQL then
-        column.head ++ (column.tail |> List.map (\c -> "->'" ++ c ++ "'") |> String.join "")
+        let
+            baseCol : String
+            baseCol =
+                if prefix == "" then
+                    "\"" ++ column.head ++ "\""
+
+                else
+                    prefix ++ ".\"" ++ column.head ++ "\""
+        in
+        case column.tail |> List.reverse of
+            last :: rest ->
+                baseCol ++ (rest |> List.reverse |> List.map (\c -> "->'" ++ c ++ "'") |> String.join "") ++ "->>'" ++ last ++ "'" |> formatColumnCast kind
+
+            [] ->
+                baseCol
 
     else
         ""
+
+
+formatColumnCast : ParsedColumnType -> String -> String
+formatColumnCast kind sqlColumn =
+    case kind of
+        ColumnType.Int ->
+            "(" ++ sqlColumn ++ ")::int"
+
+        ColumnType.Float ->
+            "(" ++ sqlColumn ++ ")::float"
+
+        ColumnType.Bool ->
+            "(" ++ sqlColumn ++ ")::boolean"
+
+        ColumnType.Uuid ->
+            "(" ++ sqlColumn ++ ")::uuid"
+
+        _ ->
+            sqlColumn
 
 
 formatValue : DatabaseKind -> DbValue -> String

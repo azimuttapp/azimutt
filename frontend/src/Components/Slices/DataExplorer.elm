@@ -4,6 +4,7 @@ import Components.Atoms.Badge as Badge
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon
 import Components.Molecules.Alert as Alert
+import Components.Molecules.Editor as Editor
 import Components.Molecules.Tooltip as Tooltip
 import Components.Slices.DataExplorerDetails as DataExplorerDetails
 import Components.Slices.DataExplorerQuery as DataExplorerQuery
@@ -12,8 +13,8 @@ import Dict exposing (Dict)
 import ElmBook
 import ElmBook.Actions as Actions exposing (logAction)
 import ElmBook.Chapter as Chapter exposing (Chapter)
-import Html exposing (Html, button, div, h3, input, label, nav, option, p, select, table, td, text, textarea, tr)
-import Html.Attributes exposing (autofocus, class, classList, disabled, for, id, name, placeholder, selected, style, title, type_, value)
+import Html exposing (Html, button, div, h3, input, label, nav, option, p, select, table, td, text, tr)
+import Html.Attributes exposing (class, classList, disabled, for, id, name, selected, style, title, type_, value)
 import Html.Events exposing (onClick, onInput)
 import Libs.Dict as Dict
 import Libs.Html exposing (bText, extLink)
@@ -98,7 +99,7 @@ type alias VisualEditorFilter =
 
 
 type alias QueryEditor =
-    SqlQuery
+    Editor.Model
 
 
 
@@ -118,7 +119,7 @@ type Msg
     | UpdateFilterOperation Int QueryBuilder.FilterOperation
     | UpdateFilterValue Int DbValue
     | DeleteFilter Int
-    | UpdateQuery SqlQuery
+    | UpdateQuery Editor.Msg
     | RunQuery DbSource SqlQuery
     | DeleteQuery DataExplorerQuery.Id
     | QueryMsg DataExplorerQuery.Id DataExplorerQuery.Msg
@@ -137,7 +138,7 @@ init =
     , activeTab = VisualEditorTab
     , source = Nothing
     , visualEditor = { table = Nothing, filters = [] }
-    , queryEditor = ""
+    , queryEditor = Editor.init ""
     , results = []
     , resultsSeq = 1
     , details = []
@@ -170,7 +171,7 @@ update wrap project sources msg model =
                         |> Maybe.andThen (\id -> dbSources |> List.find (\s -> s.id == id))
                         |> Maybe.orElse model.source
                         |> Maybe.orElse (dbSources |> List.head)
-                , queryEditor = query |> Maybe.withDefault model.queryEditor
+                , queryEditor = query |> Maybe.map Editor.init |> Maybe.withDefault model.queryEditor
               }
             , Cmd.batch
                 (Track.dataExplorerOpened sources query project
@@ -209,8 +210,8 @@ update wrap project sources msg model =
         DeleteFilter i ->
             ( model |> mapVisualEditor (mapFilters (List.removeAt i)), Cmd.none )
 
-        UpdateQuery content ->
-            ( { model | queryEditor = content }, Cmd.none )
+        UpdateQuery message ->
+            ( { model | queryEditor = Editor.update message model.queryEditor }, Cmd.none )
 
         RunQuery source query ->
             { model | resultsSeq = model.resultsSeq + 1 } |> mapResultsCmd (List.prependCmd (DataExplorerQuery.init project (model.activeTab == QueryEditorTab) model.resultsSeq (DbSource.toInfo source) (query |> QueryBuilder.limitResults source.db.kind)))
@@ -528,21 +529,22 @@ viewQueryEditor wrap htmlId source model =
             htmlId ++ "-input"
     in
     div [ class "flex-1 flex flex-col relative" ]
-        [ textarea
-            [ name inputId
-            , id inputId
-            , value model
-            , onInput (UpdateQuery >> wrap)
-            , autofocus True
-            , placeholder ("Write a query for " ++ source.name)
-            , class "m-3 py-1.5 block flex-1 rounded-md border-0 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-            ]
-            []
-        , div [ class "absolute bottom-6 right-6" ]
+        [ --textarea
+          --[ name inputId
+          --, id inputId
+          --, value model.content
+          --, onInput (Editor.SetContent >> UpdateQuery >> wrap)
+          --, autofocus True
+          --, placeholder ("Write a query for " ++ source.name)
+          --, class "m-3 py-1.5 block flex-1 rounded-md border-0 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+          --]
+          --[]
+          div [ class "m-3 block flex-1 rounded-md shadow-sm ring-1 ring-inset ring-gray-300" ] [ Editor.sql (UpdateQuery >> wrap) inputId model ]
+        , div [ class "absolute bottom-6 right-6 z-10" ]
             [ button
                 [ type_ "button"
-                , onClick (model |> RunQuery source |> wrap)
-                , disabled (model == "")
+                , onClick (model.content |> RunQuery source |> wrap)
+                , disabled (model.content == "")
                 , class "inline-flex items-center bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:bg-indigo-300"
                 ]
                 [ text "Run query" ]

@@ -1,4 +1,4 @@
-module Models.DbValue exposing (DbValue(..), compare, decode, encode, fromString, isArray, isObject, toJson, toString, view, viewRaw)
+module Models.DbValue exposing (DbValue(..), compare, decode, encode, fromString, isArray, isObject, toJson, toString, toType, view, viewRaw)
 
 import Dict exposing (Dict)
 import Html exposing (Html, pre, span, text)
@@ -9,7 +9,7 @@ import Libs.Bool as Bool
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Order exposing (compareBool, compareDict, compareList)
-import Models.Project.ColumnType as ColumnType exposing (ColumnType)
+import Models.Project.ColumnType as ColumnType exposing (ColumnType, ParsedColumnType)
 
 
 type DbValue
@@ -40,6 +40,31 @@ isObject value =
 
         _ ->
             False
+
+
+toType : DbValue -> ParsedColumnType
+toType value =
+    case value of
+        DbString _ ->
+            ColumnType.Text
+
+        DbInt _ ->
+            ColumnType.Int
+
+        DbFloat _ ->
+            ColumnType.Float
+
+        DbBool _ ->
+            ColumnType.Bool
+
+        DbNull ->
+            ColumnType.Unknown "null"
+
+        DbArray values ->
+            ColumnType.Array (values |> List.head |> Maybe.withDefault DbNull |> toType)
+
+        DbObject _ ->
+            ColumnType.Json
 
 
 fromString : ColumnType -> String -> DbValue

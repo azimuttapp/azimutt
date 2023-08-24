@@ -89,13 +89,10 @@ input[type="search"]::-webkit-search-results-decoration {
 .elmsh .view-container,
 .elmsh .textarea {
     box-sizing: border-box;
-    width: 100%;
     height: 100%;
     padding: 0;
     margin: 0;
     border: 0;
-    font-size: 1rem;
-    line-height: 1.2;
     font-family: monospace;
     letter-spacing: normal;
     word-spacing: normal;
@@ -115,6 +112,7 @@ input[type="search"]::-webkit-search-results-decoration {
     position: relative;
     z-index: 2;
     padding: 10px;
+    width: 100%;
     resize: none;
     color: rgba(0, 0, 0, 0);
 }

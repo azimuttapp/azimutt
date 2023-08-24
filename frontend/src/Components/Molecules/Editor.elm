@@ -1,4 +1,4 @@
-module Components.Molecules.Editor exposing (DocState, Highlight, Model, Msg, Scroll, SharedDocState, aml, basic, doc, docInit, init, json, sql, update)
+module Components.Molecules.Editor exposing (DocState, Highlight, Model, Msg(..), Scroll, SharedDocState, aml, basic, doc, docInit, init, json, sql, update)
 
 import Dict exposing (Dict)
 import ElmBook
@@ -77,19 +77,19 @@ update msg model =
             model |> setScroll scroll
 
 
-sql : (Msg -> msg) -> Model -> Html msg
-sql wrap model =
-    viewEditor wrap (parsers |> Dict.getOrElse "Sql" SH.noLang) True (Just 1) model
+sql : (Msg -> msg) -> HtmlId -> Model -> Html msg
+sql wrap inputId model =
+    viewEditor wrap inputId (parsers |> Dict.getOrElse "Sql" SH.noLang) True (Just 1) model
 
 
-aml : (Msg -> msg) -> Model -> Html msg
-aml wrap model =
-    viewEditor wrap (parsers |> Dict.getOrElse "Aml" SH.noLang) True (Just 1) model
+aml : (Msg -> msg) -> HtmlId -> Model -> Html msg
+aml wrap inputId model =
+    viewEditor wrap inputId (parsers |> Dict.getOrElse "Aml" SH.noLang) True (Just 1) model
 
 
-json : (Msg -> msg) -> Model -> Html msg
-json wrap model =
-    viewEditor wrap (parsers |> Dict.getOrElse "Json" SH.noLang) True (Just 1) model
+json : (Msg -> msg) -> HtmlId -> Model -> Html msg
+json wrap inputId model =
+    viewEditor wrap inputId (parsers |> Dict.getOrElse "Json" SH.noLang) True (Just 1) model
 
 
 
@@ -119,23 +119,26 @@ parsers =
         |> Dict.fromList
 
 
-viewEditor : (Msg -> msg) -> LangParser -> Bool -> Maybe Int -> Model -> Html msg
-viewEditor wrap parser showLineCount lineCount model =
+viewEditor : (Msg -> msg) -> HtmlId -> LangParser -> Bool -> Maybe Int -> Model -> Html msg
+viewEditor wrap inputId parser showLineCount lineCount model =
     -- needs CSS in backend/priv/static/elm/styles.css to work properly
-    div [ class "elmsh container" ]
+    div [ class "elmsh container rounded-md border border-gray-300" ]
         [ div
-            [ class "view-container"
+            [ class "view-container min-w-full text-sm"
             , style "transform" ("translate(" ++ String.fromFloat -model.scroll.left ++ "px, " ++ String.fromFloat -model.scroll.top ++ "px)")
             , style "will-change" "transform"
             ]
             [ Lazy.lazy4 viewContent parser lineCount model.content model.highlights
             ]
         , textarea
-            [ value model.content
+            [ name inputId
+            , id inputId
+            , value model.content
             , onInput (SetContent >> wrap)
-            , classList [ ( "textarea", True ), ( "textarea-lc", showLineCount ) ]
             , spellcheck False
             , onScroll (OnScroll >> wrap)
+            , class "textarea min-w-full text-sm"
+            , classList [ ( "textarea-lc", showLineCount ) ]
             ]
             []
         ]
@@ -177,7 +180,7 @@ docInit =
     { basic = "Hello, "
     , sql = init """SELECT * FROM users;
 """
-    , aml = init """users
+    , aml = init """users | this table store all the application users, it's very useful to know who is using the application and what they did, look at `created_by` columns, they should link to this table
   id uuid
   name varchar
   email varchar
@@ -206,9 +209,9 @@ doc : Chapter (SharedDocState x)
 doc =
     Chapter.chapter "Editor"
         |> Chapter.renderStatefulComponentList
-            [ ( "SQL editor", \{ editorDocState } -> div [ style "height" "150px" ] [ sql (\m -> docStateUpdate (\s -> { s | sql = update m editorDocState.sql })) editorDocState.sql ] )
-            , ( "AML editor", \{ editorDocState } -> div [ style "height" "150px" ] [ aml (\m -> docStateUpdate (\s -> { s | aml = update m editorDocState.aml })) editorDocState.aml ] )
-            , ( "JSON editor", \{ editorDocState } -> div [ style "height" "150px" ] [ json (\m -> docStateUpdate (\s -> { s | json = update m editorDocState.json })) editorDocState.json ] )
+            [ ( "SQL editor", \{ editorDocState } -> div [ style "height" "150px" ] [ sql (\m -> docStateUpdate (\s -> { s | sql = update m editorDocState.sql })) "sql-editor" editorDocState.sql ] )
+            , ( "AML editor", \{ editorDocState } -> div [ style "height" "150px" ] [ aml (\m -> docStateUpdate (\s -> { s | aml = update m editorDocState.aml })) "aml-editor" editorDocState.aml ] )
+            , ( "JSON editor", \{ editorDocState } -> div [ style "height" "150px" ] [ json (\m -> docStateUpdate (\s -> { s | json = update m editorDocState.json })) "json-editor" editorDocState.json ] )
             , ( "basic", \{ editorDocState } -> basic "basic" editorDocState.basic (\v -> docStateUpdate (\s -> { s | basic = v })) "placeholder value" 3 False )
             , ( "basic with error", \{ editorDocState } -> basic "basic" editorDocState.basic (\v -> docStateUpdate (\s -> { s | basic = v })) "placeholder value" 3 True )
             ]
