@@ -60,6 +60,7 @@ type alias DocState =
     , dataExplorerQueryDocState : DataExplorerQuery.DocState
     , detailsDocState : Details.DocState
     , dropdownDocState : Dropdown.DocState
+    , editorDocState : Editor.DocState
     , exportDialogDocState : ExportDialogBody.DocState
     , formLabelDocState : FormLabel.DocState
     , inputDocState : Input.DocState
@@ -86,6 +87,7 @@ init =
     , dataExplorerQueryDocState = DataExplorerQuery.docInit
     , detailsDocState = Details.docInit
     , dropdownDocState = Dropdown.docInit
+    , editorDocState = Editor.docInit
     , exportDialogDocState = ExportDialogBody.docInit
     , formLabelDocState = FormLabel.docInit
     , inputDocState = Input.docInit

@@ -75,7 +75,97 @@ input[type="search"]::-webkit-search-results-decoration {
 .vectual_bars9, .vectual_color_9, .vectual_bars19, .vectual_color_19 { fill: #ccc !important; }
 .vectual_pie_text { font-size: 16px !important; }
 
+/* [Elm Syntax Highlight](https://pablohirafuji.github.io/elm-syntax-highlight) styles, see frontend/src/Components/Molecules/Editor.elm */
+
+.elmsh.container {
+    position: relative;
+    overflow: hidden;
+    height: 100%;
+    padding: 0;
+    margin: 0;
+    text-align: left;
+}
+
+.elmsh .view-container,
+.elmsh .textarea {
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    font-size: 1rem;
+    line-height: 1.2;
+    font-family: monospace;
+    letter-spacing: normal;
+    word-spacing: normal;
+    background: transparent;
+    white-space: pre;
+}
+
+.elmsh .view-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.elmsh .textarea {
+    position: relative;
+    z-index: 2;
+    padding: 10px;
+    resize: none;
+    color: rgba(0, 0, 0, 0);
+}
+
+.elmsh .textarea:focus {
+    outline: none;
+}
+
+.elmsh .textarea-lc {
+    padding-left: 50px;
+}
+
+.elmsh pre.elmsh {
+    padding: 10px;
+    margin: 0;
+    text-align: left;
+    overflow: auto;
+}
+
+.elmsh code.elmsh {
+    padding: 0;
+}
+
+.elmsh .elmsh-line:before {
+    content: attr(data-elmsh-lc);
+    display: inline-block;
+    text-align: right;
+    width: 40px;
+    padding: 0 10px 0 0;
+    opacity: 0.3;
+}
+
+/* GitHub theme for [Elm Syntax Highlight](https://pablohirafuji.github.io/elm-syntax-highlight) */
+
+.elmsh { color: #24292e; background: #ffffff; }
+.elmsh .textarea {caret-color: #24292e;}
+.elmsh .textarea::selection { background-color: rgba(0,0,0,0.2); }
+.elmsh-hl { background: #fffbdd; }
+.elmsh-add { background: #eaffea; }
+.elmsh-del { background: #ffecec; }
+.elmsh-comm { color: #969896; }
+.elmsh1 { color: #005cc5; }
+.elmsh2 { color: #df5000; }
+.elmsh3 { color: #d73a49; }
+.elmsh4 { color: #0086b3; }
+.elmsh5 { color: #63a35c; }
+.elmsh6 { color: #005cc5; }
+.elmsh7 { color: #795da3; }
+
 /* from https://webcode.tools/generators/css/keyframe-animation */
+
 .hover\:animate-wobble-t:hover {
     animation: wobble-t 2s ease 0s 1 normal forwards;
 }

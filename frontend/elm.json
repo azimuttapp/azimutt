@@ -33,6 +33,7 @@
             "mpizenberg/elm-file": "1.0.0",
             "mpizenberg/elm-pointer-events": "5.0.0",
             "myrho/elm-round": "1.0.5",
+            "pablohirafuji/elm-syntax-highlight": "3.5.0",
             "rtfeldman/elm-iso8601-date-strings": "1.1.4",
             "ryannhg/elm-spa": "6.0.0",
             "toastal/either": "3.6.3",
@@ -61,7 +62,6 @@
             "ianmackenzie/elm-units-interval": "3.2.0",
             "ianmackenzie/elm-units-prefixed": "2.8.0",
             "justinmimbs/date": "4.0.1",
-            "pablohirafuji/elm-syntax-highlight": "3.5.0",
             "rtfeldman/elm-hex": "1.0.0",
             "ryannhg/date-format": "2.3.0",
             "zwilias/elm-utf-tools": "2.0.1"

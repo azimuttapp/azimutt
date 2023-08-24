@@ -1,11 +1,21 @@
-module Components.Molecules.Editor exposing (basic, doc)
+module Components.Molecules.Editor exposing (DocState, Highlight, Model, Msg, Scroll, SharedDocState, aml, basic, doc, docInit, init, json, sql, update)
 
-import ElmBook.Actions exposing (logActionWithString)
+import Dict exposing (Dict)
+import ElmBook
+import ElmBook.Actions as Actions
 import ElmBook.Chapter as Chapter exposing (Chapter)
-import Html exposing (Html, textarea)
-import Html.Attributes exposing (class, id, name, placeholder, rows, value)
+import Html exposing (Attribute, Html, div, text, textarea)
+import Html.Attributes exposing (class, classList, id, name, placeholder, rows, spellcheck, style, value)
 import Html.Events exposing (onInput)
+import Html.Lazy as Lazy
+import Json.Decode as Json
+import Libs.Dict as Dict
+import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.Result as Result
 import Libs.Tailwind exposing (TwClass)
+import Parser
+import Services.Lenses exposing (setContent, setScroll)
+import SyntaxHighlight as SH
 
 
 
@@ -35,14 +45,175 @@ basic fieldId fieldValue fieldUpdate fieldPlaceholder lines hasErrors =
         []
 
 
+type alias Model =
+    { content : String, scroll : Scroll, highlights : List Highlight }
+
+
+type alias Scroll =
+    { top : Float, left : Float }
+
+
+type alias Highlight =
+    { mode : Maybe SH.Highlight, start : Int, end : Int }
+
+
+init : String -> Model
+init content =
+    { content = content, scroll = { top = 0, left = 0 }, highlights = [] }
+
+
+type Msg
+    = SetContent String
+    | OnScroll Scroll
+
+
+update : Msg -> Model -> Model
+update msg model =
+    case msg of
+        SetContent content ->
+            model |> setContent content
+
+        OnScroll scroll ->
+            model |> setScroll scroll
+
+
+sql : (Msg -> msg) -> Model -> Html msg
+sql wrap model =
+    viewEditor wrap (parsers |> Dict.getOrElse "Sql" SH.noLang) True (Just 1) model
+
+
+aml : (Msg -> msg) -> Model -> Html msg
+aml wrap model =
+    viewEditor wrap (parsers |> Dict.getOrElse "Aml" SH.noLang) True (Just 1) model
+
+
+json : (Msg -> msg) -> Model -> Html msg
+json wrap model =
+    viewEditor wrap (parsers |> Dict.getOrElse "Json" SH.noLang) True (Just 1) model
+
+
+
+-- INTERNALS
+
+
+type alias LangName =
+    String
+
+
+type alias LangParser =
+    String -> Result (List Parser.DeadEnd) SH.HCode
+
+
+parsers : Dict LangName LangParser
+parsers =
+    [ ( "Elm", SH.elm )
+    , ( "Xml", SH.xml )
+    , ( "Javascript", SH.javascript )
+    , ( "Css", SH.css )
+    , ( "Python", SH.python )
+    , ( "Sql", SH.sql )
+    , ( "Json", SH.json )
+    , ( "Nix", SH.nix )
+    , ( "NoLang", SH.noLang )
+    ]
+        |> Dict.fromList
+
+
+viewEditor : (Msg -> msg) -> LangParser -> Bool -> Maybe Int -> Model -> Html msg
+viewEditor wrap parser showLineCount lineCount model =
+    -- needs CSS in backend/priv/static/elm/styles.css to work properly
+    div [ class "elmsh container" ]
+        [ div
+            [ class "view-container"
+            , style "transform" ("translate(" ++ String.fromFloat -model.scroll.left ++ "px, " ++ String.fromFloat -model.scroll.top ++ "px)")
+            , style "will-change" "transform"
+            ]
+            [ Lazy.lazy4 viewContent parser lineCount model.content model.highlights
+            ]
+        , textarea
+            [ value model.content
+            , onInput (SetContent >> wrap)
+            , classList [ ( "textarea", True ), ( "textarea-lc", showLineCount ) ]
+            , spellcheck False
+            , onScroll (OnScroll >> wrap)
+            ]
+            []
+        ]
+
+
+viewContent : (String -> Result (List Parser.DeadEnd) SH.HCode) -> Maybe Int -> String -> List Highlight -> Html msg
+viewContent parser lineCountStart content highlights =
+    parser content
+        |> Result.map (\code -> highlights |> List.foldl (\h -> SH.highlightLines h.mode h.start h.end) code)
+        |> Result.map (SH.toBlockHtml lineCountStart)
+        |> Result.mapError Parser.deadEndsToString
+        |> Result.fold text identity
+
+
+onScroll : (Scroll -> msg) -> Attribute msg
+onScroll msg =
+    Html.Events.on "scroll"
+        (Json.map2 Scroll
+            (Json.at [ "target", "scrollTop" ] Json.float)
+            (Json.at [ "target", "scrollLeft" ] Json.float)
+            |> Json.map msg
+        )
+
+
 
 -- DOCUMENTATION
 
 
-doc : Chapter x
+type alias SharedDocState x =
+    { x | editorDocState : DocState }
+
+
+type alias DocState =
+    { basic : String, sql : Model, aml : Model, json : Model }
+
+
+docInit : DocState
+docInit =
+    { basic = "Hello, "
+    , sql = init """SELECT * FROM users;
+"""
+    , aml = init """users
+  id uuid
+  name varchar
+  email varchar
+  created_at timestamp
+
+roles
+  id int
+  name varchar
+  created_at timestamp
+  created_by uuid fk users.id
+
+user_roles
+  user_id uuid fk users.id
+  role_id int fk roles.id
+"""
+    , json = init """{
+  "id": 1,
+  "name": "Loïc",
+  "tags": []
+}
+"""
+    }
+
+
+doc : Chapter (SharedDocState x)
 doc =
     Chapter.chapter "Editor"
-        |> Chapter.renderComponentList
-            [ ( "basic", basic "basic" "" (logActionWithString "basic") "placeholder value" 3 False )
-            , ( "basic with error", basic "basic" "" (logActionWithString "basic") "placeholder value" 3 True )
+        |> Chapter.renderStatefulComponentList
+            [ ( "SQL editor", \{ editorDocState } -> div [ style "height" "150px" ] [ sql (\m -> docStateUpdate (\s -> { s | sql = update m editorDocState.sql })) editorDocState.sql ] )
+            , ( "AML editor", \{ editorDocState } -> div [ style "height" "150px" ] [ aml (\m -> docStateUpdate (\s -> { s | aml = update m editorDocState.aml })) editorDocState.aml ] )
+            , ( "JSON editor", \{ editorDocState } -> div [ style "height" "150px" ] [ json (\m -> docStateUpdate (\s -> { s | json = update m editorDocState.json })) editorDocState.json ] )
+            , ( "basic", \{ editorDocState } -> basic "basic" editorDocState.basic (\v -> docStateUpdate (\s -> { s | basic = v })) "placeholder value" 3 False )
+            , ( "basic with error", \{ editorDocState } -> basic "basic" editorDocState.basic (\v -> docStateUpdate (\s -> { s | basic = v })) "placeholder value" 3 True )
             ]
+
+
+docStateUpdate : (DocState -> DocState) -> ElmBook.Msg (SharedDocState x)
+docStateUpdate f =
+    Actions.updateState (\s -> { s | editorDocState = f s.editorDocState })

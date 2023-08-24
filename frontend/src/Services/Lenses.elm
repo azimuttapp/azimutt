@@ -39,11 +39,15 @@ module Services.Lenses exposing
     , mapHead
     , mapHidden
     , mapHiddenColumns
+    , mapHighlight
+    , mapHighlights
     , mapHoverTable
     , mapIndex
     , mapIndexes
     , mapJsonSourceCmd
     , mapJsonSourceMCmd
+    , mapLanguagesModel
+    , mapLanguagesModelD
     , mapLayouts
     , mapLayoutsD
     , mapLayoutsDCmd
@@ -115,6 +119,7 @@ module Services.Lenses exposing
     , setBody
     , setCanvas
     , setChecks
+    , setCode
     , setCollapseTableColumns
     , setCollapsed
     , setColor
@@ -128,6 +133,7 @@ module Services.Lenses exposing
     , setConfirm
     , setContent
     , setContextMenu
+    , setCurrentLanguage
     , setCurrentLayout
     , setCursorMode
     , setDataExplorer
@@ -143,6 +149,7 @@ module Services.Lenses exposing
     , setEditTags
     , setEmbedSourceParsing
     , setEnabled
+    , setEnd
     , setErd
     , setErrors
     , setExecutions
@@ -159,6 +166,7 @@ module Services.Lenses exposing
     , setHiddenColumns
     , setHighlight
     , setHighlighted
+    , setHighlights
     , setHoverColumn
     , setHoverTable
     , setHoverTableRow
@@ -170,6 +178,7 @@ module Services.Lenses exposing
     , setInput
     , setIsOpen
     , setJsonSource
+    , setLanguagesModel
     , setLast
     , setLayoutOnLoad
     , setLayouts
@@ -180,6 +189,7 @@ module Services.Lenses exposing
     , setMetadata
     , setMobileMenuOpen
     , setModal
+    , setMode
     , setMouse
     , setName
     , setNavbar
@@ -217,6 +227,7 @@ module Services.Lenses exposing
     , setSampleSource
     , setSave
     , setSchemaAnalysis
+    , setScroll
     , setSearch
     , setSelected
     , setSelectionBox
@@ -230,6 +241,7 @@ module Services.Lenses exposing
     , setSource
     , setSourceUpdate
     , setSqlSource
+    , setStart
     , setState
     , setTable
     , setTableRows
@@ -332,6 +344,11 @@ setChecks =
 mapChecks : (v -> v) -> { item | checks : v } -> { item | checks : v }
 mapChecks =
     map_ .checks setChecks
+
+
+setCode : v -> { item | code : v } -> { item | code : v }
+setCode =
+    set_ .code (\value item -> { item | code = value })
 
 
 setCollapsed : v -> { item | collapsed : v } -> { item | collapsed : v }
@@ -437,6 +454,11 @@ setContextMenu =
 mapContextMenuM : (v -> v) -> { item | contextMenu : Maybe v } -> { item | contextMenu : Maybe v }
 mapContextMenuM =
     mapM_ .contextMenu setContextMenu
+
+
+setCurrentLanguage : v -> { item | currentLanguage : v } -> { item | currentLanguage : v }
+setCurrentLanguage =
+    set_ .currentLanguage (\value item -> { item | currentLanguage = value })
 
 
 setCurrentLayout : v -> { item | currentLayout : v } -> { item | currentLayout : v }
@@ -567,6 +589,11 @@ setEnabled =
 mapEnabled : (v -> v) -> { item | enabled : v } -> { item | enabled : v }
 mapEnabled =
     map_ .enabled setEnabled
+
+
+setEnd : v -> { item | end : v } -> { item | end : v }
+setEnd =
+    set_ .end (\value item -> { item | end = value })
 
 
 setErd : v -> { item | erd : v } -> { item | erd : v }
@@ -709,6 +736,21 @@ setHighlight =
     set_ .highlight (\value item -> { item | highlight = value })
 
 
+mapHighlight : (v -> v) -> { item | highlight : v } -> { item | highlight : v }
+mapHighlight =
+    map_ .highlight setHighlight
+
+
+setHighlights : v -> { item | highlights : v } -> { item | highlights : v }
+setHighlights =
+    set_ .highlights (\value item -> { item | highlights = value })
+
+
+mapHighlights : (v -> v) -> { item | highlights : v } -> { item | highlights : v }
+mapHighlights =
+    map_ .highlights setHighlights
+
+
 setHighlighted : v -> { item | highlighted : v } -> { item | highlighted : v }
 setHighlighted =
     set_ .highlighted (\value item -> { item | highlighted = value })
@@ -794,6 +836,21 @@ mapJsonSourceMCmd =
     mapMCmd_ .jsonSource setJsonSource
 
 
+setLanguagesModel : v -> { item | languagesModel : v } -> { item | languagesModel : v }
+setLanguagesModel =
+    set_ .languagesModel (\value item -> { item | languagesModel = value })
+
+
+mapLanguagesModel : (v -> v) -> { item | languagesModel : v } -> { item | languagesModel : v }
+mapLanguagesModel =
+    map_ .languagesModel setLanguagesModel
+
+
+mapLanguagesModelD : comparable -> (v -> v) -> { item | languagesModel : Dict comparable v } -> { item | languagesModel : Dict comparable v }
+mapLanguagesModelD =
+    mapD_ .languagesModel setLanguagesModel
+
+
 setLast : v -> { item | last : v } -> { item | last : v }
 setLast =
     set_ .last (\value item -> { item | last = value })
@@ -877,6 +934,11 @@ mapMobileMenuOpen =
 setModal : v -> { item | modal : v } -> { item | modal : v }
 setModal =
     set_ .modal (\value item -> { item | modal = value })
+
+
+setMode : v -> { item | mode : v } -> { item | mode : v }
+setMode =
+    set_ .mode (\value item -> { item | mode = value })
 
 
 setMouse : v -> { item | mouse : v } -> { item | mouse : v }
@@ -1214,6 +1276,11 @@ mapSchemaAnalysisM =
     mapM_ .schemaAnalysis setSchemaAnalysis
 
 
+setScroll : v -> { item | scroll : v } -> { item | scroll : v }
+setScroll =
+    set_ .scroll (\value item -> { item | scroll = value })
+
+
 setSearch : v -> { item | search : v } -> { item | search : v }
 setSearch =
     set_ .search (\value item -> { item | search = value })
@@ -1332,6 +1399,11 @@ mapSqlSourceCmd =
 mapSqlSourceMCmd : (v -> ( v, Cmd msg )) -> { item | sqlSource : Maybe v } -> ( { item | sqlSource : Maybe v }, Cmd msg )
 mapSqlSourceMCmd =
     mapMCmd_ .sqlSource setSqlSource
+
+
+setStart : v -> { item | start : v } -> { item | start : v }
+setStart =
+    set_ .start (\value item -> { item | start = value })
 
 
 setState : v -> { item | state : v } -> { item | state : v }
