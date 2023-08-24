@@ -141,7 +141,7 @@ viewTable conf zoom args layout meta tableLayout table =
                                             ShowTables (cols |> List.map (\col -> ( col.column.schema, col.column.table ))) hint
                                )
                 , nestedIconClick = ToggleNestedColumn table.id
-                , hiddenColumnsHover = \id on -> PopoverSet (B.cond on id "")
+                , hiddenColumnsHover = \id on -> PopoverOpen (B.cond on id "")
                 , hiddenColumnsClick = ToggleHiddenColumns table.id
                 }
             , zoom = zoom

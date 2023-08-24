@@ -32,7 +32,7 @@ viewTableRow now platform conf cursorMode defaultSchema openedDropdown openedPop
             Bool.cond (cursorMode == CursorMode.Drag || not conf.move) [] [ onPointerDown (handlePointerDown htmlId) platform ]
     in
     div ([ class "select-none absolute", classList [ ( "z-max", row.selected ), ( "invisible", row.size == Size.zeroCanvas ) ] ] ++ Position.stylesGrid row.position ++ dragAttrs)
-        [ TableRow.view (TableRowMsg row.id) Noop DropdownToggle PopoverSet ContextMenuCreate SelectItem (\id -> ShowTable id Nothing) HoverTableRow ShowTableRow (DeleteTableRow row.id) (\t c -> NotesMsg.NOpen t c |> NotesMsg) (\s q -> DataExplorer.Open s q |> DataExplorerMsg) now platform conf defaultSchema openedDropdown openedPopover htmlId source hoverRow rowRelations color tableMeta row
+        [ TableRow.view (TableRowMsg row.id) Noop DropdownToggle PopoverOpen ContextMenuCreate SelectItem (\id -> ShowTable id Nothing) HoverTableRow ShowTableRow (DeleteTableRow row.id) (\t c -> NotesMsg.NOpen t c |> NotesMsg) (\s q -> DataExplorer.Open s q |> DataExplorerMsg) now platform conf defaultSchema openedDropdown openedPopover htmlId source hoverRow rowRelations color tableMeta row
         ]
 
 

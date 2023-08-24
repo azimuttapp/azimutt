@@ -51,6 +51,7 @@ import Track
 
 -- TODO:
 --  - popover with JSON when hover a JSON value in table row => bad CSS? hard to setup :/
+--  - Use https://pablohirafuji.github.io/elm-syntax-highlight for SQL editor
 --  - Check embed mode to remove drag, hover & others
 --  - Show incoming rows in the side bar (and results?)
 --  - Enable data exploration for other db: MySQL, SQL Server, MongoDB, Couchbase... (QueryBuilder...)
@@ -246,8 +247,8 @@ focusMainInput tab =
 -- VIEW
 
 
-view : (Msg -> msg) -> (HtmlId -> msg) -> (TableId -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> String -> HtmlId -> SchemaName -> HtmlId -> List Source -> ErdLayout -> Metadata -> Model -> DataExplorerDisplay -> Html msg
-view wrap toggleDropdown showTable showTableRow openNotes navbarHeight openedDropdown defaultSchema htmlId sources layout metadata model display =
+view : (Msg -> msg) -> (HtmlId -> msg) -> ((msg -> String -> Html msg) -> msg) -> (TableId -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> String -> HtmlId -> SchemaName -> HtmlId -> List Source -> ErdLayout -> Metadata -> Model -> DataExplorerDisplay -> Html msg
+view wrap toggleDropdown openModal showTable showTableRow openNotes navbarHeight openedDropdown defaultSchema htmlId sources layout metadata model display =
     let
         hasFullScreen : Bool
         hasFullScreen =
@@ -275,7 +276,7 @@ view wrap toggleDropdown showTable showTableRow openNotes navbarHeight openedDro
                     model.source |> Maybe.mapOrElse (\s -> viewQueryEditor wrap (htmlId ++ "-query-editor") s model.queryEditor) (div [] [])
             ]
         , div [ class "basis-2/3 flex-1 overflow-y-auto bg-gray-50 pb-28" ]
-            [ viewResults wrap toggleDropdown (\s q -> OpenDetails s q |> wrap) openNotes openedDropdown defaultSchema sources metadata (htmlId ++ "-results") model.results ]
+            [ viewResults wrap toggleDropdown openModal (\s q -> OpenDetails s q |> wrap) openNotes openedDropdown defaultSchema sources metadata (htmlId ++ "-results") model.results ]
         , viewDetails wrap showTable showTableRow (\s q -> OpenDetails s q |> wrap) openNotes navbarHeight hasFullScreen defaultSchema sources layout metadata (htmlId ++ "-details") model.details
         ]
 
@@ -549,8 +550,8 @@ viewQueryEditor wrap htmlId source model =
         ]
 
 
-viewResults : (Msg -> msg) -> (HtmlId -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> HtmlId -> SchemaName -> List Source -> Metadata -> HtmlId -> List DataExplorerQuery.Model -> Html msg
-viewResults wrap toggleDropdown openRow openNotes openedDropdown defaultSchema sources metadata htmlId results =
+viewResults : (Msg -> msg) -> (HtmlId -> msg) -> ((msg -> String -> Html msg) -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> HtmlId -> SchemaName -> List Source -> Metadata -> HtmlId -> List DataExplorerQuery.Model -> Html msg
+viewResults wrap toggleDropdown openModal openRow openNotes openedDropdown defaultSchema sources metadata htmlId results =
     if results |> List.isEmpty then
         div [ class "m-3 p-12 block rounded-lg border-2 border-dashed border-gray-200 text-gray-300 text-center text-sm font-semibold" ] [ text "Query results" ]
 
@@ -560,7 +561,7 @@ viewResults wrap toggleDropdown openRow openNotes openedDropdown defaultSchema s
                 |> List.indexedMap
                     (\i r ->
                         div [ class "m-3 px-2 py-1 rounded-md bg-white shadow", classList [ ( "mb-6", i == 0 ) ] ]
-                            [ DataExplorerQuery.view (QueryMsg r.id >> wrap) toggleDropdown openRow (DeleteQuery r.id |> wrap) openNotes openedDropdown defaultSchema (sources |> List.find (\s -> s.id == r.source.id)) metadata (htmlId ++ "-" ++ String.fromInt r.id) r
+                            [ DataExplorerQuery.view (QueryMsg r.id >> wrap) toggleDropdown openModal openRow (DeleteQuery r.id |> wrap) openNotes openedDropdown defaultSchema (sources |> List.find (\s -> s.id == r.source.id)) metadata (htmlId ++ "-" ++ String.fromInt r.id) r
                             ]
                     )
             )
@@ -686,7 +687,7 @@ docLayout =
 
 docComponentState : String -> (DocState -> Model) -> (DocState -> Model -> DocState) -> List Source -> ( String, SharedDocState x -> Html (ElmBook.Msg (SharedDocState x)) )
 docComponentState name get set sources =
-    ( name, \{ dataExplorerDocState } -> dataExplorerDocState |> (\s -> div [ style "height" "500px" ] [ view (docUpdate s get set sources) (docToggleDropdown s) docShowTable docShowTableRow docOpenNotes "0px" s.openedDropdown "public" "data-explorer" sources docLayout docMetadata (get s) (get s |> .display |> Maybe.withDefault BottomDisplay) ]) )
+    ( name, \{ dataExplorerDocState } -> dataExplorerDocState |> (\s -> div [ style "height" "500px" ] [ view (docUpdate s get set sources) (docToggleDropdown s) docOpenModal docShowTable docShowTableRow docOpenNotes "0px" s.openedDropdown "public" "data-explorer" sources docLayout docMetadata (get s) (get s |> .display |> Maybe.withDefault BottomDisplay) ]) )
 
 
 docUpdate : DocState -> (DocState -> Model) -> (DocState -> Model -> DocState) -> List Source -> Msg -> ElmBook.Msg (SharedDocState x)
@@ -701,6 +702,11 @@ docToggleDropdown s id =
 
     else
         docSetState { s | openedDropdown = id }
+
+
+docOpenModal : (msg -> String -> Html msg) -> ElmBook.Msg (SharedDocState x)
+docOpenModal _ =
+    logAction "openModal"
 
 
 docSetState : DocState -> ElmBook.Msg (SharedDocState x)

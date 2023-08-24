@@ -59,6 +59,22 @@ input[type="search"]::-webkit-search-results-decoration {
     transform: rotateX(180deg);
 }
 
+/* Vectual overrides */
+
+.vectual_title { display: none; }
+.vectual_background { fill: transparent !important; pointer-events: none; }
+.vectual_bars0, .vectual_color_0, .vectual_bars10, .vectual_color_10 { fill: #ea5545 !important; }
+.vectual_bars1, .vectual_color_1, .vectual_bars11, .vectual_color_11 { fill: #27aeef !important; }
+.vectual_bars2, .vectual_color_2, .vectual_bars12, .vectual_color_12 { fill: #87bc45 !important; }
+.vectual_bars3, .vectual_color_3, .vectual_bars13, .vectual_color_13 { fill: #edbf33 !important; }
+.vectual_bars4, .vectual_color_4, .vectual_bars14, .vectual_color_14 { fill: #b33dc6 !important; }
+.vectual_bars5, .vectual_color_5, .vectual_bars15, .vectual_color_15 { fill: #ef9b20 !important; }
+.vectual_bars6, .vectual_color_6, .vectual_bars16, .vectual_color_16 { fill: #bdcf32 !important; }
+.vectual_bars7, .vectual_color_7, .vectual_bars17, .vectual_color_17 { fill: #f46a9b !important; }
+.vectual_bars8, .vectual_color_8, .vectual_bars18, .vectual_color_18 { fill: #ede15b !important; }
+.vectual_bars9, .vectual_color_9, .vectual_bars19, .vectual_color_19 { fill: #ccc !important; }
+.vectual_pie_text { font-size: 16px !important; }
+
 /* from https://webcode.tools/generators/css/keyframe-animation */
 .hover\:animate-wobble-t:hover {
     animation: wobble-t 2s ease 0s 1 normal forwards;

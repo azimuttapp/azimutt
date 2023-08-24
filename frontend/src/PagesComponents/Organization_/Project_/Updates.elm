@@ -347,7 +347,7 @@ update urlLayout zone now urlInfos organizations projects msg model =
         DropdownClose ->
             ( model |> setOpenedDropdown "", Cmd.none )
 
-        PopoverSet id ->
+        PopoverOpen id ->
             ( model |> setOpenedPopover id, Cmd.none )
 
         ContextMenuCreate content event ->
@@ -380,12 +380,6 @@ update urlLayout zone now urlInfos organizations projects msg model =
         Toast message ->
             model |> mapToastsCmd (Toasts.update Toast message)
 
-        CustomModalOpen content ->
-            ( model |> setModal (Just { id = Conf.ids.customDialog, content = content }), T.sendAfter 1 (ModalOpen Conf.ids.customDialog) )
-
-        CustomModalClose ->
-            ( model |> setModal Nothing, Cmd.none )
-
         ConfirmOpen confirm ->
             ( model |> setConfirm (Just { id = Conf.ids.confirmDialog, content = confirm }), T.sendAfter 1 (ModalOpen Conf.ids.confirmDialog) )
 
@@ -406,6 +400,12 @@ update urlLayout zone now urlInfos organizations projects msg model =
 
         ModalClose message ->
             ( model |> mapOpenedDialogs (List.drop 1), T.sendAfter Conf.ui.closeDuration message )
+
+        CustomModalOpen content ->
+            ( model |> setModal (Just { id = Conf.ids.customDialog, content = content }), T.sendAfter 1 (ModalOpen Conf.ids.customDialog) )
+
+        CustomModalClose ->
+            ( model |> setModal Nothing, Cmd.none )
 
         JsMessage message ->
             model |> handleJsMessage now urlLayout message

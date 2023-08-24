@@ -10,6 +10,7 @@ import Components.Atoms.Loader as Loader
 import Components.Atoms.Markdown as Markdown
 import Components.Molecules.Alert as Alert
 import Components.Molecules.Avatar as Avatar
+import Components.Molecules.BarChart as BarChart
 import Components.Molecules.Divider as Divider
 import Components.Molecules.Dropdown as Dropdown
 import Components.Molecules.Editor as Editor
@@ -19,6 +20,8 @@ import Components.Molecules.InputText as InputText
 import Components.Molecules.ItemList as ItemList
 import Components.Molecules.Modal as Modal
 import Components.Molecules.Pagination as Pagination
+import Components.Molecules.PieChart as PieChart
+import Components.Molecules.PieChartCustom as PieChartCustom
 import Components.Molecules.Popover as Popover
 import Components.Molecules.Radio as Radio
 import Components.Molecules.Select as Select
@@ -34,6 +37,7 @@ import Components.Organisms.TableRow as TableRow
 import Components.Slices.DataExplorer as DataExplorer
 import Components.Slices.DataExplorerDetails as DataExplorerDetails
 import Components.Slices.DataExplorerQuery as DataExplorerQuery
+import Components.Slices.DataExplorerStats as DataExplorerStats
 import Components.Slices.ExportDialogBody as ExportDialogBody
 import Components.Slices.NewLayoutBody as NewLayoutBody
 import Components.Slices.NotFound as NotFound
@@ -114,9 +118,9 @@ main =
         |> ElmBook.withChapterGroups
             -- sorted alphabetically
             [ ( "", [ docs ] )
-            , ( "Slices", [ DataExplorer.doc, DataExplorerDetails.doc, DataExplorerQuery.doc, ExportDialogBody.doc, NotFound.doc, NewLayoutBody.doc, ProjectSaveDialogBody.doc, ProPlan.doc ] )
+            , ( "Slices", [ DataExplorer.doc, DataExplorerDetails.doc, DataExplorerQuery.doc, DataExplorerStats.doc, ExportDialogBody.doc, NotFound.doc, NewLayoutBody.doc, ProjectSaveDialogBody.doc, ProPlan.doc ] )
             , ( "Organisms", [ ColorPicker.doc, Details.doc, Navbar.doc, Relation.doc, Table.doc, TableRow.doc ] )
-            , ( "Molecules", [ Alert.doc, Avatar.doc, Divider.doc, Dropdown.doc, Editor.doc, FileInput.doc, FormLabel.doc, InputText.doc, ItemList.doc, Modal.doc, Pagination.doc, Popover.doc, Radio.doc, Select.doc, Slideover.doc, Toast.doc, Tooltip.doc ] )
+            , ( "Molecules", [ Alert.doc, Avatar.doc, BarChart.doc, Divider.doc, Dropdown.doc, Editor.doc, FileInput.doc, FormLabel.doc, InputText.doc, ItemList.doc, Modal.doc, Pagination.doc, PieChart.doc, PieChartCustom.doc, Popover.doc, Radio.doc, Select.doc, Slideover.doc, Toast.doc, Tooltip.doc ] )
             , ( "Atoms", [ Badge.doc, Button.doc, colorsDoc, Icon.doc, Input.doc, Kbd.doc, Markdown.doc, Link.doc, Loader.doc ] )
             ]
 

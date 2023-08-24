@@ -6,6 +6,7 @@ import Components.Atoms.Icons as Icons
 import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
 import Components.Molecules.Dropdown as Dropdown
 import Components.Molecules.Pagination as Pagination exposing (PageIndex)
+import Components.Slices.DataExplorerStats as DataExplorerStats
 import Components.Slices.DataExplorerValue as DataExplorerValue
 import Dict exposing (Dict)
 import ElmBook
@@ -37,6 +38,7 @@ import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath, ColumnPathStr)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.ColumnType exposing (ColumnType)
+import Models.Project.Comment exposing (Comment)
 import Models.Project.Metadata exposing (Metadata)
 import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.SchemaName exposing (SchemaName)
@@ -278,8 +280,8 @@ csvEscape value =
 -- VIEW
 
 
-view : (Msg -> msg) -> (HtmlId -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> msg) -> msg -> (TableId -> Maybe ColumnPath -> msg) -> HtmlId -> SchemaName -> Maybe Source -> Metadata -> HtmlId -> Model -> Html msg
-view wrap toggleDropdown openRow deleteQuery openNotes openedDropdown defaultSchema source metadata htmlId model =
+view : (Msg -> msg) -> (HtmlId -> msg) -> ((msg -> String -> Html msg) -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> msg) -> msg -> (TableId -> Maybe ColumnPath -> msg) -> HtmlId -> SchemaName -> Maybe Source -> Metadata -> HtmlId -> Model -> Html msg
+view wrap toggleDropdown openModal openRow deleteQuery openNotes openedDropdown defaultSchema source metadata htmlId model =
     case model.state of
         StateRunning ->
             viewCard False
@@ -353,7 +355,7 @@ view wrap toggleDropdown openRow deleteQuery openNotes openedDropdown defaultSch
                       else
                         div [ class "mt-1 relative cursor-pointer", onClick (wrap ToggleQuery) ]
                             [ model.query |> viewQuery True ]
-                    , viewSuccess wrap (openRow model.source) openNotes defaultSchema source metadata res
+                    , viewTable wrap openModal (openRow model.source) openNotes defaultSchema source metadata res
                     ]
                 )
                 (div []
@@ -430,8 +432,8 @@ viewActionButton icon name msg =
         [ span [ class "sr-only" ] [ text name ], Icon.outline icon "w-4 h-4" ]
 
 
-viewSuccess : (Msg -> msg) -> (QueryBuilder.RowQuery -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> SchemaName -> Maybe Source -> Metadata -> SuccessState -> Html msg
-viewSuccess wrap openRow openNotes defaultSchema source metadata res =
+viewTable : (Msg -> msg) -> ((msg -> String -> Html msg) -> msg) -> (QueryBuilder.RowQuery -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> SchemaName -> Maybe Source -> Metadata -> SuccessState -> Html msg
+viewTable wrap openModal openRow openNotes defaultSchema source metadata res =
     let
         items : List ( QueryResultRow, RowIndex )
         items =
@@ -449,7 +451,7 @@ viewSuccess wrap openRow openNotes defaultSchema source metadata res =
         pageRows =
             Pagination.paginate items pagination
 
-        ( column, rows ) =
+        ( columns, rows ) =
             if res.documentMode then
                 "document" |> (\pathStr -> ( [ { path = ColumnPath.fromString pathStr, pathStr = pathStr, ref = Nothing, fk = Nothing } ], pageRows |> List.map (Tuple.mapSecond (Tuple.mapFirst (\r -> Dict.fromList [ ( pathStr, DbObject r ) ]))) ))
 
@@ -457,57 +459,52 @@ viewSuccess wrap openRow openNotes defaultSchema source metadata res =
                 ( res.columns |> QueryResult.buildColumnTargets source, pageRows )
     in
     div [ class "mt-1" ]
-        [ viewTable wrap openRow openNotes defaultSchema source metadata column rows res.documentMode res.sortBy res.expanded res.collapsed
+        [ div [ class "flow-root" ]
+            [ div [ class "overflow-x-auto" ]
+                [ div [ class "inline-block min-w-full align-middle" ]
+                    [ table [ class "table-auto min-w-full border-separate border-spacing-0" ]
+                        -- sticky header: https://reacthustle.com/blog/how-to-create-react-table-sticky-headers-with-tailwindcss
+                        [ thead []
+                            [ tr [ class "bg-gray-100" ]
+                                (th [ scope "col", onClick (UpdateSort Nothing |> wrap), class "px-1 sticky left-0 text-left text-sm font-semibold text-gray-900 border-b border-r border-gray-300 bg-gray-100 cursor-pointer" ] [ text "#" ]
+                                    :: (columns |> List.map (\c -> viewTableHeader wrap openModal openNotes source metadata res.collapsed res.sortBy (items |> List.map Tuple.first) c))
+                                )
+                            ]
+                        , tbody []
+                            (rows
+                                |> List.map
+                                    (\( pi, ( r, ri ) ) ->
+                                        let
+                                            rest : Dict ColumnPathStr DbValue
+                                            rest =
+                                                r |> Dict.filter (\k _ -> columns |> List.memberBy .pathStr k |> not)
+                                        in
+                                        tr [ class "hover:bg-gray-100", classList [ ( "bg-gray-50", modBy 2 pi == 1 ) ] ]
+                                            ([ td [ class ("px-1 sticky left-0 z-10 text-sm text-gray-900 border-r border-gray-300 hover:bg-gray-100 " ++ Bool.cond (modBy 2 pi == 1) "bg-gray-50" "bg-white") ] [ text (ri + 1 |> String.fromInt) ] ]
+                                                ++ (columns |> List.map (\c -> viewTableValue openRow (ExpandRow ri |> wrap) defaultSchema res.documentMode (res.expanded |> Set.member ri) (res.collapsed |> Set.member c.pathStr) (r |> Dict.get c.pathStr) c))
+                                                ++ (if rest |> Dict.isEmpty then
+                                                        []
+
+                                                    else
+                                                        [ viewTableValue openRow (ExpandRow ri |> wrap) defaultSchema res.documentMode (res.expanded |> Set.member ri) (res.collapsed |> Set.member "rest") (rest |> DbObject |> Just) { path = Nel "rest" [], pathStr = "rest", ref = Nothing, fk = Nothing } ]
+                                                   )
+                                            )
+                                    )
+                            )
+                        ]
+                    ]
+                ]
+            ]
         , Pagination.view (\p -> ChangePage p |> wrap) pagination
         ]
 
 
-viewTable : (Msg -> msg) -> (QueryBuilder.RowQuery -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> SchemaName -> Maybe Source -> Metadata -> List QueryResultColumnTarget -> List ( PageIndex, ( QueryResultRow, RowIndex ) ) -> Bool -> Maybe String -> Set RowIndex -> Set ColumnName -> Html msg
-viewTable wrap openRow openNotes defaultSchema source metadata columns rows documentMode sortBy expanded collapsed =
-    div [ class "flow-root" ]
-        [ div [ class "overflow-x-auto" ]
-            [ div [ class "inline-block min-w-full align-middle" ]
-                [ table [ class "table-auto min-w-full border-separate border-spacing-0" ]
-                    -- sticky header: https://reacthustle.com/blog/how-to-create-react-table-sticky-headers-with-tailwindcss
-                    [ thead []
-                        [ tr [ class "bg-gray-100" ]
-                            (th [ scope "col", onClick (UpdateSort Nothing |> wrap), class "px-1 sticky left-0 text-left text-sm font-semibold text-gray-900 border-b border-r border-gray-300 bg-gray-100 cursor-pointer" ] [ text "#" ]
-                                :: (columns |> List.map (viewTableHeader wrap openNotes source metadata collapsed sortBy))
-                            )
-                        ]
-                    , tbody []
-                        (rows
-                            |> List.map
-                                (\( pi, ( r, ri ) ) ->
-                                    let
-                                        rest : Dict ColumnPathStr DbValue
-                                        rest =
-                                            r |> Dict.filter (\k _ -> columns |> List.memberBy .pathStr k |> not)
-                                    in
-                                    tr [ class "hover:bg-gray-100", classList [ ( "bg-gray-50", modBy 2 pi == 1 ) ] ]
-                                        ([ td [ class ("px-1 sticky left-0 z-10 text-sm text-gray-900 border-r border-gray-300 hover:bg-gray-100 " ++ Bool.cond (modBy 2 pi == 1) "bg-gray-50" "bg-white") ] [ text (ri + 1 |> String.fromInt) ] ]
-                                            ++ (columns |> List.map (\c -> viewTableValue openRow (ExpandRow ri |> wrap) defaultSchema documentMode (expanded |> Set.member ri) (collapsed |> Set.member c.pathStr) (r |> Dict.get c.pathStr) c))
-                                            ++ (if rest |> Dict.isEmpty then
-                                                    []
-
-                                                else
-                                                    [ viewTableValue openRow (ExpandRow ri |> wrap) defaultSchema documentMode (expanded |> Set.member ri) (collapsed |> Set.member "rest") (rest |> DbObject |> Just) { path = Nel "rest" [], pathStr = "rest", ref = Nothing, fk = Nothing } ]
-                                               )
-                                        )
-                                )
-                        )
-                    ]
-                ]
-            ]
-        ]
-
-
-viewTableHeader : (Msg -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> Maybe Source -> Metadata -> Set ColumnName -> Maybe String -> QueryResultColumnTarget -> Html msg
-viewTableHeader wrap openNotes source metadata collapsed sortBy column =
+viewTableHeader : (Msg -> msg) -> ((msg -> String -> Html msg) -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> Maybe Source -> Metadata -> Set ColumnName -> Maybe String -> List QueryResultRow -> QueryResultColumnTarget -> Html msg
+viewTableHeader wrap openModal openNotes source metadata collapsed sortBy rows column =
     let
-        tableColumn : Maybe Column
-        tableColumn =
-            column.ref |> Maybe.andThen (\ref -> source |> Maybe.andThen (Source.getColumn ref))
+        comment : Maybe Comment
+        comment =
+            column.ref |> Maybe.andThen (\ref -> source |> Maybe.andThen (Source.getColumn ref)) |> Maybe.andThen .comment
 
         notes : Maybe ( Notes, ColumnRef )
         notes =
@@ -527,7 +524,7 @@ viewTableHeader wrap openNotes source metadata collapsed sortBy column =
     else
         th [ scope "col", class "px-1 text-left text-sm font-semibold text-gray-900 border-b border-gray-300 whitespace-nowrap group" ]
             [ text (ColumnPath.show column.path)
-            , tableColumn |> Maybe.andThen .comment |> Maybe.mapOrElse (\c -> span [ title c.text, class "ml-1 opacity-50" ] [ Icon.outline Icons.comment "w-3 h-3 inline" ]) (text "")
+            , comment |> Maybe.mapOrElse (\c -> span [ title c.text, class "ml-1 opacity-50" ] [ Icon.outline Icons.comment "w-3 h-3 inline" ]) (text "")
             , notes |> Maybe.mapOrElse (\( n, ref ) -> button [ type_ "button", onClick (openNotes ref.table (Just ref.column)), title n, class "ml-1 opacity-50" ] [ Icon.outline Icons.notes "w-3 h-3 inline" ]) (text "")
             , button [ type_ "button", onClick (sort |> Maybe.mapOrElse (\( col, asc ) -> Bool.cond asc ("-" ++ col) col) column.pathStr |> Just |> UpdateSort |> wrap), title "Sort column", class "ml-1 opacity-50" ]
                 [ sort
@@ -535,6 +532,7 @@ viewTableHeader wrap openNotes source metadata collapsed sortBy column =
                     |> Maybe.withDefault (Icon.solid Icon.SortDescending "w-3 h-3 inline invisible group-hover:visible")
                 ]
             , button [ type_ "button", onClick (CollapseColumn column.pathStr |> wrap), title "Collapse column", class "ml-1 opacity-50" ] [ Icon.outline Icon.MinusCircle "w-3 h-3 inline invisible group-hover:visible" ]
+            , button [ type_ "button", onClick (openModal (DataExplorerStats.view column (rows |> List.filterMap (Dict.get column.pathStr)))), title "Column stats", class "ml-1 opacity-50" ] [ Icon.solid Icon.ChartPie "w-3 h-3 inline invisible group-hover:visible" ]
             ]
 
 
@@ -606,9 +604,9 @@ doc =
         |> Chapter.renderStatefulComponentList
             [ docComponentState "success" .success (\s m -> { s | success = m })
             , docComponentState "long lines & json" .longLines (\s m -> { s | longLines = m })
-            , docComponent "failure" (\s -> view docWrap (docToggleDropdown s) docOpenRow docDelete docOpenNotes s.openedDropdown docDefaultSchema (Just docSource) docMetadata docHtmlId (docModel 3 docComplexQuery docStateFailure))
-            , docComponent "running" (\s -> view docWrap (docToggleDropdown s) docOpenRow docDelete docOpenNotes s.openedDropdown docDefaultSchema (Just docSource) docMetadata docHtmlId (docModel 4 docComplexQuery docStateRunning))
-            , docComponent "canceled" (\s -> view docWrap (docToggleDropdown s) docOpenRow docDelete docOpenNotes s.openedDropdown docDefaultSchema (Just docSource) docMetadata docHtmlId (docModel 5 docComplexQuery docStateCanceled))
+            , docComponent "failure" (\s -> view docWrap (docToggleDropdown s) docOpenModal docOpenRow docDelete docOpenNotes s.openedDropdown docDefaultSchema (Just docSource) docMetadata docHtmlId (docModel 3 docComplexQuery docStateFailure))
+            , docComponent "running" (\s -> view docWrap (docToggleDropdown s) docOpenModal docOpenRow docDelete docOpenNotes s.openedDropdown docDefaultSchema (Just docSource) docMetadata docHtmlId (docModel 4 docComplexQuery docStateRunning))
+            , docComponent "canceled" (\s -> view docWrap (docToggleDropdown s) docOpenModal docOpenRow docDelete docOpenNotes s.openedDropdown docDefaultSchema (Just docSource) docMetadata docHtmlId (docModel 5 docComplexQuery docStateCanceled))
             ]
 
 
@@ -859,7 +857,7 @@ docComponent name render =
 
 docComponentState : String -> (DocState -> Model) -> (DocState -> Model -> DocState) -> ( String, SharedDocState x -> Html (ElmBook.Msg (SharedDocState x)) )
 docComponentState name get set =
-    ( name, \{ dataExplorerQueryDocState } -> dataExplorerQueryDocState |> (\s -> get s |> (\m -> view (docUpdate s get set) (docToggleDropdown s) docOpenRow docDelete docOpenNotes s.openedDropdown docDefaultSchema (Just docSource) docMetadata (docHtmlId ++ "-" ++ String.fromInt m.id) m)) )
+    ( name, \{ dataExplorerQueryDocState } -> dataExplorerQueryDocState |> (\s -> get s |> (\m -> view (docUpdate s get set) (docToggleDropdown s) docOpenModal docOpenRow docDelete docOpenNotes s.openedDropdown docDefaultSchema (Just docSource) docMetadata (docHtmlId ++ "-" ++ String.fromInt m.id) m)) )
 
 
 docUpdate : DocState -> (DocState -> Model) -> (DocState -> Model -> DocState) -> Msg -> ElmBook.Msg (SharedDocState x)
@@ -884,6 +882,11 @@ docSetState state =
 docWrap : Msg -> ElmBook.Msg state
 docWrap =
     \_ -> logAction "wrap"
+
+
+docOpenModal : (msg -> String -> Html msg) -> ElmBook.Msg (SharedDocState x)
+docOpenModal _ =
+    logAction "openModal"
 
 
 docOpenRow : DbSourceInfo -> QueryBuilder.RowQuery -> ElmBook.Msg state

@@ -287,7 +287,7 @@ type Msg
     | DropdownToggle HtmlId
     | DropdownOpen HtmlId
     | DropdownClose
-    | PopoverSet HtmlId
+    | PopoverOpen HtmlId
     | ContextMenuCreate (Html Msg) PointerEvent
     | ContextMenuShow
     | ContextMenuClose
@@ -296,8 +296,6 @@ type Msg
     | DragEnd Position.Viewport
     | DragCancel
     | Toast Toasts.Msg
-    | CustomModalOpen (Msg -> String -> Html Msg)
-    | CustomModalClose
     | ConfirmOpen (Confirm Msg)
     | ConfirmAnswer Bool (Cmd Msg)
     | PromptOpen (Prompt Msg) String
@@ -305,6 +303,8 @@ type Msg
     | PromptAnswer (Cmd Msg)
     | ModalOpen HtmlId
     | ModalClose Msg
+    | CustomModalOpen (Msg -> HtmlId -> Html Msg)
+    | CustomModalClose
     | JsMessage JsMsg
     | Batch (List Msg)
     | Send (Cmd Msg)

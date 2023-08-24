@@ -162,7 +162,7 @@ viewBottomSheet model =
     let
         content : Maybe (Html Msg)
         content =
-            model.dataExplorer.display |> Maybe.map2 (\erd -> DataExplorer.view DataExplorerMsg DropdownToggle (\id -> ShowTable id Nothing) ShowTableRow (\t c -> NotesMsg.NOpen t c |> NotesMsg) (calcNavbarHeight model) model.openedDropdown erd.settings.defaultSchema Conf.ids.dataExplorerDialog erd.sources (erd |> Erd.currentLayout) erd.metadata model.dataExplorer) model.erd
+            model.dataExplorer.display |> Maybe.map2 (\erd -> DataExplorer.view DataExplorerMsg DropdownToggle CustomModalOpen (\id -> ShowTable id Nothing) ShowTableRow (\t c -> NotesMsg.NOpen t c |> NotesMsg) (calcNavbarHeight model) model.openedDropdown erd.settings.defaultSchema Conf.ids.dataExplorerDialog erd.sources (erd |> Erd.currentLayout) erd.metadata model.dataExplorer) model.erd
     in
     aside [ class "block flex-shrink-0" ]
         [ div [ style "height" ("calc(" ++ calcBottomSheetHeight model ++ ")"), css [ "relative border-t border-gray-200 bg-white overflow-y-auto" ] ]
