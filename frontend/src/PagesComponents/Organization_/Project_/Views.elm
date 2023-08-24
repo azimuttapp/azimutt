@@ -279,7 +279,10 @@ viewNotFound currentUrl urlInfos user projects conf =
 calcNavbarHeight : Model -> String
 calcNavbarHeight model =
     if model.conf.showNavbar then
-        (model.erdElem.position |> Position.extractViewport |> .top |> String.fromFloat) ++ "px"
+        --(model.erdElem.position |> Position.extractViewport |> .top |> String.fromFloat) ++ "px"
+        -- FIXME: when open data explorer for the first time with the table row incoming relation "See all", the erd moves and break everything
+        --        we still see the issue but at least it comes back as normal just after
+        "64px"
 
     else
         "0px"
