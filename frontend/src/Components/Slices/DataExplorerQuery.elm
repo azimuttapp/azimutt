@@ -8,6 +8,7 @@ import Components.Molecules.Dropdown as Dropdown
 import Components.Molecules.Pagination as Pagination exposing (PageIndex)
 import Components.Slices.DataExplorerStats as DataExplorerStats
 import Components.Slices.DataExplorerValue as DataExplorerValue
+import DataSources.DbMiner.DbTypes exposing (RowQuery)
 import Dict exposing (Dict)
 import ElmBook
 import ElmBook.Actions as Actions exposing (logAction)
@@ -51,9 +52,9 @@ import Models.Project.TableId exposing (TableId)
 import Models.Project.TableName exposing (TableName)
 import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Models.QueryResult as QueryResult exposing (QueryResult, QueryResultColumn, QueryResultColumnTarget, QueryResultRow, QueryResultSuccess)
+import Models.SqlQuery exposing (SqlQuery)
 import Ports
 import Services.Lenses exposing (mapState, setQuery, setState)
-import Services.QueryBuilder as QueryBuilder exposing (SqlQuery)
 import Services.Toasts as Toasts
 import Set exposing (Set)
 import Time
@@ -281,7 +282,7 @@ csvEscape value =
 -- VIEW
 
 
-view : (Msg -> msg) -> (HtmlId -> msg) -> ((msg -> String -> Html msg) -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> msg) -> msg -> (TableId -> Maybe ColumnPath -> msg) -> HtmlId -> SchemaName -> Maybe Source -> Metadata -> HtmlId -> Model -> Html msg
+view : (Msg -> msg) -> (HtmlId -> msg) -> ((msg -> String -> Html msg) -> msg) -> (DbSourceInfo -> RowQuery -> msg) -> msg -> (TableId -> Maybe ColumnPath -> msg) -> HtmlId -> SchemaName -> Maybe Source -> Metadata -> HtmlId -> Model -> Html msg
 view wrap toggleDropdown openModal openRow deleteQuery openNotes openedDropdown defaultSchema source metadata htmlId model =
     case model.state of
         StateRunning ->
@@ -433,7 +434,7 @@ viewActionButton icon name msg =
         [ span [ class "sr-only" ] [ text name ], Icon.outline icon "w-4 h-4" ]
 
 
-viewTable : (Msg -> msg) -> ((msg -> String -> Html msg) -> msg) -> (QueryBuilder.RowQuery -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> SchemaName -> Maybe Source -> Metadata -> SuccessState -> Html msg
+viewTable : (Msg -> msg) -> ((msg -> String -> Html msg) -> msg) -> (RowQuery -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> SchemaName -> Maybe Source -> Metadata -> SuccessState -> Html msg
 viewTable wrap openModal openRow openNotes defaultSchema source metadata res =
     let
         items : List ( QueryResultRow, RowIndex )
@@ -537,7 +538,7 @@ viewTableHeader wrap openModal openNotes source metadata collapsed sortBy rows c
             ]
 
 
-viewTableValue : (QueryBuilder.RowQuery -> msg) -> msg -> SchemaName -> Bool -> Bool -> Bool -> Maybe DbValue -> QueryResultColumnTarget -> Html msg
+viewTableValue : (RowQuery -> msg) -> msg -> SchemaName -> Bool -> Bool -> Bool -> Maybe DbValue -> QueryResultColumnTarget -> Html msg
 viewTableValue openRow expandRow defaultSchema documentMode expanded collapsed value column =
     td [ class "px-1 text-sm text-gray-500 whitespace-nowrap max-w-xs truncate" ]
         [ if collapsed then
@@ -895,7 +896,7 @@ docOpenModal _ =
     logAction "openModal"
 
 
-docOpenRow : DbSourceInfo -> QueryBuilder.RowQuery -> ElmBook.Msg state
+docOpenRow : DbSourceInfo -> RowQuery -> ElmBook.Msg state
 docOpenRow =
     \_ _ -> logAction "openRow"
 

@@ -7,6 +7,8 @@ import Components.Atoms.Icons as Icons
 import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
 import Components.Molecules.Dropdown as Dropdown
 import Components.Molecules.Popover as Popover
+import DataSources.DbMiner.DbQuery as DbQuery
+import DataSources.DbMiner.DbTypes exposing (FilterOperation(..), FilterOperator(..), IncomingRowsQuery, RowQuery, TableFilter)
 import Dict exposing (Dict)
 import ElmBook
 import ElmBook.Actions as Actions exposing (logAction)
@@ -56,13 +58,13 @@ import Models.Project.TableRow as TableRow exposing (State(..), TableRow, TableR
 import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Models.QueryResult exposing (QueryResult, QueryResultSuccess)
 import Models.Size as Size
+import Models.SqlQuery exposing (SqlQuery)
 import PagesComponents.Organization_.Project_.Models.ErdConf as ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.PositionHint as PositionHint exposing (PositionHint)
 import PagesComponents.Organization_.Project_.Views.Modals.ColumnRowContextMenu as ColumnRowContextMenu
 import PagesComponents.Organization_.Project_.Views.Modals.TableRowContextMenu as TableRowContextMenu
 import Ports
 import Services.Lenses exposing (mapColumns, mapHidden, mapSelected, mapShowHiddenColumns, mapState, setCollapsed, setPrevious, setState)
-import Services.QueryBuilder as QueryBuilder exposing (RowQuery, SqlQuery)
 import Services.Toasts as Toasts
 import Set exposing (Set)
 import Time
@@ -87,7 +89,7 @@ type Msg
     | ShowColumn ColumnPathStr
     | HideColumn ColumnPathStr
     | ToggleHiddenColumns
-    | ToggleIncomingRows HtmlId TableRowColumn (Dict TableId QueryBuilder.IncomingRowsQuery)
+    | ToggleIncomingRows HtmlId TableRowColumn (Dict TableId IncomingRowsQuery)
     | GotIncomingRows ColumnPath QueryResult
 
 
@@ -121,7 +123,7 @@ init project id now source query hidden previous hint =
     let
         queryStr : String
         queryStr =
-            QueryBuilder.findRow source.db.kind query
+            DbQuery.findRow source.db.kind query
     in
     ( { id = id
       , positionHint = hint
@@ -203,7 +205,7 @@ update toggleDropdown showToast now project sources openedDropdown msg model =
                     let
                         queryStr : String
                         queryStr =
-                            QueryBuilder.findRow dbSrc.db.kind { table = model.table, primaryKey = model.primaryKey }
+                            DbQuery.findRow dbSrc.db.kind { table = model.table, primaryKey = model.primaryKey }
                     in
                     ( model |> setState (StateLoading { query = queryStr, startedAt = now, previous = model |> TableRow.stateSuccess })
                     , Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt model.id) dbSrc.db.url queryStr
@@ -240,7 +242,7 @@ update toggleDropdown showToast now project sources openedDropdown msg model =
                         let
                             queryStr : String
                             queryStr =
-                                QueryBuilder.incomingRows dbSrc.db.kind relations { table = model.table, primaryKey = model.primaryKey }
+                                DbQuery.incomingRows dbSrc.db.kind relations { table = model.table, primaryKey = model.primaryKey }
                         in
                         ( model, Cmd.batch [ toggleDropdown dropdown |> T.send, Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt model.id ++ "/" ++ column.pathStr) dbSrc.db.url queryStr ] )
                     )
@@ -356,7 +358,7 @@ defaultHidden res =
 -- VIEW
 
 
-view : (Msg -> msg) -> (String -> msg) -> (HtmlId -> msg) -> (HtmlId -> msg) -> (Html msg -> PointerEvent -> msg) -> (HtmlId -> Bool -> msg) -> (TableId -> msg) -> (TableRowHover -> Bool -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> msg -> (TableId -> Maybe ColumnPath -> msg) -> (Maybe SourceId -> Maybe SqlQuery -> msg) -> Time.Posix -> Platform -> ErdConf -> SchemaName -> HtmlId -> HtmlId -> HtmlId -> Maybe DbSource -> Maybe TableRowHover -> List TableRowRelation -> Color -> Maybe TableMeta -> TableRow -> Html msg
+view : (Msg -> msg) -> (String -> msg) -> (HtmlId -> msg) -> (HtmlId -> msg) -> (Html msg -> PointerEvent -> msg) -> (HtmlId -> Bool -> msg) -> (TableId -> msg) -> (TableRowHover -> Bool -> msg) -> (DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> msg -> (TableId -> Maybe ColumnPath -> msg) -> (Maybe SourceId -> Maybe SqlQuery -> msg) -> Time.Posix -> Platform -> ErdConf -> SchemaName -> HtmlId -> HtmlId -> HtmlId -> Maybe DbSource -> Maybe TableRowHover -> List TableRowRelation -> Color -> Maybe TableMeta -> TableRow -> Html msg
 view wrap noop toggleDropdown openPopover createContextMenu selectItem showTable hover showTableRow delete openNotes openDataExplorer now platform conf defaultSchema openedDropdown openedPopover htmlId source hoverRow rowRelations color tableMeta row =
     let
         table : Maybe Table
@@ -488,7 +490,7 @@ viewFailure wrap delete res =
         ]
 
 
-viewSuccess : (Msg -> msg) -> (String -> msg) -> (HtmlId -> msg) -> (Html msg -> PointerEvent -> msg) -> (TableRowHover -> Bool -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> (Maybe SourceId -> Maybe SqlQuery -> msg) -> Platform -> ErdConf -> SchemaName -> Maybe DbSource -> HtmlId -> HtmlId -> HtmlId -> Maybe TableRowHover -> Maybe TableMeta -> Maybe Table -> List Relation -> List TableRowRelation -> Color -> TableRow -> TableRow.SuccessState -> Html msg
+viewSuccess : (Msg -> msg) -> (String -> msg) -> (HtmlId -> msg) -> (Html msg -> PointerEvent -> msg) -> (TableRowHover -> Bool -> msg) -> (DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> (Maybe SourceId -> Maybe SqlQuery -> msg) -> Platform -> ErdConf -> SchemaName -> Maybe DbSource -> HtmlId -> HtmlId -> HtmlId -> Maybe TableRowHover -> Maybe TableMeta -> Maybe Table -> List Relation -> List TableRowRelation -> Color -> TableRow -> TableRow.SuccessState -> Html msg
 viewSuccess wrap noop openPopover createContextMenu hover showTableRow openNotes openDataExplorer platform conf defaultSchema source openedDropdown openedPopover htmlId hoverRow tableMeta table relations rowRelations color row res =
     let
         ( hiddenValues, values ) =
@@ -540,7 +542,7 @@ viewSuccess wrap noop openPopover createContextMenu hover showTableRow openNotes
         ]
 
 
-viewColumnRow : (Msg -> msg) -> (String -> msg) -> (Html msg -> PointerEvent -> msg) -> (TableRowHover -> Bool -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> (Maybe SourceId -> Maybe SqlQuery -> msg) -> Platform -> ErdConf -> SchemaName -> Maybe DbSource -> HtmlId -> HtmlId -> Maybe TableRowHover -> Maybe TableMeta -> Maybe Table -> List Relation -> List TableRowRelation -> Color -> TableRow -> TableRowColumn -> Bool -> Html msg
+viewColumnRow : (Msg -> msg) -> (String -> msg) -> (Html msg -> PointerEvent -> msg) -> (TableRowHover -> Bool -> msg) -> (DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> (Maybe SourceId -> Maybe SqlQuery -> msg) -> Platform -> ErdConf -> SchemaName -> Maybe DbSource -> HtmlId -> HtmlId -> Maybe TableRowHover -> Maybe TableMeta -> Maybe Table -> List Relation -> List TableRowRelation -> Color -> TableRow -> TableRowColumn -> Bool -> Html msg
 viewColumnRow wrap noop createContextMenu hover showTableRow openNotes openDataExplorer platform conf defaultSchema source openedDropdown htmlId hoverRow tableMeta table relations rowRelations color row rowColumn hidden =
     let
         column : Maybe Column
@@ -567,7 +569,7 @@ viewColumnRow wrap noop createContextMenu hover showTableRow openNotes openDataE
             else
                 relations |> List.find (\r -> r.src.table == row.table && r.src.column == rowColumn.path) |> Maybe.map .ref
 
-        linkedBy : Dict TableId QueryBuilder.IncomingRowsQuery
+        linkedBy : Dict TableId IncomingRowsQuery
         linkedBy =
             if rowColumn.value == DbNull then
                 Dict.empty
@@ -693,10 +695,10 @@ viewColumnRow wrap noop createContextMenu hover showTableRow openNotes openDataE
         ]
 
 
-viewColumnRowIncomingRows : (String -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> (Maybe SourceId -> Maybe SqlQuery -> msg) -> SchemaName -> DbSourceInfo -> TableId -> TableRow -> TableRowColumn -> QueryBuilder.IncomingRowsQuery -> List RowPrimaryKey -> Html msg
+viewColumnRowIncomingRows : (String -> msg) -> (DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> (Maybe SourceId -> Maybe SqlQuery -> msg) -> SchemaName -> DbSourceInfo -> TableId -> TableRow -> TableRowColumn -> IncomingRowsQuery -> List RowPrimaryKey -> Html msg
 viewColumnRowIncomingRows noop showTableRow openDataExplorer defaultSchema source tableId row rowColumn query linkedRows =
     ContextMenu.btnSubmenu
-        { label = TableId.show defaultSchema tableId ++ " (" ++ (linkedRows |> List.length |> (\len -> String.fromInt len ++ Bool.cond (len == QueryBuilder.incomingRowsLimit) "+" "")) ++ ")"
+        { label = TableId.show defaultSchema tableId ++ " (" ++ (linkedRows |> List.length |> (\len -> String.fromInt len ++ Bool.cond (len == DbQuery.incomingRowsLimit) "+" "")) ++ ")"
         , content =
             if linkedRows |> List.isEmpty then
                 ContextMenu.Simple { action = noop "table-row-column-no-linked-rows" }
@@ -715,7 +717,7 @@ viewColumnRowIncomingRows noop showTableRow openDataExplorer defaultSchema sourc
                                 , action = showTableRow source { table = tableId, primaryKey = r } Nothing (Just (PositionHint.PlaceRight row.position row.size))
                                 }
                             )
-                        |> List.add { label = "See all", action = openDataExplorer (Just source.id) (Just (QueryBuilder.filterTable source.db.kind { table = tableId, filters = query.foreignKeys |> List.map (\( fk, _ ) -> QueryBuilder.TableFilter QueryBuilder.OpOr fk QueryBuilder.OpEqual rowColumn.value) })) }
+                        |> List.add { label = "See all", action = openDataExplorer (Just source.id) (Just (DbQuery.filterTable source.db.kind { table = tableId, filters = query.foreignKeys |> List.map (\( fk, _ ) -> TableFilter DbOr fk DbEqual rowColumn.value) })) }
                     )
                     ContextMenu.BottomRight
         }
@@ -1057,7 +1059,7 @@ docShowTable _ =
     logAction "showTable"
 
 
-docShowTableRow : DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> ElmBook.Msg state
+docShowTableRow : DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> ElmBook.Msg state
 docShowTableRow _ _ _ _ =
     logAction "showTableRow"
 

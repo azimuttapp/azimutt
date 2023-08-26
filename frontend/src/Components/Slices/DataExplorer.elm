@@ -9,6 +9,8 @@ import Components.Molecules.Tooltip as Tooltip
 import Components.Slices.DataExplorerDetails as DataExplorerDetails
 import Components.Slices.DataExplorerQuery as DataExplorerQuery
 import Conf
+import DataSources.DbMiner.DbQuery as DbQuery
+import DataSources.DbMiner.DbTypes exposing (FilterOperation(..), FilterOperator(..), RowQuery, operationFromString, operationHasValue, operationToString, operationsForType, operatorFromString, operatorToString, operators)
 import Dict exposing (Dict)
 import ElmBook
 import ElmBook.Actions as Actions exposing (logAction)
@@ -41,11 +43,11 @@ import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableRow as TableRow
 import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
+import Models.SqlQuery exposing (SqlQuery)
 import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint)
 import Ports
 import Services.Lenses exposing (mapDetailsCmd, mapFilters, mapResultsCmd, mapVisualEditor, setOperation, setOperator, setValue)
-import Services.QueryBuilder as QueryBuilder exposing (SqlQuery)
 import Services.Toasts as Toasts
 import Track
 
@@ -53,7 +55,7 @@ import Track
 
 -- TODO:
 --  - popover with JSON when hover a JSON value in table row => bad CSS? hard to setup :/
---  - Enable data exploration for other db: MySQL, SQL Server, MongoDB, Couchbase... (QueryBuilder...)
+--  - Enable data exploration for other db: MySQL, SQL Server, MongoDB, Couchbase...
 --  - Better error handling on connectors (cf PostgreSQL)
 --
 --  - column stats in query header (quick analysis on query results) => add bar chart & data list
@@ -94,7 +96,7 @@ type alias VisualEditor =
 
 
 type alias VisualEditorFilter =
-    { operator : QueryBuilder.FilterOperator, column : ColumnPath, kind : ColumnType, nullable : Bool, operation : QueryBuilder.FilterOperation, value : DbValue }
+    { operator : FilterOperator, column : ColumnPath, kind : ColumnType, nullable : Bool, operation : FilterOperation, value : DbValue }
 
 
 type alias QueryEditor =
@@ -109,15 +111,15 @@ type Msg
     | UpdateSource (Maybe DbSource)
     | UpdateTable (Maybe TableId)
     | AddFilter Table ColumnPath
-    | UpdateFilterOperator Int QueryBuilder.FilterOperator
-    | UpdateFilterOperation Int QueryBuilder.FilterOperation
+    | UpdateFilterOperator Int FilterOperator
+    | UpdateFilterOperation Int FilterOperation
     | UpdateFilterValue Int DbValue
     | DeleteFilter Int
     | UpdateQuery Editor.Msg
     | RunQuery DbSource SqlQuery
     | DeleteQuery DataExplorerQuery.Id
     | QueryMsg DataExplorerQuery.Id DataExplorerQuery.Msg
-    | OpenDetails DbSourceInfo QueryBuilder.RowQuery
+    | OpenDetails DbSourceInfo RowQuery
     | CloseDetails DataExplorerQuery.Id
     | DetailsMsg DataExplorerDetails.Id DataExplorerDetails.Msg
 
@@ -190,7 +192,7 @@ update wrap showToast project sources msg model =
             ( { model | visualEditor = { table = table, filters = [] } }, Cmd.none )
 
         AddFilter table path ->
-            ( table |> Table.getColumn path |> Maybe.mapOrElse (\col -> model |> mapVisualEditor (mapFilters (List.add { operator = QueryBuilder.OpAnd, column = path, kind = col.kind, nullable = col.nullable, operation = QueryBuilder.OpEqual, value = DbString "" }))) model, Cmd.none )
+            ( table |> Table.getColumn path |> Maybe.mapOrElse (\col -> model |> mapVisualEditor (mapFilters (List.add { operator = DbAnd, column = path, kind = col.kind, nullable = col.nullable, operation = DbEqual, value = DbString "" }))) model, Cmd.none )
 
         UpdateFilterOperator i operator ->
             ( model |> mapVisualEditor (mapFilters (List.mapAt i (setOperator operator))), Cmd.none )
@@ -208,7 +210,7 @@ update wrap showToast project sources msg model =
             ( { model | queryEditor = Editor.update message model.queryEditor }, Cmd.none )
 
         RunQuery source query ->
-            { model | resultsSeq = model.resultsSeq + 1 } |> mapResultsCmd (List.prependCmd (DataExplorerQuery.init project (model.activeTab == QueryEditorTab) model.resultsSeq (DbSource.toInfo source) (query |> QueryBuilder.limitResults source.db.kind)))
+            { model | resultsSeq = model.resultsSeq + 1 } |> mapResultsCmd (List.prependCmd (DataExplorerQuery.init project (model.activeTab == QueryEditorTab) model.resultsSeq (DbSource.toInfo source) (query |> DbQuery.addLimit source.db.kind)))
 
         DeleteQuery id ->
             ( { model | results = model.results |> List.filter (\r -> r.id /= id) }, Cmd.none )
@@ -242,7 +244,7 @@ focusMainInput tab =
 -- VIEW
 
 
-view : (Msg -> msg) -> (HtmlId -> msg) -> ((msg -> String -> Html msg) -> msg) -> (TableId -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> String -> HtmlId -> SchemaName -> HtmlId -> List Source -> ErdLayout -> Metadata -> Model -> DataExplorerDisplay -> Html msg
+view : (Msg -> msg) -> (HtmlId -> msg) -> ((msg -> String -> Html msg) -> msg) -> (TableId -> msg) -> (DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> String -> HtmlId -> SchemaName -> HtmlId -> List Source -> ErdLayout -> Metadata -> Model -> DataExplorerDisplay -> Html msg
 view wrap toggleDropdown openModal showTable showTableRow openNotes navbarHeight openedDropdown defaultSchema htmlId sources layout metadata model display =
     let
         hasFullScreen : Bool
@@ -467,22 +469,22 @@ viewVisualExplorerFilterShow wrap htmlId filters =
                                       else
                                         select
                                             [ name (htmlId ++ "-" ++ String.fromInt i ++ "-operator")
-                                            , onInput (QueryBuilder.operatorFromString >> Maybe.withDefault QueryBuilder.OpAnd >> UpdateFilterOperator i >> wrap)
+                                            , onInput (operatorFromString >> Maybe.withDefault DbAnd >> UpdateFilterOperator i >> wrap)
                                             , class "py-1.5 pl-3 pr-10 block rounded-md border-0 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
                                             ]
-                                            (QueryBuilder.operators |> List.map (\o -> option [ value (QueryBuilder.operatorToString o), selected (o == f.operator) ] [ text (QueryBuilder.operatorToString o) ]))
+                                            (operators |> List.map (\o -> option [ value (operatorToString o), selected (o == f.operator) ] [ text (operatorToString o) ]))
                                     ]
                                 , td [ class "font-bold" ] [ text (ColumnPath.show f.column) ]
                                 , td []
                                     [ select
                                         [ name (htmlId ++ "-" ++ String.fromInt i ++ "-operation")
-                                        , onInput (QueryBuilder.stringToOperation >> Maybe.withDefault QueryBuilder.OpEqual >> UpdateFilterOperation i >> wrap)
+                                        , onInput (operationFromString >> Maybe.withDefault DbEqual >> UpdateFilterOperation i >> wrap)
                                         , class "py-1.5 pl-3 pr-10 block rounded-md border-0 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
                                         ]
-                                        (QueryBuilder.operationsForType f.kind f.nullable |> List.map (\o -> option [ value (QueryBuilder.operationToString o), selected (o == f.operation) ] [ text (QueryBuilder.operationToString o) ]))
+                                        (operationsForType f.kind f.nullable |> List.map (\o -> option [ value (operationToString o), selected (o == f.operation) ] [ text (operationToString o) ]))
                                     ]
                                 , td []
-                                    [ if QueryBuilder.operationHasValue f.operation then
+                                    [ if operationHasValue f.operation then
                                         input
                                             [ type_ "text"
                                             , name (htmlId ++ "-" ++ String.fromInt i ++ "-value")
@@ -507,7 +509,7 @@ viewVisualExplorerSubmit wrap source model =
     let
         query : String
         query =
-            model.table |> Maybe.mapOrElse (\table -> QueryBuilder.filterTable source.db.kind { table = table, filters = model.filters |> List.map (\f -> { operator = f.operator, column = f.column, operation = f.operation, value = f.value }) }) ""
+            model.table |> Maybe.mapOrElse (\table -> DbQuery.filterTable source.db.kind { table = table, filters = model.filters |> List.map (\f -> { operator = f.operator, column = f.column, operation = f.operation, value = f.value }) }) ""
     in
     div [ class "mt-3 flex items-center justify-end" ]
         [ button [ type_ "button", onClick (query |> RunQuery source |> wrap), disabled (query == ""), class "inline-flex items-center bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:bg-indigo-300" ]
@@ -546,7 +548,7 @@ viewQueryEditor wrap htmlId source model =
         ]
 
 
-viewResults : (Msg -> msg) -> (HtmlId -> msg) -> ((msg -> String -> Html msg) -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> HtmlId -> SchemaName -> List Source -> Metadata -> HtmlId -> List DataExplorerQuery.Model -> Html msg
+viewResults : (Msg -> msg) -> (HtmlId -> msg) -> ((msg -> String -> Html msg) -> msg) -> (DbSourceInfo -> RowQuery -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> HtmlId -> SchemaName -> List Source -> Metadata -> HtmlId -> List DataExplorerQuery.Model -> Html msg
 viewResults wrap toggleDropdown openModal openRow openNotes openedDropdown defaultSchema sources metadata htmlId results =
     if results |> List.isEmpty then
         div [ class "m-3 p-12 block rounded-lg border-2 border-dashed border-gray-200 text-gray-300 text-center text-sm font-semibold" ] [ text "Query results" ]
@@ -563,7 +565,7 @@ viewResults wrap toggleDropdown openModal openRow openNotes openedDropdown defau
             )
 
 
-viewDetails : (Msg -> msg) -> (TableId -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> String -> Bool -> SchemaName -> List Source -> ErdLayout -> Metadata -> HtmlId -> List DataExplorerDetails.Model -> Html msg
+viewDetails : (Msg -> msg) -> (TableId -> msg) -> (DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> (DbSourceInfo -> RowQuery -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> String -> Bool -> SchemaName -> List Source -> ErdLayout -> Metadata -> HtmlId -> List DataExplorerDetails.Model -> Html msg
 viewDetails wrap showTable showTableRow openRowDetails openNotes navbarHeight hasFullScreen defaultSchema sources layout metadata htmlId details =
     div []
         (details
@@ -725,7 +727,7 @@ docShowTable _ =
     logAction "showTable"
 
 
-docShowTableRow : DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> ElmBook.Msg state
+docShowTableRow : DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> ElmBook.Msg state
 docShowTableRow _ _ _ _ =
     logAction "showTableRow"
 

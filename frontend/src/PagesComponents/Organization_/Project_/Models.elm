@@ -5,6 +5,7 @@ import Components.Organisms.TableRow as TableRow exposing (TableRowHover)
 import Components.Slices.DataExplorer as DataExplorer
 import Components.Slices.ProPlan as ProPlan
 import DataSources.AmlMiner.AmlAdapter exposing (AmlSchemaError)
+import DataSources.DbMiner.DbTypes exposing (RowQuery)
 import Dict exposing (Dict)
 import Html exposing (Html, text)
 import Libs.Html.Events exposing (PointerEvent, WheelEvent)
@@ -60,7 +61,6 @@ import PagesComponents.Organization_.Project_.Models.ShowColumns exposing (ShowC
 import PagesComponents.Organization_.Project_.Models.TagsMsg exposing (TagsMsg)
 import PagesComponents.Organization_.Project_.Views.Modals.NewLayout as NewLayout
 import Ports exposing (JsMsg)
-import Services.QueryBuilder as QueryBuilder
 import Services.Toasts as Toasts
 import Set exposing (Set)
 import Shared exposing (Confirm, Prompt)
@@ -259,7 +259,7 @@ type Msg
     | TagsMsg TagsMsg
     | GroupMsg GroupMsg
     | MemoMsg MemoMsg
-    | ShowTableRow DbSourceInfo QueryBuilder.RowQuery (Maybe TableRow.SuccessState) (Maybe PositionHint)
+    | ShowTableRow DbSourceInfo RowQuery (Maybe TableRow.SuccessState) (Maybe PositionHint)
     | DeleteTableRow TableRow.Id
     | TableRowMsg TableRow.Id TableRow.Msg
     | AmlSidebarMsg AmlSidebarMsg

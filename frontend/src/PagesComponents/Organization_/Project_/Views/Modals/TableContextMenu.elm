@@ -4,12 +4,14 @@ import Components.Molecules.ContextMenu as ContextMenu exposing (ItemAction, Men
 import Components.Organisms.ColorPicker as ColorPicker
 import Components.Slices.DataExplorer as DataExplorer
 import Conf
+import DataSources.DbMiner.DbQuery as DbQuery
 import Html exposing (Html, div, text)
 import Html.Attributes exposing (class)
 import Libs.Bool as B
 import Libs.Dict as Dict
 import Libs.List as List
 import Libs.Maybe as Maybe
+import Libs.Models.DatabaseKind as DatabaseKind
 import Libs.Models.Notes exposing (Notes)
 import Libs.Models.Platform exposing (Platform)
 import Models.ColumnOrder as ColumnOrder
@@ -24,7 +26,6 @@ import PagesComponents.Organization_.Project_.Models.ErdTableProps exposing (Erd
 import PagesComponents.Organization_.Project_.Models.HideColumns as HideColumns
 import PagesComponents.Organization_.Project_.Models.NotesMsg exposing (NotesMsg(..))
 import PagesComponents.Organization_.Project_.Models.ShowColumns as ShowColumns
-import Services.DatabaseQueries as DatabaseQueries
 
 
 view : Platform -> ErdConf -> SchemaName -> ErdLayout -> Int -> ErdTable -> ErdTableProps -> Maybe Notes -> Html Msg
@@ -35,7 +36,7 @@ view platform conf defaultSchema layout index table props notes =
                 , Maybe.when conf.layout { label = "Show details", content = ContextMenu.Simple { action = DetailsSidebarMsg (DetailsSidebar.ShowTable table.id) } }
                 , table.origins
                     |> List.findMap (\o -> o.source |> Maybe.andThen (.db >> Maybe.map (\url -> ( o.id, url ))))
-                    |> Maybe.map (\( id, url ) -> { label = "Explore table data", content = ContextMenu.Simple { action = DataExplorerMsg (DataExplorer.Open (Just id) (Just (DatabaseQueries.showData Nothing table.id url))) } })
+                    |> Maybe.map (\( id, url ) -> { label = "Explore table data", content = ContextMenu.Simple { action = DataExplorerMsg (DataExplorer.Open (Just id) (Just (DbQuery.exploreTable (DatabaseKind.fromUrl url) table.id))) } })
                 , Maybe.when conf.layout { label = notes |> Maybe.mapOrElse (\_ -> "Update notes") "Add notes", content = ContextMenu.SimpleHotkey { action = NotesMsg (NOpen table.id Nothing), platform = platform, hotkeys = Conf.hotkeys |> Dict.getOrElse "notes" [] } }
                 , Maybe.when conf.layout { label = B.cond props.selected "Set color of selected tables" "Set color", content = ContextMenu.Custom (ColorPicker.view (TableColor table.id)) ContextMenu.BottomRight }
                 , Maybe.when conf.layout { label = B.cond props.selected "Sort columns of selected tables" "Sort columns", content = ContextMenu.SubMenu (ColumnOrder.all |> List.map (\o -> { label = ColumnOrder.show o, action = SortColumns table.id o })) ContextMenu.BottomRight }

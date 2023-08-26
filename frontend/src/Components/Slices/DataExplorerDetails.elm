@@ -3,6 +3,8 @@ module Components.Slices.DataExplorerDetails exposing (DocState, FailureState, I
 import Components.Atoms.Icon as Icon
 import Components.Atoms.Icons as Icons
 import Components.Slices.DataExplorerValue as DataExplorerValue
+import DataSources.DbMiner.DbQuery as DbQuery
+import DataSources.DbMiner.DbTypes exposing (RowQuery)
 import Dict exposing (Dict)
 import ElmBook
 import ElmBook.Actions as Actions exposing (logAction)
@@ -40,7 +42,6 @@ import PagesComponents.Organization_.Project_.Models.ErdTableProps as ErdTablePr
 import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint)
 import Ports
 import Services.Lenses exposing (mapState)
-import Services.QueryBuilder as QueryBuilder exposing (RowQuery)
 import Set exposing (Set)
 import Time
 import Track
@@ -94,7 +95,7 @@ dbPrefix =
 init : ProjectInfo -> Id -> DbSourceInfo -> RowQuery -> ( Model, Cmd msg )
 init project id source query =
     ( { id = id, source = source, query = query, state = StateLoading, expanded = Set.empty }
-    , Cmd.batch [ Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt id) source.db.url (QueryBuilder.findRow source.db.kind query), Track.dataExplorerDetailsOpened project ]
+    , Cmd.batch [ Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt id) source.db.url (DbQuery.findRow source.db.kind query), Track.dataExplorerDetailsOpened project ]
     )
 
 

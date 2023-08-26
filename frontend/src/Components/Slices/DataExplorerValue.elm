@@ -1,6 +1,7 @@
 module Components.Slices.DataExplorerValue exposing (view)
 
 import Components.Atoms.Icon as Icon
+import DataSources.DbMiner.DbTypes exposing (RowQuery)
 import Html exposing (Html, button, div)
 import Html.Attributes exposing (class, title, type_)
 import Html.Events exposing (onClick)
@@ -11,10 +12,9 @@ import Models.Project.ColumnPath as ColumnPath
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.TableId as TableId
 import Models.QueryResult exposing (QueryResultColumnTarget)
-import Services.QueryBuilder as QueryBuilder
 
 
-view : (QueryBuilder.RowQuery -> msg) -> msg -> SchemaName -> Bool -> Bool -> Maybe DbValue -> QueryResultColumnTarget -> Html msg
+view : (RowQuery -> msg) -> msg -> SchemaName -> Bool -> Bool -> Maybe DbValue -> QueryResultColumnTarget -> Html msg
 view openRowDetails expandRow defaultSchema documentMode expanded value column =
     let
         -- TODO: contextual formatting: numbers, uuid, dates, may depend on context (results vs side bar)

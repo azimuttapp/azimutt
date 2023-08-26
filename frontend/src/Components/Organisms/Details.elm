@@ -9,6 +9,7 @@ import Components.Molecules.Tooltip as Tooltip
 import Conf
 import DataSources.AmlMiner.AmlAdapter as AmlAdapter
 import DataSources.AmlMiner.AmlParser as AmlParser
+import DataSources.DbMiner.DbQuery as DbQuery
 import Dict exposing (Dict)
 import ElmBook
 import ElmBook.Actions as Actions exposing (logAction)
@@ -22,6 +23,7 @@ import Libs.Dict as Dict
 import Libs.Html.Attributes exposing (ariaHidden, ariaLabel, css, role)
 import Libs.List as List
 import Libs.Maybe as Maybe
+import Libs.Models.DatabaseKind as DatabaseKind
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Notes exposing (Notes)
 import Libs.Models.Tag as Tag exposing (Tag)
@@ -58,6 +60,7 @@ import Models.Project.Unique exposing (Unique)
 import Models.Project.UniqueName exposing (UniqueName)
 import Models.Size as Size
 import Models.SourceInfo as SourceInfo
+import Models.SqlQuery exposing (SqlQuery)
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn)
 import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps exposing (ErdColumnProps, ErdColumnPropsFlat)
@@ -67,9 +70,7 @@ import PagesComponents.Organization_.Project_.Models.ErdOrigin exposing (ErdOrig
 import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.ErdTableProps exposing (ErdTableProps)
-import Services.DatabaseQueries as DatabaseQueries
 import Services.Lenses exposing (setLayouts, setTables)
-import Services.QueryBuilder exposing (SqlQuery)
 import Simple.Fuzzy
 import Time exposing (Posix)
 
@@ -742,7 +743,7 @@ viewSource openDataExplorer table column rows origin =
         , text ((origin.source |> Maybe.mapOrElse .name (SourceId.toString origin.id)) ++ (rows |> Maybe.mapOrElse (\r -> " (" ++ String.fromInt r ++ " rows)") ""))
         , origin.source
             |> Maybe.andThen .db
-            |> Maybe.map (\url -> button [ type_ "button", onClick (openDataExplorer origin.id (DatabaseQueries.showData column table url)), class "ml-1" ] [ Icon.solid Icon.ArrowCircleRight "opacity-50" ] |> Tooltip.r "Browse data")
+            |> Maybe.map (\url -> button [ type_ "button", onClick (openDataExplorer origin.id (DbQuery.explore (DatabaseKind.fromUrl url) table column)), class "ml-1" ] [ Icon.solid Icon.ArrowCircleRight "opacity-50" ] |> Tooltip.r "Browse data")
             |> Maybe.withDefault (text "")
         ]
 

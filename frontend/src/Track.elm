@@ -23,11 +23,11 @@ import Models.Project.SourceKind as SourceKind
 import Models.Project.TableRow as TableRow
 import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Models.QueryResult exposing (QueryResult)
+import Models.SqlQuery exposing (SqlQuery)
 import Models.TrackEvent exposing (TrackClick, TrackEvent)
 import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.FindPathResult exposing (FindPathResult)
 import Ports
-import Services.QueryBuilder exposing (SqlQuery)
 import Time
 
 

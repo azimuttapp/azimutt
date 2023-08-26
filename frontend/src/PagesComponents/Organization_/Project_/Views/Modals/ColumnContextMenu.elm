@@ -4,11 +4,13 @@ import Components.Atoms.Icon as Icon
 import Components.Molecules.ContextMenu as ContextMenu
 import Components.Slices.DataExplorer as DataExplorer
 import Conf
+import DataSources.DbMiner.DbQuery as DbQuery
 import Html exposing (Html, div, text)
 import Html.Attributes exposing (class, title)
 import Libs.Dict as Dict
 import Libs.List as List
 import Libs.Maybe as Maybe
+import Libs.Models.DatabaseKind as DatabaseKind
 import Libs.Models.Notes exposing (Notes)
 import Libs.Models.Platform exposing (Platform)
 import Models.Project.ColumnRef exposing (ColumnRef)
@@ -16,7 +18,6 @@ import PagesComponents.Organization_.Project_.Components.DetailsSidebar as Detai
 import PagesComponents.Organization_.Project_.Models exposing (Msg(..), VirtualRelationMsg(..))
 import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn)
 import PagesComponents.Organization_.Project_.Models.NotesMsg exposing (NotesMsg(..))
-import Services.DatabaseQueries as DatabaseQueries
 
 
 view : Platform -> Int -> ColumnRef -> Maybe ErdColumn -> Maybe Notes -> Html Msg
@@ -27,7 +28,7 @@ view platform index ref column notes =
         , ContextMenu.btn "" (DetailsSidebarMsg (DetailsSidebar.ShowColumn ref)) [] [ text "Show details" ]
         , column
             |> Maybe.andThen (\c -> c.origins |> List.findMap (\o -> o.source |> Maybe.andThen (.db >> Maybe.map (\url -> ( o.id, url )))))
-            |> Maybe.map (\( id, url ) -> ContextMenu.btn "" (DataExplorerMsg (DataExplorer.Open (Just id) (Just (DatabaseQueries.showData (Just ref.column) ref.table url)))) [] [ text "Explore column data" ])
+            |> Maybe.map (\( id, url ) -> ContextMenu.btn "" (DataExplorerMsg (DataExplorer.Open (Just id) (Just (DbQuery.exploreColumn (DatabaseKind.fromUrl url) ref.table ref.column)))) [] [ text "Explore column data" ])
             |> Maybe.withDefault (div [] [])
         , ContextMenu.btnHotkey "" (NotesMsg (NOpen ref.table (Just ref.column))) [] [ text (notes |> Maybe.mapOrElse (\_ -> "Update notes") "Add notes") ] platform (Conf.hotkeys |> Dict.getOrElse "notes" [])
         , ContextMenu.btnHotkey "" (VirtualRelationMsg (VRCreate (Just ref))) [] [ text "Add relation" ] platform (Conf.hotkeys |> Dict.getOrElse "create-virtual-relation" [])
@@ -45,7 +46,7 @@ viewHidden platform _ column erdColumn notes =
         , ContextMenu.btn "" (DetailsSidebarMsg (DetailsSidebar.ShowColumn column)) [] [ text "Show details" ]
         , erdColumn
             |> Maybe.andThen (\c -> c.origins |> List.findMap (\o -> o.source |> Maybe.andThen (.db >> Maybe.map (\url -> ( o.id, url )))))
-            |> Maybe.map (\( id, url ) -> ContextMenu.btn "" (DataExplorerMsg (DataExplorer.Open (Just id) (Just (DatabaseQueries.showData (Just column.column) column.table url)))) [] [ text "Explore column data" ])
+            |> Maybe.map (\( id, url ) -> ContextMenu.btn "" (DataExplorerMsg (DataExplorer.Open (Just id) (Just (DbQuery.exploreColumn (DatabaseKind.fromUrl url) column.table column.column)))) [] [ text "Explore column data" ])
             |> Maybe.withDefault (div [] [])
         , ContextMenu.btnHotkey "" (NotesMsg (NOpen column.table (Just column.column))) [] [ text (notes |> Maybe.mapOrElse (\_ -> "Update notes") "Add notes") ] platform (Conf.hotkeys |> Dict.getOrElse "notes" [])
         , ContextMenu.btnHotkey "" (VirtualRelationMsg (VRCreate (Just column))) [] [ text "Add relation" ] platform (Conf.hotkeys |> Dict.getOrElse "create-virtual-relation" [])

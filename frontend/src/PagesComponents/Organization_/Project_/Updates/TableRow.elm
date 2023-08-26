@@ -1,6 +1,7 @@
 module PagesComponents.Organization_.Project_.Updates.TableRow exposing (mapTableRowOrSelectedCmd, moveToTableRow, showTableRow)
 
 import Components.Organisms.TableRow as TableRow
+import DataSources.DbMiner.DbTypes exposing (RowQuery)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.Delta exposing (Delta)
@@ -17,7 +18,6 @@ import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayo
 import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint)
 import Ports
 import Services.Lenses exposing (mapCanvas, mapPosition, mapTableRows, mapTableRowsSeq)
-import Services.QueryBuilder as QueryBuilder
 import Set exposing (Set)
 import Time
 
@@ -37,7 +37,7 @@ mapTableRowOrSelectedCmd id msg f rows =
         |> Maybe.withDefault ( rows, Cmd.none )
 
 
-showTableRow : Time.Posix -> DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> Erd -> ( Erd, Cmd Msg )
+showTableRow : Time.Posix -> DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> Erd -> ( Erd, Cmd Msg )
 showTableRow now source query previous hint erd =
     let
         hidden : Set ColumnName

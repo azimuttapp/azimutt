@@ -28,6 +28,7 @@ import Models.Project.Source as Source exposing (Source)
 import Models.Project.SourceId exposing (SourceId, SourceIdStr)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableStats exposing (TableStats)
+import Models.SqlQuery exposing (SqlQuery)
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn)
 import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps exposing (ErdColumnProps, ErdColumnPropsFlat)
@@ -37,7 +38,6 @@ import PagesComponents.Organization_.Project_.Models.NotesMsg exposing (NotesMsg
 import PagesComponents.Organization_.Project_.Models.TagsMsg exposing (TagsMsg(..))
 import Ports
 import Services.Lenses exposing (setEditNotes, setSearch, setView)
-import Services.QueryBuilder exposing (SqlQuery)
 import Task
 import Track
 
