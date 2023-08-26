@@ -220,26 +220,30 @@ viewHeader model =
                 |> List.appendOn model.comment viewComment
                 |> List.appendOn model.notes (viewNotes model Nothing)
             )
-        , model.dropdown
-            |> Maybe.mapOrElse
-                (\dropdownContent ->
-                    Dropdown.dropdown { id = dropdownId, direction = BottomLeft, isOpen = model.state.openedDropdown == dropdownId }
-                        (\m ->
-                            button
-                                [ type_ "button"
-                                , id m.id
-                                , onClick (model.actions.headerDropdownClick m.id)
-                                , ariaExpanded m.isOpen
-                                , ariaHaspopup "true"
-                                , css [ "flex text-sm opacity-25", focus [ "outline-none" ] ]
-                                ]
-                                [ span [ class "sr-only" ] [ text "Open table settings" ]
-                                , Icon.solid Icon.DotsVertical ""
-                                ]
-                        )
-                        (\_ -> dropdownContent)
-                )
-                Html.none
+        , if model.conf.layout then
+            model.dropdown
+                |> Maybe.mapOrElse
+                    (\dropdownContent ->
+                        Dropdown.dropdown { id = dropdownId, direction = BottomLeft, isOpen = model.state.openedDropdown == dropdownId }
+                            (\m ->
+                                button
+                                    [ type_ "button"
+                                    , id m.id
+                                    , onClick (model.actions.headerDropdownClick m.id)
+                                    , ariaExpanded m.isOpen
+                                    , ariaHaspopup "true"
+                                    , css [ "flex text-sm opacity-25", focus [ "outline-none" ] ]
+                                    ]
+                                    [ span [ class "sr-only" ] [ text "Open table settings" ]
+                                    , Icon.solid Icon.DotsVertical ""
+                                    ]
+                            )
+                            (\_ -> dropdownContent)
+                    )
+                    Html.none
+
+          else
+            text ""
         ]
 
 

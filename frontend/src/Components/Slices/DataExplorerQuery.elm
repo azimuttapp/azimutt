@@ -29,6 +29,7 @@ import Libs.Result as Result
 import Libs.Set as Set
 import Libs.String as String
 import Libs.Tailwind exposing (TwClass, focus)
+import Libs.Task as T
 import Libs.Time as Time
 import Models.DbSourceInfo as DbSourceInfo exposing (DbSourceInfo)
 import Models.DbValue as DbValue exposing (DbValue(..))
@@ -53,6 +54,7 @@ import Models.QueryResult as QueryResult exposing (QueryResult, QueryResultColum
 import Ports
 import Services.Lenses exposing (mapState, setQuery, setState)
 import Services.QueryBuilder as QueryBuilder exposing (SqlQuery)
+import Services.Toasts as Toasts
 import Set exposing (Set)
 import Time
 import Track
@@ -159,8 +161,8 @@ initSuccess started finished res =
 -- UPDATE
 
 
-update : ProjectInfo -> Msg -> Model -> ( Model, Cmd msg )
-update project msg model =
+update : (Toasts.Msg -> msg) -> ProjectInfo -> Msg -> Model -> ( Model, Cmd msg )
+update showToast project msg model =
     case msg of
         Cancel ->
             ( model |> mapState (\_ -> StateCanceled), Cmd.none )
@@ -201,8 +203,7 @@ update project msg model =
                     ( model, Ports.downloadFile (model |> fileName extension) (s |> fileContent extension) )
 
                 _ ->
-                    -- FIXME: show error toast
-                    ( model, Cmd.none )
+                    ( model, Toasts.warning "Can't export data not in success." |> showToast |> T.send )
 
 
 stateSuccess : Model -> Maybe SuccessState
@@ -862,7 +863,7 @@ docComponentState name get set =
 
 docUpdate : DocState -> (DocState -> Model) -> (DocState -> Model -> DocState) -> Msg -> ElmBook.Msg (SharedDocState x)
 docUpdate s get set m =
-    s |> get |> update ProjectInfo.zero m |> Tuple.first |> set s |> docSetState
+    s |> get |> update docShowToast ProjectInfo.zero m |> Tuple.first |> set s |> docSetState
 
 
 docToggleDropdown : DocState -> HtmlId -> ElmBook.Msg (SharedDocState x)
@@ -882,6 +883,11 @@ docSetState state =
 docWrap : Msg -> ElmBook.Msg state
 docWrap =
     \_ -> logAction "wrap"
+
+
+docShowToast : Toasts.Msg -> ElmBook.Msg state
+docShowToast _ =
+    logAction "showToast"
 
 
 docOpenModal : (msg -> String -> Html msg) -> ElmBook.Msg (SharedDocState x)

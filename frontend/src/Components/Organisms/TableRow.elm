@@ -63,9 +63,14 @@ import PagesComponents.Organization_.Project_.Views.Modals.TableRowContextMenu a
 import Ports
 import Services.Lenses exposing (mapColumns, mapHidden, mapSelected, mapShowHiddenColumns, mapState, setCollapsed, setPrevious, setState)
 import Services.QueryBuilder as QueryBuilder exposing (RowQuery, SqlQuery)
+import Services.Toasts as Toasts
 import Set exposing (Set)
 import Time
 import Track
+
+
+
+-- TODO: allow to change source for a table row? (click on the footer)
 
 
 type alias Model =
@@ -173,8 +178,8 @@ initRelation src ref =
 -- UPDATE
 
 
-update : (HtmlId -> msg) -> Time.Posix -> ProjectInfo -> List Source -> HtmlId -> Msg -> Model -> ( Model, Cmd msg )
-update toggleDropdown now project sources openedDropdown msg model =
+update : (HtmlId -> msg) -> (Toasts.Msg -> msg) -> Time.Posix -> ProjectInfo -> List Source -> HtmlId -> Msg -> Model -> ( Model, Cmd msg )
+update toggleDropdown showToast now project sources openedDropdown msg model =
     case msg of
         GotResult res ->
             ( model
@@ -191,23 +196,19 @@ update toggleDropdown now project sources openedDropdown msg model =
             )
 
         Refresh ->
-            -- TODO: allow to change source for a table row? (click on the footer)
-            sources
-                |> List.findBy .id model.source
-                |> Maybe.andThen DbSourceInfo.fromSource
-                |> Maybe.mapOrElse
-                    (\s ->
-                        let
-                            queryStr : String
-                            queryStr =
-                                QueryBuilder.findRow s.db.kind { table = model.table, primaryKey = model.primaryKey }
-                        in
-                        ( model |> setState (StateLoading { query = queryStr, startedAt = now, previous = model |> TableRow.stateSuccess })
-                        , Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt model.id) s.db.url queryStr
-                        )
+            withDbSource showToast
+                sources
+                model
+                (\dbSrc ->
+                    let
+                        queryStr : String
+                        queryStr =
+                            QueryBuilder.findRow dbSrc.db.kind { table = model.table, primaryKey = model.primaryKey }
+                    in
+                    ( model |> setState (StateLoading { query = queryStr, startedAt = now, previous = model |> TableRow.stateSuccess })
+                    , Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt model.id) dbSrc.db.url queryStr
                     )
-                    -- TODO: show error toast if can't find source or if not database
-                    ( model, Cmd.none )
+                )
 
         Cancel ->
             ( model |> mapStateLoading (\l -> initFailure l.query l.previous l.startedAt now "Query canceled"), Cmd.none )
@@ -232,20 +233,17 @@ update toggleDropdown now project sources openedDropdown msg model =
 
         ToggleIncomingRows dropdown column relations ->
             if Dict.isEmpty column.linkedBy && openedDropdown /= dropdown then
-                sources
-                    |> List.findBy .id model.source
-                    |> Maybe.andThen DbSourceInfo.fromSource
-                    |> Maybe.mapOrElse
-                        (\s ->
-                            let
-                                queryStr : String
-                                queryStr =
-                                    QueryBuilder.incomingRows s.db.kind relations { table = model.table, primaryKey = model.primaryKey }
-                            in
-                            ( model, Cmd.batch [ toggleDropdown dropdown |> T.send, Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt model.id ++ "/" ++ column.pathStr) s.db.url queryStr ] )
-                        )
-                        -- TODO: show error toast if can't find source or if not database
-                        ( model, toggleDropdown dropdown |> T.send )
+                withDbSource showToast
+                    sources
+                    model
+                    (\dbSrc ->
+                        let
+                            queryStr : String
+                            queryStr =
+                                QueryBuilder.incomingRows dbSrc.db.kind relations { table = model.table, primaryKey = model.primaryKey }
+                        in
+                        ( model, Cmd.batch [ toggleDropdown dropdown |> T.send, Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt model.id ++ "/" ++ column.pathStr) dbSrc.db.url queryStr ] )
+                    )
 
             else
                 ( model, toggleDropdown dropdown |> T.send )
@@ -256,8 +254,21 @@ update toggleDropdown now project sources openedDropdown msg model =
                 linkedBy =
                     result.result |> Result.fold (\_ -> Dict.empty) (.rows >> List.head >> Maybe.mapOrElse (Dict.mapBoth TableId.parse parsePks) Dict.empty)
             in
-            -- TODO: show error toast on result error
-            ( model |> mapState (mapSuccess (mapColumns (List.mapBy .path column (\c -> { c | linkedBy = linkedBy })))), Cmd.none )
+            ( model |> mapState (mapSuccess (mapColumns (List.mapBy .path column (\c -> { c | linkedBy = linkedBy }))))
+            , result.result |> Result.fold (\err -> Toasts.error ("Can't get incoming rows: " ++ err) |> showToast |> T.send) (\_ -> Cmd.none)
+            )
+
+
+withDbSource : (Toasts.Msg -> msg) -> List Source -> Model -> (DbSourceInfo -> ( Model, Cmd msg )) -> ( Model, Cmd msg )
+withDbSource showToast sources model f =
+    sources
+        |> List.findBy .id model.source
+        |> Maybe.map
+            (DbSourceInfo.fromSource
+                >> Maybe.map f
+                >> Maybe.withDefault ( model, Toasts.error "Can't refresh row, source is not a database." |> showToast |> T.send )
+            )
+        |> Maybe.withDefault ( model, Toasts.error "Can't refresh row, source not found." |> showToast |> T.send )
 
 
 parsePks : DbValue -> List RowPrimaryKey
@@ -358,8 +369,11 @@ view wrap noop toggleDropdown openPopover createContextMenu selectItem showTable
     in
     div
         ([ id htmlId
-         , class "max-w-xs bg-white text-default-500 text-xs border hover:shadow-md"
-         , classList [ ( Tw.batch [ "ring-2", Tw.ring_300 color ], row.selected ) ]
+         , class "max-w-xs bg-white text-default-500 text-xs border"
+         , classList
+            [ ( Tw.batch [ "ring-2", Tw.ring_300 color ], row.selected )
+            , ( "shadow-md", (hoverRow |> Maybe.map Tuple.first) == Just row.id )
+            ]
          ]
             ++ Bool.cond conf.hover [ onMouseEnter (hover ( row.id, Nothing ) True), onMouseLeave (hover ( row.id, Nothing ) False) ] []
         )
@@ -418,27 +432,31 @@ viewHeader wrap noop toggleDropdown createContextMenu selectItem showTable delet
             ([ title (tableLabel ++ ": " ++ filter), class "flex flex-grow truncate" ]
                 ++ Bool.cond conf.layout [ onContextMenu (createContextMenu dropdown) platform ] []
             )
-            [ button [ onClick (showTable row.table), title ("Show table: " ++ tableLabel), css [ Tw.text_500 color, "mr-1 opacity-50" ] ] [ Icon.solid Icon.Eye "w-3 h-3 inline" ]
+            [ Bool.cond conf.layout (button [ onClick (showTable row.table), title ("Show table: " ++ tableLabel), css [ Tw.text_500 color, "mr-1 opacity-50" ] ] [ Icon.solid Icon.Eye "w-3 h-3 inline" ]) (text "")
             , comment |> Maybe.mapOrElse (\c -> span [ title c, css [ Tw.text_500 color, "mr-1 opacity-50" ] ] [ Icon.outline Icons.comment "w-3 h-3 inline" ]) (text "")
             , notes |> Maybe.mapOrElse (\n -> button [ type_ "button", onClick (openNotes row.table Nothing), title n, css [ Tw.text_500 color, "mr-1 opacity-50" ] ] [ Icon.outline Icons.notes "w-3 h-3 inline" ]) (text "")
             , span ([ class "flex-grow text-left truncate" ] ++ Bool.cond conf.select [ onPointerUp (\e -> Bool.cond (e.button == MainButton) (selectItem (TableRow.toHtmlId row.id) (e.ctrl || e.shift)) (noop "")) platform ] [])
                 [ span [ css [ Tw.text_500 color, "font-bold" ] ] [ text tableLabel ], text (": " ++ filter) ]
             ]
-        , Dropdown.dropdown { id = dropdownId, direction = BottomLeft, isOpen = openedDropdown == dropdownId }
-            (\m ->
-                button
-                    [ type_ "button"
-                    , id m.id
-                    , onClick (toggleDropdown m.id)
-                    , ariaExpanded m.isOpen
-                    , ariaHaspopup "true"
-                    , css [ "flex text-sm opacity-25", focus [ "outline-none" ] ]
-                    ]
-                    [ span [ class "sr-only" ] [ text "Open table settings" ]
-                    , Icon.solid Icon.DotsVertical "w-4 h-4"
-                    ]
-            )
-            (\_ -> dropdown)
+        , if conf.layout then
+            Dropdown.dropdown { id = dropdownId, direction = BottomLeft, isOpen = openedDropdown == dropdownId }
+                (\m ->
+                    button
+                        [ type_ "button"
+                        , id m.id
+                        , onClick (toggleDropdown m.id)
+                        , ariaExpanded m.isOpen
+                        , ariaHaspopup "true"
+                        , css [ "flex text-sm opacity-25", focus [ "outline-none" ] ]
+                        ]
+                        [ span [ class "sr-only" ] [ text "Open table settings" ]
+                        , Icon.solid Icon.DotsVertical "w-4 h-4"
+                        ]
+                )
+                (\_ -> dropdown)
+
+          else
+            text ""
         ]
 
 
@@ -481,7 +499,7 @@ viewSuccess wrap noop openPopover createContextMenu hover showTableRow openNotes
             hiddenValues |> List.isEmpty |> not
     in
     div []
-        [ Keyed.node "dl" [ class "divide-y divide-gray-200" ] (values |> List.map (\v -> ( v.pathStr, viewColumnRow wrap noop createContextMenu hover showTableRow openNotes openDataExplorer platform defaultSchema source openedDropdown (htmlId ++ "-" ++ v.pathStr) hoverRow tableMeta table relations rowRelations color row v False )))
+        [ Keyed.node "dl" [ class "divide-y divide-gray-200" ] (values |> List.map (\v -> ( v.pathStr, viewColumnRow wrap noop createContextMenu hover showTableRow openNotes openDataExplorer platform conf defaultSchema source openedDropdown (htmlId ++ "-" ++ v.pathStr) hoverRow tableMeta table relations rowRelations color row v False )))
         , if hasHiddenValues then
             let
                 popoverId : HtmlId
@@ -495,7 +513,7 @@ viewSuccess wrap noop openPopover createContextMenu hover showTableRow openNotes
                 popover : Html msg
                 popover =
                     if showPopover then
-                        Keyed.node "dl" [ class "divide-y divide-gray-200 shadow-md" ] (hiddenValues |> List.map (\v -> ( v.pathStr, viewColumnRow wrap noop createContextMenu hover showTableRow openNotes openDataExplorer platform defaultSchema source openedDropdown (htmlId ++ "-" ++ v.pathStr) hoverRow tableMeta table relations rowRelations color row v True )))
+                        Keyed.node "dl" [ class "divide-y divide-gray-200 shadow-md" ] (hiddenValues |> List.map (\v -> ( v.pathStr, viewColumnRow wrap noop createContextMenu hover showTableRow openNotes openDataExplorer platform conf defaultSchema source openedDropdown (htmlId ++ "-" ++ v.pathStr) hoverRow tableMeta table relations rowRelations color row v True )))
 
                     else
                         div [] []
@@ -511,7 +529,7 @@ viewSuccess wrap noop openPopover createContextMenu hover showTableRow openNotes
                     [ text ("... " ++ (hiddenValues |> String.pluralizeL " more column")) ]
                     |> Popover.r popover showPopover
                 , if row.showHiddenColumns then
-                    Keyed.node "dl" [ class "divide-y divide-gray-200 border-t border-gray-200 opacity-50" ] (hiddenValues |> List.map (\v -> ( v.pathStr, viewColumnRow wrap noop createContextMenu hover showTableRow openNotes openDataExplorer platform defaultSchema source openedDropdown (htmlId ++ "-" ++ v.pathStr) hoverRow tableMeta table relations rowRelations color row v True )))
+                    Keyed.node "dl" [ class "divide-y divide-gray-200 border-t border-gray-200 opacity-50" ] (hiddenValues |> List.map (\v -> ( v.pathStr, viewColumnRow wrap noop createContextMenu hover showTableRow openNotes openDataExplorer platform conf defaultSchema source openedDropdown (htmlId ++ "-" ++ v.pathStr) hoverRow tableMeta table relations rowRelations color row v True )))
 
                   else
                     dl [] []
@@ -522,8 +540,8 @@ viewSuccess wrap noop openPopover createContextMenu hover showTableRow openNotes
         ]
 
 
-viewColumnRow : (Msg -> msg) -> (String -> msg) -> (Html msg -> PointerEvent -> msg) -> (TableRowHover -> Bool -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> (Maybe SourceId -> Maybe SqlQuery -> msg) -> Platform -> SchemaName -> Maybe DbSource -> HtmlId -> HtmlId -> Maybe TableRowHover -> Maybe TableMeta -> Maybe Table -> List Relation -> List TableRowRelation -> Color -> TableRow -> TableRowColumn -> Bool -> Html msg
-viewColumnRow wrap noop createContextMenu hover showTableRow openNotes openDataExplorer platform defaultSchema source openedDropdown htmlId hoverRow tableMeta table relations rowRelations color row rowColumn hidden =
+viewColumnRow : (Msg -> msg) -> (String -> msg) -> (Html msg -> PointerEvent -> msg) -> (TableRowHover -> Bool -> msg) -> (DbSourceInfo -> QueryBuilder.RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> (Maybe SourceId -> Maybe SqlQuery -> msg) -> Platform -> ErdConf -> SchemaName -> Maybe DbSource -> HtmlId -> HtmlId -> Maybe TableRowHover -> Maybe TableMeta -> Maybe Table -> List Relation -> List TableRowRelation -> Color -> TableRow -> TableRowColumn -> Bool -> Html msg
+viewColumnRow wrap noop createContextMenu hover showTableRow openNotes openDataExplorer platform conf defaultSchema source openedDropdown htmlId hoverRow tableMeta table relations rowRelations color row rowColumn hidden =
     let
         column : Maybe Column
         column =
@@ -592,11 +610,7 @@ viewColumnRow wrap noop createContextMenu hover showTableRow openNotes openDataE
             htmlId ++ "-dropdown"
     in
     div
-        [ onDblClick (\_ -> rowColumn.pathStr |> Bool.cond hidden ShowColumn HideColumn |> wrap) platform
-        , onMouseEnter (hover ( row.id, Just rowColumn.path ) True)
-        , onMouseLeave (hover ( row.id, Just rowColumn.path ) False)
-        , onContextMenu (createContextMenu (Bool.cond hidden (ColumnRowContextMenu.viewHidden (ShowColumn >> wrap)) (ColumnRowContextMenu.view (HideColumn >> wrap)) openNotes platform row rowColumn notes)) platform
-        , css
+        ([ css
             [ "px-2 py-1 flex font-medium"
             , if highlight then
                 Tw.batch [ Tw.text_500 color, Tw.bg_50 color ]
@@ -604,7 +618,14 @@ viewColumnRow wrap noop createContextMenu hover showTableRow openNotes openDataE
               else
                 "text-default-500 bg-white"
             ]
-        ]
+         ]
+            ++ Bool.cond conf.hover [ onMouseEnter (hover ( row.id, Just rowColumn.path ) True), onMouseLeave (hover ( row.id, Just rowColumn.path ) False) ] []
+            ++ Bool.cond conf.layout
+                [ onDblClick (\_ -> rowColumn.pathStr |> Bool.cond hidden ShowColumn HideColumn |> wrap) platform
+                , onContextMenu (createContextMenu (Bool.cond hidden (ColumnRowContextMenu.viewHidden (ShowColumn >> wrap)) (ColumnRowContextMenu.view (HideColumn >> wrap)) openNotes platform row rowColumn notes)) platform
+                ]
+                []
+        )
         [ dt [ class "whitespace-pre" ]
             [ text (ColumnPath.show rowColumn.path)
             , comment |> Maybe.mapOrElse (\c -> span [ title c, class "ml-1 opacity-50" ] [ Icon.outline Icons.comment "w-3 h-3 inline" ]) (text "")
@@ -615,13 +636,17 @@ viewColumnRow wrap noop createContextMenu hover showTableRow openNotes openDataE
             ]
         , Maybe.map2
             (\r s ->
-                button
-                    [ type_ "button"
-                    , onClick (showTableRow (DbSource.toInfo s) { table = r.table, primaryKey = Nel { column = r.column, value = rowColumn.value } [] } Nothing (Just (PositionHint.PlaceRight row.position row.size)))
-                    , title "See linked row"
-                    , class "ml-1 opacity-50"
-                    ]
-                    [ Icon.solid Icon.ExternalLink "w-3 h-3 inline" ]
+                if conf.layout then
+                    button
+                        [ type_ "button"
+                        , onClick (showTableRow (DbSource.toInfo s) { table = r.table, primaryKey = Nel { column = r.column, value = rowColumn.value } [] } Nothing (Just (PositionHint.PlaceRight row.position row.size)))
+                        , title "See linked row"
+                        , class "ml-1 opacity-50"
+                        ]
+                        [ Icon.solid Icon.ExternalLink "w-3 h-3 inline" ]
+
+                else
+                    button [ type_ "button", class "ml-1 opacity-50 cursor-default" ] [ Icon.solid Icon.ExternalLink "w-3 h-3 inline" ]
             )
             linkTo
             source
@@ -631,34 +656,38 @@ viewColumnRow wrap noop createContextMenu hover showTableRow openNotes openDataE
             |> Maybe.map DbSource.toInfo
             |> Maybe.mapOrElse
                 (\s ->
-                    Dropdown.dropdown { id = dropdownId, direction = BottomLeft, isOpen = openedDropdown == dropdownId }
-                        (\m ->
-                            button
-                                [ type_ "button"
-                                , id m.id
-                                , onClick (ToggleIncomingRows m.id rowColumn linkedBy |> wrap)
-                                , title "See rows linking this"
-                                , ariaExpanded m.isOpen
-                                , ariaHaspopup "true"
-                                , css [ "ml-1 opacity-50", focus [ "outline-none" ] ]
-                                ]
-                                [ span [ class "sr-only" ] [ text "Incoming rows" ]
-                                , Icon.solid Icon.Login "w-3 h-3"
-                                ]
-                        )
-                        (\_ ->
-                            div []
-                                (linkedBy
-                                    |> Dict.toList
-                                    |> List.map
-                                        (\( tableId, query ) ->
-                                            rowColumn.linkedBy
-                                                |> Dict.get tableId
-                                                |> Maybe.map (\linkedRows -> viewColumnRowIncomingRows noop showTableRow openDataExplorer defaultSchema s tableId row rowColumn query linkedRows)
-                                                |> Maybe.withDefault (ContextMenu.btnSubmenu { label = TableId.show defaultSchema tableId ++ " (?)", content = ContextMenu.Simple { action = noop "table-row-column-linked-rows-not-loaded" } })
-                                        )
-                                )
-                        )
+                    if conf.layout then
+                        Dropdown.dropdown { id = dropdownId, direction = BottomLeft, isOpen = openedDropdown == dropdownId }
+                            (\m ->
+                                button
+                                    [ type_ "button"
+                                    , id m.id
+                                    , onClick (ToggleIncomingRows m.id rowColumn linkedBy |> wrap)
+                                    , title "See rows linking this"
+                                    , ariaExpanded m.isOpen
+                                    , ariaHaspopup "true"
+                                    , css [ "ml-1 opacity-50", focus [ "outline-none" ] ]
+                                    ]
+                                    [ span [ class "sr-only" ] [ text "Incoming rows" ]
+                                    , Icon.solid Icon.Login "w-3 h-3"
+                                    ]
+                            )
+                            (\_ ->
+                                div []
+                                    (linkedBy
+                                        |> Dict.toList
+                                        |> List.map
+                                            (\( tableId, query ) ->
+                                                rowColumn.linkedBy
+                                                    |> Dict.get tableId
+                                                    |> Maybe.map (\linkedRows -> viewColumnRowIncomingRows noop showTableRow openDataExplorer defaultSchema s tableId row rowColumn query linkedRows)
+                                                    |> Maybe.withDefault (ContextMenu.btnSubmenu { label = TableId.show defaultSchema tableId ++ " (?)", content = ContextMenu.Simple { action = noop "table-row-column-linked-rows-not-loaded" } })
+                                            )
+                                    )
+                            )
+
+                    else
+                        div [] [ button [ type_ "button", class "ml-1 opacity-50 cursor-default" ] [ Icon.solid Icon.Login "w-3 h-3" ] ]
                 )
                 (text "")
         ]
@@ -977,7 +1006,7 @@ docRelation ( fromSchema, fromTable, fromColumn ) ( toSchema, toTable, toColumn 
 
 docUpdate : DocState -> (DocState -> Model) -> (DocState -> Model -> DocState) -> Msg -> ElmBook.Msg (SharedDocState x)
 docUpdate s get set msg =
-    s |> get |> update (docToggleDropdown s) Time.zero ProjectInfo.zero [ docSource ] s.openedDropdown msg |> Tuple.first |> set s |> docSetState
+    s |> get |> update (docToggleDropdown s) docShowToast Time.zero ProjectInfo.zero [ docSource ] s.openedDropdown msg |> Tuple.first |> set s |> docSetState
 
 
 docSetState : DocState -> ElmBook.Msg (SharedDocState x)
@@ -1046,3 +1075,8 @@ docOpenNotes _ _ =
 docOpenDataExplorer : Maybe SourceId -> Maybe SqlQuery -> ElmBook.Msg state
 docOpenDataExplorer _ _ =
     logAction "openDataExplorer"
+
+
+docShowToast : Toasts.Msg -> ElmBook.Msg state
+docShowToast _ =
+    logAction "showToast"

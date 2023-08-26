@@ -46,19 +46,18 @@ import PagesComponents.Organization_.Project_.Models.PositionHint exposing (Posi
 import Ports
 import Services.Lenses exposing (mapDetailsCmd, mapFilters, mapResultsCmd, mapVisualEditor, setOperation, setOperator, setValue)
 import Services.QueryBuilder as QueryBuilder exposing (SqlQuery)
+import Services.Toasts as Toasts
 import Track
 
 
 
 -- TODO:
 --  - popover with JSON when hover a JSON value in table row => bad CSS? hard to setup :/
---  - Use https://pablohirafuji.github.io/elm-syntax-highlight for SQL editor
---  - Check embed mode to remove drag, hover & others
---  - Show incoming rows in the side bar (and results?)
 --  - Enable data exploration for other db: MySQL, SQL Server, MongoDB, Couchbase... (QueryBuilder...)
 --  - Better error handling on connectors (cf PostgreSQL)
 --
---  - column stats in query header (quick analysis on query results)
+--  - column stats in query header (quick analysis on query results) => add bar chart & data list
+--  - saved queries ({ name : String, description : String, query : String, createdAt : Time.Posix, createdBy : UserId })
 --  - pin a column and replace the fk by it
 --  - Nested queries like Trevor: on rows & group by
 --  - Double click on a value to edit it, add a submit option to push them to the database (like datagrip)
@@ -100,11 +99,6 @@ type alias VisualEditorFilter =
 
 type alias QueryEditor =
     Editor.Model
-
-
-
--- TODO type alias SavedQuery =
---    { name : String, description : String, query : String, createdAt : Time.Posix, createdBy : UserId }
 
 
 type Msg
@@ -150,8 +144,8 @@ init =
 -- UPDATE
 
 
-update : (Msg -> msg) -> ProjectInfo -> List Source -> Msg -> Model -> ( Model, Cmd msg )
-update wrap project sources msg model =
+update : (Msg -> msg) -> (Toasts.Msg -> msg) -> ProjectInfo -> List Source -> Msg -> Model -> ( Model, Cmd msg )
+update wrap showToast project sources msg model =
     case msg of
         Open source query ->
             let
@@ -221,7 +215,7 @@ update wrap project sources msg model =
 
         QueryMsg id m ->
             --model |> mapResultsCmd (List.mapByCmd .id id (DataExplorerQuery.update (QueryMsg id >> wrap) m))
-            model |> mapResultsCmd (List.mapByCmd .id id (DataExplorerQuery.update project m))
+            model |> mapResultsCmd (List.mapByCmd .id id (DataExplorerQuery.update showToast project m))
 
         OpenDetails source query ->
             { model | detailsSeq = model.detailsSeq + 1 } |> mapDetailsCmd (List.prependCmd (DataExplorerDetails.init project model.detailsSeq source query))
@@ -694,7 +688,7 @@ docComponentState name get set sources =
 
 docUpdate : DocState -> (DocState -> Model) -> (DocState -> Model -> DocState) -> List Source -> Msg -> ElmBook.Msg (SharedDocState x)
 docUpdate s get set sources m =
-    s |> get |> update docWrap ProjectInfo.zero sources m |> Tuple.first |> set s |> docSetState
+    s |> get |> update docWrap docShowToast ProjectInfo.zero sources m |> Tuple.first |> set s |> docSetState
 
 
 docToggleDropdown : DocState -> HtmlId -> ElmBook.Msg (SharedDocState x)
@@ -719,6 +713,11 @@ docSetState state =
 docWrap : Msg -> ElmBook.Msg state
 docWrap _ =
     logAction "wrap"
+
+
+docShowToast : Toasts.Msg -> ElmBook.Msg state
+docShowToast _ =
+    logAction "showToast"
 
 
 docShowTable : TableId -> ElmBook.Msg state

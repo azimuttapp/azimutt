@@ -28,21 +28,25 @@ type ColumnInfo = {
 }
 
 async function getColumnInfos(conn: Conn, tableIds: number[]): Promise<ColumnInfo[]> {
-    return conn.query<ColumnInfo>(`
-        SELECT n.oid     as schema_id,
-               n.nspname as schema_name,
-               c.oid     as table_id,
-               c.relname as table_name,
-               a.attnum  as column_id,
-               a.attname as column_name,
-               t.oid     as type_id,
-               t.typname as type_name
-        FROM pg_attribute a
-                 JOIN pg_class c ON c.oid = a.attrelid
-                 JOIN pg_namespace n ON n.oid = c.relnamespace
-                 JOIN pg_type t ON t.oid = a.atttypid
-        WHERE a.attrelid IN (${tableIds.join(', ')})
-          AND a.attnum > 0;`)
+    if (tableIds.length > 0) {
+        return conn.query<ColumnInfo>(`
+            SELECT n.oid     as schema_id,
+                   n.nspname as schema_name,
+                   c.oid     as table_id,
+                   c.relname as table_name,
+                   a.attnum  as column_id,
+                   a.attname as column_name,
+                   t.oid     as type_id,
+                   t.typname as type_name
+            FROM pg_attribute a
+                     JOIN pg_class c ON c.oid = a.attrelid
+                     JOIN pg_namespace n ON n.oid = c.relnamespace
+                     JOIN pg_type t ON t.oid = a.atttypid
+            WHERE a.attrelid IN (${tableIds.join(', ')})
+              AND a.attnum > 0;`)
+    } else {
+        return []
+    }
 }
 
 function buildColumns(fields: QueryResultField[], columnInfos: ColumnInfo[]): DatabaseQueryResultsColumn[] {
