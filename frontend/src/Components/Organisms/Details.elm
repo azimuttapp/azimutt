@@ -60,7 +60,7 @@ import Models.Project.Unique exposing (Unique)
 import Models.Project.UniqueName exposing (UniqueName)
 import Models.Size as Size
 import Models.SourceInfo as SourceInfo
-import Models.SqlQuery exposing (SqlQuery)
+import Models.SqlQuery exposing (SqlQuery, SqlQueryOrigin)
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn)
 import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps exposing (ErdColumnProps, ErdColumnPropsFlat)
@@ -171,7 +171,7 @@ viewTable :
     -> (ColumnRef -> msg)
     -> (TableId -> msg)
     -> (LayoutName -> msg)
-    -> (SourceId -> SqlQuery -> msg)
+    -> (SourceId -> SqlQueryOrigin -> msg)
     -> (SourceName -> msg)
     -> SourceName
     -> SchemaName
@@ -251,7 +251,7 @@ viewColumn :
     -> (ColumnRef -> msg)
     -> (TableId -> msg)
     -> (LayoutName -> msg)
-    -> (SourceId -> SqlQuery -> msg)
+    -> (SourceId -> SqlQueryOrigin -> msg)
     -> (SourceName -> msg)
     -> SourceName
     -> SchemaName
@@ -311,7 +311,7 @@ viewColumn2 :
     -> (ColumnRef -> msg)
     -> (TableId -> msg)
     -> (LayoutName -> msg)
-    -> (SourceId -> String -> msg)
+    -> (SourceId -> SqlQueryOrigin -> msg)
     -> (SourceName -> msg)
     -> SourceName
     -> SchemaName
@@ -710,7 +710,7 @@ viewLayout loadLayout layout =
     div [] [ span [ class "underline cursor-pointer", onClick (loadLayout layout) ] [ text layout ] |> Tooltip.r "View layout" ]
 
 
-viewSource : (SourceId -> SqlQuery -> msg) -> TableId -> Maybe ColumnPath -> Maybe Int -> ErdOrigin -> Html msg
+viewSource : (SourceId -> SqlQueryOrigin -> msg) -> TableId -> Maybe ColumnPath -> Maybe Int -> ErdOrigin -> Html msg
 viewSource openDataExplorer table column rows origin =
     div [ class "mt-1 flex flex-row" ]
         [ case origin.source |> Maybe.map .kind of
@@ -1044,7 +1044,7 @@ doc =
                                                     (\columnRef -> s |> docSelectColumn columnRef |> docSetState)
                                                     (\tableId -> logAction ("showTable: " ++ TableId.toString tableId))
                                                     (\layout -> logAction ("loadLayout " ++ layout))
-                                                    (\_ q -> logAction ("query: " ++ q))
+                                                    (\_ q -> logAction ("query: " ++ q.sql))
                                                     (\source -> docSetState { s | openedCollapse = Bool.cond (s.openedCollapse == "viewTable-" ++ source) "" ("viewTable-" ++ source) })
                                                     (s.openedCollapse |> String.stripLeft "viewTable-")
                                                     s.defaultSchema
@@ -1089,7 +1089,7 @@ doc =
                                                     (\columnRef -> s |> docSelectColumn columnRef |> docSetState)
                                                     (\tableId -> logAction ("showTable: " ++ TableId.toString tableId))
                                                     (\layout -> logAction ("loadLayout " ++ layout))
-                                                    (\_ q -> logAction ("query: " ++ q))
+                                                    (\_ q -> logAction ("query: " ++ q.sql))
                                                     (\source -> docSetState { s | openedCollapse = Bool.cond (s.openedCollapse == "viewColumn-" ++ source) "" ("viewColumn-" ++ source) })
                                                     (s.openedCollapse |> String.stripLeft "viewColumn-")
                                                     s.defaultSchema

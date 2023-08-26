@@ -24,7 +24,16 @@ import {
     ToastLevel,
     ViewPosition
 } from "./basics";
-import {Project, ProjectId, ProjectInfo, ProjectStorage, ProjectTokenId, SourceId, SourceOrigin} from "./project";
+import {
+    Project,
+    ProjectId,
+    ProjectInfo,
+    ProjectStorage,
+    ProjectTokenId,
+    SourceId,
+    SourceOrigin,
+    SqlQueryOrigin
+} from "./project";
 import {OrganizationId} from "./organization";
 import {Env} from "../utils/env";
 import {z} from "zod";
@@ -136,8 +145,8 @@ export type GetTableStats = { kind: 'GetTableStats', source: SourceId, database:
 export const GetTableStats = z.object({kind: z.literal('GetTableStats'), source: SourceId, database: DatabaseUrl, table: TableId}).strict()
 export type GetColumnStats = { kind: 'GetColumnStats', source: SourceId, database: DatabaseUrl, column: ColumnRef }
 export const GetColumnStats = z.object({kind: z.literal('GetColumnStats'), source: SourceId, database: DatabaseUrl, column: ColumnRef}).strict()
-export type RunDatabaseQuery = { kind: 'RunDatabaseQuery', context: string, database: DatabaseUrl, query: string }
-export const RunDatabaseQuery = z.object({kind: z.literal('RunDatabaseQuery'), context: z.string(), database: DatabaseUrl, query: z.string()}).strict()
+export type RunDatabaseQuery = { kind: 'RunDatabaseQuery', context: string, database: DatabaseUrl, query: SqlQueryOrigin }
+export const RunDatabaseQuery = z.object({kind: z.literal('RunDatabaseQuery'), context: z.string(), database: DatabaseUrl, query: SqlQueryOrigin}).strict()
 export type GetPrismaSchema = { kind: 'GetPrismaSchema', content: string }
 export const GetPrismaSchema = z.object({kind: z.literal('GetPrismaSchema'), content: z.string()}).strict()
 export type ObserveSizes = { kind: 'ObserveSizes', ids: HtmlId[] }
@@ -176,8 +185,8 @@ export type GotColumnStats = { kind: 'GotColumnStats', source: SourceId, stats: 
 export const GotColumnStats = z.object({kind: z.literal('GotColumnStats'), source: SourceId, stats: ColumnStats}).strict()
 export type GotColumnStatsError = { kind: 'GotColumnStatsError', source: SourceId, column: ColumnRef, error: string }
 export const GotColumnStatsError = z.object({kind: z.literal('GotColumnStatsError'), source: SourceId, column: ColumnRef, error: z.string()}).strict()
-export type GotDatabaseQueryResult = { kind: 'GotDatabaseQueryResult', context: string, query: string, result: string | {columns: DatabaseQueryResultsColumn[], rows: JsValue[]}, started: number, finished: number }
-export const GotDatabaseQueryResult = z.object({kind: z.literal('GotDatabaseQueryResult'), context: z.string(), query: z.string(), result: z.union([z.string(), z.object({columns: DatabaseQueryResultsColumn.array(), rows: JsValue.array() })]), started: z.number(), finished: z.number()}).strict()
+export type GotDatabaseQueryResult = { kind: 'GotDatabaseQueryResult', context: string, query: SqlQueryOrigin, result: string | {columns: DatabaseQueryResultsColumn[], rows: JsValue[]}, started: number, finished: number }
+export const GotDatabaseQueryResult = z.object({kind: z.literal('GotDatabaseQueryResult'), context: z.string(), query: SqlQueryOrigin, result: z.union([z.string(), z.object({columns: DatabaseQueryResultsColumn.array(), rows: JsValue.array() })]), started: z.number(), finished: z.number()}).strict()
 export type GotPrismaSchema = { kind: 'GotPrismaSchema', schema: AzimuttSchema }
 export const GotPrismaSchema = z.object({kind: z.literal('GotPrismaSchema'), schema: AzimuttSchema}).strict()
 export type GotPrismaSchemaError = { kind: 'GotPrismaSchemaError', error: string }

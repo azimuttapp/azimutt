@@ -10,10 +10,14 @@ import Json.Decode as Decode
 import Json.Encode as Encode
 import Libs.Bool as Bool
 import Libs.Dict as Dict
+import Libs.Json.Encode as Encode
 import Libs.Maybe as Maybe
+import Libs.Models.DatabaseKind as DatabaseKind
 import Libs.Models.Notes exposing (Notes)
 import Libs.Models.Tag exposing (Tag)
 import Libs.Result as Result
+import Models.DbSource exposing (DbSource)
+import Models.DbSourceInfo exposing (DbSourceInfo)
 import Models.OrganizationId exposing (OrganizationId)
 import Models.Plan as Plan
 import Models.Project exposing (Project)
@@ -23,7 +27,7 @@ import Models.Project.SourceKind as SourceKind
 import Models.Project.TableRow as TableRow
 import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Models.QueryResult exposing (QueryResult)
-import Models.SqlQuery exposing (SqlQuery)
+import Models.SqlQuery exposing (SqlQuery, SqlQueryOrigin)
 import Models.TrackEvent exposing (TrackClick, TrackEvent)
 import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.FindPathResult exposing (FindPathResult)
@@ -195,14 +199,20 @@ sourceEditorClosed erd =
     sendEvent "editor__source_editor__closed" [] (erd |> Maybe.map .project)
 
 
-dataExplorerOpened : List Source -> Maybe SqlQuery -> { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> Cmd msg
-dataExplorerOpened sources query project =
-    sendEvent "editor__data_explorer__opened" [ ( "nb_sources", sources |> List.length |> Encode.int ), ( "nb_db_sources", sources |> List.filter (.kind >> SourceKind.isDatabase) |> List.length |> Encode.int ), ( "with_query", query /= Nothing |> Encode.bool ) ] (Just project)
+dataExplorerOpened : List Source -> Maybe DbSource -> Maybe SqlQueryOrigin -> { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> Cmd msg
+dataExplorerOpened sources source query project =
+    sendEvent "editor__data_explorer__opened"
+        [ ( "nb_sources", sources |> List.length |> Encode.int )
+        , ( "nb_db_sources", sources |> List.filter (.kind >> SourceKind.isDatabase) |> List.length |> Encode.int )
+        , ( "db", source |> Maybe.map (.db >> .kind) |> Encode.maybe DatabaseKind.encode )
+        , ( "query", query |> Maybe.map .origin |> Encode.maybe Encode.string )
+        ]
+        (Just project)
 
 
-dataExplorerQueryOpened : Bool -> { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> Cmd msg
-dataExplorerQueryOpened sql project =
-    sendEvent "data_explorer__query__opened" [ ( "sql", sql |> Encode.bool ) ] (Just project)
+dataExplorerQueryOpened : DbSourceInfo -> SqlQueryOrigin -> { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> Cmd msg
+dataExplorerQueryOpened source query project =
+    sendEvent "data_explorer__query__opened" [ ( "db", source.db.kind |> DatabaseKind.encode ), ( "query", query.origin |> Encode.string ) ] (Just project)
 
 
 dataExplorerQueryResult : QueryResult -> { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> Cmd msg
@@ -210,9 +220,9 @@ dataExplorerQueryResult res project =
     sendEvent "data_explorer__query__result" (queryResultDetails res) (Just project)
 
 
-dataExplorerDetailsOpened : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> Cmd msg
-dataExplorerDetailsOpened project =
-    sendEvent "data_explorer__details__opened" [] (Just project)
+dataExplorerDetailsOpened : DbSourceInfo -> SqlQueryOrigin -> { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> Cmd msg
+dataExplorerDetailsOpened source query project =
+    sendEvent "data_explorer__details__opened" [ ( "db", source.db.kind |> DatabaseKind.encode ), ( "query", query.origin |> Encode.string ) ] (Just project)
 
 
 dataExplorerDetailsResult : QueryResult -> { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> Cmd msg
@@ -220,9 +230,9 @@ dataExplorerDetailsResult res project =
     sendEvent "data_explorer__details__result" (queryResultDetails res) (Just project)
 
 
-tableRowOpened : Maybe TableRow.SuccessState -> { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> Cmd msg
-tableRowOpened previous project =
-    sendEvent "data_explorer__table_row__opened" [ ( "with_data", previous /= Nothing |> Encode.bool ) ] (Just project)
+tableRowOpened : Maybe TableRow.SuccessState -> DbSourceInfo -> SqlQueryOrigin -> { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> Cmd msg
+tableRowOpened previous source query project =
+    sendEvent "data_explorer__table_row__opened" [ ( "db", source.db.kind |> DatabaseKind.encode ), ( "query", query.origin |> Encode.string ), ( "previous", previous /= Nothing |> Encode.bool ) ] (Just project)
 
 
 tableRowResult : QueryResult -> { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> Cmd msg
@@ -342,4 +352,4 @@ queryResultDetails res =
                 ]
             )
     )
-        ++ [ ( "duration", Time.posixToMillis res.finished - Time.posixToMillis res.started |> Encode.int ) ]
+        ++ [ ( "db", res.query.db |> DatabaseKind.encode ), ( "query", res.query.origin |> Encode.string ), ( "duration", Time.posixToMillis res.finished - Time.posixToMillis res.started |> Encode.int ) ]

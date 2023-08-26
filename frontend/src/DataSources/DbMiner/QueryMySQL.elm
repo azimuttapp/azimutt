@@ -13,10 +13,6 @@ import Models.Project.TableId as TableId exposing (TableId)
 import Models.SqlQuery exposing (SqlQuery)
 
 
-
--- FIXME: remove hardcoded limits & implement `addLimit`
-
-
 exploreTable : TableId -> SqlQuery
 exploreTable table =
     "SELECT *\nFROM " ++ formatTable table ++ ";\n"

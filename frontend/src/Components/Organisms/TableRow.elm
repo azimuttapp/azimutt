@@ -24,6 +24,7 @@ import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, css)
 import Libs.Html.Events exposing (PointerEvent, onContextMenu, onDblClick, onPointerUp)
 import Libs.List as List
 import Libs.Maybe as Maybe
+import Libs.Models.DatabaseKind as DatabaseKind
 import Libs.Models.DateTime as DateTime
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Notes exposing (Notes)
@@ -58,7 +59,7 @@ import Models.Project.TableRow as TableRow exposing (State(..), TableRow, TableR
 import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Models.QueryResult exposing (QueryResult, QueryResultSuccess)
 import Models.Size as Size
-import Models.SqlQuery exposing (SqlQuery)
+import Models.SqlQuery exposing (SqlQuery, SqlQueryOrigin)
 import PagesComponents.Organization_.Project_.Models.ErdConf as ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.PositionHint as PositionHint exposing (PositionHint)
 import PagesComponents.Organization_.Project_.Views.Modals.ColumnRowContextMenu as ColumnRowContextMenu
@@ -121,8 +122,8 @@ dbPrefix =
 init : ProjectInfo -> TableRow.Id -> Time.Posix -> DbSourceInfo -> RowQuery -> Set ColumnPathStr -> Maybe TableRow.SuccessState -> Maybe PositionHint -> ( Model, Cmd msg )
 init project id now source query hidden previous hint =
     let
-        queryStr : String
-        queryStr =
+        sqlQuery : SqlQueryOrigin
+        sqlQuery =
             DbQuery.findRow source.db.kind query
     in
     ( { id = id
@@ -132,7 +133,7 @@ init project id now source query hidden previous hint =
       , source = source.id
       , table = query.table
       , primaryKey = query.primaryKey
-      , state = previous |> Maybe.mapOrElse StateSuccess (StateLoading { query = queryStr, startedAt = now, previous = Nothing })
+      , state = previous |> Maybe.mapOrElse StateSuccess (StateLoading { query = sqlQuery, startedAt = now, previous = Nothing })
       , hidden =
             if Set.isEmpty hidden then
                 previous |> Maybe.mapOrElse defaultHidden Set.empty
@@ -143,11 +144,11 @@ init project id now source query hidden previous hint =
       , selected = False
       , collapsed = False
       }
-    , Cmd.batch [ previous |> Maybe.mapOrElse (\_ -> Cmd.none) (Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt id) source.db.url queryStr), Track.tableRowOpened previous project ]
+    , Cmd.batch [ previous |> Maybe.mapOrElse (\_ -> Cmd.none) (Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt id) source.db.url sqlQuery), Track.tableRowOpened previous source sqlQuery project ]
     )
 
 
-initFailure : String -> Maybe TableRow.SuccessState -> Time.Posix -> Time.Posix -> String -> TableRow.State
+initFailure : SqlQueryOrigin -> Maybe TableRow.SuccessState -> Time.Posix -> Time.Posix -> String -> TableRow.State
 initFailure query previous started finished err =
     StateFailure { query = query, error = err, startedAt = started, failedAt = finished, previous = previous }
 
@@ -203,12 +204,12 @@ update toggleDropdown showToast now project sources openedDropdown msg model =
                 model
                 (\dbSrc ->
                     let
-                        queryStr : String
-                        queryStr =
+                        sqlQuery : SqlQueryOrigin
+                        sqlQuery =
                             DbQuery.findRow dbSrc.db.kind { table = model.table, primaryKey = model.primaryKey }
                     in
-                    ( model |> setState (StateLoading { query = queryStr, startedAt = now, previous = model |> TableRow.stateSuccess })
-                    , Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt model.id) dbSrc.db.url queryStr
+                    ( model |> setState (StateLoading { query = sqlQuery, startedAt = now, previous = model |> TableRow.stateSuccess })
+                    , Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt model.id) dbSrc.db.url sqlQuery
                     )
                 )
 
@@ -240,11 +241,11 @@ update toggleDropdown showToast now project sources openedDropdown msg model =
                     model
                     (\dbSrc ->
                         let
-                            queryStr : String
-                            queryStr =
+                            sqlQuery : SqlQueryOrigin
+                            sqlQuery =
                                 DbQuery.incomingRows dbSrc.db.kind relations { table = model.table, primaryKey = model.primaryKey }
                         in
-                        ( model, Cmd.batch [ toggleDropdown dropdown |> T.send, Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt model.id ++ "/" ++ column.pathStr) dbSrc.db.url queryStr ] )
+                        ( model, Cmd.batch [ toggleDropdown dropdown |> T.send, Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt model.id ++ "/" ++ column.pathStr) dbSrc.db.url sqlQuery ] )
                     )
 
             else
@@ -358,7 +359,7 @@ defaultHidden res =
 -- VIEW
 
 
-view : (Msg -> msg) -> (String -> msg) -> (HtmlId -> msg) -> (HtmlId -> msg) -> (Html msg -> PointerEvent -> msg) -> (HtmlId -> Bool -> msg) -> (TableId -> msg) -> (TableRowHover -> Bool -> msg) -> (DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> msg -> (TableId -> Maybe ColumnPath -> msg) -> (Maybe SourceId -> Maybe SqlQuery -> msg) -> Time.Posix -> Platform -> ErdConf -> SchemaName -> HtmlId -> HtmlId -> HtmlId -> Maybe DbSource -> Maybe TableRowHover -> List TableRowRelation -> Color -> Maybe TableMeta -> TableRow -> Html msg
+view : (Msg -> msg) -> (String -> msg) -> (HtmlId -> msg) -> (HtmlId -> msg) -> (Html msg -> PointerEvent -> msg) -> (HtmlId -> Bool -> msg) -> (TableId -> msg) -> (TableRowHover -> Bool -> msg) -> (DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> msg -> (TableId -> Maybe ColumnPath -> msg) -> (Maybe SourceId -> Maybe SqlQueryOrigin -> msg) -> Time.Posix -> Platform -> ErdConf -> SchemaName -> HtmlId -> HtmlId -> HtmlId -> Maybe DbSource -> Maybe TableRowHover -> List TableRowRelation -> Color -> Maybe TableMeta -> TableRow -> Html msg
 view wrap noop toggleDropdown openPopover createContextMenu selectItem showTable hover showTableRow delete openNotes openDataExplorer now platform conf defaultSchema openedDropdown openedPopover htmlId source hoverRow rowRelations color tableMeta row =
     let
         table : Maybe Table
@@ -490,7 +491,7 @@ viewFailure wrap delete res =
         ]
 
 
-viewSuccess : (Msg -> msg) -> (String -> msg) -> (HtmlId -> msg) -> (Html msg -> PointerEvent -> msg) -> (TableRowHover -> Bool -> msg) -> (DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> (Maybe SourceId -> Maybe SqlQuery -> msg) -> Platform -> ErdConf -> SchemaName -> Maybe DbSource -> HtmlId -> HtmlId -> HtmlId -> Maybe TableRowHover -> Maybe TableMeta -> Maybe Table -> List Relation -> List TableRowRelation -> Color -> TableRow -> TableRow.SuccessState -> Html msg
+viewSuccess : (Msg -> msg) -> (String -> msg) -> (HtmlId -> msg) -> (Html msg -> PointerEvent -> msg) -> (TableRowHover -> Bool -> msg) -> (DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> (Maybe SourceId -> Maybe SqlQueryOrigin -> msg) -> Platform -> ErdConf -> SchemaName -> Maybe DbSource -> HtmlId -> HtmlId -> HtmlId -> Maybe TableRowHover -> Maybe TableMeta -> Maybe Table -> List Relation -> List TableRowRelation -> Color -> TableRow -> TableRow.SuccessState -> Html msg
 viewSuccess wrap noop openPopover createContextMenu hover showTableRow openNotes openDataExplorer platform conf defaultSchema source openedDropdown openedPopover htmlId hoverRow tableMeta table relations rowRelations color row res =
     let
         ( hiddenValues, values ) =
@@ -542,7 +543,7 @@ viewSuccess wrap noop openPopover createContextMenu hover showTableRow openNotes
         ]
 
 
-viewColumnRow : (Msg -> msg) -> (String -> msg) -> (Html msg -> PointerEvent -> msg) -> (TableRowHover -> Bool -> msg) -> (DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> (Maybe SourceId -> Maybe SqlQuery -> msg) -> Platform -> ErdConf -> SchemaName -> Maybe DbSource -> HtmlId -> HtmlId -> Maybe TableRowHover -> Maybe TableMeta -> Maybe Table -> List Relation -> List TableRowRelation -> Color -> TableRow -> TableRowColumn -> Bool -> Html msg
+viewColumnRow : (Msg -> msg) -> (String -> msg) -> (Html msg -> PointerEvent -> msg) -> (TableRowHover -> Bool -> msg) -> (DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> (Maybe SourceId -> Maybe SqlQueryOrigin -> msg) -> Platform -> ErdConf -> SchemaName -> Maybe DbSource -> HtmlId -> HtmlId -> Maybe TableRowHover -> Maybe TableMeta -> Maybe Table -> List Relation -> List TableRowRelation -> Color -> TableRow -> TableRowColumn -> Bool -> Html msg
 viewColumnRow wrap noop createContextMenu hover showTableRow openNotes openDataExplorer platform conf defaultSchema source openedDropdown htmlId hoverRow tableMeta table relations rowRelations color row rowColumn hidden =
     let
         column : Maybe Column
@@ -695,7 +696,7 @@ viewColumnRow wrap noop createContextMenu hover showTableRow openNotes openDataE
         ]
 
 
-viewColumnRowIncomingRows : (String -> msg) -> (DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> (Maybe SourceId -> Maybe SqlQuery -> msg) -> SchemaName -> DbSourceInfo -> TableId -> TableRow -> TableRowColumn -> IncomingRowsQuery -> List RowPrimaryKey -> Html msg
+viewColumnRowIncomingRows : (String -> msg) -> (DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> (Maybe SourceId -> Maybe SqlQueryOrigin -> msg) -> SchemaName -> DbSourceInfo -> TableId -> TableRow -> TableRowColumn -> IncomingRowsQuery -> List RowPrimaryKey -> Html msg
 viewColumnRowIncomingRows noop showTableRow openDataExplorer defaultSchema source tableId row rowColumn query linkedRows =
     ContextMenu.btnSubmenu
         { label = TableId.show defaultSchema tableId ++ " (" ++ (linkedRows |> List.length |> (\len -> String.fromInt len ++ Bool.cond (len == DbQuery.incomingRowsLimit) "+" "")) ++ ")"
@@ -723,9 +724,9 @@ viewColumnRowIncomingRows noop showTableRow openDataExplorer defaultSchema sourc
         }
 
 
-viewQuery : TwClass -> String -> Html msg
+viewQuery : TwClass -> SqlQueryOrigin -> Html msg
 viewQuery classes query =
-    div [ css [ "block overflow-x-auto rounded bg-gray-50 border border-gray-200", classes ] ] [ text query ]
+    div [ css [ "block overflow-x-auto rounded bg-gray-50 border border-gray-200", classes ] ] [ text query.sql ]
 
 
 viewFooter : Time.Posix -> Maybe DbSource -> TableRow -> Html msg
@@ -897,7 +898,7 @@ docLoading =
     , source = docSource.id
     , table = ( "public", "events" )
     , primaryKey = Nel { column = Nel "id" [], value = DbString "dcecf4fe-aa35-44fb-a90c-eba7d2103f4e" } []
-    , state = StateLoading { query = "SELECT * FROM public.events WHERE id='dcecf4fe-aa35-44fb-a90c-eba7d2103f4e';", startedAt = Time.millisToPosix 1691079663421, previous = Nothing }
+    , state = StateLoading { query = { sql = "SELECT * FROM public.events WHERE id='dcecf4fe-aa35-44fb-a90c-eba7d2103f4e';", origin = "doc", db = DatabaseKind.Other }, startedAt = Time.millisToPosix 1691079663421, previous = Nothing }
     , hidden = Set.fromList []
     , showHiddenColumns = False
     , selected = False
@@ -914,7 +915,7 @@ docFailure =
     , source = docSource.id
     , table = ( "public", "events" )
     , primaryKey = Nel { column = Nel "id" [], value = DbString "dcecf4fe-aa35-44fb-a90c-eba7d2103f4e" } []
-    , state = StateFailure { query = "SELECT * FROM public.event WHERE id='dcecf4fe-aa35-44fb-a90c-eba7d2103f4e';", error = "relation \"public.event\" does not exist", startedAt = Time.millisToPosix 1691079663421, failedAt = Time.millisToPosix 1691079663421, previous = Nothing }
+    , state = StateFailure { query = { sql = "SELECT * FROM public.event WHERE id='dcecf4fe-aa35-44fb-a90c-eba7d2103f4e';", origin = "doc", db = DatabaseKind.Other }, error = "relation \"public.event\" does not exist", startedAt = Time.millisToPosix 1691079663421, failedAt = Time.millisToPosix 1691079663421, previous = Nothing }
     , hidden = Set.fromList []
     , showHiddenColumns = False
     , selected = False
@@ -1074,7 +1075,7 @@ docOpenNotes _ _ =
     logAction "openNotes"
 
 
-docOpenDataExplorer : Maybe SourceId -> Maybe SqlQuery -> ElmBook.Msg state
+docOpenDataExplorer : Maybe SourceId -> Maybe SqlQueryOrigin -> ElmBook.Msg state
 docOpenDataExplorer _ _ =
     logAction "openDataExplorer"
 

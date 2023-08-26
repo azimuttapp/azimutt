@@ -22,6 +22,7 @@ import Libs.Dict as Dict
 import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, css)
 import Libs.List as List
 import Libs.Maybe as Maybe
+import Libs.Models.DatabaseKind as DatabaseKind
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Notes exposing (Notes)
 import Libs.Nel exposing (Nel)
@@ -52,7 +53,7 @@ import Models.Project.TableId exposing (TableId)
 import Models.Project.TableName exposing (TableName)
 import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Models.QueryResult as QueryResult exposing (QueryResult, QueryResultColumn, QueryResultColumnTarget, QueryResultRow, QueryResultSuccess)
-import Models.SqlQuery exposing (SqlQuery)
+import Models.SqlQuery exposing (SqlQuery, SqlQueryOrigin)
 import Ports
 import Services.Lenses exposing (mapState, setQuery, setState)
 import Services.Toasts as Toasts
@@ -64,7 +65,7 @@ import Track
 type alias Model =
     { id : Id
     , source : DbSourceInfo
-    , query : String
+    , query : SqlQueryOrigin
     , state : State
     }
 
@@ -128,10 +129,10 @@ dbPrefix =
     "data-explorer-query"
 
 
-init : ProjectInfo -> Bool -> Id -> DbSourceInfo -> SqlQuery -> ( Model, Cmd msg )
-init project sqlTab id source query =
+init : ProjectInfo -> Id -> DbSourceInfo -> SqlQueryOrigin -> ( Model, Cmd msg )
+init project id source query =
     ( { id = id, source = source, query = query, state = StateRunning }
-    , Cmd.batch [ Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt id) source.db.url query, Track.dataExplorerQueryOpened sqlTab project ]
+    , Cmd.batch [ Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt id) source.db.url query, Track.dataExplorerQueryOpened source query project ]
     )
 
 
@@ -421,10 +422,10 @@ viewCard fullScreen cardTitle cardBody cardActions =
         ]
 
 
-viewQuery : Bool -> String -> Html msg
+viewQuery : Bool -> SqlQueryOrigin -> Html msg
 viewQuery collapsed query =
     div [ css [ "block rounded bg-gray-50 border border-gray-200", Bool.cond collapsed "px-2 py-1 text-xs truncate" "px-3 py-2 text-sm whitespace-pre overflow-x-auto" ] ]
-        [ text query
+        [ text query.sql
         ]
 
 
@@ -612,12 +613,12 @@ doc =
             ]
 
 
-docModel : Int -> String -> State -> Model
+docModel : Int -> SqlQuery -> State -> Model
 docModel id query state =
-    { id = id, source = docSource |> DbSourceInfo.fromSource |> Maybe.withDefault DbSourceInfo.zero, query = query, state = state }
+    { id = id, source = docSource |> DbSourceInfo.fromSource |> Maybe.withDefault DbSourceInfo.zero, query = { sql = query, origin = "doc", db = DatabaseKind.Other }, state = state }
 
 
-docComplexQuery : String
+docComplexQuery : SqlQuery
 docComplexQuery =
     """SELECT
     u.id,
@@ -658,7 +659,7 @@ docStateFailure =
     { error = "Error: relation \"events\" does not exist\nError Code: 42P01", startedAt = Time.zero, failedAt = Time.zero } |> StateFailure
 
 
-docCityQuery : String
+docCityQuery : SqlQuery
 docCityQuery =
     "SELECT * FROM city;"
 

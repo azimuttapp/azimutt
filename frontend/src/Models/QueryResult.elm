@@ -17,12 +17,13 @@ import Models.Project.ColumnType exposing (ColumnType)
 import Models.Project.Relation exposing (Relation)
 import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
+import Models.SqlQuery as SqlQuery exposing (SqlQueryOrigin)
 import Time
 
 
 type alias QueryResult =
     { context : String
-    , query : String
+    , query : SqlQueryOrigin
     , result : Result String QueryResultSuccess
     , started : Time.Posix
     , finished : Time.Posix
@@ -80,7 +81,7 @@ decode : Decode.Decoder QueryResult
 decode =
     Decode.map5 QueryResult
         (Decode.field "context" Decode.string)
-        (Decode.field "query" Decode.string)
+        (Decode.field "query" SqlQuery.decodeOrigin)
         (Decode.field "result" (Result.decode Decode.string decodeSuccess))
         (Decode.field "started" Time.decode)
         (Decode.field "finished" Time.decode)

@@ -15,12 +15,11 @@ import {
     ElmMsg,
     ElmRuntime,
     GetLocalFile,
-    GotDatabaseSchema,
     Hotkey,
     HotkeyId,
     JsMsg
 } from "../types/ports";
-import {Project, ProjectId, SourceId} from "../types/project";
+import {Project, ProjectId, SourceId, SqlQueryOrigin} from "../types/project";
 import {Color, Delta, Position, ToastLevel} from "../types/basics";
 import * as Zod from "../utils/zod";
 import {Logger} from "./logger";
@@ -109,7 +108,7 @@ export class ElmApp {
     gotTableStatsError = (source: SourceId, table: TableId, error: string): void => this.send({kind: 'GotTableStatsError', source, table, error})
     gotColumnStats = (source: SourceId, stats: ColumnStats): void => this.send({kind: 'GotColumnStats', source, stats})
     gotColumnStatsError = (source: SourceId, column: ColumnRef, error: string): void => this.send({kind: 'GotColumnStatsError', source, column, error})
-    gotDatabaseQueryResult = (context: string, query: string, result: string | {columns: DatabaseQueryResultsColumn[], rows: JsValue[]}, started: number, finished: number): void => this.send({kind: 'GotDatabaseQueryResult', context, query, result, started, finished})
+    gotDatabaseQueryResult = (context: string, query: SqlQueryOrigin, result: string | {columns: DatabaseQueryResultsColumn[], rows: JsValue[]}, started: number, finished: number): void => this.send({kind: 'GotDatabaseQueryResult', context, query, result, started, finished})
     gotPrismaSchema = (schema: AzimuttSchema): void => this.send({kind: 'GotPrismaSchema', schema})
     gotPrismaSchemaError = (error: string): void => this.send({kind: 'GotPrismaSchemaError', error})
     gotHotkey = (hotkey: Hotkey & { id: HotkeyId }): void => this.send({kind: 'GotHotkey', id: hotkey.id})

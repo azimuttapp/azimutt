@@ -30,6 +30,7 @@ import Models.ProjectTokenId as ProjectTokenId exposing (ProjectTokenId)
 import Models.QueryResult as QueryResult exposing (QueryResult)
 import Models.Route as Route exposing (Route)
 import Models.Size as Size
+import Models.SqlQuery as SqlQuery exposing (SqlQueryOrigin)
 import Models.TrackEvent as TrackEvent exposing (TrackEvent)
 import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
@@ -147,7 +148,7 @@ getColumnStats column ( source, database ) =
     messageToJs (GetColumnStats source database column)
 
 
-runDatabaseQuery : String -> DatabaseUrl -> String -> Cmd msg
+runDatabaseQuery : String -> DatabaseUrl -> SqlQueryOrigin -> Cmd msg
 runDatabaseQuery context database query =
     messageToJs (RunDatabaseQuery context database query)
 
@@ -257,7 +258,7 @@ type ElmMsg
     | GetDatabaseSchema DatabaseUrl
     | GetTableStats SourceId DatabaseUrl TableId
     | GetColumnStats SourceId DatabaseUrl ColumnRef
-    | RunDatabaseQuery String DatabaseUrl String
+    | RunDatabaseQuery String DatabaseUrl SqlQueryOrigin
     | GetPrismaSchema String
     | ObserveSizes (List HtmlId)
     | ListenKeys (Dict String (List Hotkey))
@@ -393,7 +394,7 @@ elmEncoder elm =
             Encode.object [ ( "kind", "GetColumnStats" |> Encode.string ), ( "source", source |> SourceId.encode ), ( "database", database |> DatabaseUrl.encode ), ( "column", column |> ColumnRef.encode ) ]
 
         RunDatabaseQuery context database query ->
-            Encode.object [ ( "kind", "RunDatabaseQuery" |> Encode.string ), ( "context", context |> Encode.string ), ( "database", database |> DatabaseUrl.encode ), ( "query", query |> Encode.string ) ]
+            Encode.object [ ( "kind", "RunDatabaseQuery" |> Encode.string ), ( "context", context |> Encode.string ), ( "database", database |> DatabaseUrl.encode ), ( "query", query |> SqlQuery.encodeOrigin ) ]
 
         GetPrismaSchema content ->
             Encode.object [ ( "kind", "GetPrismaSchema" |> Encode.string ), ( "content", content |> Encode.string ) ]

@@ -23,6 +23,7 @@ import Libs.Html exposing (bText, extLink)
 import Libs.Html.Attributes exposing (css)
 import Libs.List as List
 import Libs.Maybe as Maybe
+import Libs.Models.DatabaseKind as DatabaseKind
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Ned as Ned exposing (Ned)
 import Libs.Tailwind as Tw exposing (TwClass)
@@ -43,7 +44,7 @@ import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableRow as TableRow
 import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
-import Models.SqlQuery exposing (SqlQuery)
+import Models.SqlQuery exposing (SqlQuery, SqlQueryOrigin)
 import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint)
 import Ports
@@ -104,7 +105,7 @@ type alias QueryEditor =
 
 
 type Msg
-    = Open (Maybe SourceId) (Maybe SqlQuery)
+    = Open (Maybe SourceId) (Maybe SqlQueryOrigin)
     | Close
     | UpdateDisplay (Maybe DataExplorerDisplay)
     | UpdateTab DataExplorerTab
@@ -116,7 +117,7 @@ type Msg
     | UpdateFilterValue Int DbValue
     | DeleteFilter Int
     | UpdateQuery Editor.Msg
-    | RunQuery DbSource SqlQuery
+    | RunQuery DbSource SqlQueryOrigin
     | DeleteQuery DataExplorerQuery.Id
     | QueryMsg DataExplorerQuery.Id DataExplorerQuery.Msg
     | OpenDetails DbSourceInfo RowQuery
@@ -149,11 +150,15 @@ init =
 update : (Msg -> msg) -> (Toasts.Msg -> msg) -> ProjectInfo -> List Source -> Msg -> Model -> ( Model, Cmd msg )
 update wrap showToast project sources msg model =
     case msg of
-        Open source query ->
+        Open sourceId query ->
             let
                 dbSources : List DbSource
                 dbSources =
                     sources |> List.filterMap DbSource.fromSource
+
+                source : Maybe DbSource
+                source =
+                    sourceId |> Maybe.andThen (\id -> dbSources |> List.findBy .id id)
 
                 tab : DataExplorerTab
                 tab =
@@ -162,17 +167,13 @@ update wrap showToast project sources msg model =
             ( { model
                 | display = Just BottomDisplay
                 , activeTab = tab
-                , source =
-                    source
-                        |> Maybe.andThen (\id -> dbSources |> List.find (\s -> s.id == id))
-                        |> Maybe.orElse model.source
-                        |> Maybe.orElse (dbSources |> List.head)
-                , queryEditor = query |> Maybe.map Editor.init |> Maybe.withDefault model.queryEditor
+                , source = source |> Maybe.orElse model.source |> Maybe.orElse (dbSources |> List.head)
+                , queryEditor = query |> Maybe.map (.sql >> Editor.init) |> Maybe.withDefault model.queryEditor
               }
             , Cmd.batch
-                (Track.dataExplorerOpened sources query project
+                (Track.dataExplorerOpened sources source query project
                     :: focusMainInput tab
-                    :: (Maybe.map2 (\src q -> RunQuery src q |> wrap |> T.send) (source |> Maybe.andThen (\id -> dbSources |> List.findBy .id id)) query |> Maybe.toList)
+                    :: (Maybe.map2 (\src q -> RunQuery src q |> wrap |> T.send) source query |> Maybe.toList)
                 )
             )
 
@@ -210,7 +211,7 @@ update wrap showToast project sources msg model =
             ( { model | queryEditor = Editor.update message model.queryEditor }, Cmd.none )
 
         RunQuery source query ->
-            { model | resultsSeq = model.resultsSeq + 1 } |> mapResultsCmd (List.prependCmd (DataExplorerQuery.init project (model.activeTab == QueryEditorTab) model.resultsSeq (DbSource.toInfo source) (query |> DbQuery.addLimit source.db.kind)))
+            { model | resultsSeq = model.resultsSeq + 1 } |> mapResultsCmd (List.prependCmd (DataExplorerQuery.init project model.resultsSeq (DbSource.toInfo source) (query |> DbQuery.addLimit source.db.kind)))
 
         DeleteQuery id ->
             ( { model | results = model.results |> List.filter (\r -> r.id /= id) }, Cmd.none )
@@ -507,12 +508,12 @@ viewVisualExplorerFilterShow wrap htmlId filters =
 viewVisualExplorerSubmit : (Msg -> msg) -> DbSource -> VisualEditor -> Html msg
 viewVisualExplorerSubmit wrap source model =
     let
-        query : String
+        query : SqlQueryOrigin
         query =
-            model.table |> Maybe.mapOrElse (\table -> DbQuery.filterTable source.db.kind { table = table, filters = model.filters |> List.map (\f -> { operator = f.operator, column = f.column, operation = f.operation, value = f.value }) }) ""
+            model.table |> Maybe.mapOrElse (\table -> DbQuery.filterTable source.db.kind { table = table, filters = model.filters |> List.map (\f -> { operator = f.operator, column = f.column, operation = f.operation, value = f.value }) }) { sql = "", origin = "filterTableEmpty", db = DatabaseKind.Other }
     in
     div [ class "mt-3 flex items-center justify-end" ]
-        [ button [ type_ "button", onClick (query |> RunQuery source |> wrap), disabled (query == ""), class "inline-flex items-center bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:bg-indigo-300" ]
+        [ button [ type_ "button", onClick (query |> RunQuery source |> wrap), disabled (query.sql == ""), class "inline-flex items-center bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:bg-indigo-300" ]
             [ text "Fetch data" ]
         ]
 
@@ -539,7 +540,7 @@ viewQueryEditor wrap htmlId source model =
         , div [ class "absolute bottom-6 right-6 z-10" ]
             [ button
                 [ type_ "button"
-                , onClick (model.content |> RunQuery source |> wrap)
+                , onClick ({ sql = model.content, origin = "userQuery", db = source.db.kind } |> RunQuery source |> wrap)
                 , disabled (model.content == "")
                 , class "inline-flex items-center bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:bg-indigo-300"
                 ]
@@ -609,17 +610,17 @@ docQueryResults : List DataExplorerQuery.Model
 docQueryResults =
     [ { id = 3
       , source = docSource1 |> DbSourceInfo.fromSource |> Maybe.withDefault DbSourceInfo.zero
-      , query = DataExplorerQuery.docCityQuery
+      , query = { sql = DataExplorerQuery.docCityQuery, origin = "doc", db = DatabaseKind.Other }
       , state = DataExplorerQuery.docCitySuccess
       }
     , { id = 2
       , source = docSource1 |> DbSourceInfo.fromSource |> Maybe.withDefault DbSourceInfo.zero
-      , query = DataExplorerQuery.docProjectsQuery
+      , query = { sql = DataExplorerQuery.docProjectsQuery, origin = "doc", db = DatabaseKind.Other }
       , state = DataExplorerQuery.docProjectsSuccess
       }
     , { id = 1
       , source = docSource1 |> DbSourceInfo.fromSource |> Maybe.withDefault DbSourceInfo.zero
-      , query = DataExplorerQuery.docUsersQuery
+      , query = { sql = DataExplorerQuery.docUsersQuery, origin = "doc", db = DatabaseKind.Other }
       , state = DataExplorerQuery.docUsersSuccess
       }
     ]

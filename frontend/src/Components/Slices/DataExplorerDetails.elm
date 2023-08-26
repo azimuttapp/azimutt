@@ -37,6 +37,7 @@ import Models.Project.TableName exposing (TableName)
 import Models.Project.TableRow as TableRow
 import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Models.QueryResult as QueryResult exposing (QueryResult, QueryResultColumn, QueryResultRow, QueryResultSuccess)
+import Models.SqlQuery exposing (SqlQueryOrigin)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.ErdTableProps as ErdTableProps
 import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint)
@@ -94,8 +95,13 @@ dbPrefix =
 
 init : ProjectInfo -> Id -> DbSourceInfo -> RowQuery -> ( Model, Cmd msg )
 init project id source query =
+    let
+        sqlQuery : SqlQueryOrigin
+        sqlQuery =
+            DbQuery.findRow source.db.kind query
+    in
     ( { id = id, source = source, query = query, state = StateLoading, expanded = Set.empty }
-    , Cmd.batch [ Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt id) source.db.url (DbQuery.findRow source.db.kind query), Track.dataExplorerDetailsOpened project ]
+    , Cmd.batch [ Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt id) source.db.url sqlQuery, Track.dataExplorerDetailsOpened source sqlQuery project ]
     )
 
 

@@ -398,6 +398,9 @@ export const Memo = z.object({
     selected: z.boolean().optional()
 }).strict()
 
+export type SqlQueryOrigin = {sql: string, origin: string, db: string}
+export const SqlQueryOrigin = z.object({sql: z.string(), origin: z.string(), db: z.string()}).strict()
+
 export interface RowValue {
     column: ColumnPathStr
     value: JsValue
@@ -436,26 +439,26 @@ export const TableRowStateSuccess = z.object({
 }).strict()
 
 export interface TableRowStateFailure {
-    query: string
+    query: SqlQueryOrigin
     error: string
     startedAt: Timestamp
     failedAt: Timestamp
 }
 
 export const TableRowStateFailure = z.object({
-    query: z.string(),
+    query: SqlQueryOrigin,
     error: z.string(),
     startedAt: Timestamp,
     failedAt: Timestamp
 }).strict()
 
 export interface TableRowStateLoading {
-    query: string
+    query: SqlQueryOrigin
     startedAt: Timestamp
 }
 
 export const TableRowStateLoading = z.object({
-    query: z.string(),
+    query: SqlQueryOrigin,
     startedAt: Timestamp
 }).strict()
 

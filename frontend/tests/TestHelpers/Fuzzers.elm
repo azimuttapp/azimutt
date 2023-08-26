@@ -4,6 +4,7 @@ import Conf
 import Dict exposing (Dict)
 import Fuzz exposing (Fuzzer)
 import Libs.Fuzz as Fuzz
+import Libs.Models.DatabaseKind as DatabaseKind exposing (DatabaseKind)
 import Libs.Models.FileLineIndex exposing (FileLineIndex)
 import Libs.Models.FileName exposing (FileName)
 import Libs.Models.FileSize exposing (FileSize)
@@ -41,6 +42,11 @@ dbValue =
         , Fuzz.bool |> Fuzz.map DbBool
         , Fuzz.constant DbNull
         ]
+
+
+databaseKind : Fuzzer DatabaseKind
+databaseKind =
+    Fuzz.oneOfValues DatabaseKind.all
 
 
 positionViewport : Fuzzer Position.Viewport

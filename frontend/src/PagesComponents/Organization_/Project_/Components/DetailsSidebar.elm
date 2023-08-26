@@ -28,7 +28,7 @@ import Models.Project.Source as Source exposing (Source)
 import Models.Project.SourceId exposing (SourceId, SourceIdStr)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableStats exposing (TableStats)
-import Models.SqlQuery exposing (SqlQuery)
+import Models.SqlQuery exposing (SqlQuery, SqlQueryOrigin)
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn)
 import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps exposing (ErdColumnProps, ErdColumnPropsFlat)
@@ -212,7 +212,7 @@ filterColumnDbSources column sources =
 -- VIEW
 
 
-view : (Msg -> msg) -> (TableId -> msg) -> (ColumnRef -> msg) -> (ColumnRef -> msg) -> (LayoutName -> msg) -> (SourceId -> SqlQuery -> msg) -> Dict TableId (Dict SourceIdStr (Result String TableStats)) -> Dict ColumnId (Dict SourceIdStr (Result String ColumnStats)) -> Erd -> Model -> Html msg
+view : (Msg -> msg) -> (TableId -> msg) -> (ColumnRef -> msg) -> (ColumnRef -> msg) -> (LayoutName -> msg) -> (SourceId -> SqlQueryOrigin -> msg) -> Dict TableId (Dict SourceIdStr (Result String TableStats)) -> Dict ColumnId (Dict SourceIdStr (Result String ColumnStats)) -> Erd -> Model -> Html msg
 view wrap showTable showColumn hideColumn loadLayout openDataExplorer tableStats columnStats erd model =
     let
         heading : List (Html msg)
@@ -277,7 +277,7 @@ viewSchema wrap showTable erd model =
     Details.viewSchema (ShowList |> wrap) (ShowSchema >> wrap) (ShowTable >> wrap) showTable erd.settings.defaultSchema model.schema model.tables
 
 
-viewTable : (Msg -> msg) -> (TableId -> msg) -> (LayoutName -> msg) -> (SourceId -> SqlQuery -> msg) -> Erd -> Maybe Notes -> Maybe String -> HtmlId -> Dict TableId (Dict SourceIdStr (Result String TableStats)) -> TableData -> Html msg
+viewTable : (Msg -> msg) -> (TableId -> msg) -> (LayoutName -> msg) -> (SourceId -> SqlQueryOrigin -> msg) -> Erd -> Maybe Notes -> Maybe String -> HtmlId -> Dict TableId (Dict SourceIdStr (Result String TableStats)) -> TableData -> Html msg
 viewTable wrap showTable loadLayout openDataExplorer erd editNotes editTags openedCollapse stats model =
     let
         initialNotes : Notes
@@ -317,7 +317,7 @@ viewTable wrap showTable loadLayout openDataExplorer erd editNotes editTags open
     Details.viewTable (ShowList |> wrap) (ShowSchema >> wrap) (ShowTable >> wrap) (ShowColumn >> wrap) showTable loadLayout openDataExplorer (ToggleCollapse >> wrap) openedCollapse erd.settings.defaultSchema model.schema model.table notesModel tagsModel inLayouts (erd.metadata |> Dict.get model.table.item.id) tableStats
 
 
-viewColumn : (Msg -> msg) -> (TableId -> msg) -> (ColumnRef -> msg) -> (ColumnRef -> msg) -> (LayoutName -> msg) -> (SourceId -> SqlQuery -> msg) -> Erd -> Maybe Notes -> Maybe String -> HtmlId -> Dict ColumnId (Dict SourceIdStr (Result String ColumnStats)) -> ColumnData -> Html msg
+viewColumn : (Msg -> msg) -> (TableId -> msg) -> (ColumnRef -> msg) -> (ColumnRef -> msg) -> (LayoutName -> msg) -> (SourceId -> SqlQueryOrigin -> msg) -> Erd -> Maybe Notes -> Maybe String -> HtmlId -> Dict ColumnId (Dict SourceIdStr (Result String ColumnStats)) -> ColumnData -> Html msg
 viewColumn wrap showTable _ _ loadLayout openDataExplorer erd editNotes editTags openedCollapse stats model =
     let
         initialNotes : Notes

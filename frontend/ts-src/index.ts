@@ -312,8 +312,8 @@ function getColumnStats(msg: GetColumnStats) {
 function runDatabaseQuery(msg: RunDatabaseQuery) {
     const start = Date.now();
     (window.desktop ?
-        window.desktop.runDatabaseQuery(msg.database, msg.query) :
-        backend.runDatabaseQuery(msg.database, msg.query)
+        window.desktop.runDatabaseQuery(msg.database, msg.query.sql) :
+        backend.runDatabaseQuery(msg.database, msg.query.sql)
     ).then(
         (results: DatabaseQueryResults) => app.gotDatabaseQueryResult(msg.context, msg.query, results, start, Date.now()),
         (err: any) => app.gotDatabaseQueryResult(msg.context, msg.query, errorToString(err), start, Date.now())

@@ -61,9 +61,10 @@ import Models.Project.Unique exposing (Unique)
 import Models.Project.UniqueName exposing (UniqueName)
 import Models.RelationStyle as RelationStyle exposing (RelationStyle)
 import Models.Size as Size
+import Models.SqlQuery exposing (SqlQueryOrigin)
 import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
 import PagesComponents.Organization_.Project_.Models.MemoId exposing (MemoId)
-import TestHelpers.Fuzzers exposing (color, dbValue, dictSmall, fileLineIndex, fileModified, fileName, fileSize, fileUrl, identifier, intPosSmall, listSmall, nelSmall, positionDiagram, positionGrid, posix, setSmall, sizeCanvas, stringSmall, text, uuid, zoomLevel)
+import TestHelpers.Fuzzers exposing (color, databaseKind, dbValue, dictSmall, fileLineIndex, fileModified, fileName, fileSize, fileUrl, identifier, intPosSmall, listSmall, nelSmall, positionDiagram, positionGrid, posix, setSmall, sizeCanvas, stringSmall, text, uuid, zoomLevel)
 import TestHelpers.OrganizationFuzzers exposing (organization)
 
 
@@ -229,14 +230,19 @@ tableRowState =
         ]
 
 
+sqlQueryOrigin : Fuzzer SqlQueryOrigin
+sqlQueryOrigin =
+    Fuzz.map3 SqlQueryOrigin stringSmall stringSmall databaseKind
+
+
 tableRowLoading : Fuzzer TableRow.LoadingState
 tableRowLoading =
-    Fuzz.map3 TableRow.LoadingState stringSmall posix (Fuzz.maybe tableRowSuccess)
+    Fuzz.map3 TableRow.LoadingState sqlQueryOrigin posix (Fuzz.maybe tableRowSuccess)
 
 
 tableRowFailure : Fuzzer TableRow.FailureState
 tableRowFailure =
-    Fuzz.map5 TableRow.FailureState stringSmall stringSmall posix posix (Fuzz.maybe tableRowSuccess)
+    Fuzz.map5 TableRow.FailureState sqlQueryOrigin stringSmall posix posix (Fuzz.maybe tableRowSuccess)
 
 
 tableRowSuccess : Fuzzer TableRow.SuccessState

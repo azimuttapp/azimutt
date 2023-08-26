@@ -17,6 +17,7 @@ import Models.Project.RowPrimaryKey as RowPrimaryKey exposing (RowPrimaryKey)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Size as Size
+import Models.SqlQuery as SqlQuery exposing (SqlQueryOrigin)
 import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint)
 import Set exposing (Set)
 import Time
@@ -49,11 +50,11 @@ type State
 
 
 type alias LoadingState =
-    { query : String, startedAt : Time.Posix, previous : Maybe SuccessState }
+    { query : SqlQueryOrigin, startedAt : Time.Posix, previous : Maybe SuccessState }
 
 
 type alias FailureState =
-    { query : String, error : String, startedAt : Time.Posix, failedAt : Time.Posix, previous : Maybe SuccessState }
+    { query : SqlQueryOrigin, error : String, startedAt : Time.Posix, failedAt : Time.Posix, previous : Maybe SuccessState }
 
 
 type alias SuccessState =
@@ -160,7 +161,7 @@ decodeState =
 encodeLoadingState : LoadingState -> Value
 encodeLoadingState value =
     Encode.notNullObject
-        [ ( "query", value.query |> Encode.string )
+        [ ( "query", value.query |> SqlQuery.encodeOrigin )
         , ( "startedAt", value.startedAt |> Time.encode )
         , ( "previous", value.previous |> Encode.maybe encodeSuccessState )
         ]
@@ -169,7 +170,7 @@ encodeLoadingState value =
 decodeLoadingState : Decoder LoadingState
 decodeLoadingState =
     Decode.map3 LoadingState
-        (Decode.field "query" Decode.string)
+        (Decode.field "query" SqlQuery.decodeOrigin)
         (Decode.field "startedAt" Time.decode)
         (Decode.maybeField "previous" decodeSuccessState)
 
@@ -177,7 +178,7 @@ decodeLoadingState =
 encodeFailureState : FailureState -> Value
 encodeFailureState value =
     Encode.notNullObject
-        [ ( "query", value.query |> Encode.string )
+        [ ( "query", value.query |> SqlQuery.encodeOrigin )
         , ( "error", value.error |> Encode.string )
         , ( "startedAt", value.startedAt |> Time.encode )
         , ( "failedAt", value.failedAt |> Time.encode )
@@ -188,7 +189,7 @@ encodeFailureState value =
 decodeFailureState : Decoder FailureState
 decodeFailureState =
     Decode.map5 FailureState
-        (Decode.field "query" Decode.string)
+        (Decode.field "query" SqlQuery.decodeOrigin)
         (Decode.field "error" Decode.string)
         (Decode.field "startedAt" Time.decode)
         (Decode.field "failedAt" Time.decode)
