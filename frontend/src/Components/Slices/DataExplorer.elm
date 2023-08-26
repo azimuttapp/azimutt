@@ -282,7 +282,7 @@ viewHeader : (Msg -> msg) -> DataExplorerTab -> Maybe DbSource -> DataExplorerDi
 viewHeader wrap activeTab source display =
     div [ class "px-3 flex justify-between border-b border-gray-200" ]
         [ div [ class "sm:flex sm:items-baseline" ]
-            [ h3 [ class "text-base font-semibold leading-6 text-gray-900" ] [ text "Data explorer" ]
+            [ h3 [ class "text-base font-semibold leading-6 text-gray-900 whitespace-nowrap" ] [ text "Data explorer", Badge.basic Tw.green [ class "ml-1" ] [ text "Beta" ] |> Tooltip.br "Data exploration is free while in beta." ]
             , source
                 |> Maybe.map
                     (\_ ->

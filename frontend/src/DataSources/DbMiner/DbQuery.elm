@@ -73,6 +73,9 @@ filterTable : DatabaseKind -> TableQuery -> SqlQuery
 filterTable db query =
     -- select many rows from a table with a filter
     case db of
+        DatabaseKind.MySQL ->
+            QueryMySQL.filterTable query.table query.filters
+
         DatabaseKind.PostgreSQL ->
             QueryPostgreSQL.filterTable query.table query.filters
 
@@ -84,6 +87,9 @@ findRow : DatabaseKind -> RowQuery -> SqlQuery
 findRow db query =
     -- select a single row from a table by primary key
     case db of
+        DatabaseKind.MySQL ->
+            QueryMySQL.findRow query.table query.primaryKey
+
         DatabaseKind.PostgreSQL ->
             QueryPostgreSQL.findRow query.table query.primaryKey
 
@@ -100,6 +106,9 @@ incomingRows : DatabaseKind -> Dict TableId IncomingRowsQuery -> RowQuery -> Sql
 incomingRows db relations row =
     -- fetch rows from each relation pointing to a specific row
     case db of
+        DatabaseKind.MySQL ->
+            QueryMySQL.incomingRows row relations incomingRowsLimit
+
         DatabaseKind.PostgreSQL ->
             QueryPostgreSQL.incomingRows row relations incomingRowsLimit
 
@@ -111,6 +120,9 @@ addLimit : DatabaseKind -> SqlQuery -> SqlQuery
 addLimit db query =
     -- limit query results to 100 if no limit specified
     case db of
+        DatabaseKind.MySQL ->
+            QueryMySQL.addLimit query
+
         DatabaseKind.PostgreSQL ->
             QueryPostgreSQL.addLimit query
 
