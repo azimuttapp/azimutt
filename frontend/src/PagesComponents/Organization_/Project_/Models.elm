@@ -75,6 +75,8 @@ type alias Model =
     , erd : Maybe Erd
     , tableStats : Dict TableId (Dict SourceIdStr (Result String TableStats))
     , columnStats : Dict ColumnId (Dict SourceIdStr (Result String ColumnStats))
+
+    -- TODO: merge `hoverTable` & `hoverColumn` into `hoverTable`, like `hoverTableRow`
     , hoverTable : Maybe TableId
     , hoverColumn : Maybe ColumnRef
     , hoverTableRow : Maybe TableRowHover
@@ -232,7 +234,7 @@ type Msg
     | HideTable TableId
     | ShowRelatedTables TableId
     | HideRelatedTables TableId
-    | ToggleCollapseTable TableId
+    | ToggleTableCollapse TableId
     | ShowColumn ColumnRef
     | HideColumn ColumnRef
     | ShowColumns TableId ShowColumns

@@ -743,7 +743,22 @@ viewSource openDataExplorer table column rows origin =
         , text ((origin.source |> Maybe.mapOrElse .name (SourceId.toString origin.id)) ++ (rows |> Maybe.mapOrElse (\r -> " (" ++ String.fromInt r ++ " rows)") ""))
         , origin.source
             |> Maybe.andThen .db
-            |> Maybe.map (\url -> button [ type_ "button", onClick (openDataExplorer origin.id (DbQuery.explore (DatabaseKind.fromUrl url) table column)), class "ml-1" ] [ Icon.solid Icon.ArrowCircleRight "opacity-50" ] |> Tooltip.r "Browse data")
+            |> Maybe.map
+                (\url ->
+                    button
+                        [ type_ "button"
+                        , onClick
+                            (openDataExplorer origin.id
+                                (column
+                                    |> Maybe.map (DbQuery.exploreColumn (DatabaseKind.fromUrl url) table)
+                                    |> Maybe.withDefault (DbQuery.exploreTable (DatabaseKind.fromUrl url) table)
+                                )
+                            )
+                        , class "ml-1"
+                        ]
+                        [ Icon.solid Icon.ArrowCircleRight "opacity-50" ]
+                        |> Tooltip.r "Browse data"
+                )
             |> Maybe.withDefault (text "")
         ]
 

@@ -160,7 +160,7 @@ createGroup model =
 collapseElement : Model -> Cmd Msg
 collapseElement model =
     (model |> currentTableRow |> Maybe.andThen (getTableRow model) |> Maybe.map (\r -> Bool.cond r.collapsed TableRow.Expand TableRow.Collapse |> TableRowMsg r.id |> T.send))
-        |> Maybe.orElse (model |> currentTable |> Maybe.map (ToggleCollapseTable >> T.send))
+        |> Maybe.orElse (model |> currentTable |> Maybe.map (ToggleTableCollapse >> T.send))
         |> Maybe.withDefault ("Can't find an element to collapse :(" |> Toasts.info |> Toast |> T.send)
 
 

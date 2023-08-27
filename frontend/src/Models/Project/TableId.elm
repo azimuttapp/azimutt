@@ -75,6 +75,7 @@ parse tableId =
 
 parseWith : SchemaName -> String -> TableId
 parseWith defaultSchema tableId =
+    -- TableName may have "." inside :/
     case tableId |> String.split "." of
         s :: t :: rest ->
             ( s, (t :: rest) |> String.join "." )

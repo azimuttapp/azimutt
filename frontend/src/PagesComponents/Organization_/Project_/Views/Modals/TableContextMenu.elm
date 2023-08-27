@@ -74,7 +74,7 @@ view platform conf defaultSchema layout index table props notes =
                 , groupMenu layout table props
                 , Maybe.when conf.layout
                     { label = B.cond props.collapsed (B.cond props.selected "Expand selected tables" "Expand table") (B.cond props.selected "Collapse selected tables" "Collapse table")
-                    , content = ContextMenu.SimpleHotkey { action = ToggleCollapseTable table.id, platform = platform, hotkeys = Conf.hotkeys |> Dict.getOrElse "collapse" [] }
+                    , content = ContextMenu.SimpleHotkey { action = ToggleTableCollapse table.id, platform = platform, hotkeys = Conf.hotkeys |> Dict.getOrElse "collapse" [] }
                     }
                 , Maybe.when conf.layout { label = "Show related", content = ContextMenu.SimpleHotkey { action = ShowRelatedTables table.id, platform = platform, hotkeys = Conf.hotkeys |> Dict.getOrElse "expand" [] } }
                 , Maybe.when conf.layout { label = "Hide related", content = ContextMenu.SimpleHotkey { action = HideRelatedTables table.id, platform = platform, hotkeys = Conf.hotkeys |> Dict.getOrElse "shrink" [] } }

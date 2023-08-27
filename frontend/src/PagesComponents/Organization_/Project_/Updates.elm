@@ -144,7 +144,7 @@ update urlLayout zone now urlInfos organizations projects msg model =
         HideRelatedTables id ->
             model |> mapErdMCmd (hideRelatedTables id) |> setDirtyCmd
 
-        ToggleCollapseTable id ->
+        ToggleTableCollapse id ->
             let
                 collapsed : Bool
                 collapsed =
@@ -521,7 +521,7 @@ handleJsMessage now urlLayout msg model =
             ( model, T.send (HideTable id) )
 
         GotTableToggleColumns id ->
-            ( model, T.send (ToggleCollapseTable id) )
+            ( model, T.send (ToggleTableCollapse id) )
 
         GotTablePosition id pos ->
             ( model, T.send (TablePosition id pos) )

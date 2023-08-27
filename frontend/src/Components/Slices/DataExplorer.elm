@@ -60,8 +60,9 @@ import Track
 --  - Better error handling on connectors (cf PostgreSQL)
 --
 --  - column stats in query header (quick analysis on query results) => add bar chart & data list
+--  - query relation counts on `exploreTable`, `filterTable` & `findRow`
 --  - saved queries ({ name : String, description : String, query : String, createdAt : Time.Posix, createdBy : UserId })
---  - pin a column and replace the fk by it
+--  - pin a column and replace the fk by it => special tag (`main`)
 --  - Nested queries like Trevor: on rows & group by
 --  - Double click on a value to edit it, add a submit option to push them to the database (like datagrip)
 --  - shorten uuid to its first component in results
@@ -217,7 +218,6 @@ update wrap showToast project sources msg model =
             ( { model | results = model.results |> List.filter (\r -> r.id /= id) }, Cmd.none )
 
         QueryMsg id m ->
-            --model |> mapResultsCmd (List.mapByCmd .id id (DataExplorerQuery.update (QueryMsg id >> wrap) m))
             model |> mapResultsCmd (List.mapByCmd .id id (DataExplorerQuery.update showToast project m))
 
         OpenDetails source query ->
@@ -227,7 +227,6 @@ update wrap showToast project sources msg model =
             ( { model | details = model.details |> List.removeBy .id id }, Cmd.none )
 
         DetailsMsg id m ->
-            --model |> mapDetailsCmd (List.mapByCmd .id id (DataExplorerDetails.update (DetailsMsg id >> wrap) m))
             model |> mapDetailsCmd (List.mapByCmd .id id (DataExplorerDetails.update project m))
 
 
@@ -526,17 +525,7 @@ viewQueryEditor wrap htmlId source model =
             htmlId ++ "-input"
     in
     div [ class "flex-1 flex flex-col relative" ]
-        [ --textarea
-          --[ name inputId
-          --, id inputId
-          --, value model.content
-          --, onInput (Editor.SetContent >> UpdateQuery >> wrap)
-          --, autofocus True
-          --, placeholder ("Write a query for " ++ source.name)
-          --, class "m-3 py-1.5 block flex-1 rounded-md border-0 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-          --]
-          --[]
-          div [ class "m-3 block flex-1 rounded-md shadow-sm ring-1 ring-inset ring-gray-300" ] [ Editor.sql (UpdateQuery >> wrap) inputId model ]
+        [ div [ class "m-3 block flex-1 rounded-md shadow-sm ring-1 ring-inset ring-gray-300" ] [ Editor.sql (UpdateQuery >> wrap) inputId model ]
         , div [ class "absolute bottom-6 right-6 z-10" ]
             [ button
                 [ type_ "button"

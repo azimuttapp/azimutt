@@ -1,4 +1,4 @@
-module DataSources.DbMiner.DbQuery exposing (addLimit, explore, exploreColumn, exploreTable, filterTable, findRow, incomingRows, incomingRowsLimit)
+module DataSources.DbMiner.DbQuery exposing (addLimit, exploreColumn, exploreTable, filterTable, findRow, incomingRows, incomingRowsLimit)
 
 import DataSources.DbMiner.DbTypes exposing (FilterOperation, FilterOperator(..), IncomingRowsQuery, RowQuery, TableQuery)
 import DataSources.DbMiner.QueryCouchbase as QueryCouchbase
@@ -12,11 +12,6 @@ import Libs.Models.DatabaseKind as DatabaseKind exposing (DatabaseKind)
 import Models.Project.ColumnPath exposing (ColumnPath)
 import Models.Project.TableId exposing (TableId)
 import Models.SqlQuery exposing (SqlQuery, SqlQueryOrigin)
-
-
-explore : DatabaseKind -> TableId -> Maybe ColumnPath -> SqlQueryOrigin
-explore db table column =
-    column |> Maybe.map (exploreColumn db table) |> Maybe.withDefault (exploreTable db table)
 
 
 exploreTable : DatabaseKind -> TableId -> SqlQueryOrigin

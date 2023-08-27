@@ -171,6 +171,7 @@ view wrap close showTable showTableRow openRowDetails openNotes navbarHeight has
             [ div [ class "absolute inset-0 overflow-hidden" ]
                 [ div [ class "pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10", style "top" top ]
                     [ {-
+                         TODO: fix in and out animations
                          Slide-over panel, show/hide based on slide-over state.
 
                          Entering: "transform transition ease-in-out duration-500 sm:duration-700"
