@@ -59,7 +59,111 @@ input[type="search"]::-webkit-search-results-decoration {
     transform: rotateX(180deg);
 }
 
+/* Vectual overrides */
+
+.vectual_title { display: none; }
+.vectual_background { fill: transparent !important; pointer-events: none; }
+.vectual_bars0, .vectual_color_0, .vectual_bars10, .vectual_color_10 { fill: #ea5545 !important; }
+.vectual_bars1, .vectual_color_1, .vectual_bars11, .vectual_color_11 { fill: #27aeef !important; }
+.vectual_bars2, .vectual_color_2, .vectual_bars12, .vectual_color_12 { fill: #87bc45 !important; }
+.vectual_bars3, .vectual_color_3, .vectual_bars13, .vectual_color_13 { fill: #edbf33 !important; }
+.vectual_bars4, .vectual_color_4, .vectual_bars14, .vectual_color_14 { fill: #b33dc6 !important; }
+.vectual_bars5, .vectual_color_5, .vectual_bars15, .vectual_color_15 { fill: #ef9b20 !important; }
+.vectual_bars6, .vectual_color_6, .vectual_bars16, .vectual_color_16 { fill: #bdcf32 !important; }
+.vectual_bars7, .vectual_color_7, .vectual_bars17, .vectual_color_17 { fill: #f46a9b !important; }
+.vectual_bars8, .vectual_color_8, .vectual_bars18, .vectual_color_18 { fill: #ede15b !important; }
+.vectual_bars9, .vectual_color_9, .vectual_bars19, .vectual_color_19 { fill: #ccc !important; }
+.vectual_pie_text { font-size: 16px !important; }
+
+/* [Elm Syntax Highlight](https://pablohirafuji.github.io/elm-syntax-highlight) styles, see frontend/src/Components/Molecules/Editor.elm */
+
+.elmsh.container {
+    position: relative;
+    overflow: hidden;
+    height: 100%;
+    padding: 0;
+    margin: 0;
+    text-align: left;
+}
+
+.elmsh .view-container,
+.elmsh .textarea {
+    box-sizing: border-box;
+    height: 100%;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    font-family: monospace;
+    letter-spacing: normal;
+    word-spacing: normal;
+    background: transparent;
+    white-space: pre;
+}
+
+.elmsh .view-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.elmsh .textarea {
+    position: relative;
+    z-index: 2;
+    padding: 10px;
+    width: 100%;
+    resize: none;
+    color: rgba(0, 0, 0, 0);
+}
+
+.elmsh .textarea:focus {
+    outline: none;
+}
+
+.elmsh .textarea-lc {
+    padding-left: 50px;
+}
+
+.elmsh pre.elmsh {
+    padding: 10px;
+    margin: 0;
+    text-align: left;
+    overflow: auto;
+}
+
+.elmsh code.elmsh {
+    padding: 0;
+}
+
+.elmsh .elmsh-line:before {
+    content: attr(data-elmsh-lc);
+    display: inline-block;
+    text-align: right;
+    width: 40px;
+    padding: 0 10px 0 0;
+    opacity: 0.3;
+}
+
+/* GitHub theme for [Elm Syntax Highlight](https://pablohirafuji.github.io/elm-syntax-highlight) */
+
+.elmsh { color: #24292e; background: #ffffff; }
+.elmsh .textarea {caret-color: #24292e;}
+.elmsh .textarea::selection { background-color: rgba(0,0,0,0.2); }
+.elmsh-hl { background: #fffbdd; }
+.elmsh-add { background: #eaffea; }
+.elmsh-del { background: #ffecec; }
+.elmsh-comm { color: #969896; }
+.elmsh1 { color: #005cc5; }
+.elmsh2 { color: #df5000; }
+.elmsh3 { color: #d73a49; }
+.elmsh4 { color: #0086b3; }
+.elmsh5 { color: #63a35c; }
+.elmsh6 { color: #005cc5; }
+.elmsh7 { color: #795da3; }
+
 /* from https://webcode.tools/generators/css/keyframe-animation */
+
 .hover\:animate-wobble-t:hover {
     animation: wobble-t 2s ease 0s 1 normal forwards;
 }

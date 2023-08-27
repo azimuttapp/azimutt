@@ -1,4 +1,4 @@
-module Libs.Bool exposing (cond, lazyCond, list, maybe, toString)
+module Libs.Bool exposing (cond, fromString, lazyCond, list, maybe, toString)
 
 
 cond : Bool -> a -> a -> a
@@ -35,6 +35,25 @@ lazyCond predicate true false =
 
     else
         false ()
+
+
+fromString : String -> Maybe Bool
+fromString value =
+    case value of
+        "True" ->
+            Just True
+
+        "False" ->
+            Just False
+
+        "true" ->
+            Just True
+
+        "false" ->
+            Just False
+
+        _ ->
+            Nothing
 
 
 toString : Bool -> String

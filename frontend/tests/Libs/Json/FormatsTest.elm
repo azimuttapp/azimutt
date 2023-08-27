@@ -7,15 +7,15 @@ import Libs.Tailwind as Tw
 import Libs.Time as Time
 import Test exposing (Test, describe)
 import TestHelpers.Fuzzers as Fuzzers
-import TestHelpers.JsonTest exposing (jsonFuzz)
+import TestHelpers.Helpers exposing (fuzzSerde)
 
 
 suite : Test
 suite =
     describe "Formats"
-        [ jsonFuzz "Position" Fuzzers.position Position.encode Position.decode
-        , jsonFuzz "Size" Fuzzers.size Size.encode Size.decode
-        , jsonFuzz "ZoomLevel" Fuzzers.zoomLevel ZoomLevel.encode ZoomLevel.decode
-        , jsonFuzz "Color" Fuzzers.color Tw.encodeColor Tw.decodeColor
-        , jsonFuzz "Posix" Fuzzers.posix Time.encode Time.decode
+        [ fuzzSerde "Position" Position.encode Position.decode Fuzzers.position
+        , fuzzSerde "Size" Size.encode Size.decode Fuzzers.size
+        , fuzzSerde "ZoomLevel" ZoomLevel.encode ZoomLevel.decode Fuzzers.zoomLevel
+        , fuzzSerde "Color" Tw.encodeColor Tw.decodeColor Fuzzers.color
+        , fuzzSerde "Posix" Time.encode Time.decode Fuzzers.posix
         ]

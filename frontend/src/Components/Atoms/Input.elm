@@ -1,4 +1,4 @@
-module Components.Atoms.Input exposing (DocState, SharedDocState, checkbox, checkboxBold, checkboxWithLabelAndHelp, doc, initDocState, selectWithLabelAndHelp, textWithLabelAndHelp)
+module Components.Atoms.Input exposing (DocState, SharedDocState, checkbox, checkboxBold, checkboxWithLabelAndHelp, doc, docInit, selectWithLabelAndHelp, textWithLabelAndHelp)
 
 import ElmBook exposing (Msg)
 import ElmBook.Actions as Actions
@@ -88,8 +88,8 @@ type alias DocState =
     { text : String, select : String, checkbox : Bool }
 
 
-initDocState : DocState
-initDocState =
+docInit : DocState
+docInit =
     { text = "", select = "", checkbox = False }
 
 

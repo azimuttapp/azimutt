@@ -16,13 +16,20 @@ module Libs.List exposing
     , findBy
     , findIndex
     , findIndexBy
+    , findMap
     , get
     , groupBy
     , groupByL
     , indexOf
+    , indexedConcatMap
     , indexedFilter
+    , indexedFilterMap
+    , indexedFind
     , last
     , mapAt
+    , mapAtCmd
+    , mapBy
+    , mapByCmd
     , maximumBy
     , memberBy
     , memberWith
@@ -37,6 +44,7 @@ module Libs.List exposing
     , nonEmptyMap
     , one
     , prepend
+    , prependCmd
     , prependIf
     , prependOn
     , reduce
@@ -50,7 +58,6 @@ module Libs.List exposing
     , toggle
     , unique
     , uniqueBy
-    , updateBy
     , zip
     , zipBy
     , zipWith
@@ -131,23 +138,38 @@ find predicate list =
                 find predicate rest
 
 
-findIndex : (a -> Bool) -> List a -> Maybe Int
-findIndex =
-    findIndexInner 0
-
-
-findIndexInner : Int -> (a -> Bool) -> List a -> Maybe Int
-findIndexInner index predicate list =
+findMap : (a -> Maybe b) -> List a -> Maybe b
+findMap f list =
     case list of
         [] ->
             Nothing
 
         first :: rest ->
-            if predicate first then
-                Just index
+            f first |> Maybe.map Just |> Maybe.withDefault (findMap f rest)
+
+
+indexedFind : (Int -> a -> Bool) -> List a -> Maybe a
+indexedFind predicate list =
+    indexedFindInner 0 predicate list |> Maybe.map Tuple.second
+
+
+findIndex : (a -> Bool) -> List a -> Maybe Int
+findIndex predicate list =
+    indexedFindInner 0 (\_ -> predicate) list |> Maybe.map Tuple.first
+
+
+indexedFindInner : Int -> (Int -> a -> Bool) -> List a -> Maybe ( Int, a )
+indexedFindInner i predicate list =
+    case list of
+        [] ->
+            Nothing
+
+        first :: rest ->
+            if predicate i first then
+                Just ( i, first )
 
             else
-                findIndexInner (index + 1) predicate rest
+                indexedFindInner (i + 1) predicate rest
 
 
 findBy : (a -> b) -> b -> List a -> Maybe a
@@ -185,6 +207,21 @@ indexedFilter p xs =
     xs |> List.indexedMap (\i a -> B.cond (p i a) (Just a) Nothing) |> List.filterMap identity
 
 
+indexedFilterMap : (Int -> a -> Maybe b) -> List a -> List b
+indexedFilterMap f xs =
+    List.foldr (\a ( i, acc ) -> ( i + 1, maybeCons (f i) a acc )) ( 0, [] ) xs |> Tuple.second
+
+
+maybeCons : (a -> Maybe b) -> a -> List b -> List b
+maybeCons f mx xs =
+    case f mx of
+        Just x ->
+            x :: xs
+
+        Nothing ->
+            xs
+
+
 memberBy : (a -> b) -> b -> List a -> Bool
 memberBy matcher value list =
     findBy matcher value list |> Maybe.isJust
@@ -200,8 +237,26 @@ indexOf item xs =
     xs |> List.indexedMap (\i a -> ( i, a )) |> find (\( _, a ) -> a == item) |> Maybe.map Tuple.first
 
 
-updateBy : (a -> b) -> b -> (a -> a) -> List a -> List a
-updateBy matcher value transform list =
+indexedConcatMap : (Int -> a -> List b) -> List a -> List b
+indexedConcatMap f list =
+    List.concat (List.indexedMap f list)
+
+
+mapAt : Int -> (a -> a) -> List a -> List a
+mapAt index f list =
+    list
+        |> List.indexedMap
+            (\i a ->
+                if index == i then
+                    f a
+
+                else
+                    a
+            )
+
+
+mapBy : (a -> b) -> b -> (a -> a) -> List a -> List a
+mapBy matcher value transform list =
     list
         |> List.map
             (\a ->
@@ -213,9 +268,39 @@ updateBy matcher value transform list =
             )
 
 
+mapAtCmd : Int -> (a -> ( a, Cmd msg )) -> List a -> ( List a, Cmd msg )
+mapAtCmd index f list =
+    list
+        |> List.indexedMap
+            (\i a ->
+                if index == i then
+                    f a
+
+                else
+                    ( a, Cmd.none )
+            )
+        |> List.unzip
+        |> Tuple.mapSecond Cmd.batch
+
+
+mapByCmd : (a -> b) -> b -> (a -> ( a, Cmd msg )) -> List a -> ( List a, Cmd msg )
+mapByCmd matcher value f list =
+    list
+        |> List.map
+            (\a ->
+                if matcher a == value then
+                    f a
+
+                else
+                    ( a, Cmd.none )
+            )
+        |> List.unzip
+        |> Tuple.mapSecond Cmd.batch
+
+
 zip : List b -> List a -> List ( a, b )
-zip lb la =
-    List.map2 (\a b -> ( a, b )) la lb
+zip list2 list1 =
+    List.map2 (\i1 i2 -> ( i1, i2 )) list1 list2
 
 
 filterZip : (a -> Maybe b) -> List a -> List ( a, b )
@@ -241,19 +326,6 @@ moveBy matcher value position list =
 moveByRel : (a -> b) -> b -> Int -> List a -> List a
 moveByRel matcher value delta list =
     list |> findIndexBy matcher value |> Maybe.mapOrElse (\index -> list |> moveIndex index (index + delta)) list
-
-
-mapAt : Int -> (a -> a) -> List a -> List a
-mapAt index f list =
-    list
-        |> List.indexedMap
-            (\i a ->
-                if index == i then
-                    f a
-
-                else
-                    a
-            )
 
 
 removeAt : Int -> List a -> List a
@@ -295,9 +367,14 @@ addAt item index list =
         list |> List.foldr (\a ( res, i ) -> ( B.cond (i == index) (item :: a :: res) (a :: res), i - 1 )) ( [], List.length list - 1 ) |> Tuple.first
 
 
-prepend : List a -> List a -> List a
-prepend xs ys =
-    List.append ys xs
+prepend : a -> List a -> List a
+prepend item list =
+    item :: list
+
+
+prependCmd : ( a, Cmd msg ) -> List a -> ( List a, Cmd msg )
+prependCmd ( item, cmd ) list =
+    ( item :: list, cmd )
 
 
 prependIf : Bool -> a -> List a -> List a

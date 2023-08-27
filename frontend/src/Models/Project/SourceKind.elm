@@ -1,4 +1,4 @@
-module Models.Project.SourceKind exposing (SourceKind(..), decode, encode, isDatabase, isUser, path, same, toString)
+module Models.Project.SourceKind exposing (SourceKind(..), databaseUrl, decode, encode, isDatabase, isUser, path, same, toString)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
@@ -52,6 +52,16 @@ isDatabase kind =
 
         _ ->
             False
+
+
+databaseUrl : SourceKind -> Maybe DatabaseUrl
+databaseUrl kind =
+    case kind of
+        DatabaseConnection url ->
+            Just url
+
+        _ ->
+            Nothing
 
 
 path : SourceKind -> String

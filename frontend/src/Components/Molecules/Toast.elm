@@ -1,4 +1,4 @@
-module Components.Molecules.Toast exposing (Content(..), DocState, Model, SharedDocState, SimpleModel, container, doc, initDocState, render)
+module Components.Molecules.Toast exposing (Content(..), DocState, Model, SharedDocState, SimpleModel, container, doc, docInit, render)
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
@@ -95,8 +95,8 @@ type alias DocState =
     { index : Int, toasts : List Model }
 
 
-initDocState : DocState
-initDocState =
+docInit : DocState
+docInit =
     { index = 0, toasts = [] }
 
 

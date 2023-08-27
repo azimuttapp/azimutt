@@ -7,6 +7,11 @@ defmodule AzimuttWeb.UserOauthController do
   alias AzimuttWeb.UserAuth
   action_fallback AzimuttWeb.FallbackController
 
+  # credo:disable-for-lines:4 Credo.Check.Readability.MaxLineLength
+  # [azimutt] [2023-08-01 13:40:42] Request: GET /auth/github/callback?error=access_denied&error_description=The+user+has+denied+your+application+access.&error_uri=https%3A%2F%2Fdocs.github.com%2Fapps%2Fmanaging-oauth-apps%2Ftroubleshooting-authorization-request-errors%2F%23access-denied&state=JDV1k7-5HFFIqIQyzBDLhbOx
+  # [azimutt] [2023-08-01 13:40:42] ** (exit) an exception was raised:
+  # [azimutt] [2023-08-01 13:40:42]     ** (KeyError) key :ueberauth_auth not found in: %{current_user: nil, ueberauth_failure: %Ueberauth.Failure{provider: :github, strategy: Ueberauth.Strategy.Github, errors: [%Ueberauth.Failure.Error{message_key: "csrf_attack", message: "Cross-Site Request Forgery attack"}]}}
+  # [azimutt] [2023-08-01 13:40:42]         (azimutt 2.0.1690438976) lib/azimutt_web/controllers/user_oauth_controller.ex:16: AzimuttWeb.UserOauthController.callback/2
   def callback(conn, %{"provider" => "github"}) do
     if !conn.assigns[:ueberauth_auth] && conn.assigns[:ueberauth_failure] do
       callback(conn, conn.assigns.ueberauth_failure.errors)

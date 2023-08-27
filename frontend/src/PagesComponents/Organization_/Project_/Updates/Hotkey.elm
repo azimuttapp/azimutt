@@ -1,6 +1,10 @@
 module PagesComponents.Organization_.Project_.Updates.Hotkey exposing (handleHotkey)
 
+import Components.Organisms.TableRow as TableRow
+import Components.Slices.DataExplorer as DataExplorer
+import Components.Slices.DataExplorerQuery as DataExplorerQuery
 import Conf
+import Libs.Bool as Bool
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.Delta exposing (Delta)
@@ -8,8 +12,10 @@ import Libs.Task as T
 import Libs.Tuple as Tuple
 import Models.Area as Area
 import Models.Project.CanvasProps as CanvasProps
+import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.ColumnRef exposing (ColumnRef)
-import Models.Project.TableId exposing (TableId)
+import Models.Project.TableId as TableId exposing (TableId)
+import Models.Project.TableRow as TableRow exposing (TableRow, TableRowColumn)
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
 import PagesComponents.Organization_.Project_.Components.ProjectSaveDialog as ProjectSaveDialog
 import PagesComponents.Organization_.Project_.Components.ProjectSharing as ProjectSharing
@@ -17,6 +23,7 @@ import PagesComponents.Organization_.Project_.Components.SourceUpdateDialog as S
 import PagesComponents.Organization_.Project_.Models exposing (AmlSidebarMsg(..), FindPathMsg(..), GroupMsg(..), HelpMsg(..), MemoMsg(..), Model, Msg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..), VirtualRelationMsg(..))
 import PagesComponents.Organization_.Project_.Models.Erd as Erd
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
+import PagesComponents.Organization_.Project_.Models.MemoId as MemoId exposing (MemoId)
 import PagesComponents.Organization_.Project_.Models.NotesMsg exposing (NotesMsg(..))
 import PagesComponents.Organization_.Project_.Views.Modals.NewLayout as NewLayout
 import Ports
@@ -96,7 +103,7 @@ handleHotkey _ model hotkey =
             ( model, moveTablesOrder -1000 model )
 
         "select-all" ->
-            ( model, T.send SelectAllTables )
+            ( model, T.send SelectAll )
 
         "create-layout" ->
             ( model, Nothing |> NewLayout.Open |> NewLayoutMsg |> T.send )
@@ -133,9 +140,11 @@ handleHotkey _ model hotkey =
 
 notesElement : Model -> Cmd Msg
 notesElement model =
-    (model |> currentColumn |> Maybe.map (\r -> NOpen r.table (Just r.column) |> NotesMsg |> T.send))
+    (model |> currentColumnRow |> Maybe.andThen (getColumnRow model) |> Maybe.map (\( r, c ) -> NOpen r.table (Just c.path) |> NotesMsg |> T.send))
+        |> Maybe.orElse (model |> currentTableRow |> Maybe.andThen (getTableRow model) |> Maybe.map (\r -> NOpen r.table Nothing |> NotesMsg |> T.send))
+        |> Maybe.orElse (model |> currentColumn |> Maybe.map (\r -> NOpen r.table (Just r.column) |> NotesMsg |> T.send))
         |> Maybe.orElse (model |> currentTable |> Maybe.map (\r -> NOpen r Nothing |> NotesMsg |> T.send))
-        |> Maybe.withDefault ("Can't find an element to collapse :(" |> Toasts.info |> Toast |> T.send)
+        |> Maybe.withDefault ("Can't find an element with notes :(" |> Toasts.info |> Toast |> T.send)
 
 
 createMemo : Model -> Cmd Msg
@@ -150,7 +159,8 @@ createGroup model =
 
 collapseElement : Model -> Cmd Msg
 collapseElement model =
-    (model |> currentTable |> Maybe.map (ToggleColumns >> T.send))
+    (model |> currentTableRow |> Maybe.andThen (getTableRow model) |> Maybe.map (\r -> Bool.cond r.collapsed TableRow.Expand TableRow.Collapse |> TableRowMsg r.id |> T.send))
+        |> Maybe.orElse (model |> currentTable |> Maybe.map (ToggleTableCollapse >> T.send))
         |> Maybe.withDefault ("Can't find an element to collapse :(" |> Toasts.info |> Toast |> T.send)
 
 
@@ -168,21 +178,25 @@ shrinkElement model =
 
 showElement : Model -> Cmd Msg
 showElement model =
-    (model |> currentColumn |> Maybe.map (ShowColumn >> T.send))
+    (model |> currentColumnRow |> Maybe.map (\( id, col ) -> TableRow.ShowColumn (ColumnPath.toString col) |> TableRowMsg id |> T.send))
+        |> Maybe.orElse (model |> currentColumn |> Maybe.map (ShowColumn >> T.send))
         |> Maybe.orElse (model |> currentTable |> Maybe.map (\t -> ShowTable t Nothing |> T.send))
         |> Maybe.withDefault ("Can't find an element to show :(" |> Toasts.info |> Toast |> T.send)
 
 
 hideElement : Model -> Cmd Msg
 hideElement model =
-    (model |> currentColumn |> Maybe.map (HideColumn >> T.send))
+    (model |> currentColumnRow |> Maybe.map (\( id, col ) -> TableRow.HideColumn (ColumnPath.toString col) |> TableRowMsg id |> T.send))
+        |> Maybe.orElse (model |> currentTableRow |> Maybe.map (DeleteTableRow >> T.send))
+        |> Maybe.orElse (model |> currentColumn |> Maybe.map (HideColumn >> T.send))
         |> Maybe.orElse (model |> currentTable |> Maybe.map (HideTable >> T.send))
+        |> Maybe.orElse (model |> selectedItems |> Maybe.map (\( tables, rows, memos ) -> Cmd.batch ((tables |> List.map (HideTable >> T.send)) ++ (rows |> List.map (DeleteTableRow >> T.send)) ++ (memos |> List.map (MDelete >> MemoMsg >> T.send)))))
         |> Maybe.withDefault ("Can't find an element to hide :(" |> Toasts.info |> Toast |> T.send)
 
 
 currentTable : Model -> Maybe TableId
 currentTable model =
-    model.hoverTable |> Maybe.orElse (model.erd |> Maybe.andThen (Erd.currentLayout >> .tables >> List.find (.props >> .selected) >> Maybe.map .id))
+    model.hoverTable
 
 
 currentColumn : Model -> Maybe ColumnRef
@@ -190,8 +204,43 @@ currentColumn model =
     model.hoverColumn
 
 
+currentColumnRow : Model -> Maybe ( TableRow.Id, ColumnPath )
+currentColumnRow model =
+    model.hoverTableRow |> Maybe.andThen (\( id, col ) -> col |> Maybe.map (\c -> ( id, c )))
+
+
+selectedItems : Model -> Maybe ( List TableId, List TableRow.Id, List MemoId )
+selectedItems model =
+    model.erd
+        |> Maybe.map Erd.currentLayout
+        |> Maybe.map
+            (\l ->
+                ( l.tables |> List.filter (.props >> .selected) |> List.map .id
+                , l.tableRows |> List.filter .selected |> List.map .id
+                , l.memos |> List.filter .selected |> List.map .id
+                )
+            )
+        |> Maybe.filter (\( tables, rows, memos ) -> List.nonEmpty tables || List.nonEmpty rows || List.nonEmpty memos)
+
+
+currentTableRow : Model -> Maybe TableRow.Id
+currentTableRow model =
+    model.hoverTableRow |> Maybe.map Tuple.first
+
+
+getTableRow : Model -> TableRow.Id -> Maybe TableRow
+getTableRow model id =
+    model.erd |> Maybe.andThen (Erd.currentLayout >> .tableRows >> List.findBy .id id)
+
+
+getColumnRow : Model -> ( TableRow.Id, ColumnPath ) -> Maybe ( TableRow, TableRowColumn )
+getColumnRow model ( id, col ) =
+    getTableRow model id |> Maybe.andThen (\r -> r |> TableRow.stateSuccess |> Maybe.andThen (.columns >> List.findBy .path col) |> Maybe.map (\v -> ( r, v )))
+
+
 cancelElement : Model -> Cmd Msg
 cancelElement model =
+    -- FIXME: keep a list of cancel actions so they can be canceled in order, but they need to be removed when not cancelable anymore :/
     (model.contextMenu |> Maybe.map (\_ -> ContextMenuClose))
         |> Maybe.orElse (model.confirm |> Maybe.map (\c -> ModalClose (ConfirmAnswer False c.content.onConfirm)))
         |> Maybe.orElse (model.prompt |> Maybe.map (\_ -> ModalClose (PromptAnswer Cmd.none)))
@@ -202,13 +251,26 @@ cancelElement model =
         |> Maybe.orElse (model.editNotes |> Maybe.map (\_ -> ModalClose (NotesMsg NCancel)))
         |> Maybe.orElse (model.save |> Maybe.map (\_ -> ModalClose (ProjectSaveMsg ProjectSaveDialog.Close)))
         |> Maybe.orElse (model.schemaAnalysis |> Maybe.map (\_ -> ModalClose (SchemaAnalysisMsg SAClose)))
-        |> Maybe.orElse (model.amlSidebar |> Maybe.map (\_ -> AmlSidebarMsg AClose))
         |> Maybe.orElse (model.findPath |> Maybe.map (\_ -> ModalClose (FindPathMsg FPClose)))
         |> Maybe.orElse (model.sourceUpdate |> Maybe.map (\_ -> ModalClose (SourceUpdateDialog.Close |> PSSourceUpdate |> ProjectSettingsMsg)))
         |> Maybe.orElse (model.sharing |> Maybe.map (\_ -> ModalClose (SharingMsg ProjectSharing.Close)))
-        |> Maybe.orElse (model.settings |> Maybe.map (\_ -> ModalClose (ProjectSettingsMsg PSClose)))
         |> Maybe.orElse (model.help |> Maybe.map (\_ -> ModalClose (HelpMsg HClose)))
-        |> Maybe.orElse (model.erd |> Maybe.andThen (Erd.currentLayout >> .tables >> List.find (.props >> .selected)) |> Maybe.map (\p -> SelectTable p.id False))
+        |> Maybe.orElse (model.settings |> Maybe.map (\_ -> ModalClose (ProjectSettingsMsg PSClose)))
+        |> Maybe.orElse (model.erd |> Maybe.andThen (Erd.currentLayout >> .tables >> List.find (.props >> .selected)) |> Maybe.map (\t -> SelectItem (TableId.toHtmlId t.id) False))
+        |> Maybe.orElse (model.erd |> Maybe.andThen (Erd.currentLayout >> .tableRows >> List.find .selected) |> Maybe.map (\r -> SelectItem (TableRow.toHtmlId r.id) False))
+        |> Maybe.orElse (model.erd |> Maybe.andThen (Erd.currentLayout >> .memos >> List.find .selected) |> Maybe.map (\m -> SelectItem (MemoId.toHtmlId m.id) False))
+        |> Maybe.orElse
+            (model.dataExplorer.display
+                |> Maybe.map
+                    (\_ ->
+                        (model.dataExplorer.details |> List.head |> Maybe.map (\d -> DataExplorer.CloseDetails d.id))
+                            |> Maybe.orElse (model.dataExplorer.results |> List.find (DataExplorerQuery.stateSuccess >> Maybe.mapOrElse .fullScreen False) |> Maybe.map (\r -> DataExplorerQuery.ToggleFullScreen |> DataExplorer.QueryMsg r.id))
+                            |> Maybe.withDefault DataExplorer.Close
+                            |> DataExplorerMsg
+                    )
+            )
+        |> Maybe.orElse (model.detailsSidebar |> Maybe.map (\_ -> DetailsSidebarMsg DetailsSidebar.Close))
+        |> Maybe.orElse (model.amlSidebar |> Maybe.map (\_ -> AmlSidebarMsg AClose))
         |> Maybe.map T.send
         |> Maybe.withDefault ("Nothing to cancel" |> Toasts.info |> Toast |> T.send)
 

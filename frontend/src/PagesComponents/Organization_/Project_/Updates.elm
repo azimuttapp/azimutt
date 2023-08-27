@@ -1,8 +1,11 @@
 module PagesComponents.Organization_.Project_.Updates exposing (update)
 
 import Components.Molecules.Dropdown as Dropdown
+import Components.Organisms.TableRow as TableRow
+import Components.Slices.DataExplorer as DataExplorer
+import Components.Slices.DataExplorerDetails as DataExplorerDetails
+import Components.Slices.DataExplorerQuery as DataExplorerQuery
 import Components.Slices.ProPlan as ProPlan
-import Components.Slices.QueryPane as QueryPane
 import Conf
 import Dict
 import Json.Decode as Decode
@@ -29,8 +32,10 @@ import Models.Project.Source as Source
 import Models.Project.SourceId as SourceId
 import Models.Project.SourceKind as SourceKind
 import Models.Project.TableId as TableId
+import Models.Project.TableRow as TableRow exposing (TableRow)
 import Models.ProjectInfo exposing (ProjectInfo)
 import Models.ProjectRef exposing (ProjectRef)
+import Models.QueryResult exposing (QueryResult)
 import Models.Size as Size
 import Models.SourceInfo as SourceInfo
 import Models.UrlInfos exposing (UrlInfos)
@@ -46,7 +51,7 @@ import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode
 import PagesComponents.Organization_.Project_.Models.DragState as DragState
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps
-import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
+import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout as ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
 import PagesComponents.Organization_.Project_.Models.MemoId as MemoId
@@ -64,6 +69,7 @@ import PagesComponents.Organization_.Project_.Updates.Project exposing (createPr
 import PagesComponents.Organization_.Project_.Updates.ProjectSettings exposing (handleProjectSettings)
 import PagesComponents.Organization_.Project_.Updates.Source as Source
 import PagesComponents.Organization_.Project_.Updates.Table exposing (goToTable, hideColumn, hideColumns, hideRelatedTables, hideTable, hoverColumn, hoverNextColumn, mapTablePropOrSelected, showAllTables, showColumn, showColumns, showRelatedTables, showTable, showTables, sortColumns, toggleNestedColumn)
+import PagesComponents.Organization_.Project_.Updates.TableRow exposing (mapTableRowOrSelectedCmd, moveToTableRow, showTableRow)
 import PagesComponents.Organization_.Project_.Updates.Tags exposing (handleTags)
 import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirty, setDirtyCmd)
 import PagesComponents.Organization_.Project_.Updates.VirtualRelation exposing (handleVirtualRelation)
@@ -74,7 +80,7 @@ import Random
 import Services.Backend as Backend
 import Services.DatabaseSource as DatabaseSource
 import Services.JsonSource as JsonSource
-import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapContextMenuM, mapDetailsSidebarCmd, mapEmbedSourceParsingMCmd, mapErdM, mapErdMCmd, mapExportDialogCmd, mapHoverTable, mapMemos, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapOrganizationM, mapPlan, mapPosition, mapProject, mapPromptM, mapProps, mapQueryPaneCmd, mapSaveCmd, mapSchemaAnalysisM, mapSearch, mapSelected, mapSharingCmd, mapShowHiddenColumns, mapTables, mapTablesCmd, mapToastsCmd, setActive, setCanvas, setCollapsed, setColor, setColors, setConfirm, setContextMenu, setCurrentLayout, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setLast, setLayoutOnLoad, setModal, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setSelected, setShow, setSize, setTables, setText)
+import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapContextMenuM, mapDataExplorerCmd, mapDetailsSidebarCmd, mapEmbedSourceParsingMCmd, mapErdM, mapErdMCmd, mapExportDialogCmd, mapHoverTable, mapMemos, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapOrganizationM, mapPlan, mapPosition, mapProject, mapPromptM, mapProps, mapSaveCmd, mapSchemaAnalysisM, mapSearch, mapSelected, mapSharingCmd, mapShowHiddenColumns, mapTableRows, mapTableRowsCmd, mapTables, mapTablesCmd, mapToastsCmd, setActive, setCanvas, setCollapsed, setColor, setColors, setConfirm, setContextMenu, setCurrentLayout, setCursorMode, setDragging, setHoverColumn, setHoverTable, setHoverTableRow, setInput, setLast, setLayoutOnLoad, setModal, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setSelected, setShow, setSize, setTables, setText)
 import Services.PrismaSource as PrismaSource
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
@@ -138,13 +144,13 @@ update urlLayout zone now urlInfos organizations projects msg model =
         HideRelatedTables id ->
             model |> mapErdMCmd (hideRelatedTables id) |> setDirtyCmd
 
-        ToggleColumns id ->
+        ToggleTableCollapse id ->
             let
                 collapsed : Bool
                 collapsed =
                     model.erd |> Maybe.andThen (Erd.currentLayout >> .tables >> List.findBy .id id) |> Maybe.mapOrElse (.props >> .collapsed) False
             in
-            model |> mapErdMCmd (\erd -> erd |> Erd.mapCurrentLayoutCmd now (mapTablesCmd (mapTablePropOrSelected erd.settings.defaultSchema id (mapProps (setCollapsed (not collapsed)))))) |> setDirtyCmd
+            model |> mapErdMCmd (\erd -> erd |> Erd.mapCurrentLayoutWithTimeCmd now (mapTablesCmd (mapTablePropOrSelected erd.settings.defaultSchema id (mapProps (setCollapsed (not collapsed)))))) |> setDirtyCmd
 
         ShowColumn { table, column } ->
             model |> mapErdM (showColumn now table column) |> setDirty
@@ -165,23 +171,31 @@ update urlLayout zone now urlInfos organizations projects msg model =
             model |> mapErdM (toggleNestedColumn now table path open) |> setDirty
 
         ToggleHiddenColumns id ->
-            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.updateBy .id id (mapProps (mapShowHiddenColumns not))))) |> setDirty
+            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.mapBy .id id (mapProps (mapShowHiddenColumns not))))) |> setDirty
 
-        SelectTable tableId ctrl ->
+        SelectItem htmlId ctrl ->
             if model.dragging |> Maybe.any DragState.hasMoved then
                 ( model, Cmd.none )
 
             else
-                model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.map (\t -> t |> mapProps (mapSelected (\s -> B.cond (t.id == tableId) (not s) (B.cond ctrl s False))))))) |> setDirty
+                model
+                    |> mapErdM
+                        (Erd.mapCurrentLayoutWithTime now
+                            (mapTables (List.map (\t -> t |> mapProps (mapSelected (\s -> B.cond (TableId.toHtmlId t.id == htmlId) (not s) (B.cond ctrl s False)))))
+                                >> mapTableRows (List.map (\r -> r |> mapSelected (\s -> B.cond (TableRow.toHtmlId r.id == htmlId) (not s) (B.cond ctrl s False))))
+                                >> mapMemos (List.map (\m -> m |> mapSelected (\s -> B.cond (MemoId.toHtmlId m.id == htmlId) (not s) (B.cond ctrl s False))))
+                            )
+                        )
+                    |> setDirty
 
-        SelectAllTables ->
-            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.map (mapProps (setSelected True))))) |> setDirty
+        SelectAll ->
+            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.map (mapProps (setSelected True))) >> mapTableRows (List.map (setSelected True)) >> mapMemos (List.map (setSelected True)))) |> setDirty
 
         TableMove id delta ->
-            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.updateBy .id id (mapProps (mapPosition (Position.moveGrid delta)))))) |> setDirty
+            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.mapBy .id id (mapProps (mapPosition (Position.moveGrid delta)))))) |> setDirty
 
         TablePosition id position ->
-            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.updateBy .id id (mapProps (setPosition position))))) |> setDirty
+            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.mapBy .id id (mapProps (setPosition position))))) |> setDirty
 
         TableOrder id index ->
             model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (\tables -> tables |> List.moveBy .id id (List.length tables - 1 - index)))) |> setDirty
@@ -193,19 +207,22 @@ update urlLayout zone now urlInfos organizations projects msg model =
                     model.erd |> Erd.getProjectRefM urlInfos
             in
             if model.erd |> Erd.canChangeColor then
-                model |> mapErdMCmd (\erd -> erd |> Erd.mapCurrentLayoutCmd now (mapTablesCmd (mapTablePropOrSelected erd.settings.defaultSchema id (mapProps (setColor color))))) |> setDirtyCmd
+                model |> mapErdMCmd (\erd -> erd |> Erd.mapCurrentLayoutWithTimeCmd now (mapTablesCmd (mapTablePropOrSelected erd.settings.defaultSchema id (mapProps (setColor color))))) |> setDirtyCmd
 
             else
                 ( model, Cmd.batch [ ProPlan.colorsModalBody project ProPlanColors ProPlan.colorsInit |> CustomModalOpen |> T.send, Track.planLimit .tableColor model.erd ] )
 
         MoveColumn column position ->
-            model |> mapErdM (\erd -> erd |> Erd.mapCurrentLayoutWithTime now (mapTables (List.updateBy .id column.table (mapColumns (ErdColumnProps.mapAt (column.column |> ColumnPath.parent) (List.moveBy .name (column.column |> Nel.last) position)))))) |> setDirty
+            model |> mapErdM (\erd -> erd |> Erd.mapCurrentLayoutWithTime now (mapTables (List.mapBy .id column.table (mapColumns (ErdColumnProps.mapAt (column.column |> ColumnPath.parent) (List.moveBy .name (column.column |> Nel.last) position)))))) |> setDirty
 
         ToggleHoverTable table on ->
             ( model |> setHoverTable (B.cond on (Just table) Nothing), Cmd.none )
 
         ToggleHoverColumn column on ->
             ( model |> setHoverColumn (B.cond on (Just column) Nothing) |> mapErdM (\e -> e |> Erd.mapCurrentLayoutWithTime now (mapTables (hoverColumn column on e))), Cmd.none )
+
+        HoverTableRow ( table, col ) on ->
+            ( model |> setHoverTableRow (B.cond on (Just ( table, col )) (col |> Maybe.map (\_ -> ( table, Nothing )))), Cmd.none )
 
         CreateUserSource name ->
             ( model, SourceId.generator |> Random.generate (Source.aml name now >> CreateUserSourceWithId) )
@@ -238,14 +255,25 @@ update urlLayout zone now urlInfos organizations projects msg model =
         MemoMsg message ->
             model |> handleMemo now urlInfos message
 
+        ShowTableRow source query previous hint ->
+            (model.erd |> Maybe.andThen (Erd.currentLayout >> .tableRows >> List.find (\r -> r.source == source.id && r.table == query.table && r.primaryKey == query.primaryKey)))
+                |> Maybe.map (\r -> model |> mapErdMCmd (moveToTableRow now model.erdElem r))
+                |> Maybe.withDefault (model |> mapErdMCmd (showTableRow now source query previous hint) |> setDirtyCmd)
+
+        DeleteTableRow id ->
+            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTableRows (List.removeBy .id id))) |> setDirty
+
+        TableRowMsg id message ->
+            model |> mapErdMCmd (\e -> e |> Erd.mapCurrentLayoutWithTimeCmd now (mapTableRowsCmd (mapTableRowOrSelectedCmd id message (TableRow.update DropdownToggle Toast now e.project e.sources model.openedDropdown message))))
+
         AmlSidebarMsg message ->
             model |> AmlSidebar.update now message
 
         DetailsSidebarMsg message ->
             model.erd |> Maybe.mapOrElse (\erd -> model |> mapDetailsSidebarCmd (DetailsSidebar.update Noop NotesMsg TagsMsg erd message)) ( model, Cmd.none )
 
-        QueryPaneMsg message ->
-            model.erd |> Maybe.mapOrElse (\erd -> model |> mapQueryPaneCmd (QueryPane.update QueryPaneMsg erd message)) ( model, Cmd.none )
+        DataExplorerMsg message ->
+            model.erd |> Maybe.mapOrElse (\erd -> model |> mapDataExplorerCmd (DataExplorer.update DataExplorerMsg Toast erd.project erd.sources message)) ( model, Cmd.none )
 
         VirtualRelationMsg message ->
             model |> handleVirtualRelation message
@@ -319,7 +347,7 @@ update urlLayout zone now urlInfos organizations projects msg model =
         DropdownClose ->
             ( model |> setOpenedDropdown "", Cmd.none )
 
-        PopoverSet id ->
+        PopoverOpen id ->
             ( model |> setOpenedPopover id, Cmd.none )
 
         ContextMenuCreate content event ->
@@ -352,12 +380,6 @@ update urlLayout zone now urlInfos organizations projects msg model =
         Toast message ->
             model |> mapToastsCmd (Toasts.update Toast message)
 
-        CustomModalOpen content ->
-            ( model |> setModal (Just { id = Conf.ids.customDialog, content = content }), T.sendAfter 1 (ModalOpen Conf.ids.customDialog) )
-
-        CustomModalClose ->
-            ( model |> setModal Nothing, Cmd.none )
-
         ConfirmOpen confirm ->
             ( model |> setConfirm (Just { id = Conf.ids.confirmDialog, content = confirm }), T.sendAfter 1 (ModalOpen Conf.ids.confirmDialog) )
 
@@ -378,6 +400,12 @@ update urlLayout zone now urlInfos organizations projects msg model =
 
         ModalClose message ->
             ( model |> mapOpenedDialogs (List.drop 1), T.sendAfter Conf.ui.closeDuration message )
+
+        CustomModalOpen content ->
+            ( model |> setModal (Just { id = Conf.ids.customDialog, content = content }), T.sendAfter 1 (ModalOpen Conf.ids.customDialog) )
+
+        CustomModalClose ->
+            ( model |> setModal Nothing, Cmd.none )
 
         JsMessage message ->
             model |> handleJsMessage now urlLayout message
@@ -452,11 +480,8 @@ handleJsMessage now urlLayout msg model =
         GotColumnStatsError source column error ->
             ( { model | columnStats = model.columnStats |> Dict.update (ColumnId.fromRef column) (Maybe.withDefault Dict.empty >> Dict.insert (SourceId.toString source) (Err error) >> Just) }, Cmd.none )
 
-        GotDatabaseQueryResults results ->
-            ( model, results |> Ok |> QueryPane.GotResults |> QueryPaneMsg |> T.send )
-
-        GotDatabaseQueryError error ->
-            ( model, error |> Err |> QueryPane.GotResults |> QueryPaneMsg |> T.send )
+        GotDatabaseQueryResult result ->
+            model |> handleDatabaseQueryResponse result
 
         GotPrismaSchema schema ->
             if model.embedSourceParsing == Nothing then
@@ -496,7 +521,7 @@ handleJsMessage now urlLayout msg model =
             ( model, T.send (HideTable id) )
 
         GotTableToggleColumns id ->
-            ( model, T.send (ToggleColumns id) )
+            ( model, T.send (ToggleTableCollapse id) )
 
         GotTablePosition id pos ->
             ( model, T.send (TablePosition id pos) )
@@ -505,7 +530,7 @@ handleJsMessage now urlLayout msg model =
             ( model, T.send (TableMove id delta) )
 
         GotTableSelect id ->
-            ( model, T.send (SelectTable id False) )
+            ( model, T.send (SelectItem (TableId.toHtmlId id) False) )
 
         GotTableColor id color ->
             ( model, T.send (TableColor id color) )
@@ -541,14 +566,13 @@ updateSizes changes model =
         newModel =
             erdChanged
                 |> mapErdM
-                    (\erd ->
-                        erd
-                            |> Erd.mapCurrentLayout
-                                (\l ->
-                                    l
-                                        |> mapMemos (updateMemos l.canvas.zoom changes)
-                                        |> mapTables (updateTables l.canvas.zoom erdViewport changes)
-                                )
+                    (Erd.mapCurrentLayout
+                        (\l ->
+                            l
+                                |> mapMemos (updateMemos l.canvas.zoom changes)
+                                |> mapTableRows (updateTableRows l.canvas.zoom erdViewport changes)
+                                |> mapTables (updateTables l.canvas.zoom erdViewport changes)
+                        )
                     )
     in
     newModel
@@ -571,30 +595,104 @@ updateSizes changes model =
 
 updateMemos : ZoomLevel -> List SizeChange -> List Memo -> List Memo
 updateMemos zoom changes memos =
-    changes |> List.foldl (\c mms -> mms |> List.map (\memo -> B.cond (c.id == MemoId.toHtmlId memo.id) (memo |> setSize (c.size |> Size.viewportToCanvas zoom)) memo)) memos
+    changes
+        |> List.foldl
+            (\c ->
+                List.map
+                    (\memo ->
+                        if c.id == MemoId.toHtmlId memo.id then
+                            memo |> setSize (c.size |> Size.viewportToCanvas zoom)
+
+                        else
+                            memo
+                    )
+            )
+            memos
+
+
+updateTableRows : ZoomLevel -> Area.Canvas -> List SizeChange -> List TableRow -> List TableRow
+updateTableRows zoom erdViewport changes rows =
+    changes
+        |> List.foldl
+            (\c ->
+                List.map
+                    (\row ->
+                        if c.id == TableRow.toHtmlId row.id then
+                            updateTableRow zoom erdViewport row c
+
+                        else
+                            row
+                    )
+            )
+            rows
+
+
+updateTableRow : ZoomLevel -> Area.Canvas -> TableRow -> SizeChange -> TableRow
+updateTableRow zoom erdViewport row change =
+    let
+        size : Size.Canvas
+        size =
+            change.size |> Size.viewportToCanvas zoom
+    in
+    if row.size == Size.zeroCanvas && row.position == Position.zeroGrid then
+        row |> setSize size |> setPosition (tableRowInitialPosition erdViewport size row.positionHint)
+
+    else
+        row |> setSize size
+
+
+tableRowInitialPosition : Area.Canvas -> Size.Canvas -> Maybe PositionHint -> Position.Grid
+tableRowInitialPosition erdViewport newSize hint =
+    hint
+        |> Maybe.mapOrElse
+            (\h ->
+                case h of
+                    PlaceLeft position ->
+                        position |> Position.moveGrid { dx = (Size.extractCanvas newSize).width + 50 |> negate, dy = 0 }
+
+                    PlaceRight position size ->
+                        position |> Position.moveGrid { dx = (Size.extractCanvas size).width + 50, dy = 0 }
+
+                    PlaceAt position ->
+                        position
+            )
+            (newSize |> placeAtCenter erdViewport)
 
 
 updateTables : ZoomLevel -> Area.Canvas -> List SizeChange -> List ErdTableLayout -> List ErdTableLayout
 updateTables zoom erdViewport changes tables =
-    changes |> List.foldl (\c tbls -> tbls |> List.map (\tbl -> B.cond (c.id == TableId.toHtmlId tbl.id) (updateTable zoom tbls erdViewport tbl c) tbl)) tables
+    changes
+        |> List.foldl
+            (\c currentTables ->
+                currentTables
+                    |> List.map
+                        (\table ->
+                            if c.id == TableId.toHtmlId table.id then
+                                updateTable zoom currentTables erdViewport table c
+
+                            else
+                                table
+                        )
+            )
+            tables
 
 
 updateTable : ZoomLevel -> List ErdTableLayout -> Area.Canvas -> ErdTableLayout -> SizeChange -> ErdTableLayout
 updateTable zoom tables erdViewport table change =
     let
-        newSize : Size.Canvas
-        newSize =
+        size : Size.Canvas
+        size =
             change.size |> Size.viewportToCanvas zoom
     in
     if table.props.size == Size.zeroCanvas && table.props.position == Position.zeroGrid then
-        table |> mapProps (setSize newSize >> setPosition (computeInitialPosition tables erdViewport newSize change.seeds table.props.positionHint))
+        table |> mapProps (setSize size >> setPosition (tableInitialPosition tables erdViewport size change.seeds table.props.positionHint))
 
     else
-        table |> mapProps (setSize newSize)
+        table |> mapProps (setSize size)
 
 
-computeInitialPosition : List ErdTableLayout -> Area.Canvas -> Size.Canvas -> Delta -> Maybe PositionHint -> Position.Grid
-computeInitialPosition tables erdViewport newSize _ hint =
+tableInitialPosition : List ErdTableLayout -> Area.Canvas -> Size.Canvas -> Delta -> Maybe PositionHint -> Position.Grid
+tableInitialPosition tables erdViewport newSize _ hint =
     hint
         |> Maybe.mapOrElse
             (\h ->
@@ -640,7 +738,7 @@ placeAtCenter erdViewport newSize =
 moveDownIfExists : List ErdTableLayout -> Size.Canvas -> Position.Grid -> Position.Grid
 moveDownIfExists tables size position =
     if tables |> List.any (\t -> t.props.position == position || isSameTopRight t.props { position = position, size = size }) then
-        position |> Position.moveGrid { dx = 0, dy = Conf.ui.tableHeaderHeight } |> moveDownIfExists tables size
+        position |> Position.moveGrid { dx = 0, dy = Conf.ui.table.headerHeight } |> moveDownIfExists tables size
 
     else
         position
@@ -705,10 +803,29 @@ updateErd urlLayout context project model =
 
 showAllTablesIfNeeded : Erd -> Erd
 showAllTablesIfNeeded erd =
-    if erd.currentLayout == Conf.constants.defaultLayout && (erd |> Erd.currentLayout |> .tables |> List.isEmpty) && Dict.size erd.tables < Conf.constants.fewTablesLimit then
+    if erd.currentLayout == Conf.constants.defaultLayout && (erd |> Erd.currentLayout |> ErdLayout.isEmpty) && Dict.size erd.tables < Conf.constants.fewTablesLimit then
         erd
             |> Erd.mapCurrentLayout (setTables (erd.tables |> Dict.values |> List.map (\t -> t |> ErdTableLayout.init erd.settings Set.empty (erd.relationsByTable |> Dict.getOrElse t.id []) erd.settings.collapseTableColumns Nothing)))
             |> setLayoutOnLoad "arrange"
 
     else
         erd
+
+
+handleDatabaseQueryResponse : QueryResult -> Model -> ( Model, Cmd Msg )
+handleDatabaseQueryResponse result model =
+    case result.context |> String.split "/" of
+        "data-explorer-query" :: idStr :: [] ->
+            ( model, idStr |> String.toInt |> Maybe.map (\id -> DataExplorerQuery.GotResult result |> DataExplorer.QueryMsg id |> DataExplorerMsg |> T.send) |> Maybe.withDefault ("Invalid data explorer query context: " ++ result.context |> Toasts.warning |> Toast |> T.send) )
+
+        "data-explorer-details" :: idStr :: [] ->
+            ( model, idStr |> String.toInt |> Maybe.map (\id -> DataExplorerDetails.GotResult result |> DataExplorer.DetailsMsg id |> DataExplorerMsg |> T.send) |> Maybe.withDefault ("Invalid data explorer details context: " ++ result.context |> Toasts.warning |> Toast |> T.send) )
+
+        "table-row" :: idStr :: [] ->
+            ( model, idStr |> String.toInt |> Maybe.map (\id -> TableRow.GotResult result |> TableRowMsg id |> T.send) |> Maybe.withDefault ("Invalid table row context: " ++ result.context |> Toasts.warning |> Toast |> T.send) )
+
+        "table-row" :: idStr :: column :: [] ->
+            ( model, idStr |> String.toInt |> Maybe.map (\id -> TableRow.GotIncomingRows (ColumnPath.fromString column) result |> TableRowMsg id |> T.send) |> Maybe.withDefault ("Invalid incoming table row context: " ++ result.context |> Toasts.warning |> Toast |> T.send) )
+
+        _ ->
+            ( model, "Unknown db query context: " ++ result.context |> Toasts.warning |> Toast |> T.send )

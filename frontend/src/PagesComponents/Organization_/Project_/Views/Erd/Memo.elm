@@ -3,11 +3,11 @@ module PagesComponents.Organization_.Project_.Views.Erd.Memo exposing (viewMemo)
 import Components.Atoms.Markdown as Markdown
 import Conf
 import Html exposing (Attribute, Html, div, textarea)
-import Html.Attributes exposing (autofocus, class, id, name, placeholder, value)
+import Html.Attributes exposing (autofocus, class, classList, id, name, placeholder, value)
 import Html.Events exposing (onBlur, onInput)
 import Html.Events.Extra.Mouse exposing (Button(..))
 import Libs.Bool as Bool
-import Libs.Html.Events exposing (PointerEvent, onContextMenu, onDblClick, onPointerDown)
+import Libs.Html.Events exposing (PointerEvent, onContextMenu, onDblClick, onPointerDown, onPointerUp)
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Platform exposing (Platform)
@@ -30,9 +30,9 @@ viewMemo platform conf cursorMode edit memo =
         htmlId =
             MemoId.toHtmlId memo.id
 
-        dragMemo : List (Attribute Msg)
-        dragMemo =
-            Bool.cond (cursorMode == CursorMode.Drag || not conf.move) [] [ onPointerDown (handleMemoPointerDown htmlId) platform ]
+        dragAttrs : List (Attribute Msg)
+        dragAttrs =
+            Bool.cond (cursorMode == CursorMode.Drag || not conf.move) [] [ onPointerDown (handlePointerDown htmlId) platform ]
 
         resizeMemo : List (Attribute Msg)
         resizeMemo =
@@ -60,13 +60,15 @@ viewMemo platform conf cursorMode edit memo =
         |> Maybe.withDefault
             (div
                 ([ id htmlId
-                 , class ("select-none absolute px-3 py-1 cursor-pointer overflow-hidden border border-transparent border-dashed hover:border-gray-300 hover:resize hover:overflow-auto" ++ (memo.color |> Maybe.mapOrElse (\c -> " shadow rounded " ++ Tw.bg_200 c) ""))
+                 , onPointerUp (\e -> SelectItem htmlId (e.ctrl || e.shift)) platform
+                 , class ("select-none absolute px-3 py-1 cursor-pointer overflow-hidden rounded border border-transparent border-dashed hover:border-gray-300 hover:resize" ++ (memo.color |> Maybe.mapOrElse (\c -> " shadow " ++ Tw.bg_200 c) ""))
+                 , classList [ ( "ring-2 " ++ Tw.ring_300 (memo.color |> Maybe.withDefault Tw.gray), memo.selected ) ]
                  ]
-                    ++ Bool.cond conf.layout [ onDblClick (\_ -> MemoMsg (MEdit memo)) platform, onContextMenu (ContextMenuCreate (MemoContextMenu.view platform conf memo)) platform ] []
+                    ++ Bool.cond conf.layout [ onDblClick (\_ -> MemoMsg (MEdit memo)) platform, onContextMenu (ContextMenuCreate (MemoContextMenu.view conf memo)) platform ] []
                     ++ Area.stylesGrid memo
                     ++ resizeMemo
                 )
-                [ div ([ class "w-full h-full" ] ++ dragMemo) [ viewMarkdown memo.content ]
+                [ div ([ class "w-full h-full" ] ++ dragAttrs) [ viewMarkdown memo.content ]
                 ]
             )
 
@@ -76,8 +78,8 @@ viewMarkdown content =
     Markdown.prose "prose-img:pointer-events-none" content
 
 
-handleMemoPointerDown : HtmlId -> PointerEvent -> Msg
-handleMemoPointerDown htmlId e =
+handlePointerDown : HtmlId -> PointerEvent -> Msg
+handlePointerDown htmlId e =
     if e.button == MainButton then
         e |> .clientPos |> DragStart htmlId
 

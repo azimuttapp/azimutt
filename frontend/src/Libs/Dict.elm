@@ -1,4 +1,4 @@
-module Libs.Dict exposing (alter, count, filterMap, find, from, fromIndexedList, fromListMap, fuse, getOrElse, getResult, mapKeys, nonEmpty, notMember, set)
+module Libs.Dict exposing (alter, any, count, filterMap, find, from, fromIndexedList, fromListMap, fuse, getOrElse, getResult, mapBoth, mapKeys, mapValues, nonEmpty, notMember, set, zip)
 
 import Dict exposing (Dict)
 
@@ -46,6 +46,21 @@ notMember key dict =
 mapKeys : (comparable -> comparable1) -> Dict comparable a -> Dict comparable1 a
 mapKeys f dict =
     dict |> Dict.toList |> List.map (\( k, v ) -> ( f k, v )) |> Dict.fromList
+
+
+mapValues : (a -> b) -> Dict comparable a -> Dict comparable b
+mapValues f dict =
+    dict |> Dict.toList |> List.map (\( k, v ) -> ( k, f v )) |> Dict.fromList
+
+
+mapBoth : (comparable -> comparable1) -> (a -> b) -> Dict comparable a -> Dict comparable1 b
+mapBoth f g dict =
+    dict |> Dict.toList |> List.map (\( k, v ) -> ( f k, g v )) |> Dict.fromList
+
+
+any : (comparable -> v -> Bool) -> Dict comparable v -> Bool
+any predicate dict =
+    find predicate dict /= Nothing
 
 
 find : (comparable -> v -> Bool) -> Dict comparable v -> Maybe ( comparable, v )
@@ -100,6 +115,11 @@ alter key transform dict =
 set : comparable -> Maybe v -> Dict comparable v -> Dict comparable v
 set key value dict =
     value |> Maybe.map (\v -> dict |> Dict.insert key v) |> Maybe.withDefault (dict |> Dict.remove key)
+
+
+zip : Dict comparable b -> Dict comparable a -> Dict comparable ( a, b )
+zip dict2 dict1 =
+    dict1 |> Dict.toList |> List.filterMap (\( k1, v1 ) -> dict2 |> Dict.get k1 |> Maybe.map (\v2 -> ( k1, ( v1, v2 ) ))) |> Dict.fromList
 
 
 fuse : (a -> a -> a) -> Dict comparable a -> Dict comparable a -> Dict comparable a

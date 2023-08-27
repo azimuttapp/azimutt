@@ -7,12 +7,14 @@ import Libs.Json.Encode as Encode
 import Libs.Time as Time
 import Models.Project.Group as Group exposing (Group)
 import Models.Project.TableProps as TableProps exposing (TableProps)
+import Models.Project.TableRow as TableRow exposing (TableRow)
 import PagesComponents.Organization_.Project_.Models.Memo as Memo exposing (Memo)
 import Time
 
 
 type alias Layout =
     { tables : List TableProps
+    , tableRows : List TableRow
     , groups : List Group
     , memos : List Memo
     , createdAt : Time.Posix
@@ -22,13 +24,14 @@ type alias Layout =
 
 empty : Time.Posix -> Layout
 empty now =
-    { tables = [], groups = [], memos = [], createdAt = now, updatedAt = now }
+    { tables = [], tableRows = [], groups = [], memos = [], createdAt = now, updatedAt = now }
 
 
 encode : Layout -> Value
 encode value =
     Encode.notNullObject
         [ ( "tables", value.tables |> Encode.list TableProps.encode )
+        , ( "tableRows", value.tableRows |> Encode.withDefault (Encode.list TableRow.encode) [] )
         , ( "groups", value.groups |> Encode.withDefault (Encode.list Group.encode) [] )
         , ( "memos", value.memos |> Encode.withDefault (Encode.list Memo.encode) [] )
         , ( "createdAt", value.createdAt |> Time.encode )
@@ -38,8 +41,9 @@ encode value =
 
 decode : Decode.Decoder Layout
 decode =
-    Decode.map5 Layout
+    Decode.map6 Layout
         (Decode.field "tables" (Decode.list TableProps.decode))
+        (Decode.defaultField "tableRows" (Decode.list TableRow.decode) [])
         (Decode.defaultField "groups" (Decode.list Group.decode) [])
         (Decode.defaultField "memos" (Decode.list Memo.decode) [])
         (Decode.field "createdAt" Time.decode)

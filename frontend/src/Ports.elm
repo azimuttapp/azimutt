@@ -1,4 +1,4 @@
-port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProject, createProjectTmp, deleteProject, downloadFile, fireworks, focus, fullscreen, getColumnStats, getDatabaseSchema, getPrismaSchema, getProject, getTableStats, listenHotkeys, mouseDown, moveProjectTo, observeLayout, observeMemoSize, observeSize, observeTableSize, observeTablesSize, onJsMessage, projectDirty, readLocalFile, runDatabaseQuery, scrollTo, setMeta, toast, track, unhandledJsMsgError, updateProject, updateProjectTmp)
+port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProject, createProjectTmp, deleteProject, downloadFile, fireworks, focus, fullscreen, getColumnStats, getDatabaseSchema, getPrismaSchema, getProject, getTableStats, listenHotkeys, mouseDown, moveProjectTo, observeLayout, observeMemoSize, observeSize, observeTableRowSize, observeTableSize, observeTablesSize, onJsMessage, projectDirty, readLocalFile, runDatabaseQuery, scrollTo, setMeta, toast, track, unhandledJsMsgError, updateProject, updateProjectTmp)
 
 import DataSources.JsonMiner.JsonSchema as JsonSchema exposing (JsonSchema)
 import Dict exposing (Dict)
@@ -14,7 +14,6 @@ import Libs.Models.FileName exposing (FileName)
 import Libs.Models.Hotkey as Hotkey exposing (Hotkey)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Color exposing (Color)
-import Models.DatabaseQueryResults as DatabaseQueryResults exposing (DatabaseQueryResults)
 import Models.OrganizationId as OrganizationId exposing (OrganizationId)
 import Models.Position as Position
 import Models.Project as Project exposing (Project)
@@ -24,11 +23,14 @@ import Models.Project.ProjectId as ProjectId exposing (ProjectId)
 import Models.Project.ProjectStorage as ProjectStorage exposing (ProjectStorage)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.TableId as TableId exposing (TableId)
+import Models.Project.TableRow as TableRow exposing (TableRow)
 import Models.Project.TableStats as TableStats exposing (TableStats)
 import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Models.ProjectTokenId as ProjectTokenId exposing (ProjectTokenId)
+import Models.QueryResult as QueryResult exposing (QueryResult)
 import Models.Route as Route exposing (Route)
 import Models.Size as Size
+import Models.SqlQuery as SqlQuery exposing (SqlQueryOrigin)
 import Models.TrackEvent as TrackEvent exposing (TrackEvent)
 import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
@@ -146,9 +148,9 @@ getColumnStats column ( source, database ) =
     messageToJs (GetColumnStats source database column)
 
 
-runDatabaseQuery : DatabaseUrl -> String -> Cmd msg
-runDatabaseQuery database query =
-    messageToJs (RunDatabaseQuery database query)
+runDatabaseQuery : String -> DatabaseUrl -> SqlQueryOrigin -> Cmd msg
+runDatabaseQuery context database query =
+    messageToJs (RunDatabaseQuery context database query)
 
 
 getPrismaSchema : String -> Cmd msg
@@ -176,9 +178,18 @@ observeMemoSize id =
     observeSizes [ MemoId.toHtmlId id ]
 
 
+observeTableRowSize : TableRow.Id -> Cmd msg
+observeTableRowSize id =
+    observeSizes [ TableRow.toHtmlId id ]
+
+
 observeLayout : ErdLayout -> Cmd msg
 observeLayout layout =
-    observeSizes ((layout.tables |> List.map (.id >> TableId.toHtmlId)) ++ (layout.memos |> List.map (.id >> MemoId.toHtmlId)))
+    observeSizes
+        ((layout.tables |> List.map (.id >> TableId.toHtmlId))
+            ++ (layout.tableRows |> List.map (.id >> TableRow.toHtmlId))
+            ++ (layout.memos |> List.map (.id >> MemoId.toHtmlId))
+        )
 
 
 observeSizes : List HtmlId -> Cmd msg
@@ -247,7 +258,7 @@ type ElmMsg
     | GetDatabaseSchema DatabaseUrl
     | GetTableStats SourceId DatabaseUrl TableId
     | GetColumnStats SourceId DatabaseUrl ColumnRef
-    | RunDatabaseQuery DatabaseUrl String
+    | RunDatabaseQuery String DatabaseUrl SqlQueryOrigin
     | GetPrismaSchema String
     | ObserveSizes (List HtmlId)
     | ListenKeys (Dict String (List Hotkey))
@@ -268,8 +279,7 @@ type JsMsg
     | GotTableStatsError SourceId TableId String
     | GotColumnStats SourceId ColumnStats
     | GotColumnStatsError SourceId ColumnRef String
-    | GotDatabaseQueryResults DatabaseQueryResults
-    | GotDatabaseQueryError String
+    | GotDatabaseQueryResult QueryResult
     | GotPrismaSchema JsonSchema
     | GotPrismaSchemaError String
     | GotHotkey String
@@ -383,8 +393,8 @@ elmEncoder elm =
         GetColumnStats source database column ->
             Encode.object [ ( "kind", "GetColumnStats" |> Encode.string ), ( "source", source |> SourceId.encode ), ( "database", database |> DatabaseUrl.encode ), ( "column", column |> ColumnRef.encode ) ]
 
-        RunDatabaseQuery database query ->
-            Encode.object [ ( "kind", "RunDatabaseQuery" |> Encode.string ), ( "database", database |> DatabaseUrl.encode ), ( "query", query |> Encode.string ) ]
+        RunDatabaseQuery context database query ->
+            Encode.object [ ( "kind", "RunDatabaseQuery" |> Encode.string ), ( "context", context |> Encode.string ), ( "database", database |> DatabaseUrl.encode ), ( "query", query |> SqlQuery.encodeOrigin ) ]
 
         GetPrismaSchema content ->
             Encode.object [ ( "kind", "GetPrismaSchema" |> Encode.string ), ( "content", content |> Encode.string ) ]
@@ -455,11 +465,8 @@ jsDecoder =
                 "GotColumnStatsError" ->
                     Decode.map3 GotColumnStatsError (Decode.field "source" SourceId.decode) (Decode.field "column" ColumnRef.decode) (Decode.field "error" Decode.string)
 
-                "GotDatabaseQueryResults" ->
-                    Decode.map GotDatabaseQueryResults (Decode.field "results" DatabaseQueryResults.decode)
-
-                "GotDatabaseQueryError" ->
-                    Decode.map GotDatabaseQueryError (Decode.field "error" Decode.string)
+                "GotDatabaseQueryResult" ->
+                    Decode.map GotDatabaseQueryResult QueryResult.decode
 
                 "GotPrismaSchema" ->
                     Decode.map GotPrismaSchema (Decode.field "schema" JsonSchema.decode)
@@ -555,11 +562,8 @@ unhandledJsMsgError msg =
                 GotColumnStatsError _ _ _ ->
                     "GotColumnStatsError"
 
-                GotDatabaseQueryResults _ ->
-                    "GotDatabaseQueryResults"
-
-                GotDatabaseQueryError _ ->
-                    "GotDatabaseQueryError"
+                GotDatabaseQueryResult _ ->
+                    "GotDatabaseQueryResult"
 
                 GotPrismaSchema _ ->
                     "GotPrismaSchema"

@@ -1,5 +1,6 @@
-module Libs.Result exposing (ap, ap3, ap4, ap5, bimap, filter, fold, isErr, isOk, map6, partition, swap, toError)
+module Libs.Result exposing (ap, ap3, ap4, ap5, bimap, decode, filter, fold, isErr, isOk, map6, mapOrElse, partition, swap, toError)
 
+import Json.Decode as Decode exposing (Decoder)
 import Libs.Bool as B
 import Libs.Nel as Nel exposing (Nel)
 
@@ -32,6 +33,11 @@ toError result =
 
         Err e ->
             Just e
+
+
+mapOrElse : (a -> b) -> b -> Result e a -> b
+mapOrElse f default result =
+    result |> Result.map f |> Result.withDefault default
 
 
 swap : Result e a -> Result a e
@@ -118,6 +124,14 @@ apx transform r1 rx =
 
         ( Err e1, Err ex ) ->
             Err (Nel e1 (ex |> Nel.toList))
+
+
+decode : Decoder e -> Decoder a -> Decoder (Result e a)
+decode decodeE decodeA =
+    Decode.oneOf
+        [ decodeA |> Decode.map Ok
+        , decodeE |> Decode.map Err
+        ]
 
 
 map6 : (a -> b -> c -> d -> e -> f -> value) -> Result x a -> Result x b -> Result x c -> Result x d -> Result x e -> Result x f -> Result x value

@@ -1,4 +1,4 @@
-module Components.Molecules.Dropdown exposing (DocState, Model, SharedDocState, doc, dropdown, initDocState, subs, update)
+module Components.Molecules.Dropdown exposing (DocState, Model, SharedDocState, doc, docInit, dropdown, subs, update)
 
 import Browser.Events
 import Components.Atoms.Button as Button
@@ -15,7 +15,6 @@ import Libs.Bool as B
 import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup)
 import Libs.Json.Decode as Decode
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Models.Platform as Platform
 import Libs.Tailwind as Tw
 import Services.Lenses exposing (mapOpenedDropdown)
 
@@ -28,7 +27,16 @@ dropdown : Model -> (Model -> Html msg) -> (Model -> Html msg) -> Html msg
 dropdown model elt content =
     div [ class "relative inline-block text-left" ]
         [ elt model
-        , ContextMenu.menu model.id model.direction 2 model.isOpen (content model)
+        , ContextMenu.menu model.id
+            model.direction
+            2
+            model.isOpen
+            (if model.isOpen then
+                content model
+
+             else
+                div [] []
+            )
         ]
 
 
@@ -73,8 +81,8 @@ type alias DocState =
     { opened : String }
 
 
-initDocState : DocState
-initDocState =
+docInit : DocState
+docInit =
     { opened = "" }
 
 
@@ -101,7 +109,7 @@ doc =
                 (\opened toggleOpen ->
                     dropdown { id = "dropdown", direction = BottomRight, isOpen = opened == "dropdown" }
                         (\m -> Button.white3 Tw.primary [ id m.id, ariaExpanded True, ariaHaspopup "true", onClick (toggleOpen m.id) ] [ text "Options", Icon.solid ChevronDown "" ])
-                        (\_ -> div [] ([ "Account settings", "Support", "License" ] |> List.map (\label -> ContextMenu.btn "" (logAction label) [ text label ])))
+                        (\_ -> div [] ([ "Account settings", "Support", "License" ] |> List.map (\label -> ContextMenu.btn "" (logAction label) [] [ text label ])))
                 )
             , component "item styles"
                 (\opened toggleOpen ->
@@ -109,11 +117,11 @@ doc =
                         (\m -> Button.white3 Tw.primary [ id m.id, ariaExpanded True, ariaHaspopup "true", onClick (toggleOpen m.id) ] [ text "Options", Icon.solid ChevronDown "" ])
                         (\_ ->
                             div []
-                                [ ContextMenu.btn "" (logAction "btn") [ text "btn" ]
+                                [ ContextMenu.btn "" (logAction "btn") [] [ text "btn" ]
                                 , ContextMenu.btnDisabled "" [ text "btnDisabled" ]
                                 , ContextMenu.link { url = "#", text = "link" }
-                                , ContextMenu.btnSubmenu { label = "submenuButton Right", action = Simple { action = logAction "submenuButton Right", platform = Platform.PC, hotkeys = [] } }
-                                , ContextMenu.btnSubmenu { label = "submenuButton Left", action = SubMenu ([ "Item 1", "Item 2", "Item 3" ] |> List.map (\label -> { label = label, action = logAction label, platform = Platform.PC, hotkeys = [] })) }
+                                , ContextMenu.btnSubmenu { label = "submenuButton Right", content = Simple { action = logAction "submenuButton Right" } }
+                                , ContextMenu.btnSubmenu { label = "submenuButton Left", content = SubMenu ([ "Item 1", "Item 2", "Item 3" ] |> List.map (\label -> { label = label, action = logAction label })) BottomRight }
                                 ]
                         )
                 )
@@ -122,16 +130,16 @@ doc =
                     div [ class "flex space-x-3" ]
                         [ dropdown { id = "BottomRight", direction = BottomRight, isOpen = opened == "BottomRight" }
                             (\m -> Button.white3 Tw.primary [ id m.id, ariaExpanded True, ariaHaspopup "true", onClick (toggleOpen m.id) ] [ text "BottomRight", Icon.solid ChevronDown "" ])
-                            (\_ -> div [] ([ "Account settings", "Support", "License" ] |> List.map (\label -> ContextMenu.btn "" (logAction label) [ text label ])))
+                            (\_ -> div [] ([ "Account settings", "Support", "License" ] |> List.map (\label -> ContextMenu.btn "" (logAction label) [] [ text label ])))
                         , dropdown { id = "BottomLeft", direction = BottomLeft, isOpen = opened == "BottomLeft" }
                             (\m -> Button.white3 Tw.primary [ id m.id, ariaExpanded True, ariaHaspopup "true", onClick (toggleOpen m.id) ] [ text "BottomLeft", Icon.solid ChevronDown "" ])
-                            (\_ -> div [] ([ "Account settings", "Support", "License" ] |> List.map (\label -> ContextMenu.btn "" (logAction label) [ text label ])))
+                            (\_ -> div [] ([ "Account settings", "Support", "License" ] |> List.map (\label -> ContextMenu.btn "" (logAction label) [] [ text label ])))
                         , dropdown { id = "TopRight", direction = TopRight, isOpen = opened == "TopRight" }
                             (\m -> Button.white3 Tw.primary [ id m.id, ariaExpanded True, ariaHaspopup "true", onClick (toggleOpen m.id) ] [ text "TopRight", Icon.solid ChevronDown "" ])
-                            (\_ -> div [] ([ "Account settings", "Support", "License" ] |> List.map (\label -> ContextMenu.btn "" (logAction label) [ text label ])))
+                            (\_ -> div [] ([ "Account settings", "Support", "License" ] |> List.map (\label -> ContextMenu.btn "" (logAction label) [] [ text label ])))
                         , dropdown { id = "TopLeft", direction = TopLeft, isOpen = opened == "TopLeft" }
                             (\m -> Button.white3 Tw.primary [ id m.id, ariaExpanded True, ariaHaspopup "true", onClick (toggleOpen m.id) ] [ text "TopLeft", Icon.solid ChevronDown "" ])
-                            (\_ -> div [] ([ "Account settings", "Support", "License" ] |> List.map (\label -> ContextMenu.btn "" (logAction label) [ text label ])))
+                            (\_ -> div [] ([ "Account settings", "Support", "License" ] |> List.map (\label -> ContextMenu.btn "" (logAction label) [] [ text label ])))
                         ]
                 )
             ]

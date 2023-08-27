@@ -49,8 +49,9 @@ toString ( s, t ) =
 
 
 fromString : String -> Maybe TableId
-fromString id =
-    case String.split "." id of
+fromString tableId =
+    -- TableName may have "." inside :/
+    case tableId |> String.split "." of
         s :: t :: rest ->
             Just ( s, (t :: rest) |> String.join "." )
 
@@ -74,9 +75,10 @@ parse tableId =
 
 parseWith : SchemaName -> String -> TableId
 parseWith defaultSchema tableId =
+    -- TableName may have "." inside :/
     case tableId |> String.split "." of
-        s :: t :: [] ->
-            ( s, t )
+        s :: t :: rest ->
+            ( s, (t :: rest) |> String.join "." )
 
         _ ->
             ( defaultSchema, tableId )

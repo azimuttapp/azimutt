@@ -1,4 +1,4 @@
-module Libs.Models.DateTime exposing (format, formatDate, formatDatetime, formatTime, formatUtc, greaterThan, human, minus, parse, unsafeParse)
+module Libs.Models.DateTime exposing (format, formatDate, formatDatetime, formatTime, formatUtc, greaterThan, human, minus, parse, toIso, unsafeParse)
 
 import Iso8601
 import Libs.Models.Duration as Duration exposing (Duration)
@@ -25,6 +25,11 @@ unsafeParse date =
 parse : String -> Result String Time.Posix
 parse date =
     Iso8601.toTime date |> Result.mapError (\_ -> "'" ++ date ++ "' is not a valid iso date")
+
+
+toIso : Time.Posix -> String
+toIso date =
+    Iso8601.fromTime date
 
 
 formatDatetime : Time.Zone -> Time.Posix -> String
@@ -96,16 +101,18 @@ human now date =
     else if abs diff < aDecade then
         humanText diff aYear "a year" "years"
 
-    else if abs diff < aCentury then
-        humanText diff aYear "a year" "years"
-
     else
         "a long time" |> humanDirection diff
 
 
 humanText : Int -> Int -> String -> String -> String
 humanText diff unit one many =
-    toFloat diff / toFloat unit |> round |> abs |> String.inflect one one many |> humanDirection diff
+    let
+        nb : Int
+        nb =
+            toFloat diff / toFloat unit |> round |> abs
+    in
+    nb |> String.inflect one one (String.fromInt nb ++ " " ++ many) |> humanDirection diff
 
 
 humanDirection : Int -> String -> String

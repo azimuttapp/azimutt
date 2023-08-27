@@ -4,6 +4,7 @@ import Conf
 import Dict exposing (Dict)
 import Fuzz exposing (Fuzzer)
 import Libs.Fuzz as Fuzz
+import Libs.Models.DatabaseKind as DatabaseKind exposing (DatabaseKind)
 import Libs.Models.FileLineIndex exposing (FileLineIndex)
 import Libs.Models.FileName exposing (FileName)
 import Libs.Models.FileSize exposing (FileSize)
@@ -16,10 +17,36 @@ import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Ned as Ned exposing (Ned)
 import Libs.Nel exposing (Nel)
 import Libs.Tailwind as Tw exposing (Color)
+import Models.DbValue exposing (DbValue(..))
 import Models.Position as Position
 import Models.Size as Size
 import Random
+import Set exposing (Set)
 import Time
+
+
+dbValue : Fuzzer DbValue
+dbValue =
+    Fuzz.oneOf
+        [ stringSmall |> Fuzz.map DbString
+        , Fuzz.int |> Fuzz.map DbInt
+        , Fuzz.float
+            |> Fuzz.map
+                (\f ->
+                    if isNaN f || ceiling f == floor f then
+                        DbFloat 0.5
+
+                    else
+                        DbFloat f
+                )
+        , Fuzz.bool |> Fuzz.map DbBool
+        , Fuzz.constant DbNull
+        ]
+
+
+databaseKind : Fuzzer DatabaseKind
+databaseKind =
+    Fuzz.oneOfValues DatabaseKind.all
 
 
 positionViewport : Fuzzer Position.Viewport
@@ -105,6 +132,11 @@ listSmall fuzz =
     -- TODO: should find a way to randomize list size but keep it small efficiently
     -- Fuzz.list can generate long lists & F.listN generate only size of n list, generating a random int then chaining with listN will be best
     Fuzz.listN 3 fuzz
+
+
+setSmall : Fuzzer comparable -> Fuzzer (Set comparable)
+setSmall fuzz =
+    listSmall fuzz |> Fuzz.map Set.fromList
 
 
 nelSmall : Fuzzer a -> Fuzzer (Nel a)

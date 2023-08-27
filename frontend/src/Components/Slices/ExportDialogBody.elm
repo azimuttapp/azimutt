@@ -1,4 +1,4 @@
-module Components.Slices.ExportDialogBody exposing (DocState, ExportFormat, ExportInput, Model, Msg, SharedDocState, doc, init, initDocState, update, view)
+module Components.Slices.ExportDialogBody exposing (DocState, ExportFormat, ExportInput, Model, Msg, SharedDocState, doc, docInit, init, update, view)
 
 import Array
 import Components.Atoms.Button as Button
@@ -132,7 +132,7 @@ getOutput wrap urlInfos erd input format =
                 Cmd.batch [ GotOutput "" "plan_limit" |> wrap |> T.send, Track.planLimit .sqlExport (Just erd) ]
 
             else
-                erd |> Schema.fromErd |> generateTables format |> (\( output, ext ) -> output |> GotOutput (erd.project.name ++ "." ++ ext) |> wrap |> T.send)
+                erd |> Erd.toSchema |> generateTables format |> (\( output, ext ) -> output |> GotOutput (erd.project.name ++ "." ++ ext) |> wrap |> T.send)
 
         CurrentLayout ->
             if format /= AML && format /= JSON && not sqlExportAllowed then
@@ -140,7 +140,7 @@ getOutput wrap urlInfos erd input format =
 
             else
                 erd
-                    |> Schema.fromErd
+                    |> Erd.toSchema
                     |> Schema.filter (erd.layouts |> Dict.get erd.currentLayout |> Maybe.mapOrElse (.tables >> List.map .id) [])
                     |> generateTables format
                     |> (\( output, ext ) -> output |> GotOutput (erd.project.name ++ "-" ++ erd.currentLayout ++ "." ++ ext) |> wrap |> T.send)
@@ -274,8 +274,8 @@ type alias DocState =
     { free : Model, pro : Model }
 
 
-initDocState : DocState
-initDocState =
+docInit : DocState
+docInit =
     { free = { id = "free-modal-id", input = Nothing, format = Nothing, output = Pending }
     , pro = { id = "pro-modal-id", input = Nothing, format = Nothing, output = Pending }
     }

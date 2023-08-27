@@ -4,7 +4,7 @@ import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
 import Components.Molecules.Dropdown as Dropdown
 import Components.Molecules.Tooltip as Tooltip
-import Components.Slices.QueryPane as QueryPane
+import Components.Slices.DataExplorer as DataExplorer
 import Html exposing (Html, button, div, span, text)
 import Html.Attributes exposing (class, id, type_)
 import Html.Events exposing (onClick)
@@ -22,15 +22,15 @@ import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 
 
 argsToString : CursorMode -> HtmlId -> HtmlId -> Bool -> Bool -> Bool -> Bool -> String
-argsToString cursorMode htmlId openedDropdown hasTables amlSidebar detailsSidebar queryPane =
-    [ CursorMode.toString cursorMode, htmlId, openedDropdown, B.cond hasTables "Y" "N", B.cond amlSidebar "Y" "N", B.cond detailsSidebar "Y" "N", B.cond queryPane "Y" "N" ] |> String.join "~"
+argsToString cursorMode htmlId openedDropdown layoutNonEmpty amlSidebar detailsSidebar dataExplorer =
+    [ CursorMode.toString cursorMode, htmlId, openedDropdown, B.cond layoutNonEmpty "Y" "N", B.cond amlSidebar "Y" "N", B.cond detailsSidebar "Y" "N", B.cond dataExplorer "Y" "N" ] |> String.join "~"
 
 
 stringToArgs : String -> ( ( CursorMode, HtmlId, HtmlId ), Bool, ( Bool, Bool, Bool ) )
 stringToArgs args =
     case args |> String.split "~" of
-        [ cursorMode, htmlId, openedDropdown, hasTables, amlSidebar, detailsSidebar, queryPane ] ->
-            ( ( CursorMode.fromString cursorMode, htmlId, openedDropdown ), hasTables == "Y", ( amlSidebar == "Y", detailsSidebar == "Y", queryPane == "Y" ) )
+        [ cursorMode, htmlId, openedDropdown, layoutNonEmpty, amlSidebar, detailsSidebar, dataExplorer ] ->
+            ( ( CursorMode.fromString cursorMode, htmlId, openedDropdown ), layoutNonEmpty == "Y", ( amlSidebar == "Y", detailsSidebar == "Y", dataExplorer == "Y" ) )
 
         _ ->
             ( ( CursorMode.Select, "", "" ), True, ( True, True, True ) )
@@ -39,7 +39,7 @@ stringToArgs args =
 viewCommands : ErdConf -> ZoomLevel -> String -> Html Msg
 viewCommands conf canvasZoom args =
     let
-        ( ( cursorMode, htmlId, openedDropdown ), hasTables, ( amlSidebar, detailsSidebar, queryPane ) ) =
+        ( ( cursorMode, htmlId, openedDropdown ), layoutNonEmpty, ( amlSidebar, detailsSidebar, dataExplorer ) ) =
             stringToArgs args
 
         buttonStyles : TwClass
@@ -55,7 +55,7 @@ viewCommands conf canvasZoom args =
             batch [ "bg-gray-700 text-white", hover [ "bg-gray-600" ] ]
     in
     div [ class "az-commands absolute bottom-0 right-0 m-3 print:hidden" ]
-        [ if conf.move && hasTables then
+        [ if conf.move && layoutNonEmpty then
             span [ class "relative z-0 inline-flex shadow-sm rounded-md" ]
                 [ button [ type_ "button", onClick FitToScreen, css [ "rounded-l-md", buttonStyles, classic ] ] [ Icon.solid ArrowsExpand "" ]
                     |> Tooltip.t "Fit diagram to screen"
@@ -68,16 +68,16 @@ viewCommands conf canvasZoom args =
         , if conf.update then
             span [ class "relative z-0 inline-flex shadow-sm rounded-md ml-2" ]
                 [ button [ type_ "button", onClick (DetailsSidebarMsg DetailsSidebar.Toggle), css [ "rounded-l-md", buttonStyles, B.cond detailsSidebar inverted classic ] ] [ Icon.solid Menu "" ]
-                    |> B.cond (conf.select && hasTables) Tooltip.t Tooltip.tl "Open table list"
-                , button [ type_ "button", onClick (QueryPaneMsg QueryPane.Toggle), css [ "-ml-px", buttonStyles, B.cond queryPane inverted classic ] ] [ Icon.solid Code "" ]
-                    |> B.cond (conf.move && hasTables) Tooltip.t Tooltip.tl "Query your database"
+                    |> B.cond (conf.select && layoutNonEmpty) Tooltip.t Tooltip.tl "Open table list"
+                , button [ type_ "button", onClick (DataExplorerMsg (B.cond dataExplorer DataExplorer.Close (DataExplorer.Open Nothing Nothing))), css [ "-ml-px", buttonStyles, B.cond dataExplorer inverted classic ] ] [ Icon.solid Code "" ]
+                    |> B.cond (conf.move && layoutNonEmpty) Tooltip.t Tooltip.tl "Explore your data"
                 , button [ type_ "button", onClick (AmlSidebarMsg AToggle), css [ "-ml-px rounded-r-md", buttonStyles, B.cond amlSidebar inverted classic ] ] [ Icon.solid Pencil "" ]
-                    |> B.cond (conf.move && hasTables) Tooltip.t Tooltip.tl "Update your schema"
+                    |> B.cond (conf.move && layoutNonEmpty) Tooltip.t Tooltip.tl "Update your schema"
                 ]
 
           else
             Html.none
-        , if conf.move && hasTables then
+        , if conf.move && layoutNonEmpty then
             span [ class "relative z-0 inline-flex shadow-sm rounded-md ml-2" ]
                 [ button [ type_ "button", onClick (CursorMode CursorMode.Select), css [ "rounded-l-md", buttonStyles, B.cond (cursorMode == CursorMode.Select) inverted classic ] ] [ Icon.solid CursorClick "" ]
                     |> Tooltip.t "Select tool"
@@ -87,7 +87,7 @@ viewCommands conf canvasZoom args =
 
           else
             Html.none
-        , if conf.move && hasTables then
+        , if conf.move && layoutNonEmpty then
             span [ class "relative z-0 inline-flex shadow-sm rounded-md ml-2" ]
                 [ button [ type_ "button", onClick (Zoom (-canvasZoom / 10)), css [ "rounded-l-md", buttonStyles, classic ] ] [ Icon.solid Minus "" ]
                 , Dropdown.dropdown { id = htmlId ++ "-zoom-level", direction = TopLeft, isOpen = openedDropdown == htmlId ++ "-zoom-level" }
@@ -97,15 +97,15 @@ viewCommands conf canvasZoom args =
                     )
                     (\_ ->
                         div []
-                            [ ContextMenu.btn "" (Zoom (0.05 - canvasZoom)) [ text "5%" ]
-                            , ContextMenu.btn "" (Zoom (0.25 - canvasZoom)) [ text "25%" ]
-                            , ContextMenu.btn "" (Zoom (0.5 - canvasZoom)) [ text "50%" ]
-                            , ContextMenu.btn "" (Zoom (0.8 - canvasZoom)) [ text "80%" ]
-                            , ContextMenu.btn "" (Zoom (1 - canvasZoom)) [ text "100%" ]
-                            , ContextMenu.btn "" (Zoom (1.2 - canvasZoom)) [ text "120%" ]
-                            , ContextMenu.btn "" (Zoom (1.5 - canvasZoom)) [ text "150%" ]
-                            , ContextMenu.btn "" (Zoom (2 - canvasZoom)) [ text "200%" ]
-                            , ContextMenu.btn "" (Zoom (5 - canvasZoom)) [ text "500%" ]
+                            [ ContextMenu.btn "" (Zoom (0.05 - canvasZoom)) [] [ text "5%" ]
+                            , ContextMenu.btn "" (Zoom (0.25 - canvasZoom)) [] [ text "25%" ]
+                            , ContextMenu.btn "" (Zoom (0.5 - canvasZoom)) [] [ text "50%" ]
+                            , ContextMenu.btn "" (Zoom (0.8 - canvasZoom)) [] [ text "80%" ]
+                            , ContextMenu.btn "" (Zoom (1 - canvasZoom)) [] [ text "100%" ]
+                            , ContextMenu.btn "" (Zoom (1.2 - canvasZoom)) [] [ text "120%" ]
+                            , ContextMenu.btn "" (Zoom (1.5 - canvasZoom)) [] [ text "150%" ]
+                            , ContextMenu.btn "" (Zoom (2 - canvasZoom)) [] [ text "200%" ]
+                            , ContextMenu.btn "" (Zoom (5 - canvasZoom)) [] [ text "500%" ]
                             ]
                     )
                 , button [ type_ "button", onClick (Zoom (canvasZoom / 10)), css [ "-ml-px rounded-r-md", buttonStyles, classic ] ] [ Icon.solid Plus "" ]

@@ -1,4 +1,4 @@
-module Track exposing (SQLParsing, amlSourceCreated, dbAnalysisOpened, detailSidebarClosed, detailSidebarOpened, docOpened, externalLink, findPathOpened, findPathResults, groupCreated, groupDeleted, groupRenamed, jsonError, layoutCreated, layoutDeleted, layoutLoaded, memoDeleted, memoSaved, notFound, notesCreated, notesDeleted, notesUpdated, planLimit, projectDraftCreated, projectLoaded, queryPaneClosed, queryPaneOpened, searchClicked, sourceAdded, sourceCreated, sourceDeleted, sourceEditorClosed, sourceEditorOpened, sourceRefreshed, sqlSourceCreated, tagsCreated, tagsDeleted, tagsUpdated)
+module Track exposing (SQLParsing, amlSourceCreated, dataExplorerDetailsOpened, dataExplorerDetailsResult, dataExplorerOpened, dataExplorerQueryOpened, dataExplorerQueryResult, dbAnalysisOpened, detailSidebarClosed, detailSidebarOpened, docOpened, externalLink, findPathOpened, findPathResults, groupCreated, groupDeleted, groupRenamed, jsonError, layoutCreated, layoutDeleted, layoutLoaded, memoDeleted, memoSaved, notFound, notesCreated, notesDeleted, notesUpdated, planLimit, projectDraftCreated, projectLoaded, searchClicked, sourceAdded, sourceCreated, sourceDeleted, sourceEditorClosed, sourceEditorOpened, sourceRefreshed, sqlSourceCreated, tableRowOpened, tableRowResult, tagsCreated, tagsDeleted, tagsUpdated)
 
 import Conf exposing (Feature, Features)
 import DataSources.Helpers exposing (SourceLine)
@@ -10,21 +10,29 @@ import Json.Decode as Decode
 import Json.Encode as Encode
 import Libs.Bool as Bool
 import Libs.Dict as Dict
+import Libs.Json.Encode as Encode
 import Libs.Maybe as Maybe
+import Libs.Models.DatabaseKind as DatabaseKind
 import Libs.Models.Notes exposing (Notes)
 import Libs.Models.Tag exposing (Tag)
 import Libs.Result as Result
+import Models.DbSource exposing (DbSource)
+import Models.DbSourceInfo exposing (DbSourceInfo)
 import Models.OrganizationId exposing (OrganizationId)
 import Models.Plan as Plan
 import Models.Project exposing (Project)
 import Models.Project.ProjectId as ProjectId exposing (ProjectId)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceKind as SourceKind
+import Models.Project.TableRow as TableRow
 import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
+import Models.QueryResult exposing (QueryResult)
+import Models.SqlQuery exposing (SqlQuery, SqlQueryOrigin)
 import Models.TrackEvent exposing (TrackClick, TrackEvent)
 import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.FindPathResult exposing (FindPathResult)
 import Ports
+import Time
 
 
 
@@ -191,14 +199,45 @@ sourceEditorClosed erd =
     sendEvent "editor__source_editor__closed" [] (erd |> Maybe.map .project)
 
 
-queryPaneOpened : List Source -> { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> Cmd msg
-queryPaneOpened sources erd =
-    sendEvent "editor__query_pane__opened" [ ( "nb_sources", sources |> List.length |> Encode.int ), ( "nb_db_sources", sources |> List.filter (.kind >> SourceKind.isDatabase) |> List.length |> Encode.int ) ] (Just erd.project)
+dataExplorerOpened : List Source -> Maybe DbSource -> Maybe SqlQueryOrigin -> { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> Cmd msg
+dataExplorerOpened sources source query project =
+    sendEvent "editor__data_explorer__opened"
+        [ ( "nb_sources", sources |> List.length |> Encode.int )
+        , ( "nb_db_sources", sources |> List.filter (.kind >> SourceKind.isDatabase) |> List.length |> Encode.int )
+        , ( "db", source |> Maybe.map (.db >> .kind) |> Encode.maybe DatabaseKind.encode )
+        , ( "query", query |> Maybe.map .origin |> Encode.maybe Encode.string )
+        ]
+        (Just project)
 
 
-queryPaneClosed : { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> Cmd msg
-queryPaneClosed erd =
-    sendEvent "editor__query_pane__closed" [] (Just erd.project)
+dataExplorerQueryOpened : DbSourceInfo -> SqlQueryOrigin -> { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> Cmd msg
+dataExplorerQueryOpened source query project =
+    sendEvent "data_explorer__query__opened" [ ( "db", source.db.kind |> DatabaseKind.encode ), ( "query", query.origin |> Encode.string ) ] (Just project)
+
+
+dataExplorerQueryResult : QueryResult -> { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> Cmd msg
+dataExplorerQueryResult res project =
+    sendEvent "data_explorer__query__result" (queryResultDetails res) (Just project)
+
+
+dataExplorerDetailsOpened : DbSourceInfo -> SqlQueryOrigin -> { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> Cmd msg
+dataExplorerDetailsOpened source query project =
+    sendEvent "data_explorer__details__opened" [ ( "db", source.db.kind |> DatabaseKind.encode ), ( "query", query.origin |> Encode.string ) ] (Just project)
+
+
+dataExplorerDetailsResult : QueryResult -> { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> Cmd msg
+dataExplorerDetailsResult res project =
+    sendEvent "data_explorer__details__result" (queryResultDetails res) (Just project)
+
+
+tableRowOpened : Maybe TableRow.SuccessState -> DbSourceInfo -> SqlQueryOrigin -> { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> Cmd msg
+tableRowOpened previous source query project =
+    sendEvent "data_explorer__table_row__opened" [ ( "db", source.db.kind |> DatabaseKind.encode ), ( "query", query.origin |> Encode.string ), ( "previous", previous /= Nothing |> Encode.bool ) ] (Just project)
+
+
+tableRowResult : QueryResult -> { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> Cmd msg
+tableRowResult res project =
+    sendEvent "data_explorer__table_row__result" (queryResultDetails res) (Just project)
 
 
 planLimit : (Features -> Feature a) -> Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId, plan : { pl | id : String } }, id : ProjectId } } -> Cmd msg
@@ -300,3 +339,17 @@ findPathDetails result =
     , ( "nb_ignored_tables", result.settings.ignoredTables |> String.split "," |> List.length |> Encode.int )
     , ( "path_max_length", result.settings.maxPathLength |> Encode.int )
     ]
+
+
+queryResultDetails : QueryResult -> List ( String, Encode.Value )
+queryResultDetails res =
+    (res.result
+        |> Result.fold (\err -> [ ( "error", err |> Encode.string ) ])
+            (\r ->
+                [ ( "rows", r.rows |> List.length |> Encode.int )
+                , ( "columns", r.columns |> List.length |> Encode.int )
+                , ( "column_refs", r.columns |> List.filter (\c -> c.ref /= Nothing) |> List.length |> Encode.int )
+                ]
+            )
+    )
+        ++ [ ( "db", res.query.db |> DatabaseKind.encode ), ( "query", res.query.origin |> Encode.string ), ( "duration", Time.posixToMillis res.finished - Time.posixToMillis res.started |> Encode.int ) ]

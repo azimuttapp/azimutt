@@ -1,4 +1,4 @@
-module Components.Organisms.Relation exposing (Direction(..), RelationConf, bezier, doc, show, steps, straight)
+module Components.Organisms.Relation exposing (Direction(..), Model, doc, show)
 
 import ElmBook.Actions exposing (logAction)
 import ElmBook.Chapter as Chapter exposing (Chapter)
@@ -6,7 +6,6 @@ import ElmBook.Custom exposing (Msg)
 import Html exposing (Html, div)
 import Html.Events exposing (onMouseEnter, onMouseLeave)
 import Libs.Bool as Bool
-import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.Delta exposing (Delta)
 import Libs.Models.Position as Position exposing (Position)
@@ -16,11 +15,26 @@ import Libs.Tailwind as Tw exposing (Color, fill_500, stroke_500)
 import Models.Position as Position
 import Models.RelationStyle as RelationStyle exposing (RelationStyle)
 import Svg exposing (Attribute, Svg, svg, text)
-import Svg.Attributes exposing (class, d, height, strokeDasharray, style, width, x1, x2, y1, y2)
+import Svg.Attributes exposing (class, d, height, style, width, x1, x2, y1, y2)
 
 
-type alias RelationConf =
+type alias Model =
     { hover : Bool }
+
+
+
+{-
+   -- https://www.freecodecamp.org/news/crows-foot-notation-relationship-symbols-and-how-to-read-diagrams/
+   -- https://vertabelo.com/blog/crow-s-foot-notation/
+   type CrowFoot
+      = Zero
+      | ZeroOrOne
+      | ZeroOrMany
+      | One
+      | OneOnly
+      | OneOrMany
+      | Many
+-}
 
 
 type Direction
@@ -29,43 +43,43 @@ type Direction
     | None
 
 
-show : RelationStyle -> RelationConf -> ( Position.Canvas, Direction ) -> ( Position.Canvas, Direction ) -> Bool -> Maybe Color -> String -> (Bool -> msg) -> Svg msg
-show style conf src ref nullable color label onHover =
+show : RelationStyle -> Model -> ( Position.Canvas, Direction ) -> ( Position.Canvas, Direction ) -> List (Attribute msg) -> Maybe Color -> String -> (Bool -> msg) -> Svg msg
+show style model src ref lineStyle color label onHover =
     case style of
         RelationStyle.Bezier ->
-            bezier conf src ref nullable color label onHover
+            bezier model src ref lineStyle color label onHover
 
         RelationStyle.Straight ->
-            straight conf src ref nullable color label onHover
+            straight model src ref lineStyle color label onHover
 
         RelationStyle.Steps ->
-            steps conf src ref nullable color label onHover
+            steps model src ref lineStyle color label onHover
 
 
-straight : RelationConf -> ( Position.Canvas, Direction ) -> ( Position.Canvas, Direction ) -> Bool -> Maybe Color -> String -> (Bool -> msg) -> Svg msg
-straight conf ( src, _ ) ( ref, _ ) nullable color label onHover =
-    buildSvg { src = src, ref = ref, nullable = nullable, color = color, label = label, padding = 12 }
-        (\origin -> drawLine conf (src |> Position.moveCanvas origin) (ref |> Position.moveCanvas origin) onHover)
+straight : Model -> ( Position.Canvas, Direction ) -> ( Position.Canvas, Direction ) -> List (Attribute msg) -> Maybe Color -> String -> (Bool -> msg) -> Svg msg
+straight model ( src, _ ) ( ref, _ ) lineStyle color label onHover =
+    buildSvg { src = src, ref = ref, label = label, padding = 12 }
+        (\origin -> drawLine model (src |> Position.moveCanvas origin) (ref |> Position.moveCanvas origin) lineStyle color onHover)
 
 
-bezier : RelationConf -> ( Position.Canvas, Direction ) -> ( Position.Canvas, Direction ) -> Bool -> Maybe Color -> String -> (Bool -> msg) -> Svg msg
-bezier conf ( src, srcDir ) ( ref, refDir ) nullable color label onHover =
-    buildSvg { src = src, ref = ref, nullable = nullable, color = color, label = label, padding = 50 }
-        (\origin -> drawCurve conf ( src |> Position.moveCanvas origin, srcDir ) ( ref |> Position.moveCanvas origin, refDir ) onHover)
+bezier : Model -> ( Position.Canvas, Direction ) -> ( Position.Canvas, Direction ) -> List (Attribute msg) -> Maybe Color -> String -> (Bool -> msg) -> Svg msg
+bezier model ( src, srcDir ) ( ref, refDir ) lineStyle color label onHover =
+    buildSvg { src = src, ref = ref, label = label, padding = 50 }
+        (\origin -> drawCurve model ( src |> Position.moveCanvas origin, srcDir ) ( ref |> Position.moveCanvas origin, refDir ) lineStyle color onHover)
 
 
-steps : RelationConf -> ( Position.Canvas, Direction ) -> ( Position.Canvas, Direction ) -> Bool -> Maybe Color -> String -> (Bool -> msg) -> Svg msg
-steps conf ( src, srcDir ) ( ref, refDir ) nullable color label onHover =
-    buildSvg { src = src, ref = ref, nullable = nullable, color = color, label = label, padding = 50 }
-        (\origin -> drawSteps conf ( src |> Position.moveCanvas origin, srcDir ) ( ref |> Position.moveCanvas origin, refDir ) onHover)
+steps : Model -> ( Position.Canvas, Direction ) -> ( Position.Canvas, Direction ) -> List (Attribute msg) -> Maybe Color -> String -> (Bool -> msg) -> Svg msg
+steps model ( src, srcDir ) ( ref, refDir ) lineStyle color label onHover =
+    buildSvg { src = src, ref = ref, label = label, padding = 50 }
+        (\origin -> drawSteps model ( src |> Position.moveCanvas origin, srcDir ) ( ref |> Position.moveCanvas origin, refDir ) lineStyle color onHover)
 
 
 type alias SvgParams =
-    { src : Position.Canvas, ref : Position.Canvas, nullable : Bool, color : Maybe Color, label : String, padding : Float }
+    { src : Position.Canvas, ref : Position.Canvas, label : String, padding : Float }
 
 
-buildSvg : SvgParams -> (Delta -> Bool -> Maybe Color -> List (Svg msg)) -> Svg msg
-buildSvg { src, ref, nullable, color, label, padding } svgContent =
+buildSvg : SvgParams -> (Delta -> List (Svg msg)) -> Svg msg
+buildSvg { src, ref, label, padding } svgContent =
     let
         ( srcPos, refPos ) =
             ( src |> Position.extractCanvas, ref |> Position.extractCanvas )
@@ -83,11 +97,11 @@ buildSvg { src, ref, nullable, color, label, padding } svgContent =
         --, style ("transform: translate(" ++ String.fromFloat origin.left ++ "px, " ++ String.fromFloat origin.top ++ "px);")
         --, style ("transform: translate3d(" ++ String.fromFloat origin.left ++ "px, " ++ String.fromFloat origin.top ++ "px, 0);")
         ]
-        (text label :: svgContent (Position.zero |> Position.diff origin) nullable color)
+        (text label :: svgContent (Position.zero |> Position.diff origin))
 
 
-drawLine : RelationConf -> Position.Canvas -> Position.Canvas -> (Bool -> msg) -> Bool -> Maybe Color -> List (Svg msg)
-drawLine conf pos1 pos2 onHover nullable color =
+drawLine : Model -> Position.Canvas -> Position.Canvas -> List (Attribute msg) -> Maybe Color -> (Bool -> msg) -> List (Svg msg)
+drawLine model pos1 pos2 lineStyle color onHover =
     let
         ( p1, p2 ) =
             ( pos1 |> Position.extractCanvas, pos2 |> Position.extractCanvas )
@@ -97,16 +111,17 @@ drawLine conf pos1 pos2 onHover nullable color =
          , y1 (String.fromFloat p1.top)
          , x2 (String.fromFloat p2.left)
          , y2 (String.fromFloat p2.top)
+         , css [ "fill-transparent", color |> Maybe.mapOrElse (\c -> stroke_500 c ++ " stroke-2") "stroke-default-400 stroke-1" ]
          ]
-            ++ lineAttrs nullable color
-            ++ Bool.cond conf.hover [ onMouseEnter (onHover True), onMouseLeave (onHover False) ] []
+            ++ lineStyle
+            ++ Bool.cond model.hover [ onMouseEnter (onHover True), onMouseLeave (onHover False) ] []
         )
         []
     ]
 
 
-drawCurve : RelationConf -> ( Position.Canvas, Direction ) -> ( Position.Canvas, Direction ) -> (Bool -> msg) -> Bool -> Maybe Color -> List (Svg msg)
-drawCurve conf ( pos1, dir1 ) ( pos2, dir2 ) onHover nullable color =
+drawCurve : Model -> ( Position.Canvas, Direction ) -> ( Position.Canvas, Direction ) -> List (Attribute msg) -> Maybe Color -> (Bool -> msg) -> List (Svg msg)
+drawCurve model ( pos1, dir1 ) ( pos2, dir2 ) lineStyle color onHover =
     let
         ( p1, p2 ) =
             ( pos1 |> Position.extractCanvas, pos2 |> Position.extractCanvas )
@@ -129,19 +144,26 @@ drawCurve conf ( pos1, dir1 ) ( pos2, dir2 ) onHover nullable color =
 
         hoverAttrs : List (Attribute msg)
         hoverAttrs =
-            if conf.hover then
+            if model.hover then
                 [ onMouseEnter (onHover True), onMouseLeave (onHover False) ]
 
             else
                 []
     in
-    [ Svg.path ([ d (path |> String.join " ") ] ++ hoverAttrs ++ lineAttrs nullable color) []
+    [ Svg.path
+        ([ d (path |> String.join " ")
+         , css [ "fill-transparent", color |> Maybe.mapOrElse (\c -> stroke_500 c ++ " stroke-2") "stroke-default-400 stroke-1" ]
+         ]
+            ++ lineStyle
+            ++ hoverAttrs
+        )
+        []
     , circle (p2 |> add 2 dir2) 2.5 [ class (color |> Maybe.mapOrElse (\c -> fill_500 c) "fill-default-400") ]
     ]
 
 
-drawSteps : RelationConf -> ( Position.Canvas, Direction ) -> ( Position.Canvas, Direction ) -> (Bool -> msg) -> Bool -> Maybe Color -> List (Svg msg)
-drawSteps conf ( pos1, dir1 ) ( pos2, dir2 ) onHover nullable color =
+drawSteps : Model -> ( Position.Canvas, Direction ) -> ( Position.Canvas, Direction ) -> List (Attribute msg) -> Maybe Color -> (Bool -> msg) -> List (Svg msg)
+drawSteps model ( pos1, dir1 ) ( pos2, dir2 ) lineStyle color onHover =
     let
         ( p1, p2 ) =
             ( pos1 |> Position.extractCanvas, pos2 |> Position.extractCanvas )
@@ -208,13 +230,20 @@ drawSteps conf ( pos1, dir1 ) ( pos2, dir2 ) onHover nullable color =
 
         hoverAttrs : List (Attribute msg)
         hoverAttrs =
-            if conf.hover then
+            if model.hover then
                 [ onMouseEnter (onHover True), onMouseLeave (onHover False) ]
 
             else
                 []
     in
-    [ Svg.path ([ d (path |> String.join " ") ] ++ hoverAttrs ++ lineAttrs nullable color) []
+    [ Svg.path
+        ([ d (path |> String.join " ")
+         , css [ "fill-transparent", color |> Maybe.mapOrElse (\c -> stroke_500 c ++ " stroke-2") "stroke-default-400 stroke-1" ]
+         ]
+            ++ lineStyle
+            ++ hoverAttrs
+        )
+        []
     , circle (p2 |> add 2 dir2) 2.5 [ class (color |> Maybe.mapOrElse (\c -> fill_500 c) "fill-default-400") ]
     ]
 
@@ -242,14 +271,6 @@ apply dir =
             0
 
 
-lineAttrs : Bool -> Maybe Color -> List (Attribute msg)
-lineAttrs nullable color =
-    List.prependIf nullable
-        (strokeDasharray "4")
-        [ css [ "fill-transparent", color |> Maybe.mapOrElse (\c -> stroke_500 c ++ " stroke-2") "stroke-default-400 stroke-1" ]
-        ]
-
-
 
 -- DOCUMENTATION
 
@@ -261,12 +282,11 @@ doc =
             [ ( "straight", samples straight )
             , ( "bezier", samples bezier )
             , ( "steps", samples steps )
-            , ( "green", div [ class "h-12" ] [ straight { hover = True } ( Position.zeroCanvas, Right ) ( Position 50 50 |> Position.canvas, Left ) False (Just Tw.green) "relation" (\_ -> logAction "hover relation") ] )
-            , ( "nullable", div [ class "h-12" ] [ straight { hover = True } ( Position.zeroCanvas, Right ) ( Position 50 50 |> Position.canvas, Left ) True Nothing "relation" (\_ -> logAction "hover relation") ] )
+            , ( "green", div [ class "h-12" ] [ straight { hover = True } ( Position.zeroCanvas, Right ) ( Position 50 50 |> Position.canvas, Left ) [] (Just Tw.green) "relation" (\_ -> logAction "hover relation") ] )
             ]
 
 
-samples : (RelationConf -> ( Position.Canvas, Direction ) -> ( Position.Canvas, Direction ) -> Bool -> Maybe Color -> String -> (Bool -> Msg state) -> Svg (Msg state)) -> Html (Msg state)
+samples : (Model -> ( Position.Canvas, Direction ) -> ( Position.Canvas, Direction ) -> List (Attribute msg) -> Maybe Color -> String -> (Bool -> Msg state) -> Svg (Msg state)) -> Html (Msg state)
 samples displayRelation =
     let
         ( p0, p55 ) =
@@ -287,11 +307,11 @@ samples displayRelation =
         [ div [ class "flex flex-row h-12" ]
             ([ ( p0, p55 ), ( p05, p50 ) ]
                 |> List.concatMap (\( src, ref ) -> dirs |> List.map (\( dir1, dir2 ) -> ( ( src, dir1 ), ( ref, dir2 ) )))
-                |> List.map (\( src, ref ) -> div [ class "relative w-28" ] [ displayRelation { hover = True } src ref False Nothing "relation" (\_ -> logAction "hover relation") ])
+                |> List.map (\( src, ref ) -> div [ class "relative w-28" ] [ displayRelation { hover = True } src ref [] Nothing "relation" (\_ -> logAction "hover relation") ])
             )
         , div [ class "flex flex-row h-12 mt-6" ]
             ([ ( p55, p0 ), ( p50, p05 ) ]
                 |> List.concatMap (\( src, ref ) -> dirs |> List.map (\( dir1, dir2 ) -> ( ( src, dir1 ), ( ref, dir2 ) )))
-                |> List.map (\( src, ref ) -> div [ class "relative w-28" ] [ displayRelation { hover = True } src ref False Nothing "relation" (\_ -> logAction "hover relation") ])
+                |> List.map (\( src, ref ) -> div [ class "relative w-28" ] [ displayRelation { hover = True } src ref [] Nothing "relation" (\_ -> logAction "hover relation") ])
             )
         ]

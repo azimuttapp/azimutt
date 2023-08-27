@@ -1,9 +1,11 @@
 module PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, AmlSidebarMsg(..), ConfirmDialog, ContextMenu, FindPathMsg(..), GroupEdit, GroupMsg(..), HelpDialog, HelpMsg(..), LayoutMsg(..), MemoEdit, MemoMsg(..), ModalDialog, Model, Msg(..), NavbarModel, NotesDialog, ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, VirtualRelation, VirtualRelationMsg(..), confirm, confirmDanger, emptyModel, prompt, simplePrompt)
 
 import Components.Atoms.Icon exposing (Icon(..))
+import Components.Organisms.TableRow as TableRow exposing (TableRowHover)
+import Components.Slices.DataExplorer as DataExplorer
 import Components.Slices.ProPlan as ProPlan
-import Components.Slices.QueryPane as QueryPane
 import DataSources.AmlMiner.AmlAdapter exposing (AmlSchemaError)
+import DataSources.DbMiner.DbTypes exposing (RowQuery)
 import Dict exposing (Dict)
 import Html exposing (Html, text)
 import Libs.Html.Events exposing (PointerEvent, WheelEvent)
@@ -16,6 +18,7 @@ import Libs.Tailwind as Tw exposing (Color)
 import Libs.Task as T
 import Models.Area as Area
 import Models.ColumnOrder exposing (ColumnOrder)
+import Models.DbSourceInfo exposing (DbSourceInfo)
 import Models.ErdProps as ErdProps exposing (ErdProps)
 import Models.Organization exposing (Organization)
 import Models.Position as Position
@@ -32,6 +35,7 @@ import Models.Project.Source exposing (Source)
 import Models.Project.SourceId exposing (SourceId, SourceIdStr)
 import Models.Project.SourceName exposing (SourceName)
 import Models.Project.TableId exposing (TableId)
+import Models.Project.TableRow as TableRow
 import Models.Project.TableStats exposing (TableStats)
 import Models.ProjectInfo exposing (ProjectInfo)
 import Models.RelationStyle exposing (RelationStyle)
@@ -71,8 +75,11 @@ type alias Model =
     , erd : Maybe Erd
     , tableStats : Dict TableId (Dict SourceIdStr (Result String TableStats))
     , columnStats : Dict ColumnId (Dict SourceIdStr (Result String ColumnStats))
+
+    -- TODO: merge `hoverTable` & `hoverColumn` into `hoverTable`, like `hoverTableRow`
     , hoverTable : Maybe TableId
     , hoverColumn : Maybe ColumnRef
+    , hoverTableRow : Maybe TableRowHover
     , cursorMode : CursorMode
     , selectionBox : Maybe Area.Canvas
     , newLayout : Maybe NewLayout.Model
@@ -82,7 +89,7 @@ type alias Model =
     , editMemo : Maybe MemoEdit
     , amlSidebar : Maybe AmlSidebar
     , detailsSidebar : Maybe DetailsSidebar.Model
-    , queryPane : Maybe QueryPane.Model
+    , dataExplorer : DataExplorer.Model
     , virtualRelation : Maybe VirtualRelation
     , findPath : Maybe FindPathDialog
     , schemaAnalysis : Maybe SchemaAnalysisDialog
@@ -119,6 +126,7 @@ emptyModel =
     , columnStats = Dict.empty
     , hoverTable = Nothing
     , hoverColumn = Nothing
+    , hoverTableRow = Nothing
     , cursorMode = CursorMode.Select
     , selectionBox = Nothing
     , newLayout = Nothing
@@ -128,7 +136,7 @@ emptyModel =
     , editMemo = Nothing
     , amlSidebar = Nothing
     , detailsSidebar = Nothing
-    , queryPane = Nothing
+    , dataExplorer = DataExplorer.init
     , virtualRelation = Nothing
     , findPath = Nothing
     , schemaAnalysis = Nothing
@@ -226,7 +234,7 @@ type Msg
     | HideTable TableId
     | ShowRelatedTables TableId
     | HideRelatedTables TableId
-    | ToggleColumns TableId
+    | ToggleTableCollapse TableId
     | ShowColumn ColumnRef
     | HideColumn ColumnRef
     | ShowColumns TableId ShowColumns
@@ -234,8 +242,8 @@ type Msg
     | SortColumns TableId ColumnOrder
     | ToggleNestedColumn TableId ColumnPath Bool
     | ToggleHiddenColumns TableId
-    | SelectTable TableId Bool
-    | SelectAllTables
+    | SelectItem HtmlId Bool
+    | SelectAll
     | TableMove TableId Delta
     | TablePosition TableId Position.Grid
     | TableOrder TableId Int
@@ -243,6 +251,7 @@ type Msg
     | MoveColumn ColumnRef Int
     | ToggleHoverTable TableId Bool
     | ToggleHoverColumn ColumnRef Bool
+    | HoverTableRow TableRowHover Bool
     | CreateUserSource SourceName
     | CreateUserSourceWithId Source
     | CreateRelation ColumnRef ColumnRef
@@ -252,9 +261,12 @@ type Msg
     | TagsMsg TagsMsg
     | GroupMsg GroupMsg
     | MemoMsg MemoMsg
+    | ShowTableRow DbSourceInfo RowQuery (Maybe TableRow.SuccessState) (Maybe PositionHint)
+    | DeleteTableRow TableRow.Id
+    | TableRowMsg TableRow.Id TableRow.Msg
     | AmlSidebarMsg AmlSidebarMsg
     | DetailsSidebarMsg DetailsSidebar.Msg
-    | QueryPaneMsg QueryPane.Msg
+    | DataExplorerMsg DataExplorer.Msg
     | VirtualRelationMsg VirtualRelationMsg
     | FindPathMsg FindPathMsg
     | SchemaAnalysisMsg SchemaAnalysisMsg
@@ -277,7 +289,7 @@ type Msg
     | DropdownToggle HtmlId
     | DropdownOpen HtmlId
     | DropdownClose
-    | PopoverSet HtmlId
+    | PopoverOpen HtmlId
     | ContextMenuCreate (Html Msg) PointerEvent
     | ContextMenuShow
     | ContextMenuClose
@@ -286,8 +298,6 @@ type Msg
     | DragEnd Position.Viewport
     | DragCancel
     | Toast Toasts.Msg
-    | CustomModalOpen (Msg -> String -> Html Msg)
-    | CustomModalClose
     | ConfirmOpen (Confirm Msg)
     | ConfirmAnswer Bool (Cmd Msg)
     | PromptOpen (Prompt Msg) String
@@ -295,6 +305,8 @@ type Msg
     | PromptAnswer (Cmd Msg)
     | ModalOpen HtmlId
     | ModalClose Msg
+    | CustomModalOpen (Msg -> HtmlId -> Html Msg)
+    | CustomModalClose
     | JsMessage JsMsg
     | Batch (List Msg)
     | Send (Cmd Msg)

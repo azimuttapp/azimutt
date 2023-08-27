@@ -16,6 +16,7 @@ type alias Memo =
     , position : Position.Grid
     , size : Size.Canvas
     , color : Maybe Color
+    , selected : Bool
     }
 
 
@@ -27,14 +28,16 @@ encode value =
         , ( "position", value.position |> Position.encodeGrid )
         , ( "size", value.size |> Size.encodeCanvas )
         , ( "color", value.color |> Encode.maybe Tw.encodeColor )
+        , ( "selected", value.selected |> Encode.withDefault Encode.bool False )
         ]
 
 
 decode : Decoder Memo
 decode =
-    Decode.map5 Memo
+    Decode.map6 Memo
         (Decode.field "id" Decode.int)
         (Decode.field "content" Decode.string)
         (Decode.field "position" Position.decodeGrid)
         (Decode.field "size" Size.decodeCanvas)
         (Decode.maybeField "color" Tw.decodeColor)
+        (Decode.defaultField "selected" Decode.bool False)

@@ -22,6 +22,7 @@ import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.ColumnType as ColumnType
 import Models.Project.CustomTypeValue as CustomTypeValue
 import Models.Project.SchemaName exposing (SchemaName)
+import Models.Project.TableId as TableId
 import Models.Project.TableMeta exposing (TableMeta)
 import Models.Size as Size
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
@@ -32,7 +33,7 @@ import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumn
 import PagesComponents.Organization_.Project_.Models.ErdColumnRef exposing (ErdColumnRef)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
-import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable)
+import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.NotesMsg exposing (NotesMsg(..))
 import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint(..))
@@ -72,8 +73,8 @@ viewTable conf zoom args layout meta tableLayout table =
         ( columns, hiddenColumns ) =
             table.columns |> Dict.values |> List.map (\c -> buildColumn useBasicTypes meta tableLayout c) |> List.partition (\c -> tableLayout.columns |> ErdColumnProps.member c.path)
 
-        drag : List (Attribute Msg)
-        drag =
+        dragAttrs : List (Attribute Msg)
+        dragAttrs =
             B.cond (cursorMode == CursorMode.Drag || not conf.move) [] [ onPointerDown (handleTablePointerDown table.htmlId) platform ]
 
         dropdown : Html Msg
@@ -91,7 +92,7 @@ viewTable conf zoom args layout meta tableLayout table =
                 _ ->
                     ( False, [] )
     in
-    div ([ css [ "select-none absolute" ], classList [ ( "z-max", tableLayout.props.selected ), ( "invisible", tableLayout.props.size == Size.zeroCanvas ) ] ] ++ Position.stylesGrid tableLayout.props.position ++ drag)
+    div ([ css [ "select-none absolute" ], classList [ ( "z-max", tableLayout.props.selected ), ( "invisible", tableLayout.props.size == Size.zeroCanvas ) ] ] ++ Position.stylesGrid tableLayout.props.position ++ dragAttrs)
         [ Table.table
             { id = table.htmlId
             , ref = { schema = table.schema, table = table.name }
@@ -116,14 +117,14 @@ viewTable conf zoom args layout meta tableLayout table =
                 }
             , actions =
                 { hover = ToggleHoverTable table.id
-                , headerClick = \e -> B.cond (e.button == MainButton) (SelectTable table.id (e.ctrl || e.shift)) (Noop "non-main-button-table-header-click")
+                , headerClick = \e -> B.cond (e.button == MainButton) (SelectItem (TableId.toHtmlId table.id) (e.ctrl || e.shift)) (Noop "non-main-button-table-header-click")
                 , headerDblClick = DetailsSidebarMsg (DetailsSidebar.ShowTable table.id)
                 , headerRightClick = ContextMenuCreate dropdown
                 , headerDropdownClick = DropdownToggle
                 , columnHover = \col on -> ToggleHoverColumn { table = table.id, column = col } on
                 , columnClick = B.maybe virtualRelation (\col e -> VirtualRelationMsg (VRUpdate { table = table.id, column = col } e.clientPos))
                 , columnDblClick = \col -> { table = table.id, column = col } |> DetailsSidebar.ShowColumn |> DetailsSidebarMsg
-                , columnRightClick = \i col -> ContextMenuCreate (B.cond (tableLayout.columns |> ErdColumnProps.member col) ColumnContextMenu.view ColumnContextMenu.viewHidden platform i { table = table.id, column = col } (meta.columns |> ColumnPath.get col |> Maybe.andThen .notes))
+                , columnRightClick = \i col -> ContextMenuCreate (B.cond (tableLayout.columns |> ErdColumnProps.member col) ColumnContextMenu.view ColumnContextMenu.viewHidden platform i { table = table.id, column = col } (table |> ErdTable.getColumn col) (meta.columns |> ColumnPath.get col |> Maybe.andThen .notes))
                 , notesClick = \col -> NotesMsg (NOpen table.id col)
                 , relationsIconClick =
                     \cols isOut ->
@@ -140,7 +141,7 @@ viewTable conf zoom args layout meta tableLayout table =
                                             ShowTables (cols |> List.map (\col -> ( col.column.schema, col.column.table ))) hint
                                )
                 , nestedIconClick = ToggleNestedColumn table.id
-                , hiddenColumnsHover = \id on -> PopoverSet (B.cond on id "")
+                , hiddenColumnsHover = \id on -> PopoverOpen (B.cond on id "")
                 , hiddenColumnsClick = ToggleHiddenColumns table.id
                 }
             , zoom = zoom

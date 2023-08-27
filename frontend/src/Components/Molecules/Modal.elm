@@ -1,4 +1,4 @@
-module Components.Molecules.Modal exposing (ConfirmModel, DocState, Model, PromptModel, SharedDocState, confirm, doc, initDocState, modal, prompt)
+module Components.Molecules.Modal exposing (ConfirmModel, DocState, Model, PromptModel, SharedDocState, confirm, doc, docInit, modal, prompt)
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
@@ -162,8 +162,8 @@ type alias DocState =
     { opened : String, input : String }
 
 
-initDocState : DocState
-initDocState =
+docInit : DocState
+docInit =
     { opened = "", input = "" }
 
 

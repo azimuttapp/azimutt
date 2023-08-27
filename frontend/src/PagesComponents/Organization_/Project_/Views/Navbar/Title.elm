@@ -115,9 +115,9 @@ viewProjectsDropdown platform eConf projects project dirty htmlId openedDropdown
         (\_ ->
             div [ class "divide-y divide-gray-100" ]
                 ([ if eConf.save then
-                    [ ContextMenu.btnHotkey "" TriggerSaveProject [ text "Save project" ] platform (Conf.hotkeys |> Dict.getOrElse "save" [])
-                    , ContextMenu.btn "" (RenameProject |> prompt "Rename project" (text "") project.name) [ text "Rename project" ]
-                    , ContextMenu.btn "" (DeleteProject project |> confirmDanger "Delete project?" (text "This action is definitive!")) [ text "Delete project" ]
+                    [ ContextMenu.btnHotkey "" TriggerSaveProject [] [ text "Save project" ] platform (Conf.hotkeys |> Dict.getOrElse "save" [])
+                    , ContextMenu.btn "" (RenameProject |> prompt "Rename project" (text "") project.name) [] [ text "Rename project" ]
+                    , ContextMenu.btn "" (DeleteProject project |> confirmDanger "Delete project?" (text "This action is definitive!")) [] [ text "Delete project" ]
                     ]
 
                    else
@@ -129,7 +129,8 @@ viewProjectsDropdown platform eConf projects project dirty htmlId openedDropdown
                  , organizationProjects
                     |> List.map
                         (\( org, orgProjects ) ->
-                            ContextMenu.submenuHtml [ Avatar.xs org.logo org.name "mr-2", span [] [ text (org.name ++ " »") ] ]
+                            ContextMenu.submenuHtml ContextMenu.BottomRight
+                                [ Avatar.xs org.logo org.name "mr-2", span [] [ text (org.name ++ " »") ] ]
                                 (orgProjects |> List.map (viewProjectsDropdownItem project.id))
                         )
                  , [ ContextMenu.link { url = currentOrganization |> Just |> Maybe.filter (\id -> projectsPerOrganization |> Dict.member id) |> Backend.organizationUrl, text = "Back to dashboard" } ]
@@ -174,7 +175,7 @@ viewLayouts platform currentLayout layouts htmlId openedDropdown =
         (\_ ->
             div [ class "min-w-max divide-y divide-gray-100" ]
                 [ div [ role "none", class "py-1" ]
-                    [ ContextMenu.btnHotkey "" (NewLayout.Open Nothing |> NewLayoutMsg) [ text "Create new layout" ] platform (Conf.hotkeys |> Dict.getOrElse "create-layout" []) ]
+                    [ ContextMenu.btnHotkey "" (NewLayout.Open Nothing |> NewLayoutMsg) [] [ text "Create new layout" ] platform (Conf.hotkeys |> Dict.getOrElse "create-layout" []) ]
                 , div [ role "none", class "py-1" ]
                     (layouts
                         |> Dict.toList
@@ -193,7 +194,7 @@ viewLayoutItem isCurrent name layout =
         , button [ type_ "button", onClick (name |> LLoad |> LayoutMsg), css [ "flex-grow text-left ml-3", focus [ "outline-none" ] ] ]
             [ text name
             , text " "
-            , small [] [ text ("(" ++ (layout.tables |> String.pluralizeL "table") ++ ")") ]
+            , small [] [ text ("(" ++ ((List.length layout.tables + List.length layout.tableRows + List.length layout.memos) |> String.pluralize "item") ++ ")") ]
             ]
         ]
 

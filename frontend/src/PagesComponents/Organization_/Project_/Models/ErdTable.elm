@@ -12,14 +12,15 @@ import Models.Project.Comment exposing (Comment)
 import Models.Project.CustomType exposing (CustomType)
 import Models.Project.CustomTypeId exposing (CustomTypeId)
 import Models.Project.Index exposing (Index)
-import Models.Project.Origin exposing (Origin)
 import Models.Project.PrimaryKey exposing (PrimaryKey)
 import Models.Project.SchemaName exposing (SchemaName)
+import Models.Project.Source exposing (Source)
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableName exposing (TableName)
 import Models.Project.Unique exposing (Unique)
 import PagesComponents.Organization_.Project_.Models.ErdColumn as ErdColumn exposing (ErdColumn)
+import PagesComponents.Organization_.Project_.Models.ErdOrigin as ErdOrigin exposing (ErdOrigin)
 import PagesComponents.Organization_.Project_.Models.ErdRelation exposing (ErdRelation)
 
 
@@ -36,12 +37,12 @@ type alias ErdTable =
     , indexes : List Index
     , checks : List Check
     , comment : Maybe Comment
-    , origins : List Origin
+    , origins : List ErdOrigin
     }
 
 
-create : SchemaName -> Dict CustomTypeId CustomType -> List ErdRelation -> Table -> ErdTable
-create defaultSchema types tableRelations table =
+create : SchemaName -> List Source -> Dict CustomTypeId CustomType -> List ErdRelation -> Table -> ErdTable
+create defaultSchema sources types tableRelations table =
     let
         relationsByRootColumn : Dict ColumnName (List ErdRelation)
         relationsByRootColumn =
@@ -70,13 +71,13 @@ create defaultSchema types tableRelations table =
     , schema = table.schema
     , name = table.name
     , view = table.view
-    , columns = table.columns |> Dict.map (\name -> ErdColumn.create defaultSchema types (relationsByRootColumn |> Dict.getOrElse name []) table (ColumnPath.fromString name))
+    , columns = table.columns |> Dict.map (\name -> ErdColumn.create defaultSchema sources types (relationsByRootColumn |> Dict.getOrElse name []) table (ColumnPath.fromString name))
     , primaryKey = table.primaryKey
     , uniques = table.uniques
     , indexes = table.indexes
     , checks = table.checks
     , comment = table.comment
-    , origins = table.origins
+    , origins = table.origins |> List.map (ErdOrigin.create sources)
     }
 
 
@@ -92,7 +93,7 @@ unpack table =
     , indexes = table.indexes
     , checks = table.checks
     , comment = table.comment
-    , origins = table.origins
+    , origins = table.origins |> List.map ErdOrigin.unpack
     }
 
 

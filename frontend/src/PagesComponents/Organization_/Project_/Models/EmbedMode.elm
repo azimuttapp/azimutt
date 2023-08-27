@@ -17,7 +17,7 @@ all =
     , { id = static, description = "highlight on hover but no move", conf = { embedDefault | hover = True, select = True } }
     , { id = move, description = "can move things but not more", conf = { embedDefault | hover = True, select = True, move = True } }
     , { id = layout, description = "can update the layout", conf = { embedDefault | hover = True, select = True, move = True, layout = True } }
-    , { id = advanced, description = "can seen and navigate between layouts", conf = { embedDefault | hover = True, select = True, move = True, layout = True, showNavbar = True, findPath = True } }
+    , { id = advanced, description = "can see and navigate between layouts", conf = { embedDefault | hover = True, select = True, move = True, layout = True, showNavbar = True, findPath = True } }
     , { id = full, description = "can do anything, except save", conf = { embedDefault | hover = True, select = True, move = True, layout = True, showNavbar = True, findPath = True, layoutManagement = True } }
     ]
 

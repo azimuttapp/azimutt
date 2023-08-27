@@ -1,4 +1,4 @@
-module Components.Molecules.Slideover exposing (DocState, Model, SharedDocState, doc, initDocState, slideover)
+module Components.Molecules.Slideover exposing (DocState, Model, SharedDocState, doc, docInit, slideover)
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
@@ -81,8 +81,8 @@ type alias DocState =
     { opened : String }
 
 
-initDocState : DocState
-initDocState =
+docInit : DocState
+docInit =
     { opened = "" }
 
 

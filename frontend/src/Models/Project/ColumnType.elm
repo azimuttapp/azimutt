@@ -1,4 +1,4 @@
-module Models.Project.ColumnType exposing (ColumnType, asBasic, decode, encode, label)
+module Models.Project.ColumnType exposing (ColumnType, ParsedColumnType(..), asBasic, decode, encode, label, parse)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)

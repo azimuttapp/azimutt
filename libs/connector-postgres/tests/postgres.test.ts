@@ -16,7 +16,7 @@ describe('postgres', () => {
     test.skip('getSchema', async () => {
         const schema = await connect(application, url, getSchema(undefined, 10, logger))
         console.log('schema', schema)
-        expect(schema.tables.length).toEqual(12)
+        expect(schema.tables.length).toEqual(13)
     })
     test('formatSchema', () => {
         const rawSchema: PostgresSchema = {tables: [], relations: [], types: []}

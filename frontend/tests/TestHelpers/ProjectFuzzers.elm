@@ -42,6 +42,8 @@ import Models.Project.ProjectStorage as ProjectStrorage exposing (ProjectStorage
 import Models.Project.ProjectVisibility as ProjectVisibility exposing (ProjectVisibility)
 import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.RelationName exposing (RelationName)
+import Models.Project.RowPrimaryKey exposing (RowPrimaryKey)
+import Models.Project.RowValue exposing (RowValue)
 import Models.Project.SampleKey exposing (SampleKey)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
@@ -54,19 +56,21 @@ import Models.Project.TableId exposing (TableId)
 import Models.Project.TableMeta exposing (TableMeta)
 import Models.Project.TableName exposing (TableName)
 import Models.Project.TableProps exposing (TableProps)
+import Models.Project.TableRow as TableRow exposing (TableRow)
 import Models.Project.Unique exposing (Unique)
 import Models.Project.UniqueName exposing (UniqueName)
 import Models.RelationStyle as RelationStyle exposing (RelationStyle)
 import Models.Size as Size
+import Models.SqlQuery exposing (SqlQueryOrigin)
 import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
 import PagesComponents.Organization_.Project_.Models.MemoId exposing (MemoId)
-import TestHelpers.Fuzzers exposing (color, dictSmall, fileLineIndex, fileModified, fileName, fileSize, fileUrl, identifier, intPosSmall, listSmall, nelSmall, positionDiagram, positionGrid, posix, sizeCanvas, stringSmall, text, uuid, zoomLevel)
+import TestHelpers.Fuzzers exposing (color, databaseKind, dbValue, dictSmall, fileLineIndex, fileModified, fileName, fileSize, fileUrl, identifier, intPosSmall, listSmall, nelSmall, positionDiagram, positionGrid, posix, setSmall, sizeCanvas, stringSmall, text, uuid, zoomLevel)
 import TestHelpers.OrganizationFuzzers exposing (organization)
 
 
 project : Fuzzer Project
 project =
-    Fuzz.map14 Project (Fuzz.maybe organization) projectId projectSlug projectName (Fuzz.maybe stringSmall) (listSmall source) (dictSmall tableId tableMeta) (dictSmall layoutName layout) projectSettings projectStorage projectVisibility projectEncodingVersion posix posix
+    Fuzz.map15 Project (Fuzz.maybe organization) projectId projectSlug projectName (Fuzz.maybe stringSmall) (listSmall source) (dictSmall tableId tableMeta) (dictSmall layoutName layout) intPosSmall projectSettings projectStorage projectVisibility projectEncodingVersion posix posix
 
 
 source : Fuzzer Source
@@ -179,7 +183,7 @@ columnMeta =
 
 layout : Fuzzer Layout
 layout =
-    Fuzz.map5 Layout (listSmall tableProps) (listSmall group) (listSmall memo) posix posix
+    Fuzz.map6 Layout (listSmall tableProps) (listSmall tableRow) (listSmall group) (listSmall memo) posix posix
 
 
 canvasProps : Fuzzer CanvasProps
@@ -199,12 +203,66 @@ group =
 
 memo : Fuzzer Memo
 memo =
-    Fuzz.map5 Memo memoId stringSmall positionGrid sizeCanvas (Fuzz.maybe color)
+    Fuzz.map6 Memo memoId stringSmall positionGrid sizeCanvas (Fuzz.maybe color) Fuzz.bool
 
 
 memoId : Fuzzer MemoId
 memoId =
     intPosSmall
+
+
+tableRow : Fuzzer TableRow
+tableRow =
+    Fuzz.map12 TableRow tableRowId (Fuzz.constant Nothing) positionGrid sizeCanvas sourceId tableId rowPrimaryKey tableRowState (setSmall columnName) Fuzz.bool Fuzz.bool Fuzz.bool
+
+
+tableRowId : Fuzzer TableRow.Id
+tableRowId =
+    intPosSmall
+
+
+tableRowState : Fuzzer TableRow.State
+tableRowState =
+    Fuzz.oneOf
+        [ tableRowLoading |> Fuzz.map TableRow.StateLoading
+        , tableRowFailure |> Fuzz.map TableRow.StateFailure
+        , tableRowSuccess |> Fuzz.map TableRow.StateSuccess
+        ]
+
+
+sqlQueryOrigin : Fuzzer SqlQueryOrigin
+sqlQueryOrigin =
+    Fuzz.map3 SqlQueryOrigin stringSmall stringSmall databaseKind
+
+
+tableRowLoading : Fuzzer TableRow.LoadingState
+tableRowLoading =
+    Fuzz.map3 TableRow.LoadingState sqlQueryOrigin posix (Fuzz.maybe tableRowSuccess)
+
+
+tableRowFailure : Fuzzer TableRow.FailureState
+tableRowFailure =
+    Fuzz.map5 TableRow.FailureState sqlQueryOrigin stringSmall posix posix (Fuzz.maybe tableRowSuccess)
+
+
+tableRowSuccess : Fuzzer TableRow.SuccessState
+tableRowSuccess =
+    Fuzz.map3 TableRow.SuccessState (listSmall tableRowColumn) posix posix
+
+
+tableRowColumn : Fuzzer TableRow.TableRowColumn
+tableRowColumn =
+    Fuzz.map3 (\p v l -> TableRow.TableRowColumn p (ColumnPath.toString p) v l) columnPath dbValue (Fuzz.constant Dict.empty)
+
+
+rowPrimaryKey : Fuzzer RowPrimaryKey
+rowPrimaryKey =
+    nelSmall rowValue
+
+
+rowValue : Fuzzer RowValue
+rowValue =
+    Fuzz.map2 RowValue columnPath dbValue
 
 
 projectSettings : Fuzzer ProjectSettings

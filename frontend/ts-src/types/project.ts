@@ -1,6 +1,6 @@
 import {z} from "zod";
 import {groupBy} from "@azimutt/utils";
-import {ColumnName, ColumnType, SchemaName, TableId, TableName} from "@azimutt/database-types";
+import {ColumnName, ColumnType, JsValue, SchemaName, TableId, TableName} from "@azimutt/database-types";
 import {Color, Notes, Position, Size, Slug, Tag, Timestamp} from "./basics";
 import {Uuid} from "./uuid";
 import {Organization} from "./organization";
@@ -26,6 +26,8 @@ export type RelationName = string
 export const RelationName = z.string()
 export type TypeName = string
 export const TypeName = z.string()
+export type TableRowId = number
+export const TableRowId = z.number()
 export type MemoId = number
 export const MemoId = z.number()
 export type LayoutName = string
@@ -384,6 +386,7 @@ export interface Memo {
     position: Position
     size: Size
     color?: Color
+    selected?: boolean
 }
 
 export const Memo = z.object({
@@ -391,7 +394,103 @@ export const Memo = z.object({
     content: z.string(),
     position: Position,
     size: Size,
-    color: Color.optional()
+    color: Color.optional(),
+    selected: z.boolean().optional()
+}).strict()
+
+export type SqlQueryOrigin = {sql: string, origin: string, db: string}
+export const SqlQueryOrigin = z.object({sql: z.string(), origin: z.string(), db: z.string()}).strict()
+
+export interface RowValue {
+    column: ColumnPathStr
+    value: JsValue
+}
+
+export const RowValue = z.object({
+    column: ColumnPathStr,
+    value: JsValue
+}).strict()
+
+export type RowPrimaryKey = RowValue[]
+export const RowPrimaryKey = RowValue.array()
+
+export interface TableRowColumn {
+    path: ColumnPathStr
+    value: JsValue
+    linkedBy?: Record<TableId, RowPrimaryKey[]>
+}
+
+export const TableRowColumn = z.object({
+    path: ColumnPathStr,
+    value: JsValue,
+    linkedBy: z.record(TableId, RowPrimaryKey.array()).optional()
+}).strict()
+
+export interface TableRowStateSuccess {
+    columns: TableRowColumn[]
+    startedAt: Timestamp
+    loadedAt: Timestamp
+}
+
+export const TableRowStateSuccess = z.object({
+    columns: TableRowColumn.array(),
+    startedAt: Timestamp,
+    loadedAt: Timestamp
+}).strict()
+
+export interface TableRowStateFailure {
+    query: SqlQueryOrigin
+    error: string
+    startedAt: Timestamp
+    failedAt: Timestamp
+}
+
+export const TableRowStateFailure = z.object({
+    query: SqlQueryOrigin,
+    error: z.string(),
+    startedAt: Timestamp,
+    failedAt: Timestamp
+}).strict()
+
+export interface TableRowStateLoading {
+    query: SqlQueryOrigin
+    startedAt: Timestamp
+}
+
+export const TableRowStateLoading = z.object({
+    query: SqlQueryOrigin,
+    startedAt: Timestamp
+}).strict()
+
+export type TableRowState = TableRowStateSuccess | TableRowStateFailure | TableRowStateLoading
+export const TableRowState = z.union([TableRowStateSuccess, TableRowStateFailure, TableRowStateLoading])
+
+export interface TableRow {
+    id: TableRowId
+    position: Position
+    size: Size
+    source: SourceId
+    table: TableId
+    primaryKey: RowPrimaryKey
+    state: TableRowState
+    hidden?: ColumnPathStr[]
+    showHiddenColumns?: boolean
+    selected?: boolean
+    collapsed?: boolean
+}
+
+export const TableRow = z.object({
+    id: TableRowId,
+    position: Position,
+    size: Size,
+    source: SourceId,
+    table: TableId,
+    primaryKey: RowPrimaryKey,
+    state: TableRowState,
+    hidden: ColumnPathStr.array().optional(),
+    showHiddenColumns: z.boolean().optional(),
+    selected: z.boolean().optional(),
+    collapsed: z.boolean().optional()
 }).strict()
 
 export interface Group {
@@ -411,6 +510,7 @@ export const Group = z.object({
 export interface Layout {
     canvas?: CanvasProps // legacy property, keep it for retro compatibility
     tables: TableProps[]
+    tableRows?: TableRow[]
     groups?: Group[]
     memos?: Memo[]
     createdAt: Timestamp
@@ -420,6 +520,7 @@ export interface Layout {
 export const Layout = z.object({
     canvas: CanvasProps.optional(),
     tables: TableProps.array(),
+    tableRows: TableRow.array().optional(),
     groups: Group.array().optional(),
     memos: Memo.array().optional(),
     createdAt: Timestamp,
@@ -481,6 +582,7 @@ export interface Project {
     metadata?: { [table: TableId]: TableMeta }
     usedLayout?: LayoutName // legacy property, keep it for retro compatibility
     layouts: { [name: LayoutName]: Layout }
+    tableRowsSeq?: number
     settings?: Settings
     storage: ProjectStorage
     visibility: ProjectVisibility
@@ -500,6 +602,7 @@ export const Project = z.object({
     metadata: z.record(TableId, TableMeta).optional(),
     usedLayout: LayoutName.optional(),
     layouts: z.record(LayoutName, Layout),
+    tableRowsSeq: z.number().optional(),
     settings: Settings.optional(),
     storage: ProjectStorage,
     visibility: ProjectVisibility,

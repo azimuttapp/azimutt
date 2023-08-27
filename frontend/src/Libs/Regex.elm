@@ -30,7 +30,8 @@ replace fromRegex to text =
 
 asRegexI : String -> Regex
 asRegexI regex =
-    Regex.fromStringWith { caseInsensitive = True, multiline = False } regex
+    regex
+        |> Regex.fromStringWith { caseInsensitive = True, multiline = False }
         |> Maybe.withDefault Regex.never
 
 

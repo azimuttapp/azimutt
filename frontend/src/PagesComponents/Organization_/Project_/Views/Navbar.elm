@@ -154,7 +154,7 @@ viewNavbarFeatures platform features htmlId openedDropdown =
                             btn.action
                                 |> Either.reduce
                                     (\url -> extLink url [ role "menuitem", tabindex -1, css [ "block", ContextMenu.itemStyles ] ] [ btn.content ])
-                                    (\action -> ContextMenu.btnHotkey "flex justify-between" action [ btn.content ] platform btn.hotkeys)
+                                    (\action -> ContextMenu.btnHotkey "flex justify-between" action [] [ btn.content ] platform btn.hotkeys)
                         )
                 )
         )

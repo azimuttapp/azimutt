@@ -1,4 +1,4 @@
-module Components.Slices.NewLayoutBody exposing (DocState, Model, Msg, SharedDocState, doc, init, initDocState, update, view)
+module Components.Slices.NewLayoutBody exposing (DocState, Model, Msg, SharedDocState, doc, docInit, init, update, view)
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
@@ -105,8 +105,8 @@ type alias DocState =
     Model
 
 
-initDocState : DocState
-initDocState =
+docInit : DocState
+docInit =
     { id = "modal-id", name = "", from = Nothing }
 
 

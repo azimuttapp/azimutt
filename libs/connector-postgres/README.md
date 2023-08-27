@@ -19,3 +19,10 @@ It's accessible through the [Desktop app](../../desktop) (soon), the [CLI](https
 - launch `npm publish --access public`
 
 View it on [npm](https://www.npmjs.com/package/@azimutt/connector-postgres).
+
+## Dev
+
+If you need to develop on multiple libs at the same time (ex: want to update a connector and try it through the CLI), depend on local libs but publish & revert before commit.
+
+- Depend on a local lib: `npm install <path>`, ex: `npm install ../database-types`
+- "Publish" lib locally by building it: `npm run build`

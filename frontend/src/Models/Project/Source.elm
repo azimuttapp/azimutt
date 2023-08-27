@@ -75,12 +75,7 @@ toInfo source =
 
 databaseUrl : Source -> Maybe DatabaseUrl
 databaseUrl source =
-    case source.kind of
-        DatabaseConnection url ->
-            Just url
-
-        _ ->
-            Nothing
+    SourceKind.databaseUrl source.kind
 
 
 getTable : TableId -> Source -> Maybe Table

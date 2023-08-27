@@ -1,4 +1,4 @@
-module Components.Organisms.Navbar exposing (AdminBrand, AdminModel, AdminNavigation, AdminNotifications, AdminProfile, AdminSearch, AdminState, DocState, SharedDocState, admin, doc, initDocState)
+module Components.Organisms.Navbar exposing (AdminBrand, AdminModel, AdminNavigation, AdminNotifications, AdminProfile, AdminSearch, AdminState, DocState, SharedDocState, admin, doc, docInit)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
@@ -181,8 +181,8 @@ type alias DocState =
     { app : AdminState }
 
 
-initDocState : DocState
-initDocState =
+docInit : DocState
+docInit =
     { app =
         { selectedMenu = "Dashboard"
         , profileOpen = False

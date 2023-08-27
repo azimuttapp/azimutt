@@ -10,6 +10,7 @@ import Components.Atoms.Loader as Loader
 import Components.Atoms.Markdown as Markdown
 import Components.Molecules.Alert as Alert
 import Components.Molecules.Avatar as Avatar
+import Components.Molecules.BarChart as BarChart
 import Components.Molecules.Divider as Divider
 import Components.Molecules.Dropdown as Dropdown
 import Components.Molecules.Editor as Editor
@@ -18,6 +19,9 @@ import Components.Molecules.FormLabel as FormLabel
 import Components.Molecules.InputText as InputText
 import Components.Molecules.ItemList as ItemList
 import Components.Molecules.Modal as Modal
+import Components.Molecules.Pagination as Pagination
+import Components.Molecules.PieChart as PieChart
+import Components.Molecules.PieChartCustom as PieChartCustom
 import Components.Molecules.Popover as Popover
 import Components.Molecules.Radio as Radio
 import Components.Molecules.Select as Select
@@ -29,12 +33,16 @@ import Components.Organisms.Details as Details
 import Components.Organisms.Navbar as Navbar
 import Components.Organisms.Relation as Relation
 import Components.Organisms.Table as Table
+import Components.Organisms.TableRow as TableRow
+import Components.Slices.DataExplorer as DataExplorer
+import Components.Slices.DataExplorerDetails as DataExplorerDetails
+import Components.Slices.DataExplorerQuery as DataExplorerQuery
+import Components.Slices.DataExplorerStats as DataExplorerStats
 import Components.Slices.ExportDialogBody as ExportDialogBody
 import Components.Slices.NewLayoutBody as NewLayoutBody
 import Components.Slices.NotFound as NotFound
 import Components.Slices.ProPlan as ProPlan
 import Components.Slices.ProjectSaveDialogBody as ProjectSaveDialogBody
-import Components.Slices.QueryPane as QueryPane
 import ElmBook
 import ElmBook.Chapter as Chapter exposing (Chapter)
 import ElmBook.ComponentOptions
@@ -47,8 +55,12 @@ import Libs.Tailwind as Tw
 
 
 type alias DocState =
-    { detailsDocState : Details.DocState
+    { dataExplorerDocState : DataExplorer.DocState
+    , dataExplorerDetailsDocState : DataExplorerDetails.DocState
+    , dataExplorerQueryDocState : DataExplorerQuery.DocState
+    , detailsDocState : Details.DocState
     , dropdownDocState : Dropdown.DocState
+    , editorDocState : Editor.DocState
     , exportDialogDocState : ExportDialogBody.DocState
     , formLabelDocState : FormLabel.DocState
     , inputDocState : Input.DocState
@@ -63,29 +75,35 @@ type alias DocState =
     , radioDocState : Radio.DocState
     , slideoverDocState : Slideover.DocState
     , tableDocState : Table.DocState
+    , tableRowDocState : TableRow.DocState
     , toastDocState : Toast.DocState
     }
 
 
 init : DocState
 init =
-    { detailsDocState = Details.initDocState
-    , dropdownDocState = Dropdown.initDocState
-    , exportDialogDocState = ExportDialogBody.initDocState
-    , formLabelDocState = FormLabel.initDocState
-    , inputDocState = Input.initDocState
-    , inputTextDocState = InputText.initDocState
-    , modalDocState = Modal.initDocState
-    , navbarDocState = Navbar.initDocState
-    , newLayoutDocState = NewLayoutBody.initDocState
-    , popoverDocState = Popover.initDocState
-    , projectSaveDocState = ProjectSaveDialogBody.initDocState
-    , proPlanDocState = ProPlan.initDocState
-    , selectDocState = Select.initDocState
-    , radioDocState = Radio.initDocState
-    , slideoverDocState = Slideover.initDocState
-    , tableDocState = Table.initDocState
-    , toastDocState = Toast.initDocState
+    { dataExplorerDocState = DataExplorer.docInit
+    , dataExplorerDetailsDocState = DataExplorerDetails.docInit
+    , dataExplorerQueryDocState = DataExplorerQuery.docInit
+    , detailsDocState = Details.docInit
+    , dropdownDocState = Dropdown.docInit
+    , editorDocState = Editor.docInit
+    , exportDialogDocState = ExportDialogBody.docInit
+    , formLabelDocState = FormLabel.docInit
+    , inputDocState = Input.docInit
+    , inputTextDocState = InputText.docInit
+    , modalDocState = Modal.docInit
+    , navbarDocState = Navbar.docInit
+    , newLayoutDocState = NewLayoutBody.docInit
+    , popoverDocState = Popover.docInit
+    , projectSaveDocState = ProjectSaveDialogBody.docInit
+    , proPlanDocState = ProPlan.docInit
+    , selectDocState = Select.docInit
+    , radioDocState = Radio.docInit
+    , slideoverDocState = Slideover.docInit
+    , tableDocState = Table.docInit
+    , tableRowDocState = TableRow.docInit
+    , toastDocState = Toast.docInit
     }
 
 
@@ -102,9 +120,9 @@ main =
         |> ElmBook.withChapterGroups
             -- sorted alphabetically
             [ ( "", [ docs ] )
-            , ( "Slices", [ ExportDialogBody.doc, NotFound.doc, NewLayoutBody.doc, ProjectSaveDialogBody.doc, ProPlan.doc, QueryPane.doc ] )
-            , ( "Organisms", [ ColorPicker.doc, Details.doc, Navbar.doc, Relation.doc, Table.doc ] )
-            , ( "Molecules", [ Alert.doc, Avatar.doc, Divider.doc, Dropdown.doc, Editor.doc, FileInput.doc, FormLabel.doc, InputText.doc, ItemList.doc, Modal.doc, Popover.doc, Radio.doc, Select.doc, Slideover.doc, Toast.doc, Tooltip.doc ] )
+            , ( "Slices", [ DataExplorer.doc, DataExplorerDetails.doc, DataExplorerQuery.doc, DataExplorerStats.doc, ExportDialogBody.doc, NotFound.doc, NewLayoutBody.doc, ProjectSaveDialogBody.doc, ProPlan.doc ] )
+            , ( "Organisms", [ ColorPicker.doc, Details.doc, Navbar.doc, Relation.doc, Table.doc, TableRow.doc ] )
+            , ( "Molecules", [ Alert.doc, Avatar.doc, BarChart.doc, Divider.doc, Dropdown.doc, Editor.doc, FileInput.doc, FormLabel.doc, InputText.doc, ItemList.doc, Modal.doc, Pagination.doc, PieChart.doc, PieChartCustom.doc, Popover.doc, Radio.doc, Select.doc, Slideover.doc, Toast.doc, Tooltip.doc ] )
             , ( "Atoms", [ Badge.doc, Button.doc, colorsDoc, Icon.doc, Input.doc, Kbd.doc, Markdown.doc, Link.doc, Loader.doc ] )
             ]
 

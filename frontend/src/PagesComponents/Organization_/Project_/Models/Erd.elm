@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Models.Erd exposing (Erd, canChangeColor, canCreateGroup, canCreateLayout, canCreateMemo, create, currentLayout, defaultSchemaM, getColumn, getColumnPos, getLayoutTable, getOrganization, getOrganizationM, getProjectId, getProjectIdM, getProjectRef, getProjectRefM, getTable, isShown, mapCurrentLayout, mapCurrentLayoutCmd, mapCurrentLayoutWithTime, mapSettings, mapSource, mapSources, setSettings, setSources, unpack, viewportM, viewportToCanvas)
+module PagesComponents.Organization_.Project_.Models.Erd exposing (Erd, canChangeColor, canCreateGroup, canCreateLayout, canCreateMemo, create, currentLayout, defaultSchemaM, getColumn, getColumnPos, getLayoutTable, getOrganization, getOrganizationM, getProjectId, getProjectIdM, getProjectRef, getProjectRefM, getTable, isShown, mapCurrentLayout, mapCurrentLayoutWithTime, mapCurrentLayoutWithTimeCmd, mapSettings, mapSource, mapSources, setSettings, setSources, toSchema, unpack, viewportM, viewportToCanvas)
 
 import Conf
 import Dict exposing (Dict)
@@ -21,6 +21,7 @@ import Models.Project.Metadata exposing (Metadata)
 import Models.Project.ProjectId as ProjectId exposing (ProjectId)
 import Models.Project.ProjectSettings as ProjectSettings exposing (ProjectSettings)
 import Models.Project.Relation as Relation exposing (Relation)
+import Models.Project.Schema exposing (Schema)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId exposing (SourceId)
@@ -49,6 +50,7 @@ type alias Erd =
     , layouts : Dict LayoutName ErdLayout
     , currentLayout : LayoutName
     , layoutOnLoad : String -- enum: "", "fit", "arrange"
+    , tableRowsSeq : Int
     , metadata : Metadata
     , sources : List Source
     , settings : ProjectSettings
@@ -75,6 +77,7 @@ create project =
     , layouts = project.layouts |> Dict.map (\_ -> ErdLayout.create relationsByTable)
     , currentLayout = layout
     , layoutOnLoad = ""
+    , tableRowsSeq = project.tableRowsSeq
     , metadata = project.metadata
     , sources = project.sources
     , settings = project.settings
@@ -91,12 +94,21 @@ unpack erd =
     , sources = erd.sources
     , metadata = erd.metadata
     , layouts = erd.layouts |> Dict.map (\_ -> ErdLayout.unpack)
+    , tableRowsSeq = erd.tableRowsSeq
     , settings = erd.settings
     , storage = erd.project.storage
     , visibility = erd.project.visibility
     , version = erd.project.version
     , createdAt = erd.project.createdAt
     , updatedAt = erd.project.updatedAt
+    }
+
+
+toSchema : { s | tables : Dict TableId ErdTable, relations : List ErdRelation, types : Dict CustomTypeId CustomType } -> Schema
+toSchema source =
+    { tables = source.tables |> Dict.map (\_ -> ErdTable.unpack)
+    , relations = source.relations |> List.map ErdRelation.unpack
+    , types = source.types
     }
 
 
@@ -115,8 +127,8 @@ mapCurrentLayoutWithTime now transform erd =
     erd |> mapLayoutsD erd.currentLayout (transform >> (\l -> { l | updatedAt = now }))
 
 
-mapCurrentLayoutCmd : Time.Posix -> (ErdLayout -> ( ErdLayout, Cmd msg )) -> Erd -> ( Erd, Cmd msg )
-mapCurrentLayoutCmd now transform erd =
+mapCurrentLayoutWithTimeCmd : Time.Posix -> (ErdLayout -> ( ErdLayout, Cmd msg )) -> Erd -> ( Erd, Cmd msg )
+mapCurrentLayoutWithTimeCmd now transform erd =
     erd |> mapLayoutsDCmd erd.currentLayout (transform >> Tuple.mapFirst (\l -> { l | updatedAt = now }))
 
 
@@ -203,12 +215,12 @@ getColumnPos ref erd =
             (\( t, index ) ->
                 (if t.collapsed then
                     { dx = (Size.extractCanvas t.size).width / 2
-                    , dy = Conf.ui.tableHeaderHeight * 0.5
+                    , dy = Conf.ui.table.headerHeight * 0.5
                     }
 
                  else
                     { dx = (Size.extractCanvas t.size).width / 2
-                    , dy = Conf.ui.tableHeaderHeight + (Conf.ui.tableColumnHeight * (0.5 + (index |> toFloat)))
+                    , dy = Conf.ui.table.headerHeight + (Conf.ui.table.columnHeight * (0.5 + (index |> toFloat)))
                     }
                 )
                     |> (\delta -> t.position |> Position.offGrid |> Position.moveCanvas delta)
@@ -265,7 +277,7 @@ computeSources settings sources =
 
         erdTables : Dict TableId ErdTable
         erdTables =
-            tables |> Dict.map (\id -> ErdTable.create settings.defaultSchema types (erdRelationsByTable |> Dict.getOrElse id []))
+            tables |> Dict.map (\id -> ErdTable.create settings.defaultSchema sources types (erdRelationsByTable |> Dict.getOrElse id []))
     in
     ( ( erdTables, erdRelations, types ), erdRelationsByTable )
 
@@ -353,7 +365,7 @@ mapSources transform erd =
 
 mapSource : SourceId -> (Source -> Source) -> Erd -> Erd
 mapSource id transform erd =
-    setSources (List.updateBy .id id transform erd.sources) erd
+    setSources (List.mapBy .id id transform erd.sources) erd
 
 
 setSettings : ProjectSettings -> Erd -> Erd

@@ -15,8 +15,10 @@ module Services.Lenses exposing
     , mapConf
     , mapContent
     , mapContextMenuM
+    , mapDataExplorerCmd
     , mapDatabaseSourceCmd
     , mapDatabaseSourceMCmd
+    , mapDetailsCmd
     , mapDetailsSidebarCmd
     , mapEditGroupM
     , mapEditMemoM
@@ -26,16 +28,26 @@ module Services.Lenses exposing
     , mapEnabled
     , mapErdM
     , mapErdMCmd
+    , mapExecutions
+    , mapExpanded
     , mapExportDialogCmd
+    , mapFilter
+    , mapFilters
     , mapFindPath
     , mapFindPathM
     , mapGroups
+    , mapHead
+    , mapHidden
     , mapHiddenColumns
+    , mapHighlight
+    , mapHighlights
     , mapHoverTable
     , mapIndex
     , mapIndexes
     , mapJsonSourceCmd
     , mapJsonSourceMCmd
+    , mapLanguagesModel
+    , mapLanguagesModelD
     , mapLayouts
     , mapLayoutsD
     , mapLayoutsDCmd
@@ -57,6 +69,7 @@ module Services.Lenses exposing
     , mapParsedSchemaM
     , mapPlan
     , mapPosition
+    , mapPrevious
     , mapPrimaryKeyM
     , mapPrismaSourceCmd
     , mapPrismaSourceMCmd
@@ -64,12 +77,14 @@ module Services.Lenses exposing
     , mapProjectSourceMCmd
     , mapPromptM
     , mapProps
-    , mapQueryPaneCmd
+    , mapQuery
     , mapRelatedTables
     , mapRelations
     , mapRemoveViews
     , mapRemovedSchemas
     , mapResult
+    , mapResultsCmd
+    , mapRow
     , mapSampleSourceMCmd
     , mapSaveCmd
     , mapSchemaAnalysisM
@@ -84,6 +99,10 @@ module Services.Lenses exposing
     , mapSourceUpdateCmd
     , mapSqlSourceCmd
     , mapSqlSourceMCmd
+    , mapState
+    , mapTableRows
+    , mapTableRowsCmd
+    , mapTableRowsSeq
     , mapTables
     , mapTablesCmd
     , mapTablesL
@@ -91,13 +110,16 @@ module Services.Lenses exposing
     , mapToastsCmd
     , mapTokenFormM
     , mapUniques
+    , mapValues
     , mapVirtualRelationM
+    , mapVisualEditor
     , setActive
     , setAmlSidebar
     , setAmlSource
     , setBody
     , setCanvas
     , setChecks
+    , setCode
     , setCollapseTableColumns
     , setCollapsed
     , setColor
@@ -111,10 +133,13 @@ module Services.Lenses exposing
     , setConfirm
     , setContent
     , setContextMenu
+    , setCurrentLanguage
     , setCurrentLayout
     , setCursorMode
+    , setDataExplorer
     , setDatabaseSource
     , setDefaultSchema
+    , setDetails
     , setDetailsSidebar
     , setDisplay
     , setDragging
@@ -124,18 +149,27 @@ module Services.Lenses exposing
     , setEditTags
     , setEmbedSourceParsing
     , setEnabled
+    , setEnd
     , setErd
     , setErrors
+    , setExecutions
+    , setExpanded
     , setExpire
     , setExportDialog
+    , setFilter
+    , setFilters
     , setFindPath
     , setFrom
     , setGroups
+    , setHead
+    , setHidden
     , setHiddenColumns
     , setHighlight
     , setHighlighted
+    , setHighlights
     , setHoverColumn
     , setHoverTable
+    , setHoverTableRow
     , setId
     , setIgnoredColumns
     , setIgnoredTables
@@ -144,6 +178,7 @@ module Services.Lenses exposing
     , setInput
     , setIsOpen
     , setJsonSource
+    , setLanguagesModel
     , setLast
     , setLayoutOnLoad
     , setLayouts
@@ -154,6 +189,7 @@ module Services.Lenses exposing
     , setMetadata
     , setMobileMenuOpen
     , setModal
+    , setMode
     , setMouse
     , setName
     , setNavbar
@@ -163,19 +199,22 @@ module Services.Lenses exposing
     , setOpenedDialogs
     , setOpenedDropdown
     , setOpenedPopover
+    , setOperation
+    , setOperator
     , setOrganization
     , setOrigins
     , setParsedSchema
     , setParsedSource
     , setPlan
     , setPosition
+    , setPrevious
     , setPrimaryKey
     , setPrismaSource
     , setProject
     , setProjectSource
     , setPrompt
     , setProps
-    , setQueryPane
+    , setQuery
     , setRelatedTables
     , setRelationStyle
     , setRelations
@@ -184,9 +223,11 @@ module Services.Lenses exposing
     , setRemovedTables
     , setResult
     , setResults
+    , setRow
     , setSampleSource
     , setSave
     , setSchemaAnalysis
+    , setScroll
     , setSearch
     , setSelected
     , setSelectionBox
@@ -200,7 +241,11 @@ module Services.Lenses exposing
     , setSource
     , setSourceUpdate
     , setSqlSource
+    , setStart
+    , setState
     , setTable
+    , setTableRows
+    , setTableRowsSeq
     , setTables
     , setTags
     , setText
@@ -212,8 +257,10 @@ module Services.Lenses exposing
     , setUniques
     , setUpdatedAt
     , setValue
+    , setValues
     , setView
     , setVirtualRelation
+    , setVisualEditor
     , setZoom
     )
 
@@ -297,6 +344,11 @@ setChecks =
 mapChecks : (v -> v) -> { item | checks : v } -> { item | checks : v }
 mapChecks =
     map_ .checks setChecks
+
+
+setCode : v -> { item | code : v } -> { item | code : v }
+setCode =
+    set_ .code (\value item -> { item | code = value })
 
 
 setCollapsed : v -> { item | collapsed : v } -> { item | collapsed : v }
@@ -404,6 +456,11 @@ mapContextMenuM =
     mapM_ .contextMenu setContextMenu
 
 
+setCurrentLanguage : v -> { item | currentLanguage : v } -> { item | currentLanguage : v }
+setCurrentLanguage =
+    set_ .currentLanguage (\value item -> { item | currentLanguage = value })
+
+
 setCurrentLayout : v -> { item | currentLayout : v } -> { item | currentLayout : v }
 setCurrentLayout =
     set_ .currentLayout (\value item -> { item | currentLayout = value })
@@ -429,9 +486,29 @@ mapDatabaseSourceMCmd =
     mapMCmd_ .databaseSource setDatabaseSource
 
 
+setDataExplorer : v -> { item | dataExplorer : v } -> { item | dataExplorer : v }
+setDataExplorer =
+    set_ .dataExplorer (\value item -> { item | dataExplorer = value })
+
+
+mapDataExplorerCmd : (v -> ( v, Cmd msg )) -> { item | dataExplorer : v } -> ( { item | dataExplorer : v }, Cmd msg )
+mapDataExplorerCmd =
+    mapCmd_ .dataExplorer setDataExplorer
+
+
 setDefaultSchema : v -> { item | defaultSchema : v } -> { item | defaultSchema : v }
 setDefaultSchema =
     set_ .defaultSchema (\value item -> { item | defaultSchema = value })
+
+
+setDetails : v -> { item | details : v } -> { item | details : v }
+setDetails =
+    set_ .details (\value item -> { item | details = value })
+
+
+mapDetailsCmd : (v -> ( v, Cmd msg )) -> { item | details : v } -> ( { item | details : v }, Cmd msg )
+mapDetailsCmd =
+    mapCmd_ .details setDetails
 
 
 setDetailsSidebar : v -> { item | detailsSidebar : v } -> { item | detailsSidebar : v }
@@ -514,6 +591,11 @@ mapEnabled =
     map_ .enabled setEnabled
 
 
+setEnd : v -> { item | end : v } -> { item | end : v }
+setEnd =
+    set_ .end (\value item -> { item | end = value })
+
+
 setErd : v -> { item | erd : v } -> { item | erd : v }
 setErd =
     set_ .erd (\value item -> { item | erd = value })
@@ -534,6 +616,26 @@ setErrors =
     set_ .errors (\value item -> { item | errors = value })
 
 
+setExecutions : v -> { item | executions : v } -> { item | executions : v }
+setExecutions =
+    set_ .executions (\value item -> { item | executions = value })
+
+
+mapExecutions : (v -> v) -> { item | executions : v } -> { item | executions : v }
+mapExecutions =
+    map_ .executions setExecutions
+
+
+setExpanded : v -> { item | expanded : v } -> { item | expanded : v }
+setExpanded =
+    set_ .expanded (\value item -> { item | expanded = value })
+
+
+mapExpanded : (v -> v) -> { item | expanded : v } -> { item | expanded : v }
+mapExpanded =
+    map_ .expanded setExpanded
+
+
 setExpire : v -> { item | expire : v } -> { item | expire : v }
 setExpire =
     set_ .expire (\value item -> { item | expire = value })
@@ -547,6 +649,26 @@ setExportDialog =
 mapExportDialogCmd : (v -> ( v, Cmd msg )) -> { item | exportDialog : v } -> ( { item | exportDialog : v }, Cmd msg )
 mapExportDialogCmd =
     mapCmd_ .exportDialog setExportDialog
+
+
+setFilter : v -> { item | filter : v } -> { item | filter : v }
+setFilter =
+    set_ .filter (\value item -> { item | filter = value })
+
+
+mapFilter : (v -> v) -> { item | filter : v } -> { item | filter : v }
+mapFilter =
+    map_ .filter setFilter
+
+
+setFilters : v -> { item | filters : v } -> { item | filters : v }
+setFilters =
+    set_ .filters (\value item -> { item | filters = value })
+
+
+mapFilters : (v -> v) -> { item | filters : v } -> { item | filters : v }
+mapFilters =
+    map_ .filters setFilters
 
 
 setFindPath : v -> { item | findPath : v } -> { item | findPath : v }
@@ -579,6 +701,26 @@ mapGroups =
     map_ .groups setGroups
 
 
+setHead : v -> { item | head : v } -> { item | head : v }
+setHead =
+    set_ .head (\value item -> { item | head = value })
+
+
+mapHead : (v -> v) -> { item | head : v } -> { item | head : v }
+mapHead =
+    map_ .head setHead
+
+
+setHidden : v -> { item | hidden : v } -> { item | hidden : v }
+setHidden =
+    set_ .hidden (\value item -> { item | hidden = value })
+
+
+mapHidden : (v -> v) -> { item | hidden : v } -> { item | hidden : v }
+mapHidden =
+    map_ .hidden setHidden
+
+
 setHiddenColumns : v -> { item | hiddenColumns : v } -> { item | hiddenColumns : v }
 setHiddenColumns =
     set_ .hiddenColumns (\value item -> { item | hiddenColumns = value })
@@ -594,6 +736,21 @@ setHighlight =
     set_ .highlight (\value item -> { item | highlight = value })
 
 
+mapHighlight : (v -> v) -> { item | highlight : v } -> { item | highlight : v }
+mapHighlight =
+    map_ .highlight setHighlight
+
+
+setHighlights : v -> { item | highlights : v } -> { item | highlights : v }
+setHighlights =
+    set_ .highlights (\value item -> { item | highlights = value })
+
+
+mapHighlights : (v -> v) -> { item | highlights : v } -> { item | highlights : v }
+mapHighlights =
+    map_ .highlights setHighlights
+
+
 setHighlighted : v -> { item | highlighted : v } -> { item | highlighted : v }
 setHighlighted =
     set_ .highlighted (\value item -> { item | highlighted = value })
@@ -602,6 +759,11 @@ setHighlighted =
 setHoverColumn : v -> { item | hoverColumn : v } -> { item | hoverColumn : v }
 setHoverColumn =
     set_ .hoverColumn (\value item -> { item | hoverColumn = value })
+
+
+setHoverTableRow : v -> { item | hoverTableRow : v } -> { item | hoverTableRow : v }
+setHoverTableRow =
+    set_ .hoverTableRow (\value item -> { item | hoverTableRow = value })
 
 
 setHoverTable : v -> { item | hoverTable : v } -> { item | hoverTable : v }
@@ -672,6 +834,21 @@ mapJsonSourceCmd =
 mapJsonSourceMCmd : (v -> ( v, Cmd msg )) -> { item | jsonSource : Maybe v } -> ( { item | jsonSource : Maybe v }, Cmd msg )
 mapJsonSourceMCmd =
     mapMCmd_ .jsonSource setJsonSource
+
+
+setLanguagesModel : v -> { item | languagesModel : v } -> { item | languagesModel : v }
+setLanguagesModel =
+    set_ .languagesModel (\value item -> { item | languagesModel = value })
+
+
+mapLanguagesModel : (v -> v) -> { item | languagesModel : v } -> { item | languagesModel : v }
+mapLanguagesModel =
+    map_ .languagesModel setLanguagesModel
+
+
+mapLanguagesModelD : comparable -> (v -> v) -> { item | languagesModel : Dict comparable v } -> { item | languagesModel : Dict comparable v }
+mapLanguagesModelD =
+    mapD_ .languagesModel setLanguagesModel
 
 
 setLast : v -> { item | last : v } -> { item | last : v }
@@ -759,6 +936,11 @@ setModal =
     set_ .modal (\value item -> { item | modal = value })
 
 
+setMode : v -> { item | mode : v } -> { item | mode : v }
+setMode =
+    set_ .mode (\value item -> { item | mode = value })
+
+
 setMouse : v -> { item | mouse : v } -> { item | mouse : v }
 setMouse =
     set_ .mouse (\value item -> { item | mouse = value })
@@ -834,6 +1016,16 @@ mapOpenedDialogs =
     map_ .openedDialogs setOpenedDialogs
 
 
+setOperation : v -> { item | operation : v } -> { item | operation : v }
+setOperation =
+    set_ .operation (\value item -> { item | operation = value })
+
+
+setOperator : v -> { item | operator : v } -> { item | operator : v }
+setOperator =
+    set_ .operator (\value item -> { item | operator = value })
+
+
 setOrganization : v -> { item | organization : v } -> { item | organization : v }
 setOrganization =
     set_ .organization (\value item -> { item | organization = value })
@@ -887,6 +1079,16 @@ setPosition =
 mapPosition : (v -> v) -> { item | position : v } -> { item | position : v }
 mapPosition =
     map_ .position setPosition
+
+
+setPrevious : v -> { item | previous : v } -> { item | previous : v }
+setPrevious =
+    set_ .previous (\value item -> { item | previous = value })
+
+
+mapPrevious : (v -> v) -> { item | previous : v } -> { item | previous : v }
+mapPrevious =
+    map_ .previous setPrevious
 
 
 setPrimaryKey : v -> { item | primaryKey : v } -> { item | primaryKey : v }
@@ -954,14 +1156,14 @@ mapProps =
     map_ .props setProps
 
 
-setQueryPane : v -> { item | queryPane : v } -> { item | queryPane : v }
-setQueryPane =
-    set_ .queryPane (\value item -> { item | queryPane = value })
+setQuery : v -> { item | query : v } -> { item | query : v }
+setQuery =
+    set_ .query (\value item -> { item | query = value })
 
 
-mapQueryPaneCmd : (v -> ( v, Cmd msg )) -> { item | queryPane : v } -> ( { item | queryPane : v }, Cmd msg )
-mapQueryPaneCmd =
-    mapCmd_ .queryPane setQueryPane
+mapQuery : (v -> v) -> { item | query : v } -> { item | query : v }
+mapQuery =
+    map_ .query setQuery
 
 
 setRelatedTables : v -> { item | relatedTables : v } -> { item | relatedTables : v }
@@ -1029,6 +1231,21 @@ setResults =
     set_ .results (\value item -> { item | results = value })
 
 
+mapResultsCmd : (v -> ( v, Cmd msg )) -> { item | results : v } -> ( { item | results : v }, Cmd msg )
+mapResultsCmd =
+    mapCmd_ .results setResults
+
+
+setRow : v -> { item | row : v } -> { item | row : v }
+setRow =
+    set_ .row (\value item -> { item | row = value })
+
+
+mapRow : (v -> v) -> { item | row : v } -> { item | row : v }
+mapRow =
+    map_ .row setRow
+
+
 setSampleSource : v -> { item | sampleSource : v } -> { item | sampleSource : v }
 setSampleSource =
     set_ .sampleSource (\value item -> { item | sampleSource = value })
@@ -1057,6 +1274,11 @@ setSchemaAnalysis =
 mapSchemaAnalysisM : (v -> v) -> { item | schemaAnalysis : Maybe v } -> { item | schemaAnalysis : Maybe v }
 mapSchemaAnalysisM =
     mapM_ .schemaAnalysis setSchemaAnalysis
+
+
+setScroll : v -> { item | scroll : v } -> { item | scroll : v }
+setScroll =
+    set_ .scroll (\value item -> { item | scroll = value })
 
 
 setSearch : v -> { item | search : v } -> { item | search : v }
@@ -1179,6 +1401,21 @@ mapSqlSourceMCmd =
     mapMCmd_ .sqlSource setSqlSource
 
 
+setStart : v -> { item | start : v } -> { item | start : v }
+setStart =
+    set_ .start (\value item -> { item | start = value })
+
+
+setState : v -> { item | state : v } -> { item | state : v }
+setState =
+    set_ .state (\value item -> { item | state = value })
+
+
+mapState : (v -> v) -> { item | state : v } -> { item | state : v }
+mapState =
+    map_ .state setState
+
+
 setTable : v -> { item | table : v } -> { item | table : v }
 setTable =
     set_ .table (\value item -> { item | table = value })
@@ -1202,6 +1439,31 @@ mapTablesL =
 mapTablesCmd : (v -> ( v, Cmd msg )) -> { item | tables : v } -> ( { item | tables : v }, Cmd msg )
 mapTablesCmd =
     mapCmd_ .tables setTables
+
+
+setTableRows : v -> { item | tableRows : v } -> { item | tableRows : v }
+setTableRows =
+    set_ .tableRows (\value item -> { item | tableRows = value })
+
+
+mapTableRows : (v -> v) -> { item | tableRows : v } -> { item | tableRows : v }
+mapTableRows =
+    map_ .tableRows setTableRows
+
+
+mapTableRowsCmd : (v -> ( v, Cmd msg )) -> { item | tableRows : v } -> ( { item | tableRows : v }, Cmd msg )
+mapTableRowsCmd =
+    mapCmd_ .tableRows setTableRows
+
+
+setTableRowsSeq : v -> { item | tableRowsSeq : v } -> { item | tableRowsSeq : v }
+setTableRowsSeq =
+    set_ .tableRowsSeq (\value item -> { item | tableRowsSeq = value })
+
+
+mapTableRowsSeq : (v -> v) -> { item | tableRowsSeq : v } -> { item | tableRowsSeq : v }
+mapTableRowsSeq =
+    map_ .tableRowsSeq setTableRowsSeq
 
 
 setTags : v -> { item | tags : v } -> { item | tags : v }
@@ -1274,6 +1536,16 @@ setValue =
     set_ .value (\value item -> { item | value = value })
 
 
+setValues : v -> { item | values : v } -> { item | values : v }
+setValues =
+    set_ .values (\value item -> { item | values = value })
+
+
+mapValues : (v -> v) -> { item | values : v } -> { item | values : v }
+mapValues =
+    map_ .values setValues
+
+
 setView : v -> { item | view : v } -> { item | view : v }
 setView =
     set_ .view (\view item -> { item | view = view })
@@ -1287,6 +1559,16 @@ setVirtualRelation =
 mapVirtualRelationM : (v -> v) -> { item | virtualRelation : Maybe v } -> { item | virtualRelation : Maybe v }
 mapVirtualRelationM =
     mapM_ .virtualRelation setVirtualRelation
+
+
+setVisualEditor : v -> { item | visualEditor : v } -> { item | visualEditor : v }
+setVisualEditor =
+    set_ .visualEditor (\value item -> { item | visualEditor = value })
+
+
+mapVisualEditor : (v -> v) -> { item | visualEditor : v } -> { item | visualEditor : v }
+mapVisualEditor =
+    map_ .visualEditor setVisualEditor
 
 
 setZoom : v -> { item | zoom : v } -> { item | zoom : v }

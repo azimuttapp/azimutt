@@ -1,4 +1,4 @@
-module Components.Molecules.Select exposing (DocState, Item, Model, SharedDocState, SimpleItem, doc, indicator, initDocState, simple)
+module Components.Molecules.Select exposing (DocState, Item, Model, SharedDocState, SimpleItem, doc, docInit, indicator, simple)
 
 import Components.Atoms.Icon as Icon
 import Dict exposing (Dict)
@@ -133,8 +133,8 @@ type alias DocState =
     { simple : String, selects : Dict String Model }
 
 
-initDocState : DocState
-initDocState =
+docInit : DocState
+docInit =
     { simple = "", selects = Dict.empty }
 
 

@@ -1,4 +1,4 @@
-module Components.Molecules.FormLabel exposing (DocState, SharedDocState, bold, doc, initDocState, simple)
+module Components.Molecules.FormLabel exposing (DocState, SharedDocState, bold, doc, docInit, simple)
 
 import Components.Molecules.Select as Select
 import ElmBook exposing (Msg)
@@ -38,8 +38,8 @@ type alias DocState =
     { value : String }
 
 
-initDocState : DocState
-initDocState =
+docInit : DocState
+docInit =
     { value = "" }
 
 
