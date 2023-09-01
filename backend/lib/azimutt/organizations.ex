@@ -342,7 +342,7 @@ defmodule Azimutt.Organizations do
   end
 
   defp heroku_plan(%Heroku.Resource{} = resource) do
-    if resource.plan |> String.starts_with?("pro-") do
+    if resource.plan |> String.starts_with?("pro-") || resource.plan == "test" do
       {:ok, OrganizationPlan.pro()}
     else
       {:ok, OrganizationPlan.free()}
