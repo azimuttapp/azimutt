@@ -25,6 +25,7 @@ type alias Column =
     , nullable : Bool
     , default : Maybe ColumnValue
     , comment : Maybe Comment
+    , values : Maybe (Nel String)
     , columns : Maybe NestedColumns
     , origins : List Origin
     }
@@ -60,6 +61,7 @@ merge c1 c2 =
     , default = Maybe.merge ColumnValue.merge c1.default c2.default
     , comment = Maybe.merge Comment.merge c1.comment c2.comment
     , columns = Maybe.merge mergeNested c1.columns c2.columns
+    , values = Maybe.merge Nel.append c1.values c2.values
     , origins = c1.origins ++ c2.origins
     }
 
@@ -99,6 +101,7 @@ encode value =
         , ( "nullable", value.nullable |> Encode.withDefault Encode.bool False )
         , ( "default", value.default |> Encode.maybe ColumnValue.encode )
         , ( "comment", value.comment |> Encode.maybe Comment.encode )
+        , ( "values", value.values |> Encode.maybe (Encode.nel Encode.string) )
         , ( "columns", value.columns |> Encode.maybe (\(NestedColumns d) -> d |> Ned.values |> Nel.toList |> List.sortBy .index |> Encode.list encode) )
         , ( "origins", value.origins |> Origin.encodeList )
         ]
@@ -106,12 +109,13 @@ encode value =
 
 decode : Decoder (Int -> Column)
 decode =
-    Decode.map7 (\n t nu d c cols o -> \i -> Column i n t nu d c cols o)
+    Decode.map8 (\n t nu d c v cols o -> \i -> Column i n t nu d c v cols o)
         (Decode.field "name" ColumnName.decode)
         (Decode.field "type" ColumnType.decode)
         (Decode.defaultField "nullable" Decode.bool False)
         (Decode.maybeField "default" ColumnValue.decode)
         (Decode.maybeField "comment" Comment.decode)
+        (Decode.maybeField "values" (Decode.nel Decode.string))
         (Decode.maybeField "columns" decodeNestedColumns)
         (Decode.defaultField "origins" (Decode.list Origin.decode) [])
 

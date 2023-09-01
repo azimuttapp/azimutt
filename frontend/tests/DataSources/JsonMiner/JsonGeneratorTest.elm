@@ -343,7 +343,7 @@ emptyTable =
 
 emptyColumn : Column
 emptyColumn =
-    { index = 0, name = "", kind = "", nullable = False, default = Nothing, comment = Nothing, columns = Nothing, origins = [] }
+    { index = 0, name = "", kind = "", nullable = False, default = Nothing, comment = Nothing, values = Nothing, columns = Nothing, origins = [] }
 
 
 emptyComment : Comment

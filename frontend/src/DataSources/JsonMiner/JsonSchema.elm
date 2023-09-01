@@ -103,6 +103,7 @@ jsonSchema =
         "nullable": {"type": "boolean"},
         "default": {"type": "string"},
         "comment": {"type": "string"},
+        "values": {"type": "array", "items": {"type": "string"}}
         "columns": {"type": "array", "items": {"$ref": "/column"}}
       }
     },

@@ -248,6 +248,7 @@ createColumn origin pk index column =
     , nullable = column.nullable && not inPk
     , default = column.default
     , comment = column.comment |> Maybe.map (createComment origin)
+    , values = Nothing
     , columns = Nothing -- nested columns not supported in SQL
     , origins = [ origin ]
     }
@@ -290,6 +291,7 @@ buildViewColumn origin tables index column =
                         , nullable = col.nullable
                         , default = Just ((c.table |> Maybe.mapOrElse (\t -> t ++ ".") "") ++ c.column)
                         , comment = col.comment
+                        , values = Nothing
                         , columns = Nothing -- nested columns not supported in SQL
                         , origins = [ origin ]
                         }
@@ -300,6 +302,7 @@ buildViewColumn origin tables index column =
                     , nullable = False
                     , default = Just ((c.table |> Maybe.mapOrElse (\t -> t ++ ".") "") ++ c.column)
                     , comment = Nothing
+                    , values = Nothing
                     , columns = Nothing -- nested columns not supported in SQL
                     , origins = [ origin ]
                     }
@@ -311,6 +314,7 @@ buildViewColumn origin tables index column =
             , nullable = False
             , default = Just c.formula
             , comment = Nothing
+            , values = Nothing
             , columns = Nothing -- nested columns not supported in SQL
             , origins = [ origin ]
             }

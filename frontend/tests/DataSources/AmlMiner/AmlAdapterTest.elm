@@ -152,7 +152,7 @@ table =
 
 column : Column
 column =
-    { index = 0, name = "", kind = "", nullable = False, default = Nothing, comment = Nothing, columns = Nothing, origins = [ { id = source, lines = [] } ] }
+    { index = 0, name = "", kind = "", nullable = False, default = Nothing, comment = Nothing, values = Nothing, columns = Nothing, origins = [ { id = source, lines = [] } ] }
 
 
 primaryKey : PrimaryKey

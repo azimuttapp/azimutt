@@ -116,7 +116,7 @@ project0Json =
 
 tables1 : Dict TableId Table
 tables1 =
-    Dict.fromListMap .id [ Table ( "public", "users" ) "public" "users" False (Dict.fromListMap .name [ Column 0 "id" "int" False Nothing Nothing Nothing [] ]) Nothing [] [] [] Nothing [] ]
+    Dict.fromListMap .id [ Table ( "public", "users" ) "public" "users" False (Dict.fromListMap .name [ Column 0 "id" "int" False Nothing Nothing Nothing Nothing [] ]) Nothing [] [] [] Nothing [] ]
 
 
 project1 : Project
@@ -160,8 +160,8 @@ tables2 =
           , view = False
           , columns =
                 Dict.fromListMap .name
-                    [ Column 0 "id" "int" False Nothing Nothing Nothing []
-                    , Column 1 "name" "varchar" True Nothing Nothing Nothing []
+                    [ Column 0 "id" "int" False Nothing Nothing Nothing Nothing []
+                    , Column 1 "name" "varchar" True Nothing Nothing Nothing Nothing []
                     ]
           , primaryKey = Just (PrimaryKey (Just "users_pk") (Nel (ColumnPath.fromString "id") []) [])
           , uniques = []
@@ -176,10 +176,10 @@ tables2 =
           , view = False
           , columns =
                 Dict.fromListMap .name
-                    [ Column 0 "user_id" "int" False Nothing Nothing Nothing [ Origin src1 [ 14 ] ]
-                    , Column 1 "login" "varchar" False Nothing Nothing Nothing [ Origin src1 [ 15 ] ]
-                    , Column 2 "pass" "varchar" False Nothing (Just (Comment "Encrypted field" [])) Nothing [ Origin src1 [ 16 ] ]
-                    , Column 3 "role" "varchar" True (Just "guest") Nothing Nothing [ Origin src1 [ 17 ] ]
+                    [ Column 0 "user_id" "int" False Nothing Nothing Nothing Nothing [ Origin src1 [ 14 ] ]
+                    , Column 1 "login" "varchar" False Nothing Nothing Nothing Nothing [ Origin src1 [ 15 ] ]
+                    , Column 2 "pass" "varchar" False Nothing (Just (Comment "Encrypted field" [])) Nothing Nothing [ Origin src1 [ 16 ] ]
+                    , Column 3 "role" "varchar" True (Just "guest") Nothing Nothing Nothing [ Origin src1 [ 17 ] ]
                     ]
           , primaryKey = Nothing
           , uniques = [ Unique "unique_login" (Nel (ColumnPath.fromString "login") []) (Just "(login)") [] ]

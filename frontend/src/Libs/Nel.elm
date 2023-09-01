@@ -1,4 +1,4 @@
-module Libs.Nel exposing (Nel, add, all, any, concatMap, filter, filterMap, filterNot, filterZip, find, from, fromList, indexedMap, join, last, length, map, member, merge, partition, prepend, sortBy, startsWith, toList, unique, uniqueBy, zip, zipWith)
+module Libs.Nel exposing (Nel, add, all, any, append, concatMap, filter, filterMap, filterNot, filterZip, find, from, fromList, indexedMap, join, last, length, map, member, merge, partition, prepend, sortBy, startsWith, toList, unique, uniqueBy, zip, zipWith)
 
 import Libs.List as List
 import Set
@@ -17,6 +17,11 @@ last nel =
 prepend : a -> Nel a -> Nel a
 prepend a nel =
     Nel a (nel.head :: nel.tail)
+
+
+append : Nel a -> Nel a -> Nel a
+append xs ys =
+    Nel xs.head (xs.tail |> List.append (ys |> toList))
 
 
 add : a -> Nel a -> Nel a

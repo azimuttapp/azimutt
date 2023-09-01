@@ -68,6 +68,7 @@ export type AzimuttColumn = {
     nullable?: boolean | null
     default?: AzimuttColumnValue | null
     comment?: string | null
+    values?: string[] | null
     columns?: AzimuttColumn[] | null
 }
 export const AzimuttColumn: z.ZodType<AzimuttColumn> = z.object({
@@ -76,6 +77,7 @@ export const AzimuttColumn: z.ZodType<AzimuttColumn> = z.object({
     nullable: z.boolean().nullish(),
     default: AzimuttColumnValue.nullish(),
     comment: z.string().nullish(),
+    values: z.string().array().nullish(),
     columns: z.lazy(() => AzimuttColumn.array().nullish())
 }).strict()
 // TODO: mutualise with Table in frontend/ts-src/types/project.ts:208?

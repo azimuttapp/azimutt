@@ -829,7 +829,7 @@ docTable schema name columns =
     , schema = schema
     , name = name
     , view = False
-    , columns = columns |> List.indexedMap (\i ( col, kind, nullable ) -> { index = i, name = col, kind = kind, nullable = nullable, default = Nothing, comment = Nothing, columns = Nothing, origins = [] }) |> Dict.fromListMap .name
+    , columns = columns |> List.indexedMap (\i ( col, kind, nullable ) -> { index = i, name = col, kind = kind, nullable = nullable, default = Nothing, comment = Nothing, values = Nothing, columns = Nothing, origins = [] }) |> Dict.fromListMap .name
     , primaryKey = Just { name = Just (name ++ "_pk"), columns = Nel (Nel "id" []) [], origins = [] }
     , uniques = []
     , indexes = []

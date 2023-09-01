@@ -110,7 +110,7 @@ table =
 
 column : ColumnIndex -> Fuzzer Column
 column i =
-    Fuzz.map7 (Column i) columnName columnType Fuzz.bool (Fuzz.maybe columnValue) (Fuzz.maybe comment) (Fuzz.constant Nothing) (Fuzz.listN 1 origin)
+    Fuzz.map8 (Column i) columnName columnType Fuzz.bool (Fuzz.maybe columnValue) (Fuzz.maybe comment) (Fuzz.constant Nothing) (Fuzz.constant Nothing) (Fuzz.listN 1 origin)
 
 
 primaryKey : Fuzzer PrimaryKey

@@ -15,19 +15,19 @@ suite =
                 (\_ ->
                     """{"name":"id","type":"int"}"""
                         |> Decode.decodeString JsonTable.decodeJsonColumn
-                        |> Expect.equal (Ok (JsonColumn "id" "int" Nothing Nothing Nothing Nothing))
+                        |> Expect.equal (Ok (JsonColumn "id" "int" Nothing Nothing Nothing Nothing Nothing))
                 )
             , test "full"
                 (\_ ->
-                    """{"name":"id","type":"int","nullable":false,"default":"0","comment":"id col"}"""
+                    """{"name":"id","type":"int","nullable":false,"default":"0","comment":"id col","values":["a","b"]}"""
                         |> Decode.decodeString JsonTable.decodeJsonColumn
-                        |> Expect.equal (Ok (JsonColumn "id" "int" (Just False) (Just "0") (Just "id col") Nothing))
+                        |> Expect.equal (Ok (JsonColumn "id" "int" (Just False) (Just "0") (Just "id col") (Nel.fromList [ "a", "b" ]) Nothing))
                 )
             , test "empty nested"
                 (\_ ->
                     """{"name":"id","type":"int","columns":[]}"""
                         |> Decode.decodeString JsonTable.decodeJsonColumn
-                        |> Expect.equal (Ok (JsonColumn "id" "int" Nothing Nothing Nothing Nothing))
+                        |> Expect.equal (Ok (JsonColumn "id" "int" Nothing Nothing Nothing Nothing Nothing))
                 )
             , test "nested"
                 (\_ ->
@@ -40,8 +40,9 @@ suite =
                                     Nothing
                                     Nothing
                                     Nothing
-                                    ([ JsonColumn "kind" "string" Nothing Nothing Nothing Nothing
-                                     , JsonColumn "value" "number" Nothing Nothing Nothing Nothing
+                                    Nothing
+                                    ([ JsonColumn "kind" "string" Nothing Nothing Nothing Nothing Nothing
+                                     , JsonColumn "value" "number" Nothing Nothing Nothing Nothing Nothing
                                      ]
                                         |> Nel.fromList
                                         |> Maybe.map JsonNestedColumns

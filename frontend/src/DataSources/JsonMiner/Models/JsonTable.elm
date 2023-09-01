@@ -26,6 +26,7 @@ type alias JsonColumn =
     , nullable : Maybe Bool
     , default : Maybe String
     , comment : Maybe String
+    , values : Maybe (Nel String)
     , columns : Maybe JsonNestedColumns
     }
 
@@ -93,12 +94,13 @@ encode value =
 decodeJsonColumn : Decoder JsonColumn
 decodeJsonColumn =
     -- exposed for tests
-    Decode.map6 JsonColumn
+    Decode.map7 JsonColumn
         (Decode.field "name" Decode.string)
         (Decode.field "type" Decode.string)
         (Decode.maybeField "nullable" Decode.bool)
         (Decode.maybeField "default" Decode.string)
         (Decode.maybeField "comment" Decode.string)
+        (Decode.maybeField "values" (Decode.nel Decode.string))
         (Decode.maybeField "columns" decodeJsonNestedColumns)
 
 
@@ -110,6 +112,7 @@ encodeJsonColumn value =
         , ( "nullable", value.nullable |> Encode.maybe Encode.bool )
         , ( "default", value.default |> Encode.maybe Encode.string )
         , ( "comment", value.comment |> Encode.maybe Encode.string )
+        , ( "values", value.values |> Encode.maybe (Encode.nel Encode.string) )
         , ( "columns", value.columns |> Encode.maybe encodeJsonNestedColumns )
         ]
 

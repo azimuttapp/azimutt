@@ -114,7 +114,7 @@ buildTable name columnNames =
 
 buildColumn : ColumnName -> Column
 buildColumn name =
-    Column 0 name "int" False Nothing Nothing Nothing []
+    Column 0 name "int" False Nothing Nothing Nothing Nothing []
 
 
 buildRelation : ( TableName, ColumnName ) -> ( TableName, ColumnName ) -> ErdRelation

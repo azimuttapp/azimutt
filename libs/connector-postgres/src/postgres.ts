@@ -6,7 +6,7 @@ import {buildSqlColumn, buildSqlTable} from "./helpers";
 
 export type PostgresSchema = { tables: PostgresTable[], relations: PostgresRelation[], types: PostgresType[] }
 export type PostgresTable = { schema: PostgresSchemaName, table: PostgresTableName, view: boolean, columns: PostgresColumn[], primaryKey: PostgresPrimaryKey | null, uniques: PostgresUnique[], indexes: PostgresIndex[], checks: PostgresCheck[], comment: string | null }
-export type PostgresColumn = { name: PostgresColumnName, type: PostgresColumnType, nullable: boolean, default: string | null, comment: string | null, schema: ValueSchema | null }
+export type PostgresColumn = { name: PostgresColumnName, type: PostgresColumnType, nullable: boolean, default: string | null, comment: string | null, values: string[] | null, schema: ValueSchema | null }
 export type PostgresPrimaryKey = { name: string | null, columns: PostgresColumnName[] }
 export type PostgresUnique = { name: string, columns: PostgresColumnName[], definition: string | null }
 export type PostgresIndex = { name: string, columns: PostgresColumnName[], definition: string | null }
@@ -54,6 +54,7 @@ export const getSchema = (schema: PostgresSchemaName | undefined, sampleSize: nu
                         nullable: col.column_nullable,
                         default: col.column_default,
                         comment: tableComments.find(c => c.column_name === col.column_name)?.comment || null,
+                        values: col.column_values || null,
                         schema: col.column_schema || null
                     })),
                 primaryKey: tableConstraints.filter(c => c.constraint_type === 'p').map(c => ({
@@ -107,6 +108,7 @@ export function formatSchema(schema: PostgresSchema, inferRelations: boolean): A
                 nullable: c.nullable || undefined,
                 default: c.default || undefined,
                 comment: c.comment || undefined,
+                values: c.values && c.values.length > 0 ? c.values : undefined,
                 columns: c.schema ? schemaToColumns(c.schema, 0) : undefined
             })),
             view: t.view || undefined,
@@ -164,6 +166,7 @@ type RawColumn = {
     column_index: number
     column_default: string | null
     column_nullable: boolean
+    column_values?: string[]
     column_schema?: ValueSchema
 }
 
@@ -196,14 +199,22 @@ function getColumns(conn: Conn, schema: PostgresSchemaName | undefined): Promise
 }
 
 function enrichColumnsWithSchema(conn: Conn, columns: RawColumn[], sampleSize: number): Promise<RawColumn[]> {
-    return sequence(columns, c => {
-        if (c.column_type === 'jsonb') {
-            return getColumnSchema(conn, c.table_schema, c.table_name, c.column_name, sampleSize)
-                .then(column_schema => ({...c, column_schema}))
+    return sequence(columns, async c => {
+        if (c.column_name.endsWith('_type')) {
+            return getColumnDistinctValues(conn, c.table_schema, c.table_name, c.column_name).then(column_values => ({...c, column_values}))
+        } else if (c.column_type === 'jsonb') {
+            return getColumnSchema(conn, c.table_schema, c.table_name, c.column_name, sampleSize) .then(column_schema => ({...c, column_schema}))
         } else {
-            return Promise.resolve(c)
+            return c
         }
     })
+}
+
+async function getColumnDistinctValues(conn: Conn, schema: SchemaName, table: TableName, column: ColumnName) {
+    const sqlTable = buildSqlTable(schema, table)
+    const sqlColumn = buildSqlColumn(column)
+    const rows = await conn.query<{value: string}>(`SELECT distinct ${sqlColumn}::varchar(255) as value FROM ${sqlTable} ORDER BY ${sqlColumn} LIMIT 30;`)
+    return rows.map(v => v.value)
 }
 
 async function getColumnSchema(conn: Conn, schema: SchemaName, table: TableName, column: ColumnName, sampleSize: number): Promise<ValueSchema> {

@@ -120,6 +120,7 @@ buildColumn origins index column =
     , nullable = column.nullable |> Maybe.withDefault False
     , default = column.default
     , comment = column.comment |> Maybe.map (buildComment origins)
+    , values = column.values
     , columns = column.columns |> Maybe.map (buildNestedColumns origins)
     , origins = origins
     }
@@ -132,6 +133,7 @@ unpackColumn column =
     , nullable = Just column.nullable |> Maybe.filter (\n -> n /= False)
     , default = column.default
     , comment = column.comment |> Maybe.map unpackComment
+    , values = column.values
     , columns = column.columns |> Maybe.map unpackNestedColumns
     }
 

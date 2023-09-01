@@ -646,16 +646,16 @@ docSource3 =
 
 docKeyValueColumns : Dict ColumnName Column
 docKeyValueColumns =
-    [ { index = 0, name = "key", kind = "varchar", nullable = False, default = Nothing, comment = Nothing, columns = Nothing, origins = [] }
-    , { index = 1, name = "value", kind = "json", nullable = True, default = Nothing, comment = Nothing, columns = Just (NestedColumns docKeyValueNestedColumns), origins = [] }
+    [ { index = 0, name = "key", kind = "varchar", nullable = False, default = Nothing, comment = Nothing, values = Nothing, columns = Nothing, origins = [] }
+    , { index = 1, name = "value", kind = "json", nullable = True, default = Nothing, comment = Nothing, values = Nothing, columns = Just (NestedColumns docKeyValueNestedColumns), origins = [] }
     ]
         |> Dict.fromListMap .name
 
 
 docKeyValueNestedColumns : Ned ColumnName Column
 docKeyValueNestedColumns =
-    Ned.build ( "name", { index = 0, name = "name", kind = "varchar", nullable = False, default = Nothing, comment = Nothing, columns = Nothing, origins = [] } )
-        [ ( "score", { index = 1, name = "score", kind = "int", nullable = True, default = Nothing, comment = Nothing, columns = Nothing, origins = [] } )
+    Ned.build ( "name", { index = 0, name = "name", kind = "varchar", nullable = False, default = Nothing, comment = Nothing, values = Nothing, columns = Nothing, origins = [] } )
+        [ ( "score", { index = 1, name = "score", kind = "int", nullable = True, default = Nothing, comment = Nothing, values = Nothing, columns = Nothing, origins = [] } )
         ]
 
 
