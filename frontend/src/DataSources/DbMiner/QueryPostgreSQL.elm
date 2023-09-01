@@ -1,4 +1,4 @@
-module DataSources.DbMiner.QueryPostgreSQL exposing (addLimit, exploreColumn, exploreTable, filterTable, findRow, incomingRows)
+module DataSources.DbMiner.QueryPostgreSQL exposing (addLimit, exploreColumn, exploreTable, filterTable, findRow, incomingRows, updateColumnType)
 
 import DataSources.DbMiner.DbTypes exposing (FilterOperation(..), FilterOperator(..), IncomingRowsQuery, RowQuery, TableFilter, TableQuery)
 import Dict exposing (Dict)
@@ -8,7 +8,8 @@ import Libs.Nel as Nel exposing (Nel)
 import Libs.Regex as Regex
 import Models.DbValue as DbValue exposing (DbValue(..))
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
-import Models.Project.ColumnType as ColumnType exposing (ParsedColumnType)
+import Models.Project.ColumnRef exposing (ColumnRef)
+import Models.Project.ColumnType as ColumnType exposing (ColumnType, ParsedColumnType)
 import Models.Project.RowPrimaryKey exposing (RowPrimaryKey)
 import Models.Project.RowValue exposing (RowValue)
 import Models.Project.TableId as TableId exposing (TableId)
@@ -78,6 +79,11 @@ addLimit query =
 
         _ ->
             query
+
+
+updateColumnType : ColumnRef -> ColumnType -> SqlQuery
+updateColumnType ref kind =
+    "ALTER TABLE " ++ formatTable ref.table ++ " ALTER COLUMN " ++ formatColumn "" ref.column ColumnType.Text ++ " TYPE " ++ kind ++ ";"
 
 
 

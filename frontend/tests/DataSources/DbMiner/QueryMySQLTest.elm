@@ -1,7 +1,7 @@
 module DataSources.DbMiner.QueryMySQLTest exposing (..)
 
 import DataSources.DbMiner.DbTypes exposing (FilterOperation(..), FilterOperator(..), IncomingRowsQuery, RowQuery, TableFilter)
-import DataSources.DbMiner.QueryMySQL exposing (addLimit, exploreColumn, exploreTable, filterTable, findRow, incomingRows)
+import DataSources.DbMiner.QueryMySQL exposing (addLimit, exploreColumn, exploreTable, filterTable, findRow, incomingRows, updateColumnType)
 import Dict
 import Expect
 import Libs.Nel as Nel exposing (Nel)
@@ -22,6 +22,7 @@ suite =
         , describe "findRow" findRowSuite
         , describe "incomingRows" incomingRowsSuite
         , describe "addLimit" addLimitSuite
+        , describe "updateColumnType" updateColumnTypeSuite
         ]
 
 
@@ -138,6 +139,11 @@ WHERE e.name='project_loaded'
 LIMIT 100;
 """)
     ]
+
+
+updateColumnTypeSuite : List Test
+updateColumnTypeSuite =
+    [ test "basic" (\_ -> updateColumnType { table = ( "", "users" ), column = cPath "name" } "varchar(255)" |> Expect.equal """ALTER TABLE `users` MODIFY `name` varchar(255);""") ]
 
 
 fRow : TableId -> List ( String, DbValue ) -> String

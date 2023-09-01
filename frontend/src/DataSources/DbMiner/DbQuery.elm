@@ -1,4 +1,4 @@
-module DataSources.DbMiner.DbQuery exposing (addLimit, exploreColumn, exploreTable, filterTable, findRow, incomingRows, incomingRowsLimit)
+module DataSources.DbMiner.DbQuery exposing (addLimit, exploreColumn, exploreTable, filterTable, findRow, incomingRows, incomingRowsLimit, updateColumnType)
 
 import DataSources.DbMiner.DbTypes exposing (FilterOperation, FilterOperator(..), IncomingRowsQuery, RowQuery, TableQuery)
 import DataSources.DbMiner.QueryCouchbase as QueryCouchbase
@@ -10,6 +10,8 @@ import DataSources.DbMiner.QuerySQLServer as QuerySQLServer
 import Dict exposing (Dict)
 import Libs.Models.DatabaseKind as DatabaseKind exposing (DatabaseKind)
 import Models.Project.ColumnPath exposing (ColumnPath)
+import Models.Project.ColumnRef exposing (ColumnRef, ColumnRefLike)
+import Models.Project.ColumnType exposing (ColumnType)
 import Models.Project.TableId exposing (TableId)
 import Models.SqlQuery exposing (SqlQuery, SqlQueryOrigin)
 
@@ -37,7 +39,7 @@ exploreTable db table =
                 QuerySQLServer.exploreTable table
 
             DatabaseKind.Other ->
-                "Not implemented :/"
+                "exploreTable not implemented for database " ++ DatabaseKind.toString db
     , origin = "exploreTable"
     , db = db
     }
@@ -66,7 +68,7 @@ exploreColumn db table column =
                 QuerySQLServer.exploreColumn table column
 
             DatabaseKind.Other ->
-                "Not implemented :/"
+                "exploreColumn not implemented for database " ++ DatabaseKind.toString db
     , origin = "exploreColumn"
     , db = db
     }
@@ -84,7 +86,7 @@ filterTable db query =
                 QueryPostgreSQL.filterTable query.table query.filters
 
             _ ->
-                "Not implemented :/"
+                "filterTable not implemented for database " ++ DatabaseKind.toString db
     , origin = "filterTable"
     , db = db
     }
@@ -102,7 +104,7 @@ findRow db query =
                 QueryPostgreSQL.findRow query.table query.primaryKey
 
             _ ->
-                "Not implemented :/"
+                "findRow not implemented for database " ++ DatabaseKind.toString db
     , origin = "findRow"
     , db = db
     }
@@ -125,7 +127,7 @@ incomingRows db relations row =
                 QueryPostgreSQL.incomingRows row relations incomingRowsLimit
 
             _ ->
-                "Not implemented :/"
+                "incomingRows not implemented for database " ++ DatabaseKind.toString db
     , origin = "incomingRows"
     , db = db
     }
@@ -143,3 +145,20 @@ addLimit db query =
 
         _ ->
             query
+
+
+updateColumnType : DatabaseKind -> ColumnRefLike x -> ColumnType -> SqlQueryOrigin
+updateColumnType db ref kind =
+    { sql =
+        case db of
+            DatabaseKind.MySQL ->
+                QueryMySQL.updateColumnType { table = ref.table, column = ref.column } kind
+
+            DatabaseKind.PostgreSQL ->
+                QueryPostgreSQL.updateColumnType { table = ref.table, column = ref.column } kind
+
+            _ ->
+                "updateColumnType not implemented for database " ++ DatabaseKind.toString db
+    , origin = "updateColumnType"
+    , db = db
+    }

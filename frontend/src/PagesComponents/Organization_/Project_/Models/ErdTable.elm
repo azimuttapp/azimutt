@@ -1,5 +1,6 @@
-module PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable, create, getColumn, getColumnRoot, inChecks, inIndexes, inPrimaryKey, inUniques, unpack)
+module PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable, create, getColumn, getColumnRoot, getTable, inChecks, inIndexes, inPrimaryKey, inUniques, unpack)
 
+import Conf
 import Dict exposing (Dict)
 import Libs.Dict as Dict
 import Libs.Maybe as Maybe
@@ -95,6 +96,20 @@ unpack table =
     , comment = table.comment
     , origins = table.origins |> List.map ErdOrigin.unpack
     }
+
+
+getTable : SchemaName -> TableId -> Dict TableId ErdTable -> Maybe ErdTable
+getTable defaultSchema ( schema, table ) tables =
+    case tables |> Dict.get ( schema, table ) of
+        Just t ->
+            Just t
+
+        Nothing ->
+            if schema == Conf.schema.empty then
+                tables |> Dict.get ( defaultSchema, table )
+
+            else
+                Nothing
 
 
 getColumn : ColumnPath -> ErdTable -> Maybe ErdColumn

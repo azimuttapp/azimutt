@@ -234,8 +234,8 @@ update urlLayout zone now urlInfos organizations projects msg model =
                 |> AmlSidebar.setOtherSourcesTableIdsCache (Just source.id)
                 |> setDirty
 
-        CreateRelation src ref ->
-            model |> mapErdMCmd (Source.createRelation now src ref) |> setDirtyCmd
+        CreateRelations rels ->
+            model |> mapErdMCmd (Source.createRelations now rels) |> setDirtyCmd
 
         NewLayoutMsg message ->
             model |> NewLayout.update ModalOpen Toast CustomModalOpen now urlInfos message

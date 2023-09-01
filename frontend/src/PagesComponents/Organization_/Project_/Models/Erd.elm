@@ -13,7 +13,7 @@ import Models.OrganizationId exposing (OrganizationId)
 import Models.Position as Position
 import Models.Project exposing (Project)
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
-import Models.Project.ColumnRef exposing (ColumnRef)
+import Models.Project.ColumnRef exposing (ColumnRef, ColumnRefLike)
 import Models.Project.CustomType as CustomType exposing (CustomType)
 import Models.Project.CustomTypeId exposing (CustomTypeId)
 import Models.Project.LayoutName exposing (LayoutName)
@@ -188,17 +188,8 @@ canChangeColor erd =
 
 
 getTable : TableId -> Erd -> Maybe ErdTable
-getTable ( schema, table ) erd =
-    case erd.tables |> Dict.get ( schema, table ) of
-        Just t ->
-            Just t
-
-        Nothing ->
-            if schema == Conf.schema.empty then
-                erd.tables |> Dict.get ( erd.settings.defaultSchema, table )
-
-            else
-                Nothing
+getTable tableId erd =
+    erd.tables |> ErdTable.getTable erd.settings.defaultSchema tableId
 
 
 getColumn : ColumnRef -> Erd -> Maybe ErdColumn

@@ -254,7 +254,7 @@ type Msg
     | HoverTableRow TableRowHover Bool
     | CreateUserSource SourceName
     | CreateUserSourceWithId Source
-    | CreateRelation ColumnRef ColumnRef
+    | CreateRelations (List { src : ColumnRef, ref : ColumnRef })
     | NewLayoutMsg NewLayout.Msg
     | LayoutMsg LayoutMsg
     | NotesMsg NotesMsg

@@ -32,7 +32,7 @@ handleVirtualRelation msg model =
                     ( model |> setVirtualRelation (Just { src = Just ref, mouse = pos }), Cmd.none )
 
                 Just (Just src) ->
-                    ( model |> setVirtualRelation Nothing, T.send (CreateRelation src ref) )
+                    ( model |> setVirtualRelation Nothing, T.send (CreateRelations [ { src = src, ref = ref } ]) )
 
         VRMove pos ->
             ( model |> mapVirtualRelationM (setMouse pos), Cmd.none )

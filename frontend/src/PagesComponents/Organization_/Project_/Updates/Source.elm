@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Updates.Source exposing (createRelation)
+module PagesComponents.Organization_.Project_.Updates.Source exposing (createRelations)
 
 import Conf
 import Libs.List as List
@@ -15,18 +15,26 @@ import Services.Toasts as Toasts
 import Time
 
 
-createRelation : Time.Posix -> ColumnRef -> ColumnRef -> Erd -> ( Erd, Cmd Msg )
-createRelation now src ref erd =
+createRelations : Time.Posix -> List { src : ColumnRef, ref : ColumnRef } -> Erd -> ( Erd, Cmd Msg )
+createRelations now rels erd =
     case erd.sources |> List.find (\s -> s.kind == AmlEditor && s.name == Conf.constants.virtualRelationSourceName) of
         Just source ->
-            ( erd |> Erd.mapSource source.id (Source.addRelation now src ref)
-            , "Relation " ++ TableId.show erd.settings.defaultSchema src.table ++ " → " ++ TableId.show erd.settings.defaultSchema ref.table ++ " added to " ++ source.name ++ " source." |> Toasts.info |> Toast |> T.send
+            ( erd |> Erd.mapSource source.id (Source.addRelations now rels)
+            , case rels of
+                [] ->
+                    "No relation to add." |> Toasts.info |> Toast |> T.send
+
+                { src, ref } :: [] ->
+                    "Relation " ++ TableId.show erd.settings.defaultSchema src.table ++ " → " ++ TableId.show erd.settings.defaultSchema ref.table ++ " added to " ++ source.name ++ " source." |> Toasts.info |> Toast |> T.send
+
+                _ ->
+                    (rels |> List.length |> String.fromInt) ++ " relations added to " ++ source.name ++ " source." |> Toasts.info |> Toast |> T.send
             )
 
         Nothing ->
             ( erd
             , Cmd.batch
-                [ SourceId.generator |> Random.generate (Source.aml Conf.constants.virtualRelationSourceName now >> Source.addRelation now src ref >> CreateUserSourceWithId)
-                , "Created " ++ Conf.constants.virtualRelationSourceName ++ " source to add the relation." |> Toasts.info |> Toast |> T.send
+                [ SourceId.generator |> Random.generate (Source.aml Conf.constants.virtualRelationSourceName now >> Source.addRelations now rels >> CreateUserSourceWithId)
+                , "Created " ++ Conf.constants.virtualRelationSourceName ++ " source to add the relations." |> Toasts.info |> Toast |> T.send
                 ]
             )

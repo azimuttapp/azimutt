@@ -1,4 +1,4 @@
-module Models.Project.Source exposing (Source, addRelation, aml, databaseUrl, decode, encode, getColumn, getTable, refreshWith, toInfo)
+module Models.Project.Source exposing (Source, addRelations, aml, databaseUrl, decode, encode, getColumn, getTable, refreshWith, toInfo)
 
 import Array exposing (Array)
 import Conf
@@ -97,11 +97,11 @@ refreshWith new current =
         current
 
 
-addRelation : Time.Posix -> ColumnRef -> ColumnRef -> Source -> Source
-addRelation now src ref source =
+addRelations : Time.Posix -> List { src : ColumnRef, ref : ColumnRef } -> Source -> Source
+addRelations now rels source =
     source
-        |> mapContent (Array.push (AmlGenerator.relation src ref))
-        |> mapRelations (\r -> r ++ [ Relation.virtual src ref (Origin source.id [ Array.length source.content + 1 ]) ])
+        |> mapContent (Array.append (Array.fromList (rels |> List.map (\r -> AmlGenerator.relation r.src r.ref))))
+        |> mapRelations (\rs -> rs ++ (rels |> List.indexedMap (\i r -> Relation.virtual r.src r.ref (Origin source.id [ Array.length source.content + i + 1 ]))))
         |> setUpdatedAt now
 
 

@@ -6,6 +6,7 @@ import Components.Molecules.Modal as Modal
 import Components.Molecules.Tooltip as Tooltip
 import Components.Slices.ProPlan as ProPlan
 import Conf
+import DataSources.DbMiner.DbQuery as DbQuery
 import Dict exposing (Dict)
 import Html exposing (Html, div, h3, h4, h5, p, span, text)
 import Html.Attributes exposing (class, classList, id)
@@ -15,22 +16,31 @@ import Libs.Dict as Dict
 import Libs.Html exposing (bText, extLink)
 import Libs.Html.Attributes exposing (css)
 import Libs.List as List
+import Libs.Maybe as Maybe
+import Libs.Models.DatabaseKind as DatabaseKind exposing (DatabaseKind)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Nel as Nel
 import Libs.Regex as Regex
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (sm)
+import Models.DbSourceInfo as DbSourceInfo exposing (DbSourceInfo)
 import Models.Organization exposing (Organization)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
-import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
+import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef, ColumnRefLike)
 import Models.Project.ColumnType exposing (ColumnType)
 import Models.Project.SchemaName exposing (SchemaName)
+import Models.Project.Source as Source exposing (Source)
+import Models.Project.SourceId as SourceId exposing (SourceIdStr)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableName exposing (TableName)
 import Models.ProjectRef exposing (ProjectRef)
+import Models.SqlScript exposing (SqlScript)
 import PagesComponents.Organization_.Project_.Models exposing (Msg(..), SchemaAnalysisDialog, SchemaAnalysisMsg(..))
-import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable)
+import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn)
+import PagesComponents.Organization_.Project_.Models.ErdRelation exposing (ErdRelation)
+import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable exposing (ErdTable)
+import Ports
 import Services.Backend as Backend
 
 
@@ -53,8 +63,8 @@ import Services.Backend as Backend
 -}
 
 
-viewSchemaAnalysis : ProjectRef -> Bool -> SchemaName -> Dict TableId ErdTable -> SchemaAnalysisDialog -> Html Msg
-viewSchemaAnalysis project opened defaultSchema tables model =
+viewSchemaAnalysis : ProjectRef -> Bool -> SchemaName -> List Source -> Dict TableId ErdTable -> List ErdRelation -> SchemaAnalysisDialog -> Html Msg
+viewSchemaAnalysis project opened defaultSchema sources tables relations model =
     let
         titleId : HtmlId
         titleId =
@@ -67,7 +77,7 @@ viewSchemaAnalysis project opened defaultSchema tables model =
 
           else
             div [ class "max-w-5xl px-6 mt-3" ] [ ProPlan.analysisWarning project ]
-        , viewAnalysis project model.opened defaultSchema tables
+        , viewAnalysis project model.opened defaultSchema sources tables relations
         , viewFooter
         ]
 
@@ -86,11 +96,12 @@ viewHeader titleId =
         ]
 
 
-viewAnalysis : ProjectRef -> HtmlId -> SchemaName -> Dict TableId ErdTable -> Html Msg
-viewAnalysis project opened defaultSchema tables =
+viewAnalysis : ProjectRef -> HtmlId -> SchemaName -> List Source -> Dict TableId ErdTable -> List ErdRelation -> Html Msg
+viewAnalysis project opened defaultSchema sources tables relations =
     div [ class "max-w-5xl px-6 mt-3" ]
         [ viewMissingPrimaryKey "missing-pks" project opened defaultSchema (computeMissingPrimaryKey tables)
         , viewMissingRelations "missing-relations" project opened defaultSchema (computeMissingRelations tables)
+        , viewRelationsWithDifferentTypes "relations-with-different-types" project opened defaultSchema sources (computeRelationsWithDifferentTypes defaultSchema tables relations)
         , viewHeterogeneousTypes "heterogeneous-types" project opened defaultSchema (computeHeterogeneousTypes tables)
         , viewBigTables "big-tables" project opened defaultSchema (computeBigTables tables)
         ]
@@ -212,13 +223,27 @@ kindMatch rel =
 
 viewMissingRelations : HtmlId -> ProjectRef -> HtmlId -> SchemaName -> ( List MissingRelation, List MissingRef ) -> Html Msg
 viewMissingRelations htmlId project opened defaultSchema ( missingRels, missingRefs ) =
+    let
+        sortedMissingRels : List { src : ColumnInfo, ref : ColumnInfo }
+        sortedMissingRels =
+            missingRels |> List.sortBy (\rel -> ColumnRef.show defaultSchema rel.ref ++ " ← " ++ ColumnRef.show defaultSchema rel.src)
+    in
     viewSection htmlId
         opened
         "No potentially missing relation found"
         ((missingRels |> List.length) + (missingRefs |> List.length))
         (\nb -> "Found " ++ (nb |> String.pluralize "potentially missing relation"))
-        [ ProPlan.analysisResults project
-            (missingRels |> List.sortBy (\rel -> ColumnRef.show defaultSchema rel.ref ++ " ← " ++ ColumnRef.show defaultSchema rel.src))
+        [ if List.nonEmpty missingRels && project.organization.plan.dbAnalysis then
+            div []
+                [ Button.primary1 Tw.primary
+                    [ onClick (sortedMissingRels |> List.map (\r -> { src = infoToRef r.src, ref = infoToRef r.ref }) |> CreateRelations) ]
+                    [ text ("Add all " ++ String.pluralizeL "relation" sortedMissingRels) ]
+                ]
+
+          else
+            div [] []
+        , ProPlan.analysisResults project
+            sortedMissingRels
             (\rel ->
                 div [ class "flex justify-between items-center py-1" ]
                     [ div []
@@ -230,7 +255,7 @@ viewMissingRelations htmlId project opened defaultSchema ( missingRels, missingR
                         ]
                     , div [ class "ml-3" ]
                         [ B.cond (kindMatch rel) (span [] []) (span [ class "text-gray-400 mr-3" ] [ Icon.solid Exclamation "inline", text (" " ++ rel.ref.kind ++ " vs " ++ rel.src.kind) ])
-                        , Button.primary1 Tw.primary [ onClick (CreateRelation (infoToRef rel.src) (infoToRef rel.ref)) ] [ text "Add relation" ]
+                        , Button.primary1 Tw.primary [ onClick (CreateRelations [ { src = infoToRef rel.src, ref = infoToRef rel.ref } ]) ] [ text "Add relation" ]
                         ]
                     ]
             )
@@ -251,6 +276,102 @@ viewMissingRelations htmlId project opened defaultSchema ( missingRels, missingR
                     )
                 ]
         ]
+
+
+
+-- RELATIONS WITH DIFFERENT TYPES
+
+
+computeRelationsWithDifferentTypes : SchemaName -> Dict TableId ErdTable -> List ErdRelation -> List ( ErdRelation, ErdColumn, ErdColumn )
+computeRelationsWithDifferentTypes defaultSchema tables relations =
+    let
+        getColumn : ColumnRefLike x -> Maybe ErdColumn
+        getColumn ref =
+            tables |> ErdTable.getTable defaultSchema ref.table |> Maybe.andThen (ErdTable.getColumn ref.column)
+    in
+    relations
+        |> List.filterMap (\r -> Maybe.map2 (\src ref -> ( r, src, ref )) (getColumn r.src) (getColumn r.ref))
+        |> List.filter (\( _, src, ref ) -> src.kind /= ref.kind)
+
+
+viewRelationsWithDifferentTypes : HtmlId -> ProjectRef -> HtmlId -> SchemaName -> List Source -> List ( ErdRelation, ErdColumn, ErdColumn ) -> Html Msg
+viewRelationsWithDifferentTypes htmlId project opened defaultSchema sources badRels =
+    viewSection htmlId
+        opened
+        "No relation with different types found"
+        (badRels |> List.length)
+        (\nb -> "Found " ++ (nb |> String.pluralize "relation") ++ " with different types")
+        [ if List.nonEmpty badRels && project.organization.plan.dbAnalysis then
+            div []
+                [ Button.primary1 Tw.primary
+                    [ onClick (badRels |> scriptForRelationsWithDifferentTypes defaultSchema sources |> Ports.downloadFile "azimutt-fix-relations-with-different-types.sql" |> Send) ]
+                    [ text "Download SQL script to fix all" ]
+                ]
+
+          else
+            div [] []
+        , ProPlan.analysisResults project
+            (badRels |> List.sortBy (\( rel, _, _ ) -> ColumnRef.show defaultSchema rel.ref ++ " ← " ++ ColumnRef.show defaultSchema rel.src))
+            (\( rel, src, ref ) ->
+                div [ class "flex justify-between items-center py-1" ]
+                    [ div []
+                        [ text (TableId.show defaultSchema rel.ref.table)
+                        , span [ class "text-gray-500" ] [ text ("" |> ColumnPath.withName rel.ref.column) ]
+                        , Icon.solid ArrowNarrowLeft "inline mx-1"
+                        , text (TableId.show defaultSchema rel.src.table)
+                        , span [ class "text-gray-500" ] [ text ("" |> ColumnPath.withName rel.src.column) ]
+                        ]
+                    , div [ class "ml-3 text-gray-400" ] [ Icon.solid Exclamation "inline", text (" " ++ ref.kind ++ " vs " ++ src.kind) ]
+                    ]
+            )
+        ]
+
+
+scriptForRelationsWithDifferentTypes : SchemaName -> List Source -> List ( ErdRelation, ErdColumn, ErdColumn ) -> SqlScript
+scriptForRelationsWithDifferentTypes defaultSchema sources relations =
+    let
+        sourcesById : Dict SourceIdStr Source
+        sourcesById =
+            sources |> List.groupBy (.id >> SourceId.toString) |> Dict.filterMap (\_ -> List.head)
+
+        defaultSource : Maybe DbSourceInfo
+        defaultSource =
+            sources |> List.findMap DbSourceInfo.fromSource
+    in
+    "-- Script generated by Azimutt\n"
+        ++ "-- Queries to fix column types for relations with different types (apply primary key column type to foreign key column)\n\n"
+        ++ (relations
+                |> List.sortBy (\( rel, _, _ ) -> ColumnRef.show defaultSchema rel.ref ++ " ← " ++ ColumnRef.show defaultSchema rel.src)
+                |> List.concatMap (\( rel, src, ref ) -> src.origins |> List.map (\o -> { source = SourceId.toString o.id, relation = ( rel, ref ) }))
+                |> List.groupBy .source
+                |> Dict.toList
+                |> List.map (\( sourceId, rels ) -> scriptForSource defaultSource (sourcesById |> Dict.get sourceId) (rels |> List.map .relation))
+                |> String.join "\n\n\n"
+           )
+        ++ "\n"
+
+
+scriptForSource : Maybe DbSourceInfo -> Maybe Source -> List ( ErdRelation, ErdColumn ) -> SqlScript
+scriptForSource defaultSource source relations =
+    let
+        name : String
+        name =
+            source |> Maybe.mapOrElse .name "unknown"
+
+        kind : DatabaseKind
+        kind =
+            source
+                |> Maybe.andThen Source.databaseUrl
+                |> Maybe.map DatabaseKind.fromUrl
+                |> Maybe.orElse (defaultSource |> Maybe.map (.db >> .kind))
+                |> Maybe.withDefault DatabaseKind.PostgreSQL
+    in
+    ("-- Queries for " ++ name ++ " source\n")
+        ++ (relations
+                |> List.map (\( rel, ref ) -> DbQuery.updateColumnType kind rel.src ref.kind |> .sql)
+                |> List.filter (\q -> q /= "")
+                |> String.join "\n"
+           )
 
 
 
