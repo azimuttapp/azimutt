@@ -11,13 +11,15 @@ module Libs.String exposing
     , pluralizeL
     , pluralizeS
     , prepend
+    , singular
+    , splitWords
     , stripLeft
     , stripRight
     , unique
-    , wordSplit
     )
 
 import Dict exposing (Dict)
+import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Regex as Regex
 import MD5
@@ -79,9 +81,26 @@ filterStartsWith prefix str =
         ""
 
 
-wordSplit : String -> List String
-wordSplit input =
-    List.foldl (\sep words -> words |> List.concatMap (\word -> String.split sep word)) [ input ] [ "_", "-", " " ]
+splitWords : String -> List String
+splitWords text =
+    let
+        ( rest, results ) =
+            text
+                |> String.toList
+                |> List.foldl
+                    (\c ( acc, res ) ->
+                        if c |> Char.isAlphaNum |> not then
+                            ( [], acc :: res )
+
+                        else if Char.isUpper c && (acc |> List.head |> Maybe.all Char.isUpper |> not) then
+                            ( [ c ], acc :: res )
+
+                        else
+                            ( c :: acc, res )
+                    )
+                    ( [], [] )
+    in
+    (rest :: results) |> List.filter List.nonEmpty |> List.reverse |> List.map (List.reverse >> String.fromList >> String.toLower)
 
 
 hashCode : String -> Int
@@ -156,3 +175,18 @@ pluralizeS word set =
 pluralizeD : String -> Dict k a -> String
 pluralizeD word list =
     list |> Dict.size |> pluralize word
+
+
+singular : String -> String
+singular word =
+    if word |> String.endsWith "ies" then
+        (word |> String.dropRight 3) ++ "y"
+
+    else if word |> String.endsWith "es" then
+        word |> String.dropRight 2
+
+    else if word |> String.endsWith "s" then
+        word |> String.dropRight 1
+
+    else
+        word

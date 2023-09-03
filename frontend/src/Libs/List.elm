@@ -30,6 +30,7 @@ module Libs.List exposing
     , mapAtCmd
     , mapBy
     , mapByCmd
+    , mapLast
     , maximumBy
     , memberBy
     , memberWith
@@ -253,6 +254,16 @@ mapAt index f list =
                 else
                     a
             )
+
+
+mapLast : (a -> a) -> List a -> List a
+mapLast f list =
+    let
+        i : Int
+        i =
+            List.length list - 1
+    in
+    list |> mapAt i f
 
 
 mapBy : (a -> b) -> b -> (a -> a) -> List a -> List a

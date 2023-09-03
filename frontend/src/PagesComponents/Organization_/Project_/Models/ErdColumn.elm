@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn, ErdNestedColumns(..), create, getColumn, unpack, withNullable)
+module PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn, ErdNestedColumns(..), create, flatten, getColumn, unpack, withNullable)
 
 import Dict exposing (Dict)
 import Libs.Maybe as Maybe
@@ -26,6 +26,7 @@ import PagesComponents.Organization_.Project_.Models.ErdRelation exposing (ErdRe
 
 type alias ErdColumn =
     { index : ColumnIndex
+    , name : ColumnName
     , path : ColumnPath
     , kind : ColumnType
     , kindLabel : String
@@ -53,6 +54,7 @@ type ErdNestedColumns
 create : SchemaName -> List Source -> Dict CustomTypeId CustomType -> List ErdRelation -> Table -> ColumnPath -> Column -> ErdColumn
 create defaultSchema sources types columnRelations table path column =
     { index = column.index
+    , name = column.name
     , path = path
     , kind = column.kind
     , kindLabel = column.kind |> ColumnType.label defaultSchema
@@ -92,6 +94,16 @@ getColumn path column =
     column.columns
         |> Maybe.andThen (\(ErdNestedColumns cols) -> cols |> Ned.get path.head)
         |> Maybe.andThen (\col -> path.tail |> Nel.fromList |> Maybe.mapOrElse (\next -> getColumn next col) (Just col))
+
+
+flatten : ErdColumn -> List ErdColumn
+flatten col =
+    col :: (col.columns |> Maybe.mapOrElse flattenNested [])
+
+
+flattenNested : ErdNestedColumns -> List ErdColumn
+flattenNested (ErdNestedColumns cols) =
+    cols |> Ned.values |> Nel.toList |> List.concatMap (\col -> [ col ] ++ (col.columns |> Maybe.mapOrElse flattenNested []))
 
 
 withNullable : ErdColumn -> String -> String

@@ -1,4 +1,4 @@
-module Libs.Nel exposing (Nel, add, all, any, append, concatMap, filter, filterMap, filterNot, filterZip, find, from, fromList, indexedMap, join, last, length, map, member, merge, partition, prepend, sortBy, startsWith, toList, unique, uniqueBy, zip, zipWith)
+module Libs.Nel exposing (Nel, add, all, any, append, concatMap, filter, filterMap, filterNot, filterZip, find, from, fromList, indexedMap, join, last, length, map, mapLast, member, merge, partition, prepend, sortBy, startsWith, toList, unique, uniqueBy, zip, zipWith)
 
 import Libs.List as List
 import Set
@@ -30,18 +30,27 @@ add a { head, tail } =
 
 
 map : (a -> b) -> Nel a -> Nel b
-map f xs =
-    { head = f xs.head, tail = xs.tail |> List.map f }
+map f nel =
+    { head = f nel.head, tail = nel.tail |> List.map f }
 
 
 indexedMap : (Int -> a -> b) -> Nel a -> Nel b
-indexedMap f xs =
-    { head = f 0 xs.head, tail = xs.tail |> List.indexedMap (\i a -> f (i + 1) a) }
+indexedMap f nel =
+    { head = f 0 nel.head, tail = nel.tail |> List.indexedMap (\i a -> f (i + 1) a) }
 
 
 concatMap : (a -> List b) -> Nel a -> List b
 concatMap f nel =
     nel |> map f |> toList |> List.concat
+
+
+mapLast : (a -> a) -> Nel a -> Nel a
+mapLast f nel =
+    if nel.tail |> List.isEmpty then
+        { head = f nel.head, tail = [] }
+
+    else
+        { head = nel.head, tail = nel.tail |> List.mapLast f }
 
 
 find : (a -> Bool) -> Nel a -> Maybe a

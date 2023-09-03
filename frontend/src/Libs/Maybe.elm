@@ -1,4 +1,4 @@
-module Libs.Maybe exposing (all, andThenZip, any, any2, filter, filterBy, filterNot, has, hasBy, isJust, mapOrElse, merge, orElse, resultSeq, toList, toResult, toResultErr, when, zip, zip3)
+module Libs.Maybe exposing (all, andThenZip, any, any2, filter, filterBy, filterNot, has, hasBy, isJust, mapOrElse, merge, onNothing, orElse, resultSeq, toList, toResult, toResultErr, when, zip, zip3)
 
 import Libs.Bool as B
 
@@ -20,6 +20,16 @@ orElse other item =
 
         ( Nothing, res ) ->
             res
+
+
+onNothing : (() -> Maybe a) -> Maybe a -> Maybe a
+onNothing f item =
+    case item of
+        Just a ->
+            Just a
+
+        Nothing ->
+            f ()
 
 
 mapOrElse : (a -> b) -> b -> Maybe a -> b

@@ -48,9 +48,8 @@ init collapsed hint table =
 
 computeColor : TableId -> Color
 computeColor ( _, table ) =
-    String.wordSplit table
-        |> List.head
-        |> Maybe.map String.hashCode
+    (table |> String.splitWords |> List.head)
+        |> Maybe.map (String.plural >> String.hashCode)
         |> Maybe.map (modBy (List.length Tw.list))
         |> Maybe.andThen (\index -> Tw.list |> List.get index)
         |> Maybe.withDefault Tw.default

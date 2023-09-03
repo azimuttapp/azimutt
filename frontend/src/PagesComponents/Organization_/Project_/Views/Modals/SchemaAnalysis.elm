@@ -19,8 +19,6 @@ import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.DatabaseKind as DatabaseKind exposing (DatabaseKind)
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Nel as Nel
-import Libs.Regex as Regex
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (sm)
 import Models.DbSourceInfo as DbSourceInfo exposing (DbSourceInfo)
@@ -33,7 +31,6 @@ import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source as Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceIdStr)
 import Models.Project.TableId as TableId exposing (TableId)
-import Models.Project.TableName exposing (TableName)
 import Models.ProjectRef exposing (ProjectRef)
 import Models.SqlScript exposing (SqlScript)
 import PagesComponents.Organization_.Project_.Models exposing (Msg(..), SchemaAnalysisDialog, SchemaAnalysisMsg(..))
@@ -41,6 +38,7 @@ import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColu
 import PagesComponents.Organization_.Project_.Models.ErdRelation exposing (ErdRelation)
 import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable exposing (ErdTable)
 import Ports
+import Services.Analysis.MissingRelations as MissingRelations exposing (SuggestedRelation, SuggestedRelationFound)
 import Services.Backend as Backend
 
 
@@ -48,7 +46,6 @@ import Services.Backend as Backend
 {-
    Improve analysis:
     - better missing relations (singular table name present in column name, and follower by an existing column name in this table)
-    - identify missing polymorphic relations (two successive columns with the same name ending with _type and _id)
     - '_at' columns not of date type
     - % of nullable columns in a table (warn if > 50%)
     - ?identify PII
@@ -100,7 +97,7 @@ viewAnalysis : ProjectRef -> HtmlId -> SchemaName -> List Source -> Dict TableId
 viewAnalysis project opened defaultSchema sources tables relations =
     div [ class "max-w-5xl px-6 mt-3" ]
         [ viewMissingPrimaryKey "missing-pks" project opened defaultSchema (computeMissingPrimaryKey tables)
-        , viewMissingRelations "missing-relations" project opened defaultSchema (computeMissingRelations tables)
+        , viewMissingRelations "missing-relations" project opened defaultSchema (MissingRelations.forTables tables)
         , viewRelationsWithDifferentTypes "relations-with-different-types" project opened defaultSchema sources (computeRelationsWithDifferentTypes defaultSchema tables relations)
         , viewHeterogeneousTypes "heterogeneous-types" project opened defaultSchema (computeHeterogeneousTypes tables)
         , viewBigTables "big-tables" project opened defaultSchema (computeBigTables tables)
@@ -147,96 +144,25 @@ viewMissingPrimaryKey htmlId project opened defaultSchema missingPks =
 -- MISSING RELATIONS
 
 
-type alias ColumnInfo =
-    { table : TableId, column : ColumnPath, kind : ColumnType }
-
-
-type alias MissingRelation =
-    { src : ColumnInfo
-    , ref : ColumnInfo
-    }
-
-
-type alias MissingRef =
-    { src : ColumnInfo
-    }
-
-
-infoToRef : ColumnInfo -> ColumnRef
-infoToRef info =
-    { table = info.table, column = info.column }
-
-
-computeMissingRelations : Dict TableId ErdTable -> ( List MissingRelation, List MissingRef )
-computeMissingRelations tables =
-    tables
-        |> Dict.values
-        |> List.concatMap
-            (\t ->
-                t.columns
-                    |> Dict.values
-                    |> List.filter (\c -> (c.path |> ColumnPath.toString |> String.toLower |> Regex.matchI "_ids?$") && not c.isPrimaryKey && (c.inRelations |> List.isEmpty) && (c.outRelations |> List.isEmpty))
-                    |> List.map (\c -> { table = t.id, column = c.path, kind = c.kind })
-            )
-        |> List.map (\src -> ( src, tables |> getRef src ))
-        |> List.partition (\( _, maybeRef ) -> maybeRef /= Nothing)
-        |> Tuple.mapFirst (List.filterMap (\( src, maybeRef ) -> maybeRef |> Maybe.map (\ref -> { src = src, ref = ref })))
-        |> Tuple.mapSecond (List.map (\( src, _ ) -> { src = src }))
-
-
-getRef : ColumnInfo -> Dict TableId ErdTable -> Maybe ColumnInfo
-getRef src tables =
+viewMissingRelations : HtmlId -> ProjectRef -> HtmlId -> SchemaName -> List SuggestedRelation -> Html Msg
+viewMissingRelations htmlId project opened defaultSchema suggestedRels =
     let
-        words : List String
-        words =
-            src.column |> Nel.concatMap (String.toLower >> String.split "_") |> List.dropRight 1
+        ( relsNoRef, relsWithRef ) =
+            suggestedRels |> List.partition (\r -> r.ref == Nothing)
 
-        prefix : TableName
-        prefix =
-            words |> String.join "_"
-
-        tableNames : List TableName
-        tableNames =
-            [ words |> String.join "_" |> String.plural, words |> List.drop 1 |> String.join "_" |> String.plural ]
-    in
-    tables
-        |> Dict.filter (\( schema, table ) _ -> (schema == Tuple.first src.table) && (table /= Tuple.second src.table) && (tableNames |> List.member (String.toLower table)))
-        |> Dict.values
-        |> List.sortBy (\t -> 0 - String.length t.name)
-        |> List.head
-        |> Maybe.andThen
-            (\t ->
-                t.columns
-                    |> Dict.find (\name _ -> String.toLower name == "id" || String.toLower name == (prefix ++ "_id"))
-                    |> Maybe.map (\( _, c ) -> { table = t.id, column = c.path, kind = c.kind })
-            )
-
-
-kindMatch : MissingRelation -> Bool
-kindMatch rel =
-    if (rel.src.column |> ColumnPath.toString |> String.toLower |> String.endsWith "_ids") && (rel.src.kind |> String.endsWith "[]") then
-        (rel.src.kind |> String.dropRight 2) == rel.ref.kind
-
-    else
-        rel.src.kind == rel.ref.kind
-
-
-viewMissingRelations : HtmlId -> ProjectRef -> HtmlId -> SchemaName -> ( List MissingRelation, List MissingRef ) -> Html Msg
-viewMissingRelations htmlId project opened defaultSchema ( missingRels, missingRefs ) =
-    let
-        sortedMissingRels : List { src : ColumnInfo, ref : ColumnInfo }
+        sortedMissingRels : List SuggestedRelationFound
         sortedMissingRels =
-            missingRels |> List.sortBy (\rel -> ColumnRef.show defaultSchema rel.ref ++ " ← " ++ ColumnRef.show defaultSchema rel.src)
+            relsWithRef |> List.filterMap MissingRelations.toFound |> List.sortBy (MissingRelations.toRefs >> (\r -> ColumnRef.show defaultSchema r.ref ++ " ← " ++ ColumnRef.show defaultSchema r.src))
     in
     viewSection htmlId
         opened
         "No potentially missing relation found"
-        ((missingRels |> List.length) + (missingRefs |> List.length))
+        (suggestedRels |> List.length)
         (\nb -> "Found " ++ (nb |> String.pluralize "potentially missing relation"))
-        [ if List.nonEmpty missingRels && project.organization.plan.dbAnalysis then
+        [ if List.nonEmpty relsWithRef && project.organization.plan.dbAnalysis then
             div []
                 [ Button.primary1 Tw.primary
-                    [ onClick (sortedMissingRels |> List.map (\r -> { src = infoToRef r.src, ref = infoToRef r.ref }) |> CreateRelations) ]
+                    [ onClick (sortedMissingRels |> List.map MissingRelations.toRefs |> CreateRelations) ]
                     [ text ("Add all " ++ String.pluralizeL "relation" sortedMissingRels) ]
                 ]
 
@@ -247,35 +173,44 @@ viewMissingRelations htmlId project opened defaultSchema ( missingRels, missingR
             (\rel ->
                 div [ class "flex justify-between items-center py-1" ]
                     [ div []
-                        [ text (TableId.show defaultSchema rel.ref.table)
-                        , span [ class "text-gray-500" ] [ text ("" |> ColumnPath.withName rel.ref.column) ]
+                        [ text (TableId.show defaultSchema rel.ref.table.id)
+                        , span [ class "text-gray-500" ] [ text ("" |> ColumnPath.withName rel.ref.column.path) ]
                         , Icon.solid ArrowNarrowLeft "inline mx-1"
-                        , text (TableId.show defaultSchema rel.src.table)
-                        , span [ class "text-gray-500" ] [ text ("" |> ColumnPath.withName rel.src.column) ]
+                        , text (TableId.show defaultSchema rel.src.table.id)
+                        , span [ class "text-gray-500" ] [ text ("" |> ColumnPath.withName rel.src.column.path) ]
                         ]
                     , div [ class "ml-3" ]
-                        [ B.cond (kindMatch rel) (span [] []) (span [ class "text-gray-400 mr-3" ] [ Icon.solid Exclamation "inline", text (" " ++ rel.ref.kind ++ " vs " ++ rel.src.kind) ])
-                        , Button.primary1 Tw.primary [ onClick (CreateRelations [ { src = infoToRef rel.src, ref = infoToRef rel.ref } ]) ] [ text "Add relation" ]
+                        [ B.cond (kindMatch rel) (span [] []) (span [ class "text-gray-400 mr-3" ] [ Icon.solid Exclamation "inline", text (" " ++ rel.ref.column.kind ++ " vs " ++ rel.src.column.kind) ])
+                        , Button.primary1 Tw.primary [ onClick (CreateRelations [ MissingRelations.toRefs rel ]) ] [ text "Add relation" ]
                         ]
                     ]
             )
-        , if missingRefs |> List.isEmpty then
+        , if relsNoRef |> List.isEmpty then
             div [] []
 
           else
             div []
                 [ h5 [ class "mt-1 font-medium" ] [ text "Some columns may need a relation, but can't find a related table:" ]
                 , ProPlan.analysisResults project
-                    missingRefs
+                    relsNoRef
                     (\rel ->
                         div [ class "ml-3" ]
-                            [ text (TableId.show defaultSchema rel.src.table)
-                            , span [ class "text-gray-500" ] [ text ("" |> ColumnPath.withName rel.src.column) ]
-                            , span [ class "text-gray-400" ] [ text (" (" ++ rel.src.kind ++ ")") ]
+                            [ text (TableId.show defaultSchema rel.src.table.id)
+                            , span [ class "text-gray-500" ] [ text ("" |> ColumnPath.withName rel.src.column.path) ]
+                            , span [ class "text-gray-400" ] [ text (" (" ++ rel.src.column.kind ++ ")") ]
                             ]
                     )
                 ]
         ]
+
+
+kindMatch : SuggestedRelationFound -> Bool
+kindMatch rel =
+    if (rel.src.column.path |> ColumnPath.toString |> String.toLower |> String.endsWith "_ids") && (rel.src.column.kind |> String.endsWith "[]") then
+        (rel.src.column.kind |> String.dropRight 2) == rel.ref.column.kind
+
+    else
+        rel.src.column.kind == rel.ref.column.kind
 
 
 
