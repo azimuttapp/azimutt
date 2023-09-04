@@ -11,6 +11,7 @@ import Libs.Maybe as Maybe
 import Libs.Nel as Nel exposing (Nel)
 import Libs.Parser as Parser
 import Libs.Result as Result
+import Libs.String as String
 import Models.Project.Check exposing (Check)
 import Models.Project.Column exposing (Column)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
@@ -19,6 +20,7 @@ import Models.Project.CustomType exposing (CustomType)
 import Models.Project.CustomTypeId exposing (CustomTypeId)
 import Models.Project.CustomTypeValue as CustomTypeValue
 import Models.Project.Index exposing (Index)
+import Models.Project.Origin exposing (Origin)
 import Models.Project.PrimaryKey exposing (PrimaryKey)
 import Models.Project.Relation exposing (Relation)
 import Models.Project.SchemaName exposing (SchemaName)
@@ -131,40 +133,44 @@ createTable source table =
         id : TableId
         id =
             createTableId table
+
+        origins : List Origin
+        origins =
+            [ { id = source, lines = [] } ]
     in
     ( { id = id
       , schema = id |> TableId.schema
       , name = id |> TableId.name
       , view = table.isView
-      , columns = table.columns |> List.indexedMap (createColumn source) |> Dict.fromListMap .name
-      , primaryKey = table.columns |> createPrimaryKey source
-      , uniques = table.columns |> createConstraint .unique (defaultUniqueName table.table) |> List.map (\( name, cols ) -> Unique name cols Nothing [ { id = source, lines = [] } ])
-      , indexes = table.columns |> createConstraint .index (defaultIndexName table.table) |> List.map (\( name, cols ) -> Index name cols Nothing [ { id = source, lines = [] } ])
-      , checks = table.columns |> createConstraint .check (defaultCheckName table.table) |> List.map (\( name, cols ) -> Check name (Nel.toList cols) Nothing [ { id = source, lines = [] } ])
-      , comment = table.notes |> Maybe.map (createComment source)
-      , origins = [ { id = source, lines = [] } ]
+      , columns = table.columns |> List.indexedMap (createColumn origins) |> Dict.fromListMap .name
+      , primaryKey = table.columns |> createPrimaryKey origins
+      , uniques = table.columns |> createConstraint .unique (defaultUniqueName table.table) |> List.map (\( name, cols ) -> Unique name cols Nothing origins)
+      , indexes = table.columns |> createConstraint .index (defaultIndexName table.table) |> List.map (\( name, cols ) -> Index name cols Nothing origins)
+      , checks = table.columns |> List.filterMap (\c -> c.check |> Maybe.map (\check -> Check (defaultCheckName table.table c.name) [ Nel.from c.name ] (String.nonEmptyMaybe check) origins))
+      , comment = table.notes |> Maybe.map (createComment origins)
+      , origins = origins
       }
     , table.columns |> List.filterMap (\c -> Maybe.map (createRelation source { schema = table.schema, table = table.table, column = c.name }) c.foreignKey)
-    , table.columns |> List.filterMap (\c -> Maybe.map2 (createType source (c.kindSchema |> Maybe.orElse table.schema)) c.kind c.values) |> Dict.fromListMap .id
+    , table.columns |> List.filterMap (\c -> Maybe.map2 (createType origins (c.kindSchema |> Maybe.orElse table.schema)) c.kind c.values) |> Dict.fromListMap .id
     )
 
 
-createColumn : SourceId -> Int -> AmlColumn -> Column
-createColumn source index column =
+createColumn : List Origin -> Int -> AmlColumn -> Column
+createColumn origins index column =
     { index = index
     , name = column.name
     , kind = column.kind |> Maybe.withDefault Conf.schema.column.unknownType
     , nullable = column.nullable
     , default = column.default
-    , comment = column.notes |> Maybe.map (createComment source)
+    , comment = column.notes |> Maybe.map (createComment origins)
     , values = Nothing
     , columns = Nothing -- nested columns not supported in AML
-    , origins = [ { id = source, lines = [] } ]
+    , origins = origins
     }
 
 
-createPrimaryKey : SourceId -> List AmlColumn -> Maybe PrimaryKey
-createPrimaryKey source columns =
+createPrimaryKey : List Origin -> List AmlColumn -> Maybe PrimaryKey
+createPrimaryKey origins columns =
     columns
         |> List.filter .primaryKey
         |> List.map .name
@@ -173,7 +179,7 @@ createPrimaryKey source columns =
             (\cols ->
                 { name = Nothing
                 , columns = cols |> Nel.map ColumnPath.fromString
-                , origins = [ { id = source, lines = [] } ]
+                , origins = origins
                 }
             )
 
@@ -195,10 +201,10 @@ createConstraint get defaultName columns =
             []
 
 
-createComment : SourceId -> AmlNotes -> Comment
-createComment source notes =
+createComment : List Origin -> AmlNotes -> Comment
+createComment origins notes =
     { text = notes
-    , origins = [ { id = source, lines = [] } ]
+    , origins = origins
     }
 
 
@@ -221,10 +227,10 @@ createRelation source from to =
     }
 
 
-createType : SourceId -> Maybe SchemaName -> String -> Nel String -> CustomType
-createType source schema name values =
+createType : List Origin -> Maybe SchemaName -> String -> Nel String -> CustomType
+createType origins schema name values =
     { id = ( schema |> Maybe.withDefault Conf.schema.empty, name )
     , name = name
     , value = CustomTypeValue.Enum (values |> Nel.toList)
-    , origins = [ { id = source, lines = [] } ]
+    , origins = origins
     }

@@ -165,6 +165,7 @@ export interface Column {
     nullable?: boolean
     default?: string
     comment?: Comment
+    values?: string[]
     columns?: Column[]
     origins?: Origin[]
 }
@@ -175,6 +176,7 @@ export const Column: z.ZodType<Column> = z.object({
     nullable: z.boolean().optional(),
     default: z.string().optional(),
     comment: Comment.optional(),
+    values: z.string().array().optional(),
     columns: z.lazy(() => Column.array().optional()),
     origins: Origin.array().optional()
 }).strict()

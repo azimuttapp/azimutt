@@ -46,6 +46,7 @@ export const sColumn = Type.Recursive(Node => Type.Object({
     nullable: Nullish(Type.Boolean()),
     default: Nullish(Type.String()),
     comment: Nullish(sComment),
+    values: Nullish(Type.Array(Type.String())),
     columns: Nullish(Type.Array(Node)),
 }))
 export const sCheck = Type.Object({

@@ -40,7 +40,7 @@ type alias ErdColumn =
     , outRelations : List ErdColumnRef
     , uniques : List UniqueName
     , indexes : List IndexName
-    , checks : List CheckName
+    , checks : List { name : CheckName, predicate : Maybe String }
     , values : Maybe (Nel String)
     , columns : Maybe ErdNestedColumns
     , origins : List ErdOrigin
@@ -68,7 +68,7 @@ create defaultSchema sources types columnRelations table path column =
     , outRelations = columnRelations |> List.filter (\r -> r.src.table == table.id && r.src.column == path) |> List.map .ref
     , uniques = table.uniques |> List.filter (.columns >> Nel.member path) |> List.map .name
     , indexes = table.indexes |> List.filter (.columns >> Nel.member path) |> List.map .name
-    , checks = table.checks |> List.filter (.columns >> List.member path) |> List.map .name
+    , checks = table.checks |> List.filter (.columns >> List.member path) |> List.map (\c -> { name = c.name, predicate = c.predicate })
     , values = column.values
     , columns = column.columns |> Maybe.map (\(NestedColumns cols) -> cols |> Ned.map (\name -> create defaultSchema sources types columnRelations table (path |> ColumnPath.child name)) |> ErdNestedColumns)
     , origins = column.origins |> List.map (ErdOrigin.create sources)

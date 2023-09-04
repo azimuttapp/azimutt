@@ -21,7 +21,9 @@ export async function startServer(config: Config): Promise<FastifyInstance> {
     process.on('SIGINT', closeAndExit(process, server, 'SIGINT'))
     process.on('SIGTERM', closeAndExit(process, server, 'SIGINT'))
 
-    config.CORS_ALLOW_ORIGIN && await server.register(cors, {origin: config.CORS_ALLOW_ORIGIN, credentials: true})
+    if (config.CORS_ALLOW_ORIGIN) {
+        await server.register(cors, {origin: config.CORS_ALLOW_ORIGIN, credentials: true})
+    }
     await server.register(routes)
     await server.ready()
 

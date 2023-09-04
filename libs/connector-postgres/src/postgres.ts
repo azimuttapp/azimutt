@@ -213,8 +213,8 @@ function enrichColumnsWithSchema(conn: Conn, columns: RawColumn[], sampleSize: n
 async function getColumnDistinctValues(conn: Conn, schema: SchemaName, table: TableName, column: ColumnName) {
     const sqlTable = buildSqlTable(schema, table)
     const sqlColumn = buildSqlColumn(column)
-    const rows = await conn.query<{value: string}>(`SELECT distinct ${sqlColumn}::varchar(255) as value FROM ${sqlTable} ORDER BY ${sqlColumn} LIMIT 30;`)
-    return rows.map(v => v.value)
+    const rows = await conn.query<{value: string}>(`SELECT DISTINCT ${sqlColumn} as value FROM ${sqlTable} WHERE ${sqlColumn} IS NOT NULL ORDER BY value LIMIT 30;`)
+    return rows.map(v => v.value?.toString())
 }
 
 async function getColumnSchema(conn: Conn, schema: SchemaName, table: TableName, column: ColumnName, sampleSize: number): Promise<ValueSchema> {

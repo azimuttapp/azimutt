@@ -20,8 +20,7 @@ describe('connect', () => {
     test.skip('should connect to postgres', async () => {
         const client = new Client({
             application_name: application,
-            connectionString: url,
-            ssl: {rejectUnauthorized: false}
+            connectionString: url
         })
         await client.connect()
         const results = await client.query(query)

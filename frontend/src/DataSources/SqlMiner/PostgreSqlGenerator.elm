@@ -34,31 +34,33 @@ generate schema =
 generateTable : Dict ColumnName (List Relation) -> List Relation -> Table -> String
 generateTable relations lazyRelation table =
     let
-        columns : List String
+        columns : List Column
         columns =
-            table.columns
-                |> Dict.values
-                |> List.sortBy .index
-                |> List.map (\c -> c |> generateColumn table.primaryKey table.uniques table.checks (relations |> Dict.getOrElse c.name []))
+            table.columns |> Dict.values |> List.sortBy .index
 
-        primaryKey : List String
-        primaryKey =
+        columnsSql : List String
+        columnsSql =
+            columns |> List.map (\c -> c |> generateColumn table.primaryKey table.uniques table.checks (relations |> Dict.getOrElse c.name []))
+
+        primaryKeySql : List String
+        primaryKeySql =
             table.primaryKey
                 |> Maybe.toList
                 |> List.filterNot (\k -> List.isEmpty k.columns.tail)
                 |> List.map (\k -> "PRIMARY KEY (" ++ (k.columns |> Nel.toList |> List.map .head |> String.join ", ") ++ ")")
 
-        uniques : List String
-        uniques =
+        uniquesSql : List String
+        uniquesSql =
             table.uniques
                 |> List.filterNot (\u -> List.isEmpty u.columns.tail)
                 |> List.map (\u -> "UNIQUE (" ++ (u.columns |> Nel.toList |> List.map .head |> String.join ", ") ++ ")")
     in
     ("CREATE TABLE " ++ generateTableName table ++ " (")
-        ++ ((columns ++ primaryKey ++ uniques) |> List.map (String.prepend "\n  ") |> String.join ",")
+        ++ ((columnsSql ++ primaryKeySql ++ uniquesSql) |> List.map (String.prepend "\n  ") |> String.join ",")
         ++ "\n);"
         ++ (table.indexes |> List.map (generateIndex table >> String.prepend "\n") |> String.join "")
         ++ (table.comment |> Maybe.mapOrElse (generateTableComment table >> String.prepend "\n") "")
+        ++ (columns |> List.filterMap (\c -> c.comment |> Maybe.map (generateColumnComment table c >> String.prepend "\n")) |> String.join "")
         ++ (lazyRelation |> List.map (generateLazyForeignKey >> String.prepend "\n") |> String.join "")
 
 
@@ -108,7 +110,7 @@ generateColumn pk uniques checks relations column =
                     (\d ->
                         " DEFAULT "
                             ++ (if isStringType column.kind then
-                                    "\"" ++ d ++ "\""
+                                    "'" ++ d ++ "'"
 
                                 else
                                     d
@@ -116,7 +118,6 @@ generateColumn pk uniques checks relations column =
                     )
                     ""
            )
-        ++ (column.comment |> Maybe.mapOrElse (\c -> " COMMENT \"" ++ c.text ++ "\"") "")
 
 
 isStringType : ColumnType -> Bool
@@ -131,7 +132,12 @@ generateIndex table index =
 
 generateTableComment : Table -> Comment -> String
 generateTableComment table comment =
-    "COMMENT ON TABLE " ++ generateTableName table ++ " IS \"" ++ (comment.text |> String.replace "\"" "\\\"") ++ "\";"
+    "COMMENT ON TABLE " ++ generateTableName table ++ " IS '" ++ (comment.text |> String.replace "'" "''") ++ "';"
+
+
+generateColumnComment : Table -> Column -> Comment -> String
+generateColumnComment table column comment =
+    "COMMENT ON COLUMN " ++ generateTableName table ++ "." ++ column.name ++ " IS '" ++ (comment.text |> String.replace "'" "''") ++ "';"
 
 
 generateLazyForeignKey : Relation -> String

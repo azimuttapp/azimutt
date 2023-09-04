@@ -1,6 +1,6 @@
 {
   "name": "@azimutt/gateway",
-  "version": "0.0.13",
+  "version": "0.0.15",
   "description": "A Gateway to proxy database access for Azimutt frontend",
   "keywords": [
     "database",
@@ -40,14 +40,14 @@
     "build:docker:prod": "docker build . -t azimutt-gateway --build-arg APP_ENV=production",
     "preview": "node out/start.js",
     "update": "npm update --save-dev && npm update --save && npm install",
-    "dry-publish": "npm run build && npm pack"
+    "dry-publish": "npm run build && npm test && npm pack"
   },
   "dependencies": {
     "@azimutt/connector-couchbase": "^0.0.2",
     "@azimutt/connector-mariadb": "^0.0.1",
     "@azimutt/connector-mongodb": "^0.0.2",
     "@azimutt/connector-mysql": "^0.0.2",
-    "@azimutt/connector-postgres": "^0.0.9",
+    "@azimutt/connector-postgres": "^0.0.10",
     "@azimutt/connector-sqlserver": "^0.0.2",
     "@azimutt/database-types": "^0.0.10",
     "@fastify/cors": "8.2.1",
@@ -59,17 +59,17 @@
     "fastify-plugin": "4.5.0"
   },
   "devDependencies": {
-    "@types/node": "^20.4.5",
+    "@types/node": "^20.5.9",
     "@typescript-eslint/eslint-plugin": "^5.62.0",
     "@typescript-eslint/parser": "^5.62.0",
     "esbuild": "^0.17.19",
-    "eslint": "^8.46.0",
-    "eslint-config-prettier": "^8.9.0",
+    "eslint": "^8.48.0",
+    "eslint-config-prettier": "^8.10.0",
     "eslint-plugin-prettier": "^4.2.1",
     "pino-pretty": "^10.2.0",
     "prettier": "^2.8.8",
-    "tsx": "^3.12.7",
-    "typescript": "^5.1.6",
+    "tsx": "^3.12.8",
+    "typescript": "^5.2.2",
     "vitest": "^0.31.4"
   }
 }

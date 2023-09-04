@@ -143,9 +143,10 @@ ALTER TABLE contact_roles ADD CONSTRAINT contact_roles_contact_id_fk_az FOREIGN 
 CREATE TABLE events (
   id uuid PRIMARY KEY,
   contact_id uuid REFERENCES contacts(id),
-  instance_name varchar NOT NULL COMMENT "hostname",
+  instance_name varchar NOT NULL,
   instance_id uuid NOT NULL
 );
+COMMENT ON COLUMN events.instance_name IS 'hostname';
 
 CREATE TABLE roles (
   id uuid PRIMARY KEY,

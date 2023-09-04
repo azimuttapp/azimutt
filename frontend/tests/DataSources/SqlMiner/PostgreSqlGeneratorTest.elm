@@ -45,10 +45,12 @@ suite =
                         |> Expect.equal """CREATE TABLE public.users (
   id uuid NOT NULL,
   name varchar,
-  role varchar NOT NULL DEFAULT "guest",
-  bio text NOT NULL COMMENT "Hello :)",
-  age int DEFAULT 0 COMMENT "hey!"
-);"""
+  role varchar NOT NULL DEFAULT 'guest',
+  bio text NOT NULL,
+  age int DEFAULT 0
+);
+COMMENT ON COLUMN public.users.bio IS 'Hello :)';
+COMMENT ON COLUMN public.users.age IS 'hey!';"""
                 )
             , test "table with constraints"
                 (\_ ->
@@ -83,7 +85,7 @@ suite =
   age int NOT NULL CHECK
 );
 CREATE INDEX users_role_idx ON public.users (role);
-COMMENT ON TABLE public.users IS "all users";"""
+COMMENT ON TABLE public.users IS 'all users';"""
                 )
             , test "table with complex constraints"
                 (\_ ->
@@ -103,7 +105,7 @@ COMMENT ON TABLE public.users IS "all users";"""
                                 , uniques = [ { name = "users_name_unique", columns = Nel "first_name" [ "last_name" ] |> Nel.map Nel.from, definition = Nothing, origins = [] } ]
                                 , indexes = [ { name = "users_name_idx", columns = Nel "first_name" [ "last_name" ] |> Nel.map Nel.from, definition = Nothing, origins = [] } ]
                                 , checks = [ { name = "users_age_chk", columns = [ "age" ] |> List.map Nel.from, predicate = Just "age > 0", origins = [] } ]
-                                , comment = Just { emptyComment | text = "store \"all\" users" }
+                                , comment = Just { emptyComment | text = "store 'all' users" }
                               }
                             ]
                                 |> buildTables
@@ -119,7 +121,7 @@ COMMENT ON TABLE public.users IS "all users";"""
   UNIQUE (first_name, last_name)
 );
 CREATE INDEX users_name_idx ON users (first_name, last_name);
-COMMENT ON TABLE users IS "store \\"all\\" users";"""
+COMMENT ON TABLE users IS 'store ''all'' users';"""
                 )
             , test "table with foreign keys"
                 (\_ ->

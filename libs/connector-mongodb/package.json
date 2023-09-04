@@ -22,7 +22,7 @@
     "test": "jest",
     "build": "rm -rf ./out && tsc",
     "update": "npm update --save-dev && npm update --save && npm install",
-    "dry-publish": "npm run build && npm pack"
+    "dry-publish": "npm run build && npm test && npm pack"
   },
   "dependencies": {
     "@azimutt/json-infer-schema": "0.0.3",

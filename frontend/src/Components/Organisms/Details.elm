@@ -659,7 +659,7 @@ viewColumnConstraints table column =
             (((column.isPrimaryKey |> Bool.list ( "Primary key", Icons.columns.primaryKey, viewColumnPrimaryKey table.primaryKey ))
                 ++ (column.uniques |> List.sort |> List.map (\u -> ( "Unique", Icons.columns.unique, viewColumnUnique table.uniques u )))
                 ++ (column.indexes |> List.sort |> List.map (\i -> ( "Index", Icons.columns.index, viewColumnIndex table.indexes i )))
-                ++ (column.checks |> List.sort |> List.map (\c -> ( "Check", Icons.columns.check, viewColumnCheck table.checks c )))
+                ++ (column.checks |> List.sortBy .name |> List.map (\c -> ( "Check", Icons.columns.check, viewColumnCheck table.checks c )))
              )
                 |> List.map (\( kind, icon, content ) -> div [ class "flex flex-row" ] [ Icon.solid icon "inline text-gray-500 w-4 mr-1" |> Tooltip.r kind, content ])
             )
@@ -680,9 +680,9 @@ viewColumnIndex constraints name =
     Just name |> viewColumnConstraint "Index" (constraints |> List.findBy .name name |> Maybe.mapOrElse (\u -> ( Nel.toList u.columns, u.definition )) ( [], Nothing ))
 
 
-viewColumnCheck : List Check -> CheckName -> Html msg
-viewColumnCheck constraints name =
-    Just name |> viewColumnConstraint "Check" (constraints |> List.findBy .name name |> Maybe.mapOrElse (\u -> ( u.columns, u.predicate )) ( [], Nothing ))
+viewColumnCheck : List Check -> { name : CheckName, predicate : Maybe String } -> Html msg
+viewColumnCheck constraints check =
+    Just check.name |> viewColumnConstraint "Check" (constraints |> List.findBy .name check.name |> Maybe.mapOrElse (\u -> ( u.columns, u.predicate )) ( [], Nothing ))
 
 
 viewColumnConstraint : String -> ( List ColumnPath, Maybe String ) -> Maybe String -> Html msg

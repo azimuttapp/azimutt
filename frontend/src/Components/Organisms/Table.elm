@@ -134,7 +134,7 @@ type alias IndexConstraint =
 
 
 type alias CheckConstraint =
-    { name : String }
+    { name : String, predicate : Maybe String }
 
 
 type alias SchemaName =
@@ -351,7 +351,7 @@ viewColumnIcon model column =
             , Bool.maybe (column.outRelations |> List.nonEmpty) ("Foreign key to " ++ (column.outRelations |> List.head |> Maybe.mapOrElse (.column >> showColumnRef model.defaultSchema) ""))
             , Bool.maybe (column.uniques |> List.nonEmpty) ("Unique constraint for " ++ (column.uniques |> List.map .name |> String.join ", "))
             , Bool.maybe (column.indexes |> List.nonEmpty) ("Indexed by " ++ (column.indexes |> List.map .name |> String.join ", "))
-            , Bool.maybe (column.checks |> List.nonEmpty) ("In checks " ++ (column.checks |> List.map .name |> String.join ", "))
+            , Bool.maybe (column.checks |> List.nonEmpty) ((column.checks |> String.pluralizeL "check") ++ ": " ++ (column.checks |> List.map (\c -> c.predicate |> Maybe.withDefault c.name) |> String.join ", "))
             , column.children |> Maybe.map (\(NestedColumns count _) -> "Has " ++ String.fromInt count ++ " nested columns")
             ]
                 |> List.filterMap (\a -> a)
@@ -571,7 +571,7 @@ sample =
         [ { sampleColumn | path = Nel "id" [], kind = "integer", isPrimaryKey = True, inRelations = [ { column = { schema = "demo", table = "accounts", column = ColumnPath.fromString "user" }, nullable = True, tableShown = False } ] }
         , { sampleColumn | path = Nel "name" [], kind = "character varying(120)", comment = Just "Should be unique", notes = Just "A nice note", uniques = [ { name = "users_name_unique" } ] }
         , { sampleColumn | path = Nel "email" [], kind = "character varying(120)", indexes = [ { name = "users_email_idx" } ] }
-        , { sampleColumn | path = Nel "bio" [], kind = "text", checks = [ { name = "users_bio_min_length" } ] }
+        , { sampleColumn | path = Nel "bio" [], kind = "text", checks = [ { name = "users_bio_min_length", predicate = Just "len(bio) > 3" } ] }
         , { sampleColumn | path = Nel "organization" [], kind = "integer", nullable = True, outRelations = [ { column = { schema = "demo", table = "organizations", column = ColumnPath.fromString "id" }, nullable = True, tableShown = False } ] }
         , { sampleColumn | path = Nel "plan" [], kind = "object", children = Just (NestedColumns 1 []) }
         , { sampleColumn | path = Nel "created" [], kind = "timestamp without time zone", default = Just "CURRENT_TIMESTAMP", isDeprecated = True }

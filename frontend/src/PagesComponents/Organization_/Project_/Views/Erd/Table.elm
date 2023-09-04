@@ -199,7 +199,7 @@ buildColumn useBasicTypes tableMeta layout column =
     , outRelations = column.outRelations |> List.map (buildColumnRelation layout)
     , uniques = column.uniques |> List.map (\u -> { name = u })
     , indexes = column.indexes |> List.map (\i -> { name = i })
-    , checks = column.checks |> List.map (\c -> { name = c })
+    , checks = column.checks
     , isDeprecated = (tableMeta.tags |> List.member Tag.deprecated) || (columnMeta |> Maybe.any (.tags >> List.member Tag.deprecated))
     , children =
         column.columns

@@ -6,8 +6,7 @@ export function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c
     types.setTypeParser(types.builtins.INT8, (val: string) => parseInt(val, 10))
     const client = new Client({
         application_name: application,
-        connectionString: buildUrl(url),
-        ssl: {rejectUnauthorized: false}
+        connectionString: buildUrl(url)
     })
     const conn: Conn = {
         query<T extends QueryResultRow>(sql: string, parameters: any[] = []): Promise<T[]> {
