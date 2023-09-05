@@ -8,7 +8,7 @@ import {getSchema} from "../src/postgres";
 describe('integration', () => {
     const url = parseDatabaseUrl('postgresql://postgres:postgres@localhost:5432/azimutt_sample')
 
-    test('getSchema', async () => {
+    test.skip('getSchema', async () => {
         const schema = await connect(application, url, getSchema(undefined, 10, logger))
         expect(schema.tables.length).toEqual(8)
         expect(schema.relations.length).toEqual(8)

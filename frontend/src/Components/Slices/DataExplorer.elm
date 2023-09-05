@@ -60,11 +60,12 @@ import Track
 --  - Better error handling on connectors (cf PostgreSQL)
 --
 --  - column stats in query header (quick analysis on query results) => add bar chart & data list
---  - query relation counts on `exploreTable`, `filterTable` & `findRow`
+--  - query relation counts on `exploreTable`, `filterTable` & `findRow` (like prisma)
 --  - saved queries ({ name : String, description : String, query : String, createdAt : Time.Posix, createdBy : UserId })
---  - pin a column and replace the fk by it => special tag (`main`)
 --  - Nested queries like Trevor: on rows & group by
---  - Double click on a value to edit it, add a submit option to push them to the database (like datagrip)
+--  - pin a column and replace the fk by it => special tag (`main`)
+--  - chart view: scatter plot (view one numerical column related to an other, at a third numeric for dot size, or a categorical (<10 distinct values) one for dot color)
+--  - data update: double click on a value to edit it, add a submit option to push them to the database (like datagrip)
 --  - shorten uuid to its first component in results
 --  - Add filter button on results to change editor (visual or query) and allow to trigger a new query
 --  - Polymorphic relations??? Composite primary key???

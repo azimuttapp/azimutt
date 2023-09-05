@@ -16,11 +16,10 @@ export function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c
             return client.query({text: sql, values: parameters, rowMode: 'array'}).then(null, err => Promise.reject(queryError(sql, err)))
         }
     }
-    return client.connect().then(_ => {
-        return exec(conn)
-            .then(res => client.end().then(_ => res))
-            .catch(err => client.end().then(_ => Promise.reject(err)))
-    })
+    return client.connect().then(_ => exec(conn).then(
+        res => client.end().then(_ => res),
+        err => client.end().then(_ => Promise.reject(err))
+    ))
 }
 
 function buildUrl(url: DatabaseUrlParsed): string {

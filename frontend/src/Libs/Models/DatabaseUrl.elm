@@ -16,7 +16,7 @@ databaseName url =
         url |> String.split ";" |> List.find (\p -> p |> String.toLower |> String.startsWith "Database") |> Maybe.mapOrElse (\p -> p |> String.split "=" |> List.get 1 |> Maybe.withDefault url) url
 
     else
-        url |> String.split "/" |> List.reverse |> List.head |> Maybe.withDefault url
+        url |> String.split "/" |> List.reverse |> List.head |> Maybe.andThen (String.split "?" >> List.head) |> Maybe.withDefault url
 
 
 encode : DatabaseUrl -> Value
