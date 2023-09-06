@@ -45,8 +45,10 @@ import Services.Backend as Backend
 
 {-
    Improve analysis:
+    - in "missing relations", show the column type on hover
     - better missing relations (singular table name present in column name, and follower by an existing column name in this table)
     - '_at' columns not of date type
+    - '_ids' columns not of array type (ex: profiles.additional_organization_ids)
     - % of nullable columns in a table (warn if > 50%)
     - ?identify PII
 
