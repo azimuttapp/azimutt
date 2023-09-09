@@ -45,8 +45,6 @@ import Services.Backend as Backend
 
 {-
    Improve analysis:
-    - in "missing relations", show the column type on hover
-    - better missing relations (singular table name present in column name, and follower by an existing column name in this table)
     - '_at' columns not of date type
     - '_ids' columns not of array type (ex: profiles.additional_organization_ids)
     - % of nullable columns in a table (warn if > 50%)
@@ -176,10 +174,13 @@ viewMissingRelations htmlId project opened defaultSchema suggestedRels =
                 div [ class "flex justify-between items-center py-1" ]
                     [ div []
                         [ text (TableId.show defaultSchema rel.ref.table.id)
-                        , span [ class "text-gray-500" ] [ text ("" |> ColumnPath.withName rel.ref.column.path) ]
+                        , span [ class "text-gray-500" ] [ text ("" |> ColumnPath.withName rel.ref.column.path) ] |> Tooltip.t rel.ref.column.kind
                         , Icon.solid ArrowNarrowLeft "inline mx-1"
                         , text (TableId.show defaultSchema rel.src.table.id)
-                        , span [ class "text-gray-500" ] [ text ("" |> ColumnPath.withName rel.src.column.path) ]
+                        , span [ class "text-gray-500" ] [ text ("" |> ColumnPath.withName rel.src.column.path) ] |> Tooltip.t rel.src.column.kind
+                        , rel.when
+                            |> Maybe.map (\w -> span [] [ text " when ", span [ class "text-gray-400" ] [ text (ColumnPath.show w.column.path ++ "=" ++ w.value) ] ])
+                            |> Maybe.withDefault (text "")
                         ]
                     , div [ class "ml-3" ]
                         [ B.cond (kindMatch rel) (span [] []) (span [ class "text-gray-400 mr-3" ] [ Icon.solid Exclamation "inline", text (" " ++ rel.ref.column.kind ++ " vs " ++ rel.src.column.kind) ])
@@ -198,8 +199,7 @@ viewMissingRelations htmlId project opened defaultSchema suggestedRels =
                     (\rel ->
                         div [ class "ml-3" ]
                             [ text (TableId.show defaultSchema rel.src.table.id)
-                            , span [ class "text-gray-500" ] [ text ("" |> ColumnPath.withName rel.src.column.path) ]
-                            , span [ class "text-gray-400" ] [ text (" (" ++ rel.src.column.kind ++ ")") ]
+                            , span [ class "text-gray-500" ] [ text ("" |> ColumnPath.withName rel.src.column.path) ] |> Tooltip.t rel.src.column.kind
                             ]
                     )
                 ]

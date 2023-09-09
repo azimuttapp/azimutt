@@ -6,8 +6,8 @@ import Components.Molecules.Tooltip as Tooltip
 import Components.Organisms.TableRow as TableRow exposing (TableRowHover, TableRowRelation, TableRowRelationColumn, TableRowSuccess)
 import Conf
 import Dict exposing (Dict)
-import Html exposing (Html, button, div, h2, input, p, text)
-import Html.Attributes exposing (autofocus, class, classList, id, name, placeholder, type_, value)
+import Html exposing (Html, button, div, h2, input, p, span, text)
+import Html.Attributes exposing (autofocus, class, classList, id, name, placeholder, title, type_, value)
 import Html.Events exposing (onBlur, onClick, onInput)
 import Html.Events.Extra.Mouse exposing (Button(..))
 import Html.Keyed as Keyed
@@ -129,9 +129,8 @@ viewErd conf erdElem erd selectionBox virtualRelation editMemo args dragging =
         memos =
             draggedLayout.memos
 
-        displayedTables : List ErdTableLayout
-        displayedTables =
-            layoutTables |> List.filter (\t -> t.props.size /= Size.zeroCanvas)
+        ( displayedTables, hiddenTables ) =
+            layoutTables |> List.partition (\t -> t.props.size /= Size.zeroCanvas)
 
         groups : List ( Int, Group, Area.Canvas )
         groups =
@@ -173,7 +172,8 @@ viewErd conf erdElem erd selectionBox virtualRelation editMemo args dragging =
             -- use HTML order instead of z-index, must be careful with it, this allows to have tooltips & popovers always on top
             [ -- canvas.position |> Position.debugDiagram "canvas" "bg-black"
               -- , layout.tables |> List.map (.props >> Area.offGrid) |> Area.mergeCanvas |> Maybe.mapOrElse (Area.debugCanvas "tablesArea" "border-blue-500") (div [] []),
-              div [ class "az-groups" ] (groups |> List.map (viewGroup platform erd.settings.defaultSchema editGroup))
+              hiddenTables |> viewHiddenTables erd.settings.defaultSchema
+            , groups |> viewGroups platform erd.settings.defaultSchema editGroup
             , tableRowRelations |> viewRelationRows conf erd.settings.relationStyle hoverTableRow
             , tableRows |> viewTableRows now platform conf cursorMode erd.settings.defaultSchema openedDropdown openedPopover erd.sources hoverTableRow tableRowRelations erd.metadata
             , erd.relations |> Lazy.lazy5 viewRelations conf erd.settings.defaultSchema erd.settings.relationStyle displayedTables
@@ -314,39 +314,71 @@ viewMemos platform conf cursorMode editMemo memos =
         )
 
 
-viewGroup : Platform -> SchemaName -> Maybe GroupEdit -> ( Int, Group, Area.Canvas ) -> Html Msg
-viewGroup platform defaultSchema editGroup ( index, group, area ) =
-    div
-        ([ css [ "absolute border-2 bg-opacity-25", Tw.bg_300 group.color, Tw.border_300 group.color ]
-         , onDblClick (\_ -> GEdit index group.name |> GroupMsg) platform
-         , onContextMenu (\e -> ContextMenuCreate (GroupContextMenu.view defaultSchema index group) e) platform
-         ]
-            ++ Area.styleTransformCanvas area
-        )
-        [ editGroup
-            |> Maybe.filter (\edit -> edit.index == index)
-            |> Maybe.mapOrElse
-                (\edit ->
-                    let
-                        inputId : HtmlId
-                        inputId =
-                            Group.toInputId index
-                    in
-                    input
-                        [ type_ "text"
-                        , name inputId
-                        , id inputId
-                        , placeholder "Group name"
-                        , value edit.content
-                        , onInput (GEditUpdate >> GroupMsg)
-                        , onBlur (GEditSave |> GroupMsg)
-                        , autofocus True
-                        , css [ "px-2 py-0 shadow-sm block border-gray-300 rounded-md", focus [ Tw.ring_500 group.color, Tw.border_500 group.color ] ]
+viewGroups : Platform -> SchemaName -> Maybe GroupEdit -> List ( Int, Group, Area.Canvas ) -> Html Msg
+viewGroups platform defaultSchema editGroup groups =
+    div [ class "az-groups" ]
+        (groups
+            |> List.map
+                (\( index, group, area ) ->
+                    div
+                        ([ css [ "absolute border-2 bg-opacity-25", Tw.bg_300 group.color, Tw.border_300 group.color ]
+                         , onDblClick (\_ -> GEdit index group.name |> GroupMsg) platform
+                         , onContextMenu (\e -> ContextMenuCreate (GroupContextMenu.view defaultSchema index group) e) platform
+                         ]
+                            ++ Area.styleTransformCanvas area
+                        )
+                        [ editGroup
+                            |> Maybe.filter (\edit -> edit.index == index)
+                            |> Maybe.mapOrElse
+                                (\edit ->
+                                    let
+                                        inputId : HtmlId
+                                        inputId =
+                                            Group.toInputId index
+                                    in
+                                    input
+                                        [ type_ "text"
+                                        , name inputId
+                                        , id inputId
+                                        , placeholder "Group name"
+                                        , value edit.content
+                                        , onInput (GEditUpdate >> GroupMsg)
+                                        , onBlur (GEditSave |> GroupMsg)
+                                        , autofocus True
+                                        , css [ "px-2 py-0 shadow-sm block border-gray-300 rounded-md", focus [ Tw.ring_500 group.color, Tw.border_500 group.color ] ]
+                                        ]
+                                        []
+                                )
+                                (div [ css [ "px-2 select-none", Tw.text_600 group.color ] ] [ text group.name ])
                         ]
-                        []
                 )
-                (div [ css [ "px-2 select-none", Tw.text_600 group.color ] ] [ text group.name ])
-        ]
+        )
+
+
+viewHiddenTables : SchemaName -> List ErdTableLayout -> Html Msg
+viewHiddenTables defaultSchema tables =
+    Keyed.node "div"
+        [ class "az-hidden-tables" ]
+        (tables
+            |> List.filter (\t -> t.props.position /= Position.zeroGrid)
+            |> List.map
+                (\table ->
+                    ( TableId.toString table.id
+                    , div
+                        ([ css [ "select-none absolute flex items-center justify-items-center px-3 py-1 border-t-8 border-b border-b-default-200 rounded-lg opacity-50 hover:opacity-100" ]
+                         , title "This table in layout but not in the schema, you can delete it or add it back to the schema."
+                         ]
+                            ++ Position.stylesGrid table.props.position
+                        )
+                        [ div [ class "text-xl opacity-50" ] [ text (TableId.show defaultSchema table.id) ]
+                        , button [ type_ "button", id ("hide-" ++ TableId.toHtmlId table.id), onClick (HideTable table.id), title "Remove table from layout", css [ "ml-3 flex text-sm opacity-25", focus [ "outline-none" ] ] ]
+                            [ span [ class "sr-only" ] [ text "Remove from layout" ]
+                            , Icon.solid Icon.Trash ""
+                            ]
+                        ]
+                    )
+                )
+        )
 
 
 viewSelectionBox : Area.Canvas -> List (Html Msg)

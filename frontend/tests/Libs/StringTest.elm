@@ -1,7 +1,7 @@
 module Libs.StringTest exposing (..)
 
 import Expect
-import Libs.String exposing (hashCode, plural, singular, splitWords, unique)
+import Libs.String exposing (hashCode, plural, singular, slugify, splitWords, unique)
 import Test exposing (Test, describe, test)
 
 
@@ -53,5 +53,11 @@ suite =
             , test "end with y" (\_ -> singular "tries" |> Expect.equal "try")
             , test "end with ay" (\_ -> singular "rays" |> Expect.equal "ray")
             , test "end with oy" (\_ -> singular "boys" |> Expect.equal "boy")
+            ]
+        , describe "slugify"
+            [ test "no change" (\_ -> slugify "already-slug" |> Expect.equal "already-slug")
+            , test "simple text" (\_ -> slugify "A title." |> Expect.equal "a-title")
+            , test "with diacritics" (\_ -> slugify "àéù" |> Expect.equal "aeu")
+            , test "only special chars" (\_ -> slugify "@!:,_&" |> Expect.equal "")
             ]
         ]
