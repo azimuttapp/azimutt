@@ -4,6 +4,7 @@ import Conf
 import Dict exposing (Dict)
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
+import Libs.Dict as Dict
 import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
 import Libs.List as List
@@ -29,7 +30,7 @@ import Models.Project.RelationId exposing (RelationId)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source as Source exposing (Source)
 import Models.Project.Table exposing (Table)
-import Models.Project.TableId exposing (TableId)
+import Models.Project.TableId as TableId exposing (TableId)
 import Time
 
 
@@ -40,6 +41,7 @@ type alias Project =
     , name : ProjectName
     , description : Maybe String
     , sources : List Source
+    , ignoredRelations : Dict TableId (List ColumnPath)
     , metadata : Metadata
     , layouts : Dict LayoutName Layout
     , tableRowsSeq : Int
@@ -61,6 +63,7 @@ create projects name source =
         (String.unique (projects |> List.map .name) name)
         Nothing
         [ source ]
+        Dict.empty
         Dict.empty
         (Dict.fromList [ ( Conf.constants.defaultLayout, Layout.empty source.createdAt ) ])
         1
@@ -122,6 +125,7 @@ downloadContent value =
         , ( "name", value.name |> ProjectName.encode )
         , ( "description", value.description |> Encode.maybe Encode.string )
         , ( "sources", value.sources |> Encode.list Source.encode )
+        , ( "ignoredRelations", value.ignoredRelations |> Encode.withDefault (Encode.dict TableId.toString (Encode.list ColumnPath.encode)) Dict.empty )
         , ( "metadata", value.metadata |> Metadata.encode )
         , ( "layouts", value.layouts |> Encode.dict LayoutName.toString Layout.encode )
         , ( "tableRowsSeq", value.tableRowsSeq |> Encode.withDefault Encode.int 1 )
@@ -144,6 +148,7 @@ encode value =
         , ( "name", value.name |> ProjectName.encode )
         , ( "description", value.description |> Encode.maybe Encode.string )
         , ( "sources", value.sources |> Encode.list Source.encode )
+        , ( "ignoredRelations", value.ignoredRelations |> Encode.withDefault (Encode.dict TableId.toString (Encode.list ColumnPath.encode)) Dict.empty )
         , ( "metadata", value.metadata |> Metadata.encode )
         , ( "layouts", value.layouts |> Encode.dict LayoutName.toString Layout.encode )
         , ( "tableRowsSeq", value.tableRowsSeq |> Encode.withDefault Encode.int 1 )
@@ -158,13 +163,14 @@ encode value =
 
 decode : Decode.Decoder Project
 decode =
-    Decode.map17 decodeProject
+    Decode.map18 decodeProject
         (Decode.maybeField "organization" Organization.decode)
         (Decode.field "id" ProjectId.decode)
         (Decode.maybeField "slug" ProjectSlug.decode)
         (Decode.field "name" ProjectName.decode)
         (Decode.maybeField "description" Decode.string)
         (Decode.field "sources" (Decode.list Source.decode))
+        (Decode.defaultField "ignoredRelations" (Decode.dict (Decode.list ColumnPath.decode) |> Decode.map (Dict.mapKeys TableId.parse)) Dict.empty)
         -- continue to read "notes" for retro-compatibility, then merge it to `metadata` in decodeProject
         (Decode.defaultField "notes" (Decode.dict Notes.decode) Dict.empty)
         (Decode.defaultField "metadata" Metadata.decode Dict.empty)
@@ -179,8 +185,8 @@ decode =
         (Decode.field "updatedAt" Time.decode)
 
 
-decodeProject : Maybe Organization -> ProjectId -> Maybe ProjectSlug -> ProjectName -> Maybe String -> List Source -> Dict NotesKey Notes -> Metadata -> Layout -> Dict LayoutName Layout -> Int -> ProjectSettings -> ProjectStorage -> ProjectVisibility -> ProjectEncodingVersion -> Time.Posix -> Time.Posix -> Project
-decodeProject organization id maybeSlug name description sources notes metadata layout layouts tableRowsSeq settings storage visibility version createdAt updatedAt =
+decodeProject : Maybe Organization -> ProjectId -> Maybe ProjectSlug -> ProjectName -> Maybe String -> List Source -> Dict TableId (List ColumnPath) -> Dict NotesKey Notes -> Metadata -> Layout -> Dict LayoutName Layout -> Int -> ProjectSettings -> ProjectStorage -> ProjectVisibility -> ProjectEncodingVersion -> Time.Posix -> Time.Posix -> Project
+decodeProject organization id maybeSlug name description sources ignoredRelations notes metadata layout layouts tableRowsSeq settings storage visibility version createdAt updatedAt =
     let
         allLayouts : Dict LayoutName Layout
         allLayouts =
@@ -201,7 +207,7 @@ decodeProject organization id maybeSlug name description sources notes metadata 
             -- migrate notes to metadata
             metadata |> mergeNotesInMetadata notes
     in
-    Project organization id slug name description sources fullMetadata allLayouts tableRowsSeq settings storage visibility version createdAt updatedAt
+    Project organization id slug name description sources ignoredRelations fullMetadata allLayouts tableRowsSeq settings storage visibility version createdAt updatedAt
 
 
 mergeNotesInMetadata : Dict NotesKey Notes -> Metadata -> Metadata

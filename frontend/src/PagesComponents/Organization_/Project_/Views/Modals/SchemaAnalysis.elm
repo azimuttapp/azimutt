@@ -27,18 +27,21 @@ import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef, ColumnRefLike)
 import Models.Project.ColumnType exposing (ColumnType)
+import Models.Project.Relation exposing (Relation)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source as Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceIdStr)
+import Models.Project.Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.ProjectRef exposing (ProjectRef)
 import Models.SqlScript exposing (SqlScript)
 import PagesComponents.Organization_.Project_.Models exposing (Msg(..), SchemaAnalysisDialog, SchemaAnalysisMsg(..))
 import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn)
-import PagesComponents.Organization_.Project_.Models.ErdRelation exposing (ErdRelation)
+import PagesComponents.Organization_.Project_.Models.ErdRelation as ErdRelation exposing (ErdRelation)
 import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable exposing (ErdTable)
+import PagesComponents.Organization_.Project_.Models.SuggestedRelation as SuggestedRelation exposing (SuggestedRelation, SuggestedRelationFound)
 import Ports
-import Services.Analysis.MissingRelations as MissingRelations exposing (SuggestedRelation, SuggestedRelationFound)
+import Services.Analysis.MissingRelations as MissingRelations
 import Services.Backend as Backend
 
 
@@ -60,8 +63,8 @@ import Services.Backend as Backend
 -}
 
 
-viewSchemaAnalysis : ProjectRef -> Bool -> SchemaName -> List Source -> Dict TableId ErdTable -> List ErdRelation -> SchemaAnalysisDialog -> Html Msg
-viewSchemaAnalysis project opened defaultSchema sources tables relations model =
+viewSchemaAnalysis : ProjectRef -> Bool -> SchemaName -> List Source -> Dict TableId ErdTable -> List ErdRelation -> Dict TableId (List ColumnPath) -> SchemaAnalysisDialog -> Html Msg
+viewSchemaAnalysis project opened defaultSchema sources tables relations ignoredRelations model =
     let
         titleId : HtmlId
         titleId =
@@ -74,7 +77,7 @@ viewSchemaAnalysis project opened defaultSchema sources tables relations model =
 
           else
             div [ class "max-w-5xl px-6 mt-3" ] [ ProPlan.analysisWarning project ]
-        , viewAnalysis project model.opened defaultSchema sources tables relations
+        , viewAnalysis project model.opened defaultSchema sources tables relations ignoredRelations
         , viewFooter
         ]
 
@@ -93,14 +96,23 @@ viewHeader titleId =
         ]
 
 
-viewAnalysis : ProjectRef -> HtmlId -> SchemaName -> List Source -> Dict TableId ErdTable -> List ErdRelation -> Html Msg
-viewAnalysis project opened defaultSchema sources tables relations =
+viewAnalysis : ProjectRef -> HtmlId -> SchemaName -> List Source -> Dict TableId ErdTable -> List ErdRelation -> Dict TableId (List ColumnPath) -> Html Msg
+viewAnalysis project opened defaultSchema sources erdTables erdRelations ignoredRelations =
+    let
+        tables : Dict TableId Table
+        tables =
+            erdTables |> Dict.map (\_ -> ErdTable.unpack)
+
+        relations : List Relation
+        relations =
+            erdRelations |> List.map ErdRelation.unpack
+    in
     div [ class "max-w-5xl px-6 mt-3" ]
-        [ viewMissingPrimaryKey "missing-pks" project opened defaultSchema (computeMissingPrimaryKey tables)
-        , viewMissingRelations "missing-relations" project opened defaultSchema (MissingRelations.forTables tables)
-        , viewRelationsWithDifferentTypes "relations-with-different-types" project opened defaultSchema sources (computeRelationsWithDifferentTypes defaultSchema tables relations)
-        , viewHeterogeneousTypes "heterogeneous-types" project opened defaultSchema (computeHeterogeneousTypes tables)
-        , viewBigTables "big-tables" project opened defaultSchema (computeBigTables tables)
+        [ viewMissingPrimaryKey "missing-pks" project opened defaultSchema (computeMissingPrimaryKey erdTables)
+        , viewMissingRelations "missing-relations" project opened defaultSchema (MissingRelations.forTables tables relations ignoredRelations |> Dict.values |> List.concatMap Dict.values |> List.concatMap identity)
+        , viewRelationsWithDifferentTypes "relations-with-different-types" project opened defaultSchema sources (computeRelationsWithDifferentTypes defaultSchema erdTables erdRelations)
+        , viewHeterogeneousTypes "heterogeneous-types" project opened defaultSchema (computeHeterogeneousTypes erdTables)
+        , viewBigTables "big-tables" project opened defaultSchema (computeBigTables erdTables)
         ]
 
 
@@ -152,7 +164,7 @@ viewMissingRelations htmlId project opened defaultSchema suggestedRels =
 
         sortedMissingRels : List SuggestedRelationFound
         sortedMissingRels =
-            relsWithRef |> List.filterMap MissingRelations.toFound |> List.sortBy (MissingRelations.toRefs >> (\r -> ColumnRef.show defaultSchema r.ref ++ " ← " ++ ColumnRef.show defaultSchema r.src))
+            relsWithRef |> List.filterMap SuggestedRelation.toFound |> List.sortBy (SuggestedRelation.toRefs >> (\r -> ColumnRef.show defaultSchema r.ref ++ " ← " ++ ColumnRef.show defaultSchema r.src))
     in
     viewSection htmlId
         opened
@@ -162,7 +174,7 @@ viewMissingRelations htmlId project opened defaultSchema suggestedRels =
         [ if List.nonEmpty relsWithRef && project.organization.plan.dbAnalysis then
             div []
                 [ Button.primary1 Tw.primary
-                    [ onClick (sortedMissingRels |> List.map MissingRelations.toRefs |> CreateRelations) ]
+                    [ onClick (sortedMissingRels |> List.map SuggestedRelation.toRefs |> CreateRelations) ]
                     [ text ("Add all " ++ String.pluralizeL "relation" sortedMissingRels) ]
                 ]
 
@@ -173,18 +185,19 @@ viewMissingRelations htmlId project opened defaultSchema suggestedRels =
             (\rel ->
                 div [ class "flex justify-between items-center py-1" ]
                     [ div []
-                        [ text (TableId.show defaultSchema rel.ref.table.id)
-                        , span [ class "text-gray-500" ] [ text ("" |> ColumnPath.withName rel.ref.column.path) ] |> Tooltip.t rel.ref.column.kind
+                        [ text (TableId.show defaultSchema rel.ref.table)
+                        , span [ class "text-gray-500" ] [ text ("" |> ColumnPath.withName rel.ref.column) ] |> Tooltip.t rel.ref.kind
                         , Icon.solid ArrowNarrowLeft "inline mx-1"
-                        , text (TableId.show defaultSchema rel.src.table.id)
-                        , span [ class "text-gray-500" ] [ text ("" |> ColumnPath.withName rel.src.column.path) ] |> Tooltip.t rel.src.column.kind
+                        , text (TableId.show defaultSchema rel.src.table)
+                        , span [ class "text-gray-500" ] [ text ("" |> ColumnPath.withName rel.src.column) ] |> Tooltip.t rel.src.kind
                         , rel.when
-                            |> Maybe.map (\w -> span [] [ text " when ", span [ class "text-gray-400" ] [ text (ColumnPath.show w.column.path ++ "=" ++ w.value) ] ])
+                            |> Maybe.map (\w -> span [] [ text " when ", span [ class "text-gray-400" ] [ text (ColumnPath.show w.column ++ "=" ++ w.value) ] ])
                             |> Maybe.withDefault (text "")
                         ]
                     , div [ class "ml-3" ]
-                        [ B.cond (kindMatch rel) (span [] []) (span [ class "text-gray-400 mr-3" ] [ Icon.solid Exclamation "inline", text (" " ++ rel.ref.column.kind ++ " vs " ++ rel.src.column.kind) ])
-                        , Button.primary1 Tw.primary [ onClick (CreateRelations [ MissingRelations.toRefs rel ]) ] [ text "Add relation" ]
+                        [ B.cond (kindMatch rel) (span [] []) (span [ class "text-gray-400 mr-3" ] [ Icon.solid Exclamation "inline", text (" " ++ rel.ref.kind ++ " vs " ++ rel.src.kind) ])
+                        , Button.primary1 Tw.primary [ onClick (CreateRelations [ SuggestedRelation.toRefs rel ]) ] [ text "Add" ]
+                        , Button.white1 Tw.red [ onClick (IgnoreRelation { table = rel.src.table, column = rel.src.column }), class "ml-1" ] [ text "Ignore" ]
                         ]
                     ]
             )
@@ -198,8 +211,8 @@ viewMissingRelations htmlId project opened defaultSchema suggestedRels =
                     relsNoRef
                     (\rel ->
                         div [ class "ml-3" ]
-                            [ text (TableId.show defaultSchema rel.src.table.id)
-                            , span [ class "text-gray-500" ] [ text ("" |> ColumnPath.withName rel.src.column.path) ] |> Tooltip.t rel.src.column.kind
+                            [ text (TableId.show defaultSchema rel.src.table)
+                            , span [ class "text-gray-500" ] [ text ("" |> ColumnPath.withName rel.src.column) ] |> Tooltip.t rel.src.kind
                             ]
                     )
                 ]
@@ -208,11 +221,11 @@ viewMissingRelations htmlId project opened defaultSchema suggestedRels =
 
 kindMatch : SuggestedRelationFound -> Bool
 kindMatch rel =
-    if (rel.src.column.path |> ColumnPath.toString |> String.toLower |> String.endsWith "_ids") && (rel.src.column.kind |> String.endsWith "[]") then
-        (rel.src.column.kind |> String.dropRight 2) == rel.ref.column.kind
+    if (rel.src.column |> ColumnPath.toString |> String.toLower |> String.endsWith "_ids") && (rel.src.kind |> String.endsWith "[]") then
+        (rel.src.kind |> String.dropRight 2) == rel.ref.kind
 
     else
-        rel.src.column.kind == rel.ref.column.kind
+        rel.src.kind == rel.ref.kind
 
 
 

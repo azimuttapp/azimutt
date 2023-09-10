@@ -25,7 +25,7 @@ type alias Model =
 
 dropdown : Model -> (Model -> Html msg) -> (Model -> Html msg) -> Html msg
 dropdown model elt content =
-    div [ class "relative inline-block text-left" ]
+    div [ class "relative text-left" ]
         [ elt model
         , ContextMenu.menu model.id
             model.direction

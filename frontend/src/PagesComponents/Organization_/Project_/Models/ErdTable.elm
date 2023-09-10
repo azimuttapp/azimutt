@@ -23,6 +23,7 @@ import Models.Project.Unique exposing (Unique)
 import PagesComponents.Organization_.Project_.Models.ErdColumn as ErdColumn exposing (ErdColumn)
 import PagesComponents.Organization_.Project_.Models.ErdOrigin as ErdOrigin exposing (ErdOrigin)
 import PagesComponents.Organization_.Project_.Models.ErdRelation exposing (ErdRelation)
+import PagesComponents.Organization_.Project_.Models.SuggestedRelation exposing (SuggestedRelation)
 
 
 type alias ErdTable =
@@ -42,8 +43,8 @@ type alias ErdTable =
     }
 
 
-create : SchemaName -> List Source -> Dict CustomTypeId CustomType -> List ErdRelation -> Table -> ErdTable
-create defaultSchema sources types tableRelations table =
+create : SchemaName -> List Source -> Dict CustomTypeId CustomType -> List ErdRelation -> Dict ColumnPathStr (List SuggestedRelation) -> Table -> ErdTable
+create defaultSchema sources types tableRelations suggestedRelations table =
     let
         relationsByRootColumn : Dict ColumnName (List ErdRelation)
         relationsByRootColumn =
@@ -72,7 +73,7 @@ create defaultSchema sources types tableRelations table =
     , schema = table.schema
     , name = table.name
     , view = table.view
-    , columns = table.columns |> Dict.map (\name -> ErdColumn.create defaultSchema sources types (relationsByRootColumn |> Dict.getOrElse name []) table (ColumnPath.fromString name))
+    , columns = table.columns |> Dict.map (\name -> ErdColumn.create defaultSchema sources types (relationsByRootColumn |> Dict.getOrElse name []) suggestedRelations table (ColumnPath.fromString name))
     , primaryKey = table.primaryKey
     , uniques = table.uniques
     , indexes = table.indexes

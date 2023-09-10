@@ -94,8 +94,8 @@ viewTable conf zoom args layout meta tableLayout table =
     in
     div ([ css [ "select-none absolute" ], classList [ ( "z-max", tableLayout.props.selected ), ( "invisible", tableLayout.props.size == Size.zeroCanvas ) ] ] ++ Position.stylesGrid tableLayout.props.position ++ dragAttrs)
         [ Table.table
-            { id = table.htmlId
-            , ref = { schema = table.schema, table = table.name }
+            { htmlId = table.htmlId
+            , id = table.id
             , label = table.label
             , isView = table.view
             , comment = table.comment |> Maybe.map .text
@@ -135,14 +135,17 @@ viewTable conf zoom args layout meta tableLayout table =
                                             Noop "No table to show"
 
                                         col :: [] ->
-                                            ShowTable ( col.column.schema, col.column.table ) hint
+                                            ShowTable col.column.table hint
 
                                         _ ->
-                                            ShowTables (cols |> List.map (\col -> ( col.column.schema, col.column.table ))) hint
+                                            ShowTables (cols |> List.map (.column >> .table)) hint
                                )
                 , nestedIconClick = ToggleNestedColumn table.id
                 , hiddenColumnsHover = \id on -> PopoverOpen (B.cond on id "")
                 , hiddenColumnsClick = ToggleHiddenColumns table.id
+                , addRelation = \col -> VirtualRelationMsg (VRCreate (Just col))
+                , notRelation = \col -> IgnoreRelation col
+                , createRelation = \rel -> CreateRelations [ rel ]
                 }
             , zoom = zoom
             , conf = { layout = conf.layout, move = conf.move, select = conf.select, hover = conf.hover }
@@ -197,6 +200,7 @@ buildColumn useBasicTypes tableMeta layout column =
     , isPrimaryKey = column.isPrimaryKey
     , inRelations = column.inRelations |> List.map (buildColumnRelation layout)
     , outRelations = column.outRelations |> List.map (buildColumnRelation layout)
+    , suggestedRelations = column.suggestedRelations
     , uniques = column.uniques |> List.map (\u -> { name = u })
     , indexes = column.indexes |> List.map (\i -> { name = i })
     , checks = column.checks
@@ -217,7 +221,7 @@ buildColumn useBasicTypes tableMeta layout column =
 
 buildColumnRelation : ErdTableLayout -> ErdColumnRef -> Table.Relation
 buildColumnRelation layout relation =
-    { column = { schema = relation.table |> Tuple.first, table = relation.table |> Tuple.second, column = relation.column }
+    { column = { table = relation.table, column = relation.column }
     , nullable = relation.nullable
     , tableShown = layout.relatedTables |> Dict.get relation.table |> Maybe.mapOrElse .shown False
     }

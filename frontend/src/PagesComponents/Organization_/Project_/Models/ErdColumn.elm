@@ -1,6 +1,7 @@
 module PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn, ErdNestedColumns(..), create, flatten, getColumn, unpack, withNullable)
 
 import Dict exposing (Dict)
+import Libs.Dict as Dict
 import Libs.Maybe as Maybe
 import Libs.Ned as Ned exposing (Ned)
 import Libs.Nel as Nel exposing (Nel)
@@ -8,7 +9,7 @@ import Models.Project.CheckName exposing (CheckName)
 import Models.Project.Column exposing (Column, NestedColumns(..))
 import Models.Project.ColumnIndex exposing (ColumnIndex)
 import Models.Project.ColumnName exposing (ColumnName)
-import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
+import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath, ColumnPathStr)
 import Models.Project.ColumnType as ColumnType exposing (ColumnType)
 import Models.Project.ColumnValue as ColumnValue exposing (ColumnValue)
 import Models.Project.Comment exposing (Comment)
@@ -22,6 +23,7 @@ import Models.Project.UniqueName exposing (UniqueName)
 import PagesComponents.Organization_.Project_.Models.ErdColumnRef exposing (ErdColumnRef)
 import PagesComponents.Organization_.Project_.Models.ErdOrigin as ErdOrigin exposing (ErdOrigin)
 import PagesComponents.Organization_.Project_.Models.ErdRelation exposing (ErdRelation)
+import PagesComponents.Organization_.Project_.Models.SuggestedRelation exposing (SuggestedRelation)
 
 
 type alias ErdColumn =
@@ -38,6 +40,7 @@ type alias ErdColumn =
     , isPrimaryKey : Bool
     , inRelations : List ErdColumnRef
     , outRelations : List ErdColumnRef
+    , suggestedRelations : List SuggestedRelation
     , uniques : List UniqueName
     , indexes : List IndexName
     , checks : List { name : CheckName, predicate : Maybe String }
@@ -51,8 +54,8 @@ type ErdNestedColumns
     = ErdNestedColumns (Ned ColumnName ErdColumn)
 
 
-create : SchemaName -> List Source -> Dict CustomTypeId CustomType -> List ErdRelation -> Table -> ColumnPath -> Column -> ErdColumn
-create defaultSchema sources types columnRelations table path column =
+create : SchemaName -> List Source -> Dict CustomTypeId CustomType -> List ErdRelation -> Dict ColumnPathStr (List SuggestedRelation) -> Table -> ColumnPath -> Column -> ErdColumn
+create defaultSchema sources types columnRelations suggestedRelations table path column =
     { index = column.index
     , name = column.name
     , path = path
@@ -66,11 +69,12 @@ create defaultSchema sources types columnRelations table path column =
     , isPrimaryKey = table.primaryKey |> Maybe.filter (.columns >> Nel.member path) |> Maybe.isJust
     , inRelations = columnRelations |> List.filter (\r -> r.ref.table == table.id && r.ref.column == path) |> List.map .src
     , outRelations = columnRelations |> List.filter (\r -> r.src.table == table.id && r.src.column == path) |> List.map .ref
+    , suggestedRelations = suggestedRelations |> Dict.getOrElse (ColumnPath.toString path) []
     , uniques = table.uniques |> List.filter (.columns >> Nel.member path) |> List.map .name
     , indexes = table.indexes |> List.filter (.columns >> Nel.member path) |> List.map .name
     , checks = table.checks |> List.filter (.columns >> List.member path) |> List.map (\c -> { name = c.name, predicate = c.predicate })
     , values = column.values
-    , columns = column.columns |> Maybe.map (\(NestedColumns cols) -> cols |> Ned.map (\name -> create defaultSchema sources types columnRelations table (path |> ColumnPath.child name)) |> ErdNestedColumns)
+    , columns = column.columns |> Maybe.map (\(NestedColumns cols) -> cols |> Ned.map (\name -> create defaultSchema sources types columnRelations suggestedRelations table (path |> ColumnPath.child name)) |> ErdNestedColumns)
     , origins = column.origins |> List.map (ErdOrigin.create sources)
     }
 

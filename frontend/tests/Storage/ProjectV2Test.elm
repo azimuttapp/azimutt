@@ -95,6 +95,7 @@ project0 =
     , name = "Project 0"
     , description = Nothing
     , sources = [ Source src1 "source 1" (SqlLocalFile "structure.sql" 10000 (time 1102)) Array.empty Dict.empty [] Dict.empty True Nothing (time 1100) (time 1101) ]
+    , ignoredRelations = Dict.empty
     , metadata = Dict.empty
     , layouts = Dict.fromList [ ( "initial layout", Layout [] [] [] [] (time 1200) (time 1201) ) ]
     , tableRowsSeq = 1
@@ -127,6 +128,7 @@ project1 =
     , name = "Project 0"
     , description = Nothing
     , sources = [ Source src1 "source 1" (SqlLocalFile "structure.sql" 10000 (time 200)) Array.empty tables1 [] Dict.empty True (Just "basic") (time 1100) (time 1101) ]
+    , ignoredRelations = Dict.empty
     , metadata = Dict.empty
     , layouts =
         Dict.fromList
@@ -237,6 +239,7 @@ project2 =
             (time 1100)
             (time 1101)
         ]
+    , ignoredRelations = Dict.empty
     , metadata = Dict.empty
     , layouts =
         Dict.fromList

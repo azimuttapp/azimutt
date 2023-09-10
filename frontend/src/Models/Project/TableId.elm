@@ -28,6 +28,15 @@ name ( _, t ) =
     t
 
 
+show : SchemaName -> TableId -> String
+show defaultSchema ( s, t ) =
+    if s == Conf.schema.empty || s == defaultSchema then
+        t
+
+    else
+        s ++ "." ++ t
+
+
 toHtmlId : TableId -> HtmlId
 toHtmlId ( s, t ) =
     "table#" ++ s ++ "#" ++ (t |> HtmlId.encode)
@@ -59,20 +68,6 @@ fromString tableId =
             Nothing
 
 
-show : SchemaName -> TableId -> String
-show defaultSchema ( s, t ) =
-    if s == Conf.schema.empty || s == defaultSchema then
-        t
-
-    else
-        s ++ "." ++ t
-
-
-parse : String -> TableId
-parse tableId =
-    parseWith Conf.schema.empty tableId
-
-
 parseWith : SchemaName -> String -> TableId
 parseWith defaultSchema tableId =
     -- TableName may have "." inside :/
@@ -82,6 +77,11 @@ parseWith defaultSchema tableId =
 
         _ ->
             ( defaultSchema, tableId )
+
+
+parse : String -> TableId
+parse tableId =
+    parseWith Conf.schema.empty tableId
 
 
 encode : TableId -> Value

@@ -237,6 +237,9 @@ update urlLayout zone now urlInfos organizations projects msg model =
         CreateRelations rels ->
             model |> mapErdMCmd (Source.createRelations now rels) |> setDirtyCmd
 
+        IgnoreRelation col ->
+            model |> mapErdM (Erd.mapIgnoredRelations (Dict.update col.table (Maybe.mapOrElse (List.add col.column) [ col.column ] >> List.uniqueBy ColumnPath.toString >> Just))) |> setDirty
+
         NewLayoutMsg message ->
             model |> NewLayout.update ModalOpen Toast CustomModalOpen now urlInfos message
 

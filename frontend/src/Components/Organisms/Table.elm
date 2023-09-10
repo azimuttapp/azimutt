@@ -1,4 +1,4 @@
-module Components.Organisms.Table exposing (Actions, CheckConstraint, Column, ColumnName, ColumnRef, DocState, IndexConstraint, Model, NestedColumns(..), OrganizationId, ProjectId, ProjectInfo, Relation, SchemaName, SharedDocState, State, TableConf, TableName, TableRef, UniqueConstraint, doc, docInit, table)
+module Components.Organisms.Table exposing (Actions, CheckConstraint, Column, DocState, IndexConstraint, Model, NestedColumns(..), ProjectInfo, Relation, SharedDocState, State, TableConf, UniqueConstraint, doc, docInit, table)
 
 import Components.Atoms.Icon as Icon
 import Components.Atoms.Icons as Icons
@@ -24,19 +24,24 @@ import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Platform as Platform exposing (Platform)
-import Libs.Models.Uuid exposing (Uuid)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Nel as Nel exposing (Nel)
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (Color, TwClass, batch, bg_50, border_500, focus, ring_500, text_500)
+import Models.OrganizationId exposing (OrganizationId)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath, ColumnPathStr)
+import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
 import Models.Project.Comment as Comment
+import Models.Project.ProjectId exposing (ProjectId)
+import Models.Project.SchemaName exposing (SchemaName)
+import Models.Project.TableId as TableId exposing (TableId)
+import PagesComponents.Organization_.Project_.Models.SuggestedRelation exposing (SuggestedRelation, SuggestedRelationRef)
 import Set exposing (Set)
 
 
 type alias Model msg =
-    { id : HtmlId
-    , ref : TableRef
+    { htmlId : HtmlId
+    , id : TableId
     , label : String
     , isView : Bool
     , comment : Maybe String
@@ -54,10 +59,6 @@ type alias Model msg =
     }
 
 
-type alias TableRef =
-    { schema : String, table : String }
-
-
 type alias Column =
     { index : Int
     , path : ColumnPath
@@ -70,6 +71,7 @@ type alias Column =
     , isPrimaryKey : Bool
     , inRelations : List Relation
     , outRelations : List Relation
+    , suggestedRelations : List SuggestedRelation
     , uniques : List UniqueConstraint
     , indexes : List IndexConstraint
     , checks : List CheckConstraint
@@ -110,6 +112,9 @@ type alias Actions msg =
     , nestedIconClick : ColumnPath -> Bool -> msg
     , hiddenColumnsHover : HtmlId -> Bool -> msg
     , hiddenColumnsClick : msg
+    , addRelation : ColumnRef -> msg
+    , notRelation : ColumnRef -> msg
+    , createRelation : { src : ColumnRef, ref : ColumnRef } -> msg
     }
 
 
@@ -119,10 +124,6 @@ type alias TableConf =
 
 type alias Relation =
     { column : ColumnRef, nullable : Bool, tableShown : Bool }
-
-
-type alias ColumnRef =
-    { schema : String, table : String, column : ColumnPath }
 
 
 type alias UniqueConstraint =
@@ -137,26 +138,6 @@ type alias CheckConstraint =
     { name : String, predicate : Maybe String }
 
 
-type alias SchemaName =
-    String
-
-
-type alias TableName =
-    String
-
-
-type alias ColumnName =
-    String
-
-
-type alias OrganizationId =
-    Uuid
-
-
-type alias ProjectId =
-    Uuid
-
-
 type alias ProjectInfo =
     { organization : Maybe { id : OrganizationId }, id : ProjectId }
 
@@ -164,7 +145,7 @@ type alias ProjectInfo =
 table : Model msg -> Html msg
 table model =
     div
-        ([ id model.id
+        ([ id model.htmlId
          , css
             [ "inline-block bg-white rounded-lg"
             , Bool.cond model.state.isHover "shadow-lg" "shadow-md"
@@ -191,7 +172,7 @@ viewHeader model =
     let
         dropdownId : HtmlId
         dropdownId =
-            model.id ++ "-dropdown"
+            model.htmlId ++ "-dropdown"
     in
     div
         [ title model.label
@@ -275,7 +256,7 @@ viewHiddenColumns model =
         let
             popoverId : HtmlId
             popoverId =
-                model.id
+                model.htmlId ++ "-hidden-columns"
 
             showPopover : Bool
             showPopover =
@@ -348,7 +329,7 @@ viewColumnIcon model column =
         tooltip : String
         tooltip =
             [ Bool.maybe column.isPrimaryKey "Primary key"
-            , Bool.maybe (column.outRelations |> List.nonEmpty) ("Foreign key to " ++ (column.outRelations |> List.head |> Maybe.mapOrElse (.column >> showColumnRef model.defaultSchema) ""))
+            , Bool.maybe (column.outRelations |> List.nonEmpty) ("Foreign key to " ++ (column.outRelations |> List.head |> Maybe.mapOrElse (.column >> ColumnRef.show model.defaultSchema) ""))
             , Bool.maybe (column.uniques |> List.nonEmpty) ("Unique constraint for " ++ (column.uniques |> List.map .name |> String.join ", "))
             , Bool.maybe (column.indexes |> List.nonEmpty) ("Indexed by " ++ (column.indexes |> List.map .name |> String.join ", "))
             , Bool.maybe (column.checks |> List.nonEmpty) ((column.checks |> String.pluralizeL "check") ++ ": " ++ (column.checks |> List.map (\c -> c.predicate |> Maybe.withDefault c.name) |> String.join ", "))
@@ -393,11 +374,11 @@ viewColumnIconDropdown model column icon =
     let
         dropdownId : HtmlId
         dropdownId =
-            model.id ++ "-" ++ ColumnPath.toString column.path ++ "-dropdown"
+            model.htmlId ++ "-" ++ ColumnPath.toString column.path ++ "-dropdown"
 
         tablesToShow : List Relation
         tablesToShow =
-            column.inRelations |> List.filterNot .tableShown |> List.groupBy (\c -> ( c.column.schema, c.column.table )) |> Dict.values |> List.filterMap List.head
+            column.inRelations |> List.filterNot .tableShown |> List.groupBy (.column >> .table) |> Dict.values |> List.filterMap List.head
     in
     if List.isEmpty column.inRelations || not model.conf.layout then
         div [] [ button [ type_ "button", id dropdownId, css [ "cursor-default", focus [ "outline-none" ] ] ] [ icon ] ]
@@ -418,7 +399,7 @@ viewColumnIconDropdown model column icon =
             (\_ ->
                 div []
                     ((column.inRelations
-                        |> List.groupBy (\r -> r.column.schema ++ "-" ++ r.column.table)
+                        |> List.groupBy (.column >> .table)
                         |> Dict.values
                         |> List.filterMap (List.sortBy (.column >> .column >> ColumnPath.toString) >> Nel.fromList)
                         |> List.map
@@ -427,7 +408,7 @@ viewColumnIconDropdown model column icon =
                                     content : List (Html msg)
                                     content =
                                         [ Icon.solid Icons.columns.foreignKey "inline"
-                                        , bText (showTableRef model.defaultSchema { schema = rels.head.column.schema, table = rels.head.column.table })
+                                        , bText (TableId.show model.defaultSchema rels.head.column.table)
                                         , text ("." ++ (rels |> Nel.toList |> List.map (\r -> ColumnPath.show r.column.column ++ Bool.cond r.nullable "?" "") |> String.join ", "))
                                         ]
                                 in
@@ -456,10 +437,67 @@ viewColumnIconDropdownItem message content =
 viewColumnName : Model msg -> Column -> Html msg
 viewColumnName model column =
     div [ css [ "ml-1 flex flex-grow", Bool.cond column.isPrimaryKey "font-bold" "", Bool.cond column.isDeprecated "line-through" "" ] ]
-        ([ text (ColumnPath.name column.path) ]
+        ([ span [ class "relative inline-block" ] [ text (ColumnPath.name column.path), column |> viewColumnSuggestions model ] ]
             |> List.appendOn column.comment viewComment
             |> List.appendOn column.notes (viewNotes model (Just column.path))
         )
+
+
+viewColumnSuggestions : Model msg -> Column -> Html msg
+viewColumnSuggestions model column =
+    let
+        dropdownId : HtmlId
+        dropdownId =
+            model.htmlId ++ "-" ++ ColumnPath.toString column.path ++ "-suggestion-dropdown"
+
+        columnRef : ColumnRef
+        columnRef =
+            { table = model.id, column = column.path }
+    in
+    if column.suggestedRelations |> List.nonEmpty then
+        div [ class "absolute -right-1 top-1" ]
+            [ Dropdown.dropdown { id = dropdownId, direction = BottomRight, isOpen = model.state.openedDropdown == dropdownId }
+                (\m ->
+                    button
+                        [ type_ "button"
+                        , id m.id
+                        , onClick (model.actions.headerDropdownClick m.id)
+                        , ariaExpanded m.isOpen
+                        , ariaHaspopup "true"
+                        , class "block h-1.5 w-1.5 rounded-full bg-red-500 ring-2 ring-white"
+                        ]
+                        []
+                )
+                (\_ ->
+                    div []
+                        ((column.suggestedRelations |> List.concatMap (viewRelationSuggestion model columnRef))
+                            ++ [ ContextMenu.btn "" (model.actions.addRelation columnRef) [] [ text "Add relation" ]
+                               , ContextMenu.btn "" (model.actions.notRelation columnRef) [] [ text "Not a relation" ]
+                               ]
+                        )
+                )
+            ]
+
+    else
+        div [] []
+
+
+viewRelationSuggestion : Model msg -> ColumnRef -> SuggestedRelation -> List (Html msg)
+viewRelationSuggestion model column rel =
+    rel.ref
+        |> Maybe.map
+            (\ref ->
+                [ ContextMenu.btn ""
+                    (model.actions.createRelation { src = column, ref = { table = ref.table, column = ref.column } })
+                    []
+                    [ text "Add relation to "
+                    , bText (TableId.show model.defaultSchema ref.table)
+                    , span [ class "text-gray-500" ] [ text ("" |> ColumnPath.withName ref.column) ] |> Tooltip.t ref.kind
+                    , rel.when |> Maybe.map (\w -> span [] [ text " when ", span [ class "text-gray-400" ] [ text (ColumnPath.show w.column ++ "=" ++ w.value) ] ]) |> Maybe.withDefault (text "")
+                    ]
+                ]
+            )
+        |> Maybe.withDefault []
 
 
 viewComment : String -> Html msg
@@ -508,24 +546,6 @@ viewColumnKind model column =
     div [ class "ml-1" ] (value :: nullable)
 
 
-showTableRef : SchemaName -> TableRef -> String
-showTableRef defaultSchema ref =
-    if ref.schema == defaultSchema || ref.schema == Conf.schema.empty then
-        ref.table
-
-    else
-        ref.schema ++ "." ++ ref.table
-
-
-showColumnRef : SchemaName -> ColumnRef -> String
-showColumnRef defaultSchema ref =
-    if ref.schema == defaultSchema || ref.schema == Conf.schema.empty then
-        ref.table ++ "." ++ ColumnPath.show ref.column
-
-    else
-        ref.schema ++ "." ++ ref.table ++ "." ++ ColumnPath.show ref.column
-
-
 isHighlightedColumn : Model msg -> ColumnPath -> Bool
 isHighlightedColumn model path =
     (model.state.highlightedColumns |> Set.member (path |> ColumnPath.toString)) || (path |> ColumnPath.parent |> Maybe.mapOrElse (isHighlightedColumn model) False)
@@ -555,24 +575,24 @@ updateDocState transform =
 
 sampleColumn : Column
 sampleColumn =
-    { index = 0, path = Nel "" [], kind = "", kindDetails = Nothing, nullable = False, default = Nothing, comment = Nothing, notes = Nothing, isPrimaryKey = False, inRelations = [], outRelations = [], uniques = [], indexes = [], checks = [], isDeprecated = False, children = Nothing }
+    { index = 0, path = Nel "" [], kind = "", kindDetails = Nothing, nullable = False, default = Nothing, comment = Nothing, notes = Nothing, isPrimaryKey = False, inRelations = [], outRelations = [], suggestedRelations = [], uniques = [], indexes = [], checks = [], isDeprecated = False, children = Nothing }
 
 
 sample : Model (Msg x)
 sample =
-    { id = "table-public-users"
-    , ref = { schema = "demo", table = "users" }
+    { htmlId = "table-public-users"
+    , id = ( "demo", "users" )
     , label = "users"
     , isView = False
     , comment = Nothing
     , notes = Nothing
     , isDeprecated = False
     , columns =
-        [ { sampleColumn | path = Nel "id" [], kind = "integer", isPrimaryKey = True, inRelations = [ { column = { schema = "demo", table = "accounts", column = ColumnPath.fromString "user" }, nullable = True, tableShown = False } ] }
+        [ { sampleColumn | path = Nel "id" [], kind = "integer", isPrimaryKey = True, inRelations = [ { column = { table = ( "demo", "accounts" ), column = ColumnPath.fromString "user" }, nullable = True, tableShown = False } ] }
         , { sampleColumn | path = Nel "name" [], kind = "character varying(120)", comment = Just "Should be unique", notes = Just "A nice note", uniques = [ { name = "users_name_unique" } ] }
         , { sampleColumn | path = Nel "email" [], kind = "character varying(120)", indexes = [ { name = "users_email_idx" } ] }
         , { sampleColumn | path = Nel "bio" [], kind = "text", checks = [ { name = "users_bio_min_length", predicate = Just "len(bio) > 3" } ] }
-        , { sampleColumn | path = Nel "organization" [], kind = "integer", nullable = True, outRelations = [ { column = { schema = "demo", table = "organizations", column = ColumnPath.fromString "id" }, nullable = True, tableShown = False } ] }
+        , { sampleColumn | path = Nel "organization" [], kind = "integer", nullable = True, outRelations = [ { column = { table = ( "demo", "organizations" ), column = ColumnPath.fromString "id" }, nullable = True, tableShown = False } ] }
         , { sampleColumn | path = Nel "plan" [], kind = "object", children = Just (NestedColumns 1 []) }
         , { sampleColumn | path = Nel "created" [], kind = "timestamp without time zone", default = Just "CURRENT_TIMESTAMP", isDeprecated = True }
         ]
@@ -616,10 +636,13 @@ sample =
         , columnDblClick = \col -> logAction ("columnDblClick " ++ ColumnPath.show col)
         , columnRightClick = \_ col _ -> logAction ("columnRightClick " ++ ColumnPath.show col)
         , notesClick = \col -> logAction ("notesClick " ++ (col |> Maybe.mapOrElse ColumnPath.show "table"))
-        , relationsIconClick = \refs _ -> logAction ("relationsIconClick " ++ (refs |> List.map (\r -> r.column.schema ++ "." ++ r.column.table) |> String.join ", "))
+        , relationsIconClick = \refs _ -> logAction ("relationsIconClick " ++ (refs |> List.map (\r -> r.column.table |> TableId.show "") |> String.join ", "))
         , nestedIconClick = \path open -> logAction ("nestedIconClick " ++ (path |> ColumnPath.show) ++ " " ++ Bool.cond open "open" " close")
         , hiddenColumnsHover = \id _ -> logAction ("hiddenColumnsHover " ++ id)
         , hiddenColumnsClick = logAction "hiddenColumnsClick"
+        , addRelation = \_ -> logAction "addRelation"
+        , notRelation = \_ -> logAction "notRelation"
+        , createRelation = \_ -> logAction "createRelation"
         }
     , zoom = 1
     , conf = { layout = True, move = True, select = True, hover = True }
@@ -648,30 +671,33 @@ doc =
                                 , columnDblClick = \col -> logAction ("columnDblClick " ++ ColumnPath.show col)
                                 , columnRightClick = \_ col _ -> logAction ("columnRightClick " ++ ColumnPath.show col)
                                 , notesClick = \col -> logAction ("notesClick " ++ (col |> Maybe.mapOrElse ColumnPath.show "table"))
-                                , relationsIconClick = \refs _ -> logAction ("relationsIconClick " ++ (refs |> List.map (\r -> r.column.schema ++ "." ++ r.column.table) |> String.join ", "))
+                                , relationsIconClick = \refs _ -> logAction ("relationsIconClick " ++ (refs |> List.map (\r -> r.column.table |> TableId.show "") |> String.join ", "))
                                 , nestedIconClick = \col open -> logAction ("nestedIconClick " ++ ColumnPath.show col ++ " " ++ Bool.cond open "open" " close")
                                 , hiddenColumnsHover = \id _ -> updateDocState (\s -> { s | openedPopover = id })
                                 , hiddenColumnsClick = updateDocState (\s -> { s | showHiddenColumns = not s.showHiddenColumns })
+                                , addRelation = \_ -> logAction "addRelation"
+                                , notRelation = \_ -> logAction "notRelation"
+                                , createRelation = \_ -> logAction "createRelation"
                                 }
                         }
               )
             , ( "states"
               , \_ ->
                     div [ css [ "flex flex-wrap gap-6" ] ]
-                        ([ { sample | id = "View", isView = True }
-                         , { sample | id = "With nested", columns = sample.columns |> List.map (\c -> Bool.cond (c.path == Nel "plan" []) { c | children = Just (NestedColumns 1 [ { sampleColumn | path = Nel "plan" [ "id" ], kind = "int" } ]) } c) }
-                         , { sample | id = "With comment", comment = Just "Here is a comment" }
-                         , { sample | id = "With notes", notes = Just "Here is some notes" }
-                         , { sample | id = "Hover table", state = sample.state |> (\s -> { s | isHover = True }) }
-                         , { sample | id = "Hover column", state = sample.state |> (\s -> { s | isHover = True, highlightedColumns = Set.fromList [ "name" ] }) }
-                         , { sample | id = "Selected", state = sample.state |> (\s -> { s | selected = True }) }
-                         , { sample | id = "Dragging", state = sample.state |> (\s -> { s | dragging = True }) }
-                         , { sample | id = "Collapsed", state = sample.state |> (\s -> { s | collapsed = True }) }
-                         , { sample | id = "Settings", state = sample.state |> (\s -> { s | openedDropdown = "Settings-settings" }) }
-                         , { sample | id = "Hidden columns hidden", columns = sample.columns |> List.take 3, hiddenColumns = sample.columns |> List.drop 3, state = sample.state |> (\s -> { s | showHiddenColumns = False }) }
-                         , { sample | id = "Hidden columns visible", columns = sample.columns |> List.take 3, hiddenColumns = sample.columns |> List.drop 3, state = sample.state |> (\s -> { s | showHiddenColumns = True }) }
+                        ([ { sample | htmlId = "View", isView = True }
+                         , { sample | htmlId = "With nested", columns = sample.columns |> List.map (\c -> Bool.cond (c.path == Nel "plan" []) { c | children = Just (NestedColumns 1 [ { sampleColumn | path = Nel "plan" [ "id" ], kind = "int" } ]) } c) }
+                         , { sample | htmlId = "With comment", comment = Just "Here is a comment" }
+                         , { sample | htmlId = "With notes", notes = Just "Here is some notes" }
+                         , { sample | htmlId = "Hover table", state = sample.state |> (\s -> { s | isHover = True }) }
+                         , { sample | htmlId = "Hover column", state = sample.state |> (\s -> { s | isHover = True, highlightedColumns = Set.fromList [ "name" ] }) }
+                         , { sample | htmlId = "Selected", state = sample.state |> (\s -> { s | selected = True }) }
+                         , { sample | htmlId = "Dragging", state = sample.state |> (\s -> { s | dragging = True }) }
+                         , { sample | htmlId = "Collapsed", state = sample.state |> (\s -> { s | collapsed = True }) }
+                         , { sample | htmlId = "Settings", state = sample.state |> (\s -> { s | openedDropdown = "Settings-settings" }) }
+                         , { sample | htmlId = "Hidden columns hidden", columns = sample.columns |> List.take 3, hiddenColumns = sample.columns |> List.drop 3, state = sample.state |> (\s -> { s | showHiddenColumns = False }) }
+                         , { sample | htmlId = "Hidden columns visible", columns = sample.columns |> List.take 3, hiddenColumns = sample.columns |> List.drop 3, state = sample.state |> (\s -> { s | showHiddenColumns = True }) }
                          ]
-                            |> List.map (\model -> div [] [ text (model.id ++ ":"), br [] [], table model ])
+                            |> List.map (\model -> div [] [ text (model.htmlId ++ ":"), br [] [], table model ])
                         )
               )
             ]

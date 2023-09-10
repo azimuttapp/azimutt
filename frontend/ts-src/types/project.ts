@@ -580,6 +580,7 @@ export interface Project {
     name: ProjectName
     description?: string
     sources: Source[]
+    ignoredRelations?: { [table: string]: ColumnPathStr[] }
     notes?: { [ref: string]: string } // legacy property, keep it for retro compatibility
     metadata?: { [table: TableId]: TableMeta }
     usedLayout?: LayoutName // legacy property, keep it for retro compatibility
@@ -600,6 +601,7 @@ export const Project = z.object({
     name: ProjectName,
     description: z.string().optional(),
     sources: Source.array(),
+    ignoredRelations: z.record(ColumnPathStr.array()).optional(),
     notes: z.record(z.string()).optional(),
     metadata: z.record(TableId, TableMeta).optional(),
     usedLayout: LayoutName.optional(),

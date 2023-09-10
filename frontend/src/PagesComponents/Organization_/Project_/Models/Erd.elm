@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Models.Erd exposing (Erd, canChangeColor, canCreateGroup, canCreateLayout, canCreateMemo, create, currentLayout, defaultSchemaM, getColumn, getColumnPos, getLayoutTable, getOrganization, getOrganizationM, getProjectId, getProjectIdM, getProjectRef, getProjectRefM, getTable, isShown, mapCurrentLayout, mapCurrentLayoutWithTime, mapCurrentLayoutWithTimeCmd, mapSettings, mapSource, mapSources, setSettings, setSources, toSchema, unpack, viewportM, viewportToCanvas)
+module PagesComponents.Organization_.Project_.Models.Erd exposing (Erd, canChangeColor, canCreateGroup, canCreateLayout, canCreateMemo, create, currentLayout, defaultSchemaM, getColumn, getColumnPos, getLayoutTable, getOrganization, getOrganizationM, getProjectId, getProjectIdM, getProjectRef, getProjectRefM, getTable, isShown, mapCurrentLayout, mapCurrentLayoutWithTime, mapCurrentLayoutWithTimeCmd, mapIgnoredRelations, mapSettings, mapSource, mapSources, setIgnoredRelations, setSettings, setSources, toSchema, unpack, viewportM, viewportToCanvas)
 
 import Conf
 import Dict exposing (Dict)
@@ -13,6 +13,7 @@ import Models.OrganizationId exposing (OrganizationId)
 import Models.Position as Position
 import Models.Project exposing (Project)
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
+import Models.Project.ColumnPath exposing (ColumnPath, ColumnPathStr)
 import Models.Project.ColumnRef exposing (ColumnRef, ColumnRefLike)
 import Models.Project.CustomType as CustomType exposing (CustomType)
 import Models.Project.CustomTypeId exposing (CustomTypeId)
@@ -37,6 +38,8 @@ import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout expo
 import PagesComponents.Organization_.Project_.Models.ErdRelation as ErdRelation exposing (ErdRelation)
 import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
+import PagesComponents.Organization_.Project_.Models.SuggestedRelation exposing (SuggestedRelation)
+import Services.Analysis.MissingRelations as MissingRelations
 import Services.Lenses exposing (mapLayoutsD, mapLayoutsDCmd)
 import Time
 
@@ -47,6 +50,7 @@ type alias Erd =
     , relations : List ErdRelation
     , types : Dict CustomTypeId CustomType
     , relationsByTable : Dict TableId (List ErdRelation)
+    , ignoredRelations : Dict TableId (List ColumnPath)
     , layouts : Dict LayoutName ErdLayout
     , currentLayout : LayoutName
     , layoutOnLoad : String -- enum: "", "fit", "arrange"
@@ -61,7 +65,7 @@ create : Project -> Erd
 create project =
     let
         ( ( tables, relations, types ), relationsByTable ) =
-            computeSources project.settings project.sources
+            computeSources project.settings project.sources project.ignoredRelations
 
         layout : LayoutName
         layout =
@@ -74,6 +78,7 @@ create project =
     , relations = relations
     , types = types
     , relationsByTable = relationsByTable
+    , ignoredRelations = project.ignoredRelations
     , layouts = project.layouts |> Dict.map (\_ -> ErdLayout.create relationsByTable)
     , currentLayout = layout
     , layoutOnLoad = ""
@@ -92,6 +97,7 @@ unpack erd =
     , name = erd.project.name
     , description = erd.project.description
     , sources = erd.sources
+    , ignoredRelations = erd.ignoredRelations
     , metadata = erd.metadata
     , layouts = erd.layouts |> Dict.map (\_ -> ErdLayout.unpack)
     , tableRowsSeq = erd.tableRowsSeq
@@ -243,8 +249,8 @@ viewportM erdElem erd =
     erd |> Maybe.mapOrElse (currentLayout >> .canvas >> CanvasProps.viewport erdElem) Area.zeroCanvas
 
 
-computeSources : ProjectSettings -> List Source -> ( ( Dict TableId ErdTable, List ErdRelation, Dict CustomTypeId CustomType ), Dict TableId (List ErdRelation) )
-computeSources settings sources =
+computeSources : ProjectSettings -> List Source -> Dict TableId (List ColumnPath) -> ( ( Dict TableId ErdTable, List ErdRelation, Dict CustomTypeId CustomType ), Dict TableId (List ErdRelation) )
+computeSources settings sources ignoredRelations =
     let
         tables : Dict TableId Table
         tables =
@@ -258,6 +264,10 @@ computeSources settings sources =
         types =
             sources |> computeTypes
 
+        suggestedRelations : Dict TableId (Dict ColumnPathStr (List SuggestedRelation))
+        suggestedRelations =
+            MissingRelations.forTables tables relations ignoredRelations
+
         erdRelations : List ErdRelation
         erdRelations =
             relations |> List.map (ErdRelation.create tables)
@@ -268,7 +278,7 @@ computeSources settings sources =
 
         erdTables : Dict TableId ErdTable
         erdTables =
-            tables |> Dict.map (\id -> ErdTable.create settings.defaultSchema sources types (erdRelationsByTable |> Dict.getOrElse id []))
+            tables |> Dict.map (\id -> ErdTable.create settings.defaultSchema sources types (erdRelationsByTable |> Dict.getOrElse id []) (suggestedRelations |> Dict.getOrElse id Dict.empty))
     in
     ( ( erdTables, erdRelations, types ), erdRelationsByTable )
 
@@ -342,11 +352,7 @@ setSources sources erd =
         erd
 
     else
-        let
-            ( ( tables, relations, types ), relationsByTable ) =
-                computeSources erd.settings sources
-        in
-        { erd | sources = sources, tables = tables, relations = relations, types = types, relationsByTable = relationsByTable }
+        { erd | sources = sources } |> recomputeSources
 
 
 mapSources : (List Source -> List Source) -> Erd -> Erd
@@ -359,19 +365,39 @@ mapSource id transform erd =
     setSources (List.mapBy .id id transform erd.sources) erd
 
 
+setIgnoredRelations : Dict TableId (List ColumnPath) -> Erd -> Erd
+setIgnoredRelations ignoredRelations erd =
+    if erd.ignoredRelations == ignoredRelations then
+        erd
+
+    else
+        { erd | ignoredRelations = ignoredRelations } |> recomputeSources
+
+
+mapIgnoredRelations : (Dict TableId (List ColumnPath) -> Dict TableId (List ColumnPath)) -> Erd -> Erd
+mapIgnoredRelations transform erd =
+    setIgnoredRelations (transform erd.ignoredRelations) erd
+
+
 setSettings : ProjectSettings -> Erd -> Erd
 setSettings settings erd =
     if erd.settings == settings then
         erd
 
     else
-        let
-            ( ( tables, relations, types ), relationsByTable ) =
-                computeSources settings erd.sources
-        in
-        { erd | settings = settings, tables = tables, relations = relations, types = types, relationsByTable = relationsByTable }
+        { erd | settings = settings } |> recomputeSources
 
 
 mapSettings : (ProjectSettings -> ProjectSettings) -> Erd -> Erd
 mapSettings transform erd =
     setSettings (transform erd.settings) erd
+
+
+recomputeSources : Erd -> Erd
+recomputeSources erd =
+    -- When changing any input of `computeSources`, you need to re-compute them
+    let
+        ( ( tables, relations, types ), relationsByTable ) =
+            computeSources erd.settings erd.sources erd.ignoredRelations
+    in
+    { erd | tables = tables, relations = relations, types = types, relationsByTable = relationsByTable }

@@ -70,7 +70,7 @@ import TestHelpers.OrganizationFuzzers exposing (organization)
 
 project : Fuzzer Project
 project =
-    Fuzz.map15 Project (Fuzz.maybe organization) projectId projectSlug projectName (Fuzz.maybe stringSmall) (listSmall source) (dictSmall tableId tableMeta) (dictSmall layoutName layout) intPosSmall projectSettings projectStorage projectVisibility projectEncodingVersion posix posix
+    Fuzz.map16 Project (Fuzz.maybe organization) projectId projectSlug projectName (Fuzz.maybe stringSmall) (listSmall source) (dictSmall tableId (listSmall columnPath)) (dictSmall tableId tableMeta) (dictSmall layoutName layout) intPosSmall projectSettings projectStorage projectVisibility projectEncodingVersion posix posix
 
 
 source : Fuzzer Source
