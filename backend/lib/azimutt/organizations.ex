@@ -11,6 +11,7 @@ defmodule Azimutt.Organizations do
   alias Azimutt.Organizations.OrganizationMember
   alias Azimutt.Organizations.OrganizationPlan
   alias Azimutt.Projects.Project
+  alias Azimutt.Projects.ProjectToken
   alias Azimutt.Repo
   alias Azimutt.Services.StripeSrv
   alias Azimutt.Utils.Enumx
@@ -260,6 +261,11 @@ defmodule Azimutt.Organizations do
 
   def delete_organization(%Organization{} = organization, now) do
     # TODO decide between soft and hard delete of organization, if hard, add tracking events
+    ProjectToken
+    |> join(:inner, [pt], p in Project, on: pt.project_id == p.id)
+    |> where([_, p], p.organization_id == ^organization.id)
+    |> Repo.delete_all()
+
     Project
     |> where([p], p.organization_id == ^organization.id)
     |> Repo.delete_all()

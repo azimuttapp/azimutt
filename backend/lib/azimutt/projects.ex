@@ -104,6 +104,10 @@ defmodule Azimutt.Projects do
       |> Repo.exists?()
 
     if can_delete do
+      ProjectToken
+      |> where([pt], pt.project_id == ^project.id)
+      |> Repo.delete_all()
+
       Repo.delete(project)
       |> Result.tap(fn p -> Tracking.project_deleted(current_user, p) end)
     else
