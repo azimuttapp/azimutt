@@ -21,6 +21,7 @@ import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Nel as Nel
 import Libs.Task as T
 import Libs.Time as Time
+import Libs.Url exposing (UrlPath)
 import Models.Area as Area
 import Models.Organization exposing (Organization)
 import Models.Position as Position
@@ -89,8 +90,8 @@ import Time
 import Track
 
 
-update : Maybe LayoutName -> Time.Zone -> Time.Posix -> UrlInfos -> List Organization -> List ProjectInfo -> Msg -> Model -> ( Model, Cmd Msg )
-update urlLayout zone now urlInfos organizations projects msg model =
+update : Maybe LayoutName -> Time.Zone -> Time.Posix -> UrlInfos -> UrlPath -> List Organization -> List ProjectInfo -> Msg -> Model -> ( Model, Cmd Msg )
+update urlLayout zone now urlInfos basePath organizations projects msg model =
     case msg of
         ToggleMobileMenu ->
             ( model |> mapNavbar (mapMobileMenuOpen not), Cmd.none )
@@ -117,7 +118,7 @@ update urlLayout zone now urlInfos organizations projects msg model =
             model |> mapErdM (mapProject (setName name)) |> setDirty
 
         DeleteProject project ->
-            ( model, Ports.deleteProject project ((project.organization |> Maybe.map .id) |> Backend.organizationUrl |> Just) )
+            ( model, Ports.deleteProject project ((project.organization |> Maybe.map .id) |> Backend.organizationUrl basePath |> Just) )
 
         GoToTable id ->
             model |> mapErdMCmd (goToTable now id model.erdElem) |> setDirtyCmd
@@ -210,7 +211,7 @@ update urlLayout zone now urlInfos organizations projects msg model =
                 model |> mapErdMCmd (\erd -> erd |> Erd.mapCurrentLayoutWithTimeCmd now (mapTablesCmd (mapTablePropOrSelected erd.settings.defaultSchema id (mapProps (setColor color))))) |> setDirtyCmd
 
             else
-                ( model, Cmd.batch [ ProPlan.colorsModalBody project ProPlanColors ProPlan.colorsInit |> CustomModalOpen |> T.send, Track.planLimit .tableColor model.erd ] )
+                ( model, Cmd.batch [ ProPlan.colorsModalBody basePath project ProPlanColors ProPlan.colorsInit |> CustomModalOpen |> T.send, Track.planLimit .tableColor model.erd ] )
 
         MoveColumn column position ->
             model |> mapErdM (\erd -> erd |> Erd.mapCurrentLayoutWithTime now (mapTables (List.mapBy .id column.table (mapColumns (ErdColumnProps.mapAt (column.column |> ColumnPath.parent) (List.moveBy .name (column.column |> Nel.last) position)))))) |> setDirty
@@ -241,13 +242,13 @@ update urlLayout zone now urlInfos organizations projects msg model =
             model |> mapErdM (Erd.mapIgnoredRelations (Dict.update col.table (Maybe.mapOrElse (List.add col.column) [ col.column ] >> List.uniqueBy ColumnPath.toString >> Just))) |> setDirty
 
         NewLayoutMsg message ->
-            model |> NewLayout.update ModalOpen Toast CustomModalOpen now urlInfos message
+            model |> NewLayout.update ModalOpen Toast CustomModalOpen now urlInfos basePath message
 
         LayoutMsg message ->
             model |> handleLayout message
 
         GroupMsg message ->
-            model |> handleGroups now urlInfos message
+            model |> handleGroups now basePath urlInfos message
 
         NotesMsg message ->
             model |> handleNotes message
@@ -256,7 +257,7 @@ update urlLayout zone now urlInfos organizations projects msg model =
             model |> handleTags message
 
         MemoMsg message ->
-            model |> handleMemo now urlInfos message
+            model |> handleMemo now basePath urlInfos message
 
         ShowTableRow source query previous hint ->
             (model.erd |> Maybe.andThen (Erd.currentLayout >> .tableRows >> List.find (\r -> r.source == source.id && r.table == query.table && r.primaryKey == query.primaryKey)))
@@ -297,7 +298,7 @@ update urlLayout zone now urlInfos organizations projects msg model =
             model.erd |> Maybe.mapOrElse (\erd -> model |> mapExportDialogCmd (ExportDialog.update ExportDialogMsg ModalOpen urlInfos erd message)) ( model, Cmd.none )
 
         SharingMsg message ->
-            model |> mapSharingCmd (ProjectSharing.update SharingMsg ModalOpen Toast zone now model.erd message)
+            model |> mapSharingCmd (ProjectSharing.update SharingMsg ModalOpen Toast zone now basePath model.erd message)
 
         ProjectSaveMsg message ->
             model |> mapSaveCmd (ProjectSaveDialog.update ModalOpen message)
@@ -315,7 +316,7 @@ update urlLayout zone now urlInfos organizations projects msg model =
             ( model |> mapErdM (mapProject (mapOrganizationM (mapPlan (setColors True)))), Ports.fireworks )
 
         ProPlanColors state message ->
-            state |> ProPlan.colorsUpdate ProPlanColors message |> Tuple.mapFirst (\s -> { model | modal = model.modal |> Maybe.map (\m -> { m | content = ProPlan.colorsModalBody (model.erd |> Erd.getProjectRefM urlInfos) ProPlanColors s }) })
+            state |> ProPlan.colorsUpdate basePath ProPlanColors message |> Tuple.mapFirst (\s -> { model | modal = model.modal |> Maybe.map (\m -> { m | content = ProPlan.colorsModalBody basePath (model.erd |> Erd.getProjectRefM urlInfos) ProPlanColors s }) })
 
         HelpMsg message ->
             model |> handleHelp message

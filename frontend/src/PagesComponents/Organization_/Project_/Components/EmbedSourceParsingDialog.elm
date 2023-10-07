@@ -12,6 +12,7 @@ import Libs.Models.FileUrl as FileUrl
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Result as Result
 import Libs.Tailwind as Tw
+import Libs.Url exposing (UrlPath)
 import Models.Project.Source exposing (Source)
 import Models.ProjectInfo exposing (ProjectInfo)
 import Services.DatabaseSource as DatabaseSource
@@ -96,8 +97,8 @@ update wrap now project msg model =
 -- VIEW
 
 
-view : (Msg -> msg) -> (Source -> msg) -> (msg -> msg) -> (String -> msg) -> Bool -> Model msg -> Html msg
-view wrap sourceParsed modalClose noop opened model =
+view : (Msg -> msg) -> (Source -> msg) -> (msg -> msg) -> (String -> msg) -> UrlPath -> Bool -> Model msg -> Html msg
+view wrap sourceParsed modalClose noop basePath opened model =
     let
         titleId : HtmlId
         titleId =
@@ -109,7 +110,7 @@ view wrap sourceParsed modalClose noop opened model =
         , isOpen = opened
         , onBackgroundClick = noop "close-source-parsing"
         }
-        ((model.databaseSource |> Maybe.map (viewDatabaseSourceParsing wrap sourceParsed modalClose))
+        ((model.databaseSource |> Maybe.map (viewDatabaseSourceParsing wrap sourceParsed modalClose basePath))
             |> Maybe.orElse (model.sqlSource |> Maybe.map (viewSqlSourceParsing wrap sourceParsed modalClose))
             |> Maybe.orElse (model.prismaSource |> Maybe.map (viewPrismaSourceParsing wrap sourceParsed modalClose))
             |> Maybe.orElse (model.jsonSource |> Maybe.map (viewJsonSourceParsing wrap sourceParsed modalClose))
@@ -118,15 +119,15 @@ view wrap sourceParsed modalClose noop opened model =
         )
 
 
-viewDatabaseSourceParsing : (Msg -> msg) -> (Source -> msg) -> (msg -> msg) -> DatabaseSource.Model msg -> List (Html msg)
-viewDatabaseSourceParsing wrap sourceParsed modalClose model =
+viewDatabaseSourceParsing : (Msg -> msg) -> (Source -> msg) -> (msg -> msg) -> UrlPath -> DatabaseSource.Model msg -> List (Html msg)
+viewDatabaseSourceParsing wrap sourceParsed modalClose basePath model =
     viewParsing
         sourceParsed
         modalClose
         ((model.selectedUrl |> Maybe.andThen Result.toMaybe |> Maybe.map DatabaseUrl.databaseName)
             |> Maybe.withDefault "your"
         )
-        (DatabaseSource.viewParsing (EmbedDatabaseSource >> wrap) model)
+        (DatabaseSource.viewParsing (EmbedDatabaseSource >> wrap) basePath model)
         model.parsedSource
 
 

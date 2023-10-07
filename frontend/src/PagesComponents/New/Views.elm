@@ -23,6 +23,7 @@ import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Result as Result
 import Libs.Tailwind as Tw exposing (hover, lg, sm)
+import Libs.Url exposing (UrlPath)
 import Models.OrganizationId exposing (OrganizationId)
 import Models.Project as Project
 import Models.Project.Source exposing (Source)
@@ -58,17 +59,19 @@ viewNewProject shared currentUrl urlOrganization model =
     let
         backUrl : String
         backUrl =
-            shared.user |> Maybe.mapOrElse (\_ -> urlOrganization |> Backend.organizationUrl) Backend.homeUrl
+            shared.user |> Maybe.mapOrElse (\_ -> urlOrganization |> Backend.organizationUrl shared.conf.basePath) (Backend.rootUrl shared.conf.basePath)
     in
     appShell currentUrl
         urlOrganization
         shared.user
+        shared.conf.basePath
         (\link -> SelectMenu link.text)
         DropdownToggle
         model
         [ a [ href backUrl ] [ Icon.outline Icon.ArrowLeft "inline-block", text " ", text model.selectedMenu ] ]
         [ viewContent "new-project"
             shared.zone
+            shared.conf.basePath
             shared.projects
             urlOrganization
             model
@@ -97,13 +100,13 @@ type alias TabModel tab msg =
     { tab : tab, icon : Icon, content : List (Html msg) }
 
 
-viewContent : HtmlId -> Time.Zone -> List ProjectInfo -> Maybe OrganizationId -> Model -> PageModel Msg -> Html Msg
-viewContent htmlId zone projects urlOrganization model page =
+viewContent : HtmlId -> Time.Zone -> UrlPath -> List ProjectInfo -> Maybe OrganizationId -> Model -> PageModel Msg -> Html Msg
+viewContent htmlId zone basePath projects urlOrganization model page =
     div [ css [ "divide-y", lg [ "grid grid-cols-12 divide-x" ] ] ]
         [ aside [ css [ "py-6", lg [ "col-span-3" ] ] ]
             [ nav [ css [ "space-y-1" ] ] (page.tabs |> List.map (viewTab model.selectedTab)) ]
         , div [ css [ "px-4 py-6", sm [ "p-6" ], lg [ "pb-8 col-span-9 rounded-r-lg" ] ] ]
-            [ viewTabContent (htmlId ++ "-tab") zone projects urlOrganization model ]
+            [ viewTabContent (htmlId ++ "-tab") zone basePath projects urlOrganization model ]
         ]
 
 
@@ -122,11 +125,11 @@ viewTab selected tab =
             ]
 
 
-viewTabContent : HtmlId -> Time.Zone -> List ProjectInfo -> Maybe OrganizationId -> Model -> Html Msg
-viewTabContent htmlId zone projects urlOrganization model =
+viewTabContent : HtmlId -> Time.Zone -> UrlPath -> List ProjectInfo -> Maybe OrganizationId -> Model -> Html Msg
+viewTabContent htmlId zone basePath projects urlOrganization model =
     case model.selectedTab of
         TabDatabase ->
-            model.databaseSource |> Maybe.mapOrElse (viewDatabaseSourceTab (htmlId ++ "-database") model.openedCollapse projects) (div [] [])
+            model.databaseSource |> Maybe.mapOrElse (viewDatabaseSourceTab basePath (htmlId ++ "-database") model.openedCollapse projects) (div [] [])
 
         TabSql ->
             model.sqlSource |> Maybe.mapOrElse (viewSqlSourceTab (htmlId ++ "-sql") model.openedCollapse projects) (div [] [])
@@ -147,13 +150,13 @@ viewTabContent htmlId zone projects urlOrganization model =
             model.sampleSource |> Maybe.mapOrElse (viewSampleSourceTab urlOrganization projects model.samples) (div [] [])
 
 
-viewDatabaseSourceTab : HtmlId -> HtmlId -> List ProjectInfo -> DatabaseSource.Model Msg -> Html Msg
-viewDatabaseSourceTab htmlId openedCollapse projects model =
+viewDatabaseSourceTab : UrlPath -> HtmlId -> HtmlId -> List ProjectInfo -> DatabaseSource.Model Msg -> Html Msg
+viewDatabaseSourceTab basePath htmlId openedCollapse projects model =
     div []
         [ viewHeading "Extract your database schema" [ text "Browsers can't connect to databases, schema extraction is done through a proxy, Azimutt Gateway or ", extLink "https://www.npmjs.com/package/azimutt" [ class "link" ] [ text "CLI" ], text ". Nothing is stored." ]
-        , div [ class "mt-6" ] [ DatabaseSource.viewInput DatabaseSourceMsg htmlId model ]
+        , div [ class "mt-6" ] [ DatabaseSource.viewInput DatabaseSourceMsg basePath htmlId model ]
         , div [ class "mt-3" ] [ viewDataPrivacyCollapse htmlId openedCollapse ]
-        , DatabaseSource.viewParsing DatabaseSourceMsg model
+        , DatabaseSource.viewParsing DatabaseSourceMsg basePath model
         , viewSourceActionButtons (InitTab TabDatabase) (DatabaseSource.GetSchema >> DatabaseSourceMsg) projects model.url model.parsedSource
         ]
 

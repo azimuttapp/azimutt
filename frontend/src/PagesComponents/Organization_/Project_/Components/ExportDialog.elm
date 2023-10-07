@@ -5,6 +5,7 @@ import Components.Slices.ExportDialogBody as ExportDialogBody
 import Html exposing (Html)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Task as T
+import Libs.Url exposing (UrlPath)
 import Models.ProjectRef exposing (ProjectRef)
 import Models.UrlInfos exposing (UrlInfos)
 import PagesComponents.Organization_.Project_.Models.Erd exposing (Erd)
@@ -44,8 +45,8 @@ update wrap modalOpen urlInfos erd msg model =
             model |> mapMCmd (mapBodyCmd (ExportDialogBody.update (BodyMsg >> wrap) urlInfos erd message))
 
 
-view : (Msg -> msg) -> (Cmd msg -> msg) -> (msg -> msg) -> Bool -> ProjectRef -> Model -> Html msg
-view wrap send modalClose opened project model =
+view : (Msg -> msg) -> (Cmd msg -> msg) -> (msg -> msg) -> UrlPath -> Bool -> ProjectRef -> Model -> Html msg
+view wrap send modalClose basePath opened project model =
     let
         titleId : HtmlId
         titleId =
@@ -57,5 +58,5 @@ view wrap send modalClose opened project model =
         , isOpen = opened
         , onBackgroundClick = Close |> wrap |> modalClose
         }
-        [ ExportDialogBody.view (BodyMsg >> wrap) send (Close |> wrap |> modalClose) titleId project model.body
+        [ ExportDialogBody.view (BodyMsg >> wrap) send (Close |> wrap |> modalClose) basePath titleId project model.body
         ]

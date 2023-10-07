@@ -1,7 +1,11 @@
-module Libs.Url exposing (addQuery, buildQueryString, domain, empty, relative)
+module Libs.Url exposing (UrlPath(..), addQuery, buildQueryString, domain, empty, relative, removeBasePath)
 
 import Libs.Maybe as Maybe
 import Url exposing (Url)
+
+
+type UrlPath
+    = UrlPath String
 
 
 empty : Url
@@ -40,6 +44,15 @@ relative url =
     url.path
         |> addPrefixed "?" url.query
         |> addPrefixed "#" url.fragment
+
+
+removeBasePath : UrlPath -> Url -> Url
+removeBasePath (UrlPath basePath) url =
+    if url.path |> String.startsWith basePath then
+        { url | path = url.path |> String.dropLeft (String.length basePath) }
+
+    else
+        url
 
 
 

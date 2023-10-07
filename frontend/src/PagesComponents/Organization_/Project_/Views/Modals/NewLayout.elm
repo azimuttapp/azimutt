@@ -9,6 +9,7 @@ import Html exposing (Html)
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Task as T
+import Libs.Url exposing (UrlPath)
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.ProjectRef exposing (ProjectRef)
 import Models.UrlInfos exposing (UrlInfos)
@@ -47,8 +48,8 @@ type Msg
     | Cancel
 
 
-update : (HtmlId -> msg) -> (Toasts.Msg -> msg) -> ((msg -> String -> Html msg) -> msg) -> Time.Posix -> UrlInfos -> Msg -> GlobalModel x -> ( GlobalModel x, Cmd msg )
-update modalOpen toast customModalOpen now urlInfos msg model =
+update : (HtmlId -> msg) -> (Toasts.Msg -> msg) -> ((msg -> String -> Html msg) -> msg) -> Time.Posix -> UrlInfos -> UrlPath -> Msg -> GlobalModel x -> ( GlobalModel x, Cmd msg )
+update modalOpen toast customModalOpen now urlInfos baseUrl msg model =
     case msg of
         Open from ->
             if model.erd |> Erd.canCreateLayout then
@@ -57,7 +58,7 @@ update modalOpen toast customModalOpen now urlInfos msg model =
             else
                 ( model
                 , Cmd.batch
-                    [ model.erd |> Erd.getProjectRefM urlInfos |> ProPlan.layoutsModalBody |> customModalOpen |> T.send
+                    [ model.erd |> Erd.getProjectRefM urlInfos |> ProPlan.layoutsModalBody baseUrl |> customModalOpen |> T.send
                     , Track.planLimit .layouts model.erd
                     ]
                 )
@@ -85,8 +86,8 @@ createLayout toast from name now erd =
             )
 
 
-view : (Msg -> msg) -> (msg -> msg) -> ProjectRef -> List LayoutName -> Bool -> Model -> Html msg
-view wrap modalClose projectRef layouts opened model =
+view : (Msg -> msg) -> (msg -> msg) -> UrlPath -> ProjectRef -> List LayoutName -> Bool -> Model -> Html msg
+view wrap modalClose baseUrl projectRef layouts opened model =
     let
         titleId : HtmlId
         titleId =
@@ -98,5 +99,5 @@ view wrap modalClose projectRef layouts opened model =
         , isOpen = opened
         , onBackgroundClick = Cancel |> wrap |> modalClose
         }
-        [ NewLayoutBody.view (BodyMsg >> wrap) (Create model.from >> wrap >> modalClose) (Cancel |> wrap |> modalClose) titleId layouts projectRef model
+        [ NewLayoutBody.view (BodyMsg >> wrap) (Create model.from >> wrap >> modalClose) (Cancel |> wrap |> modalClose) baseUrl titleId layouts projectRef model
         ]

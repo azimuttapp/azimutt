@@ -13,7 +13,7 @@
             <div class="flex items-center px-2 lg:px-0 xl:w-64">
                 <div class="flex-shrink-0">
                     <a aria-label="Home" href={Routes.user_dashboard_path(@conn, :index)}>
-                        <AzimuttWeb.Components.Brand.logo variant="light" class="w-auto h-8" />
+                        <AzimuttWeb.Components.Brand.logo conn={@conn} class="w-auto h-8" variant="light" />
                     </a>
                 </div>
             </div>

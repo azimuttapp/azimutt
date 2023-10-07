@@ -7,6 +7,7 @@ import Libs.Models.Env as Env exposing (Env)
 import Libs.Models.Platform as Platform exposing (Platform)
 import Libs.Result as Result
 import Libs.Tailwind exposing (Color)
+import Libs.Url exposing (UrlPath(..))
 import Models.Organization exposing (Organization)
 import Models.ProjectInfo exposing (ProjectInfo)
 import Models.User exposing (User)
@@ -20,7 +21,10 @@ import Time
 
 type alias Flags =
     { now : Int
-    , conf : { env : String, platform : String, desktop : Bool }
+    , env : String
+    , platform : String
+    , desktop : Bool
+    , basePath : String
     }
 
 
@@ -28,6 +32,7 @@ type alias GlobalConf =
     { env : Env
     , platform : Platform
     , desktop : Bool -- True when loaded from desktop app
+    , basePath : UrlPath
     }
 
 
@@ -80,16 +85,16 @@ type alias Prompt msg =
 init : Request -> Flags -> ( Model, Cmd Msg )
 init _ flags =
     let
-        env : Env
-        env =
-            Env.fromString flags.conf.env
+        ( env, basePath ) =
+            ( Env.fromString flags.env, UrlPath flags.basePath )
     in
     ( { zone = Time.utc
       , now = Time.millisToPosix flags.now
       , conf =
             { env = env
-            , platform = Platform.fromString flags.conf.platform
-            , desktop = flags.conf.desktop
+            , platform = Platform.fromString flags.platform
+            , desktop = flags.desktop
+            , basePath = basePath
             }
       , user = Nothing
       , userLoaded = False
@@ -99,8 +104,8 @@ init _ flags =
       }
     , Cmd.batch
         [ Task.perform ZoneChanged Time.here
-        , Backend.getCurrentUser GotUser
-        , Backend.getOrganizationsAndProjects GotBackendProjects
+        , Backend.getCurrentUser basePath GotUser
+        , Backend.getOrganizationsAndProjects basePath GotBackendProjects
         ]
     )
 
@@ -132,7 +137,7 @@ update _ msg model =
 
         JsMessage (Ports.ProjectDeleted projectId) ->
             ( { model | projects = model.projects |> List.filter (\p -> p.id /= projectId) }
-            , Backend.getOrganizationsAndProjects GotBackendProjects
+            , Backend.getOrganizationsAndProjects model.conf.basePath GotBackendProjects
             )
 
         JsMessage _ ->

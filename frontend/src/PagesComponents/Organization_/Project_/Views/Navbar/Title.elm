@@ -73,7 +73,7 @@ viewNavbarTitle gConf eConf projects project layouts args =
            else
             div [] []
          , if eConf.projectManagement then
-            Lazy.lazy7 viewProjectsDropdown gConf.platform eConf projects project dirty (htmlId ++ "-projects") (openedDropdown |> String.filterStartsWith (htmlId ++ "-projects"))
+            Lazy.lazy7 viewProjectsDropdown gConf eConf projects project dirty (htmlId ++ "-projects") (openedDropdown |> String.filterStartsWith (htmlId ++ "-projects"))
 
            else
             div [] [ text project.name ]
@@ -82,8 +82,8 @@ viewNavbarTitle gConf eConf projects project layouts args =
         )
 
 
-viewProjectsDropdown : Platform -> ErdConf -> List ProjectInfo -> ProjectInfo -> Bool -> HtmlId -> HtmlId -> Html Msg
-viewProjectsDropdown platform eConf projects project dirty htmlId openedDropdown =
+viewProjectsDropdown : GlobalConf -> ErdConf -> List ProjectInfo -> ProjectInfo -> Bool -> HtmlId -> HtmlId -> Html Msg
+viewProjectsDropdown gConf eConf projects project dirty htmlId openedDropdown =
     let
         projectsPerOrganization : Dict OrganizationId (List ProjectInfo)
         projectsPerOrganization =
@@ -115,7 +115,7 @@ viewProjectsDropdown platform eConf projects project dirty htmlId openedDropdown
         (\_ ->
             div [ class "divide-y divide-gray-100" ]
                 ([ if eConf.save then
-                    [ ContextMenu.btnHotkey "" TriggerSaveProject [] [ text "Save project" ] platform (Conf.hotkeys |> Dict.getOrElse "save" [])
+                    [ ContextMenu.btnHotkey "" TriggerSaveProject [] [ text "Save project" ] gConf.platform (Conf.hotkeys |> Dict.getOrElse "save" [])
                     , ContextMenu.btn "" (RenameProject |> prompt "Rename project" (text "") project.name) [] [ text "Rename project" ]
                     , ContextMenu.btn "" (DeleteProject project |> confirmDanger "Delete project?" (text "This action is definitive!")) [] [ text "Delete project" ]
                     ]
@@ -133,7 +133,7 @@ viewProjectsDropdown platform eConf projects project dirty htmlId openedDropdown
                                 [ Avatar.xs org.logo org.name "mr-2", span [] [ text (org.name ++ " »") ] ]
                                 (orgProjects |> List.map (viewProjectsDropdownItem project.id))
                         )
-                 , [ ContextMenu.link { url = currentOrganization |> Just |> Maybe.filter (\id -> projectsPerOrganization |> Dict.member id) |> Backend.organizationUrl, text = "Back to dashboard" } ]
+                 , [ ContextMenu.link { url = currentOrganization |> Just |> Maybe.filter (\id -> projectsPerOrganization |> Dict.member id) |> Backend.organizationUrl gConf.basePath, text = "Back to dashboard" } ]
                  ]
                     |> List.filterNot List.isEmpty
                     |> List.map (\section -> div [ role "none", class "py-1" ] section)

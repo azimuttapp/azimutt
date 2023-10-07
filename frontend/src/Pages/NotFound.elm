@@ -8,6 +8,7 @@ import Gen.Route as Route
 import Html exposing (Html)
 import Html.Lazy as Lazy
 import Libs.Task as T
+import Libs.Url exposing (UrlPath)
 import Page
 import Ports exposing (JsMsg(..))
 import Request exposing (Request)
@@ -20,11 +21,11 @@ import View exposing (View)
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
-page _ req =
+page stared req =
     Page.element
         { init = init req
         , update = update
-        , view = view
+        , view = view stared.conf.basePath
         , subscriptions = subscriptions
         }
 
@@ -119,26 +120,26 @@ subscriptions _ =
 -- VIEW
 
 
-view : Model -> View Msg
-view model =
-    { title = title, body = model |> viewNotFound }
+view : UrlPath -> Model -> View Msg
+view basePath model =
+    { title = title, body = model |> viewNotFound basePath }
 
 
-viewNotFound : Model -> List (Html Msg)
-viewNotFound model =
+viewNotFound : UrlPath -> Model -> List (Html Msg)
+viewNotFound basePath model =
     [ NotFound.simple
         { brand =
-            { img = { src = Backend.resourceUrl "/logo_dark.svg", alt = "Azimutt" }
-            , link = { url = Backend.homeUrl, text = "Azimutt" }
+            { img = { src = Backend.resourceUrl basePath "/logo_dark.svg", alt = "Azimutt" }
+            , link = { url = Backend.rootUrl basePath, text = "Azimutt" }
             }
         , header = "404 error"
         , title = "Page not found."
         , message = "Sorry, we couldn't find the page you’re looking for."
-        , links = [ { url = Backend.homeUrl, text = "Go back home" } ]
+        , links = [ { url = Backend.rootUrl basePath, text = "Go back home" } ]
         , footer =
             [ { url = Conf.constants.azimuttDiscussions, text = "Contact Support" }
             , { url = Conf.constants.azimuttTwitter, text = "Twitter" }
-            , { url = Backend.blogUrl, text = "Blog" }
+            , { url = Backend.blogUrl basePath, text = "Blog" }
             ]
         }
     , Lazy.lazy2 Toasts.view Toast model.toasts

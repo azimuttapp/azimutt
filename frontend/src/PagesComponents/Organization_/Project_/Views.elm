@@ -17,6 +17,7 @@ import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
 import Libs.Tailwind exposing (hover, lg, sm)
+import Libs.Url exposing (UrlPath)
 import Models.Organization exposing (Organization)
 import Models.OrganizationId exposing (OrganizationId)
 import Models.Position as Position
@@ -70,7 +71,7 @@ view onDelete currentUrl urlInfos shared model =
 viewProject : Cmd Msg -> Url -> UrlInfos -> Shared.Model -> Model -> List (Html Msg)
 viewProject onDelete currentUrl urlInfos shared model =
     [ if model.loaded then
-        model.erd |> Maybe.mapOrElse (viewApp currentUrl urlInfos.organization shared model "app") (viewNotFound currentUrl urlInfos shared.user shared.projects model.conf)
+        model.erd |> Maybe.mapOrElse (viewApp currentUrl urlInfos.organization shared model "app") (viewNotFound currentUrl urlInfos shared.conf.basePath shared.user shared.projects model.conf)
 
       else
         Loader.fullScreen
@@ -117,7 +118,7 @@ viewApp currentUrl urlOrganization shared model htmlId erd =
                   else
                     div [] []
                 , if not model.conf.showNavbar then
-                    viewWatermark
+                    viewWatermark shared.conf.basePath
 
                   else
                     div [] []
@@ -187,16 +188,16 @@ viewModal currentUrl urlInfos shared model _ =
         ([ model.modal |> Maybe.map (\m -> ( m.id, Modals.view (isOpen m) m ))
          , model.confirm |> Maybe.map (\m -> ( m.id, Modals.viewConfirm (isOpen m) m ))
          , model.prompt |> Maybe.map (\m -> ( m.id, Modals.viewPrompt (isOpen m) m ))
-         , model.newLayout |> Maybe.map2 (\e m -> ( m.id, NewLayout.view NewLayoutMsg ModalClose project (e.layouts |> Dict.keys) (isOpen m) m )) model.erd
+         , model.newLayout |> Maybe.map2 (\e m -> ( m.id, NewLayout.view NewLayoutMsg ModalClose shared.conf.basePath project (e.layouts |> Dict.keys) (isOpen m) m )) model.erd
          , model.editNotes |> Maybe.map2 (\e m -> ( m.id, viewEditNotes (isOpen m) e m )) model.erd
-         , model.findPath |> Maybe.map2 (\e m -> ( m.id, viewFindPath (isOpen m) model.openedDropdown e.settings.defaultSchema e.tables e.settings.findPath m )) model.erd
-         , model.schemaAnalysis |> Maybe.map2 (\e m -> ( m.id, viewSchemaAnalysis project (isOpen m) e.settings.defaultSchema e.sources e.tables e.relations e.ignoredRelations m )) model.erd
-         , model.exportDialog |> Maybe.map (\m -> ( m.id, ExportDialog.view ExportDialogMsg Send ModalClose (isOpen m) project m ))
-         , model.sharing |> Maybe.map2 (\e m -> ( m.id, ProjectSharing.view SharingMsg Send ModalClose confirmDanger shared.zone currentUrl urlInfos (isOpen m) e m )) model.erd
-         , model.save |> Maybe.map2 (\e m -> ( m.id, ProjectSaveDialog.view ProjectSaveMsg ModalClose CreateProject currentUrl shared.user shared.organizations (isOpen m) e m )) model.erd
+         , model.findPath |> Maybe.map2 (\e m -> ( m.id, viewFindPath shared.conf.basePath (isOpen m) model.openedDropdown e.settings.defaultSchema e.tables e.settings.findPath m )) model.erd
+         , model.schemaAnalysis |> Maybe.map2 (\e m -> ( m.id, viewSchemaAnalysis shared.conf.basePath project (isOpen m) e.settings.defaultSchema e.sources e.tables e.relations e.ignoredRelations m )) model.erd
+         , model.exportDialog |> Maybe.map (\m -> ( m.id, ExportDialog.view ExportDialogMsg Send ModalClose shared.conf.basePath (isOpen m) project m ))
+         , model.sharing |> Maybe.map2 (\e m -> ( m.id, ProjectSharing.view SharingMsg Send ModalClose confirmDanger shared.zone shared.conf.basePath currentUrl urlInfos (isOpen m) e m )) model.erd
+         , model.save |> Maybe.map2 (\e m -> ( m.id, ProjectSaveDialog.view ProjectSaveMsg ModalClose CreateProject shared.conf.basePath currentUrl shared.user shared.organizations (isOpen m) e m )) model.erd
          , model.settings |> Maybe.map2 (\e m -> ( m.id, viewProjectSettings shared.zone (isOpen m) e m )) model.erd
-         , model.sourceUpdate |> Maybe.map (\m -> ( m.id, SourceUpdateDialog.view (PSSourceUpdate >> ProjectSettingsMsg) (PSSourceSet >> ProjectSettingsMsg) ModalClose Noop shared.zone shared.now (isOpen m) m ))
-         , model.embedSourceParsing |> Maybe.map (\m -> ( m.id, EmbedSourceParsingDialog.view EmbedSourceParsingMsg SourceParsed ModalClose Noop (isOpen m) m ))
+         , model.sourceUpdate |> Maybe.map (\m -> ( m.id, SourceUpdateDialog.view (PSSourceUpdate >> ProjectSettingsMsg) (PSSourceSet >> ProjectSettingsMsg) ModalClose Noop shared.zone shared.now shared.conf.basePath (isOpen m) m ))
+         , model.embedSourceParsing |> Maybe.map (\m -> ( m.id, EmbedSourceParsingDialog.view EmbedSourceParsingMsg SourceParsed ModalClose Noop shared.conf.basePath (isOpen m) m ))
          , model.help |> Maybe.map (\m -> ( m.id, viewHelp (isOpen m) m ))
          ]
             |> List.filterMap identity
@@ -215,8 +216,8 @@ viewContextMenu menu =
             (div [ class "az-context-menu" ] [])
 
 
-viewNotFound : Url -> UrlInfos -> Maybe User -> List ProjectInfo -> ErdConf -> Html Msg
-viewNotFound currentUrl urlInfos user projects conf =
+viewNotFound : Url -> UrlInfos -> UrlPath -> Maybe User -> List ProjectInfo -> ErdConf -> Html Msg
+viewNotFound currentUrl urlInfos basePath user projects conf =
     let
         localProject : Maybe ProjectInfo
         localProject =
@@ -225,9 +226,9 @@ viewNotFound currentUrl urlInfos user projects conf =
     div [ class "min-h-full pt-16 pb-12 flex flex-col bg-white" ]
         [ main_ [ css [ "flex-grow flex flex-col justify-center max-w-7xl w-full mx-auto px-4", sm [ "px-6" ], lg [ "px-8" ] ] ]
             [ div [ class "flex-shrink-0 flex justify-center" ]
-                [ a [ href Backend.homeUrl, class "inline-flex" ]
+                [ a [ href (Backend.rootUrl basePath), class "inline-flex" ]
                     [ span [ class "sr-only" ] [ text "Azimutt" ]
-                    , img [ class "h-12 w-auto", src (Backend.resourceUrl "/logo_dark.svg"), alt "Azimutt" ] []
+                    , img [ class "h-12 w-auto", src (Backend.resourceUrl basePath "/logo_dark.svg"), alt "Azimutt" ] []
                     ]
                 ]
             , div [ class "py-16" ]
@@ -250,12 +251,12 @@ viewNotFound currentUrl urlInfos user projects conf =
                         )
                     , div [ class "mt-6 flex justify-center space-x-4" ]
                         (((if conf.projectManagement then
-                            [ { url = urlInfos.organization |> Backend.organizationUrl, text = "Back to dashboard" } ]
+                            [ { url = urlInfos.organization |> Backend.organizationUrl basePath, text = "Back to dashboard" } ]
 
                            else
                             [ { url = Conf.constants.azimuttWebsite, text = "Visit Azimutt" } ]
                           )
-                            ++ (user |> Maybe.mapOrElse (\_ -> []) [ { url = Backend.loginUrl currentUrl, text = "Sign in" } ])
+                            ++ (user |> Maybe.mapOrElse (\_ -> []) [ { url = Backend.loginUrl basePath currentUrl, text = "Sign in" } ])
                          )
                             |> List.map (\link -> a [ href link.url, css [ "text-base font-medium text-primary-600", hover [ "text-primary-500" ] ] ] [ text link.text ])
                             |> List.intersperse (span [ class "inline-block border-l border-gray-300", ariaHidden True ] [])
@@ -267,7 +268,7 @@ viewNotFound currentUrl urlInfos user projects conf =
             [ nav [ class "flex justify-center space-x-4" ]
                 ([ { url = Conf.constants.azimuttDiscussions, text = "Contact Support" }
                  , { url = Conf.constants.azimuttTwitter, text = "Twitter" }
-                 , { url = Backend.blogUrl, text = "Blog" }
+                 , { url = Backend.blogUrl basePath, text = "Blog" }
                  ]
                     |> List.map (\link -> a [ href link.url, css [ "text-sm font-medium text-gray-500 ", hover [ "text-gray-600" ] ] ] [ text link.text ])
                     |> List.intersperse (span [ class "inline-block border-l border-gray-300", ariaHidden True ] [])

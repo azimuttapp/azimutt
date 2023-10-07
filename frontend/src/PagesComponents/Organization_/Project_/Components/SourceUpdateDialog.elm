@@ -20,6 +20,7 @@ import Libs.Models.FileUrl exposing (FileUrl)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Tw exposing (sm)
 import Libs.Task as T
+import Libs.Url exposing (UrlPath)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceKind exposing (SourceKind(..))
 import Models.ProjectInfo exposing (ProjectInfo)
@@ -105,8 +106,8 @@ update wrap modalOpen noop now project msg model =
             ( model |> Maybe.map (\m -> { m | newSourceTab = kind }), Cmd.none )
 
 
-view : (Msg -> msg) -> (Source -> msg) -> (msg -> msg) -> (String -> msg) -> Time.Zone -> Time.Posix -> Bool -> Model msg -> Html msg
-view wrap sourceSet modalClose noop zone now opened model =
+view : (Msg -> msg) -> (Source -> msg) -> (msg -> msg) -> (String -> msg) -> Time.Zone -> Time.Posix -> UrlPath -> Bool -> Model msg -> Html msg
+view wrap sourceSet modalClose noop zone now basePath opened model =
     let
         titleId : HtmlId
         titleId =
@@ -127,7 +128,7 @@ view wrap sourceSet modalClose noop zone now opened model =
                 (\source ->
                     case source.kind of
                         DatabaseConnection url ->
-                            databaseModal wrap sourceSet close zone now titleId source url model.databaseSource
+                            databaseModal wrap sourceSet close zone now basePath titleId source url model.databaseSource
 
                         SqlLocalFile filename _ updatedAt ->
                             sqlLocalFileModal wrap sourceSet close noop zone now (model.id ++ "-sql") titleId source filename updatedAt model.sqlSource
@@ -150,12 +151,12 @@ view wrap sourceSet modalClose noop zone now opened model =
                         AmlEditor ->
                             userDefinedModal close titleId
                 )
-                (newSourceModal wrap sourceSet close noop (model.id ++ "-new") titleId model)
+                (newSourceModal wrap sourceSet close noop basePath (model.id ++ "-new") titleId model)
         )
 
 
-databaseModal : (Msg -> msg) -> (Source -> msg) -> msg -> Time.Zone -> Time.Posix -> HtmlId -> Source -> DatabaseUrl -> DatabaseSource.Model msg -> List (Html msg)
-databaseModal wrap sourceSet close zone now titleId source url model =
+databaseModal : (Msg -> msg) -> (Source -> msg) -> msg -> Time.Zone -> Time.Posix -> UrlPath -> HtmlId -> Source -> DatabaseUrl -> DatabaseSource.Model msg -> List (Html msg)
+databaseModal wrap sourceSet close zone now basePath titleId source url model =
     [ div [ class "max-w-3xl mx-6 mt-6" ]
         [ div [ css [ "mt-3", sm [ "mt-5" ] ] ]
             [ modalTitle titleId ("Refresh " ++ source.name ++ " source")
@@ -164,7 +165,7 @@ databaseModal wrap sourceSet close zone now titleId source url model =
         , div [ class "mt-3 flex justify-center" ]
             [ Button.primary5 Tw.primary [ onClick (url |> DatabaseSource.GetSchema |> DatabaseSourceMsg |> wrap) ] [ text "Fetch schema again" ]
             ]
-        , DatabaseSource.viewParsing (DatabaseSourceMsg >> wrap) model
+        , DatabaseSource.viewParsing (DatabaseSourceMsg >> wrap) basePath model
         , viewSourceDiff model
         ]
     , updateSourceButtons sourceSet close model.parsedSource
@@ -307,8 +308,8 @@ userDefinedModal close titleId =
     ]
 
 
-newSourceModal : (Msg -> msg) -> (Source -> msg) -> msg -> (String -> msg) -> HtmlId -> HtmlId -> Model msg -> List (Html msg)
-newSourceModal wrap sourceSet close noop htmlId titleId model =
+newSourceModal : (Msg -> msg) -> (Source -> msg) -> msg -> (String -> msg) -> UrlPath -> HtmlId -> HtmlId -> Model msg -> List (Html msg)
+newSourceModal wrap sourceSet close noop basePath htmlId titleId model =
     [ div [ class "max-w-3xl mx-6 mt-6" ]
         [ div [ css [ "mt-3", sm [ "mt-5" ] ] ]
             [ modalTitle titleId "Add a source"
@@ -329,8 +330,8 @@ newSourceModal wrap sourceSet close noop htmlId titleId model =
         , div [ class "mt-3" ]
             (case model.newSourceTab of
                 TabDatabase ->
-                    [ DatabaseSource.viewInput (DatabaseSourceMsg >> wrap) (htmlId ++ "-database") model.databaseSource
-                    , DatabaseSource.viewParsing (DatabaseSourceMsg >> wrap) model.databaseSource
+                    [ DatabaseSource.viewInput (DatabaseSourceMsg >> wrap) basePath (htmlId ++ "-database") model.databaseSource
+                    , DatabaseSource.viewParsing (DatabaseSourceMsg >> wrap) basePath model.databaseSource
                     ]
 
                 TabSql ->

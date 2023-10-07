@@ -17,6 +17,7 @@ import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Nel as Nel
 import Libs.Tailwind as Tw exposing (focus, sm)
+import Libs.Url exposing (UrlPath)
 import Models.Project.ColumnRef as ColumnRef
 import Models.Project.FindPathSettings as FindPathSettings exposing (FindPathSettings)
 import Models.Project.SchemaName exposing (SchemaName)
@@ -32,8 +33,8 @@ import PagesComponents.Organization_.Project_.Models.FindPathStepDir exposing (F
 import Services.Backend as Backend
 
 
-viewFindPath : Bool -> HtmlId -> SchemaName -> Dict TableId ErdTable -> FindPathSettings -> FindPathDialog -> Html Msg
-viewFindPath opened openedDropdown defaultSchema tables settings model =
+viewFindPath : UrlPath -> Bool -> HtmlId -> SchemaName -> Dict TableId ErdTable -> FindPathSettings -> FindPathDialog -> Html Msg
+viewFindPath basePath opened openedDropdown defaultSchema tables settings model =
     let
         titleId : HtmlId
         titleId =
@@ -48,7 +49,7 @@ viewFindPath opened openedDropdown defaultSchema tables settings model =
         [ viewHeader titleId
         , viewSettings model.id model.showSettings settings
         , viewSearchForm model.id openedDropdown tables model.from model.to
-        , viewPaths defaultSchema tables model
+        , viewPaths basePath defaultSchema tables model
         , viewFooter defaultSchema tables settings model
         ]
 
@@ -167,14 +168,14 @@ viewInputComboboxes openedDropdown fieldId selectedValue buildMsg tables =
         ]
 
 
-viewPaths : SchemaName -> Dict TableId ErdTable -> FindPathDialog -> Html Msg
-viewPaths defaultSchema tables model =
+viewPaths : UrlPath -> SchemaName -> Dict TableId ErdTable -> FindPathDialog -> Html Msg
+viewPaths basePath defaultSchema tables model =
     case ( model.from |> existingTableId defaultSchema tables, model.to |> existingTableId defaultSchema tables, model.result ) of
         ( Just from, Just to, FindPathState.Found result ) ->
             if result.paths |> List.isEmpty then
                 div [ class "px-6 mt-3 text-center" ]
                     [ h2 [ class "mt-2 text-lg font-medium text-gray-900" ] [ text "No path found" ]
-                    , img [ src (Backend.resourceUrl "/assets/images/closed-door.jpg"), alt "Closed door", class "h-96 inline-block align-middle" ] []
+                    , img [ src (Backend.resourceUrl basePath "/assets/images/closed-door.jpg"), alt "Closed door", class "h-96 inline-block align-middle" ] []
                     ]
 
             else

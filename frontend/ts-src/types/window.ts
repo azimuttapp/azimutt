@@ -9,6 +9,7 @@ declare global {
         azimutt: AzimuttApi
         isDirty: boolean
         env: Env
+        base_path: string
         gateway_url: string
         sentry_frontend_dsn?: string
         desktop?: DesktopBridge

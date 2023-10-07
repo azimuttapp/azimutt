@@ -1,5 +1,8 @@
 import Config
 
+# need to read it here as backend/config/runtime.exs is executed after :/
+path = System.get_env("PHX_PATH") || ""
+
 config :cors_plug,
   origin: ["http://localhost:4001"],
   max_age: 86400
@@ -56,7 +59,8 @@ config :azimutt, AzimuttWeb.Endpoint,
       ~r"priv/gettext/.*(po)$",
       ~r"lib/azimutt_web/(live|views)/.*(ex)$",
       ~r"lib/azimutt_web/*/*/.*(eex)$"
-    ]
+    ],
+    url: "#{path}/phoenix/live_reload/frame"
   ]
 
 # Do not include metadata nor timestamps in development logs

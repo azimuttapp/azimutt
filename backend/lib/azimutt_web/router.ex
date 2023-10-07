@@ -3,6 +3,11 @@ defmodule AzimuttWeb.Router do
   import AzimuttWeb.UserAuth
   alias AzimuttWeb.Plugs.AllowCrossOriginIframe
 
+  # need to read it here as backend/config/runtime.exs is executed after :/
+  # path = System.get_env("PHX_PATH") || ""
+  path = ""
+  # FIXME: `path` should probably not be added to the `scope`s, it generate the path twice when backend/config/config.exs:58 path is set :/
+
   pipeline :browser_no_csrf_protection do
     plug(Ueberauth)
     plug(:accepts, ["html"])
@@ -55,7 +60,7 @@ defmodule AzimuttWeb.Router do
   pipeline(:empty_layout, do: plug(:put_layout, {AzimuttWeb.LayoutView, "empty.html"}))
 
   # public routes
-  scope "/", AzimuttWeb do
+  scope "#{path}/", AzimuttWeb do
     pipe_through([:browser, :website_root_layout])
     get("/", WebsiteController, :index)
     get("/last", WebsiteController, :last)
@@ -77,7 +82,7 @@ defmodule AzimuttWeb.Router do
   end
 
   # auth routes
-  scope "/", AzimuttWeb do
+  scope "#{path}/", AzimuttWeb do
     pipe_through([:browser, :redirect_if_user_is_authed, :hfull_root_layout])
     get("/auth/:provider", UserOauthController, :request)
     get("/auth/:provider/callback", UserOauthController, :callback)
@@ -92,7 +97,7 @@ defmodule AzimuttWeb.Router do
   end
 
   # authed dashboard routes
-  scope "/", AzimuttWeb do
+  scope "#{path}/", AzimuttWeb do
     pipe_through([:browser, :require_authed_user, :organization_root_layout])
     get("/home", UserDashboardController, :index)
     get("/login/redirect", UserSessionController, :redirect_to)
@@ -162,43 +167,43 @@ defmodule AzimuttWeb.Router do
     patch("/invitations/:invitation_id/refuse", OrganizationInvitationController, :refuse, as: :invitation)
   end
 
-  scope "/heroku", AzimuttWeb do
+  scope "#{path}/heroku", AzimuttWeb do
     pipe_through([:api, :require_heroku_basic_auth])
     post("/resources", Api.HerokuController, :create)
     put("/resources/:resource_id", Api.HerokuController, :update)
     delete("/resources/:resource_id", Api.HerokuController, :delete)
   end
 
-  scope "/heroku", AzimuttWeb do
+  scope "#{path}/heroku", AzimuttWeb do
     pipe_through([:browser_no_csrf_protection])
     if Azimutt.Application.env() == :dev, do: get("/", HerokuController, :index)
     post("/login", HerokuController, :login)
   end
 
-  scope "/heroku", AzimuttWeb do
+  scope "#{path}/heroku", AzimuttWeb do
     pipe_through([:browser, :require_heroku_resource, :require_authed_user])
     get("/resources/:resource_id", HerokuController, :show)
   end
 
-  scope "/clevercloud", AzimuttWeb do
+  scope "#{path}/clevercloud", AzimuttWeb do
     pipe_through([:api, :require_clever_cloud_basic_auth])
     post("/resources", Api.CleverCloudController, :create)
     put("/resources/:resource_id", Api.CleverCloudController, :update)
     delete("/resources/:resource_id", Api.CleverCloudController, :delete)
   end
 
-  scope "/clevercloud", AzimuttWeb do
+  scope "#{path}/clevercloud", AzimuttWeb do
     pipe_through([:browser_no_csrf_protection])
     if Azimutt.Application.env() == :dev, do: get("/", CleverCloudController, :index)
     post("/login", CleverCloudController, :login)
   end
 
-  scope "/clevercloud", AzimuttWeb do
+  scope "#{path}/clevercloud", AzimuttWeb do
     pipe_through([:browser, :require_clever_cloud_resource, :require_authed_user, AllowCrossOriginIframe])
     get("/resources/:resource_id", CleverCloudController, :show)
   end
 
-  scope "/admin", AzimuttWeb, as: :admin do
+  scope "#{path}/admin", AzimuttWeb, as: :admin do
     pipe_through([:browser, :require_authed_user, :require_admin_user, :admin_root_layout])
     get("/", Admin.DashboardController, :index)
     resources("/users", Admin.UserController, param: "user_id", only: [:index, :show])
@@ -207,12 +212,12 @@ defmodule AzimuttWeb.Router do
     resources("/events", Admin.EventController, param: "event_id", only: [:index, :show])
   end
 
-  scope "/api/v1/swagger" do
+  scope "#{path}/api/v1/swagger" do
     forward("/", PhoenixSwagger.Plug.SwaggerUI, otp_app: :azimutt, swagger_file: "swagger.json")
   end
 
   # public APIs
-  scope "/api/v1", AzimuttWeb do
+  scope "#{path}/api/v1", AzimuttWeb do
     pipe_through([:api])
     # GET is practical for development and POST allows to not have params in possible http logs
     get("/analyzer/schema", Api.AnalyzerController, :schema)
@@ -231,7 +236,7 @@ defmodule AzimuttWeb.Router do
   end
 
   # authed APIs
-  scope "/api/v1", AzimuttWeb do
+  scope "#{path}/api/v1", AzimuttWeb do
     pipe_through([:api, :require_authed_user_api])
     get("/users/current", Api.UserController, :current)
 
@@ -254,7 +259,7 @@ defmodule AzimuttWeb.Router do
   if Azimutt.Application.env() in [:dev, :test, :staging] do
     import Phoenix.LiveDashboard.Router
 
-    scope "/" do
+    scope "#{path}/" do
       pipe_through(:browser)
       live_dashboard("/dashboard", metrics: AzimuttWeb.Telemetry)
     end
@@ -265,7 +270,7 @@ defmodule AzimuttWeb.Router do
   # Note that preview only shows emails that were sent by the same
   # node running the Phoenix server.
   if Azimutt.Application.env() == :dev do
-    scope "/dev" do
+    scope "#{path}/dev" do
       pipe_through(:browser)
 
       forward("/mailbox", Plug.Swoosh.MailboxPreview)
@@ -288,12 +293,12 @@ defmodule AzimuttWeb.Router do
     }
   end
 
-  scope "/", AzimuttWeb do
+  scope "#{path}/", AzimuttWeb do
     pipe_through([:browser, :elm_root_layout, AllowCrossOriginIframe])
     get("/embed", ElmController, :embed)
   end
 
-  scope "/", AzimuttWeb do
+  scope "#{path}/", AzimuttWeb do
     pipe_through([:api])
     get("/ping", Api.HealthController, :ping)
     get("/health", Api.HealthController, :health)
@@ -301,7 +306,7 @@ defmodule AzimuttWeb.Router do
 
   # elm routes, must be at the end (because of `/:organization_id/:project_id` "catch all")
   # routes listed in the same order than in `elm/src/Pages`
-  scope "/", AzimuttWeb do
+  scope "#{path}/", AzimuttWeb do
     pipe_through([:browser, :enforce_user_requirements, :elm_root_layout])
     get("/create", ElmController, :create)
     get("/new", ElmController, :new)
@@ -310,7 +315,7 @@ defmodule AzimuttWeb.Router do
   end
 
   # allow cross origin iframe for Clever Cloud
-  scope "/", AzimuttWeb do
+  scope "#{path}/", AzimuttWeb do
     pipe_through([:browser, :enforce_user_requirements, :elm_root_layout, AllowCrossOriginIframe])
     get("/:organization_id/create", ElmController, :orga_create)
     get("/:organization_id/:project_id", ElmController, :project_show)

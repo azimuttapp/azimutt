@@ -126,6 +126,7 @@ These are the basic variables you will **need** to set up Azimutt:
 
 - `PHX_SERVER` (optional): if `true`, start the Phoenix server in server mode
 - `PHX_HOST` (required): host of the deployed website (ex: `localhost` or `azimutt.app`), it's used to build absolute urls
+- `PHX_PATH` (optional, default: `""`): if you want to host Azimutt on a sub-folder (ex: `/azimutt` for `https://example.com/azimutt` as home page), should not end with `/`
 - `PORT` (required): the port the server will listen to (ex: `4000`)
 - `SECRET_KEY_BASE` (required): the secret used for server encryption (cookies and others), should be at least 64 bytes and you probably want a random value for it
 - `DATABASE_URL` (required): the whole url to connect to your PostgreSQL database (ex: `postgresql://<user>:<pass>@<host>:<port>/<database>`)

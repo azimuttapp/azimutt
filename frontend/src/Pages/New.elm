@@ -20,7 +20,7 @@ page shared req =
             Nothing
     in
     Page.element
-        { init = Init.init urlOrganization req.query
+        { init = Init.init shared.conf.basePath urlOrganization req.query
         , update = Updates.update req shared.now shared.projects urlOrganization
         , view = Views.view shared req.url urlOrganization
         , subscriptions = Subscriptions.subscriptions

@@ -15,6 +15,7 @@ import Libs.Html.Attributes exposing (css)
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Tw exposing (focus, sm)
+import Libs.Url exposing (UrlPath(..))
 import Models.Organization exposing (Organization)
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.ProjectRef as ProjectRef exposing (ProjectRef)
@@ -43,8 +44,8 @@ update msg model =
             ( { model | name = value }, Cmd.none )
 
 
-view : (Msg -> msg) -> (LayoutName -> msg) -> msg -> HtmlId -> List LayoutName -> ProjectRef -> Model -> Html msg
-view wrap onCreate onCancel titleId layouts project model =
+view : (Msg -> msg) -> (LayoutName -> msg) -> msg -> UrlPath -> HtmlId -> List LayoutName -> ProjectRef -> Model -> Html msg
+view wrap onCreate onCancel baseUrl titleId layouts project model =
     let
         inputId : HtmlId
         inputId =
@@ -63,7 +64,7 @@ view wrap onCreate onCancel titleId layouts project model =
                 [ h3 [ id titleId, class "text-lg leading-6 font-medium text-gray-900" ]
                     [ text (model.from |> Maybe.mapOrElse (\f -> "Duplicate layout '" ++ f ++ "'") "New empty layout") ]
                 , if project.organization.plan.layouts |> Maybe.any (\l -> List.length layouts >= l) then
-                    div [ class "mt-2" ] [ ProPlan.layoutsWarning project ]
+                    div [ class "mt-2" ] [ ProPlan.layoutsWarning baseUrl project ]
 
                   else
                     div [] []
@@ -149,8 +150,13 @@ doc : Chapter (SharedDocState x)
 doc =
     Chapter.chapter "NewLayoutBody"
         |> Chapter.renderStatefulComponentList
-            [ component "create" (\m -> view updateDocState sampleOnCreate sampleOnCancel sampleTitleId sampleLayouts1 ProjectRef.zero m)
-            , component "duplicate" (\m -> view updateDocState sampleOnCreate sampleOnCancel sampleTitleId sampleLayouts1 ProjectRef.zero { m | from = sampleLayouts1 |> List.head })
-            , component "create limit" (\m -> view updateDocState sampleOnCreate sampleOnCancel sampleTitleId sampleLayouts3 ProjectRef.zero m)
-            , component "duplicate limit" (\m -> view updateDocState sampleOnCreate sampleOnCancel sampleTitleId sampleLayouts3 ProjectRef.zero { m | from = sampleLayouts3 |> List.head })
+            [ component "create" (\m -> view updateDocState sampleOnCreate sampleOnCancel docBasePath sampleTitleId sampleLayouts1 ProjectRef.zero m)
+            , component "duplicate" (\m -> view updateDocState sampleOnCreate sampleOnCancel docBasePath sampleTitleId sampleLayouts1 ProjectRef.zero { m | from = sampleLayouts1 |> List.head })
+            , component "create limit" (\m -> view updateDocState sampleOnCreate sampleOnCancel docBasePath sampleTitleId sampleLayouts3 ProjectRef.zero m)
+            , component "duplicate limit" (\m -> view updateDocState sampleOnCreate sampleOnCancel docBasePath sampleTitleId sampleLayouts3 ProjectRef.zero { m | from = sampleLayouts3 |> List.head })
             ]
+
+
+docBasePath : UrlPath
+docBasePath =
+    UrlPath ""
