@@ -15,6 +15,7 @@ import Libs.Maybe as Maybe
 import Libs.Models exposing (Link)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Tw exposing (focus_ring_offset_600, hover, lg, md, sm)
+import Libs.Url exposing (UrlPath)
 import Models.OrganizationId as OrganizationId exposing (OrganizationId)
 import Models.User exposing (User)
 import Services.Backend as Backend
@@ -25,6 +26,7 @@ appShell :
     Url
     -> Maybe OrganizationId
     -> Maybe User
+    -> UrlPath
     -> (Link -> msg)
     -> (HtmlId -> msg)
     -> { x | selectedMenu : String, mobileMenuOpen : Bool, openedDropdown : HtmlId }
@@ -32,7 +34,7 @@ appShell :
     -> List (Html msg)
     -> List (Html msg)
     -> List (Html msg)
-appShell currentUrl urlOrganization user onNavigationClick onProfileClick model title content footer =
+appShell currentUrl urlOrganization user basePath onNavigationClick onProfileClick model title content footer =
     let
         profileDropdown : HtmlId
         profileDropdown =
@@ -41,21 +43,21 @@ appShell currentUrl urlOrganization user onNavigationClick onProfileClick model 
         logoUrl : String
         logoUrl =
             if urlOrganization |> Maybe.any (\id -> id /= OrganizationId.zero) then
-                urlOrganization |> Backend.organizationUrl
+                urlOrganization |> Backend.organizationUrl basePath
 
             else
-                Backend.homeUrl
+                Backend.rootUrl basePath
     in
     [ div [ css [ "pb-32 bg-primary-600" ] ]
         [ Navbar.admin
-            { brand = { url = logoUrl, src = Backend.resourceUrl "/logo_light.svg", alt = "Azimutt" }
+            { brand = { url = logoUrl, src = Backend.resourceUrl basePath "/logo_light.svg", alt = "Azimutt" }
             , navigation =
-                { links = user |> Maybe.mapOrElse (\_ -> [ { url = urlOrganization |> Backend.organizationUrl, text = "Dashboard" } ]) []
+                { links = user |> Maybe.mapOrElse (\_ -> [ { url = urlOrganization |> Backend.organizationUrl basePath, text = "Dashboard" } ]) []
                 , onClick = onNavigationClick
                 }
             , search = Nothing
             , rightIcons =
-                [ viewProfileIcon currentUrl user profileDropdown model.openedDropdown onProfileClick ]
+                [ viewProfileIcon basePath currentUrl user profileDropdown model.openedDropdown onProfileClick ]
             }
             { selectedMenu = model.selectedMenu
             , profileOpen = model.openedDropdown == profileDropdown
@@ -71,8 +73,8 @@ appShell currentUrl urlOrganization user onNavigationClick onProfileClick model 
         ++ (viewFooter :: footer)
 
 
-viewProfileIcon : Url -> Maybe User -> HtmlId -> HtmlId -> (HtmlId -> msg) -> Html msg
-viewProfileIcon currentUrl maybeUser profileDropdown openedDropdown toggle =
+viewProfileIcon : UrlPath -> Url -> Maybe User -> HtmlId -> HtmlId -> (HtmlId -> msg) -> Html msg
+viewProfileIcon basePath currentUrl maybeUser profileDropdown openedDropdown toggle =
     maybeUser
         |> Maybe.mapOrElse
             (\user ->
@@ -88,11 +90,11 @@ viewProfileIcon currentUrl maybeUser profileDropdown openedDropdown toggle =
                         div []
                             [ -- ContextMenu.link { url = Backend.organizationUrl env, text = "Your profile" }
                               --, ContextMenu.link { url = "#", text = "Settings" }
-                              ContextMenu.link { url = Backend.logoutUrl, text = "Logout" }
+                              ContextMenu.link { url = Backend.logoutUrl basePath, text = "Logout" }
                             ]
                     )
             )
-            (a [ href (Backend.loginUrl currentUrl), css [ "mx-1 flex-shrink-0 bg-primary-600 p-1 rounded-full text-primary-200", hover [ "text-white animate-flip-h" ], focus_ring_offset_600 Tw.primary ] ]
+            (a [ href (Backend.loginUrl basePath currentUrl), css [ "mx-1 flex-shrink-0 bg-primary-600 p-1 rounded-full text-primary-200", hover [ "text-white animate-flip-h" ], focus_ring_offset_600 Tw.primary ] ]
                 [ span [ class "sr-only" ] [ text "Sign in" ]
                 , Icon.outline Icon.User ""
                 ]

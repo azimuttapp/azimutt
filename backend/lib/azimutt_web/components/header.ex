@@ -4,8 +4,8 @@ defmodule AzimuttWeb.Components.Header do
   """
   use Phoenix.Component
   import AzimuttWeb.Components.Brand
+  alias AzimuttWeb.Router.Helpers, as: Routes
 
-  # FIXME: use `Routes.website_path(@conn, :index)` instead of "/", don't know how to pass `@conn` :(
   @doc "Displays full logo. "
   def header(assigns) do
     if Azimutt.config(:skip_public_site) do
@@ -15,7 +15,7 @@ defmodule AzimuttWeb.Components.Header do
           <nav class="relative z-50 flex justify-between">
             <div class="flex items-center md:gap-x-12">
               <a aria-label="Home" href="https://azimutt.app" target="_blank">
-                <.logo dark={assigns[:dark]} class="h-12 transition-transform duration-300 ease-out transform hover:scale-105" />
+                <.logo conn={@conn} dark={assigns[:dark]} class="h-12 transition-transform duration-300 ease-out transform hover:scale-105" />
               </a>
             </div>
             <div class="flex items-center gap-x-5 md:gap-x-8">
@@ -31,8 +31,8 @@ defmodule AzimuttWeb.Components.Header do
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <nav class="relative z-50 flex justify-between">
             <div class="flex items-center md:gap-x-12">
-              <a aria-label="Home" href="/">
-                <.logo dark={assigns[:dark]} class="h-12 transition-transform duration-300 ease-out transform hover:scale-105" />
+              <a aria-label="Home" href={Routes.website_path(@conn, :index)}>
+                <.logo conn={@conn} dark={assigns[:dark]} class="h-12 transition-transform duration-300 ease-out transform hover:scale-105" />
               </a>
               <div class="hidden md:flex md:gap-x-6">
                 <%= render_slot(@menu) %>

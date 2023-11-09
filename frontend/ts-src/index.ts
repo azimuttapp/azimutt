@@ -7,6 +7,7 @@ import {
     CreateProject,
     CreateProjectTmp,
     DeleteProject,
+    ElmFlags,
     GetColumnStats,
     GetDatabaseSchema,
     GetLocalFile,
@@ -20,7 +21,6 @@ import {
     ProjectDirty,
     RunDatabaseQuery,
     SetMeta,
-    Track,
     UpdateProject,
     UpdateProjectTmp
 } from "./types/ports";
@@ -45,11 +45,11 @@ import * as url from "./utils/url";
 
 const platform = Utils.getPlatform()
 const logger = new ConsoleLogger(window.env)
-const flags = {now: Date.now(), conf: {env: window.env, platform, desktop: !!window.desktop}}
+const flags: ElmFlags = {now: Date.now(), env: window.env, platform, desktop: !!window.desktop, basePath: window.base_path}
 logger.debug('flags', flags)
 const app = ElmApp.init(flags, logger)
 const storage = new Storage(logger)
-const backend = new Backend(logger)
+const backend = new Backend(logger, window.base_path)
 logger.info('Hi there! I hope you are enjoying Azimutt 👍️\n\n' +
     'Did you know you can access your current project in the console?\n' +
     'And even trigger some actions in Azimutt?\n\n' +

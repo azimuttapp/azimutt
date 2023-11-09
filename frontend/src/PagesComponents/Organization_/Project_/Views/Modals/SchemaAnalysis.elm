@@ -21,6 +21,7 @@ import Libs.Models.DatabaseKind as DatabaseKind exposing (DatabaseKind)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (sm)
+import Libs.Url exposing (UrlPath)
 import Models.DbSourceInfo as DbSourceInfo exposing (DbSourceInfo)
 import Models.Organization exposing (Organization)
 import Models.Project.ColumnName exposing (ColumnName)
@@ -63,8 +64,8 @@ import Services.Backend as Backend
 -}
 
 
-viewSchemaAnalysis : ProjectRef -> Bool -> SchemaName -> List Source -> Dict TableId ErdTable -> List ErdRelation -> Dict TableId (List ColumnPath) -> SchemaAnalysisDialog -> Html Msg
-viewSchemaAnalysis project opened defaultSchema sources tables relations ignoredRelations model =
+viewSchemaAnalysis : UrlPath -> ProjectRef -> Bool -> SchemaName -> List Source -> Dict TableId ErdTable -> List ErdRelation -> Dict TableId (List ColumnPath) -> SchemaAnalysisDialog -> Html Msg
+viewSchemaAnalysis basePath project opened defaultSchema sources tables relations ignoredRelations model =
     let
         titleId : HtmlId
         titleId =
@@ -76,8 +77,8 @@ viewSchemaAnalysis project opened defaultSchema sources tables relations ignored
             div [] []
 
           else
-            div [ class "max-w-5xl px-6 mt-3" ] [ ProPlan.analysisWarning project ]
-        , viewAnalysis project model.opened defaultSchema sources tables relations ignoredRelations
+            div [ class "max-w-5xl px-6 mt-3" ] [ ProPlan.analysisWarning basePath project ]
+        , viewAnalysis basePath project model.opened defaultSchema sources tables relations ignoredRelations
         , viewFooter
         ]
 
@@ -96,8 +97,8 @@ viewHeader titleId =
         ]
 
 
-viewAnalysis : ProjectRef -> HtmlId -> SchemaName -> List Source -> Dict TableId ErdTable -> List ErdRelation -> Dict TableId (List ColumnPath) -> Html Msg
-viewAnalysis project opened defaultSchema sources erdTables erdRelations ignoredRelations =
+viewAnalysis : UrlPath -> ProjectRef -> HtmlId -> SchemaName -> List Source -> Dict TableId ErdTable -> List ErdRelation -> Dict TableId (List ColumnPath) -> Html Msg
+viewAnalysis basePath project opened defaultSchema sources erdTables erdRelations ignoredRelations =
     let
         tables : Dict TableId Table
         tables =
@@ -108,11 +109,11 @@ viewAnalysis project opened defaultSchema sources erdTables erdRelations ignored
             erdRelations |> List.map ErdRelation.unpack
     in
     div [ class "max-w-5xl px-6 mt-3" ]
-        [ viewMissingPrimaryKey "missing-pks" project opened defaultSchema (computeMissingPrimaryKey erdTables)
-        , viewMissingRelations "missing-relations" project opened defaultSchema (MissingRelations.forTables tables relations ignoredRelations |> Dict.values |> List.concatMap Dict.values |> List.concatMap identity)
-        , viewRelationsWithDifferentTypes "relations-with-different-types" project opened defaultSchema sources (computeRelationsWithDifferentTypes defaultSchema erdTables erdRelations)
-        , viewHeterogeneousTypes "heterogeneous-types" project opened defaultSchema (computeHeterogeneousTypes erdTables)
-        , viewBigTables "big-tables" project opened defaultSchema (computeBigTables erdTables)
+        [ viewMissingPrimaryKey basePath "missing-pks" project opened defaultSchema (computeMissingPrimaryKey erdTables)
+        , viewMissingRelations basePath "missing-relations" project opened defaultSchema (MissingRelations.forTables tables relations ignoredRelations |> Dict.values |> List.concatMap Dict.values |> List.concatMap identity)
+        , viewRelationsWithDifferentTypes basePath "relations-with-different-types" project opened defaultSchema sources (computeRelationsWithDifferentTypes defaultSchema erdTables erdRelations)
+        , viewHeterogeneousTypes basePath "heterogeneous-types" project opened defaultSchema (computeHeterogeneousTypes erdTables)
+        , viewBigTables basePath "big-tables" project opened defaultSchema (computeBigTables erdTables)
         ]
 
 
@@ -133,15 +134,16 @@ computeMissingPrimaryKey tables =
     tables |> Dict.values |> List.filter (\t -> t.primaryKey == Nothing)
 
 
-viewMissingPrimaryKey : HtmlId -> ProjectRef -> HtmlId -> SchemaName -> List ErdTable -> Html Msg
-viewMissingPrimaryKey htmlId project opened defaultSchema missingPks =
+viewMissingPrimaryKey : UrlPath -> HtmlId -> ProjectRef -> HtmlId -> SchemaName -> List ErdTable -> Html Msg
+viewMissingPrimaryKey basePath htmlId project opened defaultSchema missingPks =
     viewSection htmlId
         opened
         "All tables have a primary key"
         (missingPks |> List.length)
         (\nb -> "Found " ++ (nb |> String.pluralize "table") ++ " without a primary key")
         [ p [ class "mb-3 text-sm text-gray-500" ] [ text "It's not always required to have a primary key but strongly encouraged in most case. Make sure this is what you want!" ]
-        , ProPlan.analysisResults project
+        , ProPlan.analysisResults basePath
+            project
             missingPks
             (\t ->
                 div [ class "flex justify-between items-center my-1" ]
@@ -156,8 +158,8 @@ viewMissingPrimaryKey htmlId project opened defaultSchema missingPks =
 -- MISSING RELATIONS
 
 
-viewMissingRelations : HtmlId -> ProjectRef -> HtmlId -> SchemaName -> List SuggestedRelation -> Html Msg
-viewMissingRelations htmlId project opened defaultSchema suggestedRels =
+viewMissingRelations : UrlPath -> HtmlId -> ProjectRef -> HtmlId -> SchemaName -> List SuggestedRelation -> Html Msg
+viewMissingRelations basePath htmlId project opened defaultSchema suggestedRels =
     let
         ( relsNoRef, relsWithRef ) =
             suggestedRels |> List.partition (\r -> r.ref == Nothing)
@@ -180,7 +182,8 @@ viewMissingRelations htmlId project opened defaultSchema suggestedRels =
 
           else
             div [] []
-        , ProPlan.analysisResults project
+        , ProPlan.analysisResults basePath
+            project
             sortedMissingRels
             (\rel ->
                 div [ class "flex justify-between items-center py-1" ]
@@ -207,7 +210,8 @@ viewMissingRelations htmlId project opened defaultSchema suggestedRels =
           else
             div []
                 [ h5 [ class "mt-1 font-medium" ] [ text "Some columns may need a relation, but can't find a related table:" ]
-                , ProPlan.analysisResults project
+                , ProPlan.analysisResults basePath
+                    project
                     relsNoRef
                     (\rel ->
                         div [ class "ml-3" ]
@@ -244,8 +248,8 @@ computeRelationsWithDifferentTypes defaultSchema tables relations =
         |> List.filter (\( _, src, ref ) -> src.kind /= ref.kind)
 
 
-viewRelationsWithDifferentTypes : HtmlId -> ProjectRef -> HtmlId -> SchemaName -> List Source -> List ( ErdRelation, ErdColumn, ErdColumn ) -> Html Msg
-viewRelationsWithDifferentTypes htmlId project opened defaultSchema sources badRels =
+viewRelationsWithDifferentTypes : UrlPath -> HtmlId -> ProjectRef -> HtmlId -> SchemaName -> List Source -> List ( ErdRelation, ErdColumn, ErdColumn ) -> Html Msg
+viewRelationsWithDifferentTypes basePath htmlId project opened defaultSchema sources badRels =
     viewSection htmlId
         opened
         "No relation with different types found"
@@ -260,7 +264,8 @@ viewRelationsWithDifferentTypes htmlId project opened defaultSchema sources badR
 
           else
             div [] []
-        , ProPlan.analysisResults project
+        , ProPlan.analysisResults basePath
+            project
             (badRels |> List.sortBy (\( rel, _, _ ) -> ColumnRef.show defaultSchema rel.ref ++ " ← " ++ ColumnRef.show defaultSchema rel.src))
             (\( rel, src, ref ) ->
                 div [ class "flex justify-between items-center py-1" ]
@@ -339,8 +344,8 @@ computeHeterogeneousTypes tables =
         |> List.filter (\( _, cols ) -> (cols |> List.length) > 1)
 
 
-viewHeterogeneousTypes : HtmlId -> ProjectRef -> HtmlId -> SchemaName -> List ( ColumnName, List ( ColumnType, List TableId ) ) -> Html Msg
-viewHeterogeneousTypes htmlId project opened defaultSchema heterogeneousTypes =
+viewHeterogeneousTypes : UrlPath -> HtmlId -> ProjectRef -> HtmlId -> SchemaName -> List ( ColumnName, List ( ColumnType, List TableId ) ) -> Html Msg
+viewHeterogeneousTypes basePath htmlId project opened defaultSchema heterogeneousTypes =
     viewSection htmlId
         opened
         "No heterogeneous types found"
@@ -353,7 +358,8 @@ viewHeterogeneousTypes htmlId project opened defaultSchema heterogeneousTypes =
                     ++ "But of course, not every column with the same name is the same thing, so just look at the to know, not to fix everything."
                 )
             ]
-        , ProPlan.analysisResults project
+        , ProPlan.analysisResults basePath
+            project
             heterogeneousTypes
             (\( col, types ) ->
                 div []
@@ -381,8 +387,8 @@ computeBigTables tables =
         |> List.sortBy (\t -> t.columns |> Dict.size |> negate)
 
 
-viewBigTables : HtmlId -> ProjectRef -> HtmlId -> SchemaName -> List ErdTable -> Html Msg
-viewBigTables htmlId project opened defaultSchema bigTables =
+viewBigTables : UrlPath -> HtmlId -> ProjectRef -> HtmlId -> SchemaName -> List ErdTable -> Html Msg
+viewBigTables basePath htmlId project opened defaultSchema bigTables =
     viewSection htmlId
         opened
         "No big table found"
@@ -390,12 +396,12 @@ viewBigTables htmlId project opened defaultSchema bigTables =
         (\nb -> "Found " ++ (nb |> String.pluralize "table") ++ " too big")
         [ div [ class "mb-1 text-gray-500" ]
             [ text "See "
-            , extLink (Backend.blogArticleUrl "why-you-should-avoid-tables-with-many-columns-and-how-to-fix-them")
+            , extLink (Backend.blogArticleUrl basePath "why-you-should-avoid-tables-with-many-columns-and-how-to-fix-them")
                 [ css [ "link" ] ]
                 [ text "Why you should avoid tables with many columns, and how to fix them"
                 ]
             ]
-        , ProPlan.analysisResults project bigTables (\t -> div [] [ text ((t.columns |> Dict.size |> String.pluralize "column") ++ ": "), bText (TableId.show defaultSchema t.id) ])
+        , ProPlan.analysisResults basePath project bigTables (\t -> div [] [ text ((t.columns |> Dict.size |> String.pluralize "column") ++ ": "), bText (TableId.show defaultSchema t.id) ])
         ]
 
 

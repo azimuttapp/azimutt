@@ -7,6 +7,7 @@ import Either
 import Gen.Model
 import Gen.Pages as Pages
 import Gen.Route as Route
+import Libs.Url as Url exposing (UrlPath(..))
 import Request
 import Services.Backend as Backend
 import Shared
@@ -41,13 +42,17 @@ type alias Model =
 init : Shared.Flags -> Url -> Key -> ( Model, Cmd Msg )
 init flags url key =
     let
+        elmSpaUrl : Url
+        elmSpaUrl =
+            Url.removeBasePath (UrlPath flags.basePath) url
+
         ( shared, sharedCmd ) =
-            Shared.init (Request.create () url key) flags
+            Shared.init (Request.create () elmSpaUrl key) flags
 
         ( page, effect ) =
-            Pages.init (Route.fromUrl url) shared url key
+            Pages.init (Route.fromUrl elmSpaUrl) shared elmSpaUrl key
     in
-    ( Model url key shared page
+    ( Model elmSpaUrl key shared page
     , Cmd.batch
         [ Cmd.map Shared sharedCmd
         , Effect.toCmd ( Shared, Page ) effect
@@ -70,7 +75,7 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         ClickedLink (Browser.Internal url) ->
-            ( model, url |> Backend.internal |> Either.unpack Nav.load (Url.toString >> Nav.pushUrl model.key) )
+            ( model, url |> Backend.internal model.shared.conf.basePath |> Either.unpack Nav.load (Url.toString >> Nav.pushUrl model.key) )
 
         ClickedLink (Browser.External url) ->
             ( model, Nav.load url )

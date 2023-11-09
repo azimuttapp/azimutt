@@ -7,6 +7,9 @@
 # General application configuration
 import Config
 
+# need to read it here as backend/config/runtime.exs is executed after :/
+path = System.get_env("PHX_PATH") || ""
+
 config :azimutt,
   business_name: "Azimutt",
   seo_title: "Azimutt · Database explorer and analyzer",
@@ -52,7 +55,7 @@ config :azimutt, Azimutt.Repo,
 
 # Configures the endpoint
 config :azimutt, AzimuttWeb.Endpoint,
-  url: [host: "localhost"],
+  url: [host: "localhost", path: path],
   render_errors: [view: AzimuttWeb.ErrorView, accepts: ~w(html json), layout: false],
   pubsub_server: Azimutt.PubSub,
   live_view: [signing_salt: "eIPt31PL"]

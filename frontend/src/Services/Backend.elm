@@ -1,4 +1,4 @@
-module Services.Backend exposing (Error, Sample, SampleSchema, TableColorTweet, blogArticleUrl, blogUrl, createProjectToken, embedUrl, errorStatus, errorToString, getCurrentUser, getOrganizationsAndProjects, getProjectTokens, getSamples, getTableColorTweet, homeUrl, internal, loginUrl, logoutUrl, organizationBillingUrl, organizationUrl, resourceUrl, revokeProjectToken)
+module Services.Backend exposing (Error, Sample, SampleSchema, TableColorTweet, blogArticleUrl, blogUrl, createProjectToken, embedUrl, errorStatus, errorToString, getCurrentUser, getOrganizationsAndProjects, getProjectTokens, getSamples, getTableColorTweet, internal, loginUrl, logoutUrl, organizationBillingUrl, organizationUrl, resourceUrl, revokeProjectToken, rootUrl)
 
 import Components.Atoms.Icon as Icon exposing (Icon)
 import Either exposing (Either(..))
@@ -13,7 +13,7 @@ import Libs.Maybe as Maybe
 import Libs.Models exposing (TweetUrl)
 import Libs.Tailwind exposing (Color, decodeColor)
 import Libs.Time as Time
-import Libs.Url as Url
+import Libs.Url as Url exposing (UrlPath(..))
 import Models.CleverCloudResource as CleverCloudResource exposing (CleverCloudResource)
 import Models.HerokuResource as HerokuResource exposing (HerokuResource)
 import Models.Organization exposing (Organization)
@@ -46,16 +46,20 @@ errorToString (Error _ err) =
     err
 
 
-homeUrl : String
-homeUrl =
-    "/"
+rootUrl : UrlPath -> String
+rootUrl (UrlPath basePath) =
+    if basePath == "" then
+        "/"
+
+    else
+        basePath
 
 
-loginUrl : Url -> String
-loginUrl currentUrl =
+loginUrl : UrlPath -> Url -> String
+loginUrl (UrlPath basePath) currentUrl =
     let
         ( url, redirect ) =
-            ( "/login", currentUrl |> Url.relative )
+            ( basePath ++ "/login", currentUrl |> Url.relative )
     in
     if redirect == "" then
         url
@@ -64,38 +68,38 @@ loginUrl currentUrl =
         url ++ "/redirect?url=" ++ Url.percentEncode redirect
 
 
-logoutUrl : String
-logoutUrl =
-    "/logout"
+logoutUrl : UrlPath -> String
+logoutUrl (UrlPath basePath) =
+    basePath ++ "/logout"
 
 
-dashboardUrl : String
-dashboardUrl =
-    "/home"
+homeUrl : UrlPath -> String
+homeUrl (UrlPath basePath) =
+    basePath ++ "/home"
 
 
-organizationUrl : Maybe OrganizationId -> String
-organizationUrl organization =
-    organization |> Maybe.filter (\id -> id /= OrganizationId.zero) |> Maybe.mapOrElse (\id -> "/organizations/" ++ id) dashboardUrl
+organizationUrl : UrlPath -> Maybe OrganizationId -> String
+organizationUrl (UrlPath basePath) organization =
+    organization |> Maybe.filter (\id -> id /= OrganizationId.zero) |> Maybe.mapOrElse (\id -> basePath ++ "/organizations/" ++ id) (homeUrl (UrlPath basePath))
 
 
-organizationBillingUrl : OrganizationId -> String -> String
-organizationBillingUrl organization source =
-    "/organizations/" ++ organization ++ "/billing?source=" ++ source
+organizationBillingUrl : UrlPath -> OrganizationId -> String -> String
+organizationBillingUrl (UrlPath basePath) organization source =
+    basePath ++ "/organizations/" ++ organization ++ "/billing?source=" ++ source
 
 
-blogUrl : String
-blogUrl =
-    "/blog"
+blogUrl : UrlPath -> String
+blogUrl (UrlPath basePath) =
+    basePath ++ "/blog"
 
 
-blogArticleUrl : String -> String
-blogArticleUrl slug =
-    "/blog/" ++ slug
+blogArticleUrl : UrlPath -> String -> String
+blogArticleUrl (UrlPath basePath) slug =
+    basePath ++ "/blog/" ++ slug
 
 
-embedUrl : EmbedKind -> String -> LayoutName -> EmbedModeId -> Maybe ProjectToken -> String
-embedUrl kind content layout mode token =
+embedUrl : UrlPath -> EmbedKind -> String -> LayoutName -> EmbedModeId -> Maybe ProjectToken -> String
+embedUrl (UrlPath basePath) kind content layout mode token =
     let
         queryString : String
         queryString =
@@ -107,77 +111,77 @@ embedUrl kind content layout mode token =
                 |> List.filter (\( _, value ) -> value /= "")
                 |> Url.buildQueryString
     in
-    "/embed?" ++ queryString
+    basePath ++ "/embed?" ++ queryString
 
 
-resourceUrl : String -> String
-resourceUrl path =
-    "/elm" ++ path
+resourceUrl : UrlPath -> String -> String
+resourceUrl (UrlPath basePath) path =
+    basePath ++ "/elm" ++ path
 
 
 type alias SampleSchema =
     { url : String, color : Color, icon : Icon, key : String, name : String, description : String, tables : Int }
 
 
-internal : Url -> Either String Url
-internal url =
-    if isExternal url then
+internal : UrlPath -> Url -> Either String Url
+internal basePath url =
+    if isExternal basePath url then
         url |> Url.relative |> Left
 
     else
         url |> Right
 
 
-isExternal : Url -> Bool
-isExternal url =
+isExternal : UrlPath -> Url -> Bool
+isExternal (UrlPath basePath) url =
     -- identify urls that are not inside Elm app and needs a page load (Elixir backend pages)
-    (url.path == "/")
-        || (url.path == "/home")
-        || (url.path |> String.startsWith "/login")
-        || (url.path == "/logout")
-        || (url.path |> String.startsWith "/organizations/")
+    (url.path == basePath ++ "/")
+        || (url.path == basePath ++ "/home")
+        || (url.path |> String.startsWith (basePath ++ "/login"))
+        || (url.path == basePath ++ "/logout")
+        || (url.path |> String.startsWith (basePath ++ "/organizations/"))
 
 
 type alias Sample =
     { slug : String, color : Color, icon : Icon, name : String, description : String, project_id : ProjectId, nb_tables : Int }
 
 
-getSamples : (Result Error (List Sample) -> msg) -> Cmd msg
-getSamples toMsg =
-    riskyGet { url = "/api/v1/gallery", expect = expectJson toMsg (Decode.list decodeSample) }
+getSamples : UrlPath -> (Result Error (List Sample) -> msg) -> Cmd msg
+getSamples (UrlPath basePath) toMsg =
+    riskyGet { url = basePath ++ "/api/v1/gallery", expect = expectJson toMsg (Decode.list decodeSample) }
 
 
-getCurrentUser : (Result Error (Maybe User) -> msg) -> Cmd msg
-getCurrentUser toMsg =
-    riskyGet { url = "/api/v1/users/current", expect = expectJson (recoverUnauthorized >> toMsg) User.decode }
+getCurrentUser : UrlPath -> (Result Error (Maybe User) -> msg) -> Cmd msg
+getCurrentUser (UrlPath basePath) toMsg =
+    riskyGet { url = basePath ++ "/api/v1/users/current", expect = expectJson (recoverUnauthorized >> toMsg) User.decode }
 
 
-getOrganizationsAndProjects : (Result Error ( List Organization, List ProjectInfo ) -> msg) -> Cmd msg
-getOrganizationsAndProjects toMsg =
-    riskyGet { url = "/api/v1/organizations?expand=plan,projects", expect = expectJson (Result.map formatOrgasAndProjects >> toMsg) (Decode.list decodeOrga) }
+getOrganizationsAndProjects : UrlPath -> (Result Error ( List Organization, List ProjectInfo ) -> msg) -> Cmd msg
+getOrganizationsAndProjects (UrlPath basePath) toMsg =
+    riskyGet { url = basePath ++ "/api/v1/organizations?expand=plan,projects", expect = expectJson (Result.map formatOrgasAndProjects >> toMsg) (Decode.list decodeOrga) }
 
 
-getProjectTokens : ProjectInfo -> (Result Error (List ProjectToken) -> msg) -> Cmd msg
-getProjectTokens project toMsg =
+getProjectTokens : UrlPath -> ProjectInfo -> (Result Error (List ProjectToken) -> msg) -> Cmd msg
+getProjectTokens (UrlPath basePath) project toMsg =
     riskyGet
-        { url = "/api/v1/organizations/" ++ (project |> ProjectInfo.organizationId) ++ "/projects/" ++ project.id ++ "/access-tokens"
+        { url = basePath ++ "/api/v1/organizations/" ++ (project |> ProjectInfo.organizationId) ++ "/projects/" ++ project.id ++ "/access-tokens"
         , expect = expectJson toMsg (Decode.list ProjectToken.decode)
         }
 
 
-createProjectToken : String -> Maybe Time.Posix -> ProjectInfo -> (Result Error () -> msg) -> Cmd msg
-createProjectToken name expireAt project toMsg =
+createProjectToken : UrlPath -> String -> Maybe Time.Posix -> ProjectInfo -> (Result Error () -> msg) -> Cmd msg
+createProjectToken (UrlPath basePath) name expireAt project toMsg =
     riskyPost
-        { url = "/api/v1/organizations/" ++ (project |> ProjectInfo.organizationId) ++ "/projects/" ++ project.id ++ "/access-tokens"
+        { url = basePath ++ "/api/v1/organizations/" ++ (project |> ProjectInfo.organizationId) ++ "/projects/" ++ project.id ++ "/access-tokens"
         , body = [ ( "name", name |> Encode.string ), ( "expire_at", expireAt |> Encode.maybe Time.encodeIso ) ] |> Encode.object |> Http.jsonBody
         , expect = expectEmpty toMsg
         }
 
 
-revokeProjectToken : ProjectToken -> ProjectInfo -> (Result Error () -> msg) -> Cmd msg
-revokeProjectToken token project toMsg =
+revokeProjectToken : UrlPath -> ProjectToken -> ProjectInfo -> (Result Error () -> msg) -> Cmd msg
+revokeProjectToken (UrlPath basePath) token project toMsg =
     riskyDelete
-        { url = "/api/v1/organizations/" ++ (project |> ProjectInfo.organizationId) ++ "/projects/" ++ project.id ++ "/access-tokens/" ++ token.id
+        { url = basePath ++ "/api/v1/organizations/" ++ (project |> ProjectInfo.organizationId) ++ "/projects/" ++ project.id ++ "/access-tokens/" ++ token.id
         , expect = expectEmpty toMsg
         }
 
@@ -186,10 +190,10 @@ type alias TableColorTweet =
     { tweet : String, errors : List String }
 
 
-getTableColorTweet : OrganizationId -> TweetUrl -> (Result Error TableColorTweet -> msg) -> Cmd msg
-getTableColorTweet organizationId tweetUrl toMsg =
+getTableColorTweet : UrlPath -> OrganizationId -> TweetUrl -> (Result Error TableColorTweet -> msg) -> Cmd msg
+getTableColorTweet (UrlPath basePath) organizationId tweetUrl toMsg =
     riskyPost
-        { url = "/api/v1/organizations/" ++ organizationId ++ "/tweet-for-table-colors"
+        { url = basePath ++ "/api/v1/organizations/" ++ organizationId ++ "/tweet-for-table-colors"
         , body = [ ( "tweet_url", tweetUrl |> Encode.string ) ] |> Encode.object |> Http.jsonBody
         , expect =
             expectJson toMsg

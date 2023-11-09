@@ -20,6 +20,7 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Result as Result
 import Libs.Tailwind as Tw exposing (TwClass)
 import Libs.Task as T
+import Libs.Url exposing (UrlPath)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.ProjectInfo exposing (ProjectInfo)
@@ -143,8 +144,8 @@ update wrap now project msg model =
 -- VIEW
 
 
-viewInput : (Msg -> msg) -> HtmlId -> Model msg -> Html msg
-viewInput wrap htmlId model =
+viewInput : (Msg -> msg) -> UrlPath -> HtmlId -> Model msg -> Html msg
+viewInput wrap basePath htmlId model =
     let
         error : Maybe String
         error =
@@ -168,10 +169,10 @@ viewInput wrap htmlId model =
                         db.issue
                             |> Maybe.mapOrElse
                                 (\link ->
-                                    extLink link [] [ img [ src (Backend.resourceUrl ("/assets/logos/" ++ db.key ++ ".png")), class "grayscale opacity-50" ] [] ]
+                                    extLink link [] [ img [ src (Backend.resourceUrl basePath ("/assets/logos/" ++ db.key ++ ".png")), class "grayscale opacity-50" ] [] ]
                                         |> Tooltip.t "Click to ask support (done on demand)"
                                 )
-                                (button [ type_ "button", onClick (UpdateSelectedDb db.key |> wrap) ] [ img [ src (Backend.resourceUrl ("/assets/logos/" ++ db.key ++ ".png")) ] [] ])
+                                (button [ type_ "button", onClick (UpdateSelectedDb db.key |> wrap) ] [ img [ src (Backend.resourceUrl basePath ("/assets/logos/" ++ db.key ++ ".png")) ] [] ])
                     )
             )
         , div [ class "mt-3 flex rounded-md shadow-sm" ]
@@ -208,8 +209,8 @@ viewInput wrap htmlId model =
         ]
 
 
-viewParsing : (Msg -> msg) -> Model msg -> Html msg
-viewParsing wrap model =
+viewParsing : (Msg -> msg) -> UrlPath -> Model msg -> Html msg
+viewParsing wrap basePath model =
     (model.selectedUrl |> Maybe.andThen Result.toMaybe |> Maybe.map (\url -> DatabaseUrl.databaseName url ++ " database"))
         |> Maybe.mapOrElse
             (\dbName ->
@@ -227,7 +228,7 @@ viewParsing wrap model =
                         , model.parsedSource |> Maybe.mapOrElse (Ok >> SourceLogs.viewResult) (div [] [])
                         ]
                     , if model.parsedSource == Nothing then
-                        div [] [ img [ class "mt-1 rounded-l-lg", src (Backend.resourceUrl "/assets/images/exploration.gif") ] [] ]
+                        div [] [ img [ class "mt-1 rounded-l-lg", src (Backend.resourceUrl basePath "/assets/images/exploration.gif") ] [] ]
 
                       else
                         div [] []

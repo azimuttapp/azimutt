@@ -22,7 +22,7 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Platform exposing (Platform)
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (TwClass, batch, focus, focus_ring_offset_600, hover, lg, sm)
-import Libs.Url as Url
+import Libs.Url as Url exposing (UrlPath)
 import Models.OrganizationId exposing (OrganizationId)
 import Models.ProjectInfo exposing (ProjectInfo)
 import Models.User exposing (User)
@@ -91,7 +91,7 @@ viewNavbar gConf maybeUser eConf virtualRelation erd projects model args =
         [ div [ css [ "mx-auto px-2", sm [ "px-4" ], lg [ "px-8" ] ] ]
             [ div [ class "relative flex items-center justify-between h-16" ]
                 [ div [ css [ "flex items-center px-2", lg [ "px-0" ] ] ]
-                    [ viewNavbarBrand (erd.project.organization |> Maybe.map .id |> Maybe.orElse urlOrganization |> Maybe.filter (\id -> userOrganizations |> List.member id)) (eConf.dashboardLink && notCleverCloud)
+                    [ viewNavbarBrand gConf.basePath (erd.project.organization |> Maybe.map .id |> Maybe.orElse urlOrganization |> Maybe.filter (\id -> userOrganizations |> List.member id)) (eConf.dashboardLink && notCleverCloud)
                     , Lazy.lazy8 viewNavbarSearch erd.settings.defaultSchema model.search erd.tables erd.relations erd.metadata (erd |> Erd.currentLayout |> .tables) (htmlId ++ "-search") (openedDropdown |> String.filterStartsWith (htmlId ++ "-search"))
                     , viewNavbarHelp
                     ]
@@ -104,7 +104,7 @@ viewNavbar gConf maybeUser eConf virtualRelation erd projects model args =
                         [ viewNavbarFeatures gConf.platform features (htmlId ++ "-features") (openedDropdown |> String.filterStartsWith (htmlId ++ "-features"))
                         , B.cond eConf.sharing viewNavbarShare Html.none
                         , viewNavbarSettings
-                        , Helpers.viewProfileIcon currentUrl maybeUser (htmlId ++ "-profile") openedDropdown DropdownToggle
+                        , Helpers.viewProfileIcon gConf.basePath currentUrl maybeUser (htmlId ++ "-profile") openedDropdown DropdownToggle
                         ]
                     ]
                 ]
@@ -113,19 +113,19 @@ viewNavbar gConf maybeUser eConf virtualRelation erd projects model args =
         ]
 
 
-viewNavbarBrand : Maybe OrganizationId -> Bool -> Html msg
-viewNavbarBrand organization dashboardLink =
+viewNavbarBrand : UrlPath -> Maybe OrganizationId -> Bool -> Html msg
+viewNavbarBrand basePath organization dashboardLink =
     let
         attrs : List (Attribute msg)
         attrs =
             if dashboardLink then
-                [ href (organization |> Backend.organizationUrl) ]
+                [ href (organization |> Backend.organizationUrl basePath) ]
 
             else
-                hrefBlank Backend.homeUrl
+                hrefBlank (Backend.rootUrl basePath)
     in
     a (attrs ++ [ class "flex justify-start items-center flex-shrink-0 font-medium" ])
-        [ img [ class "block h-8 w-auto", src (Backend.resourceUrl "/logo_light.svg"), alt "Azimutt", height 32 ] []
+        [ img [ class "block h-8 w-auto", src (Backend.resourceUrl basePath "/logo_light.svg"), alt "Azimutt", height 32 ] []
         ]
 
 

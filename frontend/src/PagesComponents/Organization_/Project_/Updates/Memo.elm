@@ -6,6 +6,7 @@ import Conf
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Task as T
+import Libs.Url exposing (UrlPath)
 import Models.ErdProps exposing (ErdProps)
 import Models.Position as Position
 import Models.UrlInfos exposing (UrlInfos)
@@ -34,11 +35,11 @@ type alias Model x =
     }
 
 
-handleMemo : Time.Posix -> UrlInfos -> MemoMsg -> Model x -> ( Model x, Cmd Msg )
-handleMemo now urlInfos msg model =
+handleMemo : Time.Posix -> UrlPath -> UrlInfos -> MemoMsg -> Model x -> ( Model x, Cmd Msg )
+handleMemo now basePath urlInfos msg model =
     case msg of
         MCreate pos ->
-            model.erd |> Maybe.mapOrElse (\erd -> model |> createMemo now pos urlInfos erd) ( model, Cmd.none )
+            model.erd |> Maybe.mapOrElse (\erd -> model |> createMemo now basePath pos urlInfos erd) ( model, Cmd.none )
 
         MEdit memo ->
             model |> editMemo False memo
@@ -56,8 +57,8 @@ handleMemo now urlInfos msg model =
             model |> deleteMemo now id False
 
 
-createMemo : Time.Posix -> Position.Canvas -> UrlInfos -> Erd -> Model x -> ( Model x, Cmd Msg )
-createMemo now position urlInfos erd model =
+createMemo : Time.Posix -> UrlPath -> Position.Canvas -> UrlInfos -> Erd -> Model x -> ( Model x, Cmd Msg )
+createMemo now basePath position urlInfos erd model =
     if model.erd |> Erd.canCreateMemo then
         ErdLayout.createMemo (erd |> Erd.currentLayout) position
             |> (\memo ->
@@ -68,7 +69,7 @@ createMemo now position urlInfos erd model =
                )
 
     else
-        ( model, Cmd.batch [ erd |> Erd.getProjectRef urlInfos |> ProPlan.memosModalBody |> CustomModalOpen |> T.send, Track.planLimit .memos (Just erd) ] )
+        ( model, Cmd.batch [ erd |> Erd.getProjectRef urlInfos |> ProPlan.memosModalBody basePath |> CustomModalOpen |> T.send, Track.planLimit .memos (Just erd) ] )
 
 
 editMemo : Bool -> Memo -> Model x -> ( Model x, Cmd Msg )

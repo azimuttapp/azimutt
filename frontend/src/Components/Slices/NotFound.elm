@@ -75,7 +75,7 @@ docModel =
         }
     , header = "404 error"
     , title = "Page not found."
-    , message = "Sorry, we couldn't find the page you’re looking for."
+    , message = "Sorry, we couldn't find the page you’re looking for :/"
     , links = [ { url = "#", text = "Go back home" } ]
     , footer = [ { url = "#", text = "Contact Support" }, { url = "#", text = "Status" }, { url = "#", text = "Twitter" } ]
     }

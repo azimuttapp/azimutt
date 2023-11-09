@@ -25,18 +25,18 @@
 <meta name="twitter:creator" content={twitter_creator(@conn)} />
 <meta name="twitter:url" content="https://azimutt.app" />
 
-<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-<link rel="apple-touch-icon-precomposed" sizes="180x180" href="/apple-touch-icon.png" />
-<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-<link rel="icon" type="image/x-icon" href="/favicon.ico" />
-<link rel="manifest" href="/site.webmanifest" />
-<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#000000" />
+<link rel="apple-touch-icon" sizes="180x180" href={Routes.static_path(@conn, "/apple-touch-icon.png")} />
+<link rel="apple-touch-icon-precomposed" sizes="180x180" href={Routes.static_path(@conn, "/apple-touch-icon.png")} />
+<link rel="icon" type="image/png" sizes="32x32" href={Routes.static_path(@conn, "/favicon-32x32.png")} />
+<link rel="icon" type="image/png" sizes="16x16" href={Routes.static_path(@conn, "/favicon-16x16.png")} />
+<link rel="icon" type="image/x-icon" href={Routes.static_path(@conn, "/favicon.ico")} />
+<link rel="manifest" href={Routes.static_path(@conn, "/site.webmanifest")} />
+<link rel="mask-icon" href={Routes.static_path(@conn, "/safari-pinned-tab.svg")} color="#000000" />
 <meta name="apple-mobile-web-app-title" content="Azimutt" />
 <meta name="application-name" content="Azimutt" />
 <meta name="msapplication-TileColor" content="#000000" />
-<meta name="msapplication-TileImage" content="/mstile-150x150.png" />
-<meta name="msapplication-config" content="/browserconfig.xml" />
+<meta name="msapplication-TileImage" content={Routes.static_path(@conn, "/mstile-150x150.png")} />
+<meta name="msapplication-config" content={Routes.static_path(@conn, "/browserconfig.xml")} />
 <meta name="theme-color" content="#000000" />
 
 <script type="application/ld+json">

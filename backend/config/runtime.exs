@@ -17,13 +17,15 @@ import Config
 # Alternatively, you can use `mix phx.gen.release` to generate a `bin/server`
 # script that automatically sets the env var above.
 host = System.fetch_env!("PHX_HOST")
+path = System.get_env("PHX_PATH") || ""
 port = String.to_integer(System.fetch_env!("PORT"))
 global_organization = System.get_env("GLOBAL_ORGANIZATION")
 # TODO: REQUIRE_GITHUB_ORGANIZATION: allow users only from this github orga
 
 config :azimutt,
   host: host,
-  gateway_url: System.get_env("GATEWAY_URL") || "/api/v1/analyzer",
+  path: path,
+  gateway_url: System.get_env("GATEWAY_URL") || "#{path}/api/v1/analyzer",
   skip_public_site: !(System.get_env("PUBLIC_SITE") == "true"),
   skip_onboarding_funnel: System.get_env("SKIP_ONBOARDING_FUNNEL") == "true",
   skip_email_confirmation: System.get_env("SKIP_EMAIL_CONFIRMATION") == "true",

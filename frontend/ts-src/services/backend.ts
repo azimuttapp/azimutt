@@ -43,11 +43,11 @@ import {TrackEvent} from "../types/tracking";
 export class Backend {
     private projects: { [id: ProjectId]: ProjectJson } = {}
 
-    constructor(private logger: Logger) {
+    constructor(private logger: Logger, private basePath: string) {
     }
 
     loginUrl = (currentUrl: string | undefined): string =>
-        currentUrl ? `/login/redirect?url=${encodeURIComponent(currentUrl)}` : '/login'
+        currentUrl ? `${this.basePath}/login/redirect?url=${encodeURIComponent(currentUrl)}` : `${this.basePath}/login`
 
     getProject = async (o: OrganizationId, p: ProjectId, t: ProjectTokenId | null): Promise<ProjectInfoWithContent> => {
         this.logger.debug(`backend.getProject(${o}, ${p}, ${t})`)
@@ -60,20 +60,20 @@ export class Backend {
 
     private fetchProject = (o: OrganizationId, p: ProjectId, t: ProjectTokenId | null): Promise<ProjectInfoWithContent> => {
         const token = t ? `token=${t}&` : ''
-        const path = `/api/v1/organizations/${o}/projects/${p}?${token}expand=organization,organization.plan,content`
+        const path = `${this.basePath}/api/v1/organizations/${o}/projects/${p}?${token}expand=organization,organization.plan,content`
         return Http.getJson(path, ProjectWithContentResponse, 'ProjectWithContentResponse').then(toProjectInfoWithContent)
     }
 
     createProjectLocal = (o: OrganizationId, json: ProjectJson): Promise<ProjectInfoLocal> => {
         this.logger.debug(`backend.createProjectLocal(${o})`, json)
-        const path = `/api/v1/organizations/${o}/projects?expand=organization,organization.plan`
+        const path = `${this.basePath}/api/v1/organizations/${o}/projects?expand=organization,organization.plan`
         return Http.postJson(path, toProjectBody(json, ProjectStorage.enum.local), ProjectResponse, 'ProjectResponse').then(toProjectInfo)
             .then(res => isLocal(res) ? res : Promise.reject('Expecting a local project'))
     }
 
     createProjectRemote = async (o: OrganizationId, json: ProjectJson): Promise<ProjectInfoRemote> => {
         this.logger.debug(`backend.createProjectRemote(${o})`, json)
-        const path = `/api/v1/organizations/${o}/projects?expand=organization,organization.plan`
+        const path = `${this.basePath}/api/v1/organizations/${o}/projects?expand=organization,organization.plan`
         const formData: FormData = new FormData()
         Object.entries(toProjectBody(json, ProjectStorage.enum.remote))
             .filter(([_, value]) => value !== null && value !== undefined)
@@ -88,7 +88,7 @@ export class Backend {
         this.logger.debug(`backend.updateProjectLocal(${p.organization?.id}, ${p.id})`, p)
         if (!p.organization) return Promise.reject('Expecting an organization to update project')
         if (p.storage !== ProjectStorage.enum.local) return Promise.reject('Expecting a local project')
-        const path = `/api/v1/organizations/${p.organization.id}/projects/${p.id}?expand=organization,organization.plan`
+        const path = `${this.basePath}/api/v1/organizations/${p.organization.id}/projects/${p.id}?expand=organization,organization.plan`
         const json = buildProjectJson(p)
         return Http.putJson(path, toProjectBody(json, ProjectStorage.enum.local), ProjectResponse, 'ProjectResponse').then(toProjectInfo)
             .then(res => isLocal(res) ? res : Promise.reject('Expecting a local project'))
@@ -115,7 +115,7 @@ export class Backend {
         }
 
         if (!p.organization) return Promise.reject('Expecting an organization to update project')
-        const path = `/api/v1/organizations/${p.organization.id}/projects/${p.id}?expand=organization,organization.plan`
+        const path = `${this.basePath}/api/v1/organizations/${p.organization.id}/projects/${p.id}?expand=organization,organization.plan`
         const formData: FormData = new FormData()
         Object.entries(toProjectBody(json, ProjectStorage.enum.remote))
             .filter(([_, value]) => value !== null && value !== undefined)
@@ -128,7 +128,7 @@ export class Backend {
 
     deleteProject = async (o: OrganizationId, p: ProjectId): Promise<void> => {
         this.logger.debug(`backend.deleteProject(${o}, ${p})`)
-        await Http.deleteNoContent(`/api/v1/organizations/${o}/projects/${p}`)
+        await Http.deleteNoContent(`${this.basePath}/api/v1/organizations/${o}/projects/${p}`)
         delete this.projects[p]
     }
 
@@ -142,7 +142,7 @@ export class Backend {
                 $lib: 'front'
             }
         }
-        Http.postNoContent(`/api/v1/events`, eventWithUrl).then(_ => undefined)
+        Http.postNoContent(`${this.basePath}/api/v1/events`, eventWithUrl).then(_ => undefined)
     }
 
     getDatabaseSchema = async (database: DatabaseUrl): Promise<AzimuttSchema> => {

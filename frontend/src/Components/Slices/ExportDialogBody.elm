@@ -29,6 +29,7 @@ import Libs.Tailwind as Tw exposing (sm)
 import Libs.Task as T
 import Libs.Time as Time
 import Libs.Tuple3 as Tuple3
+import Libs.Url exposing (UrlPath(..))
 import Models.Organization exposing (Organization)
 import Models.Plan as Plan
 import Models.Position as Position
@@ -162,8 +163,8 @@ generateTables format schema =
             ( JsonGenerator.generate schema, "json" )
 
 
-view : (Msg -> msg) -> (Cmd msg -> msg) -> msg -> HtmlId -> ProjectRef -> Model -> Html msg
-view wrap send onClose titleId project model =
+view : (Msg -> msg) -> (Cmd msg -> msg) -> msg -> UrlPath -> HtmlId -> ProjectRef -> Model -> Html msg
+view wrap send onClose basePath titleId project model =
     let
         inputId : HtmlId
         inputId =
@@ -216,7 +217,7 @@ view wrap send onClose titleId project model =
                             (\e -> viewCode ("Error: " ++ e))
                             (\( _, content ) ->
                                 if content == "plan_limit" then
-                                    div [ class "mt-3" ] [ ProPlan.sqlExportWarning project ]
+                                    div [ class "mt-3" ] [ ProPlan.sqlExportWarning basePath project ]
 
                                 else if model.format == Just PostgreSQL then
                                     div [] [ viewCode content, viewSuggestPR "https://github.com/azimuttapp/azimutt/blob/main/frontend/src/DataSources/SqlMiner/PostgreSqlGenerator.elm#L26" ]
@@ -358,9 +359,14 @@ doc : Chapter (SharedDocState x)
 doc =
     Chapter.chapter "ExportDialogBody"
         |> Chapter.renderStatefulComponentList
-            [ component "exportDialog" (\model -> view updateDocFreeState (\_ -> logAction "Download file") sampleOnClose sampleTitleId sampleFreePlan model.free)
-            , component "exportDialog with pro org" (\model -> view updateDocProState (\_ -> logAction "Download file") sampleOnClose sampleTitleId sampleProPlan model.pro)
+            [ component "exportDialog" (\model -> view updateDocFreeState (\_ -> logAction "Download file") sampleOnClose docBasePath sampleTitleId sampleFreePlan model.free)
+            , component "exportDialog with pro org" (\model -> view updateDocProState (\_ -> logAction "Download file") sampleOnClose docBasePath sampleTitleId sampleProPlan model.pro)
             ]
+
+
+docBasePath : UrlPath
+docBasePath =
+    UrlPath ""
 
 
 docBuildLayout : List ( TableIdStr, List ColumnPathStr ) -> ErdLayout

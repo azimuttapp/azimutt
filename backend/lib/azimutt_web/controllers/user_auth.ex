@@ -181,6 +181,7 @@ defmodule AzimuttWeb.UserAuth do
 
       !user.confirmed_at && Azimutt.config(:require_email_confirmation) && !Azimutt.config(:skip_email_confirmation) &&
         !is_email_confirm_path(conn, path) && Date.compare(user.created_at, ~D[2023-04-19]) == :gt ->
+        # TODO: remove the date check when we are sure all users have confirmed their email
         conn |> redirect(to: Routes.user_confirmation_path(conn, :new)) |> halt()
 
       user.onboarding && !Azimutt.config(:skip_onboarding_funnel) &&
@@ -192,8 +193,11 @@ defmodule AzimuttWeb.UserAuth do
     end
   end
 
-  defp is_email_confirm_path(conn, path), do: path |> String.starts_with?(Routes.user_confirmation_path(conn, :new))
-  defp is_onboarding_path(conn, path), do: path |> String.starts_with?(Routes.user_onboarding_path(conn, :index))
+  defp is_email_confirm_path(conn, path),
+    do: path |> String.starts_with?(Azimutt.config(:path) <> Routes.user_confirmation_path(conn, :new))
+
+  defp is_onboarding_path(conn, path),
+    do: path |> String.starts_with?(Azimutt.config(:path) <> Routes.user_onboarding_path(conn, :index))
 
   def require_authed_user_api(conn, _opts) do
     if conn.assigns[:current_user] do

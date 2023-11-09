@@ -24,7 +24,7 @@ import Libs.String as String
 import Libs.Tailwind as Tw exposing (TwClass, focus, sm)
 import Libs.Task as T
 import Libs.Time as Time
-import Libs.Url as Url
+import Libs.Url as Url exposing (UrlPath)
 import Models.Organization exposing (Organization)
 import Models.Plan exposing (Plan)
 import Models.Project as Project exposing (Project)
@@ -126,8 +126,8 @@ initTokenForm =
 -- UPDATE
 
 
-update : (Msg -> msg) -> (HtmlId -> msg) -> (Toasts.Msg -> msg) -> Time.Zone -> Time.Posix -> Maybe Erd -> Msg -> Maybe Model -> ( Maybe Model, Cmd msg )
-update wrap modalOpen toast zone now erd msg model =
+update : (Msg -> msg) -> (HtmlId -> msg) -> (Toasts.Msg -> msg) -> Time.Zone -> Time.Posix -> UrlPath -> Maybe Erd -> Msg -> Maybe Model -> ( Maybe Model, Cmd msg )
+update wrap modalOpen toast zone now basePath erd msg model =
     case msg of
         Open ->
             ( Just (init Conf.ids.sharingDialog erd), Cmd.batch [ T.sendAfter 1 (modalOpen Conf.ids.sharingDialog) ] )
@@ -144,7 +144,7 @@ update wrap modalOpen toast zone now erd msg model =
         EnableTokenForm ->
             ( model |> Maybe.map (setTokenForm (Just initTokenForm))
             , if erd |> Erd.getOrganizationM Nothing |> .plan |> .privateLinks then
-                erd |> Maybe.mapOrElse (\e -> Backend.getProjectTokens e.project (GotTokens >> wrap)) Cmd.none
+                erd |> Maybe.mapOrElse (\e -> Backend.getProjectTokens basePath e.project (GotTokens >> wrap)) Cmd.none
 
               else
                 Track.planLimit .privateLinks erd
@@ -167,22 +167,22 @@ update wrap modalOpen toast zone now erd msg model =
 
         CreateToken form ->
             ( model |> Maybe.map (mapTokenFormM (\f -> { f | loading = True, error = Nothing }))
-            , erd |> Maybe.mapOrElse (\e -> Backend.createProjectToken form.name (form.expire |> Maybe.map (\i -> Time.add i 1 zone now)) e.project (TokenCreated >> wrap)) Cmd.none
+            , erd |> Maybe.mapOrElse (\e -> Backend.createProjectToken basePath form.name (form.expire |> Maybe.map (\i -> Time.add i 1 zone now)) e.project (TokenCreated >> wrap)) Cmd.none
             )
 
         TokenCreated (Ok _) ->
             ( model |> Maybe.map (mapTokenFormM (\f -> { f | name = "", expire = Nothing, loading = False, error = Nothing }))
-            , erd |> Maybe.mapOrElse (\e -> Backend.getProjectTokens e.project (GotTokens >> wrap)) Cmd.none
+            , erd |> Maybe.mapOrElse (\e -> Backend.getProjectTokens basePath e.project (GotTokens >> wrap)) Cmd.none
             )
 
         TokenCreated (Err err) ->
             ( model |> Maybe.map (mapTokenFormM (\f -> { f | loading = False, error = err |> Backend.errorToString |> Just })), Cmd.none )
 
         RevokeToken token ->
-            ( model |> Maybe.map (mapTokenFormM (\f -> { f | error = Nothing })), erd |> Maybe.mapOrElse (\e -> Backend.revokeProjectToken token e.project (TokenRevoked >> wrap)) Cmd.none )
+            ( model |> Maybe.map (mapTokenFormM (\f -> { f | error = Nothing })), erd |> Maybe.mapOrElse (\e -> Backend.revokeProjectToken basePath token e.project (TokenRevoked >> wrap)) Cmd.none )
 
         TokenRevoked (Ok _) ->
-            ( model, erd |> Maybe.mapOrElse (\e -> Backend.getProjectTokens e.project (GotTokens >> wrap)) Cmd.none )
+            ( model, erd |> Maybe.mapOrElse (\e -> Backend.getProjectTokens basePath e.project (GotTokens >> wrap)) Cmd.none )
 
         TokenRevoked (Err err) ->
             ( model |> Maybe.map (mapTokenFormM (\f -> { f | error = err |> Backend.errorToString |> Just })), Cmd.none )
@@ -201,8 +201,8 @@ update wrap modalOpen toast zone now erd msg model =
 -- VIEW
 
 
-view : (Msg -> msg) -> (Cmd msg -> msg) -> (msg -> msg) -> (String -> Html msg -> msg -> msg) -> Time.Zone -> Url -> UrlInfos -> Bool -> Erd -> Model -> Html msg
-view wrap send modalClose confirm zone currentUrl urlInfos opened erd model =
+view : (Msg -> msg) -> (Cmd msg -> msg) -> (msg -> msg) -> (String -> Html msg -> msg -> msg) -> Time.Zone -> UrlPath -> Url -> UrlInfos -> Bool -> Erd -> Model -> Html msg
+view wrap send modalClose confirm zone basePath currentUrl urlInfos opened erd model =
     let
         titleId : HtmlId
         titleId =
@@ -210,25 +210,25 @@ view wrap send modalClose confirm zone currentUrl urlInfos opened erd model =
 
         iframeUrl : Maybe String
         iframeUrl =
-            buildIframeUrl currentUrl model.kind model.content model.layout model.mode (model.tokenForm |> Maybe.andThen .token)
+            buildIframeUrl basePath currentUrl model.kind model.content model.layout model.mode (model.tokenForm |> Maybe.andThen .token)
     in
     Modal.modal { id = model.id, titleId = titleId, isOpen = opened, onBackgroundClick = Close |> wrap |> modalClose }
         [ div [ class "flex" ]
-            [ Lazy.lazy viewIframe (iframeUrl |> Maybe.withDefault "")
+            [ Lazy.lazy2 viewIframe basePath (iframeUrl |> Maybe.withDefault "")
             , div [ class "p-4", style "width" "70ch" ]
                 [ viewHeader wrap modalClose titleId
-                , viewBody wrap send confirm zone currentUrl urlInfos erd model
+                , viewBody wrap send confirm zone basePath currentUrl urlInfos erd model
                 ]
             ]
         ]
 
 
-viewIframe : String -> Html msg
-viewIframe iframeUrl =
+viewIframe : UrlPath -> String -> Html msg
+viewIframe basePath iframeUrl =
     iframeUrl
         |> String.nonEmptyMaybe
         |> Maybe.map (\url -> div [ style "width" "1000px" ] [ iframe [ attribute "width" "100%", height 800, src url, title "Embedded Azimutt diagram", attribute "frameborder" "0", attribute "allowtransparency" "true", attribute "allowfullscreen" "true", attribute "scrolling" "no", style "box-shadow" "0 2px 8px 0 rgba(63,69,81,0.16)", style "border-radius" "5px" ] [] ])
-        |> Maybe.withDefault (div [ class "flex items-center" ] [ img [ class "rounded-l-lg", src (Backend.resourceUrl "/assets/images/education.gif") ] [] ])
+        |> Maybe.withDefault (div [ class "flex items-center" ] [ img [ class "rounded-l-lg", src (Backend.resourceUrl basePath "/assets/images/education.gif") ] [] ])
 
 
 buildIframeHtml : String -> String
@@ -252,8 +252,8 @@ viewHeader wrap modalClose titleId =
         ]
 
 
-viewBody : (Msg -> msg) -> (Cmd msg -> msg) -> (String -> Html msg -> msg -> msg) -> Time.Zone -> Url -> UrlInfos -> Erd -> Model -> Html msg
-viewBody wrap send confirm zone currentUrl urlInfos erd model =
+viewBody : (Msg -> msg) -> (Cmd msg -> msg) -> (String -> Html msg -> msg -> msg) -> Time.Zone -> UrlPath -> Url -> UrlInfos -> Erd -> Model -> Html msg
+viewBody wrap send confirm zone basePath currentUrl urlInfos erd model =
     div []
         [ case erd.project.storage of
             ProjectStorage.Local ->
@@ -264,12 +264,12 @@ viewBody wrap send confirm zone currentUrl urlInfos erd model =
         , viewBodyKindContentInput wrap (model.id ++ "-input") model.kind model.content
         , viewBodyLayoutInput wrap (model.id ++ "-input-layout") model.layout (erd.layouts |> Dict.keys)
         , if erd.project.storage == ProjectStorage.Remote && model.kind == EmbedKind.EmbedProjectId then
-            viewBodyPrivateLinkInput wrap confirm zone (model.id ++ "-input-token") currentUrl urlInfos erd model
+            viewBodyPrivateLinkInput wrap confirm zone basePath (model.id ++ "-input-token") currentUrl urlInfos erd model
 
           else
             div [] []
         , viewBodyModeInput wrap (model.id ++ "-input-mode") model.mode
-        , viewBodyIframe currentUrl model
+        , viewBodyIframe basePath currentUrl model
         ]
 
 
@@ -342,8 +342,8 @@ embedKindPlaceholder kind =
             JsonSource.example
 
 
-viewBodyPrivateLinkInput : (Msg -> msg) -> (String -> Html msg -> msg -> msg) -> Time.Zone -> HtmlId -> Url -> UrlInfos -> Erd -> Model -> Html msg
-viewBodyPrivateLinkInput wrap confirm zone inputId currentUrl urlInfos erd model =
+viewBodyPrivateLinkInput : (Msg -> msg) -> (String -> Html msg -> msg -> msg) -> Time.Zone -> UrlPath -> HtmlId -> Url -> UrlInfos -> Erd -> Model -> Html msg
+viewBodyPrivateLinkInput wrap confirm zone basePath inputId currentUrl urlInfos erd model =
     let
         project : ProjectRef
         project =
@@ -390,7 +390,7 @@ viewBodyPrivateLinkInput wrap confirm zone inputId currentUrl urlInfos erd model
                             ]
 
                     else
-                        div [ class "mt-1" ] [ ProPlan.privateLinkWarning project ]
+                        div [ class "mt-1" ] [ ProPlan.privateLinkWarning basePath project ]
                 )
                 (div [] [])
         , buildShareUrl currentUrl erd.project model.kind model.content model.layout (model.tokenForm |> Maybe.andThen .token)
@@ -519,9 +519,9 @@ viewBodyModeInput wrap inputId inputValue =
         ]
 
 
-viewBodyIframe : Url -> Model -> Html msg
-viewBodyIframe currentUrl model =
-    buildIframeUrl currentUrl model.kind model.content model.layout model.mode (model.tokenForm |> Maybe.andThen .token)
+viewBodyIframe : UrlPath -> Url -> Model -> Html msg
+viewBodyIframe basePath currentUrl model =
+    buildIframeUrl basePath currentUrl model.kind model.content model.layout model.mode (model.tokenForm |> Maybe.andThen .token)
         |> Maybe.mapOrElse
             (\url ->
                 div [ class "mt-3" ]
@@ -556,10 +556,10 @@ buildShareUrl currentUrl project kind content layout token =
         Nothing
 
 
-buildIframeUrl : Url -> EmbedKind -> String -> LayoutName -> EmbedModeId -> Maybe ProjectToken -> Maybe String
-buildIframeUrl currentUrl kind content layout mode token =
+buildIframeUrl : UrlPath -> Url -> EmbedKind -> String -> LayoutName -> EmbedModeId -> Maybe ProjectToken -> Maybe String
+buildIframeUrl basePath currentUrl kind content layout mode token =
     if content /= "" then
-        Just (Url.domain currentUrl ++ Backend.embedUrl kind content layout mode token)
+        Just (Url.domain currentUrl ++ Backend.embedUrl basePath kind content layout mode token)
 
     else
         Nothing

@@ -5,6 +5,7 @@ import Dict exposing (Dict)
 import Gen.Route as Route
 import Libs.Maybe as Maybe
 import Libs.Task as T
+import Libs.Url exposing (UrlPath)
 import Models.OrganizationId exposing (OrganizationId)
 import PagesComponents.New.Models exposing (Model, Msg(..), Tab(..))
 import PagesComponents.New.Views as Views
@@ -18,8 +19,8 @@ import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
 
 
-init : Maybe OrganizationId -> Dict String String -> ( Model, Cmd Msg )
-init urlOrganization query =
+init : UrlPath -> Maybe OrganizationId -> Dict String String -> ( Model, Cmd Msg )
+init basePath urlOrganization query =
     ( { selectedMenu = "New project"
       , mobileMenuOpen = False
       , openedCollapse = ""
@@ -44,7 +45,7 @@ init urlOrganization query =
             , html = Just "h-full bg-gray-100"
             , body = Just "h-full"
             }
-         , Backend.getSamples GotSamples
+         , Backend.getSamples basePath GotSamples
          ]
             ++ ((query |> Dict.get "database" |> Maybe.map (\value -> [ T.send (InitTab TabDatabase), T.sendAfter 1 (DatabaseSourceMsg (DatabaseSource.GetSchema value)) ]))
                     |> Maybe.orElse (query |> Dict.get "sql" |> Maybe.map (\value -> [ T.send (InitTab TabSql), T.sendAfter 1 (SqlSourceMsg (SqlSource.GetRemoteFile value)) ]))

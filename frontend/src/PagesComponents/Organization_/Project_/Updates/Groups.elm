@@ -7,6 +7,7 @@ import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Tailwind as Tw exposing (Color)
 import Libs.Task as T
+import Libs.Url exposing (UrlPath)
 import Models.Project.Group as Group exposing (Group)
 import Models.Project.TableId exposing (TableId)
 import Models.ProjectRef exposing (ProjectRef)
@@ -32,11 +33,11 @@ type alias Model x =
     }
 
 
-handleGroups : Time.Posix -> UrlInfos -> GroupMsg -> Model x -> ( Model x, Cmd Msg )
-handleGroups now urlInfos msg model =
+handleGroups : Time.Posix -> UrlPath -> UrlInfos -> GroupMsg -> Model x -> ( Model x, Cmd Msg )
+handleGroups now basePath urlInfos msg model =
     case msg of
         GCreate tables ->
-            model |> createGroup now urlInfos tables
+            model |> createGroup now basePath urlInfos tables
 
         GEdit index name ->
             ( model |> setEditGroup (Just { index = index, content = name }), index |> Group.toInputId |> Dom.focus |> Task.attempt (\_ -> Noop "focus-group-input") )
@@ -48,7 +49,7 @@ handleGroups now urlInfos msg model =
             model.editGroup |> Maybe.mapOrElse (\edit -> model |> saveGroup now edit) ( model, "No group to save" |> Toasts.create "warning" |> Toast |> T.send )
 
         GSetColor index color ->
-            model |> setGroupColor now urlInfos index color
+            model |> setGroupColor now basePath urlInfos index color
 
         GAddTables index tables ->
             model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapGroups (List.mapAt index (mapTables (List.append tables))))) |> setDirty
@@ -60,8 +61,8 @@ handleGroups now urlInfos msg model =
             model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapGroups (List.removeAt index))) |> setDirty
 
 
-createGroup : Time.Posix -> UrlInfos -> List TableId -> Model x -> ( Model x, Cmd Msg )
-createGroup now urlInfos tables model =
+createGroup : Time.Posix -> UrlPath -> UrlInfos -> List TableId -> Model x -> ( Model x, Cmd Msg )
+createGroup now basePath urlInfos tables model =
     if tables |> List.isEmpty then
         ( model, Cmd.none )
 
@@ -69,7 +70,7 @@ createGroup now urlInfos tables model =
         ( model |> mapErdM (Erd.mapCurrentLayoutWithTime now (\l -> l |> mapGroups (List.add (Group.init tables (groupColor l tables))))), Track.groupCreated model.erd ) |> setDirtyCmd
 
     else
-        ( model, model.erd |> Maybe.mapOrElse (\erd -> Cmd.batch [ erd |> Erd.getProjectRef urlInfos |> ProPlan.groupsModalBody |> CustomModalOpen |> T.send, Track.planLimit .groups (Just erd) ]) Cmd.none )
+        ( model, model.erd |> Maybe.mapOrElse (\erd -> Cmd.batch [ erd |> Erd.getProjectRef urlInfos |> ProPlan.groupsModalBody basePath |> CustomModalOpen |> T.send, Track.planLimit .groups (Just erd) ]) Cmd.none )
 
 
 groupColor : ErdLayout -> List TableId -> Color
@@ -85,8 +86,8 @@ groupColor layout tableIds =
         |> Maybe.mapOrElse Tuple.first Tw.indigo
 
 
-setGroupColor : Time.Posix -> UrlInfos -> Int -> Color -> Model x -> ( Model x, Cmd Msg )
-setGroupColor now urlInfos index color model =
+setGroupColor : Time.Posix -> UrlPath -> UrlInfos -> Int -> Color -> Model x -> ( Model x, Cmd Msg )
+setGroupColor now basePath urlInfos index color model =
     let
         project : ProjectRef
         project =
@@ -96,7 +97,7 @@ setGroupColor now urlInfos index color model =
         model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapGroups (List.mapAt index (setColor color)))) |> setDirty
 
     else
-        ( model, Cmd.batch [ ProPlan.colorsModalBody project ProPlanColors ProPlan.colorsInit |> CustomModalOpen |> T.send, Track.planLimit .tableColor model.erd ] )
+        ( model, Cmd.batch [ ProPlan.colorsModalBody basePath project ProPlanColors ProPlan.colorsInit |> CustomModalOpen |> T.send, Track.planLimit .tableColor model.erd ] )
 
 
 saveGroup : Time.Posix -> GroupEdit -> Model x -> ( Model x, Cmd Msg )
