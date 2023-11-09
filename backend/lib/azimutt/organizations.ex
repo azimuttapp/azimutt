@@ -330,35 +330,37 @@ defmodule Azimutt.Organizations do
   end
 
   def get_organization_plan(%Organization{} = organization) do
+    plans = Azimutt.config(:instance_plans) || ["free"]
+
     cond do
-      organization.clever_cloud_resource -> clever_cloud_plan(organization.clever_cloud_resource)
-      organization.heroku_resource -> heroku_plan(organization.heroku_resource)
-      organization.stripe_subscription_id && StripeSrv.stripe_configured?() -> stripe_plan(organization.stripe_subscription_id)
-      true -> default_plan()
+      organization.clever_cloud_resource -> clever_cloud_plan(plans, organization.clever_cloud_resource)
+      organization.heroku_resource -> heroku_plan(plans, organization.heroku_resource)
+      organization.stripe_subscription_id && StripeSrv.stripe_configured?() -> stripe_plan(plans, organization.stripe_subscription_id)
+      true -> default_plan(plans)
     end
-    |> Result.map(fn plan -> plan_overrides(organization, plan) end)
+    |> Result.map(fn plan -> plan_overrides(plans, organization, plan) end)
   end
 
-  defp clever_cloud_plan(%CleverCloud.Resource{} = resource) do
-    if resource.plan |> String.starts_with?("pro-") do
+  defp clever_cloud_plan(plans, %CleverCloud.Resource{} = resource) do
+    if resource.plan |> String.starts_with?("pro-") && plans |> Enum.member?("pro") do
       {:ok, OrganizationPlan.pro()}
     else
       {:ok, OrganizationPlan.free()}
     end
   end
 
-  defp heroku_plan(%Heroku.Resource{} = resource) do
-    if resource.plan |> String.starts_with?("pro-") || resource.plan == "test" do
+  defp heroku_plan(plans, %Heroku.Resource{} = resource) do
+    if (resource.plan |> String.starts_with?("pro-") || resource.plan == "test") && plans |> Enum.member?("pro") do
       {:ok, OrganizationPlan.pro()}
     else
       {:ok, OrganizationPlan.free()}
     end
   end
 
-  defp stripe_plan(subscription_id) do
+  defp stripe_plan(plans, subscription_id) do
     StripeSrv.get_subscription(subscription_id)
     |> Result.map(fn s ->
-      if s.status == "active" || s.status == "past_due" || s.status == "unpaid" do
+      if (s.status == "active" || s.status == "past_due" || s.status == "unpaid") && plans |> Enum.member?("pro") do
         OrganizationPlan.pro()
       else
         OrganizationPlan.free()
@@ -366,15 +368,18 @@ defmodule Azimutt.Organizations do
     end)
   end
 
-  def default_plan do
-    case Azimutt.config(:organization_default_plan) do
-      "pro" -> {:ok, OrganizationPlan.pro()}
-      _ -> {:ok, OrganizationPlan.free()}
+  def default_plan(plans) do
+    plan = Azimutt.config(:organization_default_plan)
+
+    if plan == "pro" && plans |> Enum.member?("pro") do
+      {:ok, OrganizationPlan.pro()}
+    else
+      {:ok, OrganizationPlan.free()}
     end
   end
 
-  defp plan_overrides(%Organization{} = organization, %OrganizationPlan{} = plan) do
-    if organization.data != nil do
+  defp plan_overrides(plans, %Organization{} = organization, %OrganizationPlan{} = plan) do
+    if organization.data != nil && plans |> Enum.member?("pro") do
       plan
       |> override_layouts(organization.data)
       |> override_memos(organization.data)

@@ -32,7 +32,7 @@ defmodule Azimutt.Application do
     res = Supervisor.start_link(children, opts)
 
     check_global_organization()
-    CockpitSrv.boot_check()
+    CockpitSrv.on_boot()
 
     res
   end

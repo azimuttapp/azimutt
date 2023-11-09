@@ -23,6 +23,7 @@ global_organization = System.get_env("GLOBAL_ORGANIZATION")
 
 config :azimutt,
   host: host,
+  licence: System.get_env("LICENCE_KEY"),
   gateway_url: System.get_env("GATEWAY_URL") || "/api/v1/analyzer",
   skip_public_site: !(System.get_env("PUBLIC_SITE") == "true"),
   skip_onboarding_funnel: System.get_env("SKIP_ONBOARDING_FUNNEL") == "true",

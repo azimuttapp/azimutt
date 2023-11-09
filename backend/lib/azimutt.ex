@@ -23,6 +23,10 @@ defmodule Azimutt do
     Application.get_env(:azimutt, key, default)
   end
 
+  def set_config(key, value) when is_atom(key) do
+    Application.put_env(:azimutt, key, value)
+  end
+
   def plans do
     # Next ones: Explore ($3), Expand ($13), Extend ($25)
     [

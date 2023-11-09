@@ -1,0 +1,5 @@
+<%= if Azimutt.config(:instance_message) do %>
+    <div class={"relative flex items-center justify-center gap-x-6 bg-gray-600 bg-#{Azimutt.config(:instance_message_color)}-600 px-6 py-2.5 sm:px-3.5"}>
+        <p class="text-sm leading-6 text-white"><%= raw(Azimutt.config(:instance_message)) %></p>
+    </div>
+<% end %>

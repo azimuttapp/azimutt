@@ -12,27 +12,47 @@ defmodule Azimutt.Services.CockpitSrv do
   alias Azimutt.Utils.Result
   alias Azimutt.Utils.Stringx
 
-  def boot_check do
-    # TODO: add code version
-    post("/api/check", %{
-      instance: Azimutt.config(:host),
-      environment: Azimutt.config(:environment),
-      db: db_stats(),
-      config: instance_conf()
-    })
-
+  def on_boot do
+    check(true)
     Runner.start_link()
   end
 
-  def server_up do
-    post("/api/events", %{
+  def check(startup) do
+    # TODO: add code version
+    post("/api/licences/check", %{
       instance: Azimutt.config(:host),
       environment: Azimutt.config(:environment),
-      name: "server_up",
-      details: %{},
-      entities: [],
-      createdAt: DateTime.utc_now()
+      licence: Azimutt.config(:licence),
+      startup: startup,
+      db: db_stats(),
+      config: instance_conf()
     })
+    |> Result.fold(
+      fn _ ->
+        set_error_message(
+          "Unable to reach licence server, please make sure to allow access or contact us: <a href=\"mailto:#{Azimutt.config(:azimutt_email)}\" class=\"font-bold underline\">#{Azimutt.config(:azimutt_email)}</a>."
+        )
+      end,
+      fn res ->
+        Azimutt.set_config(:instance_plans, res["plans"])
+
+        cond do
+          res["error"] != nil ->
+            set_error_message(res["error"])
+
+          res["warning"] != nil ->
+            set_warning_message(res["warning"])
+
+          res["status"] != 200 ->
+            set_warning_message(
+              "Licence server returned <b>status #{res["status"]}</b>, please contact us at <a href=\"mailto:#{Azimutt.config(:azimutt_email)}\" class=\"font-bold underline\">#{Azimutt.config(:azimutt_email)}</a>."
+            )
+
+          true ->
+            clear_message()
+        end
+      end
+    )
   end
 
   def send_event(%Event{} = event) do
@@ -66,7 +86,7 @@ defmodule Azimutt.Services.CockpitSrv do
 
     @impl true
     def handle_info(:work, state) do
-      CockpitSrv.server_up()
+      CockpitSrv.check(false)
       {:noreply, state}
     end
   end
@@ -195,5 +215,20 @@ defmodule Azimutt.Services.CockpitSrv do
       created_at: project.created_at,
       updated_at: project.updated_at
     }
+  end
+
+  defp set_error_message(message) do
+    Azimutt.set_config(:instance_message_color, "red")
+    Azimutt.set_config(:instance_message, message)
+  end
+
+  defp set_warning_message(message) do
+    Azimutt.set_config(:instance_message_color, "yellow")
+    Azimutt.set_config(:instance_message, message)
+  end
+
+  defp clear_message do
+    Azimutt.set_config(:instance_message_color, nil)
+    Azimutt.set_config(:instance_message, nil)
   end
 end

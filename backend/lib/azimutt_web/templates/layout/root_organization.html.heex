@@ -5,6 +5,7 @@
     <div class="fixed top-0 right-0 w-1/2 h-full bg-gray-50" aria-hidden="true"></div>
     <body class="h-full font-sans antialiased bg-gray-50">
         <%= render "_hello_comment.html" %>
+        <%= render "_instance_message.html" %>
         <%= render "_email_confirm_banner.html", conn: @conn, current_user: @current_user %>
         <div class="relative flex flex-col min-h-full">
             <%= render "_user_navbar.html", conn: @conn, current_user: @current_user %>

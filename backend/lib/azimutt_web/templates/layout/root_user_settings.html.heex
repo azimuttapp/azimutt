@@ -3,6 +3,7 @@
     <%= render "_head.html", conn: @conn %>
     <body class="h-full font-sans antialiased bg-gray-100">
         <%= render "_hello_comment.html" %>
+        <%= render "_instance_message.html" %>
         <%= render "_email_confirm_banner.html", conn: @conn, current_user: @current_user %>
         <div class="relative flex flex-col min-h-full">
             <%= render "_user_navbar.html", conn: @conn, current_user: @current_user %>

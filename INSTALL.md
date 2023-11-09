@@ -128,6 +128,7 @@ These are the basic variables you will **need** to set up Azimutt:
 - `PHX_HOST` (required): host of the deployed website (ex: `localhost` or `azimutt.app`), it's used to build absolute urls
 - `PORT` (required): the port the server will listen to (ex: `4000`)
 - `SECRET_KEY_BASE` (required): the secret used for server encryption (cookies and others), should be at least 64 bytes and you probably want a random value for it
+- `LICENCE_KEY` (optional): the licence key to unlock the pro features, contact us if you need one (contact@azimutt.app)
 - `DATABASE_URL` (required): the whole url to connect to your PostgreSQL database (ex: `postgresql://<user>:<pass>@<host>:<port>/<database>`)
     - `DATABASE_IPV6` (optional): if `true`, the database driver will use IPV6
     - `DATABASE_POOL_SIZE` (optional, default: `10`): the database connection pool size

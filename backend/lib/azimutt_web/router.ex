@@ -280,7 +280,7 @@ defmodule AzimuttWeb.Router do
         description: "API Documentation for Azimutt Backend",
         contact: %{
           name: "Azimutt",
-          email: "contact@azimutt.app"
+          email: Azimutt.config(:azimutt_email)
         }
       },
       consumes: ["application/json"],

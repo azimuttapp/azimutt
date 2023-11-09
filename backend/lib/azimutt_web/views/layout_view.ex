@@ -47,8 +47,8 @@ defmodule AzimuttWeb.LayoutView do
   def twitter_site(%{assigns: %{seo: %{twitter_site: twitter_site}}}), do: twitter_site
 
   def twitter_site(_conn) do
-    if Azimutt.config(:twitter_url) do
-      "@" <> (Azimutt.config(:twitter_url) |> String.split("/") |> List.last())
+    if Azimutt.config(:azimutt_twitter) do
+      "@" <> (Azimutt.config(:azimutt_twitter) |> String.split("/") |> List.last())
     else
       ""
     end

@@ -18,7 +18,7 @@ defmodule Azimutt.Utils.Markdown do
   end
 
   def preprocess(content, path) do
-    github = "https://github.com/azimuttapp/azimutt"
+    github = Azimutt.config(:azimutt_github)
 
     content
     |> String.replace("{{base_link}}", base_link(path))
@@ -26,8 +26,8 @@ defmodule Azimutt.Utils.Markdown do
     |> String.replace("{{roadmap_link}}", "#{github}/projects/1")
     |> String.replace("{{issues_link}}", "#{github}/issues?q=is%3Aissue+is%3Aopen+label%3A%22feature+request%22")
     |> String.replace("{{feedback_link}}", "#{github}/discussions")
-    |> String.replace("{{azimutt_twitter}}", "https://twitter.com/azimuttapp")
-    |> String.replace("{{azimutt_email}}", "contact@azimutt.app")
+    |> String.replace("{{azimutt_twitter}}", Azimutt.config(:azimutt_twitter))
+    |> String.replace("{{azimutt_email}}", Azimutt.config(:azimutt_email))
   end
 
   def base_link(path), do: path |> String.split("/") |> Enum.drop(2) |> Enum.take(2) |> Enum.map_join(fn p -> "/#{p}" end)
