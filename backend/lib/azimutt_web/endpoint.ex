@@ -28,6 +28,7 @@ defmodule AzimuttWeb.Endpoint do
     gzip: false,
     only:
       ~w(assets blog gallery elm fonts images android-chrome-192x192.png android-chrome-512x512.png apple-touch-icon.png browserconfig.xml favicon.ico favicon-16x16.png favicon-32x32.png mstile-150x150.png robots.txt safari-pinned-tab.svg screenshot.png screenshot-complex.png service-worker.js site.webmanifest)
+      |> Enum.map(fn p -> if(path == "", do: p, else: "#{path}/#{p}") end)
 
   plug Plug.Static, at: "#{path}/uploads", from: Path.expand('./uploads'), gzip: false
 
