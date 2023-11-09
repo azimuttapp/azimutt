@@ -1,7 +1,7 @@
 module Services.SourceLogs exposing (SchemaLike, TableLike, viewContainer, viewError, viewFile, viewParsedSchema, viewResult)
 
 import Conf
-import Html exposing (Html, div, pre, text)
+import Html exposing (Html, br, div, pre, text)
 import Html.Attributes exposing (class, style)
 import Html.Events exposing (onClick)
 import Libs.List as List
@@ -81,7 +81,7 @@ viewParsedSchema toggle show result =
                 ]
 
         Err err ->
-            div [ class "text-red-500" ] [ text err ]
+            div [ class "text-red-500" ] (withLineBreaks err)
 
 
 viewResult : Result String a -> Html msg
@@ -96,4 +96,9 @@ viewError result =
             div [] []
 
         Err err ->
-            div [ class "text-red-500" ] [ text err ]
+            div [ class "text-red-500" ] (withLineBreaks err)
+
+
+withLineBreaks : String -> List (Html msg)
+withLineBreaks content =
+    content |> String.split "\n" |> List.map text |> List.intersperse (br [] [])

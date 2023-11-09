@@ -33,6 +33,7 @@ import {Organization, OrganizationId, OrganizationSlug, Plan} from "../types/org
 import {DateTime} from "../types/basics";
 import * as Http from "../utils/http";
 import {z} from "zod";
+import {ZodType} from "zod/lib/types";
 import * as Zod from "../utils/zod";
 import * as Json from "../utils/json";
 import * as jiff from "jiff";
@@ -147,33 +148,33 @@ export class Backend {
 
     getDatabaseSchema = async (database: DatabaseUrl): Promise<AzimuttSchema> => {
         this.logger.debug(`backend.getDatabaseSchema(${database})`)
-        const gatewayUrl = await this.gatewayUrl()
-        return Http.postJson(`${gatewayUrl}/schema`, {url: database}, AzimuttSchema, 'AzimuttSchema')
+        return this.gatewayPost(`/schema`, {url: database}, AzimuttSchema, 'AzimuttSchema')
     }
 
     runDatabaseQuery = async (database: DatabaseUrl, query: string): Promise<DatabaseQueryResults> => {
         this.logger.debug(`backend.runQuery(${database}, ${query})`)
-        const gatewayUrl = await this.gatewayUrl()
-        return Http.postJson(`${gatewayUrl}/query`, {url: database, query}, DatabaseQueryResults, 'DatabaseQueryResults')
+        return this.gatewayPost(`/query`, {url: database, query}, DatabaseQueryResults, 'DatabaseQueryResults')
     }
 
     getTableStats = async (database: DatabaseUrl, id: TableId): Promise<TableStats> => {
         this.logger.debug(`backend.getTableStats(${database}, ${id})`)
-        const gatewayUrl = await this.gatewayUrl()
         const {schema, table} = parseTableId(id)
-        return Http.postJson(`${gatewayUrl}/table-stats`, {url: database, schema, table}, TableStats, 'TableStats')
+        return this.gatewayPost(`/table-stats`, {url: database, schema, table}, TableStats, 'TableStats')
     }
 
     getColumnStats = async (database: DatabaseUrl, column: ColumnRef): Promise<ColumnStats> => {
         this.logger.debug(`backend.getColumnStats(${database}, ${JSON.stringify(column)})`)
-        const gatewayUrl = await this.gatewayUrl()
         const {schema, table} = parseTableId(column.table)
-        return Http.postJson(`${gatewayUrl}/column-stats`, {url: database, schema, table, column: column.column}, ColumnStats, 'ColumnStats')
+        return this.gatewayPost(`/column-stats`, {url: database, schema, table, column: column.column}, ColumnStats, 'ColumnStats')
     }
 
-    private gatewayUrl = async (): Promise<string> => {
-        const cliGateway = 'http://localhost:4177'
-        return await fetch(`${cliGateway}/ping`, {cache: 'no-store'}).then(_ => `${cliGateway}/gateway`).catch(_ => `${window.gateway_url}/gateway`)
+    private gatewayPost = async <Body, Response>(path: string, body: Body, zod: ZodType<Response>, label: string): Promise<Response> => {
+        const gateway_local = 'http://localhost:4177'
+        return Http.postJson(`${gateway_local}/gateway${path}`, body, zod, label).catch(localErr => {
+            return Http.postJson(`${window.gateway_url}/gateway${path}`, body, zod, label).catch(remoteErr => {
+                return Promise.reject(`${gateway_local}: ${localErr}\n${window.gateway_url}: ${remoteErr}`)
+            })
+        })
     }
 }
 
