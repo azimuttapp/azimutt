@@ -48,7 +48,7 @@ defmodule AzimuttWeb.Api.ProjectView do
   defp put_content(json, %Project{} = project, %CtxParams{} = ctx) do
     if ctx.expand |> Enum.member?("content") do
       Projects.get_project_content(project)
-      |> Result.fold(fn _ -> json end, fn content -> json |> Map.put(:content, content) end)
+      |> Result.fold(fn _err -> json end, fn content -> json |> Map.put(:content, content) end)
     else
       json
     end

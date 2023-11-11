@@ -24,7 +24,6 @@ defmodule AzimuttWeb.OrganizationInvitationControllerTest do
     @tag :skip
     test "redirects to show when data is valid", %{conn: conn, organization: organization} do
       invitation_attrs = @create_attrs |> Map.put(:organization_id, organization.id)
-
       conn = post(conn, Routes.organization_member_path(conn, :create_invitation, organization.id), organization_invitation: invitation_attrs)
 
       assert %{id: id} = redirected_params(conn)

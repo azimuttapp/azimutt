@@ -91,7 +91,6 @@ defmodule Azimutt.OrganizationsTest do
       valid_attrs = %{sent_to: "hey@mail.com"}
 
       assert {:ok, %OrganizationInvitation{} = organization_invitation} = Organizations.create_organization_invitation(valid_attrs, "url", organization.id, user, now)
-
       assert organization_invitation.sent_to == "some sent_to"
     end
 

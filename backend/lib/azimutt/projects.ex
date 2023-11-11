@@ -93,6 +93,22 @@ defmodule Azimutt.Projects do
     end
   end
 
+  def update_project_file(%Project{} = project, content, %User{} = current_user, now) do
+    can_update =
+      project_query()
+      |> where([p, _, om], p.id == ^project.id and p.storage_kind == :remote and (om.user_id == ^current_user.id or p.visibility != :write))
+      |> Repo.exists?()
+
+    if can_update do
+      project
+      |> Project.update_project_file_changeset(content, current_user, now)
+      |> Repo.update()
+      |> Result.tap(fn p -> Tracking.project_updated(current_user, p) end)
+    else
+      {:error, :forbidden}
+    end
+  end
+
   def delete_project(%Project{} = project, %User{} = current_user) do
     can_delete =
       project_query()
@@ -124,8 +140,7 @@ defmodule Azimutt.Projects do
       if Application.get_env(:waffle, :storage) == Waffle.Storage.Local do
         File.read("./#{file_url}")
       else
-        # FIXME: improve http error handling
-        {:ok, HTTPoison.get!(file_url).body}
+        HTTPoison.get(file_url) |> Result.map(fn resp -> resp.body end)
       end
     else
       {:error, :not_remote}

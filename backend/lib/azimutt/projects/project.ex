@@ -7,6 +7,7 @@ defmodule Azimutt.Projects.Project do
   alias Azimutt.Accounts.User
   alias Azimutt.Organizations.Organization
   alias Azimutt.Projects.Project
+  alias Azimutt.Projects.ProjectFile
   alias Azimutt.Utils.Slugme
 
   schema "projects" do
@@ -16,7 +17,7 @@ defmodule Azimutt.Projects.Project do
     field :description, :string
     field :encoding_version, :integer
     field :storage_kind, Ecto.Enum, values: [:local, :remote]
-    field :file, Azimutt.Projects.ProjectFile.Type
+    field :file, ProjectFile.Type
     belongs_to :local_owner, User, source: :local_owner
     field :visibility, Ecto.Enum, values: [:none, :read, :write]
     field :nb_sources, :integer
@@ -159,5 +160,18 @@ defmodule Azimutt.Projects.Project do
     |> put_change(:updated_by_id, current_user.id)
     |> put_change(:updated_at, now)
     |> validate_required(required)
+  end
+
+  def update_project_file_changeset(%Project{} = project, content, %User{} = current_user, now) do
+    upload = %{
+      content_type: "application/json",
+      filename: project.file.file_name,
+      binary: content
+    }
+
+    project
+    |> cast_attachments(%{file: upload}, [:file])
+    |> put_change(:updated_by_id, current_user.id)
+    |> put_change(:updated_at, now)
   end
 end
