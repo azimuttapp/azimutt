@@ -5,8 +5,7 @@ defmodule Azimutt.Blog.ArticleTest do
 
   describe "article" do
     test "path_to_id" do
-      assert "the-story-behind-azimutt" =
-               Article.path_to_id("priv/static/blog/2021-10-01-the-story-behind-azimutt/the-story-behind-azimutt.md")
+      assert "the-story-behind-azimutt" = Article.path_to_id("priv/static/blog/2021-10-01-the-story-behind-azimutt/the-story-behind-azimutt.md")
     end
 
     test "path_to_date" do

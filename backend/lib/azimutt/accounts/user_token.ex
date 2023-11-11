@@ -1,11 +1,8 @@
 defmodule Azimutt.Accounts.UserToken do
-  @moduledoc """
-    base user token module generate by `mix phx.gen.auth`
-  """
+  @moduledoc "base user token module generate by `mix phx.gen.auth`"
   use Ecto.Schema
   use Azimutt.Schema
   import Ecto.Query
-
   alias Azimutt.Accounts.User
   alias Azimutt.Accounts.UserToken
 

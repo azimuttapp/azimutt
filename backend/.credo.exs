@@ -97,7 +97,7 @@
           {Credo.Check.Readability.FunctionNames, []},
           {Credo.Check.Readability.LargeNumbers, []},
           # keep in sync with line_length in .formatter.exs
-          {Credo.Check.Readability.MaxLineLength, [priority: :low, max_length: 140]},
+          {Credo.Check.Readability.MaxLineLength, [priority: :low, max_length: 180]},
           {Credo.Check.Readability.ModuleAttributeNames, []},
           {Credo.Check.Readability.ModuleDoc, []},
           {Credo.Check.Readability.ModuleNames, []},

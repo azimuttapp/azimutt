@@ -299,6 +299,34 @@ defmodule Azimutt.AccountsTest do
     end
   end
 
+  describe "create_auth_token/3" do
+    setup do
+      %{user: user_fixture()}
+    end
+
+    test "create, access and delete auth token", %{user: user} do
+      now = DateTime.utc_now()
+      assert Accounts.list_auth_tokens(user, now) == []
+
+      {:ok, token} = Accounts.create_auth_token(user, now, %{"name" => "test"})
+      user_token = Accounts.list_auth_tokens(user, now) |> hd()
+      assert user_token.id == token.id
+      assert user_token.name == "test"
+      assert user_token.nb_access == 0
+      assert user_token.last_access == nil
+
+      {:ok, fetched_user} = Accounts.get_user_by_auth_token(token.id, now)
+      assert fetched_user.id == user.id
+      accessed_token = Accounts.list_auth_tokens(user, now) |> hd()
+      assert accessed_token.nb_access == 1
+      assert accessed_token.last_access == now
+
+      {:ok, _deleted} = Accounts.delete_auth_token(token.id, user, now)
+      assert Accounts.list_auth_tokens(user, now) == []
+      {:error, :not_found} = Accounts.get_user_by_auth_token(token.id, now)
+    end
+  end
+
   describe "generate_user_session_token/1" do
     setup do
       %{user: user_fixture()}

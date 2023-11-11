@@ -7,7 +7,8 @@ defmodule AzimuttWeb.UserSettingsController do
 
   def show(conn, _params) do
     current_user = conn.assigns.current_user
-    conn |> show_html(current_user)
+    now = DateTime.utc_now()
+    conn |> show_html(current_user, now)
   end
 
   def update_account(conn, %{"user" => user_params}) do
@@ -16,7 +17,7 @@ defmodule AzimuttWeb.UserSettingsController do
 
     Accounts.update_user_infos(current_user, user_params, now)
     |> Result.fold(
-      fn changeset_error -> conn |> show_html(current_user, infos_changeset: changeset_error) end,
+      fn changeset_error -> conn |> show_html(current_user, now, infos_changeset: changeset_error) end,
       fn _ -> conn |> put_flash(:info, "Infos updated!") |> redirect(to: Routes.user_settings_path(conn, :show)) end
     )
   end
@@ -24,10 +25,11 @@ defmodule AzimuttWeb.UserSettingsController do
   # FIXME: how to change email for users from social login? (no password)
   def update_email(conn, %{"user" => user_params}) do
     current_user = conn.assigns.current_user
+    now = DateTime.utc_now()
 
     Accounts.apply_user_email(current_user, user_params["current_password"], user_params)
     |> Result.fold(
-      fn changeset_error -> conn |> show_html(current_user, email_changeset: changeset_error) end,
+      fn changeset_error -> conn |> show_html(current_user, now, email_changeset: changeset_error) end,
       fn user ->
         {flash_kind, flash_message} =
           Accounts.send_email_update(user, current_user.email, &Routes.user_settings_url(conn, :confirm_update_email, &1))
@@ -61,7 +63,7 @@ defmodule AzimuttWeb.UserSettingsController do
 
     Accounts.update_user_password(current_user, user_params["current_password"], user_params, now)
     |> Result.fold(
-      fn changeset_error -> conn |> show_html(current_user, password_changeset: changeset_error) end,
+      fn changeset_error -> conn |> show_html(current_user, now, password_changeset: changeset_error) end,
       fn user ->
         conn
         |> UserAuth.login_user(user, "update_password")
@@ -110,22 +112,52 @@ defmodule AzimuttWeb.UserSettingsController do
     )
   end
 
-  defp show_html(conn, user, options \\ []) do
+  def create_auth_token(conn, %{"user_auth_token" => auth_token_params}) do
+    current_user = conn.assigns.current_user
+    now = DateTime.utc_now()
+
+    Accounts.create_auth_token(current_user, now, auth_token_params)
+    |> Result.fold(
+      fn changeset_error -> conn |> show_html(current_user, now, auth_token_changeset: changeset_error) end,
+      fn _ -> conn |> put_flash(:info, "Authentication token created") |> redirect(to: Routes.user_settings_path(conn, :show)) end
+    )
+  end
+
+  def delete_auth_token(conn, %{"token_id" => token_id}) do
+    current_user = conn.assigns.current_user
+    now = DateTime.utc_now()
+
+    Accounts.delete_auth_token(token_id, current_user, now)
+    |> Result.fold(
+      fn _err -> conn |> put_flash(:error, "Can't delete authentication token :/") end,
+      fn _ -> conn |> put_flash(:info, "Authentication token delete") end
+    )
+    |> redirect(to: Routes.user_settings_path(conn, :show))
+  end
+
+  defp show_html(conn, user, now, options \\ []) do
     defaults = [
       infos_changeset: Accounts.change_user_infos(user),
       email_changeset: Accounts.change_user_email(user),
-      password_changeset: Accounts.change_user_password(user)
+      password_changeset: Accounts.change_user_password(user),
+      auth_token_changeset: Accounts.change_auth_token(user)
     ]
 
-    %{infos_changeset: infos_changeset, email_changeset: email_changeset, password_changeset: password_changeset} =
-      Keyword.merge(defaults, options) |> Enum.into(%{})
+    %{
+      infos_changeset: infos_changeset,
+      email_changeset: email_changeset,
+      password_changeset: password_changeset,
+      auth_token_changeset: auth_token_changeset
+    } = Keyword.merge(defaults, options) |> Enum.into(%{})
 
     conn
     |> render("show.html",
       user: user,
+      auth_tokens: Accounts.list_auth_tokens(user, now),
       infos_changeset: infos_changeset,
       email_changeset: email_changeset,
-      password_changeset: password_changeset
+      password_changeset: password_changeset,
+      auth_token_changeset: auth_token_changeset
     )
   end
 end

@@ -8,6 +8,7 @@ defmodule Azimutt.Projects do
   alias Azimutt.Organizations.OrganizationMember
   alias Azimutt.Projects.Project
   alias Azimutt.Projects.Project.Storage
+  alias Azimutt.Projects.ProjectFile
   alias Azimutt.Projects.ProjectToken
   alias Azimutt.Repo
   alias Azimutt.Tracking
@@ -112,6 +113,22 @@ defmodule Azimutt.Projects do
       |> Result.tap(fn p -> Tracking.project_deleted(current_user, p) end)
     else
       {:error, :forbidden}
+    end
+  end
+
+  def get_project_content(%Project{} = project) do
+    if project.storage_kind == Storage.remote() do
+      # FIXME: handle spaces in name
+      file_url = ProjectFile.url({project.file, project}, signed: true)
+
+      if Application.get_env(:waffle, :storage) == Waffle.Storage.Local do
+        File.read("./#{file_url}")
+      else
+        # FIXME: improve http error handling
+        {:ok, HTTPoison.get!(file_url).body}
+      end
+    else
+      {:error, :not_remote}
     end
   end
 

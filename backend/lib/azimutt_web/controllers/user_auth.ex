@@ -125,11 +125,18 @@ defmodule AzimuttWeb.UserAuth do
   and remember me token.
   """
   def fetch_current_user(conn, _opts) do
+    auth_token = conn.params["auth-token"]
     {user_token, conn} = ensure_user_token(conn)
-    user = user_token && Accounts.get_user_by_session_token(user_token)
 
     user =
-      user |> Azimutt.Repo.preload(:profile) |> Azimutt.Repo.preload(organizations: [:clever_cloud_resource, :heroku_resource, :projects])
+      cond do
+        user_token -> Accounts.get_user_by_session_token(user_token)
+        auth_token -> Accounts.get_user_by_auth_token(auth_token, DateTime.utc_now())
+        true -> {:ok, nil}
+      end
+      |> Result.or_else(nil)
+
+    user = user |> Azimutt.Repo.preload(:profile) |> Azimutt.Repo.preload(organizations: [:clever_cloud_resource, :heroku_resource, :projects])
 
     assign(conn, :current_user, user)
   end

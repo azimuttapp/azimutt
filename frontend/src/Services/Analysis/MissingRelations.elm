@@ -16,6 +16,10 @@ import Models.Project.TableId exposing (TableId)
 import PagesComponents.Organization_.Project_.Models.SuggestedRelation exposing (SuggestedRelation, SuggestedRelationRef)
 
 
+
+-- report columns ending with `_by` as possible relations (probably to `users` or `accounts` tables)
+
+
 forTables : Dict TableId Table -> List Relation -> Dict TableId (List ColumnPath) -> Dict TableId (Dict ColumnPathStr (List SuggestedRelation))
 forTables tables relations ignoredRelations =
     let

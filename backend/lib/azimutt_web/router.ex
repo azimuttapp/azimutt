@@ -30,28 +30,12 @@ defmodule AzimuttWeb.Router do
     plug(:fetch_heroku_resource)
   end
 
-  pipeline(:website_root_layout,
-    do: plug(:put_root_layout, {AzimuttWeb.LayoutView, "root_website.html"})
-  )
-
-  pipeline(:hfull_root_layout,
-    do: plug(:put_root_layout, {AzimuttWeb.LayoutView, "root_hfull.html"})
-  )
-
-  pipeline(:organization_root_layout,
-    do: plug(:put_root_layout, {AzimuttWeb.LayoutView, "root_organization.html"})
-  )
-
-  pipeline(:admin_root_layout,
-    do: plug(:put_root_layout, {AzimuttWeb.LayoutView, "root_admin.html"})
-  )
-
+  pipeline(:website_root_layout, do: plug(:put_root_layout, {AzimuttWeb.LayoutView, "root_website.html"}))
+  pipeline(:hfull_root_layout, do: plug(:put_root_layout, {AzimuttWeb.LayoutView, "root_hfull.html"}))
+  pipeline(:organization_root_layout, do: plug(:put_root_layout, {AzimuttWeb.LayoutView, "root_organization.html"}))
+  pipeline(:admin_root_layout, do: plug(:put_root_layout, {AzimuttWeb.LayoutView, "root_admin.html"}))
   pipeline(:elm_root_layout, do: plug(:put_root_layout, {AzimuttWeb.LayoutView, "root_elm.html"}))
-
-  pipeline(:user_settings_root_layout,
-    do: plug(:put_root_layout, {AzimuttWeb.LayoutView, "root_user_settings.html"})
-  )
-
+  pipeline(:user_settings_root_layout, do: plug(:put_root_layout, {AzimuttWeb.LayoutView, "root_user_settings.html"}))
   pipeline(:empty_layout, do: plug(:put_layout, {AzimuttWeb.LayoutView, "empty.html"}))
 
   # public routes
@@ -143,6 +127,8 @@ defmodule AzimuttWeb.Router do
       put("/password", UserSettingsController, :update_password)
       post("/password", UserSettingsController, :set_password)
       delete("/providers/:provider", UserSettingsController, :remove_provider)
+      post("/auth-tokens", UserSettingsController, :create_auth_token)
+      delete("/auth-tokens/:token_id", UserSettingsController, :delete_auth_token)
     end
 
     resources "/organizations", OrganizationController, param: "organization_id", except: [:index] do
@@ -227,6 +213,7 @@ defmodule AzimuttWeb.Router do
     post("/analyzer/rows", Api.AnalyzerController, :rows)
     get("/gallery", Api.GalleryController, :index)
     get("/organizations/:organization_id/projects/:project_id", Api.ProjectController, :show)
+    resources("/organizations/:organization_id/projects/:project_id/sources", Api.SourceController, param: "source_id", only: [:index, :show, :create, :update, :delete])
     post("/events", Api.TrackingController, :create)
   end
 

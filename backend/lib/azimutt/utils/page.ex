@@ -47,8 +47,7 @@ defmodule Azimutt.Utils.Page do
         query
         |> Map.filter(fn {k, _v} -> k |> String.starts_with?("#{prefix}f-") end)
         |> Mapx.map_keys(fn k -> k |> String.replace_leading("#{prefix}f-", "") end),
-      sort:
-        (query["#{prefix}sort"] || opts[:sort] || "") |> String.split(",") |> Enum.map(&String.trim/1) |> Enum.filter(fn s -> s != "" end)
+      sort: (query["#{prefix}sort"] || opts[:sort] || "") |> String.split(",") |> Enum.map(&String.trim/1) |> Enum.filter(fn s -> s != "" end)
     }
   end
 

@@ -21,8 +21,7 @@ defmodule AzimuttWeb.Admin.ProjectController do
       conn
       |> render("show.html",
         project: project,
-        activity:
-          Dataset.chartjs_daily_data([Admin.daily_project_activity(project) |> Dataset.from_values("Daily events")], start_stats, now),
+        activity: Dataset.chartjs_daily_data([Admin.daily_project_activity(project) |> Dataset.from_values("Daily events")], start_stats, now),
         events: Admin.get_project_events(project, events_page)
       )
     end
