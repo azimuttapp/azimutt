@@ -138,7 +138,7 @@ defmodule AzimuttWeb.UserAuth do
 
     user = user |> Azimutt.Repo.preload(:profile) |> Azimutt.Repo.preload(organizations: [:clever_cloud_resource, :heroku_resource, :projects])
 
-    assign(conn, :current_user, user)
+    conn |> assign(:current_user, user)
   end
 
   defp ensure_user_token(conn) do

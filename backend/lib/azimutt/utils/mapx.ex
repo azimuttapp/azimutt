@@ -41,6 +41,22 @@ defmodule Azimutt.Utils.Mapx do
   def map_values(enumerable, f), do: enumerable |> Enum.map(fn {k, v} -> {k, f.(v)} end) |> Map.new()
 
   @doc """
+  Same as `put` but if value is `nil` it removes the key.
+  ## Examples
+      iex> %{foo: "bar", bob: "alice"} |> Mapx.put_no_nil(:bob, "claude")
+      %{foo: "bar", bob: "claude"}
+      iex> %{foo: "bar", bob: "alice"} |> Mapx.put_no_nil(:bob, nil)
+      %{foo: "bar"}
+  """
+  def put_no_nil(enumerable, key, value) do
+    if value == nil do
+      enumerable |> Map.delete(key)
+    else
+      enumerable |> Map.put(key, value)
+    end
+  end
+
+  @doc """
   Remove a key if it's present with the expected value, or set it
   ## Examples
       iex> %{foo: "bar", bob: "alice"} |> Mapx.toggle(:foo, "bar")

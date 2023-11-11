@@ -6,6 +6,8 @@ import {Uuid} from "./uuid";
 import {Organization} from "./organization";
 import * as Zod from "../utils/zod";
 
+// MUST stay in sync with backend/lib/azimutt_web/utils/project_schema.ex
+
 export type ProjectId = Uuid
 export const ProjectId = Uuid
 export type ProjectSlug = Slug

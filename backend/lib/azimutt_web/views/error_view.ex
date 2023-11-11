@@ -15,11 +15,13 @@ defmodule AzimuttWeb.ErrorView do
     Phoenix.Controller.status_message_from_template(template)
   end
 
-  def render("error.json", %{message: message, conn: conn}) do
-    %{
+  def render("error.json", %{conn: conn} = params) do
+    params
+    |> Map.delete(:conn)
+    |> Map.delete(:current_user)
+    |> Map.merge(%{
       statusCode: conn.status,
-      error: Status.reason_phrase(conn.status),
-      message: message
-    }
+      error: Status.reason_phrase(conn.status)
+    })
   end
 end

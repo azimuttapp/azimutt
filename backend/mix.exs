@@ -74,7 +74,7 @@ defmodule Azimutt.MixProject do
       {:stripity_stripe, "~> 2.15"},
       {:gen_smtp, "~> 1.2"},
       {:phoenix_swagger, "~> 0.8.3"},
-      {:ex_json_schema, "~> 0.5"},
+      {:ex_json_schema, "~> 0.7.1"},
       {:typed_struct, "~> 0.3.0"},
       {:ex_doc, "~> 0.27", only: :dev, runtime: false},
       {:waffle, "~> 1.1"},
