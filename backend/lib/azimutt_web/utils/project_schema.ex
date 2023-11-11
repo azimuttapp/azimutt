@@ -11,7 +11,7 @@ defmodule AzimuttWeb.Utils.ProjectSchema do
       "schema" => %{"type" => "string"},
       "name" => %{"type" => "string"},
       "value" => %{
-        "anyOf" => [
+        "oneOf" => [
           %{"type" => "object", "additionalProperties" => false, "required" => ["enum"], "properties" => %{"enum" => %{"type" => "array", "items" => %{"type" => "string"}}}},
           %{"type" => "object", "additionalProperties" => false, "required" => ["definition"], "properties" => %{"definition" => %{"type" => "string"}}}
         ]
@@ -125,6 +125,58 @@ defmodule AzimuttWeb.Utils.ProjectSchema do
     }
   }
 
+  @source_kind %{
+    "oneOf" =>
+      [
+        %{
+          "type" => "object",
+          "additionalProperties" => false,
+          "required" => ["kind", "url"],
+          "properties" => %{
+            "kind" => %{"const" => "DatabaseConnection"},
+            "url" => %{"type" => "string"}
+          }
+        }
+        # FIXME: removed the AmlEditor source kind because it made others pass without needed properties :/
+        # %{
+        #   "type" => "object",
+        #   "additionalProperties" => false,
+        #   "required" => ["kind"],
+        #   "properties" => %{
+        #     "kind" => %{"const" => "AmlEditor"}
+        #   }
+        # }
+      ] ++
+        (["SqlLocalFile", "PrismaLocalFile", "JsonLocalFile"]
+         |> Enum.map(fn kind ->
+           %{
+             "type" => "object",
+             "additionalProperties" => false,
+             "required" => ["kind", "name", "size", "modified"],
+             "properties" => %{
+               "kind" => %{"const" => kind},
+               "name" => %{"type" => "string"},
+               "size" => %{"type" => "number"},
+               "modified" => %{"type" => "integer"}
+             }
+           }
+         end)) ++
+        (["SqlRemoteFile", "PrismaRemoteFile", "JsonRemoteFile"]
+         |> Enum.map(fn kind ->
+           %{
+             "type" => "object",
+             "additionalProperties" => false,
+             "required" => ["kind", "url", "size"],
+             "properties" => %{
+               "kind" => %{"const" => kind},
+               "url" => %{"type" => "string"},
+               "size" => %{"type" => "number"}
+             }
+           }
+         end))
+  }
+
+  def source_kind, do: @source_kind
   def table, do: @table
   def column, do: @column
   def relation, do: @relation
