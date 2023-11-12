@@ -1,10 +1,6 @@
 defmodule Azimutt.Projects.ProjectFile do
-  @moduledoc """
-  The file containing the content of a project, when project is stored in Azimutt
-  """
+  @moduledoc "The file containing the content of a project, when project is stored in Azimutt"
   use Waffle.Definition
-
-  # Include ecto support (requires package waffle_ecto installed):
   use Waffle.Ecto.Definition
 
   @versions [:original]

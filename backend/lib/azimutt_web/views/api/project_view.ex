@@ -1,8 +1,8 @@
 defmodule AzimuttWeb.Api.ProjectView do
   use AzimuttWeb, :view
+  alias Azimutt.Projects
   alias Azimutt.Projects.Project
-  alias Azimutt.Projects.Project.Storage
-  alias Azimutt.Projects.ProjectFile
+  alias Azimutt.Utils.Result
   alias AzimuttWeb.Utils.CtxParams
 
   def render("index.json", %{projects: projects}) do
@@ -47,24 +47,10 @@ defmodule AzimuttWeb.Api.ProjectView do
 
   defp put_content(json, %Project{} = project, %CtxParams{} = ctx) do
     if ctx.expand |> Enum.member?("content") do
-      json |> Map.put(:content, get_content(project))
+      Projects.get_project_content(project)
+      |> Result.fold(fn _err -> json end, fn content -> json |> Map.put(:content, content) end)
     else
       json
-    end
-  end
-
-  defp get_content(%Project{} = project) do
-    if project.storage_kind == Storage.remote() do
-      # FIXME: handle spaces in name
-      file_url = ProjectFile.url({project.file, project}, signed: true)
-
-      if Application.get_env(:waffle, :storage) == Waffle.Storage.Local do
-        with {:ok, body} <- File.read("./#{file_url}"), do: body
-      else
-        HTTPoison.get!(file_url).body
-      end
-    else
-      "{}"
     end
   end
 end

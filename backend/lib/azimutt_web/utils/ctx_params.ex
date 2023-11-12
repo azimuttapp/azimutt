@@ -1,7 +1,5 @@
 defmodule AzimuttWeb.Utils.CtxParams do
-  @moduledoc """
-  Parse generic optional params and make them easily accessible.
-  """
+  @moduledoc "Parse generic optional params and make them easily accessible."
   use TypedStruct
   alias AzimuttWeb.Utils.CtxParams
 

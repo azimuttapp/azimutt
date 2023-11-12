@@ -189,6 +189,58 @@ defmodule Azimutt.Utils.Result do
   def flat_map_with({:error, _err} = res, _f), do: res
 
   @doc """
+  Associate the Result value with the given value in a tuple.
+  ## Examples
+      iex> {:ok, 1} |> Result.zip(2)
+      {:ok, {1, 2}}
+      iex> {:error, 1} |> Result.zip(2)
+      {:error, 1}
+  """
+  def zip(:ok, v), do: ok({nil, v})
+  def zip(:error = res, _v), do: res
+  def zip({:ok, val}, v), do: ok({val, v})
+  def zip({:error, _err} = res, _v), do: res
+
+  @doc """
+  Same as `zip` but in the reverse order for the tuple.
+  ## Examples
+      iex> {:ok, 1} |> Result.zip_left(2)
+      {:ok, {2, 1}}
+      iex> {:error, 1} |> Result.zip_left(2)
+      {:error, 1}
+  """
+  def zip_left(:ok, v), do: ok({v, nil})
+  def zip_left(:error = res, _v), do: res
+  def zip_left({:ok, val}, v), do: ok({v, val})
+  def zip_left({:error, _err} = res, _v), do: res
+
+  @doc """
+  Same as `zip` but for the error value instead of the success one.
+  ## Examples
+      iex> {:ok, 1} |> Result.zip_error(2)
+      {:ok, 1}
+      iex> {:error, 1} |> Result.zip_error(2)
+      {:error, {1, 2}}
+  """
+  def zip_error(:ok = res, _v), do: res
+  def zip_error(:error, v), do: error({nil, v})
+  def zip_error({:ok, _val} = res, _v), do: res
+  def zip_error({:error, err}, v), do: error({err, v})
+
+  @doc """
+  Same as `zip_error` but in the reverse order for the tuple.
+  ## Examples
+      iex> {:ok, 1} |> Result.zip_error_left(2)
+      {:ok, 1}
+      iex> {:error, 1} |> Result.zip_error_left(2)
+      {:error, {2, 1}}
+  """
+  def zip_error_left(:ok = res, _v), do: res
+  def zip_error_left(:error, v), do: error({v, nil})
+  def zip_error_left({:ok, _val} = res, _v), do: res
+  def zip_error_left({:error, err}, v), do: error({v, err})
+
+  @doc """
   Execute the function on :ok but does not change the result
   ## Examples
       iex> {:ok, 1} |> Result.tap(fn x -> x + 1 end)

@@ -5,8 +5,8 @@ import Libs.Maybe as Maybe
 import Models.Project.ColumnId exposing (ColumnId)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.ColumnRef exposing (ColumnRef)
-import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
+import PagesComponents.Organization_.Project_.Models.Erd.TableWithOrigin as TableWithOrigin exposing (TableWithOrigin)
 
 
 type alias ErdColumnRef =
@@ -21,11 +21,11 @@ toId ref =
     ( ref.table, ref.column |> ColumnPath.toString )
 
 
-create : Dict TableId Table -> ColumnRef -> ErdColumnRef
+create : Dict TableId TableWithOrigin -> ColumnRef -> ErdColumnRef
 create tables ref =
     { table = ref.table
     , column = ref.column
-    , nullable = tables |> Dict.get ref.table |> Maybe.andThen (Table.getColumn ref.column) |> Maybe.mapOrElse .nullable False
+    , nullable = tables |> Dict.get ref.table |> Maybe.andThen (TableWithOrigin.getColumn ref.column) |> Maybe.mapOrElse .nullable False
     }
 
 

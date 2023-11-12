@@ -67,10 +67,10 @@ COMMENT ON COLUMN public.users.age IS 'hey!';"""
                                     , { emptyColumn | name = "age", kind = "int" }
                                     ]
                                         |> buildColumns
-                                , primaryKey = Just { name = Nothing, columns = Nel.from (Nel.from "id"), origins = [] }
-                                , uniques = [ { name = "users_name_unique", columns = Nel.from (Nel.from "name"), definition = Nothing, origins = [] } ]
-                                , indexes = [ { name = "users_role_idx", columns = Nel.from (Nel.from "role"), definition = Nothing, origins = [] } ]
-                                , checks = [ { name = "users_age_chk", columns = [ Nel.from "age" ], predicate = Nothing, origins = [] } ]
+                                , primaryKey = Just { name = Nothing, columns = Nel.from (Nel.from "id") }
+                                , uniques = [ { name = "users_name_unique", columns = Nel.from (Nel.from "name"), definition = Nothing } ]
+                                , indexes = [ { name = "users_role_idx", columns = Nel.from (Nel.from "role"), definition = Nothing } ]
+                                , checks = [ { name = "users_age_chk", columns = [ Nel.from "age" ], predicate = Nothing } ]
                                 , comment = Just { emptyComment | text = "all users" }
                               }
                             ]
@@ -101,10 +101,10 @@ COMMENT ON TABLE public.users IS 'all users';"""
                                     , { emptyColumn | name = "age", kind = "int" }
                                     ]
                                         |> buildColumns
-                                , primaryKey = Just { name = Nothing, columns = Nel "kind" [ "id" ] |> Nel.map Nel.from, origins = [] }
-                                , uniques = [ { name = "users_name_unique", columns = Nel "first_name" [ "last_name" ] |> Nel.map Nel.from, definition = Nothing, origins = [] } ]
-                                , indexes = [ { name = "users_name_idx", columns = Nel "first_name" [ "last_name" ] |> Nel.map Nel.from, definition = Nothing, origins = [] } ]
-                                , checks = [ { name = "users_age_chk", columns = [ "age" ] |> List.map Nel.from, predicate = Just "age > 0", origins = [] } ]
+                                , primaryKey = Just { name = Nothing, columns = Nel "kind" [ "id" ] |> Nel.map Nel.from }
+                                , uniques = [ { name = "users_name_unique", columns = Nel "first_name" [ "last_name" ] |> Nel.map Nel.from, definition = Nothing } ]
+                                , indexes = [ { name = "users_name_idx", columns = Nel "first_name" [ "last_name" ] |> Nel.map Nel.from, definition = Nothing } ]
+                                , checks = [ { name = "users_age_chk", columns = [ "age" ] |> List.map Nel.from, predicate = Just "age > 0" } ]
                                 , comment = Just { emptyComment | text = "store 'all' users" }
                               }
                             ]
@@ -164,17 +164,17 @@ emptySource =
 
 emptyTable : Table
 emptyTable =
-    { id = ( "", "" ), schema = "", name = "", view = False, columns = Dict.empty, primaryKey = Nothing, uniques = [], indexes = [], checks = [], comment = Nothing, origins = [] }
+    { id = ( "", "" ), schema = "", name = "", view = False, columns = Dict.empty, primaryKey = Nothing, uniques = [], indexes = [], checks = [], comment = Nothing }
 
 
 emptyColumn : Column
 emptyColumn =
-    { index = 0, name = "", kind = "", nullable = False, default = Nothing, comment = Nothing, values = Nothing, columns = Nothing, origins = [] }
+    { index = 0, name = "", kind = "", nullable = False, default = Nothing, comment = Nothing, values = Nothing, columns = Nothing }
 
 
 emptyComment : Comment
 emptyComment =
-    { text = "", origins = [] }
+    { text = "" }
 
 
 buildTables : List Table -> Dict TableId Table
@@ -193,5 +193,4 @@ buildRelation ( name, ( srcSchema, srcTable, srcColumn ), ( refSchema, refTable,
     , name = name
     , src = { table = ( srcSchema, srcTable ), column = Nel.from srcColumn }
     , ref = { table = ( refSchema, refTable ), column = Nel.from refColumn }
-    , origins = []
     }

@@ -6,23 +6,24 @@ import Libs.Dict as Dict
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Nel as Nel exposing (Nel)
-import Models.Project.Check exposing (Check)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath, ColumnPathStr)
-import Models.Project.Comment exposing (Comment)
-import Models.Project.CustomType exposing (CustomType)
 import Models.Project.CustomTypeId exposing (CustomTypeId)
-import Models.Project.Index exposing (Index)
-import Models.Project.PrimaryKey exposing (PrimaryKey)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableName exposing (TableName)
-import Models.Project.Unique exposing (Unique)
+import PagesComponents.Organization_.Project_.Models.Erd.TableWithOrigin exposing (TableWithOrigin)
+import PagesComponents.Organization_.Project_.Models.ErdCheck as ErdCheck exposing (ErdCheck)
 import PagesComponents.Organization_.Project_.Models.ErdColumn as ErdColumn exposing (ErdColumn)
-import PagesComponents.Organization_.Project_.Models.ErdOrigin as ErdOrigin exposing (ErdOrigin)
+import PagesComponents.Organization_.Project_.Models.ErdComment as ErdComment exposing (ErdComment)
+import PagesComponents.Organization_.Project_.Models.ErdCustomType exposing (ErdCustomType)
+import PagesComponents.Organization_.Project_.Models.ErdIndex as ErdIndex exposing (ErdIndex)
+import PagesComponents.Organization_.Project_.Models.ErdOrigin exposing (ErdOrigin)
+import PagesComponents.Organization_.Project_.Models.ErdPrimaryKey as ErdPrimaryKey exposing (ErdPrimaryKey)
 import PagesComponents.Organization_.Project_.Models.ErdRelation exposing (ErdRelation)
+import PagesComponents.Organization_.Project_.Models.ErdUnique as ErdUnique exposing (ErdUnique)
 import PagesComponents.Organization_.Project_.Models.SuggestedRelation exposing (SuggestedRelation)
 
 
@@ -34,17 +35,17 @@ type alias ErdTable =
     , name : TableName
     , view : Bool
     , columns : Dict ColumnName ErdColumn
-    , primaryKey : Maybe PrimaryKey
-    , uniques : List Unique
-    , indexes : List Index
-    , checks : List Check
-    , comment : Maybe Comment
+    , primaryKey : Maybe ErdPrimaryKey
+    , uniques : List ErdUnique
+    , indexes : List ErdIndex
+    , checks : List ErdCheck
+    , comment : Maybe ErdComment
     , origins : List ErdOrigin
     }
 
 
-create : SchemaName -> List Source -> Dict CustomTypeId CustomType -> List ErdRelation -> Dict ColumnPathStr (List SuggestedRelation) -> Table -> ErdTable
-create defaultSchema sources types tableRelations suggestedRelations table =
+create : SchemaName -> Dict CustomTypeId ErdCustomType -> List ErdRelation -> Dict ColumnPathStr (List SuggestedRelation) -> TableWithOrigin -> ErdTable
+create defaultSchema types tableRelations suggestedRelations table =
     let
         relationsByRootColumn : Dict ColumnName (List ErdRelation)
         relationsByRootColumn =
@@ -73,13 +74,13 @@ create defaultSchema sources types tableRelations suggestedRelations table =
     , schema = table.schema
     , name = table.name
     , view = table.view
-    , columns = table.columns |> Dict.map (\name -> ErdColumn.create defaultSchema sources types (relationsByRootColumn |> Dict.getOrElse name []) suggestedRelations table (ColumnPath.fromString name))
-    , primaryKey = table.primaryKey
-    , uniques = table.uniques
-    , indexes = table.indexes
-    , checks = table.checks
-    , comment = table.comment
-    , origins = table.origins |> List.map (ErdOrigin.create sources)
+    , columns = table.columns |> Dict.map (\name -> ErdColumn.create defaultSchema types (relationsByRootColumn |> Dict.getOrElse name []) suggestedRelations table (ColumnPath.fromString name))
+    , primaryKey = table.primaryKey |> Maybe.map ErdPrimaryKey.create
+    , uniques = table.uniques |> List.map ErdUnique.create
+    , indexes = table.indexes |> List.map ErdIndex.create
+    , checks = table.checks |> List.map ErdCheck.create
+    , comment = table.comment |> Maybe.map ErdComment.create
+    , origins = table.origins
     }
 
 
@@ -90,12 +91,11 @@ unpack table =
     , name = table.name
     , view = table.view
     , columns = table.columns |> Dict.map (\_ -> ErdColumn.unpack)
-    , primaryKey = table.primaryKey
-    , uniques = table.uniques
-    , indexes = table.indexes
-    , checks = table.checks
-    , comment = table.comment
-    , origins = table.origins |> List.map ErdOrigin.unpack
+    , primaryKey = table.primaryKey |> Maybe.map ErdPrimaryKey.unpack
+    , uniques = table.uniques |> List.map ErdUnique.unpack
+    , indexes = table.indexes |> List.map ErdIndex.unpack
+    , checks = table.checks |> List.map ErdCheck.unpack
+    , comment = table.comment |> Maybe.map ErdComment.unpack
     }
 
 
@@ -125,22 +125,22 @@ getColumnRoot path table =
     table.columns |> Dict.get path.head
 
 
-inPrimaryKey : ErdTable -> ColumnPath -> Maybe PrimaryKey
+inPrimaryKey : ErdTable -> ColumnPath -> Maybe ErdPrimaryKey
 inPrimaryKey table column =
     table.primaryKey |> Maybe.filter (\{ columns } -> columns |> Nel.toList |> hasColumn column)
 
 
-inUniques : ErdTable -> ColumnPath -> List Unique
+inUniques : ErdTable -> ColumnPath -> List ErdUnique
 inUniques table column =
     table.uniques |> List.filter (\u -> u.columns |> Nel.toList |> hasColumn column)
 
 
-inIndexes : ErdTable -> ColumnPath -> List Index
+inIndexes : ErdTable -> ColumnPath -> List ErdIndex
 inIndexes table column =
     table.indexes |> List.filter (\i -> i.columns |> Nel.toList |> hasColumn column)
 
 
-inChecks : ErdTable -> ColumnPath -> List Check
+inChecks : ErdTable -> ColumnPath -> List ErdCheck
 inChecks table column =
     table.checks |> List.filter (\i -> i.columns |> hasColumn column)
 

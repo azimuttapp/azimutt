@@ -24,12 +24,10 @@ import Models.Project.Comment exposing (Comment)
 import Models.Project.CustomType exposing (CustomType)
 import Models.Project.CustomTypeValue as CustomTypeValue
 import Models.Project.Index exposing (Index)
-import Models.Project.Origin exposing (Origin)
 import Models.Project.PrimaryKey exposing (PrimaryKey)
 import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.RelationName exposing (RelationName)
 import Models.Project.Source exposing (Source)
-import Models.Project.SourceId exposing (SourceId)
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.Unique exposing (Unique)
@@ -69,17 +67,12 @@ buildSource source _ schema =
     }
 
 
-evolve : SourceId -> ( SqlStatement, Command ) -> SqlSchema -> SqlSchema
-evolve source ( statement, command ) content =
-    let
-        origin : Origin
-        origin =
-            createOrigin source statement
-    in
+evolve : ( SqlStatement, Command ) -> SqlSchema -> SqlSchema
+evolve ( statement, command ) content =
     case command of
         CreateTable sqlTable ->
             sqlTable
-                |> createTable origin content.tables
+                |> createTable content.tables
                 |> (\( table, relations, errors ) ->
                         (content.tables |> Dict.get table.id)
                             |> Maybe.map (\_ -> { content | errors = [ "Table '" ++ TableId.show Conf.schema.empty table.id ++ "' is already defined" ] :: content.errors })
@@ -88,7 +81,7 @@ evolve source ( statement, command ) content =
 
         CreateView sqlView ->
             sqlView
-                |> createView origin content.tables
+                |> createView content.tables
                 |> (\view ->
                         (content.tables |> Dict.get view.id)
                             |> Maybe.filterNot (\_ -> sqlView.replace)
@@ -97,11 +90,11 @@ evolve source ( statement, command ) content =
                    )
 
         AlterTable (AddTableConstraint schema table (AlterTable.ParsedPrimaryKey constraintName pk)) ->
-            updateTable schema table (\t -> t.primaryKey |> Maybe.mapOrElse (\_ -> ( t, [ "Primary key already defined for '" ++ TableId.show Conf.schema.empty t.id ++ "' table" ] )) ( { t | primaryKey = Just (PrimaryKey constraintName (pk |> Nel.map ColumnPath.fromString) [ origin ]) }, [] )) statement content
+            updateTable schema table (\t -> t.primaryKey |> Maybe.mapOrElse (\_ -> ( t, [ "Primary key already defined for '" ++ TableId.show Conf.schema.empty t.id ++ "' table" ] )) ( { t | primaryKey = Just (PrimaryKey constraintName (pk |> Nel.map ColumnPath.fromString)) }, [] )) statement content
 
         AlterTable (AddTableConstraint schema table (AlterTable.ParsedForeignKey constraint fks)) ->
             -- TODO: handle multi-column foreign key!
-            createRelation origin content.tables table constraint (ColumnRef (createTableId schema table) (ColumnPath.fromString fks.head.column)) fks.head.ref
+            createRelation content.tables table constraint (ColumnRef (createTableId schema table) (ColumnPath.fromString fks.head.column)) fks.head.ref
                 |> (\( relation, errors ) ->
                         { content
                             | relations = relation |> Maybe.mapOrElse (\r -> r :: content.relations) content.relations
@@ -110,16 +103,16 @@ evolve source ( statement, command ) content =
                    )
 
         AlterTable (AddTableConstraint schema table (AlterTable.ParsedUnique constraint unique)) ->
-            updateTable schema table (\t -> ( { t | uniques = t.uniques ++ [ Unique constraint (unique.columns |> Nel.map ColumnPath.fromString) (Just unique.definition) [ origin ] ] }, [] )) statement content
+            updateTable schema table (\t -> ( { t | uniques = t.uniques ++ [ Unique constraint (unique.columns |> Nel.map ColumnPath.fromString) (Just unique.definition) ] }, [] )) statement content
 
         AlterTable (AddTableConstraint schema table (AlterTable.ParsedCheck constraint check)) ->
-            updateTable schema table (\t -> ( { t | checks = t.checks ++ [ Check constraint (check.columns |> List.map ColumnPath.fromString) (Just check.predicate) [ origin ] ] }, [] )) statement content
+            updateTable schema table (\t -> ( { t | checks = t.checks ++ [ Check constraint (check.columns |> List.map ColumnPath.fromString) (Just check.predicate) ] }, [] )) statement content
 
         AlterTable (AddTableConstraint _ _ (IgnoredConstraint _)) ->
             content
 
         AlterTable (AlterColumn schema table (ColumnDefault column default)) ->
-            updateColumn schema table column (\c -> ( { c | default = Just default, origins = c.origins ++ [ origin ] }, [] )) statement content
+            updateColumn schema table column (\c -> ( { c | default = Just default }, [] )) statement content
 
         AlterTable (AlterColumn _ _ (ColumnStatistics _ _)) ->
             content
@@ -140,22 +133,22 @@ evolve source ( statement, command ) content =
             content
 
         CreateIndex index ->
-            updateTable index.table.schema index.table.table (\t -> ( { t | indexes = t.indexes ++ [ Index index.name (index.columns |> Nel.map ColumnPath.fromString) (Just index.definition) [ origin ] ] }, [] )) statement content
+            updateTable index.table.schema index.table.table (\t -> ( { t | indexes = t.indexes ++ [ Index index.name (index.columns |> Nel.map ColumnPath.fromString) (Just index.definition) ] }, [] )) statement content
 
         CreateUnique unique ->
-            updateTable unique.table.schema unique.table.table (\t -> ( { t | uniques = t.uniques ++ [ Unique unique.name (unique.columns |> Nel.map ColumnPath.fromString) (Just unique.definition) [ origin ] ] }, [] )) statement content
+            updateTable unique.table.schema unique.table.table (\t -> ( { t | uniques = t.uniques ++ [ Unique unique.name (unique.columns |> Nel.map ColumnPath.fromString) (Just unique.definition) ] }, [] )) statement content
 
         TableComment comment ->
-            updateTable comment.schema comment.table (\t -> t.comment |> Maybe.mapOrElse (\_ -> ( t, [ "Comment already defined for '" ++ TableId.show Conf.schema.empty t.id ++ "' table" ] )) ( { t | comment = Just (Comment comment.comment [ origin ]) }, [] )) statement content
+            updateTable comment.schema comment.table (\t -> t.comment |> Maybe.mapOrElse (\_ -> ( t, [ "Comment already defined for '" ++ TableId.show Conf.schema.empty t.id ++ "' table" ] )) ( { t | comment = Just (Comment comment.comment) }, [] )) statement content
 
         ColumnComment comment ->
-            updateColumn comment.schema comment.table comment.column (\c -> c.comment |> Maybe.mapOrElse (\_ -> ( c, [ "Comment already defined for '" ++ c.name ++ "' column in '" ++ TableId.show Conf.schema.empty (createTableId comment.schema comment.table) ++ "' table" ] )) ( { c | comment = Just (Comment comment.comment [ origin ]) }, [] )) statement content
+            updateColumn comment.schema comment.table comment.column (\c -> c.comment |> Maybe.mapOrElse (\_ -> ( c, [ "Comment already defined for '" ++ c.name ++ "' column in '" ++ TableId.show Conf.schema.empty (createTableId comment.schema comment.table) ++ "' table" ] )) ( { c | comment = Just (Comment comment.comment) }, [] )) statement content
 
         ConstraintComment _ ->
             content
 
         CreateType t ->
-            { content | types = createType origin t :: content.types }
+            { content | types = createType t :: content.types }
 
         Ignored _ ->
             content
@@ -208,35 +201,34 @@ deleteColumn schema table column statement content =
         content
 
 
-createTable : Origin -> Dict TableId Table -> ParsedTable -> ( Table, List Relation, List SqlSchemaError )
-createTable origin tables table =
+createTable : Dict TableId Table -> ParsedTable -> ( Table, List Relation, List SqlSchemaError )
+createTable tables table =
     let
         id : TableId
         id =
             createTableId table.schema table.table
 
         ( relations, errors ) =
-            table.foreignKeys |> createRelations origin tables id table.table table.columns
+            table.foreignKeys |> createRelations tables id table.table table.columns
     in
     ( { id = id
       , schema = id |> Tuple.first
       , name = id |> Tuple.second
       , view = False
-      , columns = table.columns |> Nel.toList |> List.indexedMap (createColumn origin table.primaryKey) |> Dict.fromListMap .name
-      , primaryKey = table.primaryKey |> createPrimaryKey origin table.columns
-      , uniques = table.uniques |> createUniques origin table.table table.columns
-      , indexes = table.indexes |> createIndexes origin
-      , checks = table.checks |> createChecks origin table.table table.columns
+      , columns = table.columns |> Nel.toList |> List.indexedMap (createColumn table.primaryKey) |> Dict.fromListMap .name
+      , primaryKey = table.primaryKey |> createPrimaryKey table.columns
+      , uniques = table.uniques |> createUniques table.table table.columns
+      , indexes = table.indexes |> createIndexes
+      , checks = table.checks |> createChecks table.table table.columns
       , comment = Nothing
-      , origins = [ origin ]
       }
     , relations
     , errors
     )
 
 
-createColumn : Origin -> Maybe ParsedPrimaryKey -> Int -> ParsedColumn -> Column
-createColumn origin pk index column =
+createColumn : Maybe ParsedPrimaryKey -> Int -> ParsedColumn -> Column
+createColumn pk index column =
     let
         inPk : Bool
         inPk =
@@ -247,15 +239,14 @@ createColumn origin pk index column =
     , kind = column.kind
     , nullable = column.nullable && not inPk
     , default = column.default
-    , comment = column.comment |> Maybe.map (createComment origin)
+    , comment = column.comment |> Maybe.map createComment
     , values = Nothing
     , columns = Nothing -- nested columns not supported in SQL
-    , origins = [ origin ]
     }
 
 
-createView : Origin -> Dict TableId Table -> ParsedView -> Table
-createView origin tables view =
+createView : Dict TableId Table -> ParsedView -> Table
+createView tables view =
     let
         id : TableId
         id =
@@ -265,18 +256,17 @@ createView origin tables view =
     , schema = id |> Tuple.first
     , name = id |> Tuple.second
     , view = True
-    , columns = view.select.columns |> List.indexedMap (buildViewColumn origin tables) |> Dict.fromListMap .name
+    , columns = view.select.columns |> List.indexedMap (buildViewColumn tables) |> Dict.fromListMap .name
     , primaryKey = Nothing
     , uniques = []
     , indexes = []
     , checks = []
     , comment = Nothing
-    , origins = [ origin ]
     }
 
 
-buildViewColumn : Origin -> Dict TableId Table -> Int -> SelectColumn -> Column
-buildViewColumn origin tables index column =
+buildViewColumn : Dict TableId Table -> Int -> SelectColumn -> Column
+buildViewColumn tables index column =
     case column of
         BasicColumn c ->
             c.table
@@ -293,7 +283,6 @@ buildViewColumn origin tables index column =
                         , comment = col.comment
                         , values = Nothing
                         , columns = Nothing -- nested columns not supported in SQL
-                        , origins = [ origin ]
                         }
                     )
                     { index = index
@@ -304,7 +293,6 @@ buildViewColumn origin tables index column =
                     , comment = Nothing
                     , values = Nothing
                     , columns = Nothing -- nested columns not supported in SQL
-                    , origins = [ origin ]
                     }
 
         ComplexColumn c ->
@@ -316,35 +304,34 @@ buildViewColumn origin tables index column =
             , comment = Nothing
             , values = Nothing
             , columns = Nothing -- nested columns not supported in SQL
-            , origins = [ origin ]
             }
 
 
-createPrimaryKey : Origin -> Nel ParsedColumn -> Maybe ParsedPrimaryKey -> Maybe PrimaryKey
-createPrimaryKey origin columns primaryKey =
-    (primaryKey |> Maybe.map (\pk -> PrimaryKey pk.name (pk.columns |> Nel.map ColumnPath.fromString) [ origin ]))
-        |> Maybe.orElse (columns |> Nel.filterMap (\c -> c.primaryKey |> Maybe.map (\pk -> PrimaryKey (String.nonEmptyMaybe pk) (Nel (c.name |> ColumnPath.fromString) []) [ origin ])) |> List.head)
+createPrimaryKey : Nel ParsedColumn -> Maybe ParsedPrimaryKey -> Maybe PrimaryKey
+createPrimaryKey columns primaryKey =
+    (primaryKey |> Maybe.map (\pk -> PrimaryKey pk.name (pk.columns |> Nel.map ColumnPath.fromString)))
+        |> Maybe.orElse (columns |> Nel.filterMap (\c -> c.primaryKey |> Maybe.map (\pk -> PrimaryKey (String.nonEmptyMaybe pk) (Nel (c.name |> ColumnPath.fromString) []))) |> List.head)
 
 
-createUniques : Origin -> SqlTableName -> Nel ParsedColumn -> List ParsedUnique -> List Unique
-createUniques origin tableName columns uniques =
-    (uniques |> List.map (\u -> Unique u.name (u.columns |> Nel.map ColumnPath.fromString) (Just u.definition) [ origin ]))
-        ++ (columns |> Nel.toList |> List.filterMap (\col -> col.unique |> Maybe.map (\u -> Unique (defaultUniqueName tableName col.name) (Nel (col.name |> ColumnPath.fromString) []) (Just u) [ origin ])))
+createUniques : SqlTableName -> Nel ParsedColumn -> List ParsedUnique -> List Unique
+createUniques tableName columns uniques =
+    (uniques |> List.map (\u -> Unique u.name (u.columns |> Nel.map ColumnPath.fromString) (Just u.definition)))
+        ++ (columns |> Nel.toList |> List.filterMap (\col -> col.unique |> Maybe.map (\u -> Unique (defaultUniqueName tableName col.name) (Nel (col.name |> ColumnPath.fromString) []) (Just u))))
 
 
-createIndexes : Origin -> List ParsedIndex -> List Index
-createIndexes origin indexes =
-    indexes |> List.map (\i -> Index i.name (i.columns |> Nel.map ColumnPath.fromString) (Just i.definition) [ origin ])
+createIndexes : List ParsedIndex -> List Index
+createIndexes indexes =
+    indexes |> List.map (\i -> Index i.name (i.columns |> Nel.map ColumnPath.fromString) (Just i.definition))
 
 
-createChecks : Origin -> SqlTableName -> Nel ParsedColumn -> List ParsedCheck -> List Check
-createChecks origin tableName columns checks =
-    (checks |> List.map (\c -> Check c.name (c.columns |> List.map ColumnPath.fromString) (Just c.predicate) [ origin ]))
-        ++ (columns |> Nel.toList |> List.filterMap (\col -> col.check |> Maybe.map (\c -> Check (defaultCheckName tableName col.name) [ col.name |> ColumnPath.fromString ] (Just c) [ origin ])))
+createChecks : SqlTableName -> Nel ParsedColumn -> List ParsedCheck -> List Check
+createChecks tableName columns checks =
+    (checks |> List.map (\c -> Check c.name (c.columns |> List.map ColumnPath.fromString) (Just c.predicate)))
+        ++ (columns |> Nel.toList |> List.filterMap (\col -> col.check |> Maybe.map (\c -> Check (defaultCheckName tableName col.name) [ col.name |> ColumnPath.fromString ] (Just c))))
 
 
-createType : Origin -> ParsedType -> CustomType
-createType origin t =
+createType : ParsedType -> CustomType
+createType t =
     (case t.value of
         EnumType values ->
             CustomTypeValue.Enum values
@@ -352,24 +339,24 @@ createType origin t =
         UnknownType definition ->
             CustomTypeValue.Definition definition
     )
-        |> (\value -> { id = ( t.schema |> Maybe.withDefault "", t.name ), name = t.name, value = value, origins = [ origin ] })
+        |> (\value -> { id = ( t.schema |> Maybe.withDefault "", t.name ), name = t.name, value = value })
 
 
-createComment : Origin -> SqlComment -> Comment
-createComment origin comment =
-    Comment comment [ origin ]
+createComment : SqlComment -> Comment
+createComment comment =
+    Comment comment
 
 
-createRelations : Origin -> Dict TableId Table -> TableId -> SqlTableName -> Nel ParsedColumn -> List ParsedForeignKey -> ( List Relation, List SqlSchemaError )
-createRelations origin tables tableId tableName columns foreignKeys =
-    ((columns |> Nel.toList |> List.filterMap (\col -> col.foreignKey |> Maybe.map (\( name, ref ) -> createRelation origin tables tableName name (ColumnRef tableId (ColumnPath.fromString col.name)) ref)))
-        ++ (foreignKeys |> List.map (\fk -> createRelation origin tables tableName fk.name (ColumnRef tableId (ColumnPath.fromString fk.src)) fk.ref))
+createRelations : Dict TableId Table -> TableId -> SqlTableName -> Nel ParsedColumn -> List ParsedForeignKey -> ( List Relation, List SqlSchemaError )
+createRelations tables tableId tableName columns foreignKeys =
+    ((columns |> Nel.toList |> List.filterMap (\col -> col.foreignKey |> Maybe.map (\( name, ref ) -> createRelation tables tableName name (ColumnRef tableId (ColumnPath.fromString col.name)) ref)))
+        ++ (foreignKeys |> List.map (\fk -> createRelation tables tableName fk.name (ColumnRef tableId (ColumnPath.fromString fk.src)) fk.ref))
     )
         |> List.foldr (\( rel, errs ) ( rels, errors ) -> ( rel |> Maybe.mapOrElse (\r -> r :: rels) rels, errs ++ errors )) ( [], [] )
 
 
-createRelation : Origin -> Dict TableId Table -> SqlTableName -> Maybe RelationName -> ColumnRef -> SqlForeignKeyRef -> ( Maybe Relation, List SqlSchemaError )
-createRelation origin tables table relation src ref =
+createRelation : Dict TableId Table -> SqlTableName -> Maybe RelationName -> ColumnRef -> SqlForeignKeyRef -> ( Maybe Relation, List SqlSchemaError )
+createRelation tables table relation src ref =
     let
         name : RelationName
         name =
@@ -401,12 +388,7 @@ createRelation origin tables table relation src ref =
                             ( Nothing, [ "Can't create relation '" ++ name ++ "': target table '" ++ TableId.show Conf.schema.empty refTable ++ "' does not exist (yet)" ] )
                     )
     in
-    ( refCol |> Maybe.map (\col -> Relation.new name src (ColumnRef refTable col) [ origin ]), errors )
-
-
-createOrigin : SourceId -> SqlStatement -> Origin
-createOrigin source statement =
-    { id = source, lines = statement |> Nel.map .index |> Nel.toList }
+    ( refCol |> Maybe.map (\col -> Relation.new name src (ColumnRef refTable col)), errors )
 
 
 createTableId : Maybe SqlSchemaName -> SqlTableName -> TableId

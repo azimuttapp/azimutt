@@ -15,25 +15,27 @@ import Models.Project exposing (Project)
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.ColumnPath exposing (ColumnPath, ColumnPathStr)
 import Models.Project.ColumnRef exposing (ColumnRef, ColumnRefLike)
-import Models.Project.CustomType as CustomType exposing (CustomType)
 import Models.Project.CustomTypeId exposing (CustomTypeId)
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.Metadata exposing (Metadata)
 import Models.Project.ProjectId as ProjectId exposing (ProjectId)
 import Models.Project.ProjectSettings as ProjectSettings exposing (ProjectSettings)
-import Models.Project.Relation as Relation exposing (Relation)
+import Models.Project.Relation exposing (Relation)
 import Models.Project.Schema exposing (Schema)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId exposing (SourceId)
-import Models.Project.Table as Table exposing (Table)
+import Models.Project.Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
 import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Models.ProjectRef exposing (ProjectRef)
 import Models.Size as Size
 import Models.UrlInfos exposing (UrlInfos)
+import PagesComponents.Organization_.Project_.Models.Erd.RelationWithOrigin as RelationWithOrigin exposing (RelationWithOrigin)
+import PagesComponents.Organization_.Project_.Models.Erd.TableWithOrigin as TableWithOrigin exposing (TableWithOrigin)
 import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn)
 import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps
+import PagesComponents.Organization_.Project_.Models.ErdCustomType as ErdCustomType exposing (ErdCustomType)
 import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.ErdRelation as ErdRelation exposing (ErdRelation)
 import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable exposing (ErdTable)
@@ -41,6 +43,7 @@ import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (Er
 import PagesComponents.Organization_.Project_.Models.SuggestedRelation exposing (SuggestedRelation)
 import Services.Analysis.MissingRelations as MissingRelations
 import Services.Lenses exposing (mapLayoutsD, mapLayoutsDCmd)
+import Set exposing (Set)
 import Time
 
 
@@ -48,7 +51,7 @@ type alias Erd =
     { project : ProjectInfo
     , tables : Dict TableId ErdTable
     , relations : List ErdRelation
-    , types : Dict CustomTypeId CustomType
+    , types : Dict CustomTypeId ErdCustomType
     , relationsByTable : Dict TableId (List ErdRelation)
     , ignoredRelations : Dict TableId (List ColumnPath)
     , layouts : Dict LayoutName ErdLayout
@@ -110,11 +113,11 @@ unpack erd =
     }
 
 
-toSchema : { s | tables : Dict TableId ErdTable, relations : List ErdRelation, types : Dict CustomTypeId CustomType } -> Schema
+toSchema : { s | tables : Dict TableId ErdTable, relations : List ErdRelation, types : Dict CustomTypeId ErdCustomType } -> Schema
 toSchema source =
     { tables = source.tables |> Dict.map (\_ -> ErdTable.unpack)
     , relations = source.relations |> List.map ErdRelation.unpack
-    , types = source.types
+    , types = source.types |> Dict.map (\_ -> ErdCustomType.unpack)
     }
 
 
@@ -249,24 +252,28 @@ viewportM erdElem erd =
     erd |> Maybe.mapOrElse (currentLayout >> .canvas >> CanvasProps.viewport erdElem) Area.zeroCanvas
 
 
-computeSources : ProjectSettings -> List Source -> Dict TableId (List ColumnPath) -> ( ( Dict TableId ErdTable, List ErdRelation, Dict CustomTypeId CustomType ), Dict TableId (List ErdRelation) )
+computeSources : ProjectSettings -> List Source -> Dict TableId (List ColumnPath) -> ( ( Dict TableId ErdTable, List ErdRelation, Dict CustomTypeId ErdCustomType ), Dict TableId (List ErdRelation) )
 computeSources settings sources ignoredRelations =
     let
-        tables : Dict TableId Table
+        enabledSources : List Source
+        enabledSources =
+            sources |> List.filter .enabled
+
+        tables : Dict TableId TableWithOrigin
         tables =
-            sources |> computeTables settings
+            enabledSources |> computeTables settings
 
-        relations : List Relation
+        relations : List RelationWithOrigin
         relations =
-            sources |> computeRelations tables
+            enabledSources |> computeRelations (tables |> Dict.keys |> Set.fromList)
 
-        types : Dict CustomTypeId CustomType
-        types =
-            sources |> computeTypes
+        erdTypes : Dict CustomTypeId ErdCustomType
+        erdTypes =
+            enabledSources |> computeTypes
 
         suggestedRelations : Dict TableId (Dict ColumnPathStr (List SuggestedRelation))
         suggestedRelations =
-            MissingRelations.forTables tables relations ignoredRelations
+            MissingRelations.forTables (tables |> Dict.map (\_ -> TableWithOrigin.unpack)) (relations |> List.map RelationWithOrigin.unpack) ignoredRelations
 
         erdRelations : List ErdRelation
         erdRelations =
@@ -278,17 +285,16 @@ computeSources settings sources ignoredRelations =
 
         erdTables : Dict TableId ErdTable
         erdTables =
-            tables |> Dict.map (\id -> ErdTable.create settings.defaultSchema sources types (erdRelationsByTable |> Dict.getOrElse id []) (suggestedRelations |> Dict.getOrElse id Dict.empty))
+            tables |> Dict.map (\id -> ErdTable.create settings.defaultSchema erdTypes (erdRelationsByTable |> Dict.getOrElse id []) (suggestedRelations |> Dict.getOrElse id Dict.empty))
     in
-    ( ( erdTables, erdRelations, types ), erdRelationsByTable )
+    ( ( erdTables, erdRelations, erdTypes ), erdRelationsByTable )
 
 
-computeTables : ProjectSettings -> List Source -> Dict TableId Table
+computeTables : ProjectSettings -> List Source -> Dict TableId TableWithOrigin
 computeTables settings sources =
     sources
-        |> List.filter .enabled
-        |> List.map (\s -> s.tables |> Dict.filter (\_ -> shouldDisplayTable settings))
-        |> List.foldr (Dict.fuse Table.merge) Dict.empty
+        |> List.map (\s -> s.tables |> Dict.filter (\_ -> shouldDisplayTable settings) |> Dict.map (\_ -> TableWithOrigin.create s))
+        |> List.foldr (Dict.fuse TableWithOrigin.merge) Dict.empty
 
 
 shouldDisplayTable : ProjectSettings -> Table -> Bool
@@ -309,25 +315,23 @@ shouldDisplayTable settings table =
     not isSchemaRemoved && not isViewRemoved && not isTableRemoved
 
 
-computeRelations : Dict TableId Table -> List Source -> List Relation
+computeRelations : Set TableId -> List Source -> List RelationWithOrigin
 computeRelations tables sources =
     sources
-        |> List.filter .enabled
-        |> List.map (\s -> s.relations |> List.filter (shouldDisplayRelation tables))
-        |> List.foldr (List.merge .id Relation.merge) []
+        |> List.map (\s -> s.relations |> List.filter (shouldDisplayRelation tables) |> List.map (RelationWithOrigin.create s))
+        |> List.foldr (List.merge .id RelationWithOrigin.merge) []
 
 
-shouldDisplayRelation : Dict TableId Table -> Relation -> Bool
+shouldDisplayRelation : Set TableId -> Relation -> Bool
 shouldDisplayRelation tables relation =
-    (tables |> Dict.member relation.src.table) && (tables |> Dict.member relation.ref.table)
+    (tables |> Set.member relation.src.table) && (tables |> Set.member relation.ref.table)
 
 
-computeTypes : List Source -> Dict CustomTypeId CustomType
+computeTypes : List Source -> Dict CustomTypeId ErdCustomType
 computeTypes sources =
     sources
-        |> List.filter .enabled
-        |> List.map .types
-        |> List.foldr (Dict.fuse CustomType.merge) Dict.empty
+        |> List.map (\s -> s.types |> Dict.map (\_ -> ErdCustomType.create s))
+        |> List.foldr (Dict.fuse ErdCustomType.merge) Dict.empty
 
 
 buildRelationsByTable : List ErdRelation -> Dict TableId (List ErdRelation)

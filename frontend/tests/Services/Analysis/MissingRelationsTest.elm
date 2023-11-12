@@ -95,7 +95,6 @@ buildTable ( name, columns ) =
     , indexes = []
     , checks = []
     , comment = Nothing
-    , origins = []
     }
 
 
@@ -109,5 +108,4 @@ buildColumn index ( name, values ) =
     , comment = Nothing
     , values = Nel.fromList values
     , columns = Nothing
-    , origins = []
     }

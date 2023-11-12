@@ -19,9 +19,7 @@ defmodule AzimuttWeb.OrganizationMemberController do
     end
 
     with {:ok, %Organization{} = organization} <- Organizations.get_organization(organization_id, current_user) do
-      organization_invitation_changeset =
-        OrganizationInvitation.create_changeset(%OrganizationInvitation{}, %{}, organization.id, current_user, now)
-
+      organization_invitation_changeset = OrganizationInvitation.create_changeset(%OrganizationInvitation{}, %{}, organization.id, current_user, now)
       render_index(conn, organization, organization_invitation_changeset)
     end
   end

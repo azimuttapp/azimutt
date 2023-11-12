@@ -77,6 +77,26 @@ defmodule Azimutt.Utils.ResultTest do
       assert {:error, "oops"} = {:error, "oops"} |> Result.flat_map(fn x -> x + 1 end)
     end
 
+    test "zip" do
+      assert {:ok, {1, 2}} = {:ok, 1} |> Result.zip(2)
+      assert {:error, "oops"} = {:error, "oops"} |> Result.zip(2)
+    end
+
+    test "zip_left" do
+      assert {:ok, {2, 1}} = {:ok, 1} |> Result.zip_left(2)
+      assert {:error, "oops"} = {:error, "oops"} |> Result.zip_left(2)
+    end
+
+    test "zip_error" do
+      assert {:ok, 1} = {:ok, 1} |> Result.zip_error(2)
+      assert {:error, {"oops", 2}} = {:error, "oops"} |> Result.zip_error(2)
+    end
+
+    test "zip_error_left" do
+      assert {:ok, 1} = {:ok, 1} |> Result.zip_error_left(2)
+      assert {:error, {2, "oops"}} = {:error, "oops"} |> Result.zip_error_left(2)
+    end
+
     test "tap" do
       assert {:ok, 1} = {:ok, 1} |> Result.tap(fn x -> x + 1 end)
       assert {:error, "oops"} = {:error, "oops"} |> Result.tap(fn x -> x + 1 end)

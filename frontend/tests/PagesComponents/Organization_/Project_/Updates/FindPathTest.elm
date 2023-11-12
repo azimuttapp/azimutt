@@ -1,9 +1,11 @@
 module PagesComponents.Organization_.Project_.Updates.FindPathTest exposing (..)
 
+import Array
 import Dict exposing (Dict)
 import Expect
 import Libs.Dict as Dict
 import Libs.Nel exposing (Nel)
+import Libs.Time as Time
 import Models.Project.Column exposing (Column)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnPath as ColumnPath
@@ -11,9 +13,14 @@ import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.FindPathSettings exposing (FindPathSettings)
 import Models.Project.Relation as Relation
 import Models.Project.SchemaName exposing (SchemaName)
+import Models.Project.Source exposing (Source)
+import Models.Project.SourceId as SourceId
+import Models.Project.SourceKind as SourceKind
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
 import Models.Project.TableName exposing (TableName)
+import PagesComponents.Organization_.Project_.Models.Erd.RelationWithOrigin as RelationWithOrigin
+import PagesComponents.Organization_.Project_.Models.Erd.TableWithOrigin as TableWithOrigin
 import PagesComponents.Organization_.Project_.Models.ErdRelation as ErdRelation exposing (ErdRelation)
 import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.FindPathStep exposing (FindPathStep)
@@ -109,17 +116,26 @@ tableId name =
 
 buildTable : TableName -> List String -> ErdTable
 buildTable name columnNames =
-    Table (tableId name) defaultSchema name False (columnNames |> List.map buildColumn |> Dict.fromListMap .name) Nothing [] [] [] Nothing [] |> ErdTable.create defaultSchema [] Dict.empty [] Dict.empty
+    Table (tableId name) defaultSchema name False (columnNames |> List.map buildColumn |> Dict.fromListMap .name) Nothing [] [] [] Nothing
+        |> TableWithOrigin.create source
+        |> ErdTable.create defaultSchema Dict.empty [] Dict.empty
 
 
 buildColumn : ColumnName -> Column
 buildColumn name =
-    Column 0 name "int" False Nothing Nothing Nothing Nothing []
+    Column 0 name "int" False Nothing Nothing Nothing Nothing
 
 
 buildRelation : ( TableName, ColumnName ) -> ( TableName, ColumnName ) -> ErdRelation
 buildRelation ( fromTable, fromCol ) ( toTable, toCol ) =
-    Relation.new "" (ColumnRef (tableId fromTable) (ColumnPath.fromString fromCol)) (ColumnRef (tableId toTable) (ColumnPath.fromString toCol)) [] |> ErdRelation.create Dict.empty
+    Relation.new "" (ColumnRef (tableId fromTable) (ColumnPath.fromString fromCol)) (ColumnRef (tableId toTable) (ColumnPath.fromString toCol))
+        |> RelationWithOrigin.create source
+        |> ErdRelation.create Dict.empty
+
+
+source : Source
+source =
+    Source SourceId.zero "source" SourceKind.AmlEditor (Array.fromList []) Dict.empty [] Dict.empty True Nothing Time.zero Time.zero
 
 
 settings : FindPathSettings

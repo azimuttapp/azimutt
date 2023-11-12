@@ -20,12 +20,10 @@ import Models.Project.CustomType exposing (CustomType)
 import Models.Project.CustomTypeId exposing (CustomTypeId)
 import Models.Project.CustomTypeValue as CustomTypeValue
 import Models.Project.Index exposing (Index)
-import Models.Project.Origin exposing (Origin)
 import Models.Project.PrimaryKey exposing (PrimaryKey)
 import Models.Project.Relation exposing (Relation)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
-import Models.Project.SourceId exposing (SourceId)
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.Unique exposing (Unique)
@@ -61,7 +59,7 @@ buildSource source content result =
             result
                 |> Result.fold
                     (\err -> { initSchema | errors = err |> List.map (\e -> { row = e.row, col = e.col, problem = Parser.problemToString e.problem }) })
-                    (List.foldl (evolve source.id) initSchema)
+                    (List.foldl evolve initSchema)
 
         orderedColumns : Dict TableId (List ColumnPath)
         orderedColumns =
@@ -97,13 +95,13 @@ tablesColumnsOrdered statement tables =
             tables
 
 
-evolve : SourceId -> AmlStatement -> AmlSchema -> AmlSchema
-evolve source statement schema =
+evolve : AmlStatement -> AmlSchema -> AmlSchema
+evolve statement schema =
     case statement of
         AmlTableStatement amlTable ->
             let
                 ( table, relations, types ) =
-                    createTable source amlTable
+                    createTable amlTable
             in
             schema.tables
                 |> Dict.get table.id
@@ -114,7 +112,7 @@ evolve source statement schema =
             let
                 relation : Relation
                 relation =
-                    createRelation source amlRelation.from amlRelation.to
+                    createRelation amlRelation.from amlRelation.to
             in
             { schema | relations = relation :: schema.relations }
 
@@ -127,50 +125,44 @@ createTableId table =
     ( table.schema |> Maybe.withDefault Conf.schema.empty, table.table )
 
 
-createTable : SourceId -> AmlTable -> ( Table, List Relation, Dict CustomTypeId CustomType )
-createTable source table =
+createTable : AmlTable -> ( Table, List Relation, Dict CustomTypeId CustomType )
+createTable table =
     let
         id : TableId
         id =
             createTableId table
-
-        origins : List Origin
-        origins =
-            [ { id = source, lines = [] } ]
     in
     ( { id = id
       , schema = id |> TableId.schema
       , name = id |> TableId.name
       , view = table.isView
-      , columns = table.columns |> List.indexedMap (createColumn origins) |> Dict.fromListMap .name
-      , primaryKey = table.columns |> createPrimaryKey origins
-      , uniques = table.columns |> createConstraint .unique (defaultUniqueName table.table) |> List.map (\( name, cols ) -> Unique name cols Nothing origins)
-      , indexes = table.columns |> createConstraint .index (defaultIndexName table.table) |> List.map (\( name, cols ) -> Index name cols Nothing origins)
-      , checks = table.columns |> List.filterMap (\c -> c.check |> Maybe.map (\check -> Check (defaultCheckName table.table c.name) [ Nel.from c.name ] (String.nonEmptyMaybe check) origins))
-      , comment = table.notes |> Maybe.map (createComment origins)
-      , origins = origins
+      , columns = table.columns |> List.indexedMap createColumn |> Dict.fromListMap .name
+      , primaryKey = table.columns |> createPrimaryKey
+      , uniques = table.columns |> createConstraint .unique (defaultUniqueName table.table) |> List.map (\( name, cols ) -> Unique name cols Nothing)
+      , indexes = table.columns |> createConstraint .index (defaultIndexName table.table) |> List.map (\( name, cols ) -> Index name cols Nothing)
+      , checks = table.columns |> List.filterMap (\c -> c.check |> Maybe.map (\check -> Check (defaultCheckName table.table c.name) [ Nel.from c.name ] (String.nonEmptyMaybe check)))
+      , comment = table.notes |> Maybe.map createComment
       }
-    , table.columns |> List.filterMap (\c -> Maybe.map (createRelation source { schema = table.schema, table = table.table, column = c.name }) c.foreignKey)
-    , table.columns |> List.filterMap (\c -> Maybe.map2 (createType origins (c.kindSchema |> Maybe.orElse table.schema)) c.kind c.values) |> Dict.fromListMap .id
+    , table.columns |> List.filterMap (\c -> Maybe.map (createRelation { schema = table.schema, table = table.table, column = c.name }) c.foreignKey)
+    , table.columns |> List.filterMap (\c -> Maybe.map2 (createType (c.kindSchema |> Maybe.orElse table.schema)) c.kind c.values) |> Dict.fromListMap .id
     )
 
 
-createColumn : List Origin -> Int -> AmlColumn -> Column
-createColumn origins index column =
+createColumn : Int -> AmlColumn -> Column
+createColumn index column =
     { index = index
     , name = column.name
     , kind = column.kind |> Maybe.withDefault Conf.schema.column.unknownType
     , nullable = column.nullable
     , default = column.default
-    , comment = column.notes |> Maybe.map (createComment origins)
+    , comment = column.notes |> Maybe.map createComment
     , values = Nothing
     , columns = Nothing -- nested columns not supported in AML
-    , origins = origins
     }
 
 
-createPrimaryKey : List Origin -> List AmlColumn -> Maybe PrimaryKey
-createPrimaryKey origins columns =
+createPrimaryKey : List AmlColumn -> Maybe PrimaryKey
+createPrimaryKey columns =
     columns
         |> List.filter .primaryKey
         |> List.map .name
@@ -179,7 +171,6 @@ createPrimaryKey origins columns =
             (\cols ->
                 { name = Nothing
                 , columns = cols |> Nel.map ColumnPath.fromString
-                , origins = origins
                 }
             )
 
@@ -201,15 +192,14 @@ createConstraint get defaultName columns =
             []
 
 
-createComment : List Origin -> AmlNotes -> Comment
-createComment origins notes =
+createComment : AmlNotes -> Comment
+createComment notes =
     { text = notes
-    , origins = origins
     }
 
 
-createRelation : SourceId -> AmlColumnRef -> AmlColumnRef -> Relation
-createRelation source from to =
+createRelation : AmlColumnRef -> AmlColumnRef -> Relation
+createRelation from to =
     let
         fromId : TableId
         fromId =
@@ -223,14 +213,12 @@ createRelation source from to =
     , name = defaultRelName from.table (ColumnPath.fromString from.column)
     , src = { table = fromId, column = ColumnPath.fromString from.column }
     , ref = { table = toId, column = ColumnPath.fromString to.column }
-    , origins = [ { id = source, lines = [] } ]
     }
 
 
-createType : List Origin -> Maybe SchemaName -> String -> Nel String -> CustomType
-createType origins schema name values =
+createType : Maybe SchemaName -> String -> Nel String -> CustomType
+createType schema name values =
     { id = ( schema |> Maybe.withDefault Conf.schema.empty, name )
     , name = name
     , value = CustomTypeValue.Enum (values |> Nel.toList)
-    , origins = origins
     }

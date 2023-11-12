@@ -4,6 +4,7 @@ defmodule AzimuttWeb.Api.FallbackController do
   See `Phoenix.Controller.action_fallback/1` for more details.
   """
   use AzimuttWeb, :controller
+  alias Azimutt.Utils.Result
 
   # This clause handles errors returned by Ecto's insert/update/delete.
   def call(conn, {:error, %Ecto.Changeset{} = changeset}) do
@@ -14,33 +15,39 @@ defmodule AzimuttWeb.Api.FallbackController do
     |> render("error.json", changeset: changeset)
   end
 
-  # This clause is an example of how to handle resources that cannot be found.
+  def call(conn, {:error, :forbidden}) do
+    conn
+    |> put_status(:forbidden)
+    |> put_view(AzimuttWeb.ErrorView)
+    |> render("error.json", format("Forbidden"))
+  end
+
   def call(conn, {:error, :not_found}) do
     conn
     |> put_status(:not_found)
     |> put_view(AzimuttWeb.ErrorView)
-    |> render("error.json", message: "Not Found")
+    |> render("error.json", format("Not Found"))
   end
 
   def call(conn, {:error, :unauthorized}) do
     conn
     |> put_status(:unauthorized)
     |> put_view(AzimuttWeb.ErrorView)
-    |> render("error.json", message: "Unauthorized")
+    |> render("error.json", format("Unauthorized"))
   end
 
   def call(conn, {:error, {status, message}}) do
     conn
     |> put_status(status)
     |> put_view(AzimuttWeb.ErrorView)
-    |> render("error.json", message: format(message))
+    |> render("error.json", format(message))
   end
 
   def call(conn, {:error, message}) do
     conn
     |> put_status(:internal_server_error)
     |> put_view(AzimuttWeb.ErrorView)
-    |> render("error.json", message: format(message))
+    |> render("error.json", format(message))
   end
 
   def call(conn, :ok) do
@@ -51,9 +58,23 @@ defmodule AzimuttWeb.Api.FallbackController do
     conn
     |> put_status(:internal_server_error)
     |> put_view(AzimuttWeb.ErrorView)
-    |> render("error.json", message: format(other))
+    |> render("error.json", format(other))
   end
 
-  defp format(message) when is_binary(message), do: message
-  defp format(message), do: inspect(message)
+  defp format(value) when is_binary(value), do: %{message: value}
+  defp format(value) when is_map(value), do: value |> Map.put(:message, as_string(value))
+  defp format(value), do: %{message: as_string(value)}
+
+  defp as_string(value) do
+    cond do
+      is_binary(value) ->
+        value
+
+      is_atom(value) ->
+        Atom.to_string(value)
+
+      true ->
+        Jason.encode(value) |> Result.or_else(inspect(value))
+    end
+  end
 end

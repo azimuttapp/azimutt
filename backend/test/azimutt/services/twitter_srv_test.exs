@@ -5,16 +5,8 @@ defmodule Azimutt.Services.TwitterSrvTest do
 
   describe "TwitterSrv" do
     test "extract id" do
-      assert {:ok, %{user: "loicknuchel", tweet: "1604135251755663361"}} =
-               TwitterSrv.parse_url("https://twitter.com/loicknuchel/status/1604135251755663361")
-
-      assert {:ok, %{user: "loicknuchel", tweet: "1604135251755663361"}} =
-               TwitterSrv.parse_url("https://twitter.com/loicknuchel/status/1604135251755663361?s=20")
-
-      {:ok, %{user: user, tweet: tweet}} = TwitterSrv.parse_url("https://twitter.com/loicknuchel/status/1604135251755663361")
-      assert "loicknuchel" = user
-      assert "1604135251755663361" = tweet
-
+      assert {:ok, %{user: "loicknuchel", tweet: "1604135251755663361"}} = TwitterSrv.parse_url("https://twitter.com/loicknuchel/status/1604135251755663361")
+      assert {:ok, %{user: "loicknuchel", tweet: "1604135251755663361"}} = TwitterSrv.parse_url("https://twitter.com/loicknuchel/status/1604135251755663361?s=20")
       assert {:error, :not_found} = TwitterSrv.parse_url("bad")
     end
 

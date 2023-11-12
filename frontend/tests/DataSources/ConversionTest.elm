@@ -18,10 +18,8 @@ import Libs.Nel as Nel exposing (Nel)
 import Models.Project.Column exposing (Column)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.Comment exposing (Comment)
-import Models.Project.CustomType exposing (CustomType)
 import Models.Project.Relation exposing (Relation)
 import Models.Project.Schema exposing (Schema)
-import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
 import Test exposing (Test, describe, test)
@@ -56,7 +54,7 @@ crmSchema =
                 , { emptyColumn | name = "role_id", kind = "uuid" }
                 ]
                     |> buildColumns
-            , primaryKey = Just { name = Nothing, columns = Nel "contact_id" [ "role_id" ] |> Nel.map Nel.from, origins = [] }
+            , primaryKey = Just { name = Nothing, columns = Nel "contact_id" [ "role_id" ] |> Nel.map Nel.from }
           }
         , { emptyTable
             | id = ( "", "contacts" )
@@ -67,7 +65,7 @@ crmSchema =
                 , { emptyColumn | name = "email", kind = "varchar" }
                 ]
                     |> buildColumns
-            , primaryKey = Just { name = Nothing, columns = Nel.from "id" |> Nel.map Nel.from, origins = [] }
+            , primaryKey = Just { name = Nothing, columns = Nel.from "id" |> Nel.map Nel.from }
           }
         , { emptyTable
             | id = ( "", "events" )
@@ -79,7 +77,7 @@ crmSchema =
                 , { emptyColumn | name = "instance_id", kind = "uuid" }
                 ]
                     |> buildColumns
-            , primaryKey = Just { name = Nothing, columns = Nel.from "id" |> Nel.map Nel.from, origins = [] }
+            , primaryKey = Just { name = Nothing, columns = Nel.from "id" |> Nel.map Nel.from }
           }
         , { emptyTable
             | id = ( "", "roles" )
@@ -89,7 +87,7 @@ crmSchema =
                 , { emptyColumn | name = "name", kind = "varchar" }
                 ]
                     |> buildColumns
-            , primaryKey = Just { name = Nothing, columns = Nel.from "id" |> Nel.map Nel.from, origins = [] }
+            , primaryKey = Just { name = Nothing, columns = Nel.from "id" |> Nel.map Nel.from }
           }
         ]
             |> buildTables
@@ -329,8 +327,8 @@ parseAml aml =
     aml
         |> AmlParser.parse
         |> Result.withDefault []
-        |> List.foldl (\c s -> s |> AmlAdapter.evolve SourceId.zero c) AmlAdapter.initSchema
-        |> (\schema -> removeOrigins { tables = schema.tables, relations = schema.relations |> List.sortBy .id, types = schema.types })
+        |> List.foldl (\c s -> s |> AmlAdapter.evolve c) AmlAdapter.initSchema
+        |> (\schema -> { tables = schema.tables, relations = schema.relations |> List.sortBy .id, types = schema.types })
 
 
 parseSql : String -> Schema
@@ -338,8 +336,8 @@ parseSql sql =
     sql
         |> SqlParser.parse
         |> Tuple.second
-        |> List.foldl (\c s -> s |> SqlAdapter.evolve SourceId.zero ( Nel.from { index = 0, text = "" }, c )) SqlAdapter.initSchema
-        |> (\schema -> removeOrigins { tables = schema.tables, relations = schema.relations |> List.sortBy .id, types = schema.types |> Dict.fromListMap .id })
+        |> List.foldl (\c s -> s |> SqlAdapter.evolve ( Nel.from { index = 0, text = "" }, c )) SqlAdapter.initSchema
+        |> (\schema -> { tables = schema.tables, relations = schema.relations |> List.sortBy .id, types = schema.types |> Dict.fromListMap .id })
 
 
 parseJson : String -> Schema
@@ -347,41 +345,23 @@ parseJson json =
     json
         |> Decode.decodeString JsonSchema.decode
         |> Result.withDefault { tables = [], relations = [], types = [] }
-        |> JsonAdapter.buildSchema SourceId.zero
-        |> (\schema -> removeOrigins { tables = schema.tables, relations = schema.relations |> List.sortBy .id, types = schema.types })
-
-
-removeOrigins : Schema -> Schema
-removeOrigins schema =
-    { tables =
-        schema.tables
-            |> Dict.map
-                (\_ t ->
-                    { t
-                        | origins = []
-                        , columns = t.columns |> Dict.map (\_ col -> { col | origins = [], comment = col.comment |> Maybe.map (\c -> { c | origins = [] }) })
-                        , primaryKey = t.primaryKey |> Maybe.map (\pk -> { pk | origins = [] })
-                        , comment = t.comment |> Maybe.map (\c -> { c | origins = [] })
-                    }
-                )
-    , relations = schema.relations |> List.map (\r -> { r | origins = [] })
-    , types = schema.types
-    }
+        |> JsonAdapter.buildSchema
+        |> (\schema -> { tables = schema.tables, relations = schema.relations |> List.sortBy .id, types = schema.types })
 
 
 emptyTable : Table
 emptyTable =
-    { id = ( "", "" ), schema = "", name = "", view = False, columns = Dict.empty, primaryKey = Nothing, uniques = [], indexes = [], checks = [], comment = Nothing, origins = [] }
+    { id = ( "", "" ), schema = "", name = "", view = False, columns = Dict.empty, primaryKey = Nothing, uniques = [], indexes = [], checks = [], comment = Nothing }
 
 
 emptyColumn : Column
 emptyColumn =
-    { index = 0, name = "", kind = "", nullable = False, default = Nothing, comment = Nothing, values = Nothing, columns = Nothing, origins = [] }
+    { index = 0, name = "", kind = "", nullable = False, default = Nothing, comment = Nothing, values = Nothing, columns = Nothing }
 
 
 emptyComment : Comment
 emptyComment =
-    { text = "", origins = [] }
+    { text = "" }
 
 
 buildTables : List Table -> Dict TableId Table
@@ -400,5 +380,4 @@ buildRelation ( name, ( srcSchema, srcTable, srcColumn ), ( refSchema, refTable,
     , name = name
     , src = { table = ( srcSchema, srcTable ), column = Nel.from srcColumn }
     , ref = { table = ( refSchema, refTable ), column = Nel.from refColumn }
-    , origins = []
     }

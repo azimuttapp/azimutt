@@ -6,6 +6,8 @@ import {Uuid} from "./uuid";
 import {Organization} from "./organization";
 import * as Zod from "../utils/zod";
 
+// MUST stay in sync with backend/lib/azimutt_web/utils/project_schema.ex
+
 export type ProjectId = Uuid
 export const ProjectId = Uuid
 export type ProjectSlug = Slug
@@ -141,12 +143,12 @@ export const SourceOrigin = z.enum(['import-project', 'sql-source', 'prisma-sour
 
 export interface Origin {
     id: SourceId
-    lines: LineIndex[]
+    lines?: LineIndex[]
 }
 
 export const Origin = z.object({
     id: SourceId,
-    lines: LineIndex.array()
+    lines: LineIndex.array().optional()
 }).strict()
 
 export interface Comment {

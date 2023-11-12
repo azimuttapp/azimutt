@@ -2,7 +2,7 @@ defmodule Azimutt.Accounts do
   @moduledoc "The Accounts context."
   import Ecto.Query, warn: false
   alias Azimutt.Repo
-  alias Azimutt.Accounts.{User, UserNotifier, UserProfile, UserToken}
+  alias Azimutt.Accounts.{User, UserAuthToken, UserNotifier, UserProfile, UserToken}
   alias Azimutt.Organizations
   alias Azimutt.Organizations.OrganizationMember
   alias Azimutt.Tracking
@@ -266,6 +266,51 @@ defmodule Azimutt.Accounts do
     |> Repo.update()
   end
 
+  ## Auth tokens
+
+  def list_auth_tokens(%User{} = current_user, now) do
+    UserAuthToken
+    |> where([t], t.user_id == ^current_user.id and is_nil(t.deleted_at) and (is_nil(t.expire_at) or t.expire_at > ^now))
+    |> Repo.all()
+  end
+
+  def change_auth_token(%User{} = current_user, attrs \\ %{}) do
+    %UserAuthToken{}
+    |> UserAuthToken.create_changeset(%{
+      name: attrs["name"],
+      expire_at: attrs["expire_at"],
+      user_id: current_user.id
+    })
+  end
+
+  def create_auth_token(%User{} = current_user, now, attrs) do
+    %UserAuthToken{}
+    |> UserAuthToken.create_changeset(%{
+      name: attrs["name"],
+      expire_at:
+        case attrs["expire_at"] do
+          "hour" -> Timex.shift(now, hours: 1)
+          "day" -> Timex.shift(now, days: 1)
+          "month" -> Timex.shift(now, months: 1)
+          _ -> nil
+        end,
+      user_id: current_user.id
+    })
+    |> Repo.insert()
+  end
+
+  def delete_auth_token(token_id, %User{} = current_user, now) do
+    UserAuthToken
+    |> where([t], t.id == ^token_id and t.user_id == ^current_user.id and is_nil(t.deleted_at))
+    |> Repo.one()
+    |> Result.from_nillable()
+    |> Result.flat_map(fn token ->
+      token
+      |> UserAuthToken.delete_changeset(now)
+      |> Repo.update()
+    end)
+  end
+
   ## Session
 
   def generate_user_session_token(user) do
@@ -276,7 +321,18 @@ defmodule Azimutt.Accounts do
 
   def get_user_by_session_token(token) do
     {:ok, query} = UserToken.verify_session_token_query(token)
-    Repo.one(query)
+    Repo.one(query) |> Result.from_nillable()
+  end
+
+  def get_user_by_auth_token(token_id, now) do
+    UserAuthToken
+    |> where([t], t.id == ^token_id and is_nil(t.deleted_at) and (is_nil(t.expire_at) or t.expire_at > ^now))
+    |> Repo.one()
+    |> Result.from_nillable()
+    |> Result.flat_map(fn token ->
+      token |> UserAuthToken.access_changeset(now) |> Repo.update()
+      User |> Repo.get(token.user_id) |> Result.from_nillable()
+    end)
   end
 
   def delete_session_token(token) do

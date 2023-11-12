@@ -20,6 +20,11 @@ defmodule Azimutt.Utils.MapxTest do
       assert %{foo: 3, bob: 5} = %{foo: "bar", bob: "alice"} |> Mapx.map_values(&String.length/1)
     end
 
+    test "put_no_nil" do
+      assert %{foo: "bar"} = %{foo: "bar", bob: "alice"} |> Mapx.put_no_nil(:bob, nil)
+      assert %{foo: "bar", bob: "claude"} = %{foo: "bar", bob: "alice"} |> Mapx.put_no_nil(:bob, "claude")
+    end
+
     test "toggle" do
       assert %{foo: "bar"} = %{foo: "bar", bob: "alice"} |> Mapx.toggle(:bob, "alice")
       assert %{foo: "bar", bob: "loic"} = %{foo: "bar", bob: "alice"} |> Mapx.toggle(:bob, "loic")

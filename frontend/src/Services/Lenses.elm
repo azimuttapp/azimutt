@@ -202,7 +202,6 @@ module Services.Lenses exposing
     , setOperation
     , setOperator
     , setOrganization
-    , setOrigins
     , setParsedSchema
     , setParsedSource
     , setPlan
@@ -1039,11 +1038,6 @@ mapOrganization =
 mapOrganizationM : (v -> v) -> { item | organization : Maybe v } -> { item | organization : Maybe v }
 mapOrganizationM =
     mapM_ .organization setOrganization
-
-
-setOrigins : v -> { item | origins : v } -> { item | origins : v }
-setOrigins =
-    set_ .origins (\value item -> { item | origins = value })
 
 
 setParsedSchema : v -> { item | parsedSchema : v } -> { item | parsedSchema : v }
