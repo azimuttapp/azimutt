@@ -1,4 +1,4 @@
-module Models.Project.ColumnValue exposing (ColumnValue, decode, decodeAny, encode, label, merge)
+module Models.Project.ColumnValue exposing (ColumnValue, decode, decodeAny, encode, label)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
@@ -17,11 +17,6 @@ label value =
 
         _ ->
             value
-
-
-merge : ColumnValue -> ColumnValue -> ColumnValue
-merge v1 _ =
-    v1
 
 
 encode : ColumnValue -> Value

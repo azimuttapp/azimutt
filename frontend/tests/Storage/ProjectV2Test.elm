@@ -21,7 +21,6 @@ import Models.Project.CustomType as CustomType
 import Models.Project.FindPathSettings exposing (FindPathSettings)
 import Models.Project.Index as Index exposing (Index)
 import Models.Project.Layout as Layout exposing (Layout)
-import Models.Project.Origin as Origin exposing (Origin)
 import Models.Project.PrimaryKey as PrimaryKey exposing (PrimaryKey)
 import Models.Project.ProjectEncodingVersion as ProjectEncodingVersion
 import Models.Project.ProjectId as ProjectId
@@ -67,7 +66,6 @@ suite =
             , fuzzSerde "Relation" Relation.encode Relation.decode ProjectFuzzers.relation
             , fuzzSerde "ColumnRef" ColumnRef.encode ColumnRef.decode ProjectFuzzers.columnRef
             , fuzzSerde "CustomType" CustomType.encode CustomType.decode ProjectFuzzers.customType
-            , fuzzSerde "Source" Origin.encode Origin.decode ProjectFuzzers.origin
             , fuzzSerde "TableRow" TableRow.encode TableRow.decode ProjectFuzzers.tableRow
             , fuzzSerde "Layout" Layout.encode Layout.decode ProjectFuzzers.layout
             , fuzzSerde "CanvasProps" CanvasProps.encode CanvasProps.decode ProjectFuzzers.canvasProps
@@ -117,7 +115,7 @@ project0Json =
 
 tables1 : Dict TableId Table
 tables1 =
-    Dict.fromListMap .id [ Table ( "public", "users" ) "public" "users" False (Dict.fromListMap .name [ Column 0 "id" "int" False Nothing Nothing Nothing Nothing [] ]) Nothing [] [] [] Nothing [] ]
+    Dict.fromListMap .id [ Table ( "public", "users" ) "public" "users" False (Dict.fromListMap .name [ Column 0 "id" "int" False Nothing Nothing Nothing Nothing ]) Nothing [] [] [] Nothing ]
 
 
 project1 : Project
@@ -162,15 +160,14 @@ tables2 =
           , view = False
           , columns =
                 Dict.fromListMap .name
-                    [ Column 0 "id" "int" False Nothing Nothing Nothing Nothing []
-                    , Column 1 "name" "varchar" True Nothing Nothing Nothing Nothing []
+                    [ Column 0 "id" "int" False Nothing Nothing Nothing Nothing
+                    , Column 1 "name" "varchar" True Nothing Nothing Nothing Nothing
                     ]
-          , primaryKey = Just (PrimaryKey (Just "users_pk") (Nel (ColumnPath.fromString "id") []) [])
+          , primaryKey = Just (PrimaryKey (Just "users_pk") (Nel (ColumnPath.fromString "id") []))
           , uniques = []
           , indexes = []
           , checks = []
           , comment = Nothing
-          , origins = [ Origin src1 ]
           }
         , { id = ( "public", "creds" )
           , schema = "public"
@@ -178,24 +175,23 @@ tables2 =
           , view = False
           , columns =
                 Dict.fromListMap .name
-                    [ Column 0 "user_id" "int" False Nothing Nothing Nothing Nothing [ Origin src1 ]
-                    , Column 1 "login" "varchar" False Nothing Nothing Nothing Nothing [ Origin src1 ]
-                    , Column 2 "pass" "varchar" False Nothing (Just (Comment "Encrypted field" [])) Nothing Nothing [ Origin src1 ]
-                    , Column 3 "role" "varchar" True (Just "guest") Nothing Nothing Nothing [ Origin src1 ]
+                    [ Column 0 "user_id" "int" False Nothing Nothing Nothing Nothing
+                    , Column 1 "login" "varchar" False Nothing Nothing Nothing Nothing
+                    , Column 2 "pass" "varchar" False Nothing (Just (Comment "Encrypted field")) Nothing Nothing
+                    , Column 3 "role" "varchar" True (Just "guest") Nothing Nothing Nothing
                     ]
           , primaryKey = Nothing
-          , uniques = [ Unique "unique_login" (Nel (ColumnPath.fromString "login") []) (Just "(login)") [] ]
-          , indexes = [ Index "role_idx" (Nel (ColumnPath.fromString "role") []) (Just "(role)") [] ]
+          , uniques = [ Unique "unique_login" (Nel (ColumnPath.fromString "login") []) (Just "(login)") ]
+          , indexes = [ Index "role_idx" (Nel (ColumnPath.fromString "role") []) (Just "(role)") ]
           , checks = []
-          , comment = Just (Comment "To allow users to login" [])
-          , origins = [ Origin src1 ]
+          , comment = Just (Comment "To allow users to login")
           }
         ]
 
 
 relations2 : List Relation
 relations2 =
-    [ Relation.new "creds_user_id" (ColumnRef ( "public", "creds" ) (ColumnPath.fromString "user_id")) (ColumnRef ( "public", "users" ) (ColumnPath.fromString "id")) [] ]
+    [ Relation.new "creds_user_id" (ColumnRef ( "public", "creds" ) (ColumnPath.fromString "user_id")) (ColumnRef ( "public", "users" ) (ColumnPath.fromString "id")) ]
 
 
 project2 : Project
@@ -261,8 +257,8 @@ project2Json : String
 project2Json =
     """{"id":"00000000-0000-0000-0000-000000000000","slug":"00000000-0000-0000-0000-000000000000","name":"Project 0","""
         ++ """"sources":[{"id":"00000000-0000-0000-0000-000000000001","name":"source 1","kind":{"kind":"SqlLocalFile","name":"structure.sql","size":10000,"modified":200},"content":["","","","","","","","","","","CREATE TABLE users","  (id int NOT NULL, name varchar);","","CREATE TABLE creds (","  user_id int NOT NULL,","  login varchar NOT NULL,","  pass varchar NOT NULL,","  role varchar",");"],"tables":["""
-        ++ """{"schema":"public","table":"creds","columns":[{"name":"user_id","type":"int","origins":[{"id":"00000000-0000-0000-0000-000000000001"}]},{"name":"login","type":"varchar","origins":[{"id":"00000000-0000-0000-0000-000000000001"}]},{"name":"pass","type":"varchar","comment":{"text":"Encrypted field"},"origins":[{"id":"00000000-0000-0000-0000-000000000001"}]},{"name":"role","type":"varchar","nullable":true,"default":"guest","origins":[{"id":"00000000-0000-0000-0000-000000000001"}]}],"uniques":[{"name":"unique_login","columns":["login"],"definition":"(login)"}],"indexes":[{"name":"role_idx","columns":["role"],"definition":"(role)"}],"comment":{"text":"To allow users to login"},"origins":[{"id":"00000000-0000-0000-0000-000000000001"}]},"""
-        ++ """{"schema":"public","table":"users","columns":[{"name":"id","type":"int"},{"name":"name","type":"varchar","nullable":true}],"primaryKey":{"name":"users_pk","columns":["id"]},"origins":[{"id":"00000000-0000-0000-0000-000000000001"}]}],"""
+        ++ """{"schema":"public","table":"creds","columns":[{"name":"user_id","type":"int"},{"name":"login","type":"varchar"},{"name":"pass","type":"varchar","comment":{"text":"Encrypted field"}},{"name":"role","type":"varchar","nullable":true,"default":"guest"}],"uniques":[{"name":"unique_login","columns":["login"],"definition":"(login)"}],"indexes":[{"name":"role_idx","columns":["role"],"definition":"(role)"}],"comment":{"text":"To allow users to login"}},"""
+        ++ """{"schema":"public","table":"users","columns":[{"name":"id","type":"int"},{"name":"name","type":"varchar","nullable":true}],"primaryKey":{"name":"users_pk","columns":["id"]}}],"""
         ++ """"relations":[{"name":"creds_user_id","src":{"table":"public.creds","column":"user_id"},"ref":{"table":"public.users","column":"id"}}],"createdAt":1100,"updatedAt":1101}],"""
         ++ """"layouts":{"""
         ++ """"empty":{"tables":[],"createdAt":1202,"updatedAt":1203},"""

@@ -11,11 +11,11 @@ import Libs.Html exposing (bText)
 import Libs.List as List
 import Libs.String as String
 import Libs.Tailwind as Tw
-import Models.Project.Relation as Relation exposing (Relation)
+import Models.Project.Relation exposing (Relation)
 import Models.Project.RelationId as RelationId
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
-import Models.Project.Table as Table exposing (Table)
+import Models.Project.Table exposing (Table)
 import Models.Project.TableId as TableId
 
 
@@ -23,10 +23,10 @@ view : SchemaName -> Source -> Source -> Html msg
 view defaultSchema newSource oldSource =
     let
         ( removedTables, updatedTables, newTables ) =
-            List.diff .id (oldSource.tables |> Dict.values |> List.map Table.clearOrigins) (newSource.tables |> Dict.values |> List.map Table.clearOrigins)
+            List.diff .id (oldSource.tables |> Dict.values) (newSource.tables |> Dict.values)
 
         ( removedRelations, updatedRelations, newRelations ) =
-            List.diff .id (oldSource.relations |> List.map Relation.clearOrigins) (newSource.relations |> List.map Relation.clearOrigins)
+            List.diff .id oldSource.relations newSource.relations
     in
     if List.nonEmpty updatedTables || List.nonEmpty newTables || List.nonEmpty removedTables || List.nonEmpty updatedRelations || List.nonEmpty newRelations || List.nonEmpty removedRelations then
         div [ class "mt-3" ]

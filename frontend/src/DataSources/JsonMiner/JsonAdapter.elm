@@ -19,12 +19,10 @@ import Models.Project.Comment exposing (Comment)
 import Models.Project.CustomType exposing (CustomType)
 import Models.Project.CustomTypeValue as CustomTypeValue
 import Models.Project.Index exposing (Index)
-import Models.Project.Origin exposing (Origin)
 import Models.Project.PrimaryKey exposing (PrimaryKey)
 import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.Schema exposing (Schema)
 import Models.Project.Source exposing (Source)
-import Models.Project.SourceId exposing (SourceId)
 import Models.Project.Table exposing (Table)
 import Models.Project.Unique exposing (Unique)
 import Models.SourceInfo exposing (SourceInfo)
@@ -35,7 +33,7 @@ buildSource source jsonSchema =
     let
         schema : Schema
         schema =
-            buildSchema source.id jsonSchema
+            buildSchema jsonSchema
     in
     { id = source.id
     , name = source.name
@@ -51,15 +49,10 @@ buildSource source jsonSchema =
     }
 
 
-buildSchema : SourceId -> JsonSchema -> Schema
-buildSchema source schema =
-    let
-        origins : List Origin
-        origins =
-            [ { id = source } ]
-    in
-    { tables = schema.tables |> List.map (buildTable origins) |> Dict.fromListMap .id
-    , relations = schema.relations |> List.map (buildRelation origins)
+buildSchema : JsonSchema -> Schema
+buildSchema schema =
+    { tables = schema.tables |> List.map buildTable |> Dict.fromListMap .id
+    , relations = schema.relations |> List.map buildRelation
     , types = schema.types |> List.map buildType |> Dict.fromListMap .id
     }
 
@@ -72,19 +65,18 @@ unpackSchema schema =
     }
 
 
-buildTable : List Origin -> JsonTable -> Table
-buildTable origins table =
+buildTable : JsonTable -> Table
+buildTable table =
     { id = ( table.schema, table.table )
     , schema = table.schema
     , name = table.table
     , view = table.view |> Maybe.withDefault False
-    , columns = table.columns |> buildColumns origins
-    , primaryKey = table.primaryKey |> Maybe.map (buildPrimaryKey origins)
-    , uniques = table.uniques |> List.map (buildUnique origins table.table)
-    , indexes = table.indexes |> List.map (buildIndex origins table.table)
-    , checks = table.checks |> List.map (buildCheck origins table.table)
-    , comment = table.comment |> Maybe.map (buildComment origins)
-    , origins = origins
+    , columns = table.columns |> buildColumns
+    , primaryKey = table.primaryKey |> Maybe.map buildPrimaryKey
+    , uniques = table.uniques |> List.map (buildUnique table.table)
+    , indexes = table.indexes |> List.map (buildIndex table.table)
+    , checks = table.checks |> List.map (buildCheck table.table)
+    , comment = table.comment |> Maybe.map buildComment
     }
 
 
@@ -102,9 +94,9 @@ unpackTable table =
     }
 
 
-buildColumns : List Origin -> List JsonColumn -> Dict ColumnName Column
-buildColumns origins columns =
-    columns |> List.indexedMap (buildColumn origins) |> Dict.fromListMap .name
+buildColumns : List JsonColumn -> Dict ColumnName Column
+buildColumns columns =
+    columns |> List.indexedMap buildColumn |> Dict.fromListMap .name
 
 
 unpackColumns : Dict ColumnName Column -> List JsonColumn
@@ -112,17 +104,16 @@ unpackColumns columns =
     columns |> Dict.values |> List.sortBy .index |> List.map unpackColumn
 
 
-buildColumn : List Origin -> Int -> JsonColumn -> Column
-buildColumn origins index column =
+buildColumn : Int -> JsonColumn -> Column
+buildColumn index column =
     { index = index
     , name = column.name
     , kind = column.kind
     , nullable = column.nullable |> Maybe.withDefault False
     , default = column.default
-    , comment = column.comment |> Maybe.map (buildComment origins)
+    , comment = column.comment |> Maybe.map buildComment
     , values = column.values
-    , columns = column.columns |> Maybe.map (buildNestedColumns origins)
-    , origins = origins
+    , columns = column.columns |> Maybe.map buildNestedColumns
     }
 
 
@@ -138,9 +129,9 @@ unpackColumn column =
     }
 
 
-buildNestedColumns : List Origin -> JsonNestedColumns -> NestedColumns
-buildNestedColumns origins (JsonNestedColumns columns) =
-    columns |> Nel.indexedMap (buildColumn origins) |> Ned.fromNelMap .name |> NestedColumns
+buildNestedColumns : JsonNestedColumns -> NestedColumns
+buildNestedColumns (JsonNestedColumns columns) =
+    columns |> Nel.indexedMap buildColumn |> Ned.fromNelMap .name |> NestedColumns
 
 
 unpackNestedColumns : NestedColumns -> JsonNestedColumns
@@ -148,11 +139,10 @@ unpackNestedColumns (NestedColumns columns) =
     columns |> Ned.values |> Nel.sortBy .index |> Nel.map unpackColumn |> JsonNestedColumns
 
 
-buildPrimaryKey : List Origin -> JsonPrimaryKey -> PrimaryKey
-buildPrimaryKey origins pk =
+buildPrimaryKey : JsonPrimaryKey -> PrimaryKey
+buildPrimaryKey pk =
     { name = pk.name
     , columns = pk.columns |> Nel.map ColumnPath.fromString
-    , origins = origins
     }
 
 
@@ -163,12 +153,11 @@ unpackPrimaryKey pk =
     }
 
 
-buildUnique : List Origin -> String -> JsonUnique -> Unique
-buildUnique origins table unique =
+buildUnique : String -> JsonUnique -> Unique
+buildUnique table unique =
     { name = unique.name |> Maybe.withDefault (defaultUniqueName table unique.columns.head)
     , columns = unique.columns |> Nel.map ColumnPath.fromString
     , definition = unique.definition
-    , origins = origins
     }
 
 
@@ -180,12 +169,11 @@ unpackUnique table unique =
     }
 
 
-buildIndex : List Origin -> String -> JsonIndex -> Index
-buildIndex origins table index =
+buildIndex : String -> JsonIndex -> Index
+buildIndex table index =
     { name = index.name |> Maybe.withDefault (defaultIndexName table index.columns.head)
     , columns = index.columns |> Nel.map ColumnPath.fromString
     , definition = index.definition
-    , origins = origins
     }
 
 
@@ -197,12 +185,11 @@ unpackIndex table index =
     }
 
 
-buildCheck : List Origin -> String -> JsonCheck -> Check
-buildCheck origins table check =
+buildCheck : String -> JsonCheck -> Check
+buildCheck table check =
     { name = check.name |> Maybe.withDefault (defaultCheckName table (check.columns |> List.head |> Maybe.withDefault ""))
     , columns = check.columns |> List.map ColumnPath.fromString
     , predicate = check.predicate
-    , origins = origins
     }
 
 
@@ -214,10 +201,9 @@ unpackCheck table check =
     }
 
 
-buildComment : List Origin -> String -> Comment
-buildComment origins comment =
+buildComment : String -> Comment
+buildComment comment =
     { text = comment
-    , origins = origins
     }
 
 
@@ -226,12 +212,11 @@ unpackComment comment =
     comment.text
 
 
-buildRelation : List Origin -> JsonRelation -> Relation
-buildRelation origins relation =
+buildRelation : JsonRelation -> Relation
+buildRelation relation =
     Relation.new relation.name
         { table = ( relation.src.schema, relation.src.table ), column = ColumnPath.fromString relation.src.column }
         { table = ( relation.ref.schema, relation.ref.table ), column = ColumnPath.fromString relation.ref.column }
-        origins
 
 
 unpackRelation : Relation -> JsonRelation

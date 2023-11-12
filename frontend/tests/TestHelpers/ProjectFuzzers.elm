@@ -30,7 +30,6 @@ import Models.Project.Index exposing (Index)
 import Models.Project.IndexName exposing (IndexName)
 import Models.Project.Layout exposing (Layout)
 import Models.Project.LayoutName exposing (LayoutName)
-import Models.Project.Origin exposing (Origin)
 import Models.Project.PrimaryKey exposing (PrimaryKey)
 import Models.Project.PrimaryKeyName exposing (PrimaryKeyName)
 import Models.Project.ProjectEncodingVersion as ProjectEncodingVersion exposing (ProjectEncodingVersion)
@@ -95,7 +94,7 @@ tables =
 
 table : Fuzzer Table
 table =
-    Fuzz.map10 Table.new
+    Fuzz.map9 Table.new
         schemaName
         tableName
         Fuzz.bool
@@ -105,37 +104,36 @@ table =
         (listSmall index)
         (listSmall check)
         (Fuzz.maybe comment)
-        (Fuzz.listN 1 origin)
 
 
 column : ColumnIndex -> Fuzzer Column
 column i =
-    Fuzz.map8 (Column i) columnName columnType Fuzz.bool (Fuzz.maybe columnValue) (Fuzz.maybe comment) (Fuzz.constant Nothing) (Fuzz.constant Nothing) (Fuzz.listN 1 origin)
+    Fuzz.map7 (Column i) columnName columnType Fuzz.bool (Fuzz.maybe columnValue) (Fuzz.maybe comment) (Fuzz.constant Nothing) (Fuzz.constant Nothing)
 
 
 primaryKey : Fuzzer PrimaryKey
 primaryKey =
-    Fuzz.map3 PrimaryKey (Fuzz.maybe primaryKeyName) (nelSmall columnPath) (Fuzz.listN 1 origin)
+    Fuzz.map2 PrimaryKey (Fuzz.maybe primaryKeyName) (nelSmall columnPath)
 
 
 unique : Fuzzer Unique
 unique =
-    Fuzz.map4 Unique uniqueName (nelSmall columnPath) (Fuzz.maybe text) (Fuzz.listN 1 origin)
+    Fuzz.map3 Unique uniqueName (nelSmall columnPath) (Fuzz.maybe text)
 
 
 index : Fuzzer Index
 index =
-    Fuzz.map4 Index indexName (nelSmall columnPath) (Fuzz.maybe text) (Fuzz.listN 1 origin)
+    Fuzz.map3 Index indexName (nelSmall columnPath) (Fuzz.maybe text)
 
 
 check : Fuzzer Check
 check =
-    Fuzz.map4 Check checkName (listSmall columnPath) (Fuzz.maybe text) (Fuzz.listN 1 origin)
+    Fuzz.map3 Check checkName (listSmall columnPath) (Fuzz.maybe text)
 
 
 comment : Fuzzer Comment
 comment =
-    Fuzz.map2 Comment text (Fuzz.listN 1 origin)
+    Fuzz.map Comment text
 
 
 types : Fuzzer (Dict CustomTypeId CustomType)
@@ -158,17 +156,12 @@ customTypeValue =
 
 relation : Fuzzer Relation
 relation =
-    Fuzz.map4 Relation.new relationName columnRef columnRef (Fuzz.listN 1 origin)
+    Fuzz.map3 Relation.new relationName columnRef columnRef
 
 
 columnRef : Fuzzer ColumnRef
 columnRef =
     Fuzz.map2 ColumnRef tableId columnPath
-
-
-origin : Fuzzer Origin
-origin =
-    Fuzz.map Origin sourceId
 
 
 tableMeta : Fuzzer TableMeta

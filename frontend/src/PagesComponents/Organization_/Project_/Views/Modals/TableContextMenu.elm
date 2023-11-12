@@ -35,7 +35,7 @@ view platform conf defaultSchema layout index table props notes =
             ++ ([ Maybe.when conf.layout { label = B.cond props.selected "Hide selected tables" "Hide table", content = ContextMenu.SimpleHotkey { action = HideTable table.id, platform = platform, hotkeys = Conf.hotkeys |> Dict.getOrElse "hide" [] } }
                 , Maybe.when conf.layout { label = "Show details", content = ContextMenu.Simple { action = DetailsSidebarMsg (DetailsSidebar.ShowTable table.id) } }
                 , table.origins
-                    |> List.findMap (\o -> o.source |> Maybe.andThen (.db >> Maybe.map (\url -> ( o.id, url ))))
+                    |> List.findMap (\o -> o.db |> Maybe.map (\url -> ( o.id, url )))
                     |> Maybe.map (\( id, url ) -> { label = "Explore table data", content = ContextMenu.Simple { action = DataExplorerMsg (DataExplorer.Open (Just id) (Just (DbQuery.exploreTable (DatabaseKind.fromUrl url) table.id))) } })
                 , Maybe.when conf.layout { label = notes |> Maybe.mapOrElse (\_ -> "Update notes") "Add notes", content = ContextMenu.SimpleHotkey { action = NotesMsg (NOpen table.id Nothing), platform = platform, hotkeys = Conf.hotkeys |> Dict.getOrElse "notes" [] } }
                 , Maybe.when conf.layout { label = B.cond props.selected "Set color of selected tables" "Set color", content = ContextMenu.Custom (ColorPicker.view (TableColor table.id)) ContextMenu.BottomRight }

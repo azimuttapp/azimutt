@@ -35,7 +35,6 @@ import Libs.Time as Time
 import Libs.Tuple3 as Tuple3
 import Models.Position as Position
 import Models.Project as Project
-import Models.Project.Check exposing (Check)
 import Models.Project.CheckName exposing (CheckName)
 import Models.Project.ColumnId as ColumnId exposing (ColumnId)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath, ColumnPathStr)
@@ -43,11 +42,9 @@ import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
 import Models.Project.ColumnStats exposing (ColumnStats, ColumnValueCount)
 import Models.Project.ColumnValue exposing (ColumnValue)
 import Models.Project.Comment as Comment
-import Models.Project.Index exposing (Index)
 import Models.Project.IndexName exposing (IndexName)
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.Metadata as Metadata exposing (Metadata)
-import Models.Project.PrimaryKey exposing (PrimaryKey)
 import Models.Project.SchemaName as SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId, SourceIdStr)
@@ -56,20 +53,23 @@ import Models.Project.SourceName exposing (SourceName)
 import Models.Project.TableId as TableId exposing (TableId, TableIdStr)
 import Models.Project.TableMeta exposing (TableMeta)
 import Models.Project.TableStats exposing (TableStats)
-import Models.Project.Unique exposing (Unique)
 import Models.Project.UniqueName exposing (UniqueName)
 import Models.Size as Size
 import Models.SourceInfo as SourceInfo
 import Models.SqlQuery exposing (SqlQuery, SqlQueryOrigin)
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
+import PagesComponents.Organization_.Project_.Models.ErdCheck exposing (ErdCheck)
 import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn)
 import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps exposing (ErdColumnProps, ErdColumnPropsFlat)
 import PagesComponents.Organization_.Project_.Models.ErdColumnRef as ErdColumnRef exposing (ErdColumnRef)
+import PagesComponents.Organization_.Project_.Models.ErdIndex exposing (ErdIndex)
 import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.ErdOrigin exposing (ErdOrigin)
+import PagesComponents.Organization_.Project_.Models.ErdPrimaryKey exposing (ErdPrimaryKey)
 import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.ErdTableProps exposing (ErdTableProps)
+import PagesComponents.Organization_.Project_.Models.ErdUnique exposing (ErdUnique)
 import Services.Lenses exposing (setLayouts, setTables)
 import Simple.Fuzzy
 import Time exposing (Posix)
@@ -209,7 +209,7 @@ viewTable goToList goToSchema goToTable goToColumn showTable loadLayout openData
             , notes |> viewNotes
             , tags |> viewTags
             , inLayouts |> List.nonEmptyMap (\l -> viewProp [ text "In layouts" ] (l |> List.sort |> List.map (viewLayout loadLayout))) (div [] [])
-            , table.item.origins |> List.nonEmptyMap (\origin -> viewProp [ text "From sources" ] (origin |> List.sortBy (\o -> o.source |> Maybe.mapOrElse .name (SourceId.toString o.id)) |> List.map (\o -> viewSource openDataExplorer table.item.id Nothing (stats |> Dict.get (SourceId.toString o.id) |> Maybe.andThen Result.toMaybe |> Maybe.map .rows) o))) (div [] [])
+            , table.item.origins |> List.nonEmptyMap (\origin -> viewProp [ text "From sources" ] (origin |> List.sortBy .name |> List.map (\o -> viewSource openDataExplorer table.item.id Nothing (stats |> Dict.get (SourceId.toString o.id) |> Maybe.andThen Result.toMaybe |> Maybe.map .rows) o))) (div [] [])
             , outRelations |> List.nonEmptyMap (\r -> viewProp [ text "References" ] (r |> List.sortBy .table |> List.map (viewTableRelation goToTable defaultSchema))) (div [] [])
             , inRelations |> List.nonEmptyMap (\r -> viewProp [ text "Referenced by" ] (r |> List.sortBy .table |> List.map (viewTableRelation goToTable defaultSchema))) (div [] [])
             , viewTableConstraints table.item
@@ -291,7 +291,7 @@ viewColumn goToList goToSchema goToTable goToColumn showTable loadLayout openDat
             , tags |> viewTags
             , viewColumnStats column.item.origins stats
             , inLayouts |> List.nonEmptyMap (\l -> viewProp [ text "In layouts" ] (l |> List.sort |> List.map (viewLayout loadLayout))) (div [] [])
-            , column.item.origins |> List.nonEmptyMap (\origin -> viewProp [ text "From sources" ] (origin |> List.sortBy (\o -> o.source |> Maybe.mapOrElse .name (SourceId.toString o.id)) |> List.map (viewSource openDataExplorer table.item.id (Just column.item.path) Nothing))) (div [] [])
+            , column.item.origins |> List.nonEmptyMap (\origin -> viewProp [ text "From sources" ] (origin |> List.sortBy .name |> List.map (viewSource openDataExplorer table.item.id (Just column.item.path) Nothing))) (div [] [])
             , column.item.outRelations |> List.nonEmptyMap (\r -> viewProp [ text "References" ] (r |> List.sortBy ErdColumnRef.toId |> List.map (viewColumnRelation goToColumn defaultSchema))) (div [] [])
             , column.item.inRelations |> List.nonEmptyMap (\r -> viewProp [ text "Referenced by" ] (r |> List.sortBy ErdColumnRef.toId |> List.map (viewColumnRelation goToColumn defaultSchema))) (div [] [])
             , viewColumnConstraints table.item column.item
@@ -560,7 +560,7 @@ viewColumnStats origins stats =
     div []
         (stats
             |> Dict.toList
-            |> List.map (\( sourceId, s ) -> ( origins |> List.findBy (.id >> SourceId.toString) sourceId |> Maybe.andThen .source |> Maybe.mapOrElse .name sourceId, s ))
+            |> List.map (\( sourceId, s ) -> ( origins |> List.findBy (.id >> SourceId.toString) sourceId |> Maybe.mapOrElse .name sourceId, s ))
             |> List.sortBy Tuple.first
             |> List.map
                 (\( sourceName, res ) ->
@@ -621,22 +621,22 @@ viewTableConstraints table =
             )
 
 
-viewTablePrimaryKey : PrimaryKey -> Html msg
+viewTablePrimaryKey : ErdPrimaryKey -> Html msg
 viewTablePrimaryKey primaryKey =
     viewTableConstraint "Primary key" primaryKey.name (primaryKey.columns |> Nel.toList)
 
 
-viewTableUnique : Unique -> Html msg
+viewTableUnique : ErdUnique -> Html msg
 viewTableUnique unique =
     viewTableConstraint "Unique" (Just unique.name) (unique.columns |> Nel.toList)
 
 
-viewTableIndex : Index -> Html msg
+viewTableIndex : ErdIndex -> Html msg
 viewTableIndex index =
     viewTableConstraint "Index" (Just index.name) (index.columns |> Nel.toList)
 
 
-viewTableCheck : Check -> Html msg
+viewTableCheck : ErdCheck -> Html msg
 viewTableCheck check =
     viewTableConstraint "Check" (Just check.name) check.columns
 
@@ -665,22 +665,22 @@ viewColumnConstraints table column =
             )
 
 
-viewColumnPrimaryKey : Maybe PrimaryKey -> Html msg
+viewColumnPrimaryKey : Maybe ErdPrimaryKey -> Html msg
 viewColumnPrimaryKey primaryKey =
     (primaryKey |> Maybe.andThen .name) |> viewColumnConstraint "Primary key" (primaryKey |> Maybe.mapOrElse (\pk -> ( Nel.toList pk.columns, Nothing )) ( [], Nothing ))
 
 
-viewColumnUnique : List Unique -> UniqueName -> Html msg
+viewColumnUnique : List ErdUnique -> UniqueName -> Html msg
 viewColumnUnique constraints name =
     Just name |> viewColumnConstraint "Unique" (constraints |> List.findBy .name name |> Maybe.mapOrElse (\u -> ( Nel.toList u.columns, u.definition )) ( [], Nothing ))
 
 
-viewColumnIndex : List Index -> IndexName -> Html msg
+viewColumnIndex : List ErdIndex -> IndexName -> Html msg
 viewColumnIndex constraints name =
     Just name |> viewColumnConstraint "Index" (constraints |> List.findBy .name name |> Maybe.mapOrElse (\u -> ( Nel.toList u.columns, u.definition )) ( [], Nothing ))
 
 
-viewColumnCheck : List Check -> { name : CheckName, predicate : Maybe String } -> Html msg
+viewColumnCheck : List ErdCheck -> { name : CheckName, predicate : Maybe String } -> Html msg
 viewColumnCheck constraints check =
     Just check.name |> viewColumnConstraint "Check" (constraints |> List.findBy .name check.name |> Maybe.mapOrElse (\u -> ( u.columns, u.predicate )) ( [], Nothing ))
 
@@ -713,36 +713,32 @@ viewLayout loadLayout layout =
 viewSource : (SourceId -> SqlQueryOrigin -> msg) -> TableId -> Maybe ColumnPath -> Maybe Int -> ErdOrigin -> Html msg
 viewSource openDataExplorer table column rows origin =
     div [ class "mt-1 flex flex-row" ]
-        [ case origin.source |> Maybe.map .kind of
-            Just (SourceKind.DatabaseConnection _) ->
+        [ case origin.kind of
+            SourceKind.DatabaseConnection _ ->
                 Icon.solid Icons.sources.database "opacity-50 mr-1" |> Tooltip.r "Database source"
 
-            Just (SourceKind.SqlLocalFile _ _ _) ->
+            SourceKind.SqlLocalFile _ _ _ ->
                 Icon.solid Icons.sources.sql "opacity-50 mr-1" |> Tooltip.r "SQL source"
 
-            Just (SourceKind.SqlRemoteFile _ _) ->
+            SourceKind.SqlRemoteFile _ _ ->
                 Icon.solid Icons.sources.sql "opacity-50 mr-1" |> Tooltip.r "SQL source"
 
-            Just (SourceKind.PrismaLocalFile _ _ _) ->
+            SourceKind.PrismaLocalFile _ _ _ ->
                 Icon.solid Icons.sources.prisma "opacity-50 mr-1" |> Tooltip.r "Prisma source"
 
-            Just (SourceKind.PrismaRemoteFile _ _) ->
+            SourceKind.PrismaRemoteFile _ _ ->
                 Icon.solid Icons.sources.prisma "opacity-50 mr-1" |> Tooltip.r "Prisma source"
 
-            Just (SourceKind.JsonLocalFile _ _ _) ->
+            SourceKind.JsonLocalFile _ _ _ ->
                 Icon.solid Icons.sources.json "opacity-50 mr-1" |> Tooltip.r "JSON source"
 
-            Just (SourceKind.JsonRemoteFile _ _) ->
+            SourceKind.JsonRemoteFile _ _ ->
                 Icon.solid Icons.sources.json "opacity-50 mr-1" |> Tooltip.r "JSON source"
 
-            Just SourceKind.AmlEditor ->
+            SourceKind.AmlEditor ->
                 Icon.solid Icons.sources.aml "opacity-50 mr-1" |> Tooltip.r "AML source"
-
-            Nothing ->
-                Icon.solid Icons.sources.missing "opacity-50 mr-1" |> Tooltip.r "Missing source"
-        , text ((origin.source |> Maybe.mapOrElse .name (SourceId.toString origin.id)) ++ (rows |> Maybe.mapOrElse (\r -> " (" ++ String.fromInt r ++ " rows)") ""))
-        , origin.source
-            |> Maybe.andThen .db
+        , text (origin.name ++ (rows |> Maybe.mapOrElse (\r -> " (" ++ String.fromInt r ++ " rows)") ""))
+        , origin.db
             |> Maybe.map
                 (\url ->
                     button

@@ -7,16 +7,16 @@ import Models.Project.CustomType exposing (CustomType)
 import Models.Project.CustomTypeId exposing (CustomTypeId)
 import Models.Project.CustomTypeName exposing (CustomTypeName)
 import Models.Project.CustomTypeValue as CustomTypeValue exposing (CustomTypeValue)
-import Models.Project.Origin exposing (Origin)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
+import PagesComponents.Organization_.Project_.Models.ErdOrigin as ErdOrigin exposing (ErdOrigin)
 
 
 type alias ErdCustomType =
     { id : CustomTypeId
     , name : CustomTypeName
     , value : CustomTypeValue
-    , origins : List Origin
+    , origins : List ErdOrigin
     }
 
 
@@ -25,7 +25,7 @@ create source t =
     { id = t.id
     , name = t.name
     , value = t.value
-    , origins = [ Origin source.id ]
+    , origins = [ ErdOrigin.create source ]
     }
 
 

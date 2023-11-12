@@ -14,11 +14,11 @@ suite =
         [ describe "serialization"
             [ testEncode "basic"
                 Column.encode
-                (Column 1 "id" "int" False Nothing Nothing Nothing Nothing [])
+                (Column 1 "id" "int" False Nothing Nothing Nothing Nothing)
                 """{"name":"id","type":"int"}"""
             , testEncode "full"
                 Column.encode
-                (Column 1 "id" "int" True (Just "0") (Just (Comment "id col" [])) (Nel.fromList [ "a" ]) Nothing [])
+                (Column 1 "id" "int" True (Just "0") (Just (Comment "id col")) (Nel.fromList [ "a" ]) Nothing)
                 """{"name":"id","type":"int","nullable":true,"default":"0","comment":{"text":"id col"},"values":["a"]}"""
             , testEncode "nested"
                 Column.encode
@@ -29,13 +29,12 @@ suite =
                     Nothing
                     Nothing
                     Nothing
-                    ([ Column 0 "kind" "string" False Nothing Nothing Nothing Nothing []
-                     , Column 1 "value" "number" False Nothing Nothing Nothing Nothing []
+                    ([ Column 0 "kind" "string" False Nothing Nothing Nothing Nothing
+                     , Column 1 "value" "number" False Nothing Nothing Nothing Nothing
                      ]
                         |> Nel.fromList
                         |> Maybe.map (Ned.fromNelMap .name >> NestedColumns)
                     )
-                    []
                 )
                 """{"name":"id","type":"Object","columns":[{"name":"kind","type":"string"},{"name":"value","type":"number"}]}"""
             ]

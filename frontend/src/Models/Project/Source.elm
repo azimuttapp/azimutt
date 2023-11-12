@@ -16,7 +16,6 @@ import Models.Project.Column exposing (Column)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.CustomType as CustomType exposing (CustomType)
 import Models.Project.CustomTypeId exposing (CustomTypeId)
-import Models.Project.Origin exposing (Origin)
 import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.SampleKey as SampleKey exposing (SampleKey)
 import Models.Project.SourceId as SourceId exposing (SourceId)
@@ -101,7 +100,7 @@ addRelations : Time.Posix -> List { src : ColumnRef, ref : ColumnRef } -> Source
 addRelations now rels source =
     source
         |> mapContent (Array.append (Array.fromList (rels |> List.map (\r -> AmlGenerator.relation r.src r.ref))))
-        |> mapRelations (\rs -> rs ++ (rels |> List.map (\r -> Relation.virtual r.src r.ref (Origin source.id))))
+        |> mapRelations (\rs -> rs ++ (rels |> List.map (\r -> Relation.virtual r.src r.ref)))
         |> setUpdatedAt now
 
 

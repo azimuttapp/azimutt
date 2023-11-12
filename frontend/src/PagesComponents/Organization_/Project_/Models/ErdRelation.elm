@@ -2,14 +2,15 @@ module PagesComponents.Organization_.Project_.Models.ErdRelation exposing (ErdRe
 
 import Dict exposing (Dict)
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
-import Models.Project.Origin exposing (Origin)
 import Models.Project.Relation exposing (Relation)
 import Models.Project.RelationId as RelationId exposing (RelationId)
 import Models.Project.RelationName exposing (RelationName)
 import Models.Project.SchemaName exposing (SchemaName)
-import Models.Project.Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
+import PagesComponents.Organization_.Project_.Models.Erd.RelationWithOrigin exposing (RelationWithOrigin)
+import PagesComponents.Organization_.Project_.Models.Erd.TableWithOrigin exposing (TableWithOrigin)
 import PagesComponents.Organization_.Project_.Models.ErdColumnRef as ErdColumnRef exposing (ErdColumnRef)
+import PagesComponents.Organization_.Project_.Models.ErdOrigin exposing (ErdOrigin)
 
 
 type alias ErdRelation =
@@ -17,16 +18,16 @@ type alias ErdRelation =
     , name : RelationName
     , src : ErdColumnRef
     , ref : ErdColumnRef
-    , origins : List Origin
+    , origins : List ErdOrigin
     }
 
 
-new : RelationName -> ErdColumnRef -> ErdColumnRef -> List Origin -> ErdRelation
+new : RelationName -> ErdColumnRef -> ErdColumnRef -> List ErdOrigin -> ErdRelation
 new name src ref origins =
     ErdRelation (RelationId.new src ref) name src ref origins
 
 
-create : Dict TableId Table -> Relation -> ErdRelation
+create : Dict TableId TableWithOrigin -> RelationWithOrigin -> ErdRelation
 create tables relation =
     { id = relation.id
     , name = relation.name
@@ -42,7 +43,6 @@ unpack relation =
     , name = relation.name
     , src = relation.src |> ErdColumnRef.unpack
     , ref = relation.ref |> ErdColumnRef.unpack
-    , origins = relation.origins
     }
 
 

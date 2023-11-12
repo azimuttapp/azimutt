@@ -992,19 +992,18 @@ docTable schema name columns =
     , schema = schema
     , name = name
     , view = False
-    , columns = columns |> List.indexedMap (\i ( col, kind, nullable ) -> { index = i, name = col, kind = kind, nullable = nullable, default = Nothing, comment = Nothing, values = Nothing, columns = Nothing, origins = [] }) |> Dict.fromListMap .name
-    , primaryKey = Just { name = Just (name ++ "_pk"), columns = Nel (Nel "id" []) [], origins = [] }
+    , columns = columns |> List.indexedMap (\i ( col, kind, nullable ) -> { index = i, name = col, kind = kind, nullable = nullable, default = Nothing, comment = Nothing, values = Nothing, columns = Nothing }) |> Dict.fromListMap .name
+    , primaryKey = Just { name = Just (name ++ "_pk"), columns = Nel (Nel "id" []) [] }
     , uniques = []
     , indexes = []
     , checks = []
     , comment = Nothing
-    , origins = []
     }
 
 
 docRelation : ( SchemaName, TableName, ColumnName ) -> ( SchemaName, TableName, ColumnName ) -> Relation
 docRelation ( fromSchema, fromTable, fromColumn ) ( toSchema, toTable, toColumn ) =
-    Relation.new (fromTable ++ "." ++ fromColumn ++ "->" ++ toTable ++ "." ++ toColumn) { table = ( fromSchema, fromTable ), column = Nel fromColumn [] } { table = ( toSchema, toTable ), column = Nel toColumn [] } []
+    Relation.new (fromTable ++ "." ++ fromColumn ++ "->" ++ toTable ++ "." ++ toColumn) { table = ( fromSchema, fromTable ), column = Nel fromColumn [] } { table = ( toSchema, toTable ), column = Nel toColumn [] }
 
 
 docUpdate : DocState -> (DocState -> Model) -> (DocState -> Model -> DocState) -> Msg -> ElmBook.Msg (SharedDocState x)

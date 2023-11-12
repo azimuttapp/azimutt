@@ -22,29 +22,29 @@ suite : Test
 suite =
     describe "AmlAdapter"
         [ describe "evolve"
-            [ test "empty changes nothing" (\_ -> schema |> evolve source (AmlEmptyStatement { comment = Nothing }) |> Expect.equal schema)
+            [ test "empty changes nothing" (\_ -> schema |> evolve (AmlEmptyStatement { comment = Nothing }) |> Expect.equal schema)
             , test "add a table"
                 (\_ ->
                     schema
-                        |> evolve source (AmlTableStatement usersAml)
+                        |> evolve (AmlTableStatement usersAml)
                         |> Expect.equal { schema | tables = Dict.fromListMap .id [ users ] }
                 )
             , test "can't add a table twice"
                 (\_ ->
                     { schema | tables = Dict.fromListMap .id [ users ] }
-                        |> evolve source (AmlTableStatement usersAml)
+                        |> evolve (AmlTableStatement usersAml)
                         |> Expect.equal { schema | tables = Dict.fromListMap .id [ users ], errors = [ { row = 0, col = 0, problem = "Table 'users' is already defined" } ] }
                 )
             , test "add a relation"
                 (\_ ->
                     schema
-                        |> evolve source (AmlRelationStatement loginsFkAml)
+                        |> evolve (AmlRelationStatement loginsFkAml)
                         |> Expect.equal { schema | relations = [ loginsFk ] }
                 )
             , test "add a table with relations"
                 (\_ ->
                     schema
-                        |> evolve source (AmlTableStatement loginsAml)
+                        |> evolve (AmlTableStatement loginsAml)
                         |> Expect.equal { schema | tables = Dict.fromListMap .id [ logins ], relations = [ loginsFk ] }
                 )
             ]
@@ -122,7 +122,6 @@ loginsFk =
     , name = "logins_user_id_fk_az"
     , src = { table = ( Conf.schema.empty, "logins" ), column = "user_id" |> ColumnPath.fromString }
     , ref = { table = ( Conf.schema.empty, "users" ), column = "id" |> ColumnPath.fromString }
-    , origins = [ { id = source } ]
     }
 
 
@@ -147,27 +146,27 @@ amlColumn =
 
 table : Table
 table =
-    { id = ( "", "" ), schema = "", name = "", view = False, columns = Dict.empty, primaryKey = Nothing, uniques = [], indexes = [], checks = [], comment = Nothing, origins = [ { id = source } ] }
+    { id = ( "", "" ), schema = "", name = "", view = False, columns = Dict.empty, primaryKey = Nothing, uniques = [], indexes = [], checks = [], comment = Nothing }
 
 
 column : Column
 column =
-    { index = 0, name = "", kind = "", nullable = False, default = Nothing, comment = Nothing, values = Nothing, columns = Nothing, origins = [ { id = source } ] }
+    { index = 0, name = "", kind = "", nullable = False, default = Nothing, comment = Nothing, values = Nothing, columns = Nothing }
 
 
 primaryKey : PrimaryKey
 primaryKey =
-    { name = Nothing, columns = "" |> ColumnPath.fromString |> Nel.from, origins = [ { id = source } ] }
+    { name = Nothing, columns = "" |> ColumnPath.fromString |> Nel.from }
 
 
 unique : Unique
 unique =
-    { name = "", columns = "" |> ColumnPath.fromString |> Nel.from, definition = Nothing, origins = [ { id = source } ] }
+    { name = "", columns = "" |> ColumnPath.fromString |> Nel.from, definition = Nothing }
 
 
 comment : Comment
 comment =
-    { text = "", origins = [ { id = source } ] }
+    { text = "" }
 
 
 source : SourceId

@@ -12,16 +12,16 @@ import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath, ColumnPathStr)
 import Models.Project.ColumnType as ColumnType exposing (ColumnType)
 import Models.Project.ColumnValue as ColumnValue exposing (ColumnValue)
-import Models.Project.Comment exposing (Comment)
 import Models.Project.CustomTypeId exposing (CustomTypeId)
 import Models.Project.IndexName exposing (IndexName)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
-import Models.Project.Table exposing (Table)
 import Models.Project.UniqueName exposing (UniqueName)
+import PagesComponents.Organization_.Project_.Models.Erd.TableWithOrigin exposing (ColumnWithOrigin, NestedColumnsWithOrigin(..), TableWithOrigin)
 import PagesComponents.Organization_.Project_.Models.ErdColumnRef exposing (ErdColumnRef)
+import PagesComponents.Organization_.Project_.Models.ErdComment as ErdComment exposing (ErdComment)
 import PagesComponents.Organization_.Project_.Models.ErdCustomType as ErdCustomType exposing (ErdCustomType)
-import PagesComponents.Organization_.Project_.Models.ErdOrigin as ErdOrigin exposing (ErdOrigin)
+import PagesComponents.Organization_.Project_.Models.ErdOrigin exposing (ErdOrigin)
 import PagesComponents.Organization_.Project_.Models.ErdRelation exposing (ErdRelation)
 import PagesComponents.Organization_.Project_.Models.SuggestedRelation exposing (SuggestedRelation)
 
@@ -36,7 +36,7 @@ type alias ErdColumn =
     , nullable : Bool
     , default : Maybe ColumnValue
     , defaultLabel : Maybe String
-    , comment : Maybe Comment
+    , comment : Maybe ErdComment
     , isPrimaryKey : Bool
     , inRelations : List ErdColumnRef
     , outRelations : List ErdColumnRef
@@ -54,8 +54,8 @@ type ErdNestedColumns
     = ErdNestedColumns (Ned ColumnName ErdColumn)
 
 
-create : SchemaName -> List Source -> Dict CustomTypeId ErdCustomType -> List ErdRelation -> Dict ColumnPathStr (List SuggestedRelation) -> Table -> ColumnPath -> Column -> ErdColumn
-create defaultSchema sources types columnRelations suggestedRelations table path column =
+create : SchemaName -> Dict CustomTypeId ErdCustomType -> List ErdRelation -> Dict ColumnPathStr (List SuggestedRelation) -> TableWithOrigin -> ColumnPath -> ColumnWithOrigin -> ErdColumn
+create defaultSchema types columnRelations suggestedRelations table path column =
     { index = column.index
     , name = column.name
     , path = path
@@ -65,7 +65,7 @@ create defaultSchema sources types columnRelations suggestedRelations table path
     , nullable = column.nullable
     , default = column.default
     , defaultLabel = column.default |> Maybe.map ColumnValue.label
-    , comment = column.comment
+    , comment = column.comment |> Maybe.map ErdComment.create
     , isPrimaryKey = table.primaryKey |> Maybe.filter (.columns >> Nel.member path) |> Maybe.isJust
     , inRelations = columnRelations |> List.filter (\r -> r.ref.table == table.id && r.ref.column == path) |> List.map .src
     , outRelations = columnRelations |> List.filter (\r -> r.src.table == table.id && r.src.column == path) |> List.map .ref
@@ -74,8 +74,8 @@ create defaultSchema sources types columnRelations suggestedRelations table path
     , indexes = table.indexes |> List.filter (.columns >> Nel.member path) |> List.map .name
     , checks = table.checks |> List.filter (.columns >> List.member path) |> List.map (\c -> { name = c.name, predicate = c.predicate })
     , values = column.values
-    , columns = column.columns |> Maybe.map (\(NestedColumns cols) -> cols |> Ned.map (\name -> create defaultSchema sources types columnRelations suggestedRelations table (path |> ColumnPath.child name)) |> ErdNestedColumns)
-    , origins = column.origins |> List.map (ErdOrigin.create sources)
+    , columns = column.columns |> Maybe.map (\(NestedColumnsWithOrigin cols) -> cols |> Ned.map (\name -> create defaultSchema types columnRelations suggestedRelations table (path |> ColumnPath.child name)) |> ErdNestedColumns)
+    , origins = column.origins
     }
 
 
@@ -86,10 +86,9 @@ unpack column =
     , kind = column.kind
     , nullable = column.nullable
     , default = column.default
-    , comment = column.comment
+    , comment = column.comment |> Maybe.map ErdComment.unpack
     , values = column.values
     , columns = column.columns |> Maybe.map (\(ErdNestedColumns cols) -> cols |> Ned.map (\_ -> unpack) |> NestedColumns)
-    , origins = column.origins |> List.map ErdOrigin.unpack
     }
 
 
