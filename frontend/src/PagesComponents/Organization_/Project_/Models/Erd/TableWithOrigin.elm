@@ -47,17 +47,22 @@ type alias TableWithOrigin =
 
 create : Source -> Table -> TableWithOrigin
 create source table =
+    let
+        origin : ErdOrigin
+        origin =
+            ErdOrigin.create source
+    in
     { id = table.id
     , schema = table.schema
     , name = table.name
     , view = table.view
-    , columns = table.columns |> Dict.map (\_ -> createColumn source)
-    , primaryKey = table.primaryKey |> Maybe.map (createPrimaryKey source)
-    , uniques = table.uniques |> List.map (createUnique source)
-    , indexes = table.indexes |> List.map (createIndex source)
-    , checks = table.checks |> List.map (createCheck source)
-    , comment = table.comment |> Maybe.map (createComment source)
-    , origins = [ ErdOrigin.create source ]
+    , columns = table.columns |> Dict.map (\_ -> createColumn origin)
+    , primaryKey = table.primaryKey |> Maybe.map (createPrimaryKey origin)
+    , uniques = table.uniques |> List.map (createUnique origin)
+    , indexes = table.indexes |> List.map (createIndex origin)
+    , checks = table.checks |> List.map (createCheck origin)
+    , comment = table.comment |> Maybe.map (createComment origin)
+    , origins = [ origin ]
     }
 
 
@@ -123,17 +128,17 @@ type NestedColumnsWithOrigin
     = NestedColumnsWithOrigin (Ned ColumnName ColumnWithOrigin)
 
 
-createColumn : Source -> Column -> ColumnWithOrigin
-createColumn source column =
+createColumn : ErdOrigin -> Column -> ColumnWithOrigin
+createColumn origin column =
     { index = column.index
     , name = column.name
     , kind = column.kind
     , nullable = column.nullable
     , default = column.default
-    , comment = column.comment |> Maybe.map (createComment source)
+    , comment = column.comment |> Maybe.map (createComment origin)
     , values = column.values
-    , columns = column.columns |> Maybe.map (\(NestedColumns cols) -> cols |> Ned.map (\_ -> createColumn source) |> NestedColumnsWithOrigin)
-    , origins = [ ErdOrigin.create source ]
+    , columns = column.columns |> Maybe.map (\(NestedColumns cols) -> cols |> Ned.map (\_ -> createColumn origin) |> NestedColumnsWithOrigin)
+    , origins = [ origin ]
     }
 
 
@@ -181,11 +186,11 @@ type alias PrimaryKeyWithOrigin =
     }
 
 
-createPrimaryKey : Source -> PrimaryKey -> PrimaryKeyWithOrigin
-createPrimaryKey source primaryKey =
+createPrimaryKey : ErdOrigin -> PrimaryKey -> PrimaryKeyWithOrigin
+createPrimaryKey origin primaryKey =
     { name = primaryKey.name
     , columns = primaryKey.columns
-    , origins = [ ErdOrigin.create source ]
+    , origins = [ origin ]
     }
 
 
@@ -212,12 +217,12 @@ type alias UniqueWithOrigin =
     }
 
 
-createUnique : Source -> Unique -> UniqueWithOrigin
-createUnique source unique =
+createUnique : ErdOrigin -> Unique -> UniqueWithOrigin
+createUnique origin unique =
     { name = unique.name
     , columns = unique.columns
     , definition = unique.definition
-    , origins = [ ErdOrigin.create source ]
+    , origins = [ origin ]
     }
 
 
@@ -246,12 +251,12 @@ type alias IndexWithOrigin =
     }
 
 
-createIndex : Source -> Index -> IndexWithOrigin
-createIndex source index =
+createIndex : ErdOrigin -> Index -> IndexWithOrigin
+createIndex origin index =
     { name = index.name
     , columns = index.columns
     , definition = index.definition
-    , origins = [ ErdOrigin.create source ]
+    , origins = [ origin ]
     }
 
 
@@ -280,12 +285,12 @@ type alias CheckWithOrigin =
     }
 
 
-createCheck : Source -> Check -> CheckWithOrigin
-createCheck source check =
+createCheck : ErdOrigin -> Check -> CheckWithOrigin
+createCheck origin check =
     { name = check.name
     , columns = check.columns
     , predicate = check.predicate
-    , origins = [ ErdOrigin.create source ]
+    , origins = [ origin ]
     }
 
 
@@ -312,10 +317,10 @@ type alias CommentWithOrigin =
     }
 
 
-createComment : Source -> Comment -> CommentWithOrigin
-createComment source comment =
+createComment : ErdOrigin -> Comment -> CommentWithOrigin
+createComment origin comment =
     { text = comment.text
-    , origins = [ ErdOrigin.create source ]
+    , origins = [ origin ]
     }
 
 

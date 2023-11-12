@@ -125,7 +125,7 @@ defmodule AzimuttWeb.UserAuth do
   and remember me token.
   """
   def fetch_current_user(conn, _opts) do
-    auth_token = conn.params["auth-token"]
+    auth_token = conn.params["auth-token"] || conn.req_headers |> Enum.find_value(fn {key, value} -> if key == "auth-token", do: value end)
     {user_token, conn} = ensure_user_token(conn)
 
     user =

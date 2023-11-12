@@ -9,9 +9,6 @@ defmodule AzimuttWeb.Api.SourceController do
   alias AzimuttWeb.Utils.ProjectSchema
   action_fallback AzimuttWeb.Api.FallbackController
 
-  # TODO: add swagger doc
-  # TODO: remove origin fields in sources (Elm & JS)
-
   def index(conn, %{"organization_id" => _organization_id, "project_id" => project_id} = params) do
     current_user = conn.assigns.current_user
     ctx = CtxParams.from_params(params)
