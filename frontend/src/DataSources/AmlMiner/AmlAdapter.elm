@@ -136,7 +136,7 @@ createTable source table =
 
         origins : List Origin
         origins =
-            [ { id = source, lines = [] } ]
+            [ { id = source } ]
     in
     ( { id = id
       , schema = id |> TableId.schema
@@ -223,7 +223,7 @@ createRelation source from to =
     , name = defaultRelName from.table (ColumnPath.fromString from.column)
     , src = { table = fromId, column = ColumnPath.fromString from.column }
     , ref = { table = toId, column = ColumnPath.fromString to.column }
-    , origins = [ { id = source, lines = [] } ]
+    , origins = [ { id = source } ]
     }
 
 

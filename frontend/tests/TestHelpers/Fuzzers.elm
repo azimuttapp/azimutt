@@ -5,7 +5,6 @@ import Dict exposing (Dict)
 import Fuzz exposing (Fuzzer)
 import Libs.Fuzz as Fuzz
 import Libs.Models.DatabaseKind as DatabaseKind exposing (DatabaseKind)
-import Libs.Models.FileLineIndex exposing (FileLineIndex)
 import Libs.Models.FileName exposing (FileName)
 import Libs.Models.FileSize exposing (FileSize)
 import Libs.Models.FileUpdatedAt exposing (FileUpdatedAt)
@@ -100,11 +99,6 @@ fileUrl =
 
 fileSize : Fuzzer FileSize
 fileSize =
-    intPos
-
-
-fileLineIndex : Fuzzer FileLineIndex
-fileLineIndex =
     intPos
 
 

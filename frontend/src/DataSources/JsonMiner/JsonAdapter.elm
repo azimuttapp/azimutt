@@ -56,7 +56,7 @@ buildSchema source schema =
     let
         origins : List Origin
         origins =
-            [ { id = source, lines = [] } ]
+            [ { id = source } ]
     in
     { tables = schema.tables |> List.map (buildTable origins) |> Dict.fromListMap .id
     , relations = schema.relations |> List.map (buildRelation origins)

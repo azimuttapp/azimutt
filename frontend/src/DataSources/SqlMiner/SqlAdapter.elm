@@ -74,7 +74,7 @@ evolve source ( statement, command ) content =
     let
         origin : Origin
         origin =
-            createOrigin source statement
+            createOrigin source
     in
     case command of
         CreateTable sqlTable ->
@@ -404,9 +404,9 @@ createRelation origin tables table relation src ref =
     ( refCol |> Maybe.map (\col -> Relation.new name src (ColumnRef refTable col) [ origin ]), errors )
 
 
-createOrigin : SourceId -> SqlStatement -> Origin
-createOrigin source statement =
-    { id = source, lines = statement |> Nel.map .index |> Nel.toList }
+createOrigin : SourceId -> Origin
+createOrigin source =
+    { id = source }
 
 
 createTableId : Maybe SqlSchemaName -> SqlTableName -> TableId

@@ -64,7 +64,7 @@ import Models.Size as Size
 import Models.SqlQuery exposing (SqlQueryOrigin)
 import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
 import PagesComponents.Organization_.Project_.Models.MemoId exposing (MemoId)
-import TestHelpers.Fuzzers exposing (color, databaseKind, dbValue, dictSmall, fileLineIndex, fileModified, fileName, fileSize, fileUrl, identifier, intPosSmall, listSmall, nelSmall, positionDiagram, positionGrid, posix, setSmall, sizeCanvas, stringSmall, text, uuid, zoomLevel)
+import TestHelpers.Fuzzers exposing (color, databaseKind, dbValue, dictSmall, fileModified, fileName, fileSize, fileUrl, identifier, intPosSmall, listSmall, nelSmall, positionDiagram, positionGrid, posix, setSmall, sizeCanvas, stringSmall, text, uuid, zoomLevel)
 import TestHelpers.OrganizationFuzzers exposing (organization)
 
 
@@ -168,7 +168,7 @@ columnRef =
 
 origin : Fuzzer Origin
 origin =
-    Fuzz.map2 Origin sourceId (listSmall fileLineIndex)
+    Fuzz.map Origin sourceId
 
 
 tableMeta : Fuzzer TableMeta

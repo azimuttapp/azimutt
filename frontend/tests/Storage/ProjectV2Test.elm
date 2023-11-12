@@ -170,7 +170,7 @@ tables2 =
           , indexes = []
           , checks = []
           , comment = Nothing
-          , origins = [ Origin src1 [ 10, 11 ] ]
+          , origins = [ Origin src1 ]
           }
         , { id = ( "public", "creds" )
           , schema = "public"
@@ -178,17 +178,17 @@ tables2 =
           , view = False
           , columns =
                 Dict.fromListMap .name
-                    [ Column 0 "user_id" "int" False Nothing Nothing Nothing Nothing [ Origin src1 [ 14 ] ]
-                    , Column 1 "login" "varchar" False Nothing Nothing Nothing Nothing [ Origin src1 [ 15 ] ]
-                    , Column 2 "pass" "varchar" False Nothing (Just (Comment "Encrypted field" [])) Nothing Nothing [ Origin src1 [ 16 ] ]
-                    , Column 3 "role" "varchar" True (Just "guest") Nothing Nothing Nothing [ Origin src1 [ 17 ] ]
+                    [ Column 0 "user_id" "int" False Nothing Nothing Nothing Nothing [ Origin src1 ]
+                    , Column 1 "login" "varchar" False Nothing Nothing Nothing Nothing [ Origin src1 ]
+                    , Column 2 "pass" "varchar" False Nothing (Just (Comment "Encrypted field" [])) Nothing Nothing [ Origin src1 ]
+                    , Column 3 "role" "varchar" True (Just "guest") Nothing Nothing Nothing [ Origin src1 ]
                     ]
           , primaryKey = Nothing
           , uniques = [ Unique "unique_login" (Nel (ColumnPath.fromString "login") []) (Just "(login)") [] ]
           , indexes = [ Index "role_idx" (Nel (ColumnPath.fromString "role") []) (Just "(role)") [] ]
           , checks = []
           , comment = Just (Comment "To allow users to login" [])
-          , origins = [ Origin src1 [ 13, 14, 15, 16, 17, 18 ] ]
+          , origins = [ Origin src1 ]
           }
         ]
 
@@ -261,8 +261,8 @@ project2Json : String
 project2Json =
     """{"id":"00000000-0000-0000-0000-000000000000","slug":"00000000-0000-0000-0000-000000000000","name":"Project 0","""
         ++ """"sources":[{"id":"00000000-0000-0000-0000-000000000001","name":"source 1","kind":{"kind":"SqlLocalFile","name":"structure.sql","size":10000,"modified":200},"content":["","","","","","","","","","","CREATE TABLE users","  (id int NOT NULL, name varchar);","","CREATE TABLE creds (","  user_id int NOT NULL,","  login varchar NOT NULL,","  pass varchar NOT NULL,","  role varchar",");"],"tables":["""
-        ++ """{"schema":"public","table":"creds","columns":[{"name":"user_id","type":"int","origins":[{"id":"00000000-0000-0000-0000-000000000001","lines":[14]}]},{"name":"login","type":"varchar","origins":[{"id":"00000000-0000-0000-0000-000000000001","lines":[15]}]},{"name":"pass","type":"varchar","comment":{"text":"Encrypted field"},"origins":[{"id":"00000000-0000-0000-0000-000000000001","lines":[16]}]},{"name":"role","type":"varchar","nullable":true,"default":"guest","origins":[{"id":"00000000-0000-0000-0000-000000000001","lines":[17]}]}],"uniques":[{"name":"unique_login","columns":["login"],"definition":"(login)"}],"indexes":[{"name":"role_idx","columns":["role"],"definition":"(role)"}],"comment":{"text":"To allow users to login"},"origins":[{"id":"00000000-0000-0000-0000-000000000001","lines":[13,14,15,16,17,18]}]},"""
-        ++ """{"schema":"public","table":"users","columns":[{"name":"id","type":"int"},{"name":"name","type":"varchar","nullable":true}],"primaryKey":{"name":"users_pk","columns":["id"]},"origins":[{"id":"00000000-0000-0000-0000-000000000001","lines":[10,11]}]}],"""
+        ++ """{"schema":"public","table":"creds","columns":[{"name":"user_id","type":"int","origins":[{"id":"00000000-0000-0000-0000-000000000001"}]},{"name":"login","type":"varchar","origins":[{"id":"00000000-0000-0000-0000-000000000001"}]},{"name":"pass","type":"varchar","comment":{"text":"Encrypted field"},"origins":[{"id":"00000000-0000-0000-0000-000000000001"}]},{"name":"role","type":"varchar","nullable":true,"default":"guest","origins":[{"id":"00000000-0000-0000-0000-000000000001"}]}],"uniques":[{"name":"unique_login","columns":["login"],"definition":"(login)"}],"indexes":[{"name":"role_idx","columns":["role"],"definition":"(role)"}],"comment":{"text":"To allow users to login"},"origins":[{"id":"00000000-0000-0000-0000-000000000001"}]},"""
+        ++ """{"schema":"public","table":"users","columns":[{"name":"id","type":"int"},{"name":"name","type":"varchar","nullable":true}],"primaryKey":{"name":"users_pk","columns":["id"]},"origins":[{"id":"00000000-0000-0000-0000-000000000001"}]}],"""
         ++ """"relations":[{"name":"creds_user_id","src":{"table":"public.creds","column":"user_id"},"ref":{"table":"public.users","column":"id"}}],"createdAt":1100,"updatedAt":1101}],"""
         ++ """"layouts":{"""
         ++ """"empty":{"tables":[],"createdAt":1202,"updatedAt":1203},"""

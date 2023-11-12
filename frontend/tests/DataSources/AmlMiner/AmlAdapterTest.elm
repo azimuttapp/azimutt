@@ -122,7 +122,7 @@ loginsFk =
     , name = "logins_user_id_fk_az"
     , src = { table = ( Conf.schema.empty, "logins" ), column = "user_id" |> ColumnPath.fromString }
     , ref = { table = ( Conf.schema.empty, "users" ), column = "id" |> ColumnPath.fromString }
-    , origins = [ { id = source, lines = [] } ]
+    , origins = [ { id = source } ]
     }
 
 
@@ -147,27 +147,27 @@ amlColumn =
 
 table : Table
 table =
-    { id = ( "", "" ), schema = "", name = "", view = False, columns = Dict.empty, primaryKey = Nothing, uniques = [], indexes = [], checks = [], comment = Nothing, origins = [ { id = source, lines = [] } ] }
+    { id = ( "", "" ), schema = "", name = "", view = False, columns = Dict.empty, primaryKey = Nothing, uniques = [], indexes = [], checks = [], comment = Nothing, origins = [ { id = source } ] }
 
 
 column : Column
 column =
-    { index = 0, name = "", kind = "", nullable = False, default = Nothing, comment = Nothing, values = Nothing, columns = Nothing, origins = [ { id = source, lines = [] } ] }
+    { index = 0, name = "", kind = "", nullable = False, default = Nothing, comment = Nothing, values = Nothing, columns = Nothing, origins = [ { id = source } ] }
 
 
 primaryKey : PrimaryKey
 primaryKey =
-    { name = Nothing, columns = "" |> ColumnPath.fromString |> Nel.from, origins = [ { id = source, lines = [] } ] }
+    { name = Nothing, columns = "" |> ColumnPath.fromString |> Nel.from, origins = [ { id = source } ] }
 
 
 unique : Unique
 unique =
-    { name = "", columns = "" |> ColumnPath.fromString |> Nel.from, definition = Nothing, origins = [ { id = source, lines = [] } ] }
+    { name = "", columns = "" |> ColumnPath.fromString |> Nel.from, definition = Nothing, origins = [ { id = source } ] }
 
 
 comment : Comment
 comment =
-    { text = "", origins = [ { id = source, lines = [] } ] }
+    { text = "", origins = [ { id = source } ] }
 
 
 source : SourceId

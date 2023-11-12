@@ -101,7 +101,7 @@ addRelations : Time.Posix -> List { src : ColumnRef, ref : ColumnRef } -> Source
 addRelations now rels source =
     source
         |> mapContent (Array.append (Array.fromList (rels |> List.map (\r -> AmlGenerator.relation r.src r.ref))))
-        |> mapRelations (\rs -> rs ++ (rels |> List.indexedMap (\i r -> Relation.virtual r.src r.ref (Origin source.id [ Array.length source.content + i + 1 ]))))
+        |> mapRelations (\rs -> rs ++ (rels |> List.map (\r -> Relation.virtual r.src r.ref (Origin source.id))))
         |> setUpdatedAt now
 
 
