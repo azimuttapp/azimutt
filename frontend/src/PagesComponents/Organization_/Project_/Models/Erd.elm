@@ -15,7 +15,6 @@ import Models.Project exposing (Project)
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.ColumnPath exposing (ColumnPath, ColumnPathStr)
 import Models.Project.ColumnRef exposing (ColumnRef, ColumnRefLike)
-import Models.Project.CustomType as CustomType exposing (CustomType)
 import Models.Project.CustomTypeId exposing (CustomTypeId)
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.Metadata exposing (Metadata)
@@ -34,6 +33,7 @@ import Models.Size as Size
 import Models.UrlInfos exposing (UrlInfos)
 import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn)
 import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps
+import PagesComponents.Organization_.Project_.Models.ErdCustomType as ErdCustomType exposing (ErdCustomType)
 import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.ErdRelation as ErdRelation exposing (ErdRelation)
 import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable exposing (ErdTable)
@@ -48,7 +48,7 @@ type alias Erd =
     { project : ProjectInfo
     , tables : Dict TableId ErdTable
     , relations : List ErdRelation
-    , types : Dict CustomTypeId CustomType
+    , types : Dict CustomTypeId ErdCustomType
     , relationsByTable : Dict TableId (List ErdRelation)
     , ignoredRelations : Dict TableId (List ColumnPath)
     , layouts : Dict LayoutName ErdLayout
@@ -110,11 +110,11 @@ unpack erd =
     }
 
 
-toSchema : { s | tables : Dict TableId ErdTable, relations : List ErdRelation, types : Dict CustomTypeId CustomType } -> Schema
+toSchema : { s | tables : Dict TableId ErdTable, relations : List ErdRelation, types : Dict CustomTypeId ErdCustomType } -> Schema
 toSchema source =
     { tables = source.tables |> Dict.map (\_ -> ErdTable.unpack)
     , relations = source.relations |> List.map ErdRelation.unpack
-    , types = source.types
+    , types = source.types |> Dict.map (\_ -> ErdCustomType.unpack)
     }
 
 
@@ -249,7 +249,7 @@ viewportM erdElem erd =
     erd |> Maybe.mapOrElse (currentLayout >> .canvas >> CanvasProps.viewport erdElem) Area.zeroCanvas
 
 
-computeSources : ProjectSettings -> List Source -> Dict TableId (List ColumnPath) -> ( ( Dict TableId ErdTable, List ErdRelation, Dict CustomTypeId CustomType ), Dict TableId (List ErdRelation) )
+computeSources : ProjectSettings -> List Source -> Dict TableId (List ColumnPath) -> ( ( Dict TableId ErdTable, List ErdRelation, Dict CustomTypeId ErdCustomType ), Dict TableId (List ErdRelation) )
 computeSources settings sources ignoredRelations =
     let
         tables : Dict TableId Table
@@ -260,7 +260,7 @@ computeSources settings sources ignoredRelations =
         relations =
             sources |> computeRelations tables
 
-        types : Dict CustomTypeId CustomType
+        types : Dict CustomTypeId ErdCustomType
         types =
             sources |> computeTypes
 
@@ -322,12 +322,12 @@ shouldDisplayRelation tables relation =
     (tables |> Dict.member relation.src.table) && (tables |> Dict.member relation.ref.table)
 
 
-computeTypes : List Source -> Dict CustomTypeId CustomType
+computeTypes : List Source -> Dict CustomTypeId ErdCustomType
 computeTypes sources =
     sources
         |> List.filter .enabled
-        |> List.map .types
-        |> List.foldr (Dict.fuse CustomType.merge) Dict.empty
+        |> List.map (\s -> s.types |> Dict.map (\_ -> ErdCustomType.create s))
+        |> List.foldr (Dict.fuse ErdCustomType.merge) Dict.empty
 
 
 buildRelationsByTable : List ErdRelation -> Dict TableId (List ErdRelation)

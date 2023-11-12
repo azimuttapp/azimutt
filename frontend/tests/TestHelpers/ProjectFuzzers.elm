@@ -145,7 +145,7 @@ types =
 
 customType : Fuzzer CustomType
 customType =
-    Fuzz.map4 CustomType.new schemaName customTypeName customTypeValue (Fuzz.listN 1 origin)
+    Fuzz.map3 CustomType.new schemaName customTypeName customTypeValue
 
 
 customTypeValue : Fuzzer CustomTypeValue

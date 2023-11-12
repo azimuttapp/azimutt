@@ -151,7 +151,7 @@ createTable source table =
       , origins = origins
       }
     , table.columns |> List.filterMap (\c -> Maybe.map (createRelation source { schema = table.schema, table = table.table, column = c.name }) c.foreignKey)
-    , table.columns |> List.filterMap (\c -> Maybe.map2 (createType origins (c.kindSchema |> Maybe.orElse table.schema)) c.kind c.values) |> Dict.fromListMap .id
+    , table.columns |> List.filterMap (\c -> Maybe.map2 (createType (c.kindSchema |> Maybe.orElse table.schema)) c.kind c.values) |> Dict.fromListMap .id
     )
 
 
@@ -227,10 +227,9 @@ createRelation source from to =
     }
 
 
-createType : List Origin -> Maybe SchemaName -> String -> Nel String -> CustomType
-createType origins schema name values =
+createType : Maybe SchemaName -> String -> Nel String -> CustomType
+createType schema name values =
     { id = ( schema |> Maybe.withDefault Conf.schema.empty, name )
     , name = name
     , value = CustomTypeValue.Enum (values |> Nel.toList)
-    , origins = origins
     }

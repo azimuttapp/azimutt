@@ -60,7 +60,7 @@ buildSchema source schema =
     in
     { tables = schema.tables |> List.map (buildTable origins) |> Dict.fromListMap .id
     , relations = schema.relations |> List.map (buildRelation origins)
-    , types = schema.types |> List.map (buildType origins) |> Dict.fromListMap .id
+    , types = schema.types |> List.map buildType |> Dict.fromListMap .id
     }
 
 
@@ -250,8 +250,8 @@ unpackRelation relation =
     }
 
 
-buildType : List Origin -> JsonType -> CustomType
-buildType origins t =
+buildType : JsonType -> CustomType
+buildType t =
     (case t.value of
         JsonTypeEnum values ->
             CustomTypeValue.Enum values
@@ -259,7 +259,7 @@ buildType origins t =
         JsonTypeDefinition definition ->
             CustomTypeValue.Definition definition
     )
-        |> (\value -> { id = ( t.schema, t.name ), name = t.name, value = value, origins = origins })
+        |> (\value -> { id = ( t.schema, t.name ), name = t.name, value = value })
 
 
 unpackType : CustomType -> JsonType

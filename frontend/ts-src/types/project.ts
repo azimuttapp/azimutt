@@ -143,12 +143,12 @@ export const SourceOrigin = z.enum(['import-project', 'sql-source', 'prisma-sour
 
 export interface Origin {
     id: SourceId
-    lines: LineIndex[]
+    lines?: LineIndex[]
 }
 
 export const Origin = z.object({
     id: SourceId,
-    lines: LineIndex.array()
+    lines: LineIndex.array().optional()
 }).strict()
 
 export interface Comment {

@@ -155,7 +155,7 @@ evolve source ( statement, command ) content =
             content
 
         CreateType t ->
-            { content | types = createType origin t :: content.types }
+            { content | types = createType t :: content.types }
 
         Ignored _ ->
             content
@@ -343,8 +343,8 @@ createChecks origin tableName columns checks =
         ++ (columns |> Nel.toList |> List.filterMap (\col -> col.check |> Maybe.map (\c -> Check (defaultCheckName tableName col.name) [ col.name |> ColumnPath.fromString ] (Just c) [ origin ])))
 
 
-createType : Origin -> ParsedType -> CustomType
-createType origin t =
+createType : ParsedType -> CustomType
+createType t =
     (case t.value of
         EnumType values ->
             CustomTypeValue.Enum values
@@ -352,7 +352,7 @@ createType origin t =
         UnknownType definition ->
             CustomTypeValue.Definition definition
     )
-        |> (\value -> { id = ( t.schema |> Maybe.withDefault "", t.name ), name = t.name, value = value, origins = [ origin ] })
+        |> (\value -> { id = ( t.schema |> Maybe.withDefault "", t.name ), name = t.name, value = value })
 
 
 createComment : Origin -> SqlComment -> Comment

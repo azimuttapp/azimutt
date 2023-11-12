@@ -13,7 +13,6 @@ import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath, ColumnPathS
 import Models.Project.ColumnType as ColumnType exposing (ColumnType)
 import Models.Project.ColumnValue as ColumnValue exposing (ColumnValue)
 import Models.Project.Comment exposing (Comment)
-import Models.Project.CustomType as CustomType exposing (CustomType)
 import Models.Project.CustomTypeId exposing (CustomTypeId)
 import Models.Project.IndexName exposing (IndexName)
 import Models.Project.SchemaName exposing (SchemaName)
@@ -21,6 +20,7 @@ import Models.Project.Source exposing (Source)
 import Models.Project.Table exposing (Table)
 import Models.Project.UniqueName exposing (UniqueName)
 import PagesComponents.Organization_.Project_.Models.ErdColumnRef exposing (ErdColumnRef)
+import PagesComponents.Organization_.Project_.Models.ErdCustomType as ErdCustomType exposing (ErdCustomType)
 import PagesComponents.Organization_.Project_.Models.ErdOrigin as ErdOrigin exposing (ErdOrigin)
 import PagesComponents.Organization_.Project_.Models.ErdRelation exposing (ErdRelation)
 import PagesComponents.Organization_.Project_.Models.SuggestedRelation exposing (SuggestedRelation)
@@ -32,7 +32,7 @@ type alias ErdColumn =
     , path : ColumnPath
     , kind : ColumnType
     , kindLabel : String
-    , customType : Maybe CustomType
+    , customType : Maybe ErdCustomType
     , nullable : Bool
     , default : Maybe ColumnValue
     , defaultLabel : Maybe String
@@ -54,14 +54,14 @@ type ErdNestedColumns
     = ErdNestedColumns (Ned ColumnName ErdColumn)
 
 
-create : SchemaName -> List Source -> Dict CustomTypeId CustomType -> List ErdRelation -> Dict ColumnPathStr (List SuggestedRelation) -> Table -> ColumnPath -> Column -> ErdColumn
+create : SchemaName -> List Source -> Dict CustomTypeId ErdCustomType -> List ErdRelation -> Dict ColumnPathStr (List SuggestedRelation) -> Table -> ColumnPath -> Column -> ErdColumn
 create defaultSchema sources types columnRelations suggestedRelations table path column =
     { index = column.index
     , name = column.name
     , path = path
     , kind = column.kind
     , kindLabel = column.kind |> ColumnType.label defaultSchema
-    , customType = types |> CustomType.get defaultSchema column.kind
+    , customType = types |> ErdCustomType.get defaultSchema column.kind
     , nullable = column.nullable
     , default = column.default
     , defaultLabel = column.default |> Maybe.map ColumnValue.label

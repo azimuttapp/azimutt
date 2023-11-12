@@ -10,7 +10,6 @@ import Models.Project.Check exposing (Check)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath, ColumnPathStr)
 import Models.Project.Comment exposing (Comment)
-import Models.Project.CustomType exposing (CustomType)
 import Models.Project.CustomTypeId exposing (CustomTypeId)
 import Models.Project.Index exposing (Index)
 import Models.Project.PrimaryKey exposing (PrimaryKey)
@@ -21,6 +20,7 @@ import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableName exposing (TableName)
 import Models.Project.Unique exposing (Unique)
 import PagesComponents.Organization_.Project_.Models.ErdColumn as ErdColumn exposing (ErdColumn)
+import PagesComponents.Organization_.Project_.Models.ErdCustomType exposing (ErdCustomType)
 import PagesComponents.Organization_.Project_.Models.ErdOrigin as ErdOrigin exposing (ErdOrigin)
 import PagesComponents.Organization_.Project_.Models.ErdRelation exposing (ErdRelation)
 import PagesComponents.Organization_.Project_.Models.SuggestedRelation exposing (SuggestedRelation)
@@ -43,7 +43,7 @@ type alias ErdTable =
     }
 
 
-create : SchemaName -> List Source -> Dict CustomTypeId CustomType -> List ErdRelation -> Dict ColumnPathStr (List SuggestedRelation) -> Table -> ErdTable
+create : SchemaName -> List Source -> Dict CustomTypeId ErdCustomType -> List ErdRelation -> Dict ColumnPathStr (List SuggestedRelation) -> Table -> ErdTable
 create defaultSchema sources types tableRelations suggestedRelations table =
     let
         relationsByRootColumn : Dict ColumnName (List ErdRelation)
