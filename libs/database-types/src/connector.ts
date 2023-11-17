@@ -13,6 +13,15 @@ export interface Connector {
     query(application: string, url: DatabaseUrlParsed, query: string, parameters: any[]): Promise<DatabaseQueryResults>
 }
 
+export interface SchemaOpts {
+    logger: Logger
+    schema?: string // export only a single schema, bucket or database
+    mixedCollection?: string // type attribute if collections have mixed documents
+    sampleSize?: number // default: 100, number of documents used to infer the schema (document databases, json columns in relational db...)
+    inferRelations?: boolean // default: false, infer relations based on column names
+    ignoreErrors?: boolean // default: false, ignore errors when fetching the schema
+}
+
 export interface DatabaseQueryResultsColumn {
     name: string
     ref?: ColumnRef
@@ -34,11 +43,3 @@ export const DatabaseQueryResults = z.object({
     columns: DatabaseQueryResultsColumn.array(),
     rows: JsValue.array(),
 }).strict()
-
-export interface SchemaOpts {
-    logger: Logger
-    schema?: string // export only a single schema, bucket or database
-    mixedCollection?: string // type attribute if collections have mixed documents
-    sampleSize?: number // default: 100, number of documents used to infer the schema (document databases, json columns in relational db...)
-    inferRelations?: boolean // default: false, infer relations based on column names
-}

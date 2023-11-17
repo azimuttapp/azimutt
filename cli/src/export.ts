@@ -11,6 +11,7 @@ export type Opts = {
     mixedCollection: string | undefined
     sampleSize: number
     inferRelations: boolean
+    ignoreErrors: boolean
     format: FileFormat
     output: FilePath | undefined
 }
@@ -39,7 +40,8 @@ async function exportJsonSchema(kind: DatabaseKind, url: DatabaseUrlParsed, opts
         schema: opts.database || opts.bucket || opts.schema,
         mixedCollection: opts.mixedCollection,
         sampleSize: opts.sampleSize,
-        inferRelations: opts.inferRelations
+        inferRelations: opts.inferRelations,
+        ignoreErrors: opts.ignoreErrors
     })
     const schemas: string[] = [...new Set(azimuttSchema.tables.map(t => t.schema))]
     const file = filename(opts.output, url, schemas, opts.format)

@@ -27,12 +27,12 @@ export type SqlserverColumnType = string
 export type SqlserverConstraintName = string
 export type SqlserverTableId = string
 
-export const getSchema = (schema: SqlserverSchemaName | undefined, sampleSize: number, logger: Logger) => async (conn: Conn): Promise<SqlserverSchema> => {
-    const constraints = await getAllConstraints(conn, schema).then(constraints => mapValues(groupBy(constraints, toTableId), buildTableConstraints))
-    const columns = await getColumns(conn, schema)
-        .then(cols => enrichColumnsWithSchema(conn, cols, constraints, sampleSize))
+export const getSchema = (schema: SqlserverSchemaName | undefined, sampleSize: number, ignoreErrors: boolean, logger: Logger) => async (conn: Conn): Promise<SqlserverSchema> => {
+    const constraints = await getAllConstraints(conn, schema, ignoreErrors, logger).then(constraints => mapValues(groupBy(constraints, toTableId), buildTableConstraints))
+    const columns = await getColumns(conn, schema, ignoreErrors, logger)
+        .then(cols => enrichColumnsWithSchema(conn, cols, constraints, sampleSize, ignoreErrors, logger))
         .then(cols => groupBy(cols, toTableId))
-    const comments = await getTableComments(conn, schema).then(tables => groupBy(tables, toTableId))
+    const comments = await getTableComments(conn, schema, ignoreErrors, logger).then(tables => groupBy(tables, toTableId))
     return {
         tables: Object.entries(columns).map(([tableId, columns]) => {
             const tableConstraints = constraints[tableId] || []
@@ -143,7 +143,7 @@ type RawColumn = {
     column_schema?: ValueSchema
 }
 
-function getColumns(conn: Conn, schema: SqlserverSchemaName | undefined): Promise<RawColumn[]> {
+function getColumns(conn: Conn, schema: SqlserverSchemaName | undefined, ignoreErrors: boolean, logger: Logger): Promise<RawColumn[]> {
     return conn.query<RawColumn>(
         `SELECT c.TABLE_SCHEMA                  AS "schema",
                 c.TABLE_NAME                    AS "table",
@@ -166,14 +166,14 @@ function getColumns(conn: Conn, schema: SqlserverSchemaName | undefined): Promis
          FROM information_schema.COLUMNS c
                   JOIN information_schema.TABLES t ON c.TABLE_SCHEMA = t.TABLE_SCHEMA AND c.TABLE_NAME = t.TABLE_NAME
          WHERE ${filterSchema('c.TABLE_SCHEMA', schema)};`
-    )
+    ).catch(handleError(`Failed to get columns${schema ? ` for schema '${schema}'` : ''}`, [], ignoreErrors, logger))
 }
 
-function enrichColumnsWithSchema(conn: Conn, columns: RawColumn[], constraints: Record<SqlserverTableId, ConstraintFormatted[]>, sampleSize: number): Promise<RawColumn[]> {
+function enrichColumnsWithSchema(conn: Conn, columns: RawColumn[], constraints: Record<SqlserverTableId, ConstraintFormatted[]>, sampleSize: number, ignoreErrors: boolean, logger: Logger): Promise<RawColumn[]> {
     return sequence(columns, (c: RawColumn) => {
         if (c.column_type === 'nvarchar') {
             if (constraints[toTableId(c)]?.find(ct => ct.type === 'CHECK' && ct.schema == c.schema && ct.table == c.table && ct.columns.indexOf(c.column) >= 0 && ct.definition?.includes('isjson'))) {
-                return getColumnSchema(conn, c.schema, c.table, c.column, sampleSize)
+                return getColumnSchema(conn, c.schema, c.table, c.column, sampleSize, ignoreErrors, logger)
                     .then(column_schema => ({...c, column_schema}))
             }
         }
@@ -181,10 +181,11 @@ function enrichColumnsWithSchema(conn: Conn, columns: RawColumn[], constraints: 
     })
 }
 
-async function getColumnSchema(conn: Conn, schema: string, table: string, column: string, sampleSize: number): Promise<ValueSchema> {
+async function getColumnSchema(conn: Conn, schema: string, table: string, column: string, sampleSize: number, ignoreErrors: boolean, logger: Logger): Promise<ValueSchema> {
     const sqlTable = `${schema ? `${schema}.` : ''}${table}`
-    const rows = await conn.query(`SELECT TOP ${sampleSize} ${column} FROM ${sqlTable} WHERE ${column} IS NOT NULL;`)
-    return valuesToSchema(rows.map(row => safeJsonParse(row[column] as string)))
+    return conn.query(`SELECT TOP ${sampleSize} ${column} FROM ${sqlTable} WHERE ${column} IS NOT NULL;`)
+        .then(rows => valuesToSchema(rows.map(row => safeJsonParse(row[column] as string))))
+        .catch(handleError(`Failed to infer schema for column '${column}' of table '${schema ? schema + '.' : ''}${table}'`, valuesToSchema([]), ignoreErrors, logger))
 }
 
 type RawTable = {
@@ -193,7 +194,7 @@ type RawTable = {
     comment: string
 }
 
-function getTableComments(conn: Conn, schema: SqlserverSchemaName | undefined): Promise<RawTable[]> {
+function getTableComments(conn: Conn, schema: SqlserverSchemaName | undefined, ignoreErrors: boolean, logger: Logger): Promise<RawTable[]> {
     return conn.query<RawTable>(
         `SELECT s.name   AS "schema",
                 t.name   AS "table",
@@ -202,7 +203,7 @@ function getTableComments(conn: Conn, schema: SqlserverSchemaName | undefined): 
                   JOIN sys.sysusers s ON s.uid = t.uid
                   JOIN sys.extended_properties ep ON ep.major_id = t.id AND ep.minor_id = 0 AND ep.name = 'MS_Description'
          WHERE (t.type = 'U' OR t.type = 'V') AND ep.value IS NOT NULL AND ${filterSchema('s.name', schema)};`
-    )
+    ).catch(handleError(`Failed to get table comments${schema ? ` for schema '${schema}'` : ''}`, [], ignoreErrors, logger))
 }
 
 type RawConstraint = {
@@ -218,15 +219,15 @@ type RawConstraint = {
     definition?: string
 }
 
-async function getAllConstraints(conn: Conn, schema: SqlserverSchemaName | undefined): Promise<RawConstraint[]> {
+async function getAllConstraints(conn: Conn, schema: SqlserverSchemaName | undefined, ignoreErrors: boolean, logger: Logger): Promise<RawConstraint[]> {
     return Promise.all([
-        getPKsUniquesAndIndexes(conn, schema),
-        getForeignKeys(conn, schema),
-        getChecks(conn, schema),
+        getPKsUniquesAndIndexes(conn, schema, ignoreErrors, logger),
+        getForeignKeys(conn, schema, ignoreErrors, logger),
+        getChecks(conn, schema, ignoreErrors, logger),
     ]).then(constraints => constraints.flat())
 }
 
-function getPKsUniquesAndIndexes(conn: Conn, schema: SqlserverSchemaName | undefined): Promise<RawConstraint[]> {
+function getPKsUniquesAndIndexes(conn: Conn, schema: SqlserverSchemaName | undefined, ignoreErrors: boolean, logger: Logger): Promise<RawConstraint[]> {
     return conn.query<RawConstraint>(
         `SELECT OBJECT_SCHEMA_NAME(i.object_id)     AS "schema",
                 OBJECT_NAME(i.object_id)            AS "table",
@@ -243,10 +244,10 @@ function getPKsUniquesAndIndexes(conn: Conn, schema: SqlserverSchemaName | undef
          FROM sys.indexes i
                   JOIN sys.index_columns ic ON i.object_id = ic.object_id AND i.index_id = ic.index_id
          WHERE ${filterSchema('OBJECT_SCHEMA_NAME(i.object_id)', schema)};`
-    )
+    ).catch(handleError(`Failed to get constraints (pks, uniques & indexes)${schema ? ` for schema '${schema}'` : ''}`, [], ignoreErrors, logger))
 }
 
-function getForeignKeys(conn: Conn, schema: SqlserverSchemaName | undefined): Promise<RawConstraint[]> {
+function getForeignKeys(conn: Conn, schema: SqlserverSchemaName | undefined, ignoreErrors: boolean, logger: Logger): Promise<RawConstraint[]> {
     return conn.query<RawConstraint>(
         `SELECT sch1.name                AS "schema",
                 tab1.name                AS "table",
@@ -266,10 +267,10 @@ function getForeignKeys(conn: Conn, schema: SqlserverSchemaName | undefined): Pr
                   JOIN sys.schemas sch2 ON tab2.schema_id = sch2.schema_id
                   JOIN sys.columns col2 ON col2.column_id = referenced_column_id AND col2.object_id = tab2.object_id
          WHERE ${filterSchema('sch1.name', schema)};`
-    )
+    ).catch(handleError(`Failed to get foreign keys${schema ? ` for schema '${schema}'` : ''}`, [], ignoreErrors, logger))
 }
 
-function getChecks(conn: Conn, schema: SqlserverSchemaName | undefined): Promise<RawConstraint[]> {
+function getChecks(conn: Conn, schema: SqlserverSchemaName | undefined, ignoreErrors: boolean, logger: Logger): Promise<RawConstraint[]> {
     return conn.query<RawConstraint>(
         `SELECT SCHEMA_NAME(t.schema_id) AS "schema",
                 t.name                   AS "table",
@@ -283,7 +284,7 @@ function getChecks(conn: Conn, schema: SqlserverSchemaName | undefined): Promise
                                   ON con.parent_column_id = c.column_id AND con.parent_object_id = c.object_id
          WHERE con.is_disabled = 'false'
            AND ${filterSchema('SCHEMA_NAME(t.schema_id)', schema)};`
-    )
+    ).catch(handleError(`Failed to get checks${schema ? ` for schema '${schema}'` : ''}`, [], ignoreErrors, logger))
 }
 
 type ConstraintBase = { schema: SqlserverSchemaName, table: SqlserverTableName, constraint: SqlserverConstraintName }
@@ -328,6 +329,17 @@ function buildTableConstraints(constraints: RawConstraint[]): ConstraintFormatte
             }
         }
     })
+}
+
+function handleError<T>(msg: string, value: T, ignoreErrors: boolean, logger: Logger) {
+    return (err: any): Promise<T> => {
+        if (ignoreErrors) {
+            logger.warn(`${msg}. Ignoring...`)
+            return Promise.resolve(value)
+        } else {
+            return Promise.reject(err)
+        }
+    }
 }
 
 function filterSchema(field: string, schema: SqlserverSchemaName | undefined) {

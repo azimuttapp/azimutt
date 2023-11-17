@@ -29,10 +29,10 @@ export type CouchbaseScopeName = string
 export type CouchbaseCollectionName = string
 export type CouchbaseCollectionType = {field: string, value: string | undefined}
 
-export async function getSchema(application: string, url: DatabaseUrlParsed, bucketName: CouchbaseBucketName | undefined, mixedCollection: string | undefined, sampleSize: number, logger: Logger): Promise<CouchbaseSchema> {
+export async function getSchema(application: string, url: DatabaseUrlParsed, bucketName: CouchbaseBucketName | undefined, mixedCollection: string | undefined, sampleSize: number, ignoreErrors: boolean, logger: Logger): Promise<CouchbaseSchema> {
     return connect(url, async cluster => {
         logger.log('Connected to cluster ...')
-        const bucketNames: CouchbaseBucketName[] = bucketName ? [bucketName] : await listBuckets(cluster)
+        const bucketNames: CouchbaseBucketName[] = bucketName ? [bucketName] : await listBuckets(cluster, ignoreErrors, logger)
         logger.log(bucketName ? `Export for '${bucketName}' bucket ...` : `Found ${bucketNames.length} buckets to export ...`)
 
         const schemas = (await sequence(bucketNames, async b => {
@@ -41,7 +41,7 @@ export async function getSchema(application: string, url: DatabaseUrlParsed, buc
             return (await sequence(scopes, async s => {
                 const scope = bucket.scope(s.name)
                 const collections = s.collections.map(c => scope.collection(c.name))
-                return (await sequence(collections, c => inferCollection(c, mixedCollection, sampleSize, logger))).flat()
+                return (await sequence(collections, c => inferCollection(c, mixedCollection, sampleSize, ignoreErrors, logger))).flat()
             })).flat()
         })).flat()
 
@@ -64,9 +64,10 @@ export function formatSchema(schema: CouchbaseSchema, inferRelations: boolean): 
 // 👇️ Private functions, some are exported only for tests
 // If you use them, beware of breaking changes!
 
-async function listBuckets(cluster: Cluster): Promise<CouchbaseBucketName[]> {
-    const buckets = await cluster.buckets().getAllBuckets()
-    return buckets.map(b => b.name)
+async function listBuckets(cluster: Cluster, ignoreErrors: boolean, logger: Logger): Promise<CouchbaseBucketName[]> {
+    return cluster.buckets().getAllBuckets()
+        .then(buckets => buckets.map(b => b.name))
+        .catch(handleError(`Failed to get buckets`, [], ignoreErrors, logger))
 }
 
 async function connect<T>(url: DatabaseUrlParsed, run: (c: Cluster) => Promise<T>): Promise<T> {
@@ -80,27 +81,23 @@ async function connect<T>(url: DatabaseUrlParsed, run: (c: Cluster) => Promise<T
     }
 }
 
-async function inferCollection(collection: Collection, mixedCollection: string | undefined, sampleSize: number, logger: Logger): Promise<CouchbaseCollection[]> {
+async function inferCollection(collection: Collection, mixedCollection: string | undefined, sampleSize: number, ignoreErrors: boolean, logger: Logger): Promise<CouchbaseCollection[]> {
     // FIXME: fetch index informations & more
     logger.log(`Exporting collection ${collectionRef(collection)} ...`)
-    const types = mixedCollection ? await getCollectionTypes(collection, mixedCollection, logger) : [undefined]
-    return sequence(types, type => inferCollectionForType(collection, type, sampleSize, logger))
+    const types = mixedCollection ? await getCollectionTypes(collection, mixedCollection, ignoreErrors, logger) : [undefined]
+    return sequence(types, type => inferCollectionForType(collection, type, sampleSize, ignoreErrors, logger))
 }
 
-async function getCollectionTypes(collection: Collection, mixedCollection: string, logger: Logger): Promise<CouchbaseCollectionType[]> {
-    try {
-        const rows = await query<{type: string}>(collection, `SELECT distinct ${mixedCollection} as type FROM ${collection.name}`)
-        return rows.map(r => ({field: mixedCollection, value: r.type}))
-    } catch (e) {
-        logger.error(`Can't get types for ${collectionRef(collection)}: ${formatError(e)}`)
-        return []
-    }
+async function getCollectionTypes(collection: Collection, mixedCollection: string, ignoreErrors: boolean, logger: Logger): Promise<CouchbaseCollectionType[]> {
+    return query<{type: string}>(collection, `SELECT distinct ${mixedCollection} as type FROM ${collection.name}`)
+        .then(rows => rows.map(r => ({field: mixedCollection, value: r.type})))
+        .catch(handleError(`Failed to get types for '${collectionRef(collection)}'`, [], ignoreErrors, logger))
 }
 
-async function inferCollectionForType(collection: Collection, type: CouchbaseCollectionType | undefined, sampleSize: number, logger: Logger): Promise<CouchbaseCollection> {
+async function inferCollectionForType(collection: Collection, type: CouchbaseCollectionType | undefined, sampleSize: number, ignoreErrors: boolean, logger: Logger): Promise<CouchbaseCollection> {
     type && type.value && logger.log(`Exporting collection ${collectionRef(collection)} with ${type.field}=${type.value} ...`)
-    const documents = await getSampleDocuments(collection, type, sampleSize, logger)
-    const count = await countDocuments(collection, type)
+    const documents = await getSampleDocuments(collection, type, sampleSize, ignoreErrors, logger)
+    const count = await countDocuments(collection, type, ignoreErrors, logger)
     return {
         bucket: collection.scope.bucket.name,
         scope: collection.scope.name,
@@ -112,18 +109,15 @@ async function inferCollectionForType(collection: Collection, type: CouchbaseCol
     }
 }
 
-async function getSampleDocuments(collection: Collection, type: CouchbaseCollectionType | undefined, sampleSize: number, logger: Logger): Promise<any[]> {
-    try {
-        return await query(collection, `SELECT Meta() as _meta, ${collection.name}.* FROM ${collection.name}${filter(type)} LIMIT ${sampleSize}`)
-    } catch (e) {
-        logger.error(`Can't get sample documents for ${collectionRef(collection)}: ${formatError(e)}`)
-        return []
-    }
+async function getSampleDocuments(collection: Collection, type: CouchbaseCollectionType | undefined, sampleSize: number, ignoreErrors: boolean, logger: Logger): Promise<any[]> {
+    return query(collection, `SELECT Meta() as _meta, ${collection.name}.* FROM ${collection.name}${filter(type)} LIMIT ${sampleSize}`)
+        .catch(handleError(`Failed to get sample documents for '${collectionRef(collection)}'`, [], ignoreErrors, logger))
 }
 
-async function countDocuments(collection: Collection, type: CouchbaseCollectionType | undefined): Promise<number> {
-    const rows = await query<{count: number}>(collection, `SELECT count(*) as count FROM ${collection.name}${filter(type)}`)
-    return rows[0].count
+async function countDocuments(collection: Collection, type: CouchbaseCollectionType | undefined, ignoreErrors: boolean, logger: Logger): Promise<number> {
+    return query<{count: number}>(collection, `SELECT count(*) as count FROM ${collection.name}${filter(type)}`)
+        .then(rows => rows[0].count)
+        .catch(handleError(`Failed to count documents for '${collectionRef(collection)}'`, 0, ignoreErrors, logger))
 }
 
 async function query<T = any>(collection: Collection, q: string): Promise<T[]> {
@@ -133,6 +127,21 @@ async function query<T = any>(collection: Collection, q: string): Promise<T[]> {
 
 function filter(type: CouchbaseCollectionType | undefined): string {
     return type && type.value ? ` WHERE ${type.field}='${type.value}'` : ''
+}
+
+function collectionRef(collection: Collection): string {
+    return `${collection.scope.bucket.name}.${collection.scope.name}.${collection.name}`
+}
+
+function handleError<T>(msg: string, value: T, ignoreErrors: boolean, logger: Logger) {
+    return (err: any): Promise<T> => {
+        if (ignoreErrors) {
+            logger.warn(`${msg}: ${formatError(err)}. Ignoring...`)
+            return Promise.resolve(value)
+        } else {
+            return Promise.reject(err)
+        }
+    }
 }
 
 function formatError(e: any): string {
@@ -145,9 +154,4 @@ function formatError(e: any): string {
         err = errorToString(e)
     }
     return err
-
-}
-
-function collectionRef(collection: Collection): string {
-    return `${collection.scope.bucket.name}.${collection.scope.name}.${collection.name}`
 }

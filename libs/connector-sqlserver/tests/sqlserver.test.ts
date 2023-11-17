@@ -14,7 +14,7 @@ describe('sqlserver', () => {
         expect(results.rows.length).toEqual(1)
     })
     test.skip('getSchema', async () => {
-        const schema = await connect(application, url, getSchema(undefined, 10, logger))
+        const schema = await connect(application, url, getSchema(undefined, 10, false, logger))
         console.log('schema', schema)
         expect(schema.tables.length).toEqual(32)
     })

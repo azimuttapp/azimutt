@@ -50,7 +50,7 @@ const routes: FastifyPluginAsync = async (server) => {
 }
 
 function getDatabaseSchema(params: GetSchemaParams, res: FastifyReply): Promise<GetSchemaResponse | FastifyReply> {
-    return withConnector(params.url, res, (url, conn) => conn.getSchema(application, url, {logger, schema: params.schema}))
+    return withConnector(params.url, res, (url, conn) => conn.getSchema(application, url, {logger, schema: params.schema, ignoreErrors: true}))
 }
 
 function queryDatabase(params: DbQueryParams, res: FastifyReply): Promise<DbQueryResponse | FastifyReply> {

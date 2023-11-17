@@ -41,7 +41,7 @@ async function ping(): Promise<string> {
 }
 
 async function getDatabaseSchema(url: DatabaseUrl): Promise<AzimuttSchema> {
-    return withConnector(url, (parsedUrl, conn) => conn.getSchema(application, parsedUrl, {logger, inferRelations: true}))
+    return withConnector(url, (parsedUrl, conn) => conn.getSchema(application, parsedUrl, {logger, inferRelations: true, ignoreErrors: true}))
 }
 
 async function runDatabaseQuery(url: DatabaseUrl, query: string): Promise<DatabaseQueryResults> {

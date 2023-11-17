@@ -18,12 +18,12 @@ export type MysqlColumnType = string
 export type MysqlConstraintName = string
 export type MysqlTableId = string
 
-export const getSchema = (schema: MysqlSchemaName | undefined, sampleSize: number, logger: Logger) => async (conn: Conn): Promise<MysqlSchema> => {
-    const columns = await getColumns(conn, schema)
-        .then(cols => enrichColumnsWithSchema(conn, cols, sampleSize))
+export const getSchema = (schema: MysqlSchemaName | undefined, sampleSize: number, ignoreErrors: boolean, logger: Logger) => async (conn: Conn): Promise<MysqlSchema> => {
+    const columns = await getColumns(conn, schema, ignoreErrors, logger)
+        .then(cols => enrichColumnsWithSchema(conn, cols, sampleSize, ignoreErrors, logger))
         .then(cols => groupBy(cols, toTableId))
-    const comments = await getTableComments(conn, schema).then(tables => groupBy(tables, toTableId))
-    const constraints = await getAllConstraints(conn, schema).then(constraints => mapValues(groupBy(constraints, toTableId), buildTableConstraints))
+    const comments = await getTableComments(conn, schema, ignoreErrors, logger).then(tables => groupBy(tables, toTableId))
+    const constraints = await getAllConstraints(conn, schema, ignoreErrors, logger).then(constraints => mapValues(groupBy(constraints, toTableId), buildTableConstraints))
     return {
         tables: Object.entries(columns).map(([tableId, columns]) => {
             const tableConstraints = constraints[tableId] || []
@@ -134,7 +134,7 @@ type RawColumn = {
     column_schema?: ValueSchema
 }
 
-function getColumns(conn: Conn, schema: MysqlSchemaName | undefined): Promise<RawColumn[]> {
+async function getColumns(conn: Conn, schema: MysqlSchemaName | undefined, ignoreErrors: boolean, logger: Logger): Promise<RawColumn[]> {
     return conn.query<RawColumn>(
         `SELECT c.TABLE_SCHEMA     AS "schema",
                 c.TABLE_NAME       AS "table",
@@ -149,24 +149,24 @@ function getColumns(conn: Conn, schema: MysqlSchemaName | undefined): Promise<Ra
                   JOIN information_schema.TABLES t ON c.TABLE_SCHEMA = t.TABLE_SCHEMA AND c.TABLE_NAME = t.TABLE_NAME
          WHERE ${filterSchema('c.TABLE_SCHEMA', schema)}
          ORDER BY "schema", "table", column_index;`
-    )
+    ).catch(handleError(`Failed to get columns${schema ? ` for schema '${schema}'` : ''}`, [], ignoreErrors, logger))
 }
 
-function enrichColumnsWithSchema(conn: Conn, columns: RawColumn[], sampleSize: number): Promise<RawColumn[]> {
-    return sequence(columns, c => {
+function enrichColumnsWithSchema(conn: Conn, columns: RawColumn[], sampleSize: number, ignoreErrors: boolean, logger: Logger): Promise<RawColumn[]> {
+    return sequence(columns, async c => {
         if (c.column_type === 'jsonb') {
-            return getColumnSchema(conn, c.schema, c.table, c.column, sampleSize)
-                .then(column_schema => ({...c, column_schema}))
+            return getColumnSchema(conn, c.schema, c.table, c.column, sampleSize, ignoreErrors, logger).then(column_schema => ({...c, column_schema}))
         } else {
             return Promise.resolve(c)
         }
     })
 }
 
-async function getColumnSchema(conn: Conn, schema: string, table: string, column: string, sampleSize: number): Promise<ValueSchema> {
+async function getColumnSchema(conn: Conn, schema: string, table: string, column: string, sampleSize: number, ignoreErrors: boolean, logger: Logger): Promise<ValueSchema> {
     const sqlTable = `${schema ? `${schema}.` : ''}${table}`
-    const rows = await conn.query(`SELECT ${column} FROM ${sqlTable} WHERE ${column} IS NOT NULL LIMIT ${sampleSize};`)
-    return valuesToSchema(rows.map(row => row[column]))
+    return conn.query(`SELECT ${column} FROM ${sqlTable} WHERE ${column} IS NOT NULL LIMIT ${sampleSize};`)
+        .then(rows => valuesToSchema(rows.map(row => row[column])))
+        .catch(handleError(`Failed to infer schema for column '${column}' of table '${schema ? schema + '.' : ''}${table}'`, valuesToSchema([]), ignoreErrors, logger))
 }
 
 type RawTable = {
@@ -175,7 +175,7 @@ type RawTable = {
     comment: string
 }
 
-function getTableComments(conn: Conn, schema: MysqlSchemaName | undefined): Promise<RawTable[]> {
+function getTableComments(conn: Conn, schema: MysqlSchemaName | undefined, ignoreErrors: boolean, logger: Logger): Promise<RawTable[]> {
     return conn.query<RawTable>(
         `SELECT TABLE_SCHEMA  AS "schema",
                 TABLE_NAME    AS "table",
@@ -184,7 +184,7 @@ function getTableComments(conn: Conn, schema: MysqlSchemaName | undefined): Prom
          WHERE TABLE_COMMENT != ''
            AND TABLE_COMMENT != 'VIEW'
            AND ${filterSchema('TABLE_SCHEMA', schema)};`
-    )
+    ).catch(handleError(`Failed to get table comments${schema ? ` for schema '${schema}'` : ''}`, [], ignoreErrors, logger))
 }
 
 type RawConstraint = {
@@ -199,12 +199,12 @@ type RawConstraint = {
     ref_column?: MysqlColumnName
 }
 
-async function getAllConstraints(conn: Conn, schema: MysqlSchemaName | undefined): Promise<RawConstraint[]> {
-    const [indexes, constraints] = await Promise.all([getIndexes(conn, schema), getConstraints(conn, schema)])
+async function getAllConstraints(conn: Conn, schema: MysqlSchemaName | undefined, ignoreErrors: boolean, logger: Logger): Promise<RawConstraint[]> {
+    const [indexes, constraints] = await Promise.all([getIndexes(conn, schema, ignoreErrors, logger), getConstraints(conn, schema, ignoreErrors, logger)])
     return mergeBy(indexes, constraints, c => `${c.schema}.${c.table}.${c.constraint}.${c.column}`)
 }
 
-function getIndexes(conn: Conn, schema: MysqlSchemaName | undefined): Promise<RawConstraint[]> {
+function getIndexes(conn: Conn, schema: MysqlSchemaName | undefined, ignoreErrors: boolean, logger: Logger): Promise<RawConstraint[]> {
     return conn.query<RawConstraint>(
         `SELECT INDEX_SCHEMA AS "schema",
                 TABLE_NAME   AS "table",
@@ -214,10 +214,10 @@ function getIndexes(conn: Conn, schema: MysqlSchemaName | undefined): Promise<Ra
                 "INDEX"      AS type
          FROM information_schema.STATISTICS
          WHERE ${filterSchema('INDEX_SCHEMA', schema)};`
-    )
+    ).catch(handleError(`Failed to get indexes${schema ? ` for schema '${schema}'` : ''}`, [], ignoreErrors, logger))
 }
 
-function getConstraints(conn: Conn, schema: MysqlSchemaName | undefined): Promise<RawConstraint[]> {
+function getConstraints(conn: Conn, schema: MysqlSchemaName | undefined, ignoreErrors: boolean, logger: Logger): Promise<RawConstraint[]> {
     return conn.query<RawConstraint>(
         `SELECT c.CONSTRAINT_SCHEMA       AS "schema",
                 c.TABLE_NAME              AS "table",
@@ -231,7 +231,8 @@ function getConstraints(conn: Conn, schema: MysqlSchemaName | undefined): Promis
                   JOIN information_schema.KEY_COLUMN_USAGE u
                        ON c.CONSTRAINT_SCHEMA = u.CONSTRAINT_SCHEMA AND c.TABLE_NAME = u.TABLE_NAME AND
                           c.CONSTRAINT_NAME = u.CONSTRAINT_NAME
-         WHERE ${filterSchema('c.CONSTRAINT_SCHEMA', schema)};`)
+         WHERE ${filterSchema('c.CONSTRAINT_SCHEMA', schema)};`
+    ).catch(handleError(`Failed to get constraints${schema ? ` for schema '${schema}'` : ''}`, [], ignoreErrors, logger))
 }
 
 type ConstraintBase = { schema: MysqlSchemaName, table: MysqlTableName, constraint: MysqlConstraintName }
@@ -266,6 +267,17 @@ function buildTableConstraints(constraints: RawConstraint[]): ConstraintFormatte
             }
         }
     })
+}
+
+function handleError<T>(msg: string, value: T, ignoreErrors: boolean, logger: Logger) {
+    return (err: any): Promise<T> => {
+        if (ignoreErrors) {
+            logger.warn(`${msg}. Ignoring...`)
+            return Promise.resolve(value)
+        } else {
+            return Promise.reject(err)
+        }
+    }
 }
 
 function filterSchema(field: string, schema: MysqlSchemaName | undefined) {

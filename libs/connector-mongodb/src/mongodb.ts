@@ -49,14 +49,14 @@ export type MongodbDatabaseName = string
 export type MongodbCollectionName = string
 export type MongodbCollectionType = {field: string, value: string | undefined}
 
-export async function getSchema(application: string, url: DatabaseUrlParsed, databaseName: MongodbDatabaseName | undefined, mixedCollection: string | undefined, sampleSize: number, logger: Logger): Promise<MongodbSchema> {
+export async function getSchema(application: string, url: DatabaseUrlParsed, databaseName: MongodbDatabaseName | undefined, mixedCollection: string | undefined, sampleSize: number, ignoreErrors: boolean, logger: Logger): Promise<MongodbSchema> {
     return connect(url, async client => {
         logger.log('Connected to database ...')
-        const databaseNames: MongodbDatabaseName[] = databaseName ? [databaseName] : await listDatabases(client)
+        const databaseNames: MongodbDatabaseName[] = databaseName ? [databaseName] : await listDatabases(client, ignoreErrors, logger)
         logger.log(databaseName ? `Export for '${databaseName}' database ...` : `Found ${databaseNames.length} databases to export ...`)
         const collections: Collection[] = (await sequence(databaseNames, dbName => client.db(dbName).collections())).flat()
         logger.log(`Found ${collections.length} collections to export ...`)
-        const schemas: MongodbCollection[] = (await sequence(collections, collection => inferCollection(collection, mixedCollection, sampleSize, logger))).flat()
+        const schemas: MongodbCollection[] = (await sequence(collections, collection => inferCollection(collection, mixedCollection, sampleSize, ignoreErrors, logger))).flat()
         logger.log('✔︎ All collections exported!')
         return {collections: schemas}
     })
@@ -75,10 +75,11 @@ export function formatSchema(schema: MongodbSchema, inferRelations: boolean): Az
 // 👇️ Private functions, some are exported only for tests
 // If you use them, beware of breaking changes!
 
-async function listDatabases(client: MongoClient): Promise<MongodbDatabaseName[]> {
+async function listDatabases(client: MongoClient, ignoreErrors: boolean, logger: Logger): Promise<MongodbDatabaseName[]> {
     const adminDb = client.db('admin')
-    const dbs = await adminDb.admin().listDatabases()
-    return dbs.databases.map(db => db.name).filter(name => name !== 'local')
+    return adminDb.admin().listDatabases()
+        .then(dbs => dbs.databases.map(db => db.name).filter(name => name !== 'local'))
+        .catch(handleError(`Failed to get databases`, [], ignoreErrors, logger))
 }
 
 async function connect<T>(url: DatabaseUrlParsed, run: (c: MongoClient) => Promise<T>): Promise<T> {
@@ -93,7 +94,7 @@ async function connect<T>(url: DatabaseUrlParsed, run: (c: MongoClient) => Promi
     }
 }
 
-async function inferCollection(collection: Collection, mixedCollection: string | undefined, sampleSize: number, logger: Logger): Promise<MongodbCollection[]> {
+async function inferCollection(collection: Collection, mixedCollection: string | undefined, sampleSize: number, ignoreErrors: boolean, logger: Logger): Promise<MongodbCollection[]> {
     // FIXME: fetch index informations & more
     // console.log('options', await collection.options()) // empty
     // console.log('indexes', await collection.indexes())
@@ -101,19 +102,20 @@ async function inferCollection(collection: Collection, mixedCollection: string |
     // console.log('indexInformation', await collection.indexInformation()) // not much
     // console.log('stats', await collection.stats()) // several info
     logger.log(`Exporting collection ${collectionRef(collection)} ...`)
-    const types = mixedCollection ? await getCollectionTypes(collection, mixedCollection) : [undefined]
-    return sequence(types, type => inferCollectionForType(collection, type, sampleSize, logger))
+    const types = mixedCollection ? await getCollectionTypes(collection, mixedCollection, ignoreErrors, logger) : [undefined]
+    return sequence(types, type => inferCollectionForType(collection, type, sampleSize, ignoreErrors, logger))
 }
 
-async function getCollectionTypes(collection: Collection, mixedCollection: string): Promise<MongodbCollectionType[]> {
-    const values = await collection.distinct(mixedCollection)
-    return values.map(value => ({field: mixedCollection, value}))
+async function getCollectionTypes(collection: Collection, mixedCollection: string, ignoreErrors: boolean, logger: Logger): Promise<MongodbCollectionType[]> {
+    return collection.distinct(mixedCollection)
+        .then(values => values.map(value => ({field: mixedCollection, value})))
+        .catch(handleError(`Failed to get types for '${collectionRef(collection)}'`, [], ignoreErrors, logger))
 }
 
-async function inferCollectionForType(collection: Collection, type: MongodbCollectionType | undefined, sampleSize: number, logger: Logger): Promise<MongodbCollection> {
+async function inferCollectionForType(collection: Collection, type: MongodbCollectionType | undefined, sampleSize: number, ignoreErrors: boolean, logger: Logger): Promise<MongodbCollection> {
     type && type.value && logger.log(`Exporting collection ${collectionRef(collection)} with ${type.field}=${type.value} ...`)
-    const documents = await getSampleDocuments(collection, type, sampleSize)
-    const count = await countDocuments(collection, type)
+    const documents = await getSampleDocuments(collection, type, sampleSize, ignoreErrors, logger)
+    const count = await countDocuments(collection, type, ignoreErrors, logger)
     return {
         database: collection.dbName,
         collection: collection.collectionName,
@@ -124,12 +126,14 @@ async function inferCollectionForType(collection: Collection, type: MongodbColle
     }
 }
 
-async function getSampleDocuments(collection: Collection, type: MongodbCollectionType | undefined, sampleSize: number): Promise<any[]> {
-    return await collection.find(filter(type)).limit(sampleSize).toArray()
+async function getSampleDocuments(collection: Collection, type: MongodbCollectionType | undefined, sampleSize: number, ignoreErrors: boolean, logger: Logger): Promise<any[]> {
+    return collection.find(filter(type)).limit(sampleSize).toArray()
+        .catch(handleError(`Failed to get sample documents for '${collectionRef(collection)}'`, [], ignoreErrors, logger))
 }
 
-async function countDocuments(collection: Collection, type: MongodbCollectionType | undefined): Promise<number> {
-    return await collection.countDocuments(filter(type))
+async function countDocuments(collection: Collection, type: MongodbCollectionType | undefined, ignoreErrors: boolean, logger: Logger): Promise<number> {
+    return collection.countDocuments(filter(type))
+        .catch(handleError(`Failed to count documents for '${collectionRef(collection)}'`, 0, ignoreErrors, logger))
 }
 
 function filter(type: MongodbCollectionType | undefined): Filter<any> {
@@ -138,4 +142,15 @@ function filter(type: MongodbCollectionType | undefined): Filter<any> {
 
 function collectionRef(collection: Collection): string {
     return `${collection.dbName}.${collection.collectionName}`
+}
+
+function handleError<T>(msg: string, value: T, ignoreErrors: boolean, logger: Logger) {
+    return (err: any): Promise<T> => {
+        if (ignoreErrors) {
+            logger.warn(`${msg}. Ignoring...`)
+            return Promise.resolve(value)
+        } else {
+            return Promise.reject(err)
+        }
+    }
 }
