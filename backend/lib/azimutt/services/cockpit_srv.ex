@@ -32,7 +32,7 @@ defmodule Azimutt.Services.CockpitSrv do
         unreachable = Azimutt.config(:cockpit_unreachable) || 0
 
         if unreachable > 3 do
-          set_error_message("Unable to reach licence server, please make sure to allow access or #{contact_us}.")
+          set_error_message("Unable to reach licence server, please make sure to allow access or #{contact_us()}.")
         else
           Azimutt.set_config(:cockpit_unreachable, unreachable + 1)
         end
@@ -49,7 +49,7 @@ defmodule Azimutt.Services.CockpitSrv do
             set_warning_message(res["warning"])
 
           res["status"] != 200 ->
-            set_warning_message("Licence server returned <b>status #{res["status"]}</b>, please #{contact_us}.")
+            set_warning_message("Licence server returned <b>status #{res["status"]}</b>, please #{contact_us()}.")
 
           true ->
             clear_message()

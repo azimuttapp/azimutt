@@ -120,6 +120,10 @@ ENV DATABASE_URL=${DATABASE_URL}
 ENV MIX_ENV="prod"
 ENV PHX_SERVER="true"
 
+ARG GIT_COMMIT_HASH=unknown
+RUN GIT_COMMIT_HASH=$(git log -1 --pretty=format:%h)
+ENV GIT_COMMIT_HASH ${GIT_COMMIT_HASH}
+
 WORKDIR "/app"
 RUN chown nobody /app
 
