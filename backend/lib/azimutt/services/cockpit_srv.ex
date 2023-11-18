@@ -29,11 +29,16 @@ defmodule Azimutt.Services.CockpitSrv do
     })
     |> Result.fold(
       fn _ ->
-        set_error_message(
-          "Unable to reach licence server, please make sure to allow access or contact us: <a href=\"mailto:#{Azimutt.config(:azimutt_email)}\" class=\"font-bold underline\">#{Azimutt.config(:azimutt_email)}</a>."
-        )
+        unreachable = Azimutt.config(:cockpit_unreachable) || 0
+
+        if unreachable > 3 do
+          set_error_message("Unable to reach licence server, please make sure to allow access or #{contact_us}.")
+        else
+          Azimutt.set_config(:cockpit_unreachable, unreachable + 1)
+        end
       end,
       fn res ->
+        Azimutt.set_config(:cockpit_unreachable, 0)
         Azimutt.set_config(:instance_plans, res["plans"])
 
         cond do
@@ -44,9 +49,7 @@ defmodule Azimutt.Services.CockpitSrv do
             set_warning_message(res["warning"])
 
           res["status"] != 200 ->
-            set_warning_message(
-              "Licence server returned <b>status #{res["status"]}</b>, please contact us at <a href=\"mailto:#{Azimutt.config(:azimutt_email)}\" class=\"font-bold underline\">#{Azimutt.config(:azimutt_email)}</a>."
-            )
+            set_warning_message("Licence server returned <b>status #{res["status"]}</b>, please #{contact_us}.")
 
           true ->
             clear_message()
@@ -214,6 +217,10 @@ defmodule Azimutt.Services.CockpitSrv do
       created_at: project.created_at,
       updated_at: project.updated_at
     }
+  end
+
+  defp contact_us do
+    "contact us at <a href=\"mailto:#{Azimutt.config(:azimutt_email)}\" class=\"font-bold underline\">#{Azimutt.config(:azimutt_email)}</a>"
   end
 
   defp set_error_message(message) do
