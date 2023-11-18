@@ -16,10 +16,6 @@ import Models.Project.TableId exposing (TableId)
 import PagesComponents.Organization_.Project_.Models.SuggestedRelation exposing (SuggestedRelation, SuggestedRelationRef)
 
 
-
--- report columns ending with `_by` as possible relations (probably to `users` or `accounts` tables)
-
-
 forTables : Dict TableId Table -> List Relation -> Dict TableId (List ColumnPath) -> Dict TableId (Dict ColumnPathStr (List SuggestedRelation))
 forTables tables relations ignoredRelations =
     let
@@ -43,7 +39,7 @@ forTables tables relations ignoredRelations =
                     |> Dict.values
                     |> List.concatMap Column.flatten
                     |> List.filterNot (\c -> ignoreColumns |> List.member c.path)
-                    |> List.map (\c -> ( c.path |> ColumnPath.toString, find tableNames tables relationBySrc table c ))
+                    |> List.map (\c -> ( c.path |> ColumnPath.toString, guessRelations tableNames tables relationBySrc table c ))
                     |> List.filter (Tuple.second >> List.nonEmpty)
                     |> Dict.fromList
             )
@@ -55,9 +51,13 @@ type alias NormalizedTableName =
     String
 
 
-find : Dict NormalizedTableName (List TableId) -> Dict TableId Table -> Dict TableId (Dict ColumnPathStr (List Relation)) -> Table -> { path : ColumnPath, column : Column } -> List SuggestedRelation
-find tableNames tables relationBySrc table { path, column } =
+guessRelations : Dict NormalizedTableName (List TableId) -> Dict TableId Table -> Dict TableId (Dict ColumnPathStr (List Relation)) -> Table -> { path : ColumnPath, column : Column } -> List SuggestedRelation
+guessRelations tableNames tables relationBySrc table { path, column } =
     let
+        colRef : SuggestedRelationRef
+        colRef =
+            { table = table.id, column = path, kind = column.kind }
+
         columnWords : List String
         columnWords =
             column.name |> String.splitWords
@@ -65,17 +65,9 @@ find tableNames tables relationBySrc table { path, column } =
         targetColumnName : ColumnName
         targetColumnName =
             columnWords |> List.last |> Maybe.withDefault column.name |> String.singular
-
-        relations : List Relation
-        relations =
-            relationBySrc |> Dict.get table.id |> Maybe.andThen (Dict.get (ColumnPath.toString path)) |> Maybe.withDefault []
     in
-    if targetColumnName == "id" && List.length columnWords > 1 then
+    (if targetColumnName == "id" && List.length columnWords > 1 then
         let
-            colRef : SuggestedRelationRef
-            colRef =
-                { table = table.id, column = path, kind = column.kind }
-
             tableHint : List String
             tableHint =
                 columnWords |> List.dropRight 1
@@ -100,18 +92,25 @@ find tableNames tables relationBySrc table { path, column } =
                         )
                     |> Maybe.withDefault [ { src = colRef, ref = getTargetColumn tableNames tables table.schema tableHint targetColumnName, when = Nothing } ]
         in
-        -- remove existing relations
         suggestedRelations
-            |> List.filter
-                (\sr ->
-                    sr.ref
-                        |> Maybe.map (\r -> { table = r.table, column = r.column })
-                        |> Maybe.map (\ref -> relations |> List.any (\r -> r.ref == ref) |> not)
-                        |> Maybe.withDefault (relations |> List.isEmpty)
-                )
 
-    else
+     else if String.endsWith "id" column.name && String.length column.name > 2 then
+        -- when no separator before `id`
+        let
+            tableHint : List String
+            tableHint =
+                column.name |> String.dropRight 2 |> String.splitWords
+        in
+        [ { src = colRef, ref = [ column.name, "id" ] |> List.findMap (getTargetColumn tableNames tables table.schema tableHint), when = Nothing } ]
+
+     else if List.last columnWords == Just "by" then
+        -- `created_by` columns should refer to a user like table
+        [ { src = colRef, ref = [ [ "user" ], [ "account" ] ] |> List.findMap (\tableHint -> getTargetColumn tableNames tables table.schema tableHint "id"), when = Nothing } ]
+
+     else
         []
+    )
+        |> removeKnownRelations relationBySrc table.id path
 
 
 getTypeColumn : Table -> ColumnPath -> Maybe { path : ColumnPath, column : Column }
@@ -162,3 +161,21 @@ getTable tableNames tables preferredSchema columnName tableName =
         |> Maybe.andThen (\ids -> ids |> List.find (\( schema, _ ) -> schema == preferredSchema) |> Maybe.orElse (ids |> List.head))
         |> Maybe.andThen (\id -> tables |> Dict.get id)
         |> Maybe.andThen (\table -> table.columns |> Dict.get columnName |> Maybe.map (\col -> { table = table.id, column = Nel columnName [], kind = col.kind }))
+
+
+removeKnownRelations : Dict TableId (Dict ColumnPathStr (List Relation)) -> TableId -> ColumnPath -> List SuggestedRelation -> List SuggestedRelation
+removeKnownRelations relationBySrc tableId columnPath suggestedRelations =
+    let
+        relations : List Relation
+        relations =
+            relationBySrc |> Dict.get tableId |> Maybe.andThen (Dict.get (ColumnPath.toString columnPath)) |> Maybe.withDefault []
+    in
+    suggestedRelations
+        |> List.filter (\sr -> sr.ref /= Just sr.src)
+        |> List.filter
+            (\sr ->
+                sr.ref
+                    |> Maybe.map (\r -> { table = r.table, column = r.column })
+                    |> Maybe.map (\ref -> relations |> List.any (\r -> r.ref == ref) |> not)
+                    |> Maybe.withDefault (relations |> List.isEmpty)
+            )

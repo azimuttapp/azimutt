@@ -40,6 +40,27 @@ suite =
                 ]
                     |> shouldFindRelations [ ( ( "projects", "original_organization_id" ), Just ( "organizations", "id" ), Nothing ) ]
             )
+        , test "no separator"
+            (\_ ->
+                [ ( "organization", [ ( "id", [] ) ] )
+                , ( "project", [ ( "organizationid", [] ) ] )
+                ]
+                    |> shouldFindRelations [ ( ( "project", "organizationid" ), Just ( "organization", "id" ), Nothing ) ]
+            )
+        , test "no separator and long name"
+            (\_ ->
+                [ ( "organization", [ ( "organizationid", [] ) ] )
+                , ( "project", [ ( "organizationid", [] ) ] )
+                ]
+                    |> shouldFindRelations [ ( ( "project", "organizationid" ), Just ( "organization", "organizationid" ), Nothing ) ]
+            )
+        , test "user or account"
+            (\_ ->
+                [ ( "users", [ ( "id", [] ) ] )
+                , ( "project", [ ( "created_by", [] ) ] )
+                ]
+                    |> shouldFindRelations [ ( ( "project", "created_by" ), Just ( "users", "id" ), Nothing ) ]
+            )
         , test "missing target"
             (\_ ->
                 [ ( "projects", [ ( "organization_id", [] ) ] ) ]
