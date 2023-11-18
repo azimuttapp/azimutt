@@ -39,7 +39,7 @@ config :azimutt,
   free_plan_db_access: false,
   environment: config_env(),
   version: "2.0.#{DateTime.to_unix(DateTime.utc_now())}",
-  commit_hash: System.get_env("GIT_COMMIT_HASH") || System.cmd("git", ["log", "-1", "--pretty=format:%h"]) |> elem(0) |> String.trim(),
+  commit_hash: System.cmd("git", ["log", "-1", "--pretty=format:%h"]) |> elem(0) |> String.trim(),
   commit_message: System.cmd("git", ["log", "-1", "--pretty=format:%s"]) |> elem(0) |> String.trim(),
   commit_date: System.cmd("git", ["log", "-1", "--pretty=format:%aI"]) |> elem(0) |> String.trim(),
   commit_author: System.cmd("git", ["log", "-1", "--pretty=format:%an"]) |> elem(0) |> String.trim()
