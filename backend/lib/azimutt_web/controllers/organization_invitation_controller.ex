@@ -7,10 +7,11 @@ defmodule AzimuttWeb.OrganizationInvitationController do
 
   def show(conn, %{"invitation_id" => invitation_id}) do
     now = DateTime.utc_now()
+    current_user = conn.assigns.current_user
     # FIXME: remove `get_organization_plan`
     {:ok, invitation} = Organizations.get_organization_invitation(invitation_id)
     organization = invitation.organization
-    {:ok, plan} = Organizations.get_organization_plan(organization)
+    {:ok, plan} = Organizations.get_organization_plan(organization, current_user)
 
     render(conn, "show.html",
       now: now,

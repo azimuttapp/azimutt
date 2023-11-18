@@ -24,7 +24,8 @@ export const plan: Plan = {
     private_links: false,
     sql_export: false,
     db_analysis: false,
-    db_access: false
+    db_access: false,
+    streak: 0
 }
 export const organization: Organization = {
     id: uuid,

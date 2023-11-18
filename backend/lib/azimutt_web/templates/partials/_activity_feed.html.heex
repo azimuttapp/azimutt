@@ -1,0 +1,17 @@
+<section class="py-6 pl-6 lg:w-80">
+    <h2 class="mt-0 text-sm font-semibold">Activities</h2>
+    <ul role="list" class="space-y-6">
+        <%= for {event, index} <- @events |> Enum.with_index() do %>
+            <li class="relative flex gap-x-3">
+                <%= if index + 1 < length @events do %>
+                    <div class="absolute top-3 -bottom-9 left-0 flex justify-center w-6">
+                        <div class="w-px bg-gray-200"></div>
+                    </div>
+                <% end %>
+                <img src={event.created_by.avatar} alt="" class="relative flex-none w-6 h-6 rounded-full bg-gray-50">
+                <div class="flex-auto py-0.5"><%= AzimuttWeb.OrganizationView.generate_html_event_description(event) %></div>
+                <time class="flex-none py-0.5 text-xs text-gray-500" datetime={event.created_at}><%= AzimuttWeb.OrganizationView.last_update(event.created_at) %></time>
+            </li>
+        <% end %>
+    </ul>
+</section>

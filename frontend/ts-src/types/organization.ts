@@ -13,6 +13,7 @@ export const OrganizationName = z.string()
 export type PlanId = 'free' | 'pro'
 export const PlanId = z.enum(['free', 'pro'])
 
+// MUST stay in sync with frontend/src/Models/Plan.elm & backend/lib/azimutt/organizations/organization_plan.ex
 export interface Plan {
     id: PlanId
     name: string
@@ -24,6 +25,7 @@ export interface Plan {
     sql_export: boolean
     db_analysis: boolean
     db_access: boolean
+    streak: number
 }
 
 export const Plan = z.object({
@@ -36,7 +38,8 @@ export const Plan = z.object({
     private_links: z.boolean(),
     sql_export: z.boolean(),
     db_analysis: z.boolean(),
-    db_access: z.boolean()
+    db_access: z.boolean(),
+    streak: z.number(),
 }).strict()
 
 export interface Organization {

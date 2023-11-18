@@ -1,6 +1,7 @@
 defmodule AzimuttWeb.OrganizationMemberController do
   use AzimuttWeb, :controller
   alias Azimutt.Accounts
+  alias Azimutt.Accounts.User
   alias Azimutt.Organizations
   alias Azimutt.Organizations.Organization
   alias Azimutt.Organizations.OrganizationInvitation
@@ -20,7 +21,7 @@ defmodule AzimuttWeb.OrganizationMemberController do
 
     with {:ok, %Organization{} = organization} <- Organizations.get_organization(organization_id, current_user) do
       organization_invitation_changeset = OrganizationInvitation.create_changeset(%OrganizationInvitation{}, %{}, organization.id, current_user, now)
-      render_index(conn, organization, organization_invitation_changeset)
+      render_index(conn, organization, current_user, organization_invitation_changeset)
     end
   end
 
@@ -45,7 +46,7 @@ defmodule AzimuttWeb.OrganizationMemberController do
         |> redirect(to: Routes.organization_member_path(conn, :index, invitation.organization_id))
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        render_index(conn, organization, changeset)
+        render_index(conn, organization, current_user, changeset)
     end
   end
 
@@ -90,8 +91,8 @@ defmodule AzimuttWeb.OrganizationMemberController do
     end
   end
 
-  defp render_index(conn, organization, changeset) do
-    with {:ok, plan} <- Organizations.get_organization_plan(organization) do
+  defp render_index(conn, organization, %User{} = current_user, changeset) do
+    with {:ok, plan} <- Organizations.get_organization_plan(organization, current_user) do
       # FIXME: create a `Organizations.get_pending_invitations(organization.id)`
       organization_invitations =
         organization.invitations

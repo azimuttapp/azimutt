@@ -1,0 +1,56 @@
+<%= if @value > 1 do %>
+    <section class="py-6 pl-6 lg:w-80">
+        <div class="text-xs font-bold text-gray-500 uppercase">You're on a</div>
+        <% emojis = "💯☀️⭐️🌟✨⚡️👏👍👌✌️💪🥉🥈🥇🏅🏆🐥🐓🦅🦖🐉🦣🦬🐘🐴🦄🔎🔬🔭🚀🛸🧚🧜🧞🧟🧌🪵🛖🏠️🏘️🏰🧑‍🎓🥷🤵🧛🧑‍🎤🎈🎊🎉🥳🎆🍬🍭🍪🍩🎂🧑‍🏫🧑‍🍳🧑‍🎨🧑‍💻🫅🤩😍😘🥰❤️🧡💛💚💙💜💗💕💓💝💖🥖🥐🥯🥞🍔🍷🍹🍻🥂🍾😀😄😆😁😇🤔🧐🥸🤓😎🌈💎👑🧭" %>
+        <% emoji = String.at(emojis, rem(@value, String.length emojis)) %>
+        <div class="mt-1 font-semibold text-gray-900"><%= @value %> day streak <span class="text-xl"><%= emoji %></span></div>
+        <ol role="list" class="mt-3 flex items-center">
+            <%= render "_streak_step.html", step: 1, value: @value, color: "fuchsia", color_next: "indigo" %>
+            <%= render "_streak_step.html", step: 2, value: @value, color: "indigo", color_next: "sky" %>
+            <%= render "_streak_step.html", step: 3, value: @value, color: "sky", color_next: "green" %>
+            <%= if @value <= 6 do %>
+                <%= render "_streak_step.html", step: 4, value: @value, color: "green", color_next: "yellow", reward: %{icon: "🎨", label: "Day 4: unlock table colors"} %>
+            <% else %>
+                <%= render "_streak_step.html", step: 4, value: @value, color: "green", color_next: "yellow" %>
+            <% end %>
+            <%= render "_streak_step.html", step: 5, value: @value, color: "yellow", color_next: "red" %>
+            <%= cond do %>
+                <% @value <= 6 -> %>
+                    <%= render "_streak_step.html", step: 6, value: @value, color: "red", reward: %{icon: "📝", label: "Day 6: unlimited memos"} %>
+                <% @value <= 10 -> %>
+                    <%= render "_streak_step.html", step: 10, value: @value, color: "red", reward: %{icon: "🗂️", label: "Day 10: unlimited layouts"} %>
+                <% @value <= 15 -> %>
+                    <%= render "_streak_step.html", step: 15, value: @value, color: "red", reward: %{icon: "🏘️", label: "Day 15: unlimited groups"} %>
+                <% @value <= 25 -> %>
+                    <%= render "_streak_step.html", step: 25, value: @value, color: "red", reward: %{icon: "🪄", label: "Day 25: unlock SQL export"} %>
+                <% @value <= 40 -> %>
+                    <%= render "_streak_step.html", step: 40, value: @value, color: "red", reward: %{icon: "🧪", label: "Day 40: unlock schema analysis"} %>
+                <% @value <= 60 -> %>
+                    <%= render "_streak_step.html", step: 60, value: @value, color: "red", reward: %{icon: "🕵️", label: "Day 60: unlock private links"} %>
+                <% @value <= 99 -> %>
+                    <%= render "_streak_step.html", step: @value, value: @value, color: "red", reward: %{icon: "🔥", label: "Day #{@value}"} %>
+                <% true -> %>
+                    <%= render "_streak_step.html", step: @value, value: @value, color: "red", reward: %{icon: "🧭", label: "Day #{@value}"} %>
+            <% end %>
+        </ol>
+        <% # MUST stay sync with backend/lib/azimutt/organizations.ex:436#override_streak %>
+        <%= cond do %>
+            <% @value >= 100 -> %> <p class="mt-3 text-sm text-gray-500"><b>WoW</b>, you are serious 🤩<br>Contact us, we have a gift for you 🥳</p>
+            <% @value > 60 -> %> <p class="mt-3 text-sm text-gray-500">Your current streak give you <span class="underline">table colors</span>, <span class="underline">unlimited memos, layouts and groups</span>, <span class="underline">SQL exports</span>, <span class="underline">schema analysis</span> and <span class="underline">private links</span>.</p>
+            <% @value == 60 -> %> <p class="mt-3 text-sm text-gray-500"><b>Well done!</b> You just unlocked <span class="underline">private links</span>!</p>
+            <% @value > 40 -> %> <p class="mt-3 text-sm text-gray-500">Your current streak give you <span class="underline">table colors</span>, <span class="underline">unlimited memos, layouts and groups</span>, <span class="underline">SQL exports</span> and <span class="underline">schema analysis</span>.</p>
+            <% @value == 40 -> %> <p class="mt-3 text-sm text-gray-500"><b>Well done!</b> You just unlocked <span class="underline">schema analysis</span>!</p>
+            <% @value > 25 -> %> <p class="mt-3 text-sm text-gray-500">Your current streak give you <span class="underline">table colors</span>, <span class="underline">unlimited memos, layouts and groups</span> and <span class="underline">SQL exports</span>.</p>
+            <% @value == 25 -> %> <p class="mt-3 text-sm text-gray-500"><b>Well done!</b> You just unlocked <span class="underline">SQL export</span>!</p>
+            <% @value > 15 -> %> <p class="mt-3 text-sm text-gray-500">Your current streak give you <span class="underline">table colors</span> and <span class="underline">unlimited memos, layouts and groups</span>.</p>
+            <% @value == 15 -> %> <p class="mt-3 text-sm text-gray-500"><b>Well done!</b> You just unlocked <span class="underline">unlimited groups</span>!</p>
+            <% @value > 10 -> %> <p class="mt-3 text-sm text-gray-500">Your current streak give you <span class="underline">table colors</span>, <span class="underline">unlimited memos and layouts</span>.</p>
+            <% @value == 10 -> %> <p class="mt-3 text-sm text-gray-500"><b>Well done!</b> You just unlocked <span class="underline">unlimited layouts</span>!</p>
+            <% @value > 6 -> %> <p class="mt-3 text-sm text-gray-500">Your current streak give you <span class="underline">table colors</span> and <span class="underline">unlimited memos</span>.</p>
+            <% @value == 6 -> %> <p class="mt-3 text-sm text-gray-500"><b>Well done!</b> You just unlocked <span class="underline">unlimited memos</span>!</p>
+            <% @value > 4 -> %> <p class="mt-3 text-sm text-gray-500">Your current streak give you <span class="underline">table colors</span>.</p>
+            <% @value == 4 -> %> <p class="mt-3 text-sm text-gray-500"><b>Well done!</b> You just unlocked <span class="underline">table colors</span>!</p>
+            <% true -> %>
+        <% end %>
+    </section>
+<% end %>

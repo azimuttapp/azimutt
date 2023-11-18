@@ -23,7 +23,7 @@ defmodule AzimuttWeb.Api.ProjectController do
     current_user = conn.assigns.current_user
 
     with {:ok, %Organization{} = organization} <- Organizations.get_organization(organization_id, current_user),
-         do: conn |> render("index.json", projects: organization.projects)
+         do: conn |> render("index.json", projects: organization.projects, current_user: current_user)
   end
 
   def show(conn, %{"organization_id" => _organization_id, "project_id" => project_id} = params) do
@@ -32,7 +32,7 @@ defmodule AzimuttWeb.Api.ProjectController do
     ctx = CtxParams.from_params(params)
 
     with {:ok, %Project{} = project} <- Projects.load_project(project_id, maybe_current_user, params["token"], now),
-         do: conn |> render("show.json", project: project, ctx: ctx)
+         do: conn |> render("show.json", project: project, maybe_current_user: maybe_current_user, ctx: ctx)
   end
 
   swagger_path :create do

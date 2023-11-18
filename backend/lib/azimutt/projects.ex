@@ -197,7 +197,7 @@ defmodule Azimutt.Projects do
     end)
   end
 
-  def access_project(project_id, token_id, now) do
+  def access_project(project_id, token_id, maybe_current_user, now) do
     ProjectToken
     |> where(
       [pt],
@@ -210,14 +210,14 @@ defmodule Azimutt.Projects do
       |> where([p, _, _], p.id == ^project_id and p.storage_kind == :remote)
       |> Repo.one()
       |> Result.from_nillable()
-      |> Result.filter(fn p -> Organizations.get_organization_plan(p.organization) |> Result.exists(& &1.private_links) end, :not_found)
+      |> Result.filter(fn p -> Organizations.get_organization_plan(p.organization, maybe_current_user) |> Result.exists(& &1.private_links) end, :not_found)
       |> Result.tap(fn _ -> token |> ProjectToken.access_changeset(now) |> Repo.update() end)
     end)
   end
 
   def load_project(project_id, maybe_current_user, token_id, now) do
     if token_id do
-      access_project(project_id, token_id, now)
+      access_project(project_id, token_id, maybe_current_user, now)
     else
       get_project(project_id, maybe_current_user)
     end

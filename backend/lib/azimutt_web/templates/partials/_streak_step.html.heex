@@ -1,0 +1,21 @@
+<li class={"relative#{if assigns[:color_next], do: " pr-8", else: ""}"}>
+    <%= if assigns[:color_next] do %>
+        <div class="absolute inset-0 flex items-center" aria-hidden="true">
+            <div class={"h-px w-full bg-gradient-to-r from-#{@color}-600 to-#{@color_next}-600"}></div>
+        </div>
+    <% end %>
+    <div class={"relative flex h-5 w-5 items-center justify-center rounded-full #{if assigns[:reward], do: "bg-white", else: if @step < @value, do: "bg-#{@color}-600", else: "bg-white border border-#{@color}-600"}#{if @step <= @value, do: " hover:scale-110 hover:transition", else: ""}"} title={"Day #{@step}"}>
+        <%= cond do %>
+            <% assigns[:reward] -> %>
+                <span class={"#{if @value < @step, do: "grayscale ", else: ""}text-xl cursor-help"} title={@reward.label}><%= @reward.icon %></span>
+            <% @step < @value -> %>
+                <svg class="h-3 w-3 text-white" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd" />
+                </svg>
+            <% @step == @value -> %>
+                <span class={"h-2 w-2 rounded-full bg-#{@color}-600"} aria-hidden="true"></span>
+            <% true -> %>
+        <% end %>
+        <span class="sr-only">Day <%= @step %></span>
+    </div>
+</li>

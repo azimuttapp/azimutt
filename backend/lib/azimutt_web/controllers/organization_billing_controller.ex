@@ -2,6 +2,7 @@ defmodule AzimuttWeb.OrganizationBillingController do
   use AzimuttWeb, :controller
   require Logger
   alias Azimutt.Accounts
+  alias Azimutt.Accounts.User
   alias Azimutt.CleverCloud
   alias Azimutt.Heroku
   alias Azimutt.Organizations
@@ -28,42 +29,42 @@ defmodule AzimuttWeb.OrganizationBillingController do
       cond do
         organization.clever_cloud_resource -> conn |> redirect(external: CleverCloud.app_addons_url())
         organization.heroku_resource -> conn |> redirect(external: Heroku.app_addons_url(organization.heroku_resource.app))
-        organization.stripe_subscription_id -> conn |> stripe_subscription_view(organization)
-        true -> generate_billing_view(conn, "subscribe.html", organization, "You haven't got subscribe yet !")
+        organization.stripe_subscription_id -> conn |> stripe_subscription_view(organization, current_user)
+        true -> generate_billing_view(conn, "subscribe.html", organization, current_user, "You haven't got subscribe yet !")
       end
     end
   end
 
-  defp stripe_subscription_view(conn, %Organization{} = organization) do
+  defp stripe_subscription_view(conn, %Organization{} = organization, %User{} = current_user) do
     case Organizations.get_subscription_status(organization.stripe_subscription_id) do
       {:ok, :active} ->
-        generate_billing_view(conn, "billing.html", organization, "Your subscription is active !")
+        generate_billing_view(conn, "billing.html", organization, current_user, "Your subscription is active !")
 
       {:ok, :past_due} ->
-        generate_billing_view(conn, "billing.html", organization, "We have an issue with your subscription")
+        generate_billing_view(conn, "billing.html", organization, current_user, "We have an issue with your subscription")
 
       {:ok, :unpaid} ->
-        generate_billing_view(conn, "billing.html", organization, "We have an issue with your subscription")
+        generate_billing_view(conn, "billing.html", organization, current_user, "We have an issue with your subscription")
 
       {:ok, :canceled} ->
-        generate_billing_view(conn, "subscribe.html", organization, "Your subscription is canceled")
+        generate_billing_view(conn, "subscribe.html", organization, current_user, "Your subscription is canceled")
 
       {:ok, :incomplete} ->
-        generate_billing_view(conn, "billing.html", organization, "We have an issue with your subscription")
+        generate_billing_view(conn, "billing.html", organization, current_user, "We have an issue with your subscription")
 
       {:ok, :incomplete_expired} ->
-        generate_billing_view(conn, "billing.html", organization, "We have an issue with your subscription")
+        generate_billing_view(conn, "billing.html", organization, current_user, "We have an issue with your subscription")
 
       {:ok, :trialing} ->
-        generate_billing_view(conn, "billing.html", organization, "You are in free trial")
+        generate_billing_view(conn, "billing.html", organization, current_user, "You are in free trial")
 
       {:error, err} ->
         conn |> put_flash(:error, "Can't show view: #{err}.") |> redirect(to: Routes.organization_path(conn, :show, organization))
     end
   end
 
-  defp generate_billing_view(conn, file, organization, message) do
-    with {:ok, plan} <- Organizations.get_organization_plan(organization) do
+  defp generate_billing_view(conn, file, organization, %User{} = current_user, message) do
+    with {:ok, plan} <- Organizations.get_organization_plan(organization, current_user) do
       conn
       |> put_view(AzimuttWeb.OrganizationView)
       |> render(file, organization: organization, plan: plan, message: message)

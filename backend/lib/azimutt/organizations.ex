@@ -14,6 +14,7 @@ defmodule Azimutt.Organizations do
   alias Azimutt.Projects.ProjectToken
   alias Azimutt.Repo
   alias Azimutt.Services.StripeSrv
+  alias Azimutt.Tracking
   alias Azimutt.Utils.Enumx
   alias Azimutt.Utils.Result
 
@@ -329,7 +330,7 @@ defmodule Azimutt.Organizations do
     |> Repo.update()
   end
 
-  def get_organization_plan(%Organization{} = organization) do
+  def get_organization_plan(%Organization{} = organization, maybe_current_user) do
     plans = Azimutt.config(:instance_plans) || ["free"]
 
     cond do
@@ -338,7 +339,7 @@ defmodule Azimutt.Organizations do
       organization.stripe_subscription_id && StripeSrv.stripe_configured?() -> stripe_plan(plans, organization.stripe_subscription_id)
       true -> default_plan(plans)
     end
-    |> Result.map(fn plan -> plan_overrides(plans, organization, plan) end)
+    |> Result.map(fn plan -> plan_overrides(plans, organization, plan, maybe_current_user) end)
   end
 
   defp clever_cloud_plan(plans, %CleverCloud.Resource{} = resource) do
@@ -378,7 +379,7 @@ defmodule Azimutt.Organizations do
     end
   end
 
-  defp plan_overrides(plans, %Organization{} = organization, %OrganizationPlan{} = plan) do
+  defp plan_overrides(plans, %Organization{} = organization, %OrganizationPlan{} = plan, maybe_current_user) do
     if organization.data != nil && plans |> Enum.member?("pro") do
       plan
       |> override_layouts(organization.data)
@@ -389,6 +390,7 @@ defmodule Azimutt.Organizations do
     else
       plan
     end
+    |> override_streak(maybe_current_user)
   end
 
   defp override_layouts(%OrganizationPlan{} = plan, %Organization.Data{} = data) do
@@ -430,6 +432,22 @@ defmodule Azimutt.Organizations do
       plan
     end
   end
+
+  defp override_streak(%OrganizationPlan{} = plan, %User{} = maybe_current_user) do
+    # MUST stay sync with backend/lib/azimutt_web/templates/partials/_streak.html.heex
+    streak = Tracking.get_streak(maybe_current_user) |> Result.or_else(0)
+    plan = %{plan | streak: streak}
+    plan = if(streak >= 4, do: %{plan | colors: true}, else: plan)
+    plan = if(streak >= 6, do: %{plan | memos: nil}, else: plan)
+    plan = if(streak >= 10, do: %{plan | layouts: nil}, else: plan)
+    plan = if(streak >= 15, do: %{plan | groups: nil}, else: plan)
+    plan = if(streak >= 25, do: %{plan | sql_export: true}, else: plan)
+    plan = if(streak >= 40, do: %{plan | db_analysis: true}, else: plan)
+    plan = if(streak >= 60, do: %{plan | private_links: true}, else: plan)
+    plan
+  end
+
+  defp override_streak(%OrganizationPlan{} = plan, maybe_current_user) when is_nil(maybe_current_user), do: plan
 
   defp best_limit(a, b) do
     cond do

@@ -1,15 +1,16 @@
 defmodule AzimuttWeb.Api.ProjectView do
   use AzimuttWeb, :view
+  alias Azimutt.Accounts.User
   alias Azimutt.Projects
   alias Azimutt.Projects.Project
   alias Azimutt.Utils.Result
   alias AzimuttWeb.Utils.CtxParams
 
-  def render("index.json", %{projects: projects}) do
-    render_many(projects, __MODULE__, "show.json", ctx: CtxParams.empty())
+  def render("index.json", %{projects: projects, current_user: %User{} = current_user}) do
+    render_many(projects, __MODULE__, "show.json", maybe_current_user: current_user, ctx: CtxParams.empty())
   end
 
-  def render("show.json", %{project: %Project{} = project, ctx: %CtxParams{} = ctx}) do
+  def render("show.json", %{project: %Project{} = project, maybe_current_user: maybe_current_user, ctx: %CtxParams{} = ctx}) do
     %{
       id: project.id,
       slug: project.slug,
@@ -32,14 +33,14 @@ defmodule AzimuttWeb.Api.ProjectView do
       updated_at: project.updated_at,
       archived_at: project.archived_at
     }
-    |> put_orga(project, ctx)
+    |> put_orga(project, maybe_current_user, ctx)
     |> put_content(project, ctx)
   end
 
-  defp put_orga(json, %Project{} = project, %CtxParams{} = ctx) do
+  defp put_orga(json, %Project{} = project, maybe_current_user, %CtxParams{} = ctx) do
     if ctx.expand |> Enum.member?("organization") do
       orga_ctx = ctx |> CtxParams.nested("organization")
-      json |> Map.put(:organization, render_one(project.organization, AzimuttWeb.Api.OrganizationView, "show.json", ctx: orga_ctx))
+      json |> Map.put(:organization, render_one(project.organization, AzimuttWeb.Api.OrganizationView, "show.json", maybe_current_user: maybe_current_user, ctx: orga_ctx))
     else
       json
     end

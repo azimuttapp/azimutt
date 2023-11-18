@@ -3,7 +3,7 @@ defmodule Azimutt.Organizations.OrganizationPlan do
   use TypedStruct
   alias Azimutt.Organizations.OrganizationPlan
 
-  # MUST stay in sync with frontend/src/Models/Plan.elm
+  # MUST stay in sync with frontend/ts-src/types/organization.ts & frontend/src/Models/Plan.elm
   typedstruct enforce: true do
     @derive Jason.Encoder
     field :id, atom()
@@ -16,6 +16,7 @@ defmodule Azimutt.Organizations.OrganizationPlan do
     field :sql_export, boolean()
     field :db_analysis, boolean()
     field :db_access, boolean()
+    field :streak, integer()
   end
 
   def free do
@@ -30,7 +31,8 @@ defmodule Azimutt.Organizations.OrganizationPlan do
       private_links: Azimutt.config(:free_plan_private_links),
       sql_export: Azimutt.config(:free_plan_sql_export),
       db_analysis: Azimutt.config(:free_plan_db_analysis),
-      db_access: Azimutt.config(:free_plan_db_access)
+      db_access: Azimutt.config(:free_plan_db_access),
+      streak: 0
     }
   end
 
@@ -45,7 +47,8 @@ defmodule Azimutt.Organizations.OrganizationPlan do
       private_links: true,
       sql_export: true,
       db_analysis: true,
-      db_access: true
+      db_access: true,
+      streak: 0
     }
   end
 end

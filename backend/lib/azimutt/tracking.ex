@@ -13,6 +13,27 @@ defmodule Azimutt.Tracking do
   alias Azimutt.Utils.Nil
   alias Azimutt.Utils.Result
 
+  def get_streak(%User{} = current_user) do
+    now = DateTime.utc_now()
+    months_ago = Timex.shift(now, months: -4)
+
+    Event
+    |> where([e], e.created_by_id == ^current_user.id and e.created_at >= ^months_ago)
+    |> select([e], {fragment("to_char(?, 'yyyy-mm-dd')", e.created_at), count(e.id, :distinct)})
+    |> group_by([e], fragment("to_char(?, 'yyyy-mm-dd')", e.created_at))
+    |> Repo.all()
+    |> Result.from_nillable()
+    |> Result.map(fn res -> compute_streak(Map.new(res), now, 0) end)
+  end
+
+  defp compute_streak(activity, now, streak) do
+    if Map.has_key?(activity, Date.to_string(now)) do
+      compute_streak(activity, Timex.shift(now, days: -1), streak + 1)
+    else
+      streak
+    end
+  end
+
   def last_used_project(%User{} = current_user) do
     Event
     |> where(
@@ -98,6 +119,9 @@ defmodule Azimutt.Tracking do
 
   def user_onboarding(%User{} = current_user, step, data),
     do: create_event("user_onboarding", user_data(current_user), data |> Map.put("step", step), current_user, nil, nil)
+
+  def organization_loaded(%User{} = current_user, %Organization{} = org),
+    do: create_event("organization_loaded", org_data(org), nil, current_user, org.id, nil)
 
   def project_created(%User{} = current_user, %Project{} = project),
     do: create_event("project_created", project_data(project), nil, current_user, project.organization.id, project.id)

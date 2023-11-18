@@ -14,7 +14,7 @@ module.exports = {
   ],
   safelist: [
     {
-      pattern: /(bg|text)-(red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-.*/,
+      pattern: /(bg|text|border|from|via|to)-(red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-.*/,
     },
   ],
   theme: {

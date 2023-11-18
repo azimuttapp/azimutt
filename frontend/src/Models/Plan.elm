@@ -8,7 +8,7 @@ import Libs.Json.Encode as Encode
 
 
 type alias Plan =
-    -- MUST stay in sync with backend/lib/azimutt/organizations/organization_plan.ex
+    -- MUST stay in sync with frontend/ts-src/types/organization.ts & backend/lib/azimutt/organizations/organization_plan.ex
     { id : String
     , name : String
     , layouts : Maybe Int
@@ -19,6 +19,7 @@ type alias Plan =
     , sqlExport : Bool
     , dbAnalysis : Bool
     , dbAccess : Bool
+    , streak : Int
     }
 
 
@@ -35,6 +36,7 @@ free =
     , sqlExport = Conf.features.sqlExport.free
     , dbAnalysis = Conf.features.dbAnalysis.free
     , dbAccess = Conf.features.dbAnalysis.free
+    , streak = 0
     }
 
 
@@ -51,6 +53,7 @@ full =
     , sqlExport = True
     , dbAnalysis = True
     , dbAccess = True
+    , streak = 0
     }
 
 
@@ -67,12 +70,13 @@ encode value =
         , ( "sql_export", value.sqlExport |> Encode.bool )
         , ( "db_analysis", value.dbAnalysis |> Encode.bool )
         , ( "db_access", value.dbAccess |> Encode.bool )
+        , ( "streak", value.streak |> Encode.int )
         ]
 
 
 decode : Decode.Decoder Plan
 decode =
-    Decode.map10 Plan
+    Decode.map11 Plan
         (Decode.field "id" Decode.string)
         (Decode.field "name" Decode.string)
         (Decode.maybeField "layouts" Decode.int)
@@ -83,3 +87,4 @@ decode =
         (Decode.field "sql_export" Decode.bool)
         (Decode.field "db_analysis" Decode.bool)
         (Decode.field "db_access" Decode.bool)
+        (Decode.field "streak" Decode.int)

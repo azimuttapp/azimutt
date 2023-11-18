@@ -43,9 +43,10 @@ defmodule AzimuttWeb.OrganizationController do
     end
 
     with {:ok, organization} <- Organizations.get_organization(organization_id, current_user),
+         {:ok, _event} = Tracking.organization_loaded(current_user, organization),
          projects = Projects.list_projects(organization, current_user),
          {:ok, organization_events} = Tracking.recent_organization_events(organization),
-         {:ok, plan} <- Organizations.get_organization_plan(organization),
+         {:ok, plan} <- Organizations.get_organization_plan(organization, current_user),
          do: render(conn, "show.html", organization: organization, projects: projects, plan: plan, organization_events: organization_events)
   end
 
@@ -58,7 +59,7 @@ defmodule AzimuttWeb.OrganizationController do
     end
 
     with {:ok, organization} <- Organizations.get_organization(organization_id, current_user),
-         {:ok, plan} <- Organizations.get_organization_plan(organization) do
+         {:ok, plan} <- Organizations.get_organization_plan(organization, current_user) do
       changeset = Organization.update_changeset(organization, %{}, current_user)
       render(conn, "edit.html", organization: organization, plan: plan, changeset: changeset)
     end
@@ -75,7 +76,7 @@ defmodule AzimuttWeb.OrganizationController do
         |> redirect(to: Routes.organization_path(conn, :show, organization))
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        with {:ok, plan} <- Organizations.get_organization_plan(organization),
+        with {:ok, plan} <- Organizations.get_organization_plan(organization, current_user),
              do: render(conn, "edit.html", organization: organization, plan: plan, changeset: changeset)
     end
   end

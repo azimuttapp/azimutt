@@ -20,7 +20,7 @@ defmodule AzimuttWeb.Admin.OrganizationController do
     {:ok, start_stats} = "2022-11-01" |> Timex.parse("{YYYY}-{0M}-{0D}")
 
     with {:ok, %Organization{} = organization} <- Admin.get_organization(organization_id),
-         {:ok, %OrganizationPlan{} = plan} <- Organizations.get_organization_plan(organization) do
+         {:ok, %OrganizationPlan{} = plan} <- Organizations.get_organization_plan(organization, nil) do
       conn
       |> render("show.html",
         now: now,

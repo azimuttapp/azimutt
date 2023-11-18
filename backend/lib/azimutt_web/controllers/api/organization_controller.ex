@@ -13,7 +13,7 @@ defmodule AzimuttWeb.Api.OrganizationController do
     current_user = conn.assigns.current_user
     ctx = CtxParams.from_params(params)
     organizations = Organizations.list_organizations(current_user)
-    conn |> render("index.json", organizations: organizations, ctx: ctx)
+    conn |> render("index.json", organizations: organizations, current_user: current_user, ctx: ctx)
   end
 
   def table_colors(conn, %{"organization_organization_id" => organization_id, "tweet_url" => tweet_url}) do
