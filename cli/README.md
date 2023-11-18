@@ -4,9 +4,9 @@ Azimutt CLI is aimed at helping you explore databases, schema but also data.
 
 It works with relational and document ones, such as **Couchbase**, **MariaDB**, **MongoDB**, **MySQL**, **PostgreSQL**, **SQL Server**  🎉
 
-Use this CLI without installing it thanks to [npx](https://www.npmjs.com/package/npx): `npx azimutt`.
+Use this CLI without installing it thanks to [npx](https://www.npmjs.com/package/npx): `npx azimutt@latest`.
 
-Get the help simply by running the CLI (`npx azimutt`) or for a specific command using `npx azimutt help export` for example.
+Get the help simply by running the CLI (`npx azimutt@latest`) or for a specific command using `npx azimutt@latest help export` for example.
 
 ## Available commands
 

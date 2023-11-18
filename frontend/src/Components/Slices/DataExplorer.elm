@@ -352,7 +352,7 @@ viewSources wrap htmlId sources selectedSource =
                         [ text "Local databases are accessible with "
                         , extLink "https://www.npmjs.com/package/azimutt" [ class "link" ] [ text "Azimutt CLI" ]
                         , text " ("
-                        , Badge.basic Tw.blue [] [ text "npx azimutt gateway" ] |> Tooltip.t "Starts the Azimutt Gateway on your computer to access local databases."
+                        , Badge.basic Tw.blue [] [ text "npx azimutt@latest gateway" ] |> Tooltip.t "Starts the Azimutt Gateway on your computer to access local databases."
                         , text ")."
                         ]
                     ]

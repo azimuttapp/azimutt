@@ -195,7 +195,7 @@ viewInput wrap htmlId model =
                 [ text "Use "
                 , extLink "https://www.npmjs.com/package/azimutt" [ class "link" ] [ text "Azimutt CLI" ]
                 , text " ("
-                , Badge.basic Tw.blue [] [ text "npx azimutt gateway" ] |> Tooltip.br "Starts the Azimutt Gateway on your computer to access local databases."
+                , Badge.basic Tw.blue [] [ text "npx azimutt@latest gateway" ] |> Tooltip.br "Starts the Azimutt Gateway on your computer to access local databases."
                 , text ") to access databases from your computer. "
                 , text "Otherwise we will use Azimutt Gateway, an online proxy to reach it."
                 , text " For security prefer to use a "

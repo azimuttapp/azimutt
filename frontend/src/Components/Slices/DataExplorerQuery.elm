@@ -361,7 +361,7 @@ view wrap toggleDropdown openModal openRow deleteQuery openNotes openedDropdown 
                     , viewTable wrap openModal (openRow model.source) openNotes defaultSchema source metadata res
                     ]
                 )
-                (div []
+                (div [ class "flex flex-shrink-0" ]
                     [ if List.length res.rows > 10 then
                         input
                             [ type_ "search"

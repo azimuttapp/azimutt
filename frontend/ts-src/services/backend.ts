@@ -1,3 +1,4 @@
+import {errorToString} from "@azimutt/utils";
 import {
     AzimuttSchema,
     ColumnRef,
@@ -172,7 +173,7 @@ export class Backend {
         const gateway_local = 'http://localhost:4177'
         return Http.postJson(`${gateway_local}/gateway${path}`, body, zod, label).catch(localErr => {
             return Http.postJson(`${window.gateway_url}/gateway${path}`, body, zod, label).catch(remoteErr => {
-                return Promise.reject(`${gateway_local}: ${localErr}\n${window.gateway_url}: ${remoteErr}`)
+                return Promise.reject(`${gateway_local}: ${errorToString(localErr)}\n${window.gateway_url}: ${errorToString(remoteErr)}`)
             })
         })
     }
