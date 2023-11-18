@@ -41,10 +41,6 @@ RUN curl -fsSL https://deb.nodesource.com/setup_19.x | bash - && apt-get install
 RUN npm install -g npm@9.8.1
 RUN wget -O - 'https://github.com/elm/compiler/releases/download/0.19.1/binary-for-linux-64-bit.gz' | gunzip -c >/usr/local/bin/elm
 
-ARG GIT_COMMIT_HASH=unknown
-RUN GIT_COMMIT_HASH=$(git log -1 --pretty=format:%h)
-ENV GIT_COMMIT_HASH ${GIT_COMMIT_HASH}
-
 # make the elm compiler executable
 RUN chmod +x /usr/local/bin/elm
 
@@ -123,6 +119,7 @@ ENV STRIPE_WEBHOOK_SIGNING_SECRET=${STRIPE_WEBHOOK_SIGNING_SECRET}
 ENV DATABASE_URL=${DATABASE_URL}
 ENV MIX_ENV="prod"
 ENV PHX_SERVER="true"
+ENV GIT_COMMIT_HASH ${GITHUB_SHA}
 
 WORKDIR "/app"
 RUN chown nobody /app
