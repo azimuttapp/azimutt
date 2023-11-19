@@ -54,7 +54,7 @@ defmodule AzimuttWeb.Api.ProjectController do
          {:ok, %Project{} = created} <- Projects.create_project(params, organization, current_user),
          # needed to get preloads
          {:ok, %Project{} = project} <- Projects.get_project(created.id, current_user),
-         do: conn |> put_status(:created) |> render("show.json", project: project, ctx: ctx)
+         do: conn |> put_status(:created) |> render("show.json", project: project, maybe_current_user: current_user, ctx: ctx)
   end
 
   def update(conn, %{"organization_organization_id" => _organization_id, "project_id" => project_id} = params) do
@@ -66,7 +66,7 @@ defmodule AzimuttWeb.Api.ProjectController do
          {:ok, %Project{} = updated} <- Projects.update_project(project, params, current_user, now),
          # needed to get preloads
          {:ok, %Project{} = project} <- Projects.get_project(updated.id, current_user),
-         do: conn |> render("show.json", project: project, ctx: ctx)
+         do: conn |> render("show.json", project: project, maybe_current_user: current_user, ctx: ctx)
   end
 
   def delete(conn, %{"organization_organization_id" => _organization_id, "project_id" => project_id}) do
