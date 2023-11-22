@@ -4,6 +4,24 @@
             <h1 class="mx-auto max-w-4xl text-center text-5xl font-bold tracking-tight text-white"><%= @title %></h1>
             <p class="mx-auto mt-4 max-w-2xl text-center text-lg leading-8 text-white/60"><%= @description %></p>
         </div>
+        <%= if Date.compare(DateTime.utc_now(), ~D[2023-11-30]) == :lt && Azimutt.config(:host) == "azimutt.app" do %>
+            <div class="mt-10 -mb-16 rounded-md bg-indigo-50 p-4">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <Icon.sparkles class="h-5 w-5 text-indigo-400" />
+                    </div>
+                    <div class="ml-3 flex-1 md:flex md:justify-between">
+                        <p class="text-sm text-indigo-700"><b>BlackFriday Offer!</b> Get <span class="underline">50% OFF</span> for one year with code <span class="font-extrabold">BLACKFRIDAY2023</span></p>
+                        <p class="mt-3 text-sm md:ml-6 md:mt-0">
+                            <a href="/login?plan=pro" class="whitespace-nowrap font-medium text-indigo-700 hover:text-indigo-600">
+                                Claim discount!
+                                <span aria-hidden="true"> &rarr;</span>
+                            </a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        <% end %>
         <div class="mt-16 flex justify-center relative z-10 invisible">
             <fieldset class="grid grid-cols-2 gap-x-1 rounded-full bg-white/5 p-1 text-center text-xs font-semibold leading-5 text-white">
                 <legend class="sr-only">Payment frequency</legend>
@@ -18,7 +36,7 @@
             </fieldset>
         </div>
         <div class="relative mx-auto mt-10 grid max-w-md grid-cols-1 gap-y-8 lg:mx-0 lg:-mb-14 lg:max-w-none lg:grid-cols-3">
-            <svg viewBox="0 0 1208 1024" aria-hidden="true" class="absolute left-1/2 -bottom-48 h-[64rem] translate-y-1/2 -translate-x-1/2 [mask-image:radial-gradient(closest-side,white,transparent)] lg:bottom-auto lg:-top-48 lg:translate-y-0">
+            <svg viewBox="0 0 1208 1024" aria-hidden="true" class="absolute pointer-events-none left-1/2 -bottom-48 h-[64rem] translate-y-1/2 -translate-x-1/2 [mask-image:radial-gradient(closest-side,white,transparent)] lg:bottom-auto lg:-top-48 lg:translate-y-0">
                 <ellipse cx="604" cy="512" fill="url(#d25c25d4-6d43-4bf9-b9ac-1842a30a4867)" rx="604" ry="512" />
                 <defs>
                     <radialGradient id="d25c25d4-6d43-4bf9-b9ac-1842a30a4867">

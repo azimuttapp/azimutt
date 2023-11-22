@@ -1,4 +1,27 @@
 <div class="min-h-full pr-4 bg-gray-50 sm:pr-6 lg:pr-8 lg:flex-shrink-0 lg:border-l lg:border-gray-200 xl:pr-0 divide-y">
+    <%= if @plan.id == :free && Date.compare(DateTime.utc_now(), ~D[2023-11-30]) == :lt && Azimutt.config(:host) == "azimutt.app" do %>
+        <section class="py-6 pl-6 lg:w-80 mx-auto">
+            <div class="relative isolate overflow-hidden bg-gray-900 px-3 py-4 text-center shadow-2xl rounded-2xl">
+                <h2 class="mt-0 mx-auto text-xl font-bold tracking-tight text-white">BlackFriday Offer!</h2>
+                <p class="mx-auto mt-3 text-gray-300">
+                    Get <span class="underline">50% OFF</span> for one year with code:
+                    <span class="font-extrabold bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 text-transparent bg-clip-text">BLACKFRIDAY2023</span>
+                </p>
+                <div class="mt-4 flex items-center justify-center gap-x-6">
+                    <a href={Routes.organization_billing_path(@conn, :index, @organization, source: "orga-card")} class="rounded-md bg-white px-3.5 py-2.5 text-sm font-semibold text-gray-900 shadow-sm hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">Claim discount!</a>
+                </div>
+                <svg viewBox="0 0 512 512" class="absolute left-1/2 top-1/2 -z-10 h-[32rem] w-[32rem] -translate-x-1/2 [mask-image:radial-gradient(closest-side,white,transparent)]" aria-hidden="true">
+                    <circle cx="256" cy="256" r="256" fill="url(#827591b1-ce8c-4110-b064-7cb85a0b1217)" fill-opacity="0.7" />
+                    <defs>
+                        <radialGradient id="827591b1-ce8c-4110-b064-7cb85a0b1217">
+                            <stop stop-color="#7775D6" />
+                            <stop offset="1" stop-color="#E935C1" />
+                        </radialGradient>
+                    </defs>
+                </svg>
+            </div>
+        </section>
+    <% end %>
     <%= render AzimuttWeb.PartialsView, "_streak.html", value: @plan.streak %>
     <%= render AzimuttWeb.PartialsView, "_activity_feed.html", events: @organization_events %>
 </div>
