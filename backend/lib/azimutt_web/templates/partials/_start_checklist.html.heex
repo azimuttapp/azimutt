@@ -27,7 +27,11 @@
                         <span class="ml-3 text-sm leading-6 text-gray-500">
                             <span title={action[:help]}><%= action.label %></span> -
                             <%= form_for @conn, Routes.organization_start_checklist_path(@conn, :check, @organization, action.id), [class: "inline"], fn f -> %>
-                                <%= submit "ignore", class: "underline" %>
+                                <%= if action[:manual_check] do %>
+                                    <%= submit "done", class: "underline" %>
+                                <% else %>
+                                    <%= submit "ignore", class: "underline" %>
+                                <% end %>
                             <% end %>
                         </span>
                     <% end %>

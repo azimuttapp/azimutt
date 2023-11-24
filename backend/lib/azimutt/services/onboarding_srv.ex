@@ -24,18 +24,23 @@ defmodule Azimutt.Services.OnboardingSrv do
   def items do
     [
       %{id: "new_project", label: "Create a project and save it", help: "When saving your project, local mode keep all your data on your browser."},
-      %{id: "aml", label: "Design or extend your db with AML", help: "Create an AML source from settings or 'Update your schema' button on the bottom right and add a table."},
+      %{id: "aml", label: "Design/extend your db with AML", help: "Create an AML source from settings or 'Update your schema' button on the bottom right and add a table."},
       %{id: "follow_relation", label: "Navigate schema with relations", help: "Click on colored icons on a table to view related tables, in or out."},
       %{id: "details", label: "Open details for table or column", help: "Double/right click on a table or column to open details about it."},
       %{id: "create_note", label: "Add a note on table or column", help: "Right click on a table header or column, then select 'Add notes' to document it."},
-      %{id: "create_memo", label: "Create a layout memo", help: "Double/right click on diagram background and write markdown documentation."},
+      %{id: "create_memo", label: "Add a memo to a layout", help: "Double/right click on diagram background and write markdown documentation."},
       %{id: "create_layout", label: "Create a new layout", help: "On center-top, click on the layout name (initial layout) and create a new one."},
       %{id: "data_explorer", label: "Query your database", help: "Open data explorer (bottom right 'Explore your data' icon) and run some queries."},
       %{id: "table_row", label: "Add a table row in a layout", help: "Open a data explorer result row in sidebar and click on 'Add to layout' button."},
       %{id: "follow_data_relation", label: "Navigate data with relations", help: "On a table row, if there is an icon on the right, click on it to view related rows."},
       %{id: "find_path", label: "Search path between tables", help: "Right click on diagram/table header or open features menu and try 'Find path'."},
       %{id: "analyze", label: "Analyze your schema", help: "Open features menu (lightning) and see when 'Analyze your schema' will give you."},
-      %{id: "promote", label: "Give us a shout out", help: "Making Azimutt takes a lot of energy, user satisfaction and support boost us. Send some feedback if you feel it."}
+      %{
+        id: "promote",
+        label: "Give us a shout out",
+        help: "Making Azimutt takes a lot of energy, but user satisfaction and support boost us a lot. Send some feedback and love if you feel it.",
+        manual_check: true
+      }
     ]
   end
 
@@ -56,6 +61,7 @@ defmodule Azimutt.Services.OnboardingSrv do
         "follow_data_relation" -> event.name == "data_explorer__table_row__shown" && event.details["from"] == "relation"
         "find_path" -> event.name == "editor_find_path_searched"
         "analyze" -> event.name == "editor_db_analysis_opened"
+        "promote" -> false
         _ -> false
       end
     end)
