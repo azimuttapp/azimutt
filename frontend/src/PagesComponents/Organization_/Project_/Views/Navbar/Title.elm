@@ -179,7 +179,7 @@ viewLayouts platform currentLayout layouts htmlId openedDropdown =
                 , div [ role "none", class "py-1" ]
                     (layouts
                         |> Dict.toList
-                        |> List.sortBy (\( name, _ ) -> name)
+                        |> List.sortBy (\( name, _ ) -> name |> String.toLower)
                         |> List.map (\( name, layout ) -> viewLayoutItem (currentLayout == name) name layout)
                     )
                 ]
