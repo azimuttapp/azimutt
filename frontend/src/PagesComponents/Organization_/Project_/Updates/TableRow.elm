@@ -20,6 +20,7 @@ import Ports
 import Services.Lenses exposing (mapCanvas, mapPosition, mapTableRows, mapTableRowsSeq)
 import Set exposing (Set)
 import Time
+import Track
 
 
 mapTableRowOrSelectedCmd : TableRow.Id -> TableRow.Msg -> (TableRow -> ( TableRow, Cmd msg )) -> List TableRow -> ( List TableRow, Cmd msg )
@@ -37,8 +38,8 @@ mapTableRowOrSelectedCmd id msg f rows =
         |> Maybe.withDefault ( rows, Cmd.none )
 
 
-showTableRow : Time.Posix -> DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> Erd -> ( Erd, Cmd Msg )
-showTableRow now source query previous hint erd =
+showTableRow : Time.Posix -> DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> String -> Erd -> ( Erd, Cmd Msg )
+showTableRow now source query previous hint from erd =
     let
         hidden : Set ColumnName
         hidden =
@@ -50,7 +51,7 @@ showTableRow now source query previous hint erd =
     ( erd
         |> mapTableRowsSeq (\i -> i + 1)
         |> Erd.mapCurrentLayoutWithTime now (mapTableRows (List.prepend row))
-    , Cmd.batch [ cmd, Ports.observeTableRowSize row.id ]
+    , Cmd.batch [ cmd, Ports.observeTableRowSize row.id, Track.tableRowShown source from erd.project ]
     )
 
 

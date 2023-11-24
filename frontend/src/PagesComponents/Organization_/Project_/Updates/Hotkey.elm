@@ -181,7 +181,7 @@ showElement : Model -> Cmd Msg
 showElement model =
     (model |> currentColumnRow |> Maybe.map (\( id, col ) -> TableRow.ShowColumn (ColumnPath.toString col) |> TableRowMsg id |> T.send))
         |> Maybe.orElse (model |> currentColumn |> Maybe.map (ShowColumn >> T.send))
-        |> Maybe.orElse (model |> currentTable |> Maybe.map (\t -> ShowTable t Nothing |> T.send))
+        |> Maybe.orElse (model |> currentTable |> Maybe.map (\t -> ShowTable t Nothing "hotkey" |> T.send))
         |> Maybe.withDefault ("Can't find an element to show :(" |> Toasts.info |> Toast |> T.send)
 
 

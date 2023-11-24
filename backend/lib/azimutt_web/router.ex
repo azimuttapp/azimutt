@@ -141,6 +141,7 @@ defmodule AzimuttWeb.Router do
       post("/members", OrganizationMemberController, :create_invitation, as: :member)
       patch("/members/:invitation_id/cancel", OrganizationMemberController, :cancel_invitation, as: :member)
       delete("/members/:user_id/remove", OrganizationMemberController, :remove, as: :member)
+      post("/check/:item", StartChecklistController, :check, as: :start_checklist)
     end
 
     get("/invitations/:invitation_id", OrganizationInvitationController, :show, as: :invitation)

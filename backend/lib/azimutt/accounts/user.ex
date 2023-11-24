@@ -103,6 +103,12 @@ defmodule Azimutt.Accounts.User do
     |> validate_required(required)
   end
 
+  def start_checklist_changeset(user, values) do
+    user
+    |> cast(%{data: %{start_checklist: values}}, [])
+    |> cast_embed(:data, required: true, with: &User.Data.changeset/2)
+  end
+
   defp setup_onboarding(user_changeset) do
     if Azimutt.config(:skip_onboarding_funnel) do
       user_changeset

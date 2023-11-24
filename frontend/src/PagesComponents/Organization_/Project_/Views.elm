@@ -134,7 +134,7 @@ viewLeftSidebar model =
     let
         content : Maybe (Html Msg)
         content =
-            model.detailsSidebar |> Maybe.map2 (DetailsSidebar.view DetailsSidebarMsg (\id -> ShowTable id Nothing) ShowColumn HideColumn (LLoad >> LayoutMsg) (\source q -> DataExplorer.Open (Just source) (Just q) |> DataExplorerMsg) model.tableStats model.columnStats) model.erd
+            model.detailsSidebar |> Maybe.map2 (DetailsSidebar.view DetailsSidebarMsg (\id -> ShowTable id Nothing "details") ShowColumn HideColumn (LLoad >> LayoutMsg) (\source q -> DataExplorer.Open (Just source) (Just q) |> DataExplorerMsg) model.tableStats model.columnStats) model.erd
     in
     aside [ css [ "block flex-shrink-0 order-first" ] ]
         [ div [ css [ B.cond (content == Nothing) "-ml-112" "", "w-112 transition-[margin] ease-in-out duration-200 h-full relative flex flex-col border-r border-gray-200 bg-white overflow-y-auto" ] ]
@@ -162,7 +162,7 @@ viewBottomSheet model =
     let
         content : Maybe (Html Msg)
         content =
-            model.dataExplorer.display |> Maybe.map2 (\erd -> DataExplorer.view DataExplorerMsg DropdownToggle CustomModalOpen (\id -> ShowTable id Nothing) ShowTableRow (\t c -> NotesMsg.NOpen t c |> NotesMsg) (calcNavbarHeight model) model.openedDropdown erd.settings.defaultSchema Conf.ids.dataExplorerDialog erd.sources (erd |> Erd.currentLayout) erd.metadata model.dataExplorer) model.erd
+            model.dataExplorer.display |> Maybe.map2 (\erd -> DataExplorer.view DataExplorerMsg DropdownToggle CustomModalOpen (\id -> ShowTable id Nothing "data-explorer") (\i q s h -> ShowTableRow i q s h "details") (\t c -> NotesMsg.NOpen t c |> NotesMsg) (calcNavbarHeight model) model.openedDropdown erd.settings.defaultSchema Conf.ids.dataExplorerDialog erd.sources (erd |> Erd.currentLayout) erd.metadata model.dataExplorer) model.erd
     in
     aside [ class "block flex-shrink-0" ]
         [ div [ style "height" ("calc(" ++ calcBottomSheetHeight model ++ ")"), css [ "relative border-t border-gray-200 bg-white overflow-y-auto" ] ]

@@ -2,11 +2,11 @@ module Components.Molecules.Editor exposing (DocState, Highlight, Model, Msg(..)
 
 import Dict exposing (Dict)
 import ElmBook
-import ElmBook.Actions as Actions
+import ElmBook.Actions as Actions exposing (logAction)
 import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Attribute, Html, div, text, textarea)
 import Html.Attributes exposing (class, classList, id, name, placeholder, rows, spellcheck, style, value)
-import Html.Events exposing (onInput)
+import Html.Events exposing (onBlur, onInput)
 import Html.Lazy as Lazy
 import Json.Decode as Json
 import Libs.Dict as Dict
@@ -22,8 +22,8 @@ import SyntaxHighlight as SH
 -- https://package.elm-lang.org/packages/jxxcarlson/elm-editor/latest
 
 
-basic : String -> String -> (String -> msg) -> String -> Int -> Bool -> Html msg
-basic fieldId fieldValue fieldUpdate fieldPlaceholder lines hasErrors =
+basic : String -> String -> (String -> msg) -> msg -> String -> Int -> Bool -> Html msg
+basic fieldId fieldValue fieldUpdate updateEnd fieldPlaceholder lines hasErrors =
     let
         colors : TwClass
         colors =
@@ -39,6 +39,7 @@ basic fieldId fieldValue fieldUpdate fieldPlaceholder lines hasErrors =
         , id fieldId
         , value fieldValue
         , onInput fieldUpdate
+        , onBlur updateEnd
         , placeholder fieldPlaceholder
         , class ("block w-full shadow-sm rounded-md sm:text-sm " ++ colors)
         ]
@@ -212,8 +213,8 @@ doc =
             [ ( "SQL editor", \{ editorDocState } -> div [ style "height" "150px" ] [ sql (\m -> docStateUpdate (\s -> { s | sql = update m editorDocState.sql })) "sql-editor" editorDocState.sql ] )
             , ( "AML editor", \{ editorDocState } -> div [ style "height" "150px" ] [ aml (\m -> docStateUpdate (\s -> { s | aml = update m editorDocState.aml })) "aml-editor" editorDocState.aml ] )
             , ( "JSON editor", \{ editorDocState } -> div [ style "height" "150px" ] [ json (\m -> docStateUpdate (\s -> { s | json = update m editorDocState.json })) "json-editor" editorDocState.json ] )
-            , ( "basic", \{ editorDocState } -> basic "basic" editorDocState.basic (\v -> docStateUpdate (\s -> { s | basic = v })) "placeholder value" 3 False )
-            , ( "basic with error", \{ editorDocState } -> basic "basic" editorDocState.basic (\v -> docStateUpdate (\s -> { s | basic = v })) "placeholder value" 3 True )
+            , ( "basic", \{ editorDocState } -> basic "basic" editorDocState.basic (\v -> docStateUpdate (\s -> { s | basic = v })) (logAction "updateEnd") "placeholder value" 3 False )
+            , ( "basic with error", \{ editorDocState } -> basic "basic" editorDocState.basic (\v -> docStateUpdate (\s -> { s | basic = v })) (logAction "updateEnd") "placeholder value" 3 True )
             ]
 
 

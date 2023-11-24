@@ -23,5 +23,6 @@
         </section>
     <% end %>
     <%= render AzimuttWeb.PartialsView, "_streak.html", value: @plan.streak %>
+    <%= render AzimuttWeb.PartialsView, "_start_checklist.html", conn: @conn, organization: @organization, completed: @current_user.data.start_checklist %>
     <%= render AzimuttWeb.PartialsView, "_activity_feed.html", events: @organization_events %>
 </div>

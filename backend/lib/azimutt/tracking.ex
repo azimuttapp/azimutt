@@ -8,6 +8,7 @@ defmodule Azimutt.Tracking do
   alias Azimutt.Repo
   alias Azimutt.Services.BentoSrv
   alias Azimutt.Services.CockpitSrv
+  alias Azimutt.Services.OnboardingSrv
   alias Azimutt.Services.PostHogSrv
   alias Azimutt.Tracking.Event
   alias Azimutt.Utils.Nil
@@ -232,6 +233,7 @@ defmodule Azimutt.Tracking do
     })
     |> Repo.insert()
     |> Result.tap(fn event ->
+      OnboardingSrv.on_event(event)
       CockpitSrv.send_event(event)
       if Azimutt.config(:bento) && event.created_by, do: BentoSrv.send_event(event)
       if Azimutt.config(:posthog) && event.created_by, do: PostHogSrv.send_event(event)

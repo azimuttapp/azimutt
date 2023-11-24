@@ -1,4 +1,4 @@
-module Track exposing (SQLParsing, amlSourceCreated, dataExplorerDetailsOpened, dataExplorerDetailsResult, dataExplorerOpened, dataExplorerQueryOpened, dataExplorerQueryResult, dbAnalysisOpened, detailSidebarClosed, detailSidebarOpened, docOpened, externalLink, findPathOpened, findPathResults, groupCreated, groupDeleted, groupRenamed, jsonError, layoutCreated, layoutDeleted, layoutLoaded, memoDeleted, memoSaved, notFound, notesCreated, notesDeleted, notesUpdated, planLimit, projectDraftCreated, projectLoaded, searchClicked, sourceAdded, sourceCreated, sourceDeleted, sourceEditorClosed, sourceEditorOpened, sourceRefreshed, sqlSourceCreated, tableRowOpened, tableRowResult, tagsCreated, tagsDeleted, tagsUpdated)
+module Track exposing (SQLParsing, amlSourceCreated, dataExplorerDetailsOpened, dataExplorerDetailsResult, dataExplorerOpened, dataExplorerQueryOpened, dataExplorerQueryResult, dbAnalysisOpened, detailSidebarClosed, detailSidebarOpened, docOpened, externalLink, findPathOpened, findPathResults, groupCreated, groupDeleted, groupRenamed, jsonError, layoutCreated, layoutDeleted, layoutLoaded, memoDeleted, memoSaved, notFound, notesCreated, notesDeleted, notesUpdated, planLimit, projectDraftCreated, projectLoaded, searchClicked, sourceAdded, sourceCreated, sourceDeleted, sourceEditorClosed, sourceEditorOpened, sourceRefreshed, sqlSourceCreated, tableRowOpened, tableRowResult, tableRowShown, tableShown, tagsCreated, tagsDeleted, tagsUpdated)
 
 import Conf exposing (Feature, Features)
 import DataSources.Helpers exposing (SourceLine)
@@ -56,6 +56,7 @@ sqlSourceCreated project parser source =
 
 amlSourceCreated : Maybe ProjectInfo -> Source -> Cmd msg
 amlSourceCreated project source =
+    -- when a source is created, may be added to a project or not
     sendEvent "editor_source_created" ([ ( "format", "aml" |> Encode.string ) ] ++ sourceDetails source) project
 
 
@@ -102,6 +103,11 @@ layoutDeleted project layout =
 searchClicked : String -> Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> Cmd msg
 searchClicked kind erd =
     sendEvent "editor_search_clicked" [ ( "kind", kind |> Encode.string ) ] (erd |> Maybe.map .project)
+
+
+tableShown : Int -> String -> Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> Cmd msg
+tableShown tables from erd =
+    sendEvent "editor__table__shown" [ ( "nb_tables", tables |> Encode.int ), ( "from", from |> Encode.string ) ] (erd |> Maybe.map .project)
 
 
 notesCreated : Notes -> Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> Cmd msg
@@ -228,6 +234,11 @@ dataExplorerDetailsOpened source query project =
 dataExplorerDetailsResult : QueryResult -> { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> Cmd msg
 dataExplorerDetailsResult res project =
     sendEvent "data_explorer__details__result" (queryResultDetails res) (Just project)
+
+
+tableRowShown : DbSourceInfo -> String -> { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> Cmd msg
+tableRowShown source from project =
+    sendEvent "data_explorer__table_row__shown" [ ( "db", source.db.kind |> DatabaseKind.encode ), ( "from", from |> Encode.string ) ] (Just project)
 
 
 tableRowOpened : Maybe TableRow.SuccessState -> DbSourceInfo -> SqlQueryOrigin -> { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> Cmd msg

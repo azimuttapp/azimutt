@@ -135,10 +135,10 @@ viewTable conf zoom args layout meta tableLayout table =
                                             Noop "No table to show"
 
                                         col :: [] ->
-                                            ShowTable col.column.table hint
+                                            ShowTable col.column.table hint "relation"
 
                                         _ ->
-                                            ShowTables (cols |> List.map (.column >> .table)) hint
+                                            ShowTables (cols |> List.map (.column >> .table)) hint "relation"
                                )
                 , nestedIconClick = ToggleNestedColumn table.id
                 , hiddenColumnsHover = \id on -> PopoverOpen (B.cond on id "")

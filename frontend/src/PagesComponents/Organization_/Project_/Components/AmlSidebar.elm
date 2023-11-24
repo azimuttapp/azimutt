@@ -10,7 +10,6 @@ import Dict
 import Html exposing (Html, button, div, h3, label, option, p, select, text)
 import Html.Attributes exposing (class, disabled, for, id, name, selected, value)
 import Html.Events exposing (onClick, onInput)
-import Libs.Basics exposing (tupled)
 import Libs.Bool as Bool
 import Libs.Dict as Dict
 import Libs.Html exposing (extLink)
@@ -95,9 +94,12 @@ update now msg model =
 
         AUpdateSource id value ->
             model.erd
-                |> Maybe.andThen (.sources >> List.find (\s -> s.id == id))
+                |> Maybe.andThen (.sources >> List.findBy .id id)
                 |> Maybe.map (\s -> model |> updateSource now s value |> setDirtyCmd)
                 |> Maybe.withDefault ( model |> mapAmlSidebarM (setErrors [ { row = 0, col = 0, problem = "Invalid source" } ]), Cmd.none )
+
+        ASourceUpdated id ->
+            ( model, model.erd |> Maybe.andThen (.sources >> List.findBy .id id >> Maybe.map (Track.sourceRefreshed model.erd)) |> Maybe.withDefault Cmd.none )
 
 
 updateSource : Time.Posix -> Source -> String -> Model x -> ( Model x, Cmd Msg )
@@ -152,7 +154,7 @@ updateSource now source input model =
         ( model |> mapErdM (Erd.mapSource source.id (Source.refreshWith parsed)) |> mapAmlSidebarM (setErrors [])
         , Cmd.batch
             (List.map T.send
-                ((toShow |> List.map (tupled ShowTable))
+                ((toShow |> List.map (\( id, hint ) -> ShowTable id hint "aml"))
                     ++ (toHide |> List.map HideTable)
                     ++ (updated |> List.map (\t -> ShowColumns t.id (ShowColumns.List (amlColumns |> Dict.getOrElse t.id []))))
                 )
@@ -291,7 +293,7 @@ viewChooseSource selectedSource userSources =
 viewSourceEditor : AmlSidebar -> List String -> Source -> Html Msg
 viewSourceEditor model warnings source =
     div [ class "mt-3" ]
-        [ Editor.basic "source-editor" (contentStr source) (AUpdateSource source.id >> AmlSidebarMsg) """Write your schema using AML syntax
+        [ Editor.basic "source-editor" (contentStr source) (AUpdateSource source.id >> AmlSidebarMsg) (ASourceUpdated source.id |> AmlSidebarMsg) """Write your schema using AML syntax
 
 Ex:
 

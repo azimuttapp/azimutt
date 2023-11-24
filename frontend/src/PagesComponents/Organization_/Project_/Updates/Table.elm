@@ -38,6 +38,7 @@ import Services.Lenses exposing (mapCanvas, mapColumns, mapProps, mapRelatedTabl
 import Services.Toasts as Toasts
 import Set exposing (Set)
 import Time
+import Track
 
 
 goToTable : Time.Posix -> TableId -> ErdProps -> Erd -> ( Erd, Cmd Msg )
@@ -62,22 +63,22 @@ placeTableAtCenter viewport canvas table =
     canvas.position |> Position.moveDiagram delta
 
 
-showTable : Time.Posix -> TableId -> Maybe PositionHint -> Erd -> ( Erd, Cmd Msg )
-showTable now id hint erd =
+showTable : Time.Posix -> TableId -> Maybe PositionHint -> String -> Erd -> ( Erd, Cmd Msg )
+showTable now id hint from erd =
     case erd |> Erd.getTable id of
         Just table ->
             if erd |> Erd.isShown id then
                 ( erd, "Table " ++ TableId.show erd.settings.defaultSchema id ++ " already shown" |> Toasts.info |> Toast |> T.send )
 
             else
-                ( erd |> performShowTable now table hint, Ports.observeTableSize table.id )
+                ( erd |> performShowTable now table hint, Cmd.batch [ Ports.observeTableSize table.id, Track.tableShown 1 from (Just erd) ] )
 
         Nothing ->
             ( erd, "Can't show table " ++ TableId.show erd.settings.defaultSchema id ++ ": not found" |> Toasts.error |> Toast |> T.send )
 
 
-showTables : Time.Posix -> List TableId -> Maybe PositionHint -> Erd -> ( Erd, Cmd Msg )
-showTables now ids hint erd =
+showTables : Time.Posix -> List TableId -> Maybe PositionHint -> String -> Erd -> ( Erd, Cmd Msg )
+showTables now ids hint from erd =
     ids
         |> List.indexedMap (\i id -> ( id, erd |> Erd.getTable id, hint |> Maybe.map (PositionHint.move { dx = 0, dy = Conf.ui.table.headerHeight * toFloat i }) ))
         |> List.foldl
@@ -98,6 +99,7 @@ showTables now ids hint erd =
                 ( e
                 , Cmd.batch
                     [ Ports.observeTablesSize found
+                    , B.cond (shown |> List.isEmpty) Cmd.none (Track.tableShown (List.length shown) from (Just erd))
                     , B.cond (shown |> List.isEmpty) Cmd.none ("Tables " ++ (shown |> List.map (TableId.show erd.settings.defaultSchema) |> String.join ", ") ++ " are already shown" |> Toasts.info |> Toast |> T.send)
                     , B.cond (notFound |> List.isEmpty) Cmd.none ("Can't show tables " ++ (notFound |> List.map (TableId.show erd.settings.defaultSchema) |> String.join ", ") ++ ": can't found them" |> Toasts.info |> Toast |> T.send)
                     ]
@@ -105,8 +107,8 @@ showTables now ids hint erd =
            )
 
 
-showAllTables : Time.Posix -> Erd -> ( Erd, Cmd Msg )
-showAllTables now erd =
+showAllTables : Time.Posix -> String -> Erd -> ( Erd, Cmd Msg )
+showAllTables now from erd =
     let
         shownIds : Set TableId
         shownIds =
@@ -121,7 +123,10 @@ showAllTables now erd =
             tablesToShow |> List.map (\t -> t |> ErdTableLayout.init erd.settings shownIds (erd.relationsByTable |> Dict.getOrElse t.id []) erd.settings.collapseTableColumns Nothing)
     in
     ( erd |> Erd.mapCurrentLayoutWithTime now (mapTables (\old -> newTables ++ old))
-    , Cmd.batch [ Ports.observeTablesSize (newTables |> List.map .id) ]
+    , Cmd.batch
+        [ Ports.observeTablesSize (newTables |> List.map .id)
+        , B.cond (newTables |> List.isEmpty) Cmd.none (Track.tableShown (List.length newTables) from (Just erd))
+        ]
     )
 
 
@@ -184,7 +189,7 @@ showRelatedTables id erd =
                     shows =
                         toShow |> List.foldl (\( t, h ) ( cur, res ) -> ( cur + h + padding.dy, ( t, Just (PlaceAt (Position.grid { left = left, top = cur })) ) :: res )) ( top, [] ) |> Tuple.second
                 in
-                ( erd, Cmd.batch (shows |> List.map (\( t, hint ) -> T.send (ShowTable t hint))) )
+                ( erd, Cmd.batch (shows |> List.map (\( t, hint ) -> T.send (ShowTable t hint "related"))) )
             )
             ( erd, Cmd.none )
 

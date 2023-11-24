@@ -146,7 +146,7 @@ viewMissingPrimaryKey htmlId project opened defaultSchema missingPks =
             (\t ->
                 div [ class "flex justify-between items-center my-1" ]
                     [ div [] [ bText (TableId.show defaultSchema t.id), text " has no primary key" ]
-                    , Button.primary1 Tw.primary [ class "ml-3", onClick (ShowTable t.id Nothing) ] [ text "Show table" ]
+                    , Button.primary1 Tw.primary [ class "ml-3", onClick (ShowTable t.id Nothing "no-primary-key") ] [ text "Show table" ]
                     ]
             )
         ]

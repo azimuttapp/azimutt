@@ -161,6 +161,12 @@ defmodule Azimutt.Accounts do
     end)
   end
 
+  def set_start_checklist(%User{} = user, values) do
+    user
+    |> User.start_checklist_changeset(values)
+    |> Repo.update()
+  end
+
   ## Settings
 
   def change_user_infos(%User{} = user, attrs \\ %{}) do
