@@ -99,7 +99,7 @@ update urlLayout zone now urlInfos organizations projects msg model =
             ( model |> mapNavbar (mapSearch (setText search >> setActive 0)), Cmd.none )
 
         SearchClicked kind table ->
-            ( model, Cmd.batch [ ShowTable table Nothing |> T.send, Track.searchClicked kind model.erd ] )
+            ( model, Cmd.batch [ ShowTable table Nothing "search" |> T.send, Track.searchClicked kind model.erd ] )
 
         TriggerSaveProject ->
             model |> triggerSaveProject urlInfos organizations
@@ -122,18 +122,18 @@ update urlLayout zone now urlInfos organizations projects msg model =
         GoToTable id ->
             model |> mapErdMCmd (goToTable now id model.erdElem) |> setDirtyCmd
 
-        ShowTable id hint ->
+        ShowTable id hint from ->
             if model.erd |> Maybe.mapOrElse (Erd.currentLayout >> .tables) [] |> List.any (\t -> t.id == id) then
                 ( model, GoToTable id |> T.send )
 
             else
-                model |> mapErdMCmd (showTable now id hint) |> setDirtyCmd
+                model |> mapErdMCmd (showTable now id hint from) |> setDirtyCmd
 
-        ShowTables ids hint ->
-            model |> mapErdMCmd (showTables now ids hint) |> setDirtyCmd
+        ShowTables ids hint from ->
+            model |> mapErdMCmd (showTables now ids hint from) |> setDirtyCmd
 
-        ShowAllTables ->
-            model |> mapErdMCmd (showAllTables now) |> setDirtyCmd
+        ShowAllTables from ->
+            model |> mapErdMCmd (showAllTables now from) |> setDirtyCmd
 
         HideTable id ->
             model |> mapErdM (hideTable now id) |> mapHoverTable (\h -> B.cond (h == Just id) Nothing h) |> setDirty
@@ -258,10 +258,10 @@ update urlLayout zone now urlInfos organizations projects msg model =
         MemoMsg message ->
             model |> handleMemo now urlInfos message
 
-        ShowTableRow source query previous hint ->
+        ShowTableRow source query previous hint from ->
             (model.erd |> Maybe.andThen (Erd.currentLayout >> .tableRows >> List.find (\r -> r.source == source.id && r.table == query.table && r.primaryKey == query.primaryKey)))
                 |> Maybe.map (\r -> model |> mapErdMCmd (moveToTableRow now model.erdElem r))
-                |> Maybe.withDefault (model |> mapErdMCmd (showTableRow now source query previous hint) |> setDirtyCmd)
+                |> Maybe.withDefault (model |> mapErdMCmd (showTableRow now source query previous hint from) |> setDirtyCmd)
 
         DeleteTableRow id ->
             model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTableRows (List.removeBy .id id))) |> setDirty
@@ -518,7 +518,7 @@ handleJsMessage now urlLayout msg model =
             ( model, message |> Toasts.create level |> Toast |> T.send )
 
         GotTableShow id hint ->
-            ( model, T.send (ShowTable id (hint |> Maybe.map PlaceAt)) )
+            ( model, T.send (ShowTable id (hint |> Maybe.map PlaceAt) "port") )
 
         GotTableHide id ->
             ( model, T.send (HideTable id) )

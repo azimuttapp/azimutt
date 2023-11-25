@@ -72,7 +72,7 @@ viewNavbarSearch defaultSchema search tables relations metadata shownTables html
                                 [ text "Type to search into tables (", Icon.solid Icons.table "", text "), columns (", Icon.solid Icons.column "", text ") and relations (", Icon.solid Icons.columns.foreignKey "", text ")" ]
                             , button
                                 [ type_ "button"
-                                , onMouseDown (B.cond (Dict.size tables < Conf.constants.manyTablesLimit) ShowAllTables (confirm "Show all tables" (text ("You are about to show " ++ (tables |> pluralizeD "table") ++ ". That's a lot. It may slow down your browser and make Azimutt unresponsive. Continue?")) ShowAllTables))
+                                , onMouseDown (B.cond (Dict.size tables < Conf.constants.manyTablesLimit) (ShowAllTables "search") (confirm "Show all tables" (text ("You are about to show " ++ (tables |> pluralizeD "table") ++ ". That's a lot. It may slow down your browser and make Azimutt unresponsive. Continue?")) (ShowAllTables "search")))
                                 , role "menuitem"
                                 , tabindex -1
                                 , css [ "flex w-full items-center", focus [ "outline-none" ], ContextMenu.itemStyles ]

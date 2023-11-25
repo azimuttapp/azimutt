@@ -228,9 +228,9 @@ type Msg
     | RenameProject ProjectName
     | DeleteProject ProjectInfo
     | GoToTable TableId
-    | ShowTable TableId (Maybe PositionHint)
-    | ShowTables (List TableId) (Maybe PositionHint)
-    | ShowAllTables
+    | ShowTable TableId (Maybe PositionHint) String
+    | ShowTables (List TableId) (Maybe PositionHint) String
+    | ShowAllTables String
     | HideTable TableId
     | ShowRelatedTables TableId
     | HideRelatedTables TableId
@@ -262,7 +262,7 @@ type Msg
     | TagsMsg TagsMsg
     | GroupMsg GroupMsg
     | MemoMsg MemoMsg
-    | ShowTableRow DbSourceInfo RowQuery (Maybe TableRow.SuccessState) (Maybe PositionHint)
+    | ShowTableRow DbSourceInfo RowQuery (Maybe TableRow.SuccessState) (Maybe PositionHint) String
     | DeleteTableRow TableRow.Id
     | TableRowMsg TableRow.Id TableRow.Msg
     | AmlSidebarMsg AmlSidebarMsg
@@ -345,6 +345,7 @@ type AmlSidebarMsg
     | AToggle
     | AChangeSource (Maybe SourceId)
     | AUpdateSource SourceId String
+    | ASourceUpdated SourceId
 
 
 type VirtualRelationMsg
