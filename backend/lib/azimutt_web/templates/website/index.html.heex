@@ -3,10 +3,10 @@
         <!-- Hero section -->
         <div class="relative">
             <div class="my-32">
-                <%= if Date.compare(DateTime.utc_now(), ~D[2023-11-30]) == :lt && Azimutt.config(:host) == "azimutt.app" do %>
+                <%= if Azimutt.Services.BlackFridaySrv.should_display? do %>
                     <div class="flex justify-center mb-12 -mt-24">
                         <p class="relative rounded-full px-4 py-1.5 text-sm leading-6 text-gray-600 ring-1 ring-inset ring-gray-900/10 hover:ring-gray-900/20">
-                            <span class="hidden md:inline mr-1"><b>✨ BlackFriday Offer!</b> Get <span class="underline">50% OFF</span> for one year with code BLACKFRIDAY2023</span>
+                            <span class="hidden md:inline mr-1"><b>✨ BlackFriday Offer!</b> Get <span class="underline">50% OFF</span> for one year with code <%= Azimutt.Services.BlackFridaySrv.code %></span>
                             <a href="/login?plan=pro" class="font-semibold text-indigo-600"><span class="absolute inset-0" aria-hidden="true"></span> Claim discount! <span aria-hidden="true">→</span></a>
                         </p>
                     </div>
