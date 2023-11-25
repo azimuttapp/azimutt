@@ -64,7 +64,7 @@ if config_env() == :prod || config_env() == :staging do
       # Set it to  {0, 0, 0, 0, 0, 0, 0, 1} for local network only access.
       # See the documentation on https://hexdocs.pm/plug_cowboy/Plug.Cowboy.html
       # for details about using IPv6 vs IPv4 and loopback vs public addresses.
-      ip: {0, 0, 0, 0, 0, 0, 0, 0},
+      ip: if(System.get_env("PHX_PROTOCOL") == "ipv4", do: {0, 0, 0, 0}, else: {0, 0, 0, 0, 0, 0, 0, 0}),
       port: port
     ],
     secret_key_base: System.fetch_env!("SECRET_KEY_BASE")

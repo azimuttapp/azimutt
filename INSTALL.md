@@ -125,6 +125,7 @@ Here is the full list of environment variables you can use to set up Azimutt app
 These are the basic variables you will **need** to set up Azimutt:
 
 - `PHX_SERVER` (optional): if `true`, start the Phoenix server in server mode
+- `PHX_PROTOCOL` (optional, values: `ipv6` or `ipv4`, default: `ipv6`): if `ipv4`, the Phoenix server will listen to IPv4, otherwise IPv6
 - `PHX_HOST` (required): host of the deployed website (ex: `localhost` or `azimutt.app`), it's used to build absolute urls
 - `PORT` (required): the port the server will listen to (ex: `4000`)
 - `SECRET_KEY_BASE` (required): the secret used for server encryption (cookies and others), should be at least 64 bytes and you probably want a random value for it
