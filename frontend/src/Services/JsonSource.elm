@@ -6,12 +6,13 @@ import Components.Molecules.FileInput as FileInput
 import DataSources.JsonMiner.JsonAdapter as JsonAdapter
 import DataSources.JsonMiner.JsonSchema as JsonSchema exposing (JsonSchema)
 import FileValue exposing (File)
-import Html exposing (Html, div, input, p, span, text)
+import Html exposing (Html, div, input, p, pre, span, text)
 import Html.Attributes exposing (class, id, name, placeholder, type_, value)
-import Html.Events exposing (onInput)
+import Html.Events exposing (onClick, onInput)
 import Http
 import Json.Decode as Decode
 import Libs.Bool as B
+import Libs.Html exposing (extLink)
 import Libs.Html.Attributes exposing (css)
 import Libs.Http as Http
 import Libs.Maybe as Maybe
@@ -151,6 +152,7 @@ viewInput wrap noop htmlId model =
         [ viewLocalInput wrap noop (htmlId ++ "-local-file")
         , div [ class "mt-3" ] [ Divider.withLabel "OR" ]
         , div [ class "mt-3" ] [ viewRemoteInput wrap (htmlId ++ "-remote-file") model.url (model.selectedRemoteFile |> Maybe.andThen Result.toError) ]
+        , div [ class "mt-3" ] [ viewJsonSchemaCollapse wrap (htmlId ++ "-json-schema") model.show ]
         ]
 
 
@@ -196,6 +198,22 @@ viewRemoteInput wrap htmlId model error =
                 []
             ]
         , error |> Maybe.mapOrElse (\err -> p [ class "mt-1 text-sm text-red-500" ] [ text err ]) (span [] [])
+        ]
+
+
+viewJsonSchemaCollapse : (Msg -> msg) -> HtmlId -> HtmlId -> Html msg
+viewJsonSchemaCollapse wrap htmlId openedCollapse =
+    div []
+        [ div [ onClick (UiToggle htmlId |> wrap), css [ "link text-sm text-gray-500" ] ] [ text "What is the schema for the JSON?" ]
+        , div [ css [ "mt-1 mb-3 p-3 border rounded border-gray-300", B.cond (openedCollapse == htmlId) "" "hidden" ] ]
+            [ p [] [ text "Here is the JSON schema defining what is expected:" ]
+            , pre [] [ text JsonSchema.jsonSchema ]
+            , p []
+                [ text "You can use "
+                , extLink "https://www.jsonschemavalidator.net" [ class "link" ] [ text "jsonschemavalidator.net" ]
+                , text " to validate your JSON against this schema."
+                ]
+            ]
         ]
 
 

@@ -8,9 +8,8 @@ import Components.Atoms.Link as Link
 import Components.Molecules.ItemList as ItemList
 import Components.Molecules.Modal as Modal
 import Conf
-import DataSources.JsonMiner.JsonSchema as JsonSchema
 import Gen.Route as Route
-import Html exposing (Html, a, aside, div, h2, h3, li, nav, p, pre, span, text, ul)
+import Html exposing (Html, a, aside, div, h2, h3, li, nav, p, span, text, ul)
 import Html.Attributes exposing (class, href, id, rel, target)
 import Html.Events exposing (onClick)
 import Html.Keyed as Keyed
@@ -186,7 +185,6 @@ viewJsonSourceTab htmlId openedCollapse projects model =
     div []
         [ viewHeading "Import your custom source in JSON" [ text "If you have a data source not (yet) supported by Azimutt, you can extract and format its schema into JSON to import it here." ]
         , div [ class "mt-6" ] [ JsonSource.viewInput JsonSourceMsg Noop htmlId model ]
-        , div [ class "mt-3" ] [ viewJsonSourceSchemaCollapse htmlId openedCollapse ]
         , viewDataPrivacyCollapse htmlId openedCollapse
         , JsonSource.viewParsing JsonSourceMsg model
         , viewSourceActionButtons (InitTab TabJson) (JsonSource.GetRemoteFile >> JsonSourceMsg) projects model.url model.parsedSource
@@ -318,22 +316,6 @@ viewDataPrivacyCollapse htmlId openedCollapse =
             , p [ css [ "mt-1" ] ] [ text "Your schema is ", bText "read and parsed in your browser", text ". You can explore it without leaking anything to Azimutt server." ]
             , p [ css [ "mt-1" ] ] [ text "When saving your project you can choose between ", bText "local", text " or ", bText "remote", text " storage. The first one offers full privacy, your schema don't leave your computer. The second offers collaboration, sharing it with other people." ]
             , p [ css [ "mt-1" ] ] [ text "If you are worried, please ", a [ href ("mailto:" ++ Conf.constants.azimuttEmail), target "_blank", rel "noopener", class "link" ] [ text "contact us" ], text ", we take this very seriously and do whatever is possible to satisfy needs." ]
-            ]
-        ]
-
-
-viewJsonSourceSchemaCollapse : HtmlId -> HtmlId -> Html Msg
-viewJsonSourceSchemaCollapse htmlId openedCollapse =
-    div []
-        [ div [ onClick (ToggleCollapse (htmlId ++ "-json-schema")), css [ "link text-sm text-gray-500" ] ] [ text "What is the schema for the JSON?" ]
-        , div [ css [ "mt-1 mb-3 p-3 border rounded border-gray-300", B.cond (openedCollapse == (htmlId ++ "-json-schema")) "" "hidden" ] ]
-            [ p [] [ text "Here is the JSON schema defining what is expected:" ]
-            , pre [] [ text JsonSchema.jsonSchema ]
-            , p []
-                [ text "You can use "
-                , extLink "https://www.jsonschemavalidator.net" [ class "link" ] [ text "jsonschemavalidator.net" ]
-                , text " to validate your JSON against this schema."
-                ]
             ]
         ]
 
