@@ -13,13 +13,17 @@ defmodule Azimutt.Services.OnboardingSrv do
 
   def on_event(%Event{created_by: nil}), do: :ok
 
-  def add_item(%User{} = user, item) do
-    if user && !Enum.member?(user.data.start_checklist, item) do
-      user |> Accounts.set_start_checklist(user.data.start_checklist ++ [item])
-    else
+  def add_item(%User{} = user, item) when not is_nil(user) do
+    start_checklist = if(user.data, do: user.data.start_checklist, else: [])
+
+    if Enum.member?(start_checklist, item) do
       :ok
+    else
+      user |> Accounts.set_start_checklist(start_checklist ++ [item])
     end
   end
+
+  def add_item(user, item) when is_nil(user), do: :ok
 
   def items do
     [
