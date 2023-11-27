@@ -205,6 +205,9 @@ defmodule Azimutt.Tracking do
   def stripe_invoice_payment_failed(%Stripe.Event{} = event, %Organization{} = org, %User{} = current_user),
     do: create_event("stripe_invoice_payment_failed", stripe_event_data(event), nil, current_user, org.id, nil)
 
+  def stripe_unhandled_event(%Stripe.Event{} = event),
+    do: create_event("stripe_unhandled_event", stripe_event_data(event), nil, nil, nil, nil)
+
   def allow_table_color(%User{} = current_user, %Organization{} = org, tweet_url),
     do: create_event("allow_table_color", org_data(org), %{tweet_url: tweet_url}, current_user, org.id, nil)
 

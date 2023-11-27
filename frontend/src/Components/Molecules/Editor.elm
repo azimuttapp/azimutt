@@ -41,6 +41,7 @@ basic fieldId fieldValue fieldUpdate updateEnd fieldPlaceholder lines hasErrors 
         , onInput fieldUpdate
         , onBlur updateEnd
         , placeholder fieldPlaceholder
+        , spellcheck False
         , class ("block w-full shadow-sm rounded-md sm:text-sm " ++ colors)
         ]
         []

@@ -44,8 +44,14 @@ defmodule Azimutt.StripeHandler do
           )
 
         previous[:status] == "incomplete" && subscription.status == "active" ->
-          # saved in 'customer.subscription.created' event
-          # Tracking.stripe_subscription_created(event, organization, last_billing.created_by, subscription.quantity)
+          if organization.stripe_subscription_id == nil do
+            # not saved in 'customer.subscription.created', don't know why :/
+            Tracking.stripe_subscription_created(event, organization, last_billing.created_by, subscription.quantity, subscription.id)
+            Organizations.update_organization_subscription(organization, subscription.id)
+          else
+            Tracking.stripe_unhandled_event(event)
+          end
+
           :ok
 
         true ->
@@ -85,8 +91,9 @@ defmodule Azimutt.StripeHandler do
 
   # Return HTTP 200 for unhandled events
   @impl true
-  def handle_event(_event) do
+  def handle_event(%Stripe.Event{} = event) do
     # IO.inspect(event, label: "Got Stripe event")
+    Tracking.stripe_unhandled_event(event)
     :ok
   end
 
