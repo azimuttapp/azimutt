@@ -56,6 +56,9 @@ export const Utils = {
 
         document.body.removeChild(element)
     },
+    copyToClipboard(content: string): Promise<void> {
+        return navigator.clipboard.writeText(content)
+    },
     launchConfetti(id: string): void {
         // https://www.kirilv.com/canvas-confetti
         const elt = document.getElementById(id) as HTMLElement

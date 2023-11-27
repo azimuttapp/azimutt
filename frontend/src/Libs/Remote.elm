@@ -1,4 +1,4 @@
-module Libs.Remote exposing (Remote(..), andThen, fold, map, map2, mapError, toList, toResult, withDefault)
+module Libs.Remote exposing (Remote(..), andThen, fold, map, map2, mapError, toList, toMaybe, toResult, withDefault)
 
 
 type Remote error value

@@ -48,6 +48,7 @@ export class ElmApp {
         DeleteProject: [],
         ProjectDirty: [],
         DownloadFile: [],
+        CopyToClipboard: [],
         GetLocalFile: [],
         GetDatabaseSchema: [],
         GetTableStats: [],

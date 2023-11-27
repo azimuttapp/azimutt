@@ -17,7 +17,7 @@ import ElmBook
 import ElmBook.Actions exposing (logAction)
 import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Html, code, div, h3, p, pre, text)
-import Html.Attributes exposing (class, disabled, id)
+import Html.Attributes exposing (class, id)
 import Html.Events exposing (onClick)
 import Libs.Html exposing (extLink)
 import Libs.Html.Attributes exposing (css)
@@ -231,14 +231,19 @@ view wrap send onClose titleId project model =
             ]
         , div [ class "px-6 py-3 mt-6 flex items-center flex-row-reverse bg-gray-50 rounded-b-lg" ]
             ((model.output
-                |> Remote.toList
-                |> List.filter (\( _, content ) -> content /= "plan_limit")
-                |> List.map
+                |> Remote.toMaybe
+                |> Maybe.filter (\( _, content ) -> content /= "plan_limit")
+                |> Maybe.map
                     (\( file, content ) ->
-                        Button.primary3 Tw.primary
-                            [ onClick (content ++ "\n" |> Ports.downloadFile file |> send), disabled False, css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ]
+                        [ Button.primary3 Tw.primary
+                            [ onClick (content ++ "\n" |> Ports.downloadFile file |> send), css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ]
                             [ Icon.solid Icon.Download "mr-1", text "Download file" ]
+                        , Button.primary3 Tw.primary
+                            [ onClick (content ++ "\n" |> Ports.copyToClipboard |> send), css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ]
+                            [ Icon.solid Icon.Duplicate "mr-1", text "Copy to clipboard" ]
+                        ]
                     )
+                |> Maybe.withDefault []
              )
                 ++ [ Button.white3 Tw.gray [ onClick onClose, css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text "Close" ] ]
             )

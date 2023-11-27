@@ -1,4 +1,4 @@
-port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProject, createProjectTmp, deleteProject, downloadFile, fireworks, focus, fullscreen, getColumnStats, getDatabaseSchema, getPrismaSchema, getProject, getTableStats, listenHotkeys, mouseDown, moveProjectTo, observeLayout, observeMemoSize, observeSize, observeTableRowSize, observeTableSize, observeTablesSize, onJsMessage, projectDirty, readLocalFile, runDatabaseQuery, scrollTo, setMeta, toast, track, unhandledJsMsgError, updateProject, updateProjectTmp)
+port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, copyToClipboard, createProject, createProjectTmp, deleteProject, downloadFile, fireworks, focus, fullscreen, getColumnStats, getDatabaseSchema, getPrismaSchema, getProject, getTableStats, listenHotkeys, mouseDown, moveProjectTo, observeLayout, observeMemoSize, observeSize, observeTableRowSize, observeTableSize, observeTablesSize, onJsMessage, projectDirty, readLocalFile, runDatabaseQuery, scrollTo, setMeta, toast, track, unhandledJsMsgError, updateProject, updateProjectTmp)
 
 import DataSources.JsonMiner.JsonSchema as JsonSchema exposing (JsonSchema)
 import Dict exposing (Dict)
@@ -116,6 +116,11 @@ moveProjectTo project storage =
 downloadFile : FileName -> FileContent -> Cmd msg
 downloadFile filename content =
     messageToJs (DownloadFile filename content)
+
+
+copyToClipboard : String -> Cmd msg
+copyToClipboard content =
+    messageToJs (CopyToClipboard content)
 
 
 deleteProject : ProjectInfo -> Maybe String -> Cmd msg
@@ -254,6 +259,7 @@ type ElmMsg
     | DeleteProject ProjectInfo (Maybe String)
     | ProjectDirty Bool
     | DownloadFile FileName FileContent
+    | CopyToClipboard String
     | GetLocalFile String File
     | GetDatabaseSchema DatabaseUrl
     | GetTableStats SourceId DatabaseUrl TableId
@@ -380,6 +386,9 @@ elmEncoder elm =
 
         DownloadFile filename content ->
             Encode.object [ ( "kind", "DownloadFile" |> Encode.string ), ( "filename", filename |> Encode.string ), ( "content", content |> Encode.string ) ]
+
+        CopyToClipboard content ->
+            Encode.object [ ( "kind", "CopyToClipboard" |> Encode.string ), ( "content", content |> Encode.string ) ]
 
         GetLocalFile sourceKind file ->
             Encode.object [ ( "kind", "GetLocalFile" |> Encode.string ), ( "sourceKind", sourceKind |> Encode.string ), ( "file", file |> FileValue.encode ) ]
