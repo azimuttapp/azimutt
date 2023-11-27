@@ -99,7 +99,20 @@ refreshWith new current =
 addRelations : Time.Posix -> List { src : ColumnRef, ref : ColumnRef } -> Source -> Source
 addRelations now rels source =
     source
-        |> mapContent (Array.append (Array.fromList (rels |> List.map (\r -> AmlGenerator.relation r.src r.ref))))
+        |> mapContent
+            (\content ->
+                rels
+                    |> List.map (\r -> AmlGenerator.relation r.src r.ref)
+                    |> List.add ""
+                    |> Array.fromList
+                    |> Array.append
+                        (if Array.get (Array.length content - 1) content == Just "" then
+                            content |> Array.slice 0 -1
+
+                         else
+                            content
+                        )
+            )
         |> mapRelations (\rs -> rs ++ (rels |> List.map (\r -> Relation.virtual r.src r.ref)))
         |> setUpdatedAt now
 
