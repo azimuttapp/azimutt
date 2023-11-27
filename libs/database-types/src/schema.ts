@@ -132,7 +132,7 @@ export const AzimuttSchema = z.object({
 export type TableSampleValues = { [column: string]: ColumnValue }
 export const TableSampleValues = z.record(ColumnValue)
 
-// keep sync with backend/lib/azimutt/analyzer/table_stats.ex & frontend/src/Models/Project/TableStats.elm
+// keep sync with frontend/src/Models/Project/TableStats.elm
 export interface TableStats {
     schema: SchemaName | null
     table: TableName
@@ -150,7 +150,7 @@ export const TableStats = z.object({
 export type ColumnCommonValue = { value: ColumnValue, count: number }
 export const ColumnCommonValue = z.object({value: ColumnValue, count: z.number()})
 
-// keep sync with backend/lib/azimutt/analyzer/column_stats.ex & frontend/src/Models/Project/ColumnStats.elm
+// keep sync with frontend/src/Models/Project/ColumnStats.elm
 export interface ColumnStats {
     schema: SchemaName | null
     table: TableName

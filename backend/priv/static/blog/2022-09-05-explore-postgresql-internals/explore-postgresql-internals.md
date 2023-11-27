@@ -274,7 +274,7 @@ ORDER BY table_schema, table_name, column_name
 
 As you can see, I only fetch comments for *tables* and *columns* (also *views* and *materialized views*), which are the obvious ones. But maybe you need to expand to more entities as all of them can have one...
 
-If you want to have a look at how I mix the query results to build my JSON schema, the code (Elixir) is [open source on azimutt-backend](https://github.com/azimuttapp/azimutt-backend/blob/main/lib/azimutt/analyzer/postgres.ex) repository. Again a few tricks were involved 😉
+If you want to have a look at how I mix the query results to build my JSON schema, the code is [open source](https://github.com/azimuttapp/azimutt/blob/main/libs/connector-postgres/src/postgres.ts) in Azimutt repository. Again a few tricks were involved 😉
 
 ## Explore PostgreSQL schema
 

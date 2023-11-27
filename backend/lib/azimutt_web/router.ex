@@ -201,17 +201,6 @@ defmodule AzimuttWeb.Router do
   # public APIs
   scope "/api/v1", AzimuttWeb do
     pipe_through([:api])
-    # GET is practical for development and POST allows to not have params in possible http logs
-    get("/analyzer/schema", Api.AnalyzerController, :schema)
-    post("/analyzer/schema", Api.AnalyzerController, :schema)
-    get("/analyzer/query", Api.AnalyzerController, :query)
-    post("/analyzer/query", Api.AnalyzerController, :query)
-    get("/analyzer/table-stats", Api.AnalyzerController, :table_stats)
-    post("/analyzer/table-stats", Api.AnalyzerController, :table_stats)
-    get("/analyzer/column-stats", Api.AnalyzerController, :column_stats)
-    post("/analyzer/column-stats", Api.AnalyzerController, :column_stats)
-    get("/analyzer/rows", Api.AnalyzerController, :rows)
-    post("/analyzer/rows", Api.AnalyzerController, :rows)
     get("/gallery", Api.GalleryController, :index)
     get("/organizations/:organization_id/projects/:project_id", Api.ProjectController, :show)
     resources("/organizations/:organization_id/projects/:project_id/sources", Api.SourceController, param: "source_id", only: [:index, :show, :create, :update, :delete])
