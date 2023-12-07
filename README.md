@@ -8,7 +8,7 @@
     </a>
 </p>
 <p align="center">
-    <b>Next-Gen ERD</b>: Design, Explore, Document and Analyze your database
+    <b>Next-Gen ERD</b>: Design, Explore, Document and Analyze your database, schema and data
 </p>
 <p align="center">
   <a href="https://azimutt.app" target="_blank" rel="noopener">azimutt.app</a> •
@@ -20,7 +20,7 @@
     <a href="https://azimutt.app/slack" target="_blank"><img src="assets/slack-join.svg" alt="Join us on Slack" style="width: 216px; height: 54px;" width="216" height="54"></a>
 </p>
 
-Azimutt is an Entity Relationship Diagram (ERD) targeting real world database schema (big & messy).
+Azimutt is a full-stack database exploration tool, from modern ERD made for real world databases (big & messy), to fast data navigation, but also documentation everywhere and whole database analysis.
 
 [![Azimutt screenshot](docs/_assets/azimutt-screenshot-gospeak.png)](https://azimutt.app/gallery/gospeak)
 
@@ -30,7 +30,7 @@ Databases existed for more than 40 years and despite a lot of tool around them, 
 
 - **Database clients** focus on querying experience, with auto-completion and table/column lists but no visual help
 - **ERDs** have a great diagram UI but fall short when schema is growing (real-world use cases)
-- **Data catalogs** are primarily focused on data governance and lineage on big data sector
+- **Data catalogs** are focused on data governance and lineage for data teams, miss relational db for developers
 
 So we decided to built it 💪
 
@@ -39,15 +39,21 @@ Azimutt started as a schema exploration tool for databases with hundreds of tabl
 [![Azimutt roadmap](docs/_assets/azimutt-roadmap.png)](https://mm.tt/map/2434161843?t=N2yWZj1pc1)
 
 - Design your schema using [AML](docs/aml/README.md) for a fast diagramming
-- Explore your database using search everywhere, display only useful tables/columns and follow relations
-- Document it with layouts for use cases, features or team scopes and table/column notes
-- Analyze it to discover inconsistencies and best practices
+- Explore your database schema using search everywhere, display only useful tables/columns and follow relations
+- Query your data like never before, follow forign keys and display entities in diagram
+- Document using table/column notes and tags and layouts and memos for use cases, features or team scopes
+- Analyze it to discover inconsistencies and best practices to apply
 
 Azimutt goal is to be your ultimate tool to understand your database.
 
+## Self hosted
+
+You can use our [Docker image](https://github.com/azimuttapp/azimutt/pkgs/container/azimutt) to easily deploy it. Here is the [full guide](INSTALL.md).
+
+
 ## Local development
 
-Azimutt is built with [Elm](https://elm-lang.org)/[elm-spa](https://www.elm-spa.dev) (editor) and [Elixir](https://elixir-lang.org)/[Phoenix](https://www.phoenixframework.org) (backend & admin).
+Azimutt is built with [Elixir](https://elixir-lang.org)/[Phoenix](https://www.phoenixframework.org) (backend & admin) and [Elm](https://elm-lang.org)/[elm-spa](https://www.elm-spa.dev) (editor).
 
 For local development you will need to set up the environment:
 
@@ -68,9 +74,6 @@ Now you can visit :
 - [`localhost:4000`](http://localhost:4000) for the main app
 - [`localhost:4000/api/v1/swagger`](http://localhost:4000/api/swagger) for the Swagger documentation
 
-⚠️ to launch the app you will need a few environment variables: `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `MAILGUN_DOMAIN`, `MAILGUN_API_KEY`, `STRIPE_API_KEY`, `STRIPE_WEBHOOK_SIGNING_SECRET`.
-
-⚠️ Please see [Setup Stripe](#setup-stripe).
 
 ### npm command semantics
 
@@ -102,9 +105,11 @@ And then "special" commands:
 
 - `elm:book`: launch elm-book, the design system for Elm
 
+
 ### Development commands
 
 - `npm run elm:book` to launch the Elm design system
+
 
 ### Setup Stripe
 
@@ -115,6 +120,7 @@ And then "special" commands:
 - Copy your webhook signing secret to your `.env`, it's look like (`whsec_XXX`)
 - Go to [your Stripe dashboard](https://dashboard.stripe.com/test/apikeys) to obtain your API Key and copy it into `STRIPE_API_KEY` in your `.env` file.
 
+
 #### Payments
 
 When testing interactively, use a card number, such as `4242 4242 4242 4242`. Enter the card number in the Dashboard or in any payment form.
@@ -123,6 +129,7 @@ Use any three-digit CVC like `123` (four digits for American Express cards).
 Use any value you like for other form fields.
 
 See more in the [stripe testing documentation](https://stripe.com/docs/testing)
+
 
 ## Stack
 
