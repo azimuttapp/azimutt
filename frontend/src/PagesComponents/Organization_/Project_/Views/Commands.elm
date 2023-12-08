@@ -6,7 +6,7 @@ import Components.Molecules.Dropdown as Dropdown
 import Components.Molecules.Tooltip as Tooltip
 import Components.Slices.DataExplorer as DataExplorer
 import Html exposing (Html, button, div, span, text)
-import Html.Attributes exposing (class, id, type_)
+import Html.Attributes exposing (class, disabled, id, type_)
 import Html.Events exposing (onClick)
 import Libs.Basics as Basics
 import Libs.Bool as B
@@ -14,7 +14,7 @@ import Libs.Html as Html
 import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, css)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
-import Libs.Tailwind exposing (TwClass, batch, focus, hover)
+import Libs.Tailwind as Tw exposing (TwClass, batch, focus, hover)
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
 import PagesComponents.Organization_.Project_.Models exposing (AmlSidebarMsg(..), Msg(..), confirm)
 import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode exposing (CursorMode)
@@ -36,15 +36,15 @@ stringToArgs args =
             ( ( CursorMode.Select, "", "" ), True, ( True, True, True ) )
 
 
-viewCommands : ErdConf -> ZoomLevel -> String -> Html Msg
-viewCommands conf canvasZoom args =
+viewCommands : ErdConf -> ZoomLevel -> List a -> List a -> String -> Html Msg
+viewCommands conf canvasZoom history future args =
     let
         ( ( cursorMode, htmlId, openedDropdown ), layoutNonEmpty, ( amlSidebar, detailsSidebar, dataExplorer ) ) =
             stringToArgs args
 
         buttonStyles : TwClass
         buttonStyles =
-            batch [ "relative inline-flex items-center p-2 border border-gray-300 text-sm font-medium", focus [ "z-10 outline-none ring-1 ring-primary-500 border-primary-500" ] ]
+            batch [ "relative inline-flex items-center p-2 border border-gray-300 text-sm font-medium", focus [ "z-10 outline-none ring-1 ring-primary-500 border-primary-500" ], Tw.disabled [ "cursor-not-allowed opacity-50" ] ]
 
         classic : TwClass
         classic =
@@ -59,6 +59,10 @@ viewCommands conf canvasZoom args =
             span [ class "relative z-0 inline-flex shadow-sm rounded-md" ]
                 [ button [ type_ "button", onClick FitToScreen, css [ "rounded-l-md", buttonStyles, classic ] ] [ Icon.solid ArrowsExpand "" ]
                     |> Tooltip.t "Fit diagram to screen"
+                , button [ type_ "button", onClick Undo, disabled (history |> List.isEmpty), css [ "-ml-px", buttonStyles, classic ] ] [ Icon.solid ArrowCircleLeft "" ]
+                    |> Tooltip.t "Undo"
+                , button [ type_ "button", onClick Redo, disabled (future |> List.isEmpty), css [ "-ml-px", buttonStyles, classic ] ] [ Icon.solid ArrowCircleRight "" ]
+                    |> Tooltip.t "Redo"
                 , button [ type_ "button", onClick (ArrangeTables |> confirm "Arrange tables?" (text "Table disposition will be changed and undo feature is not implement yet...")), css [ "-ml-px rounded-r-md", buttonStyles, classic ] ] [ Icon.solid CubeTransparent "" ]
                     |> Tooltip.t "Arrange tables"
                 ]

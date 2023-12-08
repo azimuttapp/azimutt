@@ -103,7 +103,7 @@ viewErd conf erdElem erd selectionBox virtualRelation editMemo args dragging =
 
         canvas : CanvasProps
         canvas =
-            dragging |> Maybe.filter (\d -> d.id == Conf.ids.erd) |> Maybe.mapOrElse (\d -> layout.canvas |> Drag.moveCanvas d) layout.canvas
+            dragging |> Maybe.filter (\d -> d.id == Conf.ids.erd) |> Maybe.mapOrElse (\d -> layout.canvas |> Drag.moveCanvas d |> Tuple.first) layout.canvas
 
         -- TODO: use to render only visible tables => needs to handle size change to 0...
         --canvasViewport : Area.Canvas
@@ -111,7 +111,7 @@ viewErd conf erdElem erd selectionBox virtualRelation editMemo args dragging =
         --    canvas |> CanvasProps.viewport erdElem
         draggedLayout : ErdLayout
         draggedLayout =
-            dragging |> Maybe.mapOrElse (\d -> layout |> Drag.moveInLayout d canvas.zoom) layout
+            dragging |> Maybe.mapOrElse (\d -> layout |> Drag.moveInLayout d canvas.zoom |> Tuple.first) layout
 
         layoutTables : List ErdTableLayout
         layoutTables =

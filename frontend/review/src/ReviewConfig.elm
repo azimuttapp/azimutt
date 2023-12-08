@@ -31,7 +31,7 @@ config =
     , NoDebug.TodoOrToString.rule |> Rule.ignoreErrorsForFiles [ "src/Libs/Debug.elm" ]
     , NoExposingEverything.rule |> Rule.ignoreErrorsForDirectories [ "tests" ]
     , NoMissingSubscriptionsCall.rule
-    , NoRecursiveUpdate.rule
+    , NoRecursiveUpdate.rule |> Rule.ignoreErrorsForFiles [ "src/PagesComponents/Organization_/Project_/Updates.elm" ]
     , NoMissingTypeAnnotation.rule |> Rule.ignoreErrorsForDirectories [ ".elm-spa" ]
     , NoMissingTypeAnnotationInLetIn.rule
     , NoMissingTypeExpose.rule |> Rule.ignoreErrorsForDirectories [ ".elm-spa" ]

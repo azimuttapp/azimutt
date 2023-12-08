@@ -33,7 +33,7 @@ page shared req =
     in
     Page.element
         { init = init req.params urlToken urlSave
-        , update = Updates.update urlLayout shared.zone shared.now urlInfos shared.organizations shared.projects
+        , update = Updates.update "project" urlLayout shared.zone shared.now urlInfos shared.organizations shared.projects
         , view = Views.view (Navigation.load (Backend.organizationUrl urlInfos.organization)) req.url urlInfos shared
         , subscriptions = Subscriptions.subscriptions
         }

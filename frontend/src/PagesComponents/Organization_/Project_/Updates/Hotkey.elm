@@ -122,12 +122,10 @@ handleHotkey _ model hotkey =
             ( model, T.send FitToScreen )
 
         "undo" ->
-            -- TODO: implement undo
-            ( model, "Undo action not handled yet" |> Toasts.info |> Toast |> T.send )
+            ( model, Undo |> T.send )
 
         "redo" ->
-            -- TODO: implement redo
-            ( model, "Redo action not handled yet" |> Toasts.info |> Toast |> T.send )
+            ( model, Redo |> T.send )
 
         "cancel" ->
             ( model, cancelElement model )

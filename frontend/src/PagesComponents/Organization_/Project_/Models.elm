@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, AmlSidebarMsg(..), ConfirmDialog, ContextMenu, FindPathMsg(..), GroupEdit, GroupMsg(..), HelpDialog, HelpMsg(..), LayoutMsg(..), MemoEdit, MemoMsg(..), ModalDialog, Model, Msg(..), NavbarModel, NotesDialog, ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, VirtualRelation, VirtualRelationMsg(..), confirm, confirmDanger, emptyModel, prompt, simplePrompt)
+module PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, AmlSidebarMsg(..), ConfirmDialog, ContextMenu, FindPathMsg(..), GroupEdit, GroupMsg(..), HelpDialog, HelpMsg(..), LayoutMsg(..), MemoEdit, MemoMsg(..), ModalDialog, Model, Msg(..), NavbarModel, NotesDialog, ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, VirtualRelation, VirtualRelationMsg(..), buildHistory, confirm, confirmDanger, emptyModel, prompt, simplePrompt)
 
 import Components.Atoms.Icon exposing (Icon(..))
 import Components.Organisms.TableRow as TableRow exposing (TableRowHover)
@@ -9,6 +9,7 @@ import DataSources.DbMiner.DbTypes exposing (RowQuery)
 import Dict exposing (Dict)
 import Html exposing (Html, text)
 import Libs.Html.Events exposing (PointerEvent, WheelEvent)
+import Libs.List as List
 import Libs.Models exposing (ZoomDelta)
 import Libs.Models.Delta exposing (Delta)
 import Libs.Models.DragId exposing (DragId)
@@ -111,6 +112,8 @@ type alias Model =
     , confirm : Maybe ConfirmDialog
     , prompt : Maybe PromptDialog
     , openedDialogs : List HtmlId
+    , history : List ( Msg, Msg )
+    , future : List ( Msg, Msg )
     }
 
 
@@ -156,6 +159,8 @@ emptyModel =
     , confirm = Nothing
     , prompt = Nothing
     , openedDialogs = []
+    , history = []
+    , future = []
     }
 
 
@@ -245,7 +250,10 @@ type Msg
     | SelectItem HtmlId Bool
     | SelectAll
     | TableMove TableId Delta
+    | CanvasPosition Position.Diagram
     | TablePosition TableId Position.Grid
+    | TableRowPosition TableRow.Id Position.Grid
+    | MemoPosition MemoId Position.Grid
     | TableOrder TableId Int
     | TableColor TableId Color
     | MoveColumn ColumnRef Int
@@ -308,6 +316,8 @@ type Msg
     | ModalClose Msg
     | CustomModalOpen (Msg -> HtmlId -> Html Msg)
     | CustomModalClose
+    | Undo
+    | Redo
     | JsMessage JsMsg
     | Batch (List Msg)
     | Send (Cmd Msg)
@@ -454,3 +464,16 @@ simplePrompt label message =
         , onConfirm = message >> T.send
         }
         ""
+
+
+buildHistory : List ( Msg, Msg ) -> Maybe ( Msg, Msg )
+buildHistory history =
+    case history of
+        [] ->
+            Nothing
+
+        one :: [] ->
+            Just one
+
+        many ->
+            many |> List.tupleSeq |> Tuple.mapBoth Batch Batch |> Just

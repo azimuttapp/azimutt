@@ -101,9 +101,11 @@ viewApp currentUrl urlOrganization shared model htmlId erd =
                         layout =
                             erd |> Erd.currentLayout
                     in
-                    Lazy.lazy3 viewCommands
+                    Lazy.lazy5 viewCommands
                         model.conf
                         layout.canvas.zoom
+                        model.history
+                        model.future
                         (Commands.argsToString
                             model.cursorMode
                             (htmlId ++ "-commands")

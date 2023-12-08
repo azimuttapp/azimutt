@@ -57,6 +57,7 @@ module Libs.List exposing
     , resultCollect
     , resultSeq
     , toggle
+    , tupleSeq
     , unique
     , uniqueBy
     , zip
@@ -643,6 +644,11 @@ resultSeq list =
 
         ( errs, _ ) ->
             Err errs
+
+
+tupleSeq : List ( a, b ) -> ( List a, List b )
+tupleSeq list =
+    List.foldr (\( a, b ) ( aList, bList ) -> ( a :: aList, b :: bList )) ( [], [] ) list
 
 
 genSeq : List (Random.Generator a) -> Random.Generator (List a)

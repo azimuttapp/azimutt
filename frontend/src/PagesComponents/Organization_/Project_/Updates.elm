@@ -71,7 +71,7 @@ import PagesComponents.Organization_.Project_.Updates.Source as Source
 import PagesComponents.Organization_.Project_.Updates.Table exposing (goToTable, hideColumn, hideColumns, hideRelatedTables, hideTable, hoverColumn, hoverNextColumn, mapTablePropOrSelected, showAllTables, showColumn, showColumns, showRelatedTables, showTable, showTables, sortColumns, toggleNestedColumn)
 import PagesComponents.Organization_.Project_.Updates.TableRow exposing (mapTableRowOrSelectedCmd, moveToTableRow, showTableRow)
 import PagesComponents.Organization_.Project_.Updates.Tags exposing (handleTags)
-import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirty, setDirtyCmd)
+import PagesComponents.Organization_.Project_.Updates.Utils exposing (addHistoryT, addHistoryTCmd, setDirty, setDirtyCmd)
 import PagesComponents.Organization_.Project_.Updates.VirtualRelation exposing (handleVirtualRelation)
 import PagesComponents.Organization_.Project_.Views as Views
 import PagesComponents.Organization_.Project_.Views.Modals.NewLayout as NewLayout
@@ -80,7 +80,7 @@ import Random
 import Services.Backend as Backend
 import Services.DatabaseSource as DatabaseSource
 import Services.JsonSource as JsonSource
-import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapContextMenuM, mapDataExplorerCmd, mapDetailsSidebarCmd, mapEmbedSourceParsingMCmd, mapErdM, mapErdMCmd, mapExportDialogCmd, mapHoverTable, mapMemos, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapOrganizationM, mapPlan, mapPosition, mapProject, mapPromptM, mapProps, mapSaveCmd, mapSchemaAnalysisM, mapSearch, mapSelected, mapSharingCmd, mapShowHiddenColumns, mapTableRows, mapTableRowsCmd, mapTables, mapTablesCmd, mapToastsCmd, setActive, setCanvas, setCollapsed, setColor, setColors, setConfirm, setContextMenu, setCurrentLayout, setCursorMode, setDragging, setHoverColumn, setHoverTable, setHoverTableRow, setInput, setLast, setLayoutOnLoad, setModal, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setSelected, setShow, setSize, setTables, setText)
+import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapContextMenuM, mapDataExplorerCmd, mapDetailsSidebarCmd, mapEmbedSourceParsingMCmd, mapErdM, mapErdMCmd, mapErdMT, mapErdMTM, mapExportDialogCmd, mapHoverTable, mapMemos, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapOrganizationM, mapPlan, mapPosition, mapProject, mapPromptM, mapProps, mapSaveCmd, mapSchemaAnalysisM, mapSearch, mapSelected, mapSharingCmd, mapShowHiddenColumns, mapTableRows, mapTableRowsCmd, mapTables, mapTablesCmd, mapToastsCmd, setActive, setCanvas, setCollapsed, setColor, setColors, setConfirm, setContextMenu, setCurrentLayout, setCursorMode, setDragging, setHoverColumn, setHoverTable, setHoverTableRow, setInput, setLast, setLayoutOnLoad, setModal, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setSelected, setShow, setSize, setTables, setText)
 import Services.PrismaSource as PrismaSource
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
@@ -89,8 +89,8 @@ import Time
 import Track
 
 
-update : Maybe LayoutName -> Time.Zone -> Time.Posix -> UrlInfos -> List Organization -> List ProjectInfo -> Msg -> Model -> ( Model, Cmd Msg )
-update urlLayout zone now urlInfos organizations projects msg model =
+update : String -> Maybe LayoutName -> Time.Zone -> Time.Posix -> UrlInfos -> List Organization -> List ProjectInfo -> Msg -> Model -> ( Model, Cmd Msg )
+update doCmd urlLayout zone now urlInfos organizations projects msg model =
     case msg of
         ToggleMobileMenu ->
             ( model |> mapNavbar (mapMobileMenuOpen not), Cmd.none )
@@ -127,16 +127,16 @@ update urlLayout zone now urlInfos organizations projects msg model =
                 ( model, GoToTable id |> T.send )
 
             else
-                model |> mapErdMCmd (showTable now id hint from) |> setDirtyCmd
+                model |> mapErdMT (showTable now id hint from) |> addHistoryTCmd doCmd |> setDirtyCmd
 
         ShowTables ids hint from ->
-            model |> mapErdMCmd (showTables now ids hint from) |> setDirtyCmd
+            model |> mapErdMT (showTables now ids hint from) |> addHistoryTCmd doCmd |> setDirtyCmd
 
         ShowAllTables from ->
             model |> mapErdMCmd (showAllTables now from) |> setDirtyCmd
 
         HideTable id ->
-            model |> mapErdM (hideTable now id) |> mapHoverTable (\h -> B.cond (h == Just id) Nothing h) |> setDirty
+            model |> mapErdMTM (hideTable now id) |> addHistoryT doCmd |> mapHoverTable (\h -> B.cond (h == Just id) Nothing h) |> setDirty
 
         ShowRelatedTables id ->
             model |> mapErdMCmd (showRelatedTables id) |> setDirtyCmd
@@ -194,8 +194,17 @@ update urlLayout zone now urlInfos organizations projects msg model =
         TableMove id delta ->
             model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.mapBy .id id (mapProps (mapPosition (Position.moveGrid delta)))))) |> setDirty
 
+        CanvasPosition position ->
+            ( model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapCanvas (setPosition position))), Cmd.none )
+
         TablePosition id position ->
             model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.mapBy .id id (mapProps (setPosition position))))) |> setDirty
+
+        TableRowPosition id position ->
+            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTableRows (List.mapBy .id id (setPosition position)))) |> setDirty
+
+        MemoPosition id position ->
+            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapMemos (List.mapBy .id id (setPosition position)))) |> setDirty
 
         TableOrder id index ->
             model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (\tables -> tables |> List.moveBy .id id (List.length tables - 1 - index)))) |> setDirty
@@ -365,17 +374,17 @@ update urlLayout zone now urlInfos organizations projects msg model =
         DragStart id pos ->
             model.dragging
                 |> Maybe.mapOrElse (\d -> ( model, "Already dragging " ++ d.id |> Toasts.info |> Toast |> T.send ))
-                    ({ id = id, init = pos, last = pos } |> (\d -> model |> setDragging (Just d) |> handleDrag now d False))
+                    ({ id = id, init = pos, last = pos } |> (\d -> model |> setDragging (Just d) |> handleDrag doCmd now d False))
 
         DragMove pos ->
             model.dragging
                 |> Maybe.map (setLast pos)
-                |> Maybe.mapOrElse (\d -> model |> setDragging (Just d) |> handleDrag now d False) ( model, Cmd.none )
+                |> Maybe.mapOrElse (\d -> model |> setDragging (Just d) |> handleDrag doCmd now d False) ( model, Cmd.none )
 
         DragEnd pos ->
             model.dragging
                 |> Maybe.map (setLast pos)
-                |> Maybe.mapOrElse (\d -> model |> setDragging Nothing |> handleDrag now d True) ( model, Cmd.none )
+                |> Maybe.mapOrElse (\d -> model |> setDragging Nothing |> handleDrag doCmd now d True) ( model, Cmd.none )
 
         DragCancel ->
             ( model |> setDragging Nothing, Cmd.none )
@@ -409,6 +418,22 @@ update urlLayout zone now urlInfos organizations projects msg model =
 
         CustomModalClose ->
             ( model |> setModal Nothing, Cmd.none )
+
+        Undo ->
+            case model.history of
+                [] ->
+                    ( model, "Can't undo, action history is empty" |> Toasts.info |> Toast |> T.send )
+
+                ( back, next ) :: history ->
+                    update "undo" urlLayout zone now urlInfos organizations projects back { model | history = history, future = ( back, next ) :: model.future }
+
+        Redo ->
+            case model.future of
+                [] ->
+                    ( model, "Can't redo, no future action" |> Toasts.info |> Toast |> T.send )
+
+                ( back, next ) :: future ->
+                    update "redo" urlLayout zone now urlInfos organizations projects next { model | history = ( back, next ) :: model.history, future = future }
 
         JsMessage message ->
             model |> handleJsMessage now urlLayout message

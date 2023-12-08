@@ -2,17 +2,12 @@ module Services.Lenses exposing
     ( mapActive
     , mapAmlSidebarM
     , mapAmlSourceCmd
-    , mapBody
     , mapBodyCmd
-    , mapBodyMCmd
     , mapCanvas
-    , mapChecks
+    , mapCanvasT
     , mapCollapseTableColumns
-    , mapColumn
     , mapColumnBasicTypes
     , mapColumns
-    , mapCommentM
-    , mapConf
     , mapContent
     , mapContextMenuM
     , mapDataExplorerCmd
@@ -28,31 +23,24 @@ module Services.Lenses exposing
     , mapEnabled
     , mapErdM
     , mapErdMCmd
-    , mapExecutions
-    , mapExpanded
+    , mapErdMT
+    , mapErdMTM
     , mapExportDialogCmd
-    , mapFilter
     , mapFilters
     , mapFindPath
     , mapFindPathM
     , mapGroups
-    , mapHead
     , mapHidden
     , mapHiddenColumns
-    , mapHighlight
-    , mapHighlights
     , mapHoverTable
     , mapIndex
-    , mapIndexes
     , mapJsonSourceCmd
     , mapJsonSourceMCmd
-    , mapLanguagesModel
-    , mapLanguagesModelD
     , mapLayouts
     , mapLayoutsD
     , mapLayoutsDCmd
+    , mapLayoutsDTM
     , mapList
-    , mapM
     , mapMCmd
     , mapMemos
     , mapMemosL
@@ -60,7 +48,6 @@ module Services.Lenses exposing
     , mapMobileMenuOpen
     , mapNavbar
     , mapNewLayoutMCmd
-    , mapNotes
     , mapOpened
     , mapOpenedDialogs
     , mapOpenedDropdown
@@ -69,22 +56,18 @@ module Services.Lenses exposing
     , mapParsedSchemaM
     , mapPlan
     , mapPosition
-    , mapPrevious
-    , mapPrimaryKeyM
     , mapPrismaSourceCmd
     , mapPrismaSourceMCmd
     , mapProject
     , mapProjectSourceMCmd
     , mapPromptM
     , mapProps
-    , mapQuery
     , mapRelatedTables
     , mapRelations
     , mapRemoveViews
     , mapRemovedSchemas
     , mapResult
     , mapResultsCmd
-    , mapRow
     , mapSampleSourceMCmd
     , mapSaveCmd
     , mapSchemaAnalysisM
@@ -109,8 +92,6 @@ module Services.Lenses exposing
     , mapToasts
     , mapToastsCmd
     , mapTokenFormM
-    , mapUniques
-    , mapValues
     , mapVirtualRelationM
     , mapVisualEditor
     , setActive
@@ -118,22 +99,16 @@ module Services.Lenses exposing
     , setAmlSource
     , setBody
     , setCanvas
-    , setChecks
-    , setCode
     , setCollapseTableColumns
     , setCollapsed
     , setColor
     , setColors
-    , setColumn
     , setColumnBasicTypes
     , setColumnOrder
     , setColumns
-    , setComment
-    , setConf
     , setConfirm
     , setContent
     , setContextMenu
-    , setCurrentLanguage
     , setCurrentLayout
     , setCursorMode
     , setDataExplorer
@@ -141,7 +116,6 @@ module Services.Lenses exposing
     , setDefaultSchema
     , setDetails
     , setDetailsSidebar
-    , setDisplay
     , setDragging
     , setEditGroup
     , setEditMemo
@@ -149,24 +123,18 @@ module Services.Lenses exposing
     , setEditTags
     , setEmbedSourceParsing
     , setEnabled
-    , setEnd
     , setErd
     , setErrors
-    , setExecutions
-    , setExpanded
     , setExpire
     , setExportDialog
-    , setFilter
     , setFilters
     , setFindPath
     , setFrom
     , setGroups
-    , setHead
     , setHidden
     , setHiddenColumns
     , setHighlight
     , setHighlighted
-    , setHighlights
     , setHoverColumn
     , setHoverTable
     , setHoverTableRow
@@ -174,22 +142,18 @@ module Services.Lenses exposing
     , setIgnoredColumns
     , setIgnoredTables
     , setIndex
-    , setIndexes
     , setInput
     , setIsOpen
     , setJsonSource
-    , setLanguagesModel
     , setLast
     , setLayoutOnLoad
     , setLayouts
     , setList
-    , setLoading
     , setMax
     , setMemos
     , setMetadata
     , setMobileMenuOpen
     , setModal
-    , setMode
     , setMouse
     , setName
     , setNavbar
@@ -207,7 +171,6 @@ module Services.Lenses exposing
     , setPlan
     , setPosition
     , setPrevious
-    , setPrimaryKey
     , setPrismaSource
     , setProject
     , setProjectSource
@@ -222,7 +185,6 @@ module Services.Lenses exposing
     , setRemovedTables
     , setResult
     , setResults
-    , setRow
     , setSampleSource
     , setSave
     , setSchemaAnalysis
@@ -237,12 +199,9 @@ module Services.Lenses exposing
     , setShowSettings
     , setShown
     , setSize
-    , setSource
     , setSourceUpdate
     , setSqlSource
-    , setStart
     , setState
-    , setTable
     , setTableRows
     , setTableRowsSeq
     , setTables
@@ -253,10 +212,8 @@ module Services.Lenses exposing
     , setToken
     , setTokenForm
     , setTokens
-    , setUniques
     , setUpdatedAt
     , setValue
-    , setValues
     , setView
     , setVirtualRelation
     , setVisualEditor
@@ -302,7 +259,7 @@ setAmlSource =
 
 mapAmlSourceCmd : (v -> ( v, Cmd msg )) -> { item | amlSource : v } -> ( { item | amlSource : v }, Cmd msg )
 mapAmlSourceCmd =
-    mapCmd_ .amlSource setAmlSource
+    mapT_ .amlSource setAmlSource
 
 
 setBody : v -> { item | body : v } -> { item | body : v }
@@ -310,19 +267,9 @@ setBody =
     set_ .body (\value item -> { item | body = value })
 
 
-mapBody : (v -> v) -> { item | body : v } -> { item | body : v }
-mapBody =
-    map_ .body setBody
-
-
 mapBodyCmd : (v -> ( v, Cmd msg )) -> { item | body : v } -> ( { item | body : v }, Cmd msg )
 mapBodyCmd =
-    mapCmd_ .body setBody
-
-
-mapBodyMCmd : (v -> ( v, Cmd msg )) -> { item | body : Maybe v } -> ( { item | body : Maybe v }, Cmd msg )
-mapBodyMCmd =
-    mapMCmd_ .body setBody
+    mapT_ .body setBody
 
 
 setCanvas : v -> { item | canvas : v } -> { item | canvas : v }
@@ -335,19 +282,9 @@ mapCanvas =
     map_ .canvas setCanvas
 
 
-setChecks : v -> { item | checks : v } -> { item | checks : v }
-setChecks =
-    set_ .checks (\value item -> { item | checks = value })
-
-
-mapChecks : (v -> v) -> { item | checks : v } -> { item | checks : v }
-mapChecks =
-    map_ .checks setChecks
-
-
-setCode : v -> { item | code : v } -> { item | code : v }
-setCode =
-    set_ .code (\value item -> { item | code = value })
+mapCanvasT : (v -> ( v, a )) -> { item | canvas : v } -> ( { item | canvas : v }, a )
+mapCanvasT =
+    mapT_ .canvas setCanvas
 
 
 setCollapsed : v -> { item | collapsed : v } -> { item | collapsed : v }
@@ -375,16 +312,6 @@ setColors =
     set_ .colors (\value item -> { item | colors = value })
 
 
-setColumn : v -> { item | column : v } -> { item | column : v }
-setColumn =
-    set_ .column (\value item -> { item | column = value })
-
-
-mapColumn : (v -> v) -> { item | column : v } -> { item | column : v }
-mapColumn =
-    map_ .column setColumn
-
-
 setColumns : v -> { item | columns : v } -> { item | columns : v }
 setColumns =
     set_ .columns (\value item -> { item | columns = value })
@@ -408,26 +335,6 @@ mapColumnBasicTypes =
 setColumnOrder : v -> { item | columnOrder : v } -> { item | columnOrder : v }
 setColumnOrder =
     set_ .columnOrder (\value item -> { item | columnOrder = value })
-
-
-setComment : v -> { item | comment : v } -> { item | comment : v }
-setComment =
-    set_ .comment (\value item -> { item | comment = value })
-
-
-mapCommentM : (v -> v) -> { item | comment : Maybe v } -> { item | comment : Maybe v }
-mapCommentM =
-    mapM_ .comment setComment
-
-
-setConf : v -> { item | conf : v } -> { item | conf : v }
-setConf =
-    set_ .conf (\value item -> { item | conf = value })
-
-
-mapConf : (v -> v) -> { item | conf : v } -> { item | conf : v }
-mapConf =
-    map_ .conf setConf
 
 
 setConfirm : v -> { item | confirm : v } -> { item | confirm : v }
@@ -455,11 +362,6 @@ mapContextMenuM =
     mapM_ .contextMenu setContextMenu
 
 
-setCurrentLanguage : v -> { item | currentLanguage : v } -> { item | currentLanguage : v }
-setCurrentLanguage =
-    set_ .currentLanguage (\value item -> { item | currentLanguage = value })
-
-
 setCurrentLayout : v -> { item | currentLayout : v } -> { item | currentLayout : v }
 setCurrentLayout =
     set_ .currentLayout (\value item -> { item | currentLayout = value })
@@ -477,12 +379,12 @@ setDatabaseSource =
 
 mapDatabaseSourceCmd : (v -> ( v, Cmd msg )) -> { item | databaseSource : v } -> ( { item | databaseSource : v }, Cmd msg )
 mapDatabaseSourceCmd =
-    mapCmd_ .databaseSource setDatabaseSource
+    mapT_ .databaseSource setDatabaseSource
 
 
 mapDatabaseSourceMCmd : (v -> ( v, Cmd msg )) -> { item | databaseSource : Maybe v } -> ( { item | databaseSource : Maybe v }, Cmd msg )
-mapDatabaseSourceMCmd =
-    mapMCmd_ .databaseSource setDatabaseSource
+mapDatabaseSourceMCmd transform item =
+    mapMT_ .databaseSource setDatabaseSource transform item |> Tuple.mapSecond (Maybe.withDefault Cmd.none)
 
 
 setDataExplorer : v -> { item | dataExplorer : v } -> { item | dataExplorer : v }
@@ -492,7 +394,7 @@ setDataExplorer =
 
 mapDataExplorerCmd : (v -> ( v, Cmd msg )) -> { item | dataExplorer : v } -> ( { item | dataExplorer : v }, Cmd msg )
 mapDataExplorerCmd =
-    mapCmd_ .dataExplorer setDataExplorer
+    mapT_ .dataExplorer setDataExplorer
 
 
 setDefaultSchema : v -> { item | defaultSchema : v } -> { item | defaultSchema : v }
@@ -507,7 +409,7 @@ setDetails =
 
 mapDetailsCmd : (v -> ( v, Cmd msg )) -> { item | details : v } -> ( { item | details : v }, Cmd msg )
 mapDetailsCmd =
-    mapCmd_ .details setDetails
+    mapT_ .details setDetails
 
 
 setDetailsSidebar : v -> { item | detailsSidebar : v } -> { item | detailsSidebar : v }
@@ -517,12 +419,7 @@ setDetailsSidebar =
 
 mapDetailsSidebarCmd : (v -> ( v, Cmd msg )) -> { item | detailsSidebar : v } -> ( { item | detailsSidebar : v }, Cmd msg )
 mapDetailsSidebarCmd =
-    mapCmd_ .detailsSidebar setDetailsSidebar
-
-
-setDisplay : v -> { item | display : v } -> { item | display : v }
-setDisplay =
-    set_ .display (\value item -> { item | display = value })
+    mapT_ .detailsSidebar setDetailsSidebar
 
 
 setDragging : v -> { item | dragging : v } -> { item | dragging : v }
@@ -576,8 +473,8 @@ setEmbedSourceParsing =
 
 
 mapEmbedSourceParsingMCmd : (v -> ( v, Cmd msg )) -> { item | embedSourceParsing : Maybe v } -> ( { item | embedSourceParsing : Maybe v }, Cmd msg )
-mapEmbedSourceParsingMCmd =
-    mapMCmd_ .embedSourceParsing setEmbedSourceParsing
+mapEmbedSourceParsingMCmd transform item =
+    mapMT_ .embedSourceParsing setEmbedSourceParsing transform item |> Tuple.mapSecond (Maybe.withDefault Cmd.none)
 
 
 setEnabled : v -> { item | enabled : v } -> { item | enabled : v }
@@ -590,11 +487,6 @@ mapEnabled =
     map_ .enabled setEnabled
 
 
-setEnd : v -> { item | end : v } -> { item | end : v }
-setEnd =
-    set_ .end (\value item -> { item | end = value })
-
-
 setErd : v -> { item | erd : v } -> { item | erd : v }
 setErd =
     set_ .erd (\value item -> { item | erd = value })
@@ -605,34 +497,24 @@ mapErdM =
     mapM_ .erd setErd
 
 
+mapErdMT : (v -> ( v, a )) -> { item | erd : Maybe v } -> ( { item | erd : Maybe v }, Maybe a )
+mapErdMT =
+    mapMT_ .erd setErd
+
+
 mapErdMCmd : (v -> ( v, Cmd msg )) -> { item | erd : Maybe v } -> ( { item | erd : Maybe v }, Cmd msg )
-mapErdMCmd =
-    mapMCmd_ .erd setErd
+mapErdMCmd transform item =
+    mapMT_ .erd setErd transform item |> Tuple.mapSecond (Maybe.withDefault Cmd.none)
+
+
+mapErdMTM : (v -> ( v, Maybe a )) -> { item | erd : Maybe v } -> ( { item | erd : Maybe v }, Maybe a )
+mapErdMTM =
+    mapMTM_ .erd setErd
 
 
 setErrors : v -> { item | errors : v } -> { item | errors : v }
 setErrors =
     set_ .errors (\value item -> { item | errors = value })
-
-
-setExecutions : v -> { item | executions : v } -> { item | executions : v }
-setExecutions =
-    set_ .executions (\value item -> { item | executions = value })
-
-
-mapExecutions : (v -> v) -> { item | executions : v } -> { item | executions : v }
-mapExecutions =
-    map_ .executions setExecutions
-
-
-setExpanded : v -> { item | expanded : v } -> { item | expanded : v }
-setExpanded =
-    set_ .expanded (\value item -> { item | expanded = value })
-
-
-mapExpanded : (v -> v) -> { item | expanded : v } -> { item | expanded : v }
-mapExpanded =
-    map_ .expanded setExpanded
 
 
 setExpire : v -> { item | expire : v } -> { item | expire : v }
@@ -647,17 +529,7 @@ setExportDialog =
 
 mapExportDialogCmd : (v -> ( v, Cmd msg )) -> { item | exportDialog : v } -> ( { item | exportDialog : v }, Cmd msg )
 mapExportDialogCmd =
-    mapCmd_ .exportDialog setExportDialog
-
-
-setFilter : v -> { item | filter : v } -> { item | filter : v }
-setFilter =
-    set_ .filter (\value item -> { item | filter = value })
-
-
-mapFilter : (v -> v) -> { item | filter : v } -> { item | filter : v }
-mapFilter =
-    map_ .filter setFilter
+    mapT_ .exportDialog setExportDialog
 
 
 setFilters : v -> { item | filters : v } -> { item | filters : v }
@@ -700,16 +572,6 @@ mapGroups =
     map_ .groups setGroups
 
 
-setHead : v -> { item | head : v } -> { item | head : v }
-setHead =
-    set_ .head (\value item -> { item | head = value })
-
-
-mapHead : (v -> v) -> { item | head : v } -> { item | head : v }
-mapHead =
-    map_ .head setHead
-
-
 setHidden : v -> { item | hidden : v } -> { item | hidden : v }
 setHidden =
     set_ .hidden (\value item -> { item | hidden = value })
@@ -733,21 +595,6 @@ mapHiddenColumns =
 setHighlight : v -> { item | highlight : v } -> { item | highlight : v }
 setHighlight =
     set_ .highlight (\value item -> { item | highlight = value })
-
-
-mapHighlight : (v -> v) -> { item | highlight : v } -> { item | highlight : v }
-mapHighlight =
-    map_ .highlight setHighlight
-
-
-setHighlights : v -> { item | highlights : v } -> { item | highlights : v }
-setHighlights =
-    set_ .highlights (\value item -> { item | highlights = value })
-
-
-mapHighlights : (v -> v) -> { item | highlights : v } -> { item | highlights : v }
-mapHighlights =
-    map_ .highlights setHighlights
 
 
 setHighlighted : v -> { item | highlighted : v } -> { item | highlighted : v }
@@ -800,16 +647,6 @@ mapIndex =
     map_ .index setIndex
 
 
-setIndexes : v -> { item | indexes : v } -> { item | indexes : v }
-setIndexes =
-    set_ .indexes (\value item -> { item | indexes = value })
-
-
-mapIndexes : (v -> v) -> { item | indexes : v } -> { item | indexes : v }
-mapIndexes =
-    map_ .indexes setIndexes
-
-
 setInput : v -> { item | input : v } -> { item | input : v }
 setInput =
     set_ .input (\value item -> { item | input = value })
@@ -827,27 +664,12 @@ setJsonSource =
 
 mapJsonSourceCmd : (v -> ( v, Cmd msg )) -> { item | jsonSource : v } -> ( { item | jsonSource : v }, Cmd msg )
 mapJsonSourceCmd =
-    mapCmd_ .jsonSource setJsonSource
+    mapT_ .jsonSource setJsonSource
 
 
 mapJsonSourceMCmd : (v -> ( v, Cmd msg )) -> { item | jsonSource : Maybe v } -> ( { item | jsonSource : Maybe v }, Cmd msg )
-mapJsonSourceMCmd =
-    mapMCmd_ .jsonSource setJsonSource
-
-
-setLanguagesModel : v -> { item | languagesModel : v } -> { item | languagesModel : v }
-setLanguagesModel =
-    set_ .languagesModel (\value item -> { item | languagesModel = value })
-
-
-mapLanguagesModel : (v -> v) -> { item | languagesModel : v } -> { item | languagesModel : v }
-mapLanguagesModel =
-    map_ .languagesModel setLanguagesModel
-
-
-mapLanguagesModelD : comparable -> (v -> v) -> { item | languagesModel : Dict comparable v } -> { item | languagesModel : Dict comparable v }
-mapLanguagesModelD =
-    mapD_ .languagesModel setLanguagesModel
+mapJsonSourceMCmd transform item =
+    mapMT_ .jsonSource setJsonSource transform item |> Tuple.mapSecond (Maybe.withDefault Cmd.none)
 
 
 setLast : v -> { item | last : v } -> { item | last : v }
@@ -875,19 +697,19 @@ mapLayoutsD =
     mapD_ .layouts setLayouts
 
 
+mapLayoutsDTM : comparable -> (v -> ( v, Maybe a )) -> { item | layouts : Dict comparable v } -> ( { item | layouts : Dict comparable v }, Maybe a )
+mapLayoutsDTM =
+    mapDTM_ .layouts setLayouts
+
+
 mapLayoutsDCmd : comparable -> (v -> ( v, Cmd msg )) -> { item | layouts : Dict comparable v } -> ( { item | layouts : Dict comparable v }, Cmd msg )
-mapLayoutsDCmd =
-    mapDCmd_ .layouts setLayouts
+mapLayoutsDCmd key transform item =
+    mapDT_ .layouts setLayouts key transform item |> Tuple.mapSecond (\a -> a |> Maybe.withDefault Cmd.none)
 
 
 setList : v -> { item | list : v } -> { item | list : v }
 setList =
     set_ .list (\value item -> { item | list = value })
-
-
-setLoading : v -> { item | loading : v } -> { item | loading : v }
-setLoading =
-    set_ .loading (\value item -> { item | loading = value })
 
 
 setMax : v -> { item | max : v } -> { item | max : v }
@@ -935,11 +757,6 @@ setModal =
     set_ .modal (\value item -> { item | modal = value })
 
 
-setMode : v -> { item | mode : v } -> { item | mode : v }
-setMode =
-    set_ .mode (\value item -> { item | mode = value })
-
-
 setMouse : v -> { item | mouse : v } -> { item | mouse : v }
 setMouse =
     set_ .mouse (\value item -> { item | mouse = value })
@@ -966,18 +783,13 @@ setNewLayout =
 
 
 mapNewLayoutMCmd : (v -> ( v, Cmd msg )) -> { item | newLayout : Maybe v } -> ( { item | newLayout : Maybe v }, Cmd msg )
-mapNewLayoutMCmd =
-    mapMCmd_ .newLayout setNewLayout
+mapNewLayoutMCmd transform item =
+    mapMT_ .newLayout setNewLayout transform item |> Tuple.mapSecond (Maybe.withDefault Cmd.none)
 
 
 setNotes : v -> { item | notes : v } -> { item | notes : v }
 setNotes =
     set_ .notes (\value item -> { item | notes = value })
-
-
-mapNotes : (v -> v) -> { item | notes : v } -> { item | notes : v }
-mapNotes =
-    map_ .notes setNotes
 
 
 setOpened : v -> { item | opened : v } -> { item | opened : v }
@@ -1080,21 +892,6 @@ setPrevious =
     set_ .previous (\value item -> { item | previous = value })
 
 
-mapPrevious : (v -> v) -> { item | previous : v } -> { item | previous : v }
-mapPrevious =
-    map_ .previous setPrevious
-
-
-setPrimaryKey : v -> { item | primaryKey : v } -> { item | primaryKey : v }
-setPrimaryKey =
-    set_ .primaryKey (\value item -> { item | primaryKey = value })
-
-
-mapPrimaryKeyM : (v -> v) -> { item | primaryKey : Maybe v } -> { item | primaryKey : Maybe v }
-mapPrimaryKeyM =
-    mapM_ .primaryKey setPrimaryKey
-
-
 setPrismaSource : v -> { item | prismaSource : v } -> { item | prismaSource : v }
 setPrismaSource =
     set_ .prismaSource (\value item -> { item | prismaSource = value })
@@ -1102,12 +899,12 @@ setPrismaSource =
 
 mapPrismaSourceCmd : (v -> ( v, Cmd msg )) -> { item | prismaSource : v } -> ( { item | prismaSource : v }, Cmd msg )
 mapPrismaSourceCmd =
-    mapCmd_ .prismaSource setPrismaSource
+    mapT_ .prismaSource setPrismaSource
 
 
 mapPrismaSourceMCmd : (v -> ( v, Cmd msg )) -> { item | prismaSource : Maybe v } -> ( { item | prismaSource : Maybe v }, Cmd msg )
-mapPrismaSourceMCmd =
-    mapMCmd_ .prismaSource setPrismaSource
+mapPrismaSourceMCmd transform item =
+    mapMT_ .prismaSource setPrismaSource transform item |> Tuple.mapSecond (Maybe.withDefault Cmd.none)
 
 
 setProject : v -> { item | project : v } -> { item | project : v }
@@ -1126,8 +923,8 @@ setProjectSource =
 
 
 mapProjectSourceMCmd : (v -> ( v, Cmd msg )) -> { item | projectSource : Maybe v } -> ( { item | projectSource : Maybe v }, Cmd msg )
-mapProjectSourceMCmd =
-    mapMCmd_ .projectSource setProjectSource
+mapProjectSourceMCmd transform item =
+    mapMT_ .projectSource setProjectSource transform item |> Tuple.mapSecond (Maybe.withDefault Cmd.none)
 
 
 setPrompt : v -> { item | prompt : v } -> { item | prompt : v }
@@ -1153,11 +950,6 @@ mapProps =
 setQuery : v -> { item | query : v } -> { item | query : v }
 setQuery =
     set_ .query (\value item -> { item | query = value })
-
-
-mapQuery : (v -> v) -> { item | query : v } -> { item | query : v }
-mapQuery =
-    map_ .query setQuery
 
 
 setRelatedTables : v -> { item | relatedTables : v } -> { item | relatedTables : v }
@@ -1227,17 +1019,7 @@ setResults =
 
 mapResultsCmd : (v -> ( v, Cmd msg )) -> { item | results : v } -> ( { item | results : v }, Cmd msg )
 mapResultsCmd =
-    mapCmd_ .results setResults
-
-
-setRow : v -> { item | row : v } -> { item | row : v }
-setRow =
-    set_ .row (\value item -> { item | row = value })
-
-
-mapRow : (v -> v) -> { item | row : v } -> { item | row : v }
-mapRow =
-    map_ .row setRow
+    mapT_ .results setResults
 
 
 setSampleSource : v -> { item | sampleSource : v } -> { item | sampleSource : v }
@@ -1246,8 +1028,8 @@ setSampleSource =
 
 
 mapSampleSourceMCmd : (v -> ( v, Cmd msg )) -> { item | sampleSource : Maybe v } -> ( { item | sampleSource : Maybe v }, Cmd msg )
-mapSampleSourceMCmd =
-    mapMCmd_ .sampleSource setSampleSource
+mapSampleSourceMCmd transform item =
+    mapMT_ .sampleSource setSampleSource transform item |> Tuple.mapSecond (Maybe.withDefault Cmd.none)
 
 
 setSave : v -> { item | save : v } -> { item | save : v }
@@ -1257,7 +1039,7 @@ setSave =
 
 mapSaveCmd : (v -> ( v, Cmd msg )) -> { item | save : v } -> ( { item | save : v }, Cmd msg )
 mapSaveCmd =
-    mapCmd_ .save setSave
+    mapT_ .save setSave
 
 
 setSchemaAnalysis : v -> { item | schemaAnalysis : v } -> { item | schemaAnalysis : v }
@@ -1322,7 +1104,7 @@ setSharing =
 
 mapSharingCmd : (v -> ( v, Cmd msg )) -> { item | sharing : v } -> ( { item | sharing : v }, Cmd msg )
 mapSharingCmd =
-    mapCmd_ .sharing setSharing
+    mapT_ .sharing setSharing
 
 
 setShow : v -> { item | show : v } -> { item | show : v }
@@ -1365,11 +1147,6 @@ setSize =
     set_ .size (\value item -> { item | size = value })
 
 
-setSource : v -> { item | source : v } -> { item | source : v }
-setSource =
-    set_ .source (\value item -> { item | source = value })
-
-
 setSourceUpdate : v -> { item | sourceUpdate : v } -> { item | sourceUpdate : v }
 setSourceUpdate =
     set_ .sourceUpdate (\value item -> { item | sourceUpdate = value })
@@ -1377,7 +1154,7 @@ setSourceUpdate =
 
 mapSourceUpdateCmd : (v -> ( v, Cmd msg )) -> { item | sourceUpdate : v } -> ( { item | sourceUpdate : v }, Cmd msg )
 mapSourceUpdateCmd =
-    mapCmd_ .sourceUpdate setSourceUpdate
+    mapT_ .sourceUpdate setSourceUpdate
 
 
 setSqlSource : v -> { item | sqlSource : v } -> { item | sqlSource : v }
@@ -1387,17 +1164,12 @@ setSqlSource =
 
 mapSqlSourceCmd : (v -> ( v, Cmd msg )) -> { item | sqlSource : v } -> ( { item | sqlSource : v }, Cmd msg )
 mapSqlSourceCmd =
-    mapCmd_ .sqlSource setSqlSource
+    mapT_ .sqlSource setSqlSource
 
 
 mapSqlSourceMCmd : (v -> ( v, Cmd msg )) -> { item | sqlSource : Maybe v } -> ( { item | sqlSource : Maybe v }, Cmd msg )
-mapSqlSourceMCmd =
-    mapMCmd_ .sqlSource setSqlSource
-
-
-setStart : v -> { item | start : v } -> { item | start : v }
-setStart =
-    set_ .start (\value item -> { item | start = value })
+mapSqlSourceMCmd transform item =
+    mapMT_ .sqlSource setSqlSource transform item |> Tuple.mapSecond (Maybe.withDefault Cmd.none)
 
 
 setState : v -> { item | state : v } -> { item | state : v }
@@ -1408,11 +1180,6 @@ setState =
 mapState : (v -> v) -> { item | state : v } -> { item | state : v }
 mapState =
     map_ .state setState
-
-
-setTable : v -> { item | table : v } -> { item | table : v }
-setTable =
-    set_ .table (\value item -> { item | table = value })
 
 
 setTables : v -> { item | tables : v } -> { item | tables : v }
@@ -1432,7 +1199,7 @@ mapTablesL =
 
 mapTablesCmd : (v -> ( v, Cmd msg )) -> { item | tables : v } -> ( { item | tables : v }, Cmd msg )
 mapTablesCmd =
-    mapCmd_ .tables setTables
+    mapT_ .tables setTables
 
 
 setTableRows : v -> { item | tableRows : v } -> { item | tableRows : v }
@@ -1447,7 +1214,7 @@ mapTableRows =
 
 mapTableRowsCmd : (v -> ( v, Cmd msg )) -> { item | tableRows : v } -> ( { item | tableRows : v }, Cmd msg )
 mapTableRowsCmd =
-    mapCmd_ .tableRows setTableRows
+    mapT_ .tableRows setTableRows
 
 
 setTableRowsSeq : v -> { item | tableRowsSeq : v } -> { item | tableRowsSeq : v }
@@ -1487,7 +1254,7 @@ mapToasts =
 
 mapToastsCmd : (v -> ( v, Cmd msg )) -> { item | toasts : v } -> ( { item | toasts : v }, Cmd msg )
 mapToastsCmd =
-    mapCmd_ .toasts setToasts
+    mapT_ .toasts setToasts
 
 
 setToken : v -> { item | token : v } -> { item | token : v }
@@ -1510,16 +1277,6 @@ mapTokenFormM =
     mapM_ .tokenForm setTokenForm
 
 
-setUniques : v -> { item | uniques : v } -> { item | uniques : v }
-setUniques =
-    set_ .uniques (\value item -> { item | uniques = value })
-
-
-mapUniques : (v -> v) -> { item | uniques : v } -> { item | uniques : v }
-mapUniques =
-    map_ .uniques setUniques
-
-
 setUpdatedAt : v -> { item | updatedAt : v } -> { item | updatedAt : v }
 setUpdatedAt =
     set_ .updatedAt (\value item -> { item | updatedAt = value })
@@ -1528,16 +1285,6 @@ setUpdatedAt =
 setValue : v -> { item | value : v } -> { item | value : v }
 setValue =
     set_ .value (\value item -> { item | value = value })
-
-
-setValues : v -> { item | values : v } -> { item | values : v }
-setValues =
-    set_ .values (\value item -> { item | values = value })
-
-
-mapValues : (v -> v) -> { item | values : v } -> { item | values : v }
-mapValues =
-    map_ .values setValues
 
 
 setView : v -> { item | view : v } -> { item | view : v }
@@ -1576,16 +1323,19 @@ setZoom =
 
 mapM : (v -> v) -> Maybe v -> Maybe v
 mapM transform item =
+    -- map Maybe
     item |> Maybe.map transform
 
 
 mapMCmd : (v -> ( v, Cmd msg )) -> Maybe v -> ( Maybe v, Cmd msg )
 mapMCmd transform item =
+    -- map Maybe with Command
     item |> Maybe.mapOrElse (transform >> Tuple.mapFirst Just) ( Nothing, Cmd.none )
 
 
 mapList : (item -> k) -> k -> (item -> item) -> List item -> List item
 mapList get key transform list =
+    -- map list given a condition
     list
         |> List.map
             (\item ->
@@ -1603,6 +1353,7 @@ mapList get key transform list =
 
 set_ : (item -> v) -> (v -> item -> item) -> v -> item -> item
 set_ get update value item =
+    -- set a value in a record if different
     if get item == value then
         item
 
@@ -1612,16 +1363,53 @@ set_ get update value item =
 
 map_ : (item -> v) -> (v -> item -> item) -> (v -> v) -> item -> item
 map_ get update transform item =
+    -- update a value in a record
     update (item |> get |> transform) item
+
+
+mapT_ : (item -> v) -> (v -> item -> item) -> (v -> ( v, a )) -> item -> ( item, a )
+mapT_ get update transform item =
+    -- update a value in a record keeping tuple
+    item |> get |> transform |> Tuple.mapFirst (\value -> update value item)
 
 
 mapM_ : (item -> Maybe v) -> (Maybe v -> item -> item) -> (v -> v) -> item -> item
 mapM_ get update transform item =
+    -- update an optional value in a record if present
     update (item |> get |> Maybe.map transform) item
+
+
+mapMT_ : (item -> Maybe v) -> (Maybe v -> item -> item) -> (v -> ( v, a )) -> item -> ( item, Maybe a )
+mapMT_ get update transform item =
+    -- update optional value in a record keeping tuple
+    item |> get |> Maybe.mapOrElse (transform >> Tuple.mapBoth (\value -> item |> update (Just value)) Just) ( item, Nothing )
+
+
+mapMTM_ : (item -> Maybe v) -> (Maybe v -> item -> item) -> (v -> ( v, Maybe a )) -> item -> ( item, Maybe a )
+mapMTM_ get update transform item =
+    -- update optional value in a record keeping tuple
+    item |> get |> Maybe.mapOrElse (transform >> Tuple.mapFirst (\value -> item |> update (Just value))) ( item, Nothing )
+
+
+mapD_ : (item -> Dict comparable v) -> (Dict comparable v -> item -> item) -> comparable -> (v -> v) -> item -> item
+mapD_ get update key transform item =
+    -- update dict values in a record if match condition
+    update (item |> get |> Dict.update key (Maybe.map transform)) item
+
+
+mapDT_ : (item -> Dict comparable v) -> (Dict comparable v -> item -> item) -> comparable -> (v -> ( v, a )) -> item -> ( item, Maybe a )
+mapDT_ get update key transform item =
+    item |> get |> Dict.get key |> Maybe.mapOrElse (transform >> Tuple.mapBoth (\n -> mapD_ get update key (\_ -> n) item) Just) ( item, Nothing )
+
+
+mapDTM_ : (item -> Dict comparable v) -> (Dict comparable v -> item -> item) -> comparable -> (v -> ( v, Maybe a )) -> item -> ( item, Maybe a )
+mapDTM_ get update key transform item =
+    item |> get |> Dict.get key |> Maybe.mapOrElse (transform >> Tuple.mapFirst (\n -> mapD_ get update key (\_ -> n) item)) ( item, Nothing )
 
 
 mapL_ : (item -> List v) -> (List v -> item -> item) -> (v -> k) -> k -> (v -> v) -> item -> item
 mapL_ get update getKey key transform item =
+    -- update list values in a record if match condition
     update
         (item
             |> get
@@ -1635,26 +1423,6 @@ mapL_ get update getKey key transform item =
                 )
         )
         item
-
-
-mapD_ : (item -> Dict comparable v) -> (Dict comparable v -> item -> item) -> comparable -> (v -> v) -> item -> item
-mapD_ get update key transform item =
-    update (item |> get |> Dict.update key (Maybe.map transform)) item
-
-
-mapCmd_ : (item -> v) -> (v -> item -> item) -> (v -> ( v, Cmd msg )) -> item -> ( item, Cmd msg )
-mapCmd_ get update transform item =
-    item |> get |> transform |> Tuple.mapFirst (\value -> update value item)
-
-
-mapMCmd_ : (item -> Maybe v) -> (Maybe v -> item -> item) -> (v -> ( v, Cmd msg )) -> item -> ( item, Cmd msg )
-mapMCmd_ get update transform item =
-    item |> get |> Maybe.mapOrElse (transform >> Tuple.mapFirst (\value -> item |> update (Just value))) ( item, Cmd.none )
-
-
-mapDCmd_ : (item -> Dict comparable v) -> (Dict comparable v -> item -> item) -> comparable -> (v -> ( v, Cmd msg )) -> item -> ( item, Cmd msg )
-mapDCmd_ get update key transform item =
-    item |> get |> Dict.get key |> Maybe.mapOrElse (transform >> Tuple.mapFirst (\n -> mapD_ get update key (\_ -> n) item)) ( item, Cmd.none )
 
 
 
