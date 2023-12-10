@@ -140,7 +140,7 @@ update doCmd urlLayout zone now urlInfos organizations projects msg model =
             model |> mapErdMT (showTables now ids hint from) |> addHistoryTCmd doCmd |> setDirtyCmd
 
         ShowAllTables from ->
-            model |> mapErdMCmd (showAllTables now from) |> setDirtyCmd
+            model |> mapErdMT (showAllTables now from) |> addHistoryTCmd doCmd |> setDirtyCmd
 
         HideTable id ->
             model |> mapErdMTM (hideTable now id) |> addHistoryT doCmd |> mapHoverTable (\h -> B.cond (h == Just id) Nothing h) |> setDirty

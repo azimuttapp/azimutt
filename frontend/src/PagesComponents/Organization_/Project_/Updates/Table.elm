@@ -141,7 +141,7 @@ showTables now ids hint from erd =
            )
 
 
-showAllTables : Time.Posix -> String -> Erd -> ( Erd, Cmd Msg )
+showAllTables : Time.Posix -> String -> Erd -> ( Erd, ( Maybe ( Msg, Msg ), Cmd Msg ) )
 showAllTables now from erd =
     let
         shownIds : Set TableId
@@ -157,10 +157,12 @@ showAllTables now from erd =
             tablesToShow |> List.map (\t -> t |> ErdTableLayout.init erd.settings shownIds (erd.relationsByTable |> Dict.getOrElse t.id []) erd.settings.collapseTableColumns Nothing)
     in
     ( erd |> Erd.mapCurrentLayoutWithTime now (mapTables (\old -> newTables ++ old))
-    , Cmd.batch
-        [ Ports.observeTablesSize (newTables |> List.map .id)
-        , B.cond (newTables |> List.isEmpty) Cmd.none (Track.tableShown (List.length newTables) from (Just erd))
-        ]
+    , ( Just ( tablesToShow |> List.map (\t -> HideTable t.id) |> Batch, ShowAllTables "redo" )
+      , Cmd.batch
+            [ Ports.observeTablesSize (newTables |> List.map .id)
+            , B.cond (newTables |> List.isEmpty) Cmd.none (Track.tableShown (List.length newTables) from (Just erd))
+            ]
+      )
     )
 
 
