@@ -1,7 +1,5 @@
 module Libs.List exposing
-    ( add
-    , addAt
-    , appendIf
+    ( appendIf
     , appendOn
     , diff
     , dropRight
@@ -25,6 +23,8 @@ module Libs.List exposing
     , indexedFilter
     , indexedFilterMap
     , indexedFind
+    , insert
+    , insertAt
     , last
     , mapAt
     , mapAtCmd
@@ -322,7 +322,7 @@ filterZip f xs =
 
 moveIndex : Int -> Int -> List a -> List a
 moveIndex from to list =
-    list |> get from |> Maybe.mapOrElse (\v -> list |> removeAt from |> addAt v to) list
+    list |> get from |> Maybe.mapOrElse (\v -> list |> removeAt from |> insertAt to v) list
 
 
 move : a -> Int -> List a -> List a
@@ -360,17 +360,17 @@ removeAll items list =
     list |> List.filter (\i -> items |> List.member i |> not)
 
 
-add : a -> List a -> List a
-add item list =
+insert : a -> List a -> List a
+insert item list =
     list ++ [ item ]
 
 
-addAt : a -> Int -> List a -> List a
-addAt item index list =
+insertAt : Int -> a -> List a -> List a
+insertAt index item list =
     if index >= List.length list then
         list ++ [ item ]
 
-    else if index < 0 then
+    else if index <= 0 then
         item :: list
 
     else

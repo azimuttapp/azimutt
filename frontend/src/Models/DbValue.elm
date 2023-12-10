@@ -192,10 +192,10 @@ viewDbValue value =
             span [ class "opacity-50 italic" ] [ text "null" ]
 
         DbArray a ->
-            span [] (text "[" :: (a |> List.map viewDbValue |> List.intersperse (text ", ")) |> List.add (text "]"))
+            span [] (text "[" :: (a |> List.map viewDbValue |> List.intersperse (text ", ")) |> List.insert (text "]"))
 
         DbObject o ->
-            span [] (text "{" :: (o |> Dict.toList |> List.map (\( k, v ) -> span [] [ text (k ++ ": "), viewDbValue v ]) |> List.intersperse (text ", ")) |> List.add (text "}"))
+            span [] (text "{" :: (o |> Dict.toList |> List.map (\( k, v ) -> span [] [ text (k ++ ": "), viewDbValue v ]) |> List.intersperse (text ", ")) |> List.insert (text "}"))
 
 
 viewRaw : Maybe DbValue -> Html msg

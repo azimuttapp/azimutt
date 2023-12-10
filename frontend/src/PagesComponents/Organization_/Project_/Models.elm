@@ -52,6 +52,7 @@ import PagesComponents.Organization_.Project_.Models.Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdConf as ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.ErdRelation exposing (ErdRelation)
 import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable)
+import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.FindPathDialog exposing (FindPathDialog)
 import PagesComponents.Organization_.Project_.Models.HideColumns exposing (HideColumns)
 import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
@@ -236,6 +237,7 @@ type Msg
     | ShowTable TableId (Maybe PositionHint) String
     | ShowTables (List TableId) (Maybe PositionHint) String
     | ShowAllTables String
+    | ReshowTable Int ErdTableLayout
     | HideTable TableId
     | ShowRelatedTables TableId
     | HideRelatedTables TableId

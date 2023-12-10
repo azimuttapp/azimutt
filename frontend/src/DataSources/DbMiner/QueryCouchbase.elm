@@ -57,7 +57,7 @@ collectionRef : SchemaName -> TableName -> String
 collectionRef schema table =
     schema
         |> String.split "__"
-        |> List.add table
+        |> List.insert table
         |> List.map shouldEscape
         |> String.join "."
 

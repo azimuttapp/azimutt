@@ -68,7 +68,7 @@ import PagesComponents.Organization_.Project_.Updates.Notes exposing (handleNote
 import PagesComponents.Organization_.Project_.Updates.Project exposing (createProject, moveProject, triggerSaveProject, updateProject)
 import PagesComponents.Organization_.Project_.Updates.ProjectSettings exposing (handleProjectSettings)
 import PagesComponents.Organization_.Project_.Updates.Source as Source
-import PagesComponents.Organization_.Project_.Updates.Table exposing (goToTable, hideColumn, hideColumns, hideRelatedTables, hideTable, hoverColumn, hoverNextColumn, mapTablePropOrSelected, showAllTables, showColumn, showColumns, showRelatedTables, showTable, showTables, sortColumns, toggleNestedColumn)
+import PagesComponents.Organization_.Project_.Updates.Table exposing (goToTable, hideColumn, hideColumns, hideRelatedTables, hideTable, hoverColumn, hoverNextColumn, mapTablePropOrSelected, reshowTable, showAllTables, showColumn, showColumns, showRelatedTables, showTable, showTables, sortColumns, toggleNestedColumn)
 import PagesComponents.Organization_.Project_.Updates.TableRow exposing (mapTableRowOrSelectedCmd, moveToTableRow, showTableRow)
 import PagesComponents.Organization_.Project_.Updates.Tags exposing (handleTags)
 import PagesComponents.Organization_.Project_.Updates.Utils exposing (addHistoryT, addHistoryTCmd, setDirty, setDirtyCmd)
@@ -128,6 +128,13 @@ update doCmd urlLayout zone now urlInfos organizations projects msg model =
 
             else
                 model |> mapErdMT (showTable now id hint from) |> addHistoryTCmd doCmd |> setDirtyCmd
+
+        ReshowTable index table ->
+            if model.erd |> Maybe.mapOrElse (Erd.currentLayout >> .tables) [] |> List.any (\t -> t.id == table.id) then
+                ( model, GoToTable table.id |> T.send )
+
+            else
+                model |> mapErdMCmd (reshowTable now index table) |> setDirtyCmd
 
         ShowTables ids hint from ->
             model |> mapErdMT (showTables now ids hint from) |> addHistoryTCmd doCmd |> setDirtyCmd
@@ -238,7 +245,7 @@ update doCmd urlLayout zone now urlInfos organizations projects msg model =
 
         CreateUserSourceWithId source ->
             model
-                |> mapErdM (Erd.mapSources (List.add source))
+                |> mapErdM (Erd.mapSources (List.insert source))
                 |> (\updated -> updated |> mapAmlSidebarM (AmlSidebar.setSource (updated.erd |> Maybe.andThen (.sources >> List.last))))
                 |> AmlSidebar.setOtherSourcesTableIdsCache (Just source.id)
                 |> setDirty
@@ -247,7 +254,7 @@ update doCmd urlLayout zone now urlInfos organizations projects msg model =
             model |> mapErdMCmd (Source.createRelations now rels) |> setDirtyCmd
 
         IgnoreRelation col ->
-            model |> mapErdM (Erd.mapIgnoredRelations (Dict.update col.table (Maybe.mapOrElse (List.add col.column) [ col.column ] >> List.uniqueBy ColumnPath.toString >> Just))) |> setDirty
+            model |> mapErdM (Erd.mapIgnoredRelations (Dict.update col.table (Maybe.mapOrElse (List.insert col.column) [ col.column ] >> List.uniqueBy ColumnPath.toString >> Just))) |> setDirty
 
         NewLayoutMsg message ->
             model |> NewLayout.update ModalOpen Toast CustomModalOpen now urlInfos message

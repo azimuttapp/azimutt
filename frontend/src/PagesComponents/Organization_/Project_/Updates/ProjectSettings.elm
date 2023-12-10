@@ -69,7 +69,7 @@ handleProjectSettings now msg model =
                 ( model |> mapErdM (Erd.mapSource source.id (Source.refreshWith source)), Cmd.batch [ T.send (ModalClose (SourceUpdateDialog.Close |> PSSourceUpdate |> ProjectSettingsMsg)), Track.sourceRefreshed model.erd source ] ) |> setDirtyCmd
 
             else
-                ( model |> mapErdM (Erd.mapSources (List.add source)), Cmd.batch [ T.send (ModalClose (SourceUpdateDialog.Close |> PSSourceUpdate |> ProjectSettingsMsg)), Track.sourceAdded model.erd source ] ) |> setDirtyCmd
+                ( model |> mapErdM (Erd.mapSources (List.insert source)), Cmd.batch [ T.send (ModalClose (SourceUpdateDialog.Close |> PSSourceUpdate |> ProjectSettingsMsg)), Track.sourceAdded model.erd source ] ) |> setDirtyCmd
 
         PSDefaultSchemaUpdate value ->
             model |> mapErdM (Erd.mapSettings (setDefaultSchema value)) |> setDirty

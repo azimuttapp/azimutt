@@ -718,7 +718,7 @@ viewColumnRowIncomingRows noop showTableRow openDataExplorer defaultSchema sourc
                                 , action = showTableRow source { table = tableId, primaryKey = r } Nothing (Just (PositionHint.PlaceRight row.position row.size))
                                 }
                             )
-                        |> List.add { label = "See all", action = openDataExplorer (Just source.id) (Just (DbQuery.filterTable source.db.kind { table = tableId, filters = query.foreignKeys |> List.map (\( fk, _ ) -> TableFilter DbOr fk DbEqual rowColumn.value) })) }
+                        |> List.insert { label = "See all", action = openDataExplorer (Just source.id) (Just (DbQuery.filterTable source.db.kind { table = tableId, filters = query.foreignKeys |> List.map (\( fk, _ ) -> TableFilter DbOr fk DbEqual rowColumn.value) })) }
                     )
                     ContextMenu.BottomRight
         }

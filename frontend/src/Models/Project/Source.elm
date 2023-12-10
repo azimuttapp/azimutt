@@ -103,7 +103,7 @@ addRelations now rels source =
             (\content ->
                 rels
                     |> List.map (\r -> AmlGenerator.relation r.src r.ref)
-                    |> List.add ""
+                    |> List.insert ""
                     |> Array.fromList
                     |> Array.append
                         (if Array.get (Array.length content - 1) content == Just "" then

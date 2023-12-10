@@ -66,7 +66,7 @@ createGroup now urlInfos tables model =
         ( model, Cmd.none )
 
     else if model.erd |> Erd.canCreateGroup then
-        ( model |> mapErdM (Erd.mapCurrentLayoutWithTime now (\l -> l |> mapGroups (List.add (Group.init tables (groupColor l tables))))), Track.groupCreated model.erd ) |> setDirtyCmd
+        ( model |> mapErdM (Erd.mapCurrentLayoutWithTime now (\l -> l |> mapGroups (List.insert (Group.init tables (groupColor l tables))))), Track.groupCreated model.erd ) |> setDirtyCmd
 
     else
         ( model, model.erd |> Maybe.mapOrElse (\erd -> Cmd.batch [ erd |> Erd.getProjectRef urlInfos |> ProPlan.groupsModalBody |> CustomModalOpen |> T.send, Track.planLimit .groups (Just erd) ]) Cmd.none )

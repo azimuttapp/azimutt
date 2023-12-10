@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Updates.Table exposing (goToTable, hideColumn, hideColumns, hideRelatedTables, hideTable, hoverColumn, hoverNextColumn, mapTablePropOrSelected, showAllTables, showColumn, showColumns, showRelatedTables, showTable, showTables, sortColumns, toggleNestedColumn)
+module PagesComponents.Organization_.Project_.Updates.Table exposing (goToTable, hideColumn, hideColumns, hideRelatedTables, hideTable, hoverColumn, hoverNextColumn, mapTablePropOrSelected, reshowTable, showAllTables, showColumn, showColumns, showRelatedTables, showTable, showTables, sortColumns, toggleNestedColumn)
 
 import Conf
 import Dict
@@ -75,6 +75,11 @@ showTable now id hint from erd =
 
         Nothing ->
             ( erd, ( Nothing, "Can't show table " ++ TableId.show erd.settings.defaultSchema id ++ ": not found" |> Toasts.error |> Toast |> T.send ) )
+
+
+reshowTable : Time.Posix -> Int -> ErdTableLayout -> Erd -> ( Erd, Cmd Msg )
+reshowTable now index table erd =
+    ( erd |> performReshowTable now index table, Cmd.batch [ Ports.observeTableSize table.id, Track.tableShown 1 "undo" (Just erd) ] )
 
 
 showTables : Time.Posix -> List TableId -> Maybe PositionHint -> String -> Erd -> ( Erd, ( Maybe ( Msg, Msg ), Cmd Msg ) )
@@ -373,11 +378,11 @@ hoverColumn column enter erd tables =
 
 performHideTable : Time.Posix -> TableId -> Erd -> ( Erd, Maybe ( Msg, Msg ) )
 performHideTable now id erd =
-    (erd |> Erd.currentLayout |> .tables |> List.find (\t -> t.id == id))
+    (erd |> Erd.currentLayout |> .tables |> List.zipWithIndex |> List.find (\( t, _ ) -> t.id == id))
         |> Maybe.map
-            (\table ->
+            (\( table, index ) ->
                 ( erd |> Erd.mapCurrentLayoutWithTime now (mapTables (List.removeBy .id id) >> mapTables updateRelatedTables)
-                , Just ( ShowTable id (Just (PlaceAt table.props.position)) "undo", HideTable id )
+                , Just ( ReshowTable index table, HideTable id )
                 )
             )
         |> Maybe.withDefault ( erd, Nothing )
@@ -402,6 +407,11 @@ performShowTable now table hint erd =
             )
     , Just ( HideTable table.id, ShowTable table.id hint "undo" )
     )
+
+
+performReshowTable : Time.Posix -> Int -> ErdTableLayout -> Erd -> Erd
+performReshowTable now index table erd =
+    erd |> Erd.mapCurrentLayoutWithTime now (mapTables (List.insertAt index table) >> mapTables updateRelatedTables)
 
 
 updateRelatedTables : List ErdTableLayout -> List ErdTableLayout
