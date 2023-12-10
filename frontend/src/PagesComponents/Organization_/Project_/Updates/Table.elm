@@ -102,7 +102,7 @@ showTables now ids hint from erd =
             ( ( erd, [] ), ( [], [], [] ) )
         |> (\( ( e, h ), ( found, shown, notFound ) ) ->
                 ( e
-                , ( buildHistory h
+                , ( h |> List.reverse |> buildHistory
                   , Cmd.batch
                         [ Ports.observeTablesSize found
                         , B.cond (shown |> List.isEmpty) Cmd.none (Track.tableShown (List.length shown) from (Just erd))

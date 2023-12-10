@@ -446,7 +446,13 @@ update doCmd urlLayout zone now urlInfos organizations projects msg model =
             model |> handleJsMessage now urlLayout message
 
         Batch messages ->
-            ( model, Cmd.batch (messages |> List.map T.send) )
+            messages
+                |> List.foldl
+                    (\curMsg ( curModel, curCmd ) ->
+                        update doCmd urlLayout zone now urlInfos organizations projects curMsg curModel
+                            |> Tuple.mapSecond (\newCmd -> Cmd.batch [ curCmd, newCmd ])
+                    )
+                    ( model, Cmd.none )
 
         Send cmd ->
             ( model, cmd )
