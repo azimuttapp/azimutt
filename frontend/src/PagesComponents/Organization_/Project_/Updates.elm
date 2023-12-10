@@ -146,10 +146,10 @@ update doCmd urlLayout zone now urlInfos organizations projects msg model =
             model |> mapErdMTM (hideTable now id) |> addHistoryT doCmd |> mapHoverTable (\h -> B.cond (h == Just id) Nothing h) |> setDirty
 
         ShowRelatedTables id ->
-            model |> mapErdMCmd (showRelatedTables id) |> setDirtyCmd
+            model |> mapErdMT (showRelatedTables now id) |> addHistoryTCmd doCmd |> setDirtyCmd
 
         HideRelatedTables id ->
-            model |> mapErdMCmd (hideRelatedTables id) |> setDirtyCmd
+            model |> mapErdMT (hideRelatedTables now id) |> addHistoryTCmd doCmd |> setDirtyCmd
 
         ToggleTableCollapse id ->
             let

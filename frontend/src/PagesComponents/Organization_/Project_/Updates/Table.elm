@@ -179,12 +179,9 @@ hideTable now id erd =
         performHideTable now id erd
 
 
-showRelatedTables : TableId -> Erd -> ( Erd, Cmd Msg )
-showRelatedTables id erd =
-    erd
-        |> Erd.currentLayout
-        |> .tables
-        |> List.findBy .id id
+showRelatedTables : Time.Posix -> TableId -> Erd -> ( Erd, ( Maybe ( Msg, Msg ), Cmd Msg ) )
+showRelatedTables now id erd =
+    (erd |> Erd.currentLayout |> .tables |> List.findBy .id id)
         |> Maybe.mapOrElse
             (\table ->
                 let
@@ -228,10 +225,18 @@ showRelatedTables id erd =
                     shows : List ( TableId, Maybe PositionHint )
                     shows =
                         toShow |> List.foldl (\( t, h ) ( cur, res ) -> ( cur + h + padding.dy, ( t, Just (PlaceAt (Position.grid { left = left, top = cur })) ) :: res )) ( top, [] ) |> Tuple.second
+
+                    ( newErd, cmds ) =
+                        shows |> List.foldl (\( t, h ) ( e, cs ) -> showTable now t h "related" e |> Tuple.mapSecond (\( _, c ) -> c :: cs)) ( erd, [] )
+
+                    ( back, forward ) =
+                        ( shows |> List.map (\( t, _ ) -> HideTable t) |> Batch
+                        , shows |> List.map (\( t, h ) -> ShowTable t h "related") |> Batch
+                        )
                 in
-                ( erd, Cmd.batch (shows |> List.map (\( t, hint ) -> T.send (ShowTable t hint "related"))) )
+                ( newErd, ( Just ( back, forward ), Cmd.batch cmds ) )
             )
-            ( erd, Cmd.none )
+            ( erd, ( Nothing, Cmd.none ) )
 
 
 guessHeight : TableId -> Erd -> Float
@@ -241,8 +246,8 @@ guessHeight id erd =
         |> Maybe.withDefault 200
 
 
-hideRelatedTables : TableId -> Erd -> ( Erd, Cmd Msg )
-hideRelatedTables id erd =
+hideRelatedTables : Time.Posix -> TableId -> Erd -> ( Erd, ( Maybe ( Msg, Msg ), Cmd Msg ) )
+hideRelatedTables now id erd =
     let
         related : List TableId
         related =
@@ -256,8 +261,14 @@ hideRelatedTables id erd =
                         else
                             r.src.table
                     )
+
+        shownTables : List ( ErdTableLayout, Int )
+        shownTables =
+            erd |> Erd.currentLayout |> .tables |> List.zipWithIndex |> List.filter (\( t, _ ) -> related |> List.member t.id)
     in
-    ( erd, Cmd.batch (related |> List.map (\t -> T.send (HideTable t))) )
+    ( related |> List.foldl (\t e -> hideTable now t e |> Tuple.first) erd
+    , ( Just ( shownTables |> List.map (\( t, i ) -> ReshowTable i t) |> Batch, related |> List.map HideTable |> Batch ), Cmd.none )
+    )
 
 
 showColumn : Time.Posix -> TableId -> ColumnPath -> Erd -> Erd
