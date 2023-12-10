@@ -60,6 +60,7 @@ module Services.Lenses exposing
     , mapPrismaSourceMCmd
     , mapProject
     , mapProjectSourceMCmd
+    , mapProjectT
     , mapPromptM
     , mapProps
     , mapRelatedTables
@@ -915,6 +916,11 @@ setProject =
 mapProject : (v -> v) -> { item | project : v } -> { item | project : v }
 mapProject =
     map_ .project setProject
+
+
+mapProjectT : (v -> ( v, a )) -> { item | project : v } -> ( { item | project : v }, a )
+mapProjectT =
+    mapT_ .project setProject
 
 
 setProjectSource : v -> { item | projectSource : v } -> { item | projectSource : v }

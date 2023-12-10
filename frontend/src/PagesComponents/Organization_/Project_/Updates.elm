@@ -80,7 +80,7 @@ import Random
 import Services.Backend as Backend
 import Services.DatabaseSource as DatabaseSource
 import Services.JsonSource as JsonSource
-import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapContextMenuM, mapDataExplorerCmd, mapDetailsSidebarCmd, mapEmbedSourceParsingMCmd, mapErdM, mapErdMCmd, mapErdMT, mapErdMTM, mapExportDialogCmd, mapHoverTable, mapMemos, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapOrganizationM, mapPlan, mapPosition, mapProject, mapPromptM, mapProps, mapSaveCmd, mapSchemaAnalysisM, mapSearch, mapSelected, mapSharingCmd, mapShowHiddenColumns, mapTableRows, mapTableRowsCmd, mapTables, mapTablesCmd, mapToastsCmd, setActive, setCanvas, setCollapsed, setColor, setColors, setConfirm, setContextMenu, setCurrentLayout, setCursorMode, setDragging, setHoverColumn, setHoverTable, setHoverTableRow, setInput, setLast, setLayoutOnLoad, setModal, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setSelected, setShow, setSize, setTables, setText)
+import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapContextMenuM, mapDataExplorerCmd, mapDetailsSidebarCmd, mapEmbedSourceParsingMCmd, mapErdM, mapErdMCmd, mapErdMT, mapErdMTM, mapExportDialogCmd, mapHoverTable, mapMemos, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapOrganizationM, mapPlan, mapPosition, mapProject, mapProjectT, mapPromptM, mapProps, mapSaveCmd, mapSchemaAnalysisM, mapSearch, mapSelected, mapSharingCmd, mapShowHiddenColumns, mapTableRows, mapTableRowsCmd, mapTables, mapTablesCmd, mapToastsCmd, setActive, setCanvas, setCollapsed, setColor, setColors, setConfirm, setContextMenu, setCurrentLayout, setCursorMode, setDragging, setHoverColumn, setHoverTable, setHoverTableRow, setInput, setLast, setLayoutOnLoad, setModal, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setSelected, setShow, setSize, setTables, setText)
 import Services.PrismaSource as PrismaSource
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
@@ -114,7 +114,7 @@ update doCmd urlLayout zone now urlInfos organizations projects msg model =
             model |> moveProject storage
 
         RenameProject name ->
-            model |> mapErdM (mapProject (setName name)) |> setDirty
+            model |> mapErdMT (mapProjectT (\p -> ( p |> setName name, ( RenameProject p.name, RenameProject name ) ))) |> addHistoryT doCmd |> setDirty
 
         DeleteProject project ->
             ( model, Ports.deleteProject project ((project.organization |> Maybe.map .id) |> Backend.organizationUrl |> Just) )
