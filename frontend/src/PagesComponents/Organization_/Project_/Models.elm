@@ -250,6 +250,7 @@ type Msg
     | ToggleNestedColumn TableId ColumnPath Bool
     | ToggleHiddenColumns TableId
     | SelectItem HtmlId Bool
+    | SelectItems (List HtmlId)
     | SelectAll
     | TableMove TableId Delta
     | CanvasPosition Position.Diagram

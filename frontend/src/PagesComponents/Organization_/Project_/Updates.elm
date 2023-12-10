@@ -120,7 +120,7 @@ update doCmd urlLayout zone now urlInfos organizations projects msg model =
             ( model, Ports.deleteProject project ((project.organization |> Maybe.map .id) |> Backend.organizationUrl |> Just) )
 
         GoToTable id ->
-            model |> mapErdMCmd (goToTable now id model.erdElem) |> setDirtyCmd
+            model |> mapErdMT (goToTable now id model.erdElem) |> addHistoryTCmd doCmd |> setDirtyCmd
 
         ShowTable id hint from ->
             if model.erd |> Maybe.mapOrElse (Erd.currentLayout >> .tables) [] |> List.any (\t -> t.id == id) then
@@ -194,6 +194,17 @@ update doCmd urlLayout zone now urlInfos organizations projects msg model =
                             )
                         )
                     |> setDirty
+
+        SelectItems htmlIds ->
+            model
+                |> mapErdM
+                    (Erd.mapCurrentLayoutWithTime now
+                        (mapTables (List.map (\t -> t |> mapProps (mapSelected (\_ -> htmlIds |> List.member (TableId.toHtmlId t.id)))))
+                            >> mapTableRows (List.map (\r -> r |> mapSelected (\_ -> htmlIds |> List.member (TableRow.toHtmlId r.id))))
+                            >> mapMemos (List.map (\m -> m |> mapSelected (\_ -> htmlIds |> List.member (MemoId.toHtmlId m.id))))
+                        )
+                    )
+                |> setDirty
 
         SelectAll ->
             model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.map (mapProps (setSelected True))) >> mapTableRows (List.map (setSelected True)) >> mapMemos (List.map (setSelected True)))) |> setDirty

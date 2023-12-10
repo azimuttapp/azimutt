@@ -7,6 +7,7 @@ import Libs.Dict as Dict
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.Delta exposing (Delta)
+import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Ned as Ned
 import Libs.Nel as Nel exposing (Nel)
 import Libs.Task as T
@@ -21,6 +22,7 @@ import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.Relation as Relation
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.TableId as TableId exposing (TableId)
+import Models.Project.TableRow as TableRow
 import Models.Size as Size
 import PagesComponents.Organization_.Project_.Models exposing (Model, Msg(..), buildHistory)
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
@@ -31,22 +33,47 @@ import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable exposi
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout as ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.ErdTableProps exposing (ErdTableProps)
 import PagesComponents.Organization_.Project_.Models.HideColumns as HideColumns exposing (HideColumns)
+import PagesComponents.Organization_.Project_.Models.MemoId as MemoId
 import PagesComponents.Organization_.Project_.Models.PositionHint as PositionHint exposing (PositionHint(..))
 import PagesComponents.Organization_.Project_.Models.ShowColumns as ShowColumns exposing (ShowColumns)
 import Ports
-import Services.Lenses exposing (mapCanvas, mapColumns, mapProps, mapRelatedTables, mapTables, mapTablesL, setHighlighted, setHoverColumn, setPosition, setSelected, setShown)
+import Services.Lenses exposing (mapCanvas, mapColumns, mapMemos, mapProps, mapRelatedTables, mapTableRows, mapTables, mapTablesL, setHighlighted, setHoverColumn, setPosition, setSelected, setShown)
 import Services.Toasts as Toasts
 import Set exposing (Set)
 import Time
 import Track
 
 
-goToTable : Time.Posix -> TableId -> ErdProps -> Erd -> ( Erd, Cmd Msg )
+goToTable : Time.Posix -> TableId -> ErdProps -> Erd -> ( Erd, ( Maybe ( Msg, Msg ), Cmd Msg ) )
 goToTable now id viewport erd =
     (erd |> Erd.getLayoutTable id)
         |> Maybe.map (\p -> placeTableAtCenter viewport (erd |> Erd.currentLayout |> .canvas) p.props)
-        |> Maybe.map (\pos -> ( erd |> Erd.mapCurrentLayoutWithTime now (mapTables (List.map (\t -> t |> mapProps (setSelected (t.id == id)))) >> mapCanvas (setPosition pos)), Cmd.none ))
-        |> Maybe.withDefault ( erd, "Table " ++ TableId.show erd.settings.defaultSchema id ++ " not shown" |> Toasts.info |> Toast |> T.send )
+        |> Maybe.map
+            (\pos ->
+                erd
+                    |> Erd.mapCurrentLayoutTMWithTime now
+                        (\l ->
+                            let
+                                selected : List HtmlId
+                                selected =
+                                    (l.tables |> List.filter (.props >> .selected) |> List.map (.id >> TableId.toHtmlId))
+                                        ++ (l.tableRows |> List.filter .selected |> List.map (.id >> TableRow.toHtmlId))
+                                        ++ (l.memos |> List.filter .selected |> List.map (.id >> MemoId.toHtmlId))
+                            in
+                            ( l
+                                |> mapTables (List.map (\t -> t |> mapProps (setSelected (t.id == id))))
+                                |> mapTableRows (List.map (setSelected False))
+                                |> mapMemos (List.map (setSelected False))
+                                |> mapCanvas (setPosition pos)
+                            , Just
+                                ( Batch [ CanvasPosition l.canvas.position, SelectItems selected ]
+                                , Batch [ CanvasPosition pos, SelectItems [ TableId.toHtmlId id ] ]
+                                )
+                            )
+                        )
+                    |> Tuple.mapSecond (\h -> ( h, Cmd.none ))
+            )
+        |> Maybe.withDefault ( erd, ( Nothing, "Table " ++ TableId.show erd.settings.defaultSchema id ++ " not shown" |> Toasts.info |> Toast |> T.send ) )
 
 
 placeTableAtCenter : ErdProps -> CanvasProps -> ErdTableProps -> Position.Diagram
