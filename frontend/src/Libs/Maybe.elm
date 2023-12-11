@@ -1,4 +1,4 @@
-module Libs.Maybe exposing (all, andThenZip, any, any2, filter, filterBy, filterNot, has, hasBy, isJust, mapOrElse, merge, onNothing, orElse, resultSeq, toList, toResult, toResultErr, when, zip, zip3)
+module Libs.Maybe exposing (all, andThenZip, any, any2, filter, filterBy, filterNot, flipWith, has, hasBy, isJust, mapOrElse, merge, onNothing, orElse, resultSeq, toList, toResult, toResultErr, when, zip, zip3)
 
 import Libs.Bool as B
 
@@ -100,6 +100,16 @@ zip3 maybeA maybeB maybeC =
 andThenZip : (a -> Maybe b) -> Maybe a -> Maybe ( a, b )
 andThenZip f maybe =
     maybe |> Maybe.andThen (\a -> f a |> Maybe.map (\b -> ( a, b )))
+
+
+flipWith : b -> Maybe a -> Maybe b
+flipWith b m =
+    case m of
+        Just _ ->
+            Nothing
+
+        Nothing ->
+            Just b
 
 
 fold : b -> (a -> b) -> Maybe a -> b

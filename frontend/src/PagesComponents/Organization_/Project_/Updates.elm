@@ -159,11 +159,11 @@ update doCmd urlLayout zone now urlInfos organizations projects msg model =
             in
             model |> mapErdMCmd (\erd -> erd |> Erd.mapCurrentLayoutWithTimeCmd now (mapTablesCmd (mapTablePropOrSelected erd.settings.defaultSchema id (mapProps (setCollapsed (not collapsed)))))) |> setDirtyCmd
 
-        ShowColumn { table, column } ->
-            model |> mapErdM (showColumn now table column) |> setDirty
+        ShowColumn index column ->
+            model |> mapErdMTM (showColumn now index column) |> addHistoryT doCmd |> setDirty
 
-        HideColumn { table, column } ->
-            model |> mapErdM (hideColumn now table column) |> hoverNextColumn table column |> setDirty
+        HideColumn column ->
+            model |> mapErdMTM (hideColumn now column) |> addHistoryT doCmd |> hoverNextColumn column |> setDirty
 
         ShowColumns id kind ->
             model |> mapErdMCmd (showColumns now id kind) |> setDirtyCmd
@@ -588,7 +588,7 @@ handleJsMessage now urlLayout msg model =
             ( model, T.send (TableColor id color) )
 
         GotColumnShow ref ->
-            ( model, T.send (ShowColumn ref) )
+            ( model, T.send (ShowColumn 1000 ref) )
 
         GotColumnHide ref ->
             ( model, T.send (HideColumn ref) )

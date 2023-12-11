@@ -242,7 +242,7 @@ type Msg
     | ShowRelatedTables TableId
     | HideRelatedTables TableId
     | ToggleTableCollapse TableId
-    | ShowColumn ColumnRef
+    | ShowColumn Int ColumnRef
     | HideColumn ColumnRef
     | ShowColumns TableId ShowColumns
     | HideColumns TableId HideColumns

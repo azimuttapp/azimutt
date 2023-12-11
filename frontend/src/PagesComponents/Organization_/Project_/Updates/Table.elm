@@ -37,7 +37,7 @@ import PagesComponents.Organization_.Project_.Models.MemoId as MemoId
 import PagesComponents.Organization_.Project_.Models.PositionHint as PositionHint exposing (PositionHint(..))
 import PagesComponents.Organization_.Project_.Models.ShowColumns as ShowColumns exposing (ShowColumns)
 import Ports
-import Services.Lenses exposing (mapCanvas, mapColumns, mapMemos, mapProps, mapRelatedTables, mapTableRows, mapTables, mapTablesL, setHighlighted, setHoverColumn, setPosition, setSelected, setShown)
+import Services.Lenses exposing (mapCanvas, mapColumns, mapColumnsT, mapMemos, mapProps, mapRelatedTables, mapTableRows, mapTables, mapTablesL, mapTablesLTM, setHighlighted, setHoverColumn, setPosition, setSelected, setShown)
 import Services.Toasts as Toasts
 import Set exposing (Set)
 import Time
@@ -271,26 +271,32 @@ hideRelatedTables now id erd =
     )
 
 
-showColumn : Time.Posix -> TableId -> ColumnPath -> Erd -> Erd
-showColumn now table column erd =
-    erd |> Erd.mapCurrentLayoutWithTime now (mapTablesL .id table (mapColumns (ErdColumnProps.remove column >> ErdColumnProps.add column)))
+showColumn : Time.Posix -> Int -> ColumnRef -> Erd -> ( Erd, Maybe ( Msg, Msg ) )
+showColumn now index column erd =
+    ( erd |> Erd.mapCurrentLayoutWithTime now (mapTablesL .id column.table (mapColumns (ErdColumnProps.remove column.column >> ErdColumnProps.insertAt index column.column)))
+    , Just ( HideColumn column, ShowColumn index column )
+    )
 
 
-hideColumn : Time.Posix -> TableId -> ColumnPath -> Erd -> Erd
-hideColumn now table column erd =
-    erd |> Erd.mapCurrentLayoutWithTime now (mapTablesL .id table (mapColumns (ErdColumnProps.remove column)))
+hideColumn : Time.Posix -> ColumnRef -> Erd -> ( Erd, Maybe ( Msg, Msg ) )
+hideColumn now column erd =
+    erd
+        |> Erd.mapCurrentLayoutTMWithTime now
+            (mapTablesLTM .id column.table (mapColumnsT (ErdColumnProps.removeWithIndex column.column))
+                >> Tuple.mapSecond (Maybe.map (\i -> ( ShowColumn i column, HideColumn column )))
+            )
 
 
-hoverNextColumn : TableId -> ColumnPath -> Model -> Model
-hoverNextColumn table column model =
+hoverNextColumn : ColumnRef -> Model -> Model
+hoverNextColumn column model =
     let
         nextColumn : Maybe ColumnPath
         nextColumn =
             model.erd
-                |> Maybe.andThen (Erd.currentLayout >> .tables >> List.findBy .id table)
-                |> Maybe.andThen (.columns >> ErdColumnProps.unpackAll >> List.dropUntil (\p -> p == column) >> List.drop 1 >> List.head)
+                |> Maybe.andThen (Erd.currentLayout >> .tables >> List.findBy .id column.table)
+                |> Maybe.andThen (.columns >> ErdColumnProps.unpackAll >> List.dropUntil (\p -> p == column.column) >> List.drop 1 >> List.head)
     in
-    model |> setHoverColumn (nextColumn |> Maybe.map (ColumnRef table))
+    model |> setHoverColumn (nextColumn |> Maybe.map (ColumnRef column.table))
 
 
 showColumns : Time.Posix -> TableId -> ShowColumns -> Erd -> ( Erd, Cmd msg )

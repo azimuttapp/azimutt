@@ -8,6 +8,7 @@ module Services.Lenses exposing
     , mapCollapseTableColumns
     , mapColumnBasicTypes
     , mapColumns
+    , mapColumnsT
     , mapContent
     , mapContextMenuM
     , mapDataExplorerCmd
@@ -90,6 +91,7 @@ module Services.Lenses exposing
     , mapTables
     , mapTablesCmd
     , mapTablesL
+    , mapTablesLTM
     , mapToasts
     , mapToastsCmd
     , mapTokenFormM
@@ -321,6 +323,11 @@ setColumns =
 mapColumns : (v -> v) -> { item | columns : v } -> { item | columns : v }
 mapColumns =
     map_ .columns setColumns
+
+
+mapColumnsT : (v -> ( v, a )) -> { item | columns : v } -> ( { item | columns : v }, a )
+mapColumnsT =
+    mapT_ .columns setColumns
 
 
 setColumnBasicTypes : v -> { item | columnBasicTypes : v } -> { item | columnBasicTypes : v }
@@ -1203,6 +1210,11 @@ mapTablesL =
     mapL_ .tables setTables
 
 
+mapTablesLTM : (v -> k) -> k -> (v -> ( v, Maybe a )) -> { item | tables : List v } -> ( { item | tables : List v }, Maybe a )
+mapTablesLTM =
+    mapLTM_ .tables setTables
+
+
 mapTablesCmd : (v -> ( v, Cmd msg )) -> { item | tables : v } -> ( { item | tables : v }, Cmd msg )
 mapTablesCmd =
     mapT_ .tables setTables
@@ -1429,6 +1441,21 @@ mapL_ get update getKey key transform item =
                 )
         )
         item
+
+
+mapLTM_ : (item -> List v) -> (List v -> item -> item) -> (v -> k) -> k -> (v -> ( v, Maybe a )) -> item -> ( item, Maybe a )
+mapLTM_ get update getKey key transform item =
+    item
+        |> get
+        |> List.map
+            (\v ->
+                if getKey v == key then
+                    transform v
+
+                else
+                    ( v, Nothing )
+            )
+        |> (\res -> ( update (res |> List.map Tuple.first) item, res |> List.filterMap Tuple.second |> List.head ))
 
 
 
