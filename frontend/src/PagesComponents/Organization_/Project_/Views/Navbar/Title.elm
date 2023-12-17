@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Views.Navbar.Title exposing (NavbarTitleArgs, argsToString, viewNavbarTitle)
+module PagesComponents.Organization_.Project_.Views.Navbar.Title exposing (LayoutFolder(..), NavbarTitleArgs, argsToString, buildFolders, viewNavbarTitle)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.Avatar as Avatar
@@ -8,7 +8,7 @@ import Components.Molecules.Tooltip as Tooltip
 import Conf
 import Dict exposing (Dict)
 import Gen.Route as Route
-import Html exposing (Html, br, button, div, small, span, text)
+import Html exposing (Html, br, button, div, small, span, text, ul)
 import Html.Attributes exposing (class, classList, disabled, id, tabindex, type_)
 import Html.Events exposing (onClick)
 import Html.Lazy as Lazy
@@ -176,26 +176,90 @@ viewLayouts platform currentLayout layouts htmlId openedDropdown =
             div [ class "min-w-max divide-y divide-gray-100" ]
                 [ div [ role "none", class "py-1" ]
                     [ ContextMenu.btnHotkey "" (NewLayout.Open Nothing |> NewLayoutMsg) [] [ text "Create new layout" ] platform (Conf.hotkeys |> Dict.getOrElse "create-layout" []) ]
-                , div [ role "none", class "py-1" ]
-                    (layouts
-                        |> Dict.toList
-                        |> List.sortBy (\( name, _ ) -> name |> String.toLower)
-                        |> List.map (\( name, layout ) -> viewLayoutItem (currentLayout == name) name layout)
-                    )
+
+                --, ul [ class "context-menu max-h-96 overflow-y-auto text-gray-700" ] -- FIXME: overflow-y-auto make nested menu not visible :/
+                , ul [ class "context-menu text-gray-700" ]
+                    (layouts |> buildFolders |> viewLayoutFolders currentLayout |> List.map ContextMenu.nestedItem)
                 ]
         )
 
 
-viewLayoutItem : Bool -> LayoutName -> ErdLayout -> Html Msg
-viewLayoutItem isCurrent name layout =
+type LayoutFolder
+    = LayoutItem String ( LayoutName, ErdLayout )
+    | LayoutFolder String (List LayoutFolder)
+
+
+buildFolders : Dict LayoutName ErdLayout -> List LayoutFolder
+buildFolders layouts =
+    layouts |> Dict.toList |> List.map (\( name, layout ) -> ( name |> String.split "/" |> List.map String.trim, name, layout )) |> buildFoldersNested
+
+
+buildFoldersNested : List ( List String, LayoutName, ErdLayout ) -> List LayoutFolder
+buildFoldersNested layouts =
+    layouts
+        |> List.groupBy (\( parts, _, _ ) -> parts |> List.head |> Maybe.withDefault "")
+        |> Dict.toList
+        |> List.sortBy (\( folder, _ ) -> folder |> String.toLower)
+        |> List.concatMap
+            (\( folder, items ) ->
+                case items of
+                    ( parts, name, layout ) :: [] ->
+                        [ LayoutItem (parts |> String.join "/") ( name, layout ) ]
+
+                    _ ->
+                        [ LayoutFolder folder (items |> List.filterMap (\( parts, name, layout ) -> parts |> List.tail |> Maybe.map (\p -> ( p, name, layout ))) |> buildFoldersNested) ]
+            )
+
+
+countLayouts : List LayoutFolder -> Int
+countLayouts folders =
+    folders
+        |> List.map
+            (\folder ->
+                case folder of
+                    LayoutItem _ _ ->
+                        1
+
+                    LayoutFolder _ items ->
+                        countLayouts items
+            )
+        |> List.sum
+
+
+viewLayoutFolders : LayoutName -> List LayoutFolder -> List (ContextMenu.Nested Msg)
+viewLayoutFolders currentLayout folders =
+    folders
+        |> List.map
+            (\folder ->
+                case folder of
+                    LayoutItem folderName ( layoutName, layout ) ->
+                        ContextMenu.SingleItem (viewLayoutItem (currentLayout == layoutName) folderName layoutName layout)
+
+                    LayoutFolder folderName items ->
+                        ContextMenu.NestedItem ContextMenu.BottomRight (viewLayoutFolder folderName (countLayouts items)) (items |> viewLayoutFolders currentLayout)
+            )
+
+
+viewLayoutItem : Bool -> String -> LayoutName -> ErdLayout -> Html Msg
+viewLayoutItem isCurrent folderName layoutName layout =
     span [ role "menuitem", tabindex -1, css [ "flex", B.cond isCurrent ContextMenu.itemCurrentStyles ContextMenu.itemStyles ] ]
-        [ button [ type_ "button", onClick (name |> confirmDeleteLayout layout), disabled isCurrent, css [ focus [ "outline-none" ], Tw.disabled [ "text-gray-400" ] ] ] [ Icon.solid Trash "inline-block" ] |> Tooltip.t (B.cond isCurrent "" "Delete this layout")
-        , button [ type_ "button", onClick (name |> Just |> NewLayout.Open |> NewLayoutMsg), css [ "ml-1", focus [ "outline-none" ] ] ] [ Icon.solid DocumentDuplicate "inline-block" ] |> Tooltip.t "Duplicate this layout"
-        , button [ type_ "button", onClick (name |> LLoad |> LayoutMsg), css [ "flex-grow text-left ml-3", focus [ "outline-none" ] ] ]
-            [ text name
+        [ button [ type_ "button", onClick (layoutName |> confirmDeleteLayout layout), disabled isCurrent, css [ focus [ "outline-none" ], Tw.disabled [ "text-gray-400" ] ] ] [ Icon.solid Trash "inline-block" ] |> Tooltip.r (B.cond isCurrent "" "Delete this layout")
+        , button [ type_ "button", onClick (layoutName |> Just |> NewLayout.Open |> NewLayoutMsg), css [ "ml-1", focus [ "outline-none" ] ] ] [ Icon.solid DocumentDuplicate "inline-block" ] |> Tooltip.r "Duplicate this layout"
+        , button [ type_ "button", onClick (layoutName |> LLoad |> LayoutMsg), css [ "flex-grow text-left ml-3", focus [ "outline-none" ] ] ]
+            [ text folderName
             , text " "
             , small [] [ text ("(" ++ ((List.length layout.tables + List.length layout.tableRows + List.length layout.memos) |> String.pluralize "item") ++ ")") ]
             ]
+        ]
+
+
+viewLayoutFolder : String -> Int -> Html msg
+viewLayoutFolder folderName count =
+    span [ role "menuitem", tabindex -1, css [ "flex", ContextMenu.itemStyles ] ]
+        [ button [ type_ "button", disabled True, css [ focus [ "outline-none" ], Tw.disabled [ "text-gray-400" ] ] ] [ Icon.solid Empty "inline-block" ]
+        , button [ type_ "button", css [ "ml-1", focus [ "outline-none" ] ] ] [ Icon.solid Empty "inline-block" ]
+        , button [ type_ "button", css [ "flex-grow text-left ml-3", focus [ "outline-none" ] ] ]
+            [ text folderName, text " ", small [] [ text ("(" ++ (count |> String.pluralize "layout") ++ ")") ] ]
         ]
 
 

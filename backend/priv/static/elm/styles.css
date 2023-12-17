@@ -45,6 +45,14 @@ input[type="search"]::-webkit-search-results-decoration {
     margin-top: -64px;
 }
 
+/* context-menu, from https://tailwindcomponents.com/component/nestable-dropdown-menu */
+
+.context-menu li > ul                                  { transform: translatex(100%) scale(0) }
+.context-menu li:hover > ul                            { transform: translatex(101%) scale(1) }
+.context-menu li > span svg.context-menu-chevron       { transform: rotate(-90deg) }
+.context-menu li:hover > span svg.context-menu-chevron { transform: rotate(-270deg) }
+
+
 /* animations */
 
 /* from https://codepen.io/chrislang/pen/pvPpQb */
