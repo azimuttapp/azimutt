@@ -2,6 +2,7 @@ module PagesComponents.Organization_.Project_.Views.Modals.ErdContextMenu exposi
 
 import Components.Molecules.ContextMenu as ContextMenu
 import Components.Slices.DataExplorer as DataExplorer
+import Components.Slices.NewLayoutBody as NewLayoutBody
 import Conf
 import Html exposing (Html, div, text)
 import Html.Attributes exposing (class)
@@ -28,7 +29,7 @@ view platform erdElem canvasProps layout event =
         [ ContextMenu.btnHotkey "" (Focus Conf.ids.searchInput) [] [ text "Add more tables" ] platform (Conf.hotkeys |> Dict.getOrElse "search-open" [])
         , ContextMenu.btn "" (AmlSidebarMsg AToggle) [] [ text "Update your schema" ]
         , ContextMenu.btnHotkey "" (DataExplorerMsg (DataExplorer.Open Nothing Nothing)) [] [ text "Explore your database content" ] platform []
-        , ContextMenu.btnHotkey "" (NewLayoutMsg (NewLayout.Open Nothing)) [] [ text "New layout" ] platform (Conf.hotkeys |> Dict.getOrElse "create-layout" [])
+        , ContextMenu.btnHotkey "" (NewLayoutMsg (NewLayout.Open NewLayoutBody.Create)) [] [ text "New layout" ] platform (Conf.hotkeys |> Dict.getOrElse "create-layout" [])
         , ContextMenu.btnHotkey "" (event |> CanvasProps.eventCanvas erdElem canvasProps |> MCreate |> MemoMsg) [] [ text "New memo" ] platform (Conf.hotkeys |> Dict.getOrElse "new-memo" [])
         , selectedTables |> List.head |> Maybe.mapOrElse (\_ -> ContextMenu.btnHotkey "" (GCreate selectedTables |> GroupMsg) [] [ text "New group" ] platform (Conf.hotkeys |> Dict.getOrElse "create-group" [])) (div [] [])
         , ContextMenu.btnHotkey "" SelectAll [] [ text "Select all" ] platform (Conf.hotkeys |> Dict.getOrElse "select-all" [])

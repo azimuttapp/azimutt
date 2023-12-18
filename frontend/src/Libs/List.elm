@@ -173,14 +173,19 @@ indexedFindInner i predicate list =
                 indexedFindInner (i + 1) predicate rest
 
 
-findBy : (a -> b) -> b -> List a -> Maybe a
-findBy matcher value list =
-    find (\a -> matcher a == value) list
-
-
 findIndexBy : (a -> b) -> b -> List a -> Maybe Int
 findIndexBy matcher value list =
     findIndex (\a -> matcher a == value) list
+
+
+indexOf : a -> List a -> Maybe Int
+indexOf item xs =
+    xs |> findIndex (\a -> a == item)
+
+
+findBy : (a -> b) -> b -> List a -> Maybe a
+findBy matcher value list =
+    find (\a -> matcher a == value) list
 
 
 filterBy : (a -> b) -> b -> List a -> List a
@@ -231,11 +236,6 @@ memberBy matcher value list =
 memberWith : (a -> Bool) -> List a -> Bool
 memberWith matcher list =
     find matcher list |> Maybe.isJust
-
-
-indexOf : a -> List a -> Maybe Int
-indexOf item xs =
-    xs |> List.indexedMap (\i a -> ( i, a )) |> find (\( _, a ) -> a == item) |> Maybe.map Tuple.first
 
 
 indexedConcatMap : (Int -> a -> List b) -> List a -> List b

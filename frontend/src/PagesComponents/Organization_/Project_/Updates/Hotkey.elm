@@ -3,6 +3,7 @@ module PagesComponents.Organization_.Project_.Updates.Hotkey exposing (handleHot
 import Components.Organisms.TableRow as TableRow
 import Components.Slices.DataExplorer as DataExplorer
 import Components.Slices.DataExplorerQuery as DataExplorerQuery
+import Components.Slices.NewLayoutBody as NewLayoutBody
 import Conf
 import Libs.Bool as Bool
 import Libs.List as List
@@ -107,7 +108,7 @@ handleHotkey _ model hotkey =
             ( model, T.send SelectAll )
 
         "create-layout" ->
-            ( model, Nothing |> NewLayout.Open |> NewLayoutMsg |> T.send )
+            ( model, NewLayoutBody.Create |> NewLayout.Open |> NewLayoutMsg |> T.send )
 
         "create-virtual-relation" ->
             ( model, T.send (VirtualRelationMsg (model.virtualRelation |> Maybe.mapOrElse (\_ -> VRCancel) (VRCreate (model |> currentColumn)))) )

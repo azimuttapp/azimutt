@@ -1,6 +1,7 @@
 module PagesComponents.Organization_.Project_.Updates.Layout exposing (Model, handleLayout)
 
 import Dict
+import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Task as T
 import Models.Project.LayoutName exposing (LayoutName)
@@ -43,11 +44,26 @@ loadLayout name erd =
 
 deleteLayout : LayoutName -> Erd -> ( Erd, Cmd Msg )
 deleteLayout name erd =
-    if name == erd.currentLayout then
-        ( erd, "Can't delete current layout (" ++ name ++ ")" |> Toasts.warning |> Toast |> T.send )
+    (erd.layouts |> Dict.get name)
+        |> Maybe.map
+            (\layout ->
+                if name == erd.currentLayout then
+                    let
+                        names : List LayoutName
+                        names =
+                            erd.layouts |> Dict.keys |> List.sortBy String.toLower
 
-    else
-        erd.layouts
-            |> Dict.get name
-            |> Maybe.map (\layout -> ( erd |> mapLayouts (Dict.remove name), Track.layoutDeleted erd.project layout ))
-            |> Maybe.withDefault ( erd, "Can't find layout '" ++ name ++ "' to delete" |> Toasts.warning |> Toast |> T.send )
+                        next : Maybe LayoutName
+                        next =
+                            (names |> List.indexOf name)
+                                |> Maybe.andThen (\i -> names |> List.get (i + 1) |> Maybe.orElse (names |> List.get (i - 1)))
+                                |> Maybe.orElse (names |> List.filter (\n -> n /= name) |> List.head)
+                    in
+                    next
+                        |> Maybe.map (\nextLayout -> ( erd |> mapLayouts (Dict.remove name) |> setCurrentLayout nextLayout, Track.layoutDeleted erd.project layout ))
+                        |> Maybe.withDefault ( erd, "Can't delete last layout" |> Toasts.warning |> Toast |> T.send )
+
+                else
+                    ( erd |> mapLayouts (Dict.remove name), Track.layoutDeleted erd.project layout )
+            )
+        |> Maybe.withDefault ( erd, "Can't find layout '" ++ name ++ "' to delete" |> Toasts.warning |> Toast |> T.send )

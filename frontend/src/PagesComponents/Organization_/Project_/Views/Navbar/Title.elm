@@ -5,11 +5,12 @@ import Components.Molecules.Avatar as Avatar
 import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
 import Components.Molecules.Dropdown as Dropdown
 import Components.Molecules.Tooltip as Tooltip
+import Components.Slices.NewLayoutBody as NewLayoutBody
 import Conf
 import Dict exposing (Dict)
 import Gen.Route as Route
-import Html exposing (Html, br, button, div, small, span, text, ul)
-import Html.Attributes exposing (class, classList, disabled, id, tabindex, type_)
+import Html exposing (Html, button, div, small, span, text, ul)
+import Html.Attributes exposing (class, classList, disabled, id, tabindex, title, type_)
 import Html.Events exposing (onClick)
 import Html.Lazy as Lazy
 import Libs.Bool as B
@@ -173,13 +174,19 @@ viewLayouts platform currentLayout layouts htmlId openedDropdown =
                 ]
         )
         (\_ ->
-            div [ class "min-w-max divide-y divide-gray-100" ]
+            div [ class "min-w-max divide-y divide-gray-100 text-gray-700" ]
                 [ div [ role "none", class "py-1" ]
-                    [ ContextMenu.btnHotkey "" (NewLayout.Open Nothing |> NewLayoutMsg) [] [ text "Create new layout" ] platform (Conf.hotkeys |> Dict.getOrElse "create-layout" []) ]
+                    [ ContextMenu.btnHotkey "" (NewLayoutBody.Create |> NewLayout.Open |> NewLayoutMsg) [] [ text "Create new layout" ] platform (Conf.hotkeys |> Dict.getOrElse "create-layout" [])
+                    , div [ class "flex justify-between" ]
+                        [ ContextMenu.btn "grow text-center" (NewLayoutBody.Rename currentLayout |> NewLayout.Open |> NewLayoutMsg) [ title "Rename this layout" ] [ Icon.solid PencilAlt "inline-block" ]
+                        , ContextMenu.btn "grow text-center" (NewLayoutBody.Duplicate currentLayout |> NewLayout.Open |> NewLayoutMsg) [ title "Duplicate this layout" ] [ Icon.solid DocumentDuplicate "inline-block" ]
+                        , ContextMenu.btn "grow text-center" (currentLayout |> confirmDeleteLayout) [ title "Delete this layout" ] [ Icon.solid Trash "inline-block" ]
+                        ]
+                    ]
 
-                --, ul [ class "context-menu max-h-96 overflow-y-auto text-gray-700" ] -- FIXME: overflow-y-auto make nested menu not visible :/
-                , ul [ class "context-menu text-gray-700" ]
-                    (layouts |> buildFolders |> viewLayoutFolders currentLayout |> List.map ContextMenu.nestedItem)
+                --, ul [ class "context-menu max-h-96 overflow-y-auto" ] -- FIXME: overflow-y-auto make nested menu not visible :/
+                , ul [ class "context-menu py-1" ]
+                    (layouts |> buildFolders |> viewLayoutFolders currentLayout "" |> List.map ContextMenu.nestedItem)
                 ]
         )
 
@@ -226,8 +233,8 @@ countLayouts folders =
         |> List.sum
 
 
-viewLayoutFolders : LayoutName -> List LayoutFolder -> List (ContextMenu.Nested Msg)
-viewLayoutFolders currentLayout folders =
+viewLayoutFolders : LayoutName -> String -> List LayoutFolder -> List (ContextMenu.Nested Msg)
+viewLayoutFolders currentLayout folderPrefix folders =
     folders
         |> List.map
             (\folder ->
@@ -236,47 +243,34 @@ viewLayoutFolders currentLayout folders =
                         ContextMenu.SingleItem (viewLayoutItem (currentLayout == layoutName) folderName layoutName layout)
 
                     LayoutFolder folderName items ->
-                        ContextMenu.NestedItem ContextMenu.BottomRight (viewLayoutFolder folderName (countLayouts items)) (items |> viewLayoutFolders currentLayout)
+                        let
+                            prefix : String
+                            prefix =
+                                folderPrefix ++ folderName ++ "/"
+                        in
+                        ContextMenu.NestedItem ContextMenu.BottomRight (viewLayoutFolder (currentLayout |> String.startsWith prefix) folderName (countLayouts items)) (items |> viewLayoutFolders currentLayout prefix)
             )
 
 
 viewLayoutItem : Bool -> String -> LayoutName -> ErdLayout -> Html Msg
 viewLayoutItem isCurrent folderName layoutName layout =
-    span [ role "menuitem", tabindex -1, css [ "flex", B.cond isCurrent ContextMenu.itemCurrentStyles ContextMenu.itemStyles ] ]
-        [ button [ type_ "button", onClick (layoutName |> confirmDeleteLayout layout), disabled isCurrent, css [ focus [ "outline-none" ], Tw.disabled [ "text-gray-400" ] ] ] [ Icon.solid Trash "inline-block" ] |> Tooltip.r (B.cond isCurrent "" "Delete this layout")
-        , button [ type_ "button", onClick (layoutName |> Just |> NewLayout.Open |> NewLayoutMsg), css [ "ml-1", focus [ "outline-none" ] ] ] [ Icon.solid DocumentDuplicate "inline-block" ] |> Tooltip.r "Duplicate this layout"
-        , button [ type_ "button", onClick (layoutName |> LLoad |> LayoutMsg), css [ "flex-grow text-left ml-3", focus [ "outline-none" ] ] ]
-            [ text folderName
-            , text " "
-            , small [] [ text ("(" ++ ((List.length layout.tables + List.length layout.tableRows + List.length layout.memos) |> String.pluralize "item") ++ ")") ]
-            ]
-        ]
+    button [ type_ "button", onClick (layoutName |> LLoad |> LayoutMsg), role "menuitem", tabindex -1, css [ "w-full text-left", B.cond isCurrent ContextMenu.itemCurrentStyles ContextMenu.itemStyles, focus [ "outline-none" ] ] ]
+        [ text folderName, text " ", small [] [ text ("(" ++ ((List.length layout.tables + List.length layout.tableRows + List.length layout.memos) |> String.pluralize "item") ++ ")") ] ]
 
 
-viewLayoutFolder : String -> Int -> Html msg
-viewLayoutFolder folderName count =
-    span [ role "menuitem", tabindex -1, css [ "flex", ContextMenu.itemStyles ] ]
-        [ button [ type_ "button", disabled True, css [ focus [ "outline-none" ], Tw.disabled [ "text-gray-400" ] ] ] [ Icon.solid Empty "inline-block" ]
-        , button [ type_ "button", css [ "ml-1", focus [ "outline-none" ] ] ] [ Icon.solid Empty "inline-block" ]
-        , button [ type_ "button", css [ "flex-grow text-left ml-3", focus [ "outline-none" ] ] ]
-            [ text folderName, text " ", small [] [ text ("(" ++ (count |> String.pluralize "layout") ++ ")") ] ]
-        ]
+viewLayoutFolder : Bool -> String -> Int -> Html msg
+viewLayoutFolder isCurrent folderName count =
+    button [ type_ "button", role "menuitem", tabindex -1, css [ "w-full text-left", B.cond isCurrent ContextMenu.itemCurrentStyles ContextMenu.itemStyles, focus [ "outline-none" ] ] ]
+        [ text folderName, text " ", small [] [ text ("(" ++ (count |> String.pluralize "layout") ++ ")") ] ]
 
 
-confirmDeleteLayout : ErdLayout -> LayoutName -> Msg
-confirmDeleteLayout layout name =
+confirmDeleteLayout : LayoutName -> Msg
+confirmDeleteLayout name =
     ConfirmOpen
         { color = Tw.red
         , icon = Trash
         , title = "Delete layout"
-        , message =
-            span []
-                [ text "Are you sure you want to delete "
-                , bText name
-                , text " layout?"
-                , br [] []
-                , text ("It contains " ++ (layout.tables |> String.pluralizeL "table") ++ ".")
-                ]
+        , message = span [] [ text "Are you sure you want to delete ", bText name, text " layout?" ]
         , confirm = "Delete " ++ name ++ " layout"
         , cancel = "Cancel"
         , onConfirm = T.send (name |> LDelete |> LayoutMsg)
