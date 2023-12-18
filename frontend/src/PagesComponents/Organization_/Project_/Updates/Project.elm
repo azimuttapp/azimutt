@@ -43,18 +43,14 @@ triggerSaveProject urlInfos organizations model =
 createProject : ProjectName -> Organization -> ProjectStorage -> Model -> ( Model, Cmd Msg )
 createProject name organization storage model =
     if model.conf.save then
-        ( model
-        , Cmd.batch
-            ((model.erd |> Maybe.map Erd.unpack)
-                |> Maybe.mapOrElse
-                    (\p ->
-                        p.organization
-                            |> Maybe.map (\_ -> [ "Project already created" |> Toasts.warning |> Toast |> T.send ])
-                            |> Maybe.withDefault [ Ports.createProject organization.id storage { p | name = name } ]
-                    )
-                    [ "No project to save" |> Toasts.warning |> Toast |> T.send ]
-            )
-        )
+        (model.erd |> Maybe.map Erd.unpack)
+            |> Maybe.mapOrElse
+                (\p ->
+                    p.organization
+                        |> Maybe.map (\_ -> ( model, "Project already created" |> Toasts.warning |> Toast |> T.send ))
+                        |> Maybe.withDefault ( { model | saving = True }, Ports.createProject organization.id storage { p | name = name } )
+                )
+                ( model, "No project to save" |> Toasts.warning |> Toast |> T.send )
 
     else
         ( model, Cmd.none )
@@ -63,18 +59,14 @@ createProject name organization storage model =
 updateProject : Model -> ( Model, Cmd Msg )
 updateProject model =
     if model.conf.save then
-        ( model
-        , Cmd.batch
-            ((model.erd |> Maybe.map Erd.unpack)
-                |> Maybe.mapOrElse
-                    (\p ->
-                        p.organization
-                            |> Maybe.map (\_ -> [ Ports.updateProject p ])
-                            |> Maybe.withDefault [ "Project doesn't exist" |> Toasts.warning |> Toast |> T.send ]
-                    )
-                    [ "No project to save" |> Toasts.warning |> Toast |> T.send ]
-            )
-        )
+        (model.erd |> Maybe.map Erd.unpack)
+            |> Maybe.mapOrElse
+                (\p ->
+                    p.organization
+                        |> Maybe.map (\_ -> ( { model | saving = True }, Ports.updateProject p ))
+                        |> Maybe.withDefault ( model, "Project doesn't exist" |> Toasts.warning |> Toast |> T.send )
+                )
+                ( model, "No project to save" |> Toasts.warning |> Toast |> T.send )
 
     else
         ( model, Cmd.none )

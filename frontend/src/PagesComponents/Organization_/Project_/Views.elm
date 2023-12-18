@@ -11,6 +11,7 @@ import Html.Events exposing (onClick)
 import Html.Keyed as Keyed
 import Html.Lazy as Lazy
 import Libs.Bool as B
+import Libs.Html as Html
 import Libs.Html.Attributes exposing (ariaHidden, css)
 import Libs.List as List
 import Libs.Maybe as Maybe
@@ -77,6 +78,12 @@ viewProject onDelete currentUrl urlInfos shared model =
     , Lazy.lazy5 viewModal currentUrl urlInfos shared model onDelete
     , Lazy.lazy2 Toasts.view Toast model.toasts
     , Lazy.lazy viewContextMenu model.contextMenu
+    , if model.saving then
+        div [ class "absolute inset-0 flex z-max bg-white opacity-10 animate-pulse" ]
+            [ h1 [ class "m-auto select-none animate-text bg-gradient-to-r from-teal-500 via-purple-500 to-orange-500 bg-clip-text text-transparent text-5xl font-black" ] [ text "Saving" ] ]
+
+      else
+        Html.none
     ]
 
 

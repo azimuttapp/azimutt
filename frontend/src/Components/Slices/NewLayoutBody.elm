@@ -1,4 +1,4 @@
-module Components.Slices.NewLayoutBody exposing (DocState, Model, Msg, SharedDocState, doc, docInit, init, update, view)
+module Components.Slices.NewLayoutBody exposing (DocState, Mode(..), Model, Msg, SharedDocState, doc, docInit, init, update, view)
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
@@ -23,17 +23,23 @@ import Models.ProjectRef as ProjectRef exposing (ProjectRef)
 type alias Model =
     { id : HtmlId
     , name : LayoutName
-    , from : Maybe LayoutName
+    , mode : Mode
     }
+
+
+type Mode
+    = Create
+    | Duplicate LayoutName
+    | Rename LayoutName
 
 
 type Msg
     = UpdateLayoutName LayoutName
 
 
-init : HtmlId -> Maybe LayoutName -> Model
-init id from =
-    { id = id, name = "", from = from }
+init : HtmlId -> Mode -> Model
+init id mode =
+    { id = id, name = mode |> foldMode "" identity identity, mode = mode }
 
 
 update : Msg -> Model -> ( Model, Cmd msg )
@@ -44,7 +50,7 @@ update msg model =
 
 
 view : (Msg -> msg) -> (LayoutName -> msg) -> msg -> HtmlId -> List LayoutName -> ProjectRef -> Model -> Html msg
-view wrap onCreate onCancel titleId layouts project model =
+view wrap onSubmit onCancel titleId layouts project model =
     let
         inputId : HtmlId
         inputId =
@@ -61,7 +67,7 @@ view wrap onCreate onCancel titleId layouts project model =
                 ]
             , div [ css [ "mt-3 text-center", sm [ "mt-0 ml-4 text-left" ] ] ]
                 [ h3 [ id titleId, class "text-lg leading-6 font-medium text-gray-900" ]
-                    [ text (model.from |> Maybe.mapOrElse (\f -> "Duplicate layout '" ++ f ++ "'") "New empty layout") ]
+                    [ text (model.mode |> foldMode "New empty layout" (\name -> "Duplicate layout '" ++ name ++ "'") (\name -> "Rename layout '" ++ name ++ "'")) ]
                 , if project.organization.plan.layouts |> Maybe.any (\l -> List.length layouts >= l) then
                     div [ class "mt-2" ] [ ProPlan.layoutsWarning project ]
 
@@ -69,9 +75,9 @@ view wrap onCreate onCancel titleId layouts project model =
                     div [] []
                 , div [ class "mt-2" ]
                     [ div [ class "mt-1" ]
-                        [ input [ type_ "text", name inputId, id inputId, placeholder "Layout name", value model.name, onInput (UpdateLayoutName >> wrap), autofocus True, css [ "shadow-sm block w-full border-gray-300 rounded-md", focus [ "ring-indigo-500 border-indigo-500" ], sm [ "text-sm" ] ] ] []
+                        [ input [ type_ "text", name inputId, id inputId, placeholder "Layout name (use / to create folders)", value model.name, onInput (UpdateLayoutName >> wrap), autofocus True, css [ "shadow-sm block w-full border-gray-300 rounded-md", focus [ "ring-indigo-500 border-indigo-500" ], sm [ "text-sm" ] ] ] []
                         ]
-                    , if alreadyExists then
+                    , if alreadyExists && model.mode /= Duplicate model.name && model.mode /= Rename model.name then
                         p [ class "mt-2 text-sm text-red-600" ] [ text ("Layout '" ++ model.name ++ "' already exists 😥") ]
 
                       else
@@ -87,10 +93,25 @@ view wrap onCreate onCancel titleId layouts project model =
                 ]
             ]
         , div [ class "px-6 py-3 mt-6 flex items-center flex-row-reverse bg-gray-50 rounded-b-lg" ]
-            [ Button.primary3 Tw.primary [ onClick (model.name |> onCreate), disabled alreadyExists, css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ text (model.from |> Maybe.mapOrElse (\f -> "Duplicate '" ++ f ++ "'") "Create layout") ]
+            [ Button.primary3 Tw.primary
+                [ onClick (model.name |> onSubmit), disabled alreadyExists, css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ]
+                [ text (model.mode |> foldMode "Create layout" (\name -> "Duplicate '" ++ name ++ "'") (\name -> "Rename '" ++ name ++ "'")) ]
             , Button.white3 Tw.gray [ onClick onCancel, css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text "Cancel" ]
             ]
         ]
+
+
+foldMode : a -> (LayoutName -> a) -> (LayoutName -> a) -> Mode -> a
+foldMode onCreate onDuplicate onRename mode =
+    case mode of
+        Create ->
+            onCreate
+
+        Duplicate name ->
+            onDuplicate name
+
+        Rename name ->
+            onRename name
 
 
 
@@ -107,7 +128,7 @@ type alias DocState =
 
 docInit : DocState
 docInit =
-    { id = "modal-id", name = "", from = Nothing }
+    { id = "modal-id", name = "", mode = Create }
 
 
 updateDocState : Msg -> ElmBook.Msg (SharedDocState x)
@@ -130,14 +151,19 @@ sampleTitleId =
     "modal-id-title"
 
 
+sampleLayout : LayoutName
+sampleLayout =
+    "layout"
+
+
 sampleLayouts1 : List LayoutName
 sampleLayouts1 =
-    [ "layout" ]
+    [ sampleLayout ]
 
 
 sampleLayouts3 : List LayoutName
 sampleLayouts3 =
-    [ "layout", "initial layout", "exists" ]
+    [ sampleLayout, "initial layout", "exists" ]
 
 
 component : String -> (DocState -> Html msg) -> ( String, SharedDocState x -> Html msg )
@@ -150,7 +176,8 @@ doc =
     Chapter.chapter "NewLayoutBody"
         |> Chapter.renderStatefulComponentList
             [ component "create" (\m -> view updateDocState sampleOnCreate sampleOnCancel sampleTitleId sampleLayouts1 ProjectRef.zero m)
-            , component "duplicate" (\m -> view updateDocState sampleOnCreate sampleOnCancel sampleTitleId sampleLayouts1 ProjectRef.zero { m | from = sampleLayouts1 |> List.head })
+            , component "duplicate" (\m -> view updateDocState sampleOnCreate sampleOnCancel sampleTitleId sampleLayouts1 ProjectRef.zero { m | mode = Duplicate sampleLayout })
+            , component "rename" (\m -> view updateDocState sampleOnCreate sampleOnCancel sampleTitleId sampleLayouts1 ProjectRef.zero { m | mode = Rename sampleLayout })
             , component "create limit" (\m -> view updateDocState sampleOnCreate sampleOnCancel sampleTitleId sampleLayouts3 ProjectRef.zero m)
-            , component "duplicate limit" (\m -> view updateDocState sampleOnCreate sampleOnCancel sampleTitleId sampleLayouts3 ProjectRef.zero { m | from = sampleLayouts3 |> List.head })
+            , component "duplicate limit" (\m -> view updateDocState sampleOnCreate sampleOnCancel sampleTitleId sampleLayouts3 ProjectRef.zero { m | mode = Duplicate sampleLayout })
             ]
