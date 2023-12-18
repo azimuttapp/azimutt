@@ -74,6 +74,7 @@ type alias Model =
     , erdElem : ErdProps
     , loaded : Bool
     , dirty : Bool
+    , saving : Bool
     , erd : Maybe Erd
     , tableStats : Dict TableId (Dict SourceIdStr (Result String TableStats))
     , columnStats : Dict ColumnId (Dict SourceIdStr (Result String ColumnStats))
@@ -125,6 +126,7 @@ emptyModel =
     , erdElem = ErdProps.zero
     , loaded = False
     , dirty = False
+    , saving = False
     , erd = Nothing
     , tableStats = Dict.empty
     , columnStats = Dict.empty

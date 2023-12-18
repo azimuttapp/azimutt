@@ -101,7 +101,14 @@ viewNavbar gConf maybeUser eConf virtualRelation erd projects model args =
                 , navbarMobileButton model.mobileMenuOpen
                 , div [ css [ "hidden", lg [ "block ml-4" ] ] ]
                     [ div [ class "flex items-center print:hidden" ]
-                        [ viewNavbarFeatures gConf.platform features (htmlId ++ "-features") (openedDropdown |> String.filterStartsWith (htmlId ++ "-features"))
+                        [ if eConf.save && dirty then
+                            button [ type_ "button", onClick TriggerSaveProject, class "mr-3 px-2 py-1 text-xs font-semibold text-primary-200 rounded shadow-sm ring-1 ring-inset ring-primary-200 hover:text-white hover:ring-white hover:animate-pulse" ]
+                                [ text "Save" ]
+                                |> Tooltip.bl "Your project is not automatically saved, don't forget to save it!"
+
+                          else
+                            Html.none
+                        , viewNavbarFeatures gConf.platform features (htmlId ++ "-features") (openedDropdown |> String.filterStartsWith (htmlId ++ "-features"))
                         , B.cond eConf.sharing viewNavbarShare Html.none
                         , viewNavbarSettings
                         , Helpers.viewProfileIcon currentUrl maybeUser (htmlId ++ "-profile") openedDropdown DropdownToggle

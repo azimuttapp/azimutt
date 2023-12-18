@@ -481,13 +481,13 @@ handleJsMessage now urlLayout msg model =
         GotProject context res ->
             case res of
                 Nothing ->
-                    ( { model | loaded = True }, Cmd.none )
+                    ( { model | loaded = True, saving = False }, Cmd.none )
 
                 Just (Err err) ->
-                    ( { model | loaded = True }, Cmd.batch [ "Unable to read project: " ++ Decode.errorToHtml err |> Toasts.error |> Toast |> T.send, Track.jsonError "decode-project" err ] )
+                    ( { model | loaded = True, saving = False }, Cmd.batch [ "Unable to read project: " ++ Decode.errorToHtml err |> Toasts.error |> Toast |> T.send, Track.jsonError "decode-project" err ] )
 
                 Just (Ok project) ->
-                    model |> updateErd urlLayout context project
+                    { model | saving = False } |> updateErd urlLayout context project
 
         ProjectDeleted _ ->
             -- handled in Shared
@@ -550,7 +550,11 @@ handleJsMessage now urlLayout msg model =
                 ( model, Err error |> PrismaSource.GotSchema |> EmbedSourceParsingDialog.EmbedPrismaSource |> EmbedSourceParsingMsg |> T.send )
 
         GotHotkey hotkey ->
-            handleHotkey now model hotkey
+            if model.saving then
+                ( model, Cmd.none )
+
+            else
+                handleHotkey now model hotkey
 
         GotKeyHold key start ->
             if key == "Space" && model.conf.move then

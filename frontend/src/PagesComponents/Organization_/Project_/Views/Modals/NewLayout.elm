@@ -41,9 +41,9 @@ type alias Model =
 
 
 type Msg
-    = Open (Maybe LayoutName)
+    = Open NewLayoutBody.Mode
     | BodyMsg NewLayoutBody.Msg
-    | Create (Maybe LayoutName) LayoutName
+    | Submit NewLayoutBody.Mode LayoutName
     | Cancel
 
 
@@ -65,24 +65,41 @@ update modalOpen toast customModalOpen now urlInfos msg model =
         BodyMsg m ->
             model |> mapNewLayoutMCmd (NewLayoutBody.update m)
 
-        Create from name ->
-            model |> setNewLayout Nothing |> mapErdMCmd (createLayout toast from name now) |> setDirtyCmd
+        Submit mode name ->
+            model |> setNewLayout Nothing |> mapErdMCmd (updateLayouts toast mode name now) |> setDirtyCmd
 
         Cancel ->
             ( model |> setNewLayout Nothing, Cmd.none )
 
 
+updateLayouts : (Toasts.Msg -> msg) -> NewLayoutBody.Mode -> LayoutName -> Time.Posix -> Erd -> ( Erd, Cmd msg )
+updateLayouts toast mode name now erd =
+    case mode of
+        NewLayoutBody.Create ->
+            createLayout toast Nothing name now erd
+
+        NewLayoutBody.Duplicate from ->
+            createLayout toast (Just from) name now erd
+
+        NewLayoutBody.Rename from ->
+            renameLayout toast from name erd
+
+
 createLayout : (Toasts.Msg -> msg) -> Maybe LayoutName -> LayoutName -> Time.Posix -> Erd -> ( Erd, Cmd msg )
 createLayout toast from name now erd =
-    erd.layouts
-        |> Dict.get name
+    (erd.layouts |> Dict.get name)
         |> Maybe.mapOrElse
             (\_ -> ( erd, "Layout " ++ name ++ " already exists" |> Toasts.error |> toast |> T.send ))
-            (from
-                |> Maybe.andThen (\f -> erd.layouts |> Dict.get f)
-                |> Maybe.withDefault (ErdLayout.empty now)
-                |> (\layout -> ( erd |> setCurrentLayout name |> mapLayouts (Dict.insert name layout), Track.layoutCreated erd.project layout ))
+            ((from |> Maybe.andThen (\f -> erd.layouts |> Dict.get f) |> Maybe.withDefault (ErdLayout.empty now))
+                |> (\layout -> ( erd |> mapLayouts (Dict.insert name layout) |> setCurrentLayout name, Track.layoutCreated erd.project layout ))
             )
+
+
+renameLayout : (Toasts.Msg -> msg) -> LayoutName -> LayoutName -> Erd -> ( Erd, Cmd msg )
+renameLayout toast from name erd =
+    (erd.layouts |> Dict.get from)
+        |> Maybe.map (\l -> ( erd |> mapLayouts (Dict.remove from >> Dict.insert name l) |> setCurrentLayout name, Track.layoutRenamed erd.project l ))
+        |> Maybe.withDefault ( erd, "Layout " ++ from ++ " does not exist" |> Toasts.error |> toast |> T.send )
 
 
 view : (Msg -> msg) -> (msg -> msg) -> ProjectRef -> List LayoutName -> Bool -> Model -> Html msg
@@ -98,5 +115,5 @@ view wrap modalClose projectRef layouts opened model =
         , isOpen = opened
         , onBackgroundClick = Cancel |> wrap |> modalClose
         }
-        [ NewLayoutBody.view (BodyMsg >> wrap) (Create model.from >> wrap >> modalClose) (Cancel |> wrap |> modalClose) titleId layouts projectRef model
+        [ NewLayoutBody.view (BodyMsg >> wrap) (Submit model.mode >> wrap >> modalClose) (Cancel |> wrap |> modalClose) titleId layouts projectRef model
         ]
