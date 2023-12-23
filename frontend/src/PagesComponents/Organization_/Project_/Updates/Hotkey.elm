@@ -241,7 +241,8 @@ getColumnRow model ( id, col ) =
 cancelElement : Model -> Cmd Msg
 cancelElement model =
     -- FIXME: keep a list of cancel actions so they can be canceled in order, but they need to be removed when not cancelable anymore :/
-    (model.contextMenu |> Maybe.map (\_ -> ContextMenuClose))
+    (model.dragging |> Maybe.map (\d -> DragEnd True d.init))
+        |> Maybe.orElse (model.contextMenu |> Maybe.map (\_ -> ContextMenuClose))
         |> Maybe.orElse (model.confirm |> Maybe.map (\c -> ModalClose (ConfirmAnswer False c.content.onConfirm)))
         |> Maybe.orElse (model.prompt |> Maybe.map (\_ -> ModalClose (PromptAnswer Cmd.none)))
         |> Maybe.orElse (model.modal |> Maybe.map (\_ -> ModalClose CustomModalClose))

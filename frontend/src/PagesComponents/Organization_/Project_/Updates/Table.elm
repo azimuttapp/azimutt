@@ -7,7 +7,6 @@ import Libs.Dict as Dict
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.Delta exposing (Delta)
-import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Ned as Ned
 import Libs.Nel as Nel exposing (Nel)
 import Libs.Task as T
@@ -22,23 +21,21 @@ import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.Relation as Relation
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.TableId as TableId exposing (TableId)
-import Models.Project.TableRow as TableRow
 import Models.Size as Size
 import PagesComponents.Organization_.Project_.Models exposing (Model, Msg(..), buildHistory)
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn, ErdNestedColumns(..))
 import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps exposing (ErdColumnProps, ErdColumnPropsFlat, ErdColumnPropsNested(..))
-import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
+import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.ErdRelation as ErdRelation
 import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout as ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.ErdTableProps exposing (ErdTableProps)
 import PagesComponents.Organization_.Project_.Models.HideColumns as HideColumns exposing (HideColumns)
-import PagesComponents.Organization_.Project_.Models.MemoId as MemoId
 import PagesComponents.Organization_.Project_.Models.PositionHint as PositionHint exposing (PositionHint(..))
 import PagesComponents.Organization_.Project_.Models.ShowColumns as ShowColumns exposing (ShowColumns)
 import Ports
-import Services.Lenses exposing (mapCanvas, mapColumns, mapColumnsT, mapMemos, mapProps, mapRelatedTables, mapTableRows, mapTables, mapTablesL, mapTablesLTM, mapTablesT, setHighlighted, setHoverColumn, setPosition, setSelected, setShown)
+import Services.Lenses exposing (mapCanvas, mapColumns, mapColumnsT, mapRelatedTables, mapTables, mapTablesL, mapTablesLTM, mapTablesT, setHighlighted, setHoverColumn, setPosition, setShown)
 import Services.Toasts as Toasts
 import Set exposing (Set)
 import Time
@@ -48,27 +45,16 @@ import Track
 goToTable : Time.Posix -> TableId -> ErdProps -> Erd -> ( Erd, ( Maybe ( Msg, Msg ), Cmd Msg ) )
 goToTable now id viewport erd =
     (erd |> Erd.getLayoutTable id)
-        |> Maybe.map (\p -> placeTableAtCenter viewport (erd |> Erd.currentLayout |> .canvas) p.props)
+        |> Maybe.map (\t -> ( placeTableAtCenter viewport (erd |> Erd.currentLayout |> .canvas) t.props, TableId.toHtmlId id ))
         |> Maybe.map
-            (\pos ->
+            (\( pos, htmlId ) ->
                 erd
                     |> Erd.mapCurrentLayoutTMWithTime now
                         (\l ->
-                            let
-                                selected : List HtmlId
-                                selected =
-                                    (l.tables |> List.filter (.props >> .selected) |> List.map (.id >> TableId.toHtmlId))
-                                        ++ (l.tableRows |> List.filter .selected |> List.map (.id >> TableRow.toHtmlId))
-                                        ++ (l.memos |> List.filter .selected |> List.map (.id >> MemoId.toHtmlId))
-                            in
-                            ( l
-                                |> mapTables (List.map (\t -> t |> mapProps (setSelected (t.id == id))))
-                                |> mapTableRows (List.map (setSelected False))
-                                |> mapMemos (List.map (setSelected False))
-                                |> mapCanvas (setPosition pos)
+                            ( l |> mapCanvas (setPosition pos) |> ErdLayout.mapSelected (\i _ -> i.id == htmlId)
                             , Just
-                                ( Batch [ CanvasPosition l.canvas.position, SelectItems selected ]
-                                , Batch [ CanvasPosition pos, SelectItems [ TableId.toHtmlId id ] ]
+                                ( Batch [ CanvasPosition l.canvas.position, SelectItems (ErdLayout.getSelected l) ]
+                                , Batch [ CanvasPosition pos, SelectItems [ htmlId ] ]
                                 )
                             )
                         )

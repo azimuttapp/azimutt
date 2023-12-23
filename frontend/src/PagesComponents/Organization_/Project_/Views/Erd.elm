@@ -64,6 +64,7 @@ import PagesComponents.Organization_.Project_.Updates.Drag as Drag
 import PagesComponents.Organization_.Project_.Views.Erd.Memo as Memo
 import PagesComponents.Organization_.Project_.Views.Erd.Relation as Relation exposing (viewEmptyRelation, viewRelation, viewVirtualRelation)
 import PagesComponents.Organization_.Project_.Views.Erd.RelationRow exposing (viewRelationRow)
+import PagesComponents.Organization_.Project_.Views.Erd.SelectionBox as SelectionBox
 import PagesComponents.Organization_.Project_.Views.Erd.Table as Table exposing (viewTable)
 import PagesComponents.Organization_.Project_.Views.Erd.TableRow as TableRow exposing (viewTableRow)
 import PagesComponents.Organization_.Project_.Views.Modals.ErdContextMenu as ErdContextMenu
@@ -91,7 +92,7 @@ stringToArgs args =
             ( ( Time.zero, Platform.PC, CursorMode.Select ), ( "", "", "" ), ( Nothing, Nothing, Nothing ) )
 
 
-viewErd : ErdConf -> ErdProps -> Erd -> Maybe Area.Canvas -> Maybe VirtualRelation -> Maybe MemoEdit -> ErdArgs -> Maybe DragState -> Html Msg
+viewErd : ErdConf -> ErdProps -> Erd -> Maybe SelectionBox.Model -> Maybe VirtualRelation -> Maybe MemoEdit -> ErdArgs -> Maybe DragState -> Html Msg
 viewErd conf erdElem erd selectionBox virtualRelation editMemo args dragging =
     let
         ( ( now, platform, cursorMode ), ( openedDropdown, openedPopover, selected ), ( hoverTable, hoverTableRow, editGroup ) ) =
@@ -179,7 +180,7 @@ viewErd conf erdElem erd selectionBox virtualRelation editMemo args dragging =
             , erd.relations |> Lazy.lazy5 viewRelations conf erd.settings.defaultSchema erd.settings.relationStyle displayedTables
             , layoutTables |> viewTables platform conf cursorMode virtualRelation openedDropdown openedPopover hoverTable dragging canvas.zoom erd.settings.defaultSchema selected erd.settings.columnBasicTypes erd.tables erd.metadata layout
             , memos |> viewMemos platform conf cursorMode editMemo
-            , div [ class "az-selection-box pointer-events-none" ] (selectionBox |> Maybe.filter (\_ -> layout |> ErdLayout.nonEmpty) |> Maybe.mapOrElse viewSelectionBox [])
+            , div [ class "az-selection-box pointer-events-none" ] (selectionBox |> Maybe.filter (\_ -> layout |> ErdLayout.nonEmpty) |> Maybe.mapOrElse SelectionBox.view [])
             , div [ class "az-virtual-relation pointer-events-none" ] [ virtualRelationInfo |> Maybe.mapOrElse (\i -> viewVirtualRelation erd.settings.relationStyle i) viewEmptyRelation ]
             ]
         , if layout |> ErdLayout.isEmpty then
@@ -379,11 +380,6 @@ viewHiddenTables defaultSchema tables =
                     )
                 )
         )
-
-
-viewSelectionBox : Area.Canvas -> List (Html Msg)
-viewSelectionBox area =
-    [ div ([ css [ "absolute border-2 bg-opacity-25 z-max border-teal-400 bg-teal-400" ] ] ++ Area.styleTransformCanvas area) [] ]
 
 
 viewEmptyState : SchemaName -> Dict TableId ErdTable -> Html Msg

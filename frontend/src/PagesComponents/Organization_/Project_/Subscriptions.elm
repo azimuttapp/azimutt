@@ -21,7 +21,7 @@ subscriptions model =
                     |> Maybe.mapOrElse
                         (\_ ->
                             [ Browser.Events.onMouseMove (Mouse.eventDecoder |> Decode.map (Position.fromEventViewport >> DragMove))
-                            , Browser.Events.onMouseUp (Mouse.eventDecoder |> Decode.map (Position.fromEventViewport >> DragEnd))
+                            , Browser.Events.onMouseUp (Mouse.eventDecoder |> Decode.map (Position.fromEventViewport >> DragEnd False))
                             ]
                         )
                         []

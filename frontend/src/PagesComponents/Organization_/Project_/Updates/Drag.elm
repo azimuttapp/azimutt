@@ -13,20 +13,20 @@ import Models.Position as Position
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableRow as TableRow exposing (TableRow)
-import PagesComponents.Organization_.Project_.Models as Msg exposing (Model, Msg, buildHistory)
+import PagesComponents.Organization_.Project_.Models as Msg exposing (Model, Msg(..), buildHistory)
 import PagesComponents.Organization_.Project_.Models.DragState exposing (DragState)
 import PagesComponents.Organization_.Project_.Models.Erd as Erd
-import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
+import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
 import PagesComponents.Organization_.Project_.Models.MemoId as MemoId exposing (MemoId)
-import PagesComponents.Organization_.Project_.Updates.Utils exposing (addHistoryT, setDirty)
-import Services.Lenses exposing (mapCanvasT, mapErdM, mapErdMTM, mapMemos, mapProps, mapTableRows, mapTables, setPosition, setSelected, setSelectionBox)
+import PagesComponents.Organization_.Project_.Updates.Utils exposing (addHistory, addHistoryT, setDirty)
+import Services.Lenses exposing (mapCanvasT, mapErdM, mapErdMTM, mapMemos, mapProps, mapSelectionBox, mapTableRows, mapTables, setArea, setPosition, setSelectionBox)
 import Time
 
 
-handleDrag : String -> Time.Posix -> DragState -> Bool -> Model -> ( Model, Cmd Msg )
-handleDrag doCmd now drag isEnd model =
+handleDrag : String -> Time.Posix -> DragState -> Bool -> Bool -> Model -> ( Model, Cmd Msg )
+handleDrag doCmd now drag isEnd cancel model =
     let
         canvas : CanvasProps
         canvas =
@@ -40,22 +40,34 @@ handleDrag doCmd now drag isEnd model =
             ( model, Cmd.none )
 
     else if drag.id == Conf.ids.selectionBox then
+        let
+            currentlySelected : List HtmlId
+            currentlySelected =
+                model.erd |> Maybe.mapOrElse (Erd.currentLayout >> ErdLayout.getSelected) []
+        in
         if isEnd then
-            ( model |> setSelectionBox Nothing, Cmd.none )
+            let
+                previouslySelected : List HtmlId
+                previouslySelected =
+                    model.selectionBox |> Maybe.mapOrElse .previouslySelected []
+            in
+            if cancel then
+                ( model
+                    |> setSelectionBox Nothing
+                    |> mapErdM (Erd.mapCurrentLayout (ErdLayout.setSelected previouslySelected))
+                , Cmd.none
+                )
+
+            else
+                ( model |> setSelectionBox Nothing |> addHistory doCmd ( SelectItems previouslySelected, SelectItems currentlySelected ), Cmd.none )
 
         else
             ( drag
                 |> buildSelectionArea model.erdElem canvas
                 |> (\area ->
                         model
-                            |> setSelectionBox (Just area)
-                            |> mapErdM
-                                (Erd.mapCurrentLayoutWithTime now
-                                    (mapTables (List.map (mapProps (\p -> p |> setSelected (Area.overlapCanvas area { position = p.position |> Position.offGrid, size = p.size }))))
-                                        >> mapTableRows (List.map (\r -> r |> setSelected (Area.overlapCanvas area { position = r.position |> Position.offGrid, size = r.size })))
-                                        >> mapMemos (List.map (\m -> m |> setSelected (Area.overlapCanvas area { position = m.position |> Position.offGrid, size = m.size })))
-                                    )
-                                )
+                            |> mapSelectionBox (Maybe.map (setArea area) >> Maybe.withDefault { area = area, previouslySelected = currentlySelected } >> Just)
+                            |> mapErdM (Erd.mapCurrentLayoutWithTime now (ErdLayout.mapSelected (\i _ -> Area.overlapCanvas area { position = i.position |> Position.offGrid, size = i.size })))
                    )
             , Cmd.none
             )

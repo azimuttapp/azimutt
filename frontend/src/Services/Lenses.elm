@@ -76,6 +76,7 @@ module Services.Lenses exposing
     , mapSchemaAnalysisM
     , mapSearch
     , mapSelected
+    , mapSelectionBox
     , mapSettings
     , mapSettingsM
     , mapSharingT
@@ -101,6 +102,7 @@ module Services.Lenses exposing
     , setActive
     , setAmlSidebar
     , setAmlSource
+    , setArea
     , setBody
     , setCanvas
     , setCollapseTableColumns
@@ -279,6 +281,11 @@ setAmlSource =
 mapAmlSourceT : (v -> ( v, a )) -> { item | amlSource : v } -> ( { item | amlSource : v }, a )
 mapAmlSourceT =
     mapT_ .amlSource setAmlSource
+
+
+setArea : v -> { item | area : v } -> { item | area : v }
+setArea =
+    set_ .area (\value item -> { item | area = value })
 
 
 setBody : v -> { item | body : v } -> { item | body : v }
@@ -1129,6 +1136,11 @@ mapSelected =
 setSelectionBox : v -> { item | selectionBox : v } -> { item | selectionBox : v }
 setSelectionBox =
     set_ .selectionBox (\value item -> { item | selectionBox = value })
+
+
+mapSelectionBox : (v -> v) -> { item | selectionBox : v } -> { item | selectionBox : v }
+mapSelectionBox =
+    map_ .selectionBox setSelectionBox
 
 
 setSharing : v -> { item | sharing : v } -> { item | sharing : v }

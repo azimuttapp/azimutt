@@ -80,7 +80,7 @@ import Random
 import Services.Backend as Backend
 import Services.DatabaseSource as DatabaseSource
 import Services.JsonSource as JsonSource
-import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapContextMenuM, mapDataExplorerT, mapDetailsSidebarT, mapEmbedSourceParsingMTW, mapErdM, mapErdMT, mapErdMTM, mapErdMTW, mapExportDialogT, mapHoverTable, mapMemos, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapOrganizationM, mapPlan, mapPosition, mapProject, mapProjectT, mapPromptM, mapProps, mapSaveT, mapSchemaAnalysisM, mapSearch, mapSelected, mapSharingT, mapShowHiddenColumns, mapTableRows, mapTableRowsT, mapTables, mapTablesL, mapTablesT, mapToastsT, setActive, setCanvas, setCollapsed, setColor, setColors, setColumns, setConfirm, setContextMenu, setCurrentLayout, setCursorMode, setDragging, setHoverColumn, setHoverTable, setHoverTableRow, setInput, setLast, setLayoutOnLoad, setModal, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setSelected, setShow, setSize, setTables, setText)
+import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapContextMenuM, mapDataExplorerT, mapDetailsSidebarT, mapEmbedSourceParsingMTW, mapErdM, mapErdMT, mapErdMTM, mapErdMTW, mapExportDialogT, mapHoverTable, mapMemos, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapOrganizationM, mapPlan, mapPosition, mapProject, mapProjectT, mapPromptM, mapProps, mapSaveT, mapSchemaAnalysisM, mapSearch, mapSharingT, mapShowHiddenColumns, mapTableRows, mapTableRowsT, mapTables, mapTablesL, mapTablesT, mapToastsT, setActive, setCanvas, setCollapsed, setColor, setColors, setColumns, setConfirm, setContextMenu, setCurrentLayout, setCursorMode, setDragging, setHoverColumn, setHoverTable, setHoverTableRow, setInput, setLast, setLayoutOnLoad, setModal, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setShow, setSize, setTables, setText)
 import Services.PrismaSource as PrismaSource
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
@@ -189,28 +189,21 @@ update doCmd urlLayout zone now urlInfos organizations projects msg model =
 
             else
                 model
-                    |> mapErdM
-                        (Erd.mapCurrentLayoutWithTime now
-                            (mapTables (List.map (\t -> t |> mapProps (mapSelected (\s -> B.cond (TableId.toHtmlId t.id == htmlId) (not s) (B.cond ctrl s False)))))
-                                >> mapTableRows (List.map (\r -> r |> mapSelected (\s -> B.cond (TableRow.toHtmlId r.id == htmlId) (not s) (B.cond ctrl s False))))
-                                >> mapMemos (List.map (\m -> m |> mapSelected (\s -> B.cond (MemoId.toHtmlId m.id == htmlId) (not s) (B.cond ctrl s False))))
-                            )
-                        )
+                    |> mapErdMTM (Erd.mapCurrentLayoutTMWithTime now (\l -> ( l |> ErdLayout.mapSelected (\i s -> B.cond (i.id == htmlId) (not s) (B.cond ctrl s False)), Just ( SelectItems (ErdLayout.getSelected l), msg ) )))
+                    |> addHistoryT doCmd
                     |> setDirty
 
         SelectItems htmlIds ->
             model
-                |> mapErdM
-                    (Erd.mapCurrentLayoutWithTime now
-                        (mapTables (List.map (\t -> t |> mapProps (mapSelected (\_ -> htmlIds |> List.member (TableId.toHtmlId t.id)))))
-                            >> mapTableRows (List.map (\r -> r |> mapSelected (\_ -> htmlIds |> List.member (TableRow.toHtmlId r.id))))
-                            >> mapMemos (List.map (\m -> m |> mapSelected (\_ -> htmlIds |> List.member (MemoId.toHtmlId m.id))))
-                        )
-                    )
+                |> mapErdMTM (Erd.mapCurrentLayoutTMWithTime now (\l -> ( l |> ErdLayout.setSelected htmlIds, Just ( SelectItems (ErdLayout.getSelected l), msg ) )))
+                |> addHistoryT doCmd
                 |> setDirty
 
         SelectAll ->
-            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.map (mapProps (setSelected True))) >> mapTableRows (List.map (setSelected True)) >> mapMemos (List.map (setSelected True)))) |> setDirty
+            model
+                |> mapErdMTM (Erd.mapCurrentLayoutTMWithTime now (\l -> ( l |> ErdLayout.mapSelected (\_ _ -> True), Just ( SelectItems (ErdLayout.getSelected l), msg ) )))
+                |> addHistoryT doCmd
+                |> setDirty
 
         TableMove id delta ->
             model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.mapBy .id id (mapProps (mapPosition (Position.moveGrid delta)))))) |> setDirty
@@ -395,17 +388,17 @@ update doCmd urlLayout zone now urlInfos organizations projects msg model =
         DragStart id pos ->
             model.dragging
                 |> Maybe.mapOrElse (\d -> ( model, "Already dragging " ++ d.id |> Toasts.info |> Toast |> T.send ))
-                    ({ id = id, init = pos, last = pos } |> (\d -> model |> setDragging (Just d) |> handleDrag doCmd now d False))
+                    ({ id = id, init = pos, last = pos } |> (\d -> model |> setDragging (Just d) |> handleDrag doCmd now d False False))
 
         DragMove pos ->
             model.dragging
                 |> Maybe.map (setLast pos)
-                |> Maybe.mapOrElse (\d -> model |> setDragging (Just d) |> handleDrag doCmd now d False) ( model, Cmd.none )
+                |> Maybe.mapOrElse (\d -> model |> setDragging (Just d) |> handleDrag doCmd now d False False) ( model, Cmd.none )
 
-        DragEnd pos ->
+        DragEnd cancel pos ->
             model.dragging
                 |> Maybe.map (setLast pos)
-                |> Maybe.mapOrElse (\d -> model |> setDragging Nothing |> handleDrag doCmd now d True) ( model, Cmd.none )
+                |> Maybe.mapOrElse (\d -> model |> setDragging Nothing |> handleDrag doCmd now d True cancel) ( model, Cmd.none )
 
         DragCancel ->
             ( model |> setDragging Nothing, Cmd.none )

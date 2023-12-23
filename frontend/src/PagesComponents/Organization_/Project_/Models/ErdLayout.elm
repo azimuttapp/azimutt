@@ -1,19 +1,21 @@
-module PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout, create, createMemo, empty, isEmpty, nonEmpty, unpack)
+module PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout, ErdLayoutItem, create, createMemo, empty, getSelected, isEmpty, mapSelected, nonEmpty, setSelected, unpack)
 
 import Dict exposing (Dict)
 import Libs.Dict as Dict
+import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Size exposing (Size)
 import Models.Position as Position
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.Group exposing (Group)
 import Models.Project.Layout exposing (Layout)
-import Models.Project.TableId exposing (TableId)
-import Models.Project.TableRow exposing (TableRow)
+import Models.Project.TableId as TableId exposing (TableId)
+import Models.Project.TableRow as TableRow exposing (TableRow)
 import Models.Size as Size
 import PagesComponents.Organization_.Project_.Models.ErdRelation exposing (ErdRelation)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout as ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
-import PagesComponents.Organization_.Project_.Models.MemoId exposing (MemoId)
+import PagesComponents.Organization_.Project_.Models.MemoId as MemoId exposing (MemoId)
+import Services.Lenses as Lenses exposing (mapMemos, mapProps, mapTableRows, mapTables)
 import Set
 import Time
 
@@ -27,6 +29,10 @@ type alias ErdLayout =
     , createdAt : Time.Posix
     , updatedAt : Time.Posix
     }
+
+
+type alias ErdLayoutItem =
+    { id : HtmlId, position : Position.Grid, size : Size.Canvas }
 
 
 empty : Time.Posix -> ErdLayout
@@ -72,6 +78,29 @@ unpack layout =
     , createdAt = layout.createdAt
     , updatedAt = layout.updatedAt
     }
+
+
+getSelected : ErdLayout -> List HtmlId
+getSelected layout =
+    (layout.tables |> List.filter (.props >> .selected) |> List.map (.id >> TableId.toHtmlId))
+        ++ (layout.tableRows |> List.filter .selected |> List.map (.id >> TableRow.toHtmlId))
+        ++ (layout.memos |> List.filter .selected |> List.map (.id >> MemoId.toHtmlId))
+
+
+setSelected : List HtmlId -> ErdLayout -> ErdLayout
+setSelected htmlIds layout =
+    layout
+        |> mapTables (List.map (\t -> t |> mapProps (Lenses.mapSelected (\_ -> htmlIds |> List.member (TableId.toHtmlId t.id)))))
+        |> mapTableRows (List.map (\r -> r |> Lenses.mapSelected (\_ -> htmlIds |> List.member (TableRow.toHtmlId r.id))))
+        |> mapMemos (List.map (\m -> m |> Lenses.mapSelected (\_ -> htmlIds |> List.member (MemoId.toHtmlId m.id))))
+
+
+mapSelected : (ErdLayoutItem -> Bool -> Bool) -> ErdLayout -> ErdLayout
+mapSelected transform layout =
+    layout
+        |> mapTables (List.map (\t -> t |> mapProps (Lenses.mapSelected (transform { id = TableId.toHtmlId t.id, position = t.props.position, size = t.props.size }))))
+        |> mapTableRows (List.map (\r -> r |> Lenses.mapSelected (transform { id = TableRow.toHtmlId r.id, position = r.position, size = r.size })))
+        |> mapMemos (List.map (\m -> m |> Lenses.mapSelected (transform { id = MemoId.toHtmlId m.id, position = m.position, size = m.size })))
 
 
 createMemo : ErdLayout -> Position.Canvas -> Memo

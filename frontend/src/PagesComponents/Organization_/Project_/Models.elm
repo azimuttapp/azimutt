@@ -17,7 +17,6 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Notes exposing (Notes)
 import Libs.Tailwind as Tw exposing (Color)
 import Libs.Task as T
-import Models.Area as Area
 import Models.ColumnOrder exposing (ColumnOrder)
 import Models.DbSourceInfo exposing (DbSourceInfo)
 import Models.ErdProps as ErdProps exposing (ErdProps)
@@ -62,6 +61,7 @@ import PagesComponents.Organization_.Project_.Models.NotesMsg exposing (NotesMsg
 import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint)
 import PagesComponents.Organization_.Project_.Models.ShowColumns exposing (ShowColumns)
 import PagesComponents.Organization_.Project_.Models.TagsMsg exposing (TagsMsg)
+import PagesComponents.Organization_.Project_.Views.Erd.SelectionBox as SelectionBox
 import PagesComponents.Organization_.Project_.Views.Modals.NewLayout as NewLayout
 import Ports exposing (JsMsg)
 import Services.Toasts as Toasts
@@ -85,7 +85,7 @@ type alias Model =
     , hoverColumn : Maybe ColumnRef
     , hoverTableRow : Maybe TableRowHover
     , cursorMode : CursorMode
-    , selectionBox : Maybe Area.Canvas
+    , selectionBox : Maybe SelectionBox.Model
     , newLayout : Maybe NewLayout.Model
     , editNotes : Maybe NotesDialog
     , editTags : Maybe String
@@ -311,7 +311,7 @@ type Msg
     | ContextMenuClose
     | DragStart DragId Position.Viewport
     | DragMove Position.Viewport
-    | DragEnd Position.Viewport
+    | DragEnd Bool Position.Viewport
     | DragCancel
     | Toast Toasts.Msg
     | ConfirmOpen (Confirm Msg)
