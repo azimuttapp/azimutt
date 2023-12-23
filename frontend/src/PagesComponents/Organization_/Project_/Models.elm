@@ -49,6 +49,7 @@ import PagesComponents.Organization_.Project_.Components.SourceUpdateDialog as S
 import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode exposing (CursorMode)
 import PagesComponents.Organization_.Project_.Models.DragState exposing (DragState)
 import PagesComponents.Organization_.Project_.Models.Erd exposing (Erd)
+import PagesComponents.Organization_.Project_.Models.ErdColumnProps exposing (ErdColumnProps)
 import PagesComponents.Organization_.Project_.Models.ErdConf as ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.ErdRelation exposing (ErdRelation)
 import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable)
@@ -249,6 +250,7 @@ type Msg
     | ShowColumns TableId ShowColumns
     | HideColumns TableId HideColumns
     | SortColumns TableId ColumnOrder
+    | SetColumns TableId (List ErdColumnProps)
     | ToggleNestedColumn TableId ColumnPath Bool
     | ToggleHiddenColumns TableId
     | SelectItem HtmlId Bool

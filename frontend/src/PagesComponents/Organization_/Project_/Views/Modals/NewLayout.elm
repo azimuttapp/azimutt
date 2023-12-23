@@ -16,7 +16,7 @@ import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout
 import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirtyCmd)
-import Services.Lenses exposing (mapErdMCmd, mapLayouts, mapNewLayoutMCmd, setCurrentLayout, setNewLayout)
+import Services.Lenses exposing (mapErdMTW, mapLayouts, mapNewLayoutMTW, setCurrentLayout, setNewLayout)
 import Services.Toasts as Toasts
 import Time
 import Track
@@ -63,10 +63,10 @@ update modalOpen toast customModalOpen now urlInfos msg model =
                 )
 
         BodyMsg m ->
-            model |> mapNewLayoutMCmd (NewLayoutBody.update m)
+            model |> mapNewLayoutMTW (NewLayoutBody.update m) Cmd.none
 
         Submit mode name ->
-            model |> setNewLayout Nothing |> mapErdMCmd (updateLayouts toast mode name now) |> setDirtyCmd
+            model |> setNewLayout Nothing |> mapErdMTW (updateLayouts toast mode name now) Cmd.none |> setDirtyCmd
 
         Cancel ->
             ( model |> setNewLayout Nothing, Cmd.none )

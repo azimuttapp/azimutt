@@ -28,6 +28,7 @@ import PagesComponents.Organization_.Project_.Models exposing (Model, Msg(..), b
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn, ErdNestedColumns(..))
 import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps exposing (ErdColumnProps, ErdColumnPropsFlat, ErdColumnPropsNested(..))
+import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.ErdRelation as ErdRelation
 import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout as ErdTableLayout exposing (ErdTableLayout)
@@ -37,7 +38,7 @@ import PagesComponents.Organization_.Project_.Models.MemoId as MemoId
 import PagesComponents.Organization_.Project_.Models.PositionHint as PositionHint exposing (PositionHint(..))
 import PagesComponents.Organization_.Project_.Models.ShowColumns as ShowColumns exposing (ShowColumns)
 import Ports
-import Services.Lenses exposing (mapCanvas, mapColumns, mapColumnsT, mapMemos, mapProps, mapRelatedTables, mapTableRows, mapTables, mapTablesL, mapTablesLTM, setHighlighted, setHoverColumn, setPosition, setSelected, setShown)
+import Services.Lenses exposing (mapCanvas, mapColumns, mapColumnsT, mapMemos, mapProps, mapRelatedTables, mapTableRows, mapTables, mapTablesL, mapTablesLTM, mapTablesT, setHighlighted, setHoverColumn, setPosition, setSelected, setShown)
 import Services.Toasts as Toasts
 import Set exposing (Set)
 import Time
@@ -299,24 +300,24 @@ hoverNextColumn column model =
     model |> setHoverColumn (nextColumn |> Maybe.map (ColumnRef column.table))
 
 
-showColumns : Time.Posix -> TableId -> ShowColumns -> Erd -> ( Erd, Cmd msg )
+showColumns : Time.Posix -> TableId -> ShowColumns -> Erd -> ( Erd, ( Maybe ( Msg, Msg ), Cmd Msg ) )
 showColumns now id kind erd =
-    ( mapColumnsForTableOrSelectedProps now
+    mapColumnsForTableOrSelectedPropsTL now
         id
         (\table columns ->
             erd.relations
                 |> List.filter (Relation.linkedToTable id)
                 |> (\tableRelations -> ShowColumns.filterBy kind tableRelations table columns)
                 |> (\cols -> ShowColumns.sortBy kind cols)
+                |> (\cols -> ( cols, Just ( SetColumns table.id columns, SetColumns table.id cols ) ))
         )
         erd
-    , Cmd.none
-    )
+        |> Tuple.mapSecond (\h -> ( buildHistory h, Cmd.none ))
 
 
-hideColumns : Time.Posix -> TableId -> HideColumns -> Erd -> ( Erd, Cmd Msg )
+hideColumns : Time.Posix -> TableId -> HideColumns -> Erd -> ( Erd, ( Maybe ( Msg, Msg ), Cmd Msg ) )
 hideColumns now id kind erd =
-    ( mapColumnsForTableOrSelectedProps now
+    mapColumnsForTableOrSelectedPropsTL now
         id
         (\table columns ->
             erd.relations
@@ -344,11 +345,35 @@ hideColumns now id kind erd =
                                         _ ->
                                             False
                                 )
+                            |> (\cols -> ( cols, Just ( SetColumns table.id columns, SetColumns table.id cols ) ))
                    )
         )
         erd
-    , Cmd.none
-    )
+        |> Tuple.mapSecond (\h -> ( buildHistory h, Cmd.none ))
+
+
+sortColumns : Time.Posix -> TableId -> ColumnOrder -> Erd -> ( Erd, ( Maybe ( Msg, Msg ), Cmd Msg ) )
+sortColumns now id kind erd =
+    mapColumnsForTableOrSelectedPropsTL now
+        id
+        (\table columns ->
+            columns
+                |> ErdColumnProps.mapAll
+                    (\path cols ->
+                        cols
+                            |> List.filterMap
+                                (\col ->
+                                    table
+                                        |> ErdTable.getColumn (path |> Maybe.mapOrElse (ColumnPath.child col.name) (ColumnPath.fromString col.name))
+                                        |> Maybe.map (\c -> ( c, col ))
+                                )
+                            |> ColumnOrder.sortBy kind table erd.relations
+                            |> List.map Tuple.second
+                    )
+                |> (\cols -> ( cols, Just ( SetColumns table.id columns, SetColumns table.id cols ) ))
+        )
+        erd
+        |> Tuple.mapSecond (\h -> ( buildHistory h, Cmd.none ))
 
 
 toggleNestedColumn : Time.Posix -> TableId -> ColumnPath -> Bool -> Erd -> Erd
@@ -377,30 +402,6 @@ toggleNestedColumn now id path open erd =
                     )
         )
         erd
-
-
-sortColumns : Time.Posix -> TableId -> ColumnOrder -> Erd -> ( Erd, Cmd Msg )
-sortColumns now id kind erd =
-    ( mapColumnsForTableOrSelectedProps now
-        id
-        (\table columns ->
-            columns
-                |> ErdColumnProps.mapAll
-                    (\path cols ->
-                        cols
-                            |> List.filterMap
-                                (\col ->
-                                    table
-                                        |> ErdTable.getColumn (path |> Maybe.mapOrElse (ColumnPath.child col.name) (ColumnPath.fromString col.name))
-                                        |> Maybe.map (\c -> ( c, col ))
-                                )
-                            |> ColumnOrder.sortBy kind table erd.relations
-                            |> List.map Tuple.second
-                    )
-        )
-        erd
-    , Cmd.none
-    )
 
 
 hoverColumn : ColumnRef -> Bool -> Erd -> List ErdTableLayout -> List ErdTableLayout
@@ -501,6 +502,30 @@ mapColumnsForTableOrSelectedProps now id transform erd =
 
                         else
                             props
+                    )
+                )
+            )
+
+
+mapColumnsForTableOrSelectedPropsTL : Time.Posix -> TableId -> (ErdTable -> List ErdColumnProps -> ( List ErdColumnProps, Maybe a )) -> Erd -> ( Erd, List a )
+mapColumnsForTableOrSelectedPropsTL now id transform erd =
+    let
+        selected : Bool
+        selected =
+            erd |> Erd.currentLayout |> .tables |> List.findBy .id id |> Maybe.mapOrElse (.props >> .selected) False
+    in
+    erd
+        |> Erd.mapCurrentLayoutTLWithTime now
+            (mapTablesT
+                (List.mapTM
+                    (\props ->
+                        if props.id == id || (selected && props.props.selected) then
+                            (erd.tables |> Dict.get props.id)
+                                |> Maybe.map (\table -> props |> mapColumnsT (transform table >> Tuple.mapFirst (ErdColumnProps.filter (\p _ -> table |> ErdTable.getColumn p |> Maybe.isJust))))
+                                |> Maybe.withDefault ( props, Nothing )
+
+                        else
+                            ( props, Nothing )
                     )
                 )
             )

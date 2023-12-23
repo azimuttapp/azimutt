@@ -26,7 +26,7 @@ import Models.ProjectInfo exposing (ProjectInfo)
 import Services.AmlSource as AmlSource
 import Services.DatabaseSource as DatabaseSource
 import Services.JsonSource as JsonSource
-import Services.Lenses exposing (mapAmlSourceCmd, mapDatabaseSourceCmd, mapJsonSourceCmd, mapMCmd, mapPrismaSourceCmd, mapSqlSourceCmd)
+import Services.Lenses exposing (mapAmlSourceT, mapDatabaseSourceT, mapJsonSourceT, mapMTW, mapPrismaSourceT, mapSqlSourceT)
 import Services.PrismaSource as PrismaSource
 import Services.SourceDiff as SourceDiff
 import Services.SqlSource as SqlSource
@@ -87,19 +87,19 @@ update wrap modalOpen noop now project msg model =
             ( Nothing, Cmd.none )
 
         DatabaseSourceMsg message ->
-            model |> mapMCmd (mapDatabaseSourceCmd (DatabaseSource.update (DatabaseSourceMsg >> wrap) now project message))
+            model |> mapMTW (mapDatabaseSourceT (DatabaseSource.update (DatabaseSourceMsg >> wrap) now project message)) Cmd.none
 
         SqlSourceMsg message ->
-            model |> mapMCmd (mapSqlSourceCmd (SqlSource.update (SqlSourceMsg >> wrap) now project message))
+            model |> mapMTW (mapSqlSourceT (SqlSource.update (SqlSourceMsg >> wrap) now project message)) Cmd.none
 
         PrismaSourceMsg message ->
-            model |> mapMCmd (mapPrismaSourceCmd (PrismaSource.update (PrismaSourceMsg >> wrap) now project message))
+            model |> mapMTW (mapPrismaSourceT (PrismaSource.update (PrismaSourceMsg >> wrap) now project message)) Cmd.none
 
         JsonSourceMsg message ->
-            model |> mapMCmd (mapJsonSourceCmd (JsonSource.update (JsonSourceMsg >> wrap) now project message))
+            model |> mapMTW (mapJsonSourceT (JsonSource.update (JsonSourceMsg >> wrap) now project message)) Cmd.none
 
         AmlSourceMsg message ->
-            model |> mapMCmd (mapAmlSourceCmd (AmlSource.update (AmlSourceMsg >> wrap) now project message))
+            model |> mapMTW (mapAmlSourceT (AmlSource.update (AmlSourceMsg >> wrap) now project message)) Cmd.none
 
         UpdateTab kind ->
             ( model |> Maybe.map (\m -> { m | newSourceTab = kind }), Cmd.none )

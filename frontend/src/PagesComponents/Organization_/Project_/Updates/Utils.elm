@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Updates.Utils exposing (DirtyModel, HistoryModel, addHistory, addHistoryM, addHistoryT, addHistoryTCmd, setDirty, setDirtyCmd)
+module PagesComponents.Organization_.Project_.Updates.Utils exposing (DirtyModel, HistoryModel, addHistory, addHistoryCmd, addHistoryM, addHistoryT, addHistoryTCmd, setDirty, setDirtyCmd)
 
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import Ports
@@ -37,6 +37,11 @@ addHistory doCmd msg model =
 
     else
         { model | history = msg :: model.history, future = [] }
+
+
+addHistoryCmd : String -> ( msg, msg ) -> ( HistoryModel m msg, Cmd msg ) -> ( HistoryModel m msg, Cmd msg )
+addHistoryCmd doCmd msg ( model, cmd ) =
+    ( addHistory doCmd msg model, cmd )
 
 
 addHistoryM : String -> Maybe ( msg, msg ) -> HistoryModel m msg -> HistoryModel m msg

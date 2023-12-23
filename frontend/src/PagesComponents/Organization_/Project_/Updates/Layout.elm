@@ -10,7 +10,7 @@ import PagesComponents.Organization_.Project_.Models.Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirtyCmd)
 import Ports
-import Services.Lenses exposing (mapErdMCmd, mapLayouts, setCurrentLayout, setLayoutOnLoad)
+import Services.Lenses exposing (mapErdMTW, mapLayouts, setCurrentLayout, setLayoutOnLoad)
 import Services.Toasts as Toasts
 import Track
 
@@ -23,10 +23,10 @@ handleLayout : LayoutMsg -> Model x -> ( Model x, Cmd Msg )
 handleLayout msg model =
     case msg of
         LLoad name ->
-            model |> mapErdMCmd (loadLayout name)
+            model |> mapErdMTW (loadLayout name) Cmd.none
 
         LDelete name ->
-            model |> mapErdMCmd (deleteLayout name) |> setDirtyCmd
+            model |> mapErdMTW (deleteLayout name) Cmd.none |> setDirtyCmd
 
 
 loadLayout : LayoutName -> Erd -> ( Erd, Cmd Msg )

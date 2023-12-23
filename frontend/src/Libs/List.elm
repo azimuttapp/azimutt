@@ -31,6 +31,8 @@ module Libs.List exposing
     , mapBy
     , mapByCmd
     , mapLast
+    , mapT
+    , mapTM
     , maximumBy
     , memberBy
     , memberWith
@@ -45,9 +47,9 @@ module Libs.List exposing
     , nonEmptyMap
     , one
     , prepend
-    , prependCmd
     , prependIf
     , prependOn
+    , prependT
     , reduce
     , remove
     , removeAll
@@ -310,6 +312,16 @@ mapByCmd matcher value f list =
         |> Tuple.mapSecond Cmd.batch
 
 
+mapT : (a -> ( b, t )) -> List a -> ( List b, List t )
+mapT transform list =
+    list |> List.map transform |> List.unzip
+
+
+mapTM : (a -> ( b, Maybe t )) -> List a -> ( List b, List t )
+mapTM transform list =
+    list |> mapT transform |> Tuple.mapSecond (List.filterMap identity)
+
+
 zip : List b -> List a -> List ( a, b )
 zip list2 list1 =
     List.map2 (\i1 i2 -> ( i1, i2 )) list1 list2
@@ -384,9 +396,9 @@ prepend item list =
     item :: list
 
 
-prependCmd : ( a, Cmd msg ) -> List a -> ( List a, Cmd msg )
-prependCmd ( item, cmd ) list =
-    ( item :: list, cmd )
+prependT : ( a, t ) -> List a -> ( List a, t )
+prependT ( item, t ) list =
+    ( item :: list, t )
 
 
 prependIf : Bool -> a -> List a -> List a

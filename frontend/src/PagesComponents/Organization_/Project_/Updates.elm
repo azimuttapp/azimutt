@@ -71,7 +71,7 @@ import PagesComponents.Organization_.Project_.Updates.Source as Source
 import PagesComponents.Organization_.Project_.Updates.Table exposing (goToTable, hideColumn, hideColumns, hideRelatedTables, hideTable, hoverColumn, hoverNextColumn, mapTablePropOrSelected, reshowTable, showAllTables, showColumn, showColumns, showRelatedTables, showTable, showTables, sortColumns, toggleNestedColumn)
 import PagesComponents.Organization_.Project_.Updates.TableRow exposing (mapTableRowOrSelectedCmd, moveToTableRow, showTableRow)
 import PagesComponents.Organization_.Project_.Updates.Tags exposing (handleTags)
-import PagesComponents.Organization_.Project_.Updates.Utils exposing (addHistoryT, addHistoryTCmd, setDirty, setDirtyCmd)
+import PagesComponents.Organization_.Project_.Updates.Utils exposing (addHistory, addHistoryCmd, addHistoryT, addHistoryTCmd, setDirty, setDirtyCmd)
 import PagesComponents.Organization_.Project_.Updates.VirtualRelation exposing (handleVirtualRelation)
 import PagesComponents.Organization_.Project_.Views as Views
 import PagesComponents.Organization_.Project_.Views.Modals.NewLayout as NewLayout
@@ -80,7 +80,7 @@ import Random
 import Services.Backend as Backend
 import Services.DatabaseSource as DatabaseSource
 import Services.JsonSource as JsonSource
-import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapContextMenuM, mapDataExplorerCmd, mapDetailsSidebarCmd, mapEmbedSourceParsingMCmd, mapErdM, mapErdMCmd, mapErdMT, mapErdMTM, mapExportDialogCmd, mapHoverTable, mapMemos, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapOrganizationM, mapPlan, mapPosition, mapProject, mapProjectT, mapPromptM, mapProps, mapSaveCmd, mapSchemaAnalysisM, mapSearch, mapSelected, mapSharingCmd, mapShowHiddenColumns, mapTableRows, mapTableRowsCmd, mapTables, mapTablesCmd, mapToastsCmd, setActive, setCanvas, setCollapsed, setColor, setColors, setConfirm, setContextMenu, setCurrentLayout, setCursorMode, setDragging, setHoverColumn, setHoverTable, setHoverTableRow, setInput, setLast, setLayoutOnLoad, setModal, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setSelected, setShow, setSize, setTables, setText)
+import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapContextMenuM, mapDataExplorerT, mapDetailsSidebarT, mapEmbedSourceParsingMTW, mapErdM, mapErdMT, mapErdMTM, mapErdMTW, mapExportDialogT, mapHoverTable, mapMemos, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapOrganizationM, mapPlan, mapPosition, mapProject, mapProjectT, mapPromptM, mapProps, mapSaveT, mapSchemaAnalysisM, mapSearch, mapSelected, mapSharingT, mapShowHiddenColumns, mapTableRows, mapTableRowsT, mapTables, mapTablesL, mapTablesT, mapToastsT, setActive, setCanvas, setCollapsed, setColor, setColors, setColumns, setConfirm, setContextMenu, setCurrentLayout, setCursorMode, setDragging, setHoverColumn, setHoverTable, setHoverTableRow, setInput, setLast, setLayoutOnLoad, setModal, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setSelected, setShow, setSize, setTables, setText)
 import Services.PrismaSource as PrismaSource
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
@@ -134,7 +134,7 @@ update doCmd urlLayout zone now urlInfos organizations projects msg model =
                 ( model, GoToTable table.id |> T.send )
 
             else
-                model |> mapErdMCmd (reshowTable now index table) |> setDirtyCmd
+                model |> mapErdMTW (reshowTable now index table) Cmd.none |> setDirtyCmd
 
         ShowTables ids hint from ->
             model |> mapErdMT (showTables now ids hint from) |> addHistoryTCmd doCmd |> setDirtyCmd
@@ -157,7 +157,7 @@ update doCmd urlLayout zone now urlInfos organizations projects msg model =
                 collapsed =
                     model.erd |> Maybe.andThen (Erd.currentLayout >> .tables >> List.findBy .id id) |> Maybe.mapOrElse (.props >> .collapsed) False
             in
-            model |> mapErdMCmd (\erd -> erd |> Erd.mapCurrentLayoutWithTimeCmd now (mapTablesCmd (mapTablePropOrSelected erd.settings.defaultSchema id (mapProps (setCollapsed (not collapsed)))))) |> setDirtyCmd
+            model |> mapErdMTW (\erd -> erd |> Erd.mapCurrentLayoutWithTimeCmd now (mapTablesT (mapTablePropOrSelected erd.settings.defaultSchema id (mapProps (setCollapsed (not collapsed)))))) Cmd.none |> addHistoryCmd doCmd ( ToggleTableCollapse id, ToggleTableCollapse id ) |> setDirtyCmd
 
         ShowColumn index column ->
             model |> mapErdMTM (showColumn now index column) |> addHistoryT doCmd |> setDirty
@@ -166,19 +166,22 @@ update doCmd urlLayout zone now urlInfos organizations projects msg model =
             model |> mapErdMTM (hideColumn now column) |> addHistoryT doCmd |> hoverNextColumn column |> setDirty
 
         ShowColumns id kind ->
-            model |> mapErdMCmd (showColumns now id kind) |> setDirtyCmd
+            model |> mapErdMT (showColumns now id kind) |> addHistoryTCmd doCmd |> setDirtyCmd
 
         HideColumns id kind ->
-            model |> mapErdMCmd (hideColumns now id kind) |> setDirtyCmd
+            model |> mapErdMT (hideColumns now id kind) |> addHistoryTCmd doCmd |> setDirtyCmd
 
         SortColumns id kind ->
-            model |> mapErdMCmd (sortColumns now id kind) |> setDirtyCmd
+            model |> mapErdMT (sortColumns now id kind) |> addHistoryTCmd doCmd |> setDirtyCmd
+
+        SetColumns id columns ->
+            model |> mapErdM (Erd.mapCurrentLayout (mapTablesL .id id (setColumns columns))) |> setDirty
 
         ToggleNestedColumn table path open ->
-            model |> mapErdM (toggleNestedColumn now table path open) |> setDirty
+            model |> mapErdM (toggleNestedColumn now table path open) |> addHistory doCmd ( ToggleNestedColumn table path (not open), ToggleNestedColumn table path open ) |> setDirty
 
         ToggleHiddenColumns id ->
-            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.mapBy .id id (mapProps (mapShowHiddenColumns not))))) |> setDirty
+            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.mapBy .id id (mapProps (mapShowHiddenColumns not))))) |> addHistory doCmd ( ToggleHiddenColumns id, ToggleHiddenColumns id ) |> setDirty
 
         SelectItem htmlId ctrl ->
             if model.dragging |> Maybe.any DragState.hasMoved then
@@ -234,7 +237,7 @@ update doCmd urlLayout zone now urlInfos organizations projects msg model =
                     model.erd |> Erd.getProjectRefM urlInfos
             in
             if model.erd |> Erd.canChangeColor then
-                model |> mapErdMCmd (\erd -> erd |> Erd.mapCurrentLayoutWithTimeCmd now (mapTablesCmd (mapTablePropOrSelected erd.settings.defaultSchema id (mapProps (setColor color))))) |> setDirtyCmd
+                model |> mapErdMTW (\erd -> erd |> Erd.mapCurrentLayoutWithTimeCmd now (mapTablesT (mapTablePropOrSelected erd.settings.defaultSchema id (mapProps (setColor color))))) Cmd.none |> setDirtyCmd
 
             else
                 ( model, Cmd.batch [ ProPlan.colorsModalBody project ProPlanColors ProPlan.colorsInit |> CustomModalOpen |> T.send, Track.planLimit .tableColor model.erd ] )
@@ -262,7 +265,7 @@ update doCmd urlLayout zone now urlInfos organizations projects msg model =
                 |> setDirty
 
         CreateRelations rels ->
-            model |> mapErdMCmd (Source.createRelations now rels) |> setDirtyCmd
+            model |> mapErdMTW (Source.createRelations now rels) Cmd.none |> setDirtyCmd
 
         IgnoreRelation col ->
             model |> mapErdM (Erd.mapIgnoredRelations (Dict.update col.table (Maybe.mapOrElse (List.insert col.column) [ col.column ] >> List.uniqueBy ColumnPath.toString >> Just))) |> setDirty
@@ -287,23 +290,23 @@ update doCmd urlLayout zone now urlInfos organizations projects msg model =
 
         ShowTableRow source query previous hint from ->
             (model.erd |> Maybe.andThen (Erd.currentLayout >> .tableRows >> List.find (\r -> r.source == source.id && r.table == query.table && r.primaryKey == query.primaryKey)))
-                |> Maybe.map (\r -> model |> mapErdMCmd (moveToTableRow now model.erdElem r))
-                |> Maybe.withDefault (model |> mapErdMCmd (showTableRow now source query previous hint from) |> setDirtyCmd)
+                |> Maybe.map (\r -> model |> mapErdMTW (moveToTableRow now model.erdElem r) Cmd.none)
+                |> Maybe.withDefault (model |> mapErdMTW (showTableRow now source query previous hint from) Cmd.none |> setDirtyCmd)
 
         DeleteTableRow id ->
             model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTableRows (List.removeBy .id id))) |> setDirty
 
         TableRowMsg id message ->
-            model |> mapErdMCmd (\e -> e |> Erd.mapCurrentLayoutWithTimeCmd now (mapTableRowsCmd (mapTableRowOrSelectedCmd id message (TableRow.update DropdownToggle Toast now e.project e.sources model.openedDropdown message))))
+            model |> mapErdMTW (\e -> e |> Erd.mapCurrentLayoutWithTimeCmd now (mapTableRowsT (mapTableRowOrSelectedCmd id message (TableRow.update DropdownToggle Toast now e.project e.sources model.openedDropdown message)))) Cmd.none
 
         AmlSidebarMsg message ->
             model |> AmlSidebar.update now message
 
         DetailsSidebarMsg message ->
-            model.erd |> Maybe.mapOrElse (\erd -> model |> mapDetailsSidebarCmd (DetailsSidebar.update Noop NotesMsg TagsMsg erd message)) ( model, Cmd.none )
+            model.erd |> Maybe.mapOrElse (\erd -> model |> mapDetailsSidebarT (DetailsSidebar.update Noop NotesMsg TagsMsg erd message)) ( model, Cmd.none )
 
         DataExplorerMsg message ->
-            model.erd |> Maybe.mapOrElse (\erd -> model |> mapDataExplorerCmd (DataExplorer.update DataExplorerMsg Toast erd.project erd.sources message)) ( model, Cmd.none )
+            model.erd |> Maybe.mapOrElse (\erd -> model |> mapDataExplorerT (DataExplorer.update DataExplorerMsg Toast erd.project erd.sources message)) ( model, Cmd.none )
 
         VirtualRelationMsg message ->
             model |> handleVirtualRelation message
@@ -321,19 +324,19 @@ update doCmd urlLayout zone now urlInfos organizations projects msg model =
             ( model |> setSchemaAnalysis Nothing, Cmd.none )
 
         ExportDialogMsg message ->
-            model.erd |> Maybe.mapOrElse (\erd -> model |> mapExportDialogCmd (ExportDialog.update ExportDialogMsg ModalOpen urlInfos erd message)) ( model, Cmd.none )
+            model.erd |> Maybe.mapOrElse (\erd -> model |> mapExportDialogT (ExportDialog.update ExportDialogMsg ModalOpen urlInfos erd message)) ( model, Cmd.none )
 
         SharingMsg message ->
-            model |> mapSharingCmd (ProjectSharing.update SharingMsg ModalOpen Toast zone now model.erd message)
+            model |> mapSharingT (ProjectSharing.update SharingMsg ModalOpen Toast zone now model.erd message)
 
         ProjectSaveMsg message ->
-            model |> mapSaveCmd (ProjectSaveDialog.update ModalOpen message)
+            model |> mapSaveT (ProjectSaveDialog.update ModalOpen message)
 
         ProjectSettingsMsg message ->
             model |> handleProjectSettings now message
 
         EmbedSourceParsingMsg message ->
-            model |> mapEmbedSourceParsingMCmd (EmbedSourceParsingDialog.update EmbedSourceParsingMsg now (model.erd |> Maybe.map .project) message)
+            model |> mapEmbedSourceParsingMTW (EmbedSourceParsingDialog.update EmbedSourceParsingMsg now (model.erd |> Maybe.map .project) message) Cmd.none
 
         SourceParsed source ->
             ( model, source |> Project.create projects source.name |> Ok |> Just |> GotProject "load" |> JsMessage |> T.send )
@@ -351,10 +354,10 @@ update doCmd urlLayout zone now urlInfos organizations projects msg model =
             ( model |> setCursorMode mode, Cmd.none )
 
         FitToScreen ->
-            model |> mapErdMCmd (fitCanvas model.erdElem)
+            model |> mapErdMTW (fitCanvas model.erdElem) Cmd.none
 
         ArrangeTables ->
-            model |> mapErdMCmd (arrangeTables now model.erdElem) |> setDirtyCmd
+            model |> mapErdMTW (arrangeTables now model.erdElem) Cmd.none |> setDirtyCmd
 
         Fullscreen id ->
             ( model, Ports.fullscreen id )
@@ -408,7 +411,7 @@ update doCmd urlLayout zone now urlInfos organizations projects msg model =
             ( model |> setDragging Nothing, Cmd.none )
 
         Toast message ->
-            model |> mapToastsCmd (Toasts.update Toast message)
+            model |> mapToastsT (Toasts.update Toast message)
 
         ConfirmOpen confirm ->
             ( model |> setConfirm (Just { id = Conf.ids.confirmDialog, content = confirm }), T.sendAfter 1 (ModalOpen Conf.ids.confirmDialog) )
@@ -632,7 +635,7 @@ updateSizes changes model =
                     )
     in
     newModel
-        |> mapErdMCmd
+        |> mapErdMTW
             (\e ->
                 if e.layoutOnLoad /= "" && newModel.erdElem.size /= Size.zeroViewport && (e |> Erd.currentLayout |> .tables |> List.length) > 0 then
                     if e.layoutOnLoad == "fit" then
@@ -647,6 +650,7 @@ updateSizes changes model =
                 else
                     ( e, Cmd.none )
             )
+            Cmd.none
 
 
 updateMemos : ZoomLevel -> List SizeChange -> List Memo -> List Memo

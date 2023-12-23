@@ -14,7 +14,7 @@ import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirty, setDirtyCmd)
 import Ports
-import Services.Lenses exposing (mapCollapseTableColumns, mapColumnBasicTypes, mapEnabled, mapErdM, mapHiddenColumns, mapProps, mapRelations, mapRemoveViews, mapRemovedSchemas, mapSettingsM, mapSourceUpdateCmd, setColumnOrder, setDefaultSchema, setList, setMax, setName, setRelationStyle, setRemovedTables, setSettings)
+import Services.Lenses exposing (mapCollapseTableColumns, mapColumnBasicTypes, mapEnabled, mapErdM, mapHiddenColumns, mapProps, mapRelations, mapRemoveViews, mapRemovedSchemas, mapSettingsM, mapSourceUpdateT, setColumnOrder, setDefaultSchema, setList, setMax, setName, setRelationStyle, setRemovedTables, setSettings)
 import Services.Toasts as Toasts
 import Time
 import Track
@@ -62,7 +62,7 @@ handleProjectSettings now msg model =
             ( model |> mapErdM (Erd.mapSources (List.filter (\s -> s.id /= source.id))), Cmd.batch [ "Source " ++ source.name ++ " has been deleted from your project." |> Toasts.info |> Toast |> T.send, Track.sourceDeleted model.erd source ] ) |> setDirtyCmd
 
         PSSourceUpdate message ->
-            model |> mapSourceUpdateCmd (SourceUpdateDialog.update (PSSourceUpdate >> ProjectSettingsMsg) ModalOpen Noop now (model.erd |> Maybe.map .project) message)
+            model |> mapSourceUpdateT (SourceUpdateDialog.update (PSSourceUpdate >> ProjectSettingsMsg) ModalOpen Noop now (model.erd |> Maybe.map .project) message)
 
         PSSourceSet source ->
             if model.erd |> Maybe.mapOrElse (\erd -> erd.sources |> List.memberBy .id source.id) False then

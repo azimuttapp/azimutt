@@ -8,7 +8,7 @@ import Libs.Task as T
 import Models.ProjectRef exposing (ProjectRef)
 import Models.UrlInfos exposing (UrlInfos)
 import PagesComponents.Organization_.Project_.Models.Erd exposing (Erd)
-import Services.Lenses exposing (mapBodyCmd, mapMCmd)
+import Services.Lenses exposing (mapBodyT, mapMTW)
 
 
 dialogId : HtmlId
@@ -41,7 +41,7 @@ update wrap modalOpen urlInfos erd msg model =
             ( Nothing, Cmd.none )
 
         BodyMsg message ->
-            model |> mapMCmd (mapBodyCmd (ExportDialogBody.update (BodyMsg >> wrap) urlInfos erd message))
+            model |> mapMTW (mapBodyT (ExportDialogBody.update (BodyMsg >> wrap) urlInfos erd message)) Cmd.none
 
 
 view : (Msg -> msg) -> (Cmd msg -> msg) -> (msg -> msg) -> Bool -> ProjectRef -> Model -> Html msg

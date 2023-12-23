@@ -16,7 +16,7 @@ import Models.Project.Source exposing (Source)
 import Models.ProjectInfo exposing (ProjectInfo)
 import Services.DatabaseSource as DatabaseSource
 import Services.JsonSource as JsonSource
-import Services.Lenses exposing (mapDatabaseSourceMCmd, mapJsonSourceMCmd, mapPrismaSourceMCmd, mapSqlSourceMCmd)
+import Services.Lenses exposing (mapDatabaseSourceMTW, mapJsonSourceMTW, mapPrismaSourceMTW, mapSqlSourceMTW)
 import Services.PrismaSource as PrismaSource
 import Services.SqlSource as SqlSource
 import Time
@@ -80,16 +80,16 @@ update : (Msg -> msg) -> Time.Posix -> Maybe ProjectInfo -> Msg -> Model msg -> 
 update wrap now project msg model =
     case msg of
         EmbedDatabaseSource message ->
-            model |> mapDatabaseSourceMCmd (DatabaseSource.update (EmbedDatabaseSource >> wrap) now project message)
+            model |> mapDatabaseSourceMTW (DatabaseSource.update (EmbedDatabaseSource >> wrap) now project message) Cmd.none
 
         EmbedSqlSource message ->
-            model |> mapSqlSourceMCmd (SqlSource.update (EmbedSqlSource >> wrap) now project message)
+            model |> mapSqlSourceMTW (SqlSource.update (EmbedSqlSource >> wrap) now project message) Cmd.none
 
         EmbedPrismaSource message ->
-            model |> mapPrismaSourceMCmd (PrismaSource.update (EmbedPrismaSource >> wrap) now project message)
+            model |> mapPrismaSourceMTW (PrismaSource.update (EmbedPrismaSource >> wrap) now project message) Cmd.none
 
         EmbedJsonSource message ->
-            model |> mapJsonSourceMCmd (JsonSource.update (EmbedJsonSource >> wrap) now project message)
+            model |> mapJsonSourceMTW (JsonSource.update (EmbedJsonSource >> wrap) now project message) Cmd.none
 
 
 

@@ -21,7 +21,7 @@ import Random
 import Request
 import Services.DatabaseSource as DatabaseSource
 import Services.JsonSource as JsonSource
-import Services.Lenses exposing (mapDatabaseSourceMCmd, mapJsonSourceMCmd, mapPrismaSourceMCmd, mapSqlSourceMCmd, mapToastsCmd)
+import Services.Lenses exposing (mapDatabaseSourceMTW, mapJsonSourceMTW, mapPrismaSourceMTW, mapSqlSourceMTW, mapToastsT)
 import Services.PrismaSource as PrismaSource
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
@@ -59,16 +59,16 @@ update req now projects projectsLoaded urlOrganization msg model =
                 ( model, InitProject |> T.sendAfter 500 )
 
         DatabaseSourceMsg message ->
-            model |> mapDatabaseSourceMCmd (DatabaseSource.update DatabaseSourceMsg now Nothing message)
+            model |> mapDatabaseSourceMTW (DatabaseSource.update DatabaseSourceMsg now Nothing message) Cmd.none
 
         SqlSourceMsg message ->
-            model |> mapSqlSourceMCmd (SqlSource.update SqlSourceMsg now Nothing message)
+            model |> mapSqlSourceMTW (SqlSource.update SqlSourceMsg now Nothing message) Cmd.none
 
         PrismaSourceMsg message ->
-            model |> mapPrismaSourceMCmd (PrismaSource.update PrismaSourceMsg now Nothing message)
+            model |> mapPrismaSourceMTW (PrismaSource.update PrismaSourceMsg now Nothing message) Cmd.none
 
         JsonSourceMsg message ->
-            model |> mapJsonSourceMCmd (JsonSource.update JsonSourceMsg now Nothing message)
+            model |> mapJsonSourceMTW (JsonSource.update JsonSourceMsg now Nothing message) Cmd.none
 
         AmlSourceMsg storage name ->
             ( model, SourceId.generator |> Random.generate (Source.aml Conf.constants.virtualRelationSourceName now >> Project.create projects name >> CreateProjectTmp storage) )
@@ -83,7 +83,7 @@ update req now projects projectsLoaded urlOrganization msg model =
             )
 
         Toast message ->
-            model |> mapToastsCmd (Toasts.update Toast message)
+            model |> mapToastsT (Toasts.update Toast message)
 
         JsMessage message ->
             model |> handleJsMessage req urlOrganization message

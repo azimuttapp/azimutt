@@ -48,7 +48,7 @@ import Models.SqlQuery exposing (SqlQuery, SqlQueryOrigin)
 import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint)
 import Ports
-import Services.Lenses exposing (mapDetailsCmd, mapFilters, mapResultsCmd, mapVisualEditor, setOperation, setOperator, setValue)
+import Services.Lenses exposing (mapDetailsT, mapFilters, mapResultsT, mapVisualEditor, setOperation, setOperator, setValue)
 import Services.Toasts as Toasts
 import Track
 
@@ -213,22 +213,22 @@ update wrap showToast project sources msg model =
             ( { model | queryEditor = Editor.update message model.queryEditor }, Cmd.none )
 
         RunQuery source query ->
-            { model | resultsSeq = model.resultsSeq + 1 } |> mapResultsCmd (List.prependCmd (DataExplorerQuery.init project model.resultsSeq (DbSource.toInfo source) (query |> DbQuery.addLimit source.db.kind)))
+            { model | resultsSeq = model.resultsSeq + 1 } |> mapResultsT (List.prependT (DataExplorerQuery.init project model.resultsSeq (DbSource.toInfo source) (query |> DbQuery.addLimit source.db.kind)))
 
         DeleteQuery id ->
             ( { model | results = model.results |> List.filter (\r -> r.id /= id) }, Cmd.none )
 
         QueryMsg id m ->
-            model |> mapResultsCmd (List.mapByCmd .id id (DataExplorerQuery.update showToast project m))
+            model |> mapResultsT (List.mapByCmd .id id (DataExplorerQuery.update showToast project m))
 
         OpenDetails source query ->
-            { model | detailsSeq = model.detailsSeq + 1 } |> mapDetailsCmd (List.prependCmd (DataExplorerDetails.init project model.detailsSeq source query))
+            { model | detailsSeq = model.detailsSeq + 1 } |> mapDetailsT (List.prependT (DataExplorerDetails.init project model.detailsSeq source query))
 
         CloseDetails id ->
             ( { model | details = model.details |> List.removeBy .id id }, Cmd.none )
 
         DetailsMsg id m ->
-            model |> mapDetailsCmd (List.mapByCmd .id id (DataExplorerDetails.update project m))
+            model |> mapDetailsT (List.mapByCmd .id id (DataExplorerDetails.update project m))
 
 
 focusMainInput : DataExplorerTab -> Cmd msg
