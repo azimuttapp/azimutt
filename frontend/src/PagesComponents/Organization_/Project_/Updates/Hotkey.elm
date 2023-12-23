@@ -190,7 +190,7 @@ hideElement model =
         |> Maybe.orElse (model |> currentTableRow |> Maybe.map (DeleteTableRow >> T.send))
         |> Maybe.orElse (model |> currentColumn |> Maybe.map (HideColumn >> T.send))
         |> Maybe.orElse (model |> currentTable |> Maybe.map (HideTable >> T.send))
-        |> Maybe.orElse (model |> selectedItems |> Maybe.map (\( tables, rows, memos ) -> Cmd.batch ((tables |> List.map (HideTable >> T.send)) ++ (rows |> List.map (DeleteTableRow >> T.send)) ++ (memos |> List.map (MDelete >> MemoMsg >> T.send)))))
+        |> Maybe.orElse (model |> selectedItems |> Maybe.map (\( tables, rows, memos ) -> ((tables |> List.map HideTable) ++ (rows |> List.map DeleteTableRow) ++ (memos |> List.map (MDelete >> MemoMsg))) |> Batch |> T.send))
         |> Maybe.withDefault ("Can't find an element to hide :(" |> Toasts.info |> Toast |> T.send)
 
 
@@ -285,7 +285,7 @@ moveTables delta model =
             model.erd |> Maybe.mapOrElse (Erd.currentLayout >> .tables >> List.filter (.props >> .selected)) []
     in
     if List.nonEmpty selectedTables then
-        Cmd.batch (selectedTables |> List.map (\t -> T.send (TableMove t.id delta))) |> Just
+        selectedTables |> List.map (\t -> TableMove t.id delta) |> Batch |> T.send |> Just
 
     else
         Nothing
@@ -348,7 +348,7 @@ moveTablesOrder delta model =
             tables |> List.indexedMap Tuple.new |> List.filter (\( _, t ) -> t.props.selected)
     in
     if List.nonEmpty selectedTables then
-        Cmd.batch (selectedTables |> List.map (\( i, t ) -> T.send (TableOrder t.id (List.length tables - 1 - i + delta))))
+        selectedTables |> List.map (\( i, t ) -> TableOrder t.id (List.length tables - 1 - i + delta)) |> Batch |> T.send
 
     else
         (model.hoverTable

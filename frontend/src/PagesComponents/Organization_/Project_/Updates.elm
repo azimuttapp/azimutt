@@ -16,7 +16,7 @@ import Libs.Json.Decode as Decode
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models exposing (SizeChange)
-import Libs.Models.Delta exposing (Delta)
+import Libs.Models.Delta as Delta exposing (Delta)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Nel as Nel
 import Libs.Task as T
@@ -46,7 +46,7 @@ import PagesComponents.Organization_.Project_.Components.ExportDialog as ExportD
 import PagesComponents.Organization_.Project_.Components.ProjectSaveDialog as ProjectSaveDialog
 import PagesComponents.Organization_.Project_.Components.ProjectSharing as ProjectSharing
 import PagesComponents.Organization_.Project_.Components.SourceUpdateDialog as SourceUpdateDialog
-import PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, Model, Msg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..))
+import PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, Model, Msg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..), buildHistory)
 import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode
 import PagesComponents.Organization_.Project_.Models.DragState as DragState
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
@@ -80,7 +80,7 @@ import Random
 import Services.Backend as Backend
 import Services.DatabaseSource as DatabaseSource
 import Services.JsonSource as JsonSource
-import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapContextMenuM, mapDataExplorerT, mapDetailsSidebarT, mapEmbedSourceParsingMTW, mapErdM, mapErdMT, mapErdMTM, mapErdMTW, mapExportDialogT, mapHoverTable, mapMemos, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapOrganizationM, mapPlan, mapPosition, mapProject, mapProjectT, mapPromptM, mapProps, mapSaveT, mapSchemaAnalysisM, mapSearch, mapSharingT, mapShowHiddenColumns, mapTableRows, mapTableRowsT, mapTables, mapTablesL, mapTablesT, mapToastsT, setActive, setCanvas, setCollapsed, setColor, setColors, setColumns, setConfirm, setContextMenu, setCurrentLayout, setCursorMode, setDragging, setHoverColumn, setHoverTable, setHoverTableRow, setInput, setLast, setLayoutOnLoad, setModal, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setShow, setSize, setTables, setText)
+import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapCanvasT, mapColumns, mapContextMenuM, mapDataExplorerT, mapDetailsSidebarT, mapEmbedSourceParsingMTW, mapErdM, mapErdMT, mapErdMTM, mapErdMTW, mapExportDialogT, mapHoverTable, mapMemos, mapMemosT, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapOrganizationM, mapPlan, mapPosition, mapPositionT, mapProject, mapProjectT, mapPromptM, mapProps, mapPropsT, mapSaveT, mapSchemaAnalysisM, mapSearch, mapSharingT, mapShowHiddenColumns, mapTableRows, mapTableRowsT, mapTables, mapTablesL, mapTablesT, mapToastsT, setActive, setCanvas, setCollapsed, setColor, setColors, setColumns, setConfirm, setContextMenu, setCurrentLayout, setCursorMode, setDragging, setHoverColumn, setHoverTable, setHoverTableRow, setInput, setLast, setLayoutOnLoad, setModal, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setShow, setSize, setTables, setText)
 import Services.PrismaSource as PrismaSource
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
@@ -205,23 +205,52 @@ update doCmd urlLayout zone now urlInfos organizations projects msg model =
                 |> addHistoryT doCmd
                 |> setDirty
 
-        TableMove id delta ->
-            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.mapBy .id id (mapProps (mapPosition (Position.moveGrid delta)))))) |> setDirty
-
         CanvasPosition position ->
-            ( model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapCanvas (setPosition position))), Cmd.none )
+            ( model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (mapCanvasT (mapPositionT (\p -> ( position, ( CanvasPosition p, msg ) ))))) |> addHistoryT doCmd, Cmd.none )
+
+        TableMove id delta ->
+            model
+                |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.mapBy .id id (mapProps (mapPosition (Position.moveGrid delta))))))
+                |> addHistory doCmd ( TableMove id (Delta.negate delta), msg )
+                |> setDirty
 
         TablePosition id position ->
-            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.mapBy .id id (mapProps (setPosition position))))) |> setDirty
+            model
+                |> mapErdMTM (Erd.mapCurrentLayoutTLWithTime now (mapTablesT (List.mapByT .id id (mapPropsT (mapPositionT (\p -> ( position, ( TablePosition id p, msg ) )))))) >> Tuple.mapSecond buildHistory)
+                |> addHistoryT doCmd
+                |> setDirty
 
         TableRowPosition id position ->
-            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTableRows (List.mapBy .id id (setPosition position)))) |> setDirty
+            model
+                |> mapErdMTM (Erd.mapCurrentLayoutTLWithTime now (mapTableRowsT (List.mapByT .id id (mapPositionT (\p -> ( position, ( TableRowPosition id p, msg ) ))))) >> Tuple.mapSecond buildHistory)
+                |> addHistoryT doCmd
+                |> setDirty
 
         MemoPosition id position ->
-            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapMemos (List.mapBy .id id (setPosition position)))) |> setDirty
+            model
+                |> mapErdMTM (Erd.mapCurrentLayoutTLWithTime now (mapMemosT (List.mapByT .id id (mapPositionT (\p -> ( position, ( MemoPosition id p, msg ) ))))) >> Tuple.mapSecond buildHistory)
+                |> addHistoryT doCmd
+                |> setDirty
 
         TableOrder id index ->
-            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (\tables -> tables |> List.moveBy .id id (List.length tables - 1 - index)))) |> setDirty
+            model
+                |> mapErdMTM
+                    (Erd.mapCurrentLayoutTMWithTime now
+                        (mapTablesT
+                            (\tables ->
+                                (List.length tables - 1 - max index 0)
+                                    |> (\newPos ->
+                                            tables
+                                                |> List.findIndexBy .id id
+                                                |> Maybe.filter (\pos -> pos /= newPos)
+                                                |> Maybe.map (\pos -> ( tables |> List.moveIndex pos newPos, Just ( TableOrder id (List.length tables - 1 - pos), msg ) ))
+                                                |> Maybe.withDefault ( tables, Nothing )
+                                       )
+                            )
+                        )
+                    )
+                |> addHistoryT doCmd
+                |> setDirty
 
         TableColor id color ->
             let

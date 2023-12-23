@@ -256,8 +256,8 @@ type Msg
     | SelectItem HtmlId Bool
     | SelectItems (List HtmlId)
     | SelectAll
-    | TableMove TableId Delta
     | CanvasPosition Position.Diagram
+    | TableMove TableId Delta
     | TablePosition TableId Position.Grid
     | TableRowPosition TableRow.Id Position.Grid
     | MemoPosition MemoId Position.Grid

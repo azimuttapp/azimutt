@@ -39,6 +39,7 @@ module Services.Lenses exposing
     , mapJsonSourceT
     , mapLayouts
     , mapLayoutsD
+    , mapLayoutsDT
     , mapLayoutsDTL
     , mapLayoutsDTM
     , mapLayoutsDTW
@@ -46,6 +47,7 @@ module Services.Lenses exposing
     , mapMTW
     , mapMemos
     , mapMemosL
+    , mapMemosT
     , mapMetadata
     , mapMobileMenuOpen
     , mapNavbar
@@ -58,6 +60,7 @@ module Services.Lenses exposing
     , mapParsedSchemaM
     , mapPlan
     , mapPosition
+    , mapPositionT
     , mapPrismaSourceMTW
     , mapPrismaSourceT
     , mapProject
@@ -65,6 +68,7 @@ module Services.Lenses exposing
     , mapProjectT
     , mapPromptM
     , mapProps
+    , mapPropsT
     , mapRelatedTables
     , mapRelations
     , mapRemoveViews
@@ -728,6 +732,11 @@ mapLayoutsD =
     mapD_ .layouts setLayouts
 
 
+mapLayoutsDT : comparable -> (v -> ( v, a )) -> { item | layouts : Dict comparable v } -> ( { item | layouts : Dict comparable v }, Maybe a )
+mapLayoutsDT =
+    mapDT_ .layouts setLayouts
+
+
 mapLayoutsDTM : comparable -> (v -> ( v, Maybe a )) -> { item | layouts : Dict comparable v } -> ( { item | layouts : Dict comparable v }, Maybe a )
 mapLayoutsDTM =
     mapDTM_ .layouts setLayouts
@@ -761,6 +770,11 @@ setMemos =
 mapMemos : (v -> v) -> { item | memos : v } -> { item | memos : v }
 mapMemos =
     map_ .memos setMemos
+
+
+mapMemosT : (v -> ( v, a )) -> { item | memos : v } -> ( { item | memos : v }, a )
+mapMemosT =
+    mapT_ .memos setMemos
 
 
 mapMemosL : (v -> k) -> k -> (v -> v) -> { item | memos : List v } -> { item | memos : List v }
@@ -923,6 +937,11 @@ mapPosition =
     map_ .position setPosition
 
 
+mapPositionT : (v -> ( v, a )) -> { item | position : v } -> ( { item | position : v }, a )
+mapPositionT =
+    mapT_ .position setPosition
+
+
 setPrevious : v -> { item | previous : v } -> { item | previous : v }
 setPrevious =
     set_ .previous (\value item -> { item | previous = value })
@@ -986,6 +1005,11 @@ setProps =
 mapProps : (v -> v) -> { item | props : v } -> { item | props : v }
 mapProps =
     map_ .props setProps
+
+
+mapPropsT : (v -> ( v, a )) -> { item | props : v } -> ( { item | props : v }, a )
+mapPropsT =
+    mapT_ .props setProps
 
 
 setQuery : v -> { item | query : v } -> { item | query : v }

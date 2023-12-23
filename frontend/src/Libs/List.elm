@@ -30,6 +30,7 @@ module Libs.List exposing
     , mapAtCmd
     , mapBy
     , mapByCmd
+    , mapByT
     , mapLast
     , mapT
     , mapTM
@@ -259,6 +260,21 @@ mapAt index f list =
             )
 
 
+mapAtCmd : Int -> (a -> ( a, Cmd msg )) -> List a -> ( List a, Cmd msg )
+mapAtCmd index f list =
+    list
+        |> List.indexedMap
+            (\i a ->
+                if index == i then
+                    f a
+
+                else
+                    ( a, Cmd.none )
+            )
+        |> List.unzip
+        |> Tuple.mapSecond Cmd.batch
+
+
 mapLast : (a -> a) -> List a -> List a
 mapLast f list =
     let
@@ -282,19 +298,19 @@ mapBy matcher value transform list =
             )
 
 
-mapAtCmd : Int -> (a -> ( a, Cmd msg )) -> List a -> ( List a, Cmd msg )
-mapAtCmd index f list =
+mapByT : (a -> b) -> b -> (a -> ( a, t )) -> List a -> ( List a, List t )
+mapByT matcher value f list =
     list
-        |> List.indexedMap
-            (\i a ->
-                if index == i then
-                    f a
+        |> List.map
+            (\a ->
+                if matcher a == value then
+                    f a |> Tuple.mapSecond Just
 
                 else
-                    ( a, Cmd.none )
+                    ( a, Nothing )
             )
         |> List.unzip
-        |> Tuple.mapSecond Cmd.batch
+        |> Tuple.mapSecond (List.filterMap identity)
 
 
 mapByCmd : (a -> b) -> b -> (a -> ( a, Cmd msg )) -> List a -> ( List a, Cmd msg )
