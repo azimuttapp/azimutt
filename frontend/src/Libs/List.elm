@@ -18,6 +18,7 @@ module Libs.List exposing
     , get
     , groupBy
     , groupByL
+    , headOr
     , indexOf
     , indexedConcatMap
     , indexedFilter
@@ -76,6 +77,11 @@ import Libs.Maybe as Maybe
 import Libs.Tuple3 as Tuple3
 import Random
 import Set
+
+
+headOr : a -> List a -> a
+headOr default list =
+    list |> List.head |> Maybe.withDefault default
 
 
 get : Int -> List a -> Maybe a

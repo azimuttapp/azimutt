@@ -24,6 +24,7 @@ import Libs.Models.Platform exposing (Platform)
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (focus, focus_ring_offset_600)
 import Libs.Task as T
+import Libs.Tuple3 as Tuple3
 import Models.Organization as Organization exposing (Organization)
 import Models.OrganizationId as OrganizationId exposing (OrganizationId)
 import Models.Project.LayoutName exposing (LayoutName)
@@ -204,18 +205,32 @@ buildFolders layouts =
 buildFoldersNested : List ( List String, LayoutName, ErdLayout ) -> List LayoutFolder
 buildFoldersNested layouts =
     layouts
-        |> List.groupBy (\( parts, _, _ ) -> parts |> List.head |> Maybe.withDefault "")
+        |> List.groupBy (\( parts, _, _ ) -> parts |> List.headOr "")
         |> Dict.toList
         |> List.sortBy (\( folder, _ ) -> folder |> String.toLower)
         |> List.concatMap
             (\( folder, items ) ->
                 case items of
                     ( parts, name, layout ) :: [] ->
-                        [ LayoutItem (parts |> String.join "/") ( name, layout ) ]
+                        [ LayoutItem (parts |> String.join " / ") ( name, layout ) ]
 
                     _ ->
-                        [ LayoutFolder folder (items |> List.filterMap (\( parts, name, layout ) -> parts |> List.tail |> Maybe.map (\p -> ( p, name, layout ))) |> buildFoldersNested) ]
+                        let
+                            ( folderName, folderItems ) =
+                                buildFoldersNestedFlat folder (items |> List.map (Tuple3.mapFirst (List.drop 1)))
+                        in
+                        [ LayoutFolder folderName (folderItems |> buildFoldersNested) ]
             )
+
+
+buildFoldersNestedFlat : String -> List ( List String, LayoutName, ErdLayout ) -> ( String, List ( List String, LayoutName, ErdLayout ) )
+buildFoldersNestedFlat folder layouts =
+    case layouts |> List.groupBy (\( parts, _, _ ) -> parts |> List.headOr "") |> Dict.keys of
+        sub :: [] ->
+            buildFoldersNestedFlat (folder ++ " / " ++ sub) (layouts |> List.map (Tuple3.mapFirst (List.drop 1)))
+
+        _ ->
+            ( folder, layouts )
 
 
 countLayouts : List LayoutFolder -> Int
