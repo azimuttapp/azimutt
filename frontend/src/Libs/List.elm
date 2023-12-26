@@ -34,6 +34,7 @@ module Libs.List exposing
     , mapByT
     , mapLast
     , mapT
+    , mapTL
     , mapTM
     , maximumBy
     , memberBy
@@ -342,6 +343,11 @@ mapT transform list =
 mapTM : (a -> ( b, Maybe t )) -> List a -> ( List b, List t )
 mapTM transform list =
     list |> mapT transform |> Tuple.mapSecond (List.filterMap identity)
+
+
+mapTL : (a -> ( b, List t )) -> List a -> ( List b, List t )
+mapTL transform list =
+    list |> mapT transform |> Tuple.mapSecond (List.concatMap identity)
 
 
 zip : List b -> List a -> List ( a, b )

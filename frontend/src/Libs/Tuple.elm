@@ -1,4 +1,4 @@
-module Libs.Tuple exposing (apply, nAdd, nDiv, nSub, new)
+module Libs.Tuple exposing (append, apply, nAdd, nDiv, nSub, new)
 
 
 new : a -> b -> ( a, b )
@@ -9,6 +9,11 @@ new a b =
 apply : (a -> b -> c) -> ( a, b ) -> c
 apply f ( a, b ) =
     f a b
+
+
+append : c -> ( a, b ) -> ( a, b, c )
+append c ( a, b ) =
+    ( a, b, c )
 
 
 nAdd : ( number, number ) -> ( number, number ) -> ( number, number )

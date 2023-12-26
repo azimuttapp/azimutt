@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, AmlSidebarMsg(..), ConfirmDialog, ContextMenu, FindPathMsg(..), GroupEdit, GroupMsg(..), HelpDialog, HelpMsg(..), LayoutMsg(..), MemoEdit, MemoMsg(..), ModalDialog, Model, Msg(..), NavbarModel, NotesDialog, ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, VirtualRelation, VirtualRelationMsg(..), buildHistory, confirm, confirmDanger, emptyModel, prompt, simplePrompt)
+module PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, AmlSidebarMsg(..), ConfirmDialog, ContextMenu, FindPathMsg(..), GroupEdit, GroupMsg(..), HelpDialog, HelpMsg(..), LayoutMsg(..), MemoEdit, MemoMsg(..), ModalDialog, Model, Msg(..), NavbarModel, NotesDialog, ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, VirtualRelation, VirtualRelationMsg(..), addHistory, confirm, confirmDanger, emptyModel, prompt, simplePrompt)
 
 import Components.Atoms.Icon exposing (Icon(..))
 import Components.Organisms.TableRow as TableRow exposing (TableRowHover)
@@ -240,7 +240,7 @@ type Msg
     | ShowTable TableId (Maybe PositionHint) String
     | ShowTables (List TableId) (Maybe PositionHint) String
     | ShowAllTables String
-    | ReshowTable Int ErdTableLayout
+    | ReshowTable_ Int ErdTableLayout
     | HideTable TableId
     | ShowRelatedTables TableId
     | HideRelatedTables TableId
@@ -250,17 +250,17 @@ type Msg
     | ShowColumns TableId ShowColumns
     | HideColumns TableId HideColumns
     | SortColumns TableId ColumnOrder
-    | SetColumns TableId (List ErdColumnProps)
+    | SetColumns_ TableId (List ErdColumnProps)
     | ToggleNestedColumn TableId ColumnPath Bool
     | ToggleHiddenColumns TableId
     | SelectItem HtmlId Bool
-    | SelectItems (List HtmlId)
+    | SelectItems_ (List HtmlId)
     | SelectAll
-    | CanvasPosition Position.Diagram
+    | CanvasPosition_ Position.Diagram
     | TableMove TableId Delta
     | TablePosition TableId Position.Grid
-    | TableRowPosition TableRow.Id Position.Grid
-    | MemoPosition MemoId Position.Grid
+    | TableRowPosition_ TableRow.Id Position.Grid
+    | MemoPosition_ MemoId Position.Grid
     | TableOrder TableId Int
     | TableColor TableId Color
     | MoveColumn ColumnRef Int
@@ -473,14 +473,14 @@ simplePrompt label message =
         ""
 
 
-buildHistory : List ( Msg, Msg ) -> Maybe ( Msg, Msg )
-buildHistory history =
+addHistory : ( Model, Cmd Msg, List ( Msg, Msg ) ) -> ( Model, Cmd Msg )
+addHistory ( model, cmd, history ) =
     case history of
         [] ->
-            Nothing
+            ( model, cmd )
 
         one :: [] ->
-            Just one
+            ( { model | history = one :: model.history, future = [] }, cmd )
 
         many ->
-            many |> List.tupleSeq |> Tuple.mapBoth Batch Batch |> Just
+            ( { model | history = (many |> List.tupleSeq |> Tuple.mapBoth Batch Batch) :: model.history, future = [] }, cmd )

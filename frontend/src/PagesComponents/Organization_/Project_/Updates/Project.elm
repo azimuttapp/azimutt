@@ -15,7 +15,7 @@ import Ports
 import Services.Toasts as Toasts
 
 
-triggerSaveProject : UrlInfos -> List Organization -> Model -> ( Model, Cmd Msg )
+triggerSaveProject : UrlInfos -> List Organization -> Model -> ( Model, Cmd Msg, List ( Msg, Msg ) )
 triggerSaveProject urlInfos organizations model =
     let
         preselectedOrg : Maybe Organization
@@ -37,42 +37,43 @@ triggerSaveProject urlInfos organizations model =
                         )
             )
             Cmd.none
+    , []
     )
 
 
-createProject : ProjectName -> Organization -> ProjectStorage -> Model -> ( Model, Cmd Msg )
+createProject : ProjectName -> Organization -> ProjectStorage -> Model -> ( Model, Cmd Msg, List ( Msg, Msg ) )
 createProject name organization storage model =
     if model.conf.save then
         (model.erd |> Maybe.map Erd.unpack)
             |> Maybe.mapOrElse
                 (\p ->
                     p.organization
-                        |> Maybe.map (\_ -> ( model, "Project already created" |> Toasts.warning |> Toast |> T.send ))
-                        |> Maybe.withDefault ( { model | saving = True }, Ports.createProject organization.id storage { p | name = name } )
+                        |> Maybe.map (\_ -> ( model, "Project already created" |> Toasts.warning |> Toast |> T.send, [] ))
+                        |> Maybe.withDefault ( { model | saving = True }, Ports.createProject organization.id storage { p | name = name }, [] )
                 )
-                ( model, "No project to save" |> Toasts.warning |> Toast |> T.send )
+                ( model, "No project to save" |> Toasts.warning |> Toast |> T.send, [] )
 
     else
-        ( model, Cmd.none )
+        ( model, Cmd.none, [] )
 
 
-updateProject : Model -> ( Model, Cmd Msg )
+updateProject : Model -> ( Model, Cmd Msg, List ( Msg, Msg ) )
 updateProject model =
     if model.conf.save then
         (model.erd |> Maybe.map Erd.unpack)
             |> Maybe.mapOrElse
                 (\p ->
                     p.organization
-                        |> Maybe.map (\_ -> ( { model | saving = True }, Ports.updateProject p ))
-                        |> Maybe.withDefault ( model, "Project doesn't exist" |> Toasts.warning |> Toast |> T.send )
+                        |> Maybe.map (\_ -> ( { model | saving = True }, Ports.updateProject p, [] ))
+                        |> Maybe.withDefault ( model, "Project doesn't exist" |> Toasts.warning |> Toast |> T.send, [] )
                 )
-                ( model, "No project to save" |> Toasts.warning |> Toast |> T.send )
+                ( model, "No project to save" |> Toasts.warning |> Toast |> T.send, [] )
 
     else
-        ( model, Cmd.none )
+        ( model, Cmd.none, [] )
 
 
-moveProject : ProjectStorage -> Model -> ( Model, Cmd Msg )
+moveProject : ProjectStorage -> Model -> ( Model, Cmd Msg, List ( Msg, Msg ) )
 moveProject storage model =
     if model.conf.save then
         ( model
@@ -83,7 +84,8 @@ moveProject storage model =
                     (\p -> [ Ports.moveProjectTo p storage ])
                     [ "No project to move" |> Toasts.warning |> Toast |> T.send ]
             )
+        , []
         )
 
     else
-        ( model, Cmd.none )
+        ( model, Cmd.none, [] )

@@ -13,20 +13,20 @@ import Models.Position as Position
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableRow as TableRow exposing (TableRow)
-import PagesComponents.Organization_.Project_.Models as Msg exposing (Model, Msg(..), buildHistory)
+import PagesComponents.Organization_.Project_.Models as Msg exposing (Model, Msg(..))
 import PagesComponents.Organization_.Project_.Models.DragState exposing (DragState)
 import PagesComponents.Organization_.Project_.Models.Erd as Erd
 import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
 import PagesComponents.Organization_.Project_.Models.MemoId as MemoId exposing (MemoId)
-import PagesComponents.Organization_.Project_.Updates.Utils exposing (addHistory, addHistoryT, setDirty)
-import Services.Lenses exposing (mapCanvasT, mapErdM, mapErdMTM, mapMemos, mapProps, mapSelectionBox, mapTableRows, mapTables, setArea, setPosition, setSelectionBox)
+import PagesComponents.Organization_.Project_.Updates.Utils exposing (setHL, setHLDirty)
+import Services.Lenses exposing (mapCanvasT, mapErdM, mapErdMT, mapMemos, mapProps, mapSelectionBox, mapTableRows, mapTables, setArea, setPosition, setSelectionBox)
 import Time
 
 
-handleDrag : String -> Time.Posix -> DragState -> Bool -> Bool -> Model -> ( Model, Cmd Msg )
-handleDrag doCmd now drag isEnd cancel model =
+handleDrag : Time.Posix -> DragState -> Bool -> Bool -> Model -> ( Model, Cmd Msg, List ( Msg, Msg ) )
+handleDrag now drag isEnd cancel model =
     let
         canvas : CanvasProps
         canvas =
@@ -34,10 +34,10 @@ handleDrag doCmd now drag isEnd cancel model =
     in
     if drag.id == Conf.ids.erd then
         if isEnd && drag.init /= drag.last then
-            ( model |> mapErdMTM (Erd.mapCurrentLayoutTMWithTime now (mapCanvasT (moveCanvas drag))) |> addHistoryT doCmd, Cmd.none )
+            model |> mapErdMT (Erd.mapCurrentLayoutTLWithTime now (mapCanvasT (moveCanvas drag))) |> setHL
 
         else
-            ( model, Cmd.none )
+            ( model, Cmd.none, [] )
 
     else if drag.id == Conf.ids.selectionBox then
         let
@@ -52,14 +52,10 @@ handleDrag doCmd now drag isEnd cancel model =
                     model.selectionBox |> Maybe.mapOrElse .previouslySelected []
             in
             if cancel then
-                ( model
-                    |> setSelectionBox Nothing
-                    |> mapErdM (Erd.mapCurrentLayout (ErdLayout.setSelected previouslySelected))
-                , Cmd.none
-                )
+                ( model |> setSelectionBox Nothing |> mapErdM (Erd.mapCurrentLayout (ErdLayout.setSelected previouslySelected)), Cmd.none, [] )
 
             else
-                ( model |> setSelectionBox Nothing |> addHistory doCmd ( SelectItems previouslySelected, SelectItems currentlySelected ), Cmd.none )
+                ( model |> setSelectionBox Nothing, Cmd.none, [ ( SelectItems_ previouslySelected, SelectItems_ currentlySelected ) ] )
 
         else
             ( drag
@@ -70,22 +66,23 @@ handleDrag doCmd now drag isEnd cancel model =
                             |> mapErdM (Erd.mapCurrentLayoutWithTime now (ErdLayout.mapSelected (\i _ -> Area.overlapCanvas area { position = i.position |> Position.offGrid, size = i.size })))
                    )
             , Cmd.none
+            , []
             )
 
     else if isEnd && drag.init /= drag.last then
-        model |> mapErdMTM (Erd.mapCurrentLayoutTMWithTime now (moveInLayout drag canvas.zoom)) |> addHistoryT doCmd |> setDirty
+        model |> mapErdMT (Erd.mapCurrentLayoutTLWithTime now (moveInLayout drag canvas.zoom)) |> setHLDirty
 
     else
-        ( model, Cmd.none )
+        ( model, Cmd.none, [] )
 
 
-moveCanvas : DragState -> CanvasProps -> ( CanvasProps, Maybe ( Msg, Msg ) )
+moveCanvas : DragState -> CanvasProps -> ( CanvasProps, List ( Msg, Msg ) )
 moveCanvas drag canvas =
     (canvas.position |> Position.moveDiagram (buildDelta drag 1))
-        |> (\newPos -> ( canvas |> setPosition newPos, Just ( Msg.CanvasPosition canvas.position, Msg.CanvasPosition newPos ) ))
+        |> (\newPos -> ( canvas |> setPosition newPos, [ ( Msg.CanvasPosition_ canvas.position, Msg.CanvasPosition_ newPos ) ] ))
 
 
-moveInLayout : DragState -> ZoomLevel -> ErdLayout -> ( ErdLayout, Maybe ( Msg, Msg ) )
+moveInLayout : DragState -> ZoomLevel -> ErdLayout -> ( ErdLayout, List ( Msg, Msg ) )
 moveInLayout drag zoom layout =
     let
         dragSelected : Bool
@@ -112,17 +109,17 @@ moveInLayout drag zoom layout =
 
         moveTableRows : Dict TableRow.Id ( Position.Grid, ( Msg, Msg ) )
         moveTableRows =
-            layout.tableRows |> List.filterMap (\r -> shouldMove r.id TableRow.toHtmlId r Msg.TableRowPosition) |> Dict.fromList
+            layout.tableRows |> List.filterMap (\r -> shouldMove r.id TableRow.toHtmlId r Msg.TableRowPosition_) |> Dict.fromList
 
         moveMemos : Dict MemoId ( Position.Grid, ( Msg, Msg ) )
         moveMemos =
-            layout.memos |> List.filterMap (\m -> shouldMove m.id MemoId.toHtmlId m Msg.MemoPosition) |> Dict.fromList
+            layout.memos |> List.filterMap (\m -> shouldMove m.id MemoId.toHtmlId m Msg.MemoPosition_) |> Dict.fromList
     in
     ( layout
         |> mapTables (List.map (\t -> moveTables |> Dict.get t.id |> Maybe.mapOrElse (\( pos, _ ) -> t |> mapProps (setPosition pos)) t))
         |> mapTableRows (List.map (\r -> moveTableRows |> Dict.get r.id |> Maybe.mapOrElse (\( pos, _ ) -> r |> setPosition pos) r))
         |> mapMemos (List.map (\m -> moveMemos |> Dict.get m.id |> Maybe.mapOrElse (\( pos, _ ) -> m |> setPosition pos) m))
-    , (Dict.values moveTables ++ Dict.values moveTableRows ++ Dict.values moveMemos) |> List.map Tuple.second |> buildHistory
+    , (Dict.values moveTables ++ Dict.values moveTableRows ++ Dict.values moveMemos) |> List.map Tuple.second
     )
 
 

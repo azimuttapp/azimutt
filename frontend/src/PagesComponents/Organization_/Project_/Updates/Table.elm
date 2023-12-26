@@ -22,7 +22,7 @@ import Models.Project.Relation as Relation
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Size as Size
-import PagesComponents.Organization_.Project_.Models exposing (Model, Msg(..), buildHistory)
+import PagesComponents.Organization_.Project_.Models exposing (Model, Msg(..))
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn, ErdNestedColumns(..))
 import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps exposing (ErdColumnProps, ErdColumnPropsFlat, ErdColumnPropsNested(..))
@@ -42,25 +42,25 @@ import Time
 import Track
 
 
-goToTable : Time.Posix -> TableId -> ErdProps -> Erd -> ( Erd, ( Maybe ( Msg, Msg ), Cmd Msg ) )
+goToTable : Time.Posix -> TableId -> ErdProps -> Erd -> ( Erd, ( Cmd Msg, List ( Msg, Msg ) ) )
 goToTable now id viewport erd =
     (erd |> Erd.getLayoutTable id)
         |> Maybe.map (\t -> ( placeTableAtCenter viewport (erd |> Erd.currentLayout |> .canvas) t.props, TableId.toHtmlId id ))
         |> Maybe.map
             (\( pos, htmlId ) ->
                 erd
-                    |> Erd.mapCurrentLayoutTMWithTime now
+                    |> Erd.mapCurrentLayoutTLWithTime now
                         (\l ->
                             ( l |> mapCanvas (setPosition pos) |> ErdLayout.mapSelected (\i _ -> i.id == htmlId)
-                            , Just
-                                ( Batch [ CanvasPosition l.canvas.position, SelectItems (ErdLayout.getSelected l) ]
-                                , Batch [ CanvasPosition pos, SelectItems [ htmlId ] ]
+                            , [ ( Batch [ CanvasPosition_ l.canvas.position, SelectItems_ (ErdLayout.getSelected l) ]
+                                , Batch [ CanvasPosition_ pos, SelectItems_ [ htmlId ] ]
                                 )
+                              ]
                             )
                         )
-                    |> Tuple.mapSecond (\h -> ( h, Cmd.none ))
+                    |> Tuple.mapSecond (\h -> ( Cmd.none, h ))
             )
-        |> Maybe.withDefault ( erd, ( Nothing, "Table " ++ TableId.show erd.settings.defaultSchema id ++ " not shown" |> Toasts.info |> Toast |> T.send ) )
+        |> Maybe.withDefault ( erd, ( "Table " ++ TableId.show erd.settings.defaultSchema id ++ " not shown" |> Toasts.info |> Toast |> T.send, [] ) )
 
 
 placeTableAtCenter : ErdProps -> CanvasProps -> ErdTableProps -> Position.Diagram
@@ -77,18 +77,18 @@ placeTableAtCenter viewport canvas table =
     canvas.position |> Position.moveDiagram delta
 
 
-showTable : Time.Posix -> TableId -> Maybe PositionHint -> String -> Erd -> ( Erd, ( Maybe ( Msg, Msg ), Cmd Msg ) )
+showTable : Time.Posix -> TableId -> Maybe PositionHint -> String -> Erd -> ( Erd, ( Cmd Msg, List ( Msg, Msg ) ) )
 showTable now id hint from erd =
     case erd |> Erd.getTable id of
         Just table ->
             if erd |> Erd.isShown id then
-                ( erd, ( Nothing, "Table " ++ TableId.show erd.settings.defaultSchema id ++ " already shown" |> Toasts.info |> Toast |> T.send ) )
+                ( erd, ( "Table " ++ TableId.show erd.settings.defaultSchema id ++ " already shown" |> Toasts.info |> Toast |> T.send, [] ) )
 
             else
-                erd |> performShowTable now table hint |> Tuple.mapSecond (\m -> ( m, Cmd.batch [ Ports.observeTableSize table.id, Track.tableShown 1 from (Just erd) ] ))
+                erd |> performShowTable now table hint |> Tuple.mapSecond (\m -> ( Cmd.batch [ Ports.observeTableSize table.id, Track.tableShown 1 from (Just erd) ], m ))
 
         Nothing ->
-            ( erd, ( Nothing, "Can't show table " ++ TableId.show erd.settings.defaultSchema id ++ ": not found" |> Toasts.error |> Toast |> T.send ) )
+            ( erd, ( "Can't show table " ++ TableId.show erd.settings.defaultSchema id ++ ": not found" |> Toasts.error |> Toast |> T.send, [] ) )
 
 
 reshowTable : Time.Posix -> Int -> ErdTableLayout -> Erd -> ( Erd, Cmd Msg )
@@ -96,7 +96,7 @@ reshowTable now index table erd =
     ( erd |> performReshowTable now index table, Cmd.batch [ Ports.observeTableSize table.id, Track.tableShown 1 "undo" (Just erd) ] )
 
 
-showTables : Time.Posix -> List TableId -> Maybe PositionHint -> String -> Erd -> ( Erd, ( Maybe ( Msg, Msg ), Cmd Msg ) )
+showTables : Time.Posix -> List TableId -> Maybe PositionHint -> String -> Erd -> ( Erd, ( Cmd Msg, List ( Msg, Msg ) ) )
 showTables now ids hint from erd =
     ids
         |> List.indexedMap (\i id -> ( id, erd |> Erd.getTable id, hint |> Maybe.map (PositionHint.move { dx = 0, dy = Conf.ui.table.headerHeight * toFloat i }) ))
@@ -108,7 +108,7 @@ showTables now ids hint from erd =
                             ( ( e, h ), ( found, id :: shown, notFound ) )
 
                         else
-                            ( e |> performShowTable now table tableHint |> Tuple.mapSecond (\m -> Maybe.toList m ++ h), ( id :: found, shown, notFound ) )
+                            ( e |> performShowTable now table tableHint |> Tuple.mapSecond (\m -> m ++ h), ( id :: found, shown, notFound ) )
 
                     Nothing ->
                         ( ( e, h ), ( found, shown, id :: notFound ) )
@@ -116,19 +116,19 @@ showTables now ids hint from erd =
             ( ( erd, [] ), ( [], [], [] ) )
         |> (\( ( e, h ), ( found, shown, notFound ) ) ->
                 ( e
-                , ( h |> List.reverse |> buildHistory
-                  , Cmd.batch
+                , ( Cmd.batch
                         [ Ports.observeTablesSize found
                         , B.cond (shown |> List.isEmpty) Cmd.none (Track.tableShown (List.length shown) from (Just erd))
                         , B.cond (shown |> List.isEmpty) Cmd.none ("Tables " ++ (shown |> List.map (TableId.show erd.settings.defaultSchema) |> String.join ", ") ++ " are already shown" |> Toasts.info |> Toast |> T.send)
                         , B.cond (notFound |> List.isEmpty) Cmd.none ("Can't show tables " ++ (notFound |> List.map (TableId.show erd.settings.defaultSchema) |> String.join ", ") ++ ": can't found them" |> Toasts.info |> Toast |> T.send)
                         ]
+                  , h |> List.reverse
                   )
                 )
            )
 
 
-showAllTables : Time.Posix -> String -> Erd -> ( Erd, ( Maybe ( Msg, Msg ), Cmd Msg ) )
+showAllTables : Time.Posix -> String -> Erd -> ( Erd, ( Cmd Msg, List ( Msg, Msg ) ) )
 showAllTables now from erd =
     let
         shownIds : Set TableId
@@ -144,29 +144,28 @@ showAllTables now from erd =
             tablesToShow |> List.map (\t -> t |> ErdTableLayout.init erd.settings shownIds (erd.relationsByTable |> Dict.getOrElse t.id []) erd.settings.collapseTableColumns Nothing)
     in
     ( erd |> Erd.mapCurrentLayoutWithTime now (mapTables (\old -> newTables ++ old))
-    , ( Just ( tablesToShow |> List.map (\t -> HideTable t.id) |> Batch, ShowAllTables "redo" )
-      , Cmd.batch
+    , ( Cmd.batch
             [ Ports.observeTablesSize (newTables |> List.map .id)
             , B.cond (newTables |> List.isEmpty) Cmd.none (Track.tableShown (List.length newTables) from (Just erd))
             ]
+      , [ ( tablesToShow |> List.map (\t -> HideTable t.id) |> Batch, ShowAllTables "redo" ) ]
       )
     )
 
 
-hideTable : Time.Posix -> TableId -> Erd -> ( Erd, Maybe ( Msg, Msg ) )
+hideTable : Time.Posix -> TableId -> Erd -> ( Erd, List ( Msg, Msg ) )
 hideTable now id erd =
     -- FIXME: must keep table details in history to get back color, shown columns and so on
     if erd |> Erd.currentLayout |> .tables |> List.findBy .id id |> Maybe.map (.props >> .selected) |> Maybe.withDefault False then
         (erd |> Erd.currentLayout |> .tables)
             |> List.filter (.props >> .selected)
-            |> List.foldl (\p ( e, h ) -> performHideTable now p.id e |> Tuple.mapSecond (\m -> Maybe.toList m ++ h)) ( erd, [] )
-            |> Tuple.mapSecond buildHistory
+            |> List.foldl (\p ( e, h ) -> performHideTable now p.id e |> Tuple.mapSecond (\m -> m ++ h)) ( erd, [] )
 
     else
         performHideTable now id erd
 
 
-showRelatedTables : Time.Posix -> TableId -> Erd -> ( Erd, ( Maybe ( Msg, Msg ), Cmd Msg ) )
+showRelatedTables : Time.Posix -> TableId -> Erd -> ( Erd, ( Cmd Msg, List ( Msg, Msg ) ) )
 showRelatedTables now id erd =
     (erd |> Erd.currentLayout |> .tables |> List.findBy .id id)
         |> Maybe.mapOrElse
@@ -214,16 +213,16 @@ showRelatedTables now id erd =
                         toShow |> List.foldl (\( t, h ) ( cur, res ) -> ( cur + h + padding.dy, ( t, Just (PlaceAt (Position.grid { left = left, top = cur })) ) :: res )) ( top, [] ) |> Tuple.second
 
                     ( newErd, cmds ) =
-                        shows |> List.foldl (\( t, h ) ( e, cs ) -> showTable now t h "related" e |> Tuple.mapSecond (\( _, c ) -> c :: cs)) ( erd, [] )
+                        shows |> List.foldl (\( t, h ) ( e, cs ) -> showTable now t h "related" e |> Tuple.mapSecond (\( c, _ ) -> c :: cs)) ( erd, [] )
 
                     ( back, forward ) =
                         ( shows |> List.map (\( t, _ ) -> HideTable t) |> Batch
                         , shows |> List.map (\( t, h ) -> ShowTable t h "related") |> Batch
                         )
                 in
-                ( newErd, ( Just ( back, forward ), Cmd.batch cmds ) )
+                ( newErd, ( Cmd.batch cmds, [ ( back, forward ) ] ) )
             )
-            ( erd, ( Nothing, Cmd.none ) )
+            ( erd, ( Cmd.none, [] ) )
 
 
 guessHeight : TableId -> Erd -> Float
@@ -233,7 +232,7 @@ guessHeight id erd =
         |> Maybe.withDefault 200
 
 
-hideRelatedTables : Time.Posix -> TableId -> Erd -> ( Erd, ( Maybe ( Msg, Msg ), Cmd Msg ) )
+hideRelatedTables : Time.Posix -> TableId -> Erd -> ( Erd, ( Cmd Msg, List ( Msg, Msg ) ) )
 hideRelatedTables now id erd =
     let
         related : List TableId
@@ -254,23 +253,23 @@ hideRelatedTables now id erd =
             erd |> Erd.currentLayout |> .tables |> List.zipWithIndex |> List.filter (\( t, _ ) -> related |> List.member t.id)
     in
     ( related |> List.foldl (\t e -> hideTable now t e |> Tuple.first) erd
-    , ( Just ( shownTables |> List.map (\( t, i ) -> ReshowTable i t) |> Batch, related |> List.map HideTable |> Batch ), Cmd.none )
+    , ( Cmd.none, [ ( shownTables |> List.map (\( t, i ) -> ReshowTable_ i t) |> Batch, related |> List.map HideTable |> Batch ) ] )
     )
 
 
-showColumn : Time.Posix -> Int -> ColumnRef -> Erd -> ( Erd, Maybe ( Msg, Msg ) )
+showColumn : Time.Posix -> Int -> ColumnRef -> Erd -> ( Erd, List ( Msg, Msg ) )
 showColumn now index column erd =
     ( erd |> Erd.mapCurrentLayoutWithTime now (mapTablesL .id column.table (mapColumns (ErdColumnProps.remove column.column >> ErdColumnProps.insertAt index column.column)))
-    , Just ( HideColumn column, ShowColumn index column )
+    , [ ( HideColumn column, ShowColumn index column ) ]
     )
 
 
-hideColumn : Time.Posix -> ColumnRef -> Erd -> ( Erd, Maybe ( Msg, Msg ) )
+hideColumn : Time.Posix -> ColumnRef -> Erd -> ( Erd, List ( Msg, Msg ) )
 hideColumn now column erd =
     erd
-        |> Erd.mapCurrentLayoutTMWithTime now
+        |> Erd.mapCurrentLayoutTLWithTime now
             (mapTablesLTM .id column.table (mapColumnsT (ErdColumnProps.removeWithIndex column.column))
-                >> Tuple.mapSecond (Maybe.map (\i -> ( ShowColumn i column, HideColumn column )))
+                >> Tuple.mapSecond (Maybe.map (\i -> ( ShowColumn i column, HideColumn column )) >> Maybe.toList)
             )
 
 
@@ -286,7 +285,7 @@ hoverNextColumn column model =
     model |> setHoverColumn (nextColumn |> Maybe.map (ColumnRef column.table))
 
 
-showColumns : Time.Posix -> TableId -> ShowColumns -> Erd -> ( Erd, ( Maybe ( Msg, Msg ), Cmd Msg ) )
+showColumns : Time.Posix -> TableId -> ShowColumns -> Erd -> ( Erd, ( Cmd Msg, List ( Msg, Msg ) ) )
 showColumns now id kind erd =
     mapColumnsForTableOrSelectedPropsTL now
         id
@@ -295,13 +294,13 @@ showColumns now id kind erd =
                 |> List.filter (Relation.linkedToTable id)
                 |> (\tableRelations -> ShowColumns.filterBy kind tableRelations table columns)
                 |> (\cols -> ShowColumns.sortBy kind cols)
-                |> (\cols -> ( cols, Just ( SetColumns table.id columns, SetColumns table.id cols ) ))
+                |> (\cols -> ( cols, [ ( SetColumns_ table.id columns, SetColumns_ table.id cols ) ] ))
         )
         erd
-        |> Tuple.mapSecond (\h -> ( buildHistory h, Cmd.none ))
+        |> Tuple.mapSecond (\h -> ( Cmd.none, h ))
 
 
-hideColumns : Time.Posix -> TableId -> HideColumns -> Erd -> ( Erd, ( Maybe ( Msg, Msg ), Cmd Msg ) )
+hideColumns : Time.Posix -> TableId -> HideColumns -> Erd -> ( Erd, ( Cmd Msg, List ( Msg, Msg ) ) )
 hideColumns now id kind erd =
     mapColumnsForTableOrSelectedPropsTL now
         id
@@ -331,14 +330,14 @@ hideColumns now id kind erd =
                                         _ ->
                                             False
                                 )
-                            |> (\cols -> ( cols, Just ( SetColumns table.id columns, SetColumns table.id cols ) ))
+                            |> (\cols -> ( cols, [ ( SetColumns_ table.id columns, SetColumns_ table.id cols ) ] ))
                    )
         )
         erd
-        |> Tuple.mapSecond (\h -> ( buildHistory h, Cmd.none ))
+        |> Tuple.mapSecond (\h -> ( Cmd.none, h ))
 
 
-sortColumns : Time.Posix -> TableId -> ColumnOrder -> Erd -> ( Erd, ( Maybe ( Msg, Msg ), Cmd Msg ) )
+sortColumns : Time.Posix -> TableId -> ColumnOrder -> Erd -> ( Erd, ( Cmd Msg, List ( Msg, Msg ) ) )
 sortColumns now id kind erd =
     mapColumnsForTableOrSelectedPropsTL now
         id
@@ -356,10 +355,10 @@ sortColumns now id kind erd =
                             |> ColumnOrder.sortBy kind table erd.relations
                             |> List.map Tuple.second
                     )
-                |> (\cols -> ( cols, Just ( SetColumns table.id columns, SetColumns table.id cols ) ))
+                |> (\cols -> ( cols, [ ( SetColumns_ table.id columns, SetColumns_ table.id cols ) ] ))
         )
         erd
-        |> Tuple.mapSecond (\h -> ( buildHistory h, Cmd.none ))
+        |> Tuple.mapSecond (\h -> ( Cmd.none, h ))
 
 
 toggleNestedColumn : Time.Posix -> TableId -> ColumnPath -> Bool -> Erd -> Erd
@@ -409,19 +408,19 @@ hoverColumn column enter erd tables =
     tables |> List.map (\t -> t |> mapColumns (ErdColumnProps.map (\p c -> c |> setHighlighted (highlightedColumns |> Set.member (ColumnId.from t { path = p })))))
 
 
-performHideTable : Time.Posix -> TableId -> Erd -> ( Erd, Maybe ( Msg, Msg ) )
+performHideTable : Time.Posix -> TableId -> Erd -> ( Erd, List ( Msg, Msg ) )
 performHideTable now id erd =
     (erd |> Erd.currentLayout |> .tables |> List.zipWithIndex |> List.find (\( t, _ ) -> t.id == id))
         |> Maybe.map
             (\( table, index ) ->
                 ( erd |> Erd.mapCurrentLayoutWithTime now (mapTables (List.removeBy .id id) >> mapTables updateRelatedTables)
-                , Just ( ReshowTable index table, HideTable id )
+                , [ ( ReshowTable_ index table, HideTable id ) ]
                 )
             )
-        |> Maybe.withDefault ( erd, Nothing )
+        |> Maybe.withDefault ( erd, [] )
 
 
-performShowTable : Time.Posix -> ErdTable -> Maybe PositionHint -> Erd -> ( Erd, Maybe ( Msg, Msg ) )
+performShowTable : Time.Posix -> ErdTable -> Maybe PositionHint -> Erd -> ( Erd, List ( Msg, Msg ) )
 performShowTable now table hint erd =
     ( erd
         |> Erd.mapCurrentLayoutWithTime now
@@ -438,7 +437,7 @@ performShowTable now table hint erd =
                 )
                 >> mapTables updateRelatedTables
             )
-    , Just ( HideTable table.id, ShowTable table.id hint "undo" )
+    , [ ( HideTable table.id, ShowTable table.id hint "undo" ) ]
     )
 
 
@@ -493,7 +492,7 @@ mapColumnsForTableOrSelectedProps now id transform erd =
             )
 
 
-mapColumnsForTableOrSelectedPropsTL : Time.Posix -> TableId -> (ErdTable -> List ErdColumnProps -> ( List ErdColumnProps, Maybe a )) -> Erd -> ( Erd, List a )
+mapColumnsForTableOrSelectedPropsTL : Time.Posix -> TableId -> (ErdTable -> List ErdColumnProps -> ( List ErdColumnProps, List a )) -> Erd -> ( Erd, List a )
 mapColumnsForTableOrSelectedPropsTL now id transform erd =
     let
         selected : Bool
@@ -503,15 +502,15 @@ mapColumnsForTableOrSelectedPropsTL now id transform erd =
     erd
         |> Erd.mapCurrentLayoutTLWithTime now
             (mapTablesT
-                (List.mapTM
+                (List.mapTL
                     (\props ->
                         if props.id == id || (selected && props.props.selected) then
                             (erd.tables |> Dict.get props.id)
                                 |> Maybe.map (\table -> props |> mapColumnsT (transform table >> Tuple.mapFirst (ErdColumnProps.filter (\p _ -> table |> ErdTable.getColumn p |> Maybe.isJust))))
-                                |> Maybe.withDefault ( props, Nothing )
+                                |> Maybe.withDefault ( props, [] )
 
                         else
-                            ( props, Nothing )
+                            ( props, [] )
                     )
                 )
             )

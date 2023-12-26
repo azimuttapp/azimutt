@@ -19,7 +19,7 @@ import Models.ProjectTokenId exposing (ProjectTokenId)
 import Models.UrlInfos exposing (UrlInfos)
 import Page
 import PagesComponents.Organization_.Project_.Components.EmbedSourceParsingDialog as EmbedSourceParsingDialog
-import PagesComponents.Organization_.Project_.Models as Models exposing (Msg(..), emptyModel)
+import PagesComponents.Organization_.Project_.Models as Models exposing (Msg(..), addHistory, emptyModel)
 import PagesComponents.Organization_.Project_.Models.EmbedKind as EmbedKind
 import PagesComponents.Organization_.Project_.Models.EmbedMode as EmbedMode exposing (EmbedModeId)
 import PagesComponents.Organization_.Project_.Models.ErdConf as ErdConf
@@ -48,7 +48,7 @@ page shared req =
     in
     Page.element
         { init = init query
-        , update = Updates.update "embed" query.layout shared.zone shared.now urlInfos shared.organizations shared.projects
+        , update = \msg model -> Updates.update query.layout shared.zone shared.now urlInfos shared.organizations shared.projects msg model |> addHistory
         , view = Views.view (Request.pushRoute Route.NotFound req) req.url urlInfos shared
         , subscriptions = Subscriptions.subscriptions
         }

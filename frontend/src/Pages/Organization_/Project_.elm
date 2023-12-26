@@ -10,7 +10,7 @@ import Libs.Task as T
 import Models.ProjectTokenId exposing (ProjectTokenId)
 import Models.UrlInfos exposing (UrlInfos)
 import Page
-import PagesComponents.Organization_.Project_.Models as Models exposing (Msg(..), emptyModel)
+import PagesComponents.Organization_.Project_.Models as Models exposing (Msg(..), addHistory, emptyModel)
 import PagesComponents.Organization_.Project_.Models.ErdConf as ErdConf
 import PagesComponents.Organization_.Project_.Subscriptions as Subscriptions
 import PagesComponents.Organization_.Project_.Updates as Updates
@@ -33,7 +33,7 @@ page shared req =
     in
     Page.element
         { init = init req.params urlToken urlSave
-        , update = Updates.update "project" urlLayout shared.zone shared.now urlInfos shared.organizations shared.projects
+        , update = \msg model -> Updates.update urlLayout shared.zone shared.now urlInfos shared.organizations shared.projects msg model |> addHistory
         , view = Views.view (Navigation.load (Backend.organizationUrl urlInfos.organization)) req.url urlInfos shared
         , subscriptions = Subscriptions.subscriptions
         }

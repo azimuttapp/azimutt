@@ -21,6 +21,8 @@ import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Nel as Nel
 import Libs.Task as T
 import Libs.Time as Time
+import Libs.Tuple as Tuple
+import Libs.Tuple3 as Tuple3
 import Models.Area as Area
 import Models.Organization exposing (Organization)
 import Models.Position as Position
@@ -46,7 +48,7 @@ import PagesComponents.Organization_.Project_.Components.ExportDialog as ExportD
 import PagesComponents.Organization_.Project_.Components.ProjectSaveDialog as ProjectSaveDialog
 import PagesComponents.Organization_.Project_.Components.ProjectSharing as ProjectSharing
 import PagesComponents.Organization_.Project_.Components.SourceUpdateDialog as SourceUpdateDialog
-import PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, Model, Msg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..), buildHistory)
+import PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, Model, Msg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..))
 import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode
 import PagesComponents.Organization_.Project_.Models.DragState as DragState
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
@@ -71,7 +73,7 @@ import PagesComponents.Organization_.Project_.Updates.Source as Source
 import PagesComponents.Organization_.Project_.Updates.Table exposing (goToTable, hideColumn, hideColumns, hideRelatedTables, hideTable, hoverColumn, hoverNextColumn, mapTablePropOrSelected, reshowTable, showAllTables, showColumn, showColumns, showRelatedTables, showTable, showTables, sortColumns, toggleNestedColumn)
 import PagesComponents.Organization_.Project_.Updates.TableRow exposing (mapTableRowOrSelectedCmd, moveToTableRow, showTableRow)
 import PagesComponents.Organization_.Project_.Updates.Tags exposing (handleTags)
-import PagesComponents.Organization_.Project_.Updates.Utils exposing (addHistory, addHistoryCmd, addHistoryT, addHistoryTCmd, setDirty, setDirtyCmd)
+import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirty, setDirtyCmd, setHDirty, setHDirtyCmd, setHL, setHLDirty, setHLDirtyCmd)
 import PagesComponents.Organization_.Project_.Updates.VirtualRelation exposing (handleVirtualRelation)
 import PagesComponents.Organization_.Project_.Views as Views
 import PagesComponents.Organization_.Project_.Views.Modals.NewLayout as NewLayout
@@ -89,17 +91,17 @@ import Time
 import Track
 
 
-update : String -> Maybe LayoutName -> Time.Zone -> Time.Posix -> UrlInfos -> List Organization -> List ProjectInfo -> Msg -> Model -> ( Model, Cmd Msg )
-update doCmd urlLayout zone now urlInfos organizations projects msg model =
+update : Maybe LayoutName -> Time.Zone -> Time.Posix -> UrlInfos -> List Organization -> List ProjectInfo -> Msg -> Model -> ( Model, Cmd Msg, List ( Msg, Msg ) )
+update urlLayout zone now urlInfos organizations projects msg model =
     case msg of
         ToggleMobileMenu ->
-            ( model |> mapNavbar (mapMobileMenuOpen not), Cmd.none )
+            ( model |> mapNavbar (mapMobileMenuOpen not), Cmd.none, [] )
 
         SearchUpdated search ->
-            ( model |> mapNavbar (mapSearch (setText search >> setActive 0)), Cmd.none )
+            ( model |> mapNavbar (mapSearch (setText search >> setActive 0)), Cmd.none, [] )
 
         SearchClicked kind table ->
-            ( model, Cmd.batch [ ShowTable table Nothing "search" |> T.send, Track.searchClicked kind model.erd ] )
+            ( model, Cmd.batch [ ShowTable table Nothing "search" |> T.send, Track.searchClicked kind model.erd ], [] )
 
         TriggerSaveProject ->
             model |> triggerSaveProject urlInfos organizations
@@ -114,42 +116,42 @@ update doCmd urlLayout zone now urlInfos organizations projects msg model =
             model |> moveProject storage
 
         RenameProject name ->
-            model |> mapErdMT (mapProjectT (\p -> ( p |> setName name, ( RenameProject p.name, RenameProject name ) ))) |> addHistoryT doCmd |> setDirty
+            model |> mapErdMT (mapProjectT (\p -> ( p |> setName name, [ ( RenameProject p.name, RenameProject name ) ] ))) |> setHLDirty
 
         DeleteProject project ->
-            ( model, Ports.deleteProject project ((project.organization |> Maybe.map .id) |> Backend.organizationUrl |> Just) )
+            ( model, Ports.deleteProject project ((project.organization |> Maybe.map .id) |> Backend.organizationUrl |> Just), [] )
 
         GoToTable id ->
-            model |> mapErdMT (goToTable now id model.erdElem) |> addHistoryTCmd doCmd |> setDirtyCmd
+            model |> mapErdMT (goToTable now id model.erdElem) |> setHLDirtyCmd
 
         ShowTable id hint from ->
             if model.erd |> Maybe.mapOrElse (Erd.currentLayout >> .tables) [] |> List.any (\t -> t.id == id) then
-                ( model, GoToTable id |> T.send )
+                ( model, GoToTable id |> T.send, [] )
 
             else
-                model |> mapErdMT (showTable now id hint from) |> addHistoryTCmd doCmd |> setDirtyCmd
+                model |> mapErdMT (showTable now id hint from) |> setHLDirtyCmd
 
-        ReshowTable index table ->
+        ReshowTable_ index table ->
             if model.erd |> Maybe.mapOrElse (Erd.currentLayout >> .tables) [] |> List.any (\t -> t.id == table.id) then
-                ( model, GoToTable table.id |> T.send )
+                ( model, GoToTable table.id |> T.send, [] )
 
             else
-                model |> mapErdMTW (reshowTable now index table) Cmd.none |> setDirtyCmd
+                model |> mapErdMTW (reshowTable now index table) Cmd.none |> setHDirtyCmd [ ( HideTable table.id, msg ) ]
 
         ShowTables ids hint from ->
-            model |> mapErdMT (showTables now ids hint from) |> addHistoryTCmd doCmd |> setDirtyCmd
+            model |> mapErdMT (showTables now ids hint from) |> setHLDirtyCmd
 
         ShowAllTables from ->
-            model |> mapErdMT (showAllTables now from) |> addHistoryTCmd doCmd |> setDirtyCmd
+            model |> mapErdMT (showAllTables now from) |> setHLDirtyCmd
 
         HideTable id ->
-            model |> mapErdMTM (hideTable now id) |> addHistoryT doCmd |> mapHoverTable (\h -> B.cond (h == Just id) Nothing h) |> setDirty
+            model |> mapErdMT (hideTable now id) |> Tuple.mapFirst (mapHoverTable (\h -> B.cond (h == Just id) Nothing h)) |> setHLDirty
 
         ShowRelatedTables id ->
-            model |> mapErdMT (showRelatedTables now id) |> addHistoryTCmd doCmd |> setDirtyCmd
+            model |> mapErdMT (showRelatedTables now id) |> setHLDirtyCmd
 
         HideRelatedTables id ->
-            model |> mapErdMT (hideRelatedTables now id) |> addHistoryTCmd doCmd |> setDirtyCmd
+            model |> mapErdMT (hideRelatedTables now id) |> setHLDirtyCmd
 
         ToggleTableCollapse id ->
             let
@@ -157,85 +159,67 @@ update doCmd urlLayout zone now urlInfos organizations projects msg model =
                 collapsed =
                     model.erd |> Maybe.andThen (Erd.currentLayout >> .tables >> List.findBy .id id) |> Maybe.mapOrElse (.props >> .collapsed) False
             in
-            model |> mapErdMTW (\erd -> erd |> Erd.mapCurrentLayoutWithTimeCmd now (mapTablesT (mapTablePropOrSelected erd.settings.defaultSchema id (mapProps (setCollapsed (not collapsed)))))) Cmd.none |> addHistoryCmd doCmd ( ToggleTableCollapse id, ToggleTableCollapse id ) |> setDirtyCmd
+            model
+                |> mapErdMTW (\erd -> erd |> Erd.mapCurrentLayoutWithTimeCmd now (mapTablesT (mapTablePropOrSelected erd.settings.defaultSchema id (mapProps (setCollapsed (not collapsed)))))) Cmd.none
+                |> setHDirtyCmd [ ( ToggleTableCollapse id, ToggleTableCollapse id ) ]
 
         ShowColumn index column ->
-            model |> mapErdMTM (showColumn now index column) |> addHistoryT doCmd |> setDirty
+            model |> mapErdMT (showColumn now index column) |> setHLDirty
 
         HideColumn column ->
-            model |> mapErdMTM (hideColumn now column) |> addHistoryT doCmd |> hoverNextColumn column |> setDirty
+            model |> mapErdMT (hideColumn now column) |> Tuple.mapFirst (hoverNextColumn column) |> setHLDirty
 
         ShowColumns id kind ->
-            model |> mapErdMT (showColumns now id kind) |> addHistoryTCmd doCmd |> setDirtyCmd
+            model |> mapErdMT (showColumns now id kind) |> setHLDirtyCmd
 
         HideColumns id kind ->
-            model |> mapErdMT (hideColumns now id kind) |> addHistoryTCmd doCmd |> setDirtyCmd
+            model |> mapErdMT (hideColumns now id kind) |> setHLDirtyCmd
 
         SortColumns id kind ->
-            model |> mapErdMT (sortColumns now id kind) |> addHistoryTCmd doCmd |> setDirtyCmd
+            model |> mapErdMT (sortColumns now id kind) |> setHLDirtyCmd
 
-        SetColumns id columns ->
-            model |> mapErdM (Erd.mapCurrentLayout (mapTablesL .id id (setColumns columns))) |> setDirty
+        SetColumns_ id columns ->
+            -- no undo action as triggered only from undo ^^
+            model |> mapErdM (Erd.mapCurrentLayout (mapTablesL .id id (setColumns columns))) |> setHDirty []
 
         ToggleNestedColumn table path open ->
-            model |> mapErdM (toggleNestedColumn now table path open) |> addHistory doCmd ( ToggleNestedColumn table path (not open), ToggleNestedColumn table path open ) |> setDirty
+            model |> mapErdM (toggleNestedColumn now table path open) |> setHDirty [ ( ToggleNestedColumn table path (not open), ToggleNestedColumn table path open ) ]
 
         ToggleHiddenColumns id ->
-            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.mapBy .id id (mapProps (mapShowHiddenColumns not))))) |> addHistory doCmd ( ToggleHiddenColumns id, ToggleHiddenColumns id ) |> setDirty
+            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.mapBy .id id (mapProps (mapShowHiddenColumns not))))) |> setHDirty [ ( ToggleHiddenColumns id, ToggleHiddenColumns id ) ]
 
         SelectItem htmlId ctrl ->
             if model.dragging |> Maybe.any DragState.hasMoved then
-                ( model, Cmd.none )
+                ( model, Cmd.none, [] )
 
             else
-                model
-                    |> mapErdMTM (Erd.mapCurrentLayoutTMWithTime now (\l -> ( l |> ErdLayout.mapSelected (\i s -> B.cond (i.id == htmlId) (not s) (B.cond ctrl s False)), Just ( SelectItems (ErdLayout.getSelected l), msg ) )))
-                    |> addHistoryT doCmd
-                    |> setDirty
+                model |> mapErdMT (Erd.mapCurrentLayoutTLWithTime now (\l -> ( l |> ErdLayout.mapSelected (\i s -> B.cond (i.id == htmlId) (not s) (B.cond ctrl s False)), [ ( SelectItems_ (ErdLayout.getSelected l), msg ) ] ))) |> setHLDirty
 
-        SelectItems htmlIds ->
-            model
-                |> mapErdMTM (Erd.mapCurrentLayoutTMWithTime now (\l -> ( l |> ErdLayout.setSelected htmlIds, Just ( SelectItems (ErdLayout.getSelected l), msg ) )))
-                |> addHistoryT doCmd
-                |> setDirty
+        SelectItems_ htmlIds ->
+            model |> mapErdMT (Erd.mapCurrentLayoutTLWithTime now (\l -> ( l |> ErdLayout.setSelected htmlIds, [ ( SelectItems_ (ErdLayout.getSelected l), msg ) ] ))) |> setHLDirty
 
         SelectAll ->
-            model
-                |> mapErdMTM (Erd.mapCurrentLayoutTMWithTime now (\l -> ( l |> ErdLayout.mapSelected (\_ _ -> True), Just ( SelectItems (ErdLayout.getSelected l), msg ) )))
-                |> addHistoryT doCmd
-                |> setDirty
+            model |> mapErdMT (Erd.mapCurrentLayoutTLWithTime now (\l -> ( l |> ErdLayout.mapSelected (\_ _ -> True), [ ( SelectItems_ (ErdLayout.getSelected l), msg ) ] ))) |> setHLDirty
 
-        CanvasPosition position ->
-            ( model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (mapCanvasT (mapPositionT (\p -> ( position, ( CanvasPosition p, msg ) ))))) |> addHistoryT doCmd, Cmd.none )
+        CanvasPosition_ position ->
+            model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (mapCanvasT (mapPositionT (\p -> ( position, [ ( CanvasPosition_ p, msg ) ] ))))) |> setHL
 
         TableMove id delta ->
-            model
-                |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.mapBy .id id (mapProps (mapPosition (Position.moveGrid delta))))))
-                |> addHistory doCmd ( TableMove id (Delta.negate delta), msg )
-                |> setDirty
+            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.mapBy .id id (mapProps (mapPosition (Position.moveGrid delta)))))) |> setHDirty [ ( TableMove id (Delta.negate delta), msg ) ]
 
         TablePosition id position ->
-            model
-                |> mapErdMTM (Erd.mapCurrentLayoutTLWithTime now (mapTablesT (List.mapByT .id id (mapPropsT (mapPositionT (\p -> ( position, ( TablePosition id p, msg ) )))))) >> Tuple.mapSecond buildHistory)
-                |> addHistoryT doCmd
-                |> setDirty
+            model |> mapErdMT (Erd.mapCurrentLayoutTLWithTime now (mapTablesT (List.mapByT .id id (mapPropsT (mapPositionT (\p -> ( position, ( TablePosition id p, msg ) ))))))) |> setHLDirty
 
-        TableRowPosition id position ->
-            model
-                |> mapErdMTM (Erd.mapCurrentLayoutTLWithTime now (mapTableRowsT (List.mapByT .id id (mapPositionT (\p -> ( position, ( TableRowPosition id p, msg ) ))))) >> Tuple.mapSecond buildHistory)
-                |> addHistoryT doCmd
-                |> setDirty
+        TableRowPosition_ id position ->
+            model |> mapErdMT (Erd.mapCurrentLayoutTLWithTime now (mapTableRowsT (List.mapByT .id id (mapPositionT (\p -> ( position, ( TableRowPosition_ id p, msg ) )))))) |> setHLDirty
 
-        MemoPosition id position ->
-            model
-                |> mapErdMTM (Erd.mapCurrentLayoutTLWithTime now (mapMemosT (List.mapByT .id id (mapPositionT (\p -> ( position, ( MemoPosition id p, msg ) ))))) >> Tuple.mapSecond buildHistory)
-                |> addHistoryT doCmd
-                |> setDirty
+        MemoPosition_ id position ->
+            model |> mapErdMT (Erd.mapCurrentLayoutTLWithTime now (mapMemosT (List.mapByT .id id (mapPositionT (\p -> ( position, ( MemoPosition_ id p, msg ) )))))) |> setHLDirty
 
         TableOrder id index ->
             model
-                |> mapErdMTM
-                    (Erd.mapCurrentLayoutTMWithTime now
+                |> mapErdMT
+                    (Erd.mapCurrentLayoutTLWithTime now
                         (mapTablesT
                             (\tables ->
                                 (List.length tables - 1 - max index 0)
@@ -243,14 +227,13 @@ update doCmd urlLayout zone now urlInfos organizations projects msg model =
                                             tables
                                                 |> List.findIndexBy .id id
                                                 |> Maybe.filter (\pos -> pos /= newPos)
-                                                |> Maybe.map (\pos -> ( tables |> List.moveIndex pos newPos, Just ( TableOrder id (List.length tables - 1 - pos), msg ) ))
-                                                |> Maybe.withDefault ( tables, Nothing )
+                                                |> Maybe.map (\pos -> ( tables |> List.moveIndex pos newPos, [ ( TableOrder id (List.length tables - 1 - pos), msg ) ] ))
+                                                |> Maybe.withDefault ( tables, [] )
                                        )
                             )
                         )
                     )
-                |> addHistoryT doCmd
-                |> setDirty
+                |> setHLDirty
 
         TableColor id color ->
             let
@@ -259,25 +242,25 @@ update doCmd urlLayout zone now urlInfos organizations projects msg model =
                     model.erd |> Erd.getProjectRefM urlInfos
             in
             if model.erd |> Erd.canChangeColor then
-                model |> mapErdMTW (\erd -> erd |> Erd.mapCurrentLayoutWithTimeCmd now (mapTablesT (mapTablePropOrSelected erd.settings.defaultSchema id (mapProps (setColor color))))) Cmd.none |> setDirtyCmd
+                model |> mapErdMTW (\erd -> erd |> Erd.mapCurrentLayoutWithTimeCmd now (mapTablesT (mapTablePropOrSelected erd.settings.defaultSchema id (mapProps (setColor color))))) Cmd.none |> setHDirtyCmd []
 
             else
-                ( model, Cmd.batch [ ProPlan.colorsModalBody project ProPlanColors ProPlan.colorsInit |> CustomModalOpen |> T.send, Track.planLimit .tableColor model.erd ] )
+                ( model, Cmd.batch [ ProPlan.colorsModalBody project ProPlanColors ProPlan.colorsInit |> CustomModalOpen |> T.send, Track.planLimit .tableColor model.erd ], [] )
 
         MoveColumn column position ->
-            model |> mapErdM (\erd -> erd |> Erd.mapCurrentLayoutWithTime now (mapTables (List.mapBy .id column.table (mapColumns (ErdColumnProps.mapAt (column.column |> ColumnPath.parent) (List.moveBy .name (column.column |> Nel.last) position)))))) |> setDirty
+            model |> mapErdM (\erd -> erd |> Erd.mapCurrentLayoutWithTime now (mapTables (List.mapBy .id column.table (mapColumns (ErdColumnProps.mapAt (column.column |> ColumnPath.parent) (List.moveBy .name (column.column |> Nel.last) position)))))) |> setDirty |> Tuple.append []
 
         ToggleHoverTable table on ->
-            ( model |> setHoverTable (B.cond on (Just table) Nothing), Cmd.none )
+            ( model |> setHoverTable (B.cond on (Just table) Nothing), Cmd.none, [] )
 
         ToggleHoverColumn column on ->
-            ( model |> setHoverColumn (B.cond on (Just column) Nothing) |> mapErdM (\e -> e |> Erd.mapCurrentLayoutWithTime now (mapTables (hoverColumn column on e))), Cmd.none )
+            ( model |> setHoverColumn (B.cond on (Just column) Nothing) |> mapErdM (\e -> e |> Erd.mapCurrentLayoutWithTime now (mapTables (hoverColumn column on e))), Cmd.none, [] )
 
         HoverTableRow ( table, col ) on ->
-            ( model |> setHoverTableRow (B.cond on (Just ( table, col )) (col |> Maybe.map (\_ -> ( table, Nothing )))), Cmd.none )
+            ( model |> setHoverTableRow (B.cond on (Just ( table, col )) (col |> Maybe.map (\_ -> ( table, Nothing )))), Cmd.none, [] )
 
         CreateUserSource name ->
-            ( model, SourceId.generator |> Random.generate (Source.aml name now >> CreateUserSourceWithId) )
+            ( model, SourceId.generator |> Random.generate (Source.aml name now >> CreateUserSourceWithId), [] )
 
         CreateUserSourceWithId source ->
             model
@@ -285,198 +268,200 @@ update doCmd urlLayout zone now urlInfos organizations projects msg model =
                 |> (\updated -> updated |> mapAmlSidebarM (AmlSidebar.setSource (updated.erd |> Maybe.andThen (.sources >> List.last))))
                 |> AmlSidebar.setOtherSourcesTableIdsCache (Just source.id)
                 |> setDirty
+                |> Tuple.append []
 
         CreateRelations rels ->
-            model |> mapErdMTW (Source.createRelations now rels) Cmd.none |> setDirtyCmd
+            model |> mapErdMTW (Source.createRelations now rels) Cmd.none |> setHDirtyCmd []
 
         IgnoreRelation col ->
-            model |> mapErdM (Erd.mapIgnoredRelations (Dict.update col.table (Maybe.mapOrElse (List.insert col.column) [ col.column ] >> List.uniqueBy ColumnPath.toString >> Just))) |> setDirty
+            model |> mapErdM (Erd.mapIgnoredRelations (Dict.update col.table (Maybe.mapOrElse (List.insert col.column) [ col.column ] >> List.uniqueBy ColumnPath.toString >> Just))) |> setDirty |> Tuple.append []
 
         NewLayoutMsg message ->
-            model |> NewLayout.update ModalOpen Toast CustomModalOpen now urlInfos message
+            model |> NewLayout.update ModalOpen Toast CustomModalOpen now urlInfos message |> Tuple.append []
 
         LayoutMsg message ->
-            model |> handleLayout message
+            model |> handleLayout message |> Tuple.append []
 
         GroupMsg message ->
-            model |> handleGroups now urlInfos message
+            model |> handleGroups now urlInfos message |> Tuple.append []
 
         NotesMsg message ->
-            model |> handleNotes message
+            model |> handleNotes message |> Tuple.append []
 
         TagsMsg message ->
-            model |> handleTags message
+            model |> handleTags message |> Tuple.append []
 
         MemoMsg message ->
-            model |> handleMemo now urlInfos message
+            model |> handleMemo now urlInfos message |> Tuple.append []
 
         ShowTableRow source query previous hint from ->
             (model.erd |> Maybe.andThen (Erd.currentLayout >> .tableRows >> List.find (\r -> r.source == source.id && r.table == query.table && r.primaryKey == query.primaryKey)))
                 |> Maybe.map (\r -> model |> mapErdMTW (moveToTableRow now model.erdElem r) Cmd.none)
                 |> Maybe.withDefault (model |> mapErdMTW (showTableRow now source query previous hint from) Cmd.none |> setDirtyCmd)
+                |> Tuple.append []
 
         DeleteTableRow id ->
-            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTableRows (List.removeBy .id id))) |> setDirty
+            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTableRows (List.removeBy .id id))) |> setDirty |> Tuple.append []
 
         TableRowMsg id message ->
-            model |> mapErdMTW (\e -> e |> Erd.mapCurrentLayoutWithTimeCmd now (mapTableRowsT (mapTableRowOrSelectedCmd id message (TableRow.update DropdownToggle Toast now e.project e.sources model.openedDropdown message)))) Cmd.none
+            model |> mapErdMTW (\e -> e |> Erd.mapCurrentLayoutWithTimeCmd now (mapTableRowsT (mapTableRowOrSelectedCmd id message (TableRow.update DropdownToggle Toast now e.project e.sources model.openedDropdown message)))) Cmd.none |> Tuple.append []
 
         AmlSidebarMsg message ->
-            model |> AmlSidebar.update now message
+            model |> AmlSidebar.update now message |> Tuple.append []
 
         DetailsSidebarMsg message ->
-            model.erd |> Maybe.mapOrElse (\erd -> model |> mapDetailsSidebarT (DetailsSidebar.update Noop NotesMsg TagsMsg erd message)) ( model, Cmd.none )
+            model.erd |> Maybe.mapOrElse (\erd -> model |> mapDetailsSidebarT (DetailsSidebar.update Noop NotesMsg TagsMsg erd message)) ( model, Cmd.none ) |> Tuple.append []
 
         DataExplorerMsg message ->
-            model.erd |> Maybe.mapOrElse (\erd -> model |> mapDataExplorerT (DataExplorer.update DataExplorerMsg Toast erd.project erd.sources message)) ( model, Cmd.none )
+            model.erd |> Maybe.mapOrElse (\erd -> model |> mapDataExplorerT (DataExplorer.update DataExplorerMsg Toast erd.project erd.sources message)) ( model, Cmd.none ) |> Tuple.append []
 
         VirtualRelationMsg message ->
-            model |> handleVirtualRelation message
+            model |> handleVirtualRelation message |> Tuple.append []
 
         FindPathMsg message ->
-            model |> handleFindPath message
+            model |> handleFindPath message |> Tuple.append []
 
         SchemaAnalysisMsg SAOpen ->
-            ( model |> setSchemaAnalysis (Just { id = Conf.ids.schemaAnalysisDialog, opened = "" }), Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.schemaAnalysisDialog), Track.dbAnalysisOpened model.erd ] )
+            ( model |> setSchemaAnalysis (Just { id = Conf.ids.schemaAnalysisDialog, opened = "" }), Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.schemaAnalysisDialog), Track.dbAnalysisOpened model.erd ] ) |> Tuple.append []
 
         SchemaAnalysisMsg (SASectionToggle section) ->
-            ( model |> mapSchemaAnalysisM (mapOpened (\opened -> B.cond (opened == section) "" section)), Cmd.none )
+            ( model |> mapSchemaAnalysisM (mapOpened (\opened -> B.cond (opened == section) "" section)), Cmd.none ) |> Tuple.append []
 
         SchemaAnalysisMsg SAClose ->
-            ( model |> setSchemaAnalysis Nothing, Cmd.none )
+            ( model |> setSchemaAnalysis Nothing, Cmd.none ) |> Tuple.append []
 
         ExportDialogMsg message ->
-            model.erd |> Maybe.mapOrElse (\erd -> model |> mapExportDialogT (ExportDialog.update ExportDialogMsg ModalOpen urlInfos erd message)) ( model, Cmd.none )
+            model.erd |> Maybe.mapOrElse (\erd -> model |> mapExportDialogT (ExportDialog.update ExportDialogMsg ModalOpen urlInfos erd message)) ( model, Cmd.none ) |> Tuple.append []
 
         SharingMsg message ->
-            model |> mapSharingT (ProjectSharing.update SharingMsg ModalOpen Toast zone now model.erd message)
+            model |> mapSharingT (ProjectSharing.update SharingMsg ModalOpen Toast zone now model.erd message) |> Tuple.append []
 
         ProjectSaveMsg message ->
-            model |> mapSaveT (ProjectSaveDialog.update ModalOpen message)
+            model |> mapSaveT (ProjectSaveDialog.update ModalOpen message) |> Tuple.append []
 
         ProjectSettingsMsg message ->
-            model |> handleProjectSettings now message
+            model |> handleProjectSettings now message |> Tuple.append []
 
         EmbedSourceParsingMsg message ->
-            model |> mapEmbedSourceParsingMTW (EmbedSourceParsingDialog.update EmbedSourceParsingMsg now (model.erd |> Maybe.map .project) message) Cmd.none
+            model |> mapEmbedSourceParsingMTW (EmbedSourceParsingDialog.update EmbedSourceParsingMsg now (model.erd |> Maybe.map .project) message) Cmd.none |> Tuple.append []
 
         SourceParsed source ->
-            ( model, source |> Project.create projects source.name |> Ok |> Just |> GotProject "load" |> JsMessage |> T.send )
+            ( model, source |> Project.create projects source.name |> Ok |> Just |> GotProject "load" |> JsMessage |> T.send ) |> Tuple.append []
 
         ProPlanColors _ ProPlan.EnableTableChangeColor ->
-            ( model |> mapErdM (mapProject (mapOrganizationM (mapPlan (setColors True)))), Ports.fireworks )
+            ( model |> mapErdM (mapProject (mapOrganizationM (mapPlan (setColors True)))), Ports.fireworks ) |> Tuple.append []
 
         ProPlanColors state message ->
-            state |> ProPlan.colorsUpdate ProPlanColors message |> Tuple.mapFirst (\s -> { model | modal = model.modal |> Maybe.map (\m -> { m | content = ProPlan.colorsModalBody (model.erd |> Erd.getProjectRefM urlInfos) ProPlanColors s }) })
+            state |> ProPlan.colorsUpdate ProPlanColors message |> Tuple.mapFirst (\s -> { model | modal = model.modal |> Maybe.map (\m -> { m | content = ProPlan.colorsModalBody (model.erd |> Erd.getProjectRefM urlInfos) ProPlanColors s }) }) |> Tuple.append []
 
         HelpMsg message ->
-            model |> handleHelp message
+            model |> handleHelp message |> Tuple.append []
 
         CursorMode mode ->
-            ( model |> setCursorMode mode, Cmd.none )
+            ( model |> setCursorMode mode, Cmd.none ) |> Tuple.append []
 
         FitToScreen ->
-            model |> mapErdMTW (fitCanvas model.erdElem) Cmd.none
+            model |> mapErdMTW (fitCanvas model.erdElem) Cmd.none |> Tuple.append []
 
         ArrangeTables ->
-            model |> mapErdMTW (arrangeTables now model.erdElem) Cmd.none |> setDirtyCmd
+            model |> mapErdMTW (arrangeTables now model.erdElem) Cmd.none |> setHDirtyCmd []
 
         Fullscreen id ->
-            ( model, Ports.fullscreen id )
+            ( model, Ports.fullscreen id ) |> Tuple.append []
 
         OnWheel event ->
-            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapCanvas (handleWheel event model.erdElem))) |> setDirty
+            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapCanvas (handleWheel event model.erdElem))) |> setDirty |> Tuple.append []
 
         Zoom delta ->
-            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapCanvas (zoomCanvas delta model.erdElem))) |> setDirty
+            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapCanvas (zoomCanvas delta model.erdElem))) |> setDirty |> Tuple.append []
 
         Focus id ->
-            ( model, Ports.focus id )
+            ( model, Ports.focus id ) |> Tuple.append []
 
         DropdownToggle id ->
-            ( model |> Dropdown.update id, Cmd.none )
+            ( model |> Dropdown.update id, Cmd.none ) |> Tuple.append []
 
         DropdownOpen id ->
-            ( model |> setOpenedDropdown id, Cmd.none )
+            ( model |> setOpenedDropdown id, Cmd.none ) |> Tuple.append []
 
         DropdownClose ->
-            ( model |> setOpenedDropdown "", Cmd.none )
+            ( model |> setOpenedDropdown "", Cmd.none ) |> Tuple.append []
 
         PopoverOpen id ->
-            ( model |> setOpenedPopover id, Cmd.none )
+            ( model |> setOpenedPopover id, Cmd.none ) |> Tuple.append []
 
         ContextMenuCreate content event ->
-            ( model |> setContextMenu (Just { content = content, position = event.clientPos, show = False }), T.sendAfter 1 ContextMenuShow )
+            ( model |> setContextMenu (Just { content = content, position = event.clientPos, show = False }), T.sendAfter 1 ContextMenuShow ) |> Tuple.append []
 
         ContextMenuShow ->
-            ( model |> mapContextMenuM (setShow True), Cmd.none )
+            ( model |> mapContextMenuM (setShow True), Cmd.none ) |> Tuple.append []
 
         ContextMenuClose ->
-            ( model |> setContextMenu Nothing, Cmd.none )
+            ( model |> setContextMenu Nothing, Cmd.none ) |> Tuple.append []
 
         DragStart id pos ->
             model.dragging
-                |> Maybe.mapOrElse (\d -> ( model, "Already dragging " ++ d.id |> Toasts.info |> Toast |> T.send ))
-                    ({ id = id, init = pos, last = pos } |> (\d -> model |> setDragging (Just d) |> handleDrag doCmd now d False False))
+                |> Maybe.mapOrElse (\d -> ( model, "Already dragging " ++ d.id |> Toasts.info |> Toast |> T.send, [] ))
+                    ({ id = id, init = pos, last = pos } |> (\d -> model |> setDragging (Just d) |> handleDrag now d False False))
 
         DragMove pos ->
             model.dragging
                 |> Maybe.map (setLast pos)
-                |> Maybe.mapOrElse (\d -> model |> setDragging (Just d) |> handleDrag doCmd now d False False) ( model, Cmd.none )
+                |> Maybe.mapOrElse (\d -> model |> setDragging (Just d) |> handleDrag now d False False) ( model, Cmd.none, [] )
 
         DragEnd cancel pos ->
             model.dragging
                 |> Maybe.map (setLast pos)
-                |> Maybe.mapOrElse (\d -> model |> setDragging Nothing |> handleDrag doCmd now d True cancel) ( model, Cmd.none )
+                |> Maybe.mapOrElse (\d -> model |> setDragging Nothing |> handleDrag now d True cancel) ( model, Cmd.none, [] )
 
         DragCancel ->
-            ( model |> setDragging Nothing, Cmd.none )
+            ( model |> setDragging Nothing, Cmd.none ) |> Tuple.append []
 
         Toast message ->
-            model |> mapToastsT (Toasts.update Toast message)
+            model |> mapToastsT (Toasts.update Toast message) |> Tuple.append []
 
         ConfirmOpen confirm ->
-            ( model |> setConfirm (Just { id = Conf.ids.confirmDialog, content = confirm }), T.sendAfter 1 (ModalOpen Conf.ids.confirmDialog) )
+            ( model |> setConfirm (Just { id = Conf.ids.confirmDialog, content = confirm }), T.sendAfter 1 (ModalOpen Conf.ids.confirmDialog) ) |> Tuple.append []
 
         ConfirmAnswer answer cmd ->
-            ( model |> setConfirm Nothing, B.cond answer cmd Cmd.none )
+            ( model |> setConfirm Nothing, B.cond answer cmd Cmd.none ) |> Tuple.append []
 
         PromptOpen prompt input ->
-            ( model |> setPrompt (Just { id = Conf.ids.promptDialog, content = prompt, input = input }), T.sendAfter 1 (ModalOpen Conf.ids.promptDialog) )
+            ( model |> setPrompt (Just { id = Conf.ids.promptDialog, content = prompt, input = input }), T.sendAfter 1 (ModalOpen Conf.ids.promptDialog) ) |> Tuple.append []
 
         PromptUpdate input ->
-            ( model |> mapPromptM (setInput input), Cmd.none )
+            ( model |> mapPromptM (setInput input), Cmd.none ) |> Tuple.append []
 
         PromptAnswer cmd ->
-            ( model |> setPrompt Nothing, cmd )
+            ( model |> setPrompt Nothing, cmd ) |> Tuple.append []
 
         ModalOpen id ->
-            ( model |> mapOpenedDialogs (\dialogs -> id :: dialogs), Ports.autofocusWithin id )
+            ( model |> mapOpenedDialogs (\dialogs -> id :: dialogs), Ports.autofocusWithin id ) |> Tuple.append []
 
         ModalClose message ->
-            ( model |> mapOpenedDialogs (List.drop 1), T.sendAfter Conf.ui.closeDuration message )
+            ( model |> mapOpenedDialogs (List.drop 1), T.sendAfter Conf.ui.closeDuration message ) |> Tuple.append []
 
         CustomModalOpen content ->
-            ( model |> setModal (Just { id = Conf.ids.customDialog, content = content }), T.sendAfter 1 (ModalOpen Conf.ids.customDialog) )
+            ( model |> setModal (Just { id = Conf.ids.customDialog, content = content }), T.sendAfter 1 (ModalOpen Conf.ids.customDialog) ) |> Tuple.append []
 
         CustomModalClose ->
-            ( model |> setModal Nothing, Cmd.none )
+            ( model |> setModal Nothing, Cmd.none ) |> Tuple.append []
 
         Undo ->
             case model.history of
                 [] ->
-                    ( model, "Can't undo, action history is empty" |> Toasts.info |> Toast |> T.send )
+                    ( model, "Can't undo, action history is empty" |> Toasts.info |> Toast |> T.send, [] )
 
                 ( back, next ) :: history ->
-                    update "undo" urlLayout zone now urlInfos organizations projects back { model | history = history, future = ( back, next ) :: model.future }
+                    update urlLayout zone now urlInfos organizations projects back { model | history = history, future = ( back, next ) :: model.future } |> Tuple3.mapThird (\_ -> [])
 
         Redo ->
             case model.future of
                 [] ->
-                    ( model, "Can't redo, no future action" |> Toasts.info |> Toast |> T.send )
+                    ( model, "Can't redo, no future action" |> Toasts.info |> Toast |> T.send, [] )
 
                 ( back, next ) :: future ->
-                    update "redo" urlLayout zone now urlInfos organizations projects next { model | history = ( back, next ) :: model.history, future = future }
+                    update urlLayout zone now urlInfos organizations projects next { model | history = ( back, next ) :: model.history, future = future } |> Tuple3.mapThird (\_ -> [])
 
         JsMessage message ->
             model |> handleJsMessage now urlLayout message
@@ -484,152 +469,152 @@ update doCmd urlLayout zone now urlInfos organizations projects msg model =
         Batch messages ->
             messages
                 |> List.foldl
-                    (\curMsg ( curModel, curCmd ) ->
-                        update doCmd urlLayout zone now urlInfos organizations projects curMsg curModel
-                            |> Tuple.mapSecond (\newCmd -> Cmd.batch [ curCmd, newCmd ])
+                    (\curMsg ( curModel, curCmd, curHist ) ->
+                        update urlLayout zone now urlInfos organizations projects curMsg curModel
+                            |> (\( newModel, newCmd, newHist ) -> ( newModel, Cmd.batch [ curCmd, newCmd ], curHist ++ newHist ))
                     )
-                    ( model, Cmd.none )
+                    ( model, Cmd.none, [] )
 
         Send cmd ->
-            ( model, cmd )
+            ( model, cmd, [] )
 
         Noop _ ->
-            ( model, Cmd.none )
+            ( model, Cmd.none, [] )
 
 
-handleJsMessage : Time.Posix -> Maybe LayoutName -> JsMsg -> Model -> ( Model, Cmd Msg )
+handleJsMessage : Time.Posix -> Maybe LayoutName -> JsMsg -> Model -> ( Model, Cmd Msg, List ( Msg, Msg ) )
 handleJsMessage now urlLayout msg model =
     case msg of
         GotSizes sizes ->
-            model |> updateSizes sizes
+            model |> updateSizes sizes |> Tuple.append []
 
         GotProject context res ->
             case res of
                 Nothing ->
-                    ( { model | loaded = True, saving = False }, Cmd.none )
+                    ( { model | loaded = True, saving = False }, Cmd.none ) |> Tuple.append []
 
                 Just (Err err) ->
-                    ( { model | loaded = True, saving = False }, Cmd.batch [ "Unable to read project: " ++ Decode.errorToHtml err |> Toasts.error |> Toast |> T.send, Track.jsonError "decode-project" err ] )
+                    ( { model | loaded = True, saving = False }, Cmd.batch [ "Unable to read project: " ++ Decode.errorToHtml err |> Toasts.error |> Toast |> T.send, Track.jsonError "decode-project" err ] ) |> Tuple.append []
 
                 Just (Ok project) ->
-                    { model | saving = False } |> updateErd urlLayout context project
+                    { model | saving = False } |> updateErd urlLayout context project |> Tuple.append []
 
         ProjectDeleted _ ->
             -- handled in Shared
-            ( model, Cmd.none )
+            ( model, Cmd.none, [] )
 
         GotLocalFile kind file content ->
             if kind == SqlSource.kind then
-                ( model, SourceId.generator |> Random.generate (\sourceId -> content |> SqlSource.GotFile (SourceInfo.sqlLocal now sourceId file) |> SourceUpdateDialog.SqlSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg) )
+                ( model, SourceId.generator |> Random.generate (\sourceId -> content |> SqlSource.GotFile (SourceInfo.sqlLocal now sourceId file) |> SourceUpdateDialog.SqlSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg) ) |> Tuple.append []
 
             else if kind == PrismaSource.kind then
-                ( model, SourceId.generator |> Random.generate (\sourceId -> content |> PrismaSource.GotFile (SourceInfo.prismaLocal now sourceId file) |> SourceUpdateDialog.PrismaSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg) )
+                ( model, SourceId.generator |> Random.generate (\sourceId -> content |> PrismaSource.GotFile (SourceInfo.prismaLocal now sourceId file) |> SourceUpdateDialog.PrismaSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg) ) |> Tuple.append []
 
             else if kind == JsonSource.kind then
-                ( model, SourceId.generator |> Random.generate (\sourceId -> content |> JsonSource.GotFile (SourceInfo.jsonLocal now sourceId file) |> SourceUpdateDialog.JsonSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg) )
+                ( model, SourceId.generator |> Random.generate (\sourceId -> content |> JsonSource.GotFile (SourceInfo.jsonLocal now sourceId file) |> SourceUpdateDialog.JsonSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg) ) |> Tuple.append []
 
             else
-                ( model, "Unhandled local file kind '" ++ kind ++ "'" |> Toasts.error |> Toast |> T.send )
+                ( model, "Unhandled local file kind '" ++ kind ++ "'" |> Toasts.error |> Toast |> T.send ) |> Tuple.append []
 
         GotDatabaseSchema schema ->
             if model.embedSourceParsing == Nothing then
-                ( model, Ok schema |> DatabaseSource.GotSchema |> SourceUpdateDialog.DatabaseSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg |> T.send )
+                ( model, Ok schema |> DatabaseSource.GotSchema |> SourceUpdateDialog.DatabaseSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg |> T.send ) |> Tuple.append []
 
             else
-                ( model, Ok schema |> DatabaseSource.GotSchema |> EmbedSourceParsingDialog.EmbedDatabaseSource |> EmbedSourceParsingMsg |> T.send )
+                ( model, Ok schema |> DatabaseSource.GotSchema |> EmbedSourceParsingDialog.EmbedDatabaseSource |> EmbedSourceParsingMsg |> T.send ) |> Tuple.append []
 
         GotDatabaseSchemaError error ->
             if model.embedSourceParsing == Nothing then
-                ( model, Err error |> DatabaseSource.GotSchema |> SourceUpdateDialog.DatabaseSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg |> T.send )
+                ( model, Err error |> DatabaseSource.GotSchema |> SourceUpdateDialog.DatabaseSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg |> T.send ) |> Tuple.append []
 
             else
-                ( model, Err error |> DatabaseSource.GotSchema |> EmbedSourceParsingDialog.EmbedDatabaseSource |> EmbedSourceParsingMsg |> T.send )
+                ( model, Err error |> DatabaseSource.GotSchema |> EmbedSourceParsingDialog.EmbedDatabaseSource |> EmbedSourceParsingMsg |> T.send ) |> Tuple.append []
 
         GotTableStats source stats ->
-            ( { model | tableStats = model.tableStats |> Dict.update stats.id (Maybe.withDefault Dict.empty >> Dict.insert (SourceId.toString source) (Ok stats) >> Just) }, Cmd.none )
+            ( { model | tableStats = model.tableStats |> Dict.update stats.id (Maybe.withDefault Dict.empty >> Dict.insert (SourceId.toString source) (Ok stats) >> Just) }, Cmd.none ) |> Tuple.append []
 
         GotTableStatsError source table error ->
-            ( { model | tableStats = model.tableStats |> Dict.update table (Maybe.withDefault Dict.empty >> Dict.insert (SourceId.toString source) (Err error) >> Just) }, Cmd.none )
+            ( { model | tableStats = model.tableStats |> Dict.update table (Maybe.withDefault Dict.empty >> Dict.insert (SourceId.toString source) (Err error) >> Just) }, Cmd.none ) |> Tuple.append []
 
         GotColumnStats source stats ->
-            ( { model | columnStats = model.columnStats |> Dict.update stats.id (Maybe.withDefault Dict.empty >> Dict.insert (SourceId.toString source) (Ok stats) >> Just) }, Cmd.none )
+            ( { model | columnStats = model.columnStats |> Dict.update stats.id (Maybe.withDefault Dict.empty >> Dict.insert (SourceId.toString source) (Ok stats) >> Just) }, Cmd.none ) |> Tuple.append []
 
         GotColumnStatsError source column error ->
-            ( { model | columnStats = model.columnStats |> Dict.update (ColumnId.fromRef column) (Maybe.withDefault Dict.empty >> Dict.insert (SourceId.toString source) (Err error) >> Just) }, Cmd.none )
+            ( { model | columnStats = model.columnStats |> Dict.update (ColumnId.fromRef column) (Maybe.withDefault Dict.empty >> Dict.insert (SourceId.toString source) (Err error) >> Just) }, Cmd.none ) |> Tuple.append []
 
         GotDatabaseQueryResult result ->
-            model |> handleDatabaseQueryResponse result
+            model |> handleDatabaseQueryResponse result |> Tuple.append []
 
         GotPrismaSchema schema ->
             if model.embedSourceParsing == Nothing then
-                ( model, Ok schema |> PrismaSource.GotSchema |> SourceUpdateDialog.PrismaSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg |> T.send )
+                ( model, Ok schema |> PrismaSource.GotSchema |> SourceUpdateDialog.PrismaSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg |> T.send ) |> Tuple.append []
 
             else
-                ( model, Ok schema |> PrismaSource.GotSchema |> EmbedSourceParsingDialog.EmbedPrismaSource |> EmbedSourceParsingMsg |> T.send )
+                ( model, Ok schema |> PrismaSource.GotSchema |> EmbedSourceParsingDialog.EmbedPrismaSource |> EmbedSourceParsingMsg |> T.send ) |> Tuple.append []
 
         GotPrismaSchemaError error ->
             if model.embedSourceParsing == Nothing then
-                ( model, Err error |> PrismaSource.GotSchema |> SourceUpdateDialog.PrismaSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg |> T.send )
+                ( model, Err error |> PrismaSource.GotSchema |> SourceUpdateDialog.PrismaSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg |> T.send ) |> Tuple.append []
 
             else
-                ( model, Err error |> PrismaSource.GotSchema |> EmbedSourceParsingDialog.EmbedPrismaSource |> EmbedSourceParsingMsg |> T.send )
+                ( model, Err error |> PrismaSource.GotSchema |> EmbedSourceParsingDialog.EmbedPrismaSource |> EmbedSourceParsingMsg |> T.send ) |> Tuple.append []
 
         GotHotkey hotkey ->
             if model.saving then
-                ( model, Cmd.none )
+                ( model, Cmd.none ) |> Tuple.append []
 
             else
-                handleHotkey now model hotkey
+                handleHotkey now model hotkey |> Tuple.append []
 
         GotKeyHold key start ->
             if key == "Space" && model.conf.move then
                 if start then
-                    ( model |> setCursorMode CursorMode.Drag, Cmd.none )
+                    ( model |> setCursorMode CursorMode.Drag, Cmd.none ) |> Tuple.append []
 
                 else
-                    ( model |> setCursorMode CursorMode.Select, Cmd.none )
+                    ( model |> setCursorMode CursorMode.Select, Cmd.none ) |> Tuple.append []
 
             else
-                ( model, Cmd.none )
+                ( model, Cmd.none ) |> Tuple.append []
 
         GotToast level message ->
-            ( model, message |> Toasts.create level |> Toast |> T.send )
+            ( model, message |> Toasts.create level |> Toast |> T.send ) |> Tuple.append []
 
         GotTableShow id hint ->
-            ( model, T.send (ShowTable id (hint |> Maybe.map PlaceAt) "port") )
+            ( model, T.send (ShowTable id (hint |> Maybe.map PlaceAt) "port") ) |> Tuple.append []
 
         GotTableHide id ->
-            ( model, T.send (HideTable id) )
+            ( model, T.send (HideTable id) ) |> Tuple.append []
 
         GotTableToggleColumns id ->
-            ( model, T.send (ToggleTableCollapse id) )
+            ( model, T.send (ToggleTableCollapse id) ) |> Tuple.append []
 
         GotTablePosition id pos ->
-            ( model, T.send (TablePosition id pos) )
+            ( model, T.send (TablePosition id pos) ) |> Tuple.append []
 
         GotTableMove id delta ->
-            ( model, T.send (TableMove id delta) )
+            ( model, T.send (TableMove id delta) ) |> Tuple.append []
 
         GotTableSelect id ->
-            ( model, T.send (SelectItem (TableId.toHtmlId id) False) )
+            ( model, T.send (SelectItem (TableId.toHtmlId id) False) ) |> Tuple.append []
 
         GotTableColor id color ->
-            ( model, T.send (TableColor id color) )
+            ( model, T.send (TableColor id color) ) |> Tuple.append []
 
         GotColumnShow ref ->
-            ( model, T.send (ShowColumn 1000 ref) )
+            ( model, T.send (ShowColumn 1000 ref) ) |> Tuple.append []
 
         GotColumnHide ref ->
-            ( model, T.send (HideColumn ref) )
+            ( model, T.send (HideColumn ref) ) |> Tuple.append []
 
         GotColumnMove ref index ->
-            ( model, T.send (MoveColumn ref index) )
+            ( model, T.send (MoveColumn ref index) ) |> Tuple.append []
 
         GotFitToScreen ->
-            ( model, T.send FitToScreen )
+            ( model, T.send FitToScreen ) |> Tuple.append []
 
         Error json err ->
-            ( model, Cmd.batch [ "Unable to decode JavaScript message: " ++ Decode.errorToString err ++ " in " ++ Encode.encode 0 json |> Toasts.error |> Toast |> T.send, Track.jsonError "js_message" err ] )
+            ( model, Cmd.batch [ "Unable to decode JavaScript message: " ++ Decode.errorToString err ++ " in " ++ Encode.encode 0 json |> Toasts.error |> Toast |> T.send, Track.jsonError "js_message" err ] ) |> Tuple.append []
 
 
 updateSizes : List SizeChange -> Model -> ( Model, Cmd Msg )
