@@ -82,7 +82,7 @@ import Random
 import Services.Backend as Backend
 import Services.DatabaseSource as DatabaseSource
 import Services.JsonSource as JsonSource
-import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapCanvasT, mapColorT, mapColumns, mapContextMenuM, mapDataExplorerT, mapDetailsSidebarT, mapEmbedSourceParsingMTW, mapErdM, mapErdMT, mapErdMTM, mapErdMTW, mapExportDialogT, mapHoverTable, mapMemos, mapMemosT, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapOrganizationM, mapPlan, mapPosition, mapPositionT, mapProject, mapProjectT, mapPromptM, mapProps, mapPropsT, mapSaveT, mapSchemaAnalysisM, mapSearch, mapSharingT, mapShowHiddenColumns, mapTableRows, mapTableRowsT, mapTables, mapTablesL, mapTablesT, mapToastsT, setActive, setCanvas, setCollapsed, setColors, setColumns, setConfirm, setContextMenu, setCurrentLayout, setCursorMode, setDragging, setHoverColumn, setHoverTable, setHoverTableRow, setInput, setLast, setLayoutOnLoad, setModal, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setShow, setSize, setTables, setText)
+import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapCanvasT, mapColorT, mapColumns, mapContextMenuM, mapDataExplorerT, mapDetailsSidebarT, mapEmbedSourceParsingMTW, mapErdM, mapErdMT, mapErdMTM, mapErdMTW, mapExportDialogT, mapHoverTable, mapMemos, mapMemosT, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapOrganizationM, mapPlan, mapPosition, mapPositionT, mapProject, mapProjectT, mapPromptM, mapProps, mapPropsT, mapSaveT, mapSchemaAnalysisM, mapSearch, mapSharingT, mapShowHiddenColumns, mapTableRows, mapTableRowsT, mapTables, mapTablesL, mapTablesT, mapToastsT, setActive, setCanvas, setCollapsed, setColors, setColumns, setConfirm, setContextMenu, setCurrentLayout, setCursorMode, setDragging, setHoverTable, setHoverTableRow, setInput, setLast, setLayoutOnLoad, setModal, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setShow, setSize, setTables, setText)
 import Services.PrismaSource as PrismaSource
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
@@ -145,7 +145,7 @@ update urlLayout zone now urlInfos organizations projects msg model =
             model |> mapErdMT (showAllTables now from) |> setHLDirtyCmd
 
         HideTable id ->
-            model |> mapErdMT (hideTable now id) |> Tuple.mapFirst (mapHoverTable (\h -> B.cond (h == Just id) Nothing h)) |> setHLDirty
+            model |> mapErdMT (hideTable now id) |> Tuple.mapFirst (mapHoverTable (Maybe.filter (\( t, _ ) -> t /= id))) |> setHLDirty
 
         ShowRelatedTables id ->
             model |> mapErdMT (showRelatedTables now id) |> setHLDirtyCmd
@@ -250,11 +250,8 @@ update urlLayout zone now urlInfos organizations projects msg model =
         MoveColumn column position ->
             model |> mapErdM (\erd -> erd |> Erd.mapCurrentLayoutWithTime now (mapTables (List.mapBy .id column.table (mapColumns (ErdColumnProps.mapAt (column.column |> ColumnPath.parent) (List.moveBy .name (column.column |> Nel.last) position)))))) |> setDirty |> Tuple.append []
 
-        ToggleHoverTable table on ->
-            ( model |> setHoverTable (B.cond on (Just table) Nothing), Cmd.none, [] )
-
-        ToggleHoverColumn column on ->
-            ( model |> setHoverColumn (B.cond on (Just column) Nothing) |> mapErdM (\e -> e |> Erd.mapCurrentLayoutWithTime now (mapTables (hoverColumn column on e))), Cmd.none, [] )
+        HoverTable ( table, col ) on ->
+            ( model |> setHoverTable (B.cond on (Just ( table, col )) (col |> Maybe.map (\_ -> ( table, Nothing )))) |> mapErdM (\e -> e |> Erd.mapCurrentLayoutWithTime now (mapTables (hoverColumn ( table, col ) on e))), Cmd.none, [] )
 
         HoverTableRow ( table, col ) on ->
             ( model |> setHoverTableRow (B.cond on (Just ( table, col )) (col |> Maybe.map (\_ -> ( table, Nothing )))), Cmd.none, [] )

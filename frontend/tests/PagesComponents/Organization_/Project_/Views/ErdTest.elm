@@ -22,9 +22,9 @@ suite =
                 )
             , test "test 2"
                 (\_ ->
-                    Erd.argsToString (Time.millisToPosix 12) Platform.Mac CursorMode.Select "c" "d" "e" (Just ( "public", "users" )) (Just ( 1, Just (ColumnPath.fromString "name") )) (Just { index = 1, content = "f" })
+                    Erd.argsToString (Time.millisToPosix 12) Platform.Mac CursorMode.Select "c" "d" "e" (Just ( ( "public", "users" ), ColumnPath.fromString "id" |> Just )) (Just ( 1, Just (ColumnPath.fromString "name") )) (Just { index = 1, content = "f" })
                         |> Erd.stringToArgs
-                        |> Expect.equal ( ( Time.millisToPosix 12, Platform.Mac, CursorMode.Select ), ( "c", "d", "e" ), ( Just ( "public", "users" ), Just ( 1, Just (ColumnPath.fromString "name") ), Just { index = 1, content = "f" } ) )
+                        |> Expect.equal ( ( Time.millisToPosix 12, Platform.Mac, CursorMode.Select ), ( "c", "d", "e" ), ( Just ( ( "public", "users" ), ColumnPath.fromString "id" |> Just ), Just ( 1, Just (ColumnPath.fromString "name") ), Just { index = 1, content = "f" } ) )
                 )
             ]
         ]

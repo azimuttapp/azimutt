@@ -114,7 +114,7 @@ handleHotkey _ model hotkey =
             ( model, T.send (VirtualRelationMsg (model.virtualRelation |> Maybe.mapOrElse (\_ -> VRCancel) (VRCreate (model |> currentColumn)))) )
 
         "find-path" ->
-            ( model, T.send (FindPathMsg (model.findPath |> Maybe.mapOrElse (\_ -> FPClose) (FPOpen model.hoverTable Nothing))) )
+            ( model, T.send (FindPathMsg (model.findPath |> Maybe.mapOrElse (\_ -> FPClose) (FPOpen (currentTable model) Nothing))) )
 
         "reset-zoom" ->
             ( model, T.send (Zoom (1 - (model.erd |> Maybe.mapOrElse (Erd.currentLayout >> .canvas >> .zoom) 0))) )
@@ -196,12 +196,12 @@ hideElement model =
 
 currentTable : Model -> Maybe TableId
 currentTable model =
-    model.hoverTable
+    model.hoverTable |> Maybe.map Tuple.first
 
 
 currentColumn : Model -> Maybe ColumnRef
 currentColumn model =
-    model.hoverColumn
+    model.hoverTable |> Maybe.andThen (\( t, col ) -> col |> Maybe.map (\c -> { table = t, column = c }))
 
 
 currentColumnRow : Model -> Maybe ( TableRow.Id, ColumnPath )
@@ -352,7 +352,7 @@ moveTablesOrder delta model =
 
     else
         (model.hoverTable
-            |> Maybe.andThen (\id -> tables |> List.findIndexBy .id id |> Maybe.map (\i -> ( id, i )))
+            |> Maybe.andThen (\( id, _ ) -> tables |> List.findIndexBy .id id |> Maybe.map (\i -> ( id, i )))
             |> Maybe.map (\( id, i ) -> T.send (TableOrder id (List.length tables - 1 - i + delta)))
         )
             |> Maybe.withDefault ("Can't find an element to move :(" |> Toasts.info |> Toast |> T.send)

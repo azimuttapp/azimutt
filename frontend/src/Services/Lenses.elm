@@ -146,7 +146,6 @@ module Services.Lenses exposing
     , setHiddenColumns
     , setHighlight
     , setHighlighted
-    , setHoverColumn
     , setHoverTable
     , setHoverTableRow
     , setId
@@ -643,16 +642,6 @@ setHighlighted =
     set_ .highlighted (\value item -> { item | highlighted = value })
 
 
-setHoverColumn : v -> { item | hoverColumn : v } -> { item | hoverColumn : v }
-setHoverColumn =
-    set_ .hoverColumn (\value item -> { item | hoverColumn = value })
-
-
-setHoverTableRow : v -> { item | hoverTableRow : v } -> { item | hoverTableRow : v }
-setHoverTableRow =
-    set_ .hoverTableRow (\value item -> { item | hoverTableRow = value })
-
-
 setHoverTable : v -> { item | hoverTable : v } -> { item | hoverTable : v }
 setHoverTable =
     set_ .hoverTable (\value item -> { item | hoverTable = value })
@@ -661,6 +650,11 @@ setHoverTable =
 mapHoverTable : (v -> v) -> { item | hoverTable : v } -> { item | hoverTable : v }
 mapHoverTable =
     map_ .hoverTable setHoverTable
+
+
+setHoverTableRow : v -> { item | hoverTableRow : v } -> { item | hoverTableRow : v }
+setHoverTableRow =
+    set_ .hoverTableRow (\value item -> { item | hoverTableRow = value })
 
 
 setId : v -> { item | id : v } -> { item | id : v }

@@ -3,6 +3,7 @@ module PagesComponents.Organization_.Project_.Views.Erd exposing (ErdArgs, argsT
 import Components.Atoms.Badge as Badge
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.Tooltip as Tooltip
+import Components.Organisms.Table exposing (TableHover)
 import Components.Organisms.TableRow as TableRow exposing (TableRowHover, TableRowRelation, TableRowRelationColumn, TableRowSuccess)
 import Conf
 import Dict exposing (Dict)
@@ -77,16 +78,16 @@ type alias ErdArgs =
     String
 
 
-argsToString : Time.Posix -> Platform -> CursorMode -> String -> String -> DetailsSidebar.Selected -> Maybe TableId -> Maybe TableRowHover -> Maybe GroupEdit -> ErdArgs
+argsToString : Time.Posix -> Platform -> CursorMode -> String -> String -> DetailsSidebar.Selected -> Maybe TableHover -> Maybe TableRowHover -> Maybe GroupEdit -> ErdArgs
 argsToString now platform cursorMode openedDropdown openedPopover selected hoverTable hoverRow editGroup =
-    [ Time.posixToMillis now |> String.fromInt, Platform.toString platform, CursorMode.toString cursorMode, openedDropdown, openedPopover, selected, hoverTable |> Maybe.mapOrElse TableId.toString "", hoverRowToString hoverRow, editGroup |> Maybe.mapOrElse (.index >> String.fromInt) "", editGroup |> Maybe.mapOrElse .content "" ] |> String.join "~"
+    [ Time.posixToMillis now |> String.fromInt, Platform.toString platform, CursorMode.toString cursorMode, openedDropdown, openedPopover, selected, hoverTableToString hoverTable, hoverRowToString hoverRow, editGroup |> Maybe.mapOrElse (.index >> String.fromInt) "", editGroup |> Maybe.mapOrElse .content "" ] |> String.join "~"
 
 
-stringToArgs : ErdArgs -> ( ( Time.Posix, Platform, CursorMode ), ( String, String, DetailsSidebar.Selected ), ( Maybe TableId, Maybe TableRowHover, Maybe GroupEdit ) )
+stringToArgs : ErdArgs -> ( ( Time.Posix, Platform, CursorMode ), ( String, String, DetailsSidebar.Selected ), ( Maybe TableHover, Maybe TableRowHover, Maybe GroupEdit ) )
 stringToArgs args =
     case args |> String.split "~" of
         [ now, platform, cursorMode, openedDropdown, openedPopover, selected, hoverTable, hoverTableRow, editGroupIndex, editGroupContent ] ->
-            ( ( now |> String.toInt |> Maybe.withDefault 0 |> Time.millisToPosix, Platform.fromString platform, CursorMode.fromString cursorMode ), ( openedDropdown, openedPopover, selected ), ( hoverTable |> TableId.fromString, hoverRowFromString hoverTableRow, editGroupIndex |> String.toInt |> Maybe.map (\index -> { index = index, content = editGroupContent }) ) )
+            ( ( now |> String.toInt |> Maybe.withDefault 0 |> Time.millisToPosix, Platform.fromString platform, CursorMode.fromString cursorMode ), ( openedDropdown, openedPopover, selected ), ( hoverTableFromString hoverTable, hoverRowFromString hoverTableRow, editGroupIndex |> String.toInt |> Maybe.map (\index -> { index = index, content = editGroupContent }) ) )
 
         _ ->
             ( ( Time.zero, Platform.PC, CursorMode.Select ), ( "", "", "" ), ( Nothing, Nothing, Nothing ) )
@@ -191,7 +192,7 @@ viewErd conf erdElem erd selectionBox virtualRelation editMemo args dragging =
         ]
 
 
-viewTables : Platform -> ErdConf -> CursorMode -> Maybe VirtualRelation -> HtmlId -> HtmlId -> Maybe TableId -> Maybe DragState -> ZoomLevel -> SchemaName -> DetailsSidebar.Selected -> Bool -> Dict TableId ErdTable -> Metadata -> ErdLayout -> List ErdTableLayout -> Html Msg
+viewTables : Platform -> ErdConf -> CursorMode -> Maybe VirtualRelation -> HtmlId -> HtmlId -> Maybe TableHover -> Maybe DragState -> ZoomLevel -> SchemaName -> DetailsSidebar.Selected -> Bool -> Dict TableId ErdTable -> Metadata -> ErdLayout -> List ErdTableLayout -> Html Msg
 viewTables platform conf cursorMode virtualRelation openedDropdown openedPopover hoverTable dragging zoom defaultSchema selected useBasicTypes tables metadata layout tableLayouts =
     Keyed.node "div"
         [ class "az-tables" ]
@@ -213,7 +214,7 @@ viewTables platform conf cursorMode virtualRelation openedDropdown openedPopover
                             (B.cond (openedPopover |> String.startsWith table.htmlId) openedPopover "")
                             index
                             selected
-                            (hoverTable == Just table.id)
+                            (hoverTable |> Maybe.any (\( t, _ ) -> t == table.id))
                             (dragging |> Maybe.any (\d -> d.id == table.htmlId && d.init /= d.last))
                             (virtualRelation /= Nothing)
                             useBasicTypes
@@ -472,6 +473,21 @@ handleErdPointerDown conf cursorMode e =
 
     else
         Noop "No match on erd pointer down"
+
+
+hoverTableToString : Maybe TableHover -> String
+hoverTableToString hover =
+    hover |> Maybe.mapOrElse (\( id, col ) -> TableId.toHtmlId id ++ "/" ++ (col |> Maybe.mapOrElse ColumnPath.toString "")) ""
+
+
+hoverTableFromString : String -> Maybe TableHover
+hoverTableFromString str =
+    case str |> String.split "/" of
+        idStr :: col ->
+            idStr |> TableId.fromHtmlId |> Maybe.map (\id -> ( id, col |> List.head |> Maybe.map ColumnPath.fromString ))
+
+        _ ->
+            Nothing
 
 
 hoverRowToString : Maybe TableRowHover -> String

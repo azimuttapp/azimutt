@@ -1,5 +1,6 @@
 module PagesComponents.Organization_.Project_.Updates.Table exposing (goToTable, hideColumn, hideColumns, hideRelatedTables, hideTable, hoverColumn, hoverNextColumn, mapTablePropOrSelected, mapTablePropOrSelectedTL, reshowTable, showAllTables, showColumn, showColumns, showRelatedTables, showTable, showTables, sortColumns, toggleNestedColumn)
 
+import Components.Organisms.Table exposing (TableHover)
 import Conf
 import Dict
 import Libs.Bool as B
@@ -35,7 +36,7 @@ import PagesComponents.Organization_.Project_.Models.HideColumns as HideColumns 
 import PagesComponents.Organization_.Project_.Models.PositionHint as PositionHint exposing (PositionHint(..))
 import PagesComponents.Organization_.Project_.Models.ShowColumns as ShowColumns exposing (ShowColumns)
 import Ports
-import Services.Lenses exposing (mapCanvas, mapColumns, mapColumnsT, mapRelatedTables, mapTables, mapTablesL, mapTablesLTM, mapTablesT, setHighlighted, setHoverColumn, setPosition, setShown)
+import Services.Lenses exposing (mapCanvas, mapColumns, mapColumnsT, mapRelatedTables, mapTables, mapTablesL, mapTablesLTM, mapTablesT, setHighlighted, setHoverTable, setPosition, setShown)
 import Services.Toasts as Toasts
 import Set exposing (Set)
 import Time
@@ -282,7 +283,7 @@ hoverNextColumn column model =
                 |> Maybe.andThen (Erd.currentLayout >> .tables >> List.findBy .id column.table)
                 |> Maybe.andThen (.columns >> ErdColumnProps.unpackAll >> List.dropUntil (\p -> p == column.column) >> List.drop 1 >> List.head)
     in
-    model |> setHoverColumn (nextColumn |> Maybe.map (ColumnRef column.table))
+    model |> setHoverTable (Just ( column.table, nextColumn ))
 
 
 showColumns : Time.Posix -> TableId -> ShowColumns -> Erd -> ( Erd, ( Cmd Msg, List ( Msg, Msg ) ) )
@@ -389,23 +390,27 @@ toggleNestedColumn now id path open erd =
         erd
 
 
-hoverColumn : ColumnRef -> Bool -> Erd -> List ErdTableLayout -> List ErdTableLayout
-hoverColumn column enter erd tables =
-    let
-        highlightedColumns : Set ColumnId
-        highlightedColumns =
-            if enter then
-                erd.relationsByTable
-                    |> Dict.getOrElse column.table []
-                    |> List.filter (ErdRelation.linkedTo column)
-                    |> List.concatMap (\r -> [ ColumnId.fromRef r.src, ColumnId.fromRef r.ref ])
-                    |> Set.fromList
-                    |> Set.insert (ColumnId.fromRef column)
+hoverColumn : TableHover -> Bool -> Erd -> List ErdTableLayout -> List ErdTableLayout
+hoverColumn ( table, columnM ) enter erd tables =
+    (columnM |> Maybe.map (ColumnRef table))
+        |> Maybe.map
+            (\column ->
+                let
+                    highlightedColumns : Set ColumnId
+                    highlightedColumns =
+                        if enter then
+                            (erd.relationsByTable |> Dict.getOrElse column.table [])
+                                |> List.filter (ErdRelation.linkedTo column)
+                                |> List.concatMap (\r -> [ ColumnId.fromRef r.src, ColumnId.fromRef r.ref ])
+                                |> Set.fromList
+                                |> Set.insert (ColumnId.fromRef column)
 
-            else
-                Set.empty
-    in
-    tables |> List.map (\t -> t |> mapColumns (ErdColumnProps.map (\p c -> c |> setHighlighted (highlightedColumns |> Set.member (ColumnId.from t { path = p })))))
+                        else
+                            Set.empty
+                in
+                tables |> List.map (\t -> t |> mapColumns (ErdColumnProps.map (\p c -> c |> setHighlighted (highlightedColumns |> Set.member (ColumnId.from t { path = p })))))
+            )
+        |> Maybe.withDefault tables
 
 
 performHideTable : Time.Posix -> TableId -> Erd -> ( Erd, List ( Msg, Msg ) )

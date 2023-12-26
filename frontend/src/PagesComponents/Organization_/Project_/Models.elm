@@ -1,6 +1,7 @@
 module PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, AmlSidebarMsg(..), ConfirmDialog, ContextMenu, FindPathMsg(..), GroupEdit, GroupMsg(..), HelpDialog, HelpMsg(..), LayoutMsg(..), MemoEdit, MemoMsg(..), ModalDialog, Model, Msg(..), NavbarModel, NotesDialog, ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, VirtualRelation, VirtualRelationMsg(..), addHistory, confirm, confirmDanger, emptyModel, prompt, simplePrompt)
 
 import Components.Atoms.Icon exposing (Icon(..))
+import Components.Organisms.Table exposing (TableHover)
 import Components.Organisms.TableRow as TableRow exposing (TableRowHover)
 import Components.Slices.DataExplorer as DataExplorer
 import Components.Slices.ProPlan as ProPlan
@@ -79,10 +80,7 @@ type alias Model =
     , erd : Maybe Erd
     , tableStats : Dict TableId (Dict SourceIdStr (Result String TableStats))
     , columnStats : Dict ColumnId (Dict SourceIdStr (Result String ColumnStats))
-
-    -- TODO: merge `hoverTable` & `hoverColumn` into `hoverTable`, like `hoverTableRow`
-    , hoverTable : Maybe TableId
-    , hoverColumn : Maybe ColumnRef
+    , hoverTable : Maybe TableHover
     , hoverTableRow : Maybe TableRowHover
     , cursorMode : CursorMode
     , selectionBox : Maybe SelectionBox.Model
@@ -132,7 +130,6 @@ emptyModel =
     , tableStats = Dict.empty
     , columnStats = Dict.empty
     , hoverTable = Nothing
-    , hoverColumn = Nothing
     , hoverTableRow = Nothing
     , cursorMode = CursorMode.Select
     , selectionBox = Nothing
@@ -264,8 +261,7 @@ type Msg
     | TableOrder TableId Int
     | TableColor TableId Color Bool
     | MoveColumn ColumnRef Int
-    | ToggleHoverTable TableId Bool
-    | ToggleHoverColumn ColumnRef Bool
+    | HoverTable TableHover Bool
     | HoverTableRow TableRowHover Bool
     | CreateUserSource SourceName
     | CreateUserSourceWithId Source
