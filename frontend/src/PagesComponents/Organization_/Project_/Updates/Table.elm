@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Updates.Table exposing (goToTable, hideColumn, hideColumns, hideRelatedTables, hideTable, hoverColumn, hoverNextColumn, mapTablePropOrSelected, reshowTable, showAllTables, showColumn, showColumns, showRelatedTables, showTable, showTables, sortColumns, toggleNestedColumn)
+module PagesComponents.Organization_.Project_.Updates.Table exposing (goToTable, hideColumn, hideColumns, hideRelatedTables, hideTable, hoverColumn, hoverNextColumn, mapTablePropOrSelected, mapTablePropOrSelectedTL, reshowTable, showAllTables, showColumn, showColumns, showRelatedTables, showTable, showTables, sortColumns, toggleNestedColumn)
 
 import Conf
 import Dict
@@ -454,8 +454,7 @@ updateRelatedTables tables =
 
 mapTablePropOrSelected : SchemaName -> TableId -> (ErdTableLayout -> ErdTableLayout) -> List ErdTableLayout -> ( List ErdTableLayout, Cmd Msg )
 mapTablePropOrSelected defaultSchema id transform tableLayouts =
-    tableLayouts
-        |> List.findBy .id id
+    (tableLayouts |> List.findBy .id id)
         |> Maybe.map
             (\tableLayout ->
                 if tableLayout.props.selected then
@@ -465,6 +464,20 @@ mapTablePropOrSelected defaultSchema id transform tableLayouts =
                     ( tableLayouts |> List.mapBy .id id transform, Cmd.none )
             )
         |> Maybe.withDefault ( tableLayouts, "Table " ++ TableId.show defaultSchema id ++ " not found" |> Toasts.info |> Toast |> T.send )
+
+
+mapTablePropOrSelectedTL : SchemaName -> Bool -> TableId -> (ErdTableLayout -> ( ErdTableLayout, List a )) -> List ErdTableLayout -> ( List ErdTableLayout, ( Cmd Msg, List a ) )
+mapTablePropOrSelectedTL defaultSchema extendToSelected id transform tableLayouts =
+    (tableLayouts |> List.findBy .id id)
+        |> Maybe.map
+            (\tableLayout ->
+                if tableLayout.props.selected && extendToSelected then
+                    tableLayouts |> List.mapByTL (.props >> .selected) True transform |> Tuple.mapSecond (\l -> ( Cmd.none, l ))
+
+                else
+                    tableLayouts |> List.mapByTL .id id transform |> Tuple.mapSecond (\l -> ( Cmd.none, l ))
+            )
+        |> Maybe.withDefault ( tableLayouts, ( "Table " ++ TableId.show defaultSchema id ++ " not found" |> Toasts.info |> Toast |> T.send, [] ) )
 
 
 mapColumnsForTableOrSelectedProps : Time.Posix -> TableId -> (ErdTable -> List ErdColumnProps -> List ErdColumnProps) -> Erd -> Erd

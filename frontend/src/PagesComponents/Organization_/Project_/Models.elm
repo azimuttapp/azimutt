@@ -262,7 +262,7 @@ type Msg
     | TableRowPosition_ TableRow.Id Position.Grid
     | MemoPosition_ MemoId Position.Grid
     | TableOrder TableId Int
-    | TableColor TableId Color
+    | TableColor TableId Color Bool
     | MoveColumn ColumnRef Int
     | ToggleHoverTable TableId Bool
     | ToggleHoverColumn ColumnRef Bool

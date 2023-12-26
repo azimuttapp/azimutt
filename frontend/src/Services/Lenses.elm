@@ -6,6 +6,7 @@ module Services.Lenses exposing
     , mapCanvas
     , mapCanvasT
     , mapCollapseTableColumns
+    , mapColorT
     , mapColumnBasicTypes
     , mapColumns
     , mapColumnsT
@@ -335,6 +336,11 @@ mapCollapseTableColumns =
 setColor : v -> { item | color : v } -> { item | color : v }
 setColor =
     set_ .color (\value item -> { item | color = value })
+
+
+mapColorT : (v -> ( v, a )) -> { item | color : v } -> ( { item | color : v }, a )
+mapColorT =
+    mapT_ .color setColor
 
 
 setColors : v -> { item | colors : v } -> { item | colors : v }

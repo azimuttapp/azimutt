@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Updates.Utils exposing (DirtyModel, setDirty, setDirtyCmd, setHDirty, setHDirtyCmd, setHL, setHLDirty, setHLDirtyCmd)
+module PagesComponents.Organization_.Project_.Updates.Utils exposing (DirtyModel, setDirty, setDirtyCmd, setHDirty, setHDirtyCmd, setHDirtyCmdM, setHL, setHLDirty, setHLDirtyCmd)
 
 import Libs.Maybe as Maybe
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
@@ -57,6 +57,15 @@ setHDirtyCmd history ( model, cmd ) =
 
     else
         ( { model | dirty = True }, Cmd.batch [ cmd, Ports.projectDirty True ], history )
+
+
+setHDirtyCmdM : List ( msg, msg ) -> ( DirtyModel m, Maybe (Cmd msg) ) -> ( DirtyModel m, Cmd msg, List ( msg, msg ) )
+setHDirtyCmdM history ( model, cmd ) =
+    if model.dirty || not model.conf.save then
+        ( model, cmd |> Maybe.withDefault Cmd.none, history )
+
+    else
+        ( { model | dirty = True }, Cmd.batch [ cmd |> Maybe.withDefault Cmd.none, Ports.projectDirty True ], history )
 
 
 setDirty : DirtyModel m -> ( DirtyModel m, Cmd msg )

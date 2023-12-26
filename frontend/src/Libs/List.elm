@@ -32,6 +32,7 @@ module Libs.List exposing
     , mapBy
     , mapByCmd
     , mapByT
+    , mapByTL
     , mapLast
     , mapT
     , mapTL
@@ -318,6 +319,21 @@ mapByT matcher value f list =
             )
         |> List.unzip
         |> Tuple.mapSecond (List.filterMap identity)
+
+
+mapByTL : (a -> b) -> b -> (a -> ( a, List t )) -> List a -> ( List a, List t )
+mapByTL matcher value f list =
+    list
+        |> List.map
+            (\a ->
+                if matcher a == value then
+                    f a
+
+                else
+                    ( a, [] )
+            )
+        |> List.unzip
+        |> Tuple.mapSecond (List.concatMap identity)
 
 
 mapByCmd : (a -> b) -> b -> (a -> ( a, Cmd msg )) -> List a -> ( List a, Cmd msg )
