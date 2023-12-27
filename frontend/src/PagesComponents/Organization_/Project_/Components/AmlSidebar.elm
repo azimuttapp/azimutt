@@ -88,9 +88,7 @@ update now msg model =
             ( model, T.send (AmlSidebarMsg (Bool.cond (model.amlSidebar == Nothing) (AOpen Nothing) AClose)) )
 
         AChangeSource source ->
-            ( model |> mapAmlSidebarM (setSelected source) |> setOtherSourcesTableIdsCache source
-            , Cmd.none
-            )
+            ( model |> mapAmlSidebarM (setSelected source) |> setOtherSourcesTableIdsCache source, Cmd.none )
 
         AUpdateSource id value ->
             model.erd

@@ -1,4 +1,4 @@
-module Models.Project.Source exposing (Source, addRelations, aml, databaseUrl, decode, encode, getColumn, getTable, refreshWith, toInfo)
+module Models.Project.Source exposing (Source, addRelations, aml, databaseUrl, decode, encode, getColumn, getTable, refreshWith, removeRelations, toInfo)
 
 import Array exposing (Array)
 import Conf
@@ -6,6 +6,7 @@ import DataSources.AmlMiner.AmlGenerator as AmlGenerator
 import Dict exposing (Dict)
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
+import Libs.Array as Array
 import Libs.Dict as Dict
 import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
@@ -26,6 +27,7 @@ import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
 import Models.SourceInfo exposing (SourceInfo)
 import Services.Lenses exposing (mapContent, mapRelations, setUpdatedAt)
+import Set exposing (Set)
 import Time
 
 
@@ -115,6 +117,21 @@ addRelations now rels source =
             )
         |> mapRelations (\rs -> rs ++ (rels |> List.map (\r -> Relation.virtual r.src r.ref)))
         |> setUpdatedAt now
+
+
+removeRelations : List { src : ColumnRef, ref : ColumnRef } -> Source -> Source
+removeRelations rels source =
+    source
+        |> mapContent
+            (\content ->
+                let
+                    amlRels : Set String
+                    amlRels =
+                        rels |> List.map (\r -> AmlGenerator.relation r.src r.ref) |> Set.fromList
+                in
+                content |> Array.filterNot (\line -> amlRels |> Set.member line)
+            )
+        |> mapRelations (List.filterNot (\r -> rels |> List.member { src = r.src, ref = r.ref }))
 
 
 encode : Source -> Value

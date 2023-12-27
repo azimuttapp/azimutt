@@ -266,7 +266,9 @@ type Msg
     | CreateUserSource SourceName
     | CreateUserSourceWithId Source
     | CreateRelations (List { src : ColumnRef, ref : ColumnRef })
+    | RemoveRelations_ SourceId (List { src : ColumnRef, ref : ColumnRef })
     | IgnoreRelation ColumnRef
+    | UnIgnoreRelation_ ColumnRef
     | NewLayoutMsg NewLayout.Msg
     | LayoutMsg LayoutMsg
     | NotesMsg NotesMsg

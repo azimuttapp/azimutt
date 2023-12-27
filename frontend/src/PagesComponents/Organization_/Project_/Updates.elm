@@ -48,7 +48,7 @@ import PagesComponents.Organization_.Project_.Components.ExportDialog as ExportD
 import PagesComponents.Organization_.Project_.Components.ProjectSaveDialog as ProjectSaveDialog
 import PagesComponents.Organization_.Project_.Components.ProjectSharing as ProjectSharing
 import PagesComponents.Organization_.Project_.Components.SourceUpdateDialog as SourceUpdateDialog
-import PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, Model, Msg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..))
+import PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, AmlSidebarMsg(..), Model, Msg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..))
 import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode
 import PagesComponents.Organization_.Project_.Models.DragState as DragState
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
@@ -283,16 +283,21 @@ update urlLayout zone now urlInfos organizations projects msg model =
         CreateUserSourceWithId source ->
             model
                 |> mapErdM (Erd.mapSources (List.insert source))
-                |> (\updated -> updated |> mapAmlSidebarM (AmlSidebar.setSource (updated.erd |> Maybe.andThen (.sources >> List.last))))
+                |> (\newModel -> newModel |> mapAmlSidebarM (AmlSidebar.setSource (newModel.erd |> Maybe.andThen (.sources >> List.last))))
                 |> AmlSidebar.setOtherSourcesTableIdsCache (Just source.id)
-                |> setDirty
-                |> Tuple.append []
+                |> setHDirty [ ( Batch [ ProjectSettingsMsg (PSSourceDelete source), AmlSidebarMsg (AChangeSource (model.amlSidebar |> Maybe.andThen .selected)) ], msg ) ]
 
         CreateRelations rels ->
-            model |> mapErdMTW (Source.createRelations now rels) Cmd.none |> setHDirtyCmd []
+            model |> mapErdMT (Source.createRelations now rels) |> setHLDirtyCmd
+
+        RemoveRelations_ source rels ->
+            model |> mapErdMT (Source.deleteRelations source rels) |> setHLDirtyCmd
 
         IgnoreRelation col ->
-            model |> mapErdM (Erd.mapIgnoredRelations (Dict.update col.table (Maybe.mapOrElse (List.insert col.column) [ col.column ] >> List.uniqueBy ColumnPath.toString >> Just))) |> setDirty |> Tuple.append []
+            model |> mapErdMT (Erd.mapIgnoredRelationsT (Dict.updateT col.table (\cols -> ( cols |> Maybe.mapOrElse (List.insert col.column) [ col.column ] >> List.uniqueBy ColumnPath.toString >> Just, [ ( UnIgnoreRelation_ col, msg ) ] )))) |> setHLDirty
+
+        UnIgnoreRelation_ col ->
+            model |> mapErdMT (Erd.mapIgnoredRelationsT (Dict.updateT col.table (\cols -> ( cols |> Maybe.map (List.filter (\c -> c /= col.column)), [ ( IgnoreRelation col, msg ) ] )))) |> setHLDirty
 
         NewLayoutMsg message ->
             model |> NewLayout.update ModalOpen Toast CustomModalOpen now urlInfos message |> Tuple.append []

@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Models.Erd exposing (Erd, canChangeColor, canCreateGroup, canCreateLayout, canCreateMemo, create, currentLayout, defaultSchemaM, getColumn, getColumnPos, getLayoutTable, getOrganization, getOrganizationM, getProjectId, getProjectIdM, getProjectRef, getProjectRefM, getTable, isShown, mapCurrentLayout, mapCurrentLayoutTLWithTime, mapCurrentLayoutTWithTime, mapCurrentLayoutWithTime, mapCurrentLayoutWithTimeCmd, mapIgnoredRelations, mapSettings, mapSource, mapSources, setIgnoredRelations, setSettings, setSources, toSchema, unpack, viewportM, viewportToCanvas)
+module PagesComponents.Organization_.Project_.Models.Erd exposing (Erd, canChangeColor, canCreateGroup, canCreateLayout, canCreateMemo, create, currentLayout, defaultSchemaM, getColumn, getColumnPos, getLayoutTable, getOrganization, getOrganizationM, getProjectId, getProjectIdM, getProjectRef, getProjectRefM, getTable, isShown, mapCurrentLayout, mapCurrentLayoutTLWithTime, mapCurrentLayoutTWithTime, mapCurrentLayoutWithTime, mapCurrentLayoutWithTimeCmd, mapIgnoredRelationsT, mapSettings, mapSource, mapSources, setIgnoredRelations, setSettings, setSources, toSchema, unpack, viewportM, viewportToCanvas)
 
 import Conf
 import Dict exposing (Dict)
@@ -388,9 +388,9 @@ setIgnoredRelations ignoredRelations erd =
         { erd | ignoredRelations = ignoredRelations } |> recomputeSources
 
 
-mapIgnoredRelations : (Dict TableId (List ColumnPath) -> Dict TableId (List ColumnPath)) -> Erd -> Erd
-mapIgnoredRelations transform erd =
-    setIgnoredRelations (transform erd.ignoredRelations) erd
+mapIgnoredRelationsT : (Dict TableId (List ColumnPath) -> ( Dict TableId (List ColumnPath), a )) -> Erd -> ( Erd, a )
+mapIgnoredRelationsT transform erd =
+    transform erd.ignoredRelations |> Tuple.mapFirst (\r -> setIgnoredRelations r erd)
 
 
 setSettings : ProjectSettings -> Erd -> Erd
