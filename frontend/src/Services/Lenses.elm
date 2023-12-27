@@ -52,7 +52,7 @@ module Services.Lenses exposing
     , mapMetadata
     , mapMobileMenuOpen
     , mapNavbar
-    , mapNewLayoutMTW
+    , mapNewLayoutMT
     , mapOpened
     , mapOpenedDialogs
     , mapOpenedDropdown
@@ -832,9 +832,9 @@ setNewLayout =
     set_ .newLayout (\value item -> { item | newLayout = value })
 
 
-mapNewLayoutMTW : (v -> ( v, a )) -> a -> { item | newLayout : Maybe v } -> ( { item | newLayout : Maybe v }, a )
-mapNewLayoutMTW transform default item =
-    mapMT_ .newLayout setNewLayout transform item |> Tuple.mapSecond (Maybe.withDefault default)
+mapNewLayoutMT : (v -> ( v, a )) -> { item | newLayout : Maybe v } -> ( { item | newLayout : Maybe v }, Maybe a )
+mapNewLayoutMT transform item =
+    mapMT_ .newLayout setNewLayout transform item
 
 
 setNotes : v -> { item | notes : v } -> { item | notes : v }

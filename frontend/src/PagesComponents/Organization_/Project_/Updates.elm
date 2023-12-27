@@ -48,7 +48,7 @@ import PagesComponents.Organization_.Project_.Components.ExportDialog as ExportD
 import PagesComponents.Organization_.Project_.Components.ProjectSaveDialog as ProjectSaveDialog
 import PagesComponents.Organization_.Project_.Components.ProjectSharing as ProjectSharing
 import PagesComponents.Organization_.Project_.Components.SourceUpdateDialog as SourceUpdateDialog
-import PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, AmlSidebarMsg(..), Model, Msg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..))
+import PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, AmlSidebarMsg(..), LayoutMsg(..), Model, Msg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..))
 import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode
 import PagesComponents.Organization_.Project_.Models.DragState as DragState
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
@@ -300,10 +300,10 @@ update urlLayout zone now urlInfos organizations projects msg model =
             model |> mapErdMT (Erd.mapIgnoredRelationsT (Dict.updateT col.table (\cols -> ( cols |> Maybe.map (List.filter (\c -> c /= col.column)), [ ( IgnoreRelation col, msg ) ] )))) |> setHLDirty
 
         NewLayoutMsg message ->
-            model |> NewLayout.update ModalOpen Toast CustomModalOpen now urlInfos message |> Tuple.append []
+            model |> NewLayout.update NewLayoutMsg Batch ModalOpen Toast CustomModalOpen (LLoad "" >> LayoutMsg) (LDelete >> LayoutMsg) now urlInfos message
 
         LayoutMsg message ->
-            model |> handleLayout message |> Tuple.append []
+            model |> handleLayout message
 
         GroupMsg message ->
             model |> handleGroups now urlInfos message |> Tuple.append []

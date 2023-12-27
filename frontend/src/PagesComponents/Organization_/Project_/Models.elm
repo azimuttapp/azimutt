@@ -51,6 +51,7 @@ import PagesComponents.Organization_.Project_.Models.DragState exposing (DragSta
 import PagesComponents.Organization_.Project_.Models.Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdColumnProps exposing (ErdColumnProps)
 import PagesComponents.Organization_.Project_.Models.ErdConf as ErdConf exposing (ErdConf)
+import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.ErdRelation exposing (ErdRelation)
 import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
@@ -330,8 +331,9 @@ type Msg
 
 
 type LayoutMsg
-    = LLoad LayoutName
+    = LLoad String LayoutName
     | LDelete LayoutName
+    | LUnDelete_ LayoutName ErdLayout
 
 
 type GroupMsg

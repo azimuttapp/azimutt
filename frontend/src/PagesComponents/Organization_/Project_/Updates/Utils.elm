@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Updates.Utils exposing (DirtyModel, setDirty, setDirtyCmd, setHDirty, setHDirtyCmd, setHDirtyCmdM, setHL, setHLDirty, setHLDirtyCmd)
+module PagesComponents.Organization_.Project_.Updates.Utils exposing (DirtyModel, setDirty, setDirtyCmd, setHCmd, setHDirty, setHDirtyCmd, setHDirtyCmdM, setHL, setHLCmd, setHLDirty, setHLDirtyCmd)
 
 import Libs.Maybe as Maybe
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
@@ -14,6 +14,16 @@ setHL ( model, history ) =
     ( model, Cmd.none, history |> Maybe.withDefault [] )
 
 
+setHCmd : ( a, Maybe (Cmd msg) ) -> ( a, Cmd msg, List ( msg, msg ) )
+setHCmd ( model, cmd ) =
+    ( model, cmd |> Maybe.withDefault Cmd.none, [] )
+
+
+setHLCmd : ( a, Maybe ( Cmd msg, List ( msg, msg ) ) ) -> ( a, Cmd msg, List ( msg, msg ) )
+setHLCmd ( model, meta ) =
+    extract meta |> (\( cmd, history ) -> ( model, cmd, history ))
+
+
 setHLDirty : ( DirtyModel m, Maybe (List ( msg, msg )) ) -> ( DirtyModel m, Cmd msg, List ( msg, msg ) )
 setHLDirty ( model, history ) =
     if model.dirty || not model.conf.save then
@@ -26,13 +36,8 @@ setHLDirty ( model, history ) =
 setHLDirtyCmd : ( DirtyModel m, Maybe ( Cmd msg, List ( msg, msg ) ) ) -> ( DirtyModel m, Cmd msg, List ( msg, msg ) )
 setHLDirtyCmd ( model, meta ) =
     let
-        cmd : Cmd msg
-        cmd =
-            meta |> Maybe.mapOrElse Tuple.first Cmd.none
-
-        history : List ( msg, msg )
-        history =
-            meta |> Maybe.map Tuple.second |> Maybe.withDefault []
+        ( cmd, history ) =
+            extract meta
     in
     if model.dirty || not model.conf.save then
         ( model, cmd, history )
@@ -66,6 +71,11 @@ setHDirtyCmdM history ( model, cmd ) =
 
     else
         ( { model | dirty = True }, Cmd.batch [ cmd |> Maybe.withDefault Cmd.none, Ports.projectDirty True ], history )
+
+
+extract : Maybe ( Cmd msg, List ( msg, msg ) ) -> ( Cmd msg, List ( msg, msg ) )
+extract meta =
+    ( meta |> Maybe.mapOrElse Tuple.first Cmd.none, meta |> Maybe.map Tuple.second |> Maybe.withDefault [] )
 
 
 setDirty : DirtyModel m -> ( DirtyModel m, Cmd msg )

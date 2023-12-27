@@ -15,8 +15,8 @@ import Models.UrlInfos exposing (UrlInfos)
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout
-import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirtyCmd)
-import Services.Lenses exposing (mapErdMTW, mapLayouts, mapNewLayoutMTW, setCurrentLayout, setNewLayout)
+import PagesComponents.Organization_.Project_.Updates.Utils exposing (setHCmd, setHLDirtyCmd)
+import Services.Lenses exposing (mapErdMT, mapLayouts, mapNewLayoutMT, setCurrentLayout, setNewLayout)
 import Services.Toasts as Toasts
 import Time
 import Track
@@ -47,59 +47,65 @@ type Msg
     | Cancel
 
 
-update : (HtmlId -> msg) -> (Toasts.Msg -> msg) -> ((msg -> String -> Html msg) -> msg) -> Time.Posix -> UrlInfos -> Msg -> GlobalModel x -> ( GlobalModel x, Cmd msg )
-update modalOpen toast customModalOpen now urlInfos msg model =
+update : (Msg -> msg) -> (List msg -> msg) -> (HtmlId -> msg) -> (Toasts.Msg -> msg) -> ((msg -> String -> Html msg) -> msg) -> (LayoutName -> msg) -> (LayoutName -> msg) -> Time.Posix -> UrlInfos -> Msg -> GlobalModel x -> ( GlobalModel x, Cmd msg, List ( msg, msg ) )
+update wrap batch modalOpen toast customModalOpen loadLayout deleteLayout now urlInfos msg model =
     case msg of
         Open from ->
             if model.erd |> Erd.canCreateLayout then
-                ( model |> setNewLayout (Just (NewLayoutBody.init dialogId from)), Cmd.batch [ T.sendAfter 1 (modalOpen dialogId) ] )
+                ( model |> setNewLayout (Just (NewLayoutBody.init dialogId from)), Cmd.batch [ T.sendAfter 1 (modalOpen dialogId) ], [] )
 
             else
-                ( model
-                , Cmd.batch
-                    [ model.erd |> Erd.getProjectRefM urlInfos |> ProPlan.layoutsModalBody |> customModalOpen |> T.send
-                    , Track.planLimit .layouts model.erd
-                    ]
-                )
+                ( model, Cmd.batch [ model.erd |> Erd.getProjectRefM urlInfos |> ProPlan.layoutsModalBody |> customModalOpen |> T.send, Track.planLimit .layouts model.erd ], [] )
 
         BodyMsg m ->
-            model |> mapNewLayoutMTW (NewLayoutBody.update m) Cmd.none
+            model |> mapNewLayoutMT (NewLayoutBody.update m) |> setHCmd
 
         Submit mode name ->
-            model |> setNewLayout Nothing |> mapErdMTW (updateLayouts toast mode name now) Cmd.none |> setDirtyCmd
+            model |> setNewLayout Nothing |> mapErdMT (updateLayouts wrap batch toast loadLayout deleteLayout mode name now) |> setHLDirtyCmd
 
         Cancel ->
-            ( model |> setNewLayout Nothing, Cmd.none )
+            ( model |> setNewLayout Nothing, Cmd.none, [] )
 
 
-updateLayouts : (Toasts.Msg -> msg) -> NewLayoutBody.Mode -> LayoutName -> Time.Posix -> Erd -> ( Erd, Cmd msg )
-updateLayouts toast mode name now erd =
+updateLayouts : (Msg -> msg) -> (List msg -> msg) -> (Toasts.Msg -> msg) -> (LayoutName -> msg) -> (LayoutName -> msg) -> NewLayoutBody.Mode -> LayoutName -> Time.Posix -> Erd -> ( Erd, ( Cmd msg, List ( msg, msg ) ) )
+updateLayouts wrap batch toast loadLayout deleteLayout mode name now erd =
     case mode of
         NewLayoutBody.Create ->
-            createLayout toast Nothing name now erd
+            createLayout wrap batch toast loadLayout deleteLayout Nothing name now erd
 
         NewLayoutBody.Duplicate from ->
-            createLayout toast (Just from) name now erd
+            createLayout wrap batch toast loadLayout deleteLayout (Just from) name now erd
 
         NewLayoutBody.Rename from ->
-            renameLayout toast from name erd
+            renameLayout wrap toast from name erd
 
 
-createLayout : (Toasts.Msg -> msg) -> Maybe LayoutName -> LayoutName -> Time.Posix -> Erd -> ( Erd, Cmd msg )
-createLayout toast from name now erd =
+createLayout : (Msg -> msg) -> (List msg -> msg) -> (Toasts.Msg -> msg) -> (LayoutName -> msg) -> (LayoutName -> msg) -> Maybe LayoutName -> LayoutName -> Time.Posix -> Erd -> ( Erd, ( Cmd msg, List ( msg, msg ) ) )
+createLayout wrap batch toast loadLayout deleteLayout from name now erd =
     (erd.layouts |> Dict.get name)
-        |> Maybe.mapOrElse
-            (\_ -> ( erd, "Layout " ++ name ++ " already exists" |> Toasts.error |> toast |> T.send ))
+        |> Maybe.map (\_ -> ( erd, ( "'" ++ name ++ "' layout already exists" |> Toasts.error |> toast |> T.send, [] ) ))
+        |> Maybe.withDefault
             ((from |> Maybe.andThen (\f -> erd.layouts |> Dict.get f) |> Maybe.withDefault (ErdLayout.empty now))
-                |> (\layout -> ( erd |> mapLayouts (Dict.insert name layout) |> setCurrentLayout name, Track.layoutCreated erd.project layout ))
+                |> (\layout ->
+                        ( erd |> mapLayouts (Dict.insert name layout) |> setCurrentLayout name
+                        , ( Track.layoutCreated erd.project layout
+                          , [ ( batch [ deleteLayout name, loadLayout erd.currentLayout ], wrap (Submit (from |> Maybe.mapOrElse NewLayoutBody.Duplicate NewLayoutBody.Create) name) ) ]
+                          )
+                        )
+                   )
             )
 
 
-renameLayout : (Toasts.Msg -> msg) -> LayoutName -> LayoutName -> Erd -> ( Erd, Cmd msg )
-renameLayout toast from name erd =
+renameLayout : (Msg -> msg) -> (Toasts.Msg -> msg) -> LayoutName -> LayoutName -> Erd -> ( Erd, ( Cmd msg, List ( msg, msg ) ) )
+renameLayout wrap toast from name erd =
     (erd.layouts |> Dict.get from)
-        |> Maybe.map (\l -> ( erd |> mapLayouts (Dict.remove from >> Dict.insert name l) |> setCurrentLayout name, Track.layoutRenamed erd.project l ))
-        |> Maybe.withDefault ( erd, "Layout " ++ from ++ " does not exist" |> Toasts.error |> toast |> T.send )
+        |> Maybe.map
+            (\l ->
+                ( erd |> mapLayouts (Dict.remove from >> Dict.insert name l) |> setCurrentLayout name
+                , ( Track.layoutRenamed erd.project l, [ ( wrap (Submit (NewLayoutBody.Rename name) from), wrap (Submit (NewLayoutBody.Rename from) name) ) ] )
+                )
+            )
+        |> Maybe.withDefault ( erd, ( "'" ++ from ++ "' layout does not exist" |> Toasts.error |> toast |> T.send, [] ) )
 
 
 view : (Msg -> msg) -> (msg -> msg) -> ProjectRef -> List LayoutName -> Bool -> Model -> Html msg
