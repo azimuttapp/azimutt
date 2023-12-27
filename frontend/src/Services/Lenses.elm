@@ -32,6 +32,7 @@ module Services.Lenses exposing
     , mapFindPath
     , mapFindPathM
     , mapGroups
+    , mapGroupsT
     , mapHidden
     , mapHiddenColumns
     , mapHoverTable
@@ -42,7 +43,6 @@ module Services.Lenses exposing
     , mapLayoutsD
     , mapLayoutsDT
     , mapLayoutsDTL
-    , mapLayoutsDTM
     , mapLayoutsDTW
     , mapList
     , mapMTW
@@ -612,6 +612,11 @@ mapGroups =
     map_ .groups setGroups
 
 
+mapGroupsT : (v -> ( v, a )) -> { item | groups : v } -> ( { item | groups : v }, a )
+mapGroupsT =
+    mapT_ .groups setGroups
+
+
 setHidden : v -> { item | hidden : v } -> { item | hidden : v }
 setHidden =
     set_ .hidden (\value item -> { item | hidden = value })
@@ -735,11 +740,6 @@ mapLayoutsD =
 mapLayoutsDT : comparable -> (v -> ( v, a )) -> { item | layouts : Dict comparable v } -> ( { item | layouts : Dict comparable v }, Maybe a )
 mapLayoutsDT =
     mapDT_ .layouts setLayouts
-
-
-mapLayoutsDTM : comparable -> (v -> ( v, Maybe a )) -> { item | layouts : Dict comparable v } -> ( { item | layouts : Dict comparable v }, Maybe a )
-mapLayoutsDTM =
-    mapDTM_ .layouts setLayouts
 
 
 mapLayoutsDTL : comparable -> (v -> ( v, List a )) -> { item | layouts : Dict comparable v } -> ( { item | layouts : Dict comparable v }, List a )

@@ -306,7 +306,7 @@ update urlLayout zone now urlInfos organizations projects msg model =
             model |> handleLayout message
 
         GroupMsg message ->
-            model |> handleGroups now urlInfos message |> Tuple.append []
+            model |> handleGroups now urlInfos message
 
         NotesMsg message ->
             model |> handleNotes message |> Tuple.append []

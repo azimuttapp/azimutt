@@ -345,7 +345,7 @@ viewGroups platform defaultSchema editGroup groups =
                                         , placeholder "Group name"
                                         , value edit.content
                                         , onInput (GEditUpdate >> GroupMsg)
-                                        , onBlur (GEditSave |> GroupMsg)
+                                        , onBlur (GEditSave edit |> GroupMsg)
                                         , autofocus True
                                         , css [ "px-2 py-0 shadow-sm block border-gray-300 rounded-md", focus [ Tw.ring_500 group.color, Tw.border_500 group.color ] ]
                                         ]

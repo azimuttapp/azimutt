@@ -29,6 +29,7 @@ module Libs.List exposing
     , last
     , mapAt
     , mapAtCmd
+    , mapAtTL
     , mapBy
     , mapByCmd
     , mapByT
@@ -266,6 +267,21 @@ mapAt index f list =
                 else
                     a
             )
+
+
+mapAtTL : Int -> (a -> ( a, List t )) -> List a -> ( List a, List t )
+mapAtTL index f list =
+    list
+        |> List.indexedMap
+            (\i a ->
+                if index == i then
+                    f a
+
+                else
+                    ( a, [] )
+            )
+        |> List.unzip
+        |> Tuple.mapSecond List.concat
 
 
 mapAtCmd : Int -> (a -> ( a, Cmd msg )) -> List a -> ( List a, Cmd msg )

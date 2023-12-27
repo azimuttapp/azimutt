@@ -28,6 +28,7 @@ import Models.Project.ColumnPath exposing (ColumnPath)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.ColumnStats exposing (ColumnStats)
 import Models.Project.FindPathSettings exposing (FindPathSettings)
+import Models.Project.Group exposing (Group)
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectName exposing (ProjectName)
 import Models.Project.ProjectStorage exposing (ProjectStorage)
@@ -340,11 +341,12 @@ type GroupMsg
     = GCreate (List TableId)
     | GEdit Int String
     | GEditUpdate String
-    | GEditSave
+    | GEditSave GroupEdit
     | GSetColor Int Color
     | GAddTables Int (List TableId)
     | GRemoveTables Int (List TableId)
     | GDelete Int
+    | GUnDelete Int Group
 
 
 type MemoMsg
