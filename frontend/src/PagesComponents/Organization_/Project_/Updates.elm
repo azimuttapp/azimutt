@@ -52,7 +52,7 @@ import PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, Model
 import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode
 import PagesComponents.Organization_.Project_.Models.DragState as DragState
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
-import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps
+import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps exposing (ErdColumnProps)
 import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout as ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
@@ -82,7 +82,7 @@ import Random
 import Services.Backend as Backend
 import Services.DatabaseSource as DatabaseSource
 import Services.JsonSource as JsonSource
-import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapCanvasT, mapColorT, mapColumns, mapContextMenuM, mapDataExplorerT, mapDetailsSidebarT, mapEmbedSourceParsingMTW, mapErdM, mapErdMT, mapErdMTM, mapErdMTW, mapExportDialogT, mapHoverTable, mapMemos, mapMemosT, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapOrganizationM, mapPlan, mapPosition, mapPositionT, mapProject, mapProjectT, mapPromptM, mapProps, mapPropsT, mapSaveT, mapSchemaAnalysisM, mapSearch, mapSharingT, mapShowHiddenColumns, mapTableRows, mapTableRowsT, mapTables, mapTablesL, mapTablesT, mapToastsT, setActive, setCanvas, setCollapsed, setColors, setColumns, setConfirm, setContextMenu, setCurrentLayout, setCursorMode, setDragging, setHoverTable, setHoverTableRow, setInput, setLast, setLayoutOnLoad, setModal, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setShow, setSize, setTables, setText)
+import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapCanvasT, mapColorT, mapColumnsT, mapContextMenuM, mapDataExplorerT, mapDetailsSidebarT, mapEmbedSourceParsingMTW, mapErdM, mapErdMT, mapErdMTM, mapErdMTW, mapExportDialogT, mapHoverTable, mapMemos, mapMemosT, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapOrganizationM, mapPlan, mapPosition, mapPositionT, mapProject, mapProjectT, mapPromptM, mapProps, mapPropsT, mapSaveT, mapSchemaAnalysisM, mapSearch, mapSharingT, mapShowHiddenColumns, mapTableRows, mapTableRowsT, mapTables, mapTablesL, mapTablesT, mapToastsT, setActive, setCanvas, setCollapsed, setColors, setColumns, setConfirm, setContextMenu, setCurrentLayout, setCursorMode, setDragging, setHoverTable, setHoverTableRow, setInput, setLast, setLayoutOnLoad, setModal, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setShow, setSize, setTables, setText)
 import Services.PrismaSource as PrismaSource
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
@@ -224,8 +224,7 @@ update urlLayout zone now urlInfos organizations projects msg model =
                             (\tables ->
                                 (List.length tables - 1 - max index 0)
                                     |> (\newPos ->
-                                            tables
-                                                |> List.findIndexBy .id id
+                                            (tables |> List.findIndexBy .id id)
                                                 |> Maybe.filter (\pos -> pos /= newPos)
                                                 |> Maybe.map (\pos -> ( tables |> List.moveIndex pos newPos, [ ( TableOrder id (List.length tables - 1 - pos), msg ) ] ))
                                                 |> Maybe.withDefault ( tables, [] )
@@ -248,7 +247,29 @@ update urlLayout zone now urlInfos organizations projects msg model =
                 ( model, Cmd.batch [ ProPlan.colorsModalBody project ProPlanColors ProPlan.colorsInit |> CustomModalOpen |> T.send, Track.planLimit .tableColor model.erd ], [] )
 
         MoveColumn column position ->
-            model |> mapErdM (\erd -> erd |> Erd.mapCurrentLayoutWithTime now (mapTables (List.mapBy .id column.table (mapColumns (ErdColumnProps.mapAt (column.column |> ColumnPath.parent) (List.moveBy .name (column.column |> Nel.last) position)))))) |> setDirty |> Tuple.append []
+            model
+                |> mapErdMT
+                    (\erd ->
+                        erd
+                            |> Erd.mapCurrentLayoutTLWithTime now
+                                (mapTablesT
+                                    (List.mapByTL .id
+                                        column.table
+                                        (mapColumnsT
+                                            (ErdColumnProps.mapAtTL
+                                                (column.column |> ColumnPath.parent)
+                                                (\cols ->
+                                                    (cols |> List.findIndexBy .name (column.column |> Nel.last))
+                                                        |> Maybe.filter (\pos -> pos /= position)
+                                                        |> Maybe.map (\pos -> ( cols |> List.moveIndex pos position, [ ( MoveColumn column pos, msg ) ] ))
+                                                        |> Maybe.withDefault ( cols, [] )
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                    )
+                |> setHLDirty
 
         HoverTable ( table, col ) on ->
             ( model |> setHoverTable (B.cond on (Just ( table, col )) (col |> Maybe.map (\_ -> ( table, Nothing )))) |> mapErdM (\e -> e |> Erd.mapCurrentLayoutWithTime now (mapTables (hoverColumn ( table, col ) on e))), Cmd.none, [] )

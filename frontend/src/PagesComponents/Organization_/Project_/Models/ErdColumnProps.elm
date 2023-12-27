@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Models.ErdColumnProps exposing (ErdColumnProps, ErdColumnPropsFlat, ErdColumnPropsNested(..), children, createAll, createChildren, filter, find, flatten, getIndex, initAll, insertAt, map, mapAll, mapAt, member, nest, remove, removeWithIndex, unpackAll)
+module PagesComponents.Organization_.Project_.Models.ErdColumnProps exposing (ErdColumnProps, ErdColumnPropsFlat, ErdColumnPropsNested(..), children, createAll, createChildren, filter, find, flatten, getIndex, initAll, insertAt, map, mapAll, mapAt, mapAtTL, member, nest, remove, removeWithIndex, unpackAll)
 
 import Dict
 import Libs.List as List
@@ -190,6 +190,12 @@ mapAt : Maybe ColumnPath -> (List ErdColumnProps -> List ErdColumnProps) -> List
 mapAt path f columns =
     -- apply `f` on columns under the given path
     path |> Maybe.mapOrElse (\p -> columns |> List.map (mapChildren (mapAt (p.tail |> Nel.fromList) f))) (f columns)
+
+
+mapAtTL : Maybe ColumnPath -> (List ErdColumnProps -> ( List ErdColumnProps, List a )) -> List ErdColumnProps -> ( List ErdColumnProps, List a )
+mapAtTL path f columns =
+    -- apply `f` on columns under the given path
+    path |> Maybe.mapOrElse (\p -> columns |> List.mapTL (mapChildrenT (mapAtTL (p.tail |> Nel.fromList) f))) (f columns)
 
 
 mapAll : (Maybe ColumnPath -> List ErdColumnProps -> List ErdColumnProps) -> List ErdColumnProps -> List ErdColumnProps

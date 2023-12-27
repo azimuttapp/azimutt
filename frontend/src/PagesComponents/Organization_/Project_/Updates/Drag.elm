@@ -55,7 +55,14 @@ handleDrag now drag isEnd cancel model =
                 ( model |> setSelectionBox Nothing |> mapErdM (Erd.mapCurrentLayout (ErdLayout.setSelected previouslySelected)), Cmd.none, [] )
 
             else
-                ( model |> setSelectionBox Nothing, Cmd.none, [ ( SelectItems_ previouslySelected, SelectItems_ currentlySelected ) ] )
+                ( model |> setSelectionBox Nothing
+                , Cmd.none
+                , if previouslySelected /= currentlySelected then
+                    [ ( SelectItems_ previouslySelected, SelectItems_ currentlySelected ) ]
+
+                  else
+                    []
+                )
 
         else
             ( drag
