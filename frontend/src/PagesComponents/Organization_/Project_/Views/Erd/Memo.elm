@@ -15,7 +15,7 @@ import Libs.Tailwind as Tw
 import Models.Area as Area
 import Models.Position as Position
 import Models.Size as Size
-import PagesComponents.Organization_.Project_.Models exposing (MemoMsg(..), Msg(..))
+import PagesComponents.Organization_.Project_.Models exposing (MemoEdit, MemoMsg(..), Msg(..))
 import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode exposing (CursorMode)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
@@ -23,8 +23,8 @@ import PagesComponents.Organization_.Project_.Models.MemoId as MemoId
 import PagesComponents.Organization_.Project_.Views.Modals.MemoContextMenu as MemoContextMenu
 
 
-viewMemo : Platform -> ErdConf -> CursorMode -> Maybe String -> Memo -> Html Msg
-viewMemo platform conf cursorMode edit memo =
+viewMemo : Platform -> ErdConf -> CursorMode -> Maybe MemoEdit -> Memo -> Html Msg
+viewMemo platform conf cursorMode editM memo =
     let
         htmlId : HtmlId
         htmlId =
@@ -38,16 +38,16 @@ viewMemo platform conf cursorMode edit memo =
         resizeMemo =
             Bool.cond (cursorMode == CursorMode.Drag || not conf.move) [] [ onPointerDown (\_ -> Noop "no drag on memo resize") platform ]
     in
-    edit
+    editM
         |> Maybe.map
-            (\v ->
+            (\edit ->
                 div ([ id htmlId, class "absolute" ] ++ Position.stylesGrid memo.position)
                     [ textarea
                         ([ id (MemoId.toInputId memo.id)
                          , name (MemoId.toInputId memo.id)
-                         , value v
+                         , value edit.content
                          , onInput (MEditUpdate >> MemoMsg)
-                         , onBlur (MemoMsg MEditSave)
+                         , onBlur (MEditSave edit |> MemoMsg)
                          , autofocus True
                          , placeholder "Write any useful memo here!"
                          , class "resize block rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"

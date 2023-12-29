@@ -12,6 +12,7 @@ import Libs.Models.Delta exposing (Delta)
 import Libs.Task as T
 import Libs.Tuple as Tuple
 import Models.Area as Area
+import Models.Position as Position
 import Models.Project.CanvasProps as CanvasProps
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.ColumnRef exposing (ColumnRef)
@@ -149,7 +150,7 @@ notesElement model =
 
 createMemo : Model -> Cmd Msg
 createMemo model =
-    model.erd |> Maybe.mapOrElse (\erd -> erd |> Erd.currentLayout |> .canvas |> CanvasProps.viewport model.erdElem |> Area.centerCanvas |> MCreate |> MemoMsg |> T.send) Cmd.none
+    model.erd |> Maybe.mapOrElse (\erd -> erd |> Erd.currentLayout |> .canvas |> CanvasProps.viewport model.erdElem |> Area.centerCanvas |> Position.onGrid |> MCreate |> MemoMsg |> T.send) Cmd.none
 
 
 createGroup : Model -> Cmd Msg

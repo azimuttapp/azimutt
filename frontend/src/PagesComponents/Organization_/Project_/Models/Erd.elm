@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Models.Erd exposing (Erd, canChangeColor, canCreateGroup, canCreateLayout, canCreateMemo, create, currentLayout, defaultSchemaM, getColumn, getColumnPos, getLayoutTable, getOrganization, getOrganizationM, getProjectId, getProjectIdM, getProjectRef, getProjectRefM, getTable, isShown, mapCurrentLayout, mapCurrentLayoutTLWithTime, mapCurrentLayoutTWithTime, mapCurrentLayoutWithTime, mapCurrentLayoutWithTimeCmd, mapIgnoredRelationsT, mapSettings, mapSource, mapSources, setIgnoredRelations, setSettings, setSources, toSchema, unpack, viewportM, viewportToCanvas)
+module PagesComponents.Organization_.Project_.Models.Erd exposing (Erd, canChangeColor, canCreateGroup, canCreateLayout, canCreateMemo, create, currentLayout, defaultSchemaM, getColumn, getColumnPos, getLayoutTable, getOrganization, getOrganizationM, getProjectId, getProjectIdM, getProjectRef, getProjectRefM, getTable, isShown, mapCurrentLayout, mapCurrentLayoutTLWithTime, mapCurrentLayoutTMWithTime, mapCurrentLayoutTWithTime, mapCurrentLayoutWithTime, mapCurrentLayoutWithTimeCmd, mapIgnoredRelationsT, mapSettings, mapSource, mapSources, setIgnoredRelations, setSettings, setSources, toSchema, unpack, viewportM, viewportToCanvas)
 
 import Conf
 import Dict exposing (Dict)
@@ -42,7 +42,7 @@ import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable exposi
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.SuggestedRelation exposing (SuggestedRelation)
 import Services.Analysis.MissingRelations as MissingRelations
-import Services.Lenses exposing (mapLayoutsD, mapLayoutsDT, mapLayoutsDTL, mapLayoutsDTW)
+import Services.Lenses exposing (mapLayoutsD, mapLayoutsDT, mapLayoutsDTL, mapLayoutsDTM, mapLayoutsDTW)
 import Set exposing (Set)
 import Time
 
@@ -139,6 +139,11 @@ mapCurrentLayoutWithTime now transform erd =
 mapCurrentLayoutTWithTime : Time.Posix -> (ErdLayout -> ( ErdLayout, a )) -> Erd -> ( Erd, Maybe a )
 mapCurrentLayoutTWithTime now transform erd =
     erd |> mapLayoutsDT erd.currentLayout (transform >> Tuple.mapFirst (\l -> { l | updatedAt = now }))
+
+
+mapCurrentLayoutTMWithTime : Time.Posix -> (ErdLayout -> ( ErdLayout, Maybe a )) -> Erd -> ( Erd, Maybe a )
+mapCurrentLayoutTMWithTime now transform erd =
+    erd |> mapLayoutsDTM erd.currentLayout (transform >> Tuple.mapFirst (\l -> { l | updatedAt = now }))
 
 
 mapCurrentLayoutTLWithTime : Time.Posix -> (ErdLayout -> ( ErdLayout, List a )) -> Erd -> ( Erd, List a )

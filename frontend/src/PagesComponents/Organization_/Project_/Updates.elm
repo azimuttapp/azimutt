@@ -309,13 +309,13 @@ update urlLayout zone now urlInfos organizations projects msg model =
             model |> handleGroups now urlInfos message
 
         NotesMsg message ->
-            model |> handleNotes message |> Tuple.append []
+            model |> handleNotes message
 
         TagsMsg message ->
-            model |> handleTags message |> Tuple.append []
+            model |> handleTags message
 
         MemoMsg message ->
-            model |> handleMemo now urlInfos message |> Tuple.append []
+            model |> handleMemo now urlInfos message
 
         ShowTableRow source query previous hint from ->
             (model.erd |> Maybe.andThen (Erd.currentLayout >> .tableRows >> List.find (\r -> r.source == source.id && r.table == query.table && r.primaryKey == query.primaryKey)))

@@ -11,6 +11,7 @@ import Libs.Html.Events exposing (PointerEvent)
 import Libs.Maybe as Maybe
 import Libs.Models.Platform exposing (Platform)
 import Models.ErdProps exposing (ErdProps)
+import Models.Position as Position
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.TableId exposing (TableId)
 import PagesComponents.Organization_.Project_.Models exposing (AmlSidebarMsg(..), FindPathMsg(..), GroupMsg(..), MemoMsg(..), Msg(..), SchemaAnalysisMsg(..))
@@ -30,7 +31,7 @@ view platform erdElem canvasProps layout event =
         , ContextMenu.btn "" (AmlSidebarMsg AToggle) [] [ text "Update your schema" ]
         , ContextMenu.btnHotkey "" (DataExplorerMsg (DataExplorer.Open Nothing Nothing)) [] [ text "Explore your database content" ] platform []
         , ContextMenu.btnHotkey "" (NewLayoutMsg (NewLayout.Open NewLayoutBody.Create)) [] [ text "New layout" ] platform (Conf.hotkeys |> Dict.getOrElse "create-layout" [])
-        , ContextMenu.btnHotkey "" (event |> CanvasProps.eventCanvas erdElem canvasProps |> MCreate |> MemoMsg) [] [ text "New memo" ] platform (Conf.hotkeys |> Dict.getOrElse "new-memo" [])
+        , ContextMenu.btnHotkey "" (event |> CanvasProps.eventCanvas erdElem canvasProps |> Position.onGrid |> MCreate |> MemoMsg) [] [ text "New memo" ] platform (Conf.hotkeys |> Dict.getOrElse "new-memo" [])
         , selectedTables |> List.head |> Maybe.mapOrElse (\_ -> ContextMenu.btnHotkey "" (GCreate selectedTables |> GroupMsg) [] [ text "New group" ] platform (Conf.hotkeys |> Dict.getOrElse "create-group" [])) (div [] [])
         , ContextMenu.btnHotkey "" SelectAll [] [ text "Select all" ] platform (Conf.hotkeys |> Dict.getOrElse "select-all" [])
         , ContextMenu.btn "" FitToScreen [] [ text "Fit diagram to screen" ]

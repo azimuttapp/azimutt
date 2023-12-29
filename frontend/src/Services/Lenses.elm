@@ -11,6 +11,7 @@ module Services.Lenses exposing
     , mapColumns
     , mapColumnsT
     , mapContent
+    , mapContentT
     , mapContextMenuM
     , mapDataExplorerT
     , mapDatabaseSourceMTW
@@ -43,11 +44,13 @@ module Services.Lenses exposing
     , mapLayoutsD
     , mapLayoutsDT
     , mapLayoutsDTL
+    , mapLayoutsDTM
     , mapLayoutsDTW
     , mapList
     , mapMTW
     , mapMemos
-    , mapMemosL
+    , mapMemosLT
+    , mapMemosLTL
     , mapMemosT
     , mapMetadata
     , mapMobileMenuOpen
@@ -390,6 +393,11 @@ setContent =
 mapContent : (v -> v) -> { item | content : v } -> { item | content : v }
 mapContent =
     map_ .content setContent
+
+
+mapContentT : (v -> ( v, a )) -> { item | content : v } -> ( { item | content : v }, a )
+mapContentT =
+    mapT_ .content setContent
 
 
 setContextMenu : v -> { item | contextMenu : v } -> { item | contextMenu : v }
@@ -742,6 +750,11 @@ mapLayoutsDT =
     mapDT_ .layouts setLayouts
 
 
+mapLayoutsDTM : comparable -> (v -> ( v, Maybe a )) -> { item | layouts : Dict comparable v } -> ( { item | layouts : Dict comparable v }, Maybe a )
+mapLayoutsDTM =
+    mapDTM_ .layouts setLayouts
+
+
 mapLayoutsDTL : comparable -> (v -> ( v, List a )) -> { item | layouts : Dict comparable v } -> ( { item | layouts : Dict comparable v }, List a )
 mapLayoutsDTL =
     mapDTL_ .layouts setLayouts
@@ -777,9 +790,14 @@ mapMemosT =
     mapT_ .memos setMemos
 
 
-mapMemosL : (v -> k) -> k -> (v -> v) -> { item | memos : List v } -> { item | memos : List v }
-mapMemosL =
-    mapL_ .memos setMemos
+mapMemosLT : (v -> k) -> k -> (v -> ( v, t )) -> { item | memos : List v } -> ( { item | memos : List v }, Maybe t )
+mapMemosLT =
+    mapLT_ .memos setMemos
+
+
+mapMemosLTL : (v -> k) -> k -> (v -> ( v, List t )) -> { item | memos : List v } -> ( { item | memos : List v }, List t )
+mapMemosLTL =
+    mapLTL_ .memos setMemos
 
 
 setMetadata : v -> { item | metadata : v } -> { item | metadata : v }
@@ -1490,19 +1508,36 @@ mapDTL_ get update key transform item =
 mapL_ : (item -> List v) -> (List v -> item -> item) -> (v -> k) -> k -> (v -> v) -> item -> item
 mapL_ get update getKey key transform item =
     -- update list values in a record if match condition
-    update
-        (item
-            |> get
-            |> List.map
-                (\v ->
-                    if getKey v == key then
-                        transform v
+    (item
+        |> get
+        |> List.map
+            (\v ->
+                if getKey v == key then
+                    transform v
 
-                    else
-                        v
-                )
-        )
-        item
+                else
+                    v
+            )
+    )
+        |> (\l -> update l item)
+
+
+mapLT_ : (item -> List v) -> (List v -> item -> item) -> (v -> k) -> k -> (v -> ( v, t )) -> item -> ( item, Maybe t )
+mapLT_ get update getKey key transform item =
+    -- update list values in a record if match condition
+    (item
+        |> get
+        |> List.map
+            (\v ->
+                if getKey v == key then
+                    transform v |> Tuple.mapSecond Just
+
+                else
+                    ( v, Nothing )
+            )
+    )
+        |> List.unzip
+        |> Tuple.mapBoth (\l -> update l item) (List.filterMap identity >> List.head)
 
 
 mapLTM_ : (item -> List v) -> (List v -> item -> item) -> (v -> k) -> k -> (v -> ( v, Maybe a )) -> item -> ( item, Maybe a )
@@ -1517,4 +1552,22 @@ mapLTM_ get update getKey key transform item =
                 else
                     ( v, Nothing )
             )
-        |> (\res -> ( update (res |> List.map Tuple.first) item, res |> List.filterMap Tuple.second |> List.head ))
+        |> List.unzip
+        |> Tuple.mapBoth (\l -> update l item) (List.filterMap identity >> List.head)
+
+
+mapLTL_ : (item -> List v) -> (List v -> item -> item) -> (v -> k) -> k -> (v -> ( v, List t )) -> item -> ( item, List t )
+mapLTL_ get update getKey key transform item =
+    -- update list values in a record if match condition
+    item
+        |> get
+        |> List.map
+            (\v ->
+                if getKey v == key then
+                    transform v
+
+                else
+                    ( v, [] )
+            )
+        |> List.unzip
+        |> Tuple.mapBoth (\l -> update l item) List.concat

@@ -103,7 +103,7 @@ mapSelected transform layout =
         |> mapMemos (List.map (\m -> m |> Lenses.mapSelected (transform { id = MemoId.toHtmlId m.id, position = m.position, size = m.size })))
 
 
-createMemo : ErdLayout -> Position.Canvas -> Memo
+createMemo : ErdLayout -> Position.Grid -> Memo
 createMemo layout position =
     let
         id : MemoId
@@ -112,7 +112,7 @@ createMemo layout position =
     in
     { id = id
     , content = ""
-    , position = position |> Position.moveCanvas { dx = -75, dy = -75 } |> Position.onGrid
+    , position = position |> Position.moveGrid { dx = -75, dy = -75 }
     , size = Size 150 150 |> Size.canvas
     , color = Nothing
     , selected = False

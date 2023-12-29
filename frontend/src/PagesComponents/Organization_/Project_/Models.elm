@@ -350,12 +350,13 @@ type GroupMsg
 
 
 type MemoMsg
-    = MCreate Position.Canvas
+    = MCreate Position.Grid
     | MEdit Memo
     | MEditUpdate String
-    | MEditSave
+    | MEditSave MemoEdit
     | MSetColor MemoId (Maybe Color)
     | MDelete MemoId
+    | MUnDelete Memo
 
 
 type AmlSidebarMsg
