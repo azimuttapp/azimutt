@@ -71,7 +71,7 @@ import PagesComponents.Organization_.Project_.Updates.Project exposing (createPr
 import PagesComponents.Organization_.Project_.Updates.ProjectSettings exposing (handleProjectSettings)
 import PagesComponents.Organization_.Project_.Updates.Source as Source
 import PagesComponents.Organization_.Project_.Updates.Table exposing (goToTable, hideColumn, hideColumns, hideRelatedTables, hideTable, hoverColumn, hoverNextColumn, mapTablePropOrSelected, mapTablePropOrSelectedTL, showAllTables, showColumn, showColumns, showRelatedTables, showTable, showTables, sortColumns, toggleNestedColumn, unHideTable)
-import PagesComponents.Organization_.Project_.Updates.TableRow exposing (deleteTableRow, mapTableRowOrSelectedCmd, moveToTableRow, showTableRow, unDeleteTableRow)
+import PagesComponents.Organization_.Project_.Updates.TableRow exposing (deleteTableRow, mapTableRowOrSelected, moveToTableRow, showTableRow, unDeleteTableRow)
 import PagesComponents.Organization_.Project_.Updates.Tags exposing (handleTags)
 import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirty, setHDirty, setHDirtyCmd, setHDirtyCmdM, setHL, setHLCmd, setHLDirty, setHLDirtyCmd)
 import PagesComponents.Organization_.Project_.Updates.VirtualRelation exposing (handleVirtualRelation)
@@ -329,7 +329,7 @@ update urlLayout zone now urlInfos organizations projects msg model =
             model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (unDeleteTableRow index tableRow)) |> setHLDirtyCmd
 
         TableRowMsg id message ->
-            model |> mapErdMTW (\e -> e |> Erd.mapCurrentLayoutWithTimeCmd now (mapTableRowsT (mapTableRowOrSelectedCmd id message (TableRow.update DropdownToggle Toast now e.project e.sources model.openedDropdown message)))) Cmd.none |> Tuple.append []
+            model |> mapErdMTM (\e -> e |> Erd.mapCurrentLayoutTWithTime now (mapTableRowsT (mapTableRowOrSelected id message (TableRow.update (TableRowMsg id) DropdownToggle Toast now e.project e.sources model.openedDropdown message)))) |> setHLDirtyCmd
 
         AmlSidebarMsg message ->
             model |> AmlSidebar.update now message |> Tuple.append []

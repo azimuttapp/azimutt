@@ -6,6 +6,7 @@ module Services.Lenses exposing
     , mapCanvas
     , mapCanvasT
     , mapCollapseTableColumns
+    , mapCollapsedT
     , mapColorT
     , mapColumnBasicTypes
     , mapColumns
@@ -95,6 +96,7 @@ module Services.Lenses exposing
     , mapSqlSourceMTW
     , mapSqlSourceT
     , mapState
+    , mapStateT
     , mapTableRows
     , mapTableRowsSeq
     , mapTableRowsT
@@ -323,6 +325,11 @@ mapCanvasT =
 setCollapsed : v -> { item | collapsed : v } -> { item | collapsed : v }
 setCollapsed =
     set_ .collapsed (\value item -> { item | collapsed = value })
+
+
+mapCollapsedT : (v -> ( v, a )) -> { item | collapsed : v } -> ( { item | collapsed : v }, a )
+mapCollapsedT =
+    mapT_ .collapsed setCollapsed
 
 
 setCollapseTableColumns : v -> { item | collapseTableColumns : v } -> { item | collapseTableColumns : v }
@@ -1268,6 +1275,11 @@ setState =
 mapState : (v -> v) -> { item | state : v } -> { item | state : v }
 mapState =
     map_ .state setState
+
+
+mapStateT : (v -> ( v, a )) -> { item | state : v } -> ( { item | state : v }, a )
+mapStateT =
+    mapT_ .state setState
 
 
 setTables : v -> { item | tables : v } -> { item | tables : v }

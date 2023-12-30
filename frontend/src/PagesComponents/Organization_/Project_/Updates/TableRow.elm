@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Updates.TableRow exposing (deleteTableRow, mapTableRowOrSelectedCmd, moveToTableRow, showTableRow, unDeleteTableRow)
+module PagesComponents.Organization_.Project_.Updates.TableRow exposing (deleteTableRow, mapTableRowOrSelected, moveToTableRow, showTableRow, unDeleteTableRow)
 
 import Components.Organisms.TableRow as TableRow
 import DataSources.DbMiner.DbTypes exposing (RowQuery)
@@ -21,21 +21,6 @@ import Services.Lenses exposing (mapCanvasT, mapPositionT, mapTableRows, mapTabl
 import Set exposing (Set)
 import Time
 import Track
-
-
-mapTableRowOrSelectedCmd : TableRow.Id -> TableRow.Msg -> (TableRow -> ( TableRow, Cmd msg )) -> List TableRow -> ( List TableRow, Cmd msg )
-mapTableRowOrSelectedCmd id msg f rows =
-    rows
-        |> List.findBy .id id
-        |> Maybe.map
-            (\r ->
-                if r.selected && TableRow.canBroadcast msg then
-                    rows |> List.mapByCmd .selected True f
-
-                else
-                    rows |> List.mapByCmd .id id f
-            )
-        |> Maybe.withDefault ( rows, Cmd.none )
 
 
 showTableRow : Time.Posix -> DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> String -> Erd -> ( Erd, ( Cmd Msg, List ( Msg, Msg ) ) )
@@ -73,7 +58,7 @@ deleteTableRow id layout =
 
 unDeleteTableRow : Int -> TableRow -> ErdLayout -> ( ErdLayout, ( Cmd Msg, List ( Msg, Msg ) ) )
 unDeleteTableRow index tableRow layout =
-    ( layout |> mapTableRows (List.insertAt index tableRow), ( Ports.observeTableRowSize tableRow.id, [ ( DeleteTableRow tableRow.id, UnDeleteTableRow_ index tableRow ) ] ) )
+    layout |> mapTableRowsT (\rows -> ( rows |> List.insertAt index tableRow, ( Ports.observeTableRowSize tableRow.id, [ ( DeleteTableRow tableRow.id, UnDeleteTableRow_ index tableRow ) ] ) ))
 
 
 moveToTableRow : Time.Posix -> ErdProps -> TableRow -> Erd -> ( Erd, Maybe ( Cmd Msg, List ( Msg, Msg ) ) )
@@ -93,3 +78,18 @@ centerTableRow viewport row canvas =
             viewport |> Area.centerViewport |> Position.diffViewport rowCenter
     in
     canvas |> mapPositionT (\pos -> pos |> Position.moveDiagram delta |> (\newPos -> ( newPos, [ ( CanvasPosition_ pos, CanvasPosition_ newPos ) ] )))
+
+
+mapTableRowOrSelected : TableRow.Id -> TableRow.Msg -> (TableRow -> ( TableRow, ( Cmd msg, List ( msg, msg ) ) )) -> List TableRow -> ( List TableRow, ( Cmd msg, List ( msg, msg ) ) )
+mapTableRowOrSelected id msg f rows =
+    rows
+        |> List.findBy .id id
+        |> Maybe.map
+            (\r ->
+                if r.selected && TableRow.canBroadcast msg then
+                    rows |> List.mapByT .selected True f |> Tuple.mapSecond (List.unzip >> Tuple.mapBoth Cmd.batch List.concat)
+
+                else
+                    rows |> List.mapByT .id id f |> Tuple.mapSecond (List.unzip >> Tuple.mapBoth Cmd.batch List.concat)
+            )
+        |> Maybe.withDefault ( rows, ( Cmd.none, [] ) )

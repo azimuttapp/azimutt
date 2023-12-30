@@ -65,7 +65,7 @@ import PagesComponents.Organization_.Project_.Models.PositionHint as PositionHin
 import PagesComponents.Organization_.Project_.Views.Modals.ColumnRowContextMenu as ColumnRowContextMenu
 import PagesComponents.Organization_.Project_.Views.Modals.TableRowContextMenu as TableRowContextMenu
 import Ports
-import Services.Lenses exposing (mapColumns, mapHidden, mapSelected, mapShowHiddenColumns, mapState, setCollapsed, setPrevious, setState)
+import Services.Lenses exposing (mapCollapsedT, mapColumns, mapHidden, mapSelected, mapShowHiddenColumns, mapState, mapStateT, setPrevious, setState)
 import Services.Toasts as Toasts
 import Set exposing (Set)
 import Time
@@ -84,9 +84,8 @@ type Msg
     = GotResult QueryResult
     | Refresh
     | Cancel
-    | Restore TableRow.SuccessState
-    | Collapse
-    | Expand
+    | SetState State
+    | SetCollapsed Bool
     | ShowColumn ColumnPathStr
     | HideColumn ColumnPathStr
     | ToggleHiddenColumns
@@ -181,22 +180,25 @@ initRelation src ref =
 -- UPDATE
 
 
-update : (HtmlId -> msg) -> (Toasts.Msg -> msg) -> Time.Posix -> ProjectInfo -> List Source -> HtmlId -> Msg -> Model -> ( Model, Cmd msg )
-update toggleDropdown showToast now project sources openedDropdown msg model =
+update : (Msg -> msg) -> (HtmlId -> msg) -> (Toasts.Msg -> msg) -> Time.Posix -> ProjectInfo -> List Source -> HtmlId -> Msg -> Model -> ( Model, ( Cmd msg, List ( msg, msg ) ) )
+update wrap toggleDropdown showToast now project sources openedDropdown msg model =
     case msg of
         GotResult res ->
-            ( model
-                |> mapStateLoading (\l -> res.result |> Result.fold (initFailure l.query l.previous res.started res.finished) (initSuccess res.started res.finished))
-                |> mapHidden
-                    (\h ->
-                        if Set.isEmpty h then
-                            res.result |> Result.mapOrElse defaultHidden Set.empty
+            model
+                |> mapStateLoadingTM (\l -> ( res.result |> Result.fold (initFailure l.query l.previous res.started res.finished) (initSuccess res.started res.finished), l.previous ))
+                |> (\( newModel, previousState ) ->
+                        ( newModel
+                            |> mapHidden
+                                (\h ->
+                                    if Set.isEmpty h then
+                                        res.result |> Result.mapOrElse defaultHidden Set.empty
 
-                        else
-                            h
-                    )
-            , Track.tableRowResult res project
-            )
+                                    else
+                                        h
+                                )
+                        , ( Track.tableRowResult res project, previousState |> Maybe.mapOrElse (\s -> [ ( wrap (SetState (StateSuccess s)), wrap (SetState newModel.state) ) ]) [] )
+                        )
+                   )
 
         Refresh ->
             withDbSource showToast
@@ -209,30 +211,27 @@ update toggleDropdown showToast now project sources openedDropdown msg model =
                             DbQuery.findRow dbSrc.db.kind { table = model.table, primaryKey = model.primaryKey }
                     in
                     ( model |> setState (StateLoading { query = sqlQuery, startedAt = now, previous = model |> TableRow.stateSuccess })
-                    , Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt model.id) dbSrc.db.url sqlQuery
+                    , ( Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt model.id) dbSrc.db.url sqlQuery, [] )
                     )
                 )
 
         Cancel ->
-            ( model |> mapStateLoading (\l -> initFailure l.query l.previous l.startedAt now "Query canceled"), Cmd.none )
+            ( model |> mapStateLoading (\l -> initFailure l.query l.previous l.startedAt now "Query canceled"), ( Cmd.none, [] ) )
 
-        Restore success ->
-            ( model |> setState (StateSuccess success), Cmd.none )
+        SetState state ->
+            model |> mapStateT (\s -> ( state, ( Cmd.none, [ ( wrap (SetState s), wrap msg ) ] ) ))
 
-        Collapse ->
-            ( model |> setCollapsed True, Cmd.none )
-
-        Expand ->
-            ( model |> setCollapsed False, Cmd.none )
+        SetCollapsed value ->
+            model |> mapCollapsedT (\c -> ( value, ( Cmd.none, [ ( wrap (SetCollapsed c), wrap msg ) ] ) ))
 
         ShowColumn pathStr ->
-            ( model |> mapHidden (Set.remove pathStr), Cmd.none )
+            ( model |> mapHidden (Set.remove pathStr), ( Cmd.none, [ ( wrap (HideColumn pathStr), wrap msg ) ] ) )
 
         HideColumn pathStr ->
-            ( model |> mapHidden (Set.insert pathStr), Cmd.none )
+            ( model |> mapHidden (Set.insert pathStr), ( Cmd.none, [ ( wrap (ShowColumn pathStr), wrap msg ) ] ) )
 
         ToggleHiddenColumns ->
-            ( model |> mapShowHiddenColumns not, Cmd.none )
+            ( model |> mapShowHiddenColumns not, ( Cmd.none, [ ( wrap ToggleHiddenColumns, wrap ToggleHiddenColumns ) ] ) )
 
         ToggleIncomingRows dropdown column relations ->
             if Dict.isEmpty column.linkedBy && openedDropdown /= dropdown then
@@ -245,11 +244,11 @@ update toggleDropdown showToast now project sources openedDropdown msg model =
                             sqlQuery =
                                 DbQuery.incomingRows dbSrc.db.kind relations { table = model.table, primaryKey = model.primaryKey }
                         in
-                        ( model, Cmd.batch [ toggleDropdown dropdown |> T.send, Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt model.id ++ "/" ++ column.pathStr) dbSrc.db.url sqlQuery ] )
+                        ( model, ( Cmd.batch [ toggleDropdown dropdown |> T.send, Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt model.id ++ "/" ++ column.pathStr) dbSrc.db.url sqlQuery ], [] ) )
                     )
 
             else
-                ( model, toggleDropdown dropdown |> T.send )
+                ( model, ( toggleDropdown dropdown |> T.send, [] ) )
 
         GotIncomingRows column result ->
             let
@@ -258,20 +257,20 @@ update toggleDropdown showToast now project sources openedDropdown msg model =
                     result.result |> Result.fold (\_ -> Dict.empty) (.rows >> List.head >> Maybe.mapOrElse (Dict.mapBoth TableId.parse parsePks) Dict.empty)
             in
             ( model |> mapState (mapSuccess (mapColumns (List.mapBy .path column (\c -> { c | linkedBy = linkedBy }))))
-            , result.result |> Result.fold (\err -> Toasts.error ("Can't get incoming rows: " ++ err) |> showToast |> T.send) (\_ -> Cmd.none)
+            , ( result.result |> Result.fold (\err -> Toasts.error ("Can't get incoming rows: " ++ err) |> showToast |> T.send) (\_ -> Cmd.none), [] )
             )
 
 
-withDbSource : (Toasts.Msg -> msg) -> List Source -> Model -> (DbSourceInfo -> ( Model, Cmd msg )) -> ( Model, Cmd msg )
+withDbSource : (Toasts.Msg -> msg) -> List Source -> Model -> (DbSourceInfo -> ( Model, ( Cmd msg, List ( msg, msg ) ) )) -> ( Model, ( Cmd msg, List ( msg, msg ) ) )
 withDbSource showToast sources model f =
     sources
         |> List.findBy .id model.source
         |> Maybe.map
             (DbSourceInfo.fromSource
                 >> Maybe.map f
-                >> Maybe.withDefault ( model, Toasts.error "Can't refresh row, source is not a database." |> showToast |> T.send )
+                >> Maybe.withDefault ( model, ( Toasts.error "Can't refresh row, source is not a database." |> showToast |> T.send, [] ) )
             )
-        |> Maybe.withDefault ( model, Toasts.error "Can't refresh row, source not found." |> showToast |> T.send )
+        |> Maybe.withDefault ( model, ( Toasts.error "Can't refresh row, source not found." |> showToast |> T.send, [] ) )
 
 
 parsePks : DbValue -> List RowPrimaryKey
@@ -318,6 +317,16 @@ mapStateLoading f row =
 
         _ ->
             row
+
+
+mapStateLoadingTM : (TableRow.LoadingState -> ( State, Maybe a )) -> TableRow -> ( TableRow, Maybe a )
+mapStateLoadingTM f row =
+    case row.state of
+        StateLoading s ->
+            f s |> Tuple.mapFirst (\res -> { row | state = res })
+
+        _ ->
+            ( row, Nothing )
 
 
 mapLoading : (TableRow.LoadingState -> TableRow.LoadingState) -> State -> State
@@ -419,7 +428,7 @@ viewHeader wrap noop toggleDropdown createContextMenu selectItem showTable delet
 
         dropdown : Html msg
         dropdown =
-            TableRowContextMenu.view (wrap Refresh) openNotes (wrap Collapse) (wrap Expand) delete platform conf defaultSchema row notes
+            TableRowContextMenu.view (wrap Refresh) openNotes (SetCollapsed >> wrap) delete platform conf defaultSchema row notes
 
         tableLabel : String
         tableLabel =
@@ -470,7 +479,7 @@ viewLoading wrap delete res =
         , viewQuery "mt-2 px-3 py-2 text-sm" res.query
         , div [ class "mt-6 flex justify-around" ]
             [ Button.white1 Tw.indigo [ onClick (Cancel |> wrap), title "Cancel fetching data" ] [ text "Cancel" ]
-            , res.previous |> Maybe.map (\p -> Button.white1 Tw.emerald [ onClick (Restore p |> wrap), title "Restore previous data" ] [ text "Restore" ]) |> Maybe.withDefault (text "")
+            , res.previous |> Maybe.map (\p -> Button.white1 Tw.emerald [ onClick (StateSuccess p |> SetState |> wrap), title "Restore previous data" ] [ text "Restore" ]) |> Maybe.withDefault (text "")
             , Button.white1 Tw.red [ onClick delete, title "Remove this row" ] [ text "Delete" ]
             ]
         ]
@@ -485,7 +494,7 @@ viewFailure wrap delete res =
         , viewQuery "mt-1 px-3 py-2" res.query
         , div [ class "mt-6 flex justify-around" ]
             [ Button.white1 Tw.indigo [ onClick (Refresh |> wrap), title "Retry fetching data" ] [ text "Refresh" ]
-            , res.previous |> Maybe.map (\p -> Button.white1 Tw.emerald [ onClick (Restore p |> wrap), title "Restore previous data" ] [ text "Restore" ]) |> Maybe.withDefault (text "")
+            , res.previous |> Maybe.map (\p -> Button.white1 Tw.emerald [ onClick (StateSuccess p |> SetState |> wrap), title "Restore previous data" ] [ text "Restore" ]) |> Maybe.withDefault (text "")
             , Button.white1 Tw.red [ onClick delete, title "Remove this row" ] [ text "Delete" ]
             ]
         ]
@@ -1008,7 +1017,7 @@ docRelation ( fromSchema, fromTable, fromColumn ) ( toSchema, toTable, toColumn 
 
 docUpdate : DocState -> (DocState -> Model) -> (DocState -> Model -> DocState) -> Msg -> ElmBook.Msg (SharedDocState x)
 docUpdate s get set msg =
-    s |> get |> update (docToggleDropdown s) docShowToast Time.zero ProjectInfo.zero [ docSource ] s.openedDropdown msg |> Tuple.first |> set s |> docSetState
+    s |> get |> update (\_ -> logAction "msg") (docToggleDropdown s) docShowToast Time.zero ProjectInfo.zero [ docSource ] s.openedDropdown msg |> Tuple.first |> set s |> docSetState
 
 
 docSetState : DocState -> ElmBook.Msg (SharedDocState x)

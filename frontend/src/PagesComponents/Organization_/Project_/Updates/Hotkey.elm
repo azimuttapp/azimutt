@@ -5,7 +5,6 @@ import Components.Slices.DataExplorer as DataExplorer
 import Components.Slices.DataExplorerQuery as DataExplorerQuery
 import Components.Slices.NewLayoutBody as NewLayoutBody
 import Conf
-import Libs.Bool as Bool
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.Delta exposing (Delta)
@@ -160,7 +159,7 @@ createGroup model =
 
 collapseElement : Model -> Cmd Msg
 collapseElement model =
-    (model |> currentTableRow |> Maybe.andThen (getTableRow model) |> Maybe.map (\r -> Bool.cond r.collapsed TableRow.Expand TableRow.Collapse |> TableRowMsg r.id |> T.send))
+    (model |> currentTableRow |> Maybe.andThen (getTableRow model) |> Maybe.map (\r -> r.collapsed |> not |> TableRow.SetCollapsed |> TableRowMsg r.id |> T.send))
         |> Maybe.orElse (model |> currentTable |> Maybe.map (ToggleTableCollapse >> T.send))
         |> Maybe.withDefault ("Can't find an element to collapse :(" |> Toasts.info |> Toast |> T.send)
 
