@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Updates.TableRow exposing (mapTableRowOrSelectedCmd, moveToTableRow, showTableRow)
+module PagesComponents.Organization_.Project_.Updates.TableRow exposing (deleteTableRow, mapTableRowOrSelectedCmd, moveToTableRow, showTableRow, unDeleteTableRow)
 
 import Components.Organisms.TableRow as TableRow
 import DataSources.DbMiner.DbTypes exposing (RowQuery)
@@ -17,7 +17,7 @@ import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint)
 import Ports
-import Services.Lenses exposing (mapCanvas, mapPosition, mapTableRows, mapTableRowsSeq)
+import Services.Lenses exposing (mapCanvasT, mapPositionT, mapTableRows, mapTableRowsSeq, mapTableRowsT)
 import Set exposing (Set)
 import Time
 import Track
@@ -38,7 +38,7 @@ mapTableRowOrSelectedCmd id msg f rows =
         |> Maybe.withDefault ( rows, Cmd.none )
 
 
-showTableRow : Time.Posix -> DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> String -> Erd -> ( Erd, Cmd Msg )
+showTableRow : Time.Posix -> DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> String -> Erd -> ( Erd, ( Cmd Msg, List ( Msg, Msg ) ) )
 showTableRow now source query previous hint from erd =
     let
         hidden : Set ColumnName
@@ -51,16 +51,37 @@ showTableRow now source query previous hint from erd =
     ( erd
         |> mapTableRowsSeq (\i -> i + 1)
         |> Erd.mapCurrentLayoutWithTime now (mapTableRows (List.prepend row))
-    , Cmd.batch [ cmd, Ports.observeTableRowSize row.id, Track.tableRowShown source from erd.project ]
+    , ( Cmd.batch [ cmd, Ports.observeTableRowSize row.id, Track.tableRowShown source from erd.project ]
+      , [ ( DeleteTableRow row.id, UnDeleteTableRow_ 0 row ) ]
+      )
     )
 
 
-moveToTableRow : Time.Posix -> ErdProps -> TableRow -> Erd -> ( Erd, Cmd Msg )
+deleteTableRow : TableRow.Id -> ErdLayout -> ( ErdLayout, ( Cmd Msg, List ( Msg, Msg ) ) )
+deleteTableRow id layout =
+    layout
+        |> mapTableRowsT
+            (\rows ->
+                case rows |> List.zipWithIndex |> List.partition (\( r, _ ) -> r.id == id) of
+                    ( ( deleted, index ) :: _, kept ) ->
+                        ( kept |> List.map Tuple.first, ( Cmd.none, [ ( UnDeleteTableRow_ index deleted, DeleteTableRow deleted.id ) ] ) )
+
+                    _ ->
+                        ( rows, ( Cmd.none, [] ) )
+            )
+
+
+unDeleteTableRow : Int -> TableRow -> ErdLayout -> ( ErdLayout, ( Cmd Msg, List ( Msg, Msg ) ) )
+unDeleteTableRow index tableRow layout =
+    ( layout |> mapTableRows (List.insertAt index tableRow), ( Ports.observeTableRowSize tableRow.id, [ ( DeleteTableRow tableRow.id, UnDeleteTableRow_ index tableRow ) ] ) )
+
+
+moveToTableRow : Time.Posix -> ErdProps -> TableRow -> Erd -> ( Erd, Maybe ( Cmd Msg, List ( Msg, Msg ) ) )
 moveToTableRow now viewport row erd =
-    ( erd |> Erd.mapCurrentLayoutWithTime now (mapCanvas (centerTableRow viewport row)), Cmd.none )
+    erd |> Erd.mapCurrentLayoutTWithTime now (mapCanvasT (centerTableRow viewport row)) |> Tuple.mapSecond (Maybe.map (\h -> ( Cmd.none, h )))
 
 
-centerTableRow : ErdProps -> TableRow -> CanvasProps -> CanvasProps
+centerTableRow : ErdProps -> TableRow -> CanvasProps -> ( CanvasProps, List ( Msg, Msg ) )
 centerTableRow viewport row canvas =
     let
         rowCenter : Position.Viewport
@@ -71,4 +92,4 @@ centerTableRow viewport row canvas =
         delta =
             viewport |> Area.centerViewport |> Position.diffViewport rowCenter
     in
-    canvas |> mapPosition (Position.moveDiagram delta)
+    canvas |> mapPositionT (\pos -> pos |> Position.moveDiagram delta |> (\newPos -> ( newPos, [ ( CanvasPosition_ pos, CanvasPosition_ newPos ) ] )))

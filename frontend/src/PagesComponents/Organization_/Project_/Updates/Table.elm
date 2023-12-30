@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Updates.Table exposing (goToTable, hideColumn, hideColumns, hideRelatedTables, hideTable, hoverColumn, hoverNextColumn, mapTablePropOrSelected, mapTablePropOrSelectedTL, reshowTable, showAllTables, showColumn, showColumns, showRelatedTables, showTable, showTables, sortColumns, toggleNestedColumn)
+module PagesComponents.Organization_.Project_.Updates.Table exposing (goToTable, hideColumn, hideColumns, hideRelatedTables, hideTable, hoverColumn, hoverNextColumn, mapTablePropOrSelected, mapTablePropOrSelectedTL, showAllTables, showColumn, showColumns, showRelatedTables, showTable, showTables, sortColumns, toggleNestedColumn, unHideTable)
 
 import Components.Organisms.Table exposing (TableHover)
 import Conf
@@ -92,11 +92,6 @@ showTable now id hint from erd =
             ( erd, ( "Can't show table " ++ TableId.show erd.settings.defaultSchema id ++ ": not found" |> Toasts.error |> Toast |> T.send, [] ) )
 
 
-reshowTable : Time.Posix -> Int -> ErdTableLayout -> Erd -> ( Erd, Cmd Msg )
-reshowTable now index table erd =
-    ( erd |> performReshowTable now index table, Cmd.batch [ Ports.observeTableSize table.id, Track.tableShown 1 "undo" (Just erd) ] )
-
-
 showTables : Time.Posix -> List TableId -> Maybe PositionHint -> String -> Erd -> ( Erd, ( Cmd Msg, List ( Msg, Msg ) ) )
 showTables now ids hint from erd =
     ids
@@ -164,6 +159,11 @@ hideTable now id erd =
 
     else
         performHideTable now id erd
+
+
+unHideTable : Time.Posix -> Int -> ErdTableLayout -> Erd -> ( Erd, Cmd Msg )
+unHideTable now index table erd =
+    ( erd |> performReshowTable now index table, Cmd.batch [ Ports.observeTableSize table.id, Track.tableShown 1 "undo" (Just erd) ] )
 
 
 showRelatedTables : Time.Posix -> TableId -> Erd -> ( Erd, ( Cmd Msg, List ( Msg, Msg ) ) )
@@ -254,7 +254,7 @@ hideRelatedTables now id erd =
             erd |> Erd.currentLayout |> .tables |> List.zipWithIndex |> List.filter (\( t, _ ) -> related |> List.member t.id)
     in
     ( related |> List.foldl (\t e -> hideTable now t e |> Tuple.first) erd
-    , ( Cmd.none, [ ( shownTables |> List.map (\( t, i ) -> ReshowTable_ i t) |> Batch, related |> List.map HideTable |> Batch ) ] )
+    , ( Cmd.none, [ ( shownTables |> List.map (\( t, i ) -> UnHideTable_ i t) |> Batch, related |> List.map HideTable |> Batch ) ] )
     )
 
 
@@ -419,7 +419,7 @@ performHideTable now id erd =
         |> Maybe.map
             (\( table, index ) ->
                 ( erd |> Erd.mapCurrentLayoutWithTime now (mapTables (List.removeBy .id id) >> mapTables updateRelatedTables)
-                , [ ( ReshowTable_ index table, HideTable id ) ]
+                , [ ( UnHideTable_ index table, HideTable id ) ]
                 )
             )
         |> Maybe.withDefault ( erd, [] )
@@ -427,23 +427,26 @@ performHideTable now id erd =
 
 performShowTable : Time.Posix -> ErdTable -> Maybe PositionHint -> Erd -> ( Erd, List ( Msg, Msg ) )
 performShowTable now table hint erd =
-    ( erd
-        |> Erd.mapCurrentLayoutWithTime now
-            (mapTables
+    erd
+        |> Erd.mapCurrentLayoutTWithTime now
+            (mapTablesT
                 (\tables ->
-                    -- initial position is computed in frontend/src/PagesComponents/Organization_/Project_/Updates.elm:502#computeInitialPosition when size is known
-                    ErdTableLayout.init erd.settings
-                        (tables |> List.map .id |> Set.fromList)
-                        (erd.relationsByTable |> Dict.getOrElse table.id [])
-                        erd.settings.collapseTableColumns
-                        hint
-                        table
-                        :: tables
+                    let
+                        erdTable : ErdTableLayout
+                        erdTable =
+                            -- initial position is computed in frontend/src/PagesComponents/Organization_/Project_/Updates.elm:502#computeInitialPosition when size is known
+                            ErdTableLayout.init erd.settings
+                                (tables |> List.map .id |> Set.fromList)
+                                (erd.relationsByTable |> Dict.getOrElse table.id [])
+                                erd.settings.collapseTableColumns
+                                hint
+                                table
+                    in
+                    ( erdTable :: tables, [ ( HideTable table.id, UnHideTable_ 0 erdTable ) ] )
                 )
-                >> mapTables updateRelatedTables
+                >> Tuple.mapFirst (mapTables updateRelatedTables)
             )
-    , [ ( HideTable table.id, ShowTable table.id hint "undo" ) ]
-    )
+        |> Tuple.mapSecond (Maybe.withDefault [])
 
 
 performReshowTable : Time.Posix -> Int -> ErdTableLayout -> Erd -> Erd

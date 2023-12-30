@@ -37,7 +37,7 @@ import Models.Project.Source exposing (Source)
 import Models.Project.SourceId exposing (SourceId, SourceIdStr)
 import Models.Project.SourceName exposing (SourceName)
 import Models.Project.TableId exposing (TableId)
-import Models.Project.TableRow as TableRow
+import Models.Project.TableRow as TableRow exposing (TableRow)
 import Models.Project.TableStats exposing (TableStats)
 import Models.ProjectInfo exposing (ProjectInfo)
 import Models.RelationStyle exposing (RelationStyle)
@@ -239,8 +239,8 @@ type Msg
     | ShowTable TableId (Maybe PositionHint) String
     | ShowTables (List TableId) (Maybe PositionHint) String
     | ShowAllTables String
-    | ReshowTable_ Int ErdTableLayout
     | HideTable TableId
+    | UnHideTable_ Int ErdTableLayout
     | ShowRelatedTables TableId
     | HideRelatedTables TableId
     | ToggleTableCollapse TableId
@@ -279,6 +279,7 @@ type Msg
     | MemoMsg MemoMsg
     | ShowTableRow DbSourceInfo RowQuery (Maybe TableRow.SuccessState) (Maybe PositionHint) String
     | DeleteTableRow TableRow.Id
+    | UnDeleteTableRow_ Int TableRow
     | TableRowMsg TableRow.Id TableRow.Msg
     | AmlSidebarMsg AmlSidebarMsg
     | DetailsSidebarMsg DetailsSidebar.Msg

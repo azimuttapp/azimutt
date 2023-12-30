@@ -70,10 +70,10 @@ import PagesComponents.Organization_.Project_.Updates.Notes exposing (handleNote
 import PagesComponents.Organization_.Project_.Updates.Project exposing (createProject, moveProject, triggerSaveProject, updateProject)
 import PagesComponents.Organization_.Project_.Updates.ProjectSettings exposing (handleProjectSettings)
 import PagesComponents.Organization_.Project_.Updates.Source as Source
-import PagesComponents.Organization_.Project_.Updates.Table exposing (goToTable, hideColumn, hideColumns, hideRelatedTables, hideTable, hoverColumn, hoverNextColumn, mapTablePropOrSelected, mapTablePropOrSelectedTL, reshowTable, showAllTables, showColumn, showColumns, showRelatedTables, showTable, showTables, sortColumns, toggleNestedColumn)
-import PagesComponents.Organization_.Project_.Updates.TableRow exposing (mapTableRowOrSelectedCmd, moveToTableRow, showTableRow)
+import PagesComponents.Organization_.Project_.Updates.Table exposing (goToTable, hideColumn, hideColumns, hideRelatedTables, hideTable, hoverColumn, hoverNextColumn, mapTablePropOrSelected, mapTablePropOrSelectedTL, showAllTables, showColumn, showColumns, showRelatedTables, showTable, showTables, sortColumns, toggleNestedColumn, unHideTable)
+import PagesComponents.Organization_.Project_.Updates.TableRow exposing (deleteTableRow, mapTableRowOrSelectedCmd, moveToTableRow, showTableRow, unDeleteTableRow)
 import PagesComponents.Organization_.Project_.Updates.Tags exposing (handleTags)
-import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirty, setDirtyCmd, setHDirty, setHDirtyCmd, setHDirtyCmdM, setHL, setHLDirty, setHLDirtyCmd)
+import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirty, setHDirty, setHDirtyCmd, setHDirtyCmdM, setHL, setHLCmd, setHLDirty, setHLDirtyCmd)
 import PagesComponents.Organization_.Project_.Updates.VirtualRelation exposing (handleVirtualRelation)
 import PagesComponents.Organization_.Project_.Views as Views
 import PagesComponents.Organization_.Project_.Views.Modals.NewLayout as NewLayout
@@ -131,13 +131,6 @@ update urlLayout zone now urlInfos organizations projects msg model =
             else
                 model |> mapErdMT (showTable now id hint from) |> setHLDirtyCmd
 
-        ReshowTable_ index table ->
-            if model.erd |> Maybe.mapOrElse (Erd.currentLayout >> .tables) [] |> List.any (\t -> t.id == table.id) then
-                ( model, GoToTable table.id |> T.send, [] )
-
-            else
-                model |> mapErdMTW (reshowTable now index table) Cmd.none |> setHDirtyCmd [ ( HideTable table.id, msg ) ]
-
         ShowTables ids hint from ->
             model |> mapErdMT (showTables now ids hint from) |> setHLDirtyCmd
 
@@ -146,6 +139,13 @@ update urlLayout zone now urlInfos organizations projects msg model =
 
         HideTable id ->
             model |> mapErdMT (hideTable now id) |> Tuple.mapFirst (mapHoverTable (Maybe.filter (\( t, _ ) -> t /= id))) |> setHLDirty
+
+        UnHideTable_ index table ->
+            if model.erd |> Maybe.mapOrElse (Erd.currentLayout >> .tables) [] |> List.any (\t -> t.id == table.id) then
+                ( model, GoToTable table.id |> T.send, [] )
+
+            else
+                model |> mapErdMTW (unHideTable now index table) Cmd.none |> setHDirtyCmd [ ( HideTable table.id, msg ) ]
 
         ShowRelatedTables id ->
             model |> mapErdMT (showRelatedTables now id) |> setHLDirtyCmd
@@ -319,12 +319,14 @@ update urlLayout zone now urlInfos organizations projects msg model =
 
         ShowTableRow source query previous hint from ->
             (model.erd |> Maybe.andThen (Erd.currentLayout >> .tableRows >> List.find (\r -> r.source == source.id && r.table == query.table && r.primaryKey == query.primaryKey)))
-                |> Maybe.map (\r -> model |> mapErdMTW (moveToTableRow now model.erdElem r) Cmd.none)
-                |> Maybe.withDefault (model |> mapErdMTW (showTableRow now source query previous hint from) Cmd.none |> setDirtyCmd)
-                |> Tuple.append []
+                |> Maybe.map (\r -> model |> mapErdMTM (moveToTableRow now model.erdElem r) |> setHLCmd)
+                |> Maybe.withDefault (model |> mapErdMT (showTableRow now source query previous hint from) |> setHLDirtyCmd)
 
         DeleteTableRow id ->
-            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTableRows (List.removeBy .id id))) |> setDirty |> Tuple.append []
+            model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (deleteTableRow id)) |> setHLDirtyCmd
+
+        UnDeleteTableRow_ index tableRow ->
+            model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (unDeleteTableRow index tableRow)) |> setHLDirtyCmd
 
         TableRowMsg id message ->
             model |> mapErdMTW (\e -> e |> Erd.mapCurrentLayoutWithTimeCmd now (mapTableRowsT (mapTableRowOrSelectedCmd id message (TableRow.update DropdownToggle Toast now e.project e.sources model.openedDropdown message)))) Cmd.none |> Tuple.append []
