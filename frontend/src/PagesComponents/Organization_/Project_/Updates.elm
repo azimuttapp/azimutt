@@ -73,7 +73,7 @@ import PagesComponents.Organization_.Project_.Updates.Source as Source
 import PagesComponents.Organization_.Project_.Updates.Table exposing (goToTable, hideColumn, hideColumns, hideRelatedTables, hideTable, hoverColumn, hoverNextColumn, mapTablePropOrSelected, mapTablePropOrSelectedTL, showAllTables, showColumn, showColumns, showRelatedTables, showTable, showTables, sortColumns, toggleNestedColumn, unHideTable)
 import PagesComponents.Organization_.Project_.Updates.TableRow exposing (deleteTableRow, mapTableRowOrSelected, moveToTableRow, showTableRow, unDeleteTableRow)
 import PagesComponents.Organization_.Project_.Updates.Tags exposing (handleTags)
-import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirty, setHDirty, setHDirtyCmd, setHDirtyCmdM, setHL, setHLCmd, setHLDirty, setHLDirtyCmd)
+import PagesComponents.Organization_.Project_.Updates.Utils exposing (setHDirty, setHDirtyCmd, setHDirtyCmdM, setHL, setHLCmd, setHLDirty, setHLDirtyCmd)
 import PagesComponents.Organization_.Project_.Updates.VirtualRelation exposing (handleVirtualRelation)
 import PagesComponents.Organization_.Project_.Views as Views
 import PagesComponents.Organization_.Project_.Views.Modals.NewLayout as NewLayout
@@ -371,19 +371,19 @@ update urlLayout zone now urlInfos organizations projects msg model =
             model |> mapEmbedSourceParsingMTW (EmbedSourceParsingDialog.update EmbedSourceParsingMsg now (model.erd |> Maybe.map .project) message) Cmd.none |> Tuple.append []
 
         SourceParsed source ->
-            ( model, source |> Project.create projects source.name |> Ok |> Just |> GotProject "load" |> JsMessage |> T.send ) |> Tuple.append []
+            ( model, source |> Project.create projects source.name |> Ok |> Just |> GotProject "load" |> JsMessage |> T.send, [] )
 
         ProPlanColors _ ProPlan.EnableTableChangeColor ->
-            ( model |> mapErdM (mapProject (mapOrganizationM (mapPlan (setColors True)))), Ports.fireworks ) |> Tuple.append []
+            ( model |> mapErdM (mapProject (mapOrganizationM (mapPlan (setColors True)))), Ports.fireworks, [] )
 
         ProPlanColors state message ->
             state |> ProPlan.colorsUpdate ProPlanColors message |> Tuple.mapFirst (\s -> { model | modal = model.modal |> Maybe.map (\m -> { m | content = ProPlan.colorsModalBody (model.erd |> Erd.getProjectRefM urlInfos) ProPlanColors s }) }) |> Tuple.append []
 
         HelpMsg message ->
-            model |> handleHelp message |> Tuple.append []
+            model |> handleHelp message
 
         CursorMode mode ->
-            ( model |> setCursorMode mode, Cmd.none ) |> Tuple.append []
+            ( model |> setCursorMode mode, Cmd.none, [] )
 
         FitToScreen ->
             model |> mapErdMTW (fitCanvas model.erdElem) Cmd.none |> Tuple.append []
@@ -392,37 +392,37 @@ update urlLayout zone now urlInfos organizations projects msg model =
             model |> mapErdMTW (arrangeTables now model.erdElem) Cmd.none |> setHDirtyCmd []
 
         Fullscreen id ->
-            ( model, Ports.fullscreen id ) |> Tuple.append []
+            ( model, Ports.fullscreen id, [] )
 
         OnWheel event ->
-            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapCanvas (handleWheel event model.erdElem))) |> setDirty |> Tuple.append []
+            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapCanvas (handleWheel event model.erdElem))) |> setHDirty []
 
         Zoom delta ->
-            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapCanvas (zoomCanvas delta model.erdElem))) |> setDirty |> Tuple.append []
+            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapCanvas (zoomCanvas delta model.erdElem))) |> setHDirty []
 
         Focus id ->
-            ( model, Ports.focus id ) |> Tuple.append []
+            ( model, Ports.focus id, [] )
 
         DropdownToggle id ->
-            ( model |> Dropdown.update id, Cmd.none ) |> Tuple.append []
+            ( model |> Dropdown.update id, Cmd.none, [] )
 
         DropdownOpen id ->
-            ( model |> setOpenedDropdown id, Cmd.none ) |> Tuple.append []
+            ( model |> setOpenedDropdown id, Cmd.none, [] )
 
         DropdownClose ->
-            ( model |> setOpenedDropdown "", Cmd.none ) |> Tuple.append []
+            ( model |> setOpenedDropdown "", Cmd.none, [] )
 
         PopoverOpen id ->
-            ( model |> setOpenedPopover id, Cmd.none ) |> Tuple.append []
+            ( model |> setOpenedPopover id, Cmd.none, [] )
 
         ContextMenuCreate content event ->
-            ( model |> setContextMenu (Just { content = content, position = event.clientPos, show = False }), T.sendAfter 1 ContextMenuShow ) |> Tuple.append []
+            ( model |> setContextMenu (Just { content = content, position = event.clientPos, show = False }), T.sendAfter 1 ContextMenuShow, [] )
 
         ContextMenuShow ->
-            ( model |> mapContextMenuM (setShow True), Cmd.none ) |> Tuple.append []
+            ( model |> mapContextMenuM (setShow True), Cmd.none, [] )
 
         ContextMenuClose ->
-            ( model |> setContextMenu Nothing, Cmd.none ) |> Tuple.append []
+            ( model |> setContextMenu Nothing, Cmd.none, [] )
 
         DragStart id pos ->
             model.dragging
@@ -440,37 +440,37 @@ update urlLayout zone now urlInfos organizations projects msg model =
                 |> Maybe.mapOrElse (\d -> model |> setDragging Nothing |> handleDrag now d True cancel) ( model, Cmd.none, [] )
 
         DragCancel ->
-            ( model |> setDragging Nothing, Cmd.none ) |> Tuple.append []
+            ( model |> setDragging Nothing, Cmd.none, [] )
 
         Toast message ->
             model |> mapToastsT (Toasts.update Toast message) |> Tuple.append []
 
         ConfirmOpen confirm ->
-            ( model |> setConfirm (Just { id = Conf.ids.confirmDialog, content = confirm }), T.sendAfter 1 (ModalOpen Conf.ids.confirmDialog) ) |> Tuple.append []
+            ( model |> setConfirm (Just { id = Conf.ids.confirmDialog, content = confirm }), T.sendAfter 1 (ModalOpen Conf.ids.confirmDialog), [] )
 
         ConfirmAnswer answer cmd ->
-            ( model |> setConfirm Nothing, B.cond answer cmd Cmd.none ) |> Tuple.append []
+            ( model |> setConfirm Nothing, B.cond answer cmd Cmd.none, [] )
 
         PromptOpen prompt input ->
-            ( model |> setPrompt (Just { id = Conf.ids.promptDialog, content = prompt, input = input }), T.sendAfter 1 (ModalOpen Conf.ids.promptDialog) ) |> Tuple.append []
+            ( model |> setPrompt (Just { id = Conf.ids.promptDialog, content = prompt, input = input }), T.sendAfter 1 (ModalOpen Conf.ids.promptDialog), [] )
 
         PromptUpdate input ->
-            ( model |> mapPromptM (setInput input), Cmd.none ) |> Tuple.append []
+            ( model |> mapPromptM (setInput input), Cmd.none, [] )
 
         PromptAnswer cmd ->
-            ( model |> setPrompt Nothing, cmd ) |> Tuple.append []
+            ( model |> setPrompt Nothing, cmd, [] )
 
         ModalOpen id ->
-            ( model |> mapOpenedDialogs (\dialogs -> id :: dialogs), Ports.autofocusWithin id ) |> Tuple.append []
+            ( model |> mapOpenedDialogs (\dialogs -> id :: dialogs), Ports.autofocusWithin id, [] )
 
         ModalClose message ->
-            ( model |> mapOpenedDialogs (List.drop 1), T.sendAfter Conf.ui.closeDuration message ) |> Tuple.append []
+            ( model |> mapOpenedDialogs (List.drop 1), T.sendAfter Conf.ui.closeDuration message, [] )
 
         CustomModalOpen content ->
-            ( model |> setModal (Just { id = Conf.ids.customDialog, content = content }), T.sendAfter 1 (ModalOpen Conf.ids.customDialog) ) |> Tuple.append []
+            ( model |> setModal (Just { id = Conf.ids.customDialog, content = content }), T.sendAfter 1 (ModalOpen Conf.ids.customDialog), [] )
 
         CustomModalClose ->
-            ( model |> setModal Nothing, Cmd.none ) |> Tuple.append []
+            ( model |> setModal Nothing, Cmd.none, [] )
 
         Undo ->
             case model.history of
@@ -489,7 +489,7 @@ update urlLayout zone now urlInfos organizations projects msg model =
                     update urlLayout zone now urlInfos organizations projects next { model | history = ( back, next ) :: model.history, future = future } |> Tuple3.mapThird (\_ -> [])
 
         JsMessage message ->
-            model |> handleJsMessage now urlLayout message
+            model |> handleJsMessage now urlLayout message |> Tuple.append []
 
         Batch messages ->
             messages
@@ -507,139 +507,139 @@ update urlLayout zone now urlInfos organizations projects msg model =
             ( model, Cmd.none, [] )
 
 
-handleJsMessage : Time.Posix -> Maybe LayoutName -> JsMsg -> Model -> ( Model, Cmd Msg, List ( Msg, Msg ) )
+handleJsMessage : Time.Posix -> Maybe LayoutName -> JsMsg -> Model -> ( Model, Cmd Msg )
 handleJsMessage now urlLayout msg model =
     case msg of
         GotSizes sizes ->
-            model |> updateSizes sizes |> Tuple.append []
+            model |> updateSizes sizes
 
         GotProject context res ->
             case res of
                 Nothing ->
-                    ( { model | loaded = True, saving = False }, Cmd.none ) |> Tuple.append []
+                    ( { model | loaded = True, saving = False }, Cmd.none )
 
                 Just (Err err) ->
-                    ( { model | loaded = True, saving = False }, Cmd.batch [ "Unable to read project: " ++ Decode.errorToHtml err |> Toasts.error |> Toast |> T.send, Track.jsonError "decode-project" err ] ) |> Tuple.append []
+                    ( { model | loaded = True, saving = False }, Cmd.batch [ "Unable to read project: " ++ Decode.errorToHtml err |> Toasts.error |> Toast |> T.send, Track.jsonError "decode-project" err ] )
 
                 Just (Ok project) ->
-                    { model | saving = False } |> updateErd urlLayout context project |> Tuple.append []
+                    { model | saving = False } |> updateErd urlLayout context project
 
         ProjectDeleted _ ->
             -- handled in Shared
-            ( model, Cmd.none, [] )
+            ( model, Cmd.none )
 
         GotLocalFile kind file content ->
             if kind == SqlSource.kind then
-                ( model, SourceId.generator |> Random.generate (\sourceId -> content |> SqlSource.GotFile (SourceInfo.sqlLocal now sourceId file) |> SourceUpdateDialog.SqlSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg) ) |> Tuple.append []
+                ( model, SourceId.generator |> Random.generate (\sourceId -> content |> SqlSource.GotFile (SourceInfo.sqlLocal now sourceId file) |> SourceUpdateDialog.SqlSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg) )
 
             else if kind == PrismaSource.kind then
-                ( model, SourceId.generator |> Random.generate (\sourceId -> content |> PrismaSource.GotFile (SourceInfo.prismaLocal now sourceId file) |> SourceUpdateDialog.PrismaSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg) ) |> Tuple.append []
+                ( model, SourceId.generator |> Random.generate (\sourceId -> content |> PrismaSource.GotFile (SourceInfo.prismaLocal now sourceId file) |> SourceUpdateDialog.PrismaSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg) )
 
             else if kind == JsonSource.kind then
-                ( model, SourceId.generator |> Random.generate (\sourceId -> content |> JsonSource.GotFile (SourceInfo.jsonLocal now sourceId file) |> SourceUpdateDialog.JsonSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg) ) |> Tuple.append []
+                ( model, SourceId.generator |> Random.generate (\sourceId -> content |> JsonSource.GotFile (SourceInfo.jsonLocal now sourceId file) |> SourceUpdateDialog.JsonSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg) )
 
             else
-                ( model, "Unhandled local file kind '" ++ kind ++ "'" |> Toasts.error |> Toast |> T.send ) |> Tuple.append []
+                ( model, "Unhandled local file kind '" ++ kind ++ "'" |> Toasts.error |> Toast |> T.send )
 
         GotDatabaseSchema schema ->
             if model.embedSourceParsing == Nothing then
-                ( model, Ok schema |> DatabaseSource.GotSchema |> SourceUpdateDialog.DatabaseSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg |> T.send ) |> Tuple.append []
+                ( model, Ok schema |> DatabaseSource.GotSchema |> SourceUpdateDialog.DatabaseSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg |> T.send )
 
             else
-                ( model, Ok schema |> DatabaseSource.GotSchema |> EmbedSourceParsingDialog.EmbedDatabaseSource |> EmbedSourceParsingMsg |> T.send ) |> Tuple.append []
+                ( model, Ok schema |> DatabaseSource.GotSchema |> EmbedSourceParsingDialog.EmbedDatabaseSource |> EmbedSourceParsingMsg |> T.send )
 
         GotDatabaseSchemaError error ->
             if model.embedSourceParsing == Nothing then
-                ( model, Err error |> DatabaseSource.GotSchema |> SourceUpdateDialog.DatabaseSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg |> T.send ) |> Tuple.append []
+                ( model, Err error |> DatabaseSource.GotSchema |> SourceUpdateDialog.DatabaseSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg |> T.send )
 
             else
-                ( model, Err error |> DatabaseSource.GotSchema |> EmbedSourceParsingDialog.EmbedDatabaseSource |> EmbedSourceParsingMsg |> T.send ) |> Tuple.append []
+                ( model, Err error |> DatabaseSource.GotSchema |> EmbedSourceParsingDialog.EmbedDatabaseSource |> EmbedSourceParsingMsg |> T.send )
 
         GotTableStats source stats ->
-            ( { model | tableStats = model.tableStats |> Dict.update stats.id (Maybe.withDefault Dict.empty >> Dict.insert (SourceId.toString source) (Ok stats) >> Just) }, Cmd.none ) |> Tuple.append []
+            ( { model | tableStats = model.tableStats |> Dict.update stats.id (Maybe.withDefault Dict.empty >> Dict.insert (SourceId.toString source) (Ok stats) >> Just) }, Cmd.none )
 
         GotTableStatsError source table error ->
-            ( { model | tableStats = model.tableStats |> Dict.update table (Maybe.withDefault Dict.empty >> Dict.insert (SourceId.toString source) (Err error) >> Just) }, Cmd.none ) |> Tuple.append []
+            ( { model | tableStats = model.tableStats |> Dict.update table (Maybe.withDefault Dict.empty >> Dict.insert (SourceId.toString source) (Err error) >> Just) }, Cmd.none )
 
         GotColumnStats source stats ->
-            ( { model | columnStats = model.columnStats |> Dict.update stats.id (Maybe.withDefault Dict.empty >> Dict.insert (SourceId.toString source) (Ok stats) >> Just) }, Cmd.none ) |> Tuple.append []
+            ( { model | columnStats = model.columnStats |> Dict.update stats.id (Maybe.withDefault Dict.empty >> Dict.insert (SourceId.toString source) (Ok stats) >> Just) }, Cmd.none )
 
         GotColumnStatsError source column error ->
-            ( { model | columnStats = model.columnStats |> Dict.update (ColumnId.fromRef column) (Maybe.withDefault Dict.empty >> Dict.insert (SourceId.toString source) (Err error) >> Just) }, Cmd.none ) |> Tuple.append []
+            ( { model | columnStats = model.columnStats |> Dict.update (ColumnId.fromRef column) (Maybe.withDefault Dict.empty >> Dict.insert (SourceId.toString source) (Err error) >> Just) }, Cmd.none )
 
         GotDatabaseQueryResult result ->
-            model |> handleDatabaseQueryResponse result |> Tuple.append []
+            model |> handleDatabaseQueryResponse result
 
         GotPrismaSchema schema ->
             if model.embedSourceParsing == Nothing then
-                ( model, Ok schema |> PrismaSource.GotSchema |> SourceUpdateDialog.PrismaSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg |> T.send ) |> Tuple.append []
+                ( model, Ok schema |> PrismaSource.GotSchema |> SourceUpdateDialog.PrismaSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg |> T.send )
 
             else
-                ( model, Ok schema |> PrismaSource.GotSchema |> EmbedSourceParsingDialog.EmbedPrismaSource |> EmbedSourceParsingMsg |> T.send ) |> Tuple.append []
+                ( model, Ok schema |> PrismaSource.GotSchema |> EmbedSourceParsingDialog.EmbedPrismaSource |> EmbedSourceParsingMsg |> T.send )
 
         GotPrismaSchemaError error ->
             if model.embedSourceParsing == Nothing then
-                ( model, Err error |> PrismaSource.GotSchema |> SourceUpdateDialog.PrismaSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg |> T.send ) |> Tuple.append []
+                ( model, Err error |> PrismaSource.GotSchema |> SourceUpdateDialog.PrismaSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg |> T.send )
 
             else
-                ( model, Err error |> PrismaSource.GotSchema |> EmbedSourceParsingDialog.EmbedPrismaSource |> EmbedSourceParsingMsg |> T.send ) |> Tuple.append []
+                ( model, Err error |> PrismaSource.GotSchema |> EmbedSourceParsingDialog.EmbedPrismaSource |> EmbedSourceParsingMsg |> T.send )
 
         GotHotkey hotkey ->
             if model.saving then
-                ( model, Cmd.none ) |> Tuple.append []
+                ( model, Cmd.none )
 
             else
-                handleHotkey now model hotkey |> Tuple.append []
+                handleHotkey now model hotkey
 
         GotKeyHold key start ->
             if key == "Space" && model.conf.move then
                 if start then
-                    ( model |> setCursorMode CursorMode.Drag, Cmd.none ) |> Tuple.append []
+                    ( model |> setCursorMode CursorMode.Drag, Cmd.none )
 
                 else
-                    ( model |> setCursorMode CursorMode.Select, Cmd.none ) |> Tuple.append []
+                    ( model |> setCursorMode CursorMode.Select, Cmd.none )
 
             else
-                ( model, Cmd.none ) |> Tuple.append []
+                ( model, Cmd.none )
 
         GotToast level message ->
-            ( model, message |> Toasts.create level |> Toast |> T.send ) |> Tuple.append []
+            ( model, message |> Toasts.create level |> Toast |> T.send )
 
         GotTableShow id hint ->
-            ( model, T.send (ShowTable id (hint |> Maybe.map PlaceAt) "port") ) |> Tuple.append []
+            ( model, T.send (ShowTable id (hint |> Maybe.map PlaceAt) "port") )
 
         GotTableHide id ->
-            ( model, T.send (HideTable id) ) |> Tuple.append []
+            ( model, T.send (HideTable id) )
 
         GotTableToggleColumns id ->
-            ( model, T.send (ToggleTableCollapse id) ) |> Tuple.append []
+            ( model, T.send (ToggleTableCollapse id) )
 
         GotTablePosition id pos ->
-            ( model, T.send (TablePosition id pos) ) |> Tuple.append []
+            ( model, T.send (TablePosition id pos) )
 
         GotTableMove id delta ->
-            ( model, T.send (TableMove id delta) ) |> Tuple.append []
+            ( model, T.send (TableMove id delta) )
 
         GotTableSelect id ->
-            ( model, T.send (SelectItem (TableId.toHtmlId id) False) ) |> Tuple.append []
+            ( model, T.send (SelectItem (TableId.toHtmlId id) False) )
 
         GotTableColor id color ->
-            ( model, T.send (TableColor id color True) ) |> Tuple.append []
+            ( model, T.send (TableColor id color True) )
 
         GotColumnShow ref ->
-            ( model, T.send (ShowColumn 1000 ref) ) |> Tuple.append []
+            ( model, T.send (ShowColumn 1000 ref) )
 
         GotColumnHide ref ->
-            ( model, T.send (HideColumn ref) ) |> Tuple.append []
+            ( model, T.send (HideColumn ref) )
 
         GotColumnMove ref index ->
-            ( model, T.send (MoveColumn ref index) ) |> Tuple.append []
+            ( model, T.send (MoveColumn ref index) )
 
         GotFitToScreen ->
-            ( model, T.send FitToScreen ) |> Tuple.append []
+            ( model, T.send FitToScreen )
 
         Error json err ->
-            ( model, Cmd.batch [ "Unable to decode JavaScript message: " ++ Decode.errorToString err ++ " in " ++ Encode.encode 0 json |> Toasts.error |> Toast |> T.send, Track.jsonError "js_message" err ] ) |> Tuple.append []
+            ( model, Cmd.batch [ "Unable to decode JavaScript message: " ++ Decode.errorToString err ++ " in " ++ Encode.encode 0 json |> Toasts.error |> Toast |> T.send, Track.jsonError "js_message" err ] )
 
 
 updateSizes : List SizeChange -> Model -> ( Model, Cmd Msg )
