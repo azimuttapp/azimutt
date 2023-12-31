@@ -1,6 +1,7 @@
 module Services.Lenses exposing
     ( mapActive
     , mapAmlSidebarM
+    , mapAmlSidebarMTM
     , mapAmlSourceT
     , mapBodyT
     , mapCanvas
@@ -85,6 +86,7 @@ module Services.Lenses exposing
     , mapSchemaAnalysisM
     , mapSearch
     , mapSelected
+    , mapSelectedMT
     , mapSelectionBox
     , mapSettings
     , mapSettingsM
@@ -280,6 +282,11 @@ setAmlSidebar =
 mapAmlSidebarM : (v -> v) -> { item | amlSidebar : Maybe v } -> { item | amlSidebar : Maybe v }
 mapAmlSidebarM =
     mapM_ .amlSidebar setAmlSidebar
+
+
+mapAmlSidebarMTM : (v -> ( v, Maybe a )) -> { item | amlSidebar : Maybe v } -> ( { item | amlSidebar : Maybe v }, Maybe a )
+mapAmlSidebarMTM =
+    mapMTM_ .amlSidebar setAmlSidebar
 
 
 setAmlSource : v -> { item | amlSource : v } -> { item | amlSource : v }
@@ -1180,6 +1187,11 @@ setSelected =
 mapSelected : (v -> v) -> { item | selected : v } -> { item | selected : v }
 mapSelected =
     map_ .selected setSelected
+
+
+mapSelectedMT : (v -> ( v, a )) -> { item | selected : Maybe v } -> ( { item | selected : Maybe v }, Maybe a )
+mapSelectedMT transform item =
+    mapMT_ .selected setSelected transform item
 
 
 setSelectionBox : v -> { item | selectionBox : v } -> { item | selectionBox : v }

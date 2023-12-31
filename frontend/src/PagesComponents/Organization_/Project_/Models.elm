@@ -190,7 +190,7 @@ type alias MemoEdit =
 
 
 type alias AmlSidebar =
-    { id : HtmlId, selected : Maybe SourceId, errors : List AmlSchemaError, otherSourcesTableIdsCache : Set TableId }
+    { id : HtmlId, selected : Maybe ( SourceId, String ), errors : List AmlSchemaError, otherSourcesTableIdsCache : Set TableId }
 
 
 type alias VirtualRelation =

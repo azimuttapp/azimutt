@@ -19,6 +19,7 @@ import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Tw exposing (focus)
 import Libs.Task as T
+import Libs.Tuple as Tuple
 import Models.Position as Position
 import Models.Project.ColumnId as ColumnId
 import Models.Project.ColumnPath as ColumnPath
@@ -35,8 +36,9 @@ import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint(..))
 import PagesComponents.Organization_.Project_.Models.ShowColumns as ShowColumns
-import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirtyCmd)
-import Services.Lenses exposing (mapAmlSidebarM, mapErdM, setAmlSidebar, setContent, setErrors, setSelected, setUpdatedAt)
+import PagesComponents.Organization_.Project_.Updates.Table exposing (hideTable, showColumns, showTable)
+import PagesComponents.Organization_.Project_.Updates.Utils exposing (setHDirtyCmd, setHLDirty, setHLDirtyCmd)
+import Services.Lenses exposing (mapAmlSidebarM, mapAmlSidebarMTM, mapErdM, mapErdMT, mapSelectedMT, setAmlSidebar, setContent, setErrors, setSelected, setUpdatedAt)
 import Set exposing (Set)
 import Time
 import Track
@@ -57,17 +59,18 @@ type alias Model x =
 
 
 init : Maybe SourceId -> Maybe Erd -> AmlSidebar
-init id erd =
+init sourceId erd =
     let
-        selectedId : Maybe SourceId
-        selectedId =
-            id
+        selected : Maybe ( SourceId, String )
+        selected =
+            sourceId
                 |> Maybe.orElse (erd |> Maybe.andThen (.sources >> List.find (\s -> s.enabled && SourceKind.isUser s.kind)) |> Maybe.map .id)
+                |> Maybe.andThen (\id -> erd |> Maybe.andThen (.sources >> List.findBy .id id) |> Maybe.map (\s -> ( s.id, s |> contentStr )))
     in
     { id = Conf.ids.amlSidebarDialog
-    , selected = selectedId
+    , selected = selected
     , errors = []
-    , otherSourcesTableIdsCache = getOtherSourcesTableIds selectedId erd
+    , otherSourcesTableIdsCache = getOtherSourcesTableIds (selected |> Maybe.map Tuple.first) erd
     }
 
 
@@ -75,29 +78,40 @@ init id erd =
 -- UPDATE
 
 
-update : Time.Posix -> AmlSidebarMsg -> Model x -> ( Model x, Cmd Msg )
+update : Time.Posix -> AmlSidebarMsg -> Model x -> ( Model x, Cmd Msg, List ( Msg, Msg ) )
 update now msg model =
     case msg of
         AOpen id ->
-            ( model |> setAmlSidebar (Just (init id model.erd)), Track.sourceEditorOpened model.erd )
+            ( model |> setAmlSidebar (Just (init id model.erd)), Track.sourceEditorOpened model.erd, [] )
 
         AClose ->
-            ( model |> setAmlSidebar Nothing, Track.sourceEditorClosed model.erd )
+            ( model |> setAmlSidebar Nothing, Track.sourceEditorClosed model.erd, [] )
 
         AToggle ->
-            ( model, T.send (AmlSidebarMsg (Bool.cond (model.amlSidebar == Nothing) (AOpen Nothing) AClose)) )
+            ( model, T.send (AmlSidebarMsg (Bool.cond (model.amlSidebar == Nothing) (AOpen Nothing) AClose)), [] )
 
-        AChangeSource source ->
-            ( model |> mapAmlSidebarM (setSelected source) |> setOtherSourcesTableIdsCache source, Cmd.none )
+        AChangeSource sourceId ->
+            let
+                selected : Maybe ( SourceId, String )
+                selected =
+                    sourceId |> Maybe.andThen (\id -> model.erd |> Maybe.andThen (.sources >> List.findBy .id id >> Maybe.map (\s -> ( s.id, s |> contentStr ))))
+            in
+            ( model |> mapAmlSidebarM (setSelected selected) |> setOtherSourcesTableIdsCache sourceId, Cmd.none, [] )
 
         AUpdateSource id value ->
-            model.erd
-                |> Maybe.andThen (.sources >> List.findBy .id id)
-                |> Maybe.map (\s -> model |> updateSource now s value |> setDirtyCmd)
-                |> Maybe.withDefault ( model |> mapAmlSidebarM (setErrors [ { row = 0, col = 0, problem = "Invalid source" } ]), Cmd.none )
+            (model.erd |> Maybe.andThen (.sources >> List.findBy .id id))
+                |> Maybe.map (\s -> model |> updateSource now s value |> setHDirtyCmd [])
+                |> Maybe.withDefault ( model |> mapAmlSidebarM (setErrors [ { row = 0, col = 0, problem = "Invalid source" } ]), Cmd.none, [] )
 
         ASourceUpdated id ->
-            ( model, model.erd |> Maybe.andThen (.sources >> List.findBy .id id >> Maybe.map (Track.sourceRefreshed model.erd)) |> Maybe.withDefault Cmd.none )
+            (model.erd |> Maybe.andThen (.sources >> List.findBy .id id))
+                |> Maybe.map
+                    (\source ->
+                        model
+                            |> mapAmlSidebarMTM (mapSelectedMT (Tuple.mapSecondT (\old -> contentStr source |> (\new -> ( new, [ ( AUpdateSource source.id old |> AmlSidebarMsg, AUpdateSource source.id new |> AmlSidebarMsg ) ] )))))
+                            |> (\( newModel, hist ) -> ( newModel, Track.sourceRefreshed model.erd source, hist |> Maybe.withDefault [] ))
+                    )
+                |> Maybe.withDefault ( model, Cmd.none, [] )
 
 
 updateSource : Time.Posix -> Source -> String -> Model x -> ( Model x, Cmd Msg )
@@ -146,18 +160,18 @@ updateSource now source input model =
                     )
     in
     if List.nonEmpty errors then
-        ( model |> mapErdM (Erd.mapSource source.id (setContent content >> setUpdatedAt now)) |> mapAmlSidebarM (setErrors errors), Cmd.none )
+        ( model |> mapAmlSidebarM (setErrors errors) |> mapErdM (Erd.mapSource source.id (setContent content >> setUpdatedAt now)), Cmd.none )
 
     else
-        ( model |> mapErdM (Erd.mapSource source.id (Source.refreshWith parsed)) |> mapAmlSidebarM (setErrors [])
-        , Cmd.batch
-            (List.map T.send
-                ((toShow |> List.map (\( id, hint ) -> ShowTable id hint "aml"))
-                    ++ (toHide |> List.map HideTable)
-                    ++ (updated |> List.map (\t -> ShowColumns t.id (ShowColumns.List (amlColumns |> Dict.getOrElse t.id []))))
-                )
-            )
-        )
+        let
+            apply : List a -> (a -> Model x -> ( Model x, Cmd Msg, List ( msg, Msg ) )) -> ( Model x, Cmd Msg ) -> ( Model x, Cmd Msg )
+            apply items f m =
+                items |> List.foldl (\a ( curModel, curCmd ) -> (curModel |> f a) |> (\( newModel, newCmd, _ ) -> ( newModel, Cmd.batch [ curCmd, newCmd ] ))) m
+        in
+        ( model |> mapAmlSidebarM (setErrors []) |> mapErdM (Erd.mapSource source.id (Source.refreshWith parsed)), Cmd.none )
+            |> apply toShow (\( id, hint ) curModel -> curModel |> mapErdMT (showTable now id hint "aml") |> setHLDirtyCmd)
+            |> apply toHide (\id curModel -> curModel |> mapErdMT (hideTable now id) |> setHLDirty)
+            |> apply updated (\t curModel -> curModel |> mapErdMT (showColumns now t.id (ShowColumns.List (amlColumns |> Dict.getOrElse t.id []))) |> setHLDirtyCmd)
 
 
 associateTables : List Table -> List Table -> List ( Table, Maybe Table )
@@ -171,7 +185,7 @@ associateTables removed added =
 
 setSource : Maybe Source -> AmlSidebar -> AmlSidebar
 setSource source model =
-    model |> setSelected (source |> Maybe.map .id)
+    model |> setSelected (source |> Maybe.map (\s -> ( s.id, s |> contentStr )))
 
 
 setOtherSourcesTableIdsCache : Maybe SourceId -> Model x -> Model x
@@ -216,7 +230,7 @@ view erd model =
 
         selectedSource : Maybe Source
         selectedSource =
-            model.selected |> Maybe.andThen (\id -> userSources |> List.find (\s -> s.id == id))
+            model.selected |> Maybe.andThen (\( id, _ ) -> userSources |> List.findBy .id id)
 
         warnings : List String
         warnings =

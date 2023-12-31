@@ -285,7 +285,7 @@ update urlLayout zone now urlInfos organizations projects msg model =
                 |> mapErdM (Erd.mapSources (List.insert source))
                 |> (\newModel -> newModel |> mapAmlSidebarM (AmlSidebar.setSource (newModel.erd |> Maybe.andThen (.sources >> List.last))))
                 |> AmlSidebar.setOtherSourcesTableIdsCache (Just source.id)
-                |> setHDirty [ ( Batch [ ProjectSettingsMsg (PSSourceDelete source), AmlSidebarMsg (AChangeSource (model.amlSidebar |> Maybe.andThen .selected)) ], msg ) ]
+                |> setHDirty [ ( Batch [ ProjectSettingsMsg (PSSourceDelete source), AmlSidebarMsg (AChangeSource (model.amlSidebar |> Maybe.andThen (.selected >> Maybe.map Tuple.first))) ], msg ) ]
 
         CreateRelations rels ->
             model |> mapErdMT (Source.createRelations now rels) |> setHLDirtyCmd
@@ -332,7 +332,7 @@ update urlLayout zone now urlInfos organizations projects msg model =
             model |> mapErdMTM (\e -> e |> Erd.mapCurrentLayoutTWithTime now (mapTableRowsT (mapTableRowOrSelected id message (TableRow.update (TableRowMsg id) DropdownToggle Toast now e.project e.sources model.openedDropdown message)))) |> setHLDirtyCmd
 
         AmlSidebarMsg message ->
-            model |> AmlSidebar.update now message |> Tuple.append []
+            model |> AmlSidebar.update now message
 
         DetailsSidebarMsg message ->
             model.erd |> Maybe.mapOrElse (\erd -> model |> mapDetailsSidebarT (DetailsSidebar.update Noop NotesMsg TagsMsg erd message)) ( model, Cmd.none ) |> Tuple.append []
