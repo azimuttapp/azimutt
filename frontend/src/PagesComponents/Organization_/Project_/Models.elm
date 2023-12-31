@@ -202,7 +202,7 @@ type alias SchemaAnalysisDialog =
 
 
 type alias ProjectSettingsDialog =
-    { id : HtmlId, sourceNameEdit : Maybe SourceId }
+    { id : HtmlId, sourceNameEdit : Maybe ( SourceId, String ) }
 
 
 type alias HelpDialog =
@@ -357,7 +357,7 @@ type MemoMsg
     | MEditSave MemoEdit
     | MSetColor MemoId (Maybe Color)
     | MDelete MemoId
-    | MUnDelete Memo
+    | MUnDelete Int Memo
 
 
 type AmlSidebarMsg
@@ -399,8 +399,9 @@ type ProjectSettingsMsg
     | PSClose
     | PSSourceToggle Source
     | PSSourceNameUpdate SourceId String
-    | PSSourceNameUpdateDone
-    | PSSourceDelete Source
+    | PSSourceNameUpdateDone SourceId String
+    | PSSourceDelete SourceId
+    | PSSourceUnDelete_ Int Source
     | PSSourceUpdate SourceUpdateDialog.Msg
     | PSSourceSet Source
     | PSDefaultSchemaUpdate SchemaName

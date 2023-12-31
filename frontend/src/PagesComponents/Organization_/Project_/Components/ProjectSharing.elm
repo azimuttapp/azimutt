@@ -74,6 +74,7 @@ type Msg
     | Close
     | KindUpdate EmbedKind
     | ContentUpdate String
+    | LayoutUpdate LayoutName
     | EnableTokenForm
     | DisableTokenForm
     | GotTokens (Result Backend.Error (List ProjectToken))
@@ -84,7 +85,6 @@ type Msg
     | RevokeToken ProjectToken
     | TokenRevoked (Result Backend.Error ())
     | TokenUpdate (Maybe ProjectToken)
-    | LayoutUpdate LayoutName
     | ModeUpdate EmbedModeId
 
 
@@ -141,6 +141,9 @@ update wrap modalOpen toast zone now erd msg model =
         ContentUpdate content ->
             ( model |> Maybe.map (\s -> { s | content = content }), Cmd.none )
 
+        LayoutUpdate layout ->
+            ( model |> Maybe.map (\s -> { s | layout = layout }), Cmd.none )
+
         EnableTokenForm ->
             ( model |> Maybe.map (setTokenForm (Just initTokenForm))
             , if erd |> Erd.getOrganizationM Nothing |> .plan |> .privateLinks then
@@ -189,9 +192,6 @@ update wrap modalOpen toast zone now erd msg model =
 
         TokenUpdate token ->
             ( model |> Maybe.map (mapTokenFormM (setToken token)), Cmd.none )
-
-        LayoutUpdate layout ->
-            ( model |> Maybe.map (\s -> { s | layout = layout }), Cmd.none )
 
         ModeUpdate mode ->
             ( model |> Maybe.map (\s -> { s | mode = mode }), Cmd.none )

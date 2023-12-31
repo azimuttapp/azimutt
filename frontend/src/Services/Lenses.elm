@@ -56,6 +56,7 @@ module Services.Lenses exposing
     , mapMemosT
     , mapMetadata
     , mapMobileMenuOpen
+    , mapNameT
     , mapNavbar
     , mapNewLayoutMT
     , mapOpened
@@ -847,6 +848,11 @@ setMouse =
 setName : v -> { item | name : v } -> { item | name : v }
 setName =
     set_ .name (\value item -> { item | name = value })
+
+
+mapNameT : (v -> ( v, a )) -> { item | name : v } -> ( { item | name : v }, a )
+mapNameT =
+    mapT_ .name setName
 
 
 setNavbar : v -> { item | navbar : v } -> { item | navbar : v }

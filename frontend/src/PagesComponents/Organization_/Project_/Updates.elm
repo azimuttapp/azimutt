@@ -285,7 +285,7 @@ update urlLayout zone now urlInfos organizations projects msg model =
                 |> mapErdM (Erd.mapSources (List.insert source))
                 |> (\newModel -> newModel |> mapAmlSidebarM (AmlSidebar.setSource (newModel.erd |> Maybe.andThen (.sources >> List.last))))
                 |> AmlSidebar.setOtherSourcesTableIdsCache (Just source.id)
-                |> setHDirty [ ( Batch [ ProjectSettingsMsg (PSSourceDelete source), AmlSidebarMsg (AChangeSource (model.amlSidebar |> Maybe.andThen (.selected >> Maybe.map Tuple.first))) ], msg ) ]
+                |> setHDirty [ ( Batch [ ProjectSettingsMsg (PSSourceDelete source.id), AmlSidebarMsg (AChangeSource (model.amlSidebar |> Maybe.andThen (.selected >> Maybe.map Tuple.first))) ], msg ) ]
 
         CreateRelations rels ->
             model |> mapErdMT (Source.createRelations now rels) |> setHLDirtyCmd
@@ -347,13 +347,13 @@ update urlLayout zone now urlInfos organizations projects msg model =
             model |> handleFindPath message |> Tuple.append []
 
         SchemaAnalysisMsg SAOpen ->
-            ( model |> setSchemaAnalysis (Just { id = Conf.ids.schemaAnalysisDialog, opened = "" }), Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.schemaAnalysisDialog), Track.dbAnalysisOpened model.erd ] ) |> Tuple.append []
+            ( model |> setSchemaAnalysis (Just { id = Conf.ids.schemaAnalysisDialog, opened = "" }), Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.schemaAnalysisDialog), Track.dbAnalysisOpened model.erd ], [] )
 
         SchemaAnalysisMsg (SASectionToggle section) ->
-            ( model |> mapSchemaAnalysisM (mapOpened (\opened -> B.cond (opened == section) "" section)), Cmd.none ) |> Tuple.append []
+            ( model |> mapSchemaAnalysisM (mapOpened (\opened -> B.cond (opened == section) "" section)), Cmd.none, [] )
 
         SchemaAnalysisMsg SAClose ->
-            ( model |> setSchemaAnalysis Nothing, Cmd.none ) |> Tuple.append []
+            ( model |> setSchemaAnalysis Nothing, Cmd.none, [] )
 
         ExportDialogMsg message ->
             model.erd |> Maybe.mapOrElse (\erd -> model |> mapExportDialogT (ExportDialog.update ExportDialogMsg ModalOpen urlInfos erd message)) ( model, Cmd.none ) |> Tuple.append []
@@ -365,7 +365,7 @@ update urlLayout zone now urlInfos organizations projects msg model =
             model |> mapSaveT (ProjectSaveDialog.update ModalOpen message) |> Tuple.append []
 
         ProjectSettingsMsg message ->
-            model |> handleProjectSettings now message |> Tuple.append []
+            model |> handleProjectSettings now message
 
         EmbedSourceParsingMsg message ->
             model |> mapEmbedSourceParsingMTW (EmbedSourceParsingDialog.update EmbedSourceParsingMsg now (model.erd |> Maybe.map .project) message) Cmd.none |> Tuple.append []

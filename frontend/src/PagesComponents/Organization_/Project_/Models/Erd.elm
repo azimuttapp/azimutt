@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Models.Erd exposing (Erd, canChangeColor, canCreateGroup, canCreateLayout, canCreateMemo, create, currentLayout, defaultSchemaM, getColumn, getColumnPos, getLayoutTable, getOrganization, getOrganizationM, getProjectId, getProjectIdM, getProjectRef, getProjectRefM, getTable, isShown, mapCurrentLayout, mapCurrentLayoutTLWithTime, mapCurrentLayoutTMWithTime, mapCurrentLayoutTWithTime, mapCurrentLayoutWithTime, mapCurrentLayoutWithTimeCmd, mapIgnoredRelationsT, mapSettings, mapSource, mapSources, setIgnoredRelations, setSettings, setSources, toSchema, unpack, viewportM, viewportToCanvas)
+module PagesComponents.Organization_.Project_.Models.Erd exposing (Erd, canChangeColor, canCreateGroup, canCreateLayout, canCreateMemo, create, currentLayout, defaultSchemaM, getColumn, getColumnPos, getLayoutTable, getOrganization, getOrganizationM, getProjectId, getProjectIdM, getProjectRef, getProjectRefM, getTable, isShown, mapCurrentLayout, mapCurrentLayoutTLWithTime, mapCurrentLayoutTMWithTime, mapCurrentLayoutTWithTime, mapCurrentLayoutWithTime, mapCurrentLayoutWithTimeCmd, mapIgnoredRelationsT, mapSettings, mapSource, mapSourceT, mapSources, mapSourcesT, setIgnoredRelations, setSettings, setSources, toSchema, unpack, viewportM, viewportToCanvas)
 
 import Conf
 import Dict exposing (Dict)
@@ -379,9 +379,19 @@ mapSources transform erd =
     setSources (transform erd.sources) erd
 
 
+mapSourcesT : (List Source -> ( List Source, t )) -> Erd -> ( Erd, t )
+mapSourcesT transform erd =
+    transform erd.sources |> Tuple.mapFirst (\s -> setSources s erd)
+
+
 mapSource : SourceId -> (Source -> Source) -> Erd -> Erd
 mapSource id transform erd =
     setSources (List.mapBy .id id transform erd.sources) erd
+
+
+mapSourceT : SourceId -> (Source -> ( Source, t )) -> Erd -> ( Erd, Maybe t )
+mapSourceT id transform erd =
+    List.mapByT .id id transform erd.sources |> Tuple.mapBoth (\sources -> setSources sources erd) List.head
 
 
 setIgnoredRelations : Dict TableId (List ColumnPath) -> Erd -> Erd

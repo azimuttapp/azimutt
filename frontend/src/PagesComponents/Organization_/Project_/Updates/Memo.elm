@@ -55,8 +55,8 @@ handleMemo now urlInfos msg model =
         MDelete id ->
             model |> deleteMemo now id False
 
-        MUnDelete memo ->
-            ( model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapMemos (List.append [ memo ] >> List.sortBy .id))), Ports.observeMemoSize memo.id, [] )
+        MUnDelete index memo ->
+            ( model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapMemos (List.insertAt index memo >> List.sortBy .id))), Ports.observeMemoSize memo.id, [] )
 
 
 createMemo : Time.Posix -> Position.Grid -> UrlInfos -> Erd -> Model x -> ( Model x, Cmd Msg )
@@ -107,7 +107,7 @@ saveMemo now edit model =
                                         ( edit.content
                                         , ( Track.memoSaved edit.createMode edit.content model.erd
                                           , if edit.createMode then
-                                                [ ( MemoMsg (MDelete edit.id), MemoMsg (MUnDelete { memo | content = edit.content }) ) ]
+                                                [ ( MemoMsg (MDelete edit.id), MemoMsg (MUnDelete 0 { memo | content = edit.content }) ) ]
 
                                             else
                                                 [ ( MemoMsg (MEditSave { edit | content = c }), MemoMsg (MEditSave edit) ) ]
@@ -127,9 +127,9 @@ deleteMemo now id createMode model =
             (Erd.mapCurrentLayoutTWithTime now
                 (mapMemosT
                     (\memos ->
-                        case memos |> List.partition (\m -> m.id == id) of
-                            ( deleted :: _, kept ) ->
-                                ( kept, [ ( MemoMsg (MUnDelete deleted), MemoMsg (MDelete deleted.id) ) ] )
+                        case memos |> List.zipWithIndex |> List.partition (\( m, _ ) -> m.id == id) of
+                            ( ( deleted, index ) :: _, kept ) ->
+                                ( kept |> List.map Tuple.first, [ ( MemoMsg (MUnDelete index deleted), MemoMsg (MDelete deleted.id) ) ] )
 
                             _ ->
                                 ( memos, [] )
