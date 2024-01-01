@@ -16,7 +16,7 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Tailwind as Tw exposing (TwClass, batch, focus, hover)
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
-import PagesComponents.Organization_.Project_.Models exposing (AmlSidebarMsg(..), Msg(..), confirm)
+import PagesComponents.Organization_.Project_.Models exposing (AmlSidebarMsg(..), Msg(..))
 import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode exposing (CursorMode)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 
@@ -63,7 +63,7 @@ viewCommands conf canvasZoom history future args =
                     |> Tooltip.t "Undo"
                 , button [ type_ "button", onClick Redo, disabled (future |> List.isEmpty), css [ "-ml-px", buttonStyles, classic ] ] [ Icon.solid ArrowCircleRight "" ]
                     |> Tooltip.t "Redo"
-                , button [ type_ "button", onClick (ArrangeTables |> confirm "Arrange tables?" (text "Table disposition will be changed and undo feature is not implement yet...")), css [ "-ml-px rounded-r-md", buttonStyles, classic ] ] [ Icon.solid CubeTransparent "" ]
+                , button [ type_ "button", onClick ArrangeTables, css [ "-ml-px rounded-r-md", buttonStyles, classic ] ] [ Icon.solid CubeTransparent "" ]
                     |> Tooltip.t "Arrange tables"
                 ]
 

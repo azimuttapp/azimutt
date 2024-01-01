@@ -58,7 +58,7 @@ import PagesComponents.Organization_.Project_.Models.ErdTableLayout as ErdTableL
 import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
 import PagesComponents.Organization_.Project_.Models.MemoId as MemoId
 import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint(..))
-import PagesComponents.Organization_.Project_.Updates.Canvas exposing (arrangeTables, fitCanvas, handleWheel, zoomCanvas)
+import PagesComponents.Organization_.Project_.Updates.Canvas exposing (arrangeTables, fitCanvas, handleWheel, squashViewHistory, zoomCanvas)
 import PagesComponents.Organization_.Project_.Updates.Drag exposing (handleDrag)
 import PagesComponents.Organization_.Project_.Updates.FindPath exposing (handleFindPath)
 import PagesComponents.Organization_.Project_.Updates.Groups exposing (handleGroups)
@@ -82,7 +82,7 @@ import Random
 import Services.Backend as Backend
 import Services.DatabaseSource as DatabaseSource
 import Services.JsonSource as JsonSource
-import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapCanvasT, mapColorT, mapColumnsT, mapContextMenuM, mapDataExplorerT, mapDetailsSidebarT, mapEmbedSourceParsingMTW, mapErdM, mapErdMT, mapErdMTM, mapErdMTW, mapExportDialogT, mapHoverTable, mapMemos, mapMemosT, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapOrganizationM, mapPlan, mapPosition, mapPositionT, mapProject, mapProjectT, mapPromptM, mapProps, mapPropsT, mapSaveT, mapSchemaAnalysisM, mapSearch, mapSharingT, mapShowHiddenColumns, mapTableRows, mapTableRowsT, mapTables, mapTablesL, mapTablesT, mapToastsT, setActive, setCanvas, setCollapsed, setColors, setColumns, setConfirm, setContextMenu, setCurrentLayout, setCursorMode, setDragging, setHoverTable, setHoverTableRow, setInput, setLast, setLayoutOnLoad, setModal, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setShow, setSize, setTables, setText)
+import Services.Lenses exposing (mapAmlSidebarM, mapCanvasT, mapColorT, mapColumnsT, mapContextMenuM, mapDataExplorerT, mapDetailsSidebarT, mapEmbedSourceParsingMTW, mapErdM, mapErdMT, mapErdMTM, mapErdMTW, mapExportDialogT, mapHoverTable, mapMemos, mapMemosT, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapOrganizationM, mapPlan, mapPosition, mapPositionT, mapProject, mapProjectT, mapPromptM, mapProps, mapPropsT, mapSaveT, mapSchemaAnalysisM, mapSearch, mapSharingT, mapShowHiddenColumns, mapTableRows, mapTableRowsT, mapTables, mapTablesL, mapTablesT, mapToastsT, setActive, setCanvas, setCollapsed, setColors, setColumns, setConfirm, setContextMenu, setCurrentLayout, setCursorMode, setDragging, setHoverTable, setHoverTableRow, setInput, setLast, setLayoutOnLoad, setModal, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setShow, setSize, setTables, setText)
 import Services.PrismaSource as PrismaSource
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
@@ -305,6 +305,18 @@ update urlLayout zone now urlInfos organizations projects msg model =
         LayoutMsg message ->
             model |> handleLayout message
 
+        FitToScreen ->
+            model |> mapErdMTM (fitCanvas model.erdElem) |> setHLCmd
+
+        SetView_ canvas ->
+            model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (mapCanvasT (\c -> ( canvas, [ ( SetView_ c, SetView_ canvas ) ] )))) |> setHL
+
+        ArrangeTables ->
+            model |> mapErdMTM (arrangeTables now model.erdElem) |> setHLCmd
+
+        SetLayout_ layout ->
+            model |> mapErdMTM (Erd.mapCurrentLayoutT (\l -> ( layout, ( Ports.observeLayout layout, [ ( SetLayout_ l, SetLayout_ layout ) ] ) ))) |> setHLDirtyCmd
+
         GroupMsg message ->
             model |> handleGroups now urlInfos message
 
@@ -385,20 +397,14 @@ update urlLayout zone now urlInfos organizations projects msg model =
         CursorMode mode ->
             ( model |> setCursorMode mode, Cmd.none, [] )
 
-        FitToScreen ->
-            model |> mapErdMTW (fitCanvas model.erdElem) Cmd.none |> Tuple.append []
-
-        ArrangeTables ->
-            model |> mapErdMTW (arrangeTables now model.erdElem) Cmd.none |> setHDirtyCmd []
-
         Fullscreen id ->
             ( model, Ports.fullscreen id, [] )
 
         OnWheel event ->
-            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapCanvas (handleWheel event model.erdElem))) |> setHDirty []
+            model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (mapCanvasT (handleWheel event model.erdElem))) |> setHLDirtyCmd |> squashViewHistory
 
         Zoom delta ->
-            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapCanvas (zoomCanvas delta model.erdElem))) |> setHDirty []
+            model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (mapCanvasT (zoomCanvas delta model.erdElem))) |> setHLDirtyCmd |> squashViewHistory
 
         Focus id ->
             ( model, Ports.focus id, [] )
@@ -671,10 +677,10 @@ updateSizes changes model =
             (\e ->
                 if e.layoutOnLoad /= "" && newModel.erdElem.size /= Size.zeroViewport && (e |> Erd.currentLayout |> .tables |> List.length) > 0 then
                     if e.layoutOnLoad == "fit" then
-                        e |> fitCanvas newModel.erdElem
+                        e |> fitCanvas newModel.erdElem |> Tuple.mapSecond (Maybe.mapOrElse Tuple.first Cmd.none)
 
                     else if e.layoutOnLoad == "arrange" then
-                        e |> arrangeTables Time.zero newModel.erdElem
+                        e |> arrangeTables Time.zero newModel.erdElem |> Tuple.mapSecond (Maybe.mapOrElse Tuple.first Cmd.none)
 
                     else
                         ( e, Cmd.none )

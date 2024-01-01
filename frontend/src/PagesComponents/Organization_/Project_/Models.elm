@@ -23,6 +23,7 @@ import Models.DbSourceInfo exposing (DbSourceInfo)
 import Models.ErdProps as ErdProps exposing (ErdProps)
 import Models.Organization exposing (Organization)
 import Models.Position as Position
+import Models.Project.CanvasProps exposing (CanvasProps)
 import Models.Project.ColumnId exposing (ColumnId)
 import Models.Project.ColumnPath exposing (ColumnPath)
 import Models.Project.ColumnRef exposing (ColumnRef)
@@ -273,6 +274,10 @@ type Msg
     | UnIgnoreRelation_ ColumnRef
     | NewLayoutMsg NewLayout.Msg
     | LayoutMsg LayoutMsg
+    | FitToScreen
+    | SetView_ CanvasProps
+    | ArrangeTables
+    | SetLayout_ ErdLayout
     | NotesMsg NotesMsg
     | TagsMsg TagsMsg
     | GroupMsg GroupMsg
@@ -296,8 +301,6 @@ type Msg
     | ProPlanColors ProPlan.ColorsModel ProPlan.ColorsMsg
     | HelpMsg HelpMsg
     | CursorMode CursorMode
-    | FitToScreen
-    | ArrangeTables
     | Fullscreen (Maybe HtmlId)
     | OnWheel WheelEvent
     | Zoom ZoomDelta
@@ -485,7 +488,7 @@ addHistory ( model, cmd, history ) =
             ( model, cmd )
 
         one :: [] ->
-            ( { model | history = one :: model.history, future = [] }, cmd )
+            ( { model | history = one :: model.history |> List.take 100, future = [] }, cmd )
 
         many ->
-            ( { model | history = (many |> List.tupleSeq |> Tuple.mapBoth Batch Batch) :: model.history, future = [] }, cmd )
+            ( { model | history = (many |> List.tupleSeq |> Tuple.mapBoth Batch Batch) :: model.history |> List.take 100, future = [] }, cmd )
