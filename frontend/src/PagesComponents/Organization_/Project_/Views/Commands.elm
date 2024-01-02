@@ -36,7 +36,7 @@ stringToArgs args =
             ( ( CursorMode.Select, "", "" ), True, ( True, True, True ) )
 
 
-viewCommands : ErdConf -> ZoomLevel -> List a -> List a -> String -> Html Msg
+viewCommands : ErdConf -> ZoomLevel -> List ( Msg, Msg ) -> List ( Msg, Msg ) -> String -> Html Msg
 viewCommands conf canvasZoom history future args =
     let
         ( ( cursorMode, htmlId, openedDropdown ), layoutNonEmpty, ( amlSidebar, detailsSidebar, dataExplorer ) ) =
@@ -44,7 +44,7 @@ viewCommands conf canvasZoom history future args =
 
         buttonStyles : TwClass
         buttonStyles =
-            batch [ "relative inline-flex items-center p-2 border border-gray-300 text-sm font-medium", focus [ "z-10 outline-none ring-1 ring-primary-500 border-primary-500" ], Tw.disabled [ "cursor-not-allowed opacity-50" ] ]
+            batch [ "relative inline-flex items-center p-2 border border-gray-300 text-sm font-medium", focus [ "z-10 outline-none ring-1 ring-primary-500 border-primary-500" ], Tw.disabled [ "cursor-not-allowed bg-gray-100 text-gray-400" ] ]
 
         classic : TwClass
         classic =
@@ -56,13 +56,17 @@ viewCommands conf canvasZoom history future args =
     in
     div [ class "az-commands absolute bottom-0 right-0 m-3 print:hidden" ]
         [ if conf.move && layoutNonEmpty then
+            let
+                ( historyLen, futureLen ) =
+                    ( List.length history, List.length future )
+            in
             span [ class "relative z-0 inline-flex shadow-sm rounded-md" ]
                 [ button [ type_ "button", onClick FitToScreen, css [ "rounded-l-md", buttonStyles, classic ] ] [ Icon.solid ArrowsExpand "" ]
                     |> Tooltip.t "Fit diagram to screen"
-                , button [ type_ "button", onClick Undo, disabled (history |> List.isEmpty), css [ "-ml-px", buttonStyles, classic ] ] [ Icon.solid ArrowCircleLeft "" ]
-                    |> Tooltip.t "Undo"
-                , button [ type_ "button", onClick Redo, disabled (future |> List.isEmpty), css [ "-ml-px", buttonStyles, classic ] ] [ Icon.solid ArrowCircleRight "" ]
-                    |> Tooltip.t "Redo"
+                , button [ type_ "button", onClick Undo, disabled (historyLen == 0), css [ "-ml-px", buttonStyles, classic ] ] [ Icon.solid ArrowCircleLeft "" ]
+                    |> Tooltip.t (B.cond (historyLen == 0) "Undo" ("Undo (" ++ String.fromInt historyLen ++ ")"))
+                , button [ type_ "button", onClick Redo, disabled (futureLen == 0), css [ "-ml-px", buttonStyles, classic ] ] [ Icon.solid ArrowCircleRight "" ]
+                    |> Tooltip.t (B.cond (futureLen == 0) "Redo" ("Redo (" ++ String.fromInt futureLen ++ ")"))
                 , button [ type_ "button", onClick ArrangeTables, css [ "-ml-px rounded-r-md", buttonStyles, classic ] ] [ Icon.solid CubeTransparent "" ]
                     |> Tooltip.t "Arrange tables"
                 ]
