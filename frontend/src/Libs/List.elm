@@ -28,6 +28,7 @@ module Libs.List exposing
     , insertAt
     , last
     , mapAt
+    , mapAtT
     , mapAtTL
     , mapBy
     , mapByT
@@ -267,6 +268,21 @@ mapAt index f list =
                 else
                     a
             )
+
+
+mapAtT : Int -> (a -> ( a, t )) -> List a -> ( List a, Maybe t )
+mapAtT index f list =
+    list
+        |> List.indexedMap
+            (\i a ->
+                if index == i then
+                    f a |> Tuple.mapSecond Just
+
+                else
+                    ( a, Nothing )
+            )
+        |> List.unzip
+        |> Tuple.mapSecond (List.filterMap identity >> List.head)
 
 
 mapAtTL : Int -> (a -> ( a, List t )) -> List a -> ( List a, List t )

@@ -72,7 +72,7 @@ import PagesComponents.Organization_.Project_.Updates.Source as Source
 import PagesComponents.Organization_.Project_.Updates.Table exposing (goToTable, hideColumn, hideColumns, hideRelatedTables, hideTable, hoverColumn, hoverNextColumn, mapTablePropOrSelected, mapTablePropOrSelectedTL, showAllTables, showColumn, showColumns, showRelatedTables, showTable, showTables, sortColumns, toggleNestedColumn, unHideTable)
 import PagesComponents.Organization_.Project_.Updates.TableRow exposing (deleteTableRow, mapTableRowOrSelected, moveToTableRow, showTableRow, unDeleteTableRow)
 import PagesComponents.Organization_.Project_.Updates.Tags exposing (handleTags)
-import PagesComponents.Organization_.Project_.Updates.Utils exposing (setHDirty, setHDirtyCmdM, setHL, setHLCmd, setHLDirty, setHLDirtyCmdM)
+import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirty, setDirtyHCmdM, setDirtyM, setHDirty)
 import PagesComponents.Organization_.Project_.Updates.VirtualRelation exposing (handleVirtualRelation)
 import PagesComponents.Organization_.Project_.Views as Views
 import PagesComponents.Organization_.Project_.Views.Modals.NewLayout as NewLayout
@@ -115,42 +115,42 @@ update urlLayout zone now urlInfos organizations projects msg model =
             model |> moveProject storage
 
         RenameProject name ->
-            model |> mapErdMT (mapProjectT (\p -> ( p |> setName name, Extra.history ( RenameProject p.name, RenameProject name ) ))) |> setHLDirtyCmdM
+            model |> mapErdMT (mapProjectT (\p -> ( p |> setName name, Extra.history ( RenameProject p.name, RenameProject name ) ))) |> setDirtyM
 
         DeleteProject project ->
             ( model, Ports.deleteProject project ((project.organization |> Maybe.map .id) |> Backend.organizationUrl |> Just) |> Extra.cmd )
 
         GoToTable id ->
-            model |> mapErdMT (goToTable now id model.erdElem) |> setHLDirtyCmdM
+            model |> mapErdMT (goToTable now id model.erdElem) |> setDirtyM
 
         ShowTable id hint from ->
             if model.erd |> Maybe.mapOrElse (Erd.currentLayout >> .tables) [] |> List.any (\t -> t.id == id) then
                 ( model, GoToTable id |> Extra.msg )
 
             else
-                model |> mapErdMT (showTable now id hint from) |> setHLDirtyCmdM
+                model |> mapErdMT (showTable now id hint from) |> setDirtyM
 
         ShowTables ids hint from ->
-            model |> mapErdMT (showTables now ids hint from) |> setHLDirtyCmdM
+            model |> mapErdMT (showTables now ids hint from) |> setDirtyM
 
         ShowAllTables from ->
-            model |> mapErdMT (showAllTables now from) |> setHLDirtyCmdM
+            model |> mapErdMT (showAllTables now from) |> setDirtyM
 
         HideTable id ->
-            model |> mapErdMT (hideTable now id) |> Tuple.mapFirst (mapHoverTable (Maybe.filter (\( t, _ ) -> t /= id))) |> setHLDirtyCmdM
+            model |> mapErdMT (hideTable now id) |> Tuple.mapFirst (mapHoverTable (Maybe.filter (\( t, _ ) -> t /= id))) |> setDirtyM
 
         UnHideTable_ index table ->
             if model.erd |> Maybe.mapOrElse (Erd.currentLayout >> .tables) [] |> List.any (\t -> t.id == table.id) then
                 ( model, GoToTable table.id |> Extra.msg )
 
             else
-                model |> mapErdMT (unHideTable now index table) |> setHLDirtyCmdM
+                model |> mapErdMT (unHideTable now index table) |> setDirtyM
 
         ShowRelatedTables id ->
-            model |> mapErdMT (showRelatedTables now id) |> setHLDirtyCmdM
+            model |> mapErdMT (showRelatedTables now id) |> setDirtyM
 
         HideRelatedTables id ->
-            model |> mapErdMT (hideRelatedTables now id) |> setHLDirtyCmdM
+            model |> mapErdMT (hideRelatedTables now id) |> setDirtyM
 
         ToggleTableCollapse id ->
             let
@@ -160,60 +160,60 @@ update urlLayout zone now urlInfos organizations projects msg model =
             in
             model
                 |> mapErdMTM (\erd -> erd |> Erd.mapCurrentLayoutTWithTime now (mapTablesT (mapTablePropOrSelected erd.settings.defaultSchema id (mapProps (setCollapsed (not collapsed))))))
-                |> setHDirtyCmdM [ ( ToggleTableCollapse id, ToggleTableCollapse id ) ]
+                |> setDirtyHCmdM [ ( ToggleTableCollapse id, ToggleTableCollapse id ) ]
 
         ShowColumn index column ->
-            model |> mapErdMT (showColumn now index column) |> setHLDirtyCmdM
+            model |> mapErdMT (showColumn now index column) |> setDirtyM
 
         HideColumn column ->
-            model |> mapErdMT (hideColumn now column) |> Tuple.mapFirst (hoverNextColumn column) |> setHLDirtyCmdM
+            model |> mapErdMT (hideColumn now column) |> Tuple.mapFirst (hoverNextColumn column) |> setDirtyM
 
         ShowColumns id kind ->
-            model |> mapErdMT (showColumns now id kind) |> setHLDirtyCmdM
+            model |> mapErdMT (showColumns now id kind) |> setDirtyM
 
         HideColumns id kind ->
-            model |> mapErdMT (hideColumns now id kind) |> setHLDirtyCmdM
+            model |> mapErdMT (hideColumns now id kind) |> setDirtyM
 
         SortColumns id kind ->
-            model |> mapErdMT (sortColumns now id kind) |> setHLDirtyCmdM
+            model |> mapErdMT (sortColumns now id kind) |> setDirtyM
 
         SetColumns_ id columns ->
             -- no undo action as triggered only from undo ^^
-            model |> mapErdM (Erd.mapCurrentLayout (mapTablesL .id id (setColumns columns))) |> setHDirty []
+            ( model |> mapErdM (Erd.mapCurrentLayout (mapTablesL .id id (setColumns columns))), Extra.none ) |> setDirty
 
         ToggleNestedColumn table path open ->
-            model |> mapErdM (toggleNestedColumn now table path open) |> setHDirty [ ( ToggleNestedColumn table path (not open), ToggleNestedColumn table path open ) ]
+            ( model |> mapErdM (toggleNestedColumn now table path open), Extra.history ( ToggleNestedColumn table path (not open), ToggleNestedColumn table path open ) ) |> setDirty
 
         ToggleHiddenColumns id ->
-            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.mapBy .id id (mapProps (mapShowHiddenColumns not))))) |> setHDirty [ ( ToggleHiddenColumns id, ToggleHiddenColumns id ) ]
+            ( model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.mapBy .id id (mapProps (mapShowHiddenColumns not))))), Extra.history ( ToggleHiddenColumns id, ToggleHiddenColumns id ) ) |> setDirty
 
         SelectItem htmlId ctrl ->
             if model.dragging |> Maybe.any DragState.hasMoved then
                 ( model, Extra.none )
 
             else
-                model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (\l -> ( l |> ErdLayout.mapSelected (\i s -> B.cond (i.id == htmlId) (not s) (B.cond ctrl s False)), Extra.history ( SelectItems_ (ErdLayout.getSelected l), msg ) ))) |> setHLDirtyCmdM
+                model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (\l -> ( l |> ErdLayout.mapSelected (\i s -> B.cond (i.id == htmlId) (not s) (B.cond ctrl s False)), Extra.history ( SelectItems_ (ErdLayout.getSelected l), msg ) ))) |> setDirtyM
 
         SelectItems_ htmlIds ->
-            model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (\l -> ( l |> ErdLayout.setSelected htmlIds, Extra.history ( SelectItems_ (ErdLayout.getSelected l), msg ) ))) |> setHLDirtyCmdM
+            model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (\l -> ( l |> ErdLayout.setSelected htmlIds, Extra.history ( SelectItems_ (ErdLayout.getSelected l), msg ) ))) |> setDirtyM
 
         SelectAll ->
-            model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (\l -> ( l |> ErdLayout.mapSelected (\_ _ -> True), Extra.history ( SelectItems_ (ErdLayout.getSelected l), msg ) ))) |> setHLDirtyCmdM
+            model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (\l -> ( l |> ErdLayout.mapSelected (\_ _ -> True), Extra.history ( SelectItems_ (ErdLayout.getSelected l), msg ) ))) |> setDirtyM
 
         CanvasPosition_ position ->
-            model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (mapCanvasT (mapPositionT (\p -> ( position, [ ( CanvasPosition_ p, msg ) ] ))))) |> setHL
+            model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (mapCanvasT (mapPositionT (\p -> ( position, Extra.history ( CanvasPosition_ p, msg ) ))))) |> Extra.defaultT
 
         TableMove id delta ->
-            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.mapBy .id id (mapProps (mapPosition (Position.moveGrid delta)))))) |> setHDirty [ ( TableMove id (Delta.negate delta), msg ) ]
+            ( model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.mapBy .id id (mapProps (mapPosition (Position.moveGrid delta)))))), Extra.history ( TableMove id (Delta.negate delta), msg ) ) |> setDirty
 
         TablePosition id position ->
-            model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (mapTablesT (List.mapByTE .id id (mapPropsT (mapPositionT (\p -> ( position, Extra.history ( TablePosition id p, msg ) ))))))) |> setHLDirtyCmdM
+            model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (mapTablesT (List.mapByTE .id id (mapPropsT (mapPositionT (\p -> ( position, Extra.history ( TablePosition id p, msg ) ))))))) |> setDirtyM
 
         TableRowPosition_ id position ->
-            model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (mapTableRowsT (List.mapByTE .id id (mapPositionT (\p -> ( position, Extra.history ( TableRowPosition_ id p, msg ) )))))) |> setHLDirtyCmdM
+            model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (mapTableRowsT (List.mapByTE .id id (mapPositionT (\p -> ( position, Extra.history ( TableRowPosition_ id p, msg ) )))))) |> setDirtyM
 
         MemoPosition_ id position ->
-            model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (mapMemosT (List.mapByTE .id id (mapPositionT (\p -> ( position, Extra.history ( MemoPosition_ id p, msg ) )))))) |> setHLDirtyCmdM
+            model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (mapMemosT (List.mapByTE .id id (mapPositionT (\p -> ( position, Extra.history ( MemoPosition_ id p, msg ) )))))) |> setDirtyM
 
         TableOrder id index ->
             model
@@ -231,7 +231,7 @@ update urlLayout zone now urlInfos organizations projects msg model =
                             )
                         )
                     )
-                |> setHLDirtyCmdM
+                |> setDirtyM
 
         TableColor id color extendToSelected ->
             let
@@ -240,7 +240,7 @@ update urlLayout zone now urlInfos organizations projects msg model =
                     model.erd |> Erd.getProjectRefM urlInfos
             in
             if model.erd |> Erd.canChangeColor then
-                model |> mapErdMTM (\erd -> erd |> Erd.mapCurrentLayoutTWithTime now (mapTablesT (mapTablePropOrSelectedTL erd.settings.defaultSchema extendToSelected id (\t -> t |> mapPropsT (mapColorT (\c -> ( color, [ ( TableColor t.id c False, TableColor t.id color False ) ] ))))))) |> setHLDirtyCmdM
+                model |> mapErdMTM (\erd -> erd |> Erd.mapCurrentLayoutTWithTime now (mapTablesT (mapTablePropOrSelectedTL erd.settings.defaultSchema extendToSelected id (\t -> t |> mapPropsT (mapColorT (\c -> ( color, [ ( TableColor t.id c False, TableColor t.id color False ) ] ))))))) |> setDirtyM
 
             else
                 ( model, Extra.batch [ ProPlan.colorsModalBody project ProPlanColors ProPlan.colorsInit |> CustomModalOpen |> T.send, Track.planLimit .tableColor model.erd ] )
@@ -268,7 +268,7 @@ update urlLayout zone now urlInfos organizations projects msg model =
                                     )
                                 )
                     )
-                |> setHLDirty
+                |> setHDirty
 
         HoverTable ( table, col ) on ->
             ( model |> setHoverTable (B.cond on (Just ( table, col )) (col |> Maybe.map (\_ -> ( table, Nothing )))) |> mapErdM (\e -> e |> Erd.mapCurrentLayoutWithTime now (mapTables (hoverColumn ( table, col ) on e))), Extra.none )
@@ -280,23 +280,25 @@ update urlLayout zone now urlInfos organizations projects msg model =
             ( model, SourceId.generator |> Random.generate (Source.aml name now >> CreateUserSourceWithId) |> Extra.cmd )
 
         CreateUserSourceWithId source ->
-            model
+            ( model
                 |> mapErdM (Erd.mapSources (List.insert source))
                 |> (\newModel -> newModel |> mapAmlSidebarM (AmlSidebar.setSource (newModel.erd |> Maybe.andThen (.sources >> List.last))))
                 |> AmlSidebar.setOtherSourcesTableIdsCache (Just source.id)
-                |> setHDirty [ ( Batch [ ProjectSettingsMsg (PSSourceDelete source.id), AmlSidebarMsg (AChangeSource (model.amlSidebar |> Maybe.andThen (.selected >> Maybe.map Tuple.first))) ], msg ) ]
+            , Extra.history ( Batch [ ProjectSettingsMsg (PSSourceDelete source.id), AmlSidebarMsg (AChangeSource (model.amlSidebar |> Maybe.andThen (.selected >> Maybe.map Tuple.first))) ], msg )
+            )
+                |> setDirty
 
         CreateRelations rels ->
-            model |> mapErdMT (Source.createRelations now rels) |> setHLDirtyCmdM
+            model |> mapErdMT (Source.createRelations now rels) |> setDirtyM
 
         RemoveRelations_ source rels ->
-            model |> mapErdMT (Source.deleteRelations source rels) |> setHLDirtyCmdM
+            model |> mapErdMT (Source.deleteRelations source rels) |> setDirtyM
 
         IgnoreRelation col ->
-            model |> mapErdMT (Erd.mapIgnoredRelationsT (Dict.updateT col.table (\cols -> ( cols |> Maybe.mapOrElse (List.insert col.column) [ col.column ] >> List.uniqueBy ColumnPath.toString >> Just, [ ( UnIgnoreRelation_ col, msg ) ] )))) |> setHLDirty
+            model |> mapErdMT (Erd.mapIgnoredRelationsT (Dict.updateT col.table (\cols -> ( cols |> Maybe.mapOrElse (List.insert col.column) [ col.column ] >> List.uniqueBy ColumnPath.toString >> Just, Extra.history ( UnIgnoreRelation_ col, msg ) )))) |> Extra.defaultT
 
         UnIgnoreRelation_ col ->
-            model |> mapErdMT (Erd.mapIgnoredRelationsT (Dict.updateT col.table (\cols -> ( cols |> Maybe.map (List.filter (\c -> c /= col.column)), [ ( IgnoreRelation col, msg ) ] )))) |> setHLDirty
+            model |> mapErdMT (Erd.mapIgnoredRelationsT (Dict.updateT col.table (\cols -> ( cols |> Maybe.map (List.filter (\c -> c /= col.column)), Extra.history ( IgnoreRelation col, msg ) )))) |> Extra.defaultT
 
         NewLayoutMsg message ->
             model |> NewLayout.update NewLayoutMsg Batch ModalOpen Toast CustomModalOpen (LLoad "" >> LayoutMsg) (LDelete >> LayoutMsg) now urlInfos message
@@ -305,16 +307,16 @@ update urlLayout zone now urlInfos organizations projects msg model =
             model |> handleLayout message
 
         FitToScreen ->
-            model |> mapErdMT (fitCanvas model.erdElem) |> setHLCmd
+            model |> mapErdMT (fitCanvas model.erdElem) |> Extra.defaultT
 
         SetView_ canvas ->
-            model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (mapCanvasT (\c -> ( canvas, [ ( SetView_ c, SetView_ canvas ) ] )))) |> setHL
+            model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (mapCanvasT (\c -> ( canvas, Extra.history ( SetView_ c, SetView_ canvas ) )))) |> Extra.defaultT
 
         ArrangeTables ->
-            model |> mapErdMT (arrangeTables now model.erdElem) |> setHLCmd
+            model |> mapErdMT (arrangeTables now model.erdElem) |> Extra.defaultT
 
         SetLayout_ layout ->
-            model |> mapErdMTM (Erd.mapCurrentLayoutT (\l -> ( layout, ( Ports.observeLayout layout, [ ( SetLayout_ l, SetLayout_ layout ) ] ) ))) |> setHLDirtyCmdM
+            model |> mapErdMTM (Erd.mapCurrentLayoutT (\l -> ( layout, ( Ports.observeLayout layout, [ ( SetLayout_ l, SetLayout_ layout ) ] ) ))) |> setDirtyM
 
         GroupMsg message ->
             model |> handleGroups now urlInfos message
@@ -330,17 +332,17 @@ update urlLayout zone now urlInfos organizations projects msg model =
 
         ShowTableRow source query previous hint from ->
             (model.erd |> Maybe.andThen (Erd.currentLayout >> .tableRows >> List.find (\r -> r.source == source.id && r.table == query.table && r.primaryKey == query.primaryKey)))
-                |> Maybe.map (\r -> model |> mapErdMT (moveToTableRow now model.erdElem r) |> setHLCmd)
-                |> Maybe.withDefault (model |> mapErdMT (showTableRow now source query previous hint from) |> setHLDirtyCmdM)
+                |> Maybe.map (\r -> model |> mapErdMT (moveToTableRow now model.erdElem r) |> Extra.defaultT)
+                |> Maybe.withDefault (model |> mapErdMT (showTableRow now source query previous hint from) |> setDirtyM)
 
         DeleteTableRow id ->
-            model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (deleteTableRow id)) |> setHLDirtyCmdM
+            model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (deleteTableRow id)) |> setDirtyM
 
         UnDeleteTableRow_ index tableRow ->
-            model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (unDeleteTableRow index tableRow)) |> setHLDirtyCmdM
+            model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (unDeleteTableRow index tableRow)) |> setDirtyM
 
         TableRowMsg id message ->
-            model |> mapErdMTM (\e -> e |> Erd.mapCurrentLayoutTWithTime now (mapTableRowsT (mapTableRowOrSelected id message (TableRow.update (TableRowMsg id) DropdownToggle Toast now e.project e.sources model.openedDropdown message)))) |> setHLDirtyCmdM
+            model |> mapErdMTM (\e -> e |> Erd.mapCurrentLayoutTWithTime now (mapTableRowsT (mapTableRowOrSelected id message (TableRow.update (TableRowMsg id) DropdownToggle Toast now e.project e.sources model.openedDropdown message)))) |> setDirtyM
 
         AmlSidebarMsg message ->
             model |> AmlSidebar.update now message
@@ -400,10 +402,10 @@ update urlLayout zone now urlInfos organizations projects msg model =
             ( model, Ports.fullscreen id |> Extra.cmd )
 
         OnWheel event ->
-            model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (mapCanvasT (handleWheel event model.erdElem))) |> setHLDirtyCmdM |> squashViewHistory
+            model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (mapCanvasT (handleWheel event model.erdElem))) |> setDirtyM |> squashViewHistory
 
         Zoom delta ->
-            model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (mapCanvasT (zoomCanvas delta model.erdElem))) |> setHLDirtyCmdM |> squashViewHistory
+            model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (mapCanvasT (zoomCanvas delta model.erdElem))) |> setDirtyM |> squashViewHistory
 
         Focus id ->
             ( model, Ports.focus id |> Extra.cmd )

@@ -21,7 +21,7 @@ import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (Er
 import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
 import PagesComponents.Organization_.Project_.Models.MemoId as MemoId exposing (MemoId)
 import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
-import PagesComponents.Organization_.Project_.Updates.Utils exposing (setHLCmd, setHLDirtyCmdM)
+import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirtyM)
 import Services.Lenses exposing (mapCanvasT, mapErdM, mapErdMTM, mapMemos, mapProps, mapSelectionBox, mapTableRows, mapTables, setArea, setPosition, setSelectionBox)
 import Time
 
@@ -35,7 +35,7 @@ handleDrag now drag isEnd cancel model =
     in
     if drag.id == Conf.ids.erd then
         if isEnd && drag.init /= drag.last then
-            model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (mapCanvasT (moveCanvas drag))) |> setHLCmd
+            model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (mapCanvasT (moveCanvas drag))) |> Extra.defaultT
 
         else
             ( model, Extra.none )
@@ -76,7 +76,7 @@ handleDrag now drag isEnd cancel model =
             )
 
     else if isEnd && drag.init /= drag.last then
-        model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (moveInLayout drag canvas.zoom)) |> setHLDirtyCmdM
+        model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (moveInLayout drag canvas.zoom)) |> setDirtyM
 
     else
         ( model, Extra.none )

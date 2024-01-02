@@ -51,7 +51,6 @@ module Services.Lenses exposing
     , mapMT
     , mapMemos
     , mapMemosLT
-    , mapMemosLTL
     , mapMemosT
     , mapMetadata
     , mapMobileMenuOpen
@@ -802,11 +801,6 @@ mapMemosT =
 mapMemosLT : (v -> k) -> k -> (v -> ( v, t )) -> { item | memos : List v } -> ( { item | memos : List v }, Maybe t )
 mapMemosLT =
     mapLT_ .memos setMemos
-
-
-mapMemosLTL : (v -> k) -> k -> (v -> ( v, List t )) -> { item | memos : List v } -> ( { item | memos : List v }, List t )
-mapMemosLTL =
-    mapLTL_ .memos setMemos
 
 
 setMetadata : v -> { item | metadata : v } -> { item | metadata : v }

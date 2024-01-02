@@ -10,7 +10,7 @@ import PagesComponents.Organization_.Project_.Models.Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.NotesMsg exposing (NotesMsg(..))
 import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
-import PagesComponents.Organization_.Project_.Updates.Utils exposing (setHDirtyCmd)
+import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirty)
 import Services.Lenses exposing (mapEditNotesM, mapErdM, mapMetadata, setEditNotes, setNotes)
 import Track
 
@@ -56,8 +56,10 @@ handleNotes msg model =
                     else
                         Track.notesUpdated notes model.erd
             in
-            ( model |> setEditNotes Nothing |> mapErdM (mapMetadata (Metadata.putNotes table column (String.nonEmptyMaybe notes))), cmd )
-                |> setHDirtyCmd [ ( NotesMsg (NSave table column notes initialNotes), NotesMsg msg ) ]
+            ( model |> setEditNotes Nothing |> mapErdM (mapMetadata (Metadata.putNotes table column (String.nonEmptyMaybe notes)))
+            , Extra.new cmd ( NotesMsg (NSave table column notes initialNotes), NotesMsg msg )
+            )
+                |> setDirty
 
         NCancel ->
             ( model |> setEditNotes Nothing, Extra.none )

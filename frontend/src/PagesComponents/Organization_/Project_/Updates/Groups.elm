@@ -16,8 +16,8 @@ import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
-import PagesComponents.Organization_.Project_.Updates.Utils exposing (setHDirty, setHDirtyCmd, setHL, setHLCmd, setHLDirty)
-import Services.Lenses exposing (mapColorT, mapEditGroupM, mapErdM, mapErdMT, mapErdMTM, mapGroups, mapGroupsT, mapTables, setContent, setEditGroup, setName)
+import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirty, setDirtyM)
+import Services.Lenses exposing (mapColorT, mapEditGroupM, mapErdM, mapErdMTM, mapGroups, mapGroupsT, mapTables, setContent, setEditGroup, setName)
 import Task
 import Time
 import Track
@@ -51,27 +51,33 @@ handleGroups now urlInfos msg model =
             model |> setGroupColor now urlInfos index color
 
         GAddTables index tables ->
-            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapGroups (List.mapAt index (mapTables (List.append tables))))) |> setHDirty [ ( GroupMsg (GRemoveTables index tables), GroupMsg msg ) ]
+            ( model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapGroups (List.mapAt index (mapTables (List.append tables)))))
+            , Extra.history ( GroupMsg (GRemoveTables index tables), GroupMsg msg )
+            )
+                |> setDirty
 
         GRemoveTables index tables ->
-            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapGroups (List.mapAt index (mapTables (List.removeAll tables))))) |> setHDirty [ ( GroupMsg (GAddTables index tables), GroupMsg msg ) ]
+            ( model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapGroups (List.mapAt index (mapTables (List.removeAll tables)))))
+            , Extra.history ( GroupMsg (GAddTables index tables), GroupMsg msg )
+            )
+                |> setDirty
 
         GDelete index ->
             model
-                |> mapErdMT
-                    (Erd.mapCurrentLayoutTLWithTime now
+                |> mapErdMTM
+                    (Erd.mapCurrentLayoutTWithTime now
                         (mapGroupsT
                             (\groups ->
                                 (groups |> List.get index)
-                                    |> Maybe.map (\g -> ( groups |> List.removeAt index, [ ( GroupMsg (GUnDelete index g), GroupMsg msg ) ] ))
-                                    |> Maybe.withDefault ( groups, [] )
+                                    |> Maybe.map (\g -> ( groups |> List.removeAt index, Extra.history ( GroupMsg (GUnDelete index g), GroupMsg msg ) ))
+                                    |> Maybe.withDefault ( groups, Extra.none )
                             )
                         )
                     )
-                |> setHLDirty
+                |> setDirtyM
 
         GUnDelete index group ->
-            model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (mapGroupsT (\groups -> ( groups |> List.insertAt index group, [ ( GroupMsg (GDelete index), GroupMsg msg ) ] )))) |> setHL
+            model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (mapGroupsT (\groups -> ( groups |> List.insertAt index group, Extra.history ( GroupMsg (GDelete index), GroupMsg msg ) )))) |> Extra.defaultT
 
 
 createGroup : Time.Posix -> UrlInfos -> List TableId -> Model x -> ( Model x, Extra Msg )
@@ -93,7 +99,7 @@ createGroup now urlInfos tables model =
                                 )
                     )
                 )
-            |> setHLCmd
+            |> Extra.defaultT
 
     else
         ( model, model.erd |> Maybe.map (\erd -> Cmd.batch [ erd |> Erd.getProjectRef urlInfos |> ProPlan.groupsModalBody |> CustomModalOpen |> T.send, Track.planLimit .groups (Just erd) ]) |> Extra.cmdM )
@@ -120,7 +126,7 @@ setGroupColor now urlInfos index color model =
             model.erd |> Erd.getProjectRefM urlInfos
     in
     if model.erd |> Erd.canChangeColor then
-        model |> mapErdMT (Erd.mapCurrentLayoutTLWithTime now (mapGroupsT (List.mapAtTL index (mapColorT (\c -> ( color, [ ( GroupMsg (GSetColor index c), GroupMsg (GSetColor index color) ) ] )))))) |> setHLDirty
+        model |> mapErdMTM (Erd.mapCurrentLayoutTMWithTime now (mapGroupsT (List.mapAtT index (mapColorT (\c -> ( color, Extra.history ( GroupMsg (GSetColor index c), GroupMsg (GSetColor index color) ) )))))) |> Extra.defaultT
 
     else
         ( model, Extra.batch [ ProPlan.colorsModalBody project ProPlanColors ProPlan.colorsInit |> CustomModalOpen |> T.send, Track.planLimit .tableColor model.erd ] )
@@ -139,6 +145,6 @@ saveGroup now edit model =
 
     else
         ( model |> setEditGroup Nothing |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapGroups (List.mapAt edit.index (setName edit.content))))
-        , Track.groupRenamed edit.content model.erd
+        , Extra.new (Track.groupRenamed edit.content model.erd) ( GroupMsg (GEditSave { edit | content = groupName }), GroupMsg (GEditSave edit) )
         )
-            |> setHDirtyCmd [ ( GroupMsg (GEditSave { edit | content = groupName }), GroupMsg (GEditSave edit) ) ]
+            |> setDirty

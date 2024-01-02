@@ -14,7 +14,7 @@ import PagesComponents.Organization_.Project_.Models exposing (Msg(..), ProjectS
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
-import PagesComponents.Organization_.Project_.Updates.Utils exposing (setHDirty, setHLDirty, setHLDirtyCmd, setHLDirtyCmdM)
+import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirty, setDirtyM)
 import Ports
 import Services.Lenses exposing (mapCollapseTableColumns, mapColumnBasicTypes, mapEnabled, mapErdM, mapErdMT, mapErdMTM, mapHiddenColumns, mapNameT, mapProps, mapRelations, mapRemoveViews, mapRemovedSchemas, mapSettingsM, mapSourceUpdateT, setColumnOrder, setDefaultSchema, setList, setMax, setRelationStyle, setRemovedTables, setSettings)
 import Services.Toasts as Toasts
@@ -52,7 +52,7 @@ handleProjectSettings now msg model =
                             ]
                         )
                    )
-                |> setHLDirtyCmd
+                |> setDirty
 
         PSSourceNameUpdate source name ->
             ( model |> mapSettingsM (\s -> { s | sourceNameEdit = Just ( source, name ) }), Extra.none )
@@ -66,15 +66,15 @@ handleProjectSettings now msg model =
                             (\old ->
                                 ( name
                                 , if old == name then
-                                    []
+                                    Extra.none
 
                                   else
-                                    [ ( PSSourceNameUpdateDone source old, PSSourceNameUpdateDone source name ) |> Tuple.map ProjectSettingsMsg ]
+                                    Extra.history (( PSSourceNameUpdateDone source old, PSSourceNameUpdateDone source name ) |> Tuple.map ProjectSettingsMsg)
                                 )
                             )
                         )
                     )
-                |> setHLDirty
+                |> Extra.defaultT
 
         PSSourceDelete sourceId ->
             model
@@ -93,12 +93,12 @@ handleProjectSettings now msg model =
                                     ( sources, Extra.none )
                         )
                     )
-                |> setHLDirtyCmdM
+                |> setDirtyM
 
         PSSourceUnDelete_ index source ->
             model
                 |> mapErdM (Erd.mapSources (List.insertAt index source))
-                |> (\newModel -> ( newModel, Ports.observeTablesSize (newModel.erd |> getShownTables) |> Extra.cmd ) |> setHLDirtyCmd)
+                |> (\newModel -> ( newModel, Ports.observeTablesSize (newModel.erd |> getShownTables) |> Extra.cmd ) |> setDirty)
 
         PSSourceUpdate message ->
             model |> mapSourceUpdateT (SourceUpdateDialog.update (PSSourceUpdate >> ProjectSettingsMsg) ModalOpen Noop now (model.erd |> Maybe.map .project) message)
@@ -125,43 +125,43 @@ handleProjectSettings now msg model =
                                     )
                         )
                     )
-                |> setHLDirtyCmdM
+                |> setDirtyM
 
         PSDefaultSchemaUpdate value ->
-            model |> mapErdM (Erd.mapSettings (setDefaultSchema value)) |> setHDirty []
+            ( model |> mapErdM (Erd.mapSettings (setDefaultSchema value)), Extra.none ) |> setDirty
 
         PSSchemaToggle schema ->
-            model |> mapErdM (Erd.mapSettings (mapRemovedSchemas (List.toggle schema))) |> (\m -> ( m, Ports.observeTablesSize (m.erd |> getShownTables) |> Extra.cmd )) |> setHLDirtyCmd
+            model |> mapErdM (Erd.mapSettings (mapRemovedSchemas (List.toggle schema))) |> (\m -> ( m, Ports.observeTablesSize (m.erd |> getShownTables) |> Extra.cmd )) |> setDirty
 
         PSRemoveViewsToggle ->
-            model |> mapErdM (Erd.mapSettings (mapRemoveViews not)) |> (\m -> ( m, Ports.observeTablesSize (m.erd |> getShownTables) |> Extra.cmd )) |> setHLDirtyCmd
+            model |> mapErdM (Erd.mapSettings (mapRemoveViews not)) |> (\m -> ( m, Ports.observeTablesSize (m.erd |> getShownTables) |> Extra.cmd )) |> setDirty
 
         PSRemovedTablesUpdate values ->
-            model |> mapErdM (Erd.mapSettings (setRemovedTables values >> ProjectSettings.fillFindPath)) |> (\m -> ( m, Ports.observeTablesSize (m.erd |> getShownTables) |> Extra.cmd )) |> setHLDirtyCmd
+            model |> mapErdM (Erd.mapSettings (setRemovedTables values >> ProjectSettings.fillFindPath)) |> (\m -> ( m, Ports.observeTablesSize (m.erd |> getShownTables) |> Extra.cmd )) |> setDirty
 
         PSHiddenColumnsListUpdate values ->
-            model |> mapErdM (Erd.mapSettings (mapHiddenColumns (setList values) >> ProjectSettings.fillFindPath)) |> setHDirty []
+            ( model |> mapErdM (Erd.mapSettings (mapHiddenColumns (setList values) >> ProjectSettings.fillFindPath)), Extra.none ) |> setDirty
 
         PSHiddenColumnsMaxUpdate value ->
-            value |> String.toInt |> Maybe.mapOrElse (\max -> model |> mapErdM (Erd.mapSettings (mapHiddenColumns (setMax max) >> ProjectSettings.fillFindPath))) model |> setHDirty []
+            ( value |> String.toInt |> Maybe.mapOrElse (\max -> model |> mapErdM (Erd.mapSettings (mapHiddenColumns (setMax max) >> ProjectSettings.fillFindPath))) model, Extra.none ) |> setDirty
 
         PSHiddenColumnsPropsToggle ->
-            model |> mapErdM (Erd.mapSettings (mapHiddenColumns (mapProps not))) |> setHDirty []
+            ( model |> mapErdM (Erd.mapSettings (mapHiddenColumns (mapProps not))), Extra.none ) |> setDirty
 
         PSHiddenColumnsRelationsToggle ->
-            model |> mapErdM (Erd.mapSettings (mapHiddenColumns (mapRelations not))) |> setHDirty []
+            ( model |> mapErdM (Erd.mapSettings (mapHiddenColumns (mapRelations not))), Extra.none ) |> setDirty
 
         PSColumnOrderUpdate order ->
-            model |> mapErdM (\e -> e |> Erd.mapSettings (setColumnOrder order)) |> setHDirty []
+            ( model |> mapErdM (\e -> e |> Erd.mapSettings (setColumnOrder order)), Extra.none ) |> setDirty
 
         PSRelationStyleUpdate style ->
-            model |> mapErdM (\e -> e |> Erd.mapSettings (setRelationStyle style)) |> setHDirty []
+            ( model |> mapErdM (\e -> e |> Erd.mapSettings (setRelationStyle style)), Extra.none ) |> setDirty
 
         PSColumnBasicTypesToggle ->
-            model |> mapErdM (Erd.mapSettings (mapColumnBasicTypes not)) |> setHDirty []
+            ( model |> mapErdM (Erd.mapSettings (mapColumnBasicTypes not)), Extra.none ) |> setDirty
 
         PSCollapseTableOnShowToggle ->
-            model |> mapErdM (Erd.mapSettings (mapCollapseTableColumns not)) |> setHDirty []
+            ( model |> mapErdM (Erd.mapSettings (mapCollapseTableColumns not)), Extra.none ) |> setDirty
 
 
 getShownTables : Maybe Erd -> List TableId

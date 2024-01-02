@@ -18,6 +18,7 @@ import Libs.Tailwind as Tw exposing (focus, sm)
 import Models.Organization exposing (Organization)
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.ProjectRef as ProjectRef exposing (ProjectRef)
+import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
 
 
 type alias Model =
@@ -42,11 +43,11 @@ init id mode =
     { id = id, name = mode |> foldMode "" identity identity, mode = mode }
 
 
-update : Msg -> Model -> ( Model, Cmd msg )
+update : Msg -> Model -> ( Model, Extra msg )
 update msg model =
     case msg of
         UpdateLayoutName value ->
-            ( { model | name = value }, Cmd.none )
+            ( { model | name = value }, Extra.none )
 
 
 view : (Msg -> msg) -> (LayoutName -> msg) -> msg -> HtmlId -> List LayoutName -> ProjectRef -> Model -> Html msg

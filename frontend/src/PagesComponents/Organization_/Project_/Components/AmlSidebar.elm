@@ -37,7 +37,7 @@ import PagesComponents.Organization_.Project_.Models.PositionHint exposing (Posi
 import PagesComponents.Organization_.Project_.Models.ShowColumns as ShowColumns
 import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
 import PagesComponents.Organization_.Project_.Updates.Table exposing (hideTable, showColumns, showTable)
-import PagesComponents.Organization_.Project_.Updates.Utils exposing (setHLDirtyCmd, setHLDirtyCmdM)
+import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirty, setDirtyM)
 import Services.Lenses exposing (mapAmlSidebarM, mapAmlSidebarMTM, mapErdM, mapErdMT, mapSelectedMT, setAmlSidebar, setContent, setErrors, setSelected, setUpdatedAt)
 import Set exposing (Set)
 import Time
@@ -100,7 +100,7 @@ update now msg model =
 
         AUpdateSource id value ->
             (model.erd |> Maybe.andThen (.sources >> List.findBy .id id))
-                |> Maybe.map (\s -> model |> updateSource now s value |> setHLDirtyCmd)
+                |> Maybe.map (\s -> model |> updateSource now s value |> setDirty)
                 |> Maybe.withDefault ( model |> mapAmlSidebarM (setErrors [ { row = 0, col = 0, problem = "Invalid source" } ]), Extra.none )
 
         ASourceUpdated id ->
@@ -169,9 +169,9 @@ updateSource now source input model =
                 items |> List.foldl (\a ( curModel, curExtra ) -> curModel |> f a |> Tuple.mapSecond (Extra.combine curExtra >> Extra.dropHistory)) m
         in
         ( model |> mapAmlSidebarM (setErrors []) |> mapErdM (Erd.mapSource source.id (Source.refreshWith parsed)), Extra.none )
-            |> apply toShow (\( id, hint ) -> mapErdMT (showTable now id hint "aml") >> setHLDirtyCmdM)
-            |> apply toHide (\id -> mapErdMT (hideTable now id) >> setHLDirtyCmdM)
-            |> apply updated (\t -> mapErdMT (showColumns now t.id (ShowColumns.List (amlColumns |> Dict.getOrElse t.id []))) >> setHLDirtyCmdM)
+            |> apply toShow (\( id, hint ) -> mapErdMT (showTable now id hint "aml") >> setDirtyM)
+            |> apply toHide (\id -> mapErdMT (hideTable now id) >> setDirtyM)
+            |> apply updated (\t -> mapErdMT (showColumns now t.id (ShowColumns.List (amlColumns |> Dict.getOrElse t.id []))) >> setDirtyM)
 
 
 associateTables : List Table -> List Table -> List ( Table, Maybe Table )

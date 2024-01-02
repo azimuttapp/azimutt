@@ -16,9 +16,9 @@ import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout expo
 import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
 import PagesComponents.Organization_.Project_.Models.MemoId as MemoId exposing (MemoId)
 import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
-import PagesComponents.Organization_.Project_.Updates.Utils exposing (setHDirtyCmd, setHLDirty, setHLDirtyCmdM)
+import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirty, setDirtyM)
 import Ports
-import Services.Lenses exposing (mapColorT, mapContentT, mapEditMemoM, mapErdM, mapErdMT, mapErdMTM, mapMemos, mapMemosLT, mapMemosLTL, mapMemosT, setContent, setEditMemo)
+import Services.Lenses exposing (mapColorT, mapContentT, mapEditMemoM, mapErdM, mapErdMTM, mapMemos, mapMemosLT, mapMemosT, setContent, setEditMemo)
 import Task
 import Time
 import Track
@@ -50,7 +50,7 @@ handleMemo now urlInfos msg model =
             model |> saveMemo now edit
 
         MSetColor id color ->
-            model |> mapErdMT (Erd.mapCurrentLayoutTLWithTime now (mapMemosLTL .id id (mapColorT (\c -> ( color, [ ( MemoMsg (MSetColor id c), MemoMsg (MSetColor id color) ) ] ))))) |> setHLDirty
+            model |> mapErdMTM (Erd.mapCurrentLayoutTMWithTime now (mapMemosLT .id id (mapColorT (\c -> ( color, Extra.history ( MemoMsg (MSetColor id c), MemoMsg (MSetColor id color) ) ))))) |> Extra.defaultT
 
         MDelete id ->
             model |> deleteMemo now id False
@@ -117,7 +117,7 @@ saveMemo now edit model =
                         )
                     )
                 )
-            |> setHLDirtyCmdM
+            |> setDirtyM
 
 
 deleteMemo : Time.Posix -> MemoId -> Bool -> Model x -> ( Model x, Extra Msg )
@@ -141,5 +141,5 @@ deleteMemo now id createMode model =
                     ( m, Extra.none )
 
                 else
-                    ( m, Track.memoDeleted model.erd ) |> setHDirtyCmd (hist |> Maybe.withDefault [])
+                    ( m, Extra.newL (Track.memoDeleted model.erd) (hist |> Maybe.withDefault []) ) |> setDirty
            )

@@ -16,7 +16,7 @@ import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout
 import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
-import PagesComponents.Organization_.Project_.Updates.Utils exposing (setHCmd, setHLDirtyCmdM)
+import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirtyM)
 import Services.Lenses exposing (mapErdMT, mapLayouts, mapNewLayoutMT, setCurrentLayout, setNewLayout)
 import Services.Toasts as Toasts
 import Time
@@ -59,10 +59,10 @@ update wrap batch modalOpen toast customModalOpen loadLayout deleteLayout now ur
                 ( model, Extra.batch [ model.erd |> Erd.getProjectRefM urlInfos |> ProPlan.layoutsModalBody |> customModalOpen |> T.send, Track.planLimit .layouts model.erd ] )
 
         BodyMsg m ->
-            model |> mapNewLayoutMT (NewLayoutBody.update m) |> setHCmd
+            model |> mapNewLayoutMT (NewLayoutBody.update m) |> Extra.defaultT
 
         Submit mode name ->
-            model |> setNewLayout Nothing |> mapErdMT (updateLayouts wrap batch toast loadLayout deleteLayout mode name now) |> setHLDirtyCmdM
+            model |> setNewLayout Nothing |> mapErdMT (updateLayouts wrap batch toast loadLayout deleteLayout mode name now) |> setDirtyM
 
         Cancel ->
             ( model |> setNewLayout Nothing, Extra.none )

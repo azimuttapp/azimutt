@@ -10,7 +10,7 @@ import PagesComponents.Organization_.Project_.Models.Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
-import PagesComponents.Organization_.Project_.Updates.Utils exposing (setHLCmd, setHLDirtyCmdM)
+import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirtyM)
 import Ports
 import Services.Lenses exposing (mapErdMT, mapLayouts, setCurrentLayout, setLayoutOnLoad)
 import Services.Toasts as Toasts
@@ -25,13 +25,13 @@ handleLayout : LayoutMsg -> Model x -> ( Model x, Extra Msg )
 handleLayout msg model =
     case msg of
         LLoad onLoad name ->
-            model |> mapErdMT (loadLayout onLoad name) |> setHLCmd
+            model |> mapErdMT (loadLayout onLoad name) |> Extra.defaultT
 
         LDelete name ->
-            model |> mapErdMT (deleteLayout name) |> setHLDirtyCmdM
+            model |> mapErdMT (deleteLayout name) |> setDirtyM
 
         LUnDelete_ name layout ->
-            model |> mapErdMT (unDeleteLayout name layout) |> setHLDirtyCmdM
+            model |> mapErdMT (unDeleteLayout name layout) |> setDirtyM
 
 
 loadLayout : String -> LayoutName -> Erd -> ( Erd, Extra Msg )
