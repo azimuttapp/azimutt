@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Updates.Extra exposing (Extra, addCmd, addCmdT, batch, cmd, cmdM, cmdT, combine, concat, defaultT, dropHistory, history, historyL, historyM, msg, msgM, msgR, new, newL, newM, none)
+module PagesComponents.Organization_.Project_.Updates.Extra exposing (Extra, addCmdT, addHistoryT, cmd, cmdL, cmdM, cmdT, combine, concat, defaultT, dropHistory, history, historyL, historyM, msg, msgM, msgR, new, newL, newM, none)
 
 import Task
 
@@ -7,24 +7,24 @@ type alias Extra msg =
     ( Cmd msg, List ( msg, msg ) )
 
 
+none : Extra msg
+none =
+    ( Cmd.none, [] )
+
+
 new : Cmd msg -> ( msg, msg ) -> Extra msg
 new c h =
     ( c, [ h ] )
 
 
 newM : Cmd msg -> Maybe ( msg, msg ) -> Extra msg
-newM c hM =
-    ( c, hM |> Maybe.map (\h -> [ h ]) |> Maybe.withDefault [] )
+newM c h =
+    h |> Maybe.map (new c) |> Maybe.withDefault none
 
 
 newL : Cmd msg -> List ( msg, msg ) -> Extra msg
 newL c h =
     ( c, h )
-
-
-none : Extra msg
-none =
-    ( Cmd.none, [] )
 
 
 cmd : Cmd msg -> Extra msg
@@ -33,18 +33,18 @@ cmd c =
 
 
 cmdM : Maybe (Cmd msg) -> Extra msg
-cmdM cM =
-    cM |> Maybe.map (\c -> ( c, [] )) |> Maybe.withDefault none
+cmdM c =
+    c |> Maybe.map cmd |> Maybe.withDefault none
+
+
+cmdL : List (Cmd msg) -> Extra msg
+cmdL c =
+    ( Cmd.batch c, [] )
 
 
 cmdT : ( a, Cmd msg ) -> ( a, Extra msg )
 cmdT ( a, c ) =
-    ( a, ( c, [] ) )
-
-
-batch : List (Cmd msg) -> Extra msg
-batch cs =
-    ( Cmd.batch cs, [] )
+    ( a, cmd c )
 
 
 msg : msg -> Extra msg
@@ -53,13 +53,13 @@ msg m =
 
 
 msgM : Maybe msg -> Extra msg
-msgM mM =
-    mM |> Maybe.map msg |> Maybe.withDefault none
+msgM m =
+    m |> Maybe.map msg |> Maybe.withDefault none
 
 
 msgR : Result e msg -> Extra msg
-msgR mM =
-    mM |> Result.map msg |> Result.withDefault none
+msgR m =
+    m |> Result.map msg |> Result.withDefault none
 
 
 history : ( msg, msg ) -> Extra msg
@@ -68,23 +68,23 @@ history h =
 
 
 historyM : Maybe ( msg, msg ) -> Extra msg
-historyM hM =
-    ( Cmd.none, hM |> Maybe.map (\h -> [ h ]) |> Maybe.withDefault [] )
+historyM h =
+    h |> Maybe.map history |> Maybe.withDefault none
 
 
 historyL : List ( msg, msg ) -> Extra msg
-historyL hL =
-    ( Cmd.none, hL )
-
-
-addCmd : Cmd msg -> Extra msg -> Extra msg
-addCmd c2 ( c, h ) =
-    ( Cmd.batch [ c, c2 ], h )
+historyL h =
+    ( Cmd.none, h )
 
 
 addCmdT : Cmd msg -> ( a, Extra msg ) -> ( a, Extra msg )
 addCmdT c2 ( a, ( c, h ) ) =
     ( a, ( Cmd.batch [ c, c2 ], h ) )
+
+
+addHistoryT : ( msg, msg ) -> ( a, Extra msg ) -> ( a, Extra msg )
+addHistoryT h2 ( a, ( c, h ) ) =
+    ( a, ( c, h ++ [ h2 ] ) )
 
 
 dropHistory : Extra msg -> Extra msg
@@ -93,13 +93,13 @@ dropHistory ( c, _ ) =
 
 
 defaultT : ( a, Maybe (Extra msg) ) -> ( a, Extra msg )
-defaultT ( a, extraM ) =
-    ( a, extraM |> Maybe.withDefault none )
+defaultT ( a, e ) =
+    ( a, e |> Maybe.withDefault none )
 
 
 combine : Extra msg -> Extra msg -> Extra msg
-combine ( aCmd, aH ) ( bCmd, bH ) =
-    ( Cmd.batch [ aCmd, bCmd ], aH ++ bH )
+combine ( cmdA, hA ) ( cmdB, hB ) =
+    ( Cmd.batch [ cmdA, cmdB ], hA ++ hB )
 
 
 concat : List (Extra msg) -> Extra msg

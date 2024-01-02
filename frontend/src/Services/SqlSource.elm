@@ -203,7 +203,7 @@ update wrap now project msg model =
                 |> Maybe.map
                     (\( parsedSchema, source ) ->
                         ( model |> setParsedSource (source |> Ok |> Just)
-                        , Extra.batch [ T.send (model.callback ( Just parsedSchema, Ok source )), Track.sqlSourceCreated project parsedSchema source ]
+                        , Extra.cmdL [ T.send (model.callback ( Just parsedSchema, Ok source )), Track.sqlSourceCreated project parsedSchema source ]
                         )
                     )
                 |> Maybe.withDefault ( model, Extra.none )

@@ -51,7 +51,7 @@ handleFindPath msg model =
                         }
                     )
                 |> mapErdM (mapSettings ProjectSettings.fillFindPath)
-            , Extra.batch [ T.sendAfter 1 (ModalOpen Conf.ids.findPathDialog), Track.findPathOpened model.erd ]
+            , Extra.cmdL [ T.sendAfter 1 (ModalOpen Conf.ids.findPathDialog), Track.findPathOpened model.erd ]
             )
 
         FPToggleSettings ->

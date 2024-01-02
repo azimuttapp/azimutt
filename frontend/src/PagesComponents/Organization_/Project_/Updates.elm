@@ -69,10 +69,10 @@ import PagesComponents.Organization_.Project_.Updates.Notes exposing (handleNote
 import PagesComponents.Organization_.Project_.Updates.Project exposing (createProject, moveProject, triggerSaveProject, updateProject)
 import PagesComponents.Organization_.Project_.Updates.ProjectSettings exposing (handleProjectSettings)
 import PagesComponents.Organization_.Project_.Updates.Source as Source
-import PagesComponents.Organization_.Project_.Updates.Table exposing (goToTable, hideColumn, hideColumns, hideRelatedTables, hideTable, hoverColumn, hoverNextColumn, mapTablePropOrSelected, mapTablePropOrSelectedTL, showAllTables, showColumn, showColumns, showRelatedTables, showTable, showTables, sortColumns, toggleNestedColumn, unHideTable)
+import PagesComponents.Organization_.Project_.Updates.Table exposing (goToTable, hideColumn, hideColumns, hideRelatedTables, hideTable, hoverColumn, hoverNextColumn, mapTablePropOrSelected, mapTablePropOrSelectedTE, showAllTables, showColumn, showColumns, showRelatedTables, showTable, showTables, sortColumns, toggleNestedColumn, unHideTable)
 import PagesComponents.Organization_.Project_.Updates.TableRow exposing (deleteTableRow, mapTableRowOrSelected, moveToTableRow, showTableRow, unDeleteTableRow)
 import PagesComponents.Organization_.Project_.Updates.Tags exposing (handleTags)
-import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirty, setDirtyHCmdM, setDirtyM, setHDirty)
+import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirty, setDirtyM)
 import PagesComponents.Organization_.Project_.Updates.VirtualRelation exposing (handleVirtualRelation)
 import PagesComponents.Organization_.Project_.Views as Views
 import PagesComponents.Organization_.Project_.Views.Modals.NewLayout as NewLayout
@@ -100,7 +100,7 @@ update urlLayout zone now urlInfos organizations projects msg model =
             ( model |> mapNavbar (mapSearch (setText search >> setActive 0)), Extra.none )
 
         SearchClicked kind table ->
-            ( model, Extra.batch [ ShowTable table Nothing "search" |> T.send, Track.searchClicked kind model.erd ] )
+            ( model, Extra.cmdL [ ShowTable table Nothing "search" |> T.send, Track.searchClicked kind model.erd ] )
 
         TriggerSaveProject ->
             model |> triggerSaveProject urlInfos organizations
@@ -153,14 +153,24 @@ update urlLayout zone now urlInfos organizations projects msg model =
             model |> mapErdMT (hideRelatedTables now id) |> setDirtyM
 
         ToggleTableCollapse id ->
-            let
-                collapsed : Bool
-                collapsed =
-                    model.erd |> Maybe.andThen (Erd.currentLayout >> .tables >> List.findBy .id id) |> Maybe.mapOrElse (.props >> .collapsed) False
-            in
             model
-                |> mapErdMTM (\erd -> erd |> Erd.mapCurrentLayoutTWithTime now (mapTablesT (mapTablePropOrSelected erd.settings.defaultSchema id (mapProps (setCollapsed (not collapsed))))))
-                |> setDirtyHCmdM [ ( ToggleTableCollapse id, ToggleTableCollapse id ) ]
+                |> mapErdMTM
+                    (\erd ->
+                        erd
+                            |> Erd.mapCurrentLayoutTWithTime now
+                                (mapTablesT
+                                    (\tables ->
+                                        let
+                                            collapsed : Bool
+                                            collapsed =
+                                                tables |> List.findBy .id id |> Maybe.mapOrElse (.props >> .collapsed) False |> not
+                                        in
+                                        tables |> mapTablePropOrSelected erd.settings.defaultSchema id (mapProps (setCollapsed collapsed))
+                                    )
+                                )
+                    )
+                |> setDirtyM
+                |> Extra.addHistoryT ( ToggleTableCollapse id, ToggleTableCollapse id )
 
         ShowColumn index column ->
             model |> mapErdMT (showColumn now index column) |> setDirtyM
@@ -240,35 +250,35 @@ update urlLayout zone now urlInfos organizations projects msg model =
                     model.erd |> Erd.getProjectRefM urlInfos
             in
             if model.erd |> Erd.canChangeColor then
-                model |> mapErdMTM (\erd -> erd |> Erd.mapCurrentLayoutTWithTime now (mapTablesT (mapTablePropOrSelectedTL erd.settings.defaultSchema extendToSelected id (\t -> t |> mapPropsT (mapColorT (\c -> ( color, [ ( TableColor t.id c False, TableColor t.id color False ) ] ))))))) |> setDirtyM
+                model |> mapErdMTM (\erd -> erd |> Erd.mapCurrentLayoutTWithTime now (mapTablesT (mapTablePropOrSelectedTE erd.settings.defaultSchema extendToSelected id (\t -> t |> mapPropsT (mapColorT (\c -> ( color, Extra.history ( TableColor t.id c False, TableColor t.id color False ) ))))))) |> setDirtyM
 
             else
-                ( model, Extra.batch [ ProPlan.colorsModalBody project ProPlanColors ProPlan.colorsInit |> CustomModalOpen |> T.send, Track.planLimit .tableColor model.erd ] )
+                ( model, Extra.cmdL [ ProPlan.colorsModalBody project ProPlanColors ProPlan.colorsInit |> CustomModalOpen |> T.send, Track.planLimit .tableColor model.erd ] )
 
         MoveColumn column position ->
             model
-                |> mapErdMT
+                |> mapErdMTM
                     (\erd ->
                         erd
-                            |> Erd.mapCurrentLayoutTLWithTime now
+                            |> Erd.mapCurrentLayoutTWithTime now
                                 (mapTablesT
-                                    (List.mapByTL .id
+                                    (List.mapByTE .id
                                         column.table
                                         (mapColumnsT
-                                            (ErdColumnProps.mapAtTL
+                                            (ErdColumnProps.mapAtTE
                                                 (column.column |> ColumnPath.parent)
                                                 (\cols ->
                                                     (cols |> List.findIndexBy .name (column.column |> Nel.last))
                                                         |> Maybe.filter (\pos -> pos /= position)
-                                                        |> Maybe.map (\pos -> ( cols |> List.moveIndex pos position, [ ( MoveColumn column pos, msg ) ] ))
-                                                        |> Maybe.withDefault ( cols, [] )
+                                                        |> Maybe.map (\pos -> ( cols |> List.moveIndex pos position, Extra.history ( MoveColumn column pos, msg ) ))
+                                                        |> Maybe.withDefault ( cols, Extra.none )
                                                 )
                                             )
                                         )
                                     )
                                 )
                     )
-                |> setHDirty
+                |> setDirtyM
 
         HoverTable ( table, col ) on ->
             ( model |> setHoverTable (B.cond on (Just ( table, col )) (col |> Maybe.map (\_ -> ( table, Nothing )))) |> mapErdM (\e -> e |> Erd.mapCurrentLayoutWithTime now (mapTables (hoverColumn ( table, col ) on e))), Extra.none )
@@ -360,7 +370,7 @@ update urlLayout zone now urlInfos organizations projects msg model =
             model |> handleFindPath message
 
         SchemaAnalysisMsg SAOpen ->
-            ( model |> setSchemaAnalysis (Just { id = Conf.ids.schemaAnalysisDialog, opened = "" }), Extra.batch [ T.sendAfter 1 (ModalOpen Conf.ids.schemaAnalysisDialog), Track.dbAnalysisOpened model.erd ] )
+            ( model |> setSchemaAnalysis (Just { id = Conf.ids.schemaAnalysisDialog, opened = "" }), Extra.cmdL [ T.sendAfter 1 (ModalOpen Conf.ids.schemaAnalysisDialog), Track.dbAnalysisOpened model.erd ] )
 
         SchemaAnalysisMsg (SASectionToggle section) ->
             ( model |> mapSchemaAnalysisM (mapOpened (\opened -> B.cond (opened == section) "" section)), Extra.none )

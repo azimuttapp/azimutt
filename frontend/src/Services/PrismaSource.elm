@@ -134,7 +134,7 @@ update wrap now project msg model =
             Maybe.map2 (\( info, _ ) schema -> schema |> Result.map (JsonAdapter.buildSource info))
                 model.loadedSchema
                 model.parsedSchema
-                |> Maybe.map (\source -> ( model |> setParsedSource (Just source), Extra.batch [ T.send (model.callback source), Track.sourceCreated project "prisma" source ] ))
+                |> Maybe.map (\source -> ( model |> setParsedSource (Just source), Extra.cmdL [ T.send (model.callback source), Track.sourceCreated project "prisma" source ] ))
                 |> Maybe.withDefault ( model, Extra.none )
 
         UiToggle htmlId ->

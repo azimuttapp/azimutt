@@ -53,10 +53,10 @@ update wrap batch modalOpen toast customModalOpen loadLayout deleteLayout now ur
     case msg of
         Open from ->
             if model.erd |> Erd.canCreateLayout then
-                ( model |> setNewLayout (Just (NewLayoutBody.init dialogId from)), Extra.batch [ T.sendAfter 1 (modalOpen dialogId) ] )
+                ( model |> setNewLayout (Just (NewLayoutBody.init dialogId from)), Extra.cmdL [ T.sendAfter 1 (modalOpen dialogId) ] )
 
             else
-                ( model, Extra.batch [ model.erd |> Erd.getProjectRefM urlInfos |> ProPlan.layoutsModalBody |> customModalOpen |> T.send, Track.planLimit .layouts model.erd ] )
+                ( model, Extra.cmdL [ model.erd |> Erd.getProjectRefM urlInfos |> ProPlan.layoutsModalBody |> customModalOpen |> T.send, Track.planLimit .layouts model.erd ] )
 
         BodyMsg m ->
             model |> mapNewLayoutMT (NewLayoutBody.update m) |> Extra.defaultT

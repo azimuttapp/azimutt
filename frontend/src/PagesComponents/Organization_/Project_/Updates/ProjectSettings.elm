@@ -46,7 +46,7 @@ handleProjectSettings now msg model =
                 |> mapErdM (Erd.mapSource source.id (mapEnabled not))
                 |> (\newModel ->
                         ( newModel
-                        , Extra.batch
+                        , Extra.cmdL
                             [ Ports.observeTablesSize (newModel.erd |> getShownTables)
                             , "'" ++ source.name ++ "' source set to " ++ B.cond source.enabled "hidden" "visible" ++ "." |> Toasts.info |> Toast |> T.send
                             ]

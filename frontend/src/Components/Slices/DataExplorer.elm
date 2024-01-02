@@ -173,7 +173,7 @@ update wrap showToast project sources msg model =
                 , source = source |> Maybe.orElse model.source |> Maybe.orElse (dbSources |> List.head)
                 , queryEditor = query |> Maybe.map (.sql >> Editor.init) |> Maybe.withDefault model.queryEditor
               }
-            , Extra.batch
+            , Extra.cmdL
                 (Track.dataExplorerOpened sources source query project
                     :: focusMainInput tab
                     :: (Maybe.map2 (\src q -> RunQuery src q |> wrap |> T.send) source query |> Maybe.toList)

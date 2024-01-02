@@ -71,7 +71,7 @@ createMemo now position urlInfos erd model =
                )
 
     else
-        ( model, Extra.batch [ erd |> Erd.getProjectRef urlInfos |> ProPlan.memosModalBody |> CustomModalOpen |> T.send, Track.planLimit .memos (Just erd) ] )
+        ( model, Extra.cmdL [ erd |> Erd.getProjectRef urlInfos |> ProPlan.memosModalBody |> CustomModalOpen |> T.send, Track.planLimit .memos (Just erd) ] )
 
 
 editMemo : Bool -> Memo -> Model x -> ( Model x, Extra Msg )

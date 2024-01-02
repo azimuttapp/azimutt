@@ -132,7 +132,7 @@ dbPrefix =
 init : ProjectInfo -> Id -> DbSourceInfo -> SqlQueryOrigin -> ( Model, Extra msg )
 init project id source query =
     ( { id = id, source = source, query = query, state = StateRunning }
-    , Extra.batch [ Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt id) source.db.url query, Track.dataExplorerQueryOpened source query project ]
+    , Extra.cmdL [ Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt id) source.db.url query, Track.dataExplorerQueryOpened source query project ]
     )
 
 

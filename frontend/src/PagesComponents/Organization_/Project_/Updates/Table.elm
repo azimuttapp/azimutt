@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Updates.Table exposing (goToTable, hideColumn, hideColumns, hideRelatedTables, hideTable, hoverColumn, hoverNextColumn, mapTablePropOrSelected, mapTablePropOrSelectedTL, showAllTables, showColumn, showColumns, showRelatedTables, showTable, showTables, sortColumns, toggleNestedColumn, unHideTable)
+module PagesComponents.Organization_.Project_.Updates.Table exposing (goToTable, hideColumn, hideColumns, hideRelatedTables, hideTable, hoverColumn, hoverNextColumn, mapTablePropOrSelected, mapTablePropOrSelectedTE, showAllTables, showColumn, showColumns, showRelatedTables, showTable, showTables, sortColumns, toggleNestedColumn, unHideTable)
 
 import Components.Organisms.Table exposing (TableHover)
 import Conf
@@ -154,7 +154,6 @@ showAllTables now from erd =
 
 hideTable : Time.Posix -> TableId -> Erd -> ( Erd, Extra Msg )
 hideTable now id erd =
-    -- FIXME: must keep table details in history to get back color, shown columns and so on
     if erd |> Erd.currentLayout |> .tables |> List.findBy .id id |> Maybe.map (.props >> .selected) |> Maybe.withDefault False then
         (erd |> Erd.currentLayout |> .tables)
             |> List.filter (.props >> .selected)
@@ -464,32 +463,32 @@ updateRelatedTables tables =
         |> (\shownTables -> tables |> List.map (mapRelatedTables (Dict.map (\id -> setShown (shownTables |> Set.member id)))))
 
 
-mapTablePropOrSelected : SchemaName -> TableId -> (ErdTableLayout -> ErdTableLayout) -> List ErdTableLayout -> ( List ErdTableLayout, Cmd Msg )
+mapTablePropOrSelected : SchemaName -> TableId -> (ErdTableLayout -> ErdTableLayout) -> List ErdTableLayout -> ( List ErdTableLayout, Extra Msg )
 mapTablePropOrSelected defaultSchema id transform tableLayouts =
     (tableLayouts |> List.findBy .id id)
         |> Maybe.map
             (\tableLayout ->
                 if tableLayout.props.selected then
-                    ( tableLayouts |> List.mapBy (.props >> .selected) True transform, Cmd.none )
+                    ( tableLayouts |> List.mapBy (.props >> .selected) True transform, Extra.none )
 
                 else
-                    ( tableLayouts |> List.mapBy .id id transform, Cmd.none )
+                    ( tableLayouts |> List.mapBy .id id transform, Extra.none )
             )
-        |> Maybe.withDefault ( tableLayouts, "Table " ++ TableId.show defaultSchema id ++ " not found" |> Toasts.info |> Toast |> T.send )
+        |> Maybe.withDefault ( tableLayouts, "Table " ++ TableId.show defaultSchema id ++ " not found" |> Toasts.info |> Toast |> Extra.msg )
 
 
-mapTablePropOrSelectedTL : SchemaName -> Bool -> TableId -> (ErdTableLayout -> ( ErdTableLayout, List a )) -> List ErdTableLayout -> ( List ErdTableLayout, ( Cmd Msg, List a ) )
-mapTablePropOrSelectedTL defaultSchema extendToSelected id transform tableLayouts =
+mapTablePropOrSelectedTE : SchemaName -> Bool -> TableId -> (ErdTableLayout -> ( ErdTableLayout, Extra Msg )) -> List ErdTableLayout -> ( List ErdTableLayout, Extra Msg )
+mapTablePropOrSelectedTE defaultSchema extendToSelected id transform tableLayouts =
     (tableLayouts |> List.findBy .id id)
         |> Maybe.map
             (\tableLayout ->
                 if tableLayout.props.selected && extendToSelected then
-                    tableLayouts |> List.mapByTL (.props >> .selected) True transform |> Tuple.mapSecond (\l -> ( Cmd.none, l ))
+                    tableLayouts |> List.mapByTE (.props >> .selected) True transform
 
                 else
-                    tableLayouts |> List.mapByTL .id id transform |> Tuple.mapSecond (\l -> ( Cmd.none, l ))
+                    tableLayouts |> List.mapByTE .id id transform
             )
-        |> Maybe.withDefault ( tableLayouts, ( "Table " ++ TableId.show defaultSchema id ++ " not found" |> Toasts.info |> Toast |> T.send, [] ) )
+        |> Maybe.withDefault ( tableLayouts, "Table " ++ TableId.show defaultSchema id ++ " not found" |> Toasts.info |> Toast |> Extra.msg )
 
 
 mapColumnsForTableOrSelectedProps : Time.Posix -> TableId -> (ErdTable -> List ErdColumnProps -> List ErdColumnProps) -> Erd -> Erd

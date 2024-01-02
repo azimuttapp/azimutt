@@ -129,7 +129,7 @@ setGroupColor now urlInfos index color model =
         model |> mapErdMTM (Erd.mapCurrentLayoutTMWithTime now (mapGroupsT (List.mapAtT index (mapColorT (\c -> ( color, Extra.history ( GroupMsg (GSetColor index c), GroupMsg (GSetColor index color) ) )))))) |> Extra.defaultT
 
     else
-        ( model, Extra.batch [ ProPlan.colorsModalBody project ProPlanColors ProPlan.colorsInit |> CustomModalOpen |> T.send, Track.planLimit .tableColor model.erd ] )
+        ( model, Extra.cmdL [ ProPlan.colorsModalBody project ProPlanColors ProPlan.colorsInit |> CustomModalOpen |> T.send, Track.planLimit .tableColor model.erd ] )
 
 
 saveGroup : Time.Posix -> GroupEdit -> Model x -> ( Model x, Extra Msg )

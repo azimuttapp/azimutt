@@ -129,14 +129,14 @@ getOutput wrap urlInfos erd input format =
 
         AllTables ->
             if format /= AML && format /= JSON && not sqlExportAllowed then
-                Extra.batch [ GotOutput "" "plan_limit" |> wrap |> T.send, Track.planLimit .sqlExport (Just erd) ]
+                Extra.cmdL [ GotOutput "" "plan_limit" |> wrap |> T.send, Track.planLimit .sqlExport (Just erd) ]
 
             else
                 erd |> Erd.toSchema |> generateTables format |> (\( output, ext ) -> output |> GotOutput (erd.project.name ++ "." ++ ext) |> wrap |> Extra.msg)
 
         CurrentLayout ->
             if format /= AML && format /= JSON && not sqlExportAllowed then
-                Extra.batch [ GotOutput "" "plan_limit" |> wrap |> T.send, Track.planLimit .sqlExport (Just erd) ]
+                Extra.cmdL [ GotOutput "" "plan_limit" |> wrap |> T.send, Track.planLimit .sqlExport (Just erd) ]
 
             else
                 erd

@@ -17,7 +17,7 @@ handleHelp : HelpMsg -> Model x -> ( Model x, Extra Msg )
 handleHelp msg model =
     case msg of
         HOpen section ->
-            ( { model | help = Just { id = Conf.ids.helpDialog, openedSection = section } }, Extra.batch [ T.sendAfter 1 (ModalOpen Conf.ids.helpDialog), Track.docOpened "navbar_top" model.erd ] )
+            ( { model | help = Just { id = Conf.ids.helpDialog, openedSection = section } }, Extra.cmdL [ T.sendAfter 1 (ModalOpen Conf.ids.helpDialog), Track.docOpened "navbar_top" model.erd ] )
 
         HClose ->
             ( { model | help = Nothing }, Extra.none )

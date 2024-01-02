@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Models.ErdColumnProps exposing (ErdColumnProps, ErdColumnPropsFlat, ErdColumnPropsNested(..), children, createAll, createChildren, filter, find, flatten, getIndex, initAll, insertAt, map, mapAll, mapAt, mapAtTL, member, nest, remove, removeWithIndex, unpackAll)
+module PagesComponents.Organization_.Project_.Models.ErdColumnProps exposing (ErdColumnProps, ErdColumnPropsFlat, ErdColumnPropsNested(..), children, createAll, createChildren, filter, find, flatten, getIndex, initAll, insertAt, map, mapAll, mapAt, mapAtTE, member, nest, remove, removeWithIndex, unpackAll)
 
 import Dict
 import Libs.List as List
@@ -10,6 +10,7 @@ import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.ProjectSettings as ProjectSettings exposing (ProjectSettings)
 import PagesComponents.Organization_.Project_.Models.ErdRelation exposing (ErdRelation)
 import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable)
+import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
 
 
 type alias ErdColumnProps =
@@ -192,10 +193,10 @@ mapAt path f columns =
     path |> Maybe.mapOrElse (\p -> columns |> List.map (mapChildren (mapAt (p.tail |> Nel.fromList) f))) (f columns)
 
 
-mapAtTL : Maybe ColumnPath -> (List ErdColumnProps -> ( List ErdColumnProps, List a )) -> List ErdColumnProps -> ( List ErdColumnProps, List a )
-mapAtTL path f columns =
+mapAtTE : Maybe ColumnPath -> (List ErdColumnProps -> ( List ErdColumnProps, Extra a )) -> List ErdColumnProps -> ( List ErdColumnProps, Extra a )
+mapAtTE path f columns =
     -- apply `f` on columns under the given path
-    path |> Maybe.mapOrElse (\p -> columns |> List.mapTL (mapChildrenT (mapAtTL (p.tail |> Nel.fromList) f))) (f columns)
+    path |> Maybe.mapOrElse (\p -> columns |> List.mapT (mapChildrenT (mapAtTE (p.tail |> Nel.fromList) f)) |> Tuple.mapSecond Extra.concat) (f columns)
 
 
 mapAll : (Maybe ColumnPath -> List ErdColumnProps -> List ErdColumnProps) -> List ErdColumnProps -> List ErdColumnProps

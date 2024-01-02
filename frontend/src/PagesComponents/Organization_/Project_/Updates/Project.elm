@@ -77,7 +77,7 @@ moveProject : ProjectStorage -> Model -> ( Model, Extra Msg )
 moveProject storage model =
     if model.conf.save then
         ( model
-        , Extra.batch
+        , Extra.cmdL
             (model.erd
                 |> Maybe.map Erd.unpack
                 |> Maybe.mapOrElse
