@@ -39,6 +39,7 @@ import Models.UrlInfos exposing (UrlInfos)
 import PagesComponents.Organization_.Project_.Models.EmbedKind as EmbedKind exposing (EmbedKind)
 import PagesComponents.Organization_.Project_.Models.EmbedMode as EmbedMode exposing (EmbedModeId)
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
+import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
 import Ports
 import Services.Backend as Backend
 import Services.DatabaseSource as DatabaseSource
@@ -126,75 +127,75 @@ initTokenForm =
 -- UPDATE
 
 
-update : (Msg -> msg) -> (HtmlId -> msg) -> (Toasts.Msg -> msg) -> Time.Zone -> Time.Posix -> Maybe Erd -> Msg -> Maybe Model -> ( Maybe Model, Cmd msg )
+update : (Msg -> msg) -> (HtmlId -> msg) -> (Toasts.Msg -> msg) -> Time.Zone -> Time.Posix -> Maybe Erd -> Msg -> Maybe Model -> ( Maybe Model, Extra msg )
 update wrap modalOpen toast zone now erd msg model =
     case msg of
         Open ->
-            ( Just (init Conf.ids.sharingDialog erd), Cmd.batch [ T.sendAfter 1 (modalOpen Conf.ids.sharingDialog) ] )
+            ( Just (init Conf.ids.sharingDialog erd), modalOpen Conf.ids.sharingDialog |> T.sendAfter 1 |> Extra.cmd )
 
         Close ->
-            ( Nothing, Cmd.none )
+            ( Nothing, Extra.none )
 
         KindUpdate kind ->
-            ( model |> Maybe.map (\s -> { s | kind = kind, content = "", tokenForm = Nothing }), Cmd.none )
+            ( model |> Maybe.map (\s -> { s | kind = kind, content = "", tokenForm = Nothing }), Extra.none )
 
         ContentUpdate content ->
-            ( model |> Maybe.map (\s -> { s | content = content }), Cmd.none )
+            ( model |> Maybe.map (\s -> { s | content = content }), Extra.none )
 
         LayoutUpdate layout ->
-            ( model |> Maybe.map (\s -> { s | layout = layout }), Cmd.none )
+            ( model |> Maybe.map (\s -> { s | layout = layout }), Extra.none )
 
         EnableTokenForm ->
             ( model |> Maybe.map (setTokenForm (Just initTokenForm))
             , if erd |> Erd.getOrganizationM Nothing |> .plan |> .privateLinks then
-                erd |> Maybe.mapOrElse (\e -> Backend.getProjectTokens e.project (GotTokens >> wrap)) Cmd.none
+                erd |> Maybe.map (\e -> Backend.getProjectTokens e.project (GotTokens >> wrap)) |> Extra.cmdM
 
               else
-                Track.planLimit .privateLinks erd
+                Track.planLimit .privateLinks erd |> Extra.cmd
             )
 
         DisableTokenForm ->
-            ( model |> Maybe.map (setTokenForm Nothing), Cmd.none )
+            ( model |> Maybe.map (setTokenForm Nothing), Extra.none )
 
         GotTokens (Ok tokens) ->
-            ( model |> Maybe.map (setTokens tokens), Cmd.none )
+            ( model |> Maybe.map (setTokens tokens), Extra.none )
 
         GotTokens (Err err) ->
-            ( model, err |> Backend.errorToString |> Toasts.create "warning" |> toast |> T.send )
+            ( model, err |> Backend.errorToString |> Toasts.create "warning" |> toast |> Extra.msg )
 
         TokenNameUpdate name ->
-            ( model |> Maybe.map (mapTokenFormM (setName name)), Cmd.none )
+            ( model |> Maybe.map (mapTokenFormM (setName name)), Extra.none )
 
         TokenExpireUpdate expire ->
-            ( model |> Maybe.map (mapTokenFormM (setExpire expire)), Cmd.none )
+            ( model |> Maybe.map (mapTokenFormM (setExpire expire)), Extra.none )
 
         CreateToken form ->
             ( model |> Maybe.map (mapTokenFormM (\f -> { f | loading = True, error = Nothing }))
-            , erd |> Maybe.mapOrElse (\e -> Backend.createProjectToken form.name (form.expire |> Maybe.map (\i -> Time.add i 1 zone now)) e.project (TokenCreated >> wrap)) Cmd.none
+            , erd |> Maybe.map (\e -> Backend.createProjectToken form.name (form.expire |> Maybe.map (\i -> Time.add i 1 zone now)) e.project (TokenCreated >> wrap)) |> Extra.cmdM
             )
 
         TokenCreated (Ok _) ->
             ( model |> Maybe.map (mapTokenFormM (\f -> { f | name = "", expire = Nothing, loading = False, error = Nothing }))
-            , erd |> Maybe.mapOrElse (\e -> Backend.getProjectTokens e.project (GotTokens >> wrap)) Cmd.none
+            , erd |> Maybe.map (\e -> Backend.getProjectTokens e.project (GotTokens >> wrap)) |> Extra.cmdM
             )
 
         TokenCreated (Err err) ->
-            ( model |> Maybe.map (mapTokenFormM (\f -> { f | loading = False, error = err |> Backend.errorToString |> Just })), Cmd.none )
+            ( model |> Maybe.map (mapTokenFormM (\f -> { f | loading = False, error = err |> Backend.errorToString |> Just })), Extra.none )
 
         RevokeToken token ->
-            ( model |> Maybe.map (mapTokenFormM (\f -> { f | error = Nothing })), erd |> Maybe.mapOrElse (\e -> Backend.revokeProjectToken token e.project (TokenRevoked >> wrap)) Cmd.none )
+            ( model |> Maybe.map (mapTokenFormM (\f -> { f | error = Nothing })), erd |> Maybe.map (\e -> Backend.revokeProjectToken token e.project (TokenRevoked >> wrap)) |> Extra.cmdM )
 
         TokenRevoked (Ok _) ->
-            ( model, erd |> Maybe.mapOrElse (\e -> Backend.getProjectTokens e.project (GotTokens >> wrap)) Cmd.none )
+            ( model, erd |> Maybe.map (\e -> Backend.getProjectTokens e.project (GotTokens >> wrap)) |> Extra.cmdM )
 
         TokenRevoked (Err err) ->
-            ( model |> Maybe.map (mapTokenFormM (\f -> { f | error = err |> Backend.errorToString |> Just })), Cmd.none )
+            ( model |> Maybe.map (mapTokenFormM (\f -> { f | error = err |> Backend.errorToString |> Just })), Extra.none )
 
         TokenUpdate token ->
-            ( model |> Maybe.map (mapTokenFormM (setToken token)), Cmd.none )
+            ( model |> Maybe.map (mapTokenFormM (setToken token)), Extra.none )
 
         ModeUpdate mode ->
-            ( model |> Maybe.map (\s -> { s | mode = mode }), Cmd.none )
+            ( model |> Maybe.map (\s -> { s | mode = mode }), Extra.none )
 
 
 

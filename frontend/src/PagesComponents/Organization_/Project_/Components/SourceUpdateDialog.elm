@@ -23,10 +23,11 @@ import Libs.Task as T
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceKind exposing (SourceKind(..))
 import Models.ProjectInfo exposing (ProjectInfo)
+import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
 import Services.AmlSource as AmlSource
 import Services.DatabaseSource as DatabaseSource
 import Services.JsonSource as JsonSource
-import Services.Lenses exposing (mapAmlSourceT, mapDatabaseSourceT, mapJsonSourceT, mapMTW, mapPrismaSourceT, mapSqlSourceT)
+import Services.Lenses exposing (mapAmlSourceT, mapDatabaseSourceT, mapJsonSourceT, mapMT, mapPrismaSourceT, mapSqlSourceT)
 import Services.PrismaSource as PrismaSource
 import Services.SourceDiff as SourceDiff
 import Services.SqlSource as SqlSource
@@ -77,32 +78,32 @@ init noop dialogId source =
     }
 
 
-update : (Msg -> msg) -> (HtmlId -> msg) -> (String -> msg) -> Time.Posix -> Maybe ProjectInfo -> Msg -> Maybe (Model msg) -> ( Maybe (Model msg), Cmd msg )
+update : (Msg -> msg) -> (HtmlId -> msg) -> (String -> msg) -> Time.Posix -> Maybe ProjectInfo -> Msg -> Maybe (Model msg) -> ( Maybe (Model msg), Extra msg )
 update wrap modalOpen noop now project msg model =
     case msg of
         Open source ->
-            ( Just (init noop Conf.ids.sourceUpdateDialog source), T.sendAfter 1 (modalOpen Conf.ids.sourceUpdateDialog) )
+            ( Just (init noop Conf.ids.sourceUpdateDialog source), modalOpen Conf.ids.sourceUpdateDialog |> T.sendAfter 1 |> Extra.cmd )
 
         Close ->
-            ( Nothing, Cmd.none )
+            ( Nothing, Extra.none )
 
         DatabaseSourceMsg message ->
-            model |> mapMTW (mapDatabaseSourceT (DatabaseSource.update (DatabaseSourceMsg >> wrap) now project message)) Cmd.none
+            model |> mapMT (mapDatabaseSourceT (DatabaseSource.update (DatabaseSourceMsg >> wrap) now project message)) |> Extra.defaultT
 
         SqlSourceMsg message ->
-            model |> mapMTW (mapSqlSourceT (SqlSource.update (SqlSourceMsg >> wrap) now project message)) Cmd.none
+            model |> mapMT (mapSqlSourceT (SqlSource.update (SqlSourceMsg >> wrap) now project message)) |> Extra.defaultT
 
         PrismaSourceMsg message ->
-            model |> mapMTW (mapPrismaSourceT (PrismaSource.update (PrismaSourceMsg >> wrap) now project message)) Cmd.none
+            model |> mapMT (mapPrismaSourceT (PrismaSource.update (PrismaSourceMsg >> wrap) now project message)) |> Extra.defaultT
 
         JsonSourceMsg message ->
-            model |> mapMTW (mapJsonSourceT (JsonSource.update (JsonSourceMsg >> wrap) now project message)) Cmd.none
+            model |> mapMT (mapJsonSourceT (JsonSource.update (JsonSourceMsg >> wrap) now project message)) |> Extra.defaultT
 
         AmlSourceMsg message ->
-            model |> mapMTW (mapAmlSourceT (AmlSource.update (AmlSourceMsg >> wrap) now project message)) Cmd.none
+            model |> mapMT (mapAmlSourceT (AmlSource.update (AmlSourceMsg >> wrap) now project message)) |> Extra.defaultT
 
         UpdateTab kind ->
-            ( model |> Maybe.map (\m -> { m | newSourceTab = kind }), Cmd.none )
+            ( model |> Maybe.map (\m -> { m | newSourceTab = kind }), Extra.none )
 
 
 view : (Msg -> msg) -> (Source -> msg) -> (msg -> msg) -> (String -> msg) -> Time.Zone -> Time.Posix -> Bool -> Model msg -> Html msg

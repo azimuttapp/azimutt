@@ -22,7 +22,7 @@ import PagesComponents.Organization_.Project_.Models.FindPathResult exposing (Fi
 import PagesComponents.Organization_.Project_.Models.FindPathState as FindPathState exposing (FindPathState(..))
 import PagesComponents.Organization_.Project_.Models.FindPathStep exposing (FindPathStep)
 import PagesComponents.Organization_.Project_.Models.FindPathStepDir exposing (FindPathStepDir(..))
-import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirty, setDirtyCmd)
+import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
 import Services.Lenses exposing (mapErdM, mapFindPathM, mapOpened, mapResult, mapSettings, mapShowSettings, setFindPath, setFrom, setResult, setTo)
 import Track
 
@@ -36,7 +36,7 @@ type alias Model x =
     }
 
 
-handleFindPath : FindPathMsg -> Model x -> ( Model x, Cmd Msg )
+handleFindPath : FindPathMsg -> Model x -> ( Model x, Extra Msg )
 handleFindPath msg model =
     case msg of
         FPOpen from to ->
@@ -51,36 +51,35 @@ handleFindPath msg model =
                         }
                     )
                 |> mapErdM (mapSettings ProjectSettings.fillFindPath)
-            , Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.findPathDialog), Track.findPathOpened model.erd ]
+            , Extra.batch [ T.sendAfter 1 (ModalOpen Conf.ids.findPathDialog), Track.findPathOpened model.erd ]
             )
-                |> setDirtyCmd
 
         FPToggleSettings ->
-            ( model |> mapFindPathM (mapShowSettings not), Cmd.none )
+            ( model |> mapFindPathM (mapShowSettings not), Extra.none )
 
         FPUpdateFrom from ->
-            ( model |> mapFindPathM (setFrom from >> setResult Empty), Cmd.none )
+            ( model |> mapFindPathM (setFrom from >> setResult Empty), Extra.none )
 
         FPUpdateTo to ->
-            ( model |> mapFindPathM (setTo to >> setResult Empty), Cmd.none )
+            ( model |> mapFindPathM (setTo to >> setResult Empty), Extra.none )
 
         FPSearch ->
             Maybe.zip model.findPath model.erd
                 |> Maybe.andThen (\( fp, erd ) -> Maybe.zip3 (Just erd) (erd |> Erd.getTable (TableId.parse fp.from)) (erd |> Erd.getTable (TableId.parse fp.to)))
-                |> Maybe.mapOrElse (\( erd, from, to ) -> ( model |> mapFindPathM (setResult Searching), T.sendAfter 300 (FindPathMsg (FPCompute erd.tables erd.relations from.id to.id erd.settings.findPath)) ))
-                    ( model, Cmd.none )
+                |> Maybe.map (\( erd, from, to ) -> ( model |> mapFindPathM (setResult Searching), FindPathMsg (FPCompute erd.tables erd.relations from.id to.id erd.settings.findPath) |> T.sendAfter 300 |> Extra.cmd ))
+                |> Maybe.withDefault ( model, Extra.none )
 
         FPCompute tables relations from to settings ->
-            computeFindPath tables relations from to settings |> (\result -> ( model |> mapFindPathM (setResult (Found result)), Track.findPathResults model.erd result ))
+            computeFindPath tables relations from to settings |> (\result -> ( model |> mapFindPathM (setResult (Found result)), Track.findPathResults model.erd result |> Extra.cmd ))
 
         FPToggleResult index ->
-            ( model |> mapFindPathM (mapResult (FindPathState.map (mapOpened (\o -> B.cond (o == Just index) Nothing (Just index))))), Cmd.none )
+            ( model |> mapFindPathM (mapResult (FindPathState.map (mapOpened (\o -> B.cond (o == Just index) Nothing (Just index))))), Extra.none )
 
         FPSettingsUpdate settings ->
-            model |> mapErdM (mapSettings (setFindPath settings)) |> setDirty
+            ( model |> mapErdM (mapSettings (setFindPath settings)), Extra.none )
 
         FPClose ->
-            ( model |> setFindPath Nothing, Cmd.none )
+            ( model |> setFindPath Nothing, Extra.none )
 
 
 computeFindPath : Dict TableId ErdTable -> List ErdRelation -> TableId -> TableId -> FindPathSettings -> FindPathResult

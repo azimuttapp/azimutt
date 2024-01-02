@@ -13,7 +13,8 @@ import PagesComponents.Organization_.Project_.Components.SourceUpdateDialog as S
 import PagesComponents.Organization_.Project_.Models exposing (Msg(..), ProjectSettingsDialog, ProjectSettingsMsg(..))
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
-import PagesComponents.Organization_.Project_.Updates.Utils exposing (setHDirty, setHDirtyCmd, setHLDirty, setHLDirtyCmd)
+import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
+import PagesComponents.Organization_.Project_.Updates.Utils exposing (setHDirty, setHLDirty, setHLDirtyCmd, setHLDirtyCmdM)
 import Ports
 import Services.Lenses exposing (mapCollapseTableColumns, mapColumnBasicTypes, mapEnabled, mapErdM, mapErdMT, mapErdMTM, mapHiddenColumns, mapNameT, mapProps, mapRelations, mapRemoveViews, mapRemovedSchemas, mapSettingsM, mapSourceUpdateT, setColumnOrder, setDefaultSchema, setList, setMax, setRelationStyle, setRemovedTables, setSettings)
 import Services.Toasts as Toasts
@@ -31,30 +32,30 @@ type alias Model x =
     }
 
 
-handleProjectSettings : Time.Posix -> ProjectSettingsMsg -> Model x -> ( Model x, Cmd Msg, List ( Msg, Msg ) )
+handleProjectSettings : Time.Posix -> ProjectSettingsMsg -> Model x -> ( Model x, Extra Msg )
 handleProjectSettings now msg model =
     case msg of
         PSOpen ->
-            ( model |> setSettings (Just { id = Conf.ids.settingsDialog, sourceNameEdit = Nothing }), ModalOpen Conf.ids.settingsDialog |> T.sendAfter 1, [] )
+            ( model |> setSettings (Just { id = Conf.ids.settingsDialog, sourceNameEdit = Nothing }), ModalOpen Conf.ids.settingsDialog |> T.sendAfter 1 |> Extra.cmd )
 
         PSClose ->
-            ( model |> setSettings Nothing, Cmd.none, [] )
+            ( model |> setSettings Nothing, Extra.none )
 
         PSSourceToggle source ->
             model
                 |> mapErdM (Erd.mapSource source.id (mapEnabled not))
                 |> (\newModel ->
                         ( newModel
-                        , Cmd.batch
+                        , Extra.batch
                             [ Ports.observeTablesSize (newModel.erd |> getShownTables)
                             , "'" ++ source.name ++ "' source set to " ++ B.cond source.enabled "hidden" "visible" ++ "." |> Toasts.info |> Toast |> T.send
                             ]
                         )
                    )
-                |> setHDirtyCmd []
+                |> setHLDirtyCmd
 
         PSSourceNameUpdate source name ->
-            ( model |> mapSettingsM (\s -> { s | sourceNameEdit = Just ( source, name ) }), Cmd.none, [] )
+            ( model |> mapSettingsM (\s -> { s | sourceNameEdit = Just ( source, name ) }), Extra.none )
 
         PSSourceNameUpdateDone source name ->
             model
@@ -89,18 +90,18 @@ handleProjectSettings now msg model =
                                     )
 
                                 _ ->
-                                    ( sources, ( Cmd.none, [] ) )
+                                    ( sources, Extra.none )
                         )
                     )
-                |> setHLDirtyCmd
+                |> setHLDirtyCmdM
 
         PSSourceUnDelete_ index source ->
             model
                 |> mapErdM (Erd.mapSources (List.insertAt index source))
-                |> (\newModel -> ( newModel, Ports.observeTablesSize (newModel.erd |> getShownTables) ) |> setHDirtyCmd [])
+                |> (\newModel -> ( newModel, Ports.observeTablesSize (newModel.erd |> getShownTables) |> Extra.cmd ) |> setHLDirtyCmd)
 
         PSSourceUpdate message ->
-            model |> mapSourceUpdateT (SourceUpdateDialog.update (PSSourceUpdate >> ProjectSettingsMsg) ModalOpen Noop now (model.erd |> Maybe.map .project) message) |> Tuple.append []
+            model |> mapSourceUpdateT (SourceUpdateDialog.update (PSSourceUpdate >> ProjectSettingsMsg) ModalOpen Noop now (model.erd |> Maybe.map .project) message)
 
         PSSourceSet source ->
             model
@@ -116,27 +117,27 @@ handleProjectSettings now msg model =
                                 |> Maybe.mapOrElse
                                     (\s ->
                                         ( sources |> List.mapBy .id source.id (Source.refreshWith source)
-                                        , ( Cmd.batch [ close, Track.sourceRefreshed model.erd source ], [ ( PSSourceSet s, msg ) |> Tuple.map ProjectSettingsMsg ] )
+                                        , Extra.new (Cmd.batch [ close, Track.sourceRefreshed model.erd source ]) (( PSSourceSet s, msg ) |> Tuple.map ProjectSettingsMsg)
                                         )
                                     )
                                     ( sources |> List.insert source
-                                    , ( Cmd.batch [ close, Track.sourceAdded model.erd source ], [ ( PSSourceDelete source.id, msg ) |> Tuple.map ProjectSettingsMsg ] )
+                                    , Extra.new (Cmd.batch [ close, Track.sourceAdded model.erd source ]) (( PSSourceDelete source.id, msg ) |> Tuple.map ProjectSettingsMsg)
                                     )
                         )
                     )
-                |> setHLDirtyCmd
+                |> setHLDirtyCmdM
 
         PSDefaultSchemaUpdate value ->
             model |> mapErdM (Erd.mapSettings (setDefaultSchema value)) |> setHDirty []
 
         PSSchemaToggle schema ->
-            model |> mapErdM (Erd.mapSettings (mapRemovedSchemas (List.toggle schema))) |> (\m -> ( m, Ports.observeTablesSize (m.erd |> getShownTables) )) |> setHDirtyCmd []
+            model |> mapErdM (Erd.mapSettings (mapRemovedSchemas (List.toggle schema))) |> (\m -> ( m, Ports.observeTablesSize (m.erd |> getShownTables) |> Extra.cmd )) |> setHLDirtyCmd
 
         PSRemoveViewsToggle ->
-            model |> mapErdM (Erd.mapSettings (mapRemoveViews not)) |> (\m -> ( m, Ports.observeTablesSize (m.erd |> getShownTables) )) |> setHDirtyCmd []
+            model |> mapErdM (Erd.mapSettings (mapRemoveViews not)) |> (\m -> ( m, Ports.observeTablesSize (m.erd |> getShownTables) |> Extra.cmd )) |> setHLDirtyCmd
 
         PSRemovedTablesUpdate values ->
-            model |> mapErdM (Erd.mapSettings (setRemovedTables values >> ProjectSettings.fillFindPath)) |> (\m -> ( m, Ports.observeTablesSize (m.erd |> getShownTables) )) |> setHDirtyCmd []
+            model |> mapErdM (Erd.mapSettings (setRemovedTables values >> ProjectSettings.fillFindPath)) |> (\m -> ( m, Ports.observeTablesSize (m.erd |> getShownTables) |> Extra.cmd )) |> setHLDirtyCmd
 
         PSHiddenColumnsListUpdate values ->
             model |> mapErdM (Erd.mapSettings (mapHiddenColumns (setList values) >> ProjectSettings.fillFindPath)) |> setHDirty []

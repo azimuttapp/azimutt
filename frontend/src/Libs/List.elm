@@ -28,11 +28,10 @@ module Libs.List exposing
     , insertAt
     , last
     , mapAt
-    , mapAtCmd
     , mapAtTL
     , mapBy
-    , mapByCmd
     , mapByT
+    , mapByTE
     , mapByTL
     , mapLast
     , mapT
@@ -78,6 +77,7 @@ import Libs.Basics exposing (maxBy, minBy)
 import Libs.Bool as B
 import Libs.Maybe as Maybe
 import Libs.Tuple3 as Tuple3
+import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
 import Random
 import Set
 
@@ -284,21 +284,6 @@ mapAtTL index f list =
         |> Tuple.mapSecond List.concat
 
 
-mapAtCmd : Int -> (a -> ( a, Cmd msg )) -> List a -> ( List a, Cmd msg )
-mapAtCmd index f list =
-    list
-        |> List.indexedMap
-            (\i a ->
-                if index == i then
-                    f a
-
-                else
-                    ( a, Cmd.none )
-            )
-        |> List.unzip
-        |> Tuple.mapSecond Cmd.batch
-
-
 mapLast : (a -> a) -> List a -> List a
 mapLast f list =
     let
@@ -352,8 +337,8 @@ mapByTL matcher value f list =
         |> Tuple.mapSecond (List.concatMap identity)
 
 
-mapByCmd : (a -> b) -> b -> (a -> ( a, Cmd msg )) -> List a -> ( List a, Cmd msg )
-mapByCmd matcher value f list =
+mapByTE : (a -> b) -> b -> (a -> ( a, Extra msg )) -> List a -> ( List a, Extra msg )
+mapByTE matcher value f list =
     list
         |> List.map
             (\a ->
@@ -361,10 +346,10 @@ mapByCmd matcher value f list =
                     f a
 
                 else
-                    ( a, Cmd.none )
+                    ( a, Extra.none )
             )
         |> List.unzip
-        |> Tuple.mapSecond Cmd.batch
+        |> Tuple.mapSecond Extra.concat
 
 
 mapT : (a -> ( b, t )) -> List a -> ( List b, List t )

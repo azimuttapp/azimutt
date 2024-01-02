@@ -47,6 +47,7 @@ import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Models.SqlQuery exposing (SqlQuery, SqlQueryOrigin)
 import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint)
+import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
 import Ports
 import Services.Lenses exposing (mapDetailsT, mapFilters, mapResultsT, mapVisualEditor, setOperation, setOperator, setValue)
 import Services.Toasts as Toasts
@@ -149,7 +150,7 @@ init =
 -- UPDATE
 
 
-update : (Msg -> msg) -> (Toasts.Msg -> msg) -> ProjectInfo -> List Source -> Msg -> Model -> ( Model, Cmd msg )
+update : (Msg -> msg) -> (Toasts.Msg -> msg) -> ProjectInfo -> List Source -> Msg -> Model -> ( Model, Extra msg )
 update wrap showToast project sources msg model =
     case msg of
         Open sourceId query ->
@@ -172,7 +173,7 @@ update wrap showToast project sources msg model =
                 , source = source |> Maybe.orElse model.source |> Maybe.orElse (dbSources |> List.head)
                 , queryEditor = query |> Maybe.map (.sql >> Editor.init) |> Maybe.withDefault model.queryEditor
               }
-            , Cmd.batch
+            , Extra.batch
                 (Track.dataExplorerOpened sources source query project
                     :: focusMainInput tab
                     :: (Maybe.map2 (\src q -> RunQuery src q |> wrap |> T.send) source query |> Maybe.toList)
@@ -180,55 +181,55 @@ update wrap showToast project sources msg model =
             )
 
         Close ->
-            ( { model | display = Nothing }, Cmd.none )
+            ( { model | display = Nothing }, Extra.none )
 
         UpdateDisplay d ->
-            ( { model | display = d }, Cmd.none )
+            ( { model | display = d }, Extra.none )
 
         UpdateTab tab ->
-            ( { model | activeTab = tab }, focusMainInput tab )
+            ( { model | activeTab = tab }, focusMainInput tab |> Extra.cmd )
 
         UpdateSource source ->
-            ( { model | source = source, visualEditor = { table = Nothing, filters = [] } }, Cmd.none )
+            ( { model | source = source, visualEditor = { table = Nothing, filters = [] } }, Extra.none )
 
         UpdateTable table ->
-            ( { model | visualEditor = { table = table, filters = [] } }, Cmd.none )
+            ( { model | visualEditor = { table = table, filters = [] } }, Extra.none )
 
         AddFilter table path ->
-            ( table |> Table.getColumn path |> Maybe.mapOrElse (\col -> model |> mapVisualEditor (mapFilters (List.insert { operator = DbAnd, column = path, kind = col.kind, nullable = col.nullable, operation = DbEqual, value = DbString "" }))) model, Cmd.none )
+            ( table |> Table.getColumn path |> Maybe.mapOrElse (\col -> model |> mapVisualEditor (mapFilters (List.insert { operator = DbAnd, column = path, kind = col.kind, nullable = col.nullable, operation = DbEqual, value = DbString "" }))) model, Extra.none )
 
         UpdateFilterOperator i operator ->
-            ( model |> mapVisualEditor (mapFilters (List.mapAt i (setOperator operator))), Cmd.none )
+            ( model |> mapVisualEditor (mapFilters (List.mapAt i (setOperator operator))), Extra.none )
 
         UpdateFilterOperation i operation ->
-            ( model |> mapVisualEditor (mapFilters (List.mapAt i (setOperation operation))), Cmd.none )
+            ( model |> mapVisualEditor (mapFilters (List.mapAt i (setOperation operation))), Extra.none )
 
         UpdateFilterValue i value ->
-            ( model |> mapVisualEditor (mapFilters (List.mapAt i (setValue value))), Cmd.none )
+            ( model |> mapVisualEditor (mapFilters (List.mapAt i (setValue value))), Extra.none )
 
         DeleteFilter i ->
-            ( model |> mapVisualEditor (mapFilters (List.removeAt i)), Cmd.none )
+            ( model |> mapVisualEditor (mapFilters (List.removeAt i)), Extra.none )
 
         UpdateQuery message ->
-            ( { model | queryEditor = Editor.update message model.queryEditor }, Cmd.none )
+            ( { model | queryEditor = Editor.update message model.queryEditor }, Extra.none )
 
         RunQuery source query ->
             { model | resultsSeq = model.resultsSeq + 1 } |> mapResultsT (List.prependT (DataExplorerQuery.init project model.resultsSeq (DbSource.toInfo source) (query |> DbQuery.addLimit source.db.kind)))
 
         DeleteQuery id ->
-            ( { model | results = model.results |> List.filter (\r -> r.id /= id) }, Cmd.none )
+            ( { model | results = model.results |> List.filter (\r -> r.id /= id) }, Extra.none )
 
         QueryMsg id m ->
-            model |> mapResultsT (List.mapByCmd .id id (DataExplorerQuery.update showToast project m))
+            model |> mapResultsT (List.mapByTE .id id (DataExplorerQuery.update showToast project m))
 
         OpenDetails source query ->
             { model | detailsSeq = model.detailsSeq + 1 } |> mapDetailsT (List.prependT (DataExplorerDetails.init project model.detailsSeq source query))
 
         CloseDetails id ->
-            ( { model | details = model.details |> List.removeBy .id id }, Cmd.none )
+            ( { model | details = model.details |> List.removeBy .id id }, Extra.none )
 
         DetailsMsg id m ->
-            model |> mapDetailsT (List.mapByCmd .id id (DataExplorerDetails.update project m))
+            model |> mapDetailsT (List.mapByTE .id id (DataExplorerDetails.update project m))
 
 
 focusMainInput : DataExplorerTab -> Cmd msg

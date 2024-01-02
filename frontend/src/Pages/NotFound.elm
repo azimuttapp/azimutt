@@ -90,7 +90,7 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Toast message ->
-            model |> mapToastsT (Toasts.update Toast message)
+            model |> mapToastsT (Toasts.update Toast message) |> Tuple.mapSecond Tuple.first
 
         JsMessage message ->
             model |> handleJsMessage message

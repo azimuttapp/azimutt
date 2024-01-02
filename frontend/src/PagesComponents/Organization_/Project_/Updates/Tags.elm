@@ -5,6 +5,7 @@ import PagesComponents.Organization_.Project_.Models exposing (Msg(..))
 import PagesComponents.Organization_.Project_.Models.Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.TagsMsg exposing (TagsMsg(..))
+import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
 import PagesComponents.Organization_.Project_.Updates.Utils exposing (setHDirtyCmd)
 import Services.Lenses exposing (mapEditTagsM, mapErdM, mapMetadata, setEditTags)
 import Track
@@ -19,11 +20,11 @@ type alias Model x =
     }
 
 
-handleTags : TagsMsg -> Model x -> ( Model x, Cmd Msg, List ( Msg, Msg ) )
+handleTags : TagsMsg -> Model x -> ( Model x, Extra Msg )
 handleTags msg model =
     case msg of
         TEdit content ->
-            ( model |> mapEditTagsM (\_ -> content), Cmd.none, [] )
+            ( model |> mapEditTagsM (\_ -> content), Extra.none )
 
         TSave table column initialTags tags ->
             let

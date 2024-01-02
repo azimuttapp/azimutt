@@ -9,7 +9,8 @@ import PagesComponents.Organization_.Project_.Models exposing (LayoutMsg(..), Ms
 import PagesComponents.Organization_.Project_.Models.Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
-import PagesComponents.Organization_.Project_.Updates.Utils exposing (setHLCmd, setHLDirtyCmd)
+import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
+import PagesComponents.Organization_.Project_.Updates.Utils exposing (setHLCmd, setHLDirtyCmdM)
 import Ports
 import Services.Lenses exposing (mapErdMT, mapLayouts, setCurrentLayout, setLayoutOnLoad)
 import Services.Toasts as Toasts
@@ -20,34 +21,34 @@ type alias Model x =
     { x | conf : ErdConf, dirty : Bool, erd : Maybe Erd }
 
 
-handleLayout : LayoutMsg -> Model x -> ( Model x, Cmd Msg, List ( Msg, Msg ) )
+handleLayout : LayoutMsg -> Model x -> ( Model x, Extra Msg )
 handleLayout msg model =
     case msg of
         LLoad onLoad name ->
             model |> mapErdMT (loadLayout onLoad name) |> setHLCmd
 
         LDelete name ->
-            model |> mapErdMT (deleteLayout name) |> setHLDirtyCmd
+            model |> mapErdMT (deleteLayout name) |> setHLDirtyCmdM
 
         LUnDelete_ name layout ->
-            model |> mapErdMT (unDeleteLayout name layout) |> setHLDirtyCmd
+            model |> mapErdMT (unDeleteLayout name layout) |> setHLDirtyCmdM
 
 
-loadLayout : String -> LayoutName -> Erd -> ( Erd, ( Cmd Msg, List ( Msg, Msg ) ) )
+loadLayout : String -> LayoutName -> Erd -> ( Erd, Extra Msg )
 loadLayout onLoad name erd =
     (erd.layouts |> Dict.get name)
         |> Maybe.mapOrElse
             (\layout ->
                 ( erd |> setCurrentLayout name |> setLayoutOnLoad onLoad
-                , ( Cmd.batch [ Ports.observeLayout layout, Track.layoutLoaded erd.project layout ]
-                  , [ ( LayoutMsg (LLoad onLoad erd.currentLayout), LayoutMsg (LLoad onLoad name) ) ]
-                  )
+                , Extra.new
+                    (Cmd.batch [ Ports.observeLayout layout, Track.layoutLoaded erd.project layout ])
+                    ( LayoutMsg (LLoad onLoad erd.currentLayout), LayoutMsg (LLoad onLoad name) )
                 )
             )
-            ( erd, ( Cmd.none, [] ) )
+            ( erd, Extra.none )
 
 
-deleteLayout : LayoutName -> Erd -> ( Erd, ( Cmd Msg, List ( Msg, Msg ) ) )
+deleteLayout : LayoutName -> Erd -> ( Erd, Extra Msg )
 deleteLayout name erd =
     (erd.layouts |> Dict.get name)
         |> Maybe.map
@@ -68,26 +69,24 @@ deleteLayout name erd =
                         |> Maybe.map
                             (\nextLayout ->
                                 ( erd |> mapLayouts (Dict.remove name) |> setCurrentLayout nextLayout
-                                , ( Track.layoutDeleted erd.project layout, [ ( Batch [ LayoutMsg (LUnDelete_ name layout), LayoutMsg (LLoad "fit" name) ], LayoutMsg (LDelete name) ) ] )
+                                , Extra.new (Track.layoutDeleted erd.project layout) ( Batch [ LayoutMsg (LUnDelete_ name layout), LayoutMsg (LLoad "fit" name) ], LayoutMsg (LDelete name) )
                                 )
                             )
-                        |> Maybe.withDefault ( erd, ( "Can't delete last layout" |> Toasts.warning |> Toast |> T.send, [] ) )
+                        |> Maybe.withDefault ( erd, "Can't delete last layout" |> Toasts.warning |> Toast |> Extra.msg )
 
                 else
                     ( erd |> mapLayouts (Dict.remove name)
-                    , ( Track.layoutDeleted erd.project layout, [ ( LayoutMsg (LUnDelete_ name layout), LayoutMsg (LDelete name) ) ] )
+                    , Extra.new (Track.layoutDeleted erd.project layout) ( LayoutMsg (LUnDelete_ name layout), LayoutMsg (LDelete name) )
                     )
             )
-        |> Maybe.withDefault ( erd, ( "Can't find layout '" ++ name ++ "' to delete" |> Toasts.warning |> Toast |> T.send, [] ) )
+        |> Maybe.withDefault ( erd, "Can't find layout '" ++ name ++ "' to delete" |> Toasts.warning |> Toast |> Extra.msg )
 
 
-unDeleteLayout : LayoutName -> ErdLayout -> Erd -> ( Erd, ( Cmd Msg, List ( Msg, Msg ) ) )
+unDeleteLayout : LayoutName -> ErdLayout -> Erd -> ( Erd, Extra Msg )
 unDeleteLayout name layout erd =
     (erd.layouts |> Dict.get name)
         |> Maybe.map (\_ -> ( erd, ( "'" ++ name ++ "' layout already exists" |> Toasts.error |> Toast |> T.send, [] ) ))
         |> Maybe.withDefault
             ( erd |> mapLayouts (Dict.insert name layout)
-            , ( Cmd.none
-              , [ ( Batch [ LayoutMsg (LDelete name), LayoutMsg (LLoad "fit" erd.currentLayout) ], LayoutMsg (LUnDelete_ name layout) ) ]
-              )
+            , Extra.history ( Batch [ LayoutMsg (LDelete name), LayoutMsg (LLoad "fit" erd.currentLayout) ], LayoutMsg (LUnDelete_ name layout) )
             )

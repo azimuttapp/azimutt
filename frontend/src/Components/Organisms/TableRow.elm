@@ -62,6 +62,7 @@ import Models.Size as Size
 import Models.SqlQuery exposing (SqlQuery, SqlQueryOrigin)
 import PagesComponents.Organization_.Project_.Models.ErdConf as ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.PositionHint as PositionHint exposing (PositionHint)
+import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
 import PagesComponents.Organization_.Project_.Views.Modals.ColumnRowContextMenu as ColumnRowContextMenu
 import PagesComponents.Organization_.Project_.Views.Modals.TableRowContextMenu as TableRowContextMenu
 import Ports
@@ -180,7 +181,7 @@ initRelation src ref =
 -- UPDATE
 
 
-update : (Msg -> msg) -> (HtmlId -> msg) -> (Toasts.Msg -> msg) -> Time.Posix -> ProjectInfo -> List Source -> HtmlId -> Msg -> Model -> ( Model, ( Cmd msg, List ( msg, msg ) ) )
+update : (Msg -> msg) -> (HtmlId -> msg) -> (Toasts.Msg -> msg) -> Time.Posix -> ProjectInfo -> List Source -> HtmlId -> Msg -> Model -> ( Model, Extra msg )
 update wrap toggleDropdown showToast now project sources openedDropdown msg model =
     case msg of
         GotResult res ->
@@ -196,7 +197,9 @@ update wrap toggleDropdown showToast now project sources openedDropdown msg mode
                                     else
                                         h
                                 )
-                        , ( Track.tableRowResult res project, previousState |> Maybe.mapOrElse (\s -> [ ( wrap (SetState (StateSuccess s)), wrap (SetState newModel.state) ) ]) [] )
+                        , Extra.newM
+                            (Track.tableRowResult res project)
+                            (previousState |> Maybe.map (\s -> ( wrap (SetState (StateSuccess s)), wrap (SetState newModel.state) )))
                         )
                    )
 
@@ -211,27 +214,27 @@ update wrap toggleDropdown showToast now project sources openedDropdown msg mode
                             DbQuery.findRow dbSrc.db.kind { table = model.table, primaryKey = model.primaryKey }
                     in
                     ( model |> setState (StateLoading { query = sqlQuery, startedAt = now, previous = model |> TableRow.stateSuccess })
-                    , ( Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt model.id) dbSrc.db.url sqlQuery, [] )
+                    , Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt model.id) dbSrc.db.url sqlQuery |> Extra.cmd
                     )
                 )
 
         Cancel ->
-            ( model |> mapStateLoading (\l -> initFailure l.query l.previous l.startedAt now "Query canceled"), ( Cmd.none, [] ) )
+            ( model |> mapStateLoading (\l -> initFailure l.query l.previous l.startedAt now "Query canceled"), Extra.none )
 
         SetState state ->
-            model |> mapStateT (\s -> ( state, ( Cmd.none, [ ( wrap (SetState s), wrap msg ) ] ) ))
+            model |> mapStateT (\s -> ( state, Extra.history ( wrap (SetState s), wrap msg ) ))
 
         SetCollapsed value ->
-            model |> mapCollapsedT (\c -> ( value, ( Cmd.none, [ ( wrap (SetCollapsed c), wrap msg ) ] ) ))
+            model |> mapCollapsedT (\c -> ( value, Extra.history ( wrap (SetCollapsed c), wrap msg ) ))
 
         ShowColumn pathStr ->
-            ( model |> mapHidden (Set.remove pathStr), ( Cmd.none, [ ( wrap (HideColumn pathStr), wrap msg ) ] ) )
+            ( model |> mapHidden (Set.remove pathStr), Extra.history ( wrap (HideColumn pathStr), wrap msg ) )
 
         HideColumn pathStr ->
-            ( model |> mapHidden (Set.insert pathStr), ( Cmd.none, [ ( wrap (ShowColumn pathStr), wrap msg ) ] ) )
+            ( model |> mapHidden (Set.insert pathStr), Extra.history ( wrap (ShowColumn pathStr), wrap msg ) )
 
         ToggleHiddenColumns ->
-            ( model |> mapShowHiddenColumns not, ( Cmd.none, [ ( wrap ToggleHiddenColumns, wrap ToggleHiddenColumns ) ] ) )
+            ( model |> mapShowHiddenColumns not, Extra.history ( wrap ToggleHiddenColumns, wrap ToggleHiddenColumns ) )
 
         ToggleIncomingRows dropdown column relations ->
             if Dict.isEmpty column.linkedBy && openedDropdown /= dropdown then
@@ -244,11 +247,11 @@ update wrap toggleDropdown showToast now project sources openedDropdown msg mode
                             sqlQuery =
                                 DbQuery.incomingRows dbSrc.db.kind relations { table = model.table, primaryKey = model.primaryKey }
                         in
-                        ( model, ( Cmd.batch [ toggleDropdown dropdown |> T.send, Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt model.id ++ "/" ++ column.pathStr) dbSrc.db.url sqlQuery ], [] ) )
+                        ( model, Extra.batch [ toggleDropdown dropdown |> T.send, Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt model.id ++ "/" ++ column.pathStr) dbSrc.db.url sqlQuery ] )
                     )
 
             else
-                ( model, ( toggleDropdown dropdown |> T.send, [] ) )
+                ( model, toggleDropdown dropdown |> Extra.msg )
 
         GotIncomingRows column result ->
             let
@@ -257,20 +260,20 @@ update wrap toggleDropdown showToast now project sources openedDropdown msg mode
                     result.result |> Result.fold (\_ -> Dict.empty) (.rows >> List.head >> Maybe.mapOrElse (Dict.mapBoth TableId.parse parsePks) Dict.empty)
             in
             ( model |> mapState (mapSuccess (mapColumns (List.mapBy .path column (\c -> { c | linkedBy = linkedBy }))))
-            , ( result.result |> Result.fold (\err -> Toasts.error ("Can't get incoming rows: " ++ err) |> showToast |> T.send) (\_ -> Cmd.none), [] )
+            , result.result |> Result.fold (\err -> "Can't get incoming rows: " ++ err |> Toasts.error |> showToast |> Extra.msg) (\_ -> Extra.none)
             )
 
 
-withDbSource : (Toasts.Msg -> msg) -> List Source -> Model -> (DbSourceInfo -> ( Model, ( Cmd msg, List ( msg, msg ) ) )) -> ( Model, ( Cmd msg, List ( msg, msg ) ) )
+withDbSource : (Toasts.Msg -> msg) -> List Source -> Model -> (DbSourceInfo -> ( Model, Extra msg )) -> ( Model, Extra msg )
 withDbSource showToast sources model f =
     sources
         |> List.findBy .id model.source
         |> Maybe.map
             (DbSourceInfo.fromSource
                 >> Maybe.map f
-                >> Maybe.withDefault ( model, ( Toasts.error "Can't refresh row, source is not a database." |> showToast |> T.send, [] ) )
+                >> Maybe.withDefault ( model, "Can't refresh row, source is not a database." |> Toasts.error |> showToast |> Extra.msg )
             )
-        |> Maybe.withDefault ( model, ( Toasts.error "Can't refresh row, source not found." |> showToast |> T.send, [] ) )
+        |> Maybe.withDefault ( model, "Can't refresh row, source not found." |> Toasts.error |> showToast |> Extra.msg )
 
 
 parsePks : DbValue -> List RowPrimaryKey

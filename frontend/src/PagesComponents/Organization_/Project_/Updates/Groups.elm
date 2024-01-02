@@ -15,6 +15,7 @@ import PagesComponents.Organization_.Project_.Models exposing (GroupEdit, GroupM
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
+import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
 import PagesComponents.Organization_.Project_.Updates.Utils exposing (setHDirty, setHDirtyCmd, setHL, setHLCmd, setHLDirty)
 import Services.Lenses exposing (mapColorT, mapEditGroupM, mapErdM, mapErdMT, mapErdMTM, mapGroups, mapGroupsT, mapTables, setContent, setEditGroup, setName)
 import Task
@@ -31,17 +32,17 @@ type alias Model x =
     }
 
 
-handleGroups : Time.Posix -> UrlInfos -> GroupMsg -> Model x -> ( Model x, Cmd Msg, List ( Msg, Msg ) )
+handleGroups : Time.Posix -> UrlInfos -> GroupMsg -> Model x -> ( Model x, Extra Msg )
 handleGroups now urlInfos msg model =
     case msg of
         GCreate tables ->
             model |> createGroup now urlInfos tables
 
         GEdit index name ->
-            ( model |> setEditGroup (Just { index = index, content = name }), index |> Group.toInputId |> Dom.focus |> Task.attempt (\_ -> Noop "focus-group-input"), [] )
+            ( model |> setEditGroup (Just { index = index, content = name }), index |> Group.toInputId |> Dom.focus |> Task.attempt (\_ -> Noop "focus-group-input") |> Extra.cmd )
 
         GEditUpdate name ->
-            ( model |> mapEditGroupM (setContent name), Cmd.none, [] )
+            ( model |> mapEditGroupM (setContent name), Extra.none )
 
         GEditSave content ->
             model |> saveGroup now content
@@ -73,10 +74,10 @@ handleGroups now urlInfos msg model =
             model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (mapGroupsT (\groups -> ( groups |> List.insertAt index group, [ ( GroupMsg (GDelete index), GroupMsg msg ) ] )))) |> setHL
 
 
-createGroup : Time.Posix -> UrlInfos -> List TableId -> Model x -> ( Model x, Cmd Msg, List ( Msg, Msg ) )
+createGroup : Time.Posix -> UrlInfos -> List TableId -> Model x -> ( Model x, Extra Msg )
 createGroup now urlInfos tables model =
     if tables |> List.isEmpty then
-        ( model, Cmd.none, [] )
+        ( model, Extra.none )
 
     else if model.erd |> Erd.canCreateGroup then
         model
@@ -87,7 +88,7 @@ createGroup now urlInfos tables model =
                             |> mapGroupsT
                                 (\groups ->
                                     ( groups |> List.insert (Group.init tables (groupColor l tables))
-                                    , ( Track.groupCreated model.erd, [ ( GroupMsg (GDelete (List.length groups)), GroupMsg (GCreate tables) ) ] )
+                                    , Extra.new (Track.groupCreated model.erd) ( GroupMsg (GDelete (List.length groups)), GroupMsg (GCreate tables) )
                                     )
                                 )
                     )
@@ -95,7 +96,7 @@ createGroup now urlInfos tables model =
             |> setHLCmd
 
     else
-        ( model, model.erd |> Maybe.mapOrElse (\erd -> Cmd.batch [ erd |> Erd.getProjectRef urlInfos |> ProPlan.groupsModalBody |> CustomModalOpen |> T.send, Track.planLimit .groups (Just erd) ]) Cmd.none, [] )
+        ( model, model.erd |> Maybe.map (\erd -> Cmd.batch [ erd |> Erd.getProjectRef urlInfos |> ProPlan.groupsModalBody |> CustomModalOpen |> T.send, Track.planLimit .groups (Just erd) ]) |> Extra.cmdM )
 
 
 groupColor : ErdLayout -> List TableId -> Color
@@ -111,7 +112,7 @@ groupColor layout tableIds =
         |> Maybe.mapOrElse Tuple.first Tw.indigo
 
 
-setGroupColor : Time.Posix -> UrlInfos -> Int -> Color -> Model x -> ( Model x, Cmd Msg, List ( Msg, Msg ) )
+setGroupColor : Time.Posix -> UrlInfos -> Int -> Color -> Model x -> ( Model x, Extra Msg )
 setGroupColor now urlInfos index color model =
     let
         project : ProjectRef
@@ -122,10 +123,10 @@ setGroupColor now urlInfos index color model =
         model |> mapErdMT (Erd.mapCurrentLayoutTLWithTime now (mapGroupsT (List.mapAtTL index (mapColorT (\c -> ( color, [ ( GroupMsg (GSetColor index c), GroupMsg (GSetColor index color) ) ] )))))) |> setHLDirty
 
     else
-        ( model, Cmd.batch [ ProPlan.colorsModalBody project ProPlanColors ProPlan.colorsInit |> CustomModalOpen |> T.send, Track.planLimit .tableColor model.erd ], [] )
+        ( model, Extra.batch [ ProPlan.colorsModalBody project ProPlanColors ProPlan.colorsInit |> CustomModalOpen |> T.send, Track.planLimit .tableColor model.erd ] )
 
 
-saveGroup : Time.Posix -> GroupEdit -> Model x -> ( Model x, Cmd Msg, List ( Msg, Msg ) )
+saveGroup : Time.Posix -> GroupEdit -> Model x -> ( Model x, Extra Msg )
 saveGroup now edit model =
     let
         groupName : String
@@ -134,7 +135,7 @@ saveGroup now edit model =
     in
     if edit.content == groupName then
         -- no change, don't save
-        ( model |> setEditGroup Nothing, Cmd.none, [] )
+        ( model |> setEditGroup Nothing, Extra.none )
 
     else
         ( model |> setEditGroup Nothing |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapGroups (List.mapAt edit.index (setName edit.content))))

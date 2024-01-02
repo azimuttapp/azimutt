@@ -16,7 +16,7 @@ module Services.Lenses exposing
     , mapContentT
     , mapContextMenuM
     , mapDataExplorerT
-    , mapDatabaseSourceMTW
+    , mapDatabaseSourceMT
     , mapDatabaseSourceT
     , mapDetailsSidebarT
     , mapDetailsT
@@ -24,7 +24,7 @@ module Services.Lenses exposing
     , mapEditMemoM
     , mapEditNotesM
     , mapEditTagsM
-    , mapEmbedSourceParsingMTW
+    , mapEmbedSourceParsingMT
     , mapEnabled
     , mapErdM
     , mapErdMT
@@ -40,22 +40,22 @@ module Services.Lenses exposing
     , mapHiddenColumns
     , mapHoverTable
     , mapIndex
-    , mapJsonSourceMTW
+    , mapJsonSourceMT
     , mapJsonSourceT
     , mapLayouts
     , mapLayoutsD
     , mapLayoutsDT
     , mapLayoutsDTL
     , mapLayoutsDTM
-    , mapLayoutsDTW
     , mapList
-    , mapMTW
+    , mapMT
     , mapMemos
     , mapMemosLT
     , mapMemosLTL
     , mapMemosT
     , mapMetadata
     , mapMobileMenuOpen
+    , mapModalM
     , mapNameT
     , mapNavbar
     , mapNewLayoutMT
@@ -68,7 +68,7 @@ module Services.Lenses exposing
     , mapPlan
     , mapPosition
     , mapPositionT
-    , mapPrismaSourceMTW
+    , mapPrismaSourceMT
     , mapPrismaSourceT
     , mapProject
     , mapProjectSourceMTW
@@ -96,7 +96,7 @@ module Services.Lenses exposing
     , mapShowHiddenColumns
     , mapShowSettings
     , mapSourceUpdateT
-    , mapSqlSourceMTW
+    , mapSqlSourceMT
     , mapSqlSourceT
     , mapState
     , mapStateT
@@ -235,7 +235,6 @@ module Services.Lenses exposing
     , setView
     , setVirtualRelation
     , setVisualEditor
-    , setZoom
     )
 
 import Dict exposing (Dict)
@@ -445,9 +444,9 @@ mapDatabaseSourceT =
     mapT_ .databaseSource setDatabaseSource
 
 
-mapDatabaseSourceMTW : (v -> ( v, a )) -> a -> { item | databaseSource : Maybe v } -> ( { item | databaseSource : Maybe v }, a )
-mapDatabaseSourceMTW transform default item =
-    mapMT_ .databaseSource setDatabaseSource transform item |> Tuple.mapSecond (Maybe.withDefault default)
+mapDatabaseSourceMT : (v -> ( v, a )) -> { item | databaseSource : Maybe v } -> ( { item | databaseSource : Maybe v }, Maybe a )
+mapDatabaseSourceMT transform item =
+    mapMT_ .databaseSource setDatabaseSource transform item
 
 
 setDataExplorer : v -> { item | dataExplorer : v } -> { item | dataExplorer : v }
@@ -535,9 +534,9 @@ setEmbedSourceParsing =
     set_ .embedSourceParsing (\value item -> { item | embedSourceParsing = value })
 
 
-mapEmbedSourceParsingMTW : (v -> ( v, a )) -> a -> { item | embedSourceParsing : Maybe v } -> ( { item | embedSourceParsing : Maybe v }, a )
-mapEmbedSourceParsingMTW transform default item =
-    mapMT_ .embedSourceParsing setEmbedSourceParsing transform item |> Tuple.mapSecond (Maybe.withDefault default)
+mapEmbedSourceParsingMT : (v -> ( v, a )) -> { item | embedSourceParsing : Maybe v } -> ( { item | embedSourceParsing : Maybe v }, Maybe a )
+mapEmbedSourceParsingMT transform item =
+    mapMT_ .embedSourceParsing setEmbedSourceParsing transform item
 
 
 setEnabled : v -> { item | enabled : v } -> { item | enabled : v }
@@ -730,9 +729,9 @@ mapJsonSourceT =
     mapT_ .jsonSource setJsonSource
 
 
-mapJsonSourceMTW : (v -> ( v, a )) -> a -> { item | jsonSource : Maybe v } -> ( { item | jsonSource : Maybe v }, a )
-mapJsonSourceMTW transform default item =
-    mapMT_ .jsonSource setJsonSource transform item |> Tuple.mapSecond (Maybe.withDefault default)
+mapJsonSourceMT : (v -> ( v, a )) -> { item | jsonSource : Maybe v } -> ( { item | jsonSource : Maybe v }, Maybe a )
+mapJsonSourceMT transform item =
+    mapMT_ .jsonSource setJsonSource transform item
 
 
 setLast : v -> { item | last : v } -> { item | last : v }
@@ -773,11 +772,6 @@ mapLayoutsDTM =
 mapLayoutsDTL : comparable -> (v -> ( v, List a )) -> { item | layouts : Dict comparable v } -> ( { item | layouts : Dict comparable v }, List a )
 mapLayoutsDTL =
     mapDTL_ .layouts setLayouts
-
-
-mapLayoutsDTW : comparable -> (v -> ( v, a )) -> a -> { item | layouts : Dict comparable v } -> ( { item | layouts : Dict comparable v }, a )
-mapLayoutsDTW key transform default item =
-    mapDT_ .layouts setLayouts key transform item |> Tuple.mapSecond (Maybe.withDefault default)
 
 
 setList : v -> { item | list : v } -> { item | list : v }
@@ -838,6 +832,11 @@ mapMobileMenuOpen =
 setModal : v -> { item | modal : v } -> { item | modal : v }
 setModal =
     set_ .modal (\value item -> { item | modal = value })
+
+
+mapModalM : (v -> v) -> { item | modal : Maybe v } -> { item | modal : Maybe v }
+mapModalM =
+    mapM_ .modal setModal
 
 
 setMouse : v -> { item | mouse : v } -> { item | mouse : v }
@@ -995,9 +994,9 @@ mapPrismaSourceT =
     mapT_ .prismaSource setPrismaSource
 
 
-mapPrismaSourceMTW : (v -> ( v, a )) -> a -> { item | prismaSource : Maybe v } -> ( { item | prismaSource : Maybe v }, a )
-mapPrismaSourceMTW transform default item =
-    mapMT_ .prismaSource setPrismaSource transform item |> Tuple.mapSecond (Maybe.withDefault default)
+mapPrismaSourceMT : (v -> ( v, a )) -> { item | prismaSource : Maybe v } -> ( { item | prismaSource : Maybe v }, Maybe a )
+mapPrismaSourceMT transform item =
+    mapMT_ .prismaSource setPrismaSource transform item
 
 
 setProject : v -> { item | project : v } -> { item | project : v }
@@ -1280,9 +1279,9 @@ mapSqlSourceT =
     mapT_ .sqlSource setSqlSource
 
 
-mapSqlSourceMTW : (v -> ( v, a )) -> a -> { item | sqlSource : Maybe v } -> ( { item | sqlSource : Maybe v }, a )
-mapSqlSourceMTW transform default item =
-    mapMT_ .sqlSource setSqlSource transform item |> Tuple.mapSecond (Maybe.withDefault default)
+mapSqlSourceMT : (v -> ( v, a )) -> { item | sqlSource : Maybe v } -> ( { item | sqlSource : Maybe v }, Maybe a )
+mapSqlSourceMT transform item =
+    mapMT_ .sqlSource setSqlSource transform item
 
 
 setState : v -> { item | state : v } -> { item | state : v }
@@ -1435,25 +1434,13 @@ mapVisualEditor =
     map_ .visualEditor setVisualEditor
 
 
-setZoom : v -> { item | zoom : v } -> { item | zoom : v }
-setZoom =
-    set_ .zoom (\value item -> { item | zoom = value })
-
-
 
 -- specific methods
 
 
-mapM : (v -> v) -> Maybe v -> Maybe v
-mapM transform item =
-    -- map Maybe
-    item |> Maybe.map transform
-
-
-mapMTW : (v -> ( v, a )) -> a -> Maybe v -> ( Maybe v, a )
-mapMTW transform default item =
-    -- map Maybe with default
-    item |> Maybe.mapOrElse (transform >> Tuple.mapFirst Just) ( Nothing, default )
+mapMT : (v -> ( v, a )) -> Maybe v -> ( Maybe v, Maybe a )
+mapMT transform item =
+    item |> Maybe.mapT transform
 
 
 mapList : (item -> k) -> k -> (item -> item) -> List item -> List item

@@ -14,9 +14,10 @@ import Libs.Result as Result
 import Libs.Tailwind as Tw
 import Models.Project.Source exposing (Source)
 import Models.ProjectInfo exposing (ProjectInfo)
+import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
 import Services.DatabaseSource as DatabaseSource
 import Services.JsonSource as JsonSource
-import Services.Lenses exposing (mapDatabaseSourceMTW, mapJsonSourceMTW, mapPrismaSourceMTW, mapSqlSourceMTW)
+import Services.Lenses exposing (mapDatabaseSourceMT, mapJsonSourceMT, mapPrismaSourceMT, mapSqlSourceMT)
 import Services.PrismaSource as PrismaSource
 import Services.SqlSource as SqlSource
 import Time
@@ -76,20 +77,20 @@ init sourceParsed modalClose noop databaseSource sqlSource prismaSource jsonSour
 -- UPDATE
 
 
-update : (Msg -> msg) -> Time.Posix -> Maybe ProjectInfo -> Msg -> Model msg -> ( Model msg, Cmd msg )
+update : (Msg -> msg) -> Time.Posix -> Maybe ProjectInfo -> Msg -> Model msg -> ( Model msg, Extra msg )
 update wrap now project msg model =
     case msg of
         EmbedDatabaseSource message ->
-            model |> mapDatabaseSourceMTW (DatabaseSource.update (EmbedDatabaseSource >> wrap) now project message) Cmd.none
+            model |> mapDatabaseSourceMT (DatabaseSource.update (EmbedDatabaseSource >> wrap) now project message) |> Extra.defaultT
 
         EmbedSqlSource message ->
-            model |> mapSqlSourceMTW (SqlSource.update (EmbedSqlSource >> wrap) now project message) Cmd.none
+            model |> mapSqlSourceMT (SqlSource.update (EmbedSqlSource >> wrap) now project message) |> Extra.defaultT
 
         EmbedPrismaSource message ->
-            model |> mapPrismaSourceMTW (PrismaSource.update (EmbedPrismaSource >> wrap) now project message) Cmd.none
+            model |> mapPrismaSourceMT (PrismaSource.update (EmbedPrismaSource >> wrap) now project message) |> Extra.defaultT
 
         EmbedJsonSource message ->
-            model |> mapJsonSourceMTW (JsonSource.update (EmbedJsonSource >> wrap) now project message) Cmd.none
+            model |> mapJsonSourceMT (JsonSource.update (EmbedJsonSource >> wrap) now project message) |> Extra.defaultT
 
 
 

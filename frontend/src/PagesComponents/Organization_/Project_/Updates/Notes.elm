@@ -9,6 +9,7 @@ import PagesComponents.Organization_.Project_.Models exposing (Msg(..), NotesDia
 import PagesComponents.Organization_.Project_.Models.Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.NotesMsg exposing (NotesMsg(..))
+import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
 import PagesComponents.Organization_.Project_.Updates.Utils exposing (setHDirtyCmd)
 import Services.Lenses exposing (mapEditNotesM, mapErdM, mapMetadata, setEditNotes, setNotes)
 import Track
@@ -23,7 +24,7 @@ type alias Model x =
     }
 
 
-handleNotes : NotesMsg -> Model x -> ( Model x, Cmd Msg, List ( Msg, Msg ) )
+handleNotes : NotesMsg -> Model x -> ( Model x, Extra Msg )
 handleNotes msg model =
     case msg of
         NOpen table column ->
@@ -33,12 +34,11 @@ handleNotes msg model =
                     model.erd |> Maybe.andThen (.metadata >> Metadata.getNotes table column) |> Maybe.withDefault ""
             in
             ( model |> setEditNotes (Just { id = Conf.ids.editNotesDialog, table = table, column = column, initialNotes = notes, notes = notes })
-            , Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.editNotesDialog), Cmd.none ]
-            , []
+            , ModalOpen Conf.ids.editNotesDialog |> T.sendAfter 1 |> Extra.cmd
             )
 
         NEdit notes ->
-            ( model |> mapEditNotesM (setNotes notes), Cmd.none, [] )
+            ( model |> mapEditNotesM (setNotes notes), Extra.none )
 
         NSave table column initialNotes notes ->
             let
@@ -60,4 +60,4 @@ handleNotes msg model =
                 |> setHDirtyCmd [ ( NotesMsg (NSave table column notes initialNotes), NotesMsg msg ) ]
 
         NCancel ->
-            ( model |> setEditNotes Nothing, Cmd.none, [] )
+            ( model |> setEditNotes Nothing, Extra.none )

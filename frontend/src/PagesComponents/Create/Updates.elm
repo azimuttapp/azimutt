@@ -21,7 +21,7 @@ import Random
 import Request
 import Services.DatabaseSource as DatabaseSource
 import Services.JsonSource as JsonSource
-import Services.Lenses exposing (mapDatabaseSourceMTW, mapJsonSourceMTW, mapPrismaSourceMTW, mapSqlSourceMTW, mapToastsT)
+import Services.Lenses exposing (mapDatabaseSourceMT, mapJsonSourceMT, mapPrismaSourceMT, mapSqlSourceMT, mapToastsT)
 import Services.PrismaSource as PrismaSource
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
@@ -59,16 +59,16 @@ update req now projects projectsLoaded urlOrganization msg model =
                 ( model, InitProject |> T.sendAfter 500 )
 
         DatabaseSourceMsg message ->
-            model |> mapDatabaseSourceMTW (DatabaseSource.update DatabaseSourceMsg now Nothing message) Cmd.none
+            model |> mapDatabaseSourceMT (DatabaseSource.update DatabaseSourceMsg now Nothing message) |> Tuple.mapSecond (Maybe.mapOrElse Tuple.first Cmd.none)
 
         SqlSourceMsg message ->
-            model |> mapSqlSourceMTW (SqlSource.update SqlSourceMsg now Nothing message) Cmd.none
+            model |> mapSqlSourceMT (SqlSource.update SqlSourceMsg now Nothing message) |> Tuple.mapSecond (Maybe.mapOrElse Tuple.first Cmd.none)
 
         PrismaSourceMsg message ->
-            model |> mapPrismaSourceMTW (PrismaSource.update PrismaSourceMsg now Nothing message) Cmd.none
+            model |> mapPrismaSourceMT (PrismaSource.update PrismaSourceMsg now Nothing message) |> Tuple.mapSecond (Maybe.mapOrElse Tuple.first Cmd.none)
 
         JsonSourceMsg message ->
-            model |> mapJsonSourceMTW (JsonSource.update JsonSourceMsg now Nothing message) Cmd.none
+            model |> mapJsonSourceMT (JsonSource.update JsonSourceMsg now Nothing message) |> Tuple.mapSecond (Maybe.mapOrElse Tuple.first Cmd.none)
 
         AmlSourceMsg storage name ->
             ( model, SourceId.generator |> Random.generate (Source.aml Conf.constants.virtualRelationSourceName now >> Project.create projects name >> CreateProjectTmp storage) )
@@ -83,7 +83,7 @@ update req now projects projectsLoaded urlOrganization msg model =
             )
 
         Toast message ->
-            model |> mapToastsT (Toasts.update Toast message)
+            model |> mapToastsT (Toasts.update Toast message) |> Tuple.mapSecond Tuple.first
 
         JsMessage message ->
             model |> handleJsMessage req urlOrganization message

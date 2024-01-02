@@ -11,11 +11,12 @@ import Models.UrlInfos exposing (UrlInfos)
 import PagesComponents.Organization_.Project_.Components.ProjectSaveDialog as ProjectSaveDialog
 import PagesComponents.Organization_.Project_.Models exposing (Model, Msg(..))
 import PagesComponents.Organization_.Project_.Models.Erd as Erd
+import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
 import Ports
 import Services.Toasts as Toasts
 
 
-triggerSaveProject : UrlInfos -> List Organization -> Model -> ( Model, Cmd Msg, List ( Msg, Msg ) )
+triggerSaveProject : UrlInfos -> List Organization -> Model -> ( Model, Extra Msg )
 triggerSaveProject urlInfos organizations model =
     let
         preselectedOrg : Maybe Organization
@@ -24,7 +25,7 @@ triggerSaveProject urlInfos organizations model =
     in
     ( model
     , model.erd
-        |> Maybe.mapOrElse
+        |> Maybe.map
             (\e ->
                 e.project.organization
                     |> Maybe.map (\_ -> UpdateProject |> T.send)
@@ -36,56 +37,54 @@ triggerSaveProject urlInfos organizations model =
                             ProjectSaveDialog.Open e.project.name preselectedOrg |> ProjectSaveMsg |> T.send
                         )
             )
-            Cmd.none
-    , []
+        |> Extra.cmdM
     )
 
 
-createProject : ProjectName -> Organization -> ProjectStorage -> Model -> ( Model, Cmd Msg, List ( Msg, Msg ) )
+createProject : ProjectName -> Organization -> ProjectStorage -> Model -> ( Model, Extra Msg )
 createProject name organization storage model =
     if model.conf.save then
         (model.erd |> Maybe.map Erd.unpack)
             |> Maybe.mapOrElse
                 (\p ->
                     p.organization
-                        |> Maybe.map (\_ -> ( model, "Project already created" |> Toasts.warning |> Toast |> T.send, [] ))
-                        |> Maybe.withDefault ( { model | saving = True }, Ports.createProject organization.id storage { p | name = name }, [] )
+                        |> Maybe.map (\_ -> ( model, "Project already created" |> Toasts.warning |> Toast |> Extra.msg ))
+                        |> Maybe.withDefault ( { model | saving = True }, Ports.createProject organization.id storage { p | name = name } |> Extra.cmd )
                 )
-                ( model, "No project to save" |> Toasts.warning |> Toast |> T.send, [] )
+                ( model, "No project to save" |> Toasts.warning |> Toast |> Extra.msg )
 
     else
-        ( model, Cmd.none, [] )
+        ( model, Extra.none )
 
 
-updateProject : Model -> ( Model, Cmd Msg, List ( Msg, Msg ) )
+updateProject : Model -> ( Model, Extra Msg )
 updateProject model =
     if model.conf.save then
         (model.erd |> Maybe.map Erd.unpack)
             |> Maybe.mapOrElse
                 (\p ->
                     p.organization
-                        |> Maybe.map (\_ -> ( { model | saving = True }, Ports.updateProject p, [] ))
-                        |> Maybe.withDefault ( model, "Project doesn't exist" |> Toasts.warning |> Toast |> T.send, [] )
+                        |> Maybe.map (\_ -> ( { model | saving = True }, Ports.updateProject p |> Extra.cmd ))
+                        |> Maybe.withDefault ( model, "Project doesn't exist" |> Toasts.warning |> Toast |> Extra.msg )
                 )
-                ( model, "No project to save" |> Toasts.warning |> Toast |> T.send, [] )
+                ( model, "No project to save" |> Toasts.warning |> Toast |> Extra.msg )
 
     else
-        ( model, Cmd.none, [] )
+        ( model, Extra.none )
 
 
-moveProject : ProjectStorage -> Model -> ( Model, Cmd Msg, List ( Msg, Msg ) )
+moveProject : ProjectStorage -> Model -> ( Model, Extra Msg )
 moveProject storage model =
     if model.conf.save then
         ( model
-        , Cmd.batch
+        , Extra.batch
             (model.erd
                 |> Maybe.map Erd.unpack
                 |> Maybe.mapOrElse
                     (\p -> [ Ports.moveProjectTo p storage ])
                     [ "No project to move" |> Toasts.warning |> Toast |> T.send ]
             )
-        , []
         )
 
     else
-        ( model, Cmd.none, [] )
+        ( model, Extra.none )

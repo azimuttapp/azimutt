@@ -11,7 +11,6 @@ import Libs.Maybe as Maybe
 import Libs.Models.Delta as Delta exposing (Delta)
 import Libs.Models.Position as Position
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
-import Libs.Task as T
 import Libs.Tuple3 as Tuple3
 import Models.Area as Area
 import Models.ErdProps exposing (ErdProps)
@@ -27,34 +26,35 @@ import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayo
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout as ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
 import PagesComponents.Organization_.Project_.Models.MemoId exposing (MemoId)
+import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
 import Services.Lenses exposing (mapMemos, mapPosition, mapProps, mapTableRows, mapTables, setCanvas, setLayoutOnLoad, setPosition)
 import Services.Toasts as Toasts
 import Time
 
 
-handleWheel : WheelEvent -> ErdProps -> CanvasProps -> ( CanvasProps, ( Cmd Msg, List ( Msg, Msg ) ) )
+handleWheel : WheelEvent -> ErdProps -> CanvasProps -> ( CanvasProps, Extra Msg )
 handleWheel event erdElem canvas =
     if event.ctrl then
         canvas |> performZoom erdElem (-event.delta.dy * Conf.canvas.zoom.speed * canvas.zoom) event.clientPos
 
     else
         { canvas | position = canvas.position |> Position.moveDiagram (event.delta |> Delta.negate |> Delta.adjust canvas.zoom) }
-            |> (\new -> ( new, ( Cmd.none, [ ( SetView_ canvas, SetView_ new ) ] ) ))
+            |> (\new -> ( new, Extra.history ( SetView_ canvas, SetView_ new ) ))
 
 
-zoomCanvas : Float -> ErdProps -> CanvasProps -> ( CanvasProps, ( Cmd Msg, List ( Msg, Msg ) ) )
+zoomCanvas : Float -> ErdProps -> CanvasProps -> ( CanvasProps, Extra Msg )
 zoomCanvas delta erdElem canvas =
     canvas |> performZoom erdElem delta (erdElem |> Area.centerViewport)
 
 
-fitCanvas : ErdProps -> Erd -> ( Erd, Maybe ( Cmd Msg, List ( Msg, Msg ) ) )
+fitCanvas : ErdProps -> Erd -> ( Erd, Extra Msg )
 fitCanvas erdElem erd =
     (erd |> Erd.currentLayout |> objectsToFit)
-        |> Maybe.map (\( tables, ( rows, memos, groups ) ) -> erd |> setLayoutOnLoad "" |> Erd.mapCurrentLayoutT (fitCanvasAlgo erdElem tables rows memos groups))
-        |> Maybe.withDefault ( erd, Just ( "No table to fit into the canvas" |> Toasts.create "warning" |> Toast |> T.send, [] ) )
+        |> Maybe.map (\( tables, ( rows, memos, groups ) ) -> erd |> setLayoutOnLoad "" |> Erd.mapCurrentLayoutT (fitCanvasAlgo erdElem tables rows memos groups) |> Extra.defaultT)
+        |> Maybe.withDefault ( erd, "No table to fit into the canvas" |> Toasts.create "warning" |> Toast |> Extra.msg )
 
 
-fitCanvasAlgo : ErdProps -> List TableId -> List TableRow.Id -> List MemoId -> List Area.Canvas -> ErdLayout -> ( ErdLayout, ( Cmd Msg, List ( Msg, Msg ) ) )
+fitCanvasAlgo : ErdProps -> List TableId -> List TableRow.Id -> List MemoId -> List Area.Canvas -> ErdLayout -> ( ErdLayout, Extra Msg )
 fitCanvasAlgo erdElem tables rows memos groups layout =
     -- WARNING: the computation looks good but the diagram changes on resize due to table header size change
     -- (see headerTextSize in frontend/src/Components/Organisms/Table.elm:177)
@@ -80,13 +80,13 @@ fitCanvasAlgo erdElem tables rows memos groups layout =
                     |> mapTables (List.map (mapProps (mapPosition (Position.moveGrid centerOffset))))
                     |> mapTableRows (List.map (mapPosition (Position.moveGrid centerOffset)))
                     |> mapMemos (List.map (mapPosition (Position.moveGrid centerOffset)))
-                , ( Cmd.none, [ ( SetView_ (layout.canvas |> mapPosition (Position.moveDiagram (Delta.negate centerOffset))), SetView_ canvas ) ] )
+                , Extra.history ( SetView_ (layout.canvas |> mapPosition (Position.moveDiagram (Delta.negate centerOffset))), SetView_ canvas )
                 )
             )
-        |> Maybe.withDefault ( layout, ( Cmd.none, [] ) )
+        |> Maybe.withDefault ( layout, Extra.none )
 
 
-arrangeTables : Time.Posix -> ErdProps -> Erd -> ( Erd, Maybe ( Cmd Msg, List ( Msg, Msg ) ) )
+arrangeTables : Time.Posix -> ErdProps -> Erd -> ( Erd, Extra Msg )
 arrangeTables now erdElem erd =
     -- TODO: toggle this on show all tables if layout was empty before, see frontend/src/PagesComponents/Organization_/Project_/Updates/Table.elm:106#showAllTables
     (erd |> Erd.currentLayout |> objectsToFit)
@@ -99,13 +99,14 @@ arrangeTables now erdElem erd =
                             layout
                                 |> arrangeTablesAlgo tables rows memos
                                 |> Tuple.mapFirst (fitCanvasAlgo erdElem tables rows memos groups)
-                                |> (\( ( l, ( c2, _ ) ), ( c1, _ ) ) -> ( l, ( Cmd.batch [ c1, c2 ], [ ( SetLayout_ layout, SetLayout_ l ) ] ) ))
+                                |> (\( ( l, ( c2, _ ) ), ( c1, _ ) ) -> ( l, Extra.new (Cmd.batch [ c1, c2 ]) ( SetLayout_ layout, SetLayout_ l ) ))
                         )
+                    |> Extra.defaultT
             )
-        |> Maybe.withDefault ( erd, Just ( "No table to arrange in the canvas" |> Toasts.create "warning" |> Toast |> T.send, [] ) )
+        |> Maybe.withDefault ( erd, "No table to arrange in the canvas" |> Toasts.create "warning" |> Toast |> Extra.msg )
 
 
-arrangeTablesAlgo : List TableId -> List TableRow.Id -> List MemoId -> ErdLayout -> ( ErdLayout, ( Cmd Msg, List ( Msg, Msg ) ) )
+arrangeTablesAlgo : List TableId -> List TableRow.Id -> List MemoId -> ErdLayout -> ( ErdLayout, Extra Msg )
 arrangeTablesAlgo tables rows memos layout =
     let
         nodes : List (Graph.Node DiagramObject)
@@ -194,7 +195,7 @@ objectsToFit layout =
         Nothing
 
 
-performZoom : ErdProps -> Float -> Position.Viewport -> CanvasProps -> ( CanvasProps, ( Cmd Msg, List ( Msg, Msg ) ) )
+performZoom : ErdProps -> Float -> Position.Viewport -> CanvasProps -> ( CanvasProps, Extra Msg )
 performZoom erdElem delta target canvas =
     -- to zoom on target (center or cursor), works only if origin is top left (CSS: "transform-origin: top left;")
     let
@@ -263,11 +264,11 @@ computeZoom erdViewport padding contentArea zoom =
     newZoom
 
 
-squashViewHistory : ( Model, Cmd Msg, List ( Msg, Msg ) ) -> ( Model, Cmd Msg, List ( Msg, Msg ) )
-squashViewHistory ( model, cmd, history ) =
+squashViewHistory : ( Model, Extra Msg ) -> ( Model, Extra Msg )
+squashViewHistory ( model, ( cmd, history ) ) =
     case ( model.history, history ) of
         ( ( SetView_ first, SetView_ _ ) :: rest, [ ( SetView_ _, SetView_ last ) ] ) ->
-            ( { model | history = rest }, cmd, [ ( SetView_ first, SetView_ last ) ] )
+            ( { model | history = rest }, Extra.new cmd ( SetView_ first, SetView_ last ) )
 
         _ ->
-            ( model, cmd, history )
+            ( model, Extra.newL cmd history )

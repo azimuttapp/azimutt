@@ -8,6 +8,7 @@ import Json.Decode as Decode
 import Json.Encode as Encode
 import Libs.Bool as B
 import Libs.List as List
+import Libs.Maybe as Maybe
 import Libs.Result as Result
 import Libs.Task as T
 import Models.OrganizationId as OrganizationId exposing (OrganizationId)
@@ -24,7 +25,7 @@ import Request
 import Services.Backend as Backend
 import Services.DatabaseSource as DatabaseSource
 import Services.JsonSource as JsonSource
-import Services.Lenses exposing (mapDatabaseSourceMTW, mapJsonSourceMTW, mapOpenedDialogs, mapPrismaSourceMTW, mapProjectSourceMTW, mapSampleSourceMTW, mapSqlSourceMTW, mapToastsT, setConfirm)
+import Services.Lenses exposing (mapDatabaseSourceMT, mapJsonSourceMT, mapOpenedDialogs, mapPrismaSourceMT, mapProjectSourceMTW, mapSampleSourceMTW, mapSqlSourceMT, mapToastsT, setConfirm)
 import Services.PrismaSource as PrismaSource
 import Services.ProjectSource as ProjectSource
 import Services.SampleSource as SampleSource
@@ -87,7 +88,8 @@ update req now projects urlOrganization msg model =
             )
 
         DatabaseSourceMsg message ->
-            (model |> mapDatabaseSourceMTW (DatabaseSource.update DatabaseSourceMsg now Nothing message) Cmd.none)
+            (model |> mapDatabaseSourceMT (DatabaseSource.update DatabaseSourceMsg now Nothing message))
+                |> Tuple.mapSecond (Maybe.mapOrElse Tuple.first Cmd.none)
                 |> Tuple.mapSecond
                     (\cmd ->
                         case message of
@@ -99,15 +101,18 @@ update req now projects urlOrganization msg model =
                     )
 
         SqlSourceMsg message ->
-            (model |> mapSqlSourceMTW (SqlSource.update SqlSourceMsg now Nothing message) Cmd.none)
+            (model |> mapSqlSourceMT (SqlSource.update SqlSourceMsg now Nothing message))
+                |> Tuple.mapSecond (Maybe.mapOrElse Tuple.first Cmd.none)
                 |> Tuple.mapSecond (\cmd -> B.cond (message == SqlSource.BuildSource) (Cmd.batch [ cmd, Ports.confetti "create-project-btn" ]) cmd)
 
         PrismaSourceMsg message ->
-            (model |> mapPrismaSourceMTW (PrismaSource.update PrismaSourceMsg now Nothing message) Cmd.none)
+            (model |> mapPrismaSourceMT (PrismaSource.update PrismaSourceMsg now Nothing message))
+                |> Tuple.mapSecond (Maybe.mapOrElse Tuple.first Cmd.none)
                 |> Tuple.mapSecond (\cmd -> B.cond (message == PrismaSource.BuildSource) (Cmd.batch [ cmd, Ports.confetti "create-project-btn" ]) cmd)
 
         JsonSourceMsg message ->
-            (model |> mapJsonSourceMTW (JsonSource.update JsonSourceMsg now Nothing message) Cmd.none)
+            (model |> mapJsonSourceMT (JsonSource.update JsonSourceMsg now Nothing message))
+                |> Tuple.mapSecond (Maybe.mapOrElse Tuple.first Cmd.none)
                 |> Tuple.mapSecond (\cmd -> B.cond (message == JsonSource.BuildSource) (Cmd.batch [ cmd, Ports.confetti "create-project-btn" ]) cmd)
 
         ProjectSourceMsg message ->
@@ -128,7 +133,7 @@ update req now projects urlOrganization msg model =
             ( model |> Dropdown.update id, Cmd.none )
 
         Toast message ->
-            model |> mapToastsT (Toasts.update Toast message)
+            model |> mapToastsT (Toasts.update Toast message) |> Tuple.mapSecond Tuple.first
 
         ConfirmOpen confirm ->
             ( model |> setConfirm (Just { id = Conf.ids.confirmDialog, content = confirm }), T.sendAfter 1 (ModalOpen Conf.ids.confirmDialog) )

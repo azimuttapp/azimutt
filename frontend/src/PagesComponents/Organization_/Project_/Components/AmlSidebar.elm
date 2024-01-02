@@ -18,7 +18,6 @@ import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Tw exposing (focus)
-import Libs.Task as T
 import Libs.Tuple as Tuple
 import Models.Position as Position
 import Models.Project.ColumnId as ColumnId
@@ -36,8 +35,9 @@ import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint(..))
 import PagesComponents.Organization_.Project_.Models.ShowColumns as ShowColumns
+import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
 import PagesComponents.Organization_.Project_.Updates.Table exposing (hideTable, showColumns, showTable)
-import PagesComponents.Organization_.Project_.Updates.Utils exposing (setHDirtyCmd, setHLDirty, setHLDirtyCmd)
+import PagesComponents.Organization_.Project_.Updates.Utils exposing (setHLDirtyCmd, setHLDirtyCmdM)
 import Services.Lenses exposing (mapAmlSidebarM, mapAmlSidebarMTM, mapErdM, mapErdMT, mapSelectedMT, setAmlSidebar, setContent, setErrors, setSelected, setUpdatedAt)
 import Set exposing (Set)
 import Time
@@ -78,17 +78,17 @@ init sourceId erd =
 -- UPDATE
 
 
-update : Time.Posix -> AmlSidebarMsg -> Model x -> ( Model x, Cmd Msg, List ( Msg, Msg ) )
+update : Time.Posix -> AmlSidebarMsg -> Model x -> ( Model x, Extra Msg )
 update now msg model =
     case msg of
         AOpen id ->
-            ( model |> setAmlSidebar (Just (init id model.erd)), Track.sourceEditorOpened model.erd, [] )
+            ( model |> setAmlSidebar (Just (init id model.erd)), Track.sourceEditorOpened model.erd |> Extra.cmd )
 
         AClose ->
-            ( model |> setAmlSidebar Nothing, Track.sourceEditorClosed model.erd, [] )
+            ( model |> setAmlSidebar Nothing, Track.sourceEditorClosed model.erd |> Extra.cmd )
 
         AToggle ->
-            ( model, T.send (AmlSidebarMsg (Bool.cond (model.amlSidebar == Nothing) (AOpen Nothing) AClose)), [] )
+            ( model, Bool.cond (model.amlSidebar == Nothing) (AOpen Nothing) AClose |> AmlSidebarMsg |> Extra.msg )
 
         AChangeSource sourceId ->
             let
@@ -96,12 +96,12 @@ update now msg model =
                 selected =
                     sourceId |> Maybe.andThen (\id -> model.erd |> Maybe.andThen (.sources >> List.findBy .id id >> Maybe.map (\s -> ( s.id, s |> contentStr ))))
             in
-            ( model |> mapAmlSidebarM (setSelected selected) |> setOtherSourcesTableIdsCache sourceId, Cmd.none, [] )
+            ( model |> mapAmlSidebarM (setSelected selected) |> setOtherSourcesTableIdsCache sourceId, Extra.none )
 
         AUpdateSource id value ->
             (model.erd |> Maybe.andThen (.sources >> List.findBy .id id))
-                |> Maybe.map (\s -> model |> updateSource now s value |> setHDirtyCmd [])
-                |> Maybe.withDefault ( model |> mapAmlSidebarM (setErrors [ { row = 0, col = 0, problem = "Invalid source" } ]), Cmd.none, [] )
+                |> Maybe.map (\s -> model |> updateSource now s value |> setHLDirtyCmd)
+                |> Maybe.withDefault ( model |> mapAmlSidebarM (setErrors [ { row = 0, col = 0, problem = "Invalid source" } ]), Extra.none )
 
         ASourceUpdated id ->
             (model.erd |> Maybe.andThen (.sources >> List.findBy .id id))
@@ -109,12 +109,12 @@ update now msg model =
                     (\source ->
                         model
                             |> mapAmlSidebarMTM (mapSelectedMT (Tuple.mapSecondT (\old -> contentStr source |> (\new -> ( new, [ ( AUpdateSource source.id old |> AmlSidebarMsg, AUpdateSource source.id new |> AmlSidebarMsg ) ] )))))
-                            |> (\( newModel, hist ) -> ( newModel, Track.sourceRefreshed model.erd source, hist |> Maybe.withDefault [] ))
+                            |> (\( newModel, hist ) -> ( newModel, ( Track.sourceRefreshed model.erd source, hist |> Maybe.withDefault [] ) ))
                     )
-                |> Maybe.withDefault ( model, Cmd.none, [] )
+                |> Maybe.withDefault ( model, Extra.none )
 
 
-updateSource : Time.Posix -> Source -> String -> Model x -> ( Model x, Cmd Msg )
+updateSource : Time.Posix -> Source -> String -> Model x -> ( Model x, Extra Msg )
 updateSource now source input model =
     let
         tableLayouts : List ErdTableLayout
@@ -160,18 +160,18 @@ updateSource now source input model =
                     )
     in
     if List.nonEmpty errors then
-        ( model |> mapAmlSidebarM (setErrors errors) |> mapErdM (Erd.mapSource source.id (setContent content >> setUpdatedAt now)), Cmd.none )
+        ( model |> mapAmlSidebarM (setErrors errors) |> mapErdM (Erd.mapSource source.id (setContent content >> setUpdatedAt now)), Extra.none )
 
     else
         let
-            apply : List a -> (a -> Model x -> ( Model x, Cmd Msg, List ( msg, Msg ) )) -> ( Model x, Cmd Msg ) -> ( Model x, Cmd Msg )
+            apply : List a -> (a -> Model x -> ( Model x, Extra Msg )) -> ( Model x, Extra Msg ) -> ( Model x, Extra Msg )
             apply items f m =
-                items |> List.foldl (\a ( curModel, curCmd ) -> (curModel |> f a) |> (\( newModel, newCmd, _ ) -> ( newModel, Cmd.batch [ curCmd, newCmd ] ))) m
+                items |> List.foldl (\a ( curModel, curExtra ) -> curModel |> f a |> Tuple.mapSecond (Extra.combine curExtra >> Extra.dropHistory)) m
         in
-        ( model |> mapAmlSidebarM (setErrors []) |> mapErdM (Erd.mapSource source.id (Source.refreshWith parsed)), Cmd.none )
-            |> apply toShow (\( id, hint ) curModel -> curModel |> mapErdMT (showTable now id hint "aml") |> setHLDirtyCmd)
-            |> apply toHide (\id curModel -> curModel |> mapErdMT (hideTable now id) |> setHLDirty)
-            |> apply updated (\t curModel -> curModel |> mapErdMT (showColumns now t.id (ShowColumns.List (amlColumns |> Dict.getOrElse t.id []))) |> setHLDirtyCmd)
+        ( model |> mapAmlSidebarM (setErrors []) |> mapErdM (Erd.mapSource source.id (Source.refreshWith parsed)), Extra.none )
+            |> apply toShow (\( id, hint ) -> mapErdMT (showTable now id hint "aml") >> setHLDirtyCmdM)
+            |> apply toHide (\id -> mapErdMT (hideTable now id) >> setHLDirtyCmdM)
+            |> apply updated (\t -> mapErdMT (showColumns now t.id (ShowColumns.List (amlColumns |> Dict.getOrElse t.id []))) >> setHLDirtyCmdM)
 
 
 associateTables : List Table -> List Table -> List ( Table, Maybe Table )

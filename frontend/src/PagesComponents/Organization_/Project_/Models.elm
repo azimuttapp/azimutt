@@ -65,6 +65,7 @@ import PagesComponents.Organization_.Project_.Models.NotesMsg exposing (NotesMsg
 import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint)
 import PagesComponents.Organization_.Project_.Models.ShowColumns exposing (ShowColumns)
 import PagesComponents.Organization_.Project_.Models.TagsMsg exposing (TagsMsg)
+import PagesComponents.Organization_.Project_.Updates.Extra exposing (Extra)
 import PagesComponents.Organization_.Project_.Views.Erd.SelectionBox as SelectionBox
 import PagesComponents.Organization_.Project_.Views.Modals.NewLayout as NewLayout
 import Ports exposing (JsMsg)
@@ -481,8 +482,8 @@ simplePrompt label message =
         ""
 
 
-addHistory : ( Model, Cmd Msg, List ( Msg, Msg ) ) -> ( Model, Cmd Msg )
-addHistory ( model, cmd, history ) =
+addHistory : ( Model, Extra Msg ) -> ( Model, Cmd Msg )
+addHistory ( model, ( cmd, history ) ) =
     case history of
         [] ->
             ( model, cmd )

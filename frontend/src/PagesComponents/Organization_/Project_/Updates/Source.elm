@@ -10,12 +10,13 @@ import Models.Project.SourceKind exposing (SourceKind(..))
 import Models.Project.TableId as TableId
 import PagesComponents.Organization_.Project_.Models exposing (Msg(..))
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
+import PagesComponents.Organization_.Project_.Updates.Extra exposing (Extra)
 import Random
 import Services.Toasts as Toasts
 import Time
 
 
-createRelations : Time.Posix -> List { src : ColumnRef, ref : ColumnRef } -> Erd -> ( Erd, ( Cmd Msg, List ( Msg, Msg ) ) )
+createRelations : Time.Posix -> List { src : ColumnRef, ref : ColumnRef } -> Erd -> ( Erd, Extra Msg )
 createRelations now rels erd =
     case erd.sources |> List.find (\s -> s.kind == AmlEditor && s.name == Conf.constants.virtualRelationSourceName) of
         Just source ->
@@ -44,6 +45,6 @@ createRelations now rels erd =
             )
 
 
-deleteRelations : SourceId -> List { src : ColumnRef, ref : ColumnRef } -> Erd -> ( Erd, ( Cmd Msg, List ( Msg, Msg ) ) )
+deleteRelations : SourceId -> List { src : ColumnRef, ref : ColumnRef } -> Erd -> ( Erd, Extra Msg )
 deleteRelations sourceId rels erd =
     ( erd |> Erd.mapSource sourceId (Source.removeRelations rels), ( Cmd.none, [ ( CreateRelations rels, RemoveRelations_ sourceId rels ) ] ) )

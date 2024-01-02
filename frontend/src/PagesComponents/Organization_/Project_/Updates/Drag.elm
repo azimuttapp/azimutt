@@ -20,12 +20,13 @@ import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout expo
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
 import PagesComponents.Organization_.Project_.Models.MemoId as MemoId exposing (MemoId)
-import PagesComponents.Organization_.Project_.Updates.Utils exposing (setHL, setHLDirty)
-import Services.Lenses exposing (mapCanvasT, mapErdM, mapErdMT, mapMemos, mapProps, mapSelectionBox, mapTableRows, mapTables, setArea, setPosition, setSelectionBox)
+import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
+import PagesComponents.Organization_.Project_.Updates.Utils exposing (setHLCmd, setHLDirtyCmdM)
+import Services.Lenses exposing (mapCanvasT, mapErdM, mapErdMTM, mapMemos, mapProps, mapSelectionBox, mapTableRows, mapTables, setArea, setPosition, setSelectionBox)
 import Time
 
 
-handleDrag : Time.Posix -> DragState -> Bool -> Bool -> Model -> ( Model, Cmd Msg, List ( Msg, Msg ) )
+handleDrag : Time.Posix -> DragState -> Bool -> Bool -> Model -> ( Model, Extra Msg )
 handleDrag now drag isEnd cancel model =
     let
         canvas : CanvasProps
@@ -34,10 +35,10 @@ handleDrag now drag isEnd cancel model =
     in
     if drag.id == Conf.ids.erd then
         if isEnd && drag.init /= drag.last then
-            model |> mapErdMT (Erd.mapCurrentLayoutTLWithTime now (mapCanvasT (moveCanvas drag))) |> setHL
+            model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (mapCanvasT (moveCanvas drag))) |> setHLCmd
 
         else
-            ( model, Cmd.none, [] )
+            ( model, Extra.none )
 
     else if drag.id == Conf.ids.selectionBox then
         let
@@ -52,16 +53,15 @@ handleDrag now drag isEnd cancel model =
                     model.selectionBox |> Maybe.mapOrElse .previouslySelected []
             in
             if cancel then
-                ( model |> setSelectionBox Nothing |> mapErdM (Erd.mapCurrentLayout (ErdLayout.setSelected previouslySelected)), Cmd.none, [] )
+                ( model |> setSelectionBox Nothing |> mapErdM (Erd.mapCurrentLayout (ErdLayout.setSelected previouslySelected)), Extra.none )
 
             else
                 ( model |> setSelectionBox Nothing
-                , Cmd.none
                 , if previouslySelected /= currentlySelected then
-                    [ ( SelectItems_ previouslySelected, SelectItems_ currentlySelected ) ]
+                    Extra.history ( SelectItems_ previouslySelected, SelectItems_ currentlySelected )
 
                   else
-                    []
+                    Extra.none
                 )
 
         else
@@ -72,24 +72,23 @@ handleDrag now drag isEnd cancel model =
                             |> mapSelectionBox (Maybe.map (setArea area) >> Maybe.withDefault { area = area, previouslySelected = currentlySelected } >> Just)
                             |> mapErdM (Erd.mapCurrentLayoutWithTime now (ErdLayout.mapSelected (\i _ -> Area.overlapCanvas area { position = i.position |> Position.offGrid, size = i.size })))
                    )
-            , Cmd.none
-            , []
+            , Extra.none
             )
 
     else if isEnd && drag.init /= drag.last then
-        model |> mapErdMT (Erd.mapCurrentLayoutTLWithTime now (moveInLayout drag canvas.zoom)) |> setHLDirty
+        model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (moveInLayout drag canvas.zoom)) |> setHLDirtyCmdM
 
     else
-        ( model, Cmd.none, [] )
+        ( model, Extra.none )
 
 
-moveCanvas : DragState -> CanvasProps -> ( CanvasProps, List ( Msg, Msg ) )
+moveCanvas : DragState -> CanvasProps -> ( CanvasProps, Extra Msg )
 moveCanvas drag canvas =
     (canvas.position |> Position.moveDiagram (buildDelta drag 1))
-        |> (\newPos -> ( canvas |> setPosition newPos, [ ( Msg.CanvasPosition_ canvas.position, Msg.CanvasPosition_ newPos ) ] ))
+        |> (\newPos -> ( canvas |> setPosition newPos, Extra.history ( Msg.CanvasPosition_ canvas.position, Msg.CanvasPosition_ newPos ) ))
 
 
-moveInLayout : DragState -> ZoomLevel -> ErdLayout -> ( ErdLayout, List ( Msg, Msg ) )
+moveInLayout : DragState -> ZoomLevel -> ErdLayout -> ( ErdLayout, Extra Msg )
 moveInLayout drag zoom layout =
     let
         dragSelected : Bool
@@ -126,7 +125,7 @@ moveInLayout drag zoom layout =
         |> mapTables (List.map (\t -> moveTables |> Dict.get t.id |> Maybe.mapOrElse (\( pos, _ ) -> t |> mapProps (setPosition pos)) t))
         |> mapTableRows (List.map (\r -> moveTableRows |> Dict.get r.id |> Maybe.mapOrElse (\( pos, _ ) -> r |> setPosition pos) r))
         |> mapMemos (List.map (\m -> moveMemos |> Dict.get m.id |> Maybe.mapOrElse (\( pos, _ ) -> m |> setPosition pos) m))
-    , (Dict.values moveTables ++ Dict.values moveTableRows ++ Dict.values moveMemos) |> List.map Tuple.second
+    , (Dict.values moveTables ++ Dict.values moveTableRows ++ Dict.values moveMemos) |> List.map Tuple.second |> Extra.historyL
     )
 
 

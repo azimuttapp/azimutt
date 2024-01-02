@@ -1,11 +1,11 @@
 module PagesComponents.Organization_.Project_.Updates.VirtualRelation exposing (Model, handleVirtualRelation)
 
-import Libs.Task as T
 import Models.ErdProps exposing (ErdProps)
 import Models.Position as Position
 import Models.Project.ColumnRef exposing (ColumnRef)
 import PagesComponents.Organization_.Project_.Models exposing (Msg(..), VirtualRelation, VirtualRelationMsg(..))
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
+import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
 import Services.Lenses exposing (mapVirtualRelationM, setMouse, setVirtualRelation)
 
 
@@ -17,28 +17,28 @@ type alias Model x =
     }
 
 
-handleVirtualRelation : VirtualRelationMsg -> Model x -> ( Model x, Cmd Msg )
+handleVirtualRelation : VirtualRelationMsg -> Model x -> ( Model x, Extra Msg )
 handleVirtualRelation msg model =
     case msg of
         VRCreate src ->
-            ( model |> setVirtualRelation (Just { src = src, mouse = src |> computeInitialPosition model |> Maybe.withDefault Position.zeroViewport }), Cmd.none )
+            ( model |> setVirtualRelation (Just { src = src, mouse = src |> computeInitialPosition model |> Maybe.withDefault Position.zeroViewport }), Extra.none )
 
         VRUpdate ref pos ->
             case model.virtualRelation |> Maybe.map .src of
                 Nothing ->
-                    ( model, Cmd.none )
+                    ( model, Extra.none )
 
                 Just Nothing ->
-                    ( model |> setVirtualRelation (Just { src = Just ref, mouse = pos }), Cmd.none )
+                    ( model |> setVirtualRelation (Just { src = Just ref, mouse = pos }), Extra.none )
 
                 Just (Just src) ->
-                    ( model |> setVirtualRelation Nothing, T.send (CreateRelations [ { src = src, ref = ref } ]) )
+                    ( model |> setVirtualRelation Nothing, CreateRelations [ { src = src, ref = ref } ] |> Extra.msg )
 
         VRMove pos ->
-            ( model |> mapVirtualRelationM (setMouse pos), Cmd.none )
+            ( model |> mapVirtualRelationM (setMouse pos), Extra.none )
 
         VRCancel ->
-            ( model |> setVirtualRelation Nothing, Cmd.none )
+            ( model |> setVirtualRelation Nothing, Extra.none )
 
 
 computeInitialPosition : Model x -> Maybe ColumnRef -> Maybe Position.Viewport
