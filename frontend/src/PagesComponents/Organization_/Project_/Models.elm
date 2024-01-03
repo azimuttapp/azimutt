@@ -1,6 +1,7 @@
 module PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, AmlSidebarMsg(..), ConfirmDialog, ContextMenu, FindPathMsg(..), GroupEdit, GroupMsg(..), HelpDialog, HelpMsg(..), LayoutMsg(..), MemoEdit, MemoMsg(..), ModalDialog, Model, Msg(..), NavbarModel, NotesDialog, ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, VirtualRelation, VirtualRelationMsg(..), confirm, confirmDanger, emptyModel, prompt, simplePrompt)
 
 import Components.Atoms.Icon exposing (Icon(..))
+import Components.Organisms.Table exposing (TableHover)
 import Components.Organisms.TableRow as TableRow exposing (TableRowHover)
 import Components.Slices.DataExplorer as DataExplorer
 import Components.Slices.ProPlan as ProPlan
@@ -16,17 +17,18 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Notes exposing (Notes)
 import Libs.Tailwind as Tw exposing (Color)
 import Libs.Task as T
-import Models.Area as Area
 import Models.ColumnOrder exposing (ColumnOrder)
 import Models.DbSourceInfo exposing (DbSourceInfo)
 import Models.ErdProps as ErdProps exposing (ErdProps)
 import Models.Organization exposing (Organization)
 import Models.Position as Position
+import Models.Project.CanvasProps exposing (CanvasProps)
 import Models.Project.ColumnId exposing (ColumnId)
 import Models.Project.ColumnPath exposing (ColumnPath)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.ColumnStats exposing (ColumnStats)
 import Models.Project.FindPathSettings exposing (FindPathSettings)
+import Models.Project.Group exposing (Group)
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectName exposing (ProjectName)
 import Models.Project.ProjectStorage exposing (ProjectStorage)
@@ -35,7 +37,7 @@ import Models.Project.Source exposing (Source)
 import Models.Project.SourceId exposing (SourceId, SourceIdStr)
 import Models.Project.SourceName exposing (SourceName)
 import Models.Project.TableId exposing (TableId)
-import Models.Project.TableRow as TableRow
+import Models.Project.TableRow as TableRow exposing (TableRow)
 import Models.Project.TableStats exposing (TableStats)
 import Models.ProjectInfo exposing (ProjectInfo)
 import Models.RelationStyle exposing (RelationStyle)
@@ -48,9 +50,12 @@ import PagesComponents.Organization_.Project_.Components.SourceUpdateDialog as S
 import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode exposing (CursorMode)
 import PagesComponents.Organization_.Project_.Models.DragState exposing (DragState)
 import PagesComponents.Organization_.Project_.Models.Erd exposing (Erd)
+import PagesComponents.Organization_.Project_.Models.ErdColumnProps exposing (ErdColumnProps)
 import PagesComponents.Organization_.Project_.Models.ErdConf as ErdConf exposing (ErdConf)
+import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.ErdRelation exposing (ErdRelation)
 import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable)
+import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.FindPathDialog exposing (FindPathDialog)
 import PagesComponents.Organization_.Project_.Models.HideColumns exposing (HideColumns)
 import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
@@ -59,6 +64,7 @@ import PagesComponents.Organization_.Project_.Models.NotesMsg exposing (NotesMsg
 import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint)
 import PagesComponents.Organization_.Project_.Models.ShowColumns exposing (ShowColumns)
 import PagesComponents.Organization_.Project_.Models.TagsMsg exposing (TagsMsg)
+import PagesComponents.Organization_.Project_.Views.Erd.SelectionBox as SelectionBox
 import PagesComponents.Organization_.Project_.Views.Modals.NewLayout as NewLayout
 import Ports exposing (JsMsg)
 import Services.Toasts as Toasts
@@ -76,13 +82,10 @@ type alias Model =
     , erd : Maybe Erd
     , tableStats : Dict TableId (Dict SourceIdStr (Result String TableStats))
     , columnStats : Dict ColumnId (Dict SourceIdStr (Result String ColumnStats))
-
-    -- TODO: merge `hoverTable` & `hoverColumn` into `hoverTable`, like `hoverTableRow`
-    , hoverTable : Maybe TableId
-    , hoverColumn : Maybe ColumnRef
+    , hoverTable : Maybe TableHover
     , hoverTableRow : Maybe TableRowHover
     , cursorMode : CursorMode
-    , selectionBox : Maybe Area.Canvas
+    , selectionBox : Maybe SelectionBox.Model
     , newLayout : Maybe NewLayout.Model
     , editNotes : Maybe NotesDialog
     , editTags : Maybe String
@@ -112,6 +115,8 @@ type alias Model =
     , confirm : Maybe ConfirmDialog
     , prompt : Maybe PromptDialog
     , openedDialogs : List HtmlId
+    , history : List ( Msg, Msg )
+    , future : List ( Msg, Msg )
     }
 
 
@@ -127,7 +132,6 @@ emptyModel =
     , tableStats = Dict.empty
     , columnStats = Dict.empty
     , hoverTable = Nothing
-    , hoverColumn = Nothing
     , hoverTableRow = Nothing
     , cursorMode = CursorMode.Select
     , selectionBox = Nothing
@@ -158,6 +162,8 @@ emptyModel =
     , confirm = Nothing
     , prompt = Nothing
     , openedDialogs = []
+    , history = []
+    , future = []
     }
 
 
@@ -184,7 +190,7 @@ type alias MemoEdit =
 
 
 type alias AmlSidebar =
-    { id : HtmlId, selected : Maybe SourceId, errors : List AmlSchemaError, otherSourcesTableIdsCache : Set TableId }
+    { id : HtmlId, selected : Maybe ( SourceId, String ), errors : List AmlSchemaError, otherSourcesTableIdsCache : Set TableId }
 
 
 type alias VirtualRelation =
@@ -196,7 +202,7 @@ type alias SchemaAnalysisDialog =
 
 
 type alias ProjectSettingsDialog =
-    { id : HtmlId, sourceNameEdit : Maybe SourceId }
+    { id : HtmlId, sourceNameEdit : Maybe ( SourceId, String ) }
 
 
 type alias HelpDialog =
@@ -234,38 +240,50 @@ type Msg
     | ShowTables (List TableId) (Maybe PositionHint) String
     | ShowAllTables String
     | HideTable TableId
+    | UnHideTable_ Int ErdTableLayout
     | ShowRelatedTables TableId
     | HideRelatedTables TableId
     | ToggleTableCollapse TableId
-    | ShowColumn ColumnRef
+    | ShowColumn Int ColumnRef
     | HideColumn ColumnRef
     | ShowColumns TableId ShowColumns
     | HideColumns TableId HideColumns
     | SortColumns TableId ColumnOrder
+    | SetColumns_ TableId (List ErdColumnProps)
     | ToggleNestedColumn TableId ColumnPath Bool
     | ToggleHiddenColumns TableId
     | SelectItem HtmlId Bool
+    | SelectItems_ (List HtmlId)
     | SelectAll
+    | CanvasPosition Position.Diagram
     | TableMove TableId Delta
     | TablePosition TableId Position.Grid
+    | TableRowPosition TableRow.Id Position.Grid
+    | MemoPosition MemoId Position.Grid
     | TableOrder TableId Int
-    | TableColor TableId Color
+    | TableColor TableId Color Bool
     | MoveColumn ColumnRef Int
-    | ToggleHoverTable TableId Bool
-    | ToggleHoverColumn ColumnRef Bool
+    | HoverTable TableHover Bool
     | HoverTableRow TableRowHover Bool
     | CreateUserSource SourceName
     | CreateUserSourceWithId Source
     | CreateRelations (List { src : ColumnRef, ref : ColumnRef })
+    | RemoveRelations_ SourceId (List { src : ColumnRef, ref : ColumnRef })
     | IgnoreRelation ColumnRef
+    | UnIgnoreRelation_ ColumnRef
     | NewLayoutMsg NewLayout.Msg
     | LayoutMsg LayoutMsg
+    | FitToScreen
+    | SetView_ CanvasProps
+    | ArrangeTables
+    | SetLayout_ ErdLayout
     | NotesMsg NotesMsg
     | TagsMsg TagsMsg
     | GroupMsg GroupMsg
     | MemoMsg MemoMsg
     | ShowTableRow DbSourceInfo RowQuery (Maybe TableRow.SuccessState) (Maybe PositionHint) String
     | DeleteTableRow TableRow.Id
+    | UnDeleteTableRow_ Int TableRow
     | TableRowMsg TableRow.Id TableRow.Msg
     | AmlSidebarMsg AmlSidebarMsg
     | DetailsSidebarMsg DetailsSidebar.Msg
@@ -282,8 +300,6 @@ type Msg
     | ProPlanColors ProPlan.ColorsModel ProPlan.ColorsMsg
     | HelpMsg HelpMsg
     | CursorMode CursorMode
-    | FitToScreen
-    | ArrangeTables
     | Fullscreen (Maybe HtmlId)
     | OnWheel WheelEvent
     | Zoom ZoomDelta
@@ -298,7 +314,7 @@ type Msg
     | ContextMenuClose
     | DragStart DragId Position.Viewport
     | DragMove Position.Viewport
-    | DragEnd Position.Viewport
+    | DragEnd Bool Position.Viewport
     | DragCancel
     | Toast Toasts.Msg
     | ConfirmOpen (Confirm Msg)
@@ -310,6 +326,8 @@ type Msg
     | ModalClose Msg
     | CustomModalOpen (Msg -> HtmlId -> Html Msg)
     | CustomModalClose
+    | Undo
+    | Redo
     | JsMessage JsMsg
     | Batch (List Msg)
     | Send (Cmd Msg)
@@ -317,28 +335,31 @@ type Msg
 
 
 type LayoutMsg
-    = LLoad LayoutName
+    = LLoad String LayoutName
     | LDelete LayoutName
+    | LUnDelete_ LayoutName ErdLayout
 
 
 type GroupMsg
     = GCreate (List TableId)
     | GEdit Int String
     | GEditUpdate String
-    | GEditSave
+    | GEditSave GroupEdit
     | GSetColor Int Color
     | GAddTables Int (List TableId)
     | GRemoveTables Int (List TableId)
     | GDelete Int
+    | GUnDelete Int Group
 
 
 type MemoMsg
-    = MCreate Position.Canvas
+    = MCreate Position.Grid
     | MEdit Memo
     | MEditUpdate String
-    | MEditSave
+    | MEditSave MemoEdit
     | MSetColor MemoId (Maybe Color)
     | MDelete MemoId
+    | MUnDelete Int Memo
 
 
 type AmlSidebarMsg
@@ -380,8 +401,9 @@ type ProjectSettingsMsg
     | PSClose
     | PSSourceToggle Source
     | PSSourceNameUpdate SourceId String
-    | PSSourceNameUpdateDone
-    | PSSourceDelete Source
+    | PSSourceNameUpdateDone SourceId String
+    | PSSourceDelete SourceId
+    | PSSourceUnDelete_ Int Source
     | PSSourceUpdate SourceUpdateDialog.Msg
     | PSSourceSet Source
     | PSDefaultSchemaUpdate SchemaName
@@ -413,7 +435,7 @@ confirm title content message =
         , message = content
         , confirm = "Yes!"
         , cancel = "Nope"
-        , onConfirm = T.send message
+        , onConfirm = message |> T.send
         }
 
 
@@ -426,7 +448,7 @@ confirmDanger title content message =
         , message = content
         , confirm = "Yes!"
         , cancel = "Nope"
-        , onConfirm = T.send message
+        , onConfirm = message |> T.send
         }
 
 

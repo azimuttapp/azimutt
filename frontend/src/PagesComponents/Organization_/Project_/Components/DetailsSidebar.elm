@@ -16,7 +16,6 @@ import Libs.Models.DatabaseUrl exposing (DatabaseUrl)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Notes exposing (Notes)
 import Libs.Models.Tag as Tag exposing (Tag)
-import Libs.Task as T
 import Models.Project.ColumnId as ColumnId exposing (ColumnId)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.ColumnRef exposing (ColumnRef)
@@ -36,6 +35,7 @@ import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable exposi
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.NotesMsg exposing (NotesMsg(..))
 import PagesComponents.Organization_.Project_.Models.TagsMsg exposing (TagsMsg(..))
+import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
 import Ports
 import Services.Lenses exposing (setEditNotes, setSearch, setView)
 import Task
@@ -99,50 +99,50 @@ init v =
 -- UPDATE
 
 
-update : (String -> msg) -> (NotesMsg -> msg) -> (TagsMsg -> msg) -> Erd -> Msg -> Maybe Model -> ( Maybe Model, Cmd msg )
+update : (String -> msg) -> (NotesMsg -> msg) -> (TagsMsg -> msg) -> Erd -> Msg -> Maybe Model -> ( Maybe Model, Extra msg )
 update noop notesMsg tagsMsg erd msg model =
     case msg of
         Toggle ->
-            model |> Maybe.mapOrElse (\_ -> ( Nothing, Track.detailSidebarClosed erd )) ( listView |> init |> Just, Track.detailSidebarOpened "table-list" erd )
+            model |> Maybe.mapOrElse (\_ -> ( Nothing, Track.detailSidebarClosed erd )) ( listView |> init |> Just, Track.detailSidebarOpened "table-list" erd ) |> Extra.cmdT
 
         Close ->
-            ( Nothing, Track.detailSidebarClosed erd )
+            ( Nothing, Track.detailSidebarClosed erd |> Extra.cmd )
 
         SearchUpdate search ->
-            ( model |> Maybe.map (setSearch search), Cmd.none )
+            ( model |> Maybe.map (setSearch search), Extra.none )
 
         ShowList ->
-            ( model |> setViewM listView, Track.detailSidebarOpened "table-list" erd )
+            ( model |> setViewM listView, Track.detailSidebarOpened "table-list" erd |> Extra.cmd )
 
         ShowSchema schema ->
-            ( model |> setViewM (schemaView erd schema), Track.detailSidebarOpened "schema" erd )
+            ( model |> setViewM (schemaView erd schema), Track.detailSidebarOpened "schema" erd |> Extra.cmd )
 
         ShowTable table ->
-            ( model |> setViewM (tableView erd table), Cmd.batch (Track.detailSidebarOpened "table" erd :: (erd.sources |> filterTableDbSources table |> List.map (Ports.getTableStats table))) )
+            ( model |> setViewM (tableView erd table), (Track.detailSidebarOpened "table" erd :: (erd.sources |> filterTableDbSources table |> List.map (Ports.getTableStats table))) |> Extra.cmdL )
 
         ShowColumn column ->
-            ( model |> setViewM (columnView erd column), Cmd.batch (Track.detailSidebarOpened "column" erd :: (erd.sources |> filterColumnDbSources column |> List.map (Ports.getColumnStats column))) )
+            ( model |> setViewM (columnView erd column), (Track.detailSidebarOpened "column" erd :: (erd.sources |> filterColumnDbSources column |> List.map (Ports.getColumnStats column))) |> Extra.cmdL )
 
         ToggleCollapse id ->
-            ( model |> Maybe.map (\m -> { m | openedCollapse = Bool.cond (m.openedCollapse == id) "" id }), Cmd.none )
+            ( model |> Maybe.map (\m -> { m | openedCollapse = Bool.cond (m.openedCollapse == id) "" id }), Extra.none )
 
         EditNotes id content ->
-            ( model |> Maybe.map (\m -> { m | editNotes = Just content }), Dom.focus id |> Task.attempt (\_ -> noop "focus-notes-input") )
+            ( model |> Maybe.map (\m -> { m | editNotes = Just content }), Dom.focus id |> Task.attempt (\_ -> noop "focus-notes-input") |> Extra.cmd )
 
         EditNotesUpdate content ->
-            ( model |> Maybe.map (\m -> { m | editNotes = m.editNotes |> Maybe.map (\_ -> content) }), Cmd.none )
+            ( model |> Maybe.map (\m -> { m | editNotes = m.editNotes |> Maybe.map (\_ -> content) }), Extra.none )
 
         SaveNotes table column initialNotes updatedNotes ->
-            ( model |> Maybe.map (\m -> { m | editNotes = Nothing }), NSave table column initialNotes updatedNotes |> notesMsg |> T.send )
+            ( model |> Maybe.map (\m -> { m | editNotes = Nothing }), NSave table column initialNotes updatedNotes |> notesMsg |> Extra.msg )
 
         EditTags id tags ->
-            ( model |> Maybe.map (\m -> { m | editTags = tags |> Tag.tagsToString |> Just }), Dom.focus id |> Task.attempt (\_ -> noop "focus-tags-input") )
+            ( model |> Maybe.map (\m -> { m | editTags = tags |> Tag.tagsToString |> Just }), Dom.focus id |> Task.attempt (\_ -> noop "focus-tags-input") |> Extra.cmd )
 
         EditTagsUpdate content ->
-            ( model |> Maybe.map (\m -> { m | editTags = m.editTags |> Maybe.map (\_ -> content) }), Cmd.none )
+            ( model |> Maybe.map (\m -> { m | editTags = m.editTags |> Maybe.map (\_ -> content) }), Extra.none )
 
         SaveTags tableId columnPath initialTags updatedTags ->
-            ( model |> Maybe.map (\m -> { m | editTags = Nothing }), TSave tableId columnPath initialTags updatedTags |> tagsMsg |> T.send )
+            ( model |> Maybe.map (\m -> { m | editTags = Nothing }), TSave tableId columnPath initialTags updatedTags |> tagsMsg |> Extra.msg )
 
 
 setViewM : View -> Maybe Model -> Maybe Model

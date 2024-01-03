@@ -96,13 +96,13 @@ update wrap msg model =
         GotRemoteFile result ->
             case result of
                 Ok content ->
-                    ( model, T.send (GotFile content |> wrap) )
+                    ( model, GotFile content |> wrap |> T.send )
 
                 Err err ->
                     ( { model | loadedProject = err |> Err |> Just } |> setProject (err |> Http.errorToString |> Err |> Just), Cmd.none )
 
         GotFile content ->
-            ( { model | loadedProject = content |> Ok |> Just }, T.send (ParseProject |> wrap) )
+            ( { model | loadedProject = content |> Ok |> Just }, ParseProject |> wrap |> T.send )
 
         ParseProject ->
             model.loadedProject
@@ -111,7 +111,7 @@ update wrap msg model =
                     (\loadedProject ->
                         case loadedProject |> Decode.decodeString Project.decode of
                             Ok project ->
-                                ( { model | parsedProject = project |> Ok |> Just }, T.send (BuildProject |> wrap) )
+                                ( { model | parsedProject = project |> Ok |> Just }, BuildProject |> wrap |> T.send )
 
                             Err err ->
                                 ( { model | parsedProject = err |> Err |> Just } |> setProject (err |> Decode.errorToString |> Err |> Just), Cmd.none )

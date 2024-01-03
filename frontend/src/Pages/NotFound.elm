@@ -9,10 +9,11 @@ import Html exposing (Html)
 import Html.Lazy as Lazy
 import Libs.Task as T
 import Page
+import PagesComponents.Organization_.Project_.Updates.Extra as Extra
 import Ports exposing (JsMsg(..))
 import Request exposing (Request)
 import Services.Backend as Backend
-import Services.Lenses exposing (mapToastsCmd)
+import Services.Lenses exposing (mapToastsT)
 import Services.Toasts as Toasts
 import Shared
 import Track
@@ -90,7 +91,7 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Toast message ->
-            model |> mapToastsCmd (Toasts.update Toast message)
+            model |> mapToastsT (Toasts.update Toast message) |> Extra.unpackT
 
         JsMessage message ->
             model |> handleJsMessage message

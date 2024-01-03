@@ -8,6 +8,7 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Models.Project.Source as Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.ProjectInfo exposing (ProjectInfo)
+import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
 import Random
 import Time
 import Track
@@ -39,25 +40,25 @@ init =
 -- UPDATE
 
 
-update : (Msg -> msg) -> Time.Posix -> Maybe ProjectInfo -> Msg -> Model -> ( Model, Cmd msg )
+update : (Msg -> msg) -> Time.Posix -> Maybe ProjectInfo -> Msg -> Model -> ( Model, Extra msg )
 update wrap now project msg model =
     case msg of
         UpdateName name ->
             if name == "" then
-                ( { model | name = name, parsedSource = Nothing }, Cmd.none )
+                ( { model | name = name, parsedSource = Nothing }, Extra.none )
 
             else if model.parsedSource == Nothing then
-                ( { model | name = name }, SourceId.generator |> Random.generate (BuildSource >> wrap) )
+                ( { model | name = name }, SourceId.generator |> Random.generate (BuildSource >> wrap) |> Extra.cmd )
 
             else
-                ( { model | name = name, parsedSource = model.parsedSource |> Maybe.map (Result.map (\s -> { s | name = name })) }, Cmd.none )
+                ( { model | name = name, parsedSource = model.parsedSource |> Maybe.map (Result.map (\s -> { s | name = name })) }, Extra.none )
 
         BuildSource id ->
             if model.name == "" then
-                ( model, Cmd.none )
+                ( model, Extra.none )
 
             else
-                Source.aml model.name now id |> (\source -> ( { model | parsedSource = source |> Ok |> Just }, Track.amlSourceCreated project source ))
+                Source.aml model.name now id |> (\source -> ( { model | parsedSource = source |> Ok |> Just }, Track.amlSourceCreated project source |> Extra.cmd ))
 
 
 

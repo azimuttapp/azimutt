@@ -12,13 +12,13 @@ import Models.UrlInfos exposing (UrlInfos)
 import PagesComponents.Organization_.Project_.Models exposing (MemoEdit, MemoMsg(..), Msg(..))
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
-import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout
+import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
 import PagesComponents.Organization_.Project_.Models.MemoId as MemoId exposing (MemoId)
-import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirty, setDirtyCmd)
+import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
+import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirty, setDirtyM)
 import Ports
-import Services.Lenses exposing (mapEditMemoM, mapErdM, mapMemos, mapMemosL, setColor, setContent, setEditMemo)
-import Services.Toasts as Toasts
+import Services.Lenses exposing (mapColorT, mapContentT, mapEditMemoM, mapErdM, mapErdMTM, mapMemos, mapMemosLT, mapMemosT, setContent, setEditMemo)
 import Task
 import Time
 import Track
@@ -34,49 +34,52 @@ type alias Model x =
     }
 
 
-handleMemo : Time.Posix -> UrlInfos -> MemoMsg -> Model x -> ( Model x, Cmd Msg )
+handleMemo : Time.Posix -> UrlInfos -> MemoMsg -> Model x -> ( Model x, Extra Msg )
 handleMemo now urlInfos msg model =
     case msg of
         MCreate pos ->
-            model.erd |> Maybe.mapOrElse (\erd -> model |> createMemo now pos urlInfos erd) ( model, Cmd.none )
+            model.erd |> Maybe.mapOrElse (\erd -> model |> createMemo now pos urlInfos erd) ( model, Extra.none )
 
         MEdit memo ->
             model |> editMemo False memo
 
         MEditUpdate content ->
-            ( model |> mapEditMemoM (setContent content), Cmd.none )
+            ( model |> mapEditMemoM (setContent content), Extra.none )
 
-        MEditSave ->
-            model.editMemo |> Maybe.mapOrElse (\edit -> model |> saveMemo now edit) ( model, "No memo to save" |> Toasts.create "warning" |> Toast |> T.send )
+        MEditSave edit ->
+            model |> saveMemo now edit
 
         MSetColor id color ->
-            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapMemosL .id id (setColor color))) |> setDirty
+            model |> mapErdMTM (Erd.mapCurrentLayoutTMWithTime now (mapMemosLT .id id (mapColorT (\c -> ( color, Extra.history ( MemoMsg (MSetColor id c), MemoMsg (MSetColor id color) ) ))))) |> Extra.defaultT
 
         MDelete id ->
             model |> deleteMemo now id False
 
+        MUnDelete index memo ->
+            ( model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapMemos (List.insertAt index memo >> List.sortBy .id))), Ports.observeMemoSize memo.id |> Extra.cmd )
 
-createMemo : Time.Posix -> Position.Canvas -> UrlInfos -> Erd -> Model x -> ( Model x, Cmd Msg )
+
+createMemo : Time.Posix -> Position.Grid -> UrlInfos -> Erd -> Model x -> ( Model x, Extra Msg )
 createMemo now position urlInfos erd model =
     if model.erd |> Erd.canCreateMemo then
         ErdLayout.createMemo (erd |> Erd.currentLayout) position
             |> (\memo ->
                     model
-                        |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapMemos (List.append [ memo ])))
+                        |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapMemos (List.append [ memo ] >> List.sortBy .id)))
                         |> editMemo True memo
-                        |> Tuple.mapSecond (\cmd -> Cmd.batch [ cmd, Ports.observeMemoSize memo.id ])
+                        |> Extra.addCmdT (Ports.observeMemoSize memo.id)
                )
 
     else
-        ( model, Cmd.batch [ erd |> Erd.getProjectRef urlInfos |> ProPlan.memosModalBody |> CustomModalOpen |> T.send, Track.planLimit .memos (Just erd) ] )
+        ( model, Extra.cmdL [ erd |> Erd.getProjectRef urlInfos |> ProPlan.memosModalBody |> CustomModalOpen |> T.send, Track.planLimit .memos (Just erd) ] )
 
 
-editMemo : Bool -> Memo -> Model x -> ( Model x, Cmd Msg )
+editMemo : Bool -> Memo -> Model x -> ( Model x, Extra Msg )
 editMemo createMode memo model =
-    ( model |> setEditMemo (Just { id = memo.id, content = memo.content, createMode = createMode }), memo.id |> MemoId.toInputId |> Dom.focus |> Task.attempt (\_ -> Noop "focus-memo-input") )
+    ( model |> setEditMemo (Just { id = memo.id, content = memo.content, createMode = createMode }), memo.id |> MemoId.toInputId |> Dom.focus |> Task.attempt (\_ -> Noop "focus-memo-input") |> Extra.cmd )
 
 
-saveMemo : Time.Posix -> MemoEdit -> Model x -> ( Model x, Cmd Msg )
+saveMemo : Time.Posix -> MemoEdit -> Model x -> ( Model x, Extra Msg )
 saveMemo now edit model =
     let
         memoContent : String
@@ -88,20 +91,56 @@ saveMemo now edit model =
 
     else if edit.content == memoContent then
         -- no change, don't save
-        ( model |> setEditMemo Nothing, Cmd.none )
+        ( model |> setEditMemo Nothing, Extra.none )
 
     else
-        ( model |> setEditMemo Nothing |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapMemosL .id edit.id (setContent edit.content))), Track.memoSaved edit.createMode edit.content model.erd ) |> setDirtyCmd
+        model
+            |> setEditMemo Nothing
+            |> mapErdMTM
+                (Erd.mapCurrentLayoutTMWithTime now
+                    (mapMemosLT .id
+                        edit.id
+                        (\memo ->
+                            memo
+                                |> mapContentT
+                                    (\c ->
+                                        ( edit.content
+                                        , Extra.newHL
+                                            (Track.memoSaved edit.createMode edit.content model.erd)
+                                            (if edit.createMode then
+                                                [ ( MemoMsg (MDelete edit.id), MemoMsg (MUnDelete 0 { memo | content = edit.content }) ) ]
+
+                                             else
+                                                [ ( MemoMsg (MEditSave { edit | content = c }), MemoMsg (MEditSave edit) ) ]
+                                            )
+                                        )
+                                    )
+                        )
+                    )
+                )
+            |> setDirtyM
 
 
-deleteMemo : Time.Posix -> MemoId -> Bool -> Model x -> ( Model x, Cmd Msg )
+deleteMemo : Time.Posix -> MemoId -> Bool -> Model x -> ( Model x, Extra Msg )
 deleteMemo now id createMode model =
     model
-        |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapMemos (List.filter (\m -> m.id /= id))))
-        |> (\m ->
+        |> mapErdMTM
+            (Erd.mapCurrentLayoutTWithTime now
+                (mapMemosT
+                    (\memos ->
+                        case memos |> List.zipWithIndex |> List.partition (\( m, _ ) -> m.id == id) of
+                            ( ( deleted, index ) :: _, kept ) ->
+                                ( kept |> List.map Tuple.first, [ ( MemoMsg (MUnDelete index deleted), MemoMsg (MDelete deleted.id) ) ] )
+
+                            _ ->
+                                ( memos, [] )
+                    )
+                )
+            )
+        |> (\( m, hist ) ->
                 if createMode then
-                    ( m, Cmd.none )
+                    ( m, Extra.none )
 
                 else
-                    ( m, Track.memoDeleted model.erd ) |> setDirtyCmd
+                    ( m, Extra.newHL (Track.memoDeleted model.erd) (hist |> Maybe.withDefault []) ) |> setDirty
            )

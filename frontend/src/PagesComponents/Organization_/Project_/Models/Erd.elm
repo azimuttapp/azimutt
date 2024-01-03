@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Models.Erd exposing (Erd, canChangeColor, canCreateGroup, canCreateLayout, canCreateMemo, create, currentLayout, defaultSchemaM, getColumn, getColumnPos, getLayoutTable, getOrganization, getOrganizationM, getProjectId, getProjectIdM, getProjectRef, getProjectRefM, getTable, isShown, mapCurrentLayout, mapCurrentLayoutWithTime, mapCurrentLayoutWithTimeCmd, mapIgnoredRelations, mapSettings, mapSource, mapSources, setIgnoredRelations, setSettings, setSources, toSchema, unpack, viewportM, viewportToCanvas)
+module PagesComponents.Organization_.Project_.Models.Erd exposing (Erd, canChangeColor, canCreateGroup, canCreateLayout, canCreateMemo, create, currentLayout, defaultSchemaM, getColumn, getColumnPos, getLayoutTable, getOrganization, getOrganizationM, getProjectId, getProjectIdM, getProjectRef, getProjectRefM, getTable, isShown, mapCurrentLayout, mapCurrentLayoutT, mapCurrentLayoutTMWithTime, mapCurrentLayoutTWithTime, mapCurrentLayoutWithTime, mapIgnoredRelationsT, mapSettings, mapSource, mapSourceT, mapSources, mapSourcesT, setIgnoredRelations, setSettings, setSources, toSchema, unpack, viewportM, viewportToCanvas)
 
 import Conf
 import Dict exposing (Dict)
@@ -42,7 +42,7 @@ import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable exposi
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.SuggestedRelation exposing (SuggestedRelation)
 import Services.Analysis.MissingRelations as MissingRelations
-import Services.Lenses exposing (mapLayoutsD, mapLayoutsDCmd)
+import Services.Lenses exposing (mapLayoutsD, mapLayoutsDT, mapLayoutsDTM)
 import Set exposing (Set)
 import Time
 
@@ -131,14 +131,24 @@ mapCurrentLayout transform erd =
     erd |> mapLayoutsD erd.currentLayout transform
 
 
+mapCurrentLayoutT : (ErdLayout -> ( ErdLayout, a )) -> Erd -> ( Erd, Maybe a )
+mapCurrentLayoutT transform erd =
+    erd |> mapLayoutsDT erd.currentLayout transform
+
+
 mapCurrentLayoutWithTime : Time.Posix -> (ErdLayout -> ErdLayout) -> Erd -> Erd
 mapCurrentLayoutWithTime now transform erd =
     erd |> mapLayoutsD erd.currentLayout (transform >> (\l -> { l | updatedAt = now }))
 
 
-mapCurrentLayoutWithTimeCmd : Time.Posix -> (ErdLayout -> ( ErdLayout, Cmd msg )) -> Erd -> ( Erd, Cmd msg )
-mapCurrentLayoutWithTimeCmd now transform erd =
-    erd |> mapLayoutsDCmd erd.currentLayout (transform >> Tuple.mapFirst (\l -> { l | updatedAt = now }))
+mapCurrentLayoutTWithTime : Time.Posix -> (ErdLayout -> ( ErdLayout, a )) -> Erd -> ( Erd, Maybe a )
+mapCurrentLayoutTWithTime now transform erd =
+    erd |> mapLayoutsDT erd.currentLayout (transform >> Tuple.mapFirst (\l -> { l | updatedAt = now }))
+
+
+mapCurrentLayoutTMWithTime : Time.Posix -> (ErdLayout -> ( ErdLayout, Maybe a )) -> Erd -> ( Erd, Maybe a )
+mapCurrentLayoutTMWithTime now transform erd =
+    erd |> mapLayoutsDTM erd.currentLayout (transform >> Tuple.mapFirst (\l -> { l | updatedAt = now }))
 
 
 getOrganization : Maybe OrganizationId -> Erd -> Organization
@@ -364,9 +374,19 @@ mapSources transform erd =
     setSources (transform erd.sources) erd
 
 
+mapSourcesT : (List Source -> ( List Source, t )) -> Erd -> ( Erd, t )
+mapSourcesT transform erd =
+    transform erd.sources |> Tuple.mapFirst (\s -> setSources s erd)
+
+
 mapSource : SourceId -> (Source -> Source) -> Erd -> Erd
 mapSource id transform erd =
     setSources (List.mapBy .id id transform erd.sources) erd
+
+
+mapSourceT : SourceId -> (Source -> ( Source, t )) -> Erd -> ( Erd, Maybe t )
+mapSourceT id transform erd =
+    List.mapByT .id id transform erd.sources |> Tuple.mapBoth (\sources -> setSources sources erd) List.head
 
 
 setIgnoredRelations : Dict TableId (List ColumnPath) -> Erd -> Erd
@@ -378,9 +398,9 @@ setIgnoredRelations ignoredRelations erd =
         { erd | ignoredRelations = ignoredRelations } |> recomputeSources
 
 
-mapIgnoredRelations : (Dict TableId (List ColumnPath) -> Dict TableId (List ColumnPath)) -> Erd -> Erd
-mapIgnoredRelations transform erd =
-    setIgnoredRelations (transform erd.ignoredRelations) erd
+mapIgnoredRelationsT : (Dict TableId (List ColumnPath) -> ( Dict TableId (List ColumnPath), a )) -> Erd -> ( Erd, a )
+mapIgnoredRelationsT transform erd =
+    transform erd.ignoredRelations |> Tuple.mapFirst (\r -> setIgnoredRelations r erd)
 
 
 setSettings : ProjectSettings -> Erd -> Erd

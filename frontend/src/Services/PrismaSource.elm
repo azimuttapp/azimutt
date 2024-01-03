@@ -24,6 +24,7 @@ import Models.Project.Source exposing (Source)
 import Models.Project.SourceId as SourceId
 import Models.ProjectInfo exposing (ProjectInfo)
 import Models.SourceInfo as SourceInfo exposing (SourceInfo)
+import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
 import Ports
 import Random
 import Services.Lenses exposing (mapShow, setId, setParsedSchema, setParsedSource)
@@ -88,56 +89,56 @@ init source callback =
 -- UPDATE
 
 
-update : (Msg -> msg) -> Time.Posix -> Maybe ProjectInfo -> Msg -> Model msg -> ( Model msg, Cmd msg )
+update : (Msg -> msg) -> Time.Posix -> Maybe ProjectInfo -> Msg -> Model msg -> ( Model msg, Extra msg )
 update wrap now project msg model =
     case msg of
         UpdateRemoteFile url ->
-            ( { model | url = url, selectedLocalFile = Nothing, selectedRemoteFile = Nothing, loadedSchema = Nothing, parsedSchema = Nothing, parsedSource = Nothing }, Cmd.none )
+            ( { model | url = url, selectedLocalFile = Nothing, selectedRemoteFile = Nothing, loadedSchema = Nothing, parsedSchema = Nothing, parsedSource = Nothing }, Extra.none )
 
         GetRemoteFile schemaUrl ->
             if schemaUrl == "" then
-                ( init model.source model.callback |> (\m -> { m | url = schemaUrl }), Cmd.none )
+                ( init model.source model.callback |> (\m -> { m | url = schemaUrl }), Extra.none )
 
             else if schemaUrl |> String.startsWith "http" |> not then
-                ( init model.source model.callback |> (\m -> { m | url = schemaUrl, selectedRemoteFile = Just (Err "Invalid url, it should start with 'http'") }), Cmd.none )
+                ( init model.source model.callback |> (\m -> { m | url = schemaUrl, selectedRemoteFile = Just (Err "Invalid url, it should start with 'http'") }), Extra.none )
 
             else
                 ( init model.source model.callback |> (\m -> { m | url = schemaUrl, selectedRemoteFile = Just (Ok schemaUrl) })
-                , Http.get { url = schemaUrl, expect = Http.expectString (GotRemoteFile schemaUrl >> wrap) }
+                , Http.get { url = schemaUrl, expect = Http.expectString (GotRemoteFile schemaUrl >> wrap) } |> Extra.cmd
                 )
 
         GotRemoteFile url result ->
             case result of
                 Ok content ->
-                    ( model, SourceId.generator |> Random.generate (\sourceId -> GotFile (SourceInfo.prismaRemote now sourceId url content Nothing) content |> wrap) )
+                    ( model, SourceId.generator |> Random.generate (\sourceId -> GotFile (SourceInfo.prismaRemote now sourceId url content Nothing) content |> wrap) |> Extra.cmd )
 
                 Err err ->
-                    ( model |> setParsedSource (err |> Http.errorToString |> Err |> Just), T.send (model.callback (err |> Http.errorToString |> Err)) )
+                    ( model |> setParsedSource (err |> Http.errorToString |> Err |> Just), err |> Http.errorToString |> Err |> model.callback |> Extra.msg )
 
         GetLocalFile file ->
             ( init model.source model.callback |> (\m -> { m | selectedLocalFile = Just file })
-            , Ports.readLocalFile kind file
+            , Ports.readLocalFile kind file |> Extra.cmd
             )
 
         GotFile sourceInfo fileContent ->
             ( { model | loadedSchema = Just ( sourceInfo |> setId (model.source |> Maybe.mapOrElse .id sourceInfo.id), fileContent ) }
-            , Ports.getPrismaSchema fileContent
+            , Ports.getPrismaSchema fileContent |> Extra.cmd
             )
 
         GotSchema schema ->
             model.loadedSchema
-                |> Maybe.map (\_ -> ( model |> setParsedSchema (schema |> Just), BuildSource |> wrap |> T.send ))
-                |> Maybe.withDefault ( model, Cmd.none )
+                |> Maybe.map (\_ -> ( model |> setParsedSchema (Just schema), BuildSource |> wrap |> Extra.msg ))
+                |> Maybe.withDefault ( model, Extra.none )
 
         BuildSource ->
             Maybe.map2 (\( info, _ ) schema -> schema |> Result.map (JsonAdapter.buildSource info))
                 model.loadedSchema
                 model.parsedSchema
-                |> Maybe.map (\source -> ( model |> setParsedSource (source |> Just), Cmd.batch [ T.send (model.callback source), Track.sourceCreated project "prisma" source ] ))
-                |> Maybe.withDefault ( model, Cmd.none )
+                |> Maybe.map (\source -> ( model |> setParsedSource (Just source), Extra.cmdL [ T.send (model.callback source), Track.sourceCreated project "prisma" source ] ))
+                |> Maybe.withDefault ( model, Extra.none )
 
         UiToggle htmlId ->
-            ( model |> mapShow (\s -> B.cond (s == htmlId) "" htmlId), Cmd.none )
+            ( model |> mapShow (\s -> B.cond (s == htmlId) "" htmlId), Extra.none )
 
 
 

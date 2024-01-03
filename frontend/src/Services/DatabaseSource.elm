@@ -24,6 +24,7 @@ import Models.Project.Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.ProjectInfo exposing (ProjectInfo)
 import Models.SourceInfo as SourceInfo
+import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
 import Ports
 import Random
 import Services.Backend as Backend
@@ -101,26 +102,26 @@ init src callback =
 -- UPDATE
 
 
-update : (Msg -> msg) -> Time.Posix -> Maybe ProjectInfo -> Msg -> Model msg -> ( Model msg, Cmd msg )
+update : (Msg -> msg) -> Time.Posix -> Maybe ProjectInfo -> Msg -> Model msg -> ( Model msg, Extra msg )
 update wrap now project msg model =
     case msg of
         UpdateSelectedDb key ->
-            ( { model | selectedDb = key }, Cmd.none )
+            ( { model | selectedDb = key }, Extra.none )
 
         UpdateUrl url ->
-            ( { model | url = url, selectedUrl = Nothing, parsedSchema = Nothing, parsedSource = Nothing }, Cmd.none )
+            ( { model | url = url, selectedUrl = Nothing, parsedSchema = Nothing, parsedSource = Nothing }, Extra.none )
 
         GetSchema schemaUrl ->
             if schemaUrl == "" then
-                ( init model.source model.callback |> (\m -> { m | url = schemaUrl }), Cmd.none )
+                ( init model.source model.callback |> (\m -> { m | url = schemaUrl }), Extra.none )
 
             else
                 ( init model.source model.callback |> (\m -> { m | url = schemaUrl, selectedUrl = Just (Ok schemaUrl) })
-                , Ports.getDatabaseSchema schemaUrl
+                , Ports.getDatabaseSchema schemaUrl |> Extra.cmd
                 )
 
         GotSchema result ->
-            ( { model | parsedSchema = Just result }, SourceId.generator |> Random.generate (BuildSource >> wrap) )
+            ( { model | parsedSchema = Just result }, SourceId.generator |> Random.generate (BuildSource >> wrap) |> Extra.cmd )
 
         BuildSource sourceId ->
             Maybe.map2
@@ -132,11 +133,12 @@ update wrap now project msg model =
                         , source
                             |> Maybe.map (\s -> Cmd.batch [ s |> model.callback |> T.send, s |> Track.sourceCreated project "database" ])
                             |> Maybe.withDefault (Err "Can't build source" |> Track.sourceCreated project "database")
+                            |> Extra.cmd
                         )
                    )
 
         UiToggle htmlId ->
-            ( model |> mapShow (\s -> B.cond (s == htmlId) "" htmlId), Cmd.none )
+            ( model |> mapShow (\s -> B.cond (s == htmlId) "" htmlId), Extra.none )
 
 
 

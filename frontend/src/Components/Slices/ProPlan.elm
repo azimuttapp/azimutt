@@ -20,11 +20,11 @@ import Libs.Nel as Nel
 import Libs.Result as Result
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (Color, focus, sm)
-import Libs.Task as T
 import Models.Organization exposing (Organization)
 import Models.OrganizationId exposing (OrganizationId)
 import Models.Project.ProjectId as ProjectId exposing (ProjectId)
 import Models.ProjectRef as ProjectRef exposing (ProjectRef)
+import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
 import Services.Backend as Backend exposing (TableColorTweet)
 import Services.Lenses exposing (setColors, setResult)
 
@@ -140,7 +140,7 @@ colorsInit =
     { tweetOpen = False, tweetUrl = "", result = Nothing }
 
 
-colorsUpdate : (ColorsModel -> ColorsMsg -> msg) -> ColorsMsg -> ColorsModel -> ( ColorsModel, Cmd msg )
+colorsUpdate : (ColorsModel -> ColorsMsg -> msg) -> ColorsMsg -> ColorsModel -> ( ColorsModel, Extra msg )
 colorsUpdate update msg model =
     let
         wrap : ColorsMsg -> msg
@@ -149,17 +149,17 @@ colorsUpdate update msg model =
     in
     case msg of
         ToggleTweet ->
-            ( { model | tweetOpen = not model.tweetOpen }, Cmd.none )
+            ( { model | tweetOpen = not model.tweetOpen }, Extra.none )
 
         UpdateTweetUrl value ->
-            ( { model | tweetUrl = value }, Cmd.none )
+            ( { model | tweetUrl = value }, Extra.none )
 
         GetTableColorTweet id url ->
             if url == "" then
-                ( { model | result = Nothing }, Cmd.none )
+                ( { model | result = Nothing }, Extra.none )
 
             else
-                ( { model | result = Nothing }, Backend.getTableColorTweet id url (GotTableColorTweet >> wrap) )
+                ( { model | result = Nothing }, Backend.getTableColorTweet id url (GotTableColorTweet >> wrap) |> Extra.cmd )
 
         GotTableColorTweet res ->
             let
@@ -167,11 +167,11 @@ colorsUpdate update msg model =
                 result =
                     res |> Result.mapError Backend.errorToString |> Result.andThen colorsTweetResult
             in
-            ( { model | result = Just result }, result |> Result.map (\_ -> EnableTableChangeColor |> wrap |> T.send) |> Result.withDefault Cmd.none )
+            ( { model | result = Just result }, result |> Result.map (\_ -> EnableTableChangeColor |> wrap) |> Extra.msgR )
 
         EnableTableChangeColor ->
             -- never called, should be intercepted in the higher level to update the global model
-            ( model, Cmd.none )
+            ( model, Extra.none )
 
 
 colorsTweetResult : TableColorTweet -> Result ErrorMessage TweetText

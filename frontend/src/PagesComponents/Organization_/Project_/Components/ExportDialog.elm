@@ -8,7 +8,8 @@ import Libs.Task as T
 import Models.ProjectRef exposing (ProjectRef)
 import Models.UrlInfos exposing (UrlInfos)
 import PagesComponents.Organization_.Project_.Models.Erd exposing (Erd)
-import Services.Lenses exposing (mapBodyCmd, mapMCmd)
+import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
+import Services.Lenses exposing (mapBodyT, mapMT)
 
 
 dialogId : HtmlId
@@ -31,17 +32,17 @@ init =
     { id = dialogId, body = ExportDialogBody.init dialogId }
 
 
-update : (Msg -> msg) -> (HtmlId -> msg) -> UrlInfos -> Erd -> Msg -> Maybe Model -> ( Maybe Model, Cmd msg )
+update : (Msg -> msg) -> (HtmlId -> msg) -> UrlInfos -> Erd -> Msg -> Maybe Model -> ( Maybe Model, Extra msg )
 update wrap modalOpen urlInfos erd msg model =
     case msg of
         Open ->
-            ( Just init, Cmd.batch [ T.sendAfter 1 (modalOpen dialogId) ] )
+            ( Just init, modalOpen dialogId |> T.sendAfter 1 |> Extra.cmd )
 
         Close ->
-            ( Nothing, Cmd.none )
+            ( Nothing, Extra.none )
 
         BodyMsg message ->
-            model |> mapMCmd (mapBodyCmd (ExportDialogBody.update (BodyMsg >> wrap) urlInfos erd message))
+            model |> mapMT (mapBodyT (ExportDialogBody.update (BodyMsg >> wrap) urlInfos erd message)) |> Extra.defaultT
 
 
 view : (Msg -> msg) -> (Cmd msg -> msg) -> (msg -> msg) -> Bool -> ProjectRef -> Model -> Html msg

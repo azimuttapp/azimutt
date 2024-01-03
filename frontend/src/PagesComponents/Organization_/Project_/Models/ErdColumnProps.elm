@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Models.ErdColumnProps exposing (ErdColumnProps, ErdColumnPropsFlat, ErdColumnPropsNested(..), add, children, createAll, createChildren, filter, find, flatten, getIndex, initAll, map, mapAll, mapAt, member, nest, remove, unpackAll)
+module PagesComponents.Organization_.Project_.Models.ErdColumnProps exposing (ErdColumnProps, ErdColumnPropsFlat, ErdColumnPropsNested(..), children, createAll, createChildren, filter, find, flatten, getIndex, initAll, insertAt, map, mapAll, mapAt, mapAtTE, member, nest, remove, removeWithIndex, unpackAll)
 
 import Dict
 import Libs.List as List
@@ -10,6 +10,7 @@ import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.ProjectSettings as ProjectSettings exposing (ProjectSettings)
 import PagesComponents.Organization_.Project_.Models.ErdRelation exposing (ErdRelation)
 import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable)
+import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
 
 
 type alias ErdColumnProps =
@@ -134,14 +135,34 @@ remove path columns =
             )
 
 
-add : ColumnPath -> List ErdColumnProps -> List ErdColumnProps
-add path columns =
+removeWithIndex : ColumnPath -> List ErdColumnProps -> ( List ErdColumnProps, Maybe Int )
+removeWithIndex path columns =
+    columns
+        |> List.zipWithIndex
+        |> List.map
+            (\( c, i ) ->
+                if c.name == path.head then
+                    path.tail |> Nel.fromList |> Maybe.map (\p -> c |> mapChildrenT (removeWithIndex p)) |> Maybe.withDefault ( c, Just i )
+
+                else
+                    ( c, Nothing )
+            )
+        |> (\result ->
+                -- remove prop if found at depth of path
+                ( result |> List.filterMap (\( c, found ) -> found |> Maybe.filter (\_ -> path.tail |> List.isEmpty) |> Maybe.flipWith c)
+                , result |> List.filterMap Tuple.second |> List.head
+                )
+           )
+
+
+insertAt : Int -> ColumnPath -> List ErdColumnProps -> List ErdColumnProps
+insertAt index path columns =
     if columns |> List.memberBy .name path.head then
         columns
             |> List.map
                 (\c ->
                     if c.name == path.head then
-                        path.tail |> Nel.fromList |> Maybe.mapOrElse (\p -> c |> mapChildren (add p)) c
+                        path.tail |> Nel.fromList |> Maybe.mapOrElse (\p -> c |> mapChildren (insertAt index p)) c
 
                     else
                         c
@@ -149,11 +170,11 @@ add path columns =
 
     else
         columns
-            ++ [ { name = path.head
-                 , children = ErdColumnPropsNested (path.tail |> Nel.fromList |> Maybe.mapOrElse (\p -> [] |> add p) [])
-                 , highlighted = False
-                 }
-               ]
+            |> List.insertAt index
+                { name = path.head
+                , children = ErdColumnPropsNested (path.tail |> Nel.fromList |> Maybe.mapOrElse (\p -> [] |> insertAt index p) [])
+                , highlighted = False
+                }
 
 
 map : (ColumnPath -> ErdColumnProps -> ErdColumnProps) -> List ErdColumnProps -> List ErdColumnProps
@@ -170,6 +191,12 @@ mapAt : Maybe ColumnPath -> (List ErdColumnProps -> List ErdColumnProps) -> List
 mapAt path f columns =
     -- apply `f` on columns under the given path
     path |> Maybe.mapOrElse (\p -> columns |> List.map (mapChildren (mapAt (p.tail |> Nel.fromList) f))) (f columns)
+
+
+mapAtTE : Maybe ColumnPath -> (List ErdColumnProps -> ( List ErdColumnProps, Extra a )) -> List ErdColumnProps -> ( List ErdColumnProps, Extra a )
+mapAtTE path f columns =
+    -- apply `f` on columns under the given path
+    path |> Maybe.mapOrElse (\p -> columns |> List.mapT (mapChildrenT (mapAtTE (p.tail |> Nel.fromList) f)) |> Tuple.mapSecond Extra.concat) (f columns)
 
 
 mapAll : (Maybe ColumnPath -> List ErdColumnProps -> List ErdColumnProps) -> List ErdColumnProps -> List ErdColumnProps
@@ -201,3 +228,8 @@ children column =
 mapChildren : (List ErdColumnProps -> List ErdColumnProps) -> ErdColumnProps -> ErdColumnProps
 mapChildren f column =
     { column | children = column |> children |> f |> ErdColumnPropsNested }
+
+
+mapChildrenT : (List ErdColumnProps -> ( List ErdColumnProps, a )) -> ErdColumnProps -> ( ErdColumnProps, a )
+mapChildrenT f column =
+    column |> children |> f |> (\( cols, a ) -> ( { column | children = cols |> ErdColumnPropsNested }, a ))

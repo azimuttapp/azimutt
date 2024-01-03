@@ -1,26 +1,23 @@
-module PagesComponents.Organization_.Project_.Updates.Utils exposing (Model, setDirty, setDirtyCmd)
+module PagesComponents.Organization_.Project_.Updates.Utils exposing (DirtyModel, setDirty, setDirtyM)
 
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
+import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
 import Ports
 
 
-type alias Model x =
-    { x | conf : ErdConf, dirty : Bool }
+type alias DirtyModel m =
+    { m | conf : ErdConf, dirty : Bool }
 
 
-setDirty : Model x -> ( Model x, Cmd msg )
-setDirty model =
+setDirty : ( DirtyModel m, Extra msg ) -> ( DirtyModel m, Extra msg )
+setDirty ( model, e ) =
     if model.dirty || not model.conf.save then
-        ( model, Cmd.none )
+        ( model, e )
 
     else
-        ( { model | dirty = True }, Ports.projectDirty True )
+        ( { model | dirty = True }, e |> Extra.addCmd (Ports.projectDirty True) )
 
 
-setDirtyCmd : ( Model x, Cmd msg ) -> ( Model x, Cmd msg )
-setDirtyCmd ( model, cmd ) =
-    if model.dirty || not model.conf.save then
-        ( model, cmd )
-
-    else
-        ( { model | dirty = True }, Cmd.batch [ cmd, Ports.projectDirty True ] )
+setDirtyM : ( DirtyModel m, Maybe (Extra msg) ) -> ( DirtyModel m, Extra msg )
+setDirtyM ( model, extraM ) =
+    ( model, extraM |> Maybe.withDefault Extra.none ) |> setDirty

@@ -24,6 +24,7 @@ import Models.Organization exposing (Organization)
 import Models.Plan as Plan exposing (Plan)
 import Models.Project.ProjectName exposing (ProjectName)
 import Models.Project.ProjectStorage as ProjectStorage exposing (ProjectStorage)
+import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
 
 
 type alias Model =
@@ -45,17 +46,17 @@ init id name organization =
     { id = id, name = name, organization = organization, storage = ProjectStorage.Remote }
 
 
-update : Msg -> Model -> ( Model, Cmd msg )
+update : Msg -> Model -> ( Model, Extra msg )
 update msg model =
     case msg of
         UpdateProjectName value ->
-            ( { model | name = value }, Cmd.none )
+            ( { model | name = value }, Extra.none )
 
         UpdateOrganization value ->
-            ( { model | organization = value }, Cmd.none )
+            ( { model | organization = value }, Extra.none )
 
         UpdateStorage value ->
-            ( { model | storage = value }, Cmd.none )
+            ( { model | storage = value }, Extra.none )
 
 
 signIn : msg -> String -> HtmlId -> Html msg

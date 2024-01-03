@@ -205,7 +205,7 @@ viewPieChart values =
         data : List { value : String, count : Int }
         data =
             if List.length sorted > maxSlices then
-                sorted |> List.take (maxSlices - 1) |> List.add { value = "Other values", count = sorted |> List.drop (maxSlices - 1) |> List.map .count |> List.sum }
+                sorted |> List.take (maxSlices - 1) |> List.insert { value = "Other values", count = sorted |> List.drop (maxSlices - 1) |> List.map .count |> List.sum }
 
             else
                 sorted

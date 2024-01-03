@@ -15,13 +15,13 @@ suite =
             , test "get nothing on negative index" (\_ -> [ "a", "b", "c" ] |> List.get -1 |> Expect.equal Nothing)
             , test "get nothing on out of array index" (\_ -> [ "a", "b", "c" ] |> List.get 4 |> Expect.equal Nothing)
             ]
-        , describe "addAt"
-            [ test "first" (\_ -> [ "b", "c" ] |> List.addAt "a" 0 |> Expect.equal [ "a", "b", "c" ])
-            , test "middle" (\_ -> [ "a", "c" ] |> List.addAt "b" 1 |> Expect.equal [ "a", "b", "c" ])
-            , test "last" (\_ -> [ "a", "b" ] |> List.addAt "c" 2 |> Expect.equal [ "a", "b", "c" ])
-            , test "after" (\_ -> [ "a", "b" ] |> List.addAt "c" 5 |> Expect.equal [ "a", "b", "c" ])
-            , test "bad 1" (\_ -> [ "a", "b" ] |> List.addAt "c" -1 |> Expect.equal [ "c", "a", "b" ])
-            , test "bad 2" (\_ -> [ "a", "b" ] |> List.addAt "c" -2 |> Expect.equal [ "c", "a", "b" ])
+        , describe "insertAt"
+            [ test "first" (\_ -> [ "b", "c" ] |> List.insertAt 0 "a" |> Expect.equal [ "a", "b", "c" ])
+            , test "middle" (\_ -> [ "a", "c" ] |> List.insertAt 1 "b" |> Expect.equal [ "a", "b", "c" ])
+            , test "last" (\_ -> [ "a", "b" ] |> List.insertAt 2 "c" |> Expect.equal [ "a", "b", "c" ])
+            , test "after" (\_ -> [ "a", "b" ] |> List.insertAt 5 "c" |> Expect.equal [ "a", "b", "c" ])
+            , test "bad 1" (\_ -> [ "a", "b" ] |> List.insertAt -1 "c" |> Expect.equal [ "c", "a", "b" ])
+            , test "bad 2" (\_ -> [ "a", "b" ] |> List.insertAt -2 "c" |> Expect.equal [ "c", "a", "b" ])
             ]
         , describe "move"
             [ test "move an item from a position to an other" (\_ -> [ 1, 2, 3, 4, 5 ] |> List.moveIndex 0 2 |> Expect.equal [ 2, 3, 1, 4, 5 ])

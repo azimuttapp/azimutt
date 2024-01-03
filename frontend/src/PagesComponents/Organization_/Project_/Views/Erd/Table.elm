@@ -116,12 +116,12 @@ viewTable conf zoom args layout meta tableLayout table =
                 , showHiddenColumns = tableLayout.props.showHiddenColumns
                 }
             , actions =
-                { hover = ToggleHoverTable table.id
+                { hover = HoverTable ( table.id, Nothing )
                 , headerClick = \e -> B.cond (e.button == MainButton) (SelectItem (TableId.toHtmlId table.id) (e.ctrl || e.shift)) (Noop "non-main-button-table-header-click")
                 , headerDblClick = DetailsSidebarMsg (DetailsSidebar.ShowTable table.id)
                 , headerRightClick = ContextMenuCreate dropdown
                 , headerDropdownClick = DropdownToggle
-                , columnHover = \col on -> ToggleHoverColumn { table = table.id, column = col } on
+                , columnHover = \col -> HoverTable ( table.id, Just col )
                 , columnClick = B.maybe virtualRelation (\col e -> VirtualRelationMsg (VRUpdate { table = table.id, column = col } e.clientPos))
                 , columnDblClick = \col -> { table = table.id, column = col } |> DetailsSidebar.ShowColumn |> DetailsSidebarMsg
                 , columnRightClick = \i col -> ContextMenuCreate (B.cond (tableLayout.columns |> ErdColumnProps.member col) ColumnContextMenu.view ColumnContextMenu.viewHidden platform i { table = table.id, column = col } (table |> ErdTable.getColumn col) (meta.columns |> ColumnPath.get col |> Maybe.andThen .notes))
@@ -184,14 +184,20 @@ buildColumn useBasicTypes tableMeta layout column =
             column.kindLabel
     , kindDetails =
         column.customType
-            |> Maybe.map
+            |> Maybe.andThen
                 (\t ->
                     case t.value of
+                        CustomTypeValue.Enum [] ->
+                            Nothing
+
                         CustomTypeValue.Enum values ->
-                            "Enum: " ++ String.join ", " values
+                            "Enum: " ++ String.join ", " values |> Just
+
+                        CustomTypeValue.Definition "" ->
+                            Nothing
 
                         CustomTypeValue.Definition definition ->
-                            "Type: " ++ definition
+                            "Type: " ++ definition |> Just
                 )
     , nullable = column.nullable
     , default = column.defaultLabel

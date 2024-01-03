@@ -28,6 +28,6 @@ init urlOrganization =
             , html = Just "h-full"
             , body = Just "h-full"
             }
-        , T.send InitProject
+        , InitProject |> T.send
         ]
     )

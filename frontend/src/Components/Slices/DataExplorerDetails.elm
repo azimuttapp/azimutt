@@ -41,6 +41,7 @@ import Models.SqlQuery exposing (SqlQueryOrigin)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.ErdTableProps as ErdTableProps
 import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint)
+import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
 import Ports
 import Services.Lenses exposing (mapState)
 import Set exposing (Set)
@@ -93,7 +94,7 @@ dbPrefix =
     "data-explorer-details"
 
 
-init : ProjectInfo -> Id -> DbSourceInfo -> RowQuery -> ( Model, Cmd msg )
+init : ProjectInfo -> Id -> DbSourceInfo -> RowQuery -> ( Model, Extra msg )
 init project id source query =
     let
         sqlQuery : SqlQueryOrigin
@@ -101,7 +102,7 @@ init project id source query =
             DbQuery.findRow source.db.kind query
     in
     ( { id = id, source = source, query = query, state = StateLoading, expanded = Set.empty }
-    , Cmd.batch [ Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt id) source.db.url sqlQuery, Track.dataExplorerDetailsOpened source sqlQuery project ]
+    , Extra.cmdL [ Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt id) source.db.url sqlQuery, Track.dataExplorerDetailsOpened source sqlQuery project ]
     )
 
 
@@ -124,14 +125,14 @@ initSuccess started finished res =
 -- UPDATE
 
 
-update : ProjectInfo -> Msg -> Model -> ( Model, Cmd msg )
+update : ProjectInfo -> Msg -> Model -> ( Model, Extra msg )
 update project msg model =
     case msg of
         GotResult res ->
-            ( model |> mapState (\_ -> res.result |> Result.fold (initFailure res.started res.finished) (initSuccess res.started res.finished)), Track.dataExplorerDetailsResult res project )
+            ( model |> mapState (\_ -> res.result |> Result.fold (initFailure res.started res.finished) (initSuccess res.started res.finished)), Track.dataExplorerDetailsResult res project |> Extra.cmd )
 
         ExpandValue column ->
-            ( { model | expanded = model.expanded |> Set.toggle column }, Cmd.none )
+            ( { model | expanded = model.expanded |> Set.toggle column }, Extra.none )
 
 
 

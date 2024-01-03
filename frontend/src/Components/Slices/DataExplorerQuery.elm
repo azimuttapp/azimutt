@@ -31,7 +31,6 @@ import Libs.Result as Result
 import Libs.Set as Set
 import Libs.String as String
 import Libs.Tailwind exposing (TwClass, focus)
-import Libs.Task as T
 import Libs.Time as Time
 import Models.DbSourceInfo as DbSourceInfo exposing (DbSourceInfo)
 import Models.DbValue as DbValue exposing (DbValue(..))
@@ -54,6 +53,7 @@ import Models.Project.TableName exposing (TableName)
 import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Models.QueryResult as QueryResult exposing (QueryResult, QueryResultColumn, QueryResultColumnTarget, QueryResultRow, QueryResultSuccess)
 import Models.SqlQuery exposing (SqlQuery, SqlQueryOrigin)
+import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
 import Ports
 import Services.Lenses exposing (mapState, setQuery, setState)
 import Services.Toasts as Toasts
@@ -129,10 +129,10 @@ dbPrefix =
     "data-explorer-query"
 
 
-init : ProjectInfo -> Id -> DbSourceInfo -> SqlQueryOrigin -> ( Model, Cmd msg )
+init : ProjectInfo -> Id -> DbSourceInfo -> SqlQueryOrigin -> ( Model, Extra msg )
 init project id source query =
     ( { id = id, source = source, query = query, state = StateRunning }
-    , Cmd.batch [ Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt id) source.db.url query, Track.dataExplorerQueryOpened source query project ]
+    , Extra.cmdL [ Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt id) source.db.url query, Track.dataExplorerQueryOpened source query project ]
     )
 
 
@@ -163,49 +163,49 @@ initSuccess started finished res =
 -- UPDATE
 
 
-update : (Toasts.Msg -> msg) -> ProjectInfo -> Msg -> Model -> ( Model, Cmd msg )
+update : (Toasts.Msg -> msg) -> ProjectInfo -> Msg -> Model -> ( Model, Extra msg )
 update showToast project msg model =
     case msg of
         Cancel ->
-            ( model |> mapState (\_ -> StateCanceled), Cmd.none )
+            ( model |> mapState (\_ -> StateCanceled), Extra.none )
 
         GotResult res ->
-            ( model |> setQuery res.query |> mapState (\_ -> res.result |> Result.fold (initFailure res.started res.finished) (initSuccess res.started res.finished)), Track.dataExplorerQueryResult res project )
+            ( model |> setQuery res.query |> mapState (\_ -> res.result |> Result.fold (initFailure res.started res.finished) (initSuccess res.started res.finished)), Track.dataExplorerQueryResult res project |> Extra.cmd )
 
         ChangePage p ->
-            ( model |> mapState (mapSuccess (\s -> { s | page = p })), Cmd.none )
+            ( model |> mapState (mapSuccess (\s -> { s | page = p })), Extra.none )
 
         ExpandRow i ->
-            ( model |> mapState (mapSuccess (\s -> { s | expanded = s.expanded |> Set.toggle i })), Cmd.none )
+            ( model |> mapState (mapSuccess (\s -> { s | expanded = s.expanded |> Set.toggle i })), Extra.none )
 
         CollapseColumn pathStr ->
-            ( model |> mapState (mapSuccess (\s -> { s | collapsed = s.collapsed |> Set.toggle pathStr })), Cmd.none )
+            ( model |> mapState (mapSuccess (\s -> { s | collapsed = s.collapsed |> Set.toggle pathStr })), Extra.none )
 
         ToggleQuery ->
-            ( model |> mapState (mapSuccess (\s -> { s | showQuery = not s.showQuery })), Cmd.none )
+            ( model |> mapState (mapSuccess (\s -> { s | showQuery = not s.showQuery })), Extra.none )
 
         ToggleDocumentMode ->
-            ( model |> mapState (mapSuccess (\s -> { s | documentMode = not s.documentMode })), Cmd.none )
+            ( model |> mapState (mapSuccess (\s -> { s | documentMode = not s.documentMode })), Extra.none )
 
         ToggleFullScreen ->
-            ( model |> mapState (mapSuccess (\s -> { s | fullScreen = not s.fullScreen })), Cmd.none )
+            ( model |> mapState (mapSuccess (\s -> { s | fullScreen = not s.fullScreen })), Extra.none )
 
         UpdateSearch search ->
-            ( model |> mapState (mapSuccess (\s -> { s | search = search, page = 1 })), Cmd.none )
+            ( model |> mapState (mapSuccess (\s -> { s | search = search, page = 1 })), Extra.none )
 
         UpdateSort sort ->
-            ( model |> mapState (mapSuccess (\s -> { s | sortBy = sort, page = 1 })), Cmd.none )
+            ( model |> mapState (mapSuccess (\s -> { s | sortBy = sort, page = 1 })), Extra.none )
 
         Refresh ->
-            ( model |> setState StateRunning, Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt model.id) model.source.db.url model.query )
+            ( model |> setState StateRunning, Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt model.id) model.source.db.url model.query |> Extra.cmd )
 
         ExportData extension ->
             case model.state of
                 StateSuccess s ->
-                    ( model, Ports.downloadFile (model |> fileName extension) (s |> fileContent extension) )
+                    ( model, Ports.downloadFile (model |> fileName extension) (s |> fileContent extension) |> Extra.cmd )
 
                 _ ->
-                    ( model, Toasts.warning "Can't export data not in success." |> showToast |> T.send )
+                    ( model, Toasts.warning "Can't export data not in success." |> showToast |> Extra.msg )
 
 
 stateSuccess : Model -> Maybe SuccessState

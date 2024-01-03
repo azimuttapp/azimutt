@@ -1,7 +1,5 @@
 module Libs.List exposing
-    ( add
-    , addAt
-    , appendIf
+    ( appendIf
     , appendOn
     , diff
     , dropRight
@@ -20,17 +18,26 @@ module Libs.List exposing
     , get
     , groupBy
     , groupByL
+    , headOr
     , indexOf
     , indexedConcatMap
     , indexedFilter
     , indexedFilterMap
     , indexedFind
+    , insert
+    , insertAt
     , last
     , mapAt
-    , mapAtCmd
+    , mapAtT
+    , mapAtTL
     , mapBy
-    , mapByCmd
+    , mapByT
+    , mapByTE
     , mapLast
+    , mapT
+    , mapTE
+    , mapTL
+    , mapTM
     , maximumBy
     , memberBy
     , memberWith
@@ -45,9 +52,9 @@ module Libs.List exposing
     , nonEmptyMap
     , one
     , prepend
-    , prependCmd
     , prependIf
     , prependOn
+    , prependT
     , reduce
     , remove
     , removeAll
@@ -57,6 +64,7 @@ module Libs.List exposing
     , resultCollect
     , resultSeq
     , toggle
+    , tupleSeq
     , unique
     , uniqueBy
     , zip
@@ -70,8 +78,14 @@ import Libs.Basics exposing (maxBy, minBy)
 import Libs.Bool as B
 import Libs.Maybe as Maybe
 import Libs.Tuple3 as Tuple3
+import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
 import Random
 import Set
+
+
+headOr : a -> List a -> a
+headOr default list =
+    list |> List.head |> Maybe.withDefault default
 
 
 get : Int -> List a -> Maybe a
@@ -256,6 +270,36 @@ mapAt index f list =
             )
 
 
+mapAtT : Int -> (a -> ( a, t )) -> List a -> ( List a, Maybe t )
+mapAtT index f list =
+    list
+        |> List.indexedMap
+            (\i a ->
+                if index == i then
+                    f a |> Tuple.mapSecond Just
+
+                else
+                    ( a, Nothing )
+            )
+        |> List.unzip
+        |> Tuple.mapSecond (List.filterMap identity >> List.head)
+
+
+mapAtTL : Int -> (a -> ( a, List t )) -> List a -> ( List a, List t )
+mapAtTL index f list =
+    list
+        |> List.indexedMap
+            (\i a ->
+                if index == i then
+                    f a
+
+                else
+                    ( a, [] )
+            )
+        |> List.unzip
+        |> Tuple.mapSecond List.concat
+
+
 mapLast : (a -> a) -> List a -> List a
 mapLast f list =
     let
@@ -279,23 +323,23 @@ mapBy matcher value transform list =
             )
 
 
-mapAtCmd : Int -> (a -> ( a, Cmd msg )) -> List a -> ( List a, Cmd msg )
-mapAtCmd index f list =
+mapByT : (a -> b) -> b -> (a -> ( a, t )) -> List a -> ( List a, List t )
+mapByT matcher value f list =
     list
-        |> List.indexedMap
-            (\i a ->
-                if index == i then
-                    f a
+        |> List.map
+            (\a ->
+                if matcher a == value then
+                    f a |> Tuple.mapSecond Just
 
                 else
-                    ( a, Cmd.none )
+                    ( a, Nothing )
             )
         |> List.unzip
-        |> Tuple.mapSecond Cmd.batch
+        |> Tuple.mapSecond (List.filterMap identity)
 
 
-mapByCmd : (a -> b) -> b -> (a -> ( a, Cmd msg )) -> List a -> ( List a, Cmd msg )
-mapByCmd matcher value f list =
+mapByTE : (a -> b) -> b -> (a -> ( a, Extra msg )) -> List a -> ( List a, Extra msg )
+mapByTE matcher value f list =
     list
         |> List.map
             (\a ->
@@ -303,10 +347,30 @@ mapByCmd matcher value f list =
                     f a
 
                 else
-                    ( a, Cmd.none )
+                    ( a, Extra.none )
             )
         |> List.unzip
-        |> Tuple.mapSecond Cmd.batch
+        |> Tuple.mapSecond Extra.concat
+
+
+mapT : (a -> ( b, t )) -> List a -> ( List b, List t )
+mapT transform list =
+    list |> List.map transform |> List.unzip
+
+
+mapTM : (a -> ( b, Maybe t )) -> List a -> ( List b, List t )
+mapTM transform list =
+    list |> mapT transform |> Tuple.mapSecond (List.filterMap identity)
+
+
+mapTL : (a -> ( b, List t )) -> List a -> ( List b, List t )
+mapTL transform list =
+    list |> mapT transform |> Tuple.mapSecond (List.concatMap identity)
+
+
+mapTE : (a -> ( b, Extra t )) -> List a -> ( List b, Extra t )
+mapTE transform list =
+    list |> mapT transform |> Tuple.mapSecond Extra.concat
 
 
 zip : List b -> List a -> List ( a, b )
@@ -321,7 +385,7 @@ filterZip f xs =
 
 moveIndex : Int -> Int -> List a -> List a
 moveIndex from to list =
-    list |> get from |> Maybe.mapOrElse (\v -> list |> removeAt from |> addAt v to) list
+    list |> get from |> Maybe.mapOrElse (\v -> list |> removeAt from |> insertAt to v) list
 
 
 move : a -> Int -> List a -> List a
@@ -359,17 +423,17 @@ removeAll items list =
     list |> List.filter (\i -> items |> List.member i |> not)
 
 
-add : a -> List a -> List a
-add item list =
+insert : a -> List a -> List a
+insert item list =
     list ++ [ item ]
 
 
-addAt : a -> Int -> List a -> List a
-addAt item index list =
+insertAt : Int -> a -> List a -> List a
+insertAt index item list =
     if index >= List.length list then
         list ++ [ item ]
 
-    else if index < 0 then
+    else if index <= 0 then
         item :: list
 
     else
@@ -383,9 +447,9 @@ prepend item list =
     item :: list
 
 
-prependCmd : ( a, Cmd msg ) -> List a -> ( List a, Cmd msg )
-prependCmd ( item, cmd ) list =
-    ( item :: list, cmd )
+prependT : ( a, t ) -> List a -> ( List a, t )
+prependT ( item, t ) list =
+    ( item :: list, t )
 
 
 prependIf : Bool -> a -> List a -> List a
@@ -643,6 +707,11 @@ resultSeq list =
 
         ( errs, _ ) ->
             Err errs
+
+
+tupleSeq : List ( a, b ) -> ( List a, List b )
+tupleSeq list =
+    List.foldr (\( a, b ) ( aList, bList ) -> ( a :: aList, b :: bList )) ( [], [] ) list
 
 
 genSeq : List (Random.Generator a) -> Random.Generator (List a)

@@ -1,4 +1,4 @@
-module Components.Organisms.Table exposing (Actions, CheckConstraint, Column, DocState, IndexConstraint, Model, NestedColumns(..), ProjectInfo, Relation, SharedDocState, State, TableConf, UniqueConstraint, doc, docInit, table)
+module Components.Organisms.Table exposing (Actions, CheckConstraint, Column, DocState, IndexConstraint, Model, NestedColumns(..), ProjectInfo, Relation, SharedDocState, State, TableConf, TableHover, UniqueConstraint, doc, docInit, table)
 
 import Components.Atoms.Icon as Icon
 import Components.Atoms.Icons as Icons
@@ -82,6 +82,10 @@ type alias Column =
 
 type NestedColumns
     = NestedColumns Int (List Column)
+
+
+type alias TableHover =
+    ( TableId, Maybe ColumnPath )
 
 
 type alias State =

@@ -46,6 +46,7 @@ import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumn
 import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.ErdTableProps exposing (ErdTableProps)
+import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
 import Ports
 import Services.Lenses exposing (mapOrganization, mapProject, setCurrentLayout, setLayouts, setOrganization, setTables)
 import Track
@@ -84,7 +85,7 @@ init id =
     { id = id, input = Nothing, format = Nothing, output = Pending }
 
 
-update : (Msg -> msg) -> UrlInfos -> Erd -> Msg -> Model -> ( Model, Cmd msg )
+update : (Msg -> msg) -> UrlInfos -> Erd -> Msg -> Model -> ( Model, Extra msg )
 update wrap urlInfos erd msg model =
     case msg of
         SetInput source ->
@@ -97,26 +98,25 @@ update wrap urlInfos erd msg model =
             ( { model | output = Fetching }, getOutput wrap urlInfos erd source format )
 
         GotOutput file content ->
-            ( { model | output = Fetched ( file, content ) }, Cmd.none )
+            ( { model | output = Fetched ( file, content ) }, Extra.none )
 
 
-shouldGetOutput : (Msg -> msg) -> Model -> ( Model, Cmd msg )
+shouldGetOutput : (Msg -> msg) -> Model -> ( Model, Extra msg )
 shouldGetOutput wrap model =
     if model.output /= Fetching then
         ( { model | output = Pending }
         , if model.input == Just Project then
-            GetOutput Project JSON |> wrap |> T.send
+            GetOutput Project JSON |> wrap |> Extra.msg
 
           else
-            Maybe.map2 (\input format -> GetOutput input format |> wrap |> T.send) model.input model.format
-                |> Maybe.withDefault Cmd.none
+            Maybe.map2 GetOutput model.input model.format |> Maybe.map wrap |> Extra.msgM
         )
 
     else
-        ( model, Cmd.none )
+        ( model, Extra.none )
 
 
-getOutput : (Msg -> msg) -> UrlInfos -> Erd -> ExportInput -> ExportFormat -> Cmd msg
+getOutput : (Msg -> msg) -> UrlInfos -> Erd -> ExportInput -> ExportFormat -> Extra msg
 getOutput wrap urlInfos erd input format =
     let
         sqlExportAllowed : Bool
@@ -125,25 +125,25 @@ getOutput wrap urlInfos erd input format =
     in
     case input of
         Project ->
-            erd |> Erd.unpack |> Project.downloadContent |> (\output -> output |> GotOutput (erd.project.name ++ ".azimutt.json") |> wrap |> T.send)
+            erd |> Erd.unpack |> Project.downloadContent |> (GotOutput (erd.project.name ++ ".azimutt.json") >> wrap >> Extra.msg)
 
         AllTables ->
             if format /= AML && format /= JSON && not sqlExportAllowed then
-                Cmd.batch [ GotOutput "" "plan_limit" |> wrap |> T.send, Track.planLimit .sqlExport (Just erd) ]
+                Extra.cmdL [ GotOutput "" "plan_limit" |> wrap |> T.send, Track.planLimit .sqlExport (Just erd) ]
 
             else
-                erd |> Erd.toSchema |> generateTables format |> (\( output, ext ) -> output |> GotOutput (erd.project.name ++ "." ++ ext) |> wrap |> T.send)
+                erd |> Erd.toSchema |> generateTables format |> (\( output, ext ) -> output |> GotOutput (erd.project.name ++ "." ++ ext) |> wrap |> Extra.msg)
 
         CurrentLayout ->
             if format /= AML && format /= JSON && not sqlExportAllowed then
-                Cmd.batch [ GotOutput "" "plan_limit" |> wrap |> T.send, Track.planLimit .sqlExport (Just erd) ]
+                Extra.cmdL [ GotOutput "" "plan_limit" |> wrap |> T.send, Track.planLimit .sqlExport (Just erd) ]
 
             else
                 erd
                     |> Erd.toSchema
                     |> Schema.filter (erd.layouts |> Dict.get erd.currentLayout |> Maybe.mapOrElse (.tables >> List.map .id) [])
                     |> generateTables format
-                    |> (\( output, ext ) -> output |> GotOutput (erd.project.name ++ "-" ++ erd.currentLayout ++ "." ++ ext) |> wrap |> T.send)
+                    |> (\( output, ext ) -> output |> GotOutput (erd.project.name ++ "-" ++ erd.currentLayout ++ "." ++ ext) |> wrap |> Extra.msg)
 
 
 generateTables : ExportFormat -> Schema -> ( String, String )
@@ -293,7 +293,7 @@ updateDocState project get set msg =
             s.exportDialogDocState
                 |> get
                 |> update (updateDocState project get set) UrlInfos.empty (sampleErd |> mapProject (setOrganization (Just project.organization))) msg
-                |> Tuple.mapFirst (\r -> { s | exportDialogDocState = s.exportDialogDocState |> set r })
+                |> Tuple.mapBoth (\r -> { s | exportDialogDocState = s.exportDialogDocState |> set r }) .cmd
         )
 
 

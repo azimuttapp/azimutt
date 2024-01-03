@@ -4,10 +4,10 @@ import Components.Atoms.Icon exposing (Icon(..))
 import Components.Molecules.Toast as Toast exposing (Content(..))
 import Html exposing (Html, div)
 import Html.Attributes exposing (class)
-import Libs.Maybe as Maybe
 import Libs.Models exposing (Millis)
 import Libs.Tailwind as Tw
 import Libs.Task as T
+import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
 import Services.Lenses exposing (mapIndex, mapList, mapToasts, setIsOpen)
 
 
@@ -77,20 +77,20 @@ error message =
     ToastAdd Nothing (Simple { color = Tw.red, icon = Exclamation, title = message, message = "" })
 
 
-update : (Msg -> msg) -> Msg -> Model -> ( Model, Cmd msg )
+update : (Msg -> msg) -> Msg -> Model -> ( Model, Extra msg )
 update wrap msg model =
     case msg of
         ToastAdd millis toast ->
-            model.index |> String.fromInt |> (\key -> ( model |> mapIndex (\i -> i + 1) |> mapToasts (\t -> { key = key, content = toast, isOpen = False } :: t), T.sendAfter 1 (key |> ToastShow millis |> wrap) ))
+            model.index |> String.fromInt |> (\key -> ( model |> mapIndex (\i -> i + 1) |> mapToasts (\t -> { key = key, content = toast, isOpen = False } :: t), key |> ToastShow millis |> wrap |> T.sendAfter 1 |> Extra.cmd ))
 
         ToastShow millis key ->
-            ( model |> mapToasts (mapList .key key (setIsOpen True)), millis |> Maybe.mapOrElse (\delay -> T.sendAfter delay (key |> ToastHide |> wrap)) Cmd.none )
+            ( model |> mapToasts (mapList .key key (setIsOpen True)), millis |> Maybe.map (\delay -> key |> ToastHide |> wrap |> T.sendAfter delay) |> Extra.cmdM )
 
         ToastHide key ->
-            ( model |> mapToasts (mapList .key key (setIsOpen False)), key |> ToastRemove |> wrap |> T.sendAfter 300 )
+            ( model |> mapToasts (mapList .key key (setIsOpen False)), key |> ToastRemove |> wrap |> T.sendAfter 300 |> Extra.cmd )
 
         ToastRemove key ->
-            ( model |> mapToasts (List.filter (\t -> t.key /= key)), Cmd.none )
+            ( model |> mapToasts (List.filter (\t -> t.key /= key)), Extra.none )
 
 
 view : (Msg -> msg) -> Model -> Html msg

@@ -24,6 +24,7 @@ import Libs.Models.Platform exposing (Platform)
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (focus, focus_ring_offset_600)
 import Libs.Task as T
+import Libs.Tuple3 as Tuple3
 import Models.Organization as Organization exposing (Organization)
 import Models.OrganizationId as OrganizationId exposing (OrganizationId)
 import Models.Project.LayoutName exposing (LayoutName)
@@ -204,18 +205,32 @@ buildFolders layouts =
 buildFoldersNested : List ( List String, LayoutName, ErdLayout ) -> List LayoutFolder
 buildFoldersNested layouts =
     layouts
-        |> List.groupBy (\( parts, _, _ ) -> parts |> List.head |> Maybe.withDefault "")
+        |> List.groupBy (\( parts, _, _ ) -> parts |> List.headOr "")
         |> Dict.toList
         |> List.sortBy (\( folder, _ ) -> folder |> String.toLower)
         |> List.concatMap
             (\( folder, items ) ->
                 case items of
                     ( parts, name, layout ) :: [] ->
-                        [ LayoutItem (parts |> String.join "/") ( name, layout ) ]
+                        [ LayoutItem (parts |> String.join " / ") ( name, layout ) ]
 
                     _ ->
-                        [ LayoutFolder folder (items |> List.filterMap (\( parts, name, layout ) -> parts |> List.tail |> Maybe.map (\p -> ( p, name, layout ))) |> buildFoldersNested) ]
+                        let
+                            ( folderName, folderItems ) =
+                                buildFoldersNestedFlat folder (items |> List.map (Tuple3.mapFirst (List.drop 1)))
+                        in
+                        [ LayoutFolder folderName (folderItems |> buildFoldersNested) ]
             )
+
+
+buildFoldersNestedFlat : String -> List ( List String, LayoutName, ErdLayout ) -> ( String, List ( List String, LayoutName, ErdLayout ) )
+buildFoldersNestedFlat folder layouts =
+    case layouts |> List.groupBy (\( parts, _, _ ) -> parts |> List.headOr "") |> Dict.keys of
+        sub :: [] ->
+            buildFoldersNestedFlat (folder ++ " / " ++ sub) (layouts |> List.map (Tuple3.mapFirst (List.drop 1)))
+
+        _ ->
+            ( folder, layouts )
 
 
 countLayouts : List LayoutFolder -> Int
@@ -254,7 +269,7 @@ viewLayoutFolders currentLayout folderPrefix folders =
 
 viewLayoutItem : Bool -> String -> LayoutName -> ErdLayout -> Html Msg
 viewLayoutItem isCurrent folderName layoutName layout =
-    button [ type_ "button", onClick (layoutName |> LLoad |> LayoutMsg), role "menuitem", tabindex -1, css [ "w-full text-left", B.cond isCurrent ContextMenu.itemCurrentStyles ContextMenu.itemStyles, focus [ "outline-none" ] ] ]
+    button [ type_ "button", onClick (layoutName |> LLoad "fit" |> LayoutMsg), role "menuitem", tabindex -1, css [ "w-full text-left", B.cond isCurrent ContextMenu.itemCurrentStyles ContextMenu.itemStyles, focus [ "outline-none" ] ] ]
         [ text folderName, text " ", small [] [ text ("(" ++ ((List.length layout.tables + List.length layout.tableRows + List.length layout.memos) |> String.pluralize "item") ++ ")") ] ]
 
 
@@ -273,5 +288,5 @@ confirmDeleteLayout name =
         , message = span [] [ text "Are you sure you want to delete ", bText name, text " layout?" ]
         , confirm = "Delete " ++ name ++ " layout"
         , cancel = "Cancel"
-        , onConfirm = T.send (name |> LDelete |> LayoutMsg)
+        , onConfirm = name |> LDelete |> LayoutMsg |> T.send
         }

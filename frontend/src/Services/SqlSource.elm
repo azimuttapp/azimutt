@@ -36,6 +36,7 @@ import Models.Project.Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.ProjectInfo exposing (ProjectInfo)
 import Models.SourceInfo as SourceInfo exposing (SourceInfo)
+import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
 import Ports
 import Random
 import Services.Lenses exposing (mapParsedSchemaM, mapShow, setId, setParsedSource)
@@ -135,35 +136,35 @@ parsingInit fileContent buildMsg buildProject =
 -- UPDATE
 
 
-update : (Msg -> msg) -> Time.Posix -> Maybe ProjectInfo -> Msg -> Model msg -> ( Model msg, Cmd msg )
+update : (Msg -> msg) -> Time.Posix -> Maybe ProjectInfo -> Msg -> Model msg -> ( Model msg, Extra msg )
 update wrap now project msg model =
     case msg of
         UpdateRemoteFile url ->
-            ( { model | url = url, selectedLocalFile = Nothing, selectedRemoteFile = Nothing, loadedFile = Nothing, parsedSchema = Nothing, parsedSource = Nothing }, Cmd.none )
+            ( { model | url = url, selectedLocalFile = Nothing, selectedRemoteFile = Nothing, loadedFile = Nothing, parsedSchema = Nothing, parsedSource = Nothing }, Extra.none )
 
         GetRemoteFile schemaUrl ->
             if schemaUrl == "" then
-                ( init model.source model.callback |> (\m -> { m | url = schemaUrl }), Cmd.none )
+                ( init model.source model.callback |> (\m -> { m | url = schemaUrl }), Extra.none )
 
             else if schemaUrl |> String.startsWith "http" |> not then
-                ( init model.source model.callback |> (\m -> { m | url = schemaUrl, selectedRemoteFile = Just (Err "Invalid url, it should start with 'http'") }), Cmd.none )
+                ( init model.source model.callback |> (\m -> { m | url = schemaUrl, selectedRemoteFile = Just (Err "Invalid url, it should start with 'http'") }), Extra.none )
 
             else
                 ( init model.source model.callback |> (\m -> { m | url = schemaUrl, selectedRemoteFile = Just (Ok schemaUrl) })
-                , Http.get { url = schemaUrl, expect = Http.expectString (GotRemoteFile schemaUrl >> wrap) }
+                , Http.get { url = schemaUrl, expect = Http.expectString (GotRemoteFile schemaUrl >> wrap) } |> Extra.cmd
                 )
 
         GotRemoteFile url result ->
             case result of
                 Ok content ->
-                    ( model, SourceId.generator |> Random.generate (\sourceId -> GotFile (SourceInfo.sqlRemote now sourceId url content Nothing) content |> wrap) )
+                    ( model, SourceId.generator |> Random.generate (\sourceId -> GotFile (SourceInfo.sqlRemote now sourceId url content Nothing) content |> wrap) |> Extra.cmd )
 
                 Err err ->
-                    ( model |> setParsedSource (err |> Http.errorToString |> Err |> Just), T.send (model.callback ( Nothing, err |> Http.errorToString |> Err )) )
+                    ( model |> setParsedSource (err |> Http.errorToString |> Err |> Just), ( Nothing, err |> Http.errorToString |> Err ) |> model.callback |> Extra.msg )
 
         GetLocalFile file ->
             ( init model.source model.callback |> (\m -> { m | selectedLocalFile = Just file })
-            , Ports.readLocalFile kind file
+            , Ports.readLocalFile kind file |> Extra.cmd
             )
 
         GotFile sourceInfo fileContent ->
@@ -171,7 +172,7 @@ update wrap now project msg model =
                 | loadedFile = Just ( sourceInfo |> setId (model.source |> Maybe.mapOrElse .id sourceInfo.id), fileContent )
                 , parsedSchema = Just (parsingInit fileContent (ParseMsg >> wrap) (BuildSource |> wrap))
               }
-            , T.send (BuildLines |> ParseMsg |> wrap)
+            , BuildLines |> ParseMsg |> wrap |> Extra.msg
             )
 
         ParseMsg parseMsg ->
@@ -182,13 +183,13 @@ update wrap now project msg model =
                                 ( { model | parsedSchema = Just parsed }
                                   -- 342 is an arbitrary number to break Elm message batching
                                   -- not too often to not increase compute time too much, not too scarce to not freeze the browser
-                                , B.cond ((parsed.cpt |> modBy 342) == 1) (T.sendAfter 1 message) (T.send message)
+                                , B.cond ((parsed.cpt |> modBy 342) == 1) (T.sendAfter 1 message) (T.send message) |> Extra.cmd
                                 )
                            )
                 )
                 model.parsedSchema
                 model.loadedFile
-                |> Maybe.withDefault ( model, Cmd.none )
+                |> Maybe.withDefault ( model, Extra.none )
 
         BuildSource ->
             model.parsedSchema
@@ -202,13 +203,13 @@ update wrap now project msg model =
                 |> Maybe.map
                     (\( parsedSchema, source ) ->
                         ( model |> setParsedSource (source |> Ok |> Just)
-                        , Cmd.batch [ T.send (model.callback ( Just parsedSchema, Ok source )), Track.sqlSourceCreated project parsedSchema source ]
+                        , Extra.cmdL [ T.send (model.callback ( Just parsedSchema, Ok source )), Track.sqlSourceCreated project parsedSchema source ]
                         )
                     )
-                |> Maybe.withDefault ( model, Cmd.none )
+                |> Maybe.withDefault ( model, Extra.none )
 
         UiToggle htmlId ->
-            ( model |> mapParsedSchemaM (mapShow (\s -> B.cond (s == htmlId) "" htmlId)), Cmd.none )
+            ( model |> mapParsedSchemaM (mapShow (\s -> B.cond (s == htmlId) "" htmlId)), Extra.none )
 
 
 parsingUpdate : ParsingMsg -> SqlParsing msg -> ( SqlParsing msg, msg )

@@ -42,7 +42,7 @@ view platform index ref column notes =
 viewHidden : Platform -> Int -> ColumnRef -> Maybe ErdColumn -> Maybe Notes -> Html Msg
 viewHidden platform _ column erdColumn notes =
     div []
-        [ ContextMenu.btnHotkey "" (ShowColumn column) [] [ text "Show column" ] platform (Conf.hotkeys |> Dict.getOrElse "show" [])
+        [ ContextMenu.btnHotkey "" (ShowColumn 1000 column) [] [ text "Show column" ] platform (Conf.hotkeys |> Dict.getOrElse "show" [])
         , ContextMenu.btn "" (DetailsSidebarMsg (DetailsSidebar.ShowColumn column)) [] [ text "Show details" ]
         , erdColumn
             |> Maybe.andThen (\c -> c.origins |> List.findMap (\o -> o.db |> Maybe.map (\url -> ( o.id, url ))))

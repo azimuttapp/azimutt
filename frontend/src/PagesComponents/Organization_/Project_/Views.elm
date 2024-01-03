@@ -80,7 +80,7 @@ viewProject onDelete currentUrl urlInfos shared model =
     , Lazy.lazy viewContextMenu model.contextMenu
     , if model.saving then
         div [ class "absolute inset-0 flex z-max bg-white opacity-10 animate-pulse" ]
-            [ h1 [ class "m-auto select-none animate-text bg-gradient-to-r from-teal-500 via-purple-500 to-orange-500 bg-clip-text text-transparent text-5xl font-black" ] [ text "Saving" ] ]
+            [ h1 [ class "m-auto select-none animate-text bg-gradient-to-r from-teal-500 via-purple-500 to-orange-500 bg-clip-text text-transparent text-5xl leading-normal font-black" ] [ text "Saving" ] ]
 
       else
         Html.none
@@ -108,9 +108,11 @@ viewApp currentUrl urlOrganization shared model htmlId erd =
                         layout =
                             erd |> Erd.currentLayout
                     in
-                    Lazy.lazy3 viewCommands
+                    Lazy.lazy5 viewCommands
                         model.conf
                         layout.canvas.zoom
+                        model.history
+                        model.future
                         (Commands.argsToString
                             model.cursorMode
                             (htmlId ++ "-commands")
@@ -141,7 +143,7 @@ viewLeftSidebar model =
     let
         content : Maybe (Html Msg)
         content =
-            model.detailsSidebar |> Maybe.map2 (DetailsSidebar.view DetailsSidebarMsg (\id -> ShowTable id Nothing "details") ShowColumn HideColumn (LLoad >> LayoutMsg) (\source q -> DataExplorer.Open (Just source) (Just q) |> DataExplorerMsg) model.tableStats model.columnStats) model.erd
+            model.detailsSidebar |> Maybe.map2 (DetailsSidebar.view DetailsSidebarMsg (\id -> ShowTable id Nothing "details") (ShowColumn 1000) HideColumn (LLoad "fit" >> LayoutMsg) (\source q -> DataExplorer.Open (Just source) (Just q) |> DataExplorerMsg) model.tableStats model.columnStats) model.erd
     in
     aside [ css [ "block flex-shrink-0 order-first" ] ]
         [ div [ css [ B.cond (content == Nothing) "-ml-112" "", "w-112 transition-[margin] ease-in-out duration-200 h-full relative flex flex-col border-r border-gray-200 bg-white overflow-y-auto" ] ]

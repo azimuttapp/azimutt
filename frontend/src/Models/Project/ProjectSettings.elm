@@ -5,10 +5,11 @@ import Json.Encode as Encode exposing (Value)
 import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
 import Libs.List as List
+import Libs.Nel as Nel
 import Libs.Regex as Regex
 import Libs.String as String
 import Models.ColumnOrder as ColumnOrder exposing (ColumnOrder)
-import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
+import Models.Project.ColumnPath exposing (ColumnPath)
 import Models.Project.FindPathSettings as FindPathSettings exposing (FindPathSettings)
 import Models.Project.SchemaName as SchemaName exposing (SchemaName)
 import Models.Project.TableId exposing (TableId)
@@ -78,11 +79,10 @@ removeTable removedTables =
 removeColumn : String -> ColumnPath -> Bool
 removeColumn hiddenColumns =
     let
-        hidePaths : List ColumnPath
-        hidePaths =
-            hiddenColumns |> String.split "," |> List.map String.trim |> List.filterNot String.isEmpty |> List.map ColumnPath.fromString
+        ( regexHide, stringHide ) =
+            hiddenColumns |> String.split "," |> List.map String.trim |> List.filterNot String.isEmpty |> List.partition (Regex.match "[+*?^$()[]{}|\\]")
     in
-    \path -> hidePaths |> List.any (\hidePath -> path |> ColumnPath.startsWith hidePath)
+    Nel.toList >> String.join "." >> (\path -> (stringHide |> List.any (\h -> path |> String.startsWith h)) || (regexHide |> List.any (\h -> path |> Regex.match h)))
 
 
 hideColumn : HiddenColumns -> ErdColumn -> Bool

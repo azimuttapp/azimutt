@@ -87,5 +87,5 @@ confirm title content message =
         , message = content
         , confirm = "Yes!"
         , cancel = "Nope"
-        , onConfirm = T.send message
+        , onConfirm = message |> T.send
         }

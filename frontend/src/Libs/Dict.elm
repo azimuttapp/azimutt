@@ -1,4 +1,4 @@
-module Libs.Dict exposing (alter, any, count, filterMap, find, from, fromIndexedList, fromListMap, fuse, getOrElse, getResult, mapBoth, mapKeys, mapValues, nonEmpty, notMember, set, zip)
+module Libs.Dict exposing (alter, any, count, filterMap, find, from, fromIndexedList, fromListMap, fuse, getOrElse, getResult, mapBoth, mapKeys, mapValues, nonEmpty, notMember, set, updateT, zip)
 
 import Dict exposing (Dict)
 
@@ -104,6 +104,16 @@ count predicate dict =
                     cpt
             )
             0
+
+
+updateT : comparable -> (Maybe v -> ( Maybe v, a )) -> Dict comparable v -> ( Dict comparable v, a )
+updateT key transform dict =
+    case transform (dict |> Dict.get key) of
+        ( Just value, a ) ->
+            ( dict |> Dict.insert key value, a )
+
+        ( Nothing, a ) ->
+            ( dict |> Dict.remove key, a )
 
 
 alter : comparable -> (v -> v) -> Dict comparable v -> Dict comparable v

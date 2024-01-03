@@ -56,18 +56,18 @@ viewSourcesSection htmlId zone erd model =
         [ legend [ class "font-medium text-gray-900" ] [ text "Project sources" ]
         , p [ class "text-sm text-gray-500" ] [ text "Active sources are merged to create your current schema." ]
         , div [ class "mt-1 border border-gray-300 rounded-md shadow-sm divide-y divide-gray-300" ]
-            ((erd.sources |> List.map (\s -> viewSource htmlId erd.project.id zone (model.sourceNameEdit |> Maybe.has s.id) s)) ++ [ viewAddSource (htmlId ++ "-new") erd.project.id ])
+            ((erd.sources |> List.map (\s -> viewSource htmlId erd.project.id zone (model.sourceNameEdit |> Maybe.filter (\( id, _ ) -> id == s.id) |> Maybe.map Tuple.second) s)) ++ [ viewAddSource (htmlId ++ "-new") erd.project.id ])
         ]
 
 
-viewSource : HtmlId -> ProjectId -> Time.Zone -> Bool -> Source -> Html Msg
+viewSource : HtmlId -> ProjectId -> Time.Zone -> Maybe String -> Source -> Html Msg
 viewSource htmlId _ zone updating source =
     let
         ( views, tables ) =
             source.tables |> Dict.values |> List.partition .view
 
-        nameInput : HtmlId
-        nameInput =
+        inputName : HtmlId
+        inputName =
             htmlId ++ "-name-input"
 
         view : Icon -> String -> Time.Posix -> String -> Html Msg
@@ -77,11 +77,9 @@ viewSource htmlId _ zone updating source =
                     [ div [ class "flex justify-between" ]
                         [ viewCheckbox "mt-3"
                             (htmlId ++ "-" ++ SourceId.toString source.id)
-                            (if updating then
-                                [ input [ type_ "text", name nameInput, id nameInput, value source.name, onInput (PSSourceNameUpdate source.id >> ProjectSettingsMsg), onBlur (PSSourceNameUpdateDone |> ProjectSettingsMsg), class "block w-full rounded-md border-0 py-0 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" ] [] ]
-
-                             else
-                                [ span [ class "truncate max-w-xs" ] [ Icon.solid icon "inline", text source.name ] |> Tooltip.b labelTitle ]
+                            (updating
+                                |> Maybe.map (\inputValue -> [ input [ type_ "text", name inputName, id inputName, value inputValue, onInput (PSSourceNameUpdate source.id >> ProjectSettingsMsg), onBlur (PSSourceNameUpdateDone source.id inputValue |> ProjectSettingsMsg), class "block w-full rounded-md border-0 py-0 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" ] [] ])
+                                |> Maybe.withDefault [ span [ class "truncate max-w-xs" ] [ Icon.solid icon "inline", text source.name ] |> Tooltip.b labelTitle ]
                             )
                             source.enabled
                             (source |> PSSourceToggle |> ProjectSettingsMsg)
@@ -92,10 +90,10 @@ viewSource htmlId _ zone updating source =
                             , button [ type_ "button", onClick (Batch [ ModalClose (ProjectSettingsMsg PSClose), AmlSidebarMsg (AOpen (Just source.id)) ]), css [ focus [ "outline-none" ], B.cond (source.kind == AmlEditor) "" "hidden" ] ]
                                 [ Icon.solid Icon.Terminal "inline" ]
                                 |> Tooltip.bl "Update this source"
-                            , button [ type_ "button", onClick (Batch [ source.name |> PSSourceNameUpdate source.id |> ProjectSettingsMsg, Ports.focus nameInput |> Send ]), css [ focus [ "outline-none" ] ] ]
+                            , button [ type_ "button", onClick (Batch [ source.name |> PSSourceNameUpdate source.id |> ProjectSettingsMsg, Ports.focus inputName |> Send ]), css [ focus [ "outline-none" ] ] ]
                                 [ Icon.solid Icon.Pencil "inline" ]
                                 |> Tooltip.bl "Update source name"
-                            , button [ type_ "button", onClick (source |> PSSourceDelete |> ProjectSettingsMsg |> confirm ("Delete " ++ source.name ++ " source?") (text "Are you really sure?")), css [ focus [ "outline-none" ] ] ]
+                            , button [ type_ "button", onClick (source.id |> PSSourceDelete |> ProjectSettingsMsg |> confirm ("Delete " ++ source.name ++ " source?") (text "Are you really sure?")), css [ focus [ "outline-none" ] ] ]
                                 [ Icon.solid Icon.Trash "inline" ]
                                 |> Tooltip.bl "Delete this source"
                             ]

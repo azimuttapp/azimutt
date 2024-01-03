@@ -63,7 +63,7 @@ viewRelation defaultSchema style conf srcTable refTable relation =
 
         onHover : Bool -> Msg
         onHover =
-            ToggleHoverColumn { table = relation.src.table, column = relation.src.column }
+            HoverTable ( relation.src.table, Just relation.src.column )
     in
     case ( src, ref ) of
         ( Nothing, Nothing ) ->
