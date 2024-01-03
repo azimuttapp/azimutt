@@ -37,9 +37,9 @@ showTableRow now source query previous hint from erd =
     ( erd
         |> mapTableRowsSeq (\i -> i + 1)
         |> Erd.mapCurrentLayoutWithTime now (mapTableRows (List.prepend row))
-    , ( Cmd.batch [ cmd, Ports.observeTableRowSize row.id, Track.tableRowShown source from erd.project ]
-      , [ ( DeleteTableRow row.id, UnDeleteTableRow_ 0 row ) ]
-      )
+    , Extra.newCL
+        [ cmd, Ports.observeTableRowSize row.id, Track.tableRowShown source from erd.project ]
+        ( DeleteTableRow row.id, UnDeleteTableRow_ 0 row )
     )
 
 
@@ -78,7 +78,7 @@ centerTableRow viewport row canvas =
         delta =
             viewport |> Area.centerViewport |> Position.diffViewport rowCenter
     in
-    canvas |> mapPositionT (\pos -> pos |> Position.moveDiagram delta |> (\newPos -> ( newPos, Extra.history ( CanvasPosition_ pos, CanvasPosition_ newPos ) )))
+    canvas |> mapPositionT (\pos -> pos |> Position.moveDiagram delta |> (\newPos -> ( newPos, Extra.history ( CanvasPosition pos, CanvasPosition newPos ) )))
 
 
 mapTableRowOrSelected : TableRow.Id -> TableRow.Msg -> (TableRow -> ( TableRow, Extra msg )) -> List TableRow -> ( List TableRow, Extra msg )
@@ -88,9 +88,9 @@ mapTableRowOrSelected id msg f rows =
         |> Maybe.map
             (\r ->
                 if r.selected && TableRow.canBroadcast msg then
-                    rows |> List.mapByT .selected True f |> Tuple.mapSecond (List.unzip >> Tuple.mapBoth Cmd.batch List.concat)
+                    rows |> List.mapByT .selected True f |> Tuple.mapSecond Extra.concat
 
                 else
-                    rows |> List.mapByT .id id f |> Tuple.mapSecond (List.unzip >> Tuple.mapBoth Cmd.batch List.concat)
+                    rows |> List.mapByT .id id f |> Tuple.mapSecond Extra.concat
             )
         |> Maybe.withDefault ( rows, Extra.none )

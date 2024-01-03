@@ -61,16 +61,14 @@ type alias Model x =
 init : Maybe SourceId -> Maybe Erd -> AmlSidebar
 init sourceId erd =
     let
-        selected : Maybe ( SourceId, String )
+        selected : Maybe SourceId
         selected =
-            sourceId
-                |> Maybe.orElse (erd |> Maybe.andThen (.sources >> List.find (\s -> s.enabled && SourceKind.isUser s.kind)) |> Maybe.map .id)
-                |> Maybe.andThen (\id -> erd |> Maybe.andThen (.sources >> List.findBy .id id) |> Maybe.map (\s -> ( s.id, s |> contentStr )))
+            sourceId |> Maybe.orElse (erd |> Maybe.andThen (.sources >> List.find (\s -> s.enabled && SourceKind.isUser s.kind)) |> Maybe.map .id)
     in
     { id = Conf.ids.amlSidebarDialog
-    , selected = selected
+    , selected = selected |> Maybe.andThen (buildSelected erd)
     , errors = []
-    , otherSourcesTableIdsCache = getOtherSourcesTableIds (selected |> Maybe.map Tuple.first) erd
+    , otherSourcesTableIdsCache = getOtherSourcesTableIds selected erd
     }
 
 
@@ -91,12 +89,7 @@ update now msg model =
             ( model, Bool.cond (model.amlSidebar == Nothing) (AOpen Nothing) AClose |> AmlSidebarMsg |> Extra.msg )
 
         AChangeSource sourceId ->
-            let
-                selected : Maybe ( SourceId, String )
-                selected =
-                    sourceId |> Maybe.andThen (\id -> model.erd |> Maybe.andThen (.sources >> List.findBy .id id >> Maybe.map (\s -> ( s.id, s |> contentStr ))))
-            in
-            ( model |> mapAmlSidebarM (setSelected selected) |> setOtherSourcesTableIdsCache sourceId, Extra.none )
+            ( model |> mapAmlSidebarM (setSelected (sourceId |> Maybe.andThen (buildSelected model.erd))) |> setOtherSourcesTableIdsCache sourceId, Extra.none )
 
         AUpdateSource id value ->
             (model.erd |> Maybe.andThen (.sources >> List.findBy .id id))
@@ -105,12 +98,7 @@ update now msg model =
 
         ASourceUpdated id ->
             (model.erd |> Maybe.andThen (.sources >> List.findBy .id id))
-                |> Maybe.map
-                    (\source ->
-                        model
-                            |> mapAmlSidebarMTM (mapSelectedMT (Tuple.mapSecondT (\old -> contentStr source |> (\new -> ( new, [ ( AUpdateSource source.id old |> AmlSidebarMsg, AUpdateSource source.id new |> AmlSidebarMsg ) ] )))))
-                            |> (\( newModel, hist ) -> ( newModel, ( Track.sourceRefreshed model.erd source, hist |> Maybe.withDefault [] ) ))
-                    )
+                |> Maybe.map (\source -> model |> mapAmlSidebarMTM (mapSelectedMT (Tuple.mapSecondT (\old -> source |> contentStr |> (\new -> ( new, Extra.new (Track.sourceRefreshed model.erd source) (( AUpdateSource source.id old, AUpdateSource source.id new ) |> Tuple.map AmlSidebarMsg) ))))) |> Extra.defaultT)
                 |> Maybe.withDefault ( model, Extra.none )
 
 
@@ -191,6 +179,11 @@ setSource source model =
 setOtherSourcesTableIdsCache : Maybe SourceId -> Model x -> Model x
 setOtherSourcesTableIdsCache sourceId model =
     model |> mapAmlSidebarM (\v -> { v | otherSourcesTableIdsCache = getOtherSourcesTableIds sourceId model.erd })
+
+
+buildSelected : Maybe Erd -> SourceId -> Maybe ( SourceId, String )
+buildSelected erd sourceId =
+    erd |> Maybe.andThen (.sources >> List.findBy .id sourceId) |> Maybe.map (\s -> ( s.id, s |> contentStr ))
 
 
 contentSplit : String -> Array String

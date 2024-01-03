@@ -118,10 +118,10 @@ update noop notesMsg tagsMsg erd msg model =
             ( model |> setViewM (schemaView erd schema), Track.detailSidebarOpened "schema" erd |> Extra.cmd )
 
         ShowTable table ->
-            ( model |> setViewM (tableView erd table), Cmd.batch (Track.detailSidebarOpened "table" erd :: (erd.sources |> filterTableDbSources table |> List.map (Ports.getTableStats table))) |> Extra.cmd )
+            ( model |> setViewM (tableView erd table), (Track.detailSidebarOpened "table" erd :: (erd.sources |> filterTableDbSources table |> List.map (Ports.getTableStats table))) |> Extra.cmdL )
 
         ShowColumn column ->
-            ( model |> setViewM (columnView erd column), Cmd.batch (Track.detailSidebarOpened "column" erd :: (erd.sources |> filterColumnDbSources column |> List.map (Ports.getColumnStats column))) |> Extra.cmd )
+            ( model |> setViewM (columnView erd column), (Track.detailSidebarOpened "column" erd :: (erd.sources |> filterColumnDbSources column |> List.map (Ports.getColumnStats column))) |> Extra.cmdL )
 
         ToggleCollapse id ->
             ( model |> Maybe.map (\m -> { m | openedCollapse = Bool.cond (m.openedCollapse == id) "" id }), Extra.none )

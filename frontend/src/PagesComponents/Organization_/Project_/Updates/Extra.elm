@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Updates.Extra exposing (Extra, addCmdT, addHistoryT, cmd, cmdL, cmdM, cmdT, combine, concat, defaultT, dropHistory, history, historyL, historyM, msg, msgM, msgR, new, newL, newM, none)
+module PagesComponents.Organization_.Project_.Updates.Extra exposing (Extra, addCmdT, addHistoryT, apply, cmd, cmdL, cmdM, cmdML, cmdT, combine, concat, defaultT, dropHistory, history, historyL, historyM, msg, msgM, msgR, new, newCL, newHL, newHM, newLL, none, unpackT, unpackTM)
 
 import Task
 
@@ -17,14 +17,24 @@ new c h =
     ( c, [ h ] )
 
 
-newM : Cmd msg -> Maybe ( msg, msg ) -> Extra msg
-newM c h =
+newCL : List (Cmd msg) -> ( msg, msg ) -> Extra msg
+newCL c h =
+    ( Cmd.batch c, [ h ] )
+
+
+newHM : Cmd msg -> Maybe ( msg, msg ) -> Extra msg
+newHM c h =
     h |> Maybe.map (new c) |> Maybe.withDefault none
 
 
-newL : Cmd msg -> List ( msg, msg ) -> Extra msg
-newL c h =
+newHL : Cmd msg -> List ( msg, msg ) -> Extra msg
+newHL c h =
     ( c, h )
+
+
+newLL : List (Cmd msg) -> List ( msg, msg ) -> Extra msg
+newLL c h =
+    ( Cmd.batch c, h )
 
 
 cmd : Cmd msg -> Extra msg
@@ -45,6 +55,11 @@ cmdL c =
 cmdT : ( a, Cmd msg ) -> ( a, Extra msg )
 cmdT ( a, c ) =
     ( a, cmd c )
+
+
+cmdML : Maybe (List (Cmd msg)) -> Extra msg
+cmdML c =
+    c |> Maybe.map cmdL |> Maybe.withDefault none
 
 
 msg : msg -> Extra msg
@@ -105,3 +120,32 @@ combine ( cmdA, hA ) ( cmdB, hB ) =
 concat : List (Extra msg) -> Extra msg
 concat extras =
     extras |> List.unzip |> Tuple.mapBoth Cmd.batch List.concat
+
+
+unpackT : ( a, Extra msg ) -> ( a, Cmd msg )
+unpackT ( a, ( c, _ ) ) =
+    ( a, c )
+
+
+unpackTM : ( a, Maybe (Extra msg) ) -> ( a, Cmd msg )
+unpackTM ( a, e ) =
+    e |> Maybe.map (\( c, _ ) -> ( a, c )) |> Maybe.withDefault ( a, Cmd.none )
+
+
+apply : (List msg -> msg) -> ( { m | history : List ( msg, msg ), future : List ( msg, msg ) }, Extra msg ) -> ( { m | history : List ( msg, msg ), future : List ( msg, msg ) }, Cmd msg )
+apply batch ( model, ( c, h ) ) =
+    case h of
+        [] ->
+            ( model, c )
+
+        one :: [] ->
+            ( { model | history = one :: model.history |> List.take 100, future = [] }, c )
+
+        many ->
+            ( { model | history = (many |> tupleList |> Tuple.mapBoth batch batch) :: model.history |> List.take 100, future = [] }, c )
+
+
+tupleList : List ( a, b ) -> ( List a, List b )
+tupleList list =
+    -- from List.tupleSeq but avoid dependency on List module
+    List.foldr (\( a, b ) ( aList, bList ) -> ( a :: aList, b :: bList )) ( [], [] ) list

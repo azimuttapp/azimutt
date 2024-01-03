@@ -99,7 +99,7 @@ arrangeTables now erdElem erd =
                             layout
                                 |> arrangeTablesAlgo tables rows memos
                                 |> Tuple.mapFirst (fitCanvasAlgo erdElem tables rows memos groups)
-                                |> (\( ( l, ( c2, _ ) ), ( c1, _ ) ) -> ( l, Extra.new (Cmd.batch [ c1, c2 ]) ( SetLayout_ layout, SetLayout_ l ) ))
+                                |> (\( ( l, ( c2, _ ) ), ( c1, _ ) ) -> ( l, Extra.newCL [ c1, c2 ] ( SetLayout_ layout, SetLayout_ l ) ))
                         )
                     |> Extra.defaultT
             )
@@ -169,7 +169,7 @@ arrangeTablesAlgo tables rows memos layout =
         |> mapTables (List.map (\t -> tableNodeId |> Dict.get t.id |> Maybe.andThen getPosition |> Maybe.mapOrElse (\p -> t |> mapProps (setPosition p)) t))
         |> mapTableRows (List.map (\r -> tableRowNodeId |> Dict.get r.id |> Maybe.andThen getPosition |> Maybe.mapOrElse (\p -> r |> setPosition p) r))
         |> mapMemos (List.map (\m -> memoNodeId |> Dict.get m.id |> Maybe.andThen getPosition |> Maybe.mapOrElse (\p -> m |> setPosition p) m))
-        |> (\l -> ( l, ( Cmd.none, [ ( SetLayout_ layout, SetLayout_ l ) ] ) ))
+        |> (\l -> ( l, Extra.history ( SetLayout_ layout, SetLayout_ l ) ))
 
 
 objectsToFit : ErdLayout -> Maybe ( List TableId, ( List TableRow.Id, List MemoId, List Area.Canvas ) )
@@ -213,7 +213,7 @@ performZoom erdElem delta target canvas =
     { position = canvas.position |> Position.moveDiagram (targetDelta |> Delta.negate) |> Position.roundDiagram
     , zoom = newZoom
     }
-        |> (\newCanvas -> ( newCanvas, ( Cmd.none, [ ( SetView_ canvas, SetView_ newCanvas ) ] ) ))
+        |> (\newCanvas -> ( newCanvas, Extra.history ( SetView_ canvas, SetView_ newCanvas ) ))
 
 
 computeFit : Area.Canvas -> Float -> Area.Canvas -> ZoomLevel -> ( ZoomLevel, Delta )
@@ -271,4 +271,4 @@ squashViewHistory ( model, ( cmd, history ) ) =
             ( { model | history = rest }, Extra.new cmd ( SetView_ first, SetView_ last ) )
 
         _ ->
-            ( model, Extra.newL cmd history )
+            ( model, Extra.newHL cmd history )

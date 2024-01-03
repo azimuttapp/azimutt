@@ -84,9 +84,9 @@ handleProjectSettings now msg model =
                             case sources |> List.zipWithIndex |> List.partition (\( s, _ ) -> s.id == sourceId) of
                                 ( ( deleted, index ) :: _, kept ) ->
                                     ( kept |> List.map Tuple.first
-                                    , ( Cmd.batch [ "'" ++ deleted.name ++ "' source removed from project." |> Toasts.info |> Toast |> T.send, Track.sourceDeleted model.erd deleted ]
-                                      , [ ( PSSourceUnDelete_ index deleted, msg ) |> Tuple.map ProjectSettingsMsg ]
-                                      )
+                                    , Extra.newCL
+                                        [ "'" ++ deleted.name ++ "' source removed from project." |> Toasts.info |> Toast |> T.send, Track.sourceDeleted model.erd deleted ]
+                                        (( PSSourceUnDelete_ index deleted, msg ) |> Tuple.map ProjectSettingsMsg)
                                     )
 
                                 _ ->
@@ -117,11 +117,11 @@ handleProjectSettings now msg model =
                                 |> Maybe.mapOrElse
                                     (\s ->
                                         ( sources |> List.mapBy .id source.id (Source.refreshWith source)
-                                        , Extra.new (Cmd.batch [ close, Track.sourceRefreshed model.erd source ]) (( PSSourceSet s, msg ) |> Tuple.map ProjectSettingsMsg)
+                                        , Extra.newCL [ close, Track.sourceRefreshed model.erd source ] (( PSSourceSet s, msg ) |> Tuple.map ProjectSettingsMsg)
                                         )
                                     )
                                     ( sources |> List.insert source
-                                    , Extra.new (Cmd.batch [ close, Track.sourceAdded model.erd source ]) (( PSSourceDelete source.id, msg ) |> Tuple.map ProjectSettingsMsg)
+                                    , Extra.newCL [ close, Track.sourceAdded model.erd source ] (( PSSourceDelete source.id, msg ) |> Tuple.map ProjectSettingsMsg)
                                     )
                         )
                     )

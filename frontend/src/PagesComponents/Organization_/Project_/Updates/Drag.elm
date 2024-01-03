@@ -85,7 +85,7 @@ handleDrag now drag isEnd cancel model =
 moveCanvas : DragState -> CanvasProps -> ( CanvasProps, Extra Msg )
 moveCanvas drag canvas =
     (canvas.position |> Position.moveDiagram (buildDelta drag 1))
-        |> (\newPos -> ( canvas |> setPosition newPos, Extra.history ( Msg.CanvasPosition_ canvas.position, Msg.CanvasPosition_ newPos ) ))
+        |> (\newPos -> ( canvas |> setPosition newPos, Extra.history ( Msg.CanvasPosition canvas.position, Msg.CanvasPosition newPos ) ))
 
 
 moveInLayout : DragState -> ZoomLevel -> ErdLayout -> ( ErdLayout, Extra Msg )
@@ -115,11 +115,11 @@ moveInLayout drag zoom layout =
 
         moveTableRows : Dict TableRow.Id ( Position.Grid, ( Msg, Msg ) )
         moveTableRows =
-            layout.tableRows |> List.filterMap (\r -> shouldMove r.id TableRow.toHtmlId r Msg.TableRowPosition_) |> Dict.fromList
+            layout.tableRows |> List.filterMap (\r -> shouldMove r.id TableRow.toHtmlId r Msg.TableRowPosition) |> Dict.fromList
 
         moveMemos : Dict MemoId ( Position.Grid, ( Msg, Msg ) )
         moveMemos =
-            layout.memos |> List.filterMap (\m -> shouldMove m.id MemoId.toHtmlId m Msg.MemoPosition_) |> Dict.fromList
+            layout.memos |> List.filterMap (\m -> shouldMove m.id MemoId.toHtmlId m Msg.MemoPosition) |> Dict.fromList
     in
     ( layout
         |> mapTables (List.map (\t -> moveTables |> Dict.get t.id |> Maybe.mapOrElse (\( pos, _ ) -> t |> mapProps (setPosition pos)) t))

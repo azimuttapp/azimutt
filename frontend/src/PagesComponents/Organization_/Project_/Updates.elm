@@ -210,8 +210,8 @@ update urlLayout zone now urlInfos organizations projects msg model =
         SelectAll ->
             model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (\l -> ( l |> ErdLayout.mapSelected (\_ _ -> True), Extra.history ( SelectItems_ (ErdLayout.getSelected l), msg ) ))) |> setDirtyM
 
-        CanvasPosition_ position ->
-            model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (mapCanvasT (mapPositionT (\p -> ( position, Extra.history ( CanvasPosition_ p, msg ) ))))) |> Extra.defaultT
+        CanvasPosition position ->
+            model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (mapCanvasT (mapPositionT (\p -> ( position, Extra.history ( CanvasPosition p, msg ) ))))) |> Extra.defaultT
 
         TableMove id delta ->
             ( model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.mapBy .id id (mapProps (mapPosition (Position.moveGrid delta)))))), Extra.history ( TableMove id (Delta.negate delta), msg ) ) |> setDirty
@@ -219,11 +219,11 @@ update urlLayout zone now urlInfos organizations projects msg model =
         TablePosition id position ->
             model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (mapTablesT (List.mapByTE .id id (mapPropsT (mapPositionT (\p -> ( position, Extra.history ( TablePosition id p, msg ) ))))))) |> setDirtyM
 
-        TableRowPosition_ id position ->
-            model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (mapTableRowsT (List.mapByTE .id id (mapPositionT (\p -> ( position, Extra.history ( TableRowPosition_ id p, msg ) )))))) |> setDirtyM
+        TableRowPosition id position ->
+            model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (mapTableRowsT (List.mapByTE .id id (mapPositionT (\p -> ( position, Extra.history ( TableRowPosition id p, msg ) )))))) |> setDirtyM
 
-        MemoPosition_ id position ->
-            model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (mapMemosT (List.mapByTE .id id (mapPositionT (\p -> ( position, Extra.history ( MemoPosition_ id p, msg ) )))))) |> setDirtyM
+        MemoPosition id position ->
+            model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (mapMemosT (List.mapByTE .id id (mapPositionT (\p -> ( position, Extra.history ( MemoPosition id p, msg ) )))))) |> setDirtyM
 
         TableOrder id index ->
             model
@@ -617,37 +617,37 @@ handleJsMessage now urlLayout msg model =
             ( model, message |> Toasts.create level |> Toast |> T.send )
 
         GotTableShow id hint ->
-            ( model, T.send (ShowTable id (hint |> Maybe.map PlaceAt) "port") )
+            ( model, ShowTable id (hint |> Maybe.map PlaceAt) "port" |> T.send )
 
         GotTableHide id ->
-            ( model, T.send (HideTable id) )
+            ( model, HideTable id |> T.send )
 
         GotTableToggleColumns id ->
-            ( model, T.send (ToggleTableCollapse id) )
+            ( model, ToggleTableCollapse id |> T.send )
 
         GotTablePosition id pos ->
-            ( model, T.send (TablePosition id pos) )
+            ( model, TablePosition id pos |> T.send )
 
         GotTableMove id delta ->
-            ( model, T.send (TableMove id delta) )
+            ( model, TableMove id delta |> T.send )
 
         GotTableSelect id ->
-            ( model, T.send (SelectItem (TableId.toHtmlId id) False) )
+            ( model, SelectItem (TableId.toHtmlId id) False |> T.send )
 
         GotTableColor id color ->
-            ( model, T.send (TableColor id color True) )
+            ( model, TableColor id color True |> T.send )
 
         GotColumnShow ref ->
-            ( model, T.send (ShowColumn 1000 ref) )
+            ( model, ShowColumn 1000 ref |> T.send )
 
         GotColumnHide ref ->
-            ( model, T.send (HideColumn ref) )
+            ( model, HideColumn ref |> T.send )
 
         GotColumnMove ref index ->
-            ( model, T.send (MoveColumn ref index) )
+            ( model, MoveColumn ref index |> T.send )
 
         GotFitToScreen ->
-            ( model, T.send FitToScreen )
+            ( model, FitToScreen |> T.send )
 
         Error json err ->
             ( model, Cmd.batch [ "Unable to decode JavaScript message: " ++ Decode.errorToString err ++ " in " ++ Encode.encode 0 json |> Toasts.error |> Toast |> T.send, Track.jsonError "js_message" err ] )
@@ -682,10 +682,10 @@ updateSizes changes model =
             (\e ->
                 if e.layoutOnLoad /= "" && newModel.erdElem.size /= Size.zeroViewport && (e |> Erd.currentLayout |> .tables |> List.length) > 0 then
                     if e.layoutOnLoad == "fit" then
-                        e |> fitCanvas newModel.erdElem |> Tuple.mapSecond Tuple.first
+                        e |> fitCanvas newModel.erdElem |> Extra.unpackT
 
                     else if e.layoutOnLoad == "arrange" then
-                        e |> arrangeTables Time.zero newModel.erdElem |> Tuple.mapSecond Tuple.first
+                        e |> arrangeTables Time.zero newModel.erdElem |> Extra.unpackT
 
                     else
                         ( e, Cmd.none )

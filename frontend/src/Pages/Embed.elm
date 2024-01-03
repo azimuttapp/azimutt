@@ -19,12 +19,13 @@ import Models.ProjectTokenId exposing (ProjectTokenId)
 import Models.UrlInfos exposing (UrlInfos)
 import Page
 import PagesComponents.Organization_.Project_.Components.EmbedSourceParsingDialog as EmbedSourceParsingDialog
-import PagesComponents.Organization_.Project_.Models as Models exposing (Msg(..), addHistory, emptyModel)
+import PagesComponents.Organization_.Project_.Models as Models exposing (Msg(..), emptyModel)
 import PagesComponents.Organization_.Project_.Models.EmbedKind as EmbedKind
 import PagesComponents.Organization_.Project_.Models.EmbedMode as EmbedMode exposing (EmbedModeId)
 import PagesComponents.Organization_.Project_.Models.ErdConf as ErdConf
 import PagesComponents.Organization_.Project_.Subscriptions as Subscriptions
 import PagesComponents.Organization_.Project_.Updates as Updates
+import PagesComponents.Organization_.Project_.Updates.Extra as Extra
 import PagesComponents.Organization_.Project_.Views as Views
 import Ports exposing (JsMsg(..))
 import Request
@@ -48,7 +49,7 @@ page shared req =
     in
     Page.element
         { init = init query
-        , update = \msg model -> Updates.update query.layout shared.zone shared.now urlInfos shared.organizations shared.projects msg model |> addHistory
+        , update = \msg model -> Updates.update query.layout shared.zone shared.now urlInfos shared.organizations shared.projects msg model |> Extra.apply Batch
         , view = Views.view (Request.pushRoute Route.NotFound req) req.url urlInfos shared
         , subscriptions = Subscriptions.subscriptions
         }
@@ -99,10 +100,10 @@ init query =
             -- org id is not used to get the project ^^
             ++ ((query.projectId |> Maybe.map (\id -> [ Ports.getProject OrganizationId.zero id query.token ]))
                     |> Maybe.orElse (query.projectUrl |> Maybe.map (\url -> [ Http.get { url = url, expect = Http.decodeJson (Result.toMaybe >> GotProject "load" >> JsMessage) Project.decode } ]))
-                    |> Maybe.orElse (query.databaseSource |> Maybe.map (\url -> [ T.send (url |> DatabaseSource.GetSchema |> EmbedSourceParsingDialog.EmbedDatabaseSource |> EmbedSourceParsingMsg), T.sendAfter 1 (ModalOpen Conf.ids.sourceParsingDialog) ]))
-                    |> Maybe.orElse (query.sqlSource |> Maybe.map (\url -> [ T.send (url |> SqlSource.GetRemoteFile |> EmbedSourceParsingDialog.EmbedSqlSource |> EmbedSourceParsingMsg), T.sendAfter 1 (ModalOpen Conf.ids.sourceParsingDialog) ]))
-                    |> Maybe.orElse (query.prismaSource |> Maybe.map (\url -> [ T.send (url |> PrismaSource.GetRemoteFile |> EmbedSourceParsingDialog.EmbedPrismaSource |> EmbedSourceParsingMsg), T.sendAfter 1 (ModalOpen Conf.ids.sourceParsingDialog) ]))
-                    |> Maybe.orElse (query.jsonSource |> Maybe.map (\url -> [ T.send (url |> JsonSource.GetRemoteFile |> EmbedSourceParsingDialog.EmbedJsonSource |> EmbedSourceParsingMsg), T.sendAfter 1 (ModalOpen Conf.ids.sourceParsingDialog) ]))
+                    |> Maybe.orElse (query.databaseSource |> Maybe.map (\url -> [ url |> DatabaseSource.GetSchema |> EmbedSourceParsingDialog.EmbedDatabaseSource |> EmbedSourceParsingMsg |> T.send, ModalOpen Conf.ids.sourceParsingDialog |> T.sendAfter 1 ]))
+                    |> Maybe.orElse (query.sqlSource |> Maybe.map (\url -> [ url |> SqlSource.GetRemoteFile |> EmbedSourceParsingDialog.EmbedSqlSource |> EmbedSourceParsingMsg |> T.send, ModalOpen Conf.ids.sourceParsingDialog |> T.sendAfter 1 ]))
+                    |> Maybe.orElse (query.prismaSource |> Maybe.map (\url -> [ url |> PrismaSource.GetRemoteFile |> EmbedSourceParsingDialog.EmbedPrismaSource |> EmbedSourceParsingMsg |> T.send, ModalOpen Conf.ids.sourceParsingDialog |> T.sendAfter 1 ]))
+                    |> Maybe.orElse (query.jsonSource |> Maybe.map (\url -> [ url |> JsonSource.GetRemoteFile |> EmbedSourceParsingDialog.EmbedJsonSource |> EmbedSourceParsingMsg |> T.send, ModalOpen Conf.ids.sourceParsingDialog |> T.sendAfter 1 ]))
                     |> Maybe.withDefault []
                )
         )

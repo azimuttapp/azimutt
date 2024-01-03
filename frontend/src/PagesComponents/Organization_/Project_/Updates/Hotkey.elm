@@ -75,7 +75,7 @@ handleHotkey _ model hotkey =
 
         "save" ->
             if model.conf.save then
-                ( model, T.send TriggerSaveProject )
+                ( model, TriggerSaveProject |> T.send )
 
             else
                 ( model, "Can't save in read-only mode" |> Toasts.warning |> Toast |> T.send )
@@ -105,22 +105,22 @@ handleHotkey _ model hotkey =
             ( model, moveTablesOrder -1000 model )
 
         "select-all" ->
-            ( model, T.send SelectAll )
+            ( model, SelectAll |> T.send )
 
         "create-layout" ->
             ( model, NewLayoutBody.Create |> NewLayout.Open |> NewLayoutMsg |> T.send )
 
         "create-virtual-relation" ->
-            ( model, T.send (VirtualRelationMsg (model.virtualRelation |> Maybe.mapOrElse (\_ -> VRCancel) (VRCreate (model |> currentColumn)))) )
+            ( model, VirtualRelationMsg (model.virtualRelation |> Maybe.mapOrElse (\_ -> VRCancel) (VRCreate (model |> currentColumn))) |> T.send )
 
         "find-path" ->
-            ( model, T.send (FindPathMsg (model.findPath |> Maybe.mapOrElse (\_ -> FPClose) (FPOpen (currentTable model) Nothing))) )
+            ( model, FindPathMsg (model.findPath |> Maybe.mapOrElse (\_ -> FPClose) (FPOpen (currentTable model) Nothing)) |> T.send )
 
         "reset-zoom" ->
-            ( model, T.send (Zoom (1 - (model.erd |> Maybe.mapOrElse (Erd.currentLayout >> .canvas >> .zoom) 0))) )
+            ( model, Zoom (1 - (model.erd |> Maybe.mapOrElse (Erd.currentLayout >> .canvas >> .zoom) 0)) |> T.send )
 
         "fit-to-screen" ->
-            ( model, T.send FitToScreen )
+            ( model, FitToScreen |> T.send )
 
         "undo" ->
             ( model, Undo |> T.send )
@@ -132,7 +132,7 @@ handleHotkey _ model hotkey =
             ( model, cancelElement model )
 
         "help" ->
-            ( model, T.send (HelpMsg (model.help |> Maybe.mapOrElse (\_ -> HClose) (HOpen ""))) )
+            ( model, HelpMsg (model.help |> Maybe.mapOrElse (\_ -> HClose) (HOpen "")) |> T.send )
 
         _ ->
             ( model, "Unhandled hotkey '" ++ hotkey ++ "'" |> Toasts.warning |> Toast |> T.send )
@@ -140,21 +140,22 @@ handleHotkey _ model hotkey =
 
 notesElement : Model -> Cmd Msg
 notesElement model =
-    (model |> currentColumnRow |> Maybe.andThen (getColumnRow model) |> Maybe.map (\( r, c ) -> NOpen r.table (Just c.path) |> NotesMsg |> T.send))
-        |> Maybe.orElse (model |> currentTableRow |> Maybe.andThen (getTableRow model) |> Maybe.map (\r -> NOpen r.table Nothing |> NotesMsg |> T.send))
-        |> Maybe.orElse (model |> currentColumn |> Maybe.map (\r -> NOpen r.table (Just r.column) |> NotesMsg |> T.send))
-        |> Maybe.orElse (model |> currentTable |> Maybe.map (\r -> NOpen r Nothing |> NotesMsg |> T.send))
-        |> Maybe.withDefault ("Can't find an element with notes :(" |> Toasts.info |> Toast |> T.send)
+    (model |> currentColumnRow |> Maybe.andThen (getColumnRow model) |> Maybe.map (\( r, c ) -> NOpen r.table (Just c.path) |> NotesMsg))
+        |> Maybe.orElse (model |> currentTableRow |> Maybe.andThen (getTableRow model) |> Maybe.map (\r -> NOpen r.table Nothing |> NotesMsg))
+        |> Maybe.orElse (model |> currentColumn |> Maybe.map (\r -> NOpen r.table (Just r.column) |> NotesMsg))
+        |> Maybe.orElse (model |> currentTable |> Maybe.map (\r -> NOpen r Nothing |> NotesMsg))
+        |> Maybe.withDefault ("Can't find an element with notes :(" |> Toasts.info |> Toast)
+        |> T.send
 
 
 createMemo : Model -> Cmd Msg
 createMemo model =
-    model.erd |> Maybe.mapOrElse (\erd -> erd |> Erd.currentLayout |> .canvas |> CanvasProps.viewport model.erdElem |> Area.centerCanvas |> Position.onGrid |> MCreate |> MemoMsg |> T.send) Cmd.none
+    model.erd |> Maybe.mapOrElse (Erd.currentLayout >> .canvas >> CanvasProps.viewport model.erdElem >> Area.centerCanvas >> Position.onGrid >> MCreate >> MemoMsg >> T.send) Cmd.none
 
 
 createGroup : Model -> Cmd Msg
 createGroup model =
-    model.erd |> Maybe.mapOrElse (\erd -> erd |> Erd.currentLayout |> .tables |> List.filter (\t -> t.props.selected) |> List.map .id |> GCreate |> GroupMsg |> T.send) Cmd.none
+    model.erd |> Maybe.mapOrElse (Erd.currentLayout >> .tables >> List.filter (.props >> .selected) >> List.map .id >> GCreate >> GroupMsg >> T.send) Cmd.none
 
 
 collapseElement : Model -> Cmd Msg
@@ -273,8 +274,8 @@ cancelElement model =
             )
         |> Maybe.orElse (model.detailsSidebar |> Maybe.map (\_ -> DetailsSidebarMsg DetailsSidebar.Close))
         |> Maybe.orElse (model.amlSidebar |> Maybe.map (\_ -> AmlSidebarMsg AClose))
-        |> Maybe.map T.send
-        |> Maybe.withDefault ("Nothing to cancel" |> Toasts.info |> Toast |> T.send)
+        |> Maybe.withDefault ("Nothing to cancel" |> Toasts.info |> Toast)
+        |> T.send
 
 
 moveTables : Delta -> Model -> Maybe (Cmd Msg)
@@ -353,6 +354,7 @@ moveTablesOrder delta model =
     else
         (model.hoverTable
             |> Maybe.andThen (\( id, _ ) -> tables |> List.findIndexBy .id id |> Maybe.map (\i -> ( id, i )))
-            |> Maybe.map (\( id, i ) -> T.send (TableOrder id (List.length tables - 1 - i + delta)))
+            |> Maybe.map (\( id, i ) -> TableOrder id (List.length tables - 1 - i + delta))
         )
-            |> Maybe.withDefault ("Can't find an element to move :(" |> Toasts.info |> Toast |> T.send)
+            |> Maybe.withDefault ("Can't find an element to move :(" |> Toasts.info |> Toast)
+            |> T.send

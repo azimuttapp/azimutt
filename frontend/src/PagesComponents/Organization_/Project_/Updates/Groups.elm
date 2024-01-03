@@ -102,7 +102,7 @@ createGroup now urlInfos tables model =
             |> Extra.defaultT
 
     else
-        ( model, model.erd |> Maybe.map (\erd -> Cmd.batch [ erd |> Erd.getProjectRef urlInfos |> ProPlan.groupsModalBody |> CustomModalOpen |> T.send, Track.planLimit .groups (Just erd) ]) |> Extra.cmdM )
+        ( model, model.erd |> Maybe.map (\erd -> [ erd |> Erd.getProjectRef urlInfos |> ProPlan.groupsModalBody |> CustomModalOpen |> T.send, Track.planLimit .groups (Just erd) ]) |> Extra.cmdML )
 
 
 groupColor : ErdLayout -> List TableId -> Color

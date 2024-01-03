@@ -144,7 +144,10 @@ init project id now source query hidden previous hint =
       , selected = False
       , collapsed = False
       }
-    , Cmd.batch [ previous |> Maybe.mapOrElse (\_ -> Cmd.none) (Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt id) source.db.url sqlQuery), Track.tableRowOpened previous source sqlQuery project ]
+    , Cmd.batch
+        [ previous |> Maybe.mapOrElse (\_ -> Cmd.none) (Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt id) source.db.url sqlQuery)
+        , Track.tableRowOpened previous source sqlQuery project
+        ]
     )
 
 
@@ -197,7 +200,7 @@ update wrap toggleDropdown showToast now project sources openedDropdown msg mode
                                     else
                                         h
                                 )
-                        , Extra.newM
+                        , Extra.newHM
                             (Track.tableRowResult res project)
                             (previousState |> Maybe.map (\s -> ( wrap (SetState (StateSuccess s)), wrap (SetState newModel.state) )))
                         )

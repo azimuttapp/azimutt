@@ -10,7 +10,7 @@ import Models.Project.SourceKind exposing (SourceKind(..))
 import Models.Project.TableId as TableId
 import PagesComponents.Organization_.Project_.Models exposing (Msg(..))
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
-import PagesComponents.Organization_.Project_.Updates.Extra exposing (Extra)
+import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
 import Random
 import Services.Toasts as Toasts
 import Time
@@ -21,7 +21,8 @@ createRelations now rels erd =
     case erd.sources |> List.find (\s -> s.kind == AmlEditor && s.name == Conf.constants.virtualRelationSourceName) of
         Just source ->
             ( erd |> Erd.mapSource source.id (Source.addRelations now rels)
-            , ( case rels of
+            , Extra.new
+                (case rels of
                     [] ->
                         "No relation to add." |> Toasts.info |> Toast |> T.send
 
@@ -30,18 +31,16 @@ createRelations now rels erd =
 
                     _ ->
                         (rels |> List.length |> String.fromInt) ++ " relations added to " ++ source.name ++ " source." |> Toasts.info |> Toast |> T.send
-              , [ ( RemoveRelations_ source.id rels, CreateRelations rels ) ]
-              )
+                )
+                ( RemoveRelations_ source.id rels, CreateRelations rels )
             )
 
         Nothing ->
             ( erd
-            , ( Cmd.batch
-                    [ SourceId.generator |> Random.generate (Source.aml Conf.constants.virtualRelationSourceName now >> Source.addRelations now rels >> CreateUserSourceWithId)
-                    , "'" ++ Conf.constants.virtualRelationSourceName ++ "' source added to project with new relation." |> Toasts.info |> Toast |> T.send
-                    ]
-              , []
-              )
+            , Extra.cmdL
+                [ SourceId.generator |> Random.generate (Source.aml Conf.constants.virtualRelationSourceName now >> Source.addRelations now rels >> CreateUserSourceWithId)
+                , "'" ++ Conf.constants.virtualRelationSourceName ++ "' source added to project with new relation." |> Toasts.info |> Toast |> T.send
+                ]
             )
 
 

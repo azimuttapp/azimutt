@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, AmlSidebarMsg(..), ConfirmDialog, ContextMenu, FindPathMsg(..), GroupEdit, GroupMsg(..), HelpDialog, HelpMsg(..), LayoutMsg(..), MemoEdit, MemoMsg(..), ModalDialog, Model, Msg(..), NavbarModel, NotesDialog, ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, VirtualRelation, VirtualRelationMsg(..), addHistory, confirm, confirmDanger, emptyModel, prompt, simplePrompt)
+module PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, AmlSidebarMsg(..), ConfirmDialog, ContextMenu, FindPathMsg(..), GroupEdit, GroupMsg(..), HelpDialog, HelpMsg(..), LayoutMsg(..), MemoEdit, MemoMsg(..), ModalDialog, Model, Msg(..), NavbarModel, NotesDialog, ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, VirtualRelation, VirtualRelationMsg(..), confirm, confirmDanger, emptyModel, prompt, simplePrompt)
 
 import Components.Atoms.Icon exposing (Icon(..))
 import Components.Organisms.Table exposing (TableHover)
@@ -10,7 +10,6 @@ import DataSources.DbMiner.DbTypes exposing (RowQuery)
 import Dict exposing (Dict)
 import Html exposing (Html, text)
 import Libs.Html.Events exposing (PointerEvent, WheelEvent)
-import Libs.List as List
 import Libs.Models exposing (ZoomDelta)
 import Libs.Models.Delta exposing (Delta)
 import Libs.Models.DragId exposing (DragId)
@@ -65,7 +64,6 @@ import PagesComponents.Organization_.Project_.Models.NotesMsg exposing (NotesMsg
 import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint)
 import PagesComponents.Organization_.Project_.Models.ShowColumns exposing (ShowColumns)
 import PagesComponents.Organization_.Project_.Models.TagsMsg exposing (TagsMsg)
-import PagesComponents.Organization_.Project_.Updates.Extra exposing (Extra)
 import PagesComponents.Organization_.Project_.Views.Erd.SelectionBox as SelectionBox
 import PagesComponents.Organization_.Project_.Views.Modals.NewLayout as NewLayout
 import Ports exposing (JsMsg)
@@ -257,11 +255,11 @@ type Msg
     | SelectItem HtmlId Bool
     | SelectItems_ (List HtmlId)
     | SelectAll
-    | CanvasPosition_ Position.Diagram
+    | CanvasPosition Position.Diagram
     | TableMove TableId Delta
     | TablePosition TableId Position.Grid
-    | TableRowPosition_ TableRow.Id Position.Grid
-    | MemoPosition_ MemoId Position.Grid
+    | TableRowPosition TableRow.Id Position.Grid
+    | MemoPosition MemoId Position.Grid
     | TableOrder TableId Int
     | TableColor TableId Color Bool
     | MoveColumn ColumnRef Int
@@ -437,7 +435,7 @@ confirm title content message =
         , message = content
         , confirm = "Yes!"
         , cancel = "Nope"
-        , onConfirm = T.send message
+        , onConfirm = message |> T.send
         }
 
 
@@ -450,7 +448,7 @@ confirmDanger title content message =
         , message = content
         , confirm = "Yes!"
         , cancel = "Nope"
-        , onConfirm = T.send message
+        , onConfirm = message |> T.send
         }
 
 
@@ -480,16 +478,3 @@ simplePrompt label message =
         , onConfirm = message >> T.send
         }
         ""
-
-
-addHistory : ( Model, Extra Msg ) -> ( Model, Cmd Msg )
-addHistory ( model, ( cmd, history ) ) =
-    case history of
-        [] ->
-            ( model, cmd )
-
-        one :: [] ->
-            ( { model | history = one :: model.history |> List.take 100, future = [] }, cmd )
-
-        many ->
-            ( { model | history = (many |> List.tupleSeq |> Tuple.mapBoth Batch Batch) :: model.history |> List.take 100, future = [] }, cmd )

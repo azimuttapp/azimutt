@@ -8,7 +8,6 @@ import Json.Decode as Decode
 import Json.Encode as Encode
 import Libs.Bool as B
 import Libs.List as List
-import Libs.Maybe as Maybe
 import Libs.Result as Result
 import Libs.Task as T
 import Models.OrganizationId as OrganizationId exposing (OrganizationId)
@@ -19,6 +18,7 @@ import Models.Project.SourceId as SourceId
 import Models.ProjectInfo exposing (ProjectInfo)
 import Models.SourceInfo as SourceInfo
 import PagesComponents.New.Models exposing (Model, Msg(..), Tab(..))
+import PagesComponents.Organization_.Project_.Updates.Extra as Extra
 import Ports exposing (JsMsg(..))
 import Random
 import Request
@@ -88,8 +88,7 @@ update req now projects urlOrganization msg model =
             )
 
         DatabaseSourceMsg message ->
-            (model |> mapDatabaseSourceMT (DatabaseSource.update DatabaseSourceMsg now Nothing message))
-                |> Tuple.mapSecond (Maybe.mapOrElse Tuple.first Cmd.none)
+            (model |> mapDatabaseSourceMT (DatabaseSource.update DatabaseSourceMsg now Nothing message) |> Extra.unpackTM)
                 |> Tuple.mapSecond
                     (\cmd ->
                         case message of
@@ -101,18 +100,15 @@ update req now projects urlOrganization msg model =
                     )
 
         SqlSourceMsg message ->
-            (model |> mapSqlSourceMT (SqlSource.update SqlSourceMsg now Nothing message))
-                |> Tuple.mapSecond (Maybe.mapOrElse Tuple.first Cmd.none)
+            (model |> mapSqlSourceMT (SqlSource.update SqlSourceMsg now Nothing message) |> Extra.unpackTM)
                 |> Tuple.mapSecond (\cmd -> B.cond (message == SqlSource.BuildSource) (Cmd.batch [ cmd, Ports.confetti "create-project-btn" ]) cmd)
 
         PrismaSourceMsg message ->
-            (model |> mapPrismaSourceMT (PrismaSource.update PrismaSourceMsg now Nothing message))
-                |> Tuple.mapSecond (Maybe.mapOrElse Tuple.first Cmd.none)
+            (model |> mapPrismaSourceMT (PrismaSource.update PrismaSourceMsg now Nothing message) |> Extra.unpackTM)
                 |> Tuple.mapSecond (\cmd -> B.cond (message == PrismaSource.BuildSource) (Cmd.batch [ cmd, Ports.confetti "create-project-btn" ]) cmd)
 
         JsonSourceMsg message ->
-            (model |> mapJsonSourceMT (JsonSource.update JsonSourceMsg now Nothing message))
-                |> Tuple.mapSecond (Maybe.mapOrElse Tuple.first Cmd.none)
+            (model |> mapJsonSourceMT (JsonSource.update JsonSourceMsg now Nothing message) |> Extra.unpackTM)
                 |> Tuple.mapSecond (\cmd -> B.cond (message == JsonSource.BuildSource) (Cmd.batch [ cmd, Ports.confetti "create-project-btn" ]) cmd)
 
         ProjectSourceMsg message ->
@@ -133,10 +129,10 @@ update req now projects urlOrganization msg model =
             ( model |> Dropdown.update id, Cmd.none )
 
         Toast message ->
-            model |> mapToastsT (Toasts.update Toast message) |> Tuple.mapSecond Tuple.first
+            model |> mapToastsT (Toasts.update Toast message) |> Extra.unpackT
 
         ConfirmOpen confirm ->
-            ( model |> setConfirm (Just { id = Conf.ids.confirmDialog, content = confirm }), T.sendAfter 1 (ModalOpen Conf.ids.confirmDialog) )
+            ( model |> setConfirm (Just { id = Conf.ids.confirmDialog, content = confirm }), ModalOpen Conf.ids.confirmDialog |> T.sendAfter 1 )
 
         ConfirmAnswer answer cmd ->
             ( model |> setConfirm Nothing, B.cond answer cmd Cmd.none )
@@ -145,7 +141,7 @@ update req now projects urlOrganization msg model =
             ( model |> mapOpenedDialogs (\dialogs -> id :: dialogs), Ports.autofocusWithin id )
 
         ModalClose message ->
-            ( model |> mapOpenedDialogs (List.drop 1), T.sendAfter Conf.ui.closeDuration message )
+            ( model |> mapOpenedDialogs (List.drop 1), message |> T.sendAfter Conf.ui.closeDuration )
 
         JsMessage message ->
             model |> handleJsMessage req now urlOrganization message
@@ -159,7 +155,7 @@ handleJsMessage req now urlOrganization msg model =
     case msg of
         GotLocalFile kind file content ->
             if kind == ProjectSource.kind then
-                ( model, T.send (content |> ProjectSource.GotFile |> ProjectSourceMsg) )
+                ( model, content |> ProjectSource.GotFile |> ProjectSourceMsg |> T.send )
 
             else if kind == SqlSource.kind then
                 ( model, SourceId.generator |> Random.generate (\sourceId -> content |> SqlSource.GotFile (SourceInfo.sqlLocal now sourceId file) |> SqlSourceMsg) )
@@ -178,7 +174,7 @@ handleJsMessage req now urlOrganization msg model =
                 ( model, Request.pushRoute (Route.Organization___Project_ { organization = urlOrganization |> Maybe.withDefault OrganizationId.zero, project = ProjectId.zero }) req )
 
             else
-                ( model, T.send (project |> SampleSource.GotProject |> SampleSourceMsg) )
+                ( model, project |> SampleSource.GotProject |> SampleSourceMsg |> T.send )
 
         GotDatabaseSchema schema ->
             ( model, Ok schema |> DatabaseSource.GotSchema |> DatabaseSourceMsg |> T.send )

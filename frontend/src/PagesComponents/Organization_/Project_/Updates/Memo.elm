@@ -141,5 +141,5 @@ deleteMemo now id createMode model =
                     ( m, Extra.none )
 
                 else
-                    ( m, Extra.newL (Track.memoDeleted model.erd) (hist |> Maybe.withDefault []) ) |> setDirty
+                    ( m, Extra.newHL (Track.memoDeleted model.erd) (hist |> Maybe.withDefault []) ) |> setDirty
            )

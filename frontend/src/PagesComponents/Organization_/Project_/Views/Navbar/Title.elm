@@ -288,5 +288,5 @@ confirmDeleteLayout name =
         , message = span [] [ text "Are you sure you want to delete ", bText name, text " layout?" ]
         , confirm = "Delete " ++ name ++ " layout"
         , cancel = "Cancel"
-        , onConfirm = T.send (name |> LDelete |> LayoutMsg)
+        , onConfirm = name |> LDelete |> LayoutMsg |> T.send
         }

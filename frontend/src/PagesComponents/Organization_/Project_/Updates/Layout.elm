@@ -3,7 +3,6 @@ module PagesComponents.Organization_.Project_.Updates.Layout exposing (Model, ha
 import Dict
 import Libs.List as List
 import Libs.Maybe as Maybe
-import Libs.Task as T
 import Models.Project.LayoutName exposing (LayoutName)
 import PagesComponents.Organization_.Project_.Models exposing (LayoutMsg(..), Msg(..))
 import PagesComponents.Organization_.Project_.Models.Erd exposing (Erd)
@@ -40,8 +39,8 @@ loadLayout onLoad name erd =
         |> Maybe.mapOrElse
             (\layout ->
                 ( erd |> setCurrentLayout name |> setLayoutOnLoad onLoad
-                , Extra.new
-                    (Cmd.batch [ Ports.observeLayout layout, Track.layoutLoaded erd.project layout ])
+                , Extra.newCL
+                    [ Ports.observeLayout layout, Track.layoutLoaded erd.project layout ]
                     ( LayoutMsg (LLoad onLoad erd.currentLayout), LayoutMsg (LLoad onLoad name) )
                 )
             )
@@ -85,7 +84,7 @@ deleteLayout name erd =
 unDeleteLayout : LayoutName -> ErdLayout -> Erd -> ( Erd, Extra Msg )
 unDeleteLayout name layout erd =
     (erd.layouts |> Dict.get name)
-        |> Maybe.map (\_ -> ( erd, ( "'" ++ name ++ "' layout already exists" |> Toasts.error |> Toast |> T.send, [] ) ))
+        |> Maybe.map (\_ -> ( erd, "'" ++ name ++ "' layout already exists" |> Toasts.error |> Toast |> Extra.msg ))
         |> Maybe.withDefault
             ( erd |> mapLayouts (Dict.insert name layout)
             , Extra.history ( Batch [ LayoutMsg (LDelete name), LayoutMsg (LLoad "fit" erd.currentLayout) ], LayoutMsg (LUnDelete_ name layout) )

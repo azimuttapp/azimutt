@@ -15,7 +15,7 @@ setDirty ( model, ( cmd, history ) ) =
         ( model, ( cmd, history ) )
 
     else
-        ( { model | dirty = True }, ( Cmd.batch [ cmd, Ports.projectDirty True ], history ) )
+        ( { model | dirty = True }, Extra.newLL [ cmd, Ports.projectDirty True ] history )
 
 
 setDirtyM : ( DirtyModel m, Maybe (Extra msg) ) -> ( DirtyModel m, Extra msg )

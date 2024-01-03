@@ -76,15 +76,7 @@ updateProject model =
 moveProject : ProjectStorage -> Model -> ( Model, Extra Msg )
 moveProject storage model =
     if model.conf.save then
-        ( model
-        , Extra.cmdL
-            (model.erd
-                |> Maybe.map Erd.unpack
-                |> Maybe.mapOrElse
-                    (\p -> [ Ports.moveProjectTo p storage ])
-                    [ "No project to move" |> Toasts.warning |> Toast |> T.send ]
-            )
-        )
+        ( model, Extra.cmd (model.erd |> Maybe.map Erd.unpack |> Maybe.mapOrElse (\p -> Ports.moveProjectTo p storage) ("No project to move" |> Toasts.warning |> Toast |> T.send)) )
 
     else
         ( model, Extra.none )

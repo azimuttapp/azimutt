@@ -53,7 +53,7 @@ update wrap batch modalOpen toast customModalOpen loadLayout deleteLayout now ur
     case msg of
         Open from ->
             if model.erd |> Erd.canCreateLayout then
-                ( model |> setNewLayout (Just (NewLayoutBody.init dialogId from)), Extra.cmdL [ T.sendAfter 1 (modalOpen dialogId) ] )
+                ( model |> setNewLayout (Just (NewLayoutBody.init dialogId from)), modalOpen dialogId |> T.sendAfter 1 |> Extra.cmd )
 
             else
                 ( model, Extra.cmdL [ model.erd |> Erd.getProjectRefM urlInfos |> ProPlan.layoutsModalBody |> customModalOpen |> T.send, Track.planLimit .layouts model.erd ] )
@@ -84,7 +84,7 @@ updateLayouts wrap batch toast loadLayout deleteLayout mode name now erd =
 createLayout : (Msg -> msg) -> (List msg -> msg) -> (Toasts.Msg -> msg) -> (LayoutName -> msg) -> (LayoutName -> msg) -> Maybe LayoutName -> LayoutName -> Time.Posix -> Erd -> ( Erd, Extra msg )
 createLayout wrap batch toast loadLayout deleteLayout from name now erd =
     (erd.layouts |> Dict.get name)
-        |> Maybe.map (\_ -> ( erd, ( "'" ++ name ++ "' layout already exists" |> Toasts.error |> toast |> T.send, [] ) ))
+        |> Maybe.map (\_ -> ( erd, "'" ++ name ++ "' layout already exists" |> Toasts.error |> toast |> Extra.msg ))
         |> Maybe.withDefault
             ((from |> Maybe.andThen (\f -> erd.layouts |> Dict.get f) |> Maybe.withDefault (ErdLayout.empty now))
                 |> (\layout ->
@@ -106,7 +106,7 @@ renameLayout wrap toast from name erd =
                 , ( Track.layoutRenamed erd.project l, [ ( wrap (Submit (NewLayoutBody.Rename name) from), wrap (Submit (NewLayoutBody.Rename from) name) ) ] )
                 )
             )
-        |> Maybe.withDefault ( erd, ( "'" ++ from ++ "' layout does not exist" |> Toasts.error |> toast |> T.send, [] ) )
+        |> Maybe.withDefault ( erd, "'" ++ from ++ "' layout does not exist" |> Toasts.error |> toast |> Extra.msg )
 
 
 view : (Msg -> msg) -> (msg -> msg) -> ProjectRef -> List LayoutName -> Bool -> Model -> Html msg
