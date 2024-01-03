@@ -105,13 +105,14 @@ saveMemo now edit model =
                                 |> mapContentT
                                     (\c ->
                                         ( edit.content
-                                        , ( Track.memoSaved edit.createMode edit.content model.erd
-                                          , if edit.createMode then
+                                        , Extra.newHL
+                                            (Track.memoSaved edit.createMode edit.content model.erd)
+                                            (if edit.createMode then
                                                 [ ( MemoMsg (MDelete edit.id), MemoMsg (MUnDelete 0 { memo | content = edit.content }) ) ]
 
-                                            else
+                                             else
                                                 [ ( MemoMsg (MEditSave { edit | content = c }), MemoMsg (MEditSave edit) ) ]
-                                          )
+                                            )
                                         )
                                     )
                         )
