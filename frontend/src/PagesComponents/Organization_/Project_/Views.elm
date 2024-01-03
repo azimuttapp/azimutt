@@ -80,7 +80,7 @@ viewProject onDelete currentUrl urlInfos shared model =
     , Lazy.lazy viewContextMenu model.contextMenu
     , if model.saving then
         div [ class "absolute inset-0 flex z-max bg-white opacity-10 animate-pulse" ]
-            [ h1 [ class "m-auto select-none animate-text bg-gradient-to-r from-teal-500 via-purple-500 to-orange-500 bg-clip-text text-transparent text-5xl font-black" ] [ text "Saving" ] ]
+            [ h1 [ class "m-auto select-none animate-text bg-gradient-to-r from-teal-500 via-purple-500 to-orange-500 bg-clip-text text-transparent text-5xl leading-normal font-black" ] [ text "Saving" ] ]
 
       else
         Html.none

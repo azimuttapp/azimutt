@@ -184,14 +184,20 @@ buildColumn useBasicTypes tableMeta layout column =
             column.kindLabel
     , kindDetails =
         column.customType
-            |> Maybe.map
+            |> Maybe.andThen
                 (\t ->
                     case t.value of
+                        CustomTypeValue.Enum [] ->
+                            Nothing
+
                         CustomTypeValue.Enum values ->
-                            "Enum: " ++ String.join ", " values
+                            "Enum: " ++ String.join ", " values |> Just
+
+                        CustomTypeValue.Definition "" ->
+                            Nothing
 
                         CustomTypeValue.Definition definition ->
-                            "Type: " ++ definition
+                            "Type: " ++ definition |> Just
                 )
     , nullable = column.nullable
     , default = column.defaultLabel
