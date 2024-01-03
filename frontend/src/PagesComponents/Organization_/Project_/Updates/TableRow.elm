@@ -37,9 +37,10 @@ showTableRow now source query previous hint from erd =
     ( erd
         |> mapTableRowsSeq (\i -> i + 1)
         |> Erd.mapCurrentLayoutWithTime now (mapTableRows (List.prepend row))
-    , Extra.newCL
+    , Extra.newLL
         [ cmd, Ports.observeTableRowSize row.id, Track.tableRowShown source from erd.project ]
-        ( DeleteTableRow row.id, UnDeleteTableRow_ 0 row )
+        (previous |> Maybe.mapOrElse (\_ -> [ ( DeleteTableRow row.id, UnDeleteTableRow_ 0 row ) ]) [])
+      -- don't add history if loading, add it when loaded (see frontend/src/Components/Organisms/TableRow.elm#update GotResult)
     )
 
 

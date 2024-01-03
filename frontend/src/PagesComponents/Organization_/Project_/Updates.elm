@@ -326,7 +326,7 @@ update urlLayout zone now urlInfos organizations projects msg model =
             model |> mapErdMT (arrangeTables now model.erdElem) |> Extra.defaultT
 
         SetLayout_ layout ->
-            model |> mapErdMTM (Erd.mapCurrentLayoutT (\l -> ( layout, ( Ports.observeLayout layout, [ ( SetLayout_ l, SetLayout_ layout ) ] ) ))) |> setDirtyM
+            model |> mapErdMTM (Erd.mapCurrentLayoutT (\l -> ( layout, Extra.new (Ports.observeLayout layout) ( SetLayout_ l, SetLayout_ layout ) ))) |> setDirtyM
 
         GroupMsg message ->
             model |> handleGroups now urlInfos message
@@ -352,7 +352,7 @@ update urlLayout zone now urlInfos organizations projects msg model =
             model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (unDeleteTableRow index tableRow)) |> setDirtyM
 
         TableRowMsg id message ->
-            model |> mapErdMTM (\e -> e |> Erd.mapCurrentLayoutTWithTime now (mapTableRowsT (mapTableRowOrSelected id message (TableRow.update (TableRowMsg id) DropdownToggle Toast now e.project e.sources model.openedDropdown message)))) |> setDirtyM
+            model |> mapErdMTM (\e -> e |> Erd.mapCurrentLayoutTWithTime now (mapTableRowsT (mapTableRowOrSelected id message (TableRow.update (TableRowMsg id) DropdownToggle Toast (DeleteTableRow id) (UnDeleteTableRow_ 0) now e.project e.sources model.openedDropdown message)))) |> setDirtyM
 
         AmlSidebarMsg message ->
             model |> AmlSidebar.update now message
@@ -495,7 +495,7 @@ update urlLayout zone now urlInfos organizations projects msg model =
                     ( model, "Can't undo, action history is empty" |> Toasts.info |> Toast |> Extra.msg )
 
                 ( back, next ) :: history ->
-                    update urlLayout zone now urlInfos organizations projects back { model | history = history, future = ( back, next ) :: model.future } |> Tuple.mapSecond (Tuple.mapSecond (\_ -> []))
+                    update urlLayout zone now urlInfos organizations projects back { model | history = history, future = ( back, next ) :: model.future } |> Tuple.mapSecond Extra.dropHistory
 
         Redo ->
             case model.future of
@@ -503,7 +503,7 @@ update urlLayout zone now urlInfos organizations projects msg model =
                     ( model, "Can't redo, no future action" |> Toasts.info |> Toast |> Extra.msg )
 
                 ( back, next ) :: future ->
-                    update urlLayout zone now urlInfos organizations projects next { model | history = ( back, next ) :: model.history, future = future } |> Tuple.mapSecond (Tuple.mapSecond (\_ -> []))
+                    update urlLayout zone now urlInfos organizations projects next { model | history = ( back, next ) :: model.history, future = future } |> Tuple.mapSecond Extra.dropHistory
 
         JsMessage message ->
             model |> handleJsMessage now urlLayout message |> Tuple.mapSecond Extra.cmd

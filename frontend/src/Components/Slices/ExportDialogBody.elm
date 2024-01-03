@@ -293,7 +293,7 @@ updateDocState project get set msg =
             s.exportDialogDocState
                 |> get
                 |> update (updateDocState project get set) UrlInfos.empty (sampleErd |> mapProject (setOrganization (Just project.organization))) msg
-                |> Tuple.mapBoth (\r -> { s | exportDialogDocState = s.exportDialogDocState |> set r }) Tuple.first
+                |> Tuple.mapBoth (\r -> { s | exportDialogDocState = s.exportDialogDocState |> set r }) .cmd
         )
 
 

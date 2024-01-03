@@ -99,7 +99,7 @@ arrangeTables now erdElem erd =
                             layout
                                 |> arrangeTablesAlgo tables rows memos
                                 |> Tuple.mapFirst (fitCanvasAlgo erdElem tables rows memos groups)
-                                |> (\( ( l, ( c2, _ ) ), ( c1, _ ) ) -> ( l, Extra.newCL [ c1, c2 ] ( SetLayout_ layout, SetLayout_ l ) ))
+                                |> (\( ( l, e2 ), e1 ) -> ( l, Extra.combine e1 e2 |> Extra.setHistory ( SetLayout_ layout, SetLayout_ l ) ))
                         )
                     |> Extra.defaultT
             )
@@ -265,10 +265,10 @@ computeZoom erdViewport padding contentArea zoom =
 
 
 squashViewHistory : ( Model, Extra Msg ) -> ( Model, Extra Msg )
-squashViewHistory ( model, ( cmd, history ) ) =
-    case ( model.history, history ) of
+squashViewHistory ( model, e ) =
+    case ( model.history, e.history ) of
         ( ( SetView_ first, SetView_ _ ) :: rest, [ ( SetView_ _, SetView_ last ) ] ) ->
-            ( { model | history = rest }, Extra.new cmd ( SetView_ first, SetView_ last ) )
+            ( { model | history = rest }, e |> Extra.setHistory ( SetView_ first, SetView_ last ) )
 
         _ ->
-            ( model, Extra.newHL cmd history )
+            ( model, e )

@@ -211,15 +211,15 @@ showRelatedTables now id erd =
                     shows =
                         toShow |> List.foldl (\( t, h ) ( cur, res ) -> ( cur + h + padding.dy, ( t, Just (PlaceAt (Position.grid { left = left, top = cur })) ) :: res )) ( top, [] ) |> Tuple.second
 
-                    ( newErd, cmds ) =
-                        shows |> List.foldl (\( t, h ) ( e, cs ) -> showTable now t h "related" e |> Tuple.mapSecond (\( c, _ ) -> c :: cs)) ( erd, [] )
+                    ( newErd, extra ) =
+                        shows |> List.foldl (\( t, h ) ( e, cs ) -> showTable now t h "related" e |> Tuple.mapSecond (Extra.combine cs)) ( erd, Extra.none )
 
                     ( back, forward ) =
                         ( shows |> List.map (\( t, _ ) -> HideTable t) |> Batch
                         , shows |> List.map (\( t, h ) -> ShowTable t h "related") |> Batch
                         )
                 in
-                ( newErd, Extra.newCL cmds ( back, forward ) )
+                ( newErd, extra |> Extra.setHistory ( back, forward ) )
             )
             ( erd, Extra.none )
 

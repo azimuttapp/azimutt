@@ -10,12 +10,12 @@ type alias DirtyModel m =
 
 
 setDirty : ( DirtyModel m, Extra msg ) -> ( DirtyModel m, Extra msg )
-setDirty ( model, ( cmd, history ) ) =
+setDirty ( model, e ) =
     if model.dirty || not model.conf.save then
-        ( model, ( cmd, history ) )
+        ( model, e )
 
     else
-        ( { model | dirty = True }, Extra.newLL [ cmd, Ports.projectDirty True ] history )
+        ( { model | dirty = True }, e |> Extra.addCmd (Ports.projectDirty True) )
 
 
 setDirtyM : ( DirtyModel m, Maybe (Extra msg) ) -> ( DirtyModel m, Extra msg )

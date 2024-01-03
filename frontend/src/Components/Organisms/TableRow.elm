@@ -184,13 +184,13 @@ initRelation src ref =
 -- UPDATE
 
 
-update : (Msg -> msg) -> (HtmlId -> msg) -> (Toasts.Msg -> msg) -> Time.Posix -> ProjectInfo -> List Source -> HtmlId -> Msg -> Model -> ( Model, Extra msg )
-update wrap toggleDropdown showToast now project sources openedDropdown msg model =
+update : (Msg -> msg) -> (HtmlId -> msg) -> (Toasts.Msg -> msg) -> msg -> (TableRow -> msg) -> Time.Posix -> ProjectInfo -> List Source -> HtmlId -> Msg -> Model -> ( Model, Extra msg )
+update wrap toggleDropdown showToast deleteTableRow unDeleteTableRow now project sources openedDropdown msg model =
     case msg of
         GotResult res ->
             model
                 |> mapStateLoadingTM (\l -> ( res.result |> Result.fold (initFailure l.query l.previous res.started res.finished) (initSuccess res.started res.finished), l.previous ))
-                |> (\( newModel, previousState ) ->
+                |> (\( newModel, previous ) ->
                         ( newModel
                             |> mapHidden
                                 (\h ->
@@ -200,9 +200,13 @@ update wrap toggleDropdown showToast now project sources openedDropdown msg mode
                                     else
                                         h
                                 )
-                        , Extra.newHM
+                        , Extra.new
                             (Track.tableRowResult res project)
-                            (previousState |> Maybe.map (\s -> ( wrap (SetState (StateSuccess s)), wrap (SetState newModel.state) )))
+                            (previous
+                                |> Maybe.map (\s -> ( wrap (SetState (StateSuccess s)), wrap (SetState newModel.state) ))
+                                |> Maybe.withDefault ( deleteTableRow, unDeleteTableRow newModel )
+                             -- if no previous, add history for show table row (initial loading, cf frontend/src/PagesComponents/Organization_/Project_/Updates/TableRow.elm#showTableRow)
+                            )
                         )
                    )
 
@@ -1023,7 +1027,7 @@ docRelation ( fromSchema, fromTable, fromColumn ) ( toSchema, toTable, toColumn 
 
 docUpdate : DocState -> (DocState -> Model) -> (DocState -> Model -> DocState) -> Msg -> ElmBook.Msg (SharedDocState x)
 docUpdate s get set msg =
-    s |> get |> update (\_ -> logAction "msg") (docToggleDropdown s) docShowToast Time.zero ProjectInfo.zero [ docSource ] s.openedDropdown msg |> Tuple.first |> set s |> docSetState
+    s |> get |> update (\_ -> logAction "msg") (docToggleDropdown s) docShowToast docDelete docUnDelete Time.zero ProjectInfo.zero [ docSource ] s.openedDropdown msg |> Tuple.first |> set s |> docSetState
 
 
 docSetState : DocState -> ElmBook.Msg (SharedDocState x)
@@ -1082,6 +1086,11 @@ docShowTableRow _ _ _ _ =
 docDelete : ElmBook.Msg state
 docDelete =
     logAction "delete"
+
+
+docUnDelete : TableRow -> ElmBook.Msg state
+docUnDelete _ =
+    logAction "unDelete"
 
 
 docOpenNotes : TableId -> Maybe ColumnPath -> ElmBook.Msg state

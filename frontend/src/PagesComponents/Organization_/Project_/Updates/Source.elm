@@ -46,4 +46,4 @@ createRelations now rels erd =
 
 deleteRelations : SourceId -> List { src : ColumnRef, ref : ColumnRef } -> Erd -> ( Erd, Extra Msg )
 deleteRelations sourceId rels erd =
-    ( erd |> Erd.mapSource sourceId (Source.removeRelations rels), ( Cmd.none, [ ( CreateRelations rels, RemoveRelations_ sourceId rels ) ] ) )
+    ( erd |> Erd.mapSource sourceId (Source.removeRelations rels), Extra.history ( CreateRelations rels, RemoveRelations_ sourceId rels ) )

@@ -103,7 +103,7 @@ renameLayout wrap toast from name erd =
         |> Maybe.map
             (\l ->
                 ( erd |> mapLayouts (Dict.remove from >> Dict.insert name l) |> setCurrentLayout name
-                , ( Track.layoutRenamed erd.project l, [ ( wrap (Submit (NewLayoutBody.Rename name) from), wrap (Submit (NewLayoutBody.Rename from) name) ) ] )
+                , Extra.new (Track.layoutRenamed erd.project l) ( wrap (Submit (NewLayoutBody.Rename name) from), wrap (Submit (NewLayoutBody.Rename from) name) )
                 )
             )
         |> Maybe.withDefault ( erd, "'" ++ from ++ "' layout does not exist" |> Toasts.error |> toast |> Extra.msg )

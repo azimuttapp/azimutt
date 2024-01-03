@@ -1,45 +1,42 @@
-module PagesComponents.Organization_.Project_.Updates.Extra exposing (Extra, addCmdT, addHistoryT, apply, cmd, cmdL, cmdM, cmdML, cmdT, combine, concat, defaultT, dropHistory, history, historyL, historyM, msg, msgM, msgR, new, newCL, newHL, newHM, newLL, none, unpackT, unpackTM)
+module PagesComponents.Organization_.Project_.Updates.Extra exposing (Extra, addCmd, addCmdT, addHistoryT, apply, cmd, cmdL, cmdM, cmdML, cmdT, combine, concat, defaultT, dropHistory, history, historyL, historyM, msg, msgM, msgR, new, newCL, newHL, newLL, none, setHistory, unpackT, unpackTM)
 
 import Task
 
 
 type alias Extra msg =
-    ( Cmd msg, List ( msg, msg ) )
+    { cmd : Cmd msg
+    , history : List ( msg, msg )
+    }
 
 
 none : Extra msg
 none =
-    ( Cmd.none, [] )
+    { cmd = Cmd.none, history = [] }
 
 
 new : Cmd msg -> ( msg, msg ) -> Extra msg
 new c h =
-    ( c, [ h ] )
+    { cmd = c, history = [ h ] }
 
 
 newCL : List (Cmd msg) -> ( msg, msg ) -> Extra msg
 newCL c h =
-    ( Cmd.batch c, [ h ] )
-
-
-newHM : Cmd msg -> Maybe ( msg, msg ) -> Extra msg
-newHM c h =
-    h |> Maybe.map (new c) |> Maybe.withDefault none
+    { cmd = Cmd.batch c, history = [ h ] }
 
 
 newHL : Cmd msg -> List ( msg, msg ) -> Extra msg
 newHL c h =
-    ( c, h )
+    { cmd = c, history = h }
 
 
 newLL : List (Cmd msg) -> List ( msg, msg ) -> Extra msg
 newLL c h =
-    ( Cmd.batch c, h )
+    { cmd = Cmd.batch c, history = h }
 
 
 cmd : Cmd msg -> Extra msg
 cmd c =
-    ( c, [] )
+    { cmd = c, history = [] }
 
 
 cmdM : Maybe (Cmd msg) -> Extra msg
@@ -49,7 +46,7 @@ cmdM c =
 
 cmdL : List (Cmd msg) -> Extra msg
 cmdL c =
-    ( Cmd.batch c, [] )
+    { cmd = Cmd.batch c, history = [] }
 
 
 cmdT : ( a, Cmd msg ) -> ( a, Extra msg )
@@ -64,7 +61,7 @@ cmdML c =
 
 msg : msg -> Extra msg
 msg m =
-    ( m |> Task.succeed |> Task.perform identity, [] )
+    { cmd = m |> Task.succeed |> Task.perform identity, history = [] }
 
 
 msgM : Maybe msg -> Extra msg
@@ -79,7 +76,7 @@ msgR m =
 
 history : ( msg, msg ) -> Extra msg
 history h =
-    ( Cmd.none, [ h ] )
+    { cmd = Cmd.none, history = [ h ] }
 
 
 historyM : Maybe ( msg, msg ) -> Extra msg
@@ -89,22 +86,32 @@ historyM h =
 
 historyL : List ( msg, msg ) -> Extra msg
 historyL h =
-    ( Cmd.none, h )
+    { cmd = Cmd.none, history = h }
+
+
+addCmd : Cmd msg -> Extra msg -> Extra msg
+addCmd c e =
+    { e | cmd = Cmd.batch [ e.cmd, c ] }
 
 
 addCmdT : Cmd msg -> ( a, Extra msg ) -> ( a, Extra msg )
-addCmdT c2 ( a, ( c, h ) ) =
-    ( a, ( Cmd.batch [ c, c2 ], h ) )
+addCmdT c ( a, e ) =
+    ( a, e |> addCmd c )
 
 
 addHistoryT : ( msg, msg ) -> ( a, Extra msg ) -> ( a, Extra msg )
-addHistoryT h2 ( a, ( c, h ) ) =
-    ( a, ( c, h ++ [ h2 ] ) )
+addHistoryT h ( a, e ) =
+    ( a, { e | history = e.history ++ [ h ] } )
+
+
+setHistory : ( msg, msg ) -> Extra msg -> Extra msg
+setHistory h e =
+    { e | history = [ h ] }
 
 
 dropHistory : Extra msg -> Extra msg
-dropHistory ( c, _ ) =
-    ( c, [] )
+dropHistory e =
+    { e | history = [] }
 
 
 defaultT : ( a, Maybe (Extra msg) ) -> ( a, Extra msg )
@@ -113,36 +120,36 @@ defaultT ( a, e ) =
 
 
 combine : Extra msg -> Extra msg -> Extra msg
-combine ( cmdA, hA ) ( cmdB, hB ) =
-    ( Cmd.batch [ cmdA, cmdB ], hA ++ hB )
+combine a b =
+    { cmd = Cmd.batch [ a.cmd, b.cmd ], history = a.history ++ b.history }
 
 
 concat : List (Extra msg) -> Extra msg
 concat extras =
-    extras |> List.unzip |> Tuple.mapBoth Cmd.batch List.concat
+    { cmd = extras |> List.map .cmd |> Cmd.batch, history = extras |> List.map .history |> List.concat }
 
 
 unpackT : ( a, Extra msg ) -> ( a, Cmd msg )
-unpackT ( a, ( c, _ ) ) =
-    ( a, c )
+unpackT ( a, e ) =
+    ( a, e.cmd )
 
 
 unpackTM : ( a, Maybe (Extra msg) ) -> ( a, Cmd msg )
-unpackTM ( a, e ) =
-    e |> Maybe.map (\( c, _ ) -> ( a, c )) |> Maybe.withDefault ( a, Cmd.none )
+unpackTM ( a, eM ) =
+    eM |> Maybe.map (\e -> ( a, e.cmd )) |> Maybe.withDefault ( a, Cmd.none )
 
 
 apply : (List msg -> msg) -> ( { m | history : List ( msg, msg ), future : List ( msg, msg ) }, Extra msg ) -> ( { m | history : List ( msg, msg ), future : List ( msg, msg ) }, Cmd msg )
-apply batch ( model, ( c, h ) ) =
-    case h of
+apply batch ( model, e ) =
+    case e.history of
         [] ->
-            ( model, c )
+            ( model, e.cmd )
 
         one :: [] ->
-            ( { model | history = one :: model.history |> List.take 100, future = [] }, c )
+            ( { model | history = one :: model.history |> List.take 100, future = [] }, e.cmd )
 
         many ->
-            ( { model | history = (many |> tupleList |> Tuple.mapBoth batch batch) :: model.history |> List.take 100, future = [] }, c )
+            ( { model | history = (many |> tupleList |> Tuple.mapBoth batch batch) :: model.history |> List.take 100, future = [] }, e.cmd )
 
 
 tupleList : List ( a, b ) -> ( List a, List b )
