@@ -22,7 +22,7 @@
 
 Azimutt is a full-stack database exploration tool, from modern ERD made for real world databases (big & messy), to fast data navigation, but also documentation everywhere and whole database analysis.
 
-[![Azimutt screenshot](docs/_assets/azimutt-screenshot-gospeak.png)](https://azimutt.app/gallery/gospeak)
+[![Azimutt screenshot](docs/_assets/azimutt.png)](https://azimutt.app/gallery/gospeak)
 
 **Why building Azimutt?**
 
@@ -36,7 +36,7 @@ So we decided to built it 💪
 
 Azimutt started as a schema exploration tool for databases with hundreds of tables, but now it has grown a lot:
 
-[![Azimutt roadmap](docs/_assets/azimutt-roadmap.png)](https://mm.tt/map/2434161843?t=N2yWZj1pc1)
+[![Azimutt roadmap](docs/_assets/roadmap.png)](https://mm.tt/map/2434161843?t=N2yWZj1pc1)
 
 - Design your schema using [AML](docs/aml/README.md) for a fast diagramming
 - Explore your database schema using search everywhere, display only useful tables/columns and follow relations
