@@ -5,7 +5,7 @@ defmodule AzimuttWeb.Api.GalleryController do
   action_fallback AzimuttWeb.Api.FallbackController
 
   swagger_path :index do
-    get("/api/v1/gallery")
+    get("/gallery")
     summary("List sample projects")
     description("List sample projects")
     produces("application/json")

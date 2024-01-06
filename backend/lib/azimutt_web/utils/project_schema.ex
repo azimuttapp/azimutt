@@ -3,6 +3,30 @@ defmodule AzimuttWeb.Utils.ProjectSchema do
 
   # MUST stay in sync with frontend/ts-src/types/project.ts
 
+  @column_meta %{
+    "type" => "object",
+    "additionalProperties" => false,
+    "properties" => %{
+      "notes" => %{"type" => "string"},
+      "tags" => %{"type" => "array", "items" => %{"type" => "string"}}
+    }
+  }
+
+  @table_meta %{
+    "type" => "object",
+    "additionalProperties" => false,
+    "properties" => %{
+      "notes" => %{"type" => "string"},
+      "tags" => %{"type" => "array", "items" => %{"type" => "string"}},
+      "columns" => %{"type" => "object", "additionalProperties" => @column_meta}
+    }
+  }
+
+  @project_meta %{
+    "type" => "object",
+    "additionalProperties" => @table_meta
+  }
+
   @type_schema %{
     "type" => "object",
     "additionalProperties" => false,
@@ -181,4 +205,7 @@ defmodule AzimuttWeb.Utils.ProjectSchema do
   def column, do: @column
   def relation, do: @relation
   def type, do: @type_schema
+  def column_meta, do: @column_meta
+  def table_meta, do: @table_meta
+  def project_meta, do: @project_meta
 end

@@ -104,6 +104,15 @@ defmodule AzimuttWeb.Api.SourceController do
          do: conn |> render("show.json", source: source, ctx: ctx)
   end
 
+  defp validate_json_schema(schema, json) do
+    # TODO: add the string uuid format validation
+    ExJsonSchema.Validator.validate(schema, json)
+    |> Result.map_both(
+      fn errors -> %{errors: errors |> Enum.map(fn {error, path} -> %{path: path, error: error} end)} end,
+      fn _ -> json end
+    )
+  end
+
   defp create_source(params, now) do
     params
     |> Map.put("id", Ecto.UUID.generate())
@@ -117,14 +126,5 @@ defmodule AzimuttWeb.Api.SourceController do
     |> Map.put("tables", params["tables"])
     |> Map.put("relations", params["relations"])
     |> Mapx.put_no_nil("types", params["types"])
-  end
-
-  defp validate_json_schema(schema, json) do
-    # TODO: add the string uuid format validation
-    ExJsonSchema.Validator.validate(schema, json)
-    |> Result.map_both(
-      fn errors -> %{errors: errors |> Enum.map(fn {error, path} -> %{path: path, error: error} end)} end,
-      fn _ -> json end
-    )
   end
 end

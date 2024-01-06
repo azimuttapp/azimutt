@@ -1,5 +1,6 @@
 defmodule Azimutt.Utils.Mapx do
   @moduledoc "Helper functions on Map."
+  alias Azimutt.Utils.Mapx
   alias Azimutt.Utils.Result
   alias Azimutt.Utils.Stringx
 
@@ -53,6 +54,36 @@ defmodule Azimutt.Utils.Mapx do
       enumerable |> Map.delete(key)
     else
       enumerable |> Map.put(key, value)
+    end
+  end
+
+  @doc """
+  Similar to https://hexdocs.pm/elixir/Kernel.html#put_in/3 but does not raise.
+  """
+  def put_in(enumerable, keys, value) do
+    case keys do
+      [key | rest] ->
+        default = rest |> Enum.reverse() |> Enum.reduce(value, fn key, acc -> %{} |> Map.put(key, acc) end)
+        enumerable |> Map.update(key, default, fn v -> Mapx.put_in(v || %{}, rest, value) end)
+
+      [] ->
+        value
+    end
+  end
+
+  def update_in(enumerable, keys, f) do
+    case keys do
+      [key | rest] ->
+        value = Map.get(enumerable, key)
+
+        cond do
+          value == nil -> enumerable |> Mapx.put_in(keys, f.(nil))
+          Enum.empty?(rest) -> enumerable |> Map.put(key, f.(value))
+          true -> enumerable |> Map.update(key, nil, fn v -> Mapx.update_in(v || %{}, rest, f) end)
+        end
+
+      [] ->
+        f.(nil)
     end
   end
 

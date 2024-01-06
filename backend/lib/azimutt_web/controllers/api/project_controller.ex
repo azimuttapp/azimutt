@@ -9,7 +9,7 @@ defmodule AzimuttWeb.Api.ProjectController do
   action_fallback AzimuttWeb.Api.FallbackController
 
   swagger_path :index do
-    get("/api/v1/projects")
+    get("/projects")
     summary("Query for projects")
     description("Query for projects. This operation supports with paging and filtering")
     produces("application/json")
@@ -36,7 +36,7 @@ defmodule AzimuttWeb.Api.ProjectController do
   end
 
   swagger_path :create do
-    post("/api/v1/organizations/:organization_id/projects")
+    post("/organizations/:organization_id/projects")
     summary("Create a project")
     description("TODO")
     produces("application/json")
