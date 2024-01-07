@@ -6,6 +6,7 @@ defmodule AzimuttWeb.Api.SourceController do
   alias Azimutt.Utils.Mapx
   alias Azimutt.Utils.Result
   alias AzimuttWeb.Utils.CtxParams
+  alias AzimuttWeb.Utils.JsonSchema
   alias AzimuttWeb.Utils.ProjectSchema
   action_fallback AzimuttWeb.Api.FallbackController
 
@@ -48,7 +49,7 @@ defmodule AzimuttWeb.Api.SourceController do
       "definitions" => %{"column" => ProjectSchema.column()}
     }
 
-    with {:ok, body} <- validate_json_schema(create_schema, conn.body_params) |> Result.zip_error_left(:bad_request),
+    with {:ok, body} <- conn.body_params |> JsonSchema.validate(create_schema) |> Result.zip_error_left(:bad_request),
          {:ok, %Project{} = project} <- Projects.get_project(project_id, current_user),
          {:ok, content} <- Projects.get_project_content(project),
          {:ok, json} <- Jason.decode(content),
@@ -77,7 +78,7 @@ defmodule AzimuttWeb.Api.SourceController do
       "definitions" => %{"column" => ProjectSchema.column()}
     }
 
-    with {:ok, body} <- validate_json_schema(update_schema, conn.body_params) |> Result.zip_error_left(:bad_request),
+    with {:ok, body} <- conn.body_params |> JsonSchema.validate(update_schema) |> Result.zip_error_left(:bad_request),
          {:ok, %Project{} = project} <- Projects.get_project(project_id, current_user),
          {:ok, content} <- Projects.get_project_content(project),
          {:ok, json} <- Jason.decode(content),
@@ -102,15 +103,6 @@ defmodule AzimuttWeb.Api.SourceController do
          {:ok, content_updated} <- Jason.encode(json_updated),
          {:ok, %Project{} = _project_updated} <- Projects.update_project_file(project, content_updated, current_user, now),
          do: conn |> render("show.json", source: source, ctx: ctx)
-  end
-
-  defp validate_json_schema(schema, json) do
-    # TODO: add the string uuid format validation
-    ExJsonSchema.Validator.validate(schema, json)
-    |> Result.map_both(
-      fn errors -> %{errors: errors |> Enum.map(fn {error, path} -> %{path: path, error: error} end)} end,
-      fn _ -> json end
-    )
   end
 
   defp create_source(params, now) do
