@@ -5,9 +5,9 @@ defmodule AzimuttWeb.Api.MetadataController do
   alias Azimutt.Projects.Project
   alias Azimutt.Utils.Mapx
   alias Azimutt.Utils.Result
-  alias AzimuttWeb.Utils.CtxParams
   alias AzimuttWeb.Utils.JsonSchema
   alias AzimuttWeb.Utils.ProjectSchema
+  alias AzimuttWeb.Utils.SwaggerCommon
   action_fallback AzimuttWeb.Api.FallbackController
 
   swagger_path :index do
@@ -15,21 +15,18 @@ defmodule AzimuttWeb.Api.MetadataController do
     summary("Get project metadata")
     description("Get all metadata for the project, ie all notes and tags for all tables and columns.")
     produces("application/json")
-    get("/organizations/{organization_id}/projects/{project_id}/metadata")
-
-    parameters do
-      organization_id(:path, :string, "UUID of your organization", format: "uuid", required: true)
-      project_id(:path, :string, "UUID of your project", required: true)
-    end
+    get("#{SwaggerCommon.project_path()}/metadata")
+    SwaggerCommon.authorization()
+    SwaggerCommon.project_params()
 
     response(200, "OK", Schema.ref(:ProjectMetadata))
     response(400, "Client Error")
   end
 
-  def index(conn, %{"organization_id" => _organization_id, "project_id" => project_id} = params) do
+  def index(conn, %{"organization_id" => _organization_id, "project_id" => project_id}) do
     with {:ok, %Project{} = project} <- Projects.get_project(project_id, conn.assigns.current_user),
          {:ok, content} <- Projects.get_project_content(project) |> Result.flat_map(fn c -> Jason.decode(c) end),
-         do: conn |> render("index.json", metadata: content["metadata"], ctx: CtxParams.from_params(params))
+         do: conn |> render("index.json", metadata: content["metadata"] || %{})
   end
 
   swagger_path :update do
@@ -37,11 +34,11 @@ defmodule AzimuttWeb.Api.MetadataController do
     summary("Update project metadata")
     description("Set the whole project metadata at once. Fetch it, update it then update it. Beware to not override changes made by others.")
     produces("application/json")
-    put("/organizations/{organization_id}/projects/{project_id}/metadata")
+    put("#{SwaggerCommon.project_path()}/metadata")
+    SwaggerCommon.authorization()
+    SwaggerCommon.project_params()
 
     parameters do
-      organization_id(:path, :string, "UUID of your organization", required: true)
-      project_id(:path, :string, "UUID of your project", required: true)
       payload(:body, :object, "Project Metadata", required: true, schema: Schema.ref(:ProjectMetadata))
     end
 
@@ -49,10 +46,13 @@ defmodule AzimuttWeb.Api.MetadataController do
     response(400, "Client Error")
   end
 
-  def update(conn, %{"organization_id" => _organization_id, "project_id" => project_id} = params) do
+  def update(conn, %{"organization_id" => _organization_id, "project_id" => project_id}) do
     with {:ok, body} <- conn.body_params |> JsonSchema.validate(ProjectSchema.metadata()) |> Result.zip_error_left(:bad_request),
-         {:ok, updated} <- update_metadata(project_id, conn.assigns.current_user, DateTime.utc_now(), fn _ -> body end),
-         do: conn |> render("index.json", metadata: updated["metadata"] || %{}, ctx: CtxParams.from_params(params))
+         {:ok, updated} <-
+           Projects.update_project_content(project_id, conn.assigns.current_user, DateTime.utc_now(), fn project ->
+             project |> Map.put("metadata", body)
+           end),
+         do: conn |> render("index.json", metadata: updated["metadata"] || %{})
   end
 
   swagger_path :table do
@@ -60,11 +60,11 @@ defmodule AzimuttWeb.Api.MetadataController do
     summary("Get table metadata")
     description("Get all metadata for the table, notes and tags. You can include columns metadata too with the `expand` query param.")
     produces("application/json")
-    get("/organizations/{organization_id}/projects/{project_id}/tables/{table_id}/metadata")
+    get("#{SwaggerCommon.project_path()}/tables/{table_id}/metadata")
+    SwaggerCommon.authorization()
+    SwaggerCommon.project_params()
 
     parameters do
-      organization_id(:path, :string, "UUID of your organization", required: true)
-      project_id(:path, :string, "UUID of your project", required: true)
       table_id(:path, :string, "Id of the table (ex: public.users)", required: true)
       expand(:query, :array, "Expand columns metadata", collectionFormat: "csv", items: %{type: "string", enum: ["columns"]})
     end
@@ -76,7 +76,7 @@ defmodule AzimuttWeb.Api.MetadataController do
   def table(conn, %{"organization_id" => _organization_id, "project_id" => project_id, "table_id" => table_id} = params) do
     with {:ok, %Project{} = project} <- Projects.get_project(project_id, conn.assigns.current_user),
          {:ok, content} <- Projects.get_project_content(project) |> Result.flat_map(fn c -> Jason.decode(c) end),
-         do: conn |> render("table.json", metadata: content["metadata"][table_id] || %{}, ctx: CtxParams.from_params(params))
+         do: conn |> render("table.json", metadata: content["metadata"][table_id] || %{}, show_columns: params["expand"] == "columns")
   end
 
   swagger_path :table_update do
@@ -84,11 +84,11 @@ defmodule AzimuttWeb.Api.MetadataController do
     summary("Update table metadata")
     description("Set table metadata. If you include columns, they will be replaced, otherwise they will stay the same.")
     produces("application/json")
-    put("/organizations/{organization_id}/projects/{project_id}/tables/{table_id}/metadata")
+    put("#{SwaggerCommon.project_path()}/tables/{table_id}/metadata")
+    SwaggerCommon.authorization()
+    SwaggerCommon.project_params()
 
     parameters do
-      organization_id(:path, :string, "UUID of your organization", required: true)
-      project_id(:path, :string, "UUID of your project", required: true)
       table_id(:path, :string, "Id of the table (ex: public.users)", required: true)
       payload(:body, :object, "Table Metadata", required: true, schema: Schema.ref(:TableMetadata))
     end
@@ -97,24 +97,20 @@ defmodule AzimuttWeb.Api.MetadataController do
     response(400, "Client Error")
   end
 
-  def table_update(conn, %{"organization_id" => _organization_id, "project_id" => project_id, "table_id" => table_id} = params) do
+  def table_update(conn, %{"organization_id" => _organization_id, "project_id" => project_id, "table_id" => table_id}) do
     with {:ok, body} <- conn.body_params |> JsonSchema.validate(ProjectSchema.table_meta()) |> Result.zip_error_left(:bad_request),
          {:ok, updated} <-
-           update_metadata(project_id, conn.assigns.current_user, DateTime.utc_now(), fn m ->
-             # TODO: use a query param to decide if we want to replace columns
-             if body["columns"] do
-               m |> Map.put(table_id, body)
-             else
-               v = m |> Map.get(table_id) || %{}
-
-               if v["columns"] do
-                 m |> Map.put(table_id, body |> Map.put("columns", v["columns"]))
-               else
-                 m |> Map.put(table_id, body)
+           Projects.update_project_content(project_id, conn.assigns.current_user, DateTime.utc_now(), fn project ->
+             project
+             |> Mapx.update_in(["metadata", table_id], fn table ->
+               cond do
+                 body["columns"] -> body
+                 table["columns"] -> body |> Map.put("columns", table["columns"])
+                 true -> body
                end
-             end
+             end)
            end),
-         do: conn |> render("table.json", metadata: updated["metadata"][table_id] || %{}, ctx: CtxParams.from_params(params))
+         do: conn |> render("table.json", metadata: updated["metadata"][table_id] || %{}, show_columns: not is_nil(body["columns"]))
   end
 
   swagger_path :column do
@@ -122,11 +118,11 @@ defmodule AzimuttWeb.Api.MetadataController do
     summary("Get column metadata")
     description("Get all metadata for the column, notes and tags. For nested columns, use the column path (ex: details:address:street).")
     produces("application/json")
-    get("/organizations/{organization_id}/projects/{project_id}/tables/{table_id}/columns/{column_path}/metadata")
+    get("#{SwaggerCommon.project_path()}/tables/{table_id}/columns/{column_path}/metadata")
+    SwaggerCommon.authorization()
+    SwaggerCommon.project_params()
 
     parameters do
-      organization_id(:path, :string, "UUID of your organization", required: true)
-      project_id(:path, :string, "UUID of your project", required: true)
       table_id(:path, :string, "Id of the table (ex: public.users)", required: true)
       column_path(:path, :string, "Path of the column (ex: id, name or details:location)", required: true)
     end
@@ -135,10 +131,10 @@ defmodule AzimuttWeb.Api.MetadataController do
     response(400, "Client Error")
   end
 
-  def column(conn, %{"organization_id" => _organization_id, "project_id" => project_id, "table_id" => table_id, "column_path" => column_path} = params) do
+  def column(conn, %{"organization_id" => _organization_id, "project_id" => project_id, "table_id" => table_id, "column_path" => column_path}) do
     with {:ok, %Project{} = project} <- Projects.get_project(project_id, conn.assigns.current_user),
          {:ok, content} <- Projects.get_project_content(project) |> Result.flat_map(fn c -> Jason.decode(c) end),
-         do: conn |> render("column.json", metadata: content["metadata"][table_id]["columns"][column_path] || %{}, ctx: CtxParams.from_params(params))
+         do: conn |> render("column.json", metadata: content["metadata"][table_id]["columns"][column_path] || %{})
   end
 
   swagger_path :column_update do
@@ -146,11 +142,11 @@ defmodule AzimuttWeb.Api.MetadataController do
     summary("Update column metadata")
     description("Set column metadata. For nested columns, use the column path (ex: details:address:street).")
     produces("application/json")
-    put("/organizations/{organization_id}/projects/{project_id}/tables/{table_id}/columns/{column_path}/metadata")
+    put("#{SwaggerCommon.project_path()}/tables/{table_id}/columns/{column_path}/metadata")
+    SwaggerCommon.authorization()
+    SwaggerCommon.project_params()
 
     parameters do
-      organization_id(:path, :string, "UUID of your organization", required: true)
-      project_id(:path, :string, "UUID of your project", required: true)
       table_id(:path, :string, "Id of the table (ex: public.users)", required: true)
       column_path(:path, :string, "Path of the column (ex: id, name or details:location)", required: true)
       payload(:body, :object, "Column Metadata", required: true, schema: Schema.ref(:ColumnMetadata))
@@ -160,23 +156,13 @@ defmodule AzimuttWeb.Api.MetadataController do
     response(400, "Client Error")
   end
 
-  def column_update(conn, %{"organization_id" => _organization_id, "project_id" => project_id, "table_id" => table_id, "column_path" => column_path} = params) do
+  def column_update(conn, %{"organization_id" => _organization_id, "project_id" => project_id, "table_id" => table_id, "column_path" => column_path}) do
     with {:ok, body} <- conn.body_params |> JsonSchema.validate(ProjectSchema.column_meta()) |> Result.zip_error_left(:bad_request),
          {:ok, updated} <-
-           update_metadata(project_id, conn.assigns.current_user, DateTime.utc_now(), fn m ->
-             m |> Mapx.put_in([table_id, "columns", column_path], body)
+           Projects.update_project_content(project_id, conn.assigns.current_user, DateTime.utc_now(), fn project ->
+             project |> Mapx.put_in(["metadata", table_id, "columns", column_path], body)
            end),
-         do: conn |> render("column.json", metadata: updated["metadata"][table_id]["columns"][column_path] || %{}, ctx: CtxParams.from_params(params))
-  end
-
-  defp update_metadata(project_id, current_user, now, f) do
-    with {:ok, %Project{} = project} <- Projects.get_project(project_id, current_user),
-         {:ok, content} <- Projects.get_project_content(project),
-         {:ok, json} <- Jason.decode(content),
-         json_updated = json |> Map.put("metadata", f.(json["metadata"])),
-         {:ok, content_updated} <- Jason.encode(json_updated),
-         {:ok, %Project{} = _project_updated} <- Projects.update_project_file(project, content_updated, current_user, now),
-         do: {:ok, json_updated}
+         do: conn |> render("column.json", metadata: updated["metadata"][table_id]["columns"][column_path] || %{})
   end
 
   def swagger_definitions do

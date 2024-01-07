@@ -194,7 +194,7 @@ defmodule AzimuttWeb.Router do
     resources("/events", Admin.EventController, param: "event_id", only: [:index, :show])
   end
 
-  scope "/api/v1/swagger" do
+  scope "/api/v1" do
     forward("/", PhoenixSwagger.Plug.SwaggerUI, otp_app: :azimutt, swagger_file: "swagger.json")
   end
 
@@ -208,10 +208,8 @@ defmodule AzimuttWeb.Router do
     put("/organizations/:organization_id/projects/:project_id/metadata", Api.MetadataController, :update)
     get("/organizations/:organization_id/projects/:project_id/tables/:table_id/metadata", Api.MetadataController, :table)
     put("/organizations/:organization_id/projects/:project_id/tables/:table_id/metadata", Api.MetadataController, :table_update)
-    # delete("/organizations/:organization_id/projects/:project_id/tables/:table_id/metadata", Api.MetadataController, :table_delete)
     get("/organizations/:organization_id/projects/:project_id/tables/:table_id/columns/:column_path/metadata", Api.MetadataController, :column)
     put("/organizations/:organization_id/projects/:project_id/tables/:table_id/columns/:column_path/metadata", Api.MetadataController, :column_update)
-    # delete("/organizations/:organization_id/projects/:project_id/tables/:table_id/columns/:column_path/metadata", Api.MetadataController, :column_delete)
     post("/events", Api.TrackingController, :create)
   end
 

@@ -147,6 +147,16 @@ defmodule Azimutt.Projects do
     end
   end
 
+  def update_project_content(project_id, current_user, now, f) do
+    with {:ok, %Project{} = project} <- get_project(project_id, current_user),
+         {:ok, content} <- get_project_content(project),
+         {:ok, json} <- Jason.decode(content),
+         json_updated = f.(json),
+         {:ok, content_updated} <- Jason.encode(json_updated),
+         {:ok, %Project{} = _project_updated} <- update_project_file(project, content_updated, current_user, now),
+         do: {:ok, json_updated}
+  end
+
   def list_project_tokens(project_id, %User{} = current_user, now) do
     project_query()
     |> where([p, _, om], p.id == ^project_id and p.storage_kind == :remote and om.user_id == ^current_user.id)
