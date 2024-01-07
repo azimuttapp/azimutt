@@ -14,12 +14,11 @@ defmodule AzimuttWeb.Api.MetadataController do
     tag("Metadata")
     summary("Get project metadata")
     description("Get all metadata for the project, ie all notes and tags for all tables and columns.")
-    produces("application/json")
     get("#{SwaggerCommon.project_path()}/metadata")
     SwaggerCommon.authorization()
     SwaggerCommon.project_params()
 
-    response(200, "OK", Schema.ref(:ProjectMetadata))
+    response(200, "OK", Schema.ref(:Metadata))
     response(400, "Client Error")
   end
 
@@ -33,16 +32,15 @@ defmodule AzimuttWeb.Api.MetadataController do
     tag("Metadata")
     summary("Update project metadata")
     description("Set the whole project metadata at once. Fetch it, update it then update it. Beware to not override changes made by others.")
-    produces("application/json")
     put("#{SwaggerCommon.project_path()}/metadata")
     SwaggerCommon.authorization()
     SwaggerCommon.project_params()
 
     parameters do
-      payload(:body, :object, "Project Metadata", required: true, schema: Schema.ref(:ProjectMetadata))
+      payload(:body, :object, "Project Metadata", required: true, schema: Schema.ref(:Metadata))
     end
 
-    response(200, "OK", Schema.ref(:ProjectMetadata))
+    response(200, "OK", Schema.ref(:Metadata))
     response(400, "Client Error")
   end
 
@@ -59,7 +57,6 @@ defmodule AzimuttWeb.Api.MetadataController do
     tag("Metadata")
     summary("Get table metadata")
     description("Get all metadata for the table, notes and tags. You can include columns metadata too with the `expand` query param.")
-    produces("application/json")
     get("#{SwaggerCommon.project_path()}/tables/{table_id}/metadata")
     SwaggerCommon.authorization()
     SwaggerCommon.project_params()
@@ -69,7 +66,7 @@ defmodule AzimuttWeb.Api.MetadataController do
       expand(:query, :array, "Expand columns metadata", collectionFormat: "csv", items: %{type: "string", enum: ["columns"]})
     end
 
-    response(200, "OK", Schema.ref(:TableMetadata))
+    response(200, "OK", Schema.ref(:MetadataTable))
     response(400, "Client Error")
   end
 
@@ -83,17 +80,16 @@ defmodule AzimuttWeb.Api.MetadataController do
     tag("Metadata")
     summary("Update table metadata")
     description("Set table metadata. If you include columns, they will be replaced, otherwise they will stay the same.")
-    produces("application/json")
     put("#{SwaggerCommon.project_path()}/tables/{table_id}/metadata")
     SwaggerCommon.authorization()
     SwaggerCommon.project_params()
 
     parameters do
       table_id(:path, :string, "Id of the table (ex: public.users)", required: true)
-      payload(:body, :object, "Table Metadata", required: true, schema: Schema.ref(:TableMetadata))
+      payload(:body, :object, "Table Metadata", required: true, schema: Schema.ref(:MetadataTable))
     end
 
-    response(200, "OK", Schema.ref(:TableMetadata))
+    response(200, "OK", Schema.ref(:MetadataTable))
     response(400, "Client Error")
   end
 
@@ -117,7 +113,6 @@ defmodule AzimuttWeb.Api.MetadataController do
     tag("Metadata")
     summary("Get column metadata")
     description("Get all metadata for the column, notes and tags. For nested columns, use the column path (ex: details:address:street).")
-    produces("application/json")
     get("#{SwaggerCommon.project_path()}/tables/{table_id}/columns/{column_path}/metadata")
     SwaggerCommon.authorization()
     SwaggerCommon.project_params()
@@ -127,7 +122,7 @@ defmodule AzimuttWeb.Api.MetadataController do
       column_path(:path, :string, "Path of the column (ex: id, name or details:location)", required: true)
     end
 
-    response(200, "OK", Schema.ref(:ColumnMetadata))
+    response(200, "OK", Schema.ref(:MetadataColumn))
     response(400, "Client Error")
   end
 
@@ -141,7 +136,6 @@ defmodule AzimuttWeb.Api.MetadataController do
     tag("Metadata")
     summary("Update column metadata")
     description("Set column metadata. For nested columns, use the column path (ex: details:address:street).")
-    produces("application/json")
     put("#{SwaggerCommon.project_path()}/tables/{table_id}/columns/{column_path}/metadata")
     SwaggerCommon.authorization()
     SwaggerCommon.project_params()
@@ -149,10 +143,10 @@ defmodule AzimuttWeb.Api.MetadataController do
     parameters do
       table_id(:path, :string, "Id of the table (ex: public.users)", required: true)
       column_path(:path, :string, "Path of the column (ex: id, name or details:location)", required: true)
-      payload(:body, :object, "Column Metadata", required: true, schema: Schema.ref(:ColumnMetadata))
+      payload(:body, :object, "Column Metadata", required: true, schema: Schema.ref(:MetadataColumn))
     end
 
-    response(200, "OK", Schema.ref(:ColumnMetadata))
+    response(200, "OK", Schema.ref(:MetadataColumn))
     response(400, "Client Error")
   end
 
@@ -167,12 +161,10 @@ defmodule AzimuttWeb.Api.MetadataController do
 
   def swagger_definitions do
     %{
-      ProjectMetadata:
+      Metadata:
         swagger_schema do
-          title("ProjectMetadata")
           description("All Metadata of the project")
-          type(:object)
-          additional_properties(Schema.ref(:TableMetadata))
+          additional_properties(Schema.ref(:MetadataTable))
 
           example(%{
             "public.users": %{
@@ -194,15 +186,14 @@ defmodule AzimuttWeb.Api.MetadataController do
             }
           })
         end,
-      TableMetadata:
+      MetadataTable:
         swagger_schema do
-          title("TableMetadata")
           description("The Metadata used to document tables")
 
           properties do
             notes(:string, "Markdown text to document the table", example: "*Table* notes")
             tags(:array, "Tags to categorize the table", items: %{type: :string}, example: ["table-tag"])
-            columns(:object, "Columns metadata", additionalProperties: Schema.ref(:ColumnMetadata))
+            columns(:object, "Columns metadata", additionalProperties: Schema.ref(:MetadataColumn))
           end
 
           example(%{
@@ -220,9 +211,8 @@ defmodule AzimuttWeb.Api.MetadataController do
             }
           })
         end,
-      ColumnMetadata:
+      MetadataColumn:
         swagger_schema do
-          title("ColumnMetadata")
           description("The Metadata used to document columns")
 
           properties do

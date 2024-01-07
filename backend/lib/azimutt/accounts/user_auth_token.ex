@@ -4,6 +4,7 @@ defmodule Azimutt.Accounts.UserAuthToken do
   use Azimutt.Schema
   import Ecto.Changeset
   alias Azimutt.Accounts.User
+  alias Azimutt.Utils.Uuid
 
   schema "user_auth_tokens" do
     belongs_to :user, User
@@ -32,4 +33,6 @@ defmodule Azimutt.Accounts.UserAuthToken do
     token
     |> cast(%{deleted_at: now}, [:deleted_at])
   end
+
+  def is_valid?(value), do: Uuid.is_valid?(value)
 end

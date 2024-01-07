@@ -207,5 +207,5 @@ defmodule AzimuttWeb.Utils.ProjectSchema do
   def type, do: @type_schema
   def column_meta, do: @column_meta
   def table_meta, do: @table_meta
-  def metadata, do: @project_meta
+  def metadata, do: @metadata
 end

@@ -194,7 +194,7 @@ defmodule AzimuttWeb.Router do
     resources("/events", Admin.EventController, param: "event_id", only: [:index, :show])
   end
 
-  scope "/api/v1" do
+  scope "/api/v1/swagger" do
     forward("/", PhoenixSwagger.Plug.SwaggerUI, otp_app: :azimutt, swagger_file: "swagger.json")
   end
 

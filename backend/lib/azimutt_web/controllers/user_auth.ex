@@ -5,6 +5,7 @@ defmodule AzimuttWeb.UserAuth do
   import Phoenix.Controller
   require Logger
   alias Azimutt.Accounts
+  alias Azimutt.Accounts.UserAuthToken
   alias Azimutt.CleverCloud
   alias Azimutt.Heroku
   alias Azimutt.Tracking
@@ -125,13 +126,13 @@ defmodule AzimuttWeb.UserAuth do
   and remember me token.
   """
   def fetch_current_user(conn, _opts) do
-    auth_token = conn.params["auth-token"] || conn.req_headers |> Enum.find_value(fn {key, value} -> if key == "auth-token", do: value end)
+    auth_token = conn.params["auth-token"] || conn.req_headers |> Enum.find_value(fn {key, value} -> if key == "auth-token" && UserAuthToken.is_valid?(value), do: value end)
     {user_token, conn} = ensure_user_token(conn)
 
     user =
       cond do
-        user_token -> Accounts.get_user_by_session_token(user_token)
         auth_token -> Accounts.get_user_by_auth_token(auth_token, DateTime.utc_now())
+        user_token -> Accounts.get_user_by_session_token(user_token)
         true -> {:ok, nil}
       end
       |> Result.or_else(nil)
