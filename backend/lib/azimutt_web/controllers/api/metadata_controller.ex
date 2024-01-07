@@ -12,7 +12,7 @@ defmodule AzimuttWeb.Api.MetadataController do
   swagger_path :index do
     tag("Metadata")
     summary("Get project metadata")
-    description("Azimutt metadata like notes and tags can be retrieved via this endpoint.")
+    description("Get all metadata for the project, ie all notes and tags for all tables and columns.")
     produces("application/json")
     get("/organizations/{organization_id}/projects/{project_id}/metadata")
 
@@ -32,6 +32,40 @@ defmodule AzimuttWeb.Api.MetadataController do
     with {:ok, %Project{} = project} <- Projects.get_project(project_id, current_user),
          {:ok, content} <- Projects.get_project_content(project) |> Result.flat_map(fn c -> Jason.decode(c) end),
          do: conn |> render("index.json", metadata: content["metadata"], ctx: ctx)
+  end
+
+  swagger_path :update do
+    tag("Metadata")
+    summary("Update project metadata")
+    description("Set the whole project metadata at once. Fetch it, update it then update it. Beware to not override changes made by others.")
+    produces("application/json")
+    put("/organizations/{organization_id}/projects/{project_id}/metadata")
+
+    parameters do
+      organization_id(:path, :string, "Organization Id", required: true)
+      project_id(:path, :string, "Project Id", required: true)
+      payload(:body, :object, "Project Metadata", required: true, schema: Schema.ref(:ProjectMetadata))
+    end
+
+    response(200, "OK", Schema.ref(:ProjectMetadata))
+    response(400, "Client Error")
+  end
+
+  def update(conn, %{"organization_id" => _organization_id, "project_id" => project_id} = params) do
+    now = DateTime.utc_now()
+    ctx = CtxParams.from_params(params)
+    current_user = conn.assigns.current_user
+
+    update_schema = ProjectSchema.project_meta()
+
+    with {:ok, body} <- validate_json_schema(update_schema, conn.body_params) |> Result.zip_error_left(:bad_request),
+         {:ok, %Project{} = project} <- Projects.get_project(project_id, current_user),
+         {:ok, content} <- Projects.get_project_content(project),
+         {:ok, json} <- Jason.decode(content),
+         json_updated = json |> Map.put("metadata", body),
+         {:ok, content_updated} <- Jason.encode(json_updated),
+         {:ok, %Project{} = _project_updated} <- Projects.update_project_file(project, content_updated, current_user, now),
+         do: conn |> render("index.json", metadata: json_updated["metadata"] || %{}, ctx: ctx)
   end
 
   swagger_path :table do

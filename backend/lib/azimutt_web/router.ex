@@ -205,7 +205,7 @@ defmodule AzimuttWeb.Router do
     get("/organizations/:organization_id/projects/:project_id", Api.ProjectController, :show)
     resources("/organizations/:organization_id/projects/:project_id/sources", Api.SourceController, param: "source_id", only: [:index, :show, :create, :update, :delete])
     get("/organizations/:organization_id/projects/:project_id/metadata", Api.MetadataController, :index)
-    # put("/organizations/:organization_id/projects/:project_id/metadata", Api.MetadataController, :update)
+    put("/organizations/:organization_id/projects/:project_id/metadata", Api.MetadataController, :update)
     get("/organizations/:organization_id/projects/:project_id/tables/:table_id/metadata", Api.MetadataController, :table)
     put("/organizations/:organization_id/projects/:project_id/tables/:table_id/metadata", Api.MetadataController, :table_update)
     # delete("/organizations/:organization_id/projects/:project_id/tables/:table_id/metadata", Api.MetadataController, :table_delete)
