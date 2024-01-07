@@ -204,6 +204,12 @@ defmodule AzimuttWeb.Router do
     get("/gallery", Api.GalleryController, :index)
     get("/organizations/:organization_id/projects/:project_id", Api.ProjectController, :show)
     resources("/organizations/:organization_id/projects/:project_id/sources", Api.SourceController, param: "source_id", only: [:index, :show, :create, :update, :delete])
+    get("/organizations/:organization_id/projects/:project_id/metadata", Api.MetadataController, :index)
+    put("/organizations/:organization_id/projects/:project_id/metadata", Api.MetadataController, :update)
+    get("/organizations/:organization_id/projects/:project_id/tables/:table_id/metadata", Api.MetadataController, :table)
+    put("/organizations/:organization_id/projects/:project_id/tables/:table_id/metadata", Api.MetadataController, :table_update)
+    get("/organizations/:organization_id/projects/:project_id/tables/:table_id/columns/:column_path/metadata", Api.MetadataController, :column)
+    put("/organizations/:organization_id/projects/:project_id/tables/:table_id/columns/:column_path/metadata", Api.MetadataController, :column_update)
     post("/events", Api.TrackingController, :create)
   end
 
@@ -260,6 +266,7 @@ defmodule AzimuttWeb.Router do
           email: Azimutt.config(:azimutt_email)
         }
       },
+      basePath: "/api/v1",
       consumes: ["application/json"],
       produces: ["application/json"]
     }

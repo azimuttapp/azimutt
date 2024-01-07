@@ -25,6 +25,20 @@ defmodule Azimutt.Utils.MapxTest do
       assert %{foo: "bar", bob: "claude"} = %{foo: "bar", bob: "alice"} |> Mapx.put_no_nil(:bob, "claude")
     end
 
+    test "put_in" do
+      assert %{meta: %{events: %{columns: %{id: %{notes: "bbb"}}}}} =
+               %{meta: %{events: %{columns: %{id: %{notes: "aaa"}}}}} |> Mapx.put_in([:meta, :events, :columns, :id, :notes], "bbb")
+
+      assert %{meta: %{events: %{columns: %{id: %{notes: "ccc"}}}}} = %{meta: %{}} |> Mapx.put_in([:meta, :events, :columns, :id, :notes], "ccc")
+    end
+
+    test "update_in" do
+      assert %{meta: %{events: %{notes: "bbb", columns: %{id: %{notes: "aaa"}}}}} =
+               %{meta: %{events: %{columns: %{id: %{notes: "aaa"}}}}} |> Mapx.update_in([:meta, :events], fn v -> (v || %{}) |> Map.merge(%{notes: "bbb"}) end)
+
+      assert %{meta: %{events: %{notes: "ccc"}}} = %{meta: %{}} |> Mapx.update_in([:meta, :events], fn v -> (v || %{}) |> Map.merge(%{notes: "ccc"}) end)
+    end
+
     test "toggle" do
       assert %{foo: "bar"} = %{foo: "bar", bob: "alice"} |> Mapx.toggle(:bob, "alice")
       assert %{foo: "bar", bob: "loic"} = %{foo: "bar", bob: "alice"} |> Mapx.toggle(:bob, "loic")

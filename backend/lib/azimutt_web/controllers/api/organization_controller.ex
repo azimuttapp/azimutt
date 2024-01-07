@@ -7,7 +7,19 @@ defmodule AzimuttWeb.Api.OrganizationController do
   alias Azimutt.Tracking
   alias Azimutt.Utils.Result
   alias AzimuttWeb.Utils.CtxParams
+  alias AzimuttWeb.Utils.SwaggerCommon
   action_fallback AzimuttWeb.Api.FallbackController
+
+  swagger_path :index do
+    tag("Organizations")
+    summary("List user organizations")
+    description("Get the list of all organizations the user is part of.")
+    get("/organizations")
+    SwaggerCommon.authorization()
+
+    response(200, "OK", Schema.ref(:Organizations))
+    response(400, "Client Error")
+  end
 
   def index(conn, params) do
     current_user = conn.assigns.current_user
@@ -39,5 +51,28 @@ defmodule AzimuttWeb.Api.OrganizationController do
 
       conn |> render("table_colors.json", tweet: tweet, errors: errors)
     end
+  end
+
+  def swagger_definitions do
+    %{
+      Organization:
+        swagger_schema do
+          description("An Organization in Azimutt")
+
+          properties do
+            id(:string, "Unique identifier", required: true, example: "0ed17b9f-cb2c-403a-a148-03215b73deb4")
+            slug(:string, "Organization slug", required: true, example: "azimutt")
+            name(:string, "Organization name", required: true, example: "Azimutt")
+            logo(:string, "Organization logo", example: "https://azimutt.app/images/logo_icon_dark.svg")
+            description(:string, "Organization description", example: "The best database explorer for any database!")
+          end
+        end,
+      Organizations:
+        swagger_schema do
+          description("A collection of Organizations")
+          type(:array)
+          items(Schema.ref(:Organization))
+        end
+    }
   end
 end
