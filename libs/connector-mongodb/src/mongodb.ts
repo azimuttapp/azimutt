@@ -2,6 +2,7 @@ import {Collection, Filter, MongoClient} from "mongodb";
 import {Logger, sequence} from "@azimutt/utils";
 import {AzimuttSchema, DatabaseUrlParsed} from "@azimutt/database-types";
 import {schemaToColumns, ValueSchema, valuesToSchema} from "@azimutt/json-infer-schema";
+import {connect} from "./connect";
 
 export type QueryResult = { database: string, collection: string, operation: string, command: object, rows: object[] }
 
@@ -11,7 +12,7 @@ export type QueryResult = { database: string, collection: string, operation: str
 // - `operation`: name of the collection method to call (see https://mongodb.github.io/node-mongodb-native/5.3/classes/Collection.html)
 // - `command`: the JSON given as parameter for the operation
 export function execQuery(application: string, url: DatabaseUrlParsed, query: string): Promise<QueryResult> {
-    return connect(url, async client => {
+    return connect(application, url, async client => {
         // Ugly hack to have a single string query perform any operation on MongoDB 🤮
         // If you see this and have an idea how to improve, please reach out (issue, PR, twitter, email, slack... ^^)
         const [database, collection, operation, commandStr, limit] = query.split('/').map(v => v.trim())
@@ -50,7 +51,7 @@ export type MongodbCollectionName = string
 export type MongodbCollectionType = {field: string, value: string | undefined}
 
 export async function getSchema(application: string, url: DatabaseUrlParsed, databaseName: MongodbDatabaseName | undefined, mixedCollection: string | undefined, sampleSize: number, ignoreErrors: boolean, logger: Logger): Promise<MongodbSchema> {
-    return connect(url, async client => {
+    return connect(application, url, async client => {
         logger.log('Connected to database ...')
         const databaseNames: MongodbDatabaseName[] = databaseName ? [databaseName] : await listDatabases(client, ignoreErrors, logger)
         logger.log(databaseName ? `Export for '${databaseName}' database ...` : `Found ${databaseNames.length} databases to export ...`)
@@ -80,18 +81,6 @@ async function listDatabases(client: MongoClient, ignoreErrors: boolean, logger:
     return adminDb.admin().listDatabases()
         .then(dbs => dbs.databases.map(db => db.name).filter(name => name !== 'local'))
         .catch(handleError(`Failed to get databases`, [], ignoreErrors, logger))
-}
-
-async function connect<T>(url: DatabaseUrlParsed, run: (c: MongoClient) => Promise<T>): Promise<T> {
-    const client: MongoClient = new MongoClient(url.full)
-    try {
-        await client.connect()
-        return await run(client)
-    } catch (e) {
-        return Promise.reject(e)
-    } finally {
-        await client.close() // Ensures that the client will close when you finish/error
-    }
 }
 
 async function inferCollection(collection: Collection, mixedCollection: string | undefined, sampleSize: number, ignoreErrors: boolean, logger: Logger): Promise<MongodbCollection[]> {

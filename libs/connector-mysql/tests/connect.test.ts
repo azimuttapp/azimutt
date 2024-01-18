@@ -1,5 +1,5 @@
 import {describe, test} from "@jest/globals";
-import {Client, QueryResult} from "pg";
+import mysql, {Connection, RowDataPacket, FieldPacket} from "mysql2/promise";
 import {parseDatabaseUrl} from "@azimutt/database-types";
 import {connect} from "../src/connect";
 import {application} from "./constants";
@@ -10,7 +10,7 @@ import {execQuery} from "../src/common";
 // More documentation available at: https://azimutt.notion.site/Database-connection-troubleshooting-c4c19ed28c7040ef9aaaeec96ce6ba8d
 describe('connect', () => {
     // TODO 1: replace this with your own connection string, but don't commit it!
-    const url = 'postgresql://postgres:postgres@localhost:5432/azimutt_dev'
+    const url = 'mysql://user:pass@host.com:3306/db'
 
     // TODO 2: write a valid query for your database
     const query = 'SELECT * FROM users LIMIT 2;'
@@ -23,19 +23,22 @@ describe('connect', () => {
         console.log('results', results)
     })
 
-    // TODO 4: if previous test failed, unskip this one an find how https://www.npmjs.com/package/pg can connect to your database
+    // TODO 4: if previous test failed, unskip this one an find how https://www.npmjs.com/package/mysql2 can connect to your database
     // tips: check lib version in package.json, ping us if you need help
     test.skip('NodeJS should connect', async () => {
-        const client = new Client({
-            application_name: application,
-            connectionString: url
+        const connection: Connection = await mysql.createConnection({
+            host: 'host.com',
+            port: 3306,
+            user: 'user',
+            password: 'pass',
+            database: 'db',
+            insecureAuth: true
         })
-        try  {
-            await client.connect()
-            const results: QueryResult<any> = await client.query(query)
+        try {
+            const results: [RowDataPacket[], FieldPacket[]] = await connection.query<RowDataPacket[]>({sql: query, values: parameters})
             console.log('results', results)
         } finally {
-            await client.end()
+            await connection.end()
         }
     })
 })
