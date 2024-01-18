@@ -44,7 +44,7 @@ Check `.github/workflows/CI.yml`
 ## Publish
 
 - update `package.json` and `src/version.ts` versions
-- update lib versions `npm run update` & run `npm install`
+- update lib versions (`npm run update` + manual) & run `npm install`
 - test with `npm run dry-publish` and check `azimutt-gateway-x.y.z.tgz` content
 - launch `npm publish --access public`
 

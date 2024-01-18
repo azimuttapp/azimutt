@@ -7,7 +7,7 @@ It's used in Azimutt to extract schema from document databases such a Couchbase 
 ## Publish
 
 - update `package.json` version
-- update lib versions & run `npm install`
+- update lib versions (`npm run update` + manual) & run `npm install`
 - test with `npm run dry-publish` and check `azimutt-database-types-x.y.z.tgz` content
 - launch `npm publish --access public`
 

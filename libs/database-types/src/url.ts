@@ -60,13 +60,24 @@ export function parseDatabaseUrl(url: DatabaseUrl): DatabaseUrlParsed {
     return {full: url}
 }
 
+// https://www.connectionstrings.com/sql-server 🤯
 function parseSqlServerUrl(url: DatabaseUrl): string[] | null {
     const props = Object.fromEntries(url.split(';').map(part => part.split('=')).map(([key, value]) => [key.toLowerCase(), value]))
-    if (props['server'] && props['database'] && props['user id'] && props['password']) {
-        const [host, port] = props['server'].split(',')
-        if (host && port) {
-            return [url, props['user id'], props['password'], host, port, props['database']]
-        }
+    const {
+        server,
+        ['data source']: dataSource,
+        database,
+        ['initial catalog']: initialCatalog,
+        ['user id']: user,
+        password,
+        ...other
+    } = props
+    const hostPart = server || dataSource
+    const databasePart = database || initialCatalog
+    if (hostPart && databasePart) {
+        const [host, port] = hostPart.split(',')
+        const options = Object.entries(other).map(([k, v]) => `${k}=${v}`).join('&')
+        return options ? [url, user, password, host, port, databasePart, options] : [url, user, password, host, port, databasePart]
     }
     return null
 }

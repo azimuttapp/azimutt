@@ -106,5 +106,15 @@ describe('url', () => {
             port: 1433,
             db: 'db',
         })
+        expect(parseDatabaseUrl('data source=host.com,1433;initial catalog=db;persist security info=True;user id=user;password=pass;MultipleActiveResultSets=False;TrustServerCertificate=True;App=azimutt')).toEqual({
+            full: 'data source=host.com,1433;initial catalog=db;persist security info=True;user id=user;password=pass;MultipleActiveResultSets=False;TrustServerCertificate=True;App=azimutt',
+            kind: 'sqlserver',
+            user: 'user',
+            pass: 'pass',
+            host: 'host.com',
+            port: 1433,
+            db: 'db',
+            options: 'persist security info=True&multipleactiveresultsets=False&trustservercertificate=True&app=azimutt'
+        })
     })
 })
