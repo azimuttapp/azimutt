@@ -15,9 +15,10 @@ export async function connect<T>(application: string, url: DatabaseUrlParsed, ex
             return {rows: results.recordset as ColumnValue[][], fields: results.columns[0]}
         }
     }
-    return exec(conn)
-        .then(res => connection.close().then(_ => res))
-        .catch(err => connection.close().then(_ => Promise.reject(err)))
+    return exec(conn).then(
+        res => connection.close().then(_ => res),
+        err => connection.close().then(_ => Promise.reject(err))
+    )
 }
 
 function buildconfig(application: string, url: DatabaseUrlParsed): config {

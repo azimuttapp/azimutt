@@ -1,5 +1,6 @@
 import {describe, test} from "@jest/globals";
-import mysql, {Connection, RowDataPacket, FieldPacket} from "mysql2/promise";
+import * as mysql from "mysql2/promise";
+import {Connection, RowDataPacket, FieldPacket} from "mysql2/promise";
 import {parseDatabaseUrl} from "@azimutt/database-types";
 import {connect} from "../src/connect";
 import {application} from "./constants";

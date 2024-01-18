@@ -1,7 +1,6 @@
 import {
     Cluster,
     Collection,
-    connect as connectCB,
     PlanningFailureError,
     QueryResult,
     UnambiguousTimeoutError
@@ -9,9 +8,10 @@ import {
 import {errorToString, Logger, sequence} from "@azimutt/utils";
 import {AzimuttSchema, DatabaseUrlParsed} from "@azimutt/database-types";
 import {schemaToColumns, ValueSchema, valuesToSchema} from "@azimutt/json-infer-schema";
+import {connect} from "./connect";
 
 export function execQuery(application: string, url: DatabaseUrlParsed, query: string, parameters: any[]): Promise<QueryResult> {
-    return connect(url, cluster => cluster.query(query, {parameters}))
+    return connect(application, url, cluster => cluster.query(query, {parameters}))
 }
 
 export type CouchbaseSchema = { collections: CouchbaseCollection[] }
@@ -30,7 +30,7 @@ export type CouchbaseCollectionName = string
 export type CouchbaseCollectionType = {field: string, value: string | undefined}
 
 export async function getSchema(application: string, url: DatabaseUrlParsed, bucketName: CouchbaseBucketName | undefined, mixedCollection: string | undefined, sampleSize: number, ignoreErrors: boolean, logger: Logger): Promise<CouchbaseSchema> {
-    return connect(url, async cluster => {
+    return connect(application, url, async cluster => {
         logger.log('Connected to cluster ...')
         const bucketNames: CouchbaseBucketName[] = bucketName ? [bucketName] : await listBuckets(cluster, ignoreErrors, logger)
         logger.log(bucketName ? `Export for '${bucketName}' bucket ...` : `Found ${bucketNames.length} buckets to export ...`)
@@ -68,17 +68,6 @@ async function listBuckets(cluster: Cluster, ignoreErrors: boolean, logger: Logg
     return cluster.buckets().getAllBuckets()
         .then(buckets => buckets.map(b => b.name))
         .catch(handleError(`Failed to get buckets`, [], ignoreErrors, logger))
-}
-
-async function connect<T>(url: DatabaseUrlParsed, run: (c: Cluster) => Promise<T>): Promise<T> {
-    const cluster: Cluster = await connectCB(url.full, {username: url.user, password: url.pass})
-    try {
-        return await run(cluster)
-    } catch (e) {
-        return Promise.reject(e)
-    } finally {
-        await cluster.close() // Ensures that the cluster will close when you finish/error
-    }
 }
 
 async function inferCollection(collection: Collection, mixedCollection: string | undefined, sampleSize: number, ignoreErrors: boolean, logger: Logger): Promise<CouchbaseCollection[]> {
