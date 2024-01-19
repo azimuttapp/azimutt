@@ -11,14 +11,14 @@ Get the help simply by running the CLI (`npx azimutt@latest`) or for a specific 
 ## Available commands
 
 - **gateway** (`npx azimutt gateway`): launch the Gateway server locally to proxy database calls from your computer
-- **export** (`npx azimutt export <kind> <url> [arguments]`): export a database schema as JSON file to import in Azimutt
-  - ex: `npx azimutt export couchbase couchbases://cb.gfn6dh493pmfh613v.cloud.couchbase.com`
-  - ex: `npx azimutt export mariadb mariadb://user:password@my.host.com:3306/my_db`
-  - ex: `npx azimutt export mongodb "mongodb+srv://user:password@cluster3.md7h4xp.mongodb.net"`
-  - ex: `npx azimutt export mysql mysql://user:password@my.host.com:3306/my_db`
-  - ex: `npx azimutt export postgres postgresql://postgres:postgres@localhost:5432/azimutt_dev`
-  - ex: `npx azimutt export sqlserver Server=host.com,1433;Database=db;User Id=user;Password=pass`
-  - `kind` the database type you want to export (postgres, mongodb or couchbase)
+- **explore** (`npx azimutt explore <url>`): open Azimutt in your browser with the db url already configured (& start the Gateway server)
+- **export** (`npx azimutt export <url> [arguments]`): export a database schema as JSON file to import in Azimutt
+  - ex: `npx azimutt export couchbases://cb.gfn6dh493pmfh613v.cloud.couchbase.com`
+  - ex: `npx azimutt export mariadb://user:password@my.host.com:3306/my_db`
+  - ex: `npx azimutt export "mongodb+srv://user:password@cluster3.md7h4xp.mongodb.net"`
+  - ex: `npx azimutt export mysql://user:password@my.host.com:3306/my_db`
+  - ex: `npx azimutt export postgresql://postgres:postgres@localhost:5432/azimutt_dev`
+  - ex: `npx azimutt export Server=host.com,1433;Database=db;User Id=user;Password=pass`
   - `url` the database connection url, must contain everything needed (user, pass, port...)
   - `--database` is optional, restrict schema extraction to this database
   - `--schema` is optional, restrict schema extraction to this schema

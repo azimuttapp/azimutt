@@ -113,13 +113,13 @@ handleJsMessage req urlOrganization msg model =
             ( model, Ok schema |> DatabaseSource.GotSchema |> DatabaseSourceMsg |> T.send )
 
         GotDatabaseSchemaError error ->
-            ( model, Err error |> DatabaseSource.GotSchema |> DatabaseSourceMsg |> T.send )
+            ( model, Cmd.batch [ Err error |> DatabaseSource.GotSchema |> DatabaseSourceMsg |> T.send, error |> Toasts.error |> Toast |> T.send ] )
 
         GotPrismaSchema schema ->
             ( model, Ok schema |> PrismaSource.GotSchema |> PrismaSourceMsg |> T.send )
 
         GotPrismaSchemaError error ->
-            ( model, Err error |> PrismaSource.GotSchema |> PrismaSourceMsg |> T.send )
+            ( model, Cmd.batch [ Err error |> PrismaSource.GotSchema |> PrismaSourceMsg |> T.send, error |> Toasts.error |> Toast |> T.send ] )
 
         GotToast level message ->
             ( model, message |> Toasts.create level |> Toast |> T.send )

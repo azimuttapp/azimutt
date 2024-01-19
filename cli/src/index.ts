@@ -1,17 +1,16 @@
 #!/usr/bin/env node
 
-import {Argument, Command} from "commander";
+import {Command} from "commander";
 import chalk from "chalk";
-import {errorToString, safeParseInt} from "@azimutt/utils";
-import {parseDatabaseUrl} from "@azimutt/database-types";
-import {version} from "./version";
-import {logger} from "./utils/logger";
-import {exportDbSchema} from "./export";
-import {availableConnectors, launchGateway} from "./gateway";
-
-const clear = require('clear')
-const figlet = require('figlet')
+import clear from "clear";
+import figlet from "figlet";
 // https://github.com/SBoudrias/Inquirer.js
+import {errorToString, safeParseInt} from "@azimutt/utils";
+import {version} from "./version.js";
+import {logger} from "./utils/logger.js";
+import {exportDbSchema} from "./export.js";
+import {launchGateway} from "./gateway.js";
+import {launchExplore} from "./explore.js";
 
 clear()
 logger.log(chalk.hex('#4F46E5').bold(figlet.textSync('Azimutt.app', {horizontalLayout: 'full'})))
@@ -26,9 +25,18 @@ program.name('azimutt')
         '- export database schemas from PostgreSQL, MongoDB and Couchbase')
     .version(version)
 
+program.command('gateway')
+    .description('Launch the gateway server to allow Azimutt to access your local databases.')
+    .action((args) => exec(launchGateway(logger), args))
+
+program.command('explore')
+    .description('Open Azimutt with your database url to see it immediately.')
+    .argument('<url>', 'the database url, including credentials')
+    .option('-i, --instance <instance>', 'the Azimutt instance you want to use, by default: https://azimutt.app')
+    .action((url, args) => exec(launchExplore(url, args.instance || 'https://azimutt.app', logger), args))
+
 program.command('export')
     .description('Export a database schema in a file to easily import it in Azimutt.\nWorks with Couchbase, MariaDB, MongoDB, MySQL, PostgreSQL..., issues and PR are welcome in https://github.com/azimuttapp/azimutt ;)')
-    .addArgument(new Argument('<kind>', 'the source kind of the export').choices(availableConnectors()))
     .argument('<url>', 'the url to connect to the source, including credentials')
     .option('-d, --database <database>', 'Limit to a specific database (ex for MongoDB)')
     .option('-s, --schema <schema>', 'Limit to a specific schema (ex for PostgreSQL)')
@@ -40,11 +48,7 @@ program.command('export')
     .option('-f, --format <format>', 'Output format', 'json')
     .option('-o, --output <output>', "Path to write the schema, ex: ~/azimutt.json")
     .option('--debug', 'Add debug logs and show the full stacktrace instead of a shorter error')
-    .action((kind, url, args) => exec(exportDbSchema(kind, parseDatabaseUrl(url), args), args))
-
-program.command('gateway')
-    .description('Launch the gateway server to allow Azimutt to access your local databases.')
-    .action(() => launchGateway(logger))
+    .action((url, args) => exec(exportDbSchema(url, args), args))
 
 program.parse(process.argv)
 

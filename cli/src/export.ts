@@ -1,8 +1,8 @@
 import chalk from "chalk";
-import {Connector, DatabaseKind, DatabaseUrlParsed} from "@azimutt/database-types";
+import {Connector, DatabaseUrlParsed, parseDatabaseUrl} from "@azimutt/database-types";
 import {getConnector} from "@azimutt/gateway";
-import {FileFormat, FilePath, writeJsonFile} from "./utils/file";
-import {logger} from "./utils/logger";
+import {FileFormat, FilePath, writeJsonFile} from "./utils/file.js";
+import {logger} from "./utils/logger.js";
 
 export type Opts = {
     database: string | undefined
@@ -16,22 +16,24 @@ export type Opts = {
     output: FilePath | undefined
 }
 
-export async function exportDbSchema(kind: DatabaseKind, url: DatabaseUrlParsed, opts: Opts): Promise<void> {
-    logger.log(`Exporting database schema from ${url.full} ...`)
-    if (kind !== url.kind) {
-        logger.warn(`${kind} not recognized from url (got ${JSON.stringify(url.kind)}), will try anyway but expect some errors...`)
-    }
-    const connector = getConnector(url)
+export async function exportDbSchema(url: string, opts: Opts): Promise<void> {
+    logger.log(`Exporting database schema from ${url} ...`)
+    const parsedUrl = parseDatabaseUrl(url)
+    const connector = getConnector(parsedUrl)
     if (connector) {
-        await exportJsonSchema(kind, url, opts, connector)
+        await exportJsonSchema(parsedUrl, opts, connector)
     } else {
         logger.log('')
-        logger.error(`Source kind '${kind}' is not supported :(`)
+        if (parsedUrl.kind) {
+            logger.error(`${parsedUrl.kind} database is not supported yet :(`)
+        } else {
+            logger.error(`Can't recognize database :(`)
+        }
         logger.log(`But you're welcome to send an issue or PR at https://github.com/azimuttapp/azimutt ;)`)
     }
 }
 
-async function exportJsonSchema(kind: DatabaseKind, url: DatabaseUrlParsed, opts: Opts, connector: Connector) {
+async function exportJsonSchema(url: DatabaseUrlParsed, opts: Opts, connector: Connector) {
     if (opts.format !== 'json') {
         return logger.error(`Unsupported format '${opts.format}' for ${connector.name}, try 'json'.`)
     }
