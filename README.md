@@ -58,21 +58,19 @@ Azimutt is built with [Elixir](https://elixir-lang.org)/[Phoenix](https://www.ph
 For local development you will need to set up the environment:
 
 - install `npm`, [Elm](https://guide.elm-lang.org/install/elm.html) & [elm-spa](https://www.elm-spa.dev)
-- install [Phoenix](https://hexdocs.pm/phoenix/installation.html) and [Elixir](https://elixir-lang.org/install.html) if needed
-- install [PostgreSQL](https://www.postgresql.org/download) with a user `postgres` and password `postgres`
+- install [Phoenix](https://hexdocs.pm/phoenix/installation.html) and [Elixir](https://elixir-lang.org/install.html) if needed (use [asdf](https://asdf-vm.com))
+- install [PostgreSQL](https://www.postgresql.org/download), create a user `postgres` with password `postgres` and a database `azimutt_dev` (see `DATABASE_URL` in `.env` later)
 - install [pre-commit](https://pre-commit.com) and run `pre-commit install` before committing
-- run `npm run setup` to install dependencies and configure your environment
+- copy `.env.example` to `.env` and adapt values
+- source your environment and install dependencies: `source .env && npm run setup`
+- you can now start the Azimutt server: `source .env && npm start`
+- and finally navigate to [localhost:4000](http://localhost:4000) 🎉
+- you can login with `admin@azimutt.app` email & `admin` password
 
-Then you can choose to launch either:
+Other things:
 
-- `npm run ex:dev` for Elixir server (frontend will still be available through compiled files)
-- `npm run elm:dev` for Elm/TypeScript frontend (useful when do develop on front)
-- `npm run dev` for both with live reload
-
-Now you can visit :
-
-- [`localhost:4000`](http://localhost:4000) for the main app
-- [`localhost:4000/api/v1/swagger`](http://localhost:4000/api/swagger) for the Swagger documentation
+- API documentation is accessible at [`/api/v1/swagger`](http://localhost:4000/api/v1/swagger)
+- You can use `npm run elm:book` to start Elm design system & components, and access it with [localhost:4002](http://localhost:4002)
 
 
 ### npm command semantics

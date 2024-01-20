@@ -1,6 +1,5 @@
 defmodule AzimuttWeb.Api.MetadataView do
   use AzimuttWeb, :view
-  alias AzimuttWeb.Utils.CtxParams
 
   def render("index.json", %{metadata: metadata}) do
     metadata

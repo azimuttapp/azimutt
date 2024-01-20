@@ -23,7 +23,7 @@ defmodule Azimutt.Services.OnboardingSrv do
     end
   end
 
-  def add_item(user, item) when is_nil(user), do: :ok
+  def add_item(user, _item) when is_nil(user), do: :ok
 
   def items do
     [
