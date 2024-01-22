@@ -1,10 +1,13 @@
 import {Client, ClientConfig, types} from "pg";
+import {AnyError, errorToString} from "@azimutt/utils";
 import {DatabaseUrlParsed} from "@azimutt/database-types";
 import {Conn, QueryResultArrayMode, QueryResultRow} from "./common";
 
 export async function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c: Conn) => Promise<T>): Promise<T> {
     types.setTypeParser(types.builtins.INT8, (val: string) => parseInt(val, 10))
-    const client = await createConnection(buildConfig(application, url)).catch(_ => createConnection(url.full))
+    const client = await createConnection(buildConfig(application, url))
+        .catch(_ => createConnection(url.full))
+        .catch(err => Promise.reject(connectionError(err)))
     const conn: Conn = {
         query<T extends QueryResultRow>(sql: string, parameters: any[] = []): Promise<T[]> {
             return client.query<T>(sql, parameters).then(res => res.rows, err => Promise.reject(queryError(sql, err)))
@@ -25,13 +28,24 @@ async function createConnection(config?: string | ClientConfig): Promise<Client>
 }
 
 function buildConfig(application: string, url: DatabaseUrlParsed): ClientConfig {
-    const userPass = url.user && url.pass ? `${url.user}:${url.pass}@` : ''
-    const port = url.port ? `:${url.port}` : ''
-    const options = url.options ? `?${url.options}` : ''
-    const connectionUrl = `postgresql://${userPass}${url.host}${port}/${url.db}${options}`
     return {
         application_name: application,
-        connectionString: connectionUrl
+        host: url.host,
+        port: url.port,
+        user: url.user,
+        password: url.pass,
+        database: url.db,
+        // ssl: { rejectUnauthorized: false } // needs `?sslmode=no-verify` at the end of the connection string
+        // TODO: miss url options like sslmode...
+    }
+}
+
+function connectionError(err: AnyError): AnyError {
+    const msg = errorToString(err)
+    if (msg.match(/^no pg_hba.conf entry for host "[^"]+", user "[^"]+", database "[^"]+", no encryption$/)) {
+        return new Error(`${msg} . Try adding \`?sslmode=no-verify\` at the end of your url.`)
+    } else {
+        return err
     }
 }
 

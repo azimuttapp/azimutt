@@ -28,7 +28,8 @@ describe('connect', () => {
     test.skip('NodeJS should connect', async () => {
         const client = new Client({
             application_name: application,
-            connectionString: url
+            connectionString: url,
+            ssl: { rejectUnauthorized: false }
         })
         try  {
             await client.connect()
