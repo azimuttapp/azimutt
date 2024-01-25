@@ -1,7 +1,7 @@
 module Libs.StringTest exposing (..)
 
 import Expect
-import Libs.String exposing (hashCode, plural, singular, slugify, splitWords, unique)
+import Libs.String exposing (capitalize, hashCode, plural, singular, slugify, splitWords, unique)
 import Test exposing (Test, describe, test)
 
 
@@ -15,6 +15,10 @@ suite =
             , test "conflict with extension" (\_ -> unique [ "ddd.txt" ] "ddd.txt" |> Expect.equal "ddd2.txt")
             , test "conflict with extension and number" (\_ -> unique [ "eee2.txt" ] "eee2.txt" |> Expect.equal "eee3.txt")
             , test "multi conflicts" (\_ -> unique [ "fff.txt", "fff2.txt", "fff3.txt" ] "fff.txt" |> Expect.equal "fff4.txt")
+            ]
+        , describe "capitalize"
+            [ test "upper" (\_ -> "AAA" |> capitalize |> Expect.equal "Aaa")
+            , test "lower" (\_ -> "aaa" |> capitalize |> Expect.equal "Aaa")
             ]
         , describe "splitWords"
             [ test "CamelUpper" (\_ -> "AzimuttIsAwesome" |> splitWords |> Expect.equal [ "azimutt", "is", "awesome" ])

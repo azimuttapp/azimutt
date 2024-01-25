@@ -58,39 +58,39 @@ guessRelations tableNames tables relationBySrc table { path, column } =
         colRef =
             { table = table.id, column = path, kind = column.kind }
 
-        columnWords : List String
-        columnWords =
+        colWords : List String
+        colWords =
             column.name |> String.splitWords
 
-        targetColumnName : ColumnName
-        targetColumnName =
-            columnWords |> List.last |> Maybe.withDefault column.name |> String.singular
+        colLastWord : ColumnName
+        colLastWord =
+            colWords |> List.last |> Maybe.withDefault column.name |> String.singular
     in
-    (if targetColumnName == "id" && List.length columnWords > 1 then
+    (if colLastWord == "id" && List.length colWords > 1 then
         let
-            tableHint : List String
-            tableHint =
-                columnWords |> List.dropRight 1
+            targetTableHint : List String
+            targetTableHint =
+                colWords |> List.dropRight 1
 
             suggestedRelations : List SuggestedRelation
             suggestedRelations =
-                getTypeColumn table path
+                getPolymorphicColumn table path
                     |> Maybe.andThen
-                        (\typeCol ->
-                            typeCol.column.values
+                        (\polymorphicCol ->
+                            polymorphicCol.values
                                 |> Maybe.map
                                     (Nel.toList
                                         >> List.map
                                             (\value ->
                                                 { src = colRef
-                                                , ref = getTargetColumn tableNames tables table.schema (value |> String.splitWords) targetColumnName
-                                                , when = Just { column = typeCol.path, value = value }
+                                                , ref = getTargetColumn tableNames tables table.schema (value |> String.splitWords) colLastWord
+                                                , when = Just { column = polymorphicCol.path, value = value }
                                                 }
                                             )
                                         >> List.filter (\rel -> rel.ref /= Nothing)
                                     )
                         )
-                    |> Maybe.withDefault [ { src = colRef, ref = getTargetColumn tableNames tables table.schema tableHint targetColumnName, when = Nothing } ]
+                    |> Maybe.withDefault [ { src = colRef, ref = getTargetColumn tableNames tables table.schema targetTableHint colLastWord, when = Nothing } ]
         in
         suggestedRelations
 
@@ -103,7 +103,7 @@ guessRelations tableNames tables relationBySrc table { path, column } =
         in
         [ { src = colRef, ref = [ column.name, "id" ] |> List.findMap (getTargetColumn tableNames tables table.schema tableHint), when = Nothing } ]
 
-     else if List.last columnWords == Just "by" then
+     else if List.last colWords == Just "by" then
         -- `created_by` columns should refer to a user like table
         [ { src = colRef, ref = [ [ "user" ], [ "account" ] ] |> List.findMap (\tableHint -> getTargetColumn tableNames tables table.schema tableHint "id"), when = Nothing } ]
 
@@ -113,38 +113,31 @@ guessRelations tableNames tables relationBySrc table { path, column } =
         |> removeKnownRelations relationBySrc table.id path
 
 
-getTypeColumn : Table -> ColumnPath -> Maybe { path : ColumnPath, column : Column }
-getTypeColumn table path =
-    -- useful for polymorphic relations
+getPolymorphicColumn : Table -> ColumnPath -> Maybe { path : ColumnPath, values : Maybe (Nel String) }
+getPolymorphicColumn table path =
     let
-        typePath : ColumnPath
-        typePath =
-            path
-                |> Nel.mapLast
-                    (\name ->
-                        if name |> String.endsWith "id" then
-                            String.dropRight 2 name ++ "type"
+        ( suffixes, name ) =
+            ( [ "type", "class", "kind" ], path |> ColumnPath.name )
 
-                        else if name |> String.endsWith "ids" then
-                            String.dropRight 3 name ++ "type"
+        prefix : String
+        prefix =
+            if name |> String.toLower |> String.endsWith "ids" then
+                name |> String.dropRight 3
 
-                        else if name |> String.endsWith "Id" then
-                            String.dropRight 2 name ++ "Type"
+            else if name |> String.toLower |> String.endsWith "id" then
+                name |> String.dropRight 2
 
-                        else if name |> String.endsWith "Ids" then
-                            String.dropRight 3 name ++ "Type"
-
-                        else if name |> String.endsWith "ID" then
-                            String.dropRight 2 name ++ "TYPE"
-
-                        else if name |> String.endsWith "IDS" then
-                            String.dropRight 3 name ++ "TYPE"
-
-                        else
-                            name ++ "_type"
-                    )
+            else
+                name
     in
-    table |> Table.getColumn typePath |> Maybe.map (\c -> { path = typePath, column = c })
+    (table |> Table.getPeerColumns path)
+        |> List.find (\c -> (c.name |> String.startsWith prefix) && (suffixes |> List.any (\s -> hasSuffix s c.name)))
+        |> Maybe.map (\c -> { path = path |> Nel.mapLast (\_ -> c.name), values = c.values })
+
+
+hasSuffix : String -> String -> Bool
+hasSuffix suffix str =
+    String.endsWith (String.toLower suffix) str || String.endsWith (String.toUpper suffix) str || String.endsWith (String.capitalize suffix) str
 
 
 getTargetColumn : Dict NormalizedTableName (List TableId) -> Dict TableId Table -> SchemaName -> List String -> ColumnName -> Maybe SuggestedRelationRef

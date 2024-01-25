@@ -6,17 +6,10 @@ The other way is to use the [desktop app](../desktop) for this, keeping everythi
 
 ## Set Up
 
-- Install the dependencies:
+- copy `.env.example` to `.env` and adapt values
+- run `npm install` to install dependencies
+- start dev server with `npm start`
 
-```bash
-npm install
-```
-
-- Start the server in development mode:
-
-```bash
-npm start
-```
 
 ## Env vars
 

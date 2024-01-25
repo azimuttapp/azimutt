@@ -1,5 +1,6 @@
 module Libs.String exposing
-    ( filterStartsWith
+    ( capitalize
+    , filterStartsWith
     , hashCode
     , inflect
     , nonEmpty
@@ -62,6 +63,21 @@ stripRight suffix str =
 
     else
         str
+
+
+capitalize : String -> String
+capitalize str =
+    str
+        |> String.toList
+        |> List.indexedMap
+            (\i c ->
+                if i == 0 then
+                    Char.toUpper c
+
+                else
+                    Char.toLower c
+            )
+        |> String.fromList
 
 
 orElse : String -> String -> String

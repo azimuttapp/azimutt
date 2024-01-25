@@ -1,4 +1,4 @@
-module Models.Project.Table exposing (Table, TableLike, decode, encode, getColumn, new)
+module Models.Project.Table exposing (Table, TableLike, decode, encode, findColumn, getColumn, getPeerColumns, new)
 
 import Dict exposing (Dict)
 import Json.Decode as Decode
@@ -6,12 +6,13 @@ import Json.Encode as Encode exposing (Value)
 import Libs.Dict as Dict
 import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
+import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Nel as Nel
 import Models.Project.Check as Check exposing (Check)
 import Models.Project.Column as Column exposing (Column, ColumnLike)
 import Models.Project.ColumnName exposing (ColumnName)
-import Models.Project.ColumnPath exposing (ColumnPath)
+import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.Comment as Comment exposing (Comment)
 import Models.Project.Index as Index exposing (Index)
 import Models.Project.PrimaryKey as PrimaryKey exposing (PrimaryKey)
@@ -60,6 +61,20 @@ getColumn path table =
     table.columns
         |> Dict.get path.head
         |> Maybe.andThen (\col -> path.tail |> Nel.fromList |> Maybe.mapOrElse (\next -> Column.getColumn next col) (Just col))
+
+
+getPeerColumns : ColumnPath -> Table -> List Column
+getPeerColumns path table =
+    (path |> ColumnPath.parent)
+        |> Maybe.map (\p -> table |> getColumn p |> Maybe.mapOrElse Column.nestedColumns [])
+        |> Maybe.withDefault (table.columns |> Dict.values)
+
+
+findColumn : (ColumnPath -> Column -> Bool) -> Table -> Maybe ( ColumnPath, Column )
+findColumn predicate table =
+    table.columns
+        |> Dict.toList
+        |> List.findMap (\( _, col ) -> Column.findColumn predicate col)
 
 
 encode : Table -> Value

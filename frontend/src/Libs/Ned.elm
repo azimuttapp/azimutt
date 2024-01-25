@@ -1,4 +1,4 @@
-module Libs.Ned exposing (Ned, build, buildMap, find, from, fromDict, fromList, fromNel, fromNelMap, get, map, merge, singleton, singletonMap, size, toDict, values)
+module Libs.Ned exposing (Ned, build, buildMap, find, from, fromDict, fromList, fromNel, fromNelMap, get, map, merge, singleton, singletonMap, size, toDict, toList, values)
 
 import Dict exposing (Dict)
 import Libs.Dict as Dict

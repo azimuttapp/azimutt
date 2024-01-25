@@ -1,9 +1,11 @@
-module Models.Project.Column exposing (Column, ColumnLike, NestedColumns(..), decode, encode, flatten, getColumn)
+module Models.Project.Column exposing (Column, ColumnLike, NestedColumns(..), decode, encode, findColumn, flatten, getColumn, nestedColumns)
 
+import Dict exposing (Dict)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
+import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Ned as Ned exposing (Ned)
 import Libs.Nel as Nel exposing (Nel)
@@ -52,11 +54,48 @@ flattenNested path (NestedColumns cols) =
     cols |> Ned.values |> Nel.toList |> List.concatMap (\col -> path |> ColumnPath.child col.name |> (\p -> [ { path = p, column = col } ] ++ (col.columns |> Maybe.mapOrElse (flattenNested p) [])))
 
 
+nestedColumns : Column -> List Column
+nestedColumns col =
+    col.columns |> Maybe.mapOrElse (\(NestedColumns cols) -> cols |> Ned.values |> Nel.toList) []
+
+
 getColumn : ColumnPath -> Column -> Maybe Column
 getColumn path column =
     column.columns
         |> Maybe.andThen (\(NestedColumns cols) -> cols |> Ned.get path.head)
         |> Maybe.andThen (\col -> path.tail |> Nel.fromList |> Maybe.mapOrElse (\next -> getColumn next col) (Just col))
+
+
+findColumn : (ColumnPath -> Column -> Bool) -> Column -> Maybe ( ColumnPath, Column )
+findColumn predicate column =
+    let
+        path : ColumnPath
+        path =
+            ColumnPath.root column.name
+    in
+    if predicate path column then
+        Just ( path, column )
+
+    else
+        column.columns |> Maybe.andThen (findColumnInner predicate path)
+
+
+findColumnInner : (ColumnPath -> Column -> Bool) -> ColumnPath -> NestedColumns -> Maybe ( ColumnPath, Column )
+findColumnInner predicate path (NestedColumns cols) =
+    cols
+        |> Ned.toList
+        |> List.findMap
+            (\( name, col ) ->
+                path
+                    |> ColumnPath.child name
+                    |> (\p ->
+                            if predicate p col then
+                                Just ( p, col )
+
+                            else
+                                col.columns |> Maybe.andThen (findColumnInner predicate p)
+                       )
+            )
 
 
 encode : Column -> Value

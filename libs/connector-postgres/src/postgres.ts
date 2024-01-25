@@ -157,7 +157,7 @@ function toTableId<T extends { table_schema: string, table_name: string }>(value
     return `${value.table_schema}.${value.table_name}`
 }
 
-type RawColumn = {
+export type RawColumn = {
     table_schema: string
     table_name: string
     table_kind: 'r' | 'v' | 'm' // r: table, v: view, m: materialized view
@@ -200,12 +200,29 @@ async function getColumns(conn: Conn, schema: PostgresSchemaName | undefined, ig
 
 function enrichColumnsWithSchema(conn: Conn, columns: RawColumn[], sampleSize: number, ignoreErrors: boolean, logger: Logger): Promise<RawColumn[]> {
     return sequence(columns, async c => {
-        if (c.column_name.endsWith('_type')) {
+        if (isPolymorphicColumn(c, columns)) {
             return getColumnDistinctValues(conn, c.table_schema, c.table_name, c.column_name, ignoreErrors, logger).then(column_values => ({...c, column_values}))
         } else if (c.column_type === 'jsonb') {
             return getColumnSchema(conn, c.table_schema, c.table_name, c.column_name, sampleSize, ignoreErrors, logger).then(column_schema => ({...c, column_schema}))
         } else {
             return c
+        }
+    })
+}
+
+export function isPolymorphicColumn(column: RawColumn, columns: RawColumn[]): boolean {
+    return ['type', 'class', 'kind'].some(suffix => {
+        if (column.column_name.endsWith(suffix)) {
+            const related = column.column_name.slice(0, -suffix.length) + 'id'
+            return columns.some(c => c.column_name === related)
+        } else if (column.column_name.endsWith(suffix.toUpperCase())) {
+            const related = column.column_name.slice(0, -suffix.length) + 'ID'
+            return columns.some(c => c.column_name === related)
+        } else if (column.column_name.endsWith(suffix.charAt(0).toUpperCase() + suffix.slice(1))) {
+            const related = column.column_name.slice(0, -suffix.length) + 'Id'
+            return columns.some(c => c.column_name === related)
+        } else {
+            return false
         }
     })
 }
