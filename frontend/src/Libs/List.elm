@@ -39,6 +39,7 @@ module Libs.List exposing
     , mapTL
     , mapTM
     , maximumBy
+    , maybeSeq
     , memberBy
     , memberWith
     , merge
@@ -697,6 +698,24 @@ resultCollect list =
         )
         ( [], [] )
         list
+
+
+maybeSeq : List (Maybe a) -> Maybe (List a)
+maybeSeq list =
+    case list of
+        [] ->
+            Just []
+
+        (Just a) :: rest ->
+            case maybeSeq rest of
+                Just res ->
+                    Just (a :: res)
+
+                Nothing ->
+                    Nothing
+
+        Nothing :: _ ->
+            Nothing
 
 
 resultSeq : List (Result e a) -> Result (List e) (List a)

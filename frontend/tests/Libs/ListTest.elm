@@ -60,4 +60,8 @@ suite =
                 )
             ]
         , describe "sortWith" [ test "asc" (\_ -> [ 3, 1, 2 ] |> List.sortWith (\v1 v2 -> compare v1 v2) |> Expect.equal [ 1, 2, 3 ]) ]
+        , describe "maybeSeq"
+            [ test "all Just" (\_ -> [ Just 1, Just 2 ] |> List.maybeSeq |> Expect.equal (Just [ 1, 2 ]))
+            , test "not all Just" (\_ -> [ Just 1, Nothing ] |> List.maybeSeq |> Expect.equal Nothing)
+            ]
         ]

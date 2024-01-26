@@ -327,7 +327,12 @@ viewSourceActionButtons drop extractSchema projects url parsedSource =
             (case ( url, parsedSource ) of
                 ( _, Just source ) ->
                     source
-                        |> Result.fold (\_ -> [ Button.white3 Tw.primary [ onClick drop ] [ text "Clear" ] ])
+                        |> Result.fold
+                            (\_ ->
+                                [ Button.primary3 Tw.primary [ onClick (extractSchema url) ] [ text "Try again" ]
+                                , Button.white3 Tw.primary [ onClick drop, css [ "ml-3" ] ] [ text "Clear" ]
+                                ]
+                            )
                             (\src ->
                                 [ Button.white3 Tw.primary [ onClick drop ] [ text "Trash this" ]
                                 , Button.primary3 Tw.primary [ onClick (CreateProjectTmp (Project.create projects src.name src)), id "create-project-btn", css [ "ml-3" ] ] [ text "Create project!" ]

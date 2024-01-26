@@ -1,4 +1,4 @@
-module Models.Project.Table exposing (Table, TableLike, decode, encode, findColumn, getColumn, getPeerColumns, new)
+module Models.Project.Table exposing (Table, TableLike, decode, encode, findColumn, getAltColumns, getColumn, getPeerColumns, new)
 
 import Dict exposing (Dict)
 import Json.Decode as Decode
@@ -13,6 +13,7 @@ import Models.Project.Check as Check exposing (Check)
 import Models.Project.Column as Column exposing (Column, ColumnLike)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
+import Models.Project.ColumnType exposing (ColumnType)
 import Models.Project.Comment as Comment exposing (Comment)
 import Models.Project.Index as Index exposing (Index)
 import Models.Project.PrimaryKey as PrimaryKey exposing (PrimaryKey)
@@ -68,6 +69,20 @@ getPeerColumns path table =
     (path |> ColumnPath.parent)
         |> Maybe.map (\p -> table |> getColumn p |> Maybe.mapOrElse Column.nestedColumns [])
         |> Maybe.withDefault (table.columns |> Dict.values)
+
+
+getAltColumns : Table -> List ( ColumnPath, ColumnType )
+getAltColumns table =
+    -- guess interesting columns to show instead of primary key in table row relations (can be empty)
+    [ [ "name" ]
+    , [ "title" ]
+    , [ "slug" ]
+    , [ "first_name", "last_name" ]
+    ]
+        |> List.findMap (List.map (\name -> table.columns |> Dict.get name) >> List.maybeSeq)
+        |> Maybe.orElse (table.columns |> Dict.values |> List.find (\col -> col.name |> String.endsWith "name") |> Maybe.map (\col -> [ col ]))
+        |> Maybe.withDefault []
+        |> List.map (\c -> ( ColumnPath.root c.name, c.kind ))
 
 
 findColumn : (ColumnPath -> Column -> Bool) -> Table -> Maybe ( ColumnPath, Column )

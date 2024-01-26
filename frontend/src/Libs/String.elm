@@ -1,5 +1,6 @@
 module Libs.String exposing
     ( capitalize
+    , ellipsis
     , filterStartsWith
     , hashCode
     , inflect
@@ -63,6 +64,15 @@ stripRight suffix str =
 
     else
         str
+
+
+ellipsis : Int -> String -> String
+ellipsis maxLen str =
+    if String.length str <= maxLen then
+        str
+
+    else
+        str |> String.left maxLen |> String.dropRight 3 |> (\s -> s ++ "...")
 
 
 capitalize : String -> String

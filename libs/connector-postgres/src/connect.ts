@@ -43,7 +43,7 @@ function buildConfig(application: string, url: DatabaseUrlParsed): ClientConfig 
 function connectionError(err: AnyError): AnyError {
     const msg = errorToString(err)
     if (msg.match(/^no pg_hba.conf entry for host "[^"]+", user "[^"]+", database "[^"]+", no encryption$/)) {
-        return new Error(`${msg} . Try adding \`?sslmode=no-verify\` at the end of your url.`)
+        return new Error(`${msg}. Try adding \`?sslmode=no-verify\` at the end of your url.`)
     } else {
         return err
     }

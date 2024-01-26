@@ -170,7 +170,10 @@ rowQuery table column value =
 
 inQuery : List ( String, ColumnType ) -> List ( String, ColumnType ) -> IncomingRowsQuery
 inQuery pk fks =
-    { primaryKey = pk |> List.map (Tuple.mapFirst cPath) |> Nel.fromList |> Maybe.withDefault (Nel ( Nel "id" [], "int" ) []), foreignKeys = fks |> List.map (Tuple.mapFirst cPath) }
+    { primaryKey = pk |> List.map (Tuple.mapFirst cPath) |> Nel.fromList |> Maybe.withDefault (Nel ( Nel "id" [], "int" ) [])
+    , foreignKeys = fks |> List.map (Tuple.mapFirst cPath)
+    , altCols = []
+    }
 
 
 cPath : String -> ColumnPath

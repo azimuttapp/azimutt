@@ -46,7 +46,8 @@ import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath, ColumnPathS
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.ColumnType exposing (ColumnType)
 import Models.Project.Relation as Relation exposing (Relation)
-import Models.Project.RowPrimaryKey exposing (RowPrimaryKey)
+import Models.Project.RowPrimaryKey as RowPrimaryKey exposing (RowPrimaryKey)
+import Models.Project.RowValue exposing (RowValue)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId)
@@ -610,6 +611,7 @@ viewColumnRow wrap noop createContextMenu hover showTableRow openNotes openDataE
                                                 (\pk ->
                                                     { primaryKey = pk.columns |> Nel.map (\c -> ( c, t |> Table.getColumn c |> Maybe.mapOrElse .kind "" ))
                                                     , foreignKeys = cols |> List.map (\c -> ( c.column, t |> Table.getColumn c.column |> Maybe.mapOrElse .kind "" ))
+                                                    , altCols = t |> Table.getAltColumns
                                                     }
                                                 )
                                     )
@@ -728,19 +730,31 @@ viewColumnRowIncomingRows noop showTableRow openDataExplorer defaultSchema sourc
                     (linkedRows
                         |> List.map
                             (\r ->
-                                { label =
-                                    if r.tail |> List.isEmpty then
-                                        r.head.value |> DbValue.toString
-
-                                    else
-                                        r |> Nel.toList |> List.map (\v -> (v.column |> Nel.toList |> String.join ".") ++ ": " ++ (v.value |> DbValue.toString)) |> String.join ", "
-                                , action = showTableRow source { table = tableId, primaryKey = r } Nothing (Just (PositionHint.PlaceRight row.position row.size))
+                                { label = formatIncomingRowsLabel r
+                                , action = showTableRow source { table = tableId, primaryKey = r |> RowPrimaryKey.extractAlt |> Tuple.first } Nothing (Just (PositionHint.PlaceRight row.position row.size))
                                 }
                             )
                         |> List.insert { label = "See all", action = openDataExplorer (Just source.id) (Just (DbQuery.filterTable source.db.kind { table = tableId, filters = query.foreignKeys |> List.map (\( fk, _ ) -> TableFilter DbOr fk DbEqual rowColumn.value) })) }
                     )
                     ContextMenu.BottomRight
         }
+
+
+formatIncomingRowsLabel : RowPrimaryKey -> String
+formatIncomingRowsLabel r =
+    let
+        ( pk, alt ) =
+            r |> RowPrimaryKey.extractAlt
+
+        key : String
+        key =
+            if pk.tail |> List.isEmpty then
+                pk.head.value |> DbValue.toString
+
+            else
+                pk |> Nel.toList |> List.map (\v -> (v.column |> Nel.toList |> String.join ".") ++ ": " ++ (v.value |> DbValue.toString)) |> String.join ", "
+    in
+    alt |> Maybe.map (\a -> (a |> DbValue.toString) ++ " (" ++ (key |> String.ellipsis 12) ++ ")") |> Maybe.withDefault key
 
 
 viewQuery : TwClass -> SqlQueryOrigin -> Html msg
