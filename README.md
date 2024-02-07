@@ -40,7 +40,7 @@ Azimutt started as a schema exploration tool for databases with hundreds of tabl
 
 - Design your schema using [AML](docs/aml/README.md) for a fast diagramming
 - Explore your database schema using search everywhere, display only useful tables/columns and follow relations
-- Query your data like never before, follow forign keys and display entities in diagram
+- Query your data like never before, follow foreign keys and display entities in diagram
 - Document using table/column notes and tags and layouts and memos for use cases, features or team scopes
 - Analyze it to discover inconsistencies and best practices to apply
 
