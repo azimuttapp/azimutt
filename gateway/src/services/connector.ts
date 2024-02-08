@@ -13,6 +13,7 @@ const connectors: Record<DatabaseKind, Connector | undefined> = {
     mysql: mysql,
     oracle: undefined,
     postgres: postgres,
+    snowflake: undefined,
     sqlite: undefined,
     sqlserver: sqlserver
 }

@@ -77,6 +77,43 @@ describe('url', () => {
             options: 'ssmode=require',
         })
     })
+    test('parse snowflake url', () => {
+        expect(parseDatabaseUrl('https://orgname-account_name.snowflakecomputing.com')).toEqual({
+            full: 'https://orgname-account_name.snowflakecomputing.com',
+            kind: 'snowflake',
+            host: 'orgname-account_name.snowflakecomputing.com',
+        })
+        expect(parseDatabaseUrl('https://accountlocator.region.cloud.snowflakecomputing.com')).toEqual({
+            full: 'https://accountlocator.region.cloud.snowflakecomputing.com',
+            kind: 'snowflake',
+            host: 'accountlocator.region.cloud.snowflakecomputing.com',
+        })
+        expect(parseDatabaseUrl('https://user:pass@orgname-account_name.privatelink.snowflakecomputing.com:443/db')).toEqual({
+            full: 'https://user:pass@orgname-account_name.privatelink.snowflakecomputing.com:443/db',
+            kind: 'snowflake',
+            user: 'user',
+            pass: 'pass',
+            host: 'orgname-account_name.privatelink.snowflakecomputing.com',
+            port: 443,
+            db: 'db',
+        })
+        expect(parseDatabaseUrl('snowflake://accountlocator.region.cloud.privatelink.snowflakecomputing.com?db=db&user=user')).toEqual({
+            full: 'snowflake://accountlocator.region.cloud.privatelink.snowflakecomputing.com?db=db&user=user',
+            kind: 'snowflake',
+            user: 'user',
+            host: 'accountlocator.region.cloud.privatelink.snowflakecomputing.com',
+            db: 'db',
+        })
+        expect(parseDatabaseUrl('jdbc:snowflake://user:pass@orgname-account_name.snowflakecomputing.com:443?db=db')).toEqual({
+            full: 'jdbc:snowflake://user:pass@orgname-account_name.snowflakecomputing.com:443?db=db',
+            kind: 'snowflake',
+            user: 'user',
+            pass: 'pass',
+            host: 'orgname-account_name.snowflakecomputing.com',
+            port: 443,
+            db: 'db',
+        })
+    })
     test('parse sqlserver url', () => {
         expect(parseDatabaseUrl('jdbc:sqlserver://user:pass@host.com:1433/db?option1=abc')).toEqual({
             full: 'jdbc:sqlserver://user:pass@host.com:1433/db?option1=abc',

@@ -4,7 +4,7 @@ import {filterValues} from "@azimutt/utils";
 export type DatabaseUrl = string
 export const DatabaseUrl = z.string()
 export type DatabaseUrlParsed = { full: string, kind?: DatabaseKind, user?: string, pass?: string, host?: string, port?: number, db?: string, options?: string }
-export type DatabaseKind = 'couchbase' | 'mariadb' | 'mongodb' | 'mysql' | 'oracle' | 'postgres' | 'sqlite' | 'sqlserver'
+export type DatabaseKind = 'couchbase' | 'mariadb' | 'mongodb' | 'mysql' | 'oracle' | 'postgres' | 'snowflake' | 'sqlite' | 'sqlserver'
 
 // vertically align regexes with variable names ^^
 const couchbaseRegexpLonger = /^couchbases?:\/\/(?:([^:]+):([^@]+)@)?([^:/?]+)(?::(\d+))?(?:\/([^?]+))?(?:\?(.+))?$/
@@ -13,6 +13,8 @@ const mongoRegexLonger = /mongodb(?:\+srv)?:\/\/(?:([^:]+):([^@]+)@)?([^:/?]+)(?
 const mysqlRegexpLonger = /^(?:jdbc:)?mysql:\/\/(?:([^:]+):([^@]+)@)?([^:/?]+)(?::(\d+))?(?:\/([^?]+))?(?:\?(.+))?$/
 const postres = /^(?:jdbc:)?postgres(?:ql)?:\/\/(?:([^:]+):([^@]+)@)?([^:/?]+)(?::(\d+))?(?:\/([^?]+))?(?:\?(.+))?$/
 const sqlser = /^(?:jdbc:)?sqlserver(?:ql)?:\/\/(?:([^:]+):([^@]+)@)?([^:/?]+)(?::(\d+))?(?:\/([^?]+))?(?:\?(.+))?$/
+const snowflakeRege = /^(?:jdbc:)?snowflake:\/\/(?:([^:]+):([^@]+)@)?([^:/?]+)(?::(\d+))?(?:\/([^?]+))?(?:\?(.+))?$/
+const snowflakeRegexLongerrrrrrrr = /^https:\/\/(?:([^:]+):([^@]+)@)?(.+?(?:\.privatelink)?\.snowflakecomputing\.com)(?::(\d+))?(?:\/([^?]+))?$/
 
 export function parseDatabaseUrl(url: DatabaseUrl): DatabaseUrlParsed {
     const couchbaseMatches = url.match(couchbaseRegexpLonger)
@@ -48,6 +50,15 @@ export function parseDatabaseUrl(url: DatabaseUrl): DatabaseUrlParsed {
         const [, user, pass, host, port, db, options] = postgresMatches
         const opts = {kind: 'postgres', user, pass, host, port: port ? parseInt(port) : undefined, db, options}
         return {...filterValues(opts, v => v !== undefined), full: url}
+    }
+
+    const snowflakeMatches = url.match(snowflakeRege) || url.match(snowflakeRegexLongerrrrrrrr)
+    if (snowflakeMatches) {
+        const [, user, pass, host, port, db, optionsStr] = snowflakeMatches
+        const {db: db2, user: user2, ...opts} = Object.fromEntries((optionsStr || '').split('&').map(part => part.split('=')))
+        const options = Object.entries(opts).filter(([k, _]) => k).map(([k, v]) => `${k}=${v}`).join('&') || undefined
+        const values = {kind: 'snowflake', user: user || user2, pass, host, port: port ? parseInt(port) : undefined, db: db || db2, options}
+        return {...filterValues(values, v => v !== undefined), full: url}
     }
 
     const sqlserverMatches = url.match(sqlser) || parseSqlServerUrl(url)

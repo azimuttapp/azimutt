@@ -22,7 +22,7 @@ export async function connect<T>(application: string, url: DatabaseUrlParsed, ex
     )
 }
 
-async function createConnection(config?: string | ClientConfig): Promise<Client> {
+async function createConnection(config: string | ClientConfig): Promise<Client> {
     const client = new Client(config)
     return client.connect().then(_ => client)
 }
@@ -42,7 +42,7 @@ function buildConfig(application: string, url: DatabaseUrlParsed): ClientConfig 
 
 function connectionError(err: AnyError): AnyError {
     const msg = errorToString(err)
-    if (msg.match(/^no pg_hba.conf entry for host "[^"]+", user "[^"]+", database "[^"]+", no encryption$/)) {
+    if (msg.match(/^no pg_hba.conf entry for host "[^"]+", user "[^"]+", database "[^"]+", no encryption$/) || msg.match(/^SSL connection is required$/)) {
         return new Error(`${msg}. Try adding \`?sslmode=no-verify\` at the end of your url.`)
     } else {
         return err
