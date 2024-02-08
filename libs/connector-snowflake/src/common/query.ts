@@ -28,7 +28,7 @@ type ColumnInfo = {
 }
 
 async function getColumnInfos(conn: Conn, tableIds: number[]): Promise<ColumnInfo[]> {
-    // FIXME
+    /* FIXME
     if (tableIds.length > 0) {
         return conn.query<ColumnInfo>(`
             SELECT n.oid     as schema_id,
@@ -48,6 +48,8 @@ async function getColumnInfos(conn: Conn, tableIds: number[]): Promise<ColumnInf
     } else {
         return []
     }
+    */
+    return Promise.reject(new Error('Not implemented'))
 }
 
 function buildColumns(fields: QueryResultField[], columnInfos: ColumnInfo[]): DatabaseQueryResultsColumn[] {
