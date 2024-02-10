@@ -4,33 +4,33 @@ import {schemaToColumns, ValueSchema, valuesToSchema} from "@azimutt/json-infer-
 import {Conn} from "./common";
 import {buildSqlColumn, buildSqlTable} from "./helpers";
 
-export type SnowflakeSchema = { tables: SnowflakeTable[], relations: SnowflakeRelation[], types: SnowflakeType[] }
+export type SnowflakeSchema = { tables: SnowflakeTable[], relations: SnowflakeRelation[] }
 export type SnowflakeTable = { catalog: SnowflakeCatalogName, schema: SnowflakeSchemaName, table: SnowflakeTableName, view: boolean, columns: SnowflakeColumn[], primaryKey: SnowflakePrimaryKey | null, uniques: SnowflakeUnique[], indexes: SnowflakeIndex[], checks: SnowflakeCheck[], comment: string | null }
 export type SnowflakeColumn = { name: SnowflakeColumnName, type: SnowflakeColumnType, nullable: boolean, default: string | null, comment: string | null, values: string[] | null, schema: ValueSchema | null }
-export type SnowflakePrimaryKey = { name: string | null, columns: SnowflakeColumnName[] }
+export type SnowflakePrimaryKey = { name: string, columns: SnowflakeColumnName[] }
 export type SnowflakeUnique = { name: string, columns: SnowflakeColumnName[], definition: string | null }
 export type SnowflakeIndex = { name: string, columns: SnowflakeColumnName[], definition: string | null }
 export type SnowflakeCheck = { name: string, columns: SnowflakeColumnName[], predicate: string | null }
-export type SnowflakeRelation = { name: SnowflakeRelationName, src: SnowflakeTableRef, ref: SnowflakeTableRef, comment: string | null }
-export type SnowflakeTableRef = { catalog: SnowflakeCatalogName, schema: SnowflakeSchemaName, table: SnowflakeTableName, column: SnowflakeColumnName }
+export type SnowflakeRelation = { name: SnowflakeRelationName, src: SnowflakeTableRef, ref: SnowflakeTableRef, columns: SnowflakeColumnLink[], comment: string | null }
+export type SnowflakeTableRef = { catalog: SnowflakeCatalogName, schema: SnowflakeSchemaName, table: SnowflakeTableName }
 export type SnowflakeColumnLink = { src: SnowflakeColumnName, ref: SnowflakeColumnName }
-export type SnowflakeType = { schema: SnowflakeSchemaName, name: SnowflakeTypeName, values: string[] | null }
 export type SnowflakeCatalogName = string
 export type SnowflakeSchemaName = string
 export type SnowflakeTableName = string
 export type SnowflakeColumnName = string
 export type SnowflakeColumnType = string
 export type SnowflakeRelationName = string
-export type SnowflakeTypeName = string
 export type SnowflakeTableId = `${SnowflakeCatalogName}.${SnowflakeSchemaName}.${SnowflakeTableName}`
 
 export const getSchema = (schema: SnowflakeSchemaName | undefined, sampleSize: number, ignoreErrors: boolean, logger: Logger) => async (conn: Conn): Promise<SnowflakeSchema> => {
     // TODO: include VIEWS? (SELECT * FROM INFORMATION_SCHEMA.VIEWS;)
     const tables = await getTables(conn, schema, ignoreErrors, logger)
     const columns = await getColumns(conn, schema, ignoreErrors, logger).then(cols => groupBy(cols, toTableId))
-    const foreignKeys = await getForeignKeys(conn, ignoreErrors, logger)
+    const primaryKeys = await getPrimaryKeys(conn, schema, ignoreErrors, logger).then(keys => groupBy(keys, key => `${key.database_name}.${key.schema_name}.${key.table_name}`))
+    const foreignKeys = await getForeignKeys(conn, schema, ignoreErrors, logger).then(keys => groupBy(keys, key => key.fk_name))
     return {
         tables: tables.map(table => {
+            const pk = primaryKeys[toTableId(table)]
             return {
                 catalog: table.catalog,
                 schema: table.schema,
@@ -42,25 +42,27 @@ export const getSchema = (schema: SnowflakeSchemaName | undefined, sampleSize: n
                     nullable: column.nullable === 'YES',
                     default: column.default,
                     comment: column.comment,
-                    values: null,
-                    schema: null
+                    values: null, // TODO
+                    schema: null // TODO
                 })),
-                primaryKey: null,
-                uniques: [],
-                indexes: [],
-                checks: [],
+                primaryKey: pk ? {name: pk[0].constraint_name, columns: pk.sort((a, b) => a.key_sequence - b.key_sequence).map(c => c.column_name)} : null,
+                uniques: [], // TODO
+                indexes: [], // TODO
+                checks: [], // TODO
                 comment: table.comment
             }
         }),
-        relations: foreignKeys.map(rel => {
+        relations: Object.entries(foreignKeys).map(([name, cols]) => {
+            const rels = cols.sort((a, b) => a.key_sequence - b.key_sequence)
+            const rel = rels[0]
             return {
-                name: rel.fk_name,
-                src: {catalog: rel.fk_database_name, schema: rel.fk_schema_name, table: rel.fk_table_name, column: rel.fk_column_name},
-                ref: {catalog: rel.pk_database_name, schema: rel.pk_schema_name, table: rel.pk_table_name, column: rel.pk_column_name},
+                name: name,
+                src: {catalog: rel.fk_database_name, schema: rel.fk_schema_name, table: rel.fk_table_name},
+                ref: {catalog: rel.pk_database_name, schema: rel.pk_schema_name, table: rel.pk_table_name},
+                columns: rels.map(r => ({src: r.fk_column_name, ref: r.pk_column_name})),
                 comment: rel.comment
             }
-        }),
-        types: []
+        })
     }
 }
 
@@ -86,16 +88,16 @@ export function formatSchema(schema: SnowflakeSchema, inferRelations: boolean): 
             checks: undefined,
             comment: t.comment || undefined
         })),
-        relations: schema.relations.map(r => ({
+        relations: schema.relations.flatMap(r => r.columns.map(c => ({
             name: r.name,
-            src: {schema: r.src.schema, table: r.src.table, column: r.src.column},
-            ref: {schema: r.ref.schema, table: r.ref.table, column: r.ref.column}
-        })),
+            src: {schema: r.src.schema, table: r.src.table, column: c.src},
+            ref: {schema: r.ref.schema, table: r.ref.table, column: c.ref}
+        }))),
         types: []
     }
 }
 
-// 👇️ Private functions, some are exported only for tests
+// 👇️ Private functions, exported only for tests
 // If you use them, beware of breaking changes!
 
 export type RawTable = {
@@ -152,6 +154,23 @@ export async function getColumns(conn: Conn, schema: SnowflakeSchemaName | undef
     `).catch(handleError(`Failed to get columns${schema ? ` for schema '${schema}'` : ''}`, [], ignoreErrors, logger))
 }
 
+export type RawPrimaryKey = {
+    database_name: SnowflakeCatalogName
+    schema_name: SnowflakeSchemaName
+    table_name: SnowflakeTableName
+    column_name: SnowflakeColumnName
+    key_sequence: number
+    constraint_name: string
+    rely: string // 'false'
+    comment: string | null
+}
+
+export async function getPrimaryKeys(conn: Conn, schema: SnowflakeSchemaName | undefined, ignoreErrors: boolean, logger: Logger): Promise<RawPrimaryKey[]> {
+    return conn.query<RawPrimaryKey>(`SHOW PRIMARY KEYS;`) // can't filter on schema only (needs then db too :/)
+        .then(keys => keys.filter(key => schema ? key.schema_name === schema : key.schema_name !== 'INFORMATION_SCHEMA'))
+        .catch(handleError(`Failed to get primary keys${schema ? ` for schema '${schema}'` : ''}`, [], ignoreErrors, logger))
+}
+
 export type RawForeignKey = {
     pk_database_name: SnowflakeCatalogName
     pk_schema_name: SnowflakeSchemaName
@@ -171,9 +190,10 @@ export type RawForeignKey = {
     comment: string | null
 }
 
-export async function getForeignKeys(conn: Conn, ignoreErrors: boolean, logger: Logger): Promise<RawForeignKey[]> {
-    return conn.query<RawForeignKey>(`SHOW EXPORTED KEYS;`) // can't filter on schema only (needs db too :/)
-        .catch(handleError(`Failed to get foreign keys`, [], ignoreErrors, logger))
+export async function getForeignKeys(conn: Conn, schema: SnowflakeSchemaName | undefined, ignoreErrors: boolean, logger: Logger): Promise<RawForeignKey[]> {
+    return conn.query<RawForeignKey>(`SHOW EXPORTED KEYS;`) // can't filter on schema only (needs then db too :/)
+        .then(keys => keys.filter(key => schema ? key.fk_schema_name === schema : key.fk_schema_name !== 'INFORMATION_SCHEMA'))
+        .catch(handleError(`Failed to get foreign keys${schema ? ` for schema '${schema}'` : ''}`, [], ignoreErrors, logger))
 }
 
 function toTableId<T extends { catalog: SnowflakeCatalogName, schema: SnowflakeSchemaName, table: SnowflakeTableName }>(value: T): SnowflakeTableId {
