@@ -1,16 +1,11 @@
-import {groupBy, Logger, removeUndefined, sequence, zip} from "@azimutt/utils";
-import {AzimuttSchema, ColumnName, SchemaName, TableName} from "@azimutt/database-types";
-import {schemaToColumns, ValueSchema, valuesToSchema} from "@azimutt/json-infer-schema";
+import {groupBy, Logger, removeUndefined} from "@azimutt/utils";
+import {AzimuttSchema} from "@azimutt/database-types";
 import {Conn} from "./common";
-import {buildSqlColumn, buildSqlTable} from "./helpers";
 
 export type SnowflakeSchema = { tables: SnowflakeTable[], relations: SnowflakeRelation[] }
-export type SnowflakeTable = { catalog: SnowflakeCatalogName, schema: SnowflakeSchemaName, table: SnowflakeTableName, view: boolean, columns: SnowflakeColumn[], primaryKey: SnowflakePrimaryKey | null, uniques: SnowflakeUnique[], indexes: SnowflakeIndex[], checks: SnowflakeCheck[], comment: string | null }
-export type SnowflakeColumn = { name: SnowflakeColumnName, type: SnowflakeColumnType, nullable: boolean, default: string | null, comment: string | null, values: string[] | null, schema: ValueSchema | null }
+export type SnowflakeTable = { catalog: SnowflakeCatalogName, schema: SnowflakeSchemaName, table: SnowflakeTableName, view: boolean, columns: SnowflakeColumn[], primaryKey: SnowflakePrimaryKey | null, comment: string | null }
+export type SnowflakeColumn = { name: SnowflakeColumnName, type: SnowflakeColumnType, nullable: boolean, default: string | null, comment: string | null }
 export type SnowflakePrimaryKey = { name: string, columns: SnowflakeColumnName[] }
-export type SnowflakeUnique = { name: string, columns: SnowflakeColumnName[], definition: string | null }
-export type SnowflakeIndex = { name: string, columns: SnowflakeColumnName[], definition: string | null }
-export type SnowflakeCheck = { name: string, columns: SnowflakeColumnName[], predicate: string | null }
 export type SnowflakeRelation = { name: SnowflakeRelationName, src: SnowflakeTableRef, ref: SnowflakeTableRef, columns: SnowflakeColumnLink[], comment: string | null }
 export type SnowflakeTableRef = { catalog: SnowflakeCatalogName, schema: SnowflakeSchemaName, table: SnowflakeTableName }
 export type SnowflakeColumnLink = { src: SnowflakeColumnName, ref: SnowflakeColumnName }
@@ -41,14 +36,9 @@ export const getSchema = (schema: SnowflakeSchemaName | undefined, sampleSize: n
                     type: column.type,
                     nullable: column.nullable === 'YES',
                     default: column.default,
-                    comment: column.comment,
-                    values: null, // TODO
-                    schema: null // TODO
+                    comment: column.comment
                 })),
                 primaryKey: pk ? {name: pk[0].constraint_name, columns: pk.sort((a, b) => a.key_sequence - b.key_sequence).map(c => c.column_name)} : null,
-                uniques: [], // TODO
-                indexes: [], // TODO
-                checks: [], // TODO
                 comment: table.comment
             }
         }),
@@ -78,14 +68,17 @@ export function formatSchema(schema: SnowflakeSchema, inferRelations: boolean): 
                 nullable: c.nullable || undefined,
                 default: c.default || undefined,
                 comment: c.comment || undefined,
-                values: c.values && c.values.length > 0 ? c.values : undefined,
-                columns: c.schema ? schemaToColumns(c.schema, 0) : undefined
+                values: undefined, // TODO
+                columns: undefined // TODO
             })),
             view: t.view || undefined,
-            primaryKey: undefined,
-            uniques: undefined,
-            indexes: undefined,
-            checks: undefined,
+            primaryKey: t.primaryKey ? removeUndefined({
+                name: t.primaryKey.name || undefined,
+                columns: t.primaryKey.columns,
+            }) : undefined,
+            uniques: undefined, // TODO
+            indexes: undefined, // TODO
+            checks: undefined, // TODO
             comment: t.comment || undefined
         })),
         relations: schema.relations.flatMap(r => r.columns.map(c => ({

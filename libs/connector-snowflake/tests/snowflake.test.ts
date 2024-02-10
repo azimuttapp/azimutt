@@ -1,13 +1,12 @@
 import {describe, expect, test} from "@jest/globals";
-import {AzimuttSchema, DatabaseUrlParsed, parseDatabaseUrl} from "@azimutt/database-types";
+import {DatabaseUrlParsed, parseDatabaseUrl} from "@azimutt/database-types";
 import {application, logger} from "./constants";
-import {execQuery} from "../src/common";
 import {connect} from "../src/connect";
 import {getColumns, getForeignKeys, getPrimaryKeys, getSchema, getTables, SnowflakeSchemaName} from "../src/snowflake";
 
 describe('snowflake', () => {
     // local url, install db or replace it to test
-    const url: DatabaseUrlParsed = parseDatabaseUrl('https://<user>:<pass>@<account>.snowflakecomputing.com/<database>')
+    const url: DatabaseUrlParsed = parseDatabaseUrl('snowflake://<user>:<pass>@<account>.snowflakecomputing.com?db=<database>')
     const schema: SnowflakeSchemaName | undefined = 'TPCDS_SF10TCL'
 
     test.skip('getSchema', async () => {

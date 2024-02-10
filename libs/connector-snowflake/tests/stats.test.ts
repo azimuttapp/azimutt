@@ -6,7 +6,7 @@ import {getColumnStats, getTableStats} from "../src/stats";
 
 describe('stats', () => {
     // local url, install db or replace it to test
-    const url: DatabaseUrlParsed = parseDatabaseUrl('https://<user>:<pass>@<account>.snowflakecomputing.com/<database>')
+    const url: DatabaseUrlParsed = parseDatabaseUrl('snowflake://<user>:<pass>@<account>.snowflakecomputing.com?db=<database>')
     /* FIXME
     test.skip('getTableStats', async () => {
         const stats = await connect(application, url, getTableStats('public.users'))

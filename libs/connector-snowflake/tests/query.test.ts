@@ -6,7 +6,7 @@ import {execQuery} from "../src/common";
 
 describe('query', () => {
     // local url, install db or replace it to test
-    const url: DatabaseUrlParsed = parseDatabaseUrl('https://<user>:<pass>@<account>.snowflakecomputing.com/<database>')
+    const url: DatabaseUrlParsed = parseDatabaseUrl('snowflake://<user>:<pass>@<account>.snowflakecomputing.com?db=<database>')
     /* FIXME
     test.skip('query', async () => {
         const query = 'SELECT u.id, e.id, o.id FROM users u JOIN events e ON u.id = e.created_by JOIN organizations o on o.id = e.organization_id LIMIT 10;'

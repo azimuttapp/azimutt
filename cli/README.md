@@ -18,7 +18,7 @@ Get the help simply by running the CLI (`npx azimutt@latest`) or for a specific 
   - ex: `npx azimutt export "mongodb+srv://user:password@cluster3.md7h4xp.mongodb.net"`
   - ex: `npx azimutt export mysql://user:password@my.host.com:3306/my_db`
   - ex: `npx azimutt export postgresql://postgres:postgres@localhost:5432/azimutt_dev`
-  - ex: `npx azimutt export https://user:password@account.snowflakecomputing.com/my_db`
+  - ex: `npx azimutt export snowflake://user:password@account.snowflakecomputing.com?db=my_db`
   - ex: `npx azimutt export Server=host.com,1433;Database=db;User Id=user;Password=pass`
   - `url` the database connection url, must contain everything needed (user, pass, port...)
   - `--database` is optional, restrict schema extraction to this database

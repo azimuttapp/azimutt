@@ -1,6 +1,6 @@
 import {describe, test} from "@jest/globals";
 import {Connection, ConnectionOptions, createConnection, SnowflakeError, Statement} from "snowflake-sdk";
-import {parseDatabaseUrl, DatabaseUrlParsed} from "@azimutt/database-types";
+import {parseDatabaseUrl} from "@azimutt/database-types";
 import {connect} from "../src/connect";
 import {application} from "./constants";
 import {execQuery} from "../src/common";
@@ -15,16 +15,20 @@ describe('connect', () => {
     const url = 'snowflake://<user>:<pass>@<account>.snowflakecomputing.com?db=<database>'
 
     // TODO 2: write a valid query for your database
-    const query = 'SELECT * FROM TPCDS_SF100TCL.WEB_SITE LIMIT 10;'
-    // const query = 'SHOW TABLES;'
+    const query = `
+        SELECT cc.CC_CALL_CENTER_SK, cc.CC_NAME, c.C_CUSTOMER_SK, c.C_EMAIL_ADDRESS, r.CR_REFUNDED_CASH
+        FROM TPCDS_SF10TCL.CATALOG_RETURNS r
+            JOIN TPCDS_SF10TCL.CALL_CENTER cc ON r.CR_CALL_CENTER_SK = cc.CC_CALL_CENTER_SK
+            JOIN TPCDS_SF10TCL.CUSTOMER c ON r.CR_REFUNDED_CUSTOMER_SK = c.C_CUSTOMER_SK
+        LIMIT 30;`
     const parameters: any[] = []
 
     // TODO 3: unskip the this test first and run it: `npm run test -- tests/connect.test.ts`
-    test('Azimutt should connect', async () => {
+    test.skip('Azimutt should connect', async () => {
         const parsedUrl = parseDatabaseUrl(url)
         const results = await connect(application, parsedUrl, execQuery(query, parameters))
         console.log('results', results)
-    })
+    }, 10000)
 
     // TODO 4: if previous test failed, unskip this one an find how https://www.npmjs.com/package/snowflake-sdk can connect to your database
     // tips: check lib version in package.json, ping us if you need help
