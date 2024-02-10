@@ -15,13 +15,14 @@ type DatabaseKind
     | MongoDB
     | MySQL
     | PostgreSQL
+    | Snowflake
     | SQLServer
     | Other
 
 
 all : List DatabaseKind
 all =
-    [ Couchbase, MariaDB, MongoDB, MySQL, PostgreSQL, SQLServer, Other ]
+    [ Couchbase, MariaDB, MongoDB, MySQL, PostgreSQL, Snowflake, SQLServer, Other ]
 
 
 fromUrl : DatabaseUrl -> DatabaseKind
@@ -40,6 +41,9 @@ fromUrl url =
 
     else if url |> String.contains "postgre" then
         PostgreSQL
+
+    else if url |> String.contains "snowflake" then
+        Snowflake
 
     else if (url |> String.contains "sqlserver") || (url |> String.toLower |> String.contains "user id=") then
         SQLServer
@@ -66,6 +70,9 @@ toString kind =
         PostgreSQL ->
             "PostgreSQL"
 
+        Snowflake ->
+            "Snowflake"
+
         SQLServer ->
             "SQLServer"
 
@@ -90,6 +97,9 @@ fromString kind =
 
         "PostgreSQL" ->
             Just PostgreSQL
+
+        "Snowflake" ->
+            Just Snowflake
 
         "SQLServer" ->
             Just SQLServer

@@ -4,6 +4,7 @@ import {mariadb} from "@azimutt/connector-mariadb"
 import {mongodb} from "@azimutt/connector-mongodb"
 import {mysql} from "@azimutt/connector-mysql"
 import {postgres} from "@azimutt/connector-postgres"
+import {snowflake} from "@azimutt/connector-snowflake"
 import {sqlserver} from "@azimutt/connector-sqlserver"
 
 const connectors: Record<DatabaseKind, Connector | undefined> = {
@@ -13,7 +14,7 @@ const connectors: Record<DatabaseKind, Connector | undefined> = {
     mysql: mysql,
     oracle: undefined,
     postgres: postgres,
-    snowflake: undefined,
+    snowflake: snowflake,
     sqlite: undefined,
     sqlserver: sqlserver
 }
