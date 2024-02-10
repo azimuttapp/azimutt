@@ -2,7 +2,7 @@ import {ColumnValue} from "@azimutt/database-types";
 
 export type QueryResultValue = ColumnValue
 export type QueryResultRow = { [column: string]: QueryResultValue }
-export type QueryResultField = { name: string, tableID: number, columnID: number, dataTypeID: number, format: string } // FIXME
+export type QueryResultField = { index: number, name: string, type: string }
 export type QueryResultRowArray = QueryResultValue[]
 export type QueryResultArrayMode = {
     fields: QueryResultField[],

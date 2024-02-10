@@ -7,6 +7,7 @@ import DataSources.DbMiner.QueryMongoDB as QueryMongoDB
 import DataSources.DbMiner.QueryMySQL as QueryMySQL
 import DataSources.DbMiner.QueryPostgreSQL as QueryPostgreSQL
 import DataSources.DbMiner.QuerySQLServer as QuerySQLServer
+import DataSources.DbMiner.QuerySnowflake as QuerySnowflake
 import Dict exposing (Dict)
 import Libs.Models.DatabaseKind as DatabaseKind exposing (DatabaseKind)
 import Models.Project.ColumnPath exposing (ColumnPath)
@@ -34,6 +35,9 @@ exploreTable db table =
 
             DatabaseKind.PostgreSQL ->
                 QueryPostgreSQL.exploreTable table
+
+            DatabaseKind.Snowflake ->
+                QuerySnowflake.exploreTable table
 
             DatabaseKind.SQLServer ->
                 QuerySQLServer.exploreTable table
@@ -63,6 +67,9 @@ exploreColumn db table column =
 
             DatabaseKind.PostgreSQL ->
                 QueryPostgreSQL.exploreColumn table column
+
+            DatabaseKind.Snowflake ->
+                QuerySnowflake.exploreColumn table column
 
             DatabaseKind.SQLServer ->
                 QuerySQLServer.exploreColumn table column
@@ -142,6 +149,9 @@ addLimit db query =
 
         DatabaseKind.PostgreSQL ->
             { sql = QueryPostgreSQL.addLimit query.sql, origin = query.origin, db = query.db }
+
+        DatabaseKind.Snowflake ->
+            { sql = QuerySnowflake.addLimit query.sql, origin = query.origin, db = query.db }
 
         _ ->
             query

@@ -22,7 +22,7 @@ export async function connect<T>(application: string, url: DatabaseUrlParsed, ex
                 // @ts-ignore
                 rowMode: 'array',
                 complete: (err: SnowflakeError | undefined, stmt: Statement, rows: any[] | undefined) => err ? reject(queryError(sql, err)) : resolve({
-                    fields: stmt.getColumns().map(c => ({ name: c.getName(), tableID: 0, columnID: c.getId(), dataTypeID: 0, format: c.getType() })),
+                    fields: stmt.getColumns().map(c => ({ index: c.getIndex(), name: c.getName(), type: c.getType() })),
                     rows: rows || []
                 })
             }))

@@ -38,7 +38,7 @@ export const getColumnStats = (ref: ColumnRef) => async (conn: Conn): Promise<Co
 }
 
 async function countRows(conn: Conn, sqlTable: string): Promise<number> {
-    const sql = `SELECT count(*) FROM ${sqlTable}`
+    const sql = `SELECT count(*) as "count" FROM ${sqlTable}`
     const rows = await conn.query<{ count: number }>(sql)
     return rows[0].count
 }
@@ -63,18 +63,11 @@ async function sampleValue(conn: Conn, sqlTable: string, column: ColumnName): Pr
 }
 
 async function getColumnType(conn: Conn, schema: SchemaName, table: TableName, column: ColumnPathStr): Promise<ColumnType> {
-    // category: https://www.postgresql.org/docs/current/catalog-pg-type.html#CATALOG-TYPCATEGORY-TABLE
     const [columnName] = column.split(columnPathSeparator)
-    const rows = await conn.query<{ formatted: ColumnType, name: string, category: string }>(`
-        SELECT format_type(a.atttypid, a.atttypmod) AS formatted
-             , t.typname                            AS name
-             , t.typcategory                        AS category
-        FROM pg_attribute a
-                 JOIN pg_class c ON c.oid = a.attrelid
-                 JOIN pg_namespace n ON n.oid = c.relnamespace
-                 JOIN pg_type t ON t.oid = a.atttypid
-        WHERE c.relname = $1
-          AND a.attname = $2${schema ? ' AND n.nspname=$3' : ''}`, schema ? [table, columnName, schema] : [table, columnName])
+    const rows = await conn.query<{ formatted: ColumnType, name: string, category: string }>(
+        `SELECT DATA_TYPE as "formatted" FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME=? AND COLUMN_NAME=?${schema ? ' AND TABLE_SCHEMA=?' : ''};`,
+        schema ? [table, columnName, schema] : [table, columnName]
+    )
     return rows.length > 0 ? rows[0].formatted : 'unknown'
 }
 
@@ -82,14 +75,14 @@ type ColumnBasics = { rows: number, nulls: number, cardinality: number }
 
 async function columnBasics(conn: Conn, sqlTable: SqlFragment, sqlColumn: SqlFragment): Promise<ColumnBasics> {
     const rows = await conn.query<ColumnBasics>(`
-        SELECT count(*)                                                      AS rows
-             , (SELECT count(*) FROM ${sqlTable} WHERE ${sqlColumn} IS NULL) AS nulls
-             , count(distinct ${sqlColumn})                                  AS cardinality
+        SELECT count(*)                                                      AS "rows"
+             , (SELECT count(*) FROM ${sqlTable} WHERE ${sqlColumn} IS NULL) AS "nulls"
+             , count(distinct ${sqlColumn})                                  AS "cardinality"
         FROM ${sqlTable}`)
     return rows[0]
 }
 
 function commonValues(conn: Conn, sqlTable: SqlFragment, sqlColumn: SqlFragment): Promise<ColumnCommonValue[]> {
-    const sql = `SELECT ${sqlColumn} as value, count(*) FROM ${sqlTable} GROUP BY ${sqlColumn} ORDER BY count(*) DESC LIMIT 10`
+    const sql = `SELECT ${sqlColumn} as "value", count(*) as "count" FROM ${sqlTable} GROUP BY ${sqlColumn} ORDER BY count(*) DESC LIMIT 10`
     return conn.query<ColumnCommonValue>(sql)
 }

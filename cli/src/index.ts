@@ -36,7 +36,7 @@ program.command('explore')
     .action((url, args) => exec(launchExplore(url, args.instance || 'https://azimutt.app', logger), args))
 
 program.command('export')
-    .description('Export a database schema in a file to easily import it in Azimutt.\nWorks with Couchbase, MariaDB, MongoDB, MySQL, PostgreSQL..., issues and PR are welcome in https://github.com/azimuttapp/azimutt ;)')
+    .description('Export a database schema in a file to easily import it in Azimutt.\nWorks with Couchbase, MariaDB, MongoDB, MySQL, PostgreSQL, Snowflake..., issues and PR are welcome in https://github.com/azimuttapp/azimutt ;)')
     .argument('<url>', 'the url to connect to the source, including credentials')
     .option('-d, --database <database>', 'Limit to a specific database (ex for MongoDB)')
     .option('-s, --schema <schema>', 'Limit to a specific schema (ex for PostgreSQL)')

@@ -7,16 +7,15 @@ import {getColumnStats, getTableStats} from "../src/stats";
 describe('stats', () => {
     // local url, install db or replace it to test
     const url: DatabaseUrlParsed = parseDatabaseUrl('snowflake://<user>:<pass>@<account>.snowflakecomputing.com?db=<database>')
-    /* FIXME
+
     test.skip('getTableStats', async () => {
-        const stats = await connect(application, url, getTableStats('public.users'))
+        const stats = await connect(application, url, getTableStats('TPCDS_SF10TCL.CUSTOMER'))
         console.log('getTableStats', stats)
-        expect(stats.rows).toEqual(2)
+        expect(stats.rows).toEqual(65000000)
     })
     test.skip('getColumnStats', async () => {
-        const stats = await connect(application, url, getColumnStats({table: 'public.users', column: 'name'}))
+        const stats = await connect(application, url, getColumnStats({table: 'TPCDS_SF10TCL.CUSTOMER', column: 'C_FIRST_NAME'}))
         console.log('getColumnStats', stats)
-        expect(stats.rows).toEqual(3)
+        expect(stats.rows).toEqual(65000000)
     })
-    */
 })

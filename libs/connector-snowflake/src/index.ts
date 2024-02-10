@@ -21,9 +21,9 @@ export const snowflake: Connector = {
         return formatSchema(schema, opts.inferRelations || false)
     },
     getTableStats: (application: string, url: DatabaseUrlParsed, id: TableId): Promise<TableStats> =>
-        Promise.reject('Not implemented'), // connect(application, url, getTableStats(id)),
+        connect(application, url, getTableStats(id)),
     getColumnStats: (application: string, url: DatabaseUrlParsed, ref: ColumnRef): Promise<ColumnStats> =>
-        Promise.reject('Not implemented'), // connect(application, url, getColumnStats(ref)),
+        connect(application, url, getColumnStats(ref)),
     query: (application: string, url: DatabaseUrlParsed, query: string, parameters: any[]): Promise<DatabaseQueryResults> =>
-        Promise.reject('Not implemented'), // connect(application, url, execQuery(query, parameters)),
+        connect(application, url, execQuery(query, parameters)),
 }
