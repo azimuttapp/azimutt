@@ -26,19 +26,19 @@
     "url": "https://github.com/azimuttapp/azimutt/issues"
   },
   "type": "module",
-  "main": "./lib/index.js",
-  "types": "./lib/index.d.ts",
+  "main": "./out/index.js",
+  "types": "./out/index.d.ts",
   "bin": {
-    "azimutt": "./lib/index.js"
+    "azimutt": "./out/index.js"
   },
   "scripts": {
-    "setup": "npm install && npm run build && chmod +x ./lib/index.js",
+    "setup": "npm install && npm run build && chmod +x ./out/index.js",
     "start": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/index.ts",
     "start:windows": "nodemon --watch 'src/**/*.ts' --exec \"npx ts-node\" src/index.ts",
     "test": "jest",
-    "build": "rm -rf ./lib && tsc",
+    "build": "rm -rf ./out && tsc",
     "update": "npm update --save-dev && npm update --save && npm install",
-    "exec": "npm run build && node ./lib/index.js",
+    "exec": "npm run build && node ./out/index.js",
     "local": "sudo npm install -g && azimutt",
     "refresh": "rm -rf ./node_modules ./package-lock.json && npm install",
     "dry-publish": "npm run build && npm test && npm pack"
