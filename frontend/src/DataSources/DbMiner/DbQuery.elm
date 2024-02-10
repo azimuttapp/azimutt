@@ -19,6 +19,7 @@ import Models.SqlQuery exposing (SqlQuery, SqlQueryOrigin)
 
 exploreTable : DatabaseKind -> TableId -> SqlQueryOrigin
 exploreTable db table =
+    -- query made from table details sidebar, something like: `SELECT * FROM table;`
     { sql =
         case db of
             DatabaseKind.Couchbase ->
@@ -43,7 +44,7 @@ exploreTable db table =
                 QuerySQLServer.exploreTable table
 
             DatabaseKind.Other ->
-                "exploreTable not implemented for database " ++ DatabaseKind.toString db
+                "DbQuery.exploreTable not implemented for database " ++ DatabaseKind.toString db
     , origin = "exploreTable"
     , db = db
     }
@@ -51,6 +52,7 @@ exploreTable db table =
 
 exploreColumn : DatabaseKind -> TableId -> ColumnPath -> SqlQueryOrigin
 exploreColumn db table column =
+    -- query made from column details sidebar, something like: `SELECT col, count(*) FROM table GROUP BY col ORDER BY count(*) DESC, col;`
     { sql =
         case db of
             DatabaseKind.Couchbase ->
@@ -75,7 +77,7 @@ exploreColumn db table column =
                 QuerySQLServer.exploreColumn table column
 
             DatabaseKind.Other ->
-                "exploreColumn not implemented for database " ++ DatabaseKind.toString db
+                "DbQuery.exploreColumn not implemented for database " ++ DatabaseKind.toString db
     , origin = "exploreColumn"
     , db = db
     }
@@ -83,7 +85,7 @@ exploreColumn db table column =
 
 filterTable : DatabaseKind -> TableQuery -> SqlQueryOrigin
 filterTable db query =
-    -- select many rows from a table with a filter
+    -- query made from the visual editor, something like: `SELECT * FROM table WHERE ${filters};`
     { sql =
         case db of
             DatabaseKind.MySQL ->
@@ -93,7 +95,7 @@ filterTable db query =
                 QueryPostgreSQL.filterTable query.table query.filters
 
             _ ->
-                "filterTable not implemented for database " ++ DatabaseKind.toString db
+                "DbQuery.filterTable not implemented for database " ++ DatabaseKind.toString db
     , origin = "filterTable"
     , db = db
     }
@@ -101,7 +103,7 @@ filterTable db query =
 
 findRow : DatabaseKind -> RowQuery -> SqlQueryOrigin
 findRow db query =
-    -- select a single row from a table by primary key
+    -- query made from the table rows or the row details sidebar, something like: `SELECT * FROM table WHERE ${primaryKey} = ${value} LIMIT 1;`
     { sql =
         case db of
             DatabaseKind.MySQL ->
@@ -111,7 +113,7 @@ findRow db query =
                 QueryPostgreSQL.findRow query.table query.primaryKey
 
             _ ->
-                "findRow not implemented for database " ++ DatabaseKind.toString db
+                "DbQuery.findRow not implemented for database " ++ DatabaseKind.toString db
     , origin = "findRow"
     , db = db
     }
@@ -124,7 +126,14 @@ incomingRowsLimit =
 
 incomingRows : DatabaseKind -> Dict TableId IncomingRowsQuery -> RowQuery -> SqlQueryOrigin
 incomingRows db relations row =
-    -- fetch rows from each relation pointing to a specific row
+    -- query made from table rows to get incoming rows from every incoming relation for the specific row, something like:
+    -- ```
+    -- SELECT
+    --   ${rels.map(rel =>
+    --     `array(SELECT json('id', r.id, 'alt', r.name) FROM ${rel.table} r WHERE r.fk=t.pk LIMIT 20) as ${rel.table}`
+    --   ).join(', ')}
+    -- FROM table t WHERE ${primaryKey} = ${value} LIMIT 1;
+    -- ```
     { sql =
         case db of
             DatabaseKind.MySQL ->
@@ -134,7 +143,7 @@ incomingRows db relations row =
                 QueryPostgreSQL.incomingRows row relations incomingRowsLimit
 
             _ ->
-                "incomingRows not implemented for database " ++ DatabaseKind.toString db
+                "DbQuery.incomingRows not implemented for database " ++ DatabaseKind.toString db
     , origin = "incomingRows"
     , db = db
     }
@@ -142,7 +151,8 @@ incomingRows db relations row =
 
 addLimit : DatabaseKind -> SqlQueryOrigin -> SqlQueryOrigin
 addLimit db query =
-    -- limit query results to 100 if no limit specified
+    -- allow to limit query results (to 100) if not already specified
+    -- used before sending any query from Azimutt to the Gateway
     case db of
         DatabaseKind.MySQL ->
             { sql = QueryMySQL.addLimit query.sql, origin = query.origin, db = query.db }
@@ -159,6 +169,7 @@ addLimit db query =
 
 updateColumnType : DatabaseKind -> ColumnRefLike x -> ColumnType -> SqlQueryOrigin
 updateColumnType db ref kind =
+    -- generate SQL to update column types in the db analyzer in order to make them consistent (fk pointing at a pk)
     { sql =
         case db of
             DatabaseKind.MySQL ->
@@ -168,7 +179,7 @@ updateColumnType db ref kind =
                 QueryPostgreSQL.updateColumnType { table = ref.table, column = ref.column } kind
 
             _ ->
-                "updateColumnType not implemented for database " ++ DatabaseKind.toString db
+                "DbQuery.updateColumnType not implemented for database " ++ DatabaseKind.toString db
     , origin = "updateColumnType"
     , db = db
     }
