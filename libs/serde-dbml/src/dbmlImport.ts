@@ -11,49 +11,49 @@ import {removeUndefined, zip} from "@azimutt/utils";
 import {
     Column,
     Database,
+    Entity,
+    EntityRef,
     Index,
     Relation,
     RelationKind,
     SchemaName,
-    Table,
-    TableRef,
     Type
 } from "@azimutt/database-model";
 import {removeEmpty} from "./utils";
 import {
-    ColumnExtensions,
-    DatabaseExtensions,
+    ColumnExtra,
+    DatabaseExtra,
+    EntityExtra,
     Group,
-    IndexExtensions,
-    RelationExtensions,
-    TableExtensions,
-    TypeExtensions
-} from "./extensions";
+    IndexExtra,
+    RelationExtra,
+    TypeExtra
+} from "./extra";
 
 export const defaultSchema = 'public'
 
 export function importDatabase(db: DbmlDatabase): Database {
-    const extensions: DatabaseExtensions = removeEmpty({
+    const extra: DatabaseExtra = removeEmpty({
         source: 'serde-DBML',
         groups: db.schemas.flatMap(s => s.tableGroups.map(importGroup))
     })
     return removeEmpty({
-        tables: db.schemas.flatMap(s => s.tables.map(importTable)),
+        entities: db.schemas.flatMap(s => s.tables.map(importEntity)),
         relations: db.schemas.flatMap(s => s.refs.map(importRef)),
         types: db.schemas.flatMap(s => s.enums.map(importType)),
-        extensions
+        extra
     })
 }
 
-function importTable(table: DbmlTable): Table {
+function importEntity(table: DbmlTable): Entity {
     const pkIndex = table.indexes.filter(i => i.pk).map(i => removeUndefined({name: i.name, columns: i.columns.map(c => c.value)}))[0]
     const pkCols = table.fields.filter(f => f.pk).map(f => f.name)
 
-    const tableIndexes: Index[] = table.indexes.filter(i => !i.pk).map(importIndex)
+    const entityIndexes: Index[] = table.indexes.filter(i => !i.pk).map(importIndex)
     const columnUniques: Index[] = table.fields.filter(f => f.unique).map(f => ({columns: [f.name], unique: true}))
-    const indexes = columnUniques.concat(tableIndexes)
+    const indexes = columnUniques.concat(entityIndexes)
 
-    const extensions: TableExtensions = removeUndefined({
+    const extra: EntityExtra = removeUndefined({
         alias: table.alias || undefined,
         color: table.headerColor || undefined
     })
@@ -65,12 +65,12 @@ function importTable(table: DbmlTable): Table {
         primaryKey: pkIndex ? pkIndex : pkCols.length > 0 ? {columns: pkCols} : undefined,
         indexes: indexes.length > 0 ? indexes : undefined,
         comment: table.note || undefined,
-        extensions
+        extra
     })
 }
 
 function importColumn(field: DbmlField): Column {
-    const extensions: ColumnExtensions = removeUndefined({
+    const extra: ColumnExtra = removeUndefined({
         increment: field.increment || undefined,
         defaultType: field.dbdefault?.type === 'expression' ? 'expression' : undefined
     })
@@ -80,12 +80,12 @@ function importColumn(field: DbmlField): Column {
         nullable: field.not_null === true ? !field.not_null : undefined,
         default: field.dbdefault?.value,
         comment: field.note || undefined,
-        extensions
+        extra
     })
 }
 
 function importIndex(index: DbmlIndex): Index {
-    const extensions: IndexExtensions = removeEmpty({
+    const extra: IndexExtra = removeEmpty({
         columnTypes: removeUndefined(index.columns.reduce((acc, v) => ({...acc, [v.value]: v.type === 'expression' ? 'expression' : undefined}), {}))
     })
     return removeEmpty({
@@ -94,7 +94,7 @@ function importIndex(index: DbmlIndex): Index {
         unique: index.unique || undefined,
         definition: index.type || undefined,
         comment: index.note || undefined,
-        extensions
+        extra
     })
 }
 
@@ -106,7 +106,7 @@ function importRef(relation: DbmlRef): Relation {
         case '1-1': kind = 'one-to-one'; if (src.fields.some(f => f.pk)) [src, ref] = [ref, src]; break
         case '*-*': kind = 'many-to-many'; break
     }
-    const extensions: RelationExtensions = removeUndefined({
+    const extra: RelationExtra = removeUndefined({
         onDelete: relation.onDelete,
         onUpdate: relation.onUpdate
     })
@@ -116,16 +116,16 @@ function importRef(relation: DbmlRef): Relation {
         src: importEndpoint(src),
         ref: importEndpoint(ref),
         columns: zip(src.fieldNames, ref.fieldNames).map(([src, ref]) => ({src, ref})),
-        extensions
+        extra
     })
 }
 
-function importEndpoint(endpoint: DbmlEndpoint): TableRef {
-    return removeUndefined({schema: endpoint.schemaName || undefined, table: endpoint.tableName})
+function importEndpoint(endpoint: DbmlEndpoint): EntityRef {
+    return removeUndefined({schema: endpoint.schemaName || undefined, entity: endpoint.tableName})
 }
 
 function importType(e: DbmlEnum): Type {
-    const extensions: TypeExtensions = removeEmpty({
+    const extra: TypeExtra = removeEmpty({
         notes: removeUndefined(e.values.reduce((acc, v) => ({...acc, [v.name]: v.note || undefined}), {}))
     })
     return removeUndefined({
@@ -133,7 +133,7 @@ function importType(e: DbmlEnum): Type {
         name: e.name,
         values: e.values.map(v => v.name),
         comment: e.note || undefined,
-        extensions
+        extra
     })
 }
 
@@ -141,7 +141,7 @@ function importGroup(group: DbmlTableGroup): Group {
     return removeUndefined({
         schema: importSchemaName(group.schema),
         name: group.name,
-        tables: group.tables.map(t => removeUndefined({schema: importSchemaName(t.schema), table: t.name})),
+        entities: group.tables.map(t => removeUndefined({schema: importSchemaName(t.schema), entity: t.name})),
     })
 }
 

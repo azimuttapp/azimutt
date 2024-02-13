@@ -9,14 +9,14 @@ import {
     DatabaseName,
     JsValue,
     SchemaName,
-    TableRef
+    EntityRef
 } from "../database";
 
 // every connector should implement this interface
 export interface Connector {
     name: string
-    getSchema(application: string, url: DatabaseUrlParsed, opts: ConnectorSchemaOpts): Promise<Database>
-    getTableStats(application: string, url: DatabaseUrlParsed, table: TableRef): Promise<ConnectorTableStats>
+    getDatabase(application: string, url: DatabaseUrlParsed, opts: ConnectorSchemaOpts): Promise<Database>
+    getEntityStats(application: string, url: DatabaseUrlParsed, entity: EntityRef): Promise<ConnectorEntityStats>
     getColumnStats(application: string, url: DatabaseUrlParsed, column: ColumnRef): Promise<ConnectorColumnStats>
     query(application: string, url: DatabaseUrlParsed, query: string, parameters: any[]): Promise<ConnectorQueryResults>
 }
@@ -32,7 +32,7 @@ export type ConnectorSchemaOpts = {
     ignoreErrors?: boolean // default: false, ignore errors when fetching the schema
 }
 
-export type ConnectorTableStats = TableRef & {
+export type ConnectorEntityStats = EntityRef & {
     rows: number
     sample_values: { [column: string]: ColumnValue }
 }

@@ -1,8 +1,20 @@
+import {z} from "zod";
 import {filterValues} from "@azimutt/utils";
+import {DatabaseKind} from "./database";
 
-export type DatabaseUrl = string
-export type DatabaseUrlParsed = { full: string, kind?: DatabaseKind, user?: string, pass?: string, host?: string, port?: number, db?: string, options?: string }
-export type DatabaseKind = 'couchbase' | 'mariadb' | 'mongodb' | 'mysql' | 'oracle' | 'postgres' | 'snowflake' | 'sqlite' | 'sqlserver'
+export const DatabaseUrl = z.string()
+export type DatabaseUrl = z.infer<typeof DatabaseUrl>
+export const DatabaseUrlParsed = z.object({
+    full: z.string(), // TODO: rename to `original`, `raw` or `formatted`?
+    kind: DatabaseKind.optional(), // TODO: add `unknown` and make to required?
+    user: z.string().optional(),
+    pass: z.string().optional(),
+    host: z.string().optional(),
+    port: z.number().optional(),
+    db: z.string().optional(),
+    options: z.string().optional(), // TODO: review this to make sure it's the best (use Record<string, string> instead?)
+}).strict()
+export type DatabaseUrlParsed = z.infer<typeof DatabaseUrlParsed>
 
 // vertically align regexes with variable names ^^
 const couchbaseRegexpLonger = /^couchbases?:\/\/(?:([^:]+):([^@]+)@)?([^:/?]+)(?::(\d+))?(?:\/([^?]+))?(?:\?(.+))?$/

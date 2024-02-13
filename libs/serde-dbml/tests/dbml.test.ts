@@ -32,7 +32,7 @@ Table "posts" {
 Ref:"users"."id" < "posts"."author"
 `
         const parsed: Database = {
-            tables: [{
+            entities: [{
                 name: 'users',
                 columns: [
                     {name: 'id', type: 'integer'},
@@ -49,9 +49,9 @@ Ref:"users"."id" < "posts"."author"
                 primaryKey: {columns: ['id']}
             }],
             relations: [
-                {src: {table: 'posts'}, ref: {table: 'users'}, columns: [{src: 'author', ref: 'id'}]}
+                {src: {entity: 'posts'}, ref: {entity: 'users'}, columns: [{src: 'author', ref: 'id'}]}
             ],
-            extensions: {source: 'serde-DBML'}
+            extra: {source: 'serde-DBML'}
         }
         await expect(parse(source)).resolves.toEqual(parsed)
         await expect(parse(generated)).resolves.toEqual(parsed)
@@ -70,7 +70,7 @@ Ref:"users"."id" < "posts"."author"
     test('empty schema',  async () => {
         const source = ``
         const generated = ``
-        const parsed: Database = {extensions: {source: 'serde-DBML'}}
+        const parsed: Database = {extra: {source: 'serde-DBML'}}
         await expect(parse(source)).resolves.toEqual(parsed)
         await expect(parse(generated)).resolves.toEqual(parsed)
         await expect(generate(parsed)).resolves.toEqual(generated)
