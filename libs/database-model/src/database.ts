@@ -105,13 +105,13 @@ export const Column: z.ZodType<Column> = z.object({
 export type Column = { // define type explicitly because it's lazy (https://zod.dev/?id=recursive-types)
     name: ColumnName
     type: ColumnType
-    nullable?: boolean
-    generated?: boolean
-    default?: ColumnValue
-    values?: ColumnValue[]
-    columns?: Column[]
-    comment?: string
-    extra?: Extra
+    nullable?: boolean | undefined
+    generated?: boolean | undefined
+    default?: ColumnValue | undefined
+    values?: ColumnValue[] | undefined
+    columns?: Column[] | undefined
+    comment?: string | undefined
+    extra?: Extra | undefined
 }
 
 export const EntityKind = z.enum(['table', 'view', 'materialized view', 'foreign table'])
