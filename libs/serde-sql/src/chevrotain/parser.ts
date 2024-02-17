@@ -10,7 +10,7 @@ import {
     ParserError,
     ParserResult,
     SelectAst,
-    SelectColumnAst, SelectColumnWildcardAst,
+    SelectColumnAst,
     SelectFromAst,
     SelectResultAst,
     SelectWhereAst,
@@ -18,7 +18,8 @@ import {
     StatementAst,
     StringAst,
     TableRefAst,
-    TokenInfo, WildcardAst
+    TokenInfo,
+    WildcardAst
 } from "./ast";
 import {removeUndefined} from "@azimutt/utils";
 import {IRecognitionException} from "@chevrotain/types";
