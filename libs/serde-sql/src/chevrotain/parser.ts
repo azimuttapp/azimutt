@@ -1,4 +1,4 @@
-import {createToken, EmbeddedActionsParser, IToken, Lexer, TokenType} from "chevrotain"
+import {createToken, EmbeddedActionsParser, IRecognitionException, IToken, Lexer, TokenType} from "chevrotain";
 import {
     BooleanAst,
     ColumnRefAst,
@@ -22,14 +22,15 @@ import {
     WildcardAst
 } from "./ast";
 import {removeUndefined} from "@azimutt/utils";
-import {IRecognitionException} from "@chevrotain/types";
 
 // https://chevrotain.io/docs/features/lexer_modes.html
 // https://chevrotain.io/docs/features/custom_token_patterns.html => indentation
 
-// values & identifiers
+// special
 const WhiteSpace = createToken({name: 'WhiteSpace', pattern: /\s+/, group: Lexer.SKIPPED})
 const Identifier = createToken({ name: 'Identifier', pattern: /"([^\\"]|\\\\|\\")*"|[a-zA-Z]\w*/ })
+
+// values
 const Float = createToken({ name: 'Float', pattern: /\d+\.\d+/ })
 const Integer = createToken({ name: 'Integer', pattern: /\d+/, longer_alt: Float })
 const String = createToken({ name: 'String', pattern: /'([^\\']|\\\\|\\')*'/ })
@@ -47,7 +48,7 @@ const And = createToken({ name: 'And', pattern: /AND/ })
 const Or = createToken({ name: 'And', pattern: /OR/ })
 const keywordTokens: TokenType[] = [CreateTable, PrimaryKey, Constraint, Select, From, Where, And, Or]
 
-// special chars
+// chars
 const Star = createToken({ name: 'Star', pattern: /\*/ })
 const Dot = createToken({ name: 'Dot', pattern: /\./ })
 const Comma = createToken({ name: 'Comma', pattern: /,/ })
@@ -64,10 +65,10 @@ const LCurly = createToken({ name: 'LCurly', pattern: /\{/ })
 const RCurly = createToken({ name: 'RCurly', pattern: /\}/ })
 const LBraket = createToken({ name: 'LBraket', pattern: /\[/ })
 const RBraket = createToken({ name: 'RBraket', pattern: /\]/ })
-const specialCharsTokens: TokenType[] = [Star, Dot, Comma, Semicolon, Equal, NotEqual, GreaterThanOrEqual, GreaterThan, LessThanOrEqual, LessThan, LParen, RParen, LCurly, RCurly, LBraket, RBraket]
+const charTokens: TokenType[] = [Star, Dot, Comma, Semicolon, Equal, NotEqual, GreaterThanOrEqual, GreaterThan, LessThanOrEqual, LessThan, LParen, RParen, LCurly, RCurly, LBraket, RBraket]
 
 // token order is important as they are tried in order, so the Identifier must be last
-const allTokens: TokenType[] = [WhiteSpace, ...specialCharsTokens, ...keywordTokens, ...valueTokens, Identifier]
+const allTokens: TokenType[] = [WhiteSpace, ...charTokens, ...keywordTokens, ...valueTokens, Identifier]
 
 class SqlParser extends EmbeddedActionsParser {
     // common
@@ -217,7 +218,7 @@ class SqlParser extends EmbeddedActionsParser {
         })
 
         this.sqlScriptRule = $.RULE<() => SqlScriptAst>('sqlScriptRule', () => {
-            let stmts: StatementAst[] = []
+            const stmts: StatementAst[] = []
             $.MANY_SEP({
                 SEP: Semicolon,
                 DEF: () => stmts.push($.SUBRULE($.statementRule))

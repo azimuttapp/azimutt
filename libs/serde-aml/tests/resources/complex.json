@@ -1,0 +1,74 @@
+{
+  "entities": [{
+    "schema": "blog",
+    "name": "posts",
+    "columns": [
+      {"name": "id", "type": "bigint unsigned", "extensions": {"increment": true}},
+      {"name": "status", "type": "post_status", "default": "draft"},
+      {"name": "title", "type": "varchar", "comment": "Title of the post"},
+      {"name": "author", "type": "integer"}
+    ],
+    "primaryKey": {"columns": ["id"]},
+    "comment": "Stores all posts",
+    "extensions": {
+      "alias": "P",
+      "color": "#ccc"
+    }
+  }, {
+    "name": "users",
+    "columns": [
+      {"name": "id", "type": "integer"},
+      {"name": "name", "type": "varchar", "nullable":  false}
+    ],
+    "primaryKey": {"columns": ["id"]},
+    "indexes": [{"columns": ["name"], "unique": true}]
+  }, {
+    "name": "profiles",
+    "columns": [
+      {"name": "id", "type": "integer"},
+      {"name": "user_id", "type": "integer"},
+      {"name": "bio", "type": "text"},
+      {"name": "active", "type": "boolean", "default": "true"}
+    ],
+    "primaryKey": {"columns": ["id"]}
+  }, {
+    "name": "projects",
+    "columns": [
+      {"name": "id", "type": "integer"},
+      {"name": "name", "type": "varchar"}
+    ],
+    "primaryKey": {"columns": ["id"]}
+  }, {
+    "name": "roles",
+    "columns": [
+      {"name": "id", "type": "integer"},
+      {"name": "name", "type": "varchar"},
+      {"name": "level", "type": "int", "default": 0, "comment": "used to order roles"}
+    ],
+    "primaryKey": {"columns": ["id"]}
+  }, {
+    "name": "user_roles",
+    "columns": [
+      {"name": "user_id", "type": "integer"},
+      {"name": "role_id", "type": "integer"},
+      {"name": "created_at", "type": "timestamp", "default": "now()", "extensions": {"defaultType": "expression"}}
+    ],
+    "primaryKey": {"columns": ["user_id", "role_id"]},
+    "indexes": [{"name": "created_at_index", "columns": ["created_at"], "comment": "Date"}]
+  }],
+  "relations": [
+    {"src": {"entity": "profiles"}, "ref": {"entity": "users"}, "columns": [{"src": "user_id", "ref": "id"}], "kind":  "one-to-one"},
+    {"src": {"entity": "user_roles"}, "ref": {"entity": "users"}, "columns": [{"src": "user_id", "ref": "id"}]},
+    {"src": {"entity": "user_roles"}, "ref": {"entity": "roles"}, "columns": [{"src": "role_id", "ref": "id"}]},
+    {"src": {"schema": "blog", "entity": "posts"}, "ref": {"entity": "users"}, "columns": [{"src": "author", "ref": "id"}]}
+  ],
+  "types": [
+    {"schema": "blog", "name": "post_status", "values": ["draft", "published", "archived"], "extensions": {"notes": {"draft": "Waiting to be processed"}}}
+  ],
+  "extensions": {
+    "source": "serde-AML",
+    "groups": [
+      {"schema": "blog", "name": "publication", "entities": [{"entity":  "users"}, {"schema":  "blog", "entity":  "posts"}]}
+    ]
+  }
+}
