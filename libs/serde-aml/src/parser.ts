@@ -16,6 +16,7 @@ const Boolean = createToken({ name: 'Boolean', pattern: /true|false/, longer_alt
 const valueTokens: TokenType[] = [Integer, Float, String, Boolean]
 
 // keywords
+const Namespace = createToken({ name: 'Namespace', pattern: /namespace/, longer_alt: Identifier })
 const Nullable = createToken({ name: 'Nullable', pattern: /nullable/, longer_alt: Identifier })
 const PrimaryKey = createToken({ name: 'PrimaryKey', pattern: /pk/, longer_alt: Identifier })
 const Index = createToken({ name: 'Index', pattern: /index/, longer_alt: Identifier })
@@ -23,7 +24,7 @@ const Unique = createToken({ name: 'Unique', pattern: /unique/, longer_alt: Iden
 const Check = createToken({ name: 'Check', pattern: /check/, longer_alt: Identifier })
 const Relation = createToken({ name: 'Relation', pattern: /rel/, longer_alt: Identifier })
 const Type = createToken({ name: 'Type', pattern: /type/, longer_alt: Identifier })
-const keywordTokens: TokenType[] = [Nullable, PrimaryKey, Index, Unique, Check, Relation, Type]
+const keywordTokens: TokenType[] = [Namespace, Nullable, PrimaryKey, Index, Unique, Check, Relation, Type]
 
 // chars
 const Dot = createToken({ name: 'Dot', pattern: /\./ })
@@ -52,14 +53,17 @@ export type ParserResult<T> = {
 }
 
 export type AmlAst = StatementAst[]
-export type StatementAst = EntityAst | RelationAst | TypeAst
+export type StatementAst = NamespaceAst | EntityAst | RelationAst | TypeAst
+export type NamespaceAst = { command: 'NAMESPACE', schema: IdentifierAst, catalog?: IdentifierAst, database?: IdentifierAst }
 export type EntityAst = { command: 'ENTITY' }
 export type RelationAst = { command: 'RELATION', kind: RelationKindAst, src: ColumnRefCompositeAst, ref: ColumnRefCompositeAst, polymorphic?: RelationPolymorphicAst } & ExtraAst
 export type TypeAst = { command: 'TYPE' }
 
-export type ColumnAst = {name: IdentifierAst, type?: IdentifierAst, nullable?: {parser: TokenInfo}} & ColumnConstraintsAst & ExtraAst
-export type ColumnConstraintsAst = {primaryKey?: {parser: TokenInfo}, index?: ColumnConstraintAst, unique?: ColumnConstraintAst, check?: ColumnConstraintAst}
-export type ColumnConstraintAst = {parser: TokenInfo, value?: IdentifierAst}
+export type ColumnAst = { name: IdentifierAst, nullable?: {parser: TokenInfo} } & ColumnTypeAst & ColumnConstraintsAst & { relation?: ColumnRelationAst } & ExtraAst
+export type ColumnTypeAst = { type?: IdentifierAst, enumValues?: ColumnValueAst[], defaultValue?: ColumnValueAst }
+export type ColumnConstraintsAst = { primaryKey?: { parser: TokenInfo }, index?: ColumnConstraintAst, unique?: ColumnConstraintAst, check?: ColumnConstraintAst }
+export type ColumnConstraintAst = { parser: TokenInfo, value?: IdentifierAst }
+export type ColumnRelationAst = { kind: RelationKindAst, ref: ColumnRefCompositeAst, polymorphic?: RelationPolymorphicAst }
 
 export type RelationCardinalityAst = '1' | 'n'
 export type RelationKindAst = `${RelationCardinalityAst}-${RelationCardinalityAst}`
@@ -73,12 +77,12 @@ export type ColumnValueAst = IdentifierAst | IntegerAst
 
 export type ExtraAst = { properties?: PropertiesAst, note?: NoteAst, comment?: CommentAst }
 export type PropertiesAst = PropertyAst[]
-export type PropertyAst = {key: IdentifierAst, value?: PropertyValueAst}
+export type PropertyAst = { key: IdentifierAst, value?: PropertyValueAst }
 export type PropertyValueAst = IdentifierAst | IntegerAst
-export type NoteAst = {note: string, parser: TokenInfo}
-export type CommentAst = {comment: string, parser: TokenInfo}
-export type IdentifierAst = {identifier: string, parser: TokenInfo}
-export type IntegerAst = {value: number, parser: TokenInfo}
+export type NoteAst = { note: string, parser: TokenInfo }
+export type CommentAst = { comment: string, parser: TokenInfo }
+export type IdentifierAst = { identifier: string, parser: TokenInfo }
+export type IntegerAst = { value: number, parser: TokenInfo }
 
 class AmlParser extends EmbeddedActionsParser {
     // common
@@ -93,6 +97,9 @@ class AmlParser extends EmbeddedActionsParser {
     columnRefRule: () => ColumnRefAst
     columnRefCompositeRule: () => ColumnRefCompositeAst
     columnValueRule: () => ColumnValueAst
+
+    // namespace
+    namespaceRule: () => NamespaceAst
 
     // entity
     columnRule: () => ColumnAst
@@ -214,7 +221,38 @@ class AmlParser extends EmbeddedActionsParser {
             ])
         })
 
+        // namespace rules
+        this.namespaceRule = $.RULE<() => NamespaceAst>('namespaceRule', () => {
+            $.CONSUME(Namespace)
+            const first = $.SUBRULE($.identifierRule)
+            const second = $.OPTION(() => $.SUBRULE(nestedRule))
+            const third = $.OPTION2(() => $.SUBRULE2(nestedRule))
+            const [schema, catalog, database] = [third, second, first].filter(i => !!i)
+            return removeUndefined({command: 'NAMESPACE', schema: schema || first, catalog, database} as NamespaceAst)
+        })
+
         // entity rules
+        const columnTypeRule = $.RULE<() => ColumnTypeAst>('columnTypeRule', () => {
+            const res = $.OPTION(() => {
+                const type = $.SUBRULE($.identifierRule)
+                const enumValues = $.OPTION2(() => {
+                    $.CONSUME(LParen)
+                    const values: ColumnValueAst[] = []
+                    $.AT_LEAST_ONE_SEP({
+                        SEP: Comma,
+                        DEF: () => values.push($.SUBRULE($.columnValueRule))
+                    })
+                    $.CONSUME(RParen)
+                    return values
+                })
+                const defaultValue = $.OPTION3(() => {
+                    $.CONSUME(Equal)
+                    return $.SUBRULE2($.columnValueRule)
+                })
+                return {type, enumValues, defaultValue}
+            })
+            return {type: res?.type, enumValues: res?.enumValues, defaultValue: res?.defaultValue}
+        })
         const columnConstraintsRule = $.RULE<() => ColumnConstraintsAst>('columnConstraintsRule', () => {
             const pk = $.OPTION(() => $.CONSUME(PrimaryKey))
             const primaryKey = pk ? {parser: parserInfo(pk)} : undefined
@@ -244,15 +282,23 @@ class AmlParser extends EmbeddedActionsParser {
             })
             return removeUndefined({primaryKey, index, unique, check})
         })
+        const columnRelationRule = $.RULE<() => ColumnRelationAst>('columnRelationRule', () => {
+            const refCardinality = $.SUBRULE(relationCardinalityRule)
+            const polymorphic = $.OPTION(() => $.SUBRULE(relationPolymorphicRule))
+            const srcCardinality = $.SUBRULE2(relationCardinalityRule)
+            const ref = $.SUBRULE2($.columnRefCompositeRule)
+            return removeUndefined({kind: `${srcCardinality}-${refCardinality}`, ref, polymorphic} as ColumnRelationAst)
+        })
         this.columnRule = $.RULE<() => ColumnAst>('columnRule', () => {
             const name = $.SUBRULE($.identifierRule)
-            const type = $.OPTION(() => $.SUBRULE2($.identifierRule))
-            const isNull = $.OPTION2(() => $.CONSUME(Nullable))
+            const {type, enumValues, defaultValue} = $.SUBRULE(columnTypeRule)
+            const isNull = $.OPTION(() => $.CONSUME(Nullable))
             const nullable = isNull ? {parser: parserInfo(isNull)} : undefined
             const constraints = $.SUBRULE(columnConstraintsRule)
-            // TODO rel
+            const relation = $.OPTION2(() => $.SUBRULE(columnRelationRule))
             const extra = $.SUBRULE($.extraRule)
-            return removeUndefined({name, type, nullable, ...constraints, ...extra})
+            // TODO: nested columns?
+            return removeUndefined({name, type, enumValues, defaultValue, nullable, ...constraints, relation, ...extra})
         })
 
         // relation rules
@@ -272,12 +318,9 @@ class AmlParser extends EmbeddedActionsParser {
         this.relationRule = $.RULE<() => RelationAst>('relationRule', () => {
             $.CONSUME(Relation)
             const src = $.SUBRULE($.columnRefCompositeRule)
-            const refCardinality = $.SUBRULE(relationCardinalityRule)
-            const polymorphic = $.OPTION(() => $.SUBRULE(relationPolymorphicRule))
-            const srcCardinality = $.SUBRULE2(relationCardinalityRule)
-            const ref = $.SUBRULE2($.columnRefCompositeRule)
+            const {kind, ref, polymorphic} = $.SUBRULE(columnRelationRule)
             const extra = $.SUBRULE($.extraRule)
-            return removeUndefined({command: 'RELATION', kind: `${srcCardinality}-${refCardinality}`, src, ref, polymorphic, ...extra} as RelationAst)
+            return removeUndefined({command: 'RELATION', kind, src, ref, polymorphic, ...extra} as RelationAst)
         })
 
         // general rules

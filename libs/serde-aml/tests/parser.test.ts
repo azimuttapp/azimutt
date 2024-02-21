@@ -5,6 +5,25 @@ describe('aml parser', () => {
     /*test('empty', () => {
         expect(parse('')).toEqual({result: []})
     })*/
+    describe('namespaceRule', () => {
+        test('schema', () => {
+            expect(parseRule(p => p.namespaceRule(), 'namespace public')).toEqual({result: {
+                command: 'NAMESPACE',
+                schema: {identifier: 'public', parser: {token: 'Identifier', offset: [10, 15], line: [1, 1], column: [11, 16]}},
+            }})
+            expect(parseRule(p => p.namespaceRule(), 'namespace core.public')).toEqual({result: {
+                command: 'NAMESPACE',
+                catalog: {identifier: 'core', parser: {token: 'Identifier', offset: [10, 13], line: [1, 1], column: [11, 14]}},
+                schema: {identifier: 'public', parser: {token: 'Identifier', offset: [15, 20], line: [1, 1], column: [16, 21]}},
+            }})
+            expect(parseRule(p => p.namespaceRule(), 'namespace analytics.core.public')).toEqual({result: {
+                command: 'NAMESPACE',
+                database: {identifier: 'analytics', parser: {token: 'Identifier', offset: [10, 18], line: [1, 1], column: [11, 19]}},
+                catalog: {identifier: 'core', parser: {token: 'Identifier', offset: [20, 23], line: [1, 1], column: [21, 24]}},
+                schema: {identifier: 'public', parser: {token: 'Identifier', offset: [25, 30], line: [1, 1], column: [26, 31]}},
+            }})
+        })
+    })
     describe('entityRule', () => {
         describe('columnRule', () => {
             test('name', () => {
@@ -14,6 +33,32 @@ describe('aml parser', () => {
                 expect(parseRule(p => p.columnRule(), 'id uuid')).toEqual({result: {
                     name: {identifier: 'id', parser: {token: 'Identifier', offset: [0, 1], line: [1, 1], column: [1, 2]}},
                     type: {identifier: 'uuid', parser: {token: 'Identifier', offset: [3, 6], line: [1, 1], column: [4, 7]}},
+                }})
+                expect(parseRule(p => p.columnRule(), 'name "varchar(12)"')).toEqual({result: {
+                    name: {identifier: 'name', parser: {token: 'Identifier', offset: [0, 3], line: [1, 1], column: [1, 4]}},
+                    type: {identifier: 'varchar(12)', parser: {token: 'Identifier', offset: [5, 17], line: [1, 1], column: [6, 18]}},
+                }})
+                expect(parseRule(p => p.columnRule(), 'bio "character varying"')).toEqual({result: {
+                    name: {identifier: 'bio', parser: {token: 'Identifier', offset: [0, 2], line: [1, 1], column: [1, 3]}},
+                    type: {identifier: 'character varying', parser: {token: 'Identifier', offset: [4, 22], line: [1, 1], column: [5, 23]}},
+                }})
+            })
+            test('enum', () => {
+                expect(parseRule(p => p.columnRule(), 'status post_status(draft, published, archived)')).toEqual({result: {
+                    name: {identifier: 'status', parser: {token: 'Identifier', offset: [0, 5], line: [1, 1], column: [1, 6]}},
+                    type: {identifier: 'post_status', parser: {token: 'Identifier', offset: [7, 17], line: [1, 1], column: [8, 18]}},
+                    enumValues: [
+                        {identifier: 'draft', parser: {token: 'Identifier', offset: [19, 23], line: [1, 1], column: [20, 24]}},
+                        {identifier: 'published', parser: {token: 'Identifier', offset: [26, 34], line: [1, 1], column: [27, 35]}},
+                        {identifier: 'archived', parser: {token: 'Identifier', offset: [37, 44], line: [1, 1], column: [38, 45]}},
+                    ],
+                }})
+            })
+            test('default', () => {
+                expect(parseRule(p => p.columnRule(), 'id int=0')).toEqual({result: {
+                    name: {identifier: 'id', parser: {token: 'Identifier', offset: [0, 1], line: [1, 1], column: [1, 2]}},
+                    type: {identifier: 'int', parser: {token: 'Identifier', offset: [3, 5], line: [1, 1], column: [4, 6]}},
+                    defaultValue: {value: 0, parser: {token: 'Integer', offset: [7, 7], line: [1, 1], column: [8, 8]}},
                 }})
             })
             test('nullable', () => {
@@ -58,6 +103,15 @@ describe('aml parser', () => {
                     check: {parser: {token: 'Check', offset: [3, 7], line: [1, 1], column: [4, 8]}, value: {identifier: 'id > 0', parser: {token: 'Identifier', offset: [9, 16], line: [1, 1], column: [10, 17]}}},
                 }})
             })
+            test('relation', () => {
+                expect(parseRule(p => p.columnRule(), 'user_id -> users(id)')).toEqual({result: {
+                    name: {identifier: 'user_id', parser: {token: 'Identifier', offset: [0, 6], line: [1, 1], column: [1, 7]}},
+                    relation: {kind: 'n-1', ref: {
+                        entity: {identifier: 'users', parser: {token: 'Identifier', offset: [11, 15], line: [1, 1], column: [12, 16]}},
+                        columns: [{identifier: 'id', parser: {token: 'Identifier', offset: [17, 18], line: [1, 1], column: [18, 19]}}],
+                    }}
+                }})
+            })
             test('properties', () => {
                 expect(parseRule(p => p.columnRule(), 'id {tag: pii}')).toEqual({result: {
                     name: {identifier: 'id', parser: {token: 'Identifier', offset: [0, 1], line: [1, 1], column: [1, 2]}},
@@ -95,11 +149,6 @@ describe('aml parser', () => {
                     properties: [{key: {identifier: 'tag', parser: {token: 'Identifier', offset: [12, 14], line: [1, 1], column: [13, 15]}}, value: {identifier: 'pii', parser: {token: 'Identifier', offset: [17, 19], line: [1, 1], column: [18, 20]}}}],
                     note: {note: 'some note', parser: {token: 'Note', offset: [22, 32], line: [1, 1], column: [23, 33]}},
                 }})
-                // TODO: `group_id uuid -> groups.id`
-                // TODO: `status post_status(draft, published, archived)=draft index`
-                // TODO: `email "character varying" unique=email_orga check="len(email) > 10"`
-                // TODO: `bio varchar(12) nullable`
-                // TODO: multiline note
                 expect(parseRule(p => p.columnRule(), '12')).toEqual({errors: [{kind: 'MismatchedTokenException', message: "Expecting token of type --> Identifier <-- but found --> '12' <--", offset: [0, 1], line: [1, 1], column: [1, 2]}]})
             })
             test('full', () => {
