@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "@azimutt/database-model": "file:../database-model",
+    "@azimutt/utils": "^0.0.5",
     "chevrotain": "10.5.0"
   },
   "devDependencies": {

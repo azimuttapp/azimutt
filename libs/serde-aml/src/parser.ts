@@ -1,4 +1,6 @@
 import {createToken, EmbeddedActionsParser, IRecognitionException, IToken, Lexer, TokenType} from "chevrotain";
+import {removeUndefined} from "@azimutt/utils";
+import {removeEmpty} from "./utils";
 
 // special
 const WhiteSpace = createToken({name: 'WhiteSpace', pattern: /\s+/, group: Lexer.SKIPPED})
@@ -14,20 +16,28 @@ const Boolean = createToken({ name: 'Boolean', pattern: /true|false/, longer_alt
 const valueTokens: TokenType[] = [Integer, Float, String, Boolean]
 
 // keywords
+const Nullable = createToken({ name: 'Nullable', pattern: /nullable/, longer_alt: Identifier })
+const PrimaryKey = createToken({ name: 'PrimaryKey', pattern: /pk/, longer_alt: Identifier })
+const Index = createToken({ name: 'Index', pattern: /index/, longer_alt: Identifier })
+const Unique = createToken({ name: 'Unique', pattern: /unique/, longer_alt: Identifier })
+const Check = createToken({ name: 'Check', pattern: /check/, longer_alt: Identifier })
 const Relation = createToken({ name: 'Relation', pattern: /rel/, longer_alt: Identifier })
 const Type = createToken({ name: 'Type', pattern: /type/, longer_alt: Identifier })
-const keywordTokens: TokenType[] = [Relation, Type]
+const keywordTokens: TokenType[] = [Nullable, PrimaryKey, Index, Unique, Check, Relation, Type]
 
 // chars
-const ManyToOne = createToken({ name: 'ManyToOne', pattern: />-|->/ })
-const OneToMany = createToken({ name: 'ManyToOne', pattern: /-<|<-/ })
-const OneToOne = createToken({ name: 'ManyToOne', pattern: /--/ })
-const ManyToMany = createToken({ name: 'ManyToOne', pattern: /><|<>/ })
+const Dot = createToken({ name: 'Dot', pattern: /\./ })
 const Comma = createToken({ name: 'Comma', pattern: /,/ })
 const Colon = createToken({ name: 'Colon', pattern: /:/ })
+const Equal = createToken({ name: 'Equal', pattern: /=/ })
+const Dash = createToken({ name: 'Dash', pattern: /-/ })
+const GreaterThan = createToken({ name: 'GreaterThan', pattern: />/ })
+const LowerThan = createToken({ name: 'LowerThan', pattern: /</ })
+const LParen = createToken({ name: 'LParen', pattern: /\(/ })
+const RParen = createToken({ name: 'RParen', pattern: /\)/ })
 const LCurly = createToken({ name: 'LCurly', pattern: /\{/ })
 const RCurly = createToken({ name: 'RCurly', pattern: /\}/ })
-const charTokens: TokenType[] = [ManyToOne, OneToMany, OneToOne, ManyToMany, Comma, Colon, LCurly, RCurly]
+const charTokens: TokenType[] = [Dot, Comma, Colon, Equal, Dash, GreaterThan, LowerThan, LParen, RParen, LCurly, RCurly]
 
 // token order is important as they are tried in order, so the Identifier must be last
 const allTokens: TokenType[] = [WhiteSpace, ...charTokens, ...keywordTokens, ...valueTokens, Identifier, Note, Comment]
@@ -41,14 +51,30 @@ export type ParserResult<T> = {
     warnings?: ParserError[]
 }
 
-export type AmlAst = AmlStatementAst[]
-export type AmlStatementAst = AmlEntityAst | AmlRelationAst | AmlTypeAst
-export type AmlEntityAst = { command: 'ENTITY' }
-export type AmlRelationAst = { command: 'RELATION' }
-export type AmlTypeAst = { command: 'TYPE' }
+export type AmlAst = StatementAst[]
+export type StatementAst = EntityAst | RelationAst | TypeAst
+export type EntityAst = { command: 'ENTITY' }
+export type RelationAst = { command: 'RELATION', kind: RelationKindAst, src: ColumnRefCompositeAst, ref: ColumnRefCompositeAst, polymorphic?: RelationPolymorphicAst } & ExtraAst
+export type TypeAst = { command: 'TYPE' }
 
+export type ColumnAst = {name: IdentifierAst, type?: IdentifierAst, nullable?: {parser: TokenInfo}} & ColumnConstraintsAst & ExtraAst
+export type ColumnConstraintsAst = {primaryKey?: {parser: TokenInfo}, index?: ColumnConstraintAst, unique?: ColumnConstraintAst, check?: ColumnConstraintAst}
+export type ColumnConstraintAst = {parser: TokenInfo, value?: IdentifierAst}
+
+export type RelationCardinalityAst = '1' | 'n'
+export type RelationKindAst = `${RelationCardinalityAst}-${RelationCardinalityAst}`
+export type RelationPolymorphicAst = { column: ColumnPathAst, value: ColumnValueAst }
+
+export type EntityRefAst = { entity: IdentifierAst, schema?: IdentifierAst, catalog?: IdentifierAst, database?: IdentifierAst }
+export type ColumnPathAst = IdentifierAst & { path?: IdentifierAst[] }
+export type ColumnRefAst = EntityRefAst & { column: ColumnPathAst }
+export type ColumnRefCompositeAst = EntityRefAst & { columns: ColumnPathAst[] }
+export type ColumnValueAst = IdentifierAst | IntegerAst
+
+export type ExtraAst = { properties?: PropertiesAst, note?: NoteAst, comment?: CommentAst }
 export type PropertiesAst = PropertyAst[]
-export type PropertyAst = {key: IdentifierAst, value?: IdentifierAst | IntegerAst}
+export type PropertyAst = {key: IdentifierAst, value?: PropertyValueAst}
+export type PropertyValueAst = IdentifierAst | IntegerAst
 export type NoteAst = {note: string, parser: TokenInfo}
 export type CommentAst = {comment: string, parser: TokenInfo}
 export type IdentifierAst = {identifier: string, parser: TokenInfo}
@@ -61,9 +87,19 @@ class AmlParser extends EmbeddedActionsParser {
     commentRule: () => CommentAst
     noteRule: () => NoteAst
     propertiesRule: () => PropertiesAst
+    extraRule: () => ExtraAst
+    entityRefRule: () => EntityRefAst
+    columnPathRule: () => ColumnPathAst
+    columnRefRule: () => ColumnRefAst
+    columnRefCompositeRule: () => ColumnRefCompositeAst
+    columnValueRule: () => ColumnValueAst
 
     // entity
+    columnRule: () => ColumnAst
+
     // relation
+    relationRule: () => RelationAst
+
     // type
     // general
     // amlStatementRule: () => AmlStatementAst
@@ -98,28 +134,151 @@ class AmlParser extends EmbeddedActionsParser {
             return {note: token.image.slice(1).trim(), parser: parserInfo(token)}
         })
 
+        const propertyValueRule = $.RULE<() => PropertyValueAst>('propertyValueRule', () => {
+            return $.OR([
+                { ALT: () => $.SUBRULE($.identifierRule) },
+                { ALT: () => $.SUBRULE($.integerRule) },
+            ])
+        })
+        const propertyRule = $.RULE<() => PropertyAst>('propertyRule', () => {
+            const key = $.SUBRULE($.identifierRule)
+            const value = $.OPTION(() => {
+                $.CONSUME(Colon)
+                return $.SUBRULE(propertyValueRule)
+            })
+            return {key, value}
+        })
         this.propertiesRule = $.RULE<() => PropertiesAst>('propertiesRule', () => {
             const props: PropertiesAst = []
             $.CONSUME(LCurly)
             $.MANY_SEP({
                 SEP: Comma,
-                DEF: () => {
-                    const key = $.SUBRULE($.identifierRule)
-                    const value = $.OPTION(() => {
-                        $.CONSUME(Colon)
-                        return $.OR([
-                            { ALT: () => $.SUBRULE2($.identifierRule) },
-                            { ALT: () => $.SUBRULE3($.integerRule) },
-                        ])
-                    })
-                    props.push({key, value})
-                }
+                DEF: () => props.push($.SUBRULE(propertyRule))
             })
             $.CONSUME(RCurly)
             return props
         })
 
+        this.extraRule = $.RULE<() => ExtraAst>('extraRule', () => {
+            const properties = $.OPTION(() => $.SUBRULE($.propertiesRule))
+            const note = $.OPTION2(() => $.SUBRULE2($.noteRule))
+            const comment = $.OPTION3(() => $.SUBRULE3($.commentRule))
+            return removeUndefined({properties, note, comment})
+        })
+
+        const nestedRule = $.RULE<() => IdentifierAst>('nestedRule', () => {
+            $.CONSUME(Dot)
+            return $.SUBRULE($.identifierRule)
+        })
+
+        this.entityRefRule = $.RULE<() => EntityRefAst>('entityRefRule', () => {
+            const first = $.SUBRULE($.identifierRule)
+            const second = $.OPTION(() => $.SUBRULE(nestedRule))
+            const third = $.OPTION2(() => $.SUBRULE2(nestedRule))
+            const fourth = $.OPTION3(() => $.SUBRULE3(nestedRule))
+            const [entity, schema, catalog, database] = [fourth, third, second, first].filter(i => !!i)
+            return removeUndefined({entity: entity || first, schema, catalog, database})
+        })
+
+        this.columnPathRule = $.RULE<() => ColumnPathAst>('columnPathRule', () => {
+            const column = $.SUBRULE($.identifierRule)
+            const path: IdentifierAst[] = []
+            $.MANY(() => path.push($.SUBRULE(nestedRule)))
+            return removeEmpty({...column, path})
+        })
+
+        this.columnRefRule = $.RULE<() => ColumnRefAst>('columnRefRule', () => {
+            const entity = $.SUBRULE($.entityRefRule)
+            $.CONSUME(LParen)
+            const column = $.SUBRULE($.columnPathRule)
+            $.CONSUME(RParen)
+            return {...entity, column}
+        })
+
+        this.columnRefCompositeRule = $.RULE<() => ColumnRefCompositeAst>('columnRefCompositeRule', () => {
+            const entity = $.SUBRULE($.entityRefRule)
+            $.CONSUME(LParen)
+            const columns: ColumnPathAst[] = []
+            $.AT_LEAST_ONE_SEP({
+                SEP: Comma,
+                DEF: () => columns.push($.SUBRULE($.columnPathRule))
+            })
+            $.CONSUME(RParen)
+            return {...entity, columns}
+        })
+
+        this.columnValueRule = $.RULE<() => ColumnValueAst>('columnValueRule', () => {
+            return $.OR([
+                { ALT: () => $.SUBRULE($.identifierRule) },
+                { ALT: () => $.SUBRULE($.integerRule) },
+            ])
+        })
+
         // entity rules
+        const columnConstraintsRule = $.RULE<() => ColumnConstraintsAst>('columnConstraintsRule', () => {
+            const pk = $.OPTION(() => $.CONSUME(PrimaryKey))
+            const primaryKey = pk ? {parser: parserInfo(pk)} : undefined
+            const index = $.OPTION2(() => {
+                const token = $.CONSUME(Index)
+                const value = $.OPTION3(() => {
+                    $.CONSUME(Equal)
+                    return $.SUBRULE($.identifierRule)
+                })
+                return removeUndefined({parser: parserInfo(token), value})
+            })
+            const unique = $.OPTION4(() => {
+                const token = $.CONSUME(Unique)
+                const value = $.OPTION5(() => {
+                    $.CONSUME2(Equal)
+                    return $.SUBRULE2($.identifierRule)
+                })
+                return removeUndefined({parser: parserInfo(token), value})
+            })
+            const check = $.OPTION6(() => {
+                const token = $.CONSUME(Check)
+                const value = $.OPTION7(() => {
+                    $.CONSUME3(Equal)
+                    return $.SUBRULE3($.identifierRule)
+                })
+                return removeUndefined({parser: parserInfo(token), value})
+            })
+            return removeUndefined({primaryKey, index, unique, check})
+        })
+        this.columnRule = $.RULE<() => ColumnAst>('columnRule', () => {
+            const name = $.SUBRULE($.identifierRule)
+            const type = $.OPTION(() => $.SUBRULE2($.identifierRule))
+            const isNull = $.OPTION2(() => $.CONSUME(Nullable))
+            const nullable = isNull ? {parser: parserInfo(isNull)} : undefined
+            const constraints = $.SUBRULE(columnConstraintsRule)
+            // TODO rel
+            const extra = $.SUBRULE($.extraRule)
+            return removeUndefined({name, type, nullable, ...constraints, ...extra})
+        })
+
+        // relation rules
+        const relationCardinalityRule = $.RULE<() => RelationCardinalityAst>('relationCardinalityRule', () => {
+            return $.OR([
+                { ALT: () => { $.CONSUME(Dash); return '1' } },
+                { ALT: () => { $.CONSUME(LowerThan); return 'n' } },
+                { ALT: () => { $.CONSUME(GreaterThan); return 'n' } },
+            ])
+        })
+        const relationPolymorphicRule = $.RULE<() => RelationPolymorphicAst>('relationPolymorphicRule', () => {
+            const column = $.SUBRULE($.columnPathRule)
+            $.CONSUME(Equal)
+            const value = $.SUBRULE($.columnValueRule)
+            return {column, value}
+        })
+        this.relationRule = $.RULE<() => RelationAst>('relationRule', () => {
+            $.CONSUME(Relation)
+            const src = $.SUBRULE($.columnRefCompositeRule)
+            const refCardinality = $.SUBRULE(relationCardinalityRule)
+            const polymorphic = $.OPTION(() => $.SUBRULE(relationPolymorphicRule))
+            const srcCardinality = $.SUBRULE2(relationCardinalityRule)
+            const ref = $.SUBRULE2($.columnRefCompositeRule)
+            const extra = $.SUBRULE($.extraRule)
+            return removeUndefined({command: 'RELATION', kind: `${srcCardinality}-${refCardinality}`, src, ref, polymorphic, ...extra} as RelationAst)
+        })
 
         // general rules
         /*this.amlStatementRule = $.RULE<() => AmlStatementAst>('amlStatementRule', () => {
