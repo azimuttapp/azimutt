@@ -7,6 +7,7 @@ export function mapValues<T, U>(obj: Record<string, T>, f: (t: T) => U): Record<
 export function filterValues<K extends keyof any, V, T extends Record<K, V>>(obj: T, p: (v: V) => boolean): T {
     return Object.fromEntries(Object.entries(obj).filter(([, v]) => p(v as V))) as T
 }
+
 export function removeUndefined<K extends keyof any, V, T extends Record<K, V>>(obj: T): T {
     return filterValues(obj, v => v !== undefined)
 }

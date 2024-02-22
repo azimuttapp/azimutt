@@ -66,6 +66,13 @@ describe('url', () => {
             kind: 'postgres',
             host: 'postgres0.example.com',
         })
+        expect(parseDatabaseUrl('postgres://user:@postgres0.example.com')).toEqual({
+            full: 'postgres://user:@postgres0.example.com',
+            kind: 'postgres',
+            user: 'user',
+            pass: '',
+            host: 'postgres0.example.com',
+        })
         expect(parseDatabaseUrl('jdbc:postgresql://user:pass@postgres0.example.com:5432/my_db?ssmode=require')).toEqual({
             full: 'jdbc:postgresql://user:pass@postgres0.example.com:5432/my_db?ssmode=require',
             kind: 'postgres',

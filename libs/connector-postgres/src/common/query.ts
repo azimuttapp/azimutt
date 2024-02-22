@@ -1,3 +1,4 @@
+import {indexBy} from "@azimutt/utils";
 import {DatabaseQueryResults, DatabaseQueryResultsColumn} from "@azimutt/database-types";
 import {Conn, QueryResultArrayMode, QueryResultField} from "./types";
 
@@ -68,10 +69,3 @@ function uniqueName(name: string, currentNames: { [key: string]: true }, cpt: nu
         return newName
     }
 }
-
-// TODO: remove once using the one from libs/utils/src/array.ts:18
-const indexBy = <T, K extends keyof any>(list: T[], getKey: (item: T) => K): Record<K, T> =>
-    list.reduce((acc, item) => {
-        acc[getKey(item)] = item
-        return acc
-    }, {} as Record<K, T>)

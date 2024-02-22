@@ -1,6 +1,6 @@
 {
   "name": "@azimutt/database-types",
-  "version": "0.0.14",
+  "version": "0.0.15",
   "description": "Define common types and utils for other Azimutt packages like connectors",
   "keywords": [],
   "homepage": "https://azimutt.app",
@@ -25,7 +25,7 @@
     "dry-publish": "npm run build && npm test && npm pack"
   },
   "dependencies": {
-    "@azimutt/utils": "^0.0.5",
+    "@azimutt/utils": "^0.0.6",
     "zod": "3.22.4"
   },
   "devDependencies": {
