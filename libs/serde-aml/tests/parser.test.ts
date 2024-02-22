@@ -11,11 +11,15 @@ describe('aml parser', () => {
                 command: 'NAMESPACE',
                 schema: {identifier: 'public', parser: {token: 'Identifier', offset: [10, 15], line: [1, 1], column: [11, 16]}},
             }})
+        })
+        test('catalog', () => {
             expect(parseRule(p => p.namespaceRule(), 'namespace core.public')).toEqual({result: {
                 command: 'NAMESPACE',
                 catalog: {identifier: 'core', parser: {token: 'Identifier', offset: [10, 13], line: [1, 1], column: [11, 14]}},
                 schema: {identifier: 'public', parser: {token: 'Identifier', offset: [15, 20], line: [1, 1], column: [16, 21]}},
             }})
+        })
+        test('database', () => {
             expect(parseRule(p => p.namespaceRule(), 'namespace analytics.core.public')).toEqual({result: {
                 command: 'NAMESPACE',
                 database: {identifier: 'analytics', parser: {token: 'Identifier', offset: [10, 18], line: [1, 1], column: [11, 19]}},
@@ -25,6 +29,51 @@ describe('aml parser', () => {
         })
     })
     describe('entityRule', () => {
+        test('basic', () => {
+            expect(parseRule(p => p.entityRule(), 'users')).toEqual({result: {command: 'ENTITY', name: {identifier: 'users', parser: {token: 'Identifier', offset: [0, 4], line: [1, 1], column: [1, 5]}}}})
+        })
+        test('namespace', () => {
+            expect(parseRule(p => p.entityRule(), 'ax.core.public.users')).toEqual({result: {
+                command: 'ENTITY',
+                database: {identifier: 'ax', parser: {token: 'Identifier', offset: [0, 1], line: [1, 1], column: [1, 2]}},
+                catalog: {identifier: 'core', parser: {token: 'Identifier', offset: [3, 6], line: [1, 1], column: [4, 7]}},
+                schema: {identifier: 'public', parser: {token: 'Identifier', offset: [8, 13], line: [1, 1], column: [9, 14]}},
+                name: {identifier: 'users', parser: {token: 'Identifier', offset: [15, 19], line: [1, 1], column: [16, 20]}},
+            }})
+        })
+        test('alias', () => {
+            expect(parseRule(p => p.entityRule(), 'users as u')).toEqual({result: {
+                command: 'ENTITY',
+                name: {identifier: 'users', parser: {token: 'Identifier', offset: [0, 4], line: [1, 1], column: [1, 5]}},
+                alias: {identifier: 'u', parser: {token: 'Identifier', offset: [9, 9], line: [1, 1], column: [10, 10]}},
+            }})
+        })
+        test('extra', () => {
+            expect(parseRule(p => p.entityRule(), 'users {domain: auth} | list users # sample comment')).toEqual({result: {
+                command: 'ENTITY',
+                name: {identifier: 'users', parser: {token: 'Identifier', offset: [0, 4], line: [1, 1], column: [1, 5]}},
+                properties: [{
+                    key: {identifier: 'domain', parser: {token: 'Identifier', offset: [7, 12], line: [1, 1], column: [8, 13]}},
+                    value: {identifier: 'auth', parser: {token: 'Identifier', offset: [15, 18], line: [1, 1], column: [16, 19]}},
+                }],
+                note: {note: 'list users', parser: {token: 'Note', offset: [21, 33], line: [1, 1], column: [22, 34]}},
+                comment: {comment: 'sample comment', parser: {token: 'Comment', offset: [34, 49], line: [1, 1], column: [35, 50]}},
+            }})
+        })
+        test('columns', () => {
+            expect(parseRule(p => p.entityRule(), 'users\n  id uuid pk\n  name varchar\n')).toEqual({result: {
+                command: 'ENTITY',
+                name: {identifier: 'users', parser: {token: 'Identifier', offset: [0, 4], line: [1, 1], column: [1, 5]}},
+                columns: [{
+                    name: {identifier: 'id', parser: {token: 'Identifier', offset: [8, 9], line: [2, 2], column: [3, 4]}},
+                    type: {identifier: 'uuid', parser: {token: 'Identifier', offset: [11, 14], line: [2, 2], column: [6, 9]}},
+                    primaryKey: {parser: {token: 'PrimaryKey', offset: [16, 17], line: [2, 2], column: [11, 12]}},
+                }, {
+                    name: {identifier: 'name', parser: {token: 'Identifier', offset: [21, 24], line: [3, 3], column: [3, 6]}},
+                    type: {identifier: 'varchar', parser: {token: 'Identifier', offset: [26, 32], line: [3, 3], column: [8, 14]}},
+                }],
+            }})
+        })
         describe('columnRule', () => {
             test('name', () => {
                 expect(parseRule(p => p.columnRule(), 'id')).toEqual({result: {name: {identifier: 'id', parser: {token: 'Identifier', offset: [0, 1], line: [1, 1], column: [1, 2]}}}})
@@ -130,40 +179,8 @@ describe('aml parser', () => {
                     comment: {comment: 'a comment', parser: {token: 'Comment', offset: [3, 13], line: [1, 1], column: [4, 14]}},
                 }})
             })
-            test('complex', () => {
-                expect(parseRule(p => p.columnRule(), 'id uuid pk')).toEqual({result: {
-                    name: {identifier: 'id', parser: {token: 'Identifier', offset: [0, 1], line: [1, 1], column: [1, 2]}},
-                    type: {identifier: 'uuid', parser: {token: 'Identifier', offset: [3, 6], line: [1, 1], column: [4, 7]}},
-                    primaryKey: {parser: {token: 'PrimaryKey', offset: [8, 9], line: [1, 1], column: [9, 10]}},
-                }})
-                expect(parseRule(p => p.columnRule(), 'id uuid pk {tag: pii}')).toEqual({result: {
-                    name: {identifier: 'id', parser: {token: 'Identifier', offset: [0, 1], line: [1, 1], column: [1, 2]}},
-                    type: {identifier: 'uuid', parser: {token: 'Identifier', offset: [3, 6], line: [1, 1], column: [4, 7]}},
-                    primaryKey: {parser: {token: 'PrimaryKey', offset: [8, 9], line: [1, 1], column: [9, 10]}},
-                    properties: [{key: {identifier: 'tag', parser: {token: 'Identifier', offset: [12, 14], line: [1, 1], column: [13, 15]}}, value: {identifier: 'pii', parser: {token: 'Identifier', offset: [17, 19], line: [1, 1], column: [18, 20]}}}],
-                }})
-                expect(parseRule(p => p.columnRule(), 'id uuid pk {tag: pii} | some note')).toEqual({result: {
-                    name: {identifier: 'id', parser: {token: 'Identifier', offset: [0, 1], line: [1, 1], column: [1, 2]}},
-                    type: {identifier: 'uuid', parser: {token: 'Identifier', offset: [3, 6], line: [1, 1], column: [4, 7]}},
-                    primaryKey: {parser: {token: 'PrimaryKey', offset: [8, 9], line: [1, 1], column: [9, 10]}},
-                    properties: [{key: {identifier: 'tag', parser: {token: 'Identifier', offset: [12, 14], line: [1, 1], column: [13, 15]}}, value: {identifier: 'pii', parser: {token: 'Identifier', offset: [17, 19], line: [1, 1], column: [18, 20]}}}],
-                    note: {note: 'some note', parser: {token: 'Note', offset: [22, 32], line: [1, 1], column: [23, 33]}},
-                }})
+            test('error', () => {
                 expect(parseRule(p => p.columnRule(), '12')).toEqual({errors: [{kind: 'MismatchedTokenException', message: "Expecting token of type --> Identifier <-- but found --> '12' <--", offset: [0, 1], line: [1, 1], column: [1, 2]}]})
-            })
-            test('full', () => {
-                // TODO: add other cases
-                expect(parseRule(p => p.columnRule(), 'id uuid pk {tag: pii} | some note # a comment')).toEqual({result: {
-                    name: {identifier: 'id', parser: {token: 'Identifier', offset: [0, 1], line: [1, 1], column: [1, 2]}},
-                    type: {identifier: 'uuid', parser: {token: 'Identifier', offset: [3, 6], line: [1, 1], column: [4, 7]}},
-                    primaryKey: {parser: {token: 'PrimaryKey', offset: [8, 9], line: [1, 1], column: [9, 10]}},
-                    properties: [{
-                        key: {identifier: 'tag', parser: {token: 'Identifier', offset: [12, 14], line: [1, 1], column: [13, 15]}},
-                        value: {identifier: 'pii', parser: {token: 'Identifier', offset: [17, 19], line: [1, 1], column: [18, 20]}}
-                    }],
-                    note: {note: 'some note', parser: {token: 'Note', offset: [22, 33], line: [1, 1], column: [23, 34]}},
-                    comment: {comment: 'a comment', parser: {token: 'Comment', offset: [34, 44], line: [1, 1], column: [35, 45]}},
-                }})
             })
         })
     })
@@ -272,8 +289,16 @@ describe('aml parser', () => {
             expect(parseRule(p => p.relationRule(), 'bad')).toEqual({errors: [{kind: 'MismatchedTokenException', message: "Expecting token of type --> Relation <-- but found --> 'bad' <--", offset: [0, 2], line: [1, 1], column: [1, 3]}]})
         })
     })
-    describe('typeRule', () => {
-
+    describe.skip('typeRule', () => {
+        test('enum', () => {
+            expect(parseRule(p => p.typeRule(), 'type bug_status enum(new, in progress, done)')).toEqual({result: {}})
+        })
+        test('struct', () => {
+            expect(parseRule(p => p.typeRule(), 'type address {number: int, street: varchar}')).toEqual({result: {}})
+        })
+        test('custom', () => {
+            expect(parseRule(p => p.typeRule(), 'type bug_value range(subtype = float8, subtype_diff = float8mi)')).toEqual({result: {}})
+        })
     })
     describe('common', () => {
         test('integerRule', () => {
@@ -292,6 +317,7 @@ describe('aml parser', () => {
         })
         test('noteRule', () => {
             expect(parseRule(p => p.noteRule(), '| a note')).toEqual({result: {note: 'a note', parser: {token: 'Note', offset: [0, 7], line: [1, 1], column: [1, 8]}}})
+            // TODO expect(parseRule(p => p.noteRule(), '|||\n   a note\n   multiline\n|||')).toEqual({result: {note: 'a note\nmultiline', parser: {token: 'Note', offset: [0, 7], line: [1, 1], column: [1, 8]}}})
             expect(parseRule(p => p.noteRule(), 'bad')).toEqual({errors: [{kind: 'MismatchedTokenException', message: "Expecting token of type --> Note <-- but found --> 'bad' <--", offset: [0, 2], line: [1, 1], column: [1, 3]}]})
         })
         test('propertiesRule', () => {

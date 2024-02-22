@@ -5,8 +5,9 @@ import {removeEmpty} from "./utils";
 // special
 const WhiteSpace = createToken({name: 'WhiteSpace', pattern: /\s+/, group: Lexer.SKIPPED})
 const Identifier = createToken({ name: 'Identifier', pattern: /"([^\\"]|\\\\|\\")*"|[a-zA-Z]\w*/ })
-const Note = createToken({ name: 'Note', pattern: /\|[^#]+/ })
-const Comment = createToken({ name: 'Comment', pattern: /#.*/ })
+const Note = createToken({ name: 'Note', pattern: /\|[^#\n]*/ })
+// const NoteMultiline = createToken({ name: 'NoteMultiline', pattern: /\|\|\|.*\|\|\|/ })
+const Comment = createToken({ name: 'Comment', pattern: /#[^\n]*/ })
 
 // values
 const Float = createToken({ name: 'Float', pattern: /\d+\.\d+/ })
@@ -17,6 +18,7 @@ const valueTokens: TokenType[] = [Integer, Float, String, Boolean]
 
 // keywords
 const Namespace = createToken({ name: 'Namespace', pattern: /namespace/, longer_alt: Identifier })
+const As = createToken({ name: 'As', pattern: /as/, longer_alt: Identifier })
 const Nullable = createToken({ name: 'Nullable', pattern: /nullable/, longer_alt: Identifier })
 const PrimaryKey = createToken({ name: 'PrimaryKey', pattern: /pk/, longer_alt: Identifier })
 const Index = createToken({ name: 'Index', pattern: /index/, longer_alt: Identifier })
@@ -24,7 +26,8 @@ const Unique = createToken({ name: 'Unique', pattern: /unique/, longer_alt: Iden
 const Check = createToken({ name: 'Check', pattern: /check/, longer_alt: Identifier })
 const Relation = createToken({ name: 'Relation', pattern: /rel/, longer_alt: Identifier })
 const Type = createToken({ name: 'Type', pattern: /type/, longer_alt: Identifier })
-const keywordTokens: TokenType[] = [Namespace, Nullable, PrimaryKey, Index, Unique, Check, Relation, Type]
+const Enum = createToken({ name: 'Enum', pattern: /enum/, longer_alt: Identifier })
+const keywordTokens: TokenType[] = [Namespace, As, Nullable, PrimaryKey, Index, Unique, Check, Relation, Type]
 
 // chars
 const Dot = createToken({ name: 'Dot', pattern: /\./ })
@@ -55,9 +58,9 @@ export type ParserResult<T> = {
 export type AmlAst = StatementAst[]
 export type StatementAst = NamespaceAst | EntityAst | RelationAst | TypeAst
 export type NamespaceAst = { command: 'NAMESPACE', schema: IdentifierAst, catalog?: IdentifierAst, database?: IdentifierAst }
-export type EntityAst = { command: 'ENTITY' }
+export type EntityAst = { command: 'ENTITY', name: IdentifierAst, alias?: IdentifierAst, columns: ColumnAst[] } & NamespaceRefAst & ExtraAst
 export type RelationAst = { command: 'RELATION', kind: RelationKindAst, src: ColumnRefCompositeAst, ref: ColumnRefCompositeAst, polymorphic?: RelationPolymorphicAst } & ExtraAst
-export type TypeAst = { command: 'TYPE' }
+export type TypeAst = { command: 'TYPE', name: IdentifierAst, content: TypeEnumAst | TypeStructAst | TypeCustomAst }
 
 export type ColumnAst = { name: IdentifierAst, nullable?: {parser: TokenInfo} } & ColumnTypeAst & ColumnConstraintsAst & { relation?: ColumnRelationAst } & ExtraAst
 export type ColumnTypeAst = { type?: IdentifierAst, enumValues?: ColumnValueAst[], defaultValue?: ColumnValueAst }
@@ -69,7 +72,12 @@ export type RelationCardinalityAst = '1' | 'n'
 export type RelationKindAst = `${RelationCardinalityAst}-${RelationCardinalityAst}`
 export type RelationPolymorphicAst = { column: ColumnPathAst, value: ColumnValueAst }
 
-export type EntityRefAst = { entity: IdentifierAst, schema?: IdentifierAst, catalog?: IdentifierAst, database?: IdentifierAst }
+export type TypeEnumAst = { kind: 'enum', values: ColumnValueAst[] }
+export type TypeStructAst = { kind: 'struct', columns: ColumnAst[] }
+export type TypeCustomAst = { kind: 'custom', definition: IdentifierAst }
+
+export type NamespaceRefAst = { schema?: IdentifierAst, catalog?: IdentifierAst, database?: IdentifierAst }
+export type EntityRefAst = { entity: IdentifierAst } & NamespaceRefAst
 export type ColumnPathAst = IdentifierAst & { path?: IdentifierAst[] }
 export type ColumnRefAst = EntityRefAst & { column: ColumnPathAst }
 export type ColumnRefCompositeAst = EntityRefAst & { columns: ColumnPathAst[] }
@@ -103,11 +111,14 @@ class AmlParser extends EmbeddedActionsParser {
 
     // entity
     columnRule: () => ColumnAst
+    entityRule: () => EntityAst
 
     // relation
     relationRule: () => RelationAst
 
     // type
+    typeRule: () => TypeAst
+
     // general
     // amlStatementRule: () => AmlStatementAst
     // amlRule: () => AmlAst
@@ -137,6 +148,16 @@ class AmlParser extends EmbeddedActionsParser {
         })
 
         this.noteRule = $.RULE<() => NoteAst>('noteRule', () => {
+            /*return $.OR([
+                { ALT: () => {
+                    const token = $.CONSUME(NoteMultiline)
+                    return {note: token.image.slice(1).trim(), parser: parserInfo(token)}
+                }},
+                { ALT: () => {
+                    const token = $.CONSUME(Note)
+                    return {note: token.image.slice(1).trim(), parser: parserInfo(token)}
+                }},
+            ])*/
             const token = $.CONSUME(Note)
             return {note: token.image.slice(1).trim(), parser: parserInfo(token)}
         })
@@ -301,6 +322,18 @@ class AmlParser extends EmbeddedActionsParser {
             return removeUndefined({name, type, enumValues, defaultValue, nullable, ...constraints, relation, ...extra})
         })
 
+        this.entityRule = $.RULE<() => EntityAst>('entityRule', () => {
+            const {entity, ...namespace} = $.SUBRULE($.entityRefRule)
+            const alias = $.OPTION(() => {
+                $.CONSUME(As)
+                return $.SUBRULE($.identifierRule)
+            })
+            const extra = $.SUBRULE($.extraRule)
+            const columns: ColumnAst[] = []
+            $.MANY(() => columns.push($.SUBRULE($.columnRule)))
+            return removeEmpty({command: 'ENTITY', name: entity, ...namespace, alias, ...extra, columns} as EntityAst)
+        })
+
         // relation rules
         const relationCardinalityRule = $.RULE<() => RelationCardinalityAst>('relationCardinalityRule', () => {
             return $.OR([
@@ -322,6 +355,39 @@ class AmlParser extends EmbeddedActionsParser {
             const extra = $.SUBRULE($.extraRule)
             return removeUndefined({command: 'RELATION', kind, src, ref, polymorphic, ...extra} as RelationAst)
         })
+
+        // type rules
+        const typeEnumRule = $.RULE<() => TypeEnumAst>('typeEnumRule', () => {
+            $.CONSUME(Enum)
+            $.CONSUME(LParen)
+            const values: ColumnValueAst[] = []
+            // TODO
+            $.CONSUME(RParen)
+            return { kind: 'enum', values }
+        })
+        const typeStructRule = $.RULE<() => TypeStructAst>('typeStructRule', () => {
+            $.CONSUME(LCurly)
+            const columns: ColumnAst[] = []
+            // TODO
+            $.CONSUME(RCurly)
+            return { kind: 'struct', columns }
+        })
+        const typeCustomRule = $.RULE<() => TypeCustomAst>('typeCustomRule', () => {
+            // TODO
+            const definition = $.SUBRULE($.identifierRule)
+            return { kind: 'custom', definition }
+        })
+        this.typeRule = $.RULE<() => TypeAst>('typeRule', () => {
+            $.CONSUME(Type)
+            const name = $.SUBRULE($.identifierRule)
+            const content = $.OR([
+                { ALT: () => $.SUBRULE(typeEnumRule) },
+                { ALT: () => $.SUBRULE(typeStructRule) },
+                { ALT: () => $.SUBRULE(typeCustomRule) },
+            ])
+            return {command: 'TYPE', name, content}
+        })
+
 
         // general rules
         /*this.amlStatementRule = $.RULE<() => AmlStatementAst>('amlStatementRule', () => {
