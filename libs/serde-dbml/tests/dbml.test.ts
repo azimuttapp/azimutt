@@ -1,7 +1,10 @@
 import * as fs from "fs";
 import {describe, expect, test} from "@jest/globals";
+import {ModelExporter, Parser} from "@dbml/core";
+import DbmlDatabase from "@dbml/core/types/model_structure/database";
 import {Database} from "@azimutt/database-model";
 import {generate, parse, reformat} from "../src/dbml";
+import {JsonDatabase} from "../src/jsonDatabase";
 
 describe('dbml', () => {
     test('basic schema',  async () => {
@@ -87,5 +90,54 @@ Ref:"users"."id" < "posts"."author"
             {message: "A Custom element shouldn't have a name", start: {line: 3, column: 15}, end: {line: 3, column: 17}}
         ]
         await expect(parse(source)).rejects.toEqual(error)
+    })
+    test.skip('test',   () => {
+        const source = `Table users {
+  id integer [primary key]
+  name varchar
+}
+
+enum demo.job_status {
+    created [note: 'Waiting to be processed']
+    running
+    done
+    failure
+}
+`
+        const db: DbmlDatabase = (new Parser(undefined)).parse(source, 'dbmlv2')
+        const json = ModelExporter.export(db, 'json', false)
+        const jsonDb: JsonDatabase = JSON.parse(json)
+        console.log('json', jsonDb)
+
+        // JSON parser fails with tableGroups :/
+        const db2: DbmlDatabase = (new Parser(undefined)).parse(json, 'json')
+        const res = ModelExporter.export(db2, 'dbml', false)
+        console.log('res', res)
+    })
+    test.skip('https://github.com/holistics/dbml/issues/514',  () => {
+        const content = `Table users {
+                id integer
+                username varchar
+                role varchar
+                created_at timestamp
+            }
+
+            Table posts {
+                id integer [primary key]
+                title varchar
+                body text [note: 'Content of the post']
+                user_id integer
+                created_at timestamp
+            }
+
+            Ref: posts.user_id > users.id // many-to-one
+        `
+        const dbFromDbml = (new Parser(undefined)).parse(content, 'dbmlv2')
+        const json: string = ModelExporter.export(dbFromDbml, 'json', false)
+        console.log('json', json)
+        const dbFromJson = (new Parser(undefined)).parse(json, 'json')
+        console.log('json parsed!')
+        const generated = ModelExporter.export(dbFromJson, 'dbml', false)
+        console.log('dbml generated', generated)
     })
 })

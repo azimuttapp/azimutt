@@ -94,6 +94,20 @@ describe('chevrotain parser', () => {
             // TODO: IS NOT NULL, OR, AND
         })
     })
+    describe.skip('create table', () => {
+        test('basic', () => {
+            const res = parse('CREATE TABLE users (id integer, name varchar);')
+            console.log('res', res)
+            expect(res).toEqual({result: [{
+                command: 'CREATE_TABLE',
+                table: {identifier: 'users', parser: {token: 'Identifier', offset: [13, 17], line: [1, 1], column: [14, 18]}},
+                columns: [
+                    {name: {identifier: 'id', parser: {token: 'Identifier', offset: [20, 21], line: [1, 1], column: [21, 22]}}, type: {identifier: 'integer', parser: {token: 'Identifier', offset: [23, 29], line: [1, 1], column: [24, 30]}}},
+                    {name: {identifier: 'name', parser: {token: 'Identifier', offset: [31, 34], line: [1, 1], column: [32, 35]}}, type: {identifier: 'varchar', parser: {token: 'Identifier', offset: [36, 42], line: [1, 1], column: [37, 43]}}},
+                ]
+            }]})
+        })
+    })
     describe('common', () => {
         test('integerRule', () => {
             expect(parseRule(p => p.integerRule(), '12')).toEqual({result: {value: 12, parser: {token: 'Integer', offset: [0, 1], line: [1, 1], column: [1, 2]}}})

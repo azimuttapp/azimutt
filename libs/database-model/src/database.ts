@@ -3,6 +3,13 @@ import zodToJsonSchema from "zod-to-json-schema";
 
 // read this file from bottom to the top, to have a top-down read ^^
 
+// TODO:
+//   - function to check Database consistency (no relation to non-existing entity, etc)
+//   - function to diff two Database
+//   - function to merge two Database
+//   - convert Database to Project and the reverse
+//   - parseEntityId(EntityId): EntityRef, parseColumnId(ColumnId): ColumnRef, parseColumnType(ColumnType): ColumnTypeParsed
+
 export const DatabaseName = z.string()
 export type DatabaseName = z.infer<typeof DatabaseName>
 export const CatalogName = z.string()

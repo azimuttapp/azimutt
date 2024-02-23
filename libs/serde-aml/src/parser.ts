@@ -92,6 +92,8 @@ export type CommentAst = { comment: string, parser: TokenInfo }
 export type IdentifierAst = { identifier: string, parser: TokenInfo }
 export type IntegerAst = { value: number, parser: TokenInfo }
 
+// TODO: indentation: https://github.com/chevrotain/chevrotain/blob/master/examples/lexer/python_indentation/python_indentation.js
+// TODO: legacy rules
 class AmlParser extends EmbeddedActionsParser {
     // common
     integerRule: () => IntegerAst

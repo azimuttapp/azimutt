@@ -18,7 +18,13 @@ export type WildcardAst = {wildcard: '*', parser: TokenInfo}
 export type ConditionOpAst = {operator: '=' | '!=' | '<' | '>', parser: TokenInfo}
 export type ConditionElemAst = IntegerAst | StringAst | BooleanAst | ColumnRefAst
 export type ConditionAst = {left: ConditionElemAst, operation: ConditionOpAst, right?: ConditionElemAst}
-export type BooleanOperationAst = {left: ConditionAst, rights: {operation: 'AND' | 'OR', condition: ConditionAst}[]}
+
+export type UnaryOperatorAst = {operator: 'NOT'}
+export type UnaryExpressionAst = {operator: UnaryOperatorAst, expression: ExpressionAst}
+export type BinaryOperatorAst = {operator: 'AND' | 'OR'}
+export type BinaryExpressionAst = {left: ExpressionAst, operator: BinaryOperatorAst, right: ExpressionAst}
+export type GroupExpressionAst = {group: ExpressionAst}
+export type ExpressionAst = ConditionAst | BinaryExpressionAst | UnaryExpressionAst | GroupExpressionAst
 
 export type TokenInfo = {token: string, offset: Position, line: Position, column: Position}
 export type ParserResult<T> = {
