@@ -33,7 +33,7 @@ function buildConfig(application: string, url: DatabaseUrlParsed): ClientConfig 
         host: url.host,
         port: url.port,
         user: url.user,
-        password: url.pass,
+        password: url.pass || undefined,
         database: url.db,
         // ssl: { rejectUnauthorized: false } // needs `?sslmode=no-verify` at the end of the connection string
         // TODO: miss url options like sslmode...
