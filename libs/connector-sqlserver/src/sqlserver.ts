@@ -27,9 +27,9 @@ export type SqlserverColumnType = string
 export type SqlserverConstraintName = string
 export type SqlserverTableId = string
 
-export const getSchema = (schema: SqlserverSchemaName | undefined, sampleSize: number, ignoreErrors: boolean, logger: Logger) => async (conn: Conn): Promise<SqlserverSchema> => {
+export const getSchema = (schema: SqlserverSchemaName | undefined, pageSize: number, sampleSize: number, ignoreErrors: boolean, logger: Logger) => async (conn: Conn): Promise<SqlserverSchema> => {
     const constraints = await getAllConstraints(conn, schema, ignoreErrors, logger).then(constraints => mapValues(groupBy(constraints, toTableId), buildTableConstraints))
-    const columns = await getColumns(conn, schema, ignoreErrors, logger)
+    const columns = await getColumns(conn, schema, pageSize, ignoreErrors, logger)
         .then(cols => enrichColumnsWithSchema(conn, cols, constraints, sampleSize, ignoreErrors, logger))
         .then(cols => groupBy(cols, toTableId))
     const comments = await getTableComments(conn, schema, ignoreErrors, logger).then(tables => groupBy(tables, toTableId))
@@ -143,8 +143,13 @@ type RawColumn = {
     column_schema?: ValueSchema
 }
 
-function getColumns(conn: Conn, schema: SqlserverSchemaName | undefined, ignoreErrors: boolean, logger: Logger): Promise<RawColumn[]> {
-    return conn.query<RawColumn>(
+function getColumns(conn: Conn, schema: SqlserverSchemaName | undefined, pageSize: number, ignoreErrors: boolean, logger: Logger): Promise<RawColumn[]> {
+    // pagination needed to avoid too long queries when many columns
+    return getColumnsPages(conn, schema, 0, pageSize, [], ignoreErrors, logger)
+}
+
+async function getColumnsPages(conn: Conn, schema: SqlserverSchemaName | undefined, pageOffset: number, pageSize: number, acc: RawColumn[], ignoreErrors: boolean, logger: Logger): Promise<RawColumn[]> {
+    const res = await conn.query<RawColumn>(
         `SELECT c.TABLE_SCHEMA                  AS "schema",
                 c.TABLE_NAME                    AS "table",
                 t.TABLE_TYPE                    AS table_kind,
@@ -165,8 +170,11 @@ function getColumns(conn: Conn, schema: SqlserverSchemaName | undefined, ignoreE
                    AND sc.name = c.COLUMN_NAME) AS column_comment
          FROM information_schema.COLUMNS c
                   JOIN information_schema.TABLES t ON c.TABLE_SCHEMA = t.TABLE_SCHEMA AND c.TABLE_NAME = t.TABLE_NAME
-         WHERE ${filterSchema('c.TABLE_SCHEMA', schema)};`
+         WHERE ${filterSchema('c.TABLE_SCHEMA', schema)}
+         ORDER BY "schema", "table", column_index
+         OFFSET ${pageOffset} ROWS FETCH NEXT ${pageSize} ROWS ONLY;`
     ).catch(handleError(`Failed to get columns${schema ? ` for schema '${schema}'` : ''}`, [], ignoreErrors, logger))
+    return res.length < pageSize ? acc.concat(res) : getColumnsPages(conn, schema, pageOffset + pageSize, pageSize, acc.concat(res), ignoreErrors, logger)
 }
 
 function enrichColumnsWithSchema(conn: Conn, columns: RawColumn[], constraints: Record<SqlserverTableId, ConstraintFormatted[]>, sampleSize: number, ignoreErrors: boolean, logger: Logger): Promise<RawColumn[]> {
@@ -233,8 +241,7 @@ function getPKsUniquesAndIndexes(conn: Conn, schema: SqlserverSchemaName | undef
                 OBJECT_NAME(i.object_id)            AS "table",
                 i.name                              AS "constraint",
                 CASE
-                    WHEN OBJECTPROPERTY(OBJECT_ID(OBJECT_SCHEMA_NAME(i.object_id) + '.' + QUOTENAME(i.name)),
-                                        'IsPrimaryKey') = 1
+                    WHEN OBJECTPROPERTY(OBJECT_ID(OBJECT_SCHEMA_NAME(i.object_id) + '.' + QUOTENAME(i.name)), 'IsPrimaryKey') = 1
                         THEN 'PRIMARY KEY'
                     WHEN i.is_unique = 1
                         THEN 'UNIQUE'

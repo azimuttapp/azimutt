@@ -3,7 +3,7 @@ import * as mssql from "mssql";
 import {ConnectionPool, IResult} from "mssql";
 import {parseDatabaseUrl} from "@azimutt/database-types";
 import {connect} from "../src/connect";
-import {application} from "./constants";
+import {application, logger} from "./constants";
 import {execQuery} from "../src/common";
 
 // use this test to troubleshoot connection errors
@@ -14,13 +14,13 @@ describe('connect', () => {
     const url = 'Server=host.com,1433;Database=db;User Id=user;Password=pass'
 
     // TODO 2: write a valid query for your database
-    const query = 'SELECT * FROM users LIMIT 2;'
+    const query = 'SELECT TOP 2 * FROM ErrorLog;'
     const parameters: any[] = []
 
     // TODO 3: unskip the this test first
-    test.skip('Azimutt should connect', async () => {
+    test('Azimutt should connect', async () => {
         const parsedUrl = parseDatabaseUrl(url)
-        const results = await connect(application, parsedUrl, execQuery(query, parameters))
+        const results = await connect(application, parsedUrl, execQuery(query, parameters), {logQueries: true, logger})
         console.log('results', results)
     })
 
