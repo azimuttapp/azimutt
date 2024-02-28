@@ -1,5 +1,6 @@
 export * from "./common"
 export * from "./database"
+export * from "./databaseDiff"
 export * from "./databaseUrl"
 export * from "./interfaces/connector"
 export * from "./interfaces/serde"
