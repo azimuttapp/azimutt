@@ -8,13 +8,14 @@ export async function connect<T>(application: string, url: DatabaseUrlParsed, ex
     const connection: ConnectionPool = await mssql.connect(buildconfig(application, url)).catch(_ => mssql.connect(url.full))
     let queryCpt = 1
     const logQueryIfNeeded = <U>(sql: string, exec: (sql: string) => Promise<U>, count: (res: U) => number): Promise<U> => {
+        // TODO: compute query time in ms
         if (logQueries) {
             const queryId = `#${queryCpt++}`
             logger.log(`${queryId} exec: ${sql}`)
             const res = exec(sql)
             res.then(
-                r => logger.log(`${queryId} success: ${count(r)} rows`),
-                    e => logger.log(`${queryId} failure: ${e}`)
+                r => logger.log(`${queryId} success: ${count(r)} rows in xx ms`),
+                e => logger.log(`${queryId} failure: ${e} in xx ms`)
             )
             return res
         } else {
