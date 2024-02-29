@@ -1,6 +1,7 @@
 defmodule AzimuttWeb.UserSessionController do
   use AzimuttWeb, :controller
   alias Azimutt.Accounts
+  alias Azimutt.Services.RecaptchaSrv
   alias Azimutt.Utils.Result
   alias AzimuttWeb.UserAuth
   action_fallback AzimuttWeb.FallbackController
@@ -9,11 +10,13 @@ defmodule AzimuttWeb.UserSessionController do
     conn |> render("new.html", error_message: nil)
   end
 
-  def create(conn, %{"user" => %{"email" => email, "password" => password} = user_params}) do
-    Accounts.get_user_by_email_and_password(email, password)
-    |> Result.map(fn user -> conn |> UserAuth.login_user_and_redirect(user, "password", user_params) end)
-    # In order to prevent user enumeration attacks, don't disclose whether the email is registered.
-    |> Result.or_else(conn |> render("new.html", error_message: "Email or Password invalid."))
+  def create(conn, %{"user" => %{"email" => email, "password" => password} = user_params} = params) do
+    RecaptchaSrv.validate(params["g-recaptcha-response"])
+    |> Result.flat_map(fn _ -> Accounts.get_user_by_email_and_password(email, password) end)
+    |> Result.fold(
+      fn err -> conn |> render("new.html", error_message: if(err == :not_found, do: "Email or Password invalid.", else: err)) end,
+      fn user -> conn |> UserAuth.login_user_and_redirect(user, "password", user_params) end
+    )
   end
 
   def delete(conn, _params) do

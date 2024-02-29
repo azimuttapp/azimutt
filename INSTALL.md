@@ -177,6 +177,10 @@ At least one of authentication methods should be defined:
 - `ORGANIZATION_DEFAULT_PLAN` (optional, values: `free` or `pro`): define the plan an organization has by default when created
 - `GLOBAL_ORGANIZATION` (optional): an organization id, if set, all new users will be added to this organization
     - `GLOBAL_ORGANIZATION_ALONE` (optional): if `true`, only the global organization is shown (allows to work like a mono-tenant app)
+- `RECAPTCHA` (optional): if `true`, add [reCAPTCHA](https://www.google.com/recaptcha) on register and login
+    - `RECAPTCHA_SITE_KEY` (required): your site key (frontend)
+    - `RECAPTCHA_SECRET_KEY` (required): your secret key (backend)
+    - `RECAPTCHA_MIN_SCORE` (optional): between 0.0 and 1.0
 - `SENTRY` (optional): if `true`, add [Sentry](https://sentry.io) integration
     - `SENTRY_BACKEND_DSN` (optional): your Sentry DSN (ex: `https://2g4ks8n9zxeqkfzven08yvayzz1bol0x@062prn3b.ingest.sentry.io/6050617`)
     - `SENTRY_FRONTEND_DSN` (optional): your Sentry DSN (ex: `https://qo83sgd9ojxwpydce1am5byd2o1y86zi@zqwwq6tu.ingest.sentry.io/8470350`)

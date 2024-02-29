@@ -1,3 +1,20 @@
 <div class="mt-3">
-    <button type="submit" class="py-2 px-3 ml-flex w-full justify-center text-sm font-semibold text-white shadow-sm rounded-lg text-sm font-semibold py-3 px-4 bg-slate-900 text-white hover:bg-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"><%= @text %></button>
+    <%= if Azimutt.config(:recaptcha) do %>
+        <button data-action="submit" data-callback="submitForm" data-sitekey={Azimutt.config(:recaptcha_site_key)} class="g-recaptcha py-2 px-3 ml-flex w-full justify-center text-sm font-semibold text-white shadow-sm rounded-lg text-sm font-semibold py-3 px-4 bg-slate-900 text-white hover:bg-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+            <%= @text %>
+        </button>
+        <%# cf https://developers.google.com/recaptcha/docs/v3 %>
+        <script>
+            function submitForm(token) {
+                const button = document.getElementsByClassName("g-recaptcha")[0]
+                const form = button.closest('form')
+                form.submit()
+            }
+        </script>
+        <script src="https://www.google.com/recaptcha/api.js"></script>
+    <% else %>
+        <button type="submit" class="py-2 px-3 ml-flex w-full justify-center text-sm font-semibold text-white shadow-sm rounded-lg text-sm font-semibold py-3 px-4 bg-slate-900 text-white hover:bg-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+            <%= @text %>
+        </button>
+    <% end %>
 </div>
