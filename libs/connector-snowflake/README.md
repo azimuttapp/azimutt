@@ -1,6 +1,6 @@
 # Snowflake connector
 
-This library is able to connect to [Snowflake](https://www.snowflake.com), extract its schema and more...
+This library allows to connect to [Snowflake](https://www.snowflake.com), extract its schema and more...
 
 It lists all schemas, tables, columns and relations and format them in a JSON Schema.
 

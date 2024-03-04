@@ -1,6 +1,6 @@
 # MariaDB connector
 
-This library is able to connect to [MariaDB](https://mariadb.com), extract its schema and more...
+This library allows to connect to [MariaDB](https://mariadb.com), extract its schema and more...
 
 It lists all schemas, tables, columns, relations and types and format them in a JSON Schema.
 
