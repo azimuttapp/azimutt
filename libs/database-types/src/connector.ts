@@ -7,16 +7,20 @@ import {AzimuttSchema, ColumnRef, ColumnStats, JsValue, TableId, TableStats} fro
 export interface Connector {
     name: string
     // use `$1`, `$2`... placeholders in the query to inject parameters
-    getSchema(application: string, url: DatabaseUrlParsed, opts: SchemaOpts): Promise<AzimuttSchema>
-    getTableStats(application: string, url: DatabaseUrlParsed, id: TableId): Promise<TableStats>
-    getColumnStats(application: string, url: DatabaseUrlParsed, ref: ColumnRef): Promise<ColumnStats>
-    query(application: string, url: DatabaseUrlParsed, query: string, parameters: any[]): Promise<DatabaseQueryResults>
+    getSchema(application: string, url: DatabaseUrlParsed, opts: ConnectorOps & SchemaOpts): Promise<AzimuttSchema>
+    getTableStats(application: string, url: DatabaseUrlParsed, id: TableId, opts: ConnectorOps): Promise<TableStats>
+    getColumnStats(application: string, url: DatabaseUrlParsed, ref: ColumnRef, opts: ConnectorOps): Promise<ColumnStats>
+    query(application: string, url: DatabaseUrlParsed, query: string, parameters: any[], opts: ConnectorOps): Promise<DatabaseQueryResults>
+}
+
+export interface ConnectorOps {
+    logger: Logger
+    logQueries?: boolean // default: false, print executed queries in the console
 }
 
 export interface SchemaOpts {
-    logger: Logger
     schema?: string // export only a single schema, bucket or database
-    mixedCollection?: string // type attribute if collections have mixed documents
+    mixedCollection?: string // attribute name if collections have mixed documents identified by kind
     sampleSize?: number // default: 100, number of documents used to infer the schema (document databases, json columns in relational db...)
     inferRelations?: boolean // default: false, infer relations based on column names
     ignoreErrors?: boolean // default: false, ignore errors when fetching the schema
@@ -43,3 +47,35 @@ export const DatabaseQueryResults = z.object({
     columns: DatabaseQueryResultsColumn.array(),
     rows: JsValue.array(),
 }).strict()
+
+export const logQueryIfNeeded = <U>(id: number, name: string | undefined, sql: string, parameters: any[], exec: (sql: string, parameters: any[]) => Promise<U>, count: (res: U) => number, logger: Logger, logQueries: boolean): Promise<U> => {
+    if (logQueries) {
+        const start = Date.now()
+        name ? logger.log(`#${id} exec: ${name}\n${sql}`) : logger.log(`#${id} exec: ${sql}`)
+        const res = exec(sql, parameters)
+        res.then(
+            r => logger.log(`#${id} success: ${count(r)} rows in ${Date.now() - start} ms`),
+            e => logger.log(`#${id} failure: ${e} in ${Date.now() - start} ms`)
+        )
+        return res
+    } else {
+        return exec(sql, parameters)
+    }
+}
+
+export function isPolymorphicColumn(column: string, columns: string[]): boolean {
+    return ['type', 'class', 'kind'].some(suffix => {
+        if (column.endsWith(suffix)) {
+            const related = column.slice(0, -suffix.length) + 'id'
+            return columns.some(c => c === related)
+        } else if (column.endsWith(suffix.toUpperCase())) {
+            const related = column.slice(0, -suffix.length) + 'ID'
+            return columns.some(c => c === related)
+        } else if (column.endsWith(suffix.charAt(0).toUpperCase() + suffix.slice(1))) {
+            const related = column.slice(0, -suffix.length) + 'Id'
+            return columns.some(c => c === related)
+        } else {
+            return false
+        }
+    })
+}

@@ -4,6 +4,10 @@ export function mapValues<T, U>(obj: Record<string, T>, f: (t: T) => U): Record<
     return Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, f(v)]))
 }
 
+export function mapValuesAsync<T, U>(obj: Record<string, T>, f: (t: T) => Promise<U>): Promise<Record<string, U>> {
+    return Promise.all(Object.entries(obj).map(([k, v]) => f(v).then(u => [k, u]))).then(Object.fromEntries)
+}
+
 export function filterValues<K extends keyof any, V, T extends Record<K, V>>(obj: T, p: (v: V) => boolean): T {
     return Object.fromEntries(Object.entries(obj).filter(([, v]) => p(v as V))) as T
 }
