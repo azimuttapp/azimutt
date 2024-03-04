@@ -155,7 +155,7 @@ function getColumns(conn: Conn, schema: MariadbSchemaName | undefined, ignoreErr
          FROM information_schema.COLUMNS c
                   JOIN information_schema.TABLES t ON c.TABLE_SCHEMA = t.TABLE_SCHEMA AND c.TABLE_NAME = t.TABLE_NAME
          WHERE ${filterSchema('c.TABLE_SCHEMA', schema)}
-         ORDER BY "schema", "table", column_index;`
+         ORDER BY "schema", "table", column_index;`, [], 'getColumns'
     ).catch(handleError(`Failed to get columns${schema ? ` for schema '${schema}'` : ''}`, [], ignoreErrors, logger))
 }
 
@@ -174,7 +174,7 @@ async function enrichColumnsWithSchema(conn: Conn, tableCols: RawColumn[], sampl
 
 async function getColumnSchema(conn: Conn, schema: string, table: string, column: string, sampleSize: number, ignoreErrors: boolean, logger: Logger): Promise<ValueSchema> {
     const sqlTable = `${schema ? `${schema}.` : ''}${table}`
-    return conn.query(`SELECT ${column} FROM ${sqlTable} WHERE ${column} IS NOT NULL LIMIT ${sampleSize};`)
+    return conn.query(`SELECT ${column} FROM ${sqlTable} WHERE ${column} IS NOT NULL LIMIT ${sampleSize};`, [], 'getColumnSchema')
         .then(rows => valuesToSchema(rows.map(row => row[column])))
         .catch(handleError(`Failed to infer schema for column '${column}' of table '${schema ? schema + '.' : ''}${table}'`, valuesToSchema([]), ignoreErrors, logger))
 }
@@ -193,7 +193,7 @@ function getTableComments(conn: Conn, schema: MariadbSchemaName | undefined, ign
          FROM information_schema.TABLES
          WHERE TABLE_COMMENT != ''
            AND TABLE_COMMENT != 'VIEW'
-           AND ${filterSchema('TABLE_SCHEMA', schema)};`
+           AND ${filterSchema('TABLE_SCHEMA', schema)};`, [], 'getTableComments'
     ).catch(handleError(`Failed to get table comments${schema ? ` for schema '${schema}'` : ''}`, [], ignoreErrors, logger))
 }
 
@@ -223,7 +223,7 @@ function getIndexes(conn: Conn, schema: MariadbSchemaName | undefined, ignoreErr
                 SEQ_IN_INDEX AS "index",
                 "INDEX"      AS type
          FROM information_schema.STATISTICS
-         WHERE ${filterSchema('INDEX_SCHEMA', schema)};`
+         WHERE ${filterSchema('INDEX_SCHEMA', schema)};`, [], 'getIndexes'
     ).catch(handleError(`Failed to get indexes${schema ? ` for schema '${schema}'` : ''}`, [], ignoreErrors, logger))
 }
 
@@ -241,7 +241,7 @@ function getConstraints(conn: Conn, schema: MariadbSchemaName | undefined, ignor
                   JOIN information_schema.KEY_COLUMN_USAGE u
                        ON c.CONSTRAINT_SCHEMA = u.CONSTRAINT_SCHEMA AND c.TABLE_NAME = u.TABLE_NAME AND
                           c.CONSTRAINT_NAME = u.CONSTRAINT_NAME
-         WHERE ${filterSchema('c.CONSTRAINT_SCHEMA', schema)};`
+         WHERE ${filterSchema('c.CONSTRAINT_SCHEMA', schema)};`, [], 'getConstraints'
     ).catch(handleError(`Failed to get constraints${schema ? ` for schema '${schema}'` : ''}`, [], ignoreErrors, logger))
 }
 

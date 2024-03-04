@@ -7,13 +7,13 @@ import {AzimuttSchema, ColumnRef, ColumnStats, JsValue, TableId, TableStats} fro
 export interface Connector {
     name: string
     // use `$1`, `$2`... placeholders in the query to inject parameters
-    getSchema(application: string, url: DatabaseUrlParsed, opts: ConnectorOps & SchemaOpts): Promise<AzimuttSchema>
-    getTableStats(application: string, url: DatabaseUrlParsed, id: TableId, opts: ConnectorOps): Promise<TableStats>
-    getColumnStats(application: string, url: DatabaseUrlParsed, ref: ColumnRef, opts: ConnectorOps): Promise<ColumnStats>
-    query(application: string, url: DatabaseUrlParsed, query: string, parameters: any[], opts: ConnectorOps): Promise<DatabaseQueryResults>
+    getSchema(application: string, url: DatabaseUrlParsed, opts: ConnectorOpts & SchemaOpts): Promise<AzimuttSchema>
+    getTableStats(application: string, url: DatabaseUrlParsed, id: TableId, opts: ConnectorOpts): Promise<TableStats>
+    getColumnStats(application: string, url: DatabaseUrlParsed, ref: ColumnRef, opts: ConnectorOpts): Promise<ColumnStats>
+    query(application: string, url: DatabaseUrlParsed, query: string, parameters: any[], opts: ConnectorOpts): Promise<DatabaseQueryResults>
 }
 
-export interface ConnectorOps {
+export interface ConnectorOpts {
     logger: Logger
     logQueries?: boolean // default: false, print executed queries in the console
 }

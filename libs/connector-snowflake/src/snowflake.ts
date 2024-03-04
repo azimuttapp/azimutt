@@ -115,8 +115,8 @@ export async function getTables(conn: Conn, schema: SnowflakeSchemaName | undefi
              , ROW_COUNT as "rowCount"
              , BYTES as "size"
         FROM INFORMATION_SCHEMA.TABLES
-        WHERE ${filterSchema('TABLE_SCHEMA', schema)};
-    `).catch(handleError(`Failed to get tables${schema ? ` for schema '${schema}'` : ''}`, [], ignoreErrors, logger))
+        WHERE ${filterSchema('TABLE_SCHEMA', schema)};`, [], 'getTables'
+    ).catch(handleError(`Failed to get tables${schema ? ` for schema '${schema}'` : ''}`, [], ignoreErrors, logger))
 }
 
 export type RawColumn = {
@@ -143,8 +143,8 @@ export async function getColumns(conn: Conn, schema: SnowflakeSchemaName | undef
              , COLUMN_DEFAULT as "default"
              , COMMENT as "comment"
         FROM INFORMATION_SCHEMA.COLUMNS
-        WHERE ${filterSchema('TABLE_SCHEMA', schema)};
-    `).catch(handleError(`Failed to get columns${schema ? ` for schema '${schema}'` : ''}`, [], ignoreErrors, logger))
+        WHERE ${filterSchema('TABLE_SCHEMA', schema)};`, [], 'getColumns'
+    ).catch(handleError(`Failed to get columns${schema ? ` for schema '${schema}'` : ''}`, [], ignoreErrors, logger))
 }
 
 export type RawPrimaryKey = {
@@ -159,7 +159,7 @@ export type RawPrimaryKey = {
 }
 
 export async function getPrimaryKeys(conn: Conn, schema: SnowflakeSchemaName | undefined, ignoreErrors: boolean, logger: Logger): Promise<RawPrimaryKey[]> {
-    return conn.query<RawPrimaryKey>(`SHOW PRIMARY KEYS;`) // can't filter on schema only (needs then db too :/)
+    return conn.query<RawPrimaryKey>(`SHOW PRIMARY KEYS;`, [], 'getPrimaryKeys') // can't filter on schema only (needs then db too :/)
         .then(keys => keys.filter(key => schema ? key.schema_name === schema : key.schema_name !== 'INFORMATION_SCHEMA'))
         .catch(handleError(`Failed to get primary keys${schema ? ` for schema '${schema}'` : ''}`, [], ignoreErrors, logger))
 }
@@ -184,7 +184,7 @@ export type RawForeignKey = {
 }
 
 export async function getForeignKeys(conn: Conn, schema: SnowflakeSchemaName | undefined, ignoreErrors: boolean, logger: Logger): Promise<RawForeignKey[]> {
-    return conn.query<RawForeignKey>(`SHOW EXPORTED KEYS;`) // can't filter on schema only (needs then db too :/)
+    return conn.query<RawForeignKey>(`SHOW EXPORTED KEYS;`, [], 'getForeignKeys') // can't filter on schema only (needs then db too :/)
         .then(keys => keys.filter(key => schema ? key.fk_schema_name === schema : key.fk_schema_name !== 'INFORMATION_SCHEMA'))
         .catch(handleError(`Failed to get foreign keys${schema ? ` for schema '${schema}'` : ''}`, [], ignoreErrors, logger))
 }
