@@ -17,7 +17,8 @@ export type SnowflakeColumnType = string
 export type SnowflakeRelationName = string
 export type SnowflakeTableId = `${SnowflakeCatalogName}.${SnowflakeSchemaName}.${SnowflakeTableName}`
 
-export const getSchema = (schema: SnowflakeSchemaName | undefined, sampleSize: number, ignoreErrors: boolean, logger: Logger) => async (conn: Conn): Promise<SnowflakeSchema> => {
+export type SnowflakeSchemaOpts = {logger: Logger, schema: SnowflakeSchemaName | undefined, sampleSize: number, inferRelations: boolean, ignoreErrors: boolean}
+export const getSchema = ({logger, schema, sampleSize, inferRelations, ignoreErrors}: SnowflakeSchemaOpts) => async (conn: Conn): Promise<SnowflakeSchema> => {
     // TODO: include VIEWS? (SELECT * FROM INFORMATION_SCHEMA.VIEWS;)
     const tables = await getTables(conn, schema, ignoreErrors, logger)
     const columns = await getColumns(conn, schema, ignoreErrors, logger).then(cols => groupBy(cols, toTableId))
@@ -56,8 +57,7 @@ export const getSchema = (schema: SnowflakeSchemaName | undefined, sampleSize: n
     }
 }
 
-export function formatSchema(schema: SnowflakeSchema, inferRelations: boolean): AzimuttSchema {
-    // FIXME: handle inferRelations
+export function formatSchema(schema: SnowflakeSchema): AzimuttSchema {
     return {
         tables: schema.tables.map(t => removeUndefined({
             schema: t.schema,

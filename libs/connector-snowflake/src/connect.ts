@@ -1,31 +1,38 @@
 import {Connection, ConnectionOptions, SnowflakeError, Statement} from "snowflake-sdk";
 import * as snowflake from "snowflake-sdk";
-import {DatabaseUrlParsed} from "@azimutt/database-types";
+import {Logger} from "@azimutt/utils";
+import {DatabaseUrlParsed, logQueryIfNeeded} from "@azimutt/database-types";
 import {Conn, QueryResultArrayMode, QueryResultRow} from "./common";
 
-export async function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c: Conn) => Promise<T>): Promise<T> {
+export type SnowflakeConnectOpts = {logger: Logger, logQueries: boolean}
+export async function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c: Conn) => Promise<T>, {logger, logQueries}: SnowflakeConnectOpts): Promise<T> {
     const connection: Connection = await createConnection(buildConfig(application, url))
         .catch(_ => createConnection({application, accessUrl: url.full, account: 'not used'}))
+    let queryCpt = 1
     const conn: Conn = {
-        query<T extends QueryResultRow>(sql: string, parameters: any[] = []): Promise<T[]> {
-            return new Promise<T[]>((resolve, reject) => connection.execute({
-                sqlText: sql,
-                binds: parameters,
-                complete: (err: SnowflakeError | undefined, stmt: Statement, rows: any[] | undefined) =>
-                    err ? reject(queryError(sql, err)) : resolve(rows || [] as T[])
-            }))
+        query<T extends QueryResultRow>(sql: string, parameters: any[] = [], name?: string): Promise<T[]> {
+            return logQueryIfNeeded(queryCpt++, name, sql, parameters, (sql, parameters) => {
+                return new Promise<T[]>((resolve, reject) => connection.execute({
+                    sqlText: sql,
+                    binds: parameters,
+                    complete: (err: SnowflakeError | undefined, stmt: Statement, rows: any[] | undefined) =>
+                        err ? reject(queryError(sql, err)) : resolve(rows || [] as T[])
+                }))
+            }, r => r.length, logger, logQueries)
         },
-        queryArrayMode(sql: string, parameters: any[] = []): Promise<QueryResultArrayMode> {
-            return new Promise<QueryResultArrayMode>((resolve, reject) => connection.execute({
-                sqlText: sql,
-                binds: parameters,
-                // @ts-ignore
-                rowMode: 'array',
-                complete: (err: SnowflakeError | undefined, stmt: Statement, rows: any[] | undefined) => err ? reject(queryError(sql, err)) : resolve({
-                    fields: stmt.getColumns().map(c => ({ index: c.getIndex(), name: c.getName(), type: c.getType() })),
-                    rows: rows || []
-                })
-            }))
+        queryArrayMode(sql: string, parameters: any[] = [], name?: string): Promise<QueryResultArrayMode> {
+            return logQueryIfNeeded(queryCpt++, name, sql, parameters, (sql, parameters) => {
+                return new Promise<QueryResultArrayMode>((resolve, reject) => connection.execute({
+                    sqlText: sql,
+                    binds: parameters,
+                    // @ts-ignore
+                    rowMode: 'array',
+                    complete: (err: SnowflakeError | undefined, stmt: Statement, rows: any[] | undefined) => err ? reject(queryError(sql, err)) : resolve({
+                        fields: stmt.getColumns().map(c => ({ index: c.getIndex(), name: c.getName(), type: c.getType() })),
+                        rows: rows || []
+                    })
+                }))
+            }, r => r.rows.length, logger, logQueries)
         }
     }
     return exec(conn).then(

@@ -91,8 +91,7 @@ export const getSchema = ({logger, schema, sampleSize, inferRelations, ignoreErr
     }
 }
 
-export function formatSchema(schema: SqlserverSchema, inferRelations: boolean): AzimuttSchema {
-    // FIXME: handle inferRelations
+export function formatSchema(schema: SqlserverSchema): AzimuttSchema {
     return {
         tables: schema.tables.map(t => removeUndefined({
             schema: t.schema,

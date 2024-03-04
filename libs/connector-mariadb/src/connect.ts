@@ -1,17 +1,24 @@
 import * as mariadb from "mariadb";
 import {Connection, ConnectionConfig} from "mariadb";
-import {DatabaseUrlParsed} from "@azimutt/database-types";
+import {Logger} from "@azimutt/utils";
+import {DatabaseUrlParsed, logQueryIfNeeded} from "@azimutt/database-types";
 import {Conn, QueryResultArrayMode, QueryResultRow} from "./common";
 
-export async function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c: Conn) => Promise<T>): Promise<T> {
+export type MariadbConnectOpts = {logger: Logger, logQueries: boolean}
+export async function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c: Conn) => Promise<T>, {logger, logQueries}: MariadbConnectOpts): Promise<T> {
     const connection: Connection = await mariadb.createConnection(buildConfig(application, url)).catch(_ => mariadb.createConnection(url.full))
+    let queryCpt = 1
     const conn: Conn = {
-        query<T extends QueryResultRow>(sql: string, parameters: any[] = []): Promise<T[]> {
-            return connection.query<T[]>({sql, namedPlaceholders: true}, parameters)
+        query<T extends QueryResultRow>(sql: string, parameters: any[] = [], name?: string): Promise<T[]> {
+            return logQueryIfNeeded(queryCpt++, name, sql, parameters, (sql, parameters) => {
+                return connection.query<T[]>({sql, namedPlaceholders: true}, parameters)
+            }, r => r.length, logger, logQueries)
         },
-        queryArrayMode(sql: string, parameters: any[] = []): Promise<QueryResultArrayMode> {
-            return connection.query({sql, namedPlaceholders: true, rowsAsArray: true}, parameters)
-                .then(([rows, fields]) => ({fields, rows}))
+        queryArrayMode(sql: string, parameters: any[] = [], name?: string): Promise<QueryResultArrayMode> {
+            return logQueryIfNeeded(queryCpt++, name, sql, parameters, (sql, parameters) => {
+                return connection.query({sql, namedPlaceholders: true, rowsAsArray: true}, parameters)
+                    .then(([rows, fields]) => ({fields, rows}))
+            }, r => r.rows.length, logger, logQueries)
         }
     }
     return exec(conn).then(

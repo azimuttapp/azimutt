@@ -14,7 +14,7 @@ It's accessible through the [Desktop app](../../desktop) (soon), the [CLI](https
 ## Publish
 
 - update `package.json` version
-- update lib versions (`npm run update` + manual) `npm run update` & run `npm install`
+- update lib versions (`npm run update` + manual) & run `npm install`
 - test with `npm run dry-publish` and check `azimutt-connector-snowflake-x.y.z.tgz` content
 - launch `npm publish --access public`
 

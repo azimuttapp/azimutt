@@ -27,7 +27,7 @@ export const sqlserver: Connector = {
             ignoreErrors: withDefault(opts.ignoreErrors, false)
         }
         const schema = await connect(application, url, getSchema(schemaOpts), connectOpts)
-        return formatSchema(schema, opts.inferRelations || false)
+        return formatSchema(schema)
     },
     getTableStats: (application: string, url: DatabaseUrlParsed, id: TableId, opts: ConnectorOps): Promise<TableStats> => {
         const connectOpts: SqlserverConnectOpts = {logger: opts.logger, logQueries: withDefault(opts.logQueries, false)}

@@ -22,6 +22,6 @@ describe('sqlserver', () => {
     test('formatSchema', () => {
         const rawSchema: SqlserverSchema = {tables: [], relations: [], types: []}
         const expectedSchema: AzimuttSchema = {tables: [], relations: [], types: []}
-        expect(formatSchema(rawSchema, false)).toEqual(expectedSchema)
+        expect(formatSchema(rawSchema)).toEqual(expectedSchema)
     })
 })

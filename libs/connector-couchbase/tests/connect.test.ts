@@ -4,6 +4,7 @@ import {Cluster, QueryResult} from "couchbase";
 import {parseDatabaseUrl} from "@azimutt/database-types";
 import {application} from "./constants";
 import {execQuery} from "../src";
+import {connect} from "../src/connect";
 
 // use this test to troubleshoot connection errors
 // if you don't succeed with the first one (Azimutt code), try with the second one (node lib) and tell us how to fix ;)
@@ -19,7 +20,7 @@ describe('connect', () => {
     // TODO 3: unskip the this test first and run it: `npm run test -- tests/connect.test.ts`
     test.skip('Azimutt should connect', async () => {
         const parsedUrl = parseDatabaseUrl(url)
-        const results = await execQuery(application, parsedUrl, query, parameters)
+        const results = await connect(application, parsedUrl, execQuery(query, parameters))
         console.log('results', results)
     })
 
