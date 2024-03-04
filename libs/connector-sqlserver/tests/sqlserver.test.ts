@@ -3,7 +3,7 @@ import {AzimuttSchema, DatabaseUrlParsed, parseDatabaseUrl} from "@azimutt/datab
 import {application, logger, opts} from "./constants";
 import {execQuery} from "../src/common";
 import {connect} from "../src/connect";
-import {formatSchema, getSchema, SqlserverSchema} from "../src/sqlserver";
+import {formatSchema, getSchema, SqlserverSchema, SqlserverSchemaOpts} from "../src/sqlserver";
 
 describe('sqlserver', () => {
     // fake url, use a real one to test (see README for how-to)
@@ -14,12 +14,11 @@ describe('sqlserver', () => {
         expect(results.rows.length).toEqual(1)
     })
     test.skip('getSchema', async () => {
-        const schemaName = undefined
-        const sampleSize = 10
-        const schema = await connect(application, url, getSchema(schemaName, sampleSize, false, logger), opts)
+        const schemaOpts: SqlserverSchemaOpts = {logger, schema: undefined, sampleSize: 10, inferRelations: true, ignoreErrors: false}
+        const schema = await connect(application, url, getSchema(schemaOpts), opts)
         console.log('schema', schema)
         expect(schema.tables.length).toEqual(32)
-    }, 10 * 1000)
+    })
     test('formatSchema', () => {
         const rawSchema: SqlserverSchema = {tables: [], relations: [], types: []}
         const expectedSchema: AzimuttSchema = {tables: [], relations: [], types: []}

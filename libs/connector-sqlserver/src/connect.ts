@@ -1,40 +1,25 @@
 import mssql, {config, ConnectionPool, IOptions, IResult, ISqlType} from "mssql";
 import {Logger} from "@azimutt/utils";
-import {ColumnValue, DatabaseUrlParsed} from "@azimutt/database-types";
+import {ColumnValue, DatabaseUrlParsed, logQueryIfNeeded} from "@azimutt/database-types";
 import {Conn, QueryResultArrayMode, QueryResultRow} from "./common";
 
-export type ConnectOpts = {logger?: Logger}
-export async function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c: Conn) => Promise<T>, {logger}: ConnectOpts): Promise<T> {
+export type SqlserverConnectOpts = {logger: Logger, logQueries: boolean}
+export async function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c: Conn) => Promise<T>, {logger, logQueries}: SqlserverConnectOpts): Promise<T> {
     const connection: ConnectionPool = await mssql.connect(buildconfig(application, url)).catch(_ => mssql.connect(url.full))
     let queryCpt = 1
-    const logQueryIfNeeded = <U>(sql: string, name: string, exec: (sql: string) => Promise<U>, count: (res: U) => number): Promise<U> => {
-        if (logger) {
-            const start = performance.now()
-            const queryId = `#${queryCpt++}`
-            name ? logger.log(`${queryId} exec: ${name}\n${sql}`) : logger.log(`${queryId} exec: ${sql}`)
-            const res = exec(sql)
-            res.then(
-                r => logger.log(`${queryId} success: ${count(r)} rows in ${Math.round(performance.now() - start)} ms`),
-                e => logger.log(`${queryId} failure: ${e} in ${Math.round(performance.now() - start)} ms`)
-            )
-            return res
-        } else {
-            return exec(sql)
-        }
-    }
     const conn: Conn = {
         query<T extends QueryResultRow>(sql: string, parameters: any[] = [], name: string = ''): Promise<T[]> {
-            return logQueryIfNeeded(sql, name, sql => {
+            return logQueryIfNeeded(queryCpt++, name, sql, parameters, (sql, parameters) => {
                 return connection.query<T>(sql).then(result => result.recordset)
-            }, r => r.length)
+            }, r => r.length, logger, logQueries)
         },
         queryArrayMode(sql: string, parameters: any[] = [], name: string = ''): Promise<QueryResultArrayMode> {
-            return logQueryIfNeeded(sql, name, async sql => {
+            return logQueryIfNeeded(queryCpt++, name, sql, parameters, async (sql, parameters) => {
                 const request = connection.request() as any
                 request.arrayRowMode = true
                 const result: IResult<ColumnValue[]> & { columns: ColumnMetadata[][] } = await request.query(sql)
                 return {rows: result.recordset as ColumnValue[][], fields: result.columns[0]}
-            }, r => r.rows.length)
+            }, r => r.rows.length, logger, logQueries)
         }
     }
     return exec(conn).then(

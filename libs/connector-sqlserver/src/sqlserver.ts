@@ -2,13 +2,21 @@ import {
     groupBy,
     Logger,
     mapValues,
+    mapValuesAsync,
     removeSurroundingParentheses,
     removeUndefined,
     safeJsonParse,
     sequence
 } from "@azimutt/utils";
-import {AzimuttRelation, AzimuttSchema, AzimuttType} from "@azimutt/database-types";
-import {schemaToColumns, ValueSchema, valuesToSchema} from "@azimutt/json-infer-schema";
+import {
+    AzimuttRelation,
+    AzimuttSchema,
+    AzimuttType,
+    isPolymorphicColumn,
+    schemaToColumns,
+    ValueSchema,
+    valuesToSchema
+} from "@azimutt/database-types";
 import {Conn} from "./common";
 import {buildColumnType} from "./helpers";
 
@@ -27,11 +35,12 @@ export type SqlserverColumnType = string
 export type SqlserverConstraintName = string
 export type SqlserverTableId = string
 
-export const getSchema = (schema: SqlserverSchemaName | undefined, sampleSize: number, ignoreErrors: boolean, logger: Logger) => async (conn: Conn): Promise<SqlserverSchema> => {
+export type SqlserverSchemaOpts = {logger: Logger, schema: SqlserverSchemaName | undefined, sampleSize: number, inferRelations: boolean, ignoreErrors: boolean}
+export const getSchema = ({logger, schema, sampleSize, inferRelations, ignoreErrors}: SqlserverSchemaOpts) => async (conn: Conn): Promise<SqlserverSchema> => {
     const constraints = await getAllConstraints(conn, schema, ignoreErrors, logger).then(constraints => mapValues(groupBy(constraints, toTableId), buildTableConstraints))
     const columns = await getColumns(conn, schema, ignoreErrors, logger)
-        .then(cols => enrichColumnsWithSchema(conn, cols, constraints, sampleSize, ignoreErrors, logger))
         .then(cols => groupBy(cols, toTableId))
+        .then(cols => mapValuesAsync(cols, tableCols => enrichColumnsWithSchema(conn, tableCols, constraints, sampleSize, inferRelations, ignoreErrors, logger)))
     const comments = await getComments(conn, schema, ignoreErrors, logger).then(comments => groupBy(comments, toTableId))
     return {
         tables: Object.entries(columns).map(([tableId, columns]) => {
@@ -159,15 +168,16 @@ function getColumns(conn: Conn, schema: SqlserverSchemaName | undefined, ignoreE
     ).catch(handleError(`Failed to get columns${schema ? ` for schema '${schema}'` : ''}`, [], ignoreErrors, logger))
 }
 
-function enrichColumnsWithSchema(conn: Conn, columns: RawColumn[], constraints: Record<SqlserverTableId, ConstraintFormatted[]>, sampleSize: number, ignoreErrors: boolean, logger: Logger): Promise<RawColumn[]> {
-    return sequence(columns, (c: RawColumn) => {
-        if (c.column_type === 'nvarchar') {
-            if (sampleSize > 0 && constraints[toTableId(c)]?.find(ct => ct.type === 'CHECK' && ct.schema == c.schema && ct.table == c.table && ct.columns.indexOf(c.column) >= 0 && ct.definition?.includes('isjson'))) {
-                return getColumnSchema(conn, c.schema, c.table, c.column, sampleSize, ignoreErrors, logger)
-                    .then(column_schema => ({...c, column_schema}))
-            }
+function enrichColumnsWithSchema(conn: Conn, tableCols: RawColumn[], constraints: Record<SqlserverTableId, ConstraintFormatted[]>, sampleSize: number, inferRelations: boolean, ignoreErrors: boolean, logger: Logger): Promise<RawColumn[]> {
+    const colNames = tableCols.map(c => c.column)
+    return sequence(tableCols, async c => {
+        if (sampleSize > 0 && c.column_type === 'nvarchar' && constraints[toTableId(c)]?.find(ct => ct.type === 'CHECK' && ct.schema == c.schema && ct.table == c.table && ct.columns.indexOf(c.column) >= 0 && ct.definition?.includes('isjson'))) {
+            return getColumnSchema(conn, c.schema, c.table, c.column, sampleSize, ignoreErrors, logger).then(column_schema => ({...c, column_schema}))
+        } else if (inferRelations && isPolymorphicColumn(c.column, colNames)) {
+            return c // TODO: fetch distinct values
+        } else {
+            return c
         }
-        return Promise.resolve(c)
     })
 }
 
