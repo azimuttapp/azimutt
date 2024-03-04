@@ -54,17 +54,17 @@ function getDatabaseSchema(params: GetSchemaParams, res: FastifyReply): Promise<
 }
 
 function queryDatabase(params: DbQueryParams, res: FastifyReply): Promise<DbQueryResponse | FastifyReply> {
-    return withConnector(params.url, res, (url, conn) => conn.query(application, url, params.query, []))
+    return withConnector(params.url, res, (url, conn) => conn.query(application, url, params.query, [], {logger}))
 }
 
 function getTableStats(params: GetTableStatsParams, res: FastifyReply): Promise<GetTableStatsResponse | FastifyReply> {
     const tableId = params.schema ? `${params.schema}.${params.table}` : params.table
-    return withConnector(params.url, res, (url, conn) => conn.getTableStats(application, url, tableId))
+    return withConnector(params.url, res, (url, conn) => conn.getTableStats(application, url, tableId, {logger}))
 }
 
 function getColumnStats(params: GetColumnStatsParams, res: FastifyReply): Promise<GetColumnStatsResponse | FastifyReply> {
     const tableId = params.schema ? `${params.schema}.${params.table}` : params.table
-    return withConnector(params.url, res, (url, conn) => conn.getColumnStats(application, url, {table: tableId, column: params.column}))
+    return withConnector(params.url, res, (url, conn) => conn.getColumnStats(application, url, {table: tableId, column: params.column}, {logger}))
 }
 
 async function withConnector<T>(url: DatabaseUrl, res: FastifyReply, exec: (url: DatabaseUrlParsed, conn: Connector) => Promise<T>): Promise<T | FastifyReply> {
