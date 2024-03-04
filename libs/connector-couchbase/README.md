@@ -2,7 +2,7 @@
 
 This library is able to connect to [Couchbase](https://www.couchbase.com), extract its schema and more...
 
-It browses all buckets, scopes and collections, fetch a sample of documents and then [infer](../json-infer-schema) a schema from them.
+It browses all buckets, scopes and collections, fetch a sample of documents and then infer a schema from them.
 
 This library is made by [Azimutt](https://azimutt.app) to allow people to explore their Couchbase database.
 It's accessible through the [Desktop app](../../desktop) (soon), the [CLI](https://www.npmjs.com/package/azimutt) or even the website using a the [gateway](../../gateway) server.
@@ -10,7 +10,7 @@ It's accessible through the [Desktop app](../../desktop) (soon), the [CLI](https
 **Feel free to use it and even submit PR to improve it:**
 
 - improve [Couchbase queries](./src/couchbase.ts) (look at `getSchema` function)
-- improve [schema inference](../json-infer-schema)
+- improve [schema inference](../database-types/src/inferSchema.ts)
 
 ## Set up a sample Couchbase database
 

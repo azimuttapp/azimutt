@@ -22,13 +22,6 @@ repos:
       pass_filenames: false
       files: libs/shared/.*\.ts*$
 
-    - id: libs-json-infer-schema
-      name: 'Libs/Json infer schema'
-      language: system
-      entry: bash -c 'cd libs/json-infer-schema && exec npm run build && exec npm test'
-      pass_filenames: false
-      files: libs/json-infer-schema/.*\.ts*$
-
     - id: libs-connector-couchbase
       name: 'Libs/Couchbase connector'
       language: system
@@ -63,6 +56,13 @@ repos:
       entry: bash -c 'cd libs/connector-postgres && exec npm run build && exec npm test'
       pass_filenames: false
       files: libs/connector-postgres/.*\.ts*$
+
+    - id: libs-connector-snowflake
+      name: 'Libs/Snowflake connector'
+      language: system
+      entry: bash -c 'cd libs/connector-snowflake && exec npm run build && exec npm test'
+      pass_filenames: false
+      files: libs/connector-snowflake/.*\.ts*$
 
     - id: libs-connector-sqlserver
       name: 'Libs/SQL Server connector'
