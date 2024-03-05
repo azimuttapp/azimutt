@@ -1,5 +1,7 @@
 import {AnyError} from "./error";
 
+// functions sorted alphabetically
+
 // similar to `Promise.all` but sequential instead of parallel, "easy" rate limiting ^^
 export function sequence<T, U>(arr: T[], perform: (t: T) => Promise<U>): Promise<U[]> {
     return arr.reduce((acc, t) => {

@@ -1,3 +1,5 @@
+// functions sorted alphabetically
+
 export function isEmpty(v: any): boolean {
     return v === undefined
         || v === null
@@ -5,3 +7,5 @@ export function isEmpty(v: any): boolean {
         || (Array.isArray(v) && v.length === 0)
         || (typeof v === 'object' && Object.keys(v).length === 0)
 }
+
+export const isObject = (value: unknown): value is Record<string, any> => typeof value === "object" && !Array.isArray(value) && value !== null;

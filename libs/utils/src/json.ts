@@ -1,3 +1,5 @@
+// functions sorted alphabetically
+
 export function safeJsonParse(value: string): any {
     try {
         return JSON.parse(value)

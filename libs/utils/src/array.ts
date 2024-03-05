@@ -14,6 +14,17 @@ export const collectOne = <T, U>(arr: T[], f: (t: T) => U | undefined): U | unde
 
 export const distinct = <T>(arr: T[]): T[] => arr.filter((t, i) => arr.indexOf(t) === i)
 
+export const findLastIndex = <T>(arr: T[], p: (t: T) => boolean): number => {
+    let i = arr.length - 1
+    while (i >= 0) {
+        if(p(arr[i])) {
+            return i
+        }
+        i--
+    }
+    return -1
+}
+
 // similar to group by but keys must be unique so values are not a list
 export const indexBy = <T, K extends keyof any>(list: T[], getKey: (item: T) => K): Record<K, T> =>
     list.reduce((acc, item) => {
@@ -21,7 +32,7 @@ export const indexBy = <T, K extends keyof any>(list: T[], getKey: (item: T) => 
         return acc
     }, {} as Record<K, T>)
 
-export const partition = <T>(arr: T[], p: (i: T) => boolean): [T[], T[]] => {
+export const partition = <T>(arr: T[], p: (t: T) => boolean): [T[], T[]] => {
     const ok = [] as T[]
     const ko = [] as T[]
     arr.forEach(i => p(i) ? ok.push(i) : ko.push(i))

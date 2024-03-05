@@ -25,7 +25,7 @@
     "dry-publish": "npm run build && npm test && npm pack"
   },
   "dependencies": {
-    "@azimutt/utils": "^0.0.7",
+    "@azimutt/utils": "^0.0.8",
     "zod": "3.22.4"
   },
   "devDependencies": {

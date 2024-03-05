@@ -1,4 +1,10 @@
-import {isEmpty} from "./any";
+import {isEmpty} from "./validation";
+
+// functions sorted alphabetically
+
+export function filterValues<K extends keyof any, V, T extends Record<K, V>>(obj: T, p: (v: V) => boolean): T {
+    return Object.fromEntries(Object.entries(obj).filter(([, v]) => p(v as V))) as T
+}
 
 export function mapValues<T, U>(obj: Record<string, T>, f: (t: T) => U): Record<string, U> {
     return Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, f(v)]))
@@ -8,32 +14,28 @@ export function mapValuesAsync<T, U>(obj: Record<string, T>, f: (t: T) => Promis
     return Promise.all(Object.entries(obj).map(([k, v]) => f(v).then(u => [k, u]))).then(Object.fromEntries)
 }
 
-export function filterValues<K extends keyof any, V, T extends Record<K, V>>(obj: T, p: (v: V) => boolean): T {
-    return Object.fromEntries(Object.entries(obj).filter(([, v]) => p(v as V))) as T
-}
-
-export function removeUndefined<K extends keyof any, V, T extends Record<K, V>>(obj: T): T {
-    return filterValues(obj, v => v !== undefined)
-}
-
 export function removeEmpty<K extends keyof any, V, T extends Record<K, V>>(obj: T): T {
     return filterValues(obj, v => !isEmpty(v))
 }
 
-export function deeplyRemoveFields(obj: any, keysToRemove: string[]): any {
+export function removeFieldsDeep(obj: any, keysToRemove: string[]): any {
     if (Array.isArray(obj)) {
-        return obj.map(item => deeplyRemoveFields(item, keysToRemove))
+        return obj.map(item => removeFieldsDeep(item, keysToRemove))
     }
 
     if (typeof obj === 'object' && obj !== null) {
         const res: { [key: string]: any } = {}
         Object.keys(obj).forEach((key) => {
             if (keysToRemove.indexOf(key) < 0) {
-                res[key] = deeplyRemoveFields(obj[key], keysToRemove)
+                res[key] = removeFieldsDeep(obj[key], keysToRemove)
             }
         })
         return res
     }
 
     return obj
+}
+
+export function removeUndefined<K extends keyof any, V, T extends Record<K, V>>(obj: T): T {
+    return filterValues(obj, v => v !== undefined)
 }

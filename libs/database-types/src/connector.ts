@@ -1,6 +1,6 @@
 // every connector should implement this interface
 import {z} from "zod";
-import {Logger} from "@azimutt/utils";
+import {indent, Logger, stripIndent} from "@azimutt/utils";
 import {DatabaseUrlParsed} from "./url";
 import {AzimuttSchema, ColumnRef, ColumnStats, JsValue, TableId, TableStats} from "./schema";
 
@@ -51,7 +51,7 @@ export const DatabaseQueryResults = z.object({
 export const logQueryIfNeeded = <U>(id: number, name: string | undefined, sql: string, parameters: any[], exec: (sql: string, parameters: any[]) => Promise<U>, count: (res: U) => number, logger: Logger, logQueries: boolean): Promise<U> => {
     if (logQueries) {
         const start = Date.now()
-        name ? logger.log(`#${id} exec: ${name}\n${sql}`) : logger.log(`#${id} exec: ${sql}`)
+        logger.log(`#${id} exec:${name ? ' ' + name : ''}\n${indent(stripIndent(sql), 4)}`)
         const res = exec(sql, parameters)
         res.then(
             r => logger.log(`#${id} success: ${count(r)} rows in ${Date.now() - start} ms`),

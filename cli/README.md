@@ -28,6 +28,7 @@ Get the help simply by running the CLI (`npx azimutt@latest`) or for a specific 
   - `--sample-size` defines how many items are used to infer a schema (for document databases)
   - `--infer-relations` build relations based on column names, for example a `user_id` will have a relation if a table `users` has an `id` column
   - `--ignore-errors` is optional, do not stop export on errors, just log them
+  - `--log-queries` is optional, log queries when executing them
   - `--format` is optional, default to `json` but for relational database it could also be `sql`
   - `--output` is optional, database name will be inferred from url and prefixed by the timestamp
   - `--debug` allows to see the full stack trace of the error (can be helpful to debug)
