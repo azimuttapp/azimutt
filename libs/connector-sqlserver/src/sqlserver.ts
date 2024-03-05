@@ -2,13 +2,21 @@ import {
     groupBy,
     Logger,
     mapValues,
+    mapValuesAsync,
     removeSurroundingParentheses,
     removeUndefined,
     safeJsonParse,
     sequence
 } from "@azimutt/utils";
-import {AzimuttRelation, AzimuttSchema, AzimuttType} from "@azimutt/database-types";
-import {schemaToColumns, ValueSchema, valuesToSchema} from "@azimutt/json-infer-schema";
+import {
+    AzimuttRelation,
+    AzimuttSchema,
+    AzimuttType,
+    isPolymorphicColumn,
+    schemaToColumns,
+    ValueSchema,
+    valuesToSchema
+} from "@azimutt/database-types";
 import {Conn} from "./common";
 import {buildColumnType} from "./helpers";
 
@@ -27,12 +35,13 @@ export type SqlserverColumnType = string
 export type SqlserverConstraintName = string
 export type SqlserverTableId = string
 
-export const getSchema = (schema: SqlserverSchemaName | undefined, sampleSize: number, ignoreErrors: boolean, logger: Logger) => async (conn: Conn): Promise<SqlserverSchema> => {
+export type SqlserverSchemaOpts = {logger: Logger, schema: SqlserverSchemaName | undefined, sampleSize: number, inferRelations: boolean, ignoreErrors: boolean}
+export const getSchema = ({logger, schema, sampleSize, inferRelations, ignoreErrors}: SqlserverSchemaOpts) => async (conn: Conn): Promise<SqlserverSchema> => {
     const constraints = await getAllConstraints(conn, schema, ignoreErrors, logger).then(constraints => mapValues(groupBy(constraints, toTableId), buildTableConstraints))
     const columns = await getColumns(conn, schema, ignoreErrors, logger)
-        .then(cols => enrichColumnsWithSchema(conn, cols, constraints, sampleSize, ignoreErrors, logger))
         .then(cols => groupBy(cols, toTableId))
-    const comments = await getTableComments(conn, schema, ignoreErrors, logger).then(tables => groupBy(tables, toTableId))
+        .then(cols => mapValuesAsync(cols, tableCols => enrichColumnsWithSchema(conn, tableCols, constraints, sampleSize, inferRelations, ignoreErrors, logger)))
+    const comments = await getComments(conn, schema, ignoreErrors, logger).then(comments => groupBy(comments, toTableId))
     return {
         tables: Object.entries(columns).map(([tableId, columns]) => {
             const tableConstraints = constraints[tableId] || []
@@ -48,7 +57,7 @@ export const getSchema = (schema: SqlserverSchemaName | undefined, sampleSize: n
                         type: col.column_type,
                         nullable: col.column_nullable === 'YES',
                         default: col.column_default ? removeSurroundingParentheses(col.column_default) : null,
-                        comment: col.column_comment || null,
+                        comment: tableComments.find(c => c.column === col.column)?.comment || null,
                         schema: col.column_schema || null
                     })),
                 primaryKey: tableConstraints.filter((c): c is ConstraintPrimaryKey => c.type === 'PRIMARY KEY').map(c => ({
@@ -70,7 +79,7 @@ export const getSchema = (schema: SqlserverSchemaName | undefined, sampleSize: n
                     columns: c.columns,
                     predicate: c.definition ? removeSurroundingParentheses(c.definition) : null
                 })) || [],
-                comment: tableComments[0]?.comment || null
+                comment: tableComments.find(c => !c.column)?.comment || null
             }
         }).sort((a, b) => `${a.schema}.${a.table}`.localeCompare(`${b.schema}.${b.table}`)),
         relations: Object.values(constraints).flat().filter((c): c is ConstraintForeignKey => c.type === 'FOREIGN KEY').flatMap(c => c.columns.map(col => ({
@@ -82,8 +91,7 @@ export const getSchema = (schema: SqlserverSchemaName | undefined, sampleSize: n
     }
 }
 
-export function formatSchema(schema: SqlserverSchema, inferRelations: boolean): AzimuttSchema {
-    // FIXME: handle inferRelations
+export function formatSchema(schema: SqlserverSchema): AzimuttSchema {
     return {
         tables: schema.tables.map(t => removeUndefined({
             schema: t.schema,
@@ -139,71 +147,73 @@ type RawColumn = {
     column_index: number
     column_default: string | null
     column_nullable: 'YES' | 'NO'
-    column_comment: string
     column_schema?: ValueSchema
 }
 
 function getColumns(conn: Conn, schema: SqlserverSchemaName | undefined, ignoreErrors: boolean, logger: Logger): Promise<RawColumn[]> {
-    return conn.query<RawColumn>(
-        `SELECT c.TABLE_SCHEMA                  AS "schema",
-                c.TABLE_NAME                    AS "table",
-                t.TABLE_TYPE                    AS table_kind,
-                c.COLUMN_NAME                   AS "column",
-                ${buildColumnType('c')}         AS column_type,
-                c.ORDINAL_POSITION              AS column_index,
-                c.COLUMN_DEFAULT                AS column_default,
-                c.IS_NULLABLE                   AS column_nullable,
-                (SELECT cc.value
-                 FROM sys.columns sc
-                          JOIN sys.objects st ON sc.object_id = st.object_id
-                          JOIN sys.sysusers ss ON st.schema_id = ss.uid
-                          JOIN sys.extended_properties cc
-                               ON cc.major_id = sc.object_id AND cc.minor_id = sc.column_id AND
-                                  cc.name = 'MS_Description'
-                 WHERE ss.name = c.TABLE_SCHEMA
-                   AND st.name = c.TABLE_NAME
-                   AND sc.name = c.COLUMN_NAME) AS column_comment
-         FROM information_schema.COLUMNS c
-                  JOIN information_schema.TABLES t ON c.TABLE_SCHEMA = t.TABLE_SCHEMA AND c.TABLE_NAME = t.TABLE_NAME
-         WHERE ${filterSchema('c.TABLE_SCHEMA', schema)};`
+    return conn.query<RawColumn>(`
+        SELECT c.TABLE_SCHEMA          AS "schema",
+               c.TABLE_NAME            AS "table",
+               t.TABLE_TYPE            AS table_kind,
+               c.COLUMN_NAME           AS "column",
+               ${buildColumnType('c')} AS column_type,
+               c.ORDINAL_POSITION      AS column_index,
+               c.COLUMN_DEFAULT        AS column_default,
+               c.IS_NULLABLE           AS column_nullable
+        FROM information_schema.COLUMNS c
+                 JOIN information_schema.TABLES t ON c.TABLE_SCHEMA = t.TABLE_SCHEMA AND c.TABLE_NAME = t.TABLE_NAME
+        WHERE ${filterSchema('c.TABLE_SCHEMA', schema)}
+        ORDER BY "schema", "table", column_index;`, [], 'getColumns'
     ).catch(handleError(`Failed to get columns${schema ? ` for schema '${schema}'` : ''}`, [], ignoreErrors, logger))
 }
 
-function enrichColumnsWithSchema(conn: Conn, columns: RawColumn[], constraints: Record<SqlserverTableId, ConstraintFormatted[]>, sampleSize: number, ignoreErrors: boolean, logger: Logger): Promise<RawColumn[]> {
-    return sequence(columns, (c: RawColumn) => {
-        if (c.column_type === 'nvarchar') {
-            if (constraints[toTableId(c)]?.find(ct => ct.type === 'CHECK' && ct.schema == c.schema && ct.table == c.table && ct.columns.indexOf(c.column) >= 0 && ct.definition?.includes('isjson'))) {
-                return getColumnSchema(conn, c.schema, c.table, c.column, sampleSize, ignoreErrors, logger)
-                    .then(column_schema => ({...c, column_schema}))
-            }
+function enrichColumnsWithSchema(conn: Conn, tableCols: RawColumn[], constraints: Record<SqlserverTableId, ConstraintFormatted[]>, sampleSize: number, inferRelations: boolean, ignoreErrors: boolean, logger: Logger): Promise<RawColumn[]> {
+    const colNames = tableCols.map(c => c.column)
+    return sequence(tableCols, async c => {
+        if (sampleSize > 0 && c.column_type === 'nvarchar' && constraints[toTableId(c)]?.find(ct => ct.type === 'CHECK' && ct.schema == c.schema && ct.table == c.table && ct.columns.indexOf(c.column) >= 0 && ct.definition?.includes('isjson'))) {
+            return getColumnSchema(conn, c.schema, c.table, c.column, sampleSize, ignoreErrors, logger).then(column_schema => ({...c, column_schema}))
+        } else if (inferRelations && isPolymorphicColumn(c.column, colNames)) {
+            return c // TODO: fetch distinct values
+        } else {
+            return c
         }
-        return Promise.resolve(c)
     })
 }
 
 async function getColumnSchema(conn: Conn, schema: string, table: string, column: string, sampleSize: number, ignoreErrors: boolean, logger: Logger): Promise<ValueSchema> {
     const sqlTable = `${schema ? `${schema}.` : ''}${table}`
-    return conn.query(`SELECT TOP ${sampleSize} ${column} FROM ${sqlTable} WHERE ${column} IS NOT NULL;`)
+    return conn.query(`SELECT TOP ${sampleSize} ${column} FROM ${sqlTable} WHERE ${column} IS NOT NULL;`, [], 'getColumnSchema')
         .then(rows => valuesToSchema(rows.map(row => safeJsonParse(row[column] as string))))
         .catch(handleError(`Failed to infer schema for column '${column}' of table '${schema ? schema + '.' : ''}${table}'`, valuesToSchema([]), ignoreErrors, logger))
 }
 
-type RawTable = {
+type RawComment = {
     schema: SqlserverSchemaName
     table: SqlserverTableName
+    column?: SqlserverColumnName
     comment: string
 }
 
-function getTableComments(conn: Conn, schema: SqlserverSchemaName | undefined, ignoreErrors: boolean, logger: Logger): Promise<RawTable[]> {
-    return conn.query<RawTable>(
-        `SELECT s.name   AS "schema",
-                t.name   AS "table",
-                ep.value AS comment
-         FROM sys.sysobjects t
-                  JOIN sys.sysusers s ON s.uid = t.uid
-                  JOIN sys.extended_properties ep ON ep.major_id = t.id AND ep.minor_id = 0 AND ep.name = 'MS_Description'
-         WHERE (t.type = 'U' OR t.type = 'V') AND ep.value IS NOT NULL AND ${filterSchema('s.name', schema)};`
-    ).catch(handleError(`Failed to get table comments${schema ? ` for schema '${schema}'` : ''}`, [], ignoreErrors, logger))
+function getComments(conn: Conn, schema: SqlserverSchemaName | undefined, ignoreErrors: boolean, logger: Logger): Promise<RawComment[]> {
+    // https://learn.microsoft.com/sql/relational-databases/system-catalog-views/extended-properties-catalog-views-sys-extended-properties
+    // https://learn.microsoft.com/sql/relational-databases/system-catalog-views/sys-objects-transact-sql
+    // https://learn.microsoft.com/sql/relational-databases/system-compatibility-views/sys-sysusers-transact-sql
+    // https://learn.microsoft.com/sql/relational-databases/system-catalog-views/sys-columns-transact-sql
+    return conn.query<RawComment>(`
+        SELECT s.name  AS "schema",
+               t.name  AS "table",
+               c.name  AS "column",
+               p.value AS comment
+        FROM sys.extended_properties p
+                 JOIN sys.objects t ON t.object_id = p.major_id
+                 JOIN sys.sysusers s ON s.uid = t.schema_id
+                 LEFT OUTER JOIN sys.columns c ON c.object_id = p.major_id AND c.column_id = p.minor_id
+        WHERE p.class = 1
+          AND p.name = 'MS_Description'
+          AND p.value IS NOT NULL
+          AND t.type IN ('S', 'IT', 'U', 'V')
+          AND ${filterSchema('s.name', schema)};`, [], 'getComments'
+    ).catch(handleError(`Failed to get comments${schema ? ` for schema '${schema}'` : ''}`, [], ignoreErrors, logger))
 }
 
 type RawConstraint = {
@@ -228,62 +238,59 @@ async function getAllConstraints(conn: Conn, schema: SqlserverSchemaName | undef
 }
 
 function getPKsUniquesAndIndexes(conn: Conn, schema: SqlserverSchemaName | undefined, ignoreErrors: boolean, logger: Logger): Promise<RawConstraint[]> {
-    return conn.query<RawConstraint>(
-        `SELECT OBJECT_SCHEMA_NAME(i.object_id)     AS "schema",
-                OBJECT_NAME(i.object_id)            AS "table",
-                i.name                              AS "constraint",
-                CASE
-                    WHEN OBJECTPROPERTY(OBJECT_ID(OBJECT_SCHEMA_NAME(i.object_id) + '.' + QUOTENAME(i.name)),
-                                        'IsPrimaryKey') = 1
-                        THEN 'PRIMARY KEY'
-                    WHEN i.is_unique = 1
-                        THEN 'UNIQUE'
-                    ELSE 'INDEX' END                AS type,
-                COL_NAME(i.object_id, ic.column_id) AS "column",
-                ic.key_ordinal                      as "index"
-         FROM sys.indexes i
-                  JOIN sys.index_columns ic ON i.object_id = ic.object_id AND i.index_id = ic.index_id
-         WHERE ${filterSchema('OBJECT_SCHEMA_NAME(i.object_id)', schema)};`
+    return conn.query<RawConstraint>(`
+        SELECT OBJECT_SCHEMA_NAME(i.object_id)     AS "schema",
+               OBJECT_NAME(i.object_id)            AS "table",
+               i.name                              AS "constraint",
+               CASE
+                   WHEN OBJECTPROPERTY(OBJECT_ID(OBJECT_SCHEMA_NAME(i.object_id) + '.' + QUOTENAME(i.name)), 'IsPrimaryKey') = 1
+                       THEN 'PRIMARY KEY'
+                   WHEN i.is_unique = 1
+                       THEN 'UNIQUE'
+                   ELSE 'INDEX' END                AS type,
+               COL_NAME(i.object_id, ic.column_id) AS "column",
+               ic.key_ordinal                      as "index"
+        FROM sys.indexes i
+                 JOIN sys.index_columns ic ON i.object_id = ic.object_id AND i.index_id = ic.index_id
+        WHERE ${filterSchema('OBJECT_SCHEMA_NAME(i.object_id)', schema)};`, [], 'getPKsUniquesAndIndexes'
     ).catch(handleError(`Failed to get constraints (pks, uniques & indexes)${schema ? ` for schema '${schema}'` : ''}`, [], ignoreErrors, logger))
 }
 
 function getForeignKeys(conn: Conn, schema: SqlserverSchemaName | undefined, ignoreErrors: boolean, logger: Logger): Promise<RawConstraint[]> {
-    return conn.query<RawConstraint>(
-        `SELECT sch1.name                AS "schema",
-                tab1.name                AS "table",
-                obj.name                 AS "constraint",
-                'FOREIGN KEY'            AS type,
-                col1.name                AS "column",
-                fkc.constraint_column_id AS "index",
-                sch2.name                AS "ref_schema",
-                tab2.name                AS "ref_table",
-                col2.name                AS "ref_column"
-         FROM sys.foreign_key_columns fkc
-                  JOIN sys.objects obj ON obj.object_id = fkc.constraint_object_id
-                  JOIN sys.tables tab1 ON tab1.object_id = fkc.parent_object_id
-                  JOIN sys.schemas sch1 ON tab1.schema_id = sch1.schema_id
-                  JOIN sys.columns col1 ON col1.column_id = parent_column_id AND col1.object_id = tab1.object_id
-                  JOIN sys.tables tab2 ON tab2.object_id = fkc.referenced_object_id
-                  JOIN sys.schemas sch2 ON tab2.schema_id = sch2.schema_id
-                  JOIN sys.columns col2 ON col2.column_id = referenced_column_id AND col2.object_id = tab2.object_id
-         WHERE ${filterSchema('sch1.name', schema)};`
+    return conn.query<RawConstraint>(`
+        SELECT sch1.name                AS "schema",
+               tab1.name                AS "table",
+               obj.name                 AS "constraint",
+               'FOREIGN KEY'            AS type,
+               col1.name                AS "column",
+               fkc.constraint_column_id AS "index",
+               sch2.name                AS "ref_schema",
+               tab2.name                AS "ref_table",
+               col2.name                AS "ref_column"
+        FROM sys.foreign_key_columns fkc
+                 JOIN sys.objects obj ON obj.object_id = fkc.constraint_object_id
+                 JOIN sys.tables tab1 ON tab1.object_id = fkc.parent_object_id
+                 JOIN sys.schemas sch1 ON tab1.schema_id = sch1.schema_id
+                 JOIN sys.columns col1 ON col1.column_id = parent_column_id AND col1.object_id = tab1.object_id
+                 JOIN sys.tables tab2 ON tab2.object_id = fkc.referenced_object_id
+                 JOIN sys.schemas sch2 ON tab2.schema_id = sch2.schema_id
+                 JOIN sys.columns col2 ON col2.column_id = referenced_column_id AND col2.object_id = tab2.object_id
+        WHERE ${filterSchema('sch1.name', schema)};`, [], 'getForeignKeys'
     ).catch(handleError(`Failed to get foreign keys${schema ? ` for schema '${schema}'` : ''}`, [], ignoreErrors, logger))
 }
 
 function getChecks(conn: Conn, schema: SqlserverSchemaName | undefined, ignoreErrors: boolean, logger: Logger): Promise<RawConstraint[]> {
-    return conn.query<RawConstraint>(
-        `SELECT SCHEMA_NAME(t.schema_id) AS "schema",
-                t.name                   AS "table",
-                con.name                 AS "constraint",
-                'CHECK'                  AS type,
-                c.name                   AS "column",
-                con.definition
-         FROM sys.check_constraints con
-                  LEFT OUTER JOIN sys.objects t ON con.parent_object_id = t.object_id
-                  LEFT OUTER JOIN sys.all_columns c
-                                  ON con.parent_column_id = c.column_id AND con.parent_object_id = c.object_id
-         WHERE con.is_disabled = 'false'
-           AND ${filterSchema('SCHEMA_NAME(t.schema_id)', schema)};`
+    return conn.query<RawConstraint>(`
+        SELECT SCHEMA_NAME(t.schema_id) AS "schema",
+               t.name                   AS "table",
+               con.name                 AS "constraint",
+               'CHECK'                  AS type,
+               c.name                   AS "column",
+               con.definition
+        FROM sys.check_constraints con
+                 LEFT OUTER JOIN sys.objects t ON con.parent_object_id = t.object_id
+                 LEFT OUTER JOIN sys.all_columns c ON con.parent_column_id = c.column_id AND con.parent_object_id = c.object_id
+        WHERE con.is_disabled = 'false' AND ${filterSchema('SCHEMA_NAME(t.schema_id)', schema)};`, [], 'getChecks'
     ).catch(handleError(`Failed to get checks${schema ? ` for schema '${schema}'` : ''}`, [], ignoreErrors, logger))
 }
 

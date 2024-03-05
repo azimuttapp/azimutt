@@ -1,6 +1,14 @@
-import {groupBy, Logger, removeUndefined, sequence, zip} from "@azimutt/utils";
-import {AzimuttSchema, ColumnName, SchemaName, TableName} from "@azimutt/database-types";
-import {schemaToColumns, ValueSchema, valuesToSchema} from "@azimutt/json-infer-schema";
+import {groupBy, Logger, mapValuesAsync, removeUndefined, sequence, zip} from "@azimutt/utils";
+import {
+    AzimuttSchema,
+    ColumnName,
+    isPolymorphicColumn,
+    SchemaName,
+    schemaToColumns,
+    TableName,
+    ValueSchema,
+    valuesToSchema
+} from "@azimutt/database-types";
 import {Conn} from "./common";
 import {buildSqlColumn, buildSqlTable} from "./helpers";
 
@@ -23,10 +31,11 @@ export type PostgresRelationName = string
 export type PostgresTypeName = string
 export type PostgresTableId = string
 
-export const getSchema = (schema: PostgresSchemaName | undefined, sampleSize: number, ignoreErrors: boolean, logger: Logger) => async (conn: Conn): Promise<PostgresSchema> => {
+export type PostgresSchemaOpts = {logger: Logger, schema: PostgresSchemaName | undefined, sampleSize: number, inferRelations: boolean, ignoreErrors: boolean}
+export const getSchema = ({logger, schema, sampleSize, inferRelations, ignoreErrors}: PostgresSchemaOpts) => async (conn: Conn): Promise<PostgresSchema> => {
     const columns = await getColumns(conn, schema, ignoreErrors, logger)
-        .then(cols => enrichColumnsWithSchema(conn, cols, sampleSize, ignoreErrors, logger))
         .then(cols => groupBy(cols, toTableId))
+        .then(cols => mapValuesAsync(cols, tableCols => enrichColumnsWithSchema(conn, tableCols, sampleSize, inferRelations, ignoreErrors, logger)))
     const columnsByIndex: { [tableId: string]: { [columnIndex: number]: RawColumn } } = Object.keys(columns).reduce((acc, tableId) => ({
         ...acc,
         [tableId]: columns[tableId].reduce((acc, c) => ({...acc, [c.column_index]: c}), {})
@@ -96,8 +105,7 @@ export const getSchema = (schema: PostgresSchemaName | undefined, sampleSize: nu
     }
 }
 
-export function formatSchema(schema: PostgresSchema, inferRelations: boolean): AzimuttSchema {
-    // FIXME: handle inferRelations
+export function formatSchema(schema: PostgresSchema): AzimuttSchema {
     return {
         tables: schema.tables.map(t => removeUndefined({
             schema: t.schema,
@@ -194,53 +202,37 @@ async function getColumns(conn: Conn, schema: PostgresSchemaName | undefined, ig
           AND a.attnum > 0
           AND a.atttypid != 0
           AND ${filterSchema('n.nspname', schema)}
-        ORDER BY table_schema, table_name, column_index`
+        ORDER BY table_schema, table_name, column_index;`, [], 'getColumns'
     ).catch(handleError(`Failed to get columns${schema ? ` for schema '${schema}'` : ''}`, [], ignoreErrors, logger))
 }
 
-function enrichColumnsWithSchema(conn: Conn, columns: RawColumn[], sampleSize: number, ignoreErrors: boolean, logger: Logger): Promise<RawColumn[]> {
-    return sequence(columns, async c => {
-        if (isPolymorphicColumn(c, columns)) {
-            return getColumnDistinctValues(conn, c.table_schema, c.table_name, c.column_name, ignoreErrors, logger).then(column_values => ({...c, column_values}))
-        } else if (c.column_type === 'jsonb') {
+function enrichColumnsWithSchema(conn: Conn, tableCols: RawColumn[], sampleSize: number, inferRelations: boolean, ignoreErrors: boolean, logger: Logger): Promise<RawColumn[]> {
+    const colNames = tableCols.map(c => c.column_name)
+    return sequence(tableCols, async c => {
+        if (sampleSize > 0 && c.column_type === 'jsonb') {
             return getColumnSchema(conn, c.table_schema, c.table_name, c.column_name, sampleSize, ignoreErrors, logger).then(column_schema => ({...c, column_schema}))
+        } else if (inferRelations && isPolymorphicColumn(c.column_name, colNames)) {
+            return getColumnDistinctValues(conn, c.table_schema, c.table_name, c.column_name, ignoreErrors, logger).then(column_values => ({...c, column_values}))
         } else {
             return c
         }
     })
 }
 
-export function isPolymorphicColumn(column: RawColumn, columns: RawColumn[]): boolean {
-    return ['type', 'class', 'kind'].some(suffix => {
-        if (column.column_name.endsWith(suffix)) {
-            const related = column.column_name.slice(0, -suffix.length) + 'id'
-            return columns.some(c => c.column_name === related)
-        } else if (column.column_name.endsWith(suffix.toUpperCase())) {
-            const related = column.column_name.slice(0, -suffix.length) + 'ID'
-            return columns.some(c => c.column_name === related)
-        } else if (column.column_name.endsWith(suffix.charAt(0).toUpperCase() + suffix.slice(1))) {
-            const related = column.column_name.slice(0, -suffix.length) + 'Id'
-            return columns.some(c => c.column_name === related)
-        } else {
-            return false
-        }
-    })
+async function getColumnSchema(conn: Conn, schema: SchemaName, table: TableName, column: ColumnName, sampleSize: number, ignoreErrors: boolean, logger: Logger): Promise<ValueSchema> {
+    const sqlTable = buildSqlTable(schema, table)
+    const sqlColumn = buildSqlColumn(column)
+    return conn.query(`SELECT ${sqlColumn} FROM ${sqlTable} WHERE ${sqlColumn} IS NOT NULL LIMIT ${sampleSize};`, [], 'getColumnSchema')
+        .then(rows => valuesToSchema(rows.map(row => row[column])))
+        .catch(handleError(`Failed to infer schema for column '${column}' of table '${schema ? schema + '.' : ''}${table}'`, valuesToSchema([]), ignoreErrors, logger))
 }
 
 async function getColumnDistinctValues(conn: Conn, schema: SchemaName, table: TableName, column: ColumnName, ignoreErrors: boolean, logger: Logger): Promise<string[]> {
     const sqlTable = buildSqlTable(schema, table)
     const sqlColumn = buildSqlColumn(column)
-    return conn.query<{value: string}>(`SELECT DISTINCT ${sqlColumn} as value FROM ${sqlTable} WHERE ${sqlColumn} IS NOT NULL ORDER BY value LIMIT 30;`)
+    return conn.query<{value: string}>(`SELECT DISTINCT ${sqlColumn} as value FROM ${sqlTable} WHERE ${sqlColumn} IS NOT NULL ORDER BY value LIMIT 30;`, [], 'getColumnDistinctValues')
         .then(rows => rows.map(v => v.value?.toString()))
         .catch(handleError(`Failed to get distinct values for column '${column}' of table '${schema ? schema + '.' : ''}${table}'`, [], ignoreErrors, logger))
-}
-
-async function getColumnSchema(conn: Conn, schema: SchemaName, table: TableName, column: ColumnName, sampleSize: number, ignoreErrors: boolean, logger: Logger): Promise<ValueSchema> {
-    const sqlTable = buildSqlTable(schema, table)
-    const sqlColumn = buildSqlColumn(column)
-    return conn.query(`SELECT ${sqlColumn} FROM ${sqlTable} WHERE ${sqlColumn} IS NOT NULL LIMIT ${sampleSize};`)
-        .then(rows => valuesToSchema(rows.map(row => row[column])))
-        .catch(handleError(`Failed to infer schema for column '${column}' of table '${schema ? schema + '.' : ''}${table}'`, valuesToSchema([]), ignoreErrors, logger))
 }
 
 type RawConstraint = {
@@ -268,7 +260,7 @@ async function getConstraints(conn: Conn, schema: PostgresSchemaName | undefined
                  JOIN pg_namespace n ON n.oid = c.relnamespace
         WHERE cn.contype IN ('p', 'c')
           AND ${filterSchema('n.nspname', schema)}
-        ORDER BY table_schema, table_name, constraint_name`
+        ORDER BY table_schema, table_name, constraint_name;`, [], 'getConstraints'
     ).catch(handleError(`Failed to get constraints${schema ? ` for schema '${schema}'` : ''}`, [], ignoreErrors, logger))
 }
 
@@ -298,7 +290,7 @@ async function getIndexes(conn: Conn, schema: PostgresSchemaName | undefined, ig
                  JOIN pg_namespace tn ON tn.oid = tc.relnamespace
         WHERE i.indisprimary = false
           AND ${filterSchema('tn.nspname', schema)}
-        ORDER BY table_schema, table_name, index_name`
+        ORDER BY table_schema, table_name, index_name;`, [], 'getIndexes'
     ).then(rows => rows.map(row => ({
         ...row,
         definition: row.definition.indexOf(' USING ') > 0 ? row.definition.split(' USING ')[1].trim() : row.definition
@@ -328,7 +320,7 @@ async function getComments(conn: Conn, schema: PostgresSchemaName | undefined, i
                  LEFT OUTER JOIN pg_attribute a ON a.attrelid = c.oid AND a.attnum = d.objsubid
         WHERE c.relkind IN ('r', 'v', 'm')
           AND ${filterSchema('n.nspname', schema)}
-        ORDER BY table_schema, table_name, column_name`
+        ORDER BY table_schema, table_name, column_name;`, [], 'getComments'
     ).catch(handleError(`Failed to get comments${schema ? ` for schema '${schema}'` : ''}`, [], ignoreErrors, logger))
 }
 
@@ -361,7 +353,7 @@ async function getRelations(conn: Conn, schema: PostgresSchemaName | undefined, 
                  JOIN pg_namespace tn ON tn.oid = tc.relnamespace
         WHERE cn.contype IN ('f')
           AND ${filterSchema('n.nspname', schema)}
-        ORDER BY table_schema, table_name, constraint_name`
+        ORDER BY table_schema, table_name, constraint_name;`, [], 'getRelations'
     ).catch(handleError(`Failed to get relations${schema ? ` for schema '${schema}'` : ''}`, [], ignoreErrors, logger))
 }
 
@@ -394,7 +386,7 @@ async function getTypes(conn: Conn, schema: PostgresSchemaName | undefined, igno
         WHERE (t.typrelid = 0 OR (SELECT c.relkind = 'c' FROM pg_class c WHERE c.oid = t.typrelid))
           AND NOT EXISTS(SELECT 1 FROM pg_type WHERE oid = t.typelem AND typarray = t.oid)
           AND ${filterSchema('n.nspname', schema)}
-        ORDER BY type_schema, type_name`
+        ORDER BY type_schema, type_name;`, [], 'getTypes'
     ).catch(handleError(`Failed to get types${schema ? ` for schema '${schema}'` : ''}`, [], ignoreErrors, logger))
 }
 

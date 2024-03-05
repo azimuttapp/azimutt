@@ -10,7 +10,6 @@ For each lib, look at `package.json` description to see what it does, but in sho
 - `utils`: convenient additional function on base objects (array, object, promise...)
 - `database-types`: basic types around the database, it's used in most other libs and projects
 - `shared`: code that is not meant to be release but needs to be shared between several projects
-- `json-infer-schema`: a library to infer a schema from a list of json objects
 - `connector-couchbase`: extract database schema for Couchbase
 - `connector-mariadb`: extract database schema for MariaDB
 - `connector-mongodb`: extract database schema for MongoDB

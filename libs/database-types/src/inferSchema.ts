@@ -1,5 +1,5 @@
 import {distinct, mapValues, removeUndefined} from "@azimutt/utils";
-import {AzimuttColumn} from "@azimutt/database-types";
+import {AzimuttColumn} from "./schema";
 
 export type ValueSchema = { type: ValueType, values: Value[], nullable?: boolean, nested?: { [key: string]: ValueSchema } }
 export type Value = any

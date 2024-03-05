@@ -1,19 +1,25 @@
 import {Client, ClientConfig, types} from "pg";
-import {AnyError, errorToString} from "@azimutt/utils";
-import {DatabaseUrlParsed} from "@azimutt/database-types";
+import {AnyError, errorToString, Logger} from "@azimutt/utils";
+import {DatabaseUrlParsed, logQueryIfNeeded} from "@azimutt/database-types";
 import {Conn, QueryResultArrayMode, QueryResultRow} from "./common";
 
-export async function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c: Conn) => Promise<T>): Promise<T> {
+export type PostgresConnectOpts = {logger: Logger, logQueries: boolean}
+export async function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c: Conn) => Promise<T>, {logger, logQueries}: PostgresConnectOpts): Promise<T> {
     types.setTypeParser(types.builtins.INT8, (val: string) => parseInt(val, 10))
     const client = await createConnection(buildConfig(application, url))
         .catch(_ => createConnection(url.full))
         .catch(err => Promise.reject(connectionError(err)))
+    let queryCpt = 1
     const conn: Conn = {
-        query<T extends QueryResultRow>(sql: string, parameters: any[] = []): Promise<T[]> {
-            return client.query<T>(sql, parameters).then(res => res.rows, err => Promise.reject(queryError(sql, err)))
+        query<T extends QueryResultRow>(sql: string, parameters: any[] = [], name?: string): Promise<T[]> {
+            return logQueryIfNeeded(queryCpt++, name, sql, parameters, (sql, parameters) => {
+                return client.query<T>(sql, parameters).then(res => res.rows, err => Promise.reject(queryError(sql, err)))
+            }, r => r.length, logger, logQueries)
         },
-        queryArrayMode(sql: string, parameters: any[] = []): Promise<QueryResultArrayMode> {
-            return client.query({text: sql, values: parameters, rowMode: 'array'}).then(null, err => Promise.reject(queryError(sql, err)))
+        queryArrayMode(sql: string, parameters: any[] = [], name?: string): Promise<QueryResultArrayMode> {
+            return logQueryIfNeeded(queryCpt++, name, sql, parameters, (sql, parameters) => {
+                return client.query({text: sql, values: parameters, rowMode: 'array'}).then(null, err => Promise.reject(queryError(sql, err)))
+            }, r => r.rows.length, logger, logQueries)
         }
     }
     return exec(conn).then(
