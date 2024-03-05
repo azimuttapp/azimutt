@@ -122,13 +122,16 @@ defmodule AzimuttWeb.Router do
       pipe_through([:user_settings_root_layout, :empty_layout])
       get("/", UserSettingsController, :show)
       put("/account", UserSettingsController, :update_account)
+      delete("/account", UserSettingsController, :delete_account)
       put("/email", UserSettingsController, :update_email)
       get("/email/:token", UserSettingsController, :confirm_update_email)
       put("/password", UserSettingsController, :update_password)
       post("/password", UserSettingsController, :set_password)
       delete("/providers/:provider", UserSettingsController, :remove_provider)
-      post("/auth-tokens", UserSettingsController, :create_auth_token)
-      delete("/auth-tokens/:token_id", UserSettingsController, :delete_auth_token)
+
+      get("/auth", UserSettingsController, :auth)
+      post("/auth/tokens", UserSettingsController, :create_auth_token)
+      delete("/auth/tokens/:token_id", UserSettingsController, :delete_auth_token)
     end
 
     resources "/organizations", OrganizationController, param: "organization_id", except: [:index] do
