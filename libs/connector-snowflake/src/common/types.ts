@@ -10,7 +10,7 @@ export type QueryResultArrayMode = {
 }
 
 export interface Conn {
-    query<T extends QueryResultRow>(sql: string, parameters?: any[]): Promise<T[]>
+    query<T extends QueryResultRow>(sql: string, parameters?: any[], name?: string): Promise<T[]>
 
-    queryArrayMode(sql: string, parameters?: any[]): Promise<QueryResultArrayMode>
+    queryArrayMode(sql: string, parameters?: any[], name?: string): Promise<QueryResultArrayMode>
 }

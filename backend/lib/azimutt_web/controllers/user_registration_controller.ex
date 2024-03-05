@@ -2,7 +2,9 @@ defmodule AzimuttWeb.UserRegistrationController do
   use AzimuttWeb, :controller
   alias Azimutt.Accounts
   alias Azimutt.Accounts.User
+  alias Azimutt.Services.RecaptchaSrv
   alias Azimutt.Utils.Mapx
+  alias Azimutt.Utils.Result
   alias AzimuttWeb.UserAuth
   action_fallback AzimuttWeb.FallbackController
 
@@ -12,12 +14,16 @@ defmodule AzimuttWeb.UserRegistrationController do
     render(conn, "new.html", changeset: changeset)
   end
 
-  def create(conn, %{"user" => user_params}) do
+  def create(conn, %{"user" => user_params} = params) do
     now = DateTime.utc_now()
     auth_method = "password"
     attrs = user_params |> Mapx.atomize() |> Map.put(:avatar, Faker.Avatar.image_url())
 
-    case Accounts.register_password_user(attrs, UserAuth.get_attribution(conn), now) do
+    user_result =
+      RecaptchaSrv.validate(params["g-recaptcha-response"])
+      |> Result.flat_map(fn _ -> Accounts.register_password_user(attrs, UserAuth.get_attribution(conn), now) end)
+
+    case user_result do
       {:ok, user} ->
         Accounts.send_email_confirmation(user, &Routes.user_confirmation_url(conn, :confirm, &1))
 

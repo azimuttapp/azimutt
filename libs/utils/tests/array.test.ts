@@ -1,5 +1,5 @@
 import {describe, expect, test} from "@jest/globals";
-import {collect, collectOne, distinct, groupBy, mergeBy, partition, shuffle, zip} from "../src";
+import {collect, collectOne, distinct, findLastIndex, groupBy, indexBy, mergeBy, partition, shuffle, zip} from "../src";
 
 describe('array', () => {
     test('collect', () => {
@@ -11,9 +11,16 @@ describe('array', () => {
     test('distinct', () => {
         expect(distinct([1, 1, 2, 3, 5, 3])).toEqual([1, 2, 3, 5])
     })
+    test('findLastIndex', () => {
+        expect(findLastIndex([1, 1, 2, 3, 5, 3], i => i === 3)).toEqual(5)
+        expect(findLastIndex([1, 1, 2, 3, 5, 3], i => i === 6)).toEqual(-1)
+    })
+    test('indexBy', () => {
+        expect(indexBy([{id: 1}, {id: 2}], v => v.id)).toEqual({1: {id: 1}, 2: {id: 2}})
+        expect(indexBy([1, 2, 3], i => i % 2)).toEqual({0: 2, 1: 3})
+    })
     test('partition', () => {
-        const results = partition([1, 2, 3, 4, 5], i => i % 2 === 0)
-        expect(results).toEqual([[2, 4], [1, 3, 5]])
+        expect(partition([1, 2, 3, 4, 5], i => i % 2 === 0)).toEqual([[2, 4], [1, 3, 5]])
     })
     test('mergeBy', () => {
         type Item = {key: string, value?: string, item?: string}

@@ -1,6 +1,6 @@
 # SQL Server connector
 
-This library is able to connect to [SQL Server](https://www.microsoft.com/fr-fr/sql-server/sql-server-downloads), extract its schema and more...
+This library allows to connect to [SQL Server](https://www.microsoft.com/fr-fr/sql-server/sql-server-downloads), extract its schema and more...
 
 It lists all schemas, tables, columns, relations and types and format them in a JSON Schema.
 

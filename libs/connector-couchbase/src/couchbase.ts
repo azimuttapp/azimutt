@@ -1,17 +1,9 @@
-import {
-    Cluster,
-    Collection,
-    PlanningFailureError,
-    QueryResult,
-    UnambiguousTimeoutError
-} from "couchbase";
+import {Cluster, Collection, PlanningFailureError, QueryResult, UnambiguousTimeoutError} from "couchbase";
 import {errorToString, Logger, sequence} from "@azimutt/utils";
-import {AzimuttSchema, DatabaseUrlParsed} from "@azimutt/database-types";
-import {schemaToColumns, ValueSchema, valuesToSchema} from "@azimutt/json-infer-schema";
-import {connect} from "./connect";
+import {AzimuttSchema, schemaToColumns, ValueSchema, valuesToSchema} from "@azimutt/database-types";
 
-export function execQuery(application: string, url: DatabaseUrlParsed, query: string, parameters: any[]): Promise<QueryResult> {
-    return connect(application, url, cluster => cluster.query(query, {parameters}))
+export const execQuery = (query: string, parameters: any[]) => (cluster: Cluster): Promise<QueryResult> => {
+    return cluster.query(query, {parameters})
 }
 
 export type CouchbaseSchema = { collections: CouchbaseCollection[] }
@@ -29,29 +21,27 @@ export type CouchbaseScopeName = string
 export type CouchbaseCollectionName = string
 export type CouchbaseCollectionType = {field: string, value: string | undefined}
 
-export async function getSchema(application: string, url: DatabaseUrlParsed, bucketName: CouchbaseBucketName | undefined, mixedCollection: string | undefined, sampleSize: number, ignoreErrors: boolean, logger: Logger): Promise<CouchbaseSchema> {
-    return connect(application, url, async cluster => {
-        logger.log('Connected to cluster ...')
-        const bucketNames: CouchbaseBucketName[] = bucketName ? [bucketName] : await listBuckets(cluster, ignoreErrors, logger)
-        logger.log(bucketName ? `Export for '${bucketName}' bucket ...` : `Found ${bucketNames.length} buckets to export ...`)
+export type CouchbaseSchemaOpts = {logger: Logger, bucket: CouchbaseBucketName | undefined, mixedCollection: string | undefined, sampleSize: number, ignoreErrors: boolean}
+export const getSchema = ({logger, bucket, mixedCollection, sampleSize, ignoreErrors}: CouchbaseSchemaOpts) => async (cluster: Cluster): Promise<CouchbaseSchema> => {
+    logger.log('Connected to cluster ...')
+    const bucketNames: CouchbaseBucketName[] = bucket ? [bucket] : await listBuckets(cluster, ignoreErrors, logger)
+    logger.log(bucket ? `Export for '${bucket}' bucket ...` : `Found ${bucketNames.length} buckets to export ...`)
 
-        const schemas = (await sequence(bucketNames, async b => {
-            const bucket = cluster.bucket(b)
-            const scopes = await bucket.collections().getAllScopes()
-            return (await sequence(scopes, async s => {
-                const scope = bucket.scope(s.name)
-                const collections = s.collections.map(c => scope.collection(c.name))
-                return (await sequence(collections, c => inferCollection(c, mixedCollection, sampleSize, ignoreErrors, logger))).flat()
-            })).flat()
+    const schemas = (await sequence(bucketNames, async b => {
+        const bucket = cluster.bucket(b)
+        const scopes = await bucket.collections().getAllScopes()
+        return (await sequence(scopes, async s => {
+            const scope = bucket.scope(s.name)
+            const collections = s.collections.map(c => scope.collection(c.name))
+            return (await sequence(collections, c => inferCollection(c, mixedCollection, sampleSize, ignoreErrors, logger))).flat()
         })).flat()
+    })).flat()
 
-        logger.log('✔︎ All collections exported!')
-        return {collections: schemas}
-    })
+    logger.log('✔︎ All collections exported!')
+    return {collections: schemas}
 }
 
-export function formatSchema(schema: CouchbaseSchema, inferRelations: boolean): AzimuttSchema {
-    // FIXME: handle inferRelations
+export function formatSchema(schema: CouchbaseSchema): AzimuttSchema {
     // /!\ we group `bucket` with `scope` as it's "similar" to the database level, grouping database & schema inside schema
     const tables = schema.collections.map(c => ({
         schema: `${c.bucket}__${c.scope}`,

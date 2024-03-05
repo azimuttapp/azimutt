@@ -1,8 +1,8 @@
 import {DatabaseQueryResults, DatabaseQueryResultsColumn} from "@azimutt/database-types";
 import {Conn, QueryResultArrayMode, QueryResultField} from "./types";
 
-export const execQuery = (sql: string, parameters: any[]) => (conn: Conn): Promise<DatabaseQueryResults> => {
-    return conn.queryArrayMode(sql, parameters).then(result => buildResults(sql, result))
+export const execQuery = (query: string, parameters: any[]) => (conn: Conn): Promise<DatabaseQueryResults> => {
+    return conn.queryArrayMode(query, parameters).then(result => buildResults(query, result))
 }
 
 function buildResults(query: string, result: QueryResultArrayMode): DatabaseQueryResults {

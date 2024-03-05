@@ -1,4 +1,6 @@
-import {isObject} from "./validations";
+import {isObject} from "./validation";
+
+// functions sorted alphabetically
 
 export type AnyError = any
 export type StrError = string

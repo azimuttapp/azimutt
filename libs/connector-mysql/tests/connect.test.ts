@@ -3,7 +3,7 @@ import * as mysql from "mysql2/promise";
 import {Connection, RowDataPacket, FieldPacket} from "mysql2/promise";
 import {parseDatabaseUrl} from "@azimutt/database-types";
 import {connect} from "../src/connect";
-import {application} from "./constants";
+import {application, opts} from "./constants";
 import {execQuery} from "../src/common";
 
 // use this test to troubleshoot connection errors
@@ -20,7 +20,7 @@ describe('connect', () => {
     // TODO 3: unskip the this test first and run it: `npm run test -- tests/connect.test.ts`
     test.skip('Azimutt should connect', async () => {
         const parsedUrl = parseDatabaseUrl(url)
-        const results = await connect(application, parsedUrl, execQuery(query, parameters))
+        const results = await connect(application, parsedUrl, execQuery(query, parameters), opts)
         console.log('results', results)
     })
 

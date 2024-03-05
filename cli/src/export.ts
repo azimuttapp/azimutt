@@ -12,6 +12,7 @@ export type Opts = {
     sampleSize: number
     inferRelations: boolean
     ignoreErrors: boolean
+    logQueries: boolean
     format: FileFormat
     output: FilePath | undefined
 }
@@ -37,14 +38,17 @@ async function exportJsonSchema(url: DatabaseUrlParsed, opts: Opts, connector: C
     if (opts.format !== 'json') {
         return logger.error(`Unsupported format '${opts.format}' for ${connector.name}, try 'json'.`)
     }
+    const start = Date.now()
     const azimuttSchema = await connector.getSchema('azimutt-cli', url, {
         logger,
+        logQueries: opts.logQueries,
         schema: opts.database || opts.bucket || opts.schema,
         mixedCollection: opts.mixedCollection,
         sampleSize: opts.sampleSize,
         inferRelations: opts.inferRelations,
         ignoreErrors: opts.ignoreErrors
     })
+    logger.log(`Export done in ${Date.now() - start} ms.`)
     const schemas: string[] = [...new Set(azimuttSchema.tables.map(t => t.schema))]
     const file = filename(opts.output, url, schemas, opts.format)
     logger.log(`Writing schema to ${file} file ...`)
@@ -56,5 +60,7 @@ async function exportJsonSchema(url: DatabaseUrlParsed, opts: Opts, connector: C
 }
 
 function filename(output: FilePath | undefined, url: DatabaseUrlParsed, schemas: string[], format: FileFormat): string {
-    return output || `${url.db || (schemas.length === 1 ? schemas[0] : undefined) || 'azimutt'}-${new Date().toISOString().substring(0, 19)}.${format}`
+    const schema = (schemas.length === 1 ? schemas[0] : undefined) || 'azimutt'
+    const date = new Date().toISOString().substring(0, 19)
+    return output || `${url.db || schema}-${date}.${format}`.replaceAll(':', '_') // avoid ':' as it's invalid filename char in Windows
 }

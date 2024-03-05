@@ -1,6 +1,13 @@
-import {groupBy, Logger, mapValues, mergeBy, removeUndefined, sequence} from "@azimutt/utils";
-import {AzimuttRelation, AzimuttSchema, AzimuttType} from "@azimutt/database-types";
-import {schemaToColumns, ValueSchema, valuesToSchema} from "@azimutt/json-infer-schema";
+import {groupBy, Logger, mapValues, mergeBy, removeUndefined, sequence, mapValuesAsync} from "@azimutt/utils";
+import {
+    AzimuttRelation,
+    AzimuttSchema,
+    AzimuttType,
+    isPolymorphicColumn,
+    schemaToColumns,
+    ValueSchema,
+    valuesToSchema
+} from "@azimutt/database-types";
 import {Conn} from "./common";
 
 export type MysqlSchema = { tables: MysqlTable[], relations: AzimuttRelation[], types: AzimuttType[] }
@@ -18,10 +25,11 @@ export type MysqlColumnType = string
 export type MysqlConstraintName = string
 export type MysqlTableId = string
 
-export const getSchema = (schema: MysqlSchemaName | undefined, sampleSize: number, ignoreErrors: boolean, logger: Logger) => async (conn: Conn): Promise<MysqlSchema> => {
+export type MysqlSchemaOpts = {logger: Logger, schema: MysqlSchemaName | undefined, sampleSize: number, inferRelations: boolean, ignoreErrors: boolean}
+export const getSchema = ({logger, schema, sampleSize, inferRelations, ignoreErrors}: MysqlSchemaOpts) => async (conn: Conn): Promise<MysqlSchema> => {
     const columns = await getColumns(conn, schema, ignoreErrors, logger)
-        .then(cols => enrichColumnsWithSchema(conn, cols, sampleSize, ignoreErrors, logger))
         .then(cols => groupBy(cols, toTableId))
+        .then(cols => mapValuesAsync(cols, tableCols => enrichColumnsWithSchema(conn, tableCols, sampleSize, inferRelations, ignoreErrors, logger)))
     const comments = await getTableComments(conn, schema, ignoreErrors, logger).then(tables => groupBy(tables, toTableId))
     const constraints = await getAllConstraints(conn, schema, ignoreErrors, logger).then(constraints => mapValues(groupBy(constraints, toTableId), buildTableConstraints))
     return {
@@ -73,8 +81,7 @@ export const getSchema = (schema: MysqlSchemaName | undefined, sampleSize: numbe
     }
 }
 
-export function formatSchema(schema: MysqlSchema, inferRelations: boolean): AzimuttSchema {
-    // FIXME: handle inferRelations
+export function formatSchema(schema: MysqlSchema): AzimuttSchema {
     return {
         tables: schema.tables.map(t => removeUndefined({
             schema: t.schema,
@@ -148,23 +155,26 @@ async function getColumns(conn: Conn, schema: MysqlSchemaName | undefined, ignor
          FROM information_schema.COLUMNS c
                   JOIN information_schema.TABLES t ON c.TABLE_SCHEMA = t.TABLE_SCHEMA AND c.TABLE_NAME = t.TABLE_NAME
          WHERE ${filterSchema('c.TABLE_SCHEMA', schema)}
-         ORDER BY "schema", "table", column_index;`
+         ORDER BY "schema", "table", column_index;`, [], 'getColumns'
     ).catch(handleError(`Failed to get columns${schema ? ` for schema '${schema}'` : ''}`, [], ignoreErrors, logger))
 }
 
-function enrichColumnsWithSchema(conn: Conn, columns: RawColumn[], sampleSize: number, ignoreErrors: boolean, logger: Logger): Promise<RawColumn[]> {
-    return sequence(columns, async c => {
-        if (c.column_type === 'jsonb') {
+function enrichColumnsWithSchema(conn: Conn, tableCols: RawColumn[], sampleSize: number, inferRelations: boolean, ignoreErrors: boolean, logger: Logger): Promise<RawColumn[]> {
+    const colNames = tableCols.map(c => c.column)
+    return sequence(tableCols, async c => {
+        if (sampleSize > 0 && c.column_type === 'jsonb') {
             return getColumnSchema(conn, c.schema, c.table, c.column, sampleSize, ignoreErrors, logger).then(column_schema => ({...c, column_schema}))
+        } else if (inferRelations && isPolymorphicColumn(c.column, colNames)) {
+            return c // TODO: fetch distinct values
         } else {
-            return Promise.resolve(c)
+            return c
         }
     })
 }
 
 async function getColumnSchema(conn: Conn, schema: string, table: string, column: string, sampleSize: number, ignoreErrors: boolean, logger: Logger): Promise<ValueSchema> {
     const sqlTable = `${schema ? `${schema}.` : ''}${table}`
-    return conn.query(`SELECT ${column} FROM ${sqlTable} WHERE ${column} IS NOT NULL LIMIT ${sampleSize};`)
+    return conn.query(`SELECT ${column} FROM ${sqlTable} WHERE ${column} IS NOT NULL LIMIT ${sampleSize};`, [], 'getColumnSchema')
         .then(rows => valuesToSchema(rows.map(row => row[column])))
         .catch(handleError(`Failed to infer schema for column '${column}' of table '${schema ? schema + '.' : ''}${table}'`, valuesToSchema([]), ignoreErrors, logger))
 }
@@ -183,7 +193,7 @@ function getTableComments(conn: Conn, schema: MysqlSchemaName | undefined, ignor
          FROM information_schema.TABLES
          WHERE TABLE_COMMENT != ''
            AND TABLE_COMMENT != 'VIEW'
-           AND ${filterSchema('TABLE_SCHEMA', schema)};`
+           AND ${filterSchema('TABLE_SCHEMA', schema)};`, [], 'getTableComments'
     ).catch(handleError(`Failed to get table comments${schema ? ` for schema '${schema}'` : ''}`, [], ignoreErrors, logger))
 }
 
@@ -213,7 +223,7 @@ function getIndexes(conn: Conn, schema: MysqlSchemaName | undefined, ignoreError
                 SEQ_IN_INDEX AS "index",
                 "INDEX"      AS type
          FROM information_schema.STATISTICS
-         WHERE ${filterSchema('INDEX_SCHEMA', schema)};`
+         WHERE ${filterSchema('INDEX_SCHEMA', schema)};`, [], 'getIndexes'
     ).catch(handleError(`Failed to get indexes${schema ? ` for schema '${schema}'` : ''}`, [], ignoreErrors, logger))
 }
 
@@ -231,7 +241,7 @@ function getConstraints(conn: Conn, schema: MysqlSchemaName | undefined, ignoreE
                   JOIN information_schema.KEY_COLUMN_USAGE u
                        ON c.CONSTRAINT_SCHEMA = u.CONSTRAINT_SCHEMA AND c.TABLE_NAME = u.TABLE_NAME AND
                           c.CONSTRAINT_NAME = u.CONSTRAINT_NAME
-         WHERE ${filterSchema('c.CONSTRAINT_SCHEMA', schema)};`
+         WHERE ${filterSchema('c.CONSTRAINT_SCHEMA', schema)};`, [], 'getConstraints'
     ).catch(handleError(`Failed to get constraints${schema ? ` for schema '${schema}'` : ''}`, [], ignoreErrors, logger))
 }
 

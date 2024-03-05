@@ -231,6 +231,16 @@ if System.get_env("POSTHOG") == "true" do
     api_key: System.fetch_env!("POSTHOG_KEY")
 end
 
+if System.get_env("RECAPTCHA") == "true" do
+  IO.puts("Setup reCAPTCHA integration")
+
+  config :azimutt,
+    recaptcha: true,
+    recaptcha_site_key: System.fetch_env!("RECAPTCHA_SITE_KEY"),
+    recaptcha_secret_key: System.fetch_env!("RECAPTCHA_SECRET_KEY"),
+    recaptcha_min_score: if(System.get_env("RECAPTCHA_MIN_SCORE"), do: String.to_float(System.get_env("RECAPTCHA_MIN_SCORE")), else: nil)
+end
+
 if System.get_env("SENTRY") == "true" do
   IO.puts("Setup Sentry")
   sentry_backend_dsn = System.get_env("SENTRY_BACKEND_DSN")
