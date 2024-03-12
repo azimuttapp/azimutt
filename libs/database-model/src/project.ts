@@ -72,6 +72,12 @@ export const EntityDoc = z.object({
 export type EntityDoc = z.infer<typeof EntityDoc>
 
 
+export const ProjectStats = z.object({
+    shownEntities: z.record(EntityId, z.number()).optional(), // get rough idea of entity popularity
+    shownLayouts: z.record(LayoutName, z.number()).optional(), // get rough idea of layout popularity
+}).strict()
+export type ProjectStats = z.infer<typeof ProjectStats>
+
 export const Project = z.object({
     id: ProjectId,
     slug: ProjectSlug,
@@ -81,7 +87,22 @@ export const Project = z.object({
     sources: Source.array(),
     layouts: z.record(LayoutName, Layout.array()),
     metadata: z.record(EntityId, EntityDoc).optional(),
+    // queries
+    stats: ProjectStats.optional(),
     // createdAt
     // updatedAt
 }).strict()
 export type Project = z.infer<typeof Project>
+
+
+// stored only in the user browser
+export const ProjectUserStats = z.object({
+    shownEntities: z.record(EntityId, z.number()).optional(),
+    shownLayouts: z.record(LayoutName, z.number()).optional(),
+    queryHistory: z.object({
+        source: SourceId,
+        query: z.string(),
+        ranAt: z.date(),
+    }).array().optional(),
+}).strict()
+export type ProjectUserStats = z.infer<typeof ProjectUserStats>

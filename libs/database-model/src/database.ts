@@ -58,11 +58,18 @@ export type EntityRef = z.infer<typeof EntityRef>
 export const ColumnRef = EntityRef.merge(z.object({ column: ColumnPath })).strict()
 export type ColumnRef = z.infer<typeof ColumnRef>
 
+export const IndexStats = z.object({
+    size: z.number().optional(), // used bytes
+    scans: z.number().optional(), // number of index scans
+}).strict()
+export type IndexStats = z.infer<typeof IndexStats>
+
 export const Check = z.object({
     columns: ColumnPath.array(),
     predicate: z.string(),
     name: ConstraintName.optional(),
     comment: z.string().optional(),
+    stats: IndexStats.optional(),
     extra: Extra.optional()
 }).strict()
 export type Check = z.infer<typeof Check>
@@ -74,6 +81,7 @@ export const Index = z.object({
     partial: z.string().optional(),
     definition: z.string().optional(),
     comment: z.string().optional(),
+    stats: IndexStats.optional(),
     extra: Extra.optional()
 }).strict()
 export type Index = z.infer<typeof Index>
@@ -82,6 +90,7 @@ export const PrimaryKey = z.object({
     columns: ColumnPath.array(),
     name: ConstraintName.optional(),
     comment: z.string().optional(),
+    stats: IndexStats.optional(),
     extra: Extra.optional()
 }).strict()
 export type PrimaryKey = z.infer<typeof PrimaryKey>
@@ -98,6 +107,20 @@ export const ColumnTypeParsed = z.object({
 }).strict()
 export type ColumnTypeParsed = z.infer<typeof ColumnTypeParsed>
 
+export const ColumnStats = z.object({
+    nulls: z.number().optional(), // percentage of nulls
+    avgBytes: z.number().optional(), // average bytes for a value
+    cardinality: z.number().optional(), // number of different values
+    commonValues: z.object({
+        value: ColumnValue,
+        freq: z.number()
+    }).strict().array().optional(),
+    histogram: ColumnValue.array().optional(),
+    min: ColumnValue.optional(),
+    max: ColumnValue.optional(),
+}).strict()
+export type ColumnStats = z.infer<typeof ColumnStats>
+
 export const Column: z.ZodType<Column> = z.object({
     name: ColumnName,
     type: ColumnType,
@@ -107,6 +130,7 @@ export const Column: z.ZodType<Column> = z.object({
     values: ColumnValue.array().optional(),
     columns: z.lazy(() => Column.array().optional()),
     comment: z.string().optional(),
+    stats: ColumnStats.optional(),
     extra: Extra.optional()
 }).strict()
 export type Column = { // define type explicitly because it's lazy (https://zod.dev/?id=recursive-types)
@@ -118,20 +142,34 @@ export type Column = { // define type explicitly because it's lazy (https://zod.
     values?: ColumnValue[] | undefined
     columns?: Column[] | undefined
     comment?: string | undefined
+    stats?: ColumnStats | undefined
     extra?: Extra | undefined
 }
 
 export const EntityKind = z.enum(['table', 'view', 'materialized view', 'foreign table'])
 export type EntityKind = z.infer<typeof EntityKind>
 
+export const EntityStats = z.object({
+    rows: z.number().optional(), // number of rows
+    size: z.number().optional(), // used bytes
+    sizeIdx: z.number().optional(), // used bytes for indexes
+    sizeToast: z.number().optional(), // used bytes for toasts
+    sizeToastIdx: z.number().optional(), // used bytes for toasts indexes
+    seq_scan: z.number().optional(), // number of seq scan
+    idx_scan: z.number().optional(), // number of index scan
+}).strict()
+export type EntityStats = z.infer<typeof EntityStats>
+
 export const Entity = Namespace.merge(z.object({
     name: EntityName,
     kind: EntityKind.optional(), // 'table' when not specified
+    definition: z.string().optional(), // the query definition for views
     columns: Column.array(),
     primaryKey: PrimaryKey.optional(),
     indexes: Index.array().optional(),
     checks: Check.array().optional(),
     comment: z.string().optional(),
+    stats: EntityStats.optional(),
     extra: Extra.optional()
 })).strict()
 export type Entity = z.infer<typeof Entity>
@@ -164,6 +202,11 @@ export type Type = z.infer<typeof Type>
 export const DatabaseKind = z.enum(['cassandra', 'couchbase', 'db2', 'elasticsearch', 'mariadb', 'mongodb', 'mysql', 'oracle', 'postgres', 'redis', 'snowflake', 'sqlite', 'sqlserver'])
 export type DatabaseKind = z.infer<typeof DatabaseKind>
 
+export const DatabaseStats = z.object({
+    size: z.number().optional(), // used bytes
+}).strict()
+export type DatabaseStats = z.infer<typeof DatabaseStats>
+
 export const Database = z.object({
     entities: Entity.array(),
     relations: Relation.array(),
@@ -172,7 +215,8 @@ export const Database = z.object({
     // procedures: Procedure.array(),
     // triggers: Trigger.array(),
     comment: z.string(),
-    extra: Extra
+    stats: DatabaseStats.optional(),
+    extra: Extra.optional(),
 }).partial().strict()
 export type Database = z.infer<typeof Database>
 
