@@ -68,7 +68,7 @@ export const Check = z.object({
     columns: ColumnPath.array(),
     predicate: z.string(),
     name: ConstraintName.optional(),
-    comment: z.string().optional(),
+    doc: z.string().optional(),
     stats: IndexStats.optional(),
     extra: Extra.optional()
 }).strict()
@@ -80,7 +80,7 @@ export const Index = z.object({
     unique: z.boolean().optional(), // false when not specified
     partial: z.string().optional(),
     definition: z.string().optional(),
-    comment: z.string().optional(),
+    doc: z.string().optional(),
     stats: IndexStats.optional(),
     extra: Extra.optional()
 }).strict()
@@ -89,7 +89,7 @@ export type Index = z.infer<typeof Index>
 export const PrimaryKey = z.object({
     columns: ColumnPath.array(),
     name: ConstraintName.optional(),
-    comment: z.string().optional(),
+    doc: z.string().optional(),
     stats: IndexStats.optional(),
     extra: Extra.optional()
 }).strict()
@@ -129,7 +129,7 @@ export const Column: z.ZodType<Column> = z.object({
     default: ColumnValue.optional(),
     values: ColumnValue.array().optional(),
     columns: z.lazy(() => Column.array().optional()),
-    comment: z.string().optional(),
+    doc: z.string().optional(),
     stats: ColumnStats.optional(),
     extra: Extra.optional()
 }).strict()
@@ -141,7 +141,7 @@ export type Column = { // define type explicitly because it's lazy (https://zod.
     default?: ColumnValue | undefined
     values?: ColumnValue[] | undefined
     columns?: Column[] | undefined
-    comment?: string | undefined
+    doc?: string | undefined
     stats?: ColumnStats | undefined
     extra?: Extra | undefined
 }
@@ -168,7 +168,7 @@ export const Entity = Namespace.merge(z.object({
     primaryKey: PrimaryKey.optional(),
     indexes: Index.array().optional(),
     checks: Check.array().optional(),
-    comment: z.string().optional(),
+    doc: z.string().optional(),
     stats: EntityStats.optional(),
     extra: Extra.optional()
 })).strict()
@@ -184,7 +184,7 @@ export const Relation = Namespace.merge(z.object({
     polymorphic: z.object({column: ColumnPath, value: ColumnValue}).optional(),
     name: ConstraintName.optional(),
     kind: RelationKind.optional(), // 'many-to-one' when not specified
-    comment: z.string().optional(),
+    doc: z.string().optional(),
     extra: Extra.optional()
 })).strict()
 export type Relation = z.infer<typeof Relation>
@@ -194,7 +194,7 @@ export const Type = Namespace.merge(z.object({
     values: z.string().array().optional(),
     columns: Column.array().optional(),
     definition: z.string().optional(),
-    comment: z.string().optional(),
+    doc: z.string().optional(),
     extra: Extra.optional()
 })).strict()
 export type Type = z.infer<typeof Type>
@@ -214,7 +214,7 @@ export const Database = z.object({
     // functions: Function.array(),
     // procedures: Procedure.array(),
     // triggers: Trigger.array(),
-    comment: z.string(),
+    doc: z.string().optional(),
     stats: DatabaseStats.optional(),
     extra: Extra.optional(),
 }).partial().strict()

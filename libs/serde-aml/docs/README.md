@@ -1,16 +1,11 @@
 # AML: Azimutt Markup Language
 
-## WIP
-
-This library is a rework for AML. You can still see the [previous documentation](../../../docs/aml/README.md), still used in Azimutt today.
-
-Pending questions:
-- AML relations: `->` vs `>-`? and `<>` vs `><`?
-- tables vs entities?
+This is the Work In Progress specification for AML v2, not implemented yet.
+If you want to use AML, please look at the [current specification](../../../docs/aml/README.md), you can use in [Azimutt](https://azimutt.app) today ;)
 
 ## Introduction
 
-**AML goal is to be the fastest and intuitive DSL to define database schema, as well as feature complete.**
+**AML goal is to be the fastest and most intuitive DSL to define a database schema, as well as feature complete.**
 
 Here is how it look:
 
@@ -25,33 +20,24 @@ posts
   title varchar(100)
   content text
   tags varchar[] nullable
-  author >- users(id)
-  created timestamp=`now()`
+  author -> users(id)
+  created_at timestamp=`now()`
 ```
 
-## Namespace
+This page will give you an overview of how to use it, and links to precise specification.
 
-AML, and Azimutt, handle 3 levels of hierarchy to defines entities, in order: database, catalog and schema.
-
-They are optional and can be defined before elements like entities or types, from the lowest to highest level.
-
-To avoid too much repetition, a global namespace can be defined at the beginning of the file:
-
-```aml
-namespace analytics.web.core
-```
-
-It will be used as the default namespace for all the entities defined in the file, if not overriden.
 
 ## Entities
 
-Defining an entity is the very first step you will do with AML. And it's as simple as typing its name:
+Entities are used to model data objects from databases, such as **tables** in relational databases or **collections** in document ones.
+
+Defining in AML can't be simpler, just type their name:
 
 ```aml
 posts
 ```
 
-This entity can have columns, indexes, relations and more, but let's dive a bit more into its definition.
+Entity can have fields, indexes, relations and more, but let's dive a bit more into its definition.
 
 There is 3 levels of hierarchy for each entity, they are optional and defined from the lowest to highest.
 These levels are, from top to bottom: "database", "catalog" and "schema".
@@ -83,7 +69,7 @@ As long names may be cumbersome, you can define an alias for the entity, using t
 They are key/value pairs defined in curly braces `{}`, separated by a comma `,`:
 
 ```aml
-{color: red, size: 12, flag}
+users {color: red, size: 12, flag}
 ```
 
 The value can be omited, in which case it will be considered as `true`.
