@@ -1,8 +1,12 @@
-# AML: Azimutt Markup Language
+# AMLv2: Azimutt Markup Language
+
+[back to home](./README.md)
+
 
 ## Comments
 
-Comments are code (AML) comments, used to note things in the AML source without taking them into account in the parsing result.
+AML comments are used to note things in the AML source without taking them into account in the parsing result.
+
 There is only line comments starting with the `#` character, everything after will be ignored.
 
 They can be helpful to visually identify sections, add beloved TODOs or explain why you did some things.
@@ -23,6 +27,7 @@ users
 # Social schema
 #
 
+# posts are blog posts, for SEO ^^
 posts
   id uuid pk
   author -> users(id) # don't define relation types, they will be inherited from their linked column

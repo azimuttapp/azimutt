@@ -1,4 +1,7 @@
-# AML: Azimutt Markup Language
+# AMLv2: Azimutt Markup Language
+
+[back to home](./README.md)
+
 
 ## Custom properties
 
@@ -16,7 +19,9 @@ Keys are [identifiers](./identifier.md) and values can have several form:
 - omitted, ex: `{auto_increment}`
 
 You can use any key/value pair, they will be kept in the model.
+
 Some specific keys are standardized for some objects and can be interpreted in other in generators or in [Azimutt](https://azimutt.app).
+
 
 ### Entity properties
 
@@ -34,9 +39,10 @@ An example with all the properties:
 users {color: red, position: [50, 50], notes: "some notes here", tags: [pii], deprecated}
 ```
 
+
 ### Entity attribute properties
 
-Here are the standardized properties for [entity attributes](./entity-attribute.md):
+Here are the standardized properties for [entity attributes](./entity.md#attribute):
 
 - `auto_increment`
 - `notes`, to define default notes for the entity
@@ -50,6 +56,7 @@ users
   id {auto_increment, notes: "some notes here", tags: [pii], deprecated}
 ```
 
+
 ### Relation properties
 
 Here are the standardized properties for [relations](./relation.md):
@@ -62,3 +69,8 @@ An example with all the properties:
 ```aml
 rel posts(author) -> users(id) {on_update: no_action, on_delete: cascade}
 ```
+
+
+### Type properties
+
+None for now

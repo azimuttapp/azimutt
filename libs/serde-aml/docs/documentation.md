@@ -1,4 +1,7 @@
-# AML: Azimutt Markup Language
+# AMLv2: Azimutt Markup Language
+
+[back to home](./README.md)
+
 
 ## Textual documentation
 
@@ -11,7 +14,7 @@ To use it, just add a `|` at the end of the object definition, here is an exampl
 users | store users
 ```
 
-It can be used on: [entities](./entity.md), [attributes](./entity-attribute.md), [relations](./relation.md) and [types](./type.md).
+It can be used on: [entities](./entity.md), [attributes](./entity.md#attribute), [relations](./relation.md) and [types](./type.md).
 
 Here are examples:
 
@@ -32,6 +35,7 @@ posts
 
 rel posts(author) -> public.users(id) | link post author
 ```
+
 
 ### Multiline documentation
 
@@ -65,4 +69,4 @@ rel posts(author) -> public.users(id) |||
 |||
 ```
 
-The common indentation to every line will be removed using [stripIndent](../../utils/src/string.ts#stripIndent) to keep your code and documentation clean 😉
+The common indentation to every line will be removed using [stripIndent](../../utils/src/string.ts) to keep your code and documentation clean 😉

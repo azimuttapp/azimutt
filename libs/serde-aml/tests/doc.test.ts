@@ -33,6 +33,7 @@ describe('docs', () => {
         }
     })
     test('check relative links', () => {
+        // TODO: check in-document anchors
         const linkRegex = /\[[^\]]*?\]\([^)]*?\)/g
         const errorFiles = files.map(file => {
             const links = file.content.match(linkRegex) || []

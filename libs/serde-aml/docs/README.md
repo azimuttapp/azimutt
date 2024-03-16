@@ -1,11 +1,12 @@
-# AML: Azimutt Markup Language
+# AMLv2: Azimutt Markup Language
 
-This is the Work In Progress specification for AML v2, not implemented yet.
+This is the *Work In Progress* specification for AML v2, not implemented yet.
+
 If you want to use AML, please look at the [current specification](../../../docs/aml/README.md), you can use in [Azimutt](https://azimutt.app) today ;)
 
 ## Introduction
 
-**AML goal is to be the fastest and most intuitive DSL to define a database schema, as well as feature complete.**
+**AML goal is to be the fastest and most intuitive DSL to define a database schema.**
 
 Here is how it look:
 
@@ -15,7 +16,7 @@ users | store every user
   email varchar unique
   role user_role(guest, member, admin)=guest
 
-posts
+posts # AML comment
   id uuid pk
   title varchar(100)
   content text
@@ -24,20 +25,20 @@ posts
   created_at timestamp=`now()`
 ```
 
-This page will give you an overview of how to use it, and links to precise specification.
+This page will give you an overview of how to use it, follow links for precise specification.
 
 
 ## Entities
 
-Entities are used to model data objects from databases, such as **tables** in relational databases or **collections** in document ones.
+[Entities](./entity.md) are used to model data objects from databases, such as **tables** in relational databases or **collections** in document ones.
 
-Defining in AML can't be simpler, just type their name:
+Defining one in AML can't be simpler, just type its name:
 
 ```aml
 posts
 ```
 
-Entity can have fields, indexes, relations and more, but let's dive a bit more into its definition.
+Entities can have fields, indexes, relations and more, but let's dive a bit more into its definition.
 
 There is 3 levels of hierarchy for each entity, they are optional and defined from the lowest to highest.
 These levels are, from top to bottom: "database", "catalog" and "schema".
@@ -152,11 +153,129 @@ users
 The only place they are not supported is in multiline notes.
 
 
-## Migration guide
+## Migration from v1
 
-Coming from the previous version, the mindset is the same: the most clean, easy and quick DSL for database schema.
-There is some additions, but also some changes.
-Here are the breaking changes:
-- inline relations use the `->` symbol instead of `fk` (closer to the standalone definition and allow other kind of relations as well as polymorphic ones)
-- standalone relations use the `rel` symbol instead of `fk` (`fk`, for foreign key was too close to relational db and was not right sometimes, some relations exist without being a foreign key)
-- the `table.column` reference is replaced by `table(column)` (it's closer to SQL and allow to mix namespace and column path (like `public.table1(details.name)`), and get rid of the `:` separator for column path. It also allow support for composite relations: `table(user_id, role_id)`)
+AMLv2 is coming 2 years after AMLv1 ([post](https://azimutt.app/blog/aml-a-language-to-define-your-database-schema) & [PR](https://github.com/azimuttapp/azimutt/pull/98) ^^).
+During this time we discovered a lot of new use cases and some shortcomings (such as composite foreign keys).
+
+This new iteration fix a few issues, improve consistency and add nice features such as [namespace](./namespace.md) and [properties](./properties.md).
+
+We made it retro-compatible so you only have to fix the issued warnings but if you want to look at what needs to be adapted, look at the [migration doc](./migration.md).
+
+
+## Full example
+
+Let's write a meaningful AML example to have an idea of how it looks like to design your database schema with AML. This example won't use every available feature on AML but give you a good idea of the kind of code you will write using AML.
+
+Let's define a theorical e-commerce shop:
+
+![e-commerce schema defined using AML](../../../docs/aml/e-commerce-using-aml.png)
+
+```aml
+#
+# Identity domain
+#
+
+users
+  id uuid pk
+  slug varchar unique | user identifier in urls
+  role user_role(customer, staff, admin)
+  name varchar
+  avatar url
+  email varchar unique
+  email_validated timestamp nullable
+  phone varchar unique
+  phone_validated timestamp nullable
+  bio text nullable
+  company varchar nullable
+  locale locale(en, fr)
+  created_at timestamp
+  updated_at timestamp
+  last_login timestamp
+
+credentials
+  provider_id provider(google, facebook, twitter, email) pk
+  provider_key varchar pk | user id in provider system
+  hasher hash_method(md5, sha1, sha256)
+  password_hash varchar
+  password_salt varchar
+  user_id uuid -> users(id)
+
+social_profiles
+  user_id uuid -> users(id)
+  platform social_platform(facebook, twitter, instagram, slack, github)
+  platform_user varchar
+  created_at timestamp
+
+#
+# Catalog domain
+#
+
+categories
+  id uuid pk
+  slug varchar unique | category identifier in urls
+  name varchar
+  description text
+  tags varchar[]
+  parent_category uuid -> categories(id)
+  created_at timestamp
+  updated_at timestamp
+
+products
+  id uuid pk
+  category_id uuid nullable -> categories(id)
+  title varchar
+  picture varchar
+  summary text
+  description text
+  price number | in Euro
+  discount_type discount_type(none, percent, amount)
+  discount_value number
+  tags varchar[]
+  created_at timestamp
+  updated_at timestamp
+
+reviews
+  id uuid pk
+  user_id uuid -> users(id)
+  product_id uuid -> products(id)
+  rating int index | between 1 and 5
+  comment text
+  created_at timestamp
+
+#
+# Cart domain
+#
+
+carts
+  id uuid pk
+  status cart_status(active, ordered, abandonned)
+  created_at timestamp=`now()`
+  created_by uuid -> users(id)
+  updated_at timestamp
+
+cart_items
+  cart_id uuid pk -> carts(id)
+  product_id uuid pk -> products(id)
+  price number
+  quantity int check=`quantity > 0` | should be > 0
+  created_at timestamp
+
+#
+# Order domain
+#
+
+orders
+  id uuid pk
+  user_id uuid -> users(id)
+  created_at timestamp
+
+order_lines
+  id uuid pk
+  order_id uuid -> orders(id)
+  product_id uuid -> products(id) | used as reference and for re-order by copy data at order time as they should not change
+  price number | in Euro
+  quantity int check=`quantity > 0` | should be > 0
+```
+
+Hope you enjoyed AML, happy hacking on [Azimutt](https://azimutt.app)!
