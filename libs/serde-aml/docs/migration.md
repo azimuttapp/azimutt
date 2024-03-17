@@ -23,7 +23,7 @@ We wanted to make AMLv2 more generic to better embrace the diversity of database
 - **column** to **attribute**
 - **foreign key** to **relation**
 
-As AML don't have a lot of syntax and keywords, it almost change nothing in its syntax, except for foreign keys.
+As AML don't have a lot of syntax and keywords, it almost changes nothing in its syntax, except for foreign keys.
 
 
 ### Breaking changes

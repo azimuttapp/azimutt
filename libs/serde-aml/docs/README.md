@@ -8,7 +8,7 @@ If you want to use AML, please look at the [current specification](../../../docs
 
 **AML goal is to be the fastest and most intuitive DSL to define a database schema.**
 
-Here is how it look:
+Here is how it looks:
 
 ```aml
 users | store every user

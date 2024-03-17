@@ -147,7 +147,7 @@ In this case, they inherit the [namespace](./namespace.md) of the entity, and of
 
 #### Not null
 
-Contrary to SQL, in AML the attributes come with the NOT NULL constraint by default.
+Contrary to SQL, in AML the attributes come with the NOT NULL constraint **by default**.
 
 To remove it, you can mark the attribute as `nullable`. This "not constraint" should come after the attribute type (if present).
 
