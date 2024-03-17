@@ -110,6 +110,7 @@ async function inferCollectionForType(collection: Collection, type: MongodbColle
 }
 
 async function getSampleDocuments(collection: Collection, type: MongodbCollectionType | undefined, sampleSize: number, ignoreErrors: boolean, logger: Logger): Promise<any[]> {
+    // TODO: use $sample: https://www.mongodb.com/docs/manual/reference/operator/aggregation/sample
     return collection.find(filter(type)).limit(sampleSize).toArray()
         .catch(handleError(`Failed to get sample documents for '${collectionRef(collection)}'`, [], ignoreErrors, logger))
 }

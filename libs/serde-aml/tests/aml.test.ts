@@ -26,7 +26,7 @@ describe.skip('aml', () => {
                 name: 'posts',
                 columns: [
                     {name: 'id', type: 'integer'},
-                    {name: 'title', type: 'varchar', comment: 'Title of the post'},
+                    {name: 'title', type: 'varchar', doc: 'Title of the post'},
                     {name: 'author', type: 'integer'},
                 ],
                 primaryKey: {columns: ['id']}

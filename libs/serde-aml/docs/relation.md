@@ -209,32 +209,6 @@ rel tweets(profile) -> users(details.twitter_id)
 ```
 
 
-### Composite relation
-
-If you have composite primary key, you may also have composite foreign keys. You can easily define them by listing all the attributes:
-
-```aml
-users
-  id uuid pk
-
-projects
-  id uuid
-
-user_projects
-  user_id pk -> users
-  project_id pk -> projects
-
-user_project_rights
-  user_id pk
-  project_id pk
-  access project_right(read, write)=read
-
-rel user_project_rights(user_id, project_id) -> user_projects(user_id, project_id)
-```
-
-This kind of relation can only be defined using standalone relation.
-
-
 ### Polymorphic relation
 
 Polymorphic relations are used to target different entities depending on the value of another attribute.
@@ -291,6 +265,32 @@ rel comments(item_id) -item_kind=comments> comments(id)
 ```
 
 The value is not always the table name, some ORMs use the model name instead, so it could be `Post` instead of `posts`.
+
+
+### Composite relation
+
+If you have composite primary key, you may also have composite foreign keys. You can easily define them by listing all the attributes:
+
+```aml
+users
+  id uuid pk
+
+projects
+  id uuid
+
+user_projects
+  user_id pk -> users
+  project_id pk -> projects
+
+user_project_rights
+  user_id pk
+  project_id pk
+  access project_right(read, write)=read
+
+rel user_project_rights(user_id, project_id) -> user_projects(user_id, project_id)
+```
+
+This kind of relation can only be defined using standalone relation.
 
 
 ### Metadata

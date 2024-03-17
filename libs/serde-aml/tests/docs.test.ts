@@ -6,11 +6,11 @@ import {AmlAst, ParserResult} from "../src/parser";
 describe('docs', () => {
     const project = 'libs/serde-aml'
     const amlDocs = './docs'
-    const amlPaths = fs.readdirSync(amlDocs, {recursive: true})
+    const amlPaths: string[] = fs.readdirSync(amlDocs, {recursive: true})
         .map(path => pathJoin(amlDocs, path as string))
         .concat(['../../docs/aml/README.md'])
         .filter(path => path.endsWith('.md'))
-    const amlFiles = Object.fromEntries(amlPaths.map(path => [path, fs.readFileSync(path, 'utf8')]))
+    const amlFiles: {[path: string]: string} = Object.fromEntries(amlPaths.map(path => [path, fs.readFileSync(path, 'utf8')]))
 
     test('parse AML snippets', () => {
         const amlRegex = /```aml(.*?)```/gms

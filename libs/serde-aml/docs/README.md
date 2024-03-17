@@ -25,12 +25,14 @@ posts # AML comment
   created_at timestamp=`now()`
 ```
 
-This page will give you an overview of how to use it, follow links for precise specification.
+This page will give you an overview of how to use it, follow links for the exhaustive specification.
+
+One last things, AML [comments](./comment.md) are single line and start with `#`, so you know them as they are in many places 😉
 
 
 ## Entities
 
-[Entities](./entity.md) are used to model data objects from databases, such as **tables** in relational databases or **collections** in document ones.
+[Entities](./entity.md) can be used to model data objects from databases, such as **tables** or **collections** in databases.
 
 Defining one in AML can't be simpler, just type its name:
 
@@ -38,119 +40,133 @@ Defining one in AML can't be simpler, just type its name:
 posts
 ```
 
-Entities can have fields, indexes, relations and more, but let's dive a bit more into its definition.
+Entities can have attributes with several options like a type, nullability, indexes, constraints and relations.
 
-There is 3 levels of hierarchy for each entity, they are optional and defined from the lowest to highest.
-These levels are, from top to bottom: "database", "catalog" and "schema".
-Here are a few examples:
-
-- `posts` defines an entity without specifying the namespace
-- `analytics.web.core.events` defines the `events` entity in the `core` schema, inside the `web` catalog of the `analytics` database
-- `public.users` defines the `users` entity in the `public` schema, without specifying the catalog nor the database
-
-The names should not contain space or dot characters, if you really need them, you can use the `"` character to escape the name.
-For example: `"my db"."a.catalog".schema."special table"`.
-
-As long names may be cumbersome, you can define an alias for the entity, using the `as` keyword:
+Here is how they look:
 
 ```aml
-"my db"."a.catalog".schema."special table" as special_table
+posts
+  id uuid pk
+  slug varchar(256) unique
+  title varchar index
+  status post_status(draft, published, archived)=draft index
+  content text nullable
+  tags varchar[]
+  props json
+    needs_review bool
+    reviewed_by -> users(id)
+  created_by -> users(id)
+  created_at "timestamp with time zone"=`now()`
 ```
 
-## Columns
+You can define them inside a [namespace](./namespace.md) and give them an [alias](./entity.md#alias) name for easier referencing:
 
+```aml
+core.public.users as u
+  id uuid pk
+  name varchar
+
+core.public.posts as p
+  id uuid pk
+  title varchar
+  created_by -> u(id)
+```
+
+And you can document them both with structured [properties](./properties.md) or unstructured [documentations](./documentation.md):
+
+```aml
+events {color: yellow, scope: tracking} | store all user events
+  id uuid pk
+  name varchar index | should be structured with `context__object__action` format
+  item_kind varchar {values: [users, posts, projects]} | polymorphic relation
+  item_id uuid
+```
 
 
 ## Relations
 
+[Relations](./relation.md) can model references, like foreign keys, or source for lineage, depending how you want to use them.
+
+They mostly use the `->` symbol in entity definition (like used above) but can also be defined standalone with the `rel` keyword and use other cardinality with `--` for [one-to-one](./relation.md#one-to-one) and `<>` for [many-to-many](./relation.md#many-to-many).
+
+```aml
+users
+  id uuid pk
+
+profiles
+  id uuid pk
+  user_id uuid -- users(id)
+
+projects
+  id uuid pk <> users(id)
+  created_by -> users(id)
+
+events
+  id uuid pk
+  created_by uuid
+
+rel events(created_by) -> users(id)
+```
+
+For fasted definition, you can omit the target attribute when the target table has a primary key with a single attribute. As well as the attribute type, it will be inherited from the target attribute:
+
+```aml
+users
+  id uuid pk
+
+events
+  id uuid pk
+  created_by -> users
+```
+
+AML supports [polymorphic](./relation.md#polymorphic-relation) relations by adding the kind attribute key and value inside the relation symbol:
+
+```aml
+users
+  id uuid pk
+
+projects
+  id uuid pk
+
+events
+  id uuid pk
+  item_kind event_items(users, projects)
+  item_id
+  created_by -> users
+
+rel events(item_id) -item_kind=users> users
+rel events(item_id) -item_kind=projects> projects
+```
+
+It also supports [composite](./relation.md#composite-relation) relations by listing the used attributes in the parenthesis:
+
+```aml
+credentials
+  provider_key varchar pk
+  provider_uid varchar pk
+  user_id -> users
+
+credential_details
+  provider_key varchar pk
+  provider_uid varchar pk
+  provider_data json
+
+rel credential_details(provider_key, provider_uid) -> credentials(provider_key, provider_uid)
+```
+
+
 ## Types
 
-## Properties
+You can also create [custom types](./type.md) for better semantics, consistency or re-usability.
 
-They are key/value pairs defined in curly braces `{}`, separated by a comma `,`:
-
-```aml
-users {color: red, size: 12, flag}
-```
-
-The value can be omited, in which case it will be considered as `true`.
-
-You can define them on entities, columns, relations and types:
+They can be defined inline in the entity attribute definition when not re-used, on standalone:
 
 ```aml
-my_table {key: value}
-  id int pk {auto_increment}
-
-rel posts(author) -> users(id) {on_delete: cascade}
-type post_status enum(published, draft, deleted) {deprecated}
+type name # just a named type for better semantics
+type id_type uuid # here is a type alias
+type bug_status enum(draft, in progress, done) # enums are quite useful and explicit
+type position {x: int, y: int} # even structs can be defined
 ```
-
-Some properties are "standard" and will have an effect in Azimutt, the others are just for you or your tools.
-
-On entities you can use:
-
-- `color` with values from [Tailwind](https://tailwindcss.com/docs/customizing-colors) (red, orange, amber, yellow, lime, green, emerald, team, cyan, sky, blue, indigo, violet, purple, fuchsia, pink, rose, grey)
-
-
-## Notes
-
-They are a piece of documentation you can attach on most elements.
-They are defined at the end of the line using the `|` symbol.
-The only thing which can come after is the AML comment, so except if you use the `#` symbol in it, you don't need to escape them.
-
-```aml
-users | store all users
-  id int pk | to get users easily
-
-rel posts(author) -> users(id) | link post author
-type post_status enum(published, draft, deleted) | status of the post
-```
-
-For longer documentation you can write multiline notes using the `|||` symbol:
-
-```aml
-users |||
-  store all users
-|||
-  id int pk |||
-    to get users easily
-  |||
-
-rel posts(author) -> users(id) |||
-  link post author
-|||
-type post_status enum(published, draft, deleted) |||
-  status of the post
-|||
-```
-
-The spaces before the first line will be removed on all the lines as well for a good indentation.
-
-Finally, you can write standalone notes:
-
-```aml
-note users | store all users
-note users(id) | user id
-```
-
-## Comments
-
-If you need to write things for yourself, or other AML authors, but not present in the final schema, you can use comments.
-There is only line comments, starting with the `#` symbol, everything after will not be taken into account.
-
-```aml
-# this is a comment
-
-#
-# You can use them as visual separator in your AML
-#
-
-users
-  id int # or leaving TODOs as we all do (add primary key here)
-  status enum(active, inactive)=active index | some documentation... # or to explain a bit more about a column
-```
-
-The only place they are not supported is in multiline notes.
 
 
 ## Migration from v1

@@ -14,6 +14,8 @@ They can be helpful to visually identify sections, add beloved TODOs or explain 
 Here are an example:
 
 ```aml
+# this is a comment
+
 #
 # Auth schema
 #
@@ -34,3 +36,5 @@ posts
 
 # TODO: add social media entities
 ```
+
+The only place they are not supported is in [multiline documentation](./documentation.md#multiline-documentation).

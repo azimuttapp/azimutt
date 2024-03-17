@@ -27,7 +27,7 @@ users
   name
 ```
 
-[Attributes may hold several characteristics](#attribute) such as [type](#attribute-type), [nullability](#not-null), [indexes, constraints](#index-and-constraint) and more. Here are some examples:
+[Attributes may hold several options](#attribute) such as [type](#attribute-type), [nullability](#not-null), [indexes, constraints](#index-and-constraint) and more. Here are some examples:
 
 ```aml
 users
