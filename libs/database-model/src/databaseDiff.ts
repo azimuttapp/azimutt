@@ -1,8 +1,8 @@
-import { Database } from "./database";
+import {Database} from "./database";
 import {z} from "zod";
 
 export const DatabaseDiff = z.object({
-
+    // TODO
 }).partial().strict()
 export type DatabaseDiff = z.infer<typeof DatabaseDiff>
 

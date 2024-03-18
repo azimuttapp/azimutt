@@ -1,3 +1,5 @@
+import {ParserPosition} from "@azimutt/database-model";
+
 export type SqlScriptAst = StatementAst[]
 export type StatementAst = SelectAst
 
@@ -26,11 +28,4 @@ export type BinaryExpressionAst = {left: ExpressionAst, operator: BinaryOperator
 export type GroupExpressionAst = {group: ExpressionAst}
 export type ExpressionAst = ConditionAst | BinaryExpressionAst | UnaryExpressionAst | GroupExpressionAst
 
-export type TokenInfo = {token: string, offset: Position, line: Position, column: Position}
-export type ParserResult<T> = {
-    result?: T
-    errors?: ParserError[]
-    warnings?: ParserError[]
-}
-export type ParserError = {kind: string, message: string, offset: Position, line: Position, column: Position}
-export type Position = [number, number]
+export type TokenInfo = {token: string, offset: ParserPosition, line: ParserPosition, column: ParserPosition}

@@ -1,6 +1,6 @@
 import {createToken, EmbeddedActionsParser, IRecognitionException, IToken, Lexer, TokenType} from "chevrotain";
-import {removeUndefined} from "@azimutt/utils";
-import {removeEmpty} from "./utils";
+import {removeEmpty, removeUndefined} from "@azimutt/utils";
+import {ParserError, ParserPosition, ParserResult} from "@azimutt/database-model";
 
 // special
 const WhiteSpace = createToken({name: 'WhiteSpace', pattern: /\s+/, group: Lexer.SKIPPED})
@@ -46,42 +46,35 @@ const charTokens: TokenType[] = [Dot, Comma, Colon, Equal, Dash, GreaterThan, Lo
 // token order is important as they are tried in order, so the Identifier must be last
 const allTokens: TokenType[] = [WhiteSpace, ...charTokens, ...keywordTokens, ...valueTokens, Identifier, Note, Comment]
 
-export type Position = [number, number]
-export type TokenInfo = {token: string, offset: Position, line: Position, column: Position}
-export type ParserError = {kind: string, message: string, offset: Position, line: Position, column: Position}
-export type ParserResult<T> = {
-    result?: T
-    errors?: ParserError[]
-    warnings?: ParserError[]
-}
+export type TokenInfo = {token: string, offset: ParserPosition, line: ParserPosition, column: ParserPosition}
 
 export type AmlAst = StatementAst[]
 export type StatementAst = NamespaceAst | EntityAst | RelationAst | TypeAst
 export type NamespaceAst = { command: 'NAMESPACE', schema: IdentifierAst, catalog?: IdentifierAst, database?: IdentifierAst }
-export type EntityAst = { command: 'ENTITY', name: IdentifierAst, alias?: IdentifierAst, columns: ColumnAst[] } & NamespaceRefAst & ExtraAst
-export type RelationAst = { command: 'RELATION', kind: RelationKindAst, src: ColumnRefCompositeAst, ref: ColumnRefCompositeAst, polymorphic?: RelationPolymorphicAst } & ExtraAst
+export type EntityAst = { command: 'ENTITY', name: IdentifierAst, alias?: IdentifierAst, attrs: AttributeAst[] } & NamespaceRefAst & ExtraAst
+export type RelationAst = { command: 'RELATION', kind: RelationKindAst, src: AttributeRefCompositeAst, ref: AttributeRefCompositeAst, polymorphic?: RelationPolymorphicAst } & ExtraAst
 export type TypeAst = { command: 'TYPE', name: IdentifierAst, content: TypeEnumAst | TypeStructAst | TypeCustomAst }
 
-export type ColumnAst = { name: IdentifierAst, nullable?: {parser: TokenInfo} } & ColumnTypeAst & ColumnConstraintsAst & { relation?: ColumnRelationAst } & ExtraAst
-export type ColumnTypeAst = { type?: IdentifierAst, enumValues?: ColumnValueAst[], defaultValue?: ColumnValueAst }
-export type ColumnConstraintsAst = { primaryKey?: { parser: TokenInfo }, index?: ColumnConstraintAst, unique?: ColumnConstraintAst, check?: ColumnConstraintAst }
-export type ColumnConstraintAst = { parser: TokenInfo, value?: IdentifierAst }
-export type ColumnRelationAst = { kind: RelationKindAst, ref: ColumnRefCompositeAst, polymorphic?: RelationPolymorphicAst }
+export type AttributeAst = { name: IdentifierAst, nullable?: {parser: TokenInfo} } & AttributeTypeAst & AttributeConstraintsAst & { relation?: AttributeRelationAst } & ExtraAst
+export type AttributeTypeAst = { type?: IdentifierAst, enumValues?: AttributeValueAst[], defaultValue?: AttributeValueAst }
+export type AttributeConstraintsAst = { primaryKey?: { parser: TokenInfo }, index?: AttributeConstraintAst, unique?: AttributeConstraintAst, check?: AttributeConstraintAst }
+export type AttributeConstraintAst = { parser: TokenInfo, value?: IdentifierAst }
+export type AttributeRelationAst = { kind: RelationKindAst, ref: AttributeRefCompositeAst, polymorphic?: RelationPolymorphicAst }
 
 export type RelationCardinalityAst = '1' | 'n'
 export type RelationKindAst = `${RelationCardinalityAst}-${RelationCardinalityAst}`
-export type RelationPolymorphicAst = { column: ColumnPathAst, value: ColumnValueAst }
+export type RelationPolymorphicAst = { attr: AttributePathAst, value: AttributeValueAst }
 
-export type TypeEnumAst = { kind: 'enum', values: ColumnValueAst[] }
-export type TypeStructAst = { kind: 'struct', columns: ColumnAst[] }
+export type TypeEnumAst = { kind: 'enum', values: AttributeValueAst[] }
+export type TypeStructAst = { kind: 'struct', attrs: AttributeAst[] }
 export type TypeCustomAst = { kind: 'custom', definition: IdentifierAst }
 
 export type NamespaceRefAst = { schema?: IdentifierAst, catalog?: IdentifierAst, database?: IdentifierAst }
 export type EntityRefAst = { entity: IdentifierAst } & NamespaceRefAst
-export type ColumnPathAst = IdentifierAst & { path?: IdentifierAst[] }
-export type ColumnRefAst = EntityRefAst & { column: ColumnPathAst }
-export type ColumnRefCompositeAst = EntityRefAst & { columns: ColumnPathAst[] }
-export type ColumnValueAst = IdentifierAst | IntegerAst
+export type AttributePathAst = IdentifierAst & { path?: IdentifierAst[] }
+export type AttributeRefAst = EntityRefAst & { attr: AttributePathAst }
+export type AttributeRefCompositeAst = EntityRefAst & { attrs: AttributePathAst[] }
+export type AttributeValueAst = IdentifierAst | IntegerAst
 
 export type ExtraAst = { properties?: PropertiesAst, note?: NoteAst, comment?: CommentAst }
 export type PropertiesAst = PropertyAst[]
@@ -103,16 +96,16 @@ class AmlParser extends EmbeddedActionsParser {
     propertiesRule: () => PropertiesAst
     extraRule: () => ExtraAst
     entityRefRule: () => EntityRefAst
-    columnPathRule: () => ColumnPathAst
-    columnRefRule: () => ColumnRefAst
-    columnRefCompositeRule: () => ColumnRefCompositeAst
-    columnValueRule: () => ColumnValueAst
+    attributePathRule: () => AttributePathAst
+    attributeRefRule: () => AttributeRefAst
+    attributeRefCompositeRule: () => AttributeRefCompositeAst
+    attributeValueRule: () => AttributeValueAst
 
     // namespace
     namespaceRule: () => NamespaceAst
 
     // entity
-    columnRule: () => ColumnAst
+    attributeRule: () => AttributeAst
     entityRule: () => EntityAst
 
     // relation
@@ -210,34 +203,34 @@ class AmlParser extends EmbeddedActionsParser {
             return removeUndefined({entity: entity || first, schema, catalog, database})
         })
 
-        this.columnPathRule = $.RULE<() => ColumnPathAst>('columnPathRule', () => {
-            const column = $.SUBRULE($.identifierRule)
+        this.attributePathRule = $.RULE<() => AttributePathAst>('attributePathRule', () => {
+            const attr = $.SUBRULE($.identifierRule)
             const path: IdentifierAst[] = []
             $.MANY(() => path.push($.SUBRULE(nestedRule)))
-            return removeEmpty({...column, path})
+            return removeEmpty({...attr, path})
         })
 
-        this.columnRefRule = $.RULE<() => ColumnRefAst>('columnRefRule', () => {
+        this.attributeRefRule = $.RULE<() => AttributeRefAst>('attributeRefRule', () => {
             const entity = $.SUBRULE($.entityRefRule)
             $.CONSUME(LParen)
-            const column = $.SUBRULE($.columnPathRule)
+            const attr = $.SUBRULE($.attributePathRule)
             $.CONSUME(RParen)
-            return {...entity, column}
+            return {...entity, attr}
         })
 
-        this.columnRefCompositeRule = $.RULE<() => ColumnRefCompositeAst>('columnRefCompositeRule', () => {
+        this.attributeRefCompositeRule = $.RULE<() => AttributeRefCompositeAst>('attributeRefCompositeRule', () => {
             const entity = $.SUBRULE($.entityRefRule)
             $.CONSUME(LParen)
-            const columns: ColumnPathAst[] = []
+            const attrs: AttributePathAst[] = []
             $.AT_LEAST_ONE_SEP({
                 SEP: Comma,
-                DEF: () => columns.push($.SUBRULE($.columnPathRule))
+                DEF: () => attrs.push($.SUBRULE($.attributePathRule))
             })
             $.CONSUME(RParen)
-            return {...entity, columns}
+            return {...entity, attrs}
         })
 
-        this.columnValueRule = $.RULE<() => ColumnValueAst>('columnValueRule', () => {
+        this.attributeValueRule = $.RULE<() => AttributeValueAst>('attributeValueRule', () => {
             return $.OR([
                 { ALT: () => $.SUBRULE($.identifierRule) },
                 { ALT: () => $.SUBRULE($.integerRule) },
@@ -255,28 +248,28 @@ class AmlParser extends EmbeddedActionsParser {
         })
 
         // entity rules
-        const columnTypeRule = $.RULE<() => ColumnTypeAst>('columnTypeRule', () => {
+        const attributeTypeRule = $.RULE<() => AttributeTypeAst>('attributeTypeRule', () => {
             const res = $.OPTION(() => {
                 const type = $.SUBRULE($.identifierRule)
                 const enumValues = $.OPTION2(() => {
                     $.CONSUME(LParen)
-                    const values: ColumnValueAst[] = []
+                    const values: AttributeValueAst[] = []
                     $.AT_LEAST_ONE_SEP({
                         SEP: Comma,
-                        DEF: () => values.push($.SUBRULE($.columnValueRule))
+                        DEF: () => values.push($.SUBRULE($.attributeValueRule))
                     })
                     $.CONSUME(RParen)
                     return values
                 })
                 const defaultValue = $.OPTION3(() => {
                     $.CONSUME(Equal)
-                    return $.SUBRULE2($.columnValueRule)
+                    return $.SUBRULE2($.attributeValueRule)
                 })
                 return {type, enumValues, defaultValue}
             })
             return {type: res?.type, enumValues: res?.enumValues, defaultValue: res?.defaultValue}
         })
-        const columnConstraintsRule = $.RULE<() => ColumnConstraintsAst>('columnConstraintsRule', () => {
+        const attributeConstraintsRule = $.RULE<() => AttributeConstraintsAst>('attributeConstraintsRule', () => {
             const pk = $.OPTION(() => $.CONSUME(PrimaryKey))
             const primaryKey = pk ? {parser: parserInfo(pk)} : undefined
             const index = $.OPTION2(() => {
@@ -305,22 +298,22 @@ class AmlParser extends EmbeddedActionsParser {
             })
             return removeUndefined({primaryKey, index, unique, check})
         })
-        const columnRelationRule = $.RULE<() => ColumnRelationAst>('columnRelationRule', () => {
+        const attributeRelationRule = $.RULE<() => AttributeRelationAst>('attributeRelationRule', () => {
             const refCardinality = $.SUBRULE(relationCardinalityRule)
             const polymorphic = $.OPTION(() => $.SUBRULE(relationPolymorphicRule))
             const srcCardinality = $.SUBRULE2(relationCardinalityRule)
-            const ref = $.SUBRULE2($.columnRefCompositeRule)
-            return removeUndefined({kind: `${srcCardinality}-${refCardinality}`, ref, polymorphic} as ColumnRelationAst)
+            const ref = $.SUBRULE2($.attributeRefCompositeRule)
+            return removeUndefined({kind: `${srcCardinality}-${refCardinality}`, ref, polymorphic} as AttributeRelationAst)
         })
-        this.columnRule = $.RULE<() => ColumnAst>('columnRule', () => {
+        this.attributeRule = $.RULE<() => AttributeAst>('attributeRule', () => {
             const name = $.SUBRULE($.identifierRule)
-            const {type, enumValues, defaultValue} = $.SUBRULE(columnTypeRule)
+            const {type, enumValues, defaultValue} = $.SUBRULE(attributeTypeRule)
             const isNull = $.OPTION(() => $.CONSUME(Nullable))
             const nullable = isNull ? {parser: parserInfo(isNull)} : undefined
-            const constraints = $.SUBRULE(columnConstraintsRule)
-            const relation = $.OPTION2(() => $.SUBRULE(columnRelationRule))
+            const constraints = $.SUBRULE(attributeConstraintsRule)
+            const relation = $.OPTION2(() => $.SUBRULE(attributeRelationRule))
             const extra = $.SUBRULE($.extraRule)
-            // TODO: nested columns?
+            // TODO: nested attrs?
             return removeUndefined({name, type, enumValues, defaultValue, nullable, ...constraints, relation, ...extra})
         })
 
@@ -331,9 +324,9 @@ class AmlParser extends EmbeddedActionsParser {
                 return $.SUBRULE($.identifierRule)
             })
             const extra = $.SUBRULE($.extraRule)
-            const columns: ColumnAst[] = []
-            $.MANY(() => columns.push($.SUBRULE($.columnRule)))
-            return removeEmpty({command: 'ENTITY', name: entity, ...namespace, alias, ...extra, columns} as EntityAst)
+            const attrs: AttributeAst[] = []
+            $.MANY(() => attrs.push($.SUBRULE($.attributeRule)))
+            return removeEmpty({command: 'ENTITY', name: entity, ...namespace, alias, ...extra, attrs} as EntityAst)
         })
 
         // relation rules
@@ -345,15 +338,15 @@ class AmlParser extends EmbeddedActionsParser {
             ])
         })
         const relationPolymorphicRule = $.RULE<() => RelationPolymorphicAst>('relationPolymorphicRule', () => {
-            const column = $.SUBRULE($.columnPathRule)
+            const attr = $.SUBRULE($.attributePathRule)
             $.CONSUME(Equal)
-            const value = $.SUBRULE($.columnValueRule)
-            return {column, value}
+            const value = $.SUBRULE($.attributeValueRule)
+            return {attr, value}
         })
         this.relationRule = $.RULE<() => RelationAst>('relationRule', () => {
             $.CONSUME(Relation)
-            const src = $.SUBRULE($.columnRefCompositeRule)
-            const {kind, ref, polymorphic} = $.SUBRULE(columnRelationRule)
+            const src = $.SUBRULE($.attributeRefCompositeRule)
+            const {kind, ref, polymorphic} = $.SUBRULE(attributeRelationRule)
             const extra = $.SUBRULE($.extraRule)
             return removeUndefined({command: 'RELATION', kind, src, ref, polymorphic, ...extra} as RelationAst)
         })
@@ -362,17 +355,17 @@ class AmlParser extends EmbeddedActionsParser {
         const typeEnumRule = $.RULE<() => TypeEnumAst>('typeEnumRule', () => {
             $.CONSUME(Enum)
             $.CONSUME(LParen)
-            const values: ColumnValueAst[] = []
+            const values: AttributeValueAst[] = []
             // TODO
             $.CONSUME(RParen)
             return { kind: 'enum', values }
         })
         const typeStructRule = $.RULE<() => TypeStructAst>('typeStructRule', () => {
             $.CONSUME(LCurly)
-            const columns: ColumnAst[] = []
+            const attrs: AttributeAst[] = []
             // TODO
             $.CONSUME(RCurly)
-            return { kind: 'struct', columns }
+            return { kind: 'struct', attrs }
         })
         const typeCustomRule = $.RULE<() => TypeCustomAst>('typeCustomRule', () => {
             // TODO
@@ -421,9 +414,9 @@ export function parseRule<T>(parse: (p: AmlParser) => T, input: string): ParserR
     parser.input = lexingResult.tokens // "input" is a setter which will reset the parser's state.
     const res = parse(parser)
     if (parser.errors.length > 0) {
-        return {errors: parser.errors.map(formatError)}
+        return ParserResult.failure(parser.errors.map(formatError))
     }
-    return {result: res}
+    return ParserResult.success(res)
 }
 
 /*export function parse(input: string): ParserResult<AmlAst> {
@@ -432,7 +425,7 @@ export function parseRule<T>(parse: (p: AmlParser) => T, input: string): ParserR
 
 function formatError(err: IRecognitionException): ParserError {
     const {offset, line, column} = parserInfo(err.token)
-    return {kind: err.name, message: err.message, offset, line, column}
+    return {name: err.name, message: err.message, position: {offset, line, column}}
 }
 
 function parserInfo(token: IToken): TokenInfo {

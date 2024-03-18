@@ -7,8 +7,6 @@ import {
     ConditionOpAst,
     IdentifierAst,
     IntegerAst,
-    ParserError,
-    ParserResult,
     SelectAst,
     SelectColumnAst,
     SelectFromAst,
@@ -22,6 +20,7 @@ import {
     WildcardAst
 } from "./ast";
 import {removeUndefined} from "@azimutt/utils";
+import {ParserError, ParserResult} from "@azimutt/database-model";
 
 // https://chevrotain.io/docs/features/lexer_modes.html
 // https://chevrotain.io/docs/features/custom_token_patterns.html => indentation
@@ -239,9 +238,9 @@ export function parseRule<T>(parse: (p: SqlParser) => T, input: string): ParserR
     parser.input = lexingResult.tokens // "input" is a setter which will reset the parser's state.
     const res = parse(parser)
     if (parser.errors.length > 0) {
-        return {errors: parser.errors.map(formatError)}
+        return ParserResult.failure(parser.errors.map(formatError))
     }
-    return {result: res}
+    return ParserResult.success(res)
 }
 
 export function parse(input: string): ParserResult<SqlScriptAst> {
@@ -250,7 +249,7 @@ export function parse(input: string): ParserResult<SqlScriptAst> {
 
 function formatError(err: IRecognitionException): ParserError {
     const {offset, line, column} = parserInfo(err.token)
-    return {kind: err.name, message: err.message, offset, line, column}
+    return {name: err.name, message: err.message, position: {offset, line, column}}
 }
 
 function parserInfo(token: IToken): TokenInfo {

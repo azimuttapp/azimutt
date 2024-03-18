@@ -1,6 +1,6 @@
 import {z} from "zod";
 import {Markdown, Uuid} from "./common";
-import {ColumnPath, Database, DatabaseKind, EntityId, NamespaceId, Relation} from "./database";
+import {AttributePathId, Database, DatabaseKind, EntityId, NamespaceId, Relation} from "./database";
 
 // read this file from bottom to the top, to have a top-down read ^^
 
@@ -56,18 +56,18 @@ export const Layout = z.object({
 export type Layout = z.infer<typeof Layout>
 
 
-export const ColumnDoc = z.object({
+export const AttributeDoc = z.object({
     alias: z.string().optional(),
     content: Markdown.optional(),
     tags: Tag.array().optional(),
 }).strict()
-export type ColumnDoc = z.infer<typeof ColumnDoc>
+export type AttributeDoc = z.infer<typeof AttributeDoc>
 
 export const EntityDoc = z.object({
     alias: z.string().optional(),
     content: Markdown.optional(),
     tags: Tag.array().optional(),
-    columns: z.record(ColumnPath, ColumnDoc).optional(),
+    attrs: z.record(AttributePathId, AttributeDoc).optional(),
 }).strict()
 export type EntityDoc = z.infer<typeof EntityDoc>
 

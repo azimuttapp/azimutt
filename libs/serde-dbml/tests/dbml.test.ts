@@ -7,7 +7,7 @@ import {generate, parse, reformat} from "../src/dbml";
 import {JsonDatabase} from "../src/jsonDatabase";
 
 describe('dbml', () => {
-    test('basic schema',  async () => {
+    test('basic schema',  () => {
         const source = `
             Table users {
               id integer [primary key]
@@ -37,59 +37,59 @@ Ref:"users"."id" < "posts"."author"
         const parsed: Database = {
             entities: [{
                 name: 'users',
-                columns: [
+                attrs: [
                     {name: 'id', type: 'integer'},
                     {name: 'name', type: 'varchar'}
                 ],
-                primaryKey: {columns: ['id']}
+                pk: {attrs: [['id']]}
             }, {
                 name: 'posts',
-                columns: [
+                attrs: [
                     {name: 'id', type: 'integer'},
-                    {name: 'title', type: 'varchar', comment: 'Title of the post'},
+                    {name: 'title', type: 'varchar', doc: 'Title of the post'},
                     {name: 'author', type: 'integer'},
                 ],
-                primaryKey: {columns: ['id']}
+                pk: {attrs: [['id']]}
             }],
             relations: [
-                {src: {entity: 'posts'}, ref: {entity: 'users'}, columns: [{src: 'author', ref: 'id'}]}
+                {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}]}
             ],
             extra: {source: 'serde-DBML'}
         }
-        await expect(parse(source)).resolves.toEqual(parsed)
-        await expect(parse(generated)).resolves.toEqual(parsed)
-        await expect(generate(parsed)).resolves.toEqual(generated)
-        await expect(reformat(source)).resolves.toEqual(generated)
+        expect(parse(source).result).toEqual(parsed)
+        expect(parse(generated).result).toEqual(parsed)
+        expect(generate(parsed)).toEqual(generated)
+        expect(reformat(source)).toEqual(generated)
     })
-    test('complex schema',  async () => {
+    test('complex schema',  () => {
         const source = fs.readFileSync('./tests/resources/complex.dbml', 'utf8')
         const generated = fs.readFileSync('./tests/resources/complex.generated.dbml', 'utf8')
         const parsed: Database = JSON.parse(fs.readFileSync('./tests/resources/complex.json', 'utf8'))
-        await expect(parse(source)).resolves.toEqual(parsed)
-        // await expect(parse(generated)).resolves.toEqual(parsed) // `alias` and index `notes` are not preserved by DBML lib :/
-        // await expect(generate(parsed)).resolves.toEqual(generated) // `tableGroups` make JSON parser fail :/
-        await expect(reformat(source)).resolves.toEqual(generated)
+        expect(parse(source).result).toEqual(parsed)
+        // expect(parse(generated).result).toEqual(parsed) // `alias` and index `notes` are not preserved by DBML lib :/
+        // expect(generate(parsed)).toEqual(generated) // `tableGroups` make JSON parser fail :/
+        expect(reformat(source)).toEqual(generated)
     })
-    test('empty schema',  async () => {
+    test('empty schema',  () => {
         const source = ``
         const generated = ``
         const parsed: Database = {extra: {source: 'serde-DBML'}}
-        await expect(parse(source)).resolves.toEqual(parsed)
-        await expect(parse(generated)).resolves.toEqual(parsed)
-        await expect(generate(parsed)).resolves.toEqual(generated)
-        await expect(reformat(source)).resolves.toEqual(generated)
+        expect(parse(source).result).toEqual(parsed)
+        expect(parse(generated).result).toEqual(parsed)
+        expect(generate(parsed)).toEqual(generated)
+        expect(reformat(source)).toEqual(generated)
     })
-    test('bad schema',  async () => {
+    test('bad schema',  () => {
         const source = `
             users
               id uuid
             `
         const error = [
-            {message: "Expect an opening brace '{' or a colon ':'", start: {line: 3, column: 18}, end: {line: 3, column: 22}},
-            {message: "A custom element can only appear in a Project", start: {line: 2, column: 13}, end: {line: 3, column: 17}},
-            {message: "A Custom element shouldn't have a name", start: {line: 3, column: 15}, end: {line: 3, column: 17}}
+            {name: 'DBMLException-1005', message: "Expect an opening brace '{' or a colon ':'", position: {offset: [0, 0], line: [3, 3], column: [18, 22]}},
+            {name: 'DBMLException-3057', message: "A custom element can only appear in a Project", position: {offset: [0, 0], line: [2, 3], column: [13, 17]}},
+            {name: 'DBMLException-3001', message: "A Custom element shouldn't have a name", position: {offset: [0, 0], line: [3, 3], column: [15, 17]}}
         ]
-        await expect(parse(source)).rejects.toEqual(error)
+        expect(parse(source).errors).toEqual(error)
     })
     test.skip('test',   () => {
         const source = `Table users {

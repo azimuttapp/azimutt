@@ -7,28 +7,22 @@ import DbmlEndpoint from "@dbml/core/types/model_structure/endpoint";
 import DbmlEnum from "@dbml/core/types/model_structure/enum";
 import DbmlTableGroup from "@dbml/core/types/model_structure/tableGroup";
 import DbmlSchema from "@dbml/core/types/model_structure/schema";
-import {removeUndefined, zip} from "@azimutt/utils";
+import {removeEmpty, removeUndefined, zip} from "@azimutt/utils";
 import {
-    Column,
+    Attribute,
+    AttributePath,
     Database,
     Entity,
     EntityRef,
     Index,
+    parseAttributePath,
+    PrimaryKey,
     Relation,
     RelationKind,
     SchemaName,
     Type
 } from "@azimutt/database-model";
-import {removeEmpty} from "./utils";
-import {
-    ColumnExtra,
-    DatabaseExtra,
-    EntityExtra,
-    Group,
-    IndexExtra,
-    RelationExtra,
-    TypeExtra
-} from "./extra";
+import {AttributeExtra, DatabaseExtra, EntityExtra, Group, IndexExtra, RelationExtra, TypeExtra} from "./extra";
 
 export const defaultSchema = 'public'
 
@@ -46,12 +40,12 @@ export function importDatabase(db: DbmlDatabase): Database {
 }
 
 function importEntity(table: DbmlTable): Entity {
-    const pkIndex = table.indexes.filter(i => i.pk).map(i => removeUndefined({name: i.name, columns: i.columns.map(c => c.value)}))[0]
-    const pkCols = table.fields.filter(f => f.pk).map(f => f.name)
+    const pkIndex: PrimaryKey = table.indexes.filter(i => i.pk).map(i => removeUndefined({name: i.name, attrs: i.columns.map(c => parseAttributePath(c.value))}))[0]
+    const pkCols: AttributePath[] = table.fields.filter(f => f.pk).map(f => parseAttributePath(f.name))
 
     const entityIndexes: Index[] = table.indexes.filter(i => !i.pk).map(importIndex)
-    const columnUniques: Index[] = table.fields.filter(f => f.unique).map(f => ({columns: [f.name], unique: true}))
-    const indexes = columnUniques.concat(entityIndexes)
+    const attributeUniques: Index[] = table.fields.filter(f => f.unique).map(f => ({attrs: [parseAttributePath(f.name)], unique: true}))
+    const indexes = attributeUniques.concat(entityIndexes)
 
     const extra: EntityExtra = removeUndefined({
         alias: table.alias || undefined,
@@ -61,16 +55,16 @@ function importEntity(table: DbmlTable): Entity {
     return removeEmpty({
         schema: importSchemaName(table.schema),
         name: table.name,
-        columns: table.fields.map(importColumn),
-        primaryKey: pkIndex ? pkIndex : pkCols.length > 0 ? {columns: pkCols} : undefined,
+        attrs: table.fields.map(importAttribute),
+        pk: pkIndex ? pkIndex : pkCols.length > 0 ? {attrs: pkCols} : undefined,
         indexes: indexes.length > 0 ? indexes : undefined,
-        comment: table.note || undefined,
+        doc: table.note || undefined,
         extra
     })
 }
 
-function importColumn(field: DbmlField): Column {
-    const extra: ColumnExtra = removeUndefined({
+function importAttribute(field: DbmlField): Attribute {
+    const extra: AttributeExtra = removeUndefined({
         increment: field.increment || undefined,
         defaultType: field.dbdefault?.type === 'expression' ? 'expression' : undefined
     })
@@ -79,21 +73,21 @@ function importColumn(field: DbmlField): Column {
         type: field.type.type_name,
         nullable: field.not_null === true ? !field.not_null : undefined,
         default: field.dbdefault?.value,
-        comment: field.note || undefined,
+        doc: field.note || undefined,
         extra
     })
 }
 
 function importIndex(index: DbmlIndex): Index {
     const extra: IndexExtra = removeEmpty({
-        columnTypes: removeUndefined(index.columns.reduce((acc, v) => ({...acc, [v.value]: v.type === 'expression' ? 'expression' : undefined}), {}))
+        attrTypes: removeUndefined(index.columns.reduce((acc, v) => ({...acc, [v.value]: v.type === 'expression' ? 'expression' : undefined}), {}))
     })
     return removeEmpty({
         name: index.name,
-        columns: index.columns.map(c => c.value),
+        attrs: index.columns.map(c => parseAttributePath(c.value)),
         unique: index.unique || undefined,
         definition: index.type || undefined,
-        comment: index.note || undefined,
+        doc: index.note || undefined,
         extra
     })
 }
@@ -115,7 +109,7 @@ function importRef(relation: DbmlRef): Relation {
         kind: kind !== 'many-to-one' ? kind : undefined,
         src: importEndpoint(src),
         ref: importEndpoint(ref),
-        columns: zip(src.fieldNames, ref.fieldNames).map(([src, ref]) => ({src, ref})),
+        attrs: zip(src.fieldNames, ref.fieldNames).map(([src, ref]) => ({src: parseAttributePath(src), ref: parseAttributePath(ref)})),
         extra
     })
 }
@@ -132,7 +126,7 @@ function importType(e: DbmlEnum): Type {
         schema: importSchemaName(e.schema),
         name: e.name,
         values: e.values.map(v => v.name),
-        comment: e.note || undefined,
+        doc: e.note || undefined,
         extra
     })
 }

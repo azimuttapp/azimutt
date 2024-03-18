@@ -28,7 +28,7 @@ function formatSelect(select: SelectAst): Select {
 function formatSelectResultColumn(col: SelectColumnAst): SelectColumn {
     const alias = col.alias?.identifier
     if ('identifier' in col.column) {
-        return {name: col.column.identifier, alias, content: {kind: 'column', column: col.column.identifier, table: col.table?.identifier, schema: col.schema?.identifier}}
+        return {name: col.column.identifier, alias, content: {kind: 'column', column: [col.column.identifier], table: col.table?.identifier, schema: col.schema?.identifier}}
     } else {
         return {name: col.column.wildcard, alias, content: {kind: 'wildcard', table: col.table?.identifier, schema: col.schema?.identifier}}
     }

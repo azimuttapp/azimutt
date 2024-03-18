@@ -1,7 +1,8 @@
 import * as fs from "fs";
 import {describe, test} from "@jest/globals";
 import {pathJoin, pathParent, slugify} from "@azimutt/utils";
-import {AmlAst, ParserResult} from "../src/parser";
+import {ParserResult} from "@azimutt/database-model";
+import {AmlAst} from "../src/parser";
 
 describe('docs', () => {
     const project = 'libs/serde-aml'
@@ -17,7 +18,7 @@ describe('docs', () => {
         const errorFiles = Object.entries(amlFiles).map(([path, content]) => {
             const matches = content.match(amlRegex) || []
             const errors = matches.map(aml => aml.replace(/^```aml/, '').replace(/```$/, '')).map((aml, index) => {
-                const ast: ParserResult<AmlAst> = {result: [], errors: [], warnings: []} // TODO: parse AML and report errors
+                const ast: ParserResult<AmlAst> = ParserResult.success([]) // TODO: parse AML and report errors
                 return {index, aml, errors: ast.errors || []}
             }).filter(res => res.errors.length > 0)
             return {path, errors}

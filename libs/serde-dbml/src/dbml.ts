@@ -1,37 +1,38 @@
 import * as dbml from "@dbml/core";
 import DbmlDatabase from "@dbml/core/types/model_structure/database";
-import {Database, ParserError} from "@azimutt/database-model";
+import {errorToString} from "@azimutt/utils";
+import {Database, ParserError, ParserResult} from "@azimutt/database-model";
 import {importDatabase} from "./dbmlImport";
 import {exportDatabase} from "./dbmlExport";
 import {JsonDatabase} from "./jsonDatabase";
 
-export function parse(content: string): Promise<Database> {
+export function parse(content: string): ParserResult<Database> {
     try {
         const db: DbmlDatabase = (new dbml.Parser(undefined)).parse(content, 'dbmlv2')
-        return Promise.resolve(importDatabase(db))
+        return ParserResult.success(importDatabase(db))
     } catch (e: unknown) {
-        return Promise.reject(Array.isArray(e) ? importError(e as DbmlParserError[]) : e)
+        return ParserResult.failure(formatError(e))
     }
 }
 
-export function generate(database: Database): Promise<string> {
+export function generate(database: Database): string {
     try {
         const json: JsonDatabase = exportDatabase(database)
         const db: DbmlDatabase = (new dbml.Parser(undefined)).parse(JSON.stringify(json), 'json')
-        return Promise.resolve(dbml.ModelExporter.export(db, 'dbml', false))
+        return dbml.ModelExporter.export(db, 'dbml', false)
     } catch (e: unknown) {
-        return Promise.reject(Array.isArray(e) ? importError(e as DbmlParserError[]) : e)
+        throw formatError(e)
     }
 }
 
 // used to make sure the generated DBML contains everything possible (comparing with `generate` function)
-export function reformat(content: string): Promise<string> {
+export function reformat(content: string): string {
     try {
         const db: DbmlDatabase = (new dbml.Parser(undefined)).parse(content, 'dbmlv2')
         const res = dbml.ModelExporter.export(db, 'dbml', false)
-        return Promise.resolve(res)
+        return res
     } catch (e) {
-        return Promise.reject(e)
+        throw formatError(e)
     }
 }
 
@@ -45,10 +46,19 @@ type DbmlParserError = {
     }
 }
 
-function importError(errors: DbmlParserError[]): ParserError[] {
-    return errors.map(e => ({
-        message: e.message,
-        start: {line: e.location.start.line, column: e.location.start.column},
-        end: {line: e.location.end.line, column: e.location.end.column}
-    }))
+function formatError(err: unknown): ParserError[] {
+    if (Array.isArray(err)) {
+        const errors = err as DbmlParserError[]
+        return errors.map(e => ({
+            name: `DBMLException-${e.code}`,
+            message: e.message,
+            position: {
+                offset: [0, 0],
+                line: [e.location.start.line, e.location.end.line],
+                column: [e.location.start.column, e.location.end.column]
+            }
+        }))
+    } else {
+        return [{name: `UnknownException`, message: errorToString(err)}]
+    }
 }

@@ -9,14 +9,14 @@ describe('database', () => {
         const db: Database = {
             entities: [{
                 name: 'users',
-                columns: [
+                attrs: [
                     {name: 'id', type: 'int'},
                     {name: 'name', type: 'varchar'},
                 ],
-                primaryKey: {columns: ['id']}
+                pk: {attrs: [['id']]}
             }, {
                 name: 'posts',
-                columns: [
+                attrs: [
                     {name: 'id', type: 'int'},
                     {name: 'title', type: 'varchar'},
                     {name: 'status', type: 'post_status', default: 'draft'},
@@ -24,7 +24,7 @@ describe('database', () => {
                 ]
             }],
             relations: [
-                {src: {entity: 'posts'}, ref: {entity: 'users'}, columns: [{src: 'author', ref: 'id'}]},
+                {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}]},
             ],
             types: [
                 {name: 'post_status', values: ['draft', 'published', 'archived']},
@@ -42,7 +42,7 @@ describe('database', () => {
         const db: Database = {
             entities: [{
                 name: 'users',
-                columns: [
+                attrs: [
                     {name: 'id', type: 'int'},
                     {name: 'first_name', type: 'varchar'},
                     {name: 'last_name', type: 'varchar'},
@@ -50,43 +50,43 @@ describe('database', () => {
                     {name: 'created_at', type: 'timestamp'},
                     {name: 'deleted_at', type: 'timestamp', nullable: true},
                 ],
-                primaryKey: {columns: ['id']},
+                pk: {attrs: [['id']]},
                 indexes: [
-                    {columns: ['first_name', 'last_name']},
-                    {columns: ['email'], name: 'uniq_users_email_active', unique: true, partial: 'deleted_at IS NULL', definition: 'users (lower(email))', comment: 'Active users can\'t have the same email', extra: {kind: 'btree', columnTypes: {email: 'expression'}}},
+                    {attrs: [['first_name'], ['last_name']]},
+                    {attrs: [['email']], name: 'uniq_users_email_active', unique: true, partial: 'deleted_at IS NULL', definition: 'users (lower(email))', doc: 'Active users can\'t have the same email', extra: {kind: 'btree', attributeTypes: {email: 'expression'}}},
                 ],
                 checks: [
-                    {columns: ['email'], predicate: 'len(email) > 10'},
-                    {columns: ['created_at', 'deleted_at'], predicate: 'deleted_at > created_at', name: 'chk_users_deletion', comment: 'Don\'t create deleted users', extra: {deferred: true}},
+                    {attrs: [['email']], predicate: 'len(email) > 10'},
+                    {attrs: [['created_at'], ['deleted_at']], predicate: 'deleted_at > created_at', name: 'chk_users_deletion', doc: 'Don\'t create deleted users', extra: {deferred: true}},
                 ],
                 extra: {color: 'blue', position: {x: 120, y: 42}}
             }, {
                 name: 'posts',
-                columns: [
+                attrs: [
                     {name: 'id', type: 'int'},
                     {name: 'title', type: 'varchar'},
                     {name: 'status', type: 'post_status', default: 'draft'},
                 ],
             }, {
                 name: 'user_posts',
-                columns: [
+                attrs: [
                     {name: 'user_id', type: 'int'},
                     {name: 'post_id', type: 'int'},
                 ],
-                primaryKey: {columns: ['user_id', 'post_id'], name: 'user_posts_pk', comment: 'Composite PK', extra: {composite: true}}
+                pk: {attrs: [['user_id'], ['post_id']], name: 'user_posts_pk', doc: 'Composite PK', extra: {composite: true}}
             }, {
                 schema: 'social',
                 name: 'tweets',
-                columns: [
+                attrs: [
                     {name: 'id', type: 'int'},
-                    {name: 'content', type: 'json', columns: [
+                    {name: 'content', type: 'json', attrs: [
                         {name: 'text', type: 'varchar'},
                         {name: 'pics', type: 'varchar[]'},
-                    ], comment: 'Keep the whole tweet payload'},
+                    ], doc: 'Keep the whole tweet payload'},
                 ]
             }, {
                 name: 'profiles',
-                columns: [
+                attrs: [
                     {name: 'id', type: 'int'},
                     {name: 'user_id', type: 'int'},
                     {name: 'bio', type: 'markdown', nullable: true},
@@ -94,17 +94,17 @@ describe('database', () => {
                     {name: 'avatar_pos', type: 'position', nullable: true},
                 ],
                 indexes: [
-                    {columns: ['user_id'], unique: true}
+                    {attrs: [['user_id']], unique: true}
                 ]
             }, {
                 database: 'snowflake',
                 catalog: 'analytics',
                 schema: 'raw',
                 name: 'events',
-                columns: [
+                attrs: [
                     {name: 'id', type: 'uuid'},
                     {name: 'name', type: 'varchar'},
-                    {name: 'payload', type: 'json', columns: [
+                    {name: 'payload', type: 'json', attrs: [
                         {name: 'user_id', type: 'int'},
                         {name: 'tweet_id', type: 'int'},
                     ]},
@@ -113,31 +113,31 @@ describe('database', () => {
             }, {
                 name: 'contributions',
                 kind: 'view',
-                columns: [
+                attrs: [
                     {name: 'user_id', type: 'int'},
                     {name: 'item_kind', type: 'varchar', values: ['Post', 'Tweet'], extra: {polymorphic: true}},
                     {name: 'item_id', type: 'int'},
                 ],
-                comment: 'View storing all kind of user contributions',
+                doc: 'View storing all kind of user contributions',
                 extra: {partition: 'HASH (item_kind)', fillfactor: 70}
             }],
             relations: [
-                {src: {entity: 'user_posts'}, ref: {entity: 'users'}, columns: [{src: 'user_id', ref: 'id'}]},
-                {src: {entity: 'user_posts'}, ref: {entity: 'posts'}, columns: [{src: 'post_id', ref: 'id'}]},
-                {src: {entity: 'contributions'}, ref: {entity: 'posts'}, columns: [{src: 'item_id', ref: 'id'}], polymorphic: {column: 'item_kind', value: 'Post'}},
-                {src: {entity: 'contributions'}, ref: {schema: 'social', entity: 'tweets'}, columns: [{src: 'item_id', ref: 'id'}], polymorphic: {column: 'item_kind', value: 'Tweet'}},
-                {src: {entity: 'profiles'}, ref: {entity: 'users'}, columns: [{src: 'user_id', ref: 'id'}], kind: 'one-to-one'},
-                {src: {schema: 'social', entity: 'tweets'}, ref: {entity: 'users'}, columns: [{src: 'id', ref: 'id'}], name: 'poly_tweets_users', kind: 'many-to-many', comment: 'Users mentioned in tweets', extra: {deferred: true}},
-                {database: 'snowflake', catalog: 'analytics', schema: 'raw', src: {database: 'snowflake', catalog: 'analytics', schema: 'raw', entity: 'events'}, ref: {entity: 'users'}, columns: [{src: 'payload.user_id', ref: 'id'}]},
-                {database: 'snowflake', catalog: 'analytics', schema: 'raw', src: {database: 'snowflake', catalog: 'analytics', schema: 'raw', entity: 'events'}, ref: {schema: 'social', entity: 'tweets'}, columns: [{src: 'payload.tweet_id', ref: 'id'}]},
+                {src: {entity: 'user_posts'}, ref: {entity: 'users'}, attrs: [{src: ['user_id'], ref: ['id']}]},
+                {src: {entity: 'user_posts'}, ref: {entity: 'posts'}, attrs: [{src: ['post_id'], ref: ['id']}]},
+                {src: {entity: 'contributions'}, ref: {entity: 'posts'}, attrs: [{src: ['item_id'], ref: ['id']}], polymorphic: {attribute: ['item_kind'], value: 'Post'}},
+                {src: {entity: 'contributions'}, ref: {schema: 'social', entity: 'tweets'}, attrs: [{src: ['item_id'], ref: ['id']}], polymorphic: {attribute: ['item_kind'], value: 'Tweet'}},
+                {src: {entity: 'profiles'}, ref: {entity: 'users'}, attrs: [{src: ['user_id'], ref: ['id']}], kind: 'one-to-one'},
+                {src: {schema: 'social', entity: 'tweets'}, ref: {entity: 'users'}, attrs: [{src: ['id'], ref: ['id']}], name: 'poly_tweets_users', kind: 'many-to-many', doc: 'Users mentioned in tweets', extra: {deferred: true}},
+                {database: 'snowflake', catalog: 'analytics', schema: 'raw', src: {database: 'snowflake', catalog: 'analytics', schema: 'raw', entity: 'events'}, ref: {entity: 'users'}, attrs: [{src: ['payload', 'user_id'], ref: ['id']}]},
+                {database: 'snowflake', catalog: 'analytics', schema: 'raw', src: {database: 'snowflake', catalog: 'analytics', schema: 'raw', entity: 'events'}, ref: {schema: 'social', entity: 'tweets'}, attrs: [{src: ['payload', 'tweet_id'], ref: ['id']}]},
             ],
             types: [
                 {name: 'markdown'},
                 {name: 'post_status', values: ['draft', 'published', 'archived'], definition: 'ENUM (\'draft\', \'published\', \'archived\')'},
-                {name: 'position', columns: [{name: 'x', type: 'int'}, {name: 'y', type: 'int'}], definition: '(x int, y int)', comment: 'For complex types, ie not enums', extra: {composite: true}},
+                {name: 'position', attrs: [{name: 'x', type: 'int'}, {name: 'y', type: 'int'}], definition: '(x int, y int)', doc: 'For complex types, ie not enums', extra: {composite: true}},
                 {database: 'snowflake', catalog: 'analytics', schema: 'raw', name: 'time_ns'}
             ],
-            comment: 'This is a complex database',
+            doc: 'This is a complex database',
             extra: {source: 'connector-PostgreSQL', version: '0.20.0'}
         }
         // zod validation

@@ -1,5 +1,5 @@
 import {z} from "zod"
-import {ColumnPath, EntityName, EntityRef, Namespace, SchemaName} from "@azimutt/database-model";
+import {AttributePath, EntityName, EntityRef, Namespace, SchemaName} from "@azimutt/database-model";
 
 // https://www.postgresql.org/docs/current/sql-select.html
 // https://dev.mysql.com/doc/refman/8.3/en/select.html
@@ -7,7 +7,7 @@ import {ColumnPath, EntityName, EntityRef, Namespace, SchemaName} from "@azimutt
 const ColumnRef = Namespace.merge(z.object({
     kind: z.literal('column'),
     table: EntityName.optional(),
-    column: ColumnPath
+    column: AttributePath
 })).strict()
 
 const Expression = z.object({

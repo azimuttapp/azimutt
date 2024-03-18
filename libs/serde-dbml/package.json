@@ -26,7 +26,7 @@
   },
   "dependencies": {
     "@azimutt/database-model": "file:../database-model",
-    "@azimutt/utils": "^0.0.5",
+    "@azimutt/utils": "file:../utils",
     "@dbml/core": "3.1.5",
     "zod": "3.22.4"
   },

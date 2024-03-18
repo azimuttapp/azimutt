@@ -20,14 +20,14 @@ export const EntityExtra = z.object({
 }).partial().optional()
 export type EntityExtra = z.infer<typeof EntityExtra>
 
-export const ColumnExtra = z.object({
-    increment: z.boolean(), // true when the column is an auto-incremented primary key
+export const AttributeExtra = z.object({
+    increment: z.boolean(), // true when the attribute is an auto-incremented primary key
     defaultType: z.string() // if the default value has a specific type, like 'expression'
 }).partial().optional()
-export type ColumnExtra = z.infer<typeof ColumnExtra>
+export type AttributeExtra = z.infer<typeof AttributeExtra>
 
 export const IndexExtra = z.object({
-    columnTypes: z.record(z.enum(['column', 'expression'])) // when index columns has specific type, like 'expression'
+    attrTypes: z.record(z.enum(['column', 'expression'])) // when index attributes has specific type, like 'expression'
 }).partial().optional()
 export type IndexExtra = z.infer<typeof IndexExtra>
 
