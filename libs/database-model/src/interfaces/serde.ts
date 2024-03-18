@@ -13,7 +13,6 @@ export type ParserError = {
     message: string,
     position?: { offset: ParserPosition, line: ParserPosition, column: ParserPosition }
 }
-
 export class ParserResult<T> {
     private constructor(public result?: T, public errors?: ParserError[], public warnings?: ParserError[]) {
         Object.freeze(this)
