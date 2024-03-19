@@ -7,11 +7,11 @@
 
 AML comments are used to note things in the AML source without taking them into account in the parsing result.
 
-There is only line comments starting with the `#` character, everything after will be ignored.
+There are only line comments starting with the `#` character, everything after will be ignored.
 
 They can be helpful to visually identify sections, add beloved TODOs or explain why you did some things.
 
-Here are an example:
+Here is an example:
 
 ```aml
 # this is a comment

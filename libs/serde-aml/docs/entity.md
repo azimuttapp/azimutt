@@ -71,7 +71,7 @@ Attributes define possible values inside an entity, such as **columns** in relat
 
 They are defined nested (2 space indentation) under the entity they belong to, but they can also have [several nesting levels](#nested-attribute).
 
-The only required thing is their name which is an [identifier](./identifier.md). After they have several options for the [type](#attribute-type), [nullable](#not-null), [indexes and constraints](#index-and-constraint).
+The only required thing is their name, which is an [identifier](./identifier.md). After they have several options for the [type](#attribute-type), [nullable](#not-null), [indexes and constraints](#index-and-constraint).
 
 Here is an example:
 
@@ -151,7 +151,7 @@ Contrary to SQL, in AML the attributes come with the NOT NULL constraint **by de
 
 To remove it, you can mark the attribute as `nullable`. This "not constraint" should come after the attribute type (if present).
 
-Here is some examples:
+Here are some examples:
 
 ```aml
 profiles
@@ -164,7 +164,7 @@ profiles
 
 #### Index and constraint
 
-Entity attributes may have constraints and AML allows to define them, but not with as much details as SQL do.
+Entity attributes may have constraints and AML allows defining them, though not as detailed as SQL.
 
 They come in this order: primary key, unique, index, check and relation, but most of the time you will have just one per attribute ^^
 
@@ -190,7 +190,7 @@ users
   profile_id uuid -> profiles(id)
 ```
 
-If you want to define a single constraint on several attributes (like uniquness of `first_name` and `last_name`), you can apply it to the needed attributes with the same name, they will be put together. The primary key don't need this as there is only one for an entity:
+If you want to define a single constraint on several attributes (like uniqueness of `first_name` and `last_name`), you can apply it to the needed attributes with the same name, they will be put together. The primary key doesn't need this as there is only one for an entity:
 
 ```aml
 users # unique constraint on first_name AND last_name
@@ -222,7 +222,7 @@ users
 
 Attributes may have nested attributes, this is especially useful to define the schema of complex objects like `json`.
 
-Nested attributes are just like other attribues, just with an indentation level more under the attribute they belong to. Here is how they look:
+Nested attributes are just like other attributes, just with an indentation level more under the attribute they belong to. Here is how they look:
 
 ```aml
 users

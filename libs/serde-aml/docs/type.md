@@ -7,7 +7,7 @@
 
 Custom types can be helpful for better semantics, consistency, constraints or even structure data.
 
-Defining and using a type in AML is very easy:
+Defining and using a type in AML is straightforward:
 
 ```aml
 type post_status

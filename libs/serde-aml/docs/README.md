@@ -1,6 +1,6 @@
 # AMLv2: Azimutt Markup Language
 
-This is the *Work In Progress* specification for AML v2, not implemented yet.
+This is the *Work In Progress* specification for AML v2, not implemented yet, feedback are welcome and can be made directly on the [PR](https://github.com/azimuttapp/azimutt/pull/278/files#diff-6ecaac9e351dadb48b2209b5e5d3a2d0ef81ad31f18ad511b78a369d667e2edf).
 
 If you want to use AML, please look at the [current specification](../../../docs/aml/README.md), you can use in [Azimutt](https://azimutt.app) today ;)
 
@@ -27,7 +27,7 @@ posts # AML comment
 
 This page will give you an overview of how to use it, follow links for the exhaustive specification.
 
-One last things, AML [comments](./comment.md) are single line and start with `#`, so you know them as they are in many places 😉
+One last thing, AML [comments](./comment.md) are single line and start with `#`, so you know them as they are in many places 😉
 
 
 ## Entities
@@ -85,7 +85,7 @@ events {color: yellow, scope: tracking} | store all user events
 
 ## Relations
 
-[Relations](./relation.md) can model references, like foreign keys, or source for lineage, depending how you want to use them.
+[Relations](./relation.md) can model references, like foreign keys, or source for lineage, depending on how you want to use them.
 
 They mostly use the `->` symbol in entity definition (like used above) but can also be defined standalone with the `rel` keyword and use other cardinality with `--` for [one-to-one](./relation.md#one-to-one) and `<>` for [many-to-many](./relation.md#many-to-many).
 
@@ -174,7 +174,7 @@ type position {x: int, y: int} # even structs can be defined
 AMLv2 is coming 2 years after AMLv1 ([post](https://azimutt.app/blog/aml-a-language-to-define-your-database-schema) & [PR](https://github.com/azimuttapp/azimutt/pull/98) ^^).
 During this time we discovered a lot of new use cases and some shortcomings (such as composite foreign keys).
 
-This new iteration fix a few issues, improve consistency and add nice features such as [namespace](./namespace.md) and [properties](./properties.md).
+This new iteration fixes a few issues, improve consistency and add nice features such as [namespace](./namespace.md) and [properties](./properties.md).
 
 We made it retro-compatible so you only have to fix the issued warnings but if you want to look at what needs to be adapted, look at the [migration doc](./migration.md).
 
@@ -183,7 +183,7 @@ We made it retro-compatible so you only have to fix the issued warnings but if y
 
 Let's write a meaningful AML example to have an idea of how it looks like to design your database schema with AML. This example won't use every available feature on AML but give you a good idea of the kind of code you will write using AML.
 
-Let's define a theorical e-commerce shop:
+Let's define a theoretical e-commerce shop:
 
 ![e-commerce schema defined using AML](../../../docs/aml/e-commerce-using-aml.png)
 

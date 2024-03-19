@@ -5,7 +5,7 @@
 
 ## Relation
 
-Relations are edges in [Entity-Relationship model](https://wikipedia.org/wiki/Entity%E2%80%93relationship_model). In relational databases they can be modelized with **foreign keys**, but not necessarily.
+Relations are edges in [Entity-Relationship model](https://wikipedia.org/wiki/Entity%E2%80%93relationship_model). In relational databases they can be modeled with **foreign keys**, but not necessarily.
 
 In AML, they can be defined either as an [attribute option](./entity.md#index-and-constraint):
 
@@ -84,7 +84,7 @@ Relations defined with `->` are **one-to-many** relations: several rows can targ
 ### One to One
 
 Relation with **one-to-one** cardinality can be defined using the `--` symbol.
-If both side of the relation don't have a unique index, AML compiler will issue a warning as the logical definition doesn't match the physical one.
+If neither side of the relation has a unique index, AML compiler will issue a warning as the logical definition doesn't match the physical one.
 
 ```aml
 users

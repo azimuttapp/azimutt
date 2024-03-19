@@ -6,24 +6,24 @@
 ## Migration from v1
 
 AMLv2 is coming 2 years after AMLv1 ([post](https://azimutt.app/blog/aml-a-language-to-define-your-database-schema) & [PR](https://github.com/azimuttapp/azimutt/pull/98) ^^).
-During this time we discovered a lot of new use cases and a few shortcomings (such as composite foreign keys).
+During this time, we discovered a lot of new use cases and a few shortcomings (such as composite foreign keys).
 
-This new iteration fix some issues, improve consistency and add nice features such as [namespace](./namespace.md) and [properties](./properties.md).
+This new iteration fixes some issues, improve consistency, and adds nice features such as [namespace](./namespace.md) and [properties](./properties.md).
 
 We made it retro-compatible, so you can see warnings and fix them.
 
 
 ### Semantic changes
 
-AMLv1 was build with relational databases in mind, too much in fact. So we had **tables**, **columns** and **foreign keys**.
+AMLv1 was built with relational databases in mind, too much in fact. So we had **tables**, **columns** and **foreign keys**.
 
-We wanted to make AMLv2 more generic to better embrace the diversity of databases as well as other kind of modelisations, so we renamed:
+We wanted to make AMLv2 more generic to better embrace the diversity of databases as well as other types of modeling, so we renamed:
 
 - **table** to **entity**
 - **column** to **attribute**
 - **foreign key** to **relation**
 
-As AML don't have a lot of syntax and keywords, it almost changes nothing in its syntax, except for foreign keys.
+As AML doesn't have a lot of syntax and keywords, it almost changes nothing in its syntax, except for foreign keys.
 
 
 ### Breaking changes

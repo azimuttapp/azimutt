@@ -13,7 +13,7 @@ In AML there are 3 hierarchical levels defined with [identifiers](./identifier.m
 - **catalog**
 - **schema**
 
-They are made to match most of the DBMS structures which have hierarchical levels.
+They are made to match most of the DBMS structures, which have hierarchical levels.
 
 Each level is optional. When defining a database object, they can be added in front of it, from the lower to the higher.
 
@@ -61,7 +61,7 @@ namespace seo # override the default namespace
 posts # defines the `posts` entity inside the `seo` schema
 ```
 
-The new defined namespace fully override the previous one, for all levels:
+The new defined namespace fully overrides the previous one, for all levels:
 
 ```aml
 namespace core.public

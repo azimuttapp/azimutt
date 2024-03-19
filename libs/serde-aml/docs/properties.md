@@ -10,7 +10,7 @@ They are a good complement to [textual documentation](./documentation.md), being
 
 Here is an example: `{color: red, pii: true}`
 
-Keys are [identifiers](./identifier.md) and values can have several form:
+Keys are [identifiers](./identifier.md) and values can have several forms:
 
 - boolean, ex: `{pii: true}`
 - number, ex: `{size: 12}`
@@ -20,7 +20,7 @@ Keys are [identifiers](./identifier.md) and values can have several form:
 
 You can use any key/value pair, they will be kept in the model.
 
-Some specific keys are standardized for some objects and can be interpreted in other in generators or in [Azimutt](https://azimutt.app).
+Some specific keys are standardized for certain objects and can be interpreted by in generators or in [Azimutt](https://azimutt.app).
 
 
 ### Entity properties

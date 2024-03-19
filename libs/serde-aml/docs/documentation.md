@@ -41,7 +41,7 @@ rel posts(author) -> public.users(id) | link post author
 
 If you want longer documentation, you can use multiline documentation with `|||`.
 
-Here is the same example than above:
+Here is the same example as above:
 
 ```aml
 type post_status enum(draft, published, archived) |||
