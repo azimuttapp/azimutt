@@ -1,4 +1,4 @@
-import {Logger} from "@azimutt/utils";
+import {indent, Logger, stripIndent} from "@azimutt/utils";
 import {Millis} from "../common";
 import {DatabaseUrlParsed} from "../databaseUrl"
 import {
@@ -21,18 +21,24 @@ export interface Connector {
     execute(application: string, url: DatabaseUrlParsed, query: string, parameters: any[], opts: ConnectorExecuteOpts): Promise<ConnectorExecuteResults>
     getQueryStats(application: string, url: DatabaseUrlParsed, opts: ConnectorQueryStatsOpts): Promise<ConnectorQueryStats[]>
     // TODO: needs to be challenged
-    getEntityStats(application: string, url: DatabaseUrlParsed, entity: EntityRef): Promise<ConnectorEntityStats>
-    getAttributeStats(application: string, url: DatabaseUrlParsed, attribute: AttributeRef): Promise<ConnectorAttributeStats>
+    getEntityStats(application: string, url: DatabaseUrlParsed, entity: EntityRef, opts: ConnectorDefaultOpts): Promise<ConnectorEntityStats>
+    getAttributeStats(application: string, url: DatabaseUrlParsed, attribute: AttributeRef, opts: ConnectorDefaultOpts): Promise<ConnectorAttributeStats>
 }
 
-export type ConnectorSchemaOpts = {
+export type ConnectorDefaultOpts = {
+    // dependencies
     logger: Logger
+    // behavior
+    logQueries?: boolean // default: false, log executed queries using the logger
+}
+
+export type ConnectorSchemaOpts = ConnectorDefaultOpts & {
     // filters: limit the scope of the extraction
-    database?: DatabaseName // export only this database or database pattern (use LIKE if contains % or _, = otherwise)
-    catalog?: CatalogName // export only this catalog or catalog pattern (use LIKE if contains % or _, = otherwise)
-    schema?: SchemaName // export only this schema or schema pattern (use LIKE if contains % or _, = otherwise)
-    entity?: EntityName // export only this entity or entity pattern (use LIKE if contains % or _, = otherwise)
-    // data access: get more interesting result, beware on performance
+    database?: DatabaseName // export only this database or database pattern (use LIKE if contains %, = otherwise)
+    catalog?: CatalogName // export only this catalog or catalog pattern (use LIKE if contains %, = otherwise)
+    schema?: SchemaName // export only this schema or schema pattern (use LIKE if contains %, = otherwise)
+    entity?: EntityName // export only this entity or entity pattern (use LIKE if contains %, = otherwise)
+    // data access: get more interesting result, beware of performance
     sampleSize?: number // default: 100, number of documents used to infer a schema (document databases, json attributes in relational db...)
     inferMixedJson?: string // when inferring JSON, will differentiate documents on this attribute, useful when storing several documents in the same collection in Mongo or Couchbase
     inferJsonAttributes?: boolean // will get sample values from JSON attributes to infer a schema (nested attributes)
@@ -43,8 +49,7 @@ export type ConnectorSchemaOpts = {
     ignoreErrors?: boolean // default: false, ignore errors when fetching the schema, just log them
 }
 
-export type ConnectorExecuteOpts = {
-    logger: Logger
+export type ConnectorExecuteOpts = ConnectorDefaultOpts & {
 }
 
 export type ConnectorExecuteResults = {
@@ -53,10 +58,10 @@ export type ConnectorExecuteResults = {
     rows: JsValue[]
 }
 
-export type ConnectorQueryStatsOpts = {
-    logger: Logger
-    user?: string // query stats only from this user or user pattern (use LIKE if contains % or _, = otherwise)
-    database?: DatabaseName // query stats only from this database or database pattern (use LIKE if contains % or _, = otherwise)
+export type ConnectorQueryStatsOpts = ConnectorDefaultOpts & {
+    // filters: limit the scope of the extraction
+    user?: string // query stats only from this user or user pattern (use LIKE if contains %, = otherwise)
+    database?: DatabaseName // query stats only from this database or database pattern (use LIKE if contains %, = otherwise)
 }
 
 // TODO define more generic and meaningful structure
@@ -84,4 +89,19 @@ export type ConnectorAttributeStats = AttributeRef & {
     nulls: number
     cardinality: number
     commonValues: { value: AttributeValue, count: number }[]
+}
+
+export const logQueryIfNeeded = <U>(id: number, name: string | undefined, sql: string, parameters: any[], exec: (sql: string, parameters: any[]) => Promise<U>, count: (res: U) => number, {logger, logQueries}: ConnectorDefaultOpts): Promise<U> => {
+    if (logQueries) {
+        const start = Date.now()
+        logger.log(`#${id} exec:${name ? ' ' + name : ''}\n${indent(stripIndent(sql))}`)
+        const res = exec(sql, parameters)
+        res.then(
+            r => logger.log(`#${id} success: ${count(r)} rows in ${Date.now() - start} ms`),
+            e => logger.log(`#${id} failure: ${e} in ${Date.now() - start} ms`)
+        )
+        return res
+    } else {
+        return exec(sql, parameters)
+    }
 }

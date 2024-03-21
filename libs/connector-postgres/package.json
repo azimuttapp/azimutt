@@ -27,14 +27,15 @@
   "dependencies": {
     "@azimutt/database-model": "file:../database-model",
     "@azimutt/database-types": "^0.0.16",
-    "pg": "8.10.0"
+    "pg": "8.10.0",
+    "postgres-array": "3.0.2"
   },
   "devDependencies": {
     "@jest/globals": "^29.7.0",
     "@types/jest": "^29.5.12",
-    "@types/pg": "^8.11.2",
+    "@types/pg": "^8.11.3",
     "jest": "^29.7.0",
     "ts-jest": "^29.1.2",
-    "typescript": "^5.3.3"
+    "typescript": "^5.4.2"
   }
 }

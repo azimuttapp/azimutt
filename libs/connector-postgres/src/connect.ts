@@ -1,10 +1,9 @@
 import {Client, ClientConfig, types} from "pg";
-import {AnyError, errorToString, Logger} from "@azimutt/utils";
-import {DatabaseUrlParsed, logQueryIfNeeded} from "@azimutt/database-types";
+import {AnyError, errorToString} from "@azimutt/utils";
+import {ConnectorDefaultOpts, DatabaseUrlParsed, logQueryIfNeeded} from "@azimutt/database-model";
 import {Conn, QueryResultArrayMode, QueryResultRow} from "./common";
 
-export type PostgresConnectOpts = {logger: Logger, logQueries: boolean}
-export async function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c: Conn) => Promise<T>, {logger, logQueries}: PostgresConnectOpts): Promise<T> {
+export async function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c: Conn) => Promise<T>, opts: ConnectorDefaultOpts): Promise<T> {
     types.setTypeParser(types.builtins.INT8, (val: string) => parseInt(val, 10))
     const client = await createConnection(buildConfig(application, url))
         .catch(_ => createConnection(url.full))
@@ -14,12 +13,12 @@ export async function connect<T>(application: string, url: DatabaseUrlParsed, ex
         query<T extends QueryResultRow>(sql: string, parameters: any[] = [], name?: string): Promise<T[]> {
             return logQueryIfNeeded(queryCpt++, name, sql, parameters, (sql, parameters) => {
                 return client.query<T>(sql, parameters).then(res => res.rows, err => Promise.reject(queryError(sql, err)))
-            }, r => r.length, logger, logQueries)
+            }, r => r.length, opts)
         },
         queryArrayMode(sql: string, parameters: any[] = [], name?: string): Promise<QueryResultArrayMode> {
             return logQueryIfNeeded(queryCpt++, name, sql, parameters, (sql, parameters) => {
                 return client.query({text: sql, values: parameters, rowMode: 'array'}).then(null, err => Promise.reject(queryError(sql, err)))
-            }, r => r.rows.length, logger, logQueries)
+            }, r => r.rows.length, opts)
         }
     }
     return exec(conn).then(

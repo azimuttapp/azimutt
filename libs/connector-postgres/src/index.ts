@@ -14,14 +14,13 @@ import {
     EntityRef
 } from "@azimutt/database-model";
 import {execQuery} from "./common";
-import {connect, PostgresConnectOpts} from "./connect";
+import {connect} from "./connect";
 import {formatSchema, getSchema, PostgresSchemaOpts} from "./postgres";
 import {getColumnStats, getTableStats} from "./stats";
 
 export const postgres: old.Connector = {
     name: 'PostgreSQL',
     getSchema: async (application: string, url: old.DatabaseUrlParsed, opts: old.ConnectorOps & old.SchemaOpts): Promise<old.AzimuttSchema> => {
-        const connectOpts: PostgresConnectOpts = {logger: opts.logger, logQueries: withDefault(opts.logQueries, false)}
         const schemaOpts: PostgresSchemaOpts = {
             logger: opts.logger,
             schema: opts.schema,
@@ -29,20 +28,17 @@ export const postgres: old.Connector = {
             inferRelations: withDefault(opts.inferRelations, true),
             ignoreErrors: withDefault(opts.ignoreErrors, false)
         }
-        const schema = await connect(application, url, getSchema(schemaOpts), connectOpts)
+        const schema = await connect(application, url, getSchema(schemaOpts), opts)
         return formatSchema(schema)
     },
     getTableStats: (application: string, url: old.DatabaseUrlParsed, id: old.TableId, opts: old.ConnectorOps): Promise<old.TableStats> => {
-        const connectOpts: PostgresConnectOpts = {logger: opts.logger, logQueries: withDefault(opts.logQueries, false)}
-        return connect(application, url, getTableStats(id), connectOpts)
+        return connect(application, url, getTableStats(id), opts)
     },
     getColumnStats: (application: string, url: old.DatabaseUrlParsed, ref: old.ColumnRef, opts: old.ConnectorOps): Promise<old.ColumnStats> => {
-        const connectOpts: PostgresConnectOpts = {logger: opts.logger, logQueries: withDefault(opts.logQueries, false)}
-        return connect(application, url, getColumnStats(ref), connectOpts)
+        return connect(application, url, getColumnStats(ref), opts)
     },
     query: (application: string, url: old.DatabaseUrlParsed, query: string, parameters: any[], opts: old.ConnectorOps): Promise<old.DatabaseQueryResults> => {
-        const connectOpts: PostgresConnectOpts = {logger: opts.logger, logQueries: withDefault(opts.logQueries, false)}
-        return connect(application, url, execQuery(query, parameters), connectOpts)
+        return connect(application, url, execQuery(query, parameters), opts)
     },
 }
 
