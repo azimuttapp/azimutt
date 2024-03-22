@@ -179,17 +179,17 @@ export type Entity = z.infer<typeof Entity>
 export const RelationKind = z.enum(['many-to-one', 'one-to-many', 'one-to-one', 'many-to-many'])
 export type RelationKind = z.infer<typeof RelationKind>
 
-export const Relation = Namespace.merge(z.object({
+export const Relation = z.object({
     name: ConstraintName.optional(),
     kind: RelationKind.optional(), // 'many-to-one' when not specified
-    origin: z.enum(['fk', 'infer-name', 'infer-query']).optional(), // 'fk' when not specified
+    origin: z.enum(['fk', 'infer-name', 'infer-similar', 'infer-query', 'user']).optional(), // 'fk' when not specified
     src: EntityRef,
     ref: EntityRef,
     attrs: z.object({src: AttributePath, ref: AttributePath}).array(),
     polymorphic: z.object({attribute: AttributePath, value: AttributeValue}).optional(),
     doc: z.string().optional(),
     extra: Extra.optional()
-})).strict()
+}).strict()
 export type Relation = z.infer<typeof Relation>
 
 export const Type = Namespace.merge(z.object({

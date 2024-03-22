@@ -1,9 +1,10 @@
 import {parse} from "postgres-array";
-import {groupBy, mapEntriesAsync, mapValuesAsync, removeEmpty, removeUndefined, zip} from "@azimutt/utils";
+import {groupBy, mapEntriesAsync, mapValues, mapValuesAsync, removeEmpty, removeUndefined, zip} from "@azimutt/utils";
 import {
     Attribute,
     AttributeName,
     AttributeValue,
+    Check,
     ConnectorSchemaOpts,
     connectorSchemaOptsDefaults,
     Database,
@@ -14,6 +15,8 @@ import {
     Index,
     isPolymorphic,
     parseEntityRef,
+    PrimaryKey,
+    Relation,
     SchemaName,
     schemaToAttributes,
     ValueSchema,
@@ -26,7 +29,10 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
     const blockSize: number = await getBlockSize(opts)(conn)
     const tables: RawTable[] = await getTables(opts)(conn)
     const columns: Record<EntityId, RawColumn[]> = await getColumns(opts)(conn).then(cols => groupBy(cols, toEntityId))
+    const columnsByIndex: Record<EntityId, { [i: number]: string }> = mapValues(columns, cols => cols.reduce((acc, col) => ({...acc, [col.column_index]: col.column_name}), {}))
+    const constraints: Record<EntityId, RawConstraint[]> = await getConstraints(opts)(conn).then(cols => groupBy(cols, toEntityId))
     const indexes: Record<EntityId, RawIndex[]> = await getIndexes(opts)(conn).then(cols => groupBy(cols, toEntityId))
+    const relations: RawRelation[] = await getRelations(opts)(conn)
     const columnSchemas: Record<EntityId, Record<AttributeName, ValueSchema>> = opts.inferJsonAttributes ? await mapEntriesAsync(columns, (entityId, tableCols) => {
         const {schema, entity} = parseEntityRef(entityId)
         const jsonCols = Object.fromEntries(tableCols.filter(c => c.column_type === 'jsonb').map(c => [c.column_name, c.column_name]))
@@ -41,9 +47,9 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
     return Promise.resolve({
         entities: tables.map(table => {
             const id = toEntityId(table)
-            return buildEntity(blockSize, table, columns[id] || [], indexes[id] || [], columnSchemas[id] || {}, columnPolys[id] || {})
+            return buildEntity(blockSize, table, columns[id] || [], columnsByIndex[id] || {}, constraints[id] || [], indexes[id] || [], columnSchemas[id] || {}, columnPolys[id] || {})
         }),
-        relations: [],
+        relations: relations.map(r => buildRelation(r, columnsByIndex)),
         types: [],
     })
 }
@@ -229,16 +235,15 @@ export const getTables = ({schema, entity, logger, ignoreErrors}: ConnectorSchem
     ).catch(handleError(`Failed to get tables`, [], {logger, ignoreErrors}))
 }
 
-function buildEntity(blockSize: number, table: RawTable, columns: RawColumn[], indexes: RawIndex[], jsonColumns: Record<AttributeName, ValueSchema>, polyColumns: Record<AttributeName, string[]>): Entity {
-    const columnByIndex: { [i: number]: string } = columns.reduce((acc, col) => ({...acc, [col.column_index]: col.column_name}), {})
+function buildEntity(blockSize: number, table: RawTable, columns: RawColumn[], columnsByIndex: { [i: number]: string }, constraints: RawConstraint[], indexes: RawIndex[], jsonColumns: Record<AttributeName, ValueSchema>, polyColumns: Record<AttributeName, string[]>): Entity {
     return removeEmpty({
         name: table.table_name,
         kind: table.table_kind === 'v' ? 'view' : table.table_kind === 'm' ? 'materialized view' : undefined,
         def: table.table_definition || undefined,
         attrs: columns.slice(0).sort((a, b) => a.column_index - b.column_index).map(c => buildAttribute(c, jsonColumns[c.column_name], polyColumns[c.column_name])),
-        pk: undefined, // TODO
-        indexes: indexes.map(i => buildIndex(blockSize, i, columnByIndex)),
-        checks: undefined, // TODO
+        pk: constraints.filter(c => c.constraint_type === 'p').map(c => buildPrimaryKey(c, columnsByIndex))[0] || undefined,
+        indexes: indexes.map(i => buildIndex(blockSize, i, columnsByIndex)),
+        checks: constraints.filter(c => c.constraint_type === 'c').map(c => buildCheck(c, columnsByIndex)),
         doc: table.table_comment || undefined,
         stats: removeUndefined({
             rows: table.rows,
@@ -254,7 +259,7 @@ function buildEntity(blockSize: number, table: RawTable, columns: RawColumn[], i
 }
 
 // https://www.postgresql.org/docs/current/catalog-pg-type.html#CATALOG-TYPCATEGORY-TABLE
-export type TypeCategory = 'A' | 'B' | 'C' | 'D' | 'E' | 'G' | 'I' | 'N' | 'P' | 'R' | 'S' | 'T' | 'U' | 'V' | 'X' | 'Z' // A: array, B: bool, C: composite, D: date, E: enum, G: geo, I: inet, N: numeric, P: pseudo, R: range, S: string, T: timespan, U: user-defined, V: bit, X: unknown, Z: internal
+export type RawColumnTypeCategory = 'A' | 'B' | 'C' | 'D' | 'E' | 'G' | 'I' | 'N' | 'P' | 'R' | 'S' | 'T' | 'U' | 'V' | 'X' | 'Z' // A: array, B: bool, C: composite, D: date, E: enum, G: geo, I: inet, N: numeric, P: pseudo, R: range, S: string, T: timespan, U: user-defined, V: bit, X: unknown, Z: internal
 export type RawColumn = {
     table_id: number
     table_owner: string
@@ -266,7 +271,7 @@ export type RawColumn = {
     column_type: string
     column_type_name: string
     column_type_len: number
-    column_type_cat: TypeCategory
+    column_type_cat: RawColumnTypeCategory
     column_default: string | null
     column_nullable: boolean
     column_generated: boolean
@@ -350,7 +355,7 @@ function buildAttribute(c: RawColumn, schema: ValueSchema | undefined, values: s
     } as Attribute)
 }
 
-function parseValues(anyArray: string, type_cat: TypeCategory, type_name: string): AttributeValue[] {
+function parseValues(anyArray: string, type_cat: RawColumnTypeCategory, type_name: string): AttributeValue[] {
     switch (type_cat) {
         case "A": return parse(anyArray, v => v) // array, keep string (ex: int2vector, oidvector, _bool, _char, _int4, _json...)
         case "B": return parse(anyArray, v => v === 'true') // boolean (ex: bool)
@@ -397,42 +402,68 @@ const getColumnDistinctValues = (schema: SchemaName | undefined, table: EntityNa
         .catch(handleError(`Failed to get distinct values for column '${schema ? schema + '.' : ''}${table}(${column})'`, [], opts))
 }
 
-/*type RawConstraint = {
-    constraint_type: 'p' | 'c' // p: primary key, c: check
-    constraint_name: string
+type RawConstraint = {
     table_schema: string
     table_name: string
+    constraint_name: string
+    constraint_type: 'p' | 'c' // p: primary key, c: check
     columns: number[]
+    deferrable: boolean
     definition: string
+    constraint_comment: string | null
 }
 
-async function getConstraints(conn: Conn, schema: PostgresSchemaName | undefined, ignoreErrors: boolean, logger: Logger): Promise<RawConstraint[]> {
+export const getConstraints = ({schema, entity, logger, ignoreErrors}: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawConstraint[]> => {
     // https://www.postgresql.org/docs/current/catalog-pg-constraint.html: stores check, primary key, unique, foreign key, and exclusion constraints on tables. Not-null constraints are represented in the pg_attribute catalog, not here.
     // https://www.postgresql.org/docs/current/catalog-pg-class.html: catalogs tables and most everything else that has columns or is otherwise similar to a table. This includes indexes (but see also pg_index), sequences (but see also pg_sequence), views, materialized views, composite types, and TOAST tables; see relkind.
     // https://www.postgresql.org/docs/current/catalog-pg-namespace.html: stores namespaces. A namespace is the structure underlying SQL schemas: each namespace can have a separate collection of relations, types, etc. without name conflicts.
+    // https://www.postgresql.org/docs/current/catalog-pg-description.html: stores optional descriptions (comments) for each database object.
     // https://www.postgresql.org/docs/current/functions-info.html#FUNCTIONS-INFO-CATALOG
     return conn.query<RawConstraint>(`
-        SELECT cn.contype                         AS constraint_type
-             , cn.conname                         AS constraint_name
-             , n.nspname                          AS table_schema
-             , c.relname                          AS table_name
-             , cn.conkey                          AS columns
-             , pg_get_constraintdef(cn.oid, true) AS definition
-        FROM pg_constraint cn
-                 JOIN pg_class c ON c.oid = cn.conrelid
-                 JOIN pg_namespace n ON n.oid = c.relnamespace
-        WHERE cn.contype IN ('p', 'c')
-          AND ${filterSchema('n.nspname', schema)}
-        ORDER BY table_schema, table_name, constraint_name;`, [], 'getConstraints'
-    ).catch(handleError(`Failed to get constraints${schema ? ` for schema '${schema}'` : ''}`, [], ignoreErrors, logger))
-}*/
+        SELECT cn.nspname                        AS table_schema
+             , cl.relname                        AS table_name
+             , c.conname                         AS constraint_name
+             , c.contype                         AS constraint_type
+             , c.conkey                          AS columns
+             , c.condeferrable                   AS deferrable
+             , pg_get_constraintdef(c.oid, true) AS definition
+             , d.description                     AS constraint_comment
+        FROM pg_constraint c
+                 JOIN pg_class cl ON cl.oid = c.conrelid
+                 JOIN pg_namespace cn ON cn.oid = cl.relnamespace
+                 LEFT JOIN pg_description d ON d.objoid = c.oid
+        WHERE ${scopeFilter('cn.nspname', schema, 'cl.relname', entity)}
+          AND c.contype IN ('p', 'c');`, [], 'getConstraints'
+    ).catch(handleError(`Failed to get constraints`, [], {logger, ignoreErrors}))
+}
+
+function buildPrimaryKey(c: RawConstraint, columns: { [i: number]: string }): PrimaryKey {
+    return {
+        name: c.constraint_name,
+        attrs: c.columns.map(i => [columns[i] || 'unknown']),
+        doc: c.constraint_comment || undefined,
+        stats: undefined,
+        extra: undefined
+    }
+}
+
+function buildCheck(c: RawConstraint, columns: { [i: number]: string }): Check {
+    return {
+        name: c.constraint_name,
+        attrs: c.columns.map(i => [columns[i] || 'unknown']),
+        predicate: c.definition,
+        doc: c.constraint_comment || undefined,
+        stats: undefined,
+        extra: undefined
+    }
+}
 
 type RawIndex = {
     table_schema: string
     table_name: string
     index_name: string
     columns: number[]
-    unique: boolean
+    is_unique: boolean
     partial: string | null
     definition: string
     rows: number
@@ -454,7 +485,7 @@ export const getIndexes = ({schema, entity, logger, ignoreErrors}: ConnectorSche
              , s.relname                              AS table_name
              , s.indexrelname                         AS index_name
              , i.indkey::integer[]                    AS columns
-             , i.indisunique                          AS unique
+             , i.indisunique                          AS is_unique
              , pg_get_expr(i.indpred, i.indrelid)     AS partial
              , pg_get_indexdef(i.indexrelid, 0, true) AS definition
              , c.reltuples                            AS rows
@@ -480,7 +511,7 @@ function buildIndex(blockSize: number, index: RawIndex, columns: { [i: number]: 
     return removeUndefined({
         name: index.index_name,
         attrs: index.columns.map(i => [columns[i] || 'unknown']), // TODO: handle indexes on nested json columns
-        unique: index.unique || undefined,
+        unique: index.is_unique || undefined,
         partial: index.partial !== null || undefined,
         definition: index.definition,
         doc: index.index_comment,
@@ -492,38 +523,71 @@ function buildIndex(blockSize: number, index: RawIndex, columns: { [i: number]: 
     } as Index)
 }
 
-/*type RawRelation = {
+type RawRelationAction = 'a' | 'r' | 'c' | 'n' | 'd' // a = no action, r = restrict, c = cascade, n = set null, d = set default
+type RawRelationMatch = 'f' | 'p' | 's' // f = full, p = partial, s = simple
+type RawRelation = {
     constraint_name: string
     table_schema: string
     table_name: string
-    columns: number[]
+    table_columns: number[]
     target_schema: string
     target_table: string
     target_columns: number[]
+    is_deferrable: boolean
+    on_update: RawRelationAction
+    on_delete: RawRelationAction
+    matching: RawRelationMatch
+    definition: string
+    relation_comment: string | null
 }
 
-async function getRelations(conn: Conn, schema: PostgresSchemaName | undefined, ignoreErrors: boolean, logger: Logger): Promise<RawRelation[]> {
+export const getRelations = ({schema, entity, logger, ignoreErrors}: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawRelation[]> => {
     // https://www.postgresql.org/docs/current/catalog-pg-constraint.html: stores check, primary key, unique, foreign key, and exclusion constraints on tables. Not-null constraints are represented in the pg_attribute catalog, not here.
     // https://www.postgresql.org/docs/current/catalog-pg-class.html: catalogs tables and most everything else that has columns or is otherwise similar to a table. This includes indexes (but see also pg_index), sequences (but see also pg_sequence), views, materialized views, composite types, and TOAST tables; see relkind.
     // https://www.postgresql.org/docs/current/catalog-pg-namespace.html: stores namespaces. A namespace is the structure underlying SQL schemas: each namespace can have a separate collection of relations, types, etc. without name conflicts.
     return conn.query<RawRelation>(`
-        SELECT cn.conname AS constraint_name
-             , n.nspname  AS table_schema
-             , c.relname  AS table_name
-             , cn.conkey  AS columns
-             , tn.nspname AS target_schema
-             , tc.relname AS target_table
-             , cn.confkey AS target_columns
-        FROM pg_constraint cn
-                 JOIN pg_class c ON c.oid = cn.conrelid
-                 JOIN pg_namespace n ON n.oid = c.relnamespace
-                 JOIN pg_class tc ON tc.oid = cn.confrelid
+        SELECT c.conname                         AS constraint_name
+             , cn.nspname                        AS table_schema
+             , cl.relname                        AS table_name
+             , c.conkey                          AS table_columns
+             , tn.nspname                        AS target_schema
+             , tc.relname                        AS target_table
+             , c.confkey                         AS target_columns
+             , c.condeferrable                   AS is_deferrable
+             , c.confupdtype                     AS on_update
+             , c.confdeltype                     AS on_delete
+             , c.confmatchtype                   AS matching
+             , pg_get_constraintdef(c.oid, true) AS definition
+             , d.description                     AS relation_comment
+        FROM pg_constraint c
+                 JOIN pg_class cl ON cl.oid = c.conrelid
+                 JOIN pg_namespace cn ON cn.oid = cl.relnamespace
+                 JOIN pg_class tc ON tc.oid = c.confrelid
                  JOIN pg_namespace tn ON tn.oid = tc.relnamespace
-        WHERE cn.contype IN ('f')
-          AND ${filterSchema('n.nspname', schema)}
+                 LEFT JOIN pg_description d ON d.objoid = c.oid
+        WHERE ${scopeFilter('cn.nspname', schema, 'cl.relname', entity)}
+          AND c.contype IN ('f')
         ORDER BY table_schema, table_name, constraint_name;`, [], 'getRelations'
-    ).catch(handleError(`Failed to get relations${schema ? ` for schema '${schema}'` : ''}`, [], ignoreErrors, logger))
-}*/
+    ).catch(handleError(`Failed to get relations`, [], {logger, ignoreErrors}))
+}
+
+function buildRelation(r: RawRelation, columnsByIndex: Record<EntityId, { [i: number]: string }>): Relation {
+    const src = {schema: r.table_schema, entity: r.table_name}
+    const ref = {schema: r.target_schema, entity: r.target_table}
+    const srcId = formatEntityRef(src)
+    const refId = formatEntityRef(ref)
+    return removeUndefined({
+        name: r.constraint_name,
+        kind: undefined, // 'many-to-one' when not specified
+        origin: undefined, // 'fk' when not specified
+        src,
+        ref,
+        attrs: zip(r.table_columns, r.target_columns).map(([src, ref]) => ({src: [columnsByIndex[srcId][src]], ref: [columnsByIndex[refId][ref]]})),
+        polymorphic: undefined,
+        doc: r.relation_comment || undefined,
+        extra: undefined
+    } as Relation)
+}
 
 /*type RawType = {
     type_schema: string
