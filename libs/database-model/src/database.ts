@@ -80,7 +80,7 @@ export const Index = z.object({
     name: ConstraintName.optional(),
     attrs: AttributePath.array(),
     unique: z.boolean().optional(), // false when not specified
-    partial: z.string().optional(),
+    partial: z.string().optional(), // false when not specified
     definition: z.string().optional(),
     doc: z.string().optional(),
     stats: IndexStats.optional(),

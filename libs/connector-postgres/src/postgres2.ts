@@ -11,6 +11,7 @@ import {
     EntityId,
     EntityName,
     formatEntityRef,
+    Index,
     isPolymorphic,
     parseEntityRef,
     SchemaName,
@@ -25,6 +26,7 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
     const blockSize: number = await getBlockSize(opts)(conn)
     const tables: RawTable[] = await getTables(opts)(conn)
     const columns: Record<EntityId, RawColumn[]> = await getColumns(opts)(conn).then(cols => groupBy(cols, toEntityId))
+    const indexes: Record<EntityId, RawIndex[]> = await getIndexes(opts)(conn).then(cols => groupBy(cols, toEntityId))
     const columnSchemas: Record<EntityId, Record<AttributeName, ValueSchema>> = opts.inferJsonAttributes ? await mapEntriesAsync(columns, (entityId, tableCols) => {
         const {schema, entity} = parseEntityRef(entityId)
         const jsonCols = Object.fromEntries(tableCols.filter(c => c.column_type === 'jsonb').map(c => [c.column_name, c.column_name]))
@@ -39,7 +41,7 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
     return Promise.resolve({
         entities: tables.map(table => {
             const id = toEntityId(table)
-            return buildEntity(blockSize, table, columns[id] || [], columnSchemas[id] || {}, columnPolys[id] || {})
+            return buildEntity(blockSize, table, columns[id] || [], indexes[id] || [], columnSchemas[id] || {}, columnPolys[id] || {})
         }),
         relations: [],
         types: [],
@@ -126,10 +128,10 @@ function toEntityId<T extends { table_schema: string, table_name: string }>(valu
     return formatEntityRef({schema: value.table_schema, entity: value.table_name})
 }
 
-export const getBlockSize = ({logger, schema, entity, ignoreErrors}: ConnectorSchemaOpts) => async (conn: Conn): Promise<number> => {
+export const getBlockSize = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<number> => {
     return conn.query<{block_size: number}>(`SHOW block_size;`, [], 'getBlockSize')
         .then(res => res[0]?.block_size || 8192)
-        .catch(handleError(`Failed to get block size`, 0, {logger, ignoreErrors}))
+        .catch(handleError(`Failed to get block size`, 0, opts))
 }
 
 export type RawTable = {
@@ -169,7 +171,7 @@ export type RawTable = {
     toast_idx_blocks: number | null
 }
 
-export const getTables = ({logger, schema, entity, ignoreErrors}: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawTable[]> => {
+export const getTables = ({schema, entity, logger, ignoreErrors}: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawTable[]> => {
     // https://www.postgresql.org/docs/current/catalog-pg-class.html: catalogs tables and most everything else that has columns or is otherwise similar to a table. This includes indexes (but see also pg_index), sequences (but see also pg_sequence), views, materialized views, composite types, and TOAST tables; see relkind.
     // https://www.postgresql.org/docs/current/catalog-pg-namespace.html: stores namespaces. A namespace is the structure underlying SQL schemas: each namespace can have a separate collection of relations, types, etc. without name conflicts.
     // https://www.postgresql.org/docs/current/catalog-pg-authid.html: store users
@@ -227,14 +229,15 @@ export const getTables = ({logger, schema, entity, ignoreErrors}: ConnectorSchem
     ).catch(handleError(`Failed to get tables`, [], {logger, ignoreErrors}))
 }
 
-function buildEntity(blockSize: number, table: RawTable, columns: RawColumn[], jsonColumns: Record<AttributeName, ValueSchema>, polyColumns: Record<AttributeName, string[]>): Entity {
+function buildEntity(blockSize: number, table: RawTable, columns: RawColumn[], indexes: RawIndex[], jsonColumns: Record<AttributeName, ValueSchema>, polyColumns: Record<AttributeName, string[]>): Entity {
+    const columnByIndex: { [i: number]: string } = columns.reduce((acc, col) => ({...acc, [col.column_index]: col.column_name}), {})
     return removeEmpty({
         name: table.table_name,
         kind: table.table_kind === 'v' ? 'view' : table.table_kind === 'm' ? 'materialized view' : undefined,
         def: table.table_definition || undefined,
-        attrs: columns.sort((a, b) => a.column_index - b.column_index).map(c => buildAttribute(c, jsonColumns[c.column_name], polyColumns[c.column_name])),
+        attrs: columns.slice(0).sort((a, b) => a.column_index - b.column_index).map(c => buildAttribute(c, jsonColumns[c.column_name], polyColumns[c.column_name])),
         pk: undefined, // TODO
-        indexes: undefined, // TODO
+        indexes: indexes.map(i => buildIndex(blockSize, i, columnByIndex)),
         checks: undefined, // TODO
         doc: table.table_comment || undefined,
         stats: removeUndefined({
@@ -276,7 +279,7 @@ export type RawColumn = {
     histogram: string | null
 }
 
-export const getColumns = ({logger, schema, entity, ignoreErrors}: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawColumn[]> => {
+export const getColumns = ({schema, entity, logger, ignoreErrors}: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawColumn[]> => {
     // https://www.postgresql.org/docs/current/catalog-pg-attribute.html: stores information about table columns. There will be exactly one row for every column in every table in the database.
     // https://www.postgresql.org/docs/current/catalog-pg-class.html: catalogs tables and most everything else that has columns or is otherwise similar to a table. This includes indexes (but see also pg_index), sequences (but see also pg_sequence), views, materialized views, composite types, and TOAST tables; see relkind.
     // https://www.postgresql.org/docs/current/catalog-pg-namespace.html: stores namespaces. A namespace is the structure underlying SQL schemas: each namespace can have a separate collection of relations, types, etc. without name conflicts.
@@ -424,38 +427,70 @@ async function getConstraints(conn: Conn, schema: PostgresSchemaName | undefined
     ).catch(handleError(`Failed to get constraints${schema ? ` for schema '${schema}'` : ''}`, [], ignoreErrors, logger))
 }*/
 
-/*type RawIndex = {
-    index_name: string
+type RawIndex = {
     table_schema: string
     table_name: string
+    index_name: string
     columns: number[]
+    unique: boolean
+    partial: string | null
     definition: string
-    is_unique: boolean
+    rows: number
+    blocks: number
+    idx_scan: number
+    idx_scan_reads: number
+    idx_scan_last: Date | null
+    index_comment: string | null
 }
 
-async function getIndexes(conn: Conn, schema: PostgresSchemaName | undefined, ignoreErrors: boolean, logger: Logger): Promise<RawIndex[]> {
+export const getIndexes = ({schema, entity, logger, ignoreErrors}: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawIndex[]> => {
     // https://www.postgresql.org/docs/current/catalog-pg-index.html: contains part of the information about indexes. The rest is mostly in pg_class.
     // https://www.postgresql.org/docs/current/catalog-pg-class.html: catalogs tables and most everything else that has columns or is otherwise similar to a table. This includes indexes (but see also pg_index), sequences (but see also pg_sequence), views, materialized views, composite types, and TOAST tables; see relkind.
-    // https://www.postgresql.org/docs/current/catalog-pg-namespace.html: stores namespaces. A namespace is the structure underlying SQL schemas: each namespace can have a separate collection of relations, types, etc. without name conflicts.
+    // https://www.postgresql.org/docs/current/catalog-pg-description.html: stores optional descriptions (comments) for each database object.
+    // https://www.postgresql.org/docs/current/monitoring-stats.html#MONITORING-PG-STAT-ALL-INDEXES-VIEW: stats on indexes
+    // https://www.postgresql.org/docs/current/functions-info.html#FUNCTIONS-INFO-CATALOG
     return conn.query<RawIndex>(`
-        SELECT ic.relname                             AS index_name
-             , tn.nspname                             AS table_schema
-             , tc.relname                             AS table_name
+        SELECT s.schemaname                           AS table_schema
+             , s.relname                              AS table_name
+             , s.indexrelname                         AS index_name
              , i.indkey::integer[]                    AS columns
+             , i.indisunique                          AS unique
+             , pg_get_expr(i.indpred, i.indrelid)     AS partial
              , pg_get_indexdef(i.indexrelid, 0, true) AS definition
-             , i.indisunique                          AS is_unique
+             , c.reltuples                            AS rows
+             , c.relpages                             AS blocks
+             , s.idx_scan                             AS idx_scan
+             , s.idx_tup_fetch                        AS idx_scan_reads
+             , s.last_idx_scan                        AS idx_scan_last
+             , d.description                          AS index_comment
         FROM pg_index i
-                 JOIN pg_class ic ON ic.oid = i.indexrelid
-                 JOIN pg_class tc ON tc.oid = i.indrelid
-                 JOIN pg_namespace tn ON tn.oid = tc.relnamespace
-        WHERE i.indisprimary = false
-          AND ${filterSchema('tn.nspname', schema)}
+                 JOIN pg_class c ON c.oid = i.indexrelid
+                 JOIN pg_stat_all_indexes s ON s.indexrelid = i.indexrelid
+                 LEFT JOIN pg_description d ON d.objoid = i.indexrelid
+        WHERE ${scopeFilter('s.schemaname', schema, 's.relname', entity)}
+          AND i.indisprimary = false
         ORDER BY table_schema, table_name, index_name;`, [], 'getIndexes'
     ).then(rows => rows.map(row => ({
         ...row,
         definition: row.definition.indexOf(' USING ') > 0 ? row.definition.split(' USING ')[1].trim() : row.definition
-    }))).catch(handleError(`Failed to get indexes${schema ? ` for schema '${schema}'` : ''}`, [], ignoreErrors, logger))
-}*/
+    }))).catch(handleError(`Failed to get indexes`, [], {logger, ignoreErrors}))
+}
+
+function buildIndex(blockSize: number, index: RawIndex, columns: { [i: number]: string }): Index {
+    return removeUndefined({
+        name: index.index_name,
+        attrs: index.columns.map(i => [columns[i] || 'unknown']), // TODO: handle indexes on nested json columns
+        unique: index.unique || undefined,
+        partial: index.partial !== null || undefined,
+        definition: index.definition,
+        doc: index.index_comment,
+        stats: {
+            size: index.blocks * blockSize,
+            scans: index.idx_scan,
+        },
+        extra: undefined
+    } as Index)
+}
 
 /*type RawRelation = {
     constraint_name: string
