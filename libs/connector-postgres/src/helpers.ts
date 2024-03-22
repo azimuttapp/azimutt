@@ -7,7 +7,7 @@ import {
     TableName
 } from "@azimutt/database-types";
 
-export function buildSqlTable(schema: SchemaName, table: TableName): SqlFragment {
+export function buildSqlTable(schema: SchemaName | undefined, table: TableName): SqlFragment {
     const sqlSchema = schema ? `"${schema}".` : ''
     return `${sqlSchema}"${table}"`
 }

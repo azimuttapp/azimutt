@@ -2,6 +2,7 @@ import {indent, Logger, stripIndent} from "@azimutt/utils";
 import {Millis} from "../common";
 import {DatabaseUrlParsed} from "../databaseUrl"
 import {
+    AttributeName,
     AttributeRef,
     AttributeType,
     AttributeValue,
@@ -49,6 +50,10 @@ export type ConnectorSchemaOpts = ConnectorDefaultOpts & {
     ignoreErrors?: boolean // default: false, ignore errors when fetching the schema, just log them
 }
 
+export const connectorSchemaOptsDefaults = {
+    sampleSize: 100
+}
+
 export type ConnectorExecuteOpts = ConnectorDefaultOpts & {
 }
 
@@ -94,14 +99,32 @@ export type ConnectorAttributeStats = AttributeRef & {
 export const logQueryIfNeeded = <U>(id: number, name: string | undefined, sql: string, parameters: any[], exec: (sql: string, parameters: any[]) => Promise<U>, count: (res: U) => number, {logger, logQueries}: ConnectorDefaultOpts): Promise<U> => {
     if (logQueries) {
         const start = Date.now()
-        logger.log(`#${id} exec:${name ? ' ' + name : ''}\n${indent(stripIndent(sql))}`)
+        const queryId = `#${id}${name ? ' ' + name : ''}`
+        logger.log(`${queryId} exec:\n${indent(stripIndent(sql))}`)
         const res = exec(sql, parameters)
         res.then(
-            r => logger.log(`#${id} success: ${count(r)} rows in ${Date.now() - start} ms`),
-            e => logger.log(`#${id} failure: ${e} in ${Date.now() - start} ms`)
+            r => logger.log(`${queryId} success: ${count(r)} rows in ${Date.now() - start} ms`),
+            e => logger.log(`${queryId} failure: ${e} in ${Date.now() - start} ms`)
         )
         return res
     } else {
         return exec(sql, parameters)
     }
+}
+
+export function isPolymorphic(attr: AttributeName, entityAttrs: AttributeName[]): boolean {
+    return ['type', 'class', 'kind'].some(suffix => {
+        if (attr.endsWith(suffix)) {
+            const related = attr.slice(0, -suffix.length) + 'id'
+            return entityAttrs.some(c => c === related)
+        } else if (attr.endsWith(suffix.toUpperCase())) {
+            const related = attr.slice(0, -suffix.length) + 'ID'
+            return entityAttrs.some(c => c === related)
+        } else if (attr.endsWith(suffix.charAt(0).toUpperCase() + suffix.slice(1))) {
+            const related = attr.slice(0, -suffix.length) + 'Id'
+            return entityAttrs.some(c => c === related)
+        } else {
+            return false
+        }
+    })
 }

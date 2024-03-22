@@ -16,6 +16,7 @@ const sqlser = /^(?:jdbc:)?sqlserver(?:ql)?:\/\/(?:([^:]+):([^@]*)@)?([^:/?]+)(?
 const snowflakeRege = /^(?:jdbc:)?snowflake:\/\/(?:([^:]+):([^@]*)@)?([^:/?]+)(?::(\d+))?(?:\/([^?]+))?(?:\?(.+))?$/
 const snowflakeRegexLongerrrrrrrr = /^https:\/\/(?:([^:]+):([^@]*)@)?(.+?(?:\.privatelink)?\.snowflakecomputing\.com)(?::(\d+))?(?:\/([^?]+))?$/
 
+// TODO: duplicated to libs/database-model/src/databaseUrl.ts, update both
 export function parseDatabaseUrl(rawUrl: DatabaseUrl): DatabaseUrlParsed {
     const url = rawUrl.trim()
 

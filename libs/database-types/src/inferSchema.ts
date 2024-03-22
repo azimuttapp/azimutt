@@ -5,6 +5,7 @@ export type ValueSchema = { type: ValueType, values: Value[], nullable?: boolean
 export type Value = any
 export type ValueType = string
 
+// TODO: duplicated to libs/database-model/src/inferSchema.ts, update both
 export function valuesToSchema(values: Value[]): ValueSchema {
     if (values.length > 0) {
         return sumSchema(values.map(valueToSchema))

@@ -1,35 +1,46 @@
 import {parse} from "postgres-array";
-import {groupBy, Logger, mapValuesAsync, removeEmpty, removeUndefined, sequence, zip} from "@azimutt/utils";
-import {
-    AzimuttSchema,
-    ColumnName,
-    ColumnValue,
-    isPolymorphicColumn,
-    SchemaName,
-    schemaToColumns,
-    TableName,
-    ValueSchema,
-    valuesToSchema
-} from "@azimutt/database-types";
+import {groupBy, mapEntriesAsync, mapValuesAsync, removeEmpty, removeUndefined, zip} from "@azimutt/utils";
 import {
     Attribute,
+    AttributeName,
     AttributeValue,
     ConnectorSchemaOpts,
+    connectorSchemaOptsDefaults,
     Database,
     Entity,
     EntityId,
     EntityName,
-    formatEntityRef
+    formatEntityRef,
+    isPolymorphic,
+    parseEntityRef,
+    SchemaName,
+    schemaToAttributes,
+    ValueSchema,
+    valuesToSchema
 } from "@azimutt/database-model";
 import {Conn} from "./common";
 import {buildSqlColumn, buildSqlTable} from "./helpers";
 
 export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<Database> => {
-    const blockSize = await getBlockSize(opts)(conn)
-    const tables = await getTables(opts)(conn)
-    const columns = await getColumns(opts)(conn).then(cols => groupBy(cols, toEntityId))
+    const blockSize: number = await getBlockSize(opts)(conn)
+    const tables: RawTable[] = await getTables(opts)(conn)
+    const columns: Record<EntityId, RawColumn[]> = await getColumns(opts)(conn).then(cols => groupBy(cols, toEntityId))
+    const columnSchemas: Record<EntityId, Record<AttributeName, ValueSchema>> = opts.inferJsonAttributes ? await mapEntriesAsync(columns, (entityId, tableCols) => {
+        const {schema, entity} = parseEntityRef(entityId)
+        const jsonCols = Object.fromEntries(tableCols.filter(c => c.column_type === 'jsonb').map(c => [c.column_name, c.column_name]))
+        return mapValuesAsync(jsonCols, c => inferColumnSchema(schema, entity, c, opts)(conn))
+    }) : {}
+    const columnPolys: Record<EntityId, Record<AttributeName, string[]>> = opts.inferPolymorphicRelations ? await mapEntriesAsync(columns, (entityId, tableCols) => {
+        const {schema, entity} = parseEntityRef(entityId)
+        const colNames = tableCols.map(c => c.column_name)
+        const polyCols = Object.fromEntries(tableCols.filter(c => isPolymorphic(c.column_name, colNames)).map(c => [c.column_name, c.column_name]))
+        return mapValuesAsync(polyCols, c => getColumnDistinctValues(schema, entity, c, opts)(conn))
+    }) : {}
     return Promise.resolve({
-        entities: tables.map(table => buildEntity(blockSize, table, columns[toEntityId(table)] || [])),
+        entities: tables.map(table => {
+            const id = toEntityId(table)
+            return buildEntity(blockSize, table, columns[id] || [], columnSchemas[id] || {}, columnPolys[id] || {})
+        }),
         relations: [],
         types: [],
     })
@@ -216,12 +227,12 @@ export const getTables = ({logger, schema, entity, ignoreErrors}: ConnectorSchem
     ).catch(handleError(`Failed to get tables`, [], {logger, ignoreErrors}))
 }
 
-function buildEntity(blockSize: number, table: RawTable, columns: RawColumn[]): Entity {
+function buildEntity(blockSize: number, table: RawTable, columns: RawColumn[], jsonColumns: Record<AttributeName, ValueSchema>, polyColumns: Record<AttributeName, string[]>): Entity {
     return removeEmpty({
         name: table.table_name,
         kind: table.table_kind === 'v' ? 'view' : table.table_kind === 'm' ? 'materialized view' : undefined,
         def: table.table_definition || undefined,
-        attrs: columns.sort((a, b) => a.column_index - b.column_index).map(buildAttribute),
+        attrs: columns.sort((a, b) => a.column_index - b.column_index).map(c => buildAttribute(c, jsonColumns[c.column_name], polyColumns[c.column_name])),
         pk: undefined, // TODO
         indexes: undefined, // TODO
         checks: undefined, // TODO
@@ -315,15 +326,15 @@ export const getColumns = ({logger, schema, entity, ignoreErrors}: ConnectorSche
     ).catch(handleError(`Failed to get columns`, [], {logger, ignoreErrors}))
 }
 
-function buildAttribute(c: RawColumn): Attribute {
+function buildAttribute(c: RawColumn, schema: ValueSchema | undefined, values: string[] | undefined): Attribute {
     return removeEmpty({
         name: c.column_name,
         type: c.column_type,
         nullable: c.column_nullable || undefined,
         generated: c.column_generated || undefined,
         default: c.column_default || undefined,
-        values: undefined, // TODO
-        attrs: undefined, // TODO
+        values: values,
+        attrs: schema ? schemaToAttributes(schema, 0) : undefined,
         doc: c.column_comment || undefined,
         stats: removeUndefined({
             nulls: c.nulls || undefined,
@@ -336,7 +347,7 @@ function buildAttribute(c: RawColumn): Attribute {
     } as Attribute)
 }
 
-function parseValues(anyArray: string, type_cat: TypeCategory, type_name: string): ColumnValue[] {
+function parseValues(anyArray: string, type_cat: TypeCategory, type_name: string): AttributeValue[] {
     switch (type_cat) {
         case "A": return parse(anyArray, v => v) // array, keep string (ex: int2vector, oidvector, _bool, _char, _int4, _json...)
         case "B": return parse(anyArray, v => v === 'true') // boolean (ex: bool)
@@ -366,35 +377,22 @@ function parseValues(anyArray: string, type_cat: TypeCategory, type_name: string
     }
 }
 
-
-/*function enrichColumnsWithSchema(conn: Conn, tableCols: RawColumn[], sampleSize: number, inferRelations: boolean, ignoreErrors: boolean, logger: Logger): Promise<RawColumn[]> {
-    const colNames = tableCols.map(c => c.column_name)
-    return sequence(tableCols, async c => {
-        if (sampleSize > 0 && c.column_type === 'jsonb') {
-            return getColumnSchema(conn, c.table_schema, c.table_name, c.column_name, sampleSize, ignoreErrors, logger).then(column_schema => ({...c, column_schema}))
-        } else if (inferRelations && isPolymorphicColumn(c.column_name, colNames)) {
-            return getColumnDistinctValues(conn, c.table_schema, c.table_name, c.column_name, ignoreErrors, logger).then(column_values => ({...c, column_values}))
-        } else {
-            return c
-        }
-    })
-}
-
-async function getColumnSchema(conn: Conn, schema: SchemaName, table: TableName, column: ColumnName, sampleSize: number, ignoreErrors: boolean, logger: Logger): Promise<ValueSchema> {
+const inferColumnSchema = (schema: SchemaName | undefined, table: EntityName, column: AttributeName, opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<ValueSchema> => {
     const sqlTable = buildSqlTable(schema, table)
     const sqlColumn = buildSqlColumn(column)
-    return conn.query(`SELECT ${sqlColumn} FROM ${sqlTable} WHERE ${sqlColumn} IS NOT NULL LIMIT ${sampleSize};`, [], 'getColumnSchema')
+    const sampleSize = opts.sampleSize || connectorSchemaOptsDefaults.sampleSize
+    return conn.query(`SELECT ${sqlColumn} FROM ${sqlTable} WHERE ${sqlColumn} IS NOT NULL LIMIT ${sampleSize};`, [], 'inferColumnSchema')
         .then(rows => valuesToSchema(rows.map(row => row[column])))
-        .catch(handleError(`Failed to infer schema for column '${column}' of table '${schema ? schema + '.' : ''}${table}'`, valuesToSchema([]), ignoreErrors, logger))
+        .catch(handleError(`Failed to infer schema for column '${schema ? schema + '.' : ''}${table}(${column})'`, valuesToSchema([]), opts))
 }
 
-async function getColumnDistinctValues(conn: Conn, schema: SchemaName, table: TableName, column: ColumnName, ignoreErrors: boolean, logger: Logger): Promise<string[]> {
+const getColumnDistinctValues = (schema: SchemaName | undefined, table: EntityName, column: AttributeName, opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<string[]> => {
     const sqlTable = buildSqlTable(schema, table)
     const sqlColumn = buildSqlColumn(column)
     return conn.query<{value: string}>(`SELECT DISTINCT ${sqlColumn} as value FROM ${sqlTable} WHERE ${sqlColumn} IS NOT NULL ORDER BY value LIMIT 30;`, [], 'getColumnDistinctValues')
         .then(rows => rows.map(v => v.value?.toString()))
-        .catch(handleError(`Failed to get distinct values for column '${column}' of table '${schema ? schema + '.' : ''}${table}'`, [], ignoreErrors, logger))
-}*/
+        .catch(handleError(`Failed to get distinct values for column '${schema ? schema + '.' : ''}${table}(${column})'`, [], opts))
+}
 
 /*type RawConstraint = {
     constraint_type: 'p' | 'c' // p: primary key, c: check
