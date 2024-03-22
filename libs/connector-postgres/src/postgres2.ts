@@ -1,5 +1,5 @@
 import {parse} from "postgres-array";
-import {groupBy, Logger, mapValuesAsync, removeUndefined, sequence, zip} from "@azimutt/utils";
+import {groupBy, Logger, mapValuesAsync, removeEmpty, removeUndefined, sequence, zip} from "@azimutt/utils";
 import {
     AzimuttSchema,
     ColumnName,
@@ -13,6 +13,7 @@ import {
 } from "@azimutt/database-types";
 import {
     Attribute,
+    AttributeValue,
     ConnectorSchemaOpts,
     Database,
     Entity,
@@ -24,43 +25,14 @@ import {Conn} from "./common";
 import {buildSqlColumn, buildSqlTable} from "./helpers";
 
 export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<Database> => {
+    const blockSize = await getBlockSize(opts)(conn)
     const tables = await getTables(opts)(conn)
     const columns = await getColumns(opts)(conn).then(cols => groupBy(cols, toEntityId))
     return Promise.resolve({
-        entities: tables.map(table => buildEntity(table, columns[toEntityId(table)] || [])),
+        entities: tables.map(table => buildEntity(blockSize, table, columns[toEntityId(table)] || [])),
         relations: [],
         types: [],
     })
-}
-
-function buildEntity(table: RawTable, columns: RawColumn[]): Entity {
-    return removeUndefined({
-        name: table.table_name,
-        kind: table.table_kind === 'v' ? 'view' : table.table_kind === 'm' ? 'materialized view' : undefined,
-        def: undefined,
-        attrs: columns.map(buildAttribute),
-        pk: undefined,
-        indexes: undefined,
-        checks: undefined,
-        doc: undefined,
-        stats: undefined,
-        extra: undefined,
-    } as Entity)
-}
-
-function buildAttribute(column: RawColumn): Attribute {
-    return removeUndefined({
-        name: column.column_name,
-        type: column.column_type,
-        nullable: column.column_nullable || undefined,
-        generated: undefined,
-        default: column.column_default || undefined,
-        values: undefined,
-        attrs: undefined,
-        doc: undefined,
-        stats: undefined,
-        extra: undefined,
-    } as Attribute)
 }
 
 /*export const getSchema = ({logger, schema, sampleSize, inferRelations, ignoreErrors}: PostgresSchemaOpts) => async (conn: Conn): Promise<Database> => {
@@ -143,12 +115,21 @@ function toEntityId<T extends { table_schema: string, table_name: string }>(valu
     return formatEntityRef({schema: value.table_schema, entity: value.table_name})
 }
 
+export const getBlockSize = ({logger, schema, entity, ignoreErrors}: ConnectorSchemaOpts) => async (conn: Conn): Promise<number> => {
+    return conn.query<{block_size: number}>(`SHOW block_size;`, [], 'getBlockSize')
+        .then(res => res[0]?.block_size || 8192)
+        .catch(handleError(`Failed to get block size`, 0, {logger, ignoreErrors}))
+}
+
 export type RawTable = {
     table_id: number
     table_owner: string
     table_schema: string
     table_name: string
     table_kind: 'r' | 'v' | 'm' // r: table, v: view, m: materialized view
+    table_definition: string | null
+    table_partition: string | null
+    table_comment: string | null
     attributes_count: number
     checks_count: number
     rows: number
@@ -181,44 +162,50 @@ export const getTables = ({logger, schema, entity, ignoreErrors}: ConnectorSchem
     // https://www.postgresql.org/docs/current/catalog-pg-class.html: catalogs tables and most everything else that has columns or is otherwise similar to a table. This includes indexes (but see also pg_index), sequences (but see also pg_sequence), views, materialized views, composite types, and TOAST tables; see relkind.
     // https://www.postgresql.org/docs/current/catalog-pg-namespace.html: stores namespaces. A namespace is the structure underlying SQL schemas: each namespace can have a separate collection of relations, types, etc. without name conflicts.
     // https://www.postgresql.org/docs/current/catalog-pg-authid.html: store users
+    // https://www.postgresql.org/docs/current/catalog-pg-description.html: stores optional descriptions (comments) for each database object.
+    // https://www.postgresql.org/docs/current/functions-info.html#FUNCTIONS-INFO-CATALOG
     // https://www.postgresql.org/docs/current/monitoring-stats.html#MONITORING-PG-STAT-ALL-TABLES-VIEW: stats on tables
     // https://www.postgresql.org/docs/current/monitoring-stats.html#MONITORING-PG-STATIO-ALL-TABLES-VIEW: stats on table blocks
     // `c.relkind IN ('r', 'v', 'm')`: get only tables, view and materialized views
     return conn.query<RawTable>(`
-        SELECT c.oid                 AS table_id
-             , u.rolname             AS table_owner
-             , n.nspname             AS table_schema
-             , c.relname             AS table_name
-             , c.relkind             AS table_kind
-             , c.relnatts            AS attributes_count
-             , c.relchecks           AS checks_count
-             , s.n_live_tup          AS rows
-             , s.n_dead_tup          AS rows_dead
-             , io.heap_blks_read     AS blocks
-             , io.idx_blks_read      AS idx_blocks
+        SELECT c.oid                       AS table_id
+             , u.rolname                   AS table_owner
+             , n.nspname                   AS table_schema
+             , c.relname                   AS table_name
+             , c.relkind                   AS table_kind
+             , pg_get_viewdef(c.oid, true) AS table_definition
+             , pg_get_partkeydef(c.oid)    AS table_partition
+             , d.description               AS table_comment
+             , c.relnatts                  AS attributes_count
+             , c.relchecks                 AS checks_count
+             , s.n_live_tup                AS rows
+             , s.n_dead_tup                AS rows_dead
+             , io.heap_blks_read           AS blocks
+             , io.idx_blks_read            AS idx_blocks
              , s.seq_scan
-             , s.seq_tup_read        AS seq_scan_reads
-             , s.last_seq_scan       AS seq_scan_last
+             , s.seq_tup_read              AS seq_scan_reads
+             , s.last_seq_scan             AS seq_scan_last
              , s.idx_scan
-             , s.idx_tup_fetch       AS idx_scan_reads
-             , s.last_idx_scan       AS idx_scan_last
+             , s.idx_tup_fetch             AS idx_scan_reads
+             , s.last_idx_scan             AS idx_scan_last
              , s.analyze_count
-             , s.last_analyze        AS analyze_last
+             , s.last_analyze              AS analyze_last
              , s.autoanalyze_count
-             , s.last_autoanalyze    AS autoanalyze_last
-             , s.n_mod_since_analyze AS changes_since_analyze
+             , s.last_autoanalyze          AS autoanalyze_last
+             , s.n_mod_since_analyze       AS changes_since_analyze
              , s.vacuum_count
-             , s.last_vacuum         AS vacuum_last
+             , s.last_vacuum               AS vacuum_last
              , s.autovacuum_count
-             , s.last_autovacuum     AS autovacuum_last
-             , s.n_ins_since_vacuum  AS changes_since_vacuum
-             , tn.nspname            AS toast_schema
-             , tc.relname            AS toast_name
-             , io.toast_blks_read    AS toast_blocks
-             , io.tidx_blks_read     AS toast_idx_blocks
+             , s.last_autovacuum           AS autovacuum_last
+             , s.n_ins_since_vacuum        AS changes_since_vacuum
+             , tn.nspname                  AS toast_schema
+             , tc.relname                  AS toast_name
+             , io.toast_blks_read          AS toast_blocks
+             , io.tidx_blks_read           AS toast_idx_blocks
         FROM pg_class c
                  JOIN pg_namespace n ON n.oid = c.relnamespace
                  JOIN pg_authid u ON u.oid = c.relowner
+                 LEFT JOIN pg_description d ON d.objoid = c.oid AND d.objsubid = 0
                  LEFT JOIN pg_class tc ON tc.oid = c.reltoastrelid
                  LEFT JOIN pg_namespace tn ON tn.oid = tc.relnamespace
                  LEFT JOIN pg_stat_all_tables s ON s.relid = c.oid
@@ -229,6 +216,30 @@ export const getTables = ({logger, schema, entity, ignoreErrors}: ConnectorSchem
     ).catch(handleError(`Failed to get tables`, [], {logger, ignoreErrors}))
 }
 
+function buildEntity(blockSize: number, table: RawTable, columns: RawColumn[]): Entity {
+    return removeEmpty({
+        name: table.table_name,
+        kind: table.table_kind === 'v' ? 'view' : table.table_kind === 'm' ? 'materialized view' : undefined,
+        def: table.table_definition || undefined,
+        attrs: columns.sort((a, b) => a.column_index - b.column_index).map(buildAttribute),
+        pk: undefined, // TODO
+        indexes: undefined, // TODO
+        checks: undefined, // TODO
+        doc: table.table_comment || undefined,
+        stats: removeUndefined({
+            rows: table.rows,
+            size: table.blocks * blockSize,
+            sizeIdx: table.idx_blocks * blockSize,
+            sizeToast: table.toast_blocks ? table.toast_blocks * blockSize : undefined,
+            sizeToastIdx: table.toast_idx_blocks ? table.toast_idx_blocks * blockSize : undefined,
+            seq_scan: table.seq_scan,
+            idx_scan: table.idx_scan,
+        }),
+        extra: undefined
+    } as Entity)
+}
+
+// https://www.postgresql.org/docs/current/catalog-pg-type.html#CATALOG-TYPCATEGORY-TABLE
 export type TypeCategory = 'A' | 'B' | 'C' | 'D' | 'E' | 'G' | 'I' | 'N' | 'P' | 'R' | 'S' | 'T' | 'U' | 'V' | 'X' | 'Z' // A: array, B: bool, C: composite, D: date, E: enum, G: geo, I: inet, N: numeric, P: pseudo, R: range, S: string, T: timespan, U: user-defined, V: bit, X: unknown, Z: internal
 export type RawColumn = {
     table_id: number
@@ -241,16 +252,17 @@ export type RawColumn = {
     column_type: string
     column_type_name: string
     column_type_len: number
-    // https://www.postgresql.org/docs/current/catalog-pg-type.html#CATALOG-TYPCATEGORY-TABLE
     column_type_cat: TypeCategory
     column_default: string | null
     column_nullable: boolean
+    column_generated: boolean
+    column_comment: string | null
     nulls: number | null // percentage of nulls (between 0 & 1)
     avg_len: number | null
     cardinality: number | null // if negative: negative of distinct values divided by the number of rows (% of uniqueness)
-    common_vals: ColumnValue[] | null
+    common_vals: string | null
     common_freqs: number[] | null
-    histogram: ColumnValue[] | null
+    histogram: string | null
 }
 
 export const getColumns = ({logger, schema, entity, ignoreErrors}: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawColumn[]> => {
@@ -261,11 +273,11 @@ export const getColumns = ({logger, schema, entity, ignoreErrors}: ConnectorSche
     // https://www.postgresql.org/docs/current/catalog-pg-type.html: stores information about data types
     // https://www.postgresql.org/docs/current/catalog-pg-attrdef.html: stores column default values.
     // https://www.postgresql.org/docs/current/view-pg-stats.html: column statistics
+    // https://www.postgresql.org/docs/current/functions-info.html#FUNCTIONS-INFO-CATALOG
     // `c.relkind IN ('r', 'v', 'm')`: get only tables, view and materialized views
     // `a.attnum > 0`: avoid system columns
     // `a.atttypid != 0`: avoid deleted columns
-    type QueryRawColumn = RawColumn & {common_vals: string | null, histogram: string | null}
-    return conn.query<QueryRawColumn>(`
+    return conn.query<RawColumn>(`
         SELECT c.oid                                AS table_id
              , u.rolname                            AS table_owner
              , n.nspname                            AS table_schema
@@ -277,8 +289,10 @@ export const getColumns = ({logger, schema, entity, ignoreErrors}: ConnectorSche
              , t.typname                            AS column_type_name
              , t.typlen                             AS column_type_len
              , t.typcategory                        AS column_type_cat
-             , pg_get_expr(d.adbin, d.adrelid)      AS column_default
+             , pg_get_expr(ad.adbin, ad.adrelid)    AS column_default
              , NOT a.attnotnull                     AS column_nullable
+             , a.attgenerated = 's'                 AS column_generated
+             , d.description                        AS column_comment
              , null_frac                            AS nulls
              , avg_width                            AS avg_len
              , n_distinct                           AS cardinality
@@ -290,21 +304,39 @@ export const getColumns = ({logger, schema, entity, ignoreErrors}: ConnectorSche
                  JOIN pg_namespace n ON n.oid = c.relnamespace
                  JOIN pg_authid u ON u.oid = c.relowner
                  JOIN pg_type t ON t.oid = a.atttypid
-                 LEFT OUTER JOIN pg_attrdef d ON d.adrelid = c.oid AND d.adnum = a.attnum
-                 LEFT OUTER JOIN pg_stats s ON s.schemaname = n.nspname AND s.tablename = c.relname AND s.attname = a.attname
+                 LEFT JOIN pg_attrdef ad ON ad.adrelid = c.oid AND ad.adnum = a.attnum
+                 LEFT JOIN pg_description d ON d.objoid = c.oid AND d.objsubid = a.attnum
+                 LEFT JOIN pg_stats s ON s.schemaname = n.nspname AND s.tablename = c.relname AND s.attname = a.attname
         WHERE ${scopeFilter('n.nspname', schema, 'c.relname', entity)}
           AND c.relkind IN ('r', 'v', 'm')
           AND a.attnum > 0
           AND a.atttypid != 0
         ORDER BY table_schema, table_name, column_index;`, [], 'getColumns'
-    ).then(cols => cols.map(c => ({
-        ...c,
-        common_vals: c.common_vals ? parseAnyArray(c.common_vals, c.column_type_cat, c.column_type_name) : null,
-        histogram: c.histogram ? parseAnyArray(c.histogram, c.column_type_cat, c.column_type_name) : null,
-    }))).catch(handleError(`Failed to get columns`, [], {logger, ignoreErrors}))
+    ).catch(handleError(`Failed to get columns`, [], {logger, ignoreErrors}))
 }
 
-function parseAnyArray(anyArray: string, type_cat: TypeCategory, type_name: string): ColumnValue[] {
+function buildAttribute(c: RawColumn): Attribute {
+    return removeEmpty({
+        name: c.column_name,
+        type: c.column_type,
+        nullable: c.column_nullable || undefined,
+        generated: c.column_generated || undefined,
+        default: c.column_default || undefined,
+        values: undefined, // TODO
+        attrs: undefined, // TODO
+        doc: c.column_comment || undefined,
+        stats: removeUndefined({
+            nulls: c.nulls || undefined,
+            avgBytes: c.avg_len || undefined,
+            cardinality: c.cardinality && c.cardinality > 0 ? c.cardinality : undefined,
+            commonValues: c.common_vals && c.common_freqs ? zip(parseValues(c.common_vals, c.column_type_cat, c.column_type_name), c.common_freqs).map(([value, freq]) => ({value, freq})) : undefined,
+            histogram: c.histogram ? parseValues(c.histogram, c.column_type_cat, c.column_type_name) : undefined
+        }),
+        extra: undefined,
+    } as Attribute)
+}
+
+function parseValues(anyArray: string, type_cat: TypeCategory, type_name: string): ColumnValue[] {
     switch (type_cat) {
         case "A": return parse(anyArray, v => v) // array, keep string (ex: int2vector, oidvector, _bool, _char, _int4, _json...)
         case "B": return parse(anyArray, v => v === 'true') // boolean (ex: bool)
@@ -377,6 +409,7 @@ async function getConstraints(conn: Conn, schema: PostgresSchemaName | undefined
     // https://www.postgresql.org/docs/current/catalog-pg-constraint.html: stores check, primary key, unique, foreign key, and exclusion constraints on tables. Not-null constraints are represented in the pg_attribute catalog, not here.
     // https://www.postgresql.org/docs/current/catalog-pg-class.html: catalogs tables and most everything else that has columns or is otherwise similar to a table. This includes indexes (but see also pg_index), sequences (but see also pg_sequence), views, materialized views, composite types, and TOAST tables; see relkind.
     // https://www.postgresql.org/docs/current/catalog-pg-namespace.html: stores namespaces. A namespace is the structure underlying SQL schemas: each namespace can have a separate collection of relations, types, etc. without name conflicts.
+    // https://www.postgresql.org/docs/current/functions-info.html#FUNCTIONS-INFO-CATALOG
     return conn.query<RawConstraint>(`
         SELECT cn.contype                         AS constraint_type
              , cn.conname                         AS constraint_name
@@ -424,33 +457,6 @@ async function getIndexes(conn: Conn, schema: PostgresSchemaName | undefined, ig
         ...row,
         definition: row.definition.indexOf(' USING ') > 0 ? row.definition.split(' USING ')[1].trim() : row.definition
     }))).catch(handleError(`Failed to get indexes${schema ? ` for schema '${schema}'` : ''}`, [], ignoreErrors, logger))
-}*/
-
-/*type RawComment = {
-    table_schema: string
-    table_name: string
-    column_name: string | null
-    comment: string
-}
-
-async function getComments(conn: Conn, schema: PostgresSchemaName | undefined, ignoreErrors: boolean, logger: Logger): Promise<RawComment[]> {
-    // https://www.postgresql.org/docs/current/catalog-pg-description.html: stores optional descriptions (comments) for each database object.
-    // https://www.postgresql.org/docs/current/catalog-pg-class.html: catalogs tables and most everything else that has columns or is otherwise similar to a table. This includes indexes (but see also pg_index), sequences (but see also pg_sequence), views, materialized views, composite types, and TOAST tables; see relkind.
-    // https://www.postgresql.org/docs/current/catalog-pg-namespace.html: stores namespaces. A namespace is the structure underlying SQL schemas: each namespace can have a separate collection of relations, types, etc. without name conflicts.
-    // https://www.postgresql.org/docs/current/catalog-pg-attribute.html: stores information about table columns. There will be exactly one row for every column in every table in the database.
-    return conn.query<RawComment>(`
-        SELECT n.nspname     AS table_schema
-             , c.relname     AS table_name
-             , a.attname     AS column_name
-             , d.description AS comment
-        FROM pg_description d
-                 JOIN pg_class c ON c.oid = d.objoid
-                 JOIN pg_namespace n ON n.oid = c.relnamespace
-                 LEFT OUTER JOIN pg_attribute a ON a.attrelid = c.oid AND a.attnum = d.objsubid
-        WHERE c.relkind IN ('r', 'v', 'm')
-          AND ${filterSchema('n.nspname', schema)}
-        ORDER BY table_schema, table_name, column_name;`, [], 'getComments'
-    ).catch(handleError(`Failed to get comments${schema ? ` for schema '${schema}'` : ''}`, [], ignoreErrors, logger))
 }*/
 
 /*type RawRelation = {
@@ -518,6 +524,9 @@ async function getTypes(conn: Conn, schema: PostgresSchemaName | undefined, igno
         ORDER BY type_schema, type_name;`, [], 'getTypes'
     ).catch(handleError(`Failed to get types${schema ? ` for schema '${schema}'` : ''}`, [], ignoreErrors, logger))
 }*/
+
+// getTriggers: pg_get_triggerdef
+// getFunctions / getProcedures: pg_get_functiondef, pg_get_function_arguments, pg_get_function_identity_arguments, pg_get_function_result (https://www.postgresql.org/docs/current/functions-info.html#FUNCTIONS-INFO-CATALOG)
 
 function handleError<T>(msg: string, onError: T, {logger, ignoreErrors}: ConnectorSchemaOpts) {
     return (err: any): Promise<T> => {
