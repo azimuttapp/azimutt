@@ -2,7 +2,7 @@ import {describe, expect, test} from "@jest/globals";
 import {ConnectorSchemaOpts, DatabaseUrlParsed, parseDatabaseUrl} from "@azimutt/database-model";
 import {application, logger} from "./constants";
 import {connect} from "../src/connect";
-import {getBlockSize, getColumns, getSchema, getTables} from "../src/postgres2";
+import {getBlockSize, getColumns, getDatabase, getSchema, getTables, getTypes} from "../src/postgres2";
 
 describe.skip('postgres2', () => {
     // local url, install db or replace it to test
@@ -19,6 +19,11 @@ describe.skip('postgres2', () => {
         const blockSize = await connect(application, url, getBlockSize(opts), opts)
         console.log(`blockSize`, blockSize)
     })
+    test('getDatabase', async () => {
+        const opts: ConnectorSchemaOpts = {logger, logQueries: false}
+        const database = await connect(application, url, getDatabase(opts), opts)
+        console.log(`database`, database)
+    })
     test('getTables', async () => {
         const opts: ConnectorSchemaOpts = {logger, logQueries: false}
         const tables = await connect(application, url, getTables(opts), opts)
@@ -28,5 +33,10 @@ describe.skip('postgres2', () => {
         const opts: ConnectorSchemaOpts = {logger, logQueries: false, schema: 'public', entity: 'events'}
         const columns = await connect(application, url, getColumns(opts), opts)
         console.log(`${columns.length} columns`, columns)
+    })
+    test('getTypes', async () => {
+        const opts: ConnectorSchemaOpts = {logger, logQueries: true, schema: 'public', entity: 'events'}
+        const types = await connect(application, url, getTypes(opts), opts)
+        console.log(`${types.length} types`, types)
     })
 })
