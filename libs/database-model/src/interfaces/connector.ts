@@ -19,8 +19,9 @@ import {
 export interface Connector {
     name: string
     getSchema(application: string, url: DatabaseUrlParsed, opts: ConnectorSchemaOpts): Promise<Database>
-    execute(application: string, url: DatabaseUrlParsed, query: string, parameters: any[], opts: ConnectorExecuteOpts): Promise<ConnectorExecuteResults>
-    getQueryStats(application: string, url: DatabaseUrlParsed, opts: ConnectorQueryStatsOpts): Promise<ConnectorQueryStats[]>
+    getQueryHistory(application: string, url: DatabaseUrlParsed, opts: ConnectorQueryHistoryOpts): Promise<DatabaseQuery[]>
+    execute(application: string, url: DatabaseUrlParsed, query: string, parameters: any[], opts: ConnectorDefaultOpts): Promise<QueryResults>
+    analyze(application: string, url: DatabaseUrlParsed, query: string, parameters: any[], opts: ConnectorDefaultOpts): Promise<QueryAnalyze>
     // TODO: needs to be challenged
     getEntityStats(application: string, url: DatabaseUrlParsed, entity: EntityRef, opts: ConnectorDefaultOpts): Promise<ConnectorEntityStats>
     getAttributeStats(application: string, url: DatabaseUrlParsed, attribute: AttributeRef, opts: ConnectorDefaultOpts): Promise<ConnectorAttributeStats>
@@ -54,23 +55,14 @@ export const connectorSchemaOptsDefaults = {
     sampleSize: 100
 }
 
-export type ConnectorExecuteOpts = ConnectorDefaultOpts & {
-}
-
-export type ConnectorExecuteResults = {
-    query: string
-    attributes: { name: string, ref?: AttributeRef }[]
-    rows: JsValue[]
-}
-
-export type ConnectorQueryStatsOpts = ConnectorDefaultOpts & {
+export type ConnectorQueryHistoryOpts = ConnectorDefaultOpts & {
     // filters: limit the scope of the extraction
     user?: string // query stats only from this user or user pattern (use LIKE if contains %, = otherwise)
     database?: DatabaseName // query stats only from this database or database pattern (use LIKE if contains %, = otherwise)
 }
 
 // TODO define more generic and meaningful structure
-export type ConnectorQueryStats = {
+export type DatabaseQuery = {
     id: string // query id to group duplicates
     user: string // the user executing the query
     database: DatabaseName // the database in which the query was executed
@@ -82,6 +74,14 @@ export type ConnectorQueryStats = {
     blocksLocal: {read: number, write: number, hit: number, dirty: number} // data from temporary tables & indexes
     blocksTemp: {read: number, write: number} // data used for the query
 }
+
+export type QueryResults = {
+    query: string
+    attributes: { name: string, ref?: AttributeRef }[]
+    rows: JsValue[]
+}
+
+export type QueryAnalyze = string
 
 export type ConnectorEntityStats = EntityRef & {
     rows: number
