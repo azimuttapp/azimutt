@@ -244,7 +244,7 @@ class AmlParser extends EmbeddedActionsParser {
             const second = $.OPTION(() => $.SUBRULE(nestedRule))
             const third = $.OPTION2(() => $.SUBRULE2(nestedRule))
             const [schema, catalog, database] = [third, second, first].filter(i => !!i)
-            return removeUndefined({command: 'NAMESPACE', schema: schema || first, catalog, database} as NamespaceAst)
+            return removeUndefined({command: 'NAMESPACE' as const, schema: schema || first, catalog, database})
         })
 
         // entity rules
@@ -303,7 +303,7 @@ class AmlParser extends EmbeddedActionsParser {
             const polymorphic = $.OPTION(() => $.SUBRULE(relationPolymorphicRule))
             const srcCardinality = $.SUBRULE2(relationCardinalityRule)
             const ref = $.SUBRULE2($.attributeRefCompositeRule)
-            return removeUndefined({kind: `${srcCardinality}-${refCardinality}`, ref, polymorphic} as AttributeRelationAst)
+            return removeUndefined({kind: `${srcCardinality}-${refCardinality}` as const, ref, polymorphic})
         })
         this.attributeRule = $.RULE<() => AttributeAst>('attributeRule', () => {
             const name = $.SUBRULE($.identifierRule)
@@ -326,7 +326,7 @@ class AmlParser extends EmbeddedActionsParser {
             const extra = $.SUBRULE($.extraRule)
             const attrs: AttributeAst[] = []
             $.MANY(() => attrs.push($.SUBRULE($.attributeRule)))
-            return removeEmpty({command: 'ENTITY', name: entity, ...namespace, alias, ...extra, attrs} as EntityAst)
+            return removeEmpty({command: 'ENTITY' as const, name: entity, ...namespace, alias, ...extra, attrs})
         })
 
         // relation rules
@@ -348,7 +348,7 @@ class AmlParser extends EmbeddedActionsParser {
             const src = $.SUBRULE($.attributeRefCompositeRule)
             const {kind, ref, polymorphic} = $.SUBRULE(attributeRelationRule)
             const extra = $.SUBRULE($.extraRule)
-            return removeUndefined({command: 'RELATION', kind, src, ref, polymorphic, ...extra} as RelationAst)
+            return removeUndefined({command: 'RELATION' as const, kind, src, ref, polymorphic, ...extra})
         })
 
         // type rules

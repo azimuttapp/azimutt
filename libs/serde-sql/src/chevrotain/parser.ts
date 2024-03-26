@@ -206,7 +206,7 @@ class SqlParser extends EmbeddedActionsParser {
             const from = $.SUBRULE($.selectFromRule)
             const where = $.OPTION(() => $.SUBRULE($.selectWhereRule))
             $.CONSUME(Semicolon)
-            return removeUndefined({command: 'SELECT', result, from, where} as SelectAst)
+            return removeUndefined({command: 'SELECT' as const, result, from, where})
         })
 
         // general rules

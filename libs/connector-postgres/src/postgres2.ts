@@ -211,7 +211,7 @@ export const getTables = ({schema, entity, logger, ignoreErrors}: ConnectorSchem
 function buildEntity(blockSize: number, table: RawTable, columns: RawColumn[], columnsByIndex: { [i: number]: string }, constraints: RawConstraint[], indexes: RawIndex[], jsonColumns: Record<AttributeName, ValueSchema>, polyColumns: Record<AttributeName, string[]>): Entity {
     return removeEmpty({
         name: table.table_name,
-        kind: table.table_kind === 'v' ? 'view' : table.table_kind === 'm' ? 'materialized view' : undefined,
+        kind: table.table_kind === 'v' ? 'view' as const : table.table_kind === 'm' ? 'materialized view' as const : undefined,
         def: table.table_definition || undefined,
         attrs: columns.slice(0).sort((a, b) => a.column_index - b.column_index).map(c => buildAttribute(c, jsonColumns[c.column_name], polyColumns[c.column_name])),
         pk: constraints.filter(c => c.constraint_type === 'p').map(c => buildPrimaryKey(c, columnsByIndex))[0] || undefined,
@@ -228,7 +228,7 @@ function buildEntity(blockSize: number, table: RawTable, columns: RawColumn[], c
             idx_scan: table.idx_scan,
         }),
         extra: undefined
-    } as Entity)
+    })
 }
 
 // https://www.postgresql.org/docs/current/catalog-pg-type.html#CATALOG-TYPCATEGORY-TABLE
@@ -324,7 +324,7 @@ function buildAttribute(c: RawColumn, schema: ValueSchema | undefined, values: s
             histogram: c.histogram ? parseValues(c.histogram, c.column_type_cat, c.column_type_name) : undefined
         }),
         extra: undefined,
-    } as Attribute)
+    })
 }
 
 function parseValues(anyArray: string, type_cat: RawTypeCategory, type_name: string): AttributeValue[] {
@@ -486,15 +486,15 @@ function buildIndex(blockSize: number, index: RawIndex, columns: { [i: number]: 
         name: index.index_name,
         attrs: index.columns.map(i => [columns[i] || 'unknown']), // TODO: handle indexes on nested json columns
         unique: index.is_unique || undefined,
-        partial: index.partial !== null || undefined,
+        partial: index.partial || undefined,
         definition: index.definition,
-        doc: index.index_comment,
+        doc: index.index_comment || undefined,
         stats: {
             size: index.blocks * blockSize,
             scans: index.idx_scan,
         },
         extra: undefined
-    } as Index)
+    })
 }
 
 type RawRelationAction = 'a' | 'r' | 'c' | 'n' | 'd' // a = no action, r = restrict, c = cascade, n = set null, d = set default
@@ -560,7 +560,7 @@ function buildRelation(r: RawRelation, columnsByIndex: Record<EntityId, { [i: nu
         polymorphic: undefined,
         doc: r.relation_comment || undefined,
         extra: undefined
-    } as Relation)
+    })
 }
 
 export type RawTypeKind = 'b' | 'c' | 'd' | 'e' | 'p' | 'r' | 'm' // b: base, c: composite, d: domain, e: enum, p: pseudo-type, r: range, m: multirange
@@ -621,9 +621,9 @@ function buildType(t: RawType): Type {
         values: t.type_kind === 'e' ? t.type_values : undefined,
         attrs: undefined,
         definition: undefined,
-        doc: t.type_comment,
+        doc: t.type_comment || undefined,
         extra: undefined
-    } as Type)
+    })
 }
 
 // getTriggers: pg_get_triggerdef
