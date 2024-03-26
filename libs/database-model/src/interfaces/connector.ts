@@ -23,8 +23,8 @@ export interface Connector {
     execute(application: string, url: DatabaseUrlParsed, query: string, parameters: any[], opts: ConnectorDefaultOpts): Promise<QueryResults>
     analyze(application: string, url: DatabaseUrlParsed, query: string, parameters: any[], opts: ConnectorDefaultOpts): Promise<QueryAnalyze>
     // TODO: needs to be challenged
-    getEntityStats(application: string, url: DatabaseUrlParsed, entity: EntityRef, opts: ConnectorDefaultOpts): Promise<ConnectorEntityStats>
-    getAttributeStats(application: string, url: DatabaseUrlParsed, attribute: AttributeRef, opts: ConnectorDefaultOpts): Promise<ConnectorAttributeStats>
+    getEntityStats(application: string, url: DatabaseUrlParsed, ref: EntityRef, opts: ConnectorDefaultOpts): Promise<ConnectorEntityStats>
+    getAttributeStats(application: string, url: DatabaseUrlParsed, ref: AttributeRef, opts: ConnectorDefaultOpts): Promise<ConnectorAttributeStats>
 }
 
 export type ConnectorDefaultOpts = {
@@ -77,9 +77,11 @@ export type DatabaseQuery = {
 
 export type QueryResults = {
     query: string
-    attributes: { name: string, ref?: AttributeRef }[]
+    attributes: QueryResultsAttribute[]
     rows: JsValue[]
 }
+
+export type QueryResultsAttribute = { name: string, ref?: AttributeRef }
 
 export type QueryAnalyze = string
 
@@ -93,10 +95,20 @@ export type ConnectorAttributeStats = AttributeRef & {
     rows: number
     nulls: number
     cardinality: number
-    commonValues: { value: AttributeValue, count: number }[]
+    commonValues: ConnectorAttributeStatsValue[]
 }
 
-export const logQueryIfNeeded = <U>(id: number, name: string | undefined, sql: string, parameters: any[], exec: (sql: string, parameters: any[]) => Promise<U>, count: (res: U) => number, {logger, logQueries}: ConnectorDefaultOpts): Promise<U> => {
+export type ConnectorAttributeStatsValue = { value: AttributeValue, count: number }
+
+export const logQueryIfNeeded = <U>(
+    id: number,
+    name: string | undefined,
+    sql: string,
+    parameters: any[],
+    exec: (sql: string, parameters: any[]) => Promise<U>,
+    count: (res: U) => number,
+    {logger, logQueries}: ConnectorDefaultOpts
+): Promise<U> => {
     if (logQueries) {
         const start = Date.now()
         const queryId = `#${id}${name ? ' ' + name : ''}`

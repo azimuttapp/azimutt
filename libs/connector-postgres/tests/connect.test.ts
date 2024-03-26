@@ -20,7 +20,7 @@ describe('connect', () => {
     // TODO 3: unskip the this test and run it: `npm run test -- tests/connect.test.ts`
     test.skip('Azimutt should connect', async () => {
         const parsedUrl = parseDatabaseUrl(url)
-        const results = await connect(application, parsedUrl, execQuery(query, parameters), {logger})
+        const results = await connect(application, parsedUrl, execQuery(query, parameters), {logger, logQueries: true})
         console.log('results', results)
     })
 
@@ -34,7 +34,7 @@ describe('connect', () => {
         })
         try  {
             await client.connect()
-            const results: QueryResult<any> = await client.query(query)
+            const results: QueryResult = await client.query(query)
             console.log('results', results)
         } finally {
             await client.end()

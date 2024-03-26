@@ -13,6 +13,7 @@ import {
     Type
 } from "../database";
 import {removeEmpty, removeUndefined} from "@azimutt/utils";
+import {ValueSchema} from "../inferSchema";
 
 export const columnPathSeparator = ":"
 
@@ -112,6 +113,30 @@ export const LegacyDatabase = z.object({
     relations: LegacyRelation.array(),
     types: LegacyType.array().nullish()
 }).strict()
+
+export function schemaToColumns(schema: ValueSchema, flatten: number, path: string[] = []): LegacyColumn[] {
+    // TODO: if string with few values (< 10% of docs), handle it like an enum and add values in comment
+    if (schema.nested && flatten > 0) {
+        return Object.entries(schema.nested).flatMap(([key, value]) => {
+            return [{
+                name: path.map(p => p + '.').join('') + key,
+                type: value.type,
+                nullable: value.nullable
+            }, ...schemaToColumns(value, flatten - 1, [...path, key])]
+        })
+    } else if (schema.nested) {
+        return Object.entries(schema.nested).map(([key, value]) => {
+            return removeUndefined({
+                name: path.map(p => p + '.').join('') + key,
+                type: value.type,
+                nullable: value.nullable,
+                columns: value.nested ? schemaToColumns(value, 0, []) : undefined
+            })
+        })
+    } else {
+        return []
+    }
+}
 
 export function databaseFromLegacy(db: LegacyDatabase): Database {
     return removeEmpty({

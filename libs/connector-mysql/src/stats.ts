@@ -1,35 +1,30 @@
 import {shuffle} from "@azimutt/utils";
-import {
-    ColumnCommonValue,
-    ColumnName,
-    ColumnRef,
-    ColumnStats,
-    ColumnType,
-    ColumnValue,
-    parseTableId,
-    SchemaName,
-    TableId,
-    TableName,
-    TableSampleValues,
-    TableStats
-} from "@azimutt/database-types";
 import {Conn} from "./common";
+import {
+    AttributeName,
+    AttributePath,
+    AttributeRef,
+    AttributeType,
+    AttributeValue,
+    ConnectorAttributeStats,
+    ConnectorAttributeStatsValue,
+    ConnectorEntityStats,
+    EntityRef
+} from "@azimutt/database-model";
 
-export const getTableStats = (id: TableId) => async (conn: Conn): Promise<TableStats> => {
-    const {schema, table} = parseTableId(id)
-    const sqlTable = `${schema ? `${schema}.` : ''}${table}`
+export const getTableStats = (ref: EntityRef) => async (conn: Conn): Promise<ConnectorEntityStats> => {
+    const sqlTable = `${ref.schema ? `${ref.schema}.` : ''}${ref.entity}`
     const rows = await countRows(conn, sqlTable)
-    const sample_values = await sampleValues(conn, sqlTable)
-    return {schema, table, rows, sample_values}
+    const sampleValues = await getSampleValues(conn, sqlTable)
+    return {...ref, rows, sampleValues}
 }
 
-export const getColumnStats = (ref: ColumnRef) => async (conn: Conn): Promise<ColumnStats> => {
-    const {schema, table} = parseTableId(ref.table)
-    const sqlTable = `${schema ? `${schema}.` : ''}${table}`
-    const type = await getColumnType(conn, schema, table, ref.column)
-    const basics = await columnBasics(conn, sqlTable, ref.column)
-    const common_values = await commonValues(conn, sqlTable, ref.column)
-    return {schema, table, column: ref.column, type, ...basics, common_values}
+export const getColumnStats = (ref: AttributeRef) => async (conn: Conn): Promise<ConnectorAttributeStats> => {
+    const sqlTable = `${ref.schema ? `${ref.schema}.` : ''}${ref.entity}`
+    const type = await getColumnType(conn, ref)
+    const basics = await columnBasics(conn, sqlTable, ref.attribute)
+    const commonValues = await getCommonValues(conn, sqlTable, ref.attribute)
+    return {...ref, type, ...basics, commonValues}
 }
 
 async function countRows(conn: Conn, sqlTable: string): Promise<number> {
@@ -38,46 +33,48 @@ async function countRows(conn: Conn, sqlTable: string): Promise<number> {
     return rows[0].count
 }
 
-async function sampleValues(conn: Conn, sqlTable: string): Promise<TableSampleValues> {
+async function getSampleValues(conn: Conn, sqlTable: string): Promise<{ [attribute: string]: AttributeValue }> {
     // take several raws to minimize empty columns and randomize samples from several raws
     const sql = `SELECT * FROM ${sqlTable} LIMIT 10`
     const result = await conn.queryArrayMode(sql)
     const samples = await Promise.all(result.fields.map(async (field, fieldIndex) => {
         const values = shuffle(result.rows.map(row => row[fieldIndex]).filter(v => !!v))
-        const value = await (values.length > 0 ? Promise.resolve(values[0]) : sampleValue(conn, sqlTable, field.name))
-        return [field.name, value] as [string, ColumnValue]
+        const value = await (values.length > 0 ? Promise.resolve(values[0]) : getSampleValue(conn, sqlTable, field.name))
+        return [field.name, value] as [string, AttributeValue]
     }))
     return Object.fromEntries(samples)
 }
 
-async function sampleValue(conn: Conn, sqlTable: string, column: ColumnName): Promise<ColumnValue> {
+async function getSampleValue(conn: Conn, sqlTable: string, column: AttributeName): Promise<AttributeValue> {
     // select several raws to and then shuffle results to avoid showing samples from the same raw
     const sql = `SELECT ${column} as value FROM ${sqlTable} WHERE ${column} IS NOT NULL LIMIT 10`
-    const rows = await conn.query<{ value: ColumnValue }>(sql)
+    const rows = await conn.query<{ value: AttributeValue }>(sql)
     return rows.length > 0 ? shuffle(rows)[0].value : null
 }
 
-async function getColumnType(conn: Conn, schema: SchemaName, table: TableName, column: ColumnName): Promise<ColumnType> {
+async function getColumnType(conn: Conn, ref: AttributeRef): Promise<AttributeType> {
     const rows = await conn.query<{ type: string }>(`
         SELECT COLUMN_TYPE as type
         FROM information_schema.COLUMNS
-        WHERE ${schema ? 'TABLE_SCHEMA=? AND ' : ''}TABLE_NAME = ?
-          AND COLUMN_NAME = ?;`, schema ? [schema, table, column] : [table, column])
+        WHERE ${ref.schema ? 'TABLE_SCHEMA=? AND ' : ''}TABLE_NAME = ?
+          AND COLUMN_NAME = ?;`, (ref.schema ? [ref.schema] : []).concat([ref.entity, ref.attribute.join('.')]))
     return rows.length > 0 ? rows[0].type : 'unknown'
 }
 
 type ColumnBasics = { rows: number, nulls: number, cardinality: number }
 
-async function columnBasics(conn: Conn, sqlTable: string, column: ColumnName): Promise<ColumnBasics> {
+async function columnBasics(conn: Conn, sqlTable: string, column: AttributePath): Promise<ColumnBasics> {
+    const sqlColumn = column.join('.') // FIXME: handle nested columns (JSON)
     const rows = await conn.query<ColumnBasics>(`
-        SELECT count(*)                                                   AS rows
-             , (SELECT count(*) FROM ${sqlTable} WHERE ${column} IS NULL) AS nulls
-             , count(distinct ${column})                                  AS cardinality
+        SELECT count(*)                                                      AS rows
+             , (SELECT count(*) FROM ${sqlTable} WHERE ${sqlColumn} IS NULL) AS nulls
+             , count(distinct ${sqlColumn})                                  AS cardinality
         FROM ${sqlTable}`)
     return rows[0]
 }
 
-function commonValues(conn: Conn, sqlTable: string, column: ColumnName): Promise<ColumnCommonValue[]> {
-    const sql = `SELECT ${column} as value, count(*) as count FROM ${sqlTable} GROUP BY ${column} ORDER BY count(*) DESC LIMIT 10`
-    return conn.query<ColumnCommonValue>(sql)
+function getCommonValues(conn: Conn, sqlTable: string, column: AttributePath): Promise<ConnectorAttributeStatsValue[]> {
+    const sqlColumn = column.join('.') // FIXME: handle nested columns (JSON)
+    const sql = `SELECT ${sqlColumn} as value, count(*) as count FROM ${sqlTable} GROUP BY ${sqlColumn} ORDER BY count(*) DESC LIMIT 10`
+    return conn.query<ConnectorAttributeStatsValue>(sql)
 }
