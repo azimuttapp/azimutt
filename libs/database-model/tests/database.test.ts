@@ -128,8 +128,8 @@ describe('database', () => {
                 {src: {entity: 'contributions'}, ref: {schema: 'social', entity: 'tweets'}, attrs: [{src: ['item_id'], ref: ['id']}], polymorphic: {attribute: ['item_kind'], value: 'Tweet'}},
                 {src: {entity: 'profiles'}, ref: {entity: 'users'}, attrs: [{src: ['user_id'], ref: ['id']}], kind: 'one-to-one'},
                 {src: {schema: 'social', entity: 'tweets'}, ref: {entity: 'users'}, attrs: [{src: ['id'], ref: ['id']}], name: 'poly_tweets_users', kind: 'many-to-many', doc: 'Users mentioned in tweets', extra: {deferred: true}},
-                {database: 'snowflake', catalog: 'analytics', schema: 'raw', src: {database: 'snowflake', catalog: 'analytics', schema: 'raw', entity: 'events'}, ref: {entity: 'users'}, attrs: [{src: ['payload', 'user_id'], ref: ['id']}]},
-                {database: 'snowflake', catalog: 'analytics', schema: 'raw', src: {database: 'snowflake', catalog: 'analytics', schema: 'raw', entity: 'events'}, ref: {schema: 'social', entity: 'tweets'}, attrs: [{src: ['payload', 'tweet_id'], ref: ['id']}]},
+                {src: {database: 'snowflake', catalog: 'analytics', schema: 'raw', entity: 'events'}, ref: {entity: 'users'}, attrs: [{src: ['payload', 'user_id'], ref: ['id']}]},
+                {src: {database: 'snowflake', catalog: 'analytics', schema: 'raw', entity: 'events'}, ref: {schema: 'social', entity: 'tweets'}, attrs: [{src: ['payload', 'tweet_id'], ref: ['id']}]},
             ],
             types: [
                 {name: 'markdown'},

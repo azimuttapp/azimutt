@@ -1,19 +1,12 @@
-import {
-    ColumnName,
-    columnPathSeparator,
-    ColumnPathStr,
-    SchemaName,
-    SqlFragment,
-    TableName
-} from "@azimutt/database-types";
+import {AttributePath, EntityRef, SqlFragment} from "@azimutt/database-model";
 
-export function buildSqlTable(schema: SchemaName | undefined, table: TableName): SqlFragment {
-    const sqlSchema = schema ? `"${schema}".` : ''
-    return `${sqlSchema}"${table}"`
+export function buildSqlTable(ref: EntityRef): SqlFragment {
+    const sqlSchema = ref.schema ? `"${ref.schema}".` : ''
+    return `${sqlSchema}"${ref.entity}"`
 }
 
-export function buildSqlColumn(column: ColumnName | ColumnPathStr): SqlFragment {
-    const [head, ...tail] = column.split(columnPathSeparator)
+export function buildSqlColumn(path: AttributePath): SqlFragment {
+    const [head, ...tail] = path
     return `"${head}"${tail.map(t => `->'${t}'`).join('')}`
 }
 

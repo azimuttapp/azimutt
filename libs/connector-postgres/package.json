@@ -26,7 +26,6 @@
   },
   "dependencies": {
     "@azimutt/database-model": "file:../database-model",
-    "@azimutt/database-types": "^0.0.16",
     "@azimutt/utils": "file:../utils",
     "pg": "8.10.0",
     "postgres-array": "3.0.2"
