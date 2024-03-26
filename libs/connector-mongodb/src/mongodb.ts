@@ -1,6 +1,6 @@
 import {Collection, Filter, MongoClient} from "mongodb";
 import {Logger, sequence} from "@azimutt/utils";
-import {AzimuttSchema, schemaToColumns, ValueSchema, valuesToSchema} from "@azimutt/database-types";
+import {LegacyDatabase, schemaToColumns, ValueSchema, valuesToSchema} from "@azimutt/database-model";
 
 export type QueryResult = { database: string, collection: string, operation: string, command: object, rows: object[] }
 
@@ -58,7 +58,7 @@ export const getSchema = ({logger, database, mixedCollection, sampleSize, ignore
     return {collections: schemas}
 }
 
-export function formatSchema(schema: MongodbSchema): AzimuttSchema {
+export function formatSchema(schema: MongodbSchema): LegacyDatabase {
     const tables = schema.collections.map(c => ({
         schema: c.database,
         table: c.type && c.type.value ? `${c.collection}__${c.type.field}__${c.type.value}` : c.collection,
