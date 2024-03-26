@@ -1,25 +1,23 @@
 import mssql, {config, ConnectionPool, IOptions, IResult, ISqlType} from "mssql";
-import {Logger} from "@azimutt/utils";
-import {ColumnValue, DatabaseUrlParsed, logQueryIfNeeded} from "@azimutt/database-types";
+import {AttributeValue, ConnectorDefaultOpts, DatabaseUrlParsed, logQueryIfNeeded} from "@azimutt/database-model";
 import {Conn, QueryResultArrayMode, QueryResultRow} from "./common";
 
-export type SqlserverConnectOpts = {logger: Logger, logQueries: boolean}
-export async function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c: Conn) => Promise<T>, {logger, logQueries}: SqlserverConnectOpts): Promise<T> {
+export async function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c: Conn) => Promise<T>, opts: ConnectorDefaultOpts): Promise<T> {
     const connection: ConnectionPool = await mssql.connect(buildconfig(application, url)).catch(_ => mssql.connect(url.full))
     let queryCpt = 1
     const conn: Conn = {
         query<T extends QueryResultRow>(sql: string, parameters: any[] = [], name: string = ''): Promise<T[]> {
             return logQueryIfNeeded(queryCpt++, name, sql, parameters, (sql, parameters) => {
                 return connection.query<T>(sql).then(result => result.recordset)
-            }, r => r.length, logger, logQueries)
+            }, r => r.length, opts)
         },
         queryArrayMode(sql: string, parameters: any[] = [], name: string = ''): Promise<QueryResultArrayMode> {
             return logQueryIfNeeded(queryCpt++, name, sql, parameters, async (sql, parameters) => {
                 const request = connection.request() as any
                 request.arrayRowMode = true
-                const result: IResult<ColumnValue[]> & { columns: ColumnMetadata[][] } = await request.query(sql)
-                return {rows: result.recordset as ColumnValue[][], fields: result.columns[0]}
-            }, r => r.rows.length, logger, logQueries)
+                const result: IResult<AttributeValue[]> & { columns: ColumnMetadata[][] } = await request.query(sql)
+                return {rows: result.recordset as AttributeValue[][], fields: result.columns[0]}
+            }, r => r.rows.length, opts)
         }
     }
     return exec(conn).then(

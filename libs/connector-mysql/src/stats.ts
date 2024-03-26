@@ -30,14 +30,14 @@ export const getColumnStats = (ref: AttributeRef) => async (conn: Conn): Promise
 }
 
 async function countRows(conn: Conn, sqlTable: SqlFragment): Promise<number> {
-    const sql = `SELECT count(*) as count FROM ${sqlTable}`
+    const sql = `SELECT count(*) as count FROM ${sqlTable};`
     const rows = await conn.query<{ count: number }>(sql)
     return rows[0].count
 }
 
 async function getSampleValues(conn: Conn, sqlTable: SqlFragment): Promise<{ [attribute: string]: AttributeValue }> {
     // take several raws to minimize empty columns and randomize samples from several raws
-    const sql = `SELECT * FROM ${sqlTable} LIMIT 10`
+    const sql = `SELECT * FROM ${sqlTable} LIMIT 10;`
     const result = await conn.queryArrayMode(sql)
     const samples = await Promise.all(result.fields.map(async (field, fieldIndex) => {
         const values = shuffle(result.rows.map(row => row[fieldIndex]).filter(v => !!v))
@@ -49,7 +49,7 @@ async function getSampleValues(conn: Conn, sqlTable: SqlFragment): Promise<{ [at
 
 async function getSampleValue(conn: Conn, sqlTable: SqlFragment, column: AttributeName): Promise<AttributeValue> {
     // select several raws to and then shuffle results to avoid showing samples from the same raw
-    const sql = `SELECT ${column} as value FROM ${sqlTable} WHERE ${column} IS NOT NULL LIMIT 10`
+    const sql = `SELECT ${column} as value FROM ${sqlTable} WHERE ${column} IS NOT NULL LIMIT 10;`
     const rows = await conn.query<{ value: AttributeValue }>(sql)
     return rows.length > 0 ? shuffle(rows)[0].value : null
 }
@@ -70,11 +70,11 @@ async function getColumnBasics(conn: Conn, sqlTable: SqlFragment, sqlColumn: Sql
         SELECT count(*)                                                      AS rows
              , (SELECT count(*) FROM ${sqlTable} WHERE ${sqlColumn} IS NULL) AS nulls
              , count(distinct ${sqlColumn})                                  AS cardinality
-        FROM ${sqlTable}`)
+        FROM ${sqlTable};`)
     return rows[0]
 }
 
 function getCommonValues(conn: Conn, sqlTable: SqlFragment, sqlColumn: SqlFragment): Promise<ConnectorAttributeStatsValue[]> {
-    const sql = `SELECT ${sqlColumn} as value, count(*) as count FROM ${sqlTable} GROUP BY ${sqlColumn} ORDER BY count(*) DESC LIMIT 10`
+    const sql = `SELECT ${sqlColumn} as value, count(*) as count FROM ${sqlTable} GROUP BY ${sqlColumn} ORDER BY count(*) DESC LIMIT 10;`
     return conn.query<ConnectorAttributeStatsValue>(sql)
 }

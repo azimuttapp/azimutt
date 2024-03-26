@@ -17,7 +17,7 @@ describe('connect', () => {
     const query = 'SELECT * FROM users LIMIT 2;'
     const parameters: any[] = []
 
-    // TODO 3: unskip the this test and run it: `npm run test -- tests/connect.test.ts`
+    // TODO 3: unskip this test first and run it (`npm run test -- tests/connect.test.ts`)
     test.skip('Azimutt should connect', async () => {
         const parsedUrl = parseDatabaseUrl(url)
         const results = await connect(application, parsedUrl, execQuery(query, parameters), {logger, logQueries: true})
