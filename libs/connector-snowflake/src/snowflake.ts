@@ -1,5 +1,5 @@
 import {groupBy, Logger, removeUndefined} from "@azimutt/utils";
-import {AzimuttSchema} from "@azimutt/database-types";
+import {LegacyDatabase} from "@azimutt/database-model";
 import {Conn} from "./common";
 
 export type SnowflakeSchema = { tables: SnowflakeTable[], relations: SnowflakeRelation[] }
@@ -57,7 +57,7 @@ export const getSchema = ({logger, schema, sampleSize, inferRelations, ignoreErr
     }
 }
 
-export function formatSchema(schema: SnowflakeSchema): AzimuttSchema {
+export function formatSchema(schema: SnowflakeSchema): LegacyDatabase {
     return {
         tables: schema.tables.map(t => removeUndefined({
             schema: t.schema,

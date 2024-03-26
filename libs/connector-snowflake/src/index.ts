@@ -1,24 +1,27 @@
 import {
-    AzimuttSchema,
-    ColumnRef,
-    ColumnStats,
+    AttributeRef,
     Connector,
-    ConnectorOps,
-    DatabaseQueryResults,
+    ConnectorAttributeStats,
+    ConnectorDefaultOpts,
+    ConnectorEntityStats,
+    ConnectorQueryHistoryOpts,
+    ConnectorSchemaOpts,
+    Database,
+    databaseFromLegacy,
+    DatabaseQuery,
     DatabaseUrlParsed,
-    SchemaOpts,
-    TableId,
-    TableStats
-} from "@azimutt/database-types";
+    EntityRef,
+    QueryAnalyze,
+    QueryResults
+} from "@azimutt/database-model";
 import {execQuery} from "./common";
-import {connect, SnowflakeConnectOpts} from "./connect";
+import {connect} from "./connect";
 import {formatSchema, getSchema, SnowflakeSchemaOpts} from "./snowflake";
 import {getColumnStats, getTableStats} from "./stats";
 
 export const snowflake: Connector = {
     name: 'Snowflake',
-    getSchema: async (application: string, url: DatabaseUrlParsed, opts: ConnectorOps & SchemaOpts): Promise<AzimuttSchema> => {
-        const connectOpts: SnowflakeConnectOpts = {logger: opts.logger, logQueries: withDefault(opts.logQueries, false)}
+    getSchema: async (application: string, url: DatabaseUrlParsed, opts: ConnectorSchemaOpts): Promise<Database> => {
         const schemaOpts: SnowflakeSchemaOpts = {
             logger: opts.logger,
             schema: opts.schema,
@@ -26,21 +29,19 @@ export const snowflake: Connector = {
             inferRelations: withDefault(opts.inferRelations, true),
             ignoreErrors: withDefault(opts.ignoreErrors, false)
         }
-        const schema = await connect(application, url, getSchema(schemaOpts), connectOpts)
-        return formatSchema(schema)
+        const schema = await connect(application, url, getSchema(schemaOpts), opts)
+        return databaseFromLegacy(formatSchema(schema))
     },
-    getTableStats: (application: string, url: DatabaseUrlParsed, id: TableId, opts: ConnectorOps): Promise<TableStats> => {
-        const connectOpts: SnowflakeConnectOpts = {logger: opts.logger, logQueries: withDefault(opts.logQueries, false)}
-        return connect(application, url, getTableStats(id), connectOpts)
-    },
-    getColumnStats: (application: string, url: DatabaseUrlParsed, ref: ColumnRef, opts: ConnectorOps): Promise<ColumnStats> => {
-        const connectOpts: SnowflakeConnectOpts = {logger: opts.logger, logQueries: withDefault(opts.logQueries, false)}
-        return connect(application, url, getColumnStats(ref), connectOpts)
-    },
-    query: (application: string, url: DatabaseUrlParsed, query: string, parameters: any[], opts: ConnectorOps): Promise<DatabaseQueryResults> => {
-        const connectOpts: SnowflakeConnectOpts = {logger: opts.logger, logQueries: withDefault(opts.logQueries, false)}
-        return connect(application, url, execQuery(query, parameters), connectOpts)
-    },
+    getQueryHistory: (application: string, url: DatabaseUrlParsed, opts: ConnectorQueryHistoryOpts): Promise<DatabaseQuery[]> =>
+        Promise.reject('Not implemented'),
+    execute: (application: string, url: DatabaseUrlParsed, query: string, parameters: any[], opts: ConnectorDefaultOpts): Promise<QueryResults> =>
+        connect(application, url, execQuery(query, parameters), opts),
+    analyze: (application: string, url: DatabaseUrlParsed, query: string, parameters: any[], opts: ConnectorDefaultOpts): Promise<QueryAnalyze> =>
+        Promise.reject('Not implemented'),
+    getEntityStats: (application: string, url: DatabaseUrlParsed, ref: EntityRef, opts: ConnectorDefaultOpts): Promise<ConnectorEntityStats> =>
+        connect(application, url, getTableStats(ref), opts),
+    getAttributeStats: (application: string, url: DatabaseUrlParsed, ref: AttributeRef, opts: ConnectorDefaultOpts): Promise<ConnectorAttributeStats> =>
+        connect(application, url, getColumnStats(ref), opts)
 }
 
 function withDefault<T>(value: T | undefined, other: T): T {

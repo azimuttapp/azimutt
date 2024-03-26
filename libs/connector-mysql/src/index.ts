@@ -32,21 +32,16 @@ export const mysql: Connector = {
         const schema = await connect(application, url, getSchema(schemaOpts), opts)
         return databaseFromLegacy(formatSchema(schema))
     },
-    getQueryHistory: (application: string, url: DatabaseUrlParsed, opts: ConnectorQueryHistoryOpts): Promise<DatabaseQuery[]> => {
-        return Promise.reject('Not implemented')
-    },
-    execute: (application: string, url: DatabaseUrlParsed, query: string, parameters: any[], opts: ConnectorDefaultOpts): Promise<QueryResults> => {
-        return connect(application, url, execQuery(query, parameters), opts)
-    },
-    analyze: (application: string, url: DatabaseUrlParsed, query: string, parameters: any[], opts: ConnectorDefaultOpts): Promise<QueryAnalyze> => {
-        return Promise.reject('Not implemented')
-    },
-    getEntityStats: (application: string, url: DatabaseUrlParsed, ref: EntityRef, opts: ConnectorDefaultOpts): Promise<ConnectorEntityStats> => {
-        return connect(application, url, getTableStats(ref), opts)
-    },
-    getAttributeStats: (application: string, url: DatabaseUrlParsed, ref: AttributeRef, opts: ConnectorDefaultOpts): Promise<ConnectorAttributeStats> => {
-        return connect(application, url, getColumnStats(ref), opts)
-    }
+    getQueryHistory: (application: string, url: DatabaseUrlParsed, opts: ConnectorQueryHistoryOpts): Promise<DatabaseQuery[]> =>
+        Promise.reject('Not implemented'),
+    execute: (application: string, url: DatabaseUrlParsed, query: string, parameters: any[], opts: ConnectorDefaultOpts): Promise<QueryResults> =>
+        connect(application, url, execQuery(query, parameters), opts),
+    analyze: (application: string, url: DatabaseUrlParsed, query: string, parameters: any[], opts: ConnectorDefaultOpts): Promise<QueryAnalyze> =>
+        Promise.reject('Not implemented'),
+    getEntityStats: (application: string, url: DatabaseUrlParsed, ref: EntityRef, opts: ConnectorDefaultOpts): Promise<ConnectorEntityStats> =>
+        connect(application, url, getTableStats(ref), opts),
+    getAttributeStats: (application: string, url: DatabaseUrlParsed, ref: AttributeRef, opts: ConnectorDefaultOpts): Promise<ConnectorAttributeStats> =>
+        connect(application, url, getColumnStats(ref), opts)
 }
 
 function withDefault<T>(value: T | undefined, other: T): T {

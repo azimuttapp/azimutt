@@ -1,6 +1,6 @@
 import {describe, expect, test} from "@jest/globals";
-import {DatabaseUrlParsed, parseDatabaseUrl} from "@azimutt/database-types";
-import {application, opts} from "./constants";
+import {DatabaseUrlParsed, parseDatabaseUrl} from "@azimutt/database-model";
+import {application, logger} from "./constants";
 import {connect} from "../src/connect";
 import {execQuery} from "../src/common";
 
@@ -15,8 +15,8 @@ describe('query', () => {
             JOIN TPCDS_SF10TCL.CALL_CENTER cc ON r.CR_CALL_CENTER_SK = cc.CC_CALL_CENTER_SK
             JOIN TPCDS_SF10TCL.CUSTOMER c ON r.CR_REFUNDED_CUSTOMER_SK = c.C_CUSTOMER_SK
         LIMIT 30;`
-        const results = await connect(application, url, execQuery(query, []), opts)
-        expect(results.columns).toEqual([
+        const results = await connect(application, url, execQuery(query, []), {logger})
+        expect(results.attributes).toEqual([
             {name: 'CC_CALL_CENTER_SK'},
             {name: 'CC_NAME'},
             {name: 'C_CUSTOMER_SK'},
