@@ -1,24 +1,22 @@
 import * as mariadb from "mariadb";
 import {Connection, ConnectionConfig} from "mariadb";
-import {Logger} from "@azimutt/utils";
-import {DatabaseUrlParsed, logQueryIfNeeded} from "@azimutt/database-types";
+import {ConnectorDefaultOpts, DatabaseUrlParsed, logQueryIfNeeded} from "@azimutt/database-model";
 import {Conn, QueryResultArrayMode, QueryResultRow} from "./common";
 
-export type MariadbConnectOpts = {logger: Logger, logQueries: boolean}
-export async function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c: Conn) => Promise<T>, {logger, logQueries}: MariadbConnectOpts): Promise<T> {
+export async function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c: Conn) => Promise<T>, opts: ConnectorDefaultOpts): Promise<T> {
     const connection: Connection = await mariadb.createConnection(buildConfig(application, url)).catch(_ => mariadb.createConnection(url.full))
     let queryCpt = 1
     const conn: Conn = {
         query<T extends QueryResultRow>(sql: string, parameters: any[] = [], name?: string): Promise<T[]> {
             return logQueryIfNeeded(queryCpt++, name, sql, parameters, (sql, parameters) => {
                 return connection.query<T[]>({sql, namedPlaceholders: true}, parameters)
-            }, r => r.length, logger, logQueries)
+            }, r => r.length, opts)
         },
         queryArrayMode(sql: string, parameters: any[] = [], name?: string): Promise<QueryResultArrayMode> {
             return logQueryIfNeeded(queryCpt++, name, sql, parameters, (sql, parameters) => {
                 return connection.query({sql, namedPlaceholders: true, rowsAsArray: true}, parameters)
                     .then(([rows, fields]) => ({fields, rows}))
-            }, r => r.rows.length, logger, logQueries)
+            }, r => r.rows.length, opts)
         }
     }
     return exec(conn).then(
