@@ -43,14 +43,15 @@
     "dry-publish": "npm run build && npm test && npm pack"
   },
   "dependencies": {
-    "@azimutt/connector-couchbase": "^0.0.4",
-    "@azimutt/connector-mariadb": "^0.0.3",
-    "@azimutt/connector-mongodb": "^0.0.4",
-    "@azimutt/connector-mysql": "^0.0.4",
+    "@azimutt/connector-couchbase": "file:../libs/connector-couchbase",
+    "@azimutt/connector-mariadb": "file:../libs/connector-mariadb",
+    "@azimutt/connector-mongodb": "file:../libs/connector-mongodb",
+    "@azimutt/connector-mysql": "file:../libs/connector-mysql",
     "@azimutt/connector-postgres": "file:../libs/connector-postgres",
-    "@azimutt/connector-snowflake": "^0.0.2",
-    "@azimutt/connector-sqlserver": "^0.0.5",
-    "@azimutt/database-types": "^0.0.16",
+    "@azimutt/connector-snowflake": "file:../libs/connector-snowflake",
+    "@azimutt/connector-sqlserver": "file:../libs/connector-sqlserver",
+    "@azimutt/database-model": "file:../libs/database-model",
+    "@azimutt/utils": "file:../libs/utils",
     "@fastify/cors": "8.2.1",
     "@sinclair/typebox": "0.28.10",
     "ajv": "8.12.0",
@@ -70,7 +71,7 @@
     "pino-pretty": "^10.3.1",
     "prettier": "^2.8.8",
     "tsx": "^3.14.0",
-    "typescript": "^5.3.3",
+    "typescript": "^5.4.3",
     "vitest": "^0.31.4"
   }
 }

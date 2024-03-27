@@ -202,7 +202,7 @@ export const Type = Namespace.merge(z.object({
 })).strict()
 export type Type = z.infer<typeof Type>
 
-export const DatabaseKind = z.enum(['cassandra', 'couchbase', 'db2', 'elasticsearch', 'mariadb', 'mongodb', 'mysql', 'oracle', 'postgres', 'redis', 'snowflake', 'sqlite', 'sqlserver'])
+export const DatabaseKind = z.enum(['bigquery', 'cassandra', 'couchbase', 'db2', 'elasticsearch', 'mariadb', 'mongodb', 'mysql', 'oracle', 'postgres', 'redis', 'snowflake', 'sqlite', 'sqlserver'])
 export type DatabaseKind = z.infer<typeof DatabaseKind>
 
 export const DatabaseStats = z.object({

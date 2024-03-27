@@ -2,6 +2,7 @@ import {z} from "zod";
 import {
     Attribute,
     AttributePath,
+    AttributeRef,
     AttributeValue,
     Check,
     Database,
@@ -16,6 +17,12 @@ import {removeEmpty, removeUndefined} from "@azimutt/utils";
 import {ValueSchema} from "../inferSchema";
 
 export const columnPathSeparator = ":"
+
+
+const LegacyJsValueLiteral = z.union([z.string(), z.number(), z.boolean(), z.null()])
+type LegacyJsValueLiteral = z.infer<typeof LegacyJsValueLiteral>
+export const LegacyJsValue: z.ZodType<LegacyJsValue> = z.lazy(() => z.union([LegacyJsValueLiteral, z.array(LegacyJsValue), z.record(LegacyJsValue)]))
+export type LegacyJsValue = LegacyJsValueLiteral | { [key: string]: LegacyJsValue } | LegacyJsValue[] // lazy so can't infer type :/
 
 export type LegacySchemaName = string
 export const LegacySchemaName = z.string()
@@ -207,11 +214,11 @@ function columnToLegacy(a: Attribute): LegacyColumn {
     })
 }
 
-function columnValueFromLegacy(v: LegacyColumnValue): AttributeValue {
+export function columnValueFromLegacy(v: LegacyColumnValue): AttributeValue {
     return v
 }
 
-function columnValueToLegacy(v: AttributeValue): LegacyColumnValue {
+export function columnValueToLegacy(v: AttributeValue): LegacyColumnValue {
     if (v === undefined) return 'null'
     if (v === null) return 'null'
     return v.toString() // TODO: improve?
@@ -290,22 +297,30 @@ function checkToLegacy(c: Check): LegacyCheck {
 function relationFromLegacy(r: LegacyRelation): Relation {
     return removeUndefined({
         name: r.name || undefined,
-        src: columnRefFromLegacy(r.src),
-        ref: columnRefFromLegacy(r.ref),
+        src: columnRefFromLegacy2(r.src),
+        ref: columnRefFromLegacy2(r.ref),
         attrs: [{src: r.src.column.split(columnPathSeparator), ref: r.ref.column.split(columnPathSeparator)}],
     })
 }
 
 function relationToLegacy(r: Relation): LegacyRelation {
     const attr = r.attrs[0]
-    return { name: r.name || '', src: columnRefToLegacy(r.src, attr.src), ref: columnRefToLegacy(r.ref, attr.ref) }
+    return { name: r.name || '', src: columnRefToLegacy2(r.src, attr.src), ref: columnRefToLegacy2(r.ref, attr.ref) }
 }
 
-function columnRefFromLegacy(e: LegacyColumnRef): EntityRef {
-    return {schema: e.schema, entity: e.table}
+export function columnRefFromLegacy(c: LegacyColumnRef): AttributeRef {
+    return removeUndefined({schema: c.schema || undefined, entity: c.table, attribute: [c.column]}) // FIXME: use function from ColumnName to AttributePath
 }
 
-function columnRefToLegacy(e: EntityRef, c: AttributePath): LegacyColumnRef {
+export function columnRefToLegacy(a: AttributeRef): LegacyColumnRef {
+    return {schema: a.schema || '', table: a.entity, column: a.attribute.join(columnPathSeparator)} // FIXME: use function from AttributePath to ColumnName
+}
+
+function columnRefFromLegacy2(e: LegacyColumnRef): EntityRef {
+    return removeUndefined({schema: e.schema || undefined, entity: e.table})
+}
+
+function columnRefToLegacy2(e: EntityRef, c: AttributePath): LegacyColumnRef {
     return {schema: e.schema || '', table: e.entity, column: c.join(columnPathSeparator)}
 }
 
