@@ -35,7 +35,7 @@
             "myrho/elm-round": "1.0.5",
             "pablohirafuji/elm-syntax-highlight": "3.5.0",
             "rtfeldman/elm-iso8601-date-strings": "1.1.4",
-            "ryannhg/elm-spa": "6.0.0",
+            "ryan-haskell/elm-spa": "1.0.0",
             "toastal/either": "3.6.3",
             "truqu/elm-md5": "1.1.0"
         },
