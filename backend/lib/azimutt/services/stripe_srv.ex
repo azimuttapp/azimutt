@@ -97,6 +97,15 @@ defmodule Azimutt.Services.StripeSrv do
             quantity: quantity
           }
         ],
+        subscription_data: %{
+          trial_period_days: 14,
+          trial_settings: %{
+            end_behavior: %{
+              missing_payment_method: "cancel"
+            }
+          }
+        },
+        payment_method_collection: "if_required",
         allow_promotion_codes: true,
         success_url: success_url,
         cancel_url: cancel_url
