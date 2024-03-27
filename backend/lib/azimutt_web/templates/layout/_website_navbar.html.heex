@@ -4,7 +4,7 @@
     <% ring_style = "#{if assigns[:dark], do: "focus:ring-offset-gray-900", else: "focus:ring-offset-slate-100"} focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
     <div x-data="{ open: false }" class="relative">
       <button type="button" @click="open = !open" class={"group inline-flex items-center #{link_style} #{ring_style}"} aria-expanded="false">
-        Use cases
+        Solutions
         <Icon.chevron_down kind="mini" class="text-gray-400 ml-2 h-5 w-5 group-hover:text-gray-500" />
       </button>
       <div x-show="open" @click.outside="open = false" style="display: none" class="absolute left-1/2 z-10 mt-3 w-screen max-w-md -translate-x-1/2 transform px-2 sm:px-0">

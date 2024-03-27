@@ -62,7 +62,7 @@ defmodule Azimutt do
           "Extended schema analysis",
           "Premium support"
         ],
-        cta: "Buy this plan",
+        cta: "Try this plan",
         buy: "/login?plan=pro",
         selected: true
       },
@@ -89,18 +89,18 @@ defmodule Azimutt do
   def use_cases do
     [
       %{
-        id: "design",
-        # adjustments-horizontal / sparkles
-        icon: "academic-cap",
-        name: "Design",
-        description: "Make beautiful diagrams at your typing speed using our minimal DSL."
-      },
-      %{
         id: "explore",
         # cursor-arrow-ripple / document-magnifying-glass / eye / globe-europe-africa / magnifying-glass-circle / map / rectangle-group
         icon: "cursor-arrow-rays",
         name: "Explore",
-        description: "The all-in-one tool to understand your database following your thought process."
+        description: "The all-in-one tool to understand and design your database following your thought process."
+      },
+      %{
+        id: "analyze",
+        # check-badge / beaker / clipboard-document-check / finger-print / funnel
+        icon: "shield-check",
+        name: "Optimize",
+        description: "Identify database design warts and automate any check to keep it consistent."
       },
       %{
         id: "document",
@@ -108,13 +108,6 @@ defmodule Azimutt do
         icon: "book-open",
         name: "Document",
         description: "Nice and contextual documentation for databases is now finally a reality."
-      },
-      %{
-        id: "analyze",
-        # check-badge / beaker / clipboard-document-check / finger-print / funnel
-        icon: "shield-check",
-        name: "Analyze",
-        description: "Identify database design warts and automate any check to keep it consistent."
       }
     ]
   end
