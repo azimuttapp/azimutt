@@ -1,16 +1,16 @@
 import {groupBy, Logger, mapValues, mapValuesAsync, mergeBy, removeUndefined, sequence} from "@azimutt/utils";
 import {
-    AzimuttRelation,
-    AzimuttSchema,
-    AzimuttType,
-    isPolymorphicColumn,
+    isPolymorphic,
+    LegacyDatabase,
+    LegacyRelation,
+    LegacyType,
     schemaToColumns,
     ValueSchema,
     valuesToSchema
-} from "@azimutt/database-types";
+} from "@azimutt/database-model";
 import {Conn} from "./common";
 
-export type MariadbSchema = { tables: MariadbTable[], relations: AzimuttRelation[], types: AzimuttType[] }
+export type MariadbSchema = { tables: MariadbTable[], relations: LegacyRelation[], types: LegacyType[] }
 export type MariadbTable = { schema: MariadbSchemaName, table: MariadbTableName, view: boolean, columns: MariadbColumn[], primaryKey: MariadbPrimaryKey | null, uniques: MariadbUnique[], indexes: MariadbIndex[], checks: MariadbCheck[], comment: string | null }
 export type MariadbColumn = { name: MariadbColumnName, type: MariadbColumnType, nullable: boolean, default: string | null, comment: string | null, schema: ValueSchema | null }
 export type MariadbPrimaryKey = { name: string | null, columns: MariadbColumnName[] }
@@ -81,7 +81,7 @@ export const getSchema = ({logger, schema, sampleSize, inferRelations, ignoreErr
     }
 }
 
-export function formatSchema(schema: MariadbSchema): AzimuttSchema {
+export function formatSchema(schema: MariadbSchema): LegacyDatabase {
     return {
         tables: schema.tables.map(t => removeUndefined({
             schema: t.schema,
@@ -164,7 +164,7 @@ async function enrichColumnsWithSchema(conn: Conn, tableCols: RawColumn[], sampl
     return sequence(tableCols, async c => {
         if (sampleSize > 0 && c.column_type === 'jsonb') {
             return getColumnSchema(conn, c.schema, c.table, c.column, sampleSize, ignoreErrors, logger).then(column_schema => ({...c, column_schema}))
-        } else if (inferRelations && isPolymorphicColumn(c.column, colNames)) {
+        } else if (inferRelations && isPolymorphic(c.column, colNames)) {
             return c // TODO: fetch distinct values
         } else {
             return c

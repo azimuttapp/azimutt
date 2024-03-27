@@ -70,6 +70,7 @@ As for the table and schema names, if you need space or dot inside, you can use 
 Of course, you may want to provide additional details on columns, here is its full structure:
 
 ```aml
+users
   name type nullable pk index unique check fk table.column | notes # comment
 ```
 

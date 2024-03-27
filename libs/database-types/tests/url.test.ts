@@ -1,6 +1,7 @@
 import {describe, expect, test} from "@jest/globals";
 import {parseDatabaseUrl} from "../src";
 
+// TODO: duplicated to libs/database-model/tests/databaseUrl.test.ts, update both
 describe('url', () => {
     test('parse couchbase url', () => {
         expect(parseDatabaseUrl('couchbases://cb.id.cloud.couchbase.com')).toEqual({

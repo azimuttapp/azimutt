@@ -1,20 +1,20 @@
-import {DatabaseQueryResults, DatabaseQueryResultsColumn} from "@azimutt/database-types";
+import {QueryResults, QueryResultsAttribute} from "@azimutt/database-model";
 import {Conn, QueryResultArrayMode, QueryResultField} from "./types";
 
-export const execQuery = (query: string, parameters: any[]) => (conn: Conn): Promise<DatabaseQueryResults> => {
+export const execQuery = (query: string, parameters: any[]) => (conn: Conn): Promise<QueryResults> => {
     return conn.queryArrayMode(query, parameters).then(result => buildResults(query, result))
 }
 
-function buildResults(query: string, result: QueryResultArrayMode): DatabaseQueryResults {
-    const columns = buildColumns(result.fields)
+function buildResults(query: string, result: QueryResultArrayMode): QueryResults {
+    const attributes = buildColumns(result.fields)
     return {
         query,
-        columns,
-        rows: result.rows.map(row => columns.reduce((acc, col, i) => ({...acc, [col.name]: row[i]}), {}))
+        attributes,
+        rows: result.rows.map(row => attributes.reduce((acc, col, i) => ({...acc, [col.name]: row[i]}), {}))
     }
 }
 
-function buildColumns(fields: QueryResultField[]): DatabaseQueryResultsColumn[] {
+function buildColumns(fields: QueryResultField[]): QueryResultsAttribute[] {
     const keys: { [key: string]: true } = {}
     return fields.map(f => {
         const name = uniqueName(f.name, keys)

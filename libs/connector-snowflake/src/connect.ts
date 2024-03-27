@@ -1,11 +1,9 @@
-import {Connection, ConnectionOptions, SnowflakeError, Statement} from "snowflake-sdk";
 import * as snowflake from "snowflake-sdk";
-import {Logger} from "@azimutt/utils";
-import {DatabaseUrlParsed, logQueryIfNeeded} from "@azimutt/database-types";
+import {Connection, ConnectionOptions, SnowflakeError, Statement} from "snowflake-sdk";
+import {ConnectorDefaultOpts, DatabaseUrlParsed, logQueryIfNeeded} from "@azimutt/database-model";
 import {Conn, QueryResultArrayMode, QueryResultRow} from "./common";
 
-export type SnowflakeConnectOpts = {logger: Logger, logQueries: boolean}
-export async function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c: Conn) => Promise<T>, {logger, logQueries}: SnowflakeConnectOpts): Promise<T> {
+export async function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c: Conn) => Promise<T>, opts: ConnectorDefaultOpts): Promise<T> {
     const connection: Connection = await createConnection(buildConfig(application, url))
         .catch(_ => createConnection({application, accessUrl: url.full, account: 'not used'}))
     let queryCpt = 1
@@ -18,7 +16,7 @@ export async function connect<T>(application: string, url: DatabaseUrlParsed, ex
                     complete: (err: SnowflakeError | undefined, stmt: Statement, rows: any[] | undefined) =>
                         err ? reject(queryError(sql, err)) : resolve(rows || [] as T[])
                 }))
-            }, r => r.length, logger, logQueries)
+            }, r => r.length, opts)
         },
         queryArrayMode(sql: string, parameters: any[] = [], name?: string): Promise<QueryResultArrayMode> {
             return logQueryIfNeeded(queryCpt++, name, sql, parameters, (sql, parameters) => {
@@ -32,7 +30,7 @@ export async function connect<T>(application: string, url: DatabaseUrlParsed, ex
                         rows: rows || []
                     })
                 }))
-            }, r => r.rows.length, logger, logQueries)
+            }, r => r.rows.length, opts)
         }
     }
     return exec(conn).then(

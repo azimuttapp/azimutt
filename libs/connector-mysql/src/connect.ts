@@ -1,24 +1,22 @@
 import * as mysql from "mysql2/promise";
-import {Logger} from "@azimutt/utils";
 import {Connection, ConnectionOptions, RowDataPacket} from "mysql2/promise";
-import {DatabaseUrlParsed, logQueryIfNeeded} from "@azimutt/database-types";
+import {ConnectorDefaultOpts, DatabaseUrlParsed, logQueryIfNeeded} from "@azimutt/database-model";
 import {Conn, QueryResultArrayMode, QueryResultRow} from "./common";
 
-export type MysqlConnectOpts = {logger: Logger, logQueries: boolean}
-export async function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c: Conn) => Promise<T>, {logger, logQueries}: MysqlConnectOpts): Promise<T> {
+export async function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c: Conn) => Promise<T>, opts: ConnectorDefaultOpts): Promise<T> {
     const connection: Connection = await mysql.createConnection(buildConfig(application, url)).catch(_ => mysql.createConnection({uri: url.full}))
     let queryCpt = 1
     const conn: Conn = {
         query<T extends QueryResultRow>(sql: string, parameters: any[] = [], name?: string): Promise<T[]> {
             return logQueryIfNeeded(queryCpt++, name, sql, parameters, (sql, parameters) => {
                 return connection.query<RowDataPacket[]>({sql, values: parameters}).then(([rows]) => rows as T[])
-            }, r => r.length, logger, logQueries)
+            }, r => r.length, opts)
         },
         queryArrayMode(sql: string, parameters: any[] = [], name?: string): Promise<QueryResultArrayMode> {
             return logQueryIfNeeded(queryCpt++, name, sql, parameters, (sql, parameters) => {
                 return connection.query<RowDataPacket[][]>({sql, values: parameters, rowsAsArray: true})
                     .then(([rows, fields]) => ({fields, rows}))
-            }, r => r.rows.length, logger, logQueries)
+            }, r => r.rows.length, opts)
         }
     }
     return exec(conn).then(

@@ -16,7 +16,10 @@ const sqlser = /^(?:jdbc:)?sqlserver(?:ql)?:\/\/(?:([^:]+):([^@]*)@)?([^:/?]+)(?
 const snowflakeRege = /^(?:jdbc:)?snowflake:\/\/(?:([^:]+):([^@]*)@)?([^:/?]+)(?::(\d+))?(?:\/([^?]+))?(?:\?(.+))?$/
 const snowflakeRegexLongerrrrrrrr = /^https:\/\/(?:([^:]+):([^@]*)@)?(.+?(?:\.privatelink)?\.snowflakecomputing\.com)(?::(\d+))?(?:\/([^?]+))?$/
 
-export function parseDatabaseUrl(url: DatabaseUrl): DatabaseUrlParsed {
+// TODO: duplicated to libs/database-model/src/databaseUrl.ts, update both
+export function parseDatabaseUrl(rawUrl: DatabaseUrl): DatabaseUrlParsed {
+    const url = rawUrl.trim()
+
     const couchbaseMatches = url.match(couchbaseRegexpLonger)
     if (couchbaseMatches) {
         const kind: DatabaseKind = 'couchbase'

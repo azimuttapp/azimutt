@@ -1,6 +1,6 @@
 import * as couchbase from "couchbase";
 import {Cluster, ConnectOptions} from "couchbase";
-import {DatabaseUrlParsed} from "@azimutt/database-types";
+import {DatabaseUrlParsed} from "@azimutt/database-model";
 
 export async function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c: Cluster) => Promise<T>): Promise<T> {
     const cluster: Cluster = await createConnection(application, url)

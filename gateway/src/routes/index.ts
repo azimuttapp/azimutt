@@ -2,7 +2,14 @@ import {TSchema} from "@sinclair/typebox"
 import {FastifyPluginAsync, FastifyReply} from "fastify"
 import {RouteShorthandOptions} from "fastify/types/route"
 import {Logger} from "@azimutt/utils"
-import {Connector, DatabaseUrl, DatabaseUrlParsed, parseDatabaseUrl} from "@azimutt/database-types"
+import {
+    AttributeRef,
+    Connector, databaseToLegacy,
+    DatabaseUrl,
+    DatabaseUrlParsed,
+    EntityRef,
+    parseDatabaseUrl
+} from "@azimutt/database-model"
 import {version} from "../version";
 import {
     DbQueryParams,
@@ -19,6 +26,8 @@ import {
     ParseUrlResponse
 } from "../schemas"
 import {getConnector} from "../services/connector"
+import {columnStatsToLegacy, tableStatsToLegacy} from "@azimutt/database-model/out/legacy/legacyStats";
+import {queryResultsToLegacy} from "@azimutt/database-model/out/legacy/legacyQuery";
 
 const application = 'azimutt-gateway'
 const logger: Logger = {
@@ -50,21 +59,21 @@ const routes: FastifyPluginAsync = async (server) => {
 }
 
 function getDatabaseSchema(params: GetSchemaParams, res: FastifyReply): Promise<GetSchemaResponse | FastifyReply> {
-    return withConnector(params.url, res, (url, conn) => conn.getSchema(application, url, {logger, schema: params.schema, ignoreErrors: true}))
+    return withConnector(params.url, res, (url, conn) => conn.getSchema(application, url, {logger, schema: params.schema, ignoreErrors: true}).then(databaseToLegacy))
 }
 
 function queryDatabase(params: DbQueryParams, res: FastifyReply): Promise<DbQueryResponse | FastifyReply> {
-    return withConnector(params.url, res, (url, conn) => conn.query(application, url, params.query, [], {logger}))
+    return withConnector(params.url, res, (url, conn) => conn.execute(application, url, params.query, [], {logger}).then(queryResultsToLegacy))
 }
 
 function getTableStats(params: GetTableStatsParams, res: FastifyReply): Promise<GetTableStatsResponse | FastifyReply> {
-    const tableId = params.schema ? `${params.schema}.${params.table}` : params.table
-    return withConnector(params.url, res, (url, conn) => conn.getTableStats(application, url, tableId, {logger}))
+    const ref: EntityRef = {schema: params.schema, entity: params.table}
+    return withConnector(params.url, res, (url, conn) => conn.getEntityStats(application, url, ref, {logger}).then(tableStatsToLegacy))
 }
 
 function getColumnStats(params: GetColumnStatsParams, res: FastifyReply): Promise<GetColumnStatsResponse | FastifyReply> {
-    const tableId = params.schema ? `${params.schema}.${params.table}` : params.table
-    return withConnector(params.url, res, (url, conn) => conn.getColumnStats(application, url, {table: tableId, column: params.column}, {logger}))
+    const ref: AttributeRef = {schema: params.schema, entity: params.table, attribute: [params.column]}
+    return withConnector(params.url, res, (url, conn) => conn.getAttributeStats(application, url, ref, {logger}).then(columnStatsToLegacy))
 }
 
 async function withConnector<T>(url: DatabaseUrl, res: FastifyReply, exec: (url: DatabaseUrlParsed, conn: Connector) => Promise<T>): Promise<T | FastifyReply> {

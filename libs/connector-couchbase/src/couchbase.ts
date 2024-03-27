@@ -1,6 +1,6 @@
 import {Cluster, Collection, PlanningFailureError, QueryResult, UnambiguousTimeoutError} from "couchbase";
 import {errorToString, Logger, sequence} from "@azimutt/utils";
-import {AzimuttSchema, schemaToColumns, ValueSchema, valuesToSchema} from "@azimutt/database-types";
+import {LegacyDatabase, schemaToColumns, ValueSchema, valuesToSchema} from "@azimutt/database-model";
 
 export const execQuery = (query: string, parameters: any[]) => (cluster: Cluster): Promise<QueryResult> => {
     return cluster.query(query, {parameters})
@@ -41,7 +41,7 @@ export const getSchema = ({logger, bucket, mixedCollection, sampleSize, ignoreEr
     return {collections: schemas}
 }
 
-export function formatSchema(schema: CouchbaseSchema): AzimuttSchema {
+export function formatSchema(schema: CouchbaseSchema): LegacyDatabase {
     // /!\ we group `bucket` with `scope` as it's "similar" to the database level, grouping database & schema inside schema
     const tables = schema.collections.map(c => ({
         schema: `${c.bucket}__${c.scope}`,

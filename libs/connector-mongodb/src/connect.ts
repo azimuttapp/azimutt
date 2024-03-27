@@ -1,5 +1,5 @@
 import {MongoClient, MongoClientOptions} from "mongodb";
-import {DatabaseUrlParsed} from "@azimutt/database-types";
+import {DatabaseUrlParsed} from "@azimutt/database-model";
 
 export async function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c: MongoClient) => Promise<T>): Promise<T> {
     const client: MongoClient = await createConnection(application, url)

@@ -1,20 +1,31 @@
 import {indexBy} from "@azimutt/utils";
-import {DatabaseQueryResults, DatabaseQueryResultsColumn} from "@azimutt/database-types";
+import {AttributeRef, QueryResults} from "@azimutt/database-model";
 import {Conn, QueryResultArrayMode, QueryResultField} from "./types";
 
-export const execQuery = (query: string, parameters: any[]) => (conn: Conn): Promise<DatabaseQueryResults> => {
+export const execQuery = (query: string, parameters: any[]) => (conn: Conn): Promise<QueryResults> => {
     return conn.queryArrayMode(query, parameters).then(result => buildResults(conn, query, result))
 }
 
-async function buildResults(conn: Conn, query: string, result: QueryResultArrayMode): Promise<DatabaseQueryResults> {
+async function buildResults(conn: Conn, query: string, result: QueryResultArrayMode): Promise<QueryResults> {
     const tableIds = [...new Set(result.fields.map(f => f.tableID))]
     const columnInfos = await getColumnInfos(conn, tableIds)
-    const columns = buildColumns(result.fields, columnInfos)
+    const attributes = buildAttributes(result.fields, columnInfos)
     return {
         query,
-        columns,
-        rows: result.rows.map(row => columns.reduce((acc, col, i) => ({...acc, [col.name]: row[i]}), {}))
+        attributes,
+        rows: result.rows.map(row => attributes.reduce((acc, col, i) => ({...acc, [col.name]: row[i]}), {}))
     }
+}
+
+function buildAttributes(fields: QueryResultField[], columnInfos: ColumnInfo[]): { name: string, ref?: AttributeRef }[] {
+    const keys: { [key: string]: true } = {}
+    const indexed = indexBy(columnInfos, i => `${i.table_id}-${i.column_id}`)
+    return fields.map(f => {
+        const name = uniqueName(f.name, keys)
+        keys[name] = true
+        const info = indexed[`${f.tableID}-${f.columnID}`]
+        return info ? {name, ref: {schema: info.schema_name, entity: info.table_name, attribute: [info.column_name]}} : {name}
+    })
 }
 
 type ColumnInfo = {
@@ -48,17 +59,6 @@ async function getColumnInfos(conn: Conn, tableIds: number[]): Promise<ColumnInf
     } else {
         return []
     }
-}
-
-function buildColumns(fields: QueryResultField[], columnInfos: ColumnInfo[]): DatabaseQueryResultsColumn[] {
-    const keys: { [key: string]: true } = {}
-    const indexed = indexBy(columnInfos, i => `${i.table_id}-${i.column_id}`)
-    return fields.map(f => {
-        const name = uniqueName(f.name, keys)
-        keys[name] = true
-        const info = indexed[`${f.tableID}-${f.columnID}`]
-        return info ? {name, ref: {table: `${info.schema_name}.${info.table_name}`, column: info.column_name}} : {name}
-    })
 }
 
 function uniqueName(name: string, currentNames: { [key: string]: true }, cpt: number = 1): string {

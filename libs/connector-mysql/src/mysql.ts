@@ -1,16 +1,16 @@
-import {groupBy, Logger, mapValues, mergeBy, removeUndefined, sequence, mapValuesAsync} from "@azimutt/utils";
+import {groupBy, Logger, mapValues, mapValuesAsync, mergeBy, removeUndefined, sequence} from "@azimutt/utils";
 import {
-    AzimuttRelation,
-    AzimuttSchema,
-    AzimuttType,
-    isPolymorphicColumn,
+    isPolymorphic,
+    LegacyDatabase,
+    LegacyRelation,
+    LegacyType,
     schemaToColumns,
     ValueSchema,
     valuesToSchema
-} from "@azimutt/database-types";
+} from "@azimutt/database-model";
 import {Conn} from "./common";
 
-export type MysqlSchema = { tables: MysqlTable[], relations: AzimuttRelation[], types: AzimuttType[] }
+export type MysqlSchema = { tables: MysqlTable[], relations: LegacyRelation[], types: LegacyType[] }
 export type MysqlTable = { schema: MysqlSchemaName, table: MysqlTableName, view: boolean, columns: MysqlColumn[], primaryKey: MysqlPrimaryKey | null, uniques: MysqlUnique[], indexes: MysqlIndex[], checks: MysqlCheck[], comment: string | null }
 export type MysqlColumn = { name: MysqlColumnName, type: MysqlColumnType, nullable: boolean, default: string | null, comment: string | null, schema: ValueSchema | null }
 export type MysqlPrimaryKey = { name: string | null, columns: MysqlColumnName[] }
@@ -81,7 +81,7 @@ export const getSchema = ({logger, schema, sampleSize, inferRelations, ignoreErr
     }
 }
 
-export function formatSchema(schema: MysqlSchema): AzimuttSchema {
+export function formatSchema(schema: MysqlSchema): LegacyDatabase {
     return {
         tables: schema.tables.map(t => removeUndefined({
             schema: t.schema,
@@ -164,7 +164,7 @@ function enrichColumnsWithSchema(conn: Conn, tableCols: RawColumn[], sampleSize:
     return sequence(tableCols, async c => {
         if (sampleSize > 0 && c.column_type === 'jsonb') {
             return getColumnSchema(conn, c.schema, c.table, c.column, sampleSize, ignoreErrors, logger).then(column_schema => ({...c, column_schema}))
-        } else if (inferRelations && isPolymorphicColumn(c.column, colNames)) {
+        } else if (inferRelations && isPolymorphic(c.column, colNames)) {
             return c // TODO: fetch distinct values
         } else {
             return c

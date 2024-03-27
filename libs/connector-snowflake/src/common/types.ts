@@ -1,6 +1,6 @@
-import {ColumnValue} from "@azimutt/database-types";
+import {AttributeValue} from "@azimutt/database-model";
 
-export type QueryResultValue = ColumnValue
+export type QueryResultValue = AttributeValue
 export type QueryResultRow = { [column: string]: QueryResultValue }
 export type QueryResultField = { index: number, name: string, type: string }
 export type QueryResultRowArray = QueryResultValue[]

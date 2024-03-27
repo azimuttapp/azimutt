@@ -9,18 +9,18 @@ import {
     sequence
 } from "@azimutt/utils";
 import {
-    AzimuttRelation,
-    AzimuttSchema,
-    AzimuttType,
-    isPolymorphicColumn,
+    isPolymorphic,
+    LegacyDatabase,
+    LegacyRelation,
+    LegacyType,
     schemaToColumns,
     ValueSchema,
     valuesToSchema
-} from "@azimutt/database-types";
+} from "@azimutt/database-model";
 import {Conn} from "./common";
 import {buildColumnType} from "./helpers";
 
-export type SqlserverSchema = { tables: SqlserverTable[], relations: AzimuttRelation[], types: AzimuttType[] }
+export type SqlserverSchema = { tables: SqlserverTable[], relations: LegacyRelation[], types: LegacyType[] }
 export type SqlserverTable = { schema: SqlserverSchemaName, table: SqlserverTableName, view: boolean, columns: SqlserverColumn[], primaryKey: SqlserverPrimaryKey | null, uniques: SqlserverUnique[], indexes: SqlserverIndex[], checks: SqlserverCheck[], comment: string | null }
 export type SqlserverColumn = { name: SqlserverColumnName, type: SqlserverColumnType, nullable: boolean, default: string | null, comment: string | null, schema: ValueSchema | null }
 export type SqlserverPrimaryKey = { name: string | null, columns: SqlserverColumnName[] }
@@ -91,7 +91,7 @@ export const getSchema = ({logger, schema, sampleSize, inferRelations, ignoreErr
     }
 }
 
-export function formatSchema(schema: SqlserverSchema): AzimuttSchema {
+export function formatSchema(schema: SqlserverSchema): LegacyDatabase {
     return {
         tables: schema.tables.map(t => removeUndefined({
             schema: t.schema,
@@ -172,7 +172,7 @@ function enrichColumnsWithSchema(conn: Conn, tableCols: RawColumn[], constraints
     return sequence(tableCols, async c => {
         if (sampleSize > 0 && c.column_type === 'nvarchar' && constraints[toTableId(c)]?.find(ct => ct.type === 'CHECK' && ct.schema == c.schema && ct.table == c.table && ct.columns.indexOf(c.column) >= 0 && ct.definition?.includes('isjson'))) {
             return getColumnSchema(conn, c.schema, c.table, c.column, sampleSize, ignoreErrors, logger).then(column_schema => ({...c, column_schema}))
-        } else if (inferRelations && isPolymorphicColumn(c.column, colNames)) {
+        } else if (inferRelations && isPolymorphic(c.column, colNames)) {
             return c // TODO: fetch distinct values
         } else {
             return c
