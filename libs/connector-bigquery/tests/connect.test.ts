@@ -29,11 +29,18 @@ describe('connect', () => {
     test.skip('NodeJS should connect', async () => {
         // Using [Application Default Credentials](https://cloud.google.com/docs/authentication/application-default-credentials)
         // Put your [service account key](https://console.cloud.google.com/iam-admin/serviceaccounts) in `local/key.json` or change the `GOOGLE_APPLICATION_CREDENTIALS` path
+        // https://cloud.google.com/bigquery/docs/information-schema-intro
         process.env.GOOGLE_APPLICATION_CREDENTIALS = 'local/key.json'
         const client = new BigQuery()
+        const id = await client.getProjectId()
+        console.log(`project id`, id)
         const datasets = await client.getDatasets()
-        console.log(`datasets`, JSON.stringify(datasets, null, 2))
-        // const columns = await client.query(`-- SELECT * FROM azimutt_connector_trial.INFORMATION_SCHEMA.COLUMNS LIMIT 10;`)
-        // console.log(`columns`, columns)
-    })
+        console.log(`${datasets.length} datasets`, datasets)
+        const datasetIds = datasets.flatMap((dl: any) => dl.map((d: any) => d.id))
+        console.log('datasetIds', datasetIds)
+        // const columns = await client.query("SELECT * FROM `bigquery-public-data.baseball.INFORMATION_SCHEMA.TABLES` LIMIT 10;")
+        // const columns = await client.query("SELECT * FROM `azimutt-experiments.baseball.INFORMATION_SCHEMA.TABLES` LIMIT 10;")
+        const columns = await client.query("SELECT * FROM `azimutt-experiments.baseball.SCHEMATA` LIMIT 10;")
+        console.log(`columns`, columns)
+    }, 15 * 1000)
 })
