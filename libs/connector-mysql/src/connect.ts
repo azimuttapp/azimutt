@@ -1,6 +1,6 @@
 import * as mysql from "mysql2/promise";
-import {Logger} from "@azimutt/utils";
 import {Connection, ConnectionOptions, RowDataPacket} from "mysql2/promise";
+import {Logger} from "@azimutt/utils";
 import {DatabaseUrlParsed, logQueryIfNeeded} from "@azimutt/database-types";
 import {Conn, QueryResultArrayMode, QueryResultRow} from "./common";
 
