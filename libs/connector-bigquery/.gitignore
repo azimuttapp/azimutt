@@ -1,0 +1,6 @@
+node_modules
+out
+*.tgz
+src/**/*.js
+tests/**/*.js
+local

@@ -2,6 +2,37 @@ import {describe, expect, test} from "@jest/globals";
 import {parseDatabaseUrl} from "../src";
 
 describe('url', () => {
+    test('parse bigquery url', () => {
+        expect(parseDatabaseUrl('bigquery://?key=.bq/key.json')).toEqual({
+            full: 'bigquery://?key=.bq/key.json',
+            kind: 'bigquery',
+            pass: '.bq/key.json'
+        })
+        expect(parseDatabaseUrl('bigquery://bigquery.googleapis.com?key=.bq/key.json')).toEqual({
+            full: 'bigquery://bigquery.googleapis.com?key=.bq/key.json',
+            kind: 'bigquery',
+            host: 'bigquery.googleapis.com',
+            pass: '.bq/key.json'
+        })
+        expect(parseDatabaseUrl('jdbc:bigquery://account@service.com:.bq/key.json@https://bigquery.googleapis.com:443/my-project')).toEqual({
+            full: 'jdbc:bigquery://account@service.com:.bq/key.json@https://bigquery.googleapis.com:443/my-project',
+            kind: 'bigquery',
+            host: 'bigquery.googleapis.com',
+            port: 443,
+            user: 'account@service.com',
+            pass: '.bq/key.json',
+            db: 'my-project'
+        })
+        expect(parseDatabaseUrl('jdbc:bigquery://https://bigquery.googleapis.com:443?project=my-project&email=account@service.com&key=.bq/key.json')).toEqual({
+            full: 'jdbc:bigquery://https://bigquery.googleapis.com:443?project=my-project&email=account@service.com&key=.bq/key.json',
+            kind: 'bigquery',
+            host: 'bigquery.googleapis.com',
+            port: 443,
+            user: 'account@service.com',
+            pass: '.bq/key.json',
+            db: 'my-project'
+        })
+    })
     test('parse couchbase url', () => {
         expect(parseDatabaseUrl('couchbases://cb.id.cloud.couchbase.com')).toEqual({
             full: 'couchbases://cb.id.cloud.couchbase.com',
