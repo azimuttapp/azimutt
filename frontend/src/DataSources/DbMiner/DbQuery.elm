@@ -1,6 +1,7 @@
 module DataSources.DbMiner.DbQuery exposing (addLimit, exploreColumn, exploreTable, filterTable, findRow, incomingRows, incomingRowsLimit, updateColumnType)
 
 import DataSources.DbMiner.DbTypes exposing (FilterOperation, FilterOperator(..), IncomingRowsQuery, RowQuery, TableQuery)
+import DataSources.DbMiner.QueryBigQuery as QueryBigQuery
 import DataSources.DbMiner.QueryCouchbase as QueryCouchbase
 import DataSources.DbMiner.QueryMariaDB as QueryMariaDB
 import DataSources.DbMiner.QueryMongoDB as QueryMongoDB
@@ -22,6 +23,9 @@ exploreTable db table =
     -- query made from table details sidebar, something like: `SELECT * FROM table;`
     { sql =
         case db of
+            DatabaseKind.BigQuery ->
+                QueryBigQuery.exploreTable table
+
             DatabaseKind.Couchbase ->
                 QueryCouchbase.exploreTable table
 
@@ -55,6 +59,9 @@ exploreColumn db table column =
     -- query made from column details sidebar, something like: `SELECT col, count(*) FROM table GROUP BY col ORDER BY count(*) DESC, col;`
     { sql =
         case db of
+            DatabaseKind.BigQuery ->
+                QueryBigQuery.exploreColumn table column
+
             DatabaseKind.Couchbase ->
                 QueryCouchbase.exploreColumn table column
 
@@ -154,6 +161,9 @@ addLimit db query =
     -- allow to limit query results (to 100) if not already specified
     -- used before sending any query from Azimutt to the Gateway
     case db of
+        DatabaseKind.BigQuery ->
+            { sql = QueryBigQuery.addLimit query.sql, origin = query.origin, db = query.db }
+
         DatabaseKind.MySQL ->
             { sql = QueryMySQL.addLimit query.sql, origin = query.origin, db = query.db }
 

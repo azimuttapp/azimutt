@@ -72,6 +72,7 @@ databases =
     , { key = "couchbase", sampleUrl = "couchbases://<user>:<pass>@<host>", issue = Nothing }
     , { key = "mongodb", sampleUrl = "mongodb+srv://<user>:<pass>@<host>", issue = Nothing }
     , { key = "snowflake", sampleUrl = "snowflake://<user>:<pass>@<account>.snowflakecomputing.com?db=<database>", issue = Nothing }
+    , { key = "bigquery", sampleUrl = "bigquery://bigquery.googleapis.com/<project>?key=<service-account-key>", issue = Nothing }
     , { key = "oracle", sampleUrl = "oracle:thin:<user>/<pass>@<host>:<port>:<db>", issue = Just "https://github.com/azimuttapp/azimutt/issues/217" }
     , { key = "sqlite", sampleUrl = "file:<path>", issue = Just "https://github.com/azimuttapp/azimutt/issues/115" }
     ]

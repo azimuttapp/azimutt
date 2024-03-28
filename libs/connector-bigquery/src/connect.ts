@@ -12,8 +12,8 @@ export interface Conn {
 
 export type BigqueryConnectOpts = {logger: Logger, logQueries?: boolean}
 export async function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c: Conn) => Promise<T>, {logger, logQueries}: BigqueryConnectOpts): Promise<T> {
-    if (!url.pass) return Promise.reject('Missing key file')
-    if (!fs.existsSync(url.pass)) return Promise.reject(`Key file not found (${url.pass})`)
+    if (!url.pass) return Promise.reject(new Error('Missing key file'))
+    if (!fs.existsSync(url.pass)) return Promise.reject(new Error(`Key file not found (${url.pass})`))
     const client: BigQuery = new BigQuery({
         apiEndpoint: url.host,
         projectId: url.db,

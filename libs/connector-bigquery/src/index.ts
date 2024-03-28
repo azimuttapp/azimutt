@@ -34,9 +34,9 @@ export const bigquery: Connector = {
         return connect(application, url, execQuery(query, parameters), connectOpts)
     },
     getTableStats: (application: string, url: DatabaseUrlParsed, id: TableId, opts: ConnectorOpts): Promise<TableStats> =>
-        Promise.reject('Not implemented'),
+        Promise.reject(new Error('Not implemented')),
     getColumnStats: (application: string, url: DatabaseUrlParsed, ref: ColumnRef, opts: ConnectorOpts): Promise<ColumnStats> =>
-        Promise.reject('Not implemented'),
+        Promise.reject(new Error('Not implemented')),
 }
 
 function withDefault<T>(value: T | undefined, other: T): T {

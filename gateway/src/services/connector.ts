@@ -1,4 +1,5 @@
 import {Connector, DatabaseKind, DatabaseUrlParsed} from "@azimutt/database-types"
+import {bigquery} from "@azimutt/connector-bigquery"
 import {couchbase} from "@azimutt/connector-couchbase"
 import {mariadb} from "@azimutt/connector-mariadb"
 import {mongodb} from "@azimutt/connector-mongodb"
@@ -8,6 +9,7 @@ import {snowflake} from "@azimutt/connector-snowflake"
 import {sqlserver} from "@azimutt/connector-sqlserver"
 
 const connectors: Record<DatabaseKind, Connector | undefined> = {
+    bigquery: bigquery,
     couchbase: couchbase,
     mariadb: mariadb,
     mongodb: mongodb,

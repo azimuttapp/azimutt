@@ -13,6 +13,7 @@ Get the help simply by running the CLI (`npx azimutt@latest`) or for a specific 
 - **gateway** (`npx azimutt gateway`): launch the Gateway server locally to proxy database calls from your computer
 - **explore** (`npx azimutt explore <url>`): open Azimutt in your browser with the db url already configured (& start the Gateway server)
 - **export** (`npx azimutt export <url> [arguments]`): export a database schema as JSON file to import in Azimutt
+  - ex: `npx azimutt export bigquery://bigquery.googleapis.com/my-project?key=key.json`
   - ex: `npx azimutt export couchbases://cb.gfn6dh493pmfh613v.cloud.couchbase.com`
   - ex: `npx azimutt export mariadb://user:password@my.host.com:3306/my_db`
   - ex: `npx azimutt export "mongodb+srv://user:password@cluster3.md7h4xp.mongodb.net"`

@@ -43,6 +43,7 @@
     "dry-publish": "npm run build && npm test && npm pack"
   },
   "dependencies": {
+    "@azimutt/connector-bigquery": "file:../libs/connector-bigquery",
     "@azimutt/connector-couchbase": "^0.0.4",
     "@azimutt/connector-mariadb": "^0.0.3",
     "@azimutt/connector-mongodb": "^0.0.4",
@@ -50,7 +51,8 @@
     "@azimutt/connector-postgres": "^0.0.16",
     "@azimutt/connector-snowflake": "^0.0.2",
     "@azimutt/connector-sqlserver": "^0.0.5",
-    "@azimutt/database-types": "^0.0.16",
+    "@azimutt/database-types": "file:../libs/database-types",
+    "@azimutt/utils": "file:../libs/utils",
     "@fastify/cors": "8.2.1",
     "@sinclair/typebox": "0.28.10",
     "ajv": "8.12.0",
