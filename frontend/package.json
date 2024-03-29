@@ -28,7 +28,7 @@
     "setup": "npm install && npm run build",
     "start": "concurrently \"npm run tailwind:start\" \"npm run ts:start\" \"npm run elm:start\"",
     "test": "npm run elm:test && npm run ts:test",
-    "build": "npm run tailwind:build && npm run ts:build && npm run elm:build",
+    "build": "npm install && npm run tailwind:build && npm run ts:build && npm run elm:build",
     "docker": "npm install && npm run tailwind:docker && npm run ts:docker && npm run elm:docker",
     "update": "npm update --save-dev && npm update --save && npm install && elm-json upgrade --unsafe --yes && cd review && elm-json upgrade --unsafe --yes",
     "elm:start": "elm-go ./src/Main.elm --dir=../backend/priv/static/elm --pushstate --no-server -- --output=../backend/priv/static/elm/dist/elm.js",
