@@ -19,6 +19,16 @@
         <%= if !@organization.is_personal do %><li class="flex space-x-3"><Icon.check class="flex-shrink-0 text-green-500" /><span class="text-sm text-gray-500">As many collaborators as you want</span></li><% end %>
         <li class="flex space-x-3"><Icon.heart class="flex-shrink-0 text-rose-500" /><span class="text-sm text-gray-500">Support Azimutt development</span></li>
     </ul>
+    <div class="rounded-md bg-indigo-50 p-4 mt-6">
+      <div class="flex">
+        <div class="flex-shrink-0">
+            <Icon.bell class="flex-shrink-0 text-indigo-400" />
+        </div>
+        <div class="ml-3">
+          <p class="text-sm font-medium text-indigo-800">Try it now with 14 days free trial, no credit card required !</p>
+        </div>
+      </div>
+    </div>
     <div class="mt-6 sm:flex sm:items-start sm:justify-between">
         <!-- FIXME: could be a link? -->
         <.form for={@conn} action={Routes.organization_billing_path(@conn, :new, @organization.id)}>

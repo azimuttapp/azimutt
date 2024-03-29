@@ -27,15 +27,15 @@
             "elm-community/typed-svg": "7.0.0",
             "elm-explorations/markdown": "1.0.0",
             "folkertdev/one-true-path-experiment": "6.0.0",
-            "gampleman/elm-visualization": "2.3.0",
+            "gampleman/elm-visualization": "2.4.1",
             "goyalarchit/elm-dagre": "3.0.0",
-            "justinmimbs/time-extra": "1.1.1",
+            "justinmimbs/time-extra": "1.2.0",
             "mpizenberg/elm-file": "1.0.0",
             "mpizenberg/elm-pointer-events": "5.0.0",
             "myrho/elm-round": "1.0.5",
             "pablohirafuji/elm-syntax-highlight": "3.5.0",
             "rtfeldman/elm-iso8601-date-strings": "1.1.4",
-            "ryannhg/elm-spa": "6.0.0",
+            "ryan-haskell/elm-spa": "1.0.0",
             "toastal/either": "3.6.3",
             "truqu/elm-md5": "1.1.0"
         },
@@ -51,8 +51,10 @@
             "elm/virtual-dom": "1.0.3",
             "elm-community/intdict": "3.0.0",
             "elm-community/list-extra": "8.7.0",
+            "elmcraft/core-extra": "2.0.0",
             "folkertdev/elm-deque": "3.0.1",
             "folkertdev/svg-path-lowlevel": "4.0.1",
+            "gampleman/elm-rosetree": "1.1.0",
             "ianmackenzie/elm-1d-parameter": "1.0.1",
             "ianmackenzie/elm-float-extra": "1.1.0",
             "ianmackenzie/elm-geometry": "3.11.0",
@@ -61,15 +63,15 @@
             "ianmackenzie/elm-units": "2.10.0",
             "ianmackenzie/elm-units-interval": "3.2.0",
             "ianmackenzie/elm-units-prefixed": "2.8.0",
-            "justinmimbs/date": "4.0.1",
+            "justinmimbs/date": "4.1.0",
             "rtfeldman/elm-hex": "1.0.0",
-            "ryannhg/date-format": "2.3.0",
+            "ryan-haskell/date-format": "1.0.0",
             "zwilias/elm-utf-tools": "2.0.1"
         }
     },
     "test-dependencies": {
         "direct": {
-            "elm-explorations/test": "2.1.1"
+            "elm-explorations/test": "2.2.0"
         },
         "indirect": {}
     }

@@ -361,7 +361,7 @@ defmodule Azimutt.Organizations do
   defp stripe_plan(plans, subscription_id) do
     StripeSrv.get_subscription(subscription_id)
     |> Result.map(fn s ->
-      if (s.status == "active" || s.status == "past_due" || s.status == "unpaid") && plans |> Enum.member?("pro") do
+      if (s.status == "trialing" || s.status == "active" || s.status == "past_due" || s.status == "unpaid") && plans |> Enum.member?("pro") do
         OrganizationPlan.pro()
       else
         OrganizationPlan.free()

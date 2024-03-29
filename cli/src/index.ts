@@ -5,7 +5,7 @@ import chalk from "chalk";
 import clear from "clear";
 import figlet from "figlet";
 // https://github.com/SBoudrias/Inquirer.js
-import {errorToString, safeParseInt} from "@azimutt/utils";
+import {errorToString, strictParseInt} from "@azimutt/utils";
 import {version} from "./version.js";
 import {logger} from "./utils/logger.js";
 import {exportDbSchema} from "./export.js";
@@ -36,13 +36,13 @@ program.command('explore')
     .action((url, args) => exec(launchExplore(url, args.instance || 'https://azimutt.app', logger), args))
 
 program.command('export')
-    .description('Export a database schema in a file to easily import it in Azimutt.\nWorks with Couchbase, MariaDB, MongoDB, MySQL, PostgreSQL, Snowflake..., issues and PR are welcome in https://github.com/azimuttapp/azimutt ;)')
+    .description('Export a database schema in a file to easily import it in Azimutt.\nWorks with BigQuery, Couchbase, MariaDB, MongoDB, MySQL, PostgreSQL, Snowflake..., issues and PR are welcome in https://github.com/azimuttapp/azimutt ;)')
     .argument('<url>', 'the url to connect to the source, including credentials')
     .option('-d, --database <database>', 'Limit to a specific database (ex for MongoDB)')
     .option('-s, --schema <schema>', 'Limit to a specific schema (ex for PostgreSQL)')
     .option('-b, --bucket <bucket>', 'Limit to a specific bucket (ex for Couchbase)')
     .option('-m, --mixed-collection <field>', 'When collection have mixed documents typed by a field')
-    .option('--sample-size <number>', 'Number of items used to infer a schema', safeParseInt, 10)
+    .option('--sample-size <number>', 'Number of items used to infer a schema', strictParseInt, 10)
     .option('--infer-relations', 'Infer relations using column names')
     .option('--ignore-errors', 'Do not stop export on errors, just log them')
     .option('--log-queries', 'Log queries when executing them')

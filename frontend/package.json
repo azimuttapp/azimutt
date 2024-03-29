@@ -28,7 +28,7 @@
     "setup": "npm install && npm run build",
     "start": "concurrently \"npm run tailwind:start\" \"npm run ts:start\" \"npm run elm:start\"",
     "test": "npm run elm:test && npm run ts:test",
-    "build": "npm run tailwind:build && npm run ts:build && npm run elm:build",
+    "build": "npm install && npm run tailwind:build && npm run ts:build && npm run elm:build",
     "docker": "npm install && npm run tailwind:docker && npm run ts:docker && npm run elm:docker",
     "update": "npm update --save-dev && npm update --save && npm install && elm-json upgrade --unsafe --yes && cd review && elm-json upgrade --unsafe --yes",
     "elm:start": "elm-go ./src/Main.elm --dir=../backend/priv/static/elm --pushstate --no-server -- --output=../backend/priv/static/elm/dist/elm.js",
@@ -60,7 +60,7 @@
   },
   "devDependencies": {
     "@tailwindcss/forms": "^0.5.7",
-    "@tailwindcss/typography": "^0.5.11",
+    "@tailwindcss/typography": "^0.5.12",
     "@types/canvas-confetti": "^1.6.4",
     "@types/jest": "^29.5.12",
     "concurrently": "^8.2.2",
@@ -75,7 +75,7 @@
     "esbuild": "^0.20.2",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
-    "tailwindcss": "^3.4.1",
+    "tailwindcss": "^3.4.2",
     "ts-jest": "^29.1.2",
     "typescript": "^5.4.3"
   }

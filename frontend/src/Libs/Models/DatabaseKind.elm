@@ -10,7 +10,8 @@ import Libs.Models.DatabaseUrl exposing (DatabaseUrl)
 
 
 type DatabaseKind
-    = Couchbase
+    = BigQuery
+    | Couchbase
     | MariaDB
     | MongoDB
     | MySQL
@@ -22,12 +23,15 @@ type DatabaseKind
 
 all : List DatabaseKind
 all =
-    [ Couchbase, MariaDB, MongoDB, MySQL, PostgreSQL, Snowflake, SQLServer, Other ]
+    [ BigQuery, Couchbase, MariaDB, MongoDB, MySQL, PostgreSQL, Snowflake, SQLServer, Other ]
 
 
 fromUrl : DatabaseUrl -> DatabaseKind
 fromUrl url =
-    if url |> String.contains "couchbase" then
+    if url |> String.contains "bigquery" then
+        BigQuery
+
+    else if url |> String.contains "couchbase" then
         Couchbase
 
     else if url |> String.contains "mariadb" then
@@ -55,6 +59,9 @@ fromUrl url =
 toString : DatabaseKind -> String
 toString kind =
     case kind of
+        BigQuery ->
+            "BigQuery"
+
         Couchbase ->
             "Couchbase"
 
@@ -83,6 +90,9 @@ toString kind =
 fromString : String -> Maybe DatabaseKind
 fromString kind =
     case kind of
+        "BigQuery" ->
+            Just BigQuery
+
         "Couchbase" ->
             Just Couchbase
 

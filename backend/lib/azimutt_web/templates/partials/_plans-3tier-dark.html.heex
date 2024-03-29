@@ -4,26 +4,18 @@
             <h1 class="mx-auto max-w-4xl text-center text-5xl font-bold tracking-tight text-white"><%= @title %></h1>
             <p class="mx-auto mt-4 max-w-2xl text-center text-lg leading-8 text-white/60"><%= @description %></p>
         </div>
-        <%= if Azimutt.Services.BlackFridaySrv.should_display? do %>
-            <div class="mt-10 -mb-16 rounded-md bg-indigo-50 p-4">
-                <div class="flex">
-                    <div class="flex-shrink-0">
-                        <Icon.sparkles class="h-5 w-5 text-indigo-400" />
-                    </div>
-                    <div class="ml-3 flex-1 md:flex md:justify-between">
-                        <p class="text-sm text-indigo-700">
-                            <b>BlackFriday Offer!</b> Get <span class="underline">50% OFF</span> for one year with code <span class="font-extrabold"><%= Azimutt.Services.BlackFridaySrv.code %>></span>
-                        </p>
-                        <p class="mt-3 text-sm md:ml-6 md:mt-0">
-                            <a href="/login?plan=pro" class="whitespace-nowrap font-medium text-indigo-700 hover:text-indigo-600">
-                                Claim discount!
-                                <span aria-hidden="true"> &rarr;</span>
-                            </a>
-                        </p>
-                    </div>
+        <div class="mt-10 -mb-16 rounded-md bg-indigo-50 p-4">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <Icon.sparkles class="h-5 w-5 text-indigo-400" />
+                </div>
+                <div class="ml-3 flex-1 md:flex md:justify-between">
+                    <p class="text-sm text-indigo-700">
+                        Pro plan comes with a 14 days free trial, no credit card required !
+                    </p>
                 </div>
             </div>
-        <% end %>
+        </div>
         <div class="mt-16 flex justify-center relative z-10 invisible">
             <fieldset class="grid grid-cols-2 gap-x-1 rounded-full bg-white/5 p-1 text-center text-xs font-semibold leading-5 text-white">
                 <legend class="sr-only">Payment frequency</legend>
