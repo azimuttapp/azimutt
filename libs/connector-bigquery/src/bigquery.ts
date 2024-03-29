@@ -23,6 +23,8 @@ export const getSchema = (opts: BigquerySchemaOpts) => async (conn: Conn): Promi
         const primaryKeys = await getPrimaryKeys(projectId, datasetId, opts)(conn).then(pks => groupBy(pks, toTableId))
         const foreignKeys = await getForeignKeys(projectId, datasetId, opts)(conn)
         const indexes = await getIndexes(projectId, datasetId, opts)(conn).then(idxs => groupBy(idxs, toTableId))
+        // TODO: inspect JSON columns
+        // TODO: inspect polymorphic relations
         return {
             tables: tables.map(table => {
                 const id = toTableId(table)

@@ -1,3 +1,4 @@
+local/
 tests/
 jest.config.js
 tsconfig.json
