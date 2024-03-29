@@ -1,7 +1,7 @@
 import {describe, expect, test} from "@jest/globals";
 import {DatabaseUrlParsed, parseDatabaseUrl} from "@azimutt/database-types";
 import {connect} from "../src/connect";
-import {BigquerySchemaOpts, getSchema, getTables} from "../src/bigquery";
+import {BigquerySchemaOpts, getForeignKeys, getPrimaryKeys, getSchema, getTables} from "../src/bigquery";
 import {application, logger} from "./constants";
 import {getColumns} from "../out/bigquery";
 
@@ -27,5 +27,19 @@ describe.skip('bigquery', () => {
         const opts: BigquerySchemaOpts = {logger, catalog: undefined, schema: undefined, entity: undefined, sampleSize: 10, inferRelations: true, ignoreErrors: false}
         const columns = await connect(application, url, getColumns(projectId, datasetId, opts), {logger, logQueries: true})
         console.log(`${columns.length} columns`, columns)
+    })
+    test('getPrimaryKeys', async () => {
+        const projectId = 'azimutt-experiments'
+        const datasetId = 'relational'
+        const opts: BigquerySchemaOpts = {logger, catalog: undefined, schema: undefined, entity: undefined, sampleSize: 10, inferRelations: true, ignoreErrors: false}
+        const primaryKeys = await connect(application, url, getPrimaryKeys(projectId, datasetId, opts), {logger, logQueries: true})
+        console.log(`${primaryKeys.length} primary keys`, primaryKeys)
+    })
+    test('getForeignKeys', async () => {
+        const projectId = 'azimutt-experiments'
+        const datasetId = 'relational'
+        const opts: BigquerySchemaOpts = {logger, catalog: projectId, schema: datasetId, entity: 'azimutt_%', sampleSize: 10, inferRelations: true, ignoreErrors: false}
+        const foreignKeys = await connect(application, url, getForeignKeys(projectId, datasetId, opts), {logger, logQueries: true})
+        console.log(`${foreignKeys.length} foreign keys`, foreignKeys)
     })
 })
