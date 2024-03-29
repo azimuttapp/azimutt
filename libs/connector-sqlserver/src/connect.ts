@@ -29,7 +29,7 @@ export async function connect<T>(application: string, url: DatabaseUrlParsed, ex
 }
 
 function buildconfig(application: string, url: DatabaseUrlParsed): config {
-    const props = Object.fromEntries((url.options || '').split('&').filter(o => o).map(o => o.split('=')))
+    const props = Object.fromEntries((url.options || '').split('&').filter(o => o).map(o => o.split('='))) // TODO: use parseDatabaseOptions from url.ts
     return {
         server: url.host,
         port: url.port,

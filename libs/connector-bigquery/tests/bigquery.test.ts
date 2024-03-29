@@ -9,10 +9,10 @@ describe.skip('bigquery', () => {
     // fake url, use a real one to test (see README for how-to)
     const url: DatabaseUrlParsed = parseDatabaseUrl('bigquery://bigquery.googleapis.com/azimutt-experiments?key=local/key.json')
     test('getSchema', async () => {
-        const opts: BigquerySchemaOpts = {logger, catalog: undefined, schema: undefined, entity: undefined, sampleSize: 10, inferRelations: true, ignoreErrors: false}
+        const opts: BigquerySchemaOpts = {logger, catalog: undefined, schema: 'relational', entity: 'azimutt_%', sampleSize: 10, inferRelations: true, ignoreErrors: false}
         const schema = await connect(application, url, getSchema(opts), {logger, logQueries: true})
         console.log('schema', schema)
-        expect(schema.tables.length).toEqual(2)
+        expect(schema.tables.length).toEqual(5)
     }, 15 * 1000)
     test('getTables', async () => {
         const projectId = 'azimutt-experiments'

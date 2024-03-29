@@ -55,6 +55,13 @@ suite =
             , testParse "uuid" "Uuid"
             , testParse "bigint[]" "Int[]"
             , testParse "character varying(255)[]" "Text[]"
+            , describe "BigQuery"
+                [ testParse "STRING" "Text"
+                , testParse "STRING(12)" "Text"
+                , testParse "ARRAY<STRING(12)>" "Text[]"
+                , testParse "BOOL" "Bool"
+                , testParse "INT64" "Int"
+                ]
             ]
         ]
 

@@ -7,7 +7,7 @@ import Components.Molecules.Divider as Divider
 import Components.Molecules.Tooltip as Tooltip
 import DataSources.JsonMiner.JsonAdapter as JsonAdapter
 import DataSources.JsonMiner.JsonSchema exposing (JsonSchema)
-import Html exposing (Html, button, div, img, input, p, span, text)
+import Html exposing (Html, br, button, div, img, input, p, span, text)
 import Html.Attributes exposing (class, disabled, id, name, placeholder, src, type_, value)
 import Html.Events exposing (onClick, onInput)
 import Libs.Bool as B
@@ -72,7 +72,7 @@ databases =
     , { key = "couchbase", sampleUrl = "couchbases://<user>:<pass>@<host>", issue = Nothing }
     , { key = "mongodb", sampleUrl = "mongodb+srv://<user>:<pass>@<host>", issue = Nothing }
     , { key = "snowflake", sampleUrl = "snowflake://<user>:<pass>@<account>.snowflakecomputing.com?db=<database>", issue = Nothing }
-    , { key = "bigquery", sampleUrl = "bigquery://bigquery.googleapis.com/<project>?key=<service-account-key>", issue = Nothing }
+    , { key = "bigquery", sampleUrl = "bigquery://bigquery.googleapis.com/<project>?key=<auth-key-path>", issue = Nothing }
     , { key = "oracle", sampleUrl = "oracle:thin:<user>/<pass>@<host>:<port>:<db>", issue = Just "https://github.com/azimuttapp/azimutt/issues/217" }
     , { key = "sqlite", sampleUrl = "file:<path>", issue = Just "https://github.com/azimuttapp/azimutt/issues/115" }
     ]
@@ -193,15 +193,32 @@ viewInput wrap htmlId model =
                 []
             ]
         , error |> Maybe.mapOrElse (\err -> p [ class "mt-1 text-sm text-red-500" ] [ text err ]) (p [] [])
+        , case model.selectedDb of
+            "bigquery" ->
+                div [ class "mt-3" ]
+                    [ Alert.simple Tw.indigo
+                        Icon.LightBulb
+                        [ text "The `key` parameter should be the path to your account key (ex: "
+                        , Badge.basic Tw.indigo [] [ text "bigquery://?key=~/.bq/key.json" ]
+                        , text ")."
+                        , br [] []
+                        , text "You can add `dataset` and `table` parameters with LIKE syntax to limit the import scope."
+                        ]
+                    ]
+
+            _ ->
+                div [] []
         , div [ class "mt-3" ]
             [ Alert.simple Tw.blue
                 Icon.QuestionMarkCircle
-                [ text "Use "
+                [ text "Access databases from your computer using "
                 , extLink "https://www.npmjs.com/package/azimutt" [ class "link" ] [ text "Azimutt CLI" ]
-                , text " ("
+                , text " (install "
+                , extLink "https://docs.npmjs.com/downloading-and-installing-node-js-and-npm" [ class "link" ] [ text "npm" ]
+                , text " & run "
                 , Badge.basic Tw.blue [] [ text "npx azimutt@latest gateway" ] |> Tooltip.br "Starts the Azimutt Gateway on your computer to access local databases."
-                , text ") to access databases from your computer. "
-                , text "Otherwise we will use Azimutt Gateway, an online proxy to reach it."
+                , text "), "
+                , text "otherwise Azimutt will use the hosted gateway to connect."
                 , text " For security prefer to use a "
                 , iText "read-only user"
                 , text " and on a "

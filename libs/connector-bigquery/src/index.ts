@@ -6,6 +6,7 @@ import {
     ConnectorOpts,
     DatabaseQueryResults,
     DatabaseUrlParsed,
+    parseDatabaseOptions,
     SchemaOpts,
     TableId,
     TableStats
@@ -18,11 +19,12 @@ export const bigquery: Connector = {
     name: 'BigQuery',
     getSchema: async (application: string, url: DatabaseUrlParsed, opts: ConnectorOpts & SchemaOpts): Promise<AzimuttSchema> => {
         const connectOpts: BigqueryConnectOpts = {logger: opts.logger, logQueries: withDefault(opts.logQueries, false)}
+        const options = parseDatabaseOptions(url.options)
         const schemaOpts: BigquerySchemaOpts = {
             logger: opts.logger,
-            catalog: undefined,
-            schema: opts.schema,
-            entity: undefined,
+            catalog: url.db || options['project'],
+            schema: opts.schema || options['dataset'],
+            entity: options['table'],
             sampleSize: withDefault(opts.sampleSize, 100),
             inferRelations: withDefault(opts.inferRelations, true),
             ignoreErrors: withDefault(opts.ignoreErrors, false)
@@ -34,9 +36,9 @@ export const bigquery: Connector = {
         return connect(application, url, execQuery(query, parameters), connectOpts)
     },
     getTableStats: (application: string, url: DatabaseUrlParsed, id: TableId, opts: ConnectorOpts): Promise<TableStats> =>
-        Promise.reject(new Error('Not implemented')),
+        Promise.reject(new Error('getTableStats not implemented')),
     getColumnStats: (application: string, url: DatabaseUrlParsed, ref: ColumnRef, opts: ConnectorOpts): Promise<ColumnStats> =>
-        Promise.reject(new Error('Not implemented')),
+        Promise.reject(new Error('getColumnStats not implemented')),
 }
 
 function withDefault<T>(value: T | undefined, other: T): T {

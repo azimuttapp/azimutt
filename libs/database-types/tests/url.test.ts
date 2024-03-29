@@ -1,5 +1,5 @@
 import {describe, expect, test} from "@jest/globals";
-import {parseDatabaseUrl} from "../src";
+import {parseDatabaseOptions, parseDatabaseUrl} from "../src";
 
 describe('url', () => {
     test('parse bigquery url', () => {
@@ -8,11 +8,12 @@ describe('url', () => {
             kind: 'bigquery',
             pass: '.bq/key.json'
         })
-        expect(parseDatabaseUrl('bigquery://bigquery.googleapis.com?key=.bq/key.json')).toEqual({
-            full: 'bigquery://bigquery.googleapis.com?key=.bq/key.json',
+        expect(parseDatabaseUrl('bigquery://bigquery.googleapis.com?key=.bq/key.json&dataset=relational')).toEqual({
+            full: 'bigquery://bigquery.googleapis.com?key=.bq/key.json&dataset=relational',
             kind: 'bigquery',
             host: 'bigquery.googleapis.com',
-            pass: '.bq/key.json'
+            pass: '.bq/key.json',
+            options: 'dataset=relational'
         })
         expect(parseDatabaseUrl('jdbc:bigquery://account@service.com:.bq/key.json@https://bigquery.googleapis.com:443/my-project')).toEqual({
             full: 'jdbc:bigquery://account@service.com:.bq/key.json@https://bigquery.googleapis.com:443/my-project',
@@ -191,5 +192,8 @@ describe('url', () => {
             db: 'db',
             options: 'persist security info=True&multipleactiveresultsets=False&trustservercertificate=True&app=azimutt'
         })
+    })
+    test('parse options', () => {
+        expect(parseDatabaseOptions('user=test&security info=true')).toEqual({user: 'test', 'security info': 'true'})
     })
 })

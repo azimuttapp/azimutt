@@ -22,7 +22,7 @@ export function parseDatabaseUrl(url: DatabaseUrl): DatabaseUrlParsed {
     if (bigqueryMatches) {
         const kind: DatabaseKind = 'bigquery'
         const [, user, pass, host, port, db, optionsStr] = bigqueryMatches
-        const {email: user2, key: pass2, project: db2, ...opts} = Object.fromEntries((optionsStr || '').split('&').map(part => part.split('=')))
+        const {email: user2, key: pass2, project: db2, ...opts} = parseDatabaseOptions(optionsStr)
         const options = Object.entries(opts).filter(([k, _]) => k).map(([k, v]) => `${k}=${v}`).join('&') || undefined
         const values = {kind, user: user || user2, pass: pass || pass2, host, port: port ? parseInt(port) : undefined, db: db || db2, options}
         return {...filterValues(values, v => v !== undefined), full: url}
@@ -72,7 +72,7 @@ export function parseDatabaseUrl(url: DatabaseUrl): DatabaseUrlParsed {
     if (snowflakeMatches) {
         const kind: DatabaseKind = 'snowflake'
         const [, user, pass, host, port, db, optionsStr] = snowflakeMatches
-        const {db: db2, user: user2, ...opts} = Object.fromEntries((optionsStr || '').split('&').map(part => part.split('=')))
+        const {db: db2, user: user2, ...opts} = parseDatabaseOptions(optionsStr)
         const options = Object.entries(opts).filter(([k, _]) => k).map(([k, v]) => `${k}=${v}`).join('&') || undefined
         const values = {kind, user: user || user2, pass, host, port: port ? parseInt(port) : undefined, db: db || db2, options}
         return {...filterValues(values, v => v !== undefined), full: url}
@@ -87,6 +87,14 @@ export function parseDatabaseUrl(url: DatabaseUrl): DatabaseUrlParsed {
     }
 
     return {full: url}
+}
+
+export function parseDatabaseOptions(options: string | undefined): Record<string, string> {
+    return Object.fromEntries((options || '')
+        .split('&')
+        .filter(o => !!o)
+        .map(o => o.split('='))
+    )
 }
 
 // https://www.connectionstrings.com/sql-server 🤯

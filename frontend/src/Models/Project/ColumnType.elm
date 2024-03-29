@@ -53,16 +53,19 @@ parse kind =
     if kind |> String.endsWith "[]" then
         Array (parse (kind |> String.dropRight 2))
 
-    else if (kind |> Regex.matchI "^(tiny|medium|long|ci)?text$") || (kind |> Regex.matchI "^character( varying)? ?(\\(\\d+\\))?$") || (kind |> Regex.matchI "^n?(var)?char ?(\\([^)]+\\))?( CHARACTER SET [^ ]+)?$") then
+    else if kind |> Regex.matchI "^ARRAY<.*>$" then
+        Array (parse (kind |> String.dropLeft 6 |> String.dropRight 1))
+
+    else if (kind |> Regex.matchI "^(tiny|medium|long|ci)?text$") || (kind |> Regex.matchI "^character( varying)? ?(\\(\\d+\\))?$") || (kind |> Regex.matchI "^n?(var)?char ?(\\([^)]+\\))?( CHARACTER SET [^ ]+)?$") || (kind |> Regex.matchI "^string(\\(\\d+\\))?$") then
         Text
 
-    else if (kind |> Regex.matchI "integer|bit") || (kind |> Regex.matchI "number\\(\\d+(\\s*,\\s*0)?\\)") || (kind |> Regex.matchI "^(small)?serial$") || (kind |> Regex.matchI "^(tiny|small|big)?int ?(\\(\\d+\\))?( unsigned)?$") then
+    else if (kind |> Regex.matchI "integer|bit") || (kind |> Regex.matchI "number\\(\\d+(\\s*,\\s*0)?\\)") || (kind |> Regex.matchI "^(small)?serial$") || (kind |> Regex.matchI "^(tiny|small|big)?int ?(\\d+)?(\\(\\d+\\))?( unsigned)?$") then
         Int
 
     else if (kind |> Regex.matchI "double precision") || (kind |> Regex.matchI "number") || (kind |> Regex.matchI "^numeric ?(\\(\\d+,\\d+\\))?$") || (kind |> Regex.matchI "^decimal ?(\\(\\d+,\\d+\\))?$") then
         Float
 
-    else if kind |> Regex.matchI "boolean" then
+    else if kind |> Regex.matchI "bool(ean)?" then
         Bool
 
     else if kind |> Regex.matchI "date$" then
