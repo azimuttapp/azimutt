@@ -1,9 +1,16 @@
 import {describe, expect, test} from "@jest/globals";
-import {DatabaseUrlParsed, parseDatabaseUrl} from "@azimutt/database-types";
+import {DatabaseUrlParsed, parseDatabaseUrl} from "@azimutt/database-model";
 import {connect} from "../src/connect";
-import {BigquerySchemaOpts, getForeignKeys, getIndexes, getPrimaryKeys, getSchema, getTables} from "../src/bigquery";
+import {
+    BigquerySchemaOpts,
+    getColumns,
+    getForeignKeys,
+    getIndexes,
+    getPrimaryKeys,
+    getSchema,
+    getTables
+} from "../src/bigquery";
 import {application, logger} from "./constants";
-import {getColumns} from "../out/bigquery";
 
 describe.skip('bigquery', () => {
     // fake url, use a real one to test (see README for how-to)
@@ -16,7 +23,7 @@ describe.skip('bigquery', () => {
     test('getSchema', async () => {
         const schema = await connect(application, url, getSchema(opts), {logger, logQueries: true})
         console.log('schema', schema)
-        expect(schema.tables.length).toEqual(5)
+        expect(schema.tables.length).toEqual(8)
     }, 15 * 1000)
     test('getTables', async () => {
         const tables = await connect(application, url, getTables(project, dataset, opts), {logger, logQueries: true})

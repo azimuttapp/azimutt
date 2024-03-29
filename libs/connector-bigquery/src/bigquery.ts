@@ -1,33 +1,33 @@
 import {BigQueryTimestamp, Dataset, DatasetsResponse} from "@google-cloud/bigquery"
 import {groupBy, Logger, removeUndefined, zip} from "@azimutt/utils"
 import {
-    AzimuttColumn,
-    AzimuttIndex,
-    AzimuttRelation,
-    AzimuttSchema,
-    AzimuttTable,
-    SchemaName,
-    TableId,
-    TableName
-} from "@azimutt/database-types"
+    EntityId,
+    LegacyColumn,
+    LegacyDatabase,
+    LegacyIndex,
+    LegacyRelation,
+    LegacySchemaName,
+    LegacyTable,
+    LegacyTableName
+} from "@azimutt/database-model"
 import {Conn} from "./connect"
 
-export type BigquerySchemaOpts = {logger: Logger, catalog: SchemaName | undefined, schema: SchemaName | undefined, entity: TableName | undefined, sampleSize: number, inferRelations: boolean, ignoreErrors: boolean}
-export const getSchema = (opts: BigquerySchemaOpts) => async (conn: Conn): Promise<AzimuttSchema> => {
+export type BigquerySchemaOpts = {logger: Logger, catalog: LegacySchemaName | undefined, schema: LegacySchemaName | undefined, entity: LegacyTableName | undefined, sampleSize: number, inferRelations: boolean, ignoreErrors: boolean}
+export const getSchema = (opts: BigquerySchemaOpts) => async (conn: Conn): Promise<LegacyDatabase> => {
     const projectId = opts.catalog || await conn.client.getProjectId()
     const datasets: Dataset[] = await conn.client.getDatasets({projectId}).then(([datasets]: DatasetsResponse) => datasets)
     const datasetIds = datasets.map(d => d.id).filter((id: string | undefined): id is string => !!id).filter(id => datasetFilter(id, opts.schema))
     const datasetSchemas = await Promise.all(datasetIds.map(async datasetId => {
         const tables = await getTables(projectId, datasetId, opts)(conn)
-        const columns = await getColumns(projectId, datasetId, opts)(conn).then(cols => groupBy(cols, toTableId))
-        const primaryKeys = await getPrimaryKeys(projectId, datasetId, opts)(conn).then(pks => groupBy(pks, toTableId))
+        const columns = await getColumns(projectId, datasetId, opts)(conn).then(cols => groupBy(cols, toEntityId))
+        const primaryKeys = await getPrimaryKeys(projectId, datasetId, opts)(conn).then(pks => groupBy(pks, toEntityId))
         const foreignKeys = await getForeignKeys(projectId, datasetId, opts)(conn)
-        const indexes = await getIndexes(projectId, datasetId, opts)(conn).then(idxs => groupBy(idxs, toTableId))
+        const indexes = await getIndexes(projectId, datasetId, opts)(conn).then(idxs => groupBy(idxs, toEntityId))
         // TODO: inspect JSON columns
         // TODO: inspect polymorphic relations
         return {
             tables: tables.map(table => {
-                const id = toTableId(table)
+                const id = toEntityId(table)
                 return buildTable(table, columns[id] || [], primaryKeys[id] || [], indexes[id] || [])
             }),
             relations: foreignKeys.flatMap(buildRelation)
@@ -43,7 +43,7 @@ export const getSchema = (opts: BigquerySchemaOpts) => async (conn: Conn): Promi
 // 👇️ Private functions, some are exported only for tests
 // If you use them, beware of breaking changes!
 
-function toTableId<T extends { table_catalog: string, table_schema: string, table_name: string }>(value: T): TableId {
+function toEntityId<T extends { table_catalog: string, table_schema: string, table_name: string }>(value: T): EntityId {
     return `${value.table_catalog}.${value.table_schema}.${value.table_name}`
 }
 
@@ -97,7 +97,7 @@ export const getTables = (projectId: string, datasetId: string, opts: BigquerySc
     ).catch(handleError(`Failed to get tables for ${projectId}.${datasetId}`, [], opts))
 }
 
-function buildTable(table: RawTable, columns: RawColumn[], primaryKeys: RawPrimaryKey[], indexes: RawIndex[]): AzimuttTable {
+function buildTable(table: RawTable, columns: RawColumn[], primaryKeys: RawPrimaryKey[], indexes: RawIndex[]): LegacyTable {
     const pk = primaryKeys[0]
     return removeUndefined({
         // catalog: table.table_catalog,
@@ -147,7 +147,7 @@ export const getColumns = (projectId: string, datasetId: string, opts: BigqueryS
     ).catch(handleError(`Failed to get columns for ${projectId}.${datasetId}`, [], opts))
 }
 
-function buildColumn(column: RawColumn): AzimuttColumn {
+function buildColumn(column: RawColumn): LegacyColumn {
     return removeUndefined({
         name: column.column_name,
         type: column.column_type,
@@ -234,7 +234,7 @@ export const getForeignKeys = (projectId: string, datasetId: string, opts: Bigqu
     ).catch(handleError(`Failed to get foreign keys for ${projectId}.${datasetId}`, [], opts))
 }
 
-function buildRelation(fk: RawForeignKey): AzimuttRelation[] {
+function buildRelation(fk: RawForeignKey): LegacyRelation[] {
     return zip(fk.table_columns, fk.target_columns).map(([src_col, ref_col]) => {
         return {
             name: fk.constraint_name,
@@ -282,7 +282,7 @@ export const getIndexes = (projectId: string, datasetId: string, opts: BigqueryS
     ).catch(handleError(`Failed to get indexes for ${projectId}.${datasetId}`, [], opts))
 }
 
-function buildIndex(index: RawIndex): AzimuttIndex {
+function buildIndex(index: RawIndex): LegacyIndex {
     return {
         name: index.index_name,
         columns: index.index_columns,
@@ -301,7 +301,7 @@ function handleError<T>(msg: string, onError: T, {logger, ignoreErrors}: Bigquer
     }
 }
 
-function scopeFilter(prefix: string, catalogField?: string, catalogScope?: SchemaName, schemaField?: string, schemaScope?: SchemaName, tableField?: string, tableScope?: TableName): string {
+function scopeFilter(prefix: string, catalogField?: string, catalogScope?: LegacySchemaName, schemaField?: string, schemaScope?: LegacySchemaName, tableField?: string, tableScope?: LegacyTableName): string {
     const catalogFilter = catalogField && catalogScope ? `${catalogField} ${scopeOp(catalogScope)} '${catalogScope}'` : undefined
     const schemaFilter = schemaField && schemaScope ? `${schemaField} ${scopeOp(schemaScope)} '${schemaScope}'` : undefined
     const tableFilter = tableField && tableScope ? `${tableField} ${scopeOp(tableScope)} '${tableScope}'` : undefined
@@ -313,7 +313,7 @@ function scopeOp(scope: string): string {
     return scope.includes('%') ? 'LIKE' : '='
 }
 
-function datasetFilter(datasetId: string, schema: SchemaName | undefined): boolean {
+function datasetFilter(datasetId: string, schema: LegacySchemaName | undefined): boolean {
     if (schema === undefined) return true
     if (schema === datasetId) return true
     if (schema.indexOf('%') && new RegExp(schema.replaceAll('%', '.*')).exec(datasetId)) return true

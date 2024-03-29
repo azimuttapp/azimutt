@@ -43,7 +43,7 @@
     "dry-publish": "npm run build && npm test && npm pack"
   },
   "dependencies": {
-    "@azimutt/connector-bigquery": "^0.0.1",
+    "@azimutt/connector-bigquery": "file:../libs/connector-bigquery",
     "@azimutt/connector-couchbase": "file:../libs/connector-couchbase",
     "@azimutt/connector-mariadb": "file:../libs/connector-mariadb",
     "@azimutt/connector-mongodb": "file:../libs/connector-mongodb",

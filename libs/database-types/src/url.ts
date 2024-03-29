@@ -26,7 +26,7 @@ export function parseDatabaseUrl(rawUrl: DatabaseUrl): DatabaseUrlParsed {
         const kind: DatabaseKind = 'bigquery'
         const [, user, pass, host, port, db, optionsStr] = bigqueryMatches
         const {email: user2, key: pass2, project: db2, ...opts} = parseDatabaseOptions(optionsStr)
-        const options = Object.entries(opts).filter(([k, _]) => k).map(([k, v]) => `${k}=${v}`).join('&') || undefined
+        const options = formatDatabaseOptions(opts)
         const values = {kind, user: user || user2, pass: pass || pass2, host, port: port ? parseInt(port) : undefined, db: db || db2, options}
         return {...filterValues(values, v => v !== undefined), full: url}
     }
@@ -76,7 +76,7 @@ export function parseDatabaseUrl(rawUrl: DatabaseUrl): DatabaseUrlParsed {
         const kind: DatabaseKind = 'snowflake'
         const [, user, pass, host, port, db, optionsStr] = snowflakeMatches
         const {db: db2, user: user2, ...opts} = parseDatabaseOptions(optionsStr)
-        const options = Object.entries(opts).filter(([k, _]) => k).map(([k, v]) => `${k}=${v}`).join('&') || undefined
+        const options = formatDatabaseOptions(opts)
         const values = {kind, user: user || user2, pass, host, port: port ? parseInt(port) : undefined, db: db || db2, options}
         return {...filterValues(values, v => v !== undefined), full: url}
     }
@@ -98,6 +98,10 @@ export function parseDatabaseOptions(options: string | undefined): Record<string
         .filter(o => !!o)
         .map(o => o.split('='))
     )
+}
+
+export function formatDatabaseOptions(opts: Record<string, string>): string | undefined {
+    return Object.entries(opts).filter(([k, _]) => k).map(([k, v]) => `${k}=${v}`).join('&') || undefined
 }
 
 // https://www.connectionstrings.com/sql-server 🤯

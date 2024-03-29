@@ -1,7 +1,7 @@
 import {describe, test} from "@jest/globals";
 import {BigQuery} from "@google-cloud/bigquery";
 import {SimpleQueryRowsResponse} from "@google-cloud/bigquery/build/src/bigquery";
-import {parseDatabaseUrl} from "@azimutt/database-types";
+import {parseDatabaseUrl} from "@azimutt/database-model";
 import {connect} from "../src/connect";
 import {execQuery} from "../src/query";
 import {application, logger} from "./constants";
@@ -18,10 +18,10 @@ describe('connect', () => {
     const query = 'SELECT * FROM azimutt_connector_trial.azimutt_biggest_users WHERE string_field_0 = ? LIMIT 10;'
     const params: any[] = ['HumanTalks Paris orga']
 
-    // TODO 3: unskip the this test and run it: `npm run test -- tests/connect.test.ts`
+    // TODO 3: unskip this test first and run it (`npm run test -- tests/connect.test.ts`)
     test.skip('Azimutt should connect', async () => {
         const parsedUrl = parseDatabaseUrl(url)
-        const results = await connect(application, parsedUrl, execQuery(query, params), {logger})
+        const results = await connect(application, parsedUrl, execQuery(query, params), {logger, logQueries: true})
         console.log('results', results)
     })
 

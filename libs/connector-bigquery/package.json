@@ -25,7 +25,8 @@
     "dry-publish": "npm run build && npm test && npm pack"
   },
   "dependencies": {
-    "@azimutt/database-types": "^0.0.17",
+    "@azimutt/database-model": "file:../database-model",
+    "@azimutt/utils": "file:../utils",
     "@google-cloud/bigquery": "7.5.2"
   },
   "devDependencies": {

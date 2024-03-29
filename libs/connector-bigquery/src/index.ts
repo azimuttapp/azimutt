@@ -1,24 +1,27 @@
 import {
-    AzimuttSchema,
-    ColumnRef,
-    ColumnStats,
+    AttributeRef,
     Connector,
-    ConnectorOpts,
-    DatabaseQueryResults,
+    ConnectorAttributeStats,
+    ConnectorDefaultOpts,
+    ConnectorEntityStats,
+    ConnectorQueryHistoryOpts,
+    ConnectorSchemaOpts,
+    Database,
+    databaseFromLegacy,
+    DatabaseQuery,
     DatabaseUrlParsed,
+    EntityRef,
     parseDatabaseOptions,
-    SchemaOpts,
-    TableId,
-    TableStats
-} from "@azimutt/database-types";
-import {BigqueryConnectOpts, connect} from "./connect";
+    QueryAnalyze,
+    QueryResults
+} from "@azimutt/database-model";
+import {connect} from "./connect";
 import {BigquerySchemaOpts, getSchema} from "./bigquery";
 import {execQuery} from "./query";
 
 export const bigquery: Connector = {
     name: 'BigQuery',
-    getSchema: async (application: string, url: DatabaseUrlParsed, opts: ConnectorOpts & SchemaOpts): Promise<AzimuttSchema> => {
-        const connectOpts: BigqueryConnectOpts = {logger: opts.logger, logQueries: withDefault(opts.logQueries, false)}
+    getSchema: async (application: string, url: DatabaseUrlParsed, opts: ConnectorSchemaOpts): Promise<Database> => {
         const options = parseDatabaseOptions(url.options)
         const schemaOpts: BigquerySchemaOpts = {
             logger: opts.logger,
@@ -29,16 +32,18 @@ export const bigquery: Connector = {
             inferRelations: withDefault(opts.inferRelations, true),
             ignoreErrors: withDefault(opts.ignoreErrors, false)
         }
-        return await connect(application, url, getSchema(schemaOpts), connectOpts)
+        return databaseFromLegacy(await connect(application, url, getSchema(schemaOpts), opts))
     },
-    query: (application: string, url: DatabaseUrlParsed, query: string, parameters: any[], opts: ConnectorOpts): Promise<DatabaseQueryResults> => {
-        const connectOpts: BigqueryConnectOpts = {logger: opts.logger, logQueries: withDefault(opts.logQueries, false)}
-        return connect(application, url, execQuery(query, parameters), connectOpts)
-    },
-    getTableStats: (application: string, url: DatabaseUrlParsed, id: TableId, opts: ConnectorOpts): Promise<TableStats> =>
-        Promise.reject(new Error('getTableStats not implemented')),
-    getColumnStats: (application: string, url: DatabaseUrlParsed, ref: ColumnRef, opts: ConnectorOpts): Promise<ColumnStats> =>
-        Promise.reject(new Error('getColumnStats not implemented')),
+    getQueryHistory: (application: string, url: DatabaseUrlParsed, opts: ConnectorQueryHistoryOpts): Promise<DatabaseQuery[]> =>
+        Promise.reject(new Error('Not implemented')),
+    execute: (application: string, url: DatabaseUrlParsed, query: string, parameters: any[], opts: ConnectorDefaultOpts): Promise<QueryResults> =>
+        connect(application, url, execQuery(query, parameters), opts),
+    analyze: (application: string, url: DatabaseUrlParsed, query: string, parameters: any[], opts: ConnectorDefaultOpts): Promise<QueryAnalyze> =>
+        Promise.reject(new Error('Not implemented')),
+    getEntityStats: (application: string, url: DatabaseUrlParsed, ref: EntityRef, opts: ConnectorDefaultOpts): Promise<ConnectorEntityStats> =>
+        Promise.reject(new Error('Not implemented')),
+    getAttributeStats: (application: string, url: DatabaseUrlParsed, ref: AttributeRef, opts: ConnectorDefaultOpts): Promise<ConnectorAttributeStats> =>
+        Promise.reject(new Error('Not implemented')),
 }
 
 function withDefault<T>(value: T | undefined, other: T): T {
