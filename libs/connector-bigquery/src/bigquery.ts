@@ -103,7 +103,9 @@ function buildTable(table: RawTable, columns: RawColumn[], primaryKeys: RawPrima
         // catalog: table.table_catalog,
         schema: table.table_schema,
         table: table.table_name,
-        columns: columns.slice(0).sort((a, b) => a.column_index - b.column_index).map(c => buildColumn(c)),
+        columns: columns.slice(0)
+            .sort((a, b) => a.column_index - b.column_index)
+            .map(buildColumn),
         view: table.table_type === 'VIEW' || table.table_type === 'MATERIALIZED VIEW' ? true : undefined,
         primaryKey: pk ? buildPrimaryKey(pk) : undefined,
         uniques: undefined,
@@ -304,7 +306,7 @@ function handleError<T>(msg: string, onError: T, {logger, ignoreErrors}: Bigquer
 function datasetFilter(datasetId: string, schema: LegacySchemaName | undefined): boolean {
     if (schema === undefined) return true
     if (schema === datasetId) return true
-    if (schema.indexOf('%') && new RegExp(schema.replaceAll('%', '.*')).exec(datasetId)) return true
+    if (schema.includes('%') && new RegExp(schema.replaceAll('%', '.*')).test(datasetId)) return true
     return false
 }
 

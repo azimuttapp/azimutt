@@ -100,7 +100,9 @@ function buildEntity(columns: RawColumn[], indexColumns: RawIndexColumn[], check
         name: columns[0].table_name,
         kind: columns[0].table_kind === 'VIEW' ? 'view' as const : undefined,
         def: undefined,
-        attrs: columns.slice(0).sort((a, b) => a.column_index - b.column_index).map(c => buildAttribute(c, comments, jsonColumns[c.column_name])),
+        attrs: columns.slice(0)
+            .sort((a, b) => a.column_index - b.column_index)
+            .map(c => buildAttribute(c, comments, jsonColumns[c.column_name])),
         pk: pk.length > 0 ? buildPrimaryKey(pk[0]) : undefined,
         indexes: idxs.map(buildIndex),
         checks: checks.map(buildCheck),

@@ -31,15 +31,15 @@ export type ConnectorDefaultOpts = {
     // dependencies
     logger: Logger
     // behavior
-    logQueries?: boolean // default: false, log executed queries using the logger
+    logQueries?: boolean // default: false, log executed queries using the provided logger
 }
 
 export type ConnectorSchemaOpts = ConnectorDefaultOpts & {
     // filters: limit the scope of the extraction
-    database?: DatabaseName // export only this database or database pattern (use LIKE if contains %, = otherwise)
-    catalog?: CatalogName // export only this catalog or catalog pattern (use LIKE if contains %, = otherwise)
-    schema?: SchemaName // export only this schema or schema pattern (use LIKE if contains %, = otherwise)
-    entity?: EntityName // export only this entity or entity pattern (use LIKE if contains %, = otherwise)
+    database?: DatabaseName // export only this database or database pattern (use LIKE if contains %, equality otherwise)
+    catalog?: CatalogName // export only this catalog or catalog pattern (use LIKE if contains %, equality otherwise)
+    schema?: SchemaName // export only this schema or schema pattern (use LIKE if contains %, equality otherwise)
+    entity?: EntityName // export only this entity or entity pattern (use LIKE if contains %, equality otherwise)
     // data access: get more interesting result, beware of performance
     sampleSize?: number // default: 100, number of documents used to infer a schema (document databases, json attributes in relational db...)
     inferMixedJson?: string // when inferring JSON, will differentiate documents on this attribute, useful when storing several documents in the same collection in Mongo or Couchbase

@@ -1,7 +1,6 @@
 import * as snowflake from "snowflake-sdk";
 import {Connection, ConnectionOptions, SnowflakeError, Statement} from "snowflake-sdk";
-import {ConnectorDefaultOpts, DatabaseUrlParsed, logQueryIfNeeded} from "@azimutt/database-model";
-import {Conn, QueryResultArrayMode, QueryResultRow} from "./common";
+import {AttributeValue, ConnectorDefaultOpts, DatabaseUrlParsed, logQueryIfNeeded} from "@azimutt/database-model";
 
 export async function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c: Conn) => Promise<T>, opts: ConnectorDefaultOpts): Promise<T> {
     const connection: Connection = await createConnection(buildConfig(application, url))
@@ -37,6 +36,21 @@ export async function connect<T>(application: string, url: DatabaseUrlParsed, ex
         res => closeConnection(connection).then(_ => res),
         err => closeConnection(connection).then(_ => Promise.reject(err))
     )
+}
+
+export interface Conn {
+    query<T extends QueryResultRow>(sql: string, parameters?: any[], name?: string): Promise<T[]>
+
+    queryArrayMode(sql: string, parameters?: any[], name?: string): Promise<QueryResultArrayMode>
+}
+
+export type QueryResultValue = AttributeValue
+export type QueryResultRow = { [column: string]: QueryResultValue }
+export type QueryResultField = { index: number, name: string, type: string }
+export type QueryResultRowArray = QueryResultValue[]
+export type QueryResultArrayMode = {
+    fields: QueryResultField[],
+    rows: QueryResultRowArray[]
 }
 
 async function createConnection(options: ConnectionOptions): Promise<Connection> {

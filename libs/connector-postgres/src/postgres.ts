@@ -213,7 +213,9 @@ function buildEntity(blockSize: number, table: RawTable, columns: RawColumn[], c
         name: table.table_name,
         kind: table.table_kind === 'v' ? 'view' as const : table.table_kind === 'm' ? 'materialized view' as const : undefined,
         def: table.table_definition || undefined,
-        attrs: columns.slice(0).sort((a, b) => a.column_index - b.column_index).map(c => buildAttribute(c, jsonColumns[c.column_name], polyColumns[c.column_name])),
+        attrs: columns.slice(0)
+            .sort((a, b) => a.column_index - b.column_index)
+            .map(c => buildAttribute(c, jsonColumns[c.column_name], polyColumns[c.column_name])),
         pk: constraints.filter(c => c.constraint_type === 'p').map(c => buildPrimaryKey(c, columnsByIndex))[0] || undefined,
         indexes: indexes.map(i => buildIndex(blockSize, i, columnsByIndex)),
         checks: constraints.filter(c => c.constraint_type === 'c').map(c => buildCheck(c, columnsByIndex)),
