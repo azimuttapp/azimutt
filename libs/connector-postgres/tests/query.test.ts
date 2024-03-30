@@ -1,8 +1,8 @@
 import {describe, expect, test} from "@jest/globals";
 import {DatabaseUrlParsed, parseDatabaseUrl} from "@azimutt/database-model";
-import {application, logger} from "./constants";
 import {connect} from "../src/connect";
-import {execQuery} from "../src/common";
+import {execQuery} from "../src/query";
+import {application, logger} from "./constants";
 
 describe('query', () => {
     // local url, install db or replace it to test

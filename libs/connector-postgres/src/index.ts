@@ -13,10 +13,10 @@ import {
     QueryAnalyze,
     QueryResults
 } from "@azimutt/database-model";
-import {execQuery} from "./common";
 import {connect} from "./connect";
-import {getColumnStats, getTableStats} from "./stats";
+import {execQuery} from "./query";
 import {getSchema} from "./postgres";
+import {getColumnStats, getTableStats} from "./stats";
 
 export const postgres: Connector = {
     name: 'PostgreSQL',

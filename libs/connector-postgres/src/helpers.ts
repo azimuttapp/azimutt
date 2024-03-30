@@ -1,4 +1,11 @@
-import {AttributePath, EntityRef, SqlFragment} from "@azimutt/database-model";
+import {
+    AttributePath,
+    ConnectorSchemaOpts,
+    EntityName,
+    EntityRef,
+    SchemaName,
+    SqlFragment
+} from "@azimutt/database-model";
 
 export function buildSqlTable(ref: EntityRef): SqlFragment {
     const sqlSchema = ref.schema ? `"${ref.schema}".` : ''
@@ -8,6 +15,27 @@ export function buildSqlTable(ref: EntityRef): SqlFragment {
 export function buildSqlColumn(path: AttributePath): SqlFragment {
     const [head, ...tail] = path
     return `"${head}"${tail.map(t => `->'${t}'`).join('')}`
+}
+
+export function handleError<T>(msg: string, onError: T, {logger, ignoreErrors}: ConnectorSchemaOpts) {
+    return (err: any): Promise<T> => {
+        if (ignoreErrors) {
+            logger.warn(`${msg}. Ignoring...`)
+            return Promise.resolve(onError)
+        } else {
+            return Promise.reject(err)
+        }
+    }
+}
+
+export function scopeFilter(schemaField: string, schemaScope: SchemaName | undefined, entityField?: string, entityScope?: EntityName): SqlFragment {
+    const schemaFilter = schemaScope ? `${schemaField} ${scopeOp(schemaScope)} '${schemaScope}'` : `${schemaField} NOT IN ('information_schema', 'pg_catalog')`
+    const entityFilter = entityField && entityScope ? ` AND ${entityField} ${scopeOp(entityScope)} '${entityScope}'` : ''
+    return schemaFilter + entityFilter
+}
+
+function scopeOp(scope: string): SqlFragment {
+    return scope.includes('%') ? 'LIKE' : '='
 }
 
 // sadly pg_catalog schema doesn't have relations, so let's define them here for easy exploration

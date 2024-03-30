@@ -10,8 +10,8 @@ import {
     EntityRef,
     SqlFragment
 } from "@azimutt/database-model";
-import {Conn} from "./common";
 import {buildSqlColumn, buildSqlTable} from "./helpers";
+import {Conn} from "./connect";
 
 export const getTableStats = (ref: EntityRef) => async (conn: Conn): Promise<ConnectorEntityStats> => {
     const sqlTable = buildSqlTable(ref)

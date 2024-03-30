@@ -1,6 +1,6 @@
 import {indexBy} from "@azimutt/utils";
 import {AttributeRef, QueryResults} from "@azimutt/database-model";
-import {Conn, QueryResultArrayMode, QueryResultField} from "./types";
+import {Conn, QueryResultArrayMode, QueryResultField} from "./connect";
 
 export const execQuery = (query: string, parameters: any[]) => (conn: Conn): Promise<QueryResults> => {
     return conn.queryArrayMode(query, parameters).then(result => buildResults(conn, query, result))

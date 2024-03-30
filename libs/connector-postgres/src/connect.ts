@@ -1,7 +1,6 @@
 import {Client, ClientConfig, types} from "pg";
 import {AnyError, errorToString} from "@azimutt/utils";
-import {ConnectorDefaultOpts, DatabaseUrlParsed, logQueryIfNeeded} from "@azimutt/database-model";
-import {Conn, QueryResultArrayMode, QueryResultRow} from "./common";
+import {AttributeValue, ConnectorDefaultOpts, DatabaseUrlParsed, logQueryIfNeeded} from "@azimutt/database-model";
 
 export async function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c: Conn) => Promise<T>, opts: ConnectorDefaultOpts): Promise<T> {
     types.setTypeParser(types.builtins.INT8, (val: string) => parseInt(val, 10))
@@ -25,6 +24,21 @@ export async function connect<T>(application: string, url: DatabaseUrlParsed, ex
         res => client.end().then(_ => res),
         err => client.end().then(_ => Promise.reject(err))
     )
+}
+
+export interface Conn {
+    query<T extends QueryResultRow>(sql: string, parameters?: any[], name?: string): Promise<T[]>
+
+    queryArrayMode(sql: string, parameters?: any[], name?: string): Promise<QueryResultArrayMode>
+}
+
+export type QueryResultValue = AttributeValue
+export type QueryResultRow = { [column: string]: QueryResultValue }
+export type QueryResultField = { name: string, tableID: number, columnID: number, dataTypeID: number, format: string }
+export type QueryResultRowArray = QueryResultValue[]
+export type QueryResultArrayMode = {
+    fields: QueryResultField[],
+    rows: QueryResultRowArray[]
 }
 
 async function createConnection(config: string | ClientConfig): Promise<Client> {

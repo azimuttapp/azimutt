@@ -3,6 +3,7 @@ import {groupBy, mapEntriesAsync, mapValues, mapValuesAsync, removeEmpty, remove
 import {
     Attribute,
     AttributeName,
+    AttributePath,
     AttributeValue,
     Check,
     ConnectorSchemaOpts,
@@ -10,49 +11,49 @@ import {
     Database,
     Entity,
     EntityId,
-    EntityName,
     EntityRef,
+    formatAttributeRef,
     formatEntityRef,
     Index,
     isPolymorphic,
+    JsValue,
     parseEntityRef,
     PrimaryKey,
     Relation,
-    SchemaName,
     schemaToAttributes,
     Type,
     ValueSchema,
     valuesToSchema
 } from "@azimutt/database-model";
-import {Conn} from "./common";
-import {buildSqlColumn, buildSqlTable} from "./helpers";
+import {buildSqlColumn, buildSqlTable, handleError, scopeFilter} from "./helpers";
+import {Conn} from "./connect";
 
 export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<Database> => {
+    // access system tables only
     const blockSize: number = await getBlockSize(opts)(conn)
     const database: RawDatabase = await getDatabase(opts)(conn)
     const tables: RawTable[] = await getTables(opts)(conn)
-    const columns: Record<EntityId, RawColumn[]> = await getColumns(opts)(conn).then(cols => groupBy(cols, toEntityId))
-    const columnsByIndex: Record<EntityId, { [i: number]: string }> = mapValues(columns, cols => cols.reduce((acc, col) => ({...acc, [col.column_index]: col.column_name}), {}))
-    const constraints: Record<EntityId, RawConstraint[]> = await getConstraints(opts)(conn).then(cols => groupBy(cols, toEntityId))
-    const indexes: Record<EntityId, RawIndex[]> = await getIndexes(opts)(conn).then(cols => groupBy(cols, toEntityId))
+    const columns: Record<EntityId, RawColumn[]> = await getColumns(opts)(conn).then(groupByEntity)
+    const constraints: Record<EntityId, RawConstraint[]> = await getConstraints(opts)(conn).then(groupByEntity)
+    const indexes: Record<EntityId, RawIndex[]> = await getIndexes(opts)(conn).then(groupByEntity)
     const relations: RawRelation[] = await getRelations(opts)(conn)
     const types: RawType[] = await getTypes(opts)(conn)
-    const columnSchemas: Record<EntityId, Record<AttributeName, ValueSchema>> = opts.inferJsonAttributes ? await mapEntriesAsync(columns, (entityId, tableCols) => {
-        const ref = parseEntityRef(entityId)
-        const jsonCols = Object.fromEntries(tableCols.filter(c => c.column_type === 'jsonb').map(c => [c.column_name, c.column_name]))
-        return mapValuesAsync(jsonCols, c => inferColumnSchema(ref, c, opts)(conn))
-    }) : {}
-    const columnPolys: Record<EntityId, Record<AttributeName, string[]>> = opts.inferPolymorphicRelations ? await mapEntriesAsync(columns, (entityId, tableCols) => {
-        const ref = parseEntityRef(entityId)
-        const colNames = tableCols.map(c => c.column_name)
-        const polyCols = Object.fromEntries(tableCols.filter(c => isPolymorphic(c.column_name, colNames)).map(c => [c.column_name, c.column_name]))
-        return mapValuesAsync(polyCols, c => getColumnDistinctValues(ref, c, opts)(conn))
-    }) : {}
+    // access table data when options are requested
+    const jsonColumns: Record<EntityId, Record<AttributeName, ValueSchema>> = opts.inferJsonAttributes ? await getJsonColumns(columns, opts)(conn) : {}
+    const polyColumns: Record<EntityId, Record<AttributeName, string[]>> = opts.inferPolymorphicRelations ? await getPolyColumns(columns, opts)(conn) : {}
+    // build the database
+    const columnsByIndex: Record<EntityId, { [i: number]: string }> = mapValues(columns, cols => cols.reduce((acc, col) => ({...acc, [col.column_index]: col.column_name}), {}))
     return removeUndefined({
-        entities: tables.map(table => {
-            const id = toEntityId(table)
-            return buildEntity(blockSize, table, columns[id] || [], columnsByIndex[id] || {}, constraints[id] || [], indexes[id] || [], columnSchemas[id] || {}, columnPolys[id] || {})
-        }),
+        entities: tables.map(table => [toEntityId(table), table] as const).map(([id, table]) => buildEntity(
+            blockSize,
+            table,
+            columns[id] || [],
+            columnsByIndex[id] || {},
+            constraints[id] || [],
+            indexes[id] || [],
+            jsonColumns[id] || {},
+            polyColumns[id] || {}
+        )),
         relations: relations.map(r => buildRelation(r, columnsByIndex)),
         types: types.map(buildType),
         doc: undefined,
@@ -64,9 +65,8 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
 // 👇️ Private functions, some are exported only for tests
 // If you use them, beware of breaking changes!
 
-function toEntityId<T extends { table_schema: string, table_name: string }>(value: T): EntityId {
-    return formatEntityRef({schema: value.table_schema, entity: value.table_name})
-}
+const toEntityId = <T extends { table_schema: string, table_name: string }>(value: T): EntityId => formatEntityRef({schema: value.table_schema, entity: value.table_name})
+const groupByEntity = <T extends { table_schema: string, table_name: string }>(values: T[]): Record<EntityId, T[]> => groupBy(values, toEntityId)
 
 export type RawDatabase = {
     version: string
@@ -103,9 +103,8 @@ export const getDatabase = (opts: ConnectorSchemaOpts) => async (conn: Conn): Pr
              , tup_updated
              , tup_deleted
         FROM pg_stat_database
-        WHERE datname = current_database();`, [], 'getDatabaseStats')
-        .then(res => res[0] || onError)
-        .catch(handleError(`Failed to get database info`, onError, opts))
+        WHERE datname = current_database();`, [], 'getDatabase'
+    ).then(res => res[0] || onError).catch(handleError(`Failed to get database info`, onError, opts))
 }
 
 export const getBlockSize = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<number> => {
@@ -203,8 +202,8 @@ export const getTables = ({schema, entity, logger, ignoreErrors}: ConnectorSchem
                  LEFT JOIN pg_namespace tn ON tn.oid = tc.relnamespace
                  LEFT JOIN pg_stat_all_tables s ON s.relid = c.oid
                  LEFT JOIN pg_statio_all_tables io ON io.relid = c.oid
-        WHERE ${scopeFilter('n.nspname', schema, 'c.relname', entity)}
-          AND c.relkind IN ('r', 'v', 'm')
+        WHERE c.relkind IN ('r', 'v', 'm')
+          AND ${scopeFilter('n.nspname', schema, 'c.relname', entity)}
         ORDER BY table_schema, table_name;`, [], 'getTables'
     ).catch(handleError(`Failed to get tables`, [], {logger, ignoreErrors}))
 }
@@ -299,15 +298,15 @@ export const getColumns = ({schema, entity, logger, ignoreErrors}: ConnectorSche
                  LEFT JOIN pg_attrdef ad ON ad.adrelid = c.oid AND ad.adnum = a.attnum
                  LEFT JOIN pg_description d ON d.objoid = c.oid AND d.objsubid = a.attnum
                  LEFT JOIN pg_stats s ON s.schemaname = n.nspname AND s.tablename = c.relname AND s.attname = a.attname
-        WHERE ${scopeFilter('n.nspname', schema, 'c.relname', entity)}
-          AND c.relkind IN ('r', 'v', 'm')
+        WHERE c.relkind IN ('r', 'v', 'm')
           AND a.attnum > 0
           AND a.atttypid != 0
+          AND ${scopeFilter('n.nspname', schema, 'c.relname', entity)}
         ORDER BY table_schema, table_name, column_index;`, [], 'getColumns'
     ).catch(handleError(`Failed to get columns`, [], {logger, ignoreErrors}))
 }
 
-function buildAttribute(c: RawColumn, schema: ValueSchema | undefined, values: string[] | undefined): Attribute {
+function buildAttribute(c: RawColumn, jsonColumn: ValueSchema | undefined, values: string[] | undefined): Attribute {
     return removeEmpty({
         name: c.column_name,
         type: c.column_type,
@@ -315,7 +314,7 @@ function buildAttribute(c: RawColumn, schema: ValueSchema | undefined, values: s
         generated: c.column_generated || undefined,
         default: c.column_default || undefined,
         values: values,
-        attrs: schema ? schemaToAttributes(schema, 0) : undefined,
+        attrs: jsonColumn ? schemaToAttributes(jsonColumn, 0) : undefined,
         doc: c.column_comment || undefined,
         stats: removeUndefined({
             nulls: c.nulls || undefined,
@@ -358,23 +357,6 @@ function parseValues(anyArray: string, type_cat: RawTypeCategory, type_name: str
     }
 }
 
-const inferColumnSchema = (ref: EntityRef, column: AttributeName, opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<ValueSchema> => {
-    const sqlTable = buildSqlTable(ref)
-    const sqlColumn = buildSqlColumn([column])
-    const sampleSize = opts.sampleSize || connectorSchemaOptsDefaults.sampleSize
-    return conn.query(`SELECT ${sqlColumn} FROM ${sqlTable} WHERE ${sqlColumn} IS NOT NULL LIMIT ${sampleSize};`, [], 'inferColumnSchema')
-        .then(rows => valuesToSchema(rows.map(row => row[column])))
-        .catch(handleError(`Failed to infer schema for column '${formatEntityRef(ref)}(${column})'`, valuesToSchema([]), opts))
-}
-
-const getColumnDistinctValues = (ref: EntityRef, column: AttributeName, opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<string[]> => {
-    const sqlTable = buildSqlTable(ref)
-    const sqlColumn = buildSqlColumn([column])
-    return conn.query<{value: string}>(`SELECT DISTINCT ${sqlColumn} as value FROM ${sqlTable} WHERE ${sqlColumn} IS NOT NULL ORDER BY value LIMIT 30;`, [], 'getColumnDistinctValues')
-        .then(rows => rows.map(v => v.value?.toString()))
-        .catch(handleError(`Failed to get distinct values for column '${formatEntityRef(ref)}(${column})'`, [], opts))
-}
-
 type RawConstraint = {
     table_schema: string
     table_name: string
@@ -406,8 +388,8 @@ export const getConstraints = ({schema, entity, logger, ignoreErrors}: Connector
                  JOIN pg_class cl ON cl.oid = c.conrelid
                  JOIN pg_namespace cn ON cn.oid = cl.relnamespace
                  LEFT JOIN pg_description d ON d.objoid = c.oid
-        WHERE ${scopeFilter('cn.nspname', schema, 'cl.relname', entity)}
-          AND c.contype IN ('p', 'c');`, [], 'getConstraints'
+        WHERE c.contype IN ('p', 'c')
+          AND ${scopeFilter('cn.nspname', schema, 'cl.relname', entity)};`, [], 'getConstraints'
     ).catch(handleError(`Failed to get constraints`, [], {logger, ignoreErrors}))
 }
 
@@ -473,8 +455,8 @@ export const getIndexes = ({schema, entity, logger, ignoreErrors}: ConnectorSche
                  JOIN pg_class c ON c.oid = i.indexrelid
                  JOIN pg_stat_all_indexes s ON s.indexrelid = i.indexrelid
                  LEFT JOIN pg_description d ON d.objoid = i.indexrelid
-        WHERE ${scopeFilter('s.schemaname', schema, 's.relname', entity)}
-          AND i.indisprimary = false
+        WHERE i.indisprimary = false
+          AND ${scopeFilter('s.schemaname', schema, 's.relname', entity)}
         ORDER BY table_schema, table_name, index_name;`, [], 'getIndexes'
     ).then(rows => rows.map(row => ({
         ...row,
@@ -540,8 +522,8 @@ export const getRelations = ({schema, entity, logger, ignoreErrors}: ConnectorSc
                  JOIN pg_class tc ON tc.oid = c.confrelid
                  JOIN pg_namespace tn ON tn.oid = tc.relnamespace
                  LEFT JOIN pg_description d ON d.objoid = c.oid
-        WHERE ${scopeFilter('cn.nspname', schema, 'cl.relname', entity)}
-          AND c.contype IN ('f')
+        WHERE c.contype IN ('f')
+          AND ${scopeFilter('cn.nspname', schema, 'cl.relname', entity)}
         ORDER BY table_schema, table_name, constraint_name;`, [], 'getRelations'
     ).catch(handleError(`Failed to get relations`, [], {logger, ignoreErrors}))
 }
@@ -606,10 +588,10 @@ export const getTypes = ({schema, entity, logger, ignoreErrors}: ConnectorSchema
                  LEFT JOIN pg_type tt ON tt.oid = t.typelem AND tt.typarray = t.oid
                  LEFT JOIN pg_enum e ON e.enumtypid = t.oid
                  LEFT JOIN pg_description d ON d.objoid = t.oid
-        WHERE ${scopeFilter('n.nspname', schema)}
-          AND t.typisdefined
+        WHERE t.typisdefined
           AND (c.relkind IS NULL OR c.relkind = 'c')
           AND tt.oid IS NULL
+          AND ${scopeFilter('n.nspname', schema)}
         GROUP BY t.oid
         ORDER BY type_schema, type_name;`, [], 'getTypes'
     ).catch(handleError(`Failed to get types`, [], {logger, ignoreErrors}))
@@ -630,19 +612,37 @@ function buildType(t: RawType): Type {
 // getTriggers: pg_get_triggerdef
 // getFunctions / getProcedures: pg_get_functiondef, pg_get_function_arguments, pg_get_function_identity_arguments, pg_get_function_result (https://www.postgresql.org/docs/current/functions-info.html#FUNCTIONS-INFO-CATALOG)
 
-function handleError<T>(msg: string, onError: T, {logger, ignoreErrors}: ConnectorSchemaOpts) {
-    return (err: any): Promise<T> => {
-        if (ignoreErrors) {
-            logger.warn(`${msg}. Ignoring...`)
-            return Promise.resolve(onError)
-        } else {
-            return Promise.reject(err)
-        }
-    }
+const getJsonColumns = (columns: Record<EntityId, RawColumn[]>, opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<Record<EntityId, Record<AttributeName, ValueSchema>>> => {
+    return mapEntriesAsync(columns, (entityId, tableCols) => {
+        const ref = parseEntityRef(entityId)
+        const jsonCols = tableCols.filter(c => c.column_type === 'jsonb')
+        return mapValuesAsync(Object.fromEntries(jsonCols.map(c => [c.column_name, c.column_name])), c => inferColumnSchema(ref, [c], opts)(conn))
+    })
 }
 
-function scopeFilter(schemaField: string, schemaScope: SchemaName | undefined, entityField?: string, entityScope?: EntityName) {
-    const schemaFilter = schemaScope ? `${schemaField} ${schemaScope.includes('%') ? 'LIKE' : '='} '${schemaScope}'` : `${schemaField} NOT IN ('information_schema', 'pg_catalog')`
-    const entityFilter = entityField && entityScope ? ` AND ${entityField} ${entityScope.includes('%') ? 'LIKE' : '='} '${entityScope}'` : ''
-    return schemaFilter + entityFilter
+const inferColumnSchema = (ref: EntityRef, attribute: AttributePath, opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<ValueSchema> => {
+    const sqlTable = buildSqlTable(ref)
+    const sqlColumn = buildSqlColumn(attribute)
+    const sampleSize = opts.sampleSize || connectorSchemaOptsDefaults.sampleSize
+    return conn.query<{value: JsValue}>(`SELECT ${sqlColumn} AS value FROM ${sqlTable} WHERE ${sqlColumn} IS NOT NULL LIMIT ${sampleSize};`, [], 'inferColumnSchema')
+        .then(rows => valuesToSchema(rows.map(row => row.value)))
+        .catch(handleError(`Failed to infer schema for column '${formatAttributeRef({...ref, attribute})}'`, valuesToSchema([]), opts))
+}
+
+const getPolyColumns = (columns: Record<EntityId, RawColumn[]>, opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<Record<EntityId, Record<AttributeName, string[]>>> => {
+    return mapEntriesAsync(columns, (entityId, tableCols) => {
+        const ref = parseEntityRef(entityId)
+        const colNames = tableCols.map(c => c.column_name)
+        const polyCols = tableCols.filter(c => isPolymorphic(c.column_name, colNames))
+        return mapValuesAsync(Object.fromEntries(polyCols.map(c => [c.column_name, c.column_name])), c => getColumnDistinctValues(ref, [c], opts)(conn))
+    })
+}
+
+const getColumnDistinctValues = (ref: EntityRef, attribute: AttributePath, opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<string[]> => {
+    const sqlTable = buildSqlTable(ref)
+    const sqlColumn = buildSqlColumn(attribute)
+    const sampleSize = opts.sampleSize || connectorSchemaOptsDefaults.sampleSize
+    return conn.query<{value: string}>(`SELECT DISTINCT ${sqlColumn} as value FROM ${sqlTable} WHERE ${sqlColumn} IS NOT NULL ORDER BY value LIMIT ${sampleSize};`, [], 'getColumnDistinctValues')
+        .then(rows => rows.map(v => v.value?.toString()))
+        .catch(handleError(`Failed to get distinct values for column '${formatAttributeRef({...ref, attribute})}'`, [], opts))
 }

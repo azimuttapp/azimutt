@@ -301,6 +301,13 @@ function handleError<T>(msg: string, onError: T, {logger, ignoreErrors}: Bigquer
     }
 }
 
+function datasetFilter(datasetId: string, schema: LegacySchemaName | undefined): boolean {
+    if (schema === undefined) return true
+    if (schema === datasetId) return true
+    if (schema.indexOf('%') && new RegExp(schema.replaceAll('%', '.*')).exec(datasetId)) return true
+    return false
+}
+
 function scopeFilter(prefix: string, catalogField?: string, catalogScope?: LegacySchemaName, schemaField?: string, schemaScope?: LegacySchemaName, tableField?: string, tableScope?: LegacyTableName): string {
     const catalogFilter = catalogField && catalogScope ? `${catalogField} ${scopeOp(catalogScope)} '${catalogScope}'` : undefined
     const schemaFilter = schemaField && schemaScope ? `${schemaField} ${scopeOp(schemaScope)} '${schemaScope}'` : undefined
@@ -311,13 +318,6 @@ function scopeFilter(prefix: string, catalogField?: string, catalogScope?: Legac
 
 function scopeOp(scope: string): string {
     return scope.includes('%') ? 'LIKE' : '='
-}
-
-function datasetFilter(datasetId: string, schema: LegacySchemaName | undefined): boolean {
-    if (schema === undefined) return true
-    if (schema === datasetId) return true
-    if (schema.indexOf('%') && new RegExp(schema.replaceAll('%', '.*')).exec(datasetId)) return true
-    return false
 }
 
 function removeQuotes(value: string): string {

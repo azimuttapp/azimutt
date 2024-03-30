@@ -1,6 +1,5 @@
 import mssql, {config, ConnectionPool, IOptions, IResult, ISqlType} from "mssql";
-import {AttributeValue, ConnectorDefaultOpts, DatabaseUrlParsed, logQueryIfNeeded} from "@azimutt/database-model";
-import {Conn, QueryResultArrayMode, QueryResultRow} from "./common";
+import {AttributeValue, ConnectorDefaultOpts, DatabaseUrlParsed, logQueryIfNeeded, parseDatabaseOptions} from "@azimutt/database-model";
 
 export async function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c: Conn) => Promise<T>, opts: ConnectorDefaultOpts): Promise<T> {
     const connection: ConnectionPool = await mssql.connect(buildconfig(application, url)).catch(_ => mssql.connect(url.full))
@@ -26,8 +25,23 @@ export async function connect<T>(application: string, url: DatabaseUrlParsed, ex
     )
 }
 
+export interface Conn {
+    query<T extends QueryResultRow>(sql: string, parameters?: any[], name?: string): Promise<T[]>
+
+    queryArrayMode(sql: string, parameters?: any[], name?: string): Promise<QueryResultArrayMode>
+}
+
+export type QueryResultValue = AttributeValue
+export type QueryResultRow = { [column: string]: QueryResultValue }
+export type QueryResultField = { name: string }
+export type QueryResultRowArray = QueryResultValue[]
+export type QueryResultArrayMode = {
+    fields: QueryResultField[],
+    rows: QueryResultRowArray[]
+}
+
 function buildconfig(application: string, url: DatabaseUrlParsed): config {
-    const props = Object.fromEntries((url.options || '').split('&').filter(o => o).map(o => o.split('='))) // TODO: use parseDatabaseOptions from url.ts
+    const props = parseDatabaseOptions(url.options)
     return {
         server: url.host,
         port: url.port,
