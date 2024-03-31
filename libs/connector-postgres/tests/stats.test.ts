@@ -7,6 +7,7 @@ import {application, logger} from "./constants";
 describe('stats', () => {
     // local url, install db or replace it to test
     const url: DatabaseUrlParsed = parseDatabaseUrl('postgresql://postgres:postgres@localhost:5432/azimutt_dev')
+
     test.skip('getTableStats', async () => {
         const stats = await connect(application, url, getTableStats({schema: 'public', entity: 'users'}), {logger, logQueries: true})
         console.log('getTableStats', stats)

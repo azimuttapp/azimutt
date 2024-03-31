@@ -1,7 +1,6 @@
 import * as mariadb from "mariadb";
 import {Connection, ConnectionConfig} from "mariadb";
-import {ConnectorDefaultOpts, DatabaseUrlParsed, logQueryIfNeeded} from "@azimutt/database-model";
-import {Conn, QueryResultArrayMode, QueryResultRow} from "./common";
+import {AttributeValue, ConnectorDefaultOpts, DatabaseUrlParsed, logQueryIfNeeded} from "@azimutt/database-model";
 
 export async function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c: Conn) => Promise<T>, opts: ConnectorDefaultOpts): Promise<T> {
     const connection: Connection = await mariadb.createConnection(buildConfig(application, url)).catch(_ => mariadb.createConnection(url.full))
@@ -23,6 +22,21 @@ export async function connect<T>(application: string, url: DatabaseUrlParsed, ex
         res => connection.end().then(_ => res),
         err => connection.end().then(_ => Promise.reject(err))
     )
+}
+
+export interface Conn {
+    query<T extends QueryResultRow>(sql: string, parameters?: any[], name?: string): Promise<T[]>
+
+    queryArrayMode(sql: string, parameters?: any[], name?: string): Promise<QueryResultArrayMode>
+}
+
+export type QueryResultValue = AttributeValue
+export type QueryResultRow = { [column: string]: QueryResultValue }
+export type QueryResultField = { name: string }
+export type QueryResultRowArray = QueryResultValue[]
+export type QueryResultArrayMode = {
+    fields: QueryResultField[],
+    rows: QueryResultRowArray[]
 }
 
 function buildConfig(application: string, url: DatabaseUrlParsed): ConnectionConfig {

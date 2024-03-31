@@ -5,7 +5,7 @@ import {getColumnStats, getTableStats} from "../src/stats";
 import {application, logger} from "./constants";
 
 describe('stats', () => {
-    // local url, install db or replace it to test
+    // fake url, use a real one to test (see README for how-to)
     const url: DatabaseUrlParsed = parseDatabaseUrl('snowflake://<user>:<pass>@<account>.snowflakecomputing.com?db=<database>')
 
     test.skip('getTableStats', async () => {
