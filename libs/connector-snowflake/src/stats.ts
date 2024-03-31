@@ -49,14 +49,14 @@ async function getSampleValues(conn: Conn, sqlTable: SqlFragment): Promise<{ [at
 
 async function getSampleValue(conn: Conn, sqlTable: SqlFragment, column: AttributeName): Promise<AttributeValue> {
     // select several raws to and then shuffle results to avoid showing samples from the same raw
-    const sql = `SELECT ${column} as value FROM ${sqlTable} WHERE ${column} IS NOT NULL LIMIT 10;`
+    const sql = `SELECT ${column} AS value FROM ${sqlTable} WHERE ${column} IS NOT NULL LIMIT 10;`
     const rows = await conn.query<{ value: AttributeValue }>(sql)
     return rows.length > 0 ? shuffle(rows)[0].value : null
 }
 
 async function getColumnType(conn: Conn, ref: AttributeRef): Promise<AttributeType> {
     const rows = await conn.query<{ formatted: AttributeType, name: string, category: string }>(
-        `SELECT DATA_TYPE as "formatted" FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME=? AND COLUMN_NAME=?${ref.schema ? ' AND TABLE_SCHEMA=?' : ''};`,
+        `SELECT DATA_TYPE AS "formatted" FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME=? AND COLUMN_NAME=?${ref.schema ? ' AND TABLE_SCHEMA=?' : ''};`,
         [ref.entity, ref.attribute[0]].concat(ref.schema ? [ref.schema] : [])
     )
     return rows.length > 0 ? rows[0].formatted : 'unknown'

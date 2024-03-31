@@ -1,4 +1,3 @@
-import {distinct} from "@azimutt/utils";
 import {
     AttributeRef,
     Connector,
@@ -8,39 +7,24 @@ import {
     ConnectorQueryHistoryOpts,
     ConnectorSchemaOpts,
     Database,
-    databaseFromLegacy,
     DatabaseQuery,
     DatabaseUrlParsed,
     EntityRef,
     QueryAnalyze,
     QueryResults
 } from "@azimutt/database-model";
-import {execQuery, formatSchema, getSchema, MongodbSchemaOpts} from "./mongodb";
 import {connect} from "./connect";
-
-export * from "./mongodb"
+import {execQuery} from "./query";
+import {getSchema} from "./mongodb";
 
 export const mongodb: Connector = {
     name: 'MongoDb',
-    getSchema: async (application: string, url: DatabaseUrlParsed, opts: ConnectorSchemaOpts): Promise<Database> => {
-        const schemaOpts: MongodbSchemaOpts = {
-            logger: opts.logger,
-            database: opts.schema,
-            mixedCollection: opts.inferMixedJson,
-            sampleSize: withDefault(opts.sampleSize, 100),
-            ignoreErrors: withDefault(opts.ignoreErrors, false)
-        }
-        const schema = await connect(application, url, getSchema(schemaOpts))
-        return databaseFromLegacy(formatSchema(schema))
-    },
+    getSchema: async (application: string, url: DatabaseUrlParsed, opts: ConnectorSchemaOpts): Promise<Database> =>
+        connect(application, url, getSchema(opts), opts),
     getQueryHistory: (application: string, url: DatabaseUrlParsed, opts: ConnectorQueryHistoryOpts): Promise<DatabaseQuery[]> =>
         Promise.reject('Not implemented'),
     execute: (application: string, url: DatabaseUrlParsed, query: string, parameters: any[], opts: ConnectorDefaultOpts): Promise<QueryResults> =>
-        connect(application, url, execQuery(query, parameters)).then(r => ({
-            query,
-            attributes: distinct(r.rows.flatMap(Object.keys)).map(name => ({name})),
-            rows: r.rows.map(row => JSON.parse(JSON.stringify(row))) // serialize ObjectId & Date objects
-        })),
+        connect(application, url, execQuery(query, parameters), opts),
     analyze: (application: string, url: DatabaseUrlParsed, query: string, parameters: any[], opts: ConnectorDefaultOpts): Promise<QueryAnalyze> =>
         Promise.reject('Not implemented'),
     getEntityStats: (application: string, url: DatabaseUrlParsed, ref: EntityRef, opts: ConnectorDefaultOpts): Promise<ConnectorEntityStats> =>

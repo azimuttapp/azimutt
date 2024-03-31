@@ -12,6 +12,7 @@ import {
     Attribute,
     AttributeName,
     AttributePath,
+    AttributeValue,
     Check,
     ConnectorSchemaOpts,
     connectorSchemaOptsDefaults,
@@ -305,15 +306,17 @@ const getJsonColumns = (columns: Record<EntityId, RawColumn[]>, checks: Record<E
     return mapEntriesAsync(columns, async (entityId, tableCols) => {
         const ref = parseEntityRef(entityId)
         const jsonCols = tableCols.filter(col => col.column_type === 'nvarchar' && checks[entityId]?.find(ck => ck.column_name == col.column_name && ck.definition?.includes('isjson')))
-        return mapValuesAsync(Object.fromEntries(jsonCols.map(c => [c.column_name, c.column_name])), c => inferColumnSchema(ref, [c], opts)(conn))
+        return mapValuesAsync(Object.fromEntries(jsonCols.map(c => [c.column_name, c.column_name])), c =>
+            getSampleValues(ref, [c], opts)(conn).then(values => valuesToSchema(values.filter((v): v is string => typeof v === 'string').map(safeJsonParse)))
+        )
     })
 }
 
-const inferColumnSchema = (ref: EntityRef, attribute: AttributePath, opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<ValueSchema> => {
+const getSampleValues = (ref: EntityRef, attribute: AttributePath, opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<AttributeValue[]> => {
     const sqlTable = buildSqlTable(ref)
     const sqlColumn = buildSqlColumn(attribute)
     const sampleSize = opts.sampleSize || connectorSchemaOptsDefaults.sampleSize
-    return conn.query<{value: string}>(`SELECT TOP ${sampleSize} ${sqlColumn} AS value FROM ${sqlTable} WHERE ${sqlColumn} IS NOT NULL;`, [], 'inferColumnSchema')
-        .then(rows => valuesToSchema(rows.map(row => safeJsonParse(row.value))))
-        .catch(handleError(`Failed to infer schema for column '${formatAttributeRef({...ref, attribute})}'`, valuesToSchema([]), opts))
+    return conn.query<{value: AttributeValue}>(`SELECT TOP ${sampleSize} ${sqlColumn} AS value FROM ${sqlTable} WHERE ${sqlColumn} IS NOT NULL;`, [], 'getSampleValues')
+        .then(rows => rows.map(row => row.value))
+        .catch(handleError(`Failed to get sample values for '${formatAttributeRef({...ref, attribute})}'`, [], opts))
 }

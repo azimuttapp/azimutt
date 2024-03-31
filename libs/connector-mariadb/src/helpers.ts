@@ -17,8 +17,9 @@ export function buildSqlColumn(path: AttributePath): SqlFragment {
     return path.join('.') // FIXME: handle nested columns (JSON)
 }
 
-export type ScopeFields = { database?: SqlFragment, catalog?: SqlFragment, schema?: SqlFragment, entity?: SqlFragment }
 export type ScopeOpts = { database?: DatabaseName, catalog?: CatalogName, schema?: SchemaName, entity?: EntityName }
+export type ScopeFields = { database?: SqlFragment, catalog?: SqlFragment, schema?: SqlFragment, entity?: SqlFragment }
+
 export function scopeWhere(fields: ScopeFields, opts: ScopeOpts): SqlFragment {
     const databaseFilter = fields.database && opts.database ? `${fields.database} ${scopeOp(opts.database)} '${opts.database}'` : ''
     const catalogFilter = fields.catalog && opts.catalog ? `${fields.catalog} ${scopeOp(opts.catalog)} '${opts.catalog}'` : ''

@@ -17,7 +17,7 @@ describe('mysql', () => {
     })
     test.skip('getSchema', async () => {
         const schema = await connect(application, url, getSchema(opts), opts)
-        console.log('schema', JSON.stringify(schema, null, 2))
+        console.log('schema', schema)
         expect(schema.entities?.length).toEqual(21)
     })
     test.skip('getTables', async () => {

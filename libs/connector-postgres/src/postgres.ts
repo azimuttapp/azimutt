@@ -17,7 +17,6 @@ import {
     handleError,
     Index,
     isPolymorphic,
-    JsValue,
     parseEntityRef,
     PrimaryKey,
     Relation,
@@ -621,17 +620,19 @@ const getJsonColumns = (columns: Record<EntityId, RawColumn[]>, opts: ConnectorS
     return mapEntriesAsync(columns, (entityId, tableCols) => {
         const ref = parseEntityRef(entityId)
         const jsonCols = tableCols.filter(c => c.column_type === 'jsonb')
-        return mapValuesAsync(Object.fromEntries(jsonCols.map(c => [c.column_name, c.column_name])), c => inferColumnSchema(ref, [c], opts)(conn))
+        return mapValuesAsync(Object.fromEntries(jsonCols.map(c => [c.column_name, c.column_name])), c =>
+            getSampleValues(ref, [c], opts)(conn).then(valuesToSchema)
+        )
     })
 }
 
-const inferColumnSchema = (ref: EntityRef, attribute: AttributePath, opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<ValueSchema> => {
+const getSampleValues = (ref: EntityRef, attribute: AttributePath, opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<AttributeValue[]> => {
     const sqlTable = buildSqlTable(ref)
     const sqlColumn = buildSqlColumn(attribute)
     const sampleSize = opts.sampleSize || connectorSchemaOptsDefaults.sampleSize
-    return conn.query<{value: JsValue}>(`SELECT ${sqlColumn} AS value FROM ${sqlTable} WHERE ${sqlColumn} IS NOT NULL LIMIT ${sampleSize};`, [], 'inferColumnSchema')
-        .then(rows => valuesToSchema(rows.map(row => row.value)))
-        .catch(handleError(`Failed to infer schema for column '${formatAttributeRef({...ref, attribute})}'`, valuesToSchema([]), opts))
+    return conn.query<{value: AttributeValue}>(`SELECT ${sqlColumn} AS value FROM ${sqlTable} WHERE ${sqlColumn} IS NOT NULL LIMIT ${sampleSize};`, [], 'getSampleValues')
+        .then(rows => rows.map(row => row.value))
+        .catch(handleError(`Failed to get sample values for '${formatAttributeRef({...ref, attribute})}'`, [], opts))
 }
 
 const getPolyColumns = (columns: Record<EntityId, RawColumn[]>, opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<Record<EntityId, Record<AttributeName, string[]>>> => {
@@ -639,15 +640,17 @@ const getPolyColumns = (columns: Record<EntityId, RawColumn[]>, opts: ConnectorS
         const ref = parseEntityRef(entityId)
         const colNames = tableCols.map(c => c.column_name)
         const polyCols = tableCols.filter(c => isPolymorphic(c.column_name, colNames))
-        return mapValuesAsync(Object.fromEntries(polyCols.map(c => [c.column_name, c.column_name])), c => getColumnDistinctValues(ref, [c], opts)(conn))
+        return mapValuesAsync(Object.fromEntries(polyCols.map(c => [c.column_name, c.column_name])), c =>
+            getDistinctValues(ref, [c], opts)(conn).then(values => values.filter((v): v is string => typeof v === 'string'))
+        )
     })
 }
 
-const getColumnDistinctValues = (ref: EntityRef, attribute: AttributePath, opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<string[]> => {
+const getDistinctValues = (ref: EntityRef, attribute: AttributePath, opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<AttributeValue[]> => {
     const sqlTable = buildSqlTable(ref)
     const sqlColumn = buildSqlColumn(attribute)
     const sampleSize = opts.sampleSize || connectorSchemaOptsDefaults.sampleSize
-    return conn.query<{value: string}>(`SELECT DISTINCT ${sqlColumn} as value FROM ${sqlTable} WHERE ${sqlColumn} IS NOT NULL ORDER BY value LIMIT ${sampleSize};`, [], 'getColumnDistinctValues')
-        .then(rows => rows.map(v => v.value?.toString()))
-        .catch(handleError(`Failed to get distinct values for column '${formatAttributeRef({...ref, attribute})}'`, [], opts))
+    return conn.query<{value: AttributeValue}>(`SELECT DISTINCT ${sqlColumn} AS value FROM ${sqlTable} WHERE ${sqlColumn} IS NOT NULL ORDER BY value LIMIT ${sampleSize};`, [], 'getDistinctValues')
+        .then(rows => rows.map(row => row.value))
+        .catch(handleError(`Failed to get distinct values for '${formatAttributeRef({...ref, attribute})}'`, [], opts))
 }

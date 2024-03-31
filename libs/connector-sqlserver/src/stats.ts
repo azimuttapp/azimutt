@@ -49,7 +49,7 @@ async function getSampleValues(conn: Conn, sqlTable: SqlFragment): Promise<{ [at
 
 async function getSampleValue(conn: Conn, sqlTable: SqlFragment, column: AttributeName): Promise<AttributeValue> {
     // select several raws to and then shuffle results to avoid showing samples from the same raw
-    const sql = `SELECT TOP 10 ${column} as value FROM ${sqlTable} WHERE ${column} IS NOT NULL;`
+    const sql = `SELECT TOP 10 ${column} AS value FROM ${sqlTable} WHERE ${column} IS NOT NULL;`
     const rows = await conn.query<{ value: AttributeValue }>(sql)
     return rows.length > 0 ? shuffle(rows)[0].value : null
 }
