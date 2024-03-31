@@ -18,9 +18,9 @@ import {Conn} from "./connect";
 export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<Database> => {
     opts.logger.log('Connected to database ...')
     const databaseNames: DatabaseName[] = await getDatabases(opts)(conn)
-    opts.logger.log(`Found ${databaseNames.length} databases to export (${databaseNames.join(', ')}) ...`)
+    opts.logger.log(`Found ${pluralL(databaseNames, 'database')} to export (${printList(databaseNames)}) ...`)
     const collections: Collection[] = await getCollections(databaseNames, opts)(conn)
-    opts.logger.log(`Found ${collections.length} collections to export ...`)
+    opts.logger.log(`Found ${pluralL(collections, 'collection')} to export (${printList(collections.map(c => c.collectionName))}) ...`)
     const entities: Entity[] = (await sequence(collections, collection => inferCollection(collection, opts))).flat()
     opts.logger.log('✔︎ All collections exported!')
     return removeUndefined({
@@ -42,9 +42,7 @@ const getDatabases = (opts: ConnectorSchemaOpts) => (conn: Conn): Promise<Databa
     } else {
         const adminDb = conn.underlying.db('admin')
         return adminDb.admin().listDatabases().then(dbs =>
-            dbs.databases
-                .map(db => db.name)
-                .filter(name => scopeFilter({database: name}, opts))
+            dbs.databases.map(db => db.name).filter(name => scopeFilter({database: name}, opts))
         ).catch(handleError(`Failed to get databases`, [], opts))
     }
 }
@@ -71,6 +69,7 @@ async function inferCollection(collection: Collection, opts: ConnectorSchemaOpts
         const values = await getDistinctValues(collection, attribute, opts)
             .then(values => values.filter((v): v is string => typeof v === 'string'))
         if (values.length > 0) {
+            opts.logger.log(`Found ${pluralL(values, 'kind')} to export (${printList(values)}) ...`)
             return sequence(values, value => {
                 opts.logger.log(`Exporting collection ${collectionId(collection)} for ${attribute}=${value} ...`)
                 return inferCollectionMixed(collection, {attribute, value}, opts)
@@ -87,7 +86,6 @@ async function getDistinctValues(collection: Collection, attribute: AttributeNam
     return collection.distinct(attribute)
         .catch(handleError(`Failed to get distinct values for '${collectionId(collection)}(${attribute})'`, [], opts))
 }
-
 
 async function inferCollectionMixed(collection: Collection, mixed: MixedCollection | null, opts: ConnectorSchemaOpts): Promise<Entity> {
     const documents = await getSampleDocuments(collection, mixed, opts)
@@ -121,13 +119,18 @@ async function getSampleDocuments(collection: Collection, mixed: MixedCollection
     // TODO: use $sample: https://www.mongodb.com/docs/manual/reference/operator/aggregation/sample
     const sampleSize = opts.sampleSize || connectorSchemaOptsDefaults.sampleSize
     return collection.find(buildFilter(mixed)).limit(sampleSize).toArray()
-        .catch(handleError(`Failed to get sample documents for '${collectionId(collection)}'`, [], opts))
+        .catch(handleError(`Failed to get sample documents for '${collectionId(collection)}${formatMixed(mixed)}'`, [], opts))
 }
 
 async function countDocuments(collection: Collection, mixed: MixedCollection | null, opts: ConnectorSchemaOpts): Promise<number> {
     return collection.countDocuments(buildFilter(mixed))
-        .catch(handleError(`Failed to count documents for '${collectionId(collection)}'`, 0, opts))
+        .catch(handleError(`Failed to count documents for '${collectionId(collection)}${formatMixed(mixed)}'`, 0, opts))
 }
 
 const buildFilter = (mixed: MixedCollection | null): Filter<any> => mixed ? {[mixed.attribute]: mixed.value} : {}
 const collectionId = (collection: Collection): string => `${collection.dbName}.${collection.collectionName}`
+const formatMixed = (mixed: MixedCollection | null) => mixed ? `(${mixed.attribute}=${mixed.value})` : ''
+
+const plural = (num: number, name: string): string => num === 1 ? `${num} ${name}` : `${num} ${name}s`
+const pluralL = <T>(items: T[], name: string): string => plural(items.length, name)
+const printList = (items: string[], max: number = 5): string => items.length > max ? items.slice(0, max).join(', ') + '...' : items.join(', ')

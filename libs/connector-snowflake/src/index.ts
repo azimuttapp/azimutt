@@ -20,7 +20,7 @@ import {getColumnStats, getTableStats} from "./stats";
 
 export const snowflake: Connector = {
     name: 'Snowflake',
-    getSchema: async (application: string, url: DatabaseUrlParsed, opts: ConnectorSchemaOpts): Promise<Database> =>
+    getSchema: (application: string, url: DatabaseUrlParsed, opts: ConnectorSchemaOpts): Promise<Database> =>
         connect(application, url, getSchema(opts), opts),
     getQueryHistory: (application: string, url: DatabaseUrlParsed, opts: ConnectorQueryHistoryOpts): Promise<DatabaseQuery[]> =>
         Promise.reject('Not implemented'),

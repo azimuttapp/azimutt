@@ -2,9 +2,9 @@ import {describe, test} from "@jest/globals";
 import * as couchbase from "couchbase";
 import {Cluster, QueryResult} from "couchbase";
 import {parseDatabaseUrl} from "@azimutt/database-model";
-import {application} from "./constants";
-import {execQuery} from "../src";
 import {connect} from "../src/connect";
+import {execQuery} from "../src/query";
+import {application, logger} from "./constants";
 
 // Use this test to troubleshoot database connection errors.
 // If you don't succeed with the first one (Azimutt `connect`), try with the second one (raw node lib) and once you found a way, tell us how to fix ;)
@@ -21,7 +21,7 @@ describe('connect', () => {
     // TODO 3: unskip this test first and run it (`npm run test -- tests/connect.test.ts`)
     test.skip('Azimutt should connect', async () => {
         const parsedUrl = parseDatabaseUrl(url)
-        const results = await connect(application, parsedUrl, execQuery(query, parameters))
+        const results = await connect(application, parsedUrl, execQuery(query, parameters), {logger, logQueries: true})
         console.log('results', results)
     })
 

@@ -19,6 +19,6 @@ describe('mongodb', () => {
     test.skip('getSchema', async () => {
         const schema = await connect(application, url, getSchema(opts), opts)
         console.log('schema', schema)
-        expect(schema.entities.length).toEqual(22)
+        expect(schema.entities?.length).toEqual(22)
     })
 })

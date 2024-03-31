@@ -1,102 +1,138 @@
-import {Cluster, Collection, PlanningFailureError, QueryResult, UnambiguousTimeoutError} from "couchbase";
-import {errorToString, Logger, sequence} from "@azimutt/utils";
-import {LegacyDatabase, schemaToColumns, ValueSchema, valuesToSchema} from "@azimutt/database-model";
+import {Bucket, Collection, ScopeSpec} from "couchbase";
+import {removeUndefined, sequence} from "@azimutt/utils";
+import {
+    AttributeName,
+    AttributeValue,
+    ConnectorSchemaOpts,
+    connectorSchemaOptsDefaults,
+    Database,
+    Entity,
+    handleError,
+    schemaToAttributes,
+    valuesToSchema
+} from "@azimutt/database-model";
+import {scopeFilter} from "./helpers";
+import {Conn} from "./connect";
 
-export const execQuery = (query: string, parameters: any[]) => (cluster: Cluster): Promise<QueryResult> => {
-    return cluster.query(query, {parameters})
-}
+export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<Database> => {
+    opts.logger.log('Connected to cluster ...')
+    const buckets: Bucket[] = await getBuckets(opts)(conn)
+    opts.logger.log(`Found ${pluralL(buckets, 'bucket')} to export (${printList(buckets.map(b => b.name))}) ...`)
 
-export type CouchbaseSchema = { collections: CouchbaseCollection[] }
-export type CouchbaseCollection = {
-    bucket: CouchbaseBucketName,
-    scope: CouchbaseScopeName,
-    collection: CouchbaseCollectionName,
-    type?: CouchbaseCollectionType,
-    schema: ValueSchema,
-    sampleDocs: number,
-    totalDocs: number
-}
-export type CouchbaseBucketName = string
-export type CouchbaseScopeName = string
-export type CouchbaseCollectionName = string
-export type CouchbaseCollectionType = {field: string, value: string | undefined}
-
-export type CouchbaseSchemaOpts = {logger: Logger, bucket: CouchbaseBucketName | undefined, mixedCollection: string | undefined, sampleSize: number, ignoreErrors: boolean}
-export const getSchema = ({logger, bucket, mixedCollection, sampleSize, ignoreErrors}: CouchbaseSchemaOpts) => async (cluster: Cluster): Promise<CouchbaseSchema> => {
-    logger.log('Connected to cluster ...')
-    const bucketNames: CouchbaseBucketName[] = bucket ? [bucket] : await listBuckets(cluster, ignoreErrors, logger)
-    logger.log(bucket ? `Export for '${bucket}' bucket ...` : `Found ${bucketNames.length} buckets to export ...`)
-
-    const schemas = (await sequence(bucketNames, async b => {
-        const bucket = cluster.bucket(b)
-        const scopes = await bucket.collections().getAllScopes()
-        return (await sequence(scopes, async s => {
-            const scope = bucket.scope(s.name)
-            const collections = s.collections.map(c => scope.collection(c.name))
-            return (await sequence(collections, c => inferCollection(c, mixedCollection, sampleSize, ignoreErrors, logger))).flat()
+    const entities: Entity[] = (await sequence(buckets, async bucket => {
+        const scopes = await getScopes(bucket, opts)(conn)
+        opts.logger.log(`Found ${pluralL(scopes, 'scope')} to export in bucket '${bucket.name}' (${printList(scopes.map(b => b.name))}) ...`)
+        return (await sequence(scopes, async scope => {
+            const collections = getCollections(bucket, scope, opts)(conn)
+            opts.logger.log(`Found ${pluralL(collections, 'collection')} to export in scope '${bucket.name}.${scope.name}' (${printList(collections.map(b => b.name))}) ...`)
+            return (await sequence(collections, collection => inferCollection(collection, opts)(conn))).flat()
         })).flat()
     })).flat()
 
-    logger.log('✔︎ All collections exported!')
-    return {collections: schemas}
-}
-
-export function formatSchema(schema: CouchbaseSchema): LegacyDatabase {
-    // /!\ we group `bucket` with `scope` as it's "similar" to the database level, grouping database & schema inside schema
-    const tables = schema.collections.map(c => ({
-        schema: `${c.bucket}__${c.scope}`,
-        table: c.type && c.type.value ? `${c.collection}__${c.type.field}__${c.type.value}` : c.collection,
-        columns: schemaToColumns(c.schema, 0)
-    }))
-    return {tables, relations: []}
+    opts.logger.log('✔︎ All collections exported!')
+    return removeUndefined({
+        entities,
+        relations: undefined,
+        types: undefined,
+        doc: undefined,
+        stats: undefined,
+        extra: undefined,
+    })
 }
 
 // 👇️ Private functions, some are exported only for tests
 // If you use them, beware of breaking changes!
 
-async function listBuckets(cluster: Cluster, ignoreErrors: boolean, logger: Logger): Promise<CouchbaseBucketName[]> {
-    return cluster.buckets().getAllBuckets()
-        .then(buckets => buckets.map(b => b.name))
-        .catch(handleError(`Failed to get buckets`, [], ignoreErrors, logger))
-}
-
-async function inferCollection(collection: Collection, mixedCollection: string | undefined, sampleSize: number, ignoreErrors: boolean, logger: Logger): Promise<CouchbaseCollection[]> {
-    // FIXME: fetch index informations & more
-    logger.log(`Exporting collection ${collectionRef(collection)} ...`)
-    const types = mixedCollection ? await getCollectionTypes(collection, mixedCollection, ignoreErrors, logger) : [undefined]
-    return sequence(types, type => inferCollectionForType(collection, type, sampleSize, ignoreErrors, logger))
-}
-
-async function getCollectionTypes(collection: Collection, mixedCollection: string, ignoreErrors: boolean, logger: Logger): Promise<CouchbaseCollectionType[]> {
-    return query<{type: string}>(collection, `SELECT distinct ${mixedCollection} as type FROM ${collection.name}`)
-        .then(rows => rows.map(r => ({field: mixedCollection, value: r.type})))
-        .catch(handleError(`Failed to get types for '${collectionRef(collection)}'`, [], ignoreErrors, logger))
-}
-
-async function inferCollectionForType(collection: Collection, type: CouchbaseCollectionType | undefined, sampleSize: number, ignoreErrors: boolean, logger: Logger): Promise<CouchbaseCollection> {
-    type && type.value && logger.log(`Exporting collection ${collectionRef(collection)} with ${type.field}=${type.value} ...`)
-    const documents = await getSampleDocuments(collection, type, sampleSize, ignoreErrors, logger)
-    const count = await countDocuments(collection, type, ignoreErrors, logger)
-    return {
-        bucket: collection.scope.bucket.name,
-        scope: collection.scope.name,
-        collection: collection.name,
-        type,
-        schema: valuesToSchema(documents),
-        sampleDocs: documents.length,
-        totalDocs: count
+const getBuckets = (opts: ConnectorSchemaOpts) => (conn: Conn): Promise<Bucket[]> => {
+    if (opts.catalog && !opts.catalog.includes('%')) {
+        return Promise.resolve([conn.underlying.bucket(opts.catalog)])
+    } else {
+        return conn.underlying.buckets().getAllBuckets().then(buckets =>
+            buckets.map(b => conn.underlying.bucket(b.name)).filter(b => scopeFilter({catalog: b.name}, opts))
+        ).catch(handleError(`Failed to get buckets`, [], opts))
     }
 }
 
-async function getSampleDocuments(collection: Collection, type: CouchbaseCollectionType | undefined, sampleSize: number, ignoreErrors: boolean, logger: Logger): Promise<any[]> {
-    return query(collection, `SELECT Meta() as _meta, ${collection.name}.* FROM ${collection.name}${filter(type)} LIMIT ${sampleSize}`)
-        .catch(handleError(`Failed to get sample documents for '${collectionRef(collection)}'`, [], ignoreErrors, logger))
+const getScopes = (bucket: Bucket, opts: ConnectorSchemaOpts) => (conn: Conn): Promise<ScopeSpec[]> => {
+    return bucket.collections().getAllScopes()
+        .then(cols => cols.filter(scope => scopeFilter({schema: scope.name}, opts)))
+        .catch(handleError(`Failed to get scopes for bucket '${bucket.name}'`, [], opts))
 }
 
-async function countDocuments(collection: Collection, type: CouchbaseCollectionType | undefined, ignoreErrors: boolean, logger: Logger): Promise<number> {
-    return query<{count: number}>(collection, `SELECT count(*) as count FROM ${collection.name}${filter(type)}`)
+const getCollections = (bucket: Bucket, s: ScopeSpec, opts: ConnectorSchemaOpts) => (conn: Conn): Collection[] => {
+    const scope = bucket.scope(s.name)
+    return s.collections.filter(c => scopeFilter({entity: c.name}, opts)).map(c => scope.collection(c.name))
+}
+
+// TODO: allow nested attribute
+type MixedCollection = {attribute: AttributeName, value: string}
+
+const inferCollection = (collection: Collection, opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<Entity[]> => {
+    // FIXME: fetch index informations & more
+    opts.logger.log(`Exporting collection ${collectionId(collection)} ...`)
+    if (opts.inferMixedJson) {
+        const attribute: AttributeName = opts.inferMixedJson
+        const values = await getDistinctValues(collection, attribute, opts)
+            .then(values => values.filter((v): v is string => typeof v === 'string'))
+        if (values.length > 0) {
+            opts.logger.log(`Found ${pluralL(values, 'kind')} to export (${printList(values)}) ...`)
+            return sequence(values, value => {
+                opts.logger.log(`Exporting collection ${collectionId(collection)} for ${attribute}=${value} ...`)
+                return inferCollectionMixed(collection, {attribute, value}, opts)
+            })
+        } else {
+            return [await inferCollectionMixed(collection, null, opts)]
+        }
+    } else {
+        return [await inferCollectionMixed(collection, null, opts)]
+    }
+}
+
+async function getDistinctValues(collection: Collection, attribute: AttributeName, opts: ConnectorSchemaOpts): Promise<AttributeValue[]> {
+    return query<{value: AttributeValue}>(collection, `SELECT distinct ${attribute} AS value FROM ${collection.name};`)
+        .then(rows => rows.map(row => row.value))
+        .catch(handleError(`Failed to get distinct values for '${collectionId(collection)}(${attribute})'`, [], opts))
+}
+
+async function inferCollectionMixed(collection: Collection, mixed: MixedCollection | null, opts: ConnectorSchemaOpts): Promise<Entity> {
+    const documents = await getSampleDocuments(collection, mixed, opts)
+    const count = await countDocuments(collection, mixed, opts)
+    return removeUndefined({
+        catalog: collection.scope.bucket.name,
+        schema: collection.scope.name,
+        name: mixed ? `${collection.name}__${mixed.attribute}__${mixed.value}` : collection.name,
+        kind: undefined,
+        def: undefined,
+        attrs: schemaToAttributes(valuesToSchema(documents), 0),
+        pk: undefined,
+        indexes: undefined,
+        checks: undefined,
+        doc: undefined,
+        stats: removeUndefined({
+            rows: count,
+            size: undefined,
+            sizeIdx: undefined,
+            sizeToast: undefined,
+            sizeToastIdx: undefined,
+            seq_scan: undefined,
+            idx_scan: undefined,
+        }),
+        extra: undefined
+    })
+}
+
+type CollectionDoc = any
+
+async function getSampleDocuments(collection: Collection, mixed: MixedCollection | null, opts: ConnectorSchemaOpts): Promise<CollectionDoc[]> {
+    const sampleSize = opts.sampleSize || connectorSchemaOptsDefaults.sampleSize
+    return query(collection, `SELECT Meta() AS _meta, ${collection.name}.* FROM ${collection.name}${buildFilter(mixed)} LIMIT ${sampleSize};`)
+        .catch(handleError(`Failed to get sample documents for '${collectionId(collection)}${formatMixed(mixed)}'`, [], opts))
+}
+
+async function countDocuments(collection: Collection, mixed: MixedCollection | null, opts: ConnectorSchemaOpts): Promise<number> {
+    return query<{count: number}>(collection, `SELECT count(*) AS count FROM ${collection.name}${buildFilter(mixed)};`)
         .then(rows => rows[0].count)
-        .catch(handleError(`Failed to count documents for '${collectionRef(collection)}'`, 0, ignoreErrors, logger))
+        .catch(handleError(`Failed to count documents for '${collectionId(collection)}${formatMixed(mixed)}'`, 0, opts))
 }
 
 async function query<T = any>(collection: Collection, q: string): Promise<T[]> {
@@ -104,33 +140,10 @@ async function query<T = any>(collection: Collection, q: string): Promise<T[]> {
     return res.rows
 }
 
-function filter(type: CouchbaseCollectionType | undefined): string {
-    return type && type.value ? ` WHERE ${type.field}='${type.value}'` : ''
-}
+const buildFilter = (mixed: MixedCollection | null): string => mixed ? ` WHERE ${mixed.attribute}='${mixed.value}'` : ''
+const collectionId = (collection: Collection): string => `${collection.scope.bucket.name}.${collection.scope.name}.${collection.name}`
+const formatMixed = (mixed: MixedCollection | null) => mixed ? `(${mixed.attribute}=${mixed.value})` : ''
 
-function collectionRef(collection: Collection): string {
-    return `${collection.scope.bucket.name}.${collection.scope.name}.${collection.name}`
-}
-
-function handleError<T>(msg: string, value: T, ignoreErrors: boolean, logger: Logger) {
-    return (err: any): Promise<T> => {
-        if (ignoreErrors) {
-            logger.warn(`${msg}: ${formatError(err)}. Ignoring...`)
-            return Promise.resolve(value)
-        } else {
-            return Promise.reject(err)
-        }
-    }
-}
-
-function formatError(e: any): string {
-    let err
-    if (e instanceof PlanningFailureError) {
-        err = (e.cause as any).first_error_message
-    } else if (e instanceof UnambiguousTimeoutError) {
-        err = e.message + '.\nMake sure you have access to the database, like no ip restriction or needed VPN.'
-    } else {
-        err = errorToString(e)
-    }
-    return err
-}
+const plural = (num: number, name: string): string => num === 1 ? `${num} ${name}` : `${num} ${name}s`
+const pluralL = <T>(items: T[], name: string): string => plural(items.length, name)
+const printList = (items: string[], max: number = 5): string => items.length > max ? items.slice(0, max).join(', ') + '...' : items.join(', ')
