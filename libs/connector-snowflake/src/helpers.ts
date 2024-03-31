@@ -1,7 +1,7 @@
 import {
     AttributePath,
     CatalogName,
-    ConnectorSchemaOpts,
+    DatabaseName,
     EntityName,
     EntityRef,
     SchemaName,
@@ -18,28 +18,29 @@ export function buildSqlColumn(path: AttributePath): SqlFragment {
     return `"${head}"${tail.map(t => `->'${t}'`).join('')}`
 }
 
-export function handleError<T>(msg: string, onError: T, {logger, ignoreErrors}: ConnectorSchemaOpts) {
-    return (err: any): Promise<T> => {
-        if (ignoreErrors) {
-            logger.warn(`${msg}. Ignoring...`)
-            return Promise.resolve(onError)
-        } else {
-            return Promise.reject(err)
-        }
-    }
-}
-
-export function scopeFilter(catalogField: string, catalogScope: CatalogName | undefined, schemaField: string, schemaScope: SchemaName | undefined, entityField?: string, entityScope?: EntityName): SqlFragment {
-    const catalogFilter = catalogScope ? `${catalogField} ${scopeOp(catalogScope)} '${catalogScope}' AND ` : ''
-    const schemaFilter = schemaScope ? `${schemaField} ${scopeOp(schemaScope)} '${schemaScope}'` : `${schemaField} != 'INFORMATION_SCHEMA'`
-    const entityFilter = entityField && entityScope ? ` AND ${entityField} ${scopeOp(entityScope)} '${entityScope}'` : ''
-    return catalogFilter + schemaFilter + entityFilter
+export type ScopeFields = { database?: SqlFragment, catalog?: SqlFragment, schema?: SqlFragment, entity?: SqlFragment }
+export type ScopeOpts = { database?: DatabaseName, catalog?: CatalogName, schema?: SchemaName, entity?: EntityName }
+export function scopeWhere(fields: ScopeFields, opts: ScopeOpts): SqlFragment {
+    const databaseFilter = fields.database && opts.database ? `${fields.database} ${scopeOp(opts.database)} '${opts.database}'` : ''
+    const catalogFilter = fields.catalog && opts.catalog ? `${fields.catalog} ${scopeOp(opts.catalog)} '${opts.catalog}'` : ''
+    const schemaFilter = fields.schema && opts.schema ? `${fields.schema} ${scopeOp(opts.schema)} '${opts.schema}'` : `${fields.schema} != 'INFORMATION_SCHEMA'`
+    const entityFilter = fields.entity && opts.entity ? `${fields.entity} ${scopeOp(opts.entity)} '${opts.entity}'` : ''
+    return [databaseFilter, catalogFilter, schemaFilter, entityFilter].filter(f => !!f).join(' AND ')
 }
 
 function scopeOp(scope: string): SqlFragment {
     return scope.includes('%') ? 'LIKE' : '='
 }
 
-export function scopeMatch(value: string, scope: string): boolean {
-    return scope.includes('%') ? new RegExp(scope.replaceAll('%', '.*')).test(value) : value === scope
+export type ScopeValues = { database?: DatabaseName, catalog?: CatalogName, schema?: SchemaName, entity?: EntityName }
+export function scopeFilter(values: ScopeValues, opts: ScopeOpts): boolean {
+    const databaseFilter = values.database && opts.database ? scopeMatch(values.database, opts.database) : true
+    const catalogFilter = values.catalog && opts.catalog ? scopeMatch(values.catalog, opts.catalog) : true
+    const schemaFilter = values.schema && opts.schema ? scopeMatch(values.schema, opts.schema) : values.schema !== 'INFORMATION_SCHEMA'
+    const entityFilter = values.entity && opts.entity ? scopeMatch(values.entity, opts.entity) : true
+    return databaseFilter && catalogFilter && schemaFilter && entityFilter
+}
+
+function scopeMatch(value: string, opt: string): boolean {
+    return opt.includes('%') ? new RegExp(opt.replaceAll('%', '.*')).test(value) : value === opt
 }

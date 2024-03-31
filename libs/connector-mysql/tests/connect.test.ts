@@ -3,8 +3,8 @@ import * as mysql from "mysql2/promise";
 import {Connection, FieldPacket, RowDataPacket} from "mysql2/promise";
 import {parseDatabaseUrl} from "@azimutt/database-model";
 import {connect} from "../src/connect";
+import {execQuery} from "../src/query";
 import {application, logger} from "./constants";
-import {execQuery} from "../src/common";
 
 // Use this test to troubleshoot database connection errors.
 // If you don't succeed with the first one (Azimutt `connect`), try with the second one (raw node lib) and once you found a way, tell us how to fix ;)

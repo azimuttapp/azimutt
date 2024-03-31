@@ -6,10 +6,11 @@ import {
     Entity,
     EntityId,
     formatEntityRef,
+    handleError,
     PrimaryKey,
     Relation
 } from "@azimutt/database-model";
-import {handleError, scopeFilter, scopeMatch} from "./helpers";
+import {scopeFilter, scopeWhere} from "./helpers";
 import {Conn} from "./connect";
 
 export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<Database> => {
@@ -20,7 +21,7 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
     const primaryKeyColumns: Record<EntityId, RawPrimaryKeyColumn[]> = await getPrimaryKeyColumns(opts)(conn).then(pks => groupBy(pks, pk => formatEntityRef({catalog: pk.database_name, schema: pk.schema_name, entity: pk.table_name})))
     const foreignKeyColumns: Record<string, RawForeignKeyColumn[]> = await getForeignKeyColumns(opts)(conn).then(fks => groupBy(fks, fk => fk.fk_name))
     // access table data when options are requested
-    // TODO: json columns, polymorphic relations...
+    // TODO: json columns, polymorphic relations, pii, join relations...
     // build the database
     return removeUndefined({
         entities: tables.map(table => [toEntityId(table), table] as const).map(([id, table]) => buildEntity(
@@ -53,7 +54,7 @@ export type RawTable = {
     table_size: number
 }
 
-export const getTables = ({catalog, schema, entity, logger, ignoreErrors}: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawTable[]> => {
+export const getTables = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawTable[]> => {
     return conn.query<RawTable>(`
         SELECT TABLE_CATALOG  AS table_catalog
              , TABLE_SCHEMA   AS table_schema
@@ -64,8 +65,9 @@ export const getTables = ({catalog, schema, entity, logger, ignoreErrors}: Conne
              , ROW_COUNT      AS table_rows
              , BYTES          AS table_size
         FROM INFORMATION_SCHEMA.TABLES
-        WHERE ${scopeFilter('TABLE_CATALOG', catalog,'TABLE_SCHEMA', schema, 'TABLE_NAME', entity)};`, [], 'getTables'
-    ).catch(handleError(`Failed to get tables`, [], {logger, ignoreErrors}))
+        WHERE ${scopeWhere({catalog: 'TABLE_CATALOG',schema: 'TABLE_SCHEMA', entity: 'TABLE_NAME'}, opts)}
+        ORDER BY table_catalog, table_schema, table_name;`, [], 'getTables'
+    ).catch(handleError(`Failed to get tables`, [], opts))
 }
 
 function buildEntity(table: RawTable, columns: RawColumn[], primaryKeyColumns: RawPrimaryKeyColumn[]): Entity {
@@ -105,7 +107,7 @@ export type RawColumn = {
     column_comment: string | null
 }
 
-export const getColumns = ({catalog, schema, entity, logger, ignoreErrors}: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawColumn[]> => {
+export const getColumns = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawColumn[]> => {
     return conn.query<RawColumn>(`
         SELECT TABLE_CATALOG    AS table_catalog
              , TABLE_SCHEMA     AS table_schema
@@ -117,8 +119,9 @@ export const getColumns = ({catalog, schema, entity, logger, ignoreErrors}: Conn
              , COLUMN_DEFAULT   AS column_default
              , COMMENT          AS column_comment
         FROM INFORMATION_SCHEMA.COLUMNS
-        WHERE ${scopeFilter('TABLE_CATALOG', catalog,'TABLE_SCHEMA', schema, 'TABLE_NAME', entity)};`, [], 'getColumns'
-    ).catch(handleError(`Failed to get columns`, [], {logger, ignoreErrors}))
+        WHERE ${scopeWhere({catalog: 'TABLE_CATALOG',schema: 'TABLE_SCHEMA', entity: 'TABLE_NAME'}, opts)}
+        ORDER BY table_catalog, table_schema, table_name, column_index;`, [], 'getColumns'
+    ).catch(handleError(`Failed to get columns`, [], opts))
 }
 
 function buildAttribute(column: RawColumn): Attribute {
@@ -147,13 +150,10 @@ export type RawPrimaryKeyColumn = {
     comment: string | null
 }
 
-export const getPrimaryKeyColumns = ({catalog, schema, entity, logger, ignoreErrors}: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawPrimaryKeyColumn[]> => {
+export const getPrimaryKeyColumns = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawPrimaryKeyColumn[]> => {
     return conn.query<RawPrimaryKeyColumn>(`SHOW PRIMARY KEYS;`, [], 'getPrimaryKeys') // can't filter on schema only (needs then db too :/)
-        .then(keys => keys.filter(key =>
-            (catalog ? scopeMatch(key.database_name, catalog) : true) &&
-            (schema ? scopeMatch(key.schema_name, schema) : key.schema_name !== 'INFORMATION_SCHEMA') &&
-            (entity ? scopeMatch(key.table_name, entity) : true)
-        )).catch(handleError(`Failed to get primary keys`, [], {logger, ignoreErrors}))
+        .then(keys => keys.filter(key => scopeFilter({catalog: key.database_name, schema: key.schema_name, entity: key.table_name}, opts)))
+        .catch(handleError(`Failed to get primary keys`, [], opts))
 }
 
 function buildPrimaryKey(columns: RawPrimaryKeyColumn[]): PrimaryKey {
@@ -188,13 +188,10 @@ export type RawForeignKeyColumn = {
     comment: string | null
 }
 
-export const getForeignKeyColumns = ({catalog, schema, entity, logger, ignoreErrors}: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawForeignKeyColumn[]> => {
+export const getForeignKeyColumns = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawForeignKeyColumn[]> => {
     return conn.query<RawForeignKeyColumn>(`SHOW EXPORTED KEYS;`, [], 'getForeignKeys') // can't filter on schema only (needs then db too :/)
-        .then(keys => keys.filter(key =>
-            (catalog ? scopeMatch(key.fk_database_name, catalog) : true) &&
-            (schema ? scopeMatch(key.fk_schema_name, schema) : key.fk_schema_name !== 'INFORMATION_SCHEMA') &&
-            (entity ? scopeMatch(key.fk_table_name, entity) : true)
-        )).catch(handleError(`Failed to get foreign keys${schema ? ` for schema '${schema}'` : ''}`, [], {logger, ignoreErrors}))
+        .then(keys => keys.filter(key => scopeFilter({catalog: key.fk_database_name, schema: key.fk_schema_name, entity: key.fk_table_name}, opts)))
+        .catch(handleError(`Failed to get foreign keys`, [], opts))
 }
 
 function buildRelation(columns: RawForeignKeyColumn[]): Relation {

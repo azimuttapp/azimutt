@@ -14,6 +14,7 @@ import {
     EntityRef,
     formatAttributeRef,
     formatEntityRef,
+    handleError,
     Index,
     isPolymorphic,
     JsValue,
@@ -25,7 +26,7 @@ import {
     ValueSchema,
     valuesToSchema
 } from "@azimutt/database-model";
-import {buildSqlColumn, buildSqlTable, handleError, scopeFilter} from "./helpers";
+import {buildSqlColumn, buildSqlTable, scopeWhere} from "./helpers";
 import {Conn} from "./connect";
 
 export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<Database> => {
@@ -41,6 +42,7 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
     // access table data when options are requested
     const jsonColumns: Record<EntityId, Record<AttributeName, ValueSchema>> = opts.inferJsonAttributes ? await getJsonColumns(columns, opts)(conn) : {}
     const polyColumns: Record<EntityId, Record<AttributeName, string[]>> = opts.inferPolymorphicRelations ? await getPolyColumns(columns, opts)(conn) : {}
+    // TODO: pii, join relations...
     // build the database
     const columnsByIndex: Record<EntityId, { [i: number]: string }> = mapValues(columns, cols => cols.reduce((acc, col) => ({...acc, [col.column_index]: col.column_name}), {}))
     return removeUndefined({
@@ -52,7 +54,7 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
             constraints[id] || [],
             indexes[id] || [],
             jsonColumns[id] || {},
-            polyColumns[id] || {}
+            polyColumns[id] || {},
         )),
         relations: relations.map(r => buildRelation(r, columnsByIndex)),
         types: types.map(buildType),
@@ -150,7 +152,7 @@ export type RawTable = {
     toast_idx_blocks: number | null
 }
 
-export const getTables = ({schema, entity, logger, ignoreErrors}: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawTable[]> => {
+export const getTables = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawTable[]> => {
     // https://www.postgresql.org/docs/current/catalog-pg-class.html: catalogs tables and most everything else that has columns or is otherwise similar to a table. This includes indexes (but see also pg_index), sequences (but see also pg_sequence), views, materialized views, composite types, and TOAST tables; see relkind.
     // https://www.postgresql.org/docs/current/catalog-pg-namespace.html: stores namespaces. A namespace is the structure underlying SQL schemas: each namespace can have a separate collection of relations, types, etc. without name conflicts.
     // https://www.postgresql.org/docs/current/catalog-pg-authid.html: store users
@@ -203,9 +205,9 @@ export const getTables = ({schema, entity, logger, ignoreErrors}: ConnectorSchem
                  LEFT JOIN pg_stat_all_tables s ON s.relid = c.oid
                  LEFT JOIN pg_statio_all_tables io ON io.relid = c.oid
         WHERE c.relkind IN ('r', 'v', 'm')
-          AND ${scopeFilter('n.nspname', schema, 'c.relname', entity)}
+          AND ${scopeWhere({schema: 'n.nspname', entity: 'c.relname'}, opts)}
         ORDER BY table_schema, table_name;`, [], 'getTables'
-    ).catch(handleError(`Failed to get tables`, [], {logger, ignoreErrors}))
+    ).catch(handleError(`Failed to get tables`, [], opts))
 }
 
 function buildEntity(blockSize: number, table: RawTable, columns: RawColumn[], columnsByIndex: { [i: number]: string }, constraints: RawConstraint[], indexes: RawIndex[], jsonColumns: Record<AttributeName, ValueSchema>, polyColumns: Record<AttributeName, string[]>): Entity {
@@ -246,8 +248,8 @@ export type RawColumn = {
     column_type_name: string
     column_type_len: number
     column_type_cat: RawTypeCategory
-    column_default: string | null
     column_nullable: boolean
+    column_default: string | null
     column_generated: boolean
     column_comment: string | null
     nulls: number | null // percentage of nulls (between 0 & 1)
@@ -258,7 +260,7 @@ export type RawColumn = {
     histogram: string | null
 }
 
-export const getColumns = ({schema, entity, logger, ignoreErrors}: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawColumn[]> => {
+export const getColumns = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawColumn[]> => {
     // https://www.postgresql.org/docs/current/catalog-pg-attribute.html: stores information about table columns. There will be exactly one row for every column in every table in the database.
     // https://www.postgresql.org/docs/current/catalog-pg-class.html: catalogs tables and most everything else that has columns or is otherwise similar to a table. This includes indexes (but see also pg_index), sequences (but see also pg_sequence), views, materialized views, composite types, and TOAST tables; see relkind.
     // https://www.postgresql.org/docs/current/catalog-pg-namespace.html: stores namespaces. A namespace is the structure underlying SQL schemas: each namespace can have a separate collection of relations, types, etc. without name conflicts.
@@ -282,8 +284,8 @@ export const getColumns = ({schema, entity, logger, ignoreErrors}: ConnectorSche
              , t.typname                            AS column_type_name
              , t.typlen                             AS column_type_len
              , t.typcategory                        AS column_type_cat
-             , pg_get_expr(ad.adbin, ad.adrelid)    AS column_default
              , NOT a.attnotnull                     AS column_nullable
+             , pg_get_expr(ad.adbin, ad.adrelid)    AS column_default
              , a.attgenerated = 's'                 AS column_generated
              , d.description                        AS column_comment
              , null_frac                            AS nulls
@@ -303,9 +305,9 @@ export const getColumns = ({schema, entity, logger, ignoreErrors}: ConnectorSche
         WHERE c.relkind IN ('r', 'v', 'm')
           AND a.attnum > 0
           AND a.atttypid != 0
-          AND ${scopeFilter('n.nspname', schema, 'c.relname', entity)}
+          AND ${scopeWhere({schema: 'n.nspname', entity: 'c.relname'}, opts)}
         ORDER BY table_schema, table_name, column_index;`, [], 'getColumns'
-    ).catch(handleError(`Failed to get columns`, [], {logger, ignoreErrors}))
+    ).catch(handleError(`Failed to get columns`, [], opts))
 }
 
 function buildAttribute(c: RawColumn, jsonColumn: ValueSchema | undefined, values: string[] | undefined): Attribute {
@@ -370,7 +372,7 @@ type RawConstraint = {
     constraint_comment: string | null
 }
 
-export const getConstraints = ({schema, entity, logger, ignoreErrors}: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawConstraint[]> => {
+export const getConstraints = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawConstraint[]> => {
     // https://www.postgresql.org/docs/current/catalog-pg-constraint.html: stores check, primary key, unique, foreign key, and exclusion constraints on tables. Not-null constraints are represented in the pg_attribute catalog, not here.
     // https://www.postgresql.org/docs/current/catalog-pg-class.html: catalogs tables and most everything else that has columns or is otherwise similar to a table. This includes indexes (but see also pg_index), sequences (but see also pg_sequence), views, materialized views, composite types, and TOAST tables; see relkind.
     // https://www.postgresql.org/docs/current/catalog-pg-namespace.html: stores namespaces. A namespace is the structure underlying SQL schemas: each namespace can have a separate collection of relations, types, etc. without name conflicts.
@@ -391,8 +393,9 @@ export const getConstraints = ({schema, entity, logger, ignoreErrors}: Connector
                  JOIN pg_namespace cn ON cn.oid = cl.relnamespace
                  LEFT JOIN pg_description d ON d.objoid = c.oid
         WHERE c.contype IN ('p', 'c')
-          AND ${scopeFilter('cn.nspname', schema, 'cl.relname', entity)};`, [], 'getConstraints'
-    ).catch(handleError(`Failed to get constraints`, [], {logger, ignoreErrors}))
+          AND ${scopeWhere({schema: 'cn.nspname', entity: 'cl.relname'}, opts)}
+        ORDER BY table_schema, table_name, constraint_name;`, [], 'getConstraints'
+    ).catch(handleError(`Failed to get constraints`, [], opts))
 }
 
 function buildPrimaryKey(c: RawConstraint, columns: { [i: number]: string }): PrimaryKey {
@@ -432,7 +435,7 @@ type RawIndex = {
     index_comment: string | null
 }
 
-export const getIndexes = ({schema, entity, logger, ignoreErrors}: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawIndex[]> => {
+export const getIndexes = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawIndex[]> => {
     // https://www.postgresql.org/docs/current/catalog-pg-index.html: contains part of the information about indexes. The rest is mostly in pg_class.
     // https://www.postgresql.org/docs/current/catalog-pg-class.html: catalogs tables and most everything else that has columns or is otherwise similar to a table. This includes indexes (but see also pg_index), sequences (but see also pg_sequence), views, materialized views, composite types, and TOAST tables; see relkind.
     // https://www.postgresql.org/docs/current/catalog-pg-description.html: stores optional descriptions (comments) for each database object.
@@ -458,12 +461,12 @@ export const getIndexes = ({schema, entity, logger, ignoreErrors}: ConnectorSche
                  JOIN pg_stat_all_indexes s ON s.indexrelid = i.indexrelid
                  LEFT JOIN pg_description d ON d.objoid = i.indexrelid
         WHERE i.indisprimary = false
-          AND ${scopeFilter('s.schemaname', schema, 's.relname', entity)}
+          AND ${scopeWhere({schema: 's.schemaname', entity: 's.relname'}, opts)}
         ORDER BY table_schema, table_name, index_name;`, [], 'getIndexes'
     ).then(rows => rows.map(row => ({
         ...row,
         definition: row.definition.indexOf(' USING ') > 0 ? row.definition.split(' USING ')[1].trim() : row.definition
-    }))).catch(handleError(`Failed to get indexes`, [], {logger, ignoreErrors}))
+    }))).catch(handleError(`Failed to get indexes`, [], opts))
 }
 
 function buildIndex(blockSize: number, index: RawIndex, columns: { [i: number]: string }): Index {
@@ -500,7 +503,7 @@ type RawRelation = {
     relation_comment: string | null
 }
 
-export const getRelations = ({schema, entity, logger, ignoreErrors}: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawRelation[]> => {
+export const getRelations = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawRelation[]> => {
     // https://www.postgresql.org/docs/current/catalog-pg-constraint.html: stores check, primary key, unique, foreign key, and exclusion constraints on tables. Not-null constraints are represented in the pg_attribute catalog, not here.
     // https://www.postgresql.org/docs/current/catalog-pg-class.html: catalogs tables and most everything else that has columns or is otherwise similar to a table. This includes indexes (but see also pg_index), sequences (but see also pg_sequence), views, materialized views, composite types, and TOAST tables; see relkind.
     // https://www.postgresql.org/docs/current/catalog-pg-namespace.html: stores namespaces. A namespace is the structure underlying SQL schemas: each namespace can have a separate collection of relations, types, etc. without name conflicts.
@@ -525,9 +528,9 @@ export const getRelations = ({schema, entity, logger, ignoreErrors}: ConnectorSc
                  JOIN pg_namespace tn ON tn.oid = tc.relnamespace
                  LEFT JOIN pg_description d ON d.objoid = c.oid
         WHERE c.contype IN ('f')
-          AND ${scopeFilter('cn.nspname', schema, 'cl.relname', entity)}
+          AND ${scopeWhere({schema: 'cn.nspname', entity: 'cl.relname'}, opts)}
         ORDER BY table_schema, table_name, constraint_name;`, [], 'getRelations'
-    ).catch(handleError(`Failed to get relations`, [], {logger, ignoreErrors}))
+    ).catch(handleError(`Failed to get relations`, [], opts))
 }
 
 function buildRelation(r: RawRelation, columnsByIndex: Record<EntityId, { [i: number]: string }>): Relation {
@@ -563,7 +566,7 @@ export type RawType = {
     type_comment: string | null
 }
 
-export const getTypes = ({schema, entity, logger, ignoreErrors}: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawType[]> => {
+export const getTypes = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawType[]> => {
     // https://www.postgresql.org/docs/current/catalog-pg-type.html: stores data types
     // https://www.postgresql.org/docs/current/catalog-pg-namespace.html: stores namespaces. A namespace is the structure underlying SQL schemas: each namespace can have a separate collection of relations, types, etc. without name conflicts.
     // https://www.postgresql.org/docs/current/catalog-pg-authid.html
@@ -593,10 +596,10 @@ export const getTypes = ({schema, entity, logger, ignoreErrors}: ConnectorSchema
         WHERE t.typisdefined
           AND (c.relkind IS NULL OR c.relkind = 'c')
           AND tt.oid IS NULL
-          AND ${scopeFilter('n.nspname', schema)}
+          AND ${scopeWhere({schema: 'n.nspname'}, opts)}
         GROUP BY t.oid
         ORDER BY type_schema, type_name;`, [], 'getTypes'
-    ).catch(handleError(`Failed to get types`, [], {logger, ignoreErrors}))
+    ).catch(handleError(`Failed to get types`, [], opts))
 }
 
 function buildType(t: RawType): Type {

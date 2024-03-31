@@ -1,5 +1,4 @@
 import {shuffle} from "@azimutt/utils";
-import {Conn} from "./common";
 import {
     AttributeName,
     AttributeRef,
@@ -12,6 +11,7 @@ import {
     SqlFragment
 } from "@azimutt/database-model";
 import {buildSqlColumn, buildSqlTable} from "./helpers";
+import {Conn} from "./connect";
 
 export const getTableStats = (ref: EntityRef) => async (conn: Conn): Promise<ConnectorEntityStats> => {
     const sqlTable = buildSqlTable(ref)

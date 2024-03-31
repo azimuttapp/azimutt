@@ -21,6 +21,7 @@ import {
     EntityRef,
     formatAttributeRef,
     formatEntityRef,
+    handleError,
     Index,
     parseEntityRef,
     PrimaryKey,
@@ -29,7 +30,7 @@ import {
     ValueSchema,
     valuesToSchema
 } from "@azimutt/database-model";
-import {buildColumnType, buildSqlColumn, buildSqlTable, handleError, scopeFilter} from "./helpers";
+import {buildColumnType, buildSqlColumn, buildSqlTable, scopeWhere} from "./helpers";
 import {Conn} from "./connect";
 
 export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<Database> => {
@@ -41,6 +42,7 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
     const foreignKeyColumns: RawForeignKeyColumn[] = await getForeignKeyColumns(opts)(conn)
     // access table data when options are requested
     const jsonColumns: Record<EntityId, Record<AttributeName, ValueSchema>> = opts.inferJsonAttributes ? await getJsonColumns(columns, checks, opts)(conn) : {}
+    // TODO: polymorphic relations, pii, join relations...
     // build the database
     return removeUndefined({
         entities: Object.entries(columns).map(([id, columns]) => buildEntity(
@@ -68,28 +70,28 @@ type RawColumn = {
     table_schema: string
     table_name: string
     table_kind: 'BASE TABLE' | 'VIEW'
+    column_index: number
     column_name: string
     column_type: string
-    column_index: number
-    column_default: string | null
     column_nullable: 'YES' | 'NO'
+    column_default: string | null
 }
 
-const getColumns = ({schema, entity, logger, ignoreErrors}: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawColumn[]> => {
+const getColumns = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawColumn[]> => {
     return conn.query<RawColumn>(`
-        SELECT c.TABLE_SCHEMA          AS table_schema,
-               c.TABLE_NAME            AS table_name,
-               t.TABLE_TYPE            AS table_kind,
-               c.COLUMN_NAME           AS column_name,
-               ${buildColumnType('c')} AS column_type,
-               c.ORDINAL_POSITION      AS column_index,
-               c.COLUMN_DEFAULT        AS column_default,
-               c.IS_NULLABLE           AS column_nullable
+        SELECT c.TABLE_SCHEMA          AS table_schema
+             , c.TABLE_NAME            AS table_name
+             , t.TABLE_TYPE            AS table_kind
+             , c.ORDINAL_POSITION      AS column_index
+             , c.COLUMN_NAME           AS column_name
+             , ${buildColumnType('c')} AS column_type
+             , c.IS_NULLABLE           AS column_nullable
+             , c.COLUMN_DEFAULT        AS column_default
         FROM information_schema.COLUMNS c
                  JOIN information_schema.TABLES t ON c.TABLE_SCHEMA = t.TABLE_SCHEMA AND c.TABLE_NAME = t.TABLE_NAME
-        WHERE ${scopeFilter('c.TABLE_SCHEMA', schema, 'c.TABLE_NAME', entity)}
+        WHERE ${scopeWhere({schema: 'c.TABLE_SCHEMA', entity: 'c.TABLE_NAME'}, opts)}
         ORDER BY table_schema, table_name, column_index;`, [], 'getColumns'
-    ).catch(handleError(`Failed to get columns`, [], {logger, ignoreErrors}))
+    ).catch(handleError(`Failed to get columns`, [], opts))
 }
 
 function buildEntity(columns: RawColumn[], indexColumns: RawIndexColumn[], checks: RawCheck[], comments: RawComment[], jsonColumns: Record<AttributeName, ValueSchema>): Entity {
@@ -136,23 +138,24 @@ type RawIndexColumn = {
     column_index?: number
 }
 
-const getIndexColumns = ({schema, entity, logger, ignoreErrors}: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawIndexColumn[]> => {
+const getIndexColumns = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawIndexColumn[]> => {
     return conn.query<RawIndexColumn>(`
-        SELECT OBJECT_SCHEMA_NAME(i.object_id)     AS table_schema,
-               OBJECT_NAME(i.object_id)            AS table_name,
-               i.name                              AS constraint_name,
-               CASE
+        SELECT OBJECT_SCHEMA_NAME(i.object_id)     AS table_schema
+             , OBJECT_NAME(i.object_id)            AS table_name
+             , i.name                              AS constraint_name
+             , CASE
                    WHEN OBJECTPROPERTY(OBJECT_ID(OBJECT_SCHEMA_NAME(i.object_id) + '.' + QUOTENAME(i.name)), 'IsPrimaryKey') = 1
                        THEN 'PRIMARY KEY'
                    WHEN i.is_unique = 1
                        THEN 'UNIQUE'
-                   ELSE 'INDEX' END                AS constraint_type,
-               COL_NAME(i.object_id, ic.column_id) AS column_name,
-               ic.key_ordinal                      as column_index
+                   ELSE 'INDEX' END                AS constraint_type
+             , COL_NAME(i.object_id, ic.column_id) AS column_name
+             , ic.key_ordinal                      as column_index
         FROM sys.indexes i
                  JOIN sys.index_columns ic ON i.object_id = ic.object_id AND i.index_id = ic.index_id
-        WHERE ${scopeFilter('OBJECT_SCHEMA_NAME(i.object_id)', schema, 'OBJECT_NAME(i.object_id)', entity)};`, [], 'getIndexColumns'
-    ).catch(handleError(`Failed to get index columns (pks, uniques & indexes)`, [], {logger, ignoreErrors}))
+        WHERE ${scopeWhere({schema: 'OBJECT_SCHEMA_NAME(i.object_id)', entity: 'OBJECT_NAME(i.object_id)'}, opts)}
+        ORDER BY table_schema, table_name, constraint_name;`, [], 'getIndexColumns'
+    ).catch(handleError(`Failed to get index columns (pks, uniques & indexes)`, [], opts))
 }
 
 function buildPrimaryKey(columns: RawIndexColumn[]): PrimaryKey {
@@ -192,18 +195,20 @@ type RawCheck = {
     definition: string
 }
 
-const getChecks = ({schema, entity, logger, ignoreErrors}: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawCheck[]> => {
+const getChecks = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawCheck[]> => {
     return conn.query<RawCheck>(`
-        SELECT SCHEMA_NAME(t.schema_id) AS table_schema,
-               t.name                   AS table_name,
-               con.name                 AS constraint_name,
-               c.name                   AS column_name,
-               con.definition
+        SELECT SCHEMA_NAME(t.schema_id) AS table_schema
+             , t.name                   AS table_name
+             , con.name                 AS constraint_name
+             , c.name                   AS column_name
+             , con.definition
         FROM sys.check_constraints con
-                 LEFT OUTER JOIN sys.objects t ON con.parent_object_id = t.object_id
-                 LEFT OUTER JOIN sys.all_columns c ON con.parent_column_id = c.column_id AND con.parent_object_id = c.object_id
-        WHERE con.is_disabled = 'false' AND ${scopeFilter('SCHEMA_NAME(t.schema_id)', schema, 't.name', entity)};`, [], 'getChecks'
-    ).catch(handleError(`Failed to get checks`, [], {logger, ignoreErrors}))
+                 LEFT JOIN sys.objects t ON con.parent_object_id = t.object_id
+                 LEFT JOIN sys.all_columns c ON con.parent_column_id = c.column_id AND con.parent_object_id = c.object_id
+        WHERE con.is_disabled = 'false'
+          AND ${scopeWhere({schema: 'SCHEMA_NAME(t.schema_id)', entity: 't.name'}, opts)}
+        ORDER BY table_schema, table_name, constraint_name;`, [], 'getChecks'
+    ).catch(handleError(`Failed to get checks`, [], opts))
 }
 
 function buildCheck(check: RawCheck): Check {
@@ -224,26 +229,27 @@ type RawComment = {
     comment: string
 }
 
-const getComments = ({schema, entity, logger, ignoreErrors}: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawComment[]> => {
+const getComments = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawComment[]> => {
     // https://learn.microsoft.com/sql/relational-databases/system-catalog-views/extended-properties-catalog-views-sys-extended-properties
     // https://learn.microsoft.com/sql/relational-databases/system-catalog-views/sys-objects-transact-sql
     // https://learn.microsoft.com/sql/relational-databases/system-compatibility-views/sys-sysusers-transact-sql
     // https://learn.microsoft.com/sql/relational-databases/system-catalog-views/sys-columns-transact-sql
     return conn.query<RawComment>(`
-        SELECT s.name  AS table_schema,
-               t.name  AS table_name,
-               c.name  AS column_name,
-               p.value AS comment
+        SELECT s.name  AS table_schema
+             , t.name  AS table_name
+             , c.name  AS column_name
+             , p.value AS comment
         FROM sys.extended_properties p
                  JOIN sys.objects t ON t.object_id = p.major_id
                  JOIN sys.sysusers s ON s.uid = t.schema_id
-                 LEFT OUTER JOIN sys.columns c ON c.object_id = p.major_id AND c.column_id = p.minor_id
+                 LEFT JOIN sys.columns c ON c.object_id = p.major_id AND c.column_id = p.minor_id
         WHERE p.class = 1
           AND p.name = 'MS_Description'
           AND p.value IS NOT NULL
           AND t.type IN ('S', 'IT', 'U', 'V')
-          AND ${scopeFilter('s.name', schema, 't.name', entity)};`, [], 'getComments'
-    ).catch(handleError(`Failed to get comments`, [], {logger, ignoreErrors}))
+          AND ${scopeWhere({schema: 's.name', entity: 't.name'}, opts)}
+        ORDER BY table_schema, table_name, column_name;`, [], 'getComments'
+    ).catch(handleError(`Failed to get comments`, [], opts))
 }
 
 type RawForeignKeyColumn = {
@@ -257,16 +263,16 @@ type RawForeignKeyColumn = {
     ref_column: string
 }
 
-const getForeignKeyColumns = ({schema, entity, logger, ignoreErrors}: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawForeignKeyColumn[]> => {
+const getForeignKeyColumns = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawForeignKeyColumn[]> => {
     return conn.query<RawForeignKeyColumn>(`
-        SELECT obj.name                 AS constraint_name,
-               fkc.constraint_column_id AS column_index,
-               sch1.name                AS src_schema,
-               tab1.name                AS src_table,
-               col1.name                AS src_column,
-               sch2.name                AS ref_schema,
-               tab2.name                AS ref_table,
-               col2.name                AS ref_column
+        SELECT obj.name                 AS constraint_name
+             , fkc.constraint_column_id AS column_index
+             , sch1.name                AS src_schema
+             , tab1.name                AS src_table
+             , col1.name                AS src_column
+             , sch2.name                AS ref_schema
+             , tab2.name                AS ref_table
+             , col2.name                AS ref_column
         FROM sys.foreign_key_columns fkc
                  JOIN sys.objects obj ON obj.object_id = fkc.constraint_object_id
                  JOIN sys.tables tab1 ON tab1.object_id = fkc.parent_object_id
@@ -275,8 +281,9 @@ const getForeignKeyColumns = ({schema, entity, logger, ignoreErrors}: ConnectorS
                  JOIN sys.tables tab2 ON tab2.object_id = fkc.referenced_object_id
                  JOIN sys.schemas sch2 ON tab2.schema_id = sch2.schema_id
                  JOIN sys.columns col2 ON col2.column_id = referenced_column_id AND col2.object_id = tab2.object_id
-        WHERE ${scopeFilter('sch1.name', schema, 'tab1.name', entity)};`, [], 'getForeignKeyColumns'
-    ).catch(handleError(`Failed to get foreign keys`, [], {logger, ignoreErrors}))
+        WHERE ${scopeWhere({schema: 'sch1.name', entity: 'tab1.name'}, opts)}
+        ORDER BY src_schema, src_table, src_column;`, [], 'getForeignKeyColumns'
+    ).catch(handleError(`Failed to get foreign keys`, [], opts))
 }
 
 function buildRelation(columns: RawForeignKeyColumn[]): Relation {

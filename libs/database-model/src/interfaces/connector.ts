@@ -45,6 +45,8 @@ export type ConnectorSchemaOpts = ConnectorDefaultOpts & {
     inferMixedJson?: string // when inferring JSON, will differentiate documents on this attribute, useful when storing several documents in the same collection in Mongo or Couchbase
     inferJsonAttributes?: boolean // will get sample values from JSON attributes to infer a schema (nested attributes)
     inferPolymorphicRelations?: boolean // will get distinct values from the kind attribute of polymorphic relations to create relations
+    inferRelationsFromJoins?: boolean // will fetch historical queries and suggest relations based on joins
+    inferPii?: boolean // will fetch sample rows from tables to detect columns with Personal Identifiable Information
     // post analysis:
     inferRelations?: boolean // default: false, infer relations based on attribute names
     // behavior
@@ -139,4 +141,15 @@ export function isPolymorphic(attr: AttributeName, entityAttrs: AttributeName[])
             return false
         }
     })
+}
+
+export function handleError<T>(msg: string, onError: T, {logger, ignoreErrors}: ConnectorSchemaOpts) {
+    return (err: any): Promise<T> => {
+        if (ignoreErrors) {
+            logger.warn(`${msg}. Ignoring...`)
+            return Promise.resolve(onError)
+        } else {
+            return Promise.reject(err)
+        }
+    }
 }

@@ -1,6 +1,7 @@
 import {
     AttributePath,
-    ConnectorSchemaOpts,
+    CatalogName,
+    DatabaseName,
     EntityName,
     EntityRef,
     SchemaName,
@@ -17,21 +18,14 @@ export function buildSqlColumn(path: AttributePath): SqlFragment {
     return `"${head}"${tail.map(t => `->'${t}'`).join('')}`
 }
 
-export function handleError<T>(msg: string, onError: T, {logger, ignoreErrors}: ConnectorSchemaOpts) {
-    return (err: any): Promise<T> => {
-        if (ignoreErrors) {
-            logger.warn(`${msg}. Ignoring...`)
-            return Promise.resolve(onError)
-        } else {
-            return Promise.reject(err)
-        }
-    }
-}
-
-export function scopeFilter(schemaField: string, schemaScope: SchemaName | undefined, entityField?: string, entityScope?: EntityName): SqlFragment {
-    const schemaFilter = schemaScope ? `${schemaField} ${scopeOp(schemaScope)} '${schemaScope}'` : `${schemaField} NOT IN ('information_schema', 'pg_catalog')`
-    const entityFilter = entityField && entityScope ? ` AND ${entityField} ${scopeOp(entityScope)} '${entityScope}'` : ''
-    return schemaFilter + entityFilter
+export type ScopeFields = { database?: SqlFragment, catalog?: SqlFragment, schema?: SqlFragment, entity?: SqlFragment }
+export type ScopeOpts = { database?: DatabaseName, catalog?: CatalogName, schema?: SchemaName, entity?: EntityName }
+export function scopeWhere(fields: ScopeFields, opts: ScopeOpts): SqlFragment {
+    const databaseFilter = fields.database && opts.database ? `${fields.database} ${scopeOp(opts.database)} '${opts.database}'` : ''
+    const catalogFilter = fields.catalog && opts.catalog ? `${fields.catalog} ${scopeOp(opts.catalog)} '${opts.catalog}'` : ''
+    const schemaFilter = fields.schema && opts.schema ? `${fields.schema} ${scopeOp(opts.schema)} '${opts.schema}'` : `${fields.schema} NOT IN ('information_schema', 'pg_catalog')`
+    const entityFilter = fields.entity && opts.entity ? `${fields.entity} ${scopeOp(opts.entity)} '${opts.entity}'` : ''
+    return [databaseFilter, catalogFilter, schemaFilter, entityFilter].filter(f => !!f).join(' AND ')
 }
 
 function scopeOp(scope: string): SqlFragment {
