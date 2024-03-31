@@ -81,6 +81,6 @@ async function getColumnBasics(conn: Conn, sqlTable: SqlFragment, sqlColumn: Sql
 }
 
 function getCommonValues(conn: Conn, sqlTable: SqlFragment, sqlColumn: SqlFragment): Promise<ConnectorAttributeStatsValue[]> {
-    const sql = `SELECT ${sqlColumn} as value, count(*) FROM ${sqlTable} GROUP BY ${sqlColumn} ORDER BY count(*) DESC LIMIT 10;`
+    const sql = `SELECT ${sqlColumn} AS value, count(*) FROM ${sqlTable} GROUP BY ${sqlColumn} ORDER BY count(*) DESC LIMIT 10;`
     return conn.query<ConnectorAttributeStatsValue>(sql)
 }

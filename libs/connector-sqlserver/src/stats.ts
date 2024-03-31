@@ -30,7 +30,7 @@ export const getColumnStats = (ref: AttributeRef) => async (conn: Conn): Promise
 }
 
 async function countRows(conn: Conn, sqlTable: SqlFragment): Promise<number> {
-    const sql = `SELECT count(*) as count FROM ${sqlTable};`
+    const sql = `SELECT count(*) AS count FROM ${sqlTable};`
     const rows = await conn.query<{ count: number }>(sql)
     return rows[0].count
 }
@@ -56,7 +56,7 @@ async function getSampleValue(conn: Conn, sqlTable: SqlFragment, column: Attribu
 
 async function getColumnType(conn: Conn, ref: AttributeRef): Promise<AttributeType> {
     const rows = await conn.query<{ type: string }>(`
-        SELECT ${buildColumnType()} as type
+        SELECT ${buildColumnType()} AS type
         FROM information_schema.COLUMNS
         WHERE ${ref.schema ? `TABLE_SCHEMA='${ref.schema}' AND ` : ''}TABLE_NAME = '${ref.entity}'
           AND COLUMN_NAME = '${ref.attribute[0]}';`, [])
@@ -75,6 +75,6 @@ async function getColumnBasics(conn: Conn, sqlTable: SqlFragment, sqlColumn: Sql
 }
 
 function getCommonValues(conn: Conn, sqlTable: SqlFragment, sqlColumn: SqlFragment): Promise<ConnectorAttributeStatsValue[]> {
-    const sql = `SELECT TOP 10 ${sqlColumn} as value, count(*) as count FROM ${sqlTable} GROUP BY ${sqlColumn} ORDER BY count(*) DESC;`
+    const sql = `SELECT TOP 10 ${sqlColumn} AS value, count(*) AS count FROM ${sqlTable} GROUP BY ${sqlColumn} ORDER BY count(*) DESC;`
     return conn.query<ConnectorAttributeStatsValue>(sql)
 }

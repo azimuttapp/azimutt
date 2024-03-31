@@ -30,7 +30,7 @@ export const getColumnStats = (ref: AttributeRef) => async (conn: Conn): Promise
 }
 
 async function countRows(conn: Conn, sqlTable: SqlFragment): Promise<number> {
-    const sql = `SELECT count(*) as "count" FROM ${sqlTable};`
+    const sql = `SELECT count(*) AS "count" FROM ${sqlTable};`
     const rows = await conn.query<{ count: number }>(sql)
     return rows[0].count
 }
@@ -74,6 +74,6 @@ async function getColumnBasics(conn: Conn, sqlTable: SqlFragment, sqlColumn: Sql
 }
 
 function getCommonValues(conn: Conn, sqlTable: SqlFragment, sqlColumn: SqlFragment): Promise<ConnectorAttributeStatsValue[]> {
-    const sql = `SELECT ${sqlColumn} as "value", count(*) as "count" FROM ${sqlTable} GROUP BY ${sqlColumn} ORDER BY count(*) DESC LIMIT 10;`
+    const sql = `SELECT ${sqlColumn} AS "value", count(*) AS "count" FROM ${sqlTable} GROUP BY ${sqlColumn} ORDER BY count(*) DESC LIMIT 10;`
     return conn.query<ConnectorAttributeStatsValue>(sql)
 }
