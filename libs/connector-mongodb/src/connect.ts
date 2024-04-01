@@ -1,8 +1,9 @@
 import {MongoClient, MongoClientOptions} from "mongodb";
+import {AnyError} from "@azimutt/utils";
 import {ConnectorDefaultOpts, DatabaseUrlParsed} from "@azimutt/database-model";
 
 export async function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c: Conn) => Promise<T>, opts: ConnectorDefaultOpts): Promise<T> {
-    const client: MongoClient = await createConnection(application, url)
+    const client: MongoClient = await createConnection(application, url).catch(err => Promise.reject(connectionError(err)))
     const conn: Conn = {
         underlying: client
     }
@@ -22,4 +23,9 @@ async function createConnection(application: string, url: DatabaseUrlParsed): Pr
     }
     const client: MongoClient = new MongoClient(url.full, options)
     return client.connect().then(_ => client)
+}
+
+function connectionError(err: AnyError): AnyError {
+    // TODO: improve error messages here if needed
+    return err
 }

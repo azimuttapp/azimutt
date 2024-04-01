@@ -1,20 +1,30 @@
 import * as mysql from "mysql2/promise";
 import {Connection, ConnectionOptions, RowDataPacket} from "mysql2/promise";
-import {AttributeValue, ConnectorDefaultOpts, DatabaseUrlParsed, logQueryIfNeeded} from "@azimutt/database-model";
+import {AnyError} from "@azimutt/utils";
+import {
+    AttributeValue,
+    ConnectorDefaultOpts,
+    DatabaseUrlParsed,
+    logQueryIfNeeded,
+    queryError
+} from "@azimutt/database-model";
 
 export async function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c: Conn) => Promise<T>, opts: ConnectorDefaultOpts): Promise<T> {
-    const connection: Connection = await mysql.createConnection(buildConfig(application, url)).catch(_ => mysql.createConnection({uri: url.full}))
+    const connection: Connection = await mysql.createConnection(buildConfig(application, url))
+        .catch(_ => mysql.createConnection({uri: url.full}))
+        .catch(err => Promise.reject(connectionError(err)))
     let queryCpt = 1
     const conn: Conn = {
         query<T extends QueryResultRow>(sql: string, parameters: any[] = [], name?: string): Promise<T[]> {
             return logQueryIfNeeded(queryCpt++, name, sql, parameters, (sql, parameters) => {
-                return connection.query<RowDataPacket[]>({sql, values: parameters}).then(([rows]) => rows as T[])
+                return connection.query<RowDataPacket[]>({sql, values: parameters})
+                    .then(([rows]) => rows as T[], err => Promise.reject(queryError(name, sql, err)))
             }, r => r.length, opts)
         },
         queryArrayMode(sql: string, parameters: any[] = [], name?: string): Promise<QueryResultArrayMode> {
             return logQueryIfNeeded(queryCpt++, name, sql, parameters, (sql, parameters) => {
                 return connection.query<RowDataPacket[][]>({sql, values: parameters, rowsAsArray: true})
-                    .then(([rows, fields]) => ({fields, rows}))
+                    .then(([rows, fields]) => ({fields, rows}), err => Promise.reject(queryError(name, sql, err)))
             }, r => r.rows.length, opts)
         }
     }
@@ -49,4 +59,9 @@ function buildConfig(application: string, url: DatabaseUrlParsed): ConnectionOpt
         insecureAuth: true
         // ssl
     }
+}
+
+function connectionError(err: AnyError): AnyError {
+    // TODO: improve error messages here if needed
+    return err
 }

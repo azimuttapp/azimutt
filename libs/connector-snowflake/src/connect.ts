@@ -1,10 +1,18 @@
 import * as snowflake from "snowflake-sdk";
 import {Connection, ConnectionOptions, SnowflakeError, Statement} from "snowflake-sdk";
-import {AttributeValue, ConnectorDefaultOpts, DatabaseUrlParsed, logQueryIfNeeded} from "@azimutt/database-model";
+import {AnyError} from "@azimutt/utils";
+import {
+    AttributeValue,
+    ConnectorDefaultOpts,
+    DatabaseUrlParsed,
+    logQueryIfNeeded,
+    queryError
+} from "@azimutt/database-model";
 
 export async function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c: Conn) => Promise<T>, opts: ConnectorDefaultOpts): Promise<T> {
     const connection: Connection = await createConnection(buildConfig(application, url))
         .catch(_ => createConnection({application, accessUrl: url.full, account: 'not used'}))
+        .catch(err => Promise.reject(connectionError(err)))
     let queryCpt = 1
     const conn: Conn = {
         query<T extends QueryResultRow>(sql: string, parameters: any[] = [], name?: string): Promise<T[]> {
@@ -13,7 +21,7 @@ export async function connect<T>(application: string, url: DatabaseUrlParsed, ex
                     sqlText: sql,
                     binds: parameters,
                     complete: (err: SnowflakeError | undefined, stmt: Statement, rows: any[] | undefined) =>
-                        err ? reject(queryError(sql, err)) : resolve(rows || [] as T[])
+                        err ? reject(queryError(name, sql, err)) : resolve(rows || [] as T[])
                 }))
             }, r => r.length, opts)
         },
@@ -24,7 +32,7 @@ export async function connect<T>(application: string, url: DatabaseUrlParsed, ex
                     binds: parameters,
                     // @ts-ignore
                     rowMode: 'array',
-                    complete: (err: SnowflakeError | undefined, stmt: Statement, rows: any[] | undefined) => err ? reject(queryError(sql, err)) : resolve({
+                    complete: (err: SnowflakeError | undefined, stmt: Statement, rows: any[] | undefined) => err ? reject(queryError(name, sql, err)) : resolve({
                         fields: stmt.getColumns().map(c => ({ index: c.getIndex(), name: c.getName(), type: c.getType() })),
                         rows: rows || []
                     })
@@ -87,12 +95,7 @@ function buildConfig(application: string, url: DatabaseUrlParsed): ConnectionOpt
     }
 }
 
-function queryError(sql: string, err: unknown): Error {
-    if (typeof err === 'object' && err !== null) {
-        return new Error(`${err.constructor.name}${'code' in err ? ` ${err.code}` : ''}${'message' in err ? `:\n ${err.message}` : ''}\n on '${sql}'`)
-    } else if (err) {
-        return new Error(`error ${JSON.stringify(err)}\n on '${sql}'`)
-    } else {
-        return new Error(`error on '${sql}'`)
-    }
+function connectionError(err: AnyError): AnyError {
+    // TODO: improve error messages here if needed
+    return err
 }

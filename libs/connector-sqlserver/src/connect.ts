@@ -1,13 +1,23 @@
 import mssql, {config, ConnectionPool, IOptions, IResult, ISqlType} from "mssql";
-import {AttributeValue, ConnectorDefaultOpts, DatabaseUrlParsed, logQueryIfNeeded, parseDatabaseOptions} from "@azimutt/database-model";
+import {AnyError} from "@azimutt/utils";
+import {
+    AttributeValue,
+    ConnectorDefaultOpts,
+    DatabaseUrlParsed,
+    logQueryIfNeeded,
+    parseDatabaseOptions,
+    queryError
+} from "@azimutt/database-model";
 
 export async function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c: Conn) => Promise<T>, opts: ConnectorDefaultOpts): Promise<T> {
-    const connection: ConnectionPool = await mssql.connect(buildconfig(application, url)).catch(_ => mssql.connect(url.full))
+    const connection: ConnectionPool = await mssql.connect(buildconfig(application, url))
+        .catch(_ => mssql.connect(url.full))
+        .catch(err => Promise.reject(connectionError(err)))
     let queryCpt = 1
     const conn: Conn = {
         query<T extends QueryResultRow>(sql: string, parameters: any[] = [], name: string = ''): Promise<T[]> {
             return logQueryIfNeeded(queryCpt++, name, sql, parameters, (sql, parameters) => {
-                return connection.query<T>(sql).then(result => result.recordset)
+                return connection.query<T>(sql).then(result => result.recordset, err => Promise.reject(queryError(name, sql, err)))
             }, r => r.length, opts)
         },
         queryArrayMode(sql: string, parameters: any[] = [], name: string = ''): Promise<QueryResultArrayMode> {
@@ -15,6 +25,7 @@ export async function connect<T>(application: string, url: DatabaseUrlParsed, ex
                 const request = connection.request() as any
                 request.arrayRowMode = true
                 const result: IResult<AttributeValue[]> & { columns: ColumnMetadata[][] } = await request.query(sql)
+                    .catch((err: AnyError) => Promise.reject(queryError(name, sql, err)))
                 return {rows: result.recordset as AttributeValue[][], fields: result.columns[0]}
             }, r => r.rows.length, opts)
         }
@@ -57,6 +68,11 @@ function buildconfig(application: string, url: DatabaseUrlParsed): config {
             // ??? persist security info=True
         } as IOptions
     } as config
+}
+
+function connectionError(err: AnyError): AnyError {
+    // TODO: improve error messages here if needed
+    return err
 }
 
 // Write missing types in @types/mssql (8.1.2 instead of 9.1.1 :/)

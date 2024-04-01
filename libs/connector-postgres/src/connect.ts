@@ -1,6 +1,12 @@
 import {Client, ClientConfig, types} from "pg";
 import {AnyError, errorToString} from "@azimutt/utils";
-import {AttributeValue, ConnectorDefaultOpts, DatabaseUrlParsed, logQueryIfNeeded} from "@azimutt/database-model";
+import {
+    AttributeValue,
+    ConnectorDefaultOpts,
+    DatabaseUrlParsed,
+    logQueryIfNeeded,
+    queryError
+} from "@azimutt/database-model";
 
 export async function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c: Conn) => Promise<T>, opts: ConnectorDefaultOpts): Promise<T> {
     types.setTypeParser(types.builtins.INT8, (val: string) => parseInt(val, 10))
@@ -11,12 +17,12 @@ export async function connect<T>(application: string, url: DatabaseUrlParsed, ex
     const conn: Conn = {
         query<T extends QueryResultRow>(sql: string, parameters: any[] = [], name?: string): Promise<T[]> {
             return logQueryIfNeeded(queryCpt++, name, sql, parameters, (sql, parameters) => {
-                return client.query<T>(sql, parameters).then(res => res.rows, err => Promise.reject(queryError(sql, err)))
+                return client.query<T>(sql, parameters).then(res => res.rows, err => Promise.reject(queryError(name, sql, err)))
             }, r => r.length, opts)
         },
         queryArrayMode(sql: string, parameters: any[] = [], name?: string): Promise<QueryResultArrayMode> {
             return logQueryIfNeeded(queryCpt++, name, sql, parameters, (sql, parameters) => {
-                return client.query({text: sql, values: parameters, rowMode: 'array'}).then(null, err => Promise.reject(queryError(sql, err)))
+                return client.query({text: sql, values: parameters, rowMode: 'array'}).then(null, err => Promise.reject(queryError(name, sql, err)))
             }, r => r.rows.length, opts)
         }
     }
@@ -65,15 +71,5 @@ function connectionError(err: AnyError): AnyError {
         return new Error(`${msg}. Try adding \`?sslmode=no-verify\` at the end of your url.`)
     } else {
         return err
-    }
-}
-
-function queryError(sql: string, err: unknown): Error {
-    if (typeof err === 'object' && err !== null) {
-        return new Error(`${err.constructor.name}${'code' in err ? ` ${err.code}` : ''}${'message' in err ? `:\n ${err.message}` : ''}\n on '${sql}'`)
-    } else if (err) {
-        return new Error(`error ${JSON.stringify(err)}\n on '${sql}'`)
-    } else {
-        return new Error(`error on '${sql}'`)
     }
 }

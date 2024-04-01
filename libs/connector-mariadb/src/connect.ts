@@ -1,20 +1,29 @@
 import * as mariadb from "mariadb";
 import {Connection, ConnectionConfig} from "mariadb";
-import {AttributeValue, ConnectorDefaultOpts, DatabaseUrlParsed, logQueryIfNeeded} from "@azimutt/database-model";
+import {AnyError} from "@azimutt/utils";
+import {
+    AttributeValue,
+    ConnectorDefaultOpts,
+    DatabaseUrlParsed,
+    logQueryIfNeeded,
+    queryError
+} from "@azimutt/database-model";
 
 export async function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c: Conn) => Promise<T>, opts: ConnectorDefaultOpts): Promise<T> {
-    const connection: Connection = await mariadb.createConnection(buildConfig(application, url)).catch(_ => mariadb.createConnection(url.full))
+    const connection: Connection = await mariadb.createConnection(buildConfig(application, url))
+        .catch(_ => mariadb.createConnection(url.full))
+        .catch(err => Promise.reject(connectionError(err)))
     let queryCpt = 1
     const conn: Conn = {
         query<T extends QueryResultRow>(sql: string, parameters: any[] = [], name?: string): Promise<T[]> {
             return logQueryIfNeeded(queryCpt++, name, sql, parameters, (sql, parameters) => {
-                return connection.query<T[]>({sql, namedPlaceholders: true}, parameters)
+                return connection.query<T[]>({sql, namedPlaceholders: true}, parameters).catch(err => Promise.reject(queryError(name, sql, err)))
             }, r => r.length, opts)
         },
         queryArrayMode(sql: string, parameters: any[] = [], name?: string): Promise<QueryResultArrayMode> {
             return logQueryIfNeeded(queryCpt++, name, sql, parameters, (sql, parameters) => {
                 return connection.query({sql, namedPlaceholders: true, rowsAsArray: true}, parameters)
-                    .then(([rows, fields]) => ({fields, rows}))
+                    .then(([rows, fields]) => ({fields, rows}), err => Promise.reject(queryError(name, sql, err)))
             }, r => r.rows.length, opts)
         }
     }
@@ -48,4 +57,9 @@ function buildConfig(application: string, url: DatabaseUrlParsed): ConnectionCon
         database: url.db
         // ssl
     }
+}
+
+function connectionError(err: AnyError): AnyError {
+    // TODO: improve error messages here if needed
+    return err
 }
