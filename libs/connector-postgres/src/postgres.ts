@@ -1,5 +1,14 @@
 import {parse} from "postgres-array";
-import {groupBy, mapEntriesAsync, mapValues, mapValuesAsync, removeEmpty, removeUndefined, zip} from "@azimutt/utils";
+import {
+    groupBy,
+    mapEntriesAsync,
+    mapValues,
+    mapValuesAsync,
+    pluralizeL,
+    removeEmpty,
+    removeUndefined,
+    zip
+} from "@azimutt/utils";
 import {
     Attribute,
     AttributeName,
@@ -13,6 +22,7 @@ import {
     EntityId,
     EntityRef,
     formatAttributeRef,
+    formatConnectorScope,
     formatEntityRef,
     handleError,
     Index,
@@ -29,29 +39,44 @@ import {buildSqlColumn, buildSqlTable, scopeWhere} from "./helpers";
 import {Conn} from "./connect";
 
 export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<Database> => {
+    const scope = formatConnectorScope({schema: 'schema', entity: 'table'}, opts)
+    opts.logger.log(`Connected to the database${scope ? `, exporting for ${scope}` : ''} ...`)
+
     // access system tables only
     const blockSize: number = await getBlockSize(opts)(conn)
     const database: RawDatabase = await getDatabase(opts)(conn)
     const tables: RawTable[] = await getTables(opts)(conn)
-    const columns: Record<EntityId, RawColumn[]> = await getColumns(opts)(conn).then(groupByEntity)
-    const constraints: Record<EntityId, RawConstraint[]> = await getConstraints(opts)(conn).then(groupByEntity)
-    const indexes: Record<EntityId, RawIndex[]> = await getIndexes(opts)(conn).then(groupByEntity)
+    opts.logger.log(`Found ${pluralizeL(tables, 'table')} ...`)
+    const columns: RawColumn[] = await getColumns(opts)(conn)
+    opts.logger.log(`Found ${pluralizeL(columns, 'column')} ...`)
+    const constraints: RawConstraint[] = await getConstraints(opts)(conn)
+    opts.logger.log(`Found ${pluralizeL(constraints, 'constraint')} ...`)
+    const indexes: RawIndex[] = await getIndexes(opts)(conn)
+    opts.logger.log(`Found ${pluralizeL(indexes, 'index')} ...`)
     const relations: RawRelation[] = await getRelations(opts)(conn)
+    opts.logger.log(`Found ${pluralizeL(relations, 'relation')} ...`)
     const types: RawType[] = await getTypes(opts)(conn)
+    opts.logger.log(`Found ${pluralizeL(types, 'type')} ...`)
+
     // access table data when options are requested
-    const jsonColumns: Record<EntityId, Record<AttributeName, ValueSchema>> = opts.inferJsonAttributes ? await getJsonColumns(columns, opts)(conn) : {}
-    const polyColumns: Record<EntityId, Record<AttributeName, string[]>> = opts.inferPolymorphicRelations ? await getPolyColumns(columns, opts)(conn) : {}
+    const columnsByTable = groupByEntity(columns)
+    const jsonColumns: Record<EntityId, Record<AttributeName, ValueSchema>> = opts.inferJsonAttributes ? await getJsonColumns(columnsByTable, opts)(conn) : {}
+    const polyColumns: Record<EntityId, Record<AttributeName, string[]>> = opts.inferPolymorphicRelations ? await getPolyColumns(columnsByTable, opts)(conn) : {}
     // TODO: pii, join relations...
+
     // build the database
-    const columnsByIndex: Record<EntityId, { [i: number]: string }> = mapValues(columns, cols => cols.reduce((acc, col) => ({...acc, [col.column_index]: col.column_name}), {}))
+    const columnsByIndex: Record<EntityId, { [i: number]: string }> = mapValues(columnsByTable, cols => cols.reduce((acc, col) => ({...acc, [col.column_index]: col.column_name}), {}))
+    const constraintsByTable = groupByEntity(constraints)
+    const indexesByTable = groupByEntity(indexes)
+    opts.logger.log(`✔︎ Exported ${pluralizeL(tables, 'table')}, ${pluralizeL(relations, 'relation')} and ${pluralizeL(types, 'type')} from the database!`)
     return removeUndefined({
         entities: tables.map(table => [toEntityId(table), table] as const).map(([id, table]) => buildEntity(
             blockSize,
             table,
-            columns[id] || [],
+            columnsByTable[id] || [],
             columnsByIndex[id] || {},
-            constraints[id] || [],
-            indexes[id] || [],
+            constraintsByTable[id] || [],
+            indexesByTable[id] || [],
             jsonColumns[id] || {},
             polyColumns[id] || {},
         )),
@@ -617,6 +642,7 @@ function buildType(t: RawType): Type {
 // getFunctions / getProcedures: pg_get_functiondef, pg_get_function_arguments, pg_get_function_identity_arguments, pg_get_function_result (https://www.postgresql.org/docs/current/functions-info.html#FUNCTIONS-INFO-CATALOG)
 
 const getJsonColumns = (columns: Record<EntityId, RawColumn[]>, opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<Record<EntityId, Record<AttributeName, ValueSchema>>> => {
+    opts.logger.log('Inferring JSON columns ...')
     return mapEntriesAsync(columns, (entityId, tableCols) => {
         const ref = parseEntityRef(entityId)
         const jsonCols = tableCols.filter(c => c.column_type === 'jsonb')
@@ -636,6 +662,7 @@ const getSampleValues = (ref: EntityRef, attribute: AttributePath, opts: Connect
 }
 
 const getPolyColumns = (columns: Record<EntityId, RawColumn[]>, opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<Record<EntityId, Record<AttributeName, string[]>>> => {
+    opts.logger.log('Inferring polymorphic relations ...')
     return mapEntriesAsync(columns, (entityId, tableCols) => {
         const ref = parseEntityRef(entityId)
         const colNames = tableCols.map(c => c.column_name)

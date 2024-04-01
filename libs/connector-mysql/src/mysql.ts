@@ -1,4 +1,4 @@
-import {groupBy, mapEntriesAsync, mapValuesAsync, removeEmpty, removeUndefined} from "@azimutt/utils";
+import {groupBy, mapEntriesAsync, mapValuesAsync, pluralizeL, removeEmpty, removeUndefined} from "@azimutt/utils";
 import {
     Attribute,
     AttributeName,
@@ -11,6 +11,7 @@ import {
     EntityId,
     EntityRef,
     formatAttributeRef,
+    formatConnectorScope,
     formatEntityRef,
     handleError,
     Index,
@@ -26,31 +27,41 @@ import {buildSqlColumn, buildSqlTable, scopeWhere} from "./helpers";
 import {Conn} from "./connect";
 
 export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<Database> => {
+    const scope = formatConnectorScope({schema: 'schema', entity: 'table'}, opts)
+    opts.logger.log(`Connected to the database${scope ? `, exporting for ${scope}` : ''} ...`)
+
     // access system tables only
     const tables: RawTable[] = await getTables(opts)(conn)
-    const columns: Record<EntityId, RawColumn[]> = await getColumns(opts)(conn).then(groupByEntity)
+    opts.logger.log(`Found ${pluralizeL(tables, 'table')} ...`)
+    const columns: RawColumn[] = await getColumns(opts)(conn)
+    opts.logger.log(`Found ${pluralizeL(columns, 'column')} ...`)
     const constraintColumns: RawConstraintColumn[] = await getConstraintColumns(opts)(conn)
+    opts.logger.log(`Found ${pluralizeL(constraintColumns, 'constraint column')} ...`)
+
     // access table data when options are requested
-    const jsonColumns: Record<EntityId, Record<AttributeName, ValueSchema>> = opts.inferJsonAttributes ? await getJsonColumns(columns, opts)(conn) : {}
-    const polyColumns: Record<EntityId, Record<AttributeName, string[]>> = opts.inferPolymorphicRelations ? await getPolyColumns(columns, opts)(conn) : {}
+    const columnsByTable = groupByEntity(columns)
+    const jsonColumns: Record<EntityId, Record<AttributeName, ValueSchema>> = opts.inferJsonAttributes ? await getJsonColumns(columnsByTable, opts)(conn) : {}
+    const polyColumns: Record<EntityId, Record<AttributeName, string[]>> = opts.inferPolymorphicRelations ? await getPolyColumns(columnsByTable, opts)(conn) : {}
     // TODO: pii, join relations...
+
     // build the database
     const constraintTypes: Record<RawConstraintColumnType, RawConstraintColumn[]> = groupBy(constraintColumns, c => c.constraint_type)
     const primaryKeys: Record<EntityId, RawConstraintColumn[]> = groupBy(constraintTypes['PRIMARY KEY'] || [], toEntityId)
     const uniques: Record<EntityId, RawConstraintColumn[]> = groupBy(constraintTypes['UNIQUE'] || [], toEntityId)
     const indexes: Record<EntityId, RawConstraintColumn[]> = groupBy(constraintTypes['INDEX'] || [], toEntityId)
-    const foreignKeys: Record<string, RawConstraintColumn[]> = groupBy(constraintTypes['FOREIGN KEY'] || [], c => `${c.table_schema}.${c.table_name}.${c.constraint_name}`)
+    const foreignKeys: RawConstraintColumn[][] = Object.values(groupBy(constraintTypes['FOREIGN KEY'] || [], c => `${c.table_schema}.${c.table_name}.${c.constraint_name}`))
+    opts.logger.log(`✔︎ Exported ${pluralizeL(tables, 'table')} and ${pluralizeL(foreignKeys, 'relation')} from the database!`)
     return removeUndefined({
         entities: tables.map(table => [toEntityId(table), table] as const).map(([id, table]) => buildEntity(
             table,
-            columns[id] || [],
+            columnsByTable[id] || [],
             primaryKeys[id] || [],
             uniques[id] || [],
             indexes[id] || [],
             jsonColumns[id] || {},
             polyColumns[id] || {},
         )),
-        relations: Object.values(foreignKeys).map(cols => buildRelation(cols)),
+        relations: foreignKeys.map(cols => buildRelation(cols)),
         types: undefined,
         doc: undefined,
         stats: undefined,
@@ -269,6 +280,7 @@ function buildRelation(columns: RawConstraintColumn[]): Relation {
 }
 
 const getJsonColumns = (columns: Record<EntityId, RawColumn[]>, opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<Record<EntityId, Record<AttributeName, ValueSchema>>> => {
+    opts.logger.log('Inferring JSON columns ...')
     return mapEntriesAsync(columns, (entityId, tableCols) => {
         const ref = parseEntityRef(entityId)
         const jsonCols = tableCols.filter(c => c.column_type === 'jsonb')
@@ -288,6 +300,7 @@ const getSampleValues = (ref: EntityRef, attribute: AttributePath, opts: Connect
 }
 
 const getPolyColumns = (columns: Record<EntityId, RawColumn[]>, opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<Record<EntityId, Record<AttributeName, string[]>>> => {
+    opts.logger.log('Inferring polymorphic relations ...')
     return mapEntriesAsync(columns, (entityId, tableCols) => {
         const ref = parseEntityRef(entityId)
         const colNames = tableCols.map(c => c.column_name)

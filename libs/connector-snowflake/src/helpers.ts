@@ -1,6 +1,7 @@
 import {
     AttributePath,
     CatalogName,
+    ConnectorScopeOpts,
     DatabaseName,
     EntityName,
     EntityRef,
@@ -18,11 +19,10 @@ export function buildSqlColumn(path: AttributePath): SqlFragment {
     return `"${head}"${tail.map(t => `->'${t}'`).join('')}`
 }
 
-export type ScopeOpts = { database?: DatabaseName, catalog?: CatalogName, schema?: SchemaName, entity?: EntityName }
 export type ScopeFields = { database?: SqlFragment, catalog?: SqlFragment, schema?: SqlFragment, entity?: SqlFragment }
 export type ScopeValues = { database?: DatabaseName, catalog?: CatalogName, schema?: SchemaName, entity?: EntityName }
 
-export function scopeWhere(fields: ScopeFields, opts: ScopeOpts): SqlFragment {
+export function scopeWhere(fields: ScopeFields, opts: ConnectorScopeOpts): SqlFragment {
     const databaseFilter = fields.database && opts.database ? `${fields.database} ${scopeOp(opts.database)} '${opts.database}'` : ''
     const catalogFilter = fields.catalog && opts.catalog ? `${fields.catalog} ${scopeOp(opts.catalog)} '${opts.catalog}'` : ''
     const schemaFilter = fields.schema && opts.schema ? `${fields.schema} ${scopeOp(opts.schema)} '${opts.schema}'` : `${fields.schema} != 'INFORMATION_SCHEMA'`
@@ -34,7 +34,7 @@ function scopeOp(scope: string): SqlFragment {
     return scope.includes('%') ? 'LIKE' : '='
 }
 
-export function scopeFilter(values: ScopeValues, opts: ScopeOpts): boolean {
+export function scopeFilter(values: ScopeValues, opts: ConnectorScopeOpts): boolean {
     const databaseFilter = values.database && opts.database ? scopeMatch(values.database, opts.database) : true
     const catalogFilter = values.catalog && opts.catalog ? scopeMatch(values.catalog, opts.catalog) : true
     const schemaFilter = values.schema && opts.schema ? scopeMatch(values.schema, opts.schema) : values.schema !== 'INFORMATION_SCHEMA'

@@ -1,4 +1,4 @@
-import {indent, Logger, stripIndent} from "@azimutt/utils";
+import {indent, joinLast, Logger, plural, stripIndent} from "@azimutt/utils";
 import {Millis} from "../common";
 import {DatabaseUrlParsed} from "../databaseUrl"
 import {
@@ -34,12 +34,15 @@ export type ConnectorDefaultOpts = {
     logQueries?: boolean // default: false, log executed queries using the provided logger
 }
 
-export type ConnectorSchemaOpts = ConnectorDefaultOpts & {
+export type ConnectorScopeOpts = {
     // filters: limit the scope of the extraction
     database?: DatabaseName // export only this database or database pattern (use LIKE if contains %, equality otherwise)
     catalog?: CatalogName // export only this catalog or catalog pattern (use LIKE if contains %, equality otherwise)
     schema?: SchemaName // export only this schema or schema pattern (use LIKE if contains %, equality otherwise)
     entity?: EntityName // export only this entity or entity pattern (use LIKE if contains %, equality otherwise)
+}
+
+export type ConnectorSchemaOpts = ConnectorDefaultOpts & ConnectorScopeOpts & {
     // data access: get more interesting result, beware of performance
     sampleSize?: number // default: 100, number of documents used to infer a schema (document databases, json attributes in relational db...)
     inferMixedJson?: string // when inferring JSON, will differentiate documents on this attribute, useful when storing several documents in the same collection in Mongo or Couchbase
@@ -101,6 +104,21 @@ export type ConnectorAttributeStats = AttributeRef & {
 }
 
 export type ConnectorAttributeStatsValue = { value: AttributeValue, count: number }
+
+export const connectorScopeLevels = ['database', 'catalog', 'schema', 'entity'] as const
+export type ConnectorScopeNames = {database?: string, catalog?: string, schema?: string, entity?: string}
+
+export function formatConnectorScope(names: ConnectorScopeNames, opts: ConnectorScopeOpts): string {
+    const filters = connectorScopeLevels
+        .map(key => [names[key], opts[key]])
+        .filter((v): v is [string, string] => !!v[0] && !!v[1])
+        .map(([name, opt]) => `${opt.includes('%') ? plural(name) : name} '${opt}'`)
+    if (filters.length > 0) {
+        return joinLast(filters, ', ', ' and ')
+    } else {
+        return ''
+    }
+}
 
 export const logQueryIfNeeded = <U>(
     id: number,

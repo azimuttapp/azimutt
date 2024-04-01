@@ -1,5 +1,5 @@
 import {Bucket, Collection, ScopeSpec} from "couchbase";
-import {removeUndefined, sequence} from "@azimutt/utils";
+import {joinLimit, pluralizeL, removeUndefined, sequence} from "@azimutt/utils";
 import {
     AttributeName,
     AttributeValue,
@@ -7,6 +7,7 @@ import {
     connectorSchemaOptsDefaults,
     Database,
     Entity,
+    formatConnectorScope,
     handleError,
     schemaToAttributes,
     valuesToSchema
@@ -15,21 +16,25 @@ import {scopeFilter} from "./helpers";
 import {Conn} from "./connect";
 
 export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<Database> => {
-    opts.logger.log('Connected to cluster ...')
+    const scope = formatConnectorScope({catalog: 'bucket', schema: 'scope', entity: 'collection'}, opts)
+    opts.logger.log(`Connected to the cluster${scope ? `, exporting for ${scope}` : ''} ...`)
     const buckets: Bucket[] = await getBuckets(opts)(conn)
-    opts.logger.log(`Found ${pluralL(buckets, 'bucket')} to export (${printList(buckets.map(b => b.name))}) ...`)
+    opts.logger.log(`Found ${pluralizeL(buckets, 'bucket')} to export (${joinLimit(buckets.map(b => b.name))}) ...`)
 
     const entities: Entity[] = (await sequence(buckets, async bucket => {
         const scopes = await getScopes(bucket, opts)(conn)
-        opts.logger.log(`Found ${pluralL(scopes, 'scope')} to export in bucket '${bucket.name}' (${printList(scopes.map(b => b.name))}) ...`)
+        opts.logger.log(`  Found ${pluralizeL(scopes, 'scope')} to export in bucket '${bucket.name}' (${joinLimit(scopes.map(b => b.name))}) ...`)
         return (await sequence(scopes, async scope => {
             const collections = getCollections(bucket, scope, opts)(conn)
-            opts.logger.log(`Found ${pluralL(collections, 'collection')} to export in scope '${bucket.name}.${scope.name}' (${printList(collections.map(b => b.name))}) ...`)
-            return (await sequence(collections, collection => inferCollection(collection, opts)(conn))).flat()
+            opts.logger.log(`    Found ${pluralizeL(collections, 'collection')} to export in scope '${bucket.name}.${scope.name}' (${joinLimit(collections.map(b => b.name))}) ...`)
+            return (await sequence(collections, collection => {
+                opts.logger.log(`      Exporting collection ${collectionId(collection)} ...`)
+                return inferCollection('      ', collection, opts)(conn)
+            })).flat()
         })).flat()
     })).flat()
 
-    opts.logger.log('✔︎ All collections exported!')
+    opts.logger.log(`✔︎ Exported ${pluralizeL(entities, 'collection')} from the cluster!`)
     return removeUndefined({
         entities,
         relations: undefined,
@@ -67,17 +72,16 @@ const getCollections = (bucket: Bucket, s: ScopeSpec, opts: ConnectorSchemaOpts)
 // TODO: allow nested attribute
 type MixedCollection = {attribute: AttributeName, value: string}
 
-const inferCollection = (collection: Collection, opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<Entity[]> => {
+const inferCollection = (indent: string, collection: Collection, opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<Entity[]> => {
     // FIXME: fetch index informations & more
-    opts.logger.log(`Exporting collection ${collectionId(collection)} ...`)
     if (opts.inferMixedJson) {
         const attribute: AttributeName = opts.inferMixedJson
         const values = await getDistinctValues(collection, attribute, opts)
             .then(values => values.filter((v): v is string => typeof v === 'string'))
         if (values.length > 0) {
-            opts.logger.log(`Found ${pluralL(values, 'kind')} to export (${printList(values)}) ...`)
+            opts.logger.log(`${indent}Found ${pluralizeL(values, 'kind')} to export (${joinLimit(values)}) ...`)
             return sequence(values, value => {
-                opts.logger.log(`Exporting collection ${collectionId(collection)} for ${attribute}=${value} ...`)
+                opts.logger.log(`${indent}  Exporting collection ${collectionId(collection)} for ${attribute}=${value} ...`)
                 return inferCollectionMixed(collection, {attribute, value}, opts)
             })
         } else {
@@ -143,7 +147,3 @@ async function query<T = any>(collection: Collection, q: string): Promise<T[]> {
 const buildFilter = (mixed: MixedCollection | null): string => mixed ? ` WHERE ${mixed.attribute}='${mixed.value}'` : ''
 const collectionId = (collection: Collection): string => `${collection.scope.bucket.name}.${collection.scope.name}.${collection.name}`
 const formatMixed = (mixed: MixedCollection | null) => mixed ? `(${mixed.attribute}=${mixed.value})` : ''
-
-const plural = (num: number, name: string): string => num === 1 ? `${num} ${name}` : `${num} ${name}s`
-const pluralL = <T>(items: T[], name: string): string => plural(items.length, name)
-const printList = (items: string[], max: number = 5): string => items.length > max ? items.slice(0, max).join(', ') + '...' : items.join(', ')

@@ -1,5 +1,5 @@
 import {Collection, Filter} from "mongodb";
-import {removeUndefined, sequence} from "@azimutt/utils";
+import {joinLimit, pluralizeL, removeUndefined, sequence} from "@azimutt/utils";
 import {
     AttributeName,
     AttributeValue,
@@ -8,6 +8,7 @@ import {
     Database,
     DatabaseName,
     Entity,
+    formatConnectorScope,
     handleError,
     schemaToAttributes,
     valuesToSchema
@@ -16,13 +17,14 @@ import {scopeFilter} from "./helpers";
 import {Conn} from "./connect";
 
 export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<Database> => {
-    opts.logger.log('Connected to database ...')
+    const scope = formatConnectorScope({database: 'database', entity: 'collection'}, opts)
+    opts.logger.log(`Connected to the database${scope ? `, exporting for ${scope}` : ''} ...`)
     const databaseNames: DatabaseName[] = await getDatabases(opts)(conn)
-    opts.logger.log(`Found ${pluralL(databaseNames, 'database')} to export (${printList(databaseNames)}) ...`)
+    opts.logger.log(`Found ${pluralizeL(databaseNames, 'database')} to export (${joinLimit(databaseNames)}) ...`)
     const collections: Collection[] = await getCollections(databaseNames, opts)(conn)
-    opts.logger.log(`Found ${pluralL(collections, 'collection')} to export (${printList(collections.map(c => c.collectionName))}) ...`)
+    opts.logger.log(`Found ${pluralizeL(collections, 'collection')} to export (${joinLimit(collections.map(c => c.collectionName))}) ...`)
     const entities: Entity[] = (await sequence(collections, collection => inferCollection(collection, opts))).flat()
-    opts.logger.log('✔︎ All collections exported!')
+    opts.logger.log(`✔︎ Exported ${pluralizeL(entities, 'collection')} from the database!`)
     return removeUndefined({
         entities,
         relations: undefined,
@@ -69,9 +71,9 @@ async function inferCollection(collection: Collection, opts: ConnectorSchemaOpts
         const values = await getDistinctValues(collection, attribute, opts)
             .then(values => values.filter((v): v is string => typeof v === 'string'))
         if (values.length > 0) {
-            opts.logger.log(`Found ${pluralL(values, 'kind')} to export (${printList(values)}) ...`)
+            opts.logger.log(`  Found ${pluralizeL(values, 'kind')} to export (${joinLimit(values)}) ...`)
             return sequence(values, value => {
-                opts.logger.log(`Exporting collection ${collectionId(collection)} for ${attribute}=${value} ...`)
+                opts.logger.log(`  Exporting collection ${collectionId(collection)} for ${attribute}=${value} ...`)
                 return inferCollectionMixed(collection, {attribute, value}, opts)
             })
         } else {
@@ -130,7 +132,3 @@ async function countDocuments(collection: Collection, mixed: MixedCollection | n
 const buildFilter = (mixed: MixedCollection | null): Filter<any> => mixed ? {[mixed.attribute]: mixed.value} : {}
 const collectionId = (collection: Collection): string => `${collection.dbName}.${collection.collectionName}`
 const formatMixed = (mixed: MixedCollection | null) => mixed ? `(${mixed.attribute}=${mixed.value})` : ''
-
-const plural = (num: number, name: string): string => num === 1 ? `${num} ${name}` : `${num} ${name}s`
-const pluralL = <T>(items: T[], name: string): string => plural(items.length, name)
-const printList = (items: string[], max: number = 5): string => items.length > max ? items.slice(0, max).join(', ') + '...' : items.join(', ')

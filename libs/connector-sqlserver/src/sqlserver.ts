@@ -3,6 +3,7 @@ import {
     mapEntriesAsync,
     mapValuesAsync,
     partition,
+    pluralizeL,
     removeEmpty,
     removeSurroundingParentheses,
     removeUndefined,
@@ -21,6 +22,7 @@ import {
     EntityId,
     EntityRef,
     formatAttributeRef,
+    formatConnectorScope,
     formatEntityRef,
     handleError,
     Index,
@@ -35,25 +37,42 @@ import {buildColumnType, buildSqlColumn, buildSqlTable, scopeWhere} from "./help
 import {Conn} from "./connect";
 
 export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<Database> => {
+    const scope = formatConnectorScope({schema: 'schema', entity: 'table'}, opts)
+    opts.logger.log(`Connected to the database${scope ? `, exporting for ${scope}` : ''} ...`)
+
     // access system tables only
-    const columns: Record<EntityId, RawColumn[]> = await getColumns(opts)(conn).then(groupByEntity)
-    const indexColumns: Record<EntityId, RawIndexColumn[]> = await getIndexColumns(opts)(conn).then(groupByEntity)
-    const checks: Record<EntityId, RawCheck[]> = await getChecks(opts)(conn).then(groupByEntity)
-    const comments: Record<EntityId, RawComment[]> = await getComments(opts)(conn).then(groupByEntity)
+    const columns: RawColumn[] = await getColumns(opts)(conn)
+    opts.logger.log(`Found ${pluralizeL(columns, 'column')} ...`)
+    const indexColumns: RawIndexColumn[] = await getIndexColumns(opts)(conn)
+    opts.logger.log(`Found ${pluralizeL(indexColumns, 'index column')} ...`)
+    const checks: RawCheck[] = await getChecks(opts)(conn)
+    opts.logger.log(`Found ${pluralizeL(checks, 'check')} ...`)
+    const comments: RawComment[] = await getComments(opts)(conn)
+    opts.logger.log(`Found ${pluralizeL(comments, 'comment')} ...`)
     const foreignKeyColumns: RawForeignKeyColumn[] = await getForeignKeyColumns(opts)(conn)
+    const foreignKeys = Object.values(groupBy(foreignKeyColumns, c => c.constraint_name))
+    opts.logger.log(`Found ${pluralizeL(foreignKeys, 'foreign key')} ...`)
+
     // access table data when options are requested
-    const jsonColumns: Record<EntityId, Record<AttributeName, ValueSchema>> = opts.inferJsonAttributes ? await getJsonColumns(columns, checks, opts)(conn) : {}
+    const columnsByTable = groupByEntity(columns)
+    const checksByTable = groupByEntity(checks)
+    const jsonColumns: Record<EntityId, Record<AttributeName, ValueSchema>> = opts.inferJsonAttributes ? await getJsonColumns(columnsByTable, checksByTable, opts)(conn) : {}
     // TODO: polymorphic relations, pii, join relations...
+
     // build the database
+    const tables = Object.entries(columnsByTable)
+    const indexColumnsByTable = groupByEntity(indexColumns)
+    const commentsByTable = groupByEntity(comments)
+    opts.logger.log(`✔︎ Exported ${pluralizeL(tables, 'table')} and ${pluralizeL(foreignKeys, 'relation')} from the database!`)
     return removeUndefined({
-        entities: Object.entries(columns).map(([id, columns]) => buildEntity(
+        entities: tables.map(([id, columns]) => buildEntity(
             columns,
-            indexColumns[id] || [],
-            checks[id] || [],
-            comments[id] || [],
+            indexColumnsByTable[id] || [],
+            checksByTable[id] || [],
+            commentsByTable[id] || [],
             jsonColumns[id] || {}
         )),
-        relations: Object.values(groupBy(foreignKeyColumns, c => c.constraint_name)).map(cols => buildRelation(cols)),
+        relations: foreignKeys.map(cols => buildRelation(cols)),
         types: undefined,
         doc: undefined,
         stats: undefined,
@@ -303,6 +322,7 @@ function buildRelation(columns: RawForeignKeyColumn[]): Relation {
 }
 
 const getJsonColumns = (columns: Record<EntityId, RawColumn[]>, checks: Record<EntityId, RawCheck[]>, opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<Record<EntityId, Record<AttributeName, ValueSchema>>> => {
+    opts.logger.log('Inferring JSON columns ...')
     return mapEntriesAsync(columns, async (entityId, tableCols) => {
         const ref = parseEntityRef(entityId)
         const jsonCols = tableCols.filter(col => col.column_type === 'nvarchar' && checks[entityId]?.find(ck => ck.column_name == col.column_name && ck.definition?.includes('isjson')))

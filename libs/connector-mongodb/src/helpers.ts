@@ -1,9 +1,8 @@
-import {CatalogName, DatabaseName, EntityName, SchemaName} from "@azimutt/database-model";
+import {CatalogName, ConnectorScopeOpts, DatabaseName, EntityName, SchemaName} from "@azimutt/database-model";
 
-export type ScopeOpts = { database?: DatabaseName, catalog?: CatalogName, schema?: SchemaName, entity?: EntityName }
 export type ScopeValues = { database?: DatabaseName, catalog?: CatalogName, schema?: SchemaName, entity?: EntityName }
 
-export function scopeFilter(values: ScopeValues, opts: ScopeOpts): boolean {
+export function scopeFilter(values: ScopeValues, opts: ConnectorScopeOpts): boolean {
     const databaseFilter = values.database && opts.database ? scopeMatch(values.database, opts.database) : values.database !== 'local'
     const catalogFilter = values.catalog && opts.catalog ? scopeMatch(values.catalog, opts.catalog) : true
     const schemaFilter = values.schema && opts.schema ? scopeMatch(values.schema, opts.schema) : true

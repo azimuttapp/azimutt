@@ -1,48 +1,68 @@
 import {BigQueryTimestamp, Dataset, DatasetsResponse} from "@google-cloud/bigquery";
-import {groupBy, removeEmpty, removeUndefined, zip} from "@azimutt/utils";
+import {groupBy, joinLimit, pluralizeL, removeEmpty, removeUndefined, sequence, zip} from "@azimutt/utils";
 import {
     Attribute,
     ConnectorSchemaOpts,
     Database,
     Entity,
     EntityId,
+    formatConnectorScope,
     formatEntityRef,
     handleError,
     Index,
     PrimaryKey,
-    Relation
+    Relation,
+    SchemaName
 } from "@azimutt/database-model";
 import {removeQuotes, scopeFilter, scopeWhere} from "./helpers";
 import {Conn} from "./connect";
 
 export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<Database> => {
-    const projectId = opts.catalog || await conn.client.getProjectId()
-    const datasets: Dataset[] = await conn.client.getDatasets({projectId}).then(([datasets]: DatasetsResponse) => datasets)
-    const datasetIds = datasets.map(d => d.id).filter((id: string | undefined): id is string => !!id).filter(id => scopeFilter({schema: id}, opts))
-    const datasetDbs: Database[] = await Promise.all(datasetIds.map(async datasetId => {
+    opts.logger.log('Connected to the database ...')
+    const projectId = opts.catalog || await conn.underlying.getProjectId()
+    const scope = formatConnectorScope({schema: 'dataset', entity: 'table'}, opts)
+    opts.logger.log(`Exporting project '${projectId}'${scope ? `, only for ${scope}` : ''} ...`)
+    const datasetIds = await getDatasets(projectId, opts)(conn)
+    opts.logger.log(`Found ${pluralizeL(datasetIds, 'dataset')} to export (${joinLimit(datasetIds)}) ...`)
+    const datasetDbs: Database[] = await sequence(datasetIds, async datasetId => {
+        opts.logger.log(`Exporting dataset '${projectId}.${datasetId}' ...`)
+
         // access system tables only
         const tables = await getTables(projectId, datasetId, opts)(conn)
-        const columns = await getColumns(projectId, datasetId, opts)(conn).then(groupByEntity)
-        const primaryKeys = await getPrimaryKeys(projectId, datasetId, opts)(conn).then(groupByEntity)
+        opts.logger.log(`  Found ${pluralizeL(tables, 'table')} ...`)
+        const columns = await getColumns(projectId, datasetId, opts)(conn)
+        opts.logger.log(`  Found ${pluralizeL(columns, 'column')} ...`)
+        const primaryKeys = await getPrimaryKeys(projectId, datasetId, opts)(conn)
+        opts.logger.log(`  Found ${pluralizeL(primaryKeys, 'primary key')} ...`)
+        const indexes = await getIndexes(projectId, datasetId, opts)(conn)
+        opts.logger.log(`  Found ${pluralizeL(indexes, 'index')} ...`)
         const foreignKeys = await getForeignKeys(projectId, datasetId, opts)(conn)
-        const indexes = await getIndexes(projectId, datasetId, opts)(conn).then(groupByEntity)
+        opts.logger.log(`  Found ${pluralizeL(foreignKeys, 'foreign key')} ...`)
+
         // access table data when options are requested
         // TODO: JSON columns, polymorphic relations, pii, join relations...
+
         // build the database
+        const columnsByTable = groupByEntity(columns)
+        const primaryKeysByTable = groupByEntity(primaryKeys)
+        const indexesByTable = groupByEntity(indexes)
         return {
             entities: tables.map(table => [toEntityId(table), table] as const).map(([id, table]) => buildEntity(
                 table,
-                columns[id] || [],
-                primaryKeys[id] || [],
-                indexes[id] || []
+                columnsByTable[id] || [],
+                primaryKeysByTable[id] || [],
+                indexesByTable[id] || []
             )),
             relations: foreignKeys.map(buildRelation)
         }
-    }))
+    })
 
+    const entities = datasetDbs.flatMap(s => s.entities || [])
+    const relations = datasetDbs.flatMap(s => s.relations || [])
+    opts.logger.log(`✔︎ Exported ${pluralizeL(entities, 'table')} and ${pluralizeL(relations, 'relation')} from the database!`)
     return removeEmpty({
-        entities: datasetDbs.flatMap(s => s.entities || []),
-        relations: datasetDbs.flatMap(s => s.relations || []),
+        entities,
+        relations,
         types: undefined,
         doc: undefined,
         stats: undefined,
@@ -55,6 +75,11 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
 
 const toEntityId = <T extends { table_catalog: string, table_schema: string, table_name: string }>(value: T): EntityId => formatEntityRef({catalog: value.table_catalog, schema: value.table_schema, entity: value.table_name})
 const groupByEntity = <T extends { table_catalog: string, table_schema: string, table_name: string }>(values: T[]): Record<EntityId, T[]> => groupBy(values, toEntityId)
+
+export const getDatasets = (projectId: string, opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<SchemaName[]> => {
+    const datasets: Dataset[] = await conn.underlying.getDatasets({projectId}).then(([datasets]: DatasetsResponse) => datasets)
+    return datasets.map(d => d.id).filter((id: string | undefined): id is string => !!id).filter(id => scopeFilter({schema: id}, opts))
+}
 
 export type RawTable = {
     table_catalog: string

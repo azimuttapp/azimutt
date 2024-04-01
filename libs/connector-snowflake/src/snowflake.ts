@@ -1,10 +1,11 @@
-import {groupBy, removeEmpty, removeUndefined} from "@azimutt/utils";
+import {groupBy, pluralizeL, pluralizeR, removeEmpty, removeUndefined} from "@azimutt/utils";
 import {
     Attribute,
     ConnectorSchemaOpts,
     Database,
     Entity,
     EntityId,
+    formatConnectorScope,
     formatEntityRef,
     handleError,
     PrimaryKey,
@@ -14,22 +15,33 @@ import {scopeFilter, scopeWhere} from "./helpers";
 import {Conn} from "./connect";
 
 export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<Database> => {
+    const scope = formatConnectorScope({catalog: 'catalog', schema: 'schema', entity: 'table'}, opts)
+    opts.logger.log(`Connected to the database${scope ? `, exporting for ${scope}` : ''} ...`)
+
     // access system tables only
     const tables: RawTable[] = await getTables(opts)(conn)
+    opts.logger.log(`Found ${pluralizeL(tables, 'table')} ...`)
     // TODO: include views? (SELECT * FROM INFORMATION_SCHEMA.VIEWS;)
-    const columns: Record<EntityId, RawColumn[]> = await getColumns(opts)(conn).then(groupByEntity)
+    const columns: RawColumn[] = await getColumns(opts)(conn)
+    opts.logger.log(`Found ${pluralizeL(columns, 'column')} ...`)
     const primaryKeyColumns: Record<EntityId, RawPrimaryKeyColumn[]> = await getPrimaryKeyColumns(opts)(conn).then(pks => groupBy(pks, pk => formatEntityRef({catalog: pk.database_name, schema: pk.schema_name, entity: pk.table_name})))
-    const foreignKeyColumns: Record<string, RawForeignKeyColumn[]> = await getForeignKeyColumns(opts)(conn).then(fks => groupBy(fks, fk => fk.fk_name))
+    opts.logger.log(`Found ${pluralizeR(primaryKeyColumns, 'primary key')} ...`)
+    const foreignKeys: RawForeignKeyColumn[][] = Object.values(await getForeignKeyColumns(opts)(conn).then(fks => groupBy(fks, fk => fk.fk_name)))
+    opts.logger.log(`Found ${pluralizeR(foreignKeys, 'foreign key')} ...`)
+
     // access table data when options are requested
     // TODO: json columns, polymorphic relations, pii, join relations...
+
     // build the database
+    const columnsByTable = groupByEntity(columns)
+    opts.logger.log(`✔︎ Exported ${pluralizeL(tables, 'table')} and ${pluralizeL(foreignKeys, 'relation')} from the database!`)
     return removeUndefined({
         entities: tables.map(table => [toEntityId(table), table] as const).map(([id, table]) => buildEntity(
             table,
-            columns[id] || [],
+            columnsByTable[id] || [],
             primaryKeyColumns[id] || [],
         )),
-        relations: Object.values(foreignKeyColumns).map(buildRelation),
+        relations: foreignKeys.map(buildRelation),
         types: undefined,
         doc: undefined,
         stats: undefined,

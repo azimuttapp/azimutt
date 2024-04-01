@@ -1,12 +1,4 @@
-import {
-    AttributePath,
-    CatalogName,
-    DatabaseName,
-    EntityName,
-    EntityRef,
-    SchemaName,
-    SqlFragment
-} from "@azimutt/database-model";
+import {AttributePath, ConnectorScopeOpts, EntityRef, SchemaName, SqlFragment} from "@azimutt/database-model";
 
 export function buildSqlTable(ref: EntityRef): SqlFragment {
     // TODO: escape tables with special names (keywords or non-standard)
@@ -33,10 +25,9 @@ export function buildColumnType(schema?: SchemaName): SqlFragment {
                      ELSE '' END`
 }
 
-export type ScopeOpts = { database?: DatabaseName, catalog?: CatalogName, schema?: SchemaName, entity?: EntityName }
 export type ScopeFields = { database?: SqlFragment, catalog?: SqlFragment, schema?: SqlFragment, entity?: SqlFragment }
 
-export function scopeWhere(fields: ScopeFields, opts: ScopeOpts): SqlFragment {
+export function scopeWhere(fields: ScopeFields, opts: ConnectorScopeOpts): SqlFragment {
     const databaseFilter = fields.database && opts.database ? `${fields.database} ${scopeOp(opts.database)} '${opts.database}'` : ''
     const catalogFilter = fields.catalog && opts.catalog ? `${fields.catalog} ${scopeOp(opts.catalog)} '${opts.catalog}'` : ''
     const schemaFilter = fields.schema && opts.schema ? `${fields.schema} ${scopeOp(opts.schema)} '${opts.schema}'` : `${fields.schema} NOT IN ('information_schema', 'sys')`

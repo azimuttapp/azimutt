@@ -1,5 +1,16 @@
 import {describe, expect, test} from "@jest/globals";
-import {indent, pathJoin, pathParent, removeSurroundingParentheses, slugify, stripIndent} from "../src";
+import {
+    indent,
+    joinLast,
+    joinLimit,
+    pathJoin,
+    pathParent,
+    plural,
+    removeSurroundingParentheses,
+    singular,
+    slugify,
+    stripIndent
+} from "../src";
 
 describe('string', () => {
     test('indent', () => {
@@ -7,6 +18,23 @@ describe('string', () => {
         expect(indent(`
           my text
         `)).toEqual('  \n            my text\n          ')
+    })
+    test('joinLast', () => {
+        expect(joinLast([])).toEqual('')
+        expect(joinLast(['a'])).toEqual('a')
+        expect(joinLast(['a', 'b'])).toEqual('a and b')
+        expect(joinLast(['a', 'b', 'c'])).toEqual('a, b and c')
+        expect(joinLast(['a', 'b', 'c', 'd'])).toEqual('a, b, c and d')
+    })
+    test('joinLimit', () => {
+        expect(joinLimit([])).toEqual('')
+        expect(joinLimit(['a'])).toEqual('a')
+        expect(joinLimit(['a', 'b'])).toEqual('a, b')
+        expect(joinLimit(['a', 'b', 'c'])).toEqual('a, b, c')
+        expect(joinLimit(['a', 'b', 'c', 'd'])).toEqual('a, b, c, d')
+        expect(joinLimit(['a', 'b', 'c', 'd', 'e'])).toEqual('a, b, c, d, e')
+        expect(joinLimit(['a', 'b', 'c', 'd', 'e', 'f'])).toEqual('a, b, c, d, e ...')
+        expect(joinLimit(['a', 'b', 'c', 'd', 'e', 'f', 'g'])).toEqual('a, b, c, d, e ...')
     })
     test('pathJoin', () => {
         expect(pathJoin()).toEqual('./')
@@ -28,12 +56,34 @@ describe('string', () => {
         expect(pathParent('./README.md')).toEqual('.')
         expect(pathParent('./')).toEqual('.')
     })
+    test('plural', () => {
+        expect(plural('cat')).toEqual('cats')
+        expect(plural('bus')).toEqual('buses')
+        expect(plural('index')).toEqual('indexes')
+        expect(plural('blitz')).toEqual('blitzes')
+        expect(plural('marsh')).toEqual('marshes')
+        expect(plural('lunch')).toEqual('lunches')
+        expect(plural('try')).toEqual('tries')
+        expect(plural('ray')).toEqual('rays')
+        expect(plural('boy')).toEqual('boys')
+    })
     test('removeSurroundingParentheses', () => {
         expect(removeSurroundingParentheses('some text')).toEqual('some text')
         expect(removeSurroundingParentheses('some (text)')).toEqual('some (text)')
         expect(removeSurroundingParentheses('(some text)')).toEqual('some text')
         expect(removeSurroundingParentheses('(some (text))')).toEqual('some (text)')
         expect(removeSurroundingParentheses('((some text))')).toEqual('some text')
+    })
+    test('singular', () => {
+        expect(singular('cats')).toEqual('cat')
+        expect(singular('buses')).toEqual('bus')
+        expect(singular('indexes')).toEqual('index')
+        expect(singular('blitzes')).toEqual('blitz')
+        expect(singular('marshes')).toEqual('marsh')
+        expect(singular('lunches')).toEqual('lunch')
+        expect(singular('tries')).toEqual('try')
+        expect(singular('rays')).toEqual('ray')
+        expect(singular('boys')).toEqual('boy')
     })
     test('slugify', () => {
         expect(slugify('')).toEqual('')
