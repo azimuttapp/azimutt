@@ -60,14 +60,14 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
     const entities = datasetDbs.flatMap(s => s.entities || [])
     const relations = datasetDbs.flatMap(s => s.relations || [])
     opts.logger.log(`✔︎ Exported ${pluralizeL(entities, 'table')} and ${pluralizeL(relations, 'relation')} from the database!`)
-    return removeEmpty({
+    return Database.parse(removeEmpty({
         entities,
         relations,
         types: undefined,
         doc: undefined,
         stats: undefined,
         extra: undefined,
-    })
+    }))
 }
 
 // 👇️ Private functions, some are exported only for tests
@@ -133,7 +133,7 @@ export const getTables = (projectId: string, datasetId: string, opts: ConnectorS
 
 function buildEntity(table: RawTable, columns: RawColumn[], primaryKeys: RawPrimaryKey[], indexes: RawIndex[]): Entity {
     const pk = primaryKeys[0]
-    return removeUndefined({
+    return Entity.parse(removeUndefined({
         catalog: table.table_catalog,
         schema: table.table_schema,
         name: table.table_name,
@@ -148,7 +148,7 @@ function buildEntity(table: RawTable, columns: RawColumn[], primaryKeys: RawPrim
         doc: table.description ? removeQuotes(table.description) : undefined,
         stats: undefined,
         extra: undefined
-    })
+    }))
 }
 
 export type RawColumn = {
@@ -186,7 +186,7 @@ export const getColumns = (projectId: string, datasetId: string, opts: Connector
 }
 
 function buildAttribute(column: RawColumn): Attribute {
-    return removeUndefined({
+    return Attribute.parse(removeUndefined({
         name: column.column_name,
         type: column.column_type,
         nullable: column.column_nullable || undefined,
@@ -197,7 +197,7 @@ function buildAttribute(column: RawColumn): Attribute {
         doc: column.description || undefined,
         stats: undefined,
         extra: undefined
-    })
+    }))
 }
 
 export type RawPrimaryKey = {
@@ -231,13 +231,13 @@ export const getPrimaryKeys = (projectId: string, datasetId: string, opts: Conne
 }
 
 function buildPrimaryKey(pk: RawPrimaryKey): PrimaryKey {
-    return removeUndefined({
+    return PrimaryKey.parse(removeUndefined({
         name: pk.constraint_name,
         attrs: pk.table_columns.map(c => [c]),
         doc: undefined,
         stats: undefined,
         extra: undefined
-    })
+    }))
 }
 
 export type RawForeignKey = {
@@ -279,7 +279,7 @@ export const getForeignKeys = (projectId: string, datasetId: string, opts: Conne
 }
 
 function buildRelation(fk: RawForeignKey): Relation {
-    return removeUndefined({
+    return Relation.parse(removeUndefined({
         name: fk.constraint_name,
         kind: undefined,
         origin: undefined,
@@ -289,7 +289,7 @@ function buildRelation(fk: RawForeignKey): Relation {
         polymorphic: undefined,
         doc: undefined,
         extra: undefined
-    })
+    }))
 }
 
 export type RawIndex = {
@@ -331,7 +331,7 @@ export const getIndexes = (projectId: string, datasetId: string, opts: Connector
 }
 
 function buildIndex(index: RawIndex): Index {
-    return removeUndefined({
+    return Index.parse(removeUndefined({
         name: index.index_name,
         attrs: index.index_columns.map(c => [c]),
         unique: undefined,
@@ -343,5 +343,5 @@ function buildIndex(index: RawIndex): Index {
             scans: undefined,
         }),
         extra: undefined
-    })
+    }))
 }

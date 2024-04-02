@@ -21,11 +21,11 @@ export const execQuery = (query: string, parameters: any[]) => async (conn: Conn
     if (typeof coll[operation] === 'function') {
         const rows: any[] = await limitResults(coll[operation](command), limit).toArray()
         const allKeys: string[] = rows.flatMap(Object.keys)
-        return {
+        return QueryResults.parse({
             query,
             attributes: distinct(allKeys).map(name => ({name})),
             rows: rows.map(row => JSON.parse(JSON.stringify(row))) // serialize ObjectId & Date objects
-        }
+        })
     } else {
         return Promise.reject(`'${operation}' is not a valid MongoDB operation`)
     }

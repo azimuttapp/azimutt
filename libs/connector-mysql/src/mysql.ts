@@ -51,7 +51,7 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
     const indexes: Record<EntityId, RawConstraintColumn[]> = groupBy(constraintTypes['INDEX'] || [], toEntityId)
     const foreignKeys: RawConstraintColumn[][] = Object.values(groupBy(constraintTypes['FOREIGN KEY'] || [], c => `${c.table_schema}.${c.table_name}.${c.constraint_name}`))
     opts.logger.log(`✔︎ Exported ${pluralizeL(tables, 'table')} and ${pluralizeL(foreignKeys, 'relation')} from the database!`)
-    return removeUndefined({
+    return Database.parse(removeUndefined({
         entities: tables.map(table => [toEntityId(table), table] as const).map(([id, table]) => buildEntity(
             table,
             columnsByTable[id] || [],
@@ -66,7 +66,7 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
         doc: undefined,
         stats: undefined,
         extra: undefined,
-    })
+    }))
 }
 
 // 👇️ Private functions, some are exported only for tests
@@ -117,7 +117,7 @@ export const getTables = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
 function buildEntity(table: RawTable, columns: RawColumn[], primaryKeyColumns: RawConstraintColumn[], uniqueColumns: RawConstraintColumn[], indexColumns: RawConstraintColumn[], jsonColumns: Record<AttributeName, ValueSchema>, polyColumns: Record<AttributeName, string[]>): Entity {
     const indexes = Object.values(groupBy(uniqueColumns, c => c.constraint_name))
         .concat(Object.values(groupBy(indexColumns, c => c.constraint_name)))
-    return removeEmpty({
+    return Entity.parse(removeEmpty({
         schema: table.table_schema,
         name: table.table_name,
         kind: table.table_kind === 'VIEW' || table.table_kind === 'SYSTEM VIEW' ? 'view' as const : undefined,
@@ -139,7 +139,7 @@ function buildEntity(table: RawTable, columns: RawColumn[], primaryKeyColumns: R
             idx_scan: undefined
         }),
         extra: undefined
-    })
+    }))
 }
 
 export type RawColumn = {
@@ -173,7 +173,7 @@ export const getColumns = (opts: ConnectorSchemaOpts) => async (conn: Conn): Pro
 }
 
 function buildAttribute(column: RawColumn, jsonColumn: ValueSchema | undefined, values: string[] | undefined): Attribute {
-    return removeUndefined({
+    return Attribute.parse(removeUndefined({
         name: column.column_name,
         type: column.column_type,
         nullable: column.column_nullable === 'YES' ? true : undefined,
@@ -184,7 +184,7 @@ function buildAttribute(column: RawColumn, jsonColumn: ValueSchema | undefined, 
         doc: column.column_comment || undefined,
         stats: undefined,
         extra: undefined
-    })
+    }))
 }
 
 export type RawConstraintColumnType = 'PRIMARY KEY' | 'UNIQUE' | 'FOREIGN KEY' | 'INDEX'
@@ -237,7 +237,7 @@ export const getConstraintColumns = (opts: ConnectorSchemaOpts) => async (conn: 
 
 function buildPrimaryKey(columns: RawConstraintColumn[]): PrimaryKey {
     const first = columns[0]
-    return removeUndefined({
+    return PrimaryKey.parse(removeUndefined({
         name: first.constraint_name === 'PRIMARY' ? undefined : first.constraint_name || undefined,
         attrs: columns.slice(0)
             .sort((a, b) => (a.column_index || 0) - (b.column_index || 0))
@@ -245,12 +245,12 @@ function buildPrimaryKey(columns: RawConstraintColumn[]): PrimaryKey {
         doc: undefined,
         stats: undefined,
         extra: undefined
-    })
+    }))
 }
 
 function buildIndex(columns: RawConstraintColumn[]): Index {
     const first = columns[0]
-    return removeUndefined({
+    return Index.parse(removeUndefined({
         name: first.constraint_name || undefined,
         attrs: columns.slice(0)
             .sort((a, b) => (a.column_index || 0) - (b.column_index || 0))
@@ -261,12 +261,12 @@ function buildIndex(columns: RawConstraintColumn[]): Index {
         doc: undefined,
         stats: undefined,
         extra: undefined
-    })
+    }))
 }
 
 function buildRelation(columns: RawConstraintColumn[]): Relation {
     const first = columns[0]
-    return {
+    return Relation.parse(removeUndefined({
         name: first.constraint_name || undefined,
         kind: undefined,
         origin: undefined,
@@ -276,7 +276,7 @@ function buildRelation(columns: RawConstraintColumn[]): Relation {
         polymorphic: undefined,
         doc: undefined,
         extra: undefined
-    }
+    }))
 }
 
 const getJsonColumns = (columns: Record<EntityId, RawColumn[]>, opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<Record<EntityId, Record<AttributeName, ValueSchema>>> => {

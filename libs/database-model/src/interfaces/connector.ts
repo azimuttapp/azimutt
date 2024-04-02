@@ -1,3 +1,4 @@
+import {z} from "zod";
 import {AnyError, indent, joinLast, Logger, plural, stripIndent} from "@azimutt/utils";
 import {Millis} from "../common";
 import {DatabaseUrlParsed} from "../databaseUrl"
@@ -67,43 +68,57 @@ export type ConnectorQueryHistoryOpts = ConnectorDefaultOpts & {
 }
 
 // TODO define more generic and meaningful structure
-export type DatabaseQuery = {
-    id: string // query id to group duplicates
-    user: string // the user executing the query
-    database: DatabaseName // the database in which the query was executed
-    query: string
-    rows: number // accumulated rows retrieved or affected by the query
-    plan?: {count: number, minTime: Millis, maxTime: Millis, sumTime: Millis, meanTime: Millis, sdTime: Millis} // query planning
-    exec?: {count: number, minTime: Millis, maxTime: Millis, sumTime: Millis, meanTime: Millis, sdTime: Millis} // query execution
-    blocksShared: {read: number, write: number, hit: number, dirty: number} // data from tables & indexes
-    blocksLocal: {read: number, write: number, hit: number, dirty: number} // data from temporary tables & indexes
-    blocksTemp: {read: number, write: number} // data used for the query
-}
+export const DatabaseQuery = z.object({
+    id: z.string(), // query id to group duplicates
+    user: z.string(), // the user executing the query
+    database: DatabaseName, // the database in which the query was executed
+    query: z.string(),
+    rows: z.number(), // accumulated rows retrieved or affected by the query
+    plan: z.object({count: z.number(), minTime: Millis, maxTime: Millis, sumTime: Millis, meanTime: Millis, sdTime: Millis}).strict().optional(),
+    exec: z.object({count: z.number(), minTime: Millis, maxTime: Millis, sumTime: Millis, meanTime: Millis, sdTime: Millis}).strict().optional(),
+    blocksShared: z.object({read: z.number(), write: z.number(), hit: z.number(), dirty: z.number()}), // data from tables & indexes
+    blocksLocal: z.object({read: z.number(), write: z.number(), hit: z.number(), dirty: z.number()}), // data from temporary tables & indexes
+    blocksTemp: z.object({read: z.number(), write: z.number()}), // data used for the query
+}).strict()
+export type DatabaseQuery = z.infer<typeof DatabaseQuery>
 
-export type QueryResults = {
-    query: string
-    attributes: QueryResultsAttribute[]
-    rows: JsValue[]
-}
+export const QueryResultsAttribute = z.object({
+    name: z.string(),
+    ref: AttributeRef.optional()
+}).strict()
+export type QueryResultsAttribute = z.infer<typeof QueryResultsAttribute>
 
-export type QueryResultsAttribute = { name: string, ref?: AttributeRef }
+export const QueryResults = z.object({
+    query: z.string(),
+    attributes: QueryResultsAttribute.array(),
+    rows: JsValue.array()
+}).strict()
+export type QueryResults = z.infer<typeof QueryResults>
 
-export type QueryAnalyze = string
+// TODO
+export const QueryAnalyze = z.object({}).strict()
+export type QueryAnalyze = z.infer<typeof QueryAnalyze>
 
-export type ConnectorEntityStats = EntityRef & {
-    rows: number
-    sampleValues: { [attribute: string]: AttributeValue }
-}
+export const ConnectorEntityStats = EntityRef.extend({
+    rows: z.number(),
+    sampleValues: z.record(AttributeValue)
+})
+export type ConnectorEntityStats = z.infer<typeof ConnectorEntityStats>
 
-export type ConnectorAttributeStats = AttributeRef & {
-    type: AttributeType
-    rows: number
-    nulls: number
-    cardinality: number
-    commonValues: ConnectorAttributeStatsValue[]
-}
+export const ConnectorAttributeStatsValue = z.object({
+    value: AttributeValue,
+    count: z.number()
+}).strict()
+export type ConnectorAttributeStatsValue = z.infer<typeof ConnectorAttributeStatsValue>
 
-export type ConnectorAttributeStatsValue = { value: AttributeValue, count: number }
+export const ConnectorAttributeStats = AttributeRef.extend({
+    type: AttributeType,
+    rows: z.number(),
+    nulls: z.number(),
+    cardinality: z.number(),
+    commonValues: ConnectorAttributeStatsValue.array()
+}).strict()
+export type ConnectorAttributeStats = z.infer<typeof ConnectorAttributeStats>
 
 export const connectorScopeLevels = ['database', 'catalog', 'schema', 'entity'] as const
 export type ConnectorScopeNames = {database?: string, catalog?: string, schema?: string, entity?: string}

@@ -105,6 +105,7 @@ export const UserProperty = z.object({
     string_values: z.string().array().optional(),
     validation_regex: z.string().optional()
 }).strict()
+export type UserProperty = z.infer<typeof UserProperty>
 export const UserPropertyValue = z.union([z.string(), z.string().array()])
 export type UserPropertyValue = z.infer<typeof UserPropertyValue>
 

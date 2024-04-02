@@ -7,11 +7,11 @@ export const execQuery = (query: string, parameters: any[]) => (conn: Conn): Pro
 
 function buildResults(query: string, result: QueryResultArrayMode): QueryResults {
     const attributes = buildColumns(result.fields)
-    return {
+    return QueryResults.parse({
         query,
         attributes,
         rows: result.rows.map(row => attributes.reduce((acc, col, i) => ({...acc, [col.name]: row[i]}), {}))
-    }
+    })
 }
 
 function buildColumns(fields: QueryResultField[]): QueryResultsAttribute[] {

@@ -10,11 +10,11 @@ async function buildResults(conn: Conn, query: string, result: QueryResultArrayM
     const tableIds = [...new Set(result.fields.map(f => f.tableID))]
     const columnInfos = await getColumnInfos(conn, tableIds)
     const attributes = buildAttributes(result.fields, columnInfos)
-    return {
+    return QueryResults.parse({
         query,
         attributes,
         rows: result.rows.map(row => attributes.reduce((acc, col, i) => ({...acc, [col.name]: row[i]}), {}))
-    }
+    })
 }
 
 function buildAttributes(fields: QueryResultField[], columnInfos: ColumnInfo[]): { name: string, ref?: AttributeRef }[] {

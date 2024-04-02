@@ -10,9 +10,9 @@ import {
     DatabaseQuery,
     DatabaseUrlParsed,
     EntityRef,
+    parseDatabaseOptions,
     QueryAnalyze,
-    QueryResults,
-    parseDatabaseOptions
+    QueryResults
 } from "@azimutt/database-model";
 import {connect} from "./connect";
 import {execQuery} from "./query";
@@ -28,12 +28,12 @@ export const bigquery: Connector = {
             schema: opts.schema || urlOptions['dataset'],
             entity: opts.entity || urlOptions['table']
         }
-        return connect(application, url, getSchema(options), options)
+        return connect(application, url, getSchema(options), options).then(Database.parse)
     },
     getQueryHistory: (application: string, url: DatabaseUrlParsed, opts: ConnectorQueryHistoryOpts): Promise<DatabaseQuery[]> =>
         Promise.reject(new Error('Not implemented')),
     execute: (application: string, url: DatabaseUrlParsed, query: string, parameters: any[], opts: ConnectorDefaultOpts): Promise<QueryResults> =>
-        connect(application, url, execQuery(query, parameters), opts),
+        connect(application, url, execQuery(query, parameters), opts).then(QueryResults.parse),
     analyze: (application: string, url: DatabaseUrlParsed, query: string, parameters: any[], opts: ConnectorDefaultOpts): Promise<QueryAnalyze> =>
         Promise.reject(new Error('Not implemented')),
     getEntityStats: (application: string, url: DatabaseUrlParsed, ref: EntityRef, opts: ConnectorDefaultOpts): Promise<ConnectorEntityStats> =>

@@ -7,9 +7,9 @@ export const execQuery = (query: string, parameters: any[], name?: string) => (c
 
 function buildResults(query: string, results: QueryResultRow[]): QueryResults {
     const columns = Object.keys(results[0])
-    return {
+    return QueryResults.parse({
         query,
         attributes: columns.map(name => ({name})), // TODO: parse SQL to infer column ref
         rows: results.map(row => columns.reduce((acc, col) => ({...acc, [col]: row[col]}), {}))
-    }
+    })
 }
