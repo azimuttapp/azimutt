@@ -40,6 +40,7 @@ export type AttributePathId = z.infer<typeof AttributePathId>
 export const AttributeId = z.string() // serialized AttributeRef (EntityId with AttributePathId), ex: 'table(id)', 'd.c.s.events(payload.address.no)'
 export type AttributeId = z.infer<typeof AttributeId>
 
+// TODO: move to common.ts
 export const JsValueLiteral = z.union([z.string(), z.number(), z.boolean(), z.null()])
 export type JsValueLiteral = z.infer<typeof JsValueLiteral>
 export const JsValue: z.ZodType<JsValue> = z.lazy(() => z.union([JsValueLiteral, z.array(JsValue), z.record(JsValue)]))
