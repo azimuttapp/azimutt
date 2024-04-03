@@ -8,4 +8,11 @@ defmodule AzimuttWeb.UserDashboardController do
     organization = Accounts.get_user_default_organization(current_user)
     conn |> redirect(to: Routes.organization_path(conn, :show, organization))
   end
+
+  def billing(conn, params) do
+    source = params["source"] || "user-billing"
+    current_user = conn.assigns.current_user
+    organization = Accounts.get_user_default_organization(current_user)
+    conn |> redirect(to: Routes.organization_billing_path(conn, :index, organization, source: source))
+  end
 end

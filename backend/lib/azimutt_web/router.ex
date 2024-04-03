@@ -79,6 +79,7 @@ defmodule AzimuttWeb.Router do
   scope "/", AzimuttWeb do
     pipe_through([:browser, :require_authed_user, :organization_root_layout])
     get("/home", UserDashboardController, :index)
+    get("/billing", UserDashboardController, :billing)
     get("/login/redirect", UserSessionController, :redirect_to)
 
     scope "/email-confirm" do
