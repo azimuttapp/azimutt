@@ -1,4 +1,4 @@
-module Services.Analysis.MissingRelationsTest exposing (..)
+module PagesComponents.Organization_.Project_.Views.Modals.SchemaAnalysis.RelationMissingTest exposing (..)
 
 import Dict exposing (Dict)
 import Expect exposing (Expectation)
@@ -6,19 +6,18 @@ import Libs.Dict as Dict
 import Libs.Nel as Nel exposing (Nel)
 import Models.Project.Column exposing (Column)
 import Models.Project.ColumnName exposing (ColumnName)
-import Models.Project.ColumnPath exposing (ColumnPathStr)
 import Models.Project.ColumnValue exposing (ColumnValue)
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
 import Models.Project.TableName exposing (TableName)
 import PagesComponents.Organization_.Project_.Models.SuggestedRelation exposing (SuggestedRelation)
-import Services.Analysis.MissingRelations exposing (forTables)
+import PagesComponents.Organization_.Project_.Views.Modals.SchemaAnalysis.RelationMissing as RelationMissing
 import Test exposing (Test, describe, test)
 
 
 suite : Test
 suite =
-    describe "MissingRelations"
+    describe "RelationMissing"
         [ test "basic relation"
             (\_ ->
                 [ ( "organizations", [ ( "id", [] ) ] )
@@ -82,7 +81,7 @@ type alias SimpleRelation =
 
 shouldFindRelations : List SimpleRelation -> List ( TableName, List ( ColumnName, List ColumnValue ) ) -> Expectation
 shouldFindRelations relations tables =
-    tables |> buildTables |> (\t -> forTables t [] Dict.empty) |> formatRelations |> Expect.equal relations
+    tables |> buildTables |> (\t -> RelationMissing.compute Dict.empty t []) |> formatRelations |> Expect.equal relations
 
 
 buildTables : List ( TableName, List ( ColumnName, List ColumnValue ) ) -> Dict TableId Table
@@ -90,12 +89,9 @@ buildTables list =
     list |> List.map buildTable |> Dict.fromListMap .id
 
 
-formatRelations : Dict TableId (Dict ColumnPathStr (List SuggestedRelation)) -> List SimpleRelation
+formatRelations : List SuggestedRelation -> List SimpleRelation
 formatRelations relations =
     relations
-        |> Dict.values
-        |> List.concatMap Dict.values
-        |> List.concatMap identity
         |> List.map (\r -> ( ( Tuple.second r.src.table, r.src.column.head ), r.ref |> Maybe.map (\ref -> ( Tuple.second ref.table, ref.column.head )), r.when |> Maybe.map (\w -> ( w.column.head, w.value )) ))
 
 

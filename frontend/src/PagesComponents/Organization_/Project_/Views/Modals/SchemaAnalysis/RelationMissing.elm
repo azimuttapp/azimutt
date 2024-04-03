@@ -1,23 +1,38 @@
-module Services.Analysis.MissingRelations exposing (forTables)
+module PagesComponents.Organization_.Project_.Views.Modals.SchemaAnalysis.RelationMissing exposing (Model, compute, heading, view)
 
+import Components.Atoms.Button as Button
+import Components.Atoms.Icon as Icon exposing (Icon(..))
+import Components.Molecules.Tooltip as Tooltip
+import Components.Slices.ProPlan as ProPlan
 import Dict exposing (Dict)
+import Html exposing (Html, div, h5, span, text)
+import Html.Attributes exposing (class)
+import Html.Events exposing (onClick)
+import Libs.Bool as B
 import Libs.Dict as Dict
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Nel as Nel exposing (Nel)
 import Libs.String as String
+import Libs.Tailwind as Tw
 import Models.Project.Column as Column exposing (Column)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath, ColumnPathStr)
+import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
 import Models.Project.Relation exposing (Relation)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Table as Table exposing (Table)
-import Models.Project.TableId exposing (TableId)
-import PagesComponents.Organization_.Project_.Models.SuggestedRelation exposing (SuggestedRelation, SuggestedRelationRef)
+import Models.Project.TableId as TableId exposing (TableId)
+import Models.ProjectRef exposing (ProjectRef)
+import PagesComponents.Organization_.Project_.Models.SuggestedRelation as SuggestedRelation exposing (SuggestedRelation, SuggestedRelationFound, SuggestedRelationRef)
 
 
-forTables : Dict TableId Table -> List Relation -> Dict TableId (List ColumnPath) -> Dict TableId (Dict ColumnPathStr (List SuggestedRelation))
-forTables tables relations ignoredRelations =
+type alias Model =
+    SuggestedRelation
+
+
+compute : Dict TableId (List ColumnPath) -> Dict TableId Table -> List Relation -> List Model
+compute ignoredRelations tables relations =
     let
         tableNames : Dict NormalizedTableName (List TableId)
         tableNames =
@@ -28,8 +43,9 @@ forTables tables relations ignoredRelations =
             relations |> List.groupBy (.src >> .table) |> Dict.map (\_ -> List.groupBy (.src >> .column >> ColumnPath.toString))
     in
     tables
-        |> Dict.map
-            (\_ table ->
+        |> Dict.values
+        |> List.concatMap
+            (\table ->
                 let
                     ignoreColumns : List ColumnPath
                     ignoreColumns =
@@ -39,11 +55,8 @@ forTables tables relations ignoredRelations =
                     |> Dict.values
                     |> List.concatMap Column.flatten
                     |> List.filterNot (\c -> ignoreColumns |> List.member c.path)
-                    |> List.map (\c -> ( c.path |> ColumnPath.toString, guessRelations tableNames tables relationBySrc table c ))
-                    |> List.filter (Tuple.second >> List.nonEmpty)
-                    |> Dict.fromList
+                    |> List.concatMap (\c -> guessRelations tableNames tables relationBySrc table c)
             )
-        |> Dict.filter (\_ -> Dict.nonEmpty)
 
 
 type alias NormalizedTableName =
@@ -172,3 +185,83 @@ removeKnownRelations relationBySrc tableId columnPath suggestedRelations =
                     |> Maybe.map (\ref -> relations |> List.any (\r -> r.ref == ref) |> not)
                     |> Maybe.withDefault (relations |> List.isEmpty)
             )
+
+
+heading : List Model -> String
+heading errors =
+    List.length errors
+        |> (\count ->
+                if count == 0 then
+                    "No potentially missing relation found"
+
+                else
+                    "Found " ++ (count |> String.pluralize "potentially missing relation")
+           )
+
+
+view : (List { src : ColumnRef, ref : ColumnRef } -> msg) -> (ColumnRef -> msg) -> ProjectRef -> SchemaName -> List Model -> Html msg
+view createRelations ignoreRelation project defaultSchema errors =
+    let
+        ( relsNoRef, relsWithRef ) =
+            errors |> List.partition (\r -> r.ref == Nothing)
+
+        sortedMissingRels : List SuggestedRelationFound
+        sortedMissingRels =
+            relsWithRef |> List.filterMap SuggestedRelation.toFound |> List.sortBy (SuggestedRelation.toRefs >> (\r -> ColumnRef.show defaultSchema r.ref ++ " ← " ++ ColumnRef.show defaultSchema r.src))
+    in
+    div []
+        [ if List.nonEmpty relsWithRef && project.organization.plan.dbAnalysis then
+            div []
+                [ Button.primary1 Tw.primary
+                    [ onClick (sortedMissingRels |> List.map SuggestedRelation.toRefs |> createRelations) ]
+                    [ text ("Add all " ++ String.pluralizeL "relation" sortedMissingRels) ]
+                ]
+
+          else
+            div [] []
+        , ProPlan.analysisResults project
+            sortedMissingRels
+            (\rel ->
+                div [ class "flex justify-between items-center py-1" ]
+                    [ div []
+                        [ text (TableId.show defaultSchema rel.ref.table)
+                        , span [ class "text-gray-500" ] [ text ("" |> ColumnPath.withName rel.ref.column) ] |> Tooltip.t rel.ref.kind
+                        , Icon.solid ArrowNarrowLeft "inline mx-1"
+                        , text (TableId.show defaultSchema rel.src.table)
+                        , span [ class "text-gray-500" ] [ text ("" |> ColumnPath.withName rel.src.column) ] |> Tooltip.t rel.src.kind
+                        , rel.when
+                            |> Maybe.map (\w -> span [] [ text " when ", span [ class "text-gray-400" ] [ text (ColumnPath.show w.column ++ "=" ++ w.value) ] ])
+                            |> Maybe.withDefault (text "")
+                        ]
+                    , div [ class "ml-3" ]
+                        [ B.cond (kindMatch rel) (span [] []) (span [ class "text-gray-400 mr-3" ] [ Icon.solid Exclamation "inline", text (" " ++ rel.ref.kind ++ " vs " ++ rel.src.kind) ])
+                        , Button.primary1 Tw.primary [ onClick (createRelations [ SuggestedRelation.toRefs rel ]) ] [ text "Add" ]
+                        , Button.white1 Tw.red [ onClick (ignoreRelation { table = rel.src.table, column = rel.src.column }), class "ml-1" ] [ text "Ignore" ]
+                        ]
+                    ]
+            )
+        , if relsNoRef |> List.isEmpty then
+            div [] []
+
+          else
+            div []
+                [ h5 [ class "mt-1 font-medium" ] [ text "Some columns may need a relation, but can't find a related table:" ]
+                , ProPlan.analysisResults project
+                    relsNoRef
+                    (\rel ->
+                        div [ class "ml-3" ]
+                            [ text (TableId.show defaultSchema rel.src.table)
+                            , span [ class "text-gray-500" ] [ text ("" |> ColumnPath.withName rel.src.column) ] |> Tooltip.t rel.src.kind
+                            ]
+                    )
+                ]
+        ]
+
+
+kindMatch : SuggestedRelationFound -> Bool
+kindMatch rel =
+    if (rel.src.column |> ColumnPath.toString |> String.toLower |> String.endsWith "_ids") && (rel.src.kind |> String.endsWith "[]") then
+        (rel.src.kind |> String.dropRight 2) == rel.ref.kind
+
+    else
+        rel.src.kind == rel.ref.kind
