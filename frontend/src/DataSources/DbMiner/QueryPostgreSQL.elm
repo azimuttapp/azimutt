@@ -76,7 +76,7 @@ incomingRows query relations limit =
 
 addLimit : SqlQuery -> SqlQuery
 addLimit query =
-    case query |> String.trim |> Regex.matches "^([\\s\\S]+?)(\\slimit \\d+)?(\\soffset \\d+)?;$" of
+    case query |> String.trim |> Regex.matches "^(select[\\s\\S]+?)(\\slimit \\d+)?(\\soffset \\d+)?;$" of
         (Just q) :: Nothing :: Nothing :: [] ->
             q ++ "\nLIMIT 100;\n"
 

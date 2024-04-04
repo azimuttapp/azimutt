@@ -1,4 +1,4 @@
-module Libs.Nel exposing (Nel, add, all, any, append, concatMap, filter, filterMap, filterNot, filterZip, find, from, fromList, indexedMap, join, last, length, map, mapLast, member, merge, partition, prepend, sortBy, startsWith, toList, unique, uniqueBy, zip, zipWith)
+module Libs.Nel exposing (Nel, add, all, any, append, concatMap, drop, filter, filterMap, filterNot, filterZip, find, from, fromList, get, indexedAll, indexedMap, join, last, length, map, mapLast, member, merge, partition, prepend, sortBy, startsWith, toList, unique, uniqueBy, zip, zipWith)
 
 import Libs.List as List
 import Set
@@ -7,6 +7,27 @@ import Set
 type alias Nel a =
     -- Nel: NonEmptyList
     { head : a, tail : List a }
+
+
+get : Int -> Nel a -> Maybe a
+get index list =
+    if index < 0 then
+        Nothing
+
+    else
+        list |> drop index |> List.head
+
+
+drop : Int -> Nel a -> List a
+drop n nel =
+    if n <= 0 then
+        nel |> toList
+
+    else if n == 1 then
+        nel.tail
+
+    else
+        nel.tail |> List.drop (n - 1)
 
 
 last : Nel a -> a
@@ -95,6 +116,11 @@ partition predicate nel =
 all : (a -> Bool) -> Nel a -> Bool
 all predicate nel =
     nel |> toList |> List.all predicate
+
+
+indexedAll : (Int -> a -> Bool) -> Nel a -> Bool
+indexedAll predicate nel =
+    nel |> toList |> List.zipWithIndex |> List.all (\( a, i ) -> predicate i a)
 
 
 any : (a -> Bool) -> Nel a -> Bool

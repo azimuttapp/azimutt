@@ -1,22 +1,29 @@
-module DataSources.DbMiner.QuerySQLServer exposing (exploreColumn, exploreTable)
+module DataSources.DbMiner.QuerySQLServer exposing (addLimit, exploreColumn, exploreTable)
 
+import Libs.Regex as Regex
 import Models.Project.ColumnPath exposing (ColumnPath)
 import Models.Project.TableId exposing (TableId)
 import Models.SqlQuery exposing (SqlQuery)
 
 
-
--- FIXME: remove hardcoded limits & implement `addLimit`
-
-
 exploreTable : TableId -> SqlQuery
 exploreTable table =
-    "SELECT TOP 100 *\nFROM " ++ formatTable table ++ ";\n"
+    "SELECT * FROM " ++ formatTable table ++ ";\n"
 
 
 exploreColumn : TableId -> ColumnPath -> SqlQuery
 exploreColumn table column =
-    formatColumn column |> (\col -> "SELECT TOP 100\n  " ++ col ++ ",\n  count(*) as count\nFROM " ++ formatTable table ++ "\nGROUP BY " ++ col ++ "\nORDER BY count DESC, " ++ col ++ ";\n")
+    formatColumn column |> (\col -> "SELECT\n  " ++ col ++ ",\n  count(*) as count\nFROM " ++ formatTable table ++ "\nGROUP BY " ++ col ++ "\nORDER BY count DESC, " ++ col ++ ";\n")
+
+
+addLimit : SqlQuery -> SqlQuery
+addLimit query =
+    case query |> String.trim |> Regex.matches "^(select)(\\s+top \\d+)?([\\s\\S]+?;)$" of
+        (Just s) :: Nothing :: (Just q) :: [] ->
+            s ++ " TOP 100" ++ q ++ "\n"
+
+        _ ->
+            query
 
 
 

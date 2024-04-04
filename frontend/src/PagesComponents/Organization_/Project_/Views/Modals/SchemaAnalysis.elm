@@ -26,6 +26,9 @@ import PagesComponents.Organization_.Project_.Models.ErdRelation as ErdRelation 
 import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Views.Modals.SchemaAnalysis.InconsistentTypeOnColumns as InconsistentTypeOnColumns
 import PagesComponents.Organization_.Project_.Views.Modals.SchemaAnalysis.InconsistentTypeOnRelations as InconsistentTypeOnRelations
+import PagesComponents.Organization_.Project_.Views.Modals.SchemaAnalysis.IndexDuplicated as IndexDuplicated
+import PagesComponents.Organization_.Project_.Views.Modals.SchemaAnalysis.IndexOnForeignKeys as IndexOnForeignKeys
+import PagesComponents.Organization_.Project_.Views.Modals.SchemaAnalysis.NamingConsistency as NamingConsistency
 import PagesComponents.Organization_.Project_.Views.Modals.SchemaAnalysis.PrimaryKeyMissing as PrimaryKeyMissing
 import PagesComponents.Organization_.Project_.Views.Modals.SchemaAnalysis.RelationMissing as RelationMissing
 import PagesComponents.Organization_.Project_.Views.Modals.SchemaAnalysis.TableTooBig as TableTooBig
@@ -95,12 +98,15 @@ viewAnalysis project opened defaultSchema sources erdTables erdRelations ignored
             erdRelations |> List.map ErdRelation.unpack
     in
     div [ class "max-w-5xl px-6 mt-3" ]
-        [ PrimaryKeyMissing.compute tables |> viewSection "missing-pks" opened PrimaryKeyMissing.heading (PrimaryKeyMissing.view project defaultSchema ShowTable)
+        [ PrimaryKeyMissing.compute tables |> viewSection "missing-pks" opened PrimaryKeyMissing.heading (PrimaryKeyMissing.view ShowTable project defaultSchema)
         , RelationMissing.compute ignoredRelations tables relations |> viewSection "missing-relations" opened RelationMissing.heading (RelationMissing.view CreateRelations IgnoreRelation project defaultSchema)
         , InconsistentTypeOnRelations.compute defaultSchema erdTables erdRelations |> viewSection "relations-with-different-types" opened InconsistentTypeOnRelations.heading (InconsistentTypeOnRelations.view project defaultSchema sources Send)
         , InconsistentTypeOnColumns.compute erdTables |> viewSection "heterogeneous-types" opened InconsistentTypeOnColumns.heading (InconsistentTypeOnColumns.view project defaultSchema)
-        , TableTooBig.compute tables |> viewSection "big-tables" opened TableTooBig.heading (TableTooBig.view project defaultSchema)
-        , TableWithoutIndex.compute tables |> viewSection "tables-no-index" opened TableWithoutIndex.heading (TableWithoutIndex.view project defaultSchema)
+        , TableTooBig.compute tables |> viewSection "big-tables" opened TableTooBig.heading (TableTooBig.view ShowTable project defaultSchema)
+        , TableWithoutIndex.compute tables |> viewSection "tables-no-index" opened TableWithoutIndex.heading (TableWithoutIndex.view ShowTable project defaultSchema)
+        , IndexOnForeignKeys.compute tables relations |> viewSection "index-on-fk" opened IndexOnForeignKeys.heading (IndexOnForeignKeys.view ShowTable project defaultSchema)
+        , IndexDuplicated.compute tables |> viewSection "duplicated-index" opened IndexDuplicated.heading (IndexDuplicated.view project defaultSchema)
+        , NamingConsistency.compute tables |> viewSection "table-name-inconsistent" opened NamingConsistency.heading (NamingConsistency.view project defaultSchema)
         ]
 
 

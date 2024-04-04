@@ -37,8 +37,8 @@ heading errors =
            )
 
 
-view : ProjectRef -> SchemaName -> (TableId -> Maybe PositionHint -> String -> msg) -> List Model -> Html msg
-view project defaultSchema showTable errors =
+view : (TableId -> Maybe PositionHint -> String -> msg) -> ProjectRef -> SchemaName -> List Model -> Html msg
+view showTable project defaultSchema errors =
     div []
         [ p [ class "mb-3 text-sm text-gray-500" ] [ text "It's not always required to have a primary key but strongly encouraged in most case. Make sure this is what you want!" ]
         , ProPlan.analysisResults project

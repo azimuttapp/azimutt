@@ -65,4 +65,5 @@ FROM events e
 WHERE e.name='project_loaded'
 LIMIT 100;
 """)
+    , test "not on update" (\_ -> addLimit "UPDATE dataset.Inventory SET quantity=0 WHERE id=10;" |> Expect.equal "UPDATE dataset.Inventory SET quantity=0 WHERE id=10;")
     ]

@@ -65,4 +65,5 @@ FROM events e
 WHERE e.name='project_loaded'
 LIMIT 100;
 """)
+    , test "not on update" (\_ -> addLimit "UPDATE users SET deleted=null WHERE id=10;" |> Expect.equal "UPDATE users SET deleted=null WHERE id=10;")
     ]
