@@ -1,5 +1,5 @@
 <%= if length(@questions) > 0 do %>
-    <div class="mx-auto mt-24 max-w-7xl divide-y divide-gray-900/10 px-6 sm:mt-56 lg:px-8">
+    <div class="mx-auto mt-24 max-w-7xl divide-y divide-gray-900/10 px-6 lg:px-8">
         <h2 class="text-2xl font-bold leading-10 tracking-tight text-gray-900"><%= @title %></h2>
         <dl class="mt-10 space-y-8 divide-y divide-gray-900/10">
             <%= for question <- @questions do %>

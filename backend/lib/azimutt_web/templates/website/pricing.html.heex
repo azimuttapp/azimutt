@@ -1,67 +1,94 @@
 <main>
-    <div class="isolate overflow-hidden">
-        <%= render AzimuttWeb.PartialsView, "_plans-3tier-dark.html",
-            plans: Azimutt.plans,
-            title: "Save hours, for the price of minutes",
-            description: "Explore your database for free. Then share and go deeper with your teammates, using documentation and analysis features!"
-        %>
-        <div class="relative bg-gray-50 lg:pt-14">
-            <div class="mx-auto max-w-7xl py-12 px-6 lg:px-8">
-                <div class="bg-indigo-700 flex flex-col items-start gap-y-6 gap-x-8 rounded-xl px-8 py-6 ring-1 ring-gray-900/10 lg:col-span-2 lg:flex-row lg:items-center">
-                    <div class="lg:min-w-0 lg:flex-1">
-                        <h3 class="text-lg font-semibold leading-8 tracking-tight text-white">Database performance diagnostic comming soon...</h3>
-                        <p class="mt-1 text-base leading-7 text-indigo-200">
-                            <b>We are building a whole new set of features to improve your database performance.</b><br>
-                            If you want to try, please contact us.
-                        </p>
-                    </div>
-                    <a href={"mailto:#{Azimutt.config(:support_email)}"} target="_blank" rel="noopener" class="rounded-md bg-white px-3.5 py-2.5 text-sm font-semibold text-indigo-600 shadow-sm hover:bg-indigo-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">Contact us <span aria-hidden="true">&rarr;</span></a>
-                </div>
-            </div>
-            <div class="mx-auto max-w-7xl py-12 px-6 lg:px-8">
-                <%
-                categories = [
-                    %{name: "Design your database", features: [
-                        %{name: "Define a schema using AML", free: true, pro: true, enterprise: true},
-                        %{name: "Custom colors", free: false, pro: true, enterprise: true},
-                        %{name: "SQL export of your diagram", free: false, pro: true, enterprise: true}
-                    ]},
-                    %{name: "Explore your database", features: [
-                        %{name: "Import from connection, SQL, JSON", free: true, pro: true, enterprise: true},
-                        %{name: "Tables in project", free: "Unlimited", pro: "Unlimited", enterprise: "Unlimited"},
-                        %{name: "Layouts in project", free: "3 layouts", pro: "Unlimited layouts", enterprise: "Unlimited layouts"},
-                        %{name: "Search everywhere", free: true, pro: true, enterprise: true},
-                        %{name: "Path between tables", free: false, pro: true, enterprise: true},
-                        %{name: "Query live data", free: false, pro: "Show samples", enterprise: "Advanced queries"},
-                        %{name: "Text to SQL with AI", free: false, pro: false, enterprise: true},
-                    ]},
-                    %{name: "Document your database", features: [
-                        %{name: "Notes on tables & columns", free: "Unlimited", pro: "Unlimited", enterprise: "Unlimited"},
-                        %{name: "Memos in layouts", free: "3 per layout", pro: "Unlimited", enterprise: "Unlimited"},
-                        %{name: "Change alerting with subscriptions", free: false, pro: false, enterprise: true},
-                        %{name: "Auto documentation with GPT-3", free: false, pro: false, enterprise: true},
-                    ]},
-                    %{name: "Analyze your database", features: [
-                        %{name: "Tables without primary key", free: false, pro: true, enterprise: true},
-                        %{name: "Missing foreign keys", free: false, pro: true, enterprise: true},
-                        %{name: "Inconsistent column types", free: false, pro: true, enterprise: true},
-                        %{name: "Missing indexes", free: false, pro: false, enterprise: true}
-                    ]},
-                    %{name: "Other perks", features: [
-                        %{name: "Embed & private links", free: true, pro: true, enterprise: true},
-                        %{name: "Invite other people", free: "3 people", pro: true, enterprise: true},
-                        %{name: "Scriptable access", free: false, pro: true, enterprise: true},
-                        %{name: "Right management", free: false, pro: false, enterprise: true},
-                    ]}
-                ]
-                %>
-                <%= render AzimuttWeb.PartialsView, "_feature-comparison-desktop.html", plans: Azimutt.plans, categories: categories %>
-                <%= render AzimuttWeb.PartialsView, "_feature-comparison-mobile.html", plans: Azimutt.plans, categories: categories %>
-            </div>
+    <div class="isolate overflow-hidden bg-gray-900">
+      <div class="mx-auto max-w-7xl px-6 pb-96 pt-8 text-center lg:px-8">
+        <div class="mx-auto max-w-4xl">
+          <h2 class="text-base font-semibold leading-7 text-indigo-400">Pricing</h2>
+          <p class="mt-2 text-4xl font-bold tracking-tight text-white sm:text-5xl">A price which fit your needs</p>
         </div>
+        <div class="relative mt-6">
+          <p class="mx-auto max-w-2xl text-lg leading-8 text-white/60">
+            We are making custom price for your needs, contact us for a precise quote.
+          </p>
+          <svg viewBox="0 0 1208 1024" class="absolute -top-10 left-1/2 -z-10 h-[64rem] -translate-x-1/2 [mask-image:radial-gradient(closest-side,white,transparent)] sm:-top-12 md:-top-20 lg:-top-12 xl:top-0">
+            <ellipse cx="604" cy="512" fill="url(#6d1bd035-0dd1-437e-93fa-59d316231eb0)" rx="604" ry="512" />
+            <defs>
+              <radialGradient id="6d1bd035-0dd1-437e-93fa-59d316231eb0">
+                <stop stop-color="#7775D6" />
+                <stop offset="1" stop-color="#E935C1" />
+              </radialGradient>
+            </defs>
+          </svg>
+        </div>
+      </div>
+      <div class="flow-root bg-white pb-12">
+        <div class="-mt-80">
+          <div class="mx-auto max-w-7xl px-6 lg:px-8">
+            <div class="mx-auto grid max-w-md grid-cols-1 gap-8 lg:max-w-4xl lg:grid-cols-2">
+              <div class="flex flex-col justify-between rounded-3xl bg-white p-8 shadow-xl ring-1 ring-gray-900/10 sm:p-10">
+                <div>
+                  <h3 id="tier-explorer" class="text-base font-semibold leading-7 text-indigo-600">Explorer</h3>
+                  <div class="mt-4 flex items-baseline gap-x-2">
+                    <span class="text-5xl font-bold tracking-tight text-gray-900">Free</span>
+                    <!--<span class="text-base font-semibold leading-7 text-gray-600">/month</span>-->
+                  </div>
+                  <p class="mt-6 text-base leading-7 text-gray-600">
+                    Everything you need to explore and understand your database, like never before.
+                  </p>
+                  <ul role="list" class="mt-10 space-y-4 text-sm leading-6 text-gray-600">
+                    <%= for feature <- [
+                      "Schema & Data exploration",
+                      "Database design with AML",
+                      "Unlimited projects",
+                      "Unlimited tables",
+                      "3 layouts per project",
+                    ] do %>
+                        <li class="flex gap-x-3">
+                          <svg class="h-6 w-5 flex-none text-indigo-600" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd" />
+                          </svg>
+                          <%= feature %>
+                        </li>
+                    <% end %>
+                  </ul>
+                </div>
+                <a href="/login?plan=free" aria-describedby="tier-explorer" class="mt-8 block rounded-md bg-indigo-600 px-3.5 py-2 text-center text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Start now</a>
+              </div>
+              <div class="flex flex-col justify-between rounded-3xl bg-white p-8 shadow-xl ring-1 ring-gray-900/10 sm:p-10">
+                <div>
+                  <h3 id="tier-enterprise" class="text-base font-semibold leading-7 text-indigo-600">Enterprise</h3>
+                  <div class="mt-4 flex items-baseline gap-x-2">
+                    <span class="text-5xl font-bold tracking-tight text-gray-900">Custom</span>
+                    <!--<span class="text-base font-semibold leading-7 text-gray-600">/month</span>-->
+                  </div>
+                  <p class="mt-6 text-base leading-7 text-gray-600">
+                    Based on your specific needs and context we build a custom pricing just for you.
+                  </p>
+                  <ul role="list" class="mt-10 space-y-4 text-sm leading-6 text-gray-600">
+                    <%= for feature <- [
+                      "Everything from explorer plan",
+                      "Unlimited documentation",
+                      "Database diagnostic & performance",
+                      "Unlimited collaborators",
+                      "A great roadmap ahead with AI... 😉",
+                    ] do %>
+                        <li class="flex gap-x-3">
+                          <svg class="h-6 w-5 flex-none text-indigo-600" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd" />
+                          </svg>
+                          <%= feature %>
+                        </li>
+                    <% end %>
+                  </ul>
+                </div>
+                <a href={"mailto:#{Azimutt.config(:support_email)}"} aria-describedby="tier-enterprise" class="mt-8 block rounded-md bg-indigo-600 px-3.5 py-2 text-center text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Contact us</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
     <%= render AzimuttWeb.PartialsView, "_faq.html", title: "Frequently asked questions", questions: [
-        %{question: "Which databases are supported?", answer: "Azimutt is not tied to a specific database. If they can fit in an entity-relationship model, it's great for Azimutt. Still, some have full-support and other will need more work to integrate. PostgreSQL, MongoDB and Couchbase are supported using database connection, you only need to provide your connection url. Any SQL schema is supported as well, so PostgreSQL, MySQL, MariaDB, Oracle, SQL Server and others very easy to integrate. For the others, you need to extract their schema and format it as JSON to load it into Azimutt. The CLI has a JSON schema inference to help with this if you need. Don't hesitate to reach out for any help with this 😉"},
+        %{question: "Which databases are supported?", answer: "Azimutt is not tied to a specific database. If they can fit in an entity-relationship model, it's great for Azimutt. Still, some have full-support and other will need more work to integrate. Most common ones like PostgreSQL, MySQL, SQL Server, MongoDB, Couchbase, Snowflake, BigQuery and more are supported using database connection, you only need to provide your connection url. Any SQL schema is supported as well, so PostgreSQL, MySQL, MariaDB, Oracle, SQL Server and others very easy to integrate. For the others, you need to extract their schema and format it as JSON to load it into Azimutt. The CLI has a JSON schema inference to help with this if you need. Don't hesitate to reach out for any help with this 😉"},
         %{question: "What about data privacy?", answer: "We take data privacy very seriously and offer several ways around it. The code is Open Source, you can freely audit it to see what we do with your data (ie: nothing!). You can choose to share your database connection or just import the schema of the tables you want. Parsing the schema is done in browser, you can choose to keep your project local so Azimutt servers will never see your data. And finally, you can host yourself an Azimutt instance."},
     ] %>
 </main>
