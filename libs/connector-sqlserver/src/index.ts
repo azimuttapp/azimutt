@@ -10,6 +10,7 @@ import {
     DatabaseQuery,
     DatabaseUrlParsed,
     EntityRef,
+    parseDatabase,
     parseDatabaseOptions,
     QueryAnalyze,
     QueryResults,
@@ -28,7 +29,7 @@ export const sqlserver: Connector = {
             schema: opts.schema || urlOptions['schema'],
             entity: opts.entity || urlOptions['table']
         }
-        return connect(application, url, getSchema(options), options).then(Database.parse)
+        return connect(application, url, getSchema(options), options).then(parseDatabase)
     },
     getQueryHistory: (application: string, url: DatabaseUrlParsed, opts: ConnectorQueryHistoryOpts): Promise<DatabaseQuery[]> =>
         Promise.reject('Not implemented'),

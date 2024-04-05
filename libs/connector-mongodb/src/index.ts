@@ -10,6 +10,7 @@ import {
     DatabaseQuery,
     DatabaseUrlParsed,
     EntityRef,
+    parseDatabase,
     parseDatabaseOptions,
     QueryAnalyze,
     QueryResults
@@ -27,7 +28,7 @@ export const mongodb: Connector = {
             database: opts.database || urlOptions['database'],
             entity: opts.entity || urlOptions['collection']
         }
-        return connect(application, url, getSchema(options), options).then(Database.parse)
+        return connect(application, url, getSchema(options), options).then(parseDatabase)
     },
     getQueryHistory: (application: string, url: DatabaseUrlParsed, opts: ConnectorQueryHistoryOpts): Promise<DatabaseQuery[]> =>
         Promise.reject('Not implemented'),

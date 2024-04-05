@@ -22,7 +22,7 @@ const connectors: Record<DatabaseKind, Connector | undefined> = {
     redis: undefined,
     snowflake: snowflake,
     sqlite: undefined,
-    sqlserver: sqlserver
+    sqlserver: sqlserver,
 }
 
 export function getConnector(url: DatabaseUrlParsed): Connector | undefined {

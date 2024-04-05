@@ -35,7 +35,7 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
     // build the database
     const columnsByTable = groupByEntity(columns)
     opts.logger.log(`✔︎ Exported ${pluralizeL(tables, 'table')} and ${pluralizeL(foreignKeys, 'relation')} from the database!`)
-    return Database.parse(removeUndefined({
+    return removeUndefined({
         entities: tables.map(table => [toEntityId(table), table] as const).map(([id, table]) => buildEntity(
             table,
             columnsByTable[id] || [],
@@ -46,7 +46,7 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
         doc: undefined,
         stats: undefined,
         extra: undefined,
-    }))
+    })
 }
 
 // 👇️ Private functions, exported only for tests
@@ -83,7 +83,7 @@ export const getTables = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
 }
 
 function buildEntity(table: RawTable, columns: RawColumn[], primaryKeyColumns: RawPrimaryKeyColumn[]): Entity {
-    return Entity.parse(removeEmpty({
+    return removeEmpty({
         catalog: table.table_catalog,
         schema: table.table_schema,
         name: table.table_name,
@@ -104,7 +104,7 @@ function buildEntity(table: RawTable, columns: RawColumn[], primaryKeyColumns: R
             idx_scan: undefined
         }),
         extra: undefined
-    }))
+    })
 }
 
 export type RawColumn = {
@@ -137,7 +137,7 @@ export const getColumns = (opts: ConnectorSchemaOpts) => async (conn: Conn): Pro
 }
 
 function buildAttribute(column: RawColumn): Attribute {
-    return Attribute.parse(removeUndefined({
+    return removeUndefined({
         name: column.column_name,
         type: column.column_type,
         nullable: column.column_nullable === 'YES' ? true : undefined,
@@ -148,7 +148,7 @@ function buildAttribute(column: RawColumn): Attribute {
         doc: column.column_comment || undefined,
         stats: undefined,
         extra: undefined
-    }))
+    })
 }
 
 export type RawPrimaryKeyColumn = {
@@ -170,7 +170,7 @@ export const getPrimaryKeyColumns = (opts: ConnectorSchemaOpts) => async (conn: 
 
 function buildPrimaryKey(columns: RawPrimaryKeyColumn[]): PrimaryKey {
     const pk = columns[0]
-    return PrimaryKey.parse(removeUndefined({
+    return removeUndefined({
         name: pk.constraint_name,
         attrs: columns.slice(0)
             .sort((a, b) => a.key_sequence - b.key_sequence)
@@ -178,7 +178,7 @@ function buildPrimaryKey(columns: RawPrimaryKeyColumn[]): PrimaryKey {
         doc: pk.comment || undefined,
         stats: undefined,
         extra: undefined
-    }))
+    })
 }
 
 export type RawForeignKeyColumn = {
@@ -208,7 +208,7 @@ export const getForeignKeyColumns = (opts: ConnectorSchemaOpts) => async (conn: 
 
 function buildRelation(columns: RawForeignKeyColumn[]): Relation {
     const rel = columns[0]
-    return Relation.parse(removeUndefined({
+    return removeUndefined({
         name: rel.fk_name,
         kind: undefined,
         origin: undefined,
@@ -220,5 +220,5 @@ function buildRelation(columns: RawForeignKeyColumn[]): Relation {
         polymorphic: undefined,
         doc: rel.comment || undefined,
         extra: undefined
-    }))
+    })
 }

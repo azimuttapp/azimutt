@@ -69,7 +69,7 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
     const constraintsByTable = groupByEntity(constraints)
     const indexesByTable = groupByEntity(indexes)
     opts.logger.log(`✔︎ Exported ${pluralizeL(tables, 'table')}, ${pluralizeL(relations, 'relation')} and ${pluralizeL(types, 'type')} from the database!`)
-    return Database.parse(removeUndefined({
+    return removeUndefined({
         entities: tables.map(table => [toEntityId(table), table] as const).map(([id, table]) => buildEntity(
             blockSize,
             table,
@@ -85,7 +85,7 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
         doc: undefined,
         stats: undefined,
         extra: undefined,
-    }))
+    })
 }
 
 // 👇️ Private functions, some are exported only for tests
@@ -150,26 +150,26 @@ export type RawTable = {
     table_comment: string | null
     attributes_count: number
     checks_count: number
-    rows: number
-    rows_dead: number
-    blocks: number
-    idx_blocks: number
-    seq_scan: number
-    seq_scan_reads: number
+    rows: number | null
+    rows_dead: number | null
+    blocks: number | null
+    idx_blocks: number | null
+    seq_scan: number | null
+    seq_scan_reads: number | null
     seq_scan_last: Date | null
-    idx_scan: number
-    idx_scan_reads: number
+    idx_scan: number | null
+    idx_scan_reads: number | null
     idx_scan_last: Date | null
-    analyze_count: number
+    analyze_count: number | null
     analyze_last: Date | null
-    autoanalyze_count: number
+    autoanalyze_count: number | null
     autoanalyze_last: Date | null
-    changes_since_analyze: number
-    vacuum_count: number
+    changes_since_analyze: number | null
+    vacuum_count: number | null
     vacuum_last: Date | null
-    autovacuum_count: number
+    autovacuum_count: number | null
     autovacuum_last: Date | null
-    changes_since_vacuum: number
+    changes_since_vacuum: number | null
     toast_schema: string | null
     toast_name: string | null
     toast_blocks: number | null
@@ -235,7 +235,8 @@ export const getTables = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
 }
 
 function buildEntity(blockSize: number, table: RawTable, columns: RawColumn[], columnsByIndex: { [i: number]: string }, constraints: RawConstraint[], indexes: RawIndex[], jsonColumns: Record<AttributeName, ValueSchema>, polyColumns: Record<AttributeName, string[]>): Entity {
-    return Entity.parse(removeEmpty({
+    return removeEmpty({
+        schema: table.table_schema,
         name: table.table_name,
         kind: table.table_kind === 'v' ? 'view' as const : table.table_kind === 'm' ? 'materialized view' as const : undefined,
         def: table.table_definition || undefined,
@@ -247,16 +248,16 @@ function buildEntity(blockSize: number, table: RawTable, columns: RawColumn[], c
         checks: constraints.filter(c => c.constraint_type === 'c').map(c => buildCheck(c, columnsByIndex)),
         doc: table.table_comment || undefined,
         stats: removeUndefined({
-            rows: table.rows,
-            size: table.blocks * blockSize,
-            sizeIdx: table.idx_blocks * blockSize,
+            rows: table.rows || undefined,
+            size: table.blocks ? table.blocks * blockSize : undefined,
+            sizeIdx: table.idx_blocks ? table.idx_blocks * blockSize : undefined,
             sizeToast: table.toast_blocks ? table.toast_blocks * blockSize : undefined,
             sizeToastIdx: table.toast_idx_blocks ? table.toast_idx_blocks * blockSize : undefined,
-            seq_scan: table.seq_scan,
-            idx_scan: table.idx_scan,
+            seq_scan: table.seq_scan || undefined,
+            idx_scan: table.idx_scan || undefined,
         }),
         extra: undefined
-    }))
+    })
 }
 
 // https://www.postgresql.org/docs/current/catalog-pg-type.html#CATALOG-TYPCATEGORY-TABLE
@@ -335,7 +336,7 @@ export const getColumns = (opts: ConnectorSchemaOpts) => async (conn: Conn): Pro
 }
 
 function buildAttribute(c: RawColumn, jsonColumn: ValueSchema | undefined, values: string[] | undefined): Attribute {
-    return Attribute.parse(removeEmpty({
+    return removeEmpty({
         name: c.column_name,
         type: c.column_type,
         nullable: c.column_nullable || undefined,
@@ -352,7 +353,7 @@ function buildAttribute(c: RawColumn, jsonColumn: ValueSchema | undefined, value
             histogram: c.histogram ? parseValues(c.histogram, c.column_type_cat, c.column_type_name) : undefined
         }),
         extra: undefined,
-    }))
+    })
 }
 
 function parseValues(anyArray: string, type_cat: RawTypeCategory, type_name: string): AttributeValue[] {
@@ -423,24 +424,24 @@ export const getConstraints = (opts: ConnectorSchemaOpts) => async (conn: Conn):
 }
 
 function buildPrimaryKey(c: RawConstraint, columns: { [i: number]: string }): PrimaryKey {
-    return PrimaryKey.parse(removeUndefined({
+    return removeUndefined({
         name: c.constraint_name,
         attrs: c.columns.map(i => [columns[i] || 'unknown']),
         doc: c.constraint_comment || undefined,
         stats: undefined,
         extra: undefined
-    }))
+    })
 }
 
 function buildCheck(c: RawConstraint, columns: { [i: number]: string }): Check {
-    return Check.parse(removeUndefined({
+    return removeUndefined({
         name: c.constraint_name,
         attrs: c.columns.map(i => [columns[i] || 'unknown']),
         predicate: c.definition,
         doc: c.constraint_comment || undefined,
         stats: undefined,
         extra: undefined
-    }))
+    })
 }
 
 type RawIndex = {
@@ -494,7 +495,7 @@ export const getIndexes = (opts: ConnectorSchemaOpts) => async (conn: Conn): Pro
 }
 
 function buildIndex(blockSize: number, index: RawIndex, columns: { [i: number]: string }): Index {
-    return Index.parse(removeUndefined({
+    return removeUndefined({
         name: index.index_name,
         attrs: index.columns.map(i => [columns[i] || 'unknown']), // TODO: handle indexes on nested json columns
         unique: index.is_unique || undefined,
@@ -506,7 +507,7 @@ function buildIndex(blockSize: number, index: RawIndex, columns: { [i: number]: 
             scans: index.idx_scan,
         },
         extra: undefined
-    }))
+    })
 }
 
 type RawRelationAction = 'a' | 'r' | 'c' | 'n' | 'd' // a = no action, r = restrict, c = cascade, n = set null, d = set default
@@ -562,7 +563,7 @@ function buildRelation(r: RawRelation, columnsByIndex: Record<EntityId, { [i: nu
     const ref = {schema: r.target_schema, entity: r.target_table}
     const srcId = formatEntityRef(src)
     const refId = formatEntityRef(ref)
-    return Relation.parse(removeUndefined({
+    return removeUndefined({
         name: r.constraint_name,
         kind: undefined, // 'many-to-one' when not specified
         origin: undefined, // 'fk' when not specified
@@ -572,7 +573,7 @@ function buildRelation(r: RawRelation, columnsByIndex: Record<EntityId, { [i: nu
         polymorphic: undefined,
         doc: r.relation_comment || undefined,
         extra: undefined
-    }))
+    })
 }
 
 export type RawTypeKind = 'b' | 'c' | 'd' | 'e' | 'p' | 'r' | 'm' // b: base, c: composite, d: domain, e: enum, p: pseudo-type, r: range, m: multirange
@@ -627,7 +628,7 @@ export const getTypes = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promi
 }
 
 function buildType(t: RawType): Type {
-    return Type.parse(removeUndefined({
+    return removeUndefined({
         schema: t.type_schema,
         name: t.type_name,
         values: t.type_kind === 'e' ? t.type_values : undefined,
@@ -635,7 +636,7 @@ function buildType(t: RawType): Type {
         definition: undefined,
         doc: t.type_comment || undefined,
         extra: undefined
-    }))
+    })
 }
 
 // getTriggers: pg_get_triggerdef

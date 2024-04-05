@@ -1,4 +1,4 @@
-import {z} from "zod";
+import {z, ZodError} from "zod";
 import zodToJsonSchema from "zod-to-json-schema";
 
 // read this file from bottom to the top, to have a top-down read ^^
@@ -56,9 +56,9 @@ export const Namespace = z.object({
 }).partial().strict()
 export type Namespace = z.infer<typeof Namespace>
 
-export const EntityRef = Namespace.merge(z.object({ entity: EntityName })).strict()
+export const EntityRef = Namespace.extend({ entity: EntityName }).strict()
 export type EntityRef = z.infer<typeof EntityRef>
-export const AttributeRef = EntityRef.merge(z.object({ attribute: AttributePath })).strict()
+export const AttributeRef = EntityRef.extend({ attribute: AttributePath }).strict()
 export type AttributeRef = z.infer<typeof AttributeRef>
 
 export const IndexStats = z.object({
@@ -163,7 +163,7 @@ export const EntityStats = z.object({
 }).strict()
 export type EntityStats = z.infer<typeof EntityStats>
 
-export const Entity = Namespace.merge(z.object({
+export const Entity = Namespace.extend({
     name: EntityName,
     kind: EntityKind.optional(), // 'table' when not specified
     def: z.string().optional(), // the query definition for views
@@ -174,7 +174,7 @@ export const Entity = Namespace.merge(z.object({
     doc: z.string().optional(),
     stats: EntityStats.optional(),
     extra: Extra.optional()
-})).strict()
+}).strict()
 export type Entity = z.infer<typeof Entity>
 
 export const RelationKind = z.enum(['many-to-one', 'one-to-many', 'one-to-one', 'many-to-many'])
@@ -193,14 +193,14 @@ export const Relation = z.object({
 }).strict()
 export type Relation = z.infer<typeof Relation>
 
-export const Type = Namespace.merge(z.object({
+export const Type = Namespace.extend({
     name: TypeName,
     values: z.string().array().optional(),
     attrs: Attribute.array().optional(),
     definition: z.string().optional(),
     doc: z.string().optional(),
     extra: Extra.optional()
-})).strict()
+}).strict()
 export type Type = z.infer<typeof Type>
 
 export const DatabaseKind = z.enum(['bigquery', 'cassandra', 'couchbase', 'db2', 'elasticsearch', 'mariadb', 'mongodb', 'mysql', 'oracle', 'postgres', 'redis', 'snowflake', 'sqlite', 'sqlserver'])
@@ -223,6 +223,22 @@ export const Database = z.object({
     extra: Extra.optional(),
 }).partial().strict()
 export type Database = z.infer<typeof Database>
+
+export function parseDatabase(value: any): Promise<Database> {
+    const res = Database.safeParse(value)
+    return res.success ? Promise.resolve(res.data) : Promise.reject(new Error(formatZodError('Database', res.error)))
+}
+
+function formatZodError(name: String, e: ZodError): string {
+    if (e.issues.length > 1) {
+        return `Invalid ${name}:${e.issues.map(i => `\n- ${i.message} at ${i.path.join('.')}`).join('')}`
+    } else if (e.issues.length === 1) {
+        const issue = e.issues[0]
+        return `Invalid ${name}: ${issue.message} at ${issue.path.join('.')}`
+    } else {
+        return `Invalid ${name}, but no issue found...`
+    }
+}
 
 export const DatabaseSchema = zodToJsonSchema(Database, {
     name: 'Database',

@@ -4,10 +4,12 @@ import {RouteShorthandOptions} from "fastify/types/route"
 import {Logger} from "@azimutt/utils"
 import {
     AttributeRef,
-    Connector, databaseToLegacy,
+    Connector,
+    databaseToLegacy,
     DatabaseUrl,
     DatabaseUrlParsed,
     EntityRef,
+    parseDatabaseOptions,
     parseDatabaseUrl
 } from "@azimutt/database-model"
 import {version} from "../version";
@@ -59,7 +61,25 @@ const routes: FastifyPluginAsync = async (server) => {
 }
 
 function getDatabaseSchema(params: GetSchemaParams, res: FastifyReply): Promise<GetSchemaResponse | FastifyReply> {
-    return withConnector(params.url, res, (url, conn) => conn.getSchema(application, url, {logger, schema: params.schema, ignoreErrors: true}).then(databaseToLegacy))
+    return withConnector(params.url, res, (url, conn) => {
+        const urlOptions = parseDatabaseOptions(url.options)
+        return conn.getSchema(application, url, {
+            logger,
+            logQueries: urlOptions['log-queries'] === 'true',
+            database: params.database,
+            catalog: params.catalog,
+            schema: params.schema,
+            entity: params.entity,
+            sampleSize: undefined,
+            inferMixedJson: undefined,
+            inferJsonAttributes: urlOptions['schema-only'] !== 'true',
+            inferPolymorphicRelations: urlOptions['schema-only'] !== 'true',
+            inferRelationsFromJoins: urlOptions['schema-only'] !== 'true',
+            inferPii: urlOptions['schema-only'] !== 'true',
+            inferRelations: true,
+            ignoreErrors: true
+        }).then(databaseToLegacy)
+    })
 }
 
 function queryDatabase(params: DbQueryParams, res: FastifyReply): Promise<DbQueryResponse | FastifyReply> {

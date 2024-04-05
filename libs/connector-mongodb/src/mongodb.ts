@@ -25,14 +25,14 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
     opts.logger.log(`Found ${pluralizeL(collections, 'collection')} to export (${joinLimit(collections.map(c => c.collectionName))}) ...`)
     const entities: Entity[] = (await sequence(collections, collection => inferCollection(collection, opts))).flat()
     opts.logger.log(`✔︎ Exported ${pluralizeL(entities, 'collection')} from the database!`)
-    return Database.parse(removeUndefined({
+    return removeUndefined({
         entities,
         relations: undefined,
         types: undefined,
         doc: undefined,
         stats: undefined,
         extra: undefined,
-    }))
+    })
 }
 
 // 👇️ Private functions, some are exported only for tests
@@ -92,7 +92,7 @@ async function getDistinctValues(collection: Collection, attribute: AttributeNam
 async function inferCollectionMixed(collection: Collection, mixed: MixedCollection | null, opts: ConnectorSchemaOpts): Promise<Entity> {
     const documents = await getSampleDocuments(collection, mixed, opts)
     const count = await countDocuments(collection, mixed, opts)
-    return Entity.parse(removeUndefined({
+    return removeUndefined({
         database: collection.dbName,
         name: mixed ? `${collection.collectionName}__${mixed.attribute}__${mixed.value}` : collection.collectionName,
         kind: undefined,
@@ -112,7 +112,7 @@ async function inferCollectionMixed(collection: Collection, mixed: MixedCollecti
             idx_scan: undefined,
         }),
         extra: undefined
-    }))
+    })
 }
 
 type CollectionDoc = any

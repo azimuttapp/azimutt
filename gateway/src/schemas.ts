@@ -1,6 +1,8 @@
 import {Static, TNull, TOptional, TSchema, TUnion, Type} from "@sinclair/typebox"
 
 export const sDatabaseUrl = Type.String()
+export const sDatabaseName = Type.String()
+export const sCatalogName = Type.String()
 export const sSchemaName = Type.String()
 export const sTableName = Type.String()
 export const sTableId = Type.String()
@@ -154,7 +156,13 @@ export const ParseUrlResponse = Type.Object({
 })
 export type ParseUrlResponse = Static<typeof ParseUrlResponse>
 
-export const GetSchemaParams = Type.Object({url: sDatabaseUrl, schema: Type.Optional(sSchemaName)})
+export const GetSchemaParams = Type.Object({
+    url: sDatabaseUrl,
+    database: Type.Optional(sDatabaseName),
+    catalog: Type.Optional(sCatalogName),
+    schema: Type.Optional(sSchemaName),
+    entity: Type.Optional(sTableName),
+})
 export type GetSchemaParams = Static<typeof GetSchemaParams>
 export const GetSchemaResponse = sAzimuttSchema
 export type GetSchemaResponse = Static<typeof GetSchemaResponse>
