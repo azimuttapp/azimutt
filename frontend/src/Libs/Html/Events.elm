@@ -1,4 +1,4 @@
-module Libs.Html.Events exposing (PointerEvent, WheelEvent, onContextMenu, onDblClick, onPointerDown, onPointerUp, onWheel, pointerDecoder, wheelDecoder)
+module Libs.Html.Events exposing (DomNode, PointerEvent, WheelEvent, onContextMenu, onDblClick, onPointerDown, onPointerUp, onWheel, pointerDecoder, wheelDecoder)
 
 import Html exposing (Attribute)
 import Html.Events
@@ -22,7 +22,12 @@ type alias PointerEvent =
     , shift : Bool
     , meta : Bool
     , button : Button
+    , target : DomNode
     }
+
+
+type alias DomNode =
+    { nodeName : String, id : String, className : String }
 
 
 onContextMenu : (PointerEvent -> msg) -> Platform -> Attribute msg
@@ -98,7 +103,7 @@ onWheel toMsg platform =
 
 pointerDecoder : Platform -> Decode.Decoder PointerEvent
 pointerDecoder platform =
-    Decode.map7 PointerEvent
+    Decode.map8 PointerEvent
         Position.decodeViewport
         Position.decodeDocument
         (Decode.field (B.cond (platform == Platform.Mac) "metaKey" "ctrlKey") Decode.bool)
@@ -106,6 +111,15 @@ pointerDecoder platform =
         (Decode.field "shiftKey" Decode.bool)
         (Decode.field "metaKey" Decode.bool)
         (Decode.field "button" Decode.int |> Decode.map buttonFromId)
+        (Decode.field "target" decodeDomNode)
+
+
+decodeDomNode : Decode.Decoder DomNode
+decodeDomNode =
+    Decode.map3 DomNode
+        (Decode.field "nodeName" Decode.string)
+        (Decode.field "id" Decode.string)
+        (Decode.field "className" Decode.string)
 
 
 wheelDecoder : Platform -> Decode.Decoder WheelEvent

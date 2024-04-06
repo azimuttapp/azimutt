@@ -16,10 +16,11 @@ import Html.Attributes exposing (class, classList, id, style, tabindex, title, t
 import Html.Events exposing (onClick, onMouseEnter, onMouseLeave)
 import Html.Keyed as Keyed
 import Html.Lazy as Lazy
+import Json.Decode as Decode
 import Libs.Bool as Bool
 import Libs.Html as Html exposing (bText)
 import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, css, role)
-import Libs.Html.Events exposing (PointerEvent, onContextMenu, onDblClick, onPointerUp)
+import Libs.Html.Events as Events exposing (PointerEvent, onContextMenu, onDblClick, onPointerUp)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
@@ -119,6 +120,7 @@ type alias Actions msg =
     , addRelation : ColumnRef -> msg
     , notRelation : ColumnRef -> msg
     , createRelation : { src : ColumnRef, ref : ColumnRef } -> msg
+    , noop : String -> msg
     }
 
 
@@ -286,10 +288,8 @@ viewHiddenColumns model =
             label =
                 model.hiddenColumns |> String.pluralizeL "more column"
         in
-        Keyed.node "div"
-            []
-            (( label
-             , div
+        div []
+            [ div
                 ([ title label
                  , class "h-6 pl-7 pr-2 whitespace-nowrap text-default-500 opacity-50 hover:opacity-75"
                  , classList [ ( "cursor-pointer", model.conf.layout ) ]
@@ -299,9 +299,17 @@ viewHiddenColumns model =
                 )
                 [ text ("... " ++ label) ]
                 |> Popover.r popover showPopover
-             )
-                :: hiddenColumns
-            )
+            , Keyed.node "div"
+                [ class "max-h-96 overflow-y-auto pointerdown-stop"
+
+                -- stop wheel propagation so it's not caught by the erd and moves the layout
+                , Html.Events.custom "wheel" (Decode.succeed { message = model.actions.noop "hidden-columns-wheel", stopPropagation = True, preventDefault = False })
+
+                -- stop pointerdown propagation on container so the scroll bar don't move the table
+                , Html.Events.custom "pointerdown" (Events.pointerDecoder model.platform |> Decode.map (\e -> { message = model.actions.noop "hidden-columns-pointerdown", stopPropagation = e.target.className |> String.contains "pointerdown-stop", preventDefault = False }))
+                ]
+                hiddenColumns
+            ]
 
 
 viewColumn : Model msg -> TwClass -> Bool -> Int -> Column -> Html msg
@@ -647,6 +655,7 @@ sample =
         , addRelation = \_ -> logAction "addRelation"
         , notRelation = \_ -> logAction "notRelation"
         , createRelation = \_ -> logAction "createRelation"
+        , noop = \_ -> logAction "noop"
         }
     , zoom = 1
     , conf = { layout = True, move = True, select = True, hover = True }
@@ -682,6 +691,7 @@ doc =
                                 , addRelation = \_ -> logAction "addRelation"
                                 , notRelation = \_ -> logAction "notRelation"
                                 , createRelation = \_ -> logAction "createRelation"
+                                , noop = \_ -> logAction "noop"
                                 }
                         }
               )

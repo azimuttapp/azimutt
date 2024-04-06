@@ -146,6 +146,7 @@ viewTable conf zoom args layout meta tableLayout table =
                 , addRelation = \col -> VirtualRelationMsg (VRCreate (Just col))
                 , notRelation = \col -> IgnoreRelation col
                 , createRelation = \rel -> CreateRelations [ rel ]
+                , noop = Noop
                 }
             , zoom = zoom
             , conf = { layout = conf.layout, move = conf.move, select = conf.select, hover = conf.hover }
