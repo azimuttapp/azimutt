@@ -79,7 +79,7 @@ export const DatabaseQuery = z.object({
     blocksShared: z.object({read: z.number(), write: z.number(), hit: z.number(), dirty: z.number()}), // data from tables & indexes
     blocksLocal: z.object({read: z.number(), write: z.number(), hit: z.number(), dirty: z.number()}), // data from temporary tables & indexes
     blocksTemp: z.object({read: z.number(), write: z.number()}), // data used for the query
-}).strict()
+}).strict().describe('DatabaseQuery')
 export type DatabaseQuery = z.infer<typeof DatabaseQuery>
 
 export const QueryResultsAttribute = z.object({
@@ -92,17 +92,17 @@ export const QueryResults = z.object({
     query: z.string(),
     attributes: QueryResultsAttribute.array(),
     rows: JsValue.array()
-}).strict()
+}).strict().describe('QueryResults')
 export type QueryResults = z.infer<typeof QueryResults>
 
 // TODO
-export const QueryAnalyze = z.object({}).strict()
+export const QueryAnalyze = z.object({}).strict().describe('QueryAnalyze')
 export type QueryAnalyze = z.infer<typeof QueryAnalyze>
 
 export const ConnectorEntityStats = EntityRef.extend({
     rows: z.number(),
     sampleValues: z.record(AttributeValue)
-})
+}).strict().describe('ConnectorEntityStats')
 export type ConnectorEntityStats = z.infer<typeof ConnectorEntityStats>
 
 export const ConnectorAttributeStatsValue = z.object({
@@ -117,7 +117,7 @@ export const ConnectorAttributeStats = AttributeRef.extend({
     nulls: z.number(),
     cardinality: z.number(),
     commonValues: ConnectorAttributeStatsValue.array()
-}).strict()
+}).strict().describe('ConnectorAttributeStats')
 export type ConnectorAttributeStats = z.infer<typeof ConnectorAttributeStats>
 
 export const connectorScopeLevels = ['database', 'catalog', 'schema', 'entity'] as const

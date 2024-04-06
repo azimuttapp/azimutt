@@ -10,10 +10,10 @@ import {
     DatabaseQuery,
     DatabaseUrlParsed,
     EntityRef,
-    parseDatabase,
     parseDatabaseOptions,
     QueryAnalyze,
     QueryResults,
+    zodParse,
 } from "@azimutt/database-model";
 import {connect} from "./connect";
 import {execQuery} from "./query";
@@ -29,16 +29,16 @@ export const sqlserver: Connector = {
             schema: opts.schema || urlOptions['schema'],
             entity: opts.entity || urlOptions['table']
         }
-        return connect(application, url, getSchema(options), options).then(parseDatabase)
+        return connect(application, url, getSchema(options), options).then(zodParse(Database))
     },
     getQueryHistory: (application: string, url: DatabaseUrlParsed, opts: ConnectorQueryHistoryOpts): Promise<DatabaseQuery[]> =>
         Promise.reject('Not implemented'),
     execute: (application: string, url: DatabaseUrlParsed, query: string, parameters: any[], opts: ConnectorDefaultOpts): Promise<QueryResults> =>
-        connect(application, url, execQuery(query, parameters), opts).then(QueryResults.parse),
+        connect(application, url, execQuery(query, parameters), opts).then(zodParse(QueryResults)),
     analyze: (application: string, url: DatabaseUrlParsed, query: string, parameters: any[], opts: ConnectorDefaultOpts): Promise<QueryAnalyze> =>
         Promise.reject('Not implemented'),
     getEntityStats: (application: string, url: DatabaseUrlParsed, ref: EntityRef, opts: ConnectorDefaultOpts): Promise<ConnectorEntityStats> =>
-        connect(application, url, getTableStats(ref), opts).then(ConnectorEntityStats.parse),
+        connect(application, url, getTableStats(ref), opts).then(zodParse(ConnectorEntityStats)),
     getAttributeStats: (application: string, url: DatabaseUrlParsed, ref: AttributeRef, opts: ConnectorDefaultOpts): Promise<ConnectorAttributeStats> =>
-        connect(application, url, getColumnStats(ref), opts).then(ConnectorAttributeStats.parse)
+        connect(application, url, getColumnStats(ref), opts).then(zodParse(ConnectorAttributeStats))
 }

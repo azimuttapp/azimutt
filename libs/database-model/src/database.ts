@@ -1,4 +1,4 @@
-import {z, ZodError} from "zod";
+import {z} from "zod";
 import zodToJsonSchema from "zod-to-json-schema";
 
 // read this file from bottom to the top, to have a top-down read ^^
@@ -221,24 +221,8 @@ export const Database = z.object({
     doc: z.string().optional(),
     stats: DatabaseStats.optional(),
     extra: Extra.optional(),
-}).partial().strict()
+}).partial().strict().describe('Database')
 export type Database = z.infer<typeof Database>
-
-export function parseDatabase(value: any): Promise<Database> {
-    const res = Database.safeParse(value)
-    return res.success ? Promise.resolve(res.data) : Promise.reject(new Error(formatZodError('Database', res.error)))
-}
-
-function formatZodError(name: String, e: ZodError): string {
-    if (e.issues.length > 1) {
-        return `Invalid ${name}:${e.issues.map(i => `\n- ${i.message} at ${i.path.join('.')}`).join('')}`
-    } else if (e.issues.length === 1) {
-        const issue = e.issues[0]
-        return `Invalid ${name}: ${issue.message} at ${issue.path.join('.')}`
-    } else {
-        return `Invalid ${name}, but no issue found...`
-    }
-}
 
 export const DatabaseSchema = zodToJsonSchema(Database, {
     name: 'Database',
