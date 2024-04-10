@@ -141,7 +141,7 @@ These are the basic variables you will **need** to set up Azimutt:
         - `S3_KEY_ID` & `S3_KEY_SECRET` (optional): credentials to connect to the s3 (if you don't use s3 profiles)
         - `S3_FOLDER` (optional): if you want to store Azimutt files in a specific folder inside your bucket
         - `S3_REGION` (optional, default: `eu-west-1`): to specify your AWS region
-    - if `local` mount a volume or path of `/app/bin/uploads` to backup json objects of created schemas
+    - if `local` mount a volume or path of `/app/bin/uploads` to back up JSON objects of created schemas
 - `EMAIL_ADAPTER` (optional, values: `mailgun`, `gmail` or `smtp`): the service to use to send emails (email confirmation, password reset & organization invitations), contact us of you need another integration
     - if `mailgun`
         - `MAILGUN_DOMAIN` (required)
