@@ -9,3 +9,7 @@ export function isEmpty(v: any): boolean {
 }
 
 export const isObject = (value: unknown): value is Record<string, any> => typeof value === "object" && !Array.isArray(value) && value !== null;
+
+export function isNotUndefined<T>(t: T | undefined): t is T {
+    return t !== undefined
+}

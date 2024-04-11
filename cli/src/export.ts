@@ -1,15 +1,20 @@
 import chalk from "chalk";
-import {Connector, DatabaseUrlParsed, parseDatabaseUrl} from "@azimutt/database-types";
+import {isNotUndefined, pluralizeL} from "@azimutt/utils";
+import {Connector, DatabaseUrlParsed, parseDatabaseUrl} from "@azimutt/database-model";
 import {getConnector} from "@azimutt/gateway";
 import {FileFormat, FilePath, writeJsonFile} from "./utils/file.js";
 import {logger} from "./utils/logger.js";
 
 export type Opts = {
     database: string | undefined
+    catalog: string | undefined
     schema: string | undefined
+    entity: string | undefined
     bucket: string | undefined
-    mixedCollection: string | undefined
     sampleSize: number
+    mixedJson: string | undefined
+    inferJsonAttributes: boolean
+    inferPolymorphicRelations: boolean
     inferRelations: boolean
     ignoreErrors: boolean
     logQueries: boolean
@@ -39,23 +44,30 @@ async function exportJsonSchema(url: DatabaseUrlParsed, opts: Opts, connector: C
         return logger.error(`Unsupported format '${opts.format}' for ${connector.name}, try 'json'.`)
     }
     const start = Date.now()
-    const azimuttSchema = await connector.getSchema('azimutt-cli', url, {
+    const database = await connector.getSchema('azimutt-cli', url, {
         logger,
         logQueries: opts.logQueries,
-        schema: opts.database || opts.bucket || opts.schema,
-        mixedCollection: opts.mixedCollection,
+        database: opts.database,
+        catalog: opts.catalog,
+        schema: opts.bucket || opts.schema,
+        entity: opts.entity,
         sampleSize: opts.sampleSize,
+        inferMixedJson: opts.mixedJson,
+        inferJsonAttributes: opts.inferJsonAttributes,
+        inferPolymorphicRelations: opts.inferPolymorphicRelations,
+        inferRelationsFromJoins: true,
+        inferPii: true,
         inferRelations: opts.inferRelations,
         ignoreErrors: opts.ignoreErrors
     })
     logger.log(`Export done in ${Date.now() - start} ms.`)
-    const schemas: string[] = [...new Set(azimuttSchema.tables.map(t => t.schema))]
+    const schemas: string[] = [...new Set(database.entities?.map(t => t.schema)?.filter(isNotUndefined))]
     const file = filename(opts.output, url, schemas, opts.format)
     logger.log(`Writing schema to ${file} file ...`)
-    await writeJsonFile(file, azimuttSchema)
+    await writeJsonFile(file, database)
     logger.log('')
     logger.log(chalk.green(`${connector.name} schema written in '${file}'.`))
-    logger.log(`Found ${azimuttSchema.tables.length} tables in ${schemas.length} schemas.`)
+    logger.log(`Found ${pluralizeL(database.entities || [], 'table')} in ${pluralizeL(schemas, 'schema')}.`)
     logger.log('You can now import this file in ▶︎ https://azimutt.app/new?json ◀︎︎')
 }
 
