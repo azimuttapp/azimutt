@@ -17,6 +17,7 @@ import {
 } from "../database";
 
 // every connector should implement this interface
+// similar to https://github.com/planetscale/database-js?
 export interface Connector {
     name: string
     getSchema(application: string, url: DatabaseUrlParsed, opts: ConnectorSchemaOpts): Promise<Database>

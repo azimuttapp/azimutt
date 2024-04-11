@@ -27,7 +27,7 @@
  */
 
 import './index.css'
-import {DesktopBridge} from "@azimutt/shared";
+import {DesktopBridge, parseDatabaseUrl} from "@azimutt/database-model";
 
 declare global {
     export interface Window {
@@ -42,7 +42,7 @@ const versions = bridge.versions
 const information = document.getElementById('info')
 information.innerText = `Cette application utilise Chrome (v${versions.chrome()}), Node.js (v${versions.node()}), et Electron (v${versions.electron()})`
 
-const dbUrl = 'postgresql://postgres:postgres@localhost:5432/azimutt_dev'
+const dbUrl = parseDatabaseUrl('postgresql://postgres:postgres@localhost:5432/azimutt_dev')
 
 setTimeout(() => {
     bridge.ping()
@@ -51,25 +51,25 @@ setTimeout(() => {
 }, 1000)
 
 setTimeout(() => {
-    bridge.runDatabaseQuery(dbUrl, 'SELECT * FROM projects LIMIT 1;')
-        .then(res => console.log('runDatabaseQuery', res))
-        .catch(err => console.error('runDatabaseQuery', err))
+    bridge.execute(dbUrl, 'SELECT * FROM projects LIMIT 1;', [])
+        .then(res => console.log('execute', res))
+        .catch(err => console.error('execute', err))
 }, 2000)
 
 setTimeout(() => {
-    bridge.getDatabaseSchema(dbUrl)
-        .then(res => console.log('getDatabaseSchema', res))
-        .catch(err => console.error('getDatabaseSchema', err))
+    bridge.getSchema(dbUrl)
+        .then(res => console.log('getSchema', res))
+        .catch(err => console.error('getSchema', err))
 }, 3000)
 
 setTimeout(() => {
-    bridge.getTableStats(dbUrl, 'public.users')
-        .then(res => console.log('getTableStats', res))
-        .catch(err => console.error('getTableStats', err))
+    bridge.getEntityStats(dbUrl, {schema: 'public', entity: 'users'})
+        .then(res => console.log('getEntityStats', res))
+        .catch(err => console.error('getEntityStats', err))
 }, 4000)
 
 setTimeout(() => {
-    bridge.getColumnStats(dbUrl, {table: 'public.users', column: 'email'})
-        .then(res => console.log('getColumnStats', res))
-        .catch(err => console.error('getColumnStats', err))
+    bridge.getAttributeStats(dbUrl, {schema: 'public', entity: 'users', attribute: ['email']})
+        .then(res => console.log('getAttributeStats', res))
+        .catch(err => console.error('getAttributeStats', err))
 }, 5000)

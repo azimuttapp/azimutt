@@ -1,19 +1,18 @@
-import {ipcMain, IpcMainInvokeEvent} from "electron"
+import {ipcMain, IpcMainInvokeEvent} from "electron";
 import {
-    AzimuttSchema,
-    ColumnRef,
-    ColumnStats,
+    AttributeRef,
     Connector,
-    DatabaseQueryResults,
-    DatabaseUrl,
+    ConnectorAttributeStats,
+    ConnectorDefaultOpts,
+    ConnectorEntityStats,
+    Database,
+    DatabaseQuery,
     DatabaseUrlParsed,
-    parseDatabaseUrl,
-    TableId,
-    TableStats
-} from "@azimutt/database-types";
-import {DesktopBridge} from "@azimutt/shared";
-// import {couchbase} from "@azimutt/connector-couchbase";
-// import {mongodb} from "@azimutt/connector-mongodb";
+    DesktopBridge,
+    EntityRef,
+    QueryAnalyze,
+    QueryResults
+} from "@azimutt/database-model";
 import {postgres} from "@azimutt/connector-postgres";
 import {logger} from "./logger";
 
@@ -22,50 +21,44 @@ export const setupBridge = (): void => {
     const bridge: DesktopBridge = {
         versions: {node: (): string => "", chrome: (): string => "", electron: (): string => ""},
         ping: ping,
-        getDatabaseSchema: getDatabaseSchema,
-        getTableStats: getTableStats,
-        getColumnStats: getColumnStats,
-        runDatabaseQuery: runDatabaseQuery
+        getSchema: (url: DatabaseUrlParsed): Promise<Database> =>
+            withConnector(url, (conn) => conn.getSchema(application, url, {...opts, inferRelations: true, ignoreErrors: true})),
+        getQueryHistory: (url: DatabaseUrlParsed): Promise<DatabaseQuery[]> =>
+            withConnector(url, (conn) => conn.getQueryHistory(application, url, opts)),
+        execute: (url: DatabaseUrlParsed, query: string, parameters: any[]): Promise<QueryResults> =>
+            withConnector(url, (conn) => conn.execute(application, url, query, parameters, opts)),
+        analyze: (url: DatabaseUrlParsed, query: string, parameters: any[]): Promise<QueryAnalyze> =>
+            withConnector(url, (conn) => conn.analyze(application, url, query, parameters, opts)),
+        getEntityStats: (url: DatabaseUrlParsed, ref: EntityRef): Promise<ConnectorEntityStats> =>
+            withConnector(url, (conn) => conn.getEntityStats(application, url, ref, opts)),
+        getAttributeStats: (url: DatabaseUrlParsed, ref: AttributeRef): Promise<ConnectorAttributeStats> =>
+            withConnector(url, (conn) => conn.getAttributeStats(application, url, ref, opts)),
     }
     ipcMain.handle('ping', () => bridge.ping())
-    ipcMain.handle('getDatabaseSchema', (e: IpcMainInvokeEvent, url: DatabaseUrl) => bridge.getDatabaseSchema(url))
-    ipcMain.handle('getTableStats', (e: IpcMainInvokeEvent, url: DatabaseUrl, table: TableId) => bridge.getTableStats(url, table))
-    ipcMain.handle('getColumnStats', (e: IpcMainInvokeEvent, url: DatabaseUrl, ref: ColumnRef) => bridge.getColumnStats(url, ref))
-    ipcMain.handle('runDatabaseQuery', (e: IpcMainInvokeEvent, url: DatabaseUrl, query: string) => bridge.runDatabaseQuery(url, query))
+    ipcMain.handle('getSchema', (e: IpcMainInvokeEvent, url: DatabaseUrlParsed) => bridge.getSchema(url))
+    ipcMain.handle('getQueryHistory', (e: IpcMainInvokeEvent, url: DatabaseUrlParsed) => bridge.getQueryHistory(url))
+    ipcMain.handle('execute', (e: IpcMainInvokeEvent, url: DatabaseUrlParsed, query: string, parameters: any[]) => bridge.execute(url, query, parameters))
+    ipcMain.handle('analyze', (e: IpcMainInvokeEvent, url: DatabaseUrlParsed, query: string, parameters: any[]) => bridge.analyze(url, query, parameters))
+    ipcMain.handle('getEntityStats', (e: IpcMainInvokeEvent, url: DatabaseUrlParsed, ref: EntityRef) => bridge.getEntityStats(url, ref))
+    ipcMain.handle('getAttributeStats', (e: IpcMainInvokeEvent, url: DatabaseUrlParsed, ref: AttributeRef) => bridge.getAttributeStats(url, ref))
 }
 
 const application = 'azimutt-desktop'
+const opts: ConnectorDefaultOpts = {logger}
 
 async function ping(): Promise<string> {
     return 'pong'
 }
 
-async function getDatabaseSchema(url: DatabaseUrl): Promise<AzimuttSchema> {
-    return withConnector(url, (parsedUrl, conn) => conn.getSchema(application, parsedUrl, {logger, inferRelations: true, ignoreErrors: true}))
-}
-
-async function runDatabaseQuery(url: DatabaseUrl, query: string): Promise<DatabaseQueryResults> {
-    return withConnector(url, (parsedUrl, conn) => conn.query(application, parsedUrl, query, []))
-}
-
-async function getTableStats(url: DatabaseUrl, table: TableId): Promise<TableStats> {
-    return withConnector(url, (parsedUrl, conn) => conn.getTableStats(application, parsedUrl, table))
-}
-
-async function getColumnStats(url: DatabaseUrl, ref: ColumnRef): Promise<ColumnStats> {
-    return withConnector(url, (parsedUrl, conn) => conn.getColumnStats(application, parsedUrl, ref))
-}
-
-function withConnector<T>(url: DatabaseUrl, exec: (url: DatabaseUrlParsed, conn: Connector) => Promise<T>) {
-    const parsedUrl = parseDatabaseUrl(url)
+function withConnector<T>(url: DatabaseUrlParsed, exec: (conn: Connector) => Promise<T>): Promise<T> {
     // FIXME: got error: "Error: Could not locate the bindings file." :(
     /* if (parsedUrl.kind === 'couchbase') {
         return exec(parsedUrl, couchbase)
     } else if (parsedUrl.kind === 'mongodb') {
         return exec(parsedUrl, mongodb)
-    } else */ if (parsedUrl.kind === 'postgres') {
-        return exec(parsedUrl, postgres)
+    } else */ if (url.kind === 'postgres') {
+        return exec(postgres)
     } else {
-        return Promise.reject(`Not supported database: '${parsedUrl.kind || url}'`)
+        return Promise.reject(`Not supported database: '${url.kind || url}'`)
     }
 }

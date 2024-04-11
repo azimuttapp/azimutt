@@ -1,8 +1,18 @@
 // See the Electron documentation for details on how to use preload scripts:
 // https://www.electronjs.org/docs/latest/tutorial/process-model#preload-scripts
 
-import {ColumnRef, DatabaseUrl, TableId} from "@azimutt/database-types";
-import {DesktopBridge} from "@azimutt/shared";
+import {
+    AttributeRef,
+    ConnectorAttributeStats,
+    ConnectorEntityStats,
+    Database,
+    DatabaseQuery,
+    DatabaseUrlParsed,
+    DesktopBridge,
+    EntityRef,
+    QueryAnalyze,
+    QueryResults
+} from "@azimutt/database-model";
 
 const {contextBridge, ipcRenderer} = require('electron')
 
@@ -13,10 +23,12 @@ contextBridge.exposeInMainWorld('desktop', {
         electron: () => process.versions.electron
     },
     ping: () => ipcRenderer.invoke('ping'),
-    runDatabaseQuery: (url: DatabaseUrl, query: string) => ipcRenderer.invoke('runDatabaseQuery', url, query),
-    getDatabaseSchema: (url: DatabaseUrl) => ipcRenderer.invoke('getDatabaseSchema', url),
-    getTableStats: (url: DatabaseUrl, table: TableId) => ipcRenderer.invoke('getTableStats', url, table),
-    getColumnStats: (url: DatabaseUrl, column: ColumnRef) => ipcRenderer.invoke('getColumnStats', url, column)
+    getSchema: (url: DatabaseUrlParsed): Promise<Database> => ipcRenderer.invoke('getSchema', url),
+    getQueryHistory: (url: DatabaseUrlParsed): Promise<DatabaseQuery[]> => ipcRenderer.invoke('getQueryHistory', url),
+    execute: (url: DatabaseUrlParsed, query: string, parameters: any[]): Promise<QueryResults> => ipcRenderer.invoke('execute', url, query, parameters),
+    analyze: (url: DatabaseUrlParsed, query: string, parameters: any[]): Promise<QueryAnalyze> => ipcRenderer.invoke('analyze', url, query, parameters),
+    getEntityStats: (url: DatabaseUrlParsed, ref: EntityRef): Promise<ConnectorEntityStats> => ipcRenderer.invoke('getEntityStats', url, ref),
+    getAttributeStats: (url: DatabaseUrlParsed, ref: AttributeRef): Promise<ConnectorAttributeStats> => ipcRenderer.invoke('getAttributeStats', url, ref),
 } as DesktopBridge)
 
 // window.addEventListener('DOMContentLoaded', () => {
