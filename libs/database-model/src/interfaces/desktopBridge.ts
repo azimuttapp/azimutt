@@ -1,5 +1,5 @@
 import {ConnectorAttributeStats, ConnectorEntityStats, DatabaseQuery, QueryAnalyze, QueryResults} from "./connector";
-import {DatabaseUrlParsed} from "../databaseUrl";
+import {DatabaseUrl} from "../databaseUrl";
 import {AttributeRef, Database, EntityRef} from "../database";
 
 export type DesktopBridge = {
@@ -10,10 +10,10 @@ export type DesktopBridge = {
     }
     ping: () => Promise<string>
     // like Connector but a bit different ^^ (no application parameter)
-    getSchema(url: DatabaseUrlParsed): Promise<Database>
-    getQueryHistory(url: DatabaseUrlParsed): Promise<DatabaseQuery[]>
-    execute(url: DatabaseUrlParsed, query: string, parameters: any[]): Promise<QueryResults>
-    analyze(url: DatabaseUrlParsed, query: string, parameters: any[]): Promise<QueryAnalyze>
-    getEntityStats(url: DatabaseUrlParsed, ref: EntityRef): Promise<ConnectorEntityStats>
-    getAttributeStats(url: DatabaseUrlParsed, ref: AttributeRef): Promise<ConnectorAttributeStats>
+    getSchema(url: DatabaseUrl): Promise<Database>
+    getQueryHistory(url: DatabaseUrl): Promise<DatabaseQuery[]>
+    execute(url: DatabaseUrl, query: string, parameters: any[]): Promise<QueryResults>
+    analyze(url: DatabaseUrl, query: string, parameters: any[]): Promise<QueryAnalyze>
+    getEntityStats(url: DatabaseUrl, ref: EntityRef): Promise<ConnectorEntityStats>
+    getAttributeStats(url: DatabaseUrl, ref: AttributeRef): Promise<ConnectorAttributeStats>
 }

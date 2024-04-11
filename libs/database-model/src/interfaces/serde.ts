@@ -29,4 +29,8 @@ export class ParserResult<T> {
     public map<U>(f: (t: T) => U): ParserResult<U> {
         return new ParserResult<U>(this.result !== undefined ? f(this.result) : undefined, this.errors, this.warnings)
     }
+
+    public fold<U>(onSuccess: (t: T) => U, onFailure: (e: ParserError[]) => U): U {
+        return this.result !== undefined ? onSuccess(this.result) : onFailure((this.errors || []).concat(this.warnings || []))
+    }
 }

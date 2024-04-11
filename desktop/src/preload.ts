@@ -7,7 +7,7 @@ import {
     ConnectorEntityStats,
     Database,
     DatabaseQuery,
-    DatabaseUrlParsed,
+    DatabaseUrl,
     DesktopBridge,
     EntityRef,
     QueryAnalyze,
@@ -23,12 +23,12 @@ contextBridge.exposeInMainWorld('desktop', {
         electron: () => process.versions.electron
     },
     ping: () => ipcRenderer.invoke('ping'),
-    getSchema: (url: DatabaseUrlParsed): Promise<Database> => ipcRenderer.invoke('getSchema', url),
-    getQueryHistory: (url: DatabaseUrlParsed): Promise<DatabaseQuery[]> => ipcRenderer.invoke('getQueryHistory', url),
-    execute: (url: DatabaseUrlParsed, query: string, parameters: any[]): Promise<QueryResults> => ipcRenderer.invoke('execute', url, query, parameters),
-    analyze: (url: DatabaseUrlParsed, query: string, parameters: any[]): Promise<QueryAnalyze> => ipcRenderer.invoke('analyze', url, query, parameters),
-    getEntityStats: (url: DatabaseUrlParsed, ref: EntityRef): Promise<ConnectorEntityStats> => ipcRenderer.invoke('getEntityStats', url, ref),
-    getAttributeStats: (url: DatabaseUrlParsed, ref: AttributeRef): Promise<ConnectorAttributeStats> => ipcRenderer.invoke('getAttributeStats', url, ref),
+    getSchema: (url: DatabaseUrl): Promise<Database> => ipcRenderer.invoke('getSchema', url),
+    getQueryHistory: (url: DatabaseUrl): Promise<DatabaseQuery[]> => ipcRenderer.invoke('getQueryHistory', url),
+    execute: (url: DatabaseUrl, query: string, parameters: any[]): Promise<QueryResults> => ipcRenderer.invoke('execute', url, query, parameters),
+    analyze: (url: DatabaseUrl, query: string, parameters: any[]): Promise<QueryAnalyze> => ipcRenderer.invoke('analyze', url, query, parameters),
+    getEntityStats: (url: DatabaseUrl, ref: EntityRef): Promise<ConnectorEntityStats> => ipcRenderer.invoke('getEntityStats', url, ref),
+    getAttributeStats: (url: DatabaseUrl, ref: AttributeRef): Promise<ConnectorAttributeStats> => ipcRenderer.invoke('getAttributeStats', url, ref),
 } as DesktopBridge)
 
 // window.addEventListener('DOMContentLoaded', () => {

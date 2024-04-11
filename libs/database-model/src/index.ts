@@ -11,6 +11,8 @@ export * from "./interfaces/connector"
 export * from "./interfaces/desktopBridge"
 export * from "./interfaces/serde"
 export * from "./legacy/legacyDatabase"
+export * from "./legacy/legacyQuery"
+export * from "./legacy/legacyStats"
 
 export const zodParse = <T>(typ: ZodType<T>) => (value: any): Promise<T> => {
     const res = typ.safeParse(value)

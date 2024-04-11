@@ -27,7 +27,7 @@
  */
 
 import './index.css'
-import {DesktopBridge, parseDatabaseUrl} from "@azimutt/database-model";
+import {DesktopBridge} from "@azimutt/database-model";
 
 declare global {
     export interface Window {
@@ -42,7 +42,7 @@ const versions = bridge.versions
 const information = document.getElementById('info')
 information.innerText = `Cette application utilise Chrome (v${versions.chrome()}), Node.js (v${versions.node()}), et Electron (v${versions.electron()})`
 
-const dbUrl = parseDatabaseUrl('postgresql://postgres:postgres@localhost:5432/azimutt_dev')
+const dbUrl = 'postgresql://postgres:postgres@localhost:5432/azimutt_dev'
 
 setTimeout(() => {
     bridge.ping()

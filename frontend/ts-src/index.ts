@@ -1,8 +1,16 @@
 import * as Sentry from "@sentry/browser";
 import {BrowserTracing} from "@sentry/tracing";
 import {AnyError, errorToString} from "@azimutt/utils";
+import {
+    columnStatsToLegacy,
+    databaseToLegacy,
+    parseAttributePath,
+    parseEntityRef,
+    queryResultsToLegacy,
+    tableStatsToLegacy
+} from "@azimutt/database-model";
 import {ColumnStats, DatabaseQueryResults, TableStats} from "@azimutt/database-types";
-import {prisma} from "@azimutt/parser-prisma";
+import {prisma} from "@azimutt/serde-prisma";
 import {
     CreateProject,
     CreateProjectTmp,
@@ -272,7 +280,7 @@ const tableStatsCache: { [key: string]: TableStats } = {}
 
 function getDatabaseSchema(msg: GetDatabaseSchema) {
     (window.desktop ?
-            window.desktop.getDatabaseSchema(msg.database) :
+            window.desktop.getSchema(msg.database).then(databaseToLegacy) :
             backend.getDatabaseSchema(msg.database)
     ).then(
         schema => app.gotDatabaseSchema(schema),
@@ -286,7 +294,7 @@ function getTableStats(msg: GetTableStats) {
         app.gotTableStats(msg.source, tableStatsCache[key])
     } else {
         (window.desktop ?
-            window.desktop.getTableStats(msg.database, msg.table) :
+            window.desktop.getEntityStats(msg.database, parseEntityRef(msg.table)).then(tableStatsToLegacy) :
             backend.getTableStats(msg.database, msg.table)
         ).then(
             stats => app.gotTableStats(msg.source, tableStatsCache[key] = stats),
@@ -303,7 +311,7 @@ function getColumnStats(msg: GetColumnStats) {
         app.gotColumnStats(msg.source, columnStatsCache[key])
     } else {
         (window.desktop ?
-            window.desktop.getColumnStats(msg.database, msg.column) :
+            window.desktop.getAttributeStats(msg.database, {...parseEntityRef(msg.column.table), attribute: parseAttributePath(msg.column.column)}).then(columnStatsToLegacy) :
             backend.getColumnStats(msg.database, msg.column)
         ).then(
             stats => app.gotColumnStats(msg.source, columnStatsCache[key] = stats),
@@ -315,7 +323,7 @@ function getColumnStats(msg: GetColumnStats) {
 function runDatabaseQuery(msg: RunDatabaseQuery) {
     const start = Date.now();
     (window.desktop ?
-        window.desktop.runDatabaseQuery(msg.database, msg.query.sql) :
+        window.desktop.execute(msg.database, msg.query.sql, []).then(queryResultsToLegacy) :
         backend.runDatabaseQuery(msg.database, msg.query.sql)
     ).then(
         (results: DatabaseQueryResults) => app.gotDatabaseQueryResult(msg.context, msg.query, results, start, Date.now()),
@@ -324,9 +332,9 @@ function runDatabaseQuery(msg: RunDatabaseQuery) {
 }
 
 function getPrismaSchema(msg: GetPrismaSchema) {
-    prisma.parse(msg.content).then(
+    prisma.parse(msg.content).map(databaseToLegacy).fold(
         schema => app.gotPrismaSchema(schema),
-        err => app.gotPrismaSchemaError(errorToString(err))
+        errors => app.gotPrismaSchemaError(errors.map(errorToString).join(', '))
     )
 }
 
