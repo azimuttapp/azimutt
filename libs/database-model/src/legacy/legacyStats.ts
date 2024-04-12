@@ -1,17 +1,16 @@
 import {z} from "zod";
 import {mapValues, removeUndefined} from "@azimutt/utils";
 import {
-    columnPathSeparator,
     columnValueFromLegacy,
     columnValueToLegacy,
     LegacyColumnName,
+    legacyColumnPathSeparator,
     LegacyColumnType,
     LegacyColumnValue,
     LegacySchemaName,
     LegacyTableName
 } from "./legacyDatabase";
-import {ConnectorAttributeStats, ConnectorAttributeStatsValue, ConnectorEntityStats} from "../interfaces/connector";
-import {AttributeRef, AttributeType} from "../database";
+import {ConnectorAttributeStats, ConnectorEntityStats} from "../interfaces/connector";
 
 export const LegacyTableSampleValues = z.record(LegacyColumnValue)
 export type LegacyTableSampleValues = z.infer<typeof LegacyTableSampleValues>
@@ -22,7 +21,7 @@ export const LegacyTableStats = z.object({
     table: LegacyTableName,
     rows: z.number(),
     sample_values: LegacyTableSampleValues
-}).strict()
+}).strict().describe('LegacyTableStats')
 export type LegacyTableStats = z.infer<typeof LegacyTableStats>
 
 export function tableStatsFromLegacy(s: LegacyTableStats): ConnectorEntityStats {
@@ -56,7 +55,7 @@ export const LegacyColumnStats = z.object({
     nulls: z.number(),
     cardinality: z.number(),
     common_values: LegacyColumnCommonValue.array()
-}).strict()
+}).strict().describe('LegacyColumnStats')
 export type LegacyColumnStats = z.infer<typeof LegacyColumnStats>
 
 export function columnStatsFromLegacy(s: LegacyColumnStats): ConnectorAttributeStats {
@@ -76,7 +75,7 @@ export function columnStatsToLegacy(s: ConnectorAttributeStats): LegacyColumnSta
     return {
         schema: s.schema || null,
         table: s.entity,
-        column: s.attribute.join(columnPathSeparator),
+        column: s.attribute.join(legacyColumnPathSeparator),
         type: s.type,
         rows: s.rows,
         nulls: s.nulls,

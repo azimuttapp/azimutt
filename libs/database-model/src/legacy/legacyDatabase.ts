@@ -1,4 +1,5 @@
 import {z} from "zod";
+import {removeEmpty, removeUndefined} from "@azimutt/utils";
 import {
     Attribute,
     AttributePath,
@@ -13,11 +14,10 @@ import {
     Relation,
     Type
 } from "../database";
-import {removeEmpty, removeUndefined} from "@azimutt/utils";
 import {ValueSchema} from "../inferSchema";
 
-export const columnPathSeparator = ":"
-
+export const legacyColumnPathSeparator = ":"
+export const legacyColumnTypeUnknown: LegacyColumnType = 'unknown'
 
 const LegacyJsValueLiteral = z.union([z.string(), z.number(), z.boolean(), z.null()])
 type LegacyJsValueLiteral = z.infer<typeof LegacyJsValueLiteral>
@@ -32,9 +32,10 @@ export type LegacyColumnName = string
 export const LegacyColumnName = z.string()
 export type LegacyColumnType = string
 export const LegacyColumnType = z.string()
-export const legacyColumnTypeUnknown: LegacyColumnType = 'unknown'
 export type LegacyColumnValue = string
 export const LegacyColumnValue = z.string()
+export type LegacyColumnId = string // ex: 'public.users.id'
+export const LegacyColumnId = z.string()
 export type LegacyPrimaryKey = { name?: string | null, columns: LegacyColumnName[] }
 export const LegacyPrimaryKey = z.object({name: z.string().nullish(), columns: LegacyColumnName.array()}).strict()
 export type LegacyUnique = { name?: string | null, columns: LegacyColumnName[], definition?: string | null }
@@ -119,7 +120,7 @@ export const LegacyDatabase = z.object({
     tables: LegacyTable.array(),
     relations: LegacyRelation.array(),
     types: LegacyType.array().nullish()
-}).strict()
+}).strict().describe('LegacyDatabase')
 
 export function schemaToColumns(schema: ValueSchema, flatten: number, path: string[] = []): LegacyColumn[] {
     // TODO: if string with few values (< 10% of docs), handle it like an enum and add values in comment
@@ -238,11 +239,11 @@ function primaryKeyToLegacy(pk: PrimaryKey): LegacyPrimaryKey {
 }
 
 function columnNameFromLegacy(n: LegacyColumnName): AttributePath {
-    return n.split(columnPathSeparator)
+    return n.split(legacyColumnPathSeparator)
 }
 
 function columnNameToLegacy(p: AttributePath): LegacyColumnName {
-    return p.join(columnPathSeparator)
+    return p.join(legacyColumnPathSeparator)
 }
 
 function uniqueFromLegacy(u: LegacyUnique): Index {
@@ -299,7 +300,7 @@ function relationFromLegacy(r: LegacyRelation): Relation {
         name: r.name || undefined,
         src: columnRefFromLegacy2(r.src),
         ref: columnRefFromLegacy2(r.ref),
-        attrs: [{src: r.src.column.split(columnPathSeparator), ref: r.ref.column.split(columnPathSeparator)}],
+        attrs: [{src: r.src.column.split(legacyColumnPathSeparator), ref: r.ref.column.split(legacyColumnPathSeparator)}],
     })
 }
 
@@ -313,7 +314,7 @@ export function columnRefFromLegacy(c: LegacyColumnRef): AttributeRef {
 }
 
 export function columnRefToLegacy(a: AttributeRef): LegacyColumnRef {
-    return {schema: a.schema || '', table: a.entity, column: a.attribute.join(columnPathSeparator)} // FIXME: use function from AttributePath to ColumnName
+    return {schema: a.schema || '', table: a.entity, column: a.attribute.join(legacyColumnPathSeparator)} // FIXME: use function from AttributePath to ColumnName
 }
 
 function columnRefFromLegacy2(e: LegacyColumnRef): EntityRef {
@@ -321,7 +322,7 @@ function columnRefFromLegacy2(e: LegacyColumnRef): EntityRef {
 }
 
 function columnRefToLegacy2(e: EntityRef, c: AttributePath): LegacyColumnRef {
-    return {schema: e.schema || '', table: e.entity, column: c.join(columnPathSeparator)}
+    return {schema: e.schema || '', table: e.entity, column: c.join(legacyColumnPathSeparator)}
 }
 
 function typeFromLegacy(t: LegacyType): Type {

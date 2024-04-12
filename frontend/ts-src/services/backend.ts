@@ -1,20 +1,21 @@
 import {errorToString} from "@azimutt/utils";
 import {
-    AzimuttSchema,
-    ColumnRef,
-    ColumnStats,
+    AttributeRef,
     DatabaseUrl,
-    DatabaseQueryResults,
-    TableId,
-    TableStats
-} from "@azimutt/database-types";
+    EntityRef,
+    legacyColumnPathSeparator,
+    LegacyColumnStats,
+    LegacyDatabase,
+    LegacyDatabaseQueryResults,
+    LegacyTableStats
+} from "@azimutt/database-model";
 import {Logger} from "./logger";
+import {DateTime} from "../types/basics";
 import {
     buildProjectJson,
     computeStats,
     isLocal,
     isRemote,
-    parseTableId,
     Project,
     ProjectId,
     ProjectInfo,
@@ -31,16 +32,15 @@ import {
     ProjectVisibility
 } from "../types/project";
 import {Organization, OrganizationId, OrganizationSlug, Plan} from "../types/organization";
-import {DateTime} from "../types/basics";
+import {CleverCloudResource} from "../types/clevercloud";
+import {HerokuResource} from "../types/heroku";
+import {TrackEvent} from "../types/tracking";
 import * as Http from "../utils/http";
 import {z} from "zod";
 import {ZodType} from "zod/lib/types";
 import * as Zod from "../utils/zod";
 import * as Json from "../utils/json";
 import * as jiff from "jiff";
-import {CleverCloudResource} from "../types/clevercloud";
-import {HerokuResource} from "../types/heroku";
-import {TrackEvent} from "../types/tracking";
 
 export class Backend {
     private projects: { [id: ProjectId]: ProjectJson } = {}
@@ -147,26 +147,33 @@ export class Backend {
         Http.postNoContent(`/api/v1/events`, eventWithUrl).then(_ => undefined)
     }
 
-    getDatabaseSchema = async (database: DatabaseUrl): Promise<AzimuttSchema> => {
+    getDatabaseSchema = async (database: DatabaseUrl): Promise<LegacyDatabase> => {
         this.logger.debug(`backend.getDatabaseSchema(${database})`)
-        return this.gatewayPost(`/schema`, {url: database}, AzimuttSchema, 'AzimuttSchema')
+        return this.gatewayPost(`/schema`, {url: database}, LegacyDatabase, 'LegacyDatabase')
     }
 
-    runDatabaseQuery = async (database: DatabaseUrl, query: string): Promise<DatabaseQueryResults> => {
+    runDatabaseQuery = async (database: DatabaseUrl, query: string): Promise<LegacyDatabaseQueryResults> => {
         this.logger.debug(`backend.runQuery(${database}, ${query})`)
-        return this.gatewayPost(`/query`, {url: database, query}, DatabaseQueryResults, 'DatabaseQueryResults')
+        return this.gatewayPost(`/query`, {url: database, query}, LegacyDatabaseQueryResults, 'LegacyDatabaseQueryResults')
     }
 
-    getTableStats = async (database: DatabaseUrl, id: TableId): Promise<TableStats> => {
-        this.logger.debug(`backend.getTableStats(${database}, ${id})`)
-        const {schema, table} = parseTableId(id)
-        return this.gatewayPost(`/table-stats`, {url: database, schema, table}, TableStats, 'TableStats')
+    getTableStats = async (database: DatabaseUrl, entity: EntityRef): Promise<LegacyTableStats> => {
+        this.logger.debug(`backend.getTableStats(${database}, ${JSON.stringify(entity)})`)
+        return this.gatewayPost(`/table-stats`, {
+            url: database,
+            schema: entity.schema,
+            table: entity.entity,
+        }, LegacyTableStats, 'LegacyTableStats')
     }
 
-    getColumnStats = async (database: DatabaseUrl, column: ColumnRef): Promise<ColumnStats> => {
-        this.logger.debug(`backend.getColumnStats(${database}, ${JSON.stringify(column)})`)
-        const {schema, table} = parseTableId(column.table)
-        return this.gatewayPost(`/column-stats`, {url: database, schema, table, column: column.column}, ColumnStats, 'ColumnStats')
+    getColumnStats = async (database: DatabaseUrl, attribute: AttributeRef): Promise<LegacyColumnStats> => {
+        this.logger.debug(`backend.getColumnStats(${database}, ${JSON.stringify(attribute)})`)
+        return this.gatewayPost(`/column-stats`, {
+            url: database,
+            schema: attribute.schema,
+            table: attribute.entity,
+            column: attribute.attribute.join(legacyColumnPathSeparator),
+        }, LegacyColumnStats, 'LegacyColumnStats')
     }
 
     private gatewayPost = async <Body, Response>(path: string, body: Body, zod: ZodType<Response>, label: string): Promise<Response> => {

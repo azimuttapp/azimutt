@@ -2,15 +2,27 @@ import * as Sentry from "@sentry/browser";
 import {BrowserTracing} from "@sentry/tracing";
 import {AnyError, errorToString} from "@azimutt/utils";
 import {
+    AttributeRef,
     columnStatsToLegacy,
     databaseToLegacy,
+    LegacyColumnStats,
+    LegacyDatabaseQueryResults,
+    LegacyTableStats,
     parseAttributePath,
     parseEntityRef,
     queryResultsToLegacy,
     tableStatsToLegacy
 } from "@azimutt/database-model";
-import {ColumnStats, DatabaseQueryResults, TableStats} from "@azimutt/database-types";
 import {prisma} from "@azimutt/serde-prisma";
+import {HtmlId, Platform, ToastLevel, ViewPosition} from "./types/basics";
+import * as Uuid from "./types/uuid";
+import {
+    buildProjectDraft,
+    buildProjectJson,
+    buildProjectLocal,
+    buildProjectRemote,
+    ProjectStorage
+} from "./types/project";
 import {
     CreateProject,
     CreateProjectTmp,
@@ -34,20 +46,11 @@ import {
 } from "./types/ports";
 import {ElmApp} from "./services/elm";
 import {AzimuttApi} from "./services/api";
-import {
-    buildProjectDraft,
-    buildProjectJson,
-    buildProjectLocal,
-    buildProjectRemote,
-    ProjectStorage
-} from "./types/project";
 import {ConsoleLogger} from "./services/logger";
-import {loadPolyfills} from "./utils/polyfills";
-import {Utils} from "./utils/utils";
 import {Storage} from "./services/storage";
 import {Backend} from "./services/backend";
-import * as Uuid from "./types/uuid";
-import {HtmlId, Platform, ToastLevel, ViewPosition} from "./types/basics";
+import {loadPolyfills} from "./utils/polyfills";
+import {Utils} from "./utils/utils";
 import {Env} from "./utils/env";
 import * as url from "./utils/url";
 
@@ -276,7 +279,7 @@ function getLocalFile(msg: GetLocalFile) {
     reader.readAsText(msg.file as any)
 }
 
-const tableStatsCache: { [key: string]: TableStats } = {}
+const tableStatsCache: { [key: string]: LegacyTableStats } = {}
 
 function getDatabaseSchema(msg: GetDatabaseSchema) {
     (window.desktop ?
@@ -293,9 +296,10 @@ function getTableStats(msg: GetTableStats) {
     if (tableStatsCache[key]) {
         app.gotTableStats(msg.source, tableStatsCache[key])
     } else {
+        const entityRef = parseEntityRef(msg.table)
         (window.desktop ?
-            window.desktop.getEntityStats(msg.database, parseEntityRef(msg.table)).then(tableStatsToLegacy) :
-            backend.getTableStats(msg.database, msg.table)
+            window.desktop.getEntityStats(msg.database, entityRef).then(tableStatsToLegacy) :
+            backend.getTableStats(msg.database, entityRef)
         ).then(
             stats => app.gotTableStats(msg.source, tableStatsCache[key] = stats),
             err => app.gotTableStatsError(msg.source, msg.table, errorToString(err))
@@ -303,16 +307,17 @@ function getTableStats(msg: GetTableStats) {
     }
 }
 
-const columnStatsCache: { [key: string]: ColumnStats } = {}
+const columnStatsCache: { [key: string]: LegacyColumnStats } = {}
 
 function getColumnStats(msg: GetColumnStats) {
     const key = `${msg.source}-${msg.column.table}.${msg.column.column}`
     if (columnStatsCache[key]) {
         app.gotColumnStats(msg.source, columnStatsCache[key])
     } else {
+        const attributeRef: AttributeRef = {...parseEntityRef(msg.column.table), attribute: parseAttributePath(msg.column.column)}
         (window.desktop ?
-            window.desktop.getAttributeStats(msg.database, {...parseEntityRef(msg.column.table), attribute: parseAttributePath(msg.column.column)}).then(columnStatsToLegacy) :
-            backend.getColumnStats(msg.database, msg.column)
+            window.desktop.getAttributeStats(msg.database, attributeRef).then(columnStatsToLegacy) :
+            backend.getColumnStats(msg.database, attributeRef)
         ).then(
             stats => app.gotColumnStats(msg.source, columnStatsCache[key] = stats),
             err => app.gotColumnStatsError(msg.source, msg.column, errorToString(err))
@@ -326,7 +331,7 @@ function runDatabaseQuery(msg: RunDatabaseQuery) {
         window.desktop.execute(msg.database, msg.query.sql, []).then(queryResultsToLegacy) :
         backend.runDatabaseQuery(msg.database, msg.query.sql)
     ).then(
-        (results: DatabaseQueryResults) => app.gotDatabaseQueryResult(msg.context, msg.query, results, start, Date.now()),
+        (results: LegacyDatabaseQueryResults) => app.gotDatabaseQueryResult(msg.context, msg.query, results, start, Date.now()),
         (err: any) => app.gotDatabaseQueryResult(msg.context, msg.query, errorToString(err), start, Date.now())
     )
 }

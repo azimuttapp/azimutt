@@ -1,22 +1,22 @@
 import {z} from "zod";
-import {columnRefFromLegacy, columnRefToLegacy, LegacyColumnRef, LegacyJsValue} from "./legacyDatabase";
-import {QueryResults} from "../interfaces/connector";
 import {removeUndefined} from "@azimutt/utils";
+import {QueryResults} from "../interfaces/connector";
+import {columnRefFromLegacy, columnRefToLegacy, LegacyColumnRef, LegacyJsValue} from "./legacyDatabase";
 
-export const DatabaseQueryResultsColumn = z.object({
+export const LegacyDatabaseQueryResultsColumn = z.object({
     name: z.string(),
     ref: LegacyColumnRef.optional(),
 }).strict()
-export type DatabaseQueryResultsColumn = z.infer<typeof DatabaseQueryResultsColumn>
+export type LegacyDatabaseQueryResultsColumn = z.infer<typeof LegacyDatabaseQueryResultsColumn>
 
-export const DatabaseQueryResults = z.object({
+export const LegacyDatabaseQueryResults = z.object({
     query: z.string(),
-    columns: DatabaseQueryResultsColumn.array(),
+    columns: LegacyDatabaseQueryResultsColumn.array(),
     rows: LegacyJsValue.array(),
-}).strict()
-export type DatabaseQueryResults = z.infer<typeof DatabaseQueryResults>
+}).strict().describe('LegacyDatabaseQueryResults')
+export type LegacyDatabaseQueryResults = z.infer<typeof LegacyDatabaseQueryResults>
 
-export function queryResultsFromLegacy(r: DatabaseQueryResults): QueryResults {
+export function queryResultsFromLegacy(r: LegacyDatabaseQueryResults): QueryResults {
     return {
         query: r.query,
         attributes: r.columns.map(({name, ref}) => removeUndefined({
@@ -27,7 +27,7 @@ export function queryResultsFromLegacy(r: DatabaseQueryResults): QueryResults {
     }
 }
 
-export function queryResultsToLegacy(r: QueryResults): DatabaseQueryResults {
+export function queryResultsToLegacy(r: QueryResults): LegacyDatabaseQueryResults {
     return {
         query: r.query,
         columns: r.attributes.map(({name, ref}) => removeUndefined({
