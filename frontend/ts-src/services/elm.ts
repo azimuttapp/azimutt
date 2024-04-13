@@ -16,7 +16,7 @@ import {
     LegacyTableStats,
     Position,
     zodValidate
-} from "@azimutt/database-model";
+} from "@azimutt/models";
 import {ElementSize, ElmFlags, ElmMsg, ElmRuntime, GetLocalFile, Hotkey, HotkeyId, JsMsg} from "../types/ports";
 import {ToastLevel} from "../types/basics";
 import {Logger} from "./logger";

@@ -20,7 +20,7 @@ import {
     WildcardAst
 } from "./ast";
 import {removeUndefined} from "@azimutt/utils";
-import {ParserError, ParserResult} from "@azimutt/database-model";
+import {ParserError, ParserResult} from "@azimutt/models";
 
 // https://chevrotain.io/docs/features/lexer_modes.html
 // https://chevrotain.io/docs/features/custom_token_patterns.html => indentation

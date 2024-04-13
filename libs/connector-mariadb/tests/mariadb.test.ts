@@ -1,5 +1,5 @@
 import {describe, expect, test} from "@jest/globals";
-import {ConnectorSchemaOpts, DatabaseUrlParsed, parseDatabaseUrl} from "@azimutt/database-model";
+import {ConnectorSchemaOpts, DatabaseUrlParsed, parseDatabaseUrl} from "@azimutt/models";
 import {connect} from "../src/connect";
 import {execQuery} from "../src/query";
 import {getSchema} from "../src/mariadb";

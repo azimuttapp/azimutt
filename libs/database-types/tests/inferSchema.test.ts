@@ -1,7 +1,7 @@
 import {describe, expect, test} from "@jest/globals";
 import {valueToSchema, valuesToSchema, sumType} from "../src";
 
-// TODO: duplicated to libs/database-model/tests/inferSchema.test.ts, update both
+// TODO: duplicated to libs/models/tests/inferSchema.test.ts, update both
 describe('export/infer', () => {
     test('infer primitive schema', () => {
         expect(valueToSchema('fr')).toEqual({type: 'string', values: ['fr']})

@@ -1,5 +1,5 @@
 import {z} from "zod"
-import {AttributePath, EntityName, EntityRef, Namespace, SchemaName} from "@azimutt/database-model";
+import {AttributePath, EntityName, EntityRef, Namespace, SchemaName} from "@azimutt/models";
 
 // https://www.postgresql.org/docs/current/sql-select.html
 // https://dev.mysql.com/doc/refman/8.3/en/select.html

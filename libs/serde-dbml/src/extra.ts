@@ -1,5 +1,5 @@
 import {z} from "zod";
-import {SchemaName, EntityRef} from "@azimutt/database-model";
+import {SchemaName, EntityRef} from "@azimutt/models";
 
 export const Group = z.object({
     schema: SchemaName.optional(),

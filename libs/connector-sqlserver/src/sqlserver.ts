@@ -32,7 +32,7 @@ import {
     schemaToAttributes,
     ValueSchema,
     valuesToSchema
-} from "@azimutt/database-model";
+} from "@azimutt/models";
 import {buildColumnType, buildSqlColumn, buildSqlTable, scopeWhere} from "./helpers";
 import {Conn} from "./connect";
 

@@ -1,7 +1,7 @@
 import {describe, test} from "@jest/globals";
 import {BigQuery} from "@google-cloud/bigquery";
 import {SimpleQueryRowsResponse} from "@google-cloud/bigquery/build/src/bigquery";
-import {parseDatabaseUrl} from "@azimutt/database-model";
+import {parseDatabaseUrl} from "@azimutt/models";
 import {connect} from "../src/connect";
 import {execQuery} from "../src/query";
 import {application, logger} from "./constants";

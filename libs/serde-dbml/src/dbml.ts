@@ -1,7 +1,7 @@
 import * as dbml from "@dbml/core";
 import DbmlDatabase from "@dbml/core/types/model_structure/database";
 import {errorToString} from "@azimutt/utils";
-import {Database, ParserError, ParserResult} from "@azimutt/database-model";
+import {Database, ParserError, ParserResult} from "@azimutt/models";
 import {importDatabase} from "./dbmlImport";
 import {exportDatabase} from "./dbmlExport";
 import {JsonDatabase} from "./jsonDatabase";

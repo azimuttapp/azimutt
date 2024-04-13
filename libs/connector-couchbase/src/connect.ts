@@ -1,7 +1,7 @@
 import * as couchbase from "couchbase";
 import {Cluster, ConnectOptions} from "couchbase";
 import {AnyError} from "@azimutt/utils";
-import {ConnectorDefaultOpts, DatabaseUrlParsed} from "@azimutt/database-model";
+import {ConnectorDefaultOpts, DatabaseUrlParsed} from "@azimutt/models";
 
 export async function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c: Conn) => Promise<T>, opts: ConnectorDefaultOpts): Promise<T> {
     const cluster: Cluster = await createConnection(application, url).catch(err => Promise.reject(connectionError(err)))

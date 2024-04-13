@@ -1,6 +1,6 @@
 import chalk from "chalk";
 import {isNotUndefined, pluralizeL} from "@azimutt/utils";
-import {Connector, DatabaseUrlParsed, parseDatabaseUrl} from "@azimutt/database-model";
+import {Connector, DatabaseUrlParsed, parseDatabaseUrl} from "@azimutt/models";
 import {getConnector} from "@azimutt/gateway";
 import {FileFormat, FilePath, writeJsonFile} from "./utils/file.js";
 import {logger} from "./utils/logger.js";

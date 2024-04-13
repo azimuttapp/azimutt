@@ -1,4 +1,4 @@
-import {Connector, DatabaseKind, DatabaseUrlParsed} from "@azimutt/database-model"
+import {Connector, DatabaseKind, DatabaseUrlParsed} from "@azimutt/models"
 import {bigquery} from "@azimutt/connector-bigquery"
 import {couchbase} from "@azimutt/connector-couchbase"
 import {mariadb} from "@azimutt/connector-mariadb"
@@ -30,5 +30,5 @@ export function getConnector(url: DatabaseUrlParsed): Connector | undefined {
 }
 
 export function availableConnectors(): DatabaseKind[] {
-    return Object.entries(connectors).filter(([_, c]) => !!c).map(([kind, _]) => kind as DatabaseKind)
+    return Object.entries(connectors).filter(([, c]) => !!c).map(([kind,]) => kind as DatabaseKind)
 }

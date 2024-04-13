@@ -1,4 +1,4 @@
-import {AttributePath, ConnectorScopeOpts, EntityRef, SqlFragment} from "@azimutt/database-model";
+import {AttributePath, ConnectorScopeOpts, EntityRef, SqlFragment} from "@azimutt/models";
 
 export function buildSqlTable(ref: EntityRef): SqlFragment {
     // TODO: escape tables with special names (keywords or non-standard)

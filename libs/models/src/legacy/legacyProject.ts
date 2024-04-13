@@ -240,7 +240,7 @@ export const LegacyProjectCheck = z.object({
     origins: LegacyOrigin.array().optional()
 }).strict()
 
-// TODO: mutualise with LegacyTable in libs/database-model/src/legacy/legacyDatabase.ts:80
+// TODO: mutualise with LegacyTable in libs/models/src/legacy/legacyDatabase.ts:80
 export interface LegacyProjectTable {
     schema: LegacySchemaName
     table: LegacyTableName

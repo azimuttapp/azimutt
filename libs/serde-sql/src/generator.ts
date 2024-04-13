@@ -1,4 +1,4 @@
-import {Database, DatabaseDiff} from "@azimutt/database-model";
+import {Database, DatabaseDiff} from "@azimutt/models";
 import {SqlScript} from "./statements";
 import {exportDatabase} from "./sqlExport";
 

@@ -1,7 +1,7 @@
 import {describe, test} from "@jest/globals";
 import * as couchbase from "couchbase";
 import {Cluster, QueryResult} from "couchbase";
-import {parseDatabaseUrl} from "@azimutt/database-model";
+import {parseDatabaseUrl} from "@azimutt/models";
 import {connect} from "../src/connect";
 import {execQuery} from "../src/query";
 import {application, logger} from "./constants";

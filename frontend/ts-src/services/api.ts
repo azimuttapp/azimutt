@@ -6,7 +6,7 @@ import {
     LegacyProjectRelation,
     LegacyProjectTable,
     Px
-} from "@azimutt/database-model";
+} from "@azimutt/models";
 import {ElmApp} from "./elm";
 import {Logger} from "./logger";
 

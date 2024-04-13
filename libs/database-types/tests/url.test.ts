@@ -1,7 +1,7 @@
 import {describe, expect, test} from "@jest/globals";
 import {parseDatabaseOptions, parseDatabaseUrl} from "../src";
 
-// TODO: duplicated to libs/database-model/tests/databaseUrl.test.ts, update both
+// TODO: duplicated to libs/models/tests/databaseUrl.test.ts, update both
 describe('url', () => {
     test('parse bigquery url', () => {
         expect(parseDatabaseUrl('bigquery://?key=.bq/key.json')).toEqual({

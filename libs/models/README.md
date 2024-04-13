@@ -1,9 +1,6 @@
-# @azimutt/database-model
+# @azimutt/models
 
-**/!\ Work In Progress /!\ This lib will replace `database-types`, `json-infer-schema` and `shared` libs**
-
-
-A library defining a standard representation for databases and common utilities.
+A library defining a standard representation for databases and common utilities in Azimutt.
 
 Here are the main utilities:
 
@@ -14,10 +11,10 @@ Here are the main utilities:
 
 - update `package.json` version
 - update lib versions (`npm run update` + manual) & run `npm install`
-- test with `npm run dry-publish` and check `azimutt-database-model-x.y.z.tgz` content
+- test with `npm run dry-publish` and check `azimutt-models-x.y.z.tgz` content
 - launch `npm publish --access public`
 
-View it on [npm](https://www.npmjs.com/package/@azimutt/database-model).
+View it on [npm](https://www.npmjs.com/package/@azimutt/models).
 
 ## Dev
 

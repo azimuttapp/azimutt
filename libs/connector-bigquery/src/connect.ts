@@ -10,7 +10,7 @@ import {
     DatabaseUrlParsed,
     logQueryIfNeeded,
     queryError
-} from "@azimutt/database-model";
+} from "@azimutt/models";
 
 export type QueryResultRow = { [column: string]: AttributeValue }
 export interface Conn {

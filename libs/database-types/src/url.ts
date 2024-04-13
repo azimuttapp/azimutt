@@ -17,7 +17,7 @@ const sqlserver = /^(?:jdbc:)?sqlserver(?:ql)?:\/\/(?:([^:]+):([^@]*)@)?([^:/?&]
 const snowflakeRegexxx = /^(?:jdbc:)?snowflake:\/\/(?:([^:]+):([^@]*)@)?([^:/?&]+)(?::(\d+))?(?:\/([^?]+))?(?:\?(.+))?$/
 const snowflakeRegexxxxxxxxxxxxxx = /^https:\/\/(?:([^:]+):([^@]*)@)?(.+?(?:\.privatelink)?\.snowflakecomputing\.com)(?::(\d+))?(?:\/([^?]+))?$/
 
-// TODO: duplicated to libs/database-model/src/databaseUrl.ts, update both
+// TODO: duplicated to libs/models/src/databaseUrl.ts, update both
 export function parseDatabaseUrl(rawUrl: DatabaseUrl): DatabaseUrlParsed {
     const url = rawUrl.trim()
 

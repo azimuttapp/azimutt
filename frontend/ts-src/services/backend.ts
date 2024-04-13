@@ -36,7 +36,7 @@ import {
     LegacyTableStats,
     zodStringify,
     zodValidate
-} from "@azimutt/database-model";
+} from "@azimutt/models";
 import {TrackEvent} from "../types/tracking";
 import * as Http from "../utils/http";
 import * as Json from "../utils/json";

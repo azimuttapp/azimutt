@@ -7,7 +7,7 @@ import {
     Index,
     Relation,
     Type
-} from "@azimutt/database-model";
+} from "@azimutt/models";
 import {groupBy, removeUndefined} from "@azimutt/utils";
 import {
     JsonDatabase,

@@ -5,7 +5,7 @@ import {
     EntityName,
     SchemaName,
     SqlFragment
-} from "@azimutt/database-model";
+} from "@azimutt/models";
 
 export type ScopeFields = { database?: SqlFragment, catalog?: SqlFragment, schema?: SqlFragment, entity?: SqlFragment }
 export type ScopeValues = { database?: DatabaseName, catalog?: CatalogName, schema?: SchemaName, entity?: EntityName }

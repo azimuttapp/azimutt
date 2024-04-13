@@ -1,4 +1,4 @@
-import {Database, ParserResult, Serde} from "@azimutt/database-model";
+import {Database, ParserResult, Serde} from "@azimutt/models";
 import {generate, parse} from "./prisma";
 
 export const prisma: Serde = {

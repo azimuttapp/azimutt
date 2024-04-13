@@ -13,7 +13,7 @@ import {
     PrimaryKey,
     Relation,
     SchemaName
-} from "@azimutt/database-model";
+} from "@azimutt/models";
 import {removeQuotes, scopeFilter, scopeWhere} from "./helpers";
 import {Conn} from "./connect";
 

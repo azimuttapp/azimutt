@@ -12,7 +12,7 @@ import {
     EntityRef,
     QueryAnalyze,
     QueryResults
-} from "@azimutt/database-model";
+} from "@azimutt/models";
 
 const {contextBridge, ipcRenderer} = require('electron')
 

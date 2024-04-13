@@ -1,5 +1,5 @@
 import {errorToString} from "@azimutt/utils";
-import {LegacyProjectId, LegacyProjectJson, zodStringify, zodValidate} from "@azimutt/database-model";
+import {LegacyProjectId, LegacyProjectJson, zodStringify, zodValidate} from "@azimutt/models";
 import {StorageApi, StorageKind} from "./api";
 import {Logger} from "../logger";
 import * as Json from "../../utils/json";

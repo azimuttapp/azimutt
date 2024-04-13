@@ -1,4 +1,4 @@
-import {Database, ParserResult} from "@azimutt/database-model";
+import {Database, ParserResult} from "@azimutt/models";
 import * as chevrotain from "../src/chevrotain";
 import * as generator from "./generator";
 import {SqlScript} from "./statements";

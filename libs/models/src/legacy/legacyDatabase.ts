@@ -76,7 +76,7 @@ export const LegacyColumn: z.ZodType<LegacyColumn> = z.object({
     values: z.string().array().nullish(),
     columns: z.lazy(() => LegacyColumn.array().nullish())
 }).strict()
-// TODO: mutualise with Table in libs/database-model/src/legacy/legacyProject.ts:237
+// TODO: mutualise with Table in libs/models/src/legacy/legacyProject.ts:237
 export type LegacyTable = {
     schema: LegacySchemaName
     table: LegacyTableName

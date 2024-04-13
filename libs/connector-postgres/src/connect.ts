@@ -6,7 +6,7 @@ import {
     DatabaseUrlParsed,
     logQueryIfNeeded,
     queryError
-} from "@azimutt/database-model";
+} from "@azimutt/models";
 
 export async function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c: Conn) => Promise<T>, opts: ConnectorDefaultOpts): Promise<T> {
     types.setTypeParser(types.builtins.INT8, (val: string) => parseInt(val, 10))

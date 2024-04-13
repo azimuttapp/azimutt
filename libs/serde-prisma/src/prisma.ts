@@ -25,7 +25,7 @@ import {
     Relation,
     SchemaName,
     Type
-} from "@azimutt/database-model";
+} from "@azimutt/models";
 
 export function parse(content: string): ParserResult<Database> {
     try {

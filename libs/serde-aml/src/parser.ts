@@ -1,6 +1,6 @@
 import {createToken, EmbeddedActionsParser, IRecognitionException, IToken, Lexer, TokenType} from "chevrotain";
 import {removeEmpty, removeUndefined} from "@azimutt/utils";
-import {ParserError, ParserPosition, ParserResult} from "@azimutt/database-model";
+import {ParserError, ParserPosition, ParserResult} from "@azimutt/models";
 
 // special
 const WhiteSpace = createToken({name: 'WhiteSpace', pattern: /\s+/, group: Lexer.SKIPPED})

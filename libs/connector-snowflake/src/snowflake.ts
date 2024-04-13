@@ -10,7 +10,7 @@ import {
     handleError,
     PrimaryKey,
     Relation
-} from "@azimutt/database-model";
+} from "@azimutt/models";
 import {scopeFilter, scopeWhere} from "./helpers";
 import {Conn} from "./connect";
 

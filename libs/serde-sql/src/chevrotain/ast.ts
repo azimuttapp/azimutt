@@ -1,4 +1,4 @@
-import {ParserPosition} from "@azimutt/database-model";
+import {ParserPosition} from "@azimutt/models";
 
 export type SqlScriptAst = StatementAst[]
 export type StatementAst = SelectAst

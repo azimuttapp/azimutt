@@ -1,5 +1,5 @@
 import {describe, expect, test} from "@jest/globals";
-import {parseDatabaseUrl, ConnectorSchemaOpts} from "@azimutt/database-model";
+import {parseDatabaseUrl, ConnectorSchemaOpts} from "@azimutt/models";
 import {connect} from "../src/connect";
 import {getSchema} from "../src/postgres";
 import {application, logger} from "./constants";

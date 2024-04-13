@@ -1,4 +1,4 @@
-import {LegacyProjectId, LegacyProjectJson} from "@azimutt/database-model";
+import {LegacyProjectId, LegacyProjectJson} from "@azimutt/models";
 
 export type StorageKind = 'indexedDb' | 'localStorage' | 'inMemory' | 'manager'
 

@@ -1,5 +1,5 @@
 {
-  "name": "@azimutt/database-model",
+  "name": "@azimutt/models",
   "version": "0.0.1",
   "description": "Define a standard database representation for Azimutt.",
   "keywords": [],
@@ -13,7 +13,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/azimuttapp/azimutt.git",
-    "directory": "libs/database-model"
+    "directory": "libs/models"
   },
   "main": "./out/index.js",
   "types": "./out/index.d.ts",

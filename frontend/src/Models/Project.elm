@@ -94,7 +94,7 @@ mostUsedSchema table =
 
 
 
--- should be the same as `legacyComputeStats` in libs/database-model/src/legacy/legacyProject.ts
+-- should be the same as `legacyComputeStats` in libs/models/src/legacy/legacyProject.ts
 
 
 tables : Project -> Dict TableId (List Table)

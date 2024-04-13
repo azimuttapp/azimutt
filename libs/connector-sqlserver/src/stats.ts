@@ -9,7 +9,7 @@ import {
     ConnectorEntityStats,
     EntityRef,
     SqlFragment,
-} from "@azimutt/database-model";
+} from "@azimutt/models";
 import {buildColumnType, buildSqlColumn, buildSqlTable} from "./helpers";
 import {Conn} from "./connect";
 

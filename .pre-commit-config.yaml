@@ -8,12 +8,12 @@ repos:
       pass_filenames: false
       files: libs/utils/.*\.ts*$
 
-    - id: libs-database-model
-      name: 'libs/database-model'
+    - id: libs-models
+      name: 'libs/models'
       language: system
-      entry: bash -c 'cd libs/database-model && exec npm run build && exec npm test'
+      entry: bash -c 'cd libs/models && exec npm run build && exec npm test'
       pass_filenames: false
-      files: libs/database-model/.*\.ts*$
+      files: libs/models/.*\.ts*$
 
     - id: libs-connector-bigquery
       name: 'libs/connector-bigquery'

@@ -1,4 +1,4 @@
-import {DesktopBridge} from "@azimutt/database-model";
+import {DesktopBridge} from "@azimutt/models";
 import {ElmFlags, ElmMsg, ElmProgram, JsMsg} from "./ports";
 import {AzimuttApi} from "../services/api";
 import {Env} from "../utils/env";

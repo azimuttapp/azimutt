@@ -1,4 +1,4 @@
-import {zodValidate} from "@azimutt/database-model";
+import {zodValidate} from "@azimutt/models";
 import {ZodType} from "zod/lib/types";
 import * as Json from "./json";
 

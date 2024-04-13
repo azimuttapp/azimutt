@@ -14,7 +14,7 @@ import {
     parseDatabaseUrl,
     QueryAnalyze,
     QueryResults
-} from "@azimutt/database-model";
+} from "@azimutt/models";
 import {postgres} from "@azimutt/connector-postgres";
 import {logger} from "./logger";
 

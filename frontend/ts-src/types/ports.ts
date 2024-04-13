@@ -22,7 +22,7 @@ import {
     Position,
     Size,
     Timestamp
-} from "@azimutt/database-model";
+} from "@azimutt/models";
 import {
     FileContent,
     FileName,

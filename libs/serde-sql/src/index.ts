@@ -1,4 +1,4 @@
-import {Database, ParserResult, Serde} from "@azimutt/database-model";
+import {Database, ParserResult, Serde} from "@azimutt/models";
 import {generateDatabase, parseDatabase} from "./sql";
 
 export const sql: Serde = {

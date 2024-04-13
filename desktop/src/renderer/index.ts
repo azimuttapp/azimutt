@@ -27,7 +27,7 @@
  */
 
 import './index.css'
-import {DesktopBridge} from "@azimutt/database-model";
+import {DesktopBridge} from "@azimutt/models";
 
 declare global {
     export interface Window {

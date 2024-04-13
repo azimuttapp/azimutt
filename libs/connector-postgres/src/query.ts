@@ -1,5 +1,5 @@
 import {indexBy} from "@azimutt/utils";
-import {AttributeRef, QueryResults} from "@azimutt/database-model";
+import {AttributeRef, QueryResults} from "@azimutt/models";
 import {Conn, QueryResultArrayMode, QueryResultField} from "./connect";
 
 export const execQuery = (query: string, parameters: any[]) => (conn: Conn): Promise<QueryResults> => {

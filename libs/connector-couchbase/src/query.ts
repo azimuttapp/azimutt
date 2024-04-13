@@ -1,5 +1,5 @@
 import {distinct} from "@azimutt/utils";
-import {QueryResults} from "@azimutt/database-model";
+import {QueryResults} from "@azimutt/models";
 import {Conn} from "./connect";
 
 export const execQuery = (query: string, parameters: any[]) => async (conn: Conn): Promise<QueryResults> => {

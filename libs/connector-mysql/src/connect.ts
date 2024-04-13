@@ -7,7 +7,7 @@ import {
     DatabaseUrlParsed,
     logQueryIfNeeded,
     queryError
-} from "@azimutt/database-model";
+} from "@azimutt/models";
 
 export async function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c: Conn) => Promise<T>, opts: ConnectorDefaultOpts): Promise<T> {
     const connection: Connection = await mysql.createConnection(buildConfig(application, url))

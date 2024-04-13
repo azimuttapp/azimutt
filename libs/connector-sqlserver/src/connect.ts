@@ -7,7 +7,7 @@ import {
     logQueryIfNeeded,
     parseDatabaseOptions,
     queryError
-} from "@azimutt/database-model";
+} from "@azimutt/models";
 
 export async function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c: Conn) => Promise<T>, opts: ConnectorDefaultOpts): Promise<T> {
     const connection: ConnectionPool = await mssql.connect(buildconfig(application, url))

@@ -19,7 +19,7 @@ import {
     ParserError,
     queryResultsToLegacy,
     tableStatsToLegacy
-} from "@azimutt/database-model";
+} from "@azimutt/models";
 import {prisma} from "@azimutt/serde-prisma";
 import {HtmlId, Platform, ToastLevel, ViewPosition} from "./types/basics";
 import * as Uuid from "./types/uuid";

@@ -1,4 +1,4 @@
-import {CatalogName, ConnectorScopeOpts, DatabaseName, EntityName, SchemaName} from "@azimutt/database-model";
+import {CatalogName, ConnectorScopeOpts, DatabaseName, EntityName, SchemaName} from "@azimutt/models";
 
 export type ScopeValues = { database?: DatabaseName, catalog?: CatalogName, schema?: SchemaName, entity?: EntityName }
 

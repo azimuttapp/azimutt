@@ -1,5 +1,5 @@
 import {successes} from "@azimutt/utils";
-import {LegacyProjectId, LegacyProjectJson} from "@azimutt/database-model";
+import {LegacyProjectId, LegacyProjectJson} from "@azimutt/models";
 import {IndexedDBStorage} from "./storage/indexeddb";
 import {LocalStorageStorage} from "./storage/localstorage";
 import {InMemoryStorage} from "./storage/inmemory";

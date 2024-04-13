@@ -8,7 +8,7 @@ import Libs.Json.Encode as Encode
 
 
 type alias Plan =
-    -- MUST stay in sync with libs/database-model/src/legacy/legacyProject.ts & backend/lib/azimutt/organizations/organization_plan.ex
+    -- MUST stay in sync with libs/models/src/legacy/legacyProject.ts & backend/lib/azimutt/organizations/organization_plan.ex
     { id : String
     , name : String
     , layouts : Maybe Int

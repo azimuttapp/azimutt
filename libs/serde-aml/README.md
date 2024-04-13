@@ -9,7 +9,7 @@ TODO:
 - same for SQL
 - same for [DBML](https://dbml.dbdiagram.io)
 - same for Prisma
-- adapt Azimutt & connectors to this database-model
+- adapt Azimutt & connectors to this models
 - make standalone products to convert from one to another (pages in Azimutt site & CLI commands)
 
 AML syntax ideas:

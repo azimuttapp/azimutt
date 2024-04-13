@@ -1,5 +1,5 @@
 import {z} from "zod";
-import {LegacyOrganizationId, LegacyProjectId} from "@azimutt/database-model";
+import {LegacyOrganizationId, LegacyProjectId} from "@azimutt/models";
 
 export type TrackDetails = { [key: string]: string | number | boolean | null };
 export const TrackDetails = z.record(z.union([z.string(), z.number(), z.boolean(), z.null()]))

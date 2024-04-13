@@ -7,7 +7,7 @@ import {
     EntityRef,
     SchemaName,
     SqlFragment
-} from "@azimutt/database-model";
+} from "@azimutt/models";
 
 export function buildSqlTable(ref: EntityRef): SqlFragment {
     const sqlSchema = ref.schema ? `"${ref.schema}".` : ''

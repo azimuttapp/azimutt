@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import {describe, test} from "@jest/globals";
 import {pathJoin, pathParent, slugify} from "@azimutt/utils";
-import {ParserResult} from "@azimutt/database-model";
+import {ParserResult} from "@azimutt/models";
 import {AmlAst} from "../src/parser";
 
 describe('docs', () => {

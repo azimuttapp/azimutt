@@ -2,7 +2,7 @@ import * as fs from "fs";
 import {describe, expect, test} from "@jest/globals";
 import {ModelExporter, Parser} from "@dbml/core";
 import DbmlDatabase from "@dbml/core/types/model_structure/database";
-import {Database} from "@azimutt/database-model";
+import {Database} from "@azimutt/models";
 import {generate, parse, reformat} from "../src/dbml";
 import {JsonDatabase} from "../src/jsonDatabase";
 

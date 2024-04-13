@@ -1,4 +1,4 @@
-import {LegacyProjectId, LegacyProjectJson, zodValidate} from "@azimutt/database-model";
+import {LegacyProjectId, LegacyProjectJson, zodValidate} from "@azimutt/models";
 import {StorageApi, StorageKind} from "./api";
 import {Logger} from "../logger";
 

@@ -21,7 +21,7 @@ import {
     RelationKind,
     SchemaName,
     Type
-} from "@azimutt/database-model";
+} from "@azimutt/models";
 import {AttributeExtra, DatabaseExtra, EntityExtra, Group, IndexExtra, RelationExtra, TypeExtra} from "./extra";
 
 export const defaultSchema = 'public'

@@ -1,4 +1,4 @@
-import {Database} from "@azimutt/database-model";
+import {Database} from "@azimutt/models";
 import {SqlScript} from "./statements";
 
 export function importDatabase(script: SqlScript): Database {

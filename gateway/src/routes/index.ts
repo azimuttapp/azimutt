@@ -4,14 +4,17 @@ import {RouteShorthandOptions} from "fastify/types/route"
 import {Logger} from "@azimutt/utils"
 import {
     AttributeRef,
+    columnStatsToLegacy,
     Connector,
     databaseToLegacy,
     DatabaseUrl,
     DatabaseUrlParsed,
     EntityRef,
     parseDatabaseOptions,
-    parseDatabaseUrl
-} from "@azimutt/database-model"
+    parseDatabaseUrl,
+    queryResultsToLegacy,
+    tableStatsToLegacy
+} from "@azimutt/models"
 import {version} from "../version";
 import {
     DbQueryParams,
@@ -28,8 +31,6 @@ import {
     ParseUrlResponse
 } from "../schemas"
 import {getConnector} from "../services/connector"
-import {columnStatsToLegacy, tableStatsToLegacy} from "@azimutt/database-model/out/legacy/legacyStats";
-import {queryResultsToLegacy} from "@azimutt/database-model/out/legacy/legacyQuery";
 
 const application = 'azimutt-gateway'
 const logger: Logger = {

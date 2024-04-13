@@ -12,7 +12,7 @@ import {
     handleError,
     schemaToAttributes,
     valuesToSchema
-} from "@azimutt/database-model";
+} from "@azimutt/models";
 import {scopeFilter} from "./helpers";
 import {Conn} from "./connect";
 

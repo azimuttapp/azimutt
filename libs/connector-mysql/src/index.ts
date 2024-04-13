@@ -14,7 +14,7 @@ import {
     QueryAnalyze,
     QueryResults,
     zodParse
-} from "@azimutt/database-model";
+} from "@azimutt/models";
 import {connect} from "./connect";
 import {execQuery} from "./query";
 import {getSchema} from "./mysql";

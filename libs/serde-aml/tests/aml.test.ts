@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import {describe, expect, test} from "@jest/globals";
-import {Database} from "@azimutt/database-model";
+import {Database} from "@azimutt/models";
 import {generate, parse} from "../src/aml";
 
 describe.skip('aml', () => {

@@ -1,4 +1,4 @@
-import {QueryResults} from "@azimutt/database-model";
+import {QueryResults} from "@azimutt/models";
 import {Conn} from "./connect";
 import {distinct} from "@azimutt/utils";
 
