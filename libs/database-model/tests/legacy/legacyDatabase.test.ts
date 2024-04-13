@@ -7,7 +7,7 @@ import {
     LegacyDatabase,
     LegacyRelation,
     LegacyTable,
-    Relation
+    LegacyProjectRelation
 } from "../../src";
 
 describe('legacyDatabase', () => {
@@ -102,9 +102,9 @@ describe('legacyDatabase', () => {
                     {name: 'id', type: 'uuid'},
                 ]
             }
-            const projectsCreatorRel: Relation = {name: 'projects_created_by', src: {schema: 'public', entity: 'projects'}, ref: {schema: 'public', entity: 'users'}, attrs: [{src: ['created_by'], ref: ['id']}]}
+            const projectsCreatorRel: LegacyProjectRelation = {name: 'projects_created_by', src: {schema: 'public', entity: 'projects'}, ref: {schema: 'public', entity: 'users'}, attrs: [{src: ['created_by'], ref: ['id']}]}
             const projectsCreatorFk: LegacyRelation = {name: 'projects_created_by', src: {schema: 'public', table: 'projects', column: 'created_by'}, ref: {schema: 'public', table: 'users', column: 'id'}}
-            const eventsProjectRel: Relation = {src: {schema: 'public', entity: 'events'}, ref: {schema: 'public', entity: 'projects'}, attrs: [{src: ['details', 'project_id'], ref: ['id']}]}
+            const eventsProjectRel: LegacyProjectRelation = {src: {schema: 'public', entity: 'events'}, ref: {schema: 'public', entity: 'projects'}, attrs: [{src: ['details', 'project_id'], ref: ['id']}]}
             const eventsProjectFk: LegacyRelation = {name: '', src: {schema: 'public', table: 'events', column: 'details:project_id'}, ref: {schema: 'public', table: 'projects', column: 'id'}}
             const db: Database = {
                 entities: [usersEntity, projectsEntity, eventsEntity, userEventsEntity],

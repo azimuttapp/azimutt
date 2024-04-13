@@ -1,5 +1,5 @@
+import {zodValidate} from "@azimutt/database-model";
 import {ZodType} from "zod/lib/types";
-import * as Zod from "./zod";
 import * as Json from "./json";
 
 export const getJson = <Response>(url: string, zod: ZodType<Response>, label: string): Promise<Response> => customFetch('GET', url, undefined, zod, label)
@@ -24,6 +24,6 @@ function customFetch<Body, Response>(method: Method, path: string, body?: Body, 
 }
 
 const buildJsonResponse = <T>(zod: ZodType<T>, label: string) => (res: Response): Promise<T> =>
-    res.ok ? res.text().then(v => Zod.validate(Json.parse(v), zod, label)) : res.text().then(err => Promise.reject(Json.parse(err)))
+    res.ok ? res.text().then(v => zodValidate(Json.parse(v), zod, label)) : res.text().then(err => Promise.reject(Json.parse(err)))
 const buildNoContentResponse = <T>(res: Response): Promise<T> =>
     res.ok ? Promise.resolve() as Promise<T> : res.text().then(err => Promise.reject(Json.parse(err)))

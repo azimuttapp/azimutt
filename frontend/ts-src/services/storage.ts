@@ -1,10 +1,10 @@
 import {successes} from "@azimutt/utils";
+import {LegacyProjectId, LegacyProjectJson} from "@azimutt/database-model";
 import {IndexedDBStorage} from "./storage/indexeddb";
 import {LocalStorageStorage} from "./storage/localstorage";
 import {InMemoryStorage} from "./storage/inmemory";
 import {StorageKind} from "./storage/api";
 import {Logger} from "./logger";
-import {ProjectId, ProjectJson} from "../types/project";
 
 export class Storage {
     public kind: StorageKind = 'manager'
@@ -18,7 +18,7 @@ export class Storage {
         this.inMemory = new InMemoryStorage(logger.disableDebug())
     }
 
-    getProject = (id: ProjectId): Promise<ProjectJson> => {
+    getProject = (id: LegacyProjectId): Promise<LegacyProjectJson> => {
         this.logger.debug(`storage.getProject(${id})`)
         return this.indexedDb.then(s => s.loadProject(id))
             .catch(e => e !== 'Not found' ? this.localStorage.then(s => s.loadProject(id)) : Promise.reject(e))
@@ -26,21 +26,21 @@ export class Storage {
             .catch(e => Promise.reject(e === 'Not found' ? `Not found project ${id}` : e))
     }
 
-    createProject = (id: ProjectId, p: ProjectJson): Promise<void> => {
+    createProject = (id: LegacyProjectId, p: LegacyProjectJson): Promise<void> => {
         this.logger.debug(`storage.createProject(${id})`, p)
         return this.indexedDb.catch(_ => this.localStorage).catch(_ => this.inMemory)
             .then(s => s.createProject(id, p))
             .then(_ => undefined)
     }
 
-    updateProject = (id: ProjectId, p: ProjectJson): Promise<void> => {
+    updateProject = (id: LegacyProjectId, p: LegacyProjectJson): Promise<void> => {
         this.logger.debug(`storage.updateProject(${id})`, p)
         return this.indexedDb.catch(_ => this.localStorage).catch(_ => this.inMemory)
             .then(s => s.updateProject(id, p))
             .then(_ => undefined)
     }
 
-    deleteProject = (id: ProjectId): Promise<void> => {
+    deleteProject = (id: LegacyProjectId): Promise<void> => {
         this.logger.debug(`storage.deleteProject(${id})`)
         return successes([
             this.indexedDb.then(s => s.deleteProject(id)),

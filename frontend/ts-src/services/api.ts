@@ -1,23 +1,29 @@
-import {EntityId, LegacyColumnId} from "@azimutt/database-model";
-import {Project, Relation, Table} from "../types/project";
-import {Color, Px} from "../types/basics";
+import {
+    Color,
+    EntityId,
+    LegacyColumnId,
+    LegacyProject,
+    LegacyProjectRelation,
+    LegacyProjectTable,
+    Px
+} from "@azimutt/database-model";
 import {ElmApp} from "./elm";
 import {Logger} from "./logger";
 
 export class AzimuttApi {
     constructor(private app: ElmApp,
                 private logger: Logger,
-                public project: Project | undefined = undefined) {
+                public project: LegacyProject | undefined = undefined) {
     }
 
-    getAllTables = (): Table[] => {
+    getAllTables = (): LegacyProjectTable[] => {
         const removedTables = (this.project?.settings?.removedTables || '').split(',').map(t => t.trim()).filter(t => t.length > 0)
         return this.project?.sources
             .filter(s => s.enabled !== false)
             .flatMap(s => s.tables)
             .filter(t => !removedTables.find(r => t.table === r || new RegExp(r).test(t.table))) || []
     }
-    getAllRelations = (): Relation[] => this.project?.sources.filter(s => s.enabled !== false).flatMap(s => s.relations) || []
+    getAllRelations = (): LegacyProjectRelation[] => this.project?.sources.filter(s => s.enabled !== false).flatMap(s => s.relations) || []
     showTable = (id: EntityId, left?: Px, top?: Px): void => this.app.showTable(id, typeof left === 'number' && typeof top === 'number' ? {left, top} : undefined)
     hideTable = (id: EntityId): void => this.app.hideTable(id)
     toggleTableColumns = (id: EntityId): void => this.app.toggleTableColumns(id)

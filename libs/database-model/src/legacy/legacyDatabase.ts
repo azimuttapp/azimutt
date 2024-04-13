@@ -28,6 +28,8 @@ export type LegacySchemaName = string
 export const LegacySchemaName = z.string()
 export type LegacyTableName = string
 export const LegacyTableName = z.string()
+export type LegacyTableId = string // ex: 'public.users'
+export const LegacyTableId = z.string()
 export type LegacyColumnName = string
 export const LegacyColumnName = z.string()
 export type LegacyColumnType = string
@@ -74,7 +76,7 @@ export const LegacyColumn: z.ZodType<LegacyColumn> = z.object({
     values: z.string().array().nullish(),
     columns: z.lazy(() => LegacyColumn.array().nullish())
 }).strict()
-// TODO: mutualise with Table in frontend/ts-src/types/project.ts:208?
+// TODO: mutualise with Table in libs/database-model/src/legacy/legacyProject.ts:237
 export type LegacyTable = {
     schema: LegacySchemaName
     table: LegacyTableName
@@ -97,23 +99,27 @@ export const LegacyTable = z.object({
     checks: LegacyCheck.array().nullish(),
     comment: z.string().nullish()
 }).strict()
+export type LegacyRelationName = string
+export const LegacyRelationName = z.string()
 export type LegacyColumnRef = { schema: LegacySchemaName, table: LegacyTableName, column: LegacyColumnName }
 export const LegacyColumnRef = z.object({
     schema: LegacySchemaName,
     table: LegacyTableName,
     column: LegacyColumnName
 }).strict()
-export type LegacyRelation = { name: string, src: LegacyColumnRef, ref: LegacyColumnRef }
-export const LegacyRelation = z.object({name: z.string(), src: LegacyColumnRef, ref: LegacyColumnRef}).strict()
+export type LegacyRelation = { name: LegacyRelationName, src: LegacyColumnRef, ref: LegacyColumnRef }
+export const LegacyRelation = z.object({name: LegacyRelationName, src: LegacyColumnRef, ref: LegacyColumnRef}).strict()
 type LegacyTypeContent = { values: string[] | null } | { definition: string }
 const LegacyTypeContent = z.union([
     z.object({values: z.string().array().nullable()}),
     z.object({definition: z.string()})
 ])
-export type LegacyType = { schema: LegacySchemaName, name: string } & LegacyTypeContent
+export type LegacyTypeName = string
+export const LegacyTypeName = z.string()
+export type LegacyType = { schema: LegacySchemaName, name: LegacyTypeName } & LegacyTypeContent
 export const LegacyType = z.object({
     schema: LegacySchemaName,
-    name: z.string()
+    name: LegacyTypeName
 }).and(LegacyTypeContent)
 export type LegacyDatabase = { tables: LegacyTable[], relations: LegacyRelation[], types?: LegacyType[] | null }
 export const LegacyDatabase = z.object({

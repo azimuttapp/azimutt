@@ -1,6 +1,6 @@
-import {z} from "zod";
-import {errorToString} from "./zod";
-import {SafeParseReturnType} from "zod/lib/types";
+import {describe, expect, test} from "@jest/globals";
+import {SafeParseReturnType, z} from "zod";
+import {zodErrorToString} from "../src";
 
 describe('zod', () => {
     const user = {id: 1, name: 'Loïc', roles: ['admin'], org: {id: 1, name: 'Azimutt', admin: {id: 1, name: 'Loïc'}}, version: 1}
@@ -28,7 +28,7 @@ describe('zod', () => {
         z.object({x: z.number(), y: z.number()}).strict()
     ])
 
-    describe('toString', () => {
+    describe('errorToString', () => {
         test('additional keys', () => {
             const data = {...user, fullname: 'Loïc'}
             const error = getError(data, User.safeParse(data))
@@ -75,7 +75,7 @@ describe('zod', () => {
         if (res.success) {
             throw 'Failure expected!'
         } else {
-            return errorToString(data, res.error)
+            return zodErrorToString(data, res.error)
         }
     }
 })

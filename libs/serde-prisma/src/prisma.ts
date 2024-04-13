@@ -14,13 +14,17 @@ import {
 import {collect, collectOne, errorToString, removeEmpty, removeUndefined, zip} from "@azimutt/utils";
 import {
     Attribute,
-    AttributeName, AttributePath,
+    AttributeName,
+    AttributePath,
     Database,
     Entity,
-    EntityName, Index,
-    ParserResult, PrimaryKey,
+    EntityName,
+    Index,
+    ParserResult,
+    PrimaryKey,
     Relation,
-    SchemaName, Type
+    SchemaName,
+    Type
 } from "@azimutt/database-model";
 
 export function parse(content: string): ParserResult<Database> {

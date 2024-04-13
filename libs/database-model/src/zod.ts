@@ -1,17 +1,52 @@
-import {z} from "zod";
+import {z, ZodError, ZodType} from "zod";
+import {groupBy, pluralizeL} from "@azimutt/utils";
 
-export function stringify<T>(value: T, zod: z.ZodType<T>, label: string): string {
-    return JSON.stringify(validate(value, zod, label))
+// TODO: merge both implems using libs/utils/src/result.ts
+
+// new implem
+
+export const zodParse = <T>(typ: ZodType<T>) => (value: any): Promise<T> => {
+    const res = typ.safeParse(value)
+    return res.success ? Promise.resolve(res.data) : Promise.reject(new Error(formatZodError(typ, res.error)))
 }
 
-export function validate<T>(value: T, zod: z.ZodType<T>, label: string): T {
+function formatZodError<T>(typ: ZodType<T>, e: ZodError): string {
+    const name = typ.description || 'ZodType'
+    const len = e.issues.length
+    if (len === 0) {
+        return `Invalid ${name}, but no issue found...`
+    } else if (len === 1) {
+        const issue = e.issues[0]
+        return `Invalid ${name}: ${issue.message} at ${issue.path.join('.')}`
+    } else if (len <= 10) {
+        return `Invalid ${name}:${e.issues.map(i => `\n- ${i.message} at ${i.path.join('.')}`).join('')}`
+    } else {
+        const issuesGroups = groupBy(e.issues, i => i.message + ':' + i.path.map(p => typeof p === 'number' ? '?' : p).join('.'))
+        const formattedGroups = Object.entries(issuesGroups).map(([_, [issue, ...others]]) => {
+            if (others.length === 0) {
+                return `\n- ${issue.message} at ${issue.path.join('.')}`
+            } else {
+                return `\n- ${issue.message} on ${issue.path.map(p => typeof p === 'number' ? '?' : p).join('.')} (${issue.path.join('.')} and ${others.length} more)`
+            }
+        })
+        return `Invalid ${name}, ${len} issues found in ${pluralizeL(formattedGroups, 'group')}:${formattedGroups.join('')}`
+    }
+}
+
+// legacy implem
+
+export function zodStringify<T>(value: T, zod: z.ZodType<T>, label: string): string {
+    return JSON.stringify(zodValidate(value, zod, label))
+}
+
+export function zodValidate<T>(value: T, zod: z.ZodType<T>, label: string): T {
     const res = zod.safeParse(value)
     if (res.success) {
         return res.data
     } else {
         const jsonErrors = res.error.issues.map(i => issueToJson(value, i))
         const strErrors = res.error.issues.map(i => issueToString(value, i))
-        console.error(`invalid ${label}`, jsonErrors.length > 1 ? jsonErrors : jsonErrors[0], value)
+        // console.error(`invalid ${label}`, jsonErrors.length > 1 ? jsonErrors : jsonErrors[0], value)
         throw Error(`invalid ${label}${strErrors.length > 1 ? ` (${strErrors.length} errors)` : ''}: ${strErrors.join(', ')}`)
     }
 }
@@ -83,7 +118,7 @@ function issueToJson(value: any, issue: z.ZodIssue): object {
     }
 }
 
-export function errorToString(value: any, error: z.ZodError): string {
+export function zodErrorToString(value: any, error: z.ZodError): string {
     const issues = error.issues
     return `${issues.length} validation error:${issues.map(i => `\n - ${issueToString(value, i)}`)}`
 }

@@ -80,7 +80,7 @@ export const AzimuttColumn: z.ZodType<AzimuttColumn> = z.object({
     values: z.string().array().nullish(),
     columns: z.lazy(() => AzimuttColumn.array().nullish())
 }).strict()
-// TODO: mutualise with Table in frontend/ts-src/types/project.ts:208?
+// TODO: mutualise with LegacyProjectTable in libs/database-model/src/legacy/legacyProject.ts:244?
 export type AzimuttTable = {
     schema: AzimuttSchemaName
     table: AzimuttTableName
