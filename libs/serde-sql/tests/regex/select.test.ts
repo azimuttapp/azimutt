@@ -1,5 +1,5 @@
 import {describe, expect, test} from "@jest/globals";
-import {parseSelect, parseSelectField, parseSelectJoin, parseSelectTable} from "../src/select";
+import {parseSelect, parseSelectField, parseSelectJoin, parseSelectTable} from "../../src/regex/select";
 
 describe('parseSelect', () => {
     test('basic fields', () => expect(parseSelect('SELECT id, name FROM users;')).toEqual({

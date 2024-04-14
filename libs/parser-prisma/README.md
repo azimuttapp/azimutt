@@ -1,16 +1,5 @@
 # Prisma parser
 
-This library is able to parse [Prisma Schema](https://www.prisma.io/docs/concepts/components/prisma-schema) and format it in JSON for Azimutt.
+**This lib as been moved to [@azimutt/serde-prisma](../serde-prisma)**
 
-**Feel free to use it and even submit PR to improve it:**
-
-- improve [Prisma format](./src/prisma.ts) (look at `formatSchema` function)
-
-## Publish
-
-- update `package.json` version
-- update lib versions (`npm run update` + manual) & run `npm install`
-- test with `npm run dry-publish` and check `azimutt-parser-prisma-x.y.z.tgz` content
-- launch `npm publish --access public`
-
-View it on [npm](https://www.npmjs.com/package/@azimutt/parser-prisma).
+Please use it instead!

@@ -1,11 +1,18 @@
 # @azimutt/models
 
-A library defining a standard representation for databases and common utilities in Azimutt.
+A library defining common models and utilities for Azimutt.
+
+Main models:
+
+- [database](src/database.ts): defines a generic database infos (structure & stats), used for every connector and serde
+- [project](src/project.ts): defines an Azimutt project, holding everything
+- [connector](src/interfaces/connector.ts): defines the interface to connect to any database
+- [serde](src/interfaces/serde.ts): defines the interface to parse and generate database schema
 
 Here are the main utilities:
 
-- infer schema: infer a schema from a list of JSON objects
-- infer relations: infer relations between tables based on column names and values
+- [infer schema](src/inferSchema.ts): infer a schema from a list of JSON objects
+- [infer relations](src/inferRelations.ts): infer relations between tables based on column names and values
 
 ## Publish
 
