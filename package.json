@@ -26,7 +26,7 @@
   "scripts": {
     "setup": "npm install && npm run libs:setup && npm run fe:setup && npm run ex:setup",
     "start": "concurrently \"npm run tailwind:start\" \"npm run ts:start\" \"npm run elm:start\" \"npm run ex:start\" \"npm run gateway:start\"",
-    "test": "npm run libs:test && npm run ex:test && npm run elm:test && npm run ts:test && npm run cli:test",
+    "test": "npm run libs:test && npm run ex:test && npm run elm:test && npm run ts:test && npm run gateway:test && npm run cli:test",
     "format": "npm run ex:format && npm run elm:format",
     "lint": "npm run ex:lint && npm run elm:lint && npm run ts:lint",
     "build": "npm run libs:build && npm run tailwind:build && npm run ts:build && npm run elm:build && npm run ex:build",
@@ -66,7 +66,9 @@
     "cli:install": "cd cli && npm install",
     "cli:test": "cd cli && npm run test",
     "cli:update": "cd cli && npm run run update",
+    "gateway:setup": "cd gateway && npm run setup",
     "gateway:start": "cd gateway && npm start",
+    "gateway:test": "cd gateway && npm test",
     "desktop:install": "cd desktop && npm install",
     "desktop:start": "cd desktop && npm start",
     "desktop:lint": "cd desktop && npm run lint",
