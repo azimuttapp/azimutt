@@ -30,7 +30,7 @@ describe('snowflake', () => {
     test.skip('getSchema', async () => {
         const schema = await connect(application, url, getSchema(opts), opts)
         console.log('schema', schema)
-        expect(schema.entities.length).toEqual(24)
+        expect(schema.entities?.length).toEqual(24)
     }, 10000)
     test.skip('getTables', async () => {
         const tables = await connect(application, url, getTables(opts), opts)
