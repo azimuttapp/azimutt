@@ -33,13 +33,12 @@ Table user_roles {
   role_id integer
   created_at timestamp [default: `now()`]
 
-
-  Ref: role_id > roles.id
   indexes {
     (user_id, role_id) [pk]
     created_at [name: 'created_at_index', note: 'Date']
   }
 }
+Ref: user_roles.role_id > roles.id
 
 Table blog.posts as P [headercolor: #ccc] {
   id "bigint unsigned" [primary key, increment]

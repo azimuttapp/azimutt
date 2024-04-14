@@ -58,6 +58,8 @@ function formatError(err: unknown): ParserError[] {
                 column: [e.location.start.column, e.location.end.column]
             }
         }))
+    } else if (typeof err === 'object' && err !== null && 'diags' in err) {
+        return formatError(err.diags)
     } else {
         return [{name: `UnknownException`, message: errorToString(err)}]
     }
