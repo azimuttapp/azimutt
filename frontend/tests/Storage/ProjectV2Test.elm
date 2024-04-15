@@ -115,7 +115,7 @@ project0Json =
 
 tables1 : Dict TableId Table
 tables1 =
-    Dict.fromListMap .id [ Table ( "public", "users" ) "public" "users" False (Dict.fromListMap .name [ Column 0 "id" "int" False Nothing Nothing Nothing Nothing ]) Nothing [] [] [] Nothing ]
+    Dict.fromListMap .id [ Table ( "public", "users" ) "public" "users" False Nothing (Dict.fromListMap .name [ Column 0 "id" "int" False Nothing Nothing Nothing Nothing Nothing ]) Nothing [] [] [] Nothing Nothing ]
 
 
 project1 : Project
@@ -158,33 +158,37 @@ tables2 =
           , schema = "public"
           , name = "users"
           , view = False
+          , definition = Nothing
           , columns =
                 Dict.fromListMap .name
-                    [ Column 0 "id" "int" False Nothing Nothing Nothing Nothing
-                    , Column 1 "name" "varchar" True Nothing Nothing Nothing Nothing
+                    [ Column 0 "id" "int" False Nothing Nothing Nothing Nothing Nothing
+                    , Column 1 "name" "varchar" True Nothing Nothing Nothing Nothing Nothing
                     ]
           , primaryKey = Just (PrimaryKey (Just "users_pk") (Nel (ColumnPath.fromString "id") []))
           , uniques = []
           , indexes = []
           , checks = []
           , comment = Nothing
+          , stats = Nothing
           }
         , { id = ( "public", "creds" )
           , schema = "public"
           , name = "creds"
           , view = False
+          , definition = Nothing
           , columns =
                 Dict.fromListMap .name
-                    [ Column 0 "user_id" "int" False Nothing Nothing Nothing Nothing
-                    , Column 1 "login" "varchar" False Nothing Nothing Nothing Nothing
-                    , Column 2 "pass" "varchar" False Nothing (Just (Comment "Encrypted field")) Nothing Nothing
-                    , Column 3 "role" "varchar" True (Just "guest") Nothing Nothing Nothing
+                    [ Column 0 "user_id" "int" False Nothing Nothing Nothing Nothing Nothing
+                    , Column 1 "login" "varchar" False Nothing Nothing Nothing Nothing Nothing
+                    , Column 2 "pass" "varchar" False Nothing (Just (Comment "Encrypted field")) Nothing Nothing Nothing
+                    , Column 3 "role" "varchar" True (Just "guest") Nothing Nothing Nothing Nothing
                     ]
           , primaryKey = Nothing
           , uniques = [ Unique "unique_login" (Nel (ColumnPath.fromString "login") []) (Just "(login)") ]
           , indexes = [ Index "role_idx" (Nel (ColumnPath.fromString "role") []) (Just "(role)") ]
           , checks = []
           , comment = Just (Comment "To allow users to login")
+          , stats = Nothing
           }
         ]
 

@@ -71,12 +71,14 @@ buildTable table =
     , schema = table.schema
     , name = table.table
     , view = table.view |> Maybe.withDefault False
+    , definition = table.definition
     , columns = table.columns |> buildColumns
     , primaryKey = table.primaryKey |> Maybe.map buildPrimaryKey
     , uniques = table.uniques |> List.map (buildUnique table.table)
     , indexes = table.indexes |> List.map (buildIndex table.table)
     , checks = table.checks |> List.map (buildCheck table.table)
     , comment = table.comment |> Maybe.map buildComment
+    , stats = table.stats
     }
 
 
@@ -85,12 +87,14 @@ unpackTable table =
     { schema = table.schema
     , table = table.name
     , view = Just table.view |> Maybe.filter (\n -> n /= False)
+    , definition = table.definition
     , columns = table.columns |> unpackColumns
     , primaryKey = table.primaryKey |> Maybe.map unpackPrimaryKey
     , uniques = table.uniques |> List.map (unpackUnique table.name)
     , indexes = table.indexes |> List.map (unpackIndex table.name)
     , checks = table.checks |> List.map (unpackCheck table.name)
     , comment = table.comment |> Maybe.map unpackComment
+    , stats = table.stats
     }
 
 
@@ -114,6 +118,7 @@ buildColumn index column =
     , comment = column.comment |> Maybe.map buildComment
     , values = column.values
     , columns = column.columns |> Maybe.map buildNestedColumns
+    , stats = column.stats
     }
 
 
@@ -126,6 +131,7 @@ unpackColumn column =
     , comment = column.comment |> Maybe.map unpackComment
     , values = column.values
     , columns = column.columns |> Maybe.map unpackNestedColumns
+    , stats = column.stats
     }
 
 

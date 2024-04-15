@@ -634,7 +634,7 @@ docSource2 =
         , name = "azimutt_prod"
         , tables =
             [ DataExplorerQuery.docTable "public" "users" [ ( "id", "int", False ), ( "name", "varchar", False ), ( "email", "varchar", False ), ( "created_at", "timestamp", False ) ]
-            , Table.new "" "key_values" False docKeyValueColumns Nothing [] [] [] Nothing
+            , Table.new "" "key_values" False Nothing docKeyValueColumns Nothing [] [] [] Nothing Nothing
             ]
                 |> Dict.fromListMap .id
         , relations = []
@@ -648,16 +648,16 @@ docSource3 =
 
 docKeyValueColumns : Dict ColumnName Column
 docKeyValueColumns =
-    [ { index = 0, name = "key", kind = "varchar", nullable = False, default = Nothing, comment = Nothing, values = Nothing, columns = Nothing }
-    , { index = 1, name = "value", kind = "json", nullable = True, default = Nothing, comment = Nothing, values = Nothing, columns = Just (NestedColumns docKeyValueNestedColumns) }
+    [ { index = 0, name = "key", kind = "varchar", nullable = False, default = Nothing, comment = Nothing, values = Nothing, columns = Nothing, stats = Nothing }
+    , { index = 1, name = "value", kind = "json", nullable = True, default = Nothing, comment = Nothing, values = Nothing, columns = Just (NestedColumns docKeyValueNestedColumns), stats = Nothing }
     ]
         |> Dict.fromListMap .name
 
 
 docKeyValueNestedColumns : Ned ColumnName Column
 docKeyValueNestedColumns =
-    Ned.build ( "name", { index = 0, name = "name", kind = "varchar", nullable = False, default = Nothing, comment = Nothing, values = Nothing, columns = Nothing } )
-        [ ( "score", { index = 1, name = "score", kind = "int", nullable = True, default = Nothing, comment = Nothing, values = Nothing, columns = Nothing } )
+    Ned.build ( "name", { index = 0, name = "name", kind = "varchar", nullable = False, default = Nothing, comment = Nothing, values = Nothing, columns = Nothing, stats = Nothing } )
+        [ ( "score", { index = 1, name = "score", kind = "int", nullable = True, default = Nothing, comment = Nothing, values = Nothing, columns = Nothing, stats = Nothing } )
         ]
 
 

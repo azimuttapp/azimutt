@@ -58,6 +58,17 @@ export const LegacyCheck = z.object({
     columns: LegacyColumnName.array(),
     predicate: z.string().nullish()
 }).strict()
+export const LegacyColumnDbStats = z.object({
+    nulls: z.number().optional(), // percentage of nulls
+    bytesAvg: z.number().optional(), // average bytes for a value
+    cardinality: z.number().optional(), // number of different values
+    commonValues: z.object({
+        value: LegacyColumnValue,
+        freq: z.number()
+    }).strict().array().optional(),
+    histogram: LegacyColumnValue.array().optional()
+}).strict()
+export type LegacyColumnDbStats = z.infer<typeof LegacyColumnDbStats>
 export type LegacyColumn = {
     name: LegacyColumnName
     type: LegacyColumnType
@@ -66,6 +77,7 @@ export type LegacyColumn = {
     comment?: string | null
     values?: string[] | null
     columns?: LegacyColumn[] | null
+    stats?: LegacyColumnDbStats | null
 }
 export const LegacyColumn: z.ZodType<LegacyColumn> = z.object({
     name: LegacyColumnName,
@@ -74,36 +86,49 @@ export const LegacyColumn: z.ZodType<LegacyColumn> = z.object({
     default: LegacyColumnValue.nullish(),
     comment: z.string().nullish(),
     values: z.string().array().nullish(),
-    columns: z.lazy(() => LegacyColumn.array().nullish())
+    columns: z.lazy(() => LegacyColumn.array().nullish()),
+    stats: LegacyColumnDbStats.nullish()
 }).strict()
 // TODO: mutualise with Table in libs/models/src/legacy/legacyProject.ts:237
+export const LegacyTableDbStats = z.object({
+    rows: z.number().optional(), // number of rows
+    size: z.number().optional(), // used bytes
+    sizeIdx: z.number().optional(), // used bytes for indexes
+    scanSeq: z.number().optional(), // number of seq scan
+    scanIdx: z.number().optional(), // number of index scan
+}).strict()
+export type LegacyTableDbStats = z.infer<typeof LegacyTableDbStats>
 export type LegacyTable = {
     schema: LegacySchemaName
     table: LegacyTableName
     columns: LegacyColumn[]
     view?: boolean | null
+    definition?: string | null
     primaryKey?: LegacyPrimaryKey | null
     uniques?: LegacyUnique[] | null
     indexes?: LegacyIndex[] | null
     checks?: LegacyCheck[] | null
     comment?: string | null
+    stats?: LegacyTableDbStats | null
 }
 export const LegacyTable = z.object({
     schema: LegacySchemaName,
     table: LegacyTableName,
     columns: LegacyColumn.array(),
     view: z.boolean().nullish(),
+    definition: z.string().nullish(), // query definition for views
     primaryKey: LegacyPrimaryKey.nullish(),
     uniques: LegacyUnique.array().nullish(),
     indexes: LegacyIndex.array().nullish(),
     checks: LegacyCheck.array().nullish(),
-    comment: z.string().nullish()
+    comment: z.string().nullish(),
+    stats: LegacyTableDbStats.nullish(),
 }).strict()
 export type LegacyRelationName = string
 export const LegacyRelationName = z.string()
-export type LegacyColumnRef = { schema: LegacySchemaName, table: LegacyTableName, column: LegacyColumnName }
+export type LegacyColumnRef = { schema?: LegacySchemaName | undefined, table: LegacyTableName, column: LegacyColumnName }
 export const LegacyColumnRef = z.object({
-    schema: LegacySchemaName,
+    schema: LegacySchemaName.optional(),
     table: LegacyTableName,
     column: LegacyColumnName
 }).strict()
@@ -173,27 +198,43 @@ function tableFromLegacy(t: LegacyTable): Entity {
         schema: t.schema,
         name: t.table,
         kind: t.view ? 'view' as const : undefined,
+        def: t.definition || undefined,
         attrs: t.columns.map(columnFromLegacy),
         pk: t.primaryKey ? primaryKeyFromLegacy(t.primaryKey) : undefined,
         indexes: (t.uniques ||  []).map(uniqueFromLegacy).concat((t.indexes || []).map(indexFromLegacy)),
         checks: t.checks?.map(checkFromLegacy),
-        doc: t.comment || undefined
+        doc: t.comment || undefined,
+        stats: t.stats ? removeUndefined({
+            rows: t.stats.rows,
+            size: t.stats.size,
+            sizeIdx: t.stats.sizeIdx,
+            seq_scan: t.stats.scanSeq,
+            idx_scan: t.stats.scanIdx,
+        }) : undefined,
     })
 }
 
 function tableToLegacy(e: Entity): LegacyTable {
     const uniques = e.indexes?.filter(i => i.unique) || []
     const indexes = e.indexes?.filter(i => !i.unique) || []
-    return removeUndefined({
+    return removeEmpty({
         schema: e.schema || '',
         table: e.name,
         columns: e.attrs.map(columnToLegacy),
         view: e.kind === 'view' || e.kind === 'materialized view' || undefined,
+        definition: e.def,
         primaryKey: e.pk ? primaryKeyToLegacy(e.pk) : undefined,
         uniques: uniques.length > 0 ? uniques.map(uniqueToLegacy) : undefined,
         indexes: indexes.length > 0 ? indexes.map(indexToLegacy) : undefined,
         checks: e.checks ? e.checks.map(checkToLegacy) : undefined,
-        comment: e.doc
+        comment: e.doc,
+        stats: e.stats ? removeUndefined({
+            rows: e.stats.rows,
+            size: e.stats.size,
+            sizeIdx: e.stats.sizeIdx,
+            scanSeq: e.stats.seq_scan,
+            scanIdx: e.stats.idx_scan,
+        }) : undefined,
     })
 }
 
@@ -206,18 +247,32 @@ function columnFromLegacy(c: LegacyColumn): Attribute {
         values: c.values?.map(columnValueFromLegacy) || undefined,
         attrs: c.columns?.map(columnFromLegacy),
         doc: c.comment || undefined,
+        stats: c.stats ? removeUndefined({
+            nulls: c.stats.nulls,
+            avgBytes: c.stats.bytesAvg,
+            cardinality: c.stats.cardinality,
+            commonValues: c.stats.commonValues?.map(v => ({value: columnValueFromLegacy(v.value), freq: v.freq})),
+            histogram: c.stats.histogram?.map(columnValueFromLegacy),
+        }) : undefined,
     })
 }
 
 function columnToLegacy(a: Attribute): LegacyColumn {
-    return removeUndefined({
+    return removeEmpty({
         name: a.name,
         type: a.type,
         nullable: a.nullable,
         default: a.default ? columnValueToLegacy(a.default) : undefined,
         comment: a.doc,
         values: a.values?.map(columnValueToLegacy),
-        columns: a.attrs?.map(columnToLegacy)
+        columns: a.attrs?.map(columnToLegacy),
+        stats: a.stats ? removeUndefined({
+            nulls: a.stats.nulls,
+            bytesAvg: a.stats.avgBytes,
+            cardinality: a.stats.cardinality,
+            commonValues: a.stats.commonValues?.map(v => ({value: columnValueToLegacy(v.value), freq: v.freq})),
+            histogram: a.stats.histogram?.map(columnValueToLegacy),
+        }) : undefined,
     })
 }
 
@@ -228,6 +283,7 @@ export function columnValueFromLegacy(v: LegacyColumnValue): AttributeValue {
 export function columnValueToLegacy(v: AttributeValue): LegacyColumnValue {
     if (v === undefined) return 'null'
     if (v === null) return 'null'
+    if (typeof v === 'object') return JSON.stringify(v)
     return v.toString() // TODO: improve?
 }
 

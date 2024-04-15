@@ -1025,12 +1025,14 @@ docTable schema name columns =
     , schema = schema
     , name = name
     , view = False
-    , columns = columns |> List.indexedMap (\i ( col, kind, nullable ) -> { index = i, name = col, kind = kind, nullable = nullable, default = Nothing, comment = Nothing, values = Nothing, columns = Nothing }) |> Dict.fromListMap .name
+    , definition = Nothing
+    , columns = columns |> List.indexedMap (\i ( col, kind, nullable ) -> { index = i, name = col, kind = kind, nullable = nullable, default = Nothing, comment = Nothing, values = Nothing, columns = Nothing, stats = Nothing }) |> Dict.fromListMap .name
     , primaryKey = Just { name = Just (name ++ "_pk"), columns = Nel (Nel "id" []) [] }
     , uniques = []
     , indexes = []
     , checks = []
     , comment = Nothing
+    , stats = Nothing
     }
 
 

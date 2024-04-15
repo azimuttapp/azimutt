@@ -10,6 +10,7 @@ import Models.Project.TableName as TableName
 
 
 type alias TableStats =
+    -- stats computed from SELECT in the table
     -- keep sync with libs/models/src/legacy/legacyStats.ts:13
     { id : TableId
     , rows : Int

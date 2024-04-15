@@ -8,6 +8,7 @@ export const sTableName = Type.String()
 export const sTableId = Type.String()
 export const sColumnName = Type.String()
 export const sColumnType = Type.String()
+export const sColumnValue = Type.Union([Type.String(), Type.Number(), Type.Boolean(), Type.Date(), Type.Null(), Type.Unknown()])
 export const sRelationName = Type.String()
 export const sTypeName = Type.String()
 export const sComment = Type.String()
@@ -42,14 +43,25 @@ export const sRelation = Type.Object({
     src: sColumnRef,
     ref: sColumnRef,
 })
+export const sAzimuttColumnDbStats = Type.Object({
+    nulls: Nullish(Type.Number()),
+    bytesAvg: Nullish(Type.Number()),
+    cardinality: Nullish(Type.Number()),
+    commonValues: Nullish(Type.Array(Type.Object({
+        value: sColumnValue,
+        freq: Type.Number(),
+    }))),
+    histogram: Nullish(Type.Array(sColumnValue)),
+})
 export const sColumn = Type.Recursive(Node => Type.Object({
     name: sColumnName,
     type: sColumnType,
     nullable: Nullish(Type.Boolean()),
     default: Nullish(Type.String()),
     comment: Nullish(sComment),
-    values: Nullish(Type.Array(Type.String())),
+    values: Nullish(Type.Array(sColumnValue)),
     columns: Nullish(Type.Array(Node)),
+    stats: Nullish(sAzimuttColumnDbStats),
 }))
 export const sCheck = Type.Object({
     name: Nullish(Type.String()),
@@ -70,16 +82,25 @@ export const sPrimaryKey = Type.Object({
     name: Nullish(Type.String()),
     columns: Type.Array(sColumnName),
 })
+export const sAzimuttTableDbStats = Type.Object({
+    rows: Nullish(Type.Number()),
+    size: Nullish(Type.Number()),
+    sizeIdx: Nullish(Type.Number()),
+    scanSeq: Nullish(Type.Number()),
+    scanIdx: Nullish(Type.Number()),
+})
 export const sAzimuttTable = Type.Object({
     schema: sSchemaName,
     table: sTableName,
     view: Nullish(Type.Boolean()),
+    definition: Nullish(Type.String()),
     columns: Type.Array(sColumn),
     primaryKey: Nullish(sPrimaryKey),
     uniques: Nullish(Type.Array(sUnique)),
     indexes: Nullish(Type.Array(sIndex)),
     checks: Nullish(Type.Array(sCheck)),
     comment: Nullish(sComment),
+    stats: Nullish(sAzimuttTableDbStats),
 })
 export const sAzimuttSchema = Type.Object({
     tables: Type.Array(sAzimuttTable),
@@ -106,7 +127,6 @@ export const sDatabaseQueryResults = Type.Object({
     rows: Type.Array(sJsValue)
 })
 
-export const sColumnValue = Type.Union([Type.String(), Type.Number(), Type.Boolean(), Type.Date(), Type.Null(), Type.Unknown()])
 export const sTableSampleValues = Type.Record(sColumnName, sColumnValue)
 export const sTableStats = Type.Object({
     schema: Type.Union([sSchemaName, Type.Null()]),

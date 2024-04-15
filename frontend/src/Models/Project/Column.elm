@@ -1,6 +1,5 @@
 module Models.Project.Column exposing (Column, ColumnLike, NestedColumns(..), decode, encode, findColumn, flatten, getColumn, nestedColumns)
 
-import Dict exposing (Dict)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 import Libs.Json.Decode as Decode
@@ -9,6 +8,7 @@ import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Ned as Ned exposing (Ned)
 import Libs.Nel as Nel exposing (Nel)
+import Models.Project.ColumnDbStats as ColumnDbStats exposing (ColumnDbStats)
 import Models.Project.ColumnIndex exposing (ColumnIndex)
 import Models.Project.ColumnName as ColumnName exposing (ColumnName)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
@@ -26,6 +26,7 @@ type alias Column =
     , comment : Maybe Comment
     , values : Maybe (Nel String)
     , columns : Maybe NestedColumns
+    , stats : Maybe ColumnDbStats
     }
 
 
@@ -41,6 +42,7 @@ type alias ColumnLike x =
         , nullable : Bool
         , default : Maybe ColumnValue
         , comment : Maybe Comment
+        , stats : Maybe ColumnDbStats
     }
 
 
@@ -108,12 +110,13 @@ encode value =
         , ( "comment", value.comment |> Encode.maybe Comment.encode )
         , ( "values", value.values |> Encode.maybe (Encode.nel Encode.string) )
         , ( "columns", value.columns |> Encode.maybe (\(NestedColumns d) -> d |> Ned.values |> Nel.toList |> List.sortBy .index |> Encode.list encode) )
+        , ( "stats", value.stats |> Encode.maybe ColumnDbStats.encode )
         ]
 
 
 decode : Decoder (Int -> Column)
 decode =
-    Decode.map7 (\n t nu d c v cols -> \i -> Column i n t nu d c v cols)
+    Decode.map8 (\n t nu d c v cols s -> \i -> Column i n t nu d c v cols s)
         (Decode.field "name" ColumnName.decode)
         (Decode.field "type" ColumnType.decode)
         (Decode.defaultField "nullable" Decode.bool False)
@@ -121,6 +124,7 @@ decode =
         (Decode.maybeField "comment" Comment.decode)
         (Decode.maybeField "values" (Decode.nel Decode.string))
         (Decode.maybeField "columns" decodeNestedColumns)
+        (Decode.maybeField "stats" ColumnDbStats.decode)
 
 
 decodeNestedColumns : Decoder NestedColumns

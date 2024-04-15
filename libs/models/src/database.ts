@@ -1,5 +1,6 @@
 import {z} from "zod";
 import zodToJsonSchema from "zod-to-json-schema";
+import {DateTime} from "./common";
 
 // read this file from bottom to the top, to have a top-down read ^^
 
@@ -208,6 +209,9 @@ export type DatabaseKind = z.infer<typeof DatabaseKind>
 
 export const DatabaseStats = z.object({
     size: z.number().optional(), // used bytes
+    extractedAt: DateTime.optional(), // when the database was extracted
+    kind: DatabaseKind.optional(),
+    name: DatabaseName.optional(),
 }).strict()
 export type DatabaseStats = z.infer<typeof DatabaseStats>
 

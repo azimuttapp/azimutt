@@ -117,5 +117,36 @@ describe('legacyDatabase', () => {
             expect(databaseToLegacy(db)).toEqual(ldb)
             expect(databaseFromLegacy(ldb)).toEqual(db)
         })
+        test('with stats', () => {
+            const db: Database = {
+                entities: [{
+                    schema: 'public',
+                    name: 'users',
+                    kind: 'view',
+                    def: 'SELECT * FROM users',
+                    attrs: [
+                        {name: 'id', type: 'uuid'},
+                        {name: 'role', type: 'varchar', stats: {nulls: 0, avgBytes: 5.2, cardinality: 3, commonValues: [{value: 'guest', freq: 0.7}, {value: 'member', freq: 0.2}, {value: 'admin', freq: 0.1}], histogram: ['guest', 'admin']}},
+                    ],
+                    stats: {rows: 42, size: 1337, sizeIdx: 42000, seq_scan: 1234, idx_scan: 54934}
+                }]
+            }
+            const ldb: LegacyDatabase = {
+                tables: [{
+                    schema: 'public',
+                    table: 'users',
+                    view: true,
+                    definition: 'SELECT * FROM users',
+                    columns: [
+                        {name: 'id', type: 'uuid'},
+                        {name: 'role', type: 'varchar', stats: {nulls: 0, bytesAvg: 5.2, cardinality: 3, commonValues: [{value: 'guest', freq: 0.7}, {value: 'member', freq: 0.2}, {value: 'admin', freq: 0.1}], histogram: ['guest', 'admin']}},
+                    ],
+                    stats: {rows: 42, size: 1337, sizeIdx: 42000, scanSeq: 1234, scanIdx: 54934}
+                }],
+                relations: []
+            }
+            expect(databaseToLegacy(db)).toEqual(ldb)
+            expect(databaseFromLegacy(ldb)).toEqual(db)
+        })
     })
 })

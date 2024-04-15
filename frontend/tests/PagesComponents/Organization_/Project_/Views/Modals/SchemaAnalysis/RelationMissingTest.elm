@@ -106,12 +106,14 @@ buildTable ( name, columns ) =
     , schema = ""
     , name = name
     , view = False
+    , definition = Nothing
     , columns = columns |> List.indexedMap buildColumn |> Dict.fromListMap .name
     , primaryKey = Nothing
     , uniques = []
     , indexes = []
     , checks = []
     , comment = Nothing
+    , stats = Nothing
     }
 
 
@@ -125,4 +127,5 @@ buildColumn index ( name, values ) =
     , comment = Nothing
     , values = Nel.fromList values
     , columns = Nothing
+    , stats = Nothing
     }

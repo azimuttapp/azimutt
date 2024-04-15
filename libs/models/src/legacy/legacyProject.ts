@@ -2,11 +2,13 @@ import {z} from "zod";
 import {groupBy} from "@azimutt/utils";
 import {Color, Position, Size, Slug, Timestamp, Uuid} from "../common";
 import {
+    LegacyColumnDbStats,
     LegacyColumnName,
     LegacyColumnType,
     LegacyJsValue,
     LegacyRelationName,
     LegacySchemaName,
+    LegacyTableDbStats,
     LegacyTableId,
     LegacyTableName,
     LegacyTypeName
@@ -172,6 +174,7 @@ export interface LegacyProjectColumn {
     comment?: LegacyComment
     values?: string[]
     columns?: LegacyProjectColumn[]
+    stats?: LegacyColumnDbStats
     origins?: LegacyOrigin[]
 }
 
@@ -183,6 +186,7 @@ export const LegacyProjectColumn: z.ZodType<LegacyProjectColumn> = z.object({
     comment: LegacyComment.optional(),
     values: z.string().array().optional(),
     columns: z.lazy(() => LegacyProjectColumn.array().optional()),
+    stats: LegacyColumnDbStats.optional(),
     origins: LegacyOrigin.array().optional()
 }).strict()
 
@@ -245,12 +249,14 @@ export interface LegacyProjectTable {
     schema: LegacySchemaName
     table: LegacyTableName
     view?: boolean
+    definition?: string
     columns: LegacyProjectColumn[]
     primaryKey?: LegacyProjectPrimaryKey
     uniques?: LegacyProjectUnique[]
     indexes?: LegacyProjectIndex[]
     checks?: LegacyProjectCheck[]
     comment?: LegacyComment
+    stats?: LegacyTableDbStats
     origins?: LegacyOrigin[]
 }
 
@@ -258,12 +264,14 @@ export const LegacyProjectTable = z.object({
     schema: LegacySchemaName,
     table: LegacyTableName,
     view: z.boolean().optional(),
+    definition: z.string().optional(),
     columns: LegacyProjectColumn.array(),
     primaryKey: LegacyProjectPrimaryKey.optional(),
     uniques: LegacyProjectUnique.array().optional(),
     indexes: LegacyProjectIndex.array().optional(),
     checks: LegacyProjectCheck.array().optional(),
     comment: LegacyComment.optional(),
+    stats: LegacyTableDbStats.optional(),
     origins: LegacyOrigin.array().optional()
 }).strict()
 

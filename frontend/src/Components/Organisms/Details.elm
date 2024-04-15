@@ -23,19 +23,21 @@ import Libs.Dict as Dict
 import Libs.Html.Attributes exposing (ariaHidden, ariaLabel, css, role)
 import Libs.List as List
 import Libs.Maybe as Maybe
+import Libs.Models.Bytes as Bytes
 import Libs.Models.DatabaseKind as DatabaseKind
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Notes exposing (Notes)
 import Libs.Models.Tag as Tag exposing (Tag)
 import Libs.Nel as Nel exposing (Nel)
 import Libs.Result as Result
-import Libs.String as String
+import Libs.String as String exposing (pluralize)
 import Libs.Tailwind as Tw exposing (TwClass)
 import Libs.Time as Time
 import Libs.Tuple3 as Tuple3
 import Models.Position as Position
 import Models.Project as Project
 import Models.Project.CheckName exposing (CheckName)
+import Models.Project.ColumnDbStats exposing (ColumnDbStats)
 import Models.Project.ColumnId as ColumnId exposing (ColumnId)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath, ColumnPathStr)
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
@@ -50,6 +52,7 @@ import Models.Project.Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId, SourceIdStr)
 import Models.Project.SourceKind as SourceKind
 import Models.Project.SourceName exposing (SourceName)
+import Models.Project.TableDbStats exposing (TableDbStats)
 import Models.Project.TableId as TableId exposing (TableId, TableIdStr)
 import Models.Project.TableMeta exposing (TableMeta)
 import Models.Project.TableStats exposing (TableStats)
@@ -213,6 +216,7 @@ viewTable goToList goToSchema goToTable goToColumn showTable loadLayout openData
             , outRelations |> List.nonEmptyMap (\r -> viewProp [ text "References" ] (r |> List.sortBy .table |> List.map (viewTableRelation goToTable defaultSchema))) (div [] [])
             , inRelations |> List.nonEmptyMap (\r -> viewProp [ text "Referenced by" ] (r |> List.sortBy .table |> List.map (viewTableRelation goToTable defaultSchema))) (div [] [])
             , viewTableConstraints table.item
+            , viewTableStats table.item.origins table.item.stats stats
             , viewProp [ text (table.item.columns |> String.pluralizeD "column") ]
                 [ ul [ role "list", class "-mx-3 relative z-0 divide-y divide-gray-200" ]
                     (table.item.columns
@@ -240,6 +244,7 @@ viewTable goToList goToSchema goToTable goToColumn showTable loadLayout openData
                             )
                     )
                 ]
+            , table.item.definition |> Maybe.mapOrElse (\def -> viewProp [ text "Table definition" ] [ pre [ class "overflow-x-auto" ] [ text def ] ]) (div [] [])
             ]
         ]
 
@@ -289,7 +294,7 @@ viewColumn goToList goToSchema goToTable goToColumn showTable loadLayout openDat
             , column.item.comment |> Maybe.mapOrElse viewComment (div [] [])
             , notes |> viewNotes
             , tags |> viewTags
-            , viewColumnStats column.item.origins stats
+            , viewColumnStats column.item.origins column.item.stats stats
             , inLayouts |> List.nonEmptyMap (\l -> viewProp [ text "In layouts" ] (l |> List.sort |> List.map (viewLayout loadLayout))) (div [] [])
             , column.item.origins |> List.nonEmptyMap (\origin -> viewProp [ text "From sources" ] (origin |> List.sortBy .name |> List.map (viewSource openDataExplorer table.item.id (Just column.item.path) Nothing))) (div [] [])
             , column.item.outRelations |> List.nonEmptyMap (\r -> viewProp [ text "References" ] (r |> List.sortBy ErdColumnRef.toId |> List.map (viewColumnRelation goToColumn defaultSchema))) (div [] [])
@@ -555,36 +560,130 @@ viewMarkdown content =
     Markdown.prose "prose-sm -mt-1" content
 
 
-viewColumnStats : List ErdOrigin -> Dict SourceIdStr (Result String ColumnStats) -> Html msg
-viewColumnStats origins stats =
+viewTableStats : List ErdOrigin -> Dict SourceIdStr TableDbStats -> Dict SourceIdStr (Result String TableStats) -> Html msg
+viewTableStats origins dbStats stats =
     div []
-        (stats
-            |> Dict.toList
-            |> List.map (\( sourceId, s ) -> ( origins |> List.findBy (.id >> SourceId.toString) sourceId |> Maybe.mapOrElse .name sourceId, s ))
-            |> List.sortBy Tuple.first
-            |> List.map
-                (\( sourceName, res ) ->
-                    viewProp [ text "Values in ", span [ class "font-bold" ] [ text sourceName ], text " source:" ]
-                        (res
-                            |> Result.fold (\err -> [ pre [ class "text-red-500" ] [ text err ] ])
-                                (\s ->
-                                    if s.rows == 0 then
-                                        [ div [] [ text ("Rows: " ++ String.fromInt s.rows) ] ]
+        (origins
+            |> List.map (\o -> ( o, dbStats |> Dict.get (SourceId.toString o.id), stats |> Dict.get (SourceId.toString o.id) ))
+            |> List.filter (\( _, s1, s2 ) -> s1 /= Nothing || s2 /= Nothing)
+            |> List.filterMap
+                (\( origin, dbStat, stat ) ->
+                    [ viewTableStatsInfos dbStat (stat |> Maybe.andThen Result.toMaybe)
+                    , viewStatsError (stat |> Maybe.andThen Result.toError)
+                    ]
+                        |> List.filterMap identity
+                        |> Nel.fromList
+                        |> Maybe.map (Nel.toList >> viewProp [ text "Stats for ", span [ class "font-bold" ] [ text origin.name ], text " source:" ])
+                )
+        )
 
-                                    else
-                                        [ div [] (text "Samples: " :: (s.commonValues |> List.take 5 |> List.map viewColumnValue))
-                                        , div []
-                                            ([ span [] [ text ("Rows: " ++ String.fromInt s.rows) ]
-                                             , span [] [ text ("Cardinality: " ++ String.fromInt s.cardinality) ]
-                                             , text ("Nulls: " ++ (s.nulls |> Basics.percent s.rows |> Basics.prettyNumber) ++ "%") |> Tooltip.t (String.fromInt s.nulls ++ " nulls")
-                                             ]
-                                                |> List.intersperse (text ", ")
-                                            )
+
+viewTableStatsInfos : Maybe TableDbStats -> Maybe TableStats -> Maybe (Html msg)
+viewTableStatsInfos dbStats stats =
+    [ (dbStats |> Maybe.andThen .rows)
+        |> Maybe.orElse (stats |> Maybe.map .rows)
+        |> Maybe.map (\v -> span [] [ text (v |> pluralize "row") ])
+    , (dbStats |> Maybe.andThen .size)
+        |> Maybe.map (\v -> span [] [ text ("table size: " ++ Bytes.humanize v) ])
+    , (dbStats |> Maybe.andThen .sizeIdx)
+        |> Maybe.map (\v -> span [] [ text ("index size: " ++ Bytes.humanize v) ])
+    ]
+        |> List.filterMap identity
+        |> List.intersperse (text ", ")
+        |> Nel.fromList
+        |> Maybe.map (Nel.toList >> div [])
+
+
+viewColumnStats : List ErdOrigin -> Dict SourceIdStr ColumnDbStats -> Dict SourceIdStr (Result String ColumnStats) -> Html msg
+viewColumnStats origins dbStats stats =
+    div []
+        (origins
+            |> List.map (\o -> ( o, dbStats |> Dict.get (SourceId.toString o.id), stats |> Dict.get (SourceId.toString o.id) ))
+            |> List.filter (\( _, s1, s2 ) -> s1 /= Nothing || s2 /= Nothing)
+            |> List.filterMap
+                (\( origin, dbStat, stat ) ->
+                    [ viewColumnStatsValues dbStat (stat |> Maybe.andThen Result.toMaybe)
+                    , viewColumnStatsInfos dbStat (stat |> Maybe.andThen Result.toMaybe)
+                    , viewStatsError (stat |> Maybe.andThen Result.toError)
+                    ]
+                        |> List.filterMap identity
+                        |> Nel.fromList
+                        |> Maybe.map (Nel.toList >> viewProp [ text "Stats for ", span [ class "font-bold" ] [ text origin.name ], text " source:" ])
+                )
+        )
+
+
+viewColumnStatsValues : Maybe ColumnDbStats -> Maybe ColumnStats -> Maybe (Html msg)
+viewColumnStatsValues dbStats stats =
+    let
+        dbStatsValues : Dict String Float
+        dbStatsValues =
+            dbStats |> Maybe.andThen .commonValues |> Maybe.withDefault [] |> List.map (\v -> ( v.value, v.freq )) |> Dict.fromList
+
+        statsValues : Dict ColumnValue Int
+        statsValues =
+            stats |> Maybe.map .commonValues |> Maybe.withDefault [] |> List.map (\v -> ( v.value, v.count )) |> Dict.fromList
+    in
+    (((dbStats |> Maybe.andThen .commonValues) |> Maybe.withDefault [] |> List.map .value)
+        ++ (stats |> Maybe.map .commonValues |> Maybe.withDefault [] |> List.map .value)
+    )
+        |> List.unique
+        |> List.take 5
+        |> Nel.fromList
+        |> Maybe.map
+            (\values ->
+                div []
+                    [ text "Common values:"
+                    , ul [ class "list-disc list-inside" ]
+                        (values
+                            |> Nel.toList
+                            |> List.map
+                                (\v ->
+                                    li []
+                                        [ if v == "" then
+                                            Badge.basic Tw.gray [ class "truncate inline-block align-middle max-w-80 italic" ] [ text "Empty string" ]
+
+                                          else
+                                            Badge.basic Tw.gray [ class "truncate inline-block align-middle max-w-80", title v ] [ text v ]
+                                        , case ( dbStatsValues |> Dict.get v, statsValues |> Dict.get v ) of
+                                            ( Just pc, Just count ) ->
+                                                text (" (" ++ String.fromInt count ++ ", " ++ Basics.prettyNumber (pc * 100) ++ "%)")
+
+                                            ( Just pc, Nothing ) ->
+                                                text (" (" ++ Basics.prettyNumber (pc * 100) ++ "%)")
+
+                                            ( Nothing, Just count ) ->
+                                                text (" (" ++ String.fromInt count ++ ")")
+
+                                            ( Nothing, Nothing ) ->
+                                                text ""
                                         ]
                                 )
                         )
-                )
-        )
+                    ]
+            )
+
+
+viewColumnStatsInfos : Maybe ColumnDbStats -> Maybe ColumnStats -> Maybe (Html msg)
+viewColumnStatsInfos dbStats stats =
+    [ (dbStats |> Maybe.andThen .cardinality |> Maybe.map String.fromFloat)
+        |> Maybe.orElse (stats |> Maybe.map .cardinality |> Maybe.map String.fromInt)
+        |> Maybe.map (\v -> span [] [ text ("Cardinality: " ++ v) ])
+    , (dbStats |> Maybe.andThen .nulls |> Maybe.map (\v -> (v * 100 |> Basics.prettyNumber) ++ "%"))
+        |> Maybe.orElse (stats |> Maybe.map .nulls |> Maybe.map String.fromInt)
+        |> Maybe.map (\v -> span [] [ text (v ++ " nulls") ])
+    , (dbStats |> Maybe.andThen .bytesAvg |> Maybe.map (Basics.round >> Bytes.humanize))
+        |> Maybe.map (\v -> span [] [ text ("Avg size: " ++ v) ])
+    ]
+        |> List.filterMap identity
+        |> List.intersperse (text ", ")
+        |> Nel.fromList
+        |> Maybe.map (Nel.toList >> div [])
+
+
+viewStatsError : Maybe String -> Maybe (Html msg)
+viewStatsError stats =
+    stats |> Maybe.map (\err -> div [] [ pre [ class "text-red-500" ] [ text err ] ])
 
 
 viewProp : List (Html msg) -> List (Html msg) -> Html msg
@@ -757,17 +856,6 @@ viewSource openDataExplorer table column rows origin =
                 )
             |> Maybe.withDefault (text "")
         ]
-
-
-viewColumnValue : ColumnValueCount -> Html msg
-viewColumnValue value =
-    (if value.value == "" then
-        Badge.basicFlex Tw.gray [ class "mr-1 italic" ] [ text "Empty string" ]
-
-     else
-        Badge.basicFlex Tw.gray [ class "mr-1" ] [ text value.value ]
-    )
-        |> Tooltip.tr (String.fromInt value.count ++ " occurrences")
 
 
 breadcrumbSection : TwClass -> List { a | url : String, label : String } -> Html msg

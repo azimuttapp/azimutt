@@ -146,12 +146,12 @@ amlColumn =
 
 table : Table
 table =
-    { id = ( "", "" ), schema = "", name = "", view = False, columns = Dict.empty, primaryKey = Nothing, uniques = [], indexes = [], checks = [], comment = Nothing }
+    { id = ( "", "" ), schema = "", name = "", view = False, definition = Nothing, columns = Dict.empty, primaryKey = Nothing, uniques = [], indexes = [], checks = [], comment = Nothing, stats = Nothing }
 
 
 column : Column
 column =
-    { index = 0, name = "", kind = "", nullable = False, default = Nothing, comment = Nothing, values = Nothing, columns = Nothing }
+    { index = 0, name = "", kind = "", nullable = False, default = Nothing, comment = Nothing, values = Nothing, columns = Nothing, stats = Nothing }
 
 
 primaryKey : PrimaryKey

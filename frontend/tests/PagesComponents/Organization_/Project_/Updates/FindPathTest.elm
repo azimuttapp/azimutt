@@ -116,14 +116,14 @@ tableId name =
 
 buildTable : TableName -> List String -> ErdTable
 buildTable name columnNames =
-    Table (tableId name) defaultSchema name False (columnNames |> List.map buildColumn |> Dict.fromListMap .name) Nothing [] [] [] Nothing
+    Table (tableId name) defaultSchema name False Nothing (columnNames |> List.map buildColumn |> Dict.fromListMap .name) Nothing [] [] [] Nothing Nothing
         |> TableWithOrigin.create source
         |> ErdTable.create defaultSchema Dict.empty [] Dict.empty
 
 
 buildColumn : ColumnName -> Column
 buildColumn name =
-    Column 0 name "int" False Nothing Nothing Nothing Nothing
+    Column 0 name "int" False Nothing Nothing Nothing Nothing Nothing
 
 
 buildRelation : ( TableName, ColumnName ) -> ( TableName, ColumnName ) -> ErdRelation

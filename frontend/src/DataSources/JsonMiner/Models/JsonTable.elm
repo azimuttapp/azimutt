@@ -1,22 +1,34 @@
-module DataSources.JsonMiner.Models.JsonTable exposing (JsonCheck, JsonColumn, JsonIndex, JsonNestedColumns(..), JsonPrimaryKey, JsonTable, JsonUnique, decode, decodeJsonColumn, encode)
+module DataSources.JsonMiner.Models.JsonTable exposing (JsonCheck, JsonColumn, JsonColumnDbStats, JsonIndex, JsonNestedColumns(..), JsonPrimaryKey, JsonTable, JsonTableDbStats, JsonUnique, decode, decodeJsonColumn, encode)
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
 import Libs.Nel exposing (Nel)
+import Models.Project.ColumnValue as ColumnValue exposing (ColumnValue)
 
 
 type alias JsonTable =
     { schema : String
     , table : String
     , view : Maybe Bool
+    , definition : Maybe String
     , columns : List JsonColumn
     , primaryKey : Maybe JsonPrimaryKey
     , uniques : List JsonUnique
     , indexes : List JsonIndex
     , checks : List JsonCheck
     , comment : Maybe String
+    , stats : Maybe JsonTableDbStats
+    }
+
+
+type alias JsonTableDbStats =
+    { rows : Maybe Int
+    , size : Maybe Int
+    , sizeIdx : Maybe Int
+    , scanSeq : Maybe Int
+    , scanIdx : Maybe Int
     }
 
 
@@ -28,11 +40,21 @@ type alias JsonColumn =
     , comment : Maybe String
     , values : Maybe (Nel String)
     , columns : Maybe JsonNestedColumns
+    , stats : Maybe JsonColumnDbStats
     }
 
 
 type JsonNestedColumns
     = JsonNestedColumns (Nel JsonColumn)
+
+
+type alias JsonColumnDbStats =
+    { nulls : Maybe Float
+    , bytesAvg : Maybe Float
+    , cardinality : Maybe Float
+    , commonValues : Maybe (List { value : ColumnValue, freq : Float })
+    , histogram : Maybe (List ColumnValue)
+    }
 
 
 type alias JsonPrimaryKey =
@@ -64,16 +86,18 @@ type alias JsonCheck =
 
 decode : Decoder JsonTable
 decode =
-    Decode.map9 JsonTable
+    Decode.map11 JsonTable
         (Decode.field "schema" Decode.string)
         (Decode.field "table" Decode.string)
         (Decode.maybeField "view" Decode.bool)
+        (Decode.maybeField "definition" Decode.string)
         (Decode.field "columns" (Decode.list decodeJsonColumn))
         (Decode.maybeField "primaryKey" decodeJsonPrimaryKey)
         (Decode.defaultField "uniques" (Decode.list decodeJsonUnique) [])
         (Decode.defaultField "indexes" (Decode.list decodeJsonIndex) [])
         (Decode.defaultField "checks" (Decode.list decodeJsonCheck) [])
         (Decode.maybeField "comment" Decode.string)
+        (Decode.maybeField "stats" decodeJsonTableDbStats)
 
 
 encode : JsonTable -> Value
@@ -82,19 +106,21 @@ encode value =
         [ ( "schema", value.schema |> Encode.string )
         , ( "table", value.table |> Encode.string )
         , ( "view", value.view |> Encode.maybe Encode.bool )
+        , ( "definition", value.definition |> Encode.maybe Encode.string )
         , ( "columns", value.columns |> Encode.list encodeJsonColumn )
         , ( "primaryKey", value.primaryKey |> Encode.maybe encodeJsonPrimaryKey )
         , ( "uniques", value.uniques |> Encode.withDefault (Encode.list encodeJsonUnique) [] )
         , ( "indexes", value.indexes |> Encode.withDefault (Encode.list encodeJsonIndex) [] )
         , ( "checks", value.checks |> Encode.withDefault (Encode.list encodeJsonCheck) [] )
         , ( "comment", value.comment |> Encode.maybe Encode.string )
+        , ( "stats", value.stats |> Encode.maybe encodeJsonTableDbStats )
         ]
 
 
 decodeJsonColumn : Decoder JsonColumn
 decodeJsonColumn =
     -- exposed for tests
-    Decode.map7 JsonColumn
+    Decode.map8 JsonColumn
         (Decode.field "name" Decode.string)
         (Decode.field "type" Decode.string)
         (Decode.maybeField "nullable" Decode.bool)
@@ -102,6 +128,7 @@ decodeJsonColumn =
         (Decode.maybeField "comment" Decode.string)
         (Decode.maybeField "values" (Decode.nel Decode.string))
         (Decode.maybeField "columns" decodeJsonNestedColumns)
+        (Decode.maybeField "stats" decodeJsonColumnDbStats)
 
 
 encodeJsonColumn : JsonColumn -> Value
@@ -114,6 +141,7 @@ encodeJsonColumn value =
         , ( "comment", value.comment |> Encode.maybe Encode.string )
         , ( "values", value.values |> Encode.maybe (Encode.nel Encode.string) )
         , ( "columns", value.columns |> Encode.maybe encodeJsonNestedColumns )
+        , ( "stats", value.stats |> Encode.maybe encodeJsonColumnDbStats )
         ]
 
 
@@ -126,6 +154,42 @@ decodeJsonNestedColumns =
 encodeJsonNestedColumns : JsonNestedColumns -> Value
 encodeJsonNestedColumns (JsonNestedColumns value) =
     value |> Encode.nel encodeJsonColumn
+
+
+decodeJsonColumnDbStats : Decoder JsonColumnDbStats
+decodeJsonColumnDbStats =
+    Decode.map5 JsonColumnDbStats
+        (Decode.maybeField "nulls" Decode.float)
+        (Decode.maybeField "bytesAvg" Decode.float)
+        (Decode.maybeField "cardinality" Decode.float)
+        (Decode.maybeField "commonValues" (Decode.list decodeJsonColumnDbStatsValue))
+        (Decode.maybeField "histogram" (Decode.list ColumnValue.decodeAny))
+
+
+encodeJsonColumnDbStats : JsonColumnDbStats -> Value
+encodeJsonColumnDbStats value =
+    Encode.notNullObject
+        [ ( "nulls", value.nulls |> Encode.maybe Encode.float )
+        , ( "bytesAvg", value.bytesAvg |> Encode.maybe Encode.float )
+        , ( "cardinality", value.cardinality |> Encode.maybe Encode.float )
+        , ( "commonValues", value.commonValues |> Encode.maybe (Encode.list encodeJsonColumnDbStatsValue) )
+        , ( "histogram", value.histogram |> Encode.maybe (Encode.list ColumnValue.encode) )
+        ]
+
+
+decodeJsonColumnDbStatsValue : Decoder { value : ColumnValue, freq : Float }
+decodeJsonColumnDbStatsValue =
+    Decode.map2 (\v f -> { value = v, freq = f })
+        (Decode.field "value" ColumnValue.decodeAny)
+        (Decode.field "freq" Decode.float)
+
+
+encodeJsonColumnDbStatsValue : { value : ColumnValue, freq : Float } -> Value
+encodeJsonColumnDbStatsValue value =
+    Encode.notNullObject
+        [ ( "value", value.value |> ColumnValue.encode )
+        , ( "freq", value.freq |> Encode.float )
+        ]
 
 
 decodeJsonPrimaryKey : Decoder JsonPrimaryKey
@@ -191,4 +255,25 @@ encodeJsonCheck value =
         [ ( "name", value.name |> Encode.maybe Encode.string )
         , ( "columns", value.columns |> Encode.list Encode.string )
         , ( "predicate", value.predicate |> Encode.maybe Encode.string )
+        ]
+
+
+decodeJsonTableDbStats : Decoder JsonTableDbStats
+decodeJsonTableDbStats =
+    Decode.map5 JsonTableDbStats
+        (Decode.maybeField "rows" Decode.int)
+        (Decode.maybeField "size" Decode.int)
+        (Decode.maybeField "sizeIdx" Decode.int)
+        (Decode.maybeField "scanSeq" Decode.int)
+        (Decode.maybeField "scanIdx" Decode.int)
+
+
+encodeJsonTableDbStats : JsonTableDbStats -> Value
+encodeJsonTableDbStats value =
+    Encode.notNullObject
+        [ ( "rows", value.rows |> Encode.maybe Encode.int )
+        , ( "size", value.size |> Encode.maybe Encode.int )
+        , ( "sizeIdx", value.sizeIdx |> Encode.maybe Encode.int )
+        , ( "scanSeq", value.scanSeq |> Encode.maybe Encode.int )
+        , ( "scanIdx", value.scanIdx |> Encode.maybe Encode.int )
         ]

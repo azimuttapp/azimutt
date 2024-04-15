@@ -81,7 +81,7 @@ evolve ( statement, command ) content =
 
         CreateView sqlView ->
             sqlView
-                |> createView content.tables
+                |> createView content.tables statement
                 |> (\view ->
                         (content.tables |> Dict.get view.id)
                             |> Maybe.filterNot (\_ -> sqlView.replace)
@@ -215,12 +215,14 @@ createTable tables table =
       , schema = id |> Tuple.first
       , name = id |> Tuple.second
       , view = False
+      , definition = Nothing
       , columns = table.columns |> Nel.toList |> List.indexedMap (createColumn table.primaryKey) |> Dict.fromListMap .name
       , primaryKey = table.primaryKey |> createPrimaryKey table.columns
       , uniques = table.uniques |> createUniques table.table table.columns
       , indexes = table.indexes |> createIndexes
       , checks = table.checks |> createChecks table.table table.columns
       , comment = Nothing
+      , stats = Nothing
       }
     , relations
     , errors
@@ -242,11 +244,12 @@ createColumn pk index column =
     , comment = column.comment |> Maybe.map createComment
     , values = Nothing
     , columns = Nothing -- nested columns not supported in SQL
+    , stats = Nothing
     }
 
 
-createView : Dict TableId Table -> ParsedView -> Table
-createView tables view =
+createView : Dict TableId Table -> SqlStatement -> ParsedView -> Table
+createView tables statement view =
     let
         id : TableId
         id =
@@ -256,12 +259,14 @@ createView tables view =
     , schema = id |> Tuple.first
     , name = id |> Tuple.second
     , view = True
+    , definition = statement |> Nel.map .text |> Nel.join "\n" |> Just
     , columns = view.select.columns |> List.indexedMap (buildViewColumn tables) |> Dict.fromListMap .name
     , primaryKey = Nothing
     , uniques = []
     , indexes = []
     , checks = []
     , comment = Nothing
+    , stats = Nothing
     }
 
 
@@ -283,6 +288,7 @@ buildViewColumn tables index column =
                         , comment = col.comment
                         , values = Nothing
                         , columns = Nothing -- nested columns not supported in SQL
+                        , stats = Nothing
                         }
                     )
                     { index = index
@@ -293,6 +299,7 @@ buildViewColumn tables index column =
                     , comment = Nothing
                     , values = Nothing
                     , columns = Nothing -- nested columns not supported in SQL
+                    , stats = Nothing
                     }
 
         ComplexColumn c ->
@@ -304,6 +311,7 @@ buildViewColumn tables index column =
             , comment = Nothing
             , values = Nothing
             , columns = Nothing -- nested columns not supported in SQL
+            , stats = Nothing
             }
 
 
