@@ -683,7 +683,7 @@ viewColumnStatsInfos dbStats stats =
 
 viewStatsError : Maybe String -> Maybe (Html msg)
 viewStatsError stats =
-    stats |> Maybe.map (\err -> div [] [ pre [ class "text-red-500" ] [ text err ] ])
+    stats |> Maybe.map (\err -> div [] [ pre [ class "whitespace-pre-wrap text-red-500" ] [ text err ] ])
 
 
 viewProp : List (Html msg) -> List (Html msg) -> Html msg

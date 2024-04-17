@@ -113,7 +113,7 @@ export type AttributeTypeParsed = z.infer<typeof AttributeTypeParsed>
 
 export const AttributeStats = z.object({
     nulls: z.number().optional(), // percentage of nulls
-    avgBytes: z.number().optional(), // average bytes for a value
+    avgBytes: z.number().optional(), // average bytes for a value // TODO: rename to bytesAvg
     cardinality: z.number().optional(), // number of different values
     commonValues: z.object({
         value: AttributeValue,
@@ -126,13 +126,14 @@ export const AttributeStats = z.object({
 export type AttributeStats = z.infer<typeof AttributeStats>
 
 export const Attribute: z.ZodType<Attribute> = z.object({
+    // TODO: add order: z.number()
     name: AttributeName,
     type: AttributeType,
     nullable: z.boolean().optional(), // false when not specified
     generated: z.boolean().optional(), // false when not specified
     default: AttributeValue.optional(),
-    values: AttributeValue.array().optional(),
-    attrs: z.lazy(() => Attribute.array().optional()),
+    values: AttributeValue.array().optional(), // TODO: move to stats
+    attrs: z.lazy(() => Attribute.array().optional()), // TODO: use Record instead of Array
     doc: z.string().optional(),
     stats: AttributeStats.optional(),
     extra: Extra.optional()
@@ -159,8 +160,8 @@ export const EntityStats = z.object({
     sizeIdx: z.number().optional(), // used bytes for indexes
     sizeToast: z.number().optional(), // used bytes for toasts
     sizeToastIdx: z.number().optional(), // used bytes for toasts indexes
-    seq_scan: z.number().optional(), // number of seq scan
-    idx_scan: z.number().optional(), // number of index scan
+    seq_scan: z.number().optional(), // number of seq scan // TODO: rename scanSeq
+    idx_scan: z.number().optional(), // number of index scan // TODO: rename scanIdx
 }).strict()
 export type EntityStats = z.infer<typeof EntityStats>
 
@@ -168,7 +169,7 @@ export const Entity = Namespace.extend({
     name: EntityName,
     kind: EntityKind.optional(), // 'table' when not specified
     def: z.string().optional(), // the query definition for views
-    attrs: Attribute.array(),
+    attrs: Attribute.array(), // TODO: use Record instead of Array
     pk: PrimaryKey.optional(),
     indexes: Index.array().optional(),
     checks: Check.array().optional(),
@@ -216,9 +217,9 @@ export const DatabaseStats = z.object({
 export type DatabaseStats = z.infer<typeof DatabaseStats>
 
 export const Database = z.object({
-    entities: Entity.array(), // order should not matter
-    relations: Relation.array(), // order should not matter
-    types: Type.array(), // order should not matter
+    entities: Entity.array(), // order should not matter // TODO: use Record instead of Array
+    relations: Relation.array(), // order should not matter // TODO: use Record instead of Array
+    types: Type.array(), // order should not matter // TODO: use Record instead of Array
     // functions: Function.array(),
     // procedures: Procedure.array(),
     // triggers: Trigger.array(),
