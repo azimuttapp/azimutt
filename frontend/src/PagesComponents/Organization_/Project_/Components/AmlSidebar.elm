@@ -298,32 +298,33 @@ viewChooseSource selectedSource userSources =
 viewSourceEditor : AmlSidebar -> List String -> Source -> Html Msg
 viewSourceEditor model warnings source =
     div [ class "mt-3" ]
-        [ Editor.basic "source-editor" (contentStr source) (AUpdateSource source.id >> AmlSidebarMsg) (ASourceUpdated source.id |> AmlSidebarMsg) """Write your schema using AML syntax
-
-Ex:
-
-users
-  id uuid pk
-  first_name varchar(128)
-  last_name varchar(128)
-  email varchar(128) nullable
-
-credentials | used to authenticate users
-  user_id pk fk users.id
-  login varchar(128) unique
-  password varchar(128) nullable
-  role varchar(10)=guest index | possible values: admin or guest
-  created_at timestamp
-
-roles
-  slug varchar(10)
-
-# define a standalone relation
-fk credentials.role -> roles.slug""" 30 (List.nonEmpty model.errors)
-        , viewErrors (model.errors |> List.map (\err -> err.problem ++ " at line " ++ String.fromInt err.row ++ ", column " ++ String.fromInt err.col) |> List.unique)
-        , viewWarnings (warnings |> List.unique)
-        , viewHelp
-        ]
+        --        [ Editor.basic "source-editor" (contentStr source) (AUpdateSource source.id >> AmlSidebarMsg) (ASourceUpdated source.id |> AmlSidebarMsg) """Write your schema using AML syntax
+        --
+        --Ex:
+        --
+        --users
+        --  id uuid pk
+        --  first_name varchar(128)
+        --  last_name varchar(128)
+        --  email varchar(128) nullable
+        --
+        --credentials | used to authenticate users
+        --  user_id pk fk users.id
+        --  login varchar(128) unique
+        --  password varchar(128) nullable
+        --  role varchar(10)=guest index | possible values: admin or guest
+        --  created_at timestamp
+        --
+        --roles
+        --  slug varchar(10)
+        --
+        --# define a standalone relation
+        --fk credentials.role -> roles.slug""" 30 (List.nonEmpty model.errors)
+        --        , viewErrors (model.errors |> List.map (\err -> err.problem ++ " at line " ++ String.fromInt err.row ++ ", column " ++ String.fromInt err.col) |> List.unique)
+        --        , viewWarnings (warnings |> List.unique)
+        --        , viewHelp
+        --        ]
+        [ div [ id "aml-editor" ] [ text "AML editor" ] ]
 
 
 viewErrors : List String -> Html msg
