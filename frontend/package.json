@@ -38,9 +38,9 @@
     "elm:format": "elm-format src tests --validate",
     "elm:build": "elm-spa gen && elm make src/Main.elm --optimize --output=../backend/priv/static/elm/dist/elm.js",
     "elm:docker": "npx elm-spa gen && elm make src/Main.elm --optimize --output=../priv/static/elm/dist/elm.js",
-    "ts:start": "./node_modules/.bin/esbuild ts-src/index.ts --outfile=../backend/priv/static/elm/script.js --bundle --sourcemap --watch",
+    "ts:start": "vite build",
     "ts:test": "jest",
-    "ts:lint": "tsc --project tsconfig.json && rm -rf ./public",
+    "ts:lint": "tsc --project tsconfig.json --noEmit && rm -rf ./public",
     "ts:build": "./node_modules/.bin/esbuild ts-src/index.ts --outfile=../backend/priv/static/elm/script.js --bundle --sourcemap --minify",
     "ts:docker": "./node_modules/.bin/esbuild ts-src/index.ts --outfile=../priv/static/elm/script.js --bundle --sourcemap --minify",
     "tailwind:start": "tailwindcss -i ../backend/priv/static/elm/styles.css -o ../backend/priv/static/elm/dist/styles.css --watch",
@@ -78,6 +78,7 @@
     "jest-environment-jsdom": "^29.7.0",
     "tailwindcss": "^3.4.2",
     "ts-jest": "^29.1.2",
-    "typescript": "^5.4.3"
+    "typescript": "^5.4.3",
+    "vite": "^5.2.9"
   }
 }

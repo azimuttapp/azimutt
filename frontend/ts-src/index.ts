@@ -1,6 +1,6 @@
 import * as Sentry from "@sentry/browser";
 import {BrowserTracing} from "@sentry/tracing";
-import * as monaco from "monaco-editor";
+import * as monaco from "./monaco";
 import {AnyError, errorToString} from "@azimutt/utils";
 import {ColumnStats, DatabaseQueryResults, TableStats} from "@azimutt/database-types";
 import {prisma} from "@azimutt/parser-prisma";
@@ -399,14 +399,26 @@ function listenHotkeys(msg: ListenKeys) {
     })
 }
 
-
 // from https://microsoft.github.io/monaco-editor/playground.html?source=v0.47.0#example-creating-the-editor-hello-world
-const editorContainer = document.getElementById("aml-editor") as HTMLElement
+/*const editorContainer = document.getElementById("test-monaco") as HTMLElement
 const myEditor = monaco.editor.create(editorContainer, { // FIXME: why I need to give the container right now? :/
     value: 'demo\n  id uuid\n',
     language: 'sql',
     automaticLayout: true,
-})
+})*/
+
+class AzimuttEditor extends HTMLElement {
+    constructor() {
+        super()
+        console.log('AzimuttEditor.constructor')
+        // this.innerHTML = `<p>My Web Component</p>`
+        const shadow = this.attachShadow({ mode: "open" });
+        const div = document.createElement("div");
+    }
+}
+
+customElements.define('azimutt-editor', AzimuttEditor)
+
 /*
 Build error:
 

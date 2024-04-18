@@ -7,7 +7,7 @@ import Conf
 import DataSources.AmlMiner.AmlAdapter as AmlAdapter
 import DataSources.AmlMiner.AmlParser as AmlParser
 import Dict
-import Html exposing (Html, button, div, h3, label, option, p, select, text)
+import Html exposing (Html, button, div, h3, label, node, option, p, select, text)
 import Html.Attributes exposing (class, disabled, for, id, name, selected, value)
 import Html.Events exposing (onClick, onInput)
 import Libs.Bool as Bool
@@ -324,7 +324,8 @@ viewSourceEditor model warnings source =
         --        , viewWarnings (warnings |> List.unique)
         --        , viewHelp
         --        ]
-        [ div [ id "aml-editor" ] [ text "AML editor" ] ]
+        --[ div [ id "aml-editor" ] [ text "AML editor" ] ]
+        [ node "azimutt-editor" [] [ text "Hello" ] ]
 
 
 viewErrors : List String -> Html msg
