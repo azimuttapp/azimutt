@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import {describe, test} from "@jest/globals";
-import {pathJoin, pathParent, slugify} from "@azimutt/utils";
+import {pathJoin, pathParent, slugifyGitHub} from "@azimutt/utils";
 import {ParserResult} from "@azimutt/models";
 import {AmlAst} from "../src/parser";
 
@@ -84,5 +84,5 @@ function getAnchors(markdown: string): Set<string> {
     const titles = markdown
         .replace(codeRegex, '') // remove code blocks from markdown (may contain comments starting with #, like titles)
         .match(titleRegex) // get lines starting with # (titles)
-    return new Set(titles?.map(title => '#' + slugify(title.match(/^#+(.+)/)?.[1]?.trim() || '', {mode: 'github'})))
+    return new Set(titles?.map(title => '#' + slugifyGitHub(title.match(/^#+(.+)/)?.[1]?.trim() || '')))
 }

@@ -1,147 +1,98 @@
-import {z, ZodError, ZodType} from "zod";
-import {groupBy, pluralizeL} from "@azimutt/utils";
+import {z, ZodError, ZodIssue, ZodType} from "zod";
+import {limitDepth, getValueDeep, groupBy, pluralizeL, Result} from "@azimutt/utils";
 
-// TODO: merge both implems using libs/utils/src/result.ts
-
-// new implem
-
-export const zodParse = <T>(typ: ZodType<T>) => (value: any): Promise<T> => {
+export const zodParse = <T>(typ: ZodType<T>, label?: string) => (value: T): Result<T, string> => {
     const res = typ.safeParse(value)
-    return res.success ? Promise.resolve(res.data) : Promise.reject(new Error(formatZodError(typ, res.error)))
+    return res.success ? Result.success(res.data) : Result.failure(zodErrorToString(res.error, typ, label, value))
 }
 
-function formatZodError<T>(typ: ZodType<T>, e: ZodError): string {
-    const name = typ.description || 'ZodType'
+export const zodParseAsync = <T>(typ: ZodType<T>, label?: string) => (value: T): Promise<T> => zodParse(typ, label)(value).mapError(e => new Error(e)).toPromise()
+export const zodStringify = <T>(typ: ZodType<T>, label?: string) => (value: T): string => JSON.stringify(zodParse(typ, label)(value).getOrThrow())
+
+const pathToString = (path: (string | number)[]): string => path.length === 0 ? '_root_' : `.${path.join('.')}`
+const normalizePath = (path: (string | number)[]): string => pathToString(path.map(p => typeof p === 'number' ? '?' : p))
+
+function zodErrorToString<T>(e: ZodError, typ: ZodType<T>, label: string | undefined, value: any): string {
+    const name = label || typ.description || 'ZodType'
     const len = e.issues.length
     if (len === 0) {
         return `Invalid ${name}, but no issue found...`
     } else if (len === 1) {
-        const issue = e.issues[0]
-        return `Invalid ${name}: ${issue.message} at ${issue.path.join('.')}`
+        return `Invalid ${name}, ${zodIssueToString(e.issues[0], value)}`
     } else if (len <= 10) {
-        return `Invalid ${name}:${e.issues.map(i => `\n- ${i.message} at ${i.path.join('.')}`).join('')}`
+        return `Invalid ${name}, ${len} issues:${e.issues.map(i => `\n- ${zodIssueToString(i, value)}`).join('')}`
     } else {
-        const issuesGroups = groupBy(e.issues, i => i.message + ':' + i.path.map(p => typeof p === 'number' ? '?' : p).join('.'))
+        const issuesGroups = groupBy(e.issues, i => i.message + ':' + normalizePath(i.path))
         const formattedGroups = Object.entries(issuesGroups).map(([_, [issue, ...others]]) => {
             if (others.length === 0) {
-                return `\n- ${issue.message} at ${issue.path.join('.')}`
+                return `\n- ${zodIssueToString(issue, value)}`
             } else {
-                return `\n- ${issue.message} on ${issue.path.map(p => typeof p === 'number' ? '?' : p).join('.')} (${issue.path.join('.')} and ${others.length} more)`
+                return `\n- at ${normalizePath(issue.path)}: ${zodIssueMessageToString(issue, value)} (${pathToString(issue.path)} and ${others.length} more)`
             }
         })
         return `Invalid ${name}, ${len} issues found in ${pluralizeL(formattedGroups, 'group')}:${formattedGroups.join('')}`
     }
 }
 
-// legacy implem
-
-export function zodStringify<T>(value: T, zod: z.ZodType<T>, label: string): string {
-    return JSON.stringify(zodValidate(value, zod, label))
+function zodIssueToString(issue: ZodIssue, value: any): string {
+    return `at ${pathToString(issue.path)}: ${zodIssueMessageToString(issue, value)}`
 }
 
-export function zodValidate<T>(value: T, zod: z.ZodType<T>, label: string): T {
-    const res = zod.safeParse(value)
-    if (res.success) {
-        return res.data
-    } else {
-        const jsonErrors = res.error.issues.map(i => issueToJson(value, i))
-        const strErrors = res.error.issues.map(i => issueToString(value, i))
-        // console.error(`invalid ${label}`, jsonErrors.length > 1 ? jsonErrors : jsonErrors[0], value)
-        throw Error(`invalid ${label}${strErrors.length > 1 ? ` (${strErrors.length} errors)` : ''}: ${strErrors.join(', ')}`)
-    }
-}
-
-function issueToString(value: any, issue: z.ZodIssue): string {
+function zodIssueMessageToString(issue: ZodIssue, value: any): string {
     if (issue.code === z.ZodIssueCode.unrecognized_keys) {
-        return `at ${pathToString(issue.path)}: invalid additional key${issue.keys.length > 1 ? 's:' : ''} ${issue.keys.map(k => `'${k}' (${JSON.stringify(getValue(value, issue.path.concat(k)))})`).join(', ')}`
+        return `invalid additional key${issue.keys.length > 1 ? 's:' : ''} ${issue.keys.map(k => `'${k}' (${JSON.stringify(getValueDeep(value, issue.path.concat(k)))})`).join(', ')}`
     } else if (issue.code === z.ZodIssueCode.invalid_type) {
-        return `at ${pathToString(issue.path)}: expect '${issue.expected}' but got '${issue.received}' (${JSON.stringify(getValue(value, issue.path))})`
+        return `expect '${issue.expected}' but got '${issue.received}' (${JSON.stringify(getValueDeep(value, issue.path))})`
     } else if (issue.code === z.ZodIssueCode.invalid_literal) {
-        return `at ${pathToString(issue.path)}: expect ${JSON.stringify(issue.expected)} but got ${JSON.stringify(getValue(value, issue.path))}`
+        return `expect ${JSON.stringify(issue.expected)} but got ${JSON.stringify(getValueDeep(value, issue.path))}`
     } else if (issue.code === z.ZodIssueCode.invalid_enum_value) {
-        return `at ${pathToString(issue.path)}: expect \`${issue.options.map(o => JSON.stringify(o)).join(' | ')}\` but got ${JSON.stringify(getValue(value, issue.path))}`
+        return `expect \`${issue.options.map(o => JSON.stringify(o)).join(' | ')}\` but got ${JSON.stringify(getValueDeep(value, issue.path))}`
     } else if (issue.code === z.ZodIssueCode.invalid_union_discriminator) {
-        return `at ${pathToString(issue.path)}: expect \`${issue.options.map(o => JSON.stringify(o)).join(' | ')}\` but got ${JSON.stringify(getValue(value, issue.path))}`
+        return `expect \`${issue.options.map(o => JSON.stringify(o)).join(' | ')}\` but got ${JSON.stringify(getValueDeep(value, issue.path))}`
     } else if (issue.code === z.ZodIssueCode.invalid_union) {
-        return `at ${pathToString(issue.path)}: invalid union for ${JSON.stringify(anyTrim(getValue(value, issue.path), 3))}`
+        return `invalid union for ${JSON.stringify(limitDepth(getValueDeep(value, issue.path), 3))}`
     } else {
         return issue.message
     }
 }
 
-function pathToString(path: (string | number)[]): string {
-    if (path.length === 0) {
-        return '_root_'
-    } else {
-        return `.${path.join('.')}`
-    }
+function zodErrorToJson(error: z.ZodError, value: any): object[] {
+    return error.issues.map(i => zodIssueToJson(i, value))
 }
 
-function errorToJson(value: any, error: z.ZodError): object[] {
-    return error.issues.map(i => issueToJson(value, i))
-}
-
-function issueToJson(value: any, issue: z.ZodIssue): object {
+function zodIssueToJson(issue: z.ZodIssue, value: any): object {
     const depth = 2
     if (issue.code === z.ZodIssueCode.invalid_type) {
-        return {code: issue.code, path: issue.path, value: anyTrim(getValue(value, issue.path), depth), message: issue.message, expected: issue.expected, received: issue.received}
+        return {code: issue.code, path: issue.path, value: limitDepth(getValueDeep(value, issue.path), depth), message: issue.message, expected: issue.expected, received: issue.received}
     } else if (issue.code === z.ZodIssueCode.invalid_literal) {
-        return {code: issue.code, path: issue.path, value: anyTrim(getValue(value, issue.path), depth), message: issue.message, expected: issue.expected}
+        return {code: issue.code, path: issue.path, value: limitDepth(getValueDeep(value, issue.path), depth), message: issue.message, expected: issue.expected}
     } else if (issue.code === z.ZodIssueCode.unrecognized_keys) {
-        return {code: issue.code, path: issue.path, value: anyTrim(getValue(value, issue.path), depth), message: issue.message, keys: issue.keys}
+        return {code: issue.code, path: issue.path, value: limitDepth(getValueDeep(value, issue.path), depth), message: issue.message, keys: issue.keys}
     } else if (issue.code === z.ZodIssueCode.invalid_union) {
-        return {code: issue.code, path: issue.path, value: anyTrim(getValue(value, issue.path), depth), message: issue.message, unionErrors: issue.unionErrors.map(e => errorToJson(value, e))}
+        return {code: issue.code, path: issue.path, value: limitDepth(getValueDeep(value, issue.path), depth), message: issue.message, unionErrors: issue.unionErrors.map(e => zodErrorToJson(e, value))}
     } else if (issue.code === z.ZodIssueCode.invalid_union_discriminator) {
-        return {code: issue.code, path: issue.path, value: anyTrim(getValue(value, issue.path), depth), message: issue.message, options: issue.options}
+        return {code: issue.code, path: issue.path, value: limitDepth(getValueDeep(value, issue.path), depth), message: issue.message, options: issue.options}
     } else if (issue.code === z.ZodIssueCode.invalid_enum_value) {
-        return {code: issue.code, path: issue.path, value: anyTrim(getValue(value, issue.path), depth), message: issue.message, options: issue.options, received: issue.received}
+        return {code: issue.code, path: issue.path, value: limitDepth(getValueDeep(value, issue.path), depth), message: issue.message, options: issue.options, received: issue.received}
     } else if (issue.code === z.ZodIssueCode.invalid_arguments) {
-        return {code: issue.code, path: issue.path, value: anyTrim(getValue(value, issue.path), depth), message: issue.message, argumentsError: issue.argumentsError}
+        return {code: issue.code, path: issue.path, value: limitDepth(getValueDeep(value, issue.path), depth), message: issue.message, argumentsError: issue.argumentsError}
     } else if (issue.code === z.ZodIssueCode.invalid_return_type) {
-        return {code: issue.code, path: issue.path, value: anyTrim(getValue(value, issue.path), depth), message: issue.message, returnTypeError: issue.returnTypeError}
+        return {code: issue.code, path: issue.path, value: limitDepth(getValueDeep(value, issue.path), depth), message: issue.message, returnTypeError: issue.returnTypeError}
     } else if (issue.code === z.ZodIssueCode.invalid_date) {
-        return {code: issue.code, path: issue.path, value: anyTrim(getValue(value, issue.path), depth), message: issue.message}
+        return {code: issue.code, path: issue.path, value: limitDepth(getValueDeep(value, issue.path), depth), message: issue.message}
     } else if (issue.code === z.ZodIssueCode.invalid_string) {
-        return {code: issue.code, path: issue.path, value: anyTrim(getValue(value, issue.path), depth), message: issue.message, validation: issue.validation}
+        return {code: issue.code, path: issue.path, value: limitDepth(getValueDeep(value, issue.path), depth), message: issue.message, validation: issue.validation}
     } else if (issue.code === z.ZodIssueCode.too_small) {
-        return {code: issue.code, path: issue.path, value: anyTrim(getValue(value, issue.path), depth), message: issue.message, type: issue.type, minimum: issue.minimum, inclusive: issue.inclusive}
+        return {code: issue.code, path: issue.path, value: limitDepth(getValueDeep(value, issue.path), depth), message: issue.message, type: issue.type, minimum: issue.minimum, inclusive: issue.inclusive}
     } else if (issue.code === z.ZodIssueCode.too_big) {
-        return {code: issue.code, path: issue.path, value: anyTrim(getValue(value, issue.path), depth), message: issue.message, type: issue.type, maximum: issue.maximum, inclusive: issue.inclusive}
+        return {code: issue.code, path: issue.path, value: limitDepth(getValueDeep(value, issue.path), depth), message: issue.message, type: issue.type, maximum: issue.maximum, inclusive: issue.inclusive}
     } else if (issue.code === z.ZodIssueCode.invalid_intersection_types) {
-        return {code: issue.code, path: issue.path, value: anyTrim(getValue(value, issue.path), depth), message: issue.message}
+        return {code: issue.code, path: issue.path, value: limitDepth(getValueDeep(value, issue.path), depth), message: issue.message}
     } else if (issue.code === z.ZodIssueCode.not_multiple_of) {
-        return {code: issue.code, path: issue.path, value: anyTrim(getValue(value, issue.path), depth), message: issue.message, multipleOf: issue.multipleOf}
+        return {code: issue.code, path: issue.path, value: limitDepth(getValueDeep(value, issue.path), depth), message: issue.message, multipleOf: issue.multipleOf}
     } else if (issue.code === z.ZodIssueCode.custom) {
-        return {code: issue.code, path: issue.path, value: anyTrim(getValue(value, issue.path), depth), message: issue.message, params: issue.params}
+        return {code: issue.code, path: issue.path, value: limitDepth(getValueDeep(value, issue.path), depth), message: issue.message, params: issue.params}
     } else {
         throw `Unhandled ZodIssue!`
-    }
-}
-
-export function zodErrorToString(value: any, error: z.ZodError): string {
-    const issues = error.issues
-    return `${issues.length} validation error:${issues.map(i => `\n - ${issueToString(value, i)}`)}`
-}
-
-function getValue(value: any, path: (string | number)[]): any {
-    if (path.length === 0 || value === undefined || value === null) {
-        return value
-    } else {
-        const [head, ...tail] = path
-        return getValue(value[head], tail)
-    }
-}
-
-function anyTrim(value: any, depth: number): any {
-    if (Array.isArray(value)) {
-        return depth <= 0 ? '?' : (value.length > 3 ? value.slice(0, 3).concat(['...']) : value).map(v => anyTrim(v, depth - 1))
-    } else if (value === null) {
-        return value
-    } else if (typeof value === 'object') {
-        return depth <= 0 ? '?' : Object.fromEntries(Object.entries(value).map(([key, value]) => [key, anyTrim(value, depth - 1)]))
-    } else if (typeof value === 'string') {
-        return value.length > 30 ? value.substring(0, 30) + '...' : value
-    } else {
-        return value
     }
 }

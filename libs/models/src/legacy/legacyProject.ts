@@ -13,7 +13,7 @@ import {
     LegacyTableName,
     LegacyTypeName
 } from "./legacyDatabase";
-import {zodValidate} from "../zod";
+import {zodParse} from "../zod";
 
 // MUST stay in sync with backend/lib/azimutt_web/utils/project_schema.ex
 
@@ -701,7 +701,7 @@ export const LegacyProject = z.object({
     createdAt: Timestamp,
     updatedAt: Timestamp,
     version: LegacyProjectVersion
-}).strict()
+}).strict().describe('LegacyProject')
 
 export type LegacyProjectJson = Omit<LegacyProject, 'organization' | 'id' | 'storage' | 'visibility' | 'createdAt' | 'updatedAt'> & { _type: 'json' }
 export const LegacyProjectJson = LegacyProject.omit({organization: true, id: true, storage: true, visibility: true, createdAt: true, updatedAt: true}).extend({_type: z.literal('json')}).strict().describe('LegacyProjectJson')
@@ -728,7 +728,7 @@ export const LegacyProjectStats = z.object({
     nbLayouts: z.number(),
     nbNotes: z.number(),
     nbMemos: z.number()
-}).strict()
+}).strict().describe('LegacyProjectStats')
 
 export interface LegacyProjectInfoLocal extends LegacyProjectStats {
     organization?: LegacyOrganization
@@ -778,7 +778,7 @@ export function legacyParseTableId(id: LegacyTableId): {schema: LegacySchemaName
 }
 
 export function legacyBuildProjectDraft(id: LegacyProjectId, {_type, ...p}: LegacyProjectJson): LegacyProject {
-    return zodValidate({
+    return zodParse(LegacyProject)({
         ...p,
         id,
         slug: id,
@@ -786,11 +786,11 @@ export function legacyBuildProjectDraft(id: LegacyProjectId, {_type, ...p}: Lega
         visibility: LegacyProjectVisibility.enum.none,
         createdAt: Date.now(),
         updatedAt: Date.now()
-    }, LegacyProject, 'LegacyProject')
+    }).getOrThrow()
 }
 
 export function legacyBuildProjectLocal(info: LegacyProjectInfoLocal, {_type, ...p}: LegacyProjectJson): LegacyProject {
-    return zodValidate({
+    return zodParse(LegacyProject)({
         ...p,
         organization: info.organization,
         id: info.id,
@@ -798,11 +798,11 @@ export function legacyBuildProjectLocal(info: LegacyProjectInfoLocal, {_type, ..
         visibility: LegacyProjectVisibility.enum.none,
         createdAt: info.createdAt,
         updatedAt: info.updatedAt
-    }, LegacyProject, 'LegacyProject')
+    }).getOrThrow()
 }
 
 export function legacyBuildProjectRemote(info: LegacyProjectInfoRemote, {_type, ...p}: LegacyProjectJson): LegacyProject {
-    return zodValidate({
+    return zodParse(LegacyProject)({
         ...p,
         organization: info.organization,
         id: info.id,
@@ -811,11 +811,11 @@ export function legacyBuildProjectRemote(info: LegacyProjectInfoRemote, {_type, 
         visibility: info.visibility,
         createdAt: info.createdAt,
         updatedAt: info.updatedAt
-    }, LegacyProject, 'LegacyProject')
+    }).getOrThrow()
 }
 
 export function legacyBuildProjectJson({organization, id, storage, visibility, createdAt, updatedAt, ...p}: LegacyProject): LegacyProjectJson {
-    return zodValidate({...p, _type: 'json'}, LegacyProjectJson, 'LegacyProjectJson')
+    return zodParse(LegacyProjectJson)({...p, _type: 'json'}).getOrThrow()
 }
 
 export function legacyComputeStats(p: LegacyProjectJson): LegacyProjectStats {
@@ -824,7 +824,7 @@ export function legacyComputeStats(p: LegacyProjectJson): LegacyProjectStats {
     const relations = groupBy(p.sources.flatMap(s => s.relations), r => `${r.src.table}.${r.src.column}->${r.ref.table}.${r.ref.column}`)
     const types = groupBy(p.sources.flatMap(s => s.types || []), t => `${t.schema}.${t.name}`)
 
-    return zodValidate({
+    return zodParse(LegacyProjectStats)({
         nbSources: p.sources.length,
         nbTables: Object.keys(tables).length,
         nbColumns: Object.values(tables).map(same => Math.max(...same.map(t => t.columns.length))).reduce((acc, cols) => acc + cols, 0),
@@ -834,5 +834,5 @@ export function legacyComputeStats(p: LegacyProjectJson): LegacyProjectStats {
         nbLayouts: Object.keys(p.layouts).length,
         nbNotes: Object.keys(p.notes || {}).length,
         nbMemos: Object.values(p.layouts).flatMap(l => l.memos || []).length,
-    }, LegacyProjectStats, 'LegacyProjectStats')
+    }).getOrThrow()
 }

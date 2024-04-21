@@ -4,10 +4,10 @@ import Dict exposing (Dict)
 import Expect exposing (Expectation)
 import Libs.Dict as Dict
 import Libs.Nel as Nel exposing (Nel)
-import Models.Project.Column exposing (Column)
+import Models.Project.Column as Column exposing (Column)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnValue exposing (ColumnValue)
-import Models.Project.Table exposing (Table)
+import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
 import Models.Project.TableName exposing (TableName)
 import PagesComponents.Organization_.Project_.Models.SuggestedRelation exposing (SuggestedRelation)
@@ -97,35 +97,9 @@ formatRelations relations =
 
 buildTable : ( TableName, List ( ColumnName, List ColumnValue ) ) -> Table
 buildTable ( name, columns ) =
-    let
-        id : TableId
-        id =
-            ( "", name )
-    in
-    { id = id
-    , schema = ""
-    , name = name
-    , view = False
-    , definition = Nothing
-    , columns = columns |> List.indexedMap buildColumn |> Dict.fromListMap .name
-    , primaryKey = Nothing
-    , uniques = []
-    , indexes = []
-    , checks = []
-    , comment = Nothing
-    , stats = Nothing
-    }
+    Table.empty |> (\t -> { t | id = ( "", name ), name = name, columns = columns |> List.indexedMap buildColumn |> Dict.fromListMap .name })
 
 
 buildColumn : Int -> ( String, List String ) -> Column
 buildColumn index ( name, values ) =
-    { index = index
-    , name = name
-    , kind = "text"
-    , nullable = False
-    , default = Nothing
-    , comment = Nothing
-    , values = Nel.fromList values
-    , columns = Nothing
-    , stats = Nothing
-    }
+    Column.empty |> (\c -> { c | index = index, name = name, kind = "text", values = Nel.fromList values })

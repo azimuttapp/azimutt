@@ -1,4 +1,4 @@
-import {LegacyProjectId, LegacyProjectJson, zodValidate} from "@azimutt/models";
+import {LegacyProjectId, LegacyProjectJson, zodParse} from "@azimutt/models";
 import {StorageApi, StorageKind} from "./api";
 import {Logger} from "../logger";
 
@@ -39,7 +39,7 @@ export class IndexedDBStorage implements StorageApi {
                 if (project) {
                     return Promise.reject(`Project ${id} already exists in ${this.kind}`)
                 } else {
-                    return reqToPromise(store.add({...zodValidate(p, LegacyProjectJson, 'LegacyProjectJson'), id})).then(_ => p)
+                    return reqToPromise(store.add({...zodParse(LegacyProjectJson)(p).getOrThrow(), id})).then(_ => p)
                 }
             })
         })
@@ -49,7 +49,7 @@ export class IndexedDBStorage implements StorageApi {
         return this.openStore('readwrite').then(store => {
             return this.getProject(store, id).then(project => {
                 if (project) {
-                    return reqToPromise(store.put({...zodValidate(p, LegacyProjectJson, 'LegacyProjectJson'), id})).then(_ => p)
+                    return reqToPromise(store.put({...zodParse(LegacyProjectJson)(p).getOrThrow(), id})).then(_ => p)
                 } else {
                     return Promise.reject(`Project ${id} doesn't exists in ${this.kind}`)
                 }
@@ -69,7 +69,7 @@ export class IndexedDBStorage implements StorageApi {
         return new Promise<LegacyProjectJson | undefined>((resolve, reject) => {
             store.get(id).onsuccess = (event: any) => {
                 try {
-                    resolve(zodValidate(removeId(event.target.result), LegacyProjectJson.optional(), 'LegacyProjectJson?'))
+                    resolve(zodParse(LegacyProjectJson.optional())(removeId(event.target.result)).getOrThrow())
                 } catch (e) {
                     reject(e)
                 }

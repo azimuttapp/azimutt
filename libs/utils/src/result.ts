@@ -9,11 +9,14 @@ export abstract class Result<A, E> {
 
     abstract getOrThrow(): A
     abstract getOrNull(): A | null
+    abstract errOrNull(): E | null
     abstract swap(): Result<E, A>
     abstract map<B>(f: (a: A) => B): Result<B, E>
+    abstract mapError<F>(f: (e: E) => F): Result<A, F>
     abstract flatMap<B>(f: (a: A) => Result<B, E>): Result<B, E>
     abstract fold<B>(onSuccess: (a: A) => B, onFailure: (e: E) => B): B
     abstract toPromise(): Promise<A>
+    abstract toJson(): {success?: A, failure?: E}
 }
 
 class ResultSuccess<A, E> extends Result<A, E> {
@@ -30,12 +33,20 @@ class ResultSuccess<A, E> extends Result<A, E> {
         return this.value
     }
 
+    public errOrNull(): E | null {
+        return null
+    }
+
     public swap(): Result<E, A> {
         return new ResultFailure<E, A>(this.value)
     }
 
     public map<B>(f: (a: A) => B): Result<B, E> {
         return new ResultSuccess(f(this.value))
+    }
+
+    public mapError<F>(f: (e: E) => F): Result<A, F> {
+        return new ResultSuccess<A, F>(this.value)
     }
 
     public flatMap<B>(f: (a: A) => Result<B, E>): Result<B, E> {
@@ -48,6 +59,10 @@ class ResultSuccess<A, E> extends Result<A, E> {
 
     public toPromise(): Promise<A> {
         return Promise.resolve(this.value)
+    }
+
+    public toJson(): {success?: A, failure?: E} {
+        return {success: this.value}
     }
 }
 
@@ -65,12 +80,20 @@ class ResultFailure<A, E> extends Result<A, E> {
         return null
     }
 
+    public errOrNull(): E | null {
+        return this.error
+    }
+
     public swap(): Result<E, A> {
         return new ResultSuccess<E, A>(this.error)
     }
 
     public map<B>(f: (a: A) => B): Result<B, E> {
         return new ResultFailure<B, E>(this.error)
+    }
+
+    public mapError<F>(f: (e: E) => F): Result<A, F> {
+        return new ResultFailure<A, F>(f(this.error))
     }
 
     public flatMap<B>(f: (a: A) => Result<B, E>): Result<B, E> {
@@ -83,5 +106,9 @@ class ResultFailure<A, E> extends Result<A, E> {
 
     public toPromise(): Promise<A> {
         return Promise.reject(this.error)
+    }
+
+    public toJson(): {success?: A, failure?: E} {
+        return {failure: this.error}
     }
 }

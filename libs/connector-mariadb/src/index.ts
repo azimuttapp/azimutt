@@ -13,7 +13,7 @@ import {
     parseDatabaseOptions,
     QueryAnalyze,
     QueryResults,
-    zodParse
+    zodParseAsync
 } from "@azimutt/models";
 import {connect} from "./connect";
 import {execQuery} from "./query";
@@ -29,16 +29,16 @@ export const mariadb: Connector = {
             schema: opts.schema || urlOptions['schema'],
             entity: opts.entity || urlOptions['table']
         }
-        return connect(application, url, getSchema(options), options).then(zodParse(Database))
+        return connect(application, url, getSchema(options), options).then(zodParseAsync(Database))
     },
     getQueryHistory: (application: string, url: DatabaseUrlParsed, opts: ConnectorQueryHistoryOpts): Promise<DatabaseQuery[]> =>
         Promise.reject('Not implemented'),
     execute: (application: string, url: DatabaseUrlParsed, query: string, parameters: any[], opts: ConnectorDefaultOpts): Promise<QueryResults> =>
-        connect(application, url, execQuery(query, parameters), opts).then(zodParse(QueryResults)),
+        connect(application, url, execQuery(query, parameters), opts).then(zodParseAsync(QueryResults)),
     analyze: (application: string, url: DatabaseUrlParsed, query: string, parameters: any[], opts: ConnectorDefaultOpts): Promise<QueryAnalyze> =>
         Promise.reject('Not implemented'),
     getEntityStats: (application: string, url: DatabaseUrlParsed, ref: EntityRef, opts: ConnectorDefaultOpts): Promise<ConnectorEntityStats> =>
-        connect(application, url, getTableStats(ref), opts).then(zodParse(ConnectorEntityStats)),
+        connect(application, url, getTableStats(ref), opts).then(zodParseAsync(ConnectorEntityStats)),
     getAttributeStats: (application: string, url: DatabaseUrlParsed, ref: AttributeRef, opts: ConnectorDefaultOpts): Promise<ConnectorAttributeStats> =>
-        connect(application, url, getColumnStats(ref), opts).then(zodParse(ConnectorAttributeStats))
+        connect(application, url, getColumnStats(ref), opts).then(zodParseAsync(ConnectorAttributeStats))
 }

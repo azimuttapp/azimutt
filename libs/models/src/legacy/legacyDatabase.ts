@@ -126,9 +126,9 @@ export const LegacyTable = z.object({
 }).strict()
 export type LegacyRelationName = string
 export const LegacyRelationName = z.string()
-export type LegacyColumnRef = { schema?: LegacySchemaName | undefined, table: LegacyTableName, column: LegacyColumnName }
+export type LegacyColumnRef = { schema: LegacySchemaName, table: LegacyTableName, column: LegacyColumnName }
 export const LegacyColumnRef = z.object({
-    schema: LegacySchemaName.optional(),
+    schema: LegacySchemaName,
     table: LegacyTableName,
     column: LegacyColumnName
 }).strict()

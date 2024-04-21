@@ -1,5 +1,4 @@
 import {describe, expect, test} from "@jest/globals";
-import {LegacyProjectJson, Timestamp, Uuid} from "../../src";
 import {
     LegacyLayout,
     LegacyOrganization,
@@ -8,13 +7,16 @@ import {
     LegacyPlan,
     LegacyPlanId,
     LegacyProject,
-    LegacyProjectStorage,
-    LegacyProjectVisibility,
+    LegacyProjectJson,
     LegacyProjectRelation,
-    LegacySource,
+    LegacyProjectStorage,
     LegacyProjectTable,
     LegacyProjectType,
-} from "../../src/legacy/legacyProject";
+    LegacyProjectVisibility,
+    LegacySource,
+    Timestamp,
+    Uuid,
+} from "../../src";
 
 describe('legacyProject', () => {
     const uuid: Uuid = '84547c71-bec5-433b-87c7-685f1c9353b2'

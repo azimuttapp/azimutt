@@ -1,4 +1,4 @@
-module Models.Project.Column exposing (Column, ColumnLike, NestedColumns(..), decode, encode, findColumn, flatten, getColumn, nestedColumns)
+module Models.Project.Column exposing (Column, ColumnLike, NestedColumns(..), decode, empty, encode, findColumn, flatten, getColumn, nestedColumns)
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
@@ -44,6 +44,11 @@ type alias ColumnLike x =
         , comment : Maybe Comment
         , stats : Maybe ColumnDbStats
     }
+
+
+empty : Column
+empty =
+    { index = 0, name = "", kind = "", nullable = False, default = Nothing, comment = Nothing, values = Nothing, columns = Nothing, stats = Nothing }
 
 
 flatten : Column -> List { path : ColumnPath, column : Column }

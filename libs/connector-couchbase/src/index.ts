@@ -13,7 +13,7 @@ import {
     parseDatabaseOptions,
     QueryAnalyze,
     QueryResults,
-    zodParse
+    zodParseAsync
 } from "@azimutt/models";
 import {connect} from "./connect";
 import {execQuery} from "./query";
@@ -29,12 +29,12 @@ export const couchbase: Connector = {
             schema: opts.schema || urlOptions['scope'],
             entity: opts.entity || urlOptions['collection']
         }
-        return connect(application, url, getSchema(options), options).then(zodParse(Database))
+        return connect(application, url, getSchema(options), options).then(zodParseAsync(Database))
     },
     getQueryHistory: (application: string, url: DatabaseUrlParsed, opts: ConnectorQueryHistoryOpts): Promise<DatabaseQuery[]> =>
         Promise.reject('Not implemented'),
     execute: (application: string, url: DatabaseUrlParsed, query: string, parameters: any[], opts: ConnectorDefaultOpts): Promise<QueryResults> =>
-        connect(application, url, execQuery(query, parameters), opts).then(zodParse(QueryResults)),
+        connect(application, url, execQuery(query, parameters), opts).then(zodParseAsync(QueryResults)),
     analyze: (application: string, url: DatabaseUrlParsed, query: string, parameters: any[], opts: ConnectorDefaultOpts): Promise<QueryAnalyze> =>
         Promise.reject('Not implemented'),
     getEntityStats: (application: string, url: DatabaseUrlParsed, ref: EntityRef, opts: ConnectorDefaultOpts): Promise<ConnectorEntityStats> =>

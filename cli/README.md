@@ -22,11 +22,15 @@ Get the help simply by running the CLI (`npx azimutt@latest`) or for a specific 
   - ex: `npx azimutt export snowflake://user:password@account.snowflakecomputing.com?db=my_db`
   - ex: `npx azimutt export Server=host.com,1433;Database=db;User Id=user;Password=pass`
   - `url` the database connection url, must contain everything needed (user, pass, port...)
-  - `--database` is optional, restrict schema extraction to this database
-  - `--schema` is optional, restrict schema extraction to this schema
-  - `--bucket` is optional, restrict schema extraction to this bucket
-  - `--mixed-collection` is optional, split collections given the specified field (if you have several kind of documents in the same collection)
-  - `--sample-size` defines how many items are used to infer a schema (for document databases)
+  - `--database` is optional, restrict extraction to this database or database pattern (using %)
+  - `--catalog` is optional, restrict extraction to this catalog or catalog pattern (using %)
+  - `--bucket` is optional, restrict extraction to this bucket or bucket pattern (using %)
+  - `--schema` is optional, restrict extraction to this schema or schema pattern (using %)
+  - `--entity` is optional, restrict extraction to this entity or entity pattern (using %)
+  - `--sample-size` is optional, defines how many items are used to infer a schema (for document databases or json fields)
+  - `--mixed-json` is optional, split collections given the specified json field (if you have several kind of documents in the same collection)
+  - `--infer-json-attributes` is optional, if JSON fields should be fetched to infer their schema
+  - `--infer-polymorphic-relations` is optional, if kind field on polymorphic relations should be fetched to know all relations
   - `--infer-relations` build relations based on column names, for example a `user_id` will have a relation if a table `users` has an `id` column
   - `--ignore-errors` is optional, do not stop export on errors, just log them
   - `--log-queries` is optional, log queries when executing them

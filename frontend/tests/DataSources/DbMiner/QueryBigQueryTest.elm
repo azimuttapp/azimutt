@@ -66,4 +66,5 @@ WHERE e.name='project_loaded'
 LIMIT 100;
 """)
     , test "not on update" (\_ -> addLimit "UPDATE dataset.Inventory SET quantity=0 WHERE id=10;" |> Expect.equal "UPDATE dataset.Inventory SET quantity=0 WHERE id=10;")
+    , test "lowercase" (\_ -> addLimit "select * from users;" |> Expect.equal "select * from users\nLIMIT 100;\n")
     ]

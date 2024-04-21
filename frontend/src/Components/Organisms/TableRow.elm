@@ -39,7 +39,7 @@ import Models.DbSource as DbSource exposing (DbSource)
 import Models.DbSourceInfo as DbSourceInfo exposing (DbSourceInfo)
 import Models.DbValue as DbValue exposing (DbValue(..))
 import Models.Position as Position
-import Models.Project.Column exposing (Column)
+import Models.Project.Column as Column exposing (Column)
 import Models.Project.ColumnMeta exposing (ColumnMeta)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath, ColumnPathStr)
@@ -1021,19 +1021,16 @@ docTableMeta =
 
 docTable : SchemaName -> TableName -> List ( ColumnName, ColumnType, Bool ) -> Table
 docTable schema name columns =
-    { id = ( schema, name )
-    , schema = schema
-    , name = name
-    , view = False
-    , definition = Nothing
-    , columns = columns |> List.indexedMap (\i ( col, kind, nullable ) -> { index = i, name = col, kind = kind, nullable = nullable, default = Nothing, comment = Nothing, values = Nothing, columns = Nothing, stats = Nothing }) |> Dict.fromListMap .name
-    , primaryKey = Just { name = Just (name ++ "_pk"), columns = Nel (Nel "id" []) [] }
-    , uniques = []
-    , indexes = []
-    , checks = []
-    , comment = Nothing
-    , stats = Nothing
-    }
+    Table.empty
+        |> (\t ->
+                { t
+                    | id = ( schema, name )
+                    , schema = schema
+                    , name = name
+                    , columns = columns |> List.indexedMap (\i ( col, kind, nullable ) -> Column.empty |> (\c -> { c | index = i, name = col, kind = kind, nullable = nullable })) |> Dict.fromListMap .name
+                    , primaryKey = Just { name = Just (name ++ "_pk"), columns = Nel (Nel "id" []) [] }
+                }
+           )
 
 
 docRelation : ( SchemaName, TableName, ColumnName ) -> ( SchemaName, TableName, ColumnName ) -> Relation

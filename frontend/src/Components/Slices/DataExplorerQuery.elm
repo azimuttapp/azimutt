@@ -34,7 +34,7 @@ import Libs.Tailwind exposing (TwClass, focus)
 import Libs.Time as Time
 import Models.DbSourceInfo as DbSourceInfo exposing (DbSourceInfo)
 import Models.DbValue as DbValue exposing (DbValue(..))
-import Models.Project.Column exposing (Column)
+import Models.Project.Column as Column exposing (Column)
 import Models.Project.ColumnMeta exposing (ColumnMeta)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath, ColumnPathStr)
@@ -47,7 +47,7 @@ import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source as Source exposing (Source)
 import Models.Project.SourceId as SourceId
 import Models.Project.SourceKind exposing (SourceKind(..))
-import Models.Project.Table exposing (Table)
+import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
 import Models.Project.TableName exposing (TableName)
 import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
@@ -825,19 +825,16 @@ docSource =
 
 docTable : SchemaName -> TableName -> List ( ColumnName, ColumnType, Bool ) -> Table
 docTable schema name columns =
-    { id = ( schema, name )
-    , schema = schema
-    , name = name
-    , view = False
-    , definition = Nothing
-    , columns = columns |> List.indexedMap (\i ( col, kind, nullable ) -> { index = i, name = col, kind = kind, nullable = nullable, default = Nothing, comment = Nothing, values = Nothing, columns = Nothing, stats = Nothing }) |> Dict.fromListMap .name
-    , primaryKey = Just { name = Just (name ++ "_pk"), columns = Nel (Nel "id" []) [] }
-    , uniques = []
-    , indexes = []
-    , checks = []
-    , comment = Nothing
-    , stats = Nothing
-    }
+    Table.empty
+        |> (\t ->
+                { t
+                    | id = ( schema, name )
+                    , schema = schema
+                    , name = name
+                    , columns = columns |> List.indexedMap (\i ( col, kind, nullable ) -> Column.empty |> (\c -> { c | index = i, name = col, kind = kind, nullable = nullable })) |> Dict.fromListMap .name
+                    , primaryKey = Just { name = Just (name ++ "_pk"), columns = Nel (Nel "id" []) [] }
+                }
+           )
 
 
 docRelation : ( SchemaName, TableName, ColumnName ) -> ( SchemaName, TableName, ColumnName ) -> Relation

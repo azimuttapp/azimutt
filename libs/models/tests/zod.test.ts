@@ -1,6 +1,6 @@
 import {describe, expect, test} from "@jest/globals";
-import {SafeParseReturnType, z} from "zod";
-import {zodErrorToString} from "../src";
+import {z} from "zod";
+import {zodParse} from "../src";
 
 describe('zod', () => {
     const user = {id: 1, name: 'Loïc', roles: ['admin'], org: {id: 1, name: 'Azimutt', admin: {id: 1, name: 'Loïc'}}, version: 1}
@@ -17,65 +17,49 @@ describe('zod', () => {
             })
         }),
         version: z.literal(1)
-    }).strict()
+    }).strict().describe('User')
     const File = z.discriminatedUnion('kind', [
         z.object({kind: z.literal('local'), path: z.string()}).strict(),
         z.object({kind: z.literal('remote'), url: z.string()}).strict()
-    ])
+    ]).describe('File')
     const Position = z.union([
         z.object({width: z.number(), height: z.number()}).strict(),
         z.object({left: z.number(), top: z.number()}).strict(),
         z.object({x: z.number(), y: z.number()}).strict()
-    ])
+    ]).describe('Position')
 
-    describe('errorToString', () => {
+    describe('zodParse', () => {
         test('additional keys', () => {
             const data = {...user, fullname: 'Loïc'}
-            const error = getError(data, User.safeParse(data))
-            expect(error).toEqual("1 validation error:\n - at _root_: invalid additional key 'fullname' (\"Loïc\")")
+            expect(zodParse(User)(data as any).toJson()).toEqual({failure: "Invalid User, at _root_: invalid additional key 'fullname' (\"Loïc\")"})
         })
         test('required', () => {
             const {id, ...data} = user
-            const error = getError(data, User.safeParse(data))
-            expect(error).toEqual("1 validation error:\n - at .id: expect 'number' but got 'undefined' (undefined)")
+            expect(zodParse(User)(data as any).toJson()).toEqual({failure: "Invalid User, at .id: expect 'number' but got 'undefined' (undefined)"})
         })
         test('bad type', () => {
             const data = {...user, name: 2}
-            const error = getError(data, User.safeParse(data))
-            expect(error).toEqual("1 validation error:\n - at .name: expect 'string' but got 'number' (2)")
+            expect(zodParse(User)(data as any).toJson()).toEqual({failure: "Invalid User, at .name: expect 'string' but got 'number' (2)"})
         })
         test('nested error', () => {
             const data = {...user, org: {...user.org, admin: {...user.org.admin, name: true}}}
-            const error = getError(data, User.safeParse(data))
-            expect(error).toEqual("1 validation error:\n - at .org.admin.name: expect 'string' but got 'boolean' (true)")
+            expect(zodParse(User)(data as any).toJson()).toEqual({failure: "Invalid User, at .org.admin.name: expect 'string' but got 'boolean' (true)"})
         })
         test('invalid literal', () => {
             const data = {...user, version: 2}
-            const error = getError(data, User.safeParse(data))
-            expect(error).toEqual("1 validation error:\n - at .version: expect 1 but got 2")
+            expect(zodParse(User)(data as any).toJson()).toEqual({failure: "Invalid User, at .version: expect 1 but got 2"})
         })
         test('invalid enum', () => {
             const data = {...user, roles: ['guest', 'troll', 'admin']}
-            const error = getError(data, User.safeParse(data))
-            expect(error).toEqual("1 validation error:\n - at .roles.1: expect `\"guest\" | \"admin\"` but got \"troll\"")
+            expect(zodParse(User)(data as any).toJson()).toEqual({failure: "Invalid User, at .roles.1: expect `\"guest\" | \"admin\"` but got \"troll\""})
         })
         test('invalid discriminated union', () => {
             const data = {kind: 'bad'}
-            const error = getError(data, File.safeParse(data))
-            expect(error).toEqual("1 validation error:\n - at .kind: expect `\"local\" | \"remote\"` but got \"bad\"")
+            expect(zodParse(File)(data as any).toJson()).toEqual({failure: "Invalid File, at .kind: expect `\"local\" | \"remote\"` but got \"bad\""})
         })
         test('invalid union', () => {
             const data = {dx: 0, dy: 0}
-            const error = getError(data, Position.safeParse(data))
-            expect(error).toEqual("1 validation error:\n - at _root_: invalid union for {\"dx\":0,\"dy\":0}")
+            expect(zodParse(Position)(data as any).toJson()).toEqual({failure: "Invalid Position, at _root_: invalid union for {\"dx\":0,\"dy\":0}"})
         })
     })
-
-    function getError<Input, Output>(data: any, res: SafeParseReturnType<Input, Output>): string {
-        if (res.success) {
-            throw 'Failure expected!'
-        } else {
-            return zodErrorToString(data, res.error)
-        }
-    }
 })

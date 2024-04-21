@@ -62,4 +62,5 @@ FROM events e
 WHERE e.name='project_loaded';
 """)
     , test "not on update" (\_ -> addLimit "UPDATE users SET deleted=null WHERE id=10;" |> Expect.equal "UPDATE users SET deleted=null WHERE id=10;")
+    , test "lowercase" (\_ -> addLimit "select * from users;" |> Expect.equal "select TOP 100 * from users;\n")
     ]

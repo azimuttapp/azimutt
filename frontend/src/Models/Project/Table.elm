@@ -1,4 +1,4 @@
-module Models.Project.Table exposing (Table, TableLike, decode, encode, findColumn, getAltColumns, getColumn, getPeerColumns, new)
+module Models.Project.Table exposing (Table, TableLike, decode, empty, encode, findColumn, getAltColumns, getColumn, getPeerColumns, new)
 
 import Dict exposing (Dict)
 import Json.Decode as Decode
@@ -55,6 +55,11 @@ type alias TableLike x y =
         , comment : Maybe Comment
         , stats : Maybe TableDbStats
     }
+
+
+empty : Table
+empty =
+    { id = ( "", "" ), schema = "", name = "", view = False, definition = Nothing, columns = Dict.empty, primaryKey = Nothing, uniques = [], indexes = [], checks = [], comment = Nothing, stats = Nothing }
 
 
 new : SchemaName -> TableName -> Bool -> Maybe String -> Dict ColumnName Column -> Maybe PrimaryKey -> List Unique -> List Index -> List Check -> Maybe Comment -> Maybe TableDbStats -> Table

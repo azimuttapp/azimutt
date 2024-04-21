@@ -34,8 +34,8 @@ import {
     LegacyProjectVersion,
     LegacyProjectVisibility,
     LegacyTableStats,
-    zodStringify,
-    zodValidate
+    zodParse,
+    zodStringify
 } from "@azimutt/models";
 import {TrackEvent} from "../types/tracking";
 import * as Http from "../utils/http";
@@ -64,13 +64,13 @@ export class Backend {
     private fetchProject = (o: LegacyOrganizationId, p: LegacyProjectId, t: LegacyProjectTokenId | null): Promise<LegacyProjectInfoWithContent> => {
         const token = t ? `token=${t}&` : ''
         const path = `/api/v1/organizations/${o}/projects/${p}?${token}expand=organization,organization.plan,content`
-        return Http.getJson(path, ProjectWithContentResponse, 'ProjectWithContentResponse').then(toProjectInfoWithContent)
+        return Http.getJson(path, ProjectWithContentResponse).then(toProjectInfoWithContent)
     }
 
     createProjectLocal = (o: LegacyOrganizationId, json: LegacyProjectJson): Promise<LegacyProjectInfoLocal> => {
         this.logger.debug(`backend.createProjectLocal(${o})`, json)
         const path = `/api/v1/organizations/${o}/projects?expand=organization,organization.plan`
-        return Http.postJson(path, toProjectBody(json, LegacyProjectStorage.enum.local), ProjectResponse, 'ProjectResponse').then(toProjectInfo)
+        return Http.postJson(path, toProjectBody(json, LegacyProjectStorage.enum.local), ProjectResponse).then(toProjectInfo)
             .then(res => legacyIsLocal(res) ? res : Promise.reject('Expecting a local project'))
     }
 
@@ -82,7 +82,7 @@ export class Backend {
             .filter(([_, value]) => value !== null && value !== undefined)
             .map(([key, value]) => formData.append(key, typeof value === 'string' ? value : JSON.stringify(value)))
         formData.append('file', new Blob([encodeContent(json)], {type: 'application/json'}), `${json.name}.json`)
-        const res = await Http.postMultipart(path, formData, ProjectResponse, 'ProjectResponse').then(toProjectInfo)
+        const res = await Http.postMultipart(path, formData, ProjectResponse).then(toProjectInfo)
         this.projects[res.id] = json
         return legacyIsRemote(res) ? res : Promise.reject('Expecting a remote project')
     }
@@ -93,7 +93,7 @@ export class Backend {
         if (p.storage !== LegacyProjectStorage.enum.local) return Promise.reject('Expecting a local project')
         const path = `/api/v1/organizations/${p.organization.id}/projects/${p.id}?expand=organization,organization.plan`
         const json = legacyBuildProjectJson(p)
-        return Http.putJson(path, toProjectBody(json, LegacyProjectStorage.enum.local), ProjectResponse, 'ProjectResponse').then(toProjectInfo)
+        return Http.putJson(path, toProjectBody(json, LegacyProjectStorage.enum.local), ProjectResponse).then(toProjectInfo)
             .then(res => legacyIsLocal(res) ? res : Promise.reject('Expecting a local project'))
     }
 
@@ -124,7 +124,7 @@ export class Backend {
             .filter(([_, value]) => value !== null && value !== undefined)
             .map(([key, value]) => formData.append(key, typeof value === 'string' ? value : JSON.stringify(value)))
         formData.append('file', new Blob([encodeContent(json)], {type: 'application/json'}), `${p.organization.id}-${p.name}.json`)
-        const res = await Http.putMultipart(path, formData, ProjectResponse, 'ProjectResponse').then(toProjectInfo)
+        const res = await Http.putMultipart(path, formData, ProjectResponse).then(toProjectInfo)
         this.projects[p.id] = json
         return legacyIsRemote(res) ? res : Promise.reject('Expecting a remote project')
     }
@@ -150,12 +150,12 @@ export class Backend {
 
     getDatabaseSchema = async (database: DatabaseUrl): Promise<LegacyDatabase> => {
         this.logger.debug(`backend.getDatabaseSchema(${database})`)
-        return this.gatewayPost(`/schema`, {url: database}, LegacyDatabase, 'LegacyDatabase')
+        return this.gatewayPost(`/schema`, {url: database}, LegacyDatabase)
     }
 
     runDatabaseQuery = async (database: DatabaseUrl, query: string): Promise<LegacyDatabaseQueryResults> => {
         this.logger.debug(`backend.runQuery(${database}, ${query})`)
-        return this.gatewayPost(`/query`, {url: database, query}, LegacyDatabaseQueryResults, 'LegacyDatabaseQueryResults')
+        return this.gatewayPost(`/query`, {url: database, query}, LegacyDatabaseQueryResults)
     }
 
     getTableStats = async (database: DatabaseUrl, entity: EntityRef): Promise<LegacyTableStats> => {
@@ -164,7 +164,7 @@ export class Backend {
             url: database,
             schema: entity.schema,
             table: entity.entity,
-        }, LegacyTableStats, 'LegacyTableStats')
+        }, LegacyTableStats)
     }
 
     getColumnStats = async (database: DatabaseUrl, attribute: AttributeRef): Promise<LegacyColumnStats> => {
@@ -174,13 +174,13 @@ export class Backend {
             schema: attribute.schema,
             table: attribute.entity,
             column: attribute.attribute.join(legacyColumnPathSeparator),
-        }, LegacyColumnStats, 'LegacyColumnStats')
+        }, LegacyColumnStats)
     }
 
-    private gatewayPost = async <Body, Response>(path: string, body: Body, zod: ZodType<Response>, label: string): Promise<Response> => {
+    private gatewayPost = async <Body, Response>(path: string, body: Body, zod: ZodType<Response>): Promise<Response> => {
         const gateway_local = 'http://localhost:4177'
-        return Http.postJson(`${gateway_local}/gateway${path}`, body, zod, label).catch(localErr => {
-            return Http.postJson(`${window.gateway_url}/gateway${path}`, body, zod, label).catch(remoteErr => {
+        return Http.postJson(`${gateway_local}/gateway${path}`, body, zod).catch(localErr => {
+            return Http.postJson(`${window.gateway_url}/gateway${path}`, body, zod).catch(remoteErr => {
                 return Promise.reject(`${gateway_local}: ${errorToString(localErr)}\n${window.gateway_url}: ${errorToString(remoteErr)}`)
             })
         })
@@ -266,7 +266,7 @@ export const ProjectResponse = ProjectStatsResponse.extend({
     created_at: DateTime,
     updated_at: DateTime,
     archived_at: DateTime.nullable()
-}).strict()
+}).strict().describe('ProjectResponse')
 
 interface ProjectWithContentResponse extends ProjectResponse {
     content?: string
@@ -274,7 +274,7 @@ interface ProjectWithContentResponse extends ProjectResponse {
 
 export const ProjectWithContentResponse = ProjectResponse.extend({
     content: z.string().optional()
-}).strict()
+}).strict().describe('ProjectWithContentResponse')
 
 function toStats(s: ProjectStatsResponse): LegacyProjectStats {
     return {
@@ -349,12 +349,12 @@ function toProjectInfoWithContent(p: ProjectWithContentResponse): LegacyProjectI
 }
 
 function encodeContent(p: LegacyProjectJson): string {
-    return zodStringify(p, LegacyProjectJson, 'LegacyProjectJson')
+    return zodStringify(LegacyProjectJson)(p)
 }
 
 function decodeContent(content?: string): LegacyProjectJson {
     if (typeof content === 'string') {
-        return zodValidate(Json.parse(content), LegacyProjectJson, 'LegacyProjectJson')
+        return zodParse(LegacyProjectJson)(Json.parse(content)).getOrThrow()
     } else {
         throw 'Missing content in backend response!'
     }

@@ -7,13 +7,13 @@ import Dict
 import Expect
 import Libs.Dict as Dict
 import Libs.Nel as Nel
-import Models.Project.Column exposing (Column)
+import Models.Project.Column as Column exposing (Column)
 import Models.Project.ColumnPath as ColumnPath
 import Models.Project.Comment exposing (Comment)
 import Models.Project.PrimaryKey exposing (PrimaryKey)
 import Models.Project.Relation exposing (Relation)
 import Models.Project.SourceId as SourceId exposing (SourceId)
-import Models.Project.Table exposing (Table)
+import Models.Project.Table as Table exposing (Table)
 import Models.Project.Unique exposing (Unique)
 import Test exposing (Test, describe, test)
 
@@ -146,12 +146,12 @@ amlColumn =
 
 table : Table
 table =
-    { id = ( "", "" ), schema = "", name = "", view = False, definition = Nothing, columns = Dict.empty, primaryKey = Nothing, uniques = [], indexes = [], checks = [], comment = Nothing, stats = Nothing }
+    Table.empty
 
 
 column : Column
 column =
-    { index = 0, name = "", kind = "", nullable = False, default = Nothing, comment = Nothing, values = Nothing, columns = Nothing, stats = Nothing }
+    Column.empty
 
 
 primaryKey : PrimaryKey

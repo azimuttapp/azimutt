@@ -5,7 +5,7 @@
 
 ## Relation
 
-Relations are edges in [Entity-Relationship model](https://wikipedia.org/wiki/Entity%E2%80%93relationship_model). In relational databases they can be modeled with **foreign keys**, but not necessarily.
+Relations are edges in [Entity-Relationship model](https://wikipedia.org/wiki/Entity%E2%80%93relationship_model). In relational databases, they can be modeled with **foreign keys**, but not necessarily.
 
 In AML, they can be defined either as an [attribute option](./entity.md#index-and-constraint):
 

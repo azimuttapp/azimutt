@@ -9,6 +9,7 @@ import {
     removeSurroundingParentheses,
     singular,
     slugify,
+    slugifyGitHub,
     stripIndent
 } from "../src";
 
@@ -50,11 +51,16 @@ describe('string', () => {
         expect(pathJoin('./doc6/a', '../aml.md')).toEqual('./doc6/aml.md') // work with parent
         expect(pathJoin('./doc7/a/b', '../../aml.md')).toEqual('./doc7/aml.md') // work with several parents
         expect(pathJoin('./doc8', '../../aml.md')).toEqual('../aml.md') // keep parent when can't remove it
+        // expect(pathJoin('./doc9/a/b/c/d', '../../../../aml.md')).toEqual('./doc9/aml.md') // many parents
+        expect(pathJoin('./doc10///a/b', '../../aml.md')).toEqual('./doc10/aml.md') // repeating /
+        // TODO: absolute paths
     })
     test('pathParent', () => {
         expect(pathParent('./docs/README.md')).toEqual('./docs')
-        expect(pathParent('./README.md')).toEqual('.')
-        expect(pathParent('./')).toEqual('.')
+        expect(pathParent('./README.md')).toEqual('./')
+        expect(pathParent('./docs/folder')).toEqual('./docs')
+        expect(pathParent('./docs/folder/')).toEqual('./docs')
+        expect(pathParent('./')).toEqual('./')
     })
     test('plural', () => {
         expect(plural('cat')).toEqual('cats')
@@ -90,7 +96,9 @@ describe('string', () => {
         expect(slugify('Loïc Knuchel')).toEqual('loic-knuchel')
         expect(slugify('- Long   text, génial slug!')).toEqual('long-text-genial-slug')
         expect(slugify('🔖 Philosophy & Conventions')).toEqual('philosophy-conventions')
-        expect(slugify('🔖 Philosophy & Conventions', {mode: 'github'})).toEqual('-philosophy--conventions')
+    })
+    test('slugifyGitHub', () => {
+        expect(slugifyGitHub('🔖 Philosophy & Conventions')).toEqual('-philosophy--conventions')
     })
     test('stripIndent', () => {
         expect(stripIndent('some text')).toEqual('some text')

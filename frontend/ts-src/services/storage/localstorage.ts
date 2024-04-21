@@ -1,5 +1,5 @@
 import {errorToString} from "@azimutt/utils";
-import {LegacyProjectId, LegacyProjectJson, zodStringify, zodValidate} from "@azimutt/models";
+import {LegacyProjectId, LegacyProjectJson, zodParse, zodStringify} from "@azimutt/models";
 import {StorageApi, StorageKind} from "./api";
 import {Logger} from "../logger";
 import * as Json from "../../utils/json";
@@ -52,14 +52,14 @@ export class LocalStorageStorage implements StorageApi {
             return Promise.reject(`Nothing in localStorage ${JSON.stringify(key)}`)
         }
         try {
-            return Promise.resolve(zodValidate(Json.parse(value), LegacyProjectJson, 'LegacyProjectJson'))
+            return Promise.resolve(zodParse(LegacyProjectJson)(Json.parse(value)).getOrThrow())
         } catch (e) {
             return Promise.reject(`Invalid JSON in localStorage ${JSON.stringify(key)}: ${errorToString(e)}`)
         }
     }
     private setProject = (key: string, p: LegacyProjectJson): Promise<LegacyProjectJson> => {
         try {
-            window.localStorage.setItem(key, zodStringify(p, LegacyProjectJson, 'LegacyProjectJson'))
+            window.localStorage.setItem(key, zodStringify(LegacyProjectJson)(p))
             return Promise.resolve(p)
         } catch (e) {
             return Promise.reject(e)

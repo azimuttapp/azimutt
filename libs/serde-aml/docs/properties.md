@@ -20,7 +20,7 @@ Keys are [identifiers](./identifier.md) and values can have several forms:
 
 You can use any key/value pair, they will be kept in the model.
 
-Some specific keys are standardized for certain objects and can be interpreted by in generators or in [Azimutt](https://azimutt.app).
+Some specific keys are standardized for certain objects and can be interpreted by generators or in [Azimutt](https://azimutt.app).
 
 
 ### Entity properties

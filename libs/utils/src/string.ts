@@ -36,7 +36,7 @@ export function pathJoin(...paths: string[]): string {
 }
 
 export function pathParent(path: string): string {
-    return path.split('/').slice(0, -1).join('/')
+    return pathJoin(...path.split('/').filter(p => !!p).slice(0, -1))
 }
 
 export function plural(word: string): string {
@@ -85,23 +85,26 @@ export function singular(word: string): string {
     }
 }
 
-export function slugify(text: string, opts: {mode?: 'github'} = {}): string {
-    const clean = text
+export function cleanText(text: string): string {
+    return text
         .trim()
         .toLowerCase()
         .normalize('NFKD') // split accented characters into their base characters and diacritical marks
         .replace(/[\u0300-\u036f]/g, '') // remove all the accents
-    if (opts.mode === 'github') {
-        return clean
-            .replace(/[^a-z0-9 -]/g, '') // remove non-alphanumeric characters
-            .replace(/\s/g, '-') // replace spaces with hyphens
-    } else {
-        return clean
-            .replace(/[^a-z0-9]/g, '-') // replace other chars with '-'
-            .replace(/-+/g, '-') // only keep a single '-'
-            .replace(/^-+/, '') // remove leading '-'
-            .replace(/-+$/, '') // remove training '-'
-    }
+}
+
+export function slugify(text: string): string {
+    return cleanText(text)
+        .replace(/[^a-z0-9]/g, '-') // replace other chars with '-'
+        .replace(/-+/g, '-') // only keep a single '-'
+        .replace(/^-+/, '') // remove leading '-'
+        .replace(/-+$/, '') // remove training '-'
+}
+
+export function slugifyGitHub(text: string): string {
+    return cleanText(text)
+        .replace(/[^a-z0-9 -]/g, '') // remove non-alphanumeric characters
+        .replace(/\s/g, '-') // replace spaces with hyphens
 }
 
 export function stripIndent(value: string): string {

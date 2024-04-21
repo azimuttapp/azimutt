@@ -15,7 +15,7 @@ import {
     LegacyTableId,
     LegacyTableStats,
     Position,
-    zodValidate
+    zodParse
 } from "@azimutt/models";
 import {ElementSize, ElmFlags, ElmMsg, ElmRuntime, GetLocalFile, Hotkey, HotkeyId, JsMsg} from "../types/ports";
 import {ToastLevel} from "../types/basics";
@@ -64,7 +64,7 @@ export class ElmApp {
         this.elm.ports?.elmToJs.subscribe(msg => {
             this.logger.debug('ElmMsg', msg)
             try {
-                const valid: ElmMsg = zodValidate(msg, ElmMsg, `ElmMsg[${msg.kind}]`)
+                const valid: ElmMsg = zodParse(ElmMsg, `ElmMsg[${msg.kind}]`)(msg).getOrThrow()
                 // setTimeout: a ugly hack to wait for Elm to render the model changes before running the commands :(
                 // TODO: use requestAnimationFrame instead!
                 setTimeout(() => {
@@ -127,7 +127,7 @@ export class ElmApp {
     private send(msg: JsMsg): void {
         this.logger.debug('JsMsg', msg)
         try {
-            const valid: JsMsg = zodValidate(msg, JsMsg, `JsMsg[${msg.kind}]`)
+            const valid: JsMsg = zodParse(JsMsg, `JsMsg[${msg.kind}]`)(msg).getOrThrow()
             this.elm.ports?.jsToElm.send(valid)
         } catch (e) {
             this.toast(ToastLevel.enum.error, errorToString(e))

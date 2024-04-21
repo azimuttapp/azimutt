@@ -8,7 +8,7 @@
 AMLv2 is coming 2 years after AMLv1 ([post](https://azimutt.app/blog/aml-a-language-to-define-your-database-schema) & [PR](https://github.com/azimuttapp/azimutt/pull/98) ^^).
 During this time, we discovered a lot of new use cases and a few shortcomings (such as composite foreign keys).
 
-This new iteration fixes some issues, improve consistency, and adds nice features such as [namespace](./namespace.md) and [properties](./properties.md).
+This new iteration fixes some issues, improves consistency, and adds nice features such as [namespace](./namespace.md) and [properties](./properties.md).
 
 We made it retro-compatible, so you can see warnings and fix them.
 

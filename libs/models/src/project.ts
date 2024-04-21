@@ -2,6 +2,7 @@ import {z} from "zod";
 import {Color, Markdown, Uuid} from "./common";
 import {AttributePathId, Database, DatabaseKind, EntityId, NamespaceId, Relation} from "./database";
 
+// FIXME: Work In Progress
 // read this file from bottom to the top, to have a top-down read ^^
 
 export const ProjectId = Uuid
