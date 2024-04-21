@@ -65,7 +65,7 @@ export class ElmApp {
 
     constructor(private elm: ElmRuntime<JsMsg, ElmMsg>, private logger: Logger) {
         this.elm.ports?.elmToJs.subscribe(msg => {
-            this.logger.debug('ElmMsg', msg)
+            // this.logger.debug('ElmMsg', msg)
             try {
                 const valid: ElmMsg = Zod.validate(msg, ElmMsg, `ElmMsg[${msg.kind}]`)
                 // setTimeout: a ugly hack to wait for Elm to render the model changes before running the commands :(
@@ -128,7 +128,7 @@ export class ElmApp {
     fitToScreen = (): void => this.send({kind: 'GotFitToScreen'})
 
     private send(msg: JsMsg): void {
-        this.logger.debug('JsMsg', msg)
+        // this.logger.debug('JsMsg', msg)
         try {
             const valid: JsMsg = Zod.validate(msg, JsMsg, `JsMsg[${msg.kind}]`)
             this.elm.ports?.jsToElm.send(valid)

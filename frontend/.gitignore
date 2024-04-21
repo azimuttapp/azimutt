@@ -4,3 +4,4 @@
 /node_modules
 /review/elm-stuff/
 /public
+vite.config.js

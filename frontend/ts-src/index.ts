@@ -34,6 +34,7 @@ import {
     ProjectStorage
 } from "./types/project";
 import {ConsoleLogger} from "./services/logger";
+import "./monaco";
 import {loadPolyfills} from "./utils/polyfills";
 import {Utils} from "./utils/utils";
 import {Storage} from "./services/storage";
@@ -397,7 +398,6 @@ function listenHotkeys(msg: ListenKeys) {
         })
     })
 }
-
 
 // handle key hold
 const holdKeyState = {drag: false}

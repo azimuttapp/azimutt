@@ -527,7 +527,9 @@ viewQueryEditor wrap htmlId source model =
             htmlId ++ "-input"
     in
     div [ class "flex-1 flex flex-col relative" ]
-        [ div [ class "m-3 block flex-1 rounded-md shadow-sm ring-1 ring-inset ring-gray-300" ] [ Editor.sql (UpdateQuery >> wrap) inputId model ]
+        [ div [ class "m-3 block flex-1 rounded-md shadow-sm ring-1 ring-inset ring-gray-300" ]
+            --[ Editor.sql (UpdateQuery >> wrap) inputId model ]
+            [ div [ id "sql-editor" ] [ text "SQL editor" ] ]
         , div [ class "absolute bottom-6 right-6 z-10" ]
             [ button
                 [ type_ "button"

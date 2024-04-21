@@ -3,6 +3,7 @@
     <head>
         <%= render "_head_seo.html", conn: @conn %>
         <link rel="stylesheet" href={Routes.static_path(@conn, "/elm/dist/styles.css")} />
+        <link rel="stylesheet" href={Routes.static_path(@conn, "/elm/ts/styles.css")} />
         <script type="text/javascript" src={Routes.static_path(@conn, "/elm/dist/elm.js")} />
     </head>
     <body>
@@ -10,7 +11,7 @@
         <script>window.env = '<%= Azimutt.config(:environment) %>'</script>
         <script>window.gateway_url = '<%= Azimutt.config(:gateway_url) %>'</script>
         <%= if Azimutt.config(:sentry_frontend_dsn) do %><script>window.sentry_frontend_dsn = '<%= Azimutt.config(:sentry_frontend_dsn) %>'</script><% end %>
-        <script type="text/javascript" src={Routes.static_path(@conn, "/elm/script.js")} />
+        <script type="text/javascript" src={Routes.static_path(@conn, "/elm/ts/index.js")} />
         <%= render "_scripts.html", conn: @conn, current_user: assigns[:current_user] %>
     </body>
 </html>

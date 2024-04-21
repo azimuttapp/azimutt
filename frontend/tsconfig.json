@@ -24,9 +24,11 @@
     // "useDefineForClassFields": true,                  /* Emit ECMAScript-standard-compliant class fields. */
 
     /* Modules */
-    "module": "AMD",                                     /* Specify what module code is generated. */
+    // 😱 tsconfig.json:27:5 - error TS6082: Only 'amd' and 'system' modules are supported alongside --outFile.
+    "module": "commonjs",                                  /* Specify what module code is generated. */
     "rootDir": "./ts-src",                               /* Specify the root folder within your source files. */
-    "moduleResolution": "node",                          /* Specify how TypeScript looks up a file from a given module specifier. */
+    // 😱 tsconfig.json:29:25 - error TS5095: Option 'bundler' can only be used when 'module' is set to 'preserve' or to 'es2015' or later.
+    "moduleResolution": "bundler",                          /* Specify how TypeScript looks up a file from a given module specifier. */
     // "baseUrl": "./",                                  /* Specify the base directory to resolve non-relative module names. */
     // "paths": {},                                      /* Specify a set of entries that re-map imports to additional lookup locations. */
     // "rootDirs": [],                                   /* Allow multiple folders to be treated as one when resolving modules. */
@@ -46,6 +48,7 @@
     // "declarationMap": true,                           /* Create sourcemaps for d.ts files. */
     // "emitDeclarationOnly": true,                      /* Only output d.ts files and not JavaScript files. */
     "sourceMap": true,                                   /* Create source map files for emitted JavaScript files. */
+    // 😱 tsconfig.json:49:5 - error TS6082: Only 'amd' and 'system' modules are supported alongside --outFile.
     "outFile": "./public/script.js",                     /* Specify a file that bundles all outputs into one JavaScript file. If `declaration` is true, also designates a file that bundles all .d.ts output. */
     // "outDir": "./",                                   /* Specify an output folder for all emitted files. */
     // "removeComments": true,                           /* Disable emitting comments. */
@@ -98,6 +101,7 @@
     "skipDefaultLibCheck": true,                         /* Skip type checking .d.ts files that are included with TypeScript. */
     "skipLibCheck": true                                 /* Skip type checking all .d.ts files. */
   },
+  "$schema": "https://json.schemastore.org/tsconfig",
   "include": ["ts-src/**/*.ts"],
-  "exclude": ["node_modules", "**/*.d.ts"],
+  "exclude": ["node_modules", "**/*.d.ts"]
 }
