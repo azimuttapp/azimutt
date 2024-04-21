@@ -1,6 +1,5 @@
 import * as Sentry from "@sentry/browser";
 import {BrowserTracing} from "@sentry/tracing";
-import * as monaco from "./monaco";
 import {AnyError, errorToString} from "@azimutt/utils";
 import {ColumnStats, DatabaseQueryResults, TableStats} from "@azimutt/database-types";
 import {prisma} from "@azimutt/parser-prisma";
@@ -35,6 +34,7 @@ import {
     ProjectStorage
 } from "./types/project";
 import {ConsoleLogger} from "./services/logger";
+import "./monaco";
 import {loadPolyfills} from "./utils/polyfills";
 import {Utils} from "./utils/utils";
 import {Storage} from "./services/storage";
@@ -398,67 +398,6 @@ function listenHotkeys(msg: ListenKeys) {
         })
     })
 }
-
-// from https://microsoft.github.io/monaco-editor/playground.html?source=v0.47.0#example-creating-the-editor-hello-world
-/*const editorContainer = document.getElementById("test-monaco") as HTMLElement
-const myEditor = monaco.editor.create(editorContainer, { // FIXME: why I need to give the container right now? :/
-    value: 'demo\n  id uuid\n',
-    language: 'sql',
-    automaticLayout: true,
-})*/
-
-class AzimuttEditor extends HTMLElement {
-    constructor() {
-        super()
-        console.log('AzimuttEditor.constructor')
-        // this.innerHTML = `<p>My Web Component</p>`
-        const shadow = this.attachShadow({ mode: "open" });
-        const div = document.createElement("div");
-    }
-}
-
-customElements.define('azimutt-editor', AzimuttEditor)
-
-/*
-Build error:
-
-[watch] build started (change: "../package.json")
-✘ [ERROR] No loader is configured for ".ttf" files: node_modules/monaco-editor/esm/vs/base/browser/ui/codicons/codicon/codicon.ttf
-
-    node_modules/monaco-editor/esm/vs/base/browser/ui/codicons/codicon/codicon.css:9:6:
-      9 │   src: url(./codicon.ttf) format("truetype");
-        ╵        ~~~~~~~~~~~~~~~~~~
-
-▲ [WARNING] A nested style rule cannot start with "a" because it looks like the start of a declaration [css-syntax-error]
-
-    node_modules/monaco-editor/esm/vs/editor/browser/widget/multiDiffEditorWidget/style.css:25:3:
-      25 │       a {
-         │       ^
-         ╵       :is(a)
-
-  To start a nested style rule with an identifier, you need to wrap the identifier in ":is(...)" to prevent the rule from being parsed as a declaration.
-
-1 warning and 1 error
-[watch] build finished
-[watch] build started (change: "ts-src/index.ts")
-✘ [ERROR] No loader is configured for ".ttf" files: node_modules/monaco-editor/esm/vs/base/browser/ui/codicons/codicon/codicon.ttf
-
-    node_modules/monaco-editor/esm/vs/base/browser/ui/codicons/codicon/codicon.css:9:6:
-      9 │   src: url(./codicon.ttf) format("truetype");
-        ╵        ~~~~~~~~~~~~~~~~~~
-
-▲ [WARNING] A nested style rule cannot start with "a" because it looks like the start of a declaration [css-syntax-error]
-
-    node_modules/monaco-editor/esm/vs/editor/browser/widget/multiDiffEditorWidget/style.css:25:3:
-      25 │       a {
-         │       ^
-         ╵       :is(a)
-
-  To start a nested style rule with an identifier, you need to wrap the identifier in ":is(...)" to prevent the rule from being parsed as a declaration.
-
-1 warning and 1 error
- */
-
 
 // handle key hold
 const holdKeyState = {drag: false}
