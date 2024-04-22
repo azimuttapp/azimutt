@@ -5,9 +5,7 @@ import {ConnectorDefaultOpts, DatabaseUrlParsed} from "@azimutt/models";
 
 export async function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c: Conn) => Promise<T>, opts: ConnectorDefaultOpts): Promise<T> {
     const cluster: Cluster = await createConnection(application, url).catch(err => Promise.reject(connectionError(err)))
-    const conn: Conn = {
-        underlying: cluster
-    }
+    const conn: Conn = {url, underlying: cluster}
     return exec(conn).then(
         res => cluster.close().then(_ => res),
         err => cluster.close().then(_ => Promise.reject(err))
@@ -15,6 +13,7 @@ export async function connect<T>(application: string, url: DatabaseUrlParsed, ex
 }
 
 export interface Conn {
+    url: DatabaseUrlParsed
     underlying: Cluster
 }
 

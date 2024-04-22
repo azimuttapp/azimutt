@@ -11,11 +11,14 @@ import {removeEmpty, removeUndefined, zip} from "@azimutt/utils";
 import {
     Attribute,
     AttributePath,
+    attributePathFromId,
     Database,
     Entity,
     EntityRef,
     Index,
-    parseAttributePath,
+    indexEntities,
+    indexRelations,
+    indexTypes,
     PrimaryKey,
     Relation,
     RelationKind,
@@ -32,19 +35,19 @@ export function importDatabase(db: DbmlDatabase): Database {
         groups: db.schemas.flatMap(s => s.tableGroups.map(importGroup))
     })
     return removeEmpty({
-        entities: db.schemas.flatMap(s => s.tables.map(importEntity)),
-        relations: db.schemas.flatMap(s => s.refs.map(importRef)),
-        types: db.schemas.flatMap(s => s.enums.map(importType)),
+        entities: indexEntities(db.schemas.flatMap(s => s.tables.map(importEntity))),
+        relations: indexRelations(db.schemas.flatMap(s => s.refs.map(importRef))),
+        types: indexTypes(db.schemas.flatMap(s => s.enums.map(importType))),
         extra
     })
 }
 
 function importEntity(table: DbmlTable): Entity {
-    const pkIndex: PrimaryKey = table.indexes.filter(i => i.pk).map(i => removeUndefined({name: i.name, attrs: i.columns.map(c => parseAttributePath(c.value))}))[0]
-    const pkCols: AttributePath[] = table.fields.filter(f => f.pk).map(f => parseAttributePath(f.name))
+    const pkIndex: PrimaryKey = table.indexes.filter(i => i.pk).map(i => removeUndefined({name: i.name, attrs: i.columns.map(c => attributePathFromId(c.value))}))[0]
+    const pkCols: AttributePath[] = table.fields.filter(f => f.pk).map(f => attributePathFromId(f.name))
 
     const entityIndexes: Index[] = table.indexes.filter(i => !i.pk).map(importIndex)
-    const attributeUniques: Index[] = table.fields.filter(f => f.unique).map(f => ({attrs: [parseAttributePath(f.name)], unique: true}))
+    const attributeUniques: Index[] = table.fields.filter(f => f.unique).map(f => ({attrs: [attributePathFromId(f.name)], unique: true}))
     const indexes = attributeUniques.concat(entityIndexes)
 
     const extra: EntityExtra = removeUndefined({
@@ -71,7 +74,7 @@ function importAttribute(field: DbmlField): Attribute {
     return removeEmpty({
         name: field.name,
         type: field.type.type_name,
-        nullable: field.not_null === true ? !field.not_null : undefined,
+        null: field.not_null === true ? !field.not_null : undefined,
         default: field.dbdefault?.value,
         doc: field.note || undefined,
         extra
@@ -84,7 +87,7 @@ function importIndex(index: DbmlIndex): Index {
     })
     return removeEmpty({
         name: index.name,
-        attrs: index.columns.map(c => parseAttributePath(c.value)),
+        attrs: index.columns.map(c => attributePathFromId(c.value)),
         unique: index.unique || undefined,
         definition: index.type || undefined,
         doc: index.note || undefined,
@@ -109,7 +112,7 @@ function importRef(relation: DbmlRef): Relation {
         kind: kind !== 'many-to-one' ? kind : undefined,
         src: importEndpoint(src),
         ref: importEndpoint(ref),
-        attrs: zip(src.fieldNames, ref.fieldNames).map(([src, ref]) => ({src: parseAttributePath(src), ref: parseAttributePath(ref)})),
+        attrs: zip(src.fieldNames, ref.fieldNames).map(([src, ref]) => ({src: attributePathFromId(src), ref: attributePathFromId(ref)})),
         extra
     })
 }

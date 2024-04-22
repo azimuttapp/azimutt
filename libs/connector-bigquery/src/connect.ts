@@ -14,6 +14,7 @@ import {
 
 export type QueryResultRow = { [column: string]: AttributeValue }
 export interface Conn {
+    url: DatabaseUrlParsed
     underlying: BigQuery
     query<T extends QueryResultRow>(sql: string, parameters?: any[], name?: string): Promise<T[]>
 }
@@ -31,6 +32,7 @@ export async function connect<T>(application: string, url: DatabaseUrlParsed, ex
         .catch(err => Promise.reject(connectionError(err)))
     let queryCpt = 1
     const conn: Conn = {
+        url,
         underlying: client,
         query<T extends QueryResultRow>(sql: string, parameters: any[] = [], name?: string): Promise<T[]> {
             return logQueryIfNeeded(queryCpt++, name, sql, parameters, (sql, parameters) => {

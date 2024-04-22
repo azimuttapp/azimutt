@@ -3,11 +3,14 @@ import {
     Attribute,
     ConnectorSchemaOpts,
     Database,
+    DatabaseKind,
     Entity,
     EntityId,
+    entityRefToId,
     formatConnectorScope,
-    formatEntityRef,
     handleError,
+    indexEntities,
+    indexRelations,
     PrimaryKey,
     Relation
 } from "@azimutt/models";
@@ -15,6 +18,7 @@ import {scopeFilter, scopeWhere} from "./helpers";
 import {Conn} from "./connect";
 
 export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<Database> => {
+    const start = Date.now()
     const scope = formatConnectorScope({catalog: 'catalog', schema: 'schema', entity: 'table'}, opts)
     opts.logger.log(`Connected to the database${scope ? `, exporting for ${scope}` : ''} ...`)
 
@@ -24,7 +28,7 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
     // TODO: include views? (SELECT * FROM INFORMATION_SCHEMA.VIEWS;)
     const columns: RawColumn[] = await getColumns(opts)(conn)
     opts.logger.log(`Found ${pluralizeL(columns, 'column')} ...`)
-    const primaryKeyColumns: Record<EntityId, RawPrimaryKeyColumn[]> = await getPrimaryKeyColumns(opts)(conn).then(pks => groupBy(pks, pk => formatEntityRef({catalog: pk.database_name, schema: pk.schema_name, entity: pk.table_name})))
+    const primaryKeyColumns: Record<EntityId, RawPrimaryKeyColumn[]> = await getPrimaryKeyColumns(opts)(conn).then(pks => groupBy(pks, pk => entityRefToId({catalog: pk.database_name, schema: pk.schema_name, entity: pk.table_name})))
     opts.logger.log(`Found ${pluralizeR(primaryKeyColumns, 'primary key')} ...`)
     const foreignKeys: RawForeignKeyColumn[][] = Object.values(await getForeignKeyColumns(opts)(conn).then(fks => groupBy(fks, fk => fk.fk_name)))
     opts.logger.log(`Found ${pluralizeR(foreignKeys, 'foreign key')} ...`)
@@ -36,15 +40,23 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
     const columnsByTable = groupByEntity(columns)
     opts.logger.log(`✔︎ Exported ${pluralizeL(tables, 'table')} and ${pluralizeL(foreignKeys, 'relation')} from the database!`)
     return removeUndefined({
-        entities: tables.map(table => [toEntityId(table), table] as const).map(([id, table]) => buildEntity(
+        entities: indexEntities(tables.map(table => [toEntityId(table), table] as const).map(([id, table]) => buildEntity(
             table,
             columnsByTable[id] || [],
             primaryKeyColumns[id] || [],
-        )),
-        relations: foreignKeys.map(buildRelation),
+        ))),
+        relations: indexRelations(foreignKeys.map(buildRelation)),
         types: undefined,
         doc: undefined,
-        stats: undefined,
+        stats: removeUndefined({
+            name: conn.url.db,
+            kind: DatabaseKind.Enum.snowflake,
+            version: undefined,
+            doc: undefined,
+            extractedAt: new Date().toISOString(),
+            extractionDuration: Date.now() - start,
+            size: undefined,
+        }),
         extra: undefined,
     })
 }
@@ -52,7 +64,7 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
 // 👇️ Private functions, exported only for tests
 // If you use them, beware of breaking changes!
 
-const toEntityId = <T extends { table_catalog: string, table_schema: string, table_name: string }>(value: T): EntityId => formatEntityRef({catalog: value.table_catalog, schema: value.table_schema, entity: value.table_name})
+const toEntityId = <T extends { table_catalog: string, table_schema: string, table_name: string }>(value: T): EntityId => entityRefToId({catalog: value.table_catalog, schema: value.table_schema, entity: value.table_name})
 const groupByEntity = <T extends { table_catalog: string, table_schema: string, table_name: string }>(values: T[]): Record<EntityId, T[]> => groupBy(values, toEntityId)
 
 export type RawTable = {
@@ -138,10 +150,11 @@ export const getColumns = (opts: ConnectorSchemaOpts) => async (conn: Conn): Pro
 
 function buildAttribute(column: RawColumn): Attribute {
     return removeUndefined({
+        pos: column.column_index,
         name: column.column_name,
         type: column.column_type,
-        nullable: column.column_nullable === 'YES' ? true : undefined,
-        generated: undefined,
+        null: column.column_nullable === 'YES' ? true : undefined,
+        gen: undefined,
         default: column.column_default || undefined,
         values: undefined,
         attrs: undefined,

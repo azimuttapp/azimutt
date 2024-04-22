@@ -27,12 +27,12 @@
   "dependencies": {
     "@azimutt/models": "file:../models",
     "@azimutt/utils": "file:../utils",
-    "mssql": "9.1.1"
+    "mssql": "9.3.0"
   },
   "devDependencies": {
     "@jest/globals": "^29.7.0",
     "@types/jest": "^29.5.12",
-    "@types/mssql": "^8.1.2",
+    "@types/mssql": "^9.1.5",
     "jest": "^29.7.0",
     "ts-jest": "^29.1.2",
     "typescript": "^5.4.5"

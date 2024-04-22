@@ -4,9 +4,7 @@ import {ConnectorDefaultOpts, DatabaseUrlParsed} from "@azimutt/models";
 
 export async function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c: Conn) => Promise<T>, opts: ConnectorDefaultOpts): Promise<T> {
     const client: MongoClient = await createConnection(application, url).catch(err => Promise.reject(connectionError(err)))
-    const conn: Conn = {
-        underlying: client
-    }
+    const conn: Conn = {url, underlying: client}
     return exec(conn).then(
         res => client.close().then(_ => res),
         err => client.close().then(_ => Promise.reject(err))
@@ -14,6 +12,7 @@ export async function connect<T>(application: string, url: DatabaseUrlParsed, ex
 }
 
 export interface Conn {
+    url: DatabaseUrlParsed
     underlying: MongoClient
 }
 

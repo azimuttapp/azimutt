@@ -20,7 +20,7 @@ export function schemaToAttributes(schema: ValueSchema, flatten: number, path: s
             return [{
                 name: path.map(p => p + '.').join('') + key,
                 type: value.type,
-                nullable: value.nullable
+                null: value.nullable
             }, ...schemaToAttributes(value, flatten - 1, [...path, key])]
         })
     } else if (schema.nested) {
@@ -28,7 +28,7 @@ export function schemaToAttributes(schema: ValueSchema, flatten: number, path: s
             return removeUndefined({
                 name: path.map(p => p + '.').join('') + key,
                 type: value.type,
-                nullable: value.nullable,
+                null: value.nullable,
                 attrs: value.nested ? schemaToAttributes(value, 0, []) : undefined
             })
         })

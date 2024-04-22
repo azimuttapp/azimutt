@@ -2,21 +2,25 @@ import {describe, expect, test} from "@jest/globals";
 import {
     AttributeId,
     AttributePath,
+    attributePathFromId,
     AttributePathId,
+    attributePathToId,
     AttributeRef,
+    attributeRefFromId,
+    attributeRefToId,
+    attributeTypeParse,
     EntityId,
     EntityRef,
-    formatAttributePath,
-    formatAttributeRef,
-    formatEntityRef,
-    formatNamespace,
+    entityRefFromId,
+    entityRefToId,
     Namespace,
+    namespaceFromId,
     NamespaceId,
-    parseAttributePath,
-    parseAttributeRef,
-    parseAttributeType,
-    parseEntityRef,
-    parseNamespace
+    namespaceToId,
+    TypeId,
+    TypeRef,
+    typeRefFromId,
+    typeRefToId
 } from "../src";
 
 describe('databaseUtils', () => {
@@ -31,17 +35,17 @@ describe('databaseUtils', () => {
             {id: '"user schema"', ref: {schema: 'user schema'}},
         ]
         samples.map(({id, ref}) => {
-            expect(parseNamespace(id)).toEqual(ref)
-            expect(formatNamespace(ref)).toEqual(id)
+            expect(namespaceFromId(id)).toEqual(ref)
+            expect(namespaceToId(ref)).toEqual(id)
         })
         const badSamples: { sourceId: NamespaceId; ref: Namespace; targetId: NamespaceId }[] = [
             {sourceId: 'bad char', ref: {schema: 'bad char'}, targetId: '"bad char"'},
             // {sourceId: 'a.b.c.d.e.f', ref: {database: 'a.b.c', catalog: 'd', schema: 'e', entity: 'f'}, targetId: '"a.b.c".d.e.f'}, // FIXME: don't split on . inside "
         ]
         badSamples.map(({sourceId, ref, targetId}) => {
-            expect(parseNamespace(sourceId)).toEqual(ref)
-            expect(parseNamespace(targetId)).toEqual(ref)
-            expect(formatNamespace(ref)).toEqual(targetId)
+            expect(namespaceFromId(sourceId)).toEqual(ref)
+            expect(namespaceFromId(targetId)).toEqual(ref)
+            expect(namespaceToId(ref)).toEqual(targetId)
         })
     })
     test('parse & format EntityRef', () => {
@@ -54,8 +58,8 @@ describe('databaseUtils', () => {
             {id: '"user table"', ref: {entity: 'user table'}},
         ]
         samples.map(({id, ref}) => {
-            expect(parseEntityRef(id)).toEqual(ref)
-            expect(formatEntityRef(ref)).toEqual(id)
+            expect(entityRefFromId(id)).toEqual(ref)
+            expect(entityRefToId(ref)).toEqual(id)
         })
         const badSamples: { sourceId: EntityId; ref: EntityRef; targetId: EntityId }[] = [
             {sourceId: '', ref: {entity: ''}, targetId: ''},
@@ -63,9 +67,9 @@ describe('databaseUtils', () => {
             // {sourceId: 'a.b.c.d.e.f', ref: {database: 'a.b.c', catalog: 'd', schema: 'e', entity: 'f'}, targetId: '"a.b.c".d.e.f'}, // FIXME: don't split on . inside "
         ]
         badSamples.map(({sourceId, ref, targetId}) => {
-            expect(parseEntityRef(sourceId)).toEqual(ref)
-            expect(parseEntityRef(targetId)).toEqual(ref)
-            expect(formatEntityRef(ref)).toEqual(targetId)
+            expect(entityRefFromId(sourceId)).toEqual(ref)
+            expect(entityRefFromId(targetId)).toEqual(ref)
+            expect(entityRefToId(ref)).toEqual(targetId)
         })
     })
     test('parse & format AttributePath', () => {
@@ -75,8 +79,8 @@ describe('databaseUtils', () => {
             {path: 'details.address.street', names: ['details', 'address', 'street']},
         ]
         samples.map(({path, names}) => {
-            expect(parseAttributePath(path)).toEqual(names)
-            expect(formatAttributePath(names)).toEqual(path)
+            expect(attributePathFromId(path)).toEqual(names)
+            expect(attributePathToId(names)).toEqual(path)
         })
     })
     test('parse & format AttributeRef', () => {
@@ -84,19 +88,43 @@ describe('databaseUtils', () => {
             {id: 'users(id)', ref: {entity: 'users', attribute: ['id']}},
         ]
         samples.map(({id, ref}) => {
-            expect(parseAttributeRef(id)).toEqual(ref)
-            expect(formatAttributeRef(ref)).toEqual(id)
+            expect(attributeRefFromId(id)).toEqual(ref)
+            expect(attributeRefToId(ref)).toEqual(id)
         })
         const badSamples: { sourceId: AttributeId; ref: AttributeRef; targetId: AttributeId }[] = [
             {sourceId: 'users', ref: {entity: 'users', attribute: ['']}, targetId: 'users()'},
         ]
         badSamples.map(({sourceId, ref, targetId}) => {
-            expect(parseAttributeRef(sourceId)).toEqual(ref)
-            expect(parseAttributeRef(targetId)).toEqual(ref)
-            expect(formatAttributeRef(ref)).toEqual(targetId)
+            expect(attributeRefFromId(sourceId)).toEqual(ref)
+            expect(attributeRefFromId(targetId)).toEqual(ref)
+            expect(attributeRefToId(ref)).toEqual(targetId)
         })
     })
     test('parse & format AttributeType', () => {
-        expect(parseAttributeType('text')).toEqual({full: 'text', kind: 'unknown'})
+        expect(attributeTypeParse('text')).toEqual({full: 'text', kind: 'unknown'})
+    })
+    test('parse & format TypeRef', () => {
+        const samples: { id: TypeId; ref: TypeRef }[] = [
+            {id: 'users', ref: {type: 'users'}},
+            {id: 'public.users', ref: {schema: 'public', type: 'users'}},
+            {id: 'core.public.users', ref: {catalog: 'core', schema: 'public', type: 'users'}},
+            {id: 'ax.core.public.users', ref: {database: 'ax', catalog: 'core', schema: 'public', type: 'users'}},
+            {id: 'ax...users', ref: {database: 'ax', type: 'users'}},
+            {id: '"user table"', ref: {type: 'user table'}},
+        ]
+        samples.map(({id, ref}) => {
+            expect(typeRefFromId(id)).toEqual(ref)
+            expect(typeRefToId(ref)).toEqual(id)
+        })
+        const badSamples: { sourceId: TypeId; ref: TypeRef; targetId: TypeId }[] = [
+            {sourceId: '', ref: {type: ''}, targetId: ''},
+            {sourceId: 'bad char', ref: {type: 'bad char'}, targetId: '"bad char"'},
+            // {sourceId: 'a.b.c.d.e.f', ref: {database: 'a.b.c', catalog: 'd', schema: 'e', type: 'f'}, targetId: '"a.b.c".d.e.f'}, // FIXME: don't split on . inside "
+        ]
+        badSamples.map(({sourceId, ref, targetId}) => {
+            expect(typeRefFromId(sourceId)).toEqual(ref)
+            expect(typeRefFromId(targetId)).toEqual(ref)
+            expect(typeRefToId(ref)).toEqual(targetId)
+        })
     })
 })

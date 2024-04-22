@@ -6,9 +6,11 @@ import {
     ConnectorSchemaOpts,
     connectorSchemaOptsDefaults,
     Database,
+    DatabaseKind,
     Entity,
     formatConnectorScope,
     handleError,
+    indexEntities,
     schemaToAttributes,
     valuesToSchema
 } from "@azimutt/models";
@@ -16,6 +18,7 @@ import {scopeFilter} from "./helpers";
 import {Conn} from "./connect";
 
 export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<Database> => {
+    const start = Date.now()
     const scope = formatConnectorScope({catalog: 'bucket', schema: 'scope', entity: 'collection'}, opts)
     opts.logger.log(`Connected to the cluster${scope ? `, exporting for ${scope}` : ''} ...`)
     const buckets: Bucket[] = await getBuckets(opts)(conn)
@@ -36,11 +39,19 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
 
     opts.logger.log(`✔︎ Exported ${pluralizeL(entities, 'collection')} from the cluster!`)
     return removeUndefined({
-        entities,
+        entities: indexEntities(entities),
         relations: undefined,
         types: undefined,
         doc: undefined,
-        stats: undefined,
+        stats: removeUndefined({
+            name: conn.url.db,
+            kind: DatabaseKind.Enum.couchbase,
+            version: undefined,
+            doc: undefined,
+            extractedAt: new Date().toISOString(),
+            extractionDuration: Date.now() - start,
+            size: undefined,
+        }),
         extra: undefined,
     })
 }

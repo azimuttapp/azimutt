@@ -20,6 +20,9 @@ import {
     Entity,
     EntityName,
     Index,
+    indexEntities,
+    indexRelations,
+    indexTypes,
     ParserResult,
     PrimaryKey,
     Relation,
@@ -50,9 +53,9 @@ function buildDatabase(schema: PrismaSchema): Database {
     const enums = schema.declarations.filter((d): d is EnumDeclaration => d.kind === 'enum').map(buildEnum)
     const types = schema.declarations.filter((d): d is ModelDeclaration => d.kind === 'type').map(buildType)
     return removeEmpty({
-        entities: entities.map(t => t.entity),
-        relations: entities.flatMap(t => t.relations),
-        types: enums.concat(types)
+        entities: indexEntities(entities.map(t => t.entity)),
+        relations: indexRelations(entities.flatMap(t => t.relations)),
+        types: indexTypes(enums.concat(types))
     })
 }
 

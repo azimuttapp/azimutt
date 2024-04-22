@@ -15,6 +15,7 @@ export async function connect<T>(application: string, url: DatabaseUrlParsed, ex
         .catch(err => Promise.reject(connectionError(err)))
     let queryCpt = 1
     const conn: Conn = {
+        url,
         query<T extends QueryResultRow>(sql: string, parameters: any[] = [], name?: string): Promise<T[]> {
             return logQueryIfNeeded(queryCpt++, name, sql, parameters, (sql, parameters) => {
                 return connection.query<RowDataPacket[]>({sql, values: parameters})
@@ -35,6 +36,8 @@ export async function connect<T>(application: string, url: DatabaseUrlParsed, ex
 }
 
 export interface Conn {
+    url: DatabaseUrlParsed
+
     query<T extends QueryResultRow>(sql: string, parameters?: any[], name?: string): Promise<T[]>
 
     queryArrayMode(sql: string, parameters?: any[], name?: string): Promise<QueryResultArrayMode>

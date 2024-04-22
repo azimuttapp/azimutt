@@ -1,13 +1,4 @@
-import {
-    Attribute,
-    AttributeValue,
-    Database,
-    Entity,
-    formatAttributePath,
-    Index,
-    Relation,
-    Type
-} from "@azimutt/models";
+import {Attribute, attributePathToId, AttributeValue, Database, Entity, Index, Relation, Type} from "@azimutt/models";
 import {groupBy, removeUndefined} from "@azimutt/utils";
 import {
     JsonDatabase,
@@ -27,13 +18,14 @@ import {defaultSchema} from "./dbmlImport";
 
 export function exportDatabase(db: Database): JsonDatabase {
     const extra: DatabaseExtra = DatabaseExtra.parse(db.extra) || {}
-    const entitiesBySchema = groupBy(db.entities || [], t => t.schema || defaultSchema)
-    const typesBySchema = groupBy(db.types || [], t => t.schema || defaultSchema)
+    const entitiesBySchema = groupBy(Object.values(db.entities || {}), t => t.schema || defaultSchema)
+    const typesBySchema = groupBy(Object.values(db.types || {}), t => t.schema || defaultSchema)
     const groupsBySchema = groupBy((extra.groups || []) as Group[], g => g.schema || defaultSchema)
     const schemas = [...new Set(Object.keys(entitiesBySchema).concat(Object.keys(typesBySchema), Object.keys(groupsBySchema)))]
+    const relations = Object.values(db.relations || {}).flatMap(Object.values)
     return {
         schemas: schemas.map(schema => exportSchema(schema, entitiesBySchema[schema] || [], [], typesBySchema[schema] || [], groupsBySchema[schema] || []))
-            .concat([exportSchema('relations', [], db.relations || [], [], [])]) // put relations in an other schema to avoid JSON parser bug
+            .concat([exportSchema('relations', [], relations, [], [])]) // put relations in an other schema to avoid JSON parser bug
     }
 }
 
@@ -50,7 +42,7 @@ function exportSchema(name: string, entities: Entity[], relations: Relation[], t
 function exportEntity(entity: Entity): JsonTable {
     const extra: EntityExtra = EntityExtra.parse(entity.extra) || {}
     const pkComposite: JsonIndex[] = entity.pk && entity.pk.attrs.length > 1 ? [{
-        columns: entity.pk.attrs.map(c => ({type: 'column', value: formatAttributePath(c)})),
+        columns: entity.pk.attrs.map(c => ({type: 'column', value: attributePathToId(c)})),
         pk: true,
         note: null
     }] : []
@@ -69,9 +61,9 @@ function exportAttribute(attribute: Attribute, entity: Entity): JsonField {
     return removeUndefined({
         name: attribute.name,
         type: { schemaName: null, type_name: attribute.type, args: null },
-        pk: entity.pk?.attrs.map(formatAttributePath).includes(attribute.name) && entity.pk?.attrs.length === 1 || false,
-        unique: entity.indexes?.some(i => i.unique && i.attrs.map(formatAttributePath).includes(attribute.name)) || false,
-        not_null: attribute.nullable === false ? true : undefined,
+        pk: entity.pk?.attrs.map(attributePathToId).includes(attribute.name) && entity.pk?.attrs.length === 1 || false,
+        unique: entity.indexes?.some(i => i.unique && i.attrs.map(attributePathToId).includes(attribute.name)) || false,
+        not_null: attribute.null === false ? true : undefined,
         increment: extra.increment || undefined,
         dbdefault: attribute.default !== undefined ? exportAttributeDefault(attribute.default, extra.defaultType as JsonFieldDefaultType) : undefined,
         note: attribute.doc || null
@@ -91,7 +83,7 @@ function exportIndex(index: Index): JsonIndex {
     const extra: IndexExtra = IndexExtra.parse(index.extra) || {}
     return removeUndefined({
         name: index.name,
-        columns: index.attrs.map(formatAttributePath).map(c => ({type: (extra.attrTypes || {})[c] || 'column', value: c})),
+        columns: index.attrs.map(attributePathToId).map(c => ({type: (extra.attrTypes || {})[c] || 'column', value: c})),
         unique: index.unique,
         type: index.definition,
         note: index.doc || null
@@ -105,12 +97,12 @@ function exportRelation(relation: Relation): JsonRef {
         endpoints: [{
             schemaName: relation.ref.schema || null,
             tableName: relation.ref.entity,
-            fieldNames: relation.attrs.map(c => formatAttributePath(c.ref)),
+            fieldNames: relation.attrs.map(c => attributePathToId(c.ref)),
             relation: relation.kind?.endsWith('many') ? '*' : '1'
         }, {
             schemaName: relation.src.schema || null,
             tableName: relation.src.entity,
-            fieldNames: relation.attrs.map(c => formatAttributePath(c.src)),
+            fieldNames: relation.attrs.map(c => attributePathToId(c.src)),
             relation: relation.kind?.startsWith('one') ? '1' : '*'
         }] as [JsonRefEndpoint, JsonRefEndpoint],
         onDelete: extra.onDelete || undefined,

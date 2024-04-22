@@ -18,6 +18,7 @@ import {
 import {postgres} from "@azimutt/connector-postgres";
 import {logger} from "./logger";
 
+/* eslint @typescript-eslint/no-explicit-any: 0 */
 export const setupBridge = (): void => {
     // define a bridge object to benefit from TS typing, but don't forget to put these functions in `ipcMain.handle`
     const bridge: DesktopBridge = {
@@ -44,6 +45,7 @@ export const setupBridge = (): void => {
     ipcMain.handle('getEntityStats', (e: IpcMainInvokeEvent, url: DatabaseUrl, ref: EntityRef) => bridge.getEntityStats(url, ref))
     ipcMain.handle('getAttributeStats', (e: IpcMainInvokeEvent, url: DatabaseUrl, ref: AttributeRef) => bridge.getAttributeStats(url, ref))
 }
+/* eslint @typescript-eslint/no-explicit-any: 2 */
 
 const application = 'azimutt-desktop'
 const opts: ConnectorDefaultOpts = {logger}

@@ -4,12 +4,15 @@ import {
     Attribute,
     ConnectorSchemaOpts,
     Database,
+    DatabaseKind,
     Entity,
     EntityId,
+    entityRefToId,
     formatConnectorScope,
-    formatEntityRef,
     handleError,
     Index,
+    indexEntities,
+    indexRelations,
     PrimaryKey,
     Relation,
     SchemaName
@@ -18,13 +21,14 @@ import {removeQuotes, scopeFilter, scopeWhere} from "./helpers";
 import {Conn} from "./connect";
 
 export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<Database> => {
+    const start = Date.now()
     opts.logger.log('Connected to the database ...')
     const projectId = opts.catalog || await conn.underlying.getProjectId()
     const scope = formatConnectorScope({schema: 'dataset', entity: 'table'}, opts)
     opts.logger.log(`Exporting project '${projectId}'${scope ? `, only for ${scope}` : ''} ...`)
     const datasetIds = await getDatasets(projectId, opts)(conn)
     opts.logger.log(`Found ${pluralizeL(datasetIds, 'dataset')} to export (${joinLimit(datasetIds)}) ...`)
-    const datasetDbs: Database[] = await sequence(datasetIds, async datasetId => {
+    const datasetDbs: {entities: Entity[], relations: Relation[]}[] = await sequence(datasetIds, async datasetId => {
         opts.logger.log(`Exporting dataset '${projectId}.${datasetId}' ...`)
 
         // access system tables only
@@ -61,11 +65,19 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
     const relations = datasetDbs.flatMap(s => s.relations || [])
     opts.logger.log(`✔︎ Exported ${pluralizeL(entities, 'table')} and ${pluralizeL(relations, 'relation')} from the database!`)
     return removeEmpty({
-        entities,
-        relations,
+        entities: indexEntities(entities),
+        relations: indexRelations(relations),
         types: undefined,
         doc: undefined,
-        stats: undefined,
+        stats: removeUndefined({
+            name: projectId,
+            kind: DatabaseKind.Enum.bigquery,
+            version: undefined,
+            doc: undefined,
+            extractedAt: new Date().toISOString(),
+            extractionDuration: Date.now() - start,
+            size: undefined,
+        }),
         extra: undefined,
     })
 }
@@ -73,7 +85,7 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
 // 👇️ Private functions, some are exported only for tests
 // If you use them, beware of breaking changes!
 
-const toEntityId = <T extends { table_catalog: string, table_schema: string, table_name: string }>(value: T): EntityId => formatEntityRef({catalog: value.table_catalog, schema: value.table_schema, entity: value.table_name})
+const toEntityId = <T extends { table_catalog: string, table_schema: string, table_name: string }>(value: T): EntityId => entityRefToId({catalog: value.table_catalog, schema: value.table_schema, entity: value.table_name})
 const groupByEntity = <T extends { table_catalog: string, table_schema: string, table_name: string }>(values: T[]): Record<EntityId, T[]> => groupBy(values, toEntityId)
 
 export const getDatasets = (projectId: string, opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<SchemaName[]> => {
@@ -187,10 +199,11 @@ export const getColumns = (projectId: string, datasetId: string, opts: Connector
 
 function buildAttribute(column: RawColumn): Attribute {
     return removeUndefined({
+        pos: column.column_index,
         name: column.column_name,
         type: column.column_type,
-        nullable: column.column_nullable || undefined,
-        generated: undefined,
+        null: column.column_nullable || undefined,
+        gen: undefined,
         default: column.column_default !== 'NULL' ? column.column_default : undefined,
         values: undefined,
         attrs: undefined,

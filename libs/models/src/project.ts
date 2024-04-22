@@ -20,6 +20,8 @@ export type SourceKind = z.infer<typeof SourceKind>
 export const LayoutName = z.string()
 export type LayoutName = z.infer<typeof LayoutName>
 
+// SourceAttribute: firstSeen
+// SourceEntity: firstSeen
 
 export const Source = z.object({
     id: SourceId,
@@ -111,6 +113,8 @@ export const UserPropertyValue = z.union([z.string(), z.string().array()])
 export type UserPropertyValue = z.infer<typeof UserPropertyValue>
 
 export const AttributeDoc = z.object({
+    defaultShow: z.boolean().optional(), // true when not specified
+    defaultPos: z.number().optional(),
     alias: z.string().optional(),
     doc: Markdown.optional(),
     tags: TagName.array().optional(),

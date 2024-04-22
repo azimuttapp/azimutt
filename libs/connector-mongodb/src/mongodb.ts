@@ -6,10 +6,12 @@ import {
     ConnectorSchemaOpts,
     connectorSchemaOptsDefaults,
     Database,
+    DatabaseKind,
     DatabaseName,
     Entity,
     formatConnectorScope,
     handleError,
+    indexEntities,
     schemaToAttributes,
     valuesToSchema
 } from "@azimutt/models";
@@ -17,6 +19,7 @@ import {scopeFilter} from "./helpers";
 import {Conn} from "./connect";
 
 export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<Database> => {
+    const start = Date.now()
     const scope = formatConnectorScope({database: 'database', entity: 'collection'}, opts)
     opts.logger.log(`Connected to the database${scope ? `, exporting for ${scope}` : ''} ...`)
     const databaseNames: DatabaseName[] = await getDatabases(opts)(conn)
@@ -26,11 +29,19 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
     const entities: Entity[] = (await sequence(collections, collection => inferCollection(collection, opts))).flat()
     opts.logger.log(`✔︎ Exported ${pluralizeL(entities, 'collection')} from the database!`)
     return removeUndefined({
-        entities,
+        entities: indexEntities(entities),
         relations: undefined,
         types: undefined,
         doc: undefined,
-        stats: undefined,
+        stats: removeUndefined({
+            name: conn.url.db,
+            kind: DatabaseKind.Enum.mongodb,
+            version: undefined,
+            doc: undefined,
+            extractedAt: new Date().toISOString(),
+            extractionDuration: Date.now() - start,
+            size: undefined,
+        }),
         extra: undefined,
     })
 }

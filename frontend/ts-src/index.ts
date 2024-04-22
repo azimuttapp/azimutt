@@ -14,8 +14,8 @@ import {
     LegacyDatabaseQueryResults,
     LegacyProjectStorage,
     LegacyTableStats,
-    parseAttributePath,
-    parseEntityRef,
+    attributePathFromId,
+    entityRefFromId,
     ParserError,
     queryResultsToLegacy,
     tableStatsToLegacy
@@ -296,7 +296,7 @@ function getTableStats(msg: GetTableStats) {
     if (tableStatsCache[key]) {
         app.gotTableStats(msg.source, tableStatsCache[key])
     } else {
-        const entityRef = parseEntityRef(msg.table);
+        const entityRef = entityRefFromId(msg.table);
         (window.desktop ?
             window.desktop.getEntityStats(msg.database, entityRef).then(tableStatsToLegacy) :
             backend.getTableStats(msg.database, entityRef)
@@ -314,7 +314,7 @@ function getColumnStats(msg: GetColumnStats) {
     if (columnStatsCache[key]) {
         app.gotColumnStats(msg.source, columnStatsCache[key])
     } else {
-        const attributeRef: AttributeRef = {...parseEntityRef(msg.column.table), attribute: parseAttributePath(msg.column.column)};
+        const attributeRef: AttributeRef = {...entityRefFromId(msg.column.table), attribute: attributePathFromId(msg.column.column)};
         (window.desktop ?
             window.desktop.getAttributeStats(msg.database, attributeRef).then(columnStatsToLegacy) :
             backend.getColumnStats(msg.database, attributeRef)

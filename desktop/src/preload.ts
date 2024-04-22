@@ -16,6 +16,7 @@ import {
 
 const {contextBridge, ipcRenderer} = require('electron')
 
+/* eslint @typescript-eslint/no-explicit-any: 0 */
 contextBridge.exposeInMainWorld('desktop', {
     versions: {
         node: () => process.versions.node,
@@ -30,6 +31,7 @@ contextBridge.exposeInMainWorld('desktop', {
     getEntityStats: (url: DatabaseUrl, ref: EntityRef): Promise<ConnectorEntityStats> => ipcRenderer.invoke('getEntityStats', url, ref),
     getAttributeStats: (url: DatabaseUrl, ref: AttributeRef): Promise<ConnectorAttributeStats> => ipcRenderer.invoke('getAttributeStats', url, ref),
 } as DesktopBridge)
+/* eslint @typescript-eslint/no-explicit-any: 2 */
 
 // window.addEventListener('DOMContentLoaded', () => {
 //     // code executed on page load

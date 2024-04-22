@@ -27,7 +27,7 @@
   "dependencies": {
     "@azimutt/models": "file:../models",
     "@azimutt/utils": "file:../utils",
-    "couchbase": "4.3.0"
+    "couchbase": "4.3.1"
   },
   "devDependencies": {
     "@jest/globals": "^29.7.0",

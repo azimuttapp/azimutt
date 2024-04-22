@@ -13,21 +13,25 @@ import {
     Attribute,
     AttributeName,
     AttributePath,
+    attributeRefToId,
     AttributeValue,
     Check,
     ConnectorSchemaOpts,
     connectorSchemaOptsDefaults,
     Database,
+    DatabaseKind,
     Entity,
     EntityId,
     EntityRef,
-    formatAttributeRef,
+    entityRefFromId,
+    entityRefToId,
     formatConnectorScope,
-    formatEntityRef,
     handleError,
     Index,
+    indexEntities,
+    indexRelations,
+    indexTypes,
     isPolymorphic,
-    parseEntityRef,
     PrimaryKey,
     Relation,
     schemaToAttributes,
@@ -39,6 +43,7 @@ import {buildSqlColumn, buildSqlTable, scopeWhere} from "./helpers";
 import {Conn} from "./connect";
 
 export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<Database> => {
+    const start = Date.now()
     const scope = formatConnectorScope({schema: 'schema', entity: 'table'}, opts)
     opts.logger.log(`Connected to the database${scope ? `, exporting for ${scope}` : ''} ...`)
 
@@ -70,7 +75,7 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
     const indexesByTable = groupByEntity(indexes)
     opts.logger.log(`✔︎ Exported ${pluralizeL(tables, 'table')}, ${pluralizeL(relations, 'relation')} and ${pluralizeL(types, 'type')} from the database!`)
     return removeUndefined({
-        entities: tables.map(table => [toEntityId(table), table] as const).map(([id, table]) => buildEntity(
+        entities: indexEntities(tables.map(table => [toEntityId(table), table] as const).map(([id, table]) => buildEntity(
             blockSize,
             table,
             columnsByTable[id] || [],
@@ -79,11 +84,19 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
             indexesByTable[id] || [],
             jsonColumns[id] || {},
             polyColumns[id] || {},
-        )),
-        relations: relations.map(r => buildRelation(r, columnsByIndex)),
-        types: types.map(buildType),
+        ))),
+        relations: indexRelations(relations.map(r => buildRelation(r, columnsByIndex))),
+        types: indexTypes(types.map(buildType)),
         doc: undefined,
-        stats: undefined,
+        stats: removeUndefined({
+            name: conn.url.db || database.database,
+            kind: DatabaseKind.Enum.postgres,
+            version: database.version,
+            doc: undefined,
+            extractedAt: new Date().toISOString(),
+            extractionDuration: Date.now() - start,
+            size: database.blks_read * blockSize,
+        }),
         extra: undefined,
     })
 }
@@ -91,7 +104,7 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
 // 👇️ Private functions, some are exported only for tests
 // If you use them, beware of breaking changes!
 
-const toEntityId = <T extends { table_schema: string, table_name: string }>(value: T): EntityId => formatEntityRef({schema: value.table_schema, entity: value.table_name})
+const toEntityId = <T extends { table_schema: string, table_name: string }>(value: T): EntityId => entityRefToId({schema: value.table_schema, entity: value.table_name})
 const groupByEntity = <T extends { table_schema: string, table_name: string }>(values: T[]): Record<EntityId, T[]> => groupBy(values, toEntityId)
 
 export type RawDatabase = {
@@ -337,10 +350,11 @@ export const getColumns = (opts: ConnectorSchemaOpts) => async (conn: Conn): Pro
 
 function buildAttribute(c: RawColumn, jsonColumn: ValueSchema | undefined, values: string[] | undefined): Attribute {
     return removeEmpty({
+        pos: c.column_index,
         name: c.column_name,
         type: c.column_type,
-        nullable: c.column_nullable || undefined,
-        generated: c.column_generated || undefined,
+        null: c.column_nullable || undefined,
+        gen: c.column_generated || undefined,
         default: c.column_default || undefined,
         values: values,
         attrs: jsonColumn ? schemaToAttributes(jsonColumn, 0) : undefined,
@@ -561,8 +575,8 @@ export const getRelations = (opts: ConnectorSchemaOpts) => async (conn: Conn): P
 function buildRelation(r: RawRelation, columnsByIndex: Record<EntityId, { [i: number]: string }>): Relation {
     const src = {schema: r.table_schema, entity: r.table_name}
     const ref = {schema: r.target_schema, entity: r.target_table}
-    const srcId = formatEntityRef(src)
-    const refId = formatEntityRef(ref)
+    const srcId = entityRefToId(src)
+    const refId = entityRefToId(ref)
     return removeUndefined({
         name: r.constraint_name,
         kind: undefined, // 'many-to-one' when not specified
@@ -645,7 +659,7 @@ function buildType(t: RawType): Type {
 const getJsonColumns = (columns: Record<EntityId, RawColumn[]>, opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<Record<EntityId, Record<AttributeName, ValueSchema>>> => {
     opts.logger.log('Inferring JSON columns ...')
     return mapEntriesAsync(columns, (entityId, tableCols) => {
-        const ref = parseEntityRef(entityId)
+        const ref = entityRefFromId(entityId)
         const jsonCols = tableCols.filter(c => c.column_type === 'jsonb')
         return mapValuesAsync(Object.fromEntries(jsonCols.map(c => [c.column_name, c.column_name])), c =>
             getSampleValues(ref, [c], opts)(conn).then(valuesToSchema)
@@ -659,13 +673,13 @@ const getSampleValues = (ref: EntityRef, attribute: AttributePath, opts: Connect
     const sampleSize = opts.sampleSize || connectorSchemaOptsDefaults.sampleSize
     return conn.query<{value: AttributeValue}>(`SELECT ${sqlColumn} AS value FROM ${sqlTable} WHERE ${sqlColumn} IS NOT NULL LIMIT ${sampleSize};`, [], 'getSampleValues')
         .then(rows => rows.map(row => row.value))
-        .catch(handleError(`Failed to get sample values for '${formatAttributeRef({...ref, attribute})}'`, [], opts))
+        .catch(handleError(`Failed to get sample values for '${attributeRefToId({...ref, attribute})}'`, [], opts))
 }
 
 const getPolyColumns = (columns: Record<EntityId, RawColumn[]>, opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<Record<EntityId, Record<AttributeName, string[]>>> => {
     opts.logger.log('Inferring polymorphic relations ...')
     return mapEntriesAsync(columns, (entityId, tableCols) => {
-        const ref = parseEntityRef(entityId)
+        const ref = entityRefFromId(entityId)
         const colNames = tableCols.map(c => c.column_name)
         const polyCols = tableCols.filter(c => isPolymorphic(c.column_name, colNames))
         return mapValuesAsync(Object.fromEntries(polyCols.map(c => [c.column_name, c.column_name])), c =>
@@ -680,5 +694,5 @@ const getDistinctValues = (ref: EntityRef, attribute: AttributePath, opts: Conne
     const sampleSize = opts.sampleSize || connectorSchemaOptsDefaults.sampleSize
     return conn.query<{value: AttributeValue}>(`SELECT DISTINCT ${sqlColumn} AS value FROM ${sqlTable} WHERE ${sqlColumn} IS NOT NULL ORDER BY value LIMIT ${sampleSize};`, [], 'getDistinctValues')
         .then(rows => rows.map(row => row.value))
-        .catch(handleError(`Failed to get distinct values for '${formatAttributeRef({...ref, attribute})}'`, [], opts))
+        .catch(handleError(`Failed to get distinct values for '${attributeRefToId({...ref, attribute})}'`, [], opts))
 }

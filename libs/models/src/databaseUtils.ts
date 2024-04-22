@@ -1,4 +1,4 @@
-import {filterValues} from "@azimutt/utils";
+import {filterValues, groupBy, indexBy, mapValues, removeUndefined} from "@azimutt/utils";
 import {
     AttributeId,
     AttributePath,
@@ -6,58 +6,71 @@ import {
     AttributeRef,
     AttributeType,
     AttributeTypeParsed,
+    Entity,
     EntityId,
     EntityRef,
     Namespace,
-    NamespaceId
+    NamespaceId,
+    Relation,
+    Type,
+    TypeId,
+    TypeRef
 } from "./database";
 
-export function formatNamespace(n: Namespace): NamespaceId {
-    return [
-        n.database || '',
-        n.catalog || '',
-        n.schema || ''
-    ].map(addQuotes).join('.').replace(/^\.+/, '')
-}
+export const namespaceToId = (n: Namespace): NamespaceId => [
+    n.database || '',
+    n.catalog || '',
+    n.schema || ''
+].map(addQuotes).join('.').replace(/^\.+/, '')
 
-export function parseNamespace(id: NamespaceId): Namespace {
+export const namespaceFromId = (id: NamespaceId): Namespace => {
     const [schema, catalog, ...database] = id.split('.').reverse().map(removeQuotes)
     return filterValues({database: database.reverse().join('.'), catalog, schema}, v => !!v)
 }
 
-export function formatEntityRef(ref: EntityRef): EntityId {
-    const ns = formatNamespace(ref)
+export const entityRefToId = (ref: EntityRef): EntityId => {
+    const ns = namespaceToId(ref)
     return ns ? `${ns}.${ref.entity}` : addQuotes(ref.entity)
 }
 
-export function parseEntityRef(id: EntityId): EntityRef {
+export const entityRefFromId = (id: EntityId): EntityRef => {
     const [entity, schema, catalog, ...database] = id.split('.').reverse().map(removeQuotes)
     const namespace = filterValues({database: database.reverse().join('.'), catalog, schema}, v => !!v)
     return {...namespace, entity}
 }
 
-export function formatAttributePath(path: AttributePath): AttributePathId {
-    return path.join('.')
-}
+export const entityToRef = (e: Entity): EntityRef => removeUndefined({database: e.database, catalog: e.catalog, schema: e.schema, entity: e.name})
+export const entityToId = (e: Entity): EntityId => entityRefToId(entityToRef(e))
 
-export function parseAttributePath(path: AttributePathId): AttributePath {
-    return path.split('.')
-}
+export const attributePathToId = (path: AttributePath): AttributePathId => path.join('.')
+export const attributePathFromId = (path: AttributePathId): AttributePath => path.split('.')
 
-export function formatAttributeRef(ref: AttributeRef): AttributeId {
-    return `${formatEntityRef(ref)}(${ref.attribute})`
-}
+export const attributeRefToId = (ref: AttributeRef): AttributeId => `${entityRefToId(ref)}(${ref.attribute})`
 
-export function parseAttributeRef(id: AttributeId): AttributeRef {
+export const attributeRefFromId = (id: AttributeId): AttributeRef => {
     const [, entityId, attributeId] = id.match(/^(.*)\((.*)\)$/) || []
-    const entity = parseEntityRef(entityId || id)
-    const attribute = parseAttributePath(attributeId || '')
+    const entity = entityRefFromId(entityId || id)
+    const attribute = attributePathFromId(attributeId || '')
     return {...entity, attribute}
 }
 
-export function parseAttributeType(type: AttributeType): AttributeTypeParsed {
+export const attributeTypeParse = (type: AttributeType): AttributeTypeParsed => {
     return {full: type, kind: 'unknown'}
 }
+
+export const typeRefToId = (ref: TypeRef): TypeId => {
+    const ns = namespaceToId(ref)
+    return ns ? `${ns}.${ref.type}` : addQuotes(ref.type)
+}
+
+export const typeRefFromId = (id: TypeId): TypeRef => {
+    const [type, schema, catalog, ...database] = id.split('.').reverse().map(removeQuotes)
+    const namespace = filterValues({database: database.reverse().join('.'), catalog, schema}, v => !!v)
+    return {...namespace, type}
+}
+
+export const typeToRef = (t: Type): TypeRef => removeUndefined({database: t.database, catalog: t.catalog, schema: t.schema, type: t.name})
+export const typeToId = (t: Type): TypeId => typeRefToId(typeToRef(t))
 
 function addQuotes(value: string): string {
     if (value.match(/^\w*$/)) {
@@ -74,3 +87,10 @@ function removeQuotes(value: string): string {
         return value
     }
 }
+
+export const indexEntities = (entities: Entity[]): Record<EntityId, Entity> =>
+    indexBy(entities, entityToId)
+export const indexRelations = (relations: Relation[]): Record<EntityId, Record<EntityId, Relation[]>> =>
+    mapValues(groupBy(relations, r => entityRefToId(r.src)), rels => groupBy(rels, r => entityRefToId(r.ref)))
+export const indexTypes = (types: Type[]): Record<TypeId, Type> =>
+    indexBy(types, typeToId)
