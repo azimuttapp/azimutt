@@ -217,7 +217,7 @@ function tableFromLegacy(t: LegacyTable): Entity {
 function tableToLegacy(e: Entity): LegacyTable {
     const uniques = e.indexes?.filter(i => i.unique) || []
     const indexes = e.indexes?.filter(i => !i.unique) || []
-    return removeEmpty({
+    return removeUndefined({
         schema: e.schema || '',
         table: e.name,
         columns: e.attrs.map(columnToLegacy),
