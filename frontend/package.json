@@ -52,11 +52,11 @@
     "@azimutt/models": "file:../libs/models",
     "@azimutt/serde-prisma": "file:../libs/serde-prisma",
     "@azimutt/utils": "file:../libs/utils",
-    "@sentry/browser": "7.110.0",
-    "@sentry/tracing": "7.110.0",
+    "@sentry/browser": "7.111.0",
+    "@sentry/tracing": "7.111.0",
     "canvas-confetti": "1.9.2",
     "jiff": "0.7.3",
-    "zod": "3.22.4"
+    "zod": "3.23.0"
   },
   "devDependencies": {
     "@tailwindcss/forms": "^0.5.7",
