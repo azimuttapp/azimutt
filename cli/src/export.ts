@@ -1,6 +1,6 @@
 import chalk from "chalk";
 import {isNotUndefined, pluralizeL} from "@azimutt/utils";
-import {Connector, DatabaseUrlParsed, parseDatabaseUrl} from "@azimutt/models";
+import {Connector, DatabaseUrlParsed, Entity, parseDatabaseUrl} from "@azimutt/models";
 import {getConnector} from "@azimutt/gateway";
 import {FileFormat, FilePath, writeJsonFile} from "./utils/file.js";
 import {logger} from "./utils/logger.js";
@@ -61,7 +61,7 @@ async function exportJsonSchema(url: DatabaseUrlParsed, opts: Opts, connector: C
         ignoreErrors: opts.ignoreErrors
     })
     logger.log(`Export done in ${Date.now() - start} ms.`)
-    const entities = Object.values(database.entities || {})
+    const entities: Entity[] = Object.values(database.entities || {})
     const schemas: string[] = [...new Set(entities.map(t => t.schema)?.filter(isNotUndefined))]
     const file = filename(opts.output, url, schemas, opts.format)
     logger.log(`Writing schema to ${file} file ...`)
