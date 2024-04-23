@@ -11,7 +11,7 @@ import {
     SchemaArgument,
     SchemaExpression
 } from "@loancrate/prisma-schema-parser/dist/ast";
-import {collect, collectOne, errorToString, removeEmpty, removeUndefined, zip} from "@azimutt/utils";
+import {collect, collectOne, errorToString, indexBy, removeEmpty, removeUndefined, zip} from "@azimutt/utils";
 import {
     Attribute,
     AttributeName,
@@ -62,7 +62,7 @@ function buildDatabase(schema: PrismaSchema): Database {
 function buildEntity(schema: PrismaSchema, model: ModelDeclaration, comment: CommentBlock | undefined): { entity: Entity, relations: Relation[] } {
     const attrs: Attribute[] = model.members.flatMap((member, index, array) => {
         const prev = array[index - 1]
-        return member.kind === 'field' ? [buildAttribute(member, prev?.kind === 'commentBlock' ? prev : undefined)] : []
+        return member.kind === 'field' ? [buildAttribute(member, index, prev?.kind === 'commentBlock' ? prev : undefined)] : []
     })
     const fields: FieldDeclaration[] = model.members.filter((m): m is FieldDeclaration => m.kind === 'field')
     const attrPk: PrimaryKey | undefined = collectOne(fields, f => f.attributes?.find(a => a.path.value.indexOf('id') >= 0) ? {attrs: [[f.name.value]]} : undefined)
@@ -76,7 +76,7 @@ function buildEntity(schema: PrismaSchema, model: ModelDeclaration, comment: Com
             schema: getEntitySchema(model),
             name: getEntityName(model),
             // kind: 'view', // views are not parsed by @loancrate/prisma-schema-parser :/
-            attrs: attrs,
+            attrs: indexBy(attrs, c => c.name),
             pk: entityPk || attrPk,
             indexes: attrUniques.concat(entityUniques, entityIndexes),
             checks: undefined, // no CHECK constraint in Prisma Schema :/
@@ -86,13 +86,14 @@ function buildEntity(schema: PrismaSchema, model: ModelDeclaration, comment: Com
     }
 }
 
-function buildAttribute(field: FieldDeclaration, comment: CommentBlock | undefined): Attribute {
+function buildAttribute(field: FieldDeclaration, index: number, comment: CommentBlock | undefined): Attribute {
     const comments = (comment?.comments || []).concat(field.comment ? [field.comment] : [])
     const dbType = field.attributes?.find(a => a.path.value[0] === 'db')
     return removeUndefined({
+        pos: index,
         name: getAttributeName(field),
         type: (dbType ? formatDbType(dbType) : undefined) || formatPrismaType(field.type),
-        nullable: field.type.kind === 'optional' ? true : undefined,
+        null: field.type.kind === 'optional' ? true : undefined,
         default: field.attributes
             ?.find(a => a.path.value.indexOf('default') >= 0)
             ?.args
@@ -152,7 +153,7 @@ function buildType(model: ModelDeclaration): Type {
         name: model.name.value,
         attrs: model.members.flatMap((member, index, array) => {
             const prev = array[index - 1]
-            return member.kind === 'field' ? [buildAttribute(member, prev?.kind === 'commentBlock' ? prev : undefined)] : []
+            return member.kind === 'field' ? [buildAttribute(member, index, prev?.kind === 'commentBlock' ? prev : undefined)] : []
         })
     }
 }
