@@ -7,7 +7,7 @@ import DbmlEndpoint from "@dbml/core/types/model_structure/endpoint";
 import DbmlEnum from "@dbml/core/types/model_structure/enum";
 import DbmlTableGroup from "@dbml/core/types/model_structure/tableGroup";
 import DbmlSchema from "@dbml/core/types/model_structure/schema";
-import {indexBy, removeEmpty, removeUndefined, zip} from "@azimutt/utils";
+import {removeEmpty, removeUndefined, zip} from "@azimutt/utils";
 import {
     Attribute,
     AttributePath,
@@ -16,9 +16,6 @@ import {
     Entity,
     EntityRef,
     Index,
-    indexEntities,
-    indexRelations,
-    indexTypes,
     PrimaryKey,
     Relation,
     RelationKind,
@@ -35,9 +32,9 @@ export function importDatabase(db: DbmlDatabase): Database {
         groups: db.schemas.flatMap(s => s.tableGroups.map(importGroup))
     })
     return removeEmpty({
-        entities: indexEntities(db.schemas.flatMap(s => s.tables.map(importEntity))),
-        relations: indexRelations(db.schemas.flatMap(s => s.refs.map(importRef))),
-        types: indexTypes(db.schemas.flatMap(s => s.enums.map(importType))),
+        entities: db.schemas.flatMap(s => s.tables.map(importEntity)),
+        relations: db.schemas.flatMap(s => s.refs.map(importRef)),
+        types: db.schemas.flatMap(s => s.enums.map(importType)),
         extra
     })
 }
@@ -60,7 +57,7 @@ function importEntity(table: DbmlTable): Entity {
         name: table.name,
         kind: undefined,
         def: undefined,
-        attrs: indexBy(table.fields.map(importAttribute), c => c.name),
+        attrs: table.fields.map(importAttribute),
         pk: pkIndex ? pkIndex : pkCols.length > 0 ? {attrs: pkCols} : undefined,
         indexes: indexes.length > 0 ? indexes : undefined,
         checks: undefined,
@@ -70,13 +67,12 @@ function importEntity(table: DbmlTable): Entity {
     })
 }
 
-function importAttribute(field: DbmlField, index: number): Attribute {
+function importAttribute(field: DbmlField): Attribute {
     const extra: AttributeExtra = removeUndefined({
         increment: field.increment || undefined,
         defaultType: field.dbdefault?.type === 'expression' ? 'expression' : undefined
     })
     return removeEmpty({
-        pos: index,
         name: field.name,
         type: field.type.type_name,
         null: field.not_null === true ? !field.not_null : undefined,

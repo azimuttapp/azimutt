@@ -1,8 +1,8 @@
 node_modules
 out
-*.tgz
+local
 src/**/*.js
-tests/**/*.js
+*.tgz
 
 .env.production
 production.env

@@ -10,7 +10,6 @@ import {
     Entity,
     formatConnectorScope,
     handleError,
-    indexEntities,
     schemaToAttributes,
     valuesToSchema
 } from "@azimutt/models";
@@ -39,7 +38,7 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
 
     opts.logger.log(`✔︎ Exported ${pluralizeL(entities, 'collection')} from the cluster!`)
     return removeUndefined({
-        entities: indexEntities(entities),
+        entities: entities,
         relations: undefined,
         types: undefined,
         doc: undefined,

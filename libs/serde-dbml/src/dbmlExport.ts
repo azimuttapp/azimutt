@@ -18,14 +18,13 @@ import {defaultSchema} from "./dbmlImport";
 
 export function exportDatabase(db: Database): JsonDatabase {
     const extra: DatabaseExtra = DatabaseExtra.parse(db.extra) || {}
-    const entitiesBySchema = groupBy(Object.values(db.entities || {}), t => t.schema || defaultSchema)
-    const typesBySchema = groupBy(Object.values(db.types || {}), t => t.schema || defaultSchema)
+    const entitiesBySchema = groupBy(db.entities || [], t => t.schema || defaultSchema)
+    const typesBySchema = groupBy(db.types || [], t => t.schema || defaultSchema)
     const groupsBySchema = groupBy((extra.groups || []) as Group[], g => g.schema || defaultSchema)
     const schemas = [...new Set(Object.keys(entitiesBySchema).concat(Object.keys(typesBySchema), Object.keys(groupsBySchema)))]
-    const relations = Object.values(db.relations || {}).flatMap(Object.values)
     return {
         schemas: schemas.map(schema => exportSchema(schema, entitiesBySchema[schema] || [], [], typesBySchema[schema] || [], groupsBySchema[schema] || []))
-            .concat([exportSchema('relations', [], relations, [], [])]) // put relations in an other schema to avoid JSON parser bug
+            .concat([exportSchema('relations', [], db.relations || [], [], [])]) // put relations in an other schema to avoid JSON parser bug
     }
 }
 
@@ -51,7 +50,7 @@ function exportEntity(entity: Entity): JsonTable {
         alias: extra.alias || null,
         note: entity.doc || null,
         headerColor: extra.color || undefined,
-        fields: Object.values(entity.attrs).sort((a, b) => a.pos - b.pos).map(c => exportAttribute(c, entity)),
+        fields: entity.attrs.map(c => exportAttribute(c, entity)),
         indexes: pkComposite.concat((entity.indexes || []).filter(i => i.attrs.length > 1 || !i.unique || i.name).map(exportIndex))
     })
 }

@@ -1,12 +1,4 @@
-import {
-    groupBy,
-    indexBy,
-    mapEntriesAsync,
-    mapValuesAsync,
-    pluralizeL,
-    removeEmpty,
-    removeUndefined
-} from "@azimutt/utils";
+import {groupBy, mapEntriesAsync, mapValuesAsync, pluralizeL, removeEmpty, removeUndefined} from "@azimutt/utils";
 import {
     Attribute,
     AttributeName,
@@ -25,8 +17,6 @@ import {
     formatConnectorScope,
     handleError,
     Index,
-    indexEntities,
-    indexRelations,
     isPolymorphic,
     PrimaryKey,
     Relation,
@@ -64,7 +54,7 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
     const foreignKeys: RawConstraintColumn[][] = Object.values(groupBy(constraintTypes['FOREIGN KEY'] || [], c => `${c.table_schema}.${c.table_name}.${c.constraint_name}`))
     opts.logger.log(`✔︎ Exported ${pluralizeL(tables, 'table')} and ${pluralizeL(foreignKeys, 'relation')} from the database!`)
     return removeUndefined({
-        entities: indexEntities(tables.map(table => [toEntityId(table), table] as const).map(([id, table]) => buildEntity(
+        entities: tables.map(table => [toEntityId(table), table] as const).map(([id, table]) => buildEntity(
             table,
             columnsByTable[id] || [],
             primaryKeys[id] || [],
@@ -72,8 +62,8 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
             indexes[id] || [],
             jsonColumns[id] || {},
             polyColumns[id] || {},
-        ))),
-        relations: indexRelations(foreignKeys.map(buildRelation)),
+        )),
+        relations: foreignKeys.map(buildRelation),
         types: undefined,
         doc: undefined,
         stats: removeUndefined({
@@ -142,9 +132,9 @@ function buildEntity(table: RawTable, columns: RawColumn[], primaryKeyColumns: R
         name: table.table_name,
         kind: table.table_kind === 'VIEW' || table.table_kind === 'SYSTEM VIEW' ? 'view' as const : undefined,
         def: table.definition || undefined,
-        attrs: indexBy(columns.slice(0)
+        attrs: columns.slice(0)
             .sort((a, b) => a.column_index - b.column_index)
-            .map(c => buildAttribute(c, jsonColumns[c.column_name], polyColumns[c.column_name])), c => c.name),
+            .map(c => buildAttribute(c, jsonColumns[c.column_name], polyColumns[c.column_name])),
         pk: primaryKeyColumns.length > 0 ? buildPrimaryKey(primaryKeyColumns) : undefined,
         indexes: indexes.length > 0 ? indexes.map(buildIndex) : undefined,
         checks: undefined,
@@ -198,7 +188,6 @@ export const getColumns = (opts: ConnectorSchemaOpts) => async (conn: Conn): Pro
 
 function buildAttribute(column: RawColumn, jsonColumn: ValueSchema | undefined, values: string[] | undefined): Attribute {
     return removeEmpty({
-        pos: column.column_index,
         name: column.column_name,
         type: column.column_type,
         null: column.column_nullable === 'YES' ? true : undefined,

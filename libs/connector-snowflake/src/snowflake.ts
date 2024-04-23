@@ -1,4 +1,4 @@
-import {groupBy, indexBy, pluralizeL, pluralizeR, removeEmpty, removeUndefined} from "@azimutt/utils";
+import {groupBy, pluralizeL, pluralizeR, removeEmpty, removeUndefined} from "@azimutt/utils";
 import {
     Attribute,
     ConnectorSchemaOpts,
@@ -9,8 +9,6 @@ import {
     entityRefToId,
     formatConnectorScope,
     handleError,
-    indexEntities,
-    indexRelations,
     PrimaryKey,
     Relation
 } from "@azimutt/models";
@@ -40,12 +38,12 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
     const columnsByTable = groupByEntity(columns)
     opts.logger.log(`✔︎ Exported ${pluralizeL(tables, 'table')} and ${pluralizeL(foreignKeys, 'relation')} from the database!`)
     return removeUndefined({
-        entities: indexEntities(tables.map(table => [toEntityId(table), table] as const).map(([id, table]) => buildEntity(
+        entities: tables.map(table => [toEntityId(table), table] as const).map(([id, table]) => buildEntity(
             table,
             columnsByTable[id] || [],
             primaryKeyColumns[id] || [],
-        ))),
-        relations: indexRelations(foreignKeys.map(buildRelation)),
+        )),
+        relations: foreignKeys.map(buildRelation),
         types: undefined,
         doc: undefined,
         stats: removeUndefined({
@@ -101,7 +99,7 @@ function buildEntity(table: RawTable, columns: RawColumn[], primaryKeyColumns: R
         name: table.table_name,
         kind: table.table_kind === 'BASE TABLE' ? undefined : 'view' as const,
         def: undefined,
-        attrs: indexBy(columns.map(buildAttribute), c => c.name),
+        attrs: columns.map(buildAttribute),
         pk: primaryKeyColumns.length > 0 ? buildPrimaryKey(primaryKeyColumns) : undefined,
         indexes: undefined,
         checks: undefined,
@@ -154,7 +152,6 @@ export const getColumns = (opts: ConnectorSchemaOpts) => async (conn: Conn): Pro
 
 function buildAttribute(column: RawColumn): Attribute {
     return removeUndefined({
-        pos: column.column_index,
         name: column.column_name,
         type: column.column_type,
         null: column.column_nullable === 'YES' ? true : undefined,

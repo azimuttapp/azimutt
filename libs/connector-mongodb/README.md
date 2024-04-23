@@ -10,7 +10,7 @@ It's accessible through the [Desktop app](../../desktop) (soon), the [CLI](https
 **Feel free to use it and even submit PR to improve it:**
 
 - improve [MongoDB queries](./src/mongodb.ts) (look at `getSchema` function)
-- improve [schema inference](../database-types/src/inferSchema.ts)
+- improve [schema inference](../models/src/inferSchema.ts)
 
 ## Set up a sample MongoDB database
 

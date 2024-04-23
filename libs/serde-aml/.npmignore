@@ -1,4 +1,7 @@
-tests/
+local
+resources
+src/*.js
+src/*.test.ts
 jest.config.js
 tsconfig.json
 *.tgz

@@ -1,7 +1,6 @@
 import {parse} from "postgres-array";
 import {
     groupBy,
-    indexBy,
     mapEntriesAsync,
     mapValues,
     mapValuesAsync,
@@ -29,9 +28,6 @@ import {
     formatConnectorScope,
     handleError,
     Index,
-    indexEntities,
-    indexRelations,
-    indexTypes,
     isPolymorphic,
     PrimaryKey,
     Relation,
@@ -76,7 +72,7 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
     const indexesByTable = groupByEntity(indexes)
     opts.logger.log(`✔︎ Exported ${pluralizeL(tables, 'table')}, ${pluralizeL(relations, 'relation')} and ${pluralizeL(types, 'type')} from the database!`)
     return removeUndefined({
-        entities: indexEntities(tables.map(table => [toEntityId(table), table] as const).map(([id, table]) => buildEntity(
+        entities: tables.map(table => [toEntityId(table), table] as const).map(([id, table]) => buildEntity(
             blockSize,
             table,
             columnsByTable[id] || [],
@@ -85,9 +81,9 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
             indexesByTable[id] || [],
             jsonColumns[id] || {},
             polyColumns[id] || {},
-        ))),
-        relations: indexRelations(relations.map(r => buildRelation(r, columnsByIndex))),
-        types: indexTypes(types.map(buildType)),
+        )),
+        relations: relations.map(r => buildRelation(r, columnsByIndex)),
+        types: types.map(buildType),
         doc: undefined,
         stats: removeUndefined({
             name: conn.url.db || database.database,
@@ -254,9 +250,9 @@ function buildEntity(blockSize: number, table: RawTable, columns: RawColumn[], c
         name: table.table_name,
         kind: table.table_kind === 'v' ? 'view' as const : table.table_kind === 'm' ? 'materialized view' as const : undefined,
         def: table.table_definition || undefined,
-        attrs: indexBy(columns.slice(0)
+        attrs: columns.slice(0)
             .sort((a, b) => a.column_index - b.column_index)
-            .map(c => buildAttribute(c, jsonColumns[c.column_name], polyColumns[c.column_name])), c => c.name),
+            .map(c => buildAttribute(c, jsonColumns[c.column_name], polyColumns[c.column_name])),
         pk: constraints.filter(c => c.constraint_type === 'p').map(c => buildPrimaryKey(c, columnsByIndex))[0] || undefined,
         indexes: indexes.map(i => buildIndex(blockSize, i, columnsByIndex)),
         checks: constraints.filter(c => c.constraint_type === 'c').map(c => buildCheck(c, columnsByIndex)),
@@ -355,7 +351,6 @@ export const getColumns = (opts: ConnectorSchemaOpts) => async (conn: Conn): Pro
 
 function buildAttribute(c: RawColumn, jsonColumn: ValueSchema | undefined, values: string[] | undefined): Attribute {
     return removeEmpty({
-        pos: c.column_index,
         name: c.column_name,
         type: c.column_type,
         null: c.column_nullable || undefined,

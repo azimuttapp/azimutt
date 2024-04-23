@@ -125,25 +125,23 @@ export const AttributeStats = z.object({
 export type AttributeStats = z.infer<typeof AttributeStats>
 
 export const Attribute: z.ZodType<Attribute> = z.object({
-    pos: z.number(),
     name: AttributeName,
     type: AttributeType,
     null: z.boolean().optional(), // false when not specified
     gen: z.boolean().optional(), // false when not specified
     default: AttributeValue.optional(),
-    attrs: z.lazy(() => z.record(AttributeName, Attribute).optional()),
+    attrs: z.lazy(() => Attribute.array().optional()),
     doc: z.string().optional(),
     stats: AttributeStats.optional(),
     extra: Extra.optional()
 }).strict()
 export type Attribute = { // define type explicitly because it's lazy (https://zod.dev/?id=recursive-types)
-    pos: number
     name: AttributeName
     type: AttributeType
     null?: boolean | undefined
     gen?: boolean | undefined
     default?: AttributeValue | undefined
-    attrs?: { [name: AttributeName]: Attribute } | undefined
+    attrs?: Attribute[] | undefined
     doc?: string | undefined
     stats?: AttributeStats | undefined
     extra?: Extra | undefined
@@ -171,7 +169,7 @@ export const Entity = Namespace.extend({
     name: EntityName,
     kind: EntityKind.optional(), // 'table' when not specified
     def: z.string().optional(), // the query definition for views
-    attrs: z.record(AttributeName, Attribute),
+    attrs: Attribute.array(),
     pk: PrimaryKey.optional(),
     indexes: Index.array().optional(),
     checks: Check.array().optional(),
@@ -223,9 +221,9 @@ export const DatabaseStats = z.object({
 export type DatabaseStats = z.infer<typeof DatabaseStats>
 
 export const Database = z.object({
-    entities: z.record(EntityId, Entity),
-    relations: z.record(EntityId, z.record(EntityId, Relation.array())),
-    types: z.record(TypeId, Type),
+    entities: Entity.array(),
+    relations: Relation.array(),
+    types: Type.array(),
     // functions: z.record(FunctionId, Function.array()),
     // procedures: z.record(ProcedureId, Procedure.array()),
     // triggers: z.record(TriggerId, Trigger.array()),

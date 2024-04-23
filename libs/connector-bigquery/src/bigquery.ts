@@ -1,5 +1,5 @@
 import {BigQueryTimestamp, Dataset, DatasetsResponse} from "@google-cloud/bigquery";
-import {groupBy, indexBy, joinLimit, pluralizeL, removeEmpty, removeUndefined, sequence, zip} from "@azimutt/utils";
+import {groupBy, joinLimit, pluralizeL, removeEmpty, removeUndefined, sequence, zip} from "@azimutt/utils";
 import {
     Attribute,
     ConnectorSchemaOpts,
@@ -11,8 +11,6 @@ import {
     formatConnectorScope,
     handleError,
     Index,
-    indexEntities,
-    indexRelations,
     PrimaryKey,
     Relation,
     SchemaName
@@ -28,7 +26,7 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
     opts.logger.log(`Exporting project '${projectId}'${scope ? `, only for ${scope}` : ''} ...`)
     const datasetIds = await getDatasets(projectId, opts)(conn)
     opts.logger.log(`Found ${pluralizeL(datasetIds, 'dataset')} to export (${joinLimit(datasetIds)}) ...`)
-    const datasetDbs: {entities: Entity[], relations: Relation[]}[] = await sequence(datasetIds, async datasetId => {
+    const datasetDbs: Database[] = await sequence(datasetIds, async datasetId => {
         opts.logger.log(`Exporting dataset '${projectId}.${datasetId}' ...`)
 
         // access system tables only
@@ -65,8 +63,8 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
     const relations = datasetDbs.flatMap(s => s.relations || [])
     opts.logger.log(`✔︎ Exported ${pluralizeL(entities, 'table')} and ${pluralizeL(relations, 'relation')} from the database!`)
     return removeEmpty({
-        entities: indexEntities(entities),
-        relations: indexRelations(relations),
+        entities: entities,
+        relations: relations,
         types: undefined,
         doc: undefined,
         stats: removeUndefined({
@@ -151,9 +149,9 @@ function buildEntity(table: RawTable, columns: RawColumn[], primaryKeys: RawPrim
         name: table.table_name,
         kind: table.table_type === 'VIEW' ? 'view' as const : table.table_type === 'MATERIALIZED VIEW' ? 'materialized view' as const : undefined,
         def: table.view_definition || undefined,
-        attrs: indexBy(columns.slice(0)
+        attrs: columns.slice(0)
             .sort((a, b) => a.column_index - b.column_index)
-            .map(buildAttribute), c => c.name),
+            .map(buildAttribute),
         pk: pk ? buildPrimaryKey(pk) : undefined,
         indexes: indexes.length > 0 ? indexes.map(buildIndex) : undefined,
         checks: undefined,
@@ -199,7 +197,6 @@ export const getColumns = (projectId: string, datasetId: string, opts: Connector
 
 function buildAttribute(column: RawColumn): Attribute {
     return removeUndefined({
-        pos: column.column_index,
         name: column.column_name,
         type: column.column_type,
         null: column.column_nullable || undefined,

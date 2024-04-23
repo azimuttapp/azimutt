@@ -1,6 +1,6 @@
 import chalk from "chalk";
 import {isNotUndefined, pluralizeL} from "@azimutt/utils";
-import {Connector, DatabaseUrlParsed, Entity, parseDatabaseUrl} from "@azimutt/models";
+import {Connector, DatabaseUrlParsed, parseDatabaseUrl} from "@azimutt/models";
 import {getConnector} from "@azimutt/gateway";
 import {FileFormat, FilePath, writeJsonFile} from "./utils/file.js";
 import {logger} from "./utils/logger.js";
@@ -61,14 +61,13 @@ async function exportJsonSchema(url: DatabaseUrlParsed, opts: Opts, connector: C
         ignoreErrors: opts.ignoreErrors
     })
     logger.log(`Export done in ${Date.now() - start} ms.`)
-    const entities: Entity[] = Object.values(database.entities || {})
-    const schemas: string[] = [...new Set(entities.map(t => t.schema)?.filter(isNotUndefined))]
+    const schemas: string[] = [...new Set(database.entities?.map(t => t.schema)?.filter(isNotUndefined))]
     const file = filename(opts.output, url, schemas, opts.format)
     logger.log(`Writing schema to ${file} file ...`)
     await writeJsonFile(file, database)
     logger.log('')
     logger.log(chalk.green(`${connector.name} schema written in '${file}'.`))
-    logger.log(`Found ${pluralizeL(entities, 'table')} in ${pluralizeL(schemas, 'schema')}.`)
+    logger.log(`Found ${pluralizeL(database.entities || [], 'table')} in ${pluralizeL(schemas, 'schema')}.`)
     logger.log('You can now import this file in ▶︎ https://azimutt.app/new?json ◀︎︎')
 }
 

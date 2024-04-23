@@ -1,6 +1,5 @@
 node_modules
 out
-*.tgz
+local
 src/**/*.js
-tests/**/*.js
-tests/samples
+*.tgz

@@ -1,6 +1,5 @@
 import {
     groupBy,
-    indexBy,
     mapEntriesAsync,
     mapValuesAsync,
     partition,
@@ -29,8 +28,6 @@ import {
     formatConnectorScope,
     handleError,
     Index,
-    indexEntities,
-    indexRelations,
     PrimaryKey,
     Relation,
     schemaToAttributes,
@@ -70,14 +67,14 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
     const commentsByTable = groupByEntity(comments)
     opts.logger.log(`✔︎ Exported ${pluralizeL(tables, 'table')} and ${pluralizeL(foreignKeys, 'relation')} from the database!`)
     return removeUndefined({
-        entities: indexEntities(tables.map(([id, columns]) => buildEntity(
+        entities: tables.map(([id, columns]) => buildEntity(
             columns,
             indexColumnsByTable[id] || [],
             checksByTable[id] || [],
             commentsByTable[id] || [],
             jsonColumns[id] || {}
-        ))),
-        relations: indexRelations(foreignKeys.map(buildRelation)),
+        )),
+        relations: foreignKeys.map(buildRelation),
         types: undefined,
         doc: undefined,
         stats: removeUndefined({
@@ -135,9 +132,9 @@ function buildEntity(columns: RawColumn[], indexColumns: RawIndexColumn[], check
         name: columns[0].table_name,
         kind: columns[0].table_kind === 'VIEW' ? 'view' as const : undefined,
         def: undefined,
-        attrs: indexBy(columns.slice(0)
+        attrs: columns.slice(0)
             .sort((a, b) => a.column_index - b.column_index)
-            .map(c => buildAttribute(c, comments, jsonColumns[c.column_name])), c => c.name),
+            .map(c => buildAttribute(c, comments, jsonColumns[c.column_name])),
         pk: pk.length > 0 ? buildPrimaryKey(pk[0]) : undefined,
         indexes: idxs.map(buildIndex),
         checks: checks.map(buildCheck),
@@ -149,7 +146,6 @@ function buildEntity(columns: RawColumn[], indexColumns: RawIndexColumn[], check
 
 function buildAttribute(column: RawColumn, comments: RawComment[], jsonColumn: ValueSchema | undefined): Attribute {
     return removeUndefined({
-        pos: column.column_index,
         name: column.column_name,
         type: column.column_type,
         null: column.column_nullable === 'YES' ? true : undefined,

@@ -1,5 +1,5 @@
 import {distinct, mapValues, removeUndefined} from "@azimutt/utils";
-import {Attribute, AttributeName} from "./database";
+import {Attribute} from "./database";
 
 export type ValueSchema = { type: ValueType, values: Value[], nullable?: boolean, nested?: { [key: string]: ValueSchema } }
 export type Value = any
@@ -14,39 +14,28 @@ export function valuesToSchema(values: Value[]): ValueSchema {
 }
 
 // flatten: how many top level should be flattened
-export function schemaToAttributes(schema: ValueSchema, flatten: number = 0, path: string[] = [], nestingIndex: number = 0): Record<AttributeName, Attribute> {
+export function schemaToAttributes(schema: ValueSchema, flatten: number = 0, path: string[] = []): Attribute[] {
     // TODO: if string with few values (< 10% of docs), handle it like an enum and add values in comment
     if (schema.nested && flatten > 0) {
-        return Object.entries(schema.nested).reduce((attrs, [key, value]) => {
-            const index = Object.keys(attrs).length + 1
-            const name = path.map(p => p + '.').join('') + key
-            return {
-                ...attrs,
-                [name]: removeUndefined({
-                    pos: nestingIndex + index,
-                    name,
-                    type: value.type,
-                    null: value.nullable
-                }),
-                ...schemaToAttributes(value, flatten - 1, [...path, key], nestingIndex + index)
-            }
-        }, {})
+        return Object.entries(schema.nested).flatMap(([key, value]) => {
+            return [removeUndefined({
+                name: path.map(p => p + '.').join('') + key,
+                type: value.type,
+                null: value.nullable
+            }), ...schemaToAttributes(value, flatten - 1, [...path, key])]
+        })
     } else if (schema.nested) {
-        return Object.entries(schema.nested).reduce((attrs, [key, value], index) => {
+        return Object.entries(schema.nested).flatMap(([key, value]) => {
             const name = path.map(p => p + '.').join('') + key
-            return {
-                ...attrs,
-                [name]: removeUndefined({
-                    pos: nestingIndex + index + 1,
-                    name,
-                    type: value.type,
-                    null: value.nullable,
-                    attrs: value.nested ? schemaToAttributes(value) : undefined
-                })
-            }
-        }, {})
+            return [removeUndefined({
+                name,
+                type: value.type,
+                null: value.nullable,
+                attrs: value.nested ? schemaToAttributes(value) : undefined
+            })]
+        })
     } else {
-        return {}
+        return []
     }
 }
 
