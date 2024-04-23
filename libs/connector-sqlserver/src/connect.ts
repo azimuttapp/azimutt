@@ -55,7 +55,7 @@ export type QueryResultArrayMode = {
 }
 
 function buildconfig(application: string, url: DatabaseUrlParsed): config {
-    const props = parseDatabaseOptions(url.options)
+    const urlOptions = url.options || {}
     return {
         server: url.host,
         port: url.port,
@@ -63,10 +63,10 @@ function buildconfig(application: string, url: DatabaseUrlParsed): config {
         password: url.pass,
         database: url.db,
         options: {
-            appName: props['app'] || application || 'azimutt',
-            encrypt: ['true', 'yes'].indexOf((props['encrypt'] || '').toLowerCase()) != -1, // default: false
-            trustServerCertificate: (props['trustservercertificate'] || '').toLowerCase() !== 'false', // default: true
-            trustedConnection: ['true', 'yes'].indexOf((props['trusted_connection'] || '').toLowerCase()) != -1, // default: false
+            appName: urlOptions['app'] || application || 'azimutt',
+            encrypt: ['true', 'yes'].indexOf((urlOptions['encrypt'] || '').toLowerCase()) != -1, // default: false
+            trustServerCertificate: (urlOptions['trustservercertificate'] || '').toLowerCase() !== 'false', // default: true
+            trustedConnection: ['true', 'yes'].indexOf((urlOptions['trusted_connection'] || '').toLowerCase()) != -1, // default: false
             // ??? MultipleActiveResultSets=False
             // ??? persist security info=True
         } as IOptions

@@ -22,7 +22,7 @@ import {getSchema} from "./mongodb";
 export const mongodb: Connector = {
     name: 'MongoDb',
     getSchema: (application: string, url: DatabaseUrlParsed, opts: ConnectorSchemaOpts): Promise<Database> => {
-        const urlOptions = parseDatabaseOptions(url.options)
+        const urlOptions = url.options || {}
         const options: ConnectorSchemaOpts = {
             ...opts,
             database: opts.database || urlOptions['database'],

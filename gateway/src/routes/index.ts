@@ -10,7 +10,6 @@ import {
     DatabaseUrl,
     DatabaseUrlParsed,
     EntityRef,
-    parseDatabaseOptions,
     parseDatabaseUrl,
     queryResultsToLegacy,
     tableStatsToLegacy
@@ -63,7 +62,7 @@ const routes: FastifyPluginAsync = async (server) => {
 
 function getDatabaseSchema(params: GetSchemaParams, res: FastifyReply): Promise<GetSchemaResponse | FastifyReply> {
     return withConnector(params.url, res, (url, conn) => {
-        const urlOptions = parseDatabaseOptions(url.options)
+        const urlOptions = url.options || {}
         return conn.getSchema(application, url, {
             logger,
             logQueries: urlOptions['log-queries'] === 'true',

@@ -10,7 +10,6 @@ import {
     DatabaseQuery,
     DatabaseUrlParsed,
     EntityRef,
-    parseDatabaseOptions,
     QueryAnalyze,
     QueryResults,
     zodParseAsync
@@ -22,7 +21,7 @@ import {getSchema} from "./bigquery";
 export const bigquery: Connector = {
     name: 'BigQuery',
     getSchema: (application: string, url: DatabaseUrlParsed, opts: ConnectorSchemaOpts): Promise<Database> => {
-        const urlOptions = parseDatabaseOptions(url.options)
+        const urlOptions = url.options || {}
         const options: ConnectorSchemaOpts = {
             ...opts,
             catalog: opts.catalog || url.db || urlOptions['project'],

@@ -23,7 +23,7 @@ import {getColumnStats, getTableStats} from "./stats";
 export const snowflake: Connector = {
     name: 'Snowflake',
     getSchema: (application: string, url: DatabaseUrlParsed, opts: ConnectorSchemaOpts): Promise<Database> => {
-        const urlOptions = parseDatabaseOptions(url.options)
+        const urlOptions = url.options || {}
         const options: ConnectorSchemaOpts = {
             ...opts,
             catalog: opts.catalog || urlOptions['catalog'],

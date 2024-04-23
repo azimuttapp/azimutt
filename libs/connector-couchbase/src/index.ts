@@ -22,7 +22,7 @@ import {getSchema} from "./couchbase";
 export const couchbase: Connector = {
     name: 'Couchbase',
     getSchema: (application: string, url: DatabaseUrlParsed, opts: ConnectorSchemaOpts): Promise<Database> => {
-        const urlOptions = parseDatabaseOptions(url.options)
+        const urlOptions = url.options || {}
         const options: ConnectorSchemaOpts = {
             ...opts,
             catalog: opts.catalog || urlOptions['bucket'],

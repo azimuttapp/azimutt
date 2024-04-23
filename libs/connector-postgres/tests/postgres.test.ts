@@ -22,7 +22,7 @@ describe('postgres', () => {
     test.skip('getSchema', async () => {
         const schema = await connect(application, url, getSchema(opts), opts)
         console.log('schema', schema)
-        // console.log('schema', schema.entities?.find(e => e.name == 'events')?.attrs?.find(a => a.name == 'name')?.stats)
+        // console.log('schema', schema.entities?.['public.events']?.attrs?.['name']?.stats?.commonValues)
         expect(schema.entities?.length).toEqual(14)
     })
     test.skip('getBlockSize', async () => {

@@ -7,7 +7,7 @@ import DbmlEndpoint from "@dbml/core/types/model_structure/endpoint";
 import DbmlEnum from "@dbml/core/types/model_structure/enum";
 import DbmlTableGroup from "@dbml/core/types/model_structure/tableGroup";
 import DbmlSchema from "@dbml/core/types/model_structure/schema";
-import {removeEmpty, removeUndefined, zip} from "@azimutt/utils";
+import {indexBy, removeEmpty, removeUndefined, zip} from "@azimutt/utils";
 import {
     Attribute,
     AttributePath,
@@ -58,25 +58,33 @@ function importEntity(table: DbmlTable): Entity {
     return removeEmpty({
         schema: importSchemaName(table.schema),
         name: table.name,
-        attrs: table.fields.map(importAttribute),
+        kind: undefined,
+        def: undefined,
+        attrs: indexBy(table.fields.map(importAttribute), c => c.name),
         pk: pkIndex ? pkIndex : pkCols.length > 0 ? {attrs: pkCols} : undefined,
         indexes: indexes.length > 0 ? indexes : undefined,
+        checks: undefined,
         doc: table.note || undefined,
+        stats: undefined,
         extra
     })
 }
 
-function importAttribute(field: DbmlField): Attribute {
+function importAttribute(field: DbmlField, index: number): Attribute {
     const extra: AttributeExtra = removeUndefined({
         increment: field.increment || undefined,
         defaultType: field.dbdefault?.type === 'expression' ? 'expression' : undefined
     })
     return removeEmpty({
+        pos: index,
         name: field.name,
         type: field.type.type_name,
         null: field.not_null === true ? !field.not_null : undefined,
+        gen: undefined,
         default: field.dbdefault?.value,
+        attrs: undefined,
         doc: field.note || undefined,
+        stats: undefined,
         extra
     })
 }

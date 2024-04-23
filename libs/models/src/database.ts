@@ -23,7 +23,7 @@ export const AttributeName = z.string()
 export type AttributeName = z.infer<typeof AttributeName>
 export const AttributePath = AttributeName.array()
 export type AttributePath = z.infer<typeof AttributePath>
-export const AttributeType = z.string() // TODO: add AttributeTypeParsed?
+export const AttributeType = z.string()
 export type AttributeType = z.infer<typeof AttributeType>
 export const AttributeValue = z.union([z.string(), z.number(), z.boolean(), z.date(), z.null(), z.unknown()])
 export type AttributeValue = z.infer<typeof AttributeValue>
@@ -42,12 +42,6 @@ export const AttributeId = z.string() // serialized AttributeRef (EntityId with 
 export type AttributeId = z.infer<typeof AttributeId>
 export const TypeId = z.string() // serialized TypeRef (type name with namespace), ex: 'public.post_status'
 export type TypeId = z.infer<typeof TypeId>
-
-// TODO: move to common.ts
-export const JsValueLiteral = z.union([z.string(), z.number(), z.boolean(), z.null()])
-export type JsValueLiteral = z.infer<typeof JsValueLiteral>
-export const JsValue: z.ZodType<JsValue> = z.lazy(() => z.union([JsValueLiteral, z.array(JsValue), z.record(JsValue)]))
-export type JsValue = JsValueLiteral | { [key: string]: JsValue } | JsValue[] // define type explicitly because it's lazy (https://zod.dev/?id=recursive-types)
 
 export const Extra = z.record(z.any())
 export type Extra = z.infer<typeof Extra>
@@ -107,7 +101,7 @@ export const AttributeTypeKind = z.enum(['text', 'int', 'float', 'bool', 'uuid',
 export type AttributeTypeKind = z.infer<typeof AttributeTypeKind>
 
 export const AttributeTypeParsed = z.object({
-    full: z.string(), // TODO: same as `DatabaseUrlParsed`, rename to `original`, `raw` or `formatted`?
+    full: z.string(),
     kind: AttributeTypeKind,
     size: z.number().optional(),
     encoding: z.string().optional(),
@@ -123,35 +117,33 @@ export const AttributeStats = z.object({
         value: AttributeValue,
         freq: z.number()
     }).strict().array().optional(),
+    distinctValues: AttributeValue.array().optional(),
     histogram: AttributeValue.array().optional(),
     min: AttributeValue.optional(),
     max: AttributeValue.optional(),
-    // TODO: last analyzed
 }).strict()
 export type AttributeStats = z.infer<typeof AttributeStats>
 
 export const Attribute: z.ZodType<Attribute> = z.object({
-    pos: z.number().optional(),
+    pos: z.number(),
     name: AttributeName,
     type: AttributeType,
     null: z.boolean().optional(), // false when not specified
     gen: z.boolean().optional(), // false when not specified
     default: AttributeValue.optional(),
-    values: AttributeValue.array().optional(), // TODO: move to stats
-    attrs: z.lazy(() => Attribute.array().optional()), // TODO: use Record instead of Array
+    attrs: z.lazy(() => z.record(AttributeName, Attribute).optional()),
     doc: z.string().optional(),
     stats: AttributeStats.optional(),
     extra: Extra.optional()
 }).strict()
 export type Attribute = { // define type explicitly because it's lazy (https://zod.dev/?id=recursive-types)
-    pos?: number | undefined
+    pos: number
     name: AttributeName
     type: AttributeType
     null?: boolean | undefined
     gen?: boolean | undefined
     default?: AttributeValue | undefined
-    values?: AttributeValue[] | undefined
-    attrs?: Attribute[] | undefined
+    attrs?: { [name: AttributeName]: Attribute } | undefined
     doc?: string | undefined
     stats?: AttributeStats | undefined
     extra?: Extra | undefined
@@ -167,8 +159,11 @@ export const EntityStats = z.object({
     sizeToast: z.number().optional(), // used bytes for toasts
     sizeToastIdx: z.number().optional(), // used bytes for toasts indexes
     scanSeq: z.number().optional(), // number of seq scan
+    scanSeqLast: DateTime.optional(),
     scanIdx: z.number().optional(), // number of index scan
-    // TODO: last analyzed
+    scanIdxLast: DateTime.optional(),
+    analyzeLast: DateTime.optional(),
+    vacuumLast: DateTime.optional(),
 }).strict()
 export type EntityStats = z.infer<typeof EntityStats>
 
@@ -176,7 +171,7 @@ export const Entity = Namespace.extend({
     name: EntityName,
     kind: EntityKind.optional(), // 'table' when not specified
     def: z.string().optional(), // the query definition for views
-    attrs: Attribute.array(), // TODO: use Record instead of Array
+    attrs: z.record(AttributeName, Attribute),
     pk: PrimaryKey.optional(),
     indexes: Index.array().optional(),
     checks: Check.array().optional(),
@@ -231,12 +226,12 @@ export const Database = z.object({
     entities: z.record(EntityId, Entity),
     relations: z.record(EntityId, z.record(EntityId, Relation.array())),
     types: z.record(TypeId, Type),
-    // functions: Function.array(),
-    // procedures: Procedure.array(),
-    // triggers: Trigger.array(),
-    doc: z.string().optional(),
-    stats: DatabaseStats.optional(),
-    extra: Extra.optional(),
+    // functions: z.record(FunctionId, Function.array()),
+    // procedures: z.record(ProcedureId, Procedure.array()),
+    // triggers: z.record(TriggerId, Trigger.array()),
+    doc: z.string(),
+    stats: DatabaseStats,
+    extra: Extra,
 }).partial().strict().describe('Database')
 export type Database = z.infer<typeof Database>
 

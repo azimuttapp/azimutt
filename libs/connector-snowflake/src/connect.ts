@@ -86,15 +86,15 @@ async function closeConnection(connection: Connection): Promise<void> {
 }
 
 function buildConfig(application: string, url: DatabaseUrlParsed): ConnectionOptions {
-    const opts = Object.fromEntries((url.options || '').split('&').map(part => part.split('='))) // TODO: use parseDatabaseOptions from url.ts
+    const urlOptions = url.options || {}
     return {
         application: application,
         account: (url.host || 'missing').replace(/(\.privatelink)?\.snowflakecomputing\.com$/, ''),
         username: url.user,
         password: url.pass,
         database: url.db,
-        schema: opts['schema'],
-        warehouse: opts['warehouse'],
+        schema: urlOptions['schema'],
+        warehouse: urlOptions['warehouse'],
     }
 }
 

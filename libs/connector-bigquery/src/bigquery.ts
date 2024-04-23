@@ -1,5 +1,5 @@
 import {BigQueryTimestamp, Dataset, DatasetsResponse} from "@google-cloud/bigquery";
-import {groupBy, joinLimit, pluralizeL, removeEmpty, removeUndefined, sequence, zip} from "@azimutt/utils";
+import {groupBy, indexBy, joinLimit, pluralizeL, removeEmpty, removeUndefined, sequence, zip} from "@azimutt/utils";
 import {
     Attribute,
     ConnectorSchemaOpts,
@@ -151,9 +151,9 @@ function buildEntity(table: RawTable, columns: RawColumn[], primaryKeys: RawPrim
         name: table.table_name,
         kind: table.table_type === 'VIEW' ? 'view' as const : table.table_type === 'MATERIALIZED VIEW' ? 'materialized view' as const : undefined,
         def: table.view_definition || undefined,
-        attrs: columns.slice(0)
+        attrs: indexBy(columns.slice(0)
             .sort((a, b) => a.column_index - b.column_index)
-            .map(buildAttribute),
+            .map(buildAttribute), c => c.name),
         pk: pk ? buildPrimaryKey(pk) : undefined,
         indexes: indexes.length > 0 ? indexes.map(buildIndex) : undefined,
         checks: undefined,
@@ -205,7 +205,6 @@ function buildAttribute(column: RawColumn): Attribute {
         null: column.column_nullable || undefined,
         gen: undefined,
         default: column.column_default !== 'NULL' ? column.column_default : undefined,
-        values: undefined,
         attrs: undefined,
         doc: column.description || undefined,
         stats: undefined,

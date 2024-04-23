@@ -41,3 +41,8 @@ export type SqlStatement = z.infer<typeof SqlStatement>
 
 export const SqlFragment = z.string() // a part of SQL, can be used to build a bigger query
 export type SqlFragment = z.infer<typeof SqlFragment>
+
+export const JsValueLiteral = z.union([z.string(), z.number(), z.boolean(), z.null()])
+export type JsValueLiteral = z.infer<typeof JsValueLiteral>
+export const JsValue: z.ZodType<JsValue> = z.lazy(() => z.union([JsValueLiteral, z.array(JsValue), z.record(JsValue)]))
+export type JsValue = JsValueLiteral | { [key: string]: JsValue } | JsValue[] // define type explicitly because it's lazy (https://zod.dev/?id=recursive-types)

@@ -1,4 +1,4 @@
-import {groupBy, pluralizeL, pluralizeR, removeEmpty, removeUndefined} from "@azimutt/utils";
+import {groupBy, indexBy, pluralizeL, pluralizeR, removeEmpty, removeUndefined} from "@azimutt/utils";
 import {
     Attribute,
     ConnectorSchemaOpts,
@@ -101,7 +101,7 @@ function buildEntity(table: RawTable, columns: RawColumn[], primaryKeyColumns: R
         name: table.table_name,
         kind: table.table_kind === 'BASE TABLE' ? undefined : 'view' as const,
         def: undefined,
-        attrs: columns.map(buildAttribute),
+        attrs: indexBy(columns.map(buildAttribute), c => c.name),
         pk: primaryKeyColumns.length > 0 ? buildPrimaryKey(primaryKeyColumns) : undefined,
         indexes: undefined,
         checks: undefined,
@@ -112,8 +112,12 @@ function buildEntity(table: RawTable, columns: RawColumn[], primaryKeyColumns: R
             sizeIdx: undefined,
             sizeToast: undefined,
             sizeToastIdx: undefined,
-            seq_scan: undefined,
-            idx_scan: undefined
+            scanSeq: undefined,
+            scanSeqLast: undefined,
+            scanIdx: undefined,
+            scanIdxLast: undefined,
+            analyzeLast: undefined,
+            vacuumLast: undefined,
         }),
         extra: undefined
     })
@@ -156,7 +160,6 @@ function buildAttribute(column: RawColumn): Attribute {
         null: column.column_nullable === 'YES' ? true : undefined,
         gen: undefined,
         default: column.column_default || undefined,
-        values: undefined,
         attrs: undefined,
         doc: column.column_comment || undefined,
         stats: undefined,

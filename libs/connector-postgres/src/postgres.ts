@@ -1,6 +1,7 @@
 import {parse} from "postgres-array";
 import {
     groupBy,
+    indexBy,
     mapEntriesAsync,
     mapValues,
     mapValuesAsync,
@@ -253,9 +254,9 @@ function buildEntity(blockSize: number, table: RawTable, columns: RawColumn[], c
         name: table.table_name,
         kind: table.table_kind === 'v' ? 'view' as const : table.table_kind === 'm' ? 'materialized view' as const : undefined,
         def: table.table_definition || undefined,
-        attrs: columns.slice(0)
+        attrs: indexBy(columns.slice(0)
             .sort((a, b) => a.column_index - b.column_index)
-            .map(c => buildAttribute(c, jsonColumns[c.column_name], polyColumns[c.column_name])),
+            .map(c => buildAttribute(c, jsonColumns[c.column_name], polyColumns[c.column_name])), c => c.name),
         pk: constraints.filter(c => c.constraint_type === 'p').map(c => buildPrimaryKey(c, columnsByIndex))[0] || undefined,
         indexes: indexes.map(i => buildIndex(blockSize, i, columnsByIndex)),
         checks: constraints.filter(c => c.constraint_type === 'c').map(c => buildCheck(c, columnsByIndex)),
@@ -266,8 +267,12 @@ function buildEntity(blockSize: number, table: RawTable, columns: RawColumn[], c
             sizeIdx: table.idx_blocks ? table.idx_blocks * blockSize : undefined,
             sizeToast: table.toast_blocks ? table.toast_blocks * blockSize : undefined,
             sizeToastIdx: table.toast_idx_blocks ? table.toast_idx_blocks * blockSize : undefined,
-            seq_scan: table.seq_scan || undefined,
-            idx_scan: table.idx_scan || undefined,
+            scanSeq: table.seq_scan || undefined,
+            scanSeqLast: (table.seq_scan_last || undefined)?.toISOString(),
+            scanIdx: table.idx_scan || undefined,
+            scanIdxLast: (table.idx_scan_last || undefined)?.toISOString(),
+            analyzeLast: (table.analyze_last || table.autoanalyze_last || undefined)?.toISOString(),
+            vacuumLast: (table.vacuum_last || table.autovacuum_last || undefined)?.toISOString(),
         }),
         extra: undefined
     })
@@ -356,15 +361,17 @@ function buildAttribute(c: RawColumn, jsonColumn: ValueSchema | undefined, value
         null: c.column_nullable || undefined,
         gen: c.column_generated || undefined,
         default: c.column_default || undefined,
-        values: values,
-        attrs: jsonColumn ? schemaToAttributes(jsonColumn, 0) : undefined,
+        attrs: jsonColumn ? schemaToAttributes(jsonColumn) : undefined,
         doc: c.column_comment || undefined,
         stats: removeUndefined({
             nulls: c.nulls || undefined,
             avgBytes: c.avg_len || undefined,
             cardinality: c.cardinality && c.cardinality > 0 ? c.cardinality : undefined,
             commonValues: c.common_vals && c.common_freqs ? zip(parseValues(c.common_vals, c.column_type_cat, c.column_type_name), c.common_freqs).map(([value, freq]) => ({value, freq})) : undefined,
-            histogram: c.histogram ? parseValues(c.histogram, c.column_type_cat, c.column_type_name) : undefined
+            distinctValues: values,
+            histogram: c.histogram ? parseValues(c.histogram, c.column_type_cat, c.column_type_name) : undefined,
+            min: undefined,
+            max: undefined,
         }),
         extra: undefined,
     })

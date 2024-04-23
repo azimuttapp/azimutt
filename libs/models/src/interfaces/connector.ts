@@ -1,6 +1,6 @@
 import {z} from "zod";
 import {AnyError, indent, joinLast, Logger, plural, stripIndent} from "@azimutt/utils";
-import {Millis} from "../common";
+import {JsValue, Millis} from "../common";
 import {DatabaseUrlParsed} from "../databaseUrl"
 import {
     AttributeName,
@@ -12,7 +12,6 @@ import {
     DatabaseName,
     EntityName,
     EntityRef,
-    JsValue,
     SchemaName
 } from "../database";
 
@@ -24,7 +23,6 @@ export interface Connector {
     getQueryHistory(application: string, url: DatabaseUrlParsed, opts: ConnectorQueryHistoryOpts): Promise<DatabaseQuery[]>
     execute(application: string, url: DatabaseUrlParsed, query: string, parameters: any[], opts: ConnectorDefaultOpts): Promise<QueryResults>
     analyze(application: string, url: DatabaseUrlParsed, query: string, parameters: any[], opts: ConnectorDefaultOpts): Promise<QueryAnalyze>
-    // TODO: needs to be challenged: fallback for db stats
     getEntityStats(application: string, url: DatabaseUrlParsed, ref: EntityRef, opts: ConnectorDefaultOpts): Promise<ConnectorEntityStats>
     getAttributeStats(application: string, url: DatabaseUrlParsed, ref: AttributeRef, opts: ConnectorDefaultOpts): Promise<ConnectorAttributeStats>
 }

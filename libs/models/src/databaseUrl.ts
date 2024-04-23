@@ -5,14 +5,14 @@ import {DatabaseKind} from "./database";
 export const DatabaseUrl = z.string()
 export type DatabaseUrl = z.infer<typeof DatabaseUrl>
 export const DatabaseUrlParsed = z.object({
-    full: z.string(), // TODO: rename to `original`, `raw` or `formatted`?
-    kind: DatabaseKind.optional(), // TODO: add `unknown` and make to required?
+    full: z.string(),
+    kind: DatabaseKind.optional(),
     user: z.string().optional(),
     pass: z.string().optional(),
     host: z.string().optional(),
     port: z.number().optional(),
     db: z.string().optional(),
-    options: z.string().optional(), // TODO: review this to make sure it's the best (use Record<string, string> instead?)
+    options: z.record(z.string()).optional(),
 }).strict()
 export type DatabaseUrlParsed = z.infer<typeof DatabaseUrlParsed>
 
@@ -34,8 +34,7 @@ export function parseDatabaseUrl(rawUrl: DatabaseUrl): DatabaseUrlParsed {
     if (bigqueryMatches) {
         const kind: DatabaseKind = 'bigquery'
         const [, user, pass, host, port, db, optionsStr] = bigqueryMatches
-        const {email: user2, key: pass2, project: db2, ...opts} = parseDatabaseOptions(optionsStr)
-        const options = formatDatabaseOptions(opts)
+        const {email: user2, key: pass2, project: db2, ...options} = parseDatabaseOptions(optionsStr)
         const values = {kind, user: user || user2, pass: pass || pass2, host, port: port ? parseInt(port) : undefined, db: db || db2, options}
         return {...filterValues(values, v => v !== undefined), full: url}
     }
@@ -43,49 +42,53 @@ export function parseDatabaseUrl(rawUrl: DatabaseUrl): DatabaseUrlParsed {
     const couchbaseMatches = url.match(couchbaseRegexxxxxxxxxxx)
     if (couchbaseMatches) {
         const kind: DatabaseKind = 'couchbase'
-        const [, user, pass, host, port, db, options] = couchbaseMatches
-        const opts = {kind, user, pass, host, port: port ? parseInt(port) : undefined, db, options}
-        return {...filterValues(opts, v => v !== undefined), full: url}
+        const [, user, pass, host, port, db, optionsStr] = couchbaseMatches
+        const options = parseDatabaseOptions(optionsStr)
+        const values = {kind, user, pass, host, port: port ? parseInt(port) : undefined, db, options}
+        return {...filterValues(values, v => v !== undefined), full: url}
     }
 
     const mariadbMatches = url.match(mariadbRegexxxxxxx)
     if (mariadbMatches) {
         const kind: DatabaseKind = 'mariadb'
-        const [, user, pass, host, port, db, options] = mariadbMatches
-        const opts = {kind, user, pass, host, port: port ? parseInt(port) : undefined, db, options}
-        return {...filterValues(opts, v => v !== undefined), full: url}
+        const [, user, pass, host, port, db, optionsStr] = mariadbMatches
+        const options = parseDatabaseOptions(optionsStr)
+        const values = {kind, user, pass, host, port: port ? parseInt(port) : undefined, db, options}
+        return {...filterValues(values, v => v !== undefined), full: url}
     }
 
     const mongodbMatches = url.match(mongoRegexxxxxxxxxx)
     if (mongodbMatches) {
         const kind: DatabaseKind = 'mongodb'
-        const [, user, pass, host, port, db, options] = mongodbMatches
-        const opts = {kind, user, pass, host, port: port ? parseInt(port) : undefined, db, options}
-        return {...filterValues(opts, v => v !== undefined), full: url}
+        const [, user, pass, host, port, db, optionsStr] = mongodbMatches
+        const options = parseDatabaseOptions(optionsStr)
+        const values = {kind, user, pass, host, port: port ? parseInt(port) : undefined, db, options}
+        return {...filterValues(values, v => v !== undefined), full: url}
     }
 
     const mysqlMatches = url.match(mysqlRegexxxxxxxxxxx)
     if (mysqlMatches) {
         const kind: DatabaseKind = 'mysql'
-        const [, user, pass, host, port, db, options] = mysqlMatches
-        const opts = {kind, user, pass, host, port: port ? parseInt(port) : undefined, db, options}
-        return {...filterValues(opts, v => v !== undefined), full: url}
+        const [, user, pass, host, port, db, optionsStr] = mysqlMatches
+        const options = parseDatabaseOptions(optionsStr)
+        const values = {kind, user, pass, host, port: port ? parseInt(port) : undefined, db, options}
+        return {...filterValues(values, v => v !== undefined), full: url}
     }
 
     const postgresMatches = url.match(postgresRe)
     if (postgresMatches) {
         const kind: DatabaseKind = 'postgres'
-        const [, user, pass, host, port, db, options] = postgresMatches
-        const opts = {kind, user, pass, host, port: port ? parseInt(port) : undefined, db, options}
-        return {...filterValues(opts, v => v !== undefined), full: url}
+        const [, user, pass, host, port, db, optionsStr] = postgresMatches
+        const options = parseDatabaseOptions(optionsStr)
+        const values = {kind, user, pass, host, port: port ? parseInt(port) : undefined, db, options}
+        return {...filterValues(values, v => v !== undefined), full: url}
     }
 
     const snowflakeMatches = url.match(snowflakeRegexxx) || url.match(snowflakeRegexxxxxxxxxxxxxx)
     if (snowflakeMatches) {
         const kind: DatabaseKind = 'snowflake'
         const [, user, pass, host, port, db, optionsStr] = snowflakeMatches
-        const {db: db2, user: user2, ...opts} = parseDatabaseOptions(optionsStr)
-        const options = formatDatabaseOptions(opts)
+        const {db: db2, user: user2, ...options} = parseDatabaseOptions(optionsStr)
         const values = {kind, user: user || user2, pass, host, port: port ? parseInt(port) : undefined, db: db || db2, options}
         return {...filterValues(values, v => v !== undefined), full: url}
     }
@@ -93,9 +96,10 @@ export function parseDatabaseUrl(rawUrl: DatabaseUrl): DatabaseUrlParsed {
     const sqlserverMatches = url.match(sqlserver) || parseSqlServerUrl(url)
     if (sqlserverMatches) {
         const kind: DatabaseKind = 'sqlserver'
-        const [, user, pass, host, port, db, options] = sqlserverMatches
-        const opts = {kind, user, pass, host, port: port ? parseInt(port) : undefined, db, options}
-        return {...filterValues(opts, v => v !== undefined), full: url}
+        const [, user, pass, host, port, db, optionsStr] = sqlserverMatches
+        const options = parseDatabaseOptions(optionsStr)
+        const values = {kind, user, pass, host, port: port ? parseInt(port) : undefined, db, options}
+        return {...filterValues(values, v => v !== undefined), full: url}
     }
 
     return {full: url}

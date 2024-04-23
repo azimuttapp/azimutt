@@ -1,5 +1,6 @@
 import {
     groupBy,
+    indexBy,
     mapEntriesAsync,
     mapValuesAsync,
     partition,
@@ -134,9 +135,9 @@ function buildEntity(columns: RawColumn[], indexColumns: RawIndexColumn[], check
         name: columns[0].table_name,
         kind: columns[0].table_kind === 'VIEW' ? 'view' as const : undefined,
         def: undefined,
-        attrs: columns.slice(0)
+        attrs: indexBy(columns.slice(0)
             .sort((a, b) => a.column_index - b.column_index)
-            .map(c => buildAttribute(c, comments, jsonColumns[c.column_name])),
+            .map(c => buildAttribute(c, comments, jsonColumns[c.column_name])), c => c.name),
         pk: pk.length > 0 ? buildPrimaryKey(pk[0]) : undefined,
         indexes: idxs.map(buildIndex),
         checks: checks.map(buildCheck),
@@ -154,8 +155,7 @@ function buildAttribute(column: RawColumn, comments: RawComment[], jsonColumn: V
         null: column.column_nullable === 'YES' ? true : undefined,
         gen: undefined,
         default: column.column_default ? removeSurroundingParentheses(column.column_default) : undefined,
-        values: undefined,
-        attrs: jsonColumn ? schemaToAttributes(jsonColumn, 0) : undefined,
+        attrs: jsonColumn ? schemaToAttributes(jsonColumn) : undefined,
         doc: comments.find(c => c.column_name === column.column_name)?.comment,
         stats: undefined,
         extra: undefined

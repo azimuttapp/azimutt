@@ -108,7 +108,7 @@ async function inferCollectionMixed(collection: Collection, mixed: MixedCollecti
         name: mixed ? `${collection.collectionName}__${mixed.attribute}__${mixed.value}` : collection.collectionName,
         kind: undefined,
         def: undefined,
-        attrs: schemaToAttributes(valuesToSchema(documents), 0),
+        attrs: schemaToAttributes(valuesToSchema(documents)),
         pk: undefined,
         indexes: undefined,
         checks: undefined,
@@ -119,8 +119,12 @@ async function inferCollectionMixed(collection: Collection, mixed: MixedCollecti
             sizeIdx: undefined,
             sizeToast: undefined,
             sizeToastIdx: undefined,
-            seq_scan: undefined,
-            idx_scan: undefined,
+            scanSeq: undefined,
+            scanSeqLast: undefined,
+            scanIdx: undefined,
+            scanIdxLast: undefined,
+            analyzeLast: undefined,
+            vacuumLast: undefined,
         }),
         extra: undefined
     })

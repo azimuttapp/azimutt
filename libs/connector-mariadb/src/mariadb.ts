@@ -1,4 +1,12 @@
-import {groupBy, mapEntriesAsync, mapValuesAsync, pluralizeL, removeEmpty, removeUndefined} from "@azimutt/utils";
+import {
+    groupBy,
+    indexBy,
+    mapEntriesAsync,
+    mapValuesAsync,
+    pluralizeL,
+    removeEmpty,
+    removeUndefined
+} from "@azimutt/utils";
 import {
     Attribute,
     AttributeName,
@@ -134,9 +142,9 @@ function buildEntity(table: RawTable, columns: RawColumn[], primaryKeyColumns: R
         name: table.table_name,
         kind: table.table_kind === 'VIEW' || table.table_kind === 'SYSTEM VIEW' ? 'view' as const : undefined,
         def: table.definition || undefined,
-        attrs: columns.slice(0)
+        attrs: indexBy(columns.slice(0)
             .sort((a, b) => a.column_index - b.column_index)
-            .map(c => buildAttribute(c, jsonColumns[c.column_name], polyColumns[c.column_name])),
+            .map(c => buildAttribute(c, jsonColumns[c.column_name], polyColumns[c.column_name])), c => c.name),
         pk: primaryKeyColumns.length > 0 ? buildPrimaryKey(primaryKeyColumns) : undefined,
         indexes: indexes.length > 0 ? indexes.map(buildIndex) : undefined,
         checks: undefined,
@@ -147,8 +155,12 @@ function buildEntity(table: RawTable, columns: RawColumn[], primaryKeyColumns: R
             sizeIdx: table.index_size || undefined,
             sizeToast: undefined,
             sizeToastIdx: undefined,
-            seq_scan: undefined,
-            idx_scan: undefined
+            scanSeq: undefined,
+            scanSeqLast: undefined,
+            scanIdx: undefined,
+            scanIdxLast: undefined,
+            analyzeLast: undefined,
+            vacuumLast: undefined,
         }),
         extra: undefined
     })
@@ -185,17 +197,25 @@ export const getColumns = (opts: ConnectorSchemaOpts) => async (conn: Conn): Pro
 }
 
 function buildAttribute(column: RawColumn, jsonColumn: ValueSchema | undefined, values: string[] | undefined): Attribute {
-    return removeUndefined({
+    return removeEmpty({
         pos: column.column_index,
         name: column.column_name,
         type: column.column_type,
         null: column.column_nullable === 'YES' ? true : undefined,
         gen: undefined,
         default: column.column_default || undefined,
-        values: values,
-        attrs: jsonColumn ? schemaToAttributes(jsonColumn, 0) : undefined,
+        attrs: jsonColumn ? schemaToAttributes(jsonColumn) : undefined,
         doc: column.column_comment || undefined,
-        stats: undefined,
+        stats: removeUndefined({
+            nulls: undefined,
+            avgBytes: undefined,
+            cardinality: undefined,
+            commonValues: undefined,
+            distinctValues: values,
+            histogram: undefined,
+            min: undefined,
+            max: undefined,
+        }),
         extra: undefined
     })
 }

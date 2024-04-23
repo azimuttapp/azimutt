@@ -23,7 +23,7 @@ import {getColumnStats, getTableStats} from "./stats";
 export const sqlserver: Connector = {
     name: 'SQL Server',
     getSchema: (application: string, url: DatabaseUrlParsed, opts: ConnectorSchemaOpts): Promise<Database> => {
-        const urlOptions = parseDatabaseOptions(url.options)
+        const urlOptions = url.options || {}
         const options: ConnectorSchemaOpts = {
             ...opts,
             schema: opts.schema || urlOptions['schema'],

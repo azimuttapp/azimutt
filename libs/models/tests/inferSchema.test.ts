@@ -1,5 +1,5 @@
 import {describe, expect, test} from "@jest/globals";
-import {valueToSchema, valuesToSchema, sumType} from "../src";
+import {schemaToAttributes, sumType, ValueSchema, valuesToSchema, valueToSchema} from "../src";
 
 describe('inferSchema', () => {
     test('infer primitive schema', () => {
@@ -64,5 +64,64 @@ describe('inferSchema', () => {
         expect(sumType(['string', 'number'])).toEqual('string|number')
         expect(sumType(['[]', 'string[]'])).toEqual('string[]')
         expect(sumType(['[]', 'string'])).toEqual('[]|string')
+    })
+    describe('schemaToAttributes', () => {
+        test('basic', () => {
+            expect(schemaToAttributes({type: 'json', values: []})).toEqual({})
+            expect(schemaToAttributes({type: 'json', values: [], nested: {
+                id: {type: 'int', values: []},
+                name: {type: 'varchar', values: []},
+            }})).toEqual({
+                id: {pos: 1, name: 'id', type: 'int'},
+                name: {pos: 2, name: 'name', type: 'varchar'},
+            })
+        })
+        test('flatten levels', () => {
+            const schema: ValueSchema = {type: 'json', values: [], nested: {
+                id: {type: 'int', values: []},
+                name: {type: 'varchar', values: []},
+                details: {type: 'json', values: [], nested: {
+                    github: {type: 'varchar', values: []},
+                    twitter: {type: 'json', values: [], nested: {
+                        id: {type: 'varchar', values: []},
+                        name: {type: 'varchar', values: []},
+                    }},
+                }},
+                settings: {type: 'json', values: []},
+            }}
+            expect(schemaToAttributes(schema, 0)).toEqual({
+                id: {pos: 1, name: 'id', type: 'int'},
+                name: {pos: 2, name: 'name', type: 'varchar'},
+                details: {pos: 3, name: 'details', type: 'json', attrs: {
+                    github: {pos: 1, name: 'github', type: 'varchar'},
+                    twitter: {pos: 2, name: 'twitter', type: 'json', attrs: {
+                        id: {pos: 1, name: 'id', type: 'varchar'},
+                        name: {pos: 2, name: 'name', type: 'varchar'},
+                    }},
+                }},
+                settings: {pos: 4, name: 'settings', type: 'json'},
+            })
+            expect(schemaToAttributes(schema, 1)).toEqual({
+                id: {pos: 1, name: 'id', type: 'int'},
+                name: {pos: 2, name: 'name', type: 'varchar'},
+                details: {pos: 3, name: 'details', type: 'json'},
+                'details.github': {pos: 4, name: 'details.github', type: 'varchar'},
+                'details.twitter': {pos: 5, name: 'details.twitter', type: 'json', attrs: {
+                    id: {pos: 1, name: 'id', type: 'varchar'},
+                    name: {pos: 2, name: 'name', type: 'varchar'},
+                }},
+                settings: {pos: 6, name: 'settings', type: 'json'},
+            })
+            expect(schemaToAttributes(schema, 2)).toEqual({
+                id: {pos: 1, name: 'id', type: 'int'},
+                name: {pos: 2, name: 'name', type: 'varchar'},
+                details: {pos: 3, name: 'details', type: 'json'},
+                'details.github': {pos: 4, name: 'details.github', type: 'varchar'},
+                'details.twitter': {pos: 5, name: 'details.twitter', type: 'json'},
+                'details.twitter.id': {pos: 6, name: 'details.twitter.id', type: 'varchar'},
+                'details.twitter.name': {pos: 7, name: 'details.twitter.name', type: 'varchar'},
+                settings: {pos: 8, name: 'settings', type: 'json'},
+            })
+        })
     })
 })

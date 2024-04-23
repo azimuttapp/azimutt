@@ -61,13 +61,14 @@ async function exportJsonSchema(url: DatabaseUrlParsed, opts: Opts, connector: C
         ignoreErrors: opts.ignoreErrors
     })
     logger.log(`Export done in ${Date.now() - start} ms.`)
-    const schemas: string[] = [...new Set(database.entities?.map(t => t.schema)?.filter(isNotUndefined))]
+    const entities = Object.values(database.entities || {})
+    const schemas: string[] = [...new Set(entities.map(t => t.schema)?.filter(isNotUndefined))]
     const file = filename(opts.output, url, schemas, opts.format)
     logger.log(`Writing schema to ${file} file ...`)
     await writeJsonFile(file, database)
     logger.log('')
     logger.log(chalk.green(`${connector.name} schema written in '${file}'.`))
-    logger.log(`Found ${pluralizeL(database.entities || [], 'table')} in ${pluralizeL(schemas, 'schema')}.`)
+    logger.log(`Found ${pluralizeL(entities, 'table')} in ${pluralizeL(schemas, 'schema')}.`)
     logger.log('You can now import this file in ▶︎ https://azimutt.app/new?json ◀︎︎')
 }
 

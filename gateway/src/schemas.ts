@@ -172,7 +172,7 @@ export const ParseUrlResponse = Type.Object({
     host: Type.Optional(Type.String()),
     port: Type.Optional(Type.Number()),
     db: Type.Optional(Type.String()),
-    options: Type.Optional(Type.String())
+    options: Type.Optional(Type.Record(Type.String(), Type.String()))
 })
 export type ParseUrlResponse = Static<typeof ParseUrlResponse>
 
