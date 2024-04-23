@@ -365,7 +365,7 @@ function buildAttribute(c: RawColumn, jsonColumn: ValueSchema | undefined, value
         doc: c.column_comment || undefined,
         stats: removeUndefined({
             nulls: c.nulls || undefined,
-            avgBytes: c.avg_len || undefined,
+            bytesAvg: c.avg_len || undefined,
             cardinality: c.cardinality && c.cardinality > 0 ? c.cardinality : undefined,
             commonValues: c.common_vals && c.common_freqs ? zip(parseValues(c.common_vals, c.column_type_cat, c.column_type_name), c.common_freqs).map(([value, freq]) => ({value, freq})) : undefined,
             distinctValues: values,

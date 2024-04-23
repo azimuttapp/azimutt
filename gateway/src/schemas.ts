@@ -87,7 +87,11 @@ export const sAzimuttTableDbStats = Type.Object({
     size: Nullish(Type.Number()),
     sizeIdx: Nullish(Type.Number()),
     scanSeq: Nullish(Type.Number()),
+    scanSeqLast: Nullish(Type.String()),
     scanIdx: Nullish(Type.Number()),
+    scanIdxLast: Nullish(Type.String()),
+    analyzeLast: Nullish(Type.String()),
+    vacuumLast: Nullish(Type.String()),
 })
 export const sAzimuttTable = Type.Object({
     schema: sSchemaName,

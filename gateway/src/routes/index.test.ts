@@ -1,7 +1,7 @@
 import {describe, expect, test} from "vitest"
-import {version} from "../../src/version";
-import {NodeEnv, startServer} from "../../src";
-import {buildConfig} from "../../src/plugins/config";
+import {version} from "../version";
+import {NodeEnv, startServer} from "../index";
+import {buildConfig} from "../plugins/config";
 
 describe('GET /', async () => {
     const server = await startServer(buildConfig({

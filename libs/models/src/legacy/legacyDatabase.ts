@@ -68,7 +68,7 @@ export const LegacyColumnDbStats = z.object({
         value: LegacyColumnValue,
         freq: z.number()
     }).strict().array().optional(),
-    histogram: LegacyColumnValue.array().optional()
+    histogram: LegacyColumnValue.array().optional(),
 }).strict()
 export type LegacyColumnDbStats = z.infer<typeof LegacyColumnDbStats>
 export type LegacyColumn = {
@@ -193,8 +193,8 @@ export function databaseFromLegacy(db: LegacyDatabase): Database {
 export function databaseToLegacy(db: Database): LegacyDatabase {
     return removeUndefined({
         tables: Object.values(db.entities || {}).map(tableToLegacy),
-        relations: Object.values(db.relations || {}).flatMap(Object.values).map(relationToLegacy),
-        types: Object.values(db.types || {}).map(typeToLegacy)
+        relations: Object.values(db.relations || {}).flatMap(Object.values).flat().map(relationToLegacy),
+        types: db.types ? Object.values(db.types).map(typeToLegacy) : undefined
     })
 }
 
@@ -260,13 +260,13 @@ function columnFromLegacy(c: LegacyColumn, index: number): Attribute {
         default: c.default ? columnValueFromLegacy(c.default) : undefined,
         attrs: c.columns ? indexBy(c.columns.map(columnFromLegacy), cc => cc.name) : undefined,
         doc: c.comment || undefined,
-        stats: c.stats ? removeUndefined({
-            nulls: c.stats.nulls,
-            avgBytes: c.stats.bytesAvg,
-            cardinality: c.stats.cardinality,
-            commonValues: c.stats.commonValues?.map(v => ({value: columnValueFromLegacy(v.value), freq: v.freq})),
+        stats: c.stats || c.values ? removeUndefined({
+            nulls: c.stats?.nulls,
+            bytesAvg: c.stats?.bytesAvg,
+            cardinality: c.stats?.cardinality,
+            commonValues: c.stats?.commonValues?.map(v => ({value: columnValueFromLegacy(v.value), freq: v.freq})),
             distinctValues: c.values?.map(columnValueFromLegacy) || undefined,
-            histogram: c.stats.histogram?.map(columnValueFromLegacy),
+            histogram: c.stats?.histogram?.map(columnValueFromLegacy),
         }) : undefined,
     })
 }

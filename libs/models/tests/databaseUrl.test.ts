@@ -13,7 +13,7 @@ describe('databaseUrl', () => {
             kind: 'bigquery',
             host: 'bigquery.googleapis.com',
             pass: '.bq/key.json',
-            options: 'dataset=relational'
+            options: {dataset: 'relational'}
         })
         expect(parseDatabaseUrl('jdbc:bigquery://account@service.com:.bq/key.json@https://bigquery.googleapis.com:443/my-project')).toEqual({
             full: 'jdbc:bigquery://account@service.com:.bq/key.json@https://bigquery.googleapis.com:443/my-project',
@@ -48,7 +48,7 @@ describe('databaseUrl', () => {
             host: 'cb.id.cloud.couchbase.com',
             port: 4567,
             db: 'bucket',
-            options: 'option1=abc',
+            options: {option1: 'abc'},
         })
     })
     test('parse mariadb url', () => {
@@ -60,7 +60,7 @@ describe('databaseUrl', () => {
             host: 'host.com',
             port: 3306,
             db: 'db',
-            options: 'option1=abc',
+            options: {option1: 'abc'},
         })
     })
     test('parse mongo url', () => {
@@ -77,7 +77,7 @@ describe('databaseUrl', () => {
             host: 'mongodb0.example.com',
             port: 27017,
             db: 'my_db',
-            options: 'secure=true',
+            options: {secure: 'true'},
         })
     })
     test('parse mysql url', () => {
@@ -89,7 +89,7 @@ describe('databaseUrl', () => {
             host: 'host.com',
             port: 3306,
             db: 'db',
-            options: 'option1=abc',
+            options: {option1: 'abc'},
         })
     })
     test('parse postgres url', () => {
@@ -113,7 +113,7 @@ describe('databaseUrl', () => {
             host: 'postgres0.example.com',
             port: 5432,
             db: 'my_db',
-            options: 'ssmode=require',
+            options: {ssmode: 'require'},
         })
     })
     test('parse snowflake url', () => {
@@ -162,7 +162,7 @@ describe('databaseUrl', () => {
             host: 'host.com',
             port: 1433,
             db: 'db',
-            options: 'option1=abc',
+            options: {option1: 'abc'},
         })
         expect(parseDatabaseUrl('Server=host.com,1433;Database=db;User Id=user;Password=pass')).toEqual({
             full: 'Server=host.com,1433;Database=db;User Id=user;Password=pass',
@@ -190,7 +190,7 @@ describe('databaseUrl', () => {
             host: 'host.com',
             port: 1433,
             db: 'db',
-            options: 'persist security info=True&multipleactiveresultsets=False&trustservercertificate=True&app=azimutt'
+            options: {'persist security info': 'True', multipleactiveresultsets: 'False', trustservercertificate: 'True', app: 'azimutt'}
         })
     })
     test('parse options', () => {

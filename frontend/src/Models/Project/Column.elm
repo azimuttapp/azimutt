@@ -1,4 +1,4 @@
-module Models.Project.Column exposing (Column, ColumnLike, NestedColumns(..), decode, empty, encode, findColumn, flatten, getColumn, nestedColumns)
+module Models.Project.Column exposing (Column, ColumnLike, NestedColumns(..), cleanStats, decode, empty, encode, findColumn, flatten, getColumn, nestedColumns)
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
@@ -103,6 +103,11 @@ findColumnInner predicate path (NestedColumns cols) =
                                 col.columns |> Maybe.andThen (findColumnInner predicate p)
                        )
             )
+
+
+cleanStats : Column -> Column
+cleanStats col =
+    { col | stats = Nothing, columns = col.columns |> Maybe.map (\(NestedColumns cols) -> cols |> Ned.map (\_ -> cleanStats) |> NestedColumns) }
 
 
 encode : Column -> Value

@@ -1,4 +1,4 @@
-module Models.Project.Table exposing (Table, TableLike, decode, empty, encode, findColumn, getAltColumns, getColumn, getPeerColumns, new)
+module Models.Project.Table exposing (Table, TableLike, cleanStats, decode, empty, encode, findColumn, getAltColumns, getColumn, getPeerColumns, new)
 
 import Dict exposing (Dict)
 import Json.Decode as Decode
@@ -100,6 +100,11 @@ findColumn predicate table =
     table.columns
         |> Dict.toList
         |> List.findMap (\( _, col ) -> Column.findColumn predicate col)
+
+
+cleanStats : Table -> Table
+cleanStats table =
+    { table | stats = Nothing, columns = table.columns |> Dict.map (\_ -> Column.cleanStats) }
 
 
 encode : Table -> Value

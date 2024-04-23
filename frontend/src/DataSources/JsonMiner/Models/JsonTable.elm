@@ -5,7 +5,9 @@ import Json.Encode as Encode exposing (Value)
 import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
 import Libs.Nel exposing (Nel)
+import Libs.Time as Time
 import Models.Project.ColumnValue as ColumnValue exposing (ColumnValue)
+import Time
 
 
 type alias JsonTable =
@@ -28,7 +30,11 @@ type alias JsonTableDbStats =
     , size : Maybe Int
     , sizeIdx : Maybe Int
     , scanSeq : Maybe Int
+    , scanSeqLast : Maybe Time.Posix
     , scanIdx : Maybe Int
+    , scanIdxLast : Maybe Time.Posix
+    , analyzeLast : Maybe Time.Posix
+    , vacuumLast : Maybe Time.Posix
     }
 
 
@@ -260,12 +266,16 @@ encodeJsonCheck value =
 
 decodeJsonTableDbStats : Decoder JsonTableDbStats
 decodeJsonTableDbStats =
-    Decode.map5 JsonTableDbStats
+    Decode.map9 JsonTableDbStats
         (Decode.maybeField "rows" Decode.int)
         (Decode.maybeField "size" Decode.int)
         (Decode.maybeField "sizeIdx" Decode.int)
         (Decode.maybeField "scanSeq" Decode.int)
+        (Decode.maybeField "scanSeqLast" Time.decode)
         (Decode.maybeField "scanIdx" Decode.int)
+        (Decode.maybeField "scanIdxLast" Time.decode)
+        (Decode.maybeField "analyzeLast" Time.decode)
+        (Decode.maybeField "vacuumLast" Time.decode)
 
 
 encodeJsonTableDbStats : JsonTableDbStats -> Value
@@ -275,5 +285,9 @@ encodeJsonTableDbStats value =
         , ( "size", value.size |> Encode.maybe Encode.int )
         , ( "sizeIdx", value.sizeIdx |> Encode.maybe Encode.int )
         , ( "scanSeq", value.scanSeq |> Encode.maybe Encode.int )
+        , ( "scanSeqLast", value.scanSeqLast |> Encode.maybe Time.encodeIso )
         , ( "scanIdx", value.scanIdx |> Encode.maybe Encode.int )
+        , ( "scanIdxLast", value.scanIdxLast |> Encode.maybe Time.encodeIso )
+        , ( "analyzeLast", value.analyzeLast |> Encode.maybe Time.encodeIso )
+        , ( "vacuumLast", value.vacuumLast |> Encode.maybe Time.encodeIso )
         ]

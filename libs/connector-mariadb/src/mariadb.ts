@@ -208,7 +208,7 @@ function buildAttribute(column: RawColumn, jsonColumn: ValueSchema | undefined, 
         doc: column.column_comment || undefined,
         stats: removeUndefined({
             nulls: undefined,
-            avgBytes: undefined,
+            bytesAvg: undefined,
             cardinality: undefined,
             commonValues: undefined,
             distinctValues: values,
