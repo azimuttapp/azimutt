@@ -29,19 +29,14 @@ export const sType = Type.Object({
     values: Nullish(Type.Union([Type.Array(Type.String()), Type.Null()])),
     definition: Nullish(Type.String())
 })
-export const sColumnRef = Type.Object({
-    schema: sSchemaName,
-    table: sTableName,
-    column: sColumnName,
-})
 export const sColumnRefId = Type.Object({
     table: sTableId,
     column: sColumnName,
 })
 export const sRelation = Type.Object({
     name: sRelationName,
-    src: sColumnRef,
-    ref: sColumnRef,
+    src: sColumnRefId,
+    ref: sColumnRefId,
 })
 export const sAzimuttColumnDbStats = Type.Object({
     nulls: Nullish(Type.Number()),

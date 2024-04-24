@@ -33,7 +33,7 @@ describe('schemas', () => {
                 comment: 'get all posts',
                 stats: {rows: 12, size: 1254, sizeIdx: 124, scanSeq: 45, scanSeqLast: '2024-04-23T16:04:16.052Z', scanIdx: 45, scanIdxLast: '2024-04-22T15:04:16.051Z', analyzeLast: '2024-04-21T14:04:16.050Z', vacuumLast: '2024-04-20T13:04:16.049Z'}
             }],
-            relations: [{name: 'posts_owner_fk', src: {schema: 'public', table: 'posts', column: 'owner'}, ref: {schema: 'public', table: 'users', column: 'id'}}],
+            relations: [{name: 'posts_owner_fk', src: {table: 'public.posts', column: 'owner'}, ref: {table: 'public.users', column: 'id'}}],
             types: [
                 {schema: 'public', name: 'post_status', values: ['draft', 'published']},
                 {schema: 'public', name: 'position', definition: '{x: int, y: int}'},

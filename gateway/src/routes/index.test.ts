@@ -8,7 +8,7 @@ describe('GET /', async () => {
         NODE_ENV: NodeEnv.development,
         LOG_LEVEL: 'info',
         API_HOST: 'localhost',
-        API_PORT: '3000',
+        API_PORT: '1234',
         CORS_ALLOW_ORIGIN: 'http://localhost:4000',
     }))
     test('Should return hello world', async () => {
