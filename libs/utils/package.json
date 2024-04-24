@@ -1,7 +1,7 @@
 {
   "name": "@azimutt/utils",
-  "version": "0.0.8",
-  "description": "Define common basic helpers for all projects",
+  "version": "0.1.0",
+  "description": "Define common helpers for all Azimutt projects",
   "keywords": [],
   "homepage": "https://azimutt.app",
   "author": {

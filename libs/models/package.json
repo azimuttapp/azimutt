@@ -1,7 +1,7 @@
 {
   "name": "@azimutt/models",
-  "version": "0.0.1",
-  "description": "Define a standard database representation for Azimutt.",
+  "version": "0.1.0",
+  "description": "Define a standard database models for Azimutt.",
   "keywords": [],
   "homepage": "https://azimutt.app",
   "author": {
@@ -25,7 +25,7 @@
     "dry-publish": "npm run build && npm test && npm pack"
   },
   "dependencies": {
-    "@azimutt/utils": "file:../utils",
+    "@azimutt/utils": "^0.1.0",
     "zod": "3.23.4",
     "zod-to-json-schema": "3.23.0"
   },

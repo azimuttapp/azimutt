@@ -1,6 +1,6 @@
 {
   "name": "@azimutt/gateway",
-  "version": "0.0.24",
+  "version": "0.1.0",
   "description": "A Gateway to proxy database access for Azimutt frontend",
   "keywords": [
     "database",
@@ -43,16 +43,16 @@
     "dry-publish": "npm run build && npm test && npm pack"
   },
   "dependencies": {
-    "@azimutt/connector-bigquery": "file:../libs/connector-bigquery",
-    "@azimutt/connector-couchbase": "file:../libs/connector-couchbase",
-    "@azimutt/connector-mariadb": "file:../libs/connector-mariadb",
-    "@azimutt/connector-mongodb": "file:../libs/connector-mongodb",
-    "@azimutt/connector-mysql": "file:../libs/connector-mysql",
-    "@azimutt/connector-postgres": "file:../libs/connector-postgres",
-    "@azimutt/connector-snowflake": "file:../libs/connector-snowflake",
-    "@azimutt/connector-sqlserver": "file:../libs/connector-sqlserver",
-    "@azimutt/models": "file:../libs/models",
-    "@azimutt/utils": "file:../libs/utils",
+    "@azimutt/connector-bigquery": "^0.1.0",
+    "@azimutt/connector-couchbase": "^0.1.0",
+    "@azimutt/connector-mariadb": "^0.1.0",
+    "@azimutt/connector-mongodb": "^0.1.0",
+    "@azimutt/connector-mysql": "^0.1.0",
+    "@azimutt/connector-postgres": "^0.1.0",
+    "@azimutt/connector-snowflake": "^0.1.0",
+    "@azimutt/connector-sqlserver": "^0.1.0",
+    "@azimutt/models": "^0.1.0",
+    "@azimutt/utils": "^0.1.0",
     "@fastify/cors": "8.2.1",
     "@sinclair/typebox": "0.28.10",
     "ajv": "8.12.0",
@@ -63,8 +63,8 @@
   },
   "devDependencies": {
     "@types/node": "^20.12.7",
-    "@typescript-eslint/eslint-plugin": "^7.6.0",
-    "@typescript-eslint/parser": "^7.6.0",
+    "@typescript-eslint/eslint-plugin": "^7.7.1",
+    "@typescript-eslint/parser": "^7.7.1",
     "esbuild": "^0.20.2",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
@@ -73,6 +73,6 @@
     "prettier": "^3.2.5",
     "tsx": "^4.7.2",
     "typescript": "^5.4.5",
-    "vitest": "^1.5.0"
+    "vitest": "^1.5.1"
   }
 }

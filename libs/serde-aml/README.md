@@ -1,16 +1,10 @@
 # @azimutt/serde-aml
 
+**Work In Progress**
+
 This is a module to validate, parse and generate AML. And also provide syntax highlighter for it.
 
 Read the full [AML documentation](./docs/README.md).
-
-TODO:
-- make the AML serde: parse AML into Database JSON structure, generate AML from Database JSON structure
-- same for SQL
-- same for [DBML](https://dbml.dbdiagram.io)
-- same for Prisma
-- adapt Azimutt & connectors to this models
-- make standalone products to convert from one to another (pages in Azimutt site & CLI commands)
 
 AML syntax ideas:
 ```aml
@@ -110,4 +104,13 @@ Other concepts:
   - `type bug_status enum(new, in progress, done)`
   - `type bug_value range(subtype = float8, subtype_diff = float8mi)`
   - `type address {number: int, street: varchar}`
-- if a fk column don't have a type, it talkes the type of the referenced column
+- if a fk column don't have a type, it takes the type of the referenced column
+
+## Publish
+
+- update `package.json` version
+- update lib versions (`npm run update` + manual) & run `npm install`
+- test with `npm run dry-publish` and check `azimutt-serde-aml-x.y.z.tgz` content
+- launch `npm publish --access public`
+
+View it on [npm](https://www.npmjs.com/package/@azimutt/serde-aml).

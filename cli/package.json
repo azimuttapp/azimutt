@@ -1,6 +1,6 @@
 {
   "name": "azimutt",
-  "version": "0.0.37",
+  "version": "0.1.0",
   "description": "Export database schema from relational or document databases. Import it to https://azimutt.app",
   "keywords": [
     "database",
@@ -44,9 +44,9 @@
     "dry-publish": "npm run build && npm test && npm pack"
   },
   "dependencies": {
-    "@azimutt/models": "file:../libs/models",
-    "@azimutt/gateway": "file:../gateway",
-    "@azimutt/utils": "file:../libs/utils",
+    "@azimutt/gateway": "^0.1.0",
+    "@azimutt/models": "^0.1.0",
+    "@azimutt/utils": "^0.1.0",
     "chalk": "5.3.0",
     "clear": "0.1.0",
     "commander": "12.0.0",

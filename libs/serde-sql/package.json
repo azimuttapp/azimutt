@@ -1,6 +1,6 @@
 {
   "name": "@azimutt/serde-sql",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Parse and Generate SQL.",
   "keywords": [],
   "homepage": "https://azimutt.app",
@@ -25,8 +25,8 @@
     "dry-publish": "npm run build && npm test && npm pack"
   },
   "dependencies": {
-    "@azimutt/models": "file:../models",
-    "@azimutt/utils": "file:../utils",
+    "@azimutt/models": "^0.1.0",
+    "@azimutt/utils": "^0.1.0",
     "chevrotain": "10.5.0",
     "zod": "3.23.4"
   },

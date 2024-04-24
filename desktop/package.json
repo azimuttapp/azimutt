@@ -1,6 +1,6 @@
 {
   "name": "azimutt-desktop",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Use Azimutt as a desktop app and access local databases directly",
   "keywords": [
     "erd",
@@ -29,23 +29,23 @@
     "publish": "electron-forge publish"
   },
   "dependencies": {
-    "@azimutt/connector-postgres": "file:../libs/connector-postgres",
-    "@azimutt/models": "file:../libs/models",
-    "@azimutt/utils": "file:../libs/utils",
+    "@azimutt/connector-postgres": "^0.1.0",
+    "@azimutt/models": "^0.1.0",
+    "@azimutt/utils": "^0.1.0",
     "electron-squirrel-startup": "1.0.0",
     "pg-native": "3.0.1",
     "update-electron-app": "3.0.0"
   },
   "devDependencies": {
-    "@electron-forge/cli": "^7.3.1",
-    "@electron-forge/maker-deb": "^7.3.1",
-    "@electron-forge/maker-rpm": "^7.3.1",
-    "@electron-forge/maker-squirrel": "^7.3.1",
-    "@electron-forge/maker-zip": "^7.3.1",
-    "@electron-forge/plugin-webpack": "^7.3.1",
-    "@electron-forge/publisher-github": "^7.3.1",
-    "@typescript-eslint/eslint-plugin": "^7.6.0",
-    "@typescript-eslint/parser": "^7.6.0",
+    "@electron-forge/cli": "^7.4.0",
+    "@electron-forge/maker-deb": "^7.4.0",
+    "@electron-forge/maker-rpm": "^7.4.0",
+    "@electron-forge/maker-squirrel": "^7.4.0",
+    "@electron-forge/maker-zip": "^7.4.0",
+    "@electron-forge/plugin-webpack": "^7.4.0",
+    "@electron-forge/publisher-github": "^7.4.0",
+    "@typescript-eslint/eslint-plugin": "^7.7.1",
+    "@typescript-eslint/parser": "^7.7.1",
     "@vercel/webpack-asset-relocator-loader": "^1.7.3",
     "css-loader": "^7.1.1",
     "electron": "29.3.0",
