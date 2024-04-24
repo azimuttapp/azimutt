@@ -2,7 +2,7 @@ import {describe, expect, test} from "@jest/globals";
 import {DatabaseUrlParsed, parseDatabaseUrl} from "@azimutt/models";
 import {connect} from "./connect";
 import {getColumnStats, getTableStats} from "./stats";
-import {application, logger} from "./constants";
+import {application, logger} from "./constants.test";
 
 describe('stats', () => {
     // local url, install db or replace it to test

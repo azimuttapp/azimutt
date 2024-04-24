@@ -3,7 +3,7 @@ import {ConnectorSchemaOpts, DatabaseUrlParsed, parseDatabaseUrl} from "@azimutt
 import {connect} from "./connect";
 import {execQuery} from "./query";
 import {getBlockSize, getColumns, getDatabase, getSchema, getTables, getTypes} from "./postgres";
-import {application, logger} from "./constants";
+import {application, logger} from "./constants.test";
 
 describe('postgres', () => {
     // local url, install db or replace it to test

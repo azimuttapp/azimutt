@@ -221,16 +221,16 @@ export const DatabaseStats = z.object({
 export type DatabaseStats = z.infer<typeof DatabaseStats>
 
 export const Database = z.object({
-    entities: Entity.array(),
-    relations: Relation.array(),
-    types: Type.array(),
-    // functions: z.record(FunctionId, Function.array()),
-    // procedures: z.record(ProcedureId, Procedure.array()),
-    // triggers: z.record(TriggerId, Trigger.array()),
-    doc: z.string(),
-    stats: DatabaseStats,
-    extra: Extra,
-}).partial().strict().describe('Database')
+    entities: Entity.array().optional(),
+    relations: Relation.array().optional(),
+    types: Type.array().optional(),
+    // functions: z.record(FunctionId, Function.array()).optional(),
+    // procedures: z.record(ProcedureId, Procedure.array()).optional(),
+    // triggers: z.record(TriggerId, Trigger.array()).optional(),
+    doc: z.string().optional(),
+    stats: DatabaseStats.optional(),
+    extra: Extra.optional(),
+}).strict().describe('Database')
 export type Database = z.infer<typeof Database>
 
 export const DatabaseSchema = zodToJsonSchema(Database, {

@@ -3,7 +3,7 @@ import {Client, QueryResult} from "pg";
 import {parseDatabaseUrl} from "@azimutt/models";
 import {connect} from "./connect";
 import {execQuery} from "./query";
-import {application, logger} from "./constants";
+import {application, logger} from "./constants.test";
 
 // Use this test to troubleshoot database connection errors.
 // If you don't succeed with the first one (Azimutt `connect`), try with the second one (raw node lib) and once you found a way, tell us how to fix ;)

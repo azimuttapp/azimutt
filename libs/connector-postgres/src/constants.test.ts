@@ -1,3 +1,4 @@
+import {expect, test} from "@jest/globals";
 import {Logger} from "@azimutt/utils";
 
 export const logger: Logger = {
@@ -7,3 +8,7 @@ export const logger: Logger = {
     error: (text: string): void => console.error(text)
 }
 export const application = 'azimutt-tests'
+
+test('dummy', () => {
+    expect(application).toEqual('azimutt-tests')
+})
