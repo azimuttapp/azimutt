@@ -56,6 +56,8 @@ jobs:
         run: |
           npm install
           npm run libs:setup
+          npm run gateway:setup
+          npm run cli:setup
           npm run fe:build
 
       - name: Check format

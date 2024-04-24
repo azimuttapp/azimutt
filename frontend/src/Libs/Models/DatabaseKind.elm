@@ -6,7 +6,7 @@ import Libs.Models.DatabaseUrl exposing (DatabaseUrl)
 
 
 
--- similar to libs/database-types/src/url.ts
+-- similar to libs/models/src/database.ts#DatabaseKind
 
 
 type DatabaseKind

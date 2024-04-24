@@ -2,7 +2,7 @@ module Libs.BasicsTest exposing (..)
 
 import Expect
 import Fuzz
-import Libs.Basics exposing (convertBase, fromDec, inside, toDec)
+import Libs.Basics exposing (convertBase, fromDec, inside, prettyNumber, toDec)
 import Test exposing (Test, describe, fuzz, test)
 
 
@@ -33,6 +33,12 @@ suite =
             ]
         , describe "fromDec & toDec"
             [ fuzz (Fuzz.pair Fuzz.int (Fuzz.intRange 2 62)) "round-trip" (\( i, base ) -> i |> fromDec base |> Result.andThen (toDec base) |> Expect.equal (Ok i))
+            ]
+        , describe "prettyNumber"
+            [ test "zero" (\_ -> 0 |> prettyNumber |> Expect.equal "0")
+            , test "lower than 1" (\_ -> 0.1234 |> prettyNumber |> Expect.equal "0.12")
+            , test "lower than 10" (\_ -> 1.234 |> prettyNumber |> Expect.equal "1.2")
+            , test "higher than 10" (\_ -> 12.34 |> prettyNumber |> Expect.equal "12")
             ]
         , describe "inside"
             [ test "no change" (\_ -> 10 |> inside 5 15 |> Expect.equal 10)

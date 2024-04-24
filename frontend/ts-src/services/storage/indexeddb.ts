@@ -1,7 +1,6 @@
-import {ProjectId, ProjectJson} from "../../types/project";
+import {LegacyProjectId, LegacyProjectJson, zodParse} from "@azimutt/models";
 import {StorageApi, StorageKind} from "./api";
 import {Logger} from "../logger";
-import * as Zod from "../../utils/zod";
 
 export class IndexedDBStorage implements StorageApi {
     static databaseName = 'azimutt'
@@ -27,37 +26,37 @@ export class IndexedDBStorage implements StorageApi {
     constructor(private db: IDBDatabase, private logger: Logger) {
     }
 
-    loadProject = (id: ProjectId): Promise<ProjectJson> => {
+    loadProject = (id: LegacyProjectId): Promise<LegacyProjectJson> => {
         this.logger.debug(`indexedDb.loadProject(${id})`)
         return this.openStore('readonly')
             .then(store => this.getProject(store, id))
             .then(p => p ? p : Promise.reject(`Not found`))
     }
-    createProject = (id: ProjectId, p: ProjectJson): Promise<ProjectJson> => {
+    createProject = (id: LegacyProjectId, p: LegacyProjectJson): Promise<LegacyProjectJson> => {
         this.logger.debug(`indexedDb.createProject(${id})`, p)
         return this.openStore('readwrite').then(store => {
             return this.getProject(store, id).then(project => {
                 if (project) {
                     return Promise.reject(`Project ${id} already exists in ${this.kind}`)
                 } else {
-                    return reqToPromise(store.add({...Zod.validate(p, ProjectJson, 'ProjectJson'), id})).then(_ => p)
+                    return reqToPromise(store.add({...zodParse(LegacyProjectJson)(p).getOrThrow(), id})).then(_ => p)
                 }
             })
         })
     }
-    updateProject = (id: ProjectId, p: ProjectJson): Promise<ProjectJson> => {
+    updateProject = (id: LegacyProjectId, p: LegacyProjectJson): Promise<LegacyProjectJson> => {
         this.logger.debug(`indexedDb.updateProject(${id})`, p)
         return this.openStore('readwrite').then(store => {
             return this.getProject(store, id).then(project => {
                 if (project) {
-                    return reqToPromise(store.put({...Zod.validate(p, ProjectJson, 'ProjectJson'), id})).then(_ => p)
+                    return reqToPromise(store.put({...zodParse(LegacyProjectJson)(p).getOrThrow(), id})).then(_ => p)
                 } else {
                     return Promise.reject(`Project ${id} doesn't exists in ${this.kind}`)
                 }
             })
         })
     }
-    deleteProject = (id: ProjectId): Promise<void> => {
+    deleteProject = (id: LegacyProjectId): Promise<void> => {
         this.logger.debug(`indexedDb.deleteProject(${id})`)
         return this.openStore('readwrite').then(store => reqToPromise(store.delete(id)))
     }
@@ -66,11 +65,11 @@ export class IndexedDBStorage implements StorageApi {
         return new Promise<IDBObjectStore>(resolve => resolve(this.db.transaction(IndexedDBStorage.dbProjects, mode).objectStore(IndexedDBStorage.dbProjects)))
     }
 
-    private getProject(store: IDBObjectStore, id: ProjectId): Promise<ProjectJson | undefined> {
-        return new Promise<ProjectJson | undefined>((resolve, reject) => {
+    private getProject(store: IDBObjectStore, id: LegacyProjectId): Promise<LegacyProjectJson | undefined> {
+        return new Promise<LegacyProjectJson | undefined>((resolve, reject) => {
             store.get(id).onsuccess = (event: any) => {
                 try {
-                    resolve(Zod.validate(removeId(event.target.result), ProjectJson.optional(), 'ProjectJson?'))
+                    resolve(zodParse(LegacyProjectJson.optional())(removeId(event.target.result)).getOrThrow())
                 } catch (e) {
                     reject(e)
                 }

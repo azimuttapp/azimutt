@@ -10,6 +10,7 @@ import Libs.Nel as Nel exposing (Nel)
 import Models.Project.Check exposing (Check)
 import Models.Project.CheckName exposing (CheckName)
 import Models.Project.Column exposing (Column, NestedColumns(..))
+import Models.Project.ColumnDbStats exposing (ColumnDbStats)
 import Models.Project.ColumnIndex exposing (ColumnIndex)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
@@ -22,7 +23,9 @@ import Models.Project.PrimaryKey exposing (PrimaryKey)
 import Models.Project.PrimaryKeyName exposing (PrimaryKeyName)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
+import Models.Project.SourceId as SourceId exposing (SourceId, SourceIdStr)
 import Models.Project.Table exposing (Table)
+import Models.Project.TableDbStats exposing (TableDbStats)
 import Models.Project.TableId exposing (TableId)
 import Models.Project.TableName exposing (TableName)
 import Models.Project.Unique exposing (Unique)
@@ -35,12 +38,14 @@ type alias TableWithOrigin =
     , schema : SchemaName
     , name : TableName
     , view : Bool
+    , definition : Maybe String
     , columns : Dict ColumnName ColumnWithOrigin
     , primaryKey : Maybe PrimaryKeyWithOrigin
     , uniques : List UniqueWithOrigin
     , indexes : List IndexWithOrigin
     , checks : List CheckWithOrigin
     , comment : Maybe CommentWithOrigin
+    , stats : Dict SourceIdStr TableDbStats
     , origins : List ErdOrigin
     }
 
@@ -56,12 +61,14 @@ create source table =
     , schema = table.schema
     , name = table.name
     , view = table.view
+    , definition = table.definition
     , columns = table.columns |> Dict.map (\_ -> createColumn origin)
     , primaryKey = table.primaryKey |> Maybe.map (createPrimaryKey origin)
     , uniques = table.uniques |> List.map (createUnique origin)
     , indexes = table.indexes |> List.map (createIndex origin)
     , checks = table.checks |> List.map (createCheck origin)
     , comment = table.comment |> Maybe.map (createComment origin)
+    , stats = table.stats |> Maybe.mapOrElse (\stats -> Dict.fromList [ ( origin.id |> SourceId.toString, stats ) ]) Dict.empty
     , origins = [ origin ]
     }
 
@@ -72,12 +79,14 @@ unpack table =
     , schema = table.schema
     , name = table.name
     , view = table.view
+    , definition = table.definition
     , columns = table.columns |> Dict.map (\_ -> unpackColumn)
     , primaryKey = table.primaryKey |> Maybe.map unpackPrimaryKey
     , uniques = table.uniques |> List.map unpackUnique
     , indexes = table.indexes |> List.map unpackIndex
     , checks = table.checks |> List.map unpackCheck
     , comment = table.comment |> Maybe.map unpackComment
+    , stats = table.stats |> Dict.values |> List.head
     }
 
 
@@ -87,6 +96,7 @@ merge t1 t2 =
     , schema = t1.schema
     , name = t1.name
     , view = t1.view
+    , definition = t1.definition |> Maybe.orElse t2.definition
     , columns = Dict.fuse mergeColumn t1.columns t2.columns
     , primaryKey = Maybe.merge mergePrimaryKey t1.primaryKey t2.primaryKey
     , uniques = List.merge .name mergeUnique t1.uniques t2.uniques
@@ -94,6 +104,7 @@ merge t1 t2 =
     , checks = List.merge .name mergeCheck t1.checks t2.checks
     , comment = Maybe.merge mergeComment t1.comment t2.comment
     , origins = t1.origins ++ t2.origins
+    , stats = Dict.union t1.stats t2.stats
     }
 
 
@@ -120,6 +131,7 @@ type alias ColumnWithOrigin =
     , comment : Maybe CommentWithOrigin
     , values : Maybe (Nel String)
     , columns : Maybe NestedColumnsWithOrigin
+    , stats : Dict SourceIdStr ColumnDbStats
     , origins : List ErdOrigin
     }
 
@@ -138,6 +150,7 @@ createColumn origin column =
     , comment = column.comment |> Maybe.map (createComment origin)
     , values = column.values
     , columns = column.columns |> Maybe.map (\(NestedColumns cols) -> cols |> Ned.map (\_ -> createColumn origin) |> NestedColumnsWithOrigin)
+    , stats = column.stats |> Maybe.mapOrElse (\stats -> Dict.fromList [ ( origin.id |> SourceId.toString, stats ) ]) Dict.empty
     , origins = [ origin ]
     }
 
@@ -152,6 +165,7 @@ unpackColumn column =
     , comment = column.comment |> Maybe.map unpackComment
     , values = column.values
     , columns = column.columns |> Maybe.map (\(NestedColumnsWithOrigin cols) -> cols |> Ned.map (\_ -> unpackColumn) |> NestedColumns)
+    , stats = column.stats |> Dict.values |> List.head
     }
 
 
@@ -170,6 +184,7 @@ mergeColumn c1 c2 =
     , comment = Maybe.merge mergeComment c1.comment c2.comment
     , columns = Maybe.merge mergeColumnNested c1.columns c2.columns
     , values = Maybe.merge Nel.append c1.values c2.values
+    , stats = Dict.union c1.stats c2.stats
     , origins = c1.origins ++ c2.origins
     }
 

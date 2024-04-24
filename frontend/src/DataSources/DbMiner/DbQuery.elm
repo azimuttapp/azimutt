@@ -164,6 +164,9 @@ addLimit db query =
         DatabaseKind.BigQuery ->
             { sql = QueryBigQuery.addLimit query.sql, origin = query.origin, db = query.db }
 
+        DatabaseKind.MariaDB ->
+            { sql = QueryMariaDB.addLimit query.sql, origin = query.origin, db = query.db }
+
         DatabaseKind.MySQL ->
             { sql = QueryMySQL.addLimit query.sql, origin = query.origin, db = query.db }
 
@@ -172,6 +175,9 @@ addLimit db query =
 
         DatabaseKind.Snowflake ->
             { sql = QuerySnowflake.addLimit query.sql, origin = query.origin, db = query.db }
+
+        DatabaseKind.SQLServer ->
+            { sql = QuerySQLServer.addLimit query.sql, origin = query.origin, db = query.db }
 
         _ ->
             query

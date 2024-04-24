@@ -1,0 +1,60 @@
+Enum "blog"."post_status" {
+  "draft" [note: 'Waiting to be processed']
+  "published"
+  "archived"
+}
+
+Table "blog"."posts" [headerColor: #ccc] {
+  "id" "bigint unsigned" [pk, increment]
+  "status" post_status [default: "draft"]
+  "title" varchar [note: 'Title of the post']
+  "author" integer
+  Note: 'Stores all posts'
+}
+
+TableGroup "blog"."publication" {
+  "users"
+  "blog"."posts"
+}
+
+Table "users" {
+  "id" integer [pk]
+  "name" varchar [unique, not null]
+}
+
+Table "profiles" {
+  "id" integer [pk]
+  "user_id" integer
+  "bio" text
+  "active" boolean [default: true]
+}
+
+Table "projects" {
+  "id" integer [pk]
+  "name" varchar
+}
+
+Table "roles" {
+  "id" integer [pk]
+  "name" varchar
+  "level" int [default: 0, note: 'used to order roles']
+}
+
+Table "user_roles" {
+  "user_id" integer
+  "role_id" integer
+  "created_at" timestamp [default: `now()`]
+
+Indexes {
+  (user_id, role_id) [pk]
+  created_at [name: "created_at_index"]
+}
+}
+
+Ref:"users"."id" - "profiles"."user_id"
+
+Ref:"users"."id" < "user_roles"."user_id"
+
+Ref:"roles"."id" < "user_roles"."role_id"
+
+Ref:"users"."id" < "blog"."posts"."author"

@@ -7,6 +7,7 @@ import Libs.Ned as Ned exposing (Ned)
 import Libs.Nel as Nel exposing (Nel)
 import Models.Project.CheckName exposing (CheckName)
 import Models.Project.Column exposing (Column, NestedColumns(..))
+import Models.Project.ColumnDbStats exposing (ColumnDbStats)
 import Models.Project.ColumnIndex exposing (ColumnIndex)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath, ColumnPathStr)
@@ -15,7 +16,7 @@ import Models.Project.ColumnValue as ColumnValue exposing (ColumnValue)
 import Models.Project.CustomTypeId exposing (CustomTypeId)
 import Models.Project.IndexName exposing (IndexName)
 import Models.Project.SchemaName exposing (SchemaName)
-import Models.Project.Source exposing (Source)
+import Models.Project.SourceId exposing (SourceIdStr)
 import Models.Project.UniqueName exposing (UniqueName)
 import PagesComponents.Organization_.Project_.Models.Erd.TableWithOrigin exposing (ColumnWithOrigin, NestedColumnsWithOrigin(..), TableWithOrigin)
 import PagesComponents.Organization_.Project_.Models.ErdColumnRef exposing (ErdColumnRef)
@@ -46,6 +47,7 @@ type alias ErdColumn =
     , checks : List { name : CheckName, predicate : Maybe String }
     , values : Maybe (Nel String)
     , columns : Maybe ErdNestedColumns
+    , stats : Dict SourceIdStr ColumnDbStats
     , origins : List ErdOrigin
     }
 
@@ -75,6 +77,7 @@ create defaultSchema types columnRelations suggestedRelations table path column 
     , checks = table.checks |> List.filter (.columns >> List.member path) |> List.map (\c -> { name = c.name, predicate = c.predicate })
     , values = column.values
     , columns = column.columns |> Maybe.map (\(NestedColumnsWithOrigin cols) -> cols |> Ned.map (\name -> create defaultSchema types columnRelations suggestedRelations table (path |> ColumnPath.child name)) |> ErdNestedColumns)
+    , stats = column.stats
     , origins = column.origins
     }
 
@@ -89,6 +92,7 @@ unpack column =
     , comment = column.comment |> Maybe.map ErdComment.unpack
     , values = column.values
     , columns = column.columns |> Maybe.map (\(ErdNestedColumns cols) -> cols |> Ned.map (\_ -> unpack) |> NestedColumns)
+    , stats = column.stats |> Dict.values |> List.head
     }
 
 

@@ -1,48 +1,45 @@
 import {
-    AzimuttSchema,
-    ColumnRef,
-    ColumnStats,
+    AttributeRef,
     Connector,
-    ConnectorOps,
-    DatabaseQueryResults,
+    ConnectorAttributeStats,
+    ConnectorDefaultOpts,
+    ConnectorEntityStats,
+    ConnectorQueryHistoryOpts,
+    ConnectorSchemaOpts,
+    Database,
+    DatabaseQuery,
     DatabaseUrlParsed,
-    SchemaOpts,
-    TableId,
-    TableStats
-} from "@azimutt/database-types";
-import {execQuery} from "./common";
-import {connect, SnowflakeConnectOpts} from "./connect";
-import {formatSchema, getSchema, SnowflakeSchemaOpts} from "./snowflake";
+    EntityRef,
+    parseDatabaseOptions,
+    QueryAnalyze,
+    QueryResults,
+    zodParseAsync
+} from "@azimutt/models";
+import {connect} from "./connect";
+import {execQuery} from "./query";
+import {getSchema} from "./snowflake";
 import {getColumnStats, getTableStats} from "./stats";
 
 export const snowflake: Connector = {
     name: 'Snowflake',
-    getSchema: async (application: string, url: DatabaseUrlParsed, opts: ConnectorOps & SchemaOpts): Promise<AzimuttSchema> => {
-        const connectOpts: SnowflakeConnectOpts = {logger: opts.logger, logQueries: withDefault(opts.logQueries, false)}
-        const schemaOpts: SnowflakeSchemaOpts = {
-            logger: opts.logger,
-            schema: opts.schema,
-            sampleSize: withDefault(opts.sampleSize, 100),
-            inferRelations: withDefault(opts.inferRelations, true),
-            ignoreErrors: withDefault(opts.ignoreErrors, false)
+    getSchema: (application: string, url: DatabaseUrlParsed, opts: ConnectorSchemaOpts): Promise<Database> => {
+        const urlOptions = url.options || {}
+        const options: ConnectorSchemaOpts = {
+            ...opts,
+            catalog: opts.catalog || urlOptions['catalog'],
+            schema: opts.schema || urlOptions['schema'],
+            entity: opts.entity || urlOptions['table']
         }
-        const schema = await connect(application, url, getSchema(schemaOpts), connectOpts)
-        return formatSchema(schema)
+        return connect(application, url, getSchema(options), options).then(zodParseAsync(Database))
     },
-    getTableStats: (application: string, url: DatabaseUrlParsed, id: TableId, opts: ConnectorOps): Promise<TableStats> => {
-        const connectOpts: SnowflakeConnectOpts = {logger: opts.logger, logQueries: withDefault(opts.logQueries, false)}
-        return connect(application, url, getTableStats(id), connectOpts)
-    },
-    getColumnStats: (application: string, url: DatabaseUrlParsed, ref: ColumnRef, opts: ConnectorOps): Promise<ColumnStats> => {
-        const connectOpts: SnowflakeConnectOpts = {logger: opts.logger, logQueries: withDefault(opts.logQueries, false)}
-        return connect(application, url, getColumnStats(ref), connectOpts)
-    },
-    query: (application: string, url: DatabaseUrlParsed, query: string, parameters: any[], opts: ConnectorOps): Promise<DatabaseQueryResults> => {
-        const connectOpts: SnowflakeConnectOpts = {logger: opts.logger, logQueries: withDefault(opts.logQueries, false)}
-        return connect(application, url, execQuery(query, parameters), connectOpts)
-    },
-}
-
-function withDefault<T>(value: T | undefined, other: T): T {
-    return value === undefined ? other : value
+    getQueryHistory: (application: string, url: DatabaseUrlParsed, opts: ConnectorQueryHistoryOpts): Promise<DatabaseQuery[]> =>
+        Promise.reject('Not implemented'),
+    execute: (application: string, url: DatabaseUrlParsed, query: string, parameters: any[], opts: ConnectorDefaultOpts): Promise<QueryResults> =>
+        connect(application, url, execQuery(query, parameters), opts).then(zodParseAsync(QueryResults)),
+    analyze: (application: string, url: DatabaseUrlParsed, query: string, parameters: any[], opts: ConnectorDefaultOpts): Promise<QueryAnalyze> =>
+        Promise.reject('Not implemented'),
+    getEntityStats: (application: string, url: DatabaseUrlParsed, ref: EntityRef, opts: ConnectorDefaultOpts): Promise<ConnectorEntityStats> =>
+        connect(application, url, getTableStats(ref), opts).then(zodParseAsync(ConnectorEntityStats)),
+    getAttributeStats: (application: string, url: DatabaseUrlParsed, ref: AttributeRef, opts: ConnectorDefaultOpts): Promise<ConnectorAttributeStats> =>
+        connect(application, url, getColumnStats(ref), opts).then(zodParseAsync(ConnectorAttributeStats))
 }

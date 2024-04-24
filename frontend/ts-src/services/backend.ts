@@ -1,49 +1,51 @@
+import {z, ZodType} from "zod";
 import {errorToString} from "@azimutt/utils";
 import {
-    AzimuttSchema,
-    ColumnRef,
-    ColumnStats,
+    AttributeRef,
     DatabaseUrl,
-    DatabaseQueryResults,
-    TableId,
-    TableStats
-} from "@azimutt/database-types";
-import {Logger} from "./logger";
-import {
-    buildProjectJson,
-    computeStats,
-    isLocal,
-    isRemote,
-    parseTableId,
-    Project,
-    ProjectId,
-    ProjectInfo,
-    ProjectInfoLocal,
-    ProjectInfoRemote,
-    ProjectInfoWithContent,
-    ProjectJson,
-    ProjectName,
-    ProjectSlug,
-    ProjectStats,
-    ProjectStorage,
-    ProjectTokenId,
-    ProjectVersion,
-    ProjectVisibility
-} from "../types/project";
-import {Organization, OrganizationId, OrganizationSlug, Plan} from "../types/organization";
-import {DateTime} from "../types/basics";
-import * as Http from "../utils/http";
-import {z} from "zod";
-import {ZodType} from "zod/lib/types";
-import * as Zod from "../utils/zod";
-import * as Json from "../utils/json";
-import * as jiff from "jiff";
-import {CleverCloudResource} from "../types/clevercloud";
-import {HerokuResource} from "../types/heroku";
+    DateTime,
+    EntityRef,
+    legacyBuildProjectJson,
+    LegacyCleverCloudResource,
+    legacyColumnPathSeparator,
+    LegacyColumnStats,
+    legacyComputeStats,
+    LegacyDatabase,
+    LegacyDatabaseQueryResults,
+    LegacyHerokuResource,
+    legacyIsLocal,
+    legacyIsRemote,
+    LegacyOrganization,
+    LegacyOrganizationId,
+    LegacyOrganizationSlug,
+    LegacyPlan,
+    LegacyProject,
+    LegacyProjectId,
+    LegacyProjectInfo,
+    LegacyProjectInfoLocal,
+    LegacyProjectInfoRemote,
+    LegacyProjectInfoWithContent,
+    LegacyProjectJson,
+    LegacyProjectName,
+    LegacyProjectSlug,
+    LegacyProjectStats,
+    LegacyProjectStorage,
+    LegacyProjectTokenId,
+    LegacyProjectVersion,
+    LegacyProjectVisibility,
+    LegacyTableStats,
+    Uuid,
+    zodParse,
+    zodStringify
+} from "@azimutt/models";
 import {TrackEvent} from "../types/tracking";
+import * as Http from "../utils/http";
+import * as Json from "../utils/json";
+import {Logger} from "./logger";
+import * as jiff from "jiff";
 
 export class Backend {
-    private projects: { [id: ProjectId]: ProjectJson } = {}
+    private projects: { [id: LegacyProjectId]: LegacyProjectJson } = {}
 
     constructor(private logger: Logger) {
     }
@@ -51,60 +53,63 @@ export class Backend {
     loginUrl = (currentUrl: string | undefined): string =>
         currentUrl ? `/login/redirect?url=${encodeURIComponent(currentUrl)}` : '/login'
 
-    getProject = async (o: OrganizationId, p: ProjectId, t: ProjectTokenId | null): Promise<ProjectInfoWithContent> => {
+    getCurrentUser = async (): Promise<UserResponse | undefined> =>
+        Http.getJson(`/api/v1/users/current`, UserResponse).catch(err => err.statusCode === 401 ? undefined : Promise.reject(err))
+
+    getProject = async (o: LegacyOrganizationId, p: LegacyProjectId, t: LegacyProjectTokenId | null): Promise<LegacyProjectInfoWithContent> => {
         this.logger.debug(`backend.getProject(${o}, ${p}, ${t})`)
         const project = await this.fetchProject(o, p, t)
-        if (project.storage === ProjectStorage.enum.remote) {
+        if (project.storage === LegacyProjectStorage.enum.remote) {
             this.projects[p] = project.content
         }
         return project
     }
 
-    private fetchProject = (o: OrganizationId, p: ProjectId, t: ProjectTokenId | null): Promise<ProjectInfoWithContent> => {
+    private fetchProject = (o: LegacyOrganizationId, p: LegacyProjectId, t: LegacyProjectTokenId | null): Promise<LegacyProjectInfoWithContent> => {
         const token = t ? `token=${t}&` : ''
         const path = `/api/v1/organizations/${o}/projects/${p}?${token}expand=organization,organization.plan,content`
-        return Http.getJson(path, ProjectWithContentResponse, 'ProjectWithContentResponse').then(toProjectInfoWithContent)
+        return Http.getJson(path, ProjectWithContentResponse).then(toProjectInfoWithContent)
     }
 
-    createProjectLocal = (o: OrganizationId, json: ProjectJson): Promise<ProjectInfoLocal> => {
+    createProjectLocal = (o: LegacyOrganizationId, json: LegacyProjectJson): Promise<LegacyProjectInfoLocal> => {
         this.logger.debug(`backend.createProjectLocal(${o})`, json)
         const path = `/api/v1/organizations/${o}/projects?expand=organization,organization.plan`
-        return Http.postJson(path, toProjectBody(json, ProjectStorage.enum.local), ProjectResponse, 'ProjectResponse').then(toProjectInfo)
-            .then(res => isLocal(res) ? res : Promise.reject('Expecting a local project'))
+        return Http.postJson(path, toProjectBody(json, LegacyProjectStorage.enum.local), ProjectResponse).then(toProjectInfo)
+            .then(res => legacyIsLocal(res) ? res : Promise.reject('Expecting a local project'))
     }
 
-    createProjectRemote = async (o: OrganizationId, json: ProjectJson): Promise<ProjectInfoRemote> => {
+    createProjectRemote = async (o: LegacyOrganizationId, json: LegacyProjectJson): Promise<LegacyProjectInfoRemote> => {
         this.logger.debug(`backend.createProjectRemote(${o})`, json)
         const path = `/api/v1/organizations/${o}/projects?expand=organization,organization.plan`
         const formData: FormData = new FormData()
-        Object.entries(toProjectBody(json, ProjectStorage.enum.remote))
+        Object.entries(toProjectBody(json, LegacyProjectStorage.enum.remote))
             .filter(([_, value]) => value !== null && value !== undefined)
             .map(([key, value]) => formData.append(key, typeof value === 'string' ? value : JSON.stringify(value)))
         formData.append('file', new Blob([encodeContent(json)], {type: 'application/json'}), `${json.name}.json`)
-        const res = await Http.postMultipart(path, formData, ProjectResponse, 'ProjectResponse').then(toProjectInfo)
+        const res = await Http.postMultipart(path, formData, ProjectResponse).then(toProjectInfo)
         this.projects[res.id] = json
-        return isRemote(res) ? res : Promise.reject('Expecting a remote project')
+        return legacyIsRemote(res) ? res : Promise.reject('Expecting a remote project')
     }
 
-    updateProjectLocal = (p: Project): Promise<ProjectInfoLocal> => {
+    updateProjectLocal = (p: LegacyProject): Promise<LegacyProjectInfoLocal> => {
         this.logger.debug(`backend.updateProjectLocal(${p.organization?.id}, ${p.id})`, p)
         if (!p.organization) return Promise.reject('Expecting an organization to update project')
-        if (p.storage !== ProjectStorage.enum.local) return Promise.reject('Expecting a local project')
+        if (p.storage !== LegacyProjectStorage.enum.local) return Promise.reject('Expecting a local project')
         const path = `/api/v1/organizations/${p.organization.id}/projects/${p.id}?expand=organization,organization.plan`
-        const json = buildProjectJson(p)
-        return Http.putJson(path, toProjectBody(json, ProjectStorage.enum.local), ProjectResponse, 'ProjectResponse').then(toProjectInfo)
-            .then(res => isLocal(res) ? res : Promise.reject('Expecting a local project'))
+        const json = legacyBuildProjectJson(p)
+        return Http.putJson(path, toProjectBody(json, LegacyProjectStorage.enum.local), ProjectResponse).then(toProjectInfo)
+            .then(res => legacyIsLocal(res) ? res : Promise.reject('Expecting a local project'))
     }
 
-    updateProjectRemote = async (p: Project): Promise<ProjectInfoRemote> => {
+    updateProjectRemote = async (p: LegacyProject): Promise<LegacyProjectInfoRemote> => {
         this.logger.debug(`backend.updateProjectRemote(${p.organization?.id}, ${p.id})`, p)
         if (!p.organization) return Promise.reject('Expecting an organization to update project')
-        if (p.storage !== ProjectStorage.enum.remote) return Promise.reject('Expecting a remote project')
+        if (p.storage !== LegacyProjectStorage.enum.remote) return Promise.reject('Expecting a remote project')
 
         const initial = this.projects[p.id] // where the user started
         const current = await this.fetchProject(p.organization.id, p.id, null) // server version
-            .then(p => isRemote(p) ? p : Promise.reject('Expecting a remote project'))
-        let json = buildProjectJson(p)
+            .then(p => legacyIsRemote(p) ? p : Promise.reject('Expecting a remote project'))
+        let json = legacyBuildProjectJson(p)
         if (current.updatedAt !== p.updatedAt) {
             try {
                 // FIXME: fail most of the time because of current_layout conflict :(
@@ -119,16 +124,16 @@ export class Backend {
         if (!p.organization) return Promise.reject('Expecting an organization to update project')
         const path = `/api/v1/organizations/${p.organization.id}/projects/${p.id}?expand=organization,organization.plan`
         const formData: FormData = new FormData()
-        Object.entries(toProjectBody(json, ProjectStorage.enum.remote))
+        Object.entries(toProjectBody(json, LegacyProjectStorage.enum.remote))
             .filter(([_, value]) => value !== null && value !== undefined)
             .map(([key, value]) => formData.append(key, typeof value === 'string' ? value : JSON.stringify(value)))
         formData.append('file', new Blob([encodeContent(json)], {type: 'application/json'}), `${p.organization.id}-${p.name}.json`)
-        const res = await Http.putMultipart(path, formData, ProjectResponse, 'ProjectResponse').then(toProjectInfo)
+        const res = await Http.putMultipart(path, formData, ProjectResponse).then(toProjectInfo)
         this.projects[p.id] = json
-        return isRemote(res) ? res : Promise.reject('Expecting a remote project')
+        return legacyIsRemote(res) ? res : Promise.reject('Expecting a remote project')
     }
 
-    deleteProject = async (o: OrganizationId, p: ProjectId): Promise<void> => {
+    deleteProject = async (o: LegacyOrganizationId, p: LegacyProjectId): Promise<void> => {
         this.logger.debug(`backend.deleteProject(${o}, ${p})`)
         await Http.deleteNoContent(`/api/v1/organizations/${o}/projects/${p}`)
         delete this.projects[p]
@@ -147,37 +152,64 @@ export class Backend {
         Http.postNoContent(`/api/v1/events`, eventWithUrl).then(_ => undefined)
     }
 
-    getDatabaseSchema = async (database: DatabaseUrl): Promise<AzimuttSchema> => {
+    getDatabaseSchema = async (database: DatabaseUrl): Promise<LegacyDatabase> => {
         this.logger.debug(`backend.getDatabaseSchema(${database})`)
-        return this.gatewayPost(`/schema`, {url: database}, AzimuttSchema, 'AzimuttSchema')
+        const user = await this.getCurrentUser()
+        return this.gatewayPost(`/schema`, {url: database, user: user?.email}, LegacyDatabase)
     }
 
-    runDatabaseQuery = async (database: DatabaseUrl, query: string): Promise<DatabaseQueryResults> => {
+    runDatabaseQuery = async (database: DatabaseUrl, query: string): Promise<LegacyDatabaseQueryResults> => {
         this.logger.debug(`backend.runQuery(${database}, ${query})`)
-        return this.gatewayPost(`/query`, {url: database, query}, DatabaseQueryResults, 'DatabaseQueryResults')
+        const user = await this.getCurrentUser()
+        return this.gatewayPost(`/query`, {url: database, query, user: user?.email}, LegacyDatabaseQueryResults)
     }
 
-    getTableStats = async (database: DatabaseUrl, id: TableId): Promise<TableStats> => {
-        this.logger.debug(`backend.getTableStats(${database}, ${id})`)
-        const {schema, table} = parseTableId(id)
-        return this.gatewayPost(`/table-stats`, {url: database, schema, table}, TableStats, 'TableStats')
+    getTableStats = async (database: DatabaseUrl, entity: EntityRef): Promise<LegacyTableStats> => {
+        this.logger.debug(`backend.getTableStats(${database}, ${JSON.stringify(entity)})`)
+        const user = await this.getCurrentUser()
+        return this.gatewayPost(`/table-stats`, {
+            url: database,
+            schema: entity.schema,
+            table: entity.entity,
+            user: user?.email,
+        }, LegacyTableStats)
     }
 
-    getColumnStats = async (database: DatabaseUrl, column: ColumnRef): Promise<ColumnStats> => {
-        this.logger.debug(`backend.getColumnStats(${database}, ${JSON.stringify(column)})`)
-        const {schema, table} = parseTableId(column.table)
-        return this.gatewayPost(`/column-stats`, {url: database, schema, table, column: column.column}, ColumnStats, 'ColumnStats')
+    getColumnStats = async (database: DatabaseUrl, attribute: AttributeRef): Promise<LegacyColumnStats> => {
+        this.logger.debug(`backend.getColumnStats(${database}, ${JSON.stringify(attribute)})`)
+        const user = await this.getCurrentUser()
+        return this.gatewayPost(`/column-stats`, {
+            url: database,
+            schema: attribute.schema,
+            table: attribute.entity,
+            column: attribute.attribute.join(legacyColumnPathSeparator),
+            user: user?.email,
+        }, LegacyColumnStats)
     }
 
-    private gatewayPost = async <Body, Response>(path: string, body: Body, zod: ZodType<Response>, label: string): Promise<Response> => {
+    private gatewayPost = async <Body, Response>(path: string, body: Body, zod: ZodType<Response>): Promise<Response> => {
         const gateway_local = 'http://localhost:4177'
-        return Http.postJson(`${gateway_local}/gateway${path}`, body, zod, label).catch(localErr => {
-            return Http.postJson(`${window.gateway_url}/gateway${path}`, body, zod, label).catch(remoteErr => {
+        return Http.postJson(`${gateway_local}/gateway${path}`, body, zod).catch(localErr => {
+            return Http.postJson(`${window.gateway_url}/gateway${path}`, body, zod).catch(remoteErr => {
                 return Promise.reject(`${gateway_local}: ${errorToString(localErr)}\n${window.gateway_url}: ${errorToString(remoteErr)}`)
             })
         })
     }
 }
+
+export const UserResponse = z.object({
+    id: Uuid,
+    slug: z.string(),
+    name: z.string(),
+    email: z.string(),
+    avatar: z.string(),
+    github_username: z.string().optional(),
+    twitter_username: z.string().optional(),
+    is_admin: z.boolean(),
+    last_signin: DateTime,
+    created_at: DateTime,
+}).strict().describe('UserResponse')
+export type UserResponse = z.infer<typeof UserResponse>
 
 export interface ProjectStatsResponse {
     nb_sources: number
@@ -204,43 +236,43 @@ export const ProjectStatsResponse = z.object({
 }).strict()
 
 interface ProjectBody extends ProjectStatsResponse {
-    name: ProjectName
+    name: LegacyProjectName
     description: string | undefined
-    storage_kind: ProjectStorage
+    storage_kind: LegacyProjectStorage
     encoding_version: number
 }
 
 export interface OrganizationResponse {
-    id: OrganizationId
-    slug: OrganizationSlug
+    id: LegacyOrganizationId
+    slug: LegacyOrganizationSlug
     name: string
-    plan: Plan
+    plan: LegacyPlan
     logo: string
     description: string | null
-    clever_cloud?: CleverCloudResource
-    heroku?: HerokuResource
+    clever_cloud?: LegacyCleverCloudResource
+    heroku?: LegacyHerokuResource
 }
 
 export const OrganizationResponse = z.object({
-    id: OrganizationId,
-    slug: OrganizationSlug,
+    id: LegacyOrganizationId,
+    slug: LegacyOrganizationSlug,
     name: z.string(),
-    plan: Plan,
+    plan: LegacyPlan,
     logo: z.string(),
     description: z.string().nullable(),
-    clever_cloud: CleverCloudResource.optional(),
-    heroku: HerokuResource.optional(),
+    clever_cloud: LegacyCleverCloudResource.optional(),
+    heroku: LegacyHerokuResource.optional(),
 }).strict()
 
 interface ProjectResponse extends ProjectStatsResponse {
     organization: OrganizationResponse
-    id: ProjectId
-    slug: ProjectSlug
-    name: ProjectName
+    id: LegacyProjectId
+    slug: LegacyProjectSlug
+    name: LegacyProjectName
     description: string | null
-    encoding_version: ProjectVersion
-    storage_kind: ProjectStorage
-    visibility: ProjectVisibility
+    encoding_version: LegacyProjectVersion
+    storage_kind: LegacyProjectStorage
+    visibility: LegacyProjectVisibility
     created_at: DateTime
     updated_at: DateTime
     archived_at: DateTime | null
@@ -248,17 +280,17 @@ interface ProjectResponse extends ProjectStatsResponse {
 
 export const ProjectResponse = ProjectStatsResponse.extend({
     organization: OrganizationResponse,
-    id: ProjectId,
-    slug: ProjectSlug,
-    name: ProjectName,
+    id: LegacyProjectId,
+    slug: LegacyProjectSlug,
+    name: LegacyProjectName,
     description: z.string().nullable(),
-    encoding_version: ProjectVersion,
-    storage_kind: ProjectStorage,
-    visibility: ProjectVisibility,
+    encoding_version: LegacyProjectVersion,
+    storage_kind: LegacyProjectStorage,
+    visibility: LegacyProjectVisibility,
     created_at: DateTime,
     updated_at: DateTime,
     archived_at: DateTime.nullable()
-}).strict()
+}).strict().describe('ProjectResponse')
 
 interface ProjectWithContentResponse extends ProjectResponse {
     content?: string
@@ -266,9 +298,9 @@ interface ProjectWithContentResponse extends ProjectResponse {
 
 export const ProjectWithContentResponse = ProjectResponse.extend({
     content: z.string().optional()
-}).strict()
+}).strict().describe('ProjectWithContentResponse')
 
-function toStats(s: ProjectStatsResponse): ProjectStats {
+function toStats(s: ProjectStatsResponse): LegacyProjectStats {
     return {
         nbSources: s.nb_sources,
         nbTables: s.nb_tables,
@@ -282,7 +314,7 @@ function toStats(s: ProjectStatsResponse): ProjectStats {
     }
 }
 
-function toStatsResponse(s: ProjectStats): ProjectStatsResponse {
+function toStatsResponse(s: LegacyProjectStats): ProjectStatsResponse {
     return {
         nb_sources: s.nbSources,
         nb_tables: s.nbTables,
@@ -296,17 +328,17 @@ function toStatsResponse(s: ProjectStats): ProjectStatsResponse {
     }
 }
 
-function toProjectBody(p: ProjectJson, storage: ProjectStorage): ProjectBody {
+function toProjectBody(p: LegacyProjectJson, storage: LegacyProjectStorage): ProjectBody {
     return {
         name: p.name,
         description: undefined,
         storage_kind: storage,
         encoding_version: p.version,
-        ...toStatsResponse(computeStats(p))
+        ...toStatsResponse(legacyComputeStats(p))
     }
 }
 
-function toOrganization(o: OrganizationResponse): Organization {
+function toOrganization(o: OrganizationResponse): LegacyOrganization {
     return {
         id: o.id,
         slug: o.slug,
@@ -319,7 +351,7 @@ function toOrganization(o: OrganizationResponse): Organization {
     }
 }
 
-function toProjectInfo(p: ProjectResponse): ProjectInfo {
+function toProjectInfo(p: ProjectResponse): LegacyProjectInfo {
     return {
         organization: toOrganization(p.organization),
         id: p.id,
@@ -335,18 +367,18 @@ function toProjectInfo(p: ProjectResponse): ProjectInfo {
     }
 }
 
-function toProjectInfoWithContent(p: ProjectWithContentResponse): ProjectInfoWithContent {
+function toProjectInfoWithContent(p: ProjectWithContentResponse): LegacyProjectInfoWithContent {
     const res = toProjectInfo(p)
-    return res.storage === ProjectStorage.enum.remote ? {...res, content: decodeContent(p.content)} : res
+    return res.storage === LegacyProjectStorage.enum.remote ? {...res, content: decodeContent(p.content)} : res
 }
 
-function encodeContent(p: ProjectJson): string {
-    return Zod.stringify(p, ProjectJson, 'ProjectJson')
+function encodeContent(p: LegacyProjectJson): string {
+    return zodStringify(LegacyProjectJson)(p)
 }
 
-function decodeContent(content?: string): ProjectJson {
+function decodeContent(content?: string): LegacyProjectJson {
     if (typeof content === 'string') {
-        return Zod.validate(Json.parse(content), ProjectJson, 'ProjectJson')
+        return zodParse(LegacyProjectJson)(Json.parse(content)).getOrThrow()
     } else {
         throw 'Missing content in backend response!'
     }

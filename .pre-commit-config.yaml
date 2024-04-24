@@ -2,80 +2,115 @@ repos:
 - repo: local
   hooks:
     - id: libs-utils
-      name: 'Libs/Utils'
+      name: 'libs/utils'
       language: system
       entry: bash -c 'cd libs/utils && exec npm run build && exec npm test'
       pass_filenames: false
       files: libs/utils/.*\.ts*$
 
-    - id: libs-database-types
-      name: 'Libs/Database types'
+    - id: libs-models
+      name: 'libs/models'
       language: system
-      entry: bash -c 'cd libs/database-types && exec npm run build && exec npm test'
+      entry: bash -c 'cd libs/models && exec npm run build && exec npm test'
       pass_filenames: false
-      files: libs/database-types/.*\.ts*$
+      files: libs/models/.*\.ts*$
 
-    - id: libs-shared
-      name: 'Libs/Shared'
+    - id: libs-connector-bigquery
+      name: 'libs/connector-bigquery'
       language: system
-      entry: bash -c 'cd libs/shared && exec npm run build && exec npm test'
+      entry: bash -c 'cd libs/connector-bigquery && exec npm run build && exec npm test'
       pass_filenames: false
-      files: libs/shared/.*\.ts*$
+      files: libs/connector-bigquery/.*\.ts*$
 
     - id: libs-connector-couchbase
-      name: 'Libs/Couchbase connector'
+      name: 'libs/connector-couchbase'
       language: system
       entry: bash -c 'cd libs/connector-couchbase && exec npm run build && exec npm test'
       pass_filenames: false
       files: libs/connector-couchbase/.*\.ts*$
 
     - id: libs-connector-mariadb
-      name: 'Libs/MariaDB connector'
+      name: 'libs/connector-mariadb'
       language: system
       entry: bash -c 'cd libs/connector-mariadb && exec npm run build && exec npm test'
       pass_filenames: false
       files: libs/connector-mariadb/.*\.ts*$
 
     - id: libs-connector-mongodb
-      name: 'Libs/MongoDB connector'
+      name: 'libs/connector-mongodb'
       language: system
       entry: bash -c 'cd libs/connector-mongodb && exec npm run build && exec npm test'
       pass_filenames: false
       files: libs/connector-mongodb/.*\.ts*$
 
     - id: libs-connector-mysql
-      name: 'Libs/MySQL connector'
+      name: 'libs/connector-mysql'
       language: system
       entry: bash -c 'cd libs/connector-mysql && exec npm run build && exec npm test'
       pass_filenames: false
       files: libs/connector-mysql/.*\.ts*$
 
     - id: libs-connector-postgres
-      name: 'Libs/PostgreSQL connector'
+      name: 'libs/connector-postgres'
       language: system
       entry: bash -c 'cd libs/connector-postgres && exec npm run build && exec npm test'
       pass_filenames: false
       files: libs/connector-postgres/.*\.ts*$
 
     - id: libs-connector-snowflake
-      name: 'Libs/Snowflake connector'
+      name: 'libs/connector-snowflake'
       language: system
       entry: bash -c 'cd libs/connector-snowflake && exec npm run build && exec npm test'
       pass_filenames: false
       files: libs/connector-snowflake/.*\.ts*$
 
     - id: libs-connector-sqlserver
-      name: 'Libs/SQL Server connector'
+      name: 'libs/connector-sqlserver'
       language: system
       entry: bash -c 'cd libs/connector-sqlserver && exec npm run build && exec npm test'
       pass_filenames: false
       files: libs/connector-sqlserver/.*\.ts*$
+
+    - id: libs-serde-aml
+      name: 'libs/serde-aml'
+      language: system
+      entry: bash -c 'cd libs/serde-aml && exec npm run build && exec npm test'
+      pass_filenames: false
+      files: libs/serde-aml/.*\.ts*$
+
+    - id: libs-serde-dbml
+      name: 'libs/serde-dbml'
+      language: system
+      entry: bash -c 'cd libs/serde-dbml && exec npm run build && exec npm test'
+      pass_filenames: false
+      files: libs/serde-dbml/.*\.ts*$
+
+    - id: libs-serde-prisma
+      name: 'libs/serde-prisma'
+      language: system
+      entry: bash -c 'cd libs/serde-prisma && exec npm run build && exec npm test'
+      pass_filenames: false
+      files: libs/serde-prisma/.*\.ts*$
+
+    - id: libs-serde-sql
+      name: 'libs/serde-sql'
+      language: system
+      entry: bash -c 'cd libs/serde-sql && exec npm run build && exec npm test'
+      pass_filenames: false
+      files: libs/serde-sql/.*\.ts*$
 
     - id: mix-format
       name: 'Elixir format'
       language: system
       entry: bash -c 'cd backend && exec mix format --check-formatted'
       files: \.exs*$
+
+    - id: mix-build
+      name: 'Elixir build'
+      language: system
+      entry: npm run ex:build
+      pass_filenames: false
+      files: \.ex$
 
     - id: mix-lint
       name: 'Elixir lint'
@@ -91,24 +126,10 @@ repos:
       pass_filenames: false
       files: \.exs*$
 
-    - id: mix-build
-      name: 'Elixir build'
+    - id: elm-format
+      name: 'Elm format'
       language: system
-      entry: npm run ex:build
-      pass_filenames: false
-      files: \.ex$
-
-    - id: elm-test
-      name: 'Elm test'
-      language: system
-      entry: npm run elm:test
-      pass_filenames: false
-      files: \.elm*$
-
-    - id: elm-lint
-      name: 'Elm lint'
-      language: system
-      entry: npm run elm:lint
+      entry: npm run elm:format
       pass_filenames: false
       files: \.elm*$
 
@@ -119,10 +140,17 @@ repos:
       pass_filenames: false
       files: \.elm*$
 
-    - id: elm-format
-      name: 'Elm format'
+    - id: elm-lint
+      name: 'Elm lint'
       language: system
-      entry: npm run elm:format
+      entry: npm run elm:lint
+      pass_filenames: false
+      files: \.elm*$
+
+    - id: elm-test
+      name: 'Elm test'
+      language: system
+      entry: npm run elm:test
       pass_filenames: false
       files: \.elm*$
 

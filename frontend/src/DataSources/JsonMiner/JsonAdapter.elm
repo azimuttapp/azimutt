@@ -24,6 +24,7 @@ import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.Schema exposing (Schema)
 import Models.Project.Source exposing (Source)
 import Models.Project.Table exposing (Table)
+import Models.Project.TableId as TableId
 import Models.Project.Unique exposing (Unique)
 import Models.SourceInfo exposing (SourceInfo)
 
@@ -71,12 +72,14 @@ buildTable table =
     , schema = table.schema
     , name = table.table
     , view = table.view |> Maybe.withDefault False
+    , definition = table.definition
     , columns = table.columns |> buildColumns
     , primaryKey = table.primaryKey |> Maybe.map buildPrimaryKey
     , uniques = table.uniques |> List.map (buildUnique table.table)
     , indexes = table.indexes |> List.map (buildIndex table.table)
     , checks = table.checks |> List.map (buildCheck table.table)
     , comment = table.comment |> Maybe.map buildComment
+    , stats = table.stats
     }
 
 
@@ -85,12 +88,14 @@ unpackTable table =
     { schema = table.schema
     , table = table.name
     , view = Just table.view |> Maybe.filter (\n -> n /= False)
+    , definition = table.definition
     , columns = table.columns |> unpackColumns
     , primaryKey = table.primaryKey |> Maybe.map unpackPrimaryKey
     , uniques = table.uniques |> List.map (unpackUnique table.name)
     , indexes = table.indexes |> List.map (unpackIndex table.name)
     , checks = table.checks |> List.map (unpackCheck table.name)
     , comment = table.comment |> Maybe.map unpackComment
+    , stats = table.stats
     }
 
 
@@ -114,6 +119,7 @@ buildColumn index column =
     , comment = column.comment |> Maybe.map buildComment
     , values = column.values
     , columns = column.columns |> Maybe.map buildNestedColumns
+    , stats = column.stats
     }
 
 
@@ -126,6 +132,7 @@ unpackColumn column =
     , comment = column.comment |> Maybe.map unpackComment
     , values = column.values
     , columns = column.columns |> Maybe.map unpackNestedColumns
+    , stats = column.stats
     }
 
 
@@ -215,21 +222,19 @@ unpackComment comment =
 buildRelation : JsonRelation -> Relation
 buildRelation relation =
     Relation.new relation.name
-        { table = ( relation.src.schema, relation.src.table ), column = ColumnPath.fromString relation.src.column }
-        { table = ( relation.ref.schema, relation.ref.table ), column = ColumnPath.fromString relation.ref.column }
+        { table = relation.src.table |> TableId.parse, column = ColumnPath.fromString relation.src.column }
+        { table = relation.ref.table |> TableId.parse, column = ColumnPath.fromString relation.ref.column }
 
 
 unpackRelation : Relation -> JsonRelation
 unpackRelation relation =
     { name = relation.name
     , src =
-        { schema = relation.src.table |> Tuple.first
-        , table = relation.src.table |> Tuple.second
+        { table = relation.src.table |> TableId.toString
         , column = relation.src.column |> ColumnPath.toString
         }
     , ref =
-        { schema = relation.ref.table |> Tuple.first
-        , table = relation.ref.table |> Tuple.second
+        { table = relation.ref.table |> TableId.toString
         , column = relation.ref.column |> ColumnPath.toString
         }
     }

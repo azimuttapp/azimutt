@@ -1,18 +1,18 @@
-import {ZodType} from "zod/lib/types";
-import * as Zod from "./zod";
+import {ZodType} from "zod";
+import {zodParse} from "@azimutt/models";
 import * as Json from "./json";
 
-export const getJson = <Response>(url: string, zod: ZodType<Response>, label: string): Promise<Response> => customFetch('GET', url, undefined, zod, label)
-export const postJson = <Body, Response>(url: string, body: Body, zod: ZodType<Response>, label: string): Promise<Response> => customFetch('POST', url, body, zod, label)
+export const getJson = <Response>(url: string, zod: ZodType<Response>): Promise<Response> => customFetch('GET', url, undefined, zod)
+export const postJson = <Body, Response>(url: string, body: Body, zod: ZodType<Response>): Promise<Response> => customFetch('POST', url, body, zod)
 export const postNoContent = <Body>(url: string, body: Body): Promise<void> => customFetch('POST', url, body)
-export const postMultipart = <Response>(url: string, body: FormData, zod: ZodType<Response>, label: string): Promise<Response> => customFetch('POST', url, body, zod, label)
-export const putJson = <Body, Response>(url: string, body: Body, zod: ZodType<Response>, label: string): Promise<Response> => customFetch('PUT', url, body, zod, label)
-export const putMultipart = <Response>(url: string, body: FormData, zod: ZodType<Response>, label: string): Promise<Response> => customFetch('PUT', url, body, zod, label)
+export const postMultipart = <Response>(url: string, body: FormData, zod: ZodType<Response>): Promise<Response> => customFetch('POST', url, body, zod)
+export const putJson = <Body, Response>(url: string, body: Body, zod: ZodType<Response>): Promise<Response> => customFetch('PUT', url, body, zod)
+export const putMultipart = <Response>(url: string, body: FormData, zod: ZodType<Response>): Promise<Response> => customFetch('PUT', url, body, zod)
 export const deleteNoContent = (url: string): Promise<void> => customFetch('DELETE', url)
 
 type Method = 'GET' | 'POST' | 'PUT' | 'DELETE'
 
-function customFetch<Body, Response>(method: Method, path: string, body?: Body, zod?: ZodType<Response>, label?: string): Promise<Response> {
+function customFetch<Body, Response>(method: Method, path: string, body?: Body, zod?: ZodType<Response>): Promise<Response> {
     const url = path.startsWith('http') ? path : `${window.location.origin}${path}`
     let opts: RequestInit = path.startsWith('http') ? {method} : {method, credentials: 'include'}
     if (body instanceof FormData) {
@@ -20,10 +20,10 @@ function customFetch<Body, Response>(method: Method, path: string, body?: Body, 
     } else if (typeof body === 'object' && body !== null) {
         opts = {...opts, body: JSON.stringify(body), headers: {'Accept': 'application/json', 'Content-Type': 'application/json'}}
     }
-    return fetch(url, opts).then(r => zod && label ? buildJsonResponse(zod, label)(r) : buildNoContentResponse(r))
+    return fetch(url, opts).then(r => zod ? buildJsonResponse(zod)(r) : buildNoContentResponse(r))
 }
 
-const buildJsonResponse = <T>(zod: ZodType<T>, label: string) => (res: Response): Promise<T> =>
-    res.ok ? res.text().then(v => Zod.validate(Json.parse(v), zod, label)) : res.text().then(err => Promise.reject(Json.parse(err)))
+const buildJsonResponse = <T>(zod: ZodType<T>) => (res: Response): Promise<T> =>
+    res.ok ? res.text().then(v => zodParse(zod)(Json.parse(v)).toPromise()) : res.text().then(err => Promise.reject(Json.parse(err)))
 const buildNoContentResponse = <T>(res: Response): Promise<T> =>
     res.ok ? Promise.resolve() as Promise<T> : res.text().then(err => Promise.reject(Json.parse(err)))

@@ -1,6 +1,6 @@
-/.coverage
-/.elm-spa
-/elm-stuff
-/node_modules
-/review/elm-stuff/
-/public
+.coverage
+.elm-spa
+node_modules
+elm-stuff
+review/elm-stuff/
+public

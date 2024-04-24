@@ -50,12 +50,14 @@ jsonSchema =
           "schema": {"type": "string"},
           "table": {"type": "string"},
           "view": {"type": "boolean"},
+          "definition": {"type": "string"},
           "columns": {"type": "array", "items": {"$ref": "/column"}},
           "primaryKey": {"$ref": "/primaryKey"},
           "uniques": {"type": "array", "items": {"$ref": "/unique"}},
           "indexes": {"type": "array", "items": {"$ref": "/index"}},
           "checks": {"type": "array", "items": {"$ref": "/check"}},
-          "comment": {"type": "string"}
+          "comment": {"type": "string"},
+          "stats": {"$ref": "/tableStats"}
         }
       }
     },
@@ -103,8 +105,25 @@ jsonSchema =
         "nullable": {"type": "boolean"},
         "default": {"type": "string"},
         "comment": {"type": "string"},
-        "values": {"type": "array", "items": {"type": "string"}}
-        "columns": {"type": "array", "items": {"$ref": "/column"}}
+        "values": {"type": "array", "items": {"type": "string"}},
+        "columns": {"type": "array", "items": {"$ref": "/column"}},
+        "stats": {"$ref": "/columnStats"}
+      }
+    },
+    "columnStats": {
+      "$id": "/columnStats",
+      "type": "object",
+      "required": [],
+      "additionalProperties": false,
+      "properties": {
+        "nulls": {"type": "number"},
+        "bytesAvg": {"type": "number"},
+        "cardinality": {"type": "number"},
+        "commonValues": {"type": "array", "items": {"type": "object", "required": ["value", "freq"], "additionalProperties": false, "properties": {
+          "value": {"type": "string"},
+          "freq": {"type": "number"}
+        }}},
+        "histogram": {"type": "array", "items": {"type": "string"}}
       }
     },
     "primaryKey": {
@@ -148,6 +167,19 @@ jsonSchema =
         "name": {"type": "string"},
         "columns": {"type": "array", "items": {"type": "string"}},
         "predicate": {"type": "string"}
+      }
+    },
+    "tableStats": {
+      "$id": "/tableStats",
+      "type": "object",
+      "required": [],
+      "additionalProperties": false,
+      "properties": {
+        "rows": {"type": "number"},
+        "size": {"type": "number"},
+        "sizeIdx": {"type": "number"},
+        "scanSeq": {"type": "number"},
+        "scanIdx": {"type": "number"}
       }
     },
     "columnRef": {

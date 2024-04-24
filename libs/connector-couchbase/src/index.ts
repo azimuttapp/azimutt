@@ -1,46 +1,44 @@
-import {distinct} from "@azimutt/utils";
 import {
-    AzimuttSchema,
-    ColumnRef,
-    ColumnStats,
+    AttributeRef,
     Connector,
-    ConnectorOps,
-    DatabaseQueryResults,
+    ConnectorAttributeStats,
+    ConnectorDefaultOpts,
+    ConnectorEntityStats,
+    ConnectorQueryHistoryOpts,
+    ConnectorSchemaOpts,
+    Database,
+    DatabaseQuery,
     DatabaseUrlParsed,
-    SchemaOpts,
-    TableId,
-    TableStats
-} from "@azimutt/database-types";
-import {CouchbaseSchemaOpts, execQuery, formatSchema, getSchema} from "./couchbase";
+    EntityRef,
+    parseDatabaseOptions,
+    QueryAnalyze,
+    QueryResults,
+    zodParseAsync
+} from "@azimutt/models";
 import {connect} from "./connect";
-
-export * from "./couchbase"
+import {execQuery} from "./query";
+import {getSchema} from "./couchbase";
 
 export const couchbase: Connector = {
     name: 'Couchbase',
-    getSchema: async (application: string, url: DatabaseUrlParsed, opts: ConnectorOps & SchemaOpts): Promise<AzimuttSchema> => {
-        const schemaOpts: CouchbaseSchemaOpts = {
-            logger: opts.logger,
-            bucket: opts.schema,
-            mixedCollection: opts.mixedCollection,
-            sampleSize: withDefault(opts.sampleSize, 100),
-            ignoreErrors: withDefault(opts.ignoreErrors, false)
+    getSchema: (application: string, url: DatabaseUrlParsed, opts: ConnectorSchemaOpts): Promise<Database> => {
+        const urlOptions = url.options || {}
+        const options: ConnectorSchemaOpts = {
+            ...opts,
+            catalog: opts.catalog || urlOptions['bucket'],
+            schema: opts.schema || urlOptions['scope'],
+            entity: opts.entity || urlOptions['collection']
         }
-        const schema = await connect(application, url, getSchema(schemaOpts))
-        return formatSchema(schema)
+        return connect(application, url, getSchema(options), options).then(zodParseAsync(Database))
     },
-    getTableStats: (application: string, url: DatabaseUrlParsed, id: TableId, opts: ConnectorOps): Promise<TableStats> =>
-        Promise.reject(`'getTableStats' not implemented in Couchbase`),
-    getColumnStats: (application: string, url: DatabaseUrlParsed, ref: ColumnRef, opts: ConnectorOps): Promise<ColumnStats> =>
-        Promise.reject(`'getColumnStats' not implemented in Couchbase`),
-    query: (application: string, url: DatabaseUrlParsed, query: string, parameters: any[], opts: ConnectorOps): Promise<DatabaseQueryResults> =>
-        connect(application, url, execQuery(query, parameters)).then(r => ({
-            query,
-            columns: distinct(r.rows.flatMap(Object.keys)).map(name => ({name})),
-            rows: r.rows
-        }))
-}
-
-function withDefault<T>(value: T | undefined, other: T): T {
-    return value === undefined ? other : value
+    getQueryHistory: (application: string, url: DatabaseUrlParsed, opts: ConnectorQueryHistoryOpts): Promise<DatabaseQuery[]> =>
+        Promise.reject('Not implemented'),
+    execute: (application: string, url: DatabaseUrlParsed, query: string, parameters: any[], opts: ConnectorDefaultOpts): Promise<QueryResults> =>
+        connect(application, url, execQuery(query, parameters), opts).then(zodParseAsync(QueryResults)),
+    analyze: (application: string, url: DatabaseUrlParsed, query: string, parameters: any[], opts: ConnectorDefaultOpts): Promise<QueryAnalyze> =>
+        Promise.reject('Not implemented'),
+    getEntityStats: (application: string, url: DatabaseUrlParsed, ref: EntityRef, opts: ConnectorDefaultOpts): Promise<ConnectorEntityStats> =>
+        Promise.reject('Not implemented'),
+    getAttributeStats: (application: string, url: DatabaseUrlParsed, ref: AttributeRef, opts: ConnectorDefaultOpts): Promise<ConnectorAttributeStats> =>
+        Promise.reject('Not implemented')
 }

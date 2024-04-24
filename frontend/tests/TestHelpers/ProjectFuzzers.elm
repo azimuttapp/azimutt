@@ -94,21 +94,23 @@ tables =
 
 table : Fuzzer Table
 table =
-    Fuzz.map9 Table.new
+    Fuzz.map11 Table.new
         schemaName
         tableName
         Fuzz.bool
+        (Fuzz.constant Nothing)
         (listSmall (column 0) |> Fuzz.map (List.uniqueBy .name >> List.indexedMap (\i c -> { c | index = i }) >> Dict.fromListMap .name))
         (Fuzz.maybe primaryKey)
         (listSmall unique)
         (listSmall index)
         (listSmall check)
         (Fuzz.maybe comment)
+        (Fuzz.constant Nothing)
 
 
 column : ColumnIndex -> Fuzzer Column
 column i =
-    Fuzz.map7 (Column i) columnName columnType Fuzz.bool (Fuzz.maybe columnValue) (Fuzz.maybe comment) (Fuzz.constant Nothing) (Fuzz.constant Nothing)
+    Fuzz.map8 (Column i) columnName columnType Fuzz.bool (Fuzz.maybe columnValue) (Fuzz.maybe comment) (Fuzz.constant Nothing) (Fuzz.constant Nothing) (Fuzz.constant Nothing)
 
 
 primaryKey : Fuzzer PrimaryKey

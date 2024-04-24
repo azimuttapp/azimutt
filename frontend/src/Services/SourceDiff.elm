@@ -15,7 +15,7 @@ import Models.Project.Relation exposing (Relation)
 import Models.Project.RelationId as RelationId
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
-import Models.Project.Table exposing (Table)
+import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId as TableId
 
 
@@ -23,7 +23,9 @@ view : SchemaName -> Source -> Source -> Html msg
 view defaultSchema newSource oldSource =
     let
         ( removedTables, updatedTables, newTables ) =
-            List.diff .id (oldSource.tables |> Dict.values) (newSource.tables |> Dict.values)
+            List.diff .id
+                (oldSource.tables |> Dict.values |> List.map Table.cleanStats)
+                (newSource.tables |> Dict.values |> List.map Table.cleanStats)
 
         ( removedRelations, updatedRelations, newRelations ) =
             List.diff .id oldSource.relations newSource.relations

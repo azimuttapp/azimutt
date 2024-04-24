@@ -1,7 +1,7 @@
 defmodule AzimuttWeb.Utils.ProjectSchema do
   @moduledoc "JSON Schema definition for project"
 
-  # MUST stay in sync with frontend/ts-src/types/project.ts
+  # MUST stay in sync with libs/models/src/legacy/legacyProject.ts
 
   @column_meta %{
     "type" => "object",

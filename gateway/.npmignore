@@ -1,10 +1,14 @@
-tests/
+.github
+local
+resources
+src/*.js
+src/*.test.ts
 tsconfig.json
 *.tgz
-.github
-Dockerfile
+
 .env*
 .eslintignore
 .eslintrc.cjs
 .nvmrc
 .prettierrc.js
+Dockerfile

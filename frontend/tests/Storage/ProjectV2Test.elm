@@ -115,7 +115,7 @@ project0Json =
 
 tables1 : Dict TableId Table
 tables1 =
-    Dict.fromListMap .id [ Table ( "public", "users" ) "public" "users" False (Dict.fromListMap .name [ Column 0 "id" "int" False Nothing Nothing Nothing Nothing ]) Nothing [] [] [] Nothing ]
+    Dict.fromListMap .id [ { table | id = ( "public", "users" ), schema = "public", name = "users", columns = Dict.fromListMap .name [ { column | index = 0, name = "id", kind = "int" } ] } ]
 
 
 project1 : Project
@@ -154,37 +154,31 @@ project1Json =
 tables2 : Dict TableId Table
 tables2 =
     Dict.fromListMap .id
-        [ { id = ( "public", "users" )
-          , schema = "public"
-          , name = "users"
-          , view = False
-          , columns =
+        [ { table
+            | id = ( "public", "users" )
+            , schema = "public"
+            , name = "users"
+            , columns =
                 Dict.fromListMap .name
-                    [ Column 0 "id" "int" False Nothing Nothing Nothing Nothing
-                    , Column 1 "name" "varchar" True Nothing Nothing Nothing Nothing
+                    [ { column | index = 0, name = "id", kind = "int" }
+                    , { column | index = 1, name = "name", kind = "varchar", nullable = True }
                     ]
-          , primaryKey = Just (PrimaryKey (Just "users_pk") (Nel (ColumnPath.fromString "id") []))
-          , uniques = []
-          , indexes = []
-          , checks = []
-          , comment = Nothing
+            , primaryKey = Just (PrimaryKey (Just "users_pk") (Nel (ColumnPath.fromString "id") []))
           }
-        , { id = ( "public", "creds" )
-          , schema = "public"
-          , name = "creds"
-          , view = False
-          , columns =
+        , { table
+            | id = ( "public", "creds" )
+            , schema = "public"
+            , name = "creds"
+            , columns =
                 Dict.fromListMap .name
-                    [ Column 0 "user_id" "int" False Nothing Nothing Nothing Nothing
-                    , Column 1 "login" "varchar" False Nothing Nothing Nothing Nothing
-                    , Column 2 "pass" "varchar" False Nothing (Just (Comment "Encrypted field")) Nothing Nothing
-                    , Column 3 "role" "varchar" True (Just "guest") Nothing Nothing Nothing
+                    [ { column | index = 0, name = "user_id", kind = "int" }
+                    , { column | index = 1, name = "login", kind = "varchar" }
+                    , { column | index = 2, name = "pass", kind = "varchar", comment = Just (Comment "Encrypted field") }
+                    , { column | index = 3, name = "role", kind = "varchar", nullable = True, default = Just "guest" }
                     ]
-          , primaryKey = Nothing
-          , uniques = [ Unique "unique_login" (Nel (ColumnPath.fromString "login") []) (Just "(login)") ]
-          , indexes = [ Index "role_idx" (Nel (ColumnPath.fromString "role") []) (Just "(role)") ]
-          , checks = []
-          , comment = Just (Comment "To allow users to login")
+            , uniques = [ Unique "unique_login" (Nel (ColumnPath.fromString "login") []) (Just "(login)") ]
+            , indexes = [ Index "role_idx" (Nel (ColumnPath.fromString "role") []) (Just "(role)") ]
+            , comment = Just (Comment "To allow users to login")
           }
         ]
 
@@ -270,6 +264,16 @@ project2Json =
 gridPos : Float -> Float -> Position.Grid
 gridPos x y =
     Position x y |> Position.grid
+
+
+table : Table
+table =
+    Table.empty
+
+
+column : Column
+column =
+    Column.empty
 
 
 time : Int -> Time.Posix

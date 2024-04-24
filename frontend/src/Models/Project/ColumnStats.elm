@@ -10,7 +10,8 @@ import Models.Project.TableName as TableName
 
 
 type alias ColumnStats =
-    -- keep sync with libs/database-types/src/schema.ts
+    -- stats computed from SELECT in the table
+    -- keep sync with libs/models/src/legacy/legacyStats.ts
     { id : ColumnId
     , kind : ColumnType
     , rows : Int

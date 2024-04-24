@@ -6,7 +6,7 @@ import Expect
 import Libs.Dict as Dict
 import Libs.Nel exposing (Nel)
 import Libs.Time as Time
-import Models.Project.Column exposing (Column)
+import Models.Project.Column as Column exposing (Column)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnPath as ColumnPath
 import Models.Project.ColumnRef exposing (ColumnRef)
@@ -16,7 +16,7 @@ import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId as SourceId
 import Models.Project.SourceKind as SourceKind
-import Models.Project.Table exposing (Table)
+import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
 import Models.Project.TableName exposing (TableName)
 import PagesComponents.Organization_.Project_.Models.Erd.RelationWithOrigin as RelationWithOrigin
@@ -116,14 +116,15 @@ tableId name =
 
 buildTable : TableName -> List String -> ErdTable
 buildTable name columnNames =
-    Table (tableId name) defaultSchema name False (columnNames |> List.map buildColumn |> Dict.fromListMap .name) Nothing [] [] [] Nothing
+    Table.empty
+        |> (\c -> { c | id = tableId name, schema = defaultSchema, name = name, columns = columnNames |> List.map buildColumn |> Dict.fromListMap .name })
         |> TableWithOrigin.create source
         |> ErdTable.create defaultSchema Dict.empty [] Dict.empty
 
 
 buildColumn : ColumnName -> Column
 buildColumn name =
-    Column 0 name "int" False Nothing Nothing Nothing Nothing
+    Column.empty |> (\c -> { c | name = name })
 
 
 buildRelation : ( TableName, ColumnName ) -> ( TableName, ColumnName ) -> ErdRelation

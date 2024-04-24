@@ -2,7 +2,18 @@ import {TSchema} from "@sinclair/typebox"
 import {FastifyPluginAsync, FastifyReply} from "fastify"
 import {RouteShorthandOptions} from "fastify/types/route"
 import {Logger} from "@azimutt/utils"
-import {Connector, DatabaseUrl, DatabaseUrlParsed, parseDatabaseUrl} from "@azimutt/database-types"
+import {
+    AttributeRef,
+    columnStatsToLegacy,
+    Connector,
+    databaseToLegacy,
+    DatabaseUrl,
+    DatabaseUrlParsed,
+    EntityRef,
+    parseDatabaseUrl,
+    queryResultsToLegacy,
+    tableStatsToLegacy
+} from "@azimutt/models"
 import {version} from "../version";
 import {
     DbQueryParams,
@@ -50,21 +61,39 @@ const routes: FastifyPluginAsync = async (server) => {
 }
 
 function getDatabaseSchema(params: GetSchemaParams, res: FastifyReply): Promise<GetSchemaResponse | FastifyReply> {
-    return withConnector(params.url, res, (url, conn) => conn.getSchema(application, url, {logger, schema: params.schema, ignoreErrors: true}))
+    return withConnector(params.url, res, (url, conn) => {
+        const urlOptions = url.options || {}
+        return conn.getSchema(buildApp(params.user), url, {
+            logger,
+            logQueries: urlOptions['log-queries'] === 'true',
+            database: params.database,
+            catalog: params.catalog,
+            schema: params.schema,
+            entity: params.entity,
+            sampleSize: undefined,
+            inferMixedJson: undefined,
+            inferJsonAttributes: urlOptions['schema-only'] !== 'true',
+            inferPolymorphicRelations: urlOptions['schema-only'] !== 'true',
+            inferRelationsFromJoins: urlOptions['schema-only'] !== 'true',
+            inferPii: urlOptions['schema-only'] !== 'true',
+            inferRelations: true,
+            ignoreErrors: false
+        }).then(databaseToLegacy)
+    })
 }
 
 function queryDatabase(params: DbQueryParams, res: FastifyReply): Promise<DbQueryResponse | FastifyReply> {
-    return withConnector(params.url, res, (url, conn) => conn.query(application, url, params.query, [], {logger}))
+    return withConnector(params.url, res, (url, conn) => conn.execute(buildApp(params.user), url, params.query, [], {logger}).then(queryResultsToLegacy))
 }
 
 function getTableStats(params: GetTableStatsParams, res: FastifyReply): Promise<GetTableStatsResponse | FastifyReply> {
-    const tableId = params.schema ? `${params.schema}.${params.table}` : params.table
-    return withConnector(params.url, res, (url, conn) => conn.getTableStats(application, url, tableId, {logger}))
+    const ref: EntityRef = {schema: params.schema, entity: params.table}
+    return withConnector(params.url, res, (url, conn) => conn.getEntityStats(buildApp(params.user), url, ref, {logger}).then(tableStatsToLegacy))
 }
 
 function getColumnStats(params: GetColumnStatsParams, res: FastifyReply): Promise<GetColumnStatsResponse | FastifyReply> {
-    const tableId = params.schema ? `${params.schema}.${params.table}` : params.table
-    return withConnector(params.url, res, (url, conn) => conn.getColumnStats(application, url, {table: tableId, column: params.column}, {logger}))
+    const ref: AttributeRef = {schema: params.schema, entity: params.table, attribute: [params.column]}
+    return withConnector(params.url, res, (url, conn) => conn.getAttributeStats(buildApp(params.user), url, ref, {logger}).then(columnStatsToLegacy))
 }
 
 async function withConnector<T>(url: DatabaseUrl, res: FastifyReply, exec: (url: DatabaseUrlParsed, conn: Connector) => Promise<T>): Promise<T | FastifyReply> {
@@ -75,6 +104,10 @@ async function withConnector<T>(url: DatabaseUrl, res: FastifyReply, exec: (url:
     } else {
         return res.status(400).send({error: `Not supported database: ${parsedUrl.kind || url}`})
     }
+}
+
+function buildApp(user: string | undefined): string {
+    return user ? `${application}:${user}` : application
 }
 
 type Get<Params, Response> = {

@@ -1,25 +1,34 @@
 import mssql, {config, ConnectionPool, IOptions, IResult, ISqlType} from "mssql";
-import {Logger} from "@azimutt/utils";
-import {ColumnValue, DatabaseUrlParsed, logQueryIfNeeded} from "@azimutt/database-types";
-import {Conn, QueryResultArrayMode, QueryResultRow} from "./common";
+import {AnyError} from "@azimutt/utils";
+import {
+    AttributeValue,
+    ConnectorDefaultOpts,
+    DatabaseUrlParsed,
+    logQueryIfNeeded,
+    parseDatabaseOptions,
+    queryError
+} from "@azimutt/models";
 
-export type SqlserverConnectOpts = {logger: Logger, logQueries: boolean}
-export async function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c: Conn) => Promise<T>, {logger, logQueries}: SqlserverConnectOpts): Promise<T> {
-    const connection: ConnectionPool = await mssql.connect(buildconfig(application, url)).catch(_ => mssql.connect(url.full))
+export async function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c: Conn) => Promise<T>, opts: ConnectorDefaultOpts): Promise<T> {
+    const connection: ConnectionPool = await mssql.connect(buildconfig(application, url))
+        .catch(_ => mssql.connect(url.full))
+        .catch(err => Promise.reject(connectionError(err)))
     let queryCpt = 1
     const conn: Conn = {
+        url,
         query<T extends QueryResultRow>(sql: string, parameters: any[] = [], name: string = ''): Promise<T[]> {
             return logQueryIfNeeded(queryCpt++, name, sql, parameters, (sql, parameters) => {
-                return connection.query<T>(sql).then(result => result.recordset)
-            }, r => r.length, logger, logQueries)
+                return connection.query<T>(sql).then(result => result.recordset, err => Promise.reject(queryError(name, sql, err)))
+            }, r => r.length, opts)
         },
         queryArrayMode(sql: string, parameters: any[] = [], name: string = ''): Promise<QueryResultArrayMode> {
             return logQueryIfNeeded(queryCpt++, name, sql, parameters, async (sql, parameters) => {
                 const request = connection.request() as any
                 request.arrayRowMode = true
-                const result: IResult<ColumnValue[]> & { columns: ColumnMetadata[][] } = await request.query(sql)
-                return {rows: result.recordset as ColumnValue[][], fields: result.columns[0]}
-            }, r => r.rows.length, logger, logQueries)
+                const result: IResult<AttributeValue[]> & { columns: ColumnMetadata[][] } = await request.query(sql)
+                    .catch((err: AnyError) => Promise.reject(queryError(name, sql, err)))
+                return {rows: result.recordset as AttributeValue[][], fields: result.columns[0]}
+            }, r => r.rows.length, opts)
         }
     }
     return exec(conn).then(
@@ -28,8 +37,25 @@ export async function connect<T>(application: string, url: DatabaseUrlParsed, ex
     )
 }
 
+export interface Conn {
+    url: DatabaseUrlParsed
+
+    query<T extends QueryResultRow>(sql: string, parameters?: any[], name?: string): Promise<T[]>
+
+    queryArrayMode(sql: string, parameters?: any[], name?: string): Promise<QueryResultArrayMode>
+}
+
+export type QueryResultValue = AttributeValue
+export type QueryResultRow = { [column: string]: QueryResultValue }
+export type QueryResultField = { name: string }
+export type QueryResultRowArray = QueryResultValue[]
+export type QueryResultArrayMode = {
+    fields: QueryResultField[],
+    rows: QueryResultRowArray[]
+}
+
 function buildconfig(application: string, url: DatabaseUrlParsed): config {
-    const props = Object.fromEntries((url.options || '').split('&').filter(o => o).map(o => o.split('='))) // TODO: use parseDatabaseOptions from url.ts
+    const urlOptions = url.options || {}
     return {
         server: url.host,
         port: url.port,
@@ -37,14 +63,19 @@ function buildconfig(application: string, url: DatabaseUrlParsed): config {
         password: url.pass,
         database: url.db,
         options: {
-            appName: props['app'] || application || 'azimutt',
-            encrypt: ['true', 'yes'].indexOf((props['encrypt'] || '').toLowerCase()) != -1, // default: false
-            trustServerCertificate: (props['trustservercertificate'] || '').toLowerCase() !== 'false', // default: true
-            trustedConnection: ['true', 'yes'].indexOf((props['trusted_connection'] || '').toLowerCase()) != -1, // default: false
+            appName: urlOptions['app'] || application || 'azimutt',
+            encrypt: ['true', 'yes'].indexOf((urlOptions['encrypt'] || '').toLowerCase()) != -1, // default: false
+            trustServerCertificate: (urlOptions['trustservercertificate'] || '').toLowerCase() !== 'false', // default: true
+            trustedConnection: ['true', 'yes'].indexOf((urlOptions['trusted_connection'] || '').toLowerCase()) != -1, // default: false
             // ??? MultipleActiveResultSets=False
             // ??? persist security info=True
         } as IOptions
     } as config
+}
+
+function connectionError(err: AnyError): AnyError {
+    // TODO: improve error messages here if needed
+    return err
 }
 
 // Write missing types in @types/mssql (8.1.2 instead of 9.1.1 :/)

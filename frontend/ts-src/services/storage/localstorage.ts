@@ -1,8 +1,7 @@
 import {errorToString} from "@azimutt/utils";
-import {ProjectId, ProjectJson} from "../../types/project";
+import {LegacyProjectId, LegacyProjectJson, zodParse, zodStringify} from "@azimutt/models";
 import {StorageApi, StorageKind} from "./api";
 import {Logger} from "../logger";
-import * as Zod from "../../utils/zod";
 import * as Json from "../../utils/json";
 
 export class LocalStorageStorage implements StorageApi {
@@ -18,11 +17,11 @@ export class LocalStorageStorage implements StorageApi {
     constructor(private logger: Logger) {
     }
 
-    loadProject = (id: ProjectId): Promise<ProjectJson> => {
+    loadProject = (id: LegacyProjectId): Promise<LegacyProjectJson> => {
         this.logger.debug(`localStorage.loadProject(${id})`)
         return Promise.resolve(this.getProject(this.idToKey(id))).then(p => p ? p : Promise.reject(`Not found`))
     }
-    createProject = (id: ProjectId, p: ProjectJson): Promise<ProjectJson> => {
+    createProject = (id: LegacyProjectId, p: LegacyProjectJson): Promise<LegacyProjectJson> => {
         this.logger.debug(`localStorage.createProject(${id})`, p)
         const key = this.idToKey(id)
         if (window.localStorage.getItem(key) === null) {
@@ -31,7 +30,7 @@ export class LocalStorageStorage implements StorageApi {
             return Promise.reject(`Project ${id} already exists in ${this.kind}`)
         }
     }
-    updateProject = (id: ProjectId, p: ProjectJson): Promise<ProjectJson> => {
+    updateProject = (id: LegacyProjectId, p: LegacyProjectJson): Promise<LegacyProjectJson> => {
         this.logger.debug(`localStorage.updateProject(${id})`, p)
         const key = this.idToKey(id)
         if (window.localStorage.getItem(key) === null) {
@@ -40,27 +39,27 @@ export class LocalStorageStorage implements StorageApi {
             return this.setProject(key, p)
         }
     }
-    deleteProject = (id: ProjectId): Promise<void> => {
+    deleteProject = (id: LegacyProjectId): Promise<void> => {
         this.logger.debug(`localStorage.deleteProject(${id})`)
         window.localStorage.removeItem(this.idToKey(id))
         return Promise.resolve()
     }
 
-    private idToKey = (id: ProjectId): string => this.prefix + id
-    private getProject = (key: string): Promise<ProjectJson> => {
+    private idToKey = (id: LegacyProjectId): string => this.prefix + id
+    private getProject = (key: string): Promise<LegacyProjectJson> => {
         const value = window.localStorage.getItem(key)
         if (value === null) {
             return Promise.reject(`Nothing in localStorage ${JSON.stringify(key)}`)
         }
         try {
-            return Promise.resolve(Zod.validate(Json.parse(value), ProjectJson, 'ProjectJson'))
+            return Promise.resolve(zodParse(LegacyProjectJson)(Json.parse(value)).getOrThrow())
         } catch (e) {
             return Promise.reject(`Invalid JSON in localStorage ${JSON.stringify(key)}: ${errorToString(e)}`)
         }
     }
-    private setProject = (key: string, p: ProjectJson): Promise<ProjectJson> => {
+    private setProject = (key: string, p: LegacyProjectJson): Promise<LegacyProjectJson> => {
         try {
-            window.localStorage.setItem(key, Zod.stringify(p, ProjectJson, 'ProjectJson'))
+            window.localStorage.setItem(key, zodStringify(LegacyProjectJson)(p))
             return Promise.resolve(p)
         } catch (e) {
             return Promise.reject(e)

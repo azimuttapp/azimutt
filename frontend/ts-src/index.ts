@@ -1,8 +1,28 @@
 import * as Sentry from "@sentry/browser";
 import {BrowserTracing} from "@sentry/tracing";
 import {AnyError, errorToString} from "@azimutt/utils";
-import {ColumnStats, DatabaseQueryResults, TableStats} from "@azimutt/database-types";
-import {prisma} from "@azimutt/parser-prisma";
+import {
+    AttributeRef,
+    columnStatsToLegacy,
+    databaseToLegacy,
+    legacyBuildProjectDraft,
+    legacyBuildProjectJson,
+    legacyBuildProjectLocal,
+    legacyBuildProjectRemote,
+    LegacyColumnStats,
+    LegacyDatabase,
+    LegacyDatabaseQueryResults,
+    LegacyProjectStorage,
+    LegacyTableStats,
+    attributePathFromId,
+    entityRefFromId,
+    ParserError,
+    queryResultsToLegacy,
+    tableStatsToLegacy
+} from "@azimutt/models";
+import {prisma} from "@azimutt/serde-prisma";
+import {HtmlId, Platform, ToastLevel, ViewPosition} from "./types/basics";
+import * as Uuid from "./types/uuid";
 import {
     CreateProject,
     CreateProjectTmp,
@@ -26,20 +46,11 @@ import {
 } from "./types/ports";
 import {ElmApp} from "./services/elm";
 import {AzimuttApi} from "./services/api";
-import {
-    buildProjectDraft,
-    buildProjectJson,
-    buildProjectLocal,
-    buildProjectRemote,
-    ProjectStorage
-} from "./types/project";
 import {ConsoleLogger} from "./services/logger";
-import {loadPolyfills} from "./utils/polyfills";
-import {Utils} from "./utils/utils";
 import {Storage} from "./services/storage";
 import {Backend} from "./services/backend";
-import * as Uuid from "./types/uuid";
-import {HtmlId, Platform, ToastLevel, ViewPosition} from "./types/basics";
+import {loadPolyfills} from "./utils/polyfills";
+import {Utils} from "./utils/utils";
 import {Env} from "./utils/env";
 import * as url from "./utils/url";
 
@@ -134,12 +145,12 @@ function setMeta(meta: SetMeta) {
 
 function getProject(msg: GetProject) {
     (msg.project === Uuid.zero ?
-            storage.getProject(msg.project).then(p => buildProjectDraft(msg.project, p)) :
+            storage.getProject(msg.project).then(p => legacyBuildProjectDraft(msg.project, p)) :
             backend.getProject(msg.organization, msg.project, msg.token).then(res => {
-                if (res.storage === ProjectStorage.enum.remote) {
-                    return buildProjectRemote(res, res.content)
-                } else if (res.storage === ProjectStorage.enum.local) {
-                    return storage.getProject(msg.project).then(p => buildProjectLocal(res, p))
+                if (res.storage === LegacyProjectStorage.enum.remote) {
+                    return legacyBuildProjectRemote(res, res.content)
+                } else if (res.storage === LegacyProjectStorage.enum.local) {
+                    return storage.getProject(msg.project).then(p => legacyBuildProjectLocal(res, p))
                 } else {
                     return Promise.reject('Invalid storage')
                 }
@@ -155,24 +166,24 @@ function getProject(msg: GetProject) {
 }
 
 function createProjectTmp(msg: CreateProjectTmp): void {
-    const json = buildProjectJson(msg.project)
+    const json = legacyBuildProjectJson(msg.project)
     storage.deleteProject(Uuid.zero)
         .then(_ => storage.createProject(Uuid.zero, json))
-        .then(_ => app.gotProject('draft', buildProjectDraft(msg.project.id, json)),
+        .then(_ => app.gotProject('draft', legacyBuildProjectDraft(msg.project.id, json)),
             err => reportError(`Can't save draft project`, err))
 }
 
 function updateProjectTmp(msg: UpdateProjectTmp): void {
-    const json = buildProjectJson(msg.project)
+    const json = legacyBuildProjectJson(msg.project)
     storage.updateProject(Uuid.zero, json)
         .then(_ => null, err => reportError(`Can't update draft project`, err))
 }
 
 function createProject(msg: CreateProject): void {
-    const json = buildProjectJson(msg.project)
-    if (msg.storage == ProjectStorage.enum.local) {
+    const json = legacyBuildProjectJson(msg.project)
+    if (msg.storage == LegacyProjectStorage.enum.local) {
         backend.createProjectLocal(msg.organization, json).then(res => {
-            return storage.createProject(res.id, json).then(_ => buildProjectLocal(res, json), err => {
+            return storage.createProject(res.id, json).then(_ => legacyBuildProjectLocal(res, json), err => {
                 reportError(`Can't save project locally`, err)
                 return backend.deleteProject(msg.organization, res.id).then(_ => Promise.reject(err))
             })
@@ -190,7 +201,7 @@ function createProject(msg: CreateProject): void {
                 app.gotProject('create', p)
             })
         })
-    } else if (msg.storage == ProjectStorage.enum.remote) {
+    } else if (msg.storage == LegacyProjectStorage.enum.remote) {
         backend.createProjectRemote(msg.organization, json).then(p => {
             // delete previously stored projects: draft and legacy one
             return Promise.all([storage.deleteProject(Uuid.zero), storage.deleteProject(msg.project.id)]).catch(err => {
@@ -199,7 +210,7 @@ function createProject(msg: CreateProject): void {
             }).then(_ => {
                 app.toast(ToastLevel.enum.success, `Project created!`)
                 window.history.replaceState("", "", `/${msg.organization}/${p.id}`)
-                app.gotProject('create', buildProjectRemote(p, json))
+                app.gotProject('create', legacyBuildProjectRemote(p, json))
             })
         }, err => reportError(`Can't save project to backend`, err))
     } else {
@@ -208,19 +219,19 @@ function createProject(msg: CreateProject): void {
 }
 
 function updateProject(msg: UpdateProject): void {
-    const json = buildProjectJson(msg.project)
+    const json = legacyBuildProjectJson(msg.project)
     if (!msg.project.organization) return reportError('Expecting an organization to update project')
-    if (msg.project.storage == ProjectStorage.enum.local) {
+    if (msg.project.storage == LegacyProjectStorage.enum.local) {
         backend.updateProjectLocal(msg.project).then(res => {
             return storage.updateProject(res.id, json).then(_ => {
                 app.toast(ToastLevel.enum.success, 'Project saved')
-                app.gotProject('update', buildProjectLocal(res, json))
+                app.gotProject('update', legacyBuildProjectLocal(res, json))
             }, err => reportError(`Can't update project locally`, err))
         }, err => reportError(`Can't update project to backend`, err))
-    } else if (msg.project.storage == ProjectStorage.enum.remote) {
+    } else if (msg.project.storage == LegacyProjectStorage.enum.remote) {
         backend.updateProjectRemote(msg.project).then(res => {
             app.toast(ToastLevel.enum.success, 'Project saved')
-            app.gotProject('update', buildProjectRemote(res, json))
+            app.gotProject('update', legacyBuildProjectRemote(res, json))
         }, err => reportError(`Can't update project`, err))
     } else {
         reportError(`Unknown ProjectStorage`, msg.project.storage)
@@ -233,7 +244,7 @@ function deleteProject(msg: DeleteProject): void {
             reportError(`Can't delete project in backend`, err)
             return Promise.reject(err)
         }).then(_ => {
-            if (msg.project.storage == ProjectStorage.enum.local) {
+            if (msg.project.storage == LegacyProjectStorage.enum.local) {
                 return storage.deleteProject(msg.project.id).catch(err => {
                     reportError(`Can't delete project locally`, err)
                     return Promise.reject(err)
@@ -268,15 +279,15 @@ function getLocalFile(msg: GetLocalFile) {
     reader.readAsText(msg.file as any)
 }
 
-const tableStatsCache: { [key: string]: TableStats } = {}
+const tableStatsCache: { [key: string]: LegacyTableStats } = {}
 
 function getDatabaseSchema(msg: GetDatabaseSchema) {
     (window.desktop ?
-            window.desktop.getDatabaseSchema(msg.database) :
-            backend.getDatabaseSchema(msg.database)
+        window.desktop.getSchema(msg.database).then(databaseToLegacy) :
+        backend.getDatabaseSchema(msg.database)
     ).then(
-        schema => app.gotDatabaseSchema(schema),
-        err => app.gotDatabaseSchemaError(errorToString(err))
+        (schema: LegacyDatabase) => app.gotDatabaseSchema(schema),
+        (err: any) => app.gotDatabaseSchemaError(errorToString(err))
     )
 }
 
@@ -285,29 +296,31 @@ function getTableStats(msg: GetTableStats) {
     if (tableStatsCache[key]) {
         app.gotTableStats(msg.source, tableStatsCache[key])
     } else {
+        const entityRef = entityRefFromId(msg.table);
         (window.desktop ?
-            window.desktop.getTableStats(msg.database, msg.table) :
-            backend.getTableStats(msg.database, msg.table)
+            window.desktop.getEntityStats(msg.database, entityRef).then(tableStatsToLegacy) :
+            backend.getTableStats(msg.database, entityRef)
         ).then(
-            stats => app.gotTableStats(msg.source, tableStatsCache[key] = stats),
-            err => app.gotTableStatsError(msg.source, msg.table, errorToString(err))
+            (stats: LegacyTableStats) => app.gotTableStats(msg.source, tableStatsCache[key] = stats),
+            (err: any) => app.gotTableStatsError(msg.source, msg.table, errorToString(err))
         )
     }
 }
 
-const columnStatsCache: { [key: string]: ColumnStats } = {}
+const columnStatsCache: { [key: string]: LegacyColumnStats } = {}
 
 function getColumnStats(msg: GetColumnStats) {
     const key = `${msg.source}-${msg.column.table}.${msg.column.column}`
     if (columnStatsCache[key]) {
         app.gotColumnStats(msg.source, columnStatsCache[key])
     } else {
+        const attributeRef: AttributeRef = {...entityRefFromId(msg.column.table), attribute: attributePathFromId(msg.column.column)};
         (window.desktop ?
-            window.desktop.getColumnStats(msg.database, msg.column) :
-            backend.getColumnStats(msg.database, msg.column)
+            window.desktop.getAttributeStats(msg.database, attributeRef).then(columnStatsToLegacy) :
+            backend.getColumnStats(msg.database, attributeRef)
         ).then(
-            stats => app.gotColumnStats(msg.source, columnStatsCache[key] = stats),
-            err => app.gotColumnStatsError(msg.source, msg.column, errorToString(err))
+            (stats: LegacyColumnStats) => app.gotColumnStats(msg.source, columnStatsCache[key] = stats),
+            (err: any) => app.gotColumnStatsError(msg.source, msg.column, errorToString(err))
         )
     }
 }
@@ -315,18 +328,18 @@ function getColumnStats(msg: GetColumnStats) {
 function runDatabaseQuery(msg: RunDatabaseQuery) {
     const start = Date.now();
     (window.desktop ?
-        window.desktop.runDatabaseQuery(msg.database, msg.query.sql) :
+        window.desktop.execute(msg.database, msg.query.sql, []).then(queryResultsToLegacy) :
         backend.runDatabaseQuery(msg.database, msg.query.sql)
     ).then(
-        (results: DatabaseQueryResults) => app.gotDatabaseQueryResult(msg.context, msg.query, results, start, Date.now()),
+        (results: LegacyDatabaseQueryResults) => app.gotDatabaseQueryResult(msg.context, msg.query, results, start, Date.now()),
         (err: any) => app.gotDatabaseQueryResult(msg.context, msg.query, errorToString(err), start, Date.now())
     )
 }
 
 function getPrismaSchema(msg: GetPrismaSchema) {
-    prisma.parse(msg.content).then(
-        schema => app.gotPrismaSchema(schema),
-        err => app.gotPrismaSchemaError(errorToString(err))
+    prisma.parse(msg.content).map(databaseToLegacy).fold(
+        (schema: LegacyDatabase) => app.gotPrismaSchema(schema),
+        (errors: ParserError[]) => app.gotPrismaSchemaError(errors.map(errorToString).join(', '))
     )
 }
 

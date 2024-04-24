@@ -15,12 +15,12 @@ import Expect
 import Json.Decode as Decode
 import Libs.Dict as Dict
 import Libs.Nel as Nel exposing (Nel)
-import Models.Project.Column exposing (Column)
+import Models.Project.Column as Column exposing (Column)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.Comment exposing (Comment)
 import Models.Project.Relation exposing (Relation)
 import Models.Project.Schema exposing (Schema)
-import Models.Project.Table exposing (Table)
+import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
 import Test exposing (Test, describe, test)
 
@@ -282,39 +282,33 @@ crmJson =
     {
       "name": "contact_roles_contact_id_fk_az",
       "src": {
-        "schema": "",
-        "table": "contact_roles",
+        "table": ".contact_roles",
         "column": "contact_id"
       },
       "ref": {
-        "schema": "",
-        "table": "contacts",
+        "table": ".contacts",
         "column": "id"
       }
     },
     {
       "name": "contact_roles_role_id_fk_az",
       "src": {
-        "schema": "",
-        "table": "contact_roles",
+        "table": ".contact_roles",
         "column": "role_id"
       },
       "ref": {
-        "schema": "",
-        "table": "roles",
+        "table": ".roles",
         "column": "id"
       }
     },
     {
       "name": "events_contact_id_fk_az",
       "src": {
-        "schema": "",
-        "table": "events",
+        "table": ".events",
         "column": "contact_id"
       },
       "ref": {
-        "schema": "",
-        "table": "contacts",
+        "table": ".contacts",
         "column": "id"
       }
     }
@@ -351,12 +345,12 @@ parseJson json =
 
 emptyTable : Table
 emptyTable =
-    { id = ( "", "" ), schema = "", name = "", view = False, columns = Dict.empty, primaryKey = Nothing, uniques = [], indexes = [], checks = [], comment = Nothing }
+    Table.empty
 
 
 emptyColumn : Column
 emptyColumn =
-    { index = 0, name = "", kind = "", nullable = False, default = Nothing, comment = Nothing, values = Nothing, columns = Nothing }
+    Column.empty
 
 
 emptyComment : Comment

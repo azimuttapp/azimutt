@@ -6,12 +6,20 @@ export function filterValues<K extends keyof any, V, T extends Record<K, V>>(obj
     return Object.fromEntries(Object.entries(obj).filter(([, v]) => p(v as V))) as T
 }
 
+export function mapEntries<T, U>(obj: Record<string, T>, f: (k: string, v: T) => U): Record<string, U> {
+    return Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, f(k, v)]))
+}
+
 export function mapValues<T, U>(obj: Record<string, T>, f: (t: T) => U): Record<string, U> {
-    return Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, f(v)]))
+    return mapEntries(obj, (_, v) => f(v))
+}
+
+export function mapEntriesAsync<T, U>(obj: Record<string, T>, f: (k: string, v: T) => Promise<U>): Promise<Record<string, U>> {
+    return Promise.all(Object.entries(obj).map(([k, v]) => f(k, v).then(u => [k, u]))).then(Object.fromEntries)
 }
 
 export function mapValuesAsync<T, U>(obj: Record<string, T>, f: (t: T) => Promise<U>): Promise<Record<string, U>> {
-    return Promise.all(Object.entries(obj).map(([k, v]) => f(v).then(u => [k, u]))).then(Object.fromEntries)
+    return mapEntriesAsync(obj, (_, v) => f(v))
 }
 
 export function removeEmpty<K extends keyof any, V, T extends Record<K, V>>(obj: T): T {

@@ -1,295 +1,343 @@
-import {groupBy, Logger, mapValues, mapValuesAsync, mergeBy, removeUndefined, sequence} from "@azimutt/utils";
+import {groupBy, mapEntriesAsync, mapValuesAsync, pluralizeL, removeEmpty, removeUndefined} from "@azimutt/utils";
 import {
-    AzimuttRelation,
-    AzimuttSchema,
-    AzimuttType,
-    isPolymorphicColumn,
-    schemaToColumns,
+    Attribute,
+    AttributeName,
+    AttributePath,
+    attributeRefToId,
+    AttributeValue,
+    ConnectorSchemaOpts,
+    connectorSchemaOptsDefaults,
+    Database,
+    DatabaseKind,
+    Entity,
+    EntityId,
+    EntityRef,
+    entityRefFromId,
+    entityRefToId,
+    formatConnectorScope,
+    handleError,
+    Index,
+    isPolymorphic,
+    PrimaryKey,
+    Relation,
+    schemaToAttributes,
     ValueSchema,
     valuesToSchema
-} from "@azimutt/database-types";
-import {Conn} from "./common";
+} from "@azimutt/models";
+import {buildSqlColumn, buildSqlTable, scopeWhere} from "./helpers";
+import {Conn} from "./connect";
 
-export type MariadbSchema = { tables: MariadbTable[], relations: AzimuttRelation[], types: AzimuttType[] }
-export type MariadbTable = { schema: MariadbSchemaName, table: MariadbTableName, view: boolean, columns: MariadbColumn[], primaryKey: MariadbPrimaryKey | null, uniques: MariadbUnique[], indexes: MariadbIndex[], checks: MariadbCheck[], comment: string | null }
-export type MariadbColumn = { name: MariadbColumnName, type: MariadbColumnType, nullable: boolean, default: string | null, comment: string | null, schema: ValueSchema | null }
-export type MariadbPrimaryKey = { name: string | null, columns: MariadbColumnName[] }
-export type MariadbUnique = { name: string, columns: MariadbColumnName[], definition: string | null }
-export type MariadbIndex = { name: string, columns: MariadbColumnName[], definition: string | null }
-export type MariadbCheck = { name: string, columns: MariadbColumnName[], predicate: string | null }
-export type MariadbColumnRef = { schema: MariadbSchemaName, table: MariadbTableName, column: MariadbColumnName }
-export type MariadbSchemaName = string
-export type MariadbTableName = string
-export type MariadbColumnName = string
-export type MariadbColumnType = string
-export type MariadbConstraintName = string
-export type MariadbTableId = string
+export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<Database> => {
+    const start = Date.now()
+    const scope = formatConnectorScope({schema: 'schema', entity: 'table'}, opts)
+    opts.logger.log(`Connected to the database${scope ? `, exporting for ${scope}` : ''} ...`)
 
-export type MariadbSchemaOpts = {logger: Logger, schema: MariadbSchemaName | undefined, sampleSize: number, inferRelations: boolean, ignoreErrors: boolean}
-export const getSchema = ({logger, schema, sampleSize, inferRelations, ignoreErrors}: MariadbSchemaOpts) => async (conn: Conn): Promise<MariadbSchema> => {
-    const columns = await getColumns(conn, schema, ignoreErrors, logger)
-        .then(cols => groupBy(cols, toTableId))
-        .then(cols => mapValuesAsync(cols, tableCols => enrichColumnsWithSchema(conn, tableCols, sampleSize, inferRelations, ignoreErrors, logger)))
-    const comments = await getTableComments(conn, schema, ignoreErrors, logger).then(tables => groupBy(tables, toTableId))
-    const constraints = await getAllConstraints(conn, schema, ignoreErrors, logger).then(constraints => mapValues(groupBy(constraints, toTableId), buildTableConstraints))
-    return {
-        tables: Object.entries(columns).map(([tableId, columns]) => {
-            const tableConstraints = constraints[tableId] || []
-            const tableComments = comments[tableId] || []
-            return {
-                schema: columns[0].schema,
-                table: columns[0].table,
-                view: columns[0].table_kind === 'VIEW',
-                columns: columns
-                    .sort((a, b) => Number(a.column_index - b.column_index))
-                    .map(col => ({
-                        name: col.column,
-                        type: col.column_type,
-                        nullable: col.column_nullable === 'YES',
-                        default: col.column_default,
-                        comment: col.column_comment || null,
-                        schema: col.column_schema || null
-                    })),
-                primaryKey: tableConstraints.filter((c): c is ConstraintPrimaryKey => c.type === 'PRIMARY KEY').map(c => ({
-                    name: c.constraint,
-                    columns: c.columns
-                }))[0] || null,
-                uniques: tableConstraints.filter((c): c is ConstraintUnique => c.type === 'UNIQUE').map(c => ({
-                    name: c.constraint,
-                    columns: c.columns,
-                    definition: null
-                })) || [],
-                indexes: tableConstraints.filter((c): c is ConstraintIndex => c.type === 'INDEX').map(c => ({
-                    name: c.constraint,
-                    columns: c.columns,
-                    definition: null
-                })) || [],
-                checks: /* TODO tableConstraints.filter(c => c.constraint_type === 'c').map(c => ({
-                name: c.constraint_name,
-                columns: c.columns.map(getColumnName(tableId)),
-                predicate: c.definition.replace(/^CHECK/, '').trim()
-            })) || */ [],
-                comment: tableComments[0]?.comment || null
-            }
+    // access system tables only
+    const tables: RawTable[] = await getTables(opts)(conn)
+    opts.logger.log(`Found ${pluralizeL(tables, 'table')} ...`)
+    const columns: RawColumn[] = await getColumns(opts)(conn)
+    opts.logger.log(`Found ${pluralizeL(columns, 'column')} ...`)
+    const constraintColumns: RawConstraintColumn[] = await getConstraintColumns(opts)(conn)
+    opts.logger.log(`Found ${pluralizeL(constraintColumns, 'constraint column')} ...`)
+
+    // access table data when options are requested
+    const columnsByTable = groupByEntity(columns)
+    const jsonColumns: Record<EntityId, Record<AttributeName, ValueSchema>> = opts.inferJsonAttributes ? await getJsonColumns(columnsByTable, opts)(conn) : {}
+    const polyColumns: Record<EntityId, Record<AttributeName, string[]>> = opts.inferPolymorphicRelations ? await getPolyColumns(columnsByTable, opts)(conn) : {}
+    // TODO: pii, join relations...
+
+    // build the database
+    const constraintTypes: Record<RawConstraintColumnType, RawConstraintColumn[]> = groupBy(constraintColumns, c => c.constraint_type)
+    const primaryKeys: Record<EntityId, RawConstraintColumn[]> = groupBy(constraintTypes['PRIMARY KEY'] || [], toEntityId)
+    const uniques: Record<EntityId, RawConstraintColumn[]> = groupBy(constraintTypes['UNIQUE'] || [], toEntityId)
+    const indexes: Record<EntityId, RawConstraintColumn[]> = groupBy(constraintTypes['INDEX'] || [], toEntityId)
+    const foreignKeys: RawConstraintColumn[][] = Object.values(groupBy(constraintTypes['FOREIGN KEY'] || [], c => `${c.table_schema}.${c.table_name}.${c.constraint_name}`))
+    opts.logger.log(`✔︎ Exported ${pluralizeL(tables, 'table')} and ${pluralizeL(foreignKeys, 'relation')} from the database!`)
+    return removeUndefined({
+        entities: tables.map(table => [toEntityId(table), table] as const).map(([id, table]) => buildEntity(
+            table,
+            columnsByTable[id] || [],
+            primaryKeys[id] || [],
+            uniques[id] || [],
+            indexes[id] || [],
+            jsonColumns[id] || {},
+            polyColumns[id] || {},
+        )),
+        relations: foreignKeys.map(buildRelation),
+        types: undefined,
+        doc: undefined,
+        stats: removeUndefined({
+            name: conn.url.db,
+            kind: DatabaseKind.Enum.mariadb,
+            version: undefined,
+            doc: undefined,
+            extractedAt: new Date().toISOString(),
+            extractionDuration: Date.now() - start,
+            size: undefined,
         }),
-        relations: Object.values(constraints).flat().filter((c): c is ConstraintForeignKey => c.type === 'FOREIGN KEY').flatMap(c => c.columns.map(col => ({
-            name: c.constraint,
-            src: {schema: c.schema, table: c.table, column: col.src},
-            ref: {schema: col.ref.schema, table: col.ref.table, column: col.ref.column}
-        }))),
-        types: [] // TODO
-    }
-}
-
-export function formatSchema(schema: MariadbSchema): AzimuttSchema {
-    return {
-        tables: schema.tables.map(t => removeUndefined({
-            schema: t.schema,
-            table: t.table,
-            columns: t.columns.map(c => removeUndefined({
-                name: c.name,
-                type: c.type,
-                nullable: c.nullable || undefined,
-                default: c.default || undefined,
-                comment: c.comment || undefined,
-                columns: c.schema ? schemaToColumns(c.schema, 0) : undefined
-            })),
-            view: t.view || undefined,
-            primaryKey: t.primaryKey ? removeUndefined({
-                name: t.primaryKey.name || undefined,
-                columns: t.primaryKey.columns,
-            }) : undefined,
-            uniques: t.uniques.length > 0 ? t.uniques.map(u => removeUndefined({
-                name: u.name || undefined,
-                columns: u.columns,
-                definition: u.definition || undefined
-            })) : undefined,
-            indexes: t.indexes.length > 0 ? t.indexes.map(i => removeUndefined({
-                name: i.name || undefined,
-                columns: i.columns,
-                definition: i.definition || undefined
-            })) : undefined,
-            checks: t.checks.length > 0 ? t.checks.map(c => removeUndefined({
-                name: c.name || undefined,
-                columns: c.columns,
-                predicate: c.predicate || undefined
-            })) : undefined,
-            comment: t.comment || undefined
-        })),
-        relations: schema.relations,
-        types: schema.types
-    }
+        extra: undefined,
+    })
 }
 
 // 👇️ Private functions, some are exported only for tests
 // If you use them, beware of breaking changes!
 
-function toTableId<T extends { schema: string, table: string }>(value: T): MariadbTableId {
-    return `${value.schema}.${value.table}`
+const toEntityId = <T extends { table_schema: string, table_name: string }>(value: T): EntityId => entityRefToId({schema: value.table_schema, entity: value.table_name})
+const groupByEntity = <T extends { table_schema: string, table_name: string }>(values: T[]): Record<EntityId, T[]> => groupBy(values, toEntityId)
+
+export type RawTable = {
+    table_schema: string
+    table_name: string
+    table_kind: 'BASE TABLE' | 'VIEW' | 'SYSTEM VIEW'
+    table_engine: 'MEMORY' | 'MyISAM' | 'InnoDB' | null
+    table_comment: string // default: '' and 'VIEW'
+    table_rows: number | null // null for views
+    table_size: number | null // null for views
+    index_size: number | null // null for views
+    row_size: number | null // null for views
+    auto_increment_next: number | null
+    table_options: string | null // ex: 'max_rows=2802'
+    table_created_at: Date | null // null for views
+    definition: string | null // for views
 }
 
-type RawColumn = {
-    schema: MariadbSchemaName
-    table: MariadbTableName
-    table_kind: 'BASE TABLE' | 'VIEW'
-    column: MariadbColumnName
-    column_type: MariadbColumnType
-    column_index: number
-    column_default: string | null
-    column_nullable: 'YES' | 'NO'
-    column_comment: string
-    column_schema?: ValueSchema
-}
-
-function getColumns(conn: Conn, schema: MariadbSchemaName | undefined, ignoreErrors: boolean, logger: Logger): Promise<RawColumn[]> {
-    return conn.query<RawColumn>(
-        `SELECT c.TABLE_SCHEMA     AS "schema",
-                c.TABLE_NAME       AS "table",
-                t.TABLE_TYPE       AS table_kind,
-                c.COLUMN_NAME      AS "column",
-                c.COLUMN_TYPE      AS column_type,
-                c.ORDINAL_POSITION AS column_index,
-                c.COLUMN_DEFAULT   AS column_default,
-                c.IS_NULLABLE      AS column_nullable,
-                c.COLUMN_COMMENT   AS column_comment
-         FROM information_schema.COLUMNS c
-                  JOIN information_schema.TABLES t ON c.TABLE_SCHEMA = t.TABLE_SCHEMA AND c.TABLE_NAME = t.TABLE_NAME
-         WHERE ${filterSchema('c.TABLE_SCHEMA', schema)}
-         ORDER BY "schema", "table", column_index;`, [], 'getColumns'
-    ).catch(handleError(`Failed to get columns${schema ? ` for schema '${schema}'` : ''}`, [], ignoreErrors, logger))
-}
-
-async function enrichColumnsWithSchema(conn: Conn, tableCols: RawColumn[], sampleSize: number, inferRelations: boolean, ignoreErrors: boolean, logger: Logger): Promise<RawColumn[]> {
-    const colNames = tableCols.map(c => c.column)
-    return sequence(tableCols, async c => {
-        if (sampleSize > 0 && c.column_type === 'jsonb') {
-            return getColumnSchema(conn, c.schema, c.table, c.column, sampleSize, ignoreErrors, logger).then(column_schema => ({...c, column_schema}))
-        } else if (inferRelations && isPolymorphicColumn(c.column, colNames)) {
-            return c // TODO: fetch distinct values
-        } else {
-            return c
-        }
-    })
-}
-
-async function getColumnSchema(conn: Conn, schema: string, table: string, column: string, sampleSize: number, ignoreErrors: boolean, logger: Logger): Promise<ValueSchema> {
-    const sqlTable = `${schema ? `${schema}.` : ''}${table}`
-    return conn.query(`SELECT ${column} FROM ${sqlTable} WHERE ${column} IS NOT NULL LIMIT ${sampleSize};`, [], 'getColumnSchema')
-        .then(rows => valuesToSchema(rows.map(row => row[column])))
-        .catch(handleError(`Failed to infer schema for column '${column}' of table '${schema ? schema + '.' : ''}${table}'`, valuesToSchema([]), ignoreErrors, logger))
-}
-
-type RawTable = {
-    schema: MariadbSchemaName
-    table: MariadbTableName
-    comment: string
-}
-
-function getTableComments(conn: Conn, schema: MariadbSchemaName | undefined, ignoreErrors: boolean, logger: Logger): Promise<RawTable[]> {
+export const getTables = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawTable[]> => {
+    // https://dev.mysql.com/doc/refman/en/information-schema-tables-table.html
     return conn.query<RawTable>(
-        `SELECT TABLE_SCHEMA  AS "schema",
-                TABLE_NAME    AS "table",
-                TABLE_COMMENT AS comment
-         FROM information_schema.TABLES
-         WHERE TABLE_COMMENT != ''
-           AND TABLE_COMMENT != 'VIEW'
-           AND ${filterSchema('TABLE_SCHEMA', schema)};`, [], 'getTableComments'
-    ).catch(handleError(`Failed to get table comments${schema ? ` for schema '${schema}'` : ''}`, [], ignoreErrors, logger))
+        `SELECT t.TABLE_SCHEMA    AS table_schema
+              , t.TABLE_NAME      AS table_name
+              , t.TABLE_TYPE      AS table_kind
+              , t.ENGINE          AS table_engine
+              , t.TABLE_COMMENT   AS table_comment
+              , t.TABLE_ROWS      AS table_rows
+              , t.DATA_LENGTH     AS table_size
+              , t.INDEX_LENGTH    AS index_size
+              , t.AVG_ROW_LENGTH  AS row_size
+              , t.AUTO_INCREMENT  AS auto_increment_next
+              , t.CREATE_OPTIONS  AS table_options
+              , t.CREATE_TIME     AS table_created_at
+              , v.VIEW_DEFINITION AS definition
+         FROM information_schema.TABLES t
+                  LEFT JOIN information_schema.VIEWS v ON v.TABLE_SCHEMA = t.TABLE_SCHEMA AND v.TABLE_NAME = t.TABLE_NAME
+         WHERE ${scopeWhere({schema: 't.TABLE_SCHEMA', entity: 't.TABLE_NAME'}, opts)}
+         ORDER BY table_schema, table_name;`, [], 'getTables'
+    ).catch(handleError(`Failed to get tables`, [], opts))
 }
 
-type RawConstraint = {
-    schema: MariadbSchemaName
-    table: MariadbTableName
-    constraint: MariadbConstraintName
-    column: MariadbColumnName
-    type: 'PRIMARY KEY' | 'UNIQUE' | 'FOREIGN KEY' | 'INDEX'
-    index?: bigint
-    ref_schema?: MariadbSchemaName
-    ref_table?: MariadbTableName
-    ref_column?: MariadbColumnName
-}
-
-async function getAllConstraints(conn: Conn, schema: MariadbSchemaName | undefined, ignoreErrors: boolean, logger: Logger): Promise<RawConstraint[]> {
-    const [indexes, constraints] = await Promise.all([getIndexes(conn, schema, ignoreErrors, logger), getConstraints(conn, schema, ignoreErrors, logger)])
-    return mergeBy(indexes, constraints, c => `${c.schema}.${c.table}.${c.constraint}.${c.column}`)
-}
-
-function getIndexes(conn: Conn, schema: MariadbSchemaName | undefined, ignoreErrors: boolean, logger: Logger): Promise<RawConstraint[]> {
-    return conn.query<RawConstraint>(
-        `SELECT INDEX_SCHEMA AS "schema",
-                TABLE_NAME   AS "table",
-                INDEX_NAME   AS "constraint",
-                COLUMN_NAME  AS "column",
-                SEQ_IN_INDEX AS "index",
-                "INDEX"      AS type
-         FROM information_schema.STATISTICS
-         WHERE ${filterSchema('INDEX_SCHEMA', schema)};`, [], 'getIndexes'
-    ).catch(handleError(`Failed to get indexes${schema ? ` for schema '${schema}'` : ''}`, [], ignoreErrors, logger))
-}
-
-function getConstraints(conn: Conn, schema: MariadbSchemaName | undefined, ignoreErrors: boolean, logger: Logger): Promise<RawConstraint[]> {
-    return conn.query<RawConstraint>(
-        `SELECT c.CONSTRAINT_SCHEMA       AS "schema",
-                c.TABLE_NAME              AS "table",
-                c.CONSTRAINT_NAME         AS "constraint",
-                u.COLUMN_NAME             AS "column",
-                c.CONSTRAINT_TYPE         AS type,
-                u.REFERENCED_TABLE_SCHEMA AS ref_schema,
-                u.REFERENCED_TABLE_NAME   AS ref_table,
-                u.REFERENCED_COLUMN_NAME  AS ref_column
-         FROM information_schema.TABLE_CONSTRAINTS c
-                  JOIN information_schema.KEY_COLUMN_USAGE u
-                       ON c.CONSTRAINT_SCHEMA = u.CONSTRAINT_SCHEMA AND c.TABLE_NAME = u.TABLE_NAME AND
-                          c.CONSTRAINT_NAME = u.CONSTRAINT_NAME
-         WHERE ${filterSchema('c.CONSTRAINT_SCHEMA', schema)};`, [], 'getConstraints'
-    ).catch(handleError(`Failed to get constraints${schema ? ` for schema '${schema}'` : ''}`, [], ignoreErrors, logger))
-}
-
-type ConstraintBase = { schema: MariadbSchemaName, table: MariadbTableName, constraint: MariadbConstraintName }
-type ConstraintPrimaryKey = ConstraintBase & { type: 'PRIMARY KEY', columns: MariadbColumnName[] }
-type ConstraintUnique = ConstraintBase & { type: 'UNIQUE', columns: MariadbColumnName[] }
-type ConstraintIndex = ConstraintBase & { type: 'INDEX', columns: MariadbColumnName[] }
-type ConstraintForeignKey = ConstraintBase & { type: 'FOREIGN KEY', columns: { src: MariadbColumnName, ref: MariadbColumnRef }[] }
-type ConstraintFormatted = ConstraintPrimaryKey | ConstraintUnique | ConstraintIndex | ConstraintForeignKey
-
-function buildTableConstraints(constraints: RawConstraint[]): ConstraintFormatted[] {
-    return Object.values(groupBy(constraints, c => c.constraint)).map(columns => {
-        const first = columns[0]
-        const sorted = columns.sort((a, b) => Number((a.index || BigInt(0)) - (b.index || BigInt(0))))
-        if (first.type === 'FOREIGN KEY') {
-            return {
-                schema: first.schema,
-                table: first.table,
-                constraint: first.constraint,
-                type: first.type,
-                columns: sorted.map(c => ({
-                    src: c.column,
-                    ref: {schema: c.ref_schema || '', table: c.ref_table || '', column: c.ref_column || ''}
-                }))
-            }
-        } else {
-            return {
-                schema: first.schema,
-                table: first.table,
-                constraint: first.constraint,
-                type: first.type,
-                columns: sorted.map(c => c.column)
-            }
-        }
+function buildEntity(table: RawTable, columns: RawColumn[], primaryKeyColumns: RawConstraintColumn[], uniqueColumns: RawConstraintColumn[], indexColumns: RawConstraintColumn[], jsonColumns: Record<AttributeName, ValueSchema>, polyColumns: Record<AttributeName, string[]>): Entity {
+    const indexes = Object.values(groupBy(uniqueColumns, c => c.constraint_name))
+        .concat(Object.values(groupBy(indexColumns, c => c.constraint_name)))
+    return removeEmpty({
+        schema: table.table_schema,
+        name: table.table_name,
+        kind: table.table_kind === 'VIEW' || table.table_kind === 'SYSTEM VIEW' ? 'view' as const : undefined,
+        def: table.definition || undefined,
+        attrs: columns.slice(0)
+            .sort((a, b) => a.column_index - b.column_index)
+            .map(c => buildAttribute(c, jsonColumns[c.column_name], polyColumns[c.column_name])),
+        pk: primaryKeyColumns.length > 0 ? buildPrimaryKey(primaryKeyColumns) : undefined,
+        indexes: indexes.length > 0 ? indexes.map(buildIndex) : undefined,
+        checks: undefined,
+        doc: table.table_comment === 'VIEW' ? undefined : table.table_comment || undefined,
+        stats: removeUndefined({
+            rows: table.table_rows || undefined,
+            size: table.table_size || undefined,
+            sizeIdx: table.index_size || undefined,
+            sizeToast: undefined,
+            sizeToastIdx: undefined,
+            scanSeq: undefined,
+            scanSeqLast: undefined,
+            scanIdx: undefined,
+            scanIdxLast: undefined,
+            analyzeLast: undefined,
+            vacuumLast: undefined,
+        }),
+        extra: undefined
     })
 }
 
-function handleError<T>(msg: string, value: T, ignoreErrors: boolean, logger: Logger) {
-    return (err: any): Promise<T> => {
-        if (ignoreErrors) {
-            logger.warn(`${msg}. Ignoring...`)
-            return Promise.resolve(value)
-        } else {
-            return Promise.reject(err)
-        }
-    }
+export type RawColumn = {
+    table_schema: string
+    table_name: string
+    column_index: number
+    column_name: string
+    column_type: string
+    column_nullable: 'YES' | 'NO'
+    column_default: string | null
+    column_comment: string
+    column_extra: string // ex: 'auto_increment', 'on update CURRENT_TIMESTAMP'
 }
 
-function filterSchema(field: string, schema: MariadbSchemaName | undefined) {
-    return `${field} ${schema ? `= '${schema}'` : `NOT IN ('information_schema', 'performance_schema', 'sys', 'sky', 'mysql')`}`
+export const getColumns = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawColumn[]> => {
+    // https://dev.mysql.com/doc/refman/en/information-schema-columns-table.html
+    return conn.query<RawColumn>(
+        `SELECT TABLE_SCHEMA     AS table_schema
+              , TABLE_NAME       AS table_name
+              , ORDINAL_POSITION AS column_index
+              , COLUMN_NAME      AS column_name
+              , COLUMN_TYPE      AS column_type
+              , IS_NULLABLE      AS column_nullable
+              , COLUMN_DEFAULT   AS column_default
+              , COLUMN_COMMENT   AS column_comment
+              , EXTRA            AS column_extra
+         FROM information_schema.COLUMNS
+         WHERE ${scopeWhere({schema: 'TABLE_SCHEMA', entity: 'TABLE_NAME'}, opts)}
+         ORDER BY table_schema, table_name, column_index;`, [], 'getColumns'
+    ).catch(handleError(`Failed to get columns`, [], opts))
+}
+
+function buildAttribute(column: RawColumn, jsonColumn: ValueSchema | undefined, values: string[] | undefined): Attribute {
+    return removeEmpty({
+        name: column.column_name,
+        type: column.column_type,
+        null: column.column_nullable === 'YES' ? true : undefined,
+        gen: undefined,
+        default: column.column_default || undefined,
+        attrs: jsonColumn ? schemaToAttributes(jsonColumn) : undefined,
+        doc: column.column_comment || undefined,
+        stats: removeUndefined({
+            nulls: undefined,
+            bytesAvg: undefined,
+            cardinality: undefined,
+            commonValues: undefined,
+            distinctValues: values,
+            histogram: undefined,
+            min: undefined,
+            max: undefined,
+        }),
+        extra: undefined
+    })
+}
+
+export type RawConstraintColumnType = 'PRIMARY KEY' | 'UNIQUE' | 'FOREIGN KEY' | 'INDEX'
+export type RawConstraintColumn = {
+    constraint_name: string // default: 'PRIMARY'
+    constraint_type: RawConstraintColumnType
+    table_schema: string
+    table_name: string
+    column_name: string
+    column_index: number
+    ref_schema: string | null
+    ref_table: string | null
+    ref_column: string | null
+}
+
+export const getConstraintColumns = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawConstraintColumn[]> => {
+    // https://dev.mysql.com/doc/refman/en/information-schema-key-column-usage-table.html
+    // https://dev.mysql.com/doc/refman/en/information-schema-table-constraints-table.html
+    // https://dev.mysql.com/doc/refman/en/information-schema-statistics-table.html
+    return conn.query<RawConstraintColumn>(
+        `SELECT cc.CONSTRAINT_NAME         AS constraint_name
+              , c.CONSTRAINT_TYPE          AS constraint_type
+              , cc.TABLE_SCHEMA            AS table_schema
+              , cc.TABLE_NAME              AS table_name
+              , cc.COLUMN_NAME             AS column_name
+              , cc.ORDINAL_POSITION        AS column_index
+              , cc.REFERENCED_TABLE_SCHEMA AS ref_schema
+              , cc.REFERENCED_TABLE_NAME   AS ref_table
+              , cc.REFERENCED_COLUMN_NAME  AS ref_column
+         FROM information_schema.KEY_COLUMN_USAGE cc
+                  JOIN information_schema.TABLE_CONSTRAINTS c ON c.CONSTRAINT_CATALOG = cc.CONSTRAINT_CATALOG AND c.CONSTRAINT_SCHEMA = cc.CONSTRAINT_SCHEMA AND c.CONSTRAINT_NAME = cc.CONSTRAINT_NAME AND c.TABLE_NAME = cc.TABLE_NAME
+         WHERE ${scopeWhere({schema: 'cc.TABLE_SCHEMA', entity: 'cc.TABLE_NAME'}, opts)}
+         UNION
+         SELECT i.INDEX_NAME   AS constraint_name
+              , "INDEX"        AS constraint_type
+              , i.TABLE_SCHEMA AS table_schema
+              , i.TABLE_NAME   AS table_name
+              , i.COLUMN_NAME  AS column_name
+              , i.SEQ_IN_INDEX AS column_index
+              , null           AS ref_schema
+              , null           AS ref_table
+              , null           AS ref_column
+         FROM information_schema.STATISTICS i
+                  LEFT JOIN information_schema.TABLE_CONSTRAINTS c ON c.TABLE_SCHEMA = i.TABLE_SCHEMA AND c.TABLE_NAME = i.TABLE_NAME AND i.INDEX_NAME = c.CONSTRAINT_NAME
+         WHERE c.CONSTRAINT_TYPE IS NULL
+           AND ${scopeWhere({schema: 'i.TABLE_SCHEMA', entity: 'i.TABLE_NAME'}, opts)}
+         ORDER BY table_schema, table_name, constraint_name, column_index;`, [], 'getConstraintColumns'
+    ).catch(handleError(`Failed to get constraints`, [], opts))
+}
+
+function buildPrimaryKey(columns: RawConstraintColumn[]): PrimaryKey {
+    const first = columns[0]
+    return removeUndefined({
+        name: first.constraint_name === 'PRIMARY' ? undefined : first.constraint_name || undefined,
+        attrs: columns.slice(0)
+            .sort((a, b) => (a.column_index || 0) - (b.column_index || 0))
+            .map(c => [c.column_name]),
+        doc: undefined,
+        stats: undefined,
+        extra: undefined
+    })
+}
+
+function buildIndex(columns: RawConstraintColumn[]): Index {
+    const first = columns[0]
+    return removeUndefined({
+        name: first.constraint_name || undefined,
+        attrs: columns.slice(0)
+            .sort((a, b) => (a.column_index || 0) - (b.column_index || 0))
+            .map(c => [c.column_name]),
+        unique: first.constraint_type === 'UNIQUE' ? true : undefined, // false when not specified
+        partial: undefined,
+        definition: undefined,
+        doc: undefined,
+        stats: undefined,
+        extra: undefined
+    })
+}
+
+function buildRelation(columns: RawConstraintColumn[]): Relation {
+    const first = columns[0]
+    return removeUndefined({
+        name: first.constraint_name || undefined,
+        kind: undefined,
+        origin: undefined,
+        src: { schema: first.table_schema, entity: first.table_name },
+        ref: { schema: first.ref_schema || '', entity: first.ref_table || '' },
+        attrs: columns.map(c => ({src: [c.column_name], ref: [c.ref_column || '']})),
+        polymorphic: undefined,
+        doc: undefined,
+        extra: undefined
+    })
+}
+
+const getJsonColumns = (columns: Record<EntityId, RawColumn[]>, opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<Record<EntityId, Record<AttributeName, ValueSchema>>> => {
+    opts.logger.log('Inferring JSON columns ...')
+    return mapEntriesAsync(columns, (entityId, tableCols) => {
+        const ref = entityRefFromId(entityId)
+        const jsonCols = tableCols.filter(c => c.column_type === 'jsonb')
+        return mapValuesAsync(Object.fromEntries(jsonCols.map(c => [c.column_name, c.column_name])), c =>
+            getSampleValues(ref, [c], opts)(conn).then(valuesToSchema)
+        )
+    })
+}
+
+const getSampleValues = (ref: EntityRef, attribute: AttributePath, opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<AttributeValue[]> => {
+    const sqlTable = buildSqlTable(ref)
+    const sqlColumn = buildSqlColumn(attribute)
+    const sampleSize = opts.sampleSize || connectorSchemaOptsDefaults.sampleSize
+    return conn.query<{value: AttributeValue}>(`SELECT ${sqlColumn} AS value FROM ${sqlTable} WHERE ${sqlColumn} IS NOT NULL LIMIT ${sampleSize};`, [], 'getSampleValues')
+        .then(rows => rows.map(row => row.value))
+        .catch(handleError(`Failed to get sample values for '${attributeRefToId({...ref, attribute})}'`, [], opts))
+}
+
+const getPolyColumns = (columns: Record<EntityId, RawColumn[]>, opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<Record<EntityId, Record<AttributeName, string[]>>> => {
+    opts.logger.log('Inferring polymorphic relations ...')
+    return mapEntriesAsync(columns, (entityId, tableCols) => {
+        const ref = entityRefFromId(entityId)
+        const colNames = tableCols.map(c => c.column_name)
+        const polyCols = tableCols.filter(c => isPolymorphic(c.column_name, colNames))
+        return mapValuesAsync(Object.fromEntries(polyCols.map(c => [c.column_name, c.column_name])), c =>
+            getDistinctValues(ref, [c], opts)(conn).then(values => values.filter((v): v is string => typeof v === 'string'))
+        )
+    })
+}
+
+const getDistinctValues = (ref: EntityRef, attribute: AttributePath, opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<AttributeValue[]> => {
+    const sqlTable = buildSqlTable(ref)
+    const sqlColumn = buildSqlColumn(attribute)
+    const sampleSize = opts.sampleSize || connectorSchemaOptsDefaults.sampleSize
+    return conn.query<{value: AttributeValue}>(`SELECT DISTINCT ${sqlColumn} AS value FROM ${sqlTable} WHERE ${sqlColumn} IS NOT NULL ORDER BY value LIMIT ${sampleSize};`, [], 'getDistinctValues')
+        .then(rows => rows.map(row => row.value))
+        .catch(handleError(`Failed to get distinct values for '${attributeRefToId({...ref, attribute})}'`, [], opts))
 }

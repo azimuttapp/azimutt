@@ -29,17 +29,20 @@ const ajv = new Ajv({
 export type Config = Static<typeof ConfigSchema>
 
 export const configFromEnv = (): Config => {
-    const validate = ajv.compile(ConfigSchema)
     const env = process.env
-    const config = {
+    return buildConfig({
         NODE_ENV: env.NODE_ENV,
         LOG_LEVEL: env.LOG_LEVEL,
         API_HOST: env.API_HOST,
         API_PORT: env.API_PORT,
         CORS_ALLOW_ORIGIN: env.CORS_ALLOW_ORIGIN,
-    }
+    } as Config)
+}
+
+export const buildConfig = (config: Config): Config => {
+    const validate = ajv.compile(ConfigSchema)
     if (validate(config)) {
-        return config as Config
+        return config
     } else {
         throw new Error('invalid configuration - ' + JSON.stringify(validate.errors, null, 2))
     }

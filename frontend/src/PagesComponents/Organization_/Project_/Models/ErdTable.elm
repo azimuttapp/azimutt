@@ -10,8 +10,9 @@ import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath, ColumnPathStr)
 import Models.Project.CustomTypeId exposing (CustomTypeId)
 import Models.Project.SchemaName exposing (SchemaName)
-import Models.Project.Source exposing (Source)
+import Models.Project.SourceId exposing (SourceIdStr)
 import Models.Project.Table exposing (Table)
+import Models.Project.TableDbStats exposing (TableDbStats)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableName exposing (TableName)
 import PagesComponents.Organization_.Project_.Models.Erd.TableWithOrigin exposing (TableWithOrigin)
@@ -34,12 +35,14 @@ type alias ErdTable =
     , schema : SchemaName
     , name : TableName
     , view : Bool
+    , definition : Maybe String
     , columns : Dict ColumnName ErdColumn
     , primaryKey : Maybe ErdPrimaryKey
     , uniques : List ErdUnique
     , indexes : List ErdIndex
     , checks : List ErdCheck
     , comment : Maybe ErdComment
+    , stats : Dict SourceIdStr TableDbStats
     , origins : List ErdOrigin
     }
 
@@ -74,12 +77,14 @@ create defaultSchema types tableRelations suggestedRelations table =
     , schema = table.schema
     , name = table.name
     , view = table.view
+    , definition = table.definition
     , columns = table.columns |> Dict.map (\name -> ErdColumn.create defaultSchema types (relationsByRootColumn |> Dict.getOrElse name []) suggestedRelations table (ColumnPath.fromString name))
     , primaryKey = table.primaryKey |> Maybe.map ErdPrimaryKey.create
     , uniques = table.uniques |> List.map ErdUnique.create
     , indexes = table.indexes |> List.map ErdIndex.create
     , checks = table.checks |> List.map ErdCheck.create
     , comment = table.comment |> Maybe.map ErdComment.create
+    , stats = table.stats
     , origins = table.origins
     }
 
@@ -90,12 +95,14 @@ unpack table =
     , schema = table.schema
     , name = table.name
     , view = table.view
+    , definition = table.definition
     , columns = table.columns |> Dict.map (\_ -> ErdColumn.unpack)
     , primaryKey = table.primaryKey |> Maybe.map ErdPrimaryKey.unpack
     , uniques = table.uniques |> List.map ErdUnique.unpack
     , indexes = table.indexes |> List.map ErdIndex.unpack
     , checks = table.checks |> List.map ErdCheck.unpack
     , comment = table.comment |> Maybe.map ErdComment.unpack
+    , stats = table.stats |> Dict.values |> List.head
     }
 
 

@@ -3,7 +3,7 @@ defmodule Azimutt.Organizations.OrganizationPlan do
   use TypedStruct
   alias Azimutt.Organizations.OrganizationPlan
 
-  # MUST stay in sync with frontend/ts-src/types/organization.ts & frontend/src/Models/Plan.elm
+  # MUST stay in sync with libs/models/src/legacy/legacyProject.ts & frontend/src/Models/Plan.elm
   typedstruct enforce: true do
     @derive Jason.Encoder
     field :id, atom()

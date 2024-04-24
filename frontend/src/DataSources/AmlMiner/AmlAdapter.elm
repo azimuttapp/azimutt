@@ -136,12 +136,14 @@ createTable table =
       , schema = id |> TableId.schema
       , name = id |> TableId.name
       , view = table.isView
+      , definition = Nothing
       , columns = table.columns |> List.indexedMap createColumn |> Dict.fromListMap .name
       , primaryKey = table.columns |> createPrimaryKey
       , uniques = table.columns |> createConstraint .unique (defaultUniqueName table.table) |> List.map (\( name, cols ) -> Unique name cols Nothing)
       , indexes = table.columns |> createConstraint .index (defaultIndexName table.table) |> List.map (\( name, cols ) -> Index name cols Nothing)
       , checks = table.columns |> List.filterMap (\c -> c.check |> Maybe.map (\check -> Check (defaultCheckName table.table c.name) [ Nel.from c.name ] (String.nonEmptyMaybe check)))
       , comment = table.notes |> Maybe.map createComment
+      , stats = Nothing
       }
     , table.columns |> List.filterMap (\c -> Maybe.map (createRelation { schema = table.schema, table = table.table, column = c.name }) c.foreignKey)
     , table.columns |> List.filterMap (\c -> Maybe.map2 (createType (c.kindSchema |> Maybe.orElse table.schema)) c.kind c.values) |> Dict.fromListMap .id
@@ -158,6 +160,7 @@ createColumn index column =
     , comment = column.notes |> Maybe.map createComment
     , values = Nothing
     , columns = Nothing -- nested columns not supported in AML
+    , stats = Nothing
     }
 
 

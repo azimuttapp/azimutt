@@ -1,31 +1,53 @@
 import {Client, ClientConfig, types} from "pg";
-import {AnyError, errorToString, Logger} from "@azimutt/utils";
-import {DatabaseUrlParsed, logQueryIfNeeded} from "@azimutt/database-types";
-import {Conn, QueryResultArrayMode, QueryResultRow} from "./common";
+import {AnyError, errorToString} from "@azimutt/utils";
+import {
+    AttributeValue,
+    ConnectorDefaultOpts,
+    DatabaseUrlParsed,
+    logQueryIfNeeded,
+    queryError
+} from "@azimutt/models";
 
-export type PostgresConnectOpts = {logger: Logger, logQueries: boolean}
-export async function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c: Conn) => Promise<T>, {logger, logQueries}: PostgresConnectOpts): Promise<T> {
+export async function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c: Conn) => Promise<T>, opts: ConnectorDefaultOpts): Promise<T> {
     types.setTypeParser(types.builtins.INT8, (val: string) => parseInt(val, 10))
     const client = await createConnection(buildConfig(application, url))
         .catch(_ => createConnection(url.full))
         .catch(err => Promise.reject(connectionError(err)))
     let queryCpt = 1
     const conn: Conn = {
+        url,
         query<T extends QueryResultRow>(sql: string, parameters: any[] = [], name?: string): Promise<T[]> {
             return logQueryIfNeeded(queryCpt++, name, sql, parameters, (sql, parameters) => {
-                return client.query<T>(sql, parameters).then(res => res.rows, err => Promise.reject(queryError(sql, err)))
-            }, r => r.length, logger, logQueries)
+                return client.query<T>(sql, parameters).then(res => res.rows, err => Promise.reject(queryError(name, sql, err)))
+            }, r => r.length, opts)
         },
         queryArrayMode(sql: string, parameters: any[] = [], name?: string): Promise<QueryResultArrayMode> {
             return logQueryIfNeeded(queryCpt++, name, sql, parameters, (sql, parameters) => {
-                return client.query({text: sql, values: parameters, rowMode: 'array'}).then(null, err => Promise.reject(queryError(sql, err)))
-            }, r => r.rows.length, logger, logQueries)
+                return client.query({text: sql, values: parameters, rowMode: 'array'}).then(null, err => Promise.reject(queryError(name, sql, err)))
+            }, r => r.rows.length, opts)
         }
     }
     return exec(conn).then(
         res => client.end().then(_ => res),
         err => client.end().then(_ => Promise.reject(err))
     )
+}
+
+export interface Conn {
+    url: DatabaseUrlParsed
+
+    query<T extends QueryResultRow>(sql: string, parameters?: any[], name?: string): Promise<T[]>
+
+    queryArrayMode(sql: string, parameters?: any[], name?: string): Promise<QueryResultArrayMode>
+}
+
+export type QueryResultValue = AttributeValue
+export type QueryResultRow = { [column: string]: QueryResultValue }
+export type QueryResultField = { name: string, tableID: number, columnID: number, dataTypeID: number, format: string }
+export type QueryResultRowArray = QueryResultValue[]
+export type QueryResultArrayMode = {
+    fields: QueryResultField[],
+    rows: QueryResultRowArray[]
 }
 
 async function createConnection(config: string | ClientConfig): Promise<Client> {
@@ -52,15 +74,5 @@ function connectionError(err: AnyError): AnyError {
         return new Error(`${msg}. Try adding \`?sslmode=no-verify\` at the end of your url.`)
     } else {
         return err
-    }
-}
-
-function queryError(sql: string, err: unknown): Error {
-    if (typeof err === 'object' && err !== null) {
-        return new Error(`${err.constructor.name}${'code' in err ? ` ${err.code}` : ''}${'message' in err ? `:\n ${err.message}` : ''}\n on '${sql}'`)
-    } else if (err) {
-        return new Error(`error ${JSON.stringify(err)}\n on '${sql}'`)
-    } else {
-        return new Error(`error on '${sql}'`)
     }
 }

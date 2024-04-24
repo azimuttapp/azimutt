@@ -1,37 +1,36 @@
-import {ProjectId, ProjectJson} from "../../types/project";
+import {LegacyProjectId, LegacyProjectJson, zodParse} from "@azimutt/models";
 import {StorageApi, StorageKind} from "./api";
 import {Logger} from "../logger";
-import * as Zod from "../../utils/zod";
 
 export class InMemoryStorage implements StorageApi {
     public kind: StorageKind = 'inMemory'
 
-    constructor(private logger: Logger, private projects: { [id: string]: ProjectJson } = {}) {
+    constructor(private logger: Logger, private projects: { [id: string]: LegacyProjectJson } = {}) {
     }
 
-    loadProject = (id: ProjectId): Promise<ProjectJson> => {
+    loadProject = (id: LegacyProjectId): Promise<LegacyProjectJson> => {
         this.logger.debug(`inMemory.loadProject(${id})`)
-        return this.projects[id] ? Promise.resolve(Zod.validate(this.projects[id], ProjectJson, 'ProjectJson')) : Promise.reject(`Not found`)
+        return this.projects[id] ? Promise.resolve(zodParse(LegacyProjectJson)(this.projects[id]).getOrThrow()) : Promise.reject(`Not found`)
     }
-    createProject = (id: ProjectId, p: ProjectJson): Promise<ProjectJson> => {
+    createProject = (id: LegacyProjectId, p: LegacyProjectJson): Promise<LegacyProjectJson> => {
         this.logger.debug(`inMemory.createProject(${id})`, p)
         if(this.projects[id]) {
             return Promise.reject(`Project ${id} already exists in ${this.kind}`)
         } else {
-            this.projects[id] = Zod.validate(p, ProjectJson, 'ProjectJson')
+            this.projects[id] = zodParse(LegacyProjectJson)(p).getOrThrow()
             return Promise.resolve(p)
         }
     }
-    updateProject = (id: ProjectId, p: ProjectJson): Promise<ProjectJson> => {
+    updateProject = (id: LegacyProjectId, p: LegacyProjectJson): Promise<LegacyProjectJson> => {
         this.logger.debug(`inMemory.updateProject(${id})`, p)
         if(this.projects[id]) {
-            this.projects[id] = Zod.validate(p, ProjectJson, 'ProjectJson')
+            this.projects[id] = zodParse(LegacyProjectJson)(p).getOrThrow()
             return Promise.resolve(p)
         } else {
             return Promise.reject(`Project ${id} doesn't exists in ${this.kind}`)
         }
     }
-    deleteProject = (id: ProjectId): Promise<void> => {
+    deleteProject = (id: LegacyProjectId): Promise<void> => {
         this.logger.debug(`inMemory.deleteProject(${id})`)
         delete this.projects[id]
         return Promise.resolve()

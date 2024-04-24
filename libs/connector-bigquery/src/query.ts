@@ -1,15 +1,15 @@
-import {DatabaseQueryResults} from "@azimutt/database-types"
+import {QueryResults} from "@azimutt/models";
 import {Conn, QueryResultRow} from "./connect"
 
-export const execQuery = (query: string, parameters: any[], name?: string) => (conn: Conn): Promise<DatabaseQueryResults> => {
+export const execQuery = (query: string, parameters: any[], name?: string) => (conn: Conn): Promise<QueryResults> => {
     return conn.query(query, parameters, name).then(res => buildResults(query, res))
 }
 
-function buildResults(query: string, results: QueryResultRow[]): DatabaseQueryResults {
+function buildResults(query: string, results: QueryResultRow[]): QueryResults {
     const columns = Object.keys(results[0])
-    return {
+    return QueryResults.parse({
         query,
-        columns: columns.map(name => ({name})), // TODO: parse SQL to infer column ref
+        attributes: columns.map(name => ({name})), // TODO: parse SQL to infer column ref
         rows: results.map(row => columns.reduce((acc, col) => ({...acc, [col]: row[col]}), {}))
-    }
+    })
 }

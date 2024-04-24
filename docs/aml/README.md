@@ -2,7 +2,7 @@
 
 **AML is a text language allowing you to define your database schema in the quickest and most intuitive way.**
 
-It was built with the minimal boilerplate to be fast to write but also to limit the learning curve and possible mistakes.  It's, of course, the language used in [Azimutt](https://azimutt.app) to define or extend your schema (along with other data sources like SQL code, database connection or even JSON).
+It was built with the minimal boilerplate to be fast to write, but also to limit the learning curve and possible mistakes.  It's, of course, the language used in [Azimutt](https://azimutt.app) to define or extend your schema (along with other data sources like SQL code, database connection or even JSON).
 
 Here is a typical example of what it looks like:
 
@@ -40,7 +40,7 @@ This name should be without space or dot but to allow them you can use `"`.
 You can prefix your table name with its schema name followed by a dot if you want, the same rules apply to it (no space or dot, or use `"`).  
 Finally, you can add a `*` at the end of the table name to mark it as a *view* instead of a table.
 
-Here is some examples of tables definitions:
+Here are some examples of tables definitions:
 
 ```aml
 users
@@ -70,6 +70,7 @@ As for the table and schema names, if you need space or dot inside, you can use 
 Of course, you may want to provide additional details on columns, here is its full structure:
 
 ```aml
+users
   name type nullable pk index unique check fk table.column | notes # comment
 ```
 
@@ -109,7 +110,7 @@ As seen in the [Columns](#-columns) section, a column can have several modifiers
 
 For the `check` constraint, you can use this name (or label) to define the condition.
 
-Here is some examples:
+Here are some examples:
 
 ```aml
 users

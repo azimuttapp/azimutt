@@ -1,139 +1,148 @@
-import {Collection, Filter, MongoClient} from "mongodb";
-import {Logger, sequence} from "@azimutt/utils";
-import {AzimuttSchema, schemaToColumns, ValueSchema, valuesToSchema} from "@azimutt/database-types";
+import {Collection, Filter} from "mongodb";
+import {joinLimit, pluralizeL, removeUndefined, sequence} from "@azimutt/utils";
+import {
+    AttributeName,
+    AttributeValue,
+    ConnectorSchemaOpts,
+    connectorSchemaOptsDefaults,
+    Database,
+    DatabaseKind,
+    DatabaseName,
+    Entity,
+    formatConnectorScope,
+    handleError,
+    schemaToAttributes,
+    valuesToSchema
+} from "@azimutt/models";
+import {scopeFilter} from "./helpers";
+import {Conn} from "./connect";
 
-export type QueryResult = { database: string, collection: string, operation: string, command: object, rows: object[] }
-
-// expects `query` to be in the form of: "db/collection/operation/command"
-// - `db`: name of the database to use
-// - `collection`: name of the collection to use
-// - `operation`: name of the collection method to call (see https://mongodb.github.io/node-mongodb-native/5.3/classes/Collection.html)
-// - `command`: the JSON given as parameter for the operation
-export const execQuery = (query: string, parameters: any[]) => async (client: MongoClient): Promise<QueryResult> => {
-    // Ugly hack to have a single string query perform any operation on MongoDB 🤮
-    // If you see this and have an idea how to improve, please reach out (issue, PR, twitter, email, slack... ^^)
-    const [database, collection, operation, commandStr, limit] = query.split('/').map(v => v.trim())
-    let command
-    try {
-        command = JSON.parse(commandStr)
-    } catch (e) {
-        return Promise.reject(`'${commandStr}' is not a valid JSON (expected for the command)`)
-    }
-    const coll = client.db(database).collection(collection) as any
-    if (typeof coll[operation] === 'function') {
-        const rows = await limitResults(coll[operation](command), limit).toArray()
-        return {database, collection, operation, command, rows}
-    } else {
-        return Promise.reject(`'${operation}' is not a valid MongoDB operation`)
-    }
-}
-
-function limitResults(query: any, limit: string) {
-    const l = parseInt(limit)
-    return l ? query.limit(l) : query
-}
-
-export type MongodbSchema = { collections: MongodbCollection[] }
-export type MongodbCollection = {
-    database: MongodbDatabaseName,
-    collection: MongodbCollectionName,
-    type?: MongodbCollectionType,
-    schema: ValueSchema,
-    sampleDocs: number,
-    totalDocs: number
-}
-export type MongodbDatabaseName = string
-export type MongodbCollectionName = string
-export type MongodbCollectionType = {field: string, value: string | undefined}
-
-export type MongodbSchemaOpts = {logger: Logger, database: MongodbDatabaseName | undefined, mixedCollection: string | undefined, sampleSize: number, ignoreErrors: boolean}
-export const getSchema = ({logger, database, mixedCollection, sampleSize, ignoreErrors}: MongodbSchemaOpts) => async (client: MongoClient): Promise<MongodbSchema> => {
-    logger.log('Connected to database ...')
-    const databaseNames: MongodbDatabaseName[] = database ? [database] : await listDatabases(client, ignoreErrors, logger)
-    logger.log(database ? `Export for '${database}' database ...` : `Found ${databaseNames.length} databases to export ...`)
-    const collections: Collection[] = (await sequence(databaseNames, dbName => client.db(dbName).collections())).flat()
-    logger.log(`Found ${collections.length} collections to export ...`)
-    const schemas: MongodbCollection[] = (await sequence(collections, collection => inferCollection(collection, mixedCollection, sampleSize, ignoreErrors, logger))).flat()
-    logger.log('✔︎ All collections exported!')
-    return {collections: schemas}
-}
-
-export function formatSchema(schema: MongodbSchema): AzimuttSchema {
-    const tables = schema.collections.map(c => ({
-        schema: c.database,
-        table: c.type && c.type.value ? `${c.collection}__${c.type.field}__${c.type.value}` : c.collection,
-        columns: schemaToColumns(c.schema, 0)
-    }))
-    return {tables, relations: []}
+export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<Database> => {
+    const start = Date.now()
+    const scope = formatConnectorScope({database: 'database', entity: 'collection'}, opts)
+    opts.logger.log(`Connected to the database${scope ? `, exporting for ${scope}` : ''} ...`)
+    const databaseNames: DatabaseName[] = await getDatabases(opts)(conn)
+    opts.logger.log(`Found ${pluralizeL(databaseNames, 'database')} to export (${joinLimit(databaseNames)}) ...`)
+    const collections: Collection[] = await getCollections(databaseNames, opts)(conn)
+    opts.logger.log(`Found ${pluralizeL(collections, 'collection')} to export (${joinLimit(collections.map(c => c.collectionName))}) ...`)
+    const entities: Entity[] = (await sequence(collections, collection => inferCollection(collection, opts))).flat()
+    opts.logger.log(`✔︎ Exported ${pluralizeL(entities, 'collection')} from the database!`)
+    return removeUndefined({
+        entities: entities,
+        relations: undefined,
+        types: undefined,
+        doc: undefined,
+        stats: removeUndefined({
+            name: conn.url.db,
+            kind: DatabaseKind.Enum.mongodb,
+            version: undefined,
+            doc: undefined,
+            extractedAt: new Date().toISOString(),
+            extractionDuration: Date.now() - start,
+            size: undefined,
+        }),
+        extra: undefined,
+    })
 }
 
 // 👇️ Private functions, some are exported only for tests
 // If you use them, beware of breaking changes!
 
-async function listDatabases(client: MongoClient, ignoreErrors: boolean, logger: Logger): Promise<MongodbDatabaseName[]> {
-    const adminDb = client.db('admin')
-    return adminDb.admin().listDatabases()
-        .then(dbs => dbs.databases.map(db => db.name).filter(name => name !== 'local'))
-        .catch(handleError(`Failed to get databases`, [], ignoreErrors, logger))
+const getDatabases = (opts: ConnectorSchemaOpts) => (conn: Conn): Promise<DatabaseName[]> => {
+    if (opts.database && !opts.database.includes('%')) {
+        return Promise.resolve([opts.database])
+    } else {
+        const adminDb = conn.underlying.db('admin')
+        return adminDb.admin().listDatabases().then(dbs =>
+            dbs.databases.map(db => db.name).filter(name => scopeFilter({database: name}, opts))
+        ).catch(handleError(`Failed to get databases`, [], opts))
+    }
 }
 
-async function inferCollection(collection: Collection, mixedCollection: string | undefined, sampleSize: number, ignoreErrors: boolean, logger: Logger): Promise<MongodbCollection[]> {
+const getCollections = (databaseNames: DatabaseName[], opts: ConnectorSchemaOpts) => (conn: Conn): Promise<Collection[]> => {
+    return sequence(databaseNames, dbName => conn.underlying.db(dbName).collections())
+        .then(cols => cols.flat().filter(c => scopeFilter({entity: c.collectionName}, opts)))
+        .catch(handleError(`Failed to get collections`, [], opts))
+}
+
+// TODO: allow nested attribute
+type MixedCollection = {attribute: AttributeName, value: string}
+
+async function inferCollection(collection: Collection, opts: ConnectorSchemaOpts): Promise<Entity[]> {
     // FIXME: fetch index informations & more
     // console.log('options', await collection.options()) // empty
     // console.log('indexes', await collection.indexes())
     // console.log('listIndexes', await collection.listIndexes().toArray()) // same result as indexes()
     // console.log('indexInformation', await collection.indexInformation()) // not much
     // console.log('stats', await collection.stats()) // several info
-    logger.log(`Exporting collection ${collectionRef(collection)} ...`)
-    const types = mixedCollection ? await getCollectionTypes(collection, mixedCollection, ignoreErrors, logger) : [undefined]
-    return sequence(types, type => inferCollectionForType(collection, type, sampleSize, ignoreErrors, logger))
-}
-
-async function getCollectionTypes(collection: Collection, mixedCollection: string, ignoreErrors: boolean, logger: Logger): Promise<MongodbCollectionType[]> {
-    return collection.distinct(mixedCollection)
-        .then(values => values.map(value => ({field: mixedCollection, value})))
-        .catch(handleError(`Failed to get types for '${collectionRef(collection)}'`, [], ignoreErrors, logger))
-}
-
-async function inferCollectionForType(collection: Collection, type: MongodbCollectionType | undefined, sampleSize: number, ignoreErrors: boolean, logger: Logger): Promise<MongodbCollection> {
-    type && type.value && logger.log(`Exporting collection ${collectionRef(collection)} with ${type.field}=${type.value} ...`)
-    const documents = await getSampleDocuments(collection, type, sampleSize, ignoreErrors, logger)
-    const count = await countDocuments(collection, type, ignoreErrors, logger)
-    return {
-        database: collection.dbName,
-        collection: collection.collectionName,
-        type,
-        schema: valuesToSchema(documents),
-        sampleDocs: documents.length,
-        totalDocs: count
-    }
-}
-
-async function getSampleDocuments(collection: Collection, type: MongodbCollectionType | undefined, sampleSize: number, ignoreErrors: boolean, logger: Logger): Promise<any[]> {
-    return collection.find(filter(type)).limit(sampleSize).toArray()
-        .catch(handleError(`Failed to get sample documents for '${collectionRef(collection)}'`, [], ignoreErrors, logger))
-}
-
-async function countDocuments(collection: Collection, type: MongodbCollectionType | undefined, ignoreErrors: boolean, logger: Logger): Promise<number> {
-    return collection.countDocuments(filter(type))
-        .catch(handleError(`Failed to count documents for '${collectionRef(collection)}'`, 0, ignoreErrors, logger))
-}
-
-function filter(type: MongodbCollectionType | undefined): Filter<any> {
-    return type && type.value ? {[type.field]: type.value} : {}
-}
-
-function collectionRef(collection: Collection): string {
-    return `${collection.dbName}.${collection.collectionName}`
-}
-
-function handleError<T>(msg: string, value: T, ignoreErrors: boolean, logger: Logger) {
-    return (err: any): Promise<T> => {
-        if (ignoreErrors) {
-            logger.warn(`${msg}. Ignoring...`)
-            return Promise.resolve(value)
+    opts.logger.log(`Exporting collection ${collectionId(collection)} ...`)
+    if (opts.inferMixedJson) {
+        const attribute: AttributeName = opts.inferMixedJson
+        const values = await getDistinctValues(collection, attribute, opts)
+            .then(values => values.filter((v): v is string => typeof v === 'string'))
+        if (values.length > 0) {
+            opts.logger.log(`  Found ${pluralizeL(values, 'kind')} to export (${joinLimit(values)}) ...`)
+            return sequence(values, value => {
+                opts.logger.log(`  Exporting collection ${collectionId(collection)} for ${attribute}=${value} ...`)
+                return inferCollectionMixed(collection, {attribute, value}, opts)
+            })
         } else {
-            return Promise.reject(err)
+            return [await inferCollectionMixed(collection, null, opts)]
         }
+    } else {
+        return [await inferCollectionMixed(collection, null, opts)]
     }
 }
+
+async function getDistinctValues(collection: Collection, attribute: AttributeName, opts: ConnectorSchemaOpts): Promise<AttributeValue[]> {
+    return collection.distinct(attribute)
+        .catch(handleError(`Failed to get distinct values for '${collectionId(collection)}(${attribute})'`, [], opts))
+}
+
+async function inferCollectionMixed(collection: Collection, mixed: MixedCollection | null, opts: ConnectorSchemaOpts): Promise<Entity> {
+    const documents = await getSampleDocuments(collection, mixed, opts)
+    const count = await countDocuments(collection, mixed, opts)
+    return removeUndefined({
+        database: collection.dbName,
+        name: mixed ? `${collection.collectionName}__${mixed.attribute}__${mixed.value}` : collection.collectionName,
+        kind: undefined,
+        def: undefined,
+        attrs: schemaToAttributes(valuesToSchema(documents)),
+        pk: undefined,
+        indexes: undefined,
+        checks: undefined,
+        doc: undefined,
+        stats: removeUndefined({
+            rows: count,
+            size: undefined,
+            sizeIdx: undefined,
+            sizeToast: undefined,
+            sizeToastIdx: undefined,
+            scanSeq: undefined,
+            scanSeqLast: undefined,
+            scanIdx: undefined,
+            scanIdxLast: undefined,
+            analyzeLast: undefined,
+            vacuumLast: undefined,
+        }),
+        extra: undefined
+    })
+}
+
+type CollectionDoc = any
+
+async function getSampleDocuments(collection: Collection, mixed: MixedCollection | null, opts: ConnectorSchemaOpts): Promise<CollectionDoc[]> {
+    // TODO: use $sample: https://www.mongodb.com/docs/manual/reference/operator/aggregation/sample
+    const sampleSize = opts.sampleSize || connectorSchemaOptsDefaults.sampleSize
+    return collection.find(buildFilter(mixed)).limit(sampleSize).toArray()
+        .catch(handleError(`Failed to get sample documents for '${collectionId(collection)}${formatMixed(mixed)}'`, [], opts))
+}
+
+async function countDocuments(collection: Collection, mixed: MixedCollection | null, opts: ConnectorSchemaOpts): Promise<number> {
+    return collection.countDocuments(buildFilter(mixed))
+        .catch(handleError(`Failed to count documents for '${collectionId(collection)}${formatMixed(mixed)}'`, 0, opts))
+}
+
+const buildFilter = (mixed: MixedCollection | null): Filter<any> => mixed ? {[mixed.attribute]: mixed.value} : {}
+const collectionId = (collection: Collection): string => `${collection.dbName}.${collection.collectionName}`
+const formatMixed = (mixed: MixedCollection | null) => mixed ? `(${mixed.attribute}=${mixed.value})` : ''

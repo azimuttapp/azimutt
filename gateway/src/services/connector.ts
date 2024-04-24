@@ -1,4 +1,4 @@
-import {Connector, DatabaseKind, DatabaseUrlParsed} from "@azimutt/database-types"
+import {Connector, DatabaseKind, DatabaseUrlParsed} from "@azimutt/models"
 import {bigquery} from "@azimutt/connector-bigquery"
 import {couchbase} from "@azimutt/connector-couchbase"
 import {mariadb} from "@azimutt/connector-mariadb"
@@ -10,15 +10,19 @@ import {sqlserver} from "@azimutt/connector-sqlserver"
 
 const connectors: Record<DatabaseKind, Connector | undefined> = {
     bigquery: bigquery,
+    cassandra: undefined,
     couchbase: couchbase,
+    db2: undefined,
+    elasticsearch: undefined,
     mariadb: mariadb,
     mongodb: mongodb,
     mysql: mysql,
     oracle: undefined,
     postgres: postgres,
+    redis: undefined,
     snowflake: snowflake,
     sqlite: undefined,
-    sqlserver: sqlserver
+    sqlserver: sqlserver,
 }
 
 export function getConnector(url: DatabaseUrlParsed): Connector | undefined {
@@ -26,5 +30,5 @@ export function getConnector(url: DatabaseUrlParsed): Connector | undefined {
 }
 
 export function availableConnectors(): DatabaseKind[] {
-    return Object.keys(connectors) as DatabaseKind[]
+    return Object.entries(connectors).filter(([, c]) => !!c).map(([kind,]) => kind as DatabaseKind)
 }

@@ -1,22 +1,32 @@
-module DataSources.DbMiner.QueryMariaDB exposing (exploreColumn, exploreTable)
+module DataSources.DbMiner.QueryMariaDB exposing (addLimit, exploreColumn, exploreTable)
 
+import Libs.Regex as Regex
 import Models.Project.ColumnPath exposing (ColumnPath)
 import Models.Project.TableId exposing (TableId)
 import Models.SqlQuery exposing (SqlQuery)
 
 
-
--- FIXME: remove hardcoded limits & implement `addLimit`
-
-
 exploreTable : TableId -> SqlQuery
 exploreTable table =
-    "SELECT *\nFROM " ++ formatTable table ++ "\nLIMIT 100;\n"
+    "SELECT *\nFROM " ++ formatTable table ++ ";\n"
 
 
 exploreColumn : TableId -> ColumnPath -> SqlQuery
 exploreColumn table column =
-    formatColumn column |> (\col -> "SELECT\n  " ++ col ++ ",\n  count(*) as count\nFROM " ++ formatTable table ++ "\nGROUP BY " ++ col ++ "\nORDER BY count DESC, " ++ col ++ "\nLIMIT 100;\n")
+    formatColumn column |> (\col -> "SELECT\n  " ++ col ++ ",\n  count(*) as count\nFROM " ++ formatTable table ++ "\nGROUP BY " ++ col ++ "\nORDER BY count DESC, " ++ col ++ ";\n")
+
+
+addLimit : SqlQuery -> SqlQuery
+addLimit query =
+    case query |> String.trim |> Regex.matches "^(select[\\s\\S]+?)(\\slimit \\d+)?(\\soffset \\d+)?;$" of
+        (Just q) :: Nothing :: Nothing :: [] ->
+            q ++ "\nLIMIT 100;\n"
+
+        (Just q) :: Nothing :: (Just offset) :: [] ->
+            q ++ "\nLIMIT 100" ++ offset ++ ";\n"
+
+        _ ->
+            query
 
 
 

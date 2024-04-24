@@ -13,7 +13,7 @@ import Models.OrganizationId exposing (OrganizationId)
 import Models.Position as Position
 import Models.Project exposing (Project)
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
-import Models.Project.ColumnPath exposing (ColumnPath, ColumnPathStr)
+import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath, ColumnPathStr)
 import Models.Project.ColumnRef exposing (ColumnRef, ColumnRefLike)
 import Models.Project.CustomTypeId exposing (CustomTypeId)
 import Models.Project.LayoutName exposing (LayoutName)
@@ -41,7 +41,7 @@ import PagesComponents.Organization_.Project_.Models.ErdRelation as ErdRelation 
 import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.SuggestedRelation exposing (SuggestedRelation)
-import Services.Analysis.MissingRelations as MissingRelations
+import PagesComponents.Organization_.Project_.Views.Modals.SchemaAnalysis.RelationMissing as RelationMissing
 import Services.Lenses exposing (mapLayoutsD, mapLayoutsDT, mapLayoutsDTM)
 import Set exposing (Set)
 import Time
@@ -283,7 +283,9 @@ computeSources settings sources ignoredRelations =
 
         suggestedRelations : Dict TableId (Dict ColumnPathStr (List SuggestedRelation))
         suggestedRelations =
-            MissingRelations.forTables (tables |> Dict.map (\_ -> TableWithOrigin.unpack)) (relations |> List.map RelationWithOrigin.unpack) ignoredRelations
+            RelationMissing.compute ignoredRelations (tables |> Dict.map (\_ -> TableWithOrigin.unpack)) (relations |> List.map RelationWithOrigin.unpack)
+                |> List.groupBy (\r -> r.src.table)
+                |> Dict.mapValues (List.groupBy (\r -> r.src.column |> ColumnPath.toString))
 
         erdRelations : List ErdRelation
         erdRelations =

@@ -5,20 +5,20 @@ import Dict exposing (Dict)
 import Expect
 import Libs.Dict as Dict
 import Libs.Nel as Nel exposing (Nel)
-import Models.Project.Column exposing (Column)
+import Models.Project.Column as Column exposing (Column)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.Comment exposing (Comment)
 import Models.Project.CustomType exposing (CustomType)
 import Models.Project.CustomTypeId exposing (CustomTypeId)
 import Models.Project.Relation exposing (Relation)
-import Models.Project.Table exposing (Table)
+import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
 import Test exposing (Test, describe, test)
 
 
 suite : Test
 suite =
-    describe "AmlGenerator"
+    describe "JsonGenerator"
         [ describe "generate"
             [ test "empty" (\_ -> emptySource |> JsonGenerator.generate |> Expect.equal """{
   "tables": [],
@@ -301,26 +301,22 @@ suite =
     {
       "name": "user_roles_user_fk",
       "src": {
-        "schema": "",
-        "table": "user_roles",
+        "table": ".user_roles",
         "column": "user_id"
       },
       "ref": {
-        "schema": "",
-        "table": "users",
+        "table": ".users",
         "column": "id"
       }
     },
     {
       "name": "user_roles_role_fk",
       "src": {
-        "schema": "",
-        "table": "user_roles",
+        "table": ".user_roles",
         "column": "role_id"
       },
       "ref": {
-        "schema": "public",
-        "table": "roles",
+        "table": "public.roles",
         "column": "id"
       }
     }
@@ -338,12 +334,12 @@ emptySource =
 
 emptyTable : Table
 emptyTable =
-    { id = ( "", "" ), schema = "", name = "", view = False, columns = Dict.empty, primaryKey = Nothing, uniques = [], indexes = [], checks = [], comment = Nothing }
+    Table.empty
 
 
 emptyColumn : Column
 emptyColumn =
-    { index = 0, name = "", kind = "", nullable = False, default = Nothing, comment = Nothing, values = Nothing, columns = Nothing }
+    Column.empty
 
 
 emptyComment : Comment
