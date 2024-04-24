@@ -647,7 +647,7 @@ viewColumnStatsValues dbStats stats =
                                             Badge.basic Tw.gray [ class "truncate inline-block align-middle max-w-80", title v ] [ text v ]
                                         , case ( dbStatsValues |> Dict.get v, statsValues |> Dict.get v ) of
                                             ( Just pc, Just count ) ->
-                                                text (" (" ++ String.fromInt count ++ ", " ++ Basics.prettyNumber (pc * 100) ++ "%)")
+                                                text (" (" ++ Basics.prettyNumber (pc * 100) ++ "%" ++ ", " ++ String.fromInt count ++ ")")
 
                                             ( Just pc, Nothing ) ->
                                                 text (" (" ++ Basics.prettyNumber (pc * 100) ++ "%)")

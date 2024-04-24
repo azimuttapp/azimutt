@@ -180,10 +180,10 @@ export function queryError(name: string | undefined, sql: string, err: AnyError)
     if (typeof err === 'object' && err !== null) {
         return new Error(
             err.constructor.name +
-            'code' in err && err.code ? ` ${err.code}` : '' +
-            name ? ` on query ${name}` : '' +
-            'message' in err && err.message ? `: ${err.message}` : '' +
-                `\nQuery: ${formattedSql}`)
+            ('code' in err && err.code ? ` ${err.code}` : '') +
+            (name ? ` on query ${name}` : '') +
+            ('message' in err && err.message ? `: ${err.message}` : '') +
+            `\nQuery: ${formattedSql}`)
     } else if (err) {
         return new Error(`Error ${JSON.stringify(err)}\n on '${formattedSql}'`)
     } else {

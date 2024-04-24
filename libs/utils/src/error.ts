@@ -11,7 +11,7 @@ export function errorToString(err: AnyError): string {
     } else if (typeof err === 'string') {
         return err
     } else if (isObject(err) && typeof err.error === 'string') {
-        return err.error
+        return typeof err.message === 'string' ? `${err.error}: ${err.message}` : err.error
     } else if (isObject(err) && typeof err.message === 'string') {
         return err.message
     } else if (isObject(err) && isObject(err.json) && typeof err.json.message === 'string') {

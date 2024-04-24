@@ -20,7 +20,7 @@ import {DateTime} from "../common";
 export const legacyColumnPathSeparator = ":"
 export const legacyColumnTypeUnknown: LegacyColumnType = 'unknown'
 
-const LegacyJsValueLiteral = z.union([z.string(), z.number(), z.boolean(), z.null()])
+const LegacyJsValueLiteral = z.union([z.string(), z.number(), z.boolean(), z.date(), z.null()])
 type LegacyJsValueLiteral = z.infer<typeof LegacyJsValueLiteral>
 export const LegacyJsValue: z.ZodType<LegacyJsValue> = z.lazy(() => z.union([LegacyJsValueLiteral, z.array(LegacyJsValue), z.record(LegacyJsValue)]))
 export type LegacyJsValue = LegacyJsValueLiteral | { [key: string]: LegacyJsValue } | LegacyJsValue[] // lazy so can't infer type :/
@@ -130,10 +130,14 @@ export const LegacyTable = z.object({
 }).strict()
 export type LegacyRelationName = string
 export const LegacyRelationName = z.string()
-export type LegacyColumnRef = { schema: LegacySchemaName, table: LegacyTableName, column: LegacyColumnName }
-export const LegacyColumnRef = z.object({
+export type LegacyTableRef = { schema: LegacySchemaName, table: LegacyTableName }
+export const LegacyTableRef = z.object({
     schema: LegacySchemaName,
     table: LegacyTableName,
+}).strict()
+export type LegacyColumnRef = { table: LegacyTableId, column: LegacyColumnName }
+export const LegacyColumnRef = z.object({
+    table: LegacyTableId,
     column: LegacyColumnName
 }).strict()
 export type LegacyRelation = { name: LegacyRelationName, src: LegacyColumnRef, ref: LegacyColumnRef }
@@ -383,22 +387,33 @@ function relationToLegacy(r: Relation): LegacyRelation {
     return { name: r.name || '', src: columnRefToLegacy2(r.src, attr.src), ref: columnRefToLegacy2(r.ref, attr.ref) }
 }
 
+export function tableRefFromId(id: LegacyTableId): LegacyTableRef {
+    const [schema, table] = id.split('.')
+    return table ? {schema, table} : {schema: '', table: schema}
+}
+
+export function tableRefToId(ref: LegacyTableRef): LegacyTableId {
+    return ref.schema ? `${ref.schema}.${ref.table}` : ref.table
+}
+
 export function columnRefFromLegacy(c: LegacyColumnRef): AttributeRef {
     // FIXME: use function from ColumnName to AttributePath
-    return removeUndefined({schema: c.schema || undefined, entity: c.table, attribute: [c.column]})
+    const {schema, table} = tableRefFromId(c.table)
+    return removeUndefined({schema: schema || undefined, entity: table, attribute: [c.column]})
 }
 
 export function columnRefToLegacy(a: AttributeRef): LegacyColumnRef {
     // FIXME: use function from AttributePath to ColumnName
-    return {schema: a.schema || '', table: a.entity, column: a.attribute.join(legacyColumnPathSeparator)}
+    return {table: tableRefToId({schema: a.schema || '', table: a.entity}), column: a.attribute.join(legacyColumnPathSeparator)}
 }
 
 function columnRefFromLegacy2(e: LegacyColumnRef): EntityRef {
-    return removeUndefined({schema: e.schema || undefined, entity: e.table})
+    const {schema, table} = tableRefFromId(e.table)
+    return removeUndefined({schema: schema || undefined, entity: table})
 }
 
 function columnRefToLegacy2(e: EntityRef, c: AttributePath): LegacyColumnRef {
-    return {schema: e.schema || '', table: e.entity, column: c.join(legacyColumnPathSeparator)}
+    return {table: tableRefToId({schema: e.schema || '', table: e.entity}), column: c.join(legacyColumnPathSeparator)}
 }
 
 function typeFromLegacy(t: LegacyType): Type {

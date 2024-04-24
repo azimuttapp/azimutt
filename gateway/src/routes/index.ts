@@ -77,7 +77,7 @@ function getDatabaseSchema(params: GetSchemaParams, res: FastifyReply): Promise<
             inferRelationsFromJoins: urlOptions['schema-only'] !== 'true',
             inferPii: urlOptions['schema-only'] !== 'true',
             inferRelations: true,
-            ignoreErrors: true
+            ignoreErrors: false
         }).then(databaseToLegacy)
     })
 }

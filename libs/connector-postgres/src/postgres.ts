@@ -82,7 +82,7 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
             jsonColumns[id] || {},
             polyColumns[id] || {},
         )),
-        relations: relations.map(r => buildRelation(r, columnsByIndex)),
+        relations: relations.map(r => buildRelation(r, columnsByIndex)).filter((rel): rel is Relation => !!rel),
         types: types.map(buildType),
         doc: undefined,
         stats: removeUndefined({
@@ -151,7 +151,7 @@ export const getBlockSize = (opts: ConnectorSchemaOpts) => async (conn: Conn): P
 
 export type RawTable = {
     table_id: number
-    table_owner: string
+    // table_owner: string // TODO: `permission denied for table pg_authid`
     table_schema: string
     table_name: string
     table_kind: 'r' | 'v' | 'm' // r: table, v: view, m: materialized view
@@ -166,10 +166,10 @@ export type RawTable = {
     idx_blocks: number | null
     seq_scan: number | null
     seq_scan_reads: number | null
-    seq_scan_last: Date | null
+    // seq_scan_last: Date | null // TODO: `column s.last_seq_scan does not exist` in azimutt prod
     idx_scan: number | null
     idx_scan_reads: number | null
-    idx_scan_last: Date | null
+    // idx_scan_last: Date | null // TODO: `column s.last_seq_scan does not exist` in azimutt prod
     analyze_count: number | null
     analyze_last: Date | null
     autoanalyze_count: number | null
@@ -197,7 +197,7 @@ export const getTables = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
     // `c.relkind IN ('r', 'v', 'm')`: get only tables, view and materialized views
     return conn.query<RawTable>(`
         SELECT c.oid                       AS table_id
-             , u.rolname                   AS table_owner
+             -- , u.rolname                   AS table_owner
              , n.nspname                   AS table_schema
              , c.relname                   AS table_name
              , c.relkind                   AS table_kind
@@ -212,10 +212,10 @@ export const getTables = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
              , io.idx_blks_read            AS idx_blocks
              , s.seq_scan
              , s.seq_tup_read              AS seq_scan_reads
-             , s.last_seq_scan             AS seq_scan_last
+             -- , s.last_seq_scan             AS seq_scan_last
              , s.idx_scan
              , s.idx_tup_fetch             AS idx_scan_reads
-             , s.last_idx_scan             AS idx_scan_last
+             -- , s.last_idx_scan             AS idx_scan_last
              , s.analyze_count
              , s.last_analyze              AS analyze_last
              , s.autoanalyze_count
@@ -232,7 +232,7 @@ export const getTables = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
              , io.tidx_blks_read           AS toast_idx_blocks
         FROM pg_class c
                  JOIN pg_namespace n ON n.oid = c.relnamespace
-                 JOIN pg_authid u ON u.oid = c.relowner
+                 -- JOIN pg_authid u ON u.oid = c.relowner
                  LEFT JOIN pg_description d ON d.objoid = c.oid AND d.objsubid = 0
                  LEFT JOIN pg_class tc ON tc.oid = c.reltoastrelid
                  LEFT JOIN pg_namespace tn ON tn.oid = tc.relnamespace
@@ -264,9 +264,9 @@ function buildEntity(blockSize: number, table: RawTable, columns: RawColumn[], c
             sizeToast: table.toast_blocks ? table.toast_blocks * blockSize : undefined,
             sizeToastIdx: table.toast_idx_blocks ? table.toast_idx_blocks * blockSize : undefined,
             scanSeq: table.seq_scan || undefined,
-            scanSeqLast: (table.seq_scan_last || undefined)?.toISOString(),
+            // scanSeqLast: (table.seq_scan_last || undefined)?.toISOString(),
             scanIdx: table.idx_scan || undefined,
-            scanIdxLast: (table.idx_scan_last || undefined)?.toISOString(),
+            // scanIdxLast: (table.idx_scan_last || undefined)?.toISOString(),
             analyzeLast: (table.analyze_last || table.autoanalyze_last || undefined)?.toISOString(),
             vacuumLast: (table.vacuum_last || table.autovacuum_last || undefined)?.toISOString(),
         }),
@@ -277,7 +277,7 @@ function buildEntity(blockSize: number, table: RawTable, columns: RawColumn[], c
 // https://www.postgresql.org/docs/current/catalog-pg-type.html#CATALOG-TYPCATEGORY-TABLE
 export type RawColumn = {
     table_id: number
-    table_owner: string
+    // table_owner: string // TODO: `permission denied for table pg_authid`
     table_schema: string
     table_name: string
     table_kind: 'r' | 'v' | 'm' // r: table, v: view, m: materialized view
@@ -313,7 +313,7 @@ export const getColumns = (opts: ConnectorSchemaOpts) => async (conn: Conn): Pro
     // `a.atttypid != 0`: avoid deleted columns
     return conn.query<RawColumn>(`
         SELECT c.oid                                AS table_id
-             , u.rolname                            AS table_owner
+             -- , u.rolname                            AS table_owner
              , n.nspname                            AS table_schema
              , c.relname                            AS table_name
              , c.relkind                            AS table_kind
@@ -336,7 +336,7 @@ export const getColumns = (opts: ConnectorSchemaOpts) => async (conn: Conn): Pro
         FROM pg_attribute a
                  JOIN pg_class c ON c.oid = a.attrelid
                  JOIN pg_namespace n ON n.oid = c.relnamespace
-                 JOIN pg_authid u ON u.oid = c.relowner
+                 -- JOIN pg_authid u ON u.oid = c.relowner
                  JOIN pg_type t ON t.oid = a.atttypid
                  LEFT JOIN pg_attrdef ad ON ad.adrelid = c.oid AND ad.adnum = a.attnum
                  LEFT JOIN pg_description d ON d.objoid = c.oid AND d.objsubid = a.attnum
@@ -472,7 +472,7 @@ type RawIndex = {
     blocks: number
     idx_scan: number
     idx_scan_reads: number
-    idx_scan_last: Date | null
+    // idx_scan_last: Date | null // TODO: `column s.last_idx_scan does not exist`
     index_comment: string | null
 }
 
@@ -495,7 +495,7 @@ export const getIndexes = (opts: ConnectorSchemaOpts) => async (conn: Conn): Pro
              , c.relpages                             AS blocks
              , s.idx_scan                             AS idx_scan
              , s.idx_tup_fetch                        AS idx_scan_reads
-             , s.last_idx_scan                        AS idx_scan_last
+             -- , s.last_idx_scan                        AS idx_scan_last
              , d.description                          AS index_comment
         FROM pg_index i
                  JOIN pg_class c ON c.oid = i.indexrelid
@@ -574,28 +574,39 @@ export const getRelations = (opts: ConnectorSchemaOpts) => async (conn: Conn): P
     ).catch(handleError(`Failed to get relations`, [], opts))
 }
 
-function buildRelation(r: RawRelation, columnsByIndex: Record<EntityId, { [i: number]: string }>): Relation {
+function buildRelation(r: RawRelation, columnsByIndex: Record<EntityId, { [i: number]: string }>): Relation | undefined {
     const src = {schema: r.table_schema, entity: r.table_name}
     const ref = {schema: r.target_schema, entity: r.target_table}
     const srcId = entityRefToId(src)
     const refId = entityRefToId(ref)
-    return removeUndefined({
+    const rel = {
         name: r.constraint_name,
         kind: undefined, // 'many-to-one' when not specified
         origin: undefined, // 'fk' when not specified
         src,
         ref,
-        attrs: zip(r.table_columns, r.target_columns).map(([src, ref]) => ({src: [columnsByIndex[srcId][src]], ref: [columnsByIndex[refId][ref]]})),
+        attrs: zip(r.table_columns, r.target_columns)
+            .map(([src, ref]) => {
+                if (columnsByIndex[srcId] && columnsByIndex[srcId][src] && columnsByIndex[refId] && columnsByIndex[refId][ref]) {
+                    return {src: [columnsByIndex[srcId][src]], ref: [columnsByIndex[refId][ref]]}
+                } else {
+                    return undefined
+                }
+            })
+            .filter((attr): attr is { src: AttributePath, ref: AttributePath } => !!attr),
         polymorphic: undefined,
         doc: r.relation_comment || undefined,
         extra: undefined
-    })
+    }
+    // don't keep relation if columns are not found :/
+    // should not happen if errors are not skipped
+    return rel.attrs.length > 0 ? removeUndefined(rel) : undefined
 }
 
 export type RawTypeKind = 'b' | 'c' | 'd' | 'e' | 'p' | 'r' | 'm' // b: base, c: composite, d: domain, e: enum, p: pseudo-type, r: range, m: multirange
 export type RawTypeCategory = 'A' | 'B' | 'C' | 'D' | 'E' | 'G' | 'I' | 'N' | 'P' | 'R' | 'S' | 'T' | 'U' | 'V' | 'X' | 'Z' // A: array, B: bool, C: composite, D: date, E: enum, G: geo, I: inet, N: numeric, P: pseudo, R: range, S: string, T: timespan, U: user-defined, V: bit, X: unknown, Z: internal
 export type RawType = {
-    type_owner: string
+    // type_owner: string // TODO: `permission denied for table pg_authid`
     type_schema: string
     type_name: string
     type_kind: RawTypeKind
@@ -617,8 +628,8 @@ export const getTypes = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promi
     // `(c.relkind IS NULL OR c.relkind = 'c')`: avoid table types
     // `tt.oid IS NULL`: avoid array types
     return conn.query<RawType>(`
-        SELECT min(o.rolname)                    AS type_owner
-             , min(n.nspname)                    AS type_schema
+        SELECT min(n.nspname)                    AS type_schema
+             -- , min(o.rolname)                    AS type_owner
              , t.typname                         AS type_name
              , t.typtype                         AS type_kind
              , t.typcategory                     AS type_category
@@ -629,7 +640,7 @@ export const getTypes = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promi
              , min(d.description)                AS type_comment
         FROM pg_type t
                  JOIN pg_namespace n ON n.oid = t.typnamespace
-                 JOIN pg_authid o ON o.oid = t.typowner
+                 -- JOIN pg_authid o ON o.oid = t.typowner
                  LEFT JOIN pg_class c ON c.oid = t.typrelid
                  LEFT JOIN pg_type tt ON tt.oid = t.typelem AND tt.typarray = t.oid
                  LEFT JOIN pg_enum e ON e.enumtypid = t.oid

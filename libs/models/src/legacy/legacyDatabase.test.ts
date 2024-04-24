@@ -38,7 +38,7 @@ describe('legacyDatabase', () => {
                     {schema: 'public', table: 'posts', columns: [{name: 'id', type: 'uuid'}, {name: 'status', type: 'post_status'}, {name: 'author', type: 'uuid'}]},
                 ],
                 relations: [
-                    {name: 'posts_author', src: {schema: 'public', table: 'posts', column: 'author'}, ref: {schema: 'public', table: 'users', column: 'id'}},
+                    {name: 'posts_author', src: {table: 'public.posts', column: 'author'}, ref: {table: 'public.users', column: 'id'}},
                 ],
                 types: [
                     {schema: 'public', name: 'post_status', values: ['draft', 'published', 'archived']},
@@ -103,9 +103,9 @@ describe('legacyDatabase', () => {
                 ]
             }
             const projectsCreatorRel: Relation = {name: 'projects_created_by', src: {schema: 'public', entity: 'projects'}, ref: {schema: 'public', entity: 'users'}, attrs: [{src: ['created_by'], ref: ['id']}]}
-            const projectsCreatorFk: LegacyRelation = {name: 'projects_created_by', src: {schema: 'public', table: 'projects', column: 'created_by'}, ref: {schema: 'public', table: 'users', column: 'id'}}
+            const projectsCreatorFk: LegacyRelation = {name: 'projects_created_by', src: {table: 'public.projects', column: 'created_by'}, ref: {table: 'public.users', column: 'id'}}
             const eventsProjectRel: Relation = {src: {schema: 'public', entity: 'events'}, ref: {schema: 'public', entity: 'projects'}, attrs: [{src: ['details', 'project_id'], ref: ['id']}]}
-            const eventsProjectFk: LegacyRelation = {name: '', src: {schema: 'public', table: 'events', column: 'details:project_id'}, ref: {schema: 'public', table: 'projects', column: 'id'}}
+            const eventsProjectFk: LegacyRelation = {name: '', src: {table: 'public.events', column: 'details:project_id'}, ref: {table: 'public.projects', column: 'id'}}
             const db: Database = {
                 entities: [usersEntity, projectsEntity, eventsEntity, userEventsEntity],
                 relations: [projectsCreatorRel, eventsProjectRel]
