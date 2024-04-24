@@ -8,7 +8,7 @@ The most important one:
 
 ## Development
 
-- run `npm start`
+- run `pnpm start`
 
 Sometimes the application refuse to close, kill it manually (find it with `ps aux | grep "electron \."`)
 
@@ -18,8 +18,8 @@ Setup:
 - install `rpmbuild`
 
 Build:
-- run `npm run build`
+- run `pnpm run build`
 
 ## Publish
 
-- run `npm run publish`
+- run `pnpm run publish`

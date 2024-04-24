@@ -11,16 +11,16 @@ This extension is published on:
 
 ## Development
 
-Do an `npm install` and then run `npm start` to build the extension in live.
+Do an `pnpm install` and then run `pnpm start` to build the extension in live.
 
-To do a build you can do `npm run build` (needed when changing the manifest)
+To do a build you can do `pnpm run build` (needed when changing the manifest)
 
 ## Publish extension
 
 ### Chrome
 
 - increase the `version` in `manifest.json`
-- build package: `npm run build`
+- build package: `pnpm run build`
 - make a zip from `/dist`
 - open `https://chrome.google.com/u/2/webstore/devconsole`
 - open the extension, go on `package` section and click `import new package` to import your zip

@@ -18,14 +18,12 @@
   "main": "./out/index.js",
   "types": "./out/index.d.ts",
   "scripts": {
-    "setup": "npm install && npm run build",
     "test": "jest",
     "build": "rm -rf ./out && tsc",
-    "update": "npm update --save-dev && npm update --save && npm install",
-    "dry-publish": "npm run build && npm test && npm pack"
+    "dry-publish": "pnpm run build && pnpm test && pnpm pack"
   },
   "dependencies": {
-    "@azimutt/utils": "^0.1.3",
+    "@azimutt/utils": "workspace:^",
     "openai": "4.47.2",
     "zod": "3.23.8",
     "zod-to-json-schema": "3.23.0"

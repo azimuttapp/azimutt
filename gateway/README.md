@@ -7,8 +7,8 @@ The other way is to use the [desktop app](../desktop) for this, keeping everythi
 ## Set Up
 
 - copy `.env.example` to `.env` and adapt values
-- run `npm install` to install dependencies
-- start dev server with `npm start`
+- run `pnpm install` to install dependencies
+- start dev server with `pnpm start`
 
 
 ## Env vars
@@ -21,13 +21,13 @@ There are a number of handy commands you can run to help with development.
 
 | Command              | Action                                                            |
 |----------------------|-------------------------------------------------------------------|
-| `npm start`          | Run the server in dev mode, automatically restarts on file change |
-| `npm run build`      | Compile TypeScript to JavaScript                                  |
-| `npm run preview`    | Start JavaScript from 'build' directory                           |
-| `npm test`           | Run unit tests (run `npm run build` before)                       |
-| `npm run test:watch` | Run backend tests in watch mode, running on changed test files    |
-| `npm run lint`       | Run eslint                                                        |
-| `npm run lint:fix`   | Run eslint in fix mode                                            |
+| `pnpm start`          | Run the server in dev mode, automatically restarts on file change |
+| `pnpm run build`      | Compile TypeScript to JavaScript                                  |
+| `pnpm run preview`    | Start JavaScript from 'build' directory                           |
+| `pnpm test`           | Run unit tests (run `pnpm run build` before)                       |
+| `pnpm run test:watch` | Run backend tests in watch mode, running on changed test files    |
+| `pnpm run lint`       | Run eslint                                                        |
+| `pnpm run lint:fix`   | Run eslint in fix mode                                            |
 
 ## CI
 
@@ -37,9 +37,9 @@ Check `.github/workflows/CI.yml`
 ## Publish
 
 - update `package.json` and `src/version.ts` versions
-- update lib versions (`npm run update` + manual) & run `npm install`
-- test with `npm run dry-publish` and check `azimutt-gateway-x.y.z.tgz` content
-- launch `npm publish --access public`
+- update lib versions (`pnpm -w run update` + manual) 
+- test with `pnpm run dry-publish` and check `azimutt-gateway-x.y.z.tgz` content
+- launch `pnpm publish --access public`
 
 View it on [npm](https://www.npmjs.com/package/@azimutt/gateway).
 
@@ -47,5 +47,5 @@ View it on [npm](https://www.npmjs.com/package/@azimutt/gateway).
 
 If you need to develop on multiple libs at the same time (ex: want to update a connector and try it through the CLI), depend on local libs but publish & revert before commit.
 
-- Depend on a local lib: `npm install <path>`, ex: `npm install ../libs/connector-postgres`
-- "Publish" lib locally by building it: `npm run build`
+- Depend on a local lib: `pnpm add <lib>`, ex: `pnpm add "@azimutt/models`
+- "Publish" lib locally by building it: `pnpm run build`

@@ -13,6 +13,7 @@
     "url": "https://loicknuchel.fr"
   },
   "license": "MIT",
+  "private": true,
   "repository": {
     "type": "git",
     "url": "git+https://github.com/azimuttapp/azimutt.git",
@@ -21,17 +22,16 @@
   "main": ".webpack/main",
   "scripts": {
     "start": "electron-forge start",
-    "lint": "eslint --ext .ts,.tsx .",
+    "lint": "tsc --noEmit && eslint --ext .ts,.tsx .",
     "build": "electron-forge make",
-    "update": "npm update --save-dev && npm update --save && npm install",
     "package": "electron-forge package",
     "make": "electron-forge make",
     "publish": "electron-forge publish"
   },
   "dependencies": {
-    "@azimutt/connector-postgres": "^0.1.0",
-    "@azimutt/models": "^0.1.0",
-    "@azimutt/utils": "^0.1.0",
+    "@azimutt/connector-postgres": "workspace:^",
+    "@azimutt/models": "workspace:^",
+    "@azimutt/utils": "workspace:^",
     "electron-squirrel-startup": "1.0.0",
     "pg-native": "3.0.1",
     "update-electron-app": "3.0.0"

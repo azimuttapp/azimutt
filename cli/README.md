@@ -40,18 +40,18 @@ Get the help simply by running the CLI (`npx azimutt@latest`) or for a specific 
 
 ## Developing
 
-Start with `npm run setup` to install dependencies and set up the CLI, then you have:
+Start with `pnpm install` to install dependencies and set up the CLI, then you have:
 
-- `npm run exec` to compile and launch the CLI (use `-- args` for CLI args, ex: `npm run exec -- export postgresql://postgres:postgres@localhost:5432/azimutt_dev`), or `npm run build && node lib/index.js`
-- `npm run start` to launch it with live reload (same, use `-- args` to pass arguments to the CLI)
-- `npm run test` to launch tests
+- `pnpm run exec` launch the CLI (use `-- args` for CLI args, ex: `pnpm run exec -- export postgresql://postgres:postgres@localhost:5432/azimutt_dev`), or `pnpm run build && pnpm run exec`
+- `pnpm run start` to launch it with live reload (same, use `-- args` to pass arguments to the CLI)
+- `pnpm run test` to launch tests
 
 ## Publish
 
 - update `package.json` and `src/version.ts` versions
-- update lib versions (`npm run update` + manual) & run `npm install`
-- test with `npm run dry-publish` and check `azimutt-x.y.z.tgz` content
-- launch `npm publish`
+- update lib versions (`pnpm -w run update` + manual) 
+- test with `pnpm run dry-publish` and check `azimutt-x.y.z.tgz` content
+- launch `pnpm publish`
 
 View it on [npm](https://www.npmjs.com/package/azimutt).
 
@@ -59,5 +59,5 @@ View it on [npm](https://www.npmjs.com/package/azimutt).
 
 If you need to develop on multiple libs at the same time (ex: want to update a connector and try it through the CLI), depend on local libs but publish & revert before commit.
 
-- Depend on a local lib: `npm install <path>`, ex: `npm install ../gateway`
-- "Publish" lib locally by building it: `npm run build`
+- Depend on a local lib: `pnpm add <lib>`, ex: `pnpm add "@azimutt/models`
+- "Publish" lib locally by building it: `pnpm run build`
