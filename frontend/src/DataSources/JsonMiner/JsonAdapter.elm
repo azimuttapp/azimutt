@@ -24,6 +24,7 @@ import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.Schema exposing (Schema)
 import Models.Project.Source exposing (Source)
 import Models.Project.Table exposing (Table)
+import Models.Project.TableId as TableId
 import Models.Project.Unique exposing (Unique)
 import Models.SourceInfo exposing (SourceInfo)
 
@@ -221,21 +222,19 @@ unpackComment comment =
 buildRelation : JsonRelation -> Relation
 buildRelation relation =
     Relation.new relation.name
-        { table = ( relation.src.schema, relation.src.table ), column = ColumnPath.fromString relation.src.column }
-        { table = ( relation.ref.schema, relation.ref.table ), column = ColumnPath.fromString relation.ref.column }
+        { table = relation.src.table |> TableId.parse, column = ColumnPath.fromString relation.src.column }
+        { table = relation.ref.table |> TableId.parse, column = ColumnPath.fromString relation.ref.column }
 
 
 unpackRelation : Relation -> JsonRelation
 unpackRelation relation =
     { name = relation.name
     , src =
-        { schema = relation.src.table |> Tuple.first
-        , table = relation.src.table |> Tuple.second
+        { table = relation.src.table |> TableId.toString
         , column = relation.src.column |> ColumnPath.toString
         }
     , ref =
-        { schema = relation.ref.table |> Tuple.first
-        , table = relation.ref.table |> Tuple.second
+        { table = relation.ref.table |> TableId.toString
         , column = relation.ref.column |> ColumnPath.toString
         }
     }

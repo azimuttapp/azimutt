@@ -12,6 +12,7 @@ export const sColumnValue = Type.Union([Type.String(), Type.Number(), Type.Boole
 export const sRelationName = Type.String()
 export const sTypeName = Type.String()
 export const sComment = Type.String()
+export const sUser = Type.String()
 /* export const sType = Type.Intersect([
     Type.Object({
         schema: sSchemaName,
@@ -181,12 +182,13 @@ export const GetSchemaParams = Type.Object({
     catalog: Type.Optional(sCatalogName),
     schema: Type.Optional(sSchemaName),
     entity: Type.Optional(sTableName),
+    user: Type.Optional(sUser),
 })
 export type GetSchemaParams = Static<typeof GetSchemaParams>
 export const GetSchemaResponse = sAzimuttSchema
 export type GetSchemaResponse = Static<typeof GetSchemaResponse>
 
-export const DbQueryParams = Type.Object({url: sDatabaseUrl, query: Type.String()})
+export const DbQueryParams = Type.Object({url: sDatabaseUrl, query: Type.String(), user: Type.Optional(sUser)})
 export type DbQueryParams = Static<typeof DbQueryParams>
 export const DbQueryResponse = Type.Strict(sDatabaseQueryResults)
 export type DbQueryResponse = Static<typeof DbQueryResponse>
@@ -194,7 +196,8 @@ export type DbQueryResponse = Static<typeof DbQueryResponse>
 export const GetTableStatsParams = Type.Object({
     url: sDatabaseUrl,
     schema: Type.Optional(sSchemaName),
-    table: sTableName
+    table: sTableName,
+    user: Type.Optional(sUser),
 })
 export type GetTableStatsParams = Static<typeof GetTableStatsParams>
 export const GetTableStatsResponse = Type.Strict(sTableStats)
@@ -204,7 +207,8 @@ export const GetColumnStatsParams = Type.Object({
     url: sDatabaseUrl,
     schema: Type.Optional(sSchemaName),
     table: sTableName,
-    column: sColumnName
+    column: sColumnName,
+    user: Type.Optional(sUser),
 })
 export type GetColumnStatsParams = Static<typeof GetColumnStatsParams>
 export const GetColumnStatsResponse = Type.Strict(sColumnStats)

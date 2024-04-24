@@ -34,6 +34,7 @@ import {
     LegacyProjectVersion,
     LegacyProjectVisibility,
     LegacyTableStats,
+    Uuid,
     zodParse,
     zodStringify
 } from "@azimutt/models";
@@ -51,6 +52,9 @@ export class Backend {
 
     loginUrl = (currentUrl: string | undefined): string =>
         currentUrl ? `/login/redirect?url=${encodeURIComponent(currentUrl)}` : '/login'
+
+    getCurrentUser = async (): Promise<UserResponse | undefined> =>
+        Http.getJson(`/api/v1/users/current`, UserResponse).catch(err => err.statusCode === 401 ? undefined : Promise.reject(err))
 
     getProject = async (o: LegacyOrganizationId, p: LegacyProjectId, t: LegacyProjectTokenId | null): Promise<LegacyProjectInfoWithContent> => {
         this.logger.debug(`backend.getProject(${o}, ${p}, ${t})`)
@@ -150,30 +154,36 @@ export class Backend {
 
     getDatabaseSchema = async (database: DatabaseUrl): Promise<LegacyDatabase> => {
         this.logger.debug(`backend.getDatabaseSchema(${database})`)
-        return this.gatewayPost(`/schema`, {url: database}, LegacyDatabase)
+        const user = await this.getCurrentUser()
+        return this.gatewayPost(`/schema`, {url: database, user: user?.email}, LegacyDatabase)
     }
 
     runDatabaseQuery = async (database: DatabaseUrl, query: string): Promise<LegacyDatabaseQueryResults> => {
         this.logger.debug(`backend.runQuery(${database}, ${query})`)
-        return this.gatewayPost(`/query`, {url: database, query}, LegacyDatabaseQueryResults)
+        const user = await this.getCurrentUser()
+        return this.gatewayPost(`/query`, {url: database, query, user: user?.email}, LegacyDatabaseQueryResults)
     }
 
     getTableStats = async (database: DatabaseUrl, entity: EntityRef): Promise<LegacyTableStats> => {
         this.logger.debug(`backend.getTableStats(${database}, ${JSON.stringify(entity)})`)
+        const user = await this.getCurrentUser()
         return this.gatewayPost(`/table-stats`, {
             url: database,
             schema: entity.schema,
             table: entity.entity,
+            user: user?.email,
         }, LegacyTableStats)
     }
 
     getColumnStats = async (database: DatabaseUrl, attribute: AttributeRef): Promise<LegacyColumnStats> => {
         this.logger.debug(`backend.getColumnStats(${database}, ${JSON.stringify(attribute)})`)
+        const user = await this.getCurrentUser()
         return this.gatewayPost(`/column-stats`, {
             url: database,
             schema: attribute.schema,
             table: attribute.entity,
             column: attribute.attribute.join(legacyColumnPathSeparator),
+            user: user?.email,
         }, LegacyColumnStats)
     }
 
@@ -186,6 +196,20 @@ export class Backend {
         })
     }
 }
+
+export const UserResponse = z.object({
+    id: Uuid,
+    slug: z.string(),
+    name: z.string(),
+    email: z.string(),
+    avatar: z.string(),
+    github_username: z.string().optional(),
+    twitter_username: z.string().optional(),
+    is_admin: z.boolean(),
+    last_signin: DateTime,
+    created_at: DateTime,
+}).strict().describe('UserResponse')
+export type UserResponse = z.infer<typeof UserResponse>
 
 export interface ProjectStatsResponse {
     nb_sources: number

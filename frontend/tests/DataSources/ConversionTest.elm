@@ -282,39 +282,33 @@ crmJson =
     {
       "name": "contact_roles_contact_id_fk_az",
       "src": {
-        "schema": "",
-        "table": "contact_roles",
+        "table": ".contact_roles",
         "column": "contact_id"
       },
       "ref": {
-        "schema": "",
-        "table": "contacts",
+        "table": ".contacts",
         "column": "id"
       }
     },
     {
       "name": "contact_roles_role_id_fk_az",
       "src": {
-        "schema": "",
-        "table": "contact_roles",
+        "table": ".contact_roles",
         "column": "role_id"
       },
       "ref": {
-        "schema": "",
-        "table": "roles",
+        "table": ".roles",
         "column": "id"
       }
     },
     {
       "name": "events_contact_id_fk_az",
       "src": {
-        "schema": "",
-        "table": "events",
+        "table": ".events",
         "column": "contact_id"
       },
       "ref": {
-        "schema": "",
-        "table": "contacts",
+        "table": ".contacts",
         "column": "id"
       }
     }

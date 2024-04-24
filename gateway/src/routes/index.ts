@@ -63,7 +63,7 @@ const routes: FastifyPluginAsync = async (server) => {
 function getDatabaseSchema(params: GetSchemaParams, res: FastifyReply): Promise<GetSchemaResponse | FastifyReply> {
     return withConnector(params.url, res, (url, conn) => {
         const urlOptions = url.options || {}
-        return conn.getSchema(application, url, {
+        return conn.getSchema(buildApp(params.user), url, {
             logger,
             logQueries: urlOptions['log-queries'] === 'true',
             database: params.database,
@@ -83,17 +83,17 @@ function getDatabaseSchema(params: GetSchemaParams, res: FastifyReply): Promise<
 }
 
 function queryDatabase(params: DbQueryParams, res: FastifyReply): Promise<DbQueryResponse | FastifyReply> {
-    return withConnector(params.url, res, (url, conn) => conn.execute(application, url, params.query, [], {logger}).then(queryResultsToLegacy))
+    return withConnector(params.url, res, (url, conn) => conn.execute(buildApp(params.user), url, params.query, [], {logger}).then(queryResultsToLegacy))
 }
 
 function getTableStats(params: GetTableStatsParams, res: FastifyReply): Promise<GetTableStatsResponse | FastifyReply> {
     const ref: EntityRef = {schema: params.schema, entity: params.table}
-    return withConnector(params.url, res, (url, conn) => conn.getEntityStats(application, url, ref, {logger}).then(tableStatsToLegacy))
+    return withConnector(params.url, res, (url, conn) => conn.getEntityStats(buildApp(params.user), url, ref, {logger}).then(tableStatsToLegacy))
 }
 
 function getColumnStats(params: GetColumnStatsParams, res: FastifyReply): Promise<GetColumnStatsResponse | FastifyReply> {
     const ref: AttributeRef = {schema: params.schema, entity: params.table, attribute: [params.column]}
-    return withConnector(params.url, res, (url, conn) => conn.getAttributeStats(application, url, ref, {logger}).then(columnStatsToLegacy))
+    return withConnector(params.url, res, (url, conn) => conn.getAttributeStats(buildApp(params.user), url, ref, {logger}).then(columnStatsToLegacy))
 }
 
 async function withConnector<T>(url: DatabaseUrl, res: FastifyReply, exec: (url: DatabaseUrlParsed, conn: Connector) => Promise<T>): Promise<T | FastifyReply> {
@@ -104,6 +104,10 @@ async function withConnector<T>(url: DatabaseUrl, res: FastifyReply, exec: (url:
     } else {
         return res.status(400).send({error: `Not supported database: ${parsedUrl.kind || url}`})
     }
+}
+
+function buildApp(user: string | undefined): string {
+    return user ? `${application}:${user}` : application
 }
 
 type Get<Params, Response> = {

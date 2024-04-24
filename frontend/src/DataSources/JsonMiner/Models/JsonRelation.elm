@@ -13,8 +13,7 @@ type alias JsonRelation =
 
 
 type alias JsonColumnRef =
-    { schema : String
-    , table : String
+    { table : String
     , column : String
     }
 
@@ -38,8 +37,7 @@ encode value =
 
 decodeJsonColumnRef : Decode.Decoder JsonColumnRef
 decodeJsonColumnRef =
-    Decode.map3 JsonColumnRef
-        (Decode.field "schema" Decode.string)
+    Decode.map2 JsonColumnRef
         (Decode.field "table" Decode.string)
         (Decode.field "column" Decode.string)
 
@@ -47,7 +45,6 @@ decodeJsonColumnRef =
 encodeJsonColumnRef : JsonColumnRef -> Value
 encodeJsonColumnRef value =
     Encode.notNullObject
-        [ ( "schema", value.schema |> Encode.string )
-        , ( "table", value.table |> Encode.string )
+        [ ( "table", value.table |> Encode.string )
         , ( "column", value.column |> Encode.string )
         ]
