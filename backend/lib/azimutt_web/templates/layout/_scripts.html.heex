@@ -10,3 +10,6 @@
         <%= if @conn.params["project_id"] do %>posthog.group('project', '<%= @conn.params["project_id"] %>'<%= if assigns[:current_user] do %><%= AzimuttWeb.WebsiteView.user_project(@current_user, @conn.params["project_id"]) |> Azimutt.Utils.Result.fold(fn _ -> "" end, fn {o, p} -> raw ", {name: '#{o.name} / #{p.name}', host: window.location.host, organization: `${window.location.origin}/admin/organizations/#{o.id}`, project: `${window.location.origin}/admin/projects/#{p.id}`}" end) %><% end %>)<% end %>
     </script>
 <% end %>
+<%= if Azimutt.config(:hubspot) && Azimutt.config(:hubspot_id) do %>
+    <script type="text/javascript" id="hs-script-loader" async defer src={"//js.hs-scripts.com/#{Azimutt.config(:hubspot_id)}.js"}></script>
+<% end %>

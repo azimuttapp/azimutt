@@ -325,3 +325,11 @@ if System.get_env("GITHUB") == "true" do
   config :azimutt,
     github_access_token: System.fetch_env!("GITHUB_ACCESS_TOKEN")
 end
+
+if System.get_env("HUBSPOT") == "true" do
+  IO.puts("Setup HubSpot")
+
+  config :azimutt,
+    hubspot: true,
+    hubspot_id: System.fetch_env!("HUBSPOT_ID")
+end

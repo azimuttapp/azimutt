@@ -216,5 +216,7 @@ At least one of authentication methods should be defined:
     - `HEROKU_ADDON_ID` (required)
     - `HEROKU_PASSWORD` (required)
     - `HEROKU_SSO_SALT` (required)
+- `HUBSPOT` (optional): if `true`, enable [HubSpot](https://www.hubspot.fr) integration
+    - `HUBSPOT_ID` (required): your HubSpot tracking code id (ex: `483274933`)
 
 **Never share your secrets or keys in public spaces.**
