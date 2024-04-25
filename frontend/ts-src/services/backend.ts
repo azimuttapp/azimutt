@@ -65,13 +65,13 @@ export class Backend {
         return project
     }
 
-    private fetchProject = (o: LegacyOrganizationId, p: LegacyProjectId, t: LegacyProjectTokenId | null): Promise<LegacyProjectInfoWithContent> => {
+    private fetchProject = async (o: LegacyOrganizationId, p: LegacyProjectId, t: LegacyProjectTokenId | null): Promise<LegacyProjectInfoWithContent> => {
         const token = t ? `token=${t}&` : ''
         const path = `/api/v1/organizations/${o}/projects/${p}?${token}expand=organization,organization.plan,content`
         return Http.getJson(path, ProjectWithContentResponse).then(toProjectInfoWithContent)
     }
 
-    createProjectLocal = (o: LegacyOrganizationId, json: LegacyProjectJson): Promise<LegacyProjectInfoLocal> => {
+    createProjectLocal = async (o: LegacyOrganizationId, json: LegacyProjectJson): Promise<LegacyProjectInfoLocal> => {
         this.logger.debug(`backend.createProjectLocal(${o})`, json)
         const path = `/api/v1/organizations/${o}/projects?expand=organization,organization.plan`
         return Http.postJson(path, toProjectBody(json, LegacyProjectStorage.enum.local), ProjectResponse).then(toProjectInfo)
@@ -91,7 +91,7 @@ export class Backend {
         return legacyIsRemote(res) ? res : Promise.reject('Expecting a remote project')
     }
 
-    updateProjectLocal = (p: LegacyProject): Promise<LegacyProjectInfoLocal> => {
+    updateProjectLocal = async (p: LegacyProject): Promise<LegacyProjectInfoLocal> => {
         this.logger.debug(`backend.updateProjectLocal(${p.organization?.id}, ${p.id})`, p)
         if (!p.organization) return Promise.reject('Expecting an organization to update project')
         if (p.storage !== LegacyProjectStorage.enum.local) return Promise.reject('Expecting a local project')
@@ -189,7 +189,7 @@ export class Backend {
 
     private gatewayPost = async <Body, Response>(path: string, body: Body, zod: ZodType<Response>): Promise<Response> => {
         const gateway_local = 'http://localhost:4177'
-        return Http.postJson(`${gateway_local}/gateway${path}`, body, zod).catch(localErr => {
+        return Http.postJson(`${gateway_local}/gateway${path}`, body, zod).catch(async localErr => {
             return Http.postJson(`${window.gateway_url}/gateway${path}`, body, zod).catch(remoteErr => {
                 return Promise.reject(`${gateway_local}: ${errorToString(localErr)}\n${window.gateway_url}: ${errorToString(remoteErr)}`)
             })

@@ -16,9 +16,13 @@
                     Name
                     <%= render AzimuttWeb.PartialsView, "_page_sort.html", page: @users, key: "name" %>
                 </th>
-                <th class="p-1" scope="col">Email / Github / Twitter</th>
-                <th class="group p-1" scope="col">Company</th>
-                <th class="group p-1" scope="col">Location</th>
+                <th class="p-1" scope="col">Email</th>
+                <th class="p-1" scope="col">Phone</th>
+                <th class="p-1" scope="col">Github</th>
+                <th class="p-1" scope="col">Twitter</th>
+                <th class="p-1" scope="col">Location</th>
+                <th class="p-1" scope="col">Company</th>
+                <th class="p-1" scope="col">Industry</th>
                 <th class="p-1" scope="col">Description</th>
                 <th class="p-1" scope="col">Data</th>
             </tr>
@@ -38,15 +42,25 @@
                         </td>
                         <td class="p-1">
                             <a href={"mailto:#{user.email}"} class="underline"><%= user.email %></a>
-                            <%= if user.github_username do %>
-                                - <a href={"https://github.com/#{user.github_username}"} title="GitHub profile" class="underline"><%= user.github_username %></a>
-                            <% end %>
-                            <%= if user.twitter_username do %>
-                                - <a href={"https://twitter.com/#{user.twitter_username}"} title="Twitter account" class="underline">@<%= user.twitter_username %></a>
+                        </td>
+                        <td class="p-1">
+                            <%= if user.profile && user.profile.phone do %>
+                                <a href={"tel:#{user.profile.phone}"} class="underline"><%= user.profile.phone %></a>
                             <% end %>
                         </td>
-                        <td class="group p-1"><%= user.profile && user.profile.company %></td>
-                        <td class="group p-1"><%= user.profile && user.profile.location %></td>
+                        <td class="p-1">
+                            <%= if user.github_username do %>
+                                <a href={"https://github.com/#{user.github_username}"} title="GitHub profile" class="underline"><%= user.github_username %></a>
+                            <% end %>
+                        </td>
+                        <td class="p-1">
+                            <%= if user.twitter_username do %>
+                                <a href={"https://twitter.com/#{user.twitter_username}"} title="Twitter account" class="underline">@<%= user.twitter_username %></a>
+                            <% end %>
+                        </td>
+                        <td class="p-1"><%= user.profile && user.profile.location %></td>
+                        <td class="p-1"><%= user.profile && user.profile.company %></td>
+                        <td class="p-1"><%= user.profile && user.profile.industry %></td>
                         <td class="p-1 truncate max-w-xs" title={user.profile && user.profile.description}><%= user.profile && user.profile.description %></td>
                         <td class="p-1 truncate max-w-xs" title={user.data |> format_data()}><%= user.data |> format_data() %></td>
                     </tr>

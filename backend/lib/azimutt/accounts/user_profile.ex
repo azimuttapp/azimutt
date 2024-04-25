@@ -12,10 +12,12 @@ defmodule Azimutt.Accounts.UserProfile do
     field :usage, Ecto.Enum, values: [:solo, :team]
     field :usecase, Ecto.Enum, values: [:design, :explore]
     field :role, :string
+    field :phone, :string
     field :location, :string
     field :description, :string
     field :company, :string
     field :company_size, :integer
+    field :industry, :string
     belongs_to :team_organization, Organization
     field :plan, :string
     field :discovered_by, :string
@@ -30,10 +32,12 @@ defmodule Azimutt.Accounts.UserProfile do
       :usage,
       :usecase,
       :role,
+      :phone,
       :location,
       :description,
       :company,
       :company_size,
+      :industry,
       :plan,
       :discovered_by,
       :previously_tried,

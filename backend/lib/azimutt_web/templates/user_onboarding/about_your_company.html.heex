@@ -15,6 +15,11 @@
                         <%= error_tag f, :company %>
                     </div>
                     <div class="col-span-4 sm:col-span-2">
+                        <%= label f, :industry, class: "block text-sm font-medium leading-6 text-gray-900" %>
+                        <%= select f, :industry, Azimutt.Utils.Industry.all, required: true, class: "mt-2 block w-full rounded-md border-0 px-3 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-gray-900 sm:text-sm sm:leading-6" %>
+                        <%= error_tag f, :industry %>
+                    </div>
+                    <div class="col-span-4 sm:col-span-2">
                         <%= label f, :company_size, "Its size", class: "block text-sm font-medium leading-6 text-gray-900" %>
                         <%= text_input f, :company_size, placeholder: "1000", class: "mt-2 block w-full rounded-md border-0 px-3 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-gray-900 sm:text-sm sm:leading-6" %>
                         <%= error_tag f, :company_size %>

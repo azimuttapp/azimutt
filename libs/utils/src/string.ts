@@ -115,7 +115,7 @@ export function stripIndent(value: string): string {
     const content = lines.slice(firstIndex, lastIndex + 1)
     const minIndent = content.reduce((acc, line) => {
         const len = line.trim().length > 0 && line.match(/^(\s*).*$/)?.[1]?.length || 0
-        return acc === 0 || (0 < len && len < acc) ? len : acc
-    }, 0)
+        return acc === undefined || (0 < len && len < acc) ? len : acc
+    }, undefined as number | undefined)
     return content.map(l => l.slice(minIndent)).join('\n')
 }

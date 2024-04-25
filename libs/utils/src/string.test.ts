@@ -116,5 +116,6 @@ describe('string', () => {
           content
         `)).toEqual('  # title\n\ncontent')
         expect(stripIndent('\nfoo\r\nbar\n')).toEqual('foo\r\nbar')
+        expect(stripIndent('SELECT\n  name\nFROM users;')).toEqual('SELECT\n  name\nFROM users;')
     })
 })
