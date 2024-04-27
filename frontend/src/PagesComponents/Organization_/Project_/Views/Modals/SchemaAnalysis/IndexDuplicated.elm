@@ -4,7 +4,7 @@ import Components.Slices.ProPlan as ProPlan
 import Dict exposing (Dict)
 import Html exposing (Html, div, span, text)
 import Html.Attributes exposing (class, title)
-import Libs.Html exposing (bText, uText)
+import Libs.Html exposing (bText)
 import Libs.List as List
 import Libs.Nel as Nel exposing (Nel)
 import Libs.String as String
@@ -14,7 +14,6 @@ import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.ProjectRef exposing (ProjectRef)
-import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable)
 
 
 type alias Model =

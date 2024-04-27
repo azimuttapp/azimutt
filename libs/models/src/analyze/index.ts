@@ -8,6 +8,8 @@ import {getDuplicatedIndexes, IndexDuplicated} from "./rules/indexDuplicated";
 import {getMissingIndexOnRelation, MissingIndex} from "./rules/indexOnRelation";
 import {checkNamingConsistency, InconsistentNaming} from "./rules/namingConsistency";
 import {getMissingRelations} from "./rules/relationMissing";
+import {isEntityTooLarge} from "./rules/entityTooLarge";
+import {hasEntityNoIndex} from "./rules/entityNoIndex";
 
 export * from "./rule"
 
@@ -21,15 +23,15 @@ export function analyzeDatabase(db: Database) {
     const missingIndexOnRelations: MissingIndex[] = (db.relations || []).flatMap(r => getMissingIndexOnRelation(r, entities))
     const inconsistentNaming: InconsistentNaming = checkNamingConsistency(db.entities || [])
     const missingRelations: Relation[] = getMissingRelations(db.entities || [], db.relations || [])
-// TODO: tables with too many columns
+    const entitiesTooLarge: Entity[] = (db.entities || []).filter(isEntityTooLarge)
+    const entitiesWithoutIndex: Entity[] = (db.entities || []).filter(hasEntityNoIndex)
 // TODO: tables with too many indexes
 // TODO: tables with too heavy indexes
-// TODO: tables without indexes
 // TODO: unused index
 // TODO: unused table
 // TODO: slow queries
 // TODO: queries not using indexes
 // TODO: JSON columns with different schemas
 // TODO: sequence/auto_increment exhaustion
-// TODO: no business primary key
+// TODO: no business primary key, no composite primary key
 }

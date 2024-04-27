@@ -45,7 +45,6 @@ import PagesComponents.Organization_.Project_.Views.Modals.SchemaAnalysis.TableW
 
    https://schemaspy.org/sample/anomalies.html
    - Tables that contain a single column
-   - Tables without indexes
    - Columns whose default value is the word 'NULL' or 'null'
    - Tables with incrementing column names, potentially indicating denormalization
 

@@ -6,10 +6,8 @@ import Conf
 import Dict exposing (Dict)
 import Html exposing (Html, div, p, span, text)
 import Html.Attributes exposing (class)
-import Libs.Html exposing (bText, extLink)
-import Libs.Html.Attributes exposing (css)
+import Libs.Html exposing (bText)
 import Libs.List as List
-import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnPath as ColumnPath
@@ -18,7 +16,6 @@ import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.ProjectRef exposing (ProjectRef)
 import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable)
-import Services.Backend as Backend
 
 
 type alias Model =

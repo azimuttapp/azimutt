@@ -24,6 +24,6 @@ export const primaryKeyMissing: Rule = {
 }
 
 // same as frontend/src/PagesComponents/Organization_/Project_/Views/Modals/SchemaAnalysis/PrimaryKeyMissing.elm
-export function isPrimaryKeysMissing(e: Entity): boolean {
-    return !e.pk && (e.kind === undefined || e.kind === 'table')
+export function isPrimaryKeysMissing(entity: Entity): boolean {
+    return !entity.pk && (entity.kind === undefined || entity.kind === 'table')
 }
