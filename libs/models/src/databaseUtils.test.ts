@@ -13,6 +13,9 @@ import {
     EntityRef,
     entityRefFromId,
     entityRefToId,
+    flattenAttribute,
+    getAttribute,
+    getPeerAttributes,
     Namespace,
     namespaceFromId,
     NamespaceId,
@@ -126,5 +129,70 @@ describe('databaseUtils', () => {
             expect(typeRefFromId(targetId)).toEqual(ref)
             expect(typeRefToId(ref)).toEqual(targetId)
         })
+    })
+    test('getAttribute', () => {
+        const id = {name: 'id', type: 'uuid'}
+        const street = {name: 'street', type: 'varchar'}
+        const city = {name: 'city', type: 'varchar'}
+        const address = {name: 'address', type: 'json', attrs: [street, city]}
+        const details = {name: 'details', type: 'json', attrs: [address]}
+        expect(getAttribute(undefined, [])).toEqual(undefined)
+        expect(getAttribute([], [])).toEqual(undefined)
+        expect(getAttribute([], ['id'])).toEqual(undefined)
+        expect(getAttribute([id], [])).toEqual(undefined)
+        expect(getAttribute([id], ['id'])).toEqual(id)
+        expect(getAttribute([id], ['details'])).toEqual(undefined)
+        expect(getAttribute([id, details], ['details'])).toEqual(details)
+        expect(getAttribute([id, details], ['details', 'address'])).toEqual(address)
+        expect(getAttribute([id, details], ['details', 'address', 'city'])).toEqual(city)
+        expect(getAttribute([id, details], ['details', 'bad', 'city'])).toEqual(undefined)
+    })
+    test('getPeerAttributes', () => {
+        const id = {name: 'id', type: 'uuid'}
+        const street = {name: 'street', type: 'varchar'}
+        const city = {name: 'city', type: 'varchar'}
+        const address = {name: 'address', type: 'json', attrs: [street, city]}
+        const details = {name: 'details', type: 'json', attrs: [address]}
+        expect(getPeerAttributes(undefined, [])).toEqual([])
+        expect(getPeerAttributes([], [])).toEqual([])
+        expect(getPeerAttributes([], ['id'])).toEqual([])
+        expect(getPeerAttributes([id], [])).toEqual([id])
+        expect(getPeerAttributes([id], ['id'])).toEqual([id])
+        expect(getPeerAttributes([id, details], ['details'])).toEqual([id, details])
+        expect(getPeerAttributes([id, details], ['details', 'address'])).toEqual([address])
+        expect(getPeerAttributes([id, details], ['details', 'address', 'city'])).toEqual([street, city])
+        expect(getPeerAttributes([id, details], ['details', 'bad', 'city'])).toEqual([])
+    })
+    test('flattenAttribute', () => {
+        expect(flattenAttribute({name: 'id', type: 'uuid'})).toEqual([{path: ['id'], attr: {name: 'id', type: 'uuid'}}])
+        expect(flattenAttribute({name: 'details', type: 'json', attrs: [{name: 'address', type: 'varchar'}]})).toEqual([
+            {path: ['details'], attr: {name: 'details', type: 'json', attrs: [{name: 'address', type: 'varchar'}]}},
+            {path: ['details', 'address'], attr: {name: 'address', type: 'varchar'}},
+        ])
+        expect(flattenAttribute({name: 'details', type: 'json', attrs: [
+            {name: 'twitter', type: 'varchar'},
+            {name: 'address', type: 'json', attrs: [
+                {name: 'street', type: 'varchar'},
+                {name: 'city', type: 'varchar'},
+            ]},
+            {name: 'created', type: 'varchar'},
+        ]})).toEqual([
+            {path: ['details'], attr: {name: 'details', type: 'json', attrs: [
+                {name: 'twitter', type: 'varchar'},
+                {name: 'address', type: 'json', attrs: [
+                    {name: 'street', type: 'varchar'},
+                    {name: 'city', type: 'varchar'},
+                ]},
+                {name: 'created', type: 'varchar'},
+            ]}},
+            {path: ['details', 'twitter'], attr: {name: 'twitter', type: 'varchar'}},
+            {path: ['details', 'address'], attr: {name: 'address', type: 'json', attrs: [
+                {name: 'street', type: 'varchar'},
+                {name: 'city', type: 'varchar'},
+            ]}},
+            {path: ['details', 'address', 'street'], attr: {name: 'street', type: 'varchar'}},
+            {path: ['details', 'address', 'city'], attr: {name: 'city', type: 'varchar'}},
+            {path: ['details', 'created'], attr: {name: 'created', type: 'varchar'}},
+        ])
     })
 })

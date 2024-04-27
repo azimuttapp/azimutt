@@ -1,4 +1,5 @@
 import {findLastIndex} from "./array"
+import {isNotUndefined} from "./validation";
 
 // functions sorted alphabetically
 
@@ -6,6 +7,24 @@ export function indent(value: string, size: number = 2, char: string = ' ') {
     const prefix = char.repeat(size)
     return value.split('\n').map(l => prefix + l).join('\n')
 }
+
+export const isCamelUpper = (value: string): boolean => !!value.match(/^([A-Z][a-z0-9]*)+$/)
+export const isCamelLower = (value: string): boolean => !!value.match(/^([a-z][a-z0-9]*)([A-Z][a-z0-9]*)*$/)
+export const isSnakeUpper = (value: string): boolean => !!value.match(/^([A-Z][A-Z0-9]*)(_[A-Z][A-Z0-9]*)*$/)
+export const isSnakeLower = (value: string): boolean => !!value.match(/^([a-z][a-z0-9]*)(_[a-z][a-z0-9]*)*$/)
+export const isKebabUpper = (value: string): boolean => !!value.match(/^([A-Z][A-Z0-9]*)(-[A-Z][A-Z0-9]*)*$/)
+export const isKebabLower = (value: string): boolean => !!value.match(/^([a-z][a-z0-9]*)(-[a-z][a-z0-9]*)*$/)
+
+export type StringCase = 'camel-upper' | 'camel-lower' | 'snake-upper' | 'snake-lower' | 'kebab-upper' | 'kebab-lower'
+
+export const compatibleCases = (value: string): StringCase[] => [
+    isCamelUpper(value) ? 'camel-upper' as const : undefined,
+    isCamelLower(value) ? 'camel-lower' as const : undefined,
+    isSnakeUpper(value) ? 'snake-upper' as const : undefined,
+    isSnakeLower(value) ? 'snake-lower' as const : undefined,
+    isKebabUpper(value) ? 'kebab-upper' as const : undefined,
+    isKebabLower(value) ? 'kebab-lower' as const : undefined,
+].filter(isNotUndefined)
 
 export function joinLast(values: string[], sep: string = ', ', last: string = ' and ') {
     if (values.length === 0) {
@@ -76,7 +95,7 @@ export function removeSurroundingParentheses(value: string): string {
 export function singular(word: string): string {
     if (word.endsWith('ies')) {
         return word.slice(0, -3) + 'y'
-    } else if (word.endsWith('es')) {
+    } else if (word.endsWith('ses') || word.endsWith('xes') || word.endsWith('zes') || word.endsWith('hes')) {
         return word.slice(0, -2)
     } else if (word.endsWith('s')) {
         return word.slice(0, -1)
@@ -106,6 +125,30 @@ export function slugifyGitHub(text: string): string {
         .replace(/[^a-z0-9 -]/g, '') // remove non-alphanumeric characters
         .replace(/\s/g, '-') // replace spaces with hyphens
 }
+
+export function splitWords(text: string): string[] {
+    const {word, words} = Array.from(text).reduce(({word, words}, cur) => {
+        const code = cur.charCodeAt(0)
+        if (isLowerChar(code) || isNumber(code)) {
+            return {word: word + cur, words: words}
+        } else if (isUpperChar(code)) {
+            const len = word.length
+            if (len === 0 || isUpperChar(word.charCodeAt(len - 1))) {
+                return {word: word + cur, words: words}
+            } else {
+                return {word: cur, words: word ? words.concat([word]) : words}
+            }
+        } else {
+            return {word: '', words: word ? words.concat([word]) : words}
+        }
+    }, {word: '', words: []} as { word: string, words: string[] })
+    return words.concat([word]).filter(w => !!w).map(w => w.toLowerCase())
+}
+
+// avoid regex for better perf
+const isLowerChar = (code: number): boolean => 97 <= code && code <= 122
+const isUpperChar = (code: number): boolean => 65 <= code && code <= 90
+const isNumber = (code: number): boolean => 48 <= code && code <= 57
 
 export function stripIndent(value: string): string {
     const lines = value.split('\n')

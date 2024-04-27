@@ -26,7 +26,7 @@ suite =
             , test "SnakeUpper" (\_ -> "AZIMUTT_IS_AWESOME" |> splitWords |> Expect.equal [ "azimutt", "is", "awesome" ])
             , test "SnakeLower" (\_ -> "azimutt_is_awesome" |> splitWords |> Expect.equal [ "azimutt", "is", "awesome" ])
             , test "Kebab" (\_ -> "azimutt-is-awesome" |> splitWords |> Expect.equal [ "azimutt", "is", "awesome" ])
-            , test "single" (\_ -> splitWords "azimutt" |> Expect.equal [ "azimutt" ])
+            , test "single" (\_ -> "azimutt" |> splitWords |> Expect.equal [ "azimutt" ])
             , test "single Upper" (\_ -> "AZIMUTT" |> splitWords |> Expect.equal [ "azimutt" ])
             , test "text" (\_ -> "Azimutt is awesome" |> splitWords |> Expect.equal [ "azimutt", "is", "awesome" ])
             , test "complex" (\_ -> "[Azimutt, is awesome!]" |> splitWords |> Expect.equal [ "azimutt", "is", "awesome" ])

@@ -27,6 +27,7 @@ type alias Model =
 
 compute : Dict TableId ErdTable -> List Model
 compute tables =
+    -- same as libs/models/src/analyze/rules/attributeInconsistentType.ts
     tables
         |> Dict.values
         |> List.concatMap (\t -> t.columns |> Dict.values |> List.filter (\c -> c.kind /= Conf.schema.column.unknownType) |> List.map (\c -> { table = t.id, column = c.path |> ColumnPath.toString, kind = c.kind }))

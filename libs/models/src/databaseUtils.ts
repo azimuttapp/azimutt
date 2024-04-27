@@ -1,11 +1,13 @@
 import {filterValues, groupBy, indexBy, mapValues, removeUndefined} from "@azimutt/utils";
 import {
+    Attribute,
     AttributeId,
     AttributePath,
     AttributePathId,
     AttributeRef,
     AttributeType,
     AttributeTypeParsed,
+    AttributeValue,
     Entity,
     EntityId,
     EntityRef,
@@ -86,6 +88,42 @@ function removeQuotes(value: string): string {
     } else {
         return value
     }
+}
+
+export function getAttribute(attrs: Attribute[] | undefined, path: AttributePath): Attribute | undefined {
+    const [head, ...tail] = path
+    const attr = (attrs || []).find(a => a.name == head)
+    if (attr && tail.length === 0) {
+        return attr
+    } else if (attr && tail.length > 0) {
+        return getAttribute(attr.attrs || [], tail)
+    } else {
+        return undefined
+    }
+}
+
+export function getPeerAttributes(attrs: Attribute[] | undefined, path: AttributePath): Attribute[] {
+    const [head, ...tail] = path
+    if (attrs && tail.length > 0) {
+        const attr = (attrs || []).find(a => a.name == head)
+        return getPeerAttributes(attr?.attrs, tail)
+    } else {
+        return attrs || []
+    }
+}
+
+export function flattenAttribute(attr: Attribute, p: AttributePath = []): {path: AttributePath, attr: Attribute}[] {
+    const path = [...p, attr.name]
+    return [{path, attr}, ...(attr.attrs || []).flatMap(a => flattenAttribute(a, path))]
+}
+
+export function attributeValueToString(value: AttributeValue): string {
+    if (typeof value === 'string') return value
+    if (typeof value === 'number') return value.toString()
+    if (typeof value === 'boolean') return value.toString()
+    if (value instanceof Date) return value.toISOString()
+    if (value === null) return  'null'
+    return JSON.stringify(value)
 }
 
 export const indexEntities = (entities: Entity[]): Record<EntityId, Entity> =>

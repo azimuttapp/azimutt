@@ -12,16 +12,12 @@ import Libs.Maybe as Maybe
 import Libs.String as String
 import Libs.Tailwind as Tw
 import Models.Project.ColumnPath as ColumnPath
-import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
+import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.Relation exposing (Relation)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.ProjectRef exposing (ProjectRef)
-import PagesComponents.Organization_.Project_.Models.ErdIndex exposing (ErdIndex)
-import PagesComponents.Organization_.Project_.Models.ErdPrimaryKey exposing (ErdPrimaryKey)
-import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable)
-import PagesComponents.Organization_.Project_.Models.ErdUnique exposing (ErdUnique)
 import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint)
 
 
@@ -31,6 +27,7 @@ type alias Model =
 
 compute : Dict TableId Table -> List Relation -> List Model
 compute tables relations =
+    -- same as libs/models/src/analyze/rules/indexOnRelation.ts
     relations
         |> List.concatMap
             (\r ->

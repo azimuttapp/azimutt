@@ -23,6 +23,7 @@ type alias Model =
 
 compute : Dict TableId Table -> List Model
 compute tables =
+    -- same as libs/models/src/analyze/rules/indexDuplicated.ts
     tables
         |> Dict.values
         |> List.concatMap
