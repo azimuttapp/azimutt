@@ -1,6 +1,6 @@
-import {Entity, EntityId, Relation} from "../../database";
+import {Database, Entity} from "../../database";
 import {entityToId, entityToRef} from "../../databaseUtils";
-import {Rule, RuleViolation, RuleViolationLevel} from "../rule";
+import {Rule, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
 /**
  * Primary Keys are the default unique way to get a single row in a table.
@@ -8,16 +8,19 @@ import {Rule, RuleViolation, RuleViolationLevel} from "../rule";
  * Having a primary key on every table is a common best practice.
  */
 
-const ruleId = 'primary-key-missing'
-
-export const primaryKeyMissing: Rule = {
+const ruleId: RuleId = 'primary-key-missing'
+const ruleName: RuleName = 'missing primary key'
+const ruleLevel: RuleLevel = RuleLevel.enum.medium
+export const primaryKeyMissingRule: Rule = {
     id: ruleId,
-    name: 'Missing Primary Key',
-    analyze(entities: Record<EntityId, Entity>, relations: Record<EntityId, Relation[]>): RuleViolation[] {
-        return Object.values(entities).filter(isPrimaryKeysMissing).map(e => ({
+    name: ruleName,
+    level: ruleLevel,
+    analyze(db: Database): RuleViolation[] {
+        return (db.entities || []).filter(isPrimaryKeysMissing).map(e => ({
             ruleId,
+            ruleName,
+            ruleLevel,
             entity: entityToRef(e),
-            level: RuleViolationLevel.enum.medium,
             message: `Entity ${entityToId(e)} has no primary key.`
         }))
     }

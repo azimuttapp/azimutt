@@ -1,6 +1,6 @@
 import {describe, expect, test} from "@jest/globals";
-import {Entity} from "../../database";
-import {isEntityTooLarge} from "./entityTooLarge";
+import {Attribute, Database, Entity} from "../../database";
+import {entityTooLargeRule, isEntityTooLarge} from "./entityTooLarge";
 
 describe('entityTooLarge', () => {
     test('valid entity', () => {
@@ -15,5 +15,12 @@ describe('entityTooLarge', () => {
         const attrs = attrs1.concat(attrs2, attrs3, attrs4)
         const users: Entity = {name: 'users', attrs: attrs.map(name => ({name, type: 'varchar'}))}
         expect(isEntityTooLarge(users)).toEqual(true)
+    })
+    test('violation message', () => {
+        const attrs: Attribute[] = [...new Array(40)].map((a, i) => ({name: `a${i}`, type: 'varchar'}))
+        const db: Database = {entities: [{name: 'users', attrs: [{name: 'id', type: 'uuid'}, ...attrs]}]}
+        expect(entityTooLargeRule.analyze(db).map(v => v.message)).toEqual([
+            'Entity users has too many attributes (41).'
+        ])
     })
 })

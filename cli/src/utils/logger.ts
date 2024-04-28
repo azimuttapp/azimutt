@@ -7,3 +7,10 @@ export const logger: Logger = {
     warn: (text: string): void => console.warn(chalk.yellow(text)),
     error: (text: string): void => console.error(chalk.red(text))
 }
+
+export const loggerNoOp: Logger = {
+    debug: (text: string): void => {},
+    log: (text: string): void => {},
+    warn: (text: string): void => {},
+    error: (text: string): void => {}
+}

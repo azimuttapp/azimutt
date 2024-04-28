@@ -1,17 +1,37 @@
 import {groupBy, singular, splitWords} from "@azimutt/utils";
-import {AttributePath, AttributeValue, Entity, EntityId, EntityRef, Relation} from "../../database";
+import {AttributePath, AttributeValue, Database, Entity, EntityId, EntityRef, Relation} from "../../database";
 import {
     attributePathToId,
     attributeValueToString,
+    entityAttributesToId,
     entityRefToId,
     entityToRef,
     flattenAttribute,
     getPeerAttributes
 } from "../../databaseUtils";
+import {Rule, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
 /**
  * If relations are not defined as foreign key, it could be great to identify them
  */
+
+const ruleId: RuleId = 'relation-missing'
+const ruleName: RuleName = 'missing relation'
+const ruleLevel: RuleLevel = RuleLevel.enum.medium
+export const relationMissingRule: Rule = {
+    id: ruleId,
+    name: ruleName,
+    level: ruleLevel,
+    analyze(db: Database): RuleViolation[] {
+        return getMissingRelations(db.entities || [], db.relations || []).map(r => ({
+            ruleId,
+            ruleName,
+            ruleLevel,
+            entity: r.src,
+            message: `Create a relation from ${entityAttributesToId(r.src, r.attrs.map(a => a.src))} to ${entityAttributesToId(r.ref, r.attrs.map(a => a.ref))}.`
+        }))
+    }
+}
 
 // same as frontend/src/PagesComponents/Organization_/Project_/Views/Modals/SchemaAnalysis/RelationMissing.elm
 export function getMissingRelations(entities: Entity[], relations: Relation[]): Relation[] {

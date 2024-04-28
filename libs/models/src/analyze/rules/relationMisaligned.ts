@@ -1,6 +1,7 @@
-import {isNotUndefined} from "@azimutt/utils";
-import {AttributeRef, AttributeType, Entity, EntityId, EntityRef, Relation} from "../../database";
-import {entityRefToId, getAttribute} from "../../databaseUtils";
+import {indexBy, isNotUndefined} from "@azimutt/utils";
+import {AttributeRef, AttributeType, Database, Entity, EntityId, Relation} from "../../database";
+import {attributeRefToId, entityRefToId, entityToId, getAttribute, relationToId} from "../../databaseUtils";
+import {Rule, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
 /**
  * Relations are made to link entities by referencing a target record from a source record, mostly using the primary key.
@@ -8,23 +9,36 @@ import {entityRefToId, getAttribute} from "../../databaseUtils";
  * Sometimes, subtle differences (like varchar length) may not be an issue, it's far from ideal and may become one at some point.
  */
 
-const missingEntityRuleId = 'relation-miss-entity'
-const missingAttributeRuleId = 'relation-miss-attribute'
-const misalignedTypeRuleId = 'relation-misaligned-type'
+const ruleId: RuleId = 'relation-misaligned-type'
+const ruleName: RuleName = 'misaligned relation'
+const ruleLevel: RuleLevel = RuleLevel.enum.high
+export const relationMisalignedRule: Rule = {
+    id: ruleId,
+    name: ruleName,
+    level: ruleLevel,
+    analyze(db: Database): RuleViolation[] {
+        const entities: Record<EntityId, Entity> = indexBy(db.entities || [], entityToId)
+        return (db.relations || []).map(r => getMisalignedRelation(r, entities)).filter(isNotUndefined).map(violation => ({
+            ruleId,
+            ruleName,
+            ruleLevel,
+            entity: violation.relation.src,
+            message: `Relation ${relationName(violation.relation)} link attributes different types: ${violation.misalignedTypes.map(formatMisalignedType).join(', ')}`
+        }))
+    }
+}
+
+const relationName = (r: Relation): string => r.name || relationToId(r)
+const formatMisalignedType = (t: MisalignedType): string => `${attributeRefToId(t.src)}: ${t.srcType} != ${attributeRefToId(t.ref)}: ${t.refType}`
 
 export type MisalignedType = {src: AttributeRef, srcType: AttributeType, ref: AttributeRef, refType: AttributeType}
-export type RelationMisaligned = { relation: Relation, missingEntities: EntityRef[] }
-    | { relation: Relation, missingAttrs: AttributeRef[] }
-    | { relation: Relation, misalignedTypes: MisalignedType[] }
+export type RelationMisaligned = { relation: Relation, misalignedTypes: MisalignedType[] }
 
 // same as frontend/src/PagesComponents/Organization_/Project_/Views/Modals/SchemaAnalysis/InconsistentTypeOnRelations.elm
 export function getMisalignedRelation(relation: Relation, entities: Record<EntityId, Entity>): RelationMisaligned | undefined {
     const src = entities[entityRefToId(relation.src)]
     const ref = entities[entityRefToId(relation.ref)]
-    const missingEntities: EntityRef[] = [src ? undefined : relation.src, ref ? undefined : relation.ref].filter(isNotUndefined)
-    if (missingEntities.length > 0) {
-        return {relation, missingEntities}
-    }
+    if (!src && !ref) { return undefined }
 
     const attrs = relation.attrs.map(attr => ({
         src: attr.src,
@@ -32,13 +46,7 @@ export function getMisalignedRelation(relation: Relation, entities: Record<Entit
         ref: attr.ref,
         refAttr: getAttribute(ref.attrs, attr.ref),
     }))
-    const missingAttrs: AttributeRef[] = attrs.flatMap(attr => [
-        attr.srcAttr ? undefined : {...relation.src, attribute: attr.src},
-        attr.refAttr ? undefined : {...relation.ref, attribute: attr.ref},
-    ].filter(isNotUndefined))
-    if (missingAttrs.length > 0) {
-        return {relation, missingAttrs}
-    }
+    if (attrs.some(a => !a.srcAttr || !a.refAttr)) { return undefined }
 
     const misalignedTypes: MisalignedType[] = attrs.flatMap(attr => attr.srcAttr && attr.refAttr && attr.srcAttr.type !== attr.refAttr.type ? [{
         src: {...relation.src, attribute: attr.src},
@@ -46,9 +54,5 @@ export function getMisalignedRelation(relation: Relation, entities: Record<Entit
         ref: {...relation.ref, attribute: attr.ref},
         refType: attr.refAttr?.type,
     }] : [])
-    if (misalignedTypes.length > 0) {
-        return {relation, misalignedTypes}
-    }
-
-    return undefined
+    return misalignedTypes.length > 0 ? {relation, misalignedTypes} : undefined
 }

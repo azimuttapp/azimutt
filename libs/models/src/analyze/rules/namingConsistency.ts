@@ -8,12 +8,46 @@ import {
     isSnakeUpper,
     StringCase
 } from "@azimutt/utils";
-import {AttributeRef, Entity, EntityRef} from "../../database";
-import {entityToRef, flattenAttribute} from "../../databaseUtils";
+import {AttributeRef, Database, Entity, EntityRef} from "../../database";
+import {
+    attributeRefToId,
+    entityRefFromAttribute,
+    entityRefToId,
+    entityToRef,
+    flattenAttribute
+} from "../../databaseUtils";
+import {Rule, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
 /**
  * Keeping the same naming convention for all your tables and columns will help avoid typos and understand things.
  */
+
+const ruleId: RuleId = 'naming-consistency'
+const ruleName: RuleName = 'naming consistency'
+const ruleLevel: RuleLevel = RuleLevel.enum.low
+export const namingConsistencyRule: Rule = {
+    id: ruleId,
+    name: ruleName,
+    level: ruleLevel,
+    analyze(db: Database): RuleViolation[] {
+        const inconsistencies = checkNamingConsistency(db.entities || [])
+        const entities = inconsistencies.entities.invalid.map(entity => ({
+            ruleId,
+            ruleName,
+            ruleLevel,
+            entity: entity,
+            message: `Entity ${entityRefToId(entity)} doesn't follow naming convention ${inconsistencies.entities.convention}.`
+        }))
+        const attributes = inconsistencies.attributes.invalid.map(attribute => ({
+            ruleId,
+            ruleName,
+            ruleLevel,
+            entity: entityRefFromAttribute(attribute),
+            message: `Attribute ${attributeRefToId(attribute)} doesn't follow naming convention ${inconsistencies.attributes.convention}.`
+        }))
+        return entities.concat(attributes)
+    }
+}
 
 export type ConsistencyCheck<T> = { convention: StringCase, invalid: T[] }
 export type InconsistentNaming = { entities: ConsistencyCheck<EntityRef>, attributes: ConsistencyCheck<AttributeRef> }

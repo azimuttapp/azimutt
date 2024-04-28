@@ -14,6 +14,7 @@ import {
     Namespace,
     NamespaceId,
     Relation,
+    RelationId,
     Type,
     TypeId,
     TypeRef
@@ -44,6 +45,11 @@ export const entityRefFromId = (id: EntityId): EntityRef => {
 export const entityToRef = (e: Entity): EntityRef => removeUndefined({database: e.database, catalog: e.catalog, schema: e.schema, entity: e.name})
 export const entityToId = (e: Entity): EntityId => entityRefToId(entityToRef(e))
 
+export const entityRefFromAttribute = (a: AttributeRef): EntityRef => {
+    const {attribute, ...ref} = a
+    return ref
+}
+
 export const attributePathToId = (path: AttributePath): AttributePathId => path.join('.')
 export const attributePathFromId = (path: AttributePathId): AttributePath => path.split('.')
 
@@ -73,6 +79,9 @@ export const typeRefFromId = (id: TypeId): TypeRef => {
 
 export const typeToRef = (t: Type): TypeRef => removeUndefined({database: t.database, catalog: t.catalog, schema: t.schema, type: t.name})
 export const typeToId = (t: Type): TypeId => typeRefToId(typeToRef(t))
+
+export const entityAttributesToId = (entity: EntityRef, attributes: AttributePath[]): string => `${entityRefToId(entity)}(${attributes.map(attributePathToId).join(', ')})`
+export const relationToId = (r: Relation): RelationId => `${entityAttributesToId(r.src, r.attrs.map(a => a.src))}->${entityAttributesToId(r.ref, r.attrs.map(a => a.ref))}`
 
 function addQuotes(value: string): string {
     if (value.match(/^\w*$/)) {

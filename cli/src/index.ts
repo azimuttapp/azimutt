@@ -11,7 +11,7 @@ import {logger} from "./utils/logger.js";
 import {exportDbSchema} from "./export.js";
 import {launchGateway} from "./gateway.js";
 import {launchExplore} from "./explore.js";
-import {launchAnalyze} from "./analyze";
+import {launchAnalyze} from "./analyze.js";
 
 clear()
 logger.log(chalk.hex('#4F46E5').bold(figlet.textSync('Azimutt.app', {horizontalLayout: 'full'})))

@@ -1,5 +1,6 @@
 import {describe, expect, test} from "@jest/globals";
-import {getMissingRelations} from "./relationMissing";
+import {Database} from "../../database";
+import {getMissingRelations, relationMissingRule} from "./relationMissing";
 
 describe('relationMissing', () => {
     test('empty', () => {
@@ -91,4 +92,15 @@ describe('relationMissing', () => {
         ], [])).toEqual([{src: {entity: 'posts'}, ref: {entity: 'account'}, attrs: [{src: ['created_by'], ref: ['id']}], origin: 'infer-name'}])
     })
     // TODO: suggest relations even when target entity is not found
+    test('violation message', () => {
+        const db: Database = {
+            entities: [
+                {name: 'users', attrs: [{name: 'id', type: 'uuid'}]},
+                {name: 'posts', attrs: [{name: 'id', type: 'uuid'}, {name: 'user_id', type: 'uuid'}]},
+            ]
+        }
+        expect(relationMissingRule.analyze(db).map(v => v.message)).toEqual([
+            'Create a relation from posts(user_id) to users(id).'
+        ])
+    })
 })
