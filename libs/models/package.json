@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "@azimutt/utils": "^0.1.1",
+    "openai": "4.38.5",
     "zod": "3.23.4",
     "zod-to-json-schema": "3.23.0"
   },
