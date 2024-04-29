@@ -11,13 +11,18 @@ import {
 import {getConnector} from "@azimutt/gateway";
 import {loggerNoOp} from "./utils/logger.js";
 
-export async function launchAnalyze(url: string, logger: Logger): Promise<void> {
+export type Opts = {
+    size: number
+    only?: string
+}
+
+export async function launchAnalyze(url: string, opts: Opts, logger: Logger): Promise<void> {
     const parsed: DatabaseUrlParsed = parseDatabaseUrl(url)
     const connector: Connector | undefined = getConnector(parsed)
     if (!connector) return Promise.reject('Invalid connector')
 
     const db: Database = await connector.getSchema('azimutt-analyze', parsed, {logger: loggerNoOp})
-    const violations: RuleViolation[] = analyzeDatabase(db)
+    const violations: RuleViolation[] = analyzeDatabase(db, opts.only?.split(',') || [])
 
     const violationsByLevel: Record<RuleLevel, RuleViolation[]> = groupBy(violations, v => v.ruleLevel)
     RuleLevel.options.slice().reverse().forEach((level) => {
@@ -25,11 +30,11 @@ export async function launchAnalyze(url: string, logger: Logger): Promise<void> 
         logger.log(`${levelViolations.length} ${level} violations:`)
         Object.values(groupBy(levelViolations, v => v.ruleId)).forEach(ruleViolations => {
             logger.log(`  ${ruleViolations.length} ${ruleViolations[0].ruleName} violations:`)
-            ruleViolations.slice(0, 3).forEach(violation => {
+            ruleViolations.slice(0, opts.size).forEach(violation => {
                 logger.log(`    - ${violation.message}`)
             })
-            if (ruleViolations.length > 3) {
-                logger.log(`    ${ruleViolations.length - 3} more...`)
+            if (ruleViolations.length > opts.size) {
+                logger.log(`    ... ${ruleViolations.length - opts.size} more`)
             }
         })
     })

@@ -29,7 +29,7 @@ export const analyzeRules: Rule[] = [
     relationMissingRule,
 ]
 
-export function analyzeDatabase(db: Database): RuleViolation[] {
+export function analyzeDatabase(db: Database, ruleNames: string[]): RuleViolation[] {
     // TODO: tables with too many indexes
     // TODO: tables with too heavy indexes
     // TODO: unused index
@@ -40,5 +40,6 @@ export function analyzeDatabase(db: Database): RuleViolation[] {
     // TODO: sequence/auto_increment exhaustion
     // TODO: use varchar over char (https://youtu.be/ifEpT5STEU0?si=fcLBuwrgluG9crwt&t=90)
     // TODO: use uuid or bigint pk, not int or varchar ones
-    return analyzeRules.flatMap(r => r.analyze(db))
+    const rules = ruleNames.length > 0 ? analyzeRules.filter(r => ruleNames.indexOf(r.id) !== -1 || ruleNames.indexOf(r.name) !== -1) : analyzeRules
+    return rules.flatMap(r => r.analyze(db))
 }
