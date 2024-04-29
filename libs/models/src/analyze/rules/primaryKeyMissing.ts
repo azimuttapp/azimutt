@@ -10,7 +10,7 @@ import {Rule, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
 const ruleId: RuleId = 'primary-key-missing'
 const ruleName: RuleName = 'missing primary key'
-const ruleLevel: RuleLevel = RuleLevel.enum.medium
+const ruleLevel: RuleLevel = RuleLevel.enum.high
 export const primaryKeyMissingRule: Rule = {
     id: ruleId,
     name: ruleName,

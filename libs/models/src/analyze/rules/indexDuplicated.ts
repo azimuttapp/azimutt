@@ -17,17 +17,14 @@ export const indexDuplicatedRule: Rule = {
     name: ruleName,
     level: ruleLevel,
     analyze(db: Database): RuleViolation[] {
-        return (db.entities || []).flatMap(getDuplicatedIndexes).map(i => ({
-            ruleId,
-            ruleName,
-            ruleLevel,
-            entity: entityToRef(i.entity),
-            message: `Index ${indexName(i.entity, i.index)} can be deleted because it's covered by indexes: ${i.coveredBy.map(by => indexName(i.entity, by)).join(', ')}.`
-        }))
+        return (db.entities || []).flatMap(getDuplicatedIndexes).map(i => {
+            const entity = entityToRef(i.entity)
+            const indexName = `${i.index.name ? i.index.name + ' ' : ''}on ${entityAttributesToId(entity, i.index.attrs)}`
+            const message = `Index ${indexName} can be deleted, it's covered by: ${i.coveredBy.map(by => `${by.name || ''}(${by.attrs.map(attributePathToId).join(', ')})`).join(', ')}.`
+            return {ruleId, ruleName, ruleLevel, entity, message}
+        })
     }
 }
-
-const indexName = (e: Entity, index: Index): string => index.name || `on ${entityAttributesToId(entityToRef(e), index.attrs)}`
 
 export type IndexDuplicated = {entity: Entity, index: Index, coveredBy: Index[]}
 

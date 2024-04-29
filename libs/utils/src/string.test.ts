@@ -48,6 +48,7 @@ describe('string', () => {
         expect(isSnakeUpper('AzimuttIsAwesome')).toBeFalsy()
         expect(isSnakeUpper('azimuttIsAwesome')).toBeFalsy()
         expect(isSnakeUpper('AZIMUTT_IS_AWESOME')).toBeTruthy()
+        expect(isSnakeUpper('AZIMUTT_IS_AWESOME_2')).toBeTruthy()
         expect(isSnakeUpper('azimutt_is_awesome')).toBeFalsy()
         expect(isSnakeUpper('AZIMUTT-IS-AWESOME')).toBeFalsy()
         expect(isSnakeUpper('azimutt-is-awesome')).toBeFalsy()
@@ -57,6 +58,7 @@ describe('string', () => {
         expect(isSnakeLower('azimuttIsAwesome')).toBeFalsy()
         expect(isSnakeLower('AZIMUTT_IS_AWESOME')).toBeFalsy()
         expect(isSnakeLower('azimutt_is_awesome')).toBeTruthy()
+        expect(isSnakeLower('azimutt_is_awesome_2')).toBeTruthy()
         expect(isSnakeLower('AZIMUTT-IS-AWESOME')).toBeFalsy()
         expect(isSnakeLower('azimutt-is-awesome')).toBeFalsy()
     })
@@ -66,6 +68,7 @@ describe('string', () => {
         expect(isKebabUpper('AZIMUTT_IS_AWESOME')).toBeFalsy()
         expect(isKebabUpper('azimutt_is_awesome')).toBeFalsy()
         expect(isKebabUpper('AZIMUTT-IS-AWESOME')).toBeTruthy()
+        expect(isKebabUpper('AZIMUTT-IS-AWESOME-2')).toBeTruthy()
         expect(isKebabUpper('azimutt-is-awesome')).toBeFalsy()
     })
     test('isKebabLower', () => {
@@ -75,6 +78,7 @@ describe('string', () => {
         expect(isKebabLower('azimutt_is_awesome')).toBeFalsy()
         expect(isKebabLower('AZIMUTT-IS-AWESOME')).toBeFalsy()
         expect(isKebabLower('azimutt-is-awesome')).toBeTruthy()
+        expect(isKebabLower('azimutt-is-awesome-2')).toBeTruthy()
     })
     test('compatibleCases', () => {
         expect(compatibleCases('AzimuttIsAwesome')).toEqual(['camel-upper'])

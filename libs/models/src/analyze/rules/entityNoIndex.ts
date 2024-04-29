@@ -4,7 +4,7 @@ import {Rule, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
 const ruleId: RuleId = 'entity-no-index'
 const ruleName: RuleName = 'entity no index'
-const ruleLevel: RuleLevel = RuleLevel.enum.medium
+const ruleLevel: RuleLevel = RuleLevel.enum.high
 export const entityNoIndexRule: Rule = {
     id: ruleId,
     name: ruleName,

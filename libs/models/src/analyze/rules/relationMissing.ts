@@ -35,10 +35,11 @@ export const relationMissingRule: Rule = {
 
 // same as frontend/src/PagesComponents/Organization_/Project_/Views/Modals/SchemaAnalysis/RelationMissing.elm
 export function getMissingRelations(entities: Entity[], relations: Relation[]): Relation[] {
+    const tableEntities = entities.filter(e => e.kind === undefined || e.kind === 'table') // don't suggest relation to a view
+    const entitiesByName: Record<EntityNameNormalized, Entity[]> = groupBy(tableEntities, e => splitWords(e.name).map(singular).join('_'))
+    const entitiesByPrefixName: Record<EntityNameNormalized, Entity[]> = groupBy(tableEntities.filter(e => splitWords(e.name).length > 1), e => splitWords(e.name).slice(1).map(singular).join('_'))
+    const entitiesByPrefixName2: Record<EntityNameNormalized, Entity[]> = groupBy(tableEntities.filter(e => splitWords(e.name).length > 2), e => splitWords(e.name).slice(2).map(singular).join('_'))
     const relationsBySrc: Record<EntityId, Relation[]> = groupBy(relations, r => entityRefToId(r.src))
-    const entitiesByName: Record<EntityNameNormalized, Entity[]> = groupBy(entities, e => splitWords(e.name).map(singular).join('_'))
-    const entitiesByPrefixName: Record<EntityNameNormalized, Entity[]> = groupBy(entities.filter(e => splitWords(e.name).length > 1), e => splitWords(e.name).slice(1).map(singular).join('_'))
-    const entitiesByPrefixName2: Record<EntityNameNormalized, Entity[]> = groupBy(entities.filter(e => splitWords(e.name).length > 2), e => splitWords(e.name).slice(2).map(singular).join('_'))
 
     return entities.flatMap(entity => {
         return entity.attrs.flatMap(a => flattenAttribute(a)).flatMap(({path, attr}) => {

@@ -10,10 +10,10 @@ export function indent(value: string, size: number = 2, char: string = ' ') {
 
 export const isCamelUpper = (value: string): boolean => !!value.match(/^([A-Z][a-z0-9]*)+$/)
 export const isCamelLower = (value: string): boolean => !!value.match(/^([a-z][a-z0-9]*)([A-Z][a-z0-9]*)*$/)
-export const isSnakeUpper = (value: string): boolean => !!value.match(/^([A-Z][A-Z0-9]*)(_[A-Z][A-Z0-9]*)*$/)
-export const isSnakeLower = (value: string): boolean => !!value.match(/^([a-z][a-z0-9]*)(_[a-z][a-z0-9]*)*$/)
-export const isKebabUpper = (value: string): boolean => !!value.match(/^([A-Z][A-Z0-9]*)(-[A-Z][A-Z0-9]*)*$/)
-export const isKebabLower = (value: string): boolean => !!value.match(/^([a-z][a-z0-9]*)(-[a-z][a-z0-9]*)*$/)
+export const isSnakeUpper = (value: string): boolean => !!value.match(/^([A-Z][A-Z0-9]*)(_[A-Z0-9]*)*$/)
+export const isSnakeLower = (value: string): boolean => !!value.match(/^([a-z][a-z0-9]*)(_[a-z0-9]*)*$/)
+export const isKebabUpper = (value: string): boolean => !!value.match(/^([A-Z][A-Z0-9]*)(-[A-Z0-9]*)*$/)
+export const isKebabLower = (value: string): boolean => !!value.match(/^([a-z][a-z0-9]*)(-[a-z0-9]*)*$/)
 
 export type StringCase = 'camel-upper' | 'camel-lower' | 'snake-upper' | 'snake-lower' | 'kebab-upper' | 'kebab-lower'
 

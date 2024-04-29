@@ -30,7 +30,7 @@ describe('indexDuplicated', () => {
             {attrs: [['first_name']]},
         ]}]}
         expect(indexDuplicatedRule.analyze(db).map(v => v.message)).toEqual([
-            'Index on users(first_name) can be deleted because it\'s covered by indexes: on users(first_name, last_name).'
+            'Index on users(first_name) can be deleted, it\'s covered by: (first_name, last_name).'
         ])
     })
 })

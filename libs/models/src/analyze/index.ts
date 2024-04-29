@@ -7,6 +7,7 @@ import {indexDuplicatedRule} from "./rules/indexDuplicated";
 import {indexOnRelationRule} from "./rules/indexOnRelation";
 import {namingConsistencyRule} from "./rules/namingConsistency";
 import {primaryKeyMissingRule} from "./rules/primaryKeyMissing";
+import {primaryKeyNotBusinessRule} from "./rules/primaryKeyNotBusiness";
 import {relationMisalignedRule} from "./rules/relationMisaligned";
 import {relationMissAttributeRule} from "./rules/relationMissAttribute";
 import {relationMissEntityRule} from "./rules/relationMissEntity";
@@ -21,6 +22,7 @@ export const analyzeRules: Rule[] = [
     indexOnRelationRule,
     namingConsistencyRule,
     primaryKeyMissingRule,
+    primaryKeyNotBusinessRule,
     relationMisalignedRule,
     relationMissAttributeRule,
     relationMissEntityRule,
@@ -36,6 +38,7 @@ export function analyzeDatabase(db: Database): RuleViolation[] {
     // TODO: queries not using indexes
     // TODO: JSON columns with different schemas
     // TODO: sequence/auto_increment exhaustion
-    // TODO: no business primary key, no composite primary key
+    // TODO: use varchar over char (https://youtu.be/ifEpT5STEU0?si=fcLBuwrgluG9crwt&t=90)
+    // TODO: use uuid or bigint pk, not int or varchar ones
     return analyzeRules.flatMap(r => r.analyze(db))
 }
