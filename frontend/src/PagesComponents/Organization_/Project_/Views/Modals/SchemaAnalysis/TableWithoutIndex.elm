@@ -22,6 +22,7 @@ type alias Model =
 
 compute : Dict TableId Table -> List Model
 compute tables =
+    -- same as libs/models/src/analyze/rules/entityNoIndex.ts
     tables
         |> Dict.values
         |> List.filter (\t -> t.primaryKey == Nothing && List.isEmpty t.uniques && List.isEmpty t.indexes)

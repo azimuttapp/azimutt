@@ -33,6 +33,7 @@ type alias Model =
 
 compute : Dict TableId (List ColumnPath) -> Dict TableId Table -> List Relation -> List Model
 compute ignoredRelations tables relations =
+    -- same as libs/models/src/analyze/rules/relationMissing.ts
     let
         tableNames : Dict NormalizedTableName (List TableId)
         tableNames =

@@ -5,11 +5,10 @@ import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Slices.ProPlan as ProPlan
 import DataSources.DbMiner.DbQuery as DbQuery
 import Dict exposing (Dict)
-import Html exposing (Html, div, p, span, text)
+import Html exposing (Html, div, span, text)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
 import Libs.Dict as Dict
-import Libs.Html exposing (bText)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.DatabaseKind as DatabaseKind exposing (DatabaseKind)
@@ -27,7 +26,6 @@ import Models.SqlScript exposing (SqlScript)
 import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn)
 import PagesComponents.Organization_.Project_.Models.ErdRelation exposing (ErdRelation)
 import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable exposing (ErdTable)
-import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint)
 import Ports
 
 
@@ -37,6 +35,7 @@ type alias Model =
 
 compute : SchemaName -> Dict TableId ErdTable -> List ErdRelation -> List Model
 compute defaultSchema tables relations =
+    -- same as libs/models/src/analyze/rules/relationMisaligned.ts
     let
         getColumn : ColumnRefLike x -> Maybe ErdColumn
         getColumn ref =

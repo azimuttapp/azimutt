@@ -22,7 +22,8 @@ type alias Model =
 
 compute : Dict TableId Table -> List Model
 compute tables =
-    tables |> Dict.values |> List.filter (\t -> t.primaryKey == Nothing)
+    -- same as libs/models/src/analyze/rules/primaryKeyMissing.ts
+    tables |> Dict.values |> List.filter (\t -> t.primaryKey == Nothing && t.view == False)
 
 
 heading : List Model -> String

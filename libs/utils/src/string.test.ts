@@ -1,6 +1,13 @@
 import {describe, expect, test} from "@jest/globals";
 import {
+    compatibleCases,
     indent,
+    isCamelLower,
+    isCamelUpper,
+    isKebabLower,
+    isKebabUpper,
+    isSnakeLower,
+    isSnakeUpper,
     joinLast,
     joinLimit,
     pathJoin,
@@ -10,6 +17,7 @@ import {
     singular,
     slugify,
     slugifyGitHub,
+    splitWords,
     stripIndent
 } from "./string";
 
@@ -19,6 +27,69 @@ describe('string', () => {
         expect(indent(`
           my text
         `)).toEqual('  \n            my text\n          ')
+    })
+    test('isCamelUpper', () => {
+        expect(isCamelUpper('AzimuttIsAwesome')).toBeTruthy()
+        expect(isCamelUpper('azimuttIsAwesome')).toBeFalsy()
+        expect(isCamelUpper('AZIMUTT_IS_AWESOME')).toBeFalsy()
+        expect(isCamelUpper('azimutt_is_awesome')).toBeFalsy()
+        expect(isCamelUpper('AZIMUTT-IS-AWESOME')).toBeFalsy()
+        expect(isCamelUpper('azimutt-is-awesome')).toBeFalsy()
+    })
+    test('isCamelLower', () => {
+        expect(isCamelLower('AzimuttIsAwesome')).toBeFalsy()
+        expect(isCamelLower('azimuttIsAwesome')).toBeTruthy()
+        expect(isCamelLower('AZIMUTT_IS_AWESOME')).toBeFalsy()
+        expect(isCamelLower('azimutt_is_awesome')).toBeFalsy()
+        expect(isCamelLower('AZIMUTT-IS-AWESOME')).toBeFalsy()
+        expect(isCamelLower('azimutt-is-awesome')).toBeFalsy()
+    })
+    test('isSnakeUpper', () => {
+        expect(isSnakeUpper('AzimuttIsAwesome')).toBeFalsy()
+        expect(isSnakeUpper('azimuttIsAwesome')).toBeFalsy()
+        expect(isSnakeUpper('AZIMUTT_IS_AWESOME')).toBeTruthy()
+        expect(isSnakeUpper('AZIMUTT_IS_AWESOME_2')).toBeTruthy()
+        expect(isSnakeUpper('azimutt_is_awesome')).toBeFalsy()
+        expect(isSnakeUpper('AZIMUTT-IS-AWESOME')).toBeFalsy()
+        expect(isSnakeUpper('azimutt-is-awesome')).toBeFalsy()
+    })
+    test('isSnakeLower', () => {
+        expect(isSnakeLower('AzimuttIsAwesome')).toBeFalsy()
+        expect(isSnakeLower('azimuttIsAwesome')).toBeFalsy()
+        expect(isSnakeLower('AZIMUTT_IS_AWESOME')).toBeFalsy()
+        expect(isSnakeLower('azimutt_is_awesome')).toBeTruthy()
+        expect(isSnakeLower('azimutt_is_awesome_2')).toBeTruthy()
+        expect(isSnakeLower('AZIMUTT-IS-AWESOME')).toBeFalsy()
+        expect(isSnakeLower('azimutt-is-awesome')).toBeFalsy()
+    })
+    test('isKebabUpper', () => {
+        expect(isKebabUpper('AzimuttIsAwesome')).toBeFalsy()
+        expect(isKebabUpper('azimuttIsAwesome')).toBeFalsy()
+        expect(isKebabUpper('AZIMUTT_IS_AWESOME')).toBeFalsy()
+        expect(isKebabUpper('azimutt_is_awesome')).toBeFalsy()
+        expect(isKebabUpper('AZIMUTT-IS-AWESOME')).toBeTruthy()
+        expect(isKebabUpper('AZIMUTT-IS-AWESOME-2')).toBeTruthy()
+        expect(isKebabUpper('azimutt-is-awesome')).toBeFalsy()
+    })
+    test('isKebabLower', () => {
+        expect(isKebabLower('AzimuttIsAwesome')).toBeFalsy()
+        expect(isKebabLower('azimuttIsAwesome')).toBeFalsy()
+        expect(isKebabLower('AZIMUTT_IS_AWESOME')).toBeFalsy()
+        expect(isKebabLower('azimutt_is_awesome')).toBeFalsy()
+        expect(isKebabLower('AZIMUTT-IS-AWESOME')).toBeFalsy()
+        expect(isKebabLower('azimutt-is-awesome')).toBeTruthy()
+        expect(isKebabLower('azimutt-is-awesome-2')).toBeTruthy()
+    })
+    test('compatibleCases', () => {
+        expect(compatibleCases('AzimuttIsAwesome')).toEqual(['camel-upper'])
+        expect(compatibleCases('azimuttIsAwesome')).toEqual(['camel-lower'])
+        expect(compatibleCases('AZIMUTT_IS_AWESOME')).toEqual(['snake-upper'])
+        expect(compatibleCases('azimutt_is_awesome')).toEqual(['snake-lower'])
+        expect(compatibleCases('AZIMUTT-IS-AWESOME')).toEqual(['kebab-upper'])
+        expect(compatibleCases('azimutt-is-awesome')).toEqual(['kebab-lower'])
+        expect(compatibleCases('AZ')).toEqual(['camel-upper', 'snake-upper', 'kebab-upper'])
+        expect(compatibleCases('az')).toEqual(['camel-lower', 'snake-lower', 'kebab-lower'])
+        expect(compatibleCases('some text')).toEqual([])
     })
     test('joinLast', () => {
         expect(joinLast([])).toEqual('')
@@ -90,6 +161,7 @@ describe('string', () => {
         expect(singular('tries')).toEqual('try')
         expect(singular('rays')).toEqual('ray')
         expect(singular('boys')).toEqual('boy')
+        expect(singular('profiles')).toEqual('profile')
     })
     test('slugify', () => {
         expect(slugify('')).toEqual('')
@@ -99,6 +171,19 @@ describe('string', () => {
     })
     test('slugifyGitHub', () => {
         expect(slugifyGitHub('🔖 Philosophy & Conventions')).toEqual('-philosophy--conventions')
+    })
+    test('splitWords', () => {
+        expect(splitWords('')).toEqual([])
+        expect(splitWords('azimutt')).toEqual(['azimutt'])
+        expect(splitWords('AZIMUTT')).toEqual(['azimutt'])
+        expect(splitWords('Azimutt is awesome')).toEqual(['azimutt', 'is', 'awesome'])
+        expect(splitWords('AzimuttIsAwesome')).toEqual(['azimutt', 'is', 'awesome'])
+        expect(splitWords('azimuttIsAwesome')).toEqual(['azimutt', 'is', 'awesome'])
+        expect(splitWords('AZIMUTT_IS_AWESOME')).toEqual(['azimutt', 'is', 'awesome'])
+        expect(splitWords('azimutt_is_awesome')).toEqual(['azimutt', 'is', 'awesome'])
+        expect(splitWords('AZIMUTT-IS-AWESOME')).toEqual(['azimutt', 'is', 'awesome'])
+        expect(splitWords('azimutt-is-awesome')).toEqual(['azimutt', 'is', 'awesome'])
+        expect(splitWords('[Azimutt, is awesome!]')).toEqual(['azimutt', 'is', 'awesome'])
     })
     test('stripIndent', () => {
         expect(stripIndent('some text')).toEqual('some text')

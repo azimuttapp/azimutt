@@ -1,17 +1,20 @@
 import {filterValues, groupBy, indexBy, mapValues, removeUndefined} from "@azimutt/utils";
 import {
+    Attribute,
     AttributeId,
     AttributePath,
     AttributePathId,
     AttributeRef,
     AttributeType,
     AttributeTypeParsed,
+    AttributeValue,
     Entity,
     EntityId,
     EntityRef,
     Namespace,
     NamespaceId,
     Relation,
+    RelationId,
     Type,
     TypeId,
     TypeRef
@@ -41,6 +44,11 @@ export const entityRefFromId = (id: EntityId): EntityRef => {
 
 export const entityToRef = (e: Entity): EntityRef => removeUndefined({database: e.database, catalog: e.catalog, schema: e.schema, entity: e.name})
 export const entityToId = (e: Entity): EntityId => entityRefToId(entityToRef(e))
+
+export const entityRefFromAttribute = (a: AttributeRef): EntityRef => {
+    const {attribute, ...ref} = a
+    return ref
+}
 
 export const attributePathToId = (path: AttributePath): AttributePathId => path.join('.')
 export const attributePathFromId = (path: AttributePathId): AttributePath => path.split('.')
@@ -72,6 +80,9 @@ export const typeRefFromId = (id: TypeId): TypeRef => {
 export const typeToRef = (t: Type): TypeRef => removeUndefined({database: t.database, catalog: t.catalog, schema: t.schema, type: t.name})
 export const typeToId = (t: Type): TypeId => typeRefToId(typeToRef(t))
 
+export const entityAttributesToId = (entity: EntityRef, attributes: AttributePath[]): string => `${entityRefToId(entity)}(${attributes.map(attributePathToId).join(', ')})`
+export const relationToId = (r: Relation): RelationId => `${entityAttributesToId(r.src, r.attrs.map(a => a.src))}->${entityAttributesToId(r.ref, r.attrs.map(a => a.ref))}`
+
 function addQuotes(value: string): string {
     if (value.match(/^\w*$/)) {
         return value
@@ -86,6 +97,42 @@ function removeQuotes(value: string): string {
     } else {
         return value
     }
+}
+
+export function getAttribute(attrs: Attribute[] | undefined, path: AttributePath): Attribute | undefined {
+    const [head, ...tail] = path
+    const attr = (attrs || []).find(a => a.name == head)
+    if (attr && tail.length === 0) {
+        return attr
+    } else if (attr && tail.length > 0) {
+        return getAttribute(attr.attrs || [], tail)
+    } else {
+        return undefined
+    }
+}
+
+export function getPeerAttributes(attrs: Attribute[] | undefined, path: AttributePath): Attribute[] {
+    const [head, ...tail] = path
+    if (attrs && tail.length > 0) {
+        const attr = (attrs || []).find(a => a.name == head)
+        return getPeerAttributes(attr?.attrs, tail)
+    } else {
+        return attrs || []
+    }
+}
+
+export function flattenAttribute(attr: Attribute, p: AttributePath = []): {path: AttributePath, attr: Attribute}[] {
+    const path = [...p, attr.name]
+    return [{path, attr}, ...(attr.attrs || []).flatMap(a => flattenAttribute(a, path))]
+}
+
+export function attributeValueToString(value: AttributeValue): string {
+    if (typeof value === 'string') return value
+    if (typeof value === 'number') return value.toString()
+    if (typeof value === 'boolean') return value.toString()
+    if (value instanceof Date) return value.toISOString()
+    if (value === null) return  'null'
+    return JSON.stringify(value)
 }
 
 export const indexEntities = (entities: Entity[]): Record<EntityId, Entity> =>

@@ -11,6 +11,7 @@ import {logger} from "./utils/logger.js";
 import {exportDbSchema} from "./export.js";
 import {launchGateway} from "./gateway.js";
 import {launchExplore} from "./explore.js";
+import {launchAnalyze} from "./analyze.js";
 
 clear()
 logger.log(chalk.hex('#4F46E5').bold(figlet.textSync('Azimutt.app', {horizontalLayout: 'full'})))
@@ -34,6 +35,13 @@ program.command('explore')
     .argument('<url>', 'the database url, including credentials')
     .option('-i, --instance <instance>', 'the Azimutt instance you want to use, by default: https://azimutt.app')
     .action((url, args) => exec(launchExplore(url, args.instance || 'https://azimutt.app', logger), args))
+
+program.command('analyze')
+    .description('Analyze your database and give improvement suggestions.')
+    .argument('<url>', 'the database url, including credentials')
+    .option('--size <number>', 'limit shown violations per rule', strictParseInt, 3)
+    .option('--only <rules>', 'limit analyze to a set of rules')
+    .action((url, args) => exec(launchAnalyze(url, args, logger), args))
 
 program.command('export')
     .description('Export a database schema in a file to easily import it in Azimutt.\nWorks with BigQuery, Couchbase, MariaDB, MongoDB, MySQL, PostgreSQL, Snowflake..., issues and PR are welcome in https://github.com/azimuttapp/azimutt ;)')

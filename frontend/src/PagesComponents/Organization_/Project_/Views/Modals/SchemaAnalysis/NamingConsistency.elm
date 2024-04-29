@@ -5,7 +5,6 @@ import Dict exposing (Dict)
 import Html exposing (Html, div, text)
 import Libs.Html exposing (bText)
 import Libs.List as List
-import Libs.Maybe as Maybe
 import Libs.String as String
 import Libs.StringCase exposing (StringCase(..), isCamelLower, isCamelUpper, isKebab, isSnakeLower, isSnakeUpper)
 import Libs.Tuple3 as Tuple3
@@ -21,6 +20,7 @@ type alias Model =
 
 compute : Dict TableId Table -> List Model
 compute tables =
+    -- same as libs/models/src/analyze/rules/namingConsistency.ts
     let
         ( ( camelUpper, camelLower ), ( snakeUpper, snakeLower ), kebab ) =
             tables

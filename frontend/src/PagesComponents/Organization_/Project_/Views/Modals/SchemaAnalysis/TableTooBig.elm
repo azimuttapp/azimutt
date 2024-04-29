@@ -8,14 +8,12 @@ import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
 import Libs.Html exposing (bText, extLink)
 import Libs.Html.Attributes exposing (css)
-import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
 import Libs.Tailwind as Tw
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.ProjectRef exposing (ProjectRef)
-import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint)
 import Services.Backend as Backend
 
@@ -26,6 +24,7 @@ type alias Model =
 
 compute : Dict TableId Table -> List Model
 compute tables =
+    -- same as libs/models/src/analyze/rules/entityTooLarge.test.ts
     tables
         |> Dict.values
         |> List.filter (\t -> (t.columns |> Dict.size) > 30)

@@ -42,6 +42,8 @@ export const AttributeId = z.string() // serialized AttributeRef (EntityId with 
 export type AttributeId = z.infer<typeof AttributeId>
 export const TypeId = z.string() // serialized TypeRef (type name with namespace), ex: 'public.post_status'
 export type TypeId = z.infer<typeof TypeId>
+export const RelationId = z.string() // serialized Relation link, ex: 'posts(author)->users(id)'
+export type RelationId = z.infer<typeof RelationId>
 
 export const Extra = z.record(z.any())
 export type Extra = z.infer<typeof Extra>
