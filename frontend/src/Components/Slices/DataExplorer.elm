@@ -15,12 +15,12 @@ import Dict exposing (Dict)
 import ElmBook
 import ElmBook.Actions as Actions exposing (logAction)
 import ElmBook.Chapter as Chapter exposing (Chapter)
-import Html exposing (Html, button, div, h3, input, label, nav, option, p, select, table, td, text, tr)
-import Html.Attributes exposing (class, classList, disabled, for, id, name, selected, style, title, type_, value)
+import Html exposing (Html, button, div, h3, input, label, nav, option, p, select, span, table, td, text, tr)
+import Html.Attributes exposing (class, classList, disabled, for, id, name, selected, style, tabindex, title, type_, value)
 import Html.Events exposing (onClick, onInput)
 import Libs.Dict as Dict
 import Libs.Html exposing (bText, extLink)
-import Libs.Html.Attributes exposing (css)
+import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, ariaLabelledby, ariaOrientation, css, role)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.DatabaseKind as DatabaseKind
@@ -135,7 +135,7 @@ type Msg
 init : Model
 init =
     { display = Nothing
-    , activeTab = VisualEditorTab
+    , activeTab = QueryEditorTab
     , source = Nothing
     , visualEditor = { table = Nothing, filters = [] }
     , queryEditor = Editor.init ""
@@ -272,7 +272,7 @@ view wrap toggleDropdown openModal showTable showTableRow openNotes navbarHeight
                     model.source |> Maybe.mapOrElse (\s -> viewVisualExplorer wrap defaultSchema (htmlId ++ "-visual-editor") s model.visualEditor) (div [] [])
 
                 QueryEditorTab ->
-                    model.source |> Maybe.mapOrElse (\s -> viewQueryEditor wrap (htmlId ++ "-query-editor") s model.queryEditor) (div [] [])
+                    model.source |> Maybe.mapOrElse (\s -> viewQueryEditor wrap toggleDropdown openedDropdown (htmlId ++ "-query-editor") s model.queryEditor) (div [] [])
             ]
         , div [ class "basis-2/3 flex-1 overflow-y-auto bg-gray-50 pb-28" ]
             [ viewResults wrap toggleDropdown openModal (\s q -> OpenDetails s q |> wrap) openNotes openedDropdown defaultSchema sources metadata (htmlId ++ "-results") model.results ]
@@ -519,23 +519,51 @@ viewVisualExplorerSubmit wrap source model =
         ]
 
 
-viewQueryEditor : (Msg -> msg) -> HtmlId -> DbSource -> QueryEditor -> Html msg
-viewQueryEditor wrap htmlId source model =
+viewQueryEditor : (Msg -> msg) -> (HtmlId -> msg) -> HtmlId -> HtmlId -> DbSource -> QueryEditor -> Html msg
+viewQueryEditor wrap toggleDropdown openedDropdown htmlId source model =
     let
-        inputId : HtmlId
-        inputId =
-            htmlId ++ "-input"
+        ( inputId, optionsButton ) =
+            ( htmlId ++ "-input", htmlId ++ "-button-options" )
     in
     div [ class "flex-1 flex flex-col relative" ]
         [ div [ class "m-3 block flex-1 rounded-md shadow-sm ring-1 ring-inset ring-gray-300" ] [ Editor.sql (UpdateQuery >> wrap) inputId model ]
-        , div [ class "absolute bottom-6 right-6 z-10" ]
+        , div [ class "absolute bottom-6 right-6 z-10 inline-flex" ]
             [ button
                 [ type_ "button"
                 , onClick ({ sql = model.content, origin = "userQuery", db = source.db.kind } |> RunQuery source |> wrap)
                 , disabled (model.content == "")
-                , class "inline-flex items-center bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:bg-indigo-300"
+                , class "relative inline-flex items-center bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:bg-indigo-300"
                 ]
                 [ text "Run query" ]
+            , div [ class "relative -ml-px block" ]
+                [ button
+                    [ type_ "button"
+                    , onClick (toggleDropdown optionsButton)
+                    , disabled (model.content == "")
+                    , id optionsButton
+                    , class "relative inline-flex items-center bg-indigo-600 px-1 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:bg-indigo-300 focus:z-10 -ml-px"
+                    , ariaExpanded True
+                    , ariaHaspopup "true"
+                    ]
+                    [ span [ class "sr-only" ] [ text "Open options" ]
+                    , Icon.solid Icon.ChevronDown "h-5 w-5"
+                    ]
+                , div [ classList [ ( "hidden", openedDropdown /= optionsButton ) ], class "w-56 absolute bottom-full mb-3 right-0 flex-col items-end z-max origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none", role "menu", ariaOrientation "vertical", ariaLabelledby optionsButton, tabindex -1 ]
+                    [ div [ class "py-1", role "none" ]
+                        ([ "Text To SQL", "SQL to Text", "Query plan" ]
+                            |> List.map
+                                (\name ->
+                                    button
+                                        [ type_ "button"
+                                        , class "text-gray-700 block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 hover:text-gray-900"
+                                        , role "menuitem"
+                                        , tabindex -1
+                                        ]
+                                        [ Icon.outline Icon.Sparkles "h-5 w-5 inline mr-1", text name ]
+                                )
+                        )
+                    ]
+                ]
             ]
         ]
 

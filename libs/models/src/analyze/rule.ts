@@ -1,5 +1,5 @@
-import {Database, EntityRef} from "../database";
 import {z} from "zod";
+import {AttributePath, Database, EntityRef} from "../database";
 
 export interface Rule {
     id: RuleId
@@ -19,6 +19,7 @@ export const RuleViolation = z.object({
     ruleName: RuleName,
     ruleLevel: RuleLevel,
     entity: EntityRef.optional(),
+    attribute: AttributePath.optional(),
     message: z.string(),
 }).strict()
 export type RuleViolation = z.infer<typeof RuleViolation>

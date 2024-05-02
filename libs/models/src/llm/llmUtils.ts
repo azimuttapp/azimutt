@@ -3,6 +3,7 @@ import {Database, Entity, Relation} from "../database";
 import {attributePathToId, entityRefToId, entityToId} from "../databaseUtils";
 
 export function dbToPrompt(db: Database): string {
+    // TODO: depending on selected model, decide if db can be fully integrated or should be compressed (no types, filter tables...)
     const entities = (db.entities || []).map(entityToPrompt).filter(isNotUndefined)
     const relations = (db.relations || []).map(relationToPrompt)
     return `\`\`\`

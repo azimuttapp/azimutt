@@ -513,7 +513,7 @@ export const getIndexes = (opts: ConnectorSchemaOpts) => async (conn: Conn): Pro
 function buildIndex(blockSize: number, index: RawIndex, columns: { [i: number]: string }): Index {
     return removeUndefined({
         name: index.index_name,
-        attrs: index.columns.map(i => [columns[i] || 'unknown']), // TODO: handle indexes on nested json columns
+        attrs: index.columns.map(i => [columns[i] || (i === 0 ? '*expression*' : 'unknown')]), // TODO: handle indexes on nested json columns
         unique: index.is_unique || undefined,
         partial: index.partial || undefined,
         definition: index.definition,

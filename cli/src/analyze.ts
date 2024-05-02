@@ -16,11 +16,13 @@ export type Opts = {
     only?: string
 }
 
+// TODO: add config to choose and configure rules (thresholds & ignores)
 export async function launchAnalyze(url: string, opts: Opts, logger: Logger): Promise<void> {
     const parsed: DatabaseUrlParsed = parseDatabaseUrl(url)
     const connector: Connector | undefined = getConnector(parsed)
     if (!connector) return Promise.reject('Invalid connector')
 
+    // TODO: allow config to get schema
     const db: Database = await connector.getSchema('azimutt-analyze', parsed, {logger: loggerNoOp})
     const violations: RuleViolation[] = analyzeDatabase(db, opts.only?.split(',') || [])
 
@@ -29,7 +31,7 @@ export async function launchAnalyze(url: string, opts: Opts, logger: Logger): Pr
         const levelViolations = violationsByLevel[level] || []
         logger.log(`${levelViolations.length} ${level} violations:`)
         Object.values(groupBy(levelViolations, v => v.ruleId)).forEach(ruleViolations => {
-            logger.log(`  ${ruleViolations.length} ${ruleViolations[0].ruleName} violations:`)
+            logger.log(`  ${ruleViolations.length} ${ruleViolations[0].ruleName}:`)
             ruleViolations.slice(0, opts.size).forEach(violation => {
                 logger.log(`    - ${violation.message}`)
             })

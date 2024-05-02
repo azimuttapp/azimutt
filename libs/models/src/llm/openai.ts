@@ -12,6 +12,7 @@ export class OpenAIConnector {
     query = async (system: string, user: string): Promise<string> => {
         this.opts.logger.debug(`system: ${system}`)
         this.opts.logger.debug(`user: ${user}`)
+        // https://platform.openai.com/docs/api-reference/chat/create
         const completion = await this.openai.chat.completions.create({
             model: this.opts.model,
             messages: [
