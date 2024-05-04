@@ -105,10 +105,13 @@ ui =
 
 
 type alias Features =
-    { layouts : Feature Int
+    { projects : Feature Int
+    , layouts : Feature Int
+    , layoutTables : Feature Int
     , memos : Feature Int
     , groups : Feature Int
     , tableColor : Feature Bool
+    , localSave : Feature Bool
     , privateLinks : Feature Bool
     , sqlExport : Feature Bool
     , dbAnalysis : Feature Bool
@@ -123,10 +126,13 @@ type alias Feature a =
 features : Features
 features =
     -- MUST stay in sync with backend/config/config.exs (`free_plan_layouts`)
-    { layouts = { name = "layouts", free = 3 }
+    { projects = { name = "projects", free = 2 }
+    , layouts = { name = "layouts", free = 2 }
+    , layoutTables = { name = "layout_tables", free = 10 }
     , memos = { name = "memos", free = 3 }
     , groups = { name = "groups", free = 1 }
     , tableColor = { name = "table_color", free = False }
+    , localSave = { name = "local_save", free = False }
     , privateLinks = { name = "private_links", free = False }
     , sqlExport = { name = "sql_export", free = False }
     , dbAnalysis = { name = "analysis", free = False }

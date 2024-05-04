@@ -11,7 +11,18 @@
                     <% end %>
                 </div>
                 <div class="text-xs font-medium text-slate-300"><%= @user.profile && @user.profile.description %></div>
-                <div class="text-xs font-medium text-slate-500 truncate"><%= @user.profile && @user.profile.location %></div>
+                <div class="text-xs font-medium text-slate-500 truncate">
+                    <%= @user.profile && [
+                      @user.profile.role,
+                      @user.profile.company,
+                      @user.profile.industry,
+                      @user.profile.location,
+                      @user.profile.usage,
+                      @user.profile.usecase,
+                      @user.profile.discovered_by,
+                      @user.profile.previously_tried
+                    ] |> Enum.join(", ") %>
+                </div>
             </div>
         </div>
         <div class="my-3"><%= render AzimuttWeb.Admin.OrganizationView, "_organizations_table.html", conn: @conn, organizations: @organizations %></div>

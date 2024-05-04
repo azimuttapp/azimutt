@@ -11,6 +11,6 @@ defmodule AzimuttWeb.WebsiteControllerTest do
 
   test "GET /", %{conn: conn} do
     conn = get(conn, Routes.website_path(conn, :index))
-    assert html_response(conn, 200) =~ "Search on tables, columns, relations and comments."
+    assert html_response(conn, 200) =~ "Dive in your database, at any level"
   end
 end

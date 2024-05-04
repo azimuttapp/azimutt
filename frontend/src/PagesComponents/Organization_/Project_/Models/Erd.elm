@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Models.Erd exposing (Erd, canChangeColor, canCreateGroup, canCreateLayout, canCreateMemo, create, currentLayout, defaultSchemaM, getColumn, getColumnPos, getLayoutTable, getOrganization, getOrganizationM, getProjectId, getProjectIdM, getProjectRef, getProjectRefM, getTable, isShown, mapCurrentLayout, mapCurrentLayoutT, mapCurrentLayoutTMWithTime, mapCurrentLayoutTWithTime, mapCurrentLayoutWithTime, mapIgnoredRelationsT, mapSettings, mapSource, mapSourceT, mapSources, mapSourcesT, setIgnoredRelations, setSettings, setSources, toSchema, unpack, viewportM, viewportToCanvas)
+module PagesComponents.Organization_.Project_.Models.Erd exposing (Erd, canChangeColor, canCreateGroup, canCreateLayout, canCreateMemo, canShowTables, create, currentLayout, defaultSchemaM, getColumn, getColumnPos, getLayoutTable, getOrganization, getOrganizationM, getProjectId, getProjectIdM, getProjectRef, getProjectRefM, getTable, isShown, mapCurrentLayout, mapCurrentLayoutT, mapCurrentLayoutTMWithTime, mapCurrentLayoutTWithTime, mapCurrentLayoutWithTime, mapIgnoredRelationsT, mapSettings, mapSource, mapSourceT, mapSources, mapSourcesT, setIgnoredRelations, setSettings, setSources, toSchema, unpack, viewportM, viewportToCanvas)
 
 import Conf
 import Dict exposing (Dict)
@@ -204,6 +204,16 @@ canCreateGroup erd =
 canChangeColor : Maybe Erd -> Bool
 canChangeColor erd =
     erd |> getOrganizationM Nothing |> .plan |> .colors
+
+
+canShowTables : Int -> Maybe Erd -> Bool
+canShowTables nb erd =
+    let
+        layoutTables : Int
+        layoutTables =
+            erd |> Maybe.mapOrElse (currentLayout >> .tables >> List.length) 0
+    in
+    erd |> getOrganizationM Nothing |> .plan |> .layoutTables |> Maybe.all (\max -> layoutTables + nb <= max)
 
 
 getTable : TableId -> Erd -> Maybe ErdTable

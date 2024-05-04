@@ -35,9 +35,11 @@
                 </div>
                 <div class="mt-1 text-xs font-medium text-slate-300">
                     <span class="font-bold"><%= @plan.name %></span>:
-                    <%= @plan.layouts || "∞" %> layouts,
+                    <%= @plan.projects || "∞" %> projects,
+                    <%= @plan.layouts || "∞" %> layouts (<%= @plan.layout_tables || "∞" %> tables),
                     <%= @plan.memos || "∞" %> memos,
                     <span class={if(@plan.colors, do: "", else: "line-through")}>colors</span>,
+                    <span class={if(@plan.local_save, do: "", else: "line-through")}>local save</span>,
                     <span class={if(@plan.private_links, do: "", else: "line-through")}>private links</span>,
                     <span class={if(@plan.db_analysis, do: "", else: "line-through")}>db analysis</span>,
                     <span class={if(@plan.db_access, do: "", else: "line-through")}>db access</span>

@@ -382,9 +382,12 @@ defmodule Azimutt.Organizations do
   defp plan_overrides(plans, %Organization{} = organization, %OrganizationPlan{} = plan, maybe_current_user) do
     if organization.data != nil && plans |> Enum.member?("pro") do
       plan
+      |> override_projects(organization.data)
       |> override_layouts(organization.data)
+      |> override_layout_tables(organization.data)
       |> override_memos(organization.data)
       |> override_colors(organization.data)
+      |> override_local_save(organization.data)
       |> override_private_links(organization.data)
       |> override_analysis(organization.data)
     else
@@ -393,9 +396,25 @@ defmodule Azimutt.Organizations do
     |> override_streak(maybe_current_user)
   end
 
+  defp override_projects(%OrganizationPlan{} = plan, %Organization.Data{} = data) do
+    if data.allowed_projects != nil do
+      %{plan | projects: best_limit(plan.projects, data.allowed_projects)}
+    else
+      plan
+    end
+  end
+
   defp override_layouts(%OrganizationPlan{} = plan, %Organization.Data{} = data) do
     if data.allowed_layouts != nil do
       %{plan | layouts: best_limit(plan.layouts, data.allowed_layouts)}
+    else
+      plan
+    end
+  end
+
+  defp override_layout_tables(%OrganizationPlan{} = plan, %Organization.Data{} = data) do
+    if data.allowed_layout_tables != nil do
+      %{plan | layout_tables: best_limit(plan.layout_tables, data.allowed_layout_tables)}
     else
       plan
     end
@@ -412,6 +431,14 @@ defmodule Azimutt.Organizations do
   defp override_colors(%OrganizationPlan{} = plan, %Organization.Data{} = data) do
     if data.allow_table_color do
       %{plan | colors: true}
+    else
+      plan
+    end
+  end
+
+  defp override_local_save(%OrganizationPlan{} = plan, %Organization.Data{} = data) do
+    if data.allow_table_local_save do
+      %{plan | local_save: true}
     else
       plan
     end
