@@ -20,6 +20,7 @@
                 <th class="p-1" scope="col">Phone</th>
                 <th class="p-1" scope="col">Github</th>
                 <th class="p-1" scope="col">Twitter</th>
+                <th class="p-1" scope="col">Source</th>
                 <th class="p-1" scope="col">Location</th>
                 <th class="p-1" scope="col">Company</th>
                 <th class="p-1" scope="col">Industry</th>
@@ -58,6 +59,7 @@
                                 <a href={"https://twitter.com/#{user.twitter_username}"} title="Twitter account" class="underline">@<%= user.twitter_username %></a>
                             <% end %>
                         </td>
+                        <td class="p-1"><%= user.profile && user.profile.discovered_by %></td>
                         <td class="p-1"><%= user.profile && user.profile.location %></td>
                         <td class="p-1"><%= user.profile && user.profile.company %></td>
                         <td class="p-1"><%= user.profile && user.profile.industry %></td>

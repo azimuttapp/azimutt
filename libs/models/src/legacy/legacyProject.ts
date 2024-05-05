@@ -560,10 +560,13 @@ export const LegacyPlanId = z.enum(['free', 'pro'])
 export interface LegacyPlan {
     id: LegacyPlanId
     name: string
+    projects: number | null
     layouts: number | null
+    layout_tables: number | null
     memos: number | null
     groups: number | null
     colors: boolean
+    local_save: boolean
     private_links: boolean
     sql_export: boolean
     db_analysis: boolean
@@ -574,10 +577,13 @@ export interface LegacyPlan {
 export const LegacyPlan = z.object({
     id: LegacyPlanId,
     name: z.string(),
+    projects: z.number().nullable(),
     layouts: z.number().nullable(),
+    layout_tables: z.number().nullable(),
     memos: z.number().nullable(),
     groups: z.number().nullable(),
     colors: z.boolean(),
+    local_save: z.boolean(),
     private_links: z.boolean(),
     sql_export: z.boolean(),
     db_analysis: z.boolean(),

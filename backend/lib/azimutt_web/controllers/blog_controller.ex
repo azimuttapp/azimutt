@@ -12,7 +12,7 @@ defmodule AzimuttWeb.BlogController do
              seo: %{
                title: "The Azimutt Blog",
                description:
-                 "Hi! We are Samir & Loïc. We're building a Next-Gen ERD to help understand real world databases, with cool UI and privacy focus. You can read about our journey and what we've learnt along the way on this blog."
+                 "Hi there! We're building a Next-Gen ERD to help understand real world databases, with cool UI and privacy focus. You can read about our journey and what we've learnt along the way on this blog."
              }
            )
   end
