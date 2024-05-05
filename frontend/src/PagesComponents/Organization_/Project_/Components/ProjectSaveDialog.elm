@@ -10,6 +10,7 @@ import Libs.Url as Url
 import Models.Organization exposing (Organization)
 import Models.Project.ProjectName exposing (ProjectName)
 import Models.Project.ProjectStorage exposing (ProjectStorage)
+import Models.ProjectInfo exposing (ProjectInfo)
 import Models.User exposing (User)
 import PagesComponents.Organization_.Project_.Models.Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
@@ -47,8 +48,8 @@ update modalOpen msg model =
             model |> Maybe.mapOrElse (ProjectSaveDialogBody.update m >> Tuple.mapFirst Just) ( model, Extra.none )
 
 
-view : (Msg -> msg) -> (msg -> msg) -> (ProjectName -> Organization -> ProjectStorage -> msg) -> Url -> Maybe User -> List Organization -> Bool -> Erd -> Model -> Html msg
-view wrap modalClose saveProject currentUrl user organizations opened erd model =
+view : (Msg -> msg) -> (msg -> msg) -> (ProjectName -> Organization -> ProjectStorage -> msg) -> Url -> Maybe User -> List Organization -> List ProjectInfo -> Bool -> Erd -> Model -> Html msg
+view wrap modalClose saveProject currentUrl user organizations projects opened erd model =
     let
         titleId : HtmlId
         titleId =
@@ -65,6 +66,6 @@ view wrap modalClose saveProject currentUrl user organizations opened erd model 
         , onBackgroundClick = close
         }
         [ user
-            |> Maybe.map (\_ -> ProjectSaveDialogBody.selectSave (BodyMsg >> wrap) close saveProject titleId organizations erd.project.name model)
+            |> Maybe.map (\_ -> ProjectSaveDialogBody.selectSave (BodyMsg >> wrap) close saveProject titleId organizations projects erd.project.name model)
             |> Maybe.withDefault (ProjectSaveDialogBody.signIn close (Backend.loginUrl (currentUrl |> Url.addQuery "save" "")) titleId)
         ]

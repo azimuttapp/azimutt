@@ -351,7 +351,7 @@ sampleFreePlan =
 
 sampleProPlan : ProjectRef
 sampleProPlan =
-    sampleFreePlan |> mapOrganization (\o -> { o | plan = Plan.full })
+    sampleFreePlan |> mapOrganization (\o -> { o | plan = Plan.pro })
 
 
 component : String -> (DocState -> Html msg) -> ( String, SharedDocState x -> Html msg )

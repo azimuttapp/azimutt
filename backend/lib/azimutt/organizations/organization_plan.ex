@@ -26,7 +26,7 @@ defmodule Azimutt.Organizations.OrganizationPlan do
     # MUST stay in sync with frontend/src/Models/Plan.elm#free
     %OrganizationPlan{
       id: :free,
-      name: "Free plan",
+      name: "Free",
       projects: Azimutt.config(:free_plan_projects),
       layouts: Azimutt.config(:free_plan_layouts),
       layout_tables: Azimutt.config(:free_plan_layout_tables),
@@ -45,7 +45,7 @@ defmodule Azimutt.Organizations.OrganizationPlan do
   def pro do
     %OrganizationPlan{
       id: :pro,
-      name: "Pro plan",
+      name: "Pro",
       projects: nil,
       layouts: nil,
       layout_tables: nil,

@@ -1,4 +1,4 @@
-module Models.Plan exposing (Plan, decode, encode, free, full)
+module Models.Plan exposing (Plan, decode, encode, free, pro)
 
 import Conf
 import Json.Decode as Decode
@@ -46,11 +46,11 @@ free =
     }
 
 
-full : Plan
-full =
+pro : Plan
+pro =
     -- used in tests
-    { id = "full"
-    , name = "Full plan"
+    { id = "pro"
+    , name = "Pro"
     , projects = Nothing
     , layouts = Nothing
     , layoutTables = Nothing

@@ -157,7 +157,11 @@ update urlLayout zone now urlInfos organizations projects msg model =
                 model |> mapErdMT (unHideTable now index table) |> setDirtyM
 
         ShowRelatedTables id ->
-            model |> mapErdMT (showRelatedTables now id) |> setDirtyM
+            if model.erd |> Erd.canShowTables 1 then
+                model |> mapErdMT (showRelatedTables now id) |> setDirtyM
+
+            else
+                ( model, Extra.cmdL [ ProPlan.layoutTablesModalBody (model.erd |> Erd.getProjectRefM urlInfos) |> CustomModalOpen |> T.send, Track.planLimit .layoutTables model.erd ] )
 
         HideRelatedTables id ->
             model |> mapErdMT (hideRelatedTables now id) |> setDirtyM

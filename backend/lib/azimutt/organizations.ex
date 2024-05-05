@@ -116,7 +116,7 @@ defmodule Azimutt.Organizations do
 
   def update_organization_subscription(%Organization{} = organization, subscription_id) do
     if organization.stripe_subscription_id do
-      Logger.error("Organization #{organization.id} as already a subscription #{organization.stripe_subscription_id}, it will be replace")
+      Logger.error("Organization #{organization.id} as already a subscription #{organization.stripe_subscription_id}, it will be replaced")
     end
 
     organization = Ecto.Changeset.change(organization, stripe_subscription_id: subscription_id)

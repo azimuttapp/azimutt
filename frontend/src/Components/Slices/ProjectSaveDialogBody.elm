@@ -6,11 +6,12 @@ import Components.Atoms.Link as Link
 import Components.Molecules.FormLabel as FormLabel
 import Components.Molecules.InputText as InputText
 import Components.Molecules.Select as Select
+import Conf
 import ElmBook
 import ElmBook.Actions
 import ElmBook.Chapter as Chapter exposing (Chapter)
-import Html exposing (Html, div, h3, input, label, p, span, text)
-import Html.Attributes exposing (checked, class, classList, disabled, href, id, name, type_, value)
+import Html exposing (Html, a, div, h3, input, label, p, span, text)
+import Html.Attributes exposing (checked, class, classList, disabled, href, id, name, rel, target, type_, value)
 import Html.Events exposing (onClick, onInput)
 import Libs.Bool as Bool
 import Libs.Html exposing (bText)
@@ -18,32 +19,36 @@ import Libs.Html.Attributes exposing (ariaDescribedby, ariaHidden, ariaLabelledb
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.String as String
+import Libs.String as String exposing (pluralize)
 import Libs.Tailwind as Tw
+import Libs.Time as Time
 import Models.Organization exposing (Organization)
 import Models.Plan as Plan exposing (Plan)
 import Models.Project.ProjectName exposing (ProjectName)
 import Models.Project.ProjectStorage as ProjectStorage exposing (ProjectStorage)
+import Models.Project.ProjectVisibility as ProjectVisibility
+import Models.ProjectInfo exposing (ProjectInfo)
 import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
+import Services.Backend as Backend
 
 
 type alias Model =
     { id : HtmlId
     , name : ProjectName
     , organization : Maybe Organization
-    , storage : ProjectStorage
+    , storage : Maybe ProjectStorage
     }
 
 
 type Msg
     = UpdateProjectName ProjectName
     | UpdateOrganization (Maybe Organization)
-    | UpdateStorage ProjectStorage
+    | UpdateStorage (Maybe ProjectStorage)
 
 
 init : HtmlId -> ProjectName -> Maybe Organization -> Model
 init id name organization =
-    { id = id, name = name, organization = organization, storage = ProjectStorage.Remote }
+    { id = id, name = name, organization = organization, storage = Nothing }
 
 
 update : Msg -> Model -> ( Model, Extra msg )
@@ -53,7 +58,7 @@ update msg model =
             ( { model | name = value }, Extra.none )
 
         UpdateOrganization value ->
-            ( { model | organization = value }, Extra.none )
+            ( { model | organization = value, storage = Nothing }, Extra.none )
 
         UpdateStorage value ->
             ( { model | storage = value }, Extra.none )
@@ -84,8 +89,8 @@ signIn modalClose loginUrl titleId =
         ]
 
 
-selectSave : (Msg -> msg) -> msg -> (ProjectName -> Organization -> ProjectStorage -> msg) -> HtmlId -> List Organization -> ProjectName -> Model -> Html msg
-selectSave wrap modalClose save titleId organizations projectName model =
+selectSave : (Msg -> msg) -> msg -> (ProjectName -> Organization -> ProjectStorage -> msg) -> HtmlId -> List Organization -> List ProjectInfo -> ProjectName -> Model -> Html msg
+selectSave wrap modalClose save titleId organizations projects projectName model =
     div [ class "px-4 p-6 max-w-2xl" ]
         [ div []
             [ div [ class "mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-primary-100" ]
@@ -101,57 +106,121 @@ selectSave wrap modalClose save titleId organizations projectName model =
                         "Organization"
                         (\fieldId ->
                             Select.simple fieldId
-                                ({ value = "", label = "-- choose an organization" } :: (organizations |> List.sortBy .name |> List.map (\o -> { value = o.id, label = o.name })))
+                                ({ value = "", label = "-- choose an organization" }
+                                    :: (organizations
+                                            |> List.sortBy .name
+                                            |> List.map
+                                                (\o ->
+                                                    { value = o.id
+                                                    , label =
+                                                        o.name
+                                                            ++ (if o.plan.id == "free" then
+                                                                    ""
+
+                                                                else
+                                                                    " (" ++ o.plan.name ++ ")"
+                                                               )
+                                                    }
+                                                )
+                                       )
+                                )
                                 (model.organization |> Maybe.mapOrElse .id "")
                                 (\orgId -> organizations |> List.findBy .id orgId |> UpdateOrganization |> wrap)
                         )
                     , FormLabel.bold "mt-3"
                         (model.id ++ "-storage")
                         "How do you want to save?"
-                        (\fieldId -> radioCards fieldId (stringToStorage >> UpdateStorage >> wrap) model.storage)
+                        (\fieldId -> radioCards fieldId (stringToStorage >> UpdateStorage >> wrap) projects model.organization model.storage)
+                    , model.organization
+                        |> Maybe.filter (\o -> o.plan.id == "free")
+                        |> Maybe.map (\_ -> p [ class "mt-3 text-sm text-gray-500" ] [ text "If you upgraded to pro, refresh this page, your changes are saved." ])
+                        |> Maybe.withDefault (text "")
                     ]
                 ]
             ]
         , div [ class "mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense" ]
             [ Button.white3 Tw.default [ onClick modalClose ] [ text "Stay in draft" ]
-            , Maybe.map2 (\name orga -> save name orga model.storage) (String.nonEmptyMaybe model.name) model.organization
+            , Maybe.map3 save (String.nonEmptyMaybe model.name) model.organization model.storage
                 |> Maybe.map (\msg -> Button.primary3 Tw.primary [ onClick msg, class "w-full" ] [ text "Create project" ])
                 |> Maybe.withDefault (Button.primary3 Tw.primary [ disabled True, class "w-full" ] [ text "Create project" ])
             ]
         ]
 
 
-type alias Card =
-    { value : String, description : String, notes : String }
+type alias Card msg =
+    { value : ProjectStorage, description : String, notes : List (Html msg), enabled : Bool }
 
 
-radioCards : HtmlId -> (String -> msg) -> ProjectStorage -> Html msg
-radioCards fieldId fieldChange fieldValue =
+radioCards : HtmlId -> (String -> msg) -> List ProjectInfo -> Maybe Organization -> Maybe ProjectStorage -> Html msg
+radioCards fieldId fieldChange projects chosenOrg fieldValue =
+    let
+        ( remoteAllowed, removeNotes ) =
+            chosenOrg
+                |> Maybe.mapOrElse
+                    (\o ->
+                        o.plan.projects
+                            |> Maybe.mapOrElse
+                                (\max ->
+                                    let
+                                        orgProjects : Int
+                                        orgProjects =
+                                            projects |> List.filter (\p -> p.organization |> Maybe.any (\po -> po.id == o.id)) |> List.length
+                                    in
+                                    if max > orgProjects then
+                                        ( True, [ text (((max - orgProjects) |> pluralize "project") ++ " remaining") ] )
+
+                                    else
+                                        ( False
+                                        , [ text ("Already saved " ++ (orgProjects |> pluralize "project") ++ ", you need a ")
+                                          , a [ href (Backend.organizationBillingUrl o.id Conf.features.projects.name), target "_blank", rel "noopener", class "link" ] [ text "pro organization" ]
+                                          , text " now"
+                                          ]
+                                        )
+                                )
+                                ( True, [ text "Enjoy collaboration!" ] )
+                    )
+                    ( False, [ text "2 free projects" ] )
+
+        ( localAllowed, localNotes ) =
+            chosenOrg
+                |> Maybe.mapOrElse
+                    (\o ->
+                        if o.plan.localSave then
+                            ( True, [ text "Only this browser can access it." ] )
+
+                        else
+                            ( False
+                            , [ text "Needs "
+                              , a [ href (Backend.organizationBillingUrl o.id Conf.features.localSave.name), target "_blank", rel "noopener", class "link" ] [ text "pro organization" ]
+                              ]
+                            )
+                    )
+                    ( False, [ text "Needs pro organization" ] )
+    in
     div [ class "grid grid-cols-1 gap-y-2" ]
-        ([ Card (storageToString ProjectStorage.Remote) "Save in Azimutt and share it with other people" "Free up to 3 people"
-         , Card (storageToString ProjectStorage.Local) "Keep your project in your browser" "Free forever"
+        ([ Card ProjectStorage.Remote "Save on Azimutt servers, share with your team." removeNotes remoteAllowed
+         , Card ProjectStorage.Local "Save in your browser, highest privacy, but no sharing." localNotes localAllowed
          ]
             |> List.indexedMap (radioCardLabel fieldId (storageToString fieldValue) fieldChange)
         )
 
 
-radioCardLabel : String -> String -> (String -> msg) -> Int -> Card -> Html msg
+radioCardLabel : String -> String -> (String -> msg) -> Int -> Card msg -> Html msg
 radioCardLabel htmlId fieldValue fieldChange index card =
     let
-        cardId : HtmlId
-        cardId =
-            htmlId ++ "-" ++ String.fromInt index
+        ( cardId, cardValue ) =
+            ( htmlId ++ "-" ++ String.fromInt index, card.value |> Just |> storageToString )
 
         ( isChecked, isActive ) =
-            ( card.value == fieldValue, card.value == fieldValue )
+            ( cardValue == fieldValue, cardValue == fieldValue )
     in
-    label [ css [ "relative flex cursor-pointer rounded-lg border bg-white p-4 shadow-sm focus:outline-none", Bool.cond isChecked "border-transparent" "border-gray-300" ], classList [ ( "border-indigo-500 ring-2 ring-indigo-500", isActive ) ] ]
-        [ input [ type_ "radio", name htmlId, value card.value, onInput fieldChange, checked isChecked, class "sr-only", ariaLabelledby (cardId ++ "-label"), ariaDescribedby (cardId ++ "-description " ++ cardId ++ "-notes") ] []
+    label [ css [ "relative flex rounded-lg border bg-white p-4 shadow-sm focus:outline-none", Bool.cond isChecked "border-transparent" "border-gray-300" ], classList [ ( "cursor-pointer", card.enabled ), ( "opacity-50", not card.enabled ), ( "border-indigo-500 ring-2 ring-indigo-500", isActive ) ] ]
+        [ input [ type_ "radio", name htmlId, value cardValue, onInput fieldChange, checked isChecked, disabled (not card.enabled), class "sr-only", ariaLabelledby (cardId ++ "-label"), ariaDescribedby (cardId ++ "-description " ++ cardId ++ "-notes") ] []
         , span [ class "flex flex-1" ]
             [ span [ class "flex flex-col" ]
-                [ span [ id (cardId ++ "-label"), class "block text-sm font-medium text-gray-900" ] [ text card.value ]
+                [ span [ id (cardId ++ "-label"), class "block text-sm font-medium text-gray-900" ] [ text cardValue ]
                 , span [ id (cardId ++ "-description"), class "mt-1 flex items-center text-sm text-gray-500" ] [ text card.description ]
-                , span [ id (cardId ++ "-notes"), class "mt-6 text-sm font-medium text-gray-900" ] [ text card.notes ]
+                , span [ id (cardId ++ "-notes"), class "mt-6 text-sm font-medium text-gray-900" ] card.notes
                 ]
             ]
         , Icon.solid Icon.CheckCircle (Bool.cond isChecked "text-indigo-600" "invisible")
@@ -159,27 +228,30 @@ radioCardLabel htmlId fieldValue fieldChange index card =
         ]
 
 
-storageToString : ProjectStorage -> String
+storageToString : Maybe ProjectStorage -> String
 storageToString storage =
     case storage of
-        ProjectStorage.Local ->
+        Just ProjectStorage.Local ->
             "Local"
 
-        ProjectStorage.Remote ->
+        Just ProjectStorage.Remote ->
             "Remote"
 
+        Nothing ->
+            ""
 
-stringToStorage : String -> ProjectStorage
+
+stringToStorage : String -> Maybe ProjectStorage
 stringToStorage value =
     case value of
         "Local" ->
-            ProjectStorage.Local
+            Just ProjectStorage.Local
 
         "Remote" ->
-            ProjectStorage.Remote
+            Just ProjectStorage.Remote
 
         _ ->
-            ProjectStorage.Remote
+            Nothing
 
 
 
@@ -196,7 +268,7 @@ type alias DocState =
 
 docInit : DocState
 docInit =
-    { id = "modal-id", name = "MyProject", organization = Nothing, storage = ProjectStorage.Remote }
+    { id = "modal-id", name = "MyProject", organization = Nothing, storage = Nothing }
 
 
 updateDocState : Msg -> ElmBook.Msg (SharedDocState x)
@@ -216,7 +288,7 @@ docCloseModal =
 
 docSave : ProjectName -> Organization -> ProjectStorage -> ElmBook.Msg state
 docSave name orga storage =
-    ElmBook.Actions.logAction ("save: " ++ name ++ ", " ++ orga.name ++ ", " ++ storageToString storage)
+    ElmBook.Actions.logAction ("save: " ++ name ++ ", " ++ orga.name ++ ", " ++ (storage |> Just |> storageToString))
 
 
 docLoginUrl : String
@@ -234,11 +306,31 @@ docProjectName =
     "MyProject"
 
 
+docOrga1 : Organization
+docOrga1 =
+    Organization "00000000-0000-0000-0000-000000000001" "orga-1" "Orga 1" Plan.pro "logo" Nothing Nothing Nothing
+
+
+docOrga2 : Organization
+docOrga2 =
+    Organization "00000000-0000-0000-0000-000000000002" "orga-2" "Orga 2" Plan.free "logo" Nothing Nothing Nothing
+
+
+docOrga3 : Organization
+docOrga3 =
+    Organization "00000000-0000-0000-0000-000000000003" "orga-3" "Orga 3" Plan.free "logo" Nothing Nothing Nothing
+
+
 docOrganizations : List Organization
 docOrganizations =
-    [ Organization "00000000-0000-0000-0000-000000000001" "orga-1" "Orga 1" Plan.free "logo" Nothing Nothing Nothing
-    , Organization "00000000-0000-0000-0000-000000000002" "orga-2" "Orga 2" Plan.free "logo" Nothing Nothing Nothing
-    , Organization "00000000-0000-0000-0000-000000000003" "orga-3" "Orga 3" Plan.free "logo" Nothing Nothing Nothing
+    [ docOrga1, docOrga2, docOrga3 ]
+
+
+docProjects : List ProjectInfo
+docProjects =
+    [ ProjectInfo (Just docOrga2) "00000000-0000-0000-0000-000000000001" "prj1" "Projet 1" Nothing ProjectStorage.Remote ProjectVisibility.None 2 1 0 0 0 0 0 0 0 0 Time.zero Time.zero
+    , ProjectInfo (Just docOrga3) "00000000-0000-0000-0000-000000000002" "prj2" "Projet 2" Nothing ProjectStorage.Remote ProjectVisibility.None 2 1 0 0 0 0 0 0 0 0 Time.zero Time.zero
+    , ProjectInfo (Just docOrga3) "00000000-0000-0000-0000-000000000003" "prj3" "Projet 3" Nothing ProjectStorage.Remote ProjectVisibility.None 2 1 0 0 0 0 0 0 0 0 Time.zero Time.zero
     ]
 
 
@@ -247,5 +339,5 @@ doc =
     Chapter.chapter "ProjectSaveDialogBody"
         |> Chapter.renderStatefulComponentList
             [ component "signIn" (\_ -> signIn docCloseModal docLoginUrl docTitleId)
-            , component "selectSave" (selectSave updateDocState docCloseModal docSave docTitleId docOrganizations docProjectName)
+            , component "selectSave" (selectSave updateDocState docCloseModal docSave docTitleId docOrganizations docProjects docProjectName)
             ]
