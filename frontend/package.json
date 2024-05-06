@@ -49,18 +49,18 @@
     "book": "elm-book src/Components/Book.elm --dir=../backend/priv/static/elm --start-page=book.html --port 4002 -- --output=../backend/priv/static/elm/dist/book.js"
   },
   "dependencies": {
-    "@azimutt/models": "^0.1.0",
+    "@azimutt/models": "^0.1.1",
     "@azimutt/serde-prisma": "^0.1.0",
-    "@azimutt/utils": "^0.1.0",
-    "@sentry/browser": "7.112.2",
-    "@sentry/tracing": "7.112.2",
-    "canvas-confetti": "1.9.2",
+    "@azimutt/utils": "^0.1.1",
+    "@sentry/browser": "7.113.0",
+    "@sentry/tracing": "7.113.0",
+    "canvas-confetti": "1.9.3",
     "jiff": "0.7.3",
-    "zod": "3.23.4"
+    "zod": "3.23.6"
   },
   "devDependencies": {
     "@tailwindcss/forms": "^0.5.7",
-    "@tailwindcss/typography": "^0.5.12",
+    "@tailwindcss/typography": "^0.5.13",
     "@types/canvas-confetti": "^1.6.4",
     "@types/jest": "^29.5.12",
     "concurrently": "^8.2.2",
@@ -69,7 +69,7 @@
     "elm-format": "^0.8.7",
     "elm-go": "^5.0.20",
     "elm-json": "^0.2.13",
-    "elm-review": "^2.11.1",
+    "elm-review": "^2.11.2",
     "elm-spa": "^6.0.6",
     "elm-test": "^0.19.1-revision12",
     "esbuild": "^0.20.2",
