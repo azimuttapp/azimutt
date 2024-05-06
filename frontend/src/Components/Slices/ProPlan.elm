@@ -1,4 +1,4 @@
-module Components.Slices.ProPlan exposing (ColorsModel, ColorsMsg(..), DocState, SharedDocState, analysisResults, analysisWarning, colorsInit, colorsModalBody, colorsUpdate, doc, docInit, groupsModalBody, layoutsModalBody, layoutsWarning, memosModalBody, privateLinkWarning, sqlExportWarning)
+module Components.Slices.ProPlan exposing (ColorsModel, ColorsMsg(..), DocState, SharedDocState, analysisResults, analysisWarning, colorsInit, colorsModalBody, colorsUpdate, doc, docInit, groupsModalBody, layoutTablesModalBody, layoutsModalBody, layoutsWarning, memosModalBody, privateLinkWarning, projectsModalBody, sqlExportWarning)
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon)
@@ -29,6 +29,17 @@ import Services.Backend as Backend exposing (TableColorTweet)
 import Services.Lenses exposing (setColors, setResult)
 
 
+draftProjectWarning : Html msg
+draftProjectWarning =
+    warning Tw.indigo
+        "Oh no! You are limited by your draft project 😕"
+        [ p [] [ text "As your project is ", bText "still in draft", text ", you have free plan limitations." ]
+        , p [] [ text "Save it to an organization with a ", bText "pro plan", text " to unlock them." ]
+        , p [] [ text "Subscribing to Azimutt pro plan will unlock its full power, ", extLink "/pricing" [ class "link" ] [ text "check it out" ], text "." ]
+        ]
+        []
+
+
 draftProjectModalBody : msg -> HtmlId -> Html msg
 draftProjectModalBody close titleId =
     modalBody Tw.indigo
@@ -42,15 +53,22 @@ draftProjectModalBody close titleId =
         ]
 
 
-draftProjectWarning : Html msg
-draftProjectWarning =
-    warning Tw.indigo
-        "Oh no! You are limited by your draft project 😕"
-        [ p [] [ text "As your project is ", bText "still in draft", text ", you have free plan limitations." ]
-        , p [] [ text "Save it to an organization with a ", bText "pro plan", text " to unlock them." ]
-        , p [] [ text "Subscribing to Azimutt pro plan will unlock its full power, ", extLink "/pricing" [ class "link" ] [ text "check it out" ], text "." ]
+projectsModalBody : ProjectRef -> msg -> HtmlId -> Html msg
+projectsModalBody project close titleId =
+    let
+        ( color, limit ) =
+            ( Tw.teal, project.organization.plan.projects |> Maybe.withDefault Conf.features.projects.free )
+    in
+    showModalBody ( project, close, color )
+        Icon.Collection
+        ( titleId, "Projects" )
+        [ p [ class "text-sm text-gray-500" ] [ bText ("Oh! Free plans are limited to " ++ String.pluralize "project" limit ++ ".") ]
+        , p [ class "text-sm text-gray-500" ] [ text "We are making Azimutt free for exploration but heavy use of it needs to also contribute to its development in order to make it sustainable." ]
+        , p [ class "text-sm text-gray-500" ] [ text "Please consider subscribing to our pro plan to contribute to it and unlock all the features!" ]
         ]
-        []
+        [ Link.primary3 color [ href (Backend.organizationBillingUrl project.organization.id Conf.features.projects.name), target "_blank", rel "noopener", css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ Icon.solid Icon.Sun "mr-1", text "Upgrade plan" ]
+        , Button.white3 Tw.gray [ onClick close, css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text "Cancel" ]
+        ]
 
 
 layoutsWarning : ProjectRef -> Html msg
@@ -83,6 +101,24 @@ layoutsModalBody project close titleId =
         , p [ class "text-sm text-gray-500" ] [ text "That's why we created a paid plan. Please consider your contribution to this awesome Azimutt community, it will ", bText "bring us much further together", text "." ]
         ]
         [ Link.primary3 color [ href (Backend.organizationBillingUrl project.organization.id Conf.features.layouts.name), target "_blank", rel "noopener", css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ Icon.solid Icon.Sparkles "mr-1", text "Upgrade plan" ]
+        , Button.white3 Tw.gray [ onClick close, css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text "Cancel" ]
+        ]
+
+
+layoutTablesModalBody : ProjectRef -> msg -> HtmlId -> Html msg
+layoutTablesModalBody project close titleId =
+    let
+        ( color, limit ) =
+            ( Tw.sky, project.organization.plan.layoutTables |> Maybe.withDefault Conf.features.layoutTables.free )
+    in
+    showModalBody ( project, close, color )
+        Icon.Calculator
+        ( titleId, "Tables in layout" )
+        [ p [ class "text-sm text-gray-500" ] [ bText ("Ooops, you just hit a plan limit, you can only add " ++ String.pluralize "table" limit ++ " per layout!") ]
+        , p [ class "text-sm text-gray-500" ] [ text "We hope you like experimenting with Azimutt but, as you know, we have to make it sustainable to continue its long term development." ]
+        , p [ class "text-sm text-gray-500" ] [ text "Please consider subscribing to our pro plan to contribute to it and unlock all the features!" ]
+        ]
+        [ Link.primary3 color [ href (Backend.organizationBillingUrl project.organization.id Conf.features.layoutTables.name), target "_blank", rel "noopener", css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ Icon.solid Icon.CheckCircle "mr-1", text "Upgrade plan" ]
         , Button.white3 Tw.gray [ onClick close, css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text "Cancel" ]
         ]
 
@@ -438,10 +474,12 @@ doc : Chapter (SharedDocState x)
 doc =
     Chapter.chapter "ProPlan"
         |> Chapter.renderStatefulComponentList
-            [ ( "draftProjectModalBody", \_ -> draftProjectModalBody docClose docTitleId )
-            , ( "draftProjectWarning", \_ -> draftProjectWarning )
+            [ ( "draftProjectWarning", \_ -> draftProjectWarning )
+            , ( "draftProjectModalBody", \_ -> draftProjectModalBody docClose docTitleId )
+            , ( "projectsModalBody", \_ -> projectsModalBody projectRef docClose docTitleId )
             , ( "layoutsWarning", \_ -> layoutsWarning projectRef )
             , ( "layoutsModalBody", \_ -> layoutsModalBody projectRef docClose docTitleId )
+            , ( "layoutTablesModalBody", \_ -> layoutTablesModalBody projectRef docClose docTitleId )
             , ( "memosModalBody", \_ -> memosModalBody projectRef docClose docTitleId )
             , ( "groupsModalBody", \_ -> groupsModalBody projectRef docClose docTitleId )
             , ( "colorsModalBody", \s -> colorsModalBody projectRef docColorsUpdate s.proPlanDocState.colors docClose docTitleId )

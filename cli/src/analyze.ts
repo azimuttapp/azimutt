@@ -5,10 +5,10 @@ import {
     Database,
     DatabaseUrlParsed,
     parseDatabaseUrl,
-    RuleViolation,
-    RuleLevel
+    RuleLevel,
+    RuleViolation
 } from "@azimutt/models";
-import {getConnector} from "@azimutt/gateway";
+import {getConnector, track} from "@azimutt/gateway";
 import {loggerNoOp} from "./utils/logger.js";
 
 export type Opts = {
@@ -19,6 +19,7 @@ export type Opts = {
 // TODO: add config to choose and configure rules (thresholds & ignores)
 export async function launchAnalyze(url: string, opts: Opts, logger: Logger): Promise<void> {
     const parsed: DatabaseUrlParsed = parseDatabaseUrl(url)
+    track('cli__analyze__run', {database: parsed.kind}, 'cli').then(() => {})
     const connector: Connector | undefined = getConnector(parsed)
     if (!connector) return Promise.reject('Invalid connector')
 

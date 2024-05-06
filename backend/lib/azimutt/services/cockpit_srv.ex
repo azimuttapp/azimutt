@@ -18,11 +18,11 @@ defmodule Azimutt.Services.CockpitSrv do
   end
 
   def check(startup) do
-    # TODO: add code version
     post("/api/licences/check", %{
       instance: Azimutt.config(:host),
       environment: Azimutt.config(:environment),
       licence: Azimutt.config(:licence),
+      version: Azimutt.config(:version),
       startup: startup,
       db: db_stats(),
       config: instance_conf()
@@ -65,6 +65,7 @@ defmodule Azimutt.Services.CockpitSrv do
       id: event.id,
       instance: Azimutt.config(:host),
       environment: Azimutt.config(:environment),
+      version: Azimutt.config(:version),
       name: event.name,
       details: event.details || %{} |> Map.filter(fn {_, val} -> val != nil end),
       entities:
@@ -83,7 +84,7 @@ defmodule Azimutt.Services.CockpitSrv do
 
     @impl true
     def init(state) do
-      :timer.send_interval(60 * 60 * 1000, :work)
+      :timer.send_interval(24 * 60 * 60 * 1000, :work)
       {:ok, state}
     end
 

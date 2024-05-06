@@ -115,8 +115,8 @@ And then "special" commands:
 
 - Install [Stripe CLI](https://stripe.com/docs/stripe-cli) and login with `stripe login`
 - Run `stripe listen --forward-to localhost:4000/webhook/stripe`
-- Copy your webhook signing secret to your `.env`, it's look like (`whsec_XXX`)
-- Go to [your Stripe dashboard](https://dashboard.stripe.com/test/apikeys) to obtain your API Key and copy it into `STRIPE_API_KEY` in your `.env` file.
+- Copy your webhook signing secret to `STRIPE_WEBHOOK_SIGNING_SECRET` variable in your `.env` file (looks like `whsec_...`)
+- Go to [your Stripe dashboard](https://dashboard.stripe.com/test/apikeys) to obtain your API Key and copy it into `STRIPE_API_KEY` in your `.env` file (looks like: `sk_test_...`)
 
 
 #### Payments

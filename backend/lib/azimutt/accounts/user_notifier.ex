@@ -17,7 +17,7 @@ defmodule Azimutt.Accounts.UserNotifier do
     If you didn't create an account with us, please ignore this.
 
     Happy database hunting,
-    Samir & Loïc, from Azimutt
+    Loïc from Azimutt
     """)
   end
 
@@ -32,7 +32,7 @@ defmodule Azimutt.Accounts.UserNotifier do
     If you didn't request this change, please ignore this.
 
     Happy database hunting,
-    Samir & Loïc, from Azimutt
+    Loïc from Azimutt
     """)
   end
 
@@ -48,7 +48,7 @@ defmodule Azimutt.Accounts.UserNotifier do
     If you didn't request this change, please ignore this.
 
     Happy database hunting,
-    Samir & Loïc, from Azimutt
+    Loïc from Azimutt
     """)
   end
 
@@ -65,7 +65,7 @@ defmodule Azimutt.Accounts.UserNotifier do
     If you are not interested, you can ignore this email. The invitation will expire after a few days.
 
     Happy database hunting,
-    Samir & Loïc, from Azimutt
+    Loïc from Azimutt
     """)
   end
 
