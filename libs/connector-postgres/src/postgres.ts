@@ -649,7 +649,7 @@ export const getTypes = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promi
           AND (c.relkind IS NULL OR c.relkind = 'c')
           AND tt.oid IS NULL
           AND ${scopeWhere({schema: 'n.nspname'}, opts)}
-        GROUP BY t.oid
+        GROUP BY t.oid, t.typname, t.typtype, t.typcategory, t.typlen, t.typdelim, t.typdefault
         ORDER BY type_schema, type_name;`, [], 'getTypes'
     ).catch(handleError(`Failed to get types`, [], opts))
 }
