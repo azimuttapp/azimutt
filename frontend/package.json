@@ -49,7 +49,7 @@
     "book": "elm-book src/Components/Book.elm --dir=../backend/priv/static/elm --start-page=book.html --port 4002 -- --output=../backend/priv/static/elm/dist/book.js"
   },
   "dependencies": {
-    "@azimutt/models": "^0.1.1",
+    "@azimutt/models": "^0.1.2",
     "@azimutt/serde-prisma": "^0.1.0",
     "@azimutt/utils": "^0.1.1",
     "@sentry/browser": "7.113.0",
