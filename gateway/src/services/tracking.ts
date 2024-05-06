@@ -15,5 +15,5 @@ export async function track(name: string, details: object, instance: string, env
             details,
             createdAt: new Date().toISOString()
         })
-    }).then(() => {})
+    }).then(() => {}, () => {})
 }

@@ -13,15 +13,23 @@ export function buildSqlColumn(path: AttributePath): SqlFragment {
 export type ScopeFields = { database?: SqlFragment, catalog?: SqlFragment, schema?: SqlFragment, entity?: SqlFragment }
 
 export function scopeWhere(fields: ScopeFields, opts: ConnectorScopeOpts): SqlFragment {
-    const databaseFilter = fields.database && opts.database ? `${fields.database} ${scopeOp(opts.database)} '${opts.database}'` : ''
-    const catalogFilter = fields.catalog && opts.catalog ? `${fields.catalog} ${scopeOp(opts.catalog)} '${opts.catalog}'` : ''
-    const schemaFilter = fields.schema && opts.schema ? `${fields.schema} ${scopeOp(opts.schema)} '${opts.schema}'` : `${fields.schema} NOT IN ('information_schema', 'pg_catalog')`
-    const entityFilter = fields.entity && opts.entity ? `${fields.entity} ${scopeOp(opts.entity)} '${opts.entity}'` : ''
+    const databaseFilter = fields.database && opts.database ? `${fields.database} ${scopeOp(opts.database)} '${scopeValue(opts.database)}'` : ''
+    const catalogFilter = fields.catalog && opts.catalog ? `${fields.catalog} ${scopeOp(opts.catalog)} '${scopeValue(opts.catalog)}'` : ''
+    const schemaFilter = fields.schema && opts.schema ? `${fields.schema} ${scopeOp(opts.schema)} '${scopeValue(opts.schema)}'` : fields.schema ? `${fields.schema} NOT IN ('information_schema', 'pg_catalog')` : ''
+    const entityFilter = fields.entity && opts.entity ? `${fields.entity} ${scopeOp(opts.entity)} '${scopeValue(opts.entity)}'` : ''
     return [databaseFilter, catalogFilter, schemaFilter, entityFilter].filter(f => !!f).join(' AND ')
 }
 
 function scopeOp(scope: string): SqlFragment {
-    return scope.includes('%') ? 'LIKE' : '='
+    if (scope.startsWith('!')) {
+        return scope.includes('%') ? 'NOT LIKE' : '!='
+    } else {
+        return scope.includes('%') ? 'LIKE' : '='
+    }
+}
+
+function scopeValue(scope: string): SqlFragment {
+    return scope.startsWith('!') ? scope.slice(1) : scope
 }
 
 // sadly pg_catalog schema doesn't have relations, so let's define them here for easy exploration
