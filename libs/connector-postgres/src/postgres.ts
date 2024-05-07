@@ -628,16 +628,16 @@ export const getTypes = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promi
     // `(c.relkind IS NULL OR c.relkind = 'c')`: avoid table types
     // `tt.oid IS NULL`: avoid array types
     return conn.query<RawType>(`
-        SELECT min(n.nspname)                    AS type_schema
-             -- , min(o.rolname)                    AS type_owner
-             , t.typname                         AS type_name
-             , t.typtype                         AS type_kind
-             , t.typcategory                     AS type_category
-             , array_agg(e.enumlabel)::varchar[] AS type_values
-             , t.typlen                          AS type_len
-             , t.typdelim                        AS type_delimiter
-             , t.typdefault                      AS type_default
-             , min(d.description)                AS type_comment
+        SELECT min(n.nspname)                                        AS type_schema
+             -- , min(o.rolname)                                        AS type_owner
+             , t.typname                                             AS type_name
+             , t.typtype                                             AS type_kind
+             , t.typcategory                                         AS type_category
+             , array_remove(array_agg(e.enumlabel), null)::varchar[] AS type_values
+             , t.typlen                                              AS type_len
+             , t.typdelim                                            AS type_delimiter
+             , t.typdefault                                          AS type_default
+             , min(d.description)                                    AS type_comment
         FROM pg_type t
                  JOIN pg_namespace n ON n.oid = t.typnamespace
                  -- JOIN pg_authid o ON o.oid = t.typowner
