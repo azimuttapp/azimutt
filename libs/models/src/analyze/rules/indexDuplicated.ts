@@ -30,7 +30,10 @@ export type IndexDuplicated = {entity: Entity, index: Index, coveredBy: Index[]}
 
 // same as frontend/src/PagesComponents/Organization_/Project_/Views/Modals/SchemaAnalysis/IndexDuplicated.elm
 export function getDuplicatedIndexes(entity: Entity): IndexDuplicated[] {
-    return findDuplicated(entity, (entity.indexes || []).slice().sort((a, b) => (a.attrs.length - b.attrs.length) || (a.attrs.join(',').localeCompare(b.attrs.join(',')))))
+    const indexes = (entity.indexes || [])
+        .filter(i => !i.attrs.some(a => a[0] === 'unknown' || a[0] === '*expression*')) // ignore indexes with expressions
+        .sort((a, b) => (a.attrs.length - b.attrs.length) || (a.attrs.join(',').localeCompare(b.attrs.join(','))))
+    return findDuplicated(entity, indexes)
 }
 
 function findDuplicated(entity: Entity, indexes: Index[], duplicates: IndexDuplicated[] = []): IndexDuplicated[] {

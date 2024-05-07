@@ -1,6 +1,6 @@
 {
   "name": "@azimutt/gateway",
-  "version": "0.1.4",
+  "version": "0.1.6",
   "description": "A Gateway to proxy database access for Azimutt frontend",
   "keywords": [
     "database",
@@ -48,10 +48,10 @@
     "@azimutt/connector-mariadb": "^0.1.0",
     "@azimutt/connector-mongodb": "^0.1.0",
     "@azimutt/connector-mysql": "^0.1.0",
-    "@azimutt/connector-postgres": "^0.1.3",
+    "@azimutt/connector-postgres": "^0.1.4",
     "@azimutt/connector-snowflake": "^0.1.0",
     "@azimutt/connector-sqlserver": "^0.1.0",
-    "@azimutt/models": "^0.1.2",
+    "@azimutt/models": "^0.1.3",
     "@azimutt/utils": "^0.1.1",
     "@fastify/cors": "8.2.1",
     "@sinclair/typebox": "0.28.10",
@@ -62,7 +62,7 @@
     "fastify-plugin": "4.5.0"
   },
   "devDependencies": {
-    "@types/node": "^20.12.9",
+    "@types/node": "^20.12.10",
     "@typescript-eslint/eslint-plugin": "^7.8.0",
     "@typescript-eslint/parser": "^7.8.0",
     "esbuild": "^0.20.2",
