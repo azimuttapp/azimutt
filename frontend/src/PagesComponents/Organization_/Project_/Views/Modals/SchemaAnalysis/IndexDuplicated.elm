@@ -53,7 +53,7 @@ heading errors =
     List.length errors
         |> (\count ->
                 if count == 0 then
-                    "No duplicated index found found"
+                    "No duplicated index found"
 
                 else
                     "Found " ++ (count |> String.pluralize "duplicated index")

@@ -179,7 +179,7 @@ export type RawTable = {
     vacuum_last: Date | null
     autovacuum_count: number | null
     autovacuum_last: Date | null
-    changes_since_vacuum: number | null
+    // changes_since_vacuum: number | null // TODO: `column s.n_ins_since_vacuum does not exist` in a client db
     toast_schema: string | null
     toast_name: string | null
     toast_blocks: number | null
@@ -225,7 +225,7 @@ export const getTables = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
              , s.last_vacuum               AS vacuum_last
              , s.autovacuum_count
              , s.last_autovacuum           AS autovacuum_last
-             , s.n_ins_since_vacuum        AS changes_since_vacuum
+             -- , s.n_ins_since_vacuum        AS changes_since_vacuum
              , tn.nspname                  AS toast_schema
              , tc.relname                  AS toast_name
              , io.toast_blks_read          AS toast_blocks
@@ -442,7 +442,7 @@ export const getConstraints = (opts: ConnectorSchemaOpts) => async (conn: Conn):
 function buildPrimaryKey(c: RawConstraint, columns: { [i: number]: string }): PrimaryKey {
     return removeUndefined({
         name: c.constraint_name,
-        attrs: c.columns.map(i => [columns[i] || 'unknown']),
+        attrs: c.columns.map(i => [getColumnName(columns, i)]),
         doc: c.constraint_comment || undefined,
         stats: undefined,
         extra: undefined
@@ -452,7 +452,7 @@ function buildPrimaryKey(c: RawConstraint, columns: { [i: number]: string }): Pr
 function buildCheck(c: RawConstraint, columns: { [i: number]: string }): Check {
     return removeUndefined({
         name: c.constraint_name,
-        attrs: c.columns.map(i => [columns[i] || 'unknown']),
+        attrs: c.columns.map(i => [getColumnName(columns, i)]),
         predicate: c.definition,
         doc: c.constraint_comment || undefined,
         stats: undefined,
@@ -513,7 +513,7 @@ export const getIndexes = (opts: ConnectorSchemaOpts) => async (conn: Conn): Pro
 function buildIndex(blockSize: number, index: RawIndex, columns: { [i: number]: string }): Index {
     return removeUndefined({
         name: index.index_name,
-        attrs: index.columns.map(i => [columns[i] || (i === 0 ? '*expression*' : 'unknown')]), // TODO: handle indexes on nested json columns
+        attrs: index.columns.map(i => [getColumnName(columns, i)]), // TODO: handle indexes on nested json columns
         unique: index.is_unique || undefined,
         partial: index.partial || undefined,
         definition: index.definition,
@@ -708,4 +708,8 @@ const getDistinctValues = (ref: EntityRef, attribute: AttributePath, opts: Conne
     return conn.query<{value: AttributeValue}>(`SELECT DISTINCT ${sqlColumn} AS value FROM ${sqlTable} WHERE ${sqlColumn} IS NOT NULL ORDER BY value LIMIT ${sampleSize};`, [], 'getDistinctValues')
         .then(rows => rows.map(row => row.value))
         .catch(handleError(`Failed to get distinct values for '${attributeRefToId({...ref, attribute})}'`, [], opts))
+}
+
+function getColumnName(columns: { [i: number]: string }, index: number): AttributeName {
+    return columns[index] || (index === 0 ? '*expression*' : 'unknown')
 }

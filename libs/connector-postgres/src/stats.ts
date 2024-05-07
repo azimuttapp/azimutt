@@ -1,6 +1,5 @@
 import {shuffle} from "@azimutt/utils";
 import {
-    AttributeName,
     AttributeRef,
     AttributeType,
     AttributeValue,
@@ -41,15 +40,15 @@ async function getSampleValues(conn: Conn, sqlTable: SqlFragment): Promise<{ [at
     const result = await conn.queryArrayMode(sql)
     const samples = await Promise.all(result.fields.map(async (field, fieldIndex) => {
         const values = shuffle(result.rows.map(row => row[fieldIndex]).filter(v => !!v))
-        const value = await (values.length > 0 ? Promise.resolve(values[0]) : getSampleValue(conn, sqlTable, field.name))
+        const value = await (values.length > 0 ? Promise.resolve(values[0]) : getSampleValue(conn, sqlTable, buildSqlColumn([field.name])))
         return [field.name, value] as [string, AttributeValue]
     }))
     return Object.fromEntries(samples)
 }
 
-async function getSampleValue(conn: Conn, sqlTable: SqlFragment, column: AttributeName): Promise<AttributeValue> {
+async function getSampleValue(conn: Conn, sqlTable: SqlFragment, sqlColumn: SqlFragment): Promise<AttributeValue> {
     // select several raws to and then shuffle results to avoid showing samples from the same raw
-    const sql = `SELECT ${column} AS value FROM ${sqlTable} WHERE ${column} IS NOT NULL LIMIT 10;`
+    const sql = `SELECT ${sqlColumn} AS value FROM ${sqlTable} WHERE ${sqlColumn} IS NOT NULL LIMIT 10;`
     const rows = await conn.query<{ value: AttributeValue }>(sql)
     return rows.length > 0 ? shuffle(rows)[0].value : null
 }

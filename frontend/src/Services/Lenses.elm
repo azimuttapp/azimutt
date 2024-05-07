@@ -54,7 +54,7 @@ module Services.Lenses exposing
     , mapMemosT
     , mapMetadata
     , mapMobileMenuOpen
-    , mapModalM
+    , mapModalMF
     , mapNameT
     , mapNavbar
     , mapNewLayoutMT
@@ -126,6 +126,7 @@ module Services.Lenses exposing
     , setColumns
     , setConfirm
     , setContent
+    , setContentF
     , setContextMenu
     , setCurrentLayout
     , setCursorMode
@@ -401,6 +402,12 @@ setConfirm =
 setContent : v -> { item | content : v } -> { item | content : v }
 setContent =
     set_ .content (\value item -> { item | content = value })
+
+
+setContentF : v -> { item | content : v } -> { item | content : v }
+setContentF v i =
+    -- `F` suffix means function, don't perform equality checks to avoid Elm errors
+    { i | content = v }
 
 
 mapContent : (v -> v) -> { item | content : v } -> { item | content : v }
@@ -828,9 +835,10 @@ setModal =
     set_ .modal (\value item -> { item | modal = value })
 
 
-mapModalM : (v -> v) -> { item | modal : Maybe v } -> { item | modal : Maybe v }
-mapModalM =
-    mapM_ .modal setModal
+mapModalMF : (v -> v) -> { item | modal : Maybe v } -> { item | modal : Maybe v }
+mapModalMF f i =
+    -- `F` suffix means function, don't perform equality checks to avoid Elm errors
+    i.modal |> Maybe.map (\m -> { i | modal = m |> f |> Just }) |> Maybe.withDefault i
 
 
 setMouse : v -> { item | mouse : v } -> { item | mouse : v }
