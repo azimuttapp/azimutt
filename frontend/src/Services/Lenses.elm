@@ -48,6 +48,7 @@ module Services.Lenses exposing
     , mapLayoutsDTL
     , mapLayoutsDTM
     , mapList
+    , mapLlm
     , mapMT
     , mapMemos
     , mapMemosLT
@@ -163,10 +164,12 @@ module Services.Lenses exposing
     , setInput
     , setIsOpen
     , setJsonSource
+    , setKey
     , setLast
     , setLayoutOnLoad
     , setLayouts
     , setList
+    , setLlm
     , setMax
     , setMemos
     , setMetadata
@@ -740,6 +743,11 @@ mapJsonSourceMT transform item =
     mapMT_ .jsonSource setJsonSource transform item
 
 
+setKey : v -> { item | key : v } -> { item | key : v }
+setKey =
+    set_ .key (\value item -> { item | key = value })
+
+
 setLast : v -> { item | last : v } -> { item | last : v }
 setLast =
     set_ .last (\value item -> { item | last = value })
@@ -783,6 +791,16 @@ mapLayoutsDTL =
 setList : v -> { item | list : v } -> { item | list : v }
 setList =
     set_ .list (\value item -> { item | list = value })
+
+
+setLlm : v -> { item | llm : v } -> { item | llm : v }
+setLlm =
+    set_ .llm (\value item -> { item | llm = value })
+
+
+mapLlm : (v -> v) -> { item | llm : v } -> { item | llm : v }
+mapLlm =
+    map_ .llm setLlm
 
 
 setMax : v -> { item | max : v } -> { item | max : v }

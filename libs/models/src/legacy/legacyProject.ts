@@ -634,6 +634,7 @@ export interface LegacySettings {
     relationStyle?: 'Bezier' | 'Straight' | 'Steps'
     columnBasicTypes?: boolean
     collapseTableColumns?: boolean
+    llm?: { key?: string }
 }
 
 export const LegacySettings = z.object({
@@ -655,7 +656,10 @@ export const LegacySettings = z.object({
     columnOrder: z.enum(['sql', 'property', 'name', 'type']).optional(),
     relationStyle: z.enum(['Bezier', 'Straight', 'Steps']).optional(),
     columnBasicTypes: z.boolean().optional(),
-    collapseTableColumns: z.boolean().optional()
+    collapseTableColumns: z.boolean().optional(),
+    llm: z.object({
+        key: z.string().optional(),
+    }).strict().optional(),
 }).strict()
 
 export type LegacyProjectStorage = 'local' | 'remote'

@@ -35,7 +35,7 @@ import Models.Project.PrimaryKeyName exposing (PrimaryKeyName)
 import Models.Project.ProjectEncodingVersion as ProjectEncodingVersion exposing (ProjectEncodingVersion)
 import Models.Project.ProjectId exposing (ProjectId)
 import Models.Project.ProjectName exposing (ProjectName)
-import Models.Project.ProjectSettings exposing (HiddenColumns, ProjectSettings)
+import Models.Project.ProjectSettings exposing (HiddenColumns, LlmSettings, ProjectSettings)
 import Models.Project.ProjectSlug exposing (ProjectSlug)
 import Models.Project.ProjectStorage as ProjectStrorage exposing (ProjectStorage)
 import Models.Project.ProjectVisibility as ProjectVisibility exposing (ProjectVisibility)
@@ -262,7 +262,7 @@ rowValue =
 
 projectSettings : Fuzzer ProjectSettings
 projectSettings =
-    Fuzz.map10 ProjectSettings findPathSettings schemaName (listSmall schemaName) Fuzz.bool stringSmall findHiddenColumns columnOrder relationStyle Fuzz.bool Fuzz.bool
+    Fuzz.map11 ProjectSettings findPathSettings schemaName (listSmall schemaName) Fuzz.bool stringSmall findHiddenColumns columnOrder relationStyle Fuzz.bool Fuzz.bool projectSettingsLlm
 
 
 findPathSettings : Fuzzer FindPathSettings
@@ -273,6 +273,11 @@ findPathSettings =
 findHiddenColumns : Fuzzer HiddenColumns
 findHiddenColumns =
     Fuzz.map4 HiddenColumns stringSmall Fuzz.int Fuzz.bool Fuzz.bool
+
+
+projectSettingsLlm : Fuzzer LlmSettings
+projectSettingsLlm =
+    Fuzz.map LlmSettings (Fuzz.maybe stringSmall)
 
 
 projectStorage : Fuzzer ProjectStorage

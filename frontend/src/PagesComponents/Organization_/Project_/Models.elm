@@ -418,6 +418,7 @@ type ProjectSettingsMsg
     | PSRelationStyleUpdate RelationStyle
     | PSColumnBasicTypesToggle
     | PSCollapseTableOnShowToggle
+    | PSLlmKeyUpdate String
 
 
 type HelpMsg

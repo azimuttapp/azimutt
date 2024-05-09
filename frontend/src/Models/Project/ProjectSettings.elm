@@ -1,4 +1,4 @@
-module Models.Project.ProjectSettings exposing (HiddenColumns, ProjectSettings, RemovedTables, decode, encode, fillFindPath, hideColumn, init, removeColumn, removeTable)
+module Models.Project.ProjectSettings exposing (HiddenColumns, LlmSettings, ProjectSettings, RemovedTables, decode, encode, fillFindPath, hideColumn, init, removeColumn, removeTable)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
@@ -29,6 +29,7 @@ type alias ProjectSettings =
     , relationStyle : RelationStyle
     , columnBasicTypes : Bool
     , collapseTableColumns : Bool
+    , llm : LlmSettings
     }
 
 
@@ -38,6 +39,10 @@ type alias RemovedTables =
 
 type alias HiddenColumns =
     { list : String, max : Int, props : Bool, relations : Bool }
+
+
+type alias LlmSettings =
+    { key : Maybe String }
 
 
 init : SchemaName -> ProjectSettings
@@ -52,6 +57,7 @@ init defaultSchema =
     , relationStyle = RelationStyle.Bezier
     , columnBasicTypes = True
     , collapseTableColumns = False
+    , llm = { key = Nothing }
     }
 
 
@@ -115,12 +121,13 @@ encode default value =
         , ( "relationStyle", value.relationStyle |> Encode.withDefault RelationStyle.encode default.relationStyle )
         , ( "columnBasicTypes", value.columnBasicTypes |> Encode.withDefault Encode.bool default.columnBasicTypes )
         , ( "collapseTableColumns", value.collapseTableColumns |> Encode.withDefault Encode.bool default.collapseTableColumns )
+        , ( "llm", value.llm |> encodeLlmSettings )
         ]
 
 
 decode : ProjectSettings -> Decode.Decoder ProjectSettings
 decode default =
-    Decode.map10 ProjectSettings
+    Decode.map11 ProjectSettings
         (Decode.defaultFieldDeep "findPath" FindPathSettings.decode default.findPath)
         (Decode.defaultField "defaultSchema" SchemaName.decode default.defaultSchema)
         (Decode.defaultField "removedSchemas" (Decode.list SchemaName.decode) default.removedSchemas)
@@ -131,6 +138,7 @@ decode default =
         (Decode.defaultField "relationStyle" RelationStyle.decode default.relationStyle)
         (Decode.defaultField "columnBasicTypes" Decode.bool default.columnBasicTypes)
         (Decode.defaultField "collapseTableColumns" Decode.bool default.collapseTableColumns)
+        (Decode.defaultField "llm" decodeLlmSettings default.llm)
 
 
 encodeHiddenColumns : HiddenColumns -> HiddenColumns -> Value
@@ -154,3 +162,21 @@ decodeHiddenColumns default =
         , Decode.map (\list -> { list = list, max = default.max, props = default.props, relations = default.relations })
             Decode.string
         ]
+
+
+encodeLlmSettings : LlmSettings -> Value
+encodeLlmSettings value =
+    value.key
+        |> Maybe.map
+            (\key ->
+                Encode.notNullObject
+                    [ ( "key", key |> Encode.string )
+                    ]
+            )
+        |> Maybe.withDefault Encode.null
+
+
+decodeLlmSettings : Decode.Decoder LlmSettings
+decodeLlmSettings =
+    Decode.map LlmSettings
+        (Decode.maybeField "key" Decode.string)

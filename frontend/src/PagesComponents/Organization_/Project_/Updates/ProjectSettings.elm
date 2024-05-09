@@ -16,7 +16,7 @@ import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
 import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirty, setDirtyM)
 import Ports
-import Services.Lenses exposing (mapCollapseTableColumns, mapColumnBasicTypes, mapEnabled, mapErdM, mapErdMT, mapErdMTM, mapHiddenColumns, mapNameT, mapProps, mapRelations, mapRemoveViews, mapRemovedSchemas, mapSettingsM, mapSourceUpdateT, setColumnOrder, setDefaultSchema, setList, setMax, setRelationStyle, setRemovedTables, setSettings)
+import Services.Lenses exposing (mapCollapseTableColumns, mapColumnBasicTypes, mapEnabled, mapErdM, mapErdMT, mapErdMTM, mapHiddenColumns, mapLlm, mapNameT, mapProps, mapRelations, mapRemoveViews, mapRemovedSchemas, mapSettingsM, mapSourceUpdateT, setColumnOrder, setDefaultSchema, setKey, setList, setMax, setRelationStyle, setRemovedTables, setSettings)
 import Services.Toasts as Toasts
 import Time
 import Track
@@ -162,6 +162,9 @@ handleProjectSettings now msg model =
 
         PSCollapseTableOnShowToggle ->
             ( model |> mapErdM (Erd.mapSettings (mapCollapseTableColumns not)), Extra.none ) |> setDirty
+
+        PSLlmKeyUpdate key ->
+            ( model |> mapErdM (Erd.mapSettings (mapLlm (setKey (B.cond (key == "") Nothing (Just key))))), Extra.none ) |> setDirty
 
 
 getShownTables : Maybe Erd -> List TableId

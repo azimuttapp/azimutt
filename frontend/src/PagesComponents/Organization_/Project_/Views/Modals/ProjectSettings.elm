@@ -46,6 +46,7 @@ viewProjectSettings zone opened erd model =
             [ viewSourcesSection (model.id ++ "-sources") zone erd model
             , viewSchemasSection (model.id ++ "-schemas") erd
             , viewDisplaySettingsSection (model.id ++ "-display") erd
+            , viewLllSettingsSection (model.id ++ "-llm") erd
             ]
         )
 
@@ -250,6 +251,21 @@ viewDisplaySettingsSection htmlId erd =
             "Collapse table columns by default"
             erd.settings.collapseTableColumns
             (PSCollapseTableOnShowToggle |> ProjectSettingsMsg)
+        ]
+
+
+viewLllSettingsSection : HtmlId -> Erd -> Html Msg
+viewLllSettingsSection htmlId erd =
+    fieldset [ class "mt-6" ]
+        [ legend [ class "font-medium text-gray-900" ] [ text "LLM options" ]
+        , p [ class "text-sm text-gray-500" ] [ text "Configure these to use AI features in Azimutt." ]
+        , Input.textWithLabelAndHelp "mt-3"
+            (htmlId ++ "-key")
+            "OpenAI key"
+            "Your OpenAI key, from https://platform.openai.com/api-keys"
+            "ex: sk-proj-.........."
+            (erd.settings.llm.key |> Maybe.withDefault "")
+            (PSLlmKeyUpdate >> ProjectSettingsMsg)
         ]
 
 
