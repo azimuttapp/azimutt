@@ -1,11 +1,19 @@
+import {z} from "zod";
+import "openai/shims/node";
 import OpenAI from "openai";
 import {Logger} from "@azimutt/utils";
 
 // create a key: https://platform.openai.com/api-keys
+export const OpenAIKey = z.string()
+export type OpenAIKey = z.infer<typeof OpenAIKey>
+
+export const OpenAIModel = z.enum(['gpt-4-turbo', 'gpt-3.5-turbo'])
+export type OpenAIModel = z.infer<typeof OpenAIModel>
+
 export class OpenAIConnector {
     private openai: OpenAI
 
-    constructor(private opts: { apiKey: string, model: string, logger: Logger }) {
+    constructor(private opts: { apiKey: OpenAIKey, model: OpenAIModel, logger: Logger }) {
         this.openai = new OpenAI({apiKey: opts.apiKey, dangerouslyAllowBrowser: true})
     }
 
@@ -20,6 +28,8 @@ export class OpenAIConnector {
                 {role: 'user' as const, content: user},
             ].filter(m => m.content),
         })
-        return completion.choices?.[0].message.content || 'Invalid LLM answer :/'
+        const answer = completion.choices?.[0].message.content
+        this.opts.logger.debug(`answer: ${answer}`)
+        return answer || 'Invalid LLM answer :/'
     }
 }

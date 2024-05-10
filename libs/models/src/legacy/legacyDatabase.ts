@@ -9,6 +9,7 @@ import {
     Database,
     Entity,
     EntityRef,
+    EntityStats,
     Index,
     PrimaryKey,
     Relation,
@@ -203,7 +204,9 @@ export function databaseToLegacy(db: Database): LegacyDatabase {
 
 function tableFromLegacy(t: LegacyTable): Entity {
     return removeEmpty({
-        schema: t.schema,
+        database: undefined,
+        catalog: undefined,
+        schema: t.schema || undefined,
         name: t.table,
         kind: t.view ? 'view' as const : undefined,
         def: t.definition || undefined,
@@ -212,17 +215,7 @@ function tableFromLegacy(t: LegacyTable): Entity {
         indexes: (t.uniques ||  []).map(uniqueFromLegacy).concat((t.indexes || []).map(indexFromLegacy)),
         checks: t.checks?.map(checkFromLegacy),
         doc: t.comment || undefined,
-        stats: t.stats ? removeUndefined({
-            rows: t.stats.rows,
-            size: t.stats.size,
-            sizeIdx: t.stats.sizeIdx,
-            scanSeq: t.stats.scanSeq,
-            scanSeqLast: t.stats.scanSeqLast,
-            scanIdx: t.stats.scanIdx,
-            scanIdxLast: t.stats.scanIdxLast,
-            analyzeLast: t.stats.analyzeLast,
-            vacuumLast: t.stats.vacuumLast,
-        }) : undefined,
+        stats: t.stats ? tableDbStatsFromLegacy(t.stats) : undefined,
     })
 }
 
@@ -240,17 +233,35 @@ function tableToLegacy(e: Entity): LegacyTable {
         indexes: indexes.length > 0 ? indexes.map(indexToLegacy) : undefined,
         checks: e.checks ? e.checks.map(checkToLegacy) : undefined,
         comment: e.doc,
-        stats: e.stats ? removeUndefined({
-            rows: e.stats.rows,
-            size: e.stats.size,
-            sizeIdx: e.stats.sizeIdx,
-            scanSeq: e.stats.scanSeq,
-            scanSeqLast: e.stats.scanSeqLast,
-            scanIdx: e.stats.scanIdx,
-            scanIdxLast: e.stats.scanIdxLast,
-            analyzeLast: e.stats.analyzeLast,
-            vacuumLast: e.stats.vacuumLast,
-        }) : undefined,
+        stats: e.stats ? tableDbStatsToLegacy(e.stats) : undefined,
+    })
+}
+
+export function tableDbStatsFromLegacy(s: LegacyTableDbStats): EntityStats {
+    return removeUndefined({
+        rows: s.rows,
+        size: s.size,
+        sizeIdx: s.sizeIdx,
+        scanSeq: s.scanSeq,
+        scanSeqLast: s.scanSeqLast,
+        scanIdx: s.scanIdx,
+        scanIdxLast: s.scanIdxLast,
+        analyzeLast: s.analyzeLast,
+        vacuumLast: s.vacuumLast,
+    })
+}
+
+export function tableDbStatsToLegacy(s: EntityStats): LegacyTableDbStats {
+    return removeUndefined({
+        rows: s.rows,
+        size: s.size,
+        sizeIdx: s.sizeIdx,
+        scanSeq: s.scanSeq,
+        scanSeqLast: s.scanSeqLast,
+        scanIdx: s.scanIdx,
+        scanIdxLast: s.scanIdxLast,
+        analyzeLast: s.analyzeLast,
+        vacuumLast: s.vacuumLast,
     })
 }
 
@@ -267,8 +278,10 @@ function columnFromLegacy(c: LegacyColumn): Attribute {
             bytesAvg: c.stats?.bytesAvg,
             cardinality: c.stats?.cardinality,
             commonValues: c.stats?.commonValues?.map(v => ({value: columnValueFromLegacy(v.value), freq: v.freq})),
-            distinctValues: c.values?.map(columnValueFromLegacy) || undefined,
+            distinctValues: c.values?.map(columnValueFromLegacy),
             histogram: c.stats?.histogram?.map(columnValueFromLegacy),
+            min: undefined,
+            max: undefined,
         }) : undefined,
     })
 }
@@ -303,7 +316,7 @@ export function columnValueToLegacy(v: AttributeValue): LegacyColumnValue {
     return v.toString() // TODO: improve?
 }
 
-function primaryKeyFromLegacy(pk: LegacyPrimaryKey): PrimaryKey {
+export function primaryKeyFromLegacy(pk: LegacyPrimaryKey): PrimaryKey {
     return removeUndefined({
         name: pk.name || undefined,
         attrs: pk.columns.map(columnNameFromLegacy)
@@ -316,7 +329,7 @@ function primaryKeyToLegacy(pk: PrimaryKey): LegacyPrimaryKey {
     })
 }
 
-function columnNameFromLegacy(n: LegacyColumnName): AttributePath {
+export function columnNameFromLegacy(n: LegacyColumnName): AttributePath {
     return n.split(legacyColumnPathSeparator)
 }
 
@@ -324,7 +337,7 @@ function columnNameToLegacy(p: AttributePath): LegacyColumnName {
     return p.join(legacyColumnPathSeparator)
 }
 
-function uniqueFromLegacy(u: LegacyUnique): Index {
+export function uniqueFromLegacy(u: LegacyUnique): Index {
     return removeUndefined({
         name: u.name || undefined,
         attrs: u.columns.map(columnNameFromLegacy),
@@ -341,7 +354,7 @@ function uniqueToLegacy(i: Index): LegacyUnique {
     })
 }
 
-function indexFromLegacy(i: LegacyIndex): Index {
+export function indexFromLegacy(i: LegacyIndex): Index {
     return removeUndefined({
         name: i.name || undefined,
         attrs: i.columns.map(columnNameFromLegacy),
@@ -357,7 +370,7 @@ function indexToLegacy(i: Index): LegacyIndex {
     })
 }
 
-function checkFromLegacy(c: LegacyCheck): Check {
+export function checkFromLegacy(c: LegacyCheck): Check {
     return removeUndefined({
         name: c.name || undefined,
         attrs: c.columns.map(columnNameFromLegacy),
@@ -373,7 +386,7 @@ function checkToLegacy(c: Check): LegacyCheck {
     })
 }
 
-function relationFromLegacy(r: LegacyRelation): Relation {
+export function relationFromLegacy(r: LegacyRelation): Relation {
     return removeUndefined({
         name: r.name || undefined,
         src: columnRefFromLegacy2(r.src),
@@ -416,11 +429,11 @@ function columnRefToLegacy2(e: EntityRef, c: AttributePath): LegacyColumnRef {
     return {table: tableRefToId({schema: e.schema || '', table: e.entity}), column: c.join(legacyColumnPathSeparator)}
 }
 
-function typeFromLegacy(t: LegacyType): Type {
+export function typeFromLegacy(t: LegacyType): Type {
     if ('values' in t) {
-        return {schema: t.schema, name: t.name, values: t.values || undefined}
+        return removeUndefined({schema: t.schema || undefined, name: t.name, values: t.values || undefined})
     } else {
-        return {schema: t.schema, name: t.name, definition: t.definition}
+        return removeUndefined({schema: t.schema || undefined, name: t.name, definition: t.definition})
     }
 }
 

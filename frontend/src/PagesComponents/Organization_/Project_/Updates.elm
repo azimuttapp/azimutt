@@ -1,6 +1,7 @@
 module PagesComponents.Organization_.Project_.Updates exposing (update)
 
 import Components.Molecules.Dropdown as Dropdown
+import Components.Molecules.Editor as Editor
 import Components.Organisms.TableRow as TableRow
 import Components.Slices.DataExplorer as DataExplorer
 import Components.Slices.DataExplorerDetails as DataExplorerDetails
@@ -370,7 +371,7 @@ update urlLayout zone now urlInfos organizations projects msg model =
             model.erd |> Maybe.mapOrElse (\erd -> model |> mapDetailsSidebarT (DetailsSidebar.update Noop NotesMsg TagsMsg erd message)) ( model, Extra.none )
 
         DataExplorerMsg message ->
-            model.erd |> Maybe.mapOrElse (\erd -> model |> mapDataExplorerT (DataExplorer.update DataExplorerMsg Toast erd.project erd.sources message)) ( model, Extra.none )
+            model.erd |> Maybe.mapOrElse (\erd -> model |> mapDataExplorerT (DataExplorer.update DataExplorerMsg Toast erd.project erd.settings erd.sources message)) ( model, Extra.none )
 
         VirtualRelationMsg message ->
             model |> handleVirtualRelation message
@@ -657,6 +658,12 @@ handleJsMessage now urlLayout msg model =
 
         GotFitToScreen ->
             ( model, FitToScreen |> T.send )
+
+        GotLlmSqlGenerated query ->
+            ( model, query |> Editor.SetContent |> DataExplorer.UpdateQuery |> DataExplorerMsg |> T.send )
+
+        GotLlmSqlGeneratedError err ->
+            ( model, "Fail to generate query: " ++ err |> Toasts.error |> Toast |> T.send )
 
         Error json err ->
             ( model, Cmd.batch [ "Unable to decode JavaScript message: " ++ Decode.errorToString err ++ " in " ++ Encode.encode 0 json |> Toasts.error |> Toast |> T.send, Track.jsonError "js_message" err ] )

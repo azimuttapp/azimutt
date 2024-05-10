@@ -1,16 +1,19 @@
 import {SqlStatement} from "../common";
 import {Database, DatabaseKind} from "../database";
 import {OpenAIConnector} from "./openai";
-import {dbToPrompt} from "./llmUtils";
+import {cleanSqlAnswer, dbToPrompt} from "./llmUtils";
 
 // gpt-3.5-turbo: context window: 16k tokens
 // gpt-4-turbo: context window: 128k tokens
+export {OpenAIConnector} from "./openai";
 
 export async function textToSql(llm: OpenAIConnector, dialect: DatabaseKind, userPrompt: string, db: Database): Promise<SqlStatement> {
+    // hint with tables on the current layout?
     const systemPrompt = 'You are a pragmatic data analyst focusing on query performance and correctness.\n' +
         `Here is the database you have at your disposal:\n${dbToPrompt(db)}\n` +
-        'Answer the user request generating only a valid SQL query, no other text at all.'
-    return await llm.query(systemPrompt, userPrompt)
+        `Answer the user request generating only one valid SQL query using ${dialect} dialect and formatted nicely, no other text at all, this is very important.`
+    const answer = await llm.query(systemPrompt, userPrompt)
+    return cleanSqlAnswer(answer)
 }
 
 export async function sqlToText(llm: OpenAIConnector, sqlQuery: SqlStatement): Promise<string> {

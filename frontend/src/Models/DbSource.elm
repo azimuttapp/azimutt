@@ -1,5 +1,6 @@
-module Models.DbSource exposing (DbSource, fromSource, toInfo, zero)
+module Models.DbSource exposing (DbSource, fromSource, toInfo, toSource, zero)
 
+import Array
 import Dict exposing (Dict)
 import Libs.Models.DatabaseKind as DatabaseKind exposing (DatabaseKind)
 import Libs.Models.DatabaseUrl exposing (DatabaseUrl)
@@ -10,7 +11,7 @@ import Models.Project.CustomTypeId exposing (CustomTypeId)
 import Models.Project.Relation exposing (Relation)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId)
-import Models.Project.SourceKind as SourceKind
+import Models.Project.SourceKind as SourceKind exposing (SourceKind(..))
 import Models.Project.SourceName exposing (SourceName)
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
@@ -50,18 +51,38 @@ fromSource : Source -> Maybe DbSource
 fromSource source =
     source.kind
         |> SourceKind.databaseUrl
-        |> Maybe.map
+        |> Maybe.andThen
             (\url ->
-                { id = source.id
-                , name = source.name
-                , db = { url = url, kind = DatabaseKind.fromUrl url }
-                , tables = source.tables
-                , relations = source.relations
-                , types = source.types
-                , createdAt = source.createdAt
-                , updatedAt = source.updatedAt
-                }
+                DatabaseKind.fromUrl url
+                    |> Maybe.map
+                        (\kind ->
+                            { id = source.id
+                            , name = source.name
+                            , db = { url = url, kind = kind }
+                            , tables = source.tables
+                            , relations = source.relations
+                            , types = source.types
+                            , createdAt = source.createdAt
+                            , updatedAt = source.updatedAt
+                            }
+                        )
             )
+
+
+toSource : DbSource -> Source
+toSource source =
+    { id = source.id
+    , name = source.name
+    , kind = DatabaseConnection source.db.url
+    , content = Array.empty
+    , tables = source.tables
+    , relations = source.relations
+    , types = source.types
+    , enabled = True
+    , fromSample = Nothing
+    , createdAt = source.createdAt
+    , updatedAt = source.updatedAt
+    }
 
 
 toInfo : DbSource -> DbSourceInfo

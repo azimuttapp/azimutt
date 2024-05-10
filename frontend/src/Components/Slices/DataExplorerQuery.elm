@@ -615,7 +615,7 @@ doc =
 
 docModel : Int -> SqlQuery -> State -> Model
 docModel id query state =
-    { id = id, source = docSource |> DbSourceInfo.fromSource |> Maybe.withDefault DbSourceInfo.zero, query = { sql = query, origin = "doc", db = DatabaseKind.Other }, state = state }
+    { id = id, source = docSource |> DbSourceInfo.fromSource |> Maybe.withDefault DbSourceInfo.zero, query = { sql = query, origin = "doc", db = DatabaseKind.PostgreSQL }, state = state }
 
 
 docComplexQuery : SqlQuery

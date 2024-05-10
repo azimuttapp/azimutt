@@ -1,4 +1,4 @@
-port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, copyToClipboard, createProject, createProjectTmp, deleteProject, downloadFile, fireworks, focus, fullscreen, getColumnStats, getDatabaseSchema, getPrismaSchema, getProject, getTableStats, listenHotkeys, mouseDown, moveProjectTo, observeLayout, observeMemoSize, observeSize, observeTableRowSize, observeTableSize, observeTablesSize, onJsMessage, projectDirty, readLocalFile, runDatabaseQuery, scrollTo, setMeta, toast, track, unhandledJsMsgError, updateProject, updateProjectTmp)
+port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, copyToClipboard, createProject, createProjectTmp, deleteProject, downloadFile, fireworks, focus, fullscreen, getColumnStats, getDatabaseSchema, getPrismaSchema, getProject, getTableStats, listenHotkeys, llmGenerateSql, mouseDown, moveProjectTo, observeLayout, observeMemoSize, observeSize, observeTableRowSize, observeTableSize, observeTablesSize, onJsMessage, projectDirty, readLocalFile, runDatabaseQuery, scrollTo, setMeta, toast, track, unhandledJsMsgError, updateProject, updateProjectTmp)
 
 import DataSources.JsonMiner.JsonSchema as JsonSchema exposing (JsonSchema)
 import Dict exposing (Dict)
@@ -8,6 +8,7 @@ import Json.Encode as Encode
 import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
 import Libs.Models exposing (FileContent, SizeChange)
+import Libs.Models.DatabaseKind as DatabaseKind exposing (DatabaseKind)
 import Libs.Models.DatabaseUrl as DatabaseUrl exposing (DatabaseUrl)
 import Libs.Models.Delta as Delta exposing (Delta)
 import Libs.Models.FileName exposing (FileName)
@@ -21,6 +22,7 @@ import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
 import Models.Project.ColumnStats as ColumnStats exposing (ColumnStats)
 import Models.Project.ProjectId as ProjectId exposing (ProjectId)
 import Models.Project.ProjectStorage as ProjectStorage exposing (ProjectStorage)
+import Models.Project.Source as Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableRow as TableRow exposing (TableRow)
@@ -206,6 +208,11 @@ observeSizes ids =
         messageToJs (ObserveSizes ids)
 
 
+llmGenerateSql : String -> String -> DatabaseKind -> Source -> Cmd msg
+llmGenerateSql apiKey prompt dialect source =
+    messageToJs (LlmGenerateSql apiKey prompt dialect source)
+
+
 listenHotkeys : Dict String (List Hotkey) -> Cmd msg
 listenHotkeys keys =
     messageToJs (ListenKeys keys)
@@ -267,6 +274,7 @@ type ElmMsg
     | RunDatabaseQuery String DatabaseUrl SqlQueryOrigin
     | GetPrismaSchema String
     | ObserveSizes (List HtmlId)
+    | LlmGenerateSql String String DatabaseKind Source
     | ListenKeys (Dict String (List Hotkey))
     | Confetti HtmlId
     | ConfettiPride
@@ -302,6 +310,8 @@ type JsMsg
     | GotColumnHide ColumnRef
     | GotColumnMove ColumnRef Int
     | GotFitToScreen
+    | GotLlmSqlGenerated String
+    | GotLlmSqlGeneratedError String
     | Error Value Decode.Error
 
 
@@ -410,6 +420,9 @@ elmEncoder elm =
 
         ObserveSizes ids ->
             Encode.object [ ( "kind", "ObserveSizes" |> Encode.string ), ( "ids", ids |> Encode.list Encode.string ) ]
+
+        LlmGenerateSql apiKey prompt dialect source ->
+            Encode.object [ ( "kind", "LlmGenerateSql" |> Encode.string ), ( "apiKey", apiKey |> Encode.string ), ( "prompt", prompt |> Encode.string ), ( "dialect", dialect |> DatabaseKind.encode ), ( "source", source |> Source.encode ) ]
 
         ListenKeys keys ->
             Encode.object [ ( "kind", "ListenKeys" |> Encode.string ), ( "keys", keys |> Encode.dict identity (Encode.list Hotkey.encode) ) ]
@@ -527,6 +540,12 @@ jsDecoder =
                 "GotFitToScreen" ->
                     Decode.succeed GotFitToScreen
 
+                "GotLlmSqlGenerated" ->
+                    Decode.map GotLlmSqlGenerated (Decode.field "query" Decode.string)
+
+                "GotLlmSqlGeneratedError" ->
+                    Decode.map GotLlmSqlGeneratedError (Decode.field "error" Decode.string)
+
                 other ->
                     Decode.fail ("Not supported kind of JsMsg '" ++ other ++ "'")
         )
@@ -621,6 +640,12 @@ unhandledJsMsgError msg =
 
                 GotFitToScreen ->
                     "GotFitToScreen"
+
+                GotLlmSqlGenerated _ ->
+                    "GotLlmSqlGenerated"
+
+                GotLlmSqlGeneratedError _ ->
+                    "GotLlmSqlGeneratedError"
 
                 Error _ _ ->
                     "Error"

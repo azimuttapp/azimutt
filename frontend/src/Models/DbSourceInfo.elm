@@ -38,14 +38,18 @@ fromSource : Source -> Maybe DbSourceInfo
 fromSource source =
     source.kind
         |> SourceKind.databaseUrl
-        |> Maybe.map
+        |> Maybe.andThen
             (\url ->
-                { id = source.id
-                , name = source.name
-                , db = { url = url, kind = DatabaseKind.fromUrl url }
-                , createdAt = source.createdAt
-                , updatedAt = source.updatedAt
-                }
+                DatabaseKind.fromUrl url
+                    |> Maybe.map
+                        (\kind ->
+                            { id = source.id
+                            , name = source.name
+                            , db = { url = url, kind = kind }
+                            , createdAt = source.createdAt
+                            , updatedAt = source.updatedAt
+                            }
+                        )
             )
 
 
@@ -53,12 +57,16 @@ fromSourceInfo : SourceInfo -> Maybe DbSourceInfo
 fromSourceInfo source =
     source.kind
         |> SourceKind.databaseUrl
-        |> Maybe.map
+        |> Maybe.andThen
             (\url ->
-                { id = source.id
-                , name = source.name
-                , db = { url = url, kind = DatabaseKind.fromUrl url }
-                , createdAt = source.createdAt
-                , updatedAt = source.updatedAt
-                }
+                DatabaseKind.fromUrl url
+                    |> Maybe.map
+                        (\kind ->
+                            { id = source.id
+                            , name = source.name
+                            , db = { url = url, kind = kind }
+                            , createdAt = source.createdAt
+                            , updatedAt = source.updatedAt
+                            }
+                        )
             )

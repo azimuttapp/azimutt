@@ -1,12 +1,8 @@
-module Libs.Models.DatabaseKind exposing (DatabaseKind(..), all, decode, encode, fromUrl, toString)
+module Libs.Models.DatabaseKind exposing (DatabaseKind(..), all, decode, encode, fromUrl, show)
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 import Libs.Models.DatabaseUrl exposing (DatabaseUrl)
-
-
-
--- similar to libs/models/src/database.ts#DatabaseKind
 
 
 type DatabaseKind
@@ -18,46 +14,45 @@ type DatabaseKind
     | PostgreSQL
     | Snowflake
     | SQLServer
-    | Other
 
 
 all : List DatabaseKind
 all =
-    [ BigQuery, Couchbase, MariaDB, MongoDB, MySQL, PostgreSQL, Snowflake, SQLServer, Other ]
+    [ BigQuery, Couchbase, MariaDB, MongoDB, MySQL, PostgreSQL, Snowflake, SQLServer ]
 
 
-fromUrl : DatabaseUrl -> DatabaseKind
+fromUrl : DatabaseUrl -> Maybe DatabaseKind
 fromUrl url =
     if url |> String.contains "bigquery" then
-        BigQuery
+        Just BigQuery
 
     else if url |> String.contains "couchbase" then
-        Couchbase
+        Just Couchbase
 
     else if url |> String.contains "mariadb" then
-        MariaDB
+        Just MariaDB
 
     else if url |> String.contains "mongodb" then
-        MongoDB
+        Just MongoDB
 
     else if url |> String.contains "mysql" then
-        MySQL
+        Just MySQL
 
     else if url |> String.contains "postgre" then
-        PostgreSQL
+        Just PostgreSQL
 
     else if url |> String.contains "snowflake" then
-        Snowflake
+        Just Snowflake
 
     else if (url |> String.contains "sqlserver") || (url |> String.toLower |> String.contains "user id=") then
-        SQLServer
+        Just SQLServer
 
     else
-        Other
+        Nothing
 
 
-toString : DatabaseKind -> String
-toString kind =
+show : DatabaseKind -> String
+show kind =
     case kind of
         BigQuery ->
             "BigQuery"
@@ -83,39 +78,62 @@ toString kind =
         SQLServer ->
             "SQLServer"
 
-        Other ->
-            "Other"
+
+toString : DatabaseKind -> String
+toString kind =
+    -- MUST stay sync with to libs/models/src/database.ts#DatabaseKind
+    case kind of
+        BigQuery ->
+            "bigquery"
+
+        Couchbase ->
+            "couchbase"
+
+        MariaDB ->
+            "mariadb"
+
+        MongoDB ->
+            "mongodb"
+
+        MySQL ->
+            "mysql"
+
+        PostgreSQL ->
+            "postgres"
+
+        Snowflake ->
+            "snowflake"
+
+        SQLServer ->
+            "sqlserver"
 
 
 fromString : String -> Maybe DatabaseKind
 fromString kind =
     case kind of
-        "BigQuery" ->
+        "bigquery" ->
             Just BigQuery
 
-        "Couchbase" ->
+        "couchbase" ->
             Just Couchbase
 
-        "MariaDB" ->
+        "mariadb" ->
             Just MariaDB
 
-        "MongoDB" ->
+        "mongodb" ->
             Just MongoDB
 
-        "MySQL" ->
+        "mysql" ->
             Just MySQL
 
-        "PostgreSQL" ->
+        "postgres" ->
             Just PostgreSQL
 
-        "Snowflake" ->
+        "snowflake" ->
             Just Snowflake
 
-        "SQLServer" ->
+        "sqlserver" ->
             Just SQLServer
-
-        "Other" ->
-            Just Other
 
         _ ->
             Nothing

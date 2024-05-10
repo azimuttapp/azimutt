@@ -931,7 +931,7 @@ docLoading =
     , source = docSource.id
     , table = ( "public", "events" )
     , primaryKey = Nel { column = Nel "id" [], value = DbString "dcecf4fe-aa35-44fb-a90c-eba7d2103f4e" } []
-    , state = StateLoading { query = { sql = "SELECT * FROM public.events WHERE id='dcecf4fe-aa35-44fb-a90c-eba7d2103f4e';", origin = "doc", db = DatabaseKind.Other }, startedAt = Time.millisToPosix 1691079663421, previous = Nothing }
+    , state = StateLoading { query = { sql = "SELECT * FROM public.events WHERE id='dcecf4fe-aa35-44fb-a90c-eba7d2103f4e';", origin = "doc", db = DatabaseKind.PostgreSQL }, startedAt = Time.millisToPosix 1691079663421, previous = Nothing }
     , hidden = Set.fromList []
     , showHiddenColumns = False
     , selected = False
@@ -948,7 +948,7 @@ docFailure =
     , source = docSource.id
     , table = ( "public", "events" )
     , primaryKey = Nel { column = Nel "id" [], value = DbString "dcecf4fe-aa35-44fb-a90c-eba7d2103f4e" } []
-    , state = StateFailure { query = { sql = "SELECT * FROM public.event WHERE id='dcecf4fe-aa35-44fb-a90c-eba7d2103f4e';", origin = "doc", db = DatabaseKind.Other }, error = "relation \"public.event\" does not exist", startedAt = Time.millisToPosix 1691079663421, failedAt = Time.millisToPosix 1691079663421, previous = Nothing }
+    , state = StateFailure { query = { sql = "SELECT * FROM public.event WHERE id='dcecf4fe-aa35-44fb-a90c-eba7d2103f4e';", origin = "doc", db = DatabaseKind.PostgreSQL }, error = "relation \"public.event\" does not exist", startedAt = Time.millisToPosix 1691079663421, failedAt = Time.millisToPosix 1691079663421, previous = Nothing }
     , hidden = Set.fromList []
     , showHiddenColumns = False
     , selected = False

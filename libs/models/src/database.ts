@@ -214,7 +214,6 @@ export const DatabaseStats = z.object({
     name: DatabaseName,
     kind: DatabaseKind,
     version: z.string(),
-    doc: z.string(),
     extractedAt: DateTime, // when the database was extracted
     extractionDuration: Millis,
     // url? host? options?

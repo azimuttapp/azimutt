@@ -26,6 +26,7 @@ import Libs.Maybe as Maybe
 import Libs.Models.DatabaseKind as DatabaseKind
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Ned as Ned exposing (Ned)
+import Libs.Result as Result
 import Libs.Tailwind as Tw exposing (TwClass)
 import Libs.Task as T
 import Libs.Time as Time
@@ -37,6 +38,7 @@ import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.ColumnType exposing (ColumnType)
 import Models.Project.Metadata exposing (Metadata)
+import Models.Project.ProjectSettings as ProjectSettings exposing (ProjectSettings)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId)
@@ -56,7 +58,7 @@ import Track
 
 
 -- TODO:
---  - popover with JSON when hover a JSON value in table row => bad CSS? hard to setup :/
+--  - popover with JSON editor when hover a JSON value in table row => bad CSS? hard to setup :/
 --  - Enable data exploration for other db: MySQL, SQL Server, MongoDB, Couchbase...
 --  - Better error handling on connectors (cf PostgreSQL)
 --
@@ -126,6 +128,7 @@ type Msg
     | OpenDetails DbSourceInfo RowQuery
     | CloseDetails DataExplorerQuery.Id
     | DetailsMsg DataExplorerDetails.Id DataExplorerDetails.Msg
+    | LlmGenerateSql String
 
 
 
@@ -150,8 +153,8 @@ init =
 -- UPDATE
 
 
-update : (Msg -> msg) -> (Toasts.Msg -> msg) -> ProjectInfo -> List Source -> Msg -> Model -> ( Model, Extra msg )
-update wrap showToast project sources msg model =
+update : (Msg -> msg) -> (Toasts.Msg -> msg) -> ProjectInfo -> ProjectSettings -> List Source -> Msg -> Model -> ( Model, Extra msg )
+update wrap showToast project settings sources msg model =
     case msg of
         Open sourceId query ->
             let
@@ -230,6 +233,14 @@ update wrap showToast project sources msg model =
 
         DetailsMsg id m ->
             model |> mapDetailsT (List.mapByTE .id id (DataExplorerDetails.update project m))
+
+        LlmGenerateSql q ->
+            ( model
+            , Result.map2 (\s k -> s |> DbSource.toSource |> Ports.llmGenerateSql k q s.db.kind)
+                (model.source |> Maybe.toResult (Ports.toast "warning" "Missing selected source"))
+                (settings.llm.key |> Maybe.toResult (Ports.toast "warning" "Missing OpenAI API key (see settings)"))
+                |> Result.fold Extra.cmd Extra.cmd
+            )
 
 
 focusMainInput : DataExplorerTab -> Cmd msg
@@ -511,7 +522,7 @@ viewVisualExplorerSubmit wrap source model =
     let
         query : SqlQueryOrigin
         query =
-            model.table |> Maybe.mapOrElse (\table -> DbQuery.filterTable source.db.kind { table = table, filters = model.filters |> List.map (\f -> { operator = f.operator, column = f.column, operation = f.operation, value = f.value }) }) { sql = "", origin = "filterTableEmpty", db = DatabaseKind.Other }
+            model.table |> Maybe.mapOrElse (\table -> DbQuery.filterTable source.db.kind { table = table, filters = model.filters |> List.map (\f -> { operator = f.operator, column = f.column, operation = f.operation, value = f.value }) }) { sql = "", origin = "filterTableEmpty", db = source.db.kind }
     in
     div [ class "mt-3 flex items-center justify-end" ]
         [ button [ type_ "button", onClick (query |> RunQuery source |> wrap), disabled (query.sql == ""), class "inline-flex items-center bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:bg-indigo-300" ]
@@ -550,18 +561,9 @@ viewQueryEditor wrap toggleDropdown openedDropdown htmlId source model =
                     ]
                 , div [ classList [ ( "hidden", openedDropdown /= optionsButton ) ], class "w-56 absolute bottom-full mb-3 right-0 flex-col items-end z-max origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none", role "menu", ariaOrientation "vertical", ariaLabelledby optionsButton, tabindex -1 ]
                     [ div [ class "py-1", role "none" ]
-                        ([ "Text To SQL", "SQL to Text", "Query plan" ]
-                            |> List.map
-                                (\name ->
-                                    button
-                                        [ type_ "button"
-                                        , class "text-gray-700 block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 hover:text-gray-900"
-                                        , role "menuitem"
-                                        , tabindex -1
-                                        ]
-                                        [ Icon.outline Icon.Sparkles "h-5 w-5 inline mr-1", text name ]
-                                )
-                        )
+                        [ button [ type_ "button", onClick (LlmGenerateSql model.content |> wrap), class "text-gray-700 block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 hover:text-gray-900", role "menuitem", tabindex -1 ]
+                            [ Icon.outline Icon.Sparkles "h-5 w-5 inline mr-1", text "Generate SQL from text" ]
+                        ]
                     ]
                 ]
             ]
@@ -629,17 +631,17 @@ docQueryResults : List DataExplorerQuery.Model
 docQueryResults =
     [ { id = 3
       , source = docSource1 |> DbSourceInfo.fromSource |> Maybe.withDefault DbSourceInfo.zero
-      , query = { sql = DataExplorerQuery.docCityQuery, origin = "doc", db = DatabaseKind.Other }
+      , query = { sql = DataExplorerQuery.docCityQuery, origin = "doc", db = DatabaseKind.PostgreSQL }
       , state = DataExplorerQuery.docCitySuccess
       }
     , { id = 2
       , source = docSource1 |> DbSourceInfo.fromSource |> Maybe.withDefault DbSourceInfo.zero
-      , query = { sql = DataExplorerQuery.docProjectsQuery, origin = "doc", db = DatabaseKind.Other }
+      , query = { sql = DataExplorerQuery.docProjectsQuery, origin = "doc", db = DatabaseKind.PostgreSQL }
       , state = DataExplorerQuery.docProjectsSuccess
       }
     , { id = 1
       , source = docSource1 |> DbSourceInfo.fromSource |> Maybe.withDefault DbSourceInfo.zero
-      , query = { sql = DataExplorerQuery.docUsersQuery, origin = "doc", db = DatabaseKind.Other }
+      , query = { sql = DataExplorerQuery.docUsersQuery, origin = "doc", db = DatabaseKind.PostgreSQL }
       , state = DataExplorerQuery.docUsersSuccess
       }
     ]
@@ -710,7 +712,7 @@ docComponentState name get set sources =
 
 docUpdate : DocState -> (DocState -> Model) -> (DocState -> Model -> DocState) -> List Source -> Msg -> ElmBook.Msg (SharedDocState x)
 docUpdate s get set sources m =
-    s |> get |> update docWrap docShowToast ProjectInfo.zero sources m |> Tuple.first |> set s |> docSetState
+    s |> get |> update docWrap docShowToast ProjectInfo.zero (ProjectSettings.init "") sources m |> Tuple.first |> set s |> docSetState
 
 
 docToggleDropdown : DocState -> HtmlId -> ElmBook.Msg (SharedDocState x)

@@ -15,6 +15,7 @@ import {
     LegacyTableId,
     LegacyTableStats,
     Position,
+    SqlStatement,
     zodParse
 } from "@azimutt/models";
 import {ElementSize, ElmFlags, ElmMsg, ElmRuntime, GetLocalFile, Hotkey, HotkeyId, JsMsg} from "../types/ports";
@@ -53,6 +54,7 @@ export class ElmApp {
         RunDatabaseQuery: [],
         GetPrismaSchema: [],
         ObserveSizes: [],
+        LlmGenerateSql: [],
         ListenKeys: [],
         Confetti: [],
         ConfettiPride: [],
@@ -123,6 +125,8 @@ export class ElmApp {
     hideColumn = (id: LegacyColumnId): void => this.send({kind: 'GotColumnHide', ref: id})
     moveColumn = (id: LegacyColumnId, index: number): void => this.send({kind: 'GotColumnMove', ref: id, index})
     fitToScreen = (): void => this.send({kind: 'GotFitToScreen'})
+    gotLlmSqlGenerated = (query: SqlStatement): void => this.send({kind: 'GotLlmSqlGenerated', query})
+    gotLlmSqlGeneratedError = (error: string): void => this.send({kind: 'GotLlmSqlGeneratedError', error})
 
     private send(msg: JsMsg): void {
         this.logger.debug('JsMsg', msg)

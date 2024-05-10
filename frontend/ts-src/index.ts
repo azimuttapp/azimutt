@@ -2,9 +2,11 @@ import * as Sentry from "@sentry/browser";
 import {BrowserTracing} from "@sentry/tracing";
 import {AnyError, errorToString} from "@azimutt/utils";
 import {
+    attributePathFromId,
     AttributeRef,
     columnStatsToLegacy,
     databaseToLegacy,
+    entityRefFromId,
     legacyBuildProjectDraft,
     legacyBuildProjectJson,
     legacyBuildProjectLocal,
@@ -14,11 +16,13 @@ import {
     LegacyDatabaseQueryResults,
     LegacyProjectStorage,
     LegacyTableStats,
-    attributePathFromId,
-    entityRefFromId,
+    OpenAIConnector,
     ParserError,
     queryResultsToLegacy,
-    tableStatsToLegacy
+    sourceToDatabase,
+    SqlStatement,
+    tableStatsToLegacy,
+    textToSql
 } from "@azimutt/models";
 import {prisma} from "@azimutt/serde-prisma";
 import {HtmlId, Platform, ToastLevel, ViewPosition} from "./types/basics";
@@ -36,6 +40,7 @@ import {
     Hotkey,
     HotkeyId,
     ListenKeys,
+    LlmGenerateSql,
     ObserveSizes,
     ProjectDirty,
     RunDatabaseQuery,
@@ -109,6 +114,7 @@ app.on('GetColumnStats', getColumnStats)
 app.on('RunDatabaseQuery', runDatabaseQuery)
 app.on('GetPrismaSchema', getPrismaSchema)
 app.on('ObserveSizes', observeSizes)
+app.on('LlmGenerateSql', llmGenerateSql)
 app.on('ListenKeys', listenHotkeys)
 app.on('Confetti', msg => Utils.launchConfetti(msg.id))
 app.on('ConfettiPride', _ => Utils.launchConfettiPride())
@@ -397,6 +403,14 @@ function keydownHotkey(e: KeyboardEvent) {
         app.gotHotkey(hotkey)
     })
     if (matches.length === 0 && e.key === "Escape" && isInput(target)) target.blur()
+}
+
+function llmGenerateSql(msg: LlmGenerateSql) {
+    const llm = new OpenAIConnector({apiKey: msg.apiKey, model: 'gpt-3.5-turbo', logger})
+    textToSql(llm, msg.dialect, msg.prompt, sourceToDatabase(msg.source)).then(
+        (query: SqlStatement) => app.gotLlmSqlGenerated(query),
+        (err: any) => app.gotLlmSqlGeneratedError(errorToString(err))
+    )
 }
 
 function listenHotkeys(msg: ListenKeys) {
