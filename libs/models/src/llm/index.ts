@@ -5,6 +5,7 @@ import {cleanSqlAnswer, dbToPrompt} from "./llmUtils";
 
 // gpt-3.5-turbo: context window: 16k tokens
 // gpt-4-turbo: context window: 128k tokens
+// 1 token ~ 4 chars: https://platform.openai.com/tokenizer
 export {OpenAIConnector} from "./openai";
 
 export async function textToSql(llm: OpenAIConnector, dialect: DatabaseKind, userPrompt: string, db: Database): Promise<SqlStatement> {
