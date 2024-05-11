@@ -29,7 +29,7 @@ function entityForeignKey(r: Relation): string {
 }
 
 export function cleanSqlAnswer(answer: string): string {
-    const mdCode = answer.trim().match(/^(?:```)?(?:sql)?\n?(.+)\n?(?:```)?$/)
+    const mdCode = answer.trim().match(/^(?:```)?(?:sql)?\n?(.+?)\n?(?:```)?$/s)
     if (mdCode) return mdCode[1]
     return answer.trim()
 }

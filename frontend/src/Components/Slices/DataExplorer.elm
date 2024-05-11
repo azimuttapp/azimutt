@@ -26,7 +26,6 @@ import Libs.Maybe as Maybe
 import Libs.Models.DatabaseKind as DatabaseKind
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Ned as Ned exposing (Ned)
-import Libs.Result as Result
 import Libs.Tailwind as Tw exposing (TwClass)
 import Libs.Task as T
 import Libs.Time as Time
@@ -38,7 +37,6 @@ import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.ColumnType exposing (ColumnType)
 import Models.Project.Metadata exposing (Metadata)
-import Models.Project.ProjectSettings as ProjectSettings exposing (ProjectSettings)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId)
@@ -128,7 +126,7 @@ type Msg
     | OpenDetails DbSourceInfo RowQuery
     | CloseDetails DataExplorerQuery.Id
     | DetailsMsg DataExplorerDetails.Id DataExplorerDetails.Msg
-    | LlmGenerateSql String
+    | LlmGenerateSql SourceId
 
 
 
@@ -153,8 +151,8 @@ init =
 -- UPDATE
 
 
-update : (Msg -> msg) -> (Toasts.Msg -> msg) -> ProjectInfo -> ProjectSettings -> List Source -> Msg -> Model -> ( Model, Extra msg )
-update wrap showToast project settings sources msg model =
+update : (Msg -> msg) -> (Toasts.Msg -> msg) -> (Maybe SourceId -> msg) -> ProjectInfo -> List Source -> Msg -> Model -> ( Model, Extra msg )
+update wrap showToast openGenerateSql project sources msg model =
     case msg of
         Open sourceId query ->
             let
@@ -234,13 +232,8 @@ update wrap showToast project settings sources msg model =
         DetailsMsg id m ->
             model |> mapDetailsT (List.mapByTE .id id (DataExplorerDetails.update project m))
 
-        LlmGenerateSql q ->
-            ( model
-            , Result.map2 (\s k -> s |> DbSource.toSource |> Ports.llmGenerateSql k q s.db.kind)
-                (model.source |> Maybe.toResult (Ports.toast "warning" "Missing selected source"))
-                (settings.llm.key |> Maybe.toResult (Ports.toast "warning" "Missing OpenAI API key (see settings)"))
-                |> Result.fold Extra.cmd Extra.cmd
-            )
+        LlmGenerateSql source ->
+            ( model, source |> Just |> openGenerateSql |> Extra.msg )
 
 
 focusMainInput : DataExplorerTab -> Cmd msg
@@ -538,30 +531,29 @@ viewQueryEditor wrap toggleDropdown openedDropdown htmlId source model =
     in
     div [ class "flex-1 flex flex-col relative" ]
         [ div [ class "m-3 block flex-1 rounded-md shadow-sm ring-1 ring-inset ring-gray-300" ] [ Editor.sql (UpdateQuery >> wrap) inputId model ]
-        , div [ class "absolute bottom-6 right-6 z-10 inline-flex" ]
+        , div [ class "absolute bottom-6 right-6 z-10 inline-flex flex-row-reverse gap-3" ]
             [ button
                 [ type_ "button"
                 , onClick ({ sql = model.content, origin = "userQuery", db = source.db.kind } |> RunQuery source |> wrap)
                 , disabled (model.content == "")
-                , class "relative inline-flex items-center bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:bg-indigo-300"
+                , class "relative inline-flex items-center rounded bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:bg-indigo-300"
                 ]
                 [ text "Run query" ]
-            , div [ class "relative -ml-px block" ]
+            , div [ class "relative" ]
                 [ button
                     [ type_ "button"
                     , onClick (toggleDropdown optionsButton)
-                    , disabled (model.content == "")
                     , id optionsButton
-                    , class "relative inline-flex items-center bg-indigo-600 px-1 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:bg-indigo-300 focus:z-10 -ml-px"
+                    , class "relative inline-flex items-center rounded px-2 py-2 text-sm font-semibold bg-white text-gray-500 ring-1 ring-inset ring-gray-300 shadow-sm hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 focus:z-10"
                     , ariaExpanded True
                     , ariaHaspopup "true"
                     ]
-                    [ span [ class "sr-only" ] [ text "Open options" ]
-                    , Icon.solid Icon.ChevronDown "h-5 w-5"
+                    [ span [ class "sr-only" ] [ text "Open AI options" ]
+                    , Icon.outline Icon.Sparkles "h-5 w-5"
                     ]
                 , div [ classList [ ( "hidden", openedDropdown /= optionsButton ) ], class "w-56 absolute bottom-full mb-3 right-0 flex-col items-end z-max origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none", role "menu", ariaOrientation "vertical", ariaLabelledby optionsButton, tabindex -1 ]
                     [ div [ class "py-1", role "none" ]
-                        [ button [ type_ "button", onClick (LlmGenerateSql model.content |> wrap), class "text-gray-700 block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 hover:text-gray-900", role "menuitem", tabindex -1 ]
+                        [ button [ type_ "button", onClick (LlmGenerateSql source.id |> wrap), class "text-gray-700 block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 hover:text-gray-900", role "menuitem", tabindex -1 ]
                             [ Icon.outline Icon.Sparkles "h-5 w-5 inline mr-1", text "Generate SQL from text" ]
                         ]
                     ]
@@ -666,7 +658,7 @@ docSource2 =
             [ DataExplorerQuery.docTable "public" "users" [ ( "id", "int", False ), ( "name", "varchar", False ), ( "email", "varchar", False ), ( "created_at", "timestamp", False ) ]
             , Table.empty |> (\t -> { t | id = ( "", "key_values" ), name = "key_values", columns = docKeyValueColumns })
             ]
-                |> Dict.fromListMap .id
+                |> Dict.fromListBy .id
         , relations = []
     }
 
@@ -681,7 +673,7 @@ docKeyValueColumns =
     [ Column.empty |> (\c -> { c | index = 0, name = "key", kind = "varchar", nullable = False })
     , Column.empty |> (\c -> { c | index = 1, name = "value", kind = "json", nullable = True, columns = Just (NestedColumns docKeyValueNestedColumns) })
     ]
-        |> Dict.fromListMap .name
+        |> Dict.fromListBy .name
 
 
 docKeyValueNestedColumns : Ned ColumnName Column
@@ -712,7 +704,7 @@ docComponentState name get set sources =
 
 docUpdate : DocState -> (DocState -> Model) -> (DocState -> Model -> DocState) -> List Source -> Msg -> ElmBook.Msg (SharedDocState x)
 docUpdate s get set sources m =
-    s |> get |> update docWrap docShowToast ProjectInfo.zero (ProjectSettings.init "") sources m |> Tuple.first |> set s |> docSetState
+    s |> get |> update docWrap docShowToast docOpenGenerateSql ProjectInfo.zero sources m |> Tuple.first |> set s |> docSetState
 
 
 docToggleDropdown : DocState -> HtmlId -> ElmBook.Msg (SharedDocState x)
@@ -742,6 +734,11 @@ docWrap _ =
 docShowToast : Toasts.Msg -> ElmBook.Msg state
 docShowToast _ =
     logAction "showToast"
+
+
+docOpenGenerateSql : Maybe SourceId -> ElmBook.Msg state
+docOpenGenerateSql _ =
+    logAction "openGenerateSql"
 
 
 docShowTable : TableId -> ElmBook.Msg state

@@ -49,6 +49,7 @@ module Services.Lenses exposing
     , mapLayoutsDTM
     , mapList
     , mapLlm
+    , mapLlmGenerateSqlT
     , mapMT
     , mapMemos
     , mapMemosLT
@@ -170,6 +171,7 @@ module Services.Lenses exposing
     , setLayouts
     , setList
     , setLlm
+    , setLlmGenerateSql
     , setMax
     , setMemos
     , setMetadata
@@ -801,6 +803,16 @@ setLlm =
 mapLlm : (v -> v) -> { item | llm : v } -> { item | llm : v }
 mapLlm =
     map_ .llm setLlm
+
+
+setLlmGenerateSql : v -> { item | llmGenerateSql : v } -> { item | llmGenerateSql : v }
+setLlmGenerateSql =
+    set_ .llmGenerateSql (\value item -> { item | llmGenerateSql = value })
+
+
+mapLlmGenerateSqlT : (v -> ( v, a )) -> { item | llmGenerateSql : v } -> ( { item | llmGenerateSql : v }, a )
+mapLlmGenerateSqlT =
+    mapT_ .llmGenerateSql setLlmGenerateSql
 
 
 setMax : v -> { item | max : v } -> { item | max : v }

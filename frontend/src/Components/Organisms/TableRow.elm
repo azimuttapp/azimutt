@@ -994,7 +994,7 @@ docSource =
         , docTable "public" "events" [ ( "id", "uuid", False ), ( "name", "varchar", False ), ( "data", "json", True ), ( "details", "json", True ), ( "created_by", "uuid", True ), ( "created_at", "timestamp", False ), ( "organization_id", "uuid", True ), ( "project_id", "uuid", True ) ]
         , docTable "public" "city" [ ( "id", "int", False ), ( "name", "varchar", False ), ( "country_code", "varchar", False ), ( "district", "varchar", False ), ( "population", "int", False ) ]
         ]
-            |> Dict.fromListMap .id
+            |> Dict.fromListBy .id
     , relations =
         [ docRelation ( "public", "organizations", "created_by" ) ( "public", "users", "id" )
         , docRelation ( "public", "projects", "organization_id" ) ( "public", "organizations", "id" )
@@ -1027,7 +1027,7 @@ docTable schema name columns =
                     | id = ( schema, name )
                     , schema = schema
                     , name = name
-                    , columns = columns |> List.indexedMap (\i ( col, kind, nullable ) -> Column.empty |> (\c -> { c | index = i, name = col, kind = kind, nullable = nullable })) |> Dict.fromListMap .name
+                    , columns = columns |> List.indexedMap (\i ( col, kind, nullable ) -> Column.empty |> (\c -> { c | index = i, name = col, kind = kind, nullable = nullable })) |> Dict.fromListBy .name
                     , primaryKey = Just { name = Just (name ++ "_pk"), columns = Nel (Nel "id" []) [] }
                 }
            )

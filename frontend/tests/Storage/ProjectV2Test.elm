@@ -115,7 +115,7 @@ project0Json =
 
 tables1 : Dict TableId Table
 tables1 =
-    Dict.fromListMap .id [ { table | id = ( "public", "users" ), schema = "public", name = "users", columns = Dict.fromListMap .name [ { column | index = 0, name = "id", kind = "int" } ] } ]
+    Dict.fromListBy .id [ { table | id = ( "public", "users" ), schema = "public", name = "users", columns = Dict.fromListBy .name [ { column | index = 0, name = "id", kind = "int" } ] } ]
 
 
 project1 : Project
@@ -153,13 +153,13 @@ project1Json =
 
 tables2 : Dict TableId Table
 tables2 =
-    Dict.fromListMap .id
+    Dict.fromListBy .id
         [ { table
             | id = ( "public", "users" )
             , schema = "public"
             , name = "users"
             , columns =
-                Dict.fromListMap .name
+                Dict.fromListBy .name
                     [ { column | index = 0, name = "id", kind = "int" }
                     , { column | index = 1, name = "name", kind = "varchar", nullable = True }
                     ]
@@ -170,7 +170,7 @@ tables2 =
             , schema = "public"
             , name = "creds"
             , columns =
-                Dict.fromListMap .name
+                Dict.fromListBy .name
                     [ { column | index = 0, name = "user_id", kind = "int" }
                     , { column | index = 1, name = "login", kind = "varchar" }
                     , { column | index = 2, name = "pass", kind = "varchar", comment = Just (Comment "Encrypted field") }

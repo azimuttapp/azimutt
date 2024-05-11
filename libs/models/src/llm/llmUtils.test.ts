@@ -33,5 +33,14 @@ describe('llmUtils', () => {
     test('cleanSqlAnswer', () => {
         expect(cleanSqlAnswer('SELECT * FROM users;')).toBe('SELECT * FROM users;')
         expect(cleanSqlAnswer('```sql\nSELECT * FROM users;\n```')).toBe('SELECT * FROM users;')
+        expect(cleanSqlAnswer('```sql\n' +
+            'SELECT name, email\n' +
+            'FROM public.users\n' +
+            'WHERE provider = \'github\'\n' +
+            'ORDER BY name ASC;\n' +
+            '```')).toBe('SELECT name, email\n' +
+            'FROM public.users\n' +
+            'WHERE provider = \'github\'\n' +
+            'ORDER BY name ASC;')
     })
 })

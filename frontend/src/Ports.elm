@@ -32,7 +32,7 @@ import Models.ProjectTokenId as ProjectTokenId exposing (ProjectTokenId)
 import Models.QueryResult as QueryResult exposing (QueryResult)
 import Models.Route as Route exposing (Route)
 import Models.Size as Size
-import Models.SqlQuery as SqlQuery exposing (SqlQueryOrigin)
+import Models.SqlQuery as SqlQuery exposing (SqlQuery, SqlQueryOrigin)
 import Models.TrackEvent as TrackEvent exposing (TrackEvent)
 import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
@@ -310,7 +310,7 @@ type JsMsg
     | GotColumnHide ColumnRef
     | GotColumnMove ColumnRef Int
     | GotFitToScreen
-    | GotLlmSqlGenerated String
+    | GotLlmSqlGenerated SqlQuery
     | GotLlmSqlGeneratedError String
     | Error Value Decode.Error
 

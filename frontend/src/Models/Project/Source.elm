@@ -1,4 +1,4 @@
-module Models.Project.Source exposing (Source, addRelations, aml, databaseUrl, decode, encode, getColumn, getTable, refreshWith, removeRelations, toInfo)
+module Models.Project.Source exposing (Source, addRelations, aml, databaseKind, databaseUrl, decode, encode, getColumn, getTable, refreshWith, removeRelations, toInfo)
 
 import Array exposing (Array)
 import Conf
@@ -11,6 +11,7 @@ import Libs.Dict as Dict
 import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
 import Libs.List as List
+import Libs.Models.DatabaseKind as DatabaseKind exposing (DatabaseKind)
 import Libs.Models.DatabaseUrl exposing (DatabaseUrl)
 import Libs.Time as Time
 import Models.Project.Column exposing (Column)
@@ -76,7 +77,12 @@ toInfo source =
 
 databaseUrl : Source -> Maybe DatabaseUrl
 databaseUrl source =
-    SourceKind.databaseUrl source.kind
+    source.kind |> SourceKind.databaseUrl
+
+
+databaseKind : Source -> Maybe DatabaseKind
+databaseKind source =
+    source.kind |> SourceKind.databaseUrl |> Maybe.andThen DatabaseKind.fromUrl
 
 
 getTable : TableId -> Source -> Maybe Table
@@ -158,9 +164,9 @@ decode =
         (Decode.field "name" SourceName.decode)
         (Decode.field "kind" SourceKind.decode)
         (Decode.field "content" (Decode.array SourceLine.decode))
-        (Decode.field "tables" (Decode.list Table.decode) |> Decode.map (Dict.fromListMap .id))
+        (Decode.field "tables" (Decode.list Table.decode) |> Decode.map (Dict.fromListBy .id))
         (Decode.field "relations" (Decode.list Relation.decode))
-        (Decode.defaultField "types" (Decode.list CustomType.decode |> Decode.map (Dict.fromListMap .id)) Dict.empty)
+        (Decode.defaultField "types" (Decode.list CustomType.decode |> Decode.map (Dict.fromListBy .id)) Dict.empty)
         (Decode.defaultField "enabled" Decode.bool True)
         (Decode.maybeField "fromSample" SampleKey.decode)
         (Decode.field "createdAt" Time.decode)

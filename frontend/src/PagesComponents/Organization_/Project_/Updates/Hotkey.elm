@@ -19,6 +19,7 @@ import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableRow as TableRow exposing (TableRow, TableRowColumn)
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
 import PagesComponents.Organization_.Project_.Components.ExportDialog as ExportDialog
+import PagesComponents.Organization_.Project_.Components.LlmGenerateSqlDialog as LlmGenerateSqlDialog
 import PagesComponents.Organization_.Project_.Components.ProjectSaveDialog as ProjectSaveDialog
 import PagesComponents.Organization_.Project_.Components.ProjectSharing as ProjectSharing
 import PagesComponents.Organization_.Project_.Components.SourceUpdateDialog as SourceUpdateDialog
@@ -249,6 +250,7 @@ cancelElement model =
         |> Maybe.orElse (model.modal |> Maybe.map (\_ -> ModalClose CustomModalClose))
         |> Maybe.orElse (model.virtualRelation |> Maybe.map (\_ -> VirtualRelationMsg VRCancel))
         |> Maybe.orElse (model.dragging |> Maybe.map (\_ -> DragCancel))
+        |> Maybe.orElse (model.llmGenerateSql |> Maybe.map (\_ -> ModalClose (LlmGenerateSqlDialogMsg LlmGenerateSqlDialog.Close)))
         |> Maybe.orElse (model.exportDialog |> Maybe.map (\_ -> ModalClose (ExportDialogMsg ExportDialog.Close)))
         |> Maybe.orElse (model.newLayout |> Maybe.map (\_ -> ModalClose (NewLayoutMsg NewLayout.Cancel)))
         |> Maybe.orElse (model.editNotes |> Maybe.map (\_ -> ModalClose (NotesMsg NCancel)))

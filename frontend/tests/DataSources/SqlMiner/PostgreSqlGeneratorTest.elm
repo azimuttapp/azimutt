@@ -21,7 +21,7 @@ suite =
     describe "PostgreSqlGenerator"
         [ describe "generate"
             [ test "empty" (\_ -> emptySource |> PostgreSqlGenerator.generate |> Expect.equal "")
-            , test "empty table" (\_ -> { emptySource | tables = Dict.fromListMap .id [ { emptyTable | name = "users" } ] } |> PostgreSqlGenerator.generate |> Expect.equal "CREATE TABLE users (\n);")
+            , test "empty table" (\_ -> { emptySource | tables = Dict.fromListBy .id [ { emptyTable | name = "users" } ] } |> PostgreSqlGenerator.generate |> Expect.equal "CREATE TABLE users (\n);")
             , test "table with columns"
                 (\_ ->
                     { emptySource
@@ -179,12 +179,12 @@ emptyComment =
 
 buildTables : List Table -> Dict TableId Table
 buildTables tables =
-    tables |> Dict.fromListMap .id
+    tables |> Dict.fromListBy .id
 
 
 buildColumns : List Column -> Dict ColumnName Column
 buildColumns columns =
-    columns |> List.indexedMap (\i c -> { c | index = i }) |> Dict.fromListMap .name
+    columns |> List.indexedMap (\i c -> { c | index = i }) |> Dict.fromListBy .name
 
 
 buildRelation : ( String, ( String, String, String ), ( String, String, String ) ) -> Relation

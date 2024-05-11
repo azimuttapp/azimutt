@@ -1,5 +1,5 @@
 import {z} from "zod";
-import "openai/shims/node";
+import "openai/shims/web"; // 'web' fails on tests, 'node' fails on build (in frontend project)
 import OpenAI from "openai";
 import {Logger} from "@azimutt/utils";
 

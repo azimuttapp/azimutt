@@ -89,7 +89,7 @@ sourceLines =
 
 tables : Fuzzer (Dict TableId Table)
 tables =
-    listSmall table |> Fuzz.map (Dict.fromListMap .id)
+    listSmall table |> Fuzz.map (Dict.fromListBy .id)
 
 
 table : Fuzzer Table
@@ -99,7 +99,7 @@ table =
         tableName
         Fuzz.bool
         (Fuzz.constant Nothing)
-        (listSmall (column 0) |> Fuzz.map (List.uniqueBy .name >> List.indexedMap (\i c -> { c | index = i }) >> Dict.fromListMap .name))
+        (listSmall (column 0) |> Fuzz.map (List.uniqueBy .name >> List.indexedMap (\i c -> { c | index = i }) >> Dict.fromListBy .name))
         (Fuzz.maybe primaryKey)
         (listSmall unique)
         (listSmall index)
@@ -140,7 +140,7 @@ comment =
 
 types : Fuzzer (Dict CustomTypeId CustomType)
 types =
-    listSmall customType |> Fuzz.map (Dict.fromListMap .id)
+    listSmall customType |> Fuzz.map (Dict.fromListBy .id)
 
 
 customType : Fuzzer CustomType
