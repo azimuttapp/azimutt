@@ -1,6 +1,6 @@
 {
   "name": "@azimutt/connector-bigquery",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Connect to BigQuery, extract schema, run analysis and queries",
   "keywords": [],
   "homepage": "https://azimutt.app",
@@ -25,9 +25,9 @@
     "dry-publish": "npm run build && npm test && npm pack"
   },
   "dependencies": {
-    "@azimutt/models": "^0.1.0",
-    "@azimutt/utils": "^0.1.0",
-    "@google-cloud/bigquery": "7.6.0"
+    "@azimutt/models": "^0.1.4",
+    "@azimutt/utils": "^0.1.1",
+    "@google-cloud/bigquery": "7.7.0"
   },
   "devDependencies": {
     "@jest/globals": "^29.7.0",
