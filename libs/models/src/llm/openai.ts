@@ -1,5 +1,5 @@
 import {z} from "zod";
-import "openai/shims/web"; // FIXME 'web' fails on tests, 'node' fails on build (in frontend project)
+import "openai/shims/web"; // FIXME 'web' fails on frontend/ts-src/types/ports.test.disabled.ts tests :/
 import OpenAI from "openai";
 import {Logger} from "@azimutt/utils";
 
