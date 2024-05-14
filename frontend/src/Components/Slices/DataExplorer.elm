@@ -251,7 +251,7 @@ focusMainInput tab =
 
 
 view : (Msg -> msg) -> (HtmlId -> msg) -> ((msg -> String -> Html msg) -> msg) -> (TableId -> msg) -> (DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> String -> HtmlId -> SchemaName -> HtmlId -> List Source -> ErdLayout -> Metadata -> Model -> DataExplorerDisplay -> Html msg
-view wrap toggleDropdown openModal showTable showTableRow openNotes navbarHeight openedDropdown defaultSchema htmlId sources layout metadata model display =
+view wrap toggleDropdown openModal _ showTableRow openNotes _ openedDropdown defaultSchema htmlId sources _ metadata model display =
     let
         hasFullScreen : Bool
         hasFullScreen =
@@ -279,8 +279,10 @@ view wrap toggleDropdown openModal showTable showTableRow openNotes navbarHeight
                     model.source |> Maybe.mapOrElse (\s -> viewQueryEditor wrap toggleDropdown openedDropdown (htmlId ++ "-query-editor") s model.queryEditor) (div [] [])
             ]
         , div [ class "basis-2/3 flex-1 overflow-y-auto bg-gray-50 pb-28" ]
-            [ viewResults wrap toggleDropdown openModal (\s q -> OpenDetails s q |> wrap) openNotes openedDropdown defaultSchema sources metadata (htmlId ++ "-results") model.results ]
-        , viewDetails wrap showTable showTableRow (\s q -> OpenDetails s q |> wrap) openNotes navbarHeight hasFullScreen defaultSchema sources layout metadata (htmlId ++ "-details") model.details
+            [ viewResults wrap toggleDropdown openModal (\s q -> showTableRow s q Nothing Nothing) openNotes openedDropdown defaultSchema sources metadata (htmlId ++ "-results") model.results ]
+
+        -- Don't show TableRow details, load them directly into the layout, TODO: clean everything once sure about this change...
+        -- , viewDetails wrap showTable showTableRow (\s q -> OpenDetails s q |> wrap) openNotes navbarHeight hasFullScreen defaultSchema sources layout metadata (htmlId ++ "-details") model.details
         ]
 
 
