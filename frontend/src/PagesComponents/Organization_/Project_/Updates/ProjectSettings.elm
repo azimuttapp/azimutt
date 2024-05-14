@@ -6,6 +6,7 @@ import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Task as T
 import Libs.Tuple as Tuple
+import Models.OpenAIModel as OpenAIModel
 import Models.Project.ProjectSettings as ProjectSettings
 import Models.Project.Source as Source exposing (Source)
 import Models.Project.TableId exposing (TableId)
@@ -16,7 +17,7 @@ import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
 import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirty, setDirtyM)
 import Ports
-import Services.Lenses exposing (mapCollapseTableColumns, mapColumnBasicTypes, mapEnabled, mapErdM, mapErdMT, mapErdMTM, mapHiddenColumns, mapLlm, mapNameT, mapProps, mapRelations, mapRemoveViews, mapRemovedSchemas, mapSettingsM, mapSourceUpdateT, setColumnOrder, setDefaultSchema, setKey, setList, setMax, setRelationStyle, setRemovedTables, setSettings)
+import Services.Lenses exposing (mapCollapseTableColumns, mapColumnBasicTypes, mapEnabled, mapErdM, mapErdMT, mapErdMTM, mapHiddenColumns, mapLlm, mapLlmM, mapNameT, mapProps, mapRelations, mapRemoveViews, mapRemovedSchemas, mapSettingsM, mapSourceUpdateT, setColumnOrder, setDefaultSchema, setKey, setList, setMax, setModel, setRelationStyle, setRemovedTables, setSettings)
 import Services.Toasts as Toasts
 import Time
 import Track
@@ -164,7 +165,10 @@ handleProjectSettings now msg model =
             ( model |> mapErdM (Erd.mapSettings (mapCollapseTableColumns not)), Extra.none ) |> setDirty
 
         PSLlmKeyUpdate key ->
-            ( model |> mapErdM (Erd.mapSettings (mapLlm (setKey (B.cond (key == "") Nothing (Just key))))), Extra.none ) |> setDirty
+            ( model |> mapErdM (Erd.mapSettings (mapLlm (\llm -> B.cond (key == "") Nothing (llm |> Maybe.mapOrElse (setKey key) { key = key, model = OpenAIModel.default } |> Just)))), Extra.none ) |> setDirty
+
+        PSLlmModelUpdate m ->
+            ( model |> mapErdM (Erd.mapSettings (mapLlmM (setModel m))), Extra.none ) |> setDirty
 
 
 getShownTables : Maybe Erd -> List TableId

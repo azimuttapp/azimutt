@@ -7,6 +7,7 @@ import Libs.Dict as Dict
 import Libs.Fuzz as Fuzz
 import Libs.List as List
 import Models.ColumnOrder as ColumnOrder exposing (ColumnOrder)
+import Models.OpenAIModel as OpenAIModel exposing (OpenAIModel)
 import Models.Project exposing (Project)
 import Models.Project.CanvasProps exposing (CanvasProps)
 import Models.Project.Check exposing (Check)
@@ -262,7 +263,7 @@ rowValue =
 
 projectSettings : Fuzzer ProjectSettings
 projectSettings =
-    Fuzz.map11 ProjectSettings findPathSettings schemaName (listSmall schemaName) Fuzz.bool stringSmall findHiddenColumns columnOrder relationStyle Fuzz.bool Fuzz.bool projectSettingsLlm
+    Fuzz.map11 ProjectSettings findPathSettings schemaName (listSmall schemaName) Fuzz.bool stringSmall findHiddenColumns columnOrder relationStyle Fuzz.bool Fuzz.bool (Fuzz.maybe projectSettingsLlm)
 
 
 findPathSettings : Fuzzer FindPathSettings
@@ -277,7 +278,12 @@ findHiddenColumns =
 
 projectSettingsLlm : Fuzzer LlmSettings
 projectSettingsLlm =
-    Fuzz.map LlmSettings (Fuzz.maybe stringSmall)
+    Fuzz.map2 LlmSettings stringSmall openAIModel
+
+
+openAIModel : Fuzzer OpenAIModel
+openAIModel =
+    OpenAIModel.all |> List.map Fuzz.constant |> Fuzz.oneOf
 
 
 projectStorage : Fuzzer ProjectStorage

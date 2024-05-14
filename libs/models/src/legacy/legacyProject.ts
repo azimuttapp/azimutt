@@ -23,6 +23,7 @@ import {
 import {zodParse} from "../zod";
 import {Attribute, Database, Entity, Type} from "../database";
 import {parseDatabaseUrl} from "../databaseUrl";
+import {OpenAIKey, OpenAIModel} from "../llm";
 
 // MUST stay in sync with backend/lib/azimutt_web/utils/project_schema.ex
 
@@ -643,7 +644,7 @@ export interface LegacySettings {
     relationStyle?: 'Bezier' | 'Straight' | 'Steps'
     columnBasicTypes?: boolean
     collapseTableColumns?: boolean
-    llm?: { key?: string }
+    llm?: { key: OpenAIKey, model: OpenAIModel }
 }
 
 export const LegacySettings = z.object({
@@ -667,7 +668,8 @@ export const LegacySettings = z.object({
     columnBasicTypes: z.boolean().optional(),
     collapseTableColumns: z.boolean().optional(),
     llm: z.object({
-        key: z.string().optional(),
+        key: OpenAIKey,
+        model: OpenAIModel,
     }).strict().optional(),
 }).strict()
 

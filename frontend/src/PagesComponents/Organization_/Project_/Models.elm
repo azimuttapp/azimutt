@@ -20,6 +20,8 @@ import Libs.Task as T
 import Models.ColumnOrder exposing (ColumnOrder)
 import Models.DbSourceInfo exposing (DbSourceInfo)
 import Models.ErdProps as ErdProps exposing (ErdProps)
+import Models.OpenAIKey exposing (OpenAIKey)
+import Models.OpenAIModel exposing (OpenAIModel)
 import Models.Organization exposing (Organization)
 import Models.Position as Position
 import Models.Project.CanvasProps exposing (CanvasProps)
@@ -422,7 +424,8 @@ type ProjectSettingsMsg
     | PSRelationStyleUpdate RelationStyle
     | PSColumnBasicTypesToggle
     | PSCollapseTableOnShowToggle
-    | PSLlmKeyUpdate String
+    | PSLlmKeyUpdate OpenAIKey
+    | PSLlmModelUpdate OpenAIModel
 
 
 type HelpMsg

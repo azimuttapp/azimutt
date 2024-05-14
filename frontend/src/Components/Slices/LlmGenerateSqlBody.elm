@@ -5,6 +5,7 @@ import Components.Atoms.Badge as Badge
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon
 import Components.Molecules.Tooltip as Tooltip
+import Conf
 import Dict
 import ElmBook
 import ElmBook.Actions
@@ -25,6 +26,7 @@ import Libs.Tailwind as Tw exposing (sm)
 import Libs.Task as T
 import Libs.Time as Time
 import Libs.Tuple3 as Tuple3
+import Models.OpenAIModel as OpenAIModel exposing (OpenAIModel)
 import Models.Position as Position
 import Models.Project as Project
 import Models.Project.Column as Column exposing (Column)
@@ -47,6 +49,7 @@ import PagesComponents.Organization_.Project_.Models.ErdTableProps exposing (Erd
 import Ports
 import Services.Lenses exposing (setCurrentLayout, setLayouts, setTables)
 import Shared exposing (Prompt)
+import Track
 
 
 type alias Model =
@@ -86,21 +89,21 @@ update : (Prompt msg -> String -> msg) -> (String -> msg) -> Erd -> Msg -> Model
 update openPrompt updateLlmKey erd msg model =
     case msg of
         SetSource source ->
-            ( { model | source = model.sources |> List.find (\( s, _, _ ) -> source |> Maybe.has s) }, Cmd.none )
+            ( { model | source = source |> Maybe.andThen (\id -> model.sources |> List.findBy Tuple3.first id) }, Cmd.none )
 
         SetPrompt prompt ->
             ( { model | prompt = prompt }, Cmd.none )
 
         GenerateSql ->
-            erd.settings.llm.key
+            erd.settings.llm
                 |> Maybe.map
-                    (\key ->
+                    (\llm ->
                         model.source
                             |> Maybe.andThenZip (\( id, _, _ ) -> erd.sources |> List.findBy .id id)
                             |> Maybe.map
                                 (\( ( _, _, kind ), source ) ->
                                     ( { model | loading = True }
-                                    , Ports.llmGenerateSql key model.prompt kind source
+                                    , Cmd.batch [ Ports.llmGenerateSql llm.key llm.model model.prompt kind source, Track.generateSqlQueried erd.project source llm.model model.prompt ]
                                     )
                                 )
                             |> Maybe.withDefault ( { model | generatedSql = Err "No selected database source" |> Just }, Cmd.none )
@@ -108,7 +111,9 @@ update openPrompt updateLlmKey erd msg model =
                 |> Maybe.withDefault ( model, promptLlmKey openPrompt updateLlmKey |> T.send )
 
         SqlGenerated result ->
-            ( { model | loading = False, generatedSql = Just result }, Cmd.none )
+            ( { model | loading = False, generatedSql = Just result }
+            , Track.generateSqlReplied erd.project (model.source |> findSource erd) (getLlmModel erd) model.prompt result
+            )
 
 
 promptLlmKey : (Prompt msg -> String -> msg) -> (String -> msg) -> msg
@@ -132,8 +137,8 @@ promptLlmKey openPrompt updateLlmKey =
         ""
 
 
-view : (Msg -> msg) -> (List msg -> msg) -> (SourceId -> SqlQueryOrigin -> msg) -> msg -> HtmlId -> Model -> Html msg
-view wrap batch openDataExplorer onClose titleId model =
+view : (Msg -> msg) -> (Cmd msg -> msg) -> (List msg -> msg) -> (String -> msg) -> (SourceId -> SqlQueryOrigin -> msg) -> msg -> HtmlId -> Erd -> Model -> Html msg
+view wrap send batch toastSuccess openDataExplorer onClose titleId erd model =
     let
         ( sourceHtmlId, promptHtmlId, sqlHtmlId ) =
             ( model.id ++ "-source", model.id ++ "-prompt", model.id ++ "-sql" )
@@ -211,29 +216,72 @@ view wrap batch openDataExplorer onClose titleId model =
                     |> Maybe.withDefault (text "")
                 ]
             ]
-        , div [ class "px-6 py-3 mt-6 flex items-center flex-col sm:flex-row sm:flex-row-reverse bg-gray-50 rounded-b-lg gap-3" ]
-            [ model.generatedSql
-                |> Maybe.andThen Result.toMaybe
-                |> Maybe.map2
-                    (\( sourceId, _, dbKind ) sql ->
-                        Button.primary3 Tw.green [ onClick (batch [ onClose, openDataExplorer sourceId { sql = sql, origin = "llm-generate-query", db = dbKind } ]), css [ "w-full text-base", sm [ "w-auto text-sm" ] ] ] [ text "Execute SQL" ]
+        , div [ class "px-6 py-3 mt-6 flex flex-col sm:flex-row items-center justify-between sm:flex-row-reverse bg-gray-50 rounded-b-lg gap-3" ]
+            [ div [ class "flex flex-col sm:flex-row sm:flex-row-reverse gap-3" ]
+                [ model.generatedSql
+                    |> Maybe.andThen Result.toMaybe
+                    |> Maybe.map2
+                        (\( sourceId, _, dbKind ) sql ->
+                            Button.primary3 Tw.green [ onClick (batch [ onClose, openDataExplorer sourceId { sql = sql, origin = "llm-generate-sql", db = dbKind } ]), css [ "w-full text-base", sm [ "w-auto text-sm" ] ] ] [ text "Execute SQL" ]
+                        )
+                        model.source
+                    |> Maybe.withDefault (text "")
+                , if model.prompt == "" then
+                    text ""
+
+                  else if model.loading then
+                    Button.primary3 Tw.primary [ disabled True, css [ "w-full text-base", sm [ "w-auto text-sm" ] ] ] [ Icon.loading "mr-2 inline animate-spin", text "Generating SQL" ]
+
+                  else if model.generatedSql == Nothing then
+                    Button.primary3 Tw.primary [ onClick (GenerateSql |> wrap), css [ "w-full text-base", sm [ "w-auto text-sm" ] ] ] [ text "Generate SQL" ]
+
+                  else
+                    Button.primary3 Tw.primary [ onClick (GenerateSql |> wrap), css [ "w-full text-base", sm [ "w-auto text-sm" ] ] ] [ text "Generate SQL again" ]
+                , Button.white3 Tw.gray [ onClick onClose, css [ "w-full text-base", sm [ "w-auto text-sm" ] ] ] [ text "Close" ]
+                ]
+            , (model.generatedSql |> Maybe.andThen Result.toMaybe)
+                |> Maybe.map
+                    (\query ->
+                        div [ class "flex flex-row gap-1" ]
+                            [ Button.transparent3 Tw.gray
+                                [ onClick
+                                    (batch
+                                        [ toastSuccess "Awesome! Enjoy Azimutt AI 🤘"
+                                        , Track.generateSqlSucceeded erd.project (model.source |> findSource erd) (getLlmModel erd) model.prompt query |> send
+                                        ]
+                                    )
+                                , css [ "w-full text-base", sm [ "w-auto text-sm" ] ]
+                                ]
+                                [ Icon.outline Icon.ThumbUp "h-5 w-5" ]
+                            , Button.transparent3 Tw.gray
+                                [ onClick
+                                    (batch
+                                        [ toastSuccess ("Ok, noted! We'll try to improve it. Don't hesitate to reach out to discuss more: " ++ Conf.constants.azimuttEmail)
+                                        , Track.generateSqlFailed erd.project (model.source |> findSource erd) (getLlmModel erd) model.prompt query |> send
+                                        ]
+                                    )
+                                , css [ "w-full text-base", sm [ "w-auto text-sm" ] ]
+                                ]
+                                [ Icon.outline Icon.ThumbDown "h-5 w-5" ]
+                            ]
                     )
-                    model.source
                 |> Maybe.withDefault (text "")
-            , if model.prompt == "" then
-                text ""
-
-              else if model.loading then
-                Button.primary3 Tw.primary [ disabled True, css [ "w-full text-base", sm [ "w-auto text-sm" ] ] ] [ Icon.loading "mr-2 inline animate-spin", text "Generating SQL" ]
-
-              else if model.generatedSql == Nothing then
-                Button.primary3 Tw.primary [ onClick (GenerateSql |> wrap), css [ "w-full text-base", sm [ "w-auto text-sm" ] ] ] [ text "Generate SQL" ]
-
-              else
-                Button.primary3 Tw.primary [ onClick (GenerateSql |> wrap), css [ "w-full text-base", sm [ "w-auto text-sm" ] ] ] [ text "Generate SQL again" ]
-            , Button.white3 Tw.gray [ onClick onClose, css [ "w-full text-base", sm [ "w-auto text-sm" ] ] ] [ text "Close" ]
             ]
         ]
+
+
+
+-- HELPERS
+
+
+findSource : Erd -> Maybe ( SourceId, SourceName, DatabaseKind ) -> Maybe Source
+findSource erd source =
+    source |> Maybe.andThen (\( id, _, _ ) -> erd.sources |> List.findBy .id id)
+
+
+getLlmModel : Erd -> OpenAIModel
+getLlmModel erd =
+    erd.settings.llm |> Maybe.mapOrElse .model OpenAIModel.default
 
 
 
@@ -257,7 +305,7 @@ doc : Chapter (SharedDocState x)
 doc =
     Chapter.chapter "LlmGenerateSqlBody"
         |> Chapter.renderStatefulComponentList
-            [ docComponent "dynamic" (\model -> view docUpdateStateDynamic docBatch docOpenDatExplorer docOnClose docTitleId model.dynamic)
+            [ docComponent "dynamic" (\model -> view docUpdateStateDynamic docSend docBatch docToast docOpenDatExplorer docOnClose docTitleId docErd model.dynamic)
             , docComponentStatic "empty" docModelEmpty
             , docComponentStatic "with prompt" { docModelEmpty | prompt = "Who is Loïc?" }
             , docComponentStatic "loading" { docModelEmpty | prompt = "Who is Loïc?", loading = True }
@@ -275,7 +323,7 @@ docComponent name render =
 
 docComponentStatic : String -> Model -> ( String, SharedDocState x -> Html (ElmBook.Msg state) )
 docComponentStatic name model =
-    ( name, \_ -> view docWrap docBatch docOpenDatExplorer docOnClose docTitleId { model | id = name } )
+    ( name, \_ -> view docWrap docSend docBatch docToast docOpenDatExplorer docOnClose docTitleId docErd { model | id = name } )
 
 
 docUpdateStateDynamic : Msg -> ElmBook.Msg (SharedDocState x)
@@ -309,9 +357,19 @@ docUpdateLlmKey _ =
     ElmBook.Actions.logAction "updateLlmKey"
 
 
+docSend : Cmd msg -> ElmBook.Msg state
+docSend _ =
+    ElmBook.Actions.logAction "send"
+
+
 docBatch : List msg -> ElmBook.Msg state
 docBatch _ =
     ElmBook.Actions.logAction "batch"
+
+
+docToast : String -> ElmBook.Msg state
+docToast _ =
+    ElmBook.Actions.logAction "toast"
 
 
 docOpenDatExplorer : SourceId -> SqlQueryOrigin -> ElmBook.Msg state

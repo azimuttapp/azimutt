@@ -200,7 +200,7 @@ viewModal currentUrl urlInfos shared model _ =
          , model.newLayout |> Maybe.map2 (\e m -> ( m.id, NewLayout.view NewLayoutMsg ModalClose project (e.layouts |> Dict.keys) (isOpen m) m )) model.erd
          , model.editNotes |> Maybe.map2 (\e m -> ( m.id, viewEditNotes (isOpen m) e m )) model.erd
          , model.findPath |> Maybe.map2 (\e m -> ( m.id, viewFindPath (isOpen m) model.openedDropdown e.settings.defaultSchema e.tables e.settings.findPath m )) model.erd
-         , model.llmGenerateSql |> Maybe.map (\m -> ( m.id, LlmGenerateSqlDialog.view LlmGenerateSqlDialogMsg Batch (\source q -> DataExplorer.Open (Just source) (Just q) |> DataExplorerMsg) ModalClose (isOpen m) m ))
+         , model.llmGenerateSql |> Maybe.map2 (\e m -> ( m.id, LlmGenerateSqlDialog.view LlmGenerateSqlDialogMsg Send Batch (Toasts.success >> Toast) (\source q -> DataExplorer.Open (Just source) (Just q) |> DataExplorerMsg) ModalClose (isOpen m) e m )) model.erd
          , model.schemaAnalysis |> Maybe.map2 (\e m -> ( m.id, viewSchemaAnalysis project (isOpen m) e.settings.defaultSchema e.sources e.tables e.relations e.ignoredRelations m )) model.erd
          , model.exportDialog |> Maybe.map (\m -> ( m.id, ExportDialog.view ExportDialogMsg Send ModalClose (isOpen m) project m ))
          , model.sharing |> Maybe.map2 (\e m -> ( m.id, ProjectSharing.view SharingMsg Send ModalClose confirmDanger shared.zone currentUrl urlInfos (isOpen m) e m )) model.erd

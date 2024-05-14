@@ -21,6 +21,8 @@ import {
     LegacySqlQueryOrigin,
     LegacyTableId,
     LegacyTableStats,
+    OpenAIKey,
+    OpenAIModel,
     Position,
     Size,
     SqlStatement,
@@ -156,8 +158,8 @@ export type ObserveSizes = { kind: 'ObserveSizes', ids: HtmlId[] }
 export const ObserveSizes = z.object({kind: z.literal('ObserveSizes'), ids: HtmlId.array()}).strict()
 export type ListenKeys = { kind: 'ListenKeys', keys: { [id: HotkeyId]: Hotkey[] } }
 export const ListenKeys = z.object({kind: z.literal('ListenKeys'), keys: z.record(HotkeyId, Hotkey.array())}).strict()
-export type LlmGenerateSql = { kind: 'LlmGenerateSql', apiKey: string, prompt: string, dialect: DatabaseKind, source: LegacySource }
-export const LlmGenerateSql = z.object({kind: z.literal('LlmGenerateSql'), apiKey: z.string(), prompt: z.string(), dialect: DatabaseKind, source: LegacySource}).strict()
+export type LlmGenerateSql = { kind: 'LlmGenerateSql', apiKey: OpenAIKey, model: OpenAIModel, prompt: string, dialect: DatabaseKind, source: LegacySource }
+export const LlmGenerateSql = z.object({kind: z.literal('LlmGenerateSql'), apiKey: OpenAIKey, model: OpenAIModel, prompt: z.string(), dialect: DatabaseKind, source: LegacySource}).strict()
 export type Confetti = { kind: 'Confetti', id: HtmlId }
 export const Confetti = z.object({kind: z.literal('Confetti'), id: HtmlId}).strict()
 export type ConfettiPride = { kind: 'ConfettiPride' }

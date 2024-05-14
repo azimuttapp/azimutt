@@ -15,6 +15,8 @@ import Libs.Models.FileName exposing (FileName)
 import Libs.Models.Hotkey as Hotkey exposing (Hotkey)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Color exposing (Color)
+import Models.OpenAIKey as OpenAIKey exposing (OpenAIKey)
+import Models.OpenAIModel as OpenAIModel exposing (OpenAIModel)
 import Models.OrganizationId as OrganizationId exposing (OrganizationId)
 import Models.Position as Position
 import Models.Project as Project exposing (Project)
@@ -208,9 +210,9 @@ observeSizes ids =
         messageToJs (ObserveSizes ids)
 
 
-llmGenerateSql : String -> String -> DatabaseKind -> Source -> Cmd msg
-llmGenerateSql apiKey prompt dialect source =
-    messageToJs (LlmGenerateSql apiKey prompt dialect source)
+llmGenerateSql : OpenAIKey -> OpenAIModel -> String -> DatabaseKind -> Source -> Cmd msg
+llmGenerateSql apiKey model prompt dialect source =
+    messageToJs (LlmGenerateSql apiKey model prompt dialect source)
 
 
 listenHotkeys : Dict String (List Hotkey) -> Cmd msg
@@ -274,7 +276,7 @@ type ElmMsg
     | RunDatabaseQuery String DatabaseUrl SqlQueryOrigin
     | GetPrismaSchema String
     | ObserveSizes (List HtmlId)
-    | LlmGenerateSql String String DatabaseKind Source
+    | LlmGenerateSql OpenAIKey OpenAIModel String DatabaseKind Source
     | ListenKeys (Dict String (List Hotkey))
     | Confetti HtmlId
     | ConfettiPride
@@ -421,8 +423,8 @@ elmEncoder elm =
         ObserveSizes ids ->
             Encode.object [ ( "kind", "ObserveSizes" |> Encode.string ), ( "ids", ids |> Encode.list Encode.string ) ]
 
-        LlmGenerateSql apiKey prompt dialect source ->
-            Encode.object [ ( "kind", "LlmGenerateSql" |> Encode.string ), ( "apiKey", apiKey |> Encode.string ), ( "prompt", prompt |> Encode.string ), ( "dialect", dialect |> DatabaseKind.encode ), ( "source", source |> Source.encode ) ]
+        LlmGenerateSql apiKey model prompt dialect source ->
+            Encode.object [ ( "kind", "LlmGenerateSql" |> Encode.string ), ( "apiKey", apiKey |> OpenAIKey.encode ), ( "model", model |> OpenAIModel.encode ), ( "prompt", prompt |> Encode.string ), ( "dialect", dialect |> DatabaseKind.encode ), ( "source", source |> Source.encode ) ]
 
         ListenKeys keys ->
             Encode.object [ ( "kind", "ListenKeys" |> Encode.string ), ( "keys", keys |> Encode.dict identity (Encode.list Hotkey.encode) ) ]

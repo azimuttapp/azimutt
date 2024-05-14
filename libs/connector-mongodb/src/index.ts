@@ -10,7 +10,6 @@ import {
     DatabaseQuery,
     DatabaseUrlParsed,
     EntityRef,
-    parseDatabaseOptions,
     QueryAnalyze,
     QueryResults,
     zodParseAsync

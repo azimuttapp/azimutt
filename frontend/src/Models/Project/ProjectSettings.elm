@@ -9,6 +9,8 @@ import Libs.Nel as Nel
 import Libs.Regex as Regex
 import Libs.String as String
 import Models.ColumnOrder as ColumnOrder exposing (ColumnOrder)
+import Models.OpenAIKey as OpenAIKey exposing (OpenAIKey)
+import Models.OpenAIModel as OpenAIModel exposing (OpenAIModel)
 import Models.Project.ColumnPath exposing (ColumnPath)
 import Models.Project.FindPathSettings as FindPathSettings exposing (FindPathSettings)
 import Models.Project.SchemaName as SchemaName exposing (SchemaName)
@@ -29,7 +31,7 @@ type alias ProjectSettings =
     , relationStyle : RelationStyle
     , columnBasicTypes : Bool
     , collapseTableColumns : Bool
-    , llm : LlmSettings
+    , llm : Maybe LlmSettings
     }
 
 
@@ -42,7 +44,7 @@ type alias HiddenColumns =
 
 
 type alias LlmSettings =
-    { key : Maybe String }
+    { key : OpenAIKey, model : OpenAIModel }
 
 
 init : SchemaName -> ProjectSettings
@@ -57,7 +59,7 @@ init defaultSchema =
     , relationStyle = RelationStyle.Bezier
     , columnBasicTypes = True
     , collapseTableColumns = False
-    , llm = { key = Nothing }
+    , llm = Nothing
     }
 
 
@@ -121,7 +123,7 @@ encode default value =
         , ( "relationStyle", value.relationStyle |> Encode.withDefault RelationStyle.encode default.relationStyle )
         , ( "columnBasicTypes", value.columnBasicTypes |> Encode.withDefault Encode.bool default.columnBasicTypes )
         , ( "collapseTableColumns", value.collapseTableColumns |> Encode.withDefault Encode.bool default.collapseTableColumns )
-        , ( "llm", value.llm |> encodeLlmSettings )
+        , ( "llm", value.llm |> Encode.maybe encodeLlmSettings )
         ]
 
 
@@ -138,7 +140,7 @@ decode default =
         (Decode.defaultField "relationStyle" RelationStyle.decode default.relationStyle)
         (Decode.defaultField "columnBasicTypes" Decode.bool default.columnBasicTypes)
         (Decode.defaultField "collapseTableColumns" Decode.bool default.collapseTableColumns)
-        (Decode.defaultField "llm" decodeLlmSettings default.llm)
+        (Decode.maybeField "llm" decodeLlmSettings)
 
 
 encodeHiddenColumns : HiddenColumns -> HiddenColumns -> Value
@@ -166,17 +168,14 @@ decodeHiddenColumns default =
 
 encodeLlmSettings : LlmSettings -> Value
 encodeLlmSettings value =
-    value.key
-        |> Maybe.map
-            (\key ->
-                Encode.notNullObject
-                    [ ( "key", key |> Encode.string )
-                    ]
-            )
-        |> Maybe.withDefault Encode.null
+    Encode.notNullObject
+        [ ( "key", value.key |> OpenAIKey.encode )
+        , ( "model", value.model |> OpenAIModel.encode )
+        ]
 
 
 decodeLlmSettings : Decode.Decoder LlmSettings
 decodeLlmSettings =
-    Decode.map LlmSettings
-        (Decode.maybeField "key" Decode.string)
+    Decode.map2 LlmSettings
+        (Decode.field "key" OpenAIKey.decode)
+        (Decode.field "model" OpenAIModel.decode)

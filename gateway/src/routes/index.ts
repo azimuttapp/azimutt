@@ -73,7 +73,7 @@ function getDatabaseSchema(params: GetSchemaParams, res: FastifyReply): Promise<
             schema: params.schema,
             entity: params.entity,
             sampleSize: undefined,
-            inferMixedJson: undefined,
+            inferMixedJson: urlOptions['discriminator'],
             inferJsonAttributes: urlOptions['schema-only'] !== 'true',
             inferPolymorphicRelations: urlOptions['schema-only'] !== 'true',
             inferRelationsFromJoins: urlOptions['schema-only'] !== 'true',

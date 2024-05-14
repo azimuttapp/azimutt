@@ -1,5 +1,5 @@
 import {z} from "zod";
-import "openai/shims/web"; // 'web' fails on tests, 'node' fails on build (in frontend project)
+import "openai/shims/node"; // FIXME 'web' fails on tests, 'node' fails on build (in frontend project)
 import OpenAI from "openai";
 import {Logger} from "@azimutt/utils";
 
@@ -7,7 +7,7 @@ import {Logger} from "@azimutt/utils";
 export const OpenAIKey = z.string()
 export type OpenAIKey = z.infer<typeof OpenAIKey>
 
-export const OpenAIModel = z.enum(['gpt-4-turbo', 'gpt-3.5-turbo'])
+export const OpenAIModel = z.enum(['gpt-4o', 'gpt-4-turbo', 'gpt-3.5-turbo'])
 export type OpenAIModel = z.infer<typeof OpenAIModel>
 
 export class OpenAIConnector {
@@ -29,7 +29,7 @@ export class OpenAIConnector {
             ].filter(m => m.content),
         })
         const answer = completion.choices?.[0].message.content
-        this.opts.logger.debug(`answer: ${answer}`)
+        this.opts.logger.debug(`answer ${this.opts.model}: ${answer}`)
         return answer || 'Invalid LLM answer :/'
     }
 }

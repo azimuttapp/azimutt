@@ -50,6 +50,7 @@ module Services.Lenses exposing
     , mapList
     , mapLlm
     , mapLlmGenerateSqlT
+    , mapLlmM
     , mapMT
     , mapMemos
     , mapMemosLT
@@ -177,6 +178,7 @@ module Services.Lenses exposing
     , setMetadata
     , setMobileMenuOpen
     , setModal
+    , setModel
     , setMouse
     , setName
     , setNavbar
@@ -805,6 +807,11 @@ mapLlm =
     map_ .llm setLlm
 
 
+mapLlmM : (v -> v) -> { item | llm : Maybe v } -> { item | llm : Maybe v }
+mapLlmM =
+    mapM_ .llm setLlm
+
+
 setLlmGenerateSql : v -> { item | llmGenerateSql : v } -> { item | llmGenerateSql : v }
 setLlmGenerateSql =
     set_ .llmGenerateSql (\value item -> { item | llmGenerateSql = value })
@@ -869,6 +876,11 @@ mapModalMF : (v -> v) -> { item | modal : Maybe v } -> { item | modal : Maybe v 
 mapModalMF f i =
     -- `F` suffix means function, don't perform equality checks to avoid Elm errors
     i.modal |> Maybe.map (\m -> { i | modal = m |> f |> Just }) |> Maybe.withDefault i
+
+
+setModel : v -> { item | model : v } -> { item | model : v }
+setModel =
+    set_ .model (\value item -> { item | model = value })
 
 
 setMouse : v -> { item | mouse : v } -> { item | mouse : v }

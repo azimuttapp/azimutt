@@ -1,4 +1,4 @@
-module Libs.Models.DatabaseKind exposing (DatabaseKind(..), all, decode, encode, fromUrl, show)
+module Libs.Models.DatabaseKind exposing (DatabaseKind(..), all, decode, encode, fromUrl, show, toString)
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
