@@ -1,4 +1,4 @@
-module Track exposing (SQLParsing, amlSourceCreated, dataExplorerDetailsOpened, dataExplorerDetailsResult, dataExplorerOpened, dataExplorerQueryOpened, dataExplorerQueryResult, dbAnalysisOpened, detailSidebarClosed, detailSidebarOpened, docOpened, externalLink, findPathOpened, findPathResults, groupCreated, groupDeleted, groupRenamed, jsonError, layoutCreated, layoutDeleted, layoutLoaded, layoutRenamed, memoDeleted, memoSaved, notFound, notesCreated, notesDeleted, notesUpdated, planLimit, projectDraftCreated, projectLoaded, searchClicked, sourceAdded, sourceCreated, sourceDeleted, sourceEditorClosed, sourceEditorOpened, sourceRefreshed, sqlSourceCreated, tableRowOpened, tableRowResult, tableRowShown, tableShown, tagsCreated, tagsDeleted, tagsUpdated)
+module Track exposing (SQLParsing, amlSourceCreated, dataExplorerDetailsOpened, dataExplorerDetailsResult, dataExplorerOpened, dataExplorerQueryOpened, dataExplorerQueryResult, dbAnalysisOpened, detailSidebarClosed, detailSidebarOpened, docOpened, externalLink, findPathOpened, findPathResults, generateSqlFailed, generateSqlOpened, generateSqlQueried, generateSqlReplied, generateSqlSucceeded, groupCreated, groupDeleted, groupRenamed, jsonError, layoutCreated, layoutDeleted, layoutLoaded, layoutRenamed, memoDeleted, memoSaved, notFound, notesCreated, notesDeleted, notesUpdated, planLimit, projectDraftCreated, projectLoaded, searchClicked, sourceAdded, sourceCreated, sourceDeleted, sourceEditorClosed, sourceEditorOpened, sourceRefreshed, sqlSourceCreated, tableRowOpened, tableRowResult, tableRowShown, tableShown, tagsCreated, tagsDeleted, tagsUpdated)
 
 import Conf exposing (Feature, Features)
 import DataSources.Helpers exposing (SourceLine)
@@ -18,11 +18,13 @@ import Libs.Models.Tag exposing (Tag)
 import Libs.Result as Result
 import Models.DbSource exposing (DbSource)
 import Models.DbSourceInfo exposing (DbSourceInfo)
+import Models.OpenAIModel as OpenAIModel exposing (OpenAIModel)
 import Models.OrganizationId exposing (OrganizationId)
 import Models.Plan as Plan
 import Models.Project exposing (Project)
 import Models.Project.ProjectId as ProjectId exposing (ProjectId)
-import Models.Project.Source exposing (Source)
+import Models.Project.Source as Source exposing (Source)
+import Models.Project.SourceId as SourceId
 import Models.Project.SourceKind as SourceKind
 import Models.Project.TableRow as TableRow
 import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
@@ -256,6 +258,31 @@ tableRowResult res project =
     sendEvent "data_explorer__table_row__result" (queryResultDetails res) (Just project)
 
 
+generateSqlOpened : ProjectInfo -> Maybe Source -> Cmd msg
+generateSqlOpened project source =
+    sendEvent "editor__generate_sql__opened" (source |> Maybe.mapOrElse sourceDetails []) (Just project)
+
+
+generateSqlQueried : ProjectInfo -> Source -> OpenAIModel -> String -> Cmd msg
+generateSqlQueried project source llm prompt =
+    sendEvent "editor__generate_sql__queried" ([ ( "llm", llm |> OpenAIModel.encode ), ( "prompt_length", prompt |> String.length |> Encode.int ) ] ++ sourceDetails source) (Just project)
+
+
+generateSqlReplied : ProjectInfo -> Maybe Source -> OpenAIModel -> String -> Result String SqlQuery -> Cmd msg
+generateSqlReplied project source llm prompt reply =
+    sendEvent "editor__generate_sql__replied" ([ ( "llm", llm |> OpenAIModel.encode ), ( "prompt_length", prompt |> String.length |> Encode.int ), reply |> Result.fold (\err -> ( "error_length", err |> String.length |> Encode.int )) (\q -> ( "query_length", q |> String.length |> Encode.int )) ] ++ (source |> Maybe.mapOrElse sourceDetails [])) (Just project)
+
+
+generateSqlSucceeded : ProjectInfo -> Maybe Source -> OpenAIModel -> String -> SqlQuery -> Cmd msg
+generateSqlSucceeded project source llm prompt query =
+    sendEvent "editor__generate_sql__succeeded" ([ ( "llm", llm |> OpenAIModel.encode ), ( "prompt_length", prompt |> String.length |> Encode.int ), ( "query_length", query |> String.length |> Encode.int ) ] ++ (source |> Maybe.mapOrElse sourceDetails [])) (Just project)
+
+
+generateSqlFailed : ProjectInfo -> Maybe Source -> OpenAIModel -> String -> SqlQuery -> Cmd msg
+generateSqlFailed project source llm prompt query =
+    sendEvent "editor__generate_sql__failed" ([ ( "llm", llm |> OpenAIModel.encode ), ( "prompt", prompt |> Encode.string ), ( "query", query |> Encode.string ) ] ++ (source |> Maybe.mapOrElse sourceDetails [])) (Just project)
+
+
 planLimit : (Features -> Feature a) -> Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId, plan : { pl | id : String } }, id : ProjectId } } -> Cmd msg
 planLimit getFeature erd =
     sendEvent "plan_limit"
@@ -335,8 +362,11 @@ projectDetails project =
 
 sourceDetails : Source -> List ( String, Encode.Value )
 sourceDetails source =
-    [ ( "kind", source.kind |> SourceKind.toString |> Encode.string )
+    [ ( "source_id", source.id |> SourceId.encode )
+    , ( "source_kind", source.kind |> SourceKind.toString |> Encode.string )
+    , ( "source_dialect", source |> Source.databaseKind |> Maybe.mapOrElse DatabaseKind.toString "" |> Encode.string )
     , ( "nb_table", source.tables |> Dict.size |> Encode.int )
+    , ( "nb_columns", source.tables |> Dict.foldl (\_ t c -> c + Dict.size t.columns) 0 |> Encode.int )
     , ( "nb_relation", source.relations |> List.length |> Encode.int )
     ]
 

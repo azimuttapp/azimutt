@@ -52,9 +52,9 @@ buildSource source jsonSchema =
 
 buildSchema : JsonSchema -> Schema
 buildSchema schema =
-    { tables = schema.tables |> List.map buildTable |> Dict.fromListMap .id
+    { tables = schema.tables |> List.map buildTable |> Dict.fromListBy .id
     , relations = schema.relations |> List.map buildRelation
-    , types = schema.types |> List.map buildType |> Dict.fromListMap .id
+    , types = schema.types |> List.map buildType |> Dict.fromListBy .id
     }
 
 
@@ -101,7 +101,7 @@ unpackTable table =
 
 buildColumns : List JsonColumn -> Dict ColumnName Column
 buildColumns columns =
-    columns |> List.indexedMap buildColumn |> Dict.fromListMap .name
+    columns |> List.indexedMap buildColumn |> Dict.fromListBy .name
 
 
 unpackColumns : Dict ColumnName Column -> List JsonColumn

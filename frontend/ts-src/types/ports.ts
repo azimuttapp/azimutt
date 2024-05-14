@@ -1,5 +1,6 @@
 import {
     Color,
+    DatabaseKind,
     DatabaseUrl,
     Delta,
     LegacyColumnId,
@@ -14,13 +15,17 @@ import {
     LegacyProjectInfo,
     LegacyProjectStorage,
     LegacyProjectTokenId,
+    LegacySource,
     LegacySourceId,
     LegacySourceOrigin,
     LegacySqlQueryOrigin,
     LegacyTableId,
     LegacyTableStats,
+    OpenAIKey,
+    OpenAIModel,
     Position,
     Size,
+    SqlStatement,
     Timestamp
 } from "@azimutt/models";
 import {
@@ -153,6 +158,8 @@ export type ObserveSizes = { kind: 'ObserveSizes', ids: HtmlId[] }
 export const ObserveSizes = z.object({kind: z.literal('ObserveSizes'), ids: HtmlId.array()}).strict()
 export type ListenKeys = { kind: 'ListenKeys', keys: { [id: HotkeyId]: Hotkey[] } }
 export const ListenKeys = z.object({kind: z.literal('ListenKeys'), keys: z.record(HotkeyId, Hotkey.array())}).strict()
+export type LlmGenerateSql = { kind: 'LlmGenerateSql', apiKey: OpenAIKey, model: OpenAIModel, prompt: string, dialect: DatabaseKind, source: LegacySource }
+export const LlmGenerateSql = z.object({kind: z.literal('LlmGenerateSql'), apiKey: OpenAIKey, model: OpenAIModel, prompt: z.string(), dialect: DatabaseKind, source: LegacySource}).strict()
 export type Confetti = { kind: 'Confetti', id: HtmlId }
 export const Confetti = z.object({kind: z.literal('Confetti'), id: HtmlId}).strict()
 export type ConfettiPride = { kind: 'ConfettiPride' }
@@ -161,8 +168,8 @@ export type Fireworks = { kind: 'Fireworks' }
 export const Fireworks = z.object({kind: z.literal('Fireworks')}).strict()
 export type Track = { kind: 'Track', event: TrackEvent }
 export const Track = z.object({kind: z.literal('Track'), event: TrackEvent}).strict()
-export type ElmMsg = Click | MouseDown | Focus | Blur | ScrollTo | Fullscreen | SetMeta | AutofocusWithin | Toast | GetProject | CreateProjectTmp | UpdateProjectTmp | CreateProject | UpdateProject | MoveProjectTo | DeleteProject | ProjectDirty | DownloadFile | CopyToClipboard | GetLocalFile | GetDatabaseSchema | GetTableStats | GetColumnStats | RunDatabaseQuery | GetPrismaSchema | ObserveSizes | ListenKeys | Confetti | ConfettiPride | Fireworks | Track
-export const ElmMsg = z.discriminatedUnion('kind', [Click, MouseDown, Focus, Blur, ScrollTo, Fullscreen, SetMeta, AutofocusWithin, Toast, GetProject, CreateProjectTmp, UpdateProjectTmp, CreateProject, UpdateProject, MoveProjectTo, DeleteProject, ProjectDirty, DownloadFile, CopyToClipboard, GetLocalFile, GetDatabaseSchema, GetTableStats, GetColumnStats, RunDatabaseQuery, GetPrismaSchema, ObserveSizes, ListenKeys, Confetti, ConfettiPride, Fireworks, Track]).describe('ElmMsg')
+export type ElmMsg = Click | MouseDown | Focus | Blur | ScrollTo | Fullscreen | SetMeta | AutofocusWithin | Toast | GetProject | CreateProjectTmp | UpdateProjectTmp | CreateProject | UpdateProject | MoveProjectTo | DeleteProject | ProjectDirty | DownloadFile | CopyToClipboard | GetLocalFile | GetDatabaseSchema | GetTableStats | GetColumnStats | RunDatabaseQuery | GetPrismaSchema | ObserveSizes | ListenKeys | LlmGenerateSql | Confetti | ConfettiPride | Fireworks | Track
+export const ElmMsg = z.discriminatedUnion('kind', [Click, MouseDown, Focus, Blur, ScrollTo, Fullscreen, SetMeta, AutofocusWithin, Toast, GetProject, CreateProjectTmp, UpdateProjectTmp, CreateProject, UpdateProject, MoveProjectTo, DeleteProject, ProjectDirty, DownloadFile, CopyToClipboard, GetLocalFile, GetDatabaseSchema, GetTableStats, GetColumnStats, RunDatabaseQuery, GetPrismaSchema, ObserveSizes, ListenKeys, LlmGenerateSql, Confetti, ConfettiPride, Fireworks, Track]).describe('ElmMsg')
 
 
 export type GotSizes = { kind: 'GotSizes', sizes: ElementSize[] }
@@ -219,7 +226,11 @@ export type GotColumnMove = { kind: 'GotColumnMove', ref: LegacyColumnId, index:
 export const GotColumnMove = z.object({kind: z.literal('GotColumnMove'), ref: LegacyColumnId, index: z.number()}).strict()
 export type GotFitToScreen = { kind: 'GotFitToScreen' }
 export const GotFitToScreen = z.object({kind: z.literal('GotFitToScreen')}).strict()
+export type GotLlmSqlGenerated = { kind: 'GotLlmSqlGenerated', query: SqlStatement }
+export const GotLlmSqlGenerated = z.object({kind: z.literal('GotLlmSqlGenerated'), query: SqlStatement}).strict()
+export type GotLlmSqlGeneratedError = { kind: 'GotLlmSqlGeneratedError', error: string }
+export const GotLlmSqlGeneratedError = z.object({kind: z.literal('GotLlmSqlGeneratedError'), error: z.string()}).strict()
 export type Error = { kind: 'Error', message: string }
 export const Error = z.object({kind: z.literal('Error'), message: z.string()}).strict()
-export type JsMsg = GotSizes | GotProject | ProjectDeleted | GotLocalFile | GotDatabaseSchema | GotDatabaseSchemaError | GotTableStats | GotTableStatsError | GotColumnStats | GotColumnStatsError | GotDatabaseQueryResult | GotPrismaSchema | GotPrismaSchemaError | GotHotkey | GotKeyHold | GotToast | GotTableShow | GotTableHide | GotTableToggleColumns | GotTablePosition | GotTableMove | GotTableSelect | GotTableColor | GotColumnShow | GotColumnHide | GotColumnMove | GotFitToScreen | Error
-export const JsMsg = z.discriminatedUnion('kind', [GotSizes, GotProject, ProjectDeleted, GotLocalFile, GotDatabaseSchema, GotDatabaseSchemaError, GotTableStats, GotTableStatsError, GotColumnStats, GotColumnStatsError, GotDatabaseQueryResult, GotPrismaSchema, GotPrismaSchemaError, GotHotkey, GotKeyHold, GotToast, GotTableShow, GotTableHide, GotTableToggleColumns, GotTablePosition, GotTableMove, GotTableSelect, GotTableColor, GotColumnShow, GotColumnHide, GotColumnMove, GotFitToScreen, Error]).describe('JsMsg')
+export type JsMsg = GotSizes | GotProject | ProjectDeleted | GotLocalFile | GotDatabaseSchema | GotDatabaseSchemaError | GotTableStats | GotTableStatsError | GotColumnStats | GotColumnStatsError | GotDatabaseQueryResult | GotPrismaSchema | GotPrismaSchemaError | GotHotkey | GotKeyHold | GotToast | GotTableShow | GotTableHide | GotTableToggleColumns | GotTablePosition | GotTableMove | GotTableSelect | GotTableColor | GotColumnShow | GotColumnHide | GotColumnMove | GotFitToScreen | GotLlmSqlGenerated | GotLlmSqlGeneratedError | Error
+export const JsMsg = z.discriminatedUnion('kind', [GotSizes, GotProject, ProjectDeleted, GotLocalFile, GotDatabaseSchema, GotDatabaseSchemaError, GotTableStats, GotTableStatsError, GotColumnStats, GotColumnStatsError, GotDatabaseQueryResult, GotPrismaSchema, GotPrismaSchemaError, GotHotkey, GotKeyHold, GotToast, GotTableShow, GotTableHide, GotTableToggleColumns, GotTablePosition, GotTableMove, GotTableSelect, GotTableColor, GotColumnShow, GotColumnHide, GotColumnMove, GotFitToScreen, GotLlmSqlGenerated, GotLlmSqlGeneratedError, Error]).describe('JsMsg')

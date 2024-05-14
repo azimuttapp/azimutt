@@ -1,7 +1,10 @@
 import {z} from "zod";
-import {groupBy} from "@azimutt/utils";
+import {groupBy, removeEmpty, removeUndefined} from "@azimutt/utils";
 import {Color, Position, Size, Slug, Timestamp, Uuid} from "../common";
 import {
+    checkFromLegacy,
+    columnValueFromLegacy,
+    indexFromLegacy,
     LegacyColumnDbStats,
     LegacyColumnName,
     LegacyColumnType,
@@ -11,9 +14,16 @@ import {
     LegacyTableDbStats,
     LegacyTableId,
     LegacyTableName,
-    LegacyTypeName
+    LegacyTypeName,
+    primaryKeyFromLegacy,
+    relationFromLegacy,
+    tableDbStatsFromLegacy,
+    uniqueFromLegacy
 } from "./legacyDatabase";
 import {zodParse} from "../zod";
+import {Attribute, Database, Entity, Type} from "../database";
+import {parseDatabaseUrl} from "../databaseUrl";
+import {OpenAIKey, OpenAIModel} from "../llm";
 
 // MUST stay in sync with backend/lib/azimutt_web/utils/project_schema.ex
 
@@ -634,6 +644,7 @@ export interface LegacySettings {
     relationStyle?: 'Bezier' | 'Straight' | 'Steps'
     columnBasicTypes?: boolean
     collapseTableColumns?: boolean
+    llm?: { key: OpenAIKey, model: OpenAIModel }
 }
 
 export const LegacySettings = z.object({
@@ -655,7 +666,11 @@ export const LegacySettings = z.object({
     columnOrder: z.enum(['sql', 'property', 'name', 'type']).optional(),
     relationStyle: z.enum(['Bezier', 'Straight', 'Steps']).optional(),
     columnBasicTypes: z.boolean().optional(),
-    collapseTableColumns: z.boolean().optional()
+    collapseTableColumns: z.boolean().optional(),
+    llm: z.object({
+        key: OpenAIKey,
+        model: OpenAIModel,
+    }).strict().optional(),
 }).strict()
 
 export type LegacyProjectStorage = 'local' | 'remote'
@@ -841,4 +856,64 @@ export function legacyComputeStats(p: LegacyProjectJson): LegacyProjectStats {
         nbNotes: Object.keys(p.notes || {}).length,
         nbMemos: Object.values(p.layouts).flatMap(l => l.memos || []).length,
     }).getOrThrow()
+}
+
+export function sourceToDatabase(s: LegacySource): Database {
+    return removeEmpty({
+        entities: s.tables.map(projectTableToEntity),
+        relations: s.relations.map(relationFromLegacy),
+        types: s.types?.map(projectTypeFromLegacy),
+        stats: removeUndefined({
+            name: s.name,
+            kind: s.kind.kind === 'DatabaseConnection' ? parseDatabaseUrl(s.kind.url).kind : undefined
+        })
+    })
+}
+
+export function projectTableToEntity(t: LegacyProjectTable): Entity {
+    return removeUndefined({
+        database: undefined,
+        catalog: undefined,
+        schema: t.schema || undefined,
+        name: t.table,
+        kind: t.view ? 'view' as const : undefined,
+        def: t.definition,
+        attrs: t.columns.map(projectColumnToAttribute),
+        pk: t.primaryKey ? primaryKeyFromLegacy(t.primaryKey) : undefined,
+        indexes: (t.uniques ||  []).map(uniqueFromLegacy).concat((t.indexes || []).map(indexFromLegacy)),
+        checks: t.checks?.map(checkFromLegacy),
+        doc: t.comment?.text,
+        stats: t.stats ? tableDbStatsFromLegacy(t.stats) : undefined,
+        extra: undefined,
+    })
+}
+
+export function projectColumnToAttribute(c: LegacyProjectColumn): Attribute {
+    return removeEmpty({
+        name: c.name,
+        type: c.type,
+        null: c.nullable,
+        gen: undefined,
+        default: c.default,
+        attrs: c.columns?.map(projectColumnToAttribute),
+        doc: c.comment?.text,
+        stats: removeUndefined({
+            nulls: c.stats?.nulls,
+            bytesAvg: c.stats?.bytesAvg,
+            cardinality: c.stats?.cardinality,
+            commonValues: c.stats?.commonValues?.map(v => ({value: columnValueFromLegacy(v.value), freq: v.freq})),
+            distinctValues: c.values?.map(columnValueFromLegacy),
+            histogram: c.stats?.histogram?.map(columnValueFromLegacy),
+            min: undefined,
+            max: undefined,
+        })
+    })
+}
+
+export function projectTypeFromLegacy(t: LegacyProjectType): Type {
+    if ('enum' in t.value) {
+        return removeUndefined({schema: t.schema || undefined, name: t.name, values: t.value.enum || undefined})
+    } else {
+        return removeUndefined({schema: t.schema || undefined, name: t.name, definition: t.value.definition})
+    }
 }

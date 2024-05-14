@@ -331,7 +331,7 @@ parseSql sql =
         |> SqlParser.parse
         |> Tuple.second
         |> List.foldl (\c s -> s |> SqlAdapter.evolve ( Nel.from { index = 0, text = "" }, c )) SqlAdapter.initSchema
-        |> (\schema -> { tables = schema.tables, relations = schema.relations |> List.sortBy .id, types = schema.types |> Dict.fromListMap .id })
+        |> (\schema -> { tables = schema.tables, relations = schema.relations |> List.sortBy .id, types = schema.types |> Dict.fromListBy .id })
 
 
 parseJson : String -> Schema
@@ -360,12 +360,12 @@ emptyComment =
 
 buildTables : List Table -> Dict TableId Table
 buildTables tables =
-    tables |> Dict.fromListMap .id
+    tables |> Dict.fromListBy .id
 
 
 buildColumns : List Column -> Dict ColumnName Column
 buildColumns columns =
-    columns |> List.indexedMap (\i c -> { c | index = i }) |> Dict.fromListMap .name
+    columns |> List.indexedMap (\i c -> { c | index = i }) |> Dict.fromListBy .name
 
 
 buildRelation : ( String, ( String, String, String ), ( String, String, String ) ) -> Relation

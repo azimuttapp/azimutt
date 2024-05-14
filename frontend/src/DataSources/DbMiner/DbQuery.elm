@@ -46,9 +46,6 @@ exploreTable db table =
 
             DatabaseKind.SQLServer ->
                 QuerySQLServer.exploreTable table
-
-            DatabaseKind.Other ->
-                "DbQuery.exploreTable not implemented for database " ++ DatabaseKind.toString db
     , origin = "exploreTable"
     , db = db
     }
@@ -82,9 +79,6 @@ exploreColumn db table column =
 
             DatabaseKind.SQLServer ->
                 QuerySQLServer.exploreColumn table column
-
-            DatabaseKind.Other ->
-                "DbQuery.exploreColumn not implemented for database " ++ DatabaseKind.toString db
     , origin = "exploreColumn"
     , db = db
     }
@@ -102,7 +96,7 @@ filterTable db query =
                 QueryPostgreSQL.filterTable query.table query.filters
 
             _ ->
-                "DbQuery.filterTable not implemented for database " ++ DatabaseKind.toString db
+                "DbQuery.filterTable not implemented for database " ++ DatabaseKind.show db
     , origin = "filterTable"
     , db = db
     }
@@ -120,7 +114,7 @@ findRow db query =
                 QueryPostgreSQL.findRow query.table query.primaryKey
 
             _ ->
-                "DbQuery.findRow not implemented for database " ++ DatabaseKind.toString db
+                "DbQuery.findRow not implemented for database " ++ DatabaseKind.show db
     , origin = "findRow"
     , db = db
     }
@@ -150,7 +144,7 @@ incomingRows db relations row =
                 QueryPostgreSQL.incomingRows row relations incomingRowsLimit
 
             _ ->
-                "DbQuery.incomingRows not implemented for database " ++ DatabaseKind.toString db
+                "DbQuery.incomingRows not implemented for database " ++ DatabaseKind.show db
     , origin = "incomingRows"
     , db = db
     }
@@ -195,7 +189,7 @@ updateColumnType db ref kind =
                 QueryPostgreSQL.updateColumnType { table = ref.table, column = ref.column } kind
 
             _ ->
-                "DbQuery.updateColumnType not implemented for database " ++ DatabaseKind.toString db
+                "DbQuery.updateColumnType not implemented for database " ++ DatabaseKind.show db
     , origin = "updateColumnType"
     , db = db
     }

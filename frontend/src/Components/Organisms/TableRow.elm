@@ -931,7 +931,7 @@ docLoading =
     , source = docSource.id
     , table = ( "public", "events" )
     , primaryKey = Nel { column = Nel "id" [], value = DbString "dcecf4fe-aa35-44fb-a90c-eba7d2103f4e" } []
-    , state = StateLoading { query = { sql = "SELECT * FROM public.events WHERE id='dcecf4fe-aa35-44fb-a90c-eba7d2103f4e';", origin = "doc", db = DatabaseKind.Other }, startedAt = Time.millisToPosix 1691079663421, previous = Nothing }
+    , state = StateLoading { query = { sql = "SELECT * FROM public.events WHERE id='dcecf4fe-aa35-44fb-a90c-eba7d2103f4e';", origin = "doc", db = DatabaseKind.PostgreSQL }, startedAt = Time.millisToPosix 1691079663421, previous = Nothing }
     , hidden = Set.fromList []
     , showHiddenColumns = False
     , selected = False
@@ -948,7 +948,7 @@ docFailure =
     , source = docSource.id
     , table = ( "public", "events" )
     , primaryKey = Nel { column = Nel "id" [], value = DbString "dcecf4fe-aa35-44fb-a90c-eba7d2103f4e" } []
-    , state = StateFailure { query = { sql = "SELECT * FROM public.event WHERE id='dcecf4fe-aa35-44fb-a90c-eba7d2103f4e';", origin = "doc", db = DatabaseKind.Other }, error = "relation \"public.event\" does not exist", startedAt = Time.millisToPosix 1691079663421, failedAt = Time.millisToPosix 1691079663421, previous = Nothing }
+    , state = StateFailure { query = { sql = "SELECT * FROM public.event WHERE id='dcecf4fe-aa35-44fb-a90c-eba7d2103f4e';", origin = "doc", db = DatabaseKind.PostgreSQL }, error = "relation \"public.event\" does not exist", startedAt = Time.millisToPosix 1691079663421, failedAt = Time.millisToPosix 1691079663421, previous = Nothing }
     , hidden = Set.fromList []
     , showHiddenColumns = False
     , selected = False
@@ -994,7 +994,7 @@ docSource =
         , docTable "public" "events" [ ( "id", "uuid", False ), ( "name", "varchar", False ), ( "data", "json", True ), ( "details", "json", True ), ( "created_by", "uuid", True ), ( "created_at", "timestamp", False ), ( "organization_id", "uuid", True ), ( "project_id", "uuid", True ) ]
         , docTable "public" "city" [ ( "id", "int", False ), ( "name", "varchar", False ), ( "country_code", "varchar", False ), ( "district", "varchar", False ), ( "population", "int", False ) ]
         ]
-            |> Dict.fromListMap .id
+            |> Dict.fromListBy .id
     , relations =
         [ docRelation ( "public", "organizations", "created_by" ) ( "public", "users", "id" )
         , docRelation ( "public", "projects", "organization_id" ) ( "public", "organizations", "id" )
@@ -1027,7 +1027,7 @@ docTable schema name columns =
                     | id = ( schema, name )
                     , schema = schema
                     , name = name
-                    , columns = columns |> List.indexedMap (\i ( col, kind, nullable ) -> Column.empty |> (\c -> { c | index = i, name = col, kind = kind, nullable = nullable })) |> Dict.fromListMap .name
+                    , columns = columns |> List.indexedMap (\i ( col, kind, nullable ) -> Column.empty |> (\c -> { c | index = i, name = col, kind = kind, nullable = nullable })) |> Dict.fromListBy .name
                     , primaryKey = Just { name = Just (name ++ "_pk"), columns = Nel (Nel "id" []) [] }
                 }
            )

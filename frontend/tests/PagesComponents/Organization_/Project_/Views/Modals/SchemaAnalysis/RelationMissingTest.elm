@@ -86,7 +86,7 @@ shouldFindRelations relations tables =
 
 buildTables : List ( TableName, List ( ColumnName, List ColumnValue ) ) -> Dict TableId Table
 buildTables list =
-    list |> List.map buildTable |> Dict.fromListMap .id
+    list |> List.map buildTable |> Dict.fromListBy .id
 
 
 formatRelations : List SuggestedRelation -> List SimpleRelation
@@ -97,7 +97,7 @@ formatRelations relations =
 
 buildTable : ( TableName, List ( ColumnName, List ColumnValue ) ) -> Table
 buildTable ( name, columns ) =
-    Table.empty |> (\t -> { t | id = ( "", name ), name = name, columns = columns |> List.indexedMap buildColumn |> Dict.fromListMap .name })
+    Table.empty |> (\t -> { t | id = ( "", name ), name = name, columns = columns |> List.indexedMap buildColumn |> Dict.fromListBy .name })
 
 
 buildColumn : Int -> ( String, List String ) -> Column

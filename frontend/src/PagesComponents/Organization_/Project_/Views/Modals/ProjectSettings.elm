@@ -19,6 +19,7 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
 import Libs.Tailwind exposing (TwClass, focus, sm)
 import Models.ColumnOrder as ColumnOrder
+import Models.OpenAIModel as OpenAIModel
 import Models.Project.ProjectId exposing (ProjectId)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
@@ -42,10 +43,11 @@ viewProjectSettings zone opened erd model =
         , onClickClose = ModalClose (ProjectSettingsMsg PSClose)
         , onClickOverlay = ModalClose (ProjectSettingsMsg PSClose)
         }
-        (div [ class "pb-16" ]
+        (div [ class "pb-32" ]
             [ viewSourcesSection (model.id ++ "-sources") zone erd model
             , viewSchemasSection (model.id ++ "-schemas") erd
             , viewDisplaySettingsSection (model.id ++ "-display") erd
+            , viewLllSettingsSection (model.id ++ "-llm") erd
             ]
         )
 
@@ -250,6 +252,33 @@ viewDisplaySettingsSection htmlId erd =
             "Collapse table columns by default"
             erd.settings.collapseTableColumns
             (PSCollapseTableOnShowToggle |> ProjectSettingsMsg)
+        ]
+
+
+viewLllSettingsSection : HtmlId -> Erd -> Html Msg
+viewLllSettingsSection htmlId erd =
+    fieldset [ class "mt-6" ]
+        [ legend [ class "font-medium text-gray-900" ] [ text "LLM options" ]
+        , p [ class "text-sm text-gray-500" ] [ text "Configure these to use AI features in Azimutt." ]
+        , Input.textWithLabelAndHelp "mt-3"
+            (htmlId ++ "-key")
+            "OpenAI key"
+            "Get it from https://platform.openai.com/api-keys"
+            "ex: sk-proj-.........."
+            (erd.settings.llm |> Maybe.mapOrElse .key "")
+            (PSLlmKeyUpdate >> ProjectSettingsMsg)
+        , erd.settings.llm
+            |> Maybe.map
+                (\llm ->
+                    Input.selectWithLabelAndHelp "mt-3"
+                        (htmlId ++ "-model")
+                        "OpenAI model"
+                        "Choose wisely on https://platform.openai.com/docs/models"
+                        (OpenAIModel.all |> List.map (\m -> ( OpenAIModel.toString m, OpenAIModel.toLabel m )))
+                        (llm.model |> OpenAIModel.toString)
+                        (OpenAIModel.fromString >> Maybe.withDefault OpenAIModel.default >> PSLlmModelUpdate >> ProjectSettingsMsg)
+                )
+            |> Maybe.withDefault (text "")
         ]
 
 

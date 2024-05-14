@@ -838,19 +838,11 @@ viewSource openDataExplorer table column rows origin =
                 Icon.solid Icons.sources.aml "opacity-50 mr-1" |> Tooltip.r "AML source"
         , text (origin.name ++ (rows |> Maybe.mapOrElse (\r -> " (" ++ String.fromInt r ++ " rows)") ""))
         , origin.db
+            |> Maybe.andThen DatabaseKind.fromUrl
+            |> Maybe.map (\kind -> column |> Maybe.mapOrElse (DbQuery.exploreColumn kind table) (DbQuery.exploreTable kind table))
             |> Maybe.map
-                (\url ->
-                    button
-                        [ type_ "button"
-                        , onClick
-                            (openDataExplorer origin.id
-                                (column
-                                    |> Maybe.map (DbQuery.exploreColumn (DatabaseKind.fromUrl url) table)
-                                    |> Maybe.withDefault (DbQuery.exploreTable (DatabaseKind.fromUrl url) table)
-                                )
-                            )
-                        , class "ml-1"
-                        ]
+                (\query ->
+                    button [ type_ "button", onClick (openDataExplorer origin.id query), class "ml-1" ]
                         [ Icon.solid Icon.ArrowCircleRight "opacity-50" ]
                         |> Tooltip.r "Browse data"
                 )

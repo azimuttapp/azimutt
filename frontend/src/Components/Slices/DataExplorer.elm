@@ -15,12 +15,12 @@ import Dict exposing (Dict)
 import ElmBook
 import ElmBook.Actions as Actions exposing (logAction)
 import ElmBook.Chapter as Chapter exposing (Chapter)
-import Html exposing (Html, button, div, h3, input, label, nav, option, p, select, table, td, text, tr)
-import Html.Attributes exposing (class, classList, disabled, for, id, name, selected, style, title, type_, value)
+import Html exposing (Html, button, div, h3, input, label, nav, option, p, select, span, table, td, text, tr)
+import Html.Attributes exposing (class, classList, disabled, for, id, name, selected, style, tabindex, title, type_, value)
 import Html.Events exposing (onClick, onInput)
 import Libs.Dict as Dict
 import Libs.Html exposing (bText, extLink)
-import Libs.Html.Attributes exposing (css)
+import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, ariaLabelledby, ariaOrientation, css, role)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.DatabaseKind as DatabaseKind
@@ -56,7 +56,7 @@ import Track
 
 
 -- TODO:
---  - popover with JSON when hover a JSON value in table row => bad CSS? hard to setup :/
+--  - popover with JSON editor when hover a JSON value in table row => bad CSS? hard to setup :/
 --  - Enable data exploration for other db: MySQL, SQL Server, MongoDB, Couchbase...
 --  - Better error handling on connectors (cf PostgreSQL)
 --
@@ -126,6 +126,7 @@ type Msg
     | OpenDetails DbSourceInfo RowQuery
     | CloseDetails DataExplorerQuery.Id
     | DetailsMsg DataExplorerDetails.Id DataExplorerDetails.Msg
+    | LlmGenerateSql SourceId
 
 
 
@@ -135,7 +136,7 @@ type Msg
 init : Model
 init =
     { display = Nothing
-    , activeTab = VisualEditorTab
+    , activeTab = QueryEditorTab
     , source = Nothing
     , visualEditor = { table = Nothing, filters = [] }
     , queryEditor = Editor.init ""
@@ -150,8 +151,8 @@ init =
 -- UPDATE
 
 
-update : (Msg -> msg) -> (Toasts.Msg -> msg) -> ProjectInfo -> List Source -> Msg -> Model -> ( Model, Extra msg )
-update wrap showToast project sources msg model =
+update : (Msg -> msg) -> (Toasts.Msg -> msg) -> (Maybe SourceId -> msg) -> ProjectInfo -> List Source -> Msg -> Model -> ( Model, Extra msg )
+update wrap showToast openGenerateSql project sources msg model =
     case msg of
         Open sourceId query ->
             let
@@ -231,6 +232,9 @@ update wrap showToast project sources msg model =
         DetailsMsg id m ->
             model |> mapDetailsT (List.mapByTE .id id (DataExplorerDetails.update project m))
 
+        LlmGenerateSql source ->
+            ( model, source |> Just |> openGenerateSql |> Extra.msg )
+
 
 focusMainInput : DataExplorerTab -> Cmd msg
 focusMainInput tab =
@@ -247,7 +251,7 @@ focusMainInput tab =
 
 
 view : (Msg -> msg) -> (HtmlId -> msg) -> ((msg -> String -> Html msg) -> msg) -> (TableId -> msg) -> (DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> String -> HtmlId -> SchemaName -> HtmlId -> List Source -> ErdLayout -> Metadata -> Model -> DataExplorerDisplay -> Html msg
-view wrap toggleDropdown openModal showTable showTableRow openNotes navbarHeight openedDropdown defaultSchema htmlId sources layout metadata model display =
+view wrap toggleDropdown openModal _ showTableRow openNotes _ openedDropdown defaultSchema htmlId sources _ metadata model display =
     let
         hasFullScreen : Bool
         hasFullScreen =
@@ -272,11 +276,13 @@ view wrap toggleDropdown openModal showTable showTableRow openNotes navbarHeight
                     model.source |> Maybe.mapOrElse (\s -> viewVisualExplorer wrap defaultSchema (htmlId ++ "-visual-editor") s model.visualEditor) (div [] [])
 
                 QueryEditorTab ->
-                    model.source |> Maybe.mapOrElse (\s -> viewQueryEditor wrap (htmlId ++ "-query-editor") s model.queryEditor) (div [] [])
+                    model.source |> Maybe.mapOrElse (\s -> viewQueryEditor wrap toggleDropdown openedDropdown (htmlId ++ "-query-editor") s model.queryEditor) (div [] [])
             ]
         , div [ class "basis-2/3 flex-1 overflow-y-auto bg-gray-50 pb-28" ]
-            [ viewResults wrap toggleDropdown openModal (\s q -> OpenDetails s q |> wrap) openNotes openedDropdown defaultSchema sources metadata (htmlId ++ "-results") model.results ]
-        , viewDetails wrap showTable showTableRow (\s q -> OpenDetails s q |> wrap) openNotes navbarHeight hasFullScreen defaultSchema sources layout metadata (htmlId ++ "-details") model.details
+            [ viewResults wrap toggleDropdown openModal (\s q -> showTableRow s q Nothing Nothing) openNotes openedDropdown defaultSchema sources metadata (htmlId ++ "-results") model.results ]
+
+        -- Don't show TableRow details, load them directly into the layout, TODO: clean everything once sure about this change...
+        -- , viewDetails wrap showTable showTableRow (\s q -> OpenDetails s q |> wrap) openNotes navbarHeight hasFullScreen defaultSchema sources layout metadata (htmlId ++ "-details") model.details
         ]
 
 
@@ -511,7 +517,7 @@ viewVisualExplorerSubmit wrap source model =
     let
         query : SqlQueryOrigin
         query =
-            model.table |> Maybe.mapOrElse (\table -> DbQuery.filterTable source.db.kind { table = table, filters = model.filters |> List.map (\f -> { operator = f.operator, column = f.column, operation = f.operation, value = f.value }) }) { sql = "", origin = "filterTableEmpty", db = DatabaseKind.Other }
+            model.table |> Maybe.mapOrElse (\table -> DbQuery.filterTable source.db.kind { table = table, filters = model.filters |> List.map (\f -> { operator = f.operator, column = f.column, operation = f.operation, value = f.value }) }) { sql = "", origin = "filterTableEmpty", db = source.db.kind }
     in
     div [ class "mt-3 flex items-center justify-end" ]
         [ button [ type_ "button", onClick (query |> RunQuery source |> wrap), disabled (query.sql == ""), class "inline-flex items-center bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:bg-indigo-300" ]
@@ -519,23 +525,41 @@ viewVisualExplorerSubmit wrap source model =
         ]
 
 
-viewQueryEditor : (Msg -> msg) -> HtmlId -> DbSource -> QueryEditor -> Html msg
-viewQueryEditor wrap htmlId source model =
+viewQueryEditor : (Msg -> msg) -> (HtmlId -> msg) -> HtmlId -> HtmlId -> DbSource -> QueryEditor -> Html msg
+viewQueryEditor wrap toggleDropdown openedDropdown htmlId source model =
     let
-        inputId : HtmlId
-        inputId =
-            htmlId ++ "-input"
+        ( inputId, optionsButton ) =
+            ( htmlId ++ "-input", htmlId ++ "-button-options" )
     in
     div [ class "flex-1 flex flex-col relative" ]
         [ div [ class "m-3 block flex-1 rounded-md shadow-sm ring-1 ring-inset ring-gray-300" ] [ Editor.sql (UpdateQuery >> wrap) inputId model ]
-        , div [ class "absolute bottom-6 right-6 z-10" ]
+        , div [ class "absolute bottom-6 right-6 z-10 inline-flex flex-row-reverse gap-3" ]
             [ button
                 [ type_ "button"
                 , onClick ({ sql = model.content, origin = "userQuery", db = source.db.kind } |> RunQuery source |> wrap)
                 , disabled (model.content == "")
-                , class "inline-flex items-center bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:bg-indigo-300"
+                , class "relative inline-flex items-center rounded bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:bg-indigo-300"
                 ]
                 [ text "Run query" ]
+            , div [ class "relative" ]
+                [ button
+                    [ type_ "button"
+                    , onClick (toggleDropdown optionsButton)
+                    , id optionsButton
+                    , class "relative inline-flex items-center rounded px-2 py-2 text-sm font-semibold bg-white text-gray-500 ring-1 ring-inset ring-gray-300 shadow-sm hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 focus:z-10"
+                    , ariaExpanded True
+                    , ariaHaspopup "true"
+                    ]
+                    [ span [ class "sr-only" ] [ text "Open AI options" ]
+                    , Icon.outline Icon.Sparkles "h-5 w-5"
+                    ]
+                , div [ classList [ ( "hidden", openedDropdown /= optionsButton ) ], class "w-56 absolute bottom-full mb-3 right-0 flex-col items-end z-max origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none", role "menu", ariaOrientation "vertical", ariaLabelledby optionsButton, tabindex -1 ]
+                    [ div [ class "py-1", role "none" ]
+                        [ button [ type_ "button", onClick (LlmGenerateSql source.id |> wrap), class "text-gray-700 block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 hover:text-gray-900", role "menuitem", tabindex -1 ]
+                            [ Icon.outline Icon.Sparkles "h-5 w-5 inline mr-1", text "Generate SQL from text" ]
+                        ]
+                    ]
+                ]
             ]
         ]
 
@@ -601,17 +625,17 @@ docQueryResults : List DataExplorerQuery.Model
 docQueryResults =
     [ { id = 3
       , source = docSource1 |> DbSourceInfo.fromSource |> Maybe.withDefault DbSourceInfo.zero
-      , query = { sql = DataExplorerQuery.docCityQuery, origin = "doc", db = DatabaseKind.Other }
+      , query = { sql = DataExplorerQuery.docCityQuery, origin = "doc", db = DatabaseKind.PostgreSQL }
       , state = DataExplorerQuery.docCitySuccess
       }
     , { id = 2
       , source = docSource1 |> DbSourceInfo.fromSource |> Maybe.withDefault DbSourceInfo.zero
-      , query = { sql = DataExplorerQuery.docProjectsQuery, origin = "doc", db = DatabaseKind.Other }
+      , query = { sql = DataExplorerQuery.docProjectsQuery, origin = "doc", db = DatabaseKind.PostgreSQL }
       , state = DataExplorerQuery.docProjectsSuccess
       }
     , { id = 1
       , source = docSource1 |> DbSourceInfo.fromSource |> Maybe.withDefault DbSourceInfo.zero
-      , query = { sql = DataExplorerQuery.docUsersQuery, origin = "doc", db = DatabaseKind.Other }
+      , query = { sql = DataExplorerQuery.docUsersQuery, origin = "doc", db = DatabaseKind.PostgreSQL }
       , state = DataExplorerQuery.docUsersSuccess
       }
     ]
@@ -636,7 +660,7 @@ docSource2 =
             [ DataExplorerQuery.docTable "public" "users" [ ( "id", "int", False ), ( "name", "varchar", False ), ( "email", "varchar", False ), ( "created_at", "timestamp", False ) ]
             , Table.empty |> (\t -> { t | id = ( "", "key_values" ), name = "key_values", columns = docKeyValueColumns })
             ]
-                |> Dict.fromListMap .id
+                |> Dict.fromListBy .id
         , relations = []
     }
 
@@ -651,7 +675,7 @@ docKeyValueColumns =
     [ Column.empty |> (\c -> { c | index = 0, name = "key", kind = "varchar", nullable = False })
     , Column.empty |> (\c -> { c | index = 1, name = "value", kind = "json", nullable = True, columns = Just (NestedColumns docKeyValueNestedColumns) })
     ]
-        |> Dict.fromListMap .name
+        |> Dict.fromListBy .name
 
 
 docKeyValueNestedColumns : Ned ColumnName Column
@@ -682,7 +706,7 @@ docComponentState name get set sources =
 
 docUpdate : DocState -> (DocState -> Model) -> (DocState -> Model -> DocState) -> List Source -> Msg -> ElmBook.Msg (SharedDocState x)
 docUpdate s get set sources m =
-    s |> get |> update docWrap docShowToast ProjectInfo.zero sources m |> Tuple.first |> set s |> docSetState
+    s |> get |> update docWrap docShowToast docOpenGenerateSql ProjectInfo.zero sources m |> Tuple.first |> set s |> docSetState
 
 
 docToggleDropdown : DocState -> HtmlId -> ElmBook.Msg (SharedDocState x)
@@ -712,6 +736,11 @@ docWrap _ =
 docShowToast : Toasts.Msg -> ElmBook.Msg state
 docShowToast _ =
     logAction "showToast"
+
+
+docOpenGenerateSql : Maybe SourceId -> ElmBook.Msg state
+docOpenGenerateSql _ =
+    logAction "openGenerateSql"
 
 
 docShowTable : TableId -> ElmBook.Msg state

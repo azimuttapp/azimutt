@@ -1,8 +1,9 @@
-module Models.Project.Relation exposing (Relation, RelationLike, decode, encode, linkedToTable, new, outRelation, virtual)
+module Models.Project.Relation exposing (Relation, RelationLike, decode, empty, encode, linkedToTable, new, outRelation, virtual)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
 import Libs.Json.Encode as Encode
+import Libs.Nel exposing (Nel)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef, ColumnRefLike)
 import Models.Project.RelationId as RelationId exposing (RelationId)
@@ -25,6 +26,11 @@ type alias RelationLike x y =
         , src : ColumnRefLike y
         , ref : ColumnRefLike y
     }
+
+
+empty : Relation
+empty =
+    { id = ( ( ( "", "" ), "" ), ( ( "", "" ), "" ) ), name = "", src = { table = ( "", "" ), column = Nel "" [] }, ref = { table = ( "", "" ), column = Nel "" [] } }
 
 
 new : RelationName -> ColumnRef -> ColumnRef -> Relation

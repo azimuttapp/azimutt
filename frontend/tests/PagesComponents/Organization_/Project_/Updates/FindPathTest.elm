@@ -56,7 +56,7 @@ suite =
 
 basicTables : Dict TableId ErdTable
 basicTables =
-    [ usersTable, rolesTable, roleUserTable, credentialsTable ] |> Dict.fromListMap .id
+    [ usersTable, rolesTable, roleUserTable, credentialsTable ] |> Dict.fromListBy .id
 
 
 basicRelations : List ErdRelation
@@ -117,7 +117,7 @@ tableId name =
 buildTable : TableName -> List String -> ErdTable
 buildTable name columnNames =
     Table.empty
-        |> (\c -> { c | id = tableId name, schema = defaultSchema, name = name, columns = columnNames |> List.map buildColumn |> Dict.fromListMap .name })
+        |> (\c -> { c | id = tableId name, schema = defaultSchema, name = name, columns = columnNames |> List.map buildColumn |> Dict.fromListBy .name })
         |> TableWithOrigin.create source
         |> ErdTable.create defaultSchema Dict.empty [] Dict.empty
 

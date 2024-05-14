@@ -30,6 +30,7 @@ import PagesComponents.Organization_.Project_.Components.AmlSidebar as AmlSideba
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
 import PagesComponents.Organization_.Project_.Components.EmbedSourceParsingDialog as EmbedSourceParsingDialog
 import PagesComponents.Organization_.Project_.Components.ExportDialog as ExportDialog
+import PagesComponents.Organization_.Project_.Components.LlmGenerateSqlDialog as LlmGenerateSqlDialog
 import PagesComponents.Organization_.Project_.Components.ProjectSaveDialog as ProjectSaveDialog
 import PagesComponents.Organization_.Project_.Components.ProjectSharing as ProjectSharing
 import PagesComponents.Organization_.Project_.Components.SourceUpdateDialog as SourceUpdateDialog
@@ -171,7 +172,7 @@ viewBottomSheet model =
     let
         content : Maybe (Html Msg)
         content =
-            model.dataExplorer.display |> Maybe.map2 (\erd -> DataExplorer.view DataExplorerMsg DropdownToggle CustomModalOpen (\id -> ShowTable id Nothing "data-explorer") (\i q s h -> ShowTableRow i q s h "details") (\t c -> NotesMsg.NOpen t c |> NotesMsg) (calcNavbarHeight model) model.openedDropdown erd.settings.defaultSchema Conf.ids.dataExplorerDialog erd.sources (erd |> Erd.currentLayout) erd.metadata model.dataExplorer) model.erd
+            model.dataExplorer.display |> Maybe.map2 (\erd -> DataExplorer.view DataExplorerMsg DropdownToggle CustomModalOpen (\id -> ShowTable id Nothing "data-explorer") (\i q s h -> ShowTableRow i q s h "data-explorer") (\t c -> NotesMsg.NOpen t c |> NotesMsg) (calcNavbarHeight model) model.openedDropdown erd.settings.defaultSchema Conf.ids.dataExplorerDialog erd.sources (erd |> Erd.currentLayout) erd.metadata model.dataExplorer) model.erd
     in
     aside [ class "block flex-shrink-0" ]
         [ div [ style "height" ("calc(" ++ calcBottomSheetHeight model ++ ")"), css [ "relative border-t border-gray-200 bg-white overflow-y-auto" ] ]
@@ -199,6 +200,7 @@ viewModal currentUrl urlInfos shared model _ =
          , model.newLayout |> Maybe.map2 (\e m -> ( m.id, NewLayout.view NewLayoutMsg ModalClose project (e.layouts |> Dict.keys) (isOpen m) m )) model.erd
          , model.editNotes |> Maybe.map2 (\e m -> ( m.id, viewEditNotes (isOpen m) e m )) model.erd
          , model.findPath |> Maybe.map2 (\e m -> ( m.id, viewFindPath (isOpen m) model.openedDropdown e.settings.defaultSchema e.tables e.settings.findPath m )) model.erd
+         , model.llmGenerateSql |> Maybe.map2 (\e m -> ( m.id, LlmGenerateSqlDialog.view LlmGenerateSqlDialogMsg Send Batch (Toasts.success >> Toast) (\source q -> DataExplorer.Open (Just source) (Just q) |> DataExplorerMsg) ModalClose (isOpen m) e m )) model.erd
          , model.schemaAnalysis |> Maybe.map2 (\e m -> ( m.id, viewSchemaAnalysis project (isOpen m) e.settings.defaultSchema e.sources e.tables e.relations e.ignoredRelations m )) model.erd
          , model.exportDialog |> Maybe.map (\m -> ( m.id, ExportDialog.view ExportDialogMsg Send ModalClose (isOpen m) project m ))
          , model.sharing |> Maybe.map2 (\e m -> ( m.id, ProjectSharing.view SharingMsg Send ModalClose confirmDanger shared.zone currentUrl urlInfos (isOpen m) e m )) model.erd

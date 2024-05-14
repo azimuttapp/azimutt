@@ -1,6 +1,6 @@
 {
   "name": "@azimutt/connector-mysql",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Connect to MySQL, extract schema, run analysis and queries",
   "keywords": [],
   "homepage": "https://azimutt.app",
@@ -25,8 +25,8 @@
     "dry-publish": "npm run build && npm test && npm pack"
   },
   "dependencies": {
-    "@azimutt/models": "^0.1.0",
-    "@azimutt/utils": "^0.1.0",
+    "@azimutt/models": "^0.1.4",
+    "@azimutt/utils": "^0.1.1",
     "mysql2": "3.3.3"
   },
   "devDependencies": {

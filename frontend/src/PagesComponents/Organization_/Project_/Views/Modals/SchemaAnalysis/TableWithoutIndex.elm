@@ -37,7 +37,7 @@ heading errors =
                     "No table without index found"
 
                 else
-                    "Found " ++ (count |> String.pluralize "tables") ++ " without index"
+                    "Found " ++ (count |> String.pluralize "table") ++ " without index"
            )
 
 

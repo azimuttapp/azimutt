@@ -20,6 +20,8 @@ import Libs.Task as T
 import Models.ColumnOrder exposing (ColumnOrder)
 import Models.DbSourceInfo exposing (DbSourceInfo)
 import Models.ErdProps as ErdProps exposing (ErdProps)
+import Models.OpenAIKey exposing (OpenAIKey)
+import Models.OpenAIModel exposing (OpenAIModel)
 import Models.Organization exposing (Organization)
 import Models.Position as Position
 import Models.Project.CanvasProps exposing (CanvasProps)
@@ -44,6 +46,7 @@ import Models.RelationStyle exposing (RelationStyle)
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
 import PagesComponents.Organization_.Project_.Components.EmbedSourceParsingDialog as EmbedSourceParsingDialog
 import PagesComponents.Organization_.Project_.Components.ExportDialog as ExportDialog
+import PagesComponents.Organization_.Project_.Components.LlmGenerateSqlDialog as LlmGenerateSqlDialog
 import PagesComponents.Organization_.Project_.Components.ProjectSaveDialog as ProjectSaveDialog
 import PagesComponents.Organization_.Project_.Components.ProjectSharing as ProjectSharing
 import PagesComponents.Organization_.Project_.Components.SourceUpdateDialog as SourceUpdateDialog
@@ -96,6 +99,7 @@ type alias Model =
     , dataExplorer : DataExplorer.Model
     , virtualRelation : Maybe VirtualRelation
     , findPath : Maybe FindPathDialog
+    , llmGenerateSql : Maybe LlmGenerateSqlDialog.Model
     , schemaAnalysis : Maybe SchemaAnalysisDialog
     , exportDialog : Maybe ExportDialog.Model
     , sharing : Maybe ProjectSharing.Model
@@ -145,6 +149,7 @@ emptyModel =
     , dataExplorer = DataExplorer.init
     , virtualRelation = Nothing
     , findPath = Nothing
+    , llmGenerateSql = Nothing
     , schemaAnalysis = Nothing
     , exportDialog = Nothing
     , sharing = Nothing
@@ -290,6 +295,7 @@ type Msg
     | DataExplorerMsg DataExplorer.Msg
     | VirtualRelationMsg VirtualRelationMsg
     | FindPathMsg FindPathMsg
+    | LlmGenerateSqlDialogMsg LlmGenerateSqlDialog.Msg
     | SchemaAnalysisMsg SchemaAnalysisMsg
     | ExportDialogMsg ExportDialog.Msg
     | SharingMsg ProjectSharing.Msg
@@ -418,6 +424,8 @@ type ProjectSettingsMsg
     | PSRelationStyleUpdate RelationStyle
     | PSColumnBasicTypesToggle
     | PSCollapseTableOnShowToggle
+    | PSLlmKeyUpdate OpenAIKey
+    | PSLlmModelUpdate OpenAIModel
 
 
 type HelpMsg

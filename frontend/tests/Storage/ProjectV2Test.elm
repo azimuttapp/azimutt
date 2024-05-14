@@ -115,7 +115,7 @@ project0Json =
 
 tables1 : Dict TableId Table
 tables1 =
-    Dict.fromListMap .id [ { table | id = ( "public", "users" ), schema = "public", name = "users", columns = Dict.fromListMap .name [ { column | index = 0, name = "id", kind = "int" } ] } ]
+    Dict.fromListBy .id [ { table | id = ( "public", "users" ), schema = "public", name = "users", columns = Dict.fromListBy .name [ { column | index = 0, name = "id", kind = "int" } ] } ]
 
 
 project1 : Project
@@ -134,7 +134,7 @@ project1 =
             , ( "empty", Layout [] [] [] [] (time 1202) (time 1203) )
             ]
     , tableRowsSeq = 1
-    , settings = ProjectSettings (FindPathSettings 4 "" "") defaultSchema [] False "" (HiddenColumns "created_.+, updated_.+" 15 False False) OrderByProperty Bezier True False
+    , settings = ProjectSettings (FindPathSettings 4 "" "") defaultSchema [] False "" (HiddenColumns "created_.+, updated_.+" 15 False False) OrderByProperty Bezier True False Nothing
     , storage = ProjectStorage.Local
     , visibility = ProjectVisibility.None
     , version = ProjectEncodingVersion.current
@@ -153,13 +153,13 @@ project1Json =
 
 tables2 : Dict TableId Table
 tables2 =
-    Dict.fromListMap .id
+    Dict.fromListBy .id
         [ { table
             | id = ( "public", "users" )
             , schema = "public"
             , name = "users"
             , columns =
-                Dict.fromListMap .name
+                Dict.fromListBy .name
                     [ { column | index = 0, name = "id", kind = "int" }
                     , { column | index = 1, name = "name", kind = "varchar", nullable = True }
                     ]
@@ -170,7 +170,7 @@ tables2 =
             , schema = "public"
             , name = "creds"
             , columns =
-                Dict.fromListMap .name
+                Dict.fromListBy .name
                     [ { column | index = 0, name = "user_id", kind = "int" }
                     , { column | index = 1, name = "login", kind = "varchar" }
                     , { column | index = 2, name = "pass", kind = "varchar", comment = Just (Comment "Encrypted field") }
@@ -238,7 +238,7 @@ project2 =
             , ( "users", Layout [ TableProps ( "public", "users" ) (gridPos 90 100) Size.zeroCanvas Tw.red [ ColumnPath.fromString "id", ColumnPath.fromString "name" ] True False False ] [] [] [] (time 1202) (time 1203) )
             ]
     , tableRowsSeq = 1
-    , settings = ProjectSettings (FindPathSettings 4 "users" "created_by") defaultSchema [] False "" (HiddenColumns "created_.+, updated_.+" 15 False False) OrderByProperty Bezier True False
+    , settings = ProjectSettings (FindPathSettings 4 "users" "created_by") defaultSchema [] False "" (HiddenColumns "created_.+, updated_.+" 15 False False) OrderByProperty Bezier True False Nothing
     , storage = ProjectStorage.Local
     , visibility = ProjectVisibility.None
     , version = ProjectEncodingVersion.current

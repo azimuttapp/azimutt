@@ -1,6 +1,6 @@
 {
   "name": "@azimutt/serde-dbml",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Parse and Generate DBML.",
   "keywords": [],
   "homepage": "https://azimutt.app",
@@ -25,10 +25,10 @@
     "dry-publish": "npm run build && npm test && npm pack"
   },
   "dependencies": {
-    "@azimutt/models": "^0.1.0",
-    "@azimutt/utils": "^0.1.0",
-    "@dbml/core": "3.4.1",
-    "zod": "3.23.4"
+    "@azimutt/models": "^0.1.4",
+    "@azimutt/utils": "^0.1.1",
+    "@dbml/core": "3.4.3",
+    "zod": "3.23.8"
   },
   "devDependencies": {
     "@jest/globals": "^29.7.0",

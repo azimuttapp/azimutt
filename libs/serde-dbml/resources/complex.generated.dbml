@@ -45,10 +45,10 @@ Table "user_roles" {
   "role_id" integer
   "created_at" timestamp [default: `now()`]
 
-Indexes {
-  (user_id, role_id) [pk]
-  created_at [name: "created_at_index"]
-}
+  Indexes {
+    (user_id, role_id) [pk]
+    created_at [name: "created_at_index"]
+  }
 }
 
 Ref:"users"."id" - "profiles"."user_id"

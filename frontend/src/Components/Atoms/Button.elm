@@ -1,4 +1,4 @@
-module Components.Atoms.Button exposing (commonStyles, doc, light, light1, light2, light3, light4, light5, primary, primary1, primary2, primary3, primary4, primary5, secondary, secondary1, secondary2, secondary3, secondary4, secondary5, size1, size2, size3, size4, size5, white, white1, white2, white3, white4, white5)
+module Components.Atoms.Button exposing (commonStyles, doc, light, light1, light2, light3, light4, light5, primary, primary1, primary2, primary3, primary4, primary5, secondary, secondary1, secondary2, secondary3, secondary4, secondary5, size1, size2, size3, size4, size5, transparent, transparent1, transparent2, transparent3, transparent4, transparent5, white, white1, white2, white3, white4, white5)
 
 import ElmBook.Chapter exposing (Chapter, chapter, renderComponentList)
 import Html exposing (Attribute, Html, button, div, text)
@@ -107,6 +107,31 @@ white5 =
     build white size5
 
 
+transparent1 : Color -> List (Attribute msg) -> List (Html msg) -> Html msg
+transparent1 =
+    build transparent size1
+
+
+transparent2 : Color -> List (Attribute msg) -> List (Html msg) -> Html msg
+transparent2 =
+    build transparent size2
+
+
+transparent3 : Color -> List (Attribute msg) -> List (Html msg) -> Html msg
+transparent3 =
+    build transparent size3
+
+
+transparent4 : Color -> List (Attribute msg) -> List (Html msg) -> Html msg
+transparent4 =
+    build transparent size4
+
+
+transparent5 : Color -> List (Attribute msg) -> List (Html msg) -> Html msg
+transparent5 =
+    build transparent size5
+
+
 primary : Color -> TwClass
 primary color =
     batch [ "border-transparent shadow-sm text-white", bg_600 color, hover [ bg_700 color ], Tw.disabled [ "cursor-not-allowed", bg_300 color ] ]
@@ -125,6 +150,11 @@ light color =
 white : Color -> TwClass
 white color =
     batch [ "border-gray-300 shadow-sm bg-white", text_700 color, hover [ bg_50 color ], Tw.disabled [ "cursor-not-allowed border-gray-200 bg-white", text_300 color ] ]
+
+
+transparent : Color -> TwClass
+transparent color =
+    batch [ "border-0", text_700 color, hover [ bg_50 color ], Tw.disabled [ "cursor-not-allowed", text_300 color ] ]
 
 
 size1 : TwClass
@@ -208,6 +238,16 @@ doc =
                     , white4 Tw.primary [ css [ "mr-3" ] ] [ text "white4" ]
                     , white5 Tw.primary [ css [ "mr-3" ] ] [ text "white5" ]
                     , white5 Tw.primary [ css [ "mr-3" ], disabled True ] [ text "disabled" ]
+                    ]
+              )
+            , ( "transparent"
+              , div []
+                    [ transparent1 Tw.primary [ css [ "mr-3" ] ] [ text "transparent1" ]
+                    , transparent2 Tw.primary [ css [ "mr-3" ] ] [ text "transparent2" ]
+                    , transparent3 Tw.primary [ css [ "mr-3" ] ] [ text "transparent3" ]
+                    , transparent4 Tw.primary [ css [ "mr-3" ] ] [ text "transparent4" ]
+                    , transparent5 Tw.primary [ css [ "mr-3" ] ] [ text "transparent5" ]
+                    , transparent5 Tw.primary [ css [ "mr-3" ], disabled True ] [ text "disabled" ]
                     ]
               )
             ]

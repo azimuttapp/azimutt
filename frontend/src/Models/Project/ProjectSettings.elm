@@ -1,4 +1,4 @@
-module Models.Project.ProjectSettings exposing (HiddenColumns, ProjectSettings, RemovedTables, decode, encode, fillFindPath, hideColumn, init, removeColumn, removeTable)
+module Models.Project.ProjectSettings exposing (HiddenColumns, LlmSettings, ProjectSettings, RemovedTables, decode, encode, fillFindPath, hideColumn, init, removeColumn, removeTable)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
@@ -9,6 +9,8 @@ import Libs.Nel as Nel
 import Libs.Regex as Regex
 import Libs.String as String
 import Models.ColumnOrder as ColumnOrder exposing (ColumnOrder)
+import Models.OpenAIKey as OpenAIKey exposing (OpenAIKey)
+import Models.OpenAIModel as OpenAIModel exposing (OpenAIModel)
 import Models.Project.ColumnPath exposing (ColumnPath)
 import Models.Project.FindPathSettings as FindPathSettings exposing (FindPathSettings)
 import Models.Project.SchemaName as SchemaName exposing (SchemaName)
@@ -29,6 +31,7 @@ type alias ProjectSettings =
     , relationStyle : RelationStyle
     , columnBasicTypes : Bool
     , collapseTableColumns : Bool
+    , llm : Maybe LlmSettings
     }
 
 
@@ -38,6 +41,10 @@ type alias RemovedTables =
 
 type alias HiddenColumns =
     { list : String, max : Int, props : Bool, relations : Bool }
+
+
+type alias LlmSettings =
+    { key : OpenAIKey, model : OpenAIModel }
 
 
 init : SchemaName -> ProjectSettings
@@ -52,6 +59,7 @@ init defaultSchema =
     , relationStyle = RelationStyle.Bezier
     , columnBasicTypes = True
     , collapseTableColumns = False
+    , llm = Nothing
     }
 
 
@@ -115,12 +123,13 @@ encode default value =
         , ( "relationStyle", value.relationStyle |> Encode.withDefault RelationStyle.encode default.relationStyle )
         , ( "columnBasicTypes", value.columnBasicTypes |> Encode.withDefault Encode.bool default.columnBasicTypes )
         , ( "collapseTableColumns", value.collapseTableColumns |> Encode.withDefault Encode.bool default.collapseTableColumns )
+        , ( "llm", value.llm |> Encode.maybe encodeLlmSettings )
         ]
 
 
 decode : ProjectSettings -> Decode.Decoder ProjectSettings
 decode default =
-    Decode.map10 ProjectSettings
+    Decode.map11 ProjectSettings
         (Decode.defaultFieldDeep "findPath" FindPathSettings.decode default.findPath)
         (Decode.defaultField "defaultSchema" SchemaName.decode default.defaultSchema)
         (Decode.defaultField "removedSchemas" (Decode.list SchemaName.decode) default.removedSchemas)
@@ -131,6 +140,7 @@ decode default =
         (Decode.defaultField "relationStyle" RelationStyle.decode default.relationStyle)
         (Decode.defaultField "columnBasicTypes" Decode.bool default.columnBasicTypes)
         (Decode.defaultField "collapseTableColumns" Decode.bool default.collapseTableColumns)
+        (Decode.maybeField "llm" decodeLlmSettings)
 
 
 encodeHiddenColumns : HiddenColumns -> HiddenColumns -> Value
@@ -154,3 +164,18 @@ decodeHiddenColumns default =
         , Decode.map (\list -> { list = list, max = default.max, props = default.props, relations = default.relations })
             Decode.string
         ]
+
+
+encodeLlmSettings : LlmSettings -> Value
+encodeLlmSettings value =
+    Encode.notNullObject
+        [ ( "key", value.key |> OpenAIKey.encode )
+        , ( "model", value.model |> OpenAIModel.encode )
+        ]
+
+
+decodeLlmSettings : Decode.Decoder LlmSettings
+decodeLlmSettings =
+    Decode.map2 LlmSettings
+        (Decode.field "key" OpenAIKey.decode)
+        (Decode.field "model" OpenAIModel.decode)

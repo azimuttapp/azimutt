@@ -24,7 +24,7 @@ suite =
   "tables": [],
   "relations": []
 }""")
-            , test "empty table" (\_ -> { emptySource | tables = Dict.fromListMap .id [ { emptyTable | name = "users" } ] } |> JsonGenerator.generate |> Expect.equal """{
+            , test "empty table" (\_ -> { emptySource | tables = Dict.fromListBy .id [ { emptyTable | name = "users" } ] } |> JsonGenerator.generate |> Expect.equal """{
   "tables": [
     {
       "schema": "",
@@ -349,12 +349,12 @@ emptyComment =
 
 buildTables : List Table -> Dict TableId Table
 buildTables tables =
-    tables |> Dict.fromListMap .id
+    tables |> Dict.fromListBy .id
 
 
 buildColumns : List Column -> Dict ColumnName Column
 buildColumns columns =
-    columns |> List.indexedMap (\i c -> { c | index = i }) |> Dict.fromListMap .name
+    columns |> List.indexedMap (\i c -> { c | index = i }) |> Dict.fromListBy .name
 
 
 buildRelation : ( String, ( String, String, String ), ( String, String, String ) ) -> Relation

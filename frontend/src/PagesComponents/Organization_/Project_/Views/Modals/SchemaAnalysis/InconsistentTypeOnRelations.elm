@@ -122,7 +122,7 @@ scriptForSource defaultSource source relations =
         kind =
             source
                 |> Maybe.andThen Source.databaseUrl
-                |> Maybe.map DatabaseKind.fromUrl
+                |> Maybe.andThen DatabaseKind.fromUrl
                 |> Maybe.orElse (defaultSource |> Maybe.map (.db >> .kind))
                 |> Maybe.withDefault DatabaseKind.PostgreSQL
     in

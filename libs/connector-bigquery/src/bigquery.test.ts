@@ -2,7 +2,7 @@ import {describe, expect, test} from "@jest/globals";
 import {ConnectorSchemaOpts, DatabaseUrlParsed, parseDatabaseUrl} from "@azimutt/models";
 import {connect} from "./connect";
 import {execQuery} from "./query";
-import {getColumns, getForeignKeys, getIndexes, getPrimaryKeys, getSchema, getTables} from "./bigquery";
+import {countTables, getColumns, getForeignKeys, getIndexes, getPrimaryKeys, getSchema, getTables} from "./bigquery";
 import {application, logger} from "./constants.test";
 
 describe('bigquery', () => {
@@ -24,6 +24,10 @@ describe('bigquery', () => {
         console.log('schema', schema)
         expect(schema.entities?.length).toEqual(8)
     }, 15 * 1000)
+    test.skip('countTables', async () => {
+        const tables = await connect(application, url, countTables(project, dataset, opts), opts)
+        console.log(`${tables} tables`)
+    })
     test.skip('getTables', async () => {
         const tables = await connect(application, url, getTables(project, dataset, opts), opts)
         console.log(`${tables.length} tables`, tables)

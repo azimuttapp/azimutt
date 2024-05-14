@@ -131,7 +131,7 @@ decode =
         (Decode.field "table" TableName.decode)
         (Decode.defaultField "view" Decode.bool False)
         (Decode.maybeField "definition" Decode.string)
-        (Decode.field "columns" (Decode.list Column.decode |> Decode.map (List.indexedMap (\i c -> c i) >> Dict.fromListMap .name)))
+        (Decode.field "columns" (Decode.list Column.decode |> Decode.map (List.indexedMap (\i c -> c i) >> Dict.fromListBy .name)))
         (Decode.maybeField "primaryKey" PrimaryKey.decode)
         (Decode.defaultField "uniques" (Decode.list Unique.decode) [])
         (Decode.defaultField "indexes" (Decode.list Index.decode) [])

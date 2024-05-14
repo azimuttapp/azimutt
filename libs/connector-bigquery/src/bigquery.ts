@@ -30,6 +30,9 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
         opts.logger.log(`Exporting dataset '${projectId}.${datasetId}' ...`)
 
         // access system tables only
+        const maxTables = parseInt(conn.url.options?.['max-tables'] || '') || 500
+        const nbTables = await countTables(projectId, datasetId, opts)(conn)
+        if (nbTables > maxTables) { return {} } // BigQuery fails when dataset is too big, set a higher limit
         const tables = await getTables(projectId, datasetId, opts)(conn)
         opts.logger.log(`  Found ${pluralizeL(tables, 'table')} ...`)
         const columns = await getColumns(projectId, datasetId, opts)(conn)
@@ -89,6 +92,15 @@ const groupByEntity = <T extends { table_catalog: string, table_schema: string, 
 export const getDatasets = (projectId: string, opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<SchemaName[]> => {
     const datasets: Dataset[] = await conn.underlying.getDatasets({projectId}).then(([datasets]: DatasetsResponse) => datasets)
     return datasets.map(d => d.id).filter((id: string | undefined): id is string => !!id).filter(id => scopeFilter({schema: id}, opts))
+}
+
+export const countTables = (projectId: string, datasetId: string, opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<number> => {
+    const res = await conn.query<{nb_tables: number}>(`
+        SELECT count(*) AS nb_tables
+        FROM ${projectId}.${datasetId}.INFORMATION_SCHEMA.TABLES t
+        WHERE t.table_type IN ('BASE TABLE', 'VIEW', 'MATERIALIZED VIEW')${scopeWhere(' AND ', {catalog: 't.table_catalog', schema: 't.table_schema', entity: 't.table_name'}, opts)}`, [], 'countTables'
+    ).catch(handleError(`Failed to count tables for ${projectId}.${datasetId}`, [], opts))
+    return res?.[0]?.nb_tables || 0
 }
 
 export type RawTable = {

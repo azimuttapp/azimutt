@@ -137,11 +137,6 @@ merge mergeValue m1 m2 =
     m1 |> Maybe.map (\a1 -> m2 |> mapOrElse (mergeValue a1) a1) |> orElse m2
 
 
-add : (a -> Maybe b) -> Maybe a -> Maybe ( a, b )
-add get maybe =
-    maybe |> Maybe.andThen (\a -> get a |> Maybe.map (\b -> ( a, b )))
-
-
 resultSeq : Maybe (Result x a) -> Result x (Maybe a)
 resultSeq maybe =
     case maybe of

@@ -7,6 +7,7 @@ import Libs.Dict as Dict
 import Libs.Fuzz as Fuzz
 import Libs.List as List
 import Models.ColumnOrder as ColumnOrder exposing (ColumnOrder)
+import Models.OpenAIModel as OpenAIModel exposing (OpenAIModel)
 import Models.Project exposing (Project)
 import Models.Project.CanvasProps exposing (CanvasProps)
 import Models.Project.Check exposing (Check)
@@ -35,7 +36,7 @@ import Models.Project.PrimaryKeyName exposing (PrimaryKeyName)
 import Models.Project.ProjectEncodingVersion as ProjectEncodingVersion exposing (ProjectEncodingVersion)
 import Models.Project.ProjectId exposing (ProjectId)
 import Models.Project.ProjectName exposing (ProjectName)
-import Models.Project.ProjectSettings exposing (HiddenColumns, ProjectSettings)
+import Models.Project.ProjectSettings exposing (HiddenColumns, LlmSettings, ProjectSettings)
 import Models.Project.ProjectSlug exposing (ProjectSlug)
 import Models.Project.ProjectStorage as ProjectStrorage exposing (ProjectStorage)
 import Models.Project.ProjectVisibility as ProjectVisibility exposing (ProjectVisibility)
@@ -89,7 +90,7 @@ sourceLines =
 
 tables : Fuzzer (Dict TableId Table)
 tables =
-    listSmall table |> Fuzz.map (Dict.fromListMap .id)
+    listSmall table |> Fuzz.map (Dict.fromListBy .id)
 
 
 table : Fuzzer Table
@@ -99,7 +100,7 @@ table =
         tableName
         Fuzz.bool
         (Fuzz.constant Nothing)
-        (listSmall (column 0) |> Fuzz.map (List.uniqueBy .name >> List.indexedMap (\i c -> { c | index = i }) >> Dict.fromListMap .name))
+        (listSmall (column 0) |> Fuzz.map (List.uniqueBy .name >> List.indexedMap (\i c -> { c | index = i }) >> Dict.fromListBy .name))
         (Fuzz.maybe primaryKey)
         (listSmall unique)
         (listSmall index)
@@ -140,7 +141,7 @@ comment =
 
 types : Fuzzer (Dict CustomTypeId CustomType)
 types =
-    listSmall customType |> Fuzz.map (Dict.fromListMap .id)
+    listSmall customType |> Fuzz.map (Dict.fromListBy .id)
 
 
 customType : Fuzzer CustomType
@@ -262,7 +263,7 @@ rowValue =
 
 projectSettings : Fuzzer ProjectSettings
 projectSettings =
-    Fuzz.map10 ProjectSettings findPathSettings schemaName (listSmall schemaName) Fuzz.bool stringSmall findHiddenColumns columnOrder relationStyle Fuzz.bool Fuzz.bool
+    Fuzz.map11 ProjectSettings findPathSettings schemaName (listSmall schemaName) Fuzz.bool stringSmall findHiddenColumns columnOrder relationStyle Fuzz.bool Fuzz.bool (Fuzz.maybe projectSettingsLlm)
 
 
 findPathSettings : Fuzzer FindPathSettings
@@ -273,6 +274,16 @@ findPathSettings =
 findHiddenColumns : Fuzzer HiddenColumns
 findHiddenColumns =
     Fuzz.map4 HiddenColumns stringSmall Fuzz.int Fuzz.bool Fuzz.bool
+
+
+projectSettingsLlm : Fuzzer LlmSettings
+projectSettingsLlm =
+    Fuzz.map2 LlmSettings stringSmall openAIModel
+
+
+openAIModel : Fuzzer OpenAIModel
+openAIModel =
+    OpenAIModel.all |> List.map Fuzz.constant |> Fuzz.oneOf
 
 
 projectStorage : Fuzzer ProjectStorage

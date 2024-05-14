@@ -1,4 +1,4 @@
-module Libs.Dict exposing (alter, any, count, filterMap, find, from, fromIndexedList, fromListMap, fuse, getOrElse, getResult, mapBoth, mapKeys, mapValues, nonEmpty, notMember, set, updateT, zip)
+module Libs.Dict exposing (alter, any, count, filterMap, find, from, fromIndexedList, fromListBy, fromListIndexedMap, fromListMap, fuse, getOrElse, getResult, mapBoth, mapKeys, mapValues, nonEmpty, notMember, set, updateT, zip)
 
 import Dict exposing (Dict)
 
@@ -18,9 +18,19 @@ fromIndexedList list =
     list |> List.indexedMap (\i a -> ( i, a )) |> Dict.fromList
 
 
-fromListMap : (a -> comparable) -> List a -> Dict comparable a
-fromListMap getKey list =
+fromListBy : (a -> comparable) -> List a -> Dict comparable a
+fromListBy getKey list =
     list |> List.map (\item -> ( getKey item, item )) |> Dict.fromList
+
+
+fromListMap : (a -> ( comparable, b )) -> List a -> Dict comparable b
+fromListMap toEntity list =
+    list |> List.map toEntity |> Dict.fromList
+
+
+fromListIndexedMap : (Int -> a -> ( comparable, b )) -> List a -> Dict comparable b
+fromListIndexedMap toEntity list =
+    list |> List.indexedMap toEntity |> Dict.fromList
 
 
 getOrElse : comparable -> a -> Dict comparable a -> a

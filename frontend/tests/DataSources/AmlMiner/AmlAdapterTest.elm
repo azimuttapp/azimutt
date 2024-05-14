@@ -27,13 +27,13 @@ suite =
                 (\_ ->
                     schema
                         |> evolve (AmlTableStatement usersAml)
-                        |> Expect.equal { schema | tables = Dict.fromListMap .id [ users ] }
+                        |> Expect.equal { schema | tables = Dict.fromListBy .id [ users ] }
                 )
             , test "can't add a table twice"
                 (\_ ->
-                    { schema | tables = Dict.fromListMap .id [ users ] }
+                    { schema | tables = Dict.fromListBy .id [ users ] }
                         |> evolve (AmlTableStatement usersAml)
-                        |> Expect.equal { schema | tables = Dict.fromListMap .id [ users ], errors = [ { row = 0, col = 0, problem = "Table 'users' is already defined" } ] }
+                        |> Expect.equal { schema | tables = Dict.fromListBy .id [ users ], errors = [ { row = 0, col = 0, problem = "Table 'users' is already defined" } ] }
                 )
             , test "add a relation"
                 (\_ ->
@@ -45,7 +45,7 @@ suite =
                 (\_ ->
                     schema
                         |> evolve (AmlTableStatement loginsAml)
-                        |> Expect.equal { schema | tables = Dict.fromListMap .id [ logins ], relations = [ loginsFk ] }
+                        |> Expect.equal { schema | tables = Dict.fromListBy .id [ logins ], relations = [ loginsFk ] }
                 )
             ]
         ]
@@ -72,7 +72,7 @@ users =
         , schema = Conf.schema.empty
         , name = "users"
         , columns =
-            Dict.fromListMap .name
+            Dict.fromListBy .name
                 [ { column | index = 0, name = "id", kind = "int" }
                 , { column | index = 1, name = "slug", kind = "varchar", comment = Just { comment | text = "used in url" } }
                 , { column | index = 2, name = "role", kind = Conf.schema.column.unknownType }
@@ -101,7 +101,7 @@ logins =
         , schema = Conf.schema.empty
         , name = "logins"
         , columns =
-            Dict.fromListMap .name
+            Dict.fromListBy .name
                 [ { column | index = 0, name = "id", kind = "int" }
                 , { column | index = 1, name = "user_id", kind = "int" }
                 ]

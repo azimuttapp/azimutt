@@ -68,18 +68,18 @@ function getDatabaseSchema(params: GetSchemaParams, res: FastifyReply): Promise<
         return conn.getSchema(buildApp(params.user), url, {
             logger,
             logQueries: urlOptions['log-queries'] === 'true',
-            database: params.database,
-            catalog: params.catalog,
-            schema: params.schema,
-            entity: params.entity,
+            database: params.database || urlOptions['database'],
+            catalog: params.catalog || urlOptions['catalog'],
+            schema: params.schema || urlOptions['schema'],
+            entity: params.entity || urlOptions['entity'],
             sampleSize: undefined,
-            inferMixedJson: undefined,
+            inferMixedJson: urlOptions['discriminator'],
             inferJsonAttributes: urlOptions['schema-only'] !== 'true',
             inferPolymorphicRelations: urlOptions['schema-only'] !== 'true',
             inferRelationsFromJoins: urlOptions['schema-only'] !== 'true',
             inferPii: urlOptions['schema-only'] !== 'true',
             inferRelations: true,
-            ignoreErrors: false
+            ignoreErrors: urlOptions['ignore-errors'] === 'true'
         }).then(databaseToLegacy)
     })
 }
