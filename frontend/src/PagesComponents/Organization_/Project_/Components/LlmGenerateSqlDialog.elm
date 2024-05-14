@@ -17,7 +17,7 @@ import Track
 
 dialogId : HtmlId
 dialogId =
-    "generate-sql"
+    "llm-generate-sql"
 
 
 type alias Model =

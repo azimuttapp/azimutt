@@ -1,4 +1,4 @@
-module Services.DatabaseSource exposing (DatabaseKey, Model, Msg(..), example, init, update, viewInput, viewParsing)
+module Services.DatabaseSource exposing (Model, Msg(..), example, init, update, viewInput, viewParsing)
 
 import Components.Atoms.Badge as Badge
 import Components.Atoms.Icon as Icon
@@ -15,6 +15,7 @@ import Libs.Html exposing (extLink, iText)
 import Libs.Html.Attributes exposing (css)
 import Libs.List as List
 import Libs.Maybe as Maybe
+import Libs.Models.DatabaseKind as DatabaseKind exposing (DatabaseKind)
 import Libs.Models.DatabaseUrl as DatabaseUrl exposing (DatabaseUrl)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Result as Result
@@ -36,7 +37,7 @@ import Track
 
 type alias Model msg =
     { source : Maybe Source
-    , selectedDb : DatabaseKey
+    , selectedDb : DatabaseKind
     , url : String
     , selectedUrl : Maybe (Result String String)
     , parsedSchema : Maybe (Result String JsonSchema)
@@ -46,16 +47,8 @@ type alias Model msg =
     }
 
 
-type alias DatabaseKey =
-    String
-
-
-type alias Database =
-    { key : DatabaseKey, sampleUrl : String, issue : Maybe String }
-
-
 type Msg
-    = UpdateSelectedDb DatabaseKey
+    = UpdateSelectedDb DatabaseKind
     | UpdateUrl DatabaseUrl
     | GetSchema DatabaseUrl
     | GotSchema (Result String JsonSchema)
@@ -63,18 +56,23 @@ type Msg
     | UiToggle HtmlId
 
 
-databases : List Database
+databases : List { key : DatabaseKind, sampleUrl : String }
 databases =
-    [ { key = "postgres", sampleUrl = "postgres://<user>:<pass>@<host>:<port>/<db>", issue = Nothing }
-    , { key = "sqlserver", sampleUrl = "Server=<host>,<port>;Database=<db>;User Id=<user>;Password=<pass>", issue = Nothing }
-    , { key = "mariadb", sampleUrl = "mariadb://<user>:<pass>@<host>:<port>/<db>", issue = Nothing }
-    , { key = "mysql", sampleUrl = "mysql://<user>:<pass>@<host>:<port>/<db>", issue = Nothing }
-    , { key = "couchbase", sampleUrl = "couchbases://<user>:<pass>@<host>", issue = Nothing }
-    , { key = "mongodb", sampleUrl = "mongodb+srv://<user>:<pass>@<host>", issue = Nothing }
-    , { key = "snowflake", sampleUrl = "snowflake://<user>:<pass>@<account>.snowflakecomputing.com?db=<database>", issue = Nothing }
-    , { key = "bigquery", sampleUrl = "bigquery://bigquery.googleapis.com/<project>?key=<auth-key-path>", issue = Nothing }
-    , { key = "oracle", sampleUrl = "oracle:thin:<user>/<pass>@<host>:<port>:<db>", issue = Just "https://github.com/azimuttapp/azimutt/issues/217" }
-    , { key = "sqlite", sampleUrl = "file:<path>", issue = Just "https://github.com/azimuttapp/azimutt/issues/115" }
+    [ { key = DatabaseKind.PostgreSQL, sampleUrl = "postgres://<user>:<pass>@<host>:<port>/<db>" }
+    , { key = DatabaseKind.SQLServer, sampleUrl = "Server=<host>,<port>;Database=<db>;User Id=<user>;Password=<pass>" }
+    , { key = DatabaseKind.MariaDB, sampleUrl = "mariadb://<user>:<pass>@<host>:<port>/<db>" }
+    , { key = DatabaseKind.MySQL, sampleUrl = "mysql://<user>:<pass>@<host>:<port>/<db>" }
+    , { key = DatabaseKind.Couchbase, sampleUrl = "couchbases://<user>:<pass>@<host>" }
+    , { key = DatabaseKind.MongoDB, sampleUrl = "mongodb+srv://<user>:<pass>@<host>" }
+    , { key = DatabaseKind.Snowflake, sampleUrl = "snowflake://<user>:<pass>@<account>.snowflakecomputing.com?db=<database>" }
+    , { key = DatabaseKind.BigQuery, sampleUrl = "bigquery://bigquery.googleapis.com/<project>?key=<auth-key-path>" }
+    ]
+
+
+databasesNext : List { key : String, issue : String }
+databasesNext =
+    [ { key = "oracle", issue = "https://github.com/azimuttapp/azimutt/issues/217" }
+    , { key = "sqlite", issue = "https://github.com/azimuttapp/azimutt/issues/115" }
     ]
 
 
@@ -90,7 +88,7 @@ example =
 init : Maybe Source -> (Result String Source -> msg) -> Model msg
 init src callback =
     { source = src
-    , selectedDb = "postgres"
+    , selectedDb = DatabaseKind.PostgreSQL
     , url = ""
     , selectedUrl = Nothing
     , parsedSchema = Nothing
@@ -166,17 +164,8 @@ viewInput wrap htmlId model =
     in
     div []
         [ div [ class "flex space-x-4" ]
-            (databases
-                |> List.map
-                    (\db ->
-                        db.issue
-                            |> Maybe.mapOrElse
-                                (\link ->
-                                    extLink link [] [ img [ src (Backend.resourceUrl ("/assets/logos/" ++ db.key ++ ".png")), class "grayscale opacity-50" ] [] ]
-                                        |> Tooltip.t "Click to ask support (done on demand)"
-                                )
-                                (button [ type_ "button", onClick (UpdateSelectedDb db.key |> wrap) ] [ img [ src (Backend.resourceUrl ("/assets/logos/" ++ db.key ++ ".png")) ] [] ])
-                    )
+            ((databases |> List.map (\db -> button [ type_ "button", onClick (UpdateSelectedDb db.key |> wrap) ] [ img [ src (Backend.resourceUrl ("/assets/logos/" ++ DatabaseKind.toString db.key ++ ".png")) ] [] ]))
+                ++ (databasesNext |> List.map (\db -> extLink db.issue [] [ img [ src (Backend.resourceUrl ("/assets/logos/" ++ db.key ++ ".png")), class "grayscale opacity-50" ] [] ] |> Tooltip.t "Click to ask support (made on demand)"))
             )
         , div [ class "mt-3 flex rounded-md shadow-sm" ]
             [ span [ css [ inputStyles, "inline-flex items-center px-3 rounded-l-md border border-r-0 bg-gray-50 text-gray-500 sm:text-sm" ] ] [ text "Database url" ]
@@ -192,9 +181,10 @@ viewInput wrap htmlId model =
                 ]
                 []
             ]
+        , p [ class "mt-2 text-sm text-gray-500" ] [ text ("Sample " ++ DatabaseKind.show model.selectedDb ++ " url: " ++ sampleUrl) ]
         , error |> Maybe.mapOrElse (\err -> p [ class "mt-1 text-sm text-red-500" ] [ text err ]) (p [] [])
         , case model.selectedDb of
-            "bigquery" ->
+            DatabaseKind.BigQuery ->
                 div [ class "mt-3" ]
                     [ Alert.simple Tw.indigo
                         Icon.LightBulb

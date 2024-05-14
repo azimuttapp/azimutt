@@ -13,6 +13,7 @@ type alias SqlQuery =
 
 type alias SqlQueryOrigin =
     -- to know from where the SQL query comes from
+    -- TODO: add optional name & description (store prompt in description)
     { sql : SqlQuery, origin : String, db : DatabaseKind }
 
 
