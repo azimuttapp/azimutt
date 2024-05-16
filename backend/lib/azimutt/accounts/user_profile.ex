@@ -10,7 +10,7 @@ defmodule Azimutt.Accounts.UserProfile do
   schema "user_profiles" do
     belongs_to :user, User
     field :usage, Ecto.Enum, values: [:solo, :team]
-    field :usecase, Ecto.Enum, values: [:design, :explore]
+    field :usecase, Ecto.Enum, values: [:design, :explore, :analyze]
     field :role, :string
     field :phone, :string
     field :location, :string

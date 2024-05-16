@@ -66,7 +66,7 @@ projectsModalBody project close titleId =
         , p [ class "text-sm text-gray-500" ] [ text "We are making Azimutt free for exploration but heavy use of it needs to also contribute to its development in order to make it sustainable." ]
         , p [ class "text-sm text-gray-500" ] [ text "Please consider subscribing to our pro plan to contribute to it and unlock all the features!" ]
         ]
-        [ Link.primary3 color [ href (Backend.organizationBillingUrl project.organization.id Conf.features.projects.name), target "_blank", rel "noopener", css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ Icon.solid Icon.Sun "mr-1", text "Upgrade plan" ]
+        [ Link.primary3 color [ href (Backend.organizationBillingUrl project.organization.id Conf.features.projects.name), target "_blank", rel "noopener", css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ Icon.solid Icon.Sun "mr-1", text "Start trial" ]
         , Button.white3 Tw.gray [ onClick close, css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text "Cancel" ]
         ]
 
@@ -84,7 +84,7 @@ layoutsWarning project =
         [ p [] [ text "Hey! We are very happy you use and like layouts in Azimutt." ]
         , p [] [ text "They are an important feature but also a limited one. You've reached the limits of your current plan and will need to upgrade. We will let you create one last layout so you can keep working but ", bText "please upgrade as soon as possible", text "." ]
         ]
-        [ Link.secondary3 color [ href (Backend.organizationBillingUrl project.organization.id (Conf.features.layouts.name ++ "_warning")), target "_blank", rel "noopener" ] [ Icon.outline Icon.Sparkles "mr-1", text "Upgrade plan" ] ]
+        [ Link.secondary3 color [ href (Backend.organizationBillingUrl project.organization.id (Conf.features.layouts.name ++ "_warning")), target "_blank", rel "noopener" ] [ Icon.outline Icon.Sparkles "mr-1", text "Start trial" ] ]
 
 
 layoutsModalBody : ProjectRef -> msg -> HtmlId -> Html msg
@@ -100,7 +100,7 @@ layoutsModalBody project close titleId =
         [ p [ class "text-sm text-gray-500" ] [ text "Hey! It's so great to see people using Azimutt and we are quite proud to make this tool for you. It's already great but we have so much more to do to make it at full potential, we need your support to make it grow and help more and more people." ]
         , p [ class "text-sm text-gray-500" ] [ text "That's why we created a paid plan. Please consider your contribution to this awesome Azimutt community, it will ", bText "bring us much further together", text "." ]
         ]
-        [ Link.primary3 color [ href (Backend.organizationBillingUrl project.organization.id Conf.features.layouts.name), target "_blank", rel "noopener", css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ Icon.solid Icon.Sparkles "mr-1", text "Upgrade plan" ]
+        [ Link.primary3 color [ href (Backend.organizationBillingUrl project.organization.id Conf.features.layouts.name), target "_blank", rel "noopener", css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ Icon.solid Icon.Sparkles "mr-1", text "Start trial" ]
         , Button.white3 Tw.gray [ onClick close, css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text "Cancel" ]
         ]
 
@@ -118,7 +118,7 @@ layoutTablesModalBody project close titleId =
         , p [ class "text-sm text-gray-500" ] [ text "We hope you like experimenting with Azimutt but, as you know, we have to make it sustainable to continue its long term development." ]
         , p [ class "text-sm text-gray-500" ] [ text "Please consider subscribing to our pro plan to contribute to it and unlock all the features!" ]
         ]
-        [ Link.primary3 color [ href (Backend.organizationBillingUrl project.organization.id Conf.features.layoutTables.name), target "_blank", rel "noopener", css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ Icon.solid Icon.CheckCircle "mr-1", text "Upgrade plan" ]
+        [ Link.primary3 color [ href (Backend.organizationBillingUrl project.organization.id Conf.features.layoutTables.name), target "_blank", rel "noopener", css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ Icon.solid Icon.CheckCircle "mr-1", text "Start trial" ]
         , Button.white3 Tw.gray [ onClick close, css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text "Cancel" ]
         ]
 
@@ -136,7 +136,7 @@ memosModalBody project close titleId =
         , p [ class "mt-2 text-sm text-gray-500" ] [ text "I'm a huge fan of memos and it seems you too. They are awesome for documentation, quick notes or even branding as you can write any markdown, including links and images." ]
         , p [ class "text-sm text-gray-500" ] [ text "We see this as a long term feature to document database schema so it's reserved for pro accounts. ", bText "Consider subscribing", text " or ", a [ href ("mailto:" ++ Conf.constants.azimuttEmail), target "_blank", rel "noopener", class "link" ] [ text "reach at us" ], text " to contribute improving Azimutt." ]
         ]
-        [ Link.primary3 color [ href (Backend.organizationBillingUrl project.organization.id Conf.features.memos.name), target "_blank", rel "noopener", css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ Icon.solid Icon.ThumbUp "mr-1", text "Upgrade plan" ]
+        [ Link.primary3 color [ href (Backend.organizationBillingUrl project.organization.id Conf.features.memos.name), target "_blank", rel "noopener", css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ Icon.solid Icon.ThumbUp "mr-1", text "Start trial" ]
         , Button.white3 Tw.gray [ onClick close, css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text "Cancel" ]
         ]
 
@@ -154,7 +154,7 @@ groupsModalBody project close titleId =
         , p [ class "mt-2 text-sm text-gray-500" ] [ text "Groups are great to show which tables work together and make it immediately explicit." ]
         , p [ class "text-sm text-gray-500" ] [ text "We keep this feature for pro users as it really comes very useful with heavy usage. ", bText "Consider subscribing", text ", or ", a [ href ("mailto:" ++ Conf.constants.azimuttEmail), target "_blank", rel "noopener", class "link" ] [ text "reach at us" ], text " to contribute improving Azimutt and get it free." ]
         ]
-        [ Link.primary3 color [ href (Backend.organizationBillingUrl project.organization.id Conf.features.groups.name), target "_blank", rel "noopener", css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ Icon.solid Icon.TrendingUp "mr-1", text "Upgrade plan" ]
+        [ Link.primary3 color [ href (Backend.organizationBillingUrl project.organization.id Conf.features.groups.name), target "_blank", rel "noopener", css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ Icon.solid Icon.TrendingUp "mr-1", text "Start trial" ]
         , Button.white3 Tw.gray [ onClick close, css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text "Cancel" ]
         ]
 
@@ -244,7 +244,7 @@ colorsModalBody project update model close titleId =
                     div [] []
                 )
         ]
-        [ Link.primary3 color [ href (Backend.organizationBillingUrl project.organization.id Conf.features.tableColor.name), target "_blank", rel "noopener", css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ Icon.solid Icon.Fire "mr-1", text "Upgrade plan" ]
+        [ Link.primary3 color [ href (Backend.organizationBillingUrl project.organization.id Conf.features.tableColor.name), target "_blank", rel "noopener", css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ Icon.solid Icon.Fire "mr-1", text "Start trial" ]
         , Button.white3 Tw.gray [ onClick close, css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text "Cancel" ]
         ]
 
@@ -328,7 +328,7 @@ privateLinkWarning project =
         [ p [] [ text "They hold a great power to easily share projects or embed them in documentation." ]
         , p [] [ text "And thus, we keep them fresh for users wise enough to use our pro plan 😉" ]
         ]
-        [ Link.secondary3 color [ href (Backend.organizationBillingUrl project.organization.id Conf.features.privateLinks.name), target "_blank", rel "noopener" ] [ Icon.outline Icon.UserGroup "mr-1", text "Join us!" ] ]
+        [ Link.secondary3 color [ href (Backend.organizationBillingUrl project.organization.id Conf.features.privateLinks.name), target "_blank", rel "noopener" ] [ Icon.outline Icon.UserGroup "mr-1", text "Join us, start trial!" ] ]
 
 
 sqlExportWarning : ProjectRef -> Html msg
@@ -343,7 +343,7 @@ sqlExportWarning project =
         [ p [] [ text "Getting a pro plan is the best support you could give to Azimutt, allowing us to invest even more to make it always better." ]
         , p [] [ text "It will unlock many features for you, check it out below. Or reach us if you have any question on ", span [ title "Azimutt" ] [ text "🧭" ] ]
         ]
-        [ Link.secondary3 color [ href (Backend.organizationBillingUrl project.organization.id Conf.features.sqlExport.name), target "_blank", rel "noopener" ] [ Icon.outline Icon.TrendingUp "mr-1", text "Unleash more power!" ] ]
+        [ Link.secondary3 color [ href (Backend.organizationBillingUrl project.organization.id Conf.features.sqlExport.name), target "_blank", rel "noopener" ] [ Icon.outline Icon.TrendingUp "mr-1", text "Unleash power, start trial!" ] ]
 
 
 analysisWarning : ProjectRef -> Html msg
@@ -362,7 +362,7 @@ analysisWarning project =
         [ Link.secondary3 color
             [ href (Backend.organizationBillingUrl project.organization.id Conf.features.dbAnalysis.name), target "_blank", rel "noopener" ]
             [ Icon.outline Icon.ShieldCheck "mr-1"
-            , text "Upgrade plan"
+            , text "Start trial"
             ]
         ]
 
@@ -385,8 +385,8 @@ analysisResults project items render =
         div [ class "relative" ]
             ((items |> List.take 5 |> List.map render)
                 ++ [ div [ class "absolute inset-x-0 pt-32 bg-gradient-to-t from-white text-center text-sm text-gray-500 pointer-events-none", style "bottom" "-2px" ]
-                        [ text "See more with "
-                        , a [ href (Backend.organizationBillingUrl project.organization.id (Conf.features.dbAnalysis.name ++ "_results")), target "_blank", rel "noopener", css [ Tw.text_500 color, "underline pointer-events-auto" ] ] [ text "upgraded plan" ]
+                        [ text "See more with upgraded plan, "
+                        , a [ href (Backend.organizationBillingUrl project.organization.id (Conf.features.dbAnalysis.name ++ "_results")), target "_blank", rel "noopener", css [ Tw.text_500 color, "underline pointer-events-auto" ] ] [ text "start trial" ]
                         , text "."
                         ]
                    ]

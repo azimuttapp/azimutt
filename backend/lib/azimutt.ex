@@ -37,11 +37,11 @@ defmodule Azimutt do
         monthly: 0,
         annually: 0,
         features: [
+          "Schema & Data exploration",
           "Database design with AML",
-          "Database exploration",
-          "Unlimited Projects",
           "Unlimited Tables",
-          "Up to 3 layouts per project"
+          "2 projects with 2 layouts of 10 tables",
+          "2 collaborators"
         ],
         cta: "Select this plan",
         buy: "/login?plan=free",
@@ -55,11 +55,10 @@ defmodule Azimutt do
         annually: 130,
         features: [
           "Everything included in Explorer",
-          "Unlimited Notes & Memos",
-          "Unlimited Layouts",
-          "Layout customization",
-          "Database access",
-          "Extended schema analysis",
+          "Unlimited projects",
+          "Unlimited layouts",
+          "Unlimited notes & memos",
+          "Full database analysis",
           "Premium support"
         ],
         cta: "Try this plan",

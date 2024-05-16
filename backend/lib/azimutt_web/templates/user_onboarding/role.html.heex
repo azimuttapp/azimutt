@@ -13,11 +13,16 @@
                     "Software Engineer", "Data Engineer",
                     "Product Manager", "Manager / CTO",
                     "Database Administrator", "DevOps/SRE",
-                    "Other"
+                    "Architect"
                 ] do %>
                     <%= link role, to: Routes.user_onboarding_path(@conn, :role_next, %{user_profile: %{role: role}}), method: :post,
                         class: "rounded-md bg-white px-3.5 py-2.5 mb-2 border border-gray-900 text-sm font-semibold text-gray-900 shadow-sm hover:bg-gray-900 hover:text-white"
                     %>
+                <% end %>
+                <%= form_for @conn, Routes.user_onboarding_path(@conn, :role_next), [class: "mb-2 flex rounded-md shadow-sm ring-1 ring-inset ring-gray-900 focus-within:ring-2 focus-within:ring-inset focus-within:ring-indigo-600 sm:max-w-md"], fn f -> %>
+                    <span class="flex select-none items-center pl-3 text-gray-900 sm:text-sm">Other:</span>
+                    <%= text_input f, "user_profile[role]", placeholder: "your role", required: true, class: "block flex-1 border-0 bg-transparent py-1.5 pl-2 text-gray-900 placeholder:text-gray-500 focus:ring-0 sm:text-sm sm:leading-6" %>
+                    <%= submit "Next", class: "relative -ml-px inline-flex items-center gap-x-1.5 rounded-r-md px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-900 hover:bg-gray-900 hover:text-white" %>
                 <% end %>
             </div>
             <%= render "_error.html", changeset: @changeset %>
