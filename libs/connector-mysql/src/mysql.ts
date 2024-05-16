@@ -41,7 +41,7 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
     opts.logger.log(`Found ${pluralizeL(constraintColumns, 'constraint column')} ...`)
 
     // access table data when options are requested
-    const columnsByTable = groupByEntity(columns)
+    const columnsByTable: Record<EntityId, RawColumn[]> = groupByEntity(columns)
     const jsonColumns: Record<EntityId, Record<AttributeName, ValueSchema>> = opts.inferJsonAttributes ? await getJsonColumns(columnsByTable, opts)(conn) : {}
     const polyColumns: Record<EntityId, Record<AttributeName, string[]>> = opts.inferPolymorphicRelations ? await getPolyColumns(columnsByTable, opts)(conn) : {}
     // TODO: pii, join relations...
@@ -53,7 +53,17 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
     const indexes: Record<EntityId, RawConstraintColumn[]> = groupBy(constraintTypes['INDEX'] || [], toEntityId)
     const foreignKeys: RawConstraintColumn[][] = Object.values(groupBy(constraintTypes['FOREIGN KEY'] || [], c => `${c.table_schema}.${c.table_name}.${c.constraint_name}`))
     opts.logger.log(`✔︎ Exported ${pluralizeL(tables, 'table')} and ${pluralizeL(foreignKeys, 'relation')} from the database!`)
-    return removeUndefined({
+    return buildDatabase(tables, columnsByTable, primaryKeys, uniques, indexes, jsonColumns, polyColumns, foreignKeys, conn.url.db, start, Date.now())
+}
+
+// 👇️ Private functions, some are exported only for tests
+// If you use them, beware of breaking changes!
+
+const toEntityId = <T extends { table_schema: string, table_name: string }>(value: T): EntityId => entityRefToId({schema: value.table_schema, entity: value.table_name})
+const groupByEntity = <T extends { table_schema: string, table_name: string }>(values: T[]): Record<EntityId, T[]> => groupBy(values, toEntityId)
+
+export function buildDatabase(tables: RawTable[], columnsByTable: Record<EntityId, RawColumn[]>, primaryKeys: Record<EntityId, RawConstraintColumn[]>, uniques: Record<EntityId, RawConstraintColumn[]>, indexes: Record<EntityId, RawConstraintColumn[]>, jsonColumns: Record<EntityId, Record<AttributeName, ValueSchema>>, polyColumns: Record<EntityId, Record<AttributeName, string[]>>, foreignKeys: RawConstraintColumn[][], database: string | undefined, start: number, end: number): Database {
+    return removeEmpty({
         entities: tables.map(table => [toEntityId(table), table] as const).map(([id, table]) => buildEntity(
             table,
             columnsByTable[id] || [],
@@ -67,23 +77,17 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
         types: undefined,
         doc: undefined,
         stats: removeUndefined({
-            name: conn.url.db,
+            name: database,
             kind: DatabaseKind.Enum.mysql,
             version: undefined,
             doc: undefined,
-            extractedAt: new Date().toISOString(),
-            extractionDuration: Date.now() - start,
+            extractedAt: new Date(end).toISOString(),
+            extractionDuration: end - start,
             size: undefined,
         }),
         extra: undefined,
     })
 }
-
-// 👇️ Private functions, some are exported only for tests
-// If you use them, beware of breaking changes!
-
-const toEntityId = <T extends { table_schema: string, table_name: string }>(value: T): EntityId => entityRefToId({schema: value.table_schema, entity: value.table_name})
-const groupByEntity = <T extends { table_schema: string, table_name: string }>(values: T[]): Record<EntityId, T[]> => groupBy(values, toEntityId)
 
 export type RawTable = {
     table_schema: string
@@ -193,7 +197,6 @@ function buildAttribute(column: RawColumn, jsonColumn: ValueSchema | undefined, 
         null: column.column_nullable === 'YES' ? true : undefined,
         gen: undefined,
         default: column.column_default || undefined,
-        values: values,
         attrs: jsonColumn ? schemaToAttributes(jsonColumn) : undefined,
         doc: column.column_comment || undefined,
         stats: removeUndefined({
