@@ -10,7 +10,6 @@ import {
     DatabaseQuery,
     DatabaseUrlParsed,
     EntityRef,
-    parseDatabaseOptions,
     QueryAnalyze,
     QueryResults,
     zodParseAsync
@@ -18,6 +17,7 @@ import {
 import {connect} from "./connect";
 import {execQuery} from "./query";
 import {getSchema} from "./postgres";
+import {getQueryHistory} from "./history";
 import {getColumnStats, getTableStats} from "./stats";
 
 export const postgres: Connector = {
@@ -32,7 +32,7 @@ export const postgres: Connector = {
         return connect(application, url, getSchema(options), options).then(zodParseAsync(Database))
     },
     getQueryHistory: (application: string, url: DatabaseUrlParsed, opts: ConnectorQueryHistoryOpts): Promise<DatabaseQuery[]> =>
-        Promise.reject('Not implemented'),
+        connect(application, url, getQueryHistory(opts), opts).then(zodParseAsync(DatabaseQuery.array())),
     execute: (application: string, url: DatabaseUrlParsed, query: string, parameters: any[], opts: ConnectorDefaultOpts): Promise<QueryResults> =>
         connect(application, url, execQuery(query, parameters), opts).then(zodParseAsync(QueryResults)),
     analyze: (application: string, url: DatabaseUrlParsed, query: string, parameters: any[], opts: ConnectorDefaultOpts): Promise<QueryAnalyze> =>

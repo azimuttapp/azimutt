@@ -69,15 +69,15 @@ export type ConnectorQueryHistoryOpts = ConnectorDefaultOpts & {
 // TODO define more generic and meaningful structure
 export const DatabaseQuery = z.object({
     id: z.string(), // query id to group duplicates
-    user: z.string(), // the user executing the query
+    user: z.string().optional(), // the user executing the query
     database: DatabaseName, // the database in which the query was executed
     query: z.string(),
     rows: z.number(), // accumulated rows retrieved or affected by the query
     plan: z.object({count: z.number(), minTime: Millis, maxTime: Millis, sumTime: Millis, meanTime: Millis, sdTime: Millis}).strict().optional(),
     exec: z.object({count: z.number(), minTime: Millis, maxTime: Millis, sumTime: Millis, meanTime: Millis, sdTime: Millis}).strict().optional(),
-    blocksShared: z.object({read: z.number(), write: z.number(), hit: z.number(), dirty: z.number()}), // data from tables & indexes
-    blocksLocal: z.object({read: z.number(), write: z.number(), hit: z.number(), dirty: z.number()}), // data from temporary tables & indexes
-    blocksTemp: z.object({read: z.number(), write: z.number()}), // data used for the query
+    blocks: z.object({sumRead: z.number(), sumWrite: z.number(), sumHit: z.number(), sumDirty: z.number()}).optional(), // data from tables & indexes
+    blocksTmp: z.object({sumRead: z.number(), sumWrite: z.number(), sumHit: z.number(), sumDirty: z.number()}).optional(), // data from temporary tables & indexes
+    blocksQuery: z.object({sumRead: z.number(), sumWrite: z.number()}).optional(), // data used for the query (sorts, hashes...)
 }).strict().describe('DatabaseQuery')
 export type DatabaseQuery = z.infer<typeof DatabaseQuery>
 

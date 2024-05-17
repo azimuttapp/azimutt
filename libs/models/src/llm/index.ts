@@ -9,6 +9,8 @@ import {cleanSqlAnswer, dbToPrompt} from "./llmUtils";
 export {OpenAIConnector, OpenAIKey, OpenAIModel} from "./openai";
 
 export async function textToSql(llm: OpenAIConnector, dialect: DatabaseKind, userPrompt: string, db: Database): Promise<SqlStatement> {
+    // https://docs.anthropic.com/en/prompt-library/sql-sorcerer
+    // if db too big (>100 tables), select relevant tables with a prompt
     // hint with tables on the current layout?
     const systemPrompt = 'You are a pragmatic data analyst focusing on query performance and correctness.\n' +
         `Here is the database you have at your disposal:\n${dbToPrompt(db)}\n` +
@@ -50,3 +52,4 @@ export async function explainQueryPlan(llm: OpenAIConnector, dialect: DatabaseKi
 // TODO: suggest schema changes for a new feature
 // TODO: suggest tables for a specific topic (build layout)
 // TODO: function calling to interact with Azimutt (ex: "Show all the tables related to projects")
+// TODO: detect PII, https://docs.anthropic.com/en/prompt-library/pii-purifier
