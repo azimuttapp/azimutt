@@ -26,7 +26,7 @@ export const compatibleCases = (value: string): StringCase[] => [
     isKebabLower(value) ? 'kebab-lower' as const : undefined,
 ].filter(isNotUndefined)
 
-export function joinLast(values: string[], sep: string = ', ', last: string = ' and ') {
+export function joinLast(values: string[], sep: string = ', ', last: string = ' and '): string {
     if (values.length === 0) {
         return ''
     } else if (values.length === 1) {
@@ -36,11 +36,19 @@ export function joinLast(values: string[], sep: string = ', ', last: string = ' 
     }
 }
 
-export function joinLimit(values: string[], sep: string = ', ', limit: number = 5) {
+export function joinLimit(values: string[], sep: string = ', ', limit: number = 5): string {
     if (values.length > limit) {
         return values.slice(0, limit).join(sep) + ' ...'
     } else {
         return values.join(sep)
+    }
+}
+
+export function maxLen(value: string, max: number): string {
+    if (value.length > max) {
+        return value.slice(0, max - 3) + '...'
+    } else {
+        return value
     }
 }
 
@@ -51,7 +59,7 @@ export function pathJoin(...paths: string[]): string {
         .filter((part, i, parts) => (part !== '..' && parts[i+1] !== '..') || (part === '..' && (parts[i-1] === '..' || parts[i-1] === undefined))) // squash parents
         .filter((part, i, parts) => (part !== '..' && parts[i+1] !== '..') || (part === '..' && (parts[i-1] === '..' || parts[i-1] === undefined))) // squash parents again (if 2 levels)
         .join('/')
-    return res.startsWith('.') ? res : './' + res // add explicit relative link
+    return res.startsWith('.') || res.startsWith('~') ? res : './' + res // add explicit relative link
 }
 
 export function pathParent(path: string): string {

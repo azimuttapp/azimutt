@@ -38,7 +38,11 @@ export async function launchAnalyze(url: string, opts: Opts, logger: Logger): Pr
     const confPath = `${folder}/conf.json`
     const conf: RulesConf = await loadConf(confPath, logger)
     const db: Database = await connector.getSchema(app, parsed, {logger: loggerNoOp})
-    const queries: DatabaseQuery[] = await connector.getQueryHistory(app, parsed, {logger: loggerNoOp}).catch(err => [])
+    const queries: DatabaseQuery[] = await connector.getQueryHistory(app, parsed, {logger: loggerNoOp, database: parsed.db}).catch(err => {
+        if (typeof err === 'string' && err === 'Not implemented') logger.log(`Query history is not supported yet on ${parsed.kind}, ping us ;)`)
+        if (typeof err === 'object' && 'message' in err && err.message.indexOf('"pg_stat_statements" does not exist')) logger.log(`Can't get query history as pg_stat_statements is not enabled. Enable it for a better db analysis.`)
+        return []
+    })
     const rules = analyzeDatabase(conf, db, queries, opts.only?.split(',') || [])
 
     await updateConf(confPath, conf, rules, logger)
@@ -47,6 +51,7 @@ export async function launchAnalyze(url: string, opts: Opts, logger: Logger): Pr
     const violations: RuleViolation[] = Object.values(usedRules).flatMap(v => v.violations)
     const violationsByLevel: Record<RuleLevel, RuleViolation[]> = groupBy(violations, v => v.ruleLevel)
 
+    logger.log('')
     if (offRules.length > 0) {
         logger.log(`${pluralizeL(offRules, 'off rule')}: ${offRules.map(r => r.rule.name).join(', ')}`)
     }
@@ -64,7 +69,7 @@ export async function launchAnalyze(url: string, opts: Opts, logger: Logger): Pr
         })
     })
     logger.log('')
-    logger.log(`Found ${pluralizeL(db.entities || [], 'entity')}, ${pluralizeL(db.relations || [], 'relation')} and ${pluralizeL(db.types || [], 'type')} on the database.`)
+    logger.log(`Found ${pluralizeL(db.entities || [], 'entity')}, ${pluralizeL(db.relations || [], 'relation')}, ${pluralizeL(queries, 'query')} and ${pluralizeL(db.types || [], 'type')} on the database.`)
     logger.log(`Found ${violations.length} violations with ${usedRules.length} rules: ${shownLevels.map(l => `${(violationsByLevel[l] || []).length} ${l}`).join(', ')}.`)
     logger.log('')
 }
@@ -87,5 +92,4 @@ async function updateConf(path: string, conf: RulesConf, rules: Record<RuleId, R
         rules: Object.entries(rules).reduce((c, [id, {conf}]) => Object.assign(c, {[id]: conf}), conf.rules || {})
     })
     await fileWriteJson(path, usedConf)
-    logger.log(`Conf written to ${path}`)
 }

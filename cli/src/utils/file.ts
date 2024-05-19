@@ -1,10 +1,10 @@
 import * as fs from "node:fs";
 import os from "os";
+import {pathParent} from "@azimutt/utils";
 
 export type FilePath = string
 export type FileFormat = 'json' | 'sql'
 
-export const pathParent = (path: string): string => path.split('/').slice(0, -1).join('/')
 export const mkParentDirs = (path: string): void => { fs.mkdirSync(pathResolve(pathParent(path)), {recursive: true}) }
 export const fileExists = (path: string): boolean => fs.existsSync(pathResolve(path))
 export const fileReadJson = <T extends object>(path: string): Promise<T> => fs.promises.readFile(pathResolve(path)).then(str => JSON.parse(str.toString()))

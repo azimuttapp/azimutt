@@ -13,6 +13,9 @@ import {indexOnRelationRule} from "./rules/indexOnRelation";
 import {namingConsistencyRule} from "./rules/namingConsistency";
 import {primaryKeyMissingRule} from "./rules/primaryKeyMissing";
 import {primaryKeyNotBusinessRule} from "./rules/primaryKeyNotBusiness";
+import {queryExpensiveRule} from "./rules/queryExpensive";
+import {queryHighVariationRule} from "./rules/queryHighVariation";
+import {queryTooSlowRule} from "./rules/queryTooSlow";
 import {relationMisalignedRule} from "./rules/relationMisaligned";
 import {relationMissAttributeRule} from "./rules/relationMissAttribute";
 import {relationMissEntityRule} from "./rules/relationMissEntity";
@@ -28,6 +31,9 @@ export const analyzeRules: Rule[] = [
     namingConsistencyRule,
     primaryKeyMissingRule,
     primaryKeyNotBusinessRule,
+    queryExpensiveRule,
+    queryHighVariationRule,
+    queryTooSlowRule,
     relationMisalignedRule,
     relationMissAttributeRule,
     relationMissEntityRule,
@@ -45,15 +51,13 @@ export type RuleAnalyzed = {rule: Rule, conf: RuleConf, violations: RuleViolatio
 export function analyzeDatabase(conf: RulesConf, db: Database, queries: DatabaseQuery[], ruleNames: string[]): Record<RuleId, RuleAnalyzed> {
     // TODO: tables with too many indexes (> 20)
     // TODO: tables with too heavy indexes (index storage > table storage)
-    // TODO: unused index
-    // TODO: unused table
     // TODO: queries not using indexes
     // TODO: JSON columns with different schemas (% of similarity between schemas)
     // TODO: sequence/auto_increment exhaustion
     // TODO: use varchar over char (https://youtu.be/ifEpT5STEU0?si=fcLBuwrgluG9crwt&t=90)
     // TODO: use uuid or bigint pk, not int or varchar ones
     // TODO: uuids not stored as CHAR(36) => field ending with `id` and with type CHAR(36) => suggest type `uuid`/`BINARY(16)` instead (depend on db)
-    // TODO: slow queries (mean exec time > 100ms, high sd, high total_exec_time) => exec plan, create indexes
+    // TODO: auto_explain: index creation (https://pganalyze.com/docs/explain/setup/self_managed/01_auto_explain_check)
     // TODO: warn on queries with ORDER BY RAND()
     // TODO: constraints should be deferrable (pk, fk, unique)
     const rules = ruleNames.length > 0 ? analyzeRules.filter(r => ruleNames.indexOf(r.id) !== -1 || ruleNames.indexOf(r.name) !== -1) : analyzeRules
@@ -70,6 +74,7 @@ export function analyzeDatabase(conf: RulesConf, db: Database, queries: Database
 // - most used tables (in queries)
 // - table growth rate (Go/Month)
 // - query slow down rate (ms/month, mean & max)
+// - unused tables / indexes
 
 export function scoreDatabase(db: Database, violations: RuleViolation[]): {score: number, entities: Record<EntityId, number>} {
     // TODO: compute table importance: page rank & data cardinality (other interesting inputs: storage size, nb columns, nb relations, nb queries, nb indexes), use it to weight the overall score
