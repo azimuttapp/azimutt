@@ -1,6 +1,7 @@
 import {describe, expect, test} from "@jest/globals";
 import {Database, Entity, Relation} from "../../database";
 import {getMissingIndexOnRelation, indexOnRelationRule} from "./indexOnRelation";
+import {ruleConf} from "../rule.test";
 
 describe('indexOnRelation', () => {
     test('empty', () => {
@@ -32,7 +33,7 @@ describe('indexOnRelation', () => {
                 {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}]}
             ]
         }
-        expect(indexOnRelationRule.analyze(db).map(v => v.message)).toEqual([
+        expect(indexOnRelationRule.analyze(ruleConf, db, []).map(v => v.message)).toEqual([
             'Create an index on posts(author) to improve posts(author)->users(id) relation.'
         ])
     })

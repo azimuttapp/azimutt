@@ -1,3 +1,4 @@
+import {z} from "zod";
 import {
     compatibleCases,
     isCamelLower,
@@ -16,7 +17,8 @@ import {
     entityToRef,
     flattenAttribute
 } from "../../databaseUtils";
-import {Rule, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
+import {DatabaseQuery} from "../../interfaces/connector";
+import {Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
 /**
  * Keeping the same naming convention for all your tables and columns will help avoid typos and understand things.
@@ -24,24 +26,26 @@ import {Rule, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
 const ruleId: RuleId = 'naming-consistency'
 const ruleName: RuleName = 'naming consistency'
-const ruleLevel: RuleLevel = RuleLevel.enum.low
-export const namingConsistencyRule: Rule = {
+const CustomRuleConf = RuleConf
+type CustomRuleConf = z.infer<typeof CustomRuleConf>
+export const namingConsistencyRule: Rule<CustomRuleConf> = {
     id: ruleId,
     name: ruleName,
-    level: ruleLevel,
-    analyze(db: Database): RuleViolation[] {
+    conf: {level: RuleLevel.enum.low},
+    zConf: CustomRuleConf,
+    analyze(conf: CustomRuleConf, db: Database, queries: DatabaseQuery[]): RuleViolation[] {
         const inconsistencies = checkNamingConsistency(db.entities || [])
         const entities = inconsistencies.entities.invalid.map(entity => ({
             ruleId,
             ruleName,
-            ruleLevel,
+            ruleLevel: conf.level,
             entity: entity,
             message: `Entity ${entityRefToId(entity)} doesn't follow naming convention ${inconsistencies.entities.convention}.`
         }))
         const attributes = inconsistencies.attributes.invalid.map(attribute => ({
             ruleId,
             ruleName,
-            ruleLevel,
+            ruleLevel: conf.level,
             entity: entityRefFromAttribute(attribute),
             message: `Attribute ${attributeRefToId(attribute)} doesn't follow naming convention ${inconsistencies.attributes.convention}.`
         }))

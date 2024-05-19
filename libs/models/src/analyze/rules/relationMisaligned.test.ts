@@ -1,6 +1,7 @@
 import {describe, expect, test} from "@jest/globals";
 import {Database, Entity, Relation} from "../../database";
 import {getMisalignedRelation, relationMisalignedRule} from "./relationMisaligned";
+import {ruleConf} from "../rule.test";
 
 describe('relationMisaligned', () => {
     test('valid relation', () => {
@@ -27,7 +28,7 @@ describe('relationMisaligned', () => {
                 {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}]},
             ]
         }
-        expect(relationMisalignedRule.analyze(db).map(v => v.message)).toEqual([
+        expect(relationMisalignedRule.analyze(ruleConf, db, []).map(v => v.message)).toEqual([
             'Relation posts(author)->users(id) link attributes different types: posts(author): varchar != users(id): uuid',
         ])
     })

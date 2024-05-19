@@ -1,6 +1,7 @@
 import {describe, expect, test} from "@jest/globals";
 import {Database, Entity, Relation} from "../../database";
 import {getMissingAttributeRelations, relationMissAttributeRule} from "./relationMissAttribute";
+import {ruleConf} from "../rule.test";
 
 describe('relationMissAttribute', () => {
     test('valid relation', () => {
@@ -30,7 +31,7 @@ describe('relationMissAttribute', () => {
                 {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['created_by'], ref: ['id']}]},
             ]
         }
-        expect(relationMissAttributeRule.analyze(db).map(v => v.message)).toEqual([
+        expect(relationMissAttributeRule.analyze(ruleConf, db, []).map(v => v.message)).toEqual([
             'Relation posts(created_by)->users(id), not found attributes: posts(created_by)',
         ])
     })

@@ -1,21 +1,25 @@
+import {z} from "zod";
 import {indexBy, isNotUndefined} from "@azimutt/utils";
 import {Database, Entity, EntityId, EntityRef, Relation} from "../../database";
 import {entityRefToId, entityToId, relationToId} from "../../databaseUtils";
-import {Rule, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
+import {DatabaseQuery} from "../../interfaces/connector";
+import {Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
 const ruleId: RuleId = 'relation-miss-entity'
 const ruleName: RuleName = 'entity not found in relation'
-const ruleLevel: RuleLevel = RuleLevel.enum.high
-export const relationMissEntityRule: Rule = {
+const CustomRuleConf = RuleConf
+type CustomRuleConf = z.infer<typeof CustomRuleConf>
+export const relationMissEntityRule: Rule<CustomRuleConf> = {
     id: ruleId,
     name: ruleName,
-    level: ruleLevel,
-    analyze(db: Database): RuleViolation[] {
+    conf: {level: RuleLevel.enum.high},
+    zConf: CustomRuleConf,
+    analyze(conf: CustomRuleConf, db: Database, queries: DatabaseQuery[]): RuleViolation[] {
         const entities: Record<EntityId, Entity> = indexBy(db.entities || [], entityToId)
         return (db.relations || []).map(r => getMissingEntityRelations(r, entities)).filter(isNotUndefined).map(violation => ({
             ruleId,
             ruleName,
-            ruleLevel,
+            ruleLevel: conf.level,
             entity: violation.relation.src,
             message: `Relation ${relationName(violation.relation)}, not found entities: ${violation.missingEntities.map(entityRefToId).join(', ')}`
         }))

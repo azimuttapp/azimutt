@@ -1,6 +1,7 @@
 import {describe, expect, test} from "@jest/globals";
 import {Database, Entity} from "../../database";
 import {checkNamingConsistency, namingConsistencyRule} from "./namingConsistency";
+import {ruleConf} from "../rule.test";
 
 describe('namingConsistency', () => {
     test('empty', () => {
@@ -34,7 +35,7 @@ describe('namingConsistency', () => {
                 {name: 'Comments', attrs: [{name: 'CommentId', type: 'uuid'}, {name: 'author', type: 'uuid'}]},
             ]
         }
-        expect(namingConsistencyRule.analyze(db).map(v => v.message)).toEqual([
+        expect(namingConsistencyRule.analyze(ruleConf, db, []).map(v => v.message)).toEqual([
             'Entity Comments doesn\'t follow naming convention snake-lower.',
             'Attribute Comments(CommentId) doesn\'t follow naming convention snake-lower.'
         ])

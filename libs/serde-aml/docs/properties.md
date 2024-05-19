@@ -45,6 +45,7 @@ users {color: red, position: [50, 50], notes: "some notes here", tags: [pii], de
 Here are the standardized properties for [entity attributes](./entity.md#attribute):
 
 - `auto_increment`
+- `hidden`, to make the column not visible by default
 - `notes`, to define default notes for the entity
 - `tags`, to define default tags for the entity
 - `deprecated`, will be added to tags in Azimutt but can be better defined here

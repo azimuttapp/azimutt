@@ -1,6 +1,7 @@
 import {describe, expect, test} from "@jest/globals";
 import {Database, Entity, Relation} from "../../database";
 import {getMissingEntityRelations, relationMissEntityRule} from "./relationMissEntity";
+import {ruleConf} from "../rule.test";
 
 describe('relationMissEntity', () => {
     test('valid relation', () => {
@@ -22,7 +23,7 @@ describe('relationMissEntity', () => {
     })
     test('violation message', () => {
         const db: Database = {entities: [], relations: [{src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}]},]}
-        expect(relationMissEntityRule.analyze(db).map(v => v.message)).toEqual([
+        expect(relationMissEntityRule.analyze(ruleConf, db, []).map(v => v.message)).toEqual([
             'Relation posts(author)->users(id), not found entities: posts, users',
         ])
     })

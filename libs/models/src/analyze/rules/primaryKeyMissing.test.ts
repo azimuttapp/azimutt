@@ -1,6 +1,7 @@
 import {describe, expect, test} from "@jest/globals";
 import {Database, Entity} from "../../database";
 import {isPrimaryKeysMissing, primaryKeyMissingRule} from "./primaryKeyMissing";
+import {ruleConf} from "../rule.test";
 
 describe('primaryKeyMissing', () => {
     test('valid entity', () => {
@@ -17,7 +18,7 @@ describe('primaryKeyMissing', () => {
     })
     test('violation message', () => {
         const db: Database = {entities: [{name: 'users', attrs: [{name: 'id', type: 'uuid'}]}]}
-        expect(primaryKeyMissingRule.analyze(db).map(v => v.message)).toEqual([
+        expect(primaryKeyMissingRule.analyze(ruleConf, db, []).map(v => v.message)).toEqual([
             'Entity users has no primary key.'
         ])
     })

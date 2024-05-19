@@ -1,7 +1,9 @@
+import {z} from "zod";
 import {filterValues, groupBy} from "@azimutt/utils";
 import {Attribute, AttributeName, AttributeRef, Database, Entity} from "../../database";
 import {attributeRefToId, entityToRef, flattenAttribute} from "../../databaseUtils";
-import {Rule, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
+import {DatabaseQuery} from "../../interfaces/connector";
+import {Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
 /**
  * There is nothing wrong with inconsistent types on columns with identical name.
@@ -12,17 +14,19 @@ import {Rule, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
 const ruleId: RuleId = 'attribute-type-inconsistent'
 const ruleName: RuleName = 'inconsistent attribute type'
-const ruleLevel: RuleLevel = RuleLevel.enum.hint
-export const attributeTypeInconsistentRule: Rule = {
+const CustomRuleConf = RuleConf
+type CustomRuleConf = z.infer<typeof CustomRuleConf>
+export const attributeTypeInconsistentRule: Rule<CustomRuleConf> = {
     id: ruleId,
     name: ruleName,
-    level: ruleLevel,
-    analyze(db: Database): RuleViolation[] {
+    conf: {level: RuleLevel.enum.hint},
+    zConf: CustomRuleConf,
+    analyze(conf: CustomRuleConf, db: Database, queries: DatabaseQuery[]): RuleViolation[] {
         return Object.entries(getInconsistentAttributeTypes(db.entities || [])).map(([attrName, refs]) => {
             const refsByType = Object.entries(groupBy(refs, r => r.value.type)).sort(([, a], [, b]) => a.length - b.length)
             const {attribute, ...entity} = refsByType[0][1][0].ref
             const message = `Attribute ${attrName} has several types: ${refsByType.map(([t, [r]]) => `${t} in ${attributeRefToId(r.ref)}`).join(', ')}.`
-            return {ruleId, ruleName, ruleLevel, entity, message}
+            return {ruleId, ruleName, ruleLevel: conf.level, entity, message}
         })
     }
 }

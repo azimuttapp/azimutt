@@ -1,6 +1,7 @@
 import {describe, expect, test} from "@jest/globals";
 import {Database, Entity} from "../../database";
 import {attributeTypeInconsistentRule, getInconsistentAttributeTypes} from "./attributeTypeInconsistent";
+import {ruleConf} from "../rule.test";
 
 describe('attributeInconsistentType', () => {
     test('empty', () => {
@@ -30,7 +31,7 @@ describe('attributeInconsistentType', () => {
     })
     test('violation message', () => {
         const db: Database = {entities: [{name: 'users', attrs: [{name: 'id', type: 'uuid'}]}, {name: 'posts', attrs: [{name: 'id', type: 'int'}]}]}
-        expect(attributeTypeInconsistentRule.analyze(db).map(v => v.message)).toEqual([
+        expect(attributeTypeInconsistentRule.analyze(ruleConf, db, []).map(v => v.message)).toEqual([
             `Attribute id has several types: uuid in users(id), int in posts(id).`
         ])
     })

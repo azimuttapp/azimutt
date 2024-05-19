@@ -1,6 +1,7 @@
 import {describe, expect, test} from "@jest/globals";
 import {Database} from "../../database";
 import {getMissingRelations, relationMissingRule} from "./relationMissing";
+import {ruleConf} from "../rule.test";
 
 describe('relationMissing', () => {
     test('empty', () => {
@@ -99,7 +100,7 @@ describe('relationMissing', () => {
                 {name: 'posts', attrs: [{name: 'id', type: 'uuid'}, {name: 'user_id', type: 'uuid'}]},
             ]
         }
-        expect(relationMissingRule.analyze(db).map(v => v.message)).toEqual([
+        expect(relationMissingRule.analyze(ruleConf, db, []).map(v => v.message)).toEqual([
             'Create a relation from posts(user_id) to users(id).'
         ])
     })

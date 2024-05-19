@@ -1,7 +1,9 @@
+import {z} from "zod";
 import {groupBy} from "@azimutt/utils";
 import {Database, Entity, Relation} from "../../database";
 import {attributePathToId, entityRefToId, entityToId, entityToRef} from "../../databaseUtils";
-import {Rule, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
+import {DatabaseQuery} from "../../interfaces/connector";
+import {Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
 /**
  * Primary Keys are the default unique way to get a single row in a table.
@@ -11,17 +13,19 @@ import {Rule, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
 const ruleId: RuleId = 'primary-key-not-business'
 const ruleName: RuleName = 'no business primary key'
-const ruleLevel: RuleLevel = RuleLevel.enum.medium
-export const primaryKeyNotBusinessRule: Rule = {
+const CustomRuleConf = RuleConf
+type CustomRuleConf = z.infer<typeof CustomRuleConf>
+export const primaryKeyNotBusinessRule: Rule<CustomRuleConf> = {
     id: ruleId,
     name: ruleName,
-    level: ruleLevel,
-    analyze(db: Database): RuleViolation[] {
+    conf: {level: RuleLevel.enum.medium},
+    zConf: CustomRuleConf,
+    analyze(conf: CustomRuleConf, db: Database, queries: DatabaseQuery[]): RuleViolation[] {
         const relations = groupBy(db.relations || [], r => entityRefToId(r.src))
         return (db.entities || []).filter(e => !isPrimaryKeyTechnical(e, relations[entityToId(e)] || [])).map(e => ({
             ruleId,
             ruleName,
-            ruleLevel,
+            ruleLevel: conf.level,
             entity: entityToRef(e),
             message: `Entity ${entityToId(e)} should have a technical primary key, current one is: (${e.pk?.attrs.map(attributePathToId).join(', ')}).`
         }))

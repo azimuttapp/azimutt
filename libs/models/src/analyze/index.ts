@@ -1,7 +1,10 @@
+import {z} from "zod";
 import {groupBy} from "@azimutt/utils";
+import {zodParse} from "../zod";
 import {Database, EntityId} from "../database";
 import {entityRefToId} from "../databaseUtils";
-import {Rule, RuleViolation} from "./rule";
+import {DatabaseQuery} from "../interfaces/connector";
+import {Rule, RuleConf, RuleId, RuleLevel, RuleViolation} from "./rule";
 import {attributeTypeInconsistentRule} from "./rules/attributeTypeInconsistent";
 import {entityNoIndexRule} from "./rules/entityNoIndex";
 import {entityTooLargeRule} from "./rules/entityTooLarge";
@@ -31,7 +34,15 @@ export const analyzeRules: Rule[] = [
     relationMissingRule,
 ]
 
-export function analyzeDatabase(db: Database, ruleNames: string[]): RuleViolation[] {
+export const RulesConf = z.object({
+    rules: z.object(Object.fromEntries(analyzeRules.map(r => [r.id, r.zConf.optional()]))).optional()
+}).strict().describe('RuleConf')
+export type RulesConf = z.infer<typeof RulesConf>
+
+export type RuleAnalyzed = {rule: Rule, conf: RuleConf, violations: RuleViolation[]}
+
+// TODO: split rules by kind? (schema, query, data...)
+export function analyzeDatabase(conf: RulesConf, db: Database, queries: DatabaseQuery[], ruleNames: string[]): Record<RuleId, RuleAnalyzed> {
     // TODO: tables with too many indexes (> 20)
     // TODO: tables with too heavy indexes (index storage > table storage)
     // TODO: unused index
@@ -43,9 +54,22 @@ export function analyzeDatabase(db: Database, ruleNames: string[]): RuleViolatio
     // TODO: use uuid or bigint pk, not int or varchar ones
     // TODO: uuids not stored as CHAR(36) => field ending with `id` and with type CHAR(36) => suggest type `uuid`/`BINARY(16)` instead (depend on db)
     // TODO: slow queries (mean exec time > 100ms, high sd, high total_exec_time) => exec plan, create indexes
+    // TODO: warn on queries with ORDER BY RAND()
+    // TODO: constraints should be deferrable (pk, fk, unique)
     const rules = ruleNames.length > 0 ? analyzeRules.filter(r => ruleNames.indexOf(r.id) !== -1 || ruleNames.indexOf(r.name) !== -1) : analyzeRules
-    return rules.flatMap(r => r.analyze(db))
+    return Object.fromEntries(rules.map(r => {
+        const ruleConf = Object.assign({}, r.conf, conf.rules?.[r.id])
+        return [r.id, zodParse(r.zConf, r.id)(ruleConf).fold(
+            ruleConf => ({rule: r, conf: ruleConf, violations: ruleConf.level === RuleLevel.enum.off ? [] : r.analyze(ruleConf, db, queries)}),
+            err => ({rule: r, conf: ruleConf, violations: [{ruleId: r.id, ruleName: r.name, ruleLevel: r.conf.level, message: `Invalid conf: ${err}`}]})
+        )]
+    }))
 }
+
+// interesting:
+// - most used tables (in queries)
+// - table growth rate (Go/Month)
+// - query slow down rate (ms/month, mean & max)
 
 export function scoreDatabase(db: Database, violations: RuleViolation[]): {score: number, entities: Record<EntityId, number>} {
     // TODO: compute table importance: page rank & data cardinality (other interesting inputs: storage size, nb columns, nb relations, nb queries, nb indexes), use it to weight the overall score

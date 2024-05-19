@@ -1,6 +1,8 @@
+import {z} from "zod";
 import {Database, Entity, Index} from "../../database";
 import {attributePathToId, entityAttributesToId, entityToRef} from "../../databaseUtils";
-import {Rule, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
+import {DatabaseQuery} from "../../interfaces/connector";
+import {Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
 /**
  * Indexes are great to speed read performances, but they come at the cost of reducing write performances.
@@ -11,17 +13,19 @@ import {Rule, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
 const ruleId: RuleId = 'index-duplicated'
 const ruleName: RuleName = 'duplicated index'
-const ruleLevel: RuleLevel = RuleLevel.enum.high
-export const indexDuplicatedRule: Rule = {
+const CustomRuleConf = RuleConf
+type CustomRuleConf = z.infer<typeof CustomRuleConf>
+export const indexDuplicatedRule: Rule<CustomRuleConf> = {
     id: ruleId,
     name: ruleName,
-    level: ruleLevel,
-    analyze(db: Database): RuleViolation[] {
+    conf: {level: RuleLevel.enum.high},
+    zConf: CustomRuleConf,
+    analyze(conf: CustomRuleConf, db: Database, queries: DatabaseQuery[]): RuleViolation[] {
         return (db.entities || []).flatMap(getDuplicatedIndexes).map(i => {
             const entity = entityToRef(i.entity)
             const indexName = `${i.index.name ? i.index.name + ' ' : ''}on ${entityAttributesToId(entity, i.index.attrs)}`
             const message = `Index ${indexName} can be deleted, it's covered by: ${i.coveredBy.map(by => `${by.name || ''}(${by.attrs.map(attributePathToId).join(', ')})`).join(', ')}.`
-            return {ruleId, ruleName, ruleLevel, entity, message}
+            return {ruleId, ruleName, ruleLevel: conf.level, entity, message}
         })
     }
 }

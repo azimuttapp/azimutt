@@ -1,6 +1,8 @@
+import {z} from "zod";
 import {Database, Entity} from "../../database";
 import {entityToId, entityToRef} from "../../databaseUtils";
-import {Rule, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
+import {DatabaseQuery} from "../../interfaces/connector";
+import {Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
 /**
  * Primary Keys are the default unique way to get a single row in a table.
@@ -10,16 +12,18 @@ import {Rule, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
 const ruleId: RuleId = 'primary-key-missing'
 const ruleName: RuleName = 'missing primary key'
-const ruleLevel: RuleLevel = RuleLevel.enum.high
-export const primaryKeyMissingRule: Rule = {
+const CustomRuleConf = RuleConf
+type CustomRuleConf = z.infer<typeof CustomRuleConf>
+export const primaryKeyMissingRule: Rule<CustomRuleConf> = {
     id: ruleId,
     name: ruleName,
-    level: ruleLevel,
-    analyze(db: Database): RuleViolation[] {
+    conf: {level: RuleLevel.enum.high},
+    zConf: CustomRuleConf,
+    analyze(conf: CustomRuleConf, db: Database, queries: DatabaseQuery[]): RuleViolation[] {
         return (db.entities || []).filter(isPrimaryKeysMissing).map(e => ({
             ruleId,
             ruleName,
-            ruleLevel,
+            ruleLevel: conf.level,
             entity: entityToRef(e),
             message: `Entity ${entityToId(e)} has no primary key.`
         }))

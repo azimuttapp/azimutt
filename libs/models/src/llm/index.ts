@@ -10,6 +10,7 @@ export {OpenAIConnector, OpenAIKey, OpenAIModel} from "./openai";
 
 export async function textToSql(llm: OpenAIConnector, dialect: DatabaseKind, userPrompt: string, db: Database): Promise<SqlStatement> {
     // https://docs.anthropic.com/en/prompt-library/sql-sorcerer
+    // https://dev.to/datalynx/llms-for-text-to-sql-problems-the-benchmark-vs-real-world-performance-2064
     // if db too big (>100 tables), select relevant tables with a prompt
     // hint with tables on the current layout?
     const systemPrompt = 'You are a pragmatic data analyst focusing on query performance and correctness.\n' +

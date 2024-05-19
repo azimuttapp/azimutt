@@ -1,6 +1,7 @@
 import {describe, expect, test} from "@jest/globals";
 import {Database} from "../../database";
 import {getDuplicatedIndexes, indexDuplicatedRule} from "./indexDuplicated";
+import {ruleConf} from "../rule.test";
 
 describe('indexDuplicated', () => {
     test('empty', () => {
@@ -29,7 +30,7 @@ describe('indexDuplicated', () => {
             {attrs: [['first_name'], ['last_name']]},
             {attrs: [['first_name']]},
         ]}]}
-        expect(indexDuplicatedRule.analyze(db).map(v => v.message)).toEqual([
+        expect(indexDuplicatedRule.analyze(ruleConf, db, []).map(v => v.message)).toEqual([
             'Index on users(first_name) can be deleted, it\'s covered by: (first_name, last_name).'
         ])
     })
