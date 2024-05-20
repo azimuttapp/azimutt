@@ -1,7 +1,15 @@
 import {z} from "zod";
 import {indexBy, isNotUndefined} from "@azimutt/utils";
-import {AttributeRef, AttributeType, Database, Entity, EntityId, Relation} from "../../database";
-import {attributeRefToId, entityRefToId, entityToId, getAttribute, relationToId} from "../../databaseUtils";
+import {AttributeRef, AttributesId, AttributeType, Database, Entity, EntityId, Relation} from "../../database";
+import {
+    attributeRefToId,
+    attributesRefFromId,
+    attributesRefSame,
+    entityRefToId,
+    entityToId,
+    getAttribute,
+    relationToId
+} from "../../databaseUtils";
 import {DatabaseQuery} from "../../interfaces/connector";
 import {Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
@@ -13,7 +21,9 @@ import {Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rul
 
 const ruleId: RuleId = 'relation-misaligned-type'
 const ruleName: RuleName = 'misaligned relation'
-const CustomRuleConf = RuleConf
+const CustomRuleConf = RuleConf.extend({
+    ignores: z.object({src: AttributesId, ref: AttributesId}).array().optional()
+}).strict().describe('RelationMisalignedConf')
 type CustomRuleConf = z.infer<typeof CustomRuleConf>
 export const relationMisalignedRule: Rule<CustomRuleConf> = {
     id: ruleId,
@@ -22,13 +32,18 @@ export const relationMisalignedRule: Rule<CustomRuleConf> = {
     zConf: CustomRuleConf,
     analyze(conf: CustomRuleConf, db: Database, queries: DatabaseQuery[]): RuleViolation[] {
         const entities: Record<EntityId, Entity> = indexBy(db.entities || [], entityToId)
-        return (db.relations || []).map(r => getMisalignedRelation(r, entities)).filter(isNotUndefined).map(violation => ({
-            ruleId,
-            ruleName,
-            ruleLevel: conf.level,
-            entity: violation.relation.src,
-            message: `Relation ${relationName(violation.relation)} link attributes different types: ${violation.misalignedTypes.map(formatMisalignedType).join(', ')}`
-        }))
+        const ignores = conf.ignores?.map(i => ({src: attributesRefFromId(i.src), ref: attributesRefFromId(i.ref)})) || []
+        return (db.relations || [])
+            .map(r => getMisalignedRelation(r, entities))
+            .filter(isNotUndefined)
+            .filter(v => !ignores.some(i => attributesRefSame(i.src, {...v.relation.src, attributes: v.relation.attrs.map(a => a.src)}) && attributesRefSame(i.ref, {...v.relation.ref, attributes: v.relation.attrs.map(a => a.ref)})))
+            .map(violation => ({
+                ruleId,
+                ruleName,
+                ruleLevel: conf.level,
+                entity: violation.relation.src,
+                message: `Relation ${relationName(violation.relation)} link attributes different types: ${violation.misalignedTypes.map(formatMisalignedType).join(', ')}`
+            }))
     }
 }
 

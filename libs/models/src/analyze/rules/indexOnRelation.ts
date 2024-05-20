@@ -1,7 +1,24 @@
 import {z} from "zod";
 import {indexBy, isNotUndefined} from "@azimutt/utils";
-import {AttributePath, Database, Entity, EntityId, EntityRef, Relation} from "../../database";
-import {attributePathToId, entityAttributesToId, entityRefToId, entityToId, relationToId} from "../../databaseUtils";
+import {
+    AttributePath,
+    AttributesId,
+    AttributesRef,
+    Database,
+    Entity,
+    EntityId,
+    EntityRef,
+    Relation
+} from "../../database";
+import {
+    attributePathToId,
+    attributesRefFromId,
+    attributesRefSame,
+    entityAttributesToId,
+    entityRefToId,
+    entityToId,
+    relationToId
+} from "../../databaseUtils";
 import {DatabaseQuery} from "../../interfaces/connector";
 import {Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
@@ -12,7 +29,9 @@ import {Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rul
 
 const ruleId: RuleId = 'index-on-relation'
 const ruleName: RuleName = 'index on relation'
-const CustomRuleConf = RuleConf
+const CustomRuleConf = RuleConf.extend({
+    ignores: AttributesId.array().optional()
+}).strict().describe('IndexOnRelationConf')
 type CustomRuleConf = z.infer<typeof CustomRuleConf>
 export const indexOnRelationRule: Rule<CustomRuleConf> = {
     id: ruleId,
@@ -21,13 +40,17 @@ export const indexOnRelationRule: Rule<CustomRuleConf> = {
     zConf: CustomRuleConf,
     analyze(conf: CustomRuleConf, db: Database, queries: DatabaseQuery[]): RuleViolation[] {
         const entities: Record<EntityId, Entity> = indexBy(db.entities || [], entityToId)
-        return (db.relations || []).flatMap(r => getMissingIndexOnRelation(r, entities)).map(i => ({
-            ruleId,
-            ruleName,
-            ruleLevel: conf.level,
-            entity: i.ref,
-            message: `Create an index on ${entityAttributesToId(i.ref, i.attrs)} to improve ${relationToId(i.relation)} relation.`
-        }))
+        const ignores: AttributesRef[] = conf.ignores?.map(attributesRefFromId) || []
+        return (db.relations || [])
+            .flatMap(r => getMissingIndexOnRelation(r, entities))
+            .filter(idx => !ignores.some(i => attributesRefSame(i, {...idx.ref, attributes: idx.attrs})))
+            .map(i => ({
+                ruleId,
+                ruleName,
+                ruleLevel: conf.level,
+                entity: i.ref,
+                message: `Create an index on ${entityAttributesToId(i.ref, i.attrs)} to improve ${relationToId(i.relation)} relation.`
+            }))
     }
 }
 

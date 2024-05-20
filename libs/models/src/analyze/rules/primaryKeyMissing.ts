@@ -1,6 +1,6 @@
 import {z} from "zod";
-import {Database, Entity} from "../../database";
-import {entityToId, entityToRef} from "../../databaseUtils";
+import {Database, Entity, EntityId, EntityRef} from "../../database";
+import {entityRefFromId, entityRefSame, entityToId, entityToRef} from "../../databaseUtils";
 import {DatabaseQuery} from "../../interfaces/connector";
 import {Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
@@ -12,7 +12,9 @@ import {Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rul
 
 const ruleId: RuleId = 'primary-key-missing'
 const ruleName: RuleName = 'missing primary key'
-const CustomRuleConf = RuleConf
+const CustomRuleConf = RuleConf.extend({
+    ignores: EntityId.array().optional(),
+}).strict().describe('PrimaryKeyMissingConf')
 type CustomRuleConf = z.infer<typeof CustomRuleConf>
 export const primaryKeyMissingRule: Rule<CustomRuleConf> = {
     id: ruleId,
@@ -20,13 +22,17 @@ export const primaryKeyMissingRule: Rule<CustomRuleConf> = {
     conf: {level: RuleLevel.enum.high},
     zConf: CustomRuleConf,
     analyze(conf: CustomRuleConf, db: Database, queries: DatabaseQuery[]): RuleViolation[] {
-        return (db.entities || []).filter(isPrimaryKeysMissing).map(e => ({
-            ruleId,
-            ruleName,
-            ruleLevel: conf.level,
-            entity: entityToRef(e),
-            message: `Entity ${entityToId(e)} has no primary key.`
-        }))
+        const ignores: EntityRef[] = conf.ignores?.map(entityRefFromId) || []
+        return (db.entities || [])
+            .filter(isPrimaryKeysMissing)
+            .filter(e => !ignores.some(i => entityRefSame(i, entityToRef(e))))
+            .map(e => ({
+                ruleId,
+                ruleName,
+                ruleLevel: conf.level,
+                entity: entityToRef(e),
+                message: `Entity ${entityToId(e)} has no primary key.`
+            }))
     }
 }
 

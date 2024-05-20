@@ -30,7 +30,7 @@ export async function launchAnalyze(url: string, opts: Opts, logger: Logger): Pr
     if (!connector) return Promise.reject('Invalid connector')
 
     // if license: read previous analyses, compute trends and write result as JSON in ~/.azimutt/analyze/db_name/2024-05-19.json
-    // if email: read rule conf and print them in the console, advertize about license benefits
+    // if email: read rule conf and print them in the console, advertise about license benefits
     // if nothing: logger.log(`Found x violations from y rules, a high, b medium, c low and d hint.\nProvide your pro email as parameter (ex: --email "loic@azimutt.app") to get the detail`)
     // TODO: read config from ~/.azimutt/analyze/conf.json ({user: {}, schema: {}, queries: {}, data: {}, 'rule-1': {}...})
     const app = 'azimutt-analyze'
@@ -43,7 +43,7 @@ export async function launchAnalyze(url: string, opts: Opts, logger: Logger): Pr
         if (typeof err === 'object' && 'message' in err && err.message.indexOf('"pg_stat_statements" does not exist')) logger.log(`Can't get query history as pg_stat_statements is not enabled. Enable it for a better db analysis.`)
         return []
     })
-    const rules = analyzeDatabase(conf, db, queries, opts.only?.split(',') || [])
+    const rules: Record<RuleId, RuleAnalyzed> = analyzeDatabase(conf, db, queries, opts.only?.split(',') || [])
 
     await updateConf(confPath, conf, rules, logger)
     const shownLevels = RuleLevel.options.filter(l => l !== RuleLevel.enum.off)
@@ -59,6 +59,7 @@ export async function launchAnalyze(url: string, opts: Opts, logger: Logger): Pr
         const levelViolations = violationsByLevel[level] || []
         logger.log(`${levelViolations.length} ${level} violations:`)
         Object.values(groupBy(levelViolations, v => v.ruleId)).forEach(ruleViolations => {
+            // TODO: show nb of ignores, also keep RuleAnalyzed instead of RuleViolation? (kill violationsByLevel)
             logger.log(`  ${ruleViolations.length} ${ruleViolations[0].ruleName}:`)
             ruleViolations.slice(0, opts.size).forEach(violation => {
                 logger.log(`    - ${violation.message}`)

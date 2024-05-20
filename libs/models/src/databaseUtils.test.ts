@@ -4,14 +4,22 @@ import {
     AttributePath,
     attributePathFromId,
     AttributePathId,
+    attributePathSame,
     attributePathToId,
     AttributeRef,
     attributeRefFromId,
+    attributeRefSame,
     attributeRefToId,
+    AttributesId,
+    AttributesRef,
+    attributesRefFromId,
+    attributesRefSame,
+    attributesRefToId,
     attributeTypeParse,
     EntityId,
     EntityRef,
     entityRefFromId,
+    entityRefSame,
     entityRefToId,
     flattenAttribute,
     getAttribute,
@@ -75,6 +83,19 @@ describe('databaseUtils', () => {
             expect(entityRefToId(ref)).toEqual(targetId)
         })
     })
+    test('entityRefSame', () => {
+        expect(entityRefSame({entity: 'users'}, {entity: 'users'})).toBeTruthy()
+        expect(entityRefSame({schema: 'public', entity: 'users'}, {schema: 'public', entity: 'users'})).toBeTruthy()
+        expect(entityRefSame({catalog: 'gtm', schema: 'public', entity: 'users'}, {catalog: 'gtm', schema: 'public', entity: 'users'})).toBeTruthy()
+        expect(entityRefSame({database: 'ax', catalog: 'gtm', schema: 'public', entity: 'users'}, {database: 'ax', catalog: 'gtm', schema: 'public', entity: 'users'})).toBeTruthy()
+        expect(entityRefSame({database: 'ax', catalog: 'gtm', schema: 'public', entity: 'users'}, {database: 'ae', catalog: 'gtm', schema: 'public', entity: 'users'})).toBeFalsy()
+        expect(entityRefSame({database: 'ax', catalog: 'gtm', schema: 'public', entity: 'users'}, {database: 'ax', catalog: 'cdn', schema: 'public', entity: 'users'})).toBeFalsy()
+        expect(entityRefSame({database: 'ax', catalog: 'gtm', schema: 'public', entity: 'users'}, {database: 'ax', catalog: 'cdn', schema: 'cdo', entity: 'users'})).toBeFalsy()
+        expect(entityRefSame({database: 'ax', catalog: 'gtm', schema: 'public', entity: 'users'}, {database: 'ax', catalog: 'cdn', schema: 'cdo', entity: 'accounts'})).toBeFalsy()
+        expect(entityRefSame({database: 'ax', catalog: 'gtm', schema: 'public', entity: 'users'}, {catalog: 'gtm', schema: 'public', entity: 'users'})).toBeFalsy()
+        expect(entityRefSame({database: 'ax', catalog: 'gtm', schema: 'public', entity: 'users'}, {database: 'ax', schema: 'public', entity: 'users'})).toBeFalsy()
+        expect(entityRefSame({database: 'ax', catalog: 'gtm', schema: 'public', entity: 'users'}, {database: 'ax', catalog: 'gtm', entity: 'users'})).toBeFalsy()
+    })
     test('parse & format AttributePath', () => {
         const samples: { path: AttributePathId; names: AttributePath }[] = [
             {path: 'details', names: ['details']},
@@ -86,9 +107,18 @@ describe('databaseUtils', () => {
             expect(attributePathToId(names)).toEqual(path)
         })
     })
+    test('attributePathSame', () => {
+        expect(attributePathSame(['id'], ['id'])).toBeTruthy()
+        expect(attributePathSame(['details', 'address', 'street'], ['details', 'address', 'street'])).toBeTruthy()
+        expect(attributePathSame(['id'], ['name'])).toBeFalsy()
+        expect(attributePathSame(['details', 'address', 'street'], ['details', 'address'])).toBeFalsy()
+        expect(attributePathSame(['details', 'address', 'street'], ['details', 'address', 'city'])).toBeFalsy()
+        expect(attributePathSame(['details', 'address', 'street'], ['details', 'place', 'street'])).toBeFalsy()
+    })
     test('parse & format AttributeRef', () => {
         const samples: { id: AttributeId; ref: AttributeRef }[] = [
             {id: 'users(id)', ref: {entity: 'users', attribute: ['id']}},
+            {id: 'users(details.org)', ref: {entity: 'users', attribute: ['details', 'org']}},
         ]
         samples.map(({id, ref}) => {
             expect(attributeRefFromId(id)).toEqual(ref)
@@ -102,6 +132,36 @@ describe('databaseUtils', () => {
             expect(attributeRefFromId(targetId)).toEqual(ref)
             expect(attributeRefToId(ref)).toEqual(targetId)
         })
+    })
+    test('attributeRefSame', () => {
+        expect(attributeRefSame({entity: 'users', attribute: ['id']}, {entity: 'users', attribute: ['id']})).toBeTruthy()
+        expect(attributeRefSame({entity: 'users', attribute: ['id']}, {entity: 'users', attribute: ['id', 'name']})).toBeFalsy()
+        expect(attributeRefSame({entity: 'users', attribute: ['id']}, {entity: 'users', attribute: ['name']})).toBeFalsy()
+    })
+    test('parse & format AttributesRef', () => {
+        const samples: { id: AttributesId; ref: AttributesRef }[] = [
+            {id: 'users(id)', ref: {entity: 'users', attributes: [['id']]}},
+            {id: 'users(id, name)', ref: {entity: 'users', attributes: [['id'], ['name']]}},
+            {id: 'users(details.org)', ref: {entity: 'users', attributes: [['details', 'org']]}},
+        ]
+        samples.map(({id, ref}) => {
+            expect(attributesRefFromId(id)).toEqual(ref)
+            expect(attributesRefToId(ref)).toEqual(id)
+        })
+        const badSamples: { sourceId: AttributesId; ref: AttributesRef; targetId: AttributesId }[] = [
+            {sourceId: 'users', ref: {entity: 'users', attributes: [['']]}, targetId: 'users()'},
+        ]
+        badSamples.map(({sourceId, ref, targetId}) => {
+            expect(attributesRefFromId(sourceId)).toEqual(ref)
+            expect(attributesRefFromId(targetId)).toEqual(ref)
+            expect(attributesRefToId(ref)).toEqual(targetId)
+        })
+    })
+    test('attributesRefSame', () => {
+        expect(attributesRefSame({entity: 'users', attributes: [['id']]}, {entity: 'users', attributes: [['id']]})).toBeTruthy()
+        expect(attributesRefSame({entity: 'users', attributes: [['id'], ['name']]}, {entity: 'users', attributes: [['id'], ['name']]})).toBeTruthy()
+        expect(attributesRefSame({entity: 'users', attributes: [['id']]}, {entity: 'users', attributes: [['id', 'name']]})).toBeFalsy()
+        expect(attributesRefSame({entity: 'users', attributes: [['id']]}, {entity: 'users', attributes: [['name']]})).toBeFalsy()
     })
     test('parse & format AttributeType', () => {
         expect(attributeTypeParse('text')).toEqual({full: 'text', kind: 'unknown'})

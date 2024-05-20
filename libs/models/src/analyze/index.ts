@@ -60,6 +60,7 @@ export function analyzeDatabase(conf: RulesConf, db: Database, queries: Database
     // TODO: auto_explain: index creation (https://pganalyze.com/docs/explain/setup/self_managed/01_auto_explain_check)
     // TODO: warn on queries with ORDER BY RAND()
     // TODO: constraints should be deferrable (pk, fk, unique)
+    // TODO: vacuum not too old
     const rules = ruleNames.length > 0 ? analyzeRules.filter(r => ruleNames.indexOf(r.id) !== -1 || ruleNames.indexOf(r.name) !== -1) : analyzeRules
     return Object.fromEntries(rules.map(r => {
         const ruleConf = Object.assign({}, r.conf, conf.rules?.[r.id])

@@ -14,7 +14,9 @@ import {Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rul
 
 const ruleId: RuleId = 'attribute-type-inconsistent'
 const ruleName: RuleName = 'inconsistent attribute type'
-const CustomRuleConf = RuleConf
+const CustomRuleConf = RuleConf.extend({
+    ignores: AttributeName.array().optional()
+}).strict().describe('AttributeTypeInconsistentConf')
 type CustomRuleConf = z.infer<typeof CustomRuleConf>
 export const attributeTypeInconsistentRule: Rule<CustomRuleConf> = {
     id: ruleId,
@@ -22,12 +24,14 @@ export const attributeTypeInconsistentRule: Rule<CustomRuleConf> = {
     conf: {level: RuleLevel.enum.hint},
     zConf: CustomRuleConf,
     analyze(conf: CustomRuleConf, db: Database, queries: DatabaseQuery[]): RuleViolation[] {
-        return Object.entries(getInconsistentAttributeTypes(db.entities || [])).map(([attrName, refs]) => {
-            const refsByType = Object.entries(groupBy(refs, r => r.value.type)).sort(([, a], [, b]) => a.length - b.length)
-            const {attribute, ...entity} = refsByType[0][1][0].ref
-            const message = `Attribute ${attrName} has several types: ${refsByType.map(([t, [r]]) => `${t} in ${attributeRefToId(r.ref)}`).join(', ')}.`
-            return {ruleId, ruleName, ruleLevel: conf.level, entity, message}
-        })
+        return Object.entries(getInconsistentAttributeTypes(db.entities || []))
+            .filter(([name,]) => !conf.ignores?.some(i => i === name))
+            .map(([name, refs]) => {
+                const refsByType = Object.entries(groupBy(refs, r => r.value.type)).sort(([, a], [, b]) => a.length - b.length)
+                const {attribute, ...entity} = refsByType[0][1][0].ref
+                const message = `Attribute ${name} has several types: ${refsByType.map(([t, [r]]) => `${t} in ${attributeRefToId(r.ref)}`).join(', ')}.`
+                return {ruleId, ruleName, ruleLevel: conf.level, entity, message}
+            })
     }
 }
 

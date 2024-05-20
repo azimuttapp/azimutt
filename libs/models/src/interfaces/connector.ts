@@ -66,9 +66,12 @@ export type ConnectorQueryHistoryOpts = ConnectorDefaultOpts & {
     database?: DatabaseName // query stats only from this database or database pattern (use LIKE if contains %, = otherwise)
 }
 
+export const QueryId = z.string()
+export type QueryId = z.infer<typeof QueryId>
+
 // TODO define more generic and meaningful structure
 export const DatabaseQuery = z.object({
-    id: z.string(), // query id to group duplicates
+    id: QueryId, // query id to group duplicates
     user: z.string().optional(), // the user executing the query
     database: DatabaseName, // the database in which the query was executed
     query: z.string(),

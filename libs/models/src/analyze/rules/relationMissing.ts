@@ -1,8 +1,19 @@
 import {z} from "zod";
 import {groupBy, singular, splitWords} from "@azimutt/utils";
-import {AttributePath, AttributeValue, Database, Entity, EntityId, EntityRef, Relation} from "../../database";
+import {
+    AttributePath,
+    AttributesId,
+    AttributeValue,
+    Database,
+    Entity,
+    EntityId,
+    EntityRef,
+    Relation
+} from "../../database";
 import {
     attributePathToId,
+    attributesRefFromId,
+    attributesRefSame,
     attributeValueToString,
     entityAttributesToId,
     entityRefToId,
@@ -19,7 +30,9 @@ import {Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rul
 
 const ruleId: RuleId = 'relation-missing'
 const ruleName: RuleName = 'missing relation'
-const CustomRuleConf = RuleConf
+const CustomRuleConf = RuleConf.extend({
+    ignores: z.object({src: AttributesId, ref: AttributesId}).array().optional()
+}).strict().describe('RelationMissingConf')
 type CustomRuleConf = z.infer<typeof CustomRuleConf>
 export const relationMissingRule: Rule<CustomRuleConf> = {
     id: ruleId,
@@ -27,13 +40,16 @@ export const relationMissingRule: Rule<CustomRuleConf> = {
     conf: {level: RuleLevel.enum.medium},
     zConf: CustomRuleConf,
     analyze(conf: CustomRuleConf, db: Database, queries: DatabaseQuery[]): RuleViolation[] {
-        return getMissingRelations(db.entities || [], db.relations || []).map(r => ({
-            ruleId,
-            ruleName,
-            ruleLevel: conf.level,
-            entity: r.src,
-            message: `Create a relation from ${entityAttributesToId(r.src, r.attrs.map(a => a.src))} to ${entityAttributesToId(r.ref, r.attrs.map(a => a.ref))}.`
-        }))
+        const ignores = conf.ignores?.map(i => ({src: attributesRefFromId(i.src), ref: attributesRefFromId(i.ref)})) || []
+        return getMissingRelations(db.entities || [], db.relations || [])
+            .filter(r => !ignores.some(i => attributesRefSame(i.src, {...r.src, attributes: r.attrs.map(a => a.src)}) && attributesRefSame(i.ref, {...r.ref, attributes: r.attrs.map(a => a.ref)})))
+            .map(r => ({
+                ruleId,
+                ruleName,
+                ruleLevel: conf.level,
+                entity: r.src,
+                message: `Create a relation from ${entityAttributesToId(r.src, r.attrs.map(a => a.src))} to ${entityAttributesToId(r.ref, r.attrs.map(a => a.ref))}.`
+            }))
     }
 }
 

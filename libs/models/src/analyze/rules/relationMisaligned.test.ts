@@ -18,6 +18,25 @@ describe('relationMisaligned', () => {
             {src: {entity: 'posts', attribute: ['author']}, srcType: 'string', ref: {entity: 'users', attribute: ['id']}, refType: 'uuid'}
         ]})
     })
+    test('ignores', () => {
+        const db: Database = {
+            entities: [
+                {name: 'users', attrs: [{name: 'id', type: 'uuid'}]},
+                {name: 'posts', attrs: [{name: 'id', type: 'uuid'}, {name: 'author', type: 'varchar'}, {name: 'created_by', type: 'text'}]},
+            ],
+            relations: [
+                {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}]},
+                {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['created_by'], ref: ['id']}]},
+            ]
+        }
+        expect(relationMisalignedRule.analyze(ruleConf, db, []).map(v => v.message)).toEqual([
+            'Relation posts(author)->users(id) link attributes different types: posts(author): varchar != users(id): uuid',
+            'Relation posts(created_by)->users(id) link attributes different types: posts(created_by): text != users(id): uuid',
+        ])
+        expect(relationMisalignedRule.analyze({...ruleConf, ignores: [{src: 'posts(created_by)', ref: 'users(id)'}]}, db, []).map(v => v.message)).toEqual([
+            'Relation posts(author)->users(id) link attributes different types: posts(author): varchar != users(id): uuid',
+        ])
+    })
     test('violation message', () => {
         const db: Database = {
             entities: [

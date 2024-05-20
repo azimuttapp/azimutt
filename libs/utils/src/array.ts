@@ -58,6 +58,9 @@ export const groupBy = <T, K extends keyof any>(list: T[], getKey: (item: T) => 
         return acc
     }, {} as Record<K, T[]>)
 
+export const arraySame = <T>(a1: T[], a2: T[], eq: (a: T, b: T) => boolean): boolean =>
+    a1.length === a2.length && a1.every((e, i) => eq(e, a2[i]))
+
 export const shuffle = <T>(array: T[]): T[] => {
     // Fisher-Yates shuffle
     const arr = [...array] // shallow copy of array to avoid in-place updates

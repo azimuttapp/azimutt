@@ -1,13 +1,23 @@
 import {z} from "zod";
 import {indexBy, isNotUndefined} from "@azimutt/utils";
-import {AttributeRef, Database, Entity, EntityId, Relation} from "../../database";
-import {attributeRefToId, entityRefToId, entityToId, getAttribute, relationToId} from "../../databaseUtils";
+import {AttributeId, AttributeRef, Database, Entity, EntityId, Relation} from "../../database";
+import {
+    attributeRefFromId,
+    attributeRefSame,
+    attributeRefToId,
+    entityRefToId,
+    entityToId,
+    getAttribute,
+    relationToId
+} from "../../databaseUtils";
 import {DatabaseQuery} from "../../interfaces/connector";
 import {Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
 const ruleId: RuleId = 'relation-miss-attribute'
 const ruleName: RuleName = 'attribute not found in relation'
-const CustomRuleConf = RuleConf
+const CustomRuleConf = RuleConf.extend({
+    ignores: AttributeId.array().optional(),
+}).strict().describe('RelationMissAttributeConf')
 type CustomRuleConf = z.infer<typeof CustomRuleConf>
 export const relationMissAttributeRule: Rule<CustomRuleConf> = {
     id: ruleId,
@@ -16,13 +26,19 @@ export const relationMissAttributeRule: Rule<CustomRuleConf> = {
     zConf: CustomRuleConf,
     analyze(conf: CustomRuleConf, db: Database, queries: DatabaseQuery[]): RuleViolation[] {
         const entities: Record<EntityId, Entity> = indexBy(db.entities || [], entityToId)
-        return (db.relations || []).map(r => getMissingAttributeRelations(r, entities)).filter(isNotUndefined).map(violation => ({
-            ruleId,
-            ruleName,
-            ruleLevel: conf.level,
-            entity: violation.relation.src,
-            message: `Relation ${relationName(violation.relation)}, not found attributes: ${violation.missingAttrs.map(attributeRefToId).join(', ')}`
-        }))
+        const ignores: AttributeRef[] = conf.ignores?.map(attributeRefFromId) || []
+        return (db.relations || [])
+            .map(r => getMissingAttributeRelations(r, entities))
+            .filter(isNotUndefined)
+            .map(v => ({...v, missingAttrs: v?.missingAttrs?.filter(a => !ignores.some(i => attributeRefSame(i, a)))}))
+            .filter(v => v.missingAttrs.length > 0)
+            .map(violation => ({
+                ruleId,
+                ruleName,
+                ruleLevel: conf.level,
+                entity: violation.relation.src,
+                message: `Relation ${relationName(violation.relation)}, not found attributes: ${violation.missingAttrs.map(attributeRefToId).join(', ')}`
+            }))
     }
 }
 

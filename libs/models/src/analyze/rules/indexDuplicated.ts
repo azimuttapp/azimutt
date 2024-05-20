@@ -1,6 +1,12 @@
 import {z} from "zod";
-import {Database, Entity, Index} from "../../database";
-import {attributePathToId, entityAttributesToId, entityToRef} from "../../databaseUtils";
+import {AttributesId, AttributesRef, Database, Entity, Index} from "../../database";
+import {
+    attributePathToId,
+    attributesRefFromId,
+    attributesRefSame,
+    entityAttributesToId,
+    entityToRef
+} from "../../databaseUtils";
 import {DatabaseQuery} from "../../interfaces/connector";
 import {Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
@@ -13,7 +19,9 @@ import {Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rul
 
 const ruleId: RuleId = 'index-duplicated'
 const ruleName: RuleName = 'duplicated index'
-const CustomRuleConf = RuleConf
+const CustomRuleConf = RuleConf.extend({
+    ignores: AttributesId.array().optional()
+}).strict().describe('IndexDuplicatedConf')
 type CustomRuleConf = z.infer<typeof CustomRuleConf>
 export const indexDuplicatedRule: Rule<CustomRuleConf> = {
     id: ruleId,
@@ -21,12 +29,15 @@ export const indexDuplicatedRule: Rule<CustomRuleConf> = {
     conf: {level: RuleLevel.enum.high},
     zConf: CustomRuleConf,
     analyze(conf: CustomRuleConf, db: Database, queries: DatabaseQuery[]): RuleViolation[] {
-        return (db.entities || []).flatMap(getDuplicatedIndexes).map(i => {
-            const entity = entityToRef(i.entity)
-            const indexName = `${i.index.name ? i.index.name + ' ' : ''}on ${entityAttributesToId(entity, i.index.attrs)}`
-            const message = `Index ${indexName} can be deleted, it's covered by: ${i.coveredBy.map(by => `${by.name || ''}(${by.attrs.map(attributePathToId).join(', ')})`).join(', ')}.`
-            return {ruleId, ruleName, ruleLevel: conf.level, entity, message}
-        })
+        const ignores: AttributesRef[] = conf.ignores?.map(attributesRefFromId) || []
+        return (db.entities || []).flatMap(getDuplicatedIndexes)
+            .filter(idx => !ignores.some(i => attributesRefSame(i, {...entityToRef(idx.entity), attributes: idx.index.attrs})))
+            .map(i => {
+                const entity = entityToRef(i.entity)
+                const indexName = `${i.index.name ? i.index.name + ' ' : ''}on ${entityAttributesToId(entity, i.index.attrs)}`
+                const message = `Index ${indexName} can be deleted, it's covered by: ${i.coveredBy.map(by => `${by.name || ''}(${by.attrs.map(attributePathToId).join(', ')})`).join(', ')}.`
+                return {ruleId, ruleName, ruleLevel: conf.level, entity, message}
+            })
     }
 }
 

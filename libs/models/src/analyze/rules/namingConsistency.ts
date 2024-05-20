@@ -9,10 +9,14 @@ import {
     isSnakeUpper,
     StringCase
 } from "@azimutt/utils";
-import {AttributeRef, Database, Entity, EntityRef} from "../../database";
+import {AttributeId, AttributeRef, Database, Entity, EntityId, EntityRef} from "../../database";
 import {
+    attributeRefFromId,
+    attributeRefSame,
     attributeRefToId,
     entityRefFromAttribute,
+    entityRefFromId,
+    entityRefSame,
     entityRefToId,
     entityToRef,
     flattenAttribute
@@ -26,7 +30,10 @@ import {Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rul
 
 const ruleId: RuleId = 'naming-consistency'
 const ruleName: RuleName = 'naming consistency'
-const CustomRuleConf = RuleConf
+const CustomRuleConf = RuleConf.extend({
+    ignoreEntities: EntityId.array().optional(),
+    ignoreAttributes: AttributeId.array().optional(),
+}).strict().describe('NamingConsistencyConf')
 type CustomRuleConf = z.infer<typeof CustomRuleConf>
 export const namingConsistencyRule: Rule<CustomRuleConf> = {
     id: ruleId,
@@ -35,20 +42,26 @@ export const namingConsistencyRule: Rule<CustomRuleConf> = {
     zConf: CustomRuleConf,
     analyze(conf: CustomRuleConf, db: Database, queries: DatabaseQuery[]): RuleViolation[] {
         const inconsistencies = checkNamingConsistency(db.entities || [])
-        const entities = inconsistencies.entities.invalid.map(entity => ({
-            ruleId,
-            ruleName,
-            ruleLevel: conf.level,
-            entity: entity,
-            message: `Entity ${entityRefToId(entity)} doesn't follow naming convention ${inconsistencies.entities.convention}.`
-        }))
-        const attributes = inconsistencies.attributes.invalid.map(attribute => ({
-            ruleId,
-            ruleName,
-            ruleLevel: conf.level,
-            entity: entityRefFromAttribute(attribute),
-            message: `Attribute ${attributeRefToId(attribute)} doesn't follow naming convention ${inconsistencies.attributes.convention}.`
-        }))
+        const ignoreEntities: EntityRef[] = conf.ignoreEntities?.map(entityRefFromId) || []
+        const ignoreAttributes: AttributeRef[] = conf.ignoreAttributes?.map(attributeRefFromId) || []
+        const entities = inconsistencies.entities.invalid
+            .filter(e => !ignoreEntities.some(i => entityRefSame(i, e)))
+            .map(entity => ({
+                ruleId,
+                ruleName,
+                ruleLevel: conf.level,
+                entity: entity,
+                message: `Entity ${entityRefToId(entity)} doesn't follow naming convention ${inconsistencies.entities.convention}.`
+            }))
+        const attributes = inconsistencies.attributes.invalid
+            .filter(a => !ignoreAttributes.some(i => attributeRefSame(i, a)))
+            .map(attribute => ({
+                ruleId,
+                ruleName,
+                ruleLevel: conf.level,
+                entity: entityRefFromAttribute(attribute),
+                message: `Attribute ${attributeRefToId(attribute)} doesn't follow naming convention ${inconsistencies.attributes.convention}.`
+            }))
         return entities.concat(attributes)
     }
 }

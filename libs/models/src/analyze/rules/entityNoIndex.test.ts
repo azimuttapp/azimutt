@@ -16,6 +16,16 @@ describe('entityNoIndex', () => {
         const users: Entity = {name: 'users', attrs: [{name: 'id', type: 'uuid'}]}
         expect(hasEntityNoIndex(users)).toEqual(true)
     })
+    test('ignores', () => {
+        const db: Database = {entities: [{name: 'users', attrs: [{name: 'id', type: 'uuid'}]}, {name: 'posts', attrs: [{name: 'id', type: 'uuid'}]}]}
+        expect(entityNoIndexRule.analyze(ruleConf, db, []).map(v => v.message)).toEqual([
+            'Entity users has no index.',
+            'Entity posts has no index.',
+        ])
+        expect(entityNoIndexRule.analyze({...ruleConf, ignores: ['posts']}, db, []).map(v => v.message)).toEqual([
+            'Entity users has no index.',
+        ])
+    })
     test('violation message', () => {
         const db: Database = {entities: [{name: 'users', attrs: [{name: 'id', type: 'uuid'}]}]}
         expect(entityNoIndexRule.analyze(ruleConf, db, []).map(v => v.message)).toEqual([

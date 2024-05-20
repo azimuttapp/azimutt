@@ -1,12 +1,13 @@
 import {z} from "zod";
-import {Database, Entity} from "../../database";
-import {entityToId, entityToRef} from "../../databaseUtils";
+import {Database, Entity, EntityId, EntityRef} from "../../database";
+import {entityRefFromId, entityRefSame, entityToId, entityToRef} from "../../databaseUtils";
 import {DatabaseQuery} from "../../interfaces/connector";
 import {Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
 const ruleId: RuleId = 'entity-too-large'
 const ruleName: RuleName = 'entity too large'
 const CustomRuleConf = RuleConf.extend({
+    ignores: EntityId.array().optional(),
     max: z.number()
 }).strict().describe('EntityTooLargeConf')
 type CustomRuleConf = z.infer<typeof CustomRuleConf>
@@ -16,13 +17,17 @@ export const entityTooLargeRule: Rule<CustomRuleConf> = {
     conf: {level: RuleLevel.enum.medium, max: 30},
     zConf: CustomRuleConf,
     analyze(conf: CustomRuleConf, db: Database, queries: DatabaseQuery[]): RuleViolation[] {
-        return (db.entities || []).filter(e => isEntityTooLarge(e, conf.max)).map(e => ({
-            ruleId,
-            ruleName,
-            ruleLevel: conf.level,
-            entity: entityToRef(e),
-            message: `Entity ${entityToId(e)} has too many attributes (${e.attrs.length}).`
-        }))
+        const ignores: EntityRef[] = conf.ignores?.map(entityRefFromId) || []
+        return (db.entities || [])
+            .filter(e => isEntityTooLarge(e, conf.max))
+            .filter(e => !ignores.some(i => entityRefSame(i, entityToRef(e))))
+            .map(e => ({
+                ruleId,
+                ruleName,
+                ruleLevel: conf.level,
+                entity: entityToRef(e),
+                message: `Entity ${entityToId(e)} has too many attributes (${e.attrs.length}).`
+            }))
     }
 }
 

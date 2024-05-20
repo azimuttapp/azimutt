@@ -1,7 +1,14 @@
 import {z} from "zod";
 import {groupBy} from "@azimutt/utils";
-import {Database, Entity, Relation} from "../../database";
-import {attributePathToId, entityRefToId, entityToId, entityToRef} from "../../databaseUtils";
+import {AttributesId, AttributesRef, Database, Entity, Relation} from "../../database";
+import {
+    attributePathToId,
+    attributesRefFromId,
+    attributesRefSame,
+    entityRefToId,
+    entityToId,
+    entityToRef
+} from "../../databaseUtils";
 import {DatabaseQuery} from "../../interfaces/connector";
 import {Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
@@ -13,7 +20,9 @@ import {Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rul
 
 const ruleId: RuleId = 'primary-key-not-business'
 const ruleName: RuleName = 'no business primary key'
-const CustomRuleConf = RuleConf
+const CustomRuleConf = RuleConf.extend({
+    ignores: AttributesId.array().optional()
+}).strict().describe('PrimaryKeyNotBusinessConf')
 type CustomRuleConf = z.infer<typeof CustomRuleConf>
 export const primaryKeyNotBusinessRule: Rule<CustomRuleConf> = {
     id: ruleId,
@@ -22,13 +31,17 @@ export const primaryKeyNotBusinessRule: Rule<CustomRuleConf> = {
     zConf: CustomRuleConf,
     analyze(conf: CustomRuleConf, db: Database, queries: DatabaseQuery[]): RuleViolation[] {
         const relations = groupBy(db.relations || [], r => entityRefToId(r.src))
-        return (db.entities || []).filter(e => !isPrimaryKeyTechnical(e, relations[entityToId(e)] || [])).map(e => ({
-            ruleId,
-            ruleName,
-            ruleLevel: conf.level,
-            entity: entityToRef(e),
-            message: `Entity ${entityToId(e)} should have a technical primary key, current one is: (${e.pk?.attrs.map(attributePathToId).join(', ')}).`
-        }))
+        const ignores: AttributesRef[] = conf.ignores?.map(attributesRefFromId) || []
+        return (db.entities || [])
+            .filter(e => !isPrimaryKeyTechnical(e, relations[entityToId(e)] || []))
+            .filter(e => !ignores.some(i => attributesRefSame(i, {...entityToRef(e), attributes: e.pk?.attrs || []})))
+            .map(e => ({
+                ruleId,
+                ruleName,
+                ruleLevel: conf.level,
+                entity: entityToRef(e),
+                message: `Entity ${entityToId(e)} should have a technical primary key, current one is: (${e.pk?.attrs.map(attributePathToId).join(', ')}).`
+            }))
     }
 }
 

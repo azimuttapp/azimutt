@@ -29,6 +29,19 @@ describe('attributeInconsistentType', () => {
             ],
         })
     })
+    test('ignores', () => {
+        const db: Database = {entities: [
+            {name: 'users', attrs: [{name: 'id', type: 'uuid'}, {name: 'name', type: 'varchar'}]},
+            {name: 'posts', attrs: [{name: 'id', type: 'int'}, {name: 'name', type: 'text'}]}
+        ]}
+        expect(attributeTypeInconsistentRule.analyze(ruleConf, db, []).map(v => v.message)).toEqual([
+            `Attribute id has several types: uuid in users(id), int in posts(id).`,
+            `Attribute name has several types: varchar in users(name), text in posts(name).`,
+        ])
+        expect(attributeTypeInconsistentRule.analyze({...ruleConf, ignores: ['name']}, db, []).map(v => v.message)).toEqual([
+            `Attribute id has several types: uuid in users(id), int in posts(id).`,
+        ])
+    })
     test('violation message', () => {
         const db: Database = {entities: [{name: 'users', attrs: [{name: 'id', type: 'uuid'}]}, {name: 'posts', attrs: [{name: 'id', type: 'int'}]}]}
         expect(attributeTypeInconsistentRule.analyze(ruleConf, db, []).map(v => v.message)).toEqual([
