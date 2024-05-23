@@ -1,5 +1,6 @@
 export * from "./any"
 export * from "./array"
+export * from "./email"
 export * from "./error"
 export * from "./json"
 export * from "./logger"

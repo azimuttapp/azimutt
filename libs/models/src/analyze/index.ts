@@ -82,3 +82,9 @@ export function scoreDatabase(db: Database, violations: RuleViolation[]): {score
     const violationsByEntity: Record<EntityId, RuleViolation[]> = groupBy(violations, v => v.entity ? entityRefToId(v.entity) : 'unknown')
     return {score: 0, entities: {}}
 }
+
+// safe migration rules:
+// - always concurrently in create/drop indexes
+// - disable validations at the beginning, enable them at the end (foreign keys, unique, pk, checks...)
+// - no default value on add column (will update every row otherwise)
+// - drop foreign keys before dropping a table

@@ -48,9 +48,9 @@ export async function explainQueryPlan(llm: OpenAIConnector, dialect: DatabaseKi
     return Promise.reject('Not implemented')
 }
 
+// TODO: suggest tables for a specific topic (build layout)
 // TODO: chat with your db
 // TODO: suggest schema improvements
 // TODO: suggest schema changes for a new feature
-// TODO: suggest tables for a specific topic (build layout)
 // TODO: function calling to interact with Azimutt (ex: "Show all the tables related to projects")
 // TODO: detect PII, https://docs.anthropic.com/en/prompt-library/pii-purifier

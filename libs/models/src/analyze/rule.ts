@@ -16,6 +16,7 @@ export const RuleName = z.string()
 export type RuleName = z.infer<typeof RuleName>
 export const RuleLevel = z.enum(['high', 'medium', 'low', 'hint', 'off']) // from highest to lowest
 export type RuleLevel = z.infer<typeof RuleLevel>
+export const ruleLevelsShown = RuleLevel.options.filter(l => l !== RuleLevel.enum.off)
 export const RuleConf = z.object({
     level: RuleLevel
 }).strict().describe('RuleConf')

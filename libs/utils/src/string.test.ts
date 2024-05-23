@@ -1,6 +1,8 @@
 import {describe, expect, test} from "@jest/globals";
 import {
     compatibleCases,
+    dateFromIsoFilename,
+    dateToIsoFilename,
     indent,
     isCamelLower,
     isCamelUpper,
@@ -23,6 +25,12 @@ import {
 } from "./string";
 
 describe('string', () => {
+    test('dateToIsoFilename', () => {
+        const d = new Date(1716456672960)
+        expect(dateToIsoFilename(d)).toEqual('2024-05-23T09-31-12-960Z')
+        expect(dateFromIsoFilename('2024-05-23T09-31-12-960Z')).toEqual(d)
+        expect(() => dateFromIsoFilename('bad')).toThrow(new Error('Invalid filename iso date: bad'))
+    })
     test('indent', () => {
         expect(indent('some text')).toEqual('  some text')
         expect(indent(`

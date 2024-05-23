@@ -39,8 +39,11 @@ program.command('explore')
 program.command('analyze')
     .description('Analyze your database and give improvement suggestions.')
     .argument('<url>', 'the database url, including credentials')
-    .option('--size <number>', 'limit shown violations per rule', strictParseInt, 3)
+    .option('--folder <folder>', 'where to read/write configuration and report files, default is ~/.azimutt/analyze/$db_name')
+    .option('--email <email>', 'provide your professional email to get the full analyze report as a JSON file')
+    .option('--size <number>', 'limit shown violations per rule', strictParseInt)
     .option('--only <rules>', 'limit analyze to a set of rules')
+    .option('--key <key>', 'reach out to contact@azimutt.app to buy a key for incremental rules: unused tables/indexes, degrading queries and more...')
     .action((url, args) => exec(launchAnalyze(url, args, logger), args))
 
 program.command('export')
@@ -72,7 +75,7 @@ if (!process.argv.slice(2).length) {
 function exec(res: Promise<void>, args: any) {
     if (!args.debug) {
         res.catch(e => {
-            logger.error(`Unexpected error: ${errorToString(e)}`)
+            logger.error(`Got error: ${errorToString(e)}`)
             logger.log(`(use --debug option to see the full error)`)
         })
     }
