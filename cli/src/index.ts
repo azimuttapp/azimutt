@@ -6,6 +6,7 @@ import clear from "clear";
 import figlet from "figlet";
 // https://github.com/SBoudrias/Inquirer.js
 import {errorToString, strictParseInt} from "@azimutt/utils";
+import {azimuttEmail} from "@azimutt/models";
 import {version} from "./version.js";
 import {logger} from "./utils/logger.js";
 import {exportDbSchema} from "./export.js";
@@ -43,7 +44,7 @@ program.command('analyze')
     .option('--email <email>', 'provide your professional email to get the full analyze report as a JSON file')
     .option('--size <number>', 'limit shown violations per rule', strictParseInt)
     .option('--only <rules>', 'limit analyze to a set of rules')
-    .option('--key <key>', 'reach out to contact@azimutt.app to buy a key for incremental rules: unused tables/indexes, degrading queries and more...')
+    .option('--key <key>', `reach out to ${azimuttEmail} to buy a key for incremental rules: unused tables/indexes, degrading queries and more...`)
     .action((url, args) => exec(launchAnalyze(url, args, logger), args))
 
 program.command('export')

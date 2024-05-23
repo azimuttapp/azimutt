@@ -17,6 +17,7 @@ import {
 import {
     analyzeDatabase,
     AttributePath,
+    azimuttEmail,
     Connector,
     Database,
     DatabaseQuery,
@@ -32,8 +33,8 @@ import {
     zodParseAsync
 } from "@azimutt/models";
 import {getConnector, track} from "@azimutt/gateway";
+import {fileExists, fileList, fileReadJson, fileWriteJson, mkParentDirs} from "./utils/file.js";
 import {loggerNoOp} from "./utils/logger.js";
-import {fileExists, fileReadJson, fileWriteJson, mkParentDirs} from "./utils/file.js";
 
 export type Opts = {
     folder?: string
@@ -43,28 +44,25 @@ export type Opts = {
     key?: string
 }
 
-// TODO: key check => store previous results (db, queries & violations) to compute trends
-// TODO: add config for user, db, query & data
 export async function launchAnalyze(url: string, opts: Opts, logger: Logger): Promise<void> {
     const dbUrl: DatabaseUrlParsed = parseDatabaseUrl(url)
     const connector: Connector | undefined = getConnector(dbUrl)
     if (!connector) return Promise.reject(`Invalid connector for ${dbUrl.kind ? `${dbUrl.kind} db` : `unknown db (${dbUrl.full})`}`)
     if (opts.email && !isValidEmail(opts.email, logger)) return Promise.reject(`Invalid email (${opts.email})`)
+    if (opts.key && !isValidKey(opts.email, opts.key, logger)) return Promise.reject(`Invalid key (${opts.key})`)
 
-    // if license: read previous analyses, compute trends and write result as JSON in ~/.azimutt/analyze/db_name/2024-05-19.json
-    // if email: read rule conf and print them in the console, advertise about license benefits
-    // if nothing: logger.log(`Found x violations from y rules, a high, b medium, c low and d hint.\nProvide your pro email as parameter (ex: --email "loic@azimutt.app") to get the detail`)
-    // TODO: read config from ~/.azimutt/analyze/conf.json ({user: {}, schema: {}, queries: {}, data: {}, 'rule-1': {}...})
+    // TODO: extend config for user, database, queries, data... ({user: {}, database: {}, queries: {}, data: {}, rules: {}})
     const app = 'azimutt-analyze'
     const folder = opts.folder || `~/.azimutt/analyze${dbUrl.db ? '/' + dbUrl.db : ''}`
     const conf: RulesConf = await loadConf(folder, logger)
+    const previousReports = opts.key ? await loadPreviousReports(folder) : []
     const db: Database = await connector.getSchema(app, dbUrl, {logger: loggerNoOp})
     const queries: DatabaseQuery[] = await connector.getQueryHistory(app, dbUrl, {logger: loggerNoOp, database: dbUrl.db}).catch(err => {
         if (typeof err === 'string' && err === 'Not implemented') logger.log(`Query history is not supported yet on ${dbUrl.kind}, ping us ;)`)
         if (typeof err === 'object' && 'message' in err && err.message.indexOf('"pg_stat_statements" does not exist')) logger.log(`Can't get query history as pg_stat_statements is not enabled. Enable it for a better db analysis.`)
         return []
     })
-    // TODO: const previousReports = isValidKey(dbUrl, opts.email, opts.key) ? await loadPreviousReports(folder) : []
+    // TODO: use previous reports to compute trends and warn on them
     const rules: Record<RuleId, RuleAnalyzed> = analyzeDatabase(conf, db, queries, opts.only?.split(',') || [])
     const [offRules, usedRules] = partition(Object.values(rules), r => r.conf.level === RuleLevel.enum.off)
     const rulesByLevel: Record<RuleLevel, RuleAnalyzed[]> = groupBy(usedRules, r => r.conf.level)
@@ -77,32 +75,38 @@ export async function launchAnalyze(url: string, opts: Opts, logger: Logger): Pr
         printReport(offRules, rulesByLevel, maxShown, stats, logger)
         const report = buildReport(db, queries, rules)
         await writeReport(folder, report, logger)
+        // TODO: advertise on `key` option once done
     } else {
         const maxShown = 3
         printReport(offRules, rulesByLevel, maxShown, stats, logger)
-        logger.log(chalk.hex('#3b82f6')('Thanks for using Azimutt analyze, add your professional email (ex: `--email "loic@azimutt.app"`) to get the full report in JSON and use `size` and `only` options.'))
+        logger.log(chalk.hex('#3b82f6')('Thanks for using Azimutt analyze, add your professional email (ex: `--email "your.name@company.com"`) to get the full report in JSON and use `size` and `only` options.'))
         logger.log('')
     }
 }
 
-export function isValidEmail(email: string | undefined, logger: Logger): boolean {
-    if (email) {
-        const parsed = emailParse(email.trim())
-        if (parsed.domain) {
-            if (parsed.domain === 'azimutt.app') {
-                logger.log(chalk.hex('#ef4444')(`Do you really have an 'azimutt.app' email? Good try ;)`))
-                return false
-            } else if (publicEmailDomains.includes(parsed.domain)) {
-                logger.log(chalk.hex('#ef4444')(`Got your email, but please use your professional email instead ;)`))
-                return false
-            } else {
-                return true
-            }
-        } else {
-            logger.log(chalk.hex('#ef4444')(`Unrecognized email (${email}), try adding quotes around it.`))
+function isValidEmail(email: string, logger: Logger): boolean {
+    const parsed = emailParse(email.trim())
+    if (parsed.domain) {
+        if (parsed.domain === 'azimutt.app') {
+            logger.log(chalk.hex('#ef4444')(`Do you really have an 'azimutt.app' email? Good try ;)`))
             return false
+        } else if (publicEmailDomains.includes(parsed.domain)) {
+            logger.log(chalk.hex('#ef4444')(`Got your email, but please use your professional email instead ;)`))
+            return false
+        } else {
+            return true
         }
     } else {
+        logger.log(chalk.hex('#ef4444')(`Unrecognized email (${email}), try adding quotes around it.`))
+        return false
+    }
+}
+
+function isValidKey(email: string | undefined, key: string, logger: Logger): boolean {
+    if (key === 'sesame') {
+        return true
+    } else {
+        logger.log(chalk.hex('#ef4444')(`Unrecognized key (${email}), reach out to ${azimuttEmail} for help.`))
         return false
     }
 }
@@ -180,7 +184,7 @@ function printReport(offRules: RuleAnalyzed[], rulesByLevel: Record<string, Rule
     logger.log('')
 }
 
-export const RuleReport = z.object({
+const RuleReport = z.object({
     name: z.string(),
     level: RuleLevel,
     conf: z.record(z.string(), z.any()),
@@ -191,14 +195,14 @@ export const RuleReport = z.object({
         extra: z.record(z.any()).optional(),
     }).array()
 }).strict()
-export type RuleReport = z.infer<typeof RuleReport>
+type RuleReport = z.infer<typeof RuleReport>
 
-export const AnalyzeReport = z.object({
+const AnalyzeReport = z.object({
     database: Database,
     queries: DatabaseQuery.array(),
     rules: z.record(RuleId, RuleReport)
 }).strict().describe('AnalyzeReport')
-export type AnalyzeReport = z.infer<typeof AnalyzeReport>
+type AnalyzeReport = z.infer<typeof AnalyzeReport>
 
 function buildReport(database: Database, queries: DatabaseQuery[], rules: Record<RuleId, RuleAnalyzed>): AnalyzeReport {
     return zodParse(AnalyzeReport)({
@@ -225,4 +229,13 @@ async function writeReport(folder: string, report: AnalyzeReport, logger: Logger
     const path = pathJoin(folder, `report_${dateToIsoFilename(new Date())}.azimutt.json`)
     await fileWriteJson(path, report)
     logger.log(`Analysis report written to ${path}`)
+}
+
+async function loadPreviousReports(folder: string): Promise<AnalyzeReport[]> {
+    const files = await fileList(folder)
+    const reports = files
+        .filter(file => file.startsWith('report_'))
+        .map(file => pathJoin(folder, file))
+        .map(path => fileReadJson<AnalyzeReport>(path).then(zodParseAsync(AnalyzeReport)))
+    return Promise.all(reports)
 }
