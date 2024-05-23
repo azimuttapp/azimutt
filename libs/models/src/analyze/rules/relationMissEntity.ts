@@ -22,25 +22,26 @@ export const relationMissEntityRule: Rule<CustomRuleConf> = {
         return (db.relations || [])
             .map(r => getMissingEntityRelations(r, entities))
             .filter(isNotUndefined)
-            .map(v => ({...v, missingEntities: v?.missingEntities?.filter(e => !ignores.some(i => entityRefSame(i, e)))}))
+            .map(v => ({...v, missingEntities: v?.missing?.filter(e => !ignores.some(i => entityRefSame(i, e)))}))
             .filter(v => v.missingEntities.length > 0)
             .map(violation => ({
                 ruleId,
                 ruleName,
                 ruleLevel: conf.level,
-                entity: violation.relation.src,
-                message: `Relation ${relationName(violation.relation)}, not found entities: ${violation.missingEntities.map(entityRefToId).join(', ')}`
+                message: `Relation ${relationName(violation.relation)}, not found entities: ${violation.missingEntities.map(entityRefToId).join(', ')}`,
+                entity: violation.missingEntities[0],
+                extra: violation
             }))
     }
 }
 
 const relationName = (r: Relation): string => r.name || relationToId(r)
 
-export type MissingEntityRelation = { relation: Relation, missingEntities: EntityRef[] }
+export type MissingEntityRelation = { relation: Relation, missing: EntityRef[] }
 
 export function getMissingEntityRelations(relation: Relation, entities: Record<EntityId, Entity>): MissingEntityRelation | undefined {
     const src = entities[entityRefToId(relation.src)]
     const ref = entities[entityRefToId(relation.ref)]
-    const missingEntities: EntityRef[] = [src ? undefined : relation.src, ref ? undefined : relation.ref].filter(isNotUndefined)
-    return missingEntities.length > 0 ? {relation, missingEntities} : undefined
+    const missing: EntityRef[] = [src ? undefined : relation.src, ref ? undefined : relation.ref].filter(isNotUndefined)
+    return missing.length > 0 ? {relation, missing} : undefined
 }

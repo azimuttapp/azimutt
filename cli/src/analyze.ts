@@ -188,23 +188,24 @@ export const RuleReport = z.object({
         message: z.string(),
         entity: EntityRef.optional(),
         attribute: AttributePath.optional(),
+        extra: z.record(z.any()).optional(),
     }).array()
 }).strict()
 export type RuleReport = z.infer<typeof RuleReport>
 
 export const AnalyzeReport = z.object({
-    db: Database,
+    database: Database,
     queries: DatabaseQuery.array(),
     rules: z.record(RuleId, RuleReport)
 }).strict().describe('AnalyzeReport')
 export type AnalyzeReport = z.infer<typeof AnalyzeReport>
 
-function buildReport(db: Database, queries: DatabaseQuery[], rules: Record<RuleId, RuleAnalyzed>): AnalyzeReport {
+function buildReport(database: Database, queries: DatabaseQuery[], rules: Record<RuleId, RuleAnalyzed>): AnalyzeReport {
     return zodParse(AnalyzeReport)({
         rules: Object.fromEntries(Object.entries(rules)
             .filter(([, r]) => r.violations.length > 0)
             .map(([id, r]) => [id, buildRuleReport(r)])),
-        db,
+        database,
         queries,
     }).getOrThrow()
 }
@@ -214,7 +215,8 @@ function buildRuleReport(rule: RuleAnalyzed): RuleReport {
     const violations = rule.violations.map(v => removeUndefined({
         message: v.message,
         entity: v.entity,
-        attribute: v.attribute
+        attribute: v.attribute,
+        extra: v.extra,
     }))
     return {name: rule.rule.name, level, conf, violations}
 }

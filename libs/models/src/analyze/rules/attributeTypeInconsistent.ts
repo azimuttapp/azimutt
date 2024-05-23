@@ -1,6 +1,6 @@
 import {z} from "zod";
-import {filterValues, groupBy} from "@azimutt/utils";
-import {Attribute, AttributeName, AttributeRef, Database, Entity} from "../../database";
+import {filterValues, groupBy, pluralize} from "@azimutt/utils";
+import {Attribute, AttributeName, AttributeRef, AttributeType, Database, Entity} from "../../database";
 import {attributeRefToId, entityToRef, flattenAttribute} from "../../databaseUtils";
 import {DatabaseQuery} from "../../interfaces/connector";
 import {Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
@@ -27,10 +27,11 @@ export const attributeTypeInconsistentRule: Rule<CustomRuleConf> = {
         return Object.entries(getInconsistentAttributeTypes(db.entities || []))
             .filter(([name,]) => !conf.ignores?.some(i => i === name))
             .map(([name, refs]) => {
-                const refsByType = Object.entries(groupBy(refs, r => r.value.type)).sort(([, a], [, b]) => a.length - b.length)
+                const refsByType: [AttributeType, AttributeWithRef[]][] = Object.entries(groupBy(refs, r => r.value.type)).sort(([, a], [, b]) => a.length - b.length)
+                const message = `Attribute ${name} has several types: ${refsByType.map(([t, [r, ...others]]) => `${t} in ${attributeRefToId(r.ref)}${others.length > 0 ? ` and ${pluralize(others.length, 'other')}` : ''}`).join(', ')}.`
                 const {attribute, ...entity} = refsByType[0][1][0].ref
-                const message = `Attribute ${name} has several types: ${refsByType.map(([t, [r]]) => `${t} in ${attributeRefToId(r.ref)}`).join(', ')}.`
-                return {ruleId, ruleName, ruleLevel: conf.level, entity, message}
+                const attributes = refs.map(r => ({...r.ref, type: r.value.type}))
+                return {ruleId, ruleName, ruleLevel: conf.level, message, entity, attribute: [name], extra: {attributes}}
             })
     }
 }

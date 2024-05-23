@@ -48,8 +48,10 @@ export const indexOnRelationRule: Rule<CustomRuleConf> = {
                 ruleId,
                 ruleName,
                 ruleLevel: conf.level,
+                message: `Create an index on ${entityAttributesToId(i.ref, i.attrs)} to improve ${relationToId(i.relation)} relation.`,
                 entity: i.ref,
-                message: `Create an index on ${entityAttributesToId(i.ref, i.attrs)} to improve ${relationToId(i.relation)} relation.`
+                attribute: i.attrs[0],
+                extra: {indexAttrs: i.attrs, relation: i.relation}
             }))
     }
 }

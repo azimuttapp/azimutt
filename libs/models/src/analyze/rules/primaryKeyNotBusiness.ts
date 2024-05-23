@@ -35,13 +35,18 @@ export const primaryKeyNotBusinessRule: Rule<CustomRuleConf> = {
         return (db.entities || [])
             .filter(e => !isPrimaryKeyTechnical(e, relations[entityToId(e)] || []))
             .filter(e => !ignores.some(i => attributesRefSame(i, {...entityToRef(e), attributes: e.pk?.attrs || []})))
-            .map(e => ({
-                ruleId,
-                ruleName,
-                ruleLevel: conf.level,
-                entity: entityToRef(e),
-                message: `Entity ${entityToId(e)} should have a technical primary key, current one is: (${e.pk?.attrs.map(attributePathToId).join(', ')}).`
-            }))
+            .map(e => {
+                const {stats, extra, ...primaryKey} = e.pk || {}
+                return {
+                    ruleId,
+                    ruleName,
+                    ruleLevel: conf.level,
+                    message: `Entity ${entityToId(e)} should have a technical primary key, current one is: (${e.pk?.attrs.map(attributePathToId).join(', ')}).`,
+                    entity: entityToRef(e),
+                    attribute: e.pk?.attrs?.[0],
+                    extra: {primaryKey}
+                }
+            })
     }
 }
 

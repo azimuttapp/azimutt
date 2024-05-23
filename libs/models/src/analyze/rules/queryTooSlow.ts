@@ -30,8 +30,9 @@ export const queryTooSlowRule: Rule<CustomRuleConf> = {
                     ruleId,
                     ruleName,
                     ruleLevel: conf.level,
+                    message: `Query ${q.id}${entity ? ` on ${entityRefToId(entity)}` : ''} is too slow (${formatMs(q.exec?.meanTime || 0)}, ${formatSql(q.query)}).`,
                     entity,
-                    message: `Query ${q.id}${entity ? ` on ${entityRefToId(entity)}` : ''} is too slow (${formatMs(q.exec?.meanTime || 0)}, ${formatSql(q.query)}).`
+                    extra: {query: q}
                 })
             })
     }

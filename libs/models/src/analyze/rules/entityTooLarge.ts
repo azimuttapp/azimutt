@@ -25,8 +25,9 @@ export const entityTooLargeRule: Rule<CustomRuleConf> = {
                 ruleId,
                 ruleName,
                 ruleLevel: conf.level,
+                message: `Entity ${entityToId(e)} has too many attributes (${e.attrs.length}).`,
                 entity: entityToRef(e),
-                message: `Entity ${entityToId(e)} has too many attributes (${e.attrs.length}).`
+                extra: {attributes: e.attrs.length}
             }))
     }
 }

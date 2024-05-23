@@ -29,8 +29,9 @@ export const queryExpensiveRule: Rule<CustomRuleConf> = {
                     ruleId,
                     ruleName,
                     ruleLevel: conf.level,
+                    message: `Query ${q.id}${entity ? ` on ${entityRefToId(entity)}` : ''} is one of the most expensive, cumulated ${formatMs(q.exec?.sumTime || 0)} (${formatSql(q.query)})`,
                     entity,
-                    message: `Query ${q.id}${entity ? ` on ${entityRefToId(entity)}` : ''} is one of the most expensive, cumulated ${formatMs(q.exec?.sumTime || 0)} (${formatSql(q.query)})`
+                    extra: {query: q}
                 })
             })
     }

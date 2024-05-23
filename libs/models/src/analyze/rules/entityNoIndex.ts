@@ -23,8 +23,8 @@ export const entityNoIndexRule: Rule<CustomRuleConf> = {
                 ruleId,
                 ruleName,
                 ruleLevel: conf.level,
+                message: `Entity ${entityToId(e)} has no index.`,
                 entity: entityToRef(e),
-                message: `Entity ${entityToId(e)} has no index.`
             }))
     }
 }

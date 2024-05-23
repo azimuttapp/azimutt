@@ -30,21 +30,26 @@ export const relationMissAttributeRule: Rule<CustomRuleConf> = {
         return (db.relations || [])
             .map(r => getMissingAttributeRelations(r, entities))
             .filter(isNotUndefined)
-            .map(v => ({...v, missingAttrs: v?.missingAttrs?.filter(a => !ignores.some(i => attributeRefSame(i, a)))}))
+            .map(v => ({...v, missingAttrs: v?.missing?.filter(a => !ignores.some(i => attributeRefSame(i, a)))}))
             .filter(v => v.missingAttrs.length > 0)
-            .map(violation => ({
-                ruleId,
-                ruleName,
-                ruleLevel: conf.level,
-                entity: violation.relation.src,
-                message: `Relation ${relationName(violation.relation)}, not found attributes: ${violation.missingAttrs.map(attributeRefToId).join(', ')}`
-            }))
+            .map(violation => {
+                const {attribute, ...entity} = violation.missingAttrs[0]
+                return {
+                    ruleId,
+                    ruleName,
+                    ruleLevel: conf.level,
+                    message: `Relation ${relationName(violation.relation)}, not found attributes: ${violation.missingAttrs.map(attributeRefToId).join(', ')}`,
+                    entity,
+                    attribute,
+                    extra: violation
+                }
+            })
     }
 }
 
 const relationName = (r: Relation): string => r.name || relationToId(r)
 
-export type MissingAttributeRelation = { relation: Relation, missingAttrs: AttributeRef[] }
+export type MissingAttributeRelation = { relation: Relation, missing: AttributeRef[] }
 
 export function getMissingAttributeRelations(relation: Relation, entities: Record<EntityId, Entity>): MissingAttributeRelation | undefined {
     const src = entities[entityRefToId(relation.src)]
@@ -57,9 +62,9 @@ export function getMissingAttributeRelations(relation: Relation, entities: Recor
         ref: attr.ref,
         refAttr: getAttribute(ref.attrs, attr.ref),
     }))
-    const missingAttrs: AttributeRef[] = attrs.flatMap(attr => [
+    const missing: AttributeRef[] = attrs.flatMap(attr => [
         attr.srcAttr ? undefined : {...relation.src, attribute: attr.src},
         attr.refAttr ? undefined : {...relation.ref, attribute: attr.ref},
     ].filter(isNotUndefined))
-    return missingAttrs.length > 0 ? {relation, missingAttrs} : undefined
+    return missing.length > 0 ? {relation, missing} : undefined
 }

@@ -25,8 +25,11 @@ export const RuleViolation = z.object({
     ruleId: RuleId,
     ruleName: RuleName,
     ruleLevel: RuleLevel,
-    entity: EntityRef.optional(),
-    attribute: AttributePath.optional(), // TODO: keep track of the column of violations
     message: z.string(),
+    // entity & attribute allow to locate the violation
+    entity: EntityRef.optional(),
+    attribute: AttributePath.optional(),
+    // extra allow to keep structured information about the violation
+    extra: z.record(z.any()).optional()
 }).strict()
 export type RuleViolation = z.infer<typeof RuleViolation>

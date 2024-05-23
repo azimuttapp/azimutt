@@ -13,10 +13,10 @@ describe('relationMissAttribute', () => {
     test('missing attributes', () => {
         const postAuthor: Relation = {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}]}
         const users: Entity = {name: 'users', attrs: [{name: 'id', type: 'uuid'}]}
-        expect(getMissingAttributeRelations(postAuthor, {users, posts: {name: 'posts', attrs: []}})).toEqual({relation: postAuthor, missingAttrs: [
+        expect(getMissingAttributeRelations(postAuthor, {users, posts: {name: 'posts', attrs: []}})).toEqual({relation: postAuthor, missing: [
             {entity: 'posts', attribute: ['author']}
         ]})
-        expect(getMissingAttributeRelations(postAuthor, {users: {name: 'users', attrs: []}, posts: {name: 'posts', attrs: []}})).toEqual({relation: postAuthor, missingAttrs: [
+        expect(getMissingAttributeRelations(postAuthor, {users: {name: 'users', attrs: []}, posts: {name: 'posts', attrs: []}})).toEqual({relation: postAuthor, missing: [
             {entity: 'posts', attribute: ['author']},
             {entity: 'users', attribute: ['id']}
         ]})

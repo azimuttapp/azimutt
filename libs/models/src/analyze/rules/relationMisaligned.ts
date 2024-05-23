@@ -37,13 +37,18 @@ export const relationMisalignedRule: Rule<CustomRuleConf> = {
             .map(r => getMisalignedRelation(r, entities))
             .filter(isNotUndefined)
             .filter(v => !ignores.some(i => attributesRefSame(i.src, {...v.relation.src, attributes: v.relation.attrs.map(a => a.src)}) && attributesRefSame(i.ref, {...v.relation.ref, attributes: v.relation.attrs.map(a => a.ref)})))
-            .map(violation => ({
-                ruleId,
-                ruleName,
-                ruleLevel: conf.level,
-                entity: violation.relation.src,
-                message: `Relation ${relationName(violation.relation)} link attributes different types: ${violation.misalignedTypes.map(formatMisalignedType).join(', ')}`
-            }))
+            .map(violation => {
+                const {extra, ...relation} = violation.relation
+                return {
+                    ruleId,
+                    ruleName,
+                    ruleLevel: conf.level,
+                    message: `Relation ${relationName(violation.relation)} link attributes different types: ${violation.misalignedTypes.map(formatMisalignedType).join(', ')}`,
+                    entity: violation.relation.src,
+                    attribute: violation.relation.attrs[0].src,
+                    extra: {relation, misalignedTypes: violation.misalignedTypes}
+                }
+            })
     }
 }
 

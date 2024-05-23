@@ -32,8 +32,9 @@ export const queryHighVariationRule: Rule<CustomRuleConf> = {
                     ruleId,
                     ruleName,
                     ruleLevel: conf.level,
+                    message: `Query ${q.id}${entity ? ` on ${entityRefToId(entity)}` : ''} has high variation, with ${sd} standard deviation and execution time ranging from ${min} to ${max} (${formatSql(q.query)})`,
                     entity,
-                    message: `Query ${q.id}${entity ? ` on ${entityRefToId(entity)}` : ''} has high variation, with ${sd} standard deviation and execution time ranging from ${min} to ${max} (${formatSql(q.query)})`
+                    extra: {query: q}
                 })
             })
     }

@@ -5,12 +5,13 @@ import {Database, EntityId} from "../database";
 import {entityRefToId} from "../databaseUtils";
 import {DatabaseQuery} from "../interfaces/connector";
 import {Rule, RuleConf, RuleId, RuleLevel, RuleViolation} from "./rule";
+import {attributeNamingConsistencyRule} from "./rules/attributeNamingConsistency";
 import {attributeTypeInconsistentRule} from "./rules/attributeTypeInconsistent";
+import {entityNamingConsistencyRule} from "./rules/entityNamingConsistency";
 import {entityNoIndexRule} from "./rules/entityNoIndex";
 import {entityTooLargeRule} from "./rules/entityTooLarge";
 import {indexDuplicatedRule} from "./rules/indexDuplicated";
 import {indexOnRelationRule} from "./rules/indexOnRelation";
-import {namingConsistencyRule} from "./rules/namingConsistency";
 import {primaryKeyMissingRule} from "./rules/primaryKeyMissing";
 import {primaryKeyNotBusinessRule} from "./rules/primaryKeyNotBusiness";
 import {queryExpensiveRule} from "./rules/queryExpensive";
@@ -23,12 +24,13 @@ import {relationMissingRule} from "./rules/relationMissing";
 
 export * from "./rule"
 export const analyzeRules: Rule[] = [
+    attributeNamingConsistencyRule,
     attributeTypeInconsistentRule,
+    entityNamingConsistencyRule,
     entityNoIndexRule,
     entityTooLargeRule,
     indexDuplicatedRule,
     indexOnRelationRule,
-    namingConsistencyRule,
     primaryKeyMissingRule,
     primaryKeyNotBusinessRule,
     queryExpensiveRule,

@@ -36,7 +36,9 @@ export const indexDuplicatedRule: Rule<CustomRuleConf> = {
                 const entity = entityToRef(i.entity)
                 const indexName = `${i.index.name ? i.index.name + ' ' : ''}on ${entityAttributesToId(entity, i.index.attrs)}`
                 const message = `Index ${indexName} can be deleted, it's covered by: ${i.coveredBy.map(by => `${by.name || ''}(${by.attrs.map(attributePathToId).join(', ')})`).join(', ')}.`
-                return {ruleId, ruleName, ruleLevel: conf.level, entity, message}
+                const {stats, extra, ...index} = i.index
+                const coveredBy = i.coveredBy.map(({stats, extra, ...index}) => index)
+                return {ruleId, ruleName, ruleLevel: conf.level, message, entity, attribute: i.index.attrs[0], extra: {index, coveredBy}}
             })
     }
 }

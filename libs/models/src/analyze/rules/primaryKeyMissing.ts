@@ -30,8 +30,8 @@ export const primaryKeyMissingRule: Rule<CustomRuleConf> = {
                 ruleId,
                 ruleName,
                 ruleLevel: conf.level,
-                entity: entityToRef(e),
-                message: `Entity ${entityToId(e)} has no primary key.`
+                message: `Entity ${entityToId(e)} has no primary key.`,
+                entity: entityToRef(e)
             }))
     }
 }
