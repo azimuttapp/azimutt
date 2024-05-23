@@ -158,6 +158,7 @@ export type EntityKind = z.infer<typeof EntityKind>
 
 export const EntityStats = z.object({
     rows: z.number().optional(), // number of rows
+    rowsDead: z.number().optional(), // number of dead rows
     size: z.number().optional(), // used bytes
     sizeIdx: z.number().optional(), // used bytes for indexes
     sizeToast: z.number().optional(), // used bytes for toasts
@@ -167,7 +168,9 @@ export const EntityStats = z.object({
     scanIdx: z.number().optional(), // number of index scan
     scanIdxLast: DateTime.optional(),
     analyzeLast: DateTime.optional(),
+    analyzeLag: z.number().optional(),
     vacuumLast: DateTime.optional(),
+    vacuumLag: z.number().optional(),
 }).strict()
 export type EntityStats = z.infer<typeof EntityStats>
 

@@ -166,10 +166,10 @@ export type RawTable = {
     idx_blocks: number | null
     seq_scan: number | null
     seq_scan_reads: number | null
-    // seq_scan_last: Date | null // TODO: `column s.last_seq_scan does not exist` in azimutt prod
+    seq_scan_last: Date | null
     idx_scan: number | null
     idx_scan_reads: number | null
-    // idx_scan_last: Date | null // TODO: `column s.last_seq_scan does not exist` in azimutt prod
+    idx_scan_last: Date | null
     analyze_count: number | null
     analyze_last: Date | null
     autoanalyze_count: number | null
@@ -179,11 +179,21 @@ export type RawTable = {
     vacuum_last: Date | null
     autovacuum_count: number | null
     autovacuum_last: Date | null
-    // changes_since_vacuum: number | null // TODO: `column s.n_ins_since_vacuum does not exist` in a client db
+    changes_since_vacuum: number | null
     toast_schema: string | null
     toast_name: string | null
     toast_blocks: number | null
     toast_idx_blocks: number | null
+}
+
+const getTableColumns = (schema: string, table: string, opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<string[]> => {
+    return conn.query<{ attr: string }>(`
+        SELECT a.attname AS attr
+        FROM pg_attribute a
+                 JOIN pg_class c ON c.oid = a.attrelid
+                 JOIN pg_namespace n ON n.oid = c.relnamespace
+        WHERE n.nspname = '${schema}' AND c.relname = '${table}';`, [], 'getTableColumns'
+    ).then(res => res.map(r => r.attr)).catch(handleError(`Failed to get table columns`, [], opts))
 }
 
 export const getTables = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawTable[]> => {
@@ -195,6 +205,7 @@ export const getTables = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
     // https://www.postgresql.org/docs/current/monitoring-stats.html#MONITORING-PG-STAT-ALL-TABLES-VIEW: stats on tables
     // https://www.postgresql.org/docs/current/monitoring-stats.html#MONITORING-PG-STATIO-ALL-TABLES-VIEW: stats on table blocks
     // `c.relkind IN ('r', 'v', 'm')`: get only tables, view and materialized views
+    const sCols = await getTableColumns('pg_catalog', 'pg_stat_all_tables', opts)(conn) // check column presence to include them or not
     return conn.query<RawTable>(`
         SELECT c.oid                       AS table_id
              -- , u.rolname                   AS table_owner
@@ -212,10 +223,10 @@ export const getTables = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
              , io.idx_blks_read            AS idx_blocks
              , s.seq_scan
              , s.seq_tup_read              AS seq_scan_reads
-             -- , s.last_seq_scan             AS seq_scan_last
+             , ${sCols.includes('last_seq_scan') ? 's.last_seq_scan' : 'null           '}             AS seq_scan_last
              , s.idx_scan
              , s.idx_tup_fetch             AS idx_scan_reads
-             -- , s.last_idx_scan             AS idx_scan_last
+             , ${sCols.includes('last_idx_scan') ? 's.last_idx_scan' : 'null           '}             AS idx_scan_last
              , s.analyze_count
              , s.last_analyze              AS analyze_last
              , s.autoanalyze_count
@@ -225,7 +236,7 @@ export const getTables = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
              , s.last_vacuum               AS vacuum_last
              , s.autovacuum_count
              , s.last_autovacuum           AS autovacuum_last
-             -- , s.n_ins_since_vacuum        AS changes_since_vacuum
+             , ${sCols.includes('n_ins_since_vacuum') ? 's.n_ins_since_vacuum' : 'null                '}        AS changes_since_vacuum
              , tn.nspname                  AS toast_schema
              , tc.relname                  AS toast_name
              , io.toast_blks_read          AS toast_blocks
@@ -259,16 +270,19 @@ function buildEntity(blockSize: number, table: RawTable, columns: RawColumn[], c
         doc: table.table_comment || undefined,
         stats: removeUndefined({
             rows: table.rows || undefined,
+            rowsDead: table.rows_dead || undefined,
             size: table.blocks ? table.blocks * blockSize : undefined,
             sizeIdx: table.idx_blocks ? table.idx_blocks * blockSize : undefined,
             sizeToast: table.toast_blocks ? table.toast_blocks * blockSize : undefined,
             sizeToastIdx: table.toast_idx_blocks ? table.toast_idx_blocks * blockSize : undefined,
             scanSeq: table.seq_scan || undefined,
-            // scanSeqLast: (table.seq_scan_last || undefined)?.toISOString(),
+            scanSeqLast: (table.seq_scan_last || undefined)?.toISOString(),
             scanIdx: table.idx_scan || undefined,
-            // scanIdxLast: (table.idx_scan_last || undefined)?.toISOString(),
+            scanIdxLast: (table.idx_scan_last || undefined)?.toISOString(),
             analyzeLast: (table.analyze_last || table.autoanalyze_last || undefined)?.toISOString(),
+            analyzeLag: table.changes_since_analyze || undefined,
             vacuumLast: (table.vacuum_last || table.autovacuum_last || undefined)?.toISOString(),
+            vacuumLag: table.changes_since_vacuum || undefined,
         }),
         extra: undefined
     })
@@ -472,7 +486,7 @@ type RawIndex = {
     blocks: number
     idx_scan: number
     idx_scan_reads: number
-    // idx_scan_last: Date | null // TODO: `column s.last_idx_scan does not exist`
+    idx_scan_last: Date | null
     index_comment: string | null
 }
 
@@ -483,6 +497,7 @@ export const getIndexes = (opts: ConnectorSchemaOpts) => async (conn: Conn): Pro
     // https://www.postgresql.org/docs/current/monitoring-stats.html#MONITORING-PG-STAT-ALL-INDEXES-VIEW: stats on indexes
     // https://www.postgresql.org/docs/current/functions-info.html#FUNCTIONS-INFO-CATALOG
     // `i.indisprimary = false`: primary keys are fetch an other way
+    const sCols = await getTableColumns('pg_catalog', 'pg_stat_all_indexes', opts)(conn) // check column presence to include them or not
     return conn.query<RawIndex>(`
         SELECT s.schemaname                           AS table_schema
              , s.relname                              AS table_name
@@ -495,7 +510,7 @@ export const getIndexes = (opts: ConnectorSchemaOpts) => async (conn: Conn): Pro
              , c.relpages                             AS blocks
              , s.idx_scan                             AS idx_scan
              , s.idx_tup_fetch                        AS idx_scan_reads
-             -- , s.last_idx_scan                        AS idx_scan_last
+             , ${sCols.includes('last_idx_scan') ? 's.last_idx_scan' : 'null           '}                        AS idx_scan_last
              , d.description                          AS index_comment
         FROM pg_index i
                  JOIN pg_class c ON c.oid = i.indexrelid

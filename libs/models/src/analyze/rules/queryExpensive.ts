@@ -8,7 +8,7 @@ import {formatMs} from "../../helpers/time";
 import {Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
 const ruleId: RuleId = 'query-expensive'
-const ruleName: RuleName = 'query expensive'
+const ruleName: RuleName = 'expensive query'
 const CustomRuleConf = RuleConf.extend({
     ignores: QueryId.array().optional(),
 }).strict().describe('QueryExpensiveConf')

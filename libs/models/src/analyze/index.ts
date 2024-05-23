@@ -9,6 +9,7 @@ import {attributeNamingConsistencyRule} from "./rules/attributeNamingConsistency
 import {attributeTypeInconsistentRule} from "./rules/attributeTypeInconsistent";
 import {entityNamingConsistencyRule} from "./rules/entityNamingConsistency";
 import {entityNoIndexRule} from "./rules/entityNoIndex";
+import {entityNotCleanRule} from "./rules/entityNotClean";
 import {entityTooLargeRule} from "./rules/entityTooLarge";
 import {indexDuplicatedRule} from "./rules/indexDuplicated";
 import {indexOnRelationRule} from "./rules/indexOnRelation";
@@ -28,6 +29,7 @@ export const analyzeRules: Rule[] = [
     attributeTypeInconsistentRule,
     entityNamingConsistencyRule,
     entityNoIndexRule,
+    entityNotCleanRule,
     entityTooLargeRule,
     indexDuplicatedRule,
     indexOnRelationRule,
@@ -53,6 +55,7 @@ export type RuleAnalyzed = {rule: Rule, conf: RuleConf, violations: RuleViolatio
 export function analyzeDatabase(conf: RulesConf, db: Database, queries: DatabaseQuery[], ruleNames: string[]): Record<RuleId, RuleAnalyzed> {
     // TODO: tables with too many indexes (> 20)
     // TODO: tables with too heavy indexes (index storage > table storage)
+
     // TODO: queries not using indexes
     // TODO: JSON columns with different schemas (% of similarity between schemas)
     // TODO: sequence/auto_increment exhaustion
@@ -62,7 +65,6 @@ export function analyzeDatabase(conf: RulesConf, db: Database, queries: Database
     // TODO: auto_explain: index creation (https://pganalyze.com/docs/explain/setup/self_managed/01_auto_explain_check)
     // TODO: warn on queries with ORDER BY RAND()
     // TODO: constraints should be deferrable (pk, fk, unique)
-    // TODO: vacuum not too old
     const rules = ruleNames.length > 0 ? analyzeRules.filter(r => ruleNames.indexOf(r.id) !== -1 || ruleNames.indexOf(r.name) !== -1) : analyzeRules
     return Object.fromEntries(rules.map(r => {
         const ruleConf = Object.assign({}, r.conf, conf.rules?.[r.id])

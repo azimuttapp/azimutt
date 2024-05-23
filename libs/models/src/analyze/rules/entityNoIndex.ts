@@ -5,7 +5,7 @@ import {DatabaseQuery} from "../../interfaces/connector";
 import {Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
 const ruleId: RuleId = 'entity-no-index'
-const ruleName: RuleName = 'entity no index'
+const ruleName: RuleName = 'entity with no index'
 const CustomRuleConf = RuleConf.extend({
     ignores: EntityId.array().optional(),
 }).strict().describe('EntityNoIndexConf')

@@ -8,7 +8,7 @@ import {formatMs} from "../../helpers/time";
 import {Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
 const ruleId: RuleId = 'query-too-slow'
-const ruleName: RuleName = 'query too slow'
+const ruleName: RuleName = 'too slow query'
 const CustomRuleConf = RuleConf.extend({
     ignores: QueryId.array().optional(),
     maxMs: z.number(),

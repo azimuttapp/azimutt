@@ -8,7 +8,7 @@ import {formatMs} from "../../helpers/time";
 import {Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
 const ruleId: RuleId = 'query-high-variation'
-const ruleName: RuleName = 'query high variation'
+const ruleName: RuleName = 'query with high variation'
 const CustomRuleConf = RuleConf.extend({
     ignores: QueryId.array().optional(),
 }).strict().describe('QueryHighVariationConf')
