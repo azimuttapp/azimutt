@@ -716,12 +716,13 @@ const getPolyColumns = (columns: Record<EntityId, RawColumn[]>, opts: ConnectorS
     })
 }
 
-const getDistinctValues = (ref: EntityRef, attribute: AttributePath, opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<AttributeValue[]> => {
+export const getDistinctValues = (ref: EntityRef, attribute: AttributePath, opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<AttributeValue[]> => {
     const sqlTable = buildSqlTable(ref)
     const sqlColumn = buildSqlColumn(attribute)
     const sampleSize = opts.sampleSize || connectorSchemaOptsDefaults.sampleSize
     return conn.query<{value: AttributeValue}>(`SELECT DISTINCT ${sqlColumn} AS value FROM ${sqlTable} WHERE ${sqlColumn} IS NOT NULL ORDER BY value LIMIT ${sampleSize};`, [], 'getDistinctValues')
         .then(rows => rows.map(row => row.value))
+        .catch(err => err instanceof Error && err.message.match(/materialized view "[^"]+" has not been populated/) ? [] : Promise.reject(err))
         .catch(handleError(`Failed to get distinct values for '${attributeRefToId({...ref, attribute})}'`, [], opts))
 }
 
