@@ -11,6 +11,7 @@ import {entityNamingConsistencyRule} from "./rules/entityNamingConsistency";
 import {entityNoIndexRule} from "./rules/entityNoIndex";
 import {entityNotCleanRule} from "./rules/entityNotClean";
 import {entityTooLargeRule} from "./rules/entityTooLarge";
+import {entityTooManyIndexesRule} from "./rules/entityTooManyIndexes";
 import {indexDuplicatedRule} from "./rules/indexDuplicated";
 import {indexOnRelationRule} from "./rules/indexOnRelation";
 import {primaryKeyMissingRule} from "./rules/primaryKeyMissing";
@@ -31,6 +32,7 @@ export const analyzeRules: Rule[] = [
     entityNoIndexRule,
     entityNotCleanRule,
     entityTooLargeRule,
+    entityTooManyIndexesRule,
     indexDuplicatedRule,
     indexOnRelationRule,
     primaryKeyMissingRule,
@@ -53,18 +55,18 @@ export type RuleAnalyzed = {rule: Rule, conf: RuleConf, violations: RuleViolatio
 
 // TODO: split rules by kind? (schema, query, data...)
 export function analyzeDatabase(conf: RulesConf, db: Database, queries: DatabaseQuery[], ruleNames: string[]): Record<RuleId, RuleAnalyzed> {
-    // TODO: tables with too many indexes (> 20)
     // TODO: tables with too heavy indexes (index storage > table storage)
+    // TODO: entity/attribute empty
 
+    // TODO: use uuid or bigint pk, not int or varchar ones
+    // TODO: uuids not stored as CHAR(36) => field ending with `id` and with type CHAR(36) => suggest type `uuid`/`BINARY(16)` instead (depend on db)
+    // TODO: warn on queries with ORDER BY RAND()
+    // TODO: constraints should be deferrable (pk, fk, unique)
     // TODO: queries not using indexes
     // TODO: JSON columns with different schemas (% of similarity between schemas)
     // TODO: sequence/auto_increment exhaustion
     // TODO: use varchar over char (https://youtu.be/ifEpT5STEU0?si=fcLBuwrgluG9crwt&t=90)
-    // TODO: use uuid or bigint pk, not int or varchar ones
-    // TODO: uuids not stored as CHAR(36) => field ending with `id` and with type CHAR(36) => suggest type `uuid`/`BINARY(16)` instead (depend on db)
     // TODO: auto_explain: index creation (https://pganalyze.com/docs/explain/setup/self_managed/01_auto_explain_check)
-    // TODO: warn on queries with ORDER BY RAND()
-    // TODO: constraints should be deferrable (pk, fk, unique)
     const rules = ruleNames.length > 0 ? analyzeRules.filter(r => ruleNames.indexOf(r.id) !== -1 || ruleNames.indexOf(r.name) !== -1) : analyzeRules
     return Object.fromEntries(rules.map(r => {
         const ruleConf = Object.assign({}, r.conf, conf.rules?.[r.id])

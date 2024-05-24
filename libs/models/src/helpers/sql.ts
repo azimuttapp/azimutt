@@ -1,9 +1,34 @@
-import {maxLen, removeUndefined} from "@azimutt/utils";
+import {isNotUndefined, maxLen, removeUndefined} from "@azimutt/utils";
 import {EntityRef} from "../database";
 
 export function getMainEntity(sql: string): EntityRef | undefined {
-    const [, res] = sql.match(/\s+FROM\s+((?:["'`\[]?\b\w+\b["'`\]]?\.)?["'`\[]?\b\w+\b["'`\]]?)(?:\s|;)/) || []
-    const [entity, schema] = res?.replaceAll(/["'`\[\]]/g, '')?.split('.')?.reverse() || []
+    const res = sql.match(new RegExp(insertRegex, 'i'))
+        || sql.match(new RegExp(updateRegex, 'i'))
+        || sql.match(new RegExp(deleteRegex, 'i'))
+        || sql.match(new RegExp(fromRegex, 'i'))
+    return res ? extractEntityRegex(res) : undefined
+}
+
+export function getEntities(sql: string): EntityRef[] {
+    const lower = sql.trim().toLowerCase()
+    const matches = lower.startsWith('insert') ? [...sql.matchAll(new RegExp(insertRegex, 'gi'))] :
+        lower.startsWith('update') ? [...sql.matchAll(new RegExp(updateRegex, 'gi'))] :
+            lower.startsWith('delete') ? [...sql.matchAll(new RegExp(deleteRegex, 'gi'))] :
+                lower.startsWith('select') ? [...sql.matchAll(new RegExp(fromRegex, 'gi')), ...sql.matchAll(new RegExp(joinRegex, 'gi'))] : []
+    return matches.map(extractEntityRegex).filter(isNotUndefined)
+}
+
+const identifierRegex = `["'\`\\[]?\\b\\w+\\b["'\`\\]]?`
+const entityRegex = `(?:${identifierRegex}\\.)?${identifierRegex}`
+const insertRegex = `^INSERT\\s+INTO\\s+(${entityRegex})(?:\\s|\\()`
+const updateRegex = `^UPDATE\\s+(${entityRegex})\\s`
+const deleteRegex = `^DELETE\\s+FROM\\s+(${entityRegex})\\s`
+const fromRegex = `\\s+FROM\\s+(${entityRegex})(?:\\s|;)`
+const joinRegex = `\\s+JOIN\\s+(${entityRegex})\\s`
+
+function extractEntityRegex(res: RegExpMatchArray | RegExpExecArray): EntityRef | undefined {
+    const [, value] = res
+    const [entity, schema] = value?.replaceAll(/["'`\[\]]/g, '')?.split('.')?.reverse() || []
     return entity ? removeUndefined({entity, schema}) : undefined
 }
 
