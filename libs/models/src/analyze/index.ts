@@ -16,6 +16,7 @@ import {entityIndexTooManyRule} from "./rules/entityIndexTooMany";
 import {entityNameInconsistentRule} from "./rules/entityNameInconsistent";
 import {entityNotCleanRule} from "./rules/entityNotClean";
 import {entityTooLargeRule} from "./rules/entityTooLarge";
+import {entityUnusedRule} from "./rules/entityUnused";
 import {indexDuplicatedRule} from "./rules/indexDuplicated";
 import {indexOnRelationRule} from "./rules/indexOnRelation";
 import {primaryKeyMissingRule} from "./rules/primaryKeyMissing";
@@ -41,6 +42,7 @@ export const analyzeRules: Rule[] = [
     entityNameInconsistentRule,
     entityNotCleanRule,
     entityTooLargeRule,
+    entityUnusedRule,
     indexDuplicatedRule,
     indexOnRelationRule,
     primaryKeyMissingRule,
