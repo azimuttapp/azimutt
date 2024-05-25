@@ -1,7 +1,7 @@
 export type EmailParsed = {full: string, domain?: string}
 
 export function emailParse(email: string): EmailParsed {
-    const [, domain] = email.match(/^[^\s]+@([^\s]+\.[^\s]+)$/) || []
+    const [, domain] = email.match(/^[^\s@]+@([^\s@]+\.[^\s@]+)$/) || []
     return {full: email, domain}
 }
 

@@ -26,16 +26,14 @@ export const attributeEmptyRule: Rule<CustomRuleConf> = {
         return (db.entities || [])
             .flatMap(getEmptyAttributes)
             .filter(r => !ignores.some(i => attributeRefSame(i, r)))
-            .map(r => {
-                return {
-                    ruleId,
-                    ruleName,
-                    ruleLevel: conf.level,
-                    message: `Attribute ${attributeRefToId(r)} is empty.`,
-                    entity: attributeRefToEntity(r),
-                    attribute: r.attribute,
-                }
-            })
+            .map(r => ({
+                ruleId,
+                ruleName,
+                ruleLevel: conf.level,
+                message: `Attribute ${attributeRefToId(r)} is empty.`,
+                entity: attributeRefToEntity(r),
+                attribute: r.attribute,
+            }))
     }
 }
 

@@ -5,11 +5,11 @@ import {ruleConf} from "../rule.test";
 
 describe('entityTooLarge', () => {
     test('valid entity', () => {
-        const users: Entity = {name: 'users', attrs: [{name: 'id', type: 'uuid'}, {name: 'name', type: 'varcahr'}], pk: {attrs: [['id']]}}
+        const users: Entity = {name: 'users', attrs: [{name: 'id', type: 'uuid'}, {name: 'name', type: 'varchar'}], pk: {attrs: [['id']]}}
         expect(isEntityTooLarge(users, 30)).toEqual(false)
     })
     test('invalid entity', () => {
-        const users: Entity = {name: 'users', attrs: [{name: 'id', type: 'uuid'}, {name: 'name', type: 'varcahr'}], pk: {attrs: [['id']]}}
+        const users: Entity = {name: 'users', attrs: [{name: 'id', type: 'uuid'}, {name: 'name', type: 'varchar'}], pk: {attrs: [['id']]}}
         expect(isEntityTooLarge(users, 1)).toEqual(true)
     })
     test('ignores', () => {

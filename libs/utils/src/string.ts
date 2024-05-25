@@ -3,10 +3,6 @@ import {isNotUndefined} from "./validation";
 
 // functions sorted alphabetically
 
-export function dateToIsoFilename(d: Date): string {
-    return d.toISOString().replaceAll(':', '-').replaceAll('.', '-')
-}
-
 export function dateFromIsoFilename(d: string): Date {
     const [, year, month, day, hour, min, sec, milli]  = d.match(/(\d\d\d\d)-(\d\d)-(\d\d)T(\d\d)-(\d\d)-(\d\d)-(\d\d\d)Z/) || []
     if (year) {
@@ -16,7 +12,9 @@ export function dateFromIsoFilename(d: string): Date {
     }
 }
 
-
+export function dateToIsoFilename(d: Date): string {
+    return d.toISOString().replaceAll(':', '-').replaceAll('.', '-')
+}
 
 export function indent(value: string, size: number = 2, char: string = ' ') {
     const prefix = char.repeat(size)

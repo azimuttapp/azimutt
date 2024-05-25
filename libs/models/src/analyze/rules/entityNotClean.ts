@@ -6,6 +6,7 @@ import {Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rul
 
 const ruleId: RuleId = 'entity-not-clean'
 const ruleName: RuleName = 'entity not clean'
+const oneDayMs = 24 * 60 * 60 * 1000
 const CustomRuleConf = RuleConf.extend({
     ignores: EntityId.array().optional(),
     maxDeadRows: z.number(),
@@ -15,7 +16,6 @@ const CustomRuleConf = RuleConf.extend({
     maxAnalyzeDelayMs: z.number(),
 }).strict().describe('EntityNotCleanConf')
 type CustomRuleConf = z.infer<typeof CustomRuleConf>
-const oneDayMs = 24 * 60 * 60 * 1000
 export const entityNotCleanRule: Rule<CustomRuleConf> = {
     id: ruleId,
     name: ruleName,

@@ -49,8 +49,8 @@ export async function launchAnalyze(url: string, opts: Opts, logger: Logger): Pr
     const dbUrl: DatabaseUrlParsed = parseDatabaseUrl(url)
     const connector: Connector | undefined = getConnector(dbUrl)
     if (!connector) return Promise.reject(`Invalid connector for ${dbUrl.kind ? `${dbUrl.kind} db` : `unknown db (${dbUrl.full})`}`)
-    if (opts.email && !isValidEmail(opts.email, logger)) return Promise.reject(`Invalid email (${opts.email})`)
-    if (opts.key && !isValidKey(opts.email, opts.key, logger)) return Promise.reject(`Invalid key (${opts.key})`)
+    if (opts.email && !isValidEmail(dbUrl, opts.email, logger)) return Promise.reject(`Invalid email (${opts.email})`)
+    if (opts.key && !isValidKey(dbUrl, opts.email, opts.key, logger)) return Promise.reject(`Invalid key (${opts.key})`)
 
     // TODO: extend config for user, database, queries, data... ({user: {}, database: {}, queries: {}, data: {}, rules: {}})
     const app = 'azimutt-analyze'
@@ -85,14 +85,15 @@ export async function launchAnalyze(url: string, opts: Opts, logger: Logger): Pr
     }
 }
 
-function isValidEmail(email: string, logger: Logger): boolean {
+function isValidEmail(dbUrl: DatabaseUrlParsed, email: string, logger: Logger): boolean {
     const parsed = emailParse(email.trim())
     if (parsed.domain) {
         if (parsed.domain === 'azimutt.app') {
             logger.log(chalk.red(`Do you really have an 'azimutt.app' email? Good try ;)`))
             return false
         } else if (publicEmailDomains.includes(parsed.domain)) {
-            logger.log(chalk.red(`Got your email, but please use your professional email instead ;)`))
+            track('cli__analyze__run', removeUndefined({version, database: dbUrl.kind, email, error: 'wrong email'}), 'cli').then(() => {})
+            logger.log(chalk.red(`Got email param, please use your professional one instead ;)`))
             return false
         } else {
             return true
@@ -103,12 +104,16 @@ function isValidEmail(email: string, logger: Logger): boolean {
     }
 }
 
-function isValidKey(email: string | undefined, key: string, logger: Logger): boolean {
-    if (key === 'sesame') {
-        return true
-    } else {
-        logger.log(chalk.red(`Unrecognized key (${email}), reach out to ${azimuttEmail} for help.`))
+function isValidKey(dbUrl: DatabaseUrlParsed, email: string | undefined, key: string, logger: Logger): boolean {
+    if (!email) {
+        logger.log(chalk.red(`You must provide your email alongside your key.`))
         return false
+    } else if (key !== 'sesame') {
+        logger.log(chalk.red(`Unrecognized key for ${email}, reach out to ${azimuttEmail} for help.`))
+        track('cli__analyze__run', removeUndefined({version, database: dbUrl.kind, email, key, error: 'wrong key'}), 'cli').then(() => {})
+        return false
+    } else {
+        return true
     }
 }
 

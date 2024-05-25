@@ -72,7 +72,7 @@ export const attributeRefSame = (a: AttributeRef, b: AttributeRef): boolean => e
 export const attributesRefToId = (ref: AttributesRef): AttributeId => `${entityRefToId(ref)}(${ref.attributes.map(attributePathToId).join(', ')})`
 
 export const attributesRefFromId = (id: AttributeId): AttributesRef => {
-    const [, entityId, attributeId] = id.match(/^(.*)\((.*)\)$/) || []
+    const [, entityId, attributeId] = id.match(/^([^(]*)\(([^)]*)\)$/) || []
     const entity = entityRefFromId(entityId || id)
     const attributes = (attributeId || '').split(',').map(a => attributePathFromId(a.trim()))
     return {...entity, attributes}
