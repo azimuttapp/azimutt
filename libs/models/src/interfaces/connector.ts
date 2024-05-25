@@ -34,27 +34,35 @@ export type ConnectorDefaultOpts = {
     logQueries?: boolean // default: false, log executed queries using the provided logger
 }
 
-export type ConnectorScopeOpts = {
+export const ConnectorScopeOpts = z.object({
     // filters: limit the scope of the extraction
-    database?: DatabaseName // export only this database or database pattern (use LIKE if contains %, equality otherwise)
-    catalog?: CatalogName // export only this catalog or catalog pattern (use LIKE if contains %, equality otherwise)
-    schema?: SchemaName // export only this schema or schema pattern (use LIKE if contains %, equality otherwise)
-    entity?: EntityName // export only this entity or entity pattern (use LIKE if contains %, equality otherwise)
-}
+    database: DatabaseName.optional(), // export only this database or database pattern (use LIKE if contains %, equality otherwise)
+    catalog: CatalogName.optional(), // export only this catalog or catalog pattern (use LIKE if contains %, equality otherwise)
+    schema: SchemaName.optional(), // export only this schema or schema pattern (use LIKE if contains %, equality otherwise)
+    entity: EntityName.optional(), // export only this entity or entity pattern (use LIKE if contains %, equality otherwise)
+}).strict()
+export type ConnectorScopeOpts = z.infer<typeof ConnectorScopeOpts>
 
-export type ConnectorSchemaOpts = ConnectorDefaultOpts & ConnectorScopeOpts & {
+export const ConnectorSchemaDataOpts = z.object({
     // data access: get more interesting result, beware of performance
-    sampleSize?: number // default: 100, number of documents used to infer a schema (document databases, json attributes in relational db...)
-    inferMixedJson?: string // when inferring JSON, will differentiate documents on this attribute, useful when storing several documents in the same collection in Mongo or Couchbase
-    inferJsonAttributes?: boolean // will get sample values from JSON attributes to infer a schema (nested attributes)
-    inferPolymorphicRelations?: boolean // will get distinct values from the kind attribute of polymorphic relations to create relations
-    inferRelationsFromJoins?: boolean // will fetch historical queries and suggest relations based on joins
-    inferPii?: boolean // will fetch sample rows from tables to detect columns with Personal Identifiable Information
+    sampleSize: z.number().optional(), // default: 100, number of documents used to infer a schema (document databases, json attributes in relational db...)
+    inferMixedJson: z.string().optional(), // when inferring JSON, will differentiate documents on this attribute, useful when storing several documents in the same collection in Mongo or Couchbase
+    inferJsonAttributes: z.boolean().optional(), // will get sample values from JSON attributes to infer a schema (nested attributes)
+    inferPolymorphicRelations: z.boolean().optional(), // will get distinct values from the kind attribute of polymorphic relations to create relations
+    inferRelationsFromJoins: z.boolean().optional(), // will fetch historical queries and suggest relations based on joins
+    inferPii: z.boolean().optional(), // will fetch sample rows from tables to detect columns with Personal Identifiable Information
+})
+export type ConnectorSchemaDataOpts = z.infer<typeof ConnectorSchemaDataOpts>
+
+export const ConnectorSchemaConfOpts = z.object({
     // post analysis:
-    inferRelations?: boolean // default: false, infer relations based on attribute names
+    inferRelations: z.boolean().optional(), // default: false, infer relations based on attribute names
     // behavior
-    ignoreErrors?: boolean // default: false, ignore errors when fetching the schema, just log them
-}
+    ignoreErrors: z.boolean().optional(), // default: false, ignore errors when fetching the schema, just log them
+})
+export type ConnectorSchemaConfOpts = z.infer<typeof ConnectorSchemaConfOpts>
+
+export type ConnectorSchemaOpts = ConnectorDefaultOpts & ConnectorScopeOpts & ConnectorSchemaDataOpts & ConnectorSchemaConfOpts
 
 export const connectorSchemaOptsDefaults = {
     sampleSize: 100

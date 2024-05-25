@@ -33,8 +33,9 @@ import {
     zodParseAsync
 } from "@azimutt/models";
 import {getConnector, track} from "@azimutt/gateway";
-import {fileExists, fileList, fileReadJson, fileWriteJson, mkParentDirs} from "./utils/file.js";
+import {version} from "./version.js";
 import {loggerNoOp} from "./utils/logger.js";
+import {fileExists, fileList, fileReadJson, fileWriteJson, mkParentDirs} from "./utils/file.js";
 
 export type Opts = {
     folder?: string
@@ -56,10 +57,10 @@ export async function launchAnalyze(url: string, opts: Opts, logger: Logger): Pr
     const folder = opts.folder || `~/.azimutt/analyze${dbUrl.db ? '/' + dbUrl.db : ''}`
     const conf: RulesConf = await loadConf(folder, logger)
     const previousReports = opts.key ? await loadPreviousReports(folder) : []
-    const db: Database = await connector.getSchema(app, dbUrl, {logger: loggerNoOp})
+    const db: Database = await connector.getSchema(app, dbUrl, {...conf.database, logger: loggerNoOp})
     const queries: DatabaseQuery[] = await connector.getQueryHistory(app, dbUrl, {logger: loggerNoOp, database: dbUrl.db}).catch(err => {
-        if (typeof err === 'string' && err === 'Not implemented') logger.log(`Query history is not supported yet on ${dbUrl.kind}, ping us ;)`)
-        if (typeof err === 'object' && 'message' in err && err.message.indexOf('"pg_stat_statements" does not exist')) logger.log(`Can't get query history as pg_stat_statements is not enabled. Enable it for a better db analysis.`)
+        if (typeof err === 'string' && err === 'Not implemented') logger.log(chalk.blue(`Query history is not supported yet on ${dbUrl.kind}, ping us ;)`))
+        if (typeof err === 'object' && 'message' in err && err.message.indexOf('"pg_stat_statements" does not exist')) logger.log(chalk.blue(`Can't get query history as pg_stat_statements is not enabled. Enable it for a better db analysis.`))
         return []
     })
     // TODO: use previous reports to compute trends and warn on them
@@ -67,7 +68,7 @@ export async function launchAnalyze(url: string, opts: Opts, logger: Logger): Pr
     const [offRules, usedRules] = partition(Object.values(rules), r => r.conf.level === RuleLevel.enum.off)
     const rulesByLevel: Record<RuleLevel, RuleAnalyzed[]> = groupBy(usedRules, r => r.conf.level)
     const stats = buildStats(db, queries, rulesByLevel)
-    track('cli__analyze__run', removeUndefined({database: dbUrl.kind, ...stats, email: opts.email, key: opts.key}), 'cli').then(() => {})
+    track('cli__analyze__run', removeUndefined({version, database: dbUrl.kind, ...stats, email: opts.email, key: opts.key}), 'cli').then(() => {})
     await updateConf(folder, conf, rules)
 
     if (opts.email) {
@@ -79,7 +80,7 @@ export async function launchAnalyze(url: string, opts: Opts, logger: Logger): Pr
     } else {
         const maxShown = 3
         printReport(offRules, rulesByLevel, maxShown, stats, logger)
-        logger.log(chalk.hex('#3b82f6')('Thanks for using Azimutt analyze, add your professional email (ex: `--email "your.name@company.com"`) to get the full report in JSON and use `size` and `only` options.'))
+        logger.log(chalk.blue('Thanks for using Azimutt analyze, add your professional email (ex: `--email "your.name@company.com"`) to get the full report in JSON and use `size` and `only` options.'))
         logger.log('')
     }
 }
@@ -88,16 +89,16 @@ function isValidEmail(email: string, logger: Logger): boolean {
     const parsed = emailParse(email.trim())
     if (parsed.domain) {
         if (parsed.domain === 'azimutt.app') {
-            logger.log(chalk.hex('#ef4444')(`Do you really have an 'azimutt.app' email? Good try ;)`))
+            logger.log(chalk.red(`Do you really have an 'azimutt.app' email? Good try ;)`))
             return false
         } else if (publicEmailDomains.includes(parsed.domain)) {
-            logger.log(chalk.hex('#ef4444')(`Got your email, but please use your professional email instead ;)`))
+            logger.log(chalk.red(`Got your email, but please use your professional email instead ;)`))
             return false
         } else {
             return true
         }
     } else {
-        logger.log(chalk.hex('#ef4444')(`Unrecognized email (${email}), try adding quotes around it.`))
+        logger.log(chalk.red(`Unrecognized email (${email}), try adding quotes around it.`))
         return false
     }
 }
@@ -106,7 +107,7 @@ function isValidKey(email: string | undefined, key: string, logger: Logger): boo
     if (key === 'sesame') {
         return true
     } else {
-        logger.log(chalk.hex('#ef4444')(`Unrecognized key (${email}), reach out to ${azimuttEmail} for help.`))
+        logger.log(chalk.red(`Unrecognized key (${email}), reach out to ${azimuttEmail} for help.`))
         return false
     }
 }
@@ -166,7 +167,7 @@ function printReport(offRules: RuleAnalyzed[], rulesByLevel: Record<string, Rule
     ruleLevelsShown.slice().reverse().forEach(level => {
         const levelRules = rulesByLevel[level] || []
         const levelViolationsCount = levelRules.reduce((acc, r) => acc + r.violations.length, 0)
-        logger.log(`${levelViolationsCount} ${level} violations:`)
+        logger.log(`${levelViolationsCount} ${level} violations (${pluralizeL(levelRules, 'rule')}):`)
         levelRules.forEach(rule => {
             const ignores = 'ignores' in rule.conf && Array.isArray(rule.conf.ignores) ? ` (${pluralize(rule.conf.ignores.length, 'ignore')})` : ''
             logger.log(`  ${rule.violations.length} ${rule.rule.name}${ignores}${rule.violations.length > 0 ? ':' : ''}`)

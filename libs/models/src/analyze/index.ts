@@ -3,7 +3,7 @@ import {groupBy} from "@azimutt/utils";
 import {zodParse} from "../zod";
 import {Database, EntityId} from "../database";
 import {entityRefToId} from "../databaseUtils";
-import {DatabaseQuery} from "../interfaces/connector";
+import {ConnectorSchemaDataOpts, ConnectorScopeOpts, DatabaseQuery} from "../interfaces/connector";
 import {Rule, RuleConf, RuleId, RuleLevel, RuleViolation} from "./rule";
 import {attributeEmptyRule} from "./rules/attributeEmpty";
 import {attributeNameInconsistentRule} from "./rules/attributeNameInconsistent";
@@ -53,7 +53,8 @@ export const analyzeRules: Rule[] = [
 ]
 
 export const RulesConf = z.object({
-    rules: z.object(Object.fromEntries(analyzeRules.map(r => [r.id, r.zConf.optional()]))).optional()
+    database: ConnectorScopeOpts.merge(ConnectorSchemaDataOpts).optional(),
+    rules: z.object(Object.fromEntries(analyzeRules.map(r => [r.id, r.zConf.optional()]))).optional(),
 }).strict().describe('RulesConf')
 export type RulesConf = z.infer<typeof RulesConf>
 

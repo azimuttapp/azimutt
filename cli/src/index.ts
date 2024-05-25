@@ -16,7 +16,7 @@ import {launchAnalyze} from "./analyze.js";
 
 clear()
 logger.log(chalk.hex('#4F46E5').bold(figlet.textSync('Azimutt.app', {horizontalLayout: 'full'})))
-logger.log(chalk.hex('#3f3f46')('Version ' + version))
+logger.log(chalk.grey('Version ' + version))
 logger.log('')
 
 // TODO: `azimutt infer --path ~/my_db` or `azimutt export --url ~/my_db` (no 'protocol://') => recursively list .json files and infer them as a collection
