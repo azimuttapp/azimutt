@@ -1,5 +1,6 @@
 import {z} from "zod";
 import {indexBy, isNotUndefined} from "@azimutt/utils";
+import {Timestamp} from "../../common";
 import {
     AttributePath,
     AttributesId,
@@ -20,7 +21,7 @@ import {
     relationToId
 } from "../../databaseUtils";
 import {DatabaseQuery} from "../../interfaces/connector";
-import {Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
+import {AnalyzeHistory, Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
 /**
  * Relations are often used on JOIN or WHERE clauses to fetch more data or limit rows.
@@ -38,7 +39,7 @@ export const indexOnRelationRule: Rule<CustomRuleConf> = {
     name: ruleName,
     conf: {level: RuleLevel.enum.medium},
     zConf: CustomRuleConf,
-    analyze(conf: CustomRuleConf, db: Database, queries: DatabaseQuery[]): RuleViolation[] {
+    analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[]): RuleViolation[] {
         const entities: Record<EntityId, Entity> = indexBy(db.entities || [], entityToId)
         const ignores: AttributesRef[] = conf.ignores?.map(attributesRefFromId) || []
         return (db.relations || [])

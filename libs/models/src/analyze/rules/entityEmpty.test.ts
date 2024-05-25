@@ -3,7 +3,8 @@ import {Database, Entity} from "../../database";
 import {entityEmptyRule, isEntityEmpty} from "./entityEmpty";
 import {ruleConf} from "../rule.test";
 
-describe('entityEmptyRule', () => {
+describe('entityEmpty', () => {
+    const now = Date.now()
     test('valid entity', () => {
         const users: Entity = {name: 'users', attrs: [], stats: {rows: 10}}
         const posts: Entity = {name: 'posts', attrs: [], stats: {size: 10}}
@@ -18,23 +19,23 @@ describe('entityEmptyRule', () => {
         expect(isEntityEmpty(users)).toEqual(true)
         expect(isEntityEmpty(posts)).toEqual(true)
     })
+    test('violation message', () => {
+        const db: Database = {entities: [{name: 'users', attrs: [], stats: {rows: 0}}]}
+        expect(entityEmptyRule.analyze(ruleConf, now, db, [], []).map(v => v.message)).toEqual([
+            'Entity users is empty.'
+        ])
+    })
     test('ignores', () => {
         const db: Database = {entities: [
             {name: 'users', attrs: [], stats: {rows: 0}},
             {name: 'posts', attrs: [], stats: {rows: 0}},
         ]}
-        expect(entityEmptyRule.analyze(ruleConf, db, []).map(v => v.message)).toEqual([
+        expect(entityEmptyRule.analyze(ruleConf, now, db, [], []).map(v => v.message)).toEqual([
             'Entity users is empty.',
             'Entity posts is empty.',
         ])
-        expect(entityEmptyRule.analyze({...ruleConf, ignores: ['posts']}, db, []).map(v => v.message)).toEqual([
+        expect(entityEmptyRule.analyze({...ruleConf, ignores: ['posts']}, now, db, [], []).map(v => v.message)).toEqual([
             'Entity users is empty.',
-        ])
-    })
-    test('violation message', () => {
-        const db: Database = {entities: [{name: 'users', attrs: [], stats: {rows: 0}}]}
-        expect(entityEmptyRule.analyze(ruleConf, db, []).map(v => v.message)).toEqual([
-            'Entity users is empty.'
         ])
     })
 })

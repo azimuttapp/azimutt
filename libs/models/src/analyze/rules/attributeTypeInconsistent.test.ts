@@ -3,7 +3,8 @@ import {Database, Entity} from "../../database";
 import {attributeTypeInconsistentRule, getInconsistentAttributeTypes} from "./attributeTypeInconsistent";
 import {ruleConf} from "../rule.test";
 
-describe('attributeInconsistentType', () => {
+describe('attributeTypeInconsistent', () => {
+    const now = Date.now()
     test('empty', () => {
         expect(getInconsistentAttributeTypes([])).toEqual({})
     })
@@ -29,27 +30,27 @@ describe('attributeInconsistentType', () => {
             ],
         })
     })
+    test('violation message', () => {
+        const db: Database = {entities: [
+                {name: 'users', attrs: [{name: 'id', type: 'uuid'}]},
+                {name: 'posts', attrs: [{name: 'id', type: 'int'}]},
+                {name: 'events', attrs: [{name: 'id', type: 'int'}]},
+            ]}
+        expect(attributeTypeInconsistentRule.analyze(ruleConf, now, db, [], []).map(v => v.message)).toEqual([
+            `Attribute id has several types: uuid in users(id), int in posts(id) and 1 other.`
+        ])
+    })
     test('ignores', () => {
         const db: Database = {entities: [
             {name: 'users', attrs: [{name: 'id', type: 'uuid'}, {name: 'name', type: 'varchar'}]},
             {name: 'posts', attrs: [{name: 'id', type: 'int'}, {name: 'name', type: 'text'}]}
         ]}
-        expect(attributeTypeInconsistentRule.analyze(ruleConf, db, []).map(v => v.message)).toEqual([
+        expect(attributeTypeInconsistentRule.analyze(ruleConf, now, db, [], []).map(v => v.message)).toEqual([
             `Attribute id has several types: uuid in users(id), int in posts(id).`,
             `Attribute name has several types: varchar in users(name), text in posts(name).`,
         ])
-        expect(attributeTypeInconsistentRule.analyze({...ruleConf, ignores: ['name']}, db, []).map(v => v.message)).toEqual([
+        expect(attributeTypeInconsistentRule.analyze({...ruleConf, ignores: ['name']}, now, db, [], []).map(v => v.message)).toEqual([
             `Attribute id has several types: uuid in users(id), int in posts(id).`,
-        ])
-    })
-    test('violation message', () => {
-        const db: Database = {entities: [
-            {name: 'users', attrs: [{name: 'id', type: 'uuid'}]},
-            {name: 'posts', attrs: [{name: 'id', type: 'int'}]},
-            {name: 'events', attrs: [{name: 'id', type: 'int'}]},
-        ]}
-        expect(attributeTypeInconsistentRule.analyze(ruleConf, db, []).map(v => v.message)).toEqual([
-            `Attribute id has several types: uuid in users(id), int in posts(id) and 1 other.`
         ])
     })
 })

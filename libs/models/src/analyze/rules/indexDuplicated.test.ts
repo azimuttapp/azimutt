@@ -4,6 +4,7 @@ import {getDuplicatedIndexes, indexDuplicatedRule} from "./indexDuplicated";
 import {ruleConf} from "../rule.test";
 
 describe('indexDuplicated', () => {
+    const now = Date.now()
     test('empty', () => {
         expect(getDuplicatedIndexes({name: 'users', attrs: []})).toEqual([])
         expect(getDuplicatedIndexes({name: 'users', attrs: [], indexes: []})).toEqual([])
@@ -25,6 +26,15 @@ describe('indexDuplicated', () => {
             {entity: users, index: {attrs: [['first_name']]}, coveredBy: [{attrs: [['first_name'], ['last_name']]}]}
         ])
     })
+    test('violation message', () => {
+        const db: Database = {entities: [{name: 'users', attrs: [], indexes: [
+            {attrs: [['first_name'], ['last_name']]},
+            {attrs: [['first_name']]},
+        ]}]}
+        expect(indexDuplicatedRule.analyze(ruleConf, now, db, [], []).map(v => v.message)).toEqual([
+            'Index on users(first_name) can be deleted, it\'s covered by: (first_name, last_name).'
+        ])
+    })
     test('ignores', () => {
         const db: Database = {entities: [{name: 'users', attrs: [], indexes: [
             {attrs: [['first_name'], ['last_name']]},
@@ -32,21 +42,12 @@ describe('indexDuplicated', () => {
             {attrs: [['last_name']]},
             {attrs: [['first_name'], ['last_name'], ['email']]},
         ]}]}
-        expect(indexDuplicatedRule.analyze(ruleConf, db, []).map(v => v.message)).toEqual([
+        expect(indexDuplicatedRule.analyze(ruleConf, now, db, [], []).map(v => v.message)).toEqual([
             'Index on users(first_name) can be deleted, it\'s covered by: (first_name, last_name), (first_name, last_name, email).',
             'Index on users(first_name, last_name) can be deleted, it\'s covered by: (first_name, last_name, email).',
         ])
-        expect(indexDuplicatedRule.analyze({...ruleConf, ignores: ['users(first_name, last_name)']}, db, []).map(v => v.message)).toEqual([
+        expect(indexDuplicatedRule.analyze({...ruleConf, ignores: ['users(first_name, last_name)']}, now, db, [], []).map(v => v.message)).toEqual([
             'Index on users(first_name) can be deleted, it\'s covered by: (first_name, last_name), (first_name, last_name, email).',
-        ])
-    })
-    test('violation message', () => {
-        const db: Database = {entities: [{name: 'users', attrs: [], indexes: [
-            {attrs: [['first_name'], ['last_name']]},
-            {attrs: [['first_name']]},
-        ]}]}
-        expect(indexDuplicatedRule.analyze(ruleConf, db, []).map(v => v.message)).toEqual([
-            'Index on users(first_name) can be deleted, it\'s covered by: (first_name, last_name).'
         ])
     })
 })

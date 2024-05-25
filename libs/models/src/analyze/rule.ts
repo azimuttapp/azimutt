@@ -1,4 +1,5 @@
 import {z, ZodType} from "zod";
+import {Timestamp} from "../common";
 import {AttributePath, Database, EntityRef} from "../database";
 import {DatabaseQuery} from "../interfaces/connector";
 
@@ -7,7 +8,7 @@ export interface Rule<Conf extends RuleConf = RuleConf> {
     name: RuleName
     conf: Conf
     zConf: ZodType<Conf>
-    analyze(conf: Conf, db: Database, queries: DatabaseQuery[]): RuleViolation[]
+    analyze(conf: Conf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[]): RuleViolation[]
 }
 
 export const RuleId = z.string()
@@ -33,3 +34,31 @@ export const RuleViolation = z.object({
     extra: z.record(z.any()).optional()
 }).strict()
 export type RuleViolation = z.infer<typeof RuleViolation>
+
+export const AnalyzeReportRule = z.object({
+    name: z.string(),
+    level: RuleLevel,
+    conf: z.record(z.string(), z.any()),
+    violations: z.object({
+        message: z.string(),
+        entity: EntityRef.optional(),
+        attribute: AttributePath.optional(),
+        extra: z.record(z.any()).optional(),
+    }).array()
+}).strict().describe('AnalyzeReportRule')
+export type AnalyzeReportRule = z.infer<typeof AnalyzeReportRule>
+
+export const AnalyzeReport = z.object({
+    rules: z.record(RuleId, AnalyzeReportRule),
+    database: Database,
+    queries: DatabaseQuery.array(),
+}).strict().describe('AnalyzeReport')
+export type AnalyzeReport = z.infer<typeof AnalyzeReport>
+
+export const AnalyzeHistory = z.object({
+    report: z.string(),
+    date: Timestamp,
+    database: Database,
+    queries: DatabaseQuery.array(),
+}).strict().describe('AnalyzeHistory')
+export type AnalyzeHistory = z.infer<typeof AnalyzeHistory>

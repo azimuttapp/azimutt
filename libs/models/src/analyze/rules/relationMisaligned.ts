@@ -1,5 +1,6 @@
 import {z} from "zod";
 import {indexBy, isNotUndefined} from "@azimutt/utils";
+import {Timestamp} from "../../common";
 import {AttributeRef, AttributesId, AttributeType, Database, Entity, EntityId, Relation} from "../../database";
 import {
     attributeRefToId,
@@ -11,7 +12,7 @@ import {
     relationToId
 } from "../../databaseUtils";
 import {DatabaseQuery} from "../../interfaces/connector";
-import {Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
+import {AnalyzeHistory, Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
 /**
  * Relations are made to link entities by referencing a target record from a source record, mostly using the primary key.
@@ -30,7 +31,7 @@ export const relationMisalignedRule: Rule<CustomRuleConf> = {
     name: ruleName,
     conf: {level: RuleLevel.enum.high},
     zConf: CustomRuleConf,
-    analyze(conf: CustomRuleConf, db: Database, queries: DatabaseQuery[]): RuleViolation[] {
+    analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[]): RuleViolation[] {
         const entities: Record<EntityId, Entity> = indexBy(db.entities || [], entityToId)
         const ignores = conf.ignores?.map(i => ({src: attributesRefFromId(i.src), ref: attributesRefFromId(i.ref)})) || []
         return (db.relations || [])

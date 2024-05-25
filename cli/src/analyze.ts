@@ -1,9 +1,10 @@
 import chalk from "chalk";
-import {z} from "zod";
 import {
+    dateFromIsoFilename,
     dateToIsoFilename,
     emailParse,
     groupBy,
+    isNotUndefined,
     Logger,
     mapValues,
     partition,
@@ -16,13 +17,14 @@ import {
 } from "@azimutt/utils";
 import {
     analyzeDatabase,
-    AttributePath,
+    AnalyzeHistory,
+    AnalyzeReport,
+    AnalyzeReportRule,
     azimuttEmail,
     Connector,
     Database,
     DatabaseQuery,
     DatabaseUrlParsed,
-    EntityRef,
     parseDatabaseUrl,
     RuleAnalyzed,
     RuleId,
@@ -55,16 +57,16 @@ export async function launchAnalyze(url: string, opts: Opts, logger: Logger): Pr
     // TODO: extend config for user, database, queries, data... ({user: {}, database: {}, queries: {}, data: {}, rules: {}})
     const app = 'azimutt-analyze'
     const folder = opts.folder || `~/.azimutt/analyze${dbUrl.db ? '/' + dbUrl.db : ''}`
+    const now = Date.now()
     const conf: RulesConf = await loadConf(folder, logger)
-    const previousReports = opts.key ? await loadPreviousReports(folder) : []
+    const history = opts.key ? await loadHistory(folder, logger) : []
     const db: Database = await connector.getSchema(app, dbUrl, {...conf.database, logger: loggerNoOp})
     const queries: DatabaseQuery[] = await connector.getQueryHistory(app, dbUrl, {logger: loggerNoOp, database: dbUrl.db}).catch(err => {
         if (typeof err === 'string' && err === 'Not implemented') logger.log(chalk.blue(`Query history is not supported yet on ${dbUrl.kind}, ping us ;)`))
         if (typeof err === 'object' && 'message' in err && err.message.indexOf('"pg_stat_statements" does not exist')) logger.log(chalk.blue(`Can't get query history as pg_stat_statements is not enabled. Enable it for a better db analysis.`))
         return []
     })
-    // TODO: use previous reports to compute trends and warn on them
-    const rules: Record<RuleId, RuleAnalyzed> = analyzeDatabase(conf, db, queries, opts.only?.split(',') || [])
+    const rules: Record<RuleId, RuleAnalyzed> = analyzeDatabase(conf, now, db, queries, history, opts.only?.split(',') || [])
     const [offRules, usedRules] = partition(Object.values(rules), r => r.conf.level === RuleLevel.enum.off)
     const rulesByLevel: Record<RuleLevel, RuleAnalyzed[]> = groupBy(usedRules, r => r.conf.level)
     const stats = buildStats(db, queries, rulesByLevel)
@@ -76,7 +78,12 @@ export async function launchAnalyze(url: string, opts: Opts, logger: Logger): Pr
         printReport(offRules, rulesByLevel, maxShown, stats, logger)
         const report = buildReport(db, queries, rules)
         await writeReport(folder, report, logger)
-        // TODO: advertise on `key` option once done
+        if (!opts.key) {
+            logger.log(chalk.blue('Hope you like Azimutt analyze.'))
+            logger.log(chalk.blue('Get more from it with a license key, enabling historical analysis to find degrading queries and unused indexes for example.'))
+            logger.log(chalk.blue(`Reach out to ${azimuttEmail} to buy it.`))
+            logger.log('')
+        }
     } else {
         const maxShown = 3
         printReport(offRules, rulesByLevel, maxShown, stats, logger)
@@ -186,29 +193,9 @@ function printReport(offRules: RuleAnalyzed[], rulesByLevel: Record<string, Rule
     })
     logger.log('')
     logger.log(`Found ${pluralize(stats.nb_entities, 'entity')}, ${pluralize(stats.nb_relations, 'relation')}, ${pluralize(stats.nb_queries, 'query')} and ${pluralize(stats.nb_types, 'type')} on the database.`)
-    logger.log(`Found ${stats.nb_violations} violations with ${stats.nb_rules} rules: ${ruleLevelsShown.map(l => `${(stats.violations[l] || 0)} ${l}`).join(', ')}.`)
+    logger.log(`Found ${stats.nb_violations} violations using ${stats.nb_rules} rules: ${ruleLevelsShown.map(l => `${(stats.violations[l] || 0)} ${l}`).join(', ')}.`)
     logger.log('')
 }
-
-const RuleReport = z.object({
-    name: z.string(),
-    level: RuleLevel,
-    conf: z.record(z.string(), z.any()),
-    violations: z.object({
-        message: z.string(),
-        entity: EntityRef.optional(),
-        attribute: AttributePath.optional(),
-        extra: z.record(z.any()).optional(),
-    }).array()
-}).strict()
-type RuleReport = z.infer<typeof RuleReport>
-
-const AnalyzeReport = z.object({
-    database: Database,
-    queries: DatabaseQuery.array(),
-    rules: z.record(RuleId, RuleReport)
-}).strict().describe('AnalyzeReport')
-type AnalyzeReport = z.infer<typeof AnalyzeReport>
 
 function buildReport(database: Database, queries: DatabaseQuery[], rules: Record<RuleId, RuleAnalyzed>): AnalyzeReport {
     return zodParse(AnalyzeReport)({
@@ -220,7 +207,7 @@ function buildReport(database: Database, queries: DatabaseQuery[], rules: Record
     }).getOrThrow()
 }
 
-function buildRuleReport(rule: RuleAnalyzed): RuleReport {
+function buildRuleReport(rule: RuleAnalyzed): AnalyzeReportRule {
     const {level, ...conf} = rule.conf
     const violations = rule.violations.map(v => removeUndefined({
         message: v.message,
@@ -237,11 +224,20 @@ async function writeReport(folder: string, report: AnalyzeReport, logger: Logger
     logger.log(`Analysis report written to ${path}`)
 }
 
-async function loadPreviousReports(folder: string): Promise<AnalyzeReport[]> {
+async function loadHistory(folder: string, logger: Logger): Promise<AnalyzeHistory[]> {
     const files = await fileList(folder)
-    const reports = files
-        .filter(file => file.startsWith('report_'))
-        .map(file => pathJoin(folder, file))
-        .map(path => fileReadJson<AnalyzeReport>(path).then(zodParseAsync(AnalyzeReport)))
-    return Promise.all(reports)
+    const history = files
+        .map(file => {
+            const [, date] = file.match(/^report_([0-9-TZ]{24})\.azimutt\.json$/) || []
+            return date ? {date: dateFromIsoFilename(date).getTime(), path: pathJoin(folder, file)} : undefined
+        })
+        .filter(isNotUndefined)
+        .map(({date, path}) =>
+            fileReadJson<AnalyzeReport>(path)
+                .then(zodParseAsync(AnalyzeReport))
+                .then(report => ({report: path, date, database: report.database, queries: report.queries}))
+        )
+    const res = await Promise.all(history)
+    logger.log(`Loaded ${pluralizeL(res, 'previous report')} from ${folder}`)
+    return res
 }

@@ -4,6 +4,7 @@ import {checkNamingConsistency, attributeNameInconsistentRule} from "./attribute
 import {ruleConf} from "../rule.test";
 
 describe('attributeNameInconsistent', () => {
+    const now = Date.now()
     test('empty', () => {
         expect(checkNamingConsistency([])).toEqual({convention: 'snake-lower', invalid: []})
     })
@@ -18,6 +19,18 @@ describe('attributeNameInconsistent', () => {
         const userPosts: Entity = {name: 'UserPost', attrs: [{name: 'UserId', type: 'uuid'}, {name: 'PostId', type: 'uuid'}]}
         expect(checkNamingConsistency([users, posts, userPosts])).toEqual({convention: 'snake-lower', invalid: [{entity: 'UserPost', attribute: ['UserId']}, {entity: 'UserPost', attribute: ['PostId']}]})
     })
+    test('violation message', () => {
+        const db: Database = {
+            entities: [
+                {name: 'wp_users', attrs: [{name: 'user_id', type: 'uuid'}]},
+                {name: 'wp_posts', attrs: [{name: 'post_id', type: 'uuid'}, {name: 'author', type: 'uuid'}]},
+                {name: 'Comments', attrs: [{name: 'CommentId', type: 'uuid'}, {name: 'author', type: 'uuid'}]},
+            ]
+        }
+        expect(attributeNameInconsistentRule.analyze(ruleConf, now, db, [], []).map(v => v.message)).toEqual([
+            'Attribute Comments(CommentId) doesn\'t follow naming convention snake-lower.'
+        ])
+    })
     test('ignores', () => {
         const db: Database = {
             entities: [
@@ -28,24 +41,12 @@ describe('attributeNameInconsistent', () => {
                 {name: 'Forms', attrs: [{name: 'FormId', type: 'uuid'}]},
             ]
         }
-        expect(attributeNameInconsistentRule.analyze(ruleConf, db, []).map(v => v.message)).toEqual([
+        expect(attributeNameInconsistentRule.analyze(ruleConf, now, db, [], []).map(v => v.message)).toEqual([
             'Attribute Comments(CommentId) doesn\'t follow naming convention snake-lower.',
             'Attribute Forms(FormId) doesn\'t follow naming convention snake-lower.',
         ])
-        expect(attributeNameInconsistentRule.analyze({...ruleConf, ignores: ['Forms(FormId)']}, db, []).map(v => v.message)).toEqual([
+        expect(attributeNameInconsistentRule.analyze({...ruleConf, ignores: ['Forms(FormId)']}, now, db, [], []).map(v => v.message)).toEqual([
             'Attribute Comments(CommentId) doesn\'t follow naming convention snake-lower.',
-        ])
-    })
-    test('violation message', () => {
-        const db: Database = {
-            entities: [
-                {name: 'wp_users', attrs: [{name: 'user_id', type: 'uuid'}]},
-                {name: 'wp_posts', attrs: [{name: 'post_id', type: 'uuid'}, {name: 'author', type: 'uuid'}]},
-                {name: 'Comments', attrs: [{name: 'CommentId', type: 'uuid'}, {name: 'author', type: 'uuid'}]},
-            ]
-        }
-        expect(attributeNameInconsistentRule.analyze(ruleConf, db, []).map(v => v.message)).toEqual([
-            'Attribute Comments(CommentId) doesn\'t follow naming convention snake-lower.'
         ])
     })
 })

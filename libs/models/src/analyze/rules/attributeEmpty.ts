@@ -1,4 +1,5 @@
 import {z} from "zod";
+import {Timestamp} from "../../common";
 import {Attribute, AttributeId, AttributeRef, Database, Entity} from "../../database";
 import {
     attributeRefFromId,
@@ -8,7 +9,7 @@ import {
     entityToRef
 } from "../../databaseUtils";
 import {DatabaseQuery} from "../../interfaces/connector";
-import {Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
+import {AnalyzeHistory, Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
 const ruleId: RuleId = 'attribute-empty'
 const ruleName: RuleName = 'empty attribute'
@@ -21,7 +22,7 @@ export const attributeEmptyRule: Rule<CustomRuleConf> = {
     name: ruleName,
     conf: {level: RuleLevel.enum.low},
     zConf: CustomRuleConf,
-    analyze(conf: CustomRuleConf, db: Database, queries: DatabaseQuery[]): RuleViolation[] {
+    analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[]): RuleViolation[] {
         const ignores: AttributeRef[] = conf.ignores?.map(attributeRefFromId) || []
         return (db.entities || [])
             .flatMap(getEmptyAttributes)

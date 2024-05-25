@@ -9,10 +9,11 @@ import {
     isSnakeUpper,
     StringCase
 } from "@azimutt/utils";
+import {Timestamp} from "../../common";
 import {Database, Entity, EntityId, EntityRef} from "../../database";
 import {entityRefFromId, entityRefSame, entityRefToId, entityToRef} from "../../databaseUtils";
 import {DatabaseQuery} from "../../interfaces/connector";
-import {Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
+import {AnalyzeHistory, Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
 /**
  * Keeping the same naming convention for all your tables will help avoid typos and understand things.
@@ -29,7 +30,7 @@ export const entityNameInconsistentRule: Rule<CustomRuleConf> = {
     name: ruleName,
     conf: {level: RuleLevel.enum.low},
     zConf: CustomRuleConf,
-    analyze(conf: CustomRuleConf, db: Database, queries: DatabaseQuery[]): RuleViolation[] {
+    analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[]): RuleViolation[] {
         const inconsistencies = checkNamingConsistency(db.entities || [])
         const ignores: EntityRef[] = conf.ignores?.map(entityRefFromId) || []
         return inconsistencies.invalid

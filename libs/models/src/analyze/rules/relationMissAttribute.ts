@@ -1,5 +1,6 @@
 import {z} from "zod";
 import {indexBy, isNotUndefined} from "@azimutt/utils";
+import {Timestamp} from "../../common";
 import {AttributeId, AttributeRef, Database, Entity, EntityId, Relation} from "../../database";
 import {
     attributeRefFromId,
@@ -11,7 +12,7 @@ import {
     relationToId
 } from "../../databaseUtils";
 import {DatabaseQuery} from "../../interfaces/connector";
-import {Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
+import {AnalyzeHistory, Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
 const ruleId: RuleId = 'relation-miss-attribute'
 const ruleName: RuleName = 'attribute not found in relation'
@@ -24,7 +25,7 @@ export const relationMissAttributeRule: Rule<CustomRuleConf> = {
     name: ruleName,
     conf: {level: RuleLevel.enum.high},
     zConf: CustomRuleConf,
-    analyze(conf: CustomRuleConf, db: Database, queries: DatabaseQuery[]): RuleViolation[] {
+    analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[]): RuleViolation[] {
         const entities: Record<EntityId, Entity> = indexBy(db.entities || [], entityToId)
         const ignores: AttributeRef[] = conf.ignores?.map(attributeRefFromId) || []
         return (db.relations || [])

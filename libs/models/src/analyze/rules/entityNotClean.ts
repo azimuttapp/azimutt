@@ -1,12 +1,13 @@
 import {z} from "zod";
+import {Timestamp} from "../../common";
 import {Database, Entity, EntityId, EntityKind, EntityRef} from "../../database";
 import {entityRefFromId, entityRefSame, entityToId, entityToRef} from "../../databaseUtils";
+import {oneDay} from "../../helpers/date";
 import {DatabaseQuery} from "../../interfaces/connector";
-import {Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
+import {AnalyzeHistory, Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
 const ruleId: RuleId = 'entity-not-clean'
 const ruleName: RuleName = 'entity not clean'
-const oneDayMs = 24 * 60 * 60 * 1000
 const CustomRuleConf = RuleConf.extend({
     ignores: EntityId.array().optional(),
     maxDeadRows: z.number(),
@@ -19,17 +20,17 @@ type CustomRuleConf = z.infer<typeof CustomRuleConf>
 export const entityNotCleanRule: Rule<CustomRuleConf> = {
     id: ruleId,
     name: ruleName,
-    conf: {level: RuleLevel.enum.high, maxDeadRows: 30000, maxVacuumLag: 30000, maxAnalyzeLag: 30000, maxVacuumDelayMs: oneDayMs, maxAnalyzeDelayMs: oneDayMs},
+    conf: {level: RuleLevel.enum.high, maxDeadRows: 30000, maxVacuumLag: 30000, maxAnalyzeLag: 30000, maxVacuumDelayMs: oneDay, maxAnalyzeDelayMs: oneDay},
     zConf: CustomRuleConf,
-    analyze(conf: CustomRuleConf, db: Database, queries: DatabaseQuery[]): RuleViolation[] {
-        const now = db.stats?.extractedAt ? new Date(db.stats.extractedAt).getTime() : Date.now()
+    analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[]): RuleViolation[] {
+        const dbDate = db.stats?.extractedAt ? new Date(db.stats.extractedAt).getTime() : now
         const ignores: EntityRef[] = conf.ignores?.map(entityRefFromId) || []
         return (db.entities || [])
-            .filter(e => isEntityNotClean(e, now, conf.maxDeadRows, conf.maxVacuumLag, conf.maxAnalyzeLag, conf.maxVacuumDelayMs, conf.maxAnalyzeDelayMs))
+            .filter(e => isEntityNotClean(e, dbDate, conf.maxDeadRows, conf.maxVacuumLag, conf.maxAnalyzeLag, conf.maxVacuumDelayMs, conf.maxAnalyzeDelayMs))
             .filter(e => !ignores.some(i => entityRefSame(i, entityToRef(e))))
             .map(e => {
-                const reason = isEntityNotClean(e, now, conf.maxDeadRows, conf.maxVacuumLag, conf.maxAnalyzeLag, conf.maxVacuumDelayMs, conf.maxAnalyzeDelayMs)
-                const value = isEntityNotCleanValue(e, now, conf.maxDeadRows, conf.maxVacuumLag, conf.maxAnalyzeLag, conf.maxVacuumDelayMs, conf.maxAnalyzeDelayMs)
+                const reason = isEntityNotClean(e, dbDate, conf.maxDeadRows, conf.maxVacuumLag, conf.maxAnalyzeLag, conf.maxVacuumDelayMs, conf.maxAnalyzeDelayMs)
+                const value = isEntityNotCleanValue(e, dbDate, conf.maxDeadRows, conf.maxVacuumLag, conf.maxAnalyzeLag, conf.maxVacuumDelayMs, conf.maxAnalyzeDelayMs)
                 return {
                     ruleId,
                     ruleName,

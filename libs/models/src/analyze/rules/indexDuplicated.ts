@@ -1,4 +1,5 @@
 import {z} from "zod";
+import {Timestamp} from "../../common";
 import {AttributesId, AttributesRef, Database, Entity, Index} from "../../database";
 import {
     attributePathToId,
@@ -8,7 +9,7 @@ import {
     entityToRef
 } from "../../databaseUtils";
 import {DatabaseQuery} from "../../interfaces/connector";
-import {Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
+import {AnalyzeHistory, Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
 /**
  * Indexes are great to speed read performances, but they come at the cost of reducing write performances.
@@ -28,7 +29,7 @@ export const indexDuplicatedRule: Rule<CustomRuleConf> = {
     name: ruleName,
     conf: {level: RuleLevel.enum.high},
     zConf: CustomRuleConf,
-    analyze(conf: CustomRuleConf, db: Database, queries: DatabaseQuery[]): RuleViolation[] {
+    analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[]): RuleViolation[] {
         const ignores: AttributesRef[] = conf.ignores?.map(attributesRefFromId) || []
         return (db.entities || []).flatMap(getDuplicatedIndexes)
             .filter(idx => !ignores.some(i => attributesRefSame(i, {...entityToRef(idx.entity), attributes: idx.index.attrs})))

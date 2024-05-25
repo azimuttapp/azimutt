@@ -4,6 +4,7 @@ import {getMissingIndexOnRelation, indexOnRelationRule} from "./indexOnRelation"
 import {ruleConf} from "../rule.test";
 
 describe('indexOnRelation', () => {
+    const now = Date.now()
     test('empty', () => {
         const postAuthor: Relation = {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}]}
         expect(getMissingIndexOnRelation(postAuthor, {})).toEqual([])
@@ -23,6 +24,20 @@ describe('indexOnRelation', () => {
             {relation: postAuthor, ref: {entity: 'posts'}, attrs: [['author']]},
         ])
     })
+    test('violation message', () => {
+        const db: Database = {
+            entities: [
+                {name: 'users', attrs: [{name: 'id', type: 'uuid'}], pk: {attrs: [['id']]}},
+                {name: 'posts', attrs: [{name: 'id', type: 'uuid'}, {name: 'author', type: 'uuid'}]},
+            ],
+            relations: [
+                {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}]}
+            ]
+        }
+        expect(indexOnRelationRule.analyze(ruleConf, now, db, [], []).map(v => v.message)).toEqual([
+            'Create an index on posts(author) to improve posts(author)->users(id) relation.'
+        ])
+    })
     test('ignores', () => {
         const db: Database = {
             entities: [
@@ -34,26 +49,12 @@ describe('indexOnRelation', () => {
                 {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['created_by'], ref: ['id']}]},
             ]
         }
-        expect(indexOnRelationRule.analyze(ruleConf, db, []).map(v => v.message)).toEqual([
+        expect(indexOnRelationRule.analyze(ruleConf, now, db, [], []).map(v => v.message)).toEqual([
             'Create an index on posts(author) to improve posts(author)->users(id) relation.',
             'Create an index on posts(created_by) to improve posts(created_by)->users(id) relation.',
         ])
-        expect(indexOnRelationRule.analyze({...ruleConf, ignores: ['posts(created_by)']}, db, []).map(v => v.message)).toEqual([
+        expect(indexOnRelationRule.analyze({...ruleConf, ignores: ['posts(created_by)']}, now, db, [], []).map(v => v.message)).toEqual([
             'Create an index on posts(author) to improve posts(author)->users(id) relation.',
-        ])
-    })
-    test('violation message', () => {
-        const db: Database = {
-            entities: [
-                {name: 'users', attrs: [{name: 'id', type: 'uuid'}], pk: {attrs: [['id']]}},
-                {name: 'posts', attrs: [{name: 'id', type: 'uuid'}, {name: 'author', type: 'uuid'}]},
-            ],
-            relations: [
-                {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}]}
-            ]
-        }
-        expect(indexOnRelationRule.analyze(ruleConf, db, []).map(v => v.message)).toEqual([
-            'Create an index on posts(author) to improve posts(author)->users(id) relation.'
         ])
     })
 })

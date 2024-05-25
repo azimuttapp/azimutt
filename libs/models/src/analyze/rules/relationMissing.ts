@@ -1,5 +1,6 @@
 import {z} from "zod";
 import {groupBy, singular, splitWords} from "@azimutt/utils";
+import {Timestamp} from "../../common";
 import {
     AttributePath,
     AttributesId,
@@ -22,7 +23,7 @@ import {
     getPeerAttributes
 } from "../../databaseUtils";
 import {DatabaseQuery} from "../../interfaces/connector";
-import {Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
+import {AnalyzeHistory, Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
 /**
  * If relations are not defined as foreign key, it could be great to identify them
@@ -39,7 +40,7 @@ export const relationMissingRule: Rule<CustomRuleConf> = {
     name: ruleName,
     conf: {level: RuleLevel.enum.medium},
     zConf: CustomRuleConf,
-    analyze(conf: CustomRuleConf, db: Database, queries: DatabaseQuery[]): RuleViolation[] {
+    analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[]): RuleViolation[] {
         const ignores = conf.ignores?.map(i => ({src: attributesRefFromId(i.src), ref: attributesRefFromId(i.ref)})) || []
         return getMissingRelations(db.entities || [], db.relations || [])
             .filter(r => !ignores.some(i => attributesRefSame(i.src, {...r.src, attributes: r.attrs.map(a => a.src)}) && attributesRefSame(i.ref, {...r.ref, attributes: r.attrs.map(a => a.ref)})))

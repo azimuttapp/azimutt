@@ -1,5 +1,8 @@
 // functions sorted alphabetically
 
+export const arraySame = <T>(a1: T[], a2: T[], eq: (a: T, b: T) => boolean): boolean =>
+    a1.length === a2.length && a1.every((e, i) => eq(e, a2[i]))
+
 export const collect = <T, U>(arr: T[], f: (t: T) => U | undefined): U[] => arr.map(f).filter((u): u is U => u !== undefined)
 
 export const collectOne = <T, U>(arr: T[], f: (t: T) => U | undefined): U | undefined => {
@@ -25,6 +28,14 @@ export const findLastIndex = <T>(arr: T[], p: (t: T) => boolean): number => {
     return -1
 }
 
+export const groupBy = <T, K extends keyof any>(list: T[], getKey: (item: T) => K): Record<K, T[]> =>
+    list.reduce((acc, item) => {
+        const key = getKey(item)
+        if (!acc[key]) acc[key] = []
+        acc[key].push(item)
+        return acc
+    }, {} as Record<K, T[]>)
+
 // similar to group by but keys must be unique so values are not a list
 export const indexBy = <T, K extends keyof any>(list: T[], getKey: (item: T) => K): Record<K, T> =>
     list.reduce((acc, item) => {
@@ -32,11 +43,16 @@ export const indexBy = <T, K extends keyof any>(list: T[], getKey: (item: T) => 
         return acc
     }, {} as Record<K, T>)
 
-export const partition = <T>(arr: T[], p: (t: T) => boolean): [T[], T[]] => {
-    const ok = [] as T[]
-    const ko = [] as T[]
-    arr.forEach(i => p(i) ? ok.push(i) : ko.push(i))
-    return [ok, ko]
+export const maxBy = <T, V>(arr: T[], f: (t: T) => V): T | undefined => {
+    let res: T | undefined = undefined
+    arr.forEach(i => {
+        if (res === undefined) {
+            res = i
+        } else if (f(res) < f(i)) {
+            res = i
+        }
+    })
+    return res
 }
 
 export const mergeBy = <T, K extends keyof any>(a1: T[], a2: T[], getKey: (i: T) => K, merge: (i1: T, i2: T) => T = (i1, i2) => ({...i1, ...i2})): T[] => {
@@ -50,16 +66,24 @@ export const mergeBy = <T, K extends keyof any>(a1: T[], a2: T[], getKey: (i: T)
     return merged.concat(others.map(o => o.value))
 }
 
-export const groupBy = <T, K extends keyof any>(list: T[], getKey: (item: T) => K): Record<K, T[]> =>
-    list.reduce((acc, item) => {
-        const key = getKey(item)
-        if (!acc[key]) acc[key] = []
-        acc[key].push(item)
-        return acc
-    }, {} as Record<K, T[]>)
+export const minBy = <T, V>(arr: T[], f: (t: T) => V): T | undefined => {
+    let res: T | undefined = undefined
+    arr.forEach(i => {
+        if (res === undefined) {
+            res = i
+        } else if (f(res) > f(i)) {
+            res = i
+        }
+    })
+    return res
+}
 
-export const arraySame = <T>(a1: T[], a2: T[], eq: (a: T, b: T) => boolean): boolean =>
-    a1.length === a2.length && a1.every((e, i) => eq(e, a2[i]))
+export const partition = <T>(arr: T[], p: (t: T) => boolean): [T[], T[]] => {
+    const ok = [] as T[]
+    const ko = [] as T[]
+    arr.forEach(i => p(i) ? ok.push(i) : ko.push(i))
+    return [ok, ko]
+}
 
 export const shuffle = <T>(array: T[]): T[] => {
     // Fisher-Yates shuffle

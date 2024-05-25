@@ -1,5 +1,6 @@
 import {z} from "zod";
 import {groupBy} from "@azimutt/utils";
+import {Timestamp} from "../../common";
 import {AttributesId, AttributesRef, Database, Entity, Relation} from "../../database";
 import {
     attributePathToId,
@@ -10,7 +11,7 @@ import {
     entityToRef
 } from "../../databaseUtils";
 import {DatabaseQuery} from "../../interfaces/connector";
-import {Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
+import {AnalyzeHistory, Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
 /**
  * Primary Keys are the default unique way to get a single row in a table.
@@ -29,7 +30,7 @@ export const primaryKeyNotBusinessRule: Rule<CustomRuleConf> = {
     name: ruleName,
     conf: {level: RuleLevel.enum.medium},
     zConf: CustomRuleConf,
-    analyze(conf: CustomRuleConf, db: Database, queries: DatabaseQuery[]): RuleViolation[] {
+    analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[]): RuleViolation[] {
         const relations = groupBy(db.relations || [], r => entityRefToId(r.src))
         const ignores: AttributesRef[] = conf.ignores?.map(attributesRefFromId) || []
         return (db.entities || [])

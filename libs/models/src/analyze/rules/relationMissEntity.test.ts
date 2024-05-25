@@ -4,6 +4,7 @@ import {getMissingEntityRelations, relationMissEntityRule} from "./relationMissE
 import {ruleConf} from "../rule.test";
 
 describe('relationMissEntity', () => {
+    const now = Date.now()
     test('valid relation', () => {
         const postAuthor: Relation = {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}]}
         const users: Entity = {name: 'users', attrs: [{name: 'id', type: 'uuid'}]}
@@ -21,23 +22,23 @@ describe('relationMissEntity', () => {
             {entity: 'users'}
         ]})
     })
+    test('violation message', () => {
+        const db: Database = {entities: [], relations: [{src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}]},]}
+        expect(relationMissEntityRule.analyze(ruleConf, now, db, [], []).map(v => v.message)).toEqual([
+            'Relation posts(author)->users(id), not found entities: posts, users',
+        ])
+    })
     test('ignores', () => {
         const db: Database = {entities: [], relations: [
             {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}]},
             {src: {entity: 'events'}, ref: {entity: 'users'}, attrs: [{src: ['created_by'], ref: ['id']}]},
         ]}
-        expect(relationMissEntityRule.analyze(ruleConf, db, []).map(v => v.message)).toEqual([
+        expect(relationMissEntityRule.analyze(ruleConf, now, db, [], []).map(v => v.message)).toEqual([
             'Relation posts(author)->users(id), not found entities: posts, users',
             'Relation events(created_by)->users(id), not found entities: events, users',
         ])
-        expect(relationMissEntityRule.analyze({...ruleConf, ignores: ['events', 'users']}, db, []).map(v => v.message)).toEqual([
+        expect(relationMissEntityRule.analyze({...ruleConf, ignores: ['events', 'users']}, now, db, [], []).map(v => v.message)).toEqual([
             'Relation posts(author)->users(id), not found entities: posts',
-        ])
-    })
-    test('violation message', () => {
-        const db: Database = {entities: [], relations: [{src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}]},]}
-        expect(relationMissEntityRule.analyze(ruleConf, db, []).map(v => v.message)).toEqual([
-            'Relation posts(author)->users(id), not found entities: posts, users',
         ])
     })
 })

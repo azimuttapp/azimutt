@@ -1,10 +1,11 @@
 import {z} from "zod";
 import {groupBy} from "@azimutt/utils";
+import {Timestamp} from "../common";
 import {zodParse} from "../zod";
 import {Database, EntityId} from "../database";
 import {entityRefToId} from "../databaseUtils";
 import {ConnectorSchemaDataOpts, ConnectorScopeOpts, DatabaseQuery} from "../interfaces/connector";
-import {Rule, RuleConf, RuleId, RuleLevel, RuleViolation} from "./rule";
+import {AnalyzeHistory, Rule, RuleConf, RuleId, RuleLevel, RuleViolation} from "./rule";
 import {attributeEmptyRule} from "./rules/attributeEmpty";
 import {attributeNameInconsistentRule} from "./rules/attributeNameInconsistent";
 import {attributeTypeInconsistentRule} from "./rules/attributeTypeInconsistent";
@@ -19,6 +20,7 @@ import {indexDuplicatedRule} from "./rules/indexDuplicated";
 import {indexOnRelationRule} from "./rules/indexOnRelation";
 import {primaryKeyMissingRule} from "./rules/primaryKeyMissing";
 import {primaryKeyNotBusinessRule} from "./rules/primaryKeyNotBusiness";
+import {queryDegradingRule} from "./rules/queryDegrading";
 import {queryExpensiveRule} from "./rules/queryExpensive";
 import {queryHighVariationRule} from "./rules/queryHighVariation";
 import {queryTooSlowRule} from "./rules/queryTooSlow";
@@ -43,6 +45,7 @@ export const analyzeRules: Rule[] = [
     indexOnRelationRule,
     primaryKeyMissingRule,
     primaryKeyNotBusinessRule,
+    queryDegradingRule,
     queryExpensiveRule,
     queryHighVariationRule,
     queryTooSlowRule,
@@ -61,8 +64,7 @@ export type RulesConf = z.infer<typeof RulesConf>
 export type RuleAnalyzed = {rule: Rule, conf: RuleConf, violations: RuleViolation[]}
 
 // TODO: split rules by kind? (schema, query, data...)
-export function analyzeDatabase(conf: RulesConf, db: Database, queries: DatabaseQuery[], ruleNames: string[]): Record<RuleId, RuleAnalyzed> {
-    // TODO: degrading queries mean time (absolute slow down & daily slow down)
+export function analyzeDatabase(conf: RulesConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[], ruleNames: string[]): Record<RuleId, RuleAnalyzed> {
     // TODO: fast growing tables/indexes (absolute % growth, daily % growth)
     // TODO: unused tables/indexes (flat count)
 
@@ -80,7 +82,7 @@ export function analyzeDatabase(conf: RulesConf, db: Database, queries: Database
     return Object.fromEntries(rules.map(r => {
         const ruleConf = Object.assign({}, r.conf, conf.rules?.[r.id])
         return [r.id, zodParse(r.zConf, r.id)(ruleConf).fold(
-            ruleConf => ({rule: r, conf: ruleConf, violations: ruleConf.level === RuleLevel.enum.off ? [] : r.analyze(ruleConf, db, queries)}),
+            ruleConf => ({rule: r, conf: ruleConf, violations: ruleConf.level === RuleLevel.enum.off ? [] : r.analyze(ruleConf, now, db, queries, history)}),
             err => ({rule: r, conf: ruleConf, violations: [{ruleId: r.id, ruleName: r.name, ruleLevel: r.conf.level, message: `Invalid conf: ${err}`}]})
         )]
     }))

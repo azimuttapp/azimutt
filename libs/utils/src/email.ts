@@ -1,8 +1,10 @@
+import {removeUndefined} from "./object";
+
 export type EmailParsed = {full: string, domain?: string}
 
 export function emailParse(email: string): EmailParsed {
-    const [, domain] = email.match(/^[^\s@]+@([^\s@]+\.[^\s@]+)$/) || []
-    return {full: email, domain}
+    const [, domain] = email.match(/^[^\s@]+@([^\s@.]+\.[^\s@.]+)$/) || []
+    return removeUndefined({full: email, domain})
 }
 
 // https://email-verify.my-addr.com/list-of-most-popular-email-domains.php

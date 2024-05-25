@@ -1,9 +1,10 @@
 import {z} from "zod";
 import {filterValues, groupBy, pluralize} from "@azimutt/utils";
+import {Timestamp} from "../../common";
 import {Attribute, AttributeName, AttributeRef, AttributeType, Database, Entity} from "../../database";
 import {attributeRefToId, entityToRef, flattenAttribute} from "../../databaseUtils";
 import {DatabaseQuery} from "../../interfaces/connector";
-import {Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
+import {AnalyzeHistory, Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
 /**
  * There is nothing wrong with inconsistent types on columns with identical name.
@@ -23,7 +24,7 @@ export const attributeTypeInconsistentRule: Rule<CustomRuleConf> = {
     name: ruleName,
     conf: {level: RuleLevel.enum.hint},
     zConf: CustomRuleConf,
-    analyze(conf: CustomRuleConf, db: Database, queries: DatabaseQuery[]): RuleViolation[] {
+    analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[]): RuleViolation[] {
         return Object.entries(getInconsistentAttributeTypes(db.entities || []))
             .filter(([name,]) => !conf.ignores?.some(i => i === name))
             .map(([name, refs]) => {
